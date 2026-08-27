@@ -14,9 +14,10 @@
 use std::fmt::Write;
 
 use crate::ast::{
-    AggregateCall, ClassExprOperand, ColumnExpr, CompareOperand, ContainsExpr, FunctionCall,
-    IdentifiedExpr, IdentifiedPath, LikeOperand, MatchesOperand, SelectQuery, StatFunc, Terminal,
-    TerminologyFunction, TopDirection, ValueListItem, VersionPredicate, WhereExpr, comp_op_text,
+    AggregateCall, ClassExprOperand, ColumnExpr, CompareOperand, ContainsConstraint, ContainsExpr,
+    FunctionCall, IdentifiedExpr, IdentifiedPath, LikeOperand, MatchesOperand, SelectQuery,
+    StatFunc, Terminal, TerminologyFunction, TopDirection, ValueListItem, VersionPredicate,
+    WhereExpr, comp_op_text,
 };
 
 /// Render a whole query as canonical AQL text.
@@ -30,21 +31,7 @@ pub fn to_aql(query: &SelectQuery) -> String {
         out.push_str(" WHERE ");
         where_expr(&mut out, where_, WhereCtx::Top);
     }
-    if !query.order_by.is_empty() {
-        out.push_str(" ORDER BY ");
-        for (i, ob) in query.order_by.iter().enumerate() {
-            if i > 0 {
-                out.push_str(", ");
-            }
-            identified_path(&mut out, &ob.path);
-            if let Some(order) = ob.order {
-                out.push_str(match order {
-                    crate::ast::SortOrder::Ascending => " ASC",
-                    crate::ast::SortOrder::Descending => " DESC",
-                });
-            }
-        }
-    }
+    order_by_clause(&mut out, query);
     if let Some(limit) = &query.limit {
         let _ = write!(out, " LIMIT {}", limit.limit);
         if let Some(offset) = limit.offset {
@@ -52,6 +39,27 @@ pub fn to_aql(query: &SelectQuery) -> String {
         }
     }
     out
+}
+
+/// The `ORDER BY` clause, with each term's explicit direction where the query
+/// states one.
+fn order_by_clause(out: &mut String, query: &SelectQuery) {
+    if query.order_by.is_empty() {
+        return;
+    }
+    out.push_str(" ORDER BY ");
+    for (i, ob) in query.order_by.iter().enumerate() {
+        if i > 0 {
+            out.push_str(", ");
+        }
+        identified_path(out, &ob.path);
+        if let Some(order) = ob.order {
+            out.push_str(match order {
+                crate::ast::SortOrder::Ascending => " ASC",
+                crate::ast::SortOrder::Descending => " DESC",
+            });
+        }
+    }
 }
 
 /// Escapes a raw string for embedding in an AQL single-quoted literal.
@@ -215,31 +223,41 @@ enum ContainsCtx {
     Nested,
 }
 
+/// One class operand and its optional `[NOT] CONTAINS` constraint.
+///
+/// `containsExpr: classExprOperand (NOT? CONTAINS containsExpr)?` makes the
+/// CONTAINS operand a whole `containsExpr`, so it absorbs any `AND`/`OR` that
+/// follows it: an unparenthesised `A CONTAINS B` used as a boolean operand
+/// would re-parse with the operator moved INSIDE its scope, which changes what
+/// the query means — hence the parens.
+fn contained_expr(
+    out: &mut String,
+    operand: &ClassExprOperand,
+    contains: Option<&ContainsConstraint>,
+    ctx: ContainsCtx,
+) {
+    let parens = contains.is_some() && !matches!(ctx, ContainsCtx::Top | ContainsCtx::Nested);
+    if parens {
+        out.push('(');
+    }
+    class_operand(out, operand);
+    if let Some(constraint) = contains {
+        if constraint.negated {
+            out.push_str(" NOT CONTAINS ");
+        } else {
+            out.push_str(" CONTAINS ");
+        }
+        contains_expr(out, &constraint.expr, ContainsCtx::Nested);
+    }
+    if parens {
+        out.push(')');
+    }
+}
+
 fn contains_expr(out: &mut String, expr: &ContainsExpr, ctx: ContainsCtx) {
     match expr {
         ContainsExpr::Contained { operand, contains } => {
-            // `containsExpr: classExprOperand (NOT? CONTAINS containsExpr)?`
-            // makes the CONTAINS operand a whole `containsExpr`, so it absorbs
-            // any `AND`/`OR` that follows it: an unparenthesised `A CONTAINS B`
-            // used as a boolean operand would re-parse with the operator moved
-            // INSIDE its scope, which changes what the query means.
-            let parens =
-                contains.is_some() && !matches!(ctx, ContainsCtx::Top | ContainsCtx::Nested);
-            if parens {
-                out.push('(');
-            }
-            class_operand(out, operand);
-            if let Some(constraint) = contains {
-                if constraint.negated {
-                    out.push_str(" NOT CONTAINS ");
-                } else {
-                    out.push_str(" CONTAINS ");
-                }
-                contains_expr(out, &constraint.expr, ContainsCtx::Nested);
-            }
-            if parens {
-                out.push(')');
-            }
+            contained_expr(out, operand, contains.as_deref(), ctx);
         }
         ContainsExpr::And(a, b) => {
             // `AND` binds tighter than `OR`, so only a right-hand `AND` (which

@@ -392,32 +392,14 @@ fn create_node(
     let coded_name = archetyped
         .then(|| coded_name_constraint(co, ctx, arch_id, name_constraint.as_deref()))
         .flatten();
-    if let Some((value, coded)) = coded_name {
-        node.name = Some(value.clone());
-        node.localized_name = Some(value);
-        node.name_coded = Some(coded);
-    } else if let Some(nc) = &name_constraint {
-        node.name = Some(nc.clone());
-        node.localized_name = Some(nc.clone());
-    } else if !name_code.is_empty() {
-        node.name = ctx.text(arch_id, name_code, &ctx.default_language);
-        node.localized_name.clone_from(&node.name);
-        for lang in &ctx.languages {
-            if let Some(r) = ctx.rubric(arch_id, lang, name_code) {
-                if let Some(t) = &r.text {
-                    node.localized_names.insert(lang.clone(), t.clone());
-                }
-                if let Some(d) = &r.description {
-                    node.localized_descriptions.insert(lang.clone(), d.clone());
-                }
-            }
-        }
-    }
-    node.name_code = if name_code.is_empty() {
-        None
-    } else {
-        Some(name_code.to_owned())
-    };
+    apply_node_naming(
+        &mut node,
+        ctx,
+        arch_id,
+        name_code,
+        name_constraint.as_deref(),
+        coded_name,
+    );
     // Node-level external term bindings: the archetype root's `term_bindings`
     // whose item code matches this node's constraint node id (master04
     // §"Web Template Metadata": the node-level `termBindings` map).
@@ -429,6 +411,108 @@ fn create_node(
     // Value-sets to Archetypes").
     node.constraint_bindings = constraint_bindings_of(ctx, co, arch_id);
     node
+}
+
+/// Fills a node's name, localized names/descriptions and name code.
+///
+/// A coded name constraint wins over an explicit plain `name/value`, which wins
+/// over the node rubric; only the rubric route carries per-language text.
+fn apply_node_naming(
+    node: &mut WebTemplateNode,
+    ctx: &Ctx,
+    arch_id: &str,
+    name_code: &str,
+    name_constraint: Option<&str>,
+    coded_name: Option<(String, CodedName)>,
+) {
+    if let Some((value, coded)) = coded_name {
+        node.name = Some(value.clone());
+        node.localized_name = Some(value);
+        node.name_coded = Some(coded);
+    } else if let Some(nc) = name_constraint {
+        node.name = Some(nc.to_owned());
+        node.localized_name = Some(nc.to_owned());
+    } else if !name_code.is_empty() {
+        node.name = ctx.text(arch_id, name_code, &ctx.default_language);
+        node.localized_name.clone_from(&node.name);
+        apply_localized_rubrics(node, ctx, arch_id, name_code);
+    }
+    node.name_code = if name_code.is_empty() {
+        None
+    } else {
+        Some(name_code.to_owned())
+    };
+}
+
+/// Records the node rubric's per-language text and description.
+fn apply_localized_rubrics(node: &mut WebTemplateNode, ctx: &Ctx, arch_id: &str, name_code: &str) {
+    for lang in &ctx.languages {
+        let Some(r) = ctx.rubric(arch_id, lang, name_code) else {
+            continue;
+        };
+        if let Some(t) = &r.text {
+            node.localized_names.insert(lang.clone(), t.clone());
+        }
+        if let Some(d) = &r.description {
+            node.localized_descriptions.insert(lang.clone(), d.clone());
+        }
+    }
+}
+
+/// Builds the child nodes of one constraint attribute into `children`.
+///
+/// The careflow-state alternatives of `ism_transition` collapse into the one
+/// transition node master05 §ISM_TRANSITION maps, so they are built without
+/// their at-code identity (see [`shape::MERGED_ATTRIBUTE`]) and the merged
+/// node takes the ATTRIBUTE's occurrences — one required transition per ACTION
+/// instance, not one per careflow state. An unfilled slot or a constraint ref
+/// yields no node.
+fn build_attribute_children(
+    ctx: &Ctx,
+    attr: &crate::opt14::types::CAttribute,
+    node: &WebTemplateNode,
+    arch_id: &str,
+    children: &mut Vec<WebTemplateNode>,
+) {
+    let attr_name = inputs::attribute_name(attr);
+    // The openEHR terminology group a child's coded value binds to, fixed by
+    // (this node's RM type, the attribute) — used to resolve rubrics from the
+    // correct group (SPECPR-51 code collisions; see `inputs::openehr_group`).
+    let child_group = inputs::openehr_group(&node.rm_type, attr_name);
+    let merged = attr_name == shape::MERGED_ATTRIBUTE;
+    let identity = if merged {
+        shape::Identity::AttributeOnly
+    } else {
+        shape::Identity::Archetyped
+    };
+    let mut built = Vec::new();
+    for child_co in inputs::attribute_children(attr) {
+        if matches!(
+            child_co,
+            CObject::ArchetypeSlot(_) | CObject::ConstraintRef(_)
+        ) {
+            continue;
+        }
+        built.push(build_node(
+            ctx,
+            Some(attr),
+            child_co,
+            &node.aql_path,
+            arch_id,
+            child_group,
+            identity,
+        ));
+    }
+    if !merged {
+        children.extend(built);
+        return;
+    }
+    if let Some(mut transition) = shape::merge_alternatives(built) {
+        let (min, max) = occurrences(attribute_existence(attr));
+        transition.min = min;
+        transition.max = max;
+        children.push(transition);
+    }
 }
 
 fn build_children(
@@ -444,57 +528,10 @@ fn build_children(
     let mut children = Vec::new();
     if recurse_attrs {
         for attr in inputs::attributes(co) {
-            let attr_name = inputs::attribute_name(attr);
-            if attr_name == "name" {
-                // The `name` attribute is never a child node — it names the node
-                // (master04 §"Field Identifiers": names generate the node id).
-                continue;
-            }
-            // The openEHR terminology group a child's coded value binds to, fixed
-            // by (this node's RM type, the attribute) — used to resolve rubrics
-            // from the correct group (SPECPR-51 code collisions; see
-            // `inputs::openehr_group`).
-            let child_group = inputs::openehr_group(&node.rm_type, attr_name);
-            // The careflow-state alternatives of `ism_transition` collapse into
-            // the one transition node master05 §ISM_TRANSITION maps, so they are
-            // built without their at-code identity (see
-            // [`shape::MERGED_ATTRIBUTE`]).
-            let merged = attr_name == shape::MERGED_ATTRIBUTE;
-            let identity = if merged {
-                shape::Identity::AttributeOnly
-            } else {
-                shape::Identity::Archetyped
-            };
-            let mut built = Vec::new();
-            for child_co in inputs::attribute_children(attr) {
-                if matches!(
-                    child_co,
-                    CObject::ArchetypeSlot(_) | CObject::ConstraintRef(_)
-                ) {
-                    continue; // Unfilled slot / constraint ref: no node.
-                }
-                built.push(build_node(
-                    ctx,
-                    Some(attr),
-                    child_co,
-                    &node.aql_path,
-                    arch_id,
-                    child_group,
-                    identity,
-                ));
-            }
-            if merged {
-                if let Some(mut transition) = shape::merge_alternatives(built) {
-                    // The merged node's occurrences are the ATTRIBUTE's — one
-                    // required transition per ACTION instance, not one per
-                    // careflow state.
-                    let (min, max) = occurrences(attribute_existence(attr));
-                    transition.min = min;
-                    transition.max = max;
-                    children.push(transition);
-                }
-            } else {
-                children.extend(built);
+            // The `name` attribute is never a child node — it names the node
+            // (master04 §"Field Identifiers": names generate the node id).
+            if inputs::attribute_name(attr) != "name" {
+                build_attribute_children(ctx, attr, node, arch_id, &mut children);
             }
         }
     }
@@ -632,37 +669,7 @@ fn capture_leaf_constraints(co: &CObject, node: &mut WebTemplateNode) {
     }
     capture_size_range(co, node);
     capture_leaf_existence(co, node);
-    if let Some(CPrimitive::CDuration(d)) = inputs::primitive_under(co, "value")
-        && let Some(range) = &d.range
-    {
-        let min = if range.lower_unbounded {
-            None
-        } else {
-            range.lower.clone()
-        };
-        let max = if range.upper_unbounded {
-            None
-        } else {
-            range.upper.clone()
-        };
-        if min.is_some() || max.is_some() {
-            // Inclusivity comes from the AOM interval flags (BASE
-            // foundation_types Interval: lower_included/upper_included) —
-            // an exclusive bound (`> PT0S`) must not degrade to `>=`.
-            let min_strict = range.lower_included == Some(false);
-            let max_strict = range.upper_included == Some(false);
-            node.duration_range = Some(super::model::WebTemplateRange {
-                min_op: min
-                    .as_ref()
-                    .map(|_| if min_strict { ">" } else { ">=" }.to_owned()),
-                min: min.map(serde_json::Value::String),
-                max_op: max
-                    .as_ref()
-                    .map(|_| if max_strict { "<" } else { "<=" }.to_owned()),
-                max: max.map(serde_json::Value::String),
-            });
-        }
-    }
+    capture_duration_range(co, node);
     // C_TIME/C_DATE_TIME timezone_validity (VALIDITY_KIND: OPT 1.4 XSD 1001 =
     // mandatory, 1002 = optional, 1003 = disallowed). C_DATE has no timezone.
     node.tz_validity = match inputs::primitive_under(co, "value") {
@@ -670,13 +677,58 @@ fn capture_leaf_constraints(co: &CObject, node: &mut WebTemplateNode) {
         Some(CPrimitive::CDateTime(c)) => c.timezone_validity.map(validity_code),
         _ => None,
     };
-    // C_QUANTITY.property (openEHR `property`-group code): captured so the
-    // instance's `units` can be checked against the property's unit set
-    // (`AM/docs/UML/classes/org.openehr.am.aom14.c_quantity.adoc` §C_QUANTITY:
-    // `property` = "Name of physical property for Quantities being
-    // constrained"). Only the openEHR-terminology property code is meaningful,
-    // and the placeholder "0" (Ocean Template Designer's unconstrained property)
-    // is treated as no constraint (matching the OPT-side C_DV_QUANTITY check).
+    capture_quantity_property(co, node);
+    capture_code_lists(co, node);
+}
+
+/// `C_DURATION.range` on `value` → [`WebTemplateNode::duration_range`] (AOM 1.4
+/// §`C_DURATION`).
+///
+/// Inclusivity comes from the AOM interval flags (BASE `foundation_types`
+/// Interval: `lower_included`/`upper_included`) — an exclusive bound
+/// (`> PT0S`) must not degrade to `>=`.
+fn capture_duration_range(co: &CObject, node: &mut WebTemplateNode) {
+    let Some(CPrimitive::CDuration(d)) = inputs::primitive_under(co, "value") else {
+        return;
+    };
+    let Some(range) = &d.range else { return };
+    let min = if range.lower_unbounded {
+        None
+    } else {
+        range.lower.clone()
+    };
+    let max = if range.upper_unbounded {
+        None
+    } else {
+        range.upper.clone()
+    };
+    if min.is_none() && max.is_none() {
+        return;
+    }
+    let min_strict = range.lower_included == Some(false);
+    let max_strict = range.upper_included == Some(false);
+    node.duration_range = Some(super::model::WebTemplateRange {
+        min_op: min
+            .as_ref()
+            .map(|_| if min_strict { ">" } else { ">=" }.to_owned()),
+        min: min.map(serde_json::Value::String),
+        max_op: max
+            .as_ref()
+            .map(|_| if max_strict { "<" } else { "<=" }.to_owned()),
+        max: max.map(serde_json::Value::String),
+    });
+}
+
+/// `C_QUANTITY.property` (an openEHR `property`-group code), captured so the
+/// instance's `units` can be checked against the property's unit set
+/// (`AM/docs/UML/classes/org.openehr.am.aom14.c_quantity.adoc` §C_QUANTITY:
+/// `property` = "Name of physical property for Quantities being
+/// constrained").
+///
+/// Only the openEHR-terminology property code is meaningful, and the
+/// placeholder "0" (Ocean Template Designer's unconstrained property) is
+/// treated as no constraint, matching the OPT-side `C_DV_QUANTITY` check.
+fn capture_quantity_property(co: &CObject, node: &mut WebTemplateNode) {
     if let CObject::CDvQuantity(q) = co
         && let Some(property) = &q.property
         && property
@@ -688,13 +740,25 @@ fn capture_leaf_constraints(co: &CObject, node: &mut WebTemplateNode) {
     {
         node.quantity_property = Some(property.code_string.clone());
     }
-    // An explicitly `local`-scoped closed code list admits ONLY local codes, so
-    // a foreign-terminology instance code violates it
-    // (`AM/docs/UML/classes/org.openehr.am.aom14.c_coded_text.adoc`
-    // §C_CODED_TEXT: `code_list` is "a list of codes FROM the terminology").
-    // The `wt+json` `inputs` mapping strips the implicit `local`, so the
-    // explicit scoping is recorded on the node instead (validation-only); a
-    // `C_CODE_PHRASE` naming no terminology is not flagged.
+}
+
+/// The `C_CODE_PHRASE` code lists the `inputs` mapping does not carry: the
+/// explicit `local` scoping of `defining_code`, and the lists on every other
+/// coded attribute (e.g. `DV_MULTIMEDIA.media_type`) → AOM 1.4
+/// §`C_CODE_PHRASE`.
+///
+/// An explicitly `local`-scoped closed code list admits ONLY local codes, so a
+/// foreign-terminology instance code violates it
+/// (`AM/docs/UML/classes/org.openehr.am.aom14.c_coded_text.adoc`
+/// §C_CODED_TEXT: `code_list` is "a list of codes FROM the terminology"). The
+/// `wt+json` `inputs` mapping strips the implicit `local`, so the explicit
+/// scoping is recorded on the node instead (validation-only); a
+/// `C_CODE_PHRASE` naming no terminology is not flagged.
+///
+/// NOTE: `AM/docs/AOM1.4/master04-constraint_model_package.adoc` §Reference
+/// Objects resolves a CONSTRAINT_REF through an external terminology query,
+/// not a local code list, so it is not captured as a leaf constraint.
+fn capture_code_lists(co: &CObject, node: &mut WebTemplateNode) {
     let defining_cp = match co {
         CObject::CCodePhrase(cp) => Some(cp),
         _ => inputs::attr_children(co, "defining_code").find_map(|c| match c {
@@ -711,9 +775,6 @@ fn capture_leaf_constraints(co: &CObject, node: &mut WebTemplateNode) {
     {
         node.coded_terminology_local = true;
     }
-    // NOTE: `AM/docs/AOM1.4/master04-constraint_model_package.adoc` §Reference
-    // Objects resolves a CONSTRAINT_REF through an external terminology query,
-    // not a local code list, so it is not captured as a leaf constraint.
     for attr in inputs::attributes(co) {
         let attr_name = inputs::attribute_name(attr);
         if attr_name == "defining_code" {
@@ -896,45 +957,64 @@ fn existence_constraints(co: &CObject, node_path: &str) -> Vec<WebTemplateExiste
 /// rule 2): `name`/`value`/`category`/`context` etc. hold non-LOCATABLE values
 /// that carry no `archetype_node_id` and so are never subject to sibling closure.
 fn closed_attributes(co: &CObject, node_path: &str) -> Vec<WebTemplateClosedAttribute> {
-    let mut out = Vec::new();
-    for attr in inputs::attributes(co) {
-        let attr_name = inputs::attribute_name(attr);
-        if attr_name == "name" {
-            continue; // The name is matched by predicate, not closure (master04 §"Field Identifiers").
-        }
-        // An unresolved internal-ref / constraint-ref makes the admissible set
-        // uncertain (target resolution is a documented builder scope gap); leave
-        // such an attribute OPEN rather than risk over-rejecting.
-        if inputs::attribute_children(attr).iter().any(|c| {
-            matches!(
-                c,
-                CObject::ArchetypeInternalRef(_) | CObject::ConstraintRef(_)
-            )
-        }) {
+    inputs::attributes(co)
+        .iter()
+        .filter_map(|attr| closed_attribute(attr, node_path))
+        .collect()
+}
+
+/// The closure record for one constraint attribute, or [`None`] when the
+/// attribute stays open.
+///
+/// An attribute stays open when it is the predicate-matched `name` (master04
+/// §"Field Identifiers"), when an unresolved internal-ref / constraint-ref makes
+/// the admissible set uncertain (target resolution is a documented builder scope
+/// gap — leave it open rather than risk over-rejecting), or when it constrains
+/// no node-id alternative and no slot.
+fn closed_attribute(
+    attr: &crate::opt14::types::CAttribute,
+    node_path: &str,
+) -> Option<WebTemplateClosedAttribute> {
+    let attr_name = inputs::attribute_name(attr);
+    if attr_name == "name" {
+        return None;
+    }
+    if inputs::attribute_children(attr).iter().any(|c| {
+        matches!(
+            c,
+            CObject::ArchetypeInternalRef(_) | CObject::ConstraintRef(_)
+        )
+    }) {
+        return None;
+    }
+    let (allowed_ids, slots) = admissible_children(attr);
+    if allowed_ids.is_empty() && slots.is_empty() {
+        return None;
+    }
+    Some(WebTemplateClosedAttribute {
+        path: format!("{node_path}/{attr_name}"),
+        allowed_ids,
+        slots,
+    })
+}
+
+/// The archetype node ids and slots one attribute admits as children.
+fn admissible_children(
+    attr: &crate::opt14::types::CAttribute,
+) -> (Vec<String>, Vec<WebTemplateArchetypeSlot>) {
+    let mut allowed_ids: Vec<String> = Vec::new();
+    let mut slots: Vec<WebTemplateArchetypeSlot> = Vec::new();
+    for child in inputs::attribute_children(attr) {
+        if let CObject::ArchetypeSlot(s) = child {
+            slots.push(archetype_slot(s));
             continue;
         }
-        let mut allowed_ids: Vec<String> = Vec::new();
-        let mut slots: Vec<WebTemplateArchetypeSlot> = Vec::new();
-        for child in inputs::attribute_children(attr) {
-            if let CObject::ArchetypeSlot(s) = child {
-                slots.push(archetype_slot(s));
-                continue;
-            }
-            let id = object_archetype_node_id(child);
-            if !id.is_empty() {
-                allowed_ids.push(id);
-            }
+        let id = object_archetype_node_id(child);
+        if !id.is_empty() {
+            allowed_ids.push(id);
         }
-        if allowed_ids.is_empty() && slots.is_empty() {
-            continue; // Open attribute (no node-id alternatives, no slot).
-        }
-        out.push(WebTemplateClosedAttribute {
-            path: format!("{node_path}/{attr_name}"),
-            allowed_ids,
-            slots,
-        });
     }
-    out
+    (allowed_ids, slots)
 }
 
 // ── structural stubs (constrained-but-content-less ENTRY structural attrs) ────

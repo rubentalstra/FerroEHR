@@ -87,25 +87,7 @@ pub(super) fn check_identification(
     // So both are suppressed in the 1.4 dialect: applying the AOM2 rule would
     // reject every valid 1.4 archetype.
     if !is_overlay && dialect == Dialect::Adl2 {
-        match v.adl_version {
-            Some(a) if is_three_part_version(a) => {}
-            _ => out.push(ValidationIssue::new(
-                ValidationCode::Varav,
-                format!(
-                    "adl_version {:?} is not a valid 3-part version",
-                    v.adl_version
-                ),
-            )),
-        }
-        if !is_three_part_version(v.rm_release) {
-            out.push(ValidationIssue::new(
-                ValidationCode::Varrv,
-                format!(
-                    "rm_release {:?} is not a valid 3-part version",
-                    v.rm_release
-                ),
-            ));
-        }
+        check_version_formats(v, out);
     }
     if !is_overlay {
         // VDEOL / VARD: original language + description present (master03
@@ -131,6 +113,37 @@ pub(super) fn check_identification(
     // VALC: language conformance to the flat parent (master03 §Validity Rules,
     // G3) — needs the parent; runs only when resolvable.
     check_language_conformance(v, repo, out);
+}
+
+/// VARAV / VARRV: the `adl_version` / `rm_release` 3-part version formats
+/// (master03 §Validity Rules).
+///
+/// AOM2-only: an ADL 1.4 artefact carries a `1.4`-form `adl_version`
+/// (two-part, optional metadata) and NO `rm_release`, and AOM 1.4 defines no
+/// 3-part-version rule for either (ADL1.4 master08 §Syntax Specification,
+/// `arch_identification` meta-data; AOM1.4 master03 ARCHETYPE §Invariants —
+/// version validity is only `version = archetype_id.version_id`). So the
+/// caller suppresses both in the 1.4 dialect: applying the AOM2 rule would
+/// reject every valid 1.4 archetype.
+fn check_version_formats(v: &ArchetypeView<'_>, out: &mut Vec<ValidationIssue>) {
+    if !v.adl_version.is_some_and(is_three_part_version) {
+        out.push(ValidationIssue::new(
+            ValidationCode::Varav,
+            format!(
+                "adl_version {:?} is not a valid 3-part version",
+                v.adl_version
+            ),
+        ));
+    }
+    if !is_three_part_version(v.rm_release) {
+        out.push(ValidationIssue::new(
+            ValidationCode::Varrv,
+            format!(
+                "rm_release {:?} is not a valid 3-part version",
+                v.rm_release
+            ),
+        ));
+    }
 }
 
 /// VARCN (ADL 1.4, terminology half): the `concept` section's term must exist

@@ -170,47 +170,115 @@ impl Parser<'_> {
     /// A type-headed object: `c_complex_object` or `c_regular_primitive_object`
     /// (`cadl2.g4`). Distinguished by whether the `matches { … }` body (or the
     /// bare, body-less form) holds attribute defs or a single inline primitive.
-    #[expect(
-        clippy::too_many_lines,
-        reason = "one linear parse of a type-headed object — node bracket, optional OPT ref, body; the steps are sequential, not extractable units"
-    )]
+    /// The `'[' ID_CODE [',' archetype_ref] ']'` node bracket, if present.
+    ///
+    /// The two-part form is the OPT-inlined `C_ARCHETYPE_ROOT`: a flattened
+    /// slot-filler or external reference carrying the full archetype id inside
+    /// the bracket and an inline body (OPT2 master03 §Artefact Structure +
+    /// §Flattening; the same shape as `cadl14.g4` `c_archetype_root`).
+    ///
+    /// NOTE: `cadl2.g4` requires `'[' ID_CODE ']'`, but a *missing* node id is
+    /// a semantic defect (VCOID, `AOM2/master08`), not a syntax error, so an
+    /// absent `[…]` yields an empty node id that validation flags.
+    ///
+    /// # Errors
+    /// A malformed bracket — a missing archetype id after `,`, or a missing
+    /// closing `]`.
+    fn parse_node_bracket(&mut self) -> PResult<(String, Option<String>)> {
+        if !self.eat(|t| matches!(t, Token::LBracket)) {
+            return Ok((String::new(), None));
+        }
+        let node_id = self.parse_node_id()?;
+        let mut archetype_ref: Option<String> = None;
+        if self.eat(|t| matches!(t, Token::SymComma)) {
+            match self.peek().cloned() {
+                Some(Token::ArchetypeId(a)) => {
+                    self.pos += 1;
+                    archetype_ref = Some(a);
+                }
+                _ => {
+                    return self.err(
+                        SyntaxErrorCode::Suaid,
+                        "expecting an archetype id after ',' in a node reference",
+                    );
+                }
+            }
+        }
+        self.expect(
+            |t| matches!(t, Token::RBracket),
+            SyntaxErrorCode::Sccog,
+            "expecting ']' after the node id",
+        )?;
+        Ok((node_id, archetype_ref))
+    }
+
+    /// The `matches { … }` body of a type-headed object: the deprecated
+    /// `matches {*}` any-form (`master04.2`), a single inline primitive
+    /// constraint, or an attribute-definition body.
+    ///
+    /// # Errors
+    /// An empty body, an unterminated body, or the nested constraint's own
+    /// syntax errors.
+    fn parse_matches_body(&mut self, rm_type: &str, node_id: &str) -> PResult<CObject> {
+        self.pos += 1; // SYM_MATCHES
+        self.expect(
+            |t| matches!(t, Token::LCurly),
+            SyntaxErrorCode::Scoat,
+            "expecting '{' after 'matches'",
+        )?;
+        if matches!(self.peek(), Some(Token::RCurly)) {
+            let span = self.cur_span();
+            self.push(
+                SyntaxErrorCode::Scoat,
+                "expecting attribute definition(s)",
+                span,
+            );
+            return Err(());
+        }
+        if self.eat(|t| matches!(t, Token::SymStar)) {
+            self.expect(
+                |t| matches!(t, Token::RCurly),
+                SyntaxErrorCode::Scoat,
+                "expecting '}' after '*'",
+            )?;
+            return Ok(complex_object(
+                rm_type.to_owned(),
+                node_id.to_owned(),
+                Vec::new(),
+                Vec::new(),
+                None,
+            ));
+        }
+        if self.body_is_inline_primitive() {
+            let mut prim = self.parse_c_inline_primitive(node_id.to_owned())?;
+            self.expect(
+                |t| matches!(t, Token::RCurly),
+                SyntaxErrorCode::Scas,
+                "expecting '}' after the primitive constraint",
+            )?;
+            // A regular primitive object carries the declared RM type name.
+            rm_type.clone_into(common_mut(&mut prim).0);
+            return Ok(prim);
+        }
+        let (attrs, tuples, default) = self.parse_object_body()?;
+        self.expect(
+            |t| matches!(t, Token::RCurly),
+            SyntaxErrorCode::Scoat,
+            "expecting '}' closing the object body",
+        )?;
+        Ok(complex_object(
+            rm_type.to_owned(),
+            node_id.to_owned(),
+            attrs,
+            tuples,
+            default,
+        ))
+    }
+
     fn parse_type_object(&mut self) -> PResult<CObject> {
         let type_span = self.cur_span();
         let rm_type = self.parse_rm_type_id()?;
-        // OPT-inlined `C_ARCHETYPE_ROOT` form `TYPE[id, archetype_ref] …`: a
-        // flattened slot-filler / external reference carries the full archetype
-        // id inside the node bracket and an inline body (OPT2 master03
-        // §Artefact Structure + §Flattening; the same `'[' ID_CODE ','
-        // archetype_ref ']'` shape as `cadl14.g4` `c_archetype_root`).
-        // NOTE: `cadl2.g4` requires `'[' ID_CODE ']'`, but a *missing* node id
-        // is a semantic defect (VCOID, `AOM2/master08`), not a syntax error, so
-        // an absent `[…]` yields an empty node id that validation flags.
-        let mut archetype_ref: Option<String> = None;
-        let node_id = if self.eat(|t| matches!(t, Token::LBracket)) {
-            let n = self.parse_node_id()?;
-            if self.eat(|t| matches!(t, Token::SymComma)) {
-                match self.peek().cloned() {
-                    Some(Token::ArchetypeId(a)) => {
-                        self.pos += 1;
-                        archetype_ref = Some(a);
-                    }
-                    _ => {
-                        return self.err(
-                            SyntaxErrorCode::Suaid,
-                            "expecting an archetype id after ',' in a node reference",
-                        );
-                    }
-                }
-            }
-            self.expect(
-                |t| matches!(t, Token::RBracket),
-                SyntaxErrorCode::Sccog,
-                "expecting ']' after the node id",
-            )?;
-            n
-        } else {
-            String::new()
-        };
+        let (node_id, archetype_ref) = self.parse_node_bracket()?;
         let occurrences = if matches!(self.peek(), Some(Token::SymOccurrences)) {
             Some(self.parse_occurrences()?)
         } else {
@@ -221,56 +289,7 @@ impl Parser<'_> {
             return self.negated_matches_reject(SyntaxErrorCode::Sccog);
         }
         let mut obj = if matches!(self.peek(), Some(Token::SymMatches)) {
-            self.pos += 1; // SYM_MATCHES
-            self.expect(
-                |t| matches!(t, Token::LCurly),
-                SyntaxErrorCode::Scoat,
-                "expecting '{' after 'matches'",
-            )?;
-            if matches!(self.peek(), Some(Token::RCurly)) {
-                // Empty object body — `expecting attribute definition(s)`.
-                let span = self.cur_span();
-                self.push(
-                    SyntaxErrorCode::Scoat,
-                    "expecting attribute definition(s)",
-                    span,
-                );
-                return Err(());
-            }
-            if self.eat(|t| matches!(t, Token::SymStar)) {
-                // Deprecated `matches {*}` == any (`master04.2`).
-                self.expect(
-                    |t| matches!(t, Token::RCurly),
-                    SyntaxErrorCode::Scoat,
-                    "expecting '}' after '*'",
-                )?;
-                complex_object(
-                    rm_type.clone(),
-                    node_id.clone(),
-                    Vec::new(),
-                    Vec::new(),
-                    None,
-                )
-            } else if self.body_is_inline_primitive() {
-                let prim = self.parse_c_inline_primitive(node_id.clone())?;
-                self.expect(
-                    |t| matches!(t, Token::RCurly),
-                    SyntaxErrorCode::Scas,
-                    "expecting '}' after the primitive constraint",
-                )?;
-                // A regular primitive object carries the declared RM type name.
-                let mut prim = prim;
-                common_mut(&mut prim).0.clone_from(&rm_type);
-                prim
-            } else {
-                let (attrs, tuples, default) = self.parse_object_body()?;
-                self.expect(
-                    |t| matches!(t, Token::RCurly),
-                    SyntaxErrorCode::Scoat,
-                    "expecting '}' closing the object body",
-                )?;
-                complex_object(rm_type.clone(), node_id.clone(), attrs, tuples, default)
-            }
+            self.parse_matches_body(&rm_type, &node_id)?
         } else if let Some(prim) = Self::primitive_any(&rm_type, &node_id) {
             // Body-less primitive type (e.g. `String[id2]`): an unconstrained
             // primitive object (`master04.5` regular primitive form).
@@ -766,6 +785,26 @@ impl Parser<'_> {
         if self.eat(|t| matches!(t, Token::SymStar)) {
             return Ok(Vec::new()); // deprecated `matches {*}` == any.
         }
+        if let Some(objs) = self.parse_c_objects_whole_body()? {
+            return Ok(objs);
+        }
+        let mut objs = Vec::new();
+        while !matches!(self.peek(), Some(Token::RCurly) | None) {
+            match self.parse_adl14_sibling()? {
+                Some(alternatives) => objs.extend(alternatives),
+                None => objs.push(self.parse_c_regular_object_ordered()?),
+            }
+        }
+        Ok(objs)
+    }
+
+    /// The forms that constrain the WHOLE `matches {…}` body as one object.
+    ///
+    /// [`None`] means the body is a sibling list to be walked object by object.
+    ///
+    /// # Errors
+    /// Propagates the sub-parser's [`SyntaxError`](crate::error::SyntaxError).
+    fn parse_c_objects_whole_body(&mut self) -> PResult<Option<Vec<CObject>>> {
         // 1.4-only (converter front end; no openEHR spec — see `crate::adl14`):
         // a qualified/listed terminology constraint (`[local::at1]`,
         // `[local:: a, b ; c]`, `[openehr::524]`). A single `[local::code]` is
@@ -773,54 +812,49 @@ impl Parser<'_> {
         // must reach `parse_adl14_term_object` rather than the ADL2 inline
         // terminology-code path (which expects a bare `[at1]`/`[ac1]`).
         if self.dialect == Dialect::Adl14 && self.is_adl14_qualified_code_start() {
-            let obj = self.parse_adl14_term_object()?;
-            return Ok(vec![obj]);
+            return Ok(Some(vec![self.parse_adl14_term_object()?]));
         }
         // The 1.4 ordinal shorthand OPENS with a number, so it would otherwise
         // be swallowed by the inline-primitive path as an integer/real
         // constraint and then trip over the `|`. It keeps precedence here (as
-        // it always had) and is dispatched per-sibling inside the loop below.
+        // it always had) and is dispatched per-sibling by the caller's loop.
         let at_adl14_ordinal = self.dialect == Dialect::Adl14 && self.is_adl14_ordinal_start();
         if self.is_inline_primitive_start() && !at_adl14_ordinal {
-            let obj = self.parse_c_inline_primitive("Primitive_node_id".to_owned())?;
-            return Ok(vec![obj]);
+            return Ok(Some(vec![
+                self.parse_c_inline_primitive("Primitive_node_id".to_owned())?,
+            ]));
         }
-        let mut objs = Vec::new();
-        while !matches!(self.peek(), Some(Token::RCurly) | None) {
-            // 1.4-only: the pipe-ordinal shorthand `0|[local::at0005], 1|[…]`
-            // (`cadl14.g4` `c_ordinal`, one of the `c_non_primitive_object`
-            // alternatives — so it stands exactly where an object is expected).
-            // It is dispatched INSIDE the loop, not as a whole-body special
-            // case: an ordinal list is one alternative among the siblings of its
-            // block, so it may stand beside a regular complex object in either
-            // order. `ADL1.4/master05-cadl.adoc` §Mixed Structures is the
-            // reading: "at any given node, all three types can co-exist".
-            if self.dialect == Dialect::Adl14 && self.is_adl14_ordinal_start() {
-                objs.push(self.parse_adl14_ordinal()?);
-                continue;
-            }
-            // 1.4-only: an inline dADL domain block is intercepted here (not
-            // in `parse_c_regular_object`) because a block whose `list` rows
-            // constrain DIFFERENT member sets lowers to SEVERAL sibling
-            // alternatives (#1466) — the per-object path can only return one.
-            // A sibling-order marker before the block still routes through
-            // the single-object shim.
-            if self.dialect == Dialect::Adl14 {
-                match self.peek() {
-                    Some(Token::LParen) => {
-                        objs.extend(self.parse_adl14_domain_object(true)?);
-                        continue;
-                    }
-                    Some(Token::AlphaUcId(_)) if self.is_adl14_domain_block_start() => {
-                        objs.extend(self.parse_adl14_domain_object(false)?);
-                        continue;
-                    }
-                    _ => {}
-                }
-            }
-            objs.push(self.parse_c_regular_object_ordered()?);
+        Ok(None)
+    }
+
+    /// One ADL 1.4-only sibling form, when the cursor stands on one.
+    ///
+    /// The pipe-ordinal shorthand `0|[local::at0005], 1|[…]` (`cadl14.g4`
+    /// `c_ordinal`) and an inline dADL domain block are dispatched PER SIBLING
+    /// rather than as whole-body special cases: each is one alternative among
+    /// the siblings of its block, so it may stand beside a regular complex
+    /// object in either order (`ADL1.4/master05-cadl.adoc` §Mixed Structures:
+    /// "at any given node, all three types can co-exist"). A domain block whose
+    /// `list` rows constrain DIFFERENT member sets lowers to SEVERAL
+    /// alternatives, which is why the return is a list; a sibling-order marker
+    /// before the block still routes through the single-object shim.
+    ///
+    /// # Errors
+    /// Propagates the sub-parser's [`SyntaxError`](crate::error::SyntaxError).
+    fn parse_adl14_sibling(&mut self) -> PResult<Option<Vec<CObject>>> {
+        if self.dialect != Dialect::Adl14 {
+            return Ok(None);
         }
-        Ok(objs)
+        if self.is_adl14_ordinal_start() {
+            return Ok(Some(vec![self.parse_adl14_ordinal()?]));
+        }
+        match self.peek() {
+            Some(Token::LParen) => Ok(Some(self.parse_adl14_domain_object(true)?)),
+            Some(Token::AlphaUcId(_)) if self.is_adl14_domain_block_start() => {
+                Ok(Some(self.parse_adl14_domain_object(false)?))
+            }
+            _ => Ok(None),
+        }
     }
 
     /// The single-object shim over [`Parser::parse_adl14_domain_object`] for

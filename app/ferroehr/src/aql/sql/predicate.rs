@@ -53,109 +53,147 @@ impl Builder<'_> {
                 op,
                 rhs,
                 coercion,
-            } => {
-                // Typed EHR-id equality: `e/ehr_id/value = <uuid>` as
-                // a uuid comparison on `ehr.id` instead of a text-cast on both
-                // sides (which blinded the btree on `ehr.id` and left the join
-                // unbounded). uuid equality is value-based — case-insensitive —
-                // which is also the identifier-equality semantics (BASE
-                // base_types master05 §Composite Identifiers and Case); a
-                // literal that is not a uuid can match no EHR (constant).
-                if let Some(expr) = self.ehr_id_typed_compare(lhs, *op, rhs)? {
-                    return Ok(expr);
-                }
-                // Existential lowering for an anchored data leaf compared to
-                // a bound value (any matched node satisfies) — positive
-                // polarity only.
-                if positive && let Some(expr) = self.exists_compare(lhs, *op, rhs, *coercion)? {
-                    return Ok(expr);
-                }
-                // a mixed-type (`Raw`) leaf compared to a numeric literal
-                // is compared numerically (with a NULL-guard); otherwise the Raw
-                // set falls through to text, exactly as every other Text leaf
-                // (QUERY master03 §Comparison operators).
-                let (l, r) = if *coercion == Coercion::Raw && raw_numeric_wanted(&[lhs, rhs]) {
-                    (
-                        self.operand_value_raw_numeric(lhs)?,
-                        self.operand_value_raw_numeric(rhs)?,
-                    )
-                } else {
-                    (
-                        self.operand_value(lhs, *coercion)?,
-                        self.operand_value(rhs, *coercion)?,
-                    )
-                };
-                Ok(l.binary(binoper(*op), r))
-            }
+            } => self.compare_expr(lhs, *op, rhs, *coercion, positive),
             IrExpr::Exists(target) => Ok(self
                 .value_expr(target, ValueMode::Projection)?
                 .is_not_null()),
-            IrExpr::Like { path, pattern } => {
-                let pat = match pattern {
-                    LikePattern::Literal(s) => aql_like_to_sql(s),
-                    LikePattern::Param(p) => aql_like_to_sql(&self.param_str(p)?),
-                };
-                // Existential lowering on an anchored multi-valued path
-                // (any-match, the same #1448 unification as `exists_compare`
-                // above): the scalar LIMIT-1 extraction's matched-node choice
-                // is order-undefined when the path matches several nodes —
-                // positive polarity only, like every existential arm.
-                if positive && let Some(leaf) = Self::existential_leaf(path) {
-                    let leaf = leaf.clone();
-                    self.ensure_leaf_root(path)?;
-                    let pat = pat.clone();
-                    if let Some(expr) =
-                        self.data_leaf_exists(&leaf, ValueMode::Value(Coercion::Text), |extract| {
-                            extract.like(pat)
-                        })?
-                    {
-                        return Ok(expr);
-                    }
-                }
-                let lhs = self.value_expr(path, ValueMode::Value(Coercion::Text))?;
-                Ok(lhs.like(pat))
-            }
+            IrExpr::Like { path, pattern } => self.like_expr(path, pattern, positive),
             IrExpr::Const(b) => Ok(Expr::val(*b)),
             IrExpr::Matches {
                 path,
                 values,
                 coercion,
-            } => {
-                // Matches (QUERY master03 §matches): a mixed-type
-                // leaf matched against numeric literals compares numerically.
-                let numeric = *coercion == Coercion::Raw
-                    && values.iter().any(|b| {
-                        matches!(b, Bind::Literal(TypedLit::Integer(_) | TypedLit::Real(_)))
-                    });
-                let mode = if numeric {
-                    ValueMode::RawNumeric
-                } else {
-                    ValueMode::Value(*coercion)
-                };
-                let mut members = Vec::with_capacity(values.len());
-                for b in values {
-                    let v = self.bind_value(b)?;
-                    members.push(if numeric {
-                        cast(Expr::val(v), "numeric")
-                    } else {
-                        coerce_rhs(v, *coercion)
-                    });
-                }
-                // The same #1448 existential unification as LIKE above.
-                if positive && let Some(leaf) = Self::existential_leaf(path) {
-                    let leaf = leaf.clone();
-                    self.ensure_leaf_root(path)?;
-                    let members = members.clone();
-                    if let Some(expr) =
-                        self.data_leaf_exists(&leaf, mode, |extract| extract.is_in(members))?
-                    {
-                        return Ok(expr);
-                    }
-                }
-                let lhs = self.value_expr(path, mode)?;
-                Ok(lhs.is_in(members))
+            } => self.matches_expr(path, values, *coercion, positive),
+        }
+    }
+
+    /// Lowers a comparison, taking the first lowering that applies: the typed
+    /// EHR-id fast path, the existential anchored-leaf shape, then the generic
+    /// operand comparison.
+    ///
+    /// # Errors
+    /// [`AqlError`] from the operand lowerings.
+    fn compare_expr(
+        &mut self,
+        lhs: &Operand,
+        op: CompOp,
+        rhs: &Operand,
+        coercion: Coercion,
+        positive: bool,
+    ) -> Result<Expr, AqlError> {
+        // Typed EHR-id equality: `e/ehr_id/value = <uuid>` as a uuid comparison
+        // on `ehr.id` instead of a text-cast on both sides (which blinded the
+        // btree on `ehr.id` and left the join unbounded). uuid equality is
+        // value-based — case-insensitive — which is also the
+        // identifier-equality semantics (BASE base_types master05 §Composite
+        // Identifiers and Case); a literal that is not a uuid can match no EHR
+        // (constant).
+        if let Some(expr) = self.ehr_id_typed_compare(lhs, op, rhs)? {
+            return Ok(expr);
+        }
+        // Existential lowering for an anchored data leaf compared to a bound
+        // value (any matched node satisfies) — positive polarity only.
+        if positive && let Some(expr) = self.exists_compare(lhs, op, rhs, coercion)? {
+            return Ok(expr);
+        }
+        // A mixed-type (`Raw`) leaf compared to a numeric literal is compared
+        // numerically (with a NULL-guard); otherwise the Raw set falls through
+        // to text, exactly as every other Text leaf (QUERY master03
+        // §Comparison operators).
+        let (l, r) = if coercion == Coercion::Raw && raw_numeric_wanted(&[lhs, rhs]) {
+            (
+                self.operand_value_raw_numeric(lhs)?,
+                self.operand_value_raw_numeric(rhs)?,
+            )
+        } else {
+            (
+                self.operand_value(lhs, coercion)?,
+                self.operand_value(rhs, coercion)?,
+            )
+        };
+        Ok(l.binary(binoper(op), r))
+    }
+
+    /// Lowers a LIKE, with the existential anchored-leaf shape in positive
+    /// positions.
+    ///
+    /// The existential lowering is the any-match unification `exists_compare`
+    /// applies: the scalar LIMIT-1 extraction's matched-node choice is
+    /// order-undefined when the path matches several nodes, so it fires in
+    /// positive polarity only, like every existential arm.
+    ///
+    /// # Errors
+    /// [`AqlError`] from the parameter and path lowerings.
+    fn like_expr(
+        &mut self,
+        path: &PathTarget,
+        pattern: &LikePattern,
+        positive: bool,
+    ) -> Result<Expr, AqlError> {
+        let pat = match pattern {
+            LikePattern::Literal(s) => aql_like_to_sql(s),
+            LikePattern::Param(p) => aql_like_to_sql(&self.param_str(p)?),
+        };
+        if positive && let Some(leaf) = Self::existential_leaf(path) {
+            let leaf = leaf.clone();
+            self.ensure_leaf_root(path)?;
+            let pat = pat.clone();
+            if let Some(expr) =
+                self.data_leaf_exists(&leaf, ValueMode::Value(Coercion::Text), |extract| {
+                    extract.like(pat)
+                })?
+            {
+                return Ok(expr);
             }
         }
+        let lhs = self.value_expr(path, ValueMode::Value(Coercion::Text))?;
+        Ok(lhs.like(pat))
+    }
+
+    /// Lowers a MATCHES (QUERY master03 §matches), with the same existential
+    /// anchored-leaf shape LIKE uses.
+    ///
+    /// A mixed-type leaf matched against numeric literals compares numerically.
+    ///
+    /// # Errors
+    /// [`AqlError`] from the member-value and path lowerings.
+    fn matches_expr(
+        &mut self,
+        path: &PathTarget,
+        values: &[Bind],
+        coercion: Coercion,
+        positive: bool,
+    ) -> Result<Expr, AqlError> {
+        let numeric = coercion == Coercion::Raw
+            && values
+                .iter()
+                .any(|b| matches!(b, Bind::Literal(TypedLit::Integer(_) | TypedLit::Real(_))));
+        let mode = if numeric {
+            ValueMode::RawNumeric
+        } else {
+            ValueMode::Value(coercion)
+        };
+        let mut members = Vec::with_capacity(values.len());
+        for b in values {
+            let v = self.bind_value(b)?;
+            members.push(if numeric {
+                cast(Expr::val(v), "numeric")
+            } else {
+                coerce_rhs(v, coercion)
+            });
+        }
+        if positive && let Some(leaf) = Self::existential_leaf(path) {
+            let leaf = leaf.clone();
+            self.ensure_leaf_root(path)?;
+            let members = members.clone();
+            if let Some(expr) =
+                self.data_leaf_exists(&leaf, mode, |extract| extract.is_in(members))?
+            {
+                return Ok(expr);
+            }
+        }
+        let lhs = self.value_expr(path, mode)?;
+        Ok(lhs.is_in(members))
     }
 
     /// The typed EHR-id comparison fast path: fires only for

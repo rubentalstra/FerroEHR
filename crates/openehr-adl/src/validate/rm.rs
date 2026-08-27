@@ -522,30 +522,47 @@ impl RmScan<'_> {
 
     /// The attribute-level RM checks (VCAEX / VCAM / VCACA / VACSO).
     fn check_attribute(&mut self, attr_path: &str, attr: &CAttribute, rm_attr: &RmAttr) {
-        // VCAEX: existence, if set, must conform to (be same-or-narrower than)
-        // the RM existence (master04.5 §Validity Rules: `C_ATTRIBUTE`).
-        if let Some(ex) = attr.existence.as_ref() {
-            let arch = bounds(ex);
-            if !rm_attr.existence.contains(arch) {
-                push_issue(
-                    &mut self.issues,
-                    ValidationCode::Vcaex,
-                    format!(
-                        "existence {} does not conform to the reference-model existence {}",
-                        display_bounds(arch),
-                        display_bounds(rm_attr.existence)
-                    ),
-                    attr_path,
-                );
-            }
+        self.check_existence_conformance(attr_path, attr, rm_attr);
+        self.check_arity(attr_path, attr, rm_attr);
+        self.check_cardinality_conformance(attr_path, attr, rm_attr);
+        if !rm_attr.is_multiple {
+            self.check_single_valued_child_occurrences(attr_path, attr);
         }
+    }
 
-        let has_cardinality = attr.cardinality.is_some();
+    /// VCAEX: existence, if set, must conform to (be same-or-narrower than) the
+    /// RM existence (master04.5 §Validity Rules: `C_ATTRIBUTE`).
+    fn check_existence_conformance(
+        &mut self,
+        attr_path: &str,
+        attr: &CAttribute,
+        rm_attr: &RmAttr,
+    ) {
+        let Some(ex) = attr.existence.as_ref() else {
+            return;
+        };
+        let arch = bounds(ex);
+        if !rm_attr.existence.contains(arch) {
+            push_issue(
+                &mut self.issues,
+                ValidationCode::Vcaex,
+                format!(
+                    "existence {} does not conform to the reference-model existence {}",
+                    display_bounds(arch),
+                    display_bounds(rm_attr.existence)
+                ),
+                attr_path,
+            );
+        }
+    }
 
-        // VCAM: single/multiple arity must match the RM. A cardinality declares
-        // the attribute a container; if the RM attribute is single-valued that
-        // is a mismatch (master04.5 §Validity Rules: `C_ATTRIBUTE`, VCAM).
-        if has_cardinality && !rm_attr.is_multiple {
+    /// VCAM: single/multiple arity must match the RM.
+    ///
+    /// A cardinality declares the attribute a container; if the RM attribute is
+    /// single-valued that is a mismatch (master04.5 §Validity Rules:
+    /// `C_ATTRIBUTE`, VCAM).
+    fn check_arity(&mut self, attr_path: &str, attr: &CAttribute, rm_attr: &RmAttr) {
+        if attr.cardinality.is_some() && !rm_attr.is_multiple {
             push_issue(
                 &mut self.issues,
                 ValidationCode::Vcam,
@@ -553,11 +570,19 @@ impl RmScan<'_> {
                 attr_path,
             );
         }
+    }
 
-        // VCACA: cardinality must conform to the RM container cardinality
-        // (master04.5 §Validity Rules: `C_ATTRIBUTE`). Only meaningful when the RM
-        // attribute is a container; a cardinality on a single-valued RM
-        // attribute is already VCAM above.
+    /// VCACA: cardinality must conform to the RM container cardinality
+    /// (master04.5 §Validity Rules: `C_ATTRIBUTE`).
+    ///
+    /// Only meaningful when the RM attribute is a container; a cardinality on a
+    /// single-valued RM attribute is already VCAM.
+    fn check_cardinality_conformance(
+        &mut self,
+        attr_path: &str,
+        attr: &CAttribute,
+        rm_attr: &RmAttr,
+    ) {
         if let (Some(card), true) = (attr.cardinality.as_ref(), rm_attr.is_multiple)
             && let Some(rm_card) = rm_attr.cardinality
         {
@@ -575,27 +600,27 @@ impl RmScan<'_> {
                 );
             }
         }
+    }
 
-        // VACSO: the occurrences of a child object of a single-valued attribute
-        // cannot have an upper limit greater than 1 (master04.5 §Validity Rules:
-        // `C_ATTRIBUTE` — the rules "for single-valued attributes, i.e. when
-        // `C_ATTRIBUTE`._is_multiple_ is False"). The single/multiple
-        // determination is the RM's, not the parser's cardinality heuristic.
-        if !rm_attr.is_multiple {
-            for child in attr.children.iter().flatten() {
-                if let Some(occ) = child_occurrences(child)
-                    && let Some(upper) = finite_upper(occ)
-                    && upper > 1
-                {
-                    push_issue(
-                        &mut self.issues,
-                        ValidationCode::Vacso,
-                        format!(
-                            "child of single-valued attribute has occurrences upper {upper} > 1"
-                        ),
-                        attr_path,
-                    );
-                }
+    /// VACSO: the occurrences of a child object of a single-valued attribute
+    /// cannot have an upper limit greater than 1 (master04.5 §Validity Rules:
+    /// `C_ATTRIBUTE` — the rules "for single-valued attributes, i.e. when
+    /// `C_ATTRIBUTE`.`is_multiple` is False").
+    ///
+    /// The single/multiple determination is the RM's, not the parser's
+    /// cardinality heuristic, so the caller gates on `rm_attr.is_multiple`.
+    fn check_single_valued_child_occurrences(&mut self, attr_path: &str, attr: &CAttribute) {
+        for child in attr.children.iter().flatten() {
+            if let Some(occ) = child_occurrences(child)
+                && let Some(upper) = finite_upper(occ)
+                && upper > 1
+            {
+                push_issue(
+                    &mut self.issues,
+                    ValidationCode::Vacso,
+                    format!("child of single-valued attribute has occurrences upper {upper} > 1"),
+                    attr_path,
+                );
             }
         }
     }
@@ -608,34 +633,7 @@ impl RmScan<'_> {
             let child_path = child_path(attr_path, object_node_id(child));
 
             if !child_type.is_empty() {
-                if !self.rm.type_exists(child_type) {
-                    // VCORM: the object type must exist in the RM.
-                    push_issue(
-                        &mut self.issues,
-                        ValidationCode::Vcorm,
-                        format!(
-                            "object type {child_type:?} is not defined in the reference model ({})",
-                            self.rm.name()
-                        ),
-                        &child_path,
-                    );
-                } else if type_conforms(self.rm, child_type, &rm_attr.declared_type) == Some(false)
-                {
-                    // VCORMT: the object type must be the same as, or conform to,
-                    // the type declared for the owning attribute in the RM,
-                    // covariantly on any generic arguments (master04.5 §Validity
-                    // Rules: `C_OBJECT`, VCORMT; master04.2 §Rm_type_name and
-                    // Reference Model Type Matching).
-                    push_issue(
-                        &mut self.issues,
-                        ValidationCode::Vcormt,
-                        format!(
-                            "object type {child_type:?} does not conform to the attribute's reference-model type {:?}",
-                            rm_attr.declared_type
-                        ),
-                        &child_path,
-                    );
-                }
+                self.check_child_type(&child_path, child_type, &rm_attr.declared_type);
             }
 
             // VCORMEN / VCORMENV / VCORMENU: a primitive constraint on an
@@ -646,25 +644,8 @@ impl RmScan<'_> {
                 self.check_enumeration(&child_path, child, &en);
             }
 
-            // Interior-node VATID: a node under a multiply-valued attribute must
-            // have its id-code defined in the terminology; for a single-valued
-            // attribute a term definition is optional (master07
-            // §Overview). The flattened terminology of a specialised archetype
-            // is not available here, so this runs on the archetype's own
-            // terminology only.
             if rm_attr.is_multiple && !self.is_specialised {
-                let nid = object_node_id(child);
-                if (AdlCodeDefinitionsData::is_id_code(nid)
-                    || AdlCodeDefinitionsData::is_at_code(nid))
-                    && !self.defined.contains(nid)
-                {
-                    push_issue(
-                        &mut self.issues,
-                        ValidationCode::Vatid,
-                        format!("node id {nid:?} is not defined in the terminology"),
-                        &child_path,
-                    );
-                }
+                self.check_interior_node_id(&child_path, child);
             }
 
             if let CObject::CComplexObjectProxy(proxy) = child {
@@ -674,6 +655,57 @@ impl RmScan<'_> {
             if let CObject::CComplexObject(cco) = child {
                 self.walk_complex(&child_path, child_type, cco);
             }
+        }
+    }
+
+    /// VCORM / VCORMT: a child object's declared type must exist in the
+    /// reference model and be the same as, or conform to, the type declared
+    /// for the owning attribute — covariantly on any generic arguments
+    /// (master04.5 §Validity Rules: `C_OBJECT`, VCORMT; master04.2
+    /// §`Rm_type_name` and Reference Model Type Matching).
+    fn check_child_type(&mut self, child_path: &str, child_type: &str, declared_type: &str) {
+        if !self.rm.type_exists(child_type) {
+            push_issue(
+                &mut self.issues,
+                ValidationCode::Vcorm,
+                format!(
+                    "object type {child_type:?} is not defined in the reference model ({})",
+                    self.rm.name()
+                ),
+                child_path,
+            );
+            return;
+        }
+        if type_conforms(self.rm, child_type, declared_type) == Some(false) {
+            push_issue(
+                &mut self.issues,
+                ValidationCode::Vcormt,
+                format!(
+                    "object type {child_type:?} does not conform to the attribute's reference-model type {declared_type:?}"
+                ),
+                child_path,
+            );
+        }
+    }
+
+    /// Interior-node VATID: a node under a multiply-valued attribute must have
+    /// its id-code defined in the terminology.
+    ///
+    /// For a single-valued attribute a term definition is optional (master07
+    /// §Overview). The flattened terminology of a specialised archetype is not
+    /// available here, so the caller runs this on the archetype's own
+    /// terminology only.
+    fn check_interior_node_id(&mut self, child_path: &str, child: &CObject) {
+        let nid = object_node_id(child);
+        if (AdlCodeDefinitionsData::is_id_code(nid) || AdlCodeDefinitionsData::is_at_code(nid))
+            && !self.defined.contains(nid)
+        {
+            push_issue(
+                &mut self.issues,
+                ValidationCode::Vatid,
+                format!("node id {nid:?} is not defined in the terminology"),
+                child_path,
+            );
         }
     }
 
@@ -769,50 +801,52 @@ impl RmScan<'_> {
     /// Enumeration Types (no fuller openEHR spec text governs the partition).
     fn check_enumeration(&mut self, path: &str, child: &CObject, en: &RmEnum) {
         match child {
-            CObject::CInteger(c) => match en.underlying {
-                EnumUnderlying::Integer => {
-                    for v in integer_point_values(c.constraint.as_deref().unwrap_or_default()) {
-                        if !en.int_values.contains(&i64::from(v)) {
-                            push_issue(
-                                &mut self.issues,
-                                ValidationCode::Vcormenv,
-                                format!(
-                                    "integer value {v} is not a declared literal of the enumeration"
-                                ),
-                                path,
-                            );
-                        }
+            CObject::CInteger(c) => {
+                if en.underlying == EnumUnderlying::String {
+                    push_issue(
+                        &mut self.issues,
+                        ValidationCode::Vcormen,
+                        "an integer constraint is stated on a string-based enumeration slot",
+                        path,
+                    );
+                    return;
+                }
+                for v in integer_point_values(c.constraint.as_deref().unwrap_or_default()) {
+                    if !en.int_values.contains(&i64::from(v)) {
+                        push_issue(
+                            &mut self.issues,
+                            ValidationCode::Vcormenv,
+                            format!(
+                                "integer value {v} is not a declared literal of the enumeration"
+                            ),
+                            path,
+                        );
                     }
                 }
-                EnumUnderlying::String => push_issue(
-                    &mut self.issues,
-                    ValidationCode::Vcormen,
-                    "an integer constraint is stated on a string-based enumeration slot",
-                    path,
-                ),
-            },
-            CObject::CString(c) => match en.underlying {
-                EnumUnderlying::String => {
-                    for v in string_literal_values(c.constraint.as_deref().unwrap_or_default()) {
-                        if !en.str_values.iter().any(|lit| lit == v) {
-                            push_issue(
-                                &mut self.issues,
-                                ValidationCode::Vcormenu,
-                                format!(
-                                    "string value {v:?} is not a declared literal of the enumeration"
-                                ),
-                                path,
-                            );
-                        }
+            }
+            CObject::CString(c) => {
+                if en.underlying == EnumUnderlying::Integer {
+                    push_issue(
+                        &mut self.issues,
+                        ValidationCode::Vcormen,
+                        "a string constraint is stated on an integer-based enumeration slot",
+                        path,
+                    );
+                    return;
+                }
+                for v in string_literal_values(c.constraint.as_deref().unwrap_or_default()) {
+                    if !en.str_values.iter().any(|lit| lit == v) {
+                        push_issue(
+                            &mut self.issues,
+                            ValidationCode::Vcormenu,
+                            format!(
+                                "string value {v:?} is not a declared literal of the enumeration"
+                            ),
+                            path,
+                        );
                     }
                 }
-                EnumUnderlying::Integer => push_issue(
-                    &mut self.issues,
-                    ValidationCode::Vcormen,
-                    "a string constraint is stated on an integer-based enumeration slot",
-                    path,
-                ),
-            },
+            }
             // Any other primitive kind cannot constrain an enumeration
             // (VCORMEN); complex objects / proxies / slots / terminology codes
             // are not primitive enumeration constraints and are left to the

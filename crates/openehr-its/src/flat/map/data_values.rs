@@ -395,16 +395,7 @@ pub(super) fn build_leaf(
 /// on demand when a walker routes a `_`-child to it instead.
 fn attach_value_internal(map: &mut Map<String, Value>, base: &str, node: &SimNode) {
     if is_text_family(base) {
-        if let Some(cp) = single(node, "_language").and_then(build_code_phrase) {
-            map.insert("language".to_owned(), cp);
-        }
-        if let Some(cp) = single(node, "_encoding").and_then(build_code_phrase) {
-            map.insert("encoding".to_owned(), cp);
-        }
-        let mappings = build_indexed(node, "_mapping", build_term_mapping);
-        if !mappings.is_empty() {
-            map.insert("mappings".to_owned(), Value::Array(mappings));
-        }
+        attach_text_internal(map, node);
     }
     if base == "DV_PARSABLE" || base == "DV_MULTIMEDIA" {
         if let Some(child) = single(node, "_charset").and_then(build_code_phrase) {
@@ -421,23 +412,44 @@ fn attach_value_internal(map: &mut Map<String, Value>, base: &str, node: &SimNod
         map.insert("thumbnail".to_owned(), dv);
     }
     if DV_ORDERED.contains(&base) {
-        if let Some(child) = single(node, "_normal_range") {
-            map.insert("normal_range".to_owned(), build_interval(child, base));
-        }
-        let ranges = build_indexed(node, "_other_reference_ranges", |n| {
-            build_reference_range(n, base)
-        });
-        if !ranges.is_empty() {
-            map.insert("other_reference_ranges".to_owned(), Value::Array(ranges));
-        }
-        if matches!(base, "DV_DATE" | "DV_DATE_TIME" | "DV_TIME")
-            && let Some(acc) = single(node, "_accuracy").and_then(SimNode::bare)
-        {
-            map.insert(
-                "accuracy".to_owned(),
-                json!({"_type": "DV_DURATION", "value": acc.clone()}),
-            );
-        }
+        attach_ordered_internal(map, base, node);
+    }
+}
+
+/// The text-family value-internal families: `language`, `encoding` and the
+/// `_mapping:i` list.
+fn attach_text_internal(map: &mut Map<String, Value>, node: &SimNode) {
+    if let Some(cp) = single(node, "_language").and_then(build_code_phrase) {
+        map.insert("language".to_owned(), cp);
+    }
+    if let Some(cp) = single(node, "_encoding").and_then(build_code_phrase) {
+        map.insert("encoding".to_owned(), cp);
+    }
+    let mappings = build_indexed(node, "_mapping", build_term_mapping);
+    if !mappings.is_empty() {
+        map.insert("mappings".to_owned(), Value::Array(mappings));
+    }
+}
+
+/// The DV_ORDERED value-internal families: the normal range, the other
+/// reference ranges, and (temporal types only) the accuracy duration.
+fn attach_ordered_internal(map: &mut Map<String, Value>, base: &str, node: &SimNode) {
+    if let Some(child) = single(node, "_normal_range") {
+        map.insert("normal_range".to_owned(), build_interval(child, base));
+    }
+    let ranges = build_indexed(node, "_other_reference_ranges", |n| {
+        build_reference_range(n, base)
+    });
+    if !ranges.is_empty() {
+        map.insert("other_reference_ranges".to_owned(), Value::Array(ranges));
+    }
+    if matches!(base, "DV_DATE" | "DV_DATE_TIME" | "DV_TIME")
+        && let Some(acc) = single(node, "_accuracy").and_then(SimNode::bare)
+    {
+        map.insert(
+            "accuracy".to_owned(),
+            json!({"_type": "DV_DURATION", "value": acc.clone()}),
+        );
     }
 }
 

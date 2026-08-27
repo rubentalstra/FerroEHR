@@ -36,90 +36,111 @@ impl Model {
         external: &External,
     ) -> String {
         match t {
-            BmmType::Simple(n) => {
-                if let Some(concrete) = subst.get(n) {
-                    // A bound ancestor-generic parameter: render the concrete.
-                    self.render_type(
-                        &BmmType::Simple(concrete.clone()),
-                        generics,
-                        subst,
-                        local,
-                        external,
-                    )
-                } else if let Some(p) = primitive(n) {
-                    p.to_string()
-                } else if generics.iter().any(|g| g == n) {
-                    n.clone()
-                } else if n == "Any" {
-                    "serde_json::Value".to_string()
-                } else if let Some(carrier) = open_extension_point(n) {
-                    carrier.to_string()
-                } else if local.contains(n) || external.contains(n) {
-                    // A bare reference to a *generic* class (BMM omits the args,
-                    // e.g. `normal_range: DV_INTERVAL`) is filled with each type
-                    // parameter's bound (`DV_INTERVAL` → `DvInterval<DvOrdered>`).
-                    // An *unbounded* parameter (the versioned-content `T` of the
-                    // VERSION family) is threaded from the enclosing scope's type
-                    // params (`generics`, then bound `subst` values), so it stays
-                    // strongly typed instead of degrading to `serde_json::Value`.
-                    match self.generic_param_bounds(n) {
-                        Some(bounds) => {
-                            let mut content = Self::scope_content_types(generics, subst);
-                            let args: Vec<String> = bounds
-                                .iter()
-                                .map(|b| match b {
-                                    Some(bound) => self.render_type(
-                                        &BmmType::Simple(bound.clone()),
-                                        generics,
-                                        subst,
-                                        local,
-                                        external,
-                                    ),
-                                    None => content
-                                        .next()
-                                        .unwrap_or_else(|| "serde_json::Value".to_string()),
-                                })
-                                .collect();
-                            format!("{}<{}>", naming::type_name(n), args.join(", "))
-                        }
-                        None => naming::type_name(n),
-                    }
-                } else {
-                    "serde_json::Value".to_string()
-                }
-            }
+            BmmType::Simple(n) => self.render_simple(n, generics, subst, local, external),
             BmmType::Generic { root, params } => {
                 let ps: Vec<String> = params
                     .iter()
                     .map(|p| self.render_type(p, generics, subst, local, external))
                     .collect();
-                // Foundation container generics map to Rust collections; a
-                // container with the wrong arity (e.g. the deeply-nested
-                // free-form `Hash` in RESOURCE_ANNOTATIONS) is free-form JSON.
-                // Arity is matched structurally (slice patterns), never by index.
-                match (root.as_str(), ps.as_slice()) {
-                    ("Hash", [key, value]) => {
-                        format!("std::collections::BTreeMap<{key}, {value}>")
-                    }
-                    ("List" | "Array", [item]) => format!("Vec<{item}>"),
-                    ("Set", [item]) => format!("std::collections::BTreeSet<{item}>"),
-                    // A container of the wrong arity (e.g. the deeply-nested
-                    // free-form `Hash` in RESOURCE_ANNOTATIONS) or a type neither
-                    // emitted here nor by a dependency → free-form JSON.
-                    ("Hash" | "List" | "Array" | "Set", _) => "serde_json::Value".to_string(),
-                    (r, _) if !local.contains(r) && !external.contains(r) => {
-                        "serde_json::Value".to_string()
-                    }
-                    // Respect the class's *effective* arity: a class whose only
-                    // param was unused is monomorphized (emitted non-generic), so
-                    // a reference must drop the explicit args (`REFERENCE_RANGE<X>`
-                    // → `ReferenceRange`).
-                    (r, _) => match self.generic_param_bounds(r) {
-                        None => naming::type_name(r),
-                        Some(_) => format!("{}<{}>", naming::type_name(r), ps.join(", ")),
-                    },
-                }
+                self.render_container(root, &ps, local, external)
             }
+        }
+    }
+
+    /// Render a simple (non-container) BMM type reference.
+    ///
+    /// A bare reference to a *generic* class (the BMM omits the args, e.g.
+    /// `normal_range: DV_INTERVAL`) is filled with each type parameter's bound
+    /// (`DV_INTERVAL` → `DvInterval<DvOrdered>`). An *unbounded* parameter (the
+    /// versioned-content `T` of the VERSION family) is threaded from the
+    /// enclosing scope's type params (`generics`, then bound `subst` values),
+    /// so it stays strongly typed instead of degrading to `serde_json::Value`.
+    fn render_simple(
+        &self,
+        n: &str,
+        generics: &[String],
+        subst: &BTreeMap<String, String>,
+        local: &BTreeSet<String>,
+        external: &External,
+    ) -> String {
+        if let Some(concrete) = subst.get(n) {
+            // A bound ancestor-generic parameter: render the concrete.
+            return self.render_type(
+                &BmmType::Simple(concrete.clone()),
+                generics,
+                subst,
+                local,
+                external,
+            );
+        }
+        if let Some(p) = primitive(n) {
+            return p.to_string();
+        }
+        if generics.iter().any(|g| g == n) {
+            return n.to_owned();
+        }
+        if n == "Any" {
+            return "serde_json::Value".to_string();
+        }
+        if let Some(carrier) = open_extension_point(n) {
+            return carrier.to_string();
+        }
+        if !local.contains(n) && !external.contains(n) {
+            return "serde_json::Value".to_string();
+        }
+        let Some(bounds) = self.generic_param_bounds(n) else {
+            return naming::type_name(n);
+        };
+        let mut content = Self::scope_content_types(generics, subst);
+        let args: Vec<String> = bounds
+            .iter()
+            .map(|b| match b {
+                Some(bound) => self.render_type(
+                    &BmmType::Simple(bound.clone()),
+                    generics,
+                    subst,
+                    local,
+                    external,
+                ),
+                None => content
+                    .next()
+                    .unwrap_or_else(|| "serde_json::Value".to_string()),
+            })
+            .collect();
+        format!("{}<{}>", naming::type_name(n), args.join(", "))
+    }
+
+    /// Render a generic BMM type reference over its already-rendered arguments.
+    ///
+    /// Foundation container generics map to Rust collections, matched
+    /// structurally by arity (slice patterns), never by index. A container of
+    /// the wrong arity (e.g. the deeply-nested free-form `Hash` in
+    /// `RESOURCE_ANNOTATIONS`) or a type neither emitted here nor by a dependency
+    /// degrades to free-form JSON. A non-container respects the class's
+    /// *effective* arity: a class whose only param was unused is monomorphized
+    /// (emitted non-generic), so a reference must drop the explicit args
+    /// (`REFERENCE_RANGE<X>` → `ReferenceRange`).
+    fn render_container(
+        &self,
+        root: &str,
+        ps: &[String],
+        local: &BTreeSet<String>,
+        external: &External,
+    ) -> String {
+        match (root, ps) {
+            ("Hash", [key, value]) => {
+                format!("std::collections::BTreeMap<{key}, {value}>")
+            }
+            ("List" | "Array", [item]) => format!("Vec<{item}>"),
+            ("Set", [item]) => format!("std::collections::BTreeSet<{item}>"),
+            ("Hash" | "List" | "Array" | "Set", _) => "serde_json::Value".to_string(),
+            (r, _) if !local.contains(r) && !external.contains(r) => {
+                "serde_json::Value".to_string()
+            }
+            (r, _) => match self.generic_param_bounds(r) {
+                None => naming::type_name(r),
+                Some(_) => format!("{}<{}>", naming::type_name(r), ps.join(", ")),
+            },
         }
     }
 

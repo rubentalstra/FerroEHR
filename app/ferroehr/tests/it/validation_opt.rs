@@ -217,42 +217,6 @@ fn vcaex_widened_existence_on_mandatory_attribute() {
 /// §Attributes), i.e. an RM cardinality lower bound of 1 — and restate that
 /// attribute's cardinality interval. Everything else is the vendored valid OPT.
 fn cluster_items_cardinality(lower: i32, upper: Option<i32>) -> OperationalTemplate {
-    fn retype(objects: &mut [CObject], lower: i32, upper: Option<i32>) {
-        for object in objects {
-            let attributes = match object {
-                CObject::CComplexObject(c) => {
-                    if c.rm_type_name == "ITEM_TREE" {
-                        "CLUSTER".clone_into(&mut c.rm_type_name);
-                    }
-                    &mut c.attributes
-                }
-                CObject::CArchetypeRoot(c) => &mut c.attributes,
-                _ => continue,
-            };
-            for attribute in attributes.iter_mut() {
-                if let CAttribute::CMultipleAttribute(multiple) = attribute {
-                    if multiple.rm_attribute_name == "items" {
-                        // `CLUSTER.items` is RM-mandatory, so the fixture's
-                        // `{0..1}` existence must rise with the retype or VCAEX
-                        // (not VCACA) is what fires.
-                        multiple.existence.lower = Some(1);
-                        multiple.cardinality.interval = Intervalofinteger {
-                            lower_included: Some(true),
-                            upper_included: upper.map(|_| true),
-                            lower_unbounded: false,
-                            upper_unbounded: upper.is_none(),
-                            lower: Some(lower),
-                            upper,
-                        };
-                    }
-                    retype(&mut multiple.children, lower, upper);
-                } else if let CAttribute::CSingleAttribute(single) = attribute {
-                    retype(&mut single.children, lower, upper);
-                }
-            }
-        }
-    }
-
     let mut opt = parse(&minimal_xml());
     let mut roots = vec![CObject::CArchetypeRoot(opt.definition.clone())];
     retype(&mut roots, lower, upper);
@@ -261,6 +225,50 @@ fn cluster_items_cardinality(lower: i32, upper: Option<i32>) -> OperationalTempl
     };
     opt.definition = root.clone();
     opt
+}
+
+/// Retypes every `ITEM_TREE` in `objects` to `CLUSTER`, restating the stated
+/// cardinality of each `items` attribute it reaches.
+fn retype(objects: &mut [CObject], lower: i32, upper: Option<i32>) {
+    for object in objects {
+        let attributes = match object {
+            CObject::CComplexObject(c) => {
+                if c.rm_type_name == "ITEM_TREE" {
+                    "CLUSTER".clone_into(&mut c.rm_type_name);
+                }
+                &mut c.attributes
+            }
+            CObject::CArchetypeRoot(c) => &mut c.attributes,
+            _ => continue,
+        };
+        for attribute in attributes.iter_mut() {
+            retype_attribute(attribute, lower, upper);
+        }
+    }
+}
+
+/// Restates one attribute's cardinality when it is `items`, then descends.
+fn retype_attribute(attribute: &mut CAttribute, lower: i32, upper: Option<i32>) {
+    match attribute {
+        CAttribute::CMultipleAttribute(multiple) => {
+            if multiple.rm_attribute_name == "items" {
+                // `CLUSTER.items` is RM-mandatory, so the fixture's `{0..1}`
+                // existence must rise with the retype or VCAEX (not VCACA) is
+                // what fires.
+                multiple.existence.lower = Some(1);
+                multiple.cardinality.interval = Intervalofinteger {
+                    lower_included: Some(true),
+                    upper_included: upper.map(|_| true),
+                    lower_unbounded: false,
+                    upper_unbounded: upper.is_none(),
+                    lower: Some(lower),
+                    upper,
+                };
+            }
+            retype(&mut multiple.children, lower, upper);
+        }
+        CAttribute::CSingleAttribute(single) => retype(&mut single.children, lower, upper),
+    }
 }
 
 /// VCACA: "the cardinality of an attribute must conform, i.e. be the same or

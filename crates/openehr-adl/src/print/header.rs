@@ -32,43 +32,7 @@ impl Printer {
         } else {
             parts.keyword
         };
-        let mut meta = String::new();
-        if let Some(adl) = parts.adl_version {
-            let _ = write!(meta, "adl_version={adl}");
-        }
-        if let Some(rm) = parts.rm_release
-            && !rm.is_empty()
-        {
-            push_meta(&mut meta, &format!("rm_release={rm}"));
-        }
-        if let Some(uid) = parts.uid
-            && !is_nil(uid)
-        {
-            push_meta(&mut meta, &format!("uid={}", uid.value()));
-        }
-        if let Some(build) = parts.build_uid
-            && !is_nil(build)
-        {
-            push_meta(&mut meta, &format!("build_uid={}", build.value()));
-        }
-        if parts.is_generated {
-            push_meta(&mut meta, "generated");
-        }
-        if let Some(controlled) = parts.is_controlled {
-            push_meta(
-                &mut meta,
-                if controlled {
-                    "controlled"
-                } else {
-                    "uncontrolled"
-                },
-            );
-        }
-        if let Some(other) = parts.other_meta_data {
-            for (k, v) in other {
-                push_meta(&mut meta, &format!("{k}={v}"));
-            }
-        }
+        let meta = meta_clause(parts);
         if meta.is_empty() {
             self.line(0, keyword);
         } else {
@@ -267,6 +231,51 @@ impl Printer {
 
 /// Append one `key=value` item to the identification-line meta-data list,
 /// separating it from any preceding item with `; `.
+/// The `(…)` meta-data clause of the artefact declaration: the ADL and RM
+/// versions, the identifiers, and the standardised flags, `;`-separated in
+/// declaration order (`ADL2/master07.04` §Artefact declaration).
+///
+/// A nil `uid`/`build_uid` is the absent-value spelling the assembler stores
+/// and never prints.
+fn meta_clause(parts: &Parts<'_>) -> String {
+    let mut meta = String::new();
+    if let Some(adl) = parts.adl_version {
+        let _ = write!(meta, "adl_version={adl}");
+    }
+    if let Some(rm) = parts.rm_release
+        && !rm.is_empty()
+    {
+        push_meta(&mut meta, &format!("rm_release={rm}"));
+    }
+    if let Some(uid) = parts.uid
+        && !is_nil(uid)
+    {
+        push_meta(&mut meta, &format!("uid={}", uid.value()));
+    }
+    if let Some(build) = parts.build_uid
+        && !is_nil(build)
+    {
+        push_meta(&mut meta, &format!("build_uid={}", build.value()));
+    }
+    if parts.is_generated {
+        push_meta(&mut meta, "generated");
+    }
+    if let Some(controlled) = parts.is_controlled {
+        push_meta(
+            &mut meta,
+            if controlled {
+                "controlled"
+            } else {
+                "uncontrolled"
+            },
+        );
+    }
+    for (k, v) in parts.other_meta_data.into_iter().flatten() {
+        push_meta(&mut meta, &format!("{k}={v}"));
+    }
+    meta
+}
+
 fn push_meta(meta: &mut String, item: &str) {
     if !meta.is_empty() {
         meta.push_str("; ");

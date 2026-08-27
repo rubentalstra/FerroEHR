@@ -209,66 +209,14 @@ fn classify_leaf(toks: &[String]) -> Bucket {
     let joined = toks.join(" ");
     let has = |needle: &str| toks.iter().any(|t| t.contains(needle));
 
-    // ── Complex: quantifiers / lambdas / arithmetic (true structural depth) ──
-    if has("for_all") || has("forall") || has("exists") || toks.iter().any(|t| t == "for") {
-        return Bucket::Complex("quantifier over a collection");
+    if let Some(bucket) = structural_depth(toks, &has) {
+        return bucket;
     }
-    if toks.iter().any(|t| t == "|") {
-        return Bucket::Complex("lambda predicate");
+    if let Some(bucket) = missing_runtime_hook(&has) {
+        return bucket;
     }
-    // A boolean-returning *method* call (a BMM function, not a stored property):
-    // the emitter has no field to project it from, so it is not mechanically
-    // evaluable. `is_empty`/`empty` are handled as the recognised emptiness
-    // methods below; `is_justified` (ITEM_TAG) is a real function call.
-    if has(".is_justified") {
-        return Bucket::Complex("boolean method call (a BMM function, not a field)");
-    }
-    if has(".diff") || has(".to_seconds") || has(".mod") || has(".floor") || has(".item") {
-        return Bucket::Complex("cross-object arithmetic / navigation");
-    }
-    if toks
-        .iter()
-        .any(|t| matches!(t.as_str(), "-" | "+" | "*" | "/"))
-    {
-        return Bucket::Complex("arithmetic over related objects");
-    }
-
-    // ── Runtime-hook-missing: terminology / code-set / repository / aggregate ──
-    // Checked before the generic membership/navigation signals below: the
-    // terminology/code-set predicates read as `.has_code…` (a `.has` substring),
-    // and a code lookup is a missing *hook*, not irreducible structural depth.
-    if has("terminology") || has("Terminology") || has("has_code_for_group_id") {
-        return Bucket::RuntimeHookMissing("openEHR terminology service");
-    }
-    if has("code_set") || has("has_code") {
-        return Bucket::RuntimeHookMissing("openEHR code-set access");
-    }
-    if has("repository") {
-        return Bucket::RuntimeHookMissing("demographic repository access");
-    }
-    if has("all_versions")
-        || has("all_version_ids")
-        || has("version_count")
-        || has("latest_version")
-    {
-        return Bucket::RuntimeHookMissing("versioned-object aggregate model");
-    }
-
-    // ── Complex: membership / cross-object navigation ──
-    if has(".has") || has("has_object") || has("has_key") {
-        return Bucket::Complex("membership over a related collection");
-    }
-    if toks.iter().any(|t| t == "self")
-        || has("parent.")
-        || has(".source")
-        || has(".target")
-        || has(".relationships")
-        || has(".reverse_relationships")
-        || has(".description")
-        || has(".data")
-        || has(".origin")
-    {
-        return Bucket::Complex("cross-object navigation");
+    if let Some(bucket) = cross_object_navigation(toks, &has) {
+        return bucket;
     }
 
     // ── Emittable leaf forms ──
@@ -284,6 +232,85 @@ fn classify_leaf(toks: &[String]) -> Bucket {
         return Bucket::Emitted;
     }
     Bucket::Complex("unrecognised leaf form")
+}
+
+/// True structural depth: quantifiers, lambdas, boolean method calls and
+/// arithmetic over related objects.
+///
+/// A boolean-returning *method* call is a BMM function, not a stored property,
+/// so the emitter has no field to project it from and it is not mechanically
+/// evaluable. `is_empty`/`empty` are the recognised emptiness methods handled
+/// as emittable atoms; `is_justified` (`ITEM_TAG`) is a real function call.
+fn structural_depth(toks: &[String], has: &impl Fn(&str) -> bool) -> Option<Bucket> {
+    if has("for_all") || has("forall") || has("exists") || toks.iter().any(|t| t == "for") {
+        return Some(Bucket::Complex("quantifier over a collection"));
+    }
+    if toks.iter().any(|t| t == "|") {
+        return Some(Bucket::Complex("lambda predicate"));
+    }
+    if has(".is_justified") {
+        return Some(Bucket::Complex(
+            "boolean method call (a BMM function, not a field)",
+        ));
+    }
+    if has(".diff") || has(".to_seconds") || has(".mod") || has(".floor") || has(".item") {
+        return Some(Bucket::Complex("cross-object arithmetic / navigation"));
+    }
+    if toks
+        .iter()
+        .any(|t| matches!(t.as_str(), "-" | "+" | "*" | "/"))
+    {
+        return Some(Bucket::Complex("arithmetic over related objects"));
+    }
+    None
+}
+
+/// The runtime hooks the emitter has no access to: terminology, code sets, the
+/// demographic repository, and the versioned-object aggregate model.
+///
+/// Checked before the generic membership/navigation signals, because the
+/// terminology/code-set predicates read as `.has_code…` (a `.has` substring)
+/// and a code lookup is a missing *hook*, not irreducible structural depth.
+fn missing_runtime_hook(has: &impl Fn(&str) -> bool) -> Option<Bucket> {
+    if has("terminology") || has("Terminology") || has("has_code_for_group_id") {
+        return Some(Bucket::RuntimeHookMissing("openEHR terminology service"));
+    }
+    if has("code_set") || has("has_code") {
+        return Some(Bucket::RuntimeHookMissing("openEHR code-set access"));
+    }
+    if has("repository") {
+        return Some(Bucket::RuntimeHookMissing("demographic repository access"));
+    }
+    if has("all_versions")
+        || has("all_version_ids")
+        || has("version_count")
+        || has("latest_version")
+    {
+        return Some(Bucket::RuntimeHookMissing(
+            "versioned-object aggregate model",
+        ));
+    }
+    None
+}
+
+/// Membership over a related collection, and navigation off `self`.
+fn cross_object_navigation(toks: &[String], has: &impl Fn(&str) -> bool) -> Option<Bucket> {
+    if has(".has") || has("has_object") || has("has_key") {
+        return Some(Bucket::Complex("membership over a related collection"));
+    }
+    if toks.iter().any(|t| t == "self")
+        || has("parent.")
+        || has(".source")
+        || has(".target")
+        || has(".relationships")
+        || has(".reverse_relationships")
+        || has(".description")
+        || has(".data")
+        || has(".origin")
+    {
+        return Some(Bucket::Complex("cross-object navigation"));
+    }
+    None
 }
 
 /// Whether a leaf is one of the simple emittable atoms: an emptiness/`Void`

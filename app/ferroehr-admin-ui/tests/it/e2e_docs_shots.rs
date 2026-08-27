@@ -301,6 +301,90 @@ async fn shot_to(h: &Harness, dir: &Path, slug: &str) {
     println!("captured {slug} -> {}", out.display());
 }
 
+/// Capture the stored-query screens: FIRST the true empty state (fresh
+/// database), then the populated screen and the dashboard that derives from
+/// it.
+///
+/// Three stored queries are seeded over the Definition API under TWO different
+/// namespaces, so the derived namespace grouping (and the dashboard's
+/// namespace tiles) have something real to show. Nothing is created through a
+/// group form: a query's group IS its namespace.
+async fn capture_stored_query_screens(h: &Harness, dir: &Path, cdr: &str, user: &str, pass: &str) {
+    let http = reqwest::Client::new();
+    // The cleanup below hits the ADMIN extension, which the plain
+    // `UI_E2E_BASIC_*` account has no ADMIN role for — so it carries the
+    // admin credential, read from the environment like every journey.
+    let admin_user = env("UI_E2E_ADMIN_USER").unwrap_or_else(|| "ferroehr-admin".to_owned());
+    let admin_pass = env("UI_E2E_ADMIN_PASS").unwrap_or_else(|| "ferroehr".to_owned());
+    // Self-cleaning: earlier runs may have seeded these — delete first (the
+    // admin extension endpoint; 404 = already absent) so the empty-state
+    // capture is honest.
+    for name in [
+        "org.example::recent-compositions",
+        "org.example::quantity-series",
+        "ehr.demo::cohort-watch",
+    ] {
+        let status = http
+            .delete(format!(
+                "{cdr}/ferroehr/rest/openehr/v1/admin/query/{name}/1.0.0"
+            ))
+            .basic_auth(&admin_user, Some(&admin_pass))
+            .send()
+            .await
+            .expect("clean stored query")
+            .status();
+        assert!(
+            status == StatusCode::NO_CONTENT || status == StatusCode::NOT_FOUND,
+            "stored-query cleanup -> {status}"
+        );
+    }
+    capture(h, dir, "/queries", "queries/queries-empty", None).await;
+    for (name, aql) in [
+        (
+            "org.example::recent-compositions",
+            "SELECT c/uid/value AS uid, c/context/start_time/value AS time                  FROM EHR e CONTAINS COMPOSITION c                  ORDER BY c/context/start_time/value DESC LIMIT 20",
+        ),
+        (
+            "org.example::quantity-series",
+            "SELECT c/context/start_time/value AS time,                  c/content[openEHR-EHR-EVALUATION.minimal.v1]/data[at0001]/items[at0002]/value/magnitude AS magnitude                  FROM EHR e CONTAINS COMPOSITION c",
+        ),
+        // A SECOND namespace, so the grouping renders more than one card
+        // (`ehr::…` is one of the spec's own qualified-name examples).
+        (
+            "ehr.demo::cohort-watch",
+            "SELECT COUNT(*) AS cohort FROM EHR e CONTAINS COMPOSITION c",
+        ),
+    ] {
+        let status = http
+            .put(format!(
+                "{cdr}/ferroehr/rest/openehr/v1/definition/query/{name}/1.0.0"
+            ))
+            .basic_auth(user, Some(pass))
+            .header("Content-Type", "text/plain")
+            .body(aql)
+            .send()
+            .await
+            .expect("seed stored query")
+            .status();
+        assert!(status.is_success(), "stored-query seed -> {status}");
+    }
+    // Capture the populated screen: rows + open-in-editor links on the left,
+    // and the DERIVED namespace cards on the right (both seeded namespaces
+    // present — no group was created by hand).
+    h.goto("/queries").await;
+    h.wait_css("a[href^='/queries/aql?load=']").await;
+    h.wait_css("[data-query-namespace=\"org.example\"]").await;
+    h.wait_css("[data-query-namespace=\"ehr.demo\"]").await;
+    shot_to(h, dir, "queries/queries").await;
+    // Re-capture the DASHBOARD now that stored queries exist: its namespace
+    // tiles are derived from this same listing, and the first pass (before
+    // seeding) could only show the empty state.
+    h.goto("/").await;
+    h.wait_css("footer").await;
+    h.wait_css("[data-namespace-tile]").await;
+    shot_to(h, dir, "dashboard/dashboard").await;
+}
+
 /// Capture the canonical documentation screenshots for every console screen.
 #[tokio::test]
 #[expect(
@@ -406,79 +490,7 @@ async fn capture_documentation_screenshots() {
         env("UI_E2E_BASIC_USER"),
         env("UI_E2E_BASIC_PASS"),
     ) {
-        let http = reqwest::Client::new();
-        // The cleanup below hits the ADMIN extension, which the plain
-        // `UI_E2E_BASIC_*` account has no ADMIN role for — so it carries the
-        // admin credential, read from the environment like every journey.
-        let admin_user = env("UI_E2E_ADMIN_USER").unwrap_or_else(|| "ferroehr-admin".to_owned());
-        let admin_pass = env("UI_E2E_ADMIN_PASS").unwrap_or_else(|| "ferroehr".to_owned());
-        // Self-cleaning: earlier runs may have seeded these — delete first
-        // (the admin extension endpoint; 404 = already absent) so the
-        // empty-state capture is honest.
-        for name in [
-            "org.example::recent-compositions",
-            "org.example::quantity-series",
-            "ehr.demo::cohort-watch",
-        ] {
-            let status = http
-                .delete(format!(
-                    "{cdr}/ferroehr/rest/openehr/v1/admin/query/{name}/1.0.0"
-                ))
-                .basic_auth(&admin_user, Some(&admin_pass))
-                .send()
-                .await
-                .expect("clean stored query")
-                .status();
-            assert!(
-                status == StatusCode::NO_CONTENT || status == StatusCode::NOT_FOUND,
-                "stored-query cleanup -> {status}"
-            );
-        }
-        capture(&h, &dir, "/queries", "queries/queries-empty", None).await;
-        for (name, aql) in [
-            (
-                "org.example::recent-compositions",
-                "SELECT c/uid/value AS uid, c/context/start_time/value AS time                  FROM EHR e CONTAINS COMPOSITION c                  ORDER BY c/context/start_time/value DESC LIMIT 20",
-            ),
-            (
-                "org.example::quantity-series",
-                "SELECT c/context/start_time/value AS time,                  c/content[openEHR-EHR-EVALUATION.minimal.v1]/data[at0001]/items[at0002]/value/magnitude AS magnitude                  FROM EHR e CONTAINS COMPOSITION c",
-            ),
-            // A SECOND namespace, so the grouping renders more than one card
-            // (`ehr::…` is one of the spec's own qualified-name examples).
-            (
-                "ehr.demo::cohort-watch",
-                "SELECT COUNT(*) AS cohort FROM EHR e CONTAINS COMPOSITION c",
-            ),
-        ] {
-            let status = http
-                .put(format!(
-                    "{cdr}/ferroehr/rest/openehr/v1/definition/query/{name}/1.0.0"
-                ))
-                .basic_auth(&user, Some(&pass))
-                .header("Content-Type", "text/plain")
-                .body(aql)
-                .send()
-                .await
-                .expect("seed stored query")
-                .status();
-            assert!(status.is_success(), "stored-query seed -> {status}");
-        }
-        // Capture the populated screen: rows + open-in-editor links on the
-        // left, and the DERIVED namespace cards on the right (both seeded
-        // namespaces present — no group was created by hand).
-        h.goto("/queries").await;
-        h.wait_css("a[href^='/queries/aql?load=']").await;
-        h.wait_css("[data-query-namespace=\"org.example\"]").await;
-        h.wait_css("[data-query-namespace=\"ehr.demo\"]").await;
-        shot_to(&h, &dir, "queries/queries").await;
-        // Re-capture the DASHBOARD now that stored queries exist: its namespace
-        // tiles are derived from this same listing, and the first pass (before
-        // seeding) could only show the empty state.
-        h.goto("/").await;
-        h.wait_css("footer").await;
-        h.wait_css("[data-namespace-tile]").await;
-        shot_to(&h, &dir, "dashboard/dashboard").await;
+        capture_stored_query_screens(&h, &dir, &cdr, &user, &pass).await;
     } else {
         capture(&h, &dir, "/queries", "queries/queries-empty", None).await;
         println!("SKIP docs-shots: stored-query seeding needs UI_E2E_CDR_URL/UI_E2E_BASIC_*");

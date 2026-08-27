@@ -286,34 +286,45 @@ pub(super) fn emit_participation(p: &Value, out: &mut SimNode) {
     if let Some(m) = p.pointer("/mode/value") {
         out.attrs.insert("mode".to_owned(), m.clone());
     }
-    let Some(performer) = p.get("performer").filter(|v| !v.is_null()) else {
-        return;
-    };
+    if let Some(performer) = p.get("performer").filter(|v| !v.is_null()) {
+        emit_performer(performer, out);
+    }
+}
+
+/// The inlined performer of a PARTICIPATION: its `|name`/`|id`/`|id_scheme`/
+/// `|id_namespace` suffixes, the `|identifiers_<field>:i` list, and a
+/// PARTY_RELATED `/relationship` child.
+///
+/// Performer identifiers are inlined as `|identifiers_<field>:i` suffixes
+/// (master05 §PARTICIPATION), not the `_identifier:i` sub-path form.
+fn emit_performer(performer: &Value, out: &mut SimNode) {
     if let Some(name) = performer.get("name").filter(|v| !v.is_null()) {
         out.attrs.insert("name".to_owned(), name.clone());
     }
-    if let Some(id) = performer.pointer("/external_ref/id/value") {
-        out.attrs.insert("id".to_owned(), id.clone());
+    for (pointer, suffix) in [
+        ("/external_ref/id/value", "id"),
+        ("/external_ref/id/scheme", "id_scheme"),
+        ("/external_ref/namespace", "id_namespace"),
+    ] {
+        if let Some(v) = performer.pointer(pointer) {
+            out.attrs.insert(suffix.to_owned(), v.clone());
+        }
     }
-    if let Some(s) = performer.pointer("/external_ref/id/scheme") {
-        out.attrs.insert("id_scheme".to_owned(), s.clone());
-    }
-    if let Some(ns) = performer.pointer("/external_ref/namespace") {
-        out.attrs.insert("id_namespace".to_owned(), ns.clone());
-    }
-    // Performer identifiers are inlined as `|identifiers_<field>:i` suffixes
-    // (master05 §PARTICIPATION), not the `_identifier:i` sub-path form.
-    if let Some(ids) = performer.get("identifiers").and_then(Value::as_array) {
-        for (i, id) in ids.iter().enumerate() {
-            for (field, suffix) in [
-                ("id", "identifiers_id"),
-                ("issuer", "identifiers_issuer"),
-                ("assigner", "identifiers_assigner"),
-                ("type", "identifiers_type"),
-            ] {
-                if let Some(v) = id.get(field).filter(|v| !v.is_null()) {
-                    out.attrs.insert(format!("{suffix}:{i}"), v.clone());
-                }
+    for (i, id) in performer
+        .get("identifiers")
+        .and_then(Value::as_array)
+        .into_iter()
+        .flatten()
+        .enumerate()
+    {
+        for (field, suffix) in [
+            ("id", "identifiers_id"),
+            ("issuer", "identifiers_issuer"),
+            ("assigner", "identifiers_assigner"),
+            ("type", "identifiers_type"),
+        ] {
+            if let Some(v) = id.get(field).filter(|v| !v.is_null()) {
+                out.attrs.insert(format!("{suffix}:{i}"), v.clone());
             }
         }
     }

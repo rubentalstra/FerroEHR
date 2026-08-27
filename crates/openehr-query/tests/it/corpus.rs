@@ -92,6 +92,20 @@ fn wrap_fragment(fragment: &str) -> String {
     format!("SELECT e/ehr_id/value FROM EHR e WHERE {}", fragment.trim())
 }
 
+/// Parses one query and round-trips it through the printer.
+///
+/// The whole official corpus must satisfy parse → print → parse with an
+/// identical AST; the error is the failure message to record.
+fn round_trip_failure(query: &str) -> Result<(), String> {
+    let ast = openehr_query::parser::parse_str(query).map_err(|e| e.to_string())?;
+    let printed = openehr_query::printer::to_aql(&ast);
+    match openehr_query::parser::parse_str(&printed) {
+        Ok(reparsed) if reparsed == ast => Ok(()),
+        Ok(_) => Err(format!("printer round-trip drifted the AST via: {printed}")),
+        Err(e) => Err(format!("printed AQL failed to reparse: {printed}\n  {e}")),
+    }
+}
+
 #[test]
 fn official_aql_corpus_parses() {
     let dir = Path::new(env!("CARGO_MANIFEST_DIR")).join("vendor/examples");
@@ -121,25 +135,9 @@ fn official_aql_corpus_parses() {
             } else {
                 wrap_fragment(&block)
             };
-            match openehr_query::parser::parse_str(&query) {
-                Ok(ast) => {
-                    parsed += 1;
-                    // Printer round-trip: parse → print → parse must
-                    // reproduce the same AST for the whole official corpus.
-                    let printed = openehr_query::printer::to_aql(&ast);
-                    match openehr_query::parser::parse_str(&printed) {
-                        Ok(reparsed) if reparsed == ast => {}
-                        Ok(_) => failures.push((
-                            query.clone(),
-                            format!("printer round-trip drifted the AST via: {printed}"),
-                        )),
-                        Err(e) => failures.push((
-                            query.clone(),
-                            format!("printed AQL failed to reparse: {printed}\n  {e}"),
-                        )),
-                    }
-                }
-                Err(e) => failures.push((query, e.to_string())),
+            match round_trip_failure(&query) {
+                Ok(()) => parsed += 1,
+                Err(message) => failures.push((query, message)),
             }
         }
     }

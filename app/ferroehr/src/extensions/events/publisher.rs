@@ -189,31 +189,7 @@ async fn run(
         {
             tracing::debug!("event subscription sync deferred: {e}");
         }
-        // Drain until the outbox is empty or the broker/DB stalls.
-        loop {
-            if *shutdown.borrow() {
-                break;
-            }
-            match drain_batch(&pool, publisher.as_ref(), &config).await {
-                Ok(n) => {
-                    healthy.store(true, Ordering::Relaxed);
-                    // A full batch means more may remain — keep draining;
-                    // a short batch means the outbox is now empty.
-                    if usize::try_from(config.batch_size).unwrap_or(usize::MAX) > n {
-                        break;
-                    }
-                }
-                Err(DrainError::Publish(e)) => {
-                    healthy.store(false, Ordering::Relaxed);
-                    tracing::warn!("event publish stalled (broker unavailable?): {e}");
-                    break;
-                }
-                Err(DrainError::Db(e)) => {
-                    tracing::warn!("event outbox drain DB error: {e}");
-                    break;
-                }
-            }
-        }
+        drain_until_caught_up(&pool, publisher.as_ref(), &config, &shutdown, &healthy).await;
 
         // Retention prune (best-effort), on its own cadence.
         if last_prune.elapsed() >= prune_every {
@@ -238,6 +214,42 @@ async fn run(
         tracing::debug!("event publisher flushed {n} events on shutdown");
     }
     tracing::debug!("event publisher loop exited");
+}
+
+/// Drains the outbox until it is empty, the broker or DB stalls, or shutdown
+/// is signalled, keeping the health flag in step with broker delivery.
+///
+/// A full batch means more may remain — keep draining; a short batch means the
+/// outbox is now empty.
+async fn drain_until_caught_up(
+    pool: &PgPool,
+    publisher: &dyn EventPublisher,
+    config: &EventsConfig,
+    shutdown: &watch::Receiver<bool>,
+    healthy: &AtomicBool,
+) {
+    loop {
+        if *shutdown.borrow() {
+            return;
+        }
+        match drain_batch(pool, publisher, config).await {
+            Ok(n) => {
+                healthy.store(true, Ordering::Relaxed);
+                if usize::try_from(config.batch_size).unwrap_or(usize::MAX) > n {
+                    return;
+                }
+            }
+            Err(DrainError::Publish(e)) => {
+                healthy.store(false, Ordering::Relaxed);
+                tracing::warn!("event publish stalled (broker unavailable?): {e}");
+                return;
+            }
+            Err(DrainError::Db(e)) => {
+                tracing::warn!("event outbox drain DB error: {e}");
+                return;
+            }
+        }
+    }
 }
 
 /// Declare + bind the queue for every **enabled** subscription — but only when

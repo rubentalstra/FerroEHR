@@ -107,6 +107,50 @@ fn collect_element_value_defects(node: &Value, path: &str, out: &mut Vec<String>
     }
 }
 
+/// What one packed template's parse + example generation produced.
+enum TemplateOutcome {
+    /// The file could not be read at all.
+    ReadFailed(String),
+    /// Parsed, built and generated defect-free examples.
+    Clean,
+    /// The OPT parse or the WebTemplate build refused it.
+    Refused(String),
+    /// Examples were generated but carry RM-shape defects.
+    Defects(Vec<String>),
+}
+
+/// Parses one packed OPT and checks the examples it generates at every level.
+fn examine_template(path: &Path, name: &str) -> TemplateOutcome {
+    let xml = match std::fs::read_to_string(path) {
+        Ok(xml) => xml,
+        Err(e) => return TemplateOutcome::ReadFailed(format!("{name}: read failed: {e}")),
+    };
+    let opt = match opt14::from_xml(&xml) {
+        Ok(opt) => opt,
+        Err(e) => return TemplateOutcome::Refused(format!("{name}: OPT parse failed: {e}")),
+    };
+    let wt = match build_web_template(&opt) {
+        Ok(wt) => wt,
+        Err(e) => {
+            return TemplateOutcome::Refused(format!("{name}: WebTemplate build failed: {e}"));
+        }
+    };
+    let mut defects = Vec::new();
+    for level in [
+        DetailLevel::Required,
+        DetailLevel::Medium,
+        DetailLevel::Complete,
+    ] {
+        let example = example_composition(&wt, level);
+        collect_element_value_defects(&example, &format!("{name}@{level:?}"), &mut defects);
+    }
+    if defects.is_empty() {
+        TemplateOutcome::Clean
+    } else {
+        TemplateOutcome::Defects(defects)
+    }
+}
+
 /// Every OPT of the full CKM library parses, builds a WebTemplate, and
 /// generates RM-shape-valid examples at every detail level.
 #[test]
@@ -129,61 +173,24 @@ fn full_ckm_pack_parses_and_generates_valid_examples() {
     for path in &files {
         let name = file_name(path);
         let verdict = adjudication(&name);
-        let xml = match std::fs::read_to_string(path) {
-            Ok(xml) => xml,
-            Err(e) => {
-                let _ = writeln!(findings, "{name}: read failed: {e}");
-                continue;
+        match examine_template(path, &name) {
+            // A read failure is never adjudicable: the corpus itself is broken.
+            TemplateOutcome::ReadFailed(message) => {
+                let _ = writeln!(findings, "{message}");
             }
-        };
-
-        let opt = match opt14::from_xml(&xml) {
-            Ok(opt) => opt,
-            Err(e) => {
-                match verdict {
-                    Some(_) => adjudicated += 1,
-                    None => {
-                        let _ = writeln!(findings, "{name}: OPT parse failed: {e}");
-                    }
+            TemplateOutcome::Clean => {
+                if verdict.is_some() {
+                    unexpectedly_accepted.push(name.clone());
                 }
-                continue;
+                parsed += 1;
             }
-        };
-
-        let wt = match build_web_template(&opt) {
-            Ok(wt) => wt,
-            Err(e) => {
-                match verdict {
-                    Some(_) => adjudicated += 1,
-                    None => {
-                        let _ = writeln!(findings, "{name}: WebTemplate build failed: {e}");
-                    }
-                }
-                continue;
+            TemplateOutcome::Refused(message) if verdict.is_none() => {
+                let _ = writeln!(findings, "{message}");
             }
-        };
-
-        let mut defects = Vec::new();
-        for level in [
-            DetailLevel::Required,
-            DetailLevel::Medium,
-            DetailLevel::Complete,
-        ] {
-            let example = example_composition(&wt, level);
-            collect_element_value_defects(&example, &format!("{name}@{level:?}"), &mut defects);
-        }
-        if defects.is_empty() {
-            if verdict.is_some() {
-                unexpectedly_accepted.push(name.clone());
+            TemplateOutcome::Defects(defects) if verdict.is_none() => {
+                let _ = writeln!(findings, "{}", defects.join("\n"));
             }
-            parsed += 1;
-        } else {
-            match verdict {
-                Some(_) => adjudicated += 1,
-                None => {
-                    let _ = writeln!(findings, "{}", defects.join("\n"));
-                }
-            }
+            TemplateOutcome::Refused(_) | TemplateOutcome::Defects(_) => adjudicated += 1,
         }
     }
 

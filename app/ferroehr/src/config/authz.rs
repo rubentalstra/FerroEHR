@@ -370,47 +370,63 @@ impl AbacConfig {
     /// Validate the ABAC section at boot (hard errors). Only called when
     /// `enabled`.
     fn validate(&self) -> Result<(), AuthzConfigError> {
-        for (kind, rule) in &self.policy {
-            if !POLICY_KINDS.contains(&kind.as_str()) {
-                return Err(AuthzConfigError::UnknownPolicyKind(kind.clone()));
-            }
-            if rule.parameters.contains(&AbacParam::Template) {
-                match kind.as_str() {
-                    "ehr" => return Err(AuthzConfigError::TemplateParamIllegal("ehr")),
-                    "ehr_status" => {
-                        return Err(AuthzConfigError::TemplateParamIllegal("ehr_status"));
-                    }
-                    _ => {}
-                }
-            }
-        }
+        self.validate_policy_rules()?;
         match self.engine {
-            AbacEngineKind::Remote => {
-                let server = self
-                    .remote
-                    .server
-                    .as_deref()
-                    .filter(|s| !s.trim().is_empty())
-                    .ok_or(AuthzConfigError::RemoteServerMissing)?;
-                if !server.ends_with('/') {
-                    return Err(AuthzConfigError::RemoteServerTrailingSlash(
-                        server.to_owned(),
-                    ));
-                }
-                for kind in REQUIRED_REMOTE_POLICY_KINDS {
-                    if !self.policy.contains_key(kind) {
-                        return Err(AuthzConfigError::RemotePolicyMissing(kind));
-                    }
-                }
-                if self.check_directory && !self.policy.contains_key("directory") {
-                    return Err(AuthzConfigError::RemotePolicyMissing("directory"));
-                }
-            }
+            AbacEngineKind::Remote => self.validate_remote_engine(),
             AbacEngineKind::Cedar => {
                 if self.cedar.policy_dir.is_none() {
                     return Err(AuthzConfigError::CedarDirMissing);
                 }
+                Ok(())
             }
+        }
+    }
+
+    /// Every configured policy rule names a known resource kind, and no rule
+    /// asks for a parameter its kind cannot carry.
+    ///
+    /// The `template` parameter is a property of committed content, so an
+    /// EHR-level or EHR_STATUS-level rule can never be given one.
+    fn validate_policy_rules(&self) -> Result<(), AuthzConfigError> {
+        for (kind, rule) in &self.policy {
+            if !POLICY_KINDS.contains(&kind.as_str()) {
+                return Err(AuthzConfigError::UnknownPolicyKind(kind.clone()));
+            }
+            if !rule.parameters.contains(&AbacParam::Template) {
+                continue;
+            }
+            match kind.as_str() {
+                "ehr" => return Err(AuthzConfigError::TemplateParamIllegal("ehr")),
+                "ehr_status" => return Err(AuthzConfigError::TemplateParamIllegal("ehr_status")),
+                _ => {}
+            }
+        }
+        Ok(())
+    }
+
+    /// The remote-PDP engine's own requirements: a base server URL with a
+    /// trailing slash, and a policy for every resource kind the PEP consults
+    /// (an unconfigured kind denies, and the missing rule is a boot error
+    /// rather than a silent refusal at request time).
+    fn validate_remote_engine(&self) -> Result<(), AuthzConfigError> {
+        let server = self
+            .remote
+            .server
+            .as_deref()
+            .filter(|s| !s.trim().is_empty())
+            .ok_or(AuthzConfigError::RemoteServerMissing)?;
+        if !server.ends_with('/') {
+            return Err(AuthzConfigError::RemoteServerTrailingSlash(
+                server.to_owned(),
+            ));
+        }
+        for kind in REQUIRED_REMOTE_POLICY_KINDS {
+            if !self.policy.contains_key(kind) {
+                return Err(AuthzConfigError::RemotePolicyMissing(kind));
+            }
+        }
+        if self.check_directory && !self.policy.contains_key("directory") {
+            return Err(AuthzConfigError::RemotePolicyMissing("directory"));
         }
         Ok(())
     }

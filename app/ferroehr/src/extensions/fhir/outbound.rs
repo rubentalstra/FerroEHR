@@ -253,94 +253,25 @@ async fn process_batch(
     let mut processed = 0usize;
     let mut advanced = last_seq;
     let mut outcome: Result<usize, ProcessError> = Ok(0);
-    'rows: for row in &rows {
+    for row in &rows {
         let seq: i64 = row.try_get("seq")?;
         let envelope: Value = row.try_get("envelope")?;
-        let ehr_id = envelope
-            .get("ehr_id")
-            .and_then(Value::as_str)
-            .and_then(|s| Uuid::parse_str(s).ok());
-
-        let mut parked = false;
-        'versions: for version in envelope
-            .get("versions")
-            .and_then(Value::as_array)
-            .into_iter()
-            .flatten()
-        {
-            // Only COMPOSITION versions can map to a FHIR resource
-            // (EHR_STATUS/FOLDER carry no mappable template). The template is
-            // read from the COMPOSITION body by the service.
-            if version.get("kind").and_then(Value::as_str) != Some("COMPOSITION") {
-                continue;
+        match process_row(service, publisher, config, poison, seq, &envelope).await {
+            RowOutcome::Stop(e) => {
+                outcome = Err(e);
+                break;
             }
-            let (Some(vo_id), Some(sys_version)) = (
-                version
-                    .get("vo_id")
-                    .and_then(Value::as_str)
-                    .and_then(|s| Uuid::parse_str(s).ok())
-                    .map(VoId),
-                version
-                    .get("sys_version")
-                    .and_then(Value::as_i64)
-                    .and_then(|v| i32::try_from(v).ok()),
-            ) else {
-                continue;
-            };
-
-            let messages = match service
-                .fhir_outbound_messages(ehr_id, vo_id, sys_version)
-                .await
-            {
-                Ok(m) => m,
-                Err(e) => {
-                    // A mapping failure is deterministic for this row: charge
-                    // its park budget; once exhausted, dead-letter it to the
-                    // log and skip (the cursor advances past it below).
-                    let failed_passes = charge_poison(poison, seq);
-                    if failed_passes >= PARK_AFTER_FAILED_PASSES {
-                        tracing::error!(
-                            seq,
-                            vo_id = %vo_id,
-                            sys_version,
-                            error = %e,
-                            "fhir outbound: parking poison outbox row after \
-                             {PARK_AFTER_FAILED_PASSES} failed passes — row skipped \
-                             (dead-lettered to the log; fix the stored mapping/template \
-                             and re-commit to re-emit)"
-                        );
-                        *poison = None;
-                        parked = true;
-                        break 'versions;
-                    }
-                    outcome = Err(ProcessError::Map(e.to_string()));
-                    break 'rows;
-                }
-            };
-            for (resource_type, template_id, resource) in &messages {
-                let routing_key = routing_key(resource_type, template_id);
-                let payload = match resource_payload(resource_type, resource) {
-                    Ok(bytes) => bytes,
-                    Err(e) => {
-                        outcome = Err(e);
-                        break 'rows;
-                    }
-                };
-                if let Err(e) = publish_with_retry(publisher, &routing_key, &payload, config).await
-                {
-                    outcome = Err(ProcessError::Publish(e));
-                    break 'rows;
+            RowOutcome::Published { parked } => {
+                // The whole row published (or parked): it is safe to advance
+                // the cursor past it.
+                advanced = seq;
+                processed += 1;
+                if !parked {
+                    // The head row completed cleanly — any earlier failures on
+                    // it were transient; clear its budget.
+                    clear_poison_for(poison, seq);
                 }
             }
-        }
-        // The whole row published (or parked): it is safe to advance the
-        // cursor past it.
-        advanced = seq;
-        processed += 1;
-        if !parked {
-            // The head row completed cleanly — any earlier failures on it were
-            // transient; clear its budget.
-            clear_poison_for(poison, seq);
         }
     }
 
@@ -353,6 +284,101 @@ async fn process_batch(
         Err(e) => Err(e),
         Ok(_) => Ok(processed),
     }
+}
+
+/// What one outbox row's processing means for the rest of the batch.
+enum RowOutcome {
+    /// Every mappable version of the row published, or the row was parked —
+    /// the cursor may advance past it. `parked` says which.
+    Published { parked: bool },
+    /// The batch stops here; the already-published prefix keeps its cursor
+    /// advance, so a re-run resumes from this row.
+    Stop(ProcessError),
+}
+
+/// Publishes every mappable version of one outbox row.
+///
+/// Only COMPOSITION versions can map to a FHIR resource (`EHR_STATUS`/`FOLDER`
+/// carry no mappable template); the template is read from the COMPOSITION body
+/// by the service. A mapping failure is deterministic for the row, so it
+/// charges the row's park budget; once the budget is exhausted the row is
+/// dead-lettered to the log and skipped. Publish and payload failures are
+/// transient and stop the batch instead.
+async fn process_row(
+    service: &FerroEhrService,
+    publisher: &dyn EventPublisher,
+    config: &FhirOutboundConfig,
+    poison: &mut PoisonBudget,
+    seq: i64,
+    envelope: &Value,
+) -> RowOutcome {
+    let ehr_id = envelope
+        .get("ehr_id")
+        .and_then(Value::as_str)
+        .and_then(|s| Uuid::parse_str(s).ok());
+    for version in envelope
+        .get("versions")
+        .and_then(Value::as_array)
+        .into_iter()
+        .flatten()
+    {
+        let Some((vo_id, sys_version)) = mappable_version(version) else {
+            continue;
+        };
+        let messages = match service
+            .fhir_outbound_messages(ehr_id, vo_id, sys_version)
+            .await
+        {
+            Ok(m) => m,
+            Err(e) => {
+                let failed_passes = charge_poison(poison, seq);
+                if failed_passes < PARK_AFTER_FAILED_PASSES {
+                    return RowOutcome::Stop(ProcessError::Map(e.to_string()));
+                }
+                tracing::error!(
+                    seq,
+                    vo_id = %vo_id,
+                    sys_version,
+                    error = %e,
+                    "fhir outbound: parking poison outbox row after \
+                     {PARK_AFTER_FAILED_PASSES} failed passes — row skipped \
+                     (dead-lettered to the log; fix the stored mapping/template \
+                     and re-commit to re-emit)"
+                );
+                *poison = None;
+                return RowOutcome::Published { parked: true };
+            }
+        };
+        for (resource_type, template_id, resource) in &messages {
+            let routing_key = routing_key(resource_type, template_id);
+            let payload = match resource_payload(resource_type, resource) {
+                Ok(bytes) => bytes,
+                Err(e) => return RowOutcome::Stop(e),
+            };
+            if let Err(e) = publish_with_retry(publisher, &routing_key, &payload, config).await {
+                return RowOutcome::Stop(ProcessError::Publish(e));
+            }
+        }
+    }
+    RowOutcome::Published { parked: false }
+}
+
+/// The versioned-object id and version ordinal of one announced version, or
+/// `None` when it is not a mappable COMPOSITION version.
+fn mappable_version(version: &Value) -> Option<(VoId, i32)> {
+    if version.get("kind").and_then(Value::as_str) != Some("COMPOSITION") {
+        return None;
+    }
+    let vo_id = version
+        .get("vo_id")
+        .and_then(Value::as_str)
+        .and_then(|s| Uuid::parse_str(s).ok())
+        .map(VoId)?;
+    let sys_version = version
+        .get("sys_version")
+        .and_then(Value::as_i64)
+        .and_then(|v| i32::try_from(v).ok())?;
+    Some((vo_id, sys_version))
 }
 
 /// Charge one failed pass against `seq`'s park budget, returning its

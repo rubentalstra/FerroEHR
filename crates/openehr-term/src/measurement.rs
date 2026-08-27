@@ -79,22 +79,7 @@ fn parse_atom_or_factor(b: &[u8], mut pos: usize) -> Option<usize> {
     let start = pos;
     while let Some(&c) = b.get(pos) {
         match c {
-            b'[' => {
-                pos += 1;
-                while let Some(&inner) = b.get(pos) {
-                    if inner == b']' {
-                        break;
-                    }
-                    if !(0x21..=0x7e).contains(&inner) || inner == b'[' {
-                        return None;
-                    }
-                    pos += 1;
-                }
-                if pos >= b.len() {
-                    return None; // unbalanced '['
-                }
-                pos += 1; // ']'
-            }
+            b'[' => pos = parse_bracket_segment(b, pos)?,
             b'.' | b'/' | b'(' | b')' | b'{' | b'}' | b']' => break,
             // exponent digits/sign are consumed by parse_exponent_opt; inside
             // an atom, digits terminate the symbol part (e.g. `mm3`).
@@ -103,6 +88,27 @@ fn parse_atom_or_factor(b: &[u8], mut pos: usize) -> Option<usize> {
         }
     }
     (pos > start).then_some(pos)
+}
+
+/// One balanced `[...]` segment of an atom, entered on its opening bracket.
+///
+/// Returns the position after the closing `]`, or `None` for an unbalanced or
+/// non-printable segment.
+fn parse_bracket_segment(b: &[u8], mut pos: usize) -> Option<usize> {
+    pos += 1;
+    while let Some(&inner) = b.get(pos) {
+        if inner == b']' {
+            break;
+        }
+        if !(0x21..=0x7e).contains(&inner) || inner == b'[' {
+            return None;
+        }
+        pos += 1;
+    }
+    if pos >= b.len() {
+        return None; // unbalanced '['
+    }
+    Some(pos + 1) // past ']'
 }
 
 /// exponent = ['+'|'-'] digits — but bare trailing digits are already consumed

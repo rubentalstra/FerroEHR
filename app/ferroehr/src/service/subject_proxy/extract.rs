@@ -161,59 +161,39 @@ fn coerce(raw: Raw, type_name: &str) -> Result<VariableValue, String> {
 /// examples (`Date`, `Quantity`, `Boolean`) plus the common scalar names.
 /// Unknown names (and `Any`) pass through unchecked.
 fn check_type(value: &Value, type_name: &str) -> Result<(), String> {
-    let mismatch = |want: &str| {
-        Err(format!(
-            "value {value} does not match declared type_name {want:?}"
-        ))
-    };
     // A null cell is "no data", acceptable for every declared type.
     if value.is_null() {
         return Ok(());
     }
-    match type_name.to_lowercase().as_str() {
-        "boolean" => {
-            if value.is_boolean() {
-                Ok(())
-            } else {
-                mismatch(type_name)
-            }
+    let matches = match type_name.to_lowercase().as_str() {
+        "boolean" => value.is_boolean(),
+        "integer" | "count" => value.is_i64() || value.is_u64() || is_rm_family(value, "DV_COUNT"),
+        "real" | "double" | "decimal" => value.is_number(),
+        "quantity" => value.is_number() || is_rm_family(value, "DV_QUANTITY"),
+        "string" | "text" => value.is_string() || is_rm_family(value, "DV_TEXT"),
+        "date" => {
+            return check_time_str(value, type_name, |s| s.parse::<jiff::civil::Date>().is_ok());
         }
-        "integer" | "count" => {
-            if value.is_i64() || value.is_u64() || is_rm_family(value, "DV_COUNT") {
-                Ok(())
-            } else {
-                mismatch(type_name)
-            }
+        "datetime" | "date_time" => {
+            return check_time_str(value, type_name, |s| {
+                s.parse::<jiff::Timestamp>().is_ok() || s.parse::<jiff::civil::DateTime>().is_ok()
+            });
         }
-        "real" | "double" | "decimal" => {
-            if value.is_number() {
-                Ok(())
-            } else {
-                mismatch(type_name)
-            }
+        "time" => {
+            return check_time_str(value, type_name, |s| s.parse::<jiff::civil::Time>().is_ok());
         }
-        "quantity" => {
-            if value.is_number() || is_rm_family(value, "DV_QUANTITY") {
-                Ok(())
-            } else {
-                mismatch(type_name)
-            }
+        "duration" => {
+            return check_time_str(value, type_name, |s| s.parse::<jiff::Span>().is_ok());
         }
-        "string" | "text" => {
-            if value.is_string() || is_rm_family(value, "DV_TEXT") {
-                Ok(())
-            } else {
-                mismatch(type_name)
-            }
-        }
-        "date" => check_time_str(value, type_name, |s| s.parse::<jiff::civil::Date>().is_ok()),
-        "datetime" | "date_time" => check_time_str(value, type_name, |s| {
-            s.parse::<jiff::Timestamp>().is_ok() || s.parse::<jiff::civil::DateTime>().is_ok()
-        }),
-        "time" => check_time_str(value, type_name, |s| s.parse::<jiff::civil::Time>().is_ok()),
-        "duration" => check_time_str(value, type_name, |s| s.parse::<jiff::Span>().is_ok()),
-        _ => Ok(()), // Any / unknown model type names: pass through
+        // Any / unknown model type names: pass through
+        _ => true,
+    };
+    if matches {
+        return Ok(());
     }
+    Err(format!(
+        "value {value} does not match declared type_name {type_name:?}"
+    ))
 }
 
 /// Temporal types arrive as ISO-8601 strings (or the matching RM `DV_*`

@@ -279,78 +279,8 @@ pub(crate) fn emit_to_xml(
             generics,
             fields,
         } => {
-            let (hdr, args) = generic_header(generics, "crate::xml::runtime::ToXml");
-            let by_wire: BTreeMap<&str, &XmlField> =
-                fields.iter().map(|f| (f.wire_name.as_str(), f)).collect();
-            let _ = write!(
-                b,
-                "impl{hdr} crate::xml::runtime::ToXml for {path}::{rust}{args} {{\n\
-                 fn xml_type_name(&self) -> &'static str {{ \"{spec}\" }}\n\
-                 fn write_xml(&self, w: &mut crate::xml::runtime::XmlWriter, tag: &str, declared: Option<&str>) -> Result<(), crate::xml::runtime::XmlError> {{\n\
-                 let mut __attrs: Vec<(&str, String)> = Vec::new();\n\
-                 if let Some(d) = declared {{ if d != \"{spec}\" {{ __attrs.push((\"xsi:type\", \"{spec}\".to_string())); }} }}\n"
-            );
-            // Wire order + attr/element split from the XSD; else BMM order, no attrs.
-            let (attrs, mut elems): (Vec<String>, Vec<String>) = if xsd.types.contains_key(spec) {
-                let (a, e) = xsd.flattened(spec);
-                (
-                    a.iter().map(|x| x.name.clone()).collect(),
-                    e.iter().map(|x| x.name.clone()).collect(),
-                )
-            } else {
-                (
-                    Vec::new(),
-                    fields.iter().map(|f| f.wire_name.clone()).collect(),
-                )
-            };
-            // append any allowlisted BMM-only field (no XSD slot) as a
-            // deterministic trailing element in BMM order, so it is not dropped.
-            // (Non-allowlisted BMM-only fields already failed the guard above.)
-            for f in bmm_only_fields(spec, fields, xsd) {
-                elems.push(f.wire_name.clone());
-            }
-            // A validated class's fields are `pub(crate)` (the construction-door
-            // scheme), so this codec — a different crate — reads them through the
-            // emitted accessor.
-            let validated = construction::is_validated(spec);
-            let read = |f: &XmlField| {
-                if validated {
-                    format!("{}()", f.rust_name)
-                } else {
-                    f.rust_name.clone()
-                }
-            };
-            for aname in &attrs {
-                if let Some(f) = by_wire.get(aname.as_str()) {
-                    if f.optional {
-                        let _ = writeln!(
-                            b,
-                            "if let Some(v) = &self.{} {{ __attrs.push((\"{}\", v.to_string())); }}",
-                            read(f),
-                            f.wire_name
-                        );
-                    } else {
-                        let _ = writeln!(
-                            b,
-                            "__attrs.push((\"{}\", self.{}.to_string()));",
-                            f.wire_name,
-                            read(f)
-                        );
-                    }
-                } else {
-                    unmatched.push((spec.clone(), aname.clone()));
-                }
-            }
-            b.push_str("let mut __e = quick_xml::events::BytesStart::new(tag);\n");
-            b.push_str("for (k, v) in &__attrs { __e.push_attribute((*k, v.as_str())); }\n");
-            b.push_str("w.write_start(__e)?;\n");
-            for ename in &elems {
-                match by_wire.get(ename.as_str()) {
-                    Some(f) => emit_write_field(b, f, validated),
-                    None => unmatched.push((spec.clone(), ename.clone())),
-                }
-            }
-            b.push_str("w.write_end(tag)?;\nOk(())\n}\n}\n\n");
+            let target = XmlTarget { spec, rust, path };
+            emit_struct_to_xml(b, &target, generics, fields, xsd, unmatched);
         }
         XmlType::Enum {
             rust,
@@ -409,6 +339,89 @@ pub(crate) fn emit_to_xml(
     }
 }
 
+/// Emits `impl ToXml` for a struct: the `xsi:type` attribute, the XSD-ordered
+/// attributes, and the elements.
+///
+/// Wire order and the attribute/element split come from the XSD; a type the
+/// XSD does not cover falls back to BMM order with no attributes. Any
+/// allowlisted BMM-only field (no XSD slot) is appended as a deterministic
+/// trailing element in BMM order so it is never dropped — a non-allowlisted
+/// one has already failed the emitter guard.
+fn emit_struct_to_xml(
+    b: &mut String,
+    target: &XmlTarget<'_>,
+    generics: &[String],
+    fields: &[XmlField],
+    xsd: &XsdModel,
+    unmatched: &mut Vec<(String, String)>,
+) {
+    let (hdr, args) = generic_header(generics, "crate::xml::runtime::ToXml");
+    let (spec, rust, path) = (target.spec, target.rust, target.path);
+    let by_wire: BTreeMap<&str, &XmlField> =
+        fields.iter().map(|f| (f.wire_name.as_str(), f)).collect();
+    let _ = write!(
+        b,
+        "impl{hdr} crate::xml::runtime::ToXml for {path}::{rust}{args} {{\n\
+         fn xml_type_name(&self) -> &'static str {{ \"{spec}\" }}\n\
+         fn write_xml(&self, w: &mut crate::xml::runtime::XmlWriter, tag: &str, declared: Option<&str>) -> Result<(), crate::xml::runtime::XmlError> {{\n\
+         let mut __attrs: Vec<(&str, String)> = Vec::new();\n\
+         if let Some(d) = declared {{ if d != \"{spec}\" {{ __attrs.push((\"xsi:type\", \"{spec}\".to_string())); }} }}\n"
+    );
+    let (attrs, mut elems): (Vec<String>, Vec<String>) = if xsd.types.contains_key(spec) {
+        let (a, e) = xsd.flattened(spec);
+        (
+            a.iter().map(|x| x.name.clone()).collect(),
+            e.iter().map(|x| x.name.clone()).collect(),
+        )
+    } else {
+        (
+            Vec::new(),
+            fields.iter().map(|f| f.wire_name.clone()).collect(),
+        )
+    };
+    for f in bmm_only_fields(spec, fields, xsd) {
+        elems.push(f.wire_name.clone());
+    }
+    // A validated class's fields are `pub(crate)` (the construction-door
+    // scheme), so this codec — a different crate — reads them through the
+    // emitted accessor.
+    let validated = construction::is_validated(spec);
+    for aname in &attrs {
+        match by_wire.get(aname.as_str()) {
+            Some(f) => emit_write_attr(b, f, validated),
+            None => unmatched.push((spec.to_owned(), aname.clone())),
+        }
+    }
+    b.push_str("let mut __e = quick_xml::events::BytesStart::new(tag);\n");
+    b.push_str("for (k, v) in &__attrs { __e.push_attribute((*k, v.as_str())); }\n");
+    b.push_str("w.write_start(__e)?;\n");
+    for ename in &elems {
+        match by_wire.get(ename.as_str()) {
+            Some(f) => emit_write_field(b, f, validated),
+            None => unmatched.push((spec.to_owned(), ename.clone())),
+        }
+    }
+    b.push_str("w.write_end(tag)?;\nOk(())\n}\n}\n\n");
+}
+
+/// Pushes one XSD attribute onto the start tag's attribute list.
+fn emit_write_attr(b: &mut String, f: &XmlField, validated: bool) {
+    let read = if validated {
+        format!("{}()", f.rust_name)
+    } else {
+        f.rust_name.clone()
+    };
+    let wire = &f.wire_name;
+    if f.optional {
+        let _ = writeln!(
+            b,
+            "if let Some(v) = &self.{read} {{ __attrs.push((\"{wire}\", v.to_string())); }}"
+        );
+    } else {
+        let _ = writeln!(b, "__attrs.push((\"{wire}\", self.{read}.to_string()));");
+    }
+}
+
 fn emit_write_field(b: &mut String, f: &XmlField, validated: bool) {
     // A validated class reads its `pub(crate)` fields through the emitted
     // accessor (see the construction-door scheme in `plan::construction`).
@@ -424,32 +437,7 @@ fn emit_write_field(b: &mut String, f: &XmlField, validated: bool) {
     // `<name id="key">value</name>` wire shape; only the map container differs,
     // and both iterate as `(k, v)` here.
     if f.target == "Hash" || f.target == "OrderedDict" {
-        let rust = accessor(&f.rust_name);
-        let (name, rust) = (&f.wire_name, &rust);
-        if f.map_value.as_deref() == Some("String") {
-            // `Hash<String, String>` → repeated `<name id="key">value</name>`
-            // (the openEHR `StringDictionaryItem` shape).
-            if f.optional {
-                let _ = writeln!(
-                    b,
-                    "if let Some(m) = &self.{rust} {{ for (k, v) in m {{ w.write_kv_element(\"{name}\", k, v)?; }} }}"
-                );
-            } else {
-                let _ = writeln!(
-                    b,
-                    "for (k, v) in &self.{rust} {{ w.write_kv_element(\"{name}\", k, v)?; }}"
-                );
-            }
-        } else {
-            // `Hash<String, ComplexType>` (translations, RESOURCE_ANNOTATIONS):
-            // archetype-resource metadata serialized via ADL/AOM, off the RM
-            // canonical-XML wire; its RM-XML shape is not spec-defined here.
-            let _ = writeln!(
-                b,
-                "// NOTE: Hash<String, {}> field `{rust}` is off the RM canonical-XML wire (resource metadata); not serialized.",
-                f.map_value.as_deref().unwrap_or("?")
-            );
-        }
+        emit_write_map_field(b, f, &accessor(&f.rust_name));
         return;
     }
     let rust = accessor(&f.rust_name);
@@ -483,6 +471,35 @@ fn emit_write_field(b: &mut String, f: &XmlField, validated: bool) {
     }
 }
 
+/// Emits the write half of a map-typed field.
+///
+/// `Hash<String, String>` writes repeated `<name id="key">value</name>` (the
+/// openEHR `StringDictionaryItem` shape). A complex map value (translations,
+/// `RESOURCE_ANNOTATIONS`) is archetype-resource metadata serialized via
+/// ADL/AOM, off the RM canonical-XML wire, so it is not serialized at all.
+fn emit_write_map_field(b: &mut String, f: &XmlField, rust: &str) {
+    let name = &f.wire_name;
+    if f.map_value.as_deref() != Some("String") {
+        let _ = writeln!(
+            b,
+            "// NOTE: Hash<String, {}> field `{rust}` is off the RM canonical-XML wire (resource metadata); not serialized.",
+            f.map_value.as_deref().unwrap_or("?")
+        );
+        return;
+    }
+    if f.optional {
+        let _ = writeln!(
+            b,
+            "if let Some(m) = &self.{rust} {{ for (k, v) in m {{ w.write_kv_element(\"{name}\", k, v)?; }} }}"
+        );
+    } else {
+        let _ = writeln!(
+            b,
+            "for (k, v) in &self.{rust} {{ w.write_kv_element(\"{name}\", k, v)?; }}"
+        );
+    }
+}
+
 // ── deserialization ─────────────────────────────────────────────────────────
 
 /// Emit `impl FromXml` for one [`XmlType`]. Public so the OPT emitter
@@ -501,193 +518,8 @@ pub(crate) fn emit_from_xml(
             generics,
             fields,
         } => {
-            let (hdr, args) = generic_header(generics, "crate::xml::runtime::FromXml");
-            let attrs = attr_names(spec, xsd);
-            let is_attr = |f: &XmlField| attrs.contains(&f.wire_name);
-            // `Hash<String, String>` / `OrderedDict` are parsed inline
-            // (StringDictionaryItem); `Hash<String, ComplexType>` is off-wire and
-            // defaulted. `OrderedDict` (OPT `opt14`) accumulates into an
-            // order-preserving `IndexMap`; `Hash` (RM) into a `BTreeMap`.
-            let is_str_hash = |f: &XmlField| {
-                (f.target == "Hash" || f.target == "OrderedDict")
-                    && f.map_value.as_deref() == Some("String")
-            };
-            let is_cplx_hash =
-                |f: &XmlField| f.target == "Hash" && f.map_value.as_deref() != Some("String");
-            let _ = write!(
-                b,
-                "impl{hdr} crate::xml::runtime::FromXml for {path}::{rust}{args} {{\n\
-                 fn from_xml(reader: &mut crate::xml::runtime::XmlReader, start: &crate::xml::runtime::StartTag) -> Result<Self, crate::xml::runtime::XmlError> {{\n"
-            );
-            // Accumulators for element fields. Types are intentionally left to
-            // inference — each `__x` is pinned by its construction site below
-            // (`field: __x…`), so boxing and type overrides resolve without
-            // naming (and repeating the import of) the field type here.
-            for f in fields.iter().filter(|f| !is_attr(f) && !is_cplx_hash(f)) {
-                let var = acc_var(&f.rust_name);
-                if is_str_hash(f) {
-                    if f.target == "OrderedDict" {
-                        let _ = writeln!(b, "let mut {var} = indexmap::IndexMap::new();");
-                    } else {
-                        let _ = writeln!(b, "let mut {var} = std::collections::BTreeMap::new();");
-                    }
-                } else if f.multiple {
-                    let _ = writeln!(b, "let mut {var} = Vec::new();");
-                } else {
-                    let _ = writeln!(b, "let mut {var} = None;");
-                }
-            }
-            b.push_str("loop { match reader.read()? {\n");
-            b.push_str("crate::xml::runtime::XmlEvent::Start(__c) => match __c.name.as_str() {\n");
-            for f in fields.iter().filter(|f| !is_attr(f) && !is_cplx_hash(f)) {
-                let var = acc_var(&f.rust_name);
-                if is_str_hash(f) {
-                    // StringDictionaryItem: `<name id="key">value</name>`.
-                    let _ = writeln!(
-                        b,
-                        "\"{}\" => {{ let __k = __c.attr(\"id\").unwrap_or(\"\").to_string(); let __v: String = crate::xml::runtime::FromXml::from_xml(reader, &__c)?; {var}.insert(__k, __v); }}",
-                        f.wire_name
-                    );
-                } else if f.multiple {
-                    let _ = writeln!(
-                        b,
-                        "\"{}\" => {{ {var}.push(crate::xml::runtime::FromXml::from_xml(reader, &__c)?); }}",
-                        f.wire_name
-                    );
-                } else {
-                    let _ = writeln!(
-                        b,
-                        "\"{}\" => {{ {var} = Some(crate::xml::runtime::FromXml::from_xml(reader, &__c)?); }}",
-                        f.wire_name
-                    );
-                }
-            }
-            b.push_str("_ => reader.skip_element()?,\n},\n");
-            b.push_str("crate::xml::runtime::XmlEvent::End => break,\n");
-            b.push_str("crate::xml::runtime::XmlEvent::Text(_) => {}\n");
-            b.push_str("crate::xml::runtime::XmlEvent::Eof => return Err(crate::xml::runtime::XmlError::Parse(\"unexpected EOF\".into())),\n");
-            b.push_str("} }\n");
-            // Construct. Each field's value expression is built first, so a
-            // class with a validating construction door (`plan::construction`)
-            // can hand the same expressions to its constructor instead of a
-            // struct literal — one read path, one grammar.
-            let mut values: Vec<(String, String)> = Vec::new();
-            for f in fields {
-                let fname = &f.rust_name;
-                let expr = if is_attr(f) {
-                    if f.optional {
-                        format!("start.attr(\"{}\").map(|s| s.to_string())", f.wire_name)
-                    } else {
-                        format!(
-                            "start.attr(\"{}\").ok_or_else(|| crate::xml::runtime::XmlError::Parse(\"missing attribute {}\".into()))?.to_string()",
-                            f.wire_name, f.wire_name
-                        )
-                    }
-                } else if is_cplx_hash(f) {
-                    "Default::default()".to_owned()
-                } else if is_str_hash(f) {
-                    let var = acc_var(fname);
-                    if f.optional {
-                        format!("if {var}.is_empty() {{ None }} else {{ Some({var}) }}")
-                    } else {
-                        var
-                    }
-                } else if f.multiple && f.optional {
-                    // Zero occurrences of a repeated element is indistinguishable
-                    // from the attribute's absence in XML, so it reads back as
-                    // `None` (see `emit_write_field`). A present-implies-non-empty
-                    // field (`Option<NonEmptyVec<T>>`, #1730) builds through the
-                    // fallible constructor — the branch guarantees non-emptiness,
-                    // so the error arm is unreachable but honest.
-                    let var = acc_var(fname);
-                    if f.nonempty {
-                        format!(
-                            "if {var}.is_empty() {{ None }} else {{ Some(openehr_base::containers::NonEmptyVec::new({var}).map_err(|__e| crate::xml::runtime::XmlError::Parse(::std::format!(\"element {}: {{__e}}\", ).into()))?) }}",
-                            f.wire_name
-                        )
-                    } else {
-                        format!("if {var}.is_empty() {{ None }} else {{ Some({var}) }}")
-                    }
-                } else if f.nonempty {
-                    // A `1..*` container goes through its own constructor, so a
-                    // document with zero occurrences is refused at parse.
-                    format!(
-                        "openehr_base::containers::NonEmptyVec::new({}).map_err(|__e| crate::xml::runtime::XmlError::Parse(::std::format!(\"element {}: {{__e}}\", ).into()))?",
-                        acc_var(fname),
-                        f.wire_name
-                    )
-                } else if f.multiple || f.optional {
-                    acc_var(fname)
-                } else if let Some(default) = &f.default {
-                    // Mandatory field archie omits at its default (Interval flags):
-                    // use the default when the element is absent.
-                    format!("{}.unwrap_or({default})", acc_var(fname))
-                } else {
-                    format!(
-                        "{}.ok_or_else(|| crate::xml::runtime::XmlError::Parse(\"missing element {}\".into()))?",
-                        acc_var(fname),
-                        f.wire_name
-                    )
-                };
-                values.push((fname.clone(), expr));
-            }
-            if let Some((params, fallible)) = construction::validated_ctor(spec) {
-                {
-                    assert_eq!(
-                        params.len(),
-                        values.len(),
-                        "construction map declares {} constructor parameter(s) for {spec}, \
-                         but the XML field view has {} field(s)",
-                        params.len(),
-                        values.len()
-                    );
-                    // Bind each read BY FIELD NAME to a local of the
-                    // constructor's DECLARED parameter type (no inference
-                    // ambiguity), calling in the table's declared order — one
-                    // canonical door signature across generations whose BMMs
-                    // declare the fields in different orders.
-                    let mut names = Vec::new();
-                    for (i, (param, ty)) in params.iter().enumerate() {
-                        let Some((_, expr)) = values.iter().find(|(fname, _)| fname == param)
-                        else {
-                            panic!(
-                                "construction map parameter {param:?} of {spec} names no \
-                                 XML field (fields: {:?})",
-                                values.iter().map(|(f, _)| f).collect::<Vec<_>>()
-                            )
-                        };
-                        let ty = if let Some(env) = door_env {
-                            door_param(env, ty)
-                        } else {
-                            assert!(
-                                !ty.starts_with('@'),
-                                "door class {spec} with a @-typed parameter emitted without \
-                                 a door environment (an emit-opt closure generating a door \
-                                 class is a table/closure bug)"
-                            );
-                            (*ty).to_owned()
-                        };
-                        let _ = writeln!(b, "let __a{i}: {ty} = {expr};");
-                        names.push(format!("__a{i}"));
-                    }
-                    let args = names.join(", ");
-                    if fallible {
-                        let _ = writeln!(
-                            b,
-                            "{path}::{rust}::new({args}).map_err(|__e| crate::xml::runtime::XmlError::Parse(::std::format!(\"{spec}: {{__e}}\").into()))"
-                        );
-                    } else {
-                        let _ = writeln!(b, "Ok({path}::{rust}::new({args}))");
-                    }
-                }
-            } else {
-                let _ = writeln!(b, "Ok({path}::{rust} {{");
-                for (fname, expr) in &values {
-                    let _ = writeln!(b, "{fname}: {expr},");
-                }
-                b.push_str("})\n");
-            }
-            b.push_str("}\n}\n\n");
+            let target = XmlTarget { spec, rust, path };
+            emit_struct_from_xml(b, &target, generics, fields, xsd, door_env);
         }
         XmlType::Enum {
             spec,
@@ -696,42 +528,8 @@ pub(crate) fn emit_from_xml(
             dispatch,
             ..
         } => {
-            let (hdr, args) = generic_header(generics, "crate::xml::runtime::FromXml");
-            let self_ident = dispatch
-                .iter()
-                .find(|(x, _)| x == spec)
-                .map(|(_, i)| i.clone());
-            let _ = write!(
-                b,
-                "impl{hdr} crate::xml::runtime::FromXml for {path}::{rust}{args} {{\n\
-                 fn from_xml(reader: &mut crate::xml::runtime::XmlReader, start: &crate::xml::runtime::StartTag) -> Result<Self, crate::xml::runtime::XmlError> {{\n\
-                 match start.xsi_type() {{\n"
-            );
-            for (xsi, ident) in dispatch {
-                let _ = writeln!(
-                    b,
-                    "Some(\"{xsi}\") => Ok({path}::{rust}::{ident}(crate::xml::runtime::FromXml::from_xml(reader, start)?)),"
-                );
-            }
-            match self_ident {
-                Some(ident) => {
-                    let _ = writeln!(
-                        b,
-                        "None => Ok({path}::{rust}::{ident}(crate::xml::runtime::FromXml::from_xml(reader, start)?)),"
-                    );
-                }
-                None => {
-                    let _ = writeln!(
-                        b,
-                        "None => Err(crate::xml::runtime::XmlError::Parse(\"{rust}: missing xsi:type\".into())),"
-                    );
-                }
-            }
-            let _ = writeln!(
-                b,
-                "Some(other) => Err(crate::xml::runtime::XmlError::Parse(format!(\"{rust}: unknown xsi:type {{other}}\"))),"
-            );
-            b.push_str("}\n}\n}\n\n");
+            let target = XmlTarget { spec, rust, path };
+            emit_enum_from_xml(b, &target, generics, dispatch);
         }
         XmlType::Newtype { rust, .. } => {
             let _ = write!(
@@ -765,4 +563,352 @@ pub(crate) fn emit_from_xml(
             );
         }
     }
+}
+
+/// The item one `FromXml` impl is emitted for: its openEHR spec name, its Rust
+/// identifier, and the module path the identifier lives at.
+struct XmlTarget<'a> {
+    spec: &'a str,
+    rust: &'a str,
+    path: &'a str,
+}
+
+/// How one field of a struct is read back off the wire.
+enum ReadShape {
+    /// An XSD attribute on the type's own start tag.
+    Attribute,
+    /// `Hash<String, ComplexType>` — off-wire, so it reads back as the default.
+    ComplexHash,
+    /// `Hash<String, String>` / `OrderedDict`, parsed inline as the openEHR
+    /// `StringDictionaryItem` shape. `OrderedDict` (OPT `opt14`) accumulates
+    /// into an order-preserving `IndexMap`, `Hash` (RM) into a `BTreeMap`.
+    StringHash { ordered: bool },
+    /// A repeated child element.
+    Multiple,
+    /// A single child element.
+    Single,
+}
+
+/// Classifies how one field of an XSD-covered struct is read back.
+fn read_shape(f: &XmlField, attrs: &BTreeSet<String>) -> ReadShape {
+    if attrs.contains(&f.wire_name) {
+        return ReadShape::Attribute;
+    }
+    let is_dict = f.target == "Hash" || f.target == "OrderedDict";
+    if is_dict && f.map_value.as_deref() == Some("String") {
+        return ReadShape::StringHash {
+            ordered: f.target == "OrderedDict",
+        };
+    }
+    if f.target == "Hash" {
+        return ReadShape::ComplexHash;
+    }
+    if f.multiple {
+        return ReadShape::Multiple;
+    }
+    ReadShape::Single
+}
+
+/// Emits `impl FromXml` for a struct: accumulators, the child-element read
+/// loop, and the construction that consumes them.
+fn emit_struct_from_xml(
+    b: &mut String,
+    target: &XmlTarget<'_>,
+    generics: &[String],
+    fields: &[XmlField],
+    xsd: &XsdModel,
+    door_env: Option<&XmlSchema<'_>>,
+) {
+    let (hdr, args) = generic_header(generics, "crate::xml::runtime::FromXml");
+    let attrs = attr_names(target.spec, xsd);
+    let (path, rust) = (target.path, target.rust);
+    let _ = write!(
+        b,
+        "impl{hdr} crate::xml::runtime::FromXml for {path}::{rust}{args} {{\n\
+         fn from_xml(reader: &mut crate::xml::runtime::XmlReader, start: &crate::xml::runtime::StartTag) -> Result<Self, crate::xml::runtime::XmlError> {{\n"
+    );
+    emit_read_accumulators(b, fields, &attrs);
+    emit_read_loop(b, fields, &attrs);
+    // Each field's value expression is built first, so a class with a
+    // validating construction door (`plan::construction`) can hand the same
+    // expressions to its constructor instead of a struct literal — one read
+    // path, one grammar.
+    let values: Vec<(String, String)> = fields
+        .iter()
+        .map(|f| (f.rust_name.clone(), read_expr(f, &attrs)))
+        .collect();
+    emit_read_construction(b, target, &values, door_env);
+    b.push_str("}\n}\n\n");
+}
+
+/// Declares one accumulator local per element field.
+///
+/// Their types are deliberately left to inference — each `__x` is pinned by
+/// its construction site (`field: __x…`), so boxing and type overrides resolve
+/// without naming (and re-importing) the field type here.
+fn emit_read_accumulators(b: &mut String, fields: &[XmlField], attrs: &BTreeSet<String>) {
+    for f in fields {
+        let var = acc_var(&f.rust_name);
+        match read_shape(f, attrs) {
+            ReadShape::Attribute | ReadShape::ComplexHash => {}
+            ReadShape::StringHash { ordered: true } => {
+                let _ = writeln!(b, "let mut {var} = indexmap::IndexMap::new();");
+            }
+            ReadShape::StringHash { ordered: false } => {
+                let _ = writeln!(b, "let mut {var} = std::collections::BTreeMap::new();");
+            }
+            ReadShape::Multiple => {
+                let _ = writeln!(b, "let mut {var} = Vec::new();");
+            }
+            ReadShape::Single => {
+                let _ = writeln!(b, "let mut {var} = None;");
+            }
+        }
+    }
+}
+
+/// Emits the event loop that dispatches each child element into its
+/// accumulator, skipping elements the type does not declare.
+fn emit_read_loop(b: &mut String, fields: &[XmlField], attrs: &BTreeSet<String>) {
+    b.push_str("loop { match reader.read()? {\n");
+    b.push_str("crate::xml::runtime::XmlEvent::Start(__c) => match __c.name.as_str() {\n");
+    for f in fields {
+        let var = acc_var(&f.rust_name);
+        let wire = &f.wire_name;
+        match read_shape(f, attrs) {
+            ReadShape::Attribute | ReadShape::ComplexHash => {}
+            // StringDictionaryItem: `<name id="key">value</name>`.
+            ReadShape::StringHash { .. } => {
+                let _ = writeln!(
+                    b,
+                    "\"{wire}\" => {{ let __k = __c.attr(\"id\").unwrap_or(\"\").to_string(); let __v: String = crate::xml::runtime::FromXml::from_xml(reader, &__c)?; {var}.insert(__k, __v); }}"
+                );
+            }
+            ReadShape::Multiple => {
+                let _ = writeln!(
+                    b,
+                    "\"{wire}\" => {{ {var}.push(crate::xml::runtime::FromXml::from_xml(reader, &__c)?); }}"
+                );
+            }
+            ReadShape::Single => {
+                let _ = writeln!(
+                    b,
+                    "\"{wire}\" => {{ {var} = Some(crate::xml::runtime::FromXml::from_xml(reader, &__c)?); }}"
+                );
+            }
+        }
+    }
+    b.push_str("_ => reader.skip_element()?,\n},\n");
+    b.push_str("crate::xml::runtime::XmlEvent::End => break,\n");
+    b.push_str("crate::xml::runtime::XmlEvent::Text(_) => {}\n");
+    b.push_str("crate::xml::runtime::XmlEvent::Eof => return Err(crate::xml::runtime::XmlError::Parse(\"unexpected EOF\".into())),\n");
+    b.push_str("} }\n");
+}
+
+/// The Rust expression that yields one field's value once the read loop has
+/// finished.
+fn read_expr(f: &XmlField, attrs: &BTreeSet<String>) -> String {
+    match read_shape(f, attrs) {
+        ReadShape::Attribute => attr_read_expr(f),
+        ReadShape::ComplexHash => "Default::default()".to_owned(),
+        ReadShape::StringHash { .. } => {
+            let var = acc_var(&f.rust_name);
+            if f.optional {
+                format!("if {var}.is_empty() {{ None }} else {{ Some({var}) }}")
+            } else {
+                var
+            }
+        }
+        ReadShape::Multiple | ReadShape::Single => element_read_expr(f),
+    }
+}
+
+/// The value expression for a field carried as an XSD attribute.
+fn attr_read_expr(f: &XmlField) -> String {
+    let wire = &f.wire_name;
+    if f.optional {
+        format!("start.attr(\"{wire}\").map(|s| s.to_string())")
+    } else {
+        format!(
+            "start.attr(\"{wire}\").ok_or_else(|| crate::xml::runtime::XmlError::Parse(\"missing attribute {wire}\".into()))?.to_string()"
+        )
+    }
+}
+
+/// The value expression for a field carried as one or more child elements.
+fn element_read_expr(f: &XmlField) -> String {
+    let var = acc_var(&f.rust_name);
+    let wire = &f.wire_name;
+    let nonempty_new = format!(
+        "openehr_base::containers::NonEmptyVec::new({var}).map_err(|__e| crate::xml::runtime::XmlError::Parse(::std::format!(\"element {wire}: {{__e}}\", ).into()))?"
+    );
+    if f.multiple && f.optional {
+        // Zero occurrences of a repeated element is indistinguishable from the
+        // attribute's absence in XML, so it reads back as `None` (see
+        // `emit_write_field`). A present-implies-non-empty field
+        // (`Option<NonEmptyVec<T>>`, #1730) builds through the fallible
+        // constructor — the branch guarantees non-emptiness, so the error arm
+        // is unreachable but honest.
+        let some = if f.nonempty {
+            nonempty_new
+        } else {
+            var.clone()
+        };
+        return format!("if {var}.is_empty() {{ None }} else {{ Some({some}) }}");
+    }
+    if f.nonempty {
+        // A `1..*` container goes through its own constructor, so a document
+        // with zero occurrences is refused at parse.
+        return nonempty_new;
+    }
+    if f.multiple || f.optional {
+        return var;
+    }
+    if let Some(default) = &f.default {
+        // Mandatory field archie omits at its default (Interval flags): use the
+        // default when the element is absent.
+        return format!("{var}.unwrap_or({default})");
+    }
+    format!(
+        "{var}.ok_or_else(|| crate::xml::runtime::XmlError::Parse(\"missing element {wire}\".into()))?"
+    )
+}
+
+/// Emits the construction of the read value — through the class's validating
+/// constructor where the construction map declares one, otherwise a struct
+/// literal.
+fn emit_read_construction(
+    b: &mut String,
+    target: &XmlTarget<'_>,
+    values: &[(String, String)],
+    door_env: Option<&XmlSchema<'_>>,
+) {
+    let (path, rust) = (target.path, target.rust);
+    let Some((params, fallible)) = construction::validated_ctor(target.spec) else {
+        let _ = writeln!(b, "Ok({path}::{rust} {{");
+        for (fname, expr) in values {
+            let _ = writeln!(b, "{fname}: {expr},");
+        }
+        b.push_str("})\n");
+        return;
+    };
+    let args = emit_ctor_bindings(b, target, params, values, door_env);
+    if fallible {
+        let _ = writeln!(
+            b,
+            "{path}::{rust}::new({args}).map_err(|__e| crate::xml::runtime::XmlError::Parse(::std::format!(\"{}: {{__e}}\").into()))",
+            target.spec
+        );
+    } else {
+        let _ = writeln!(b, "Ok({path}::{rust}::new({args}))");
+    }
+}
+
+/// Binds each read value to a local of the constructor's DECLARED parameter
+/// type, in the construction map's declared order, and returns the argument
+/// list for the call.
+///
+/// The binding is BY FIELD NAME, not by position: it keeps one canonical door
+/// signature across generations whose BMMs declare the fields in different
+/// orders, and it leaves no inference ambiguity at the call.
+///
+/// # Panics
+/// If the construction map's parameter list and the XML field view disagree —
+/// either in length, or on a parameter naming no field. Both are table bugs.
+fn emit_ctor_bindings(
+    b: &mut String,
+    target: &XmlTarget<'_>,
+    params: &[(&str, &str)],
+    values: &[(String, String)],
+    door_env: Option<&XmlSchema<'_>>,
+) -> String {
+    let spec = target.spec;
+    assert_eq!(
+        params.len(),
+        values.len(),
+        "construction map declares {} constructor parameter(s) for {spec}, \
+         but the XML field view has {} field(s)",
+        params.len(),
+        values.len()
+    );
+    let mut names = Vec::new();
+    for (i, (param, ty)) in params.iter().enumerate() {
+        let Some((_, expr)) = values.iter().find(|(fname, _)| fname == param) else {
+            panic!(
+                "construction map parameter {param:?} of {spec} names no XML field \
+                 (fields: {:?})",
+                values.iter().map(|(f, _)| f).collect::<Vec<_>>()
+            )
+        };
+        let ty = door_param_type(door_env, ty, spec);
+        let _ = writeln!(b, "let __a{i}: {ty} = {expr};");
+        names.push(format!("__a{i}"));
+    }
+    names.join(", ")
+}
+
+/// Resolves one constructor parameter's declared type against the door
+/// environment.
+///
+/// # Panics
+/// If a `@`-typed (class-resolved) parameter is emitted without a door
+/// environment — a table or closure bug in the emit-opt closure.
+fn door_param_type(door_env: Option<&XmlSchema<'_>>, ty: &str, spec: &str) -> String {
+    let Some(env) = door_env else {
+        assert!(
+            !ty.starts_with('@'),
+            "door class {spec} with a @-typed parameter emitted without a door \
+             environment (an emit-opt closure generating a door class is a \
+             table/closure bug)"
+        );
+        return ty.to_owned();
+    };
+    door_param(env, ty)
+}
+
+/// Emits `impl FromXml` for an untagged enum: the `xsi:type` dispatch into the
+/// variant that owns each concrete descendant.
+fn emit_enum_from_xml(
+    b: &mut String,
+    target: &XmlTarget<'_>,
+    generics: &[String],
+    dispatch: &[(String, String)],
+) {
+    let (hdr, args) = generic_header(generics, "crate::xml::runtime::FromXml");
+    let (path, rust, spec) = (target.path, target.rust, target.spec);
+    let self_ident = dispatch
+        .iter()
+        .find(|(x, _)| x == spec)
+        .map(|(_, i)| i.clone());
+    let _ = write!(
+        b,
+        "impl{hdr} crate::xml::runtime::FromXml for {path}::{rust}{args} {{\n\
+         fn from_xml(reader: &mut crate::xml::runtime::XmlReader, start: &crate::xml::runtime::StartTag) -> Result<Self, crate::xml::runtime::XmlError> {{\n\
+         match start.xsi_type() {{\n"
+    );
+    for (xsi, ident) in dispatch {
+        let _ = writeln!(
+            b,
+            "Some(\"{xsi}\") => Ok({path}::{rust}::{ident}(crate::xml::runtime::FromXml::from_xml(reader, start)?)),"
+        );
+    }
+    match self_ident {
+        Some(ident) => {
+            let _ = writeln!(
+                b,
+                "None => Ok({path}::{rust}::{ident}(crate::xml::runtime::FromXml::from_xml(reader, start)?)),"
+            );
+        }
+        None => {
+            let _ = writeln!(
+                b,
+                "None => Err(crate::xml::runtime::XmlError::Parse(\"{rust}: missing xsi:type\".into())),"
+            );
+        }
+    }
+    let _ = writeln!(
+        b,
+        "Some(other) => Err(crate::xml::runtime::XmlError::Parse(format!(\"{rust}: unknown xsi:type {{other}}\"))),"
+    );
+    b.push_str("}\n}\n}\n\n");
 }

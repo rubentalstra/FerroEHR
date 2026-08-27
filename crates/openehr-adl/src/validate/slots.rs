@@ -74,42 +74,15 @@ impl<'a> ParentScan<'a> {
             // A narrowed / closed `ARCHETYPE_SLOT` (`master04.5` §`ARCHETYPE_SLOT`
             // VDSSID L462 / VDSSP L468 / VDSSC L471).
             CObject::ArchetypeSlot(child_slot) => {
-                // VDSSID: a redefining slot must have an identical node id.
-                if child_slot.node_id != parent_slot.node_id {
-                    push_issue(
-                        &mut self.issues,
-                        ValidationCode::Vdssid,
-                        format!(
-                            "specialised slot node id {:?} is not identical to the parent slot id {:?}",
-                            child_slot.node_id, parent_slot.node_id
-                        ),
-                        path,
-                    );
-                }
-                // VDSSP: the parent slot must not already be closed.
-                if parent_slot.is_closed {
-                    push_issue(
-                        &mut self.issues,
-                        ValidationCode::Vdssp,
-                        "cannot specialise a slot that is already closed in the flat parent",
-                        path,
-                    );
-                }
-                // VDSSC: a specialised slot may be closed OR narrowed, not both.
-                //
-                // NOTE: the vendored `masterAppB` slot grammar admits `closed`
-                // XOR a `matches` body, so this guard can only fire for AOM
-                // input that was not parsed from ADL2 source.
-                let narrows = !child_slot.includes.as_ref().is_none_or(Vec::is_empty)
-                    || !child_slot.excludes.as_ref().is_none_or(Vec::is_empty);
-                if child_slot.is_closed && narrows {
-                    push_issue(
-                        &mut self.issues,
-                        ValidationCode::Vdssc,
-                        "a specialised slot cannot be both closed and narrowed",
-                        path,
-                    );
-                }
+                self.check_slot_identity(child_slot, parent_slot, path);
+                // VDSSM: a specialised slot must narrow the parent slot or be
+                // closed (`master04.5` §`ARCHETYPE_SLOT`), i.e. be a PROPER subset
+                // of its admitted-archetype set. Regex-language subset is
+                // undecidable, so three decidable checks stand in: no
+                // `includes`/`excludes` is no narrowing; one structurally identical
+                // to the parent's is a restatement; and a child `include` naming a
+                // literal archetype id the parent does not admit is a widening.
+                let narrows = slot_narrows(child_slot);
                 // VDSSM: a specialised slot must narrow the parent slot or be
                 // closed (`master04.5` §`ARCHETYPE_SLOT`), i.e. be a PROPER subset
                 // of its admitted-archetype set. Regex-language subset is
@@ -151,6 +124,48 @@ impl<'a> ParentScan<'a> {
                 }
             }
             _ => {}
+        }
+    }
+
+    /// The identity and closure rules of a specialised slot (`master04.5`
+    /// §`ARCHETYPE_SLOT`): VDSSID (identical node id), VDSSP (the parent slot
+    /// must not already be closed), VDSSC (closed OR narrowed, never both).
+    ///
+    /// NOTE: the vendored `masterAppB` slot grammar admits `closed` XOR a
+    /// `matches` body, so the VDSSC guard can only fire for AOM input that was
+    /// not parsed from ADL2 source.
+    fn check_slot_identity(
+        &mut self,
+        child_slot: &ArchetypeSlot,
+        parent_slot: &ArchetypeSlot,
+        path: &str,
+    ) {
+        if child_slot.node_id != parent_slot.node_id {
+            push_issue(
+                &mut self.issues,
+                ValidationCode::Vdssid,
+                format!(
+                    "specialised slot node id {:?} is not identical to the parent slot id {:?}",
+                    child_slot.node_id, parent_slot.node_id
+                ),
+                path,
+            );
+        }
+        if parent_slot.is_closed {
+            push_issue(
+                &mut self.issues,
+                ValidationCode::Vdssp,
+                "cannot specialise a slot that is already closed in the flat parent",
+                path,
+            );
+        }
+        if child_slot.is_closed && slot_narrows(child_slot) {
+            push_issue(
+                &mut self.issues,
+                ValidationCode::Vdssc,
+                "a specialised slot cannot be both closed and narrowed",
+                path,
+            );
         }
     }
 
@@ -221,6 +236,13 @@ impl<'a> ParentScan<'a> {
 /// An assertion the printer refuses has no comparison key, so the two lists are
 /// reported as different: VDSSM fires only on a proven restatement, and an
 /// unrenderable assertion proves nothing.
+/// Whether a slot states any narrowing at all — an `includes` or `excludes`
+/// assertion.
+fn slot_narrows(slot: &ArchetypeSlot) -> bool {
+    !slot.includes.as_ref().is_none_or(Vec::is_empty)
+        || !slot.excludes.as_ref().is_none_or(Vec::is_empty)
+}
+
 fn slot_assertions_equal(a: &[Assertion], b: &[Assertion]) -> bool {
     let rendered = |list: &[Assertion]| {
         list.iter()

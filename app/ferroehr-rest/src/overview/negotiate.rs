@@ -169,10 +169,32 @@ pub(crate) fn resolve_accept(
     if accept.trim().is_empty() {
         return Some(default);
     }
-    // ONE pass over the `Accept` ranges: each range is tokenized and
-    // q-parsed once, and every allowed format aggregates its best
-    // `(quality, specificity)` from that same pass (highest q, then
-    // specificity — the per-format aggregation `match_quality` describes).
+    let per_format = rank_allowed_formats(accept, allowed);
+    let mut best: Option<(WireFormat, f64, u8)> = None;
+    for (slot, &fmt) in per_format.iter().zip(allowed) {
+        let Some((q, spec)) = *slot else {
+            continue;
+        };
+        if q <= 0.0 {
+            // `;q=0` explicitly rejects the format (RFC 9110 §12.5.1).
+            continue;
+        }
+        let candidate = (fmt, q, spec);
+        best = Some(match best {
+            None => candidate,
+            Some(current) => choose(current, candidate, default),
+        });
+    }
+    best.map(|(fmt, _, _)| fmt)
+}
+
+/// The best `(quality, specificity)` each allowed format reaches across the
+/// `Accept` ranges, positionally aligned to `allowed`.
+///
+/// ONE pass over the ranges: each is tokenized and q-parsed once, and every
+/// allowed format aggregates its best pair from that same pass — highest q,
+/// then specificity.
+fn rank_allowed_formats(accept: &str, allowed: &[WireFormat]) -> Vec<Option<(f64, u8)>> {
     let mut per_format: Vec<Option<(f64, u8)>> = vec![None; allowed.len()];
     for range in accept.split(',') {
         let range = range.trim();
@@ -192,22 +214,7 @@ pub(crate) fn resolve_accept(
             });
         }
     }
-    let mut best: Option<(WireFormat, f64, u8)> = None;
-    for (slot, &fmt) in per_format.iter().zip(allowed) {
-        let Some((q, spec)) = *slot else {
-            continue;
-        };
-        if q <= 0.0 {
-            // `;q=0` explicitly rejects the format (RFC 9110 §12.5.1).
-            continue;
-        }
-        let candidate = (fmt, q, spec);
-        best = Some(match best {
-            None => candidate,
-            Some(current) => choose(current, candidate, default),
-        });
-    }
-    best.map(|(fmt, _, _)| fmt)
+    per_format
 }
 
 /// The specificity with which `token` matches `fmt` (compared

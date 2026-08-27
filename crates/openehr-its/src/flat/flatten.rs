@@ -146,49 +146,53 @@ fn walk(node: &WebTemplateNode, rm: &Value, out: &mut SimNode) {
     map::emit_rm_attrs(rm, base_type(&node.rm_type), out);
 
     for child in &node.children {
-        if covered_by_ctx(node, child) {
-            continue;
-        }
-        let rel = rmpath::relative(&node.aql_path, &child.aql_path);
-        // Polymorphic choice alternatives share one aqlPath; emit only under
-        // the alternative whose rm type matches this value's `_type`. The
-        // filter must apply to EVERY member of a choice group — the first
-        // alternative carries no `alt_json_id`, so sharing an aqlPath with a
-        // sibling is the group marker.
-        let in_choice = child.alt_json_id.is_some()
-            || node
-                .children
-                .iter()
-                .any(|c| c.id != child.id && c.aql_path == child.aql_path);
-        let occurrences = occurrences_of(child, rm, &rel, in_choice);
-        if occurrences.is_empty() {
-            continue;
-        }
-        let repeating = child.max == -1 || child.max > 1;
-        if repeating {
-            out.children.entry(child.id.clone()).or_default().indexed = true;
-        }
-        for (i, occurrence) in occurrences.iter().enumerate() {
-            if occurrence
-                .value
-                .is_some_and(|v| is_default_entry_context(child, v))
-            {
-                continue;
-            }
-            let slot = out.place_mut(&child.id, u32::try_from(i).unwrap_or(u32::MAX));
-            if let Some(value) = occurrence.value {
-                walk(child, value, slot);
-            }
-            // The leaf's wrapping ELEMENT carries its own `_` attribute
-            // family (`master05 §ELEMENT`: `_uid`, `_null_flavour`,
-            // `_null_reason`, `_link:i`, `_feeder_audit`); the leaf walk
-            // above saw only the DV value, so surface the wrapper's here.
-            if let Some(element) = occurrence.element {
-                map::emit_rm_attrs(element, "ELEMENT", slot);
-            }
+        if !covered_by_ctx(node, child) {
+            walk_child(node, child, rm, out);
         }
     }
     emit_direct_rm_paths(node, rm, out);
+}
+
+/// Emits every occurrence of one template child under its simplified slot.
+///
+/// Polymorphic choice alternatives share one `aqlPath`, so an occurrence is
+/// emitted only under the alternative whose RM type matches the value's
+/// `_type`. That filter must apply to EVERY member of a choice group — the
+/// first alternative carries no `alt_json_id`, so sharing an `aqlPath` with a
+/// sibling is the group marker.
+fn walk_child(node: &WebTemplateNode, child: &WebTemplateNode, rm: &Value, out: &mut SimNode) {
+    let rel = rmpath::relative(&node.aql_path, &child.aql_path);
+    let in_choice = child.alt_json_id.is_some()
+        || node
+            .children
+            .iter()
+            .any(|c| c.id != child.id && c.aql_path == child.aql_path);
+    let occurrences = occurrences_of(child, rm, &rel, in_choice);
+    if occurrences.is_empty() {
+        return;
+    }
+    if child.max == -1 || child.max > 1 {
+        out.children.entry(child.id.clone()).or_default().indexed = true;
+    }
+    for (i, occurrence) in occurrences.iter().enumerate() {
+        if occurrence
+            .value
+            .is_some_and(|v| is_default_entry_context(child, v))
+        {
+            continue;
+        }
+        let slot = out.place_mut(&child.id, u32::try_from(i).unwrap_or(u32::MAX));
+        if let Some(value) = occurrence.value {
+            walk(child, value, slot);
+        }
+        // The leaf's wrapping ELEMENT carries its own `_` attribute family
+        // (`master05 §ELEMENT`: `_uid`, `_null_flavour`, `_null_reason`,
+        // `_link:i`, `_feeder_audit`); the leaf walk above saw only the DV
+        // value, so surface the wrapper's here.
+        if let Some(element) = occurrence.element {
+            map::emit_rm_attrs(element, "ELEMENT", slot);
+        }
+    }
 }
 
 /// One emitted occurrence of a template child: the RM value its relative path
@@ -312,73 +316,105 @@ fn attr_emitted(node: &WebTemplateNode, out: &SimNode, attr: &str) -> bool {
 /// `setting` are NOT emitted here — they surface through the `ctx/` vocabulary
 /// (master06; [`crate::flat::ctx`]) to avoid a duplicate encoding of the same datum.
 fn emit_direct_rm_paths(node: &WebTemplateNode, rm: &Value, out: &mut SimNode) {
-    let mut leaf = |name: &str, rm_type: &str, value: Option<&Value>| {
-        if attr_emitted(node, out, name) {
-            return;
-        }
-        if let Some(v) = value.filter(|v| !v.is_null()) {
-            map::emit_leaf(v, rm_type, None, out.occurrence_mut(name, None));
-        }
-    };
     match base_type(&node.rm_type) {
-        "ACTION" => {
-            leaf("time", "DV_DATE_TIME", rm.get("time"));
-            if !attr_emitted(node, out, "ism_transition")
-                && let Some(ism) = rm.get("ism_transition").filter(|v| !v.is_null())
-            {
-                emit_ism_transition(ism, out.occurrence_mut("ism_transition", None));
-            }
-        }
+        "ACTION" => emit_action_paths(node, rm, out),
         // master05 §ISM_TRANSITION: the three coded rows are addressable on the
         // transition node itself, so one the template leaves unconstrained is
-        // emitted here rather than lost (the `leaf` closure skips whatever the
+        // emitted here rather than lost ([`emit_direct_leaf`] skips whatever the
         // template-child walk already realized).
         "ISM_TRANSITION" => {
-            leaf("current_state", "DV_CODED_TEXT", rm.get("current_state"));
-            leaf("transition", "DV_CODED_TEXT", rm.get("transition"));
-            leaf("careflow_step", "DV_CODED_TEXT", rm.get("careflow_step"));
-        }
-        "INSTRUCTION" => leaf("narrative", "DV_TEXT", rm.get("narrative")),
-        "OBSERVATION" => {
-            // `history_origin` maps to the nested `data.origin` (master05
-            // §OBSERVATION); the HISTORY is compacted away, so `origin` is
-            // never a template leaf child — emit it unless the walk already did.
-            if !out.children.contains_key("history_origin")
-                && let Some(origin) = rm.pointer("/data/origin/value")
-            {
-                out.occurrence_mut("history_origin", None)
-                    .attrs
-                    .insert(String::new(), origin.clone());
+            for attr in ["current_state", "transition", "careflow_step"] {
+                emit_direct_leaf(node, out, attr, "DV_CODED_TEXT", rm.get(attr));
             }
         }
-        "ACTIVITY" => {
-            leaf("timing", "DV_PARSABLE", rm.get("timing"));
-            // `action_archetype_id` is the match-all `/.*/` when unset
-            // (master05 §ACTIVITY: "Will be set to /.*/ if not set explicit.");
-            // that default is re-synthesised on build, so emitting it would
-            // desync the round-trip — emit only an explicit non-default value.
-            if !attr_emitted(node, out, "action_archetype_id")
-                && let Some(aid) = rm.get("action_archetype_id").and_then(Value::as_str)
-                && aid != "/.*/"
-            {
-                out.occurrence_mut("action_archetype_id", None)
-                    .attrs
-                    .insert(String::new(), Value::String(aid.to_owned()));
-            }
+        "INSTRUCTION" => {
+            emit_direct_leaf(node, out, "narrative", "DV_TEXT", rm.get("narrative"));
         }
-        "POINT_EVENT" | "EVENT" => leaf("time", "DV_DATE_TIME", rm.get("time")),
-        "INTERVAL_EVENT" => {
-            leaf("time", "DV_DATE_TIME", rm.get("time"));
-            leaf("width", "DV_DURATION", rm.get("width"));
-            leaf("math_function", "DV_CODED_TEXT", rm.get("math_function"));
-            // master05 §INTERVAL_EVENT: `|sample_count` (INTEGER) is a datum
-            // suffix on the event node itself, not a sub-path — the section's
-            // second example spells it `…/any_event:0|sample_count: 5`.
-            if let Some(n) = rm.get("sample_count").filter(|v| !v.is_null()) {
-                out.attrs.insert("sample_count".to_owned(), n.clone());
-            }
+        "OBSERVATION" => emit_history_origin(rm, out),
+        "ACTIVITY" => emit_activity_paths(node, rm, out),
+        "POINT_EVENT" | "EVENT" => {
+            emit_direct_leaf(node, out, "time", "DV_DATE_TIME", rm.get("time"));
         }
+        "INTERVAL_EVENT" => emit_interval_event_paths(node, rm, out),
         _ => {}
+    }
+}
+
+/// Emits one datum under `name` unless the template-child walk already did.
+fn emit_direct_leaf(
+    node: &WebTemplateNode,
+    out: &mut SimNode,
+    name: &str,
+    rm_type: &str,
+    value: Option<&Value>,
+) {
+    if attr_emitted(node, out, name) {
+        return;
+    }
+    if let Some(v) = value.filter(|v| !v.is_null()) {
+        map::emit_leaf(v, rm_type, None, out.occurrence_mut(name, None));
+    }
+}
+
+/// Emits the ACTION rows the template left unconstrained (master05 §ACTION).
+fn emit_action_paths(node: &WebTemplateNode, rm: &Value, out: &mut SimNode) {
+    emit_direct_leaf(node, out, "time", "DV_DATE_TIME", rm.get("time"));
+    if !attr_emitted(node, out, "ism_transition")
+        && let Some(ism) = rm.get("ism_transition").filter(|v| !v.is_null())
+    {
+        emit_ism_transition(ism, out.occurrence_mut("ism_transition", None));
+    }
+}
+
+/// Emits `history_origin`, which maps to the nested `data.origin` (master05
+/// §OBSERVATION).
+///
+/// The HISTORY is compacted away, so `origin` is never a template leaf child —
+/// it is emitted here unless the walk already produced it.
+fn emit_history_origin(rm: &Value, out: &mut SimNode) {
+    if !out.children.contains_key("history_origin")
+        && let Some(origin) = rm.pointer("/data/origin/value")
+    {
+        out.occurrence_mut("history_origin", None)
+            .attrs
+            .insert(String::new(), origin.clone());
+    }
+}
+
+/// Emits the ACTIVITY rows the template left unconstrained (master05 §ACTIVITY).
+fn emit_activity_paths(node: &WebTemplateNode, rm: &Value, out: &mut SimNode) {
+    emit_direct_leaf(node, out, "timing", "DV_PARSABLE", rm.get("timing"));
+    // `action_archetype_id` is the match-all `/.*/` when unset (master05
+    // §ACTIVITY: "Will be set to /.*/ if not set explicit."); that default is
+    // re-synthesised on build, so emitting it would desync the round-trip —
+    // emit only an explicit non-default value.
+    if !attr_emitted(node, out, "action_archetype_id")
+        && let Some(aid) = rm.get("action_archetype_id").and_then(Value::as_str)
+        && aid != "/.*/"
+    {
+        out.occurrence_mut("action_archetype_id", None)
+            .attrs
+            .insert(String::new(), Value::String(aid.to_owned()));
+    }
+}
+
+/// Emits the INTERVAL_EVENT rows the template left unconstrained (master05
+/// §INTERVAL_EVENT).
+fn emit_interval_event_paths(node: &WebTemplateNode, rm: &Value, out: &mut SimNode) {
+    emit_direct_leaf(node, out, "time", "DV_DATE_TIME", rm.get("time"));
+    emit_direct_leaf(node, out, "width", "DV_DURATION", rm.get("width"));
+    emit_direct_leaf(
+        node,
+        out,
+        "math_function",
+        "DV_CODED_TEXT",
+        rm.get("math_function"),
+    );
+    // `|sample_count` (INTEGER) is a datum suffix on the event node itself, not
+    // a sub-path — the section's second example spells it
+    // `…/any_event:0|sample_count: 5`.
+    if let Some(n) = rm.get("sample_count").filter(|v| !v.is_null()) {
+        out.attrs.insert("sample_count".to_owned(), n.clone());
     }
 }
 

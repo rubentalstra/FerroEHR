@@ -132,82 +132,8 @@ pub fn assemble<S: std::hash::BuildHasher>(
     overrides: &[(String, String)],
 ) -> Result<FerroEhrConfig, ConfigErrors> {
     let mut errors = strict::strict_env(env);
-
-    let file_content = match file {
-        Some(path) => match std::fs::read_to_string(path) {
-            Ok(content) => Some(content),
-            Err(e) => {
-                errors.push(ConfigError::new(format!(
-                    "reading config file {}: {e}",
-                    path.display()
-                )));
-                None
-            }
-        },
-        None => None,
-    };
-
-    // The two permanent conventional aliases (DATABASE_URL, RUST_LOG) —
-    // layered BELOW the canonical source so an `FERROEHR__` form always wins.
-    let mut alias_map: HashMap<String, String> = HashMap::new();
-    // A transaction-pooled endpoint (pgbouncer) hands statements to backend
-    // connections without the session `search_path`, which surfaces as
-    // intermittent 42P01 "relation does not exist" (#2716) — so when a
-    // managed-Postgres integration offers the DIRECT endpoint beside the
-    // pooled one (Neon injects both), the direct one wins within this layer.
-    if let Some(value) = env.get("DATABASE_URL_UNPOOLED") {
-        alias_map.insert("FERROEHR__DB__URL".to_owned(), value.clone());
-    }
-    for (external, canonical) in CONVENTIONAL {
-        if let Some(value) = env.get(*external) {
-            alias_map
-                .entry((*canonical).to_owned())
-                .or_insert_with(|| value.clone());
-        }
-    }
-    // The PaaS port convention: container platforms (Vercel, Cloud Run,
-    // Heroku) inject `PORT` and route traffic to it. It carries only the port
-    // half, so it maps to an all-interfaces bind rather than joining the 1:1
-    // CONVENTIONAL table — still layered BELOW `FERROEHR__SERVER__BIND`.
-    if let Some(port) = env.get("PORT") {
-        alias_map
-            .entry("FERROEHR__SERVER__BIND".to_owned())
-            .or_insert_with(|| format!("0.0.0.0:{port}"));
-    }
-    // The libpq environment convention (PostgreSQL's own variable set,
-    // https://www.postgresql.org/docs/current/libpq-envars.html): managed
-    // Postgres integrations (Neon on Vercel among them) inject PGHOST/PGUSER/
-    // PGPASSWORD/PGDATABASE instead of a URL. Assembled into a DSN BELOW both
-    // URL forms — a URL entry already claimed above wins — and preferring the
-    // direct `PGHOST_UNPOOLED` host over the pooled `PGHOST` (#2716, the
-    // same transaction-pooling reason as `DATABASE_URL_UNPOOLED` above).
-    if let Some(host) = env.get("PGHOST_UNPOOLED").or_else(|| env.get("PGHOST")) {
-        let mut dsn = String::from("postgres://");
-        if let Some(user) = env.get("PGUSER") {
-            dsn.push_str(&urlencoding::encode(user));
-            if let Some(password) = env.get("PGPASSWORD") {
-                dsn.push(':');
-                dsn.push_str(&urlencoding::encode(password));
-            }
-            dsn.push('@');
-        }
-        dsn.push_str(host);
-        if let Some(port) = env.get("PGPORT") {
-            dsn.push(':');
-            dsn.push_str(port);
-        }
-        dsn.push('/');
-        dsn.push_str(env.get("PGDATABASE").map_or("postgres", String::as_str));
-        if let Some(sslmode) = env.get("PGSSLMODE") {
-            dsn.push_str("?sslmode=");
-            dsn.push_str(sslmode);
-        }
-        // `or_insert_with`: a `DATABASE_URL` already claimed this entry in the
-        // CONVENTIONAL loop above, and it outranks the assembled form.
-        alias_map
-            .entry("FERROEHR__DB__URL".to_owned())
-            .or_insert(dsn);
-    }
+    let file_content = read_config_file(file, &mut errors);
+    let alias_map = conventional_aliases(env);
 
     // The canonical (uniform-grammar) `FERROEHR__…` variables. Allowlisted
     // infra names never carry the double prefix, so the prefix check alone
@@ -264,6 +190,96 @@ pub fn assemble<S: std::hash::BuildHasher>(
     } else {
         Err(ConfigErrors(errors))
     }
+}
+
+/// Reads the configuration file, recording an unreadable path as an error
+/// rather than aborting the pass (every problem is reported at once).
+fn read_config_file(file: Option<&Path>, errors: &mut Vec<ConfigError>) -> Option<String> {
+    let path = file?;
+    match std::fs::read_to_string(path) {
+        Ok(content) => Some(content),
+        Err(e) => {
+            errors.push(ConfigError::new(format!(
+                "reading config file {}: {e}",
+                path.display()
+            )));
+            None
+        }
+    }
+}
+
+/// The conventional (non-`FERROEHR__`) environment aliases, mapped onto their
+/// canonical keys.
+///
+/// This whole layer sits BELOW the canonical source, so an `FERROEHR__` form
+/// always wins. Within the layer, a transaction-pooled endpoint (pgbouncer)
+/// hands statements to backend connections without the session `search_path`,
+/// which surfaces as intermittent 42P01 "relation does not exist" (#2716) — so
+/// where a managed-Postgres integration offers the DIRECT endpoint beside the
+/// pooled one (Neon injects both), the direct one wins.
+fn conventional_aliases<S: std::hash::BuildHasher>(
+    env: &HashMap<String, String, S>,
+) -> HashMap<String, String> {
+    let mut alias_map: HashMap<String, String> = HashMap::new();
+    if let Some(value) = env.get("DATABASE_URL_UNPOOLED") {
+        alias_map.insert("FERROEHR__DB__URL".to_owned(), value.clone());
+    }
+    for (external, canonical) in CONVENTIONAL {
+        if let Some(value) = env.get(*external) {
+            alias_map
+                .entry((*canonical).to_owned())
+                .or_insert_with(|| value.clone());
+        }
+    }
+    // The PaaS port convention: container platforms (Vercel, Cloud Run,
+    // Heroku) inject `PORT` and route traffic to it. It carries only the port
+    // half, so it maps to an all-interfaces bind rather than joining the 1:1
+    // CONVENTIONAL table — still layered BELOW `FERROEHR__SERVER__BIND`.
+    if let Some(port) = env.get("PORT") {
+        alias_map
+            .entry("FERROEHR__SERVER__BIND".to_owned())
+            .or_insert_with(|| format!("0.0.0.0:{port}"));
+    }
+    if let Some(dsn) = libpq_dsn(env) {
+        // `or_insert`: a `DATABASE_URL` already claimed this entry in the
+        // CONVENTIONAL loop above, and it outranks the assembled form.
+        alias_map
+            .entry("FERROEHR__DB__URL".to_owned())
+            .or_insert(dsn);
+    }
+    alias_map
+}
+
+/// A DSN assembled from the libpq environment convention (PostgreSQL's own
+/// variable set, <https://www.postgresql.org/docs/current/libpq-envars.html>),
+/// which managed Postgres integrations (Neon on Vercel among them) inject
+/// instead of a URL.
+///
+/// The direct `PGHOST_UNPOOLED` host is preferred over the pooled `PGHOST`
+/// (#2716, the same transaction-pooling reason as `DATABASE_URL_UNPOOLED`).
+fn libpq_dsn<S: std::hash::BuildHasher>(env: &HashMap<String, String, S>) -> Option<String> {
+    let host = env.get("PGHOST_UNPOOLED").or_else(|| env.get("PGHOST"))?;
+    let mut dsn = String::from("postgres://");
+    if let Some(user) = env.get("PGUSER") {
+        dsn.push_str(&urlencoding::encode(user));
+        if let Some(password) = env.get("PGPASSWORD") {
+            dsn.push(':');
+            dsn.push_str(&urlencoding::encode(password));
+        }
+        dsn.push('@');
+    }
+    dsn.push_str(host);
+    if let Some(port) = env.get("PGPORT") {
+        dsn.push(':');
+        dsn.push_str(port);
+    }
+    dsn.push('/');
+    dsn.push_str(env.get("PGDATABASE").map_or("postgres", String::as_str));
+    if let Some(sslmode) = env.get("PGSSLMODE") {
+        dsn.push_str("?sslmode=");
+        dsn.push_str(sslmode);
+    }
+    Some(dsn)
 }
 
 /// An `FERROEHR_`-prefixed environment source over an injected map (the hermetic

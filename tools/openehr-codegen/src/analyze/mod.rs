@@ -205,25 +205,18 @@ impl Model {
         // through its variants (e.g. ARCHETYPE_CONSTRAINT ↔ ARCHETYPE_SLOT,
         // EXPR_ITEM ↔ EXPR_BINARY_OPERATOR). Traverse them too.
         if class.is_abstract {
-            for d in self.enum_variants(from) {
-                if d == target || self.reaches(&d, target, seen) {
-                    return true;
-                }
-            }
-            return false;
+            return self
+                .enum_variants(from)
+                .iter()
+                .any(|d| d == target || self.reaches(d, target, seen));
         }
-        for rp in self.flattened_props(class) {
-            if let BmmPropKind::Single(t) = &rp.prop.kind {
-                let root = t.root_name();
-                if Self::is_mapped(root) {
-                    continue;
-                }
-                if root == target || self.reaches(root, target, seen) {
-                    return true;
-                }
-            }
-        }
-        false
+        self.flattened_props(class).iter().any(|rp| {
+            let BmmPropKind::Single(t) = &rp.prop.kind else {
+                return false;
+            };
+            let root = t.root_name();
+            !Self::is_mapped(root) && (root == target || self.reaches(root, target, seen))
+        })
     }
 
     /// The *immediate* concrete, emittable subtypes of `name` — the variants of
@@ -474,39 +467,9 @@ impl Model {
                         .iter()
                         .any(|v| ok.contains(v) || Self::is_mapped(v))
                 } else {
-                    self.flattened_props(class).iter().all(|rp| {
-                        // Only a mandatory, single-valued, non-back-reference
-                        // field can force construction of another value.
-                        if !rp.prop.is_mandatory {
-                            return true;
-                        }
-                        if back_reference(&rp.owner, &rp.prop.name).is_some() {
-                            return true;
-                        }
-                        let BmmPropKind::Single(t) = &rp.prop.kind else {
-                            return true;
-                        };
-                        // A single-valued property whose type is a container
-                        // generic (`List`/`Array`/`Set`/`Hash` → `Vec`/`BTreeMap`)
-                        // renders as an indirection that can be empty, so it never
-                        // blocks construction (mirrors `field_type`'s
-                        // `already_indirect`).
-                        if let BmmType::Generic { root, .. } = t
-                            && matches!(root.as_str(), "List" | "Array" | "Set" | "Hash")
-                        {
-                            return true;
-                        }
-                        let mut roots = BTreeSet::new();
-                        self.effective_roots(t, &mut roots);
-                        // A root blocks construction only if it is a *defined
-                        // model class* not yet known constructible. A generic
-                        // parameter (`EVENT.data: T`), `Any`, or a cross-schema
-                        // type (rendered as `serde_json::Value`) is not a model
-                        // class here — it is caller-filled/mapped and never blocks.
-                        roots
-                            .iter()
-                            .all(|r| Self::is_mapped(r) || self.get(r).is_none() || ok.contains(r))
-                    })
+                    self.flattened_props(class)
+                        .iter()
+                        .all(|rp| self.prop_allows_construction(rp, &ok))
                 };
                 if constructible {
                     ok.insert(name.clone());
@@ -518,6 +481,37 @@ impl Model {
             }
         }
         ok
+    }
+
+    /// Whether one property leaves its owner constructible, given the classes
+    /// already known constructible.
+    ///
+    /// Only a mandatory, single-valued, non-back-reference field can force
+    /// construction of another value. A single-valued property whose type is a
+    /// container generic (`List`/`Array`/`Set`/`Hash` → `Vec`/`BTreeMap`)
+    /// renders as an indirection that can be empty, so it never blocks
+    /// construction (mirroring `field_type`'s `already_indirect`). Of the
+    /// remaining roots, one blocks only if it is a *defined model class* not
+    /// yet known constructible: a generic parameter (`EVENT.data: T`), `Any`,
+    /// or a cross-schema type (rendered as `serde_json::Value`) is not a model
+    /// class here — it is caller-filled/mapped and never blocks.
+    fn prop_allows_construction(&self, rp: &ResolvedProp<'_>, ok: &BTreeSet<String>) -> bool {
+        if !rp.prop.is_mandatory || back_reference(&rp.owner, &rp.prop.name).is_some() {
+            return true;
+        }
+        let BmmPropKind::Single(t) = &rp.prop.kind else {
+            return true;
+        };
+        if let BmmType::Generic { root, .. } = t
+            && matches!(root.as_str(), "List" | "Array" | "Set" | "Hash")
+        {
+            return true;
+        }
+        let mut roots = BTreeSet::new();
+        self.effective_roots(t, &mut roots);
+        roots
+            .iter()
+            .all(|r| Self::is_mapped(r) || self.get(r).is_none() || ok.contains(r))
     }
 
     /// The concrete emittable classes of `schema` that are **not**

@@ -116,68 +116,85 @@ fn generate(
     if depth > 12 {
         return Value::Object(obj);
     }
-    let generic_params =
-        openehr_rm::v1_2::model::class(class).map_or(&[][..], |c| c.generic_params);
     for attr in openehr_rm::v1_2::model::attributes(class) {
-        if !attr.is_mandatory && !rich {
-            continue;
-        }
-        // Rich mode still skips optional RECURSIVE containment (folders in
-        // folders, links, feeder audit) to keep instances finite and small.
-        if !attr.is_mandatory && depth > 2 {
-            continue;
-        }
-        // Canonical JSON carries `List<Octet>` (DV_MULTIMEDIA.data etc.) as
-        // an inline base64 STRING, not a JSON array (ITS-JSON) — the one
-        // container shape the codec re-forms.
-        if attr.declared_type == "Octet"
-            && matches!(attr.container, openehr_rm::v1_2::model::Container::List)
-        {
-            obj.insert(attr.name.to_owned(), json!("AA=="));
-            continue;
-        }
-        // An attribute the class constrains beyond its declared primitive type.
-        if let Some(v) = constrained_attribute(class, attr.name) {
+        if let Some(v) = attribute_value(class, attr, args, rich, depth, unknown) {
             obj.insert(attr.name.to_owned(), v);
-            continue;
         }
-        // Bare-generic-parameter substitution: an attribute whose declared
-        // type equals a parameter's bound takes the caller's argument.
-        let substituted: Option<(&str, Vec<&openehr_rm::v1_2::model::RmTypeRef>)> = generic_params
-            .iter()
-            .zip(args.iter())
-            .find(|(p, _)| p.conforms_to.unwrap_or("Any") == attr.declared_type)
-            .map(|(_, a)| (a.name, a.params.iter().collect()));
-        let (ty, ty_args) = substituted.unwrap_or_else(|| {
-            let mut ty_args: Vec<&openehr_rm::v1_2::model::RmTypeRef> =
-                attr.type_params.iter().collect();
-            // A BARE reference to a generic class (the BMM drops the argument:
-            // `IMPORTED_VERSION.item: ORIGINAL_VERSION`) is monomorphized by the
-            // emitter with the enclosing scope's type argument (`item:
-            // OriginalVersion<T>`), so thread the caller's argument the same way
-            // — the emitted type is what the codec enforces, and an unthreaded
-            // element is not an instance of it.
-            if ty_args.is_empty()
-                && !args.is_empty()
-                && openehr_rm::v1_2::model::class(attr.declared_type)
-                    .is_some_and(|c| !c.generic_params.is_empty())
-            {
-                ty_args = args.to_vec();
-            }
-            (attr.declared_type, ty_args)
-        });
-        let element = value_for(ty, &ty_args, rich, depth, unknown);
-        let Some(element) = element else { continue };
-        let v = match attr.container {
-            openehr_rm::v1_2::model::Container::None => element,
-            openehr_rm::v1_2::model::Container::List | openehr_rm::v1_2::model::Container::Set => {
-                json!([element])
-            }
-            openehr_rm::v1_2::model::Container::Hash => json!({ "x": element }),
-        };
-        obj.insert(attr.name.to_owned(), v);
     }
     Value::Object(obj)
+}
+
+/// The generated value for one attribute, or `None` when it is skipped.
+///
+/// Skipped: an optional attribute outside rich mode, and (in rich mode too)
+/// optional RECURSIVE containment below depth 2 — folders in folders, links,
+/// feeder audit — which keeps instances finite and small.
+fn attribute_value(
+    class: &str,
+    attr: &'static openehr_rm::v1_2::model::RmAttribute,
+    args: &[&openehr_rm::v1_2::model::RmTypeRef],
+    rich: bool,
+    depth: usize,
+    unknown: &mut BTreeSet<String>,
+) -> Option<Value> {
+    if !attr.is_mandatory && (!rich || depth > 2) {
+        return None;
+    }
+    // Canonical JSON carries `List<Octet>` (DV_MULTIMEDIA.data etc.) as an
+    // inline base64 STRING, not a JSON array (ITS-JSON) — the one container
+    // shape the codec re-forms.
+    if attr.declared_type == "Octet"
+        && matches!(attr.container, openehr_rm::v1_2::model::Container::List)
+    {
+        return Some(json!("AA=="));
+    }
+    // An attribute the class constrains beyond its declared primitive type.
+    if let Some(v) = constrained_attribute(class, attr.name) {
+        return Some(v);
+    }
+    let (ty, ty_args) = attribute_type(class, attr, args);
+    let element = value_for(ty, &ty_args, rich, depth, unknown)?;
+    Some(match attr.container {
+        openehr_rm::v1_2::model::Container::None => element,
+        openehr_rm::v1_2::model::Container::List | openehr_rm::v1_2::model::Container::Set => {
+            json!([element])
+        }
+        openehr_rm::v1_2::model::Container::Hash => json!({ "x": element }),
+    })
+}
+
+/// The effective type (and type arguments) of one attribute in `class`'s scope.
+///
+/// An attribute whose declared type equals a generic parameter's bound takes the
+/// caller's argument. A BARE reference to a generic class (the BMM drops the
+/// argument: `IMPORTED_VERSION.item: ORIGINAL_VERSION`) is monomorphized by the
+/// emitter with the enclosing scope's type argument (`item: OriginalVersion<T>`),
+/// so the caller's argument is threaded the same way — the emitted type is what
+/// the codec enforces, and an unthreaded element is not an instance of it.
+fn attribute_type<'a>(
+    class: &str,
+    attr: &'static openehr_rm::v1_2::model::RmAttribute,
+    args: &[&'a openehr_rm::v1_2::model::RmTypeRef],
+) -> (&'static str, Vec<&'a openehr_rm::v1_2::model::RmTypeRef>) {
+    let generic_params =
+        openehr_rm::v1_2::model::class(class).map_or(&[][..], |c| c.generic_params);
+    let substituted = generic_params
+        .iter()
+        .zip(args.iter())
+        .find(|(p, _)| p.conforms_to.unwrap_or("Any") == attr.declared_type)
+        .map(|(_, a)| (a.name, a.params.iter().collect()));
+    substituted.unwrap_or_else(|| {
+        let mut ty_args: Vec<&openehr_rm::v1_2::model::RmTypeRef> =
+            attr.type_params.iter().collect();
+        if ty_args.is_empty()
+            && !args.is_empty()
+            && openehr_rm::v1_2::model::class(attr.declared_type)
+                .is_some_and(|c| !c.generic_params.is_empty())
+        {
+            ty_args = args.to_vec();
+        }
+        (attr.declared_type, ty_args)
+    })
 }
 
 /// A value of declared type `ty` (with its generic arguments): a model class
@@ -192,25 +209,11 @@ fn value_for(
 ) -> Option<Value> {
     if let Some(class) = openehr_rm::v1_2::model::class(ty) {
         let concrete = if class.is_abstract {
-            // Deterministic non-recursive preference: the concrete descendant
-            // with the FEWEST mandatory class-typed attributes (ELEMENT over
-            // CLUSTER for an ITEM slot), so mandatory recursion terminates.
-            let mut best: Option<(&str, usize)> = None;
-            for d in class.descendants {
-                let cost = openehr_rm::v1_2::model::attributes(d)
-                    .filter(|a| {
-                        a.is_mandatory && openehr_rm::v1_2::model::class(a.declared_type).is_some()
-                    })
-                    .count();
-                if best.is_none_or(|(_, c)| cost < c) {
-                    best = Some((d, cost));
-                }
-            }
-            best?.0.to_owned()
+            cheapest_descendant(class.descendants)?
         } else {
-            class.name.to_owned()
+            class.name
         };
-        return Some(generate(&concrete, ty_args, rich, depth + 1, unknown));
+        return Some(generate(concrete, ty_args, rich, depth + 1, unknown));
     }
     if let Some(e) = openehr_rm::v1_2::model::enumeration(ty) {
         return e.literals.first().map(|l| match l.value {
@@ -223,6 +226,26 @@ fn value_for(
         unknown.insert(ty.to_owned());
     }
     p
+}
+
+/// The concrete descendant to instantiate for an abstract slot.
+///
+/// Deterministic non-recursive preference: the descendant with the FEWEST
+/// mandatory class-typed attributes (ELEMENT over CLUSTER for an ITEM slot), so
+/// mandatory recursion terminates.
+fn cheapest_descendant(descendants: &[&'static str]) -> Option<&'static str> {
+    descendants
+        .iter()
+        .map(|d| {
+            let cost = openehr_rm::v1_2::model::attributes(d)
+                .filter(|a| {
+                    a.is_mandatory && openehr_rm::v1_2::model::class(a.declared_type).is_some()
+                })
+                .count();
+            (*d, cost)
+        })
+        .min_by_key(|(_, cost)| *cost)
+        .map(|(d, _)| d)
 }
 
 /// Every concrete class of the static model, in declaration order.

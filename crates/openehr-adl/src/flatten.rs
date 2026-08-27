@@ -234,6 +234,82 @@ enum Overlaid {
 /// Overlay the children of one container/single attribute — the cloning +
 /// sibling-order core.
 ///
+/// Classifies each child node in source order as a redefinition of a
+/// congruent base node or a new extension, carrying its EXPLICIT sibling
+/// marker.
+///
+/// The parser attaches a marker only to the node immediately after the marker
+/// keyword; per `master09.04` L249 a marker anchors every following node until
+/// the next marker, so the run range is everything from the first
+/// explicitly-marked node onward.
+#[expect(
+    clippy::indexing_slicing,
+    reason = "`base_idx` is a `find_congruent_idx` result over `base_nodes`, so it is in bounds by construction"
+)]
+fn classify_children(
+    base_nodes: &[CObject],
+    child_attr: &CAttribute,
+) -> Vec<(Overlaid, Option<SiblingOrder>)> {
+    let mut classified: Vec<(Overlaid, Option<SiblingOrder>)> = Vec::new();
+    for child in child_attr.children.iter().flatten() {
+        let marker = sibling_order(child).cloned();
+        let overlaid = if let Some(base_idx) = find_congruent_idx(base_nodes, object_node_id(child))
+        {
+            let node = overlay_node(&base_nodes[base_idx], child);
+            Overlaid::Redef { base_idx, node }
+        } else {
+            let mut node = child.clone();
+            strip_sibling_order(&mut node);
+            Overlaid::New { node }
+        };
+        classified.push((overlaid, marker));
+    }
+    classified
+}
+
+/// Phase 1: the working list with every unmarked node at its default position
+/// — redefinitions in place or cloned, extensions appended
+/// (`master09.04` L272).
+///
+/// The cloning decision uses the WHOLE redef set, but only the default
+/// (pre-marker) redefs are placed here: run-range redefs are positioned by
+/// their run in phase 2, so a base node whose only redefinition is in the run
+/// range is dropped here for the run to place. Where cloning is needed the
+/// parent node survives and the default clone-redefs follow it
+/// (`master09.05` §Single and Multiple Specialisation).
+#[expect(
+    clippy::indexing_slicing,
+    reason = "`split` is a `position(..).unwrap_or(len)` over `classified`, so `classified[..split]` is valid"
+)]
+fn place_default_nodes(
+    base_attr: &CAttribute,
+    base_nodes: &[CObject],
+    classified: &[(Overlaid, Option<SiblingOrder>)],
+    split: usize,
+) -> Vec<CObject> {
+    let mut work: Vec<CObject> = Vec::new();
+    for (base_idx, base_node) in base_nodes.iter().enumerate() {
+        let all_redefs = redef_nodes_for(classified, base_idx);
+        if all_redefs.is_empty() {
+            work.push(base_node.clone());
+            continue;
+        }
+        let default_redefs = redef_nodes_for(&classified[..split], base_idx);
+        if !clone_not_needed(base_node, base_attr, &all_redefs) {
+            work.push(base_node.clone());
+        }
+        for node in default_redefs {
+            work.push(node.clone());
+        }
+    }
+    for (o, _) in &classified[..split] {
+        if let Overlaid::New { node } = o {
+            work.push(node.clone());
+        }
+    }
+    work
+}
+
 /// Two phases (`master09.04`/`master09.05`):
 /// 1. Build the working list with in-place redefinitions and cloning applied,
 ///    ignoring sibling markers (unmarked nodes placed at their default position:
@@ -244,7 +320,7 @@ enum Overlaid {
 ///    is itself placed by a later run is available first.
 #[expect(
     clippy::indexing_slicing,
-    reason = "every index here is in bounds by construction: `base_idx` is a `find_congruent_idx` result over `base_nodes`, `split` is a `position(..).unwrap_or(len)` so both `classified[..split]` and `classified[split..]` are valid, and `runs[i]` is guarded by the enclosing `i < runs.len()`"
+    reason = "every index here is in bounds by construction: `split` is a `position(..).unwrap_or(len)` so `classified[split..]` is valid, and `runs[i]` is guarded by the enclosing `i < runs.len()`"
 )]
 fn overlay_children(base_attr: &mut CAttribute, child_attr: &CAttribute, _level: usize) {
     let base_nodes = base_attr.children.clone();
@@ -254,60 +330,17 @@ fn overlay_children(base_attr: &mut CAttribute, child_attr: &CAttribute, _level:
     // the marker keyword; per `master09.04` L249 a marker anchors every following
     // node until the next marker, so the run range is everything from the first
     // explicitly-marked node onward.
-    let mut classified: Vec<(Overlaid, Option<SiblingOrder>)> = Vec::new();
-    for child in child_attr.children.iter().flatten() {
-        let marker = sibling_order(child).cloned();
-        let overlaid = if let Some(base_idx) = find_congruent_idx(
-            base_nodes.as_deref().unwrap_or_default(),
-            object_node_id(child),
-        ) {
-            let node = overlay_node(&base_nodes.as_deref().unwrap_or_default()[base_idx], child);
-            Overlaid::Redef { base_idx, node }
-        } else {
-            let mut node = child.clone();
-            strip_sibling_order(&mut node);
-            Overlaid::New { node }
-        };
-        classified.push((overlaid, marker));
-    }
+    let classified = classify_children(base_nodes.as_deref().unwrap_or_default(), child_attr);
     let split = classified
         .iter()
         .position(|(_, m)| m.is_some())
         .unwrap_or(classified.len());
-
-    // Phase 1: default placement of the pre-marker nodes (redefinitions in place
-    // or cloned; extensions appended). Cloning uses the WHOLE redef set for the
-    // decision but only places the default (pre-marker) redefs here — run-range
-    // redefs are positioned by their run in phase 2; a base node whose only
-    // redefinition is in the run range is dropped here for the run to place.
-    let mut work: Vec<CObject> = Vec::new();
-    for (base_idx, base_node) in base_nodes.iter().flatten().enumerate() {
-        let all_redefs = redef_nodes_for(&classified, base_idx);
-        if all_redefs.is_empty() {
-            work.push(base_node.clone());
-            continue;
-        }
-        let default_redefs = redef_nodes_for(&classified[..split], base_idx);
-        if clone_not_needed(base_node, base_attr, &all_redefs) {
-            // In-place replacement.
-            for node in default_redefs {
-                work.push(node.clone());
-            }
-        } else {
-            // Cloning: the parent node survives, default clone-redefs follow it
-            // (`master09.05` §Single and Multiple Specialisation).
-            work.push(base_node.clone());
-            for node in default_redefs {
-                work.push(node.clone());
-            }
-        }
-    }
-    // Pre-marker extension nodes go to the end (`master09.04` L272).
-    for (o, _) in &classified[..split] {
-        if let Overlaid::New { node } = o {
-            work.push(node.clone());
-        }
-    }
+    let mut work = place_default_nodes(
+        base_attr,
+        base_nodes.as_deref().unwrap_or_default(),
+        &classified,
+        split,
+    );
 
     // Phase 2: place the run-range nodes by their runs (dependency-ordered).
     let mut runs = build_runs(&classified[split..]);

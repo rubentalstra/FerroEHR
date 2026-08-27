@@ -163,6 +163,26 @@ fn index_normalised(map: &serde_json::Map<String, Value>) -> BTreeMap<String, Va
 
 // ── STRUCTURED round-trip + RM validation ─────────────────────────────────────
 
+/// One pair's STRUCTURED round-trip: `to_structured` → `from_structured` →
+/// `to_structured` again.
+///
+/// Returns the rebuilt RM value and whether the two STRUCTURED renderings agree,
+/// or the conversion failure to record.
+fn structured_round_trip(
+    name: &str,
+    comp: &Value,
+    wt: &WebTemplate,
+) -> Result<(Value, bool), String> {
+    let s0 =
+        composition_to_structured(comp, wt).map_err(|e| format!("{name}: to_structured: {e}"))?;
+    let rm1 = composition_from_structured(&s0, wt, NOW)
+        .map_err(|e| format!("{name}: from_structured: {e}"))?;
+    let s1 = composition_to_structured(&rm1, wt)
+        .map_err(|e| format!("{name}: to_structured(rm1): {e}"))?;
+    let is_stable = s0 == s1;
+    Ok((rm1, is_stable))
+}
+
 #[test]
 fn structured_roundtrip_and_rm_validation() {
     let wts = web_templates();
@@ -180,29 +200,14 @@ fn structured_roundtrip_and_rm_validation() {
         let Some(wt) = wts.get(tid) else { continue };
         paired += 1;
 
-        let s0 = match composition_to_structured(comp, wt) {
-            Ok(s) => s,
-            Err(e) => {
-                failures.push(format!("{name}: to_structured: {e}"));
+        let (rm1, is_stable) = match structured_round_trip(name, comp, wt) {
+            Ok(pair) => pair,
+            Err(message) => {
+                failures.push(message);
                 continue;
             }
         };
-        let rm1 = match composition_from_structured(&s0, wt, NOW) {
-            Ok(v) => v,
-            Err(e) => {
-                failures.push(format!("{name}: from_structured: {e}"));
-                continue;
-            }
-        };
-        let s1 = match composition_to_structured(&rm1, wt) {
-            Ok(s) => s,
-            Err(e) => {
-                failures.push(format!("{name}: to_structured(rm1): {e}"));
-                continue;
-            }
-        };
-
-        if s0 == s1 {
+        if is_stable {
             stable += 1;
         } else {
             failures.push(format!("{name} ({tid}): STRUCTURED not stable"));

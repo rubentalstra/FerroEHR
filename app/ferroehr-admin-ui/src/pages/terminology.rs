@@ -516,6 +516,27 @@ fn subsumption_card(selected: Signal<String>) -> AnyView {
     .into_any()
 }
 
+/// The refusal copy for an incomplete value-set form, or `None` when the form
+/// is ready to dispatch.
+///
+/// `candidate` is `Some` only for the membership test, which needs both fields.
+fn value_set_form_error(
+    terminology: &str,
+    value_set: &str,
+    candidate: Option<&str>,
+) -> Option<String> {
+    if let Some(message) = missing_selection(terminology) {
+        return Some(message);
+    }
+    let Some(candidate) = candidate else {
+        return value_set
+            .is_empty()
+            .then(|| "Type a value set id to expand.".to_owned());
+    };
+    (value_set.is_empty() || candidate.is_empty())
+        .then(|| "Both a value set id and a candidate code are needed.".to_owned())
+}
+
 /// The value-set card: expand a value set's members, then test one code's
 /// membership in it.
 #[expect(
@@ -544,12 +565,8 @@ fn value_set_card(selected: Signal<String>) -> AnyView {
     let on_expand = move |_| {
         let terminology = selected.get_untracked();
         let value_set = input_value(id_ref);
-        if let Some(message) = missing_selection(&terminology) {
+        if let Some(message) = value_set_form_error(&terminology, &value_set, None) {
             validation.set(Some(message));
-            return;
-        }
-        if value_set.is_empty() {
-            validation.set(Some("Type a value set id to expand.".to_owned()));
             return;
         }
         validation.set(None);
@@ -559,14 +576,8 @@ fn value_set_card(selected: Signal<String>) -> AnyView {
         let terminology = selected.get_untracked();
         let value_set = input_value(id_ref);
         let candidate = input_value(candidate_ref);
-        if let Some(message) = missing_selection(&terminology) {
+        if let Some(message) = value_set_form_error(&terminology, &value_set, Some(&candidate)) {
             validation.set(Some(message));
-            return;
-        }
-        if value_set.is_empty() || candidate.is_empty() {
-            validation.set(Some(
-                "Both a value set id and a candidate code are needed.".to_owned(),
-            ));
             return;
         }
         validation.set(None);

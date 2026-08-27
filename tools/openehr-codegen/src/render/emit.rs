@@ -752,13 +752,7 @@ fn render_struct_def(
         // `*_impl.rs`. This is the only sanctioned way to break a mandatory
         // construction cycle — a forward composition is never relaxed.
         if let Some(citation) = back_reference(&rp.owner, &p.name) {
-            b.push_str(&format!(
-                "    // NOTE: `{}` (BMM-mandatory back-reference) omitted — {}. \
-                 A back-reference is not forward-owned data and never appears on \
-                 the canonical wire; emitting it as an owning field would make \
-                 this type non-constructible.\n",
-                p.name, citation
-            ));
+            push_back_reference_note(&mut b, &p.name, citation);
             continue;
         }
         if rp.owner != class.name && prev_owner != Some(rp.owner.as_str()) {
@@ -788,14 +782,8 @@ fn render_struct_def(
         // NOTE is conditional on the degrade actually happening, so a
         // composition where the type IS resolvable (the AM24 re-emission of
         // `EL_CASE`, where `C_OBJECT` is local) emits the typed field with no note.
-        if rust_ty.contains("serde_json::Value")
-            && let Some(adj) =
-                untyped_field(&rp.owner, &p.name).or_else(|| untyped_field(&class.name, &p.name))
-        {
-            b.push_str(&format!(
-                "    // NOTE: free-form JSON is adjudicated here, not accidental — {}. {}\n",
-                adj.citation, adj.reason
-            ));
+        if rust_ty.contains("serde_json::Value") {
+            push_untyped_field_note(&mut b, &rp.owner, &class.name, &p.name);
         }
         b.push_str(&format!("    {field_vis} {ident}: {rust_ty},\n"));
         emitted.push((ident, rust_ty));
@@ -811,6 +799,39 @@ fn render_struct_def(
         ));
     }
     b
+}
+
+/// The NOTE emitted in place of an omitted back-reference field.
+///
+/// A designated owner/parent back-reference is a non-data navigational
+/// association, never forward-owned data and never on the canonical wire;
+/// emitting it as an owning field makes the type a non-constructible infinite
+/// value. This is the only sanctioned way to break a mandatory construction
+/// cycle — a forward composition is never relaxed.
+fn push_back_reference_note(b: &mut String, prop: &str, citation: &str) {
+    b.push_str(&format!(
+        "    // NOTE: `{prop}` (BMM-mandatory back-reference) omitted — {citation}. \
+         A back-reference is not forward-owned data and never appears on \
+         the canonical wire; emitting it as an owning field would make \
+         this type non-constructible.\n"
+    ));
+}
+
+/// The NOTE emitted beside a field that degraded to free-form JSON *and*
+/// carries an adjudication.
+///
+/// Silence over an untyped slot in a generated spec crate is
+/// indistinguishable from an oversight. The note is conditional on the degrade
+/// actually happening, so a composition where the type IS resolvable (the AM24
+/// re-emission of `EL_CASE`, where `C_OBJECT` is local) emits the typed field
+/// with no note.
+fn push_untyped_field_note(b: &mut String, owner: &str, class: &str, prop: &str) {
+    if let Some(adj) = untyped_field(owner, prop).or_else(|| untyped_field(class, prop)) {
+        b.push_str(&format!(
+            "    // NOTE: free-form JSON is adjudicated here, not accidental — {}. {}\n",
+            adj.citation, adj.reason
+        ));
+    }
 }
 
 /// The read accessors + door NOTE for a class whose fields are `pub(crate)`
@@ -926,32 +947,46 @@ fn const_literal(c: &BmmConstant, siblings: &BTreeSet<&str>) -> (String, String)
         serde_json::Value::Number(n) => ("i64".to_string(), format!("{}", n.as_i64().unwrap_or(0))),
         serde_json::Value::Bool(b) => ("bool".to_string(), format!("{b}")),
         serde_json::Value::String(s) => {
-            let t = s.trim();
-            if let Some(inner) = strip_delims(t, '"') {
-                ("&str".to_string(), format!("{:?}", decode_entities(inner)))
-            } else if let Some(inner) = strip_delims(t, '\'') {
-                ("char".to_string(), format!("{:?}", decode_char(inner)))
-            } else if siblings.contains(t) {
-                let rust_ty = if is_real { "f64" } else { "i64" };
-                (
-                    rust_ty.to_string(),
-                    format!("Self::{}", naming::const_ident(t)),
-                )
-            } else if c.type_name == "Boolean" {
-                (
-                    "bool".to_string(),
-                    format!("{}", t.eq_ignore_ascii_case("true")),
-                )
-            } else {
-                // A bareword that is neither a sibling nor a boolean: emit as a
-                // string literal (verbatim), the safest total decoding.
-                ("&str".to_string(), format!("{t:?}"))
-            }
+            string_const_literal(s.trim(), &c.type_name, is_real, siblings)
         }
         serde_json::Value::Null | serde_json::Value::Array(_) | serde_json::Value::Object(_) => {
             ("&str".to_string(), "\"\"".to_string())
         }
     }
+}
+
+/// Decode a STRING-valued BMM constant to a Rust `(type, literal)` pair.
+///
+/// A quoted `"…"` is a `&str`, a quoted `'…'` a `char`, a bareword naming a
+/// sibling constant a `Self::OTHER` cross-reference, and a bareword under a
+/// `Boolean` type a bool. Anything else is emitted verbatim as a string
+/// literal — the safest total decoding.
+fn string_const_literal(
+    t: &str,
+    type_name: &str,
+    is_real: bool,
+    siblings: &BTreeSet<&str>,
+) -> (String, String) {
+    if let Some(inner) = strip_delims(t, '"') {
+        return ("&str".to_string(), format!("{:?}", decode_entities(inner)));
+    }
+    if let Some(inner) = strip_delims(t, '\'') {
+        return ("char".to_string(), format!("{:?}", decode_char(inner)));
+    }
+    if siblings.contains(t) {
+        let rust_ty = if is_real { "f64" } else { "i64" };
+        return (
+            rust_ty.to_string(),
+            format!("Self::{}", naming::const_ident(t)),
+        );
+    }
+    if type_name == "Boolean" {
+        return (
+            "bool".to_string(),
+            format!("{}", t.eq_ignore_ascii_case("true")),
+        );
+    }
+    ("&str".to_string(), format!("{t:?}"))
 }
 
 /// Strip a matching pair of delimiter characters (`"…"` or `'…'`) from `s`,
@@ -966,33 +1001,37 @@ fn decode_entities(s: &str) -> String {
     let mut out = String::new();
     let mut chars = s.chars().peekable();
     while let Some(c) = chars.next() {
-        if c == '&' && chars.peek() == Some(&'#') {
-            chars.next();
-            let mut num = String::new();
-            while let Some(&d) = chars.peek() {
-                if d == ';' {
-                    chars.next();
-                    break;
-                }
-                if d.is_ascii_digit() {
-                    num.push(d);
-                    chars.next();
-                } else {
-                    break;
-                }
-            }
-            if let Some(ch) = num.parse::<u32>().ok().and_then(char::from_u32) {
-                out.push(ch);
-            } else {
-                out.push('&');
-                out.push('#');
-                out.push_str(&num);
-            }
-        } else {
+        if c != '&' || chars.peek() != Some(&'#') {
             out.push(c);
+            continue;
+        }
+        chars.next();
+        let num = read_reference_digits(&mut chars);
+        if let Some(ch) = num.parse::<u32>().ok().and_then(char::from_u32) {
+            out.push(ch);
+        } else {
+            out.push_str("&#");
+            out.push_str(&num);
         }
     }
     out
+}
+
+/// Reads a numeric character reference's digits, consuming a closing `;`.
+fn read_reference_digits(chars: &mut std::iter::Peekable<std::str::Chars<'_>>) -> String {
+    let mut num = String::new();
+    while let Some(&d) = chars.peek() {
+        if d == ';' {
+            chars.next();
+            break;
+        }
+        if !d.is_ascii_digit() {
+            break;
+        }
+        num.push(d);
+        chars.next();
+    }
+    num
 }
 
 /// Decode a single-character BMM literal body: numeric references first, then an
@@ -1026,32 +1065,7 @@ pub(crate) fn field_type(
 ) -> String {
     match &p.kind {
         BmmPropKind::Single(t) => {
-            let overridden = type_override(&class.name, &p.name);
-            let mut inner = match overridden {
-                Some(rust) => rust.to_string(),
-                None => model.render_type(t, generics, subst, local, external),
-            };
-            // Box a field that would make the struct infinitely sized: direct
-            // self-recursion, mutual recursion (RESOURCE_DESCRIPTION ↔
-            // AUTHORED_RESOURCE), and F-bounded recursion through an auto-filled
-            // generic arg (DV_QUANTITY → normal_range: DvInterval<DvOrdered>,
-            // and DvOrdered's variants include DV_QUANTITY). We check every spec
-            // name the rendered type embeds by value, not just its head.
-            // A type already behind an indirection (`Vec`, `BTreeMap`,
-            // `BTreeSet`) breaks the cycle on its own — boxing it is redundant.
-            let already_indirect =
-                inner.starts_with("Vec<") || inner.starts_with("std::collections::");
-            let cyclic = overridden.is_none() && !already_indirect && {
-                let mut roots = BTreeSet::new();
-                model.effective_roots(t, &mut roots);
-                roots.iter().any(|r| {
-                    !Model::is_mapped(r)
-                        && (r == &class.name || model.reaches(r, &class.name, &mut BTreeSet::new()))
-                })
-            };
-            if cyclic {
-                inner = format!("Box<{inner}>");
-            }
+            let inner = single_field_type(model, class, p, t, generics, subst, local, external);
             if p.is_mandatory {
                 inner
             } else {
@@ -1060,44 +1074,123 @@ pub(crate) fn field_type(
         }
         BmmPropKind::Container {
             item, cardinality, ..
-        } => {
-            // A byte buffer (`Array<Octet>` / `List<Octet>`, e.g.
-            // `DV_MULTIMEDIA.data`) is inline base64 *text* on the canonical
-            // wire, not a JSON array — carry the base64 verbatim as a `String`
-            // (decoding is a behaviour-layer concern), like other broader-than-a-
-            // crate openEHR types. Optionality follows the property.
-            if item.root_name() == "Octet" {
-                return if p.is_mandatory {
-                    "String".to_string()
-                } else {
-                    "Option<String>".to_string()
-                };
-            }
-            // NOTE: a container property's Rust shape follows its BMM existence
-            // and cardinality — the emission table in this crate's `CLAUDE.md`
-            // §Container shapes carries the adjudication and its citations.
-            let item_ty = model.render_type(item, generics, subst, local, external);
-            let lower_bound_one = cardinality.as_ref().is_some_and(|c| c.lower >= 1)
-                && !crate::plan::overrides::cardinality_contradicted(&class.name, &p.name);
-            let nonempty_when_present = crate::analyze::nonempty_optional_lists_cached(model)
-                .iter()
-                .any(|(decl, attr)| {
-                    attr == &p.name && (decl == &class.name || model.inherits(&class.name, decl))
-                });
-            match (p.is_mandatory, lower_bound_one, nonempty_when_present) {
-                (true, true, _) => {
-                    format!("{}::NonEmptyVec<{item_ty}>", external.containers_path())
-                }
-                (true, false, _) => format!("Vec<{item_ty}>"),
-                (false, _, true) => {
-                    format!(
-                        "Option<{}::NonEmptyVec<{item_ty}>>",
-                        external.containers_path()
-                    )
-                }
-                (false, _, false) => format!("Option<Vec<{item_ty}>>"),
-            }
+        } => container_field_type(
+            model,
+            class,
+            p,
+            ContainerShape { item, cardinality },
+            generics,
+            subst,
+            local,
+            external,
+        ),
+    }
+}
+
+/// The item type and declared cardinality of a container property.
+#[derive(Clone, Copy)]
+struct ContainerShape<'a> {
+    item: &'a BmmType,
+    cardinality: &'a Option<crate::load::bmm::BmmCardinality>,
+}
+
+/// The inner Rust type of a single-valued property, boxed where leaving it by
+/// value would make the struct infinitely sized.
+///
+/// The cycle may be direct self-recursion, mutual recursion
+/// (`RESOURCE_DESCRIPTION` ↔ `AUTHORED_RESOURCE`), or F-bounded recursion through
+/// an auto-filled generic arg (`DV_QUANTITY` → `normal_range:
+/// DvInterval<DvOrdered>`, and `DvOrdered`'s variants include `DV_QUANTITY`), so
+/// every spec name the rendered type embeds by value is checked, not just its
+/// head. A type already behind an indirection (`Vec`, `BTreeMap`, `BTreeSet`)
+/// breaks the cycle on its own, and boxing it would be redundant.
+#[expect(
+    clippy::too_many_arguments,
+    reason = "the field-shape decision threads the same resolution tables `field_type` takes; bundling them would hide which each renderer reads"
+)]
+fn single_field_type(
+    model: &Model,
+    class: &BmmClass,
+    p: &crate::load::bmm::BmmProperty,
+    t: &BmmType,
+    generics: &[String],
+    subst: &BTreeMap<String, String>,
+    local: &BTreeSet<String>,
+    external: &External,
+) -> String {
+    let overridden = type_override(&class.name, &p.name);
+    let inner = match overridden {
+        Some(rust) => rust.to_string(),
+        None => model.render_type(t, generics, subst, local, external),
+    };
+    let already_indirect = inner.starts_with("Vec<") || inner.starts_with("std::collections::");
+    let cyclic = overridden.is_none() && !already_indirect && {
+        let mut roots = BTreeSet::new();
+        model.effective_roots(t, &mut roots);
+        roots.iter().any(|r| {
+            !Model::is_mapped(r)
+                && (r == &class.name || model.reaches(r, &class.name, &mut BTreeSet::new()))
+        })
+    };
+    if cyclic {
+        format!("Box<{inner}>")
+    } else {
+        inner
+    }
+}
+
+/// The Rust type of a container property.
+///
+/// A byte buffer (`Array<Octet>` / `List<Octet>`, e.g. `DV_MULTIMEDIA.data`) is
+/// inline base64 *text* on the canonical wire, not a JSON array, so it carries
+/// the base64 verbatim as a `String` (decoding is a behaviour-layer concern),
+/// like other broader-than-a-crate openEHR types; its optionality follows the
+/// property.
+///
+/// NOTE: every other container's shape follows its BMM existence and
+/// cardinality — the emission table in this crate's `CLAUDE.md` §Container
+/// shapes carries the adjudication and its citations.
+#[expect(
+    clippy::too_many_arguments,
+    reason = "the field-shape decision threads the same resolution tables `field_type` takes; bundling them would hide which each renderer reads"
+)]
+fn container_field_type(
+    model: &Model,
+    class: &BmmClass,
+    p: &crate::load::bmm::BmmProperty,
+    shape: ContainerShape<'_>,
+    generics: &[String],
+    subst: &BTreeMap<String, String>,
+    local: &BTreeSet<String>,
+    external: &External,
+) -> String {
+    if shape.item.root_name() == "Octet" {
+        return if p.is_mandatory {
+            "String".to_string()
+        } else {
+            "Option<String>".to_string()
+        };
+    }
+    let item_ty = model.render_type(shape.item, generics, subst, local, external);
+    let lower_bound_one = shape.cardinality.as_ref().is_some_and(|c| c.lower >= 1)
+        && !crate::plan::overrides::cardinality_contradicted(&class.name, &p.name);
+    let nonempty_when_present = crate::analyze::nonempty_optional_lists_cached(model)
+        .iter()
+        .any(|(decl, attr)| {
+            attr == &p.name && (decl == &class.name || model.inherits(&class.name, decl))
+        });
+    match (p.is_mandatory, lower_bound_one, nonempty_when_present) {
+        (true, true, _) => {
+            format!("{}::NonEmptyVec<{item_ty}>", external.containers_path())
         }
+        (true, false, _) => format!("Vec<{item_ty}>"),
+        (false, _, true) => {
+            format!(
+                "Option<{}::NonEmptyVec<{item_ty}>>",
+                external.containers_path()
+            )
+        }
+        (false, _, false) => format!("Option<Vec<{item_ty}>>"),
     }
 }
 
@@ -1135,7 +1228,6 @@ fn emit_enum(
         format!("<{}>", enum_generics.join(", "))
     };
     let mut b = String::new();
-    let no_subst = BTreeMap::new();
 
     // Compute payloads first (so imports can be derived from what they touch).
     // Each entry is `(variant ident, payload type, doc line)` — a variant is a
@@ -1143,45 +1235,7 @@ fn emit_enum(
     // a closed slot, so the line is synthesized from the subtype's spec name.
     let payloads: Vec<(String, String, String)> = variants
         .iter()
-        .map(|d| {
-            let variant = naming::type_name(d);
-            let d_generic = !model.used_generic_params(d).is_empty();
-            let payload = if d_generic && !enum_generics.is_empty() {
-                // Same subtype family: thread the enum's own params (`Event<T>`
-                // → `PointEvent(PointEvent<T>)`).
-                format!("{variant}<{}>", enum_generics.join(", "))
-            } else {
-                // Non-generic enum (e.g. `DataValue`) with a generic variant:
-                // bound-fill the variant (`DvInterval(DvInterval<DvOrdered>)`).
-                model.render_type(
-                    &BmmType::Simple(d.clone()),
-                    &enum_generics,
-                    &no_subst,
-                    local,
-                    external,
-                )
-            };
-            // Box a variant that would make the enum infinitely sized: either
-            // the payload embeds the enum type by value via a bound-filled arg
-            // (`EL_TERMINAL` ⊇ `EL_CASE_TABLE<EL_TERMINAL>`), or the variant's
-            // own fields reach back to the enum (`BMM_TYPE` ⊇ `BMM_CONTAINER_TYPE`
-            // whose `base_type` is a `BMM_TYPE`). A `Vec`/map payload already
-            // breaks the cycle.
-            let already_indirect =
-                payload.starts_with("Vec<") || payload.starts_with("std::collections::");
-            let cyclic = !already_indirect && {
-                let mut roots = BTreeSet::new();
-                model.effective_roots(&BmmType::Simple(d.clone()), &mut roots);
-                roots.contains(&class.name) || model.reaches(d, &class.name, &mut BTreeSet::new())
-            };
-            let payload = if cyclic {
-                format!("Box<{payload}>")
-            } else {
-                payload
-            };
-            let doc = format!("The `{d}` subtype of `{}`.", class.name);
-            (variant, payload, doc)
-        })
+        .map(|d| enum_variant_payload(model, class, d, &enum_generics, local, external))
         .collect();
 
     // A polymorphic *concrete* class also carries its own instances: append a
@@ -1359,6 +1413,56 @@ fn enum_literals(enumeration: &BmmEnumeration) -> Vec<EnumLit> {
         .collect()
 }
 
+/// One untagged-enum variant as `(ident, payload type, doc line)`.
+///
+/// A variant is a public item `missing_docs` checks, and the BMM has no
+/// per-subtype text for a closed slot, so the doc line is synthesized from the
+/// subtype's spec name.
+///
+/// The payload threads the enum's own generic params when the subtype belongs
+/// to the same generic family (`Event<T>` → `PointEvent(PointEvent<T>)`), and
+/// otherwise bound-fills the variant (`DvInterval(DvInterval<DvOrdered>)`). It
+/// is boxed when leaving it by value would make the enum infinitely sized:
+/// either the payload embeds the enum type through a bound-filled argument
+/// (`EL_TERMINAL` ⊇ `EL_CASE_TABLE<EL_TERMINAL>`), or the variant's own fields
+/// reach back to the enum (`BMM_TYPE` ⊇ `BMM_CONTAINER_TYPE` whose `base_type`
+/// is a `BMM_TYPE`). A `Vec`/map payload already breaks the cycle.
+fn enum_variant_payload(
+    model: &Model,
+    class: &BmmClass,
+    subtype: &str,
+    enum_generics: &[String],
+    local: &BTreeSet<String>,
+    external: &External,
+) -> (String, String, String) {
+    let variant = naming::type_name(subtype);
+    let subtype_generic = !model.used_generic_params(subtype).is_empty();
+    let payload = if subtype_generic && !enum_generics.is_empty() {
+        format!("{variant}<{}>", enum_generics.join(", "))
+    } else {
+        model.render_type(
+            &BmmType::Simple(subtype.to_owned()),
+            enum_generics,
+            &BTreeMap::new(),
+            local,
+            external,
+        )
+    };
+    let already_indirect = payload.starts_with("Vec<") || payload.starts_with("std::collections::");
+    let cyclic = !already_indirect && {
+        let mut roots = BTreeSet::new();
+        model.effective_roots(&BmmType::Simple(subtype.to_owned()), &mut roots);
+        roots.contains(&class.name) || model.reaches(subtype, &class.name, &mut BTreeSet::new())
+    };
+    let payload = if cyclic {
+        format!("Box<{payload}>")
+    } else {
+        payload
+    };
+    let doc = format!("The `{subtype}` subtype of `{}`.", class.name);
+    (variant, payload, doc)
+}
+
 /// Emit a BMM enumeration class as a real Rust enum: one variant per named
 /// constant, plus a tolerance-preserving `Other(String|i32)` catch-all.
 ///
@@ -1392,14 +1496,38 @@ fn emit_enum_literals(class: &BmmClass, enumeration: &BmmEnumeration, has_siblin
         &synth_class_summary(spec),
     );
     push_spec_alias(&mut b, spec, &ty, "");
-    let derive = if is_int {
+    emit_enum_declaration(&mut b, &ty, spec, payload, is_int, &lits);
+
+    emit_enum_conversions(&mut b, &ty, is_int, &lits);
+    emit_enum_try_from(&mut b, &ty, spec, &err_ty, is_int, &lits);
+
+    // Canonical-JSON (de)serialization is the emitted `ToJson`/`FromJson` impl in
+    // `openehr-its` (`emit-json`): `ToJson` writes `as_str`/`value` (the constant
+    // token or verbatim `Other` payload) and `FromJson` maps the bare primitive
+    // through the total `from_wire`/`from_value`, byte-identical to the primitive
+    // it replaces. No serde impl is emitted here.
+
+    emit_enum_error_type(&mut b, &ty, spec, &err_ty, err_inner, is_int);
+    b
+}
+
+/// The enum declaration: its derive, one variant per constant, and the
+/// tolerant `Other` payload variant.
+fn emit_enum_declaration(
+    b: &mut String,
+    ty: &str,
+    spec: &str,
+    payload: &str,
+    is_int: bool,
+    lits: &[EnumLit],
+) {
+    b.push_str(if is_int {
         "#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]\n"
     } else {
         "#[derive(Debug, Clone, PartialEq, Eq, Hash)]\n"
-    };
-    b.push_str(derive);
+    });
     b.push_str(&format!("pub enum {ty} {{\n"));
-    for lit in &lits {
+    for lit in lits {
         match &lit.wire {
             EnumLitWire::Str(s) => b.push_str(&format!("    /// `{s}`\n")),
             EnumLitWire::Int(v) => b.push_str(&format!("    /// `{}` = {v}\n", lit.name)),
@@ -1414,15 +1542,18 @@ fn emit_enum_literals(class: &BmmClass, enumeration: &BmmEnumeration, has_siblin
          /// the bare `{payload}` it replaces.\n    \
          Other({payload}),\n}}\n\n"
     ));
+}
 
-    // Inherent conversions.
+/// The enum's inherent wire conversions: the total `as_str`/`value` writer and
+/// its tolerant `from_wire`/`from_value` reader.
+fn emit_enum_conversions(b: &mut String, ty: &str, is_int: bool, lits: &[EnumLit]) {
     b.push_str(&format!("impl {ty} {{\n"));
     if is_int {
         b.push_str(
             "    /// The `i32` wire value of this constant (the verbatim payload for\n    \
              /// [`Self::Other`]).\n    #[must_use]\n    pub fn value(self) -> i32 {\n        match self {\n",
         );
-        for lit in &lits {
+        for lit in lits {
             if let EnumLitWire::Int(v) = &lit.wire {
                 b.push_str(&format!("            Self::{} => {v},\n", lit.ident));
             }
@@ -1433,37 +1564,46 @@ fn emit_enum_literals(class: &BmmClass, enumeration: &BmmEnumeration, has_siblin
              /// value as [`Self::Other`] (total — never fails).\n    #[must_use]\n    \
              pub fn from_value(__v: i32) -> Self {\n        match __v {\n",
         );
-        for lit in &lits {
+        for lit in lits {
             if let EnumLitWire::Int(v) = &lit.wire {
                 b.push_str(&format!("            {v} => Self::{},\n", lit.ident));
             }
         }
         b.push_str("            _ => Self::Other(__v),\n        }\n    }\n}\n\n");
-    } else {
-        b.push_str(
-            "    /// The wire string of this constant (the verbatim token for\n    \
-             /// [`Self::Other`]).\n    #[must_use]\n    pub fn as_str(&self) -> &str {\n        match self {\n",
-        );
-        for lit in &lits {
-            if let EnumLitWire::Str(s) = &lit.wire {
-                b.push_str(&format!("            Self::{} => {s:?},\n", lit.ident));
-            }
-        }
-        b.push_str("            Self::Other(__s) => __s.as_str(),\n        }\n    }\n\n");
-        b.push_str(
-            "    /// This constant for a wire string, tolerating an unknown token\n    \
-             /// as [`Self::Other`] (total — never fails).\n    #[must_use]\n    \
-             pub fn from_wire(__s: &str) -> Self {\n        match __s {\n",
-        );
-        for lit in &lits {
-            if let EnumLitWire::Str(s) = &lit.wire {
-                b.push_str(&format!("            {s:?} => Self::{},\n", lit.ident));
-            }
-        }
-        b.push_str("            _ => Self::Other(__s.to_owned()),\n        }\n    }\n}\n\n");
+        return;
     }
+    b.push_str(
+        "    /// The wire string of this constant (the verbatim token for\n    \
+         /// [`Self::Other`]).\n    #[must_use]\n    pub fn as_str(&self) -> &str {\n        match self {\n",
+    );
+    for lit in lits {
+        if let EnumLitWire::Str(s) = &lit.wire {
+            b.push_str(&format!("            Self::{} => {s:?},\n", lit.ident));
+        }
+    }
+    b.push_str("            Self::Other(__s) => __s.as_str(),\n        }\n    }\n\n");
+    b.push_str(
+        "    /// This constant for a wire string, tolerating an unknown token\n    \
+         /// as [`Self::Other`] (total — never fails).\n    #[must_use]\n    \
+         pub fn from_wire(__s: &str) -> Self {\n        match __s {\n",
+    );
+    for lit in lits {
+        if let EnumLitWire::Str(s) = &lit.wire {
+            b.push_str(&format!("            {s:?} => Self::{},\n", lit.ident));
+        }
+    }
+    b.push_str("            _ => Self::Other(__s.to_owned()),\n        }\n    }\n}\n\n");
+}
 
-    // Strict `TryFrom` seam (never yields `Other`).
+/// The strict `TryFrom` seam, which never yields `Other`.
+fn emit_enum_try_from(
+    b: &mut String,
+    ty: &str,
+    spec: &str,
+    err_ty: &str,
+    is_int: bool,
+    lits: &[EnumLit],
+) {
     if is_int {
         b.push_str(&format!(
             "impl ::core::convert::TryFrom<i64> for {ty} {{\n    type Error = {err_ty};\n\n    \
@@ -1471,7 +1611,7 @@ fn emit_enum_literals(class: &BmmClass, enumeration: &BmmEnumeration, has_siblin
              /// (unlike [`Self::from_value`], which is total).\n    \
              fn try_from(__v: i64) -> ::core::result::Result<Self, Self::Error> {{\n        match __v {{\n"
         ));
-        for lit in &lits {
+        for lit in lits {
             if let EnumLitWire::Int(v) = &lit.wire {
                 b.push_str(&format!(
                     "            {v} => ::core::result::Result::Ok(Self::{}),\n",
@@ -1482,33 +1622,37 @@ fn emit_enum_literals(class: &BmmClass, enumeration: &BmmEnumeration, has_siblin
         b.push_str(&format!(
             "            _ => ::core::result::Result::Err({err_ty}(__v)),\n        }}\n    }}\n}}\n\n"
         ));
-    } else {
-        b.push_str(&format!(
-            "impl ::core::convert::TryFrom<&str> for {ty} {{\n    type Error = {err_ty};\n\n    \
-             /// # Errors\n    /// Returns [`{err_ty}`] when `__s` is not a `{spec}` value\n    \
-             /// (unlike [`Self::from_wire`], which is total).\n    \
-             fn try_from(__s: &str) -> ::core::result::Result<Self, Self::Error> {{\n        match __s {{\n"
-        ));
-        for lit in &lits {
-            if let EnumLitWire::Str(s) = &lit.wire {
-                b.push_str(&format!(
-                    "            {s:?} => ::core::result::Result::Ok(Self::{}),\n",
-                    lit.ident
-                ));
-            }
-        }
-        b.push_str(&format!(
-            "            _ => ::core::result::Result::Err({err_ty}(__s.to_owned())),\n        }}\n    }}\n}}\n\n"
-        ));
+        return;
     }
+    b.push_str(&format!(
+        "impl ::core::convert::TryFrom<&str> for {ty} {{\n    type Error = {err_ty};\n\n    \
+         /// # Errors\n    /// Returns [`{err_ty}`] when `__s` is not a `{spec}` value\n    \
+         /// (unlike [`Self::from_wire`], which is total).\n    \
+         fn try_from(__s: &str) -> ::core::result::Result<Self, Self::Error> {{\n        match __s {{\n"
+    ));
+    for lit in lits {
+        if let EnumLitWire::Str(s) = &lit.wire {
+            b.push_str(&format!(
+                "            {s:?} => ::core::result::Result::Ok(Self::{}),\n",
+                lit.ident
+            ));
+        }
+    }
+    b.push_str(&format!(
+        "            _ => ::core::result::Result::Err({err_ty}(__s.to_owned())),\n        }}\n    }}\n}}\n\n"
+    ));
+}
 
-    // Canonical-JSON (de)serialization is the emitted `ToJson`/`FromJson` impl in
-    // `openehr-its` (`emit-json`): `ToJson` writes `as_str`/`value` (the constant
-    // token or verbatim `Other` payload) and `FromJson` maps the bare primitive
-    // through the total `from_wire`/`from_value`, byte-identical to the primitive
-    // it replaces. No serde impl is emitted here.
-
-    // The strict-seam error type (hand-rolled Display + Error, no `thiserror`).
+/// The strict seam's error type (hand-rolled `Display` + `Error`, no
+/// `thiserror` in the generated crates).
+fn emit_enum_error_type(
+    b: &mut String,
+    ty: &str,
+    spec: &str,
+    err_ty: &str,
+    err_inner: &str,
+    is_int: bool,
+) {
     b.push_str(&format!(
         "/// The error returned by [`{ty}::try_from`] for a value outside the `{spec}`\n\
          /// constant set.\n#[derive(Debug, Clone, PartialEq, Eq)]\npub struct {err_ty}(pub {err_inner});\n\n"
@@ -1524,7 +1668,6 @@ fn emit_enum_literals(class: &BmmClass, enumeration: &BmmEnumeration, has_siblin
          ::core::write!(f, {fmt:?}, self.0)\n    }}\n}}\n\n"
     ));
     b.push_str(&format!("impl ::std::error::Error for {err_ty} {{}}\n"));
-    b
 }
 
 // ── import + header helpers ──────────────────────────────────────────────────
@@ -1678,75 +1821,11 @@ fn doc_block(b: &mut String, doc: Option<&str>, indent: &str) {
 
 fn doc_block_summarized(b: &mut String, doc: Option<&str>, indent: &str, summary_hint: &str) {
     let Some(doc) = doc else { return };
-    // Spec prose carries example blocks (ODIN snippets, `YYYY-MM-DDTHH:MM:SS`
-    // date formats) that rustdoc would compile as Rust doctests and choke on.
-    // Neutralize both forms it recognizes so the docs render as text, never run:
-    //   - a bare ``` fence → tag the opening as ```text (closing stays bare);
-    //   - a run of 4-space-indented lines → wrap it in a ```text fence.
-    // Prose OUTSIDE those blocks additionally goes through `sanitize_doc_prose`
-    // (bare URLs, stray brackets/angle brackets — the rustdoc deny-lints).
-    let mut out: Vec<String> = Vec::new();
-    // Pending prose lines, sanitized as one segment so a code span may span
-    // lines (the BMM has such spans, e.g. `BMM_SCHEMA_DESCRIPTOR.schema_id`).
-    let mut prose: Vec<&str> = Vec::new();
-    let flush = |prose: &mut Vec<&str>, out: &mut Vec<String>| {
-        if prose.is_empty() {
-            return;
-        }
-        let sanitized = sanitize_doc_prose(&prose.join("\n"));
-        out.extend(sanitized.split('\n').map(str::to_string));
-        prose.clear();
-    };
-
-    let mut in_fence = false; // inside an explicit ``` fence
-    let mut in_indent = false; // inside an auto-wrapped indented block
+    let mut block = DocBlock::default();
     for line in doc.lines() {
-        let line = line.trim_end();
-        let stripped = line.trim_start();
-        let lead = line.len() - stripped.len();
-
-        if stripped.starts_with("```") && !in_indent {
-            flush(&mut prose, &mut out);
-            if in_fence {
-                in_fence = false;
-                out.push(line.to_string());
-            } else {
-                in_fence = true;
-                out.push(if stripped == "```" {
-                    line.replacen("```", "```text", 1)
-                } else {
-                    line.to_string()
-                });
-            }
-            continue;
-        }
-        if in_fence {
-            out.push(line.to_string());
-            continue;
-        }
-
-        let is_indent_line = lead >= 4 && !stripped.is_empty();
-        if is_indent_line && !in_indent {
-            flush(&mut prose, &mut out);
-            out.push("```text".to_string());
-            in_indent = true;
-        } else if in_indent && !is_indent_line && !stripped.is_empty() {
-            out.push("```".to_string());
-            in_indent = false;
-        }
-        if in_indent {
-            out.push(line.to_string());
-        } else {
-            prose.push(line);
-        }
+        block.push_line(line.trim_end());
     }
-    flush(&mut prose, &mut out);
-    if in_indent {
-        out.push("```".to_string());
-    }
-    if in_fence {
-        out.push("```".to_string());
-    }
+    let mut out = block.finish();
     split_long_first_paragraph(&mut out, summary_hint);
 
     for line in &out {
@@ -1755,6 +1834,100 @@ fn doc_block_summarized(b: &mut String, doc: Option<&str>, indent: &str, summary
         } else {
             b.push_str(&format!("{indent}/// {line}\n"));
         }
+    }
+}
+
+/// The line-by-line rewriter behind [`doc_block_summarized`].
+///
+/// Spec prose carries example blocks (ODIN snippets, `YYYY-MM-DDTHH:MM:SS` date
+/// formats) that rustdoc would compile as Rust doctests and choke on. Both forms
+/// it recognizes are neutralized so the docs render as text, never run: a bare
+/// triple-backtick fence has its opening tagged `text` (the closing stays bare),
+/// and a run of 4-space-indented lines is wrapped in a `text` fence. Prose
+/// OUTSIDE those blocks additionally goes through [`sanitize_doc_prose`] (bare
+/// URLs, stray brackets/angle brackets — the rustdoc deny-lints).
+#[derive(Default)]
+struct DocBlock<'a> {
+    /// The rewritten lines, in order.
+    out: Vec<String>,
+    /// Pending prose lines, sanitized as one segment so a code span may span
+    /// lines (the BMM has such spans, e.g. `BMM_SCHEMA_DESCRIPTOR.schema_id`).
+    prose: Vec<&'a str>,
+    /// Inside an explicit triple-backtick fence.
+    in_fence: bool,
+    /// Inside an auto-wrapped indented block.
+    in_indent: bool,
+}
+
+impl<'a> DocBlock<'a> {
+    /// Sanitizes and emits the pending prose segment, if any.
+    fn flush_prose(&mut self) {
+        if self.prose.is_empty() {
+            return;
+        }
+        let sanitized = sanitize_doc_prose(&self.prose.join("\n"));
+        self.out.extend(sanitized.split('\n').map(str::to_string));
+        self.prose.clear();
+    }
+
+    /// Takes one already-right-trimmed source line.
+    fn push_line(&mut self, line: &'a str) {
+        let stripped = line.trim_start();
+        if stripped.starts_with("```") && !self.in_indent {
+            self.toggle_fence(line, stripped);
+            return;
+        }
+        if self.in_fence {
+            self.out.push(line.to_string());
+            return;
+        }
+        let lead = line.len() - stripped.len();
+        self.track_indent_block(lead >= 4 && !stripped.is_empty(), stripped.is_empty());
+        if self.in_indent {
+            self.out.push(line.to_string());
+        } else {
+            self.prose.push(line);
+        }
+    }
+
+    /// Opens or closes an explicit fence, tagging a bare opening as `text`.
+    fn toggle_fence(&mut self, line: &str, stripped: &str) {
+        self.flush_prose();
+        if self.in_fence {
+            self.in_fence = false;
+            self.out.push(line.to_string());
+            return;
+        }
+        self.in_fence = true;
+        self.out.push(if stripped == "```" {
+            line.replacen("```", "```text", 1)
+        } else {
+            line.to_string()
+        });
+    }
+
+    /// Opens or closes the auto-wrapped fence around an indented run.
+    fn track_indent_block(&mut self, is_indent_line: bool, is_blank: bool) {
+        if is_indent_line && !self.in_indent {
+            self.flush_prose();
+            self.out.push("```text".to_string());
+            self.in_indent = true;
+        } else if self.in_indent && !is_indent_line && !is_blank {
+            self.out.push("```".to_string());
+            self.in_indent = false;
+        }
+    }
+
+    /// Flushes the tail state and yields the rewritten lines.
+    fn finish(mut self) -> Vec<String> {
+        self.flush_prose();
+        if self.in_indent {
+            self.out.push("```".to_string());
+        }
+        if self.in_fence {
+            self.out.push("```".to_string());
+        }
+        self.out
     }
 }
 
@@ -1861,35 +2034,9 @@ fn sanitize_doc_prose(text: &str) -> String {
     let mut rest = text;
     while let Some(c) = rest.chars().next() {
         match c {
-            '`' => {
-                let open = backtick_run(rest);
-                // A matched pair delimits a code span: copy it verbatim, closing
-                // run included. An unmatched run is escaped instead.
-                if let Some(offset) = find_backtick_run(after(rest, open), open) {
-                    let end = open + offset + open;
-                    out.push_str(upto(rest, end));
-                    rest = after(rest, end);
-                } else {
-                    for _ in 0..open {
-                        out.push_str("\\`");
-                    }
-                    rest = after(rest, open);
-                }
-            }
+            '`' => rest = copy_code_span(rest, &mut out),
             'h' if rest.starts_with("http://") || rest.starts_with("https://") => {
-                let url = read_url(rest);
-                let tail = after(rest, url.len());
-                // asciidoc link form `https://host/path[label]`. A parenthesis in
-                // the URL would end the Markdown destination early, so such a
-                // link stays an autolink with escaped brackets.
-                let plain_dest = !url.contains(['(', ')']);
-                if let Some((consumed, label)) = read_link_label(tail).filter(|_| plain_dest) {
-                    out.push_str(&format!("[{label}]({url})"));
-                    rest = after(tail, consumed);
-                } else {
-                    out.push_str(&format!("<{url}>"));
-                    rest = tail;
-                }
+                rest = copy_url(rest, &mut out);
             }
             '[' | ']' | '<' | '>' => {
                 out.push('\\');
@@ -1903,6 +2050,40 @@ fn sanitize_doc_prose(text: &str) -> String {
         }
     }
     out
+}
+
+/// Copies a backtick run to `out`, returning the unconsumed remainder.
+///
+/// A matched pair delimits a code span: it is copied verbatim, closing run
+/// included. An unmatched run is escaped instead.
+fn copy_code_span<'a>(rest: &'a str, out: &mut String) -> &'a str {
+    let open = backtick_run(rest);
+    if let Some(offset) = find_backtick_run(after(rest, open), open) {
+        let end = open + offset + open;
+        out.push_str(upto(rest, end));
+        return after(rest, end);
+    }
+    for _ in 0..open {
+        out.push_str("\\`");
+    }
+    after(rest, open)
+}
+
+/// Copies a URL to `out` as Markdown, returning the unconsumed remainder.
+///
+/// The asciidoc link form `https://host/path[label]` becomes a Markdown link. A
+/// parenthesis in the URL would end the Markdown destination early, so such a
+/// link stays an autolink with escaped brackets.
+fn copy_url<'a>(rest: &'a str, out: &mut String) -> &'a str {
+    let url = read_url(rest);
+    let tail = after(rest, url.len());
+    let plain_dest = !url.contains(['(', ')']);
+    if let Some((consumed, label)) = read_link_label(tail).filter(|_| plain_dest) {
+        out.push_str(&format!("[{label}]({url})"));
+        return after(tail, consumed);
+    }
+    out.push_str(&format!("<{url}>"));
+    tail
 }
 
 /// `s` after its first `n` bytes — total (empty when `n` is out of range or not

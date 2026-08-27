@@ -160,62 +160,70 @@ fn parse_tree(xml: &str) -> Result<El, FlatError> {
     let mut stack: Vec<El> = Vec::new();
     let mut root: Option<El> = None;
 
-    let start_el = |e: &quick_xml::events::BytesStart<'_>| -> Result<El, FlatError> {
-        let mut attrs = Vec::new();
-        for a in e.attributes() {
-            let a =
-                a.map_err(|err| FlatError::Conversion(format!("malformed TDD attribute: {err}")))?;
-            let key = String::from_utf8_lossy(a.key.as_ref()).into_owned();
-            let val = String::from_utf8_lossy(&a.value).into_owned();
-            attrs.push((key, val));
-        }
-        Ok(El {
-            name: local_name(e.name().as_ref()),
-            attrs,
-            text: String::new(),
-            children: Vec::new(),
-        })
-    };
-
-    let close = |stack: &mut Vec<El>, root: &mut Option<El>| {
-        if let Some(done) = stack.pop() {
-            match stack.last_mut() {
-                Some(parent) => parent.children.push(done),
-                None => *root = Some(done),
-            }
-        }
-    };
-
     loop {
         match reader
             .read_event()
             .map_err(|e| FlatError::Conversion(format!("TDD is not well-formed XML: {e}")))?
         {
-            Event::Start(e) => stack.push(start_el(&e)?),
+            Event::Start(e) => stack.push(start_element(&e)?),
             Event::Empty(e) => {
-                stack.push(start_el(&e)?);
-                close(&mut stack, &mut root);
+                stack.push(start_element(&e)?);
+                close_element(&mut stack, &mut root);
             }
-            Event::End(_) => close(&mut stack, &mut root),
+            Event::End(_) => close_element(&mut stack, &mut root),
             Event::Text(t) => {
-                if let Some(top) = stack.last_mut() {
-                    let txt = t
-                        .decode()
-                        .map_err(|e| FlatError::Conversion(format!("TDD text decode: {e}")))?;
-                    top.text.push_str(txt.trim());
-                }
+                let txt = t
+                    .decode()
+                    .map_err(|e| FlatError::Conversion(format!("TDD text decode: {e}")))?;
+                push_text(&mut stack, txt.trim());
             }
             Event::CData(t) => {
-                if let Some(top) = stack.last_mut() {
-                    let bytes = t.into_inner();
-                    top.text.push_str(&String::from_utf8_lossy(&bytes));
-                }
+                let bytes = t.into_inner();
+                push_text(&mut stack, &String::from_utf8_lossy(&bytes));
             }
             Event::Eof => break,
             _ => {}
         }
     }
     root.ok_or_else(|| FlatError::Conversion("TDD has no root element".into()))
+}
+
+/// Reads one start tag into a childless [`El`].
+///
+/// # Errors
+/// Returns [`FlatError::Conversion`] if an attribute is malformed.
+fn start_element(e: &quick_xml::events::BytesStart<'_>) -> Result<El, FlatError> {
+    let mut attrs = Vec::new();
+    for a in e.attributes() {
+        let a =
+            a.map_err(|err| FlatError::Conversion(format!("malformed TDD attribute: {err}")))?;
+        let key = String::from_utf8_lossy(a.key.as_ref()).into_owned();
+        let val = String::from_utf8_lossy(&a.value).into_owned();
+        attrs.push((key, val));
+    }
+    Ok(El {
+        name: local_name(e.name().as_ref()),
+        attrs,
+        text: String::new(),
+        children: Vec::new(),
+    })
+}
+
+/// Closes the innermost open element, attaching it to its parent or the root.
+fn close_element(stack: &mut Vec<El>, root: &mut Option<El>) {
+    if let Some(done) = stack.pop() {
+        match stack.last_mut() {
+            Some(parent) => parent.children.push(done),
+            None => *root = Some(done),
+        }
+    }
+}
+
+/// Appends character data to the innermost open element, if there is one.
+fn push_text(stack: &mut [El], text: &str) {
+    if let Some(top) = stack.last_mut() {
+        top.text.push_str(text);
+    }
 }
 
 /// Re-serialise an [`El`] subtree to a standalone canonical-XML document so the
@@ -458,63 +466,73 @@ pub fn from_tdd(tdd_xml: &str, wt: &WebTemplate) -> Result<Value, FlatError> {
 /// the build. Everything else is content the TDS does not define.
 const WRAPPER_METADATA: [&str; 6] = ["name", "uid", "links", "feeder_audit", "origin", "time"];
 
-#[expect(
-    clippy::indexing_slicing,
-    reason = "`simple`, `matched` and `wrapper` are all sized `el.children.len()` and every index into them is either a `match_indices(el, ..)` position over those same children or the `enumerate()` index of the same iteration, so all are in bounds by construction"
-)]
 fn check_conformance(el: &El, wt: &WebTemplateNode, rm_type: &str) -> Result<(), FlatError> {
-    // Direct children consumed as simple in-context attributes.
-    let simple: Vec<bool> = el
-        .children
-        .iter()
-        .map(|c| simple_attr(rm_type, &c.name).is_some())
-        .collect();
-
-    // Children matched by some web-template child (with the matched
-    // template node, to recurse), at any depth of the scoped search.
-    let mut matched: Vec<Option<&WebTemplateNode>> = vec![None; el.children.len()];
-    let mut wrapper: Vec<bool> = vec![false; el.children.len()];
-    for wc in &wt.children {
-        for (idx, is_direct) in match_indices(el, node_display(wc)) {
-            if is_direct {
-                matched[idx] = Some(wc);
-            } else {
-                // The match sits deeper: the direct child at `idx` is a
-                // wrapper on the path to it. The deeper levels are checked
-                // by the recursion below only for DIRECT matches; wrapper
-                // interiors are re-checked against the SAME context.
-                wrapper[idx] = true;
-            }
-        }
-    }
-
-    for (idx, child) in el.children.iter().enumerate() {
-        if simple[idx] {
-            continue;
-        }
-        if let Some(wc) = matched[idx] {
-            if !wc.has_input() {
+    for (child, role) in el.children.iter().zip(classify_children(el, wt, rm_type)) {
+        match role {
+            ChildRole::Matched(wc) if !wc.has_input() => {
                 check_conformance(child, wc, concrete_type(&wc.rm_type))?;
             }
-            continue;
-        }
-        if wrapper[idx] {
             // A wrapper is transparent: its children are checked against the
             // same template node so a junk sibling BESIDE the real match is
             // still caught.
-            check_conformance(child, wt, rm_type)?;
-            continue;
+            ChildRole::Wrapper => check_conformance(child, wt, rm_type)?,
+            ChildRole::Unmatched if !WRAPPER_METADATA.contains(&child.name.as_str()) => {
+                return Err(FlatError::Conversion(format!(
+                    "TDD element <{}> (under <{}>) matches no node of the operational template — \
+                     the document does not conform to the template-derived TDS",
+                    child.name, el.name
+                )));
+            }
+            ChildRole::Simple | ChildRole::Matched(_) | ChildRole::Unmatched => {}
         }
-        if WRAPPER_METADATA.contains(&child.name.as_str()) {
-            continue;
-        }
-        return Err(FlatError::Conversion(format!(
-            "TDD element <{}> (under <{}>) matches no node of the operational template — \
-             the document does not conform to the template-derived TDS",
-            child.name, el.name
-        )));
     }
     Ok(())
+}
+
+/// How one direct child of a TDD element relates to its template node.
+enum ChildRole<'a> {
+    /// Consumed as a simple in-context attribute.
+    Simple,
+    /// Matched by this web-template child.
+    Matched(&'a WebTemplateNode),
+    /// A wrapper on the path to a deeper match.
+    Wrapper,
+    /// Matched by no web-template child at any depth.
+    Unmatched,
+}
+
+/// Classifies every direct child of `el` against `wt`'s children, in order.
+///
+/// A match deeper than a direct child marks that direct child a wrapper: the
+/// deeper levels are recursed into only for DIRECT matches, so wrapper
+/// interiors are re-checked against the SAME context.
+fn classify_children<'a>(el: &El, wt: &'a WebTemplateNode, rm_type: &str) -> Vec<ChildRole<'a>> {
+    let matches: Vec<(usize, bool, &WebTemplateNode)> = wt
+        .children
+        .iter()
+        .flat_map(|wc| {
+            match_indices(el, node_display(wc))
+                .into_iter()
+                .map(move |(idx, is_direct)| (idx, is_direct, wc))
+        })
+        .collect();
+    el.children
+        .iter()
+        .enumerate()
+        .map(|(idx, c)| {
+            if simple_attr(rm_type, &c.name).is_some() {
+                return ChildRole::Simple;
+            }
+            // Last direct match wins, as the single-pass classification did.
+            if let Some((_, _, wc)) = matches.iter().rev().find(|(i, d, _)| *i == idx && *d) {
+                return ChildRole::Matched(wc);
+            }
+            if matches.iter().any(|(i, d, _)| *i == idx && !*d) {
+                return ChildRole::Wrapper;
+            }
+            ChildRole::Unmatched
+        })
+        .collect()
 }
 
 /// For each shallowest match of `display` in `parent`'s subtree (the same
@@ -562,10 +580,22 @@ fn build_node(
         }
     }
 
-    // Simple in-context RM attributes — read directly from the TDD (faithful).
-    let mut i = 0;
-    while let Some(child) = el.children.get(i) {
-        i += 1;
+    build_simple_attrs(el, rm_type, &mut obj)?;
+    build_content_children(el, wt, rm_type, path, &mut obj)?;
+    Ok(Value::Object(obj))
+}
+
+/// Reads the simple in-context RM attributes directly off the TDD element
+/// (faithful — no template mediation).
+///
+/// # Errors
+/// [`FlatError`] when a typed attribute's text does not parse.
+fn build_simple_attrs(
+    el: &El,
+    rm_type: &str,
+    obj: &mut Map<String, Value>,
+) -> Result<(), FlatError> {
+    for child in &el.children {
         let Some(hint) = simple_attr(rm_type, &child.name) else {
             continue;
         };
@@ -573,38 +603,52 @@ fn build_node(
             Simple::Text => {
                 obj.insert(child.name.clone(), json!(child.text));
             }
+            Simple::Typed(ty) if is_multi_simple(&child.name) => {
+                let arr = obj
+                    .entry(child.name.clone())
+                    .or_insert_with(|| json!([]))
+                    .as_array_mut();
+                if let Some(arr) = arr {
+                    arr.push(parse_typed(child, ty)?);
+                }
+            }
             Simple::Typed(ty) => {
-                if is_multi_simple(&child.name) {
-                    let arr = obj
-                        .entry(child.name.clone())
-                        .or_insert_with(|| json!([]))
-                        .as_array_mut();
-                    if let Some(arr) = arr {
-                        arr.push(parse_typed(child, ty)?);
-                    }
-                } else if !obj.contains_key(&child.name) {
+                if !obj.contains_key(&child.name) {
                     obj.insert(child.name.clone(), parse_typed(child, ty)?);
                 }
             }
         }
     }
+    Ok(())
+}
 
-    // Content children — driven by the web-template node tree. Each web-template
-    // child is located in the TDD by name (scoped) and placed at its relative
-    // aqlPath, re-materialising the wrapper chain the TDD/template compacted.
+/// Builds the content children, driven by the web-template node tree.
+///
+/// Each web-template child is located in the TDD by name (scoped) and placed
+/// at its relative `aqlPath`, re-materialising the wrapper chain the
+/// TDD/template compacted. A node the WebTemplate synthesizes for a *simple*
+/// RM in-context attribute (COMPOSITION context/language/territory/composer,
+/// ENTRY language/encoding/subject — `ITS-REST simplified_formats master04`
+/// §"Web Template Metadata", the `inContext` marker) is skipped: it is already
+/// built from the TDD element by [`build_simple_attrs`], and walking it again
+/// would rebuild it partially (e.g. an EVENT_CONTEXT without its mandatory
+/// `start_time`) and overwrite the faithful value. `category` and the per-EVENT
+/// `time` are real tree data and still build through the walk.
+///
+/// # Errors
+/// [`FlatError`] from a child's leaf parse or nested build.
+fn build_content_children(
+    el: &El,
+    wt: &WebTemplateNode,
+    rm_type: &str,
+    path: &str,
+    obj: &mut Map<String, Value>,
+) -> Result<(), FlatError> {
     for wc in &wt.children {
         let rel = rmpath::relative(path, &wc.aql_path);
         if rel.is_empty() {
             continue;
         }
-        // A node the WebTemplate synthesizes for a *simple* RM in-context
-        // attribute (COMPOSITION context/language/territory/composer, ENTRY
-        // language/encoding/subject — `ITS-REST simplified_formats master04`
-        // §"Web Template Metadata", the `inContext` marker) is already built
-        // above from the TDD element by `simple_attr`; walking it again would
-        // rebuild it partially (e.g. an EVENT_CONTEXT without its mandatory
-        // `start_time`) and overwrite the faithful value. `category` and the
-        // per-EVENT `time` are real tree data and still build through the walk.
         if (wc.in_context == Some(true) || wc.rm_type == "EVENT_CONTEXT")
             && rel
                 .last()
@@ -612,8 +656,7 @@ fn build_node(
         {
             continue;
         }
-        let matches = find_matches(el, node_display(wc));
-        for cel in matches {
+        for cel in find_matches(el, node_display(wc)) {
             let child_value = if wc.has_input() {
                 // A leaf: the ELEMENT wrapper is materialised by `place`; the
                 // datum is the leaf element's `<value>` fragment.
@@ -621,11 +664,10 @@ fn build_node(
             } else {
                 build_node(cel, wc, concrete_type(&wc.rm_type), &wc.aql_path, false)?
             };
-            place(&mut obj, &rel, child_value, wc);
+            place(obj, &rel, child_value, wc);
         }
     }
-
-    Ok(Value::Object(obj))
+    Ok(())
 }
 
 /// The `DATA_VALUE` of a leaf, parsed as the web-template-declared concrete type.

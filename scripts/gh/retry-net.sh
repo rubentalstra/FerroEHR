@@ -67,7 +67,7 @@ poll_until() {
     if "$@"; then
       return 0
     fi
-    if [ "$(date +%s)" -ge "$deadline" ]; then
+    if [[ "$(date +%s)" -ge "$deadline" ]]; then
       return 1
     fi
     sleep "$interval"
@@ -90,7 +90,7 @@ retry_state() {
     if "$@"; then
       return 0
     fi
-    if [ "$attempt" -lt "$attempts" ]; then
+    if [[ "$attempt" -lt "$attempts" ]]; then
       echo "${what} attempt ${attempt} failed; retrying in $(( attempt * 10 ))s"
       sleep $(( attempt * 10 ))
     fi

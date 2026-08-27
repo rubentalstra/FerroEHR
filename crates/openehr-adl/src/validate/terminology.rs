@@ -37,17 +37,12 @@ use crate::parse::Dialect;
 use crate::paths::child_path;
 use openehr_am::v2_4::aom2::definitions::adl_code_definitions::AdlCodeDefinitionsData;
 
-#[expect(
-    clippy::too_many_lines,
-    reason = "the individual rules are already extracted into helpers below; the remaining length is the number of terminology codes checked in sequence"
-)]
 pub(super) fn check_terminology(
     v: &ArchetypeView<'_>,
     dialect: Dialect,
     issues: &mut Vec<ValidationIssue>,
 ) {
     let term = v.terminology;
-    let level = v.specialisation_level();
 
     // Union of all defined codes across languages (a code defined in any
     // language counts as defined for the definedness checks).
@@ -62,12 +57,35 @@ pub(super) fn check_terminology(
     let root = CObject::CComplexObject(v.definition.clone());
     collect_usage(&root, &mut usage);
 
-    // VATID: the root concept code must be defined in the terminology (master08
-    // §Code Validation; NOTE-flagged, no full vendored text).
-    //
-    // NOTE: the per-node id-code definedness half is a reference-model check
-    // (master07 §Overview: a term definition is optional for children of a
-    // single-valued attribute), so it runs in [`super::rm`].
+    check_root_concept_code(v, &defined, issues);
+    check_node_id_definedness(v, dialect, &usage, &defined, issues);
+    check_referenced_codes(v, &usage, &defined, issues);
+    check_assumed_values(term, &usage, issues);
+    check_defined_code_levels(v, dialect, &defined, issues);
+    check_defined_code_forms(&defined, issues);
+    // VTLC: every code defined in one language must be defined in all languages
+    // (master07 §Validity Rules).
+    check_language_coverage(term, issues);
+    check_declared_languages(v, term, issues);
+    // VTVSID / VTVSMD / VTVSUQ: value-set integrity (master07 §Validity Rules).
+    check_value_sets(term, &defined, !v.is_specialised(), issues);
+    // VTTBK / VTCBK: term/constraint binding key validity (master07 §Validity
+    // Rules).
+    check_bindings(v, &defined, issues);
+    check_unused_codes(v, dialect, &usage, &defined, issues);
+}
+
+/// VATID: the root concept code must be defined in the terminology (master08
+/// §Code Validation; NOTE-flagged, no full vendored text).
+///
+/// NOTE: the per-node id-code definedness half is a reference-model check
+/// (master07 §Overview: a term definition is optional for children of a
+/// single-valued attribute), so it runs in [`super::rm`].
+fn check_root_concept_code(
+    v: &ArchetypeView<'_>,
+    defined: &BTreeSet<&str>,
+    issues: &mut Vec<ValidationIssue>,
+) {
     let root_id = complex_node_id(v.definition);
     if !root_id.is_empty()
         && (AdlCodeDefinitionsData::is_id_code(root_id)
@@ -79,33 +97,54 @@ pub(super) fn check_terminology(
             format!("root concept code {root_id:?} is not defined in the terminology"),
         ));
     }
+}
 
-    // VATDF (ADL 1.4, node-id half): in ADL 1.4 EVERY at-code used as a node
-    // identifier in the definition must be defined in the ontology's
-    // term_definitions (ADL1.4 master08 §Validity Rules VATDF; AOM1.4
-    // `ARCHETYPE.node_ids_valid`). ADL2 defers interior-node-id definedness to
-    // the RM phase, but the 1.4 formalism has no such optionality for a code
-    // that IS present — "each archetype term used as a node identifier … must
-    // be defined". A non-specialised 1.4 archetype is its own flat form, so the
-    // phase-1 subset closes VATDF's interior half for a 1.4 upload.
-    if dialect == Dialect::Adl14 && !v.is_specialised() {
-        for code in &usage.node_codes {
-            if AdlCodeDefinitionsData::is_at_code(code) && !defined.contains(code.as_str()) {
-                issues.push(ValidationIssue::new(
-                    ValidationCode::Vatdf,
-                    format!("node identifier code {code:?} is not defined in the terminology"),
-                ));
-            }
+/// VATDF (ADL 1.4, node-id half): in ADL 1.4 EVERY at-code used as a node
+/// identifier in the definition must be defined in the ontology's
+/// `term_definitions` (ADL1.4 master08 §Validity Rules VATDF; AOM1.4
+/// `ARCHETYPE.node_ids_valid`).
+///
+/// ADL2 defers interior-node-id definedness to the RM phase, but the 1.4
+/// formalism has no such optionality for a code that IS present — "each
+/// archetype term used as a node identifier … must be defined". A
+/// non-specialised 1.4 archetype is its own flat form, so the phase-1 subset
+/// closes VATDF's interior half for a 1.4 upload.
+fn check_node_id_definedness(
+    v: &ArchetypeView<'_>,
+    dialect: Dialect,
+    usage: &CodeUsage,
+    defined: &BTreeSet<&str>,
+    issues: &mut Vec<ValidationIssue>,
+) {
+    if dialect != Dialect::Adl14 || v.is_specialised() {
+        return;
+    }
+    for code in &usage.node_codes {
+        if AdlCodeDefinitionsData::is_at_code(code) && !defined.contains(code.as_str()) {
+            issues.push(ValidationIssue::new(
+                ValidationCode::Vatdf,
+                format!("node identifier code {code:?} is not defined in the terminology"),
+            ));
         }
     }
+}
 
-    // VATDF: at-codes used in term constraints defined in the terminology of the
-    // flattened form (master03 §Validity Rules). For a specialised archetype the
-    // flat form is not available here, so this runs only when the archetype
-    // is its own flat form (non-specialised); the specialised flat-form half runs
-    // in [`super::flat`].
-    // VACDF: ac-codes defined in the current archetype (master03 — "current",
-    // not flattened; runs for all). VATCD: code level <= archetype level.
+/// The definedness and level rules over the codes the definition references.
+///
+/// VATDF: at-codes used in term constraints defined in the terminology of the
+/// flattened form (master03 §Validity Rules). For a specialised archetype the
+/// flat form is not available here, so this runs only when the archetype is
+/// its own flat form (non-specialised); the specialised flat-form half runs in
+/// [`super::flat`]. VACDF: ac-codes defined in the current archetype (master03
+/// — "current", not flattened; runs for all). VATCD: at/id codes at a level
+/// greater than the archetype level.
+fn check_referenced_codes(
+    v: &ArchetypeView<'_>,
+    usage: &CodeUsage,
+    defined: &BTreeSet<&str>,
+    issues: &mut Vec<ValidationIssue>,
+) {
+    let level = v.specialisation_level();
     let flat_self = !v.is_specialised();
     for code in &usage.value_codes {
         if AdlCodeDefinitionsData::is_at_code(code) {
@@ -123,7 +162,6 @@ pub(super) fn check_terminology(
                 format!("constraint code {code:?} is not defined in the terminology"),
             ));
         }
-        // VATCD: at/id codes at a level greater than the archetype level.
         if !AdlCodeDefinitionsData::is_value_set_code(code)
             && let Some(d) = codes::specialisation_depth(code)
             && d > level
@@ -134,9 +172,15 @@ pub(super) fn check_terminology(
             ));
         }
     }
+}
 
-    // VATDA: an assumed value at-code must be a member of the referenced value
-    // set (master03 §Validity Rules).
+/// VATDA: an assumed value at-code must be a member of the referenced value
+/// set (master03 §Validity Rules).
+fn check_assumed_values(
+    term: &openehr_am::v2_4::aom2::terminology::archetype_terminology::ArchetypeTerminology,
+    usage: &CodeUsage,
+    issues: &mut Vec<ValidationIssue>,
+) {
     for (path, ac, assumed) in &usage.assumed_refs {
         let members = term
             .value_sets
@@ -153,42 +197,56 @@ pub(super) fn check_terminology(
             );
         }
     }
+}
 
-    // VTSD: every defined term/constraint code is at the archetype's
-    // specialisation level (differential) or the same-or-less (flat)
-    // (master07 §Validity Rules). ac-codes are a flat code space (master07
-    // §Specialisation Depth) so only an over-level ac-code is invalid, never the
-    // strict differential-equality test.
-    for code in &defined {
-        if let Some(d) = codes::specialisation_depth(code) {
-            // A 1.4 specialised archetype is a FLAT artefact (its ontology
-            // legitimately carries inherited codes at lower levels alongside
-            // the level-N additions), even though the 1.4-shaped model is
-            // marked `is_differential` for the converter's re-differentiation
-            // pass. So the 1.4 dialect always uses the flat-form rule
-            // (`d <= level`), never the differential `d == level`
-            // (AOM1.4 master07 §Specialisation Depth).
-            let differential = v.is_differential && dialect == Dialect::Adl2;
-            let bad = if AdlCodeDefinitionsData::is_value_set_code(code) {
-                d > level
-            } else if differential {
-                d != level
-            } else {
-                d > level
-            };
-            if bad {
-                issues.push(ValidationIssue::new(
-                    ValidationCode::Vtsd,
-                    format!("terminology code {code:?} specialisation level {d} is invalid for archetype level {level}"),
-                ));
-            }
+/// VTSD: every defined term/constraint code is at the archetype's
+/// specialisation level (differential) or the same-or-less (flat) (master07
+/// §Validity Rules).
+///
+/// ac-codes are a flat code space (master07 §Specialisation Depth), so only an
+/// over-level ac-code is invalid, never the strict differential-equality test.
+/// A 1.4 specialised archetype is a FLAT artefact (its ontology legitimately
+/// carries inherited codes at lower levels alongside the level-N additions),
+/// even though the 1.4-shaped model is marked `is_differential` for the
+/// converter's re-differentiation pass — so the 1.4 dialect always uses the
+/// flat-form rule (`d <= level`), never the differential `d == level` (AOM1.4
+/// master07 §Specialisation Depth).
+fn check_defined_code_levels(
+    v: &ArchetypeView<'_>,
+    dialect: Dialect,
+    defined: &BTreeSet<&str>,
+    issues: &mut Vec<ValidationIssue>,
+) {
+    let level = v.specialisation_level();
+    let differential = v.is_differential && dialect == Dialect::Adl2;
+    for code in defined {
+        let Some(d) = codes::specialisation_depth(code) else {
+            continue;
+        };
+        let bad = if AdlCodeDefinitionsData::is_value_set_code(code) {
+            d > level
+        } else if differential {
+            d != level
+        } else {
+            d > level
+        };
+        if bad {
+            issues.push(ValidationIssue::new(
+                ValidationCode::Vtsd,
+                format!(
+                    "terminology code {code:?} specialisation level {d} is invalid for archetype level {level}"
+                ),
+            ));
         }
     }
+}
 
-    // VATCV (defined-code form): every defined code must be a valid code form
-    // (master08 §Code Validation). Value-code form on definition-referenced
-    // codes is covered in the walk.
-    for code in &defined {
+/// VATCV (defined-code form): every defined code must be a valid code form
+/// (master08 §Code Validation).
+///
+/// Value-code form on definition-referenced codes is covered in the walk.
+fn check_defined_code_forms(defined: &BTreeSet<&str>, issues: &mut Vec<ValidationIssue>) {
+    for code in defined {
         if !AdlCodeDefinitionsData::is_valid_code(code) {
             issues.push(ValidationIssue::new(
                 ValidationCode::Vatcv,
@@ -196,13 +254,15 @@ pub(super) fn check_terminology(
             ));
         }
     }
+}
 
-    // VTLC: every code defined in one language must be defined in all languages
-    // (master07 §Validity Rules).
-    check_language_coverage(term, issues);
-
-    // VOTM: every language declared in description/translations must have
-    // term_definitions (master03 §Validity Rules).
+/// VOTM: every language declared in description/translations must have
+/// `term_definitions` (master03 §Validity Rules).
+fn check_declared_languages(
+    v: &ArchetypeView<'_>,
+    term: &openehr_am::v2_4::aom2::terminology::archetype_terminology::ArchetypeTerminology,
+    issues: &mut Vec<ValidationIssue>,
+) {
     for l in languages(v) {
         if !term.term_definitions.contains_key(&l) {
             issues.push(ValidationIssue::new(
@@ -211,46 +271,48 @@ pub(super) fn check_terminology(
             ));
         }
     }
+}
 
-    // VTVSID / VTVSMD / VTVSUQ: value-set integrity (master07 §Validity Rules).
-    check_value_sets(term, &defined, !v.is_specialised(), issues);
-
-    // VTTBK / VTCBK: term/constraint binding key validity (master07 §Validity
-    // Rules).
-    check_bindings(v, &defined, issues);
-
-    // WOUC is suppressed in the 1.4 dialect: 1.4 value codes are carried inside
-    // the verbatim terminology-constraint strings (not recognised as ADL2 code
-    // usage), so the "unused" heuristic is unreliable on a 1.4-shaped model and
-    // would flag legitimately-used codes.
-    //
-    // NOTE: no openEHR spec governs WOUC (a defined at/ac code never used in the
-    // definition) — our own design/extension.
-    if dialect == Dialect::Adl2 {
-        let mut used_all: BTreeSet<&str> = usage.value_codes.iter().map(String::as_str).collect();
-        used_all.extend(usage.node_codes.iter().map(String::as_str));
-        // value-set membership also counts as "use" of a member at-code.
-        if let Some(vs) = term.value_sets.as_ref() {
-            for set in vs.values() {
-                used_all.insert(set.id.as_str());
-                for m in &set.members {
-                    used_all.insert(m.as_str());
-                }
+/// WOUC: a defined at/ac code never used in the definition.
+///
+/// NOTE: no openEHR spec governs WOUC — our own design/extension. It is
+/// suppressed in the 1.4 dialect: 1.4 value codes are carried inside the
+/// verbatim terminology-constraint strings (not recognised as ADL2 code
+/// usage), so the "unused" heuristic is unreliable on a 1.4-shaped model and
+/// would flag legitimately-used codes.
+fn check_unused_codes(
+    v: &ArchetypeView<'_>,
+    dialect: Dialect,
+    usage: &CodeUsage,
+    defined: &BTreeSet<&str>,
+    issues: &mut Vec<ValidationIssue>,
+) {
+    if dialect != Dialect::Adl2 {
+        return;
+    }
+    let mut used_all: BTreeSet<&str> = usage.value_codes.iter().map(String::as_str).collect();
+    used_all.extend(usage.node_codes.iter().map(String::as_str));
+    // value-set membership also counts as "use" of a member at-code.
+    if let Some(vs) = v.terminology.value_sets.as_ref() {
+        for set in vs.values() {
+            used_all.insert(set.id.as_str());
+            for m in &set.members {
+                used_all.insert(m.as_str());
             }
         }
-        for code in &defined {
-            // The root concept code and id-code node ids are structural, not
-            // "unused" terms; WOUC targets value at-codes and ac-codes.
-            if (AdlCodeDefinitionsData::is_at_code(code)
-                || AdlCodeDefinitionsData::is_value_set_code(code))
-                && *code != complex_node_id(v.definition)
-                && !used_all.contains(code)
-            {
-                issues.push(ValidationIssue::new(
-                    ValidationCode::Wouc,
-                    format!("terminology code {code:?} is defined but unused in the definition"),
-                ));
-            }
+    }
+    for code in defined {
+        // The root concept code and id-code node ids are structural, not
+        // "unused" terms; WOUC targets value at-codes and ac-codes.
+        if (AdlCodeDefinitionsData::is_at_code(code)
+            || AdlCodeDefinitionsData::is_value_set_code(code))
+            && *code != complex_node_id(v.definition)
+            && !used_all.contains(code)
+        {
+            issues.push(ValidationIssue::new(
+                ValidationCode::Wouc,
+                format!("terminology code {code:?} is defined but unused in the definition"),
+            ));
         }
     }
 }
@@ -290,42 +352,53 @@ fn check_value_sets(
         return;
     };
     for set in vs.values() {
-        // VTVSID: the value-set id must be defined in the terminology of the
-        // current archetype (master07 — "current", runs for all).
-        if !defined.contains(set.id.as_str()) {
+        check_value_set(set, defined, flat_self, issues);
+    }
+}
+
+/// One value set's integrity rules (master07 §Validity Rules).
+///
+/// VTVSID: the id must be defined in the terminology of the current archetype
+/// ("current", runs for all). VTVSUQ: members must be unique within the set.
+/// VTVSMD: members must be defined in the terminology of the *flattened* form,
+/// which runs only when the archetype is its own flat form — the specialised
+/// flat-form half runs in [`super::flat`].
+fn check_value_set(
+    set: &openehr_am::v2_4::aom2::terminology::value_set::ValueSet,
+    defined: &BTreeSet<&str>,
+    flat_self: bool,
+    issues: &mut Vec<ValidationIssue>,
+) {
+    if !defined.contains(set.id.as_str()) {
+        issues.push(ValidationIssue::new(
+            ValidationCode::Vtvsid,
+            format!(
+                "value set id {:?} is not defined in the terminology",
+                set.id
+            ),
+        ));
+    }
+    let mut seen = BTreeSet::new();
+    for m in &set.members {
+        if !seen.insert(m.as_str()) {
             issues.push(ValidationIssue::new(
-                ValidationCode::Vtvsid,
+                ValidationCode::Vtvsuq,
+                format!("value set {:?} has a duplicate member {m:?}", set.id),
+            ));
+        }
+    }
+    if !flat_self {
+        return;
+    }
+    for m in &set.members {
+        if !defined.contains(m.as_str()) {
+            issues.push(ValidationIssue::new(
+                ValidationCode::Vtvsmd,
                 format!(
-                    "value set id {:?} is not defined in the terminology",
+                    "value set {:?} member {m:?} is not defined in the terminology",
                     set.id
                 ),
             ));
-        }
-        // VTVSUQ: members must be unique within the value set.
-        let mut seen = BTreeSet::new();
-        for m in &set.members {
-            if !seen.insert(m.as_str()) {
-                issues.push(ValidationIssue::new(
-                    ValidationCode::Vtvsuq,
-                    format!("value set {:?} has a duplicate member {m:?}", set.id),
-                ));
-            }
-        }
-        // VTVSMD: members must be defined in the terminology of the *flattened*
-        // form (master07). Runs only when the archetype is its own flat form; the
-        // specialised flat-form half runs in [`super::flat`].
-        if flat_self {
-            for m in &set.members {
-                if !defined.contains(m.as_str()) {
-                    issues.push(ValidationIssue::new(
-                        ValidationCode::Vtvsmd,
-                        format!(
-                            "value set {:?} member {m:?} is not defined in the terminology",
-                            set.id
-                        ),
-                    ));
-                }
-            }
         }
     }
 }
@@ -352,27 +425,7 @@ fn collect_usage_at(obj: &CObject, path: &str, usage: &mut CodeUsage) {
         usage.node_codes.insert(nid.to_owned());
     }
     match obj {
-        CObject::CComplexObject(cco) => {
-            for attr in complex_attributes(cco) {
-                let apath = format!("{path}/{}", attr.rm_attribute_name);
-                for child in attr.children.iter().flatten() {
-                    let cpath = child_path(&apath, object_node_id(child));
-                    collect_usage_at(child, &cpath, usage);
-                }
-            }
-            // Second-order tuples (e.g. ordinals) carry primitive constraints
-            // outside the normal attribute tree (master04.4); collect their
-            // terminology-code values too.
-            for tuple in complex_attribute_tuples(cco) {
-                for prim_tuple in tuple.tuples.iter().flatten() {
-                    for member in &prim_tuple.members {
-                        if let CPrimitiveObject::CTerminologyCode(tc) = member {
-                            usage.value_codes.extend(constraint_codes(&tc.constraint));
-                        }
-                    }
-                }
-            }
-        }
+        CObject::CComplexObject(cco) => collect_complex_usage(cco, path, usage),
         CObject::CTerminologyCode(tc) => {
             let codes = constraint_codes(&tc.constraint);
             if let Some(a) = tc.assumed_value.as_ref()
@@ -387,6 +440,34 @@ fn collect_usage_at(obj: &CObject, path: &str, usage: &mut CodeUsage) {
             usage.value_codes.extend(codes);
         }
         _ => {}
+    }
+}
+
+/// Walks a complex object's attribute children and its second-order tuples.
+///
+/// The tuples (e.g. ordinals) carry primitive constraints outside the normal
+/// attribute tree (master04.4), so their terminology-code values are collected
+/// too.
+fn collect_complex_usage(
+    cco: &openehr_am::v2_4::aom2::constraint_model::c_complex_object::CComplexObject,
+    path: &str,
+    usage: &mut CodeUsage,
+) {
+    for attr in complex_attributes(cco) {
+        let apath = format!("{path}/{}", attr.rm_attribute_name);
+        for child in attr.children.iter().flatten() {
+            let cpath = child_path(&apath, object_node_id(child));
+            collect_usage_at(child, &cpath, usage);
+        }
+    }
+    for tuple in complex_attribute_tuples(cco) {
+        for prim_tuple in tuple.tuples.iter().flatten() {
+            for member in &prim_tuple.members {
+                if let CPrimitiveObject::CTerminologyCode(tc) = member {
+                    usage.value_codes.extend(constraint_codes(&tc.constraint));
+                }
+            }
+        }
     }
 }
 

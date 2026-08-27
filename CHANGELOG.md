@@ -15,6 +15,14 @@ workflow refuses a tag that has no matching section here.
 
 ## [Unreleased]
 
+### Changed
+
+- The `openehr-*` spec crates step to `0.0.42`. The change is internal
+  structure only: long functions across the spec crates, the code generator and
+  the test harnesses were split into named, documented helpers, with the wire
+  behaviour, the generated output and every gate unchanged. Nothing an API
+  consumer calls moved.
+
 ## [4.0.6-rc3] - 2026-08-26
 
 ### Changed

@@ -506,100 +506,161 @@ fn apply_entry(
             if let Some(v) = source(resource, entry)? {
                 flat.insert(entry.openehr_path.clone(), scalar(v, entry)?);
             }
+            Ok(())
         }
         Transform::Quantity { unit_path, unit } => {
-            if let Some(v) = source(resource, entry)? {
-                let magnitude = number(v, entry)?;
-                flat.insert(format!("{}|magnitude", entry.openehr_path), magnitude);
-            }
-            let unit_val = unit.clone().or_else(|| {
-                unit_path
-                    .as_deref()
-                    .and_then(|p| resolve(resource, p))
-                    .and_then(Value::as_str)
-                    .map(str::to_owned)
-            });
-            if let Some(u) = unit_val {
-                flat.insert(format!("{}|unit", entry.openehr_path), Value::String(u));
-            }
+            apply_quantity(resource, entry, unit_path.as_deref(), unit.as_deref(), flat)
         }
         Transform::Coded {
             system_path,
             display_path,
             translate,
         } => {
-            let fhir_path = entry
-                .fhir_path
-                .as_deref()
-                .ok_or_else(|| FhirMapError::CodedWithoutSource(entry.openehr_path.clone()))?;
-            let Some(code) = resolve(resource, fhir_path).and_then(Value::as_str) else {
-                if entry.required {
-                    return Err(FhirMapError::MissingField {
-                        fhir_path: fhir_path.to_owned(),
-                        openehr_path: entry.openehr_path.clone(),
-                    });
-                }
-                return Ok(());
+            let coded = CodedTransform {
+                system_path: system_path.as_deref(),
+                display_path: display_path.as_deref(),
+                translate: translate.as_ref(),
             };
-            let system = system_path
-                .as_deref()
-                .and_then(|p| resolve(resource, p))
-                .and_then(Value::as_str);
-            if let Some(translate) = translate {
-                let system = system.ok_or_else(|| {
-                    FhirMapError::TranslateWithoutSystem(entry.openehr_path.clone())
-                })?;
-                let Some(translated) = translations.get(system, code, &translate.target_system)
-                else {
-                    // No equivalent concept: writing the SOURCE code under the
-                    // TARGET terminology would be a silently wrong clinical
-                    // value, so a required entry refuses and an optional one
-                    // writes nothing.
-                    if entry.required {
-                        return Err(FhirMapError::Untranslatable {
-                            system: system.to_owned(),
-                            code: code.to_owned(),
-                            target_system: translate.target_system.clone(),
-                            openehr_path: entry.openehr_path.clone(),
-                        });
-                    }
-                    return Ok(());
-                };
-                flat.insert(
-                    format!("{}|code", entry.openehr_path),
-                    json!(translated.code),
-                );
-                let terminology = entry
-                    .code_map
-                    .get(&translate.target_system)
-                    .or_else(|| entry.code_map.get("*"))
-                    .map_or("local", String::as_str);
-                flat.insert(
-                    format!("{}|terminology", entry.openehr_path),
-                    json!(terminology),
-                );
-                // The translated concept's own display wins; the source
-                // resource's display_path text names the SOURCE concept.
-                if let Some(display) = &translated.display {
-                    flat.insert(format!("{}|value", entry.openehr_path), json!(display));
-                }
-                return Ok(());
-            }
-            flat.insert(format!("{}|code", entry.openehr_path), json!(code));
-            let terminology = system
-                .and_then(|s| entry.code_map.get(s))
-                .or_else(|| entry.code_map.get("*"))
-                .map_or("local", String::as_str);
-            flat.insert(
-                format!("{}|terminology", entry.openehr_path),
-                json!(terminology),
-            );
-            if let Some(dp) = display_path
-                && let Some(display) = resolve(resource, dp).and_then(Value::as_str)
-            {
-                flat.insert(format!("{}|value", entry.openehr_path), json!(display));
-            }
+            apply_coded(resource, entry, &coded, translations, flat)
         }
+    }
+}
+
+/// The `Coded` transform's own three fields, as a borrowed view.
+struct CodedTransform<'a> {
+    system_path: Option<&'a str>,
+    display_path: Option<&'a str>,
+    translate: Option<&'a CodeTranslate>,
+}
+
+/// Writes a `DV_QUANTITY`'s `|magnitude` and `|unit` leaves.
+///
+/// A literal `unit` wins over a `unit_path` read.
+///
+/// # Errors
+/// The source-read and numeric-conversion rejections of the entry.
+fn apply_quantity(
+    resource: &Value,
+    entry: &MappingEntry,
+    unit_path: Option<&str>,
+    unit: Option<&str>,
+    flat: &mut Map<String, Value>,
+) -> Result<(), FhirMapError> {
+    if let Some(v) = source(resource, entry)? {
+        let magnitude = number(v, entry)?;
+        flat.insert(format!("{}|magnitude", entry.openehr_path), magnitude);
+    }
+    let unit_val = unit.map(str::to_owned).or_else(|| {
+        unit_path
+            .and_then(|p| resolve(resource, p))
+            .and_then(Value::as_str)
+            .map(str::to_owned)
+    });
+    if let Some(u) = unit_val {
+        flat.insert(format!("{}|unit", entry.openehr_path), Value::String(u));
+    }
+    Ok(())
+}
+
+/// Writes a coded leaf's `|code`, `|terminology` and `|value` pairs, applying
+/// a configured concept translation first.
+///
+/// # Errors
+/// [`FhirMapError::CodedWithoutSource`] for an entry with no FHIR path,
+/// [`FhirMapError::MissingField`] for a required entry whose source is absent,
+/// and the translation rejections of [`apply_translated_code`].
+fn apply_coded(
+    resource: &Value,
+    entry: &MappingEntry,
+    coded: &CodedTransform<'_>,
+    translations: &CodeTranslations,
+    flat: &mut Map<String, Value>,
+) -> Result<(), FhirMapError> {
+    let fhir_path = entry
+        .fhir_path
+        .as_deref()
+        .ok_or_else(|| FhirMapError::CodedWithoutSource(entry.openehr_path.clone()))?;
+    let Some(code) = resolve(resource, fhir_path).and_then(Value::as_str) else {
+        if entry.required {
+            return Err(FhirMapError::MissingField {
+                fhir_path: fhir_path.to_owned(),
+                openehr_path: entry.openehr_path.clone(),
+            });
+        }
+        return Ok(());
+    };
+    let system = coded
+        .system_path
+        .and_then(|p| resolve(resource, p))
+        .and_then(Value::as_str);
+    if let Some(translate) = coded.translate {
+        return apply_translated_code(entry, translate, system, code, translations, flat);
+    }
+    flat.insert(format!("{}|code", entry.openehr_path), json!(code));
+    let terminology = system
+        .and_then(|s| entry.code_map.get(s))
+        .or_else(|| entry.code_map.get("*"))
+        .map_or("local", String::as_str);
+    flat.insert(
+        format!("{}|terminology", entry.openehr_path),
+        json!(terminology),
+    );
+    if let Some(dp) = coded.display_path
+        && let Some(display) = resolve(resource, dp).and_then(Value::as_str)
+    {
+        flat.insert(format!("{}|value", entry.openehr_path), json!(display));
+    }
+    Ok(())
+}
+
+/// Writes the TRANSLATED concept for a coded leaf.
+///
+/// No equivalent concept means writing the SOURCE code under the TARGET
+/// terminology, which would be a silently wrong clinical value — so a required
+/// entry refuses and an optional one writes nothing. The translated concept's
+/// own display wins, because the source resource's `display_path` text names
+/// the SOURCE concept.
+///
+/// # Errors
+/// [`FhirMapError::TranslateWithoutSystem`] when the source coding names no
+/// system, and [`FhirMapError::Untranslatable`] for a required entry with no
+/// equivalent concept.
+fn apply_translated_code(
+    entry: &MappingEntry,
+    translate: &CodeTranslate,
+    system: Option<&str>,
+    code: &str,
+    translations: &CodeTranslations,
+    flat: &mut Map<String, Value>,
+) -> Result<(), FhirMapError> {
+    let system =
+        system.ok_or_else(|| FhirMapError::TranslateWithoutSystem(entry.openehr_path.clone()))?;
+    let Some(translated) = translations.get(system, code, &translate.target_system) else {
+        if entry.required {
+            return Err(FhirMapError::Untranslatable {
+                system: system.to_owned(),
+                code: code.to_owned(),
+                target_system: translate.target_system.clone(),
+                openehr_path: entry.openehr_path.clone(),
+            });
+        }
+        return Ok(());
+    };
+    flat.insert(
+        format!("{}|code", entry.openehr_path),
+        json!(translated.code),
+    );
+    let terminology = entry
+        .code_map
+        .get(&translate.target_system)
+        .or_else(|| entry.code_map.get("*"))
+        .map_or("local", String::as_str);
+    flat.insert(
+        format!("{}|terminology", entry.openehr_path),
+        json!(terminology),
+    );
+    if let Some(display) = &translated.display {
+        flat.insert(format!("{}|value", entry.openehr_path), json!(display));
     }
     Ok(())
 }

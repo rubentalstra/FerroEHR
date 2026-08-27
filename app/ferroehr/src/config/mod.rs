@@ -106,14 +106,38 @@ impl FerroEhrConfig {
     /// [`ConfigErrors`] carrying every failing rule.
     pub fn validate(&self) -> Result<(), ConfigErrors> {
         let mut errors = Vec::new();
+        self.validate_system_id(&mut errors);
+        self.validate_mechanisms(&mut errors);
+        self.validate_signing(&mut errors);
+        self.validate_key_sources(&mut errors);
+        errors.extend(multimedia_endpoint_errors(&self.multimedia));
+        // management.port must differ from the server.bind port.
+        if let Some(port) = self.management.port
+            && server_bind_port(&self.server.bind) == Some(port)
+        {
+            errors.push(ConfigError::semantic(format!(
+                "management.port ({port}) must differ from the server.bind port"
+            )));
+        }
+        validate_terminology(&self.terminology.external, &mut errors);
 
-        // server.system_id is stamped into every AUDIT_DETAILS
-        // (`System_id_valid`: "not system_id.is_empty", RM
-        // `docs/UML/classes/org.openehr.rm.common.audit_details.adoc`
-        // §Invariants) and occupies the `creating_system_id` position of every
-        // OBJECT_VERSION_ID this CDR mints (BASE
-        // `base_types/master05-identification_package.adoc` §Syntaxes), so it is
-        // judged here by the SAME validating `UID` constructor the reader uses.
+        if errors.is_empty() {
+            Ok(())
+        } else {
+            Err(ConfigErrors(errors))
+        }
+    }
+
+    /// `server.system_id` is judged by the SAME validating `UID` constructor
+    /// the reader uses.
+    ///
+    /// It is stamped into every `AUDIT_DETAILS` (`System_id_valid`: "not
+    /// `system_id.is_empty`", RM
+    /// `docs/UML/classes/org.openehr.rm.common.audit_details.adoc` §Invariants)
+    /// and occupies the `creating_system_id` position of every
+    /// `OBJECT_VERSION_ID` this CDR mints (BASE
+    /// `base_types/master05-identification_package.adoc` §Syntaxes).
+    fn validate_system_id(&self, errors: &mut Vec<ConfigError>) {
         if let Err(source) =
             openehr_base::v1_3::base_types::identification::uid::Uid::new(&self.server.system_id)
         {
@@ -126,24 +150,31 @@ impl FerroEhrConfig {
                 self.server.system_id
             )));
         }
+    }
 
-        // Authentication rules: the RFC-grounded shape of each configured
-        // mechanism (issuer, audience, leeway, key entropy, KDF cost floor).
+    /// The per-mechanism rules each security section owns.
+    ///
+    /// Authentication contributes the RFC-grounded shape of each configured
+    /// mechanism (issuer, audience, leeway, key entropy, KDF cost floor);
+    /// SMART adds the deprecated-grant rule plus everything the discovery
+    /// document publishes (endpoint scheme, the RFC 8414 §2 required fields,
+    /// PKCE).
+    fn validate_mechanisms(&self, errors: &mut Vec<ConfigError>) {
         if let Err(e) = self.auth.validate() {
             errors.push(ConfigError::semantic(format!("auth: {e}")));
         }
-        // Authorization rules (moved verbatim from the old AuthzConfig::validate).
         if let Err(e) = self.authz.validate() {
             errors.push(ConfigError::semantic(format!("authz: {e}")));
         }
-        // SMART: the deprecated-grant rule plus everything the discovery
-        // document publishes (endpoint scheme, the RFC 8414 §2 required fields,
-        // PKCE).
         if let Err(e) = self.smart.validate() {
             errors.push(ConfigError::semantic(format!("smart: {e}")));
         }
-        self.validate_smart_issuer(&mut errors);
-        // signing.mode = pgp ⇒ key_path set.
+        self.validate_smart_issuer(errors);
+    }
+
+    /// The signing section's own rules: a PGP mode needs a key, and a
+    /// passphrase is given inline or by file, never both.
+    fn validate_signing(&self, errors: &mut Vec<ConfigError>) {
         if matches!(
             self.signing.mode,
             crate::versioning::signature::config::Mode::Pgp
@@ -153,12 +184,20 @@ impl FerroEhrConfig {
                 "signing.mode = \"pgp\" requires signing.key_path".to_owned(),
             ));
         }
-        // Secret / *_file mutual exclusion.
         if self.signing.key_passphrase.is_some() && self.signing.key_passphrase_file.is_some() {
             errors.push(ConfigError::semantic(
                 "set only one of signing.key_passphrase / signing.key_passphrase_file".to_owned(),
             ));
         }
+    }
+
+    /// Every secret that can be given inline or by file is given exactly one
+    /// way, and the OIDC key material names exactly one source.
+    ///
+    /// A symmetric secret and a static JWKS are competing explicit key
+    /// sources; both configured is a contradiction, never resolved by silent
+    /// precedence.
+    fn validate_key_sources(&self, errors: &mut Vec<ConfigError>) {
         if let Some(oidc) = &self.auth.oidc {
             if oidc.hmac_secret.is_some() && oidc.hmac_secret_file.is_some() {
                 errors.push(ConfigError::semantic(
@@ -170,9 +209,6 @@ impl FerroEhrConfig {
                     "set only one of auth.oidc.jwks_json / auth.oidc.jwks_json_file".to_owned(),
                 ));
             }
-            // A symmetric secret and a static JWKS are competing explicit key
-            // sources; both configured is a contradiction, never resolved by
-            // silent precedence.
             let hmac_configured = oidc.hmac_secret.is_some() || oidc.hmac_secret_file.is_some();
             let jwks_configured = oidc.jwks_json.is_some() || oidc.jwks_json_file.is_some();
             if hmac_configured && jwks_configured {
@@ -192,22 +228,6 @@ impl FerroEhrConfig {
                  multimedia.secret_access_key_file"
                     .to_owned(),
             ));
-        }
-        errors.extend(multimedia_endpoint_errors(&self.multimedia));
-        // management.port must differ from the server.bind port.
-        if let Some(port) = self.management.port
-            && server_bind_port(&self.server.bind) == Some(port)
-        {
-            errors.push(ConfigError::semantic(format!(
-                "management.port ({port}) must differ from the server.bind port"
-            )));
-        }
-        validate_terminology(&self.terminology.external, &mut errors);
-
-        if errors.is_empty() {
-            Ok(())
-        } else {
-            Err(ConfigErrors(errors))
         }
     }
 
@@ -325,55 +345,78 @@ fn validate_terminology(
         }
     }
     for (name, provider) in &terminology.providers {
-        if provider.url.trim().is_empty() {
-            errors.push(ConfigError::semantic(format!(
-                "terminology.external.providers.{name}.url must not be empty (the FHIR R4B base \
-                 URL of the terminology server)"
-            )));
-        }
-        // A mutual-TLS identity is a certificate AND its key; half of one
-        // would connect with no client certificate at all, which the server
-        // rejects at handshake time — a boot error, not a runtime surprise.
-        match (&provider.client_cert_path, &provider.client_key_path) {
-            (Some(_), None) => errors.push(ConfigError::semantic(format!(
-                "terminology.external.providers.{name}.client_cert_path is set without \
-                 client_key_path (a client certificate needs its private key)"
-            ))),
-            (None, Some(_)) => errors.push(ConfigError::semantic(format!(
-                "terminology.external.providers.{name}.client_key_path is set without \
-                 client_cert_path (a private key needs its certificate)"
-            ))),
-            _ => {}
-        }
-        let Some(client) = provider.oauth2_client.as_deref() else {
-            continue;
-        };
-        if !terminology.oauth2_clients.contains_key(client) {
-            errors.push(ConfigError::semantic(format!(
-                "terminology.external.providers.{name}.oauth2_client names '{client}', which has \
-                 no [terminology.external.oauth2_clients.{client}]"
-            )));
-        }
+        validate_terminology_provider(name, provider, terminology, errors);
     }
     for (name, client) in &terminology.oauth2_clients {
-        if client.token_url.trim().is_empty() {
-            errors.push(ConfigError::semantic(format!(
-                "terminology.external.oauth2_clients.{name}.token_url must not be empty"
-            )));
-        }
-        if client.client_id.trim().is_empty() {
-            errors.push(ConfigError::semantic(format!(
-                "terminology.external.oauth2_clients.{name}.client_id must not be empty"
-            )));
-        }
-        if client.client_secret.as_ref().is_none_or(Secret::is_empty)
-            && client.client_secret_file.is_none()
-        {
-            errors.push(ConfigError::semantic(format!(
-                "terminology.external.oauth2_clients.{name} requires client_secret or \
-                 client_secret_file (the client-credentials grant authenticates the client)"
-            )));
-        }
+        validate_terminology_client(name, client, errors);
+    }
+}
+
+/// One `[terminology.external.providers.<name>]` block: its base URL, the
+/// completeness of any mutual-TLS identity, and the resolvability of its
+/// OAuth2 client reference.
+///
+/// A mutual-TLS identity is a certificate AND its key; half of one would
+/// connect with no client certificate at all, which the server rejects at
+/// handshake time — a boot error, not a runtime surprise.
+fn validate_terminology_provider(
+    name: &str,
+    provider: &crate::service::terminology::config::FhirProviderConfig,
+    terminology: &crate::service::terminology::config::ExternalTerminologyConfig,
+    errors: &mut Vec<ConfigError>,
+) {
+    if provider.url.trim().is_empty() {
+        errors.push(ConfigError::semantic(format!(
+            "terminology.external.providers.{name}.url must not be empty (the FHIR R4B base \
+             URL of the terminology server)"
+        )));
+    }
+    match (&provider.client_cert_path, &provider.client_key_path) {
+        (Some(_), None) => errors.push(ConfigError::semantic(format!(
+            "terminology.external.providers.{name}.client_cert_path is set without \
+             client_key_path (a client certificate needs its private key)"
+        ))),
+        (None, Some(_)) => errors.push(ConfigError::semantic(format!(
+            "terminology.external.providers.{name}.client_key_path is set without \
+             client_cert_path (a private key needs its certificate)"
+        ))),
+        _ => {}
+    }
+    let Some(client) = provider.oauth2_client.as_deref() else {
+        return;
+    };
+    if !terminology.oauth2_clients.contains_key(client) {
+        errors.push(ConfigError::semantic(format!(
+            "terminology.external.providers.{name}.oauth2_client names '{client}', which has \
+             no [terminology.external.oauth2_clients.{client}]"
+        )));
+    }
+}
+
+/// One `[terminology.external.oauth2_clients.<name>]` block: the
+/// client-credentials grant needs a token endpoint, a client id, and a secret.
+fn validate_terminology_client(
+    name: &str,
+    client: &crate::service::terminology::config::TerminologyOauth2Config,
+    errors: &mut Vec<ConfigError>,
+) {
+    if client.token_url.trim().is_empty() {
+        errors.push(ConfigError::semantic(format!(
+            "terminology.external.oauth2_clients.{name}.token_url must not be empty"
+        )));
+    }
+    if client.client_id.trim().is_empty() {
+        errors.push(ConfigError::semantic(format!(
+            "terminology.external.oauth2_clients.{name}.client_id must not be empty"
+        )));
+    }
+    if client.client_secret.as_ref().is_none_or(Secret::is_empty)
+        && client.client_secret_file.is_none()
+    {
+        errors.push(ConfigError::semantic(format!(
+            "terminology.external.oauth2_clients.{name} requires client_secret or \
+             client_secret_file (the client-credentials grant authenticates the client)"
+        )));
     }
 }
 

@@ -19,26 +19,7 @@ impl Printer {
     }
 
     pub(super) fn terminology_body(&mut self, t: &ArchetypeTerminology, depth: usize) {
-        self.line(depth, "term_definitions = <");
-        for (lang, codes) in &t.term_definitions {
-            self.line(depth + 1, &format!("[{}] = <", quoted(lang)));
-            for (code, term) in codes {
-                self.line(depth + 2, &format!("[{}] = <", quoted(code)));
-                self.line(depth + 3, &format!("text = <{}>", quoted(&term.text)));
-                self.line(
-                    depth + 3,
-                    &format!("description = <{}>", quoted(&term.description)),
-                );
-                if let Some(items) = &term.other_items {
-                    for (k, v) in items {
-                        self.line(depth + 3, &format!("{k} = <{}>", quoted(v)));
-                    }
-                }
-                self.line(depth + 2, ">");
-            }
-            self.line(depth + 1, ">");
-        }
-        self.line(depth, ">");
+        self.term_definitions(t, depth);
         if let Some(bindings) = &t.term_bindings {
             self.line(depth, "term_bindings = <");
             for (terminology, map) in bindings {
@@ -53,18 +34,51 @@ impl Printer {
         if let Some(value_sets) = &t.value_sets {
             self.line(depth, "value_sets = <");
             for (id, vs) in value_sets {
-                self.line(depth + 1, &format!("[{}] = <", quoted(id)));
-                self.line(depth + 2, &format!("id = <{}>", quoted(&vs.id)));
-                let members = vs
-                    .members
-                    .iter()
-                    .map(|m| quoted(m))
-                    .collect::<Vec<_>>()
-                    .join(", ");
-                self.line(depth + 2, &format!("members = <{members}>"));
-                self.line(depth + 1, ">");
+                self.value_set(id, vs, depth + 1);
             }
             self.line(depth, ">");
         }
+    }
+
+    /// The `term_definitions` block: one nested ODIN object per language, then
+    /// per code.
+    fn term_definitions(&mut self, t: &ArchetypeTerminology, depth: usize) {
+        self.line(depth, "term_definitions = <");
+        for (lang, codes) in &t.term_definitions {
+            self.line(depth + 1, &format!("[{}] = <", quoted(lang)));
+            for (code, term) in codes {
+                self.line(depth + 2, &format!("[{}] = <", quoted(code)));
+                self.line(depth + 3, &format!("text = <{}>", quoted(&term.text)));
+                self.line(
+                    depth + 3,
+                    &format!("description = <{}>", quoted(&term.description)),
+                );
+                for (k, v) in term.other_items.iter().flatten() {
+                    self.line(depth + 3, &format!("{k} = <{}>", quoted(v)));
+                }
+                self.line(depth + 2, ">");
+            }
+            self.line(depth + 1, ">");
+        }
+        self.line(depth, ">");
+    }
+
+    /// One `value_sets` entry: its id and its comma-separated member list.
+    fn value_set(
+        &mut self,
+        id: &str,
+        vs: &openehr_am::v2_4::aom2::terminology::value_set::ValueSet,
+        depth: usize,
+    ) {
+        self.line(depth, &format!("[{}] = <", quoted(id)));
+        self.line(depth + 1, &format!("id = <{}>", quoted(&vs.id)));
+        let members = vs
+            .members
+            .iter()
+            .map(|m| quoted(m))
+            .collect::<Vec<_>>()
+            .join(", ");
+        self.line(depth + 1, &format!("members = <{members}>"));
+        self.line(depth, ">");
     }
 }

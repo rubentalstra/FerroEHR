@@ -160,6 +160,92 @@ fn corpus_tuple_narrowing_raises_no_tuple_code() {
     assert!(raised.contains(&"VTPNC"), "widened row: raised {raised:?}");
 }
 
+/// The phase-2 verdict for one specialisation fixture.
+///
+/// A `Violation` carries the message tail; the caller prefixes the file name.
+enum ParentOutcome {
+    /// The fixture's tagged code was raised exactly.
+    ExactCode,
+    /// A `PASS`/untagged fixture raised no error.
+    PassClean,
+    /// The parent is deliberately absent and the typed outcome says so.
+    ParentNotFound,
+    /// A level-0 support archetype, not a phase-2 subject.
+    NonSpecialised,
+    /// The fixture's outcome contradicts its tag.
+    Violation(String),
+}
+
+/// Judges one specialisation fixture against its authoritative `regression` tag.
+fn judge_parent_fixture(
+    src: &str,
+    tag: Option<&str>,
+    repo: &ArchetypeRepository,
+    rm: ProductionRmModel,
+) -> ParentOutcome {
+    let Ok(archetype) = parse_artefact(src, Dialect::Adl2) else {
+        // A non-parsing fixture is owned by the parse gates; a FAIL tag is a
+        // valid outcome here.
+        if tag == Some("FAIL") {
+            return ParentOutcome::ParentNotFound;
+        }
+        return ParentOutcome::Violation(format!("failed to parse (tag {tag:?})"));
+    };
+
+    // FAIL fixtures whose parent is deliberately absent assert the typed
+    // parent-not-found outcome (INVENTORY §5).
+    if tag == Some("FAIL") {
+        return match resolve_flat_parent(&archetype, repo) {
+            FlatParent::NotFound => ParentOutcome::ParentNotFound,
+            other => ParentOutcome::Violation(format!(
+                "FAIL fixture expected parent-not-found, got {other:?}"
+            )),
+        };
+    }
+
+    // Non-specialised support archetypes (the level-0 parents that live in this
+    // directory) are not phase-2 subjects — their RM/phase-1 validation is the
+    // reference-model / phase-1 harnesses' concern (and some exercise an
+    // emit-rm-model gap, e.g. spec_test_obs3's DV_QUANTITY attributes).
+    if matches!(
+        resolve_flat_parent(&archetype, repo),
+        FlatParent::NotSpecialised
+    ) {
+        return ParentOutcome::NonSpecialised;
+    }
+
+    let Ok(issues) = validate_source(src, Some(repo), &rm, &NoTerminologyResolver) else {
+        return ParentOutcome::Violation("validate_source parse error".to_owned());
+    };
+    let error_codes: Vec<String> = issues
+        .iter()
+        .filter(|i| i.severity == Severity::Error)
+        .map(|i| i.code.mnemonic().to_owned())
+        .collect();
+    judge_parent_codes(tag, &error_codes)
+}
+
+/// The verdict for a fixture that reached phase-2 validation.
+fn judge_parent_codes(tag: Option<&str>, error_codes: &[String]) -> ParentOutcome {
+    match tag {
+        None | Some("PASS") => {
+            if error_codes.is_empty() {
+                ParentOutcome::PassClean
+            } else {
+                ParentOutcome::Violation(format!("PASS/untagged but raised {error_codes:?}"))
+            }
+        }
+        Some(t) if PARENT_CONFORMANCE_FIRING.contains(&t) => {
+            if error_codes.iter().any(|c| c == t) {
+                ParentOutcome::ExactCode
+            } else {
+                ParentOutcome::Violation(format!("expected {t} but raised {error_codes:?}"))
+            }
+        }
+        Some(t) => ParentOutcome::Violation(format!("unhandled tag {t} (raised {error_codes:?})")),
+    }
+}
+
 #[test]
 fn corpus_parent_conformance_outcomes() {
     let repo = build_repository();
@@ -185,73 +271,12 @@ fn corpus_parent_conformance_outcomes() {
         };
         let tag = read_tag_raw(&src).map(|t| normalise_tag(&t));
 
-        let Ok(archetype) = parse_artefact(&src, Dialect::Adl2) else {
-            // A non-parsing fixture is owned by the parse gates; a FAIL tag is a
-            // valid outcome here.
-            if tag.as_deref() == Some("FAIL") {
-                counts.parent_not_found += 1;
-            } else {
-                violations.push(format!("{name}: failed to parse (tag {tag:?})"));
-            }
-            continue;
-        };
-
-        // FAIL fixtures whose parent is deliberately absent assert the typed
-        // parent-not-found outcome (INVENTORY §5).
-        if tag.as_deref() == Some("FAIL") {
-            match resolve_flat_parent(&archetype, &repo) {
-                FlatParent::NotFound => {
-                    counts.parent_not_found += 1;
-                }
-                other => violations.push(format!(
-                    "{name}: FAIL fixture expected parent-not-found, got {other:?}"
-                )),
-            }
-            continue;
-        }
-
-        // Non-specialised support archetypes (the level-0 parents that live in
-        // this directory) are not phase-2 subjects — their RM/phase-1 validation
-        // is the reference-model / phase-1 harnesses' concern (and some exercise
-        // an emit-rm-model gap, e.g. spec_test_obs3's DV_QUANTITY attributes).
-        if matches!(
-            resolve_flat_parent(&archetype, &repo),
-            FlatParent::NotSpecialised
-        ) {
-            counts.non_specialised += 1;
-            continue;
-        }
-
-        let Ok(issues) = validate_source(&src, Some(&repo), &rm, &NoTerminologyResolver) else {
-            violations.push(format!("{name}: validate_source parse error"));
-            continue;
-        };
-        let error_codes: Vec<String> = issues
-            .iter()
-            .filter(|i| i.severity == Severity::Error)
-            .map(|i| i.code.mnemonic().to_owned())
-            .collect();
-
-        match tag.as_deref() {
-            None | Some("PASS") => {
-                if error_codes.is_empty() {
-                    counts.pass_clean += 1;
-                } else {
-                    violations.push(format!("{name}: PASS/untagged but raised {error_codes:?}"));
-                }
-            }
-            Some(t) if PARENT_CONFORMANCE_FIRING.contains(&t) => {
-                if error_codes.iter().any(|c| c == t) {
-                    counts.exact_code += 1;
-                } else {
-                    violations.push(format!("{name}: expected {t} but raised {error_codes:?}"));
-                }
-            }
-            Some(t) => {
-                violations.push(format!(
-                    "{name}: unhandled tag {t} (raised {error_codes:?})"
-                ));
-            }
+        match judge_parent_fixture(&src, tag.as_deref(), &repo, rm) {
+            ParentOutcome::ExactCode => counts.exact_code += 1,
+            ParentOutcome::PassClean => counts.pass_clean += 1,
+            ParentOutcome::ParentNotFound => counts.parent_not_found += 1,
+            ParentOutcome::NonSpecialised => counts.non_specialised += 1,
+            ParentOutcome::Violation(message) => violations.push(format!("{name}: {message}")),
         }
     }
 

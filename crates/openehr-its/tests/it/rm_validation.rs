@@ -413,6 +413,18 @@ fn collect_nodes<'a>(v: &'a Value, out: &mut Vec<&'a Value>) {
 /// [`crate::common::twinned`] substitutes it, so honouring the exclusions
 /// costs the battery no coverage; an excluded document with no twin is
 /// dropped.
+/// Records one corpus JSON file, substituting an excluded document's valid twin.
+fn push_corpus_file(path: std::path::PathBuf, files: &mut Vec<std::path::PathBuf>) {
+    if crate::common::excluded(&crate::common::corpus_rel(&path)).is_none() {
+        files.push(path);
+        return;
+    }
+    let twin = crate::common::twinned(&path);
+    if twin != path {
+        files.push(twin);
+    }
+}
+
 fn corpus_files() -> Vec<std::path::PathBuf> {
     let mut roots = vec![std::path::PathBuf::from(concat!(
         env!("CARGO_MANIFEST_DIR"),
@@ -432,14 +444,7 @@ fn corpus_files() -> Vec<std::path::PathBuf> {
             if path.is_dir() {
                 roots.push(path);
             } else if path.extension().and_then(std::ffi::OsStr::to_str) == Some("json") {
-                if crate::common::excluded(&crate::common::corpus_rel(&path)).is_some() {
-                    let twin = crate::common::twinned(&path);
-                    if twin != path {
-                        files.push(twin);
-                    }
-                    continue;
-                }
-                files.push(path);
+                push_corpus_file(path, &mut files);
             }
         }
     }
@@ -524,28 +529,7 @@ fn corpus_equivalence_mutated_nodes() {
                 if key == "_type" || !seen.insert((ty.clone(), key.clone())) {
                     continue;
                 }
-                // Removal.
-                let mut removed = map.clone();
-                removed.shift_remove(&key);
-                let removed = Value::Object(removed);
-                assert_eq!(
-                    two_tier(&removed),
-                    typed(&removed),
-                    "divergence removing {ty}.{key}"
-                );
-                checked += 1;
-                // Shape battery.
-                for m in mutations {
-                    let mut mutated = map.clone();
-                    mutated.insert(key.clone(), m.clone());
-                    let mutated = Value::Object(mutated);
-                    assert_eq!(
-                        two_tier(&mutated),
-                        typed(&mutated),
-                        "divergence mutating {ty}.{key} to {m}"
-                    );
-                    checked += 1;
-                }
+                checked += assert_key_equivalence(map, &ty, &key, mutations);
             }
             // An unknown key must stay ignored on both paths.
             if seen.insert((ty.clone(), "__unknown__".into())) {
@@ -563,6 +547,35 @@ fn corpus_equivalence_mutated_nodes() {
     }
     eprintln!("mutation equivalence: {checked} mutated nodes checked");
     assert!(checked > 500, "mutation battery too small: {checked}");
+}
+
+/// Asserts the two paths agree on one key's removal and on every mutated shape,
+/// returning how many comparisons were made.
+fn assert_key_equivalence(
+    map: &serde_json::Map<String, Value>,
+    ty: &str,
+    key: &str,
+    mutations: &[Value],
+) -> usize {
+    let mut removed = map.clone();
+    removed.shift_remove(key);
+    let removed = Value::Object(removed);
+    assert_eq!(
+        two_tier(&removed),
+        typed(&removed),
+        "divergence removing {ty}.{key}"
+    );
+    for m in mutations {
+        let mut mutated = map.clone();
+        mutated.insert(key.to_owned(), m.clone());
+        let mutated = Value::Object(mutated);
+        assert_eq!(
+            two_tier(&mutated),
+            typed(&mutated),
+            "divergence mutating {ty}.{key} to {m}"
+        );
+    }
+    1 + mutations.len()
 }
 
 /// The hot commit shape must actually ride the fast path: on the populated IPS

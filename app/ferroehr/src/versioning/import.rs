@@ -307,6 +307,334 @@ async fn enforce_copy_closure(
     Ok(())
 }
 
+/// The local act of committal every version of one import shares: the fresh
+/// CONTRIBUTION, its audit, and the temporal base of the synthetic period
+/// chain (master06 §Committal and Audits).
+struct ImportAct<'a> {
+    ctx: &'a SigningCtx<'a>,
+    ehr_id: Option<EhrId>,
+    contribution_id: Uuid,
+    contribution_audit_id: Uuid,
+    /// The canonical `AUDIT_DETAILS` fragment of the local act, signed into
+    /// every wrapper.
+    local_commit_audit: &'a Value,
+    /// The local act's `change_type` code — `249|creation|` for an import
+    /// (master06 §Contributions, "import of item").
+    change_type: &'a str,
+    base: jiff::Timestamp,
+}
+
+/// One container being replayed: its identity and the ordered versions.
+struct ContainerCursor<'a> {
+    vo_id: VoId,
+    kind: Kind,
+    versions: &'a [ImportVersion],
+}
+
+/// Refuses a container that carries the same version identity twice.
+///
+/// The identity tuple is {`object_id`, `creating_system_id`,
+/// `version_tree_id`} (master06 §Distributed Versioning); the caller has
+/// already sorted the versions, so duplicates are adjacent.
+///
+/// # Errors
+/// [`ServiceError::Conflict`] naming the repeated version.
+fn reject_duplicate_identities(container: &ImportContainer) -> Result<(), ServiceError> {
+    for pair in container.versions.windows(2) {
+        let [first, second] = pair else { continue };
+        if first.creating_system_id == second.creating_system_id && first.tree == second.tree {
+            return Err(ServiceError::conflict(format!(
+                "version {}::{}::{} appears more than once in the import",
+                container.vo_id, first.creating_system_id, first.tree
+            )));
+        }
+    }
+    Ok(())
+}
+
+/// Prepares a container whose first receipt already happened (master06
+/// §Copying Case 3): the kind must match, the EHR must own it, every imported
+/// version must be strictly newer than the stored tip of its lineage, and a
+/// still-open stored tip closes at the import base.
+///
+/// # Errors
+/// [`ServiceError::Conflict`] on a foreign owner, a kind mismatch, or a
+/// re-imported trunk or branch version; storage errors from the lineage reads.
+async fn append_to_existing_clone(
+    tx: &mut PgConnection,
+    act: &ImportAct<'_>,
+    container: &ImportContainer,
+    state: &ContainerState,
+    existing_kind: Kind,
+) -> Result<(), ServiceError> {
+    if state.owner != act.ehr_id {
+        return Err(ServiceError::conflict(format!(
+            "versioned object {} already exists in another EHR",
+            container.vo_id
+        )));
+    }
+    if existing_kind != container.kind {
+        return Err(ServiceError::conflict(format!(
+            "versioned object {} is a {}, cannot import a {}",
+            container.vo_id,
+            existing_kind.as_str(),
+            container.kind.as_str()
+        )));
+    }
+    if let Some(first_trunk) = container
+        .versions
+        .iter()
+        .filter(|v| v.tree.is_trunk())
+        .map(|v| v.tree.trunk)
+        .min()
+        && first_trunk <= state.max_trunk
+    {
+        return Err(ServiceError::conflict(format!(
+            "versioned object {} already has trunk version {} — cannot \
+             re-import trunk version {first_trunk}",
+            container.vo_id, state.max_trunk
+        )));
+    }
+    if state.trunk_open && container.versions.iter().any(|v| v.tree.is_trunk()) {
+        crate::storage::version_repo::import::close_lineage_at(
+            tx,
+            container.vo_id,
+            &(String::new(), 0, 0),
+            act.base,
+        )
+        .await?;
+    }
+    advance_existing_branches(tx, act, container).await
+}
+
+/// The BRANCH mirror of the trunk checks in [`append_to_existing_clone`].
+///
+/// A later receipt may also advance an already-held branch lineage (master06
+/// §Copying — "previous copies have been made for the item"; §Semantics in
+/// Distributed Systems keeps lineages coexisting). Each incoming branch
+/// lineage must be strictly newer than the stored tip, and a still-open stored
+/// tip closes at the import base so the successor becomes that lineage's one
+/// open row.
+///
+/// # Errors
+/// [`ServiceError::Conflict`] on a re-imported branch version; storage errors
+/// from the lineage reads and closes.
+async fn advance_existing_branches(
+    tx: &mut PgConnection,
+    act: &ImportAct<'_>,
+    container: &ImportContainer,
+) -> Result<(), ServiceError> {
+    let mut incoming: BTreeMap<Lineage, i32> = BTreeMap::new();
+    for version in container.versions.iter().filter(|v| !v.tree.is_trunk()) {
+        let (trunk_version, branch_number, branch_version) = version.tree.columns();
+        let first = incoming
+            .entry((
+                version.creating_system_id.clone(),
+                trunk_version,
+                branch_number,
+            ))
+            .or_insert(branch_version);
+        *first = (*first).min(branch_version);
+    }
+    for (lineage, first_incoming) in &incoming {
+        let (max_stored, open) = crate::storage::version_repo::import::branch_lineage_state(
+            tx,
+            container.vo_id,
+            lineage,
+        )
+        .await?;
+        if max_stored > 0 && *first_incoming <= max_stored {
+            return Err(ServiceError::conflict(format!(
+                "versioned object {} already has branch version {}.{}.{max_stored} — \
+                 cannot re-import branch version {}.{}.{first_incoming}",
+                container.vo_id, lineage.1, lineage.2, lineage.1, lineage.2
+            )));
+        }
+        if open {
+            crate::storage::version_repo::import::close_lineage_at(
+                tx,
+                container.vo_id,
+                lineage,
+                act.base,
+            )
+            .await?;
+        }
+    }
+    Ok(())
+}
+
+/// Lands a container this store has never seen (master06 §Copying Case 2).
+///
+/// A first-received FOLDER container is a new folder hierarchy of the EHR (RM
+/// ehr master04 §Folders); every other kind needs no preparation.
+///
+/// # Errors
+/// Storage errors from the folder-rank insert.
+async fn land_first_receipt(
+    tx: &mut PgConnection,
+    act: &ImportAct<'_>,
+    container: &ImportContainer,
+) -> Result<(), ServiceError> {
+    if container.kind == Kind::Folder
+        && let Some(ehr_id) = act.ehr_id
+    {
+        crate::storage::version_repo::commit::insert_ehr_folder_rank(tx, ehr_id, container.vo_id)
+            .await?;
+    }
+    Ok(())
+}
+
+/// Replays one received original as an `IMPORTED_VERSION` row (plus its nodes
+/// and attestations), returning the PHI-free outbox entry announcing it.
+///
+/// The wrapper is signed over the bytes a later read will serve, never over
+/// the received JSON, so commit-time and read-time canonical forms are
+/// identical by construction (master06 §Digital Signature).
+///
+/// # Errors
+/// Decompose/reassemble failures on the received data, signing failures, and
+/// storage errors from the row, node and attestation writes.
+async fn import_one_version(
+    tx: &mut PgConnection,
+    act: &ImportAct<'_>,
+    cursor: &ContainerCursor<'_>,
+    index: usize,
+    ordinal: i32,
+) -> Result<Value, ServiceError> {
+    let Some(version) = cursor.versions.get(index) else {
+        return Err(ServiceError::exception(
+            "import cursor addressed a version past the end of the container".to_owned(),
+        ));
+    };
+    let (lower, upper) = local_period(cursor, index, act.base);
+    let (trunk_version, branch_number, branch_version) = version.tree.columns();
+    // The wrapped ORIGINAL_VERSION, reproduced exactly as received: its own
+    // contribution reference, commit audit (with the SOURCE `time_committed`)
+    // and signature, beside the identity/lifecycle/data columns the row already
+    // carries. master06 §Copying: "the `ORIGINAL_VERSION` instance is never
+    // modified — it remains a faithful copy of its original".
+    let wrapped_original = wrapped_fragment(version);
+    // The content, decomposed once: the node rows to write AND — through
+    // `reassemble` — the exact bytes a later read will serve.
+    let rows = if version.data.is_null() {
+        Vec::new()
+    } else {
+        decompose(version.data.clone())?
+    };
+    let served = if rows.is_empty() {
+        Value::Null
+    } else {
+        reassemble(&rows)?
+    };
+    let item = crate::versioning::wire::build_original_version(
+        &crate::versioning::wire::OriginalVersionParts {
+            creating_system_id: &version.creating_system_id,
+            vo_id: cursor.vo_id,
+            tree: version.tree,
+            preceding_version_uid: version.preceding_version_uid.as_deref(),
+            other_input_version_uids: &version.other_input_version_uids,
+            contribution: &version.contribution,
+            commit_audit: &version.commit_audit,
+            lifecycle_state: &version.lifecycle_state,
+            data: &served,
+            // The received original's own attestations are attributes of
+            // `item`, so they ride inside the wrapper's signed form: master06
+            // §Digital Signature says of an IMPORTED_VERSION that "all
+            // attributes of the object are serialised and then used to generate
+            // a signature". They are the version's at-committal attestations for
+            // this repository — the local act of importing supplies none of its
+            // own (§Copying: "the `ORIGINAL_VERSION` instance is never
+            // modified").
+            attestations: &version.attestations,
+            signature: version.signature.as_deref(),
+        },
+    )?;
+    // The wrapper's own signature, "which signifies the act of importing and
+    // making available locally an `ORIGINAL_VERSION` from another system"
+    // (master06 §Digital Signature).
+    let signature = crate::versioning::integrity::sign_imported_version(
+        act.ctx,
+        act.contribution_id,
+        act.local_commit_audit,
+        &item,
+    )?;
+    crate::storage::version_repo::import::insert_imported_vo_version(
+        tx,
+        &crate::storage::version_repo::import::ImportedVersionRow {
+            vo_id: cursor.vo_id,
+            kind: cursor.kind.as_str(),
+            ehr_id: act.ehr_id,
+            sys_version: ordinal,
+            trunk_version,
+            branch_number,
+            branch_version,
+            lifecycle_state: &version.lifecycle_state,
+            creating_system_id: &version.creating_system_id,
+            preceding_version_uid: version.preceding_version_uid.as_deref(),
+            other_input_version_uids: &version.other_input_version_uids,
+            contribution_id: act.contribution_id,
+            audit_id: act.contribution_audit_id,
+            signature: signature.as_deref(),
+            wrapped_original: &wrapped_original,
+            lower,
+            upper,
+            body: (!served.is_null()).then_some(&served),
+        },
+    )
+    .await?;
+    // A `523|deleted|` version stores no node rows (data is Void).
+    if !rows.is_empty() {
+        crate::storage::node_repo::write_nodes(tx, cursor.vo_id, ordinal, act.ehr_id, &rows)
+            .await?;
+    }
+    for attestation in &version.attestations {
+        crate::storage::version_repo::attestation::insert_attestation(
+            tx,
+            cursor.vo_id,
+            ordinal,
+            act.contribution_id,
+            // At committal: these rode in with the original and are inside the
+            // wrapper signature computed just above.
+            true,
+            attestation,
+        )
+        .await?;
+    }
+    // PHI-free outbox entry: identity + provenance only; no template_id. The
+    // announced `change_type` is the LOCAL act's.
+    Ok(serde_json::json!({
+        "vo_id": cursor.vo_id,
+        "kind": cursor.kind.as_str(),
+        "sys_version": ordinal,
+        "version_tree_id": version.tree.to_string(),
+        "change_type": act.change_type,
+        "template_id": Value::Null,
+    }))
+}
+
+/// The synthetic local period of one imported version: a strictly-increasing
+/// 1 µs step off the import base, closed by the next version ON THE SAME
+/// LINEAGE (if the import carries one).
+fn local_period(
+    cursor: &ContainerCursor<'_>,
+    index: usize,
+    base: jiff::Timestamp,
+) -> (jiff::Timestamp, Option<jiff::Timestamp>) {
+    let lower = base + jiff::SignedDuration::from_micros(i64::try_from(index).unwrap_or(0));
+    let Some(version) = cursor.versions.get(index) else {
+        return (lower, None);
+    };
+    let upper = cursor
+        .versions
+        .iter()
+        .skip(index + 1)
+        .position(|later| later.lineage() == version.lineage())
+        .map(|offset| {
+            base + jiff::SignedDuration::from_micros(i64::try_from(index + 1 + offset).unwrap_or(0))
+        });
+    (lower, upper)
+}
+
 /// NOTE (local temporal periods, master06 §Copying): all versions of an
 /// imported container are committed in the single local import act, so they get
 /// a synthetic strictly-increasing local `sys_period` chain (base = import time,
@@ -315,11 +643,6 @@ async fn enforce_copy_closure(
 /// local (more recent) act of committal"; the source chronology is not lost but
 /// moved inside the wrapped `ORIGINAL_VERSION`, where §Committal and Audits
 /// puts it.
-#[expect(
-    clippy::too_many_lines,
-    reason = "one linear import transaction; splitting it would obscure the \
-              replay order the version chain depends on"
-)]
 async fn commit_import_scoped(
     tx: &mut PgConnection,
     ctx: &SigningCtx<'_>,
@@ -346,6 +669,15 @@ async fn commit_import_scoped(
         contribution_audit_id,
     )
     .await?;
+    let act = ImportAct {
+        ctx,
+        ehr_id,
+        contribution_id,
+        contribution_audit_id,
+        local_commit_audit: &local_commit_audit,
+        change_type: &import_audit.change_type,
+        base,
+    };
     let mut outbox_versions: Vec<Value> = Vec::new();
 
     for mut container in containers {
@@ -353,252 +685,38 @@ async fn commit_import_scoped(
             continue;
         }
         enforce_copy_closure(tx, &container).await?;
-        // Version-tree order; reject a duplicated version identity within one
-        // import (the identity tuple is {object_id, creating_system_id,
+        // Version-tree order; a duplicated version identity within one import
+        // is a conflict (the identity tuple is {object_id, creating_system_id,
         // version_tree_id} — master06 §Distributed Versioning).
         container
             .versions
             .sort_by_key(|v| (v.lineage(), v.tree.columns()));
-        for pair in container.versions.windows(2) {
-            let [first, second] = pair else { continue };
-            if first.creating_system_id == second.creating_system_id && first.tree == second.tree {
-                return Err(ServiceError::conflict(format!(
-                    "version {}::{}::{} appears more than once in the import",
-                    container.vo_id, first.creating_system_id, first.tree
-                )));
-            }
-        }
+        reject_duplicate_identities(&container)?;
 
         let state = container_state(tx, container.vo_id).await?;
         if skip_existing && state.kind.is_some() {
             continue;
         }
-        if let Some(existing_kind) = state.kind {
-            // First receipt already happened (master06 §Copying Case 3): append
-            // to the existing clone — the kind must match, the EHR must own it,
-            // and every imported trunk version must be strictly newer.
-            if state.owner != ehr_id {
-                return Err(ServiceError::conflict(format!(
-                    "versioned object {} already exists in another EHR",
-                    container.vo_id
-                )));
+        match state.kind {
+            Some(existing_kind) => {
+                append_to_existing_clone(tx, &act, &container, &state, existing_kind).await?;
             }
-            if existing_kind != container.kind {
-                return Err(ServiceError::conflict(format!(
-                    "versioned object {} is a {}, cannot import a {}",
-                    container.vo_id,
-                    existing_kind.as_str(),
-                    container.kind.as_str()
-                )));
+            None => {
+                land_first_receipt(tx, &act, &container).await?;
             }
-            if let Some(first_trunk) = container
-                .versions
-                .iter()
-                .filter(|v| v.tree.is_trunk())
-                .map(|v| v.tree.trunk)
-                .min()
-                && first_trunk <= state.max_trunk
-            {
-                return Err(ServiceError::conflict(format!(
-                    "versioned object {} already has trunk version {} — cannot \
-                     re-import trunk version {first_trunk}",
-                    container.vo_id, state.max_trunk
-                )));
-            }
-            if state.trunk_open && container.versions.iter().any(|v| v.tree.is_trunk()) {
-                crate::storage::version_repo::import::close_lineage_at(
-                    tx,
-                    container.vo_id,
-                    &(String::new(), 0, 0),
-                    base,
-                )
-                .await?;
-            }
-            // The BRANCH mirror of the trunk checks above: a later receipt may
-            // also advance an already-held branch lineage (master06 §Copying —
-            // "previous copies have been made for the item"; §Semantics in
-            // Distributed Systems keeps lineages coexisting). Each incoming
-            // branch lineage must be strictly newer than the stored tip, and a
-            // still-open stored tip closes at the import base so the successor
-            // becomes the lineage's one open row.
-            let mut incoming_branch_lineages: BTreeMap<(String, i32, i32), i32> = BTreeMap::new();
-            for version in container.versions.iter().filter(|v| !v.tree.is_trunk()) {
-                let (trunk_version, branch_number, branch_version) = version.tree.columns();
-                let first = incoming_branch_lineages
-                    .entry((
-                        version.creating_system_id.clone(),
-                        trunk_version,
-                        branch_number,
-                    ))
-                    .or_insert(branch_version);
-                *first = (*first).min(branch_version);
-            }
-            for (lineage, first_incoming) in &incoming_branch_lineages {
-                let (max_stored, open) =
-                    crate::storage::version_repo::import::branch_lineage_state(
-                        tx,
-                        container.vo_id,
-                        lineage,
-                    )
-                    .await?;
-                if max_stored > 0 && *first_incoming <= max_stored {
-                    return Err(ServiceError::conflict(format!(
-                        "versioned object {} already has branch version {}.{}.{max_stored} — \
-                         cannot re-import branch version {}.{}.{first_incoming}",
-                        container.vo_id, lineage.1, lineage.2, lineage.1, lineage.2
-                    )));
-                }
-                if open {
-                    crate::storage::version_repo::import::close_lineage_at(
-                        tx,
-                        container.vo_id,
-                        lineage,
-                        base,
-                    )
-                    .await?;
-                }
-            }
-        } else if container.kind == Kind::Folder
-            && let Some(ehr_id) = ehr_id
-        {
-            // A first-received FOLDER container is a new folder hierarchy of the
-            // EHR (RM ehr master04 §Folders; master06 §Copying Case 2).
-            crate::storage::version_repo::commit::insert_ehr_folder_rank(
-                tx,
-                ehr_id,
-                container.vo_id,
-            )
-            .await?;
         }
 
         // Per-lineage period chains: within a lineage each version closes its
         // predecessor; each lineage's last version stays open. Lineages coexist.
+        let cursor = ContainerCursor {
+            vo_id: container.vo_id,
+            kind: container.kind,
+            versions: &container.versions,
+        };
         let mut ordinal = state.max_ordinal;
-        let versions = container.versions;
-        for (i, version) in versions.iter().enumerate() {
+        for index in 0..cursor.versions.len() {
             ordinal += 1;
-            // PHI-free outbox entry: identity + provenance only; no template_id.
-            // The announced `change_type` is the LOCAL act's — an import commits
-            // every wrapped original as `249|creation|` (master06 §Contributions,
-            // "import of item").
-            outbox_versions.push(serde_json::json!({
-                "vo_id": container.vo_id,
-                "kind": container.kind.as_str(),
-                "sys_version": ordinal,
-                "version_tree_id": version.tree.to_string(),
-                "change_type": import_audit.change_type,
-                "template_id": Value::Null,
-            }));
-            // Synthetic strictly-increasing local period; the next version ON
-            // THE SAME LINEAGE (if any) closes this one.
-            let lower = base + jiff::SignedDuration::from_micros(i64::try_from(i).unwrap_or(0));
-            let upper = versions
-                .iter()
-                .skip(i + 1)
-                .position(|later| later.lineage() == version.lineage())
-                .map(|offset| {
-                    base + jiff::SignedDuration::from_micros(
-                        i64::try_from(i + 1 + offset).unwrap_or(0),
-                    )
-                });
-            let (trunk_version, branch_number, branch_version) = version.tree.columns();
-            // The wrapped ORIGINAL_VERSION, reproduced exactly as received: its
-            // own contribution reference, commit audit (with the SOURCE
-            // `time_committed`) and signature, beside the identity/lifecycle/
-            // data columns the row already carries. master06 §Copying: "the
-            // `ORIGINAL_VERSION` instance is never modified — it remains a
-            // faithful copy of its original".
-            let wrapped_original = wrapped_fragment(version);
-            // The content, decomposed once: the node rows to write AND — through
-            // `reassemble` — the exact bytes a later read will serve. The
-            // wrapper is signed over THOSE, never over the received JSON, so
-            // commit-time and read-time canonical forms are identical by
-            // construction (the same rule the local commit path follows).
-            let rows = if version.data.is_null() {
-                Vec::new()
-            } else {
-                decompose(version.data.clone())?
-            };
-            let served = if rows.is_empty() {
-                Value::Null
-            } else {
-                reassemble(&rows)?
-            };
-            // The wrapper's own signature, "which signifies the act of
-            // importing and making available locally an `ORIGINAL_VERSION` from
-            // another system" (master06 §Digital Signature). Signed over the
-            // same IMPORTED_VERSION value the read path rebuilds.
-            let item = crate::versioning::wire::build_original_version(
-                &crate::versioning::wire::OriginalVersionParts {
-                    creating_system_id: &version.creating_system_id,
-                    vo_id: container.vo_id,
-                    tree: version.tree,
-                    preceding_version_uid: version.preceding_version_uid.as_deref(),
-                    other_input_version_uids: &version.other_input_version_uids,
-                    contribution: &version.contribution,
-                    commit_audit: &version.commit_audit,
-                    lifecycle_state: &version.lifecycle_state,
-                    data: &served,
-                    // The received original's own attestations are attributes of
-                    // `item`, so they ride inside the wrapper's signed form:
-                    // master06 §Digital Signature says of an IMPORTED_VERSION
-                    // that "all attributes of the object are serialised and then
-                    // used to generate a signature". They are the version's
-                    // at-committal attestations for this repository — the local
-                    // act of importing supplies none of its own (§Copying: "the
-                    // `ORIGINAL_VERSION` instance is never modified").
-                    attestations: &version.attestations,
-                    signature: version.signature.as_deref(),
-                },
-            )?;
-            let signature = crate::versioning::integrity::sign_imported_version(
-                ctx,
-                contribution_id,
-                &local_commit_audit,
-                &item,
-            )?;
-            crate::storage::version_repo::import::insert_imported_vo_version(
-                tx,
-                &crate::storage::version_repo::import::ImportedVersionRow {
-                    vo_id: container.vo_id,
-                    kind: container.kind.as_str(),
-                    ehr_id,
-                    sys_version: ordinal,
-                    trunk_version,
-                    branch_number,
-                    branch_version,
-                    lifecycle_state: &version.lifecycle_state,
-                    creating_system_id: &version.creating_system_id,
-                    preceding_version_uid: version.preceding_version_uid.as_deref(),
-                    other_input_version_uids: &version.other_input_version_uids,
-                    contribution_id,
-                    audit_id: contribution_audit_id,
-                    signature: signature.as_deref(),
-                    wrapped_original: &wrapped_original,
-                    lower,
-                    upper,
-                    body: (!served.is_null()).then_some(&served),
-                },
-            )
-            .await?;
-            // A `523|deleted|` version stores no node rows (data is Void).
-            if !rows.is_empty() {
-                crate::storage::node_repo::write_nodes(tx, container.vo_id, ordinal, ehr_id, &rows)
-                    .await?;
-            }
-            for attestation in &version.attestations {
-                crate::storage::version_repo::attestation::insert_attestation(
-                    tx,
-                    container.vo_id,
-                    ordinal,
-                    contribution_id,
-                    // At committal: these rode in with the original and are
-                    // inside the wrapper signature computed just above.
-                    true,
-                    attestation,
-                )
-                .await?;
-            }
+            outbox_versions.push(import_one_version(tx, &act, &cursor, index, ordinal).await?);
         }
     }
     if ctx.outbox_enabled && !outbox_versions.is_empty() {

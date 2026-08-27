@@ -150,41 +150,50 @@ pub fn completeness(key: &str) -> Result<Vec<Completeness>, Error> {
     let mut out = Vec::new();
     for g in &c.generations {
         for u in &g.units {
-            let used = u.model.used_as_type();
-            let mut planned = 0;
-            let mut skipped_mapped = 0;
-            let mut skipped_abstract_unused = 0;
-            let mut silently_dropped = Vec::new();
-            for (name, class) in &u.schema.classes {
-                match decide(&u.model, class, &used) {
-                    Emission::Skip => {
-                        if Model::is_mapped(name) {
-                            skipped_mapped += 1;
-                        } else if class.is_abstract
-                            && u.model.enum_variants(name).is_empty()
-                            && !used.contains(name)
-                        {
-                            skipped_abstract_unused += 1;
-                        } else {
-                            silently_dropped.push(name.clone());
-                        }
-                    }
-                    _ => planned += 1,
-                }
-            }
-            silently_dropped.sort();
-            out.push(Completeness {
-                key: key.to_string(),
-                file: u.spec.file.to_string(),
-                total: u.schema.classes.len(),
-                planned,
-                skipped_mapped,
-                skipped_abstract_unused,
-                silently_dropped,
-            });
+            let mut breakdown = unit_completeness(&u.model, &u.schema);
+            breakdown.key = key.to_string();
+            breakdown.file = u.spec.file.to_string();
+            out.push(breakdown);
         }
     }
     Ok(out)
+}
+
+/// The completeness breakdown of one BMM specification unit.
+///
+/// A skipped class is accounted for by WHY it is skipped: a mapped type, an
+/// abstract class with no variants that nothing references, or — the one that
+/// matters — a silent drop.
+fn unit_completeness(model: &Model, schema: &BmmSchema) -> Completeness {
+    let used = model.used_as_type();
+    let mut planned = 0;
+    let mut skipped_mapped = 0;
+    let mut skipped_abstract_unused = 0;
+    let mut silently_dropped = Vec::new();
+    for (name, class) in &schema.classes {
+        if !matches!(decide(model, class, &used), Emission::Skip) {
+            planned += 1;
+            continue;
+        }
+        if Model::is_mapped(name) {
+            skipped_mapped += 1;
+        } else if class.is_abstract && model.enum_variants(name).is_empty() && !used.contains(name)
+        {
+            skipped_abstract_unused += 1;
+        } else {
+            silently_dropped.push(name.clone());
+        }
+    }
+    silently_dropped.sort();
+    Completeness {
+        key: String::new(),
+        file: String::new(),
+        total: schema.classes.len(),
+        planned,
+        skipped_mapped,
+        skipped_abstract_unused,
+        silently_dropped,
+    }
 }
 
 /// One BMM-declared attribute that reaches no emitted Rust field — the
@@ -227,35 +236,15 @@ pub fn attribute_gaps(key: &str) -> Result<(Vec<AttributeGap>, usize), Error> {
     for g in &c.generations {
         for u in &g.units {
             let used = u.model.used_as_type();
-            // Emitted field names per class (flattened, back-references omitted —
-            // exactly what `render_struct_def` writes).
-            let fields = |class_name: &str| -> BTreeSet<String> {
-                u.model.get(class_name).map_or_else(BTreeSet::new, |cls| {
-                    u.model
-                        .flattened_props(cls)
-                        .iter()
-                        .filter(|rp| overrides::back_reference(&rp.owner, &rp.prop.name).is_none())
-                        .map(|rp| rp.prop.name.clone())
-                        .collect()
-                })
-            };
             for (name, class) in &u.schema.classes {
-                let carriers: Vec<String> = match decide(&u.model, class, &used) {
-                    Emission::Struct | Emission::PolyEnum(_) => vec![name.clone()],
-                    Emission::Enum(variants) => variants,
-                    // A literal enumeration and a transparent newtype are scalars on
-                    // the wire and declare no attributes of their own; a mapped or
-                    // unused-abstract class emits nothing (the name-level
-                    // completeness check accounts for it).
-                    Emission::EnumLiterals(_) | Emission::Newtype(_) | Emission::Skip => Vec::new(),
-                };
+                let carriers = attribute_carriers(name, class, &u.model, &used);
                 for p in &class.properties {
                     if overrides::back_reference(name, &p.name).is_some() {
                         continue;
                     }
                     for carrier in &carriers {
                         checked += 1;
-                        if !fields(carrier).contains(&p.name) {
+                        if !emitted_field_names(&u.model, carrier).contains(&p.name) {
                             gaps.push(AttributeGap {
                                 file: u.spec.file.to_string(),
                                 class: name.clone(),
@@ -269,6 +258,39 @@ pub fn attribute_gaps(key: &str) -> Result<(Vec<AttributeGap>, usize), Error> {
         }
     }
     Ok((gaps, checked))
+}
+
+/// The emitted types that must carry a class's declared attributes.
+///
+/// A struct (or a polymorphic slot's `{Name}Data`) carries them itself; a
+/// closed subtype set carries them through each concrete variant. A literal
+/// enumeration and a transparent newtype are scalars on the wire and declare
+/// no attributes of their own; a mapped or unused-abstract class emits
+/// nothing, which the name-level completeness check accounts for.
+fn attribute_carriers(
+    name: &str,
+    class: &crate::load::bmm::BmmClass,
+    model: &Model,
+    used: &BTreeSet<String>,
+) -> Vec<String> {
+    match decide(model, class, used) {
+        Emission::Struct | Emission::PolyEnum(_) => vec![name.to_owned()],
+        Emission::Enum(variants) => variants,
+        Emission::EnumLiterals(_) | Emission::Newtype(_) | Emission::Skip => Vec::new(),
+    }
+}
+
+/// The emitted field names of a class — flattened, back-references omitted:
+/// exactly what `render_struct_def` writes.
+fn emitted_field_names(model: &Model, class_name: &str) -> BTreeSet<String> {
+    model.get(class_name).map_or_else(BTreeSet::new, |cls| {
+        model
+            .flattened_props(cls)
+            .iter()
+            .filter(|rp| overrides::back_reference(&rp.owner, &rp.prop.name).is_none())
+            .map(|rp| rp.prop.name.clone())
+            .collect()
+    })
 }
 
 /// A file path or prelude identifier claimed by more than one BMM generation of
@@ -1684,28 +1706,9 @@ pub fn generation_function_divergence(key: &str) -> Result<Vec<String>, Error> {
         let mut per_class: ClassFunctions = BTreeMap::new();
         for unit in &generation.units {
             for (name, class) in &unit.schema.classes {
-                let stem = name.to_lowercase();
-                let Some(sibling) = bodies.get(&format!("{stem}_impl")) else {
-                    continue;
-                };
-                let own = bodies.get(&stem).map(String::as_str).unwrap_or_default();
-                let declared: BTreeSet<String> = class.functions.iter().cloned().collect();
-                let found = class
-                    .functions
-                    .iter()
-                    .filter(|f| {
-                        // Both spellings: a BMM name that is a Rust keyword is
-                        // realized as a raw identifier (`fn r#type(`).
-                        let item = format!("fn {f}(");
-                        let raw = format!("fn r#{f}(");
-                        sibling.contains(&item)
-                            || own.contains(&item)
-                            || sibling.contains(&raw)
-                            || own.contains(&raw)
-                    })
-                    .cloned()
-                    .collect();
-                per_class.insert(name.clone(), (declared, found));
+                if let Some(entry) = class_function_status(name, class, &bodies) {
+                    per_class.insert(name.clone(), entry);
+                }
             }
         }
         realized.push((generation.spec.module, per_class));
@@ -1735,6 +1738,36 @@ pub fn generation_function_divergence(key: &str) -> Result<Vec<String>, Error> {
     divergent.sort();
     divergent.dedup();
     Ok(divergent)
+}
+
+/// The functions one class DECLARES and those its hand-written sibling
+/// realizes, or `None` when the class has no `*_impl.rs` sibling at all.
+///
+/// Both spellings are recognised: a BMM name that is a Rust keyword is
+/// realized as a raw identifier (`fn r#type(`).
+fn class_function_status(
+    name: &str,
+    class: &crate::load::bmm::BmmClass,
+    bodies: &BTreeMap<String, String>,
+) -> Option<(BTreeSet<String>, BTreeSet<String>)> {
+    let stem = name.to_lowercase();
+    let sibling = bodies.get(&format!("{stem}_impl"))?;
+    let own = bodies.get(&stem).map(String::as_str).unwrap_or_default();
+    let declared: BTreeSet<String> = class.functions.iter().cloned().collect();
+    let found = class
+        .functions
+        .iter()
+        .filter(|f| {
+            let item = format!("fn {f}(");
+            let raw = format!("fn r#{f}(");
+            sibling.contains(&item)
+                || own.contains(&item)
+                || sibling.contains(&raw)
+                || own.contains(&raw)
+        })
+        .cloned()
+        .collect();
+    Some((declared, found))
 }
 
 /// Whether `body` applies items to `rust_type` — an `impl` block on it, or the
@@ -1823,37 +1856,10 @@ pub fn unrealized_bmm_functions(key: &str) -> Result<Vec<String>, Error> {
                 if overrides::primitive(name).is_some() || overrides::is_mapped_class(name) {
                     continue;
                 }
-                let stem = name.to_lowercase();
-                let sibling = bodies
-                    .get(&format!("{stem}_impl"))
-                    .map(String::as_str)
-                    .unwrap_or_default();
-                let own = bodies.get(&stem).map(String::as_str).unwrap_or_default();
-                let rust_type = naming::type_name(name);
                 for function in &class.functions {
-                    // A BMM name that is a Rust keyword is realized as a RAW
-                    // identifier (`BMM_CLASS.type` → `pub fn r#type(`), so the
-                    // witness has to accept both spellings or it can never
-                    // credit those functions at all.
-                    let item = format!("fn {function}(");
-                    let raw_item = format!("fn r#{function}(");
-                    let realized = |body: &str| body.contains(&item) || body.contains(&raw_item);
-                    if realized(sibling) || realized(own) {
-                        continue;
+                    if !function_is_realized(name, function, bodies_of(name, &bodies), &bodies) {
+                        missing.push(format!("{}/{name}.{function}", generation.spec.module));
                     }
-                    // A method can be realized by a MACRO applied elsewhere in the
-                    // generation, so the witness searches the whole generation —
-                    // but it must name the type as an impl TARGET, not merely
-                    // mention it: a mention credited `VERSION.data` to
-                    // `imported_version_impl.rs`, a false NEGATIVE that silently
-                    // drops a real gap (#2247).
-                    if bodies
-                        .values()
-                        .any(|body| realized(body) && targets_type(body, &rust_type))
-                    {
-                        continue;
-                    }
-                    missing.push(format!("{}/{name}.{function}", generation.spec.module));
                 }
             }
         }
@@ -1861,6 +1867,46 @@ pub fn unrealized_bmm_functions(key: &str) -> Result<Vec<String>, Error> {
     missing.sort();
     missing.dedup();
     Ok(missing)
+}
+
+/// The class's own two candidate bodies: its generated type file and its
+/// hand-written `*_impl.rs` sibling.
+fn bodies_of<'a>(name: &str, bodies: &'a BTreeMap<String, String>) -> [&'a str; 2] {
+    let stem = name.to_lowercase();
+    [
+        bodies
+            .get(&format!("{stem}_impl"))
+            .map(String::as_str)
+            .unwrap_or_default(),
+        bodies.get(&stem).map(String::as_str).unwrap_or_default(),
+    ]
+}
+
+/// Whether one BMM function is realized anywhere in its generation.
+///
+/// A BMM name that is a Rust keyword is realized as a RAW identifier
+/// (`BMM_CLASS.type` → `pub fn r#type(`), so both spellings count or those
+/// functions could never be credited at all. A method may also be realized by
+/// a MACRO applied elsewhere in the generation, so the witness searches every
+/// body — but such a body must name the type as an impl TARGET, not merely
+/// mention it: a mention credited `VERSION.data` to `imported_version_impl.rs`,
+/// a false NEGATIVE that silently drops a real gap (#2247).
+fn function_is_realized(
+    name: &str,
+    function: &str,
+    own: [&str; 2],
+    bodies: &BTreeMap<String, String>,
+) -> bool {
+    let item = format!("fn {function}(");
+    let raw_item = format!("fn r#{function}(");
+    let realized = |body: &str| body.contains(&item) || body.contains(&raw_item);
+    if own.iter().any(|body| realized(body)) {
+        return true;
+    }
+    let rust_type = naming::type_name(name);
+    bodies
+        .values()
+        .any(|body| realized(body) && targets_type(body, &rust_type))
 }
 
 /// Every `.rs` file under `dir` as file-stem → the CONCATENATED bodies of every
@@ -1975,34 +2021,45 @@ pub fn untyped_enumeration_facets() -> Result<Vec<UntypedFacet>, Error> {
                 });
             }
         }
-
-        let declared = model.declared_field_types();
-        for (spec, fields) in &declared {
-            let by_wire: BTreeMap<&str, &str> = fields
-                .iter()
-                .map(|(w, d)| (w.as_str(), d.as_str()))
-                .collect();
-            for elem in xsd.flattened(spec).1 {
-                let Some(rust) = faceted.get(elem.type_name.as_str()) else {
-                    continue;
-                };
-                if !by_wire
-                    .get(elem.name.as_str())
-                    .is_some_and(|d| d.contains(rust.as_str()))
-                {
-                    out.push(UntypedFacet {
-                        closure: name.to_owned(),
-                        simple_type: elem.type_name.clone(),
-                        problem: "an element slot of a faceted simple type is not typed to its enum",
-                        detail: format!("{spec}.{}", elem.name),
-                    });
-                }
-            }
+        for (spec, fields) in &model.declared_field_types() {
+            push_untyped_facet_slots(name, spec, fields, &faceted, &xsd, &mut out);
         }
     }
     out.sort();
     out.dedup();
     Ok(out)
+}
+
+/// Reports every element slot of one emitted type whose faceted simple type
+/// did not reach the field's declared Rust type.
+fn push_untyped_facet_slots(
+    closure: &str,
+    spec: &str,
+    fields: &[(String, String)],
+    faceted: &BTreeMap<&str, String>,
+    xsd: &crate::load::xsd::XsdModel,
+    out: &mut Vec<UntypedFacet>,
+) {
+    let by_wire: BTreeMap<&str, &str> = fields
+        .iter()
+        .map(|(w, d)| (w.as_str(), d.as_str()))
+        .collect();
+    for elem in xsd.flattened(spec).1 {
+        let Some(rust) = faceted.get(elem.type_name.as_str()) else {
+            continue;
+        };
+        if !by_wire
+            .get(elem.name.as_str())
+            .is_some_and(|d| d.contains(rust.as_str()))
+        {
+            out.push(UntypedFacet {
+                closure: closure.to_owned(),
+                simple_type: elem.type_name.clone(),
+                problem: "an element slot of a faceted simple type is not typed to its enum",
+                detail: format!("{spec}.{}", elem.name),
+            });
+        }
+    }
 }
 
 /// A place where the concrete-only `xsi:type` reading would LOSE a document
@@ -2056,30 +2113,15 @@ pub fn lost_dispatch_variants() -> Result<Vec<LostVariant>, Error> {
         for declared in &slot_types {
             let variants: BTreeSet<String> = model.descendants(declared).into_iter().collect();
             for abstract_ty in model.types.values().filter(|t| t.is_abstract) {
-                if !model.is_a(&abstract_ty.name, declared) {
-                    continue;
-                }
-                // The abstract type itself is correctly absent; every concrete
-                // type BELOW it is a shape a document can present at this slot.
-                for concrete in model.descendants(&abstract_ty.name) {
-                    if !variants.contains(&concrete) {
-                        out.push(LostVariant {
-                            closure: name.to_owned(),
-                            declared: declared.clone(),
-                            via_abstract: abstract_ty.name.clone(),
-                            lost: concrete,
-                            problem: "a concrete descendant is missing from the variant set",
-                        });
-                    }
-                }
-                if variants.contains(&abstract_ty.name) {
-                    out.push(LostVariant {
-                        closure: name.to_owned(),
-                        declared: declared.clone(),
-                        via_abstract: abstract_ty.name.clone(),
-                        lost: abstract_ty.name.clone(),
-                        problem: "an abstract type appears as an xsi:type variant",
-                    });
+                if model.is_a(&abstract_ty.name, declared) {
+                    push_lost_variants(
+                        name,
+                        declared,
+                        &abstract_ty.name,
+                        &variants,
+                        &model,
+                        &mut out,
+                    );
                 }
             }
         }
@@ -2087,4 +2129,40 @@ pub fn lost_dispatch_variants() -> Result<Vec<LostVariant>, Error> {
     out.sort();
     out.dedup();
     Ok(out)
+}
+
+/// Reports the shapes one abstract intermediate loses at one slot.
+///
+/// The abstract type itself is correctly absent from the variant set; every
+/// concrete type BELOW it is a shape a document can present at this slot, so a
+/// missing one is a loss — and the abstract type appearing AS a variant is the
+/// mirror defect.
+fn push_lost_variants(
+    closure: &str,
+    declared: &str,
+    abstract_ty: &str,
+    variants: &BTreeSet<String>,
+    model: &crate::load::xsd::XsdModel,
+    out: &mut Vec<LostVariant>,
+) {
+    for concrete in model.descendants(abstract_ty) {
+        if !variants.contains(&concrete) {
+            out.push(LostVariant {
+                closure: closure.to_owned(),
+                declared: declared.to_owned(),
+                via_abstract: abstract_ty.to_owned(),
+                lost: concrete,
+                problem: "a concrete descendant is missing from the variant set",
+            });
+        }
+    }
+    if variants.contains(abstract_ty) {
+        out.push(LostVariant {
+            closure: closure.to_owned(),
+            declared: declared.to_owned(),
+            via_abstract: abstract_ty.to_owned(),
+            lost: abstract_ty.to_owned(),
+            problem: "an abstract type appears as an xsi:type variant",
+        });
+    }
 }
