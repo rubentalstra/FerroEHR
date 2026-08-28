@@ -1659,7 +1659,7 @@ jobs:
 
   # ── The compose/local image target (docker/Dockerfile runtime-from-source) ──
   # ui-e2e packages the shipped `runtime-prebuilt` target now (issue #335), so
-  # the in-image source build that docker-compose.override.yml (the repo-dev
+  # the in-image source build that docker-compose.dev.yml (the repo-dev
   # `up --build` posture) and docker/sut-ferroehr.yml (the conformance SUT
   # stack) rely on would otherwise have no CI exercise at all.
   # It is built here instead — but ONLY when its own recipe changes, which is

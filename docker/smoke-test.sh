@@ -3,7 +3,8 @@
 # SPDX-License-Identifier: MIT
 # End-to-end smoke test for the two container images (amd64), run against the
 # TRUE end-user artifact: the standalone docker-compose.yml, pinned with an
-# explicit -f so a repo checkout's docker-compose.override.yml never merges in.
+# explicit -f. (The dev overlay stopped auto-merging in #2868 — its explicit
+# name keeps this pin as belt-and-braces, not as the defence.)
 #
 # Only postgres + the server start (the admin console sits behind the
 # `admin-ui` profile). The server configuration is the quickstart posture the

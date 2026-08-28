@@ -3,7 +3,7 @@
 # Mounted into the app container at /etc/ferroehr/ferroehr.toml — the server's
 # config search order (position 4) discovers it automatically, so no
 # FERROEHR_CONFIG / --config pointer is needed (mounted by
-# docker-compose.override.yml and docker/sut-ferroehr.yml). Their env vars
+# docker-compose.dev.yml and docker/sut-ferroehr.yml). Their env vars
 # override individual keys on top of this file (layer 3 beats the file).
 #
 # The out-of-the-box auth posture has authentication ENABLED but no configured
@@ -58,7 +58,7 @@ loggers = "admin_only"
 
 # Dev-only trust for the shipped dev Keycloak realm (docker/keycloak/import):
 # standard OIDC discovery — the issuer is the canonical KC_HOSTNAME from
-# docker-compose.override.yml; the CDR resolves the JWKS lazily from the issuer's
+# docker-compose.dev.yml; the CDR resolves the JWKS lazily from the issuer's
 # discovery document (cached, refreshed — key rotation just works, exactly
 # like any real OAuth2 resource server; no static key material). With this
 # the CDR advertises `Basic, Bearer` and an OIDC-logged-in admin console can

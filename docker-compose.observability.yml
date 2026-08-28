@@ -6,7 +6,7 @@
 #
 #   docker compose -f docker-compose.yml -f docker-compose.observability.yml up
 #
-# (In a repo checkout, add -f docker-compose.override.yml before it to build
+# (In a repo checkout, add -f docker-compose.dev.yml before it to build
 # from source.)
 #
 # Adds a single-container LGTM stack (grafana/otel-lgtm = OTLP collector +
