@@ -15,6 +15,8 @@ workflow refuses a tag that has no matching section here.
 
 ## [Unreleased]
 
+## [4.0.9] - 2026-08-28
+
 ### Fixed
 
 - `FOLDER f CONTAINS COMPOSITION c` now resolves the folder's `items`
@@ -7727,7 +7729,8 @@ but has not yet run in production.
   seccomp, default-deny NetworkPolicy) and golden-render validation.
 
 
-[unreleased]: https://github.com/rubentalstra/FerroEHR/compare/v4.0.8...HEAD
+[unreleased]: https://github.com/rubentalstra/FerroEHR/compare/v4.0.9...HEAD
+[4.0.9]: https://github.com/rubentalstra/FerroEHR/compare/v4.0.8...v4.0.9
 [4.0.8]: https://github.com/rubentalstra/FerroEHR/compare/v4.0.7...v4.0.8
 [4.0.7]: https://github.com/rubentalstra/FerroEHR/compare/v4.0.6...v4.0.7
 [4.0.6]: https://github.com/rubentalstra/FerroEHR/compare/v4.0.6-rc3...v4.0.6
