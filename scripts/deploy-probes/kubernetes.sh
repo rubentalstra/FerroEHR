@@ -129,8 +129,14 @@ k8s_try_db_hosts() {
 }
 
 k8s_db_up() {
+  # The db-publish overlay is required here (#2879): the quickstart file
+  # publishes no database port, and this probe is the one consumer that
+  # genuinely needs one (cluster pods reach the compose postgres through the
+  # Docker Desktop gateway).
   FERROEHR_BIND_HOST=0.0.0.0 FERROEHR_DB_PORT="$K8S_DB_PORT" \
-    docker compose -p "$COMPOSE_PROJECT" up -d ferroehr-postgres >/dev/null 2>&1
+    docker compose -p "$COMPOSE_PROJECT" \
+    -f docker-compose.yml -f docker-compose.db-publish.yml \
+    up -d ferroehr-postgres >/dev/null 2>&1
   local _i
   for _i in $(seq 1 40); do
     docker compose -p "$COMPOSE_PROJECT" exec -T ferroehr-postgres \

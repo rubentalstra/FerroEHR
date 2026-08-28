@@ -370,6 +370,7 @@ jobs:
             docker-compose.yml
             docker-compose.keycloak.yml
             docker-compose.observability.yml
+            docker-compose.db-publish.yml
             ferroehr-${{ needs.plan.outputs.tag }}.spdx.json
           # Releases publish as OFFICIAL releases (owner sign-off
           # 2026-07-31, superseding the 2026-07-11 always-prerelease rule);
@@ -472,7 +473,8 @@ jobs:
             "ferroehr-${TAG}.spdx.json" \
             "docker-compose.yml" \
             "docker-compose.keycloak.yml" \
-            "docker-compose.observability.yml"; do
+            "docker-compose.observability.yml" \
+            "docker-compose.db-publish.yml"; do
             printf '%s\n' "$assets" | grep -Fxq "$asset" || missing="$missing $asset"
           done
           [ -z "$missing" ] || {
