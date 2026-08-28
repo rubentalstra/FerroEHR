@@ -15,6 +15,13 @@ workflow refuses a tag that has no matching section here.
 
 ## [Unreleased]
 
+### Fixed
+
+- The v4.0.9 Helm chart publishes as **6.0.26** (appVersion 4.0.9). The
+  release's own chart leg failed on a CI guard defect before publishing, so
+  chart 6.0.25 never existed on the registry; 6.0.26 is the same chart with
+  the committed appVersion default refreshed to the released 4.0.9.
+
 ## [4.0.9] - 2026-08-28
 
 ### Fixed
