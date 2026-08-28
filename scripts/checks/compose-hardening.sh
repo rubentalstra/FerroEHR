@@ -85,7 +85,7 @@ interface and bypasses the host firewall"
   #
   # A service named in BOTH the base file and an overlay is likewise exempt in the
   # overlay, even when the overlay restates `image:` (which
-  # `docker-compose.override.yml` does to swap in the from-source tags): Compose
+  # `docker-compose.dev.yml` does to swap in the from-source tags): Compose
   # merges the two definitions, and restating `security_opt` there is not merely
   # redundant — it makes `docker compose config` fail with "items at 0 and 1 are
   # equal", because list-valued keys concatenate.

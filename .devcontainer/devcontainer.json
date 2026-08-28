@@ -8,9 +8,10 @@
 // compose override (see website/book/src/installation/compose.md).
 //
 // COMPOSE_FILE pins every compose invocation in this container to the
-// standalone docker-compose.yml: a bare `docker compose up` inside a checkout
-// would otherwise merge docker-compose.override.yml and try a from-source
-// build (the trap documented at the top of the compose book page).
+// standalone docker-compose.yml. (Historical: the dev overlay auto-merged
+// under its old `override` name and made bare invocations build from
+// source; since #2868 it is explicit-only, and this pin stays as
+// belt-and-braces.)
 //
 // Schema: https://containers.dev/implementors/json_reference
 {

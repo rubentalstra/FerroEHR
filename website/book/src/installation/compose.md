@@ -11,11 +11,11 @@ overlays, and the variables that tune them. For a step-by-step first run, see
 [Getting started](../getting-started.md).
 
 > [!NOTE]
-> This chapter describes the **standalone** `docker-compose.yml` downloaded
-> into an empty directory. If you're running `docker compose up` from a
-> checkout of the repository instead, `docker-compose.override.yml` is
-> merged in automatically and the behavior is different — see
-> [Repository development](#repository-development) below.
+> This chapter applies equally to the **standalone** `docker-compose.yml`
+> downloaded into an empty directory and to a bare `docker compose up` in a
+> repository checkout — both run the published images. Building from source
+> is an explicit opt-in (`-f docker-compose.yml -f docker-compose.dev.yml`) —
+> see [Repository development](#repository-development) below.
 
 <!-- toc -->
 
@@ -348,13 +348,14 @@ ignored.
 
 ## Repository development
 
-In a checkout of the repository, `docker-compose.override.yml` is
-[merged automatically](https://docs.docker.com/compose/how-tos/multiple-compose-files/)
-onto any bare `docker compose` command, and switches the stack to the
-from-source developer posture:
+A bare `docker compose up` in a checkout runs the same published-images
+quickstart as the downloaded file. Building from the current sources is an
+explicit opt-in: the `docker-compose.dev.yml` overlay, passed as a
+[second file](https://docs.docker.com/compose/how-tos/multiple-compose-files/),
+switches the stack to the from-source developer posture:
 
 ```shell
-docker compose up --build
+docker compose -f docker-compose.yml -f docker-compose.dev.yml up --build
 ```
 
 That builds the server, database and console images from the current sources
@@ -367,10 +368,8 @@ that imports the full development realm
 (`docker compose --profile keycloak up`).
 
 Downloaders of the standalone quickstart file never see any of this; it is
-purely a convenience for working on FerroEHR itself. Note that passing `-f`
-explicitly (as the overlays above do) replaces the default file set, so the
-override is *not* merged in those invocations; add
-`-f docker-compose.override.yml` to the chain if you want it.
+purely a convenience for working on FerroEHR itself, and it only ever
+applies when its `-f` is passed — nothing merges it in silently.
 
 ## Build provenance
 

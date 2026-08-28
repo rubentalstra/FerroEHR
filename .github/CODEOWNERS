@@ -59,7 +59,7 @@
 /docker-compose.yml                 @rubentalstra
 /docker-compose.keycloak.yml        @rubentalstra
 /docker-compose.observability.yml   @rubentalstra
-/docker-compose.override.yml        @rubentalstra
+/docker-compose.dev.yml        @rubentalstra
 
 # ── Policy and legal ────────────────────────────────────────────────────────
 /SECURITY.md                        @rubentalstra
