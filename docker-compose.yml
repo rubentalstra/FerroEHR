@@ -58,9 +58,10 @@
 # Every published port binds the LOOPBACK interface by default
 # (127.0.0.1:HOST:CONTAINER). This matters more than it looks: a published port
 # is DNAT'd by rules Docker inserts ahead of the host firewall's own chains, so
-# `ufw deny 5432` does NOT stop a container port published on 0.0.0.0
-# (docs.docker.com/engine/network/packet-filtering-firewalls). Running this file
-# unchanged on a public host therefore used to expose PostgreSQL to the internet.
+# `ufw deny 8080` does NOT stop a container port published on 0.0.0.0
+# (docs.docker.com/engine/network/packet-filtering-firewalls). The database
+# publishes NO host port at all (#2879); host psql/GUI access is the explicit
+# docker-compose.db-publish.yml overlay.
 #
 # To reach the stack from another machine, name the interface explicitly:
 #   FERROEHR_BIND_HOST=0.0.0.0 docker compose up      # every interface
@@ -87,7 +88,7 @@
 # their own self-contained SUT stack (docker/sut-ferroehr.yml, see its header
 # for the lane table). NO hard-coded `name:` (issue #282 D3): each lane picks
 # its own project name so the lanes coexist; all lanes share the
-# 8080/3000/5432/8081 host port block, so they run one at a time on defaults —
+# 8080/3000/8081 host port block, so they run one at a time on defaults —
 # override the *_PORT env vars for true parallel coexistence.
 
 services:
@@ -131,8 +132,13 @@ services:
       - wal_compression=${BENCH_PG_WAL_COMPRESSION:-lz4}
     volumes:
       - ferroehr-pgdata:/var/lib/postgresql
-    ports:
-      - "${FERROEHR_BIND_HOST:-127.0.0.1}:${FERROEHR_DB_PORT:-5432}:5432"
+    # NO host port, deliberately (#2879): the server reaches the database over
+    # the compose network, so a host publish serves only host psql/GUI clients
+    # — and on Windows the default 5432 collided with the EDB installer's
+    # auto-started postgresql-x64-* service, failing the quickstart's first
+    # command. Host access is the docker-compose.db-publish.yml overlay;
+    # in-stack access needs no port: docker compose exec ferroehr-postgres
+    # psql -U postgres -d ferroehr.
     # Isolation floor. The entrypoint starts as root to chown the data directory
     # and then drops to `postgres`, so it needs exactly the capabilities that
     # requires and nothing else — not the ~14 the default set grants.

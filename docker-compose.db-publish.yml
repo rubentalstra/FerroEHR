@@ -1,0 +1,25 @@
+# SPDX-FileCopyrightText: FerroEHR contributors
+# SPDX-License-Identifier: MIT
+#
+# OPT-IN overlay: publish PostgreSQL to a host port, for psql or GUI clients
+# (pgAdmin, DBeaver) running on the host. The quickstart deliberately
+# publishes no database port (#2879): nothing in the stack needs it — the
+# server reaches the database over the compose network — and the 5432
+# default collided with natively installed PostgreSQL (on Windows the EDB
+# installer registers an auto-started postgresql-x64-* service holding it).
+#
+# Usage, beside the base file:
+#   docker compose -f docker-compose.yml -f docker-compose.db-publish.yml up
+#   FERROEHR_DB_PORT=5433 docker compose -f docker-compose.yml \
+#     -f docker-compose.db-publish.yml up          # when 5432 is taken
+#
+# In-stack access needs no port at all:
+#   docker compose exec ferroehr-postgres psql -U postgres -d ferroehr
+#
+# The bind host defaults to loopback like every published port in the base
+# file; the base file's header carries the firewall/DNAT warning that applies
+# if you widen it.
+services:
+  ferroehr-postgres:
+    ports:
+      - "${FERROEHR_BIND_HOST:-127.0.0.1}:${FERROEHR_DB_PORT:-5432}:5432"

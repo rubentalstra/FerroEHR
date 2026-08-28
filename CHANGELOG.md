@@ -17,6 +17,13 @@ workflow refuses a tag that has no matching section here.
 
 ### Fixed
 
+- The quickstart no longer publishes PostgreSQL to a host port, so a natively
+  installed PostgreSQL (the classic Windows collision: the installer's
+  auto-started `postgresql-x64-*` service holding 5432) can no longer fail
+  `docker compose up`. Host access for psql/GUI clients is the new
+  `docker-compose.db-publish.yml` overlay, attached to releases beside the
+  base file; in-stack access needs no port
+  (`docker compose exec ferroehr-postgres psql`) (#2879).
 - The admin console stops re-downloading its whole WebAssembly bundle on every
   page load. Its `/pkg/` filenames now carry a content hash and are served
   `public, max-age=31536000, immutable`, so a browser reuses them until the
