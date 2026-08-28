@@ -13,11 +13,17 @@
 //! the root `<Title formatter=…/>`.
 
 use leptos::prelude::*;
-use leptos_meta::{MetaTags, Stylesheet, Title, provide_meta_context};
+use leptos_meta::{HashedStylesheet, MetaTags, Title, provide_meta_context};
 use leptos_router::components::{ParentRoute, Route, Router, Routes};
 use leptos_router::path;
 
 /// The full HTML document shell rendered by the server.
+///
+/// The stylesheet link is emitted HERE, not from a component body, because it
+/// is the one `<head>` element whose href depends on the build's content
+/// hashes: `HashedStylesheet` reads the cargo-leptos hash manifest through
+/// [`LeptosOptions`], which exists only on the server
+/// (<https://docs.rs/leptos_meta/0.8/leptos_meta/fn.HashedStylesheet.html>).
 #[must_use]
 pub fn shell(options: LeptosOptions) -> impl IntoView {
     view! {
@@ -31,7 +37,8 @@ pub fn shell(options: LeptosOptions) -> impl IntoView {
                 <meta charset="utf-8" />
                 <meta name="viewport" content="width=device-width, initial-scale=1" />
                 <AutoReload options=options.clone() />
-                <HydrationScripts options />
+                <HydrationScripts options=options.clone() />
+                <HashedStylesheet options id="leptos" />
                 <MetaTags />
             </head>
             <body>
@@ -95,7 +102,6 @@ pub fn App() -> impl IntoView {
         }
     });
     view! {
-        <Stylesheet id="leptos" href="/pkg/ferroehr-admin-ui.css" />
         <Title formatter=console_title text=PRODUCT />
         <thaw::ConfigProvider
             theme_id="ferroehr-admin".to_owned()

@@ -220,7 +220,8 @@ unwinding to WORK, not to be fast. Do not re-file it, and do not silence
 `/ui-gates`: clippy on **native (`--features ssr`) and wasm32 (hydrate)**
 targets, `cargo nextest run -p ferroehr-admin-ui --features ssr` (the
 featureless crate ships nowhere and skips every ssr-gated test), leptosfmt
-(src + tests) + cargo fmt, cargo-leptos build; E2E journeys (the `e2e_*`
+(src + tests) + cargo fmt, `bash scripts/cargo-leptos.sh build` (the wrapper,
+never a bare `cargo leptos` — it rewrites `Cargo.lock`, #2877); E2E journeys (the `e2e_*`
 modules under `tests/it/`, skip-with-reason via `UI_E2E_BASE_URL`)
 merge-gate in CI; a UI-visual change re-captures the `website/book`
 screenshots (`ui-screenshot-guard`).

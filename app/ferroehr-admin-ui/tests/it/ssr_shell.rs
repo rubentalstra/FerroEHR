@@ -422,6 +422,26 @@ async fn the_login_screen_is_served_without_a_session() {
     );
 }
 
+/// The document links its stylesheet from the SHELL's `<head>`.
+///
+/// The link cannot come from a component body any more: with content-hashed
+/// `/pkg` filenames its href is a build fact the server reads out of the
+/// cargo-leptos hash manifest, which only the shell has (`LeptosOptions`).
+/// Losing it renders a console that works and looks broken, and no other test
+/// would notice — the screens assert their own markup, never the head.
+#[tokio::test]
+async fn the_shell_links_the_bundle_stylesheet_from_the_document_head() {
+    let pass = render_route("/login").await;
+    let head = pass
+        .html
+        .split_once("<body")
+        .map_or(pass.html.as_str(), |(head, _)| head);
+    assert!(
+        head.contains(r#"rel="stylesheet""#) && head.contains("/pkg/ferroehr-admin-ui.css"),
+        "the shell must link the bundle stylesheet in <head>: {head}"
+    );
+}
+
 /// The in-view guard (`AppShell`'s `<Redirect/>`) still stands behind the
 /// router layer: rendered bare (no axum service, so no login guard), a
 /// guarded URL keeps answering `302 → /login` on the response line — the

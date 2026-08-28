@@ -163,8 +163,10 @@ fn is_public_path(path: &str) -> bool {
 ///   one of those and leave the console unstyled.
 /// - `X-Frame-Options: DENY` plus `frame-ancestors 'none'` — belt and braces
 ///   against clickjacking a console that performs administrative writes.
-/// - `Cache-Control: no-store` — the console renders patient data into HTML,
-///   and it is also what keeps a nonced document out of any shared cache.
+/// - `Cache-Control` — `no-store` on every document, because the console
+///   renders patient data into HTML and because a nonced document must never
+///   sit in a shared cache; the hashed `/pkg/*` bundle is the one exception
+///   ([`cache_control_for`]).
 ///
 /// `Strict-Transport-Security` is left to the TLS edge, for the same reason as
 /// on the API: RFC 6797 §7.2 makes it inert over plain HTTP.
@@ -184,10 +186,66 @@ fn with_security_headers(router: axum::Router<LeptosOptions>) -> axum::Router<Le
             http::header::X_FRAME_OPTIONS,
             http::HeaderValue::from_static("DENY"),
         ))
-        .layer(SetResponseHeaderLayer::overriding(
-            http::header::CACHE_CONTROL,
-            http::HeaderValue::from_static("no-store"),
-        ))
+        .layer(axum::middleware::from_fn(cache_control_layer))
+}
+
+/// The hydration bundle's caching directive: RFC 9111 §5.2.2.9 `public` +
+/// §5.2.2.1 `max-age`, and RFC 8246 `immutable`.
+///
+/// One year is the conventional ceiling for a content-addressed asset
+/// (<https://developer.mozilla.org/en-US/docs/Web/HTTP/Reference/Headers/Cache-Control#caching_static_assets_with_hashed_filenames>),
+/// and `immutable` is what stops the browser revalidating on a reload it would
+/// otherwise treat as a reason to ask again (RFC 8246 §2).
+const IMMUTABLE_ASSET_CACHE_CONTROL: &str = "public, max-age=31536000, immutable";
+
+/// The console default: never store the response anywhere (RFC 9111 §5.2.2.5).
+const NO_STORE_CACHE_CONTROL: &str = "no-store";
+
+/// Stamps each response with the caching directive its path and status earn.
+async fn cache_control_layer(
+    request: axum::extract::Request,
+    next: axum::middleware::Next,
+) -> axum::response::Response {
+    let path = request.uri().path().to_owned();
+    let mut response = next.run(request).await;
+    let value = cache_control_for(&path, response.status());
+    response
+        .headers_mut()
+        .insert(http::header::CACHE_CONTROL, value);
+    response
+}
+
+/// Which `Cache-Control` value one response carries.
+///
+/// `/pkg/` is the cargo-leptos hydration bundle and NOTHING else: the WASM,
+/// its JS glue, and the stylesheet. Their filenames carry a content hash
+/// (`hash-files` in the crate manifest), so a changed asset is a changed URL
+/// and a cached copy can never go stale — which is what makes `immutable` an
+/// honest claim rather than a bet on the deploy cadence. The bundle holds no
+/// patient data either: the console reaches the CDR through its own server
+/// functions, so nothing clinical is ever compiled into it.
+///
+/// `/pkg/snippets/` is carved back out because cargo-leptos deliberately does
+/// NOT hash those files — the WebAssembly looks for them by their unhashed
+/// names — so their URLs are stable across builds and caching one for a year
+/// would pin a stale copy. This build emits none today; the carve-out is what
+/// keeps that from becoming a silent defect if a dependency ever adds one.
+///
+/// Everything else keeps `no-store`, unchanged and for unchanged reasons —
+/// the console renders patient data into HTML, and each document carries a
+/// per-request CSP nonce that must not be replayed out of a cache.
+///
+/// A refused or missing asset is never cached: only a served body (2xx) and
+/// the `304` a revalidation answers with take the immutable directive, so a
+/// deploy racing a request cannot freeze a 404 into a browser for a year.
+fn cache_control_for(path: &str, status: http::StatusCode) -> http::HeaderValue {
+    let cacheable = status.is_success() || status == http::StatusCode::NOT_MODIFIED;
+    let hashed_asset = path.starts_with("/pkg/") && !path.starts_with("/pkg/snippets/");
+    if hashed_asset && cacheable {
+        http::HeaderValue::from_static(IMMUTABLE_ASSET_CACHE_CONTROL)
+    } else {
+        http::HeaderValue::from_static(NO_STORE_CACHE_CONTROL)
+    }
 }
 
 /// Mints this response's script nonce and answers with the policy that names
@@ -259,7 +317,10 @@ mod tests {
         reason = "the exchange helpers panic to report a broken fixture, which is how a test fails (Book ch11); clippy's allow-*-in-tests scoping covers only the #[test] fns themselves"
     )]
 
-    use super::{console_csp, csp_nonce_layer, is_public_path, provide_request_nonce};
+    use super::{
+        IMMUTABLE_ASSET_CACHE_CONTROL, NO_STORE_CACHE_CONTROL, cache_control_for, console_csp,
+        csp_nonce_layer, is_public_path, provide_request_nonce,
+    };
     use tower::util::ServiceExt;
 
     /// A sample policy for the directive assertions; the value stands in for a
@@ -288,6 +349,65 @@ mod tests {
         for guarded in ["/", "/templates", "/queries/builder", "/ehrs", "/nonsense"] {
             assert!(!is_public_path(guarded), "{guarded} must be guarded");
         }
+    }
+
+    /// The hydration bundle is the ONLY thing that may be cached, and every
+    /// document — the sign-in screen included — keeps `no-store`: the console
+    /// renders patient data into HTML and stamps a per-request CSP nonce on
+    /// it.
+    #[test]
+    fn only_the_hashed_bundle_is_cacheable() {
+        let ok = http::StatusCode::OK;
+        for asset in [
+            "/pkg/ferroehr-admin-ui.RUlUrl0ZR7DGPjuVWkKtwA.wasm",
+            "/pkg/ferroehr-admin-ui.RUlUrl0ZR7DGPjuVWkKtwA.js",
+            "/pkg/ferroehr-admin-ui.RUlUrl0ZR7DGPjuVWkKtwA.css",
+        ] {
+            assert_eq!(
+                cache_control_for(asset, ok),
+                IMMUTABLE_ASSET_CACHE_CONTROL,
+                "{asset} is content-hashed and must be cacheable"
+            );
+        }
+        for document in [
+            "/",
+            "/login",
+            "/ehrs",
+            "/favicon.ico",
+            "/api/current_session",
+        ] {
+            assert_eq!(
+                cache_control_for(document, ok),
+                NO_STORE_CACHE_CONTROL,
+                "{document} may carry patient data or a nonce and must not be stored"
+            );
+        }
+        assert_eq!(
+            cache_control_for("/pkg/snippets/some-dep/inline0.js", ok),
+            NO_STORE_CACHE_CONTROL,
+            "cargo-leptos leaves snippet filenames unhashed, so their URLs repeat across builds"
+        );
+    }
+
+    /// A missing or refused asset must never be frozen into a browser for a
+    /// year; a revalidation's `304` must keep the directive it revalidated.
+    #[test]
+    fn a_refused_asset_is_never_cached() {
+        for refused in [
+            http::StatusCode::NOT_FOUND,
+            http::StatusCode::FOUND,
+            http::StatusCode::INTERNAL_SERVER_ERROR,
+        ] {
+            assert_eq!(
+                cache_control_for("/pkg/ferroehr-admin-ui.js", refused),
+                NO_STORE_CACHE_CONTROL,
+                "a {refused} for a /pkg path must not be cached"
+            );
+        }
+        assert_eq!(
+            cache_control_for("/pkg/ferroehr-admin-ui.js", http::StatusCode::NOT_MODIFIED),
+            IMMUTABLE_ASSET_CACHE_CONTROL
+        );
     }
 
     /// Returns the named directive of `policy`, panicking if it is absent.
