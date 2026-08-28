@@ -12,5 +12,5 @@ Contact: https://github.com/rubentalstra/FerroEHR/security/advisories/new
 Expires: 2027-08-06T00:00:00.000Z
 Preferred-Languages: en, nl
 Canonical: https://ferroehr.eu/.well-known/security.txt
-Policy: https://github.com/rubentalstra/FerroEHR/blob/develop/SECURITY.md
+Policy: https://github.com/rubentalstra/FerroEHR/blob/main/SECURITY.md
 Acknowledgments: https://github.com/rubentalstra/FerroEHR/security/advisories

@@ -24,7 +24,7 @@
 #   PROBE_K8S_IMAGE   repo:tag of the server image under probe. Defaults to a
 #                     `dev-local` build if the node already has one, else the
 #                     chart's appVersion. The chart's `config:` defaults track
-#                     develop while appVersion names the last release, so a key
+#                     main while appVersion names the last release, so a key
 #                     added since that release makes the appVersion image refuse
 #                     to boot — that is a real finding, and P-K8S-BOOT reports it
 #                     against the chart rather than hiding it.

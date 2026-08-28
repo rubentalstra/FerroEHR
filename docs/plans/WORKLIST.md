@@ -9,7 +9,7 @@ table. This file is a delete-protected pointer.
   running discussion.
 - **Record**: tick acceptance-criteria checkboxes (`gh issue edit`), post
   status comments (`gh issue comment`); PRs declare `Closes #<n>` — the
-  merge into develop auto-closes the issue.
+  merge into main auto-closes the issue.
 - **Deep plans** live here in `docs/plans/*.md`, linked from their issue,
   deleted in the PR that implements them (`docs/plans/README.md`).
 

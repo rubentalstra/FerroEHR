@@ -15,6 +15,15 @@ workflow refuses a tag that has no matching section here.
 
 ## [Unreleased]
 
+### Changed
+
+- The repository's default branch is now `main` (renamed from `develop`;
+  full history preserved, old GitHub URLs redirect). The moving development
+  image tag follows the branch: pull `ghcr.io/rubentalstra/ferroehr:main`
+  (and the admin-ui/postgres siblings) instead of `:develop`, which is
+  frozen and will be removed. `:latest` keeps its meaning — the newest
+  stable release — and release tags are unchanged.
+
 ### Fixed
 
 - The v4.0.9 Helm chart publishes as **6.0.26** (appVersion 4.0.9). The

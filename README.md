@@ -11,9 +11,9 @@ ITS-REST 1.1.0 &nbsp;·&nbsp; AQL 1.1 &nbsp;·&nbsp; RM 1.2.0 **+ 1.1.0** &nbsp;
 
 **Try it live: [sandbox.ferroehr.eu](https://sandbox.ferroehr.eu)** (`ferroehr` / `ferroehr`, demo data, reset nightly)
 
-[![CI](https://github.com/rubentalstra/FerroEHR/actions/workflows/ci.yml/badge.svg?branch=develop)](https://github.com/rubentalstra/FerroEHR/actions/workflows/ci.yml)
-[![Containers](https://github.com/rubentalstra/FerroEHR/actions/workflows/containers.yml/badge.svg?branch=develop)](https://github.com/rubentalstra/FerroEHR/actions/workflows/containers.yml)
-[![CodeQL](https://github.com/rubentalstra/FerroEHR/actions/workflows/codeql.yml/badge.svg?branch=develop)](https://github.com/rubentalstra/FerroEHR/actions/workflows/codeql.yml)
+[![CI](https://github.com/rubentalstra/FerroEHR/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/rubentalstra/FerroEHR/actions/workflows/ci.yml)
+[![Containers](https://github.com/rubentalstra/FerroEHR/actions/workflows/containers.yml/badge.svg?branch=main)](https://github.com/rubentalstra/FerroEHR/actions/workflows/containers.yml)
+[![CodeQL](https://github.com/rubentalstra/FerroEHR/actions/workflows/codeql.yml/badge.svg?branch=main)](https://github.com/rubentalstra/FerroEHR/actions/workflows/codeql.yml)
 [![GitHub Release](https://img.shields.io/github/release/rubentalstra/FerroEHR.svg?logo=github)](https://github.com/rubentalstra/FerroEHR/releases/latest)
 [![Image pulls](https://img.shields.io/badge/dynamic/json?url=https%3A%2F%2Fghcr-badge.elias.eu.org%2Fapi%2Frubentalstra%2FFerroEHR%2Fferroehr&query=downloadCount&label=image%20pulls&logo=github)](https://github.com/rubentalstra/FerroEHR/pkgs/container/ferroehr)
 [![FOSSA Status](https://app.fossa.com/api/projects/custom%2B63718%2FFerroEHR.svg?type=shield&issueType=license)](https://app.fossa.com/projects/custom%2B63718%2FFerroEHR?ref=badge_shield&issueType=license)
@@ -28,8 +28,8 @@ ITS-REST 1.1.0 &nbsp;·&nbsp; AQL 1.1 &nbsp;·&nbsp; RM 1.2.0 **+ 1.1.0** &nbsp;
 [![DOI](https://zenodo.org/badge/1286429270.svg)](https://doi.org/10.5281/zenodo.21940279)
 [![License](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
 
-[![openEHR CNF conformance](https://img.shields.io/endpoint?url=https%3A%2F%2Fraw.githubusercontent.com%2Frubentalstra%2Fferroehr%2Fdevelop%2Fdocs%2Fconformance%2Fferroehr%2Fbadge.json)](docs/conformance/ferroehr/CONFORMANCE_REPORT.md)
-[![CNF performance](https://img.shields.io/endpoint?url=https%3A%2F%2Fraw.githubusercontent.com%2Frubentalstra%2Fferroehr%2Fdevelop%2Fdocs%2Fconformance%2Fferroehr%2Fbadge-performance.json)](docs/conformance/ferroehr/CONFORMANCE_CERTIFICATE.md)
+[![openEHR CNF conformance](https://img.shields.io/endpoint?url=https%3A%2F%2Fraw.githubusercontent.com%2Frubentalstra%2Fferroehr%2Fmain%2Fdocs%2Fconformance%2Fferroehr%2Fbadge.json)](docs/conformance/ferroehr/CONFORMANCE_REPORT.md)
+[![CNF performance](https://img.shields.io/endpoint?url=https%3A%2F%2Fraw.githubusercontent.com%2Frubentalstra%2Fferroehr%2Fmain%2Fdocs%2Fconformance%2Fferroehr%2Fbadge-performance.json)](docs/conformance/ferroehr/CONFORMANCE_CERTIFICATE.md)
 [![SLSA Build L3](https://slsa.dev/images/gh-badge-level3.svg)](https://ferroehr.eu/docs/latest/verifying-releases.html#what-slsa-level-each-artifact-reaches)
 
 [**Live sandbox**](https://sandbox.ferroehr.eu) · [**Documentation**](https://ferroehr.eu/) · [Why this exists](#why-this-project-exists) · [Quick start](#quick-start) · [Features](#features) · [Spec versions](#choose-your-openehr-specification-generation) · [Rust crates](#the-openehr-specification-layer-as-rust-crates) · [Architecture](#architecture) · [Conformance](#conformance-measured) · [Deployment](#deployment) · [Roadmap](https://github.com/users/rubentalstra/projects/4) · [Contributing](#contributing-and-security)
@@ -412,12 +412,12 @@ full design is documented in
 ## Conformance, measured
 
 <!-- CNF 2.0 profile badges: shields.io endpoint scheme over the
-     runner-generated badge JSONs on develop — auto-updating on every merged
+     runner-generated badge JSONs on main — auto-updating on every merged
      conformance ratchet, zero manual edits. -->
-[![CNF CORE](https://img.shields.io/endpoint?url=https%3A%2F%2Fraw.githubusercontent.com%2Frubentalstra%2Fferroehr%2Fdevelop%2Fdocs%2Fconformance%2Fferroehr%2Fbadge-core.json)](docs/conformance/ferroehr/CONFORMANCE_CERTIFICATE.md)
-[![CNF STANDARD](https://img.shields.io/endpoint?url=https%3A%2F%2Fraw.githubusercontent.com%2Frubentalstra%2Fferroehr%2Fdevelop%2Fdocs%2Fconformance%2Fferroehr%2Fbadge-standard.json)](docs/conformance/ferroehr/CONFORMANCE_CERTIFICATE.md)
-[![CNF OPTIONS](https://img.shields.io/endpoint?url=https%3A%2F%2Fraw.githubusercontent.com%2Frubentalstra%2Fferroehr%2Fdevelop%2Fdocs%2Fconformance%2Fferroehr%2Fbadge-options.json)](docs/conformance/ferroehr/CONFORMANCE_CERTIFICATE.md)
-[![CNF SEC-BASIC](https://img.shields.io/endpoint?url=https%3A%2F%2Fraw.githubusercontent.com%2Frubentalstra%2Fferroehr%2Fdevelop%2Fdocs%2Fconformance%2Fferroehr%2Fbadge-sec-basic.json)](docs/conformance/ferroehr/CONFORMANCE_CERTIFICATE.md)
+[![CNF CORE](https://img.shields.io/endpoint?url=https%3A%2F%2Fraw.githubusercontent.com%2Frubentalstra%2Fferroehr%2Fmain%2Fdocs%2Fconformance%2Fferroehr%2Fbadge-core.json)](docs/conformance/ferroehr/CONFORMANCE_CERTIFICATE.md)
+[![CNF STANDARD](https://img.shields.io/endpoint?url=https%3A%2F%2Fraw.githubusercontent.com%2Frubentalstra%2Fferroehr%2Fmain%2Fdocs%2Fconformance%2Fferroehr%2Fbadge-standard.json)](docs/conformance/ferroehr/CONFORMANCE_CERTIFICATE.md)
+[![CNF OPTIONS](https://img.shields.io/endpoint?url=https%3A%2F%2Fraw.githubusercontent.com%2Frubentalstra%2Fferroehr%2Fmain%2Fdocs%2Fconformance%2Fferroehr%2Fbadge-options.json)](docs/conformance/ferroehr/CONFORMANCE_CERTIFICATE.md)
+[![CNF SEC-BASIC](https://img.shields.io/endpoint?url=https%3A%2F%2Fraw.githubusercontent.com%2Frubentalstra%2Fferroehr%2Fmain%2Fdocs%2Fconformance%2Fferroehr%2Fbadge-sec-basic.json)](docs/conformance/ferroehr/CONFORMANCE_CERTIFICATE.md)
 
 ```shell
 bash scripts/conformance.sh

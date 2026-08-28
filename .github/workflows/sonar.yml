@@ -22,7 +22,7 @@ name: SonarQube Cloud
 
 on:
   push:
-    branches: [develop, main]
+    branches: [main]
   pull_request:
     types: [opened, synchronize, reopened]
 
@@ -35,7 +35,7 @@ jobs:
   # no scanned code has nothing for it to measure (#2777).
   #
   # In-workflow, never a workflow-level `paths:` filter — the same required-check
-  # reasoning `ci.yml` and `docs.yml` record. A develop push is NEVER gated:
+  # reasoning `ci.yml` and `docs.yml` record. A main push is NEVER gated:
   # coverage and the New Code baseline are wanted on every merge.
   changes:
     name: change detection
@@ -88,7 +88,7 @@ jobs:
     name: analyze
     needs: changes
     # PR analysis authenticates with SONAR_TOKEN, which fork PRs cannot read.
-    # A develop push always scans; a pull request scans only when it touched
+    # A main push always scans; a pull request scans only when it touched
     # scanned code (#2777).
     if: github.event_name == 'push' || (github.event.pull_request.head.repo.full_name == github.repository && needs.changes.outputs.code == 'true')
     runs-on: ubuntu-26.04
@@ -141,7 +141,7 @@ jobs:
         with:
           components: llvm-tools-preview
           cache-shared-key: sonar
-          cache-save-if: ${{ (github.ref == 'refs/heads/develop' || github.ref == 'refs/heads/main') }}
+          cache-save-if: ${{ github.ref == 'refs/heads/main' }}
       - uses: taiki-e/install-action@b6ff580856c41316412a0b9b60540fbc6f8c82cc # v2.86.7
         with:
           tool: cargo-llvm-cov,cargo-nextest

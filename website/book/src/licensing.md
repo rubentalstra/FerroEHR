@@ -12,7 +12,7 @@ summary for evaluators and deployers, not legal advice.
 Everything written for this project (the server and application crates, the
 code generator and tooling, the admin console, and the hand-written
 specification engines `openehr-query` and `openehr-adl`) is licensed under the
-[MIT License](https://github.com/rubentalstra/FerroEHR/blob/develop/LICENSE).
+[MIT License](https://github.com/rubentalstra/FerroEHR/blob/main/LICENSE).
 You can use, modify, and redistribute it freely, including commercially,
 provided the copyright and permission notice are preserved. The copyright holder
 is stated as *FerroEHR contributors*, identically in `LICENSE`, in `REUSE.toml`,
@@ -45,16 +45,16 @@ used as test corpora. Each family keeps its upstream license:
 
 | Material | Source | License |
 |---|---|---|
-| openEHR machine-readable artifacts (BMM meta-models, XML Schemas, OpenAPI documents, JSON Schemas) | the openEHR `specifications-ITS-*` repositories | [Apache-2.0](https://github.com/rubentalstra/FerroEHR/blob/develop/LICENSES/Apache-2.0.txt) |
-| The normative ADL, cADL, ODIN, BEL and Expression-Language ANTLR grammars | `openEHR/adl-antlr`, `openEHR/openEHR-antlr4` | [Apache-2.0](https://github.com/rubentalstra/FerroEHR/blob/develop/LICENSES/Apache-2.0.txt) |
-| openEHR specification text (the conformance reference) | the openEHR `specifications-*` repositories | [CC-BY-SA 3.0](https://github.com/rubentalstra/FerroEHR/blob/develop/LICENSES/CC-BY-SA-3.0.txt) |
-| The AQL grammar and the computable terminology assets (the terminology XML the server embeds, and its schemas) | `specifications-QUERY`, `specifications-TERM` | [CC-BY-SA 3.0](https://github.com/rubentalstra/FerroEHR/blob/develop/LICENSES/CC-BY-SA-3.0.txt) |
-| Clinical models (archetypes and templates) from the openEHR Clinical Knowledge Manager and the openEHR ADL archetype library | ckm.openehr.org, `openEHR/adl-archetypes` | per-file `licence` metadata — a **mix** of [CC-BY-SA 4.0](https://github.com/rubentalstra/FerroEHR/blob/develop/LICENSES/CC-BY-SA-4.0.txt) and [CC-BY-SA 3.0](https://github.com/rubentalstra/FerroEHR/blob/develop/LICENSES/CC-BY-SA-3.0.txt) |
+| openEHR machine-readable artifacts (BMM meta-models, XML Schemas, OpenAPI documents, JSON Schemas) | the openEHR `specifications-ITS-*` repositories | [Apache-2.0](https://github.com/rubentalstra/FerroEHR/blob/main/LICENSES/Apache-2.0.txt) |
+| The normative ADL, cADL, ODIN, BEL and Expression-Language ANTLR grammars | `openEHR/adl-antlr`, `openEHR/openEHR-antlr4` | [Apache-2.0](https://github.com/rubentalstra/FerroEHR/blob/main/LICENSES/Apache-2.0.txt) |
+| openEHR specification text (the conformance reference) | the openEHR `specifications-*` repositories | [CC-BY-SA 3.0](https://github.com/rubentalstra/FerroEHR/blob/main/LICENSES/CC-BY-SA-3.0.txt) |
+| The AQL grammar and the computable terminology assets (the terminology XML the server embeds, and its schemas) | `specifications-QUERY`, `specifications-TERM` | [CC-BY-SA 3.0](https://github.com/rubentalstra/FerroEHR/blob/main/LICENSES/CC-BY-SA-3.0.txt) |
+| Clinical models (archetypes and templates) from the openEHR Clinical Knowledge Manager and the openEHR ADL archetype library | ckm.openehr.org, `openEHR/adl-archetypes` | per-file `licence` metadata — a **mix** of [CC-BY-SA 4.0](https://github.com/rubentalstra/FerroEHR/blob/main/LICENSES/CC-BY-SA-4.0.txt) and [CC-BY-SA 3.0](https://github.com/rubentalstra/FerroEHR/blob/main/LICENSES/CC-BY-SA-3.0.txt) |
 | Test corpora (archie fixtures and reference models, Better `web-template-tests`, EHRbase SDK canonical-JSON data) | Nedap, Better Ltd, vitasystems | Apache-2.0 |
-| Three ISO 13606 / rejected-extract BMM reference models inside the archie corpus | offered by their authors under MPL 1.1 / GPL 2.0 / LGPL 2.1 | taken under [MPL 1.1](https://github.com/rubentalstra/FerroEHR/blob/develop/LICENSES/MPL-1.1.txt) — see the election below |
-| One terminology schema file, `PropertyUnitData.xsd` | ADL Designer / ADL2-tools, via the openEHR TERM assets | [AGPL-3.0-only](https://github.com/rubentalstra/FerroEHR/blob/develop/LICENSES/AGPL-3.0-only.txt) — see the contradiction below |
+| Three ISO 13606 / rejected-extract BMM reference models inside the archie corpus | offered by their authors under MPL 1.1 / GPL 2.0 / LGPL 2.1 | taken under [MPL 1.1](https://github.com/rubentalstra/FerroEHR/blob/main/LICENSES/MPL-1.1.txt) — see the election below |
+| One terminology schema file, `PropertyUnitData.xsd` | ADL Designer / ADL2-tools, via the openEHR TERM assets | [AGPL-3.0-only](https://github.com/rubentalstra/FerroEHR/blob/main/LICENSES/AGPL-3.0-only.txt) — see the contradiction below |
 | The self-hosted KaTeX stylesheet and fonts this documentation site renders maths with | KaTeX contributors | MIT |
-| The Citation File Format 1.2.0 JSON Schema (validates `CITATION.cff` in CI) | `citation-file-format/citation-file-format` | [CC-BY 4.0](https://github.com/rubentalstra/FerroEHR/blob/develop/LICENSES/CC-BY-4.0.txt) |
+| The Citation File Format 1.2.0 JSON Schema (validates `CITATION.cff` in CI) | `citation-file-format/citation-file-format` | [CC-BY 4.0](https://github.com/rubentalstra/FerroEHR/blob/main/LICENSES/CC-BY-4.0.txt) |
 
 Every vendored tree in the repository carries a provenance note naming its exact
 upstream source and pinned revision, with the upstream `LICENSE` file vendored
@@ -103,11 +103,11 @@ ship it and sell it, downstream file-level redistribution is the expected case.
 So licensing is **also** published in the machine-readable form the
 [REUSE Specification 3.3](https://reuse.software/spec-3.3/) defines:
 
-- **[`LICENSES/`](https://github.com/rubentalstra/FerroEHR/tree/develop/LICENSES)**
+- **[`LICENSES/`](https://github.com/rubentalstra/FerroEHR/tree/main/LICENSES)**
   holds the full text of every license any file in the tree is offered under,
   named by SPDX identifier: `MIT`, `Apache-2.0`, `CC-BY-SA-3.0`,
   `CC-BY-SA-4.0`, `CC-BY-4.0`, `MPL-1.1`, `AGPL-3.0-only`.
-- **[`REUSE.toml`](https://github.com/rubentalstra/FerroEHR/blob/develop/REUSE.toml)**
+- **[`REUSE.toml`](https://github.com/rubentalstra/FerroEHR/blob/main/REUSE.toml)**
   declares, by glob, which files are offered under which, including the two
   positions above, represented rather than flattened.
 - **Every first-party source file carries the header inside itself:** an

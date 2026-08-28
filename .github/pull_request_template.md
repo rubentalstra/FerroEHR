@@ -2,7 +2,7 @@
 
 ## What this changes
 
-Closes #<!-- tracker issue number — the merge into develop auto-closes it -->
+Closes #<!-- tracker issue number — the merge into main auto-closes it -->
 
 ## Checks
 

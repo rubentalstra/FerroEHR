@@ -24,7 +24,7 @@ For an ADL 2 *engine* (parser, validation, flattener, OPT2 generation, ADL
 
 This crate is **entirely generated** — every file carries a `// @generated`
 header — emitted deterministically by
-[`openehr-codegen`](https://github.com/rubentalstra/FerroEHR/tree/develop/tools/openehr-codegen)
+[`openehr-codegen`](https://github.com/rubentalstra/FerroEHR/tree/main/tools/openehr-codegen)
 from the vendored openEHR BMM meta-model. Changes belong in the emitter, never
 in the generated output; hand-written spec behaviour, when a class needs it,
 goes in a sibling `*_impl.rs` file the generator never rewrites. The AOM 2

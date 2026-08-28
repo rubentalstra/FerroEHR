@@ -9,7 +9,7 @@ metadata:
 
 Owner standing instruction (2026-07-10): when
 a phase finishes — push, create the PR, **merge it right away**, checkout a
-fresh branch from develop, and **start the next phase immediately** without
+fresh branch from main, and **start the next phase immediately** without
 waiting for a "yes continue".
 
 **Why:** the owner wants uninterrupted autonomous progression through the
@@ -18,10 +18,10 @@ live on the public roadmap board).
 
 **Hard ordering rule (owner correction 2026-07-11, angry):** the sequence is
 strictly commit → push → **create PR → merge** → `git fetch` → checkout the
-next branch **from the updated develop**. NEVER cut a new working branch from
-develop while finished work sits unmerged on a feature branch — the new
+next branch **from the updated main**. NEVER cut a new working branch from
+main while finished work sits unmerged on a feature branch — the new
 branch silently misses that work ("otherwise we are missing data"). If work
-was just committed on any working branch, merge it to develop first, then
+was just committed on any working branch, merge it to main first, then
 branch. (Branch naming: conventional types `feat/…`/`fix/…`/`chore/…` per
 the CLAUDE.md hard rule, 2026-07-19.)
 

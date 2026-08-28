@@ -21,11 +21,11 @@ measurement from your own hardware all count.
 
 The three governing documents are kept in the repository root:
 
-- [CONTRIBUTING](https://github.com/rubentalstra/FerroEHR/blob/develop/CONTRIBUTING.md)
+- [CONTRIBUTING](https://github.com/rubentalstra/FerroEHR/blob/main/CONTRIBUTING.md)
   — the practical rules for setup, the required checks, and pull requests.
-- [Code of conduct](https://github.com/rubentalstra/FerroEHR/blob/develop/CODE_OF_CONDUCT.md)
+- [Code of conduct](https://github.com/rubentalstra/FerroEHR/blob/main/CODE_OF_CONDUCT.md)
   — the Contributor Covenant (v2.1) the community follows.
-- [Security policy](https://github.com/rubentalstra/FerroEHR/blob/develop/SECURITY.md)
+- [Security policy](https://github.com/rubentalstra/FerroEHR/blob/main/SECURITY.md)
   — how to report a vulnerability privately.
 
 ## Setting up
@@ -99,7 +99,7 @@ guards. Console-only work has its own local battery; see the repository's
 
 A few more conventions worth knowing before you open a pull request:
 
-- Branch from `develop`, and target your pull request at `develop`. Branch names
+- Branch from `main`, and target your pull request at `main`. Branch names
   are `<type>/<slug>` with the conventional-commit types (`feat/…`, `fix/…`,
   `docs/…`, `chore/…`, and so on), and commit subjects use the same types.
 - Keep changes focused, and describe **what** changed and **why**. For anything

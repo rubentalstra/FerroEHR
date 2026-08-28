@@ -185,7 +185,7 @@ gh attestation verify oci://ghcr.io/rubentalstra/ferroehr:4.0.9 \
 > after the `v4.0.1` git tag. Using `v4.0.1` as an image reference will simply
 > not resolve.
 
-The development tags (`ghcr.io/rubentalstra/ferroehr:develop` and its two
+The development tags (`ghcr.io/rubentalstra/ferroehr:main` and its two
 siblings) are signed the same way, so you can rehearse the command against them
 before a release.
 
@@ -329,7 +329,7 @@ public history.
 Run a scanner over a FerroEHR artifact and it will report findings. Every one
 this project has assessed and accepted is published as an
 [OpenVEX](https://openvex.dev) document under
-[`security/vex/`](https://github.com/rubentalstra/FerroEHR/tree/develop/security/vex),
+[`security/vex/`](https://github.com/rubentalstra/FerroEHR/tree/main/security/vex),
 carrying a controlled-vocabulary justification and an impact statement you can
 check, rather than an ignore entry that records only the verdict. Point your
 tooling at them (`trivy --vex`, and most SCA platforms take an OpenVEX feed).
@@ -363,6 +363,6 @@ looks at is not a control.
 
 A failing verification is a security report, not a support question. Do not run
 the artifact, and follow
-[SECURITY.md](https://github.com/rubentalstra/FerroEHR/blob/develop/SECURITY.md):
+[SECURITY.md](https://github.com/rubentalstra/FerroEHR/blob/main/SECURITY.md):
 report privately, never as a public issue. Note that only the newest release
 receives fixes; there is no maintenance branch to backport to.

@@ -152,7 +152,7 @@ FerroEHR are built with AI coding tools, directed and reviewed by the
 maintainer, with every change held to the machine-enforced gates described
 above. The full statement — what that means, what bounds it, and what you
 can verify instead of trusting it — is the repository's
-[AI statement](https://github.com/rubentalstra/FerroEHR/blob/develop/AI_STATEMENT.md).
+[AI statement](https://github.com/rubentalstra/FerroEHR/blob/main/AI_STATEMENT.md).
 
 ---
 

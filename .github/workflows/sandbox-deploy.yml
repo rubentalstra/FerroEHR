@@ -19,13 +19,13 @@
 #     no edge to the images: at v4.0.3 a tree scan finding suppressed a
 #     perfectly good deploy. The caller passes `expected-version`, which the
 #     verified wait below used to parse out of the run payload's `head_branch`.
-#   - push to develop touching the sandbox posture (Dockerfile.vercel,
+#   - push to main touching the sandbox posture (Dockerfile.vercel,
 #     vercel.json, deploy/vercel/**): a config change redeploys the same
 #     release image with the new posture.
 #   - workflow_dispatch: a manual redeploy (reseed skippable).
 #
 # Provisioning (owner action, once): create a Deploy Hook on the Vercel
-# project (Settings → Git → Deploy Hooks, branch `develop`) and store its
+# project (Settings → Git → Deploy Hooks, branch `main`) and store its
 # URL with `gh secret set SANDBOX_DEPLOY_HOOK_URL`. An empty secret is a
 # hard failure here, never a skip: the job already runs only on the
 # upstream repo, so a missing hook is always a misconfiguration, and a
@@ -63,7 +63,7 @@ on:
         type: boolean
         default: true
   push:
-    branches: [develop, main]
+    branches: [main]
     paths:
       - Dockerfile.vercel
       - vercel.json
@@ -131,7 +131,7 @@ jobs:
         run: |
           set -euo pipefail
           if [ -z "$HOOK_URL" ]; then
-            echo "::error::SANDBOX_DEPLOY_HOOK_URL is empty — create the Deploy Hook on the Vercel project (Settings → Git → Deploy Hooks, branch develop) and run: gh secret set SANDBOX_DEPLOY_HOOK_URL" >&2
+            echo "::error::SANDBOX_DEPLOY_HOOK_URL is empty — create the Deploy Hook on the Vercel project (Settings → Git → Deploy Hooks, branch main) and run: gh secret set SANDBOX_DEPLOY_HOOK_URL" >&2
             exit 1
           fi
           echo "pinged-at=$(date +%s)" >> "$GITHUB_OUTPUT"

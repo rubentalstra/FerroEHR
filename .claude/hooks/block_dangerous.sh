@@ -5,7 +5,7 @@
 #
 # Claude Code PreToolUse hook (matcher: Bash). Blocks destructive commands:
 #   - rm -rf / rm -fr (delete specific files, use git rm, or work under /tmp)
-#   - force-pushes touching main/master/develop, and bare force-pushes
+#   - force-pushes touching main/master/main, and bare force-pushes
 #   - deletion of docs/plans/WORKLIST.md or README.md (the single tracker + guide)
 #   - deletion of the read-only reference/v1 ref (Stage 2 archaeology source)
 #
@@ -31,16 +31,16 @@ if printf '%s' "$cmd" | grep -qE '(^|[;&|[:space:]])rm[[:space:]]+-[a-zA-Z]*([rR
   fi
 fi
 
-# Force pushes: never to main/master/develop; bare force-pushes refused too.
+# Force pushes: never to main/master/main; bare force-pushes refused too.
 # The protected names match only as WHOLE REF WORDS (delimiter-bounded, so
-# `refs/heads/main`, `origin main`, `HEAD:develop` all hit) — never as raw
+# `refs/heads/main`, `origin main`, `HEAD:main` all hit) — never as raw
 # substrings of the command line, which falsely blocked feature branches
 # whose names merely CONTAIN a protected name (fix/flat-master05-…) and
 # pushed sessions into delete-then-push workarounds that defeat the lease
 # safety this guard exists to encourage (#542).
 if printf '%s' "$cmd" | grep -qE 'git[[:space:]]+push[^;|&]*(--force([^-]|$)|--force-with-lease|[[:space:]]-f([[:space:]]|$)|[[:space:]]\+[[:alnum:]])'; then
-  if printf '%s' "$cmd" | grep -qE '(^|[[:space:]:/+])(main|master|develop)([[:space:]]|$|["'"'"';&|])'; then
-    echo "BLOCKED: force-push touching main/master/develop is forbidden (CLAUDE.md hard rule)." >&2
+  if printf '%s' "$cmd" | grep -qE '(^|[[:space:]:/+])(main|master)([[:space:]]|$|["'"'"';&|])'; then
+    echo "BLOCKED: force-push touching main/master is forbidden (CLAUDE.md hard rule)." >&2
     exit 2
   fi
   if ! printf '%s' "$cmd" | grep -qE '(feat|fix|chore|docs|refactor|perf|test|ci|build|release|claude)/'; then

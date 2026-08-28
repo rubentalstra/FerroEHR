@@ -181,7 +181,7 @@ metadata lists: the server, and the optional admin console.
 > before it is published: the publish lane refuses to ship a chart whose defaults
 > its own `appVersion` image rejects, and it repeats the check against every values
 > overlay the chart carries, so this matters mainly when you install from a
-> checkout of `develop`, or pin an image older than the chart.
+> checkout of `main`, or pin an image older than the chart.
 
 That install alone **boots but answers `401` to everything**, deliberately:
 `config.auth.enabled` is on and no mechanism is configured yet, and a server that
