@@ -307,6 +307,24 @@ each is a separate file instead:
   [Terminology servers](../beyond-core/terminology.md) for the invocation and
   what is seeded.
 
+## Port already in use?
+
+Every published port is a variable, so a conflict never requires editing any
+file. When `docker compose up` refuses with `port is already allocated` (or
+`address already in use`), pick a free port and pass it:
+
+```shell
+FERROEHR_PORT=8081 docker compose up
+```
+
+The same works for the other ports (`FERROEHR_DB_PORT`, `FERROEHR_ADMIN_UI_PORT`,
+`FERROEHR_S3_PORT`). The defaults stay fixed on purpose: every URL in this
+book assumes `localhost:8080`, and Docker's automatic ephemeral-port
+allocation exists only when a mapping
+[omits the host port entirely](https://docs.docker.com/engine/network/port-publishing/)
+— a server that silently moved ports would break every printed URL, so here
+you always choose the port and always know it.
+
 ## Variables the compose files read
 
 Set these in your shell (or an `.env` file) to retune without editing anything:

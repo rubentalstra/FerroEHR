@@ -23,6 +23,10 @@ workflow refuses a tag that has no matching section here.
   name (it is `docker-compose.dev.yml`, applied only by an explicit `-f`),
   so a checkout can no longer fail on unpublished `:local` tags or missing
   build contexts (#2868).
+- A port conflict never requires editing the compose file: every published
+  port was already a variable (`FERROEHR_PORT`, `FERROEHR_DB_PORT`,
+  `FERROEHR_ADMIN_UI_PORT`, `FERROEHR_S3_PORT`), and the quickstart and the
+  book now say so at the point of failure (#2869).
 
 ### Changed
 

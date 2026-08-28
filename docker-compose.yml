@@ -67,6 +67,14 @@
 #   FERROEHR_BIND_HOST=10.0.0.5 docker compose up     # one address
 # Prefer a reverse proxy on the host over publishing the database at all.
 #
+# Port already in use? Every published port is a variable (#2869) — no edit:
+#   FERROEHR_PORT=8081 docker compose up
+# (Likewise FERROEHR_DB_PORT / FERROEHR_ADMIN_UI_PORT / FERROEHR_S3_PORT.)
+# Defaults stay fixed deliberately: the docs assume localhost:8080, and
+# Docker's own auto-allocation exists only for mappings that omit the host
+# port entirely (docs.docker.com/engine/network/port-publishing) — a server
+# that moved ports silently would break every printed URL.
+#
 # ── Repo development / CI (never needed by downloaders) ──────────────────────
 # The dev overlay is EXPLICIT, never auto-merged (#2868 — the auto-merged
 # `override` name made a checkout's bare `docker compose up` build from
