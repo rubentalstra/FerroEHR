@@ -21,7 +21,8 @@
 #         ├─ admin-ui-binary ── admin-ui-image ─┼─ scan-and-tag ─┬─ chart
 #         ├─ postgres-image ────────────────┘                    └─ sandbox
 #         ├─ docs-freeze
-#         └─ (smoke, admin-ui-smoke hang off their image)
+#         └─ (smoke hangs off app-image; admin-ui-smoke off both images —
+#             it drives the console against this run's own CDR)
 #   announce ── needs everything, if: always()
 #
 # `crates` is the one leg that PAUSES: it runs in the `crates-io` environment,
@@ -803,18 +804,26 @@ jobs:
   # a console whose pages 404 their own wasm published green (issue #2550,
   # found live on the 3.20.0 image during #2164). This smoke drives the very
   # image this run pushed: every asset the served page references must exist
-  # in the artifact that serves it.
+  # in the artifact that serves it, AND a real browser must log in through
+  # them — the second half exists because 4.0.8 shipped a console nobody had
+  # ever driven in a browser (#2871).
   admin-ui-smoke:
-    name: admin-ui asset-chain smoke (amd64)
+    name: admin-ui smoke (amd64)
     runs-on: ubuntu-26.04
-    timeout-minutes: 10
+    timeout-minutes: 20
     permissions:
       contents: read
       packages: read # pull the image this run just pushed
-    needs: admin-ui-image
+    needs: [admin-ui-image, app-image]
     env:
       ADMIN_UI_IMAGE: ghcr.io/${{ github.repository_owner }}/ferroehr-admin-ui
+      APP_IMAGE: ghcr.io/${{ github.repository_owner }}/ferroehr
     steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+          ref: ${{ github.sha }} # == plan's pinned commit: the dispatch-at-tag refusal makes them equal (#2790)
+
       - uses: docker/login-action@dbcb813823bdd20940b903addbd779551569679f # v4.6.0
         with:
           registry: ghcr.io
@@ -856,6 +865,28 @@ jobs:
           done <<< "$assets"
           docker stop adminui-smoke >/dev/null
           [ "$fail" = 0 ] || { echo "the pushed console image references assets it does not ship (#2550)"; exit 1; }
+
+      - name: Pull pushed app image (by digest)
+        env:
+          DIGEST: ${{ needs.app-image.outputs.digest }}
+        run: |
+          docker pull "${APP_IMAGE}@${DIGEST}"
+          docker tag  "${APP_IMAGE}@${DIGEST}" ferroehr:smoke
+
+      - name: Build the postgres image (amd64; COPY-only, seconds)
+        run: docker build -t ferroehr-postgres:smoke docker/postgres
+
+      # The asset-chain step proves the image SERVES its assets; nothing proved
+      # a browser can log in THROUGH them, and 4.0.8 shipped with this lane
+      # green (#2871). Both CDR images are this run's own, so the release that
+      # ships the console proves the console it ships.
+      - name: Browser-driven login against the pushed console image
+        shell: bash
+        run: |
+          FERROEHR_ADMIN_UI_IMAGE=ferroehr-admin-ui:smoke \
+          FERROEHR_IMAGE=ferroehr:smoke \
+          FERROEHR_POSTGRES_IMAGE=ferroehr-postgres:smoke \
+            bash docker/admin-ui/login-smoke.sh
 
   # ── Smoke test (amd64): pull the pushed image, compose up, exercise the API ──
   smoke:
