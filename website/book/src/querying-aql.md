@@ -40,7 +40,12 @@ ORDER BY systolic DESC
   `.v2` data.
 - **`CONTAINS`** expresses structural containment: "an EHR that contains a
   composition that contains a blood-pressure observation". Chains can nest
-  several deep, and combine with `AND`, `OR`, and `NOT`.
+  several deep, and combine with `AND`, `OR`, and `NOT`. Folder containment
+  follows the RM's reference model: `FOLDER f CONTAINS COMPOSITION c` matches
+  the compositions a folder's `items` reference, transitively over the
+  folder's sub-tree, and `FOLDER f1 CONTAINS FOLDER f2` matches strict
+  sub-folders. A pair the RM defines no containment relationship for (say
+  `COMPOSITION CONTAINS COMPOSITION`) is refused with a typed error.
 - **`SELECT`** projects values by path. Paths use archetype node ids (`at0004`)
   and RM attribute names (`value/magnitude`); `AS` names a column.
 - **`WHERE`** filters on typed leaf values, with comparisons, `EXISTS`, `LIKE`,

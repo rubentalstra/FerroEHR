@@ -17,6 +17,17 @@ workflow refuses a tag that has no matching section here.
 
 ### Fixed
 
+- `FOLDER f CONTAINS COMPOSITION c` now resolves the folder's `items`
+  references (transitively over its sub-folders) instead of returning every
+  composition in the EHR — the containment edge was silently dropped for any
+  versioned object under a non-EHR parent, and the same defect made
+  `NOT CONTAINS` vacuously false under a folder and let `ORDER BY` change the
+  row count of `EHR e CONTAINS FOLDER f`. `FOLDER CONTAINS FOLDER` is now a
+  strict sub-folder match (no self-pairs), and a `CONTAINS` pair the RM
+  defines no containment relationship for (such as
+  `COMPOSITION CONTAINS COMPOSITION`) is a typed refusal instead of a
+  cartesian product (#2880).
+
 - The quickstart no longer publishes PostgreSQL to a host port, so a natively
   installed PostgreSQL (the classic Windows collision: the installer's
   auto-started `postgresql-x64-*` service holding 5432) can no longer fail

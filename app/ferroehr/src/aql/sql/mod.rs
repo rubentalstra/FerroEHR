@@ -162,6 +162,9 @@ pub struct ScopeQuery {
 struct VoGroup {
     node: String,
     vo: String,
+    /// The resolved RM types of the operand that created this group — the
+    /// containment-edge classifier's parent side (#2880).
+    types: crate::aql::ir::TypeSet,
 }
 
 /// The extraction/coercion mode of a value expression.

@@ -1715,3 +1715,175 @@ async fn an_uncoercible_temporal_binding_is_the_callers_400() {
         err.message
     );
 }
+
+// ── folder containment (#2880) ───────────────────────────────────────────────
+
+/// An `items` entry referencing a this-system versioned composition.
+fn folder_ref(comp_root: &str) -> Value {
+    json!({
+        "_type": "OBJECT_REF",
+        "namespace": "local",
+        "type": "VERSIONED_COMPOSITION",
+        "id": { "_type": "HIER_OBJECT_ID", "value": comp_root }
+    })
+}
+
+/// The uid root of an `OBJECT_VERSION_ID` string.
+fn uid_root(ovid: &str) -> String {
+    ovid.split("::").next().expect("uid root").to_owned()
+}
+
+/// `FOLDER CONTAINS COMPOSITION` resolves the `FOLDER.items` `OBJECT_REF`s,
+/// transitively over the folder subtree, and only those (RM common master05
+/// — folders reference versioned objects; QUERY master03 §Containment —
+/// CONTAINS is the parent/child relationship, not co-residence in one EHR).
+#[tokio::test]
+async fn folder_containment_resolves_references() {
+    let db = testkit::db().await.expect("testkit database");
+    let svc = FerroEhrService::new(db.pool());
+    let ehr_id = create_ehr(&svc).await;
+    let ehr_uuid = ferroehr::ids::EhrId(ehr_id.parse::<Uuid>().expect("ehr uuid"));
+
+    // cB is multiply-classified (course-1 AND course-2 — RM common master05
+    // names multiple classification as the design intent); cD is committed
+    // but referenced by NO folder.
+    let ca = uid_root(&create_comp(&svc, &ehr_id, "cA", 1.0).await);
+    let cb = uid_root(&create_comp(&svc, &ehr_id, "cB", 2.0).await);
+    let cc = uid_root(&create_comp(&svc, &ehr_id, "cC", 3.0).await);
+    let cd = uid_root(&create_comp(&svc, &ehr_id, "cD", 4.0).await);
+
+    let sub = |name: &str, items: Vec<Value>| {
+        json!({
+            "_type": "FOLDER",
+            "archetype_node_id": "openEHR-EHR-FOLDER.generic.v1",
+            "name": { "_type": "DV_TEXT", "value": name },
+            "items": items
+        })
+    };
+    let directory = json!({
+        "_type": "FOLDER",
+        "archetype_node_id": "openEHR-EHR-FOLDER.generic.v1",
+        "name": { "_type": "DV_TEXT", "value": "episodes" },
+        "items": [folder_ref(&ca)],
+        "folders": [
+            sub("course-1", vec![folder_ref(&cb)]),
+            sub("course-2", vec![folder_ref(&cb), folder_ref(&cc)]),
+        ]
+    });
+    svc.create_directory(ehr_uuid, uv(&directory, "249", None))
+        .await
+        .expect("create_directory");
+
+    // The full pair set, transitive: episodes reaches every subtree ref.
+    let r = run_aql(
+        &svc,
+        "SELECT f/name/value, c/uid/value \
+         FROM EHR e CONTAINS FOLDER f CONTAINS COMPOSITION c",
+        ehr_scope(&ehr_id),
+    )
+    .await;
+    let pairs: std::collections::BTreeSet<(String, String)> = rows(&r)
+        .iter()
+        .map(|row| {
+            (
+                row[0].as_str().expect("folder name").to_owned(),
+                uid_root(row[1].as_str().expect("composition uid")),
+            )
+        })
+        .collect();
+    let expected: std::collections::BTreeSet<(String, String)> = [
+        ("episodes", &ca),
+        ("episodes", &cb),
+        ("episodes", &cc),
+        ("course-1", &cb),
+        ("course-2", &cb),
+        ("course-2", &cc),
+    ]
+    .into_iter()
+    .map(|(f, c)| (f.to_owned(), c.clone()))
+    .collect();
+    assert_eq!(
+        pairs, expected,
+        "exactly the reference pairs, transitively — never the EHR cartesian"
+    );
+    assert_eq!(
+        rows(&r).len(),
+        6,
+        "one row per (folder, referenced object) pair"
+    );
+    assert!(
+        !pairs.iter().any(|(_, c)| *c == cd),
+        "the unreferenced composition appears under no folder"
+    );
+
+    // Scoped to one sub-folder.
+    let r = run_aql(
+        &svc,
+        "SELECT c/uid/value FROM EHR e CONTAINS FOLDER f CONTAINS COMPOSITION c \
+         WHERE f/name/value = 'course-2'",
+        ehr_scope(&ehr_id),
+    )
+    .await;
+    assert_eq!(rows(&r).len(), 2, "course-2 references exactly cB and cC");
+
+    // FOLDER CONTAINS FOLDER: strict ancestor/descendant pairs only.
+    let r = run_aql(
+        &svc,
+        "SELECT f1/name/value, f2/name/value FROM EHR e CONTAINS FOLDER f1 CONTAINS FOLDER f2",
+        ehr_scope(&ehr_id),
+    )
+    .await;
+    let folder_pairs: std::collections::BTreeSet<(String, String)> = rows(&r)
+        .iter()
+        .map(|row| {
+            (
+                row[0].as_str().expect("parent").to_owned(),
+                row[1].as_str().expect("child").to_owned(),
+            )
+        })
+        .collect();
+    assert_eq!(
+        folder_pairs,
+        [("episodes", "course-1"), ("episodes", "course-2")]
+            .into_iter()
+            .map(|(a, b)| (a.to_owned(), b.to_owned()))
+            .collect(),
+        "no self-pairs, no inverted pairs"
+    );
+
+    // EHR CONTAINS FOLDER matches every folder node — the same answer with
+    // and without ORDER BY (the pre-fix streaming shape returned only the
+    // root when unordered).
+    let unordered = run_aql(
+        &svc,
+        "SELECT f/name/value FROM EHR e CONTAINS FOLDER f",
+        ehr_scope(&ehr_id),
+    )
+    .await;
+    let ordered = run_aql(
+        &svc,
+        "SELECT f/name/value FROM EHR e CONTAINS FOLDER f ORDER BY f/name/value",
+        ehr_scope(&ehr_id),
+    )
+    .await;
+    assert_eq!(rows(&unordered).len(), 3, "root + two sub-folders");
+    assert_eq!(
+        rows(&ordered).len(),
+        rows(&unordered).len(),
+        "ORDER BY never changes the row count"
+    );
+
+    // NOT CONTAINS negates the same reference edge: every folder here has a
+    // reference in its subtree, so the anti-join is empty.
+    let r = run_aql(
+        &svc,
+        "SELECT f/name/value FROM EHR e CONTAINS FOLDER f NOT CONTAINS COMPOSITION c",
+        ehr_scope(&ehr_id),
+    )
+    .await;
+    assert_eq!(
+        rows(&r).len(),
+        0,
+        "no folder is without a referenced composition in its subtree"
+    );
+}
