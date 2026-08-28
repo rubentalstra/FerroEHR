@@ -35,7 +35,7 @@ on:
     # `main` exists but nothing merges into it, so a `main` trigger analysed a
     # branch no work reaches and filed its revisions under a name the dashboard
     # never shows (#2777).
-    branches: [develop]
+    branches: [develop, main]
   pull_request:
   workflow_dispatch:
 

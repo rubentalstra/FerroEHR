@@ -22,7 +22,7 @@ name: SonarQube Cloud
 
 on:
   push:
-    branches: [develop]
+    branches: [develop, main]
   pull_request:
     types: [opened, synchronize, reopened]
 
@@ -141,7 +141,7 @@ jobs:
         with:
           components: llvm-tools-preview
           cache-shared-key: sonar
-          cache-save-if: ${{ github.ref == 'refs/heads/develop' }}
+          cache-save-if: ${{ (github.ref == 'refs/heads/develop' || github.ref == 'refs/heads/main') }}
       - uses: taiki-e/install-action@b6ff580856c41316412a0b9b60540fbc6f8c82cc # v2.86.7
         with:
           tool: cargo-llvm-cov,cargo-nextest

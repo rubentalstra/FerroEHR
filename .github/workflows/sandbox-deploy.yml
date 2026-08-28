@@ -63,7 +63,7 @@ on:
         type: boolean
         default: true
   push:
-    branches: [develop]
+    branches: [develop, main]
     paths:
       - Dockerfile.vercel
       - vercel.json

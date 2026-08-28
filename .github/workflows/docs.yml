@@ -14,7 +14,7 @@ name: Docs
 
 on:
   push:
-    branches: [develop]     # redeploy dev docs + landing
+    branches: [develop, main]     # redeploy dev docs + landing
   pull_request:             # PR: build + lint + link-check ONLY (no deploy),
                             # and only when a site input changed (the `changes`
                             # gate below)

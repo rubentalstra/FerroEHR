@@ -51,7 +51,7 @@ collect() {
   elif [[ "$#" -gt 0 ]]; then
     printf '%s\n' "$@"
   else
-    git diff --name-only origin/develop...HEAD -- '*.rs' 2>/dev/null || git ls-files '*.rs'
+    git diff --name-only origin/develop...HEAD -- '*.rs' 2>/dev/null || git diff --name-only origin/main...HEAD -- '*.rs' 2>/dev/null || git ls-files '*.rs'
   fi
 }
 
