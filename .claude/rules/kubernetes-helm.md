@@ -194,8 +194,7 @@ evidence if it ran in an enforcing namespace — say which.
 | `values.schema.json` accepts/rejects | `validate.sh` `schema_gate`, `fixture_gate` |
 | Golden render drift | CI compare against `deploy/helm/golden/` |
 | Chart version bump on packaged-content change | `chart-version-guard` |
-| The committed `appVersion` names a released version, and the image annotations + generated README agree with it | `chart-appversion-guard` → `scripts/checks/chart-appversion.sh` (mutation-proven). The PUBLISHED appVersion and image tags are INJECTED at package time, not guarded in the tree — #2779 |
-| The committed `appVersion` is FRESH: one of the two newest STABLE releases (an rc never qualifies) | the same guard, property 5 (#2804, mutation-proven). One-stable-behind is the deliberate slack that keeps #2779: the cutting release PR needn't refresh, the one after it fails until someone does — a deterministic guard, not a scheduled watcher |
+| The committed `appVersion` equals the workspace version, and the image annotations + generated README agree with it | `chart-appversion-guard` → `scripts/checks/chart-appversion.sh` (#2890, mutation-proven). The release PR bumps it in the same sweep as the compose tags; the package-time injection (#2779) stays as belt-and-braces for the release leg and the dispatch recovery lane |
 | Field-vs-`kubeVersion` availability | **review-enforced** — no tool knows which fields a manifest uses; §1 is the procedure |
 | Applied posture, admission, readiness gating, secret reads | `scripts/deploy-probe-k8s.sh` — observed on a live cluster, machine-readable record |
 | Live behaviour beyond those probes | **review-enforced** — the `/k8s-test` skill is the procedure; the PR quotes observations |
