@@ -34,10 +34,80 @@ use super::{Builder, VoGroup};
 enum ExistsAnchor {
     /// Interval-anchored inside a node subtree of a shared versioned object:
     /// `num BETWEEN parent.num AND parent.num_cap`, same `(vo_id, sys_version)`.
-    Vo(String),
+    /// Carries the anchor operand's resolved types so the edge classifier can
+    /// decide the join shape (#2880).
+    Vo(String, crate::aql::ir::TypeSet),
     /// Contained in an EHR as its own versioned object: `ehr_id` join + version
     /// scope.
     Ehr(String),
+}
+
+/// How a `CONTAINS` edge renders in SQL, decided from the RM relationship
+/// between the parent and child operand types (#2880).
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+enum EdgeKind {
+    /// Content inside the parent's own node subtree: same `(vo_id,
+    /// sys_version)`, inclusive interval join. The child shares the parent's
+    /// version group.
+    Structural,
+    /// `FOLDER CONTAINS <versioned object>`: reference resolution through
+    /// `FOLDER.items` `OBJECT_REF`s, transitively over the folder subtree (RM
+    /// common master05 — folders hold *references* to versioned objects; RM
+    /// ehr master04 §Folders). The child opens its own version group.
+    FolderItems,
+    /// `FOLDER CONTAINS FOLDER`: the by-value `folders` nesting inside one
+    /// versioned folder tree — a STRICT descendant interval, or the same-typed
+    /// pair matches itself.
+    FolderSubtree,
+}
+
+/// Classifies a `CONTAINS` edge, or refuses a pair the RM defines no
+/// containment for (the class that used to answer a silent cartesian, #2880).
+fn classify_edge(
+    parent: &crate::aql::ir::TypeSet,
+    child: &crate::aql::ir::TypeSet,
+) -> Result<EdgeKind, AqlError> {
+    let child_is_vo_root = !child.is_empty() && child.names().iter().all(|t| is_vo_root_type(t));
+    if !child_is_vo_root {
+        return Ok(EdgeKind::Structural);
+    }
+    let parent_all_folder = !parent.is_empty() && parent.names().iter().all(|t| t == "FOLDER");
+    let child_all_folder = child.names().iter().all(|t| t == "FOLDER");
+    let child_no_folder = !child.names().iter().any(|t| t == "FOLDER");
+    match (parent_all_folder, child_all_folder, child_no_folder) {
+        (true, true, _) => Ok(EdgeKind::FolderSubtree),
+        (true, _, true) => Ok(EdgeKind::FolderItems),
+        _ => Err(crate::aql::error::AqlFeatureError::UnsupportedContainment(
+            parent.names().join("|"),
+            child.names().join("|"),
+        )
+        .into()),
+    }
+}
+
+/// The `FOLDER.items` reference-resolution correlation (#2880): some folder
+/// row in the parent's subtree (the parent row itself included — transitive
+/// containment) carries an `items` `OBJECT_REF` whose uid root equals the
+/// child's versioned-object id. The ref uid is compared as TEXT against the
+/// child's `vo_id`, taking the segment before `::` (an `OBJECT_VERSION_ID`
+/// still names its object root — the same resolution the directory commit
+/// validator performs), so a malformed or foreign ref yields no match rather
+/// than a cast error.
+fn folder_items_exists(parent_node: &str, child_node: &str) -> Expr {
+    let sf = format!("{parent_node}_items_sf");
+    let mut sub = Query::select();
+    sub.expr(Expr::val(1));
+    sub.from_as(Node::Table, Alias::new(sf.as_str()));
+    sub.and_where(col(&sf, "vo_id").eq(col(parent_node, "vo_id")));
+    sub.and_where(col(&sf, "sys_version").eq(col(parent_node, "sys_version")));
+    sub.and_where(col(&sf, "num").between(col(parent_node, "num"), col(parent_node, "num_cap")));
+    sub.and_where(col(&sf, "rm_type").eq(Expr::val("FOLDER")));
+    sub.and_where(Expr::cust_with_exprs(
+        "EXISTS (SELECT 1 FROM jsonb_array_elements(COALESCE($1 -> 'items', '[]'::jsonb)) AS item \
+         WHERE split_part(item.value #>> '{id,value}', '::', 1) = ($2)::text)",
+        [col(&sf, "data"), col(child_node, "vo_id")],
+    ));
+    Expr::exists(sub)
 }
 
 /// The streaming-shape plan: the linear containment chain eligible for the
@@ -80,6 +150,13 @@ pub(super) fn streaming_plan(ir: &QueryIr) -> Option<StreamPlan> {
         return None;
     };
     if r.rm_type.is_empty() || !r.rm_type.names().iter().all(|t| is_vo_root_type(t)) {
+        return None;
+    }
+    // A FOLDER root is ineligible: the streaming shape binds the root at
+    // `num = 0`, but `EHR CONTAINS FOLDER` matches every folder node
+    // (containment is transitive — QUERY master03 §Containment), which only
+    // the flat shape's whole-table scan serves (#2880).
+    if r.rm_type.names().iter().any(|t| t == "FOLDER") {
         return None;
     }
     let mut plan = StreamPlan {
@@ -435,7 +512,7 @@ impl Builder<'_> {
         vo: Option<&VoGroup>,
     ) -> Result<Option<VoGroup>, AqlError> {
         let anchor = match (vo, ehr) {
-            (Some(g), _) => ExistsAnchor::Vo(g.node.clone()),
+            (Some(g), _) => ExistsAnchor::Vo(g.node.clone(), g.types.clone()),
             (None, Some(e)) => ExistsAnchor::Ehr(e.to_owned()),
             (None, None) => {
                 return Err(SqlError::Unsupported(
@@ -542,8 +619,10 @@ impl Builder<'_> {
                 // negated. This generalises NOT CONTAINS to compound (AND/OR)
                 // and further-nested operands (QUERY master03 §Containment,
                 // §NOT).
-                let inner =
-                    self.contained_exists(&ExistsAnchor::Vo(parent.node.clone()), &c.tree)?;
+                let inner = self.contained_exists(
+                    &ExistsAnchor::Vo(parent.node.clone(), parent.types.clone()),
+                    &c.tree,
+                )?;
                 self.q.and_where(inner.not());
                 Ok(())
             }
@@ -564,23 +643,39 @@ impl Builder<'_> {
             self.q.and_where(cond);
         }
 
-        let is_vo_root =
-            !r.rm_type.is_empty() && r.rm_type.names().iter().all(|t| is_vo_root_type(t));
+        // The edge kind is classified from the RM relationship of the two
+        // operands' types (#2880). Before this, the join shape was inferred
+        // from the CHILD alone (VO root or not) — a VO-root child under a
+        // non-EHR parent silently dropped the parent edge entirely and
+        // answered a cartesian product.
+        let edge = match vo {
+            Some(parent) => Some(classify_edge(&parent.types, &r.rm_type)?),
+            None => None,
+        };
 
-        // A VO root (or a top-level source with no enclosing group) opens its own
-        // `vo_version` group; otherwise the source is content sharing the parent
-        // group's version and interval-joining into its node subtree.
-        if let (false, Some(parent)) = (is_vo_root, vo) {
+        if let (Some(EdgeKind::Structural | EdgeKind::FolderSubtree), Some(parent)) = (edge, vo) {
             self.q
                 .and_where(col(&node, "vo_id").eq(col(&parent.node, "vo_id")));
             self.q
                 .and_where(col(&node, "sys_version").eq(col(&parent.node, "sys_version")));
-            self.q.and_where(
-                col(&node, "num").between(col(&parent.node, "num"), col(&parent.node, "num_cap")),
-            );
+            if edge == Some(EdgeKind::FolderSubtree) {
+                // STRICT descendant: a folder trivially sits in its own
+                // inclusive interval, so `FOLDER CONTAINS FOLDER` with the
+                // inclusive join would self-match every folder row.
+                self.q
+                    .and_where(col(&node, "num").gt(col(&parent.node, "num")));
+                self.q
+                    .and_where(col(&node, "num").lte(col(&parent.node, "num_cap")));
+            } else {
+                self.q.and_where(
+                    col(&node, "num")
+                        .between(col(&parent.node, "num"), col(&parent.node, "num_cap")),
+                );
+            }
             Ok(VoGroup {
                 node,
                 vo: parent.vo.clone(),
+                types: r.rm_type.clone(),
             })
         } else {
             let voa = format!("v{sid}");
@@ -607,7 +702,18 @@ impl Builder<'_> {
                 self.q.and_where(col(&voa, "ehr_id").eq(col(e, "id")));
                 self.roots_linked_to_ehr.insert(node.clone());
             }
-            Ok(VoGroup { node, vo: voa })
+            // FolderItems: the child's own version group is open; the
+            // reference edge itself is the correlated `items` lookup over the
+            // parent folder's subtree (RM common master05 — folders hold
+            // references to versioned objects).
+            if let (Some(EdgeKind::FolderItems), Some(parent)) = (edge, vo) {
+                self.q.and_where(folder_items_exists(&parent.node, &node));
+            }
+            Ok(VoGroup {
+                node,
+                vo: voa,
+                types: r.rm_type.clone(),
+            })
         }
     }
 
@@ -640,12 +746,15 @@ impl Builder<'_> {
                 let mut sub = Query::select();
                 sub.expr(Expr::val(1));
                 sub.from_as(Node::Table, Alias::new(alias.as_str()));
-                self.anchor_correlation(&mut sub, anchor, &alias, &r.scope)?;
+                self.anchor_correlation(&mut sub, anchor, &alias, &r.rm_type, &r.scope)?;
                 for cond in self.rm_conds(&alias, &r)? {
                     sub.and_where(cond);
                 }
                 if let Some(c) = contained {
-                    let inner = self.contained_exists(&ExistsAnchor::Vo(alias.clone()), &c.tree)?;
+                    let inner = self.contained_exists(
+                        &ExistsAnchor::Vo(alias.clone(), r.rm_type.clone()),
+                        &c.tree,
+                    )?;
                     match c.link {
                         Link::Contains => sub.and_where(inner),
                         Link::NotContains => sub.and_where(inner.not()),
@@ -657,22 +766,59 @@ impl Builder<'_> {
     }
 
     /// Correlate an `EXISTS` subquery's operand node (`alias`) to its anchor:
-    /// interval containment for a shared VO, or an `ehr_id` join + version scope
-    /// for a VO contained in an EHR.
+    /// the classified containment edge for a VO anchor (structural interval,
+    /// strict folder-subtree interval, or the `FOLDER.items` reference
+    /// resolution — #2880), or an `ehr_id` join + version scope for a VO
+    /// contained in an EHR.
     fn anchor_correlation(
         &mut self,
         sub: &mut SelectStatement,
         anchor: &ExistsAnchor,
         alias: &str,
+        child_types: &crate::aql::ir::TypeSet,
         scope: &VersionScope,
     ) -> Result<(), AqlError> {
         match anchor {
-            ExistsAnchor::Vo(parent) => {
-                sub.and_where(col(alias, "vo_id").eq(col(parent, "vo_id")));
-                sub.and_where(col(alias, "sys_version").eq(col(parent, "sys_version")));
-                sub.and_where(
-                    col(alias, "num").between(col(parent, "num"), col(parent, "num_cap")),
-                );
+            ExistsAnchor::Vo(parent, parent_types) => {
+                match classify_edge(parent_types, child_types)? {
+                    EdgeKind::Structural => {
+                        sub.and_where(col(alias, "vo_id").eq(col(parent, "vo_id")));
+                        sub.and_where(col(alias, "sys_version").eq(col(parent, "sys_version")));
+                        sub.and_where(
+                            col(alias, "num").between(col(parent, "num"), col(parent, "num_cap")),
+                        );
+                    }
+                    EdgeKind::FolderSubtree => {
+                        sub.and_where(col(alias, "vo_id").eq(col(parent, "vo_id")));
+                        sub.and_where(col(alias, "sys_version").eq(col(parent, "sys_version")));
+                        sub.and_where(col(alias, "num").gt(col(parent, "num")));
+                        sub.and_where(col(alias, "num").lte(col(parent, "num_cap")));
+                    }
+                    EdgeKind::FolderItems => {
+                        // The child is its own versioned object: bind its
+                        // version spine + scope (the Ehr arm's shape), then
+                        // the reference edge over the anchor folder's subtree.
+                        let voa = format!("xv{}", self.next_ctr());
+                        sub.from_as(VoVersion::Table, Alias::new(voa.as_str()));
+                        sub.and_where(col(alias, "vo_id").eq(col(&voa, "vo_id")));
+                        sub.and_where(col(alias, "sys_version").eq(col(&voa, "sys_version")));
+                        match scope {
+                            VersionScope::Latest => {
+                                sub.and_where(call("upper_inf", vec![col(&voa, "sys_period")]));
+                                sub.and_where(col(&voa, "branch_number").eq(Expr::val(0)));
+                            }
+                            VersionScope::All => {}
+                            VersionScope::Predicate(_) => {
+                                return Err(SqlError::Unsupported(
+                                    "a version predicate on an OR/NOT-CONTAINS branch VO"
+                                        .to_owned(),
+                                )
+                                .into());
+                            }
+                        }
+                        sub.and_where(folder_items_exists(parent, alias));
+                    }
+                }
                 Ok(())
             }
             ExistsAnchor::Ehr(e) => {
