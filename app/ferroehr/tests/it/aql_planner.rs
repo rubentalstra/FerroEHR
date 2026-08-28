@@ -1555,3 +1555,96 @@ fn stable_profile_gate_matches_the_released_model() {
         );
     }
 }
+
+// ── containment-edge classification (#2880) ──────────────────────────────────
+
+/// Plan `q` and expect the SQL BUILD (not planning) to refuse it.
+fn build_err(q: &str) -> AqlError {
+    let ir = plan_ok(q);
+    let ctx = SqlCtx {
+        system_id: "sys.example.com".to_owned(),
+        ehr_ids: Vec::new(),
+        subject_scope: None,
+        limit: None,
+        offset: None,
+        archetype_lineage: Arc::new(ArchetypeLineage::default()),
+    };
+    ferroehr::aql::sql::build(&ir, &Params::new(), &ctx)
+        .err()
+        .unwrap_or_else(|| panic!("expected the SQL build to refuse {q:?}"))
+}
+
+/// `FOLDER CONTAINS COMPOSITION` resolves through `FOLDER.items` `OBJECT_REF`s
+/// (RM common master05 — folders hold references to versioned objects), over
+/// the whole folder subtree: the ref uid roots are compared against the
+/// child's `vo_id`.
+#[test]
+fn folder_contains_composition_resolves_items_refs() {
+    let sql = build_sql("SELECT c/uid/value FROM EHR e CONTAINS FOLDER f CONTAINS COMPOSITION c");
+    assert!(
+        sql.contains("jsonb_array_elements") && sql.contains("'items'"),
+        "the edge is the items reference lookup: {sql}"
+    );
+    assert!(
+        sql.contains("split_part"),
+        "the ref uid root is compared, not the full OBJECT_VERSION_ID: {sql}"
+    );
+}
+
+/// `FOLDER CONTAINS FOLDER` is the by-value `folders` nesting inside one
+/// versioned folder tree — a STRICT descendant interval, or every folder
+/// would trivially contain itself.
+#[test]
+fn folder_contains_folder_is_a_strict_descendant() {
+    let sql = build_sql("SELECT f2/name/value FROM EHR e CONTAINS FOLDER f1 CONTAINS FOLDER f2");
+    assert!(
+        sql.contains(r#""n2"."num" > "n1"."num""#)
+            && sql.contains(r#""n2"."num" <= "n1"."num_cap""#),
+        "strict interval, no self-pair: {sql}"
+    );
+    assert!(
+        !sql.contains("BETWEEN"),
+        "the inclusive self-matching interval is gone: {sql}"
+    );
+}
+
+/// A `CONTAINS` pair the RM defines no containment relationship for is a
+/// typed refusal, never a silent cartesian (the pre-#2880 behaviour).
+#[test]
+fn versioned_object_under_versioned_object_is_refused() {
+    let err =
+        build_err("SELECT c2/uid/value FROM EHR e CONTAINS COMPOSITION c1 CONTAINS COMPOSITION c2");
+    assert!(
+        err.to_string().contains("no RM containment relationship"),
+        "typed containment refusal, got: {err}"
+    );
+}
+
+/// `FOLDER f NOT CONTAINS COMPOSITION` negates the same reference edge — the
+/// anti-join probes `FOLDER.items`, not the (vacuously true) node interval.
+#[test]
+fn not_contains_under_folder_uses_the_reference_edge() {
+    let sql =
+        build_sql("SELECT f/name/value FROM EHR e CONTAINS FOLDER f NOT CONTAINS COMPOSITION c");
+    assert!(
+        sql.contains("NOT EXISTS") || sql.contains("NOT (EXISTS"),
+        "the exclusion is an anti-join: {sql}"
+    );
+    assert!(
+        sql.contains("jsonb_array_elements") && sql.contains("'items'"),
+        "the negated edge is the items reference lookup: {sql}"
+    );
+}
+
+/// A FOLDER root never takes the streaming shape: the streaming root binds
+/// `num = 0`, but `EHR CONTAINS FOLDER` matches every folder node
+/// (containment is transitive — QUERY master03 §Containment), so the flat
+/// shape owns it.
+#[test]
+fn folder_root_never_streams() {
+    let sql = build_sql_limited("SELECT f/name/value FROM EHR e CONTAINS FOLDER f");
+    assert!(
+        !sql.contains("JOIN LATERAL"),
+        "FOLDER roots take the flat shape: {sql}"
+    );
+}

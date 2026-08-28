@@ -140,6 +140,17 @@ pub enum AqlFeatureError {
     #[error("FROM source class `{0}` is not in scope (demographic/off-scope class; QUERY §FROM)")]
     UnsupportedSourceClass(String),
 
+    /// A `CONTAINS` pair the RM defines no containment relationship for — a
+    /// versioned-object root under a parent that cannot contain it (e.g.
+    /// `COMPOSITION CONTAINS COMPOSITION`, `FOLDER CONTAINS EHR_STATUS`).
+    /// Folder containment of versioned objects is `FOLDER.items` reference
+    /// resolution (RM common master05); everything else this refuses used to
+    /// answer a silent cartesian product (#2880).
+    #[error(
+        "`{0} CONTAINS {1}` has no RM containment relationship (QUERY §FROM/Containment; RM common master05)"
+    )]
+    UnsupportedContainment(String, String),
+
     /// Branch (non-trunk) version addressing. Trunk-only per the storage design
     /// NOTE. QUERY §Predicates/Standard predicate (version).
     #[error("branch version addressing is not supported (trunk-only; QUERY §Predicates)")]
