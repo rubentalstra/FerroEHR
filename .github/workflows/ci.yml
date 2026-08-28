@@ -6,7 +6,7 @@ name: CI
 
 on:
   push:
-    branches: [develop]
+    branches: [develop, main]
   # The types are spelled out (#2777) because the implicit default is
   # `[opened, synchronize, reopened]` only: applying an escape-hatch label
   # (`no-changelog`, `no-chart-bump`, `no-crate-bump`, `no-ui-visual-change`)
@@ -665,7 +665,7 @@ jobs:
       # guards are the only cargo consumers in this job.
       - uses: actions-rust-lang/setup-rust-toolchain@166cdcfd11aee3cb47222f9ddb555ce30ddb9659 # v1.17.0
         with:
-          cache-save-if: ${{ github.ref == 'refs/heads/develop' }}
+          cache-save-if: ${{ (github.ref == 'refs/heads/develop' || github.ref == 'refs/heads/main') }}
       # A packaged src file embedding a path its own package does not carry
       # compiles in this repository and breaks inside the published .crate.
       - name: Packaged sources embed only packaged files
@@ -835,7 +835,7 @@ jobs:
           persist-credentials: false
       - uses: actions-rust-lang/setup-rust-toolchain@166cdcfd11aee3cb47222f9ddb555ce30ddb9659 # v1.17.0
         with:
-          cache-save-if: ${{ github.ref == 'refs/heads/develop' }}
+          cache-save-if: ${{ (github.ref == 'refs/heads/develop' || github.ref == 'refs/heads/main') }}
       - uses: taiki-e/install-action@b6ff580856c41316412a0b9b60540fbc6f8c82cc # v2.86.7
         with:
           tool: cargo-deny
@@ -913,7 +913,7 @@ jobs:
         with:
           components: clippy
           target: wasm32-unknown-unknown
-          cache-save-if: ${{ github.ref == 'refs/heads/develop' }}
+          cache-save-if: ${{ (github.ref == 'refs/heads/develop' || github.ref == 'refs/heads/main') }}
       # The console's `hydrate`/`ssr` features are mutually exclusive (a
       # compile_error! guard per the Cargo book §Mutually exclusive features),
       # so the workspace lane excludes it and the crate gets its own two
@@ -958,7 +958,7 @@ jobs:
       - uses: actions-rust-lang/setup-rust-toolchain@166cdcfd11aee3cb47222f9ddb555ce30ddb9659 # v1.17.0
         with:
           components: clippy
-          cache-save-if: ${{ github.ref == 'refs/heads/develop' }}
+          cache-save-if: ${{ (github.ref == 'refs/heads/develop' || github.ref == 'refs/heads/main') }}
       - run: cargo clippy --locked -p ferroehr-server --no-default-features --all-targets -- -D warnings
       - run: cargo clippy --locked -p ferroehr-server --no-default-features --features events --all-targets -- -D warnings
       - run: cargo clippy --locked -p ferroehr-server --no-default-features --features fhir --all-targets -- -D warnings
@@ -976,7 +976,7 @@ jobs:
     # is docs-only would otherwise never have its docs evaluated at all. This
     # job is ~1/10 the length of the test job, so re-evaluating the whole tree
     # on every develop push is cheap insurance.
-    if: needs.changes.outputs.code == 'true' || github.ref == 'refs/heads/develop'
+    if: needs.changes.outputs.code == 'true' || (github.ref == 'refs/heads/develop' || github.ref == 'refs/heads/main')
     runs-on: ubuntu-latest
     timeout-minutes: 25
     permissions:
@@ -989,7 +989,7 @@ jobs:
           persist-credentials: false
       - uses: actions-rust-lang/setup-rust-toolchain@166cdcfd11aee3cb47222f9ddb555ce30ddb9659 # v1.17.0
         with:
-          cache-save-if: ${{ github.ref == 'refs/heads/develop' }}
+          cache-save-if: ${{ (github.ref == 'refs/heads/develop' || github.ref == 'refs/heads/main') }}
       # --document-private-items: stale intra-doc links can hide behind
       # non-pub items the public build never evaluates (#1838; measured
       # cost ~10s incremental over the public-only run).
@@ -1021,7 +1021,7 @@ jobs:
           persist-credentials: false
       - uses: actions-rust-lang/setup-rust-toolchain@166cdcfd11aee3cb47222f9ddb555ce30ddb9659 # v1.17.0
         with:
-          cache-save-if: ${{ github.ref == 'refs/heads/develop' }}
+          cache-save-if: ${{ (github.ref == 'refs/heads/develop' || github.ref == 'refs/heads/main') }}
       - uses: taiki-e/install-action@b6ff580856c41316412a0b9b60540fbc6f8c82cc # v2.86.7
         with:
           tool: cargo-hack
@@ -1043,7 +1043,7 @@ jobs:
       - uses: actions-rust-lang/setup-rust-toolchain@166cdcfd11aee3cb47222f9ddb555ce30ddb9659 # v1.17.0
         with:
           components: rustfmt
-          cache-save-if: ${{ github.ref == 'refs/heads/develop' }}
+          cache-save-if: ${{ (github.ref == 'refs/heads/develop' || github.ref == 'refs/heads/main') }}
       - name: Regenerate and diff
         run: bash scripts/checks/codegen-drift.sh
 
@@ -1085,7 +1085,7 @@ jobs:
           persist-credentials: false
       - uses: actions-rust-lang/setup-rust-toolchain@166cdcfd11aee3cb47222f9ddb555ce30ddb9659 # v1.17.0
         with:
-          cache-save-if: ${{ github.ref == 'refs/heads/develop' }}
+          cache-save-if: ${{ (github.ref == 'refs/heads/develop' || github.ref == 'refs/heads/main') }}
       - name: Enable required extensions + non-durable test tuning
         # libxml2-utils provides xmllint — the C14N XML parity gate shells out
         # to it (serialization.md); the runner image does not ship it.
