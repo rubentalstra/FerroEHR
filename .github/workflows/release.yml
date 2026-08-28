@@ -186,14 +186,13 @@ jobs:
       # released. Each of these guards exists because its site shipped stale
       # once; they ran on pull requests only, so a cut whose main CI run was
       # cancelled re-verified nothing.
-      # NOT equality with the released version any more (#2779): the chart leg
-      # packages with `helm package --app-version ${TAG#v}` and rewrites the
-      # `artifacthub.io/images` tags at the same moment, so the PUBLISHED chart
-      # carries the released version whatever the tree says. What is still
-      # checked is what still has content — that the committed default names a
-      # version this project released, that the image annotation agrees with it,
-      # and that no injected annotation is committed. One script, so this and the
-      # `chart-appversion` CI job cannot drift apart (they were two copies).
+      # The committed appVersion equals the workspace version (#2890, the
+      # compose treatment), and this plan job has already asserted the tag
+      # equals the workspace version above — so re-running the guard here
+      # transitively pins appVersion == ${TAG#v}. The chart leg's
+      # `helm package --app-version ${TAG#v}` injection stays as belt-and-braces
+      # and keeps the between-releases dispatch lane correct. One script, so
+      # this and the `chart-appversion` CI job cannot drift apart.
       - name: The committed chart release facts are coherent
         run: bash scripts/checks/chart-appversion.sh
 
