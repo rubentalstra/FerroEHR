@@ -16,6 +16,9 @@
 COMPOSE_PROJECT="ferroehr-probe"
 export FERROEHR_PORT="${PROBE_CDR_PORT:-18080}"
 export FERROEHR_S3_PORT="${PROBE_S3_PORT:-18333}"
+# Inert against the base file since #2879 (the quickstart publishes no DB
+# port); kept for runs that add the db-publish overlay so a probe stack still
+# coexists with a developer's own.
 export FERROEHR_DB_PORT="${PROBE_DB_PORT:-15432}"
 CDR="http://localhost:${FERROEHR_PORT}"
 S3="http://localhost:${FERROEHR_S3_PORT}"

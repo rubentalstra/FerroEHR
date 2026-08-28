@@ -100,11 +100,11 @@ Swagger UI at `http://localhost:8080/ferroehr/rest/swagger-ui`.
 > **Every published port binds the loopback interface by default**
 > (`127.0.0.1:HOST:CONTAINER`), and that is a security property rather than a
 > style choice: a published port is DNAT'd by rules Docker inserts *ahead* of
-> the host firewall's own chains, so a `ufw deny 5432` does not stop a port
+> the host firewall's own chains, so a `ufw deny 8080` does not stop a port
 > published on `0.0.0.0`. To reach the stack from another machine, name the
 > interface explicitly (`FERROEHR_BIND_HOST=0.0.0.0 docker compose up`, or a
-> single address) and prefer a reverse proxy on the host over publishing the
-> database at all.
+> single address). The database publishes no host port at all — see
+> [Connecting to the database](#connecting-to-the-database).
 
 > [!NOTE]
 > Third-party base images are pinned by digest (`name:tag@sha256:…`), not by a
@@ -317,13 +317,47 @@ file. When `docker compose up` refuses with `port is already allocated` (or
 FERROEHR_PORT=8081 docker compose up
 ```
 
-The same works for the other ports (`FERROEHR_DB_PORT`, `FERROEHR_ADMIN_UI_PORT`,
-`FERROEHR_S3_PORT`). The defaults stay fixed on purpose: every URL in this
-book assumes `localhost:8080`, and Docker's automatic ephemeral-port
-allocation exists only when a mapping
+The same works for the other ports (`FERROEHR_ADMIN_UI_PORT`,
+`FERROEHR_S3_PORT`; PostgreSQL publishes no host port — see
+[Connecting to the database](#connecting-to-the-database)). The defaults stay
+fixed on purpose: every URL in this book assumes `localhost:8080`, and
+Docker's automatic ephemeral-port allocation exists only when a mapping
 [omits the host port entirely](https://docs.docker.com/engine/network/port-publishing/)
 — a server that silently moved ports would break every printed URL, so here
 you always choose the port and always know it.
+
+> [!NOTE]
+> **On Windows** the refusal reads differently: `Ports are not available:
+> exposing port TCP 127.0.0.1:8080 … bind: Only one usage of each socket
+> address … is normally permitted` when another program holds the port, or
+> `… An attempt was made to access a socket in a way forbidden by its access
+> permissions` when the port sits in a Windows reserved range. The remedy is
+> the same variable; to see the reserved ranges, run
+> `netsh interface ipv4 show excludedportrange protocol=tcp`. (The classic
+> Windows collision — a natively installed PostgreSQL service holding 5432 —
+> no longer affects the quickstart, which publishes no database port.)
+
+## Connecting to the database
+
+The quickstart publishes no PostgreSQL host port: the server reaches the
+database over the compose network, so nothing needs one, and a published
+5432 collided with natively installed PostgreSQL (on Windows the installer
+registers an auto-started `postgresql-x64-*` service). For a psql session,
+no port is needed at all:
+
+```shell
+docker compose exec ferroehr-postgres psql -U postgres -d ferroehr
+```
+
+For a GUI client on the host (pgAdmin, DBeaver), add the `db-publish`
+overlay, downloaded from the same release beside the base file:
+
+```shell
+docker compose -f docker-compose.yml -f docker-compose.db-publish.yml up
+```
+
+It publishes `127.0.0.1:5432` (retune with `FERROEHR_DB_PORT`, widen with
+`FERROEHR_BIND_HOST` — the warning above applies).
 
 ## Variables the compose files read
 
@@ -337,7 +371,7 @@ Set these in your shell (or an `.env` file) to retune without editing anything:
 | `FERROEHR_BIND_HOST` | `127.0.0.1` | Host interface every published port binds. |
 | `FERROEHR_PORT` | `8080` | Host port mapped to the server. |
 | `FERROEHR_ADMIN_UI_PORT` | `3000` | Host port mapped to the admin console. |
-| `FERROEHR_DB_PORT` | `5432` | Host port mapped to PostgreSQL. |
+| `FERROEHR_DB_PORT` | not published | Host port for PostgreSQL, read only by the `db-publish` overlay (default `5432` there). |
 | `FERROEHR_S3_PORT` | `8333` | Host port mapped to the S3 gateway (the `s3` profile). |
 | `FERROEHR_CPUS` / `FERROEHR_MEM` | `4` / `4G` | Server container resource ceiling. |
 | `FERROEHR_DB_CPUS` / `FERROEHR_DB_MEM` | `4` / `4G` | Database container resource ceiling. |
