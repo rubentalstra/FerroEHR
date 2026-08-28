@@ -46,8 +46,9 @@ cargo nextest run -p ferroehr-admin-ui --features ssr
 
 # 4. Full build (server bin + WASM + assets) — only when the change
 #    touches the build surface (Cargo.toml, styles, assets, features);
-#    otherwise report it as skipped-with-reason
-cargo leptos build
+#    otherwise report it as skipped-with-reason. ALWAYS through the wrapper:
+#    a bare `cargo leptos` re-resolves and rewrites Cargo.lock (#2877).
+bash scripts/cargo-leptos.sh build
 
 # 5. E2E journeys (merge-gating in CI; local requires Docker) — Rust-native
 #    thirtyfour/WebDriver over the composed stack (.claude/rules/leptos-ui.md §10)

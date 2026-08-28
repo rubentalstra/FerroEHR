@@ -17,6 +17,12 @@ workflow refuses a tag that has no matching section here.
 
 ### Fixed
 
+- The admin console stops re-downloading its whole WebAssembly bundle on every
+  page load. Its `/pkg/` filenames now carry a content hash and are served
+  `public, max-age=31536000, immutable`, so a browser reuses them until the
+  console is rebuilt — measured on the shipped image, a second page load
+  transfers 0 bytes of `/pkg` instead of 7.6 MB. Documents keep `no-store`
+  unchanged: they carry patient data and a per-request CSP nonce (#2875).
 - A bare `docker compose up` in a repository checkout now runs the same
   published-images quickstart as the downloaded standalone file. The
   development overlay no longer carries Compose's auto-merged `override`
@@ -30,6 +36,17 @@ workflow refuses a tag that has no matching section here.
 
 ### Changed
 
+- Console builds no longer touch `Cargo.lock`. `cargo leptos` resolves the
+  workspace through an unlocked `cargo metadata` call of its own, which had
+  silently re-resolved a transitive dependency during a build; every
+  invocation now runs through a wrapper that refuses a stale lockfile up front
+  and passes `--locked` to both compile legs, matching every other build in
+  the repository (#2877).
+- The full browser e2e battery now runs against the PUBLISHED console image, in
+  a weekly lane that drives the latest release's three images at that release's
+  own tag. The battery's shipped-artifact mode had no caller at all; the
+  release pipeline keeps gating the login journey through the image it pushes
+  (#2876).
 - The `openehr-*` spec crates step to `0.0.43`. The change is internal
   structure only: over-complex functions in the ADL engine, the Simplified
   Formats web-template builder and the ISO 8601 duration parser were split

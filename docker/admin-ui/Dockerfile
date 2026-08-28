@@ -109,12 +109,21 @@ WORKDIR /app/app/ferroehr-admin-ui
 # (docs.docker.com/guides/rust/develop — the same shape as docker/Dockerfile).
 # `sharing=locked` serializes every cargo build over the one workspace cache —
 # including the server image's, when compose builds both images at once.
+#
+# The build runs through scripts/cargo-leptos.sh, which freezes Cargo.lock —
+# `cargo leptos` re-resolves it otherwise, and an image build silently
+# re-resolving the workspace is a build nobody can reproduce (#2877).
+#
+# hash.txt is the content-hash manifest cargo-leptos writes beside the server
+# binary; it travels WITH the site bundle it describes, and the runtime stages
+# put it back beside the binary, which is the only place leptos reads it from.
 RUN --mount=type=cache,target=/app/target,sharing=locked \
     --mount=type=cache,target=/usr/local/cargo/registry,sharing=locked \
-    cargo leptos build --release \
+    bash /app/scripts/cargo-leptos.sh build --release \
     && mkdir -p /out \
     && cp /app/target/release/ferroehr-admin-ui /out/ \
-    && cp -r /app/target/site /out/site
+    && cp -r /app/target/site /out/site \
+    && cp /app/target/release/hash.txt /out/site/hash.txt
 
 # ── runtime-base: the SHARED final base (digest-pinned distroless, non-root) ───
 # gcr.io/distroless/cc-debian13:nonroot, digest-pinned, resolved 2026-07-24 —
@@ -133,9 +142,16 @@ FROM gcr.io/distroless/cc-debian13:nonroot@sha256:a77defd6fedbb3392b175ba8ea3d1c
 # the distroless `:nonroot` tag sets, so this states the base uid rather than
 # choosing one.
 USER 65532:65532
+# LEPTOS_HASH_FILES is the RUNTIME half of the crate manifest's `hash-files`:
+# leptos_config reads it from the environment at startup (there is no
+# compile-time fallback the way LEPTOS_OUTPUT_NAME has one), and it is what
+# makes the renderer name the content-hashed /pkg files this image ships
+# instead of the unhashed names it would otherwise 404 on. It must stay in
+# step with the manifest key and with hash.txt below — all three or none.
 ENV LEPTOS_SITE_ROOT=/site \
     LEPTOS_SITE_ADDR=0.0.0.0:3000 \
-    LEPTOS_OUTPUT_NAME=ferroehr-admin-ui
+    LEPTOS_OUTPUT_NAME=ferroehr-admin-ui \
+    LEPTOS_HASH_FILES=true
 EXPOSE 3000
 # Shell-less image: the healthcheck is the binary's own subcommand, which probes
 # its own /login and exits 0 (2xx/3xx) / 1 otherwise.
@@ -166,6 +182,9 @@ LABEL org.opencontainers.image.title="FerroEHR admin console" \
 FROM runtime-base AS runtime-from-source
 COPY --from=builder /out/ferroehr-admin-ui /usr/local/bin/ferroehr-admin-ui
 COPY --from=builder /out/site /site
+# The manifest travels inside the site bundle it describes; leptos resolves it
+# as current_exe().parent()/hash.txt, so it is placed beside the binary too.
+COPY --from=builder /out/site/hash.txt /usr/local/bin/hash.txt
 
 # ── runtime-prebuilt: CI (COPY the context-provided native binary + site) ──────
 # The server binary is built natively per architecture on the CI runners
@@ -178,3 +197,7 @@ FROM runtime-base AS runtime-prebuilt
 ARG TARGETARCH
 COPY --chmod=0755 bin/${TARGETARCH}/ferroehr-admin-ui /usr/local/bin/ferroehr-admin-ui
 COPY site /site
+# Same placement as the from-source stage: the manifest rides the
+# (arch-independent) site artifact and is copied beside the binary, which is
+# where leptos looks for it.
+COPY site/hash.txt /usr/local/bin/hash.txt

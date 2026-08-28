@@ -112,6 +112,10 @@ jobs:
               - '.cargo/**'
               - 'docker/admin-ui/**'
               - 'docker-compose.yml'
+              # The frozen-lockfile wrapper the console site build runs, and
+              # the battery its smoke lane drives.
+              - 'scripts/cargo-leptos.sh'
+              - 'scripts/ui-e2e.sh'
               - '.github/workflows/containers.yml'
             postgres:
               - 'docker/postgres/**'
@@ -384,8 +388,11 @@ jobs:
           curl -sSfL -o /usr/local/bin/tailwindcss \
             https://github.com/tailwindlabs/tailwindcss/releases/download/v4.3.3/tailwindcss-linux-x64
           chmod +x /usr/local/bin/tailwindcss
-          cd app/ferroehr-admin-ui
-          LEPTOS_TAILWIND_VERSION=v4.3.3 cargo leptos build --release
+          LEPTOS_TAILWIND_VERSION=v4.3.3 bash scripts/cargo-leptos.sh build --release
+          # hash.txt names the content hashes of the files in this bundle, so
+          # it travels WITH the bundle; the image COPYs it beside the binary,
+          # which is where leptos reads it from.
+          cp target/release/hash.txt target/site/hash.txt
 
       - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         if: matrix.platform == 'amd64'
