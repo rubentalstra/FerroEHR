@@ -14,7 +14,7 @@ name: Docs
 
 on:
   push:
-    branches: [develop, main]     # redeploy dev docs + landing
+    branches: [main]     # redeploy dev docs + landing
   pull_request:             # PR: build + lint + link-check ONLY (no deploy),
                             # and only when a site input changed (the `changes`
                             # gate below)
@@ -37,7 +37,7 @@ env:
 # actual deploys, and the dispatch run lands last with the frozen version.
 # Residual: GitHub still displaces a QUEUED run when a third arrives for the
 # same group (pending-displacement ignores this setting), so a rapid burst of
-# 3+ develop pushes can still show one Cancelled row — rare, and equally
+# 3+ main pushes can still show one Cancelled row — rare, and equally
 # benign.
 concurrency:
   group: docs-${{ github.ref }}
@@ -59,7 +59,7 @@ jobs:
   # branch protection
   # (https://docs.github.com/en/pull-requests/collaborating-with-pull-requests/collaborating-on-repositories-with-code-quality-features/troubleshooting-required-status-checks).
   #
-  # Any non-pull-request event answers `true` unconditionally: a develop push
+  # Any non-pull-request event answers `true` unconditionally: a main push
   # deploys the site and a manual dispatch is an explicit request to rebuild
   # it, so neither is ever gated on a delta.
   changes:
@@ -193,7 +193,7 @@ jobs:
           name: site
           path: _site
 
-  # ── Deploy the full site (develop push or manual dispatch) ──────────────────
+  # ── Deploy the full site (main push or manual dispatch) ──────────────────
   deploy:
     needs: build
     # Deploy on any non-PR event. The release pipeline's docs-freeze leg

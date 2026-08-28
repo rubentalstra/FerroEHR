@@ -67,7 +67,7 @@ does not decide the work is done on your behalf.
    where things stand at close, what was deliberately left out (with the
    follow-up issue numbers), and what a follow-up session should do first.
 6. **Ensure the PR body declares `Closes #<n>`** (`gh pr view` /
-   `gh pr edit`) so the merge into develop auto-closes the issue — never
+   `gh pr edit`) so the merge into main auto-closes the issue — never
    close the issue by hand when a PR carries the work.
 7. **Delete the implemented plan file** in the same PR (the
    delete-on-implementation lifecycle; `docs/plans/README.md`) — unless

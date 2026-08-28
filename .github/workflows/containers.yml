@@ -25,7 +25,7 @@ name: Containers
 
 on:
   push:
-    branches: [develop, main]
+    branches: [main]
   workflow_dispatch:
 
 concurrency:
@@ -52,7 +52,7 @@ jobs:
   # ── Detect which images need (re)building ───────────────────────────────────
   # The ci.yml owner ruling (2026-07-17) applied to images: a push that touches
   # none of an image's build inputs must not recompile and republish it. A
-  # docs-only develop push used to run FOUR native release compiles (two
+  # docs-only main push used to run FOUR native release compiles (two
   # binaries × two arches) plus a cargo-leptos site build for byte-identical
   # images. A manual dispatch always builds everything (the per-job conditions
   # below); a release builds everything in release.yml, which has no filter at
@@ -567,14 +567,14 @@ jobs:
 
       # The asset-chain step proves the image SERVES its assets; nothing proved
       # a browser can log in THROUGH them, and 4.0.8 shipped with this lane
-      # green (#2871). The CDR and its database are FIXTURES — the last develop
+      # green (#2871). The CDR and its database are FIXTURES — the last main
       # build of the server image, which this lane never re-tags — while the
       # console is the artifact under test.
       - name: Browser-driven login against the pushed console image
         shell: bash
         run: |
           FERROEHR_ADMIN_UI_IMAGE=ferroehr-admin-ui:smoke \
-          FERROEHR_IMAGE="${APP_IMAGE}:develop" \
+          FERROEHR_IMAGE="${APP_IMAGE}:main" \
           FERROEHR_POSTGRES_IMAGE=ferroehr-postgres:smoke \
             bash docker/admin-ui/login-smoke.sh
 

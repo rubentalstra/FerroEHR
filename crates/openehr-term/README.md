@@ -23,7 +23,7 @@ package (English, Spanish, Japanese, Portuguese, Chinese).
 
 The types under the `v3_1` generation module each carry a `// @generated`
 header and are emitted deterministically by
-[`openehr-codegen`](https://github.com/rubentalstra/FerroEHR/tree/develop/tools/openehr-codegen)
+[`openehr-codegen`](https://github.com/rubentalstra/FerroEHR/tree/main/tools/openehr-codegen)
 from the vendored openEHR BMM meta-model; changes to them belong in the
 emitter, never in the generated output. The terminology content is a different
 matter: the BMM declares only the data classes, so the embedded XML assets and

@@ -102,7 +102,7 @@ jq --arg ver "$VER" --arg base "$SITE_BASE" --arg today "$TODAY" '
   | {
       latest: $ver,
       versions: ([
-        { id: "dev", label: "dev (develop)", path: ($base + "/docs/dev/"),
+        { id: "dev", label: "dev (main)", path: ($base + "/docs/dev/"),
           released: null, prerelease: true },
         { id: "latest", label: ("latest (" + $ver + ")"),
           path: ($base + "/docs/latest/"), released: $today, aliasOf: $ver },

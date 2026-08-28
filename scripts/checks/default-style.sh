@@ -33,7 +33,7 @@
 # `#[serde(default)]` with no path, which is the required form.
 #
 # Usage: scripts/checks/default-style.sh [--all | <file>...]
-#   no args  → the files changed against origin/develop
+#   no args  → the files changed against origin/main
 #   --all    → every .rs file, tracked or untracked (unignored)
 set -euo pipefail
 cd "$(dirname "$0")/../.."
@@ -51,7 +51,7 @@ collect() {
   elif [[ "$#" -gt 0 ]]; then
     printf '%s\n' "$@"
   else
-    git diff --name-only origin/develop...HEAD -- '*.rs' 2>/dev/null || git diff --name-only origin/main...HEAD -- '*.rs' 2>/dev/null || git ls-files '*.rs'
+    git diff --name-only origin/main...HEAD -- '*.rs' 2>/dev/null || git ls-files '*.rs'
   fi
 }
 

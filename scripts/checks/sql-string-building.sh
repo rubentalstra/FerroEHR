@@ -64,8 +64,7 @@ collect() {
     printf '%s\n' "$@"
   else
     # shellcheck disable=SC2086
-    git diff --name-only origin/develop...HEAD -- $SCOPE 2>/dev/null ||
-      git diff --name-only origin/main...HEAD -- $SCOPE 2>/dev/null ||
+    git diff --name-only origin/main...HEAD -- $SCOPE 2>/dev/null ||
       git ls-files -- $SCOPE
   fi
 }

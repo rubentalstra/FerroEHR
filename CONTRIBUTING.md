@@ -75,7 +75,7 @@ render/boot lanes; nothing is advisory.
 
 ## Pull requests
 
-- Branch from `develop`; PRs target `develop`.
+- Branch from `main`; PRs target `main`.
 - Keep PRs focused; describe **what** changed and **why**, citing spec sections
   for conformance-relevant behaviour.
 - Tests accompany behaviour changes. Snapshot changes (`insta`) must be reviewed,

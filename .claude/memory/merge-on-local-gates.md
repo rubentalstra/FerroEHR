@@ -17,9 +17,9 @@ green work wastes wave throughput.
 **Why:** the local gates run the exact CI checks (same flags, same tests);
 CI is a backstop for the untested paths (ui-e2e, coverage), not a
 prerequisite for sequential fix-wave progress. A rare CI failure after merge
-is fixed forward on develop.
+is fixed forward on main.
 
 **How to apply:** run the local gates → commit → push → `gh pr create` →
-`gh pr merge <n> --merge` in the same breath → checkout develop, pull, next
+`gh pr merge <n> --merge` in the same breath → checkout main, pull, next
 branch. No `--watch` loops between issues. Applies to this repo's
 fix-wave/issue cadence; for release cuts keep the normal discipline.

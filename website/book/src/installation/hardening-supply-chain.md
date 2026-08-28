@@ -68,7 +68,7 @@ provider. Read it off a published artifact rather than deriving it from a workfl
 file:
 
 ```shell
-gh attestation verify oci://ghcr.io/rubentalstra/ferroehr:develop \
+gh attestation verify oci://ghcr.io/rubentalstra/ferroehr:main \
   -R rubentalstra/FerroEHR --format json \
   | jq '.[0].verificationResult.signature.certificate
         | {subjectAlternativeName, issuer, sourceRepositoryRef, runnerEnvironment}'
@@ -76,9 +76,9 @@ gh attestation verify oci://ghcr.io/rubentalstra/ferroehr:develop \
 
 ```json
 {
-  "subjectAlternativeName": "https://github.com/rubentalstra/FerroEHR/.github/workflows/build-image.yml@refs/heads/develop",
+  "subjectAlternativeName": "https://github.com/rubentalstra/FerroEHR/.github/workflows/build-image.yml@refs/heads/main",
   "issuer": "https://token.actions.githubusercontent.com",
-  "sourceRepositoryRef": "refs/heads/develop",
+  "sourceRepositoryRef": "refs/heads/main",
   "runnerEnvironment": "github-hosted"
 }
 ```
@@ -89,8 +89,8 @@ identity:
 
 | Artifact | Signing workflow | SAN on a release build | SAN on a development build |
 |---|---|---|---|
-| the three images | `build-image.yml` — the reusable builder both callers use | `…/build-image.yml@refs/tags/vX.Y.Z` (the release pipeline) | `…/build-image.yml@refs/heads/develop` (via `containers.yml`) |
-| the chart | `build-chart.yml` — the reusable chart lane | `…/build-chart.yml@refs/tags/vX.Y.Z` (the release pipeline's chart leg) | `…/build-chart.yml@refs/heads/develop` (a `workflow_dispatch` chart-only publish) |
+| the three images | `build-image.yml` — the reusable builder both callers use | `…/build-image.yml@refs/tags/vX.Y.Z` (the release pipeline) | `…/build-image.yml@refs/heads/main` (via `containers.yml`) |
+| the chart | `build-chart.yml` — the reusable chart lane | `…/build-chart.yml@refs/tags/vX.Y.Z` (the release pipeline's chart leg) | `…/build-chart.yml@refs/heads/main` (a `workflow_dispatch` chart-only publish) |
 | the release binaries | `release-build.yml` | `…/release-build.yml@refs/tags/vX.Y.Z` | *(none; the lane only runs on a tag)* |
 
 All three prefixed with `https://github.com/rubentalstra/FerroEHR/.github/workflows/`,
@@ -103,10 +103,10 @@ names the workflow that owns the build definition, which is what makes the
 
 **Pick the ref set deliberately, because the choice is a refusal.** A policy
 matching `refs/tags/v…` only admits released images and **refuses
-`ghcr.io/rubentalstra/ferroehr:develop`**, correct for production, and the
-reason a policy tested against `:develop` appears broken when it is working. A
-staging cluster that runs `:develop` needs both refs. Nothing accepts an
-arbitrary branch: `refs/heads/develop` is exact, not a prefix match.
+`ghcr.io/rubentalstra/ferroehr:main`**, correct for production, and the
+reason a policy tested against `:main` appears broken when it is working. A
+staging cluster that runs `:main` needs both refs. Nothing accepts an
+arbitrary branch: `refs/heads/main` is exact, not a prefix match.
 
 ### Kyverno
 
@@ -164,7 +164,7 @@ spec:
                         issuer: https://token.actions.githubusercontent.com
                         # Released images only. For a staging cluster that runs
                         # the development tag, make the group
-                        # `(heads/develop|tags/v.+)`.
+                        # `(heads/main|tags/v.+)`.
                         subjectRegExp: '^https://github\.com/rubentalstra/FerroEHR/\.github/workflows/containers\.yml@refs/(tags/v.+)$'
                         rekor:
                           url: https://rekor.sigstore.dev
@@ -208,7 +208,7 @@ spec:
         url: https://fulcio.sigstore.dev
         identities:
           - issuer: https://token.actions.githubusercontent.com
-            # Same group as the Kyverno policy: `(heads/develop|tags/v.+)` for a
+            # Same group as the Kyverno policy: `(heads/main|tags/v.+)` for a
             # staging cluster that runs the development tag.
             subjectRegExp: '^https://github\.com/rubentalstra/FerroEHR/\.github/workflows/containers\.yml@refs/(tags/v.+)$'
       signatureFormat: bundle
@@ -221,7 +221,7 @@ spec:
 > **What has been checked, and what has not.** The identity, the issuer and the
 > predicate type above are verified first-hand against the published images with
 > `cosign verify --certificate-identity-regexp …`, which admits them and refuses
-> both an unsigned image and, under a tags-only pattern, a `:develop` image, so
+> both an unsigned image and, under a tags-only pattern, a `:main` image, so
 > the matcher is neither vacuous nor accidentally permissive. The manifests are
 > checked field by field against the published `ClusterPolicy` and
 > `ClusterImagePolicy` CRDs. **Neither policy has been exercised by a running
@@ -250,12 +250,12 @@ Add `--signer-workflow` to insist on the lane as well as the repository; without
 it you are trusting that *some* workflow here signed the image:
 
 ```shell
-gh attestation verify oci://ghcr.io/rubentalstra/ferroehr:develop \
+gh attestation verify oci://ghcr.io/rubentalstra/ferroehr:main \
   -R rubentalstra/FerroEHR \
   --signer-workflow rubentalstra/FerroEHR/.github/workflows/build-image.yml
 ```
 
-Substitute a `vX.Y.Z` tag for `develop` on a release; the signer workflow is the
+Substitute a `vX.Y.Z` tag for `main` on a release; the signer workflow is the
 same.
 
 > [!IMPORTANT]

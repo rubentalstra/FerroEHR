@@ -4,7 +4,7 @@
 # .claude/hooks/crate_version_bump_guard.sh
 #
 # Claude Code PreToolUse hook (matcher: Bash). Blocks `git push` when the
-# outgoing commits (vs the merge-base with origin/develop) change PACKAGED
+# outgoing commits (vs the merge-base with origin/main) change PACKAGED
 # content of the published crates/* members without bumping the lockstep
 # 0.0.x crate version (.claude/rules/crates-publishing.md — published
 # versions are immutable), and when a bump leaves fuzz/Cargo.lock behind.
@@ -32,7 +32,7 @@ printf '%s' "$cmd" | grep -qE '(^|[;&|[:space:]])git[[:space:]]+push([[:space:]]
 printf '%s' "$cmd" | grep -q 'FERROEHR_SKIP_CRATE_BUMP_GUARD=1' && exit 0
 
 git rev-parse --is-inside-work-tree >/dev/null 2>&1 || exit 0
-base="$(git merge-base HEAD origin/develop 2>/dev/null || git merge-base HEAD origin/main 2>/dev/null || true)"
+base="$(git merge-base HEAD origin/main 2>/dev/null || true)"
 [ -n "$base" ] || exit 0
 
 changed="$(git diff --name-only "$base" HEAD 2>/dev/null || true)"

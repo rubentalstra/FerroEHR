@@ -25,7 +25,7 @@ name: CodeQL
 # (CodeQL is not a required status check, so a skipped leg cannot block a merge.)
 on:
   push:
-    branches: [develop, main]
+    branches: [main]
     paths:
       - "**/*.rs"
       - "**/Cargo.toml"
@@ -33,7 +33,7 @@ on:
       - ".github/workflows/**"
       - ".github/actions/**"
   pull_request:
-    branches: [develop, main]
+    branches: [main]
     paths:
       - "**/*.rs"
       - "**/Cargo.toml"

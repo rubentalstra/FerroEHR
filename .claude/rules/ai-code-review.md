@@ -1,6 +1,6 @@
 # Machine review (SonarQube Cloud) — what it is and what it is not
 
-Every pull request and every develop push is analyzed by SonarQube Cloud
+Every pull request and every main push is analyzed by SonarQube Cloud
 (`.github/workflows/sonar.yml`; scope in `sonar-project.properties`; #2630).
 It exists because the local gates catch what a lint can catch, review is one
 person, and a deterministic multi-language sweep also covers trees the Rust

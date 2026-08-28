@@ -34,10 +34,10 @@
 #
 # `plan` re-runs the ENTIRE release-fact guard tier against the tagged commit
 # before anything is built or published. That closes a structural hole rather
-# than a slip: those guards ran on pull requests and develop pushes only, and
+# than a slip: those guards ran on pull requests and main pushes only, and
 # GitHub cancels a PENDING run in a concurrency group when a newer one queues
 # regardless of `cancel-in-progress` (workflow-syntax docs §concurrency), which
-# is exactly how the v4.0.5 release commit's develop CI run — the whole guard
+# is exactly how the v4.0.5 release commit's main CI run — the whole guard
 # tier — was cancelled and never reported.
 #
 # RE-RUNNING is the recovery for every partial failure, and each leg is
@@ -54,7 +54,7 @@
 # `workflow_dispatch` re-runs the pipeline for an existing tag, and must be
 # dispatched AT the tag (`gh workflow run Release --ref vX.Y.Z -f tag=vX.Y.Z`).
 # `plan` refuses anything else: the reusable image, chart and docs legs resolve
-# the event's own ref, so a dispatch from develop would build develop's tree and
+# the event's own ref, so a dispatch from main would build main's tree and
 # label it with the tag's version.
 name: Release
 
@@ -184,7 +184,7 @@ jobs:
 
       # The hand-edited pin sites, every one of them, at the commit being
       # released. Each of these guards exists because its site shipped stale
-      # once; they ran on pull requests only, so a cut whose develop CI run was
+      # once; they ran on pull requests only, so a cut whose main CI run was
       # cancelled re-verified nothing.
       # NOT equality with the released version any more (#2779): the chart leg
       # packages with `helm package --app-version ${TAG#v}` and rewrites the
@@ -780,7 +780,7 @@ jobs:
         org.opencontainers.image.base.digest=sha256:06cad38a5d9f5d24b4d83d86def30795d5e4b757fedbf5281172b576dedcd941
 
   # ── The gate that makes the pushed digests referencable ─────────────────────
-  # The same reusable pair containers.yml uses, so the develop lane and the
+  # The same reusable pair containers.yml uses, so the main lane and the
   # release lane cannot drift on a security gate. Its completion is what every
   # consumer of a PUBLISHED image tag hangs off: the chart pulls the appVersion
   # image, the sandbox tracks `:latest`, and both exist by construction here.
@@ -1088,7 +1088,7 @@ jobs:
     timeout-minutes: 45
     environment: crates-io
     # Shared with publish-crates.yml's dispatch lane, and deliberately not
-    # ref-keyed: a tag-triggered release and a develop dispatch would otherwise
+    # ref-keyed: a tag-triggered release and a main dispatch would otherwise
     # sit in different groups and could interleave uploads of the same immutable
     # versions. Queue, never cancel.
     concurrency:

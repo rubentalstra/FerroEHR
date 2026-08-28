@@ -42,7 +42,7 @@
 #      CHANGELOG.md (#2804). With the cut no longer bumping it (#2779), nothing
 #      moved the committed default and the gap between it and the tree's
 #      advancing `config` defaults grew unboundedly, unseen by any lane
-#      (chart-boot overrides the image; the dispatch judge uses sha-/develop).
+#      (chart-boot overrides the image; the dispatch judge uses sha-/main).
 #      "One stable behind" is the deliberate slack that keeps #2779's design:
 #      the release PR that cuts X.Y.Z does NOT have to refresh (that would
 #      re-impose the hand edit), but the one after it fails here until someone

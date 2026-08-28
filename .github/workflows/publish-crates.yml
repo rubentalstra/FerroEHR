@@ -79,7 +79,7 @@ jobs:
     # same immutable versions must never interleave. Job-level and unkeyed on
     # purpose: workflow-level would queue an innocent dry run behind a release's
     # approval pause, and a ref-keyed group would put a tag-triggered release and
-    # a develop dispatch in different groups, which is no group at all. Queue,
+    # a main dispatch in different groups, which is no group at all. Queue,
     # never cancel.
     concurrency:
       group: publish-crates

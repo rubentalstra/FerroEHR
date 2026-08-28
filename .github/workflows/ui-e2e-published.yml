@@ -27,7 +27,7 @@
 # WHAT IT DRIVES. The three images of the latest RELEASE, and the repository
 # checked out at that release's own tag — the journeys and the artifact they
 # drive have to be the same generation, which is exactly what a run against
-# `develop` would not guarantee.
+# `main` would not guarantee.
 #
 # RUN COLOUR. This is a test battery, not a probe: a failing journey is a real
 # defect in the shipped console and the run goes RED.

@@ -48,7 +48,7 @@ set -uo pipefail
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 CHART_DIR="$(cd "${SCRIPT_DIR}/../ferroehr" && pwd)"
 CI_DIR="$SCRIPT_DIR"
-IMAGE="${FERROEHR_IMAGE:-ghcr.io/rubentalstra/ferroehr:develop}"
+IMAGE="${FERROEHR_IMAGE:-ghcr.io/rubentalstra/ferroehr:main}"
 RELEASE_NAME="ferroehr"
 NAMESPACE="ferroehr"
 

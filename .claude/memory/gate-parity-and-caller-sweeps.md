@@ -13,7 +13,7 @@ Two gate-discipline escapes, both live on 2026-08-27:
 1. **Local gate lines must mirror the CI invocation VERBATIM.** CLAUDE.md's
    rustdoc line lacked `--document-private-items` while CI passes it; the
    #2832 worker ran the CLAUDE.md line green and eight broken intra-doc links
-   in PRIVATE helpers' docs reached develop (red rustdoc, fixed in #2833).
+   in PRIVATE helpers' docs reached main (red rustdoc, fixed in #2833).
    Before trusting any "gates green" claim — mine or a worker's — diff the
    command against the CI step's `run:` line, not against CLAUDE.md.
 
