@@ -397,7 +397,12 @@ jobs:
           # renders as the front page, so its install example has to name the
           # same version the chart carries.
           readme=$(tar -xzOf "$PACKAGE" ferroehr/README.md)
-          if ! printf '%s' "$readme" | grep -qF -- "--set image.tag=${APP}"; then
+          # A herestring, never `printf | grep -q`: -q closes the pipe at the
+          # first match, printf takes SIGPIPE once the payload tops the 64K
+          # pipe buffer, and pipefail turns the successful match into a red
+          # leg (the v4.0.9 cut, when the regenerated README outgrew the
+          # buffer).
+          if ! grep -qF -- "--set image.tag=${APP}" <<<"$readme"; then
             echo "::error::the README inside ${PACKAGE} does not teach 'image.tag=${APP}' — the packaged front page would advertise a different version from the chart."
             printf '%s' "$readme" | grep -nE 'AppVersion|image\.tag=' || true
             exit 1
@@ -523,7 +528,9 @@ jobs:
           # shared index. It is matched on the SLSA predicate or the in-toto
           # media type rather than on cosign's own media type, which differs
           # between cosign's bundle formats and is not ours to predict.
-          if ! printf '%s' "$manifest" | grep -qE 'slsa\.dev/provenance|application/vnd\.in-toto'; then
+          # Herestring for the same SIGPIPE-under-pipefail reason as the
+          # README check above.
+          if ! grep -qE 'slsa\.dev/provenance|application/vnd\.in-toto' <<<"$manifest"; then
             echo "::error::${fallback} no longer carries the SLSA provenance entry — both the signature and the attestation write this one index (GHCR serves no referrers API), so one writer replaced the other's entry. The index is printed above."
             exit 1
           fi
