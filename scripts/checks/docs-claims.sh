@@ -74,6 +74,7 @@ collect() {
     printf '%s\n' "$@"
   else
     git diff --name-only origin/develop...HEAD -- "$BOOK/*.md" "$BOOK/**/*.md" 2>/dev/null \
+      || git diff --name-only origin/main...HEAD -- "$BOOK/*.md" "$BOOK/**/*.md" 2>/dev/null \
       || git ls-files "$BOOK/**/*.md" "$BOOK/*.md"
   fi
 }
