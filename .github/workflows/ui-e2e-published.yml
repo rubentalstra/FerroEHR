@@ -1,0 +1,125 @@
+# SPDX-FileCopyrightText: FerroEHR contributors
+# SPDX-License-Identifier: MIT
+
+# The full admin-console E2E battery against the PUBLISHED console image
+# (issue #2876).
+#
+# scripts/ui-e2e.sh has carried a shipped-artifact mode
+# (UI_E2E_IMAGE/UI_E2E_IMAGE_REF) since the console lane was built, and nothing
+# ever called it: every gate ran the battery against a console cargo-leptos
+# built on the runner. A capability no lane runs is decoration, so this is its
+# caller.
+#
+# WHY WEEKLY AND NOT THE RELEASE PIPELINE. Measured 2026-08-28 against a
+# locally built image on an arm64 host: 139 journeys in 256s, and 7m17s for
+# everything the battery does once the images exist (compose up, Keycloak
+# setup, REST seeding, console start, chromedriver, the journeys, teardown).
+# What is NOT cheap is the input it needs — the e2e test binaries, compiled
+# from this checkout. release.yml is a PUBLISHING pipeline, and a publishing
+# lane restores no build cache (.claude/rules/reliability.md), so that compile
+# would be fully cold there; ci.yml budgets 45 minutes for the same compile
+# WITH sccache. Paying that on the critical path of every release buys little:
+# the highest-value slice of this battery — a real browser logging in through
+# the shipped artifact — the release already gates, via
+# docker/admin-ui/login-smoke.sh. Here the compile caches like any test lane
+# and the wall clock gates nothing.
+#
+# WHAT IT DRIVES. The three images of the latest RELEASE, and the repository
+# checked out at that release's own tag — the journeys and the artifact they
+# drive have to be the same generation, which is exactly what a run against
+# `develop` would not guarantee.
+#
+# RUN COLOUR. This is a test battery, not a probe: a failing journey is a real
+# defect in the shipped console and the run goes RED.
+name: ui-e2e (published images)
+
+on:
+  schedule:
+    # Weekly, Tuesday 05:23 UTC. Off the hour: GitHub documents that runs
+    # scheduled on the hour are delayed by load spikes
+    # (https://docs.github.com/en/actions/reference/workflows-and-actions/events-that-trigger-workflows#schedule).
+    - cron: "23 5 * * 2"
+  workflow_dispatch:
+    inputs:
+      release-tag:
+        description: "Release tag to drive (default: the latest release)"
+        required: false
+        type: string
+
+permissions: {}
+
+concurrency:
+  group: ui-e2e-published
+  cancel-in-progress: false
+
+jobs:
+  battery:
+    name: ui-e2e (published console image)
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+    permissions:
+      contents: read
+      packages: read # pull the published images
+    steps:
+      # Resolved BEFORE the checkout, because it decides what to check out.
+      - name: Resolve the release under test
+        id: release
+        env:
+          GH_TOKEN: ${{ github.token }}
+          REPO: ${{ github.repository }}
+          REQUESTED: ${{ inputs.release-tag }}
+        run: |
+          set -euo pipefail
+          tag="$REQUESTED"
+          if [ -z "$tag" ]; then
+            tag=$(gh api "repos/${REPO}/releases/latest" --jq '.tag_name')
+          fi
+          # Strict, because this value becomes a checkout `ref` and three image
+          # tags: anything that is not a release tag is refused here rather
+          # than resolved into something surprising later.
+          if ! printf '%s' "$tag" | grep -qE '^v[0-9]+\.[0-9]+\.[0-9]+(-[0-9A-Za-z.]+)?$'; then
+            echo "::error::'$tag' is not a vX.Y.Z release tag"
+            exit 1
+          fi
+          echo "tag=$tag" >> "$GITHUB_OUTPUT"
+          echo "version=${tag#v}" >> "$GITHUB_OUTPUT"
+          echo "Driving release $tag"
+
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+          ref: ${{ steps.release.outputs.tag }}
+
+      # The e2e test binaries compile from this checkout; nothing here is
+      # release input, so an ordinary test-lane cache applies.
+      - uses: actions-rust-lang/setup-rust-toolchain@166cdcfd11aee3cb47222f9ddb555ce30ddb9659 # v1.17.0
+      - uses: taiki-e/install-action@b6ff580856c41316412a0b9b60540fbc6f8c82cc # v2.86.7
+        with:
+          tool: cargo-nextest
+
+      - uses: docker/login-action@dbcb813823bdd20940b903addbd779551569679f # v4.6.0
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      # UI_E2E_IMAGE_REF is the console artifact under test; the two CDR images
+      # are FIXTURES, pinned to the same release so a red run names the console
+      # rather than a version skew. UI_E2E_NO_BUILD keeps compose from
+      # rebuilding either of them from this checkout.
+      - name: Run the battery against the published images
+        env:
+          UI_E2E_IMAGE: "1"
+          UI_E2E_IMAGE_REF: ghcr.io/${{ github.repository_owner }}/ferroehr-admin-ui:${{ steps.release.outputs.version }}
+          UI_E2E_NO_BUILD: "1"
+          FERROEHR_IMAGE: ghcr.io/${{ github.repository_owner }}/ferroehr:${{ steps.release.outputs.version }}
+          FERROEHR_POSTGRES_IMAGE: ghcr.io/${{ github.repository_owner }}/ferroehr-postgres:${{ steps.release.outputs.version }}
+        run: bash scripts/ui-e2e.sh
+
+      - name: Upload journey screenshots
+        if: always()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: ui-e2e-published-screenshots
+          path: target/ui-e2e/screenshots/
+          if-no-files-found: ignore

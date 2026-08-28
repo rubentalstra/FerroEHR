@@ -13,9 +13,14 @@
 #                       image (docker compose build of docker/admin-ui/
 #                       Dockerfile + the e2e-env override) instead of a host
 #                       cargo-leptos build — the shipped-artifact battery.
+#                       Its caller is the weekly
+#                       .github/workflows/ui-e2e-published.yml lane, which
+#                       drives the latest release's published images; measured
+#                       2026-08-28 at 139 journeys in 256s (7m17s for the whole
+#                       battery once the images exist).
 #   UI_E2E_IMAGE_REF    with UI_E2E_IMAGE: use this exact (already published)
-#                       image reference instead of building — CI verifies the
-#                       very artifact containers.yml pushed.
+#                       image reference instead of building — the weekly lane
+#                       verifies the very artifact the release pushed.
 #   UI_E2E_NO_COMPOSE   if set, assume CDR+Keycloak are already up.
 #   UI_E2E_NO_BUILD     if set, `up --no-build` the compose stack (use images
 #                       already present as the `*_IMAGE` refs) instead of
@@ -36,7 +41,8 @@
 #   UI_E2E_SHOTS_ONLY   if set, skip the journeys entirely (capture pass only).
 #   UI_E2E_DOCS_SHOTS   if set, also run the --docs-shots capture pass
 #                       (canonical per-screen screenshots for website/book).
-#   CHROMEDRIVER        chromedriver binary (default: chromedriver on PATH).
+#   CHROMEDRIVER        chromedriver binary; else CHROMEWEBDRIVER (the GitHub
+#                       runner images' variable), else chromedriver on PATH.
 #
 # The journeys themselves read:
 #   UI_E2E_BASE_URL        the console origin (set by this script)
@@ -265,17 +271,25 @@ if [[ -n "${UI_E2E_IMAGE:-}" ]]; then
 else
   if [[ -n "${UI_E2E_PREBUILT_CONSOLE:-}" ]]; then
     echo "── using the prebuilt console (UI_E2E_PREBUILT_CONSOLE)"
-    for p in "$ROOT/target/debug/ferroehr-admin-ui" "$ROOT/target/site/pkg"; do
+    # hash.txt is as load-bearing as the binary: without it the renderer names
+    # the unhashed /pkg files, which the hashed bundle does not contain.
+    for p in "$ROOT/target/debug/ferroehr-admin-ui" "$ROOT/target/debug/hash.txt" \
+             "$ROOT/target/site/pkg"; do
       [[ -e "$p" ]] || { echo "FATAL: UI_E2E_PREBUILT_CONSOLE set but $p is missing" >&2; exit 1; }
     done
   else
     echo "── building the console (cargo-leptos)"
-    (cd app/ferroehr-admin-ui && LEPTOS_TAILWIND_VERSION=v4.3.3 cargo leptos build)
+    LEPTOS_TAILWIND_VERSION=v4.3.3 bash scripts/cargo-leptos.sh build
   fi
   echo "── starting the console on $CONSOLE_ADDR"
+  # LEPTOS_HASH_FILES is the runtime half of the crate manifest's `hash-files`
+  # (leptos_config reads it from the environment, with no compile-time
+  # fallback): it is what makes the served page name the content-hashed /pkg
+  # files this build produced.
   LEPTOS_SITE_ROOT="$ROOT/target/site" \
   LEPTOS_SITE_ADDR="$CONSOLE_ADDR" \
   LEPTOS_OUTPUT_NAME="ferroehr-admin-ui" \
+  LEPTOS_HASH_FILES="true" \
   FERROEHR_ADMIN__CDR__BASE_URL="$CDR_URL" \
   FERROEHR_ADMIN__AUTH__OIDC__ENABLED="true" \
   FERROEHR_ADMIN__AUTH__OIDC__ISSUER="http://keycloak:8081/auth/realms/ferroehr" \
@@ -300,7 +314,17 @@ curl -sf "$CONSOLE_URL/login" \
     done
 
 # ── 4. chromedriver ──────────────────────────────────────────────────────────
-CHROMEDRIVER_BIN="${CHROMEDRIVER:-chromedriver}"
+# CHROMEWEBDRIVER is the GitHub runner images' own variable and the driver is
+# NOT on their PATH, so a lane that did not spell the path out would fail on a
+# runner that ships chromedriver (the login-smoke gate resolves it the same
+# way).
+if [[ -n "${CHROMEDRIVER:-}" ]]; then
+  CHROMEDRIVER_BIN="$CHROMEDRIVER"
+elif [[ -n "${CHROMEWEBDRIVER:-}" ]]; then
+  CHROMEDRIVER_BIN="$CHROMEWEBDRIVER/chromedriver"
+else
+  CHROMEDRIVER_BIN="chromedriver"
+fi
 if ! command -v "$CHROMEDRIVER_BIN" >/dev/null; then
   echo "FATAL: chromedriver not found (set CHROMEDRIVER)" >&2
   exit 1

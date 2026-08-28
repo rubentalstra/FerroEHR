@@ -215,7 +215,8 @@ jobs:
           # scripts/ is NOT build-relevant by default: the cargo jobs never
           # execute repo scripts, so a new watcher/site/release script must
           # not cost a Rust run. Allowlist the ONLY scripts a code-gated CI
-          # job actually executes (the drift check and the e2e harness).
+          # job actually executes (the drift check, the e2e harness, and the
+          # frozen-lockfile cargo-leptos wrapper the console build runs).
           # The deployment harness drives the composed stack, so it is relevant
           # to its own scripts, the compose files, and the server image — and to
           # the code, since what it probes IS the server.
@@ -225,7 +226,7 @@ jobs:
             echo "deploy=false" >> "$GITHUB_OUTPUT"
           fi
           code_relevant=$(echo "$changed" | grep -vE '^scripts/' || true)
-          if echo "$changed" | grep -qE '^scripts/(checks/codegen-drift|ui-e2e)\.sh$'; then
+          if echo "$changed" | grep -qE '^scripts/(checks/codegen-drift|ui-e2e|cargo-leptos)\.sh$'; then
             echo "code=true" >> "$GITHUB_OUTPUT"
           # `corpus/` is the shared vendored breadth corpus the crate and
           # application suites read (it moved out of `tools/` with the
@@ -244,7 +245,7 @@ jobs:
           # Dockerfile change, or a change to the job's own build recipe each
           # alter what is under test, and without them a build/caching-only PR
           # could not even run the job it changes.
-          if echo "$changed" | grep -qE '^(app/ferroehr-admin-ui/|scripts/ui-e2e\.sh$|docker-compose\.yml$|docker-compose\.override\.yml$|docker-compose\.keycloak\.yml$|docker/Dockerfile$|docker/admin-ui/|docker/keycloak/|docker/postgres/|Cargo\.lock$|\.github/workflows/ci\.yml$)' ; then
+          if echo "$changed" | grep -qE '^(app/ferroehr-admin-ui/|scripts/ui-e2e\.sh$|scripts/cargo-leptos\.sh$|docker-compose\.yml$|docker-compose\.override\.yml$|docker-compose\.keycloak\.yml$|docker/Dockerfile$|docker/admin-ui/|docker/keycloak/|docker/postgres/|Cargo\.lock$|\.github/workflows/ci\.yml$)' ; then
             echo "admin_ui=true" >> "$GITHUB_OUTPUT"
           else
             echo "admin_ui=false" >> "$GITHUB_OUTPUT"
@@ -1540,12 +1541,15 @@ jobs:
           # FIRST, cargo-leptos LAST, stage immediately.
           cargo nextest archive -p ferroehr-admin-ui --features ssr \
             --archive-file ui-e2e-tests.tar.zst
-          (cd app/ferroehr-admin-ui && cargo leptos build)
+          bash scripts/cargo-leptos.sh build
           # One staging tree = one artifact = one cache path. The console
           # binary's executable bit is restored by the battery job (GitHub
-          # artifacts do not preserve file permissions).
+          # artifacts do not preserve file permissions). hash.txt is the
+          # content-hash manifest the renderer reads the /pkg filenames back
+          # from; without it the console 404s its own hashed wasm.
           mkdir -p ui-e2e-console-stage/site
           cp target/debug/ferroehr-admin-ui ui-e2e-console-stage/
+          cp target/debug/hash.txt ui-e2e-console-stage/
           cp ui-e2e-tests.tar.zst ui-e2e-console-stage/
           cp -R target/site/. ui-e2e-console-stage/site/
       - name: sccache statistics
@@ -1625,6 +1629,8 @@ jobs:
           set -euo pipefail
           mkdir -p target/debug target/site
           install -m0755 ui-e2e-console-stage/ferroehr-admin-ui target/debug/ferroehr-admin-ui
+          # leptos resolves the hash manifest as current_exe().parent()/hash.txt.
+          cp ui-e2e-console-stage/hash.txt target/debug/hash.txt
           cp -R ui-e2e-console-stage/site/. target/site/
           test -f ui-e2e-console-stage/ui-e2e-tests.tar.zst
       - uses: docker/setup-buildx-action@37fe631027851001ddb9b187196cc803df7f5f0e # v4.3.0

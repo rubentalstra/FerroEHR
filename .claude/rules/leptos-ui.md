@@ -290,8 +290,10 @@ in the root `[workspace.dependencies]`: Leptos 0.8 SSR/full-stack,
 - Gates for every UI change: `cargo clippy -p ferroehr-admin-ui
   --all-targets` green on native **and**
   `--target wasm32-unknown-unknown` (lib); `cargo nextest run -p
-  ferroehr-admin-ui`; `leptosfmt` + `cargo fmt` clean; `cargo leptos build`
-  completes. Target-dir discipline from CLAUDE.md applies unchanged.
+  ferroehr-admin-ui`; `leptosfmt` + `cargo fmt` clean;
+  `bash scripts/cargo-leptos.sh build` completes — always the wrapper, never a
+  bare `cargo leptos`, which resolves the workspace through an unlocked
+  `cargo metadata` of its own and rewrites `Cargo.lock`. Target-dir discipline from CLAUDE.md applies unchanged.
 - `console_error_panic_hook` is set in the hydrate entry point (real stack
   traces in the browser — `getting_started/leptos_dx`). RustRover users:
   leptosfmt runs via the FileWatchers plugin (no rust-analyzer there).
