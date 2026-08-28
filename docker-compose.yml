@@ -67,12 +67,23 @@
 #   FERROEHR_BIND_HOST=10.0.0.5 docker compose up     # one address
 # Prefer a reverse proxy on the host over publishing the database at all.
 #
+# Port already in use? Every published port is a variable (#2869) — no edit:
+#   FERROEHR_PORT=8081 docker compose up
+# (Likewise FERROEHR_DB_PORT / FERROEHR_ADMIN_UI_PORT / FERROEHR_S3_PORT.)
+# Defaults stay fixed deliberately: the docs assume localhost:8080, and
+# Docker's own auto-allocation exists only for mappings that omit the host
+# port entirely (docs.docker.com/engine/network/port-publishing) — a server
+# that moved ports silently would break every printed URL.
+#
 # ── Repo development / CI (never needed by downloaders) ──────────────────────
-# In a repo checkout, docker-compose.override.yml is merged automatically onto
-# a bare `docker compose up`: it flips the images to `:local`
-# build-from-source tags, swaps the inline config below for
-# docker/ferroehr.dev.toml, and defines the dev `keycloak` profile (the full
-# exported realm). The conformance lanes never touch this file — they compose
+# The dev overlay is EXPLICIT, never auto-merged (#2868 — the auto-merged
+# `override` name made a checkout's bare `docker compose up` build from
+# source and reference unpublished `:local` tags, breaking the quickstart):
+#   docker compose -f docker-compose.yml -f docker-compose.dev.yml up --build
+# It flips the images to `:local` build-from-source tags, swaps the inline
+# config below for docker/ferroehr.dev.toml, and defines the dev `keycloak`
+# profile (the full exported realm). A bare `docker compose up` in a checkout
+# is now the SAME published-images quickstart the downloaded file gives. The conformance lanes never touch this file — they compose
 # their own self-contained SUT stack (docker/sut-ferroehr.yml, see its header
 # for the lane table). NO hard-coded `name:` (issue #282 D3): each lane picks
 # its own project name so the lanes coexist; all lanes share the
@@ -420,7 +431,7 @@ configs:
   #     ADMIN / USER / READONLY separation)
   #   * admin API + management introspection enabled, permissive CORS
   # The repo's dev/CI lanes replace this whole config with
-  # docker/ferroehr.dev.toml via docker-compose.override.yml.
+  # docker/ferroehr.dev.toml via docker-compose.dev.yml.
   ferroehr-config:
     content: |
       [server]

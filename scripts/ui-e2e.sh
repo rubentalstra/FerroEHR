@@ -143,7 +143,7 @@ if [[ -z "${UI_E2E_NO_COMPOSE:-}" ]]; then
   # The e2e overlay rides BOTH lanes: without it here, its `ferroehr:` env
   # block (tenancy on, terminology on) never reached the host-mode CDR — the
   # lane CI actually runs.
-  docker compose -f docker-compose.yml -f docker-compose.override.yml \
+  docker compose -f docker-compose.yml -f docker-compose.dev.yml \
     -f docker/admin-ui/e2e-env.yml \
     up -d "${BUILD_ARGS[@]}" ferroehr-postgres ferroehr keycloak
 fi
@@ -253,12 +253,12 @@ if [[ -n "${UI_E2E_IMAGE:-}" ]]; then
   if [[ -n "${UI_E2E_IMAGE_REF:-}" ]]; then
     echo "── compose up the PUBLISHED console image ($UI_E2E_IMAGE_REF)"
     FERROEHR_ADMIN_UI_IMAGE="$UI_E2E_IMAGE_REF" \
-      docker compose -f docker-compose.yml -f docker-compose.override.yml \
+      docker compose -f docker-compose.yml -f docker-compose.dev.yml \
       -f docker/admin-ui/e2e-env.yml \
       up -d --no-build --pull always ferroehr-admin-ui
   else
     echo "── compose up the console image (build from source)"
-    docker compose -f docker-compose.yml -f docker-compose.override.yml \
+    docker compose -f docker-compose.yml -f docker-compose.dev.yml \
       -f docker/admin-ui/e2e-env.yml \
       up -d --build ferroehr-admin-ui
   fi

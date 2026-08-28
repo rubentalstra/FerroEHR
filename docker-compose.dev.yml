@@ -1,10 +1,14 @@
 # SPDX-FileCopyrightText: FerroEHR contributors
 # SPDX-License-Identifier: MIT
 
-# Repo-development override — merged automatically onto docker-compose.yml by
-# any bare `docker compose` invocation run from a repo checkout
-# (docs.docker.com/compose/how-tos/multiple-compose-files — "the override
-# file"). Downloaders of the standalone docker-compose.yml never see it.
+# Repo-development overlay — applied EXPLICITLY, never automatically:
+#   docker compose -f docker-compose.yml -f docker-compose.dev.yml up --build
+# It deliberately does NOT carry Compose's auto-merged `override` name
+# (docs.docker.com/compose/how-tos/multiple-compose-files): under that name a
+# checkout's bare `docker compose up` silently became the from-source dev
+# path — unpublished `:local` tags, `docker/` build contexts — and broke the
+# quickstart for anyone cloning the repo (#2868). A bare `docker compose up`
+# now runs the same published-images quickstart everywhere.
 #
 # It restores the from-source developer posture:
 #   * images flip to the unpublished `:local` tags + `build:` blocks (both

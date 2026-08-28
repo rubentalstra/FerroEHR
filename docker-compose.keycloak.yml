@@ -38,7 +38,7 @@
 # deployment configure your own issuer via FERROEHR__AUTH__OIDC__* (or the
 # [auth.oidc] config block) and remove this overlay.
 #
-# The repo's dev/e2e lanes use their OWN Keycloak (docker-compose.override.yml,
+# The repo's dev/e2e lanes use their OWN Keycloak (docker-compose.dev.yml,
 # `keycloak` profile) with the full exported realm from docker/keycloak/import
 # — this overlay's minimal demo realm is deliberately independent of it.
 

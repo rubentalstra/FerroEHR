@@ -4,7 +4,7 @@
 # Compose override for the image-mode E2E run (scripts/ui-e2e.sh with
 # UI_E2E_IMAGE=1): the composed console image receives the same OIDC test
 # wiring the host-mode harness passes as process env. The issuer uses the
-# in-network hostname at the aligned port (docker-compose.override.yml keycloak
+# in-network hostname at the aligned port (docker-compose.dev.yml keycloak
 # KC_HTTP_PORT) so the SAME URL resolves for the container (docker DNS)
 # and for the E2E browser (a chromedriver host-resolver mapping of
 # `keycloak` to 127.0.0.1). The client secret is the shipped DEV realm's
