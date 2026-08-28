@@ -308,7 +308,7 @@ jobs:
           GH_TOKEN: ${{ secrets.TOOLCHAIN_BUMP_TOKEN || github.token }}
           HAVE_TOKEN: ${{ secrets.TOOLCHAIN_BUMP_TOKEN != '' && '1' || '0' }}
           REPO: ${{ github.repository }}
-          BASE_BRANCH: ${{ github.event.repository.default_branch || 'develop' }}
+          BASE_BRANCH: ${{ github.event.repository.default_branch || 'main' }}
           OLD_VERSION: ${{ steps.discover.outputs.old_version }}
           NEW_VERSION: ${{ steps.discover.outputs.new_version }}
           VARIANT: ${{ steps.image.outputs.variant }}

@@ -32,7 +32,7 @@ Simplified Data Formats (FLAT / STRUCTURED / Web Template).
 
 This crate is **half generated, half hand-written**, and every generated file
 carries a `// @generated` header. The generated halves are emitted
-deterministically by [`openehr-codegen`](https://github.com/rubentalstra/FerroEHR/tree/develop/tools/openehr-codegen)
+deterministically by [`openehr-codegen`](https://github.com/rubentalstra/FerroEHR/tree/main/tools/openehr-codegen)
 from the vendored openEHR artifacts: the XML codec from the ITS-XML XSDs plus
 the BMM field model, the REST contract from the ITS-REST OpenAPI documents,
 the `_type` dispatch table from the BMM, and the three archetype XML codecs

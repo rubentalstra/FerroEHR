@@ -6,7 +6,7 @@ name: CI
 
 on:
   push:
-    branches: [develop, main]
+    branches: [main]
   # The types are spelled out (#2777) because the implicit default is
   # `[opened, synchronize, reopened]` only: applying an escape-hatch label
   # (`no-changelog`, `no-chart-bump`, `no-crate-bump`, `no-ui-visual-change`)
@@ -37,7 +37,7 @@ concurrency:
   # any existing pending job or workflow in the same concurrency group will be
   # canceled and the new queued job or workflow will take its place"
   # (https://docs.github.com/en/actions/reference/workflows-and-actions/workflow-syntax#concurrency).
-  # With a per-ref group every develop push shared one group, so a push that
+  # With a per-ref group every main push shared one group, so a push that
   # queued behind a running one was cancelled by the next push and its guard
   # tier never reported at all — which is what happened to the v4.0.5 release
   # merge commit (run 32951162038). Keying non-PR runs by SHA gives each push
@@ -52,8 +52,8 @@ concurrency:
   # — used in preference to the `a && b || c` idiom, which the operator table
   # does not define.
   group: ci-${{ case(github.event_name == 'pull_request', github.ref, github.sha) }}
-  # Cancel superseded PR runs, NEVER a develop run. The change filter below
-  # compares only THIS push's delta, so a develop run cancelled mid-flight is
+  # Cancel superseded PR runs, NEVER a main run. The change filter below
+  # compares only THIS push's delta, so a main run cancelled mid-flight is
   # never re-evaluated by the next push if that push touches no code — a
   # defect can then land permanently with every job reported green-or-skipped.
   cancel-in-progress: ${{ github.event_name == 'pull_request' }}
@@ -92,8 +92,8 @@ env:
   # the queue ever builds a group. Everything else is ungated by event and
   # runs on all three.
   #
-  # Cache policy (the ruff/polars `save-if` idiom): only develop writes the
-  # per-job rust-cache entries; PR branches restore develop's warm cache and
+  # Cache policy (the ruff/polars `save-if` idiom): only main writes the
+  # per-job rust-cache entries; PR branches restore main's warm cache and
   # never publish their own. PR-branch caches are read by nothing else (GHA
   # cache scoping), so letting every PR save would only thrash the shared
   # 10 GB repo quota and evict the caches that matter — including the ui-e2e
@@ -665,7 +665,7 @@ jobs:
       # guards are the only cargo consumers in this job.
       - uses: actions-rust-lang/setup-rust-toolchain@166cdcfd11aee3cb47222f9ddb555ce30ddb9659 # v1.17.0
         with:
-          cache-save-if: ${{ (github.ref == 'refs/heads/develop' || github.ref == 'refs/heads/main') }}
+          cache-save-if: ${{ github.ref == 'refs/heads/main' }}
       # A packaged src file embedding a path its own package does not carry
       # compiles in this repository and breaks inside the published .crate.
       - name: Packaged sources embed only packaged files
@@ -835,7 +835,7 @@ jobs:
           persist-credentials: false
       - uses: actions-rust-lang/setup-rust-toolchain@166cdcfd11aee3cb47222f9ddb555ce30ddb9659 # v1.17.0
         with:
-          cache-save-if: ${{ (github.ref == 'refs/heads/develop' || github.ref == 'refs/heads/main') }}
+          cache-save-if: ${{ github.ref == 'refs/heads/main' }}
       - uses: taiki-e/install-action@b6ff580856c41316412a0b9b60540fbc6f8c82cc # v2.86.7
         with:
           tool: cargo-deny
@@ -913,7 +913,7 @@ jobs:
         with:
           components: clippy
           target: wasm32-unknown-unknown
-          cache-save-if: ${{ (github.ref == 'refs/heads/develop' || github.ref == 'refs/heads/main') }}
+          cache-save-if: ${{ github.ref == 'refs/heads/main' }}
       # The console's `hydrate`/`ssr` features are mutually exclusive (a
       # compile_error! guard per the Cargo book §Mutually exclusive features),
       # so the workspace lane excludes it and the crate gets its own two
@@ -958,7 +958,7 @@ jobs:
       - uses: actions-rust-lang/setup-rust-toolchain@166cdcfd11aee3cb47222f9ddb555ce30ddb9659 # v1.17.0
         with:
           components: clippy
-          cache-save-if: ${{ (github.ref == 'refs/heads/develop' || github.ref == 'refs/heads/main') }}
+          cache-save-if: ${{ github.ref == 'refs/heads/main' }}
       - run: cargo clippy --locked -p ferroehr-server --no-default-features --all-targets -- -D warnings
       - run: cargo clippy --locked -p ferroehr-server --no-default-features --features events --all-targets -- -D warnings
       - run: cargo clippy --locked -p ferroehr-server --no-default-features --features fhir --all-targets -- -D warnings
@@ -971,12 +971,12 @@ jobs:
     name: rustdoc
     needs: changes
     # Path-filtered on PRs (a PR touching no Rust cannot introduce a doc
-    # defect), but ALWAYS run on a develop push: the filter is a per-push
+    # defect), but ALWAYS run on a main push: the filter is a per-push
     # DELTA, so a code commit whose run was cancelled or whose successor push
     # is docs-only would otherwise never have its docs evaluated at all. This
     # job is ~1/10 the length of the test job, so re-evaluating the whole tree
-    # on every develop push is cheap insurance.
-    if: needs.changes.outputs.code == 'true' || (github.ref == 'refs/heads/develop' || github.ref == 'refs/heads/main')
+    # on every main push is cheap insurance.
+    if: needs.changes.outputs.code == 'true' || github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
     timeout-minutes: 25
     permissions:
@@ -989,7 +989,7 @@ jobs:
           persist-credentials: false
       - uses: actions-rust-lang/setup-rust-toolchain@166cdcfd11aee3cb47222f9ddb555ce30ddb9659 # v1.17.0
         with:
-          cache-save-if: ${{ (github.ref == 'refs/heads/develop' || github.ref == 'refs/heads/main') }}
+          cache-save-if: ${{ github.ref == 'refs/heads/main' }}
       # --document-private-items: stale intra-doc links can hide behind
       # non-pub items the public build never evaluates (#1838; measured
       # cost ~10s incremental over the public-only run).
@@ -1021,7 +1021,7 @@ jobs:
           persist-credentials: false
       - uses: actions-rust-lang/setup-rust-toolchain@166cdcfd11aee3cb47222f9ddb555ce30ddb9659 # v1.17.0
         with:
-          cache-save-if: ${{ (github.ref == 'refs/heads/develop' || github.ref == 'refs/heads/main') }}
+          cache-save-if: ${{ github.ref == 'refs/heads/main' }}
       - uses: taiki-e/install-action@b6ff580856c41316412a0b9b60540fbc6f8c82cc # v2.86.7
         with:
           tool: cargo-hack
@@ -1043,7 +1043,7 @@ jobs:
       - uses: actions-rust-lang/setup-rust-toolchain@166cdcfd11aee3cb47222f9ddb555ce30ddb9659 # v1.17.0
         with:
           components: rustfmt
-          cache-save-if: ${{ (github.ref == 'refs/heads/develop' || github.ref == 'refs/heads/main') }}
+          cache-save-if: ${{ github.ref == 'refs/heads/main' }}
       - name: Regenerate and diff
         run: bash scripts/checks/codegen-drift.sh
 
@@ -1085,7 +1085,7 @@ jobs:
           persist-credentials: false
       - uses: actions-rust-lang/setup-rust-toolchain@166cdcfd11aee3cb47222f9ddb555ce30ddb9659 # v1.17.0
         with:
-          cache-save-if: ${{ (github.ref == 'refs/heads/develop' || github.ref == 'refs/heads/main') }}
+          cache-save-if: ${{ github.ref == 'refs/heads/main' }}
       - name: Enable required extensions + non-durable test tuning
         # libxml2-utils provides xmllint — the C14N XML parity gate shells out
         # to it (serialization.md); the runner image does not ship it.
@@ -1120,7 +1120,7 @@ jobs:
   # chart's security posture — runAsNonRoot, readOnlyRootFilesystem,
   # allowPrivilegeEscalation:false, seccomp RuntimeDefault, drop ALL,
   # enableServiceLinks:false, the default-deny NetworkPolicy — and it ran in no
-  # workflow at all, so the goldens went stale on develop and nothing failed.
+  # workflow at all, so the goldens went stale on main and nothing failed.
   #
   # helm is INSTALLED, never taken from the runner image: `helm template` output
   # is not byte-stable across helm releases (4.2.3 emits blank lines 4.1.3 does

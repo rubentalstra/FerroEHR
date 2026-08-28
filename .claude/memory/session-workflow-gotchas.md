@@ -86,7 +86,7 @@ Recurring session-workflow traps (all hit 2026-07-13/14):
 commit-message wording. Late labels: since #2777 applying a label raises a fresh run itself (labeled/unlabeled types); never re-run the failed job (stale payload).
 
 6. **Merge PRs only behind a GREEN gate, in code** (hit 2026-07-26, broke
-   develop's rustfmt): never chain `gh pr merge` unconditionally after a
+   main's rustfmt): never chain `gh pr merge` unconditionally after a
    wait loop — the wait can terminate on a FAILURE and the merge still
    runs. Pattern: `if [ -z "$(gh pr checks N | grep -v 'pass\|skipping')" ];
    then gh pr merge N …; else report; fi`. Repo has no auto-merge
@@ -133,7 +133,7 @@ commit-message wording. Late labels: since #2777 applying a label raises a fresh
   regenerates a different day than the copy rendered pre-commit under the
   mtime fallback — and the regenerate-and-diff gate fails permanently INSIDE
   the tag's immutable tree (the frozen-site cut can then never pass from the
-  tag; recover by fixing the script on develop and running
+  tag; recover by fixing the script on main and running
   `scripts/site/cut-version.sh vX.Y.Z` locally — toolchain versions must
   match the workflow pins). Any rendered date derives from the committed
   artifact in UTC (`TZ=UTC --date=format-local:%Y-%m-%d`), never `%cs`,
@@ -141,7 +141,7 @@ commit-message wording. Late labels: since #2777 applying a label raises a fresh
 - **`gh pr merge --admin` is blocked by the harness permission classifier**
   (hit 2026-08-18), and the repo has no auto-merge — so the merge path is:
   wait for the run, rerun the flaky red (`gh run rerun <id> --failed`; while
-  #2285 is open, ui-e2e is red-on-develop and needs this), then plain
+  #2285 is open, ui-e2e is red-on-main and needs this), then plain
   `gh pr merge --merge` behind the green-gate `if` (gotcha 6). `gh run
   rerun` refuses while the run is `in_progress` — wait for `completed`
   first.
@@ -190,7 +190,7 @@ commit-message wording. Late labels: since #2777 applying a label raises a fresh
     BROKEN — read the log before choosing** (both halves hit live at the two
     2026-08-27 cuts). When the leg's CODE is defective (v4.0.6's chart leg:
     the missing helm-docs), `gh run rerun --failed` re-executes the tag
-    snapshot and fails identically — fix forward on develop, then the leg's
+    snapshot and fails identically — fix forward on main, then the leg's
     dispatch recovery lane (chart: refresh the committed appVersion default
     first; the empty-Unreleased changelog fallback injects the right
     section), and the red run stays as the honest record. When the failure

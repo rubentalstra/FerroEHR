@@ -48,7 +48,7 @@
 # reads the chart pages and the chart pages only.
 #
 # Usage: scripts/checks/docs-claims.sh [--all | <file>...]
-#   no args  → the book files changed against origin/develop
+#   no args  → the book files changed against origin/main
 #   --all    → every tracked book page
 set -euo pipefail
 cd "$(dirname "$0")/../.."
@@ -73,8 +73,7 @@ collect() {
   elif [[ "$#" -gt 0 ]]; then
     printf '%s\n' "$@"
   else
-    git diff --name-only origin/develop...HEAD -- "$BOOK/*.md" "$BOOK/**/*.md" 2>/dev/null \
-      || git diff --name-only origin/main...HEAD -- "$BOOK/*.md" "$BOOK/**/*.md" 2>/dev/null \
+    git diff --name-only origin/main...HEAD -- "$BOOK/*.md" "$BOOK/**/*.md" 2>/dev/null \
       || git ls-files "$BOOK/**/*.md" "$BOOK/*.md"
   fi
 }

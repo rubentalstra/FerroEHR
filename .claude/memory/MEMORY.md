@@ -1,7 +1,7 @@
 # Memory index
 
 - [Owner work style](owner-work-style.md) — defer nothing; no quick fixes (proper rewrites welcome); orchestrator codes context-heavy work itself; big-bang rewrites converge once at the end (no intermediate stubs); specs re-read first-hand; never copy a number forward; rerun `scripts/conformance.sh` after runner/validation merges
-- [Autonomous phase flow](autonomous-phase-flow.md) — standing: PR+merge each phase, checkout develop, start the next without asking; never branch while finished work sits unmerged
+- [Autonomous phase flow](autonomous-phase-flow.md) — standing: PR+merge each phase, checkout main, start the next without asking; never branch while finished work sits unmerged
 - [Merge on local gates](merge-on-local-gates.md) — local gates green (fmt+clippy+nextest+CNF validate) → merge the PR immediately; CI is a post-merge backstop
 - [Max 2 concurrent workers](max-two-concurrent-workers.md) — implementation subagents run in pairs, never wider
 - [One worker per phase, hard fences](one-worker-per-phase-hard-fences.md) — within a refactor phase run ONE worker with explicit file fences; reverts are orchestrator-only; back up before any reset

@@ -13,7 +13,7 @@
 #                  pointers (`:latest`, /docs/latest/, the hosted sandbox)
 #   is-prerelease  a v* tag WITH a `-` suffix
 #
-# Neither is true when the ref is not a `v*` tag at all (a develop push, a
+# Neither is true when the ref is not a `v*` tag at all (a main push, a
 # pull request), so a caller can branch on one output alone.
 #
 # A workflow that must decide in an EXPRESSION position a step output cannot

@@ -25,11 +25,11 @@
 # three images (title comes from the repo NAME, so all three would claim to be
 # "FerroEHR"). Two declarations of one fact drift; this makes them fail instead.
 #
-# EVERY workflow that declares them is checked, not one: the develop lane
+# EVERY workflow that declares them is checked, not one: the main lane
 # (containers.yml) and the release pipeline (release.yml) each carry the three
 # `uses: build-image.yml` calls with their labels (#2776), so a label corrected
 # in one of them alone would publish a differently-described image at a release
-# than on develop.
+# than on main.
 #
 # Ownership, which is what the checks below encode:
 #   build-INDEPENDENT (title, description, url, documentation, source, vendor,

@@ -234,10 +234,10 @@ jobs:
       # the first commit that adds a configuration key until the release PR —
       # a fact about the clock, not about the artifact. A dispatch is judged
       # against an image built from THIS tree instead: containers.yml's
-      # exact-commit `sha-` tag when it published one, otherwise `develop`.
-      # `develop` is a sound fallback rather than a guess: every path that can
+      # exact-commit `sha-` tag when it published one, otherwise `main`.
+      # `main` is a sound fallback rather than a guess: every path that can
       # move the server's configuration vocabulary sits inside that workflow's
-      # `app` filter, so the `develop` tag carries this tree's vocabulary even
+      # `app` filter, so the `main` tag carries this tree's vocabulary even
       # when the head commit built no image of its own.
       - name: Select the image the chart is judged against
         id: judge
@@ -256,8 +256,8 @@ jobs:
               image="$candidate"
               why="the image built from this commit; appVersion ${APP} predates this tree's configuration vocabulary"
             else
-              image="${APP_IMAGE}:develop"
-              why="the develop image (containers.yml published none for ${SHA:0:7}); appVersion ${APP} predates this tree's configuration vocabulary"
+              image="${APP_IMAGE}:main"
+              why="the main image (containers.yml published none for ${SHA:0:7}); appVersion ${APP} predates this tree's configuration vocabulary"
             fi
           fi
           echo "image=$image" >> "$GITHUB_OUTPUT"

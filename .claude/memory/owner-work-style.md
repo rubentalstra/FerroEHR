@@ -23,7 +23,7 @@ every phase:
   the hard, context-rich code itself.
 - **Rerun the CNF pipeline (`scripts/conformance.sh`) after merging anything
   that touches the runner or validation** — the committed baseline is only
-  trustworthy immediately after a rerun (a skipped rerun once left develop
+  trustworthy immediately after a rerun (a skipped rerun once left main
   claiming 92 phantom failures).
 - **Never copy a number forward.** Any figure quoted in a doc, issue, PR, or
   status update is re-derived from the committed artifacts at the moment of

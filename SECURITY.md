@@ -16,7 +16,7 @@ running a clinical deployment under change control has to plan around it.
 | The Helm chart (`oci://ghcr.io/rubentalstra/charts`) | its own SemVer, independent of the server | the newest published chart version |
 | The `openehr-*` crates (crates.io) | their own lockstep `0.0.x` line | the newest published version of all eight |
 
-**How a security fix reaches you.** The fix lands on `develop` and ships in the
+**How a security fix reaches you.** The fix lands on `main` and ships in the
 next tagged release. That is normally the next *patch* on the current minor
 (so a fix does not oblige you to take new behaviour), but the project does
 not promise it: if the fix is only correct alongside a behavioural change, the
@@ -118,8 +118,7 @@ finding.
 | Secret scanning — **validity checks** | enabled | the difference between "rotate this eventually" and "this credential is live right now" |
 | Dependabot security updates | enabled | advisory-driven bumps, exempt from the update cooldowns |
 | Private vulnerability reporting | enabled | the reporting route this document points at |
-| Ruleset `develop` (default branch) | active — no deletion, no force-push, signed commits, pull request required, `conclusion` status check required | the merge gate |
-| Ruleset `protect-main` | active — no deletion, no force-push, pull request required | |
+| Ruleset `main` (default branch) | active — no deletion, no force-push, signed commits, pull request required (code-owner review, stale approvals dismissed on push), `conclusion` status check required on an up-to-date branch; repository admins may bypass (the merge-on-local-gates lever — a deliberate, recorded trade against the Scorecard admin-enforcement warning) | the merge gate |
 | Ruleset `release-tags` (`refs/tags/v*`) | active — no tag deletion, no non-fast-forward tag update, signatures required | three lanes publish off a raw tag push (the release, the Helm chart, the documentation version cut). Release immutability protects the window *after* a release is published; this protects the window in which a tag drives a build, an image push and a chart publish |
 
 > [!NOTE]

@@ -39,7 +39,7 @@ by side as generation modules: `v1_0` (LANG 1.0.0, the latest released) and
 ## Generated code — do not edit
 
 Every type file carries a `// @generated` header. The crate is emitted
-deterministically by [`openehr-codegen`](https://github.com/rubentalstra/FerroEHR/tree/develop/tools/openehr-codegen)
+deterministically by [`openehr-codegen`](https://github.com/rubentalstra/FerroEHR/tree/main/tools/openehr-codegen)
 from the vendored openEHR BMM meta-model; hand-written spec behaviour
 (invariants, spec functions) lives in sibling `*_impl.rs` files, and the
 notation readers (`odin`, `bel`, `el`, `lexer`, the P_BMM schema reader) are

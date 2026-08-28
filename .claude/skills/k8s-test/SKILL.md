@@ -65,7 +65,7 @@ output.
    chart therefore pins `enableServiceLinks: false`, and
    `deploy/helm/validate.sh` asserts it.
 3. **The chart's `config:` defaults can be ahead of `appVersion`'s image.** Chart
-   values track the develop tree; `appVersion` names the last published release.
+   values track the main tree; `appVersion` names the last published release.
    A key added since that release makes the pod exit with
    `unknown configuration key …`. See the troubleshooting entry — it is the most
    likely failure of a first run. Check the pairing without a cluster, using the
@@ -79,7 +79,7 @@ output.
      -e FERROEHR__DB__URL=postgres://u:p@db:5432/ferroehr \
      --entrypoint /usr/local/bin/ferroehr ghcr.io/rubentalstra/ferroehr:3.17.3 config check
    # 3.17.3, 2026-08-06: `unknown configuration key statement_timeout_ms` (default
-   # overlay) and `limits` (all-features) — i.e. the chart on develop currently
+   # overlay) and `limits` (all-features) — i.e. the chart on main currently
    # cannot deploy its own appVersion without the version-skew nulls below.
    ```
 

@@ -39,7 +39,7 @@
     var versions = (manifest && manifest.versions) || [];
     if (!versions.length) {
       // Before the first tag is cut, only "dev" exists; latest resolves to dev.
-      versions = [{ id: "dev", label: "dev (develop)", path: SITE_BASE + "/docs/dev/" }];
+      versions = [{ id: "dev", label: "dev (main)", path: SITE_BASE + "/docs/dev/" }];
     }
 
     var select = document.createElement("select");

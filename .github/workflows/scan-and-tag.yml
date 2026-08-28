@@ -9,7 +9,7 @@
 # the identical order, and a second copy of a security gate is a second thing to
 # keep in step — so the pair moved here and both callers consume it:
 #
-#   * containers.yml — develop pushes and manual dispatches
+#   * containers.yml — main pushes and manual dispatches
 #   * release.yml    — the `v*` release pipeline
 #
 # The ORDER is the whole point (#2747): the builds push by digest

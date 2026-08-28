@@ -30,7 +30,7 @@ and the only place that POST happens is `.github/workflows/sandbox-deploy.yml`:
    builds `Dockerfile.vercel` — `FROM ghcr.io/rubentalstra/ferroehr:latest`,
    a pull + retag measured in seconds. The image provably exists before the
    ping, so no ordering race exists to guard against.
-2. **A posture change lands on develop** (`Dockerfile.vercel`,
+2. **A posture change lands on main** (`Dockerfile.vercel`,
    `vercel.json`, `deploy/vercel/**`): the same workflow fires on the push
    and redeploys the current release image with the new posture.
 3. **Manual**: `workflow_dispatch` on Sandbox deploy (reseed skippable).

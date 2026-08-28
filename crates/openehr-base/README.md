@@ -34,7 +34,7 @@ Every other `openehr-*` crate builds on this one.
 ## Generated code — do not edit
 
 Every type file carries a `// @generated` header. The crate is emitted
-deterministically by [`openehr-codegen`](https://github.com/rubentalstra/FerroEHR/tree/develop/tools/openehr-codegen)
+deterministically by [`openehr-codegen`](https://github.com/rubentalstra/FerroEHR/tree/main/tools/openehr-codegen)
 from the vendored openEHR BMM meta-model; hand-written spec behaviour
 (invariants, spec functions) lives in sibling `*_impl.rs` files the generator
 never rewrites. Changes belong in the emitter, never in the generated output.

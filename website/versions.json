@@ -1,6 +1,6 @@
 {
   "latest": "dev",
   "versions": [
-    { "id": "dev", "label": "dev (develop)", "path": "/docs/dev/", "released": null, "prerelease": true }
+    { "id": "dev", "label": "dev (main)", "path": "/docs/dev/", "released": null, "prerelease": true }
   ]
 }
