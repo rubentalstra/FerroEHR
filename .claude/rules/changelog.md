@@ -36,7 +36,9 @@ optional:
   job (the hosted sandbox carries NO release-cut step since #2724: its
   `Dockerfile.vercel` tracks the `:latest` release pointer and
   `sandbox-deploy.yml` redeploys + reseeds it automatically after the tag's
-  Containers run — `deploy/vercel/README.md`), + the book's pinned versions — `website/book/src/installation/
+  Containers run — `deploy/vercel/README.md`), + the chart's `appVersion` and
+  `artifacthub.io/images` tags (#2890, the same sweep — details in the Helm
+  chart bullet below), + the book's pinned versions — `website/book/src/installation/
   kubernetes.md` pins the chart `--version` and `image.tag`, and
   `website/book/src/verifying-releases.md` pins the release tag and the image
   tags in its examples; `docs-claims` catches all of them, the chart/image pins
@@ -48,11 +50,12 @@ optional:
   version match is missing**. Releases publish as OFFICIAL
   releases — `prerelease` is true only for an explicitly suffixed tag
   (`vX.Y.Z-rc1`, ...) — owner sign-off 2026-07-31.
-- **The Helm chart, in the SAME release PR:** bump the chart's own `version` —
-  EVERY release, not only on chart diffs: since #2779 the packaged chart's
-  release facts (appVersion, image tags, changes) are injected at package
-  time, so every release ships a DISTINCT packaged chart, and an unbumped
-  version collides with refuse-overwrite at the tag (#2818 — the pipeline's
+- **The Helm chart, in the SAME release PR:** set `appVersion` and the
+  `artifacthub.io/images` tags to X.Y.Z (the sweep step below), and bump the
+  chart's own `version` — EVERY release, not only on chart diffs: every
+  release ships a DISTINCT packaged chart (the changes annotation is injected
+  at package time), and an unbumped version collides with refuse-overwrite at
+  the tag (#2818 — the pipeline's
   `plan` refuses that tag before anything builds). Then
   regenerate whatever that change moved — the golden renders
   (`deploy/helm/validate.sh --update`) and the generated chart README
@@ -60,21 +63,22 @@ optional:
   README.md.gotmpl`). The chart version and `appVersion` are INDEPENDENT SemVer
   lines and stay so.
 
-  **`appVersion` is NOT a cut step any more (#2779), and neither are the
-  `artifacthub.io/images` tags.** The publish lane injects both from the tag
-  (`helm package --app-version ${TAG#v}` plus
-  `deploy/helm/release-facts.sh`), the same way it has injected
-  `artifacthub.io/changes` since #2107 and for the same reason: they are facts
-  about a release, and a committed copy is stale from the next merge onwards.
-  What stays committed is a between-releases DEFAULT, held only to being a real
-  released version whose image annotations and generated README agree with it —
-  `scripts/checks/chart-appversion.sh`, run by the `chart-appversion` CI job and
-  again by the release pipeline's `plan` at the tagged commit. Refreshing that
-  default is ordinary maintenance, not a release step — but bounded maintenance
-  (#2804): the guard also refuses a default more than ONE stable release behind
-  the newest changelog section (rc sections never qualify), so the release PR
-  that cuts X.Y.Z needn't touch it, and the next one fails until it is
-  refreshed.
+  **`appVersion` is an ordinary cut step again (#2890, the compose
+  treatment):** the same release-PR sweep that bumps the docker-compose.yml
+  image tags sets the chart's `appVersion` and the `artifacthub.io/images`
+  tags to X.Y.Z, then regenerates the chart README. The committed value
+  equals the workspace version at all times —
+  `scripts/checks/chart-appversion.sh` enforces the equality (run by the
+  `chart-appversion` CI job and again by the release pipeline's `plan` at the
+  tagged commit, where plan's own tag-equals-workspace check makes it
+  transitively `appVersion == ${TAG#v}`). The publish lane's package-time
+  injection (`helm package --app-version ${TAG#v}` plus
+  `deploy/helm/release-facts.sh`, #2779) stays as belt-and-braces and is what
+  keeps the between-releases `publish-chart.yml` dispatch correct;
+  `artifacthub.io/changes` remains inject-only (#2107). The accepted cost is
+  the window docker-compose.yml has always accepted: between the release
+  merge and the tag's Containers leg, the committed tags reference images not
+  yet published.
 - **The chart publishes as the release pipeline's `chart` leg** (`build-chart.yml`,
   called by `release.yml` after the scanned tags apply; `publish-chart.yml` is
   the dispatch-only dry-run/recovery lane between releases): it refuses to

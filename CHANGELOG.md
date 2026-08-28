@@ -17,6 +17,12 @@ workflow refuses a tag that has no matching section here.
 
 ### Changed
 
+- The Helm chart's committed `appVersion` now always equals the product
+  version, bumped in every release PR beside the compose image tags (chart
+  6.0.27). Published charts are unchanged — the release pipeline keeps
+  injecting the released version at package time — but a from-tree
+  `helm install` now defaults to the current version instead of a release
+  that could lag by one.
 - The repository's default branch is now `main` (renamed from `develop`;
   full history preserved, old GitHub URLs redirect). The moving development
   image tag follows the branch: pull `ghcr.io/rubentalstra/ferroehr:main`

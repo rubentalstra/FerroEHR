@@ -19,24 +19,20 @@ type: application
 # A published OCI version is immutable by refusal rather than by the registry —
 # `helm push` over an existing tag replaces it silently — so a correction always
 # ships as a NEW version and the published one stands as it was.
-version: 6.0.26
-# The DEFAULT container image tag (overridable via image.tag) — no longer a
-# per-release fact (#2779).
+version: 6.0.27
+# The DEFAULT container image tag (overridable via image.tag). Equals the
+# workspace version in Cargo.toml, bumped in the release PR beside the
+# docker-compose.yml image tags — one version sweep, the compose treatment
+# (#2890; scripts/checks/chart-appversion.sh enforces the equality). The
+# publish lane still injects `helm package --app-version ${TAG#v}` and rewrites
+# the `artifacthub.io/images` tags below at package time (#2779) — the same
+# value the tree now carries for a release, and what keeps the between-releases
+# `publish-chart.yml` dispatch correct.
 #
-# A published chart's appVersion is injected at package time, from the tag being
-# released: `helm package --app-version ${TAG#v}`, beside the rewrite of the
-# `artifacthub.io/images` tags below and the `artifacthub.io/changes` injection
-# that has worked this way since #2107. The argument is the same for all three —
-# they are facts about a release, and a committed copy is stale from the next
-# merge onwards. So a release cut edits none of them, and the published chart is
-# correct whatever this line says.
-#
-# What this line therefore IS: the default for a chart packaged OUTSIDE a release
-# (the between-releases `publish-chart.yml` dispatch) and for anyone running
-# `helm template` or `helm install` against this directory. It names the most
-# recent release it was refreshed at and may lag; what it may NOT do is name a
-# version this project never released, which is what
-# scripts/checks/chart-appversion.sh holds it to (CHANGELOG.md is the authority).
+# The accepted window (adjudicated on #2890): between a release PR's merge and
+# the tag's Containers leg publishing the images, a from-tree install
+# references tags that do not exist yet — the window docker-compose.yml has
+# always accepted.
 #
 # It is NOT a promise that this tag accepts the chart's current `config`
 # defaults: values track development between releases, so the publish lane
