@@ -17,6 +17,14 @@ workflow refuses a tag that has no matching section here.
 
 ### Fixed
 
+- The `is_modifiable` content-write gate is evaluated inside the commit
+  transaction, under a row lock, instead of a separate read before it — a
+  deactivation committed concurrently with a content write is now always
+  observed (one or the other strictly wins; previously the content commit
+  could land on a just-deactivated EHR). The gate's semantics are unchanged:
+  the atomic change set is judged as a whole — a deactivating set may carry
+  its final content, a reactivating set enables its own content, and
+  `EHR_STATUS` itself is always writable.
 - AQL date/time comparisons work on reduced-precision values. openEHR admits
   partial date/times (`2019`, `1985-06`), but one stored anywhere in the
   scanned data made every temporal comparison on that path fail as a 400

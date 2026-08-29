@@ -385,6 +385,35 @@ pub async fn ehr_is_modifiable(pool: &PgPool, ehr_id: EhrId) -> Result<Option<bo
     )
 }
 
+/// The in-transaction, row-locked read of the promoted `ehr.is_modifiable`
+/// flag — the commit engine's content-write gate.
+///
+/// The lock serializes the gate against a concurrent `EHR_STATUS` flip (whose
+/// own commit updates this row): `FOR SHARE` for a content-only change set
+/// (concurrent content commits stay parallel), `FOR NO KEY UPDATE` when the
+/// set itself writes an `EHR_STATUS` (taking the exclusive lock up front
+/// avoids the share-then-upgrade deadlock). Plain reads are unaffected by
+/// either. `None` when the EHR row does not exist. No openEHR spec governs
+/// the promoted column or the locking — our own storage design.
+///
+/// # Errors
+/// Returns [`StorageError::Database`] on a driver failure.
+pub async fn ehr_is_modifiable_locked(
+    tx: &mut PgConnection,
+    ehr_id: EhrId,
+    exclusive: bool,
+) -> Result<Option<bool>, StorageError> {
+    let sql = if exclusive {
+        "SELECT is_modifiable FROM ehr WHERE id = $1 FOR NO KEY UPDATE"
+    } else {
+        "SELECT is_modifiable FROM ehr WHERE id = $1 FOR SHARE"
+    };
+    Ok(sqlx::query_scalar(sql)
+        .bind(ehr_id)
+        .fetch_optional(tx)
+        .await?)
+}
+
 /// The two content-write pre-checks plus the server clock in ONE round trip:
 /// whether the EHR exists, whether it is modifiable, and the database `now()`.
 ///

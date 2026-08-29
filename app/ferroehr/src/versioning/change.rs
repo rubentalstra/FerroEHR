@@ -1014,6 +1014,52 @@ async fn write_single_outbox(
 /// [`ServiceError::Unprocessable`] for an out-of-group / non-first lifecycle
 /// state; the [`commit_resolved`] storage/signing errors; a multimedia offload
 /// failure as [`ServiceError::Internal`].
+/// The `409 Conflict` for a content write to a deactivated EHR
+/// (`EHR_STATUS.is_modifiable = false`) — RM ehr master04 §EHR Active Status
+/// forbids writes to everything except the `EHR_STATUS` object. ITS-REST
+/// 1.1.0 enumerates no status code for this outcome; `409` is the closest
+/// HTTP semantics (RFC 9110 §15.5.10 — the write conflicts with the current
+/// state of the target resource).
+pub(crate) fn not_modifiable_error(ehr_id: EhrId) -> ServiceError {
+    ServiceError::conflict(format!(
+        "EHR {ehr_id} is not modifiable (EHR_STATUS.is_modifiable = false); its \
+         contents cannot be created, updated or deleted (RM ehr master04 §EHR Active \
+         Status). Set EHR_STATUS.is_modifiable = true to reactivate it."
+    ))
+}
+
+/// The content-write gate, evaluated INSIDE the commit transaction.
+///
+/// Reads the promoted `ehr.is_modifiable` under a row lock
+/// ([`crate::storage::ehr_repo::ehr_is_modifiable_locked`]), so the value that
+/// governs the change set is the one this transaction serializes against — a
+/// concurrent `EHR_STATUS` flip either commits first and is seen, or waits
+/// for this commit; a pre-transaction read could act on a flag another
+/// commit was flipping at that instant. A missing EHR row reads as
+/// modifiable (the existence gate answers 404 on its own).
+///
+/// NOTE: RM ehr master04 §EHR Active Status defines what the flag forbids;
+/// no released text states WHEN it is evaluated relative to a commit — the
+/// in-transaction snapshot is our own recorded semantics (#2673).
+///
+/// # Errors
+/// [`ServiceError::Conflict`] when the EHR is not modifiable;
+/// [`ServiceError::Database`] if the locked read fails.
+pub(crate) async fn ensure_content_writable_tx(
+    tx: &mut PgConnection,
+    ehr_id: EhrId,
+    exclusive: bool,
+) -> Result<(), ServiceError> {
+    let modifiable = crate::storage::ehr_repo::ehr_is_modifiable_locked(tx, ehr_id, exclusive)
+        .await?
+        .unwrap_or(true);
+    if modifiable {
+        Ok(())
+    } else {
+        Err(not_modifiable_error(ehr_id))
+    }
+}
+
 #[expect(
     clippy::too_many_arguments,
     reason = "the write parameters, named individually; a parameter struct \

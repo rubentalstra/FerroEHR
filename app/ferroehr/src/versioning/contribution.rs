@@ -489,11 +489,10 @@ pub(crate) async fn commit_version_set(
         changes.push(build_change(cx, &target_kinds, v, ehr_id, party_only).await?);
     }
 
-    if let Some(ehr_id) = ehr_id
-        && needs_content_write_permission(&changes)
-    {
-        cx.ensure_content_writable(ehr_id).await?;
-    }
+    // Whether the set needs the content-write gate; the gate itself runs
+    // INSIDE the commit transaction (`write_contribution`), under a row lock,
+    // so no pre-transaction read can race a concurrent EHR_STATUS flip.
+    let needs_content_permission = needs_content_write_permission(&changes);
 
     let contribution_audit =
         parse_contribution_audit(body, &contrib_committer, &contrib_system_id)?;
@@ -548,6 +547,7 @@ pub(crate) async fn commit_version_set(
             attests,
             status_commits,
             folder_commits,
+            needs_content_permission,
         },
     )
     .await?;
@@ -582,6 +582,9 @@ struct ContributionWrite<'a> {
     /// The FOLDER bodies the set commits, for the post-insert item-reference
     /// check.
     folder_commits: Vec<Value>,
+    /// Whether the set needs the content-write gate
+    /// ([`needs_content_write_permission`]); evaluated in-transaction.
+    needs_content_permission: bool,
 }
 
 /// Writes the resolved change set in one transaction, with the cross-area
@@ -602,6 +605,17 @@ async fn write_contribution(
     write: ContributionWrite<'_>,
 ) -> Result<CommittedContribution, ServiceError> {
     let mut tx = cx.pool().begin().await?;
+    // The content-write gate, under a row lock (RM ehr master04 §EHR Active
+    // Status; the in-transaction evaluation is our own recorded semantics —
+    // see `change::ensure_content_writable_tx`). A set that itself writes an
+    // EHR_STATUS takes the exclusive lock up front (its own commit updates
+    // the same row), avoiding a share-then-upgrade deadlock.
+    if let Some(ehr_id) = ehr_id
+        && write.needs_content_permission
+    {
+        change::ensure_content_writable_tx(&mut tx, ehr_id, !write.status_commits.is_empty())
+            .await?;
+    }
     for (_, change) in &write.changes {
         if let Change::Modify {
             vo_id,
