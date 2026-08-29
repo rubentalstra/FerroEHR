@@ -126,7 +126,10 @@ fn path_split_bp_example() {
     );
     assert_eq!(fragment_names(leaf), ["value", "magnitude"]);
     assert_eq!(leaf.coercion, Coercion::Magnitude, "magnitude is numeric");
-    assert!(leaf.multi_valued, "content/events/items are list-valued");
+    assert!(
+        leaf.anchor.iter().any(|s| s.multi_valued),
+        "content/events/items are list-valued anchor steps"
+    );
     // The leaf resolves to the numeric primitive(s) behind `magnitude`.
     assert!(leaf.types.contains("Real") || leaf.types.contains("Integer"));
 }
@@ -759,6 +762,146 @@ fn full_scalar_function_set_plans() {
 /// so every remaining `EXISTS` is a containment anchor (OR / NOT CONTAINS).
 fn anchor_exists(sql: &str) -> usize {
     sql.matches("EXISTS(SELECT").count()
+}
+
+/// A predicate whose leaf crosses a MULTI-VALUED FRAGMENT attribute
+/// (`LOCATABLE.links` — LINK is no structure root, so the whole list lives in
+/// the root node's fragment) lowers existentially through the set-returning
+/// `jsonb_path_query`, never the first-match scalar: QUERY master03 §WHERE is
+/// silent on multi-valued predicates, and any-match is the adjudicated
+/// semantics recorded on `data_leaf_exists`.
+#[test]
+fn multi_valued_fragment_predicate_lowers_existentially() {
+    let sql = build_sql(
+        "SELECT c/uid/value FROM EHR e CONTAINS COMPOSITION c \
+         WHERE c/links/target/value = 'ehr://x/1'",
+    );
+    assert!(
+        sql.contains("jsonb_path_query("),
+        "set-returning per-match extraction: {sql}"
+    );
+    assert!(
+        !sql.contains("jsonb_path_query_first"),
+        "no first-match scalar remains on the links predicate: {sql}"
+    );
+    assert!(sql.contains("EXISTS"), "existential shape: {sql}");
+}
+
+/// The same existential lowering applies when the multi-valued fragment sits
+/// UNDER an anchored structure walk (`context` is a structure hop,
+/// `participations` its list-valued fragment).
+#[test]
+fn anchored_multi_valued_fragment_predicate_is_existential() {
+    let sql = build_sql(
+        "SELECT c/uid/value FROM EHR e CONTAINS COMPOSITION c \
+         WHERE c/context/participations/performer/name = 'Dr Second'",
+    );
+    assert!(
+        sql.contains("jsonb_path_query(") && sql.contains("BETWEEN"),
+        "anchored walk + per-match extraction: {sql}"
+    );
+    assert!(sql.contains("EXISTS"), "existential shape: {sql}");
+}
+
+/// Projection over a multi-valued fragment path yields every match as ONE
+/// jsonb array cell (`jsonb_path_query_array`, NULL when nothing matches) —
+/// QUERY master03 §Identified Paths is silent; the array cell is the decided
+/// semantics (no element invisible, row cardinality untouched).
+#[test]
+fn multi_valued_fragment_projection_is_an_array_cell() {
+    let sql = build_sql("SELECT c/links/target/value FROM EHR e CONTAINS COMPOSITION c");
+    assert!(
+        sql.contains("jsonb_path_query_array("),
+        "array-cell projection: {sql}"
+    );
+    assert!(
+        sql.contains("nullif("),
+        "an empty match set is a NULL cell, not []: {sql}"
+    );
+}
+
+/// A single-valued fragment leaf keeps the exact first-match scalar
+/// extraction — the existential machinery only fires where multiplicity is
+/// real.
+#[test]
+fn single_valued_fragment_predicate_keeps_the_scalar_extraction() {
+    let sql = build_sql(
+        "SELECT c/uid/value FROM EHR e CONTAINS COMPOSITION c \
+         WHERE c/name/value = 'report'",
+    );
+    assert!(
+        sql.contains("jsonb_path_query_first"),
+        "single-valued stays scalar: {sql}"
+    );
+    assert!(
+        !sql.contains("jsonb_path_query("),
+        "no set-returning extraction for a single-valued leaf: {sql}"
+    );
+}
+
+/// `EXISTS <path>` over a multi-valued fragment lowers through the same
+/// per-match shape — exact in both polarities (the test is boolean, so the
+/// three-valued comparison caveat does not apply).
+#[test]
+fn exists_over_multi_valued_fragment_is_per_match() {
+    let sql = build_sql(
+        "SELECT c/uid/value FROM EHR e CONTAINS COMPOSITION c \
+         WHERE EXISTS c/links/target/value",
+    );
+    assert!(
+        sql.contains("jsonb_path_query(") && sql.contains("IS NOT NULL"),
+        "existence probes every match: {sql}"
+    );
+}
+
+/// A predicate on the path ROOT reaches the SQL: the leaf value only exists
+/// where the source node satisfies it (QUERY master03 §Identified Paths — a
+/// node predicate qualifies the object the path reads). Before the fix the
+/// constraint silently vanished and any composition's name matched.
+#[test]
+fn path_root_predicate_reaches_the_sql() {
+    let sql = build_sql(
+        "SELECT c/uid/value FROM EHR e CONTAINS COMPOSITION c \
+         WHERE c[openEHR-EHR-COMPOSITION.report.v1]/name/value = 'x'",
+    );
+    assert!(
+        sql.contains("arch_concept"),
+        "the root archetype predicate is lowered, not dropped: {sql}"
+    );
+    // Projection context: the guarded read is a CASE over the same condition.
+    let sql = build_sql(
+        "SELECT c[openEHR-EHR-COMPOSITION.report.v1]/name/value \
+         FROM EHR e CONTAINS COMPOSITION c",
+    );
+    assert!(
+        sql.contains("CASE WHEN") && sql.contains("arch_concept"),
+        "the projected read is guarded by the root predicate: {sql}"
+    );
+}
+
+/// A predicate on a FRAGMENT step and a root predicate on a whole-object
+/// projection are TYPED REJECTS: neither has a SQL lowering yet, and building
+/// the query without the constraint would answer as if it were not written.
+#[test]
+fn unlowerable_path_predicates_are_typed_rejects() {
+    for (q, needle) in [
+        (
+            "SELECT c/uid/value FROM EHR e CONTAINS COMPOSITION c \
+             WHERE c/links[at0001]/target/value = 'x'",
+            "non-structure path step 'links'",
+        ),
+        (
+            "SELECT c[openEHR-EHR-COMPOSITION.report.v1] \
+             FROM EHR e CONTAINS COMPOSITION c",
+            "whole-object projection",
+        ),
+    ] {
+        let err = build_err(q);
+        assert!(
+            err.to_string().contains(needle),
+            "{q:?} must reject with {needle:?}: {err}"
+        );
+    }
 }
 
 /// OR-containment under an EHR lowers to a disjunction of correlated

@@ -1680,6 +1680,193 @@ async fn like_and_matches_are_any_match_on_multi_valued_paths() {
     assert_eq!(rows(&none).len(), 0, "no node satisfies: {none}");
 }
 
+/// A composition carrying MULTI-VALUED FRAGMENT attributes — two `links` on
+/// the root, two `context/participations`, two composer `identifiers` — where
+/// only the LAST element of each list satisfies the predicates below.
+fn multi_fragment_composition() -> Value {
+    let mut c = composition("multi-fragment", 7.0);
+    c["links"] = json!([
+        {
+            "_type": "LINK",
+            "meaning": { "_type": "DV_TEXT", "value": "problem" },
+            "type": { "_type": "DV_TEXT", "value": "clinical" },
+            "target": { "_type": "DV_EHR_URI", "value": "ehr://x/first" }
+        },
+        {
+            "_type": "LINK",
+            "meaning": { "_type": "DV_TEXT", "value": "issue" },
+            "type": { "_type": "DV_TEXT", "value": "clinical" },
+            "target": { "_type": "DV_EHR_URI", "value": "ehr://x/last" }
+        }
+    ]);
+    c["context"]["participations"] = json!([
+        {
+            "_type": "PARTICIPATION",
+            "function": { "_type": "DV_TEXT", "value": "observer" },
+            "performer": { "_type": "PARTY_IDENTIFIED", "name": "Dr First" }
+        },
+        {
+            "_type": "PARTICIPATION",
+            "function": { "_type": "DV_TEXT", "value": "assistant" },
+            "performer": { "_type": "PARTY_IDENTIFIED", "name": "Dr Second" }
+        }
+    ]);
+    c["composer"] = json!({
+        "_type": "PARTY_IDENTIFIED",
+        "name": "composer",
+        "identifiers": [
+            { "_type": "DV_IDENTIFIER", "id": "MRN-1" },
+            { "_type": "DV_IDENTIFIER", "id": "MRN-2" }
+        ]
+    });
+    c
+}
+
+/// Predicates over MULTI-VALUED FRAGMENT paths are any-match: with two
+/// `links`, two `context/participations` and two composer `identifiers` where
+/// only the LAST element satisfies each predicate, the row must return for
+/// `=`, `LIKE`, `MATCHES` and `EXISTS` alike — the first-match scalar
+/// extraction this replaces saw only element one. (QUERY master03 §WHERE is
+/// silent on multi-valued predicates — the any-match adjudication on
+/// `data_leaf_exists` covers the fragment half too.)
+#[tokio::test]
+async fn multi_valued_fragment_predicates_are_any_match() {
+    let db = testkit::db().await.expect("testkit database");
+    let svc = FerroEhrService::new(db.pool());
+    let ehr_id = create_ehr(&svc).await;
+    svc.create_composition(
+        ehr_id.parse().expect("ehr_id uuid"),
+        uv(&multi_fragment_composition(), "249", None),
+    )
+    .await
+    .expect("multi-fragment composition");
+    // A second composition with none of the list-valued attributes, so every
+    // predicate below also proves it does NOT match vacuously.
+    create_comp(&svc, &ehr_id, "plain", 1.0).await;
+
+    // `=` on the root fragment list (links), last element only.
+    let eq = run_aql(
+        &svc,
+        "SELECT c/name/value FROM EHR e CONTAINS COMPOSITION c \
+         WHERE c/links/target/value = 'ehr://x/last'",
+        ehr_scope(&ehr_id),
+    )
+    .await;
+    assert_eq!(rows(&eq).len(), 1, "= matches the LAST link: {eq}");
+    assert_eq!(rows(&eq)[0][0], json!("multi-fragment"));
+
+    // `=` on an anchored fragment list (context → participations), last only.
+    let anchored = run_aql(
+        &svc,
+        "SELECT c/name/value FROM EHR e CONTAINS COMPOSITION c \
+         WHERE c/context/participations/performer/name = 'Dr Second'",
+        ehr_scope(&ehr_id),
+    )
+    .await;
+    assert_eq!(
+        rows(&anchored).len(),
+        1,
+        "= matches the LAST participation: {anchored}"
+    );
+
+    // `LIKE` on the second identifier of the composer.
+    let like = run_aql(
+        &svc,
+        "SELECT c/name/value FROM EHR e CONTAINS COMPOSITION c \
+         WHERE c/composer/identifiers/id LIKE 'MRN-2*'",
+        ehr_scope(&ehr_id),
+    )
+    .await;
+    assert_eq!(
+        rows(&like).len(),
+        1,
+        "LIKE matches the LAST identifier: {like}"
+    );
+
+    // `MATCHES` against a set only the last link satisfies.
+    let matches = run_aql(
+        &svc,
+        "SELECT c/name/value FROM EHR e CONTAINS COMPOSITION c \
+         WHERE c/links/target/value MATCHES {'ehr://x/last', 'ehr://other'}",
+        ehr_scope(&ehr_id),
+    )
+    .await;
+    assert_eq!(rows(&matches).len(), 1, "MATCHES is any-match: {matches}");
+
+    // `EXISTS` distinguishes the composition carrying links from the plain
+    // one (the vendored base fixture has no links).
+    let exists = run_aql(
+        &svc,
+        "SELECT c/name/value FROM EHR e CONTAINS COMPOSITION c \
+         WHERE EXISTS c/links/target/value",
+        ehr_scope(&ehr_id),
+    )
+    .await;
+    assert_eq!(rows(&exists).len(), 1, "EXISTS is per-match: {exists}");
+    assert_eq!(rows(&exists)[0][0], json!("multi-fragment"));
+
+    // A predicate no element satisfies still returns nothing (no vacuous truth).
+    let none = run_aql(
+        &svc,
+        "SELECT c/name/value FROM EHR e CONTAINS COMPOSITION c \
+         WHERE c/links/target/value = 'ehr://x/absent'",
+        ehr_scope(&ehr_id),
+    )
+    .await;
+    assert_eq!(rows(&none).len(), 0, "no element satisfies: {none}");
+}
+
+/// Projection over a multi-valued fragment path serves EVERY match as one
+/// jsonb array cell, and NULL where the path matches nothing — QUERY master03
+/// §Identified Paths is silent on the shape; the array cell is the decided
+/// semantics (the first-match scalar served one target where the data held
+/// two).
+#[tokio::test]
+async fn multi_valued_fragment_projection_serves_every_match() {
+    let db = testkit::db().await.expect("testkit database");
+    let svc = FerroEhrService::new(db.pool());
+    let ehr_id = create_ehr(&svc).await;
+    svc.create_composition(
+        ehr_id.parse().expect("ehr_id uuid"),
+        uv(&multi_fragment_composition(), "249", None),
+    )
+    .await
+    .expect("multi-fragment composition");
+
+    let r = run_aql(
+        &svc,
+        "SELECT c/links/target/value, c/context/participations/performer/name \
+         FROM EHR e CONTAINS COMPOSITION c",
+        ehr_scope(&ehr_id),
+    )
+    .await;
+    assert_eq!(
+        rows(&r)[0][0],
+        json!(["ehr://x/first", "ehr://x/last"]),
+        "every link target projects, in document order: {r}"
+    );
+    assert_eq!(
+        rows(&r)[0][1],
+        json!(["Dr First", "Dr Second"]),
+        "every participation performer projects: {r}"
+    );
+
+    // The plain composition has no links: the cell is null, never [].
+    let ehr2 = create_ehr(&svc).await;
+    create_comp(&svc, &ehr2, "plain", 1.0).await;
+    let empty = run_aql(
+        &svc,
+        "SELECT c/links/target/value FROM EHR e CONTAINS COMPOSITION c",
+        ehr_scope(&ehr2),
+    )
+    .await;
+    assert_eq!(
+        rows(&empty)[0][0],
+        Value::Null,
+        "no match is a NULL cell: {empty}"
+    );
+}
+
 /// An uncoercible client binding is the CALLER's 400, never a 500 (#2593):
 /// measured live, `"not-a-date"` against a temporal predicate reached the
 /// driver as sqlstate 22007 and answered the opaque internal error.

@@ -85,16 +85,45 @@ impl Builder<'_> {
         if let Some(expr) = self.promoted_leaf_expr(leaf, mode) {
             return Ok(expr);
         }
+        reject_fragment_predicates(leaf)?;
         let src = self.source_node(leaf.source.0)?;
+        let root_conds = leaf
+            .root_predicate
+            .as_ref()
+            .map(|p| self.node_constraint_conds(&src, p))
+            .transpose()?;
         let jp = fragment_jsonpath(leaf);
+        // NOTE: QUERY master03 §Identified Paths is silent on projecting a
+        // list-valued fragment path — our own decision: every match as ONE
+        // jsonb array cell; scalar contexts keep the first-match extraction.
+        let projected_array =
+            matches!(mode, ValueMode::Projection) && jp.is_some() && leaf.fragment_multi_valued();
+        let extract = |data: Expr| -> Expr {
+            match (&jp, projected_array) {
+                (Some(jp), true) => super::expr::jsonb_path_array(data, jp),
+                _ => extract_base(data, jp.as_deref()),
+            }
+        };
 
         if leaf.anchor.is_empty() {
-            let base = extract_base(col(&src, "data"), jp.as_deref());
-            return Ok(coerce_value(base, mode, leaf));
+            let base = extract(col(&src, "data"));
+            let value = coerce_value(base, mode, leaf);
+            // A root predicate guards the inline read: the value only exists
+            // where the source node satisfies it (QUERY master03 §Identified
+            // Paths — a node predicate qualifies the object the path reads).
+            return Ok(match all_of(root_conds) {
+                Some(cond) => sea_query::CaseStatement::new().case(cond, value).into(),
+                None => value,
+            });
         }
 
         let (mut sub, last) = self.anchored_walk(leaf, &src)?;
-        let base = extract_base(col(&last, "data"), jp.as_deref());
+        if let Some(conds) = root_conds {
+            for cond in conds {
+                sub.and_where(cond);
+            }
+        }
+        let base = extract(col(&last, "data"));
         sub.expr(coerce_value(base, mode, leaf));
         sub.limit(1);
         Ok(Expr::from(sub))
@@ -146,25 +175,60 @@ impl Builder<'_> {
     /// cross-EHR profile showed collapsing cardinality estimates and
     /// materializing bitmap plans under `LIMIT`).
     ///
-    /// Returns `Ok(None)` when the leaf is not an anchored-walk extraction
-    /// (uid synthesis, a promoted column, or an inline fragment read) — the
-    /// caller falls back to the scalar comparison, which is exact there.
+    /// The same any-match rule covers a MULTI-VALUED FRAGMENT tail:
+    /// a path crossing a list-valued fragment attribute (`links`,
+    /// `participations`, `identifiers`, `mappings`, …) yields one item per
+    /// match through the set-returning `jsonb_path_query` in the subquery's
+    /// FROM, and the predicate holds when ANY item satisfies it — the scalar
+    /// `jsonb_path_query_first` saw only the first match.
+    ///
+    /// Returns `Ok(None)` when the leaf is a single-valued inline read, uid
+    /// synthesis, or a promoted column — the caller falls back to the scalar
+    /// comparison, which is exact there.
     pub(super) fn data_leaf_exists(
         &mut self,
         leaf: &LeafPath,
         mode: ValueMode,
         cond: impl FnOnce(Expr) -> Expr,
     ) -> Result<Option<Expr>, AqlError> {
-        if leaf.anchor.is_empty()
-            || self.version_uid_expr(leaf, mode).is_some()
+        if self.version_uid_expr(leaf, mode).is_some()
             || self.promoted_leaf_expr(leaf, mode).is_some()
         {
             return Ok(None);
         }
-        let src = self.source_node(leaf.source.0)?;
+        reject_fragment_predicates(leaf)?;
         let jp = fragment_jsonpath(leaf);
-        let (mut sub, last) = self.anchored_walk(leaf, &src)?;
-        let base = extract_base(col(&last, "data"), jp.as_deref());
+        let multi = jp.is_some() && leaf.fragment_multi_valued();
+        if leaf.anchor.is_empty() && !multi {
+            return Ok(None);
+        }
+        let src = self.source_node(leaf.source.0)?;
+        let mut sub;
+        let base;
+        if leaf.anchor.is_empty() {
+            // `multi` holds here, so the fragment jsonpath exists.
+            let Some(jp) = jp.as_deref() else {
+                return Ok(None);
+            };
+            sub = Query::select();
+            base = fragment_items(&mut sub, col(&src, "data"), jp, self.next_ctr());
+        } else {
+            let (walk, last) = self.anchored_walk(leaf, &src)?;
+            sub = walk;
+            base = match (jp.as_deref(), multi) {
+                (Some(jp), true) => {
+                    fragment_items(&mut sub, col(&last, "data"), jp, self.next_ctr())
+                }
+                _ => extract_base(col(&last, "data"), jp.as_deref()),
+            };
+        }
+        // The root predicate correlates against the source node: the value
+        // only exists where the source satisfies it.
+        if let Some(pred) = &leaf.root_predicate {
+            for c in self.node_constraint_conds(&src, pred)? {
+                sub.and_where(c);
+            }
+        }
         sub.expr(Expr::val(1));
         sub.and_where(cond(coerce_value(base, mode, leaf)));
         if self.streaming {
@@ -555,6 +619,44 @@ pub(super) fn ehr_field_expr(alias: &str, field: EhrField, system_id: &str) -> E
         EhrField::TimeCreated => col(alias, "time_created"),
         EhrField::SystemId => Expr::val(system_id.to_owned()),
     }
+}
+
+/// A predicate on a fragment step (below the anchor node) has no SQL lowering
+/// yet — refusing loudly keeps the engine's typed-reject rule: the silent
+/// alternative answers as if the predicate were not written.
+// TODO(#2927): lower fragment-step predicates as jsonpath filter expressions.
+fn reject_fragment_predicates(leaf: &LeafPath) -> Result<(), AqlError> {
+    match leaf.fragment.iter().find(|s| s.predicate.is_some()) {
+        Some(step) => Err(SqlError::Unsupported(format!(
+            "a predicate on the non-structure path step '{}' is not supported",
+            step.name
+        ))
+        .into()),
+        None => Ok(()),
+    }
+}
+
+/// AND-combine a lowered condition list, `None` for an absent/empty list.
+fn all_of(conds: Option<Vec<Expr>>) -> Option<Expr> {
+    conds.and_then(|c| c.into_iter().reduce(sea_query::ExprTrait::and))
+}
+
+/// Adds the set-returning `jsonb_path_query(<data>, '<jp>'::jsonpath)` to the
+/// subquery's FROM and returns the per-match item reference.
+///
+/// The call is implicitly LATERAL (a FROM function may reference columns of
+/// preceding FROM items — PostgreSQL docs §7.2.1.5 LATERAL Subqueries), and
+/// for a scalar-returning function the table alias doubles as the column name
+/// (§7.2.1.4 Table Functions).
+fn fragment_items(sub: &mut sea_query::SelectStatement, data: Expr, jp: &str, n: usize) -> Expr {
+    let alias = format!("f{n}");
+    sub.from_function(
+        sea_query::Func::cust(Alias::new("jsonb_path_query"))
+            .arg(data)
+            .arg(cast(Expr::val(jp.to_owned()), "jsonpath")),
+        Alias::new(alias.as_str()),
+    );
+    col(&alias, &alias)
 }
 
 // ── jsonpaths ───────────────────────────────────────────────────────────────
