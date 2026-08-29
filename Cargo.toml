@@ -404,6 +404,13 @@ criterion = { version = "0.8.2", features = ["html_reports"] }
 # code; dependencies get none (their debuginfo is never read in this repo).
 [profile.dev]
 debug = "line-tables-only"
+# rustc's `linker_messages` lint surfaces Apple ld's "__eh_frame section too
+# large (max 16MB)" compact-unwind fallback on every macOS dev/test link of
+# the big app binaries. Accepted (#2866): unwinding stays correct via the
+# dwarf tables and only panic-path speed is affected, while the levers that
+# would shrink the section (optimizing test builds, splitting test binaries)
+# cost every local test cycle or break the one-binary-per-crate rule. Never
+# answer it by allowing `linker_messages` workspace-wide.
 
 [profile.dev.package."*"]
 debug = false
