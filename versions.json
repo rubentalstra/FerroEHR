@@ -1,19 +1,25 @@
 {
-  "latest": "v4.0.9",
+  "latest": "v4.0.10",
   "versions": [
     {
       "id": "dev",
-      "label": "dev (develop)",
+      "label": "dev (main)",
       "path": "/docs/dev/",
       "released": null,
       "prerelease": true
     },
     {
       "id": "latest",
-      "label": "latest (v4.0.9)",
+      "label": "latest (v4.0.10)",
       "path": "/docs/latest/",
-      "released": "2026-08-28",
-      "aliasOf": "v4.0.9"
+      "released": "2026-08-29",
+      "aliasOf": "v4.0.10"
+    },
+    {
+      "id": "v4.0.10",
+      "label": "v4.0.10",
+      "path": "/docs/v4.0.10/",
+      "released": "2026-08-29"
     },
     {
       "id": "v4.0.9",
