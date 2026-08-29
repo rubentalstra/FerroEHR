@@ -514,7 +514,15 @@ jobs:
     permissions:
       contents: read
       packages: read # pull the image this run just pushed
-    needs: admin-ui-image
+    # The browser-login step pulls the CDR fixture by its `:main` tag, and
+    # `scan-and-tag` is what APPLIES that tag — without the edge the smoke
+    # raced it and pulled a tag that did not exist yet (#2904). `skipped` is
+    # accepted so an admin-ui-only run keeps driving the last published
+    # fixture (the designed behaviour); a failed tag application refuses.
+    needs: [admin-ui-image, scan-and-tag]
+    if: >-
+      !cancelled() && needs.admin-ui-image.result == 'success' &&
+      contains(fromJSON('["success", "skipped"]'), needs.scan-and-tag.result)
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
