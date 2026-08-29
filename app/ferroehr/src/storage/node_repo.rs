@@ -536,10 +536,9 @@ async fn read_root_bodies(
     let mut by_key: HashMap<(Uuid, i32), Value> = rows
         .into_iter()
         .map(|row| {
-            Ok((
-                (row.try_get("vo_id")?, row.try_get("sys_version")?),
-                row.try_get("body")?,
-            ))
+            let text: String = row.try_get("body")?;
+            let value: Value = serde_json::from_str(&text).map_err(StorageError::BodyDecode)?;
+            Ok(((row.try_get("vo_id")?, row.try_get("sys_version")?), value))
         })
         .collect::<Result<_, StorageError>>()?;
     for anchor in roots {
@@ -569,8 +568,8 @@ pub async fn first_version_root(
     // Two text scalars off the materialized body — never a fragment fetch and
     // a Value parse for a two-field comparison.
     Ok(sqlx::query_as(
-        "SELECT body ->> 'archetype_node_id', \
-         body #>> '{category,defining_code,code_string}' \
+        "SELECT (body)::jsonb ->> 'archetype_node_id', \
+         (body)::jsonb #>> '{category,defining_code,code_string}' \
          FROM vo_version_all WHERE vo_id = $1 AND body IS NOT NULL \
          ORDER BY sys_version LIMIT 1",
     )

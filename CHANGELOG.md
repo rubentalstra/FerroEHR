@@ -15,6 +15,16 @@ workflow refuses a tag that has no matching section here.
 
 ## [Unreleased]
 
+### Fixed
+
+- Reads serve the exact canonical bytes the commit accepted: `_type` first
+  and every field at its spec-declared position — including the
+  server-stamped `uid`, which now lands at its place in the document instead
+  of the end. Previously the stored body passed through a `jsonb` column
+  and PostgreSQL's own key ordering leaked onto the wire (reported by the
+  community). Dump archives carry the same faithful bytes, so an
+  export/load round-trip is byte-equal again.
+
 ## [4.0.10] - 2026-08-29
 
 ### Added

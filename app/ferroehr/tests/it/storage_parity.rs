@@ -215,7 +215,7 @@ async fn a_tampered_version_body_is_reported_as_content_differs() {
     // The other copy: the materialized projection every point read serves.
     tamper(
         &pool,
-        "UPDATE vo_version SET body = jsonb_set(body, '{archetype_node_id}', '\"tampered\"') \
+        "UPDATE vo_version SET body = (jsonb_set((body)::jsonb, '{archetype_node_id}', '\"tampered\"'))::text \
          WHERE vo_id = $1 AND sys_version = $2",
         vo_id,
         sys_version,
