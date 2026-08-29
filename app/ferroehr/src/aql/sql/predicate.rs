@@ -504,10 +504,12 @@ impl Builder<'_> {
                 let code_extract = as_text(jsonb_path(
                     col(node, "data"),
                     "$.name.defining_code.code_string",
+                    None,
                 ));
                 let term_extract = as_text(jsonb_path(
                     col(node, "data"),
                     "$.name.defining_code.terminology_id.value",
+                    None,
                 ));
                 Ok(code_extract
                     .eq(Expr::val(code.clone()))
@@ -518,7 +520,7 @@ impl Builder<'_> {
 
     pub(super) fn std_cond(&self, node: &str, sp: &StdPredicate) -> Result<Expr, AqlError> {
         let jp = jsonpath(&sp.path);
-        let lhs = as_text(jsonb_path(col(node, "data"), &jp));
+        let lhs = as_text(jsonb_path(col(node, "data"), &jp, None));
         let rhs = cast(Expr::val(self.bind_value(&sp.value)?), "text");
         Ok(lhs.binary(binoper(sp.op), rhs))
     }

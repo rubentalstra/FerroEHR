@@ -45,26 +45,30 @@ pub(super) fn to_jsonb(e: Expr) -> Expr {
     call("to_jsonb", vec![e])
 }
 
-/// `jsonb_path_query_first(data, '<jp>'::jsonpath)`.
-pub(super) fn jsonb_path(data: Expr, jp: &str) -> Expr {
-    call(
-        "jsonb_path_query_first",
-        vec![data, cast(Expr::val(jp.to_owned()), "jsonpath")],
-    )
+/// `jsonb_path_query_first(data, '<jp>'::jsonpath[, vars])` — `vars` carries
+/// the filter-expression variables of a predicated fragment path, always as a
+/// bound jsonb parameter (never spliced into the path text).
+pub(super) fn jsonb_path(data: Expr, jp: &str, vars: Option<Expr>) -> Expr {
+    let mut args = vec![data, cast(Expr::val(jp.to_owned()), "jsonpath")];
+    if let Some(vars) = vars {
+        args.push(vars);
+    }
+    call("jsonb_path_query_first", args)
 }
 
 /// `NULLIF(jsonb_path_query_array(data, '<jp>'::jsonpath), '[]'::jsonb)` —
 /// every fragment match as ONE jsonb array cell, SQL `NULL` when the path
 /// matches nothing (so absence keeps reading as a NULL cell / a false
 /// comparison, exactly as the scalar extraction reads it).
-pub(super) fn jsonb_path_array(data: Expr, jp: &str) -> Expr {
+pub(super) fn jsonb_path_array(data: Expr, jp: &str, vars: Option<Expr>) -> Expr {
+    let mut args = vec![data, cast(Expr::val(jp.to_owned()), "jsonpath")];
+    if let Some(vars) = vars {
+        args.push(vars);
+    }
     call(
         "nullif",
         vec![
-            call(
-                "jsonb_path_query_array",
-                vec![data, cast(Expr::val(jp.to_owned()), "jsonpath")],
-            ),
+            call("jsonb_path_query_array", args),
             cast(Expr::val("[]"), "jsonb"),
         ],
     )
@@ -82,9 +86,9 @@ pub(super) fn cast(e: Expr, ty: &str) -> Expr {
 
 /// The jsonb extraction base: `jsonb_path_query_first(<data>, jp)` when a
 /// fragment path is present, else the raw `<data>` expression.
-pub(super) fn extract_base(data: Expr, jp: Option<&str>) -> Expr {
+pub(super) fn extract_base(data: Expr, jp: Option<&str>, vars: Option<Expr>) -> Expr {
     match jp {
-        Some(jp) => jsonb_path(data, jp),
+        Some(jp) => jsonb_path(data, jp, vars),
         None => data,
     }
 }

@@ -129,13 +129,32 @@ impl Builder<'_> {
         leaf: &LeafPath,
     ) -> Result<ColumnSpec, AqlError> {
         let anchor = self.whole_object_alias(leaf)?;
+        // A root predicate guards the projection: a row whose source node does
+        // not satisfy it serves a NULL cell, never a dropped row — expressed by
+        // CASE-guarding the vo_id locator alone (the executor short-circuits a
+        // NULL vo_id to a null cell before reading the other three).
+        let root_cond = match &leaf.root_predicate {
+            Some(pred) => {
+                let src = self.source_node(leaf.source.0)?;
+                self.node_constraint_conds(&src, pred)?
+                    .into_iter()
+                    .reduce(sea_query::ExprTrait::and)
+            }
+            None => None,
+        };
         let cols = ["vo", "sv", "num", "cap"];
         let node_cols = ["vo_id", "sys_version", "num", "num_cap"];
         let mut sql_cols = Vec::with_capacity(4);
         for (suffix, ncol) in cols.iter().zip(node_cols) {
             let sql_col = format!("col{i}_{suffix}");
-            self.q
-                .expr_as(col(&anchor, ncol), Alias::new(sql_col.as_str()));
+            let locator = col(&anchor, ncol);
+            let expr: Expr = match (&root_cond, ncol) {
+                (Some(cond), "vo_id") => sea_query::CaseStatement::new()
+                    .case(cond.clone(), locator)
+                    .into(),
+                _ => locator,
+            };
+            self.q.expr_as(expr, Alias::new(sql_col.as_str()));
             sql_cols.push(sql_col);
         }
         Ok(ColumnSpec {
@@ -150,16 +169,6 @@ impl Builder<'_> {
     /// anchor → the source node; otherwise the anchor chain is joined in and its
     /// final node alias returned.
     fn whole_object_alias(&mut self, leaf: &LeafPath) -> Result<String, AqlError> {
-        // A root predicate on a whole-object projection has no lowering (the
-        // reassembly locators cannot carry a per-row guard yet): refuse loudly
-        // rather than serve the object as if the predicate were not written.
-        // TODO(#2927): decide and lower the guarded whole-object projection.
-        if leaf.root_predicate.is_some() {
-            return Err(crate::aql::error::SqlError::Unsupported(
-                "a node predicate on a whole-object projection is not supported".to_owned(),
-            )
-            .into());
-        }
         let src = self.source_node(leaf.source.0)?;
         if leaf.anchor.is_empty() {
             return Ok(src);
