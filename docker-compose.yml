@@ -264,6 +264,11 @@ services:
     # docker VM; a 2cpu/1Gi cap halved the measured knee). Production limits
     # are the Helm values' concern (deploy/helm/ferroehr/values.yaml);
     # override via env for a constrained profile.
+    # The server's measured resident envelope (#2872 soaks, 4.0.9 image):
+    # ~22 MiB at boot, ~70 MiB after hours of idle, ~125 MiB warm steady
+    # state under and after sustained load — a designed plateau (caches +
+    # pool), zero growth slope. The 4G default is headroom, not a forecast;
+    # watch `process_resident_memory_bytes` on the metrics surface.
     deploy:
       resources:
         limits:
