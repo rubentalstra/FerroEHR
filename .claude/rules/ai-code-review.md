@@ -25,6 +25,32 @@ a deliberate recorded decision (the RFC 2008 rejection, zero re-exports, …)
 is rejected as a class in the quality profile, with the reason recorded on
 the triage program (#2640).
 
+## Metric-scope adjudications (#2862)
+
+Two scope decisions keep the dashboard numbers meaning something, both
+duplication/coverage-ONLY — the affected trees stay fully analyzed for
+findings:
+
+- **`sonar.cpd.exclusions`** carries the ITS-REST wire-declaration surface
+  (the per-group `openapi_routes.rs` files and the declaration-dominated
+  handler files) and the codegen decision maps/templates. The released party
+  CRUD is five byte-identical operation quintets and every `#[utoipa::path]`
+  block mirrors its released operation file 1:1 for spec review; the
+  template twins are near-identical by the #1964 design. Measured before the
+  exclusion: ~20.5k of the 30.8k duplicated lines (67%) sat in that class.
+  Extracting or macro-izing it would hide the citation surface, not remove
+  repetition the wire does not itself carry.
+- **`sonar.coverage.exclusions`** carries `app/ferroehr-admin-ui/**`: the
+  console's acceptance instrument is the browser journey battery
+  (`scripts/ui-e2e.sh`) and the published-image login probe, which no lcov
+  run can observe (browser/wasm execution) — the metric misstated verified
+  code, and view-macro unit tests would be the line-execution-only class
+  `testing.md` forbids.
+
+Both were adjudicated per-cluster from the live MCP ranking on #2862, where
+the before/after numbers are recorded. Do not widen either list without the
+same per-cluster case.
+
 ## New Code = since the last release (#2657)
 
 The project's New Code definition is **"Previous version"**, anchored by
