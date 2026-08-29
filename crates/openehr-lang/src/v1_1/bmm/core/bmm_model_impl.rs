@@ -405,7 +405,13 @@ impl BmmModel {
     ///
     /// A non-generic descendant against a generic ancestor is therefore NOT
     /// conformant — the rule set admits generic parameters only on the
-    /// descendant side.
+    /// descendant side. Deliberate: the published algorithm's final case
+    /// returns exactly `not valid_generic_type_name(anc_type)`
+    /// (`master06-core-types.adoc` §Type Conformance), so a simple class
+    /// closing a generic ancestor (`Multiplicity_interval` against
+    /// `Interval<Ordered>`) has NO published substitution rule; the gap is
+    /// reported upstream, and this stays the faithful reading until a rule
+    /// is published.
     ///
     /// An open ancestor parameter is "replaced with their appropriate
     /// constrainer types, or Any": the constrainer is resolved POSITIONALLY
