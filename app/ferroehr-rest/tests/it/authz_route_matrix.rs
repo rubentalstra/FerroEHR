@@ -43,21 +43,18 @@ use std::sync::Arc;
 
 use axum::Router;
 use axum::body::Body;
-use ferroehr::config::auth::{AuthConfig, OidcConfig};
 use ferroehr::config::authz::AuthzConfig;
 use ferroehr::config::server::{AdminConfig, ServerConfig};
 use ferroehr::config::smart::SmartConfig;
 use ferroehr_rest::config::AppConfig;
-use ferroehr_rest::extensions::access::authz::{AuthzHandle, AuthzResolvers, ResolveError};
+use ferroehr_rest::extensions::access::authz::AuthzHandle;
 use http::{Request, StatusCode};
-use jsonwebtoken::{Algorithm, EncodingKey, Header, encode};
 use serde_json::{Value, json};
 use tower::ServiceExt;
 
 use crate::common;
+use crate::common::BASE;
 
-/// The configured API base path every gated route hangs off.
-const BASE: &str = "/ferroehr/rest/openehr/v1";
 const HMAC_SECRET: &str = "route-matrix-secret";
 const ISSUER: &str = "https://issuer.example";
 const AUDIENCE: &str = "ferroehr";
@@ -382,29 +379,23 @@ const HANDLER_ADMIN_READ: &[(&str, &str)] = &[("GET", "/fhir/r4/AuditEvent")];
 /// `(method, absolute path)`.
 fn declared() -> BTreeMap<(String, String), (Class, Effect)> {
     let mut out = BTreeMap::new();
-    let mut absolute = |rows: &[(&str, &str)], class: Class, effect: Effect| {
-        for (method, path) in rows {
-            let prior = out.insert(((*method).to_owned(), (*path).to_owned()), (class, effect));
-            assert!(prior.is_none(), "duplicate table row: {method} {path}");
-        }
-    };
-    absolute(PUBLIC, Class::Public, Effect::Read);
-    absolute(MANAGEMENT, Class::Management, Effect::Read);
-
-    let mut relative = |rows: &[(&str, &str)], class: Class, effect: Effect| {
+    // `prefix` is empty for the tables that already spell absolute paths.
+    let mut rows = |rows: &[(&str, &str)], prefix: &str, class: Class, effect: Effect| {
         for (method, path) in rows {
             let prior = out.insert(
-                ((*method).to_owned(), format!("{BASE}{path}")),
+                ((*method).to_owned(), format!("{prefix}{path}")),
                 (class, effect),
             );
             assert!(prior.is_none(), "duplicate table row: {method} {path}");
         }
     };
-    relative(CLINICAL_READ, Class::Clinical, Effect::Read);
-    relative(CLINICAL_WRITE, Class::Clinical, Effect::Write);
-    relative(ADMIN_READ, Class::Admin, Effect::Read);
-    relative(ADMIN_WRITE, Class::Admin, Effect::Write);
-    relative(HANDLER_ADMIN_READ, Class::HandlerAdmin, Effect::Read);
+    rows(PUBLIC, "", Class::Public, Effect::Read);
+    rows(MANAGEMENT, "", Class::Management, Effect::Read);
+    rows(CLINICAL_READ, BASE, Class::Clinical, Effect::Read);
+    rows(CLINICAL_WRITE, BASE, Class::Clinical, Effect::Write);
+    rows(ADMIN_READ, BASE, Class::Admin, Effect::Read);
+    rows(ADMIN_WRITE, BASE, Class::Admin, Effect::Write);
+    rows(HANDLER_ADMIN_READ, BASE, Class::HandlerAdmin, Effect::Read);
     out
 }
 
@@ -450,21 +441,7 @@ fn matrix_config() -> AppConfig {
             swagger_ui: true,
             ..Default::default()
         },
-        auth: AuthConfig {
-            enabled: true,
-            basic: None,
-            oidc: Some(OidcConfig {
-                issuer: ISSUER.to_owned(),
-                audiences: vec![AUDIENCE.to_owned()],
-                algorithms: vec!["HS256".to_owned()],
-                hmac_secret: Some(ferroehr::config::secret::Secret::new(
-                    HMAC_SECRET.to_owned(),
-                )),
-                jwks_json: None,
-                ..OidcConfig::default()
-            }),
-            ..AuthConfig::default()
-        },
+        auth: common::hs256_auth_config(ISSUER, AUDIENCE, HMAC_SECRET),
         admin: AdminConfig { enabled: true },
         // ON for the same reason as the Swagger pair: the PUBLIC table declares
         // the discovery document, and it is mounted only when SMART is enabled.
@@ -478,15 +455,11 @@ fn matrix_config() -> AppConfig {
 
 /// The RBAC gate over the default rule set (`ADMIN` / `READONLY`), no ABAC.
 fn authz() -> Option<Arc<AuthzHandle>> {
-    let resolvers = AuthzResolvers {
-        subject: Arc::new(|_| Box::pin(async { Ok::<_, ResolveError>(None) })),
-        template_of_version: Arc::new(|_, _| Box::pin(async { Ok::<_, ResolveError>(None) })),
-    };
     AuthzHandle::build(
         &AuthzConfig::default(),
         &matrix_config().server.base_path,
         None,
-        resolvers,
+        common::null_resolvers(),
     )
     .map(Arc::new)
 }
@@ -522,13 +495,7 @@ fn bearer(roles: &[&str]) -> String {
         "exp": exp,
         "roles": roles,
     });
-    let token = encode(
-        &Header::new(Algorithm::HS256),
-        &claims,
-        &EncodingKey::from_secret(HMAC_SECRET.as_bytes()),
-    )
-    .expect("encode");
-    format!("Bearer {token}")
+    common::hs256_bearer(HMAC_SECRET, &claims)
 }
 
 /// The refusal the authorization layer rendered, identified by the reason text

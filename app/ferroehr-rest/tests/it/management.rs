@@ -17,7 +17,7 @@
               fixture indexing are the intended shape here (the Rust Book ch11)"
 )]
 
-use std::sync::OnceLock;
+use std::sync::{Arc, OnceLock};
 
 use argon2::Argon2;
 use argon2::password_hash::{PasswordHasher, SaltString};
@@ -29,6 +29,7 @@ use ferroehr::config::server::ServerConfig;
 use ferroehr::telemetry::build_info::BuildInfo;
 use ferroehr::telemetry::health::HealthRegistry;
 use ferroehr_rest::config::AppConfig;
+use ferroehr_rest::extensions::access::authz::AuthzHandle;
 use ferroehr_rest::extensions::management::Observability;
 
 use crate::common;
@@ -63,45 +64,67 @@ fn auth_config(roles: &[&str]) -> AuthConfig {
     }
 }
 
+/// The base app configuration every management fixture shares: Swagger off,
+/// authentication from `auth`.
+fn base_config(auth: AuthConfig) -> AppConfig {
+    AppConfig {
+        server: ServerConfig {
+            swagger_ui: false,
+            ..Default::default()
+        },
+        auth,
+        ..Default::default()
+    }
+}
+
+/// The RBAC gate over the default rule set, with RBAC itself on or off and no
+/// attribute resolution (the management surface has no subject or template).
+fn authz_for(config: &AppConfig, rbac_enabled: bool) -> Option<Arc<AuthzHandle>> {
+    let mut authz_cfg = ferroehr::config::authz::AuthzConfig::default();
+    authz_cfg.rbac.enabled = rbac_enabled;
+    AuthzHandle::build(
+        &authz_cfg,
+        &config.server.base_path,
+        None,
+        common::null_resolvers(),
+    )
+    .map(Arc::new)
+}
+
+/// Assemble the full app over a real service on a fresh database.
+async fn build_app(
+    config: AppConfig,
+    authz: Option<Arc<AuthzHandle>>,
+    observability: Observability,
+) -> Router {
+    let (_pg, service) = common::test_service().await;
+    ferroehr_rest::build_full(config, service, authz, observability).expect("build")
+}
+
+/// One management endpoint mounted at `level`, everything else at its default.
+fn one_endpoint(endpoints: EndpointLevels) -> Observability {
+    Observability {
+        management: ManagementConfig {
+            enabled: true,
+            endpoints,
+            ..ManagementConfig::default()
+        },
+        ..Observability::default()
+    }
+}
+
 /// Build an app with the management surface enabled, one endpoint (`info`) set
 /// to `level`, the Basic user granted `roles`, and RBAC on or off — the
 /// `AdminOnly` level gates on the RBAC `admin_role` (issue #1879 retired the
 /// deprecated `admin_scope` alias).
 async fn app_with(level: AccessLevel, roles: &[&str], rbac_enabled: bool) -> Router {
-    let config = AppConfig {
-        server: ServerConfig {
-            swagger_ui: false,
-            ..Default::default()
-        },
-        auth: auth_config(roles),
-        ..Default::default()
-    };
-    let mut authz_cfg = ferroehr::config::authz::AuthzConfig::default();
-    authz_cfg.rbac.enabled = rbac_enabled;
-    let resolvers = ferroehr_rest::extensions::access::authz::AuthzResolvers {
-        subject: std::sync::Arc::new(|_| Box::pin(async { Ok(None) })),
-        template_of_version: std::sync::Arc::new(|_, _| Box::pin(async { Ok(None) })),
-    };
-    let authz = ferroehr_rest::extensions::access::authz::AuthzHandle::build(
-        &authz_cfg,
-        &config.server.base_path,
-        None,
-        resolvers,
-    )
-    .map(std::sync::Arc::new);
-    let observability = Observability {
-        management: ManagementConfig {
-            enabled: true,
-            endpoints: EndpointLevels {
-                info: level,
-                ..EndpointLevels::default()
-            },
-            ..ManagementConfig::default()
-        },
-        ..Observability::default()
-    };
-    let (_pg, service) = common::test_service().await;
-    ferroehr_rest::build_full(config, service, authz, observability).expect("build")
+    let config = base_config(auth_config(roles));
+    let authz = authz_for(&config, rbac_enabled);
+    let observability = one_endpoint(EndpointLevels {
+        info: level,
+        ..EndpointLevels::default()
+    });
+    build_app(config, authz, observability).await
 }
 
 async fn status_of(app: Router, req: Request<Body>) -> StatusCode {
@@ -109,18 +132,11 @@ async fn status_of(app: Router, req: Request<Body>) -> StatusCode {
 }
 
 fn get(path: &str) -> Request<Body> {
-    Request::builder()
-        .uri(path)
-        .body(Body::empty())
-        .expect("request")
+    common::get(path)
 }
 
 fn get_auth(path: &str) -> Request<Body> {
-    Request::builder()
-        .uri(path)
-        .header(header::AUTHORIZATION, ADMIN_BASIC)
-        .body(Body::empty())
-        .expect("request")
+    common::get_authorized(path, ADMIN_BASIC)
 }
 
 #[tokio::test]
@@ -185,46 +201,20 @@ async fn admin_only_401_403_200() {
 /// Build an app with FOUR endpoints at four different levels at once, so a
 /// leak between them is observable.
 async fn app_with_mixed_levels(roles: &[&str]) -> Router {
-    let config = AppConfig {
-        server: ServerConfig {
-            swagger_ui: false,
-            ..Default::default()
-        },
-        auth: auth_config(roles),
-        ..Default::default()
-    };
-    let resolvers = ferroehr_rest::extensions::access::authz::AuthzResolvers {
-        subject: std::sync::Arc::new(|_| Box::pin(async { Ok(None) })),
-        template_of_version: std::sync::Arc::new(|_, _| Box::pin(async { Ok(None) })),
-    };
-    let authz = ferroehr_rest::extensions::access::authz::AuthzHandle::build(
-        &ferroehr::config::authz::AuthzConfig::default(),
-        &config.server.base_path,
-        None,
-        resolvers,
-    )
-    .map(std::sync::Arc::new);
-    let observability = Observability {
-        management: ManagementConfig {
-            enabled: true,
-            endpoints: EndpointLevels {
-                prometheus: AccessLevel::Public,
-                info: AccessLevel::Private,
-                env: AccessLevel::AdminOnly,
-                metrics: AccessLevel::Off,
-                ..EndpointLevels::default()
-            },
-            ..ManagementConfig::default()
-        },
-        // The recorder is what MOUNTS prometheus/metrics at all; without it
-        // they answer 404 whatever their level says, which would make the
-        // `public` row below pass for the wrong reason and the `off` row
-        // vacuous.
-        prometheus: Some(recorder().clone()),
-        ..Observability::default()
-    };
-    let (_pg, service) = common::test_service().await;
-    ferroehr_rest::build_full(config, service, authz, observability).expect("build")
+    let config = base_config(auth_config(roles));
+    let authz = authz_for(&config, true);
+    let mut observability = one_endpoint(EndpointLevels {
+        prometheus: AccessLevel::Public,
+        info: AccessLevel::Private,
+        env: AccessLevel::AdminOnly,
+        metrics: AccessLevel::Off,
+        ..EndpointLevels::default()
+    });
+    // The recorder is what MOUNTS prometheus/metrics at all; without it they
+    // answer 404 whatever their level says, which would make the `public` row
+    // below pass for the wrong reason and the `off` row vacuous.
+    observability.prometheus = Some(recorder().clone());
+    build_app(config, authz, observability).await
 }
 
 /// Each endpoint answers at ITS OWN level, and no endpoint's level leaks to a
@@ -325,17 +315,8 @@ async fn management_serves_no_health_route() {
 /// still answer, and `/management/info` is absent.
 #[tokio::test]
 async fn health_family_survives_management_disabled() {
-    let config = AppConfig {
-        server: ServerConfig {
-            swagger_ui: false,
-            ..Default::default()
-        },
-        auth: auth_config(&["ADMIN"]),
-        ..Default::default()
-    };
-    let (_pg, service) = common::test_service().await;
-    let app = ferroehr_rest::build_full(config, service, None, Observability::default())
-        .expect("build with management disabled");
+    let config = base_config(auth_config(&["ADMIN"]));
+    let app = build_app(config, None, Observability::default()).await;
 
     for public in ["/health", "/health/liveness", "/health/readiness"] {
         assert_eq!(
@@ -371,17 +352,11 @@ fn recorder() -> &'static prometheus::Registry {
 }
 
 async fn app_with_metrics() -> Router {
-    let config = AppConfig {
-        server: ServerConfig {
-            swagger_ui: false,
-            ..Default::default()
-        },
-        auth: AuthConfig {
-            enabled: false, // exercise the API path without auth in this test
-            ..AuthConfig::default()
-        },
-        ..Default::default()
-    };
+    // Authentication off: this test exercises the API path, not the gate.
+    let config = base_config(AuthConfig {
+        enabled: false,
+        ..AuthConfig::default()
+    });
     let observability = Observability {
         management: ManagementConfig {
             enabled: true,
@@ -397,8 +372,7 @@ async fn app_with_metrics() -> Router {
         build_info: BuildInfo::current(),
         ..Observability::default()
     };
-    let (_pg, service) = common::test_service().await;
-    ferroehr_rest::build_full(config, service, None, observability).expect("build")
+    build_app(config, None, observability).await
 }
 
 #[tokio::test]
@@ -471,17 +445,10 @@ fn looks_like_id(value: &str) -> bool {
 #[tokio::test]
 async fn separate_port_mode_keeps_management_off_the_main_app() {
     // With `management.port` set, the main app must NOT mount /management…
-    let config = AppConfig {
-        server: ServerConfig {
-            swagger_ui: false,
-            ..Default::default()
-        },
-        auth: AuthConfig {
-            enabled: false,
-            ..AuthConfig::default()
-        },
-        ..Default::default()
-    };
+    let config = base_config(AuthConfig {
+        enabled: false,
+        ..AuthConfig::default()
+    });
     let observability = Observability {
         management: ManagementConfig {
             enabled: true,
@@ -494,8 +461,7 @@ async fn separate_port_mode_keeps_management_off_the_main_app() {
         },
         ..Observability::default()
     };
-    let (_pg, service) = common::test_service().await;
-    let main_app = ferroehr_rest::build_full(config, service, None, observability).expect("build");
+    let main_app = build_app(config, None, observability).await;
 
     // …the main app 404s the management route.
     assert_eq!(
@@ -522,14 +488,7 @@ async fn app_with_flamegraph(
     level: AccessLevel,
     profiling: ferroehr::config::management::ProfilingConfig,
 ) -> Router {
-    let config = AppConfig {
-        server: ServerConfig {
-            swagger_ui: false,
-            ..Default::default()
-        },
-        auth: auth_config(&["ADMIN"]),
-        ..Default::default()
-    };
+    let config = base_config(auth_config(&["ADMIN"]));
     let observability = Observability {
         management: ManagementConfig {
             enabled: true,
@@ -542,8 +501,7 @@ async fn app_with_flamegraph(
         },
         ..Observability::default()
     };
-    let (_pg, service) = common::test_service().await;
-    ferroehr_rest::build_full(config, service, None, observability).expect("build")
+    build_app(config, None, observability).await
 }
 
 /// Off (the default) means the route is simply absent — a `404` answered
