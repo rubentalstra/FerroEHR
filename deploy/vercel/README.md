@@ -55,7 +55,14 @@ The deploy job verifies in two layers (#2846, after the v4.0.7 cut spent
    release tag's image digest on GHCR before any ping — the needs-edge's
    guarantee, re-asserted where it is consumed, with anonymous registry
    reads.
-2. **The served-version poll** is the acceptance; the hook response's job
+2. **The served-version poll** is the acceptance, and it is version-bound on
+   EVERY path: a release run waits for the tag's version, and a push or
+   dispatch run derives its expectation from the `:latest` image's own
+   `org.opencontainers.image.version` label (anonymous registry read) — the
+   deploy always builds from `:latest`, so that label is exactly what a
+   successful promotion must serve. Before this, a non-release run passed on
+   any 200, and the v4.0.10 recovery dispatch went green while the sandbox
+   still served 4.0.9. The hook response's job
    id is captured for the record, and the timeout message states what was
    already proven (the image side) so the remaining suspect (Vercel's own
    build/promotion — historically a flaky Neon integration step, #2846) is
