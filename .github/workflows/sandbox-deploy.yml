@@ -150,6 +150,7 @@ jobs:
           # Only compared against the served version string, never executed.
           EXPECTED: ${{ inputs.expected-version }}
           JOB_ID: ${{ steps.ping.outputs.job-id }}
+          IMAGE: ghcr.io/rubentalstra/ferroehr
         run: |
           set -euo pipefail
           if [ -z "$HOOK_URL" ]; then
@@ -162,10 +163,31 @@ jobs:
           # first 200 proves the new deployment is live AND migrated.
           # A bare 200 is NOT proof of the new deployment — the OLD one
           # answers 200 too (measured: the 4.0.4 dispatch went green while
-          # the sandbox still served 4.0.3). A release run is told the version
-          # the tag names and waits for exactly it; other runs log what is
-          # served.
+          # the sandbox still served 4.0.3, and the v4.0.10 recovery dispatch
+          # went green while it still served 4.0.9). A release run is told the
+          # version the tag names; EVERY other run derives its expectation
+          # from the `:latest` image's own version label, anonymously — the
+          # deploy always builds FROM `:latest`, so what that image declares
+          # is exactly what a successful promotion must serve.
           expected="${EXPECTED:-}"
+          if [ -z "$expected" ]; then
+            tok=$(curl -fsS "https://ghcr.io/token?scope=repository:${IMAGE#ghcr.io/}:pull" | sed -nE 's/.*"token":"([^"]+)".*/\1/p')
+            idx=$(curl -fsS -H "Authorization: Bearer ${tok}" \
+              -H "Accept: application/vnd.oci.image.index.v1+json, application/vnd.docker.distribution.manifest.list.v2+json" \
+              "https://ghcr.io/v2/${IMAGE#ghcr.io/}/manifests/latest")
+            child=$(printf '%s' "$idx" | jq -r '[.manifests[] | select(.platform.os == "linux")][0].digest // empty')
+            cfg=$(curl -fsS -H "Authorization: Bearer ${tok}" \
+              -H "Accept: application/vnd.oci.image.manifest.v1+json, application/vnd.docker.distribution.manifest.v2+json" \
+              "https://ghcr.io/v2/${IMAGE#ghcr.io/}/manifests/${child}" | jq -r '.config.digest // empty')
+            expected=$(curl -fsSL -H "Authorization: Bearer ${tok}" \
+              "https://ghcr.io/v2/${IMAGE#ghcr.io/}/blobs/${cfg}" \
+              | jq -r '.config.Labels["org.opencontainers.image.version"] // empty')
+            if [ -z "$expected" ]; then
+              echo "::error::could not derive the expected version from :latest's org.opencontainers.image.version label — a verification that cannot decide must not pass (the image-labels guard keeps the label present, so an unreadable label is a registry/read defect to look at, not a shrug)." >&2
+              exit 1
+            fi
+            echo "expectation derived from :latest — waiting for '${expected}'"
+          fi
           deadline=$(( $(date +%s) + 1200 ))
           sleep 60
           while :; do
