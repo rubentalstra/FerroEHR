@@ -538,6 +538,9 @@ impl RmScan<'_> {
         attr: &CAttribute,
         rm_attr: &RmAttr,
     ) {
+        // NOTE: ADL 1.4 master05 §existence states a {1..1} default when
+        // unstated — applied literally it fails published CKM content, so an
+        // unstated existence deliberately defers to the RM (reported upstream).
         let Some(ex) = attr.existence.as_ref() else {
             return;
         };
