@@ -15,6 +15,8 @@ workflow refuses a tag that has no matching section here.
 
 ## [Unreleased]
 
+## [4.0.10] - 2026-08-29
+
 ### Added
 
 - The metrics surface gains `process_resident_memory_bytes` (the standard
@@ -40,7 +42,7 @@ workflow refuses a tag that has no matching section here.
   full history preserved, old GitHub URLs redirect). The moving development
   image tag follows the branch: pull `ghcr.io/rubentalstra/ferroehr:main`
   (and the admin-ui/postgres siblings) instead of `:develop`, which is
-  frozen and will be removed. `:latest` keeps its meaning — the newest
+  frozen tags are deleted. `:latest` keeps its meaning — the newest
   stable release — and release tags are unchanged.
 
 ### Fixed
@@ -7764,7 +7766,8 @@ but has not yet run in production.
   seccomp, default-deny NetworkPolicy) and golden-render validation.
 
 
-[unreleased]: https://github.com/rubentalstra/FerroEHR/compare/v4.0.9...HEAD
+[unreleased]: https://github.com/rubentalstra/FerroEHR/compare/v4.0.10...HEAD
+[4.0.10]: https://github.com/rubentalstra/FerroEHR/compare/v4.0.9...v4.0.10
 [4.0.9]: https://github.com/rubentalstra/FerroEHR/compare/v4.0.8...v4.0.9
 [4.0.8]: https://github.com/rubentalstra/FerroEHR/compare/v4.0.7...v4.0.8
 [4.0.7]: https://github.com/rubentalstra/FerroEHR/compare/v4.0.6...v4.0.7
