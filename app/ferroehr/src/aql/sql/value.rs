@@ -85,23 +85,24 @@ impl Builder<'_> {
         if let Some(expr) = self.promoted_leaf_expr(leaf, mode) {
             return Ok(expr);
         }
-        reject_fragment_predicates(leaf)?;
         let src = self.source_node(leaf.source.0)?;
         let root_conds = leaf
             .root_predicate
             .as_ref()
             .map(|p| self.node_constraint_conds(&src, p))
             .transpose()?;
-        let jp = fragment_jsonpath(leaf);
+        let fragment = self.fragment_path(leaf)?;
+        let jp = fragment.as_ref().map(|(jp, _)| jp.clone());
         // NOTE: QUERY master03 §Identified Paths is silent on projecting a
         // list-valued fragment path — our own decision: every match as ONE
         // jsonb array cell; scalar contexts keep the first-match extraction.
         let projected_array =
             matches!(mode, ValueMode::Projection) && jp.is_some() && leaf.fragment_multi_valued();
         let extract = |data: Expr| -> Expr {
+            let vars = fragment.as_ref().and_then(|(_, v)| v.clone());
             match (&jp, projected_array) {
-                (Some(jp), true) => super::expr::jsonb_path_array(data, jp),
-                _ => extract_base(data, jp.as_deref()),
+                (Some(jp), true) => super::expr::jsonb_path_array(data, jp, vars),
+                _ => extract_base(data, jp.as_deref(), vars),
             }
         };
 
@@ -196,9 +197,8 @@ impl Builder<'_> {
         {
             return Ok(None);
         }
-        reject_fragment_predicates(leaf)?;
-        let jp = fragment_jsonpath(leaf);
-        let multi = jp.is_some() && leaf.fragment_multi_valued();
+        let fragment = self.fragment_path(leaf)?;
+        let multi = fragment.is_some() && leaf.fragment_multi_valued();
         if leaf.anchor.is_empty() && !multi {
             return Ok(None);
         }
@@ -207,19 +207,22 @@ impl Builder<'_> {
         let base;
         if leaf.anchor.is_empty() {
             // `multi` holds here, so the fragment jsonpath exists.
-            let Some(jp) = jp.as_deref() else {
+            let Some((jp, vars)) = fragment else {
                 return Ok(None);
             };
             sub = Query::select();
-            base = fragment_items(&mut sub, col(&src, "data"), jp, self.next_ctr());
+            base = fragment_items(&mut sub, col(&src, "data"), &jp, vars, self.next_ctr());
         } else {
             let (walk, last) = self.anchored_walk(leaf, &src)?;
             sub = walk;
-            base = match (jp.as_deref(), multi) {
-                (Some(jp), true) => {
-                    fragment_items(&mut sub, col(&last, "data"), jp, self.next_ctr())
+            base = match (fragment, multi) {
+                (Some((jp, vars)), true) => {
+                    fragment_items(&mut sub, col(&last, "data"), &jp, vars, self.next_ctr())
                 }
-                _ => extract_base(col(&last, "data"), jp.as_deref()),
+                (fragment, _) => {
+                    let (jp, vars) = fragment.unzip();
+                    extract_base(col(&last, "data"), jp.as_deref(), vars.flatten())
+                }
             };
         }
         // The root predicate correlates against the source node: the value
@@ -359,6 +362,93 @@ impl Builder<'_> {
         }
         let alias = self.node_alias.get(&leaf.source.0)?;
         Some(col(alias, entry.column))
+    }
+
+    /// The leaf's fragment jsonpath plus the bound filter variables of any
+    /// predicated fragment step, or `None` when the leaf addresses the whole
+    /// anchor node.
+    ///
+    /// A step predicate lowers to a jsonpath filter expression on the step's
+    /// member accessor (`$.links ? (@.archetype_node_id == $p0).target.value`
+    /// — QUERY master03 §Node predicate / §Standard predicate); every
+    /// compared value travels in the `vars` jsonb PARAMETER (`$p0`, `$p1`, …),
+    /// never spliced into the path text, and member names are lexer-restricted
+    /// identifiers. An archetype constraint on a fragment step is plain
+    /// equality on `archetype_node_id` — fragment objects are not `node` rows,
+    /// so the subsumption columns do not exist there; an HRID compares as the
+    /// written string.
+    #[expect(
+        clippy::disallowed_types,
+        reason = "the jsonpath vars object is SQL/JSON wire material (the bound \
+                  third argument of jsonb_path_query*), not an RM value — no \
+                  generated type models it"
+    )]
+    fn fragment_path(&self, leaf: &LeafPath) -> Result<Option<(String, Option<Expr>)>, AqlError> {
+        if leaf.fragment.is_empty() {
+            return Ok(None);
+        }
+        let mut jp = String::from("$");
+        let mut vars = serde_json::Map::new();
+        let var = |v: serde_json::Value, vars: &mut serde_json::Map<String, serde_json::Value>| {
+            let name = format!("p{}", vars.len());
+            vars.insert(name.clone(), v);
+            name
+        };
+        for step in &leaf.fragment {
+            let _ = write!(jp, ".{}", step.name);
+            let Some(pred) = &step.predicate else {
+                continue;
+            };
+            let mut conds: Vec<String> = Vec::new();
+            if let Some(a) = &pred.archetype {
+                let value = match a {
+                    crate::aql::ir::ArchetypeConstraint::NodeCode(c)
+                    | crate::aql::ir::ArchetypeConstraint::Archetype(c) => c.clone(),
+                    crate::aql::ir::ArchetypeConstraint::Param(p) => self.param_str(p)?,
+                };
+                let v = var(serde_json::Value::String(value), &mut vars);
+                conds.push(format!("@.archetype_node_id == ${v}"));
+            }
+            if let Some(n) = &pred.name {
+                match n {
+                    crate::aql::ir::NameConstraint::Value(s) => {
+                        let v = var(serde_json::Value::String(s.clone()), &mut vars);
+                        conds.push(format!("@.name.value == ${v}"));
+                    }
+                    crate::aql::ir::NameConstraint::Param(p) => {
+                        let v = var(serde_json::Value::String(self.param_str(p)?), &mut vars);
+                        conds.push(format!("@.name.value == ${v}"));
+                    }
+                    crate::aql::ir::NameConstraint::TermCode { terminology, code } => {
+                        let c = var(serde_json::Value::String(code.clone()), &mut vars);
+                        conds.push(format!("@.name.defining_code.code_string == ${c}"));
+                        let t = var(serde_json::Value::String(terminology.clone()), &mut vars);
+                        conds.push(format!("@.name.defining_code.terminology_id.value == ${t}"));
+                    }
+                }
+            }
+            for sp in &pred.standard {
+                let value = jsonpath_scalar(self.bind_value(&sp.value)?)?;
+                let v = var(value, &mut vars);
+                let mut lhs = String::from("@");
+                for part in &sp.path {
+                    let _ = write!(lhs, ".{part}");
+                }
+                conds.push(format!("{lhs} {} ${v}", jsonpath_op(sp.op)));
+            }
+            if !conds.is_empty() {
+                let _ = write!(jp, " ? ({})", conds.join(" && "));
+            }
+        }
+        let vars_expr = if vars.is_empty() {
+            None
+        } else {
+            Some(cast(
+                Expr::val(serde_json::Value::Object(vars).to_string()),
+                "jsonb",
+            ))
+        };
+        Ok(Some((jp, vars_expr)))
     }
 
     /// Resolve a leaf's source to a node alias present in the FROM.
@@ -650,57 +740,74 @@ pub(super) fn ehr_field_expr(alias: &str, field: EhrField, system_id: &str) -> E
     }
 }
 
-/// A predicate on a fragment step (below the anchor node) has no SQL lowering
-/// yet — refusing loudly keeps the engine's typed-reject rule: the silent
-/// alternative answers as if the predicate were not written.
-// TODO(#2927): lower fragment-step predicates as jsonpath filter expressions.
-fn reject_fragment_predicates(leaf: &LeafPath) -> Result<(), AqlError> {
-    match leaf.fragment.iter().find(|s| s.predicate.is_some()) {
-        Some(step) => Err(SqlError::Unsupported(format!(
-            "a predicate on the non-structure path step '{}' is not supported",
-            step.name
-        ))
-        .into()),
-        None => Ok(()),
-    }
-}
-
 /// AND-combine a lowered condition list, `None` for an absent/empty list.
 fn all_of(conds: Option<Vec<Expr>>) -> Option<Expr> {
     conds.and_then(|c| c.into_iter().reduce(sea_query::ExprTrait::and))
 }
 
-/// Adds the set-returning `jsonb_path_query(<data>, '<jp>'::jsonpath)` to the
-/// subquery's FROM and returns the per-match item reference.
+/// Adds the set-returning `jsonb_path_query(<data>, '<jp>'::jsonpath[, vars])`
+/// to the subquery's FROM and returns the per-match item reference.
 ///
 /// The call is implicitly LATERAL (a FROM function may reference columns of
 /// preceding FROM items — PostgreSQL docs §7.2.1.5 LATERAL Subqueries), and
 /// for a scalar-returning function the table alias doubles as the column name
 /// (§7.2.1.4 Table Functions).
-fn fragment_items(sub: &mut sea_query::SelectStatement, data: Expr, jp: &str, n: usize) -> Expr {
+fn fragment_items(
+    sub: &mut sea_query::SelectStatement,
+    data: Expr,
+    jp: &str,
+    vars: Option<Expr>,
+    n: usize,
+) -> Expr {
     let alias = format!("f{n}");
-    sub.from_function(
-        sea_query::Func::cust(Alias::new("jsonb_path_query"))
-            .arg(data)
-            .arg(cast(Expr::val(jp.to_owned()), "jsonpath")),
-        Alias::new(alias.as_str()),
-    );
+    let mut func = sea_query::Func::cust(Alias::new("jsonb_path_query"))
+        .arg(data)
+        .arg(cast(Expr::val(jp.to_owned()), "jsonpath"));
+    if let Some(vars) = vars {
+        func = func.arg(vars);
+    }
+    sub.from_function(func, Alias::new(alias.as_str()));
     col(&alias, &alias)
 }
 
 // ── jsonpaths ───────────────────────────────────────────────────────────────
 
-/// Build the fragment jsonpath (`$.a.b`) for a leaf, or `None` when the leaf
-/// addresses the whole anchor node.
-pub(super) fn fragment_jsonpath(leaf: &LeafPath) -> Option<String> {
-    if leaf.fragment.is_empty() {
-        return None;
+/// The jsonpath filter-expression operator for an AQL comparison operator
+/// (PostgreSQL docs §9.16.2 — the SQL/JSON path comparison operators).
+fn jsonpath_op(op: openehr_query::lexer::CompOp) -> &'static str {
+    match op {
+        openehr_query::lexer::CompOp::Eq => "==",
+        openehr_query::lexer::CompOp::Ne => "!=",
+        openehr_query::lexer::CompOp::Lt => "<",
+        openehr_query::lexer::CompOp::Le => "<=",
+        openehr_query::lexer::CompOp::Gt => ">",
+        openehr_query::lexer::CompOp::Ge => ">=",
     }
-    let mut jp = String::from("$");
-    for step in &leaf.fragment {
-        let _ = write!(jp, ".{}", step.name);
-    }
-    Some(jp)
+}
+
+/// A bound predicate value as the JSON scalar a jsonpath `vars` object
+/// carries. A non-scalar bind cannot appear in a filter comparison and is a
+/// typed reject.
+#[expect(
+    clippy::disallowed_types,
+    reason = "the jsonpath vars object is SQL/JSON wire material (the bound \
+              third argument of jsonb_path_query*), not an RM value — no \
+              generated type models it"
+)]
+fn jsonpath_scalar(value: sea_query::Value) -> Result<serde_json::Value, AqlError> {
+    Ok(match value {
+        sea_query::Value::String(Some(s)) => serde_json::Value::String(s),
+        sea_query::Value::Bool(Some(b)) => serde_json::Value::Bool(b),
+        sea_query::Value::BigInt(Some(i)) => serde_json::Value::from(i),
+        sea_query::Value::Int(Some(i)) => serde_json::Value::from(i),
+        sea_query::Value::Double(Some(f)) => serde_json::Value::from(f),
+        other => {
+            return Err(SqlError::Unsupported(format!(
+                "a fragment-step predicate compares against a non-scalar value ({other:?})"
+            ))
+            .into());
+        }
+    })
 }
 
 /// Build a jsonpath from a relative object path (`[a, b]` → `$.a.b`) — a node

@@ -55,10 +55,11 @@ workflow refuses a tag that has no matching section here.
 - An AQL node predicate written on the ROOT of an identified path
   (`c[openEHR-EHR-COMPOSITION.report.v1]/name/value`) now constrains the
   query — it was silently discarded, so the path answered as if the
-  predicate were not written. The two shapes that still have no lowering — a
-  predicate on a non-structure path step (`links[at0001]`) and a node
-  predicate on a whole-object projection — are refused with a typed error
-  instead of being ignored.
+  predicate were not written. A predicate on a non-structure path step
+  (`links[meaning/value = ...]`) lowers as a SQL/JSON path filter selecting
+  the matching elements, and a root predicate on a whole-object projection
+  serves the object where the source matches and a `null` cell where it
+  does not.
 - Reads serve the exact canonical bytes the commit accepted: `_type` first
   and every field at its spec-declared position — including the
   server-stamped `uid`, which now lands at its place in the document instead
