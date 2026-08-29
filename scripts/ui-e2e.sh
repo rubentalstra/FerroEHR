@@ -263,10 +263,21 @@ if [[ -n "${UI_E2E_IMAGE:-}" ]]; then
       -f docker/admin-ui/e2e-env.yml \
       up -d --no-build --pull always ferroehr-admin-ui
   else
-    echo "── compose up the console image (build from source)"
+    # `up --build ferroehr-admin-ui` would also rebuild the whole `depends_on`
+    # closure — a full CDR compile even when the caller supplied both images
+    # (#2882) — so the build is a separate, service-scoped step (`compose
+    # build` never builds dependencies) and the `up` itself never builds.
+    if [[ -n "${UI_E2E_NO_BUILD:-}" ]]; then
+      echo "── compose up the console image (UI_E2E_NO_BUILD: images as provided)"
+    else
+      echo "── compose build the console image (build from source)"
+      docker compose -f docker-compose.yml -f docker-compose.dev.yml \
+        -f docker/admin-ui/e2e-env.yml \
+        build ferroehr-admin-ui
+    fi
     docker compose -f docker-compose.yml -f docker-compose.dev.yml \
       -f docker/admin-ui/e2e-env.yml \
-      up -d --build ferroehr-admin-ui
+      up -d --no-build ferroehr-admin-ui
   fi
 else
   if [[ -n "${UI_E2E_PREBUILT_CONSOLE:-}" ]]; then
