@@ -44,7 +44,9 @@ ORDER BY systolic DESC
   follows the RM's reference model: `FOLDER f CONTAINS COMPOSITION c` matches
   the compositions a folder's `items` reference, transitively over the
   folder's sub-tree, and `FOLDER f1 CONTAINS FOLDER f2` matches strict
-  sub-folders. A pair the RM defines no containment relationship for (say
+  sub-folders plus the folders of a versioned folder the `items` reference —
+  one reference hop, so a chain of references is expressed by chaining
+  `CONTAINS`. A pair the RM defines no containment relationship for (say
   `COMPOSITION CONTAINS COMPOSITION`) is refused with a typed error.
 - **`SELECT`** projects values by path. Paths use archetype node ids (`at0004`)
   and RM attribute names (`value/magnitude`); `AS` names a column.

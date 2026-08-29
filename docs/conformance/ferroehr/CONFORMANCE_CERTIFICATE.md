@@ -4,7 +4,7 @@
 
 | Field | Value |
 | --- | --- |
-| Solution | ferroehr 4.0.8 |
+| Solution | ferroehr 4.0.9 |
 | Vendor | Ruben Talstra |
 | Runner | veredictum 0.1.0-alpha.6 |
 | Infrastructure | ixit.json#/environment |
