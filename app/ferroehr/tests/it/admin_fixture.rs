@@ -1,17 +1,17 @@
 // SPDX-FileCopyrightText: FerroEHR contributors
 // SPDX-License-Identifier: MIT
 
-//! Shared fixtures for the ADMIN-surface service suites (`service_admin`,
-//! `service_dump_load`).
+//! Shared fixtures for the service suites that drive a whole repository
+//! (`service_admin`, `service_dump_load`, `service_sm3`,
+//! `service_ehr_index_conflicts`, `service_message_audit`).
 //!
-//! Both suites drive the same repository shape — a fresh migrated database from
-//! the shared `testkit` harness, an EHR carrying several versioned-object kinds,
+//! They all start from the same shape — a fresh migrated database from the
+//! shared `testkit` harness, an EHR carrying several versioned-object kinds,
 //! and the SM `UPDATE_VERSION` commit envelope — so the seeds and probes live
 //! here once rather than once per suite.
 
 #![expect(
     clippy::expect_used,
-    clippy::unwrap_used,
     clippy::panic,
     clippy::indexing_slicing,
     reason = "clippy's in-test lint scoping (clippy.toml `allow-*-in-tests`) only \
@@ -45,6 +45,16 @@ pub(crate) async fn repository() -> (testkit::TestDb, PgPool, FerroEhrService) {
 /// Returns the `uid.value` (`OBJECT_VERSION_ID`) of a versioned-object body.
 pub(crate) fn uid(v: &Value) -> &str {
     v["uid"]["value"].as_str().expect("uid.value")
+}
+
+/// Returns the bare versioned-object UUID of an `OBJECT_VERSION_ID`.
+///
+/// The grammar is `object_version_id = object_id, '::', creating_system_id,
+/// '::', version_tree_id` (BASE `base_types/master05-identification_package.adoc`
+/// §Syntaxes), so the object identifier is everything before the first
+/// separator.
+pub(crate) fn vo_of(ovid: &str) -> &str {
+    ovid.split("::").next().expect("vo uuid")
 }
 
 /// Builds the SM `UPDATE_VERSION` commit envelope for a bare-RM write.
@@ -95,7 +105,7 @@ pub(crate) async fn seed_full_ehr(svc: &FerroEhrService) -> EhrId {
         .await
         .expect("status get");
     let status_ovid = uid(&updated).to_owned();
-    let status_vo = status_ovid.split("::").next().unwrap().to_owned();
+    let status_vo = vo_of(&status_ovid).to_owned();
     updated.as_object_mut().expect("status obj").remove("uid");
     svc.target_tags_replace(
         ehr_id,

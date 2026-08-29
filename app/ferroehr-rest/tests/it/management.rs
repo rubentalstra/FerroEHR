@@ -92,13 +92,19 @@ fn authz_for(config: &AppConfig, rbac_enabled: bool) -> Option<Arc<AuthzHandle>>
 }
 
 /// Assemble the full app over a real service on a fresh database.
+///
+/// Returns the harness guard with the router: dropping it releases the template
+/// clone the app is still serving from, so every caller binds it for the test.
 async fn build_app(
     config: AppConfig,
     authz: Option<Arc<AuthzHandle>>,
     observability: Observability,
-) -> Router {
-    let (_pg, service) = common::test_service().await;
-    ferroehr_rest::build_full(config, service, authz, observability).expect("build")
+) -> (testkit::TestDb, Router) {
+    let (pg, service) = common::test_service().await;
+    (
+        pg,
+        ferroehr_rest::build_full(config, service, authz, observability).expect("build"),
+    )
 }
 
 /// One management endpoint mounted at `level`, everything else at its default.
@@ -117,7 +123,11 @@ fn one_endpoint(endpoints: EndpointLevels) -> Observability {
 /// to `level`, the Basic user granted `roles`, and RBAC on or off — the
 /// `AdminOnly` level gates on the RBAC `admin_role` (issue #1879 retired the
 /// deprecated `admin_scope` alias).
-async fn app_with(level: AccessLevel, roles: &[&str], rbac_enabled: bool) -> Router {
+async fn app_with(
+    level: AccessLevel,
+    roles: &[&str],
+    rbac_enabled: bool,
+) -> (testkit::TestDb, Router) {
     let config = base_config(auth_config(roles));
     let authz = authz_for(&config, rbac_enabled);
     let observability = one_endpoint(EndpointLevels {
@@ -141,7 +151,7 @@ fn get_auth(path: &str) -> Request<Body> {
 
 #[tokio::test]
 async fn off_endpoint_is_404() {
-    let app = app_with(AccessLevel::Off, &["ADMIN"], true).await;
+    let (_db, app) = app_with(AccessLevel::Off, &["ADMIN"], true).await;
     assert_eq!(
         status_of(app, get("/management/info")).await,
         StatusCode::NOT_FOUND
@@ -150,7 +160,7 @@ async fn off_endpoint_is_404() {
 
 #[tokio::test]
 async fn public_endpoint_needs_no_auth() {
-    let app = app_with(AccessLevel::Public, &["ADMIN"], true).await;
+    let (_db, app) = app_with(AccessLevel::Public, &["ADMIN"], true).await;
     assert_eq!(
         status_of(app, get("/management/info")).await,
         StatusCode::OK
@@ -159,7 +169,7 @@ async fn public_endpoint_needs_no_auth() {
 
 #[tokio::test]
 async fn private_endpoint_401_then_200() {
-    let app = app_with(AccessLevel::Private, &["ADMIN"], true).await;
+    let (_db, app) = app_with(AccessLevel::Private, &["ADMIN"], true).await;
     assert_eq!(
         status_of(app.clone(), get("/management/info")).await,
         StatusCode::UNAUTHORIZED
@@ -173,25 +183,25 @@ async fn private_endpoint_401_then_200() {
 #[tokio::test]
 async fn admin_only_401_403_200() {
     // 401 unauthenticated.
-    let app = app_with(AccessLevel::AdminOnly, &["ADMIN"], true).await;
+    let (_db, app) = app_with(AccessLevel::AdminOnly, &["ADMIN"], true).await;
     assert_eq!(
         status_of(app, get("/management/info")).await,
         StatusCode::UNAUTHORIZED
     );
     // 403 authenticated but without the RBAC admin role.
-    let app = app_with(AccessLevel::AdminOnly, &["USER"], true).await;
+    let (_db, app) = app_with(AccessLevel::AdminOnly, &["USER"], true).await;
     assert_eq!(
         status_of(app, get_auth("/management/info")).await,
         StatusCode::FORBIDDEN
     );
     // 200 with the admin role.
-    let app = app_with(AccessLevel::AdminOnly, &["ADMIN"], true).await;
+    let (_db, app) = app_with(AccessLevel::AdminOnly, &["ADMIN"], true).await;
     assert_eq!(
         status_of(app, get_auth("/management/info")).await,
         StatusCode::OK
     );
     // 200 with RBAC disabled: authenticated is enough (auth-only deployments).
-    let app = app_with(AccessLevel::AdminOnly, &["USER"], false).await;
+    let (_db, app) = app_with(AccessLevel::AdminOnly, &["USER"], false).await;
     assert_eq!(
         status_of(app, get_auth("/management/info")).await,
         StatusCode::OK
@@ -200,7 +210,7 @@ async fn admin_only_401_403_200() {
 
 /// Build an app with FOUR endpoints at four different levels at once, so a
 /// leak between them is observable.
-async fn app_with_mixed_levels(roles: &[&str]) -> Router {
+async fn app_with_mixed_levels(roles: &[&str]) -> (testkit::TestDb, Router) {
     let config = base_config(auth_config(roles));
     let authz = authz_for(&config, true);
     let mut observability = one_endpoint(EndpointLevels {
@@ -231,7 +241,7 @@ async fn endpoint_levels_are_independent() {
     // Anonymous: only the `public` endpoint answers. The `admin_only` and
     // `private` ones challenge; the `off` one is not mounted at all, and says
     // 404 rather than 401 — its absence is not a credential problem.
-    let app = app_with_mixed_levels(&["ADMIN"]).await;
+    let (_db, app) = app_with_mixed_levels(&["ADMIN"]).await;
     assert_eq!(
         status_of(app, get("/management/prometheus")).await,
         StatusCode::OK
@@ -241,7 +251,7 @@ async fn endpoint_levels_are_independent() {
         ("/management/env", StatusCode::UNAUTHORIZED),
         ("/management/metrics", StatusCode::NOT_FOUND),
     ] {
-        let app = app_with_mixed_levels(&["ADMIN"]).await;
+        let (_db, app) = app_with_mixed_levels(&["ADMIN"]).await;
         assert_eq!(
             status_of(app, get(path)).await,
             expected,
@@ -257,7 +267,7 @@ async fn endpoint_levels_are_independent() {
         ("/management/env", StatusCode::FORBIDDEN),
         ("/management/metrics", StatusCode::NOT_FOUND),
     ] {
-        let app = app_with_mixed_levels(&["USER"]).await;
+        let (_db, app) = app_with_mixed_levels(&["USER"]).await;
         assert_eq!(
             status_of(app, get_auth(path)).await,
             expected,
@@ -272,7 +282,7 @@ async fn endpoint_levels_are_independent() {
         ("/management/env", StatusCode::OK),
         ("/management/metrics", StatusCode::NOT_FOUND),
     ] {
-        let app = app_with_mixed_levels(&["ADMIN"]).await;
+        let (_db, app) = app_with_mixed_levels(&["ADMIN"]).await;
         assert_eq!(
             status_of(app, get_auth(path)).await,
             expected,
@@ -289,7 +299,7 @@ async fn endpoint_levels_are_independent() {
 /// `/health/readiness` indicator body.)
 #[tokio::test]
 async fn management_serves_no_health_route() {
-    let app = app_with(AccessLevel::Public, &["ADMIN"], true).await;
+    let (_db, app) = app_with(AccessLevel::Public, &["ADMIN"], true).await;
     for gone in [
         "/management/health",
         "/management/health/liveness",
@@ -316,7 +326,7 @@ async fn management_serves_no_health_route() {
 #[tokio::test]
 async fn health_family_survives_management_disabled() {
     let config = base_config(auth_config(&["ADMIN"]));
-    let app = build_app(config, None, Observability::default()).await;
+    let (_db, app) = build_app(config, None, Observability::default()).await;
 
     for public in ["/health", "/health/liveness", "/health/readiness"] {
         assert_eq!(
@@ -351,7 +361,7 @@ fn recorder() -> &'static prometheus::Registry {
     })
 }
 
-async fn app_with_metrics() -> Router {
+async fn app_with_metrics() -> (testkit::TestDb, Router) {
     // Authentication off: this test exercises the API path, not the gate.
     let config = base_config(AuthConfig {
         enabled: false,
@@ -377,7 +387,7 @@ async fn app_with_metrics() -> Router {
 
 #[tokio::test]
 async fn prometheus_has_route_template_label_and_no_ids() {
-    let app = app_with_metrics().await;
+    let (_db, app) = app_with_metrics().await;
 
     // Drive an API request that matches a templated route carrying an id. The
     // HTTP metrics layer must label it by the *template*, never the raw id.
@@ -461,7 +471,7 @@ async fn separate_port_mode_keeps_management_off_the_main_app() {
         },
         ..Observability::default()
     };
-    let main_app = build_app(config, None, observability).await;
+    let (_db, main_app) = build_app(config, None, observability).await;
 
     // …the main app 404s the management route.
     assert_eq!(
@@ -487,7 +497,7 @@ async fn separate_port_mode_keeps_management_off_the_main_app() {
 async fn app_with_flamegraph(
     level: AccessLevel,
     profiling: ferroehr::config::management::ProfilingConfig,
-) -> Router {
+) -> (testkit::TestDb, Router) {
     let config = base_config(auth_config(&["ADMIN"]));
     let observability = Observability {
         management: ManagementConfig {
@@ -508,7 +518,7 @@ async fn app_with_flamegraph(
 /// before authentication.
 #[tokio::test]
 async fn flamegraph_off_is_404() {
-    let app = app_with_flamegraph(
+    let (_db, app) = app_with_flamegraph(
         AccessLevel::Off,
         ferroehr::config::management::ProfilingConfig::default(),
     )
@@ -522,7 +532,7 @@ async fn flamegraph_off_is_404() {
 /// Opted in: a short sample window answers `200` with a rendered SVG.
 #[tokio::test]
 async fn flamegraph_samples_and_renders_svg() {
-    let app = app_with_flamegraph(
+    let (_db, app) = app_with_flamegraph(
         AccessLevel::Public,
         ferroehr::config::management::ProfilingConfig::default(),
     )
@@ -558,7 +568,7 @@ async fn flamegraph_samples_and_renders_svg() {
 /// clamped.
 #[tokio::test]
 async fn flamegraph_over_cap_is_400() {
-    let app = app_with_flamegraph(
+    let (_db, app) = app_with_flamegraph(
         AccessLevel::Public,
         ferroehr::config::management::ProfilingConfig::default(),
     )

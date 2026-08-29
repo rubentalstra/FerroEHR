@@ -30,7 +30,7 @@
 //! our own extension surface); the public methods exist for the SM native API
 //! and future extension routes.
 
-pub(crate) mod conflicts;
+pub mod conflicts;
 pub(crate) mod index;
 pub mod types;
 

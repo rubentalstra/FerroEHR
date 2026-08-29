@@ -10,33 +10,27 @@
 
 #![expect(
     clippy::expect_used,
-    clippy::indexing_slicing,
     reason = "clippy's in-test lint scoping (clippy.toml `allow-*-in-tests`) only \
               reaches `#[test]`-annotated functions, so it misses this integration \
-              module's helpers and async bodies; panicking assertions and direct \
-              fixture indexing are the intended shape here (the Rust Book ch11)"
+              module's helpers and async bodies; panicking assertions are the \
+              intended shape here (the Rust Book ch11)"
 )]
 
 use serde_json::{Value, json};
 use sqlx::PgPool;
 use uuid::Uuid;
 
+use crate::admin_fixture::{uid, uv, vo_of};
 use crate::typed_body::typed;
 use ferroehr::service::FerroEhrService;
 use ferroehr::service::ehr_index::types::{
     LocationDesc, ResourceInstanceType, ResourceStatus, SubjectRef,
 };
 use ferroehr::service::status::{CallStatusType, SmError};
-use openehr_its::rest::generated::common::UpdateVersion;
 
-/// The `uid.value` (`OBJECT_VERSION_ID`) of a versioned-object body.
-fn ovid(v: &Value) -> &str {
-    v["uid"]["value"].as_str().expect("uid.value")
-}
-
-/// The bare versioned-object UUID from an `OBJECT_VERSION_ID`.
+/// The bare versioned-object UUID of a versioned-object body.
 fn vo_uuid(v: &Value) -> String {
-    ovid(v).split("::").next().expect("vo uuid").to_owned()
+    vo_of(uid(v)).to_owned()
 }
 
 /// The DB's current instant (`SELECT now()`) as a `jiff::Timestamp`. Time-travel
@@ -83,37 +77,6 @@ async fn seed_ehr(pool: &PgPool) -> Uuid {
     id
 }
 
-/// The SM `UPDATE_VERSION` commit envelope for a bare-RM relationship write.
-/// The `change_type` matches the operation — `249` first version, `251` when
-/// a `preceding_version_uid` names an existing one (RM common master06
-/// §Contributions; a contradicting client code is rejected per ITS-REST
-/// overview §"openehr-version and openehr-audit-details").
-fn uv<T: serde::de::DeserializeOwned>(data: &Value, preceding: Option<&str>) -> UpdateVersion<T> {
-    let change = if preceding.is_some() { "251" } else { "249" };
-    // `lifecycle_state` and `commit_audit.change_type` are `DV_CODED_TEXT` on
-    // the released wire (ITS-REST `schemas/common/UpdateVersion.yaml` /
-    // `UpdateAudit.yaml` both `$ref` `DvCodedText`), not the flat SM
-    // `Terminology_code` spelling.
-    let mut v = json!({
-        "lifecycle_state": {
-            "value": "complete",
-            "defining_code": { "terminology_id": { "value": "openehr" }, "code_string": "532" }
-        },
-        "data": data,
-        "commit_audit": {
-            "change_type": {
-                "value": "commit",
-                "defining_code": { "terminology_id": { "value": "openehr" }, "code_string": change }
-            },
-            "committer": { "_type": "PARTY_IDENTIFIED", "name": "sm tester" }
-        }
-    });
-    if let Some(p) = preceding {
-        v["preceding_version_uid"] = json!({ "value": p });
-    }
-    openehr_its::json::from_canonical_value(&v).expect("UpdateVersion")
-}
-
 // ─── PARTY_RELATIONSHIP ───────────────────────────────────────────────────────
 
 /// The literal SM `I_PARTY_RELATIONSHIP` calls (typed Uuid/version arguments),
@@ -131,7 +94,7 @@ async fn relationship_sm_calls_round_trip() {
 
     // create_party_relationship(UV) → the new VERSIONED_OBJECT's id.
     let vo_id = svc
-        .create_party_relationship(uv(&relationship("parent-of", src, tgt), None))
+        .create_party_relationship(uv(&relationship("parent-of", src, tgt), "249", None))
         .await
         .expect("create_party_relationship");
 
@@ -157,7 +120,10 @@ async fn relationship_sm_calls_round_trip() {
 
     // update_party_relationship(UV with preceding) → the new version uid.
     let v2 = svc
-        .update_party_relationship(vo_id, uv(&relationship("guardian-of", src, tgt), Some(&v1)))
+        .update_party_relationship(
+            vo_id,
+            uv(&relationship("guardian-of", src, tgt), "251", Some(&v1)),
+        )
         .await
         .expect("update_party_relationship");
     assert!(v2.ends_with("::2"), "second version, got {v2}");
@@ -209,7 +175,7 @@ async fn relationship_lifecycle_end_to_end() {
     assert_eq!(created.body["_type"], "PARTY_RELATIONSHIP");
     assert_eq!(created.body["source"]["id"]["value"], src);
     assert_eq!(created.body["target"]["id"]["value"], tgt);
-    let ovid_v1 = ovid(&created.body).to_owned();
+    let ovid_v1 = uid(&created.body).to_owned();
     let vo = vo_uuid(&created.body);
     assert!(ovid_v1.ends_with("::1"), "first version, got {ovid_v1}");
     assert_eq!(
@@ -230,7 +196,7 @@ async fn relationship_lifecycle_end_to_end() {
         .party_relationship_get(ovid_v1.clone(), None)
         .await
         .expect("get by ovid");
-    assert_eq!(ovid(&by_ovid.body), ovid_v1);
+    assert_eq!(uid(&by_ovid.body), ovid_v1);
 
     // time-travel: capture a time inside v1 FROM THE DB CLOCK, then update. The
     // reference instant MUST come from the server clock (the clock that stamps
@@ -252,7 +218,7 @@ async fn relationship_lifecycle_end_to_end() {
         )
         .await
         .expect("update relationship");
-    let ovid_v2 = ovid(&updated.body).to_owned();
+    let ovid_v2 = uid(&updated.body).to_owned();
     assert!(ovid_v2.ends_with("::2"), "second version, got {ovid_v2}");
     assert_eq!(updated.body["name"]["value"], "guardian-of");
 

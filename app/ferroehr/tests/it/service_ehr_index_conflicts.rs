@@ -15,30 +15,28 @@
 
 #![expect(
     clippy::expect_used,
+    clippy::panic,
     reason = "clippy's in-test lint scoping (clippy.toml `allow-*-in-tests`) only \
               reaches `#[test]`-annotated functions, so it misses this integration \
-              module's helpers and async bodies; panicking assertions are the \
-              intended shape here (the Rust Book ch11)"
+              module's helpers and async bodies; panicking assertions and direct \
+              fixture indexing are the intended shape here (the Rust Book ch11)"
 )]
 
+use std::collections::BTreeSet;
+
 use ferroehr::service::FerroEhrService;
-use ferroehr::service::ehr_index::types::{ResourceInstanceType, ResourceStatus, SubjectRef};
+use ferroehr::service::ehr_index::conflicts::IndexConflict;
+use ferroehr::service::ehr_index::types::{
+    EhrIndexEntry, ResourceInstanceType, ResourceStatus, SubjectRef,
+};
 
 use crate::admin_fixture::repository;
 
-// The reported conflict type lives in a `pub(crate)` module, so an integration
-// test cannot name its variants; the derived `Debug` rendering is the only
-// surface outside the crate that distinguishes them, and is what these tests
-// read.
-
-/// The `Debug` renderings of every conflict one scan reports.
-async fn scan(svc: &FerroEhrService) -> Vec<String> {
+/// Every conflict one scan reports.
+async fn scan(svc: &FerroEhrService) -> Vec<IndexConflict> {
     svc.index_conflicts()
         .await
         .expect("the advisory scan never refuses")
-        .iter()
-        .map(|conflict| format!("{conflict:?}"))
-        .collect()
 }
 
 /// Associate `subject` with a freshly created EHR, returning that EHR's id.
@@ -50,25 +48,41 @@ async fn associate(svc: &FerroEhrService, subject: &SubjectRef) -> String {
     ehr
 }
 
+/// The EHR ids an association group names, as a set — the order of a
+/// subject-keyed group is fixed by its own query and asserted where it matters.
+fn ehr_ids(entries: &[EhrIndexEntry]) -> BTreeSet<String> {
+    entries.iter().map(|e| e.ehr_id.clone()).collect()
+}
+
+/// The one `SubjectWithMultipleEhrs` conflict in `conflicts`.
+fn only_subject_conflict(conflicts: &[IndexConflict]) -> (&SubjectRef, &[EhrIndexEntry]) {
+    assert_eq!(
+        conflicts.len(),
+        1,
+        "one conflicting subject, got {conflicts:?}"
+    );
+    match conflicts.first() {
+        Some(IndexConflict::SubjectWithMultipleEhrs { subject, entries }) => (subject, entries),
+        other => panic!("expected a SubjectWithMultipleEhrs conflict, got {other:?}"),
+    }
+}
+
 /// A clean index reports nothing: neither an empty index nor a set of
 /// well-formed 1:1 associations is an error state.
 #[tokio::test]
 async fn a_one_to_one_index_reports_no_conflict() {
     let (_db, _pool, svc) = repository().await;
 
-    assert_eq!(
-        scan(&svc).await,
-        Vec::<String>::new(),
-        "an empty index has nothing to report"
-    );
+    let empty = scan(&svc).await;
+    assert!(empty.is_empty(), "an empty index has nothing to report");
 
     associate(&svc, &SubjectRef::person("PID-A", "mpi")).await;
     associate(&svc, &SubjectRef::person("PID-B", "mpi")).await;
 
-    assert_eq!(
-        scan(&svc).await,
-        Vec::<String>::new(),
-        "two subjects on two EHRs is the normal state"
+    let conflicts = scan(&svc).await;
+    assert!(
+        conflicts.is_empty(),
+        "two subjects on two EHRs is the normal state, got {conflicts:?}"
     );
 }
 
@@ -87,29 +101,16 @@ async fn one_subject_on_several_ehrs_is_reported_with_all_its_associations() {
     let lone = associate(&svc, &SubjectRef::person("PID-LONE", "mpi")).await;
 
     let conflicts = scan(&svc).await;
+    let (reported, entries) = only_subject_conflict(&conflicts);
+    assert_eq!(*reported, subject, "the conflicting subject is named");
     assert_eq!(
-        conflicts.len(),
-        1,
-        "one conflicting subject, got {conflicts:?}"
-    );
-    let reported = &conflicts[0];
-    assert!(
-        reported.starts_with("SubjectWithMultipleEhrs"),
-        "a subject on several EHRs is that state, got {reported}"
+        ehr_ids(entries),
+        BTreeSet::from([first, second, third]),
+        "every association of the subject is carried, and only those"
     );
     assert!(
-        reported.contains("PID-SHARED"),
-        "the report names the conflicting subject, got {reported}"
-    );
-    for ehr in [&first, &second, &third] {
-        assert!(
-            reported.contains(ehr.as_str()),
-            "every association is carried; {ehr} missing from {reported}"
-        );
-    }
-    assert!(
-        !reported.contains(lone.as_str()) && !reported.contains("PID-LONE"),
-        "a 1:1 association is not part of the conflict, got {reported}"
+        entries.iter().all(|e| e.subject == subject),
+        "a 1:1 association ({lone}) is not part of the conflict, got {entries:?}"
     );
 }
 
@@ -129,23 +130,19 @@ async fn the_reported_subject_carries_the_stored_type() {
     associate(&svc, &subject).await;
 
     let conflicts = scan(&svc).await;
-    assert_eq!(conflicts.len(), 1, "one conflicting subject");
+    let (reported, entries) = only_subject_conflict(&conflicts);
+    assert_eq!(reported.r#type, "ORGANISATION");
+    assert_eq!(*reported, subject);
     assert!(
-        conflicts[0].contains("ORGANISATION"),
-        "the stored subject type is reported, got {}",
-        conflicts[0]
-    );
-    assert!(
-        !conflicts[0].contains("PERSON"),
-        "the PERSON default must not overwrite the stored type, got {}",
-        conflicts[0]
+        entries.iter().all(|e| e.subject.r#type == "ORGANISATION"),
+        "every carried association keeps the stored type, got {entries:?}"
     );
 }
 
 /// The "records merged … multiple subject ids" state: one EHR associated with
-/// more than one subject is reported once, carrying every association with its
-/// stored `RESOURCE_INSTANCE_TYPE`, so the operator can see which association
-/// was already flagged `Duplicate`.
+/// more than one subject is reported once, carrying every association ordered
+/// by subject key, with the stored `RESOURCE_INSTANCE_TYPE` intact so the
+/// operator can see which association was already flagged `Duplicate`.
 #[tokio::test]
 async fn one_ehr_with_several_subjects_is_reported_with_all_its_associations() {
     let (_db, _pool, svc) = repository().await;
@@ -167,30 +164,28 @@ async fn one_ehr_with_several_subjects_is_reported_with_all_its_associations() {
 
     let conflicts = scan(&svc).await;
     assert_eq!(conflicts.len(), 1, "one conflicting EHR, got {conflicts:?}");
-    let reported = &conflicts[0];
-    assert!(
-        reported.starts_with("EhrWithMultipleSubjects"),
-        "an EHR with several subjects is that state, got {reported}"
+    let (ehr_id, entries) = match conflicts.first() {
+        Some(IndexConflict::EhrWithMultipleSubjects { ehr_id, entries }) => (ehr_id, entries),
+        other => panic!("expected an EhrWithMultipleSubjects conflict, got {other:?}"),
+    };
+    assert_eq!(ehr_id.to_string(), ehr, "the conflicting EHR is named");
+    // `ORDER BY subject_id, subject_namespace`: PID-1 before PID-2.
+    assert_eq!(entries.len(), 2, "both associations are carried");
+    assert_eq!(
+        entries.iter().map(|e| &e.subject).collect::<Vec<_>>(),
+        vec![&primary, &duplicate]
     );
-    assert!(
-        reported.contains(ehr.as_str()),
-        "the report names the conflicting EHR, got {reported}"
+    assert_eq!(
+        entries
+            .iter()
+            .map(|e| e.status.instance_type)
+            .collect::<Vec<_>>(),
+        vec![
+            ResourceInstanceType::Primary,
+            ResourceInstanceType::Duplicate
+        ],
+        "each association keeps its stored instance type"
     );
-    assert!(
-        reported.contains("PID-1") && reported.contains("PID-2"),
-        "both subjects are carried, got {reported}"
-    );
-    assert!(
-        reported.contains("Duplicate") && reported.contains("Primary"),
-        "each association keeps its stored instance type, got {reported}"
-    );
-
-    // The SM read agrees, and fixes the order the scan's own query declares
-    // (`ORDER BY subject_id, subject_namespace`).
-    let entries = svc.ehr_subjects(ehr).await.expect("ehr subjects");
-    assert_eq!(entries.len(), 2);
-    assert_eq!(entries[0].subject, primary);
-    assert_eq!(entries[1].subject, duplicate);
 }
 
 /// An index in BOTH error states reports both, and the scan is advisory: it
@@ -217,28 +212,30 @@ async fn both_error_states_are_reported_together_and_the_scan_mutates_nothing() 
         "both states reported, got {conflicts:?}"
     );
     assert!(
-        conflicts
-            .iter()
-            .any(|c| c.starts_with("SubjectWithMultipleEhrs")
-                && c.contains("PID-SHARED")
-                && c.contains(first.as_str())
-                && c.contains(second.as_str())),
+        conflicts.iter().any(|c| matches!(
+            c,
+            IndexConflict::SubjectWithMultipleEhrs { subject, entries }
+                if *subject == shared
+                    && ehr_ids(entries) == BTreeSet::from([first.clone(), second.clone()])
+        )),
         "the shared subject's multiple EHRs are reported, got {conflicts:?}"
     );
     assert!(
-        conflicts
-            .iter()
-            .any(|c| c.starts_with("EhrWithMultipleSubjects")
-                && c.contains(second.as_str())
-                && c.contains("PID-OTHER")),
+        conflicts.iter().any(|c| matches!(
+            c,
+            IndexConflict::EhrWithMultipleSubjects { ehr_id, entries }
+                if ehr_id.to_string() == second
+                    && entries.iter().any(|e| e.subject == other)
+                    && entries.len() == 2
+        )),
         "the second EHR's multiple subjects are reported, got {conflicts:?}"
     );
 
     let after = svc.ehr_subjects(second).await.expect("read after");
     assert_eq!(after, before, "detection is a read: it mutates nothing");
     assert_eq!(
-        scan(&svc).await,
-        conflicts,
+        scan(&svc).await.len(),
+        2,
         "a repeated scan reports the same states"
     );
 }
@@ -265,20 +262,21 @@ async fn rectifying_through_the_sm_writes_clears_the_report() {
         .await
         .expect("remove the duplicate subject");
     let conflicts = scan(&svc).await;
-    assert_eq!(conflicts.len(), 1, "only one state left, got {conflicts:?}");
-    assert!(conflicts[0].starts_with("SubjectWithMultipleEhrs"));
+    let (reported, _entries) = only_subject_conflict(&conflicts);
+    assert_eq!(*reported, shared, "only the shared subject is left");
 
     // I4 again: with one association left, a subject is no longer duplicated.
     svc.remove_ehr_subject(first, shared.clone())
         .await
         .expect("remove the duplicate association");
-    assert_eq!(
-        scan(&svc).await,
-        Vec::<String>::new(),
-        "a rectified index reports nothing"
+    let rectified = scan(&svc).await;
+    assert!(
+        rectified.is_empty(),
+        "a rectified index reports nothing, got {rectified:?}"
     );
 
     // I5: dropping the subject entirely leaves the index clean too.
     svc.remove_subject(shared).await.expect("remove subject");
-    assert_eq!(scan(&svc).await, Vec::<String>::new());
+    let cleared = scan(&svc).await;
+    assert!(cleared.is_empty(), "got {cleared:?}");
 }
