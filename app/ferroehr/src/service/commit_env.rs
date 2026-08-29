@@ -72,10 +72,6 @@ impl CommitEnv for FerroEhrService {
         FerroEhrService::ensure_ehr_exists(self, ehr_id).await
     }
 
-    async fn ensure_content_writable(&self, ehr_id: EhrId) -> Result<(), ServiceError> {
-        FerroEhrService::ensure_content_writable(self, ehr_id).await
-    }
-
     async fn current_vo(
         &self,
         ehr_id: EhrId,

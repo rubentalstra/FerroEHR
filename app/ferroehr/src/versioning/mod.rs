@@ -213,13 +213,14 @@ pub(crate) struct SigningCtx<'a> {
 /// The cross-area hooks the CONTRIBUTION commit orchestration
 /// ([`contribution::commit_version_set`]) needs from the service layer. Each
 /// hook is owned by another register: content validation (validation register),
-/// EHR existence + `is_modifiable` write guard + `current_vo` (EHR register),
-/// `EHR_ACCESS` cache invalidation (EHR register), committer default (EHR
-/// register). `crate::service::FerroEhrService` implements it; versioning owns
-/// only the change-set decision logic. `default_committer` is the EHR worker's
-/// `committer()`; `ensure_ehr_exists` closes the `Pre_has_ehr` check (SM `i_ehr_contribution.adoc`
-/// §`commit_contribution` `Pre_has_ehr`); `ensure_content_writable` is the
-/// `EHR_STATUS` `is_modifiable` guard.
+/// EHR existence + `current_vo` (EHR register), `EHR_ACCESS` cache
+/// invalidation (EHR register), committer default (EHR register).
+/// `crate::service::FerroEhrService` implements it; versioning owns only the
+/// change-set decision logic. `default_committer` is the EHR worker's
+/// `committer()`; `ensure_ehr_exists` closes the `Pre_has_ehr` check (SM
+/// `i_ehr_contribution.adoc` §`commit_contribution` `Pre_has_ehr`). The
+/// `is_modifiable` content-write guard is NOT a hook: it runs inside the
+/// commit transaction ([`change::ensure_content_writable_tx`]).
 ///
 /// The two in-transaction hooks ([`Self::pre_composition_modify`] and
 /// [`Self::post_status_commit`]) are the cross-version invariant / promoted-
@@ -258,8 +259,6 @@ pub(crate) trait CommitEnv {
     ) -> Result<(), ServiceError>;
     /// the target EHR must exist before a CONTRIBUTION is committed to it.
     async fn ensure_ehr_exists(&self, ehr_id: EhrId) -> Result<(), ServiceError>;
-    /// The `EHR_STATUS` `is_modifiable = False` content-write guard.
-    async fn ensure_content_writable(&self, ehr_id: EhrId) -> Result<(), ServiceError>;
     /// The current versioned object of `kind` in `ehr_id`, if any (for the
     /// EHR-singleton create guard).
     async fn current_vo(

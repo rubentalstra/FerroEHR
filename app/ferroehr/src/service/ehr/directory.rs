@@ -316,7 +316,7 @@ impl FerroEhrService {
         // pre-read; the 409 outcome and its ordering (after validate_folder's
         // 422) are unchanged.
         if !is_modifiable {
-            return Err(Self::not_modifiable_error(ehr_id));
+            return Err(crate::versioning::change::not_modifiable_error(ehr_id));
         }
 
         let mut tx = self.pool.begin().await?;
@@ -361,7 +361,7 @@ impl FerroEhrService {
         // Active Status) — folded from the standalone `ensure_content_writable`
         // side-SELECT into the merged pre-read; the 409 outcome is unchanged.
         if !is_modifiable {
-            return Err(Self::not_modifiable_error(ehr_id));
+            return Err(crate::versioning::change::not_modifiable_error(ehr_id));
         }
 
         let mut tx = self.pool.begin().await?;
