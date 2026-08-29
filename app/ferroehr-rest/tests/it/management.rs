@@ -17,7 +17,7 @@
               fixture indexing are the intended shape here (the Rust Book ch11)"
 )]
 
-use std::sync::OnceLock;
+use std::sync::{Arc, OnceLock};
 
 use argon2::Argon2;
 use argon2::password_hash::{PasswordHasher, SaltString};
@@ -29,6 +29,7 @@ use ferroehr::config::server::ServerConfig;
 use ferroehr::telemetry::build_info::BuildInfo;
 use ferroehr::telemetry::health::HealthRegistry;
 use ferroehr_rest::config::AppConfig;
+use ferroehr_rest::extensions::access::authz::AuthzHandle;
 use ferroehr_rest::extensions::management::Observability;
 
 use crate::common;
@@ -63,45 +64,77 @@ fn auth_config(roles: &[&str]) -> AuthConfig {
     }
 }
 
-/// Build an app with the management surface enabled, one endpoint (`info`) set
-/// to `level`, the Basic user granted `roles`, and RBAC on or off — the
-/// `AdminOnly` level gates on the RBAC `admin_role` (issue #1879 retired the
-/// deprecated `admin_scope` alias).
-async fn app_with(level: AccessLevel, roles: &[&str], rbac_enabled: bool) -> Router {
-    let config = AppConfig {
+/// The base app configuration every management fixture shares: Swagger off,
+/// authentication from `auth`.
+fn base_config(auth: AuthConfig) -> AppConfig {
+    AppConfig {
         server: ServerConfig {
             swagger_ui: false,
             ..Default::default()
         },
-        auth: auth_config(roles),
+        auth,
         ..Default::default()
-    };
+    }
+}
+
+/// The RBAC gate over the default rule set, with RBAC itself on or off and no
+/// attribute resolution (the management surface has no subject or template).
+fn authz_for(config: &AppConfig, rbac_enabled: bool) -> Option<Arc<AuthzHandle>> {
     let mut authz_cfg = ferroehr::config::authz::AuthzConfig::default();
     authz_cfg.rbac.enabled = rbac_enabled;
-    let resolvers = ferroehr_rest::extensions::access::authz::AuthzResolvers {
-        subject: std::sync::Arc::new(|_| Box::pin(async { Ok(None) })),
-        template_of_version: std::sync::Arc::new(|_, _| Box::pin(async { Ok(None) })),
-    };
-    let authz = ferroehr_rest::extensions::access::authz::AuthzHandle::build(
+    AuthzHandle::build(
         &authz_cfg,
         &config.server.base_path,
         None,
-        resolvers,
+        common::null_resolvers(),
     )
-    .map(std::sync::Arc::new);
-    let observability = Observability {
+    .map(Arc::new)
+}
+
+/// Assemble the full app over a real service on a fresh database.
+///
+/// Returns the harness guard with the router: dropping it releases the template
+/// clone the app is still serving from, so every caller binds it for the test.
+async fn build_app(
+    config: AppConfig,
+    authz: Option<Arc<AuthzHandle>>,
+    observability: Observability,
+) -> (testkit::TestDb, Router) {
+    let (pg, service) = common::test_service().await;
+    (
+        pg,
+        ferroehr_rest::build_full(config, service, authz, observability).expect("build"),
+    )
+}
+
+/// One management endpoint mounted at `level`, everything else at its default.
+fn one_endpoint(endpoints: EndpointLevels) -> Observability {
+    Observability {
         management: ManagementConfig {
             enabled: true,
-            endpoints: EndpointLevels {
-                info: level,
-                ..EndpointLevels::default()
-            },
+            endpoints,
             ..ManagementConfig::default()
         },
         ..Observability::default()
-    };
-    let (_pg, service) = common::test_service().await;
-    ferroehr_rest::build_full(config, service, authz, observability).expect("build")
+    }
+}
+
+/// Build an app with the management surface enabled, one endpoint (`info`) set
+/// to `level`, the Basic user granted `roles`, and RBAC on or off — the
+/// `AdminOnly` level gates on the RBAC `admin_role` (issue #1879 retired the
+/// deprecated `admin_scope` alias).
+async fn app_with(
+    level: AccessLevel,
+    roles: &[&str],
+    rbac_enabled: bool,
+) -> (testkit::TestDb, Router) {
+    let config = base_config(auth_config(roles));
+    let authz = authz_for(&config, rbac_enabled);
+    let observability = one_endpoint(EndpointLevels {
+        info: level,
+        ..EndpointLevels::default()
+    });
+    build_app(config, authz, observability).await
 }
 
 async fn status_of(app: Router, req: Request<Body>) -> StatusCode {
@@ -109,23 +142,16 @@ async fn status_of(app: Router, req: Request<Body>) -> StatusCode {
 }
 
 fn get(path: &str) -> Request<Body> {
-    Request::builder()
-        .uri(path)
-        .body(Body::empty())
-        .expect("request")
+    common::get(path)
 }
 
 fn get_auth(path: &str) -> Request<Body> {
-    Request::builder()
-        .uri(path)
-        .header(header::AUTHORIZATION, ADMIN_BASIC)
-        .body(Body::empty())
-        .expect("request")
+    common::get_authorized(path, ADMIN_BASIC)
 }
 
 #[tokio::test]
 async fn off_endpoint_is_404() {
-    let app = app_with(AccessLevel::Off, &["ADMIN"], true).await;
+    let (_db, app) = app_with(AccessLevel::Off, &["ADMIN"], true).await;
     assert_eq!(
         status_of(app, get("/management/info")).await,
         StatusCode::NOT_FOUND
@@ -134,7 +160,7 @@ async fn off_endpoint_is_404() {
 
 #[tokio::test]
 async fn public_endpoint_needs_no_auth() {
-    let app = app_with(AccessLevel::Public, &["ADMIN"], true).await;
+    let (_db, app) = app_with(AccessLevel::Public, &["ADMIN"], true).await;
     assert_eq!(
         status_of(app, get("/management/info")).await,
         StatusCode::OK
@@ -143,7 +169,7 @@ async fn public_endpoint_needs_no_auth() {
 
 #[tokio::test]
 async fn private_endpoint_401_then_200() {
-    let app = app_with(AccessLevel::Private, &["ADMIN"], true).await;
+    let (_db, app) = app_with(AccessLevel::Private, &["ADMIN"], true).await;
     assert_eq!(
         status_of(app.clone(), get("/management/info")).await,
         StatusCode::UNAUTHORIZED
@@ -157,25 +183,25 @@ async fn private_endpoint_401_then_200() {
 #[tokio::test]
 async fn admin_only_401_403_200() {
     // 401 unauthenticated.
-    let app = app_with(AccessLevel::AdminOnly, &["ADMIN"], true).await;
+    let (_db, app) = app_with(AccessLevel::AdminOnly, &["ADMIN"], true).await;
     assert_eq!(
         status_of(app, get("/management/info")).await,
         StatusCode::UNAUTHORIZED
     );
     // 403 authenticated but without the RBAC admin role.
-    let app = app_with(AccessLevel::AdminOnly, &["USER"], true).await;
+    let (_db, app) = app_with(AccessLevel::AdminOnly, &["USER"], true).await;
     assert_eq!(
         status_of(app, get_auth("/management/info")).await,
         StatusCode::FORBIDDEN
     );
     // 200 with the admin role.
-    let app = app_with(AccessLevel::AdminOnly, &["ADMIN"], true).await;
+    let (_db, app) = app_with(AccessLevel::AdminOnly, &["ADMIN"], true).await;
     assert_eq!(
         status_of(app, get_auth("/management/info")).await,
         StatusCode::OK
     );
     // 200 with RBAC disabled: authenticated is enough (auth-only deployments).
-    let app = app_with(AccessLevel::AdminOnly, &["USER"], false).await;
+    let (_db, app) = app_with(AccessLevel::AdminOnly, &["USER"], false).await;
     assert_eq!(
         status_of(app, get_auth("/management/info")).await,
         StatusCode::OK
@@ -184,47 +210,21 @@ async fn admin_only_401_403_200() {
 
 /// Build an app with FOUR endpoints at four different levels at once, so a
 /// leak between them is observable.
-async fn app_with_mixed_levels(roles: &[&str]) -> Router {
-    let config = AppConfig {
-        server: ServerConfig {
-            swagger_ui: false,
-            ..Default::default()
-        },
-        auth: auth_config(roles),
-        ..Default::default()
-    };
-    let resolvers = ferroehr_rest::extensions::access::authz::AuthzResolvers {
-        subject: std::sync::Arc::new(|_| Box::pin(async { Ok(None) })),
-        template_of_version: std::sync::Arc::new(|_, _| Box::pin(async { Ok(None) })),
-    };
-    let authz = ferroehr_rest::extensions::access::authz::AuthzHandle::build(
-        &ferroehr::config::authz::AuthzConfig::default(),
-        &config.server.base_path,
-        None,
-        resolvers,
-    )
-    .map(std::sync::Arc::new);
-    let observability = Observability {
-        management: ManagementConfig {
-            enabled: true,
-            endpoints: EndpointLevels {
-                prometheus: AccessLevel::Public,
-                info: AccessLevel::Private,
-                env: AccessLevel::AdminOnly,
-                metrics: AccessLevel::Off,
-                ..EndpointLevels::default()
-            },
-            ..ManagementConfig::default()
-        },
-        // The recorder is what MOUNTS prometheus/metrics at all; without it
-        // they answer 404 whatever their level says, which would make the
-        // `public` row below pass for the wrong reason and the `off` row
-        // vacuous.
-        prometheus: Some(recorder().clone()),
-        ..Observability::default()
-    };
-    let (_pg, service) = common::test_service().await;
-    ferroehr_rest::build_full(config, service, authz, observability).expect("build")
+async fn app_with_mixed_levels(roles: &[&str]) -> (testkit::TestDb, Router) {
+    let config = base_config(auth_config(roles));
+    let authz = authz_for(&config, true);
+    let mut observability = one_endpoint(EndpointLevels {
+        prometheus: AccessLevel::Public,
+        info: AccessLevel::Private,
+        env: AccessLevel::AdminOnly,
+        metrics: AccessLevel::Off,
+        ..EndpointLevels::default()
+    });
+    // The recorder is what MOUNTS prometheus/metrics at all; without it they
+    // answer 404 whatever their level says, which would make the `public` row
+    // below pass for the wrong reason and the `off` row vacuous.
+    observability.prometheus = Some(recorder().clone());
+    build_app(config, authz, observability).await
 }
 
 /// Each endpoint answers at ITS OWN level, and no endpoint's level leaks to a
@@ -241,7 +241,7 @@ async fn endpoint_levels_are_independent() {
     // Anonymous: only the `public` endpoint answers. The `admin_only` and
     // `private` ones challenge; the `off` one is not mounted at all, and says
     // 404 rather than 401 — its absence is not a credential problem.
-    let app = app_with_mixed_levels(&["ADMIN"]).await;
+    let (_db, app) = app_with_mixed_levels(&["ADMIN"]).await;
     assert_eq!(
         status_of(app, get("/management/prometheus")).await,
         StatusCode::OK
@@ -251,7 +251,7 @@ async fn endpoint_levels_are_independent() {
         ("/management/env", StatusCode::UNAUTHORIZED),
         ("/management/metrics", StatusCode::NOT_FOUND),
     ] {
-        let app = app_with_mixed_levels(&["ADMIN"]).await;
+        let (_db, app) = app_with_mixed_levels(&["ADMIN"]).await;
         assert_eq!(
             status_of(app, get(path)).await,
             expected,
@@ -267,7 +267,7 @@ async fn endpoint_levels_are_independent() {
         ("/management/env", StatusCode::FORBIDDEN),
         ("/management/metrics", StatusCode::NOT_FOUND),
     ] {
-        let app = app_with_mixed_levels(&["USER"]).await;
+        let (_db, app) = app_with_mixed_levels(&["USER"]).await;
         assert_eq!(
             status_of(app, get_auth(path)).await,
             expected,
@@ -282,7 +282,7 @@ async fn endpoint_levels_are_independent() {
         ("/management/env", StatusCode::OK),
         ("/management/metrics", StatusCode::NOT_FOUND),
     ] {
-        let app = app_with_mixed_levels(&["ADMIN"]).await;
+        let (_db, app) = app_with_mixed_levels(&["ADMIN"]).await;
         assert_eq!(
             status_of(app, get_auth(path)).await,
             expected,
@@ -299,7 +299,7 @@ async fn endpoint_levels_are_independent() {
 /// `/health/readiness` indicator body.)
 #[tokio::test]
 async fn management_serves_no_health_route() {
-    let app = app_with(AccessLevel::Public, &["ADMIN"], true).await;
+    let (_db, app) = app_with(AccessLevel::Public, &["ADMIN"], true).await;
     for gone in [
         "/management/health",
         "/management/health/liveness",
@@ -325,17 +325,8 @@ async fn management_serves_no_health_route() {
 /// still answer, and `/management/info` is absent.
 #[tokio::test]
 async fn health_family_survives_management_disabled() {
-    let config = AppConfig {
-        server: ServerConfig {
-            swagger_ui: false,
-            ..Default::default()
-        },
-        auth: auth_config(&["ADMIN"]),
-        ..Default::default()
-    };
-    let (_pg, service) = common::test_service().await;
-    let app = ferroehr_rest::build_full(config, service, None, Observability::default())
-        .expect("build with management disabled");
+    let config = base_config(auth_config(&["ADMIN"]));
+    let (_db, app) = build_app(config, None, Observability::default()).await;
 
     for public in ["/health", "/health/liveness", "/health/readiness"] {
         assert_eq!(
@@ -370,18 +361,12 @@ fn recorder() -> &'static prometheus::Registry {
     })
 }
 
-async fn app_with_metrics() -> Router {
-    let config = AppConfig {
-        server: ServerConfig {
-            swagger_ui: false,
-            ..Default::default()
-        },
-        auth: AuthConfig {
-            enabled: false, // exercise the API path without auth in this test
-            ..AuthConfig::default()
-        },
-        ..Default::default()
-    };
+async fn app_with_metrics() -> (testkit::TestDb, Router) {
+    // Authentication off: this test exercises the API path, not the gate.
+    let config = base_config(AuthConfig {
+        enabled: false,
+        ..AuthConfig::default()
+    });
     let observability = Observability {
         management: ManagementConfig {
             enabled: true,
@@ -397,13 +382,12 @@ async fn app_with_metrics() -> Router {
         build_info: BuildInfo::current(),
         ..Observability::default()
     };
-    let (_pg, service) = common::test_service().await;
-    ferroehr_rest::build_full(config, service, None, observability).expect("build")
+    build_app(config, None, observability).await
 }
 
 #[tokio::test]
 async fn prometheus_has_route_template_label_and_no_ids() {
-    let app = app_with_metrics().await;
+    let (_db, app) = app_with_metrics().await;
 
     // Drive an API request that matches a templated route carrying an id. The
     // HTTP metrics layer must label it by the *template*, never the raw id.
@@ -471,17 +455,10 @@ fn looks_like_id(value: &str) -> bool {
 #[tokio::test]
 async fn separate_port_mode_keeps_management_off_the_main_app() {
     // With `management.port` set, the main app must NOT mount /management…
-    let config = AppConfig {
-        server: ServerConfig {
-            swagger_ui: false,
-            ..Default::default()
-        },
-        auth: AuthConfig {
-            enabled: false,
-            ..AuthConfig::default()
-        },
-        ..Default::default()
-    };
+    let config = base_config(AuthConfig {
+        enabled: false,
+        ..AuthConfig::default()
+    });
     let observability = Observability {
         management: ManagementConfig {
             enabled: true,
@@ -494,8 +471,7 @@ async fn separate_port_mode_keeps_management_off_the_main_app() {
         },
         ..Observability::default()
     };
-    let (_pg, service) = common::test_service().await;
-    let main_app = ferroehr_rest::build_full(config, service, None, observability).expect("build");
+    let (_db, main_app) = build_app(config, None, observability).await;
 
     // …the main app 404s the management route.
     assert_eq!(
@@ -521,15 +497,8 @@ async fn separate_port_mode_keeps_management_off_the_main_app() {
 async fn app_with_flamegraph(
     level: AccessLevel,
     profiling: ferroehr::config::management::ProfilingConfig,
-) -> Router {
-    let config = AppConfig {
-        server: ServerConfig {
-            swagger_ui: false,
-            ..Default::default()
-        },
-        auth: auth_config(&["ADMIN"]),
-        ..Default::default()
-    };
+) -> (testkit::TestDb, Router) {
+    let config = base_config(auth_config(&["ADMIN"]));
     let observability = Observability {
         management: ManagementConfig {
             enabled: true,
@@ -542,15 +511,14 @@ async fn app_with_flamegraph(
         },
         ..Observability::default()
     };
-    let (_pg, service) = common::test_service().await;
-    ferroehr_rest::build_full(config, service, None, observability).expect("build")
+    build_app(config, None, observability).await
 }
 
 /// Off (the default) means the route is simply absent — a `404` answered
 /// before authentication.
 #[tokio::test]
 async fn flamegraph_off_is_404() {
-    let app = app_with_flamegraph(
+    let (_db, app) = app_with_flamegraph(
         AccessLevel::Off,
         ferroehr::config::management::ProfilingConfig::default(),
     )
@@ -564,7 +532,7 @@ async fn flamegraph_off_is_404() {
 /// Opted in: a short sample window answers `200` with a rendered SVG.
 #[tokio::test]
 async fn flamegraph_samples_and_renders_svg() {
-    let app = app_with_flamegraph(
+    let (_db, app) = app_with_flamegraph(
         AccessLevel::Public,
         ferroehr::config::management::ProfilingConfig::default(),
     )
@@ -600,7 +568,7 @@ async fn flamegraph_samples_and_renders_svg() {
 /// clamped.
 #[tokio::test]
 async fn flamegraph_over_cap_is_400() {
-    let app = app_with_flamegraph(
+    let (_db, app) = app_with_flamegraph(
         AccessLevel::Public,
         ferroehr::config::management::ProfilingConfig::default(),
     )

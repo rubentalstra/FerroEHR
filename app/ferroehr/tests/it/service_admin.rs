@@ -16,7 +16,6 @@
 
 #![expect(
     clippy::expect_used,
-    clippy::unwrap_used,
     clippy::panic,
     clippy::indexing_slicing,
     reason = "clippy's in-test lint scoping (clippy.toml `allow-*-in-tests`) only \
@@ -34,47 +33,13 @@ use serde_json::{Value, json};
 use sqlx::{AssertSqlSafe, PgPool};
 use uuid::Uuid;
 
-use openehr_rm::prelude::PartyProxy;
-
 use ferroehr::service::FerroEhrService;
 
+use crate::admin_fixture::{count_for_ehr, party_relationship, repository, seed_full_ehr, uid, uv};
 use crate::typed_body::typed;
 use ferroehr::service::demographic::types::PartyKind;
 use ferroehr::service::platform_service::PlatformService;
 use ferroehr::service::status::{CallStatusType, SmError};
-use ferroehr::service::version_update::{change_type_coded, lifecycle_state_coded};
-use openehr_its::rest::generated::common::{UpdateAudit, UpdateAuditData, UpdateVersion};
-
-/// The `uid.value` (`OBJECT_VERSION_ID`) of a versioned-object body.
-fn uid(v: &Value) -> &str {
-    v["uid"]["value"].as_str().expect("uid.value")
-}
-
-/// The SM `UPDATE_VERSION` commit envelope for a bare-RM write.
-fn uv<T: serde::de::DeserializeOwned>(
-    data: &Value,
-    change_code: &str,
-    preceding: Option<&str>,
-) -> UpdateVersion<T> {
-    UpdateVersion {
-        preceding_version_uid: preceding.map(|p| p.parse().expect("OBJECT_VERSION_ID")),
-        lifecycle_state: lifecycle_state_coded("532"),
-        attestations: None,
-        data: openehr_its::json::from_canonical_value(data)
-            .expect("the fixture commit body decodes as its RM type"),
-        commit_audit: UpdateAudit::UpdateAudit(UpdateAuditData {
-            _type: None,
-            system_id: None,
-            change_type: change_type_coded(change_code),
-            description: None,
-            committer: openehr_its::json::from_canonical_value::<PartyProxy>(
-                &json!({ "_type": "PARTY_IDENTIFIED", "name": "conformance tester" }),
-            )
-            .expect("committer"),
-        }),
-        signature: None,
-    }
-}
 
 /// Row counts scoped to one EHR across every table a physical delete must clear.
 /// `audit` has no `ehr_id`, so it is counted by the audit ids the EHR's
@@ -95,14 +60,6 @@ impl EhrRows {
     }
 }
 
-async fn count(pool: &PgPool, sql: &'static str, ehr_id: Uuid) -> i64 {
-    sqlx::query_scalar(sql)
-        .bind(ehr_id)
-        .fetch_one(pool)
-        .await
-        .expect("count")
-}
-
 async fn ehr_rows(pool: &PgPool, ehr_id: Uuid) -> EhrRows {
     let audit_ids: Vec<Uuid> = sqlx::query_scalar(
         "SELECT audit_id FROM vo_version WHERE ehr_id = $1 \
@@ -118,21 +75,21 @@ async fn ehr_rows(pool: &PgPool, ehr_id: Uuid) -> EhrRows {
         .await
         .expect("audit count");
     EhrRows {
-        ehr: count(pool, "SELECT count(*) FROM ehr WHERE id = $1", ehr_id).await,
-        vo_version: count(
+        ehr: count_for_ehr(pool, "SELECT count(*) FROM ehr WHERE id = $1", ehr_id).await,
+        vo_version: count_for_ehr(
             pool,
             "SELECT count(*) FROM vo_version WHERE ehr_id = $1",
             ehr_id,
         )
         .await,
-        node: count(pool, "SELECT count(*) FROM node WHERE ehr_id = $1", ehr_id).await,
-        contribution: count(
+        node: count_for_ehr(pool, "SELECT count(*) FROM node WHERE ehr_id = $1", ehr_id).await,
+        contribution: count_for_ehr(
             pool,
             "SELECT count(*) FROM contribution WHERE ehr_id = $1",
             ehr_id,
         )
         .await,
-        item_tag: count(
+        item_tag: count_for_ehr(
             pool,
             "SELECT count(*) FROM item_tag WHERE ehr_id = $1",
             ehr_id,
@@ -142,69 +99,11 @@ async fn ehr_rows(pool: &PgPool, ehr_id: Uuid) -> EhrRows {
     }
 }
 
-/// Seed an EHR with enough content to exercise every FK the physical delete
-/// must cascade through: `EHR_STATUS` (two versions) + `EHR_ACCESS` from
-/// creation, a directory FOLDER, and an item tag on the `EHR_STATUS`.
-/// COMPOSITION is deliberately absent: `EHR_STATUS`/FOLDER writes populate
-/// the same `vo_version`/`node`/`contribution`/`audit`/`item_tag` tables, so
-/// the cascade contract is fully covered without one.
-async fn seed_full_ehr(svc: &FerroEhrService) -> ferroehr::ids::EhrId {
-    let ehr_uuid = svc.create_ehr(None).await.expect("ehr");
-
-    // A second EHR_STATUS version (create → update): a multi-version vo.
-    let mut updated = svc
-        .get_ehr_status_at_time(ehr_uuid, None)
-        .await
-        .expect("status get");
-    let status_ovid = uid(&updated).to_owned();
-    let status_vo = status_ovid.split("::").next().unwrap().to_owned();
-    updated.as_object_mut().expect("status obj").remove("uid");
-    // An item tag on the EHR_STATUS.
-    svc.target_tags_replace(
-        ehr_uuid,
-        status_vo,
-        "EHR_STATUS",
-        vec![crate::item_tag_fixture::ehr_tag(
-            "priority",
-            Some("high"),
-            None,
-        )],
-    )
-    .await
-    .expect("tag");
-
-    // A directory FOLDER (another versioned-object kind through the cascade).
-    svc.create_directory(
-        ehr_uuid,
-        uv(
-            &json!({ "_type": "FOLDER", "archetype_node_id": "openEHR-EHR-FOLDER.generic.v1", "name": { "_type": "DV_TEXT", "value": "root" } }),
-            "249",
-            None,
-        ),
-    )
-    .await
-    .expect("directory");
-
-    // Deactivate LAST: with the B2 write guard, content writes on an EHR whose
-    // EHR_STATUS.is_modifiable = false are refused (RM ehr master04 §"EHR
-    // Active Status"), so the non-modifiable status must be the final change —
-    // the cascade still deletes an EHR carrying a deactivated status, which is
-    // this fixture's point.
-    updated["is_modifiable"] = json!(false);
-    svc.replace_ehr_status(ehr_uuid, uv(&updated, "251", Some(&status_ovid)))
-        .await
-        .expect("status update");
-
-    ehr_uuid
-}
-
 #[tokio::test]
 async fn admin_delete_cascades_and_leaves_other_ehr_untouched() {
-    let db = testkit::db().await.expect("testkit database");
     // One database, two handles: the service owns one clone, the test queries
     // the other directly to assert the cascade.
-    let pool = db.pool();
-    let svc = FerroEhrService::new(pool.clone());
+    let (_db, pool, svc) = repository().await;
     let pool = &pool;
 
     let ehr1 = seed_full_ehr(&svc).await;
@@ -238,8 +137,7 @@ async fn admin_delete_cascades_and_leaves_other_ehr_untouched() {
 
 #[tokio::test]
 async fn admin_delete_unknown_ehr_is_not_found() {
-    let db = testkit::db().await.expect("testkit database");
-    let svc = FerroEhrService::new(db.pool());
+    let (_db, _pool, svc) = repository().await;
 
     // `has_ehr` is false → `ehr_id_does_not_exist` (→ HTTP 404), preserved
     // through the ServiceError round-trip.
@@ -272,8 +170,7 @@ async fn admin_delete_unknown_ehr_is_not_found() {
 
 #[tokio::test]
 async fn admin_delete_all_deletes_present_and_skips_missing() {
-    let db = testkit::db().await.expect("testkit database");
-    let svc = FerroEhrService::new(db.pool());
+    let (_db, _pool, svc) = repository().await;
 
     let a = seed_full_ehr(&svc).await;
     let b = seed_full_ehr(&svc).await;
@@ -322,8 +219,7 @@ async fn admin_delete_all_deletes_present_and_skips_missing() {
 /// former delete-nothing safety posture.
 #[tokio::test]
 async fn admin_delete_all_with_empty_list_deletes_every_ehr() {
-    let db = testkit::db().await.expect("testkit database");
-    let svc = FerroEhrService::new(db.pool());
+    let (_db, _pool, svc) = repository().await;
 
     seed_full_ehr(&svc).await;
     seed_full_ehr(&svc).await;
@@ -383,9 +279,7 @@ fn is_not_found(res: &Result<(), SmError>, status: CallStatusType) -> bool {
 
 #[tokio::test]
 async fn admin_template_delete_happy_unknown_and_referenced() {
-    let db = testkit::db().await.expect("testkit database");
-    let pool = db.pool();
-    let svc = FerroEhrService::new(pool.clone());
+    let (_db, pool, svc) = repository().await;
     let pool = &pool;
 
     // Unknown id → NotFound (→ 404).
@@ -454,8 +348,7 @@ async fn admin_template_delete_happy_unknown_and_referenced() {
 
 #[tokio::test]
 async fn admin_query_delete_exact_version_and_unknown() {
-    let db = testkit::db().await.expect("testkit database");
-    let svc = FerroEhrService::new(db.pool());
+    let (_db, _pool, svc) = repository().await;
 
     let name = "org.example::my_query";
     // Store the query at an explicit version (the PUT-with-version path).
@@ -493,44 +386,10 @@ async fn admin_query_delete_exact_version_and_unknown() {
 
 // ─── SM-4: statistics / physical_party_delete / archive ───────────────────────
 
-/// A minimal valid demographic PERSON (PARTY invariant `Identities_valid`).
+/// A minimal valid demographic PERSON (PARTY invariant `Identities_valid`),
+/// with no structured identity detail beyond the mandatory legal name.
 fn person(name: &str) -> Value {
-    json!({
-        "_type": "PERSON",
-        "archetype_node_id": "openEHR-DEMOGRAPHIC-PERSON.person.v1",
-        "archetype_details": { "_type": "ARCHETYPED",
-            "archetype_id": { "_type": "ARCHETYPE_ID", "value": "openEHR-DEMOGRAPHIC-PERSON.person.v1" },
-            "rm_version": "1.1.0" },
-        "name": { "_type": "DV_TEXT", "value": name },
-        "identities": [{
-            "_type": "PARTY_IDENTITY",
-            "archetype_node_id": "at0001",
-            "name": { "_type": "DV_TEXT", "value": "legal name" },
-            "details": {
-                "_type": "ITEM_TREE",
-                "archetype_node_id": "at0002",
-                "name": { "_type": "DV_TEXT", "value": "structure" },
-                "items": []
-            }
-        }]
-    })
-}
-
-/// A `PARTY_RELATIONSHIP` from `source` to `target` (bare versioned-object ids).
-fn relationship(name: &str, source: &str, target: &str) -> Value {
-    json!({
-        "_type": "PARTY_RELATIONSHIP",
-        "archetype_node_id": "openEHR-DEMOGRAPHIC-PARTY_RELATIONSHIP.relationship.v1",
-        "name": { "_type": "DV_TEXT", "value": name },
-        "source": {
-            "_type": "PARTY_REF", "namespace": "demographic", "type": "PERSON",
-            "id": { "_type": "HIER_OBJECT_ID", "value": source }
-        },
-        "target": {
-            "_type": "PARTY_REF", "namespace": "demographic", "type": "PERSON",
-            "id": { "_type": "HIER_OBJECT_ID", "value": target }
-        }
-    })
+    crate::admin_fixture::person(name, &json!([]))
 }
 
 /// Create a PERSON and return its bare versioned-object UUID string.
@@ -563,9 +422,7 @@ async fn vo_version_rows(pool: &PgPool, vo: &str) -> i64 {
 
 #[tokio::test]
 async fn admin_statistics_per_service_and_time_range() {
-    let db = testkit::db().await.expect("testkit database");
-    let pool = db.pool();
-    let svc = FerroEhrService::new(pool.clone());
+    let (_db, pool, svc) = repository().await;
     let pool = &pool;
 
     let ehr = seed_full_ehr(&svc).await; // several EHR-scoped contributions
@@ -700,9 +557,7 @@ async fn admin_statistics_per_service_and_time_range() {
 
 #[tokio::test]
 async fn physical_party_delete_cascades_relationships_and_spares_partner() {
-    let db = testkit::db().await.expect("testkit database");
-    let pool = db.pool();
-    let svc = FerroEhrService::new(pool.clone());
+    let (_db, pool, svc) = repository().await;
     let pool = &pool;
 
     let p1 = make_person(&svc, "P1").await;
@@ -712,7 +567,7 @@ async fn physical_party_delete_cascades_relationships_and_spares_partner() {
     // R1: p1 → p2 (references p1 as source). R2: p2 → p1 (references p1 as
     // target). R3: p2 → p3 (does NOT reference p1).
     let r1 = svc
-        .party_relationship_create(typed(&relationship("r1", &p1, &p2)), None)
+        .party_relationship_create(typed(&party_relationship("r1", &p1, &p2)), None)
         .await
         .expect("r1");
     let r1 = r1.body["uid"]["value"]
@@ -723,7 +578,7 @@ async fn physical_party_delete_cascades_relationships_and_spares_partner() {
         .unwrap()
         .to_owned();
     let r2 = svc
-        .party_relationship_create(typed(&relationship("r2", &p2, &p1)), None)
+        .party_relationship_create(typed(&party_relationship("r2", &p2, &p1)), None)
         .await
         .expect("r2");
     let r2 = r2.body["uid"]["value"]
@@ -734,7 +589,7 @@ async fn physical_party_delete_cascades_relationships_and_spares_partner() {
         .unwrap()
         .to_owned();
     let r3 = svc
-        .party_relationship_create(typed(&relationship("r3", &p2, &p3)), None)
+        .party_relationship_create(typed(&party_relationship("r3", &p2, &p3)), None)
         .await
         .expect("r3");
     let r3 = r3.body["uid"]["value"]
@@ -827,9 +682,7 @@ async fn physical_party_delete_cascades_relationships_and_spares_partner() {
 
 #[tokio::test]
 async fn archive_marks_vos_idempotently_and_reads_stay_unchanged() {
-    let db = testkit::db().await.expect("testkit database");
-    let pool = db.pool();
-    let svc = FerroEhrService::new(pool.clone());
+    let (_db, pool, svc) = repository().await;
     let pool = &pool;
 
     let ehr = seed_full_ehr(&svc).await;
@@ -961,9 +814,7 @@ async fn tier_rows(pool: &PgPool, relation: &str, ehr: ferroehr::ids::EhrId) -> 
 /// existence, which is what the read assertions below pin.
 #[tokio::test]
 async fn archive_physically_moves_rows_to_the_cold_tier_and_back() {
-    let db = testkit::db().await.expect("testkit database");
-    let pool = db.pool();
-    let svc = FerroEhrService::new(pool.clone());
+    let (_db, pool, svc) = repository().await;
     let pool = &pool;
 
     let ehr = seed_full_ehr(&svc).await;
@@ -1057,9 +908,7 @@ async fn archive_physically_moves_rows_to_the_cold_tier_and_back() {
 /// can touch (the mirrors are deliberately FK-free).
 #[tokio::test]
 async fn physical_delete_removes_archived_rows_from_the_cold_tier() {
-    let db = testkit::db().await.expect("testkit database");
-    let pool = db.pool();
-    let svc = FerroEhrService::new(pool.clone());
+    let (_db, pool, svc) = repository().await;
     let pool = &pool;
 
     let ehr = seed_full_ehr(&svc).await;
@@ -1087,9 +936,7 @@ async fn physical_delete_removes_archived_rows_from_the_cold_tier() {
 /// truncated on the next read).
 #[tokio::test]
 async fn writing_an_archived_object_thaws_it_back_to_the_primary_tier() {
-    let db = testkit::db().await.expect("testkit database");
-    let pool = db.pool();
-    let svc = FerroEhrService::new(pool.clone());
+    let (_db, pool, svc) = repository().await;
     let pool = &pool;
 
     let ehr = svc.create_ehr(None).await.expect("ehr");
@@ -1138,8 +985,7 @@ async fn writing_an_archived_object_thaws_it_back_to_the_primary_tier() {
 /// guard.
 #[tokio::test]
 async fn cold_mirrors_match_the_primary_relations_column_for_column() {
-    let db = testkit::db().await.expect("testkit database");
-    let pool = db.pool();
+    let (_db, pool, _svc) = repository().await;
 
     for relation in ["vo_version", "node", "vo_attestation"] {
         let columns: Vec<(String, String, String)> = sqlx::query_as(

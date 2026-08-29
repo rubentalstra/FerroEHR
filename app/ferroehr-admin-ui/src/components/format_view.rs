@@ -420,23 +420,42 @@ fn row_view(row: RenderedRow) -> AnyView {
     .into_any()
 }
 
-/// One domain error rendered as the standard inline error bar.
+/// The pane a detail screen shows its loaded document in, over the SAME
+/// resource its facts section reads.
 ///
-/// Used by data sections that resolve their `Result` inside `<Suspense>`
-/// (SSR'd `ErrorBoundary` fallbacks mismatch at hydration in leptos 0.8, so
-/// sections render content-or-this directly; errors never render as nothing).
-/// Newlines survive (`whitespace-pre-line`), because a CDR diagnostic carrying
-/// `validationErrors` puts one violation per line.
+/// A `<Transition>` so a refetch keeps the current document visible (rules §6),
+/// with the `Result` resolved inside it (rules §4). A failed or absent read
+/// renders nothing HERE, because the facts section above it states that once —
+/// the screen as a whole never renders an error as nothing. `body_of` picks the
+/// verbatim wire body out of the loaded state; `id` is the pane's stable E2E
+/// hook.
 #[must_use]
-pub fn inline_error(error: &crate::error::AdminUiError) -> AnyView {
-    let message = error.to_string();
+pub fn document_section<T>(
+    resource: Resource<Result<Option<T>, crate::error::AdminUiError>>,
+    id: &'static str,
+    body_of: fn(&T) -> &str,
+) -> AnyView
+where
+    T: Clone + Send + Sync + 'static,
+{
     view! {
-        <div
-            role="alert"
-            class="rounded-control border border-danger/40 bg-danger-subtle px-3 py-2 text-sm text-danger whitespace-pre-line"
-        >
-            {message}
-        </div>
+        <Transition fallback=crate::components::data_table::table_skeleton>
+            {move || Suspend::new(async move {
+                match resource.await {
+                    Ok(Some(state)) => {
+                        let pretty = pretty_body(body_of(&state), ReprFormat::CanonicalJson);
+                        let doc = RwSignal::new(pretty);
+                        view! {
+                            <div id=id>
+                                <DocumentPane body=doc />
+                            </div>
+                        }
+                            .into_any()
+                    }
+                    Ok(None) | Err(_) => ().into_any(),
+                }
+            })}
+        </Transition>
     }
     .into_any()
 }

@@ -7,7 +7,11 @@
 //! These are class constants rather than wrapper components because half the
 //! console's inputs are deliberately uncontrolled (the login form) or carry
 //! bespoke wiring (the builder's per-datatype editors) — the kit standardizes
-//! the LOOK, each screen keeps its own behaviour.
+//! the LOOK, each screen keeps its own behaviour. [`text_field`] is the one
+//! assembled control: the plain labelled text input bound to a signal, which
+//! the administration forms are made of.
+
+use leptos::prelude::*;
 
 /// A single-line text input.
 pub const INPUT: &str = "rounded-control border border-edge-strong bg-raised px-3 py-1.5 text-sm text-ink placeholder:text-ink-faint focus:outline-none focus:ring-2 focus:ring-accent focus:border-accent";
@@ -31,3 +35,36 @@ pub const BTN_SECONDARY: &str = "inline-flex items-center gap-1.5 rounded-contro
 
 /// The quiet/destructive text button (delete affordances, two-step confirms).
 pub const BTN_DANGER: &str = "inline-flex items-center gap-1.5 rounded-control border border-danger/40 px-3 py-1.5 text-sm font-medium text-danger hover:bg-danger-subtle focus:outline-none focus:ring-2 focus:ring-danger disabled:opacity-50 disabled:pointer-events-none";
+
+/// One labelled text input bound to `value`, stacked label-over-control.
+///
+/// `prop:value` carries the live state and `on:input` writes it back (rules
+/// §5 — the `value` attribute would only set the initial value, and an
+/// `oninput="…"` JS attribute is forbidden outright). `placeholder` is
+/// `None` where the field carries no example, which leaves the attribute off
+/// the element entirely.
+#[must_use]
+pub fn text_field(
+    id: String,
+    label: &'static str,
+    placeholder: Option<&'static str>,
+    value: RwSignal<String>,
+) -> AnyView {
+    let field_id = id.clone();
+    view! {
+        <div class="flex flex-col gap-1">
+            <label class=LABEL r#for=id>
+                {label}
+            </label>
+            <input
+                id=field_id
+                type="text"
+                class=INPUT
+                placeholder=placeholder
+                prop:value=move || value.get()
+                on:input:target=move |ev| value.set(ev.target().value())
+            />
+        </div>
+    }
+    .into_any()
+}

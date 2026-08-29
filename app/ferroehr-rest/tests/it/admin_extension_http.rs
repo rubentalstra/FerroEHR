@@ -25,69 +25,34 @@
 use axum::Router;
 use axum::body::Body;
 use http::{Request, StatusCode, header};
-use http_body_util::BodyExt;
-use tower::ServiceExt;
-
-use ferroehr::config::auth::AuthConfig;
-use ferroehr::config::server::{AdminConfig, ServerConfig};
-use ferroehr_rest::config::AppConfig;
 
 use crate::common;
+use crate::common::BASE;
+use tower::ServiceExt;
 
-const BASE: &str = "/ferroehr/rest/openehr/v1";
 /// A syntactically valid id that is never created — the "unknown" probe.
 const ABSENT: &str = "00000000-0000-0000-0000-000000000000";
 
-fn config(admin_enabled: bool) -> AppConfig {
-    AppConfig {
-        server: ServerConfig {
-            bind: "127.0.0.1:0".to_owned(),
-            base_path: BASE.to_owned(),
-            max_in_flight: 1024,
-            swagger_ui: false,
-            cors_permissive: false,
-            ..Default::default()
-        },
-        auth: AuthConfig {
-            enabled: false,
-            basic: None,
-            oidc: None,
-            ..AuthConfig::default()
-        },
-        admin: AdminConfig {
-            enabled: admin_enabled,
-        },
-        ..Default::default()
-    }
-}
-
 async fn app(admin_enabled: bool) -> (testkit::TestDb, Router) {
     let (pg, service) = common::test_service().await;
-    (pg, common::router_with(config(admin_enabled), service))
+    (
+        pg,
+        common::router_with(common::api_config(admin_enabled), service),
+    )
 }
 
 async fn send(app: &Router, req: Request<Body>) -> (StatusCode, String) {
-    let resp = app.clone().oneshot(req).await.expect("response");
-    let status = resp.status();
-    let bytes = resp.into_body().collect().await.expect("body").to_bytes();
-    (status, String::from_utf8_lossy(&bytes).into_owned())
+    common::send_body(app, req).await
 }
 
+/// A bodyless `GET` of the [`BASE`]-relative `path`.
 fn get(path: &str) -> Request<Body> {
-    Request::builder()
-        .method("GET")
-        .uri(format!("{BASE}{path}"))
-        .body(Body::empty())
-        .expect("request")
+    common::get(&format!("{BASE}{path}"))
 }
 
+/// A JSON `POST` of `body` to the [`BASE`]-relative `path`.
 fn post_json(path: &str, body: &str) -> Request<Body> {
-    Request::builder()
-        .method("POST")
-        .uri(format!("{BASE}{path}"))
-        .header(header::CONTENT_TYPE, "application/json")
-        .body(Body::from(body.to_owned()))
-        .expect("request")
+    common::post_json(&format!("{BASE}{path}"), body)
 }
 
 /// Create an EHR through the released wire and return its id.

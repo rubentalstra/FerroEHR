@@ -47,101 +47,40 @@ use serde_json::{Value, json};
 use sqlx::PgPool;
 use uuid::Uuid;
 
-use openehr_rm::prelude::PartyProxy;
-
 use ferroehr::ids::EhrId;
 use ferroehr::service::FerroEhrService;
 
+use crate::admin_fixture::{
+    archive_dir, count_for_ehr, repository, seed_full_ehr, truncate_to_half, uid, uv,
+};
 use crate::typed_body::typed;
-use ferroehr::service::admin::types::{CompressionFormat, ExportFormat, ExportSpec};
+use ferroehr::service::admin::types::{
+    CompressionFormat, DumpLoadFailReport, ExportFormat, ExportSpec,
+};
 use ferroehr::service::ehr_index::types::SubjectRef;
 use ferroehr::service::status::CallStatusType;
-use ferroehr::service::version_update::{change_type_coded, lifecycle_state_coded};
-use openehr_its::rest::generated::common::{UpdateAudit, UpdateAuditData, UpdateVersion};
+use openehr_its::rest::generated::common::UpdateVersion;
 
-/// A unique temporary directory path for one archive (best-effort cleaned up by
-/// the OS temp dir; the round-trip does not depend on removal).
-fn archive_dir() -> String {
-    std::env::temp_dir()
-        .join(format!("ferroehr-dumpload-{}", Uuid::now_v7()))
-        .to_string_lossy()
-        .into_owned()
-}
-
-fn uid(v: &Value) -> &str {
-    v["uid"]["value"].as_str().expect("uid.value")
-}
-
-fn uv<T: serde::de::DeserializeOwned>(
-    data: &Value,
-    change_code: &str,
-    preceding: Option<&str>,
-) -> UpdateVersion<T> {
-    UpdateVersion {
-        preceding_version_uid: preceding.map(|p| p.parse().expect("OBJECT_VERSION_ID")),
-        lifecycle_state: lifecycle_state_coded("532"),
-        attestations: None,
-        data: openehr_its::json::from_canonical_value(data)
-            .expect("the fixture commit body decodes as its RM type"),
-        commit_audit: UpdateAudit::UpdateAudit(UpdateAuditData {
-            _type: None,
-            system_id: None,
-            change_type: change_type_coded(change_code),
-            description: None,
-            committer: openehr_its::json::from_canonical_value::<PartyProxy>(
-                &json!({ "_type": "PARTY_IDENTIFIED", "name": "conformance tester" }),
-            )
-            .expect("committer"),
-        }),
-        signature: None,
+/// An `EXPORT_SPEC` in `logical_format`/`compression_format` whose
+/// `segment_split_size` of one kilobyte forces several segment entries — the
+/// segmenting path every container test wants exercised.
+fn split_spec(
+    logical_format: Option<ExportFormat>,
+    compression_format: Option<CompressionFormat>,
+) -> ExportSpec {
+    ExportSpec {
+        logical_format,
+        compression_format,
+        segment_split_size: 1,
     }
 }
 
-/// Seed an EHR carrying multiple versioned-object kinds and versions: `EHR_STATUS`
-/// (create → update = two versions), an item tag on the `EHR_STATUS`, and a
-/// directory `FOLDER` — the same fixture shape as `service_admin.rs` (avoids
-/// `COMPOSITION`, which needs a template the shared fixtures do not supply, so the
-/// dump/load path is exercised without a `template_store` dependency).
-async fn seed_full_ehr(svc: &FerroEhrService) -> EhrId {
-    let ehr_uuid = svc.create_ehr(None).await.expect("ehr");
-
-    let mut updated = svc
-        .get_ehr_status_at_time(ehr_uuid, None)
-        .await
-        .expect("status get");
-    let status_ovid = uid(&updated).to_owned();
-    let status_vo = status_ovid.split("::").next().unwrap().to_owned();
-    updated.as_object_mut().expect("status obj").remove("uid");
-    svc.target_tags_replace(
-        ehr_uuid,
-        status_vo,
-        "EHR_STATUS",
-        vec![crate::item_tag_fixture::ehr_tag(
-            "priority",
-            Some("high"),
-            None,
-        )],
-    )
-    .await
-    .expect("tag");
-
-    svc.create_directory(
-        ehr_uuid,
-        uv(
-            &json!({ "_type": "FOLDER", "archetype_node_id": "openEHR-EHR-FOLDER.generic.v1", "name": { "_type": "DV_TEXT", "value": "root" } }),
-            "249",
-            None,
-        ),
-    )
-    .await
-    .expect("directory");
-
-    updated["is_modifiable"] = json!(false);
-    svc.replace_ehr_status(ehr_uuid, uv(&updated, "251", Some(&status_ovid)))
-        .await
-        .expect("status update");
-
-    ehr_uuid
+/// Assert that a dump/load operation reported no per-entity failure.
+fn assert_clean(reports: &[DumpLoadFailReport], what: &str) {
+    assert!(
+        reports.is_empty(),
+        "a clean {what} reports no failures, got {reports:?}"
+    );
 }
 
 /// An `EHR_STATUS` whose `PARTY_SELF` subject carries an `external_ref` — RM
@@ -174,18 +113,26 @@ fn status_for_subject(subject_id: &str) -> Value {
 /// The per-EHR row counts across the versioned-object tables (used to prove the
 /// load reproduced the same storage shape).
 async fn counts(pool: &PgPool, ehr_id: Uuid) -> (i64, i64, i64, i64) {
-    let one = |sql: &'static str| async move {
-        sqlx::query_scalar::<_, i64>(sql)
-            .bind(ehr_id)
-            .fetch_one(pool)
-            .await
-            .expect("count")
-    };
     (
-        one("SELECT count(*) FROM vo_version WHERE ehr_id = $1").await,
-        one("SELECT count(*) FROM node WHERE ehr_id = $1").await,
-        one("SELECT count(*) FROM contribution WHERE ehr_id = $1").await,
-        one("SELECT count(*) FROM item_tag WHERE ehr_id = $1").await,
+        count_for_ehr(
+            pool,
+            "SELECT count(*) FROM vo_version WHERE ehr_id = $1",
+            ehr_id,
+        )
+        .await,
+        count_for_ehr(pool, "SELECT count(*) FROM node WHERE ehr_id = $1", ehr_id).await,
+        count_for_ehr(
+            pool,
+            "SELECT count(*) FROM contribution WHERE ehr_id = $1",
+            ehr_id,
+        )
+        .await,
+        count_for_ehr(
+            pool,
+            "SELECT count(*) FROM item_tag WHERE ehr_id = $1",
+            ehr_id,
+        )
+        .await,
     )
 }
 
@@ -210,12 +157,8 @@ async fn canonical_snapshot(svc: &FerroEhrService, ehr_id: EhrId) -> (String, St
 
 #[tokio::test]
 async fn export_then_load_into_fresh_db_round_trips_byte_equal() {
-    let src_db = testkit::db().await.expect("testkit database");
-    let src_pool = src_db.pool();
-    let dst_db = testkit::db().await.expect("testkit database");
-    let dst_pool = dst_db.pool();
-    let source = FerroEhrService::new(src_pool.clone());
-    let target = FerroEhrService::new(dst_pool.clone());
+    let (_src_db, src_pool, source) = repository().await;
+    let (_dst_db, dst_pool, target) = repository().await;
 
     // Seed two EHRs in the source repository.
     let ehr1 = seed_full_ehr(&source).await;
@@ -234,10 +177,7 @@ async fn export_then_load_into_fresh_db_round_trips_byte_equal() {
         .export_ehrs(dir.clone(), ExportSpec::canonical_json(1))
         .await
         .expect("export");
-    assert!(
-        export_reports.is_empty(),
-        "a clean export reports no failures, got {export_reports:?}"
-    );
+    assert_clean(&export_reports, "export");
     // The archive exists on disk (manifest + at least one segment).
     assert!(
         std::path::Path::new(&dir).join("manifest.json").exists(),
@@ -246,10 +186,7 @@ async fn export_then_load_into_fresh_db_round_trips_byte_equal() {
 
     // Load into the fresh target repository.
     let load_reports = target.load_ehrs(dir.clone()).await.expect("load");
-    assert!(
-        load_reports.is_empty(),
-        "loading into an empty repo reports no failures, got {load_reports:?}"
-    );
+    assert_clean(&load_reports, "load into an empty repository");
 
     // Both EHRs read back byte-equal at the canonical JSON level.
     assert_eq!(
@@ -272,11 +209,8 @@ async fn export_then_load_into_fresh_db_round_trips_byte_equal() {
 
 #[tokio::test]
 async fn load_duplicate_ehr_ids_is_reported_not_fatal() {
-    let src_db = testkit::db().await.expect("testkit database");
-    let source = FerroEhrService::new(src_db.pool());
-    let dst_db = testkit::db().await.expect("testkit database");
-    let dst_pool = dst_db.pool();
-    let target = FerroEhrService::new(dst_pool.clone());
+    let (_src_db, _src_pool, source) = repository().await;
+    let (_dst_db, dst_pool, target) = repository().await;
 
     let ehr1 = seed_full_ehr(&source).await;
     let ehr2 = seed_full_ehr(&source).await;
@@ -289,7 +223,7 @@ async fn load_duplicate_ehr_ids_is_reported_not_fatal() {
 
     // First load into the empty target: both EHRs land, no failures.
     let first = target.load_ehrs(dir.clone()).await.expect("first load");
-    assert!(first.is_empty(), "first load is clean, got {first:?}");
+    assert_clean(&first, "first load");
     let after_first = counts(&dst_pool, ehr1.into()).await;
 
     // Second load of the same archive: every EHR id now already exists, so each
@@ -328,11 +262,8 @@ async fn load_promotes_the_subject_from_the_loaded_status() {
     // an archive whose projection is absent — the shape an EHR landed by a path
     // that never promoted has — still yields an EHR the subject lookup finds
     // (SM `I_EHR_SERVICE.get_ehrs_for_subject`).
-    let src_db = testkit::db().await.expect("testkit database");
-    let src_pool = src_db.pool();
-    let source = FerroEhrService::new(src_pool.clone());
-    let dst_db = testkit::db().await.expect("testkit database");
-    let target = FerroEhrService::new(dst_db.pool());
+    let (_src_db, src_pool, source) = repository().await;
+    let (_dst_db, _dst_pool, target) = repository().await;
 
     let ehr = source
         .create_ehr(Some(typed(&status_for_subject("patient-dump-1"))))
@@ -361,7 +292,7 @@ async fn load_promotes_the_subject_from_the_loaded_status() {
         .await
         .expect("export");
     let reports = target.load_ehrs(dir.clone()).await.expect("load");
-    assert!(reports.is_empty(), "clean load, got {reports:?}");
+    assert_clean(&reports, "load");
 
     let found = target
         .get_ehrs_for_subject(SubjectRef::person("patient-dump-1", "patients"))
@@ -385,10 +316,8 @@ async fn load_reports_an_ehr_whose_subject_the_repository_already_holds() {
     // (`DUMP_LOAD_FAIL_REPORT`, `dump_status = false`) and skipped exactly like
     // a duplicate EHR id — never fatal, never a silent duplicate — and the rest
     // of the archive still loads.
-    let src_db = testkit::db().await.expect("testkit database");
-    let source = FerroEhrService::new(src_db.pool());
-    let dst_db = testkit::db().await.expect("testkit database");
-    let target = FerroEhrService::new(dst_db.pool());
+    let (_src_db, _src_pool, source) = repository().await;
+    let (_dst_db, _dst_pool, target) = repository().await;
 
     let clashing = source
         .create_ehr(Some(typed(&status_for_subject("patient-dump-2"))))
@@ -448,29 +377,23 @@ async fn load_reports_an_ehr_whose_subject_the_repository_already_holds() {
 /// detects and reads it, round-tripping byte-equal.
 #[tokio::test]
 async fn zip_compressed_export_round_trips_through_the_detected_container() {
-    let src_db = testkit::db().await.expect("testkit database");
-    let src_pool = src_db.pool();
-    let source = FerroEhrService::new(src_pool.clone());
-    let dst_db = testkit::db().await.expect("testkit database");
-    let dst_pool = dst_db.pool();
-    let target = FerroEhrService::new(dst_pool.clone());
+    let (_src_db, src_pool, source) = repository().await;
+    let (_dst_db, dst_pool, target) = repository().await;
 
     let ehr = seed_full_ehr(&source).await;
     let src = canonical_snapshot(&source, ehr).await;
     let src_counts = counts(&src_pool, ehr.into()).await;
 
     let dir = archive_dir();
-    let spec = ExportSpec {
-        logical_format: Some(ExportFormat::OpenehrCanonicalJson),
-        compression_format: Some(CompressionFormat::Zip),
-        // A small split forces several segment entries into the one container.
-        segment_split_size: 1,
-    };
+    let spec = split_spec(
+        Some(ExportFormat::OpenehrCanonicalJson),
+        Some(CompressionFormat::Zip),
+    );
     let reports = source
         .export_ehrs(dir.clone(), spec)
         .await
         .expect("zip export");
-    assert!(reports.is_empty(), "a clean export reports no failures");
+    assert_clean(&reports, "export");
 
     // The packed container is the ONLY thing written — no loose manifest.
     let root = std::path::Path::new(&dir);
@@ -481,10 +404,7 @@ async fn zip_compressed_export_round_trips_through_the_detected_container() {
     );
 
     let load_reports = target.load_ehrs(dir.clone()).await.expect("zip load");
-    assert!(
-        load_reports.is_empty(),
-        "loading into an empty repo reports no failures, got {load_reports:?}"
-    );
+    assert_clean(&load_reports, "load into an empty repository");
     assert_eq!(
         canonical_snapshot(&target, ehr).await,
         src,
@@ -505,29 +425,23 @@ async fn zip_compressed_export_round_trips_through_the_detected_container() {
 /// round-tripping byte-equal — the exact mirror of the `zip` sibling above.
 #[tokio::test]
 async fn sevenz_compressed_export_round_trips_through_the_detected_container() {
-    let src_db = testkit::db().await.expect("testkit database");
-    let src_pool = src_db.pool();
-    let source = FerroEhrService::new(src_pool.clone());
-    let dst_db = testkit::db().await.expect("testkit database");
-    let dst_pool = dst_db.pool();
-    let target = FerroEhrService::new(dst_pool.clone());
+    let (_src_db, src_pool, source) = repository().await;
+    let (_dst_db, dst_pool, target) = repository().await;
 
     let ehr = seed_full_ehr(&source).await;
     let src = canonical_snapshot(&source, ehr).await;
     let src_counts = counts(&src_pool, ehr.into()).await;
 
     let dir = archive_dir();
-    let spec = ExportSpec {
-        logical_format: Some(ExportFormat::OpenehrCanonicalJson),
-        compression_format: Some(CompressionFormat::SevenZip),
-        // A small split forces several segment entries into the one container.
-        segment_split_size: 1,
-    };
+    let spec = split_spec(
+        Some(ExportFormat::OpenehrCanonicalJson),
+        Some(CompressionFormat::SevenZip),
+    );
     let reports = source
         .export_ehrs(dir.clone(), spec)
         .await
         .expect("7z export");
-    assert!(reports.is_empty(), "a clean export reports no failures");
+    assert_clean(&reports, "export");
 
     // The packed container is the ONLY thing written — no loose manifest.
     let root = std::path::Path::new(&dir);
@@ -538,10 +452,7 @@ async fn sevenz_compressed_export_round_trips_through_the_detected_container() {
     );
 
     let load_reports = target.load_ehrs(dir.clone()).await.expect("7z load");
-    assert!(
-        load_reports.is_empty(),
-        "loading into an empty repo reports no failures, got {load_reports:?}"
-    );
+    assert_clean(&load_reports, "load into an empty repository");
     assert_eq!(
         canonical_snapshot(&target, ehr).await,
         src,
@@ -707,39 +618,24 @@ async fn mixed_snapshot(svc: &FerroEhrService, ehr: EhrId, ovids: &[String]) -> 
 /// Export/load one mixed-kind EHR as `openehr_canonical_xml` in `compression`
 /// and assert the whole served surface is byte-equal afterwards.
 async fn assert_xml_round_trip(compression: Option<CompressionFormat>, container: &str) {
-    let src_db = testkit::db().await.expect("testkit database");
-    let src_pool = src_db.pool();
-    let source = FerroEhrService::new(src_pool.clone());
-    let dst_db = testkit::db().await.expect("testkit database");
-    let dst_pool = dst_db.pool();
-    let target = FerroEhrService::new(dst_pool.clone());
+    let (_src_db, src_pool, source) = repository().await;
+    let (_dst_db, dst_pool, target) = repository().await;
 
     let (ehr, ovids) = seed_mixed_kind_ehr(&source).await;
     let src = mixed_snapshot(&source, ehr, &ovids).await;
     let src_counts = counts(&src_pool, ehr.into()).await;
 
     let dir = archive_dir();
-    let spec = ExportSpec {
-        logical_format: Some(ExportFormat::OpenehrCanonicalXml),
-        compression_format: compression,
-        // A small split forces several segment entries; the externalized
-        // version documents are per-document and never split.
-        segment_split_size: 1,
-    };
+    // The externalized version documents are per-document and never split.
+    let spec = split_spec(Some(ExportFormat::OpenehrCanonicalXml), compression);
     let reports = source
         .export_ehrs(dir.clone(), spec)
         .await
         .expect("canonical-XML export");
-    assert!(
-        reports.is_empty(),
-        "a clean export reports no failures, got {reports:?}"
-    );
+    assert_clean(&reports, "export");
 
     let load_reports = target.load_ehrs(dir.clone()).await.expect("load");
-    assert!(
-        load_reports.is_empty(),
-        "loading into an empty repo reports no failures, got {load_reports:?}"
-    );
+    assert_clean(&load_reports, "load into an empty repository");
 
     assert_eq!(
         mixed_snapshot(&target, ehr, &ovids).await,
@@ -790,8 +686,7 @@ async fn canonical_xml_export_round_trips_through_the_sevenz_container() {
 /// logically-deleted version gets no document at all.
 #[tokio::test]
 async fn the_canonical_xml_archive_holds_original_version_documents_under_the_published_root() {
-    let db = testkit::db().await.expect("testkit database");
-    let source = FerroEhrService::new(db.pool());
+    let (_db, _pool, source) = repository().await;
     let (_ehr, ovids) = seed_mixed_kind_ehr(&source).await;
 
     let dir = archive_dir();
@@ -863,11 +758,8 @@ async fn the_canonical_xml_archive_holds_original_version_documents_under_the_pu
 /// whole-operation `file_not_writable`, because neither belongs to one entity.
 #[tokio::test]
 async fn a_corrupt_version_document_reports_that_record_and_commits_nothing() {
-    let src_db = testkit::db().await.expect("testkit database");
-    let source = FerroEhrService::new(src_db.pool());
-    let dst_db = testkit::db().await.expect("testkit database");
-    let dst_pool = dst_db.pool();
-    let target = FerroEhrService::new(dst_pool.clone());
+    let (_src_db, _src_pool, source) = repository().await;
+    let (_dst_db, dst_pool, target) = repository().await;
 
     let (spoiled, ovids) = seed_mixed_kind_ehr(&source).await;
     let intact = seed_full_ehr(&source).await;
@@ -883,13 +775,7 @@ async fn a_corrupt_version_document_reports_that_record_and_commits_nothing() {
     let victim = std::path::Path::new(&dir)
         .join("versions")
         .join(format!("{}.xml", ovids.first().expect("a version uid")));
-    let text = std::fs::read_to_string(&victim).expect("version document");
-    // Truncate at the midpoint; the remainder the division drops is
-    // irrelevant — any prefix shorter than the whole document is corrupt.
-    #[expect(clippy::integer_division, reason = "a deliberate midpoint truncation")]
-    let half = text.len() / 2;
-    std::fs::write(&victim, text.get(..half).expect("document prefix"))
-        .expect("truncate the document");
+    truncate_to_half(&victim);
 
     let reports = target.load_ehrs(dir.clone()).await.expect("load");
     assert_eq!(
@@ -927,8 +813,7 @@ async fn a_corrupt_version_document_reports_that_record_and_commits_nothing() {
 /// is a `precondition_violation`, distinct from the unrealized-member branch.
 #[tokio::test]
 async fn non_positive_segment_split_size_is_a_precondition_violation() {
-    let db = testkit::db().await.expect("testkit database");
-    let service = FerroEhrService::new(db.pool());
+    let (_db, _pool, service) = repository().await;
 
     let dir = archive_dir();
     let err = service
@@ -951,8 +836,7 @@ async fn non_positive_segment_split_size_is_a_precondition_violation() {
 /// never a panic or a silent empty load.
 #[tokio::test]
 async fn load_from_a_location_with_no_archive_is_file_not_writable() {
-    let db = testkit::db().await.expect("testkit database");
-    let service = FerroEhrService::new(db.pool());
+    let (_db, _pool, service) = repository().await;
 
     let dir = archive_dir();
     let err = service
@@ -991,11 +875,8 @@ async fn ehr_row_exists(pool: &PgPool, ehr_id: Uuid) -> bool {
 /// partial load.
 #[tokio::test]
 async fn load_from_an_archive_with_a_mangled_manifest_is_file_not_writable() {
-    let src_db = testkit::db().await.expect("testkit database");
-    let source = FerroEhrService::new(src_db.pool());
-    let dst_db = testkit::db().await.expect("testkit database");
-    let dst_pool = dst_db.pool();
-    let target = FerroEhrService::new(dst_pool.clone());
+    let (_src_db, _src_pool, source) = repository().await;
+    let (_dst_db, dst_pool, target) = repository().await;
 
     let ehr = seed_full_ehr(&source).await;
     let dir = archive_dir();
@@ -1007,13 +888,7 @@ async fn load_from_an_archive_with_a_mangled_manifest_is_file_not_writable() {
 
     // Truncate the manifest mid-object: readable bytes, unparseable JSON.
     let manifest = std::path::Path::new(&dir).join("manifest.json");
-    let text = std::fs::read_to_string(&manifest).expect("manifest");
-    // Truncate at the midpoint; the remainder the division drops is
-    // irrelevant — any prefix shorter than the whole document is corrupt.
-    #[expect(clippy::integer_division, reason = "a deliberate midpoint truncation")]
-    let half = text.len() / 2;
-    std::fs::write(&manifest, text.get(..half).expect("manifest prefix"))
-        .expect("mangle the manifest");
+    truncate_to_half(&manifest);
 
     let err = target
         .load_ehrs(dir.clone())
@@ -1046,32 +921,22 @@ async fn load_from_an_archive_with_a_mangled_manifest_is_file_not_writable() {
 /// as a container, which is `file_not_writable` with nothing loaded.
 #[tokio::test]
 async fn load_from_a_truncated_container_is_file_not_writable() {
-    let src_db = testkit::db().await.expect("testkit database");
-    let source = FerroEhrService::new(src_db.pool());
-    let dst_db = testkit::db().await.expect("testkit database");
-    let dst_pool = dst_db.pool();
-    let target = FerroEhrService::new(dst_pool.clone());
+    let (_src_db, _src_pool, source) = repository().await;
+    let (_dst_db, dst_pool, target) = repository().await;
 
     let ehr = seed_full_ehr(&source).await;
     let dir = archive_dir();
-    let spec = ExportSpec {
-        logical_format: Some(ExportFormat::OpenehrCanonicalJson),
-        compression_format: Some(CompressionFormat::Zip),
-        segment_split_size: 1,
-    };
+    let spec = split_spec(
+        Some(ExportFormat::OpenehrCanonicalJson),
+        Some(CompressionFormat::Zip),
+    );
     let reports = source.export_ehrs(dir.clone(), spec).await.expect("export");
     assert!(reports.is_empty());
 
     // Drop the ZIP central directory (the trailing bytes): the file still
     // exists, so detection picks it, but it is no longer an archive.
     let container = std::path::Path::new(&dir).join("archive.zip");
-    let bytes = std::fs::read(&container).expect("container");
-    // Truncate at the midpoint; the remainder the division drops is
-    // irrelevant — any prefix shorter than the whole document is corrupt.
-    #[expect(clippy::integer_division, reason = "a deliberate midpoint truncation")]
-    let half = bytes.len() / 2;
-    std::fs::write(&container, bytes.get(..half).expect("container prefix"))
-        .expect("truncate the container");
+    truncate_to_half(&container);
 
     let err = target
         .load_ehrs(dir.clone())
@@ -1098,12 +963,9 @@ async fn load_from_a_truncated_container_is_file_not_writable() {
 /// act to carry, so the archive had nothing to lose.
 #[tokio::test]
 async fn an_imported_version_round_trips_through_the_archive() {
-    let src_db = testkit::db().await.expect("testkit database");
-    let source = FerroEhrService::new(src_db.pool());
-    let mid_db = testkit::db().await.expect("testkit database");
-    let middle = FerroEhrService::new(mid_db.pool());
-    let dst_db = testkit::db().await.expect("testkit database");
-    let target = FerroEhrService::new(dst_db.pool());
+    let (_src_db, _src_pool, source) = repository().await;
+    let (_mid_db, _mid_pool, middle) = repository().await;
+    let (_dst_db, _dst_pool, target) = repository().await;
 
     // Source → extract → import: the middle repository now holds imported rows.
     let ehr = seed_full_ehr(&source).await;
@@ -1119,15 +981,9 @@ async fn an_imported_version_round_trips_through_the_archive() {
         .export_ehrs(dir.clone(), ExportSpec::canonical_json(1024))
         .await
         .expect("export");
-    assert!(
-        export_reports.is_empty(),
-        "a clean export reports no failures, got {export_reports:?}"
-    );
+    assert_clean(&export_reports, "export");
     let load_reports = target.load_ehrs(dir.clone()).await.expect("load");
-    assert!(
-        load_reports.is_empty(),
-        "loading into an empty repo reports no failures, got {load_reports:?}"
-    );
+    assert_clean(&load_reports, "load into an empty repository");
 
     // The loaded copy serves the same IMPORTED_VERSION the middle repository
     // does — wrapper act and wrapped original alike.
@@ -1175,17 +1031,6 @@ async fn an_imported_version_round_trips_through_the_archive() {
 /// [`attestations_round_trip_and_the_restored_signature_verifies`]: one
 /// COMPOSITION version carrying an `UPDATE_ATTESTATION`.
 fn attested_contribution() -> Value {
-    let change_type = |code: &str, value: &str| {
-        json!({
-            "_type": "DV_CODED_TEXT", "value": value,
-            "defining_code": {
-                "_type": "CODE_PHRASE",
-                "terminology_id": { "_type": "TERMINOLOGY_ID", "value": "openehr" },
-                "code_string": code
-            }
-        })
-    };
-    let committer = |name: &str| json!({ "_type": "PARTY_IDENTIFIED", "name": name });
     json!({
         "_type": "CONTRIBUTION",
         "versions": [{
@@ -1195,37 +1040,7 @@ fn attested_contribution() -> Value {
                 "committer": committer("author")
             },
             "lifecycle_state": change_type("532", "complete"),
-            "data": {
-                "_type": "COMPOSITION",
-                "archetype_node_id": "openEHR-EHR-COMPOSITION.encounter.v1",
-                "archetype_details": {
-                    "_type": "ARCHETYPED",
-                    "archetype_id": { "_type": "ARCHETYPE_ID",
-                                      "value": "openEHR-EHR-COMPOSITION.encounter.v1" },
-                    "rm_version": "1.2.0"
-                },
-                "name": { "_type": "DV_TEXT", "value": "attested encounter" },
-                "language": {
-                    "_type": "CODE_PHRASE",
-                    "terminology_id": { "_type": "TERMINOLOGY_ID", "value": "ISO_639-1" },
-                    "code_string": "en"
-                },
-                "territory": {
-                    "_type": "CODE_PHRASE",
-                    "terminology_id": { "_type": "TERMINOLOGY_ID", "value": "ISO_3166-1" },
-                    "code_string": "NL"
-                },
-                "category": {
-                    "_type": "DV_CODED_TEXT",
-                    "value": "event",
-                    "defining_code": {
-                        "_type": "CODE_PHRASE",
-                        "terminology_id": { "_type": "TERMINOLOGY_ID", "value": "openehr" },
-                        "code_string": "433"
-                    }
-                },
-                "composer": { "_type": "PARTY_IDENTIFIED", "name": "conformance tester" }
-            },
+            "data": composition("attested encounter"),
             "attestations": [{
                 "_type": "UPDATE_ATTESTATION",
                 "change_type": change_type("666", "attestation"),
@@ -1242,20 +1057,26 @@ fn attested_contribution() -> Value {
     })
 }
 
+/// A `DV_CODED_TEXT` in the `openehr` terminology (`code_string` + rubric).
+fn change_type(code: &str, value: &str) -> Value {
+    json!({
+        "_type": "DV_CODED_TEXT", "value": value,
+        "defining_code": {
+            "_type": "CODE_PHRASE",
+            "terminology_id": { "_type": "TERMINOLOGY_ID", "value": "openehr" },
+            "code_string": code
+        }
+    })
+}
+
+/// A `PARTY_IDENTIFIED` committer named `name`.
+fn committer(name: &str) -> Value {
+    json!({ "_type": "PARTY_IDENTIFIED", "name": name })
+}
+
 /// The 666-only after-committal CONTRIBUTION attesting `ovid` — fixture of the
 /// same test.
 fn later_attest_contribution(ovid: &str) -> Value {
-    let change_type = |code: &str, value: &str| {
-        json!({
-            "_type": "DV_CODED_TEXT", "value": value,
-            "defining_code": {
-                "_type": "CODE_PHRASE",
-                "terminology_id": { "_type": "TERMINOLOGY_ID", "value": "openehr" },
-                "code_string": code
-            }
-        })
-    };
-    let committer = |name: &str| json!({ "_type": "PARTY_IDENTIFIED", "name": name });
     json!({
         "versions": [{
             "preceding_version_uid": { "value": ovid },
@@ -1288,12 +1109,10 @@ async fn attestations_round_trip_and_the_restored_signature_verifies() {
         retired_key_paths: Vec::new(),
         verify_on_read: Some(VerifyOnRead::Strict),
     };
-    let src_db = testkit::db().await.expect("testkit database");
-    let source = FerroEhrService::new(src_db.pool())
-        .with_signer(Arc::new(Signer::from_config(&config).expect("signer")));
-    let dst_db = testkit::db().await.expect("testkit database");
-    let target = FerroEhrService::new(dst_db.pool())
-        .with_signer(Arc::new(Signer::from_config(&config).expect("signer")));
+    let (_src_db, src_pool, source) = repository().await;
+    let source = source.with_signer(Arc::new(Signer::from_config(&config).expect("signer")));
+    let (_dst_db, dst_pool, target) = repository().await;
+    let target = target.with_signer(Arc::new(Signer::from_config(&config).expect("signer")));
 
     let ehr_id = source.create_ehr(None).await.expect("ehr");
     let contribution = attested_contribution();
@@ -1325,12 +1144,9 @@ async fn attestations_round_trip_and_the_restored_signature_verifies() {
         .export_ehrs(dir.clone(), ExportSpec::canonical_json(1))
         .await
         .expect("export");
-    assert!(
-        export_reports.is_empty(),
-        "clean export: {export_reports:?}"
-    );
+    assert_clean(&export_reports, "export");
     let load_reports = target.load_ehrs(dir.clone()).await.expect("load");
-    assert!(load_reports.is_empty(), "clean load: {load_reports:?}");
+    assert_clean(&load_reports, "load");
 
     let row_counts = |pool: &PgPool| {
         let pool = pool.clone();
@@ -1342,8 +1158,8 @@ async fn attestations_round_trip_and_the_restored_signature_verifies() {
         }
     };
     assert_eq!(
-        row_counts(&dst_db.pool()).await,
-        row_counts(&src_db.pool()).await,
+        row_counts(&dst_pool).await,
+        row_counts(&src_pool).await,
         "every vo_attestation row is restored"
     );
 
@@ -1369,50 +1185,31 @@ async fn attestations_round_trip_and_the_restored_signature_verifies() {
 
 // ── the demographic wave (issue #2457) ───────────────────────────────────────
 
-/// A minimal PERSON body for the wave round-trip.
+/// A minimal PERSON body for the wave round-trip, its legal-name identity
+/// carrying one family-name `ELEMENT`.
 fn wave_person(name: &str) -> Value {
-    json!({
-        "_type": "PERSON",
-        "archetype_node_id": "openEHR-DEMOGRAPHIC-PERSON.person.v1",
-        "archetype_details": { "_type": "ARCHETYPED",
-            "archetype_id": { "_type": "ARCHETYPE_ID", "value": "openEHR-DEMOGRAPHIC-PERSON.person.v1" },
-            "rm_version": "1.1.0" },
-        "name": { "_type": "DV_TEXT", "value": name },
-        "identities": [{
-            "_type": "PARTY_IDENTITY",
-            "archetype_node_id": "at0001",
-            "name": { "_type": "DV_TEXT", "value": "legal name" },
-            "details": {
-                "_type": "ITEM_TREE",
-                "archetype_node_id": "at0002",
-                "name": { "_type": "DV_TEXT", "value": "structure" },
-                "items": [{
-                    "_type": "ELEMENT",
-                    "archetype_node_id": "at0003",
-                    "name": { "_type": "DV_TEXT", "value": "family" },
-                    "value": { "_type": "DV_TEXT", "value": name }
-                }]
-            }
-        }]
-    })
+    crate::admin_fixture::person(
+        name,
+        &json!([{
+            "_type": "ELEMENT",
+            "archetype_node_id": "at0003",
+            "name": { "_type": "DV_TEXT", "value": "family" },
+            "value": { "_type": "DV_TEXT", "value": name }
+        }]),
+    )
 }
 
-/// A minimal `PARTY_RELATIONSHIP` body between two party containers.
+/// A minimal `PARTY_RELATIONSHIP` body between two party containers, archetyped
+/// like the PERSON containers the wave carries beside it.
 fn wave_relationship(name: &str, source: &str, target: &str) -> Value {
-    json!({
-        "_type": "PARTY_RELATIONSHIP",
-        "archetype_node_id": "openEHR-DEMOGRAPHIC-PARTY_RELATIONSHIP.relationship.v1",
-        "archetype_details": { "_type": "ARCHETYPED",
-            "archetype_id": { "_type": "ARCHETYPE_ID", "value": "openEHR-DEMOGRAPHIC-PARTY_RELATIONSHIP.relationship.v1" },
-            "rm_version": "1.1.0" },
-        "name": { "_type": "DV_TEXT", "value": name },
-        "source": { "_type": "PARTY_REF",
-            "id": { "_type": "HIER_OBJECT_ID", "value": source },
-            "namespace": "demographic", "type": "PERSON" },
-        "target": { "_type": "PARTY_REF",
-            "id": { "_type": "HIER_OBJECT_ID", "value": target },
-            "namespace": "demographic", "type": "PERSON" }
-    })
+    let mut relationship = crate::admin_fixture::party_relationship(name, source, target);
+    relationship["archetype_details"] = json!({
+        "_type": "ARCHETYPED",
+        "archetype_id": { "_type": "ARCHETYPE_ID",
+                          "value": "openEHR-DEMOGRAPHIC-PARTY_RELATIONSHIP.relationship.v1" },
+        "rm_version": "1.1.0"
+    });
+    relationship
 }
 
 /// The wire-shaped commit envelope for a demographic create.
@@ -1436,10 +1233,8 @@ fn wave_uv<T: serde::de::DeserializeOwned>(data: &Value) -> UpdateVersion<T> {
 
 #[tokio::test]
 async fn demographic_wave_round_trips_standalone_party_and_relationship() {
-    let src_db = testkit::db().await.expect("testkit database");
-    let dst_db = testkit::db().await.expect("testkit database");
-    let source = FerroEhrService::new(src_db.pool());
-    let target = FerroEhrService::new(dst_db.pool());
+    let (_src_db, _src_pool, source) = repository().await;
+    let (_dst_db, _dst_pool, target) = repository().await;
 
     // Seed an EHR (so the archive carries both waves), a standalone person and
     // a relationship whose source is that person's container.
@@ -1468,16 +1263,10 @@ async fn demographic_wave_round_trips_standalone_party_and_relationship() {
         .export_ehrs(dir.clone(), ExportSpec::canonical_json(64))
         .await
         .expect("export");
-    assert!(
-        export_reports.is_empty(),
-        "clean export: {export_reports:?}"
-    );
+    assert_clean(&export_reports, "export");
 
     let load_reports = target.load_ehrs(dir.clone()).await.expect("load");
-    assert!(
-        load_reports.is_empty(),
-        "loading into an empty repo reports no failures, got {load_reports:?}"
-    );
+    assert_clean(&load_reports, "load into an empty repository");
 
     // The EHR wave still round-trips, and the demographic wave restores the
     // standalone containers verbatim (the archive ⇒ repository identity the
@@ -1511,10 +1300,8 @@ async fn demographic_wave_round_trips_standalone_party_and_relationship() {
 
 #[tokio::test]
 async fn demographic_wave_round_trips_in_canonical_xml() {
-    let src_db = testkit::db().await.expect("testkit database");
-    let dst_db = testkit::db().await.expect("testkit database");
-    let source = FerroEhrService::new(src_db.pool());
-    let target = FerroEhrService::new(dst_db.pool());
+    let (_src_db, _src_pool, source) = repository().await;
+    let (_dst_db, _dst_pool, target) = repository().await;
 
     let person_vo = Box::pin(source.create_party(wave_uv(&wave_person("Xara"))))
         .await
@@ -1534,13 +1321,9 @@ async fn demographic_wave_round_trips_in_canonical_xml() {
         .expect("source relationship");
 
     let dir = archive_dir();
-    let spec = ExportSpec {
-        logical_format: Some(ExportFormat::OpenehrCanonicalXml),
-        compression_format: None,
-        segment_split_size: 1,
-    };
+    let spec = split_spec(Some(ExportFormat::OpenehrCanonicalXml), None);
     let reports = source.export_ehrs(dir.clone(), spec).await.expect("export");
-    assert!(reports.is_empty(), "clean export: {reports:?}");
+    assert_clean(&reports, "export");
     assert!(
         std::fs::read_dir(std::path::Path::new(&dir).join("versions"))
             .expect("versions dir")
@@ -1550,7 +1333,7 @@ async fn demographic_wave_round_trips_in_canonical_xml() {
     );
 
     let load_reports = target.load_ehrs(dir.clone()).await.expect("load");
-    assert!(load_reports.is_empty(), "clean load: {load_reports:?}");
+    assert_clean(&load_reports, "load");
 
     assert_eq!(
         target.get_party(person_vo).await.expect("loaded party"),
@@ -1571,10 +1354,8 @@ async fn demographic_wave_round_trips_in_canonical_xml() {
 
 #[tokio::test]
 async fn demographic_wave_round_trips_inside_a_7z_container() {
-    let src_db = testkit::db().await.expect("testkit database");
-    let dst_db = testkit::db().await.expect("testkit database");
-    let source = FerroEhrService::new(src_db.pool());
-    let target = FerroEhrService::new(dst_db.pool());
+    let (_src_db, _src_pool, source) = repository().await;
+    let (_dst_db, _dst_pool, target) = repository().await;
 
     let ehr = seed_full_ehr(&source).await;
     let person_vo = Box::pin(source.create_party(wave_uv(&wave_person("Zena"))))
@@ -1596,13 +1377,9 @@ async fn demographic_wave_round_trips_inside_a_7z_container() {
     let src_ehr_snapshot = canonical_snapshot(&source, ehr).await;
 
     let dir = archive_dir();
-    let spec = ExportSpec {
-        logical_format: None,
-        compression_format: Some(CompressionFormat::SevenZip),
-        segment_split_size: 1,
-    };
+    let spec = split_spec(None, Some(CompressionFormat::SevenZip));
     let reports = source.export_ehrs(dir.clone(), spec).await.expect("export");
-    assert!(reports.is_empty(), "clean export: {reports:?}");
+    assert_clean(&reports, "export");
     let root = std::path::Path::new(&dir);
     assert!(root.join("archive.7z").is_file(), "archive.7z written");
     assert!(
@@ -1611,7 +1388,7 @@ async fn demographic_wave_round_trips_inside_a_7z_container() {
     );
 
     let load_reports = target.load_ehrs(dir.clone()).await.expect("load");
-    assert!(load_reports.is_empty(), "clean load: {load_reports:?}");
+    assert_clean(&load_reports, "load");
 
     assert_eq!(canonical_snapshot(&target, ehr).await, src_ehr_snapshot);
     assert_eq!(

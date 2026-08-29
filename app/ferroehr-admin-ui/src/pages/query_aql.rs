@@ -288,7 +288,7 @@ fn load_status_section(
                             .into_any()
                     }
                     Ok(None) => ().into_any(),
-                    Err(e) => crate::components::format_view::inline_error(&e),
+                    Err(e) => crate::components::notice::inline_error(&e),
                 }
             })}
         </Transition>
@@ -353,7 +353,7 @@ fn validate_feedback(validate_action: Action<String, Result<(), AdminUiError>>) 
                     }
                         .into_any()
                 }
-                Some(Err(error)) => crate::components::format_view::inline_error(&error),
+                Some(Err(error)) => crate::components::notice::inline_error(&error),
                 None => ().into_any(),
             }}
         </div>
@@ -452,7 +452,7 @@ fn save_feedback(save_action: SaveAction) -> AnyView {
                 <span class="text-ink-muted">"Saving…"</span>
             </Show>
             {move || match save_action.value().get() {
-                Some(Err(error)) => crate::components::format_view::inline_error(&error),
+                Some(Err(error)) => crate::components::notice::inline_error(&error),
                 Some(Ok(())) | None => ().into_any(),
             }}
         </div>
@@ -490,7 +490,7 @@ fn results_section(
                         }
                             .into_any()
                     }
-                    Err(e) => crate::components::format_view::inline_error(&e),
+                    Err(e) => crate::components::notice::inline_error(&e),
                 }
             })}
         </Transition>

@@ -269,7 +269,7 @@ pub(super) fn compositions_section(
                         )
                     }
                     Ok(None) => ().into_any(),
-                    Err(e) => crate::components::format_view::inline_error(&e),
+                    Err(e) => crate::components::notice::inline_error(&e),
                 }
             })}
         </Transition>

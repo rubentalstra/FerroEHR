@@ -34,7 +34,8 @@ use leptos::prelude::*;
 use serde_json::Value;
 
 use crate::components::field::{BTN_PRIMARY, BTN_SECONDARY, INPUT, TEXTAREA};
-use crate::components::format_view::{inline_error, pretty_body};
+use crate::components::format_view::pretty_body;
+use crate::components::notice::inline_error;
 use crate::components::surface::{CARD_PAD, CARD_TITLE, WELL};
 use crate::error::AdminUiError;
 use crate::format::ReprFormat;

@@ -224,7 +224,7 @@ fn stored_table(
                     Ok(rows) => {
                         stored_rows_view(rows, selected, paging, admin, cdr_delete, pending_delete)
                     }
-                    Err(e) => crate::components::format_view::inline_error(&e),
+                    Err(e) => crate::components::notice::inline_error(&e),
                 }
             })}
         </Transition>
@@ -412,7 +412,7 @@ fn stored_detail(detail: Resource<Result<Option<String>, AdminUiError>>) -> AnyV
                     match detail.await {
                         Ok(Some(text)) => detail_panel(text),
                         Ok(None) => ().into_any(),
-                        Err(e) => crate::components::format_view::inline_error(&e),
+                        Err(e) => crate::components::notice::inline_error(&e),
                     }
                 })}
             </Transition>
@@ -468,7 +468,7 @@ fn namespaces_panel(stored: Resource<Result<Vec<StoredQueryRow>, AdminUiError>>)
             {move || Suspend::new(async move {
                 match stored.await {
                     Ok(rows) => namespace_cards(&rows),
-                    Err(e) => crate::components::format_view::inline_error(&e),
+                    Err(e) => crate::components::notice::inline_error(&e),
                 }
             })}
         </Transition>

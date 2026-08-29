@@ -9,7 +9,7 @@
 //! - **Party** (default) — the CURRENT version
 //!   (`GET /demographic/{kind}/{uid_based_id}`): its facts, the `edit_form`
 //!   that commits a new version (`PUT` with `If-Match`), and the whole document
-//!   in a [`DocumentPane`].
+//!   in the shared [`document_section`].
 //! - **History** — the `VERSIONED_PARTY` family
 //!   ([`history`](super::history)).
 //! - **Relationships** — the party's own `relationships` list
@@ -46,11 +46,15 @@ use serde::{Deserialize, Serialize};
 use serde_json::Value;
 
 use crate::components::data_table::table_skeleton;
-use crate::components::field::{BTN_DANGER, BTN_PRIMARY, LABEL, TEXTAREA};
-use crate::components::format_view::{DocumentPane, inline_error};
+use crate::components::field::{BTN_PRIMARY, LABEL, TEXTAREA};
+use crate::components::format_view::document_section;
+use crate::components::logical_delete::{LogicalDeleteCopy, logical_delete_section};
+use crate::components::notice::inline_error;
+use crate::components::notice::{deleted_notice, diagnostic_pane, missing_notice};
 use crate::components::page_header::{Crumb, PageHeader};
-use crate::components::surface::{CARD_PAD, CARD_TITLE, WELL};
-use crate::components::toast::{toast_error, toast_success};
+use crate::components::surface::{CARD_PAD, CARD_TITLE};
+use crate::components::tab_bar::tab_link;
+use crate::components::toast::toast_success;
 use crate::error::AdminUiError;
 use crate::pages::demographics::{PartyKind, browse_href};
 use crate::uid::container_uid_of;
@@ -593,24 +597,16 @@ fn party_screen(kind: PartyKind, uid: Signal<String>, selected: Memo<String>) ->
 /// tabs working before hydration (the router intercepts them once WASM loads).
 fn tab_bar(kind: PartyKind, uid: Signal<String>, selected: Memo<String>) -> AnyView {
     let link = move |value: &'static str, label: &'static str| {
-        let href = move || {
-            format!(
-                "{}?tab={value}",
-                super::party_href(kind, uid.get().as_str())
-            )
-        };
-        let class = move || {
-            if selected.get() == value {
-                "rounded-control px-3 py-1.5 text-sm font-medium bg-accent-subtle text-accent-ink"
-            } else {
-                "rounded-control px-3 py-1.5 text-sm font-medium text-ink-muted hover:bg-sunken"
-            }
-        };
-        view! {
-            <a href=href class=class>
-                {label}
-            </a>
-        }
+        tab_link(
+            move || {
+                format!(
+                    "{}?tab={value}",
+                    super::party_href(kind, uid.get().as_str())
+                )
+            },
+            label,
+            Signal::derive(move || selected.get() == value),
+        )
     };
     view! {
         <div class="flex flex-wrap gap-1 border-b border-edge pb-2">
@@ -791,7 +787,9 @@ fn party_section(
     let form = PartyForm::new();
     let facts = facts_section(resource, form, latest_version);
     let editor = edit_form(kind, form, save);
-    let document = document_section(resource);
+    // A failed read renders nothing in the pane — the facts section above
+    // states it once (the screen never renders an error as nothing; rules §4).
+    let document = document_section(resource, "party-document", |state| state.body.as_str());
     (
         view! { <div class="flex flex-col gap-4">{facts} {editor} {document}</div> }.into_any(),
         resource,
@@ -821,18 +819,10 @@ fn facts_section(
                     }
                     Ok(None) => deleted_card(),
                     Err(e) if e.status_code() == Some(http::StatusCode::NOT_FOUND) => {
-                        // The delete affordance's precondition, published from
-                        // the screen's ONE read of the party.
-                        view! {
-                            <div
-                                role="alert"
-                                id="party-not-found"
-                                class="rounded-card border border-danger/40 bg-danger-subtle px-3 py-2 text-sm text-danger"
-                            >
-                                "The CDR holds no party of this kind with this id. Check the id and the kind — the same id under a different kind is a different resource."
-                            </div>
-                        }
-                            .into_any()
+                        missing_notice(
+                            "party-not-found",
+                            "The CDR holds no party of this kind with this id. Check the id and the kind — the same id under a different kind is a different resource.",
+                        )
                     }
                     Err(e) => inline_error(&e),
                 }
@@ -844,16 +834,10 @@ fn facts_section(
 
 /// The `204` state: the party exists but its current version is deleted.
 fn deleted_card() -> AnyView {
-    view! {
-        <div
-            role="status"
-            id="party-deleted"
-            class="rounded-card border border-warn/40 bg-warn-subtle px-3 py-2 text-sm text-warn"
-        >
-            "This party's current version is deleted. Its earlier versions are still readable — open one from the History tab."
-        </div>
-    }
-    .into_any()
+    deleted_notice(
+        "party-deleted",
+        "This party's current version is deleted. Its earlier versions are still readable — open one from the History tab.",
+    )
 }
 
 /// Render the loaded party's facts as a card.
@@ -880,54 +864,10 @@ fn facts_card(state: &PartyState) -> AnyView {
     .into_any()
 }
 
-/// One label/value line of a fact card. `hook` is the row's `data-demographic-fact`
-/// value — the stable E2E hook; an absent value shows an em dash.
+/// One label/value line of a fact card, carrying the demographic screens'
+/// `data-demographic-fact` hook.
 pub(super) fn fact_row(label: &'static str, hook: &'static str, value: String) -> AnyView {
-    let shown = if value.is_empty() {
-        "—".to_owned()
-    } else {
-        value
-    };
-    view! {
-        <div>
-            <span class="font-medium text-ink-muted mr-1">{label}":"</span>
-            <span class="font-mono break-all text-ink" data-demographic-fact=hook>
-                {shown}
-            </span>
-        </div>
-    }
-    .into_any()
-}
-
-/// The current party document in the shared
-/// [`DocumentPane`](crate::components::format_view::DocumentPane).
-///
-/// A failed read renders nothing here — the facts section above states it once
-/// (the screen as a whole never renders an error as nothing; rules §4).
-fn document_section(resource: PartyResource) -> AnyView {
-    view! {
-        <Transition fallback=table_skeleton>
-            {move || Suspend::new(async move {
-                match resource.await {
-                    Ok(Some(state)) => {
-                        let pretty = crate::components::format_view::pretty_body(
-                            &state.body,
-                            crate::format::ReprFormat::CanonicalJson,
-                        );
-                        let doc = RwSignal::new(pretty);
-                        view! {
-                            <div id="party-document">
-                                <DocumentPane body=doc />
-                            </div>
-                        }
-                            .into_any()
-                    }
-                    Ok(None) | Err(_) => ().into_any(),
-                }
-            })}
-        </Transition>
-    }
-    .into_any()
+    crate::components::facts::fact_row(label, "data-demographic-fact", hook, value)
 }
 
 /// The edit card: the two JSON drafts, the save button, and the two inline
@@ -987,20 +927,10 @@ fn edit_form(
     };
     // The CDR's own diagnostic, kept beside the form it refused: the toast is
     // the notification, this is the detail worth reading line by line.
-    let diagnostic = move || match save.value().get() {
-        Some(Err(error)) => {
-            let detail = error.to_string();
-            view! {
-                <div class=WELL id="party-diagnostic" role="alert">
-                    <pre class="overflow-auto max-h-[40vh] whitespace-pre-wrap font-mono text-xs text-danger">
-                        {detail}
-                    </pre>
-                </div>
-            }
-            .into_any()
-        }
-        _ => ().into_any(),
-    };
+    let diagnostic = diagnostic_pane(
+        "party-diagnostic",
+        Signal::derive(move || save.value().get().and_then(Result::err)),
+    );
     let hint = format!(
         "Commits a new {} version on top of the one loaded above (If-Match), so a concurrent \
          change is refused rather than overwritten. Every other attribute travels back exactly as \
@@ -1098,34 +1028,10 @@ fn draft_complaint(identities: &str, details: &str) -> Result<(), String> {
 /// `preceding_version_uid` to be deleted", `operations/person_delete.yaml`), and
 /// a second read for that would be the same claim twice.
 fn delete_section(kind: PartyKind, uid: Signal<String>, version_uid: RwSignal<String>) -> AnyView {
-    let toaster = thaw::ToasterInjection::expect_context();
-    let confirming = RwSignal::new(false);
     let delete: Action<String, Result<(), AdminUiError>> = Action::new(move |version: &String| {
         let version = version.clone();
         async move { delete_party(kind.segment().to_owned(), version).await }
     });
-
-    let navigate = leptos_router::hooks::use_navigate();
-    Effect::new(move |_| match delete.value().get() {
-        Some(Ok(())) => {
-            toast_success(
-                toaster,
-                "Party deleted",
-                "A deleted version was committed; earlier versions stay readable in History.",
-            );
-            navigate(
-                &browse_href(kind),
-                leptos_router::NavigateOptions::default(),
-            );
-        }
-        Some(Err(error)) => toast_error(
-            toaster,
-            "Delete failed",
-            &crate::feedback::logical_delete_failure_copy(PARTY_OBJECT, &error),
-        ),
-        None => {}
-    });
-
     let message = Signal::derive(move || {
         format!(
             "Delete {} {}? This commits a deleted version: the party stops resolving as current, \
@@ -1134,34 +1040,19 @@ fn delete_section(kind: PartyKind, uid: Signal<String>, version_uid: RwSignal<St
             uid.get()
         )
     });
-
-    view! {
-        <div class="mb-4 flex flex-wrap items-center justify-end gap-3">
-            <button
-                id="party-delete"
-                type="button"
-                class=BTN_DANGER
-                disabled=Signal::derive(move || delete.pending().get())
-                on:click=move |_| confirming.set(true)
-            >
-                <leptos_icons::Icon icon=icondata_lu::LuTrash width="14" height="14" />
-                "Delete party"
-            </button>
-            <crate::components::confirm_dialog::ConfirmDialog
-                open=confirming
-                title="Delete party"
-                message=message
-                confirm_label="Delete party"
-                confirm_id="party-delete-confirm"
-                on_cancel=Callback::new(move |()| confirming.set(false))
-                on_confirm=Callback::new(move |()| {
-                    delete.dispatch(version_uid.get_untracked());
-                    confirming.set(false);
-                })
-            />
-        </div>
-    }
-    .into_any()
+    logical_delete_section(
+        delete,
+        version_uid,
+        message,
+        browse_href(kind),
+        LogicalDeleteCopy {
+            button_id: "party-delete",
+            label: "Delete party",
+            confirm_id: "party-delete-confirm",
+            success_title: "Party deleted",
+            object: PARTY_OBJECT,
+        },
+    )
 }
 
 #[cfg(test)]

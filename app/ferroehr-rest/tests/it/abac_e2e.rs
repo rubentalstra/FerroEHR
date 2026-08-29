@@ -34,7 +34,7 @@ use std::time::Duration;
 use async_trait::async_trait;
 use axum::Router;
 use axum::body::Body;
-use ferroehr::config::auth::{AuthConfig, OidcConfig};
+use ferroehr::config::auth::AuthConfig;
 use ferroehr::config::authz::AuthzConfig;
 use ferroehr::config::server::ServerConfig;
 use ferroehr::service::FerroEhrService;
@@ -47,14 +47,13 @@ use ferroehr_rest::extensions::access::authz::{AuthzHandle, AuthzResolvers, Reso
 use ferroehr_rest::extensions::management::Observability;
 use ferroehr_rest::{build_full, build_with};
 use http::{Request, StatusCode};
-use jsonwebtoken::{Algorithm, EncodingKey, Header, encode};
 use serde_json::{Value, json};
 use tokio::net::UdpSocket;
 use tower::ServiceExt;
 
 use crate::common;
+use crate::common::BASE;
 
-const BASE: &str = "/ferroehr/rest/openehr/v1";
 const HMAC_SECRET: &str = "abac-test-secret";
 const ISSUER: &str = "https://issuer.example";
 /// The audience every fixture token is minted for: `audiences` is mandatory
@@ -124,21 +123,7 @@ fn rest_config() -> AppConfig {
             swagger_ui: false,
             ..Default::default()
         },
-        auth: AuthConfig {
-            enabled: true,
-            basic: None,
-            oidc: Some(OidcConfig {
-                issuer: ISSUER.to_owned(),
-                audiences: vec![AUDIENCE.to_owned()],
-                algorithms: vec!["HS256".to_owned()],
-                hmac_secret: Some(ferroehr::config::secret::Secret::new(
-                    HMAC_SECRET.to_owned(),
-                )),
-                jwks_json: None,
-                ..OidcConfig::default()
-            }),
-            ..AuthConfig::default()
-        },
+        auth: common::hs256_auth_config(ISSUER, AUDIENCE, HMAC_SECRET),
         ..Default::default()
     }
 }
@@ -249,27 +234,25 @@ async fn seed_ehr(seed: &Router, ehr_id: &str) {
     assert_eq!(resp.status(), StatusCode::CREATED, "seed EHR {ehr_id}");
 }
 
-/// Commit a composition into `ehr_id`; return its version uid (from the `ETag`).
-async fn seed_composition(seed: &Router, ehr_id: &str) -> String {
-    let req = Request::builder()
-        .method("POST")
-        .uri(format!("{BASE}/ehr/{ehr_id}/composition"))
-        .header("content-type", "application/json")
-        .body(Body::from(composition().to_string()))
-        .expect("request");
-    let resp = seed.clone().oneshot(req).await.expect("seed composition");
+/// Commit `body` into `ehr_id` through the direct composition route; return its
+/// version uid (from the `ETag`, which carries `W/"<version_uid>"`).
+async fn post_composition(seed: &Router, ehr_id: &str, body: String) -> String {
+    let (status, headers, response) = common::send(
+        seed,
+        common::post_json(&format!("{BASE}/ehr/{ehr_id}/composition"), &body),
+    )
+    .await;
     assert_eq!(
-        resp.status(),
+        status,
         StatusCode::CREATED,
-        "seed composition in {ehr_id}"
+        "seed composition in {ehr_id}: {response}"
     );
-    let etag = resp
-        .headers()
-        .get(http::header::ETAG)
-        .and_then(|v| v.to_str().ok())
-        .expect("ETag on create");
-    // ETag is `W/"<version_uid>"`.
-    etag.trim_start_matches("W/").trim_matches('"').to_owned()
+    common::etag_uid(&headers)
+}
+
+/// Commit the templateless fixture composition into `ehr_id`.
+async fn seed_composition(seed: &Router, ehr_id: &str) -> String {
+    post_composition(seed, ehr_id, composition().to_string()).await
 }
 
 // ── ATNA capture ───────────────────────────────────────────────────────────────
@@ -331,13 +314,7 @@ fn bearer(patient: Option<&str>) -> String {
     if let Some(p) = patient {
         claims["patient_id"] = json!(p);
     }
-    let token = encode(
-        &Header::new(Algorithm::HS256),
-        &claims,
-        &EncodingKey::from_secret(HMAC_SECRET.as_bytes()),
-    )
-    .expect("encode");
-    format!("Bearer {token}")
+    common::hs256_bearer(HMAC_SECRET, &claims)
 }
 
 fn request(method: &str, path: &str, token: &str) -> Request<Body> {
@@ -352,7 +329,33 @@ fn request(method: &str, path: &str, token: &str) -> Request<Body> {
 }
 
 async fn status(app: &Router, req: Request<Body>) -> StatusCode {
-    app.clone().oneshot(req).await.expect("oneshot").status()
+    common::send_status(app, req).await
+}
+
+/// A real service plus the auth-off seed app over it — the fixture every gated
+/// scenario starts from (data is seeded through the seed app, which bypasses
+/// the gate under test).
+async fn service_and_seed_app() -> (testkit::TestDb, Arc<FerroEhrService>, Router) {
+    let (pg, svc) = service(None).await;
+    let seed = build_with(seed_config(), Arc::clone(&svc)).expect("seed app");
+    (pg, svc, seed)
+}
+
+/// Drive one gated request as a caller whose token carries `patient`.
+async fn probe(app: &Router, method: &str, path: &str, patient: Option<&str>) -> StatusCode {
+    status(app, request(method, path, &bearer(patient))).await
+}
+
+/// The app whose PDP permits only requests carrying the IPS template attribute,
+/// resolved from the REAL service.
+fn template_scoped_app(svc: Arc<FerroEhrService>) -> Router {
+    build_full(
+        rest_config(),
+        Arc::clone(&svc),
+        authz_with(Arc::new(RequireIpsTemplate), service_resolvers(svc)),
+        Observability::default(),
+    )
+    .expect("build app")
 }
 
 // ── tests ─────────────────────────────────────────────────────────────────────
@@ -362,13 +365,11 @@ async fn create_for_other_patient_is_pre_check_forbidden() {
     // The pre-check denies before dispatch (no data needed).
     let (_pg, svc) = service(None).await;
     let app = abac_app(svc, true);
-    let s = status(
+    let s = probe(
         &app,
-        request(
-            "POST",
-            &format!("/ehr/{EHR_OTHER}/composition"),
-            &bearer(Some(PATIENT_OWN)),
-        ),
+        "POST",
+        &format!("/ehr/{EHR_OTHER}/composition"),
+        Some(PATIENT_OWN),
     )
     .await;
     assert_eq!(
@@ -380,18 +381,15 @@ async fn create_for_other_patient_is_pre_check_forbidden() {
 
 #[tokio::test]
 async fn create_for_own_patient_clears_the_gate() {
-    let (_pg, svc) = service(None).await;
-    let seed = build_with(seed_config(), Arc::clone(&svc)).expect("seed app");
+    let (_pg, svc, seed) = service_and_seed_app().await;
     seed_ehr(&seed, EHR_OWN).await;
 
     let app = abac_app(svc, true);
-    let s = status(
+    let s = probe(
         &app,
-        request(
-            "POST",
-            &format!("/ehr/{EHR_OWN}/composition"),
-            &bearer(Some(PATIENT_OWN)),
-        ),
+        "POST",
+        &format!("/ehr/{EHR_OWN}/composition"),
+        Some(PATIENT_OWN),
     )
     .await;
     assert_ne!(
@@ -404,8 +402,7 @@ async fn create_for_own_patient_clears_the_gate() {
 
 #[tokio::test]
 async fn read_of_other_patient_is_post_check_forbidden() {
-    let (_pg, svc) = service(None).await;
-    let seed = build_with(seed_config(), Arc::clone(&svc)).expect("seed app");
+    let (_pg, svc, seed) = service_and_seed_app().await;
     // Seed EHR_OTHER + a composition so the read succeeds and the post-check can
     // evaluate it; the post-check then denies because EHR_OTHER's subject is
     // PATIENT_OTHER while the caller's claim is PATIENT_OWN.
@@ -413,13 +410,11 @@ async fn read_of_other_patient_is_post_check_forbidden() {
     let uid = seed_composition(&seed, EHR_OTHER).await;
 
     let app = abac_app(svc, true);
-    let s = status(
+    let s = probe(
         &app,
-        request(
-            "GET",
-            &format!("/ehr/{EHR_OTHER}/composition/{uid}"),
-            &bearer(Some(PATIENT_OWN)),
-        ),
+        "GET",
+        &format!("/ehr/{EHR_OTHER}/composition/{uid}"),
+        Some(PATIENT_OWN),
     )
     .await;
     assert_eq!(
@@ -431,19 +426,16 @@ async fn read_of_other_patient_is_post_check_forbidden() {
 
 #[tokio::test]
 async fn read_of_own_patient_is_served() {
-    let (_pg, svc) = service(None).await;
-    let seed = build_with(seed_config(), Arc::clone(&svc)).expect("seed app");
+    let (_pg, svc, seed) = service_and_seed_app().await;
     seed_ehr(&seed, EHR_OWN).await;
     let uid = seed_composition(&seed, EHR_OWN).await;
 
     let app = abac_app(svc, true);
-    let s = status(
+    let s = probe(
         &app,
-        request(
-            "GET",
-            &format!("/ehr/{EHR_OWN}/composition/{uid}"),
-            &bearer(Some(PATIENT_OWN)),
-        ),
+        "GET",
+        &format!("/ehr/{EHR_OWN}/composition/{uid}"),
+        Some(PATIENT_OWN),
     )
     .await;
     assert_eq!(s, StatusCode::OK, "own-patient read is served");
@@ -453,15 +445,7 @@ async fn read_of_own_patient_is_served() {
 async fn missing_patient_claim_is_forbidden() {
     let (_pg, svc) = service(None).await;
     let app = abac_app(svc, true);
-    let s = status(
-        &app,
-        request(
-            "POST",
-            &format!("/ehr/{EHR_OWN}/composition"),
-            &bearer(None),
-        ),
-    )
-    .await;
+    let s = probe(&app, "POST", &format!("/ehr/{EHR_OWN}/composition"), None).await;
     assert_eq!(
         s,
         StatusCode::FORBIDDEN,
@@ -472,18 +456,15 @@ async fn missing_patient_claim_is_forbidden() {
 #[tokio::test]
 async fn abac_disabled_restores_behaviour() {
     // ABAC off → no gate → a create for any EHR is served (auth+RBAC only).
-    let (_pg, svc) = service(None).await;
-    let seed = build_with(seed_config(), Arc::clone(&svc)).expect("seed app");
+    let (_pg, svc, seed) = service_and_seed_app().await;
     seed_ehr(&seed, EHR_OTHER).await;
 
     let app = abac_app(svc, false);
-    let s = status(
+    let s = probe(
         &app,
-        request(
-            "POST",
-            &format!("/ehr/{EHR_OTHER}/composition"),
-            &bearer(Some(PATIENT_OWN)),
-        ),
+        "POST",
+        &format!("/ehr/{EHR_OTHER}/composition"),
+        Some(PATIENT_OWN),
     )
     .await;
     assert_ne!(s, StatusCode::FORBIDDEN);
@@ -500,13 +481,11 @@ async fn abac_deny_is_audited() {
     let (_pg, svc) = service(Some(sender)).await;
     let app = abac_app(svc, true);
 
-    let s = status(
+    let s = probe(
         &app,
-        request(
-            "POST",
-            &format!("/ehr/{EHR_OTHER}/composition"),
-            &bearer(Some(PATIENT_OWN)),
-        ),
+        "POST",
+        &format!("/ehr/{EHR_OTHER}/composition"),
+        Some(PATIENT_OWN),
     )
     .await;
     assert_eq!(s, StatusCode::FORBIDDEN);
@@ -525,24 +504,6 @@ async fn abac_deny_is_audited() {
 
 /// The `template_id` the vendored IPS operational template declares.
 const IPS_TEMPLATE_ID: &str = "International Patient Summary";
-
-fn ips_opt_xml() -> String {
-    std::fs::read_to_string(
-        std::path::PathBuf::from(env!("CARGO_MANIFEST_DIR"))
-            .join("../../crates/openehr-its/tests/fixtures/sdk/ips.v0.opt"),
-    )
-    .expect("ips.v0.opt vendored in openehr-its")
-}
-
-fn ips_composition() -> Value {
-    let text = std::fs::read_to_string(
-        std::path::PathBuf::from(env!("CARGO_MANIFEST_DIR")).join(
-            "../../crates/openehr-its/tests/vendor/openehr_sdk/composition/canonical_json/ips_canonical.json",
-        ),
-    )
-    .expect("ips_canonical.json vendored in openehr-its");
-    serde_json::from_str(&text).expect("valid canonical composition")
-}
 
 /// A PDP that permits ONLY when the request carries the IPS template attribute
 /// — a template-scoped rule. With `vo_version.template_id` unstamped the
@@ -574,53 +535,32 @@ async fn seed_templated_composition(seed: &Router, ehr_id: &str) -> String {
         .method("POST")
         .uri(format!("{BASE}/definition/template/adl1.4"))
         .header("content-type", "application/xml")
-        .body(Body::from(ips_opt_xml()))
+        .body(Body::from(common::ips_opt_xml()))
         .expect("request");
-    let resp = seed.clone().oneshot(upload).await.expect("upload OPT");
-    assert_eq!(resp.status(), StatusCode::CREATED, "IPS OPT upload");
+    let (status, body) = common::send_body(seed, upload).await;
+    assert_eq!(status, StatusCode::CREATED, "IPS OPT upload: {body}");
 
-    let req = Request::builder()
-        .method("POST")
-        .uri(format!("{BASE}/ehr/{ehr_id}/composition"))
-        .header("content-type", "application/json")
-        .body(Body::from(ips_composition().to_string()))
-        .expect("request");
-    let resp = seed.clone().oneshot(req).await.expect("seed composition");
-    assert_eq!(
-        resp.status(),
-        StatusCode::CREATED,
-        "seed templated composition in {ehr_id}"
-    );
-    let etag = resp
-        .headers()
-        .get(http::header::ETAG)
-        .and_then(|v| v.to_str().ok())
-        .expect("ETag on create");
-    etag.trim_start_matches("W/").trim_matches('"').to_owned()
+    post_composition(
+        seed,
+        ehr_id,
+        common::ips_canonical_composition().to_string(),
+    )
+    .await
 }
 
 #[tokio::test]
 async fn template_scoped_rule_binds_on_a_direct_route_composition() {
-    let (_pg, svc) = service(None).await;
-    let seed = build_with(seed_config(), Arc::clone(&svc)).expect("seed app");
+    let (_pg, svc, seed) = service_and_seed_app().await;
     seed_ehr(&seed, EHR_OWN).await;
     let uid = seed_templated_composition(&seed, EHR_OWN).await;
 
-    let app = build_full(
-        rest_config(),
-        Arc::clone(&svc),
-        authz_with(Arc::new(RequireIpsTemplate), service_resolvers(svc)),
-        Observability::default(),
-    )
-    .expect("build app");
+    let app = template_scoped_app(svc);
 
-    let s = status(
+    let s = probe(
         &app,
-        request(
-            "GET",
-            &format!("/ehr/{EHR_OWN}/composition/{uid}"),
-            &bearer(Some(PATIENT_OWN)),
-        ),
+        "GET",
+        &format!("/ehr/{EHR_OWN}/composition/{uid}"),
+        Some(PATIENT_OWN),
     )
     .await;
     assert_eq!(
@@ -636,26 +576,17 @@ async fn template_scoped_rule_does_not_bind_a_templateless_composition() {
     // The refusing twin: a composition carrying no `archetype_details.template_id`
     // genuinely has no template attribute, so the same rule denies — the
     // resolver answering `None` must mean "no template", never "unstamped".
-    let (_pg, svc) = service(None).await;
-    let seed = build_with(seed_config(), Arc::clone(&svc)).expect("seed app");
+    let (_pg, svc, seed) = service_and_seed_app().await;
     seed_ehr(&seed, EHR_OWN).await;
     let uid = seed_composition(&seed, EHR_OWN).await;
 
-    let app = build_full(
-        rest_config(),
-        Arc::clone(&svc),
-        authz_with(Arc::new(RequireIpsTemplate), service_resolvers(svc)),
-        Observability::default(),
-    )
-    .expect("build app");
+    let app = template_scoped_app(svc);
 
-    let s = status(
+    let s = probe(
         &app,
-        request(
-            "GET",
-            &format!("/ehr/{EHR_OWN}/composition/{uid}"),
-            &bearer(Some(PATIENT_OWN)),
-        ),
+        "GET",
+        &format!("/ehr/{EHR_OWN}/composition/{uid}"),
+        Some(PATIENT_OWN),
     )
     .await;
     assert_eq!(
