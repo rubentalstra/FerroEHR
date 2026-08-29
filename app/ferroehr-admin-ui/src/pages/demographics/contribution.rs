@@ -36,7 +36,8 @@ use serde_json::Value;
 
 use crate::components::data_table::{CELL, CELL_MONO, ROW, table_shell, table_skeleton};
 use crate::components::empty_state::EmptyState;
-use crate::components::format_view::{DocumentPane, inline_error};
+use crate::components::format_view::DocumentPane;
+use crate::components::notice::inline_error;
 use crate::components::page_header::{Crumb, PageHeader};
 use crate::components::surface::{CARD_PAD, CARD_TITLE};
 use crate::error::AdminUiError;

@@ -4,19 +4,18 @@
 //! The inline notice kit: the small alert, status and diagnostic blocks a
 //! screen renders BESIDE the thing they are about.
 //!
-//! Four shapes, each with exactly one definition so a refusal, an absence and
-//! a rejected write look the same wherever they land: the alert note beside a
-//! control ([`alert_note`]), the two whole-section notices that say an object
-//! is deleted or unknown ([`deleted_notice`], [`missing_notice`]), the CDR's
-//! verbatim diagnostic under the form it refused ([`diagnostic_pane`]), and
-//! the message bar a failed write shows beside its failure toast
+//! Five shapes, each with exactly one definition so a failed read, a refusal,
+//! an absence and a rejected write look the same wherever they land: the
+//! general "this section's read failed" bar ([`inline_error`]), the alert note
+//! beside a control ([`alert_note`]), the two whole-section notices that say an
+//! object is deleted or unknown ([`deleted_notice`], [`missing_notice`]), the
+//! CDR's verbatim diagnostic under the form it refused ([`diagnostic_pane`]),
+//! and the message bar a failed write shows beside its failure toast
 //! ([`failure_bar`]).
 //!
 //! The console's feedback rule (crate `CLAUDE.md`) decides which one applies:
 //! a pure READ renders inline and never toasts; a MUTATION toasts on both
-//! outcomes and may keep the detail inline beside the toast. The general
-//! "this section's read failed" view is
-//! [`inline_error`](crate::components::format_view::inline_error).
+//! outcomes and may keep the detail inline beside the toast.
 
 use leptos::prelude::*;
 
@@ -35,6 +34,27 @@ const MISSING: &str =
 /// The class set of a whole-section notice that something is deleted.
 const DELETED: &str =
     "rounded-card border border-warn/40 bg-warn-subtle px-3 py-2 text-sm text-warn";
+
+/// One domain error rendered as the standard inline error bar.
+///
+/// Used by data sections that resolve their `Result` inside `<Suspense>`
+/// (SSR'd `ErrorBoundary` fallbacks mismatch at hydration in leptos 0.8, so
+/// sections render content-or-this directly; errors never render as nothing).
+/// Newlines survive (`whitespace-pre-line`), because a CDR diagnostic carrying
+/// `validationErrors` puts one violation per line.
+#[must_use]
+pub fn inline_error(error: &AdminUiError) -> AnyView {
+    let message = error.to_string();
+    view! {
+        <div
+            role="alert"
+            class="rounded-control border border-danger/40 bg-danger-subtle px-3 py-2 text-sm text-danger whitespace-pre-line"
+        >
+            {message}
+        </div>
+    }
+    .into_any()
+}
 
 /// A danger-toned note beside the control it is about: a client-side
 /// validation complaint, or a refusal rendered as actionable copy.

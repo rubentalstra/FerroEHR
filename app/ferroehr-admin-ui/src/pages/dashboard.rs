@@ -14,7 +14,7 @@
 //! public HTTP API — rules §0); the CDR credential never reaches client-visible
 //! state. Each tile/section is an `.into_any()`-erased local with its own
 //! `<Suspense>`/`<Transition>` skeleton that resolves its `Result` inside the
-//! suspense (rendering [`inline_error`](crate::components::format_view::inline_error)
+//! suspense (rendering [`inline_error`](crate::components::notice::inline_error)
 //! on failure) rather than through an `<ErrorBoundary>` — an SSR'd
 //! `ErrorBoundary` fallback mismatches at hydration in leptos 0.8 — so one
 //! failing section never blanks the dashboard (rules §1/§6).
@@ -356,7 +356,7 @@ fn counts_section() -> AnyView {
                         }
                             .into_any()
                     }
-                    Err(e) => crate::components::format_view::inline_error(&e),
+                    Err(e) => crate::components::notice::inline_error(&e),
                 }
             })}
         </Suspense>
@@ -384,7 +384,7 @@ fn stored_queries_tile() -> AnyView {
                             Some("/queries".to_owned()),
                         )
                     }
-                    Err(e) => crate::components::format_view::inline_error(&e),
+                    Err(e) => crate::components::notice::inline_error(&e),
                 }
             })}
         </Suspense>
@@ -402,7 +402,7 @@ fn namespaces_section() -> AnyView {
             {move || Suspend::new(async move {
                 match resource.await {
                     Ok(tiles) => namespace_tiles_view(tiles),
-                    Err(e) => crate::components::format_view::inline_error(&e),
+                    Err(e) => crate::components::notice::inline_error(&e),
                 }
             })}
         </Transition>
@@ -485,7 +485,7 @@ fn trend_section() -> AnyView {
                             "Commit a composition and the trend appears here from the next day onward.",
                         )
                     }
-                    Err(e) => crate::components::format_view::inline_error(&e),
+                    Err(e) => crate::components::notice::inline_error(&e),
                 }
             })}
         </Suspense>

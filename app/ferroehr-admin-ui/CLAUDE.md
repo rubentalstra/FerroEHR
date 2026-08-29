@@ -109,10 +109,13 @@ extension); the wire it consumes IS spec-bound (`docs/specs/openehr/ITS-REST/`
   the notification, the inline bar is the detail. Never inline-only: a
   transient success toast paired with a silent failure below the fold reads
   as "nothing happened".
-- **Pure reads render inline errors only** — `format_view::inline_error` in
+- **Pure reads render inline errors only** — `notice::inline_error` in
   the section whose data failed (a screen says so where the data would be),
   and never a toast. A first-class empty/absent state (`Ok(None)` from a
-  `404`) is not an error at all.
+  `404`) is not an error at all. `components::notice` is the ONE home of the
+  inline feedback views: the read-failure bar, the alert note beside a
+  control, the deleted/unknown section notices, the CDR's verbatim diagnostic
+  under a refused form, and the write-failure message bar.
 
 ## No console-local domain state (owner ruling, 2026-07-25)
 

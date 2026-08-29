@@ -406,7 +406,7 @@ fn load_notice_section(
                         }
                             .into_any()
                     }
-                    Err(e) => crate::components::format_view::inline_error(&e),
+                    Err(e) => crate::components::notice::inline_error(&e),
                 }
             })}
         </Transition>
@@ -480,7 +480,7 @@ fn template_step_section(
                     {move || Suspend::new(async move {
                         match templates.await {
                             Ok(rows) => template_select(ctx, ran, rows),
-                            Err(e) => crate::components::format_view::inline_error(&e),
+                            Err(e) => crate::components::notice::inline_error(&e),
                         }
                     })}
                 </Suspense>
@@ -554,7 +554,7 @@ fn picker_section(
                         view! { <ul class="text-sm">{picker_node(&node, ctx, shape_is_dv, 0)}</ul> }
                             .into_any()
                     }
-                    Err(e) => crate::components::format_view::inline_error(&e),
+                    Err(e) => crate::components::notice::inline_error(&e),
                 }
             })}
         </Transition>
@@ -1421,7 +1421,7 @@ fn coded_code_entry(key: &str, coded: CodedCtx, path: Vec<usize>, ctx: BuilderCt
                 </button>
             </div>
             {move || match lookup.value().get() {
-                Some(Err(error)) => crate::components::format_view::inline_error(&error),
+                Some(Err(error)) => crate::components::notice::inline_error(&error),
                 Some(Ok(())) | None => ().into_any(),
             }}
             {chip_list}
@@ -1497,7 +1497,7 @@ fn coded_value_set(key: &str, coded: CodedCtx, path: Vec<usize>, ctx: BuilderCtx
     };
     let outcome = move || match expand.value().get() {
         None => ().into_any(),
-        Some(Err(error)) => crate::components::format_view::inline_error(&error),
+        Some(Err(error)) => crate::components::notice::inline_error(&error),
         Some(Ok(false)) => {
             let value_set = expand.input().get().unwrap_or_default();
             view! {
@@ -2220,7 +2220,7 @@ fn save_feedback(save_action: SaveAction) -> AnyView {
                 <span class="text-ink-muted">"Saving…"</span>
             </Show>
             {move || match save_action.value().get() {
-                Some(Err(error)) => crate::components::format_view::inline_error(&error),
+                Some(Err(error)) => crate::components::notice::inline_error(&error),
                 Some(Ok(())) | None => ().into_any(),
             }}
         </div>
@@ -2383,7 +2383,7 @@ fn results_section(
                         }
                             .into_any()
                     }
-                    Err(e) => crate::components::format_view::inline_error(&e),
+                    Err(e) => crate::components::notice::inline_error(&e),
                 }
             })}
         </Transition>

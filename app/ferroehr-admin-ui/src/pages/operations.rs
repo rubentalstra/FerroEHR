@@ -45,7 +45,7 @@ use leptos_router::hooks::use_query_map;
 use crate::components::confirm_dialog::ConfirmDialog;
 use crate::components::data_table::{CELL, CELL_MONO, ROW, table_shell};
 use crate::components::field::{BTN_PRIMARY, BTN_SECONDARY, INPUT, SELECT};
-use crate::components::format_view::inline_error;
+use crate::components::notice::inline_error;
 use crate::components::page_header::PageHeader;
 use crate::components::stat_card::StatCard;
 use crate::components::surface::titled_card;

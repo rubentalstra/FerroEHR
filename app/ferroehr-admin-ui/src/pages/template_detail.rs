@@ -453,7 +453,7 @@ fn meta_section(detail: Resource<Result<TemplateDetail, AdminUiError>>) -> AnyVi
                                 }
                                     .into_any()
                             }
-                            Err(e) => crate::components::format_view::inline_error(&e),
+                            Err(e) => crate::components::notice::inline_error(&e),
                         }
                     })
                 }}

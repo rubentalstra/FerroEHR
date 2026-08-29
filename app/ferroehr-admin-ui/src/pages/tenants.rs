@@ -34,7 +34,7 @@ use crate::components::data_table::{
 };
 use crate::components::empty_state::EmptyState;
 use crate::components::field::{BTN_DANGER, BTN_PRIMARY, BTN_SECONDARY, text_field};
-use crate::components::format_view::inline_error;
+use crate::components::notice::inline_error;
 use crate::components::notice::{alert_note, failure_bar};
 use crate::components::page_header::PageHeader;
 use crate::components::surface::{CARD_PAD, CARD_TITLE};

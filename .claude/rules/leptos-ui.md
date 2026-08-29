@@ -154,7 +154,7 @@ in the root `[workspace.dependencies]`: Leptos 0.8 SSR/full-stack,
   **hydrating a server-rendered ErrorBoundary fallback mismatches in
   Leptos 0.8** (proven live by the E2E console gate, 2026-07-17). The
   standing pattern: resolve the `Result` INSIDE the `Suspend` and render
-  content-or-`format_view::inline_error(&e)` as one `.into_any()`-erased
+  content-or-`notice::inline_error(&e)` as one `.into_any()`-erased
   view (see any `*_section` fn in the console pages). `<ErrorBoundary>`
   remains fine for non-suspense render-time `Result`s (`view/07_errors`).
 - **Never create Resources (or render `<Outlet/>`/any resource-owning

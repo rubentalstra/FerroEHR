@@ -22,10 +22,11 @@ use leptos::prelude::*;
 use crate::components::data_table::{CELL, CELL_MONO, ROW, table_shell, table_skeleton};
 use crate::components::empty_state::EmptyState;
 use crate::components::field::{BTN_SECONDARY, INPUT, LABEL};
-use crate::components::format_view::{DocumentPane, inline_error};
+use crate::components::format_view::DocumentPane;
+use crate::components::notice::inline_error;
 use crate::components::surface::{CARD_PAD, CARD_TITLE};
+use crate::components::wire::VersionEntry;
 use crate::error::AdminUiError;
-use crate::pages::composition::VersionEntry;
 
 /// The revision-history resource: a versioned object's commits, newest-first.
 pub type HistoryResource = Resource<Result<Vec<VersionEntry>, AdminUiError>>;
@@ -318,7 +319,7 @@ pub fn pinned_document_section(
 #[cfg(all(test, feature = "ssr"))]
 mod tests {
     use super::history_row;
-    use crate::pages::composition::VersionEntry;
+    use crate::components::wire::VersionEntry;
     use leptos::prelude::*;
 
     #[test]

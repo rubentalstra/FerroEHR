@@ -47,8 +47,9 @@ use serde_json::Value;
 
 use crate::components::data_table::table_skeleton;
 use crate::components::field::{BTN_PRIMARY, LABEL, TEXTAREA};
-use crate::components::format_view::{document_section, inline_error};
+use crate::components::format_view::document_section;
 use crate::components::logical_delete::{LogicalDeleteCopy, logical_delete_section};
+use crate::components::notice::inline_error;
 use crate::components::notice::{deleted_notice, diagnostic_pane, missing_notice};
 use crate::components::page_header::{Crumb, PageHeader};
 use crate::components::surface::{CARD_PAD, CARD_TITLE};

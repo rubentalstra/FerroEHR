@@ -69,11 +69,11 @@ use crate::components::data_table::{
 };
 use crate::components::empty_state::EmptyState;
 use crate::components::field::BTN_SECONDARY;
-use crate::components::format_view::inline_error;
 use crate::components::item_tags::{
     ItemTagRow, TagActions, TagEdit, TagGroup, TagList, TagPanelCopy, group_by_target,
     tag_filter_form, tag_panel,
 };
+use crate::components::notice::inline_error;
 use crate::components::surface::{CARD_PAD, CARD_TITLE};
 use crate::error::AdminUiError;
 use crate::uid::container_uid_of;

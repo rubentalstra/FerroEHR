@@ -40,14 +40,15 @@ use crate::components::version_history::{
     DocumentResource, HistoryResource, VersionHistoryLabels, at_time_lookup_section,
     pinned_document_section, revision_history_section, versioned_facts_section,
 };
+use crate::components::wire::VersionedObjectFacts;
 use crate::error::AdminUiError;
 use crate::pages::ehr_detail::status::{
-    VersionedStatusDetails, fetch_ehr_status_version, fetch_status_revision_history,
-    fetch_status_version_at_time, fetch_versioned_status,
+    fetch_ehr_status_version, fetch_status_revision_history, fetch_status_version_at_time,
+    fetch_versioned_status,
 };
 
 /// The versioned-object + VERSION-envelope resource.
-type VersionedResource = Resource<Result<Option<VersionedStatusDetails>, AdminUiError>>;
+type VersionedResource = Resource<Result<Option<VersionedObjectFacts>, AdminUiError>>;
 
 /// This family's copy and DOM hooks for the shared History-tab kit.
 const LABELS: VersionHistoryLabels = VersionHistoryLabels {
@@ -133,7 +134,7 @@ pub(in crate::pages::ehr_detail) fn status_history_section(
 }
 
 /// Render the container + selected-VERSION facts as a card.
-fn versioned_card(details: &VersionedStatusDetails) -> AnyView {
+fn versioned_card(details: &VersionedObjectFacts) -> AnyView {
     let signature = if details.signed {
         "present".to_owned()
     } else {

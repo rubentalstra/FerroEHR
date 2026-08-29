@@ -21,7 +21,7 @@ use serde_json::Value;
 
 use crate::components::empty_state::EmptyState;
 use crate::components::field::{BTN_DANGER, BTN_SECONDARY, INPUT, LABEL};
-use crate::components::format_view::inline_error;
+use crate::components::notice::inline_error;
 use crate::components::surface::{CARD_PAD, CARD_TITLE, WELL};
 use crate::error::AdminUiError;
 use crate::pages::ehr_detail::directory::tree::read_only_tree;

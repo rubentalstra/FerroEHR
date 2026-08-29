@@ -42,11 +42,12 @@ use crate::components::version_history::{
     DocumentResource, HistoryResource, VersionHistoryLabels, at_time_lookup_section,
     pinned_document_section, revision_history_section, versioned_facts_section,
 };
+use crate::components::wire::VersionedObjectFacts;
 use crate::error::AdminUiError;
 use crate::pages::demographics::party::fact_row;
 use crate::pages::demographics::{
-    DemographicResource, VersionedObjectFacts, contribution_href,
-    fetch_demographic_revision_history, fetch_demographic_version_document, fetch_versioned_object,
+    DemographicResource, contribution_href, fetch_demographic_revision_history,
+    fetch_demographic_version_document, fetch_versioned_object,
     resolve_demographic_version_at_time,
 };
 

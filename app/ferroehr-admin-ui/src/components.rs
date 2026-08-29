@@ -12,7 +12,9 @@
 //! mutation outcome. `facts`, `notice`, `tab_bar`, `logical_delete` and
 //! `version_history` carry the shapes the detail screens are assembled from: a
 //! facts line, the inline notices, one tab pill, the logical-delete affordance,
-//! and a versioned object's whole History tab.
+//! and a versioned object's whole History tab. `wire` holds the two flattened
+//! CDR shapes the kit itself renders, so no component reaches into a screen for
+//! a type.
 
 pub mod activity_chart;
 pub mod brand;
@@ -33,3 +35,4 @@ pub mod surface;
 pub mod tab_bar;
 pub mod toast;
 pub mod version_history;
+pub mod wire;
