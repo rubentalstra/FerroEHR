@@ -83,8 +83,12 @@ carriers = ["openidconnect", "pgp"]
 workspace_roots = [
   "ferroehr",
   "ferroehr-admin-ui",
+  "ferroehr-ext",
   "ferroehr-rest",
   "ferroehr-server",
+  "openehr-adl",
+  "openehr-its",
+  "openehr-rm",
   "testkit",
 ]
 status = "not_affected"
@@ -103,9 +107,15 @@ form), which uses no asymmetric key at all, so the default artifact performs no 
 RSA private-key operation. A deployment that does enable `pgp` mode chooses its \
 own OpenPGP key, and an ECC/EdDSA signing key keeps `rsa` off the signing path \
 entirely; a deployment that enables `pgp` mode with an RSA key is outside this \
-statement and should rotate to an ECC key. No upstream fix exists — `rsa` has \
-no patched release — so this is not a deferred upgrade. Re-evaluate if a \
-release beyond rsa 0.9 ships, or if the default signing mode changes.\
+statement and should rotate to an ECC key. `ferroehr-ext` reaches the crate \
+through the same two carriers as the platform library it extends, so the same \
+argument covers it. The spec crates (`openehr-rm`, `openehr-its`, \
+`openehr-adl`) reach `rsa` only through their path-only dev-dependency on the \
+`testkit` harness (which depends on the platform library): a test-only edge \
+cargo strips at packaging, so no published crate ships the code at all. No \
+upstream fix exists — `rsa` has no patched release — so this is not a deferred \
+upgrade. Re-evaluate if a release beyond rsa 0.9 ships, or if the default \
+signing mode changes.\
 """
 
 [[accepted]]
