@@ -2300,3 +2300,44 @@ async fn concurrent_deactivation_is_seen_by_the_content_commit() {
         "the refusal names the deactivation: {refused:?}"
     );
 }
+
+/// A create body carrying its own `uid` succeeds, and the served identity is
+/// the SERVER-minted `OBJECT_VERSION_ID` — a version identifier names a
+/// version that does not exist until this commit mints it, and no released
+/// operation gives a create-body uid any semantics (`composition_create.yaml`
+/// states nothing; BASE `architecture_overview` master09 §Levels of
+/// Identification defines what the stored uid must carry — the containing
+/// VERSION's `OBJECT_VERSION_ID`; the adjudication is #2918, the party twin
+/// #1578).
+#[tokio::test]
+async fn create_body_uid_is_replaced_by_the_minted_identity() {
+    let db = testkit::db().await.expect("testkit database");
+    let svc = FerroEhrService::new(db.pool());
+    let ehr_id = create_ehr(&svc).await;
+    let ehr_uuid: ferroehr::ids::EhrId = ehr_id.parse().expect("ehr uuid");
+
+    let mut body = composition("client uid");
+    body["uid"] = json!({
+        "_type": "OBJECT_VERSION_ID",
+        "value": "11111111-1111-1111-1111-111111111111::client.example::7"
+    });
+    let committed = svc
+        .create_composition(ehr_uuid, uv(&body, "249", None))
+        .await
+        .expect("a schema-valid body uid never refuses the create");
+    let minted = committed.version_uid();
+    assert_ne!(
+        minted, "11111111-1111-1111-1111-111111111111::client.example::7",
+        "the identity is server-minted"
+    );
+
+    let served = svc
+        .get_composition_at_version(ehr_uuid, minted.parse().expect("OBJECT_VERSION_ID"))
+        .await
+        .expect("the committed version exists");
+    assert_eq!(
+        served["uid"]["value"],
+        json!(minted),
+        "the served body uid IS the identifier the create returned"
+    );
+}

@@ -490,12 +490,19 @@ struct ResolvedWrite {
 /// carry it — the copied-uid recommendation for top-level types (RM common
 /// `master03-archetyped_package.adoc` §Unique Node Identification; ITS-REST
 /// `Resources.md` §Identifier types: the enclosing VERSION's uid "should be
-/// copied"; the full three-part form is this server's fixed handling,
-/// no released text fixes it). A client-supplied `uid` is overwritten — the version
-/// identity is server-assigned, and the previous behaviour (store verbatim,
-/// overwrite at bare read) served two shapes for one object. The EHR Extract
-/// import path does NOT run through here (foreign versions keep their
-/// carried bytes verbatim).
+/// copied"). The full three-part form is BASE `architecture_overview`
+/// master09 §Levels of Identification: "populated with a copy of the
+/// `OBJECT_VERSION_ID` from the containing `VERSION<X>` object" (the RM
+/// COMPOSITION class note's `object_id()` wording contradicts its own
+/// example — reported upstream).
+///
+/// NOTE: a client-supplied create-body `uid` is overwritten — no released
+/// operation states a body-uid semantic for the content-object creates, and
+/// the identifier names a version that does not exist until this commit
+/// mints it (the party-side twin of this adjudication is #1578).
+///
+/// The EHR Extract import path does NOT run through here (foreign versions
+/// keep their carried bytes verbatim).
 ///
 /// # Errors
 /// [`VersionIdError`] when `version_uid` is not a well-formed
