@@ -1252,6 +1252,35 @@ async fn scalar_functions_execute() {
     assert_eq!(row[4], json!(81.5), "ROUND to 1 decimal");
     assert_eq!(row[5], json!(1.5), "MOD(81.5, 2)");
 
+    // ROUND's rounding mode is half-AWAY-FROM-ZERO, in both signs and at a
+    // decimal place — QUERY master03 §ROUND fixes no mode, so the adjudicated
+    // mode is pinned here: a lowering change that drops the ::numeric cast
+    // (double precision rounds ties to EVEN: 2.5 → 2) flips these
+    // assertions, never a clinical number silently.
+    for (magnitude, decimals, expected, label) in [
+        (2.5, None, json!(3), "ROUND(2.5) = 3, away from zero"),
+        (-2.5, None, json!(-3), "ROUND(-2.5) = -3, away from zero"),
+        (
+            0.125,
+            Some(2),
+            json!(0.13),
+            "ROUND(0.125, 2) = 0.13 at a decimal place",
+        ),
+    ] {
+        let ehr = create_ehr(&svc).await;
+        create_comp(&svc, &ehr, "ties", magnitude).await;
+        let call = match decimals {
+            None => format!("round(o/{MAG_PATH})"),
+            Some(d) => format!("round(o/{MAG_PATH}, {d})"),
+        };
+        let aql = format!(
+            "SELECT {call} FROM EHR e CONTAINS COMPOSITION c \
+             CONTAINS OBSERVATION o[{OBS_ARCHETYPE}]"
+        );
+        let r = run_aql(&svc, &aql, ehr_scope(&ehr)).await;
+        assert_eq!(rows(&r)[0][0], expected, "{label}: {r}");
+    }
+
     // Date/time functions: shape checks (values are 'now').
     let r = run_aql(
         &svc,

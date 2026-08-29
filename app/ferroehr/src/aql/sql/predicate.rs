@@ -345,6 +345,9 @@ impl Builder<'_> {
             ScalarFn::Ceil => Expr::cust_with_exprs("(ceil($1))::int8", [num(self, 0)?]),
             ScalarFn::Floor => Expr::cust_with_exprs("(floor($1))::int8", [num(self, 0)?]),
             // ROUND(expression[, decimal]) — decimal defaults to 0.
+            // NOTE: QUERY master03 §ROUND fixes no mode; the `::numeric` cast
+            // pins half-away-from-zero (PostgreSQL docs §Mathematical
+            // Functions — numeric ties round away from zero), test-pinned.
             ScalarFn::Round => match args.len() {
                 1 => Expr::cust_with_exprs("round(($1)::numeric, 0)", [num(self, 0)?]),
                 _ => Expr::cust_with_exprs(
