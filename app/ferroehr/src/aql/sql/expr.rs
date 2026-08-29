@@ -53,6 +53,23 @@ pub(super) fn jsonb_path(data: Expr, jp: &str) -> Expr {
     )
 }
 
+/// `NULLIF(jsonb_path_query_array(data, '<jp>'::jsonpath), '[]'::jsonb)` —
+/// every fragment match as ONE jsonb array cell, SQL `NULL` when the path
+/// matches nothing (so absence keeps reading as a NULL cell / a false
+/// comparison, exactly as the scalar extraction reads it).
+pub(super) fn jsonb_path_array(data: Expr, jp: &str) -> Expr {
+    call(
+        "nullif",
+        vec![
+            call(
+                "jsonb_path_query_array",
+                vec![data, cast(Expr::val(jp.to_owned()), "jsonpath")],
+            ),
+            cast(Expr::val("[]"), "jsonb"),
+        ],
+    )
+}
+
 /// `<jsonb> #>> '{}'` — the scalar's text at the empty path.
 pub(super) fn as_text(e: Expr) -> Expr {
     e.binary(BinOper::Custom("#>>"), cast(Expr::val("{}"), "text[]"))

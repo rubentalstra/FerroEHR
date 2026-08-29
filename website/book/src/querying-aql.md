@@ -52,10 +52,13 @@ ORDER BY systolic DESC
   and RM attribute names (`value/magnitude`); `AS` names a column.
 - **`WHERE`** filters on typed leaf values, with comparisons, `EXISTS`, `LIKE`,
   `MATCHES`, and boolean combinators. Comparisons over multi-valued paths use
-  any-match semantics: when a path matches several nodes, the predicate holds if
-  **any** matched value satisfies it (the AQL specification is silent here;
-  any-match is this engine's documented convention, deterministic and
-  index-friendly).
+  any-match semantics: when a path matches several nodes or several elements of
+  a list attribute (`links`, `participations`, `identifiers`, ...), the
+  predicate holds if **any** matched value satisfies it (the AQL specification
+  is silent here; any-match is this engine's documented convention,
+  deterministic and index-friendly). Projecting a path that crosses a
+  list-valued attribute returns every match as one JSON array cell, and `null`
+  where nothing matches.
 - **`ORDER BY`**, **`LIMIT`**, and **`OFFSET`** behave as you expect; quantities
   order by their openEHR magnitude semantics.
 

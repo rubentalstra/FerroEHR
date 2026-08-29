@@ -1838,8 +1838,7 @@ impl FerroEhrService {
         let body = if lifecycle_state == DELETED_LIFECYCLE {
             Value::Null
         } else {
-            version_repo::read::stored_body_all(&self.pool, vo_id, sys_version)
-                .await?
+            version_repo::read::stored_body_all(&self.pool, vo_id, sys_version).await?
         };
         Ok(VersionRecord {
             vo_id,
@@ -1954,8 +1953,7 @@ impl FerroEhrService {
             let body = if lifecycle_state == DELETED_LIFECYCLE {
                 Value::Null
             } else {
-                version_repo::read::stored_body_all(&self.pool, vo_id, sys_version)
-                    .await?
+                version_repo::read::stored_body_all(&self.pool, vo_id, sys_version).await?
             };
             versions.push(VersionRecord {
                 vo_id,

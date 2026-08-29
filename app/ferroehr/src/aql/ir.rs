@@ -328,8 +328,6 @@ pub struct LeafPath {
     pub types: TypeSet,
     /// The typed extraction/comparison strategy.
     pub coercion: Coercion,
-    /// Whether any step along the path is a list/set (⇒ multi-valued leaf).
-    pub multi_valued: bool,
 }
 
 impl LeafPath {
@@ -337,6 +335,15 @@ impl LeafPath {
     #[must_use]
     pub fn is_whole_object(&self) -> bool {
         self.fragment.is_empty()
+    }
+
+    /// Whether the fragment tail crosses a list/set-valued attribute — the
+    /// extraction then yields several items within ONE anchor node, and the
+    /// SQL layer lowers predicates existentially and projections as an array
+    /// cell.
+    #[must_use]
+    pub fn fragment_multi_valued(&self) -> bool {
+        self.fragment.iter().any(|s| s.multi_valued)
     }
 }
 

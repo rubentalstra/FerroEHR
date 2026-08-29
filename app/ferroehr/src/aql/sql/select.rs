@@ -150,6 +150,16 @@ impl Builder<'_> {
     /// anchor → the source node; otherwise the anchor chain is joined in and its
     /// final node alias returned.
     fn whole_object_alias(&mut self, leaf: &LeafPath) -> Result<String, AqlError> {
+        // A root predicate on a whole-object projection has no lowering (the
+        // reassembly locators cannot carry a per-row guard yet): refuse loudly
+        // rather than serve the object as if the predicate were not written.
+        // TODO(#2927): decide and lower the guarded whole-object projection.
+        if leaf.root_predicate.is_some() {
+            return Err(crate::aql::error::SqlError::Unsupported(
+                "a node predicate on a whole-object projection is not supported".to_owned(),
+            )
+            .into());
+        }
         let src = self.source_node(leaf.source.0)?;
         if leaf.anchor.is_empty() {
             return Ok(src);
