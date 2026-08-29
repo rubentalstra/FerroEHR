@@ -1626,6 +1626,32 @@ fn versioned_object_under_versioned_object_is_refused() {
     );
 }
 
+/// `FOLDER f1 NOT CONTAINS FOLDER f2` negates the union edge (#2887): the
+/// anti-join's branch carries its own version spine and the by-value strict
+/// interval OR the items-reference lookup — the same shape the positive edge
+/// renders.
+#[test]
+fn not_contains_folder_negates_the_union_edge() {
+    let sql =
+        build_sql("SELECT f1/name/value FROM EHR e CONTAINS FOLDER f1 NOT CONTAINS FOLDER f2");
+    assert!(
+        sql.contains("NOT EXISTS") || sql.contains("NOT (EXISTS"),
+        "the exclusion is an anti-join: {sql}"
+    );
+    assert!(
+        sql.contains(") OR EXISTS") || sql.contains(") OR (EXISTS"),
+        "the negated edge unites the by-value branch with the reference branch: {sql}"
+    );
+    assert!(
+        sql.contains("jsonb_array_elements") && sql.contains("'items'"),
+        "the reference branch is the items lookup: {sql}"
+    );
+    assert!(
+        sql.contains("upper_inf"),
+        "the branch folder binds its own version spine at latest scope: {sql}"
+    );
+}
+
 /// `FOLDER f NOT CONTAINS COMPOSITION` negates the same reference edge — the
 /// anti-join probes `FOLDER.items`, not the (vacuously true) node interval.
 #[test]
