@@ -490,7 +490,7 @@ impl FerroEhrService {
         // Active Status); the 409 outcome and its ordering (after the deleted
         // 404, before the template 422) are unchanged.
         if pre.is_modifiable == Some(false) {
-            return Err(Self::not_modifiable_error(ehr_id));
+            return Err(crate::versioning::change::not_modifiable_error(ehr_id));
         }
         // Reject an update whose body declares a *different* template than the
         // stored composition it supersedes — a semantic 422. NOTE: no openEHR
@@ -694,7 +694,7 @@ impl FerroEhrService {
         // (after the already-deleted 400, before the stale-precondition 409)
         // unchanged.
         if !current.is_modifiable {
-            return Err(Self::not_modifiable_error(ehr_id));
+            return Err(crate::versioning::change::not_modifiable_error(ehr_id));
         }
         let current_tree = TreeId::from_columns(
             current.trunk_version,
@@ -832,7 +832,7 @@ impl FerroEhrService {
         // `None` (no current EHR_STATUS) is treated as modifiable, so the guard
         // never spuriously blocks — identical to `ensure_content_writable`.
         if is_modifiable == Some(false) {
-            return Err(Self::not_modifiable_error(ehr_id));
+            return Err(crate::versioning::change::not_modifiable_error(ehr_id));
         }
         Ok(now)
     }

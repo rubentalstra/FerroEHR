@@ -2251,3 +2251,52 @@ async fn reactivating_contribution_unlocks_its_own_content() {
         .await
         .expect("content write after the reactivating commit");
 }
+
+/// The content-write gate reads `is_modifiable` INSIDE the commit transaction
+/// under a row lock: a deactivation already holding the EHR row when the
+/// content CONTRIBUTION arrives commits first, and the content commit
+/// observes the flipped flag — the pre-transaction read this replaces saw the
+/// still-`true` committed value and let the content land after the
+/// deactivation. (The flip is a raw column update here: the pin targets the
+/// gate's locked read, and the promoted `ehr.is_modifiable` column is exactly
+/// what the gate reads.)
+#[tokio::test]
+async fn concurrent_deactivation_is_seen_by_the_content_commit() {
+    let db = testkit::db().await.expect("testkit database");
+    let svc = FerroEhrService::new(db.pool());
+    let ehr_id = create_ehr(&svc).await;
+    let ehr_uuid: ferroehr::ids::EhrId = ehr_id.parse().expect("ehr uuid");
+
+    // An open transaction flips the flag and HOLDS the row lock.
+    let mut flip = db.pool().begin().await.expect("begin the flip tx");
+    sqlx::query("UPDATE ehr SET is_modifiable = false WHERE id = $1")
+        .bind(ehr_uuid)
+        .execute(&mut *flip)
+        .await
+        .expect("uncommitted deactivation");
+
+    // The content CONTRIBUTION must block on the gate's row lock, then see
+    // the committed flip and refuse.
+    let pool = db.pool();
+    let racing = tokio::spawn(async move {
+        let svc = FerroEhrService::new(pool);
+        let ehr_uuid: ferroehr::ids::EhrId = ehr_id.parse().expect("ehr uuid");
+        let content = json!({
+            "versions": [ member(composition("raced"), ("249", "creation"), None) ],
+            "audit": { "change_type": change_type("249", "creation"), "committer": committer("author") }
+        });
+        svc.create_ehr_contribution(ehr_uuid, content).await
+    });
+    // Give the racing commit time to reach the in-transaction gate and block.
+    tokio::time::sleep(std::time::Duration::from_millis(300)).await;
+    flip.commit().await.expect("commit the deactivation");
+
+    let refused = racing
+        .await
+        .expect("the racing task completes")
+        .expect_err("the content commit observes the concurrent deactivation");
+    assert!(
+        refused.message.contains("not modifiable"),
+        "the refusal names the deactivation: {refused:?}"
+    );
+}

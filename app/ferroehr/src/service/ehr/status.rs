@@ -427,8 +427,10 @@ impl FerroEhrService {
     /// EHR are modifiable"; "an EHR's 'contents' consist of everything other
     /// than the `EHR_STATUS` object". The `EHR_STATUS` object itself "is
     /// always modifiable", so this guard is applied to COMPOSITION / DIRECTORY
-    /// / content-CONTRIBUTION writes only — the
-    /// [`crate::versioning::CommitEnv`] `ensure_content_writable` hook.
+    /// / content writes only. This pooled read is the direct write paths'
+    /// FAST-FAIL convenience; the CONTRIBUTION engine evaluates the flag
+    /// inside its commit transaction under a row lock
+    /// ([`crate::versioning::change::ensure_content_writable_tx`]).
     ///
     /// NOTE (wire): ITS-REST 1.1.0 does not enumerate a status code for a
     /// write to a non-modifiable EHR (`composition_create.yaml` lists only
@@ -441,13 +443,6 @@ impl FerroEhrService {
     /// # Errors
     /// [`ServiceError::Conflict`] when the EHR is not modifiable;
     /// [`ServiceError::Database`] if the flag read fails.
-    #[expect(
-        clippy::same_name_method,
-        reason = "the `CommitEnv` seam (service/commit_env.rs) deliberately \
-                  mirrors these chapter method names so the versioning layer \
-                  calls them by their own vocabulary; that impl disambiguates \
-                  explicitly with `FerroEhrService::<name>(self, …)`"
-    )]
     pub(in crate::service) async fn ensure_content_writable(
         &self,
         ehr_id: EhrId,
@@ -455,22 +450,8 @@ impl FerroEhrService {
         if self.ehr_is_modifiable(ehr_id).await? {
             Ok(())
         } else {
-            Err(Self::not_modifiable_error(ehr_id))
+            Err(crate::versioning::change::not_modifiable_error(ehr_id))
         }
-    }
-
-    /// The `409 Conflict` for a content write to a deactivated EHR
-    /// (`EHR_STATUS.is_modifiable = false`) — see
-    /// [`Self::ensure_content_writable`] for the NOTE on the status-code
-    /// choice. Shared with the combined
-    /// [`Self::ensure_ehr_content_writable`] pre-check so the message stays
-    /// single-sourced.
-    pub(in crate::service) fn not_modifiable_error(ehr_id: EhrId) -> ServiceError {
-        ServiceError::conflict(format!(
-            "EHR {ehr_id} is not modifiable (EHR_STATUS.is_modifiable = false); its \
-             contents cannot be created, updated or deleted (RM ehr master04 §EHR Active \
-             Status). Set EHR_STATUS.is_modifiable = true to reactivate it."
-        ))
     }
 
     /// Keep the EHR's promoted subject columns (`ehr.subject_id` /
