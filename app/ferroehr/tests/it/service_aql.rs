@@ -2048,4 +2048,24 @@ async fn folder_contains_folder_reaches_items_referenced_versioned_folders() {
         vec![("shared-plan".to_owned(), cx.clone())],
         "cX is reached from course-1 only across the explicit second hop"
     );
+
+    // The negated twin: NOT CONTAINS excludes over the SAME union edge, so
+    // the only folder with no folder child — by value or by reference — is
+    // the leaf.
+    let r = run_aql(
+        &svc,
+        "SELECT f1/name/value \
+         FROM EHR e CONTAINS FOLDER f1 NOT CONTAINS FOLDER f2",
+        ehr_scope(&ehr_id),
+    )
+    .await;
+    let childless: Vec<String> = rows(&r)
+        .iter()
+        .map(|row| row[0].as_str().expect("folder name").to_owned())
+        .collect();
+    assert_eq!(
+        childless,
+        vec!["plan-week-1".to_owned()],
+        "every non-leaf folder has a union-edge child, so only the leaf survives the anti-join"
+    );
 }
