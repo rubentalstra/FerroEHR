@@ -38,7 +38,7 @@
 # `scripts/conformance.sh` run against the committed baseline. Machine-enforced
 # by the `veredictum-pin` CI job (#2867): the bumping PR refreshes
 # docs/conformance/ferroehr/ or carries the `no-conformance-run` deferral label.
-VEREDICTUM_VERSION="0.1.0-alpha.6"
+VEREDICTUM_VERSION="0.1.0"
 VEREDICTUM_REPO="https://github.com/rubentalstra/Veredictum"
 
 veredictum_cache_root() {

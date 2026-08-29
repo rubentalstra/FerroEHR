@@ -58,11 +58,11 @@ probes_signing() {
   local before after rows
   before="$(http_code -u "$BASIC" "$API/ehr/$ehr/versioned_ehr_status/version")"
   rows="$(probe_psql "UPDATE ehr.vo_version
-                         SET body = jsonb_set(body, '{name,value}', '\"tampered\"')
+                         SET body = (jsonb_set((body)::jsonb, '{name,value}', '\"tampered\"'))::text
                        WHERE ehr_id = '$ehr'::uuid AND kind = 'EHR_STATUS';" \
           && probe_psql "SELECT count(*) FROM ehr.vo_version
                           WHERE ehr_id = '$ehr'::uuid
-                            AND body #>> '{name,value}' = 'tampered';")"
+                            AND (body)::jsonb #>> '{name,value}' = 'tampered';")"
   if [[ "${rows:-0}" = "0" ]]; then
     probe_fail "a tampered stored row" "the UPDATE matched nothing" \
       "the probe could not reach the stored content, so detection was never tested"
