@@ -49,7 +49,12 @@ findings:
 
 Both were adjudicated per-cluster from the live MCP ranking on #2862, where
 the before/after numbers are recorded. Do not widen either list without the
-same per-cluster case.
+same per-cluster case. #2915 widened `sonar.cpd.exclusions` by two pinned
+expectation TABLES — `vendor_bmm_schema.rs` (the per-fixture adjudication
+register over the 43 vendored BMM schemas) and `model_query.rs` (the
+model-query report pinned row-for-row) — on the decision-map argument: each
+"duplicated" run is a decided record, and compressing the rows hides the
+adjudication the file exists to carry.
 
 ## New Code = since the last release (#2657)
 

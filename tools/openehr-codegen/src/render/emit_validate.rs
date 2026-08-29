@@ -117,6 +117,22 @@ fn realization_register(own_schema: &BmmSchema) -> String {
          //! (or adjudicated) outside this file, and are listed so the emitted\n\
          //! bucket is accounted for in full rather than assumed.\n",
     );
+    b.push_str(&render_register_rows(
+        &rows,
+        "UNACCOUNTED (classified emittable, no register row)",
+    ));
+    b.push_str(&complex_register(own_schema));
+    b
+}
+
+/// Renders one accounted-invariant row set: the venue-grouped sections plus
+/// the explicit unaccounted heading — the ONE rendering both registers share,
+/// so the emitted and complex buckets can never drift apart in shape.
+fn render_register_rows(
+    rows: &[crate::plan::overrides::AccountedInvariant],
+    unaccounted_heading: &str,
+) -> String {
+    let mut b = String::new();
     for venue in [
         InvariantVenue::Core,
         InvariantVenue::Impl,
@@ -151,16 +167,11 @@ fn realization_register(own_schema: &BmmSchema) -> String {
     }
     let unaccounted: Vec<_> = rows.iter().filter(|r| r.realization.is_none()).collect();
     if !unaccounted.is_empty() {
-        b.push_str(
-            "//!\n\
-             //! ## UNACCOUNTED (classified emittable, no register row)\n\
-             //!\n",
-        );
+        b.push_str(&format!("//!\n//! ## {unaccounted_heading}\n//!\n"));
         for r in unaccounted {
             b.push_str(&format!("//! - `{}.{}`.\n", r.class, r.name));
         }
     }
-    b.push_str(&complex_register(own_schema));
     b
 }
 
@@ -188,49 +199,10 @@ fn complex_register(own_schema: &BmmSchema) -> String {
          //! adjudication that excludes it — the complex bucket is accounted for\n\
          //! in full, exactly like the emitted bucket above.\n",
     );
-    for venue in [
-        InvariantVenue::Core,
-        InvariantVenue::Impl,
-        InvariantVenue::Wire,
-        InvariantVenue::App,
-        InvariantVenue::Excluded,
-        InvariantVenue::Unrealized,
-    ] {
-        let group: Vec<_> = rows
-            .iter()
-            .filter_map(|r| r.realization.filter(|reg| reg.venue == venue))
-            .collect();
-        if group.is_empty() {
-            continue;
-        }
-        b.push_str(&format!("//!\n//! ## {}\n//!\n", venue.heading()));
-        for reg in group {
-            let site = if reg.site.is_empty() {
-                String::new()
-            } else {
-                format!(" — `{}`", reg.site)
-            };
-            b.push_str(&format!(
-                "//! - `{}.{}`{site}: {} ({}/{} §Invariants).\n",
-                reg.class,
-                reg.name,
-                reg.reason,
-                crate::plan::overrides::class_doc_dir(reg.spec_file),
-                reg.spec_file,
-            ));
-        }
-    }
-    let unaccounted: Vec<_> = rows.iter().filter(|r| r.realization.is_none()).collect();
-    if !unaccounted.is_empty() {
-        b.push_str(
-            "//!\n\
-             //! ## UNACCOUNTED-COMPLEX (classified complex, no register row)\n\
-             //!\n",
-        );
-        for r in unaccounted {
-            b.push_str(&format!("//! - `{}.{}`.\n", r.class, r.name));
-        }
-    }
+    b.push_str(&render_register_rows(
+        &rows,
+        "UNACCOUNTED-COMPLEX (classified complex, no register row)",
+    ));
     b
 }
 

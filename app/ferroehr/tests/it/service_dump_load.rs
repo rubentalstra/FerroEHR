@@ -51,8 +51,9 @@ use ferroehr::ids::EhrId;
 use ferroehr::service::FerroEhrService;
 
 use crate::admin_fixture::{
-    archive_dir, count_for_ehr, repository, seed_full_ehr, truncate_to_half, uid, uv,
+    archive_dir, count_for_ehr, repository, seed_full_ehr, truncate_to_half,
 };
+use crate::fixtures::{change_type, committer, composition, uid, uv};
 use crate::typed_body::typed;
 use ferroehr::service::admin::types::{
     CompressionFormat, DumpLoadFailReport, ExportFormat, ExportSpec,
@@ -474,46 +475,6 @@ async fn sevenz_compressed_export_round_trips_through_the_detected_container() {
 // enumeration never reaches this layer (the REST edge refuses it,
 // `admin_extension_http.rs`) and a non-positive `segment_split_size` is proved
 // below.
-
-/// A minimal *valid* RM COMPOSITION: `language`, `territory`, `category` and
-/// `composer` are all `1..1` (RM ehr, COMPOSITION class), so typed RM
-/// validation rejects a fixture without them. No template is referenced, so
-/// the fixture needs no `template_store` row.
-fn composition(name: &str) -> Value {
-    json!({
-        "_type": "COMPOSITION",
-        "archetype_node_id": "openEHR-EHR-COMPOSITION.encounter.v1",
-        "archetype_details": {
-            "_type": "ARCHETYPED",
-            "archetype_id": {
-                "_type": "ARCHETYPE_ID",
-                "value": "openEHR-EHR-COMPOSITION.encounter.v1"
-            },
-            "rm_version": "1.2.0"
-        },
-        "name": { "_type": "DV_TEXT", "value": name },
-        "language": {
-            "_type": "CODE_PHRASE",
-            "terminology_id": { "_type": "TERMINOLOGY_ID", "value": "ISO_639-1" },
-            "code_string": "en"
-        },
-        "territory": {
-            "_type": "CODE_PHRASE",
-            "terminology_id": { "_type": "TERMINOLOGY_ID", "value": "ISO_3166-1" },
-            "code_string": "NL"
-        },
-        "category": {
-            "_type": "DV_CODED_TEXT",
-            "value": "event",
-            "defining_code": {
-                "_type": "CODE_PHRASE",
-                "terminology_id": { "_type": "TERMINOLOGY_ID", "value": "openehr" },
-                "code_string": "433"
-            }
-        },
-        "composer": { "_type": "PARTY_IDENTIFIED", "name": "conformance tester" }
-    })
-}
 
 /// Every versioned-object kind an EHR-scoped dump can carry, in one EHR:
 /// `EHR_STATUS` (two versions), a directory `FOLDER`, a `COMPOSITION` with two
@@ -1055,23 +1016,6 @@ fn attested_contribution() -> Value {
             "committer": committer("author")
         }
     })
-}
-
-/// A `DV_CODED_TEXT` in the `openehr` terminology (`code_string` + rubric).
-fn change_type(code: &str, value: &str) -> Value {
-    json!({
-        "_type": "DV_CODED_TEXT", "value": value,
-        "defining_code": {
-            "_type": "CODE_PHRASE",
-            "terminology_id": { "_type": "TERMINOLOGY_ID", "value": "openehr" },
-            "code_string": code
-        }
-    })
-}
-
-/// A `PARTY_IDENTIFIED` committer named `name`.
-fn committer(name: &str) -> Value {
-    json!({ "_type": "PARTY_IDENTIFIED", "name": name })
 }
 
 /// The 666-only after-committal CONTRIBUTION attesting `ovid` — fixture of the

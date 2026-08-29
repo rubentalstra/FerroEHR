@@ -35,7 +35,9 @@ use uuid::Uuid;
 
 use ferroehr::service::FerroEhrService;
 
-use crate::admin_fixture::{count_for_ehr, party_relationship, repository, seed_full_ehr, uid, uv};
+use crate::admin_fixture::{count_for_ehr, party_relationship, repository, seed_full_ehr};
+use crate::fixtures::uid;
+use crate::fixtures::uv;
 use crate::typed_body::typed;
 use ferroehr::service::demographic::types::PartyKind;
 use ferroehr::service::platform_service::PlatformService;

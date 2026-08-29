@@ -30,80 +30,22 @@ use async_trait::async_trait;
 use serde_json::{Value, json};
 use sqlx::{PgPool, Row};
 
+use crate::fixtures::{committer, composition_by, uv};
 use crate::typed_body::typed;
 use ferroehr::extensions::events::config::EventsConfig;
 use ferroehr::extensions::events::publisher::start_with_publisher;
 use ferroehr::service::FerroEhrService;
-use ferroehr::service::version_update::{change_type_coded, lifecycle_state_coded};
 use ferroehr_ext::events::{EventError, EventPublisher};
-use openehr_its::rest::generated::common::{UpdateAudit, UpdateAuditData, UpdateVersion};
-use openehr_rm::prelude::PartyProxy;
 
 // ── fixtures ─────────────────────────────────────────────────────────────────
 
-fn committer(name: &str) -> Value {
-    json!({ "_type": "PARTY_IDENTIFIED", "name": name })
-}
-
-/// An SM `UPDATE_VERSION` wrapping bare-RM `data`.
-fn uv<T: serde::de::DeserializeOwned>(data: &Value, change_code: &str) -> UpdateVersion<T> {
-    UpdateVersion {
-        preceding_version_uid: None,
-        lifecycle_state: lifecycle_state_coded("532"),
-        attestations: None,
-        data: openehr_its::json::from_canonical_value(data)
-            .expect("the fixture commit body decodes as its RM type"),
-        commit_audit: UpdateAudit::UpdateAudit(UpdateAuditData {
-            _type: None,
-            system_id: None,
-            change_type: change_type_coded(change_code),
-            description: None,
-            committer: openehr_its::json::from_canonical_value::<PartyProxy>(&committer(
-                "event tester",
-            ))
-            .expect("committer"),
-        }),
-        signature: None,
-    }
-}
-
-/// A minimal valid bare-RM COMPOSITION (no template). Clinical-ish keys
-/// (`composer`, `archetype_node_id`, `territory`, …) let the PHI-free assertion
-/// prove none of them leak into the event envelope.
+/// A minimal valid bare-RM COMPOSITION whose `composer` is the PHI probe.
+///
+/// The name is load-bearing: [`assert_phi_free`] asserts that exact string
+/// never reaches an event envelope, so this suite cannot share the default
+/// composer.
 fn composition(name: &str) -> Value {
-    json!({
-        "_type": "COMPOSITION",
-        "archetype_node_id": "openEHR-EHR-COMPOSITION.encounter.v1",
-        "archetype_details": {
-            "_type": "ARCHETYPED",
-            "archetype_id": {
-                "_type": "ARCHETYPE_ID",
-                "value": "openEHR-EHR-COMPOSITION.encounter.v1"
-            },
-            "rm_version": "1.2.0"
-        },
-        "name": { "_type": "DV_TEXT", "value": name },
-        "language": {
-            "_type": "CODE_PHRASE",
-            "terminology_id": { "_type": "TERMINOLOGY_ID", "value": "ISO_639-1" },
-            "code_string": "en"
-        },
-        "territory": {
-            "_type": "CODE_PHRASE",
-            "terminology_id": { "_type": "TERMINOLOGY_ID", "value": "ISO_3166-1" },
-            "code_string": "NL"
-        },
-        "category": {
-            "_type": "DV_CODED_TEXT",
-            "value": "event",
-            "defining_code": {
-                "_type": "CODE_PHRASE",
-                "terminology_id": { "_type": "TERMINOLOGY_ID", "value": "openehr" },
-                "code_string": "433"
-            }
-        },
-        "composer": { "_type": "PARTY_IDENTIFIED", "name": "secret clinician name" }
-    })
+    composition_by(name, "secret clinician name")
 }
 
 // ── outbox helpers ───────────────────────────────────────────────────────────
@@ -214,7 +156,7 @@ async fn composition_and_contribution_commits_each_write_one_phi_free_outbox_row
     assert_eq!(after_ehr, 1, "EHR creation writes one outbox row");
 
     // (a) A direct composition commit writes exactly one more row.
-    svc.create_composition(ehr, uv(&composition("v1"), "249"))
+    svc.create_composition(ehr, uv(&composition("v1"), "249", None))
         .await
         .expect("create_composition");
     assert_eq!(
@@ -280,7 +222,7 @@ async fn outbox_disabled_writes_no_rows() {
     let ehr = create_ehr(&svc).await;
     assert_eq!(total_count(&pool).await, 0, "EHR creation writes none");
 
-    svc.create_composition(ehr, uv(&composition("v1"), "249"))
+    svc.create_composition(ehr, uv(&composition("v1"), "249", None))
         .await
         .expect("create_composition");
     assert_eq!(
@@ -424,10 +366,10 @@ async fn drainer_holds_pending_while_broker_down_then_drains_without_loss() {
 
     // Commit some work: an EHR + two compositions ⇒ three outbox rows.
     let ehr = create_ehr(&svc).await;
-    svc.create_composition(ehr, uv(&composition("v1"), "249"))
+    svc.create_composition(ehr, uv(&composition("v1"), "249", None))
         .await
         .expect("comp 1");
-    svc.create_composition(ehr, uv(&composition("v2"), "249"))
+    svc.create_composition(ehr, uv(&composition("v2"), "249", None))
         .await
         .expect("comp 2");
     let committed = total_count(&pool).await;
@@ -533,7 +475,7 @@ async fn import_writes_one_phi_free_outbox_row() {
     status.as_object_mut().unwrap().remove("uid");
     status["is_modifiable"] = json!(false);
     source
-        .replace_ehr_status(ehr, uv_precede(&status, "251", &ovid))
+        .replace_ehr_status(ehr, uv(&status, "251", Some(&ovid)))
         .await
         .expect("status update");
 
@@ -562,15 +504,4 @@ async fn import_writes_one_phi_free_outbox_row() {
         kinds.contains(&"EHR_STATUS"),
         "import envelope must announce the EHR_STATUS versions, got {kinds:?}"
     );
-}
-
-/// An `UpdateVersion` with a preceding-version uid (for updates).
-fn uv_precede<T: serde::de::DeserializeOwned>(
-    data: &Value,
-    change_code: &str,
-    preceding: &str,
-) -> UpdateVersion<T> {
-    let mut v = uv(data, change_code);
-    v.preceding_version_uid = Some(preceding.parse().expect("OBJECT_VERSION_ID"));
-    v
 }
