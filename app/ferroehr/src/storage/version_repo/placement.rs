@@ -238,7 +238,7 @@ pub async fn update_placement(
         "LEFT JOIN audit a ON a.id = tip.audit_id ",
         "LEFT JOIN ehr e ON e.id = tip.ehr_id ",
         "LEFT JOIN LATERAL ( ",
-        "    SELECT b.body #>> '{archetype_details,template_id,value}' AS stored_template ",
+        "    SELECT (b.body)::jsonb #>> '{archetype_details,template_id,value}' AS stored_template ",
         "    FROM (SELECT body FROM vo_version ",
         "          WHERE vo_id = $1 AND sys_version = tip.sys_version ",
         "          UNION ALL ",
@@ -250,8 +250,8 @@ pub async fn update_placement(
         // extractions OUTSIDE it: evaluated inline, the planner computes the
         // extractions for every version row below the sort.
         "    SELECT true AS found, ",
-        "           b.body ->> 'archetype_node_id' AS ani, ",
-        "           b.body #>> '{category,defining_code,code_string}' AS category ",
+        "           (b.body)::jsonb ->> 'archetype_node_id' AS ani, ",
+        "           (b.body)::jsonb #>> '{category,defining_code,code_string}' AS category ",
         "    FROM (SELECT f.sys_version, f.body ",
         "          FROM (SELECT sys_version, body FROM vo_version ",
         "                WHERE vo_id = $1 AND body IS NOT NULL ",

@@ -115,6 +115,46 @@ fn vo_of(ovid: &str) -> &str {
     ovid.split("::").next().expect("vo uuid")
 }
 
+/// [`commit_ips_composition`] with a caller-supplied composition body.
+async fn commit_composition_body(app: &Router, body: Value) -> (String, String) {
+    let (status, h, _b) = send(
+        app,
+        Request::builder()
+            .method("POST")
+            .uri(format!("{BASE}/ehr"))
+            .body(Body::empty())
+            .unwrap(),
+    )
+    .await;
+    assert_eq!(status, StatusCode::CREATED);
+    let ehr_id = etag_uid(&h);
+
+    let (status, _h, resp) = send(
+        app,
+        Request::builder()
+            .method("POST")
+            .uri(format!("{BASE}/definition/template/adl1.4"))
+            .header(header::CONTENT_TYPE, "application/xml")
+            .body(Body::from(opt_xml()))
+            .unwrap(),
+    )
+    .await;
+    assert_eq!(status, StatusCode::CREATED, "OPT upload: {resp}");
+
+    let (status, h, resp) = send(
+        app,
+        Request::builder()
+            .method("POST")
+            .uri(format!("{BASE}/ehr/{ehr_id}/composition"))
+            .header(header::CONTENT_TYPE, "application/json")
+            .body(Body::from(body.to_string()))
+            .unwrap(),
+    )
+    .await;
+    assert_eq!(status, StatusCode::CREATED, "composition commit: {resp}");
+    (ehr_id, etag_uid(&h))
+}
+
 /// Create an EHR, upload the IPS OPT, and commit the IPS composition; return the
 /// `(ehr_id, version_uid)` of the committed COMPOSITION.
 async fn commit_ips_composition(app: &Router) -> (String, String) {
@@ -847,17 +887,26 @@ async fn composition_version_serves_xml_with_signature() {
     assert!(body.contains("sha256:"), "digest signature value: {body}");
 }
 
-/// The JSON-accept composition GET serves the stored body text VERBATIM (the
-/// raw passthrough): the response opens with the commit-time `uid` stamp —
-/// jsonb renders object keys length-first, so the stamped body's text starts
-/// with its own `uid` — still parses as the same canonical value, and the
-/// version-addressed variant passes through identically. An XML accept on the
-/// same resource still parses and re-serializes (the passthrough is
+/// The JSON-accept composition GET serves the stored canonical body BYTES
+/// verbatim (#2913): `_type` first, every field at its BMM-declared position —
+/// including the server-stamped `uid`, which the RM BMM declares third on
+/// LOCATABLE (after `name` and `archetype_node_id`), exercised here by a
+/// commit whose request body carries NO `uid`. The served text is
+/// byte-identical to the canonical codec's own re-encoding, and the
+/// version-addressed variant passes through the same bytes. An XML accept on
+/// the same resource still parses and re-serializes (the passthrough is
 /// representation-local).
 #[tokio::test]
 async fn composition_get_serves_stored_json_verbatim() {
     let (_pg, app) = app().await;
-    let (ehr_id, v1) = commit_ips_composition(&app).await;
+    // The committed body must be uid-less so the stamped-field PLACEMENT is
+    // what the byte comparison exercises (the borutjures case on #2913).
+    let mut fixture = canonical_composition();
+    fixture
+        .as_object_mut()
+        .expect("a JSON object")
+        .remove("uid");
+    let (ehr_id, v1) = commit_composition_body(&app, fixture).await;
     let vo = vo_of(&v1);
 
     let get = |uri: String, accept: &'static str| {
@@ -868,7 +917,6 @@ async fn composition_get_serves_stored_json_verbatim() {
             .body(Body::empty())
             .unwrap()
     };
-    let prefix = format!("{{\"uid\": {{\"_type\": \"OBJECT_VERSION_ID\", \"value\": \"{v1}\"}}");
 
     // The latest read.
     let (status, h, body) = send(
@@ -885,12 +933,33 @@ async fn composition_get_serves_stored_json_verbatim() {
         Some("application/json")
     );
     assert!(
-        body.starts_with(&prefix),
-        "the stored text passes through, opening with the commit-time uid stamp: {body}"
+        body.starts_with("{\"_type\":\"COMPOSITION\""),
+        "the canonical encoding opens with _type: {body}"
     );
     let parsed: Value = serde_json::from_str(&body).expect("the passthrough text is JSON");
+    let keys: Vec<&str> = parsed
+        .as_object()
+        .expect("a JSON object")
+        .keys()
+        .take(4)
+        .map(String::as_str)
+        .collect();
+    assert_eq!(
+        keys,
+        ["_type", "name", "archetype_node_id", "uid"],
+        "the stamped uid sits at its BMM-declared position"
+    );
     assert_eq!(parsed["uid"]["value"], Value::String(v1.clone()));
-    assert_eq!(parsed["_type"], Value::String("COMPOSITION".to_owned()));
+
+    // The served bytes ARE the codec's encoding: parsing them into the typed
+    // RM value and re-encoding reproduces the identical text.
+    let typed: openehr_rm::v1_2::composition::composition::Composition =
+        openehr_its::json::from_canonical_value(&parsed).expect("served body decodes as typed RM");
+    let reencoded = openehr_its::json::to_canonical_json(&typed);
+    assert_eq!(
+        body, reencoded,
+        "the served bytes are byte-identical to the canonical codec's encoding"
+    );
 
     // The version-addressed read takes the same passthrough.
     let (status, _h, at_version) = send(
@@ -902,7 +971,7 @@ async fn composition_get_serves_stored_json_verbatim() {
     )
     .await;
     assert_eq!(status, StatusCode::OK, "body: {at_version}");
-    assert!(at_version.starts_with(&prefix), "body: {at_version}");
+    assert_eq!(at_version, body, "both reads serve the same stored bytes");
 
     // XML negotiation still parses and re-serializes the same resource.
     let (status, h, xml) = send(

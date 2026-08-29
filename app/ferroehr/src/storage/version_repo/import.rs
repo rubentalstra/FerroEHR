@@ -121,7 +121,12 @@ pub async fn insert_imported_vo_version(
     .bind(row.audit_id)
     .bind(row.signature)
     .bind(row.wrapped_original)
-    .bind(row.body)
+    .bind(
+        row.body
+            .map(serde_json::to_string)
+            .transpose()
+            .map_err(StorageError::BodyDecode)?,
+    )
     .execute(&mut *tx)
     .await?;
     Ok(())
@@ -260,7 +265,7 @@ pub async fn insert_versions_verbatim(
     let mut sig_client: Vec<bool> = Vec::with_capacity(n);
     let mut creating: Vec<&str> = Vec::with_capacity(n);
     let mut wrappeds: Vec<Option<&Value>> = Vec::with_capacity(n);
-    let mut bodies: Vec<Option<&Value>> = Vec::with_capacity(n);
+    let mut bodies: Vec<Option<String>> = Vec::with_capacity(n);
     for r in rows {
         vo_ids.push(r.vo_id.0);
         kinds.push(r.kind);
@@ -281,7 +286,12 @@ pub async fn insert_versions_verbatim(
         sig_client.push(r.signature_client_supplied);
         creating.push(r.creating_system_id);
         wrappeds.push(r.wrapped_original);
-        bodies.push(r.body);
+        bodies.push(
+            r.body
+                .map(serde_json::to_string)
+                .transpose()
+                .map_err(StorageError::BodyDecode)?,
+        );
     }
     sqlx::query(
         "INSERT INTO vo_version (vo_id, kind, ehr_id, sys_version, trunk_version, branch_number, \
@@ -296,7 +306,7 @@ pub async fn insert_versions_verbatim(
          FROM unnest($1::uuid[], $2::text[], $3::uuid[], $4::int[], $5::int[], $6::int[], \
          $7::int[], $8::text[], $9::jsonb[], $10::text[], $11::text[], $12::text[], \
          $13::uuid[], $14::uuid[], $15::text[], $16::text[], $17::bool[], $18::text[], \
-         $19::jsonb[], $20::jsonb[]) \
+         $19::jsonb[], $20::text[]) \
          AS t(vo_id, kind, ehr_id, sys_version, trunk_version, branch_number, branch_version, \
          preceding_version_uid, other_input, lower, upper, lifecycle_state, contribution_id, \
          audit_id, template_id, signature, sig_client, creating_system_id, wrapped_original, \

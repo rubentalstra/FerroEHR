@@ -440,6 +440,10 @@ struct ResolvedWrite {
     client_signature: Option<String>,
     /// The decomposed node rows (empty for a logical delete — data Void).
     rows: Vec<NodeRow>,
+    /// The canonical body BYTES, serialized from the accepted, uid-stamped
+    /// value BEFORE decomposition — the stored `vo_version.body` text a point
+    /// read serves verbatim (#2913). `None` for a logical delete.
+    canonical_text: Option<String>,
     /// Whether the RELEASED generation set can express this body — the
     /// commit-time `vo_version.stable_compatible` stamp
     /// ([`crate::versioning::profile::stable_compatible`]).
@@ -505,10 +509,35 @@ fn stamp_version_uid(canonical: &mut Value, version_uid: &str) -> Result<(), Ver
                 raw: version_uid.to_owned(),
                 source,
             })?;
-        map.insert(
-            "uid".to_owned(),
-            openehr_its::json::to_canonical_value(&uid),
-        );
+        let value = openehr_its::json::to_canonical_value(&uid);
+        if map.contains_key("uid") {
+            // Replacing keeps the key's existing position.
+            map.insert("uid".to_owned(), value);
+        } else {
+            // A fresh `uid` must land at its BMM-declared position — the RM
+            // BMM declares LOCATABLE as (name, archetype_node_id, uid, …), so
+            // in the canonical encoding it follows `archetype_node_id`. A
+            // plain insert appends at the map's end, and the stored body is
+            // now served byte-verbatim (#2913), so placement is wire-visible.
+            let anchor = ["archetype_node_id", "name", "_type"]
+                .iter()
+                .find_map(|k| map.keys().position(|key| key == k));
+            let at = anchor.map_or(0, |i| i + 1);
+            let original_len = map.len();
+            let mut rebuilt = serde_json::Map::with_capacity(original_len + 1);
+            for (i, (k, v)) in std::mem::take(map).into_iter().enumerate() {
+                if i == at {
+                    rebuilt.insert("uid".to_owned(), value.clone());
+                }
+                rebuilt.insert(k, v);
+            }
+            if rebuilt.len() == original_len {
+                // `at` sat past the last entry (the anchor was last, or the
+                // map was empty) — the uid closes the map instead.
+                rebuilt.insert("uid".to_owned(), value);
+            }
+            *map = rebuilt;
+        }
     }
     Ok(())
 }
@@ -599,6 +628,7 @@ async fn apply_change(
             // node rows reassemble to these bytes, and the released-generation
             // reader's answer is what a later `stable` deployment reads back.
             let stable_compatible = profile::stable_compatible(ctx.spec_profile, kind, &canonical);
+            let canonical_text = Some(canonical_body_text(&canonical)?);
             let rows = decompose(canonical)?;
             let time_committed = match known_now {
                 Some(ts) => ts,
@@ -616,6 +646,7 @@ async fn apply_change(
                 close_ordinal: None,
                 client_signature: signature,
                 rows,
+                canonical_text,
                 stable_compatible,
                 attestations,
                 is_first_folder: kind == Kind::Folder && ehr_id.is_some(),
@@ -655,6 +686,7 @@ async fn apply_change(
                 &object_version_id(vo_id, &ctx.system_id, next.tree),
             )?;
             let stable_compatible = profile::stable_compatible(ctx.spec_profile, kind, &canonical);
+            let canonical_text = Some(canonical_body_text(&canonical)?);
             let rows = decompose(canonical)?;
             ResolvedWrite {
                 kind,
@@ -668,6 +700,7 @@ async fn apply_change(
                 close_ordinal: next.close_ordinal,
                 client_signature: signature,
                 rows,
+                canonical_text,
                 stable_compatible,
                 attestations,
                 is_first_folder: false,
@@ -698,6 +731,7 @@ async fn apply_change(
                 close_ordinal: next.close_ordinal,
                 client_signature: signature,
                 rows: Vec::new(),
+                canonical_text: None,
                 // A deleted version's data is Void (master06 §Logical
                 // Deletion): there is no body a generation could fail to
                 // express.
@@ -769,7 +803,7 @@ async fn commit_resolved(
     .map(openehr_its::json::to_canonical_value)
     .collect();
 
-    let (body, signature, signature_client_supplied) =
+    let (signature, signature_client_supplied) =
         body_and_signature(ctx, audit, contribution_id, &r, &at_committal_attestations)?;
 
     let folded = crate::storage::version_repo::commit::FoldedVersion {
@@ -787,7 +821,7 @@ async fn commit_resolved(
         signature: signature.as_deref(),
         signature_client_supplied,
         stable_compatible: r.stable_compatible,
-        body: body.as_ref(),
+        body: r.canonical_text.as_deref(),
         time_committed: r.time_committed,
         rows: &r.rows,
         // The superseded lineage tip closes inside the SAME statement (its
@@ -854,11 +888,28 @@ async fn commit_resolved(
     ))
 }
 
-/// Reassemble the version body ONCE and derive the signature over it.
+/// Serialize the accepted, uid-stamped canonical value to the body BYTES a
+/// point read serves verbatim (`vo_version.body` — #2913: text, taken BEFORE
+/// node decomposition, so the served wire keeps the codec's `_type`-first,
+/// BMM-declared field order).
 ///
-/// The value the signature covers, the stored `vo_version.body`, and the value
-/// point reads serve are the same bytes by construction — the rows are the
-/// ones `write_nodes` stores; empty rows = logical delete (`None` body).
+/// # Errors
+/// [`ServiceError`] when the value cannot serialize (a non-finite number —
+/// unreachable for a codec-produced canonical value, refused loudly anyway).
+fn canonical_body_text(canonical: &Value) -> Result<String, ServiceError> {
+    serde_json::to_string(canonical)
+        .map_err(|e| ServiceError::internal("serialize the canonical body", e))
+}
+
+/// Reassemble the version body from the node rows and derive the signature
+/// over it.
+///
+/// The signature input is the reassembled value; the stored `vo_version.body`
+/// is the pre-decomposition text ([`canonical_body_text`]). The two are the
+/// same VALUE by decompose/reassemble fidelity, and the signature
+/// canonicalization is RFC 8785 (key-order-insensitive), so signing the
+/// reassembled form still proves the stored and served bytes. Empty rows =
+/// logical delete (Void body is signed — master06 §Logical Deletion).
 ///
 /// # Errors
 /// The reassembly [`ServiceError`] or the signer's failure.
@@ -868,21 +919,20 @@ fn body_and_signature(
     contribution_id: Uuid,
     r: &ResolvedWrite,
     at_committal_attestations: &[Value],
-) -> Result<(Option<Value>, Option<String>, bool), ServiceError> {
+) -> Result<(Option<String>, bool), ServiceError> {
     let body = if r.rows.is_empty() {
         None
     } else {
         Some(reassemble(&r.rows)?)
     };
-    let (signature, client_supplied) = version_signature(
+    version_signature(
         ctx,
         audit,
         contribution_id,
         r,
         body.as_ref(),
         at_committal_attestations,
-    )?;
-    Ok((body, signature, client_supplied))
+    )
 }
 
 /// The signature stored with the version, and whether it is **client-supplied**

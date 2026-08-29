@@ -852,14 +852,16 @@ async fn materialized_body_matches_node_reassembly_on_a_real_commit() {
     let ehr_id = service.create_ehr(None).await.expect("ehr create");
 
     // The EHR create commits an EHR_STATUS through the full commit path.
-    let (vo, body): (Uuid, Option<Value>) = sqlx::query_as(
+    let (vo, body): (Uuid, Option<String>) = sqlx::query_as(
         "SELECT vo_id, body FROM vo_version WHERE ehr_id = $1 AND kind = 'EHR_STATUS'",
     )
     .bind(ehr_id.0)
     .fetch_one(&pool)
     .await
     .expect("status version row");
-    let body = body.expect("a content-bearing version materializes its body");
+    let body: Value =
+        serde_json::from_str(&body.expect("a content-bearing version materializes its body"))
+            .expect("the stored body text parses");
     let reassembled = read_version_canonical(&pool, ferroehr::ids::VoId(vo), 1)
         .await
         .expect("node reassembly");

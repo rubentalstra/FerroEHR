@@ -72,6 +72,12 @@ pub enum StorageError {
     /// A driver/pool/query error from `sqlx`.
     #[error("database: {0}")]
     Database(#[from] sqlx::Error),
+
+    /// A stored `vo_version.body` text failed to parse as JSON — storage
+    /// corruption, never a caller error (the column holds the canonical bytes
+    /// the commit serialized, #2913).
+    #[error("stored canonical body does not parse: {0}")]
+    BodyDecode(#[source] serde_json::Error),
 }
 
 impl From<StorageError> for crate::service::status::SmError {
@@ -107,7 +113,8 @@ impl From<StorageError> for crate::service::status::SmError {
             // body carries the curated message and the detail is traced.
             StorageError::NotAStructureRoot(_)
             | StorageError::MixedArray { .. }
-            | StorageError::InvalidRows(_) => {
+            | StorageError::InvalidRows(_)
+            | StorageError::BodyDecode(_) => {
                 tracing::error!(
                     error = %e,
                     "storage bridge: node-codec invariant violated → 500"
