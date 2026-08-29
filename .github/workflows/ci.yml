@@ -1892,6 +1892,52 @@ jobs:
       - name: The committed chart release facts are coherent
         run: bash scripts/checks/chart-appversion.sh
 
+  # Veredictum-pin guard (#2867): scripts/lib/veredictum.sh promises every pin
+  # bump is re-proven by a full `scripts/conformance.sh` run against the
+  # committed baseline, and this job is the failing check behind that promise
+  # (a rule without one is a wish — reliability.md). A PR that changes
+  # VEREDICTUM_VERSION must also refresh docs/conformance/ferroehr/ (the run's
+  # committed record), or carry the `no-conformance-run` label as an explicit,
+  # visible deferral.
+  #
+  # PULL-REQUEST ONLY, deliberately (the crate-version pattern, #2777): it
+  # compares the pull request's base and head trees and reads a pull-request
+  # label, neither of which a merge_group event carries.
+  veredictum-pin:
+    name: veredictum-pin-guard
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+          fetch-depth: 0
+      - name: A pin bump carries its acceptance run
+        env:
+          BASE: ${{ github.event.pull_request.base.sha }}
+          HEAD: ${{ github.event.pull_request.head.sha }}
+          HAS_LABEL: ${{ contains(github.event.pull_request.labels.*.name, 'no-conformance-run') }}
+        run: |
+          set -euo pipefail
+          if [ "$HAS_LABEL" = "true" ]; then
+            echo "no-conformance-run label set — the deferral is recorded on the PR, guard skipped."
+            exit 0
+          fi
+          old=$(git show "$BASE:scripts/lib/veredictum.sh" 2>/dev/null | grep -m1 '^VEREDICTUM_VERSION=' || true)
+          new=$(git show "$HEAD:scripts/lib/veredictum.sh" 2>/dev/null | grep -m1 '^VEREDICTUM_VERSION=' || true)
+          if [ "$old" = "$new" ]; then
+            echo "VEREDICTUM_VERSION unchanged — guard not required."
+            exit 0
+          fi
+          if ! git diff --name-only "$BASE" "$HEAD" | grep -q '^docs/conformance/ferroehr/'; then
+            echo "::error::This PR bumps VEREDICTUM_VERSION ($old → $new) but commits nothing under docs/conformance/ferroehr/ — a pin bump is re-proven by a full 'bash scripts/conformance.sh' acceptance run whose refreshed record lands in the same PR (scripts/lib/veredictum.sh). To defer the run deliberately, apply the 'no-conformance-run' label." >&2
+            exit 1
+          fi
+          echo "pin bump carries a refreshed docs/conformance/ferroehr/ record — OK."
+
   # Changelog guard (Keep a Changelog discipline): a PR that changes
   # user-visible surfaces must update CHANGELOG.md's [Unreleased] section in
   # the same PR. Escape hatch: the `no-changelog` label for genuinely
@@ -2086,6 +2132,7 @@ jobs:
       - crate-version
       - chart-version
       - chart-appversion
+      - veredictum-pin
       - chart-boot
     runs-on: ubuntu-latest
     timeout-minutes: 5

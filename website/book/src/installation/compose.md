@@ -40,7 +40,7 @@ Each image is published under several tags:
 |---|---|
 | `X.Y.Z`, `X.Y` | every release |
 | `latest` | the newest release |
-| `develop` | every push to the development branch |
+| `main` | every push to the default branch |
 | `sha-<commit>` | every push, for exact pinning |
 
 The quickstart Compose file pins the **exact release version it shipped with**
@@ -422,6 +422,17 @@ that imports the full development realm
 Downloaders of the standalone quickstart file never see any of this; it is
 purely a convenience for working on FerroEHR itself, and it only ever
 applies when its `-f` is passed — nothing merges it in silently.
+
+> [!TIP]
+> A cold from-source build compiles at two parallel rustc jobs by default,
+> and a release-optimization compile can hold several gigabytes per job. If
+> the build gets OOM-killed on a memory-constrained host (observed on a
+> 24 GB machine that was also running another stack), rerun it serially —
+> slower, but it completes:
+>
+> ```shell
+> CARGO_BUILD_JOBS=1 docker compose -f docker-compose.yml -f docker-compose.dev.yml build
+> ```
 
 ## Build provenance
 
