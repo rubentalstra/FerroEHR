@@ -323,6 +323,50 @@ pub fn table_footer(base: &str, noun: &str, paging: TablePaging, total: Signal<u
     .into_any()
 }
 
+/// A whole paged table over rows already in hand: the styled shell, the row
+/// window, and the footer that pages it.
+///
+/// The window comes from the URL, so turning the page re-renders the rows
+/// without re-running the suspense that fetched them (rules §9), and the footer
+/// reads the SAME [`page_window`] inputs as the rows, so the two cannot
+/// disagree. `key` is the row's own stable, data-derived identity — never an
+/// index (rules §4). `base` is the screen's own path and `noun` names the rows
+/// in the plural, both for [`table_footer`].
+#[must_use]
+pub fn paged_table<R, V>(
+    rows: Vec<R>,
+    paging: TablePaging,
+    base: &str,
+    noun: &str,
+    headers: &[&str],
+    key: fn(&R) -> String,
+    row: impl Fn(R) -> V + Clone + Send + Sync + 'static,
+) -> AnyView
+where
+    R: Clone + Send + Sync + 'static,
+    V: IntoView + 'static,
+{
+    let count = row_total(rows.len());
+    let total = Signal::derive(move || count);
+    let body = view! {
+        <For
+            each=move || {
+                let window = page_window(total.get(), paging.page.get(), paging.size.get());
+                page_rows(&rows, window)
+            }
+            key=key
+            children=row
+        />
+    }
+    .into_any();
+    let footer = table_footer(base, noun, paging, total);
+    view! {
+        {table_shell(headers, body)}
+        {footer}
+    }
+    .into_any()
+}
+
 /// Which way a paging step moves — its label, its icon, and its E2E hook.
 #[derive(Debug, Clone, Copy)]
 enum Step {

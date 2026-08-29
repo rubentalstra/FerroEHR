@@ -21,25 +21,24 @@
 //! `Result` resolves INSIDE the `<Transition>` (an SSR'd `ErrorBoundary`
 //! fallback mismatches at hydration in leptos 0.8); each mutation is an
 //! [`Action`] that toasts BOTH outcomes and keeps the CDR's own diagnostic
-//! inline beside the failure toast; the table is the shared [`table_shell`]
-//! with its explicit `<tbody>`, paged by the shared [`table_footer`] whose page
-//! state lives in the URL.
+//! inline beside the failure toast; the table is the shared [`paged_table`]
+//! with its explicit `<tbody>`, whose page state lives in the URL.
 
 use leptos::component;
 use leptos::prelude::*;
 use leptos_meta::Title;
 
-use crate::components::confirm_dialog::ConfirmDialog;
+use crate::components::confirm_dialog::delete_confirmation;
 use crate::components::data_table::{
-    CELL, CELL_MONO, ROW, TablePaging, page_rows, page_window, paging_from_url, row_total,
-    table_footer, table_shell, table_skeleton,
+    CELL, CELL_MONO, ROW, TablePaging, paged_table, paging_from_url, table_skeleton,
 };
 use crate::components::empty_state::EmptyState;
-use crate::components::field::{BTN_DANGER, BTN_PRIMARY, BTN_SECONDARY, INPUT, LABEL};
+use crate::components::field::{BTN_DANGER, BTN_PRIMARY, BTN_SECONDARY, text_field};
 use crate::components::format_view::inline_error;
+use crate::components::notice::{alert_note, failure_bar};
 use crate::components::page_header::PageHeader;
 use crate::components::surface::{CARD_PAD, CARD_TITLE};
-use crate::components::toast::{toast_error, toast_success};
+use crate::components::toast::toast_outcome;
 use crate::error::AdminUiError;
 use crate::tenants::{
     CurrentTenant, TenantRow, context_line, create_tenant, delete_tenant, draft_is_complete,
@@ -214,56 +213,40 @@ pub fn TenantsPage() -> impl IntoView {
 /// Every mutation toasts on BOTH outcomes (the console's mutation-feedback
 /// rule — crate `CLAUDE.md`); the CDR's diagnostic ALSO stays inline beside
 /// each form, because a `400`/`409` on a registry write is worth reading in
-/// full. Dispatching a toast is a side effect on the outside world, so an
-/// Effect is its correct home (rules §2) — it never writes a signal, and it
-/// never runs on the server pass.
+/// full.
 fn mutation_toasts(
     toaster: thaw::ToasterInjection,
     create: CreateAction,
     update: UpdateAction,
     delete: DeleteAction,
 ) {
-    Effect::new(move |_| match create.value().get() {
-        Some((name, Ok(row))) => toast_success(
-            toaster,
-            "Tenant registered",
-            &format!("{name} was registered with system_id {}.", row.system_id),
-        ),
-        Some((name, Err(error))) => toast_error(
-            toaster,
-            "Registration failed",
-            &tenant_failure_copy(&format!("tenant `{name}`"), &error),
-        ),
-        None => {}
-    });
+    toast_outcome(
+        toaster,
+        create.value().into(),
+        ("Tenant registered", "Registration failed"),
+        |name, row: &TenantRow| format!("{name} was registered with system_id {}.", row.system_id),
+        write_failure,
+    );
+    toast_outcome(
+        toaster,
+        update.value().into(),
+        ("Tenant updated", "Update failed"),
+        |name, row: &TenantRow| format!("{name} now carries system_id {}.", row.system_id),
+        write_failure,
+    );
+    toast_outcome(
+        toaster,
+        delete.value().into(),
+        ("Tenant deleted", "Delete failed"),
+        |name, ()| format!("{name} was removed from the registry."),
+        write_failure,
+    );
+}
 
-    Effect::new(move |_| match update.value().get() {
-        Some((name, Ok(row))) => toast_success(
-            toaster,
-            "Tenant updated",
-            &format!("{name} now carries system_id {}.", row.system_id),
-        ),
-        Some((name, Err(error))) => toast_error(
-            toaster,
-            "Update failed",
-            &tenant_failure_copy(&format!("tenant `{name}`"), &error),
-        ),
-        None => {}
-    });
-
-    Effect::new(move |_| match delete.value().get() {
-        Some((name, Ok(()))) => toast_success(
-            toaster,
-            "Tenant deleted",
-            &format!("{name} was removed from the registry."),
-        ),
-        Some((name, Err(error))) => toast_error(
-            toaster,
-            "Delete failed",
-            &tenant_failure_copy(&format!("tenant `{name}`"), &error),
-        ),
-        None => {}
-    });
+/// The actionable copy every refused registry write is reported with, naming
+/// the tenant the operator was working on.
+fn write_failure(name: &str, error: &AdminUiError) -> String {
+    tenant_failure_copy(&format!("tenant `{name}`"), error)
 }
 
 /// The context card: which tenant this session's credential resolves to.
@@ -331,32 +314,13 @@ fn create_card(
         <section id="tenant-create" class=format!("{CARD_PAD} mb-4")>
             <h2 class=CARD_TITLE>"Register a tenant"</h2>
             <div class="flex flex-wrap items-end gap-3">
-                <div class="flex flex-col gap-1">
-                    <label class=LABEL r#for="tenant-create-name">
-                        "Name"
-                    </label>
-                    <input
-                        id="tenant-create-name"
-                        type="text"
-                        class=INPUT
-                        placeholder="acme"
-                        prop:value=move || name.get()
-                        on:input:target=move |ev| name.set(ev.target().value())
-                    />
-                </div>
-                <div class="flex flex-col gap-1">
-                    <label class=LABEL r#for="tenant-create-system-id">
-                        "System ID"
-                    </label>
-                    <input
-                        id="tenant-create-system-id"
-                        type="text"
-                        class=INPUT
-                        placeholder="acme.example.org"
-                        prop:value=move || system_id.get()
-                        on:input:target=move |ev| system_id.set(ev.target().value())
-                    />
-                </div>
+                {text_field("tenant-create-name".to_owned(), "Name", Some("acme"), name)}
+                {text_field(
+                    "tenant-create-system-id".to_owned(),
+                    "System ID",
+                    Some("acme.example.org"),
+                    system_id,
+                )}
                 <button
                     id="tenant-create-submit"
                     type="button"
@@ -415,30 +379,13 @@ fn edit_card(editor: Editor, update: UpdateAction) -> AnyView {
                     <span class="font-mono break-all text-ink">{row.id}</span>
                 </p>
                 <div class="flex flex-wrap items-end gap-3">
-                    <div class="flex flex-col gap-1">
-                        <label class=LABEL r#for="tenant-edit-name">
-                            "Name"
-                        </label>
-                        <input
-                            id="tenant-edit-name"
-                            type="text"
-                            class=INPUT
-                            prop:value=move || editor.name.get()
-                            on:input:target=move |ev| editor.name.set(ev.target().value())
-                        />
-                    </div>
-                    <div class="flex flex-col gap-1">
-                        <label class=LABEL r#for="tenant-edit-system-id">
-                            "System ID"
-                        </label>
-                        <input
-                            id="tenant-edit-system-id"
-                            type="text"
-                            class=INPUT
-                            prop:value=move || editor.system_id.get()
-                            on:input:target=move |ev| editor.system_id.set(ev.target().value())
-                        />
-                    </div>
+                    {text_field("tenant-edit-name".to_owned(), "Name", None, editor.name)}
+                    {text_field(
+                        "tenant-edit-system-id".to_owned(),
+                        "System ID",
+                        None,
+                        editor.system_id,
+                    )}
                     <button
                         id="tenant-edit-save"
                         type="button"
@@ -465,28 +412,6 @@ fn edit_card(editor: Editor, update: UpdateAction) -> AnyView {
     view! {
         {fields}
         {failure}
-    }
-    .into_any()
-}
-
-/// The CDR's own diagnostic for a failed write, verbatim, inline BESIDE the
-/// failure toast (the console's feedback rule: a registry refusal names the
-/// field or the conflict, and that is worth reading line by line).
-fn failure_bar(error: Signal<Option<AdminUiError>>) -> AnyView {
-    view! {
-        {move || {
-            error
-                .get()
-                .map(|error| {
-                    view! {
-                        <div class="mt-2">
-                            <thaw::MessageBar intent=thaw::MessageBarIntent::Error>
-                                <thaw::MessageBarBody>{error.to_string()}</thaw::MessageBarBody>
-                            </thaw::MessageBar>
-                        </div>
-                    }
-                })
-        }}
     }
     .into_any()
 }
@@ -529,16 +454,9 @@ fn registry_table(
 /// this is where the per-request refusal lands.
 fn read_error(error: &AdminUiError, object: &str) -> AnyView {
     match error {
-        AdminUiError::CdrUnauthorized(_) | AdminUiError::Forbidden(_) => view! {
-            <p
-                id="tenant-refused"
-                role="alert"
-                class="rounded-control border border-danger/40 bg-danger-subtle px-3 py-2 text-sm text-danger"
-            >
-                {tenant_failure_copy(object, error)}
-            </p>
+        AdminUiError::CdrUnauthorized(_) | AdminUiError::Forbidden(_) => {
+            alert_note("tenant-refused", tenant_failure_copy(object, error))
         }
-        .into_any(),
         other => inline_error(other),
     }
 }
@@ -588,25 +506,15 @@ fn rows_view(
     pending_delete: RwSignal<Option<TenantRow>>,
     delete: DeleteAction,
 ) -> AnyView {
-    let count = row_total(rows.len());
-    let total = Signal::derive(move || count);
-    let body = view! {
-        <For
-            each=move || {
-                let window = page_window(total.get(), paging.page.get(), paging.size.get());
-                page_rows(&rows, window)
-            }
-            key=|row: &TenantRow| row.id.clone()
-            children=move |row| row_view(row, editor, pending_delete, delete)
-        />
-    }
-    .into_any();
-    let footer = table_footer("/tenants", "tenants", paging, total);
-    view! {
-        {table_shell(&["Name", "System ID", "Tenant ID", "Created", ""], body)}
-        {footer}
-    }
-    .into_any()
+    paged_table(
+        rows,
+        paging,
+        "/tenants",
+        "tenants",
+        &["Name", "System ID", "Tenant ID", "Created", ""],
+        |row: &TenantRow| row.id.clone(),
+        move |row| row_view(row, editor, pending_delete, delete),
+    )
 }
 
 /// One registry row: its four facts, plus the edit trigger and the delete
@@ -671,21 +579,12 @@ fn delete_dialog(pending_delete: RwSignal<Option<TenantRow>>, delete: DeleteActi
             )
         })
     });
-    view! {
-        <ConfirmDialog
-            open=Signal::derive(move || pending_delete.get().is_some())
-            title="Delete tenant"
-            message=message
-            confirm_label="Delete tenant"
-            confirm_id="tenant-delete-confirm"
-            on_cancel=Callback::new(move |()| pending_delete.set(None))
-            on_confirm=Callback::new(move |()| {
-                if let Some(row) = pending_delete.get_untracked() {
-                    drop(delete.dispatch(row));
-                }
-                pending_delete.set(None);
-            })
-        />
-    }
-    .into_any()
+    delete_confirmation(
+        pending_delete,
+        delete,
+        "Delete tenant",
+        "Delete tenant",
+        "tenant-delete-confirm",
+        message,
+    )
 }

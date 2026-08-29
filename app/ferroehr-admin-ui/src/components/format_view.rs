@@ -441,6 +441,46 @@ pub fn inline_error(error: &crate::error::AdminUiError) -> AnyView {
     .into_any()
 }
 
+/// The pane a detail screen shows its loaded document in, over the SAME
+/// resource its facts section reads.
+///
+/// A `<Transition>` so a refetch keeps the current document visible (rules §6),
+/// with the `Result` resolved inside it (rules §4). A failed or absent read
+/// renders nothing HERE, because the facts section above it states that once —
+/// the screen as a whole never renders an error as nothing. `body_of` picks the
+/// verbatim wire body out of the loaded state; `id` is the pane's stable E2E
+/// hook.
+#[must_use]
+pub fn document_section<T>(
+    resource: Resource<Result<Option<T>, crate::error::AdminUiError>>,
+    id: &'static str,
+    body_of: fn(&T) -> &str,
+) -> AnyView
+where
+    T: Clone + Send + Sync + 'static,
+{
+    view! {
+        <Transition fallback=crate::components::data_table::table_skeleton>
+            {move || Suspend::new(async move {
+                match resource.await {
+                    Ok(Some(state)) => {
+                        let pretty = pretty_body(body_of(&state), ReprFormat::CanonicalJson);
+                        let doc = RwSignal::new(pretty);
+                        view! {
+                            <div id=id>
+                                <DocumentPane body=doc />
+                            </div>
+                        }
+                            .into_any()
+                    }
+                    Ok(None) | Err(_) => ().into_any(),
+                }
+            })}
+        </Transition>
+    }
+    .into_any()
+}
+
 /// Pretty-print a JSON body for display; non-JSON (XML, FLAT with odd
 /// content types) passes through unchanged.
 #[must_use]

@@ -22,25 +22,24 @@
 //! `Result` resolves INSIDE the `<Transition>` (an SSR'd `ErrorBoundary`
 //! fallback mismatches at hydration in leptos 0.8); each mutation is an
 //! [`Action`] that toasts BOTH outcomes and keeps the CDR's own diagnostic
-//! inline beside the failure toast; the table is the shared [`table_shell`]
-//! with its explicit `<tbody>`, paged by the shared [`table_footer`] whose page
-//! state lives in the URL.
+//! inline beside the failure toast; the table is the shared [`paged_table`]
+//! with its explicit `<tbody>`, whose page state lives in the URL.
 
 use leptos::component;
 use leptos::prelude::*;
 use leptos_meta::Title;
 
-use crate::components::confirm_dialog::ConfirmDialog;
+use crate::components::confirm_dialog::delete_confirmation;
 use crate::components::data_table::{
-    CELL, CELL_MONO, ROW, TablePaging, page_rows, page_window, paging_from_url, row_total,
-    table_footer, table_shell, table_skeleton,
+    CELL, CELL_MONO, ROW, TablePaging, paged_table, paging_from_url, table_skeleton,
 };
 use crate::components::empty_state::EmptyState;
-use crate::components::field::{BTN_DANGER, BTN_PRIMARY, BTN_SECONDARY, INPUT, LABEL};
+use crate::components::field::{BTN_DANGER, BTN_PRIMARY, BTN_SECONDARY, text_field};
 use crate::components::format_view::inline_error;
+use crate::components::notice::{alert_note, failure_bar};
 use crate::components::page_header::PageHeader;
 use crate::components::surface::{CARD_PAD, CARD_TITLE};
-use crate::components::toast::{toast_error, toast_success};
+use crate::components::toast::toast_outcome;
 use crate::error::AdminUiError;
 use crate::subscriptions::{
     SubscriptionPredicates, SubscriptionRow, create_event_subscription, delete_event_subscription,
@@ -259,56 +258,40 @@ pub fn SubscriptionsPage() -> impl IntoView {
 /// Every mutation toasts on BOTH outcomes (the console's mutation-feedback
 /// rule — crate `CLAUDE.md`); the CDR's diagnostic ALSO stays inline beside
 /// each form, because a `400`/`409` on a subscription write names the exact
-/// field or conflict. Dispatching a toast is a side effect on the outside
-/// world, so an Effect is its correct home (rules §2) — it never writes a
-/// signal, and it never runs on the server pass.
+/// field or conflict.
 fn mutation_toasts(
     toaster: thaw::ToasterInjection,
     create: CreateAction,
     update: UpdateAction,
     delete: DeleteAction,
 ) {
-    Effect::new(move |_| match create.value().get() {
-        Some((name, Ok(row))) => toast_success(
-            toaster,
-            "Subscription created",
-            &format!("{name} — {}", match_summary(&row)),
-        ),
-        Some((name, Err(error))) => toast_error(
-            toaster,
-            "Create failed",
-            &subscription_failure_copy(&format!("subscription `{name}`"), &error),
-        ),
-        None => {}
-    });
+    toast_outcome(
+        toaster,
+        create.value().into(),
+        ("Subscription created", "Create failed"),
+        |name, row| format!("{name} — {}", match_summary(row)),
+        write_failure,
+    );
+    toast_outcome(
+        toaster,
+        update.value().into(),
+        ("Subscription updated", "Update failed"),
+        |name, row| format!("{name} — {}", match_summary(row)),
+        write_failure,
+    );
+    toast_outcome(
+        toaster,
+        delete.value().into(),
+        ("Subscription deleted", "Delete failed"),
+        |name, ()| format!("{name} was removed from the CDR."),
+        write_failure,
+    );
+}
 
-    Effect::new(move |_| match update.value().get() {
-        Some((name, Ok(row))) => toast_success(
-            toaster,
-            "Subscription updated",
-            &format!("{name} — {}", match_summary(&row)),
-        ),
-        Some((name, Err(error))) => toast_error(
-            toaster,
-            "Update failed",
-            &subscription_failure_copy(&format!("subscription `{name}`"), &error),
-        ),
-        None => {}
-    });
-
-    Effect::new(move |_| match delete.value().get() {
-        Some((name, Ok(()))) => toast_success(
-            toaster,
-            "Subscription deleted",
-            &format!("{name} was removed from the CDR."),
-        ),
-        Some((name, Err(error))) => toast_error(
-            toaster,
-            "Delete failed",
-            &subscription_failure_copy(&format!("subscription `{name}`"), &error),
-        ),
-        None => {}
-    });
+/// The actionable copy every refused subscription write is reported with,
+/// naming the subscription the operator was working on.
+fn write_failure(name: &str, error: &AdminUiError) -> String {
+    subscription_failure_copy(&format!("subscription `{name}`"), error)
 }
 
 /// The create card: the name, the four predicates, the enabled toggle, and the
@@ -328,8 +311,12 @@ fn create_card(name: RwSignal<String>, draft: Draft, create: CreateAction) -> An
         <section id="subscription-create" class=format!("{CARD_PAD} mb-4")>
             <h2 class=CARD_TITLE>"Create a subscription"</h2>
             <div class="flex flex-wrap items-end gap-3">
-                {text_field("subscription-create-name".to_owned(), "Name", "vitals-feed", name)}
-                {predicate_fields("create", draft)}
+                {text_field(
+                    "subscription-create-name".to_owned(),
+                    "Name",
+                    Some("vitals-feed"),
+                    name,
+                )} {predicate_fields("create", draft)}
                 {enabled_toggle("subscription-create-enabled", draft.enabled, true)}
                 <button
                     id="subscription-create-submit"
@@ -431,49 +418,19 @@ fn edit_card(editor: Editor, update: UpdateAction) -> AnyView {
 /// `subscription-edit-kind`, …) — both cards can be on screen at once.
 fn predicate_fields(form: &'static str, draft: Draft) -> AnyView {
     view! {
-        {text_field(format!("subscription-{form}-kind"), "Kind", "COMPOSITION", draft.kind)}
+        {text_field(format!("subscription-{form}-kind"), "Kind", Some("COMPOSITION"), draft.kind)}
         {text_field(
             format!("subscription-{form}-change-type"),
             "Change type",
-            "249",
+            Some("249"),
             draft.change_type,
         )}
         {text_field(
             format!("subscription-{form}-template"),
             "Template id",
-            "blank = any",
+            Some("blank = any"),
             draft.template_id,
         )}
-    }
-    .into_any()
-}
-
-/// One labelled text input bound to `value`.
-///
-/// `prop:value` carries the live state and `on:input` writes it back (rules
-/// §5 — the `value` attribute would only set the initial value, and an
-/// `oninput="…"` JS attribute is forbidden outright).
-fn text_field(
-    id: String,
-    label: &'static str,
-    placeholder: &'static str,
-    value: RwSignal<String>,
-) -> AnyView {
-    let field_id = id.clone();
-    view! {
-        <div class="flex flex-col gap-1">
-            <label class=LABEL r#for=id>
-                {label}
-            </label>
-            <input
-                id=field_id
-                type="text"
-                class=INPUT
-                placeholder=placeholder
-                prop:value=move || value.get()
-                on:input:target=move |ev| value.set(ev.target().value())
-            />
-        </div>
     }
     .into_any()
 }
@@ -497,28 +454,6 @@ fn enabled_toggle(id: &'static str, value: RwSignal<bool>, initial: bool) -> Any
             />
             "Enabled"
         </label>
-    }
-    .into_any()
-}
-
-/// The CDR's own diagnostic for a failed write, verbatim, inline BESIDE the
-/// failure toast (the console's feedback rule: a subscription refusal names the
-/// offending field or the conflicting name, and that is worth reading in full).
-fn failure_bar(error: Signal<Option<AdminUiError>>) -> AnyView {
-    view! {
-        {move || {
-            error
-                .get()
-                .map(|error| {
-                    view! {
-                        <div class="mt-2">
-                            <thaw::MessageBar intent=thaw::MessageBarIntent::Error>
-                                <thaw::MessageBarBody>{error.to_string()}</thaw::MessageBarBody>
-                            </thaw::MessageBar>
-                        </div>
-                    }
-                })
-        }}
     }
     .into_any()
 }
@@ -561,16 +496,10 @@ fn listing_table(
 /// this is where the per-request refusal lands.
 fn read_error(error: &AdminUiError, object: &str) -> AnyView {
     match error {
-        AdminUiError::CdrUnauthorized(_) | AdminUiError::Forbidden(_) => view! {
-            <p
-                id="subscription-refused"
-                role="alert"
-                class="rounded-control border border-danger/40 bg-danger-subtle px-3 py-2 text-sm text-danger"
-            >
-                {subscription_failure_copy(object, error)}
-            </p>
-        }
-        .into_any(),
+        AdminUiError::CdrUnauthorized(_) | AdminUiError::Forbidden(_) => alert_note(
+            "subscription-refused",
+            subscription_failure_copy(object, error),
+        ),
         other => inline_error(other),
     }
 }
@@ -619,28 +548,23 @@ fn rows_view(
     pending_delete: RwSignal<Option<SubscriptionRow>>,
     delete: DeleteAction,
 ) -> AnyView {
-    let count = row_total(rows.len());
-    let total = Signal::derive(move || count);
-    let body = view! {
-        <For
-            each=move || {
-                let window = page_window(total.get(), paging.page.get(), paging.size.get());
-                page_rows(&rows, window)
-            }
-            key=|row: &SubscriptionRow| row.id.clone()
-            children=move |row| row_view(row, editor, pending_delete, delete)
-        />
-    }
-    .into_any();
-    let footer = table_footer("/subscriptions", "subscriptions", paging, total);
-    view! {
-        {table_shell(
-            &["Subscription", "Kind", "Change type", "Template", "State", "Created", ""],
-            body,
-        )}
-        {footer}
-    }
-    .into_any()
+    paged_table(
+        rows,
+        paging,
+        "/subscriptions",
+        "subscriptions",
+        &[
+            "Subscription",
+            "Kind",
+            "Change type",
+            "Template",
+            "State",
+            "Created",
+            "",
+        ],
+        |row: &SubscriptionRow| row.id.clone(),
+        move |row| row_view(row, editor, pending_delete, delete),
+    )
 }
 
 /// One stored subscription: its name and what it matches in words, the four
@@ -731,21 +655,12 @@ fn delete_dialog(
             )
         })
     });
-    view! {
-        <ConfirmDialog
-            open=Signal::derive(move || pending_delete.get().is_some())
-            title="Delete subscription"
-            message=message
-            confirm_label="Delete subscription"
-            confirm_id="subscription-delete-confirm"
-            on_cancel=Callback::new(move |()| pending_delete.set(None))
-            on_confirm=Callback::new(move |()| {
-                if let Some(row) = pending_delete.get_untracked() {
-                    drop(delete.dispatch(row));
-                }
-                pending_delete.set(None);
-            })
-        />
-    }
-    .into_any()
+    delete_confirmation(
+        pending_delete,
+        delete,
+        "Delete subscription",
+        "Delete subscription",
+        "subscription-delete-confirm",
+        message,
+    )
 }
