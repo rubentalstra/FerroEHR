@@ -224,3 +224,14 @@ commit-message wording. Late labels: since #2777 applying a label raises a fresh
     base.digest declaration (both Dockerfiles + the label blocks in
     containers.yml and release.yml) — image-labels.sh holds them equal and
     dependabot bumps only the FROM lines.
+
+- **A main push cancels an in-flight containers dispatch** (`concurrency:
+  containers-${{ github.ref }}` + cancel-in-progress): hold every merge while
+  a `workflow_dispatch` image build runs, or it dies at the next merge — the
+  v4.0.10 night lost three dispatches to this before freezing merges.
+- **A release cut has TWO more regenerate-from-artifacts layers beyond the
+  changelog rule's list**: `scripts/render/comparison.sh`
+  (docs/conformance/COMPARISON.md) and `scripts/render/conformance-assets.sh`
+  (the book's conformance SVGs) both re-render release-day facts and are
+  diff-gated by the Docs lane — run them in the release PR whenever the party
+  statement or the committed results stamp moved.
