@@ -53,6 +53,11 @@
 //! of `X` precedes every completion of `Y`; `Some(Equal)` only for equal raw
 //! strings, so differently-written equal values (`20200615` vs `2020-06-15`)
 //! report incomparable, never equal.
+//!
+//! A consumer needing a TOTAL order (a query engine sorting stored values)
+//! must choose its own completion policy (e.g. flooring a partial to its
+//! first instant) — a deliberately different reading from this partial
+//! comparison, which never invents an order the value does not carry.
 
 use std::cmp::Ordering;
 

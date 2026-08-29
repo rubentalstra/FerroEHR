@@ -204,7 +204,7 @@ impl Builder<'_> {
             members.push(if numeric {
                 cast(Expr::val(v), "numeric")
             } else {
-                coerce_rhs(v, coercion)
+                coerce_rhs(v, coercion)?
             });
         }
         if positive && let Some(leaf) = Self::existential_leaf(path) {
@@ -438,8 +438,8 @@ impl Builder<'_> {
     ) -> Result<Expr, AqlError> {
         match op {
             Operand::Path(t) => self.value_expr(t, ValueMode::Value(coercion)),
-            Operand::Literal(lit) => Ok(coerce_rhs(super::expr::literal_value(lit), coercion)),
-            Operand::Param(p) => Ok(coerce_rhs(self.param_value(p)?, coercion)),
+            Operand::Literal(lit) => coerce_rhs(super::expr::literal_value(lit), coercion),
+            Operand::Param(p) => coerce_rhs(self.param_value(p)?, coercion),
             Operand::Function { func, args } => {
                 let expr = self.scalar_fn_expr(*func, args)?;
                 // A function operand joins the comparison in the requested

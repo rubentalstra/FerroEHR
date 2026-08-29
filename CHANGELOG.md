@@ -17,6 +17,17 @@ workflow refuses a tag that has no matching section here.
 
 ### Fixed
 
+- AQL date/time comparisons work on reduced-precision values. openEHR admits
+  partial date/times (`2019`, `1985-06`), but one stored anywhere in the
+  scanned data made every temporal comparison on that path fail as a 400
+  ("your request is malformed" — for a data property). Both sides of a
+  temporal comparison now floor a partial value to the first instant it
+  contains (first month/day, zero time), the same completion the promoted
+  timestamp column uses, so stored partials compare, order, and match
+  `NOW()` instead of erroring. A comparison value that is not an ISO 8601
+  date/time at all is still the caller's 400, now named at plan time; non-ISO
+  forms PostgreSQL happened to parse (e.g. `June 15, 2020`) are refused —
+  AQL temporal literals are ISO 8601.
 - AQL predicates and projections now see every element of a list-valued
   attribute (`links`, `context/participations`, composer `identifiers`,
   `mappings`, ...). Previously the extraction took only the first match, so

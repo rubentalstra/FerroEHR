@@ -452,17 +452,10 @@ pub(super) fn coerce_value(base: Expr, mode: ValueMode, leaf: &LeafPath) -> Expr
             }
         }
         ValueMode::Value(Coercion::Boolean) => cast(as_text(base), "boolean"),
-        // ISO 8601 permits a COMMA decimal sign on the fractional second (BASE
-        // foundation_types master06); PostgreSQL's timestamptz input does not,
-        // and a comma cannot occur elsewhere in a valid ISO timestamp, so it
-        // normalizes to the dot before the cast.
-        // NOTE: temporal comparison casts the ISO-8601 leaf text to timestamptz
-        // — precise for full timestamps; partial-precision values (`2019`,
-        // `12:00`) are a documented gap (QUERY master03 §Dates and Times).
-        ValueMode::Value(Coercion::Temporal) => cast(
-            Expr::cust_with_exprs("replace($1, ',', '.')", [as_text(base)]),
-            "timestamptz",
-        ),
+        // NOTE: RM data_types master07 §Partial Date/Times admits reduced
+        // precision, so the leaf reads through the total `ext.openehr_timestamp`
+        // — floor completion, NULL for garbage (the recorded semantics, #1493).
+        ValueMode::Value(Coercion::Temporal) => call("openehr_timestamp", vec![as_text(base)]),
         ValueMode::Value(Coercion::Text | Coercion::Raw) => as_text(base),
         // a mixed-type (`Raw`) leaf being compared/matched against a
         // numeric literal — extract numerically, but guard on the stored jsonb
@@ -475,18 +468,54 @@ pub(super) fn coerce_value(base: Expr, mode: ValueMode, leaf: &LeafPath) -> Expr
 
 /// Cast a bound right-hand-side value to match the comparison coercion
 /// (QUERY master03 §Comparison operators).
-pub(super) fn coerce_rhs(value: sea_query::Value, coercion: Coercion) -> Expr {
-    match coercion {
+///
+/// A temporal bound routes through the same total `ext.openehr_timestamp` the
+/// leaf side uses (floor completion for reduced precision), after a plan-time
+/// shape check: a bound that is no ISO-8601 date/time at all is the CALLER's
+/// defect and refuses as a typed error — never a silent empty result and
+/// never a driver error surfacing as a 500.
+///
+/// # Errors
+/// [`SqlError::UncoercibleTemporal`] when a temporal bound is not an ISO-8601
+/// date, time, or date-time (reduced precision is accepted).
+pub(super) fn coerce_rhs(value: sea_query::Value, coercion: Coercion) -> Result<Expr, AqlError> {
+    Ok(match coercion {
         Coercion::Magnitude => cast(Expr::val(value), "numeric"),
         Coercion::Boolean => cast(Expr::val(value), "boolean"),
-        // Comma-fraction normalization as on the leaf side (ISO 8601 permits
-        // the comma decimal sign; PostgreSQL's timestamptz input does not).
-        Coercion::Temporal => cast(
-            Expr::cust_with_exprs("replace($1, ',', '.')", [cast(Expr::val(value), "text")]),
-            "timestamptz",
-        ),
+        Coercion::Temporal => {
+            if let sea_query::Value::String(Some(s)) = &value
+                && !is_iso_temporal(s)
+            {
+                return Err(SqlError::UncoercibleTemporal.into());
+            }
+            call("openehr_timestamp", vec![cast(Expr::val(value), "text")])
+        }
         Coercion::Text | Coercion::Raw => cast(Expr::val(value), "text"),
-    }
+    })
+}
+
+/// Whether `s` is an ISO-8601 date, time, or date-time literal in the shapes
+/// the temporal floor accepts — reduced precision and compact forms included
+/// (BASE `foundation_types` master06 §Time Types). Purely a plan-time shape
+/// gate: the SQL-side completion is the semantics.
+fn is_iso_temporal(s: &str) -> bool {
+    static ISO_TEMPORAL: std::sync::LazyLock<regex::Regex> = std::sync::LazyLock::new(|| {
+        // The separator set includes the space form PostgreSQL's own parser
+        // accepts, so previously-working SQL-style literals keep working.
+        let time = r"\d{2}(:\d{2}(:\d{2}([.,]\d+)?)?|\d{2}(\d{2}([.,]\d+)?)?)?";
+        let offset = r"([Zz]|[+-]\d{2}(:?\d{2})?)?";
+        let date = r"\d{4}(-\d{2}(-\d{2})?|\d{2}(\d{2})?)?";
+        #[expect(
+            clippy::expect_used,
+            reason = "a hardcoded regex literal should always compile; covered by \
+                      the temporal planner tests"
+        )]
+        regex::Regex::new(&format!(
+            "^({date}([Tt ]{time}{offset})?|[Tt]?{time}{offset})$"
+        ))
+        .expect("hardcoded ISO-8601 shape regex should be valid")
+    });
+    ISO_TEMPORAL.is_match(s)
 }
 
 /// Guarded numeric extraction for a mixed-type (`Raw`) leaf: number-typed jsonb
