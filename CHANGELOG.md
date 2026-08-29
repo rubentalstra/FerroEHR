@@ -15,6 +15,14 @@ workflow refuses a tag that has no matching section here.
 
 ## [Unreleased]
 
+### Added
+
+- Validation enforces the one testable rule of `DV_TEXT.formatting`: a value
+  formatted `"plain_no_newlines"` is refused when the text contains a
+  newline (RM: "newlines are not allowed"). Every other formatting value
+  stays unvalidated — markdown, `"plain"`, the deprecated CSS form, and
+  unknown names all remain legal, with or without newlines.
+
 ### Fixed
 
 - The `is_modifiable` content-write gate is evaluated inside the commit

@@ -25,6 +25,15 @@ impl Validate for DvText {
             DvText::DvCodedText(t) => ("DV_CODED_TEXT", &t.value, t.formatting.as_deref()),
         };
         crate::v1_2::validate::generated::dv_text_core(ty, value, formatting, out);
+        // NOTE: RM data_types master05 §Text package — "plain_no_newlines":
+        // "newlines are not allowed"; every OTHER formatting value stays
+        // unvalidated, deliberately (the value space is open).
+        if formatting == Some("plain_no_newlines") && value.contains(['\n', '\r']) {
+            out.push(InvariantViolation::here(format!(
+                "formatting \"plain_no_newlines\" forbids newlines in value on type {ty} \
+                 (RM data_types master05 §Text package)"
+            )));
+        }
     }
 }
 
@@ -69,5 +78,45 @@ mod tests {
             out.iter().any(|m| m.message.contains("Formatting_valid")),
             "empty formatting must fail: {out:?}"
         );
+    }
+
+    fn formatted(value: &str, formatting: &str) -> DvText {
+        let mut t = text(value);
+        if let DvText::DvText(d) = &mut t {
+            d.formatting = Some(formatting.to_owned());
+        }
+        t
+    }
+
+    /// `"plain_no_newlines"` — "newlines are not allowed" (RM data_types
+    /// master05 §Text package): both twins, plus the open value space — a
+    /// newline under any OTHER formatting (or none) stays legal, including
+    /// the deprecated CSS form and an unknown name.
+    #[test]
+    fn plain_no_newlines_forbids_newlines_and_nothing_else() {
+        let mut out = Vec::new();
+        formatted("one line", "plain_no_newlines").validate_invariants(&mut out);
+        assert!(out.is_empty(), "no newline passes: {out:?}");
+
+        for value in ["two\nlines", "carriage\rreturn"] {
+            let mut out = Vec::new();
+            formatted(value, "plain_no_newlines").validate_invariants(&mut out);
+            assert!(
+                out.iter().any(|m| m.message.contains("plain_no_newlines")),
+                "{value:?} must fail under plain_no_newlines: {out:?}"
+            );
+        }
+
+        for formatting in ["plain", "markdown", "font-weight : bold;", "custom-name"] {
+            let mut out = Vec::new();
+            formatted("two\nlines", formatting).validate_invariants(&mut out);
+            assert!(
+                out.is_empty(),
+                "the value space stays open — {formatting:?} with a newline passes: {out:?}"
+            );
+        }
+        let mut out = Vec::new();
+        text("two\nlines").validate_invariants(&mut out);
+        assert!(out.is_empty(), "Void formatting allows newlines: {out:?}");
     }
 }
