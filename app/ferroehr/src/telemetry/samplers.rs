@@ -22,7 +22,8 @@ use sqlx::postgres::Postgres;
 use tokio::task::JoinHandle;
 
 use super::metrics::{
-    DB_POOL_CONNECTIONS, TOKIO_ALIVE_TASKS, TOKIO_GLOBAL_QUEUE_DEPTH, TOKIO_WORKERS,
+    DB_POOL_CONNECTIONS, PROCESS_RESIDENT_MEMORY, TOKIO_ALIVE_TASKS, TOKIO_GLOBAL_QUEUE_DEPTH,
+    TOKIO_WORKERS,
 };
 
 /// How often the sampler reads gauges + runs recorder upkeep.
@@ -82,6 +83,19 @@ struct Sample {
     workers: u64,
     global_queue_depth: u64,
     alive_tasks: u64,
+    resident_bytes: Option<u64>,
+}
+
+/// Reads the process resident set from `/proc/self/status` (`VmRSS`, kibibytes
+/// per proc(5)), `None` where procfs is absent (macOS development hosts).
+fn resident_bytes() -> Option<u64> {
+    // NOTE: `Result → Option` is the decision here (reliability.md class): no
+    // procfs, or a VmRSS line this shape cannot read, means the gauge is
+    // legitimately absent on this platform — not a swallowed defect.
+    let status = std::fs::read_to_string("/proc/self/status").ok()?;
+    let line = status.lines().find(|l| l.starts_with("VmRSS:"))?;
+    let kib: u64 = line.split_whitespace().nth(1)?.parse().ok()?;
+    kib.checked_mul(1024)
 }
 
 /// Read the pool + runtime gauges.
@@ -104,6 +118,7 @@ fn sample(pool: &PgPool) -> Sample {
         workers: rt.num_workers() as u64,
         global_queue_depth: rt.global_queue_depth() as u64,
         alive_tasks: rt.num_alive_tasks() as u64,
+        resident_bytes: resident_bytes(),
     }
 }
 
@@ -113,6 +128,7 @@ struct OtelGauges {
     workers: opentelemetry::metrics::Gauge<u64>,
     global_queue_depth: opentelemetry::metrics::Gauge<u64>,
     alive_tasks: opentelemetry::metrics::Gauge<u64>,
+    resident_memory: opentelemetry::metrics::Gauge<u64>,
 }
 
 impl OtelGauges {
@@ -122,6 +138,15 @@ impl OtelGauges {
             workers: meter.u64_gauge(TOKIO_WORKERS).build(),
             global_queue_depth: meter.u64_gauge(TOKIO_GLOBAL_QUEUE_DEPTH).build(),
             alive_tasks: meter.u64_gauge(TOKIO_ALIVE_TASKS).build(),
+            resident_memory: meter
+                .u64_gauge(PROCESS_RESIDENT_MEMORY)
+                .with_description(
+                    "Process resident set size; the designed residents are the moka \
+                     template/WebTemplate caches, the sqlx pool, the verified-credential \
+                     cache and the ATNA audit queue (#2872)",
+                )
+                .with_unit("By")
+                .build(),
         }
     }
 
@@ -132,5 +157,8 @@ impl OtelGauges {
         self.workers.record(s.workers, &[]);
         self.global_queue_depth.record(s.global_queue_depth, &[]);
         self.alive_tasks.record(s.alive_tasks, &[]);
+        if let Some(rss) = s.resident_bytes {
+            self.resident_memory.record(rss, &[]);
+        }
     }
 }

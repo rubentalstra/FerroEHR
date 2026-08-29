@@ -15,6 +15,14 @@ workflow refuses a tag that has no matching section here.
 
 ## [Unreleased]
 
+### Added
+
+- The metrics surface gains `process_resident_memory_bytes` (the standard
+  Prometheus name), sampled from procfs every five seconds beside the pool
+  and runtime gauges — so "is the server's memory growing?" is a dashboard
+  read instead of a shell into the host. Absent on platforms without
+  procfs.
+
 ### Changed
 
 - AQL `FOLDER f1 CONTAINS FOLDER f2` now also matches the folders of a

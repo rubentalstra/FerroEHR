@@ -137,6 +137,16 @@ async fn the_sampler_records_the_pool_and_runtime_gauges_until_aborted() {
         );
     }
 
+    // The RSS gauge reads /proc/self/status, so it exists exactly where procfs
+    // does: present on Linux (what every deployment runs), absent elsewhere.
+    #[cfg(target_os = "linux")]
+    assert!(
+        names
+            .iter()
+            .any(|n| n == ferroehr::telemetry::metrics::PROCESS_RESIDENT_MEMORY),
+        "the sampler must record the resident-set gauge on Linux, exported: {names:?}"
+    );
+
     // The task is a loop, not a one-shot: it is still running, and the handle
     // the telemetry guard holds is what ends it.
     assert!(!handle.is_finished(), "the sampler runs until aborted");

@@ -105,6 +105,9 @@ pub const TOKIO_WORKERS: &str = "tokio_workers";
 pub const TOKIO_GLOBAL_QUEUE_DEPTH: &str = "tokio_global_queue_depth";
 /// Tokio alive tasks.
 pub const TOKIO_ALIVE_TASKS: &str = "tokio_alive_tasks";
+/// Process resident set size (unit: bytes — the exporter appends `_bytes`,
+/// yielding the standard Prometheus `process_resident_memory_bytes`).
+pub const PROCESS_RESIDENT_MEMORY: &str = "process_resident_memory";
 
 // ── Bucket ladders ───────────────────────────────────────────────────────────
 
@@ -486,6 +489,7 @@ mod tests {
             TOKIO_WORKERS,
             TOKIO_GLOBAL_QUEUE_DEPTH,
             TOKIO_ALIVE_TASKS,
+            PROCESS_RESIDENT_MEMORY,
         ];
         for name in names {
             for suffix in ["_total", "_seconds", "_bytes"] {
