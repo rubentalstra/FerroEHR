@@ -2014,6 +2014,96 @@ async fn multi_valued_fragment_projection_serves_every_match() {
     );
 }
 
+/// A predicate ON a fragment step lowers as a jsonpath filter and selects the
+/// matching element — the SECOND link here, so a first-element shortcut fails
+/// this (QUERY master03 §Standard predicate at a non-structure step; the
+/// filter values bind as jsonpath vars, never spliced).
+#[tokio::test]
+async fn fragment_step_predicates_filter_the_matching_elements() {
+    let db = testkit::db().await.expect("testkit database");
+    let svc = FerroEhrService::new(db.pool());
+    let ehr_id = create_ehr(&svc).await;
+    svc.create_composition(
+        ehr_id.parse().expect("ehr_id uuid"),
+        uv(&multi_fragment_composition(), "249", None),
+    )
+    .await
+    .expect("multi-fragment composition");
+
+    // Projection: only the filtered (second) link's target projects.
+    let filtered = run_aql(
+        &svc,
+        "SELECT c/links[meaning/value = 'issue']/target/value \
+         FROM EHR e CONTAINS COMPOSITION c",
+        ehr_scope(&ehr_id),
+    )
+    .await;
+    assert_eq!(
+        rows(&filtered)[0][0],
+        json!(["ehr://x/last"]),
+        "the filter selects the SECOND link: {filtered}"
+    );
+
+    // Predicate: the filtered comparison matches through the second element.
+    let hit = run_aql(
+        &svc,
+        "SELECT c/name/value FROM EHR e CONTAINS COMPOSITION c \
+         WHERE c/links[meaning/value = 'issue']/target/value = 'ehr://x/last'",
+        ehr_scope(&ehr_id),
+    )
+    .await;
+    assert_eq!(rows(&hit).len(), 1, "filtered any-match: {hit}");
+
+    // A filter no element satisfies yields nothing (no vacuous truth).
+    let miss = run_aql(
+        &svc,
+        "SELECT c/name/value FROM EHR e CONTAINS COMPOSITION c \
+         WHERE c/links[meaning/value = 'absent']/target/value = 'ehr://x/last'",
+        ehr_scope(&ehr_id),
+    )
+    .await;
+    assert_eq!(rows(&miss).len(), 0, "no element passes the filter: {miss}");
+}
+
+/// A root predicate on a WHOLE-OBJECT projection serves the object where the
+/// source matches and a NULL cell where it does not — row cardinality
+/// untouched (QUERY master03 §Identified Paths; the NULL-cell shape mirrors
+/// the guarded leaf reads).
+#[tokio::test]
+async fn whole_object_root_predicate_serves_null_for_non_matches() {
+    let db = testkit::db().await.expect("testkit database");
+    let svc = FerroEhrService::new(db.pool());
+    let ehr_id = create_ehr(&svc).await;
+    create_comp(&svc, &ehr_id, "minimal-root", 1.0).await;
+
+    let r = run_aql(
+        &svc,
+        "SELECT c[openEHR-EHR-COMPOSITION.report.v1], c/name/value \
+         FROM EHR e CONTAINS COMPOSITION c",
+        ehr_scope(&ehr_id),
+    )
+    .await;
+    assert_eq!(rows(&r).len(), 1, "the row survives: {r}");
+    assert_eq!(
+        rows(&r)[0][0],
+        Value::Null,
+        "a non-matching root serves a NULL cell: {r}"
+    );
+
+    let matching = run_aql(
+        &svc,
+        "SELECT c[openEHR-EHR-COMPOSITION.minimal.v1] \
+         FROM EHR e CONTAINS COMPOSITION c",
+        ehr_scope(&ehr_id),
+    )
+    .await;
+    assert_eq!(
+        rows(&matching)[0][0]["_type"],
+        json!("COMPOSITION"),
+        "the matching root serves the whole object: {matching}"
+    );
+}
+
 /// An uncoercible client binding is the CALLER's 400, never a 500 (#2593):
 /// measured live, `"not-a-date"` against a temporal predicate reached the
 /// driver as sqlstate 22007 and answered the opaque internal error.

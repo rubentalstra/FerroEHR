@@ -879,29 +879,43 @@ fn path_root_predicate_reaches_the_sql() {
     );
 }
 
-/// A predicate on a FRAGMENT step and a root predicate on a whole-object
-/// projection are TYPED REJECTS: neither has a SQL lowering yet, and building
-/// the query without the constraint would answer as if it were not written.
+/// A predicate on a FRAGMENT step lowers to a jsonpath FILTER whose compared
+/// values travel in the bound `vars` jsonb argument (the third
+/// `jsonb_path_query*` argument), never spliced into the path text — QUERY
+/// master03 §Node predicate / §Standard predicate at a non-structure step.
 #[test]
-fn unlowerable_path_predicates_are_typed_rejects() {
-    for (q, needle) in [
-        (
-            "SELECT c/uid/value FROM EHR e CONTAINS COMPOSITION c \
-             WHERE c/links[at0001]/target/value = 'x'",
-            "non-structure path step 'links'",
-        ),
-        (
-            "SELECT c[openEHR-EHR-COMPOSITION.report.v1] \
-             FROM EHR e CONTAINS COMPOSITION c",
-            "whole-object projection",
-        ),
-    ] {
-        let err = build_err(q);
-        assert!(
-            err.to_string().contains(needle),
-            "{q:?} must reject with {needle:?}: {err}"
-        );
-    }
+fn fragment_step_predicate_lowers_to_a_jsonpath_filter() {
+    let sql = build_sql(
+        "SELECT c/uid/value FROM EHR e CONTAINS COMPOSITION c \
+         WHERE c/links[meaning/value = 'issue']/target/value = 'x'",
+    );
+    assert!(
+        sql.contains("AS jsonb)"),
+        "the filter variables bind as the jsonb vars argument: {sql}"
+    );
+    assert!(
+        sql.contains("jsonb_path_query("),
+        "the predicated multi-valued fragment stays existential: {sql}"
+    );
+}
+
+/// A root predicate on a whole-object projection guards the `vo_id` locator:
+/// a non-matching row serves a NULL cell (the executor short-circuits a NULL
+/// `vo_id`), never a dropped row.
+#[test]
+fn whole_object_root_predicate_guards_the_locator() {
+    let sql = build_sql(
+        "SELECT c[openEHR-EHR-COMPOSITION.report.v1] \
+         FROM EHR e CONTAINS COMPOSITION c",
+    );
+    assert!(
+        sql.contains("CASE WHEN") && sql.contains("arch_concept"),
+        "the vo_id locator is CASE-guarded by the predicate: {sql}"
+    );
+    assert!(
+        sql.contains(r#""vo_id" END"#),
+        "the guard wraps the vo_id locator: {sql}"
+    );
 }
 
 /// OR-containment under an EHR lowers to a disjunction of correlated
