@@ -5,7 +5,7 @@
   },
   "runner": {
     "name": "veredictum",
-    "version": "0.1.0-alpha.6",
+    "version": "0.1.0",
     "verification_pack_status": "passed"
   },
   "schedule_release": "cnf-2.0-w2",
