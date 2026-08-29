@@ -55,10 +55,14 @@ enum EdgeKind {
     /// common master05 — folders hold *references* to versioned objects; RM
     /// ehr master04 §Folders). The child opens its own version group.
     FolderItems,
-    /// `FOLDER CONTAINS FOLDER`: the by-value `folders` nesting inside one
-    /// versioned folder tree — a STRICT descendant interval, or the same-typed
-    /// pair matches itself.
-    FolderSubtree,
+    /// `FOLDER CONTAINS FOLDER`: the union of the by-value `folders` nesting
+    /// (a STRICT descendant interval — the inclusive join would self-match
+    /// every folder row) and an items-referenced `VERSIONED_FOLDER`'s folder
+    /// rows (RM common master05: `items` references name versioned objects
+    /// "logically in this folder", with no target-type restriction — the same
+    /// ground as `FolderItems`; one reference hop, adjudicated on #2887). The
+    /// child opens its own version group either way.
+    FolderChild,
 }
 
 /// Classifies a `CONTAINS` edge, or refuses a pair the RM defines no
@@ -75,7 +79,7 @@ fn classify_edge(
     let child_all_folder = child.names().iter().all(|t| t == "FOLDER");
     let child_no_folder = !child.names().iter().any(|t| t == "FOLDER");
     match (parent_all_folder, child_all_folder, child_no_folder) {
-        (true, true, _) => Ok(EdgeKind::FolderSubtree),
+        (true, true, _) => Ok(EdgeKind::FolderChild),
         (true, _, true) => Ok(EdgeKind::FolderItems),
         _ => Err(crate::aql::error::AqlFeatureError::UnsupportedContainment(
             parent.names().join("|"),
@@ -108,6 +112,18 @@ fn folder_items_exists(parent_node: &str, child_node: &str) -> Expr {
         [col(&sf, "data"), col(child_node, "vo_id")],
     ));
     Expr::exists(sub)
+}
+
+/// The by-value half of the `FOLDER CONTAINS FOLDER` union edge (#2887): the
+/// child row is a STRICT nested-set descendant of the parent row inside the
+/// same versioned folder tree (same `(vo_id, sys_version)`; strict, because
+/// the inclusive interval would self-match every folder row).
+fn folder_by_value_child(parent_node: &str, child_node: &str) -> Expr {
+    col(child_node, "vo_id")
+        .eq(col(parent_node, "vo_id"))
+        .and(col(child_node, "sys_version").eq(col(parent_node, "sys_version")))
+        .and(col(child_node, "num").gt(col(parent_node, "num")))
+        .and(col(child_node, "num").lte(col(parent_node, "num_cap")))
 }
 
 /// The streaming-shape plan: the linear containment chain eligible for the
@@ -653,25 +669,14 @@ impl Builder<'_> {
             None => None,
         };
 
-        if let (Some(EdgeKind::Structural | EdgeKind::FolderSubtree), Some(parent)) = (edge, vo) {
+        if let (Some(EdgeKind::Structural), Some(parent)) = (edge, vo) {
             self.q
                 .and_where(col(&node, "vo_id").eq(col(&parent.node, "vo_id")));
             self.q
                 .and_where(col(&node, "sys_version").eq(col(&parent.node, "sys_version")));
-            if edge == Some(EdgeKind::FolderSubtree) {
-                // STRICT descendant: a folder trivially sits in its own
-                // inclusive interval, so `FOLDER CONTAINS FOLDER` with the
-                // inclusive join would self-match every folder row.
-                self.q
-                    .and_where(col(&node, "num").gt(col(&parent.node, "num")));
-                self.q
-                    .and_where(col(&node, "num").lte(col(&parent.node, "num_cap")));
-            } else {
-                self.q.and_where(
-                    col(&node, "num")
-                        .between(col(&parent.node, "num"), col(&parent.node, "num_cap")),
-                );
-            }
+            self.q.and_where(
+                col(&node, "num").between(col(&parent.node, "num"), col(&parent.node, "num_cap")),
+            );
             Ok(VoGroup {
                 node,
                 vo: parent.vo.clone(),
@@ -708,6 +713,17 @@ impl Builder<'_> {
             // references to versioned objects).
             if let (Some(EdgeKind::FolderItems), Some(parent)) = (edge, vo) {
                 self.q.and_where(folder_items_exists(&parent.node, &node));
+            }
+            // FolderChild: the union edge (#2887) — a by-value strict
+            // descendant in the parent's own tree, or any folder row of an
+            // items-referenced VERSIONED_FOLDER. The child's own version
+            // group serves both branches: in the by-value branch the child's
+            // spine row IS the parent's (same vo_id + sys_version).
+            if let (Some(EdgeKind::FolderChild), Some(parent)) = (edge, vo) {
+                self.q.and_where(
+                    folder_by_value_child(&parent.node, &node)
+                        .or(folder_items_exists(&parent.node, &node)),
+                );
             }
             Ok(VoGroup {
                 node,
@@ -788,11 +804,35 @@ impl Builder<'_> {
                             col(alias, "num").between(col(parent, "num"), col(parent, "num_cap")),
                         );
                     }
-                    EdgeKind::FolderSubtree => {
-                        sub.and_where(col(alias, "vo_id").eq(col(parent, "vo_id")));
-                        sub.and_where(col(alias, "sys_version").eq(col(parent, "sys_version")));
-                        sub.and_where(col(alias, "num").gt(col(parent, "num")));
-                        sub.and_where(col(alias, "num").lte(col(parent, "num_cap")));
+                    EdgeKind::FolderChild => {
+                        // The union edge (#2887): a by-value strict
+                        // descendant, or any folder row of an items-referenced
+                        // VERSIONED_FOLDER — the latter needs the child's own
+                        // version spine + scope (the FolderItems shape below;
+                        // by-value rows satisfy it too, sharing the parent's
+                        // spine row).
+                        let voa = format!("xv{}", self.next_ctr());
+                        sub.from_as(VoVersion::Table, Alias::new(voa.as_str()));
+                        sub.and_where(col(alias, "vo_id").eq(col(&voa, "vo_id")));
+                        sub.and_where(col(alias, "sys_version").eq(col(&voa, "sys_version")));
+                        match scope {
+                            VersionScope::Latest => {
+                                sub.and_where(call("upper_inf", vec![col(&voa, "sys_period")]));
+                                sub.and_where(col(&voa, "branch_number").eq(Expr::val(0)));
+                            }
+                            VersionScope::All => {}
+                            VersionScope::Predicate(_) => {
+                                return Err(SqlError::Unsupported(
+                                    "a version predicate on an OR/NOT-CONTAINS branch VO"
+                                        .to_owned(),
+                                )
+                                .into());
+                            }
+                        }
+                        sub.and_where(
+                            folder_by_value_child(parent, alias)
+                                .or(folder_items_exists(parent, alias)),
+                        );
                     }
                     EdgeKind::FolderItems => {
                         // The child is its own versioned object: bind its

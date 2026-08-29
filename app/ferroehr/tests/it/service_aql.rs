@@ -1887,3 +1887,165 @@ async fn folder_containment_resolves_references() {
         "no folder is without a referenced composition in its subtree"
     );
 }
+
+/// `FOLDER CONTAINS FOLDER` is the union edge (#2887): the by-value
+/// `folders` nesting AND the folder rows of an items-referenced
+/// `VERSIONED_FOLDER` (RM common master05 — `items` references name
+/// versioned objects "logically in this folder", with no target-type
+/// restriction). One reference hop; the referenced tree's own refs are
+/// reached by explicit chaining, as the second query pins.
+#[tokio::test]
+async fn folder_contains_folder_reaches_items_referenced_versioned_folders() {
+    let db = testkit::db().await.expect("testkit database");
+    let svc = FerroEhrService::new(db.pool());
+    let ehr_id = create_ehr(&svc).await;
+    let ehr_uuid = ferroehr::ids::EhrId(ehr_id.parse::<Uuid>().expect("ehr uuid"));
+
+    // cX is referenced from the SECOND versioned folder, so it is reachable
+    // from the directory only across the folder-reference hop.
+    let cx = uid_root(&create_comp(&svc, &ehr_id, "cX", 1.0).await);
+
+    // The directory goes in FIRST (a creation-FOLDER contribution takes the
+    // empty directory slot, so the additional hierarchy must come second),
+    // and its reference is added by update AFTER the target exists (a
+    // dangling local items ref is refused at commit).
+    let folder = |name: &str, items: Vec<Value>, folders: Vec<Value>| {
+        let mut f = json!({
+            "_type": "FOLDER",
+            "archetype_node_id": "openEHR-EHR-FOLDER.generic.v1",
+            "name": { "_type": "DV_TEXT", "value": name }
+        });
+        if !items.is_empty() {
+            f["items"] = Value::Array(items);
+        }
+        if !folders.is_empty() {
+            f["folders"] = Value::Array(folders);
+        }
+        f
+    };
+    let directory_v1 = folder("episodes", vec![], vec![folder("course-1", vec![], vec![])]);
+    let meta = svc
+        .create_directory(ehr_uuid, uv(&directory_v1, "249", None))
+        .await
+        .expect("create_directory");
+
+    // The second VERSIONED_FOLDER (an additional EHR.folders hierarchy — RM
+    // ehr master04 §Folders), committed through a CONTRIBUTION: a root with
+    // one by-value sub-folder and an items ref to cX.
+    let coded = |code: &str, value: &str| {
+        json!({
+            "_type": "DV_CODED_TEXT",
+            "value": value,
+            "defining_code": {
+                "_type": "CODE_PHRASE",
+                "terminology_id": { "_type": "TERMINOLOGY_ID", "value": "openehr" },
+                "code_string": code
+            }
+        })
+    };
+    let shared_plan = folder(
+        "shared-plan",
+        vec![folder_ref(&cx)],
+        vec![folder("plan-week-1", vec![], vec![])],
+    );
+    let contribution = json!({
+        "versions": [{
+            "commit_audit": {
+                "change_type": coded("249", "creation"),
+                "committer": { "_type": "PARTY_IDENTIFIED", "name": "folder author" }
+            },
+            "lifecycle_state": coded("532", "complete"),
+            "data": shared_plan
+        }],
+        "audit": {
+            "change_type": coded("249", "creation"),
+            "committer": { "_type": "PARTY_IDENTIFIED", "name": "folder author" }
+        }
+    });
+    let created = svc
+        .create_ehr_contribution(ehr_uuid, contribution)
+        .await
+        .expect("commit the second versioned folder");
+    let vf_ovid = created.body["versions"][0]["id"]["value"]
+        .as_str()
+        .expect("folder version id")
+        .to_owned();
+    let vf_root = uid_root(&vf_ovid);
+
+    // course-1's items now reference the second VERSIONED_FOLDER.
+    let vf_ref = json!({
+        "_type": "OBJECT_REF",
+        "namespace": "local",
+        "type": "VERSIONED_FOLDER",
+        "id": { "_type": "HIER_OBJECT_ID", "value": vf_root }
+    });
+    let directory_v2 = folder(
+        "episodes",
+        vec![],
+        vec![folder("course-1", vec![vf_ref], vec![])],
+    );
+    svc.update_directory(ehr_uuid, uv(&directory_v2, "251", Some(&meta.uid)))
+        .await
+        .expect("update_directory with the folder reference");
+
+    // The full (parent, child) folder pair set: by-value nesting inside each
+    // tree, plus the reference hop from any folder whose subtree items name
+    // the second VERSIONED_FOLDER — which contributes the referenced tree's
+    // root AND its by-value descendants.
+    let r = run_aql(
+        &svc,
+        "SELECT f1/name/value, f2/name/value \
+         FROM EHR e CONTAINS FOLDER f1 CONTAINS FOLDER f2",
+        ehr_scope(&ehr_id),
+    )
+    .await;
+    let pairs: std::collections::BTreeSet<(String, String)> = rows(&r)
+        .iter()
+        .map(|row| {
+            (
+                row[0].as_str().expect("parent name").to_owned(),
+                row[1].as_str().expect("child name").to_owned(),
+            )
+        })
+        .collect();
+    let expected: std::collections::BTreeSet<(String, String)> = [
+        ("episodes", "course-1"),
+        ("episodes", "shared-plan"),
+        ("episodes", "plan-week-1"),
+        ("course-1", "shared-plan"),
+        ("course-1", "plan-week-1"),
+        ("shared-plan", "plan-week-1"),
+    ]
+    .into_iter()
+    .map(|(a, b)| (a.to_owned(), b.to_owned()))
+    .collect();
+    assert_eq!(
+        pairs, expected,
+        "the union edge, one reference hop, no dupes"
+    );
+
+    // The chained hop composes: the referenced folder's own items refs are
+    // that folder's OWN containment edge.
+    let r = run_aql(
+        &svc,
+        "SELECT f2/name/value, c/uid/value \
+         FROM EHR e CONTAINS FOLDER f1 CONTAINS FOLDER f2 CONTAINS COMPOSITION c \
+         WHERE f1/name/value = 'course-1'",
+        ehr_scope(&ehr_id),
+    )
+    .await;
+    let chained: Vec<(String, String)> = rows(&r)
+        .iter()
+        .map(|row| {
+            (
+                row[0].as_str().expect("folder name").to_owned(),
+                uid_root(row[1].as_str().expect("composition uid")),
+            )
+        })
+        .collect();
+    assert_eq!(
+        chained,
+        vec![("shared-plan".to_owned(), cx.clone())],
+        "cX is reached from course-1 only across the explicit second hop"
+    );
+}

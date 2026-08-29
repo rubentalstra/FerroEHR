@@ -1591,20 +1591,26 @@ fn folder_contains_composition_resolves_items_refs() {
     );
 }
 
-/// `FOLDER CONTAINS FOLDER` is the by-value `folders` nesting inside one
-/// versioned folder tree — a STRICT descendant interval, or every folder
-/// would trivially contain itself.
+/// `FOLDER CONTAINS FOLDER` is the union edge (#2887): a by-value STRICT
+/// descendant (or every folder would trivially contain itself) OR any folder
+/// row of an items-referenced `VERSIONED_FOLDER` (RM common master05 — the
+/// `items` references name versioned objects "logically in this folder",
+/// with no target-type restriction).
 #[test]
-fn folder_contains_folder_is_a_strict_descendant() {
+fn folder_contains_folder_unites_subtree_and_items_reference() {
     let sql = build_sql("SELECT f2/name/value FROM EHR e CONTAINS FOLDER f1 CONTAINS FOLDER f2");
     assert!(
         sql.contains(r#""n2"."num" > "n1"."num""#)
             && sql.contains(r#""n2"."num" <= "n1"."num_cap""#),
-        "strict interval, no self-pair: {sql}"
+        "the by-value branch is a strict interval, no self-pair: {sql}"
     );
     assert!(
-        !sql.contains("BETWEEN"),
-        "the inclusive self-matching interval is gone: {sql}"
+        sql.contains(") OR EXISTS") || sql.contains(") OR (EXISTS"),
+        "the by-value branch is united with the items-reference branch: {sql}"
+    );
+    assert!(
+        sql.contains("jsonb_array_elements") && sql.contains("'items'"),
+        "the reference branch is the items lookup: {sql}"
     );
 }
 
