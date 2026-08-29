@@ -87,6 +87,7 @@ full = [
 [dev-dependencies]
 serde_json.workspace = true
 insta.workspace = true   # canonical-output determinism snapshots (the contract gate)
+testkit = { path = "../../tools/testkit" }   # the shared canonical-json-literals gate scanner (path-only: stripped at packaging)
 sha2.workspace = true    # corpus manifest hashing for the determinism gate
 # The `flat` module's async WebTemplate cache tests (`flat::cache`) run under a
 # tokio runtime.

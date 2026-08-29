@@ -24,13 +24,12 @@
 use std::sync::OnceLock;
 
 use ferroehr::service::FerroEhrService;
-use ferroehr::service::version_update::{change_type_coded, lifecycle_state_coded};
 use ferroehr::telemetry::build_info::BuildInfo;
 use ferroehr::telemetry::metrics;
 use openehr_base::prelude::ObjectVersionId;
-use openehr_its::rest::generated::common::{UpdateAudit, UpdateAuditData, UpdateVersion};
-use openehr_rm::prelude::PartyProxy;
-use serde_json::{Value, json};
+use serde_json::json;
+
+use crate::fixtures::{change_type, committer, composition, uv, vo_of};
 
 /// The process-wide meter provider + its Prometheus registry, built through the
 /// real entry point so the instruments and their bucket views are the shipped
@@ -61,89 +60,6 @@ fn committed(registry: &prometheus::Registry, change_type: &str) -> u64 {
         .filter(|l| l.starts_with("compositions_committed_total{") && l.contains(&needle))
         .find_map(|l| l.rsplit(' ').next().and_then(|v| v.parse::<u64>().ok()))
         .unwrap_or(0)
-}
-
-fn committer(name: &str) -> Value {
-    json!({ "_type": "PARTY_IDENTIFIED", "name": name })
-}
-
-/// The wire `change_type` `DV_CODED_TEXT` of a CONTRIBUTION version item.
-fn change_type(code: &str, value: &str) -> Value {
-    json!({
-        "_type": "DV_CODED_TEXT", "value": value,
-        "defining_code": {
-            "_type": "CODE_PHRASE",
-            "terminology_id": { "_type": "TERMINOLOGY_ID", "value": "openehr" },
-            "code_string": code
-        }
-    })
-}
-
-/// The SM `UPDATE_VERSION` commit envelope for a bare-RM composition write.
-fn uv<T: serde::de::DeserializeOwned>(
-    data: &Value,
-    change_code: &str,
-    preceding: Option<&str>,
-) -> UpdateVersion<T> {
-    UpdateVersion {
-        preceding_version_uid: preceding.map(|p| p.parse().expect("OBJECT_VERSION_ID")),
-        lifecycle_state: lifecycle_state_coded("532"),
-        attestations: None,
-        data: openehr_its::json::from_canonical_value(data)
-            .expect("the fixture commit body decodes as its RM type"),
-        commit_audit: UpdateAudit::UpdateAudit(UpdateAuditData {
-            _type: None,
-            system_id: None,
-            change_type: change_type_coded(change_code),
-            description: None,
-            committer: openehr_its::json::from_canonical_value::<PartyProxy>(&committer(
-                "metrics tester",
-            ))
-            .expect("committer"),
-        }),
-        signature: None,
-    }
-}
-
-/// A minimal *valid* RM COMPOSITION.
-fn composition(name: &str) -> Value {
-    json!({
-        "_type": "COMPOSITION",
-        "archetype_node_id": "openEHR-EHR-COMPOSITION.encounter.v1",
-        "archetype_details": {
-            "_type": "ARCHETYPED",
-            "archetype_id": {
-                "_type": "ARCHETYPE_ID",
-                "value": "openEHR-EHR-COMPOSITION.encounter.v1"
-            },
-            "rm_version": "1.2.0"
-        },
-        "name": { "_type": "DV_TEXT", "value": name },
-        "language": {
-            "_type": "CODE_PHRASE",
-            "terminology_id": { "_type": "TERMINOLOGY_ID", "value": "ISO_639-1" },
-            "code_string": "en"
-        },
-        "territory": {
-            "_type": "CODE_PHRASE",
-            "terminology_id": { "_type": "TERMINOLOGY_ID", "value": "ISO_3166-1" },
-            "code_string": "NL"
-        },
-        "category": {
-            "_type": "DV_CODED_TEXT",
-            "value": "event",
-            "defining_code": {
-                "_type": "CODE_PHRASE",
-                "terminology_id": { "_type": "TERMINOLOGY_ID", "value": "openehr" },
-                "code_string": "433"
-            }
-        },
-        "composer": { "_type": "PARTY_IDENTIFIED", "name": "metrics tester" }
-    })
-}
-
-fn vo_of(ovid: &str) -> &str {
-    ovid.split("::").next().expect("object id part")
 }
 
 /// One test drives every phase in a single process, so the counter deltas are

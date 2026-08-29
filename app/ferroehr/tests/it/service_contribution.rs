@@ -15,7 +15,6 @@
 
 #![expect(
     clippy::expect_used,
-    clippy::unwrap_used,
     clippy::indexing_slicing,
     reason = "clippy's in-test lint scoping (clippy.toml `allow-*-in-tests`) only \
               reaches `#[test]`-annotated functions, so it misses this integration \
@@ -33,88 +32,10 @@ use ferroehr::service::error::ServiceError;
 use ferroehr::service::status::{CallStatusType, SmError};
 
 use ferroehr::service::list::Page;
-use ferroehr::service::version_update::{change_type_coded, lifecycle_state_coded};
-use openehr_its::rest::generated::common::{UpdateAudit, UpdateAuditData, UpdateVersion};
-use openehr_rm::prelude::PartyProxy;
+use ferroehr::service::version_update::lifecycle_state_coded;
 use serde_json::{Value, json};
 
-/// The SM `UPDATE_VERSION` commit envelope for a bare-RM composition write.
-fn uv<T: serde::de::DeserializeOwned>(
-    data: &Value,
-    change_code: &str,
-    preceding: Option<&str>,
-) -> UpdateVersion<T> {
-    UpdateVersion {
-        preceding_version_uid: preceding.map(|p| p.parse().expect("OBJECT_VERSION_ID")),
-        lifecycle_state: lifecycle_state_coded("532"),
-        attestations: None,
-        data: openehr_its::json::from_canonical_value(data)
-            .expect("the fixture commit body decodes as its RM type"),
-        commit_audit: UpdateAudit::UpdateAudit(UpdateAuditData {
-            _type: None,
-            system_id: None,
-            change_type: change_type_coded(change_code),
-            description: None,
-            committer: openehr_its::json::from_canonical_value::<PartyProxy>(
-                &json!({ "_type": "PARTY_IDENTIFIED", "name": "conformance tester" }),
-            )
-            .expect("committer"),
-        }),
-        signature: None,
-    }
-}
-
-/// A minimal *valid* RM COMPOSITION (mirrors the signing-test fixture).
-fn composition(name: &str) -> Value {
-    json!({
-        "_type": "COMPOSITION",
-        "archetype_node_id": "openEHR-EHR-COMPOSITION.encounter.v1",
-        "archetype_details": {
-            "_type": "ARCHETYPED",
-            "archetype_id": {
-                "_type": "ARCHETYPE_ID",
-                "value": "openEHR-EHR-COMPOSITION.encounter.v1"
-            },
-            "rm_version": "1.2.0"
-        },
-        "name": { "_type": "DV_TEXT", "value": name },
-        "language": {
-            "_type": "CODE_PHRASE",
-            "terminology_id": { "_type": "TERMINOLOGY_ID", "value": "ISO_639-1" },
-            "code_string": "en"
-        },
-        "territory": {
-            "_type": "CODE_PHRASE",
-            "terminology_id": { "_type": "TERMINOLOGY_ID", "value": "ISO_3166-1" },
-            "code_string": "NL"
-        },
-        "category": {
-            "_type": "DV_CODED_TEXT",
-            "value": "event",
-            "defining_code": {
-                "_type": "CODE_PHRASE",
-                "terminology_id": { "_type": "TERMINOLOGY_ID", "value": "openehr" },
-                "code_string": "433"
-            }
-        },
-        "composer": { "_type": "PARTY_IDENTIFIED", "name": "conformance tester" }
-    })
-}
-
-fn committer(name: &str) -> Value {
-    json!({ "_type": "PARTY_IDENTIFIED", "name": name })
-}
-
-fn change_type(code: &str, value: &str) -> Value {
-    json!({
-        "_type": "DV_CODED_TEXT", "value": value,
-        "defining_code": {
-            "_type": "CODE_PHRASE",
-            "terminology_id": { "_type": "TERMINOLOGY_ID", "value": "openehr" },
-            "code_string": code
-        }
-    })
-}
+use crate::fixtures::{change_type, committer, composition, uv, vo_of};
 
 /// A wire `UPDATE_ATTESTATION` partial (the server completes it).
 fn attestation(reason: &str, is_pending: bool) -> Value {
@@ -150,10 +71,6 @@ fn first_version_uid(contribution: &Value) -> String {
         .to_owned()
 }
 
-fn vo_of(ovid: &str) -> String {
-    ovid.split("::").next().unwrap().to_owned()
-}
-
 #[tokio::test]
 async fn accompanying_attestation_then_standalone_666_attestation() {
     let db = testkit::db().await.expect("testkit database");
@@ -184,7 +101,7 @@ async fn accompanying_attestation_then_standalone_666_attestation() {
     let vo_id = vo_of(&ovid_v1);
 
     // Reading the ORIGINAL_VERSION exposes the completed ATTESTATION.
-    let ov = read_version(&svc, &ehr_id, &vo_id, &ovid_v1).await;
+    let ov = read_version(&svc, &ehr_id, vo_id, &ovid_v1).await;
     let atts = ov["attestations"].as_array().expect("attestations array");
     assert_eq!(atts.len(), 1, "one attestation after step 1");
     let att = &atts[0];
@@ -236,7 +153,7 @@ async fn accompanying_attestation_then_standalone_666_attestation() {
     );
 
     // The ORIGINAL_VERSION now lists both attestations.
-    let ov = read_version(&svc, &ehr_id, &vo_id, &ovid_v1).await;
+    let ov = read_version(&svc, &ehr_id, vo_id, &ovid_v1).await;
     assert_eq!(
         ov["attestations"].as_array().map(Vec::len),
         Some(2),
@@ -712,7 +629,7 @@ async fn contribution_honors_the_five_lifecycle_states() {
         .await
         .expect("create incomplete (553) → 201");
     let ovid_v1 = first_version_uid(&created.body);
-    let vo_id = vo_of(&ovid_v1);
+    let vo_id = vo_of(&ovid_v1).to_owned();
 
     let ov1 = read_version(&svc, &ehr_id, &vo_id, &ovid_v1).await;
     assert_eq!(
@@ -905,7 +822,7 @@ async fn version_commit_audit_defaults_from_the_contribution_audit() {
     for v in created.body["versions"].as_array().expect("versions") {
         let ovid = v["id"]["value"].as_str().expect("ovid").to_owned();
         let vo = vo_of(&ovid);
-        let ov = read_version(&svc, &ehr_id, &vo, &ovid).await;
+        let ov = read_version(&svc, &ehr_id, vo, &ovid).await;
         let sys = ov["commit_audit"]["system_id"]
             .as_str()
             .expect("system_id")
@@ -1489,7 +1406,7 @@ async fn incomplete_admits_missing_composition_data_but_never_wrong_data() {
         .expect("a 553 commit accepts absent mandatory data (master06 §Incomplete Content)");
     let ovid = first_version_uid(&created.body);
     assert_eq!(
-        lifecycle_code_of(&svc, &ehr_id, &vo_of(&ovid), &ovid).await,
+        lifecycle_code_of(&svc, &ehr_id, vo_of(&ovid), &ovid).await,
         "553"
     );
 
@@ -1730,7 +1647,7 @@ async fn merge_provenance_is_refused_on_the_commit_wire() {
         .await
         .expect("the same member without the undeclared property commits");
     let v2 = first_version_uid(&committed.body);
-    let ov = read_version(&svc, &ehr_id, &vo_of(&v2), &v2).await;
+    let ov = read_version(&svc, &ehr_id, vo_of(&v2), &v2).await;
     assert!(
         ov.get("other_input_version_uids").is_none(),
         "a locally committed version carries no merge provenance, got {ov:?}"
@@ -1828,7 +1745,7 @@ async fn foreign_version_identity_is_refused_on_the_commit_wire() {
         .await
         .expect("the same member without the undeclared keys commits");
     let v2 = first_version_uid(&committed.body);
-    let ov = read_version(&svc, &ehr_id, &vo_of(&v2), &v2).await;
+    let ov = read_version(&svc, &ehr_id, vo_of(&v2), &v2).await;
     assert_eq!(
         ov["_type"], "ORIGINAL_VERSION",
         "a locally committed version is an ORIGINAL_VERSION, got {ov:?}"

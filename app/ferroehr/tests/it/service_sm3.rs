@@ -20,7 +20,8 @@ use serde_json::{Value, json};
 use sqlx::PgPool;
 use uuid::Uuid;
 
-use crate::admin_fixture::{uid, uv, vo_of};
+use crate::fixtures::uv;
+use crate::fixtures::{uid, vo_of};
 use crate::typed_body::typed;
 use ferroehr::service::FerroEhrService;
 use ferroehr::service::ehr_index::types::{

@@ -33,7 +33,6 @@
 )]
 
 use std::collections::BTreeMap;
-use std::path::{Path, PathBuf};
 
 use openehr_its::flat::convert::{composition_from_flat, composition_to_flat};
 use openehr_its::flat::webtemplate::builder::build_web_template;
@@ -44,94 +43,6 @@ use serde_json::Value;
 /// Fixed `ctx/time` default for the FLAT build direction (ITS-REST
 /// simplified_formats master04 §Context) so round-trips are deterministic.
 const NOW: &str = "2024-01-01T00:00:00Z";
-
-fn manifest_dir() -> PathBuf {
-    PathBuf::from(env!("CARGO_MANIFEST_DIR"))
-}
-
-/// The canonical-JSON composition corpus vendored in `openehr-its`.
-fn composition_dir() -> PathBuf {
-    manifest_dir().join("../openehr-its/tests/vendor/openehr_sdk/composition/canonical_json")
-}
-
-/// All directories that hold `.opt` operational templates for pairing.
-fn opt_dirs() -> Vec<PathBuf> {
-    vec![
-        manifest_dir().join("tests/fixtures/sdk"),
-        manifest_dir().join("tests/fixtures/better"),
-        manifest_dir().join("../../app/ferroehr/tests/resources/service"),
-    ]
-}
-
-fn opt_files(dir: &Path) -> Vec<PathBuf> {
-    let mut out = Vec::new();
-    let Ok(entries) = std::fs::read_dir(dir) else {
-        return out;
-    };
-    for entry in entries.flatten() {
-        let path = entry.path();
-        if path.is_dir() {
-            out.extend(opt_files(&path));
-        } else if path.extension().is_some_and(|e| e == "opt") {
-            out.push(path);
-        }
-    }
-    out
-}
-
-/// Build `templateId → WebTemplate` for every OPT the `opt14` parser can read.
-fn web_templates() -> BTreeMap<String, WebTemplate> {
-    let mut out = BTreeMap::new();
-    for dir in opt_dirs() {
-        for path in opt_files(&dir) {
-            let Ok(xml) = std::fs::read_to_string(&path) else {
-                continue;
-            };
-            let Ok(opt) = opt14::from_xml(&xml) else {
-                continue;
-            };
-            if let Ok(wt) = build_web_template(&opt) {
-                out.entry(wt.template_id.clone()).or_insert(wt);
-            }
-        }
-    }
-    out
-}
-
-/// Load every canonical COMPOSITION (with its template id) from the corpus.
-fn compositions() -> Vec<(String, String, Value)> {
-    let mut out = Vec::new();
-    let Ok(entries) = std::fs::read_dir(composition_dir()) else {
-        return out;
-    };
-    for entry in entries.flatten() {
-        let path = entry.path();
-        if path.extension().is_none_or(|e| e != "json") {
-            continue;
-        }
-        let Ok(text) = std::fs::read_to_string(crate::common::twinned(&path)) else {
-            continue;
-        };
-        let Ok(value) = serde_json::from_str::<Value>(&text) else {
-            continue;
-        };
-        if value.get("_type").and_then(Value::as_str) != Some("COMPOSITION") {
-            continue;
-        }
-        let Some(tid) = value
-            .pointer("/archetype_details/template_id/value")
-            .and_then(Value::as_str)
-        else {
-            continue;
-        };
-        let Some(name) = path.file_name().map(|n| n.to_string_lossy().into_owned()) else {
-            continue;
-        };
-        out.push((name, tid.to_owned(), value));
-    }
-    out.sort_by(|a, b| a.0.cmp(&b.0));
-    out
-}
 
 fn sorted(m: &serde_json::Map<String, Value>) -> BTreeMap<String, Value> {
     m.iter().map(|(k, v)| (k.clone(), v.clone())).collect()
@@ -252,8 +163,8 @@ fn eprint_diagnostics(label: &str, lines: &[String]) {
 
 #[test]
 fn flat_roundtrip_stable() {
-    let wts = web_templates();
-    let comps = compositions();
+    let wts = crate::common::web_templates();
+    let comps = crate::common::compositions();
     assert!(!wts.is_empty(), "no web templates built");
     assert!(!comps.is_empty(), "no canonical compositions found");
 
@@ -294,12 +205,14 @@ fn flat_roundtrip_stable() {
 // ── insta goldens ───────────────────────────────────────────────────────────────
 
 fn golden_flat(comp_file: &str, template_id: &str, snap: &str) {
-    let wts = web_templates();
+    let wts = crate::common::web_templates();
     let wt = wts
         .get(template_id)
         .unwrap_or_else(|| panic!("no web template for {template_id:?}"));
-    let text = std::fs::read_to_string(crate::common::twinned(&composition_dir().join(comp_file)))
-        .unwrap_or_else(|e| panic!("read {comp_file}: {e}"));
+    let text = std::fs::read_to_string(crate::common::twinned(
+        &crate::common::composition_dir().join(comp_file),
+    ))
+    .unwrap_or_else(|e| panic!("read {comp_file}: {e}"));
     let comp: Value =
         serde_json::from_str(&text).unwrap_or_else(|e| panic!("parse {comp_file}: {e}"));
     let flat =
@@ -326,10 +239,10 @@ fn golden_minimal_observation_flat() {
 
 #[test]
 fn demo_vitals_flat_key_shape() {
-    let wts = web_templates();
+    let wts = crate::common::web_templates();
     let wt = wts.get("Demo Vitals").expect("Demo Vitals web template");
     let text = std::fs::read_to_string(crate::common::twinned(
-        &composition_dir().join("demo_vitals_352.json"),
+        &crate::common::composition_dir().join("demo_vitals_352.json"),
     ))
     .unwrap();
     let comp: Value = serde_json::from_str(&text).unwrap();
@@ -363,8 +276,10 @@ fn demo_vitals_flat_key_shape() {
 // ── closed-gap assertions ─────────────────────────────────────────────────────
 
 fn load(comp_file: &str) -> Value {
-    let text = std::fs::read_to_string(crate::common::twinned(&composition_dir().join(comp_file)))
-        .unwrap_or_else(|e| panic!("read {comp_file}: {e}"));
+    let text = std::fs::read_to_string(crate::common::twinned(
+        &crate::common::composition_dir().join(comp_file),
+    ))
+    .unwrap_or_else(|e| panic!("read {comp_file}: {e}"));
     serde_json::from_str(&text).unwrap_or_else(|e| panic!("parse {comp_file}: {e}"))
 }
 
@@ -378,7 +293,7 @@ fn is_valid_rm(rm: &Value) -> bool {
 /// with the mandatory `ACTIVITY.action_archetype_id`.
 #[test]
 fn instruction_activity_from_flat_is_valid_rm() {
-    let wts = web_templates();
+    let wts = crate::common::web_templates();
     let wt = wts
         .get("minimal_instruction.en.v1")
         .expect("minimal_instruction web template");
@@ -403,7 +318,7 @@ fn ctx_participation_shortcuts_round_trip() {
     // (`context/_participation:i|…`); the master06 ctx/ shortcuts remain
     // accepted on input (they are lossy — no scheme key — so they are not
     // the emission form).
-    let wts = web_templates();
+    let wts = crate::common::web_templates();
     let wt = wts
         .get("minimal_observation.en.v1")
         .expect("minimal_observation web template");
@@ -460,7 +375,7 @@ fn ctx_health_care_facility_round_trips() {
     // Output uses the lossless master05 §EVENT_CONTEXT path row
     // (`context/_health_care_facility|…` — it carries |id_scheme, which the
     // master06 ctx shortcut cannot); the ctx/ shortcut stays input-only.
-    let wts = web_templates();
+    let wts = crate::common::web_templates();
     let Some(wt) = wts.get("cardinality_of_section") else {
         return; // template not present in this checkout
     };
@@ -516,7 +431,7 @@ fn ctx_health_care_facility_round_trips() {
 /// valid RM (the previously-broken `all_types` fixtures).
 #[test]
 fn multimedia_and_parsable_leaves_are_valid_rm() {
-    let wts = web_templates();
+    let wts = crate::common::web_templates();
     let wt = wts
         .get("minimal_action_3.en.v1")
         .expect("a web template with a DV_MULTIMEDIA leaf");
@@ -542,7 +457,7 @@ fn terse_coded_text_string_is_rejected() {
     // |code/|value/|terminology suffixes (+ |other, master04 §Open
     // Value-Sets). A bare string on a closed coded leaf is rejected, never
     // silently coerced.
-    let wts = web_templates();
+    let wts = crate::common::web_templates();
     let wt = wts
         .get("Corona_Anamnese")
         .expect("Corona_Anamnese web template");
@@ -953,7 +868,7 @@ fn dv_leaf_count(v: &Value) -> usize {
 /// were lost that way). master05 §§ACTION `/ism_transition`, ISM_TRANSITION.
 #[test]
 fn action_careflow_ism_transition_wins_over_direct_path() {
-    let wts = web_templates();
+    let wts = crate::common::web_templates();
     let Some(wt) = wts.get("International Patient Summary") else {
         return; // ips.v0 OPT not present in this checkout
     };

@@ -22,92 +22,16 @@
               Rust Book ch11)"
 )]
 
-use serde_json::{Value, json};
 use sqlx::PgPool;
 use uuid::Uuid;
-
-use openehr_its::rest::generated::common::{UpdateAudit, UpdateAuditData, UpdateVersion};
-use openehr_rm::prelude::PartyProxy;
 
 use ferroehr::ids::EhrId;
 use ferroehr::service::FerroEhrService;
 use ferroehr::service::admin::integrity::StorageParityDefect;
-use ferroehr::service::version_update::{change_type_coded, lifecycle_state_coded};
 
-/// The SM `UPDATE_VERSION` commit envelope for a bare-RM write.
-fn uv<T: serde::de::DeserializeOwned>(
-    data: &Value,
-    change_code: &str,
-    preceding: Option<&str>,
-) -> UpdateVersion<T> {
-    UpdateVersion {
-        preceding_version_uid: preceding.map(|p| p.parse().expect("OBJECT_VERSION_ID")),
-        lifecycle_state: lifecycle_state_coded("532"),
-        attestations: None,
-        data: openehr_its::json::from_canonical_value(data)
-            .expect("the fixture commit body decodes as its RM type"),
-        commit_audit: UpdateAudit::UpdateAudit(UpdateAuditData {
-            _type: None,
-            system_id: None,
-            change_type: change_type_coded(change_code),
-            description: None,
-            committer: openehr_its::json::from_canonical_value::<PartyProxy>(
-                &json!({ "_type": "PARTY_IDENTIFIED", "name": "conformance tester" }),
-            )
-            .expect("committer"),
-        }),
-        signature: None,
-    }
-}
-
-/// A minimal *valid* RM COMPOSITION: `language`, `territory`, `category` and
-/// `composer` are all `1..1` (RM ehr, COMPOSITION class), so the typed RM
-/// validation rejects a fixture without them.
-fn composition(name: &str) -> Value {
-    json!({
-        "_type": "COMPOSITION",
-        "archetype_node_id": "openEHR-EHR-COMPOSITION.encounter.v1",
-        "archetype_details": {
-            "_type": "ARCHETYPED",
-            "archetype_id": {
-                "_type": "ARCHETYPE_ID",
-                "value": "openEHR-EHR-COMPOSITION.encounter.v1"
-            },
-            "rm_version": "1.2.0"
-        },
-        "name": { "_type": "DV_TEXT", "value": name },
-        "language": {
-            "_type": "CODE_PHRASE",
-            "terminology_id": { "_type": "TERMINOLOGY_ID", "value": "ISO_639-1" },
-            "code_string": "en"
-        },
-        "territory": {
-            "_type": "CODE_PHRASE",
-            "terminology_id": { "_type": "TERMINOLOGY_ID", "value": "ISO_3166-1" },
-            "code_string": "NL"
-        },
-        "category": {
-            "_type": "DV_CODED_TEXT",
-            "value": "event",
-            "defining_code": {
-                "_type": "CODE_PHRASE",
-                "terminology_id": { "_type": "TERMINOLOGY_ID", "value": "openehr" },
-                "code_string": "433"
-            }
-        },
-        "composer": { "_type": "PARTY_IDENTIFIED", "name": "conformance tester" }
-    })
-}
+use crate::fixtures::{composition, folder, uv};
 
 /// A minimal *valid* root FOLDER (a folder-hierarchy root).
-fn folder(name: &str) -> Value {
-    json!({
-        "_type": "FOLDER",
-        "archetype_node_id": "openEHR-EHR-FOLDER.generic.v1",
-        "name": { "_type": "DV_TEXT", "value": name }
-    })
-}
-
 /// An EHR carrying one committed COMPOSITION — three content versions in all
 /// (`EHR_STATUS`, `EHR_ACCESS`, the COMPOSITION), every one of which the sweep
 /// reads.

@@ -369,6 +369,25 @@ struct AttestationRow {
     data: Value,
 }
 
+impl AttestationRow {
+    /// One exported attestation from its `vo_attestation_all` row — the one
+    /// mapping every export path shares.
+    fn from_row(r: &sqlx::postgres::PgRow) -> Result<Self, ServiceError> {
+        Ok(Self {
+            id: r.try_get("id")?,
+            vo_id: r.try_get("vo_id")?,
+            sys_version: r.try_get("sys_version")?,
+            contribution_id: r.try_get("contribution_id")?,
+            time_committed: r
+                .try_get::<jiff_sqlx::Timestamp, _>("time_committed")?
+                .to_jiff()
+                .to_string(),
+            at_committal: r.try_get("at_committal")?,
+            data: r.try_get("data")?,
+        })
+    }
+}
+
 #[derive(Debug, Serialize, Deserialize)]
 struct FolderRankRow {
     rank: i32,
@@ -473,6 +492,22 @@ struct ItemTagRow {
     value: Option<String>,
     target_path: Option<String>,
     created_at: String,
+}
+
+impl ItemTagRow {
+    /// One exported tag from its `item_tag` row — the one mapping every
+    /// export path shares.
+    fn from_row(r: &sqlx::postgres::PgRow) -> Result<Self, ServiceError> {
+        Ok(Self {
+            id: r.try_get("id")?,
+            target_vo_id: r.try_get("target_vo_id")?,
+            target_type: r.try_get("target_type")?,
+            key: r.try_get("key")?,
+            value: r.try_get("value")?,
+            target_path: r.try_get("target_path")?,
+            created_at: r.try_get("created_at")?,
+        })
+    }
 }
 
 #[derive(Debug, Serialize, Deserialize)]
@@ -1764,18 +1799,7 @@ impl FerroEhrService {
         .await?;
         let mut attestations = Vec::with_capacity(attestation_rows.len());
         for r in attestation_rows {
-            attestations.push(AttestationRow {
-                id: r.try_get("id")?,
-                vo_id: r.try_get("vo_id")?,
-                sys_version: r.try_get("sys_version")?,
-                contribution_id: r.try_get("contribution_id")?,
-                time_committed: r
-                    .try_get::<jiff_sqlx::Timestamp, _>("time_committed")?
-                    .to_jiff()
-                    .to_string(),
-                at_committal: r.try_get("at_committal")?,
-                data: r.try_get("data")?,
-            });
+            attestations.push(AttestationRow::from_row(&r)?);
         }
 
         let tag_rows = sqlx::query(
@@ -1788,15 +1812,7 @@ impl FerroEhrService {
         .await?;
         let mut item_tags = Vec::with_capacity(tag_rows.len());
         for r in tag_rows {
-            item_tags.push(ItemTagRow {
-                id: r.try_get("id")?,
-                target_vo_id: r.try_get("target_vo_id")?,
-                target_type: r.try_get("target_type")?,
-                key: r.try_get("key")?,
-                value: r.try_get("value")?,
-                target_path: r.try_get("target_path")?,
-                created_at: r.try_get("created_at")?,
-            });
+            item_tags.push(ItemTagRow::from_row(&r)?);
         }
 
         let archive_rows = sqlx::query(
@@ -1941,44 +1957,7 @@ impl FerroEhrService {
         .await?;
         let mut versions = Vec::with_capacity(version_rows.len());
         for r in version_rows {
-            let vo_id: VoId = r.try_get("vo_id")?;
-            let sys_version: i32 = r.try_get("sys_version")?;
-            let lifecycle_state: String = r.try_get("lifecycle_state")?;
-            // A deleted version has no node rows; its body stays `null`. An
-            // export covers the WHOLE repository, so the content is read across
-            // both storage tiers (`crate::storage::version_repo::tier`).
-            // NOTE: no openEHR spec governs the `spec_profile` gate — our own
-            // design/extension: a dump replicates stored bytes for restore
-            // rather than serving an RM body, so it reads ungated.
-            let body = if lifecycle_state == DELETED_LIFECYCLE {
-                Value::Null
-            } else {
-                version_repo::read::stored_body_all(&self.pool, vo_id, sys_version).await?
-            };
-            versions.push(VersionRecord {
-                vo_id,
-                kind: r.try_get("kind")?,
-                sys_version,
-                trunk_version: r.try_get("trunk_version")?,
-                branch_number: r.try_get("branch_number")?,
-                branch_version: r.try_get("branch_version")?,
-                preceding_version_uid: r.try_get("preceding_version_uid")?,
-                other_input_version_uids: r.try_get("other_input_version_uids")?,
-                sys_period_lower: r.try_get("lo")?,
-                sys_period_upper: r.try_get("hi")?,
-                lifecycle_state,
-                contribution_id: r.try_get("contribution_id")?,
-                audit_id: r.try_get("audit_id")?,
-                template_id: r.try_get("template_id")?,
-                signature: r.try_get("signature")?,
-                signature_client_supplied: r.try_get("signature_client_supplied")?,
-                creating_system_id: r.try_get("creating_system_id")?,
-                wrapped_original: r.try_get("wrapped_original")?,
-                body,
-                // Filled in by `externalize_version_documents` when the export
-                // is `openehr_canonical_xml`.
-                body_entry: None,
-            });
+            versions.push(self.version_record_of(&r).await?);
         }
 
         let folder_rank_rows =
@@ -2003,15 +1982,7 @@ impl FerroEhrService {
         .await?;
         let mut item_tags = Vec::with_capacity(tag_rows.len());
         for r in tag_rows {
-            item_tags.push(ItemTagRow {
-                id: r.try_get("id")?,
-                target_vo_id: r.try_get("target_vo_id")?,
-                target_type: r.try_get("target_type")?,
-                key: r.try_get("key")?,
-                value: r.try_get("value")?,
-                target_path: r.try_get("target_path")?,
-                created_at: r.try_get("created_at")?,
-            });
+            item_tags.push(ItemTagRow::from_row(&r)?);
         }
 
         let archive_rows = sqlx::query(
@@ -2042,18 +2013,7 @@ impl FerroEhrService {
         .await?;
         let mut attestations = Vec::with_capacity(attestation_rows.len());
         for r in attestation_rows {
-            attestations.push(AttestationRow {
-                id: r.try_get("id")?,
-                vo_id: r.try_get("vo_id")?,
-                sys_version: r.try_get("sys_version")?,
-                contribution_id: r.try_get("contribution_id")?,
-                time_committed: r
-                    .try_get::<jiff_sqlx::Timestamp, _>("time_committed")?
-                    .to_jiff()
-                    .to_string(),
-                at_committal: r.try_get("at_committal")?,
-                data: r.try_get("data")?,
-            });
+            attestations.push(AttestationRow::from_row(&r)?);
         }
 
         Ok(EhrRecord {

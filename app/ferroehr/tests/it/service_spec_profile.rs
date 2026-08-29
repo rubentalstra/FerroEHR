@@ -35,46 +35,18 @@ use ferroehr::service::FerroEhrService;
 use ferroehr::service::admin::types::ExportSpec;
 use ferroehr::service::query::request::AqlQueryRequest;
 use ferroehr::service::status::{CallStatusType, SmError};
-use ferroehr::service::version_update::{change_type_coded, lifecycle_state_coded};
-use openehr_its::rest::generated::common::{UpdateAudit, UpdateAuditData, UpdateVersion};
-use openehr_rm::prelude::{Composition, PartyProxy};
 
-/// A minimal valid RM COMPOSITION carrying the given `content` list.
+use crate::fixtures::uv;
+
+/// The shared minimal valid RM COMPOSITION, carrying the given `content` list.
+///
+/// The generation delta these tests probe lives entirely in `content`, so the
+/// suite adds it to the shared fixture rather than restating the mandatory
+/// attributes.
 fn composition(name: &str, content: &Value) -> Value {
-    json!({
-        "_type": "COMPOSITION",
-        "archetype_node_id": "openEHR-EHR-COMPOSITION.encounter.v1",
-        "archetype_details": {
-            "_type": "ARCHETYPED",
-            "archetype_id": {
-                "_type": "ARCHETYPE_ID",
-                "value": "openEHR-EHR-COMPOSITION.encounter.v1"
-            },
-            "rm_version": "1.2.0"
-        },
-        "name": { "_type": "DV_TEXT", "value": name },
-        "language": {
-            "_type": "CODE_PHRASE",
-            "terminology_id": { "_type": "TERMINOLOGY_ID", "value": "ISO_639-1" },
-            "code_string": "en"
-        },
-        "territory": {
-            "_type": "CODE_PHRASE",
-            "terminology_id": { "_type": "TERMINOLOGY_ID", "value": "ISO_3166-1" },
-            "code_string": "NL"
-        },
-        "category": {
-            "_type": "DV_CODED_TEXT",
-            "value": "event",
-            "defining_code": {
-                "_type": "CODE_PHRASE",
-                "terminology_id": { "_type": "TERMINOLOGY_ID", "value": "openehr" },
-                "code_string": "433"
-            }
-        },
-        "composer": { "_type": "PARTY_IDENTIFIED", "name": "conformance tester" },
-        "content": content
-    })
+    let mut composition = crate::fixtures::composition(name);
+    composition["content"] = content.clone();
+    composition
 }
 
 /// A COMPOSITION whose content both generation sets express.
@@ -113,28 +85,6 @@ fn development_only_composition() -> Value {
     )
 }
 
-/// The SM `UPDATE_VERSION` commit envelope for a bare-RM COMPOSITION create.
-fn create_version(data: &Value) -> UpdateVersion<Composition> {
-    UpdateVersion {
-        preceding_version_uid: None,
-        lifecycle_state: lifecycle_state_coded("532"),
-        attestations: None,
-        data: openehr_its::json::from_canonical_value(data)
-            .expect("the fixture commit body decodes as its RM type"),
-        commit_audit: UpdateAudit::UpdateAudit(UpdateAuditData {
-            _type: None,
-            system_id: None,
-            change_type: change_type_coded("249"),
-            description: None,
-            committer: openehr_its::json::from_canonical_value::<PartyProxy>(
-                &json!({ "_type": "PARTY_IDENTIFIED", "name": "conformance tester" }),
-            )
-            .expect("committer"),
-        }),
-        signature: None,
-    }
-}
-
 /// The stored `vo_version.stable_compatible` of an object's only version.
 async fn stamp(pool: &sqlx::PgPool, vo_id: VoId) -> Option<bool> {
     sqlx::query_scalar::<_, Option<bool>>(
@@ -155,7 +105,7 @@ fn stable_service(pool: sqlx::PgPool) -> FerroEhrService {
 async fn commit(svc: &FerroEhrService, body: &Value) -> (EhrId, VoId) {
     let ehr_id = svc.create_ehr(None).await.expect("ehr_create");
     let committed = svc
-        .create_composition(ehr_id, create_version(body))
+        .create_composition(ehr_id, uv(body, "249", None))
         .await
         .expect("composition create");
     (ehr_id, committed.vo_id)
@@ -703,7 +653,7 @@ async fn the_fhir_read_facade_is_gated_by_the_spec_profile() {
         .await
         .expect("the inbound ingest commits the clean composition");
     let planted = svc
-        .create_composition(ehr_id, create_version(&development_only_under_template()))
+        .create_composition(ehr_id, uv(&development_only_under_template(), "249", None))
         .await
         .expect("the development profile commits the development-only body");
     assert_eq!(
