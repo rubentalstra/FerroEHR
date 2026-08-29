@@ -33,74 +33,9 @@
 )]
 
 use ferroehr::ids::EhrId;
-use ferroehr::service::version_update::{change_type_coded, lifecycle_state_coded};
 use ferroehr::service::{DEFAULT_SYSTEM_ID, FerroEhrService};
-use openehr_its::rest::generated::common::{UpdateAudit, UpdateAuditData, UpdateVersion};
-use openehr_rm::prelude::PartyProxy;
-use serde_json::{Value, json};
 
-fn committer(name: &str) -> PartyProxy {
-    openehr_its::json::from_canonical_value(&json!({ "_type": "PARTY_IDENTIFIED", "name": name }))
-        .expect("committer")
-}
-
-/// A minimal *valid* RM COMPOSITION: `language`, `territory`, `category`, and
-/// `composer` are all `1..1` (RM ehr, COMPOSITION class).
-fn composition(name: &str) -> Value {
-    json!({
-        "_type": "COMPOSITION",
-        "archetype_node_id": "openEHR-EHR-COMPOSITION.encounter.v1",
-        "archetype_details": {
-            "_type": "ARCHETYPED",
-            "archetype_id": {
-                "_type": "ARCHETYPE_ID",
-                "value": "openEHR-EHR-COMPOSITION.encounter.v1"
-            },
-            "rm_version": "1.2.0"
-        },
-        "name": { "_type": "DV_TEXT", "value": name },
-        "language": {
-            "_type": "CODE_PHRASE",
-            "terminology_id": { "_type": "TERMINOLOGY_ID", "value": "ISO_639-1" },
-            "code_string": "en"
-        },
-        "territory": {
-            "_type": "CODE_PHRASE",
-            "terminology_id": { "_type": "TERMINOLOGY_ID", "value": "ISO_3166-1" },
-            "code_string": "NL"
-        },
-        "category": {
-            "_type": "DV_CODED_TEXT",
-            "value": "event",
-            "defining_code": {
-                "_type": "CODE_PHRASE",
-                "terminology_id": { "_type": "TERMINOLOGY_ID", "value": "openehr" },
-                "code_string": "433"
-            }
-        },
-        "composer": { "_type": "PARTY_IDENTIFIED", "name": "conformance tester" }
-    })
-}
-
-/// The SM `UPDATE_VERSION` commit envelope with **no** client-supplied
-/// `system_id` — the case in which the server MUST supply its own.
-fn uv<T: serde::de::DeserializeOwned>(data: &Value) -> UpdateVersion<T> {
-    UpdateVersion {
-        preceding_version_uid: None,
-        lifecycle_state: lifecycle_state_coded("532"),
-        attestations: None,
-        data: openehr_its::json::from_canonical_value(data)
-            .expect("the fixture commit body decodes as its RM type"),
-        commit_audit: UpdateAudit::UpdateAudit(UpdateAuditData {
-            _type: None,
-            system_id: None,
-            change_type: change_type_coded("249"),
-            description: None,
-            committer: committer("conformance tester"),
-        }),
-        signature: None,
-    }
-}
+use crate::fixtures::{composition, uv};
 
 /// Create an EHR + one composition on `svc` and return
 /// `(EHR.system_id, OBJECT_VERSION_ID, AUDIT_DETAILS.system_id)`.
@@ -109,7 +44,7 @@ async fn stamped_identities(svc: &FerroEhrService) -> (String, String, String) {
     let summary = svc.get_ehr(ehr_id).await.expect("get_ehr");
 
     let ovid = svc
-        .create_composition(ehr_id, uv(&composition("system id")))
+        .create_composition(ehr_id, uv(&composition("system id"), "249", None))
         .await
         .expect("create_composition")
         .version_uid();

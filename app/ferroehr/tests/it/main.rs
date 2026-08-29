@@ -36,6 +36,7 @@ mod directory_item_refs;
 mod events_amqp;
 mod fhir_ingest_translate;
 mod fhir_outbound_amqp;
+mod fixtures;
 mod item_tag_fixture;
 mod multimedia_s3;
 mod opt_resource_meta;

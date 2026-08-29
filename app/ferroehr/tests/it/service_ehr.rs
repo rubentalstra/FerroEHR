@@ -9,7 +9,6 @@
 //! metadata (`.meta`, from which the HTTP edge derives `ETag`/`Location`).
 
 #![expect(
-    clippy::expect_used,
     clippy::indexing_slicing,
     reason = "clippy's in-test lint scoping (clippy.toml `allow-*-in-tests`) only \
               reaches `#[test]`-annotated functions, so it misses this integration \
@@ -32,84 +31,16 @@ use ferroehr::service::error::ServiceError;
 use ferroehr::service::status::{CallStatusType, SmError};
 use ferroehr::versioning::change::Committed;
 
+use crate::fixtures::{change_type, composition, folder, uid, uv};
 use crate::item_tag_fixture::ehr_tag;
 
 use crate::typed_body::typed;
-use ferroehr::service::version_update::{Committal, change_type_coded, lifecycle_state_coded};
-use openehr_its::rest::generated::common::{UpdateAudit, UpdateAuditData, UpdateVersion};
+use ferroehr::service::version_update::{Committal, change_type_coded};
+use openehr_its::rest::generated::common::{UpdateAudit, UpdateAuditData};
 
 /// The `uid.value` (`OBJECT_VERSION_ID`) of a versioned-object body.
-fn uid(v: &Value) -> &str {
-    v["uid"]["value"].as_str().expect("uid.value")
-}
-
-/// The SM `UPDATE_VERSION` commit envelope for a bare-RM write.
-fn uv<T: serde::de::DeserializeOwned>(
-    data: &Value,
-    change_code: &str,
-    preceding: Option<&str>,
-) -> UpdateVersion<T> {
-    UpdateVersion {
-        preceding_version_uid: preceding.map(|p| p.parse().expect("OBJECT_VERSION_ID")),
-        lifecycle_state: lifecycle_state_coded("532"),
-        attestations: None,
-        data: openehr_its::json::from_canonical_value(data)
-            .expect("the fixture commit body decodes as its RM type"),
-        commit_audit: UpdateAudit::UpdateAudit(UpdateAuditData {
-            _type: None,
-            system_id: None,
-            change_type: change_type_coded(change_code),
-            description: None,
-            committer: openehr_its::json::from_canonical_value::<PartyProxy>(
-                &json!({ "_type": "PARTY_IDENTIFIED", "name": "conformance tester" }),
-            )
-            .expect("committer"),
-        }),
-        signature: None,
-    }
-}
-
 fn has_key(tags: &[ItemTag], k: &str) -> bool {
     tags.iter().any(|t| t.key() == k)
-}
-
-/// A minimal *valid* RM COMPOSITION: `language`, `territory`, `category`, and
-/// `composer` are all `1..1` (RM ehr, COMPOSITION class), so the typed RM
-/// validation rejects a fixture without them.
-fn composition(name: &str) -> Value {
-    json!({
-        "_type": "COMPOSITION",
-        "archetype_node_id": "openEHR-EHR-COMPOSITION.encounter.v1",
-        "archetype_details": {
-            "_type": "ARCHETYPED",
-            "archetype_id": {
-                "_type": "ARCHETYPE_ID",
-                "value": "openEHR-EHR-COMPOSITION.encounter.v1"
-            },
-            "rm_version": "1.2.0"
-        },
-        "name": { "_type": "DV_TEXT", "value": name },
-        "language": {
-            "_type": "CODE_PHRASE",
-            "terminology_id": { "_type": "TERMINOLOGY_ID", "value": "ISO_639-1" },
-            "code_string": "en"
-        },
-        "territory": {
-            "_type": "CODE_PHRASE",
-            "terminology_id": { "_type": "TERMINOLOGY_ID", "value": "ISO_3166-1" },
-            "code_string": "NL"
-        },
-        "category": {
-            "_type": "DV_CODED_TEXT",
-            "value": "event",
-            "defining_code": {
-                "_type": "CODE_PHRASE",
-                "terminology_id": { "_type": "TERMINOLOGY_ID", "value": "openehr" },
-                "code_string": "433"
-            }
-        },
-        "composer": { "_type": "PARTY_IDENTIFIED", "name": "conformance tester" }
-    })
 }
 
 /// A COMPOSITION with **no** `template_id` but a terminology-invalid `category`
@@ -126,14 +57,6 @@ fn composition_with_bad_category() -> Value {
 /// A minimal *valid* root FOLDER (a folder-hierarchy root). `validate_folder`
 /// requires `name` and forbids inline content-by-value, which a bare root
 /// satisfies (RM ehr, DIRECTORY package).
-fn folder(name: &str) -> Value {
-    json!({
-        "_type": "FOLDER",
-        "archetype_node_id": "openEHR-EHR-FOLDER.generic.v1",
-        "name": { "_type": "DV_TEXT", "value": name }
-    })
-}
-
 #[tokio::test]
 async fn ehr_composition_lifecycle_end_to_end() {
     let db = testkit::db().await.expect("testkit database");
@@ -826,18 +749,6 @@ async fn ehr_status_subject_type_is_enforced_end_to_end() {
     svc.create_ehr(Some(typed(&anonymous)))
         .await
         .expect("an anonymous PARTY_SELF EHR_STATUS is accepted");
-}
-
-/// A `DV_CODED_TEXT` audit `change_type` (openEHR audit change-type group).
-fn change_type(code: &str, value: &str) -> Value {
-    json!({
-        "_type": "DV_CODED_TEXT", "value": value,
-        "defining_code": {
-            "_type": "CODE_PHRASE",
-            "terminology_id": { "_type": "TERMINOLOGY_ID", "value": "openehr" },
-            "code_string": code
-        }
-    })
 }
 
 #[tokio::test]

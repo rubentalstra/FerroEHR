@@ -48,7 +48,6 @@ use std::sync::Arc;
 
 use serde_json::{Value, json};
 
-use openehr_rm::prelude::PartyProxy;
 use openehr_rm::v1_2::ehr_extract::common::extract::Extract;
 use openehr_rm::v1_2::ehr_extract::common::extract_spec::ExtractSpec;
 
@@ -56,36 +55,10 @@ use ferroehr::service::FerroEhrService;
 use ferroehr::service::ehr_index::types::SubjectRef;
 use ferroehr::service::status::CallStatusType;
 
+use crate::fixtures::{composition, uv};
 use crate::typed_body::typed;
-use ferroehr::service::version_update::{change_type_coded, lifecycle_state_coded};
 use ferroehr::versioning::signature::config::{Mode, SigningConfig, VerifyOnRead};
 use ferroehr::versioning::signature::signer::Signer;
-use openehr_its::rest::generated::common::{UpdateAudit, UpdateAuditData, UpdateVersion};
-
-fn uv<T: serde::de::DeserializeOwned>(
-    data: &Value,
-    change_code: &str,
-    preceding: Option<&str>,
-) -> UpdateVersion<T> {
-    UpdateVersion {
-        preceding_version_uid: preceding.map(|p| p.parse().expect("OBJECT_VERSION_ID")),
-        lifecycle_state: lifecycle_state_coded("532"),
-        attestations: None,
-        data: openehr_its::json::from_canonical_value(data)
-            .expect("the fixture commit body decodes as its RM type"),
-        commit_audit: UpdateAudit::UpdateAudit(UpdateAuditData {
-            _type: None,
-            system_id: None,
-            change_type: change_type_coded(change_code),
-            description: None,
-            committer: openehr_its::json::from_canonical_value::<PartyProxy>(
-                &json!({ "_type": "PARTY_IDENTIFIED", "name": "conformance tester" }),
-            )
-            .expect("committer"),
-        }),
-        signature: None,
-    }
-}
 
 /// Seed an EHR with an `EHR_STATUS` (create → update = two versions), a directory
 /// `FOLDER`, and the auto-created `EHR_ACCESS` — the same shape the export tests
@@ -130,44 +103,6 @@ async fn export_one(svc: &FerroEhrService, ehr: ferroehr::ids::EhrId) -> Extract
     assert_eq!(extracts.len(), 1, "one EHR id → one EXTRACT");
     openehr_its::json::from_canonical_value(&extracts.remove(0))
         .expect("EXTRACT deserializes into the typed RM model")
-}
-
-/// A minimal *valid* RM COMPOSITION: `language`, `territory`, `category` and
-/// `composer` are all `1..1` (RM ehr, COMPOSITION class).
-fn minimal_composition(name: &str) -> Value {
-    json!({
-        "_type": "COMPOSITION",
-        "archetype_node_id": "openEHR-EHR-COMPOSITION.encounter.v1",
-        "archetype_details": {
-            "_type": "ARCHETYPED",
-            "archetype_id": {
-                "_type": "ARCHETYPE_ID",
-                "value": "openEHR-EHR-COMPOSITION.encounter.v1"
-            },
-            "rm_version": "1.2.0"
-        },
-        "name": { "_type": "DV_TEXT", "value": name },
-        "language": {
-            "_type": "CODE_PHRASE",
-            "terminology_id": { "_type": "TERMINOLOGY_ID", "value": "ISO_639-1" },
-            "code_string": "en"
-        },
-        "territory": {
-            "_type": "CODE_PHRASE",
-            "terminology_id": { "_type": "TERMINOLOGY_ID", "value": "ISO_3166-1" },
-            "code_string": "NL"
-        },
-        "category": {
-            "_type": "DV_CODED_TEXT",
-            "value": "event",
-            "defining_code": {
-                "_type": "CODE_PHRASE",
-                "terminology_id": { "_type": "TERMINOLOGY_ID", "value": "openehr" },
-                "code_string": "433"
-            }
-        },
-        "composer": { "_type": "PARTY_IDENTIFIED", "name": "conformance tester" }
-    })
 }
 
 /// The content item of an extract whose wrapped object has the given
@@ -993,7 +928,7 @@ async fn an_as_of_read_before_the_import_does_not_see_the_imported_version() {
     // A plain modifiable source EHR (the seeded fixture ends non-modifiable).
     let ehr = source.create_ehr(None).await.expect("source ehr");
     let composition_uid = source
-        .create_composition(ehr, uv(&minimal_composition("as-of"), "249", None))
+        .create_composition(ehr, uv(&composition("as-of"), "249", None))
         .await
         .expect("source composition")
         .version_uid();

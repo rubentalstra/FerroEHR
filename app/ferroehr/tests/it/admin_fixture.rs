@@ -24,12 +24,10 @@ use serde_json::{Value, json};
 use sqlx::PgPool;
 use uuid::Uuid;
 
-use openehr_rm::prelude::PartyProxy;
-
 use ferroehr::ids::EhrId;
 use ferroehr::service::FerroEhrService;
-use ferroehr::service::version_update::{change_type_coded, lifecycle_state_coded};
-use openehr_its::rest::generated::common::{UpdateAudit, UpdateAuditData, UpdateVersion};
+
+use crate::fixtures::{uid, uv, vo_of};
 
 /// Returns a fresh migrated database, its pool, and a service over it.
 ///
@@ -43,49 +41,6 @@ pub(crate) async fn repository() -> (testkit::TestDb, PgPool, FerroEhrService) {
 }
 
 /// Returns the `uid.value` (`OBJECT_VERSION_ID`) of a versioned-object body.
-pub(crate) fn uid(v: &Value) -> &str {
-    v["uid"]["value"].as_str().expect("uid.value")
-}
-
-/// Returns the bare versioned-object UUID of an `OBJECT_VERSION_ID`.
-///
-/// The grammar is `object_version_id = object_id, '::', creating_system_id,
-/// '::', version_tree_id` (BASE `base_types/master05-identification_package.adoc`
-/// §Syntaxes), so the object identifier is everything before the first
-/// separator.
-pub(crate) fn vo_of(ovid: &str) -> &str {
-    ovid.split("::").next().expect("vo uuid")
-}
-
-/// Builds the SM `UPDATE_VERSION` commit envelope for a bare-RM write.
-///
-/// `change_code` is the `openehr` terminology change-type code (`249` create,
-/// `251` modification); `preceding` names the version this one supersedes.
-pub(crate) fn uv<T: serde::de::DeserializeOwned>(
-    data: &Value,
-    change_code: &str,
-    preceding: Option<&str>,
-) -> UpdateVersion<T> {
-    UpdateVersion {
-        preceding_version_uid: preceding.map(|p| p.parse().expect("OBJECT_VERSION_ID")),
-        lifecycle_state: lifecycle_state_coded("532"),
-        attestations: None,
-        data: openehr_its::json::from_canonical_value(data)
-            .expect("the fixture commit body decodes as its RM type"),
-        commit_audit: UpdateAudit::UpdateAudit(UpdateAuditData {
-            _type: None,
-            system_id: None,
-            change_type: change_type_coded(change_code),
-            description: None,
-            committer: openehr_its::json::from_canonical_value::<PartyProxy>(
-                &json!({ "_type": "PARTY_IDENTIFIED", "name": "conformance tester" }),
-            )
-            .expect("committer"),
-        }),
-        signature: None,
-    }
-}
-
 /// Seeds an EHR carrying multiple versioned-object kinds and versions.
 ///
 /// `EHR_STATUS` (create → update = two versions) plus the `EHR_ACCESS` minted at

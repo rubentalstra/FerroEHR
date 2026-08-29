@@ -39,94 +39,16 @@
 )]
 
 use ferroehr::service::FerroEhrService;
-use ferroehr::service::version_update::{change_type_coded, lifecycle_state_coded};
-use openehr_its::rest::generated::common::{UpdateAudit, UpdateAuditData, UpdateVersion};
-use openehr_rm::prelude::PartyProxy;
 use serde_json::{Value, json};
 use uuid::Uuid;
+
+use crate::fixtures::{change_type, committer, composition, uv};
 
 /// The service's own system id (`DEFAULT_SYSTEM_ID`) — the local
 /// `creating_system_id` every non-import write records.
 const LOCAL: &str = "ferroehr.local";
 /// The pretend foreign system a copied version tree originates from.
 const FOREIGN: &str = "sysA.example.org";
-
-fn uv<T: serde::de::DeserializeOwned>(
-    data: &Value,
-    change_code: &str,
-    preceding: Option<&str>,
-) -> UpdateVersion<T> {
-    UpdateVersion {
-        preceding_version_uid: preceding.map(|p| p.parse().expect("OBJECT_VERSION_ID")),
-        lifecycle_state: lifecycle_state_coded("532"),
-        attestations: None,
-        data: openehr_its::json::from_canonical_value(data)
-            .expect("the fixture commit body decodes as its RM type"),
-        commit_audit: UpdateAudit::UpdateAudit(UpdateAuditData {
-            _type: None,
-            system_id: None,
-            change_type: change_type_coded(change_code),
-            description: None,
-            committer: openehr_its::json::from_canonical_value::<PartyProxy>(
-                &json!({ "_type": "PARTY_IDENTIFIED", "name": "branching tester" }),
-            )
-            .expect("committer"),
-        }),
-        signature: None,
-    }
-}
-
-/// A minimal *valid* RM COMPOSITION.
-fn composition(name: &str) -> Value {
-    json!({
-        "_type": "COMPOSITION",
-        "archetype_node_id": "openEHR-EHR-COMPOSITION.encounter.v1",
-        "archetype_details": {
-            "_type": "ARCHETYPED",
-            "archetype_id": {
-                "_type": "ARCHETYPE_ID",
-                "value": "openEHR-EHR-COMPOSITION.encounter.v1"
-            },
-            "rm_version": "1.2.0"
-        },
-        "name": { "_type": "DV_TEXT", "value": name },
-        "language": {
-            "_type": "CODE_PHRASE",
-            "terminology_id": { "_type": "TERMINOLOGY_ID", "value": "ISO_639-1" },
-            "code_string": "en"
-        },
-        "territory": {
-            "_type": "CODE_PHRASE",
-            "terminology_id": { "_type": "TERMINOLOGY_ID", "value": "ISO_3166-1" },
-            "code_string": "NL"
-        },
-        "category": {
-            "_type": "DV_CODED_TEXT",
-            "value": "event",
-            "defining_code": {
-                "_type": "CODE_PHRASE",
-                "terminology_id": { "_type": "TERMINOLOGY_ID", "value": "openehr" },
-                "code_string": "433"
-            }
-        },
-        "composer": { "_type": "PARTY_IDENTIFIED", "name": "branching tester" }
-    })
-}
-
-fn committer(name: &str) -> Value {
-    json!({ "_type": "PARTY_IDENTIFIED", "name": name })
-}
-
-fn change_type(code: &str, value: &str) -> Value {
-    json!({
-        "_type": "DV_CODED_TEXT", "value": value,
-        "defining_code": {
-            "_type": "CODE_PHRASE",
-            "terminology_id": { "_type": "TERMINOLOGY_ID", "value": "openehr" },
-            "code_string": code
-        }
-    })
-}
 
 /// A CONTRIBUTION body modifying one composition (`251|modification|`).
 fn modify_contribution(data: &Value, preceding: &str) -> Value {

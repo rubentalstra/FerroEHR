@@ -257,3 +257,95 @@ pub(crate) fn excluded(name: &str) -> Option<&'static str> {
         _ => None,
     }
 }
+
+// ── Simplified-formats corpus pairing (flat.rs / structured.rs / webtemplate.rs) ──
+
+/// The canonical-JSON composition corpus vendored in this crate.
+pub(crate) fn composition_dir() -> PathBuf {
+    Path::new(env!("CARGO_MANIFEST_DIR"))
+        .join("tests/vendor/openehr_sdk/composition/canonical_json")
+}
+
+/// All directories that hold `.opt` operational templates for pairing.
+pub(crate) fn opt_dirs() -> Vec<PathBuf> {
+    let manifest = Path::new(env!("CARGO_MANIFEST_DIR"));
+    vec![
+        manifest.join("tests/fixtures/sdk"),
+        manifest.join("tests/fixtures/better"),
+        manifest.join("../../app/ferroehr/tests/resources/service"),
+    ]
+}
+
+/// Every `.opt` under `dir`, recursively, sorted for determinism.
+pub(crate) fn opt_files(dir: &Path) -> Vec<PathBuf> {
+    let mut out = Vec::new();
+    let Ok(entries) = fs::read_dir(dir) else {
+        return out;
+    };
+    for entry in entries.flatten() {
+        let path = entry.path();
+        if path.is_dir() {
+            out.extend(opt_files(&path));
+        } else if path.extension().is_some_and(|e| e == "opt") {
+            out.push(path);
+        }
+    }
+    out.sort();
+    out
+}
+
+/// Build `templateId → WebTemplate` for every OPT the `opt14` parser can read.
+pub(crate) fn web_templates()
+-> std::collections::BTreeMap<String, openehr_its::flat::webtemplate::model::WebTemplate> {
+    let mut out = std::collections::BTreeMap::new();
+    for dir in opt_dirs() {
+        for path in opt_files(&dir) {
+            let Ok(xml) = fs::read_to_string(&path) else {
+                continue;
+            };
+            let Ok(opt) = openehr_its::opt14::from_xml(&xml) else {
+                continue;
+            };
+            if let Ok(wt) = openehr_its::flat::webtemplate::builder::build_web_template(&opt) {
+                out.entry(wt.template_id.clone()).or_insert(wt);
+            }
+        }
+    }
+    out
+}
+
+/// Load every canonical COMPOSITION (with its file name + template id) from
+/// the corpus, through the adjudicated-twin substitution.
+pub(crate) fn compositions() -> Vec<(String, String, serde_json::Value)> {
+    let mut out = Vec::new();
+    let Ok(entries) = fs::read_dir(composition_dir()) else {
+        return out;
+    };
+    for entry in entries.flatten() {
+        let path = entry.path();
+        if path.extension().is_none_or(|e| e != "json") {
+            continue;
+        }
+        let Ok(text) = fs::read_to_string(twinned(&path)) else {
+            continue;
+        };
+        let Ok(value) = serde_json::from_str::<serde_json::Value>(&text) else {
+            continue;
+        };
+        if value.get("_type").and_then(serde_json::Value::as_str) != Some("COMPOSITION") {
+            continue;
+        }
+        let Some(tid) = value
+            .pointer("/archetype_details/template_id/value")
+            .and_then(serde_json::Value::as_str)
+        else {
+            continue;
+        };
+        let Some(name) = path.file_name().map(|n| n.to_string_lossy().into_owned()) else {
+            continue;
+        };
+        out.push((name, tid.to_owned(), value));
+    }
+    out.sort_by(|a, b| a.0.cmp(&b.0));
+    out
+}

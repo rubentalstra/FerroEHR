@@ -28,47 +28,15 @@ use ferroehr::versioning::signature::config::{Mode, SigningConfig, VerifyOnRead}
 use ferroehr::versioning::signature::signer::Signer;
 use ferroehr::versioning::signature::verify::Verdict;
 
-use ferroehr::service::version_update::{change_type_coded, lifecycle_state_coded};
+use ferroehr::service::version_update::change_type_coded;
 use openehr_base::prelude::ObjectVersionId;
-use openehr_its::rest::generated::common::{
-    UpdateAttestation, UpdateAudit, UpdateAuditData, UpdateVersion,
-};
-use openehr_rm::prelude::{DvText, PartyProxy};
+use openehr_its::rest::generated::common::{UpdateAttestation, UpdateAudit, UpdateAuditData};
+use openehr_rm::prelude::DvText;
 use openehr_rm::v1_2::common::change_control::version_impl::canonical_form_of_json;
 use serde_json::{Value, json};
 use sqlx::{PgPool, Row};
 
-fn uid(v: &Value) -> &str {
-    v["uid"]["value"].as_str().expect("uid.value")
-}
-
-fn committer(name: &str) -> PartyProxy {
-    openehr_its::json::from_canonical_value(&json!({ "_type": "PARTY_IDENTIFIED", "name": name }))
-        .expect("committer")
-}
-
-/// The SM `UPDATE_VERSION` commit envelope for a bare-RM write.
-fn uv<T: serde::de::DeserializeOwned>(
-    data: &Value,
-    change_code: &str,
-    preceding: Option<&str>,
-) -> UpdateVersion<T> {
-    UpdateVersion {
-        preceding_version_uid: preceding.map(|p| p.parse().expect("OBJECT_VERSION_ID")),
-        lifecycle_state: lifecycle_state_coded("532"),
-        attestations: None,
-        data: openehr_its::json::from_canonical_value(data)
-            .expect("the fixture commit body decodes as its RM type"),
-        commit_audit: UpdateAudit::UpdateAudit(UpdateAuditData {
-            _type: None,
-            system_id: None,
-            change_type: change_type_coded(change_code),
-            description: None,
-            committer: committer("conformance tester"),
-        }),
-        signature: None,
-    }
-}
+use crate::fixtures::{change_type, committer_proxy, composition, uid, uv};
 
 /// A wire `UPDATE_ATTESTATION` partial for an attestation committed WITH the
 /// version (`UPDATE_VERSION.attestations`; SM
@@ -80,7 +48,7 @@ fn update_attestation(reason: &str) -> UpdateAttestation {
         system_id: None,
         change_type: change_type_coded("666"),
         description: None,
-        committer: committer("witness"),
+        committer: committer_proxy("witness"),
         attested_view: None,
         proof: None,
         items: None,
@@ -99,7 +67,7 @@ fn contribution_audit(change_code: &str, committer_name: &str) -> UpdateAudit {
         system_id: None,
         change_type: change_type_coded(change_code),
         description: None,
-        committer: committer(committer_name),
+        committer: committer_proxy(committer_name),
     })
 }
 
@@ -107,56 +75,6 @@ fn contribution_audit(change_code: &str, committer_name: &str) -> UpdateAudit {
 fn version_components(ovid: &str) -> (ferroehr::ids::VoId, String) {
     let parts: Vec<&str> = ovid.split("::").collect();
     (parts[0].parse().expect("vo uuid"), parts[2].to_owned())
-}
-
-/// A minimal *valid* RM COMPOSITION: `language`, `territory`, `category`, and
-/// `composer` are all `1..1` (RM ehr, COMPOSITION class), so the typed RM
-/// validation rejects a fixture without them.
-fn composition(name: &str) -> Value {
-    json!({
-        "_type": "COMPOSITION",
-        "archetype_node_id": "openEHR-EHR-COMPOSITION.encounter.v1",
-        "archetype_details": {
-            "_type": "ARCHETYPED",
-            "archetype_id": {
-                "_type": "ARCHETYPE_ID",
-                "value": "openEHR-EHR-COMPOSITION.encounter.v1"
-            },
-            "rm_version": "1.2.0"
-        },
-        "name": { "_type": "DV_TEXT", "value": name },
-        "language": {
-            "_type": "CODE_PHRASE",
-            "terminology_id": { "_type": "TERMINOLOGY_ID", "value": "ISO_639-1" },
-            "code_string": "en"
-        },
-        "territory": {
-            "_type": "CODE_PHRASE",
-            "terminology_id": { "_type": "TERMINOLOGY_ID", "value": "ISO_3166-1" },
-            "code_string": "NL"
-        },
-        "category": {
-            "_type": "DV_CODED_TEXT",
-            "value": "event",
-            "defining_code": {
-                "_type": "CODE_PHRASE",
-                "terminology_id": { "_type": "TERMINOLOGY_ID", "value": "openehr" },
-                "code_string": "433"
-            }
-        },
-        "composer": { "_type": "PARTY_IDENTIFIED", "name": "conformance tester" }
-    })
-}
-
-fn change_type(code: &str, value: &str) -> Value {
-    json!({
-        "_type": "DV_CODED_TEXT", "value": value,
-        "defining_code": {
-            "_type": "CODE_PHRASE",
-            "terminology_id": { "_type": "TERMINOLOGY_ID", "value": "openehr" },
-            "code_string": code
-        }
-    })
 }
 
 /// Assert a served `ORIGINAL_VERSION` carries a server digest signature that

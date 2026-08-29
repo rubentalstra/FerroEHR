@@ -29,34 +29,12 @@ use openehr_its::flat::webtemplate::builder::build_web_template;
 use openehr_its::flat::webtemplate::model::{WebTemplateInputType, WebTemplateNode};
 use openehr_its::opt14;
 
-fn manifest_dir() -> PathBuf {
-    PathBuf::from(env!("CARGO_MANIFEST_DIR"))
-}
-
 fn corpus_dir() -> PathBuf {
-    manifest_dir().join("../../app/ferroehr/tests/resources/service")
+    PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("../../app/ferroehr/tests/resources/service")
 }
 
 fn better_fixtures_dir() -> PathBuf {
-    manifest_dir().join("tests/fixtures/better")
-}
-
-/// Recursively collect every `*.opt` under `dir`.
-fn opt_files(dir: &Path) -> Vec<PathBuf> {
-    let mut out = Vec::new();
-    let Ok(entries) = std::fs::read_dir(dir) else {
-        return out;
-    };
-    for entry in entries.flatten() {
-        let path = entry.path();
-        if path.is_dir() {
-            out.extend(opt_files(&path));
-        } else if path.extension().is_some_and(|e| e == "opt") {
-            out.push(path);
-        }
-    }
-    out.sort();
-    out
+    PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("tests/fixtures/better")
 }
 
 /// Parse an `OPT` and build a `WebTemplate`, returning any error as a string.
@@ -108,8 +86,8 @@ fn assert_unique_sibling_ids(node: &WebTemplateNode) {
 
 #[test]
 fn every_opt_builds_a_web_template() {
-    let corpus = opt_files(&corpus_dir());
-    let vendored = opt_files(&better_fixtures_dir());
+    let corpus = crate::common::opt_files(&corpus_dir());
+    let vendored = crate::common::opt_files(&better_fixtures_dir());
     let corpus_count = corpus.len();
     let vendored_count = vendored.len();
 
@@ -600,8 +578,8 @@ fn party_related_narrowing_is_a_party_leaf_with_a_relationship_child() {
 fn no_party_node_is_inputless() {
     let mut checked = 0_usize;
     let mut offenders: Vec<String> = Vec::new();
-    let mut files: Vec<PathBuf> = opt_files(&better_fixtures_dir());
-    files.extend(opt_files(&corpus_dir()));
+    let mut files: Vec<PathBuf> = crate::common::opt_files(&better_fixtures_dir());
+    files.extend(crate::common::opt_files(&corpus_dir()));
     for path in files {
         let Ok(wt) = build_from_file(&path) else {
             continue; // parser gaps are reported by the smoke gate, not here
@@ -644,7 +622,7 @@ fn unenforceable_constraints_are_reported_not_dropped() {
     use openehr_its::flat::validation::{UnenforceableReason, unenforceable_existence_constraints};
 
     let mut seen: Vec<String> = Vec::new();
-    for path in opt_files(Path::new("tests/fixtures")) {
+    for path in crate::common::opt_files(Path::new("tests/fixtures")) {
         let Ok(wt) = build_from_file(&path) else {
             continue;
         };
