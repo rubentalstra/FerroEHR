@@ -13,3 +13,11 @@ On issues opened by external contributors (and any public-facing thread), post e
 **Why:** owner reaction 2026-08-26 ("you wrote two comments what the hell and do not write to much okay and do not amke it sound like AI") after two long comments landed on #2759 (Joost's issue). Both were deleted and replaced with one short comment.
 
 **How to apply:** draft the comment, cut it to the facts (transcript snippet, one-line ruling, the concrete remedy), apply [[owner-work-style]] no-AI-tells rules (no triads, no "not X but Y", minimal em dashes), and post once. Long derivations belong on internal PRs/issue bodies, not on an external contributor's thread. If new facts arrive after posting, EDIT the existing comment (gh api PATCH) instead of adding another.
+
+**Verify before you confirm (owner correction 2026-08-29, #2913):** never
+write "confirmed"/agreement in a public thread before checking the claim
+against the official/vendored text first-hand — the owner deleted a comment
+that confirmed a community claim ahead of the BMM check. Order is: verify in
+the official source, then reply, citing what was checked. And the reply is
+plain human text: short sentences, no em-dash chains, no "good catch — and"
+framing.
