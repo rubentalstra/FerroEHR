@@ -17,6 +17,21 @@ workflow refuses a tag that has no matching section here.
 
 ### Fixed
 
+- AQL predicates and projections now see every element of a list-valued
+  attribute (`links`, `context/participations`, composer `identifiers`,
+  `mappings`, ...). Previously the extraction took only the first match, so
+  `WHERE c/links/target/value = ...` missed a match on the second link and
+  `SELECT` over such a path served one value where the data held several —
+  silently. Comparisons, `LIKE`, `MATCHES` and `EXISTS` are any-match;
+  projection returns every match as one JSON array cell (`null` when nothing
+  matches).
+- An AQL node predicate written on the ROOT of an identified path
+  (`c[openEHR-EHR-COMPOSITION.report.v1]/name/value`) now constrains the
+  query — it was silently discarded, so the path answered as if the
+  predicate were not written. The two shapes that still have no lowering — a
+  predicate on a non-structure path step (`links[at0001]`) and a node
+  predicate on a whole-object projection — are refused with a typed error
+  instead of being ignored.
 - Reads serve the exact canonical bytes the commit accepted: `_type` first
   and every field at its spec-declared position — including the
   server-stamped `uid`, which now lands at its place in the document instead

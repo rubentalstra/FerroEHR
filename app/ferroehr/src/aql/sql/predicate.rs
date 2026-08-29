@@ -54,9 +54,7 @@ impl Builder<'_> {
                 rhs,
                 coercion,
             } => self.compare_expr(lhs, *op, rhs, *coercion, positive),
-            IrExpr::Exists(target) => Ok(self
-                .value_expr(target, ValueMode::Projection)?
-                .is_not_null()),
+            IrExpr::Exists(target) => self.exists_path_expr(target),
             IrExpr::Like { path, pattern } => self.like_expr(path, pattern, positive),
             IrExpr::Const(b) => Ok(Expr::val(*b)),
             IrExpr::Matches {
@@ -65,6 +63,33 @@ impl Builder<'_> {
                 coercion,
             } => self.matches_expr(path, values, *coercion, positive),
         }
+    }
+
+    /// Lowers `EXISTS <path>` (QUERY master03 §EXISTS): true when the path has
+    /// a value on ANY node the anchored walk matches / ANY fragment item — the
+    /// existential shape is exact for pure existence in BOTH polarities (the
+    /// test is boolean, so the three-valued caveat on comparisons does not
+    /// apply). A leaf the existential lowering declines (uid synthesis, a
+    /// promoted column, a single-valued inline read) keeps the scalar
+    /// `IS NOT NULL` shape, which is exact there.
+    ///
+    /// # Errors
+    /// [`AqlError`] from the path lowerings.
+    fn exists_path_expr(&mut self, target: &PathTarget) -> Result<Expr, AqlError> {
+        if let Some(leaf) = Self::existential_leaf(target) {
+            let leaf = leaf.clone();
+            self.ensure_leaf_root(target)?;
+            if let Some(expr) = self.data_leaf_exists(
+                &leaf,
+                ValueMode::Projection,
+                sea_query::ExprTrait::is_not_null,
+            )? {
+                return Ok(expr);
+            }
+        }
+        Ok(self
+            .value_expr(target, ValueMode::Projection)?
+            .is_not_null())
     }
 
     /// Lowers a comparison, taking the first lowering that applies: the typed

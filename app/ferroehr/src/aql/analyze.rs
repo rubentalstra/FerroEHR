@@ -135,7 +135,6 @@ fn analyze_rm_path(
     let mut fragment: Vec<FragmentStep> = Vec::new();
     let mut in_fragment = false;
     let mut current = root_types.clone();
-    let mut multi_valued = false;
     // The candidate types of the *parent* of the final step, and the final
     // attribute name — used to coerce a `.../value` leaf under a temporal DV
     // parent to `Temporal` (its `value` is an ISO-8601 String; QUERY §Built-in
@@ -148,9 +147,6 @@ fn analyze_rm_path(
             parent_types = current.clone();
             last_name = Some(part.name.clone());
             let (step_types, is_multi) = resolve_attribute(&current, &part.name, profile)?;
-            if is_multi {
-                multi_valued = true;
-            }
             let predicate = part
                 .predicate
                 .as_ref()
@@ -195,7 +191,6 @@ fn analyze_rm_path(
         fragment,
         types: current,
         coercion,
-        multi_valued,
     })
 }
 
