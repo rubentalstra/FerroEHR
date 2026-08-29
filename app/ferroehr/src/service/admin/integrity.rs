@@ -262,13 +262,18 @@ impl FerroEhrService {
     /// The materialized body of one stored version, read one version at a time
     /// so the sweep holds a single document in memory.
     async fn stored_body(&self, key: &VersionKey) -> Result<Option<Value>, ServiceError> {
-        let row: Option<(Option<Value>,)> =
+        let row: Option<(Option<String>,)> =
             sqlx::query_as("SELECT body FROM vo_version_all WHERE vo_id = $1 AND sys_version = $2")
                 .bind(key.vo_id)
                 .bind(key.sys_version)
                 .fetch_optional(&self.pool)
                 .await?;
-        Ok(row.and_then(|(body,)| body))
+        row.and_then(|(body,)| body)
+            .map(|text| {
+                serde_json::from_str(&text)
+                    .map_err(|e| ServiceError::internal("parse the stored canonical body", e))
+            })
+            .transpose()
     }
 }
 

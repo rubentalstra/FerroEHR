@@ -246,10 +246,11 @@ pub struct FoldedVersion<'a> {
     /// `spec_profile` gate consults. No openEHR spec governs runtime
     /// generation selection — our own design/extension.
     pub stable_compatible: bool,
-    /// The assembled canonical body (`vo_version.body`) — the SAME in-memory
-    /// value the node rows are decomposed from; `None` on a logical delete
-    /// (no content — RM common master06 §Logical Deletion).
-    pub body: Option<&'a Value>,
+    /// The canonical body BYTES (`vo_version.body`, text — #2913): the
+    /// accepted, uid-stamped value serialized BEFORE node decomposition, so a
+    /// point read serves the codec's field order verbatim; `None` on a
+    /// logical delete (no content — RM common master06 §Logical Deletion).
+    pub body: Option<&'a str>,
     /// The commit instant: the database `now()` the caller read on this
     /// request (the placement read, the writability gate, or the owning
     /// CONTRIBUTION's committal), stored as the audit `time_committed` and

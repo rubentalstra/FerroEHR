@@ -169,10 +169,10 @@ macro_rules! version_select {
     };
 }
 
-/// [`version_select!`] with the body as the database's own jsonb text
-/// rendering (`v.body::text`) — the raw-read column list for the JSON-accept
-/// passthrough ([`read_current_raw`] / [`read_version_raw`]). Every other
-/// column is identical.
+/// [`version_select!`] — with the body column already text (#2913), the
+/// raw-read list for the JSON-accept passthrough ([`read_current_raw`] /
+/// [`read_version_raw`]) is the same column list; the macro pair survives so
+/// the two intents keep their own names.
 macro_rules! version_select_raw {
     ($tail:literal) => {
         concat!(
@@ -180,7 +180,7 @@ macro_rules! version_select_raw {
             "v.branch_version, v.lifecycle_state, v.creating_system_id, v.preceding_version_uid, ",
             "v.other_input_version_uids, v.contribution_id, v.template_id, v.signature, ",
             "v.signature_client_supplied, v.wrapped_original, v.stable_compatible, ",
-            "v.body::text AS body, ",
+            "v.body, ",
             "a.system_id, a.change_type, a.description, a.committer, a.attestation, ",
             "a.time_committed, ",
             "att.attestations_at_committal, att.attestations_after_committal ",
@@ -203,14 +203,15 @@ macro_rules! version_select_raw {
 /// a logical delete), so the whole version read is the ONE statement that
 /// produced `row`, on whichever tier's connection ran it.
 fn stored_version(vo_id: VoId, row: &PgRow) -> Result<StoredVersion, StorageError> {
-    let canonical = row
-        .try_get::<Option<Value>, _>("body")?
-        .unwrap_or(Value::Null);
+    let canonical = match row.try_get::<Option<String>, _>("body")? {
+        Some(text) => serde_json::from_str(&text).map_err(StorageError::BodyDecode)?,
+        None => Value::Null,
+    };
     stored_version_fields(vo_id, row, canonical, None)
 }
 
-/// [`stored_version`] for a raw-read row (`v.body::text AS body`): the body
-/// arrives as the database's own jsonb text rendering, kept verbatim in
+/// [`stored_version`] for a raw-read row: the body text arrives as the
+/// stored canonical bytes (#2913), kept verbatim in
 /// [`StoredVersion::canonical_text`] with `canonical = Value::Null` — the
 /// JSON-accept passthrough source (the caller parses the text wherever a
 /// typed value is still needed).
@@ -697,4 +698,32 @@ pub async fn read_current_directory(
         .as_ref()
         .map(stored_version_by_row)
         .transpose()
+}
+
+/// The stored canonical body BYTES of one version, across both storage tiers
+/// (`vo_version_all`), parsed back to a value with the stored key order kept.
+///
+/// This is the dump/export source (#2913): the archived payload carries the
+/// codec's own field order because it IS the committed bytes — a node-row
+/// reassembly would surface the `node.data` fragments' jsonb key order
+/// instead. `Value::Null` for a deleted version or an absent row.
+///
+/// # Errors
+/// [`StorageError::Database`] on row I/O; [`StorageError::BodyDecode`] when a
+/// stored body does not parse (storage corruption).
+pub async fn stored_body_all(
+    pool: &PgPool,
+    vo_id: VoId,
+    sys_version: i32,
+) -> Result<Value, StorageError> {
+    let row: Option<(Option<String>,)> =
+        sqlx::query_as("SELECT body FROM vo_version_all WHERE vo_id = $1 AND sys_version = $2")
+            .bind(vo_id)
+            .bind(sys_version)
+            .fetch_optional(pool)
+            .await?;
+    match row.and_then(|(body,)| body) {
+        Some(text) => serde_json::from_str(&text).map_err(StorageError::BodyDecode),
+        None => Ok(Value::Null),
+    }
 }

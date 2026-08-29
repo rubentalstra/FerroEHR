@@ -348,7 +348,7 @@ pub async fn persistent_template_exists(
         "SELECT EXISTS(SELECT 1 FROM vo_version WHERE ehr_id = $1 AND kind = 'COMPOSITION' \
          AND upper_inf(sys_period) AND branch_number = 0 AND lifecycle_state <> $2 \
          AND template_id = $3 \
-         AND body #>> '{category,defining_code,code_string}' = $4)",
+         AND (body)::jsonb #>> '{category,defining_code,code_string}' = $4)",
     )
     .bind(ehr_id)
     .bind(deleted_state)
@@ -635,7 +635,7 @@ pub async fn current_composition_meta(
     const SQL: &str = "SELECT v.ehr_id, v.lifecycle_state, v.trunk_version, v.branch_number, \
                        v.branch_version, v.creating_system_id, a.time_committed, \
                        e.is_modifiable, \
-                       v.body #>> '{archetype_details,template_id,value}' AS stored_template, \
+                       (v.body)::jsonb #>> '{archetype_details,template_id,value}' AS stored_template, \
                        fv.found AS first_found, fv.ani AS first_ani, \
                        fv.category AS first_category \
                        FROM vo_version_all v \
@@ -643,8 +643,8 @@ pub async fn current_composition_meta(
                        JOIN ehr e ON e.id = v.ehr_id \
                        LEFT JOIN LATERAL ( \
                            SELECT true AS found, \
-                                  f.body ->> 'archetype_node_id' AS ani, \
-                                  f.body #>> '{category,defining_code,code_string}' AS category \
+                                  (f.body)::jsonb ->> 'archetype_node_id' AS ani, \
+                                  (f.body)::jsonb #>> '{category,defining_code,code_string}' AS category \
                            FROM vo_version_all f \
                            WHERE f.vo_id = $1 AND f.body IS NOT NULL \
                            ORDER BY f.sys_version LIMIT 1 \
