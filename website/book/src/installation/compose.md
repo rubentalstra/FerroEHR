@@ -40,7 +40,7 @@ Each image is published under several tags:
 |---|---|
 | `X.Y.Z`, `X.Y` | every release |
 | `latest` | the newest release |
-| `develop` | every push to the development branch |
+| `main` | every push to the default branch |
 | `sha-<commit>` | every push, for exact pinning |
 
 The quickstart Compose file pins the **exact release version it shipped with**
