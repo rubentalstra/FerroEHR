@@ -433,7 +433,7 @@ fn audit_table(
             {move || Suspend::new(async move {
                 match page.await {
                     Ok(page) => page_view(page, query),
-                    Err(e) => crate::components::format_view::inline_error(&e),
+                    Err(e) => crate::components::notice::inline_error(&e),
                 }
             })}
         </Transition>

@@ -23,6 +23,45 @@ use leptos::prelude::*;
 use leptos::reactive::wrappers::write::SignalSetter;
 
 use crate::components::field::{BTN_DANGER, BTN_SECONDARY};
+use crate::error::AdminUiError;
+
+/// The row-driven delete confirmation a listing screen mounts once, outside its
+/// table.
+///
+/// `pending` is both "which row" and "is the dialog open", so a list refetch
+/// never re-creates the dialog and no second copy of that state can drift.
+/// Confirming dispatches `delete` with the pending row and clears it; the
+/// screen's toasts report the answer ([`toast_outcome`](crate::components::toast::toast_outcome)).
+#[must_use]
+pub fn delete_confirmation<R>(
+    pending: RwSignal<Option<R>>,
+    delete: Action<R, (String, Result<(), AdminUiError>)>,
+    title: &'static str,
+    confirm_label: &'static str,
+    confirm_id: &'static str,
+    message: Signal<String>,
+) -> AnyView
+where
+    R: Clone + Send + Sync + 'static,
+{
+    view! {
+        <ConfirmDialog
+            open=Signal::derive(move || pending.get().is_some())
+            title=title
+            message=message
+            confirm_label=confirm_label
+            confirm_id=confirm_id
+            on_cancel=Callback::new(move |()| pending.set(None))
+            on_confirm=Callback::new(move |()| {
+                if let Some(row) = pending.get_untracked() {
+                    drop(delete.dispatch(row));
+                }
+                pending.set(None);
+            })
+        />
+    }
+    .into_any()
+}
 
 /// A modal confirmation for one destructive action: a title, the consequence
 /// copy naming the exact object, Cancel, and the confirming danger button.

@@ -479,7 +479,7 @@ fn usage_card() -> AnyView {
                                 table
                             }
                         }
-                        Err(e) => crate::components::format_view::inline_error(&e),
+                        Err(e) => crate::components::notice::inline_error(&e),
                     }
                 })
             }}
@@ -537,7 +537,7 @@ fn config_card() -> AnyView {
                             }
                                 .into_any()
                         }
-                        Err(e) => crate::components::format_view::inline_error(&e),
+                        Err(e) => crate::components::notice::inline_error(&e),
                     }
                 })
             }}

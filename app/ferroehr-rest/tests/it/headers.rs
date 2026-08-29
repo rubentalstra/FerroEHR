@@ -19,86 +19,27 @@
     clippy::unwrap_used,
     clippy::expect_used,
     clippy::indexing_slicing,
-    clippy::missing_assert_message,
     reason = "clippy's in-test lint scoping (clippy.toml `allow-*-in-tests`) only \
               reaches `#[test]`-annotated functions, so it misses this integration \
               module's helpers and async bodies; panicking assertions and direct \
               fixture indexing are the intended shape here (the Rust Book ch11)"
 )]
 
-use std::path::PathBuf;
-
 use axum::Router;
 use axum::body::Body;
 use http::{Request, StatusCode, header};
-use http_body_util::BodyExt;
 use serde_json::Value;
-use tower::ServiceExt;
-
-use ferroehr::config::auth::AuthConfig;
-use ferroehr::config::server::ServerConfig;
-use ferroehr_rest::config::AppConfig;
 
 use crate::common;
-
-const BASE: &str = "/ferroehr/rest/openehr/v1";
-
-// The IPS OPT + its canonical composition are the pair driven end-to-end
-// through the real `FerroEhrService` (upload → create-EHR → commit) in
-// `app/ferroehr/tests/service_validation.rs`, so they commit cleanly here too.
-fn opt_xml() -> String {
-    std::fs::read_to_string(
-        PathBuf::from(env!("CARGO_MANIFEST_DIR"))
-            .join("../../crates/openehr-its/tests/fixtures/sdk/ips.v0.opt"),
-    )
-    .expect("ips.v0.opt vendored in openehr-its")
-}
-
-fn canonical_composition() -> Value {
-    let text = std::fs::read_to_string(
-        PathBuf::from(env!("CARGO_MANIFEST_DIR")).join(
-            "../../crates/openehr-its/tests/vendor/openehr_sdk/composition/canonical_json/ips_canonical.json",
-        ),
-    )
-    .expect("ips_canonical.json vendored in openehr-its");
-    serde_json::from_str(&text).expect("valid canonical composition")
-}
-
-fn config() -> AppConfig {
-    AppConfig {
-        server: ServerConfig {
-            bind: "127.0.0.1:0".to_owned(),
-            base_path: BASE.to_owned(),
-            max_in_flight: 1024,
-            swagger_ui: false,
-            cors_permissive: false,
-            ..Default::default()
-        },
-        auth: AuthConfig {
-            enabled: false,
-            basic: None,
-            oidc: None,
-            ..AuthConfig::default()
-        },
-        ..Default::default()
-    }
-}
+use crate::common::BASE;
 
 async fn app() -> (testkit::TestDb, Router) {
     let (pg, service) = common::test_service().await;
-    (pg, common::router_with(config(), service))
+    (pg, common::router_with(common::api_config(false), service))
 }
 
 async fn send(app: &Router, req: Request<Body>) -> (StatusCode, header::HeaderMap, String) {
-    let resp = app.clone().oneshot(req).await.expect("response");
-    let status = resp.status();
-    let headers = resp.headers().clone();
-    let bytes = resp.into_body().collect().await.expect("body").to_bytes();
-    (
-        status,
-        headers,
-        String::from_utf8_lossy(&bytes).into_owned(),
-    )
+    common::send(app, req).await
 }
 
 fn etag(h: &header::HeaderMap) -> Option<&str> {
@@ -134,11 +75,7 @@ fn commit_instant(version: &Value) -> &str {
 
 /// The bare uid inside a weak `ETag` (`W/"{uid}"`).
 fn etag_uid(h: &header::HeaderMap) -> String {
-    etag(h)
-        .expect("ETag present")
-        .trim_start_matches("W/")
-        .trim_matches('"')
-        .to_owned()
+    common::etag_uid(h)
 }
 
 fn vo_of(ovid: &str) -> &str {
@@ -149,14 +86,7 @@ fn vo_of(ovid: &str) -> &str {
 
 /// Create an EHR through the wire; return its id (from the create `ETag`).
 async fn create_ehr(app: &Router) -> String {
-    let req = Request::builder()
-        .method("POST")
-        .uri(format!("{BASE}/ehr"))
-        .body(Body::empty())
-        .unwrap();
-    let (status, h, _b) = send(app, req).await;
-    assert_eq!(status, StatusCode::CREATED);
-    etag_uid(&h)
+    common::create_ehr(app).await
 }
 
 /// Upload the Demo Vitals OPT (canonical XML) through the wire.
@@ -165,7 +95,7 @@ async fn upload_opt(app: &Router) {
         .method("POST")
         .uri(format!("{BASE}/definition/template/adl1.4"))
         .header(header::CONTENT_TYPE, "application/xml")
-        .body(Body::from(opt_xml()))
+        .body(Body::from(common::ips_opt_xml()))
         .unwrap();
     let (status, _h, body) = send(app, req).await;
     assert_eq!(status, StatusCode::CREATED, "OPT upload: {body}");
@@ -177,7 +107,7 @@ async fn commit_composition(app: &Router, ehr_id: &str) -> String {
         .method("POST")
         .uri(format!("{BASE}/ehr/{ehr_id}/composition"))
         .header(header::CONTENT_TYPE, "application/json")
-        .body(Body::from(canonical_composition().to_string()))
+        .body(Body::from(common::ips_canonical_composition().to_string()))
         .unwrap();
     let (status, h, body) = send(app, req).await;
     assert_eq!(status, StatusCode::CREATED, "composition commit: {body}");
@@ -531,7 +461,7 @@ async fn composition_read_and_write_carry_the_commit_instant() {
         .method("POST")
         .uri(format!("{BASE}/ehr/{ehr_id}/composition"))
         .header(header::CONTENT_TYPE, "application/json")
-        .body(Body::from(canonical_composition().to_string()))
+        .body(Body::from(common::ips_canonical_composition().to_string()))
         .unwrap();
     let (status, h, body) = send(&app, req).await;
     assert_eq!(status, StatusCode::CREATED, "composition commit: {body}");
@@ -594,7 +524,7 @@ async fn composition_read_and_write_carry_the_commit_instant() {
     assert_eq!(last_modified(&h), Some(committed.as_str()));
 
     // PUT /composition — the update 200/204 carries the NEW version's instant.
-    let mut updated = canonical_composition();
+    let mut updated = common::ips_canonical_composition();
     updated.as_object_mut().unwrap().remove("uid");
     let req = Request::builder()
         .method("PUT")
@@ -833,7 +763,7 @@ async fn composition_update_echoes_each_item_tag_target_under_its_own_header() {
     let ovid = commit_composition(&app, &ehr_id).await;
     let vo = vo_of(&ovid).to_owned();
 
-    let mut updated = canonical_composition();
+    let mut updated = common::ips_canonical_composition();
     updated.as_object_mut().unwrap().remove("uid");
     let req = Request::builder()
         .method("PUT")
@@ -894,7 +824,7 @@ async fn composition_update_echoes_nothing_for_an_absent_item_tag_header() {
     let ovid = commit_composition(&app, &ehr_id).await;
     let vo = vo_of(&ovid).to_owned();
 
-    let mut updated = canonical_composition();
+    let mut updated = common::ips_canonical_composition();
     updated.as_object_mut().unwrap().remove("uid");
     let req = Request::builder()
         .method("PUT")
@@ -956,7 +886,7 @@ async fn writes_declare_the_applied_preference() {
         .method("POST")
         .uri(format!("{BASE}/definition/template/adl1.4"))
         .header(header::CONTENT_TYPE, "application/xml")
-        .body(Body::from(opt_xml()))
+        .body(Body::from(common::ips_opt_xml()))
         .unwrap();
     let (status, h, body) = send(&app, req).await;
     assert_eq!(status, StatusCode::CREATED, "OPT upload: {body}");
@@ -972,7 +902,7 @@ async fn writes_declare_the_applied_preference() {
         .uri(format!("{BASE}/ehr/{ehr_id}/composition"))
         .header(header::CONTENT_TYPE, "application/json")
         .header("Prefer", "return=representation")
-        .body(Body::from(canonical_composition().to_string()))
+        .body(Body::from(common::ips_canonical_composition().to_string()))
         .unwrap();
     let (status, h, body) = send(&app, req).await;
     assert_eq!(status, StatusCode::CREATED, "composition commit: {body}");
@@ -1531,7 +1461,7 @@ async fn an_undecodable_header_value_is_refused_not_dropped() {
             .uri(format!("{BASE}/ehr/{ehr_id}/composition"))
             .header(header::CONTENT_TYPE, "application/json")
             .header(header_name, opaque.clone())
-            .body(Body::from(canonical_composition().to_string()))
+            .body(Body::from(common::ips_canonical_composition().to_string()))
             .unwrap();
         let (status, _h, body) = send(&app, req).await;
         assert_eq!(
@@ -1546,7 +1476,7 @@ async fn an_undecodable_header_value_is_refused_not_dropped() {
         .method("POST")
         .uri(format!("{BASE}/ehr/{ehr_id}/composition"))
         .header(header::CONTENT_TYPE, "application/json")
-        .body(Body::from(canonical_composition().to_string()))
+        .body(Body::from(common::ips_canonical_composition().to_string()))
         .unwrap();
     let (status, _h, body) = send(&app, req).await;
     assert_eq!(
@@ -1574,7 +1504,7 @@ async fn an_emptied_item_tag_collection_echoes_no_header_not_an_empty_one() {
 
     // Tag the VERSIONED_OBJECT, then update with an EMPTY openehr-item-tag —
     // the remove-all instruction — so the stored collection empties.
-    let mut updated = canonical_composition();
+    let mut updated = common::ips_canonical_composition();
     updated.as_object_mut().unwrap().remove("uid");
     let tag_first = Request::builder()
         .method("PUT")

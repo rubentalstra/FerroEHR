@@ -44,7 +44,8 @@ use crate::components::data_table::{
 };
 use crate::components::empty_state::EmptyState;
 use crate::components::field::{BTN_DANGER, BTN_PRIMARY, BTN_SECONDARY, INPUT, LABEL, TEXTAREA};
-use crate::components::format_view::{DocumentPane, inline_error};
+use crate::components::format_view::DocumentPane;
+use crate::components::notice::inline_error;
 use crate::components::page_header::PageHeader;
 use crate::components::surface::{CARD_PAD, CARD_TITLE, WELL};
 use crate::components::toast::{toast_error, toast_success};

@@ -21,7 +21,6 @@
     clippy::unwrap_used,
     clippy::expect_used,
     clippy::panic,
-    clippy::missing_assert_message,
     reason = "clippy's in-test lint scoping (clippy.toml `allow-*-in-tests`) only \
               reaches `#[test]`-annotated functions, so it misses this integration \
               module's helpers and async bodies; panicking assertions and direct \
@@ -31,61 +30,18 @@
 use axum::Router;
 use axum::body::Body;
 use http::{Request, StatusCode, header};
-use http_body_util::BodyExt;
-use tower::ServiceExt;
-
-use ferroehr::config::auth::AuthConfig;
-use ferroehr::config::server::{AdminConfig, ServerConfig};
-use ferroehr_rest::config::AppConfig;
 
 use crate::common;
+use crate::common::BASE;
 
-const BASE: &str = "/ferroehr/rest/openehr/v1";
 /// A syntactically valid EHR id that is never created — the "unknown" probe.
 const OTHER: &str = "11111111-2222-3333-4444-555555555555";
 
-fn config(admin_enabled: bool) -> AppConfig {
-    AppConfig {
-        server: ServerConfig {
-            bind: "127.0.0.1:0".to_owned(),
-            base_path: BASE.to_owned(),
-            max_in_flight: 1024,
-            swagger_ui: false,
-            cors_permissive: false,
-            ..Default::default()
-        },
-        auth: AuthConfig {
-            enabled: false,
-            basic: None,
-            oidc: None,
-            ..AuthConfig::default()
-        },
-        admin: AdminConfig {
-            enabled: admin_enabled,
-        },
-        ..Default::default()
-    }
-}
-
 async fn app(admin_enabled: bool) -> (testkit::TestDb, Router) {
     let (pg, service) = common::test_service().await;
-    (pg, common::router_with(config(admin_enabled), service))
-}
-
-async fn send(app: &Router, req: Request<Body>) -> (StatusCode, String) {
-    let (status, _headers, body) = send_full(app, req).await;
-    (status, body)
-}
-
-async fn send_full(app: &Router, req: Request<Body>) -> (StatusCode, header::HeaderMap, String) {
-    let resp = app.clone().oneshot(req).await.expect("response");
-    let status = resp.status();
-    let headers = resp.headers().clone();
-    let bytes = resp.into_body().collect().await.expect("body").to_bytes();
     (
-        status,
-        headers,
-        String::from_utf8_lossy(&bytes).into_owned(),
+        pg,
+        common::router_with(common::api_config(admin_enabled), service),
     )
 }
 
@@ -102,48 +58,9 @@ fn allow_of(headers: &header::HeaderMap) -> &str {
         .expect("Allow is ASCII")
 }
 
-fn delete(uri: String) -> Request<Body> {
-    Request::builder()
-        .method("DELETE")
-        .uri(uri)
-        .body(Body::empty())
-        .unwrap()
-}
-
-fn get(uri: String) -> Request<Body> {
-    Request::builder()
-        .method("GET")
-        .uri(uri)
-        .body(Body::empty())
-        .unwrap()
-}
-
-/// Create a real EHR through the wire; return its server-assigned id.
-async fn create_ehr(app: &Router) -> String {
-    let req = Request::builder()
-        .method("POST")
-        .uri(format!("{BASE}/ehr"))
-        .body(Body::empty())
-        .unwrap();
-    let resp = app.clone().oneshot(req).await.expect("create ehr");
-    assert_eq!(resp.status(), StatusCode::CREATED);
-    let raw = resp
-        .headers()
-        .get(header::ETAG)
-        .and_then(|v| v.to_str().ok())
-        .expect("ETag on create");
-    raw.trim_start_matches("W/").trim_matches('"').to_owned()
-}
-
 /// Whether an EHR still exists (`GET /ehr/{id}` → 200 vs 404).
 async fn ehr_exists(app: &Router, id: &str) -> bool {
-    let req = Request::builder()
-        .method("GET")
-        .uri(format!("{BASE}/ehr/{id}"))
-        .body(Body::empty())
-        .unwrap();
-    let resp = app.clone().oneshot(req).await.expect("get ehr");
-    match resp.status() {
+    match common::send_status(app, common::get(&format!("{BASE}/ehr/{id}"))).await {
         StatusCode::OK => true,
         StatusCode::NOT_FOUND => false,
         other => panic!("unexpected GET /ehr status {other}"),
@@ -154,8 +71,9 @@ async fn ehr_exists(app: &Router, id: &str) -> bool {
 async fn disabled_admin_is_405_and_never_deletes() {
     let (_pg, app) = app(false).await;
     // Create a real EHR, then attempt the (disabled) admin delete.
-    let id = create_ehr(&app).await;
-    let (status, headers, _) = send_full(&app, delete(format!("{BASE}/admin/ehr/{id}"))).await;
+    let id = common::create_ehr(&app).await;
+    let (status, headers, _) =
+        common::send(&app, common::delete(&format!("{BASE}/admin/ehr/{id}"))).await;
     // The gate answers 405 Method Not Allowed — the status the OAS itself
     // declares for a disabled admin operation
     // (`admin_ehr_delete_all.yaml` + `responses/405.yaml`).
@@ -175,8 +93,9 @@ async fn disabled_admin_is_405_and_never_deletes() {
 #[tokio::test]
 async fn enabled_delete_is_204() {
     let (_pg, app) = app(true).await;
-    let id = create_ehr(&app).await;
-    let (status, body) = send(&app, delete(format!("{BASE}/admin/ehr/{id}"))).await;
+    let id = common::create_ehr(&app).await;
+    let (status, body) =
+        common::send_body(&app, common::delete(&format!("{BASE}/admin/ehr/{id}"))).await;
     assert_eq!(status, StatusCode::NO_CONTENT);
     assert!(body.is_empty(), "204 carries no body, got {body:?}");
     // RE-TARGET (was `calls == 1`): the delete took effect — the EHR is gone.
@@ -187,7 +106,8 @@ async fn enabled_delete_is_204() {
 async fn enabled_delete_unknown_maps_to_404() {
     let (_pg, app) = app(true).await;
     // The backend's NotFound (ehr_id_does_not_exist) surfaces as HTTP 404.
-    let (status, _) = send(&app, delete(format!("{BASE}/admin/ehr/{OTHER}"))).await;
+    let (status, _) =
+        common::send_body(&app, common::delete(&format!("{BASE}/admin/ehr/{OTHER}"))).await;
     assert_eq!(status, StatusCode::NOT_FOUND);
 }
 
@@ -196,9 +116,13 @@ async fn enabled_delete_all_is_204_bodyless() {
     // `admin_ehr_delete_all.yaml:18-26`: the only declared success responses are
     // `202` (async) and `204 No Content` (sync) — both bodyless.
     let (_pg, app) = app(true).await;
-    let a = create_ehr(&app).await;
-    let b = create_ehr(&app).await;
-    let (status, body) = send(&app, delete(format!("{BASE}/admin/ehr/all?ehr_id={a},{b}"))).await;
+    let a = common::create_ehr(&app).await;
+    let b = common::create_ehr(&app).await;
+    let (status, body) = common::send_body(
+        &app,
+        common::delete(&format!("{BASE}/admin/ehr/all?ehr_id={a},{b}")),
+    )
+    .await;
     assert_eq!(status, StatusCode::NO_CONTENT);
     assert!(body.is_empty(), "204 carries no body, got {body:?}");
     // RE-TARGET (was `calls == 1`): both listed EHRs are gone.
@@ -213,11 +137,11 @@ async fn enabled_delete_all_repeated_param_reaches_backend_with_both_ids() {
     // a recorder of the ids handed to the mock): both EHRs being deleted proves
     // the RFC 6570 `{?ehr_id*}` list handling passed both ids to the backend.
     let (_pg, app) = app(true).await;
-    let a = create_ehr(&app).await;
-    let b = create_ehr(&app).await;
-    let (status, body) = send(
+    let a = common::create_ehr(&app).await;
+    let b = common::create_ehr(&app).await;
+    let (status, body) = common::send_body(
         &app,
-        delete(format!("{BASE}/admin/ehr/all?ehr_id={a}&ehr_id={b}")),
+        common::delete(&format!("{BASE}/admin/ehr/all?ehr_id={a}&ehr_id={b}")),
     )
     .await;
     assert_eq!(status, StatusCode::NO_CONTENT);
@@ -237,7 +161,8 @@ async fn disabled_admin_config_is_405() {
     // (`admin_ehr_delete_all.yaml` + `responses/405.yaml`), applied
     // uniformly across the group.
     let (_pg, app) = app(false).await;
-    let (status, headers, body) = send_full(&app, get(format!("{BASE}/admin/config"))).await;
+    let (status, headers, body) =
+        common::send(&app, common::get(&format!("{BASE}/admin/config"))).await;
     assert_eq!(status, StatusCode::METHOD_NOT_ALLOWED);
     // Mandatory on every 405 (RFC 9110 §15.5.6), empty because the resource
     // currently allows no methods at all (RFC 9110 §10.2.1) — see
@@ -255,7 +180,8 @@ async fn enabled_admin_config_is_200_json() {
     // proven by the unit test on `FerroEhrConfig::to_redacted_json`; here the
     // point is the route is mounted and served under the enabled gate.
     let (_pg, app) = app(true).await;
-    let (status, _body) = send(&app, get(format!("{BASE}/admin/config"))).await;
+    let (status, _body) =
+        common::send_body(&app, common::get(&format!("{BASE}/admin/config"))).await;
     assert_eq!(status, StatusCode::OK);
 }
 
@@ -266,9 +192,10 @@ async fn enabled_delete_all_missing_list_deletes_all() {
     // "delete ALL EHRs" (`admin_ehr_delete_all.yaml:5`), expressed to the
     // backend as the empty list.
     let (_pg, app) = app(true).await;
-    let a = create_ehr(&app).await;
-    let b = create_ehr(&app).await;
-    let (status, body) = send(&app, delete(format!("{BASE}/admin/ehr/all"))).await;
+    let a = common::create_ehr(&app).await;
+    let b = common::create_ehr(&app).await;
+    let (status, body) =
+        common::send_body(&app, common::delete(&format!("{BASE}/admin/ehr/all"))).await;
     assert_eq!(status, StatusCode::NO_CONTENT);
     assert!(body.is_empty(), "204 carries no body, got {body:?}");
     // RE-TARGET (was `calls == 1`): the all-EHRs request removed every EHR.
@@ -284,25 +211,14 @@ async fn enabled_delete_all_missing_list_deletes_all() {
 // branches are pinned. NOTE: no openEHR spec governs these routes — our own
 // design/extension; the outcome shapes mirror the released admin deletes.
 
-fn ips_opt_xml() -> String {
-    std::fs::read_to_string(
-        std::path::PathBuf::from(env!("CARGO_MANIFEST_DIR"))
-            .join("../../crates/openehr-its/tests/fixtures/sdk/ips.v0.opt"),
-    )
-    .expect("ips.v0.opt vendored in openehr-its")
-}
-
 async fn upload_ips_template(app: &Router) {
-    let (status, body) = send(
-        app,
-        Request::builder()
-            .method("POST")
-            .uri(format!("{BASE}/definition/template/adl1.4"))
-            .header(header::CONTENT_TYPE, "application/xml")
-            .body(Body::from(ips_opt_xml()))
-            .unwrap(),
-    )
-    .await;
+    let req = Request::builder()
+        .method("POST")
+        .uri(format!("{BASE}/definition/template/adl1.4"))
+        .header(header::CONTENT_TYPE, "application/xml")
+        .body(Body::from(common::ips_opt_xml()))
+        .unwrap();
+    let (status, body) = common::send_body(app, req).await;
     assert_eq!(status, StatusCode::CREATED, "OPT upload: {body}");
 }
 
@@ -314,12 +230,12 @@ fn ips_template_path() -> String {
 async fn template_delete_is_204_and_the_template_is_gone() {
     let (_pg, app) = app(true).await;
     upload_ips_template(&app).await;
-    let (status, body) = send(&app, delete(ips_template_path())).await;
+    let (status, body) = common::send_body(&app, common::delete(&ips_template_path())).await;
     assert_eq!(status, StatusCode::NO_CONTENT, "template delete: {body}");
     assert!(body.is_empty(), "204 carries no body, got {body:?}");
-    let (status, _body) = send(
+    let (status, _body) = common::send_body(
         &app,
-        get(format!(
+        common::get(&format!(
             "{BASE}/definition/template/adl1.4/International%20Patient%20Summary"
         )),
     )
@@ -334,9 +250,9 @@ async fn template_delete_is_204_and_the_template_is_gone() {
 #[tokio::test]
 async fn template_delete_unknown_is_404() {
     let (_pg, app) = app(true).await;
-    let (status, _body) = send(
+    let (status, _body) = common::send_body(
         &app,
-        delete(format!("{BASE}/admin/template/no-such-template")),
+        common::delete(&format!("{BASE}/admin/template/no-such-template")),
     )
     .await;
     assert_eq!(status, StatusCode::NOT_FOUND);
@@ -349,33 +265,25 @@ async fn template_delete_still_referenced_is_409() {
     // physical delete refuses with 409 and the template stays served.
     let (_pg, app) = app(true).await;
     upload_ips_template(&app).await;
-    let ehr_id = create_ehr(&app).await;
-    let composition = std::fs::read_to_string(
-        std::path::PathBuf::from(env!("CARGO_MANIFEST_DIR")).join(
-            "../../crates/openehr-its/tests/vendor/openehr_sdk/composition/canonical_json/ips_canonical.json",
-        ),
-    )
-    .expect("ips_canonical.json vendored in openehr-its");
-    let (status, body) = send(
+    let ehr_id = common::create_ehr(&app).await;
+    let (status, body) = common::send_body(
         &app,
-        Request::builder()
-            .method("POST")
-            .uri(format!("{BASE}/ehr/{ehr_id}/composition"))
-            .header(header::CONTENT_TYPE, "application/json")
-            .body(Body::from(composition))
-            .unwrap(),
+        common::post_json(
+            &format!("{BASE}/ehr/{ehr_id}/composition"),
+            &common::ips_canonical_composition().to_string(),
+        ),
     )
     .await;
     assert_eq!(status, StatusCode::CREATED, "referencing commit: {body}");
-    let (status, body) = send(&app, delete(ips_template_path())).await;
+    let (status, body) = common::send_body(&app, common::delete(&ips_template_path())).await;
     assert_eq!(
         status,
         StatusCode::CONFLICT,
         "in-use template delete: {body}"
     );
-    let (status, _body) = send(
+    let (status, _body) = common::send_body(
         &app,
-        get(format!(
+        common::get(&format!(
             "{BASE}/definition/template/adl1.4/International%20Patient%20Summary"
         )),
     )
@@ -390,20 +298,17 @@ async fn template_delete_still_referenced_is_409() {
 #[tokio::test]
 async fn query_version_delete_is_204_and_that_version_is_gone() {
     let (_pg, app) = app(true).await;
-    let (status, body) = send(
-        &app,
-        Request::builder()
-            .method("PUT")
-            .uri(format!("{BASE}/definition/query/cnf.admin::probe/1.0.0"))
-            .header(header::CONTENT_TYPE, "text/plain")
-            .body(Body::from("SELECT e/ehr_id/value FROM EHR e"))
-            .unwrap(),
-    )
-    .await;
+    let req = Request::builder()
+        .method("PUT")
+        .uri(format!("{BASE}/definition/query/cnf.admin::probe/1.0.0"))
+        .header(header::CONTENT_TYPE, "text/plain")
+        .body(Body::from("SELECT e/ehr_id/value FROM EHR e"))
+        .unwrap();
+    let (status, body) = common::send_body(&app, req).await;
     assert_eq!(status, StatusCode::OK, "query store: {body}");
-    let (status, body) = send(
+    let (status, body) = common::send_body(
         &app,
-        delete(format!("{BASE}/admin/query/cnf.admin::probe/1.0.0")),
+        common::delete(&format!("{BASE}/admin/query/cnf.admin::probe/1.0.0")),
     )
     .await;
     assert_eq!(
@@ -412,9 +317,9 @@ async fn query_version_delete_is_204_and_that_version_is_gone() {
         "query version delete: {body}"
     );
     assert!(body.is_empty(), "204 carries no body, got {body:?}");
-    let (status, _body) = send(
+    let (status, _body) = common::send_body(
         &app,
-        get(format!("{BASE}/definition/query/cnf.admin::probe/1.0.0")),
+        common::get(&format!("{BASE}/definition/query/cnf.admin::probe/1.0.0")),
     )
     .await;
     assert_eq!(
@@ -427,9 +332,9 @@ async fn query_version_delete_is_204_and_that_version_is_gone() {
 #[tokio::test]
 async fn query_version_delete_unknown_is_404() {
     let (_pg, app) = app(true).await;
-    let (status, _body) = send(
+    let (status, _body) = common::send_body(
         &app,
-        delete(format!("{BASE}/admin/query/cnf.admin::absent/9.9.9")),
+        common::delete(&format!("{BASE}/admin/query/cnf.admin::absent/9.9.9")),
     )
     .await;
     assert_eq!(status, StatusCode::NOT_FOUND);

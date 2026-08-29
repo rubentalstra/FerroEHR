@@ -36,7 +36,7 @@ use serde_json::Value;
 use crate::components::data_table::{CELL, CELL_MONO, PAGE_SIZE, ROW, table_shell, table_skeleton};
 use crate::components::empty_state::EmptyState;
 use crate::components::field::{BTN_PRIMARY, BTN_SECONDARY, INPUT, LABEL};
-use crate::components::format_view::inline_error;
+use crate::components::notice::inline_error;
 use crate::components::page_header::PageHeader;
 use crate::components::surface::{CARD_PAD, CARD_TITLE};
 use crate::components::toast::toast_success;

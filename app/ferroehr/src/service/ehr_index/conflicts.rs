@@ -1,12 +1,13 @@
 // SPDX-FileCopyrightText: FerroEHR contributors
 // SPDX-License-Identifier: MIT
 
-//! Design-filled advisory duplicate-detection read. `master07 §Overview`
-//! names two error states the index metadata exists "to detect and rectify":
-//! multiple EHRs recorded for one subject, and multiple subjects recorded for
-//! one EHR. The SM defines no detection *operation* — this read is our own
-//! design (advisory, never a hard reject: the N:M states are legal-but-flagged
-//! per `resource_instance_type.adoc` `Duplicate`).
+//! Design-filled advisory duplicate-detection read.
+//!
+//! `master07 §Overview` names two error states the index metadata exists "to
+//! detect and rectify": multiple EHRs recorded for one subject, and multiple
+//! subjects recorded for one EHR. The SM defines no detection *operation* —
+//! this read is our own design (advisory, never a hard reject: the N:M states
+//! are legal-but-flagged per `resource_instance_type.adoc` `Duplicate`).
 
 use sqlx::Row;
 
@@ -29,13 +30,17 @@ pub enum IndexConflict {
     /// "multiple EHRs … created in different locations" case). Carries every
     /// association of that subject so the operator can pick the `Primary`.
     SubjectWithMultipleEhrs {
+        /// The subject the associations share, with its stored type.
         subject: SubjectRef,
+        /// Every association of that subject, ordered by EHR id.
         entries: Vec<EhrIndexEntry>,
     },
     /// One EHR is associated with more than one subject (the
     /// "records merged … multiple subject ids" case).
     EhrWithMultipleSubjects {
+        /// The EHR the associations share.
         ehr_id: EhrId,
+        /// Every association of that EHR, ordered by subject key.
         entries: Vec<EhrIndexEntry>,
     },
 }

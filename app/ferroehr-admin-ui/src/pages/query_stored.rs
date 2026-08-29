@@ -166,7 +166,7 @@ fn definition_section(
                             }
                                 .into_any()
                         }
-                        Err(e) => crate::components::format_view::inline_error(&e),
+                        Err(e) => crate::components::notice::inline_error(&e),
                     }
                 })}
             </Transition>
@@ -323,7 +323,7 @@ fn parameters_section(
                     match definition.await {
                         Ok(Some((_, _, aql))) => parameter_inputs(&placeholders(&aql), bindings),
                         Ok(None) => ().into_any(),
-                        Err(e) => crate::components::format_view::inline_error(&e),
+                        Err(e) => crate::components::notice::inline_error(&e),
                     }
                 })}
             </Transition>
@@ -490,7 +490,7 @@ fn results_section(
                         }
                             .into_any()
                     }
-                    Err(e) => crate::components::format_view::inline_error(&e),
+                    Err(e) => crate::components::notice::inline_error(&e),
                 }
             })}
         </Transition>

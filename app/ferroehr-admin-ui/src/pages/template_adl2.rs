@@ -431,7 +431,7 @@ fn version_section(
         Suspend::new(async move {
             let rows = match listing.await {
                 Ok(rows) => rows,
-                Err(e) => return crate::components::format_view::inline_error(&e),
+                Err(e) => return crate::components::notice::inline_error(&e),
             };
             let ids = rows
                 .into_iter()
@@ -637,7 +637,7 @@ fn source_tab(source: Resource<Result<PaneBody, AdminUiError>>) -> AnyView {
                             .into_any()
                     }
                     Ok(PaneBody::Absent) => absent_view("ADL2 source"),
-                    Err(e) => crate::components::format_view::inline_error(&e),
+                    Err(e) => crate::components::notice::inline_error(&e),
                 }
             })}
         </Transition>
@@ -662,7 +662,7 @@ fn json_tab(json: Resource<Result<PaneBody, AdminUiError>>) -> AnyView {
                             .into_any()
                     }
                     Ok(PaneBody::Absent) => absent_view("OperationalTemplateV2 JSON"),
-                    Err(e) => crate::components::format_view::inline_error(&e),
+                    Err(e) => crate::components::notice::inline_error(&e),
                 }
             })}
         </Transition>
@@ -703,7 +703,7 @@ fn example_tab(
                                 .into_any()
                         }
                         Ok(PaneBody::Absent) => absent_view("example composition"),
-                        Err(e) => crate::components::format_view::inline_error(&e),
+                        Err(e) => crate::components::notice::inline_error(&e),
                     }
                 })}
             </Transition>

@@ -597,7 +597,7 @@ fn template_picker(
                             .into_any()
                     }
                     Ok(None) => ().into_any(),
-                    Err(e) => crate::components::format_view::inline_error(&e),
+                    Err(e) => crate::components::notice::inline_error(&e),
                 }
             })}
         </Transition>
@@ -654,7 +654,7 @@ fn composition_picker(
                             .into_any()
                     }
                     Ok(None) => ().into_any(),
-                    Err(e) => crate::components::format_view::inline_error(&e),
+                    Err(e) => crate::components::notice::inline_error(&e),
                 }
             })}
         </Transition>

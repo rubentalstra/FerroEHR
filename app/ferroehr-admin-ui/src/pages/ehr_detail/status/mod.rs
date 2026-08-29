@@ -52,8 +52,8 @@ use crate::components::data_table::table_skeleton;
 use crate::components::format_view::DocumentPane;
 use crate::components::surface::CARD_PAD;
 use crate::components::toast::toast_success;
+use crate::components::wire::{VersionEntry, VersionedObjectFacts};
 use crate::error::AdminUiError;
-use crate::pages::composition::VersionEntry;
 use crate::pages::ehr_detail::status::edit::{StatusEdit, StatusForm, edit_form, seed};
 
 /// The noun phrase every `EHR_STATUS` write-failure toast is built around
@@ -99,39 +99,6 @@ pub struct EhrStatusState {
     /// `EHR_STATUS.other_details` pretty-printed as canonical JSON, empty when
     /// the status carries none (the attribute is optional).
     pub other_details: String,
-}
-
-/// The `VERSIONED_EHR_STATUS` container plus one of its VERSIONS' envelope
-/// facts, flattened for the history tab's card (fixed-size-safe — rules §1).
-///
-/// The attributes are the RM classes' own (files under
-/// `docs/specs/openehr/RM/docs/UML/classes/`): `VERSIONED_OBJECT._uid_`,
-/// `_owner_id_` and `_time_created_`
-/// (`org.openehr.rm.common.versioned_object.adoc`); `VERSION._contribution_`,
-/// `_signature_` and `_preceding_version_uid_`, whose invariant
-/// `Preceding_version_uid_validity` makes it absent exactly for a first version
-/// (`org.openehr.rm.common.version.adoc`); and
-/// `ORIGINAL_VERSION._lifecycle_state_`
-/// (`org.openehr.rm.common.original_version.adoc`).
-#[derive(Debug, Clone, PartialEq, Eq, Default, Serialize, Deserialize)]
-pub struct VersionedStatusDetails {
-    /// `VERSIONED_OBJECT.uid.value` — the versioned-object id.
-    pub object_uid: String,
-    /// `VERSIONED_OBJECT.owner_id.id.value` — the owning EHR.
-    pub owner_id: String,
-    /// `VERSIONED_OBJECT.time_created.value` — when the first version was
-    /// committed.
-    pub time_created: String,
-    /// The read VERSION's `uid.value` (`OBJECT_VERSION_ID`).
-    pub version_id: String,
-    /// `ORIGINAL_VERSION.lifecycle_state.value`.
-    pub lifecycle_state: String,
-    /// `VERSION.preceding_version_uid.value` — empty for a first version.
-    pub preceding_version_uid: String,
-    /// `VERSION.contribution.id.value`.
-    pub contribution_uid: String,
-    /// Whether the VERSION carries a `signature`.
-    pub signed: bool,
 }
 
 /// The EHR's CURRENT `EHR_STATUS` (`GET /ehr/{ehr_id}/ehr_status`), flattened
@@ -296,9 +263,8 @@ pub async fn update_ehr_status(
 /// The `VERSIONED_EHR_STATUS`'s revision history, newest-first
 /// (`GET /ehr/{ehr_id}/versioned_ehr_status/revision_history`).
 ///
-/// The rows are the shared [`VersionEntry`] the composition viewer's history
-/// uses, parsed by the same
-/// `crate::pages::composition::parse_versions` — a
+/// The rows are the shared [`VersionEntry`] every History tab renders, parsed
+/// by the same `crate::pages::composition::parse_versions` — a
 /// `REVISION_HISTORY` is a `REVISION_HISTORY` whichever versioned object it
 /// belongs to.
 ///
@@ -355,7 +321,7 @@ pub async fn fetch_versioned_status(
     ehr_id: String,
     /// The status version whose envelope facts to read.
     version_uid: String,
-) -> Result<VersionedStatusDetails, AdminUiError> {
+) -> Result<VersionedObjectFacts, AdminUiError> {
     let session = crate::session::require_session().await?;
     let state: crate::state::AppState = expect_context();
     let ehr = urlencoding::encode(&ehr_id);
@@ -478,7 +444,7 @@ fn parse_status_state(
 
 #[cfg(feature = "ssr")]
 /// Flatten a `VERSIONED_EHR_STATUS` body plus a VERSION body into
-/// [`VersionedStatusDetails`]. Defensive throughout — an absent attribute reads
+/// [`VersionedObjectFacts`]. Defensive throughout — an absent attribute reads
 /// as empty rather than failing the card.
 ///
 /// # Errors
@@ -486,12 +452,12 @@ fn parse_status_state(
 fn parse_versioned_status(
     object_body: &str,
     version_body: &str,
-) -> Result<VersionedStatusDetails, AdminUiError> {
+) -> Result<VersionedObjectFacts, AdminUiError> {
     let object: Value = serde_json::from_str(object_body)
         .map_err(|e| AdminUiError::Internal(format!("versioned ehr_status JSON: {e}")))?;
     let version: Value = serde_json::from_str(version_body)
         .map_err(|e| AdminUiError::Internal(format!("version JSON: {e}")))?;
-    Ok(VersionedStatusDetails {
+    Ok(VersionedObjectFacts {
         object_uid: crate::uid::uid_value_of_document(&object),
         owner_id: json_str(&object, &["owner_id", "id", "value"]),
         time_created: json_str(&object, &["time_created", "value"]),
@@ -671,7 +637,7 @@ fn facts_section(resource: StatusResource, form: StatusForm) -> AnyView {
                         seed(form, &state);
                         facts_card(&state)
                     }
-                    Err(e) => crate::components::format_view::inline_error(&e),
+                    Err(e) => crate::components::notice::inline_error(&e),
                 }
             })}
         </Transition>

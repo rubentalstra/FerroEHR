@@ -52,25 +52,12 @@ use crate::components::format_view::{DocumentPane, FormatSelector, PaneView};
 use crate::components::page_header::{Crumb, PageHeader};
 use crate::components::surface::{CARD_PAD, CARD_TITLE, WELL};
 use crate::components::toast::{toast_error, toast_success};
+use crate::components::wire::VersionEntry;
 // Server-side pretty-printing happens in the #[server] body only.
 #[cfg(feature = "ssr")]
 use crate::components::format_view::pretty_body;
 use crate::error::AdminUiError;
 use crate::format::ReprFormat;
-
-/// One entry in a versioned composition's history, flattened for the version
-/// selector and audit card. All fields fixed-size-safe strings (rules §1).
-#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
-pub struct VersionEntry {
-    /// The `OBJECT_VERSION_ID` value (`uuid::system::version`).
-    pub version_id: String,
-    /// `AUDIT_DETAILS.time_committed` value.
-    pub committed: String,
-    /// `AUDIT_DETAILS.change_type` value (the `DV_CODED_TEXT` label).
-    pub change_type: String,
-    /// `AUDIT_DETAILS.committer` name.
-    pub committer: String,
-}
 
 /// The revision history of a versioned composition, newest-first.
 ///
@@ -877,7 +864,7 @@ fn versioned_section(
                 {move || Suspend::new(async move {
                     match versioned.await {
                         Ok(details) => versioned_card(&details),
-                        Err(e) => crate::components::format_view::inline_error(&e),
+                        Err(e) => crate::components::notice::inline_error(&e),
                     }
                 })}
             </Transition>
@@ -1113,7 +1100,7 @@ fn toolbar_section(
             </p>
         }
         .into_any(),
-        Some(Err(error)) => crate::components::format_view::inline_error(&error),
+        Some(Err(error)) => crate::components::notice::inline_error(&error),
         _ => ().into_any(),
     };
     view! {
@@ -1209,7 +1196,7 @@ fn document_section(
                             .into_any()
                     }
                     Ok(None) => deleted_pane(),
-                    Err(e) => crate::components::format_view::inline_error(&e),
+                    Err(e) => crate::components::notice::inline_error(&e),
                 }
             })}
         </Transition>

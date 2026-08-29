@@ -779,7 +779,7 @@ fn templates_table(
                     Ok(rows) => {
                         rows_view(rows, filter, paging, admin, delete, pending_delete, family)
                     }
-                    Err(e) => crate::components::format_view::inline_error(&e),
+                    Err(e) => crate::components::notice::inline_error(&e),
                 }
             })}
         </Transition>

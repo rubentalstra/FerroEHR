@@ -65,8 +65,8 @@ use serde::{Deserialize, Serialize};
 #[cfg(feature = "ssr")]
 use serde_json::Value;
 
+use crate::components::wire::{VersionEntry, VersionedObjectFacts};
 use crate::error::AdminUiError;
-use crate::pages::composition::VersionEntry;
 use crate::uid::container_uid_of;
 
 /// The five concrete PARTY families the Demographic API routes by.
@@ -286,39 +286,6 @@ pub fn contribution_href(uid: &str) -> String {
     )
 }
 
-/// A demographic versioned object's container facts plus one of its VERSIONs'
-/// envelope facts, flattened for the history card (fixed-size-safe — rules §1).
-///
-/// The attributes are the RM classes' own (files under
-/// `docs/specs/openehr/RM/docs/UML/classes/`): `VERSIONED_OBJECT._uid_`,
-/// `_owner_id_` and `_time_created_`
-/// (`org.openehr.rm.common.versioned_object.adoc`); `VERSION._contribution_`,
-/// `_signature_` and `_preceding_version_uid_`, whose invariant
-/// `Preceding_version_uid_validity` makes it absent exactly for a first
-/// version (`org.openehr.rm.common.version.adoc`); and
-/// `ORIGINAL_VERSION._lifecycle_state_`
-/// (`org.openehr.rm.common.original_version.adoc`).
-#[derive(Debug, Clone, PartialEq, Eq, Default, Serialize, Deserialize)]
-pub struct VersionedObjectFacts {
-    /// `VERSIONED_OBJECT.uid.value` — the versioned-object id.
-    pub object_uid: String,
-    /// `VERSIONED_OBJECT.owner_id.id.value`; empty on a demographic container,
-    /// which has no owning EHR.
-    pub owner_id: String,
-    /// `VERSIONED_OBJECT.time_created.value`.
-    pub time_created: String,
-    /// The read VERSION's `uid.value` (`OBJECT_VERSION_ID`).
-    pub version_id: String,
-    /// `ORIGINAL_VERSION.lifecycle_state.value`.
-    pub lifecycle_state: String,
-    /// `VERSION.preceding_version_uid.value` — empty for a first version.
-    pub preceding_version_uid: String,
-    /// `VERSION.contribution.id.value`.
-    pub contribution_uid: String,
-    /// Whether the VERSION carries a `signature`.
-    pub signed: bool,
-}
-
 /// Read a demographic versioned-object container and one of its VERSIONs.
 ///
 /// Two reads, one resource: `GET /demographic/{family}/{versioned_object_uid}`
@@ -383,9 +350,9 @@ pub async fn fetch_versioned_object(
 /// (`GET /demographic/{family}/{versioned_object_uid}/revision_history` —
 /// `operations/versioned_party_revision_history.yaml`).
 ///
-/// The rows are the shared [`VersionEntry`] the composition viewer's history
-/// uses, parsed by the same `parse_versions` — a `REVISION_HISTORY` is a
-/// `REVISION_HISTORY` whichever versioned object it belongs to.
+/// The rows are the shared [`VersionEntry`] every History tab renders, parsed
+/// by the same `parse_versions` — a `REVISION_HISTORY` is a `REVISION_HISTORY`
+/// whichever versioned object it belongs to.
 ///
 /// # Errors
 /// [`AdminUiError::Unauthenticated`] without a console session; CDR transport

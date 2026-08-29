@@ -836,11 +836,11 @@ pub(super) fn directory_section(ehr_id: Signal<String>, selected: Memo<String>) 
                                     picker_target,
                                 )
                             }
-                            Err(e) => crate::components::format_view::inline_error(&e),
+                            Err(e) => crate::components::notice::inline_error(&e),
                         }
                     }
                     Ok(None) => create_section(ehr_id, create),
-                    Err(e) => crate::components::format_view::inline_error(&e),
+                    Err(e) => crate::components::notice::inline_error(&e),
                 }
             })}
         </Transition>

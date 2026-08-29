@@ -250,7 +250,7 @@ fn activity_section(ehr_id: Signal<String>, selected: Memo<String>) -> AnyView {
                         )
                     }
                     Ok(None) => ().into_any(),
-                    Err(e) => crate::components::format_view::inline_error(&e),
+                    Err(e) => crate::components::notice::inline_error(&e),
                 }
             })}
         </Suspense>
@@ -289,7 +289,7 @@ pub(super) fn contributions_section(ehr_id: Signal<String>, selected: Memo<Strin
                 match list.await {
                     Ok(Some(page)) => contributions_table(&page, offset),
                     Ok(None) => ().into_any(),
-                    Err(e) => crate::components::format_view::inline_error(&e),
+                    Err(e) => crate::components::notice::inline_error(&e),
                 }
             })}
         </Transition>
@@ -440,7 +440,7 @@ fn contribution_lookup(ehr_id: Signal<String>, selected: Memo<String>) -> AnyVie
                         }
                             .into_any()
                     }
-                    Err(e) => crate::components::format_view::inline_error(&e),
+                    Err(e) => crate::components::notice::inline_error(&e),
                 }
             })}
         </Transition>

@@ -48,11 +48,15 @@ use serde_json::Value;
 
 use crate::components::data_table::{CELL, CELL_MONO, ROW, table_shell, table_skeleton};
 use crate::components::empty_state::EmptyState;
-use crate::components::field::{BTN_DANGER, BTN_PRIMARY, INPUT, LABEL, SELECT, TEXTAREA};
-use crate::components::format_view::{DocumentPane, inline_error};
+use crate::components::field::{BTN_PRIMARY, INPUT, LABEL, SELECT, TEXTAREA};
+use crate::components::format_view::document_section;
+use crate::components::logical_delete::{LogicalDeleteCopy, logical_delete_section};
+use crate::components::notice::inline_error;
+use crate::components::notice::{alert_note, deleted_notice, diagnostic_pane, missing_notice};
 use crate::components::page_header::{Crumb, PageHeader};
-use crate::components::surface::{CARD_PAD, CARD_TITLE, WELL};
-use crate::components::toast::{toast_error, toast_success};
+use crate::components::surface::{CARD_PAD, CARD_TITLE};
+use crate::components::tab_bar::tab_link;
+use crate::components::toast::toast_success;
 use crate::error::AdminUiError;
 use crate::pages::demographics::party::fact_row;
 use crate::pages::demographics::{DemographicResource, PartyKind, party_href, relationship_href};
@@ -968,19 +972,7 @@ fn create_card(source_uid: &str, source_kind: &str) -> AnyView {
                     </Show>
                 </div>
                 {move || {
-                    validation
-                        .get()
-                        .map(|message| {
-                            view! {
-                                <p
-                                    role="alert"
-                                    id="relationship-validation"
-                                    class="rounded-control border border-danger/40 bg-danger-subtle px-3 py-2 text-sm text-danger"
-                                >
-                                    {message}
-                                </p>
-                            }
-                        })
+                    validation.get().map(|message| alert_note("relationship-validation", message))
                 }}
                 {move || match create.value().get() {
                     Some(Err(error)) => inline_error(&error),
@@ -1091,19 +1083,11 @@ pub fn RelationshipDetailPage() -> impl IntoView {
 /// The relationship detail's two-tab bar.
 fn tab_bar(uid: Signal<String>, selected: Memo<String>) -> AnyView {
     let link = move |value: &'static str, label: &'static str| {
-        let href = move || format!("{}?tab={value}", relationship_href(uid.get().as_str()));
-        let class = move || {
-            if selected.get() == value {
-                "rounded-control px-3 py-1.5 text-sm font-medium bg-accent-subtle text-accent-ink"
-            } else {
-                "rounded-control px-3 py-1.5 text-sm font-medium text-ink-muted hover:bg-sunken"
-            }
-        };
-        view! {
-            <a href=href class=class>
-                {label}
-            </a>
-        }
+        tab_link(
+            move || format!("{}?tab={value}", relationship_href(uid.get().as_str())),
+            label,
+            Signal::derive(move || selected.get() == value),
+        )
     };
     view! {
         <div class="flex flex-wrap gap-1 border-b border-edge pb-2">
@@ -1219,33 +1203,16 @@ fn relationship_section(uid: Signal<String>, latest_version: RwSignal<String>) -
                         facts_card(&state)
                     }
                     Ok(None) => {
-                        // Idempotent per loaded version: a Suspend re-run for
-                        // the SAME version must not overwrite edits in
-                        // progress (rules §4).
-                        // The delete affordance's precondition, published from
-                        // this one read.
-                        view! {
-                            <div
-                                role="status"
-                                id="relationship-deleted"
-                                class="rounded-card border border-warn/40 bg-warn-subtle px-3 py-2 text-sm text-warn"
-                            >
-                                "This relationship's current version is deleted. Its earlier versions are still readable — open one from the History tab."
-                            </div>
-                        }
-                            .into_any()
+                        deleted_notice(
+                            "relationship-deleted",
+                            "This relationship's current version is deleted. Its earlier versions are still readable — open one from the History tab.",
+                        )
                     }
                     Err(e) if e.status_code() == Some(http::StatusCode::NOT_FOUND) => {
-                        view! {
-                            <div
-                                role="alert"
-                                id="relationship-not-found"
-                                class="rounded-card border border-danger/40 bg-danger-subtle px-3 py-2 text-sm text-danger"
-                            >
-                                "No relationship with this id. Relationship routes are an extension of this CDR, so a server built without them answers the same 404."
-                            </div>
-                        }
-                            .into_any()
+                        missing_notice(
+                            "relationship-not-found",
+                            "No relationship with this id. Relationship routes are an extension of this CDR, so a server built without them answers the same 404.",
+                        )
                     }
                     Err(e) => inline_error(&e),
                 }
@@ -1263,29 +1230,11 @@ fn relationship_section(uid: Signal<String>, latest_version: RwSignal<String>) -
         validation,
         save,
     );
-    let document = view! {
-        <Transition fallback=table_skeleton>
-            {move || Suspend::new(async move {
-                match resource.await {
-                    Ok(Some(state)) => {
-                        let pretty = crate::components::format_view::pretty_body(
-                            &state.body,
-                            crate::format::ReprFormat::CanonicalJson,
-                        );
-                        let doc = RwSignal::new(pretty);
-                        view! {
-                            <div id="relationship-document">
-                                <DocumentPane body=doc />
-                            </div>
-                        }
-                            .into_any()
-                    }
-                    Ok(None) | Err(_) => ().into_any(),
-                }
-            })}
-        </Transition>
-    }
-    .into_any();
+    // A failed read renders nothing in the pane — the facts section above
+    // states it once (the screen never renders an error as nothing; rules §4).
+    let document = document_section(resource, "relationship-document", |state| {
+        state.body.as_str()
+    });
 
     view! { <div class="flex flex-col gap-4">{facts} {editor} {document}</div> }.into_any()
 }
@@ -1307,10 +1256,6 @@ fn facts_card(state: &RelationshipState) -> AnyView {
 }
 
 /// The relationship edit card: its type and `details`.
-#[expect(
-    clippy::too_many_lines,
-    reason = "one erased section: the edit card's inputs + validation + action wiring (rules §1)"
-)]
 fn edit_card(
     name_draft: RwSignal<String>,
     details_draft: RwSignal<String>,
@@ -1343,20 +1288,10 @@ fn edit_card(
             details,
         });
     };
-    let diagnostic = move || match save.value().get() {
-        Some(Err(error)) => {
-            let detail = error.to_string();
-            view! {
-                <div class=WELL id="relationship-diagnostic" role="alert">
-                    <pre class="overflow-auto max-h-[40vh] whitespace-pre-wrap font-mono text-xs text-danger">
-                        {detail}
-                    </pre>
-                </div>
-            }
-            .into_any()
-        }
-        _ => ().into_any(),
-    };
+    let diagnostic = diagnostic_pane(
+        "relationship-diagnostic",
+        Signal::derive(move || save.value().get().and_then(Result::err)),
+    );
     view! {
         <section class=CARD_PAD id="relationship-edit">
             <h2 class=CARD_TITLE>"Edit relationship"</h2>
@@ -1407,17 +1342,7 @@ fn edit_card(
                 {move || {
                     validation
                         .get()
-                        .map(|message| {
-                            view! {
-                                <p
-                                    role="alert"
-                                    id="relationship-edit-validation"
-                                    class="rounded-control border border-danger/40 bg-danger-subtle px-3 py-2 text-sm text-danger"
-                                >
-                                    {message}
-                                </p>
-                            }
-                        })
+                        .map(|message| alert_note("relationship-edit-validation", message))
                 }}
                 {diagnostic}
             </div>
@@ -1433,33 +1358,10 @@ fn edit_card(
 /// `version_uid` is the screen's ONE read of the relationship, published by
 /// [`relationship_section`] — the delete addresses the version to supersede.
 fn delete_section(uid: Signal<String>, version_uid: RwSignal<String>) -> AnyView {
-    let toaster = thaw::ToasterInjection::expect_context();
-    let confirming = RwSignal::new(false);
     let delete: Action<String, Result<(), AdminUiError>> = Action::new(|version: &String| {
         let version = version.clone();
         async move { delete_relationship(version).await }
     });
-    let navigate = leptos_router::hooks::use_navigate();
-    Effect::new(move |_| match delete.value().get() {
-        Some(Ok(())) => {
-            toast_success(
-                toaster,
-                "Relationship deleted",
-                "A deleted version was committed; earlier versions stay readable in History.",
-            );
-            navigate(
-                "/demographics/relationship",
-                leptos_router::NavigateOptions::default(),
-            );
-        }
-        Some(Err(error)) => toast_error(
-            toaster,
-            "Delete failed",
-            &crate::feedback::logical_delete_failure_copy(RELATIONSHIP_OBJECT, &error),
-        ),
-        None => {}
-    });
-
     let message = Signal::derive(move || {
         format!(
             "Delete relationship {}? This commits a deleted version: the relationship stops \
@@ -1468,33 +1370,19 @@ fn delete_section(uid: Signal<String>, version_uid: RwSignal<String>) -> AnyView
             uid.get()
         )
     });
-    view! {
-        <div class="mb-4 flex flex-wrap items-center justify-end gap-3">
-            <button
-                id="relationship-delete"
-                type="button"
-                class=BTN_DANGER
-                disabled=Signal::derive(move || delete.pending().get())
-                on:click=move |_| confirming.set(true)
-            >
-                <leptos_icons::Icon icon=icondata_lu::LuTrash width="14" height="14" />
-                "Delete relationship"
-            </button>
-            <crate::components::confirm_dialog::ConfirmDialog
-                open=confirming
-                title="Delete relationship"
-                message=message
-                confirm_label="Delete relationship"
-                confirm_id="relationship-delete-confirm"
-                on_cancel=Callback::new(move |()| confirming.set(false))
-                on_confirm=Callback::new(move |()| {
-                    delete.dispatch(version_uid.get_untracked());
-                    confirming.set(false);
-                })
-            />
-        </div>
-    }
-    .into_any()
+    logical_delete_section(
+        delete,
+        version_uid,
+        message,
+        "/demographics/relationship".to_owned(),
+        LogicalDeleteCopy {
+            button_id: "relationship-delete",
+            label: "Delete relationship",
+            confirm_id: "relationship-delete-confirm",
+            success_title: "Relationship deleted",
+            object: RELATIONSHIP_OBJECT,
+        },
+    )
 }
 
 /// The party detail's **Relationships** tab: the party's own inline
@@ -1522,16 +1410,10 @@ pub(super) fn party_relationships_section(
                 match party.await {
                     Ok(Some(state)) => relationships_view(kind, uid, &state.relationships),
                     Ok(None) => {
-                        view! {
-                            <div
-                                role="status"
-                                id="party-relationships-deleted"
-                                class="rounded-card border border-warn/40 bg-warn-subtle px-3 py-2 text-sm text-warn"
-                            >
-                                "This party's current version is deleted, so it has no relationships to show and cannot be related to another party."
-                            </div>
-                        }
-                            .into_any()
+                        deleted_notice(
+                            "party-relationships-deleted",
+                            "This party's current version is deleted, so it has no relationships to show and cannot be related to another party.",
+                        )
                     }
                     Err(e) => inline_error(&e),
                 }
