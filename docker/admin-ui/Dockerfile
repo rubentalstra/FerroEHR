@@ -96,7 +96,12 @@ COPY . .
 ENV LEPTOS_TAILWIND_VERSION=${TAILWIND_VERSION}
 # Serial-compile escape hatch for memory-constrained hosts, same knob as
 # docker/Dockerfile (cargo reads CARGO_BUILD_JOBS from the environment —
-# doc.rust-lang.org/cargo/reference/environment-variables.html).
+# doc.rust-lang.org/cargo/reference/environment-variables.html). The default
+# stays 2 (adjudicated on #2883): every CI lane builds at 2, and jobs=1 would
+# roughly double every build to spare the rare constrained host. A cold build
+# OOM-killed rustc at 2 on an 8-core/24 GB arm64 host that was also running a
+# stack (#2881); `CARGO_BUILD_JOBS=1 docker compose … build` completed there —
+# the compose dev overlay forwards the variable.
 ARG CARGO_BUILD_JOBS=2
 ENV CARGO_BUILD_JOBS=${CARGO_BUILD_JOBS}
 # `cargo leptos` reads its configuration from the console crate's own manifest

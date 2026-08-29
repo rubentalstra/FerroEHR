@@ -423,6 +423,17 @@ Downloaders of the standalone quickstart file never see any of this; it is
 purely a convenience for working on FerroEHR itself, and it only ever
 applies when its `-f` is passed — nothing merges it in silently.
 
+> [!TIP]
+> A cold from-source build compiles at two parallel rustc jobs by default,
+> and a release-optimization compile can hold several gigabytes per job. If
+> the build gets OOM-killed on a memory-constrained host (observed on a
+> 24 GB machine that was also running another stack), rerun it serially —
+> slower, but it completes:
+>
+> ```shell
+> CARGO_BUILD_JOBS=1 docker compose -f docker-compose.yml -f docker-compose.dev.yml build
+> ```
+
 ## Build provenance
 
 Images built by CI (and any `docker compose build` you drive from a checkout)
