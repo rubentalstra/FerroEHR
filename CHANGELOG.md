@@ -17,6 +17,11 @@ workflow refuses a tag that has no matching section here.
 
 ### Changed
 
+- AQL `FOLDER f1 CONTAINS FOLDER f2` now also matches the folders of a
+  `VERSIONED_FOLDER` that a folder's `items` reference — the same
+  reference-resolution ground as `FOLDER CONTAINS COMPOSITION`, one
+  reference hop (chain `CONTAINS` to follow further hops). Strict
+  sub-folder matching is unchanged.
 - The Helm chart's committed `appVersion` now always equals the product
   version, bumped in every release PR beside the compose image tags (chart
   6.0.27). Published charts are unchanged — the release pipeline keeps
