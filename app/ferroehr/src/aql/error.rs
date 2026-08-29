@@ -334,6 +334,17 @@ pub enum SqlError {
     /// (should have been caught by [`super::plan`]; a defensive guard).
     #[error("unbound query parameter `${0}` at SQL build time")]
     UnboundParameter(String),
+
+    /// A temporal comparison bound that is no ISO-8601 date/time/date-time in
+    /// any accepted precision — the caller's own value (→ 400). The message
+    /// deliberately names the defect class only, never the value or a driver
+    /// type.
+    #[error(
+        "a query value in a date/time comparison cannot be coerced to an \
+         ISO-8601 date, time or date-time (reduced precision is accepted); \
+         correct the value"
+    )]
+    UncoercibleTemporal,
 }
 
 /// An execution / `RESULT_SET` assembly failure.

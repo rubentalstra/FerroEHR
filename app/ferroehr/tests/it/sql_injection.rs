@@ -645,8 +645,11 @@ fn every_quoted_identifier_comes_from_the_closed_set() {
     };
     for query in [
         "SELECT c/name/value FROM COMPOSITION c",
+        // The literal is a (partial) ISO value: a temporal comparison bound is
+        // shape-checked at plan time, and a non-temporal string would refuse
+        // before any SQL exists to scan.
         "SELECT c/name/value FROM EHR e CONTAINS COMPOSITION c CONTAINS OBSERVATION o \
-         WHERE o/data/origin/value = 'x'",
+         WHERE o/data/origin/value = '2020'",
         "SELECT o/data FROM COMPOSITION c CONTAINS OBSERVATION o",
     ] {
         let prepared = build_with(query, &Params::new(), &streaming);

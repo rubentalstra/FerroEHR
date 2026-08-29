@@ -246,48 +246,87 @@ BEGIN
     END IF;
 END $$;
 
--- ext.openehr_timestamp — a fail-safe ISO-8601 → timestamptz conversion.
+-- ext.openehr_timestamp — a total ISO-8601 → timestamptz reading.
 --
 -- No openEHR spec governs storage columns or their derivation — this is our own
--- design (docs/architecture.md §Storage). It exists so promoted timestamp
--- columns (the first being node.context_start, the ehr baseline) are populated
--- identically at write time and in their one-time backfill: both feed the raw
--- canonical leaf text (e.g. EVENT_CONTEXT.start_time.value) through this
--- function.
+-- design (docs/architecture.md §Storage). It is the ONE partial-precision
+-- semantics the product carries on the temporal read/write paths: the promoted
+-- timestamp columns (node.context_start) are populated through it at write +
+-- backfill, and the AQL engine's temporal comparisons/orderings
+-- (app/ferroehr/src/aql/sql/value.rs, Coercion::Temporal) extract through it —
+-- so the promoted fast path and the jsonb lowering can never disagree.
 --
--- The body is exactly PostgreSQL's own text::timestamptz input parser, so for
--- every value the AQL engine's query-time cast ((… #>> '{}')::timestamptz)
--- already accepted, this returns the byte-identical instant — the promoted
--- column is a true drop-in for the correlated-subquery lowering
--- (app/ferroehr/src/aql/sql/value.rs). The EXCEPTION handler turns any
--- non-castable text (ISO-8601 partial precision such as `2021`, or malformed
--- input) into NULL instead of erroring, so a write can never fail on a value
--- the query path would merely have rejected (QUERY master03 §Built-in
--- Types/Dates and Times documents partial precision as the boundary). STRICT
--- short-circuits NULL input (a persistent COMPOSITION without context, RM ehr
--- master03 §COMPOSITION.context [0..1]) to NULL with no subtransaction cost.
+-- Full-precision input takes PostgreSQL's own text::timestamptz parser
+-- verbatim. RM data_types master07 §Partial Date/Times admits reduced
+-- precision (`2021`, `1985-06`, `12:00`), which that parser refuses — a valid
+-- stored value must never make a query error (SQLSTATE 22007 answered the
+-- caller a 400 for a data property) — so partial precision is FLOOR-completed
+-- instead: a partial date assumes the first month/day, a partial time assumes
+-- 0, a time-only value anchors on 0001-01-01 (the same floor the
+-- openehr_date_days/time_seconds family documents, and the completion
+-- strategy prior art converged on). Mixed-precision ordering is genuinely
+-- unspecified upstream (confirmed report #1493 / register AMB-29); the floor
+-- is our own recorded semantics and does not depend on its resolution.
+-- Malformed input returns NULL (a comparison miss), never an error.
+-- STRICT short-circuits NULL input (a persistent COMPOSITION without context,
+-- RM ehr master03 §COMPOSITION.context [0..1]) with no subtransaction cost.
 --
--- STABLE, not IMMUTABLE: text::timestamptz depends on the session TimeZone for
--- offset-less inputs, so this must not back an expression index; it is only
--- used in DML (the write INSERT and the backfill), where STABLE is correct.
--- Canonical DV_DATE_TIME values carrying an explicit offset/Z are
--- TimeZone-independent.
--- ISO 8601 permits a COMMA decimal sign on the fractional second (canonical
--- DV_DATE_TIME values may carry it; BASE foundation_types master06), which
--- PostgreSQL's timestamptz input rejects. A comma cannot occur elsewhere in a
--- valid ISO timestamp, so it normalizes to the dot before the cast — matching
--- the AQL engine's query-time normalization (app/ferroehr/src/aql/sql/value.rs).
+-- STABLE, not IMMUTABLE: text::timestamptz (and the offset-less completion
+-- branch) depend on the session TimeZone, so this must not back an expression
+-- index; it runs in DML and query expressions, where STABLE is correct.
+-- Values carrying an explicit offset/Z are TimeZone-independent.
+-- ISO 8601 permits a COMMA decimal sign on the fractional second (BASE
+-- foundation_types master06), which PostgreSQL rejects; a comma cannot occur
+-- elsewhere in a valid ISO value, so it normalizes to the dot first.
 CREATE FUNCTION openehr_timestamp(v text) RETURNS timestamptz
 LANGUAGE plpgsql STABLE STRICT PARALLEL SAFE AS $$
+DECLARE
+    s text := replace(v, ',', '.');
+    date_part text;
+    time_part text;
+    dcomp text;
+    y int; mo int := 1; d int := 1;
+    sod numeric := 0;
+    ts timestamp;
 BEGIN
-    RETURN replace(v, ',', '.')::timestamptz;
+    BEGIN
+        RETURN s::timestamptz;
+    EXCEPTION WHEN others THEN
+        NULL; -- reduced precision or malformed: fall through to the completion
+    END;
+    IF s ~ '^[Tt]' OR s ~ '^\d{1,2}:' THEN
+        -- time-only: floor onto 0001-01-01
+        time_part := regexp_replace(s, '^[Tt]', '');
+        y := 1;
+    ELSE
+        date_part := split_part(s, 'T', 1);
+        time_part := split_part(s, 'T', 2);
+        dcomp := replace(date_part, '-', '');
+        IF dcomp !~ '^(\d{4}|\d{6}|\d{8})$' THEN
+            RETURN NULL;
+        END IF;
+        y := substring(dcomp FROM 1 FOR 4)::int;
+        IF length(dcomp) >= 6 THEN mo := substring(dcomp FROM 5 FOR 2)::int; END IF;
+        IF length(dcomp) >= 8 THEN d := substring(dcomp FROM 7 FOR 2)::int; END IF;
+    END IF;
+    IF time_part <> '' THEN
+        sod := openehr_time_seconds(time_part);
+        IF sod IS NULL THEN RETURN NULL; END IF;
+    END IF;
+    ts := make_date(y, mo, d)::timestamp + make_interval(secs => sod::double precision);
+    IF time_part ~ '([Zz]|[+-]\d{2}:?\d{0,2})$' THEN
+        RETURN (ts - make_interval(secs => openehr_tz_offset_seconds(time_part)::double precision))
+               AT TIME ZONE 'UTC';
+    END IF;
+    -- offset-less: session-TimeZone reading, matching the native-cast branch
+    RETURN ts::timestamptz;
 EXCEPTION WHEN others THEN
     RETURN NULL;
 END;
 $$;
 
 COMMENT ON FUNCTION ext.openehr_timestamp(text) IS
-    'Fail-safe ISO-8601 text -> timestamptz: PostgreSQL''s own timestamptz parser, returning NULL on any non-castable (partial-precision or malformed) input instead of erroring. Feeds promoted timestamp columns (node.context_start) at write + backfill. STABLE (TimeZone-dependent for offset-less inputs); not legal in index expressions.';
+    'Total ISO-8601 text -> timestamptz: PostgreSQL''s own parser for full precision, floor completion for reduced precision (partial dates assume the first month/day, partial times 0, time-only values anchor on 0001-01-01), NULL for malformed input — never an error. The ONE partial-temporal semantics: feeds the promoted timestamp columns (node.context_start) AND the AQL temporal coercion. STABLE (TimeZone-dependent for offset-less inputs); not legal in index expressions.';
 
 -- Grants mirror ext/0001: the runtime writer executes this on the write path
 -- (promoted-column population); the reader may see it via the backfill. The

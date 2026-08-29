@@ -1286,6 +1286,124 @@ fn composition_at(name: &str, magnitude: f64, start_time: &str) -> Value {
     c
 }
 
+/// A composition whose context carries `start_time` AND `end_time` at the
+/// given (possibly reduced) precision — one value on both the promoted path
+/// (`start_time` → `node.context_start`) and the plain jsonb path
+/// (`end_time`).
+fn composition_spanning(name: &str, temporal: &str) -> Value {
+    let mut c = composition_at(name, 1.0, temporal);
+    c["context"]["end_time"] = json!({ "_type": "DV_DATE_TIME", "value": temporal });
+    c
+}
+
+/// Partial-precision date/times (RM `data_types` master07 §Partial Date/Times)
+/// compare and order instead of erroring: the temporal coercion routes both
+/// sides through the total `ext.openehr_timestamp` floor (partial dates
+/// assume the first month/day), so a stored `2019` or `1985-06` — and a
+/// reduced-precision comparison literal — answers rows, never the SQLSTATE
+/// 22007-driven 400 it answered before. Exercised on BOTH lowerings: the
+/// promoted `context_start` column (`start_time`) and the jsonb extraction
+/// (`end_time`).
+#[tokio::test]
+async fn partial_precision_temporals_compare_and_order() {
+    let db = testkit::db().await.expect("testkit database");
+    let svc = FerroEhrService::new(db.pool());
+    let ehr_id = create_ehr(&svc).await;
+    for (name, temporal) in [
+        ("year-only", "2019"),
+        ("year-month", "1985-06"),
+        ("full", "2020-06-15T10:00:00Z"),
+    ] {
+        svc.create_composition(
+            ehr_id.parse().expect("ehr_id uuid"),
+            uv(&composition_spanning(name, temporal), "249", None),
+        )
+        .await
+        .unwrap_or_else(|e| panic!("create ({name}): {e:?}"));
+    }
+
+    for path in ["c/context/start_time/value", "c/context/end_time/value"] {
+        // `<` against a partial literal: 2019 and 1985-06 floor before 2020.
+        let lt = run_aql(
+            &svc,
+            &format!("SELECT c/name/value FROM EHR e CONTAINS COMPOSITION c WHERE {path} < '2020'"),
+            ehr_scope(&ehr_id),
+        )
+        .await;
+        assert_eq!(
+            rows(&lt).len(),
+            2,
+            "{path} < '2020' floors both sides: {lt}"
+        );
+
+        // `>` against a partial literal: everything after 1985-01-01.
+        let gt = run_aql(
+            &svc,
+            &format!("SELECT c/name/value FROM EHR e CONTAINS COMPOSITION c WHERE {path} > '1985'"),
+            ehr_scope(&ehr_id),
+        )
+        .await;
+        assert_eq!(rows(&gt).len(), 3, "{path} > '1985': {gt}");
+
+        // `=` at equal reduced precision (floor equality).
+        let eq = run_aql(
+            &svc,
+            &format!(
+                "SELECT c/name/value FROM EHR e CONTAINS COMPOSITION c WHERE {path} = '1985-06'"
+            ),
+            ehr_scope(&ehr_id),
+        )
+        .await;
+        assert_eq!(rows(&eq).len(), 1, "{path} = '1985-06': {eq}");
+        assert_eq!(rows(&eq)[0][0], json!("year-month"));
+
+        // Against NOW(): every stored value precedes the query instant.
+        let now = run_aql(
+            &svc,
+            &format!("SELECT c/name/value FROM EHR e CONTAINS COMPOSITION c WHERE {path} < NOW()"),
+            ehr_scope(&ehr_id),
+        )
+        .await;
+        assert_eq!(rows(&now).len(), 3, "{path} < NOW(): {now}");
+
+        // ORDER BY floors partials onto the same axis.
+        let ordered = run_aql(
+            &svc,
+            &format!("SELECT c/name/value FROM EHR e CONTAINS COMPOSITION c ORDER BY {path} ASC"),
+            ehr_scope(&ehr_id),
+        )
+        .await;
+        let names: Vec<&str> = rows(&ordered)
+            .iter()
+            .map(|r| r[0].as_str().expect("name"))
+            .collect();
+        assert_eq!(
+            names,
+            ["year-month", "year-only", "full"],
+            "{path} orders by the floored instant: {ordered}"
+        );
+    }
+
+    // A time-only value floors onto 0001-01-01 at the function seam (a
+    // DV_TIME value cannot legally sit on these DV_DATE_TIME attributes, so
+    // the seam is pinned directly).
+    let anchored: Option<String> =
+        sqlx::query_scalar("SELECT ext.openehr_timestamp('12:00')::text")
+            .fetch_one(&db.pool())
+            .await
+            .expect("time-only floors, never errors");
+    assert!(
+        anchored.is_some_and(|t| t.starts_with("0001-01-01 12:00:00")),
+        "time-only anchors on 0001-01-01"
+    );
+    let garbage: Option<String> =
+        sqlx::query_scalar("SELECT ext.openehr_timestamp('not-a-date')::text")
+            .fetch_one(&db.pool())
+            .await
+            .expect("garbage is NULL, never an error");
+    assert_eq!(garbage, None, "malformed stored text is a comparison miss");
+}
+
 /// A persistent COMPOSITION with no `context` (RM ehr master03
 /// §COMPOSITION.context [0..1]) — its promoted `context_start` is NULL.
 fn composition_persistent(name: &str, magnitude: f64) -> Value {

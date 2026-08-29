@@ -1081,8 +1081,8 @@ fn non_promoted_temporal_leaf_falls_back_to_subquery() {
         "OBSERVATION time is not the promoted composition leaf: {sql}"
     );
     assert!(
-        sql.contains("jsonb_path_query_first") && sql.contains("timestamptz"),
-        "the general temporal lowering (extraction + ::timestamptz) is used: {sql}"
+        sql.contains("jsonb_path_query_first") && sql.contains("openehr_timestamp("),
+        "the general temporal lowering (extraction + the total floor) is used: {sql}"
     );
 }
 

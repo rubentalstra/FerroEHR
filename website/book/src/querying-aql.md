@@ -61,6 +61,11 @@ ORDER BY systolic DESC
   where nothing matches.
 - **`ORDER BY`**, **`LIMIT`**, and **`OFFSET`** behave as you expect; quantities
   order by their openEHR magnitude semantics.
+- **Date/time comparisons accept reduced precision** on both sides: openEHR
+  admits partial values (`2019`, `1985-06`), and the engine compares them by
+  flooring to the first instant they contain (a partial date assumes the first
+  month/day, a partial time assumes zero). A comparison value that is not an
+  ISO 8601 date/time at all is refused with a 400.
 
 ## Running a query over HTTP
 
