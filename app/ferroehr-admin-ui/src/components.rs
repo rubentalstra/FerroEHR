@@ -34,5 +34,6 @@ pub mod stat_card;
 pub mod surface;
 pub mod tab_bar;
 pub mod toast;
+pub mod upload_dialog;
 pub mod version_history;
 pub mod wire;

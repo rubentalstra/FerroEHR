@@ -16,7 +16,7 @@ the commit-activity trend](img/dashboard/dashboard-dark.png)
 ## Templates
 
 ![The templates screen in dark mode: the operational-template listing with its
-upload card](img/templates/templates-dark.png)
+upload button](img/templates/templates-dark.png)
 
 ## Query Builder
 

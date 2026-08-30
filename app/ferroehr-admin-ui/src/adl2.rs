@@ -54,6 +54,69 @@ impl TemplateFamily {
         }
     }
 
+    /// The upload trigger's label — what the header button offers.
+    #[must_use]
+    pub fn upload_label(self) -> &'static str {
+        match self {
+            Self::Adl14 => "Upload OPT",
+            Self::Adl2 => "Upload ADL2",
+        }
+    }
+
+    /// The upload dialog's heading.
+    #[must_use]
+    pub fn upload_title(self) -> &'static str {
+        match self {
+            Self::Adl14 => "Upload an operational template",
+            Self::Adl2 => "Upload an ADL2 operational template",
+        }
+    }
+
+    /// The upload dialog's one-paragraph help: what the CDR ingests, and that
+    /// a refusal is shown verbatim.
+    #[must_use]
+    pub fn upload_help(self) -> &'static str {
+        match self {
+            Self::Adl14 => {
+                "The CDR ingests an ADL 1.4 operational template as OPT/XML. Choose a file or \
+                 paste the source below; the CDR's validation diagnostics are shown verbatim on \
+                 refusal."
+            }
+            Self::Adl2 => {
+                "The CDR ingests the ADL2 artefact SOURCE as text/plain. Choose a file or paste \
+                 the source below; the openEHR-ADL engine's diagnostics are shown verbatim on \
+                 refusal."
+            }
+        }
+    }
+
+    /// The upload picker's `accept` list.
+    #[must_use]
+    pub fn upload_accept(self) -> &'static str {
+        match self {
+            Self::Adl14 => ".opt,.xml",
+            Self::Adl2 => ".adls,.adl,.opt2,.txt",
+        }
+    }
+
+    /// The paste area's placeholder: a recognizable first line of the format.
+    #[must_use]
+    pub fn upload_placeholder(self) -> &'static str {
+        match self {
+            Self::Adl14 => "<template xmlns=\"http://schemas.openehr.org/v1\"> …",
+            Self::Adl2 => "operational_template (adl_version=2.0.6; rm_release=1.0.2; generated) …",
+        }
+    }
+
+    /// The file picker's button label.
+    #[must_use]
+    pub fn upload_choose_label(self) -> &'static str {
+        match self {
+            Self::Adl14 => " Choose an OPT/XML file",
+            Self::Adl2 => " Choose an ADL2 file",
+        }
+    }
+
     /// Read the family out of a `?family=` value.
     ///
     /// Anything other than `adl2` is the ADL 1.4 default: the parameter is

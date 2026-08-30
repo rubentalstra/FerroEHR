@@ -116,7 +116,7 @@ fn fixture_opt_path(name: &str) -> String {
 /// On any navigation/interaction failure.
 async fn ensure_template(h: &Harness, fixture: &str, template_id: &str) {
     h.goto("/templates").await;
-    h.wait_css("input[type=file]").await;
+    h.wait_css("#template-upload-open").await;
     // Let the list settle on either rows or the empty-state bar first.
     h.wait_css("a[href^='/templates/'], .thaw-message-bar")
         .await;
@@ -133,11 +133,7 @@ async fn ensure_template(h: &Harness, fixture: &str, template_id: &str) {
     // backstop only.
     h.wait_hydrated().await;
     for _ in 0..4 {
-        h.wait_css("input[type=file]")
-            .await
-            .send_keys(&fixture_opt_path(fixture))
-            .await
-            .expect("upload the fixture OPT via the hidden file input");
+        common::upload_via_dialog(h, &fixture_opt_path(fixture)).await;
         for _ in 0..40 {
             if h.driver.find(By::Css(row_delete.clone())).await.is_ok() {
                 return;
@@ -192,7 +188,7 @@ async fn admin_deletes_a_template_from_the_detail_screen() {
     confirm_in_dialog(&h, "#template-delete", "template-delete-confirm").await;
     // A successful detail delete returns to the list.
     h.wait_url_not_contains(DETAIL_TEMPLATE_ID).await;
-    h.wait_css("input[type=file]").await;
+    h.wait_css("#template-upload-open").await;
     wait_css_absent(
         &h,
         &format!("[data-template-delete=\"{DETAIL_TEMPLATE_ID}\"]"),

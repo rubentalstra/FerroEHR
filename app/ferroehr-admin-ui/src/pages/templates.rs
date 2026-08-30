@@ -39,9 +39,8 @@ use crate::components::data_table::{
     table_footer, table_shell, table_skeleton,
 };
 use crate::components::empty_state::EmptyState;
-use crate::components::field::{BTN_DANGER, BTN_PRIMARY, INPUT, TEXTAREA};
+use crate::components::field::{BTN_DANGER, BTN_PRIMARY, INPUT};
 use crate::components::page_header::PageHeader;
-use crate::components::surface::{CARD_PAD, CARD_TITLE};
 use crate::components::toast::{toast_error, toast_success};
 use crate::error::AdminUiError;
 
@@ -352,22 +351,34 @@ pub fn TemplatesPage() -> impl IntoView {
     let family = Memo::new(move |_| {
         TemplateFamily::from_query(&query.with(|q| q.get("family").unwrap_or_default()))
     });
-    let upload: TemplateUploadAction = Action::new(|opt_xml: &String| {
+    // The upload dialog's state, shared by both families: the source awaiting
+    // upload (the picker fills it, the paste area edits it) and whether the
+    // dialog is open. Only one family is on screen at a time, so ONE dialog and
+    // one source signal serve both (#2955).
+    let upload_open = RwSignal::new(false);
+    let upload_source = RwSignal::new(String::new());
+    // The accepted source is cleared, and the dialog closed, in each action's
+    // OWN async continuation — never from an Effect reading the action's
+    // value: a dispatch is the user event, so the answer is written where it
+    // arrives (rules §2).
+    let upload: TemplateUploadAction = Action::new(move |opt_xml: &String| {
         let opt_xml = opt_xml.clone();
-        async move { upload_template(opt_xml).await }
+        async move {
+            let outcome = upload_template(opt_xml).await;
+            if outcome.is_ok() {
+                upload_source.set(String::new());
+                upload_open.set(false);
+            }
+            outcome
+        }
     });
-    // The ADL2 source awaiting upload: the file picker fills it, the textarea
-    // edits it, and the upload button dispatches exactly what it holds.
-    let adl2_source = RwSignal::new(String::new());
-    // The accepted source is cleared in the action's OWN async continuation,
-    // never from an Effect reading the action's value: a dispatch is the user
-    // event, so the answer is written where it arrives (rules §2).
     let adl2_upload: TemplateUploadAction = Action::new(move |source: &String| {
         let source = source.clone();
         async move {
             let outcome = upload_adl2_template(source).await;
             if outcome.is_ok() {
-                adl2_source.set(String::new());
+                upload_source.set(String::new());
+                upload_open.set(false);
             }
             outcome
         }
@@ -418,19 +429,12 @@ pub fn TemplatesPage() -> impl IntoView {
 
     mutation_toasts(toaster, upload, adl2_upload, delete);
 
-    // The two families' upload affordances are genuinely different controls
-    // (an OPT/XML file picker versus a source editor), so the header slot and
-    // the card below it are reactive branches on the URL family rather than
-    // one control with two modes — both branches render identically on the
-    // server pass and at hydration, because the family comes from the URL.
-    let action_slot = move || match family.get() {
-        TemplateFamily::Adl14 => upload_trigger(upload),
-        TemplateFamily::Adl2 => ().into_any(),
-    };
-    let upload_card = move || match family.get() {
-        TemplateFamily::Adl14 => upload_feedback(upload),
-        TemplateFamily::Adl2 => adl2_upload_card(adl2_source, adl2_upload),
-    };
+    // ONE upload affordance for both families: the same header-slot trigger in
+    // the same position, opening the same dialog, with only the copy and the
+    // accepted input differing (#2955). The family comes from the URL, so both
+    // branches render identically on the server pass and at hydration.
+    let action_slot = upload_trigger(upload_open, family);
+    let upload_dialog = upload_dialog_view(upload_open, upload_source, family, upload, adl2_upload);
     let switch = family_switch(family);
     let table_section = templates_table(filter, paging, list, gate, delete, pending_delete);
     let confirm = delete_dialog(pending_delete, delete);
@@ -454,9 +458,9 @@ pub fn TemplatesPage() -> impl IntoView {
                     on:input:target=move |ev| filter.set(ev.target().value())
                 />
             </div>
-            {upload_card}
             {table_section}
             {confirm}
+            {upload_dialog}
         </div>
     }
 }
@@ -558,77 +562,53 @@ fn family_switch(family: Memo<TemplateFamily>) -> AnyView {
     .into_any()
 }
 
-/// The ADL2 upload card: a file picker and a paste area over ONE source
-/// signal, plus the upload button that dispatches exactly what the area holds
-/// and the inline diagnostic the CDR answered with.
+/// The screen's ONE upload dialog, serving both families: the copy, the
+/// accepted file types and the dispatched action follow the URL family, and
+/// nothing else about the flow differs (#2955).
 ///
-/// The two inputs feed one signal on purpose — a selected file is loaded into
-/// the editor so it can be read (and corrected) before it is sent, and there is
-/// only one thing the button can dispatch. The button is inert from first paint
-/// (a static `disabled` attribute for the server HTML) with the live state on
-/// `prop:disabled`, per the properties-carry-live-state doctrine (rules §2).
-fn adl2_upload_card(source: RwSignal<String>, upload: TemplateUploadAction) -> AnyView {
-    // `custom_request` runs only in the browser (a file-selection event), so
-    // reading the file with the Web `File`/`Blob` API here is hydration-safe
-    // (rules §8 — browser-only APIs never run on the server pass).
-    let custom_request = move |files: thaw::FileList| {
-        let Some(file) = files.get(0) else {
-            return;
-        };
-        let promise = file.text();
-        leptos::task::spawn_local(async move {
-            if let Ok(value) = wasm_bindgen_futures::JsFuture::from(promise).await
-                && let Some(text) = value.as_string()
-            {
-                source.set(text);
-            }
-        });
+/// It is rendered once outside the table (a list refetch never re-creates it)
+/// and is inert while closed. Success is reported by each action's own
+/// continuation, which clears the source and closes the dialog; a refusal keeps
+/// it open with the CDR's diagnostic beside the input that caused it.
+fn upload_dialog_view(
+    open: RwSignal<bool>,
+    source: RwSignal<String>,
+    family: Memo<TemplateFamily>,
+    upload: TemplateUploadAction,
+    adl2_upload: TemplateUploadAction,
+) -> AnyView {
+    // The active family's action drives the busy state and the diagnostic;
+    // both are read reactively, so switching families while the dialog is
+    // closed carries no stale state onto the next open.
+    let active = move || match family.get() {
+        TemplateFamily::Adl14 => upload,
+        TemplateFamily::Adl2 => adl2_upload,
     };
-    let empty = Signal::derive(move || source.read().trim().is_empty());
-    let feedback = upload_feedback(upload);
-
+    let pending = Signal::derive(move || active().pending().get());
+    let error = Signal::derive(move || match active().value().get() {
+        Some(Err(error)) => Some(error.to_string()),
+        _ => None,
+    });
     view! {
-        <section class=format!("{CARD_PAD} mb-4")>
-            <h2 class=CARD_TITLE>"Upload an ADL2 operational template"</h2>
-            <p class="mb-3 text-sm text-ink-muted">
-                "The CDR ingests the ADL2 artefact SOURCE as text/plain. Choose a file or paste the
-                 source below; the openEHR-ADL engine's diagnostics are shown verbatim on refusal."
-            </p>
-            <div id="adl2-upload-picker" class="mb-2">
-                <thaw::Upload
-                    accept=Signal::derive(|| ".adls,.adl,.opt2,.txt".to_owned())
-                    custom_request
-                >
-                    <thaw::Button>
-                        <leptos_icons::Icon icon=icondata_lu::LuUpload width="14" height="14" />
-                        " Choose an ADL2 file"
-                    </thaw::Button>
-                </thaw::Upload>
-            </div>
-            <textarea
-                id="adl2-source"
-                class=format!("{TEXTAREA} min-h-[10rem]")
-                placeholder="operational_template (adl_version=2.0.6; rm_release=1.0.2; generated) …"
-                prop:value=move || source.get()
-                on:input:target=move |ev| source.set(ev.target().value())
-            ></textarea>
-            <div class="mt-2">
-                <button
-                    id="adl2-upload-submit"
-                    type="button"
-                    class=BTN_PRIMARY
-                    disabled=true
-                    prop:disabled=move || empty.get() || upload.pending().get()
-                    on:click=move |_| {
-                        drop(upload.dispatch(source.get_untracked()));
-                    }
-                >
-                    <leptos_icons::Icon icon=icondata_lu::LuUpload width="14" height="14" />
-                    "Upload template"
-                </button>
-            </div>
-            <div class="mt-2">{feedback}</div>
-        </section>
+        <crate::components::upload_dialog::UploadDialog
+            open=Signal::derive(move || open.get())
+            on_dismiss=Callback::new(move |()| open.set(false))
+            title=Signal::derive(move || family.get().upload_title().to_owned())
+            help=Signal::derive(move || family.get().upload_help().to_owned())
+            accept=Signal::derive(move || family.get().upload_accept().to_owned())
+            placeholder=Signal::derive(move || family.get().upload_placeholder().to_owned())
+            choose_label=Signal::derive(move || family.get().upload_choose_label().to_owned())
+            submit_label=Signal::derive(|| "Upload template".to_owned())
+            source=source
+            pending=pending
+            error=error
+            on_submit=Callback::new(move |text: String| {
+                drop(active().dispatch(text));
+            })
+            picker_id="template-upload-picker"
+            source_id="template-upload-source"
+            submit_id="template-upload-submit"
+        />
     }
     .into_any()
 }
@@ -690,63 +670,20 @@ fn delete_prompt(target: &DeleteTarget) -> String {
     }
 }
 
-/// The upload trigger for the page-header action slot: a [`thaw::Upload`] whose
-/// selected file is read to text browser-side (the `File` Web API via the
-/// component, then
-/// [`Blob::text`](https://developer.mozilla.org/en-US/docs/Web/API/Blob/text)),
-/// dispatched to the [`upload_template`] action. Kept as `thaw::Upload` so it
-/// renders a real `<input type="file">`.
-fn upload_trigger(upload: Action<String, Result<String, AdminUiError>>) -> AnyView {
-    // `custom_request` runs only in the browser (a file-selection event), so
-    // reading the file with the Web `File`/`Blob` API here is hydration-safe
-    // (rules §8 — browser-only APIs never run on the server pass).
-    let custom_request = move |files: thaw::FileList| {
-        let Some(file) = files.get(0) else {
-            return;
-        };
-        let promise = file.text();
-        leptos::task::spawn_local(async move {
-            if let Ok(value) = wasm_bindgen_futures::JsFuture::from(promise).await
-                && let Some(text) = value.as_string()
-            {
-                upload.dispatch(text);
-            }
-        });
-    };
-
+/// The upload trigger for the page-header action slot: the SAME button in the
+/// same place for both families, opening the screen's one upload dialog
+/// ([`upload_dialog_view`]). Only its label follows the family.
+fn upload_trigger(open: RwSignal<bool>, family: Memo<TemplateFamily>) -> AnyView {
     view! {
-        <thaw::Upload accept=Signal::derive(|| ".opt,.xml".to_owned()) custom_request>
-            <thaw::Button appearance=thaw::ButtonAppearance::Primary>
-                <leptos_icons::Icon icon=icondata_lu::LuUpload width="14" height="14" />
-                " Upload OPT"
-            </thaw::Button>
-        </thaw::Upload>
-    }
-    .into_any()
-}
-
-/// The upload action's inline state: a pending hint plus the CDR diagnostic on
-/// failure (verbatim — a validation payload worth reading line by line stays
-/// inline ALONGSIDE the failure toast). Both outcomes also toast (see
-/// [`TemplatesPage`]).
-fn upload_feedback(upload: Action<String, Result<String, AdminUiError>>) -> AnyView {
-    view! {
-        <div class="text-sm mb-3">
-            <Show when=move || upload.pending().get()>
-                <span class="text-ink-muted">"Uploading…"</span>
-            </Show>
-            {move || match upload.value().get() {
-                Some(Err(error)) => {
-                    view! {
-                        <thaw::MessageBar intent=thaw::MessageBarIntent::Error>
-                            <thaw::MessageBarBody>{error.to_string()}</thaw::MessageBarBody>
-                        </thaw::MessageBar>
-                    }
-                        .into_any()
-                }
-                _ => ().into_any(),
-            }}
-        </div>
+        <button
+            id="template-upload-open"
+            type="button"
+            class=BTN_PRIMARY
+            on:click=move |_| open.set(true)
+        >
+            <leptos_icons::Icon icon=icondata_lu::LuUpload width="14" height="14" />
+            {move || family.get().upload_label()}
+        </button>
     }
     .into_any()
 }
@@ -912,7 +849,7 @@ fn empty_family_state(family: TemplateFamily) -> AnyView {
             "Upload your first operational template (OPT/XML) with the Upload OPT button above."
         }
         TemplateFamily::Adl2 => {
-            "Upload your first ADL2 operational template with the source card above."
+            "Upload your first ADL2 operational template with the Upload ADL2 button above."
         }
     };
     view! { <EmptyState icon=icondata_lu::LuFileCode2 message="No templates yet" hint=hint /> }

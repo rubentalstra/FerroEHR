@@ -58,9 +58,8 @@ fn fixture_opt_path() -> String {
 /// Guarantee [`TEMPLATE_ID`] is present in the CDR: land on `/templates`, wait
 /// for the list to settle, and upload the fixture only if the row is absent
 /// (so a shared stack that a sibling journey already seeded is not re-POSTed
-/// into a `409`). The thaw `Upload` hides a real `<input type=file>`; the
-/// standard `WebDriver` upload mechanism is `send_keys(<absolute path>)` on it,
-/// whose change event drives the console's upload action.
+/// into a `409`). The upload goes through the screen's one dialog
+/// ([`common::upload_via_dialog`]), the same control the ADL2 family drives.
 ///
 /// Returns `true` when this call performed the upload.
 ///
@@ -68,8 +67,7 @@ fn fixture_opt_path() -> String {
 /// On any navigation/interaction failure (journeys are assertive end-to-end).
 pub(crate) async fn ensure_template_present(h: &Harness) -> bool {
     h.goto("/templates").await;
-    // The upload bar's hidden file input is always in the DOM.
-    h.wait_css("input[type=file]").await;
+    h.wait_css("#template-upload-open").await;
     // Let the list Transition resolve to either a row link or the empty-state
     // message bar before deciding whether an upload is needed.
     h.wait_css("a[href^='/templates/'], .thaw-message-bar")
@@ -78,18 +76,14 @@ pub(crate) async fn ensure_template_present(h: &Harness) -> bool {
         return false;
     }
     let path = fixture_opt_path();
-    // The change event that drives the upload is a HYDRATED listener, and a
-    // file set before it exists is unrecoverable by retrying — a re-send of
-    // the same path fires no change event (#2285). Wait for the shell's
-    // hydration marker so the first send lands on a live listener; the
-    // bounded loop stays as a backstop only.
+    // The change event that fills the dialog's editor is a HYDRATED listener,
+    // and a file set before it exists is unrecoverable by retrying — a re-send
+    // of the same path fires no change event (#2285). Wait for the shell's
+    // hydration marker so the first send lands on a live listener; the bounded
+    // loop stays as a backstop only.
     h.wait_hydrated().await;
     for _ in 0..4 {
-        h.wait_css("input[type=file]")
-            .await
-            .send_keys(&path)
-            .await
-            .expect("upload fixture OPT via the hidden file input");
+        common::upload_via_dialog(h, &path).await;
         for _ in 0..40 {
             if h.driver.find(By::Css(TEMPLATE_LINK)).await.is_ok() {
                 return true;
@@ -139,7 +133,7 @@ async fn template_upload_lists_and_inspects_path_catalog() {
     // The list before any upload this journey performs (best-effort: the table
     // is absent on a fresh stack, so an empty count is expected).
     h.goto("/templates").await;
-    h.wait_css("input[type=file]").await;
+    h.wait_css("#template-upload-open").await;
     // The rendered tab title: the ONE browser-level pin of the app shell's
     // Title formatter (the unit tests pin the pure fn; only WebDriver sees
     // what the tab actually says).
