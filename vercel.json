@@ -31,6 +31,7 @@
         { "source": "/health/(.*)", "destination": { "service": "api" } },
         { "source": "/management", "destination": { "service": "api" } },
         { "source": "/management/(.*)", "destination": { "service": "api" } },
+        { "source": "/.well-known/(.*)", "destination": { "service": "api" } },
         { "source": "/(.*)", "destination": { "service": "console" } }
     ]
 }
