@@ -17,8 +17,8 @@
             "runtime": "container"
         },
         "console": {
-            "root": ".",
-            "entrypoint": "Dockerfile.admin-ui.vercel",
+            "root": "deploy/vercel/console",
+            "entrypoint": "Dockerfile.vercel",
             "runtime": "container"
         }
     },

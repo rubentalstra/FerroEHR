@@ -16,7 +16,7 @@ set -Eeuo pipefail
 ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
 COMPOSE_FILE="$ROOT_DIR/docker-compose.yml"
 VERCEL_FILE="$ROOT_DIR/Dockerfile.vercel"
-VERCEL_UI_FILE="$ROOT_DIR/Dockerfile.admin-ui.vercel"
+VERCEL_UI_FILE="$ROOT_DIR/deploy/vercel/console/Dockerfile.vercel"
 MANIFEST="$ROOT_DIR/Cargo.toml"
 
 version="$(sed -nE 's/^version = "(.*)"$/\1/p' "$MANIFEST" | head -1)"
@@ -59,10 +59,10 @@ fi
 # The console service (#2941) is held to the same pointer discipline.
 vercel_ui_ref="$(grep -oE '^FROM ghcr\.io/[^ ]+' "$VERCEL_UI_FILE" | head -1 | sed 's/^FROM //')"
 if [[ "$vercel_ui_ref" != "ghcr.io/rubentalstra/ferroehr-admin-ui:latest" ]]; then
-  echo "::error::Dockerfile.admin-ui.vercel must be FROM ghcr.io/rubentalstra/ferroehr-admin-ui:latest (the release pointer, #2941); found '$vercel_ui_ref'." >&2
+  echo "::error::deploy/vercel/console/Dockerfile.vercel must be FROM ghcr.io/rubentalstra/ferroehr-admin-ui:latest (the release pointer, #2941); found '$vercel_ui_ref'." >&2
   rc=1
 else
-  echo "Dockerfile.admin-ui.vercel tracks the :latest release pointer."
+  echo "deploy/vercel/console/Dockerfile.vercel tracks the :latest release pointer."
 fi
 
 exit "$rc"
