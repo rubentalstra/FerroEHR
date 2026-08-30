@@ -6,7 +6,7 @@
 //! one-file/strict/env-grammar convention.
 //!
 //! No openEHR spec governs configuration — our own design. The console is
-//! stateless bar its in-process session store: no database, and no local store
+//! stateless: sessions ride a sealed cookie, and there is no database or local store
 //! of domain state either — every fact it shows lives in the CDR and is read
 //! over ITS-REST.
 
@@ -133,7 +133,7 @@ pub struct OidcConfig {
     pub scopes: Vec<String>,
 }
 
-/// Session behaviour (in-process store; single-instance deployment).
+/// Session behaviour (a sealed cookie — no server-side store).
 #[derive(Debug, Clone, Deserialize)]
 #[serde(default, deny_unknown_fields)]
 pub struct SessionConfig {
@@ -141,6 +141,14 @@ pub struct SessionConfig {
     pub idle_minutes: u64,
     /// Set the `Secure` cookie flag (turn on behind TLS).
     pub cookie_secure: bool,
+    /// The cookie-sealing secret, base64 of at least 64 bytes. Every
+    /// instance of a scaled deployment must hold the same value — the
+    /// session is an encrypted cookie any instance can open. Empty = an
+    /// ephemeral per-instance key (single-replica only), with a startup
+    /// warning.
+    pub secret: String,
+    /// Path to a file holding the sealing secret; wins over `secret`.
+    pub secret_file: String,
 }
 
 impl Default for SessionConfig {
@@ -148,6 +156,8 @@ impl Default for SessionConfig {
         Self {
             idle_minutes: 60,
             cookie_secure: false,
+            secret: String::new(),
+            secret_file: String::new(),
         }
     }
 }
@@ -214,6 +224,16 @@ pub fn load() -> Result<AdminUiConfig, ConfigError> {
             ))
         })?;
         secret.trim().clone_into(&mut cfg.auth.oidc.client_secret);
+    }
+
+    if !cfg.session.secret_file.is_empty() {
+        let secret = std::fs::read_to_string(&cfg.session.secret_file).map_err(|e| {
+            ConfigError(format!(
+                "session.secret_file `{}`: {e}",
+                cfg.session.secret_file
+            ))
+        })?;
+        secret.trim().clone_into(&mut cfg.session.secret);
     }
 
     if cfg.auth.oidc.enabled {

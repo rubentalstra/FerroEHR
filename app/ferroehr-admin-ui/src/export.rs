@@ -22,7 +22,7 @@
               (#1694)"
 )]
 
-use axum::http::{HeaderValue, StatusCode, header};
+use axum::http::{HeaderMap, HeaderValue, StatusCode, header};
 use axum::response::{IntoResponse, Response};
 
 use crate::error::AdminUiError;
@@ -43,27 +43,23 @@ pub struct ExportForm {
 ///
 /// Callers without a console session are redirected to `/login` (the form is
 /// a full-page navigation, so a redirect is the correct UX and the correct
-/// security answer) — both when no session exists and when the session store
-/// refuses it. A CDR-side refusal of the session's credential instead
+/// security answer) — a missing, tampered or idle-expired cookie all read as
+/// no session. A CDR-side refusal of the session's credential instead
 /// answers the error branch below (the download never navigates away on a
 /// mid-flight CDR 401).
 pub async fn export_aql(
     axum::Extension(state): axum::Extension<crate::state::AppState>,
-    session: tower_sessions::Session,
+    headers: HeaderMap,
     axum::Form(form): axum::Form<ExportForm>,
 ) -> Response {
-    let admin = match session
-        .get::<crate::session::AdminSession>(crate::session::SESSION_KEY)
-        .await
-    {
-        Ok(Some(admin)) => admin,
-        Ok(None) => return axum::response::Redirect::to("/login").into_response(),
-        Err(e) => {
-            return plain(
-                StatusCode::INTERNAL_SERVER_ERROR,
-                &format!("session store: {e}"),
-            );
-        }
+    let session = crate::session::unseal(
+        &state.session_keys,
+        &headers,
+        state.config.session.idle_minutes,
+    );
+    let Some(admin) = session.get::<crate::session::AdminSession>(crate::session::SESSION_KEY)
+    else {
+        return axum::response::Redirect::to("/login").into_response();
     };
     match run(&state, &admin, &form).await {
         Ok(response) => response,

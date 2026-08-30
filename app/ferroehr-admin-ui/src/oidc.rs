@@ -94,11 +94,11 @@ fn error_page(status: StatusCode, message: &str) -> Response {
     (status, format!("OIDC login failed: {message}")).into_response()
 }
 
-/// `GET /auth/oidc/login` — park PKCE/CSRF/nonce in the session and
-/// redirect to the authorization endpoint.
+/// `GET /auth/oidc/login` — park PKCE/CSRF/nonce in the sealed session
+/// cookie and redirect to the authorization endpoint.
 pub async fn login(
     axum::Extension(state): axum::Extension<crate::state::AppState>,
-    session: tower_sessions::Session,
+    headers: http::HeaderMap,
 ) -> Response {
     let Some(oidc) = state.oidc.as_ref() else {
         return error_page(StatusCode::NOT_FOUND, "OIDC is not enabled");
@@ -125,10 +125,37 @@ pub async fn login(
         csrf: csrf.secret().clone(),
         nonce: nonce.secret().clone(),
     };
-    if let Err(e) = session.insert(FLOW_KEY, flow).await {
+    let mut session = crate::session::unseal(
+        &state.session_keys,
+        &headers,
+        state.config.session.idle_minutes,
+    );
+    if let Err(e) = session.insert(FLOW_KEY, &flow) {
         return error_page(StatusCode::INTERNAL_SERVER_ERROR, &e.to_string());
     }
-    Redirect::to(auth_url.as_str()).into_response()
+    with_session_cookie(&state, &session, Redirect::to(auth_url.as_str()))
+}
+
+/// Attach the sealed session cookie to a handler's response.
+fn with_session_cookie(
+    state: &crate::state::AppState,
+    session: &crate::session::ConsoleSession,
+    response: impl IntoResponse,
+) -> Response {
+    let sealed = match crate::session::set_cookie(
+        &state.session_keys,
+        session,
+        state.config.session.cookie_secure,
+        state.config.session.idle_minutes,
+    ) {
+        Ok(sealed) => sealed,
+        Err(e) => return error_page(StatusCode::INTERNAL_SERVER_ERROR, &e.to_string()),
+    };
+    let mut response = response.into_response();
+    response
+        .headers_mut()
+        .append(http::header::SET_COOKIE, sealed);
+    response
 }
 
 /// The callback's query parameters (only the success pair; a provider
@@ -145,7 +172,7 @@ pub struct CallbackParams {
 /// token nonce, store the session, land on `/`.
 pub async fn callback(
     axum::Extension(state): axum::Extension<crate::state::AppState>,
-    session: tower_sessions::Session,
+    headers: http::HeaderMap,
     axum::extract::Query(params): axum::extract::Query<CallbackParams>,
 ) -> Response {
     let Some(oidc) = state.oidc.as_ref() else {
@@ -158,10 +185,13 @@ pub async fn callback(
     let (Some(code), Some(state_param)) = (params.code, params.state) else {
         return error_page(StatusCode::BAD_REQUEST, "missing code/state");
     };
-    let flow: FlowState = match session.remove(FLOW_KEY).await {
-        Ok(Some(flow)) => flow,
-        Ok(None) => return error_page(StatusCode::BAD_REQUEST, "no login in progress"),
-        Err(e) => return error_page(StatusCode::INTERNAL_SERVER_ERROR, &e.to_string()),
+    let mut session = crate::session::unseal(
+        &state.session_keys,
+        &headers,
+        state.config.session.idle_minutes,
+    );
+    let Some(flow): Option<FlowState> = session.remove(FLOW_KEY) else {
+        return error_page(StatusCode::BAD_REQUEST, "no login in progress");
     };
     if flow.csrf != state_param {
         return error_page(StatusCode::BAD_REQUEST, "state mismatch");
@@ -206,8 +236,8 @@ pub async fn callback(
         },
         scopes,
     };
-    if let Err(e) = session.insert(crate::session::SESSION_KEY, admin).await {
+    if let Err(e) = session.insert(crate::session::SESSION_KEY, &admin) {
         return error_page(StatusCode::INTERNAL_SERVER_ERROR, &e.to_string());
     }
-    Redirect::to("/").into_response()
+    with_session_cookie(&state, &session, Redirect::to("/"))
 }

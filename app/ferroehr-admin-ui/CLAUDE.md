@@ -120,8 +120,7 @@ extension); the wire it consumes IS spec-bound (`docs/specs/openehr/ITS-REST/`
 ## No console-local domain state (owner ruling, 2026-07-25)
 
 - **The console stores NOTHING of its own** — no database, no JSON store beside
-  the binary, no state directory. Its only state is the in-process session
-  store. Every fact a screen shows is read from the CDR over ITS-REST, so it is
+  the binary, no state directory. Its only state is the sealed session cookie. Every fact a screen shows is read from the CDR over ITS-REST, so it is
   visible to other clients, survives a restart, is covered by the CDR's backups,
   and is identical across replicas. The two former stores (`groups.rs` →
   `admin-ui-groups.json`, `folder_templates.rs` →

@@ -54,10 +54,13 @@ async fn main() -> anyhow::Result<()> {
     } else {
         None
     };
+    let session_keys = ferroehr_admin_ui::session::SessionKeys::from_secret(&config.session.secret)
+        .map_err(|e| anyhow::anyhow!("{e}"))?;
     let app_state = ferroehr_admin_ui::state::AppState {
         config: std::sync::Arc::clone(&config),
         cdr,
         oidc,
+        session_keys,
     };
 
     let conf = leptos::config::get_configuration(None)?;
