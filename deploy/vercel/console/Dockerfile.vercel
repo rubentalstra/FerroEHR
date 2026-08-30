@@ -31,6 +31,10 @@ USER 65532:65532
 # The sandbox posture: the public CDR base URL and the TLS-edge cookie flag.
 COPY ferroehr-admin-ui.sandbox.toml /etc/ferroehr/admin-ui.toml
 ENV FERROEHR_ADMIN_CONFIG=/etc/ferroehr/admin-ui.toml
-# Vercel routes to the port the image declares; the console serves on 3000
-# (the base image's LEPTOS_SITE_ADDR).
-ENV PORT=3000
+# Vercel forwards to $PORT and its default is 80 — an image-level PORT does
+# not change what the platform expects (measured live: "could not connect to
+# $PORT=80 … detected ports your server listened on: 3000"). The console
+# reads its bind address from LEPTOS_SITE_ADDR at startup, so it is rebound
+# to 80 here, the same port the CDR service binds.
+ENV LEPTOS_SITE_ADDR=0.0.0.0:80
+ENV PORT=80
