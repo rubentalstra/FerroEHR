@@ -158,10 +158,18 @@ fn unquote(s: &str) -> String {
     unescape(inner)
 }
 
-/// Decode AQL string escapes. `ESCAPE_SEQ: '\\' ['"?abfnrtv\\]`,
-/// `UTF8CHAR: '\\u' HEX{4}`, and `OCTAL_ESC: '\\' [0-3]?OCTAL{1,2}` (a `\`
-/// followed by 1–3 octal digits). Unknown escapes are passed through verbatim
-/// (the backslash is retained), which keeps the function total on any input.
+/// Decode AQL string escapes: quotes, `\\`, the control escapes
+/// (`abfnrtv`), `UTF8CHAR: '\\u' HEX{4}`, and `OCTAL_ESC` (a `\` followed by
+/// 1–3 octal digits). Unknown escapes are passed through verbatim (the
+/// backslash is retained), which keeps the function total on any input.
+///
+/// `\?` is deliberately NOT a string escape, although the grammar's
+/// `ESCAPE_SEQ` lists `?`: QUERY AQL master03 §Operators/LIKE requires `\?`
+/// and `\*` in a pattern to match the literal character, which is only
+/// expressible when the string layer preserves them for the pattern layer —
+/// under the grammar reading, `\?` decodes to a bare wildcard and `'\*'` is
+/// not even lexable, so the docs text wins and both escapes pass through
+/// verbatim, symmetrically.
 fn unescape(inner: &str) -> String {
     if !inner.contains('\\') {
         return inner.to_string();
@@ -178,7 +186,7 @@ fn unescape(inner: &str) -> String {
             break;
         };
         match next {
-            '\'' | '"' | '?' | '\\' => {
+            '\'' | '"' | '\\' => {
                 out.push(next);
                 chars.next();
             }
@@ -846,6 +854,31 @@ mod tests {
                 ..
             } if rm_type == "COMPOSITION" && variable.as_deref() == Some("c")
         ));
+    }
+
+    /// QUERY master03 §Operators/LIKE: `\?` and `\*` in a pattern match the
+    /// literal character, so string decoding must preserve BOTH escapes for
+    /// the pattern layer — symmetrically (the 4.0.11 defect kept `\*` and
+    /// consumed `\?` into a bare wildcard, #2940).
+    #[test]
+    fn like_pattern_escapes_survive_string_decoding() {
+        for (src, expected) in [
+            (r"'2026-01-01T0\?:00:00Z'", r"2026-01-01T0\?:00:00Z"),
+            (r"'2026-01-01T\*'", r"2026-01-01T\*"),
+        ] {
+            let q = parse_str(&format!(
+                "SELECT c FROM COMPOSITION c WHERE c/name/value LIKE {src}"
+            ))
+            .expect("parse");
+            let Some(WhereExpr::Identified(IdentifiedExpr::Like {
+                operand: LikeOperand::String(pattern),
+                ..
+            })) = q.where_
+            else {
+                panic!("not a LIKE: {:?}", q.where_);
+            };
+            assert_eq!(pattern, expected);
+        }
     }
 
     #[test]

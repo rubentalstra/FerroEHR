@@ -1827,6 +1827,48 @@ async fn like_and_matches_are_any_match_on_multi_valued_paths() {
     assert_eq!(rows(&none).len(), 0, "no node satisfies: {none}");
 }
 
+/// #2940 — QUERY master03 §Operators/LIKE: a backslash-escaped wildcard
+/// (`\?`, `\*`) matches the LITERAL character. Against values containing no
+/// `?` or `*`, the escaped patterns select nothing while their unescaped
+/// twins select the row — both wildcards, symmetrically (4.0.11 honored `\*`
+/// and let `\?` keep matching as the single-character wildcard).
+#[tokio::test]
+async fn like_escaped_wildcards_match_the_literal_character() {
+    let db = testkit::db().await.expect("testkit database");
+    let svc = FerroEhrService::new(db.pool());
+    let ehr_id = create_ehr(&svc).await;
+
+    let mut c = composition("escape-target", 1.0);
+    c["content"][0]["data"]["events"][0]["data"]["items"][0]["value"] =
+        json!({ "_type": "DV_TEXT", "value": "2026-01-01T03:00:00Z" });
+    svc.create_composition(ehr_id.parse().expect("ehr_id uuid"), uv(&c, "249", None))
+        .await
+        .expect("escape-target composition");
+
+    let path = "o/data[at0001]/events[at0002]/data[at0003]/items[at0004]/value/value";
+    for (pattern, expected, claim) in [
+        (
+            r"2026-01-01T0?:00:00Z",
+            1,
+            "unescaped ? is the one-char wildcard",
+        ),
+        (r"2026-01-01T0\?:00:00Z", 0, "escaped \\? is the literal ?"),
+        (r"2026-01-01T0*", 1, "unescaped * is the any-run wildcard"),
+        (r"2026-01-01T0\*", 0, "escaped \\* is the literal *"),
+    ] {
+        let result = run_aql(
+            &svc,
+            &format!(
+                "SELECT c/uid/value FROM EHR e CONTAINS COMPOSITION c CONTAINS OBSERVATION o \
+                 WHERE {path} LIKE '{pattern}'"
+            ),
+            ehr_scope(&ehr_id),
+        )
+        .await;
+        assert_eq!(rows(&result).len(), expected, "{claim}: {result}");
+    }
+}
+
 /// A composition carrying MULTI-VALUED FRAGMENT attributes — two `links` on
 /// the root, two `context/participations`, two composer `identifiers` — where
 /// only the LAST element of each list satisfies the predicates below.
