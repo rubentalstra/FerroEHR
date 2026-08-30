@@ -109,6 +109,8 @@ fn app_state() -> ferroehr_admin_ui::state::AppState {
             .expect("the CDR client should build from a well-formed base URL"),
         config: std::sync::Arc::new(config),
         oidc: None,
+        session_keys: ferroehr_admin_ui::session::SessionKeys::from_secret("")
+            .expect("an empty secret always yields an ephemeral key"),
     }
 }
 

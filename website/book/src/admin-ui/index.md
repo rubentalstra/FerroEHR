@@ -64,9 +64,11 @@ and a Secret holding its client secret. **To turn the console off**, set
 CDR is untouched.
 
 > [!NOTE]
-> The console keeps its sessions **in process**, so the chart deploys one
-> replica deliberately. Scaling it out needs sticky sessions at the ingress, or
-> users get logged out whenever a request lands on the other pod.
+> To scale the console past one replica, set the same `session.secret` on
+> every replica: the session is a sealed cookie any key-holding replica can
+> serve. Without a configured secret each replica seals with its own
+> ephemeral key, and visitors get signed out whenever a request lands on
+> another pod.
 
 ## Signing in
 
@@ -133,17 +135,22 @@ overrides. Unknown keys are refused at startup, exactly as on the CDR:
 | `auth.oidc.resolve` | — | A `host=ip:port` override for the issuer host, for split-horizon DNS: the console reaches an issuer whose canonical name only resolves inside the container network, while browsers and tokens keep the canonical URL. |
 | `login.notice` | empty | Informational text on the sign-in card, line breaks preserved. A demo or evaluation deployment states its public credentials and usage expectations here. |
 | `login.links` | empty | Links under the sign-in card, each `{ label, href }` — an API reference, a documentation page. |
-| `session.idle_minutes` | `60` | Session idle expiry. |
+| `session.idle_minutes` | `60` | Session idle expiry (sliding; carried inside the sealed cookie). |
 | `session.cookie_secure` | `false` | Set behind TLS. |
+| `session.secret` | empty | The session-cookie sealing key: base64 of at least 64 bytes (`openssl rand -base64 64`). Every replica of a scaled deployment must hold the same value. Empty = an ephemeral per-instance key, fine for exactly one replica. |
+| `session.secret_file` | — | Path to a file holding the sealing key; wins over `session.secret`. |
 
-The console is **stateless apart from its in-process session store**: it has
-no database and keeps no local files of its own. Everything it shows,
-including how stored queries are grouped, which is derived from the namespace
-in each query's qualified name, lives in the CDR and is read over ITS-REST,
-so nothing here needs backing up and every replica shows the same repository.
+The console is **stateless**: it has no database and keeps no local files of
+its own. Everything it shows, including how stored queries are grouped,
+which is derived from the namespace in each query's qualified name, lives in
+the CDR and is read over ITS-REST, so nothing here needs backing up and
+every replica shows the same repository. Sessions are a **sealed cookie**
+(AES-256-GCM, keyed by `session.secret`), so any replica holding the key can
+serve any signed-in visitor.
 
-Login and sessions live in the console's backend; CDR credentials and
-bearer tokens never reach the browser.
+Login and sessions live in the console's backend; the browser stores only
+the encrypted session cookie — CDR credentials and bearer tokens never reach
+it in readable form.
 
 ![Login](img/login/login.png)
 

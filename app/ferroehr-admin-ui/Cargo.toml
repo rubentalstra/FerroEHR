@@ -89,7 +89,11 @@ tracing-subscriber = { workspace = true, optional = true }
 anyhow = { workspace = true, optional = true }
 reqwest = { workspace = true, optional = true }
 config = { workspace = true, optional = true }
-tower-sessions = { workspace = true, optional = true, features = ["memory-store"] }
+# The sealed session cookie (AES-256-GCM private jar, #2949): the whole
+# session rides one encrypted cookie so every instance can read it — the
+# console runs multi-instance on serverless platforms and keeps no store.
+cookie = { workspace = true, optional = true }
+base64 = { workspace = true, optional = true }
 # The browser security-header layer (`SetResponseHeaderLayer`). Server-only:
 # headers are a response property, so the hydrate target never needs it.
 tower-http = { workspace = true, optional = true }
@@ -150,7 +154,8 @@ ssr = [
     "dep:reqwest",
     "dep:futures",
     "dep:config",
-    "dep:tower-sessions",
+    "dep:cookie",
+    "dep:base64",
     "dep:csv",
     "dep:openidconnect",
     # The full ITS surface BFF-side (OPT parsing + WebTemplate building); the

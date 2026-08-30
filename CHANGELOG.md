@@ -15,6 +15,19 @@ workflow refuses a tag that has no matching section here.
 
 ## [Unreleased]
 
+### Fixed
+
+- Console sessions survive multi-instance deployments. The session moved
+  from an in-process store to a sealed cookie (AES-256-GCM): any replica
+  holding the configured `session.secret` (base64, at least 64 bytes; new,
+  with `session.secret_file`) can serve any signed-in visitor — on
+  serverless platforms the in-process store made every request that landed
+  on another instance fail as 500 and the console report the CDR as down.
+  With no secret configured the console behaves as before (one replica,
+  ephemeral key) and says so at startup. The cookie is encrypted and
+  authenticated, HttpOnly, SameSite=Lax, `Secure` per configuration; idle
+  expiry is unchanged and rides inside the sealed payload.
+
 ## [4.0.12] - 2026-08-30
 
 ### Added
