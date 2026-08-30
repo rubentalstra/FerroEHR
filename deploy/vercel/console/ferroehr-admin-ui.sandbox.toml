@@ -3,7 +3,7 @@
 #
 # The hosted-sandbox posture for the admin console (#2941,
 # sandbox.ferroehr.eu), baked into the Vercel image by
-# Dockerfile.admin-ui.vercel. The console is the sandbox's landing surface;
+# its Dockerfile.vercel in this directory. The console is the sandbox's landing surface;
 # it drives the sandbox CDR strictly over the public REST base, so what it
 # shows is exactly what the public API serves. It signs in as the same demo
 # user the API takes (ferroehr / ferroehr, USER role): the CDR's admin and

@@ -9,7 +9,7 @@ demo posture baked on top, and it resets to known demo data every night:
   API and its Swagger UI), `/health*`, and `/management*` (disabled in the
   sandbox posture, so those answer the CDR's own 404 — which is what lets
   the console's probe-and-hide read the truth).
-- **`console`** — the admin console (`Dockerfile.admin-ui.vercel`,
+- **`console`** — the admin console (`deploy/vercel/console/Dockerfile.vercel`,
   `FROM ghcr.io/rubentalstra/ferroehr-admin-ui:latest`), the LANDING surface
   (#2941): every other path routes here, so sandbox.ferroehr.eu opens on the
   console's sign-in screen. It drives the CDR strictly over the public REST
@@ -50,7 +50,7 @@ and the only place that POST happens is `.github/workflows/sandbox-deploy.yml`:
    provably exist before the ping, so no ordering race exists to guard
    against.
 2. **A posture change lands on main** (`Dockerfile.vercel`,
-   `Dockerfile.admin-ui.vercel`, `vercel.json`, `deploy/vercel/**`): the
+   `vercel.json`, `deploy/vercel/**` — the console service lives there): the
    same workflow fires on the push and redeploys the current release images
    with the new posture.
 3. **Manual**: `workflow_dispatch` on Sandbox deploy (reseed skippable).
@@ -144,9 +144,9 @@ this section is what makes them read as understood.
 |---|---|
 | `vercel.json` | routing (console = landing, `/ferroehr`+`/health`+`/management` = the CDR), both container services, git auto-deploys OFF |
 | `Dockerfile.vercel` | the CDR: `FROM ferroehr:latest` + the baked sandbox posture |
-| `Dockerfile.admin-ui.vercel` | the console: `FROM ferroehr-admin-ui:latest` + its posture |
+| `deploy/vercel/console/Dockerfile.vercel` | the console: `FROM ferroehr-admin-ui:latest` + its posture (own service root — Vercel accepts only the fixed Dockerfile names) |
 | `deploy/vercel/ferroehr.sandbox.toml` | the CDR's demo configuration |
-| `deploy/vercel/ferroehr-admin-ui.sandbox.toml` | the console's demo configuration |
+| `deploy/vercel/console/ferroehr-admin-ui.sandbox.toml` | the console's demo configuration |
 | `.github/workflows/sandbox-deploy.yml` | the ONLY deploy trigger + verify + reseed call |
 | `.github/workflows/sandbox-reseed.yml` | nightly janitor + the reusable wipe/seed |
 | `scripts/sandbox/reseed.sh` | seeds demo data through the public API |
