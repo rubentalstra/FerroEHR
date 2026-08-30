@@ -66,6 +66,7 @@ on:
     branches: [main]
     paths:
       - Dockerfile.vercel
+      - Dockerfile.admin-ui.vercel
       - vercel.json
       - deploy/vercel/**
   workflow_dispatch:
@@ -94,32 +95,34 @@ jobs:
     permissions: {}
     steps:
       # The needs-edge's guarantee, re-asserted at the point of use (#2846): a
-      # release call means `:latest` must ALREADY be the tag's image, because
-      # the Vercel build is `FROM …:latest`. A stale tag fails here, before
-      # any ping — never as a 20-minute blind poll. Anonymous registry reads:
-      # the images are public.
-      - name: The :latest tag is the release image
+      # release call means `:latest` must ALREADY be the tag's image for BOTH
+      # sandbox services (the CDR and the console, #2941), because both Vercel
+      # builds are `FROM …:latest`. A stale tag fails here, before any ping —
+      # never as a 20-minute blind poll. Anonymous registry reads: the images
+      # are public.
+      - name: The :latest tags are the release images
         if: inputs.expected-version != ''
         env:
           EXPECTED: ${{ inputs.expected-version }}
-          IMAGE: ghcr.io/rubentalstra/ferroehr
         run: |
           set -euo pipefail
-          tok=$(curl -fsS "https://ghcr.io/token?scope=repository:${IMAGE#ghcr.io/}:pull" | sed -nE 's/.*"token":"([^"]+)".*/\1/p')
-          digest_of() {
-            curl -fsS -o /dev/null -w '%{header_json}' \
-              -H "Authorization: Bearer ${tok}" \
-              -H "Accept: application/vnd.oci.image.index.v1+json, application/vnd.docker.distribution.manifest.list.v2+json" \
-              "https://ghcr.io/v2/${IMAGE#ghcr.io/}/manifests/$1" \
-              | sed -nE 's/.*"docker-content-digest":\["([^"]+)"\].*/\1/p'
-          }
-          latest=$(digest_of latest)
-          tagged=$(digest_of "$EXPECTED")
-          if [ -z "$latest" ] || [ -z "$tagged" ] || [ "$latest" != "$tagged" ]; then
-            echo "::error:::latest (${latest:-unreadable}) is not the ${EXPECTED} image (${tagged:-unreadable}) — the deploy would rebuild the OLD release; the tag-apply leg must land first." >&2
-            exit 1
-          fi
-          echo ":latest == ${EXPECTED} (${latest})"
+          for image in ghcr.io/rubentalstra/ferroehr ghcr.io/rubentalstra/ferroehr-admin-ui; do
+            tok=$(curl -fsS "https://ghcr.io/token?scope=repository:${image#ghcr.io/}:pull" | sed -nE 's/.*"token":"([^"]+)".*/\1/p')
+            digest_of() {
+              curl -fsS -o /dev/null -w '%{header_json}' \
+                -H "Authorization: Bearer ${tok}" \
+                -H "Accept: application/vnd.oci.image.index.v1+json, application/vnd.docker.distribution.manifest.list.v2+json" \
+                "https://ghcr.io/v2/${image#ghcr.io/}/manifests/$1" \
+                | sed -nE 's/.*"docker-content-digest":\["([^"]+)"\].*/\1/p'
+            }
+            latest=$(digest_of latest)
+            tagged=$(digest_of "$EXPECTED")
+            if [ -z "$latest" ] || [ -z "$tagged" ] || [ "$latest" != "$tagged" ]; then
+              echo "::error::${image}:latest (${latest:-unreadable}) is not the ${EXPECTED} image (${tagged:-unreadable}) — the deploy would rebuild the OLD release; the tag-apply leg must land first." >&2
+              exit 1
+            fi
+            echo "${image}:latest == ${EXPECTED} (${latest})"
+          done
 
       # The hook response is CAPTURED, not discarded (#2846): it carries the
       # created job's id — the only handle linking this run to the deployment
@@ -202,6 +205,30 @@ jobs:
               exit 1
             fi
             echo "sandbox serves '${served:-nothing}'; waiting for '${expected:-any}'"
+            sleep 20
+          done
+
+      # The console is the second service of the same deployment (#2941), and
+      # Vercel promotes a deployment atomically — so once the version poll
+      # above proves the new deployment serves, a 200 from the console's
+      # public sign-in path proves the console CONTAINER boots (a posture
+      # defect — a config key the release image refuses — would leave it
+      # failing while the API answers happily beside it).
+      - name: The console serves its sign-in screen
+        run: |
+          set -euo pipefail
+          deadline=$(( $(date +%s) + 600 ))
+          while :; do
+            code=$(curl -sS -m 30 -o /dev/null -w '%{http_code}' https://sandbox.ferroehr.eu/login || true)
+            if [ "$code" = "200" ]; then
+              echo "console serves /login (200)"
+              break
+            fi
+            if [ "$(date +%s)" -ge "$deadline" ]; then
+              echo "::error::the console answers '${code:-nothing}' on /login 10 minutes after the API came up — the deployment promoted, so the suspect is the console container itself: its config posture (deploy/vercel/ferroehr-admin-ui.sandbox.toml) against the released image, or the service routing in vercel.json." >&2
+              exit 1
+            fi
+            echo "console answers '${code:-nothing}' on /login; waiting for 200"
             sleep 20
           done
 

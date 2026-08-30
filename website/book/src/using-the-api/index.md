@@ -11,8 +11,9 @@ schema), open the Swagger UI of the live sandbox at
 <https://sandbox.ferroehr.eu/ferroehr/rest/swagger-ui> and sign in with the
 public demo credentials `ferroehr` / `ferroehr`. That server generates the
 document from its own handlers, so it describes the running release and its
-"Try it out" buttons issue real requests. This book explains how to *use* the
-API.
+"Try it out" buttons issue real requests. The sandbox's landing surface,
+<https://sandbox.ferroehr.eu>, is the admin console over the same server and
+takes the same credentials. This book explains how to *use* the API.
 
 ## Base path
 

@@ -1,8 +1,25 @@
 # The hosted sandbox — how it deploys (sandbox.ferroehr.eu)
 
 The sandbox is Vercel (container runtime) + Neon (PostgreSQL 18). It runs
-the latest published release image with a demo posture baked on top, and it
-resets to known demo data every night.
+TWO container services from the latest published release images, each with a
+demo posture baked on top, and it resets to known demo data every night:
+
+- **`api`** — the CDR (`Dockerfile.vercel`, `FROM ghcr.io/rubentalstra/ferroehr:latest`).
+  Owns the path families the server itself serves: `/ferroehr/*` (the REST
+  API and its Swagger UI), `/health*`, and `/management*` (disabled in the
+  sandbox posture, so those answer the CDR's own 404 — which is what lets
+  the console's probe-and-hide read the truth).
+- **`console`** — the admin console (`Dockerfile.admin-ui.vercel`,
+  `FROM ghcr.io/rubentalstra/ferroehr-admin-ui:latest`), the LANDING surface
+  (#2941): every other path routes here, so sandbox.ferroehr.eu opens on the
+  console's sign-in screen. It drives the CDR strictly over the public REST
+  base (`https://sandbox.ferroehr.eu`) as the same demo user the API takes,
+  and it holds no state of its own (in-process sessions only — a serverless
+  scale-in signs visitors out, which the demo accepts).
+
+Routing lives in `vercel.json` `rewrites` (evaluated in order, first match
+wins — the Vercel Services model); Swagger stays reachable at
+`/ferroehr/rest/swagger-ui` as the API reference.
 
 The Neon↔Vercel integration is LOAD-BEARING for exactly one thing: its
 injected `DATABASE_URL`/`DATABASE_URL_UNPOOLED` is the server's DSN (the
@@ -23,16 +40,19 @@ Vercel never builds on its own: git-triggered deployments are OFF
 ignore script exists. Every deploy is a POST to the project's Deploy Hook,
 and the only place that POST happens is `.github/workflows/sandbox-deploy.yml`:
 
-1. **A release publishes.** The Containers pipeline builds and pushes
-   `ghcr.io/rubentalstra/ferroehr:X.Y.Z` and moves `:latest` (release tags
-   only, never prereleases). When that pipeline SUCCEEDS for a release tag,
-   `sandbox-deploy.yml` runs (called by the release pipeline after the scanned tags apply), pings the hook, and Vercel
-   builds `Dockerfile.vercel` — `FROM ghcr.io/rubentalstra/ferroehr:latest`,
-   a pull + retag measured in seconds. The image provably exists before the
-   ping, so no ordering race exists to guard against.
+1. **A release publishes.** The Containers pipeline builds and pushes the
+   `ghcr.io/rubentalstra/ferroehr:X.Y.Z` and `…/ferroehr-admin-ui:X.Y.Z`
+   images and moves both `:latest` pointers (release tags only, never
+   prereleases). When that pipeline SUCCEEDS for a release tag,
+   `sandbox-deploy.yml` runs (called by the release pipeline after the
+   scanned tags apply), pings the hook, and Vercel builds both Dockerfiles —
+   each `FROM …:latest`, a pull + retag measured in seconds. The images
+   provably exist before the ping, so no ordering race exists to guard
+   against.
 2. **A posture change lands on main** (`Dockerfile.vercel`,
-   `vercel.json`, `deploy/vercel/**`): the same workflow fires on the push
-   and redeploys the current release image with the new posture.
+   `Dockerfile.admin-ui.vercel`, `vercel.json`, `deploy/vercel/**`): the
+   same workflow fires on the push and redeploys the current release images
+   with the new posture.
 3. **Manual**: `workflow_dispatch` on Sandbox deploy (reseed skippable).
 
 After the deploy, the workflow polls `/ferroehr/rest/status` until the new
@@ -48,13 +68,14 @@ Sandbox failures live in the two sandbox-named workflows (Sandbox deploy,
 Sandbox reseed) and nowhere else. CI, Containers, the chart and release
 lanes carry no sandbox steps, so a sandbox outage can never redden them.
 
-The deploy job verifies in two layers (#2846, after the v4.0.7 cut spent
-20 blind minutes on a Vercel-side build failure):
+The deploy job verifies in three layers (#2846, after the v4.0.7 cut spent
+20 blind minutes on a Vercel-side build failure; the console layer joined
+with #2941):
 
-1. **Precondition** (release calls): `:latest`'s digest must equal the
-   release tag's image digest on GHCR before any ping — the needs-edge's
-   guarantee, re-asserted where it is consumed, with anonymous registry
-   reads.
+1. **Precondition** (release calls): both images' `:latest` digests must
+   equal the release tag's image digests on GHCR before any ping — the
+   needs-edge's guarantee, re-asserted where it is consumed, with anonymous
+   registry reads.
 2. **The served-version poll** is the acceptance, and it is version-bound on
    EVERY path: a release run waits for the tag's version, and a push or
    dispatch run derives its expectation from the `:latest` image's own
@@ -67,6 +88,10 @@ The deploy job verifies in two layers (#2846, after the v4.0.7 cut spent
    already proven (the image side) so the remaining suspect (Vercel's own
    build/promotion — historically a flaky Neon integration step, #2846) is
    named, not guessed.
+3. **The console poll**: once the version poll proves the new deployment
+   serves (promotion is atomic across services), a 200 from `/login` proves
+   the console container boots — a posture defect (a config key the release
+   image refuses) would leave it failing while the API answers beside it.
 
 Watching the triggered deployment's own state was considered and REFUSED
 (#2846): Vercel offers no read-only tokens, so it would cost a stored
@@ -75,7 +100,8 @@ repository's no-long-lived-tokens posture.
 
 ## Two build-log warnings that are understood, not unnoticed (#2773)
 
-Every Vercel build of `Dockerfile.vercel` prints two warnings. Both were
+Every Vercel build of the sandbox Dockerfiles (both services) prints two
+warnings. Both were
 adjudicated first-hand against Vercel's own documentation (read 2026-08-27)
 and neither has a configuration that removes it, so they will keep printing —
 this section is what makes them read as understood.
@@ -116,9 +142,11 @@ this section is what makes them read as understood.
 
 | File | Role |
 |---|---|
-| `vercel.json` | routing, container service, git auto-deploys OFF |
-| `Dockerfile.vercel` | `FROM …:latest` + the baked sandbox posture |
-| `deploy/vercel/ferroehr.sandbox.toml` | the demo configuration |
+| `vercel.json` | routing (console = landing, `/ferroehr`+`/health`+`/management` = the CDR), both container services, git auto-deploys OFF |
+| `Dockerfile.vercel` | the CDR: `FROM ferroehr:latest` + the baked sandbox posture |
+| `Dockerfile.admin-ui.vercel` | the console: `FROM ferroehr-admin-ui:latest` + its posture |
+| `deploy/vercel/ferroehr.sandbox.toml` | the CDR's demo configuration |
+| `deploy/vercel/ferroehr-admin-ui.sandbox.toml` | the console's demo configuration |
 | `.github/workflows/sandbox-deploy.yml` | the ONLY deploy trigger + verify + reseed call |
 | `.github/workflows/sandbox-reseed.yml` | nightly janitor + the reusable wipe/seed |
 | `scripts/sandbox/reseed.sh` | seeds demo data through the public API |
