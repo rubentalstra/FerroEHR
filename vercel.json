@@ -15,13 +15,22 @@
             "root": ".",
             "entrypoint": "Dockerfile.vercel",
             "runtime": "container"
+        },
+        "console": {
+            "root": ".",
+            "entrypoint": "Dockerfile.admin-ui.vercel",
+            "runtime": "container"
         }
     },
     "redirects": [
-        { "source": "/", "destination": "/ferroehr/rest/swagger-ui/", "permanent": false },
         { "source": "/favicon.ico", "destination": "/ferroehr/rest/swagger-ui/favicon-32x32.png", "permanent": false }
     ],
     "rewrites": [
-        { "source": "/(.*)", "destination": { "service": "api" } }
+        { "source": "/ferroehr/(.*)", "destination": { "service": "api" } },
+        { "source": "/health", "destination": { "service": "api" } },
+        { "source": "/health/(.*)", "destination": { "service": "api" } },
+        { "source": "/management", "destination": { "service": "api" } },
+        { "source": "/management/(.*)", "destination": { "service": "api" } },
+        { "source": "/(.*)", "destination": { "service": "console" } }
     ]
 }

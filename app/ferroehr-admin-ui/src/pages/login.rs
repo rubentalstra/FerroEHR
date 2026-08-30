@@ -8,13 +8,14 @@
 //! (progressive enhancement — the inputs are named exactly `username`,
 //! `password`, `next`, matching the server-fn arguments). The OIDC path is a
 //! plain `<a>` to the BFF's `/auth/oidc/login` axum route, styled as the
-//! secondary design-system button. Which paths appear is decided by
-//! [`crate::auth::login_modes`]. The post-login destination is carried through
-//! the `next` query parameter.
+//! secondary design-system button. Which paths appear — and the
+//! deployment-configured notice and links around them — is decided by
+//! [`crate::auth::fetch_login_screen`]. The post-login destination is carried
+//! through the `next` query parameter.
 
 use leptos::prelude::*;
 
-use crate::auth::{LoginBasic, login_modes};
+use crate::auth::{LoginBasic, fetch_login_screen};
 use crate::components::brand::Wordmark;
 use crate::components::field::{BTN_PRIMARY, BTN_SECONDARY, INPUT, LABEL};
 use crate::components::surface::CARD_PAD;
@@ -36,7 +37,7 @@ use crate::components::surface::CARD_PAD;
 #[component]
 pub fn LoginPage() -> impl IntoView {
     let action = ServerAction::<LoginBasic>::new();
-    let modes = Resource::new(|| (), |()| login_modes());
+    let screen = Resource::new(|| (), |()| fetch_login_screen());
     let pending = action.pending();
     let value = action.value();
 
@@ -75,9 +76,48 @@ pub fn LoginPage() -> impl IntoView {
         }>
             {move || {
                 Suspend::new(async move {
-                    let (basic, oidc, mode_error) = match modes.await {
-                        Ok((basic, oidc)) => (basic, oidc, None),
-                        Err(e) => (true, true, Some(e.to_string())),
+                    let (basic, oidc, notice, links, mode_error) = match screen.await {
+                        Ok(s) => (s.basic, s.oidc, s.notice, s.links, None),
+                        Err(e) => (true, true, String::new(), Vec::new(), Some(e.to_string())),
+                    };
+                    let notice_note = if notice.is_empty() {
+                        ().into_any()
+                    } else {
+                        // whitespace-pre-line: a configured notice states its
+                        // lines (credentials, expectations) deliberately.
+                        view! {
+                            <div class="rounded-control border border-accent/40 bg-accent-subtle px-3 py-2 text-xs text-accent-ink whitespace-pre-line">
+                                {notice}
+                            </div>
+                        }
+                            .into_any()
+                    };
+                    let link_row = if links.is_empty() {
+                        ().into_any()
+                    } else {
+                        view! {
+                            <div class="flex flex-wrap justify-center gap-x-4 gap-y-1 text-xs">
+                                {links
+                                    .into_iter()
+                                    .map(|link| {
+                                        // rel=external: these point at non-app
+                                        // URLs (an API reference, docs); the
+                                        // client router must not intercept a
+                                        // same-origin one.
+                                        view! {
+                                            <a
+                                                href=link.href
+                                                rel="external noopener"
+                                                class="text-accent underline underline-offset-2 hover:text-accent-hover"
+                                            >
+                                                {link.label}
+                                            </a>
+                                        }
+                                    })
+                                    .collect::<Vec<_>>()}
+                            </div>
+                        }
+                            .into_any()
                     };
                     let mode_warning = match mode_error {
                         Some(e) => {
@@ -155,7 +195,8 @@ pub fn LoginPage() -> impl IntoView {
                     };
                     view! {
                         <div class="flex flex-col gap-4">
-                            {mode_warning} {basic_form} {separator} {oidc_button} {none_available}
+                            {notice_note} {mode_warning} {basic_form} {separator} {oidc_button}
+                            {none_available} {link_row}
                         </div>
                     }
                         .into_any()

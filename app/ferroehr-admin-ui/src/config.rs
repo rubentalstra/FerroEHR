@@ -20,6 +20,8 @@ pub struct AdminUiConfig {
     pub cdr: CdrConfig,
     /// Console login modes.
     pub auth: AuthConfig,
+    /// Login-screen presentation.
+    pub login: LoginConfig,
     /// Session behaviour.
     pub session: SessionConfig,
 }
@@ -70,6 +72,19 @@ impl CdrConfig {
             configured.to_owned()
         }
     }
+}
+
+/// Login-screen presentation: what the sign-in card says beyond the forms.
+#[derive(Debug, Clone, Default, Deserialize)]
+#[serde(default, deny_unknown_fields)]
+pub struct LoginConfig {
+    /// Informational text rendered on the sign-in card (empty = none); line
+    /// breaks are preserved. A demo deployment states its public credentials
+    /// and usage expectations here.
+    pub notice: String,
+    /// Links rendered under the sign-in card — an API reference, a
+    /// documentation page. Each entry needs both `label` and `href`.
+    pub links: Vec<crate::auth::LoginLink>,
 }
 
 /// Which login modes the console offers (design: both ship in v1).
@@ -225,7 +240,7 @@ pub fn load() -> Result<AdminUiConfig, ConfigError> {
 
 #[cfg(test)]
 mod tests {
-    use super::CdrConfig;
+    use super::{AdminUiConfig, CdrConfig};
 
     #[test]
     fn management_base_defaults_to_the_cdr_origin() {
@@ -243,6 +258,39 @@ mod tests {
             ..CdrConfig::default()
         };
         assert_eq!(cfg.management_base(), "http://cdr.internal:9464/ops");
+    }
+
+    #[test]
+    fn the_login_section_parses_and_defaults_to_empty() {
+        let parsed: AdminUiConfig = config::Config::builder()
+            .add_source(config::File::from_str(
+                "[login]\nnotice = \"demo\"\n\n[[login.links]]\nlabel = \"API reference\"\nhref = \"https://example.org/swagger\"\n",
+                config::FileFormat::Toml,
+            ))
+            .build()
+            .unwrap()
+            .try_deserialize()
+            .unwrap();
+        assert_eq!(parsed.login.notice, "demo");
+        assert_eq!(parsed.login.links.len(), 1);
+        assert_eq!(parsed.login.links[0].label, "API reference");
+        assert_eq!(parsed.login.links[0].href, "https://example.org/swagger");
+
+        let defaults = AdminUiConfig::default();
+        assert!(defaults.login.notice.is_empty());
+        assert!(defaults.login.links.is_empty());
+    }
+
+    #[test]
+    fn a_login_link_without_an_href_is_refused() {
+        let assembled = config::Config::builder()
+            .add_source(config::File::from_str(
+                "[[login.links]]\nlabel = \"dangling\"\n",
+                config::FileFormat::Toml,
+            ))
+            .build()
+            .unwrap();
+        assert!(assembled.try_deserialize::<AdminUiConfig>().is_err());
     }
 
     #[test]

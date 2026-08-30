@@ -11,6 +11,33 @@ use serde::{Deserialize, Serialize};
 
 use crate::error::AdminUiError;
 
+/// One deployment-configured link rendered under the sign-in card.
+///
+/// Doubles as the `[login.links]` configuration entry (ssr side), so the wire
+/// and the configuration cannot drift; both fields are required there.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(deny_unknown_fields)]
+pub struct LoginLink {
+    /// Visible link text.
+    pub label: String,
+    /// Absolute or same-origin URL the link opens.
+    pub href: String,
+}
+
+/// What the login screen offers and says: the available modes plus the
+/// deployment-configured notice and links.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct LoginScreen {
+    /// Offer the Basic (username/password) form.
+    pub basic: bool,
+    /// Offer the OIDC login button.
+    pub oidc: bool,
+    /// Informational text on the sign-in card (empty = none).
+    pub notice: String,
+    /// Links rendered under the sign-in card.
+    pub links: Vec<LoginLink>,
+}
+
 /// What the UI may know about the current session (never the credential).
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub struct SessionInfo {
@@ -120,12 +147,13 @@ pub async fn current_session() -> Result<Option<SessionInfo>, AdminUiError> {
     }))
 }
 
-/// Which login modes the login screen should offer.
+/// Which login modes the login screen should offer, plus the configured
+/// notice and links it renders.
 ///
 /// # Errors
 /// None in practice; the signature is fallible per the server-fn contract.
 #[server]
-pub async fn login_modes() -> Result<(bool, bool), AdminUiError> {
+pub async fn fetch_login_screen() -> Result<LoginScreen, AdminUiError> {
     let state: crate::state::AppState = leptos::prelude::expect_context();
     // The console offers only what BOTH sides support: its own configured
     // modes intersected with the schemes the CDR advertises in its
@@ -134,10 +162,12 @@ pub async fn login_modes() -> Result<(bool, bool), AdminUiError> {
     // config alone so the login page still renders — the login attempt
     // itself then surfaces the outage.
     let (cdr_basic, cdr_bearer) = state.cdr.advertised_schemes().await.unwrap_or((true, true));
-    Ok((
-        state.config.auth.basic_enabled && cdr_basic,
-        state.config.auth.oidc.enabled && cdr_bearer,
-    ))
+    Ok(LoginScreen {
+        basic: state.config.auth.basic_enabled && cdr_basic,
+        oidc: state.config.auth.oidc.enabled && cdr_bearer,
+        notice: state.config.login.notice.clone(),
+        links: state.config.login.links.clone(),
+    })
 }
 
 /// The CDR `/ferroehr/rest/status` document (public endpoint), raw JSON — the
