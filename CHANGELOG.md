@@ -15,6 +15,8 @@ workflow refuses a tag that has no matching section here.
 
 ## [Unreleased]
 
+## [4.0.12] - 2026-08-30
+
 ### Added
 
 - The admin console's sign-in card takes a deployment-configured notice and
@@ -7840,7 +7842,8 @@ but has not yet run in production.
   seccomp, default-deny NetworkPolicy) and golden-render validation.
 
 
-[unreleased]: https://github.com/rubentalstra/FerroEHR/compare/v4.0.11...HEAD
+[unreleased]: https://github.com/rubentalstra/FerroEHR/compare/v4.0.12...HEAD
+[4.0.12]: https://github.com/rubentalstra/FerroEHR/compare/v4.0.11...v4.0.12
 [4.0.11]: https://github.com/rubentalstra/FerroEHR/compare/v4.0.10...v4.0.11
 [4.0.10]: https://github.com/rubentalstra/FerroEHR/compare/v4.0.9...v4.0.10
 [4.0.9]: https://github.com/rubentalstra/FerroEHR/compare/v4.0.8...v4.0.9
