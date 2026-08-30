@@ -6,9 +6,11 @@ demo posture baked on top, and it resets to known demo data every night:
 
 - **`api`** — the CDR (`Dockerfile.vercel`, `FROM ghcr.io/rubentalstra/ferroehr:latest`).
   Owns the path families the server itself serves: `/ferroehr/*` (the REST
-  API and its Swagger UI), `/health*`, and `/management*` (disabled in the
+  API and its Swagger UI), `/health*`, `/management*` (disabled in the
   sandbox posture, so those answer the CDR's own 404 — which is what lets
-  the console's probe-and-hide read the truth).
+  the console's probe-and-hide read the truth), and `/.well-known/*`, so a
+  machine client probing the origin for a discovery document gets the CDR's
+  own answer rather than the console's sign-in redirect (#2954).
 - **`console`** — the admin console (`deploy/vercel/console/Dockerfile.vercel`,
   `FROM ghcr.io/rubentalstra/ferroehr-admin-ui:latest`), the LANDING surface
   (#2941): every other path routes here, so sandbox.ferroehr.eu opens on the

@@ -24,6 +24,18 @@ workflow refuses a tag that has no matching section here.
   listing. A refusal keeps the dialog open with the server's diagnostic beside
   the source, and a successful upload closes it and refreshes the list.
 
+### Fixed
+
+- The admin console's System screen reports SMART correctly. It probed the
+  discovery document at the origin instead of under the platform base path
+  the CDR serves it from, and rendered whatever came back as a raw status
+  echo (`CDR answered 302: HTTP 302` on the hosted sandbox, where the origin
+  path belongs to the console itself). It now probes
+  `/ferroehr/rest/.well-known/smart-configuration`, states plainly that SMART
+  is not enabled when the CDR serves no document, and gives an unexpected
+  answer actionable copy that never claims SMART is disabled when the probe
+  could not tell.
+
 ## [4.0.13] - 2026-08-30
 
 ### Fixed
