@@ -44,9 +44,19 @@ use crate::components::page_header::PageHeader;
 use crate::components::surface::titled_card;
 use crate::error::AdminUiError;
 
+/// Where the CDR serves its SMART service-discovery document.
+///
+/// Relative to the PLATFORM base URL, which this platform gives a path
+/// segment: ITS-REST `smart_app_launch/master04-service_discovery.adoc`
+/// §"the configuration endpoint" — "If the base URL includes a path segment
+/// as `https://platform.example.com/gateway/v1`, then the configuration
+/// should be accessible at
+/// `https://platform.example.com/gateway/v1/.well-known/smart-configuration`".
+const SMART_DISCOVERY_PATH: &str = "ferroehr/rest/.well-known/smart-configuration";
+
 /// The CDR's SMART service-discovery document, or `None` when the CDR
-/// advertises none (a `404` from `/.well-known/smart-configuration` is a
-/// first-class "SMART disabled" state, not an error).
+/// advertises none (a `404` is a first-class "SMART disabled" state, not an
+/// error).
 ///
 /// # Errors
 /// [`AdminUiError::Unauthenticated`] without a console session; CDR transport
@@ -56,9 +66,7 @@ use crate::error::AdminUiError;
 pub async fn fetch_smart_config() -> Result<Option<String>, AdminUiError> {
     crate::session::require_session().await?;
     let state: crate::state::AppState = expect_context();
-    // Served relative to the platform base URL, not the ITS-REST base
-    // (master04-service_discovery.adoc §"the configuration endpoint").
-    let url = state.cdr.origin_url(".well-known/smart-configuration");
+    let url = state.cdr.origin_url(SMART_DISCOVERY_PATH);
     let response = state.cdr.get_public(&url, "application/json").await?;
     if response.is(http::StatusCode::NOT_FOUND) {
         return Ok(None);
@@ -645,6 +653,9 @@ fn status_body(body: &str) -> Result<AnyView, AdminUiError> {
 
 /// SMART card: `fetch_smart_config` → a "disabled" state, or the advertised
 /// endpoints (out-links) plus capability chips.
+///
+/// A failed probe renders [`smart_probe_failure_copy`] rather than the raw
+/// error: "the CDR answered 302" tells a reader nothing they can act on.
 fn smart_card() -> AnyView {
     let resource = Resource::new(|| (), |()| async move { fetch_smart_config().await });
     let body = view! {
@@ -652,13 +663,67 @@ fn smart_card() -> AnyView {
             {move || Suspend::new(async move {
                 match resource.await {
                     Ok(config) => smart_body(config),
-                    Err(e) => card_error(&e),
+                    Err(e) => {
+                        view! {
+                            <thaw::MessageBar intent=thaw::MessageBarIntent::Warning>
+                                <thaw::MessageBarBody>
+                                    {smart_probe_failure_copy(&e)}
+                                </thaw::MessageBarBody>
+                            </thaw::MessageBar>
+                        }
+                            .into_any()
+                    }
                 }
             })}
         </Suspense>
     }
     .into_any();
     titled_card("SMART", false, body)
+}
+
+/// What to say when the SMART discovery probe could not be read.
+///
+/// Component-free and unit-tested (the console's failure-copy convention —
+/// `crate::feedback::write_failure_copy`): every branch names what was asked
+/// for and what to do next, and none of them echoes a bare status code back
+/// at the reader.
+#[must_use]
+pub fn smart_probe_failure_copy(error: &AdminUiError) -> String {
+    let endpoint = format!("/{SMART_DISCOVERY_PATH}");
+    match error {
+        AdminUiError::CdrUnreachable(detail) => format!(
+            "SMART discovery could not be read: the CDR is unreachable ({detail}). This says \
+             nothing about whether SMART is enabled — check the CDR is up, then reload."
+        ),
+        AdminUiError::CdrUnauthorized(_) | AdminUiError::Unauthenticated => format!(
+            "SMART discovery could not be read: the CDR refused this session at {endpoint}. Sign \
+             in again, then reload."
+        ),
+        AdminUiError::Forbidden(_) => format!(
+            "SMART discovery could not be read: this session may not read {endpoint}. It needs an \
+             account the CDR allows there."
+        ),
+        _ => {
+            // A CDR body that only restates its own status ("HTTP 302") adds
+            // nothing, so it is dropped rather than printed beside the code it
+            // repeats — the doubled echo this card used to show (#2954).
+            let detail = match error {
+                AdminUiError::Cdr { status, message } => {
+                    let restatement = format!("HTTP {status}");
+                    if message.trim().is_empty() || message.trim() == restatement {
+                        format!("the CDR answered {status} there")
+                    } else {
+                        format!("the CDR answered {status} there: {message}")
+                    }
+                }
+                other => other.to_string(),
+            };
+            format!(
+                "SMART discovery could not be read from {endpoint} — {detail}. Whether SMART is \
+                 enabled is therefore unknown; check that the CDR serves that path."
+            )
+        }
+    }
 }
 
 /// Render the SMART discovery document. `None` is the neutral disabled state;
@@ -670,7 +735,7 @@ fn smart_body(config: Option<String>) -> AnyView {
         return view! {
             <thaw::MessageBar intent=thaw::MessageBarIntent::Info>
                 <thaw::MessageBarBody>
-                    "SMART: disabled — the CDR advertises no service-discovery document."
+                    "SMART is not enabled on this CDR: it serves no service-discovery document."
                 </thaw::MessageBarBody>
             </thaw::MessageBar>
         }
@@ -972,7 +1037,66 @@ fn group_openapi_paths(doc: &serde_json::Value) -> Vec<(String, Vec<(String, Str
 
 #[cfg(test)]
 mod tests {
-    use super::{OPENAPI_FAMILIES, group_openapi_paths, openapi_family_slug, scalar_rows};
+    use super::{
+        OPENAPI_FAMILIES, SMART_DISCOVERY_PATH, group_openapi_paths, openapi_family_slug,
+        scalar_rows, smart_probe_failure_copy,
+    };
+    use crate::error::AdminUiError;
+
+    /// The probe asks for the path the CDR actually serves: relative to the
+    /// PLATFORM base URL, which carries a path segment here (ITS-REST
+    /// `smart_app_launch/master04-service_discovery.adoc` §"the configuration
+    /// endpoint"). The origin-level path is a different resource, and on a
+    /// single-origin deployment it is not the CDR's at all.
+    #[test]
+    fn discovery_is_probed_under_the_platform_base_path() {
+        assert_eq!(
+            SMART_DISCOVERY_PATH,
+            "ferroehr/rest/.well-known/smart-configuration"
+        );
+    }
+
+    /// No failure branch echoes a bare status back at the reader; each names
+    /// what was probed (or why that is moot) and what to do next.
+    #[test]
+    fn a_failed_probe_reads_as_actionable_copy_never_a_status_echo() {
+        let cases = [
+            AdminUiError::CdrUnreachable("connection refused".to_owned()),
+            AdminUiError::CdrUnauthorized("expired".to_owned()),
+            AdminUiError::Forbidden("missing role".to_owned()),
+            AdminUiError::Unauthenticated,
+            AdminUiError::Cdr {
+                status: 302,
+                message: "HTTP 302".to_owned(),
+            },
+        ];
+        for error in cases {
+            let copy = smart_probe_failure_copy(&error);
+            assert!(
+                copy.starts_with("SMART discovery could not be read"),
+                "{copy}"
+            );
+            assert!(!copy.contains("CDR answered 302: HTTP 302"), "{copy}");
+            // Either the endpoint is named, or the branch explains why naming
+            // it would not help (the CDR was never reached).
+            assert!(
+                copy.contains(SMART_DISCOVERY_PATH) || copy.contains("unreachable"),
+                "{copy}"
+            );
+        }
+    }
+
+    /// An unexpected answer states that "enabled" is UNKNOWN — the one thing
+    /// the card must not do is imply SMART is off when it could not tell.
+    #[test]
+    fn an_unexpected_answer_does_not_claim_smart_is_disabled() {
+        let copy = smart_probe_failure_copy(&AdminUiError::Cdr {
+            status: 302,
+            message: "HTTP 302".to_owned(),
+        });
+        assert!(copy.contains("unknown"), "{copy}");
+        assert!(!copy.contains("not enabled"), "{copy}");
+    }
 
     #[cfg(feature = "ssr")]
     #[test]
