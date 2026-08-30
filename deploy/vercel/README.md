@@ -14,8 +14,9 @@ demo posture baked on top, and it resets to known demo data every night:
   (#2941): every other path routes here, so sandbox.ferroehr.eu opens on the
   console's sign-in screen. It drives the CDR strictly over the public REST
   base (`https://sandbox.ferroehr.eu`) as the same demo user the API takes,
-  and it holds no state of its own (in-process sessions only — a serverless
-  scale-in signs visitors out, which the demo accepts).
+  and it holds no state of its own: sessions are a sealed cookie keyed by
+  the posture's deliberately public `session.secret` (#2949 — the demo's
+  only credential is itself public), so any instance serves any visitor.
 
 Routing lives in `vercel.json` `rewrites` (evaluated in order, first match
 wins — the Vercel Services model); Swagger stays reachable at

@@ -89,18 +89,16 @@ pub async fn login_basic(
         });
     }
 
-    let session = crate::session::http_session().await?;
-    session
-        .insert(
-            crate::session::SESSION_KEY,
-            crate::session::AdminSession {
-                identity: username,
-                credential,
-                scopes: Vec::new(),
-            },
-        )
-        .await
-        .map_err(|e| AdminUiError::Internal(format!("session store: {e}")))?;
+    let mut session = crate::session::http_session().await?;
+    session.insert(
+        crate::session::SESSION_KEY,
+        &crate::session::AdminSession {
+            identity: username,
+            credential,
+            scopes: Vec::new(),
+        },
+    )?;
+    crate::session::commit(&session)?;
 
     leptos_axum::redirect(next.as_deref().unwrap_or("/"));
     Ok(())
@@ -113,14 +111,14 @@ pub async fn login_basic(
 /// unauthenticated call is a harmless no-op redirect.
 ///
 /// # Errors
-/// [`AdminUiError::Internal`] on a session-store failure.
+/// [`AdminUiError::Internal`] outside a request or on a sealing failure.
 #[server]
 pub async fn logout() -> Result<(), AdminUiError> {
-    let session = crate::session::http_session().await?;
-    session
-        .flush()
-        .await
-        .map_err(|e| AdminUiError::Internal(format!("session store: {e}")))?;
+    // The extraction is the in-request proof (it fails outside one); its
+    // decoded content is irrelevant — sign-out overwrites the cookie.
+    crate::session::http_session().await?;
+    // Committing the EMPTY session sets the removal cookie.
+    crate::session::commit(&crate::session::ConsoleSession::default())?;
     leptos_axum::redirect("/login");
     Ok(())
 }
@@ -129,14 +127,11 @@ pub async fn logout() -> Result<(), AdminUiError> {
 /// scope panel. Deliberately NOT guarded: "no session" is a valid answer.
 ///
 /// # Errors
-/// [`AdminUiError::Internal`] on a session-store failure.
+/// [`AdminUiError::Internal`] when called outside a request (a bug).
 #[server]
 pub async fn current_session() -> Result<Option<SessionInfo>, AdminUiError> {
     let session = crate::session::http_session().await?;
-    let admin = session
-        .get::<crate::session::AdminSession>(crate::session::SESSION_KEY)
-        .await
-        .map_err(|e| AdminUiError::Internal(format!("session store: {e}")))?;
+    let admin = session.get::<crate::session::AdminSession>(crate::session::SESSION_KEY);
     Ok(admin.map(|s| SessionInfo {
         identity: s.identity,
         method: match s.credential {

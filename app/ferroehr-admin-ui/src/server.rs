@@ -19,24 +19,11 @@ use crate::state::AppState;
 /// Assembles the console's full axum service.
 ///
 /// OIDC routes, the export POST, the Leptos routes with the per-request
-/// context, the static-file fallback, and the layer stack (session → state →
-/// session guard → security headers).
+/// context, the static-file fallback, and the layer stack (state → session
+/// guard → security headers). Sessions are a sealed cookie
+/// ([`crate::session`]) — no session-store layer exists, so no state is
+/// bound to any one instance.
 pub fn router(app_state: AppState, leptos_options: LeptosOptions) -> axum::Router {
-    let session_layer =
-        tower_sessions::SessionManagerLayer::new(tower_sessions::MemoryStore::default())
-            .with_secure(app_state.config.session.cookie_secure)
-            // Lax, not the Strict default: the OIDC callback arrives as a
-            // top-level cross-site redirect from the identity provider, and
-            // Strict would withhold the session cookie holding the PKCE/state
-            // — the flow would always fail "no login in progress". CSRF on
-            // the callback is covered by the state + PKCE checks.
-            .with_same_site(tower_sessions::cookie::SameSite::Lax)
-            .with_expiry(tower_sessions::Expiry::OnInactivity(
-                tower_sessions::cookie::time::Duration::minutes(
-                    i64::try_from(app_state.config.session.idle_minutes).unwrap_or(60),
-                ),
-            ));
-
     let routes = leptos_axum::generate_route_list(crate::app::App);
 
     let context_state = app_state.clone();
@@ -66,11 +53,11 @@ pub fn router(app_state: AppState, leptos_options: LeptosOptions) -> axum::Route
             provide_console_context,
             crate::app::shell,
         ))
-        // Inside the session layer, ahead of every render: a document request
-        // without a session never reaches Leptos.
+        // Ahead of every render: a document request without a session never
+        // reaches Leptos, and an authenticated response leaves with a
+        // refreshed sliding-expiry cookie.
         .layer(axum::middleware::from_fn(login_guard))
-        .layer(Extension(app_state))
-        .layer(session_layer);
+        .layer(Extension(app_state));
     with_security_headers(service).with_state(leptos_options)
 }
 
@@ -91,36 +78,65 @@ pub fn router(app_state: AppState, leptos_options: LeptosOptions) -> axum::Route
 /// (`is_public_path`). Server-function calls (`/api/…`) keep their own
 /// typed refusals; the export POST enforces its own session.
 ///
-/// Fail-closed: a request that reaches this layer without session machinery
-/// redirects rather than renders.
+/// Fail-closed: a request that reaches this layer without the app state
+/// redirects rather than renders. This layer is also the sliding-expiry
+/// writer: every response to an authenticated request leaves with a
+/// re-sealed cookie carrying a fresh idle anchor — unless the handler
+/// already set our cookie itself (login and logout do).
 pub async fn login_guard(
     request: axum::extract::Request,
     next: axum::middleware::Next,
 ) -> axum::response::Response {
+    let state = request.extensions().get::<AppState>().cloned();
+    let session = state.as_ref().map(|s| {
+        crate::session::unseal(
+            &s.session_keys,
+            request.headers(),
+            s.config.session.idle_minutes,
+        )
+    });
+    let authenticated = session
+        .as_ref()
+        .is_some_and(|s| s.get::<AdminSession>(SESSION_KEY).is_some());
+
     let method = request.method();
     let guarded = (method == http::Method::GET || method == http::Method::HEAD)
         && !is_public_path(request.uri().path());
-    if guarded {
-        let authenticated = match request.extensions().get::<tower_sessions::Session>() {
-            Some(session) => session
-                .get::<AdminSession>(SESSION_KEY)
-                .await
-                .ok()
-                .flatten()
-                .is_some(),
-            None => false,
-        };
-        if !authenticated {
-            let mut response = axum::response::Response::new(axum::body::Body::empty());
-            *response.status_mut() = http::StatusCode::FOUND;
-            response.headers_mut().insert(
-                http::header::LOCATION,
-                http::HeaderValue::from_static("/login"),
-            );
-            return response;
-        }
+    if guarded && !authenticated {
+        let mut response = axum::response::Response::new(axum::body::Body::empty());
+        *response.status_mut() = http::StatusCode::FOUND;
+        response.headers_mut().insert(
+            http::header::LOCATION,
+            http::HeaderValue::from_static("/login"),
+        );
+        return response;
     }
-    next.run(request).await
+
+    let mut response = next.run(request).await;
+    if authenticated
+        && !sets_session_cookie(response.headers())
+        && let (Some(state), Some(session)) = (state, session)
+        && let Ok(refreshed) = crate::session::set_cookie(
+            &state.session_keys,
+            &session,
+            state.config.session.cookie_secure,
+            state.config.session.idle_minutes,
+        )
+    {
+        response
+            .headers_mut()
+            .append(http::header::SET_COOKIE, refreshed);
+    }
+    response
+}
+
+/// Whether a response already sets our session cookie (the handler wrote the
+/// session itself — its value wins over the guard's sliding refresh).
+fn sets_session_cookie(headers: &http::HeaderMap) -> bool {
+    headers.get_all(http::header::SET_COOKIE).iter().any(|v| {
+        v.to_str()
+            .is_ok_and(|s| s.starts_with(crate::session::SESSION_COOKIE))
+    })
 }
 
 /// Whether a path is served without a console session: the sign-in screen,

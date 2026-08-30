@@ -16,4 +16,6 @@ pub struct AppState {
     pub cdr: crate::cdr::CdrClient,
     /// OIDC discovery result (present when `auth.oidc.enabled`).
     pub oidc: Option<Arc<crate::oidc::OidcState>>,
+    /// The session-cookie sealing key (from `session.secret`, or ephemeral).
+    pub session_keys: crate::session::SessionKeys,
 }
