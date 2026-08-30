@@ -17,6 +17,11 @@ workflow refuses a tag that has no matching section here.
 
 ### Fixed
 
+- AQL `LIKE` honors the escaped single-character wildcard: `\?` in a pattern
+  now matches a literal `?` (QUERY master03 §Operators/LIKE), symmetrically
+  with the already-correct `\*`. The string reader was consuming `\?` as a
+  string escape before the pattern layer could see it, so the escaped form
+  still matched as the wildcard.
 - Console sessions survive multi-instance deployments. The session moved
   from an in-process store to a sealed cookie (AES-256-GCM): any replica
   holding the configured `session.secret` (base64, at least 64 bytes; new,
