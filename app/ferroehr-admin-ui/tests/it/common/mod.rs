@@ -458,6 +458,35 @@ pub(crate) async fn is_visible(h: &Harness, css: &str) -> bool {
     }
 }
 
+/// Upload `path` through the Template Manager's one upload dialog: open it
+/// from the page-header trigger, choose the file, and send it.
+///
+/// Both template families share this control (#2955), so both families' seed
+/// helpers drive the same routine. The submit button is inert until the chosen
+/// file has been read into the dialog's source editor, which makes
+/// [`wait_enabled`] the exact "the file arrived" condition — never a sleep.
+///
+/// # Panics
+/// On any interaction failure.
+pub(crate) async fn upload_via_dialog(h: &Harness, path: &str) {
+    h.wait_css("#template-upload-open")
+        .await
+        .click()
+        .await
+        .expect("open the template upload dialog");
+    h.wait_css("#template-upload-picker input[type=file]")
+        .await
+        .send_keys(path)
+        .await
+        .expect("choose the fixture through the dialog's hidden file input");
+    wait_enabled(h, "#template-upload-submit").await;
+    h.wait_css("#template-upload-submit")
+        .await
+        .click()
+        .await
+        .expect("send the chosen template source");
+}
+
 /// Poll until the control at `css` is present and ENABLED.
 ///
 /// The console keeps an edit form inert until the document it edits has been

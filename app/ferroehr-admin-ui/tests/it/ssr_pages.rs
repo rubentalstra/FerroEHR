@@ -159,9 +159,14 @@ async fn the_templates_screen_renders_its_header_and_the_opt_upload_control() {
         view! { <ferroehr_admin_ui::pages::templates::TemplatesPage /> }.into_any()
     });
     assert!(html.contains(">Templates</h1>"), "{html}");
-    // Upload is a real file input, not a scripted picker (the no-JS mandate).
-    assert!(html.contains("type=\"file\""), "{html}");
-    assert!(html.contains("accept=\".opt,.xml\""), "{html}");
+    // ONE upload trigger, in the page-header action slot, labelled for the
+    // family the URL names (#2955). Its dialog is teleported by thaw and so
+    // contributes nothing to either pass; the real `<input type=file>` inside
+    // it — the no-JS mandate — is driven in the browser by every journey that
+    // seeds a template (`common::upload_via_dialog`).
+    assert!(html.contains("id=\"template-upload-open\""), "{html}");
+    assert!(html.contains("Upload OPT"), "{html}");
+    assert!(!html.contains("type=\"file\""), "{html}");
 }
 
 #[tokio::test]

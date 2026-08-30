@@ -455,7 +455,7 @@ async fn capture_documentation_screenshots() {
         &dir,
         "/templates?family=adl2",
         "templates/templates-adl2",
-        Some("#adl2-upload-submit"),
+        Some("#template-upload-open"),
     )
     .await;
     if h.driver

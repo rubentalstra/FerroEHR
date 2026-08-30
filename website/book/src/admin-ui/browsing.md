@@ -17,6 +17,15 @@ the title. The choice is in the URL (`/templates` is the ADL 1.4 listing and
 `/templates?family=adl2` the ADL 2 one) so either is a shareable link, and
 the filter and the paging footer work the same in both.
 
+Both families upload the same way: the button at the top right of the screen
+(**Upload OPT** or **Upload ADL2**, depending on the family you are looking
+at) opens a dialog where you either choose a file or paste the source. Both
+inputs feed one editor, so a chosen file can be read over, corrected, and
+sent from there. **Upload template** stays disabled until there is something
+to send, a refusal keeps the dialog open with the server's diagnostic beside
+the source it rejected, and a successful upload closes the dialog and
+refreshes the list.
+
 ![Templates](img/templates/templates.png)
 
 The template detail screen shows the **path catalog** (the template's tree
@@ -67,15 +76,13 @@ separate rows and the list shows all of them.
 
 ![ADL 2 templates](img/templates/templates-adl2.png)
 
-Uploading is different from ADL 1.4 in one way: the CDR ingests the ADL 2
-artefact **source** as plain text rather than an XML document. The upload card
-therefore offers both a file picker and a paste area, feeding the same editor:
-choose a `.adls` file to load it in, or paste a source directly, then read it
-over before sending it. **Upload template** stays disabled until there is
-something to send. If the openEHR-ADL engine refuses the source, its
-diagnostics (the AOM 2 rule codes with their line and column) are shown in
-full above the editor as well as in the failure notification, so the source can
-be corrected in place and re-sent.
+Uploading works exactly as it does for ADL 1.4, through the same dialog; what
+differs is the artefact. The CDR ingests the ADL 2 **source** as plain text
+rather than an XML document, so the dialog accepts `.adls` files and the
+source you paste is sent verbatim. If the openEHR-ADL engine refuses it, its
+diagnostics (the AOM 2 rule codes with their line and column) appear in full
+under the editor as well as in the failure notification, so the source can be
+corrected in place and re-sent.
 
 Opening a row shows the artefact's three server-side representations plus a
 derived view:

@@ -127,28 +127,34 @@ fn row_link(hrid: &str) -> String {
     format!("a[href='/templates/adl2/{hrid}']")
 }
 
-/// Load `relative` into the ADL2 upload card's source editor and send it.
+/// Open the upload dialog, load `relative` into its source editor, and send it.
 ///
-/// The file picker and the paste area feed ONE source signal, and the upload
-/// button is inert until that signal holds something — so `wait_enabled` on the
-/// button is exactly the "the file has been read into the editor" condition,
-/// never a sleep.
+/// The trigger is the page-header button both families share (#2955); the file
+/// picker and the paste area inside the dialog feed ONE source signal, and the
+/// submit button is inert until that signal holds something — so
+/// `wait_enabled` on the button is exactly the "the file has been read into the
+/// editor" condition, never a sleep.
 ///
 /// # Panics
 /// On any interaction failure.
 async fn upload_source_file(h: &Harness, relative: &str) {
     let path = fixture_adl2_path(relative);
+    h.wait_css("#template-upload-open")
+        .await
+        .click()
+        .await
+        .expect("open the upload dialog");
     // The change event that fills the editor is a HYDRATED listener, and a file
     // set before it exists is unrecoverable by retrying — a re-send of the same
     // path fires no change event (#2285). `goto` already waited for the shell's
     // hydration marker, so the first send lands on a live listener.
-    h.wait_css("#adl2-upload-picker input[type=file]")
+    h.wait_css("#template-upload-picker input[type=file]")
         .await
         .send_keys(&path)
         .await
         .expect("choose the ADL2 fixture through the hidden file input");
-    wait_enabled(h, "#adl2-upload-submit").await;
-    h.wait_css("#adl2-upload-submit")
+    wait_enabled(h, "#template-upload-submit").await;
+    h.wait_css("#template-upload-submit")
         .await
         .click()
         .await
@@ -371,7 +377,7 @@ async fn an_unparseable_adl2_source_surfaces_the_engine_diagnostic() {
     };
     common::login_basic(&h).await;
     h.goto(LIST_URL).await;
-    h.wait_css("#adl2-upload-submit").await;
+    h.wait_css("#template-upload-open").await;
 
     upload_source_file(&h, "invalid/unparseable.adls").await;
 
