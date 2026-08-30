@@ -1,18 +1,35 @@
 # SPDX-FileCopyrightText: FerroEHR contributors
 # SPDX-License-Identifier: MIT
 #
-# The nightly sandbox reset (#2710, sandbox.ferroehr.eu): wipe the Neon
-# database's schemas, let the next cold boot re-run the migrations, then
-# seed fresh demo data through the PUBLIC API (scripts/sandbox/reseed.sh).
-# Visitors can create, change and delete anything; every night the demo
-# returns to a known state.
+# The sandbox reset (#2710, sandbox.ferroehr.eu): wipe the Neon database's
+# schemas, promote a FRESH Vercel deployment whose cold boots re-run the
+# migrations, then seed demo data through the PUBLIC API
+# (scripts/sandbox/reseed.sh). Visitors can create, change and delete
+# anything; every night the demo returns to a known state.
+#
+# Why a redeploy and not a wait (#2941 follow-up, measured 2026-08-30): the
+# server runs its migrations ONLY at boot, so after the wipe the schemas come
+# back exclusively through a cold start. The original design slept out
+# Vercel's 5-minute idle scale-in window and let the next request boot a
+# fresh instance — sound while the sandbox was a Swagger page polled by
+# nobody at 03:00, structurally dead once the admin console became the
+# landing surface: the console's own backend calls the CDR, visitors supply
+# traffic at any hour, and even the readiness poll is traffic — so a wiped
+# warm instance never idles out and answers an honest 503 forever (observed
+# live: a 15-minute 503 loop). Pinging the Deploy Hook instead promotes a
+# deployment on which EVERY instance is a fresh boot — deterministic, quiet
+# hours not required, and a pull-and-retag build measured in minutes. On the
+# deploy-called path this is a second build per event; accepted for the
+# determinism.
 #
 # The wipe is direct SQL because the sandbox deliberately serves no admin
 # API. Safety fence: the job refuses to run against any host that is not a
 # Neon endpoint, so a mispasted secret can never wipe a real deployment.
 #
-# Secret: SANDBOX_DATABASE_URL — the Neon DIRECT (non-pooled) connection
-# string, in the sandbox-reseed environment.
+# Secrets: SANDBOX_DATABASE_URL — the Neon DIRECT (non-pooled) connection
+# string, in the sandbox-reseed environment. SANDBOX_DEPLOY_HOOK_URL — the
+# project's Deploy Hook (repo secret, shared with sandbox-deploy.yml); an
+# empty hook is a hard failure, never a skip (#2755).
 
 name: Sandbox reseed
 
@@ -33,8 +50,9 @@ concurrency:
 
 jobs:
   reset:
-    name: wipe and reseed
+    name: wipe, redeploy and reseed
     runs-on: ubuntu-latest
+    timeout-minutes: 30
     environment: sandbox-reseed
     permissions:
       contents: read
@@ -42,6 +60,18 @@ jobs:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           persist-credentials: false
+
+      # The hook is checked BEFORE the wipe: with no way to redeploy, a wipe
+      # would leave the sandbox serving 503 until someone intervened.
+      - name: The deploy hook exists
+        env:
+          HOOK_URL: ${{ secrets.SANDBOX_DEPLOY_HOOK_URL }}
+        run: |
+          set -euo pipefail
+          if [ -z "$HOOK_URL" ]; then
+            echo "::error::SANDBOX_DEPLOY_HOOK_URL is empty — the reset needs it to promote the fresh deployment that re-runs the migrations. Create the Deploy Hook on the Vercel project and run: gh secret set SANDBOX_DEPLOY_HOOK_URL" >&2
+            exit 1
+          fi
 
       - name: Wipe the sandbox schemas
         env:
@@ -62,25 +92,36 @@ jobs:
           DROP SCHEMA IF EXISTS cold CASCADE;
           SQL
 
-      # A warm serverless instance would keep serving against the dropped
-      # schemas; at this hour the sandbox is idle and instances scale in
-      # after 5 minutes without traffic, so wait one scale-in window before
-      # waking a fresh instance whose boot re-runs the migrations.
-      - name: Wait out the scale-in window
-        run: sleep 420
+      # Every instance of the promoted deployment is a fresh boot, and boot
+      # re-runs the migrations against the wiped database. The hook job id is
+      # the one handle linking this run to the deployment it triggered.
+      - name: Trigger a fresh deployment
+        env:
+          HOOK_URL: ${{ secrets.SANDBOX_DEPLOY_HOOK_URL }}
+        run: |
+          set -euo pipefail
+          body=$(curl -fsS -X POST "$HOOK_URL")
+          job_id=$(printf '%s' "$body" | sed -nE 's/.*"id":"([^"]+)".*/\1/p')
+          echo "redeploy triggered (hook job ${job_id:-<no id in response>})"
 
-      - name: Wake the server and wait for readiness
+      # Readiness 200 means: database reachable AND the migrations are back
+      # (the readiness probe distinguishes the two — a wiped schema is an
+      # honest DOWN). Whichever instance migrates first satisfies the reseed's
+      # precondition, so a cold boot of the outgoing deployment passing early
+      # is also a valid green — both deployments run the same :latest bytes.
+      - name: Wait until the sandbox is migrated and ready
         run: |
           set -euo pipefail
           deadline=$(( $(date +%s) + 900 ))
           until code=$(curl -sS -m 30 -o /dev/null -w '%{http_code}' https://sandbox.ferroehr.eu/health/readiness); [ "$code" = "200" ]; do
             if [ "$(date +%s)" -ge "$deadline" ]; then
-              echo "::error::the sandbox did not become ready within 15 minutes of the wipe." >&2
+              echo "::error::the sandbox did not become ready within 15 minutes of the wipe + redeploy — read the Vercel build log for the hook job above; the database side (the wipe) already succeeded, so the suspect is the build or the boot-time migration run." >&2
               exit 1
             fi
             echo "readiness answered ${code:-nothing}; waiting"
-            sleep 20
+            sleep 15
           done
+          echo "sandbox ready"
 
       - name: Seed the demo data
         run: bash scripts/sandbox/reseed.sh
