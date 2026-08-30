@@ -57,10 +57,14 @@ and the only place that POST happens is `.github/workflows/sandbox-deploy.yml`:
 
 After the deploy, the workflow polls `/ferroehr/rest/status` until the new
 deployment serves (cold boots run the migrations), then calls the reseed
-(the reusable half of `sandbox-reseed.yml`): wipe, wait out the serverless
-scale-in window, wake, seed through the public API. A release that edits
-the baseline migration therefore heals at deploy time; the nightly reseed
-remains as the janitor.
+(the reusable half of `sandbox-reseed.yml`): wipe, ping the deploy hook so a
+FRESH deployment's cold boots re-run the migrations, wait for readiness,
+seed through the public API. The redeploy replaced an idle-window sleep the
+moment the console became the landing surface: the server migrates only at
+boot, and with the console's backend and visitors supplying traffic at any
+hour, a wiped warm instance never scales in — it answers an honest 503
+until replaced. A release that edits the baseline migration therefore heals
+at deploy time; the nightly reseed remains as the janitor.
 
 ## What can fail, and where it shows
 

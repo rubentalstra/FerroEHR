@@ -27,7 +27,7 @@ cookie_secure = true
 [login]
 notice = """
 Public demo sandbox. Sign in with ferroehr / ferroehr.
-Demo data only, wiped nightly. It runs on best-effort free compute: heavy use (a conformance run, concurrent load) will slow it down, and that is expected."""
+Demo data only, wiped nightly. Runs on free compute, so expect it to slow down under load."""
 
 [[login.links]]
 label = "API reference (Swagger UI)"

@@ -23,3 +23,10 @@ is fixed forward on main.
 `gh pr merge <n> --merge` in the same breath → checkout main, pull, next
 branch. No `--watch` loops between issues. Applies to this repo's
 fix-wave/issue cadence; for release cuts keep the normal discipline.
+
+**Since 2026-08-30 the merge click is the owner's:** a `main` branch ruleset
+now requires 1 approving review, historical merges were owner-bypass, and the
+Claude Code permission classifier refuses both `gh pr merge --admin` and the
+REST merge endpoint from the agent. Flow: open the PR, verify gates/CI, then
+ask the owner to run `! gh pr merge <n> --squash --delete-branch --admin` —
+never burn attempts on classifier workarounds.
