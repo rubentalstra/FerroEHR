@@ -35,6 +35,7 @@ use ferroehr_admin_ui::components::scope_grants::{
 use ferroehr_admin_ui::components::stat_card::StatCard;
 use ferroehr_admin_ui::components::surface::{CARD_TITLE, titled_card};
 use ferroehr_admin_ui::components::toast::{toast_error, toast_success};
+use ferroehr_admin_ui::components::upload_dialog::UploadDialog;
 use ferroehr_admin_ui::scopes::{CAPABILITY_NOTE, grants};
 use leptos::prelude::*;
 
@@ -314,6 +315,51 @@ fn a_closed_confirm_dialog_renders_no_server_markup() {
     assert!(!html.contains("Delete template"), "{html}");
     assert!(!html.contains("confirm-delete-template"), "{html}");
     assert!(!html.contains("thaw-dialog"), "{html}");
+}
+
+/// The upload dialog is the same shape as the confirm dialog and carries the
+/// same hydration property, in BOTH states: nothing of it — not the copy, not
+/// the file input, not the paste area — reaches the server pass, so the
+/// client cannot hydrate against markup the server never produced (rules §8).
+/// The controls themselves are driven in the browser by the template journeys
+/// (`common::upload_via_dialog`).
+#[test]
+fn an_upload_dialog_renders_no_server_markup_open_or_closed() {
+    for open_state in [false, true] {
+        let html = render(move || {
+            let open = RwSignal::new(open_state);
+            let source = RwSignal::new(String::new());
+            thaw_shell(move || {
+                view! {
+                    <UploadDialog
+                        open=Signal::derive(move || open.get())
+                        on_dismiss=Callback::new(move |()| open.set(false))
+                        title=Signal::derive(|| "Upload an operational template".to_owned())
+                        help=Signal::derive(|| "The CDR ingests OPT/XML.".to_owned())
+                        accept=Signal::derive(|| ".opt,.xml".to_owned())
+                        placeholder=Signal::derive(|| "<template …".to_owned())
+                        choose_label=Signal::derive(|| " Choose an OPT/XML file".to_owned())
+                        submit_label=Signal::derive(|| "Upload template".to_owned())
+                        source=source
+                        pending=Signal::derive(|| false)
+                        error=Signal::derive(|| Option::<String>::None)
+                        on_submit=Callback::new(move |_: String| {})
+                        picker_id="template-upload-picker"
+                        source_id="template-upload-source"
+                        submit_id="template-upload-submit"
+                    />
+                }
+                .into_any()
+            })
+        });
+        // The shell around it DID render, so the absences below are real.
+        assert!(html.contains("thaw-config-provider"), "{html}");
+        assert!(!html.contains("Upload an operational template"), "{html}");
+        assert!(!html.contains("template-upload-picker"), "{html}");
+        assert!(!html.contains("template-upload-submit"), "{html}");
+        assert!(!html.contains("type=\"file\""), "{html}");
+        assert!(!html.contains("thaw-dialog"), "{html}");
+    }
 }
 
 /// And so does an OPEN one — which is the point. `thaw::Dialog` teleports its

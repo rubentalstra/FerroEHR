@@ -436,7 +436,7 @@ async fn capture_documentation_screenshots() {
         &dir,
         "/templates",
         "templates/templates",
-        Some("input[type=file]"),
+        Some("#template-upload-open"),
     )
     .await;
     capture(
@@ -455,7 +455,7 @@ async fn capture_documentation_screenshots() {
         &dir,
         "/templates?family=adl2",
         "templates/templates-adl2",
-        Some("#adl2-upload-submit"),
+        Some("#template-upload-open"),
     )
     .await;
     if h.driver
@@ -856,7 +856,7 @@ async fn dark_ordinary_screens(h: &Harness, dir: &Path) {
         dir,
         "/templates",
         "templates/templates-dark",
-        Some("input[type=file]"),
+        Some("#template-upload-open"),
     )
     .await;
     capture_dark(

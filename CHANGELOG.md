@@ -15,6 +15,15 @@ workflow refuses a tag that has no matching section here.
 
 ## [Unreleased]
 
+### Changed
+
+- The admin console's Template Manager uploads both template families the same
+  way: one button in the page header (**Upload OPT** / **Upload ADL2**) opens a
+  dialog offering a file picker and a paste area for either family, so ADL 1.4
+  gains the paste path and ADL 2 no longer carries a permanent card above its
+  listing. A refusal keeps the dialog open with the server's diagnostic beside
+  the source, and a successful upload closes it and refreshes the list.
+
 ## [4.0.13] - 2026-08-30
 
 ### Fixed
