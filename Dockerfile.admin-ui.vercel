@@ -1,0 +1,30 @@
+# SPDX-FileCopyrightText: FerroEHR contributors
+# SPDX-License-Identifier: MIT
+#
+# The Vercel container build for the sandbox's admin console (#2941) — the
+# `console` service in vercel.json, deployed beside the CDR service
+# (Dockerfile.vercel) and the sandbox's landing surface: every path outside
+# the CDR's own families (/ferroehr, /health, /management) routes here.
+#
+# Same doctrine as Dockerfile.vercel: FROM the PUBLISHED release image, so
+# the sandbox runs the exact release bytes and Vercel's build is a pull +
+# retag. `:latest` is the release pointer the image lane moves on release
+# tags only; the only deploy trigger is sandbox-deploy.yml, which fires after
+# that lane succeeds, so this reference always resolves.
+#
+# The console is a stateless ITS-REST client of the CDR — no database, no
+# Neon integration, no injected DSN. It reaches the sandbox CDR over the
+# public REST base (deploy/vercel/ferroehr-admin-ui.sandbox.toml).
+
+FROM ghcr.io/rubentalstra/ferroehr-admin-ui:latest
+
+# The base image already runs as uid 65532 (distroless nonroot); stated
+# explicitly so the posture is a property of THIS file too (trivy DS-0002).
+USER 65532:65532
+
+# The sandbox posture: the public CDR base URL and the TLS-edge cookie flag.
+COPY deploy/vercel/ferroehr-admin-ui.sandbox.toml /etc/ferroehr/admin-ui.toml
+ENV FERROEHR_ADMIN_CONFIG=/etc/ferroehr/admin-ui.toml
+# Vercel routes to the port the image declares; the console serves on 3000
+# (the base image's LEPTOS_SITE_ADDR).
+ENV PORT=3000

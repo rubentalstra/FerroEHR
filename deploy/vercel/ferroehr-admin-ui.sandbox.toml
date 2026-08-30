@@ -1,0 +1,38 @@
+# SPDX-FileCopyrightText: FerroEHR contributors
+# SPDX-License-Identifier: MIT
+#
+# The hosted-sandbox posture for the admin console (#2941,
+# sandbox.ferroehr.eu), baked into the Vercel image by
+# Dockerfile.admin-ui.vercel. The console is the sandbox's landing surface;
+# it drives the sandbox CDR strictly over the public REST base, so what it
+# shows is exactly what the public API serves. It signs in as the same demo
+# user the API takes (ferroehr / ferroehr, USER role): the CDR's admin and
+# management surfaces stay OFF, and the console's probe-and-hide keeps their
+# screens out of the navigation.
+
+[cdr]
+# The public REST base — the console's BFF calls the same origin a visitor's
+# own tooling calls, never a private channel.
+base_url = "https://sandbox.ferroehr.eu"
+
+[session]
+# TLS terminates at the Vercel edge.
+cookie_secure = true
+
+# The sign-in card states what a visitor needs (#2941): the demo credentials
+# and the free-tier expectations, with the API reference linked underneath.
+# The [login] key ships in the console image from v4.0.12 on — an older
+# :latest refuses it at boot, which the deploy workflow's console poll
+# catches.
+[login]
+notice = """
+Public demo sandbox. Sign in with ferroehr / ferroehr.
+Demo data only, wiped nightly. It runs on best-effort free compute: heavy use (a conformance run, concurrent load) will slow it down, and that is expected."""
+
+[[login.links]]
+label = "API reference (Swagger UI)"
+href = "https://sandbox.ferroehr.eu/ferroehr/rest/swagger-ui"
+
+[[login.links]]
+label = "Documentation"
+href = "https://ferroehr.eu/docs/latest/"

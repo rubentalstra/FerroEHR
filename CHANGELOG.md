@@ -15,6 +15,25 @@ workflow refuses a tag that has no matching section here.
 
 ## [Unreleased]
 
+### Added
+
+- The admin console's sign-in card takes a deployment-configured notice and
+  links: `login.notice` (informational text, line breaks preserved — a demo
+  states its public credentials and usage expectations there) and
+  `login.links` (label + href pairs, e.g. an API reference). Both default
+  empty and render nothing when unset.
+
+### Changed
+
+- The hosted sandbox (sandbox.ferroehr.eu) leads with the admin console: the
+  deployment now runs both published container images, the console is the
+  landing surface (a visitor gets its sign-in screen, demo credentials
+  `ferroehr` / `ferroehr`), and the CDR keeps its path families —
+  `/ferroehr/*` (including the Swagger UI, which stays the API reference),
+  `/health*`, and `/management*`. The console drives the sandbox CDR over
+  the public REST base as the same demo user; the CDR's admin and
+  management surfaces stay off.
+
 ## [4.0.11] - 2026-08-29
 
 ### Added

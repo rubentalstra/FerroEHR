@@ -131,6 +131,8 @@ overrides. Unknown keys are refused at startup, exactly as on the CDR:
 | `auth.oidc.enabled` | `false` | Offer OIDC login (authorization code + PKCE). |
 | `auth.oidc.issuer` / `client_id` / `client_secret` (`_file`) / `public_base_url` / `scopes` | — | The OIDC client registration; `public_base_url` is the console's externally visible origin for the redirect URI. Enabling OIDC without issuer, client id and public base URL is a startup error. |
 | `auth.oidc.resolve` | — | A `host=ip:port` override for the issuer host, for split-horizon DNS: the console reaches an issuer whose canonical name only resolves inside the container network, while browsers and tokens keep the canonical URL. |
+| `login.notice` | empty | Informational text on the sign-in card, line breaks preserved. A demo or evaluation deployment states its public credentials and usage expectations here. |
+| `login.links` | empty | Links under the sign-in card, each `{ label, href }` — an API reference, a documentation page. |
 | `session.idle_minutes` | `60` | Session idle expiry. |
 | `session.cookie_secure` | `false` | Set behind TLS. |
 
