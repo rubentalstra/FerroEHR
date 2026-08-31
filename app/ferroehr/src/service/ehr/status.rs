@@ -113,15 +113,14 @@ impl FerroEhrService {
     /// `UPDATE_VERSION` envelope, sync the promoted subject columns, and return
     /// the committed version identity.
     ///
-    /// `vo_id` is the `EHR_STATUS` versioned object (resolved once by the
-    /// caller's `If-Match` meta pre-read, so the `current_vo` JOIN is not
-    /// re-run here); `if_match` is the `OBJECT_VERSION_ID` (or bare version)
-    /// the client believes is current. The result is the commit's own
-    /// [`Committed`](crate::versioning::change::Committed) (the written version
-    /// identity + commit instant, RM common master06 §Committal) — the write
-    /// path never re-reads the row it just wrote; a
-    /// `Prefer: return=representation` body is read back at the protocol
-    /// layer, matching the COMPOSITION/DIRECTORY write paths.
+    /// `vo_id` is the `EHR_STATUS` versioned object, resolved once by the
+    /// caller's `If-Match` meta pre-read; `if_match` is the
+    /// `OBJECT_VERSION_ID` (or bare version) the client believes is current. The
+    /// result is the commit's own
+    /// [`Committed`](crate::versioning::change::Committed), the written version
+    /// identity and commit instant (RM common master06 §Committal). The write
+    /// path never re-reads the row it just wrote; a `Prefer:
+    /// return=representation` body is read back at the protocol layer.
     async fn commit_status(
         &self,
         ehr_id: EhrId,
@@ -175,10 +174,10 @@ impl FerroEhrService {
     /// preceding version (server-driven optimistic lock).
     ///
     /// `EHR_STATUS` "is always modifiable" (RM ehr master04 §EHR Active
-    /// Status), so this is deliberately **not** gated by
-    /// [`Self::ensure_content_writable`] — that guard scopes to EHR *contents*,
-    /// never to `EHR_STATUS`, which is how `clear_ehr_modifiable` disables an
-    /// EHR yet `set_ehr_modifiable` re-enables it.
+    /// Status), so this is deliberately not gated by
+    /// [`Self::ensure_content_writable`], whose guard scopes to EHR contents;
+    /// that is how `clear_ehr_modifiable` disables an EHR yet
+    /// `set_ehr_modifiable` re-enables it.
     ///
     /// # Errors
     /// [`ServiceError::NotFound`] when the EHR has no current `EHR_STATUS`;
@@ -416,24 +415,21 @@ impl FerroEhrService {
         )
     }
 
-    /// Refuse a write to *EHR contents* when the EHR is deactivated
-    /// (`EHR_STATUS.is_modifiable = False`). Per RM ehr master04 §EHR Active
-    /// Status, `is_modifiable` "is used to indicate whether the contents of an
-    /// EHR are modifiable"; "an EHR's 'contents' consist of everything other
-    /// than the `EHR_STATUS` object". The `EHR_STATUS` object itself "is
-    /// always modifiable", so this guard is applied to COMPOSITION / DIRECTORY
-    /// / content writes only. This pooled read is the direct write paths'
-    /// FAST-FAIL convenience; the CONTRIBUTION engine evaluates the flag
-    /// inside its commit transaction under a row lock
+    /// Refuses a write to EHR contents when the EHR is deactivated
+    /// (`EHR_STATUS.is_modifiable = False`).
+    ///
+    /// RM ehr master04 §EHR Active Status scopes the flag to "everything other
+    /// than the `EHR_STATUS` object", which "is always modifiable", so this
+    /// guard applies to COMPOSITION, DIRECTORY and content writes only. The
+    /// pooled read is the direct write paths' fast-fail convenience; the
+    /// CONTRIBUTION engine evaluates the flag inside its commit transaction
+    /// under a row lock
     /// ([`crate::versioning::change::ensure_content_writable_tx`]).
     ///
-    /// NOTE (wire): ITS-REST 1.1.0 does not enumerate a status code for a
-    /// write to a non-modifiable EHR (`composition_create.yaml` lists only
-    /// 201/400/404/422; the CNF schedule `master06-func_tc_ehr.adoc` tests the
-    /// flag flip, not the write-block outcome), so the code is
-    /// underdetermined. We return `409 Conflict` — the write conflicts with
-    /// the current state of the target resource (RFC 9110 §15.5.10), the
-    /// closest HTTP semantics.
+    /// NOTE: ITS-REST 1.1.0 enumerates no status code for a write to a
+    /// non-modifiable EHR, so `409 Conflict` is used as the closest HTTP
+    /// semantics (RFC 9110 §15.5.10, a conflict with the current state of the
+    /// target resource).
     ///
     /// # Errors
     /// [`ServiceError::Conflict`] when the EHR is not modifiable;
@@ -458,16 +454,13 @@ impl FerroEhrService {
     /// [`ServiceError::Conflict`] (→ 409). A status without an `external_ref`
     /// (e.g. anonymous `PARTY_SELF`) clears the columns and never conflicts.
     ///
-    /// The EHR-owned commit hook the versioning layer lifted out of its write
-    /// path (RM common master06 §Committal). Called inside the commit
-    /// transaction of the EHR-create / EHR_STATUS-update paths, and — for the
-    /// CONTRIBUTION path — through the
-    /// [`crate::versioning::CommitEnv::post_status_commit`] hook after an
-    /// `EHR_STATUS` version. The `UPDATE` stays inline here (not a plain
-    /// `ehr_repo` read) because it maps the subject-uniqueness constraint
-    /// violation to a service-level [`ServiceError::Conflict`] (→ 409); the
-    /// `ehr.subject_*` columns are spec-silent index plumbing (our own
-    /// design).
+    /// This is the EHR-owned commit hook (RM common master06 §Committal),
+    /// called inside the commit transaction of the EHR-create and
+    /// `EHR_STATUS`-update paths and, for the CONTRIBUTION path, through the
+    /// [`crate::versioning::CommitEnv::post_status_commit`] hook. The `UPDATE`
+    /// stays inline here because it maps the subject-uniqueness constraint
+    /// violation to a service-level [`ServiceError::Conflict`]; the
+    /// `ehr.subject_*` columns are spec-silent index plumbing (our own design).
     ///
     /// # Errors
     /// [`ServiceError::Conflict`] when the subject already owns another EHR
@@ -514,28 +507,22 @@ impl FerroEhrService {
         Ok(())
     }
 
-    /// Re-promote the `ehr` columns from the **stored** current `EHR_STATUS` —
-    /// the seam for the paths that land `EHR_STATUS` versions WITHOUT the
-    /// service write hook: the EHR Extract import
-    /// ([`crate::service::message`]) and the admin archive load
-    /// ([`crate::service::admin`]). The current status root fragment is read on
-    /// the caller's transaction
-    /// ([`crate::storage::ehr_repo::current_status_root`]) and handed to
-    /// [`Self::sync_ehr_subject`], so those paths promote the subject columns
-    /// and the two status flags through exactly the extraction the create /
-    /// update paths use — an imported or loaded EHR is therefore visible to the
-    /// subject lookup (SM `I_EHR_SERVICE.get_ehrs_for_subject`;
-    /// `operations/ehr_get_by_subject.yaml`) and bound by the
-    /// one-EHR-per-subject rule (RM ehr master04 §EHR Status) like any other.
-    /// A no-op when the EHR has no current `EHR_STATUS` (the row keeps its
-    /// column defaults).
+    /// Re-promotes the `ehr` columns from the stored current `EHR_STATUS`, the
+    /// seam for the paths that land `EHR_STATUS` versions without the service
+    /// write hook: the EHR Extract import and the admin archive load.
     ///
-    /// A subject already owned by ANOTHER EHR is rejected BEFORE the UPDATE so
+    /// The current status root fragment is read on the caller's transaction
+    /// ([`crate::storage::ehr_repo::current_status_root`]) and handed to
+    /// [`Self::sync_ehr_subject`], so an imported or loaded EHR is visible to
+    /// the subject lookup (SM `I_EHR_SERVICE.get_ehrs_for_subject`) and bound by
+    /// the one-EHR-per-subject rule (RM ehr master04 §EHR Status) like any
+    /// other. An EHR with no current `EHR_STATUS` keeps its column defaults.
+    ///
+    /// A subject already owned by another EHR is rejected before the UPDATE so
     /// the caller can report which subject clashed and which EHR holds it. The
-    /// `uq_ehr_subject` index remains the backstop for a holder this
-    /// pre-check cannot see — a concurrent writer, or (under multi-tenancy) a
-    /// row RLS hides while the index stays service-wide — which surfaces as
-    /// [`Self::sync_ehr_subject`]'s own conflict.
+    /// `uq_ehr_subject` index remains the backstop for a holder this pre-check
+    /// cannot see, such as a concurrent writer or a row RLS hides, which
+    /// surfaces as [`Self::sync_ehr_subject`]'s own conflict.
     ///
     /// # Errors
     /// [`ServiceError::Conflict`] when another EHR already owns the status's

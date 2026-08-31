@@ -2,7 +2,7 @@
 // SPDX-License-Identifier: MIT
 
 //! EHR-Extract import (SM `I_EHR_EXTRACT_SERVICE.import_ehr` /
-//! `import_ehr_extract`) — the inverse of export: each received
+//! `import_ehr_extract`), the inverse of export: each received
 //! `X_VERSIONED_*`'s `ORIGINAL_VERSION`s are replayed into the local store as
 //! `IMPORTED_VERSION`s.
 //!
@@ -15,37 +15,35 @@
 //! `docs/specs/openehr/RM/docs/ehr_extract/master09-semantics.adoc` §Creation
 //! Semantics.
 //!
-//! This module owns only the **parse + dispatch**: turning a received `EXTRACT`
-//! into the [`ImportContainer`] sets and choosing clone-vs-append. The
-//! `IMPORTED_VERSION` replay (a fresh local import CONTRIBUTION recording the
-//! local act of committal at `249|creation|`, while each wrapped original's
-//! identity / `commit_audit` / lifecycle / data / signature / attestations are
-//! preserved verbatim — master06 §Copying "the `ORIGINAL_VERSION` instance is
-//! never modified") lives in the change-control engine
-//! ([`crate::versioning::import::commit_import`] / [`crate::versioning::import::commit_demographic_import`]).
+//! This module owns the parse and dispatch: turning a received `EXTRACT` into
+//! the [`ImportContainer`] sets and choosing clone against append. The
+//! `IMPORTED_VERSION` replay lives in the change-control engine
+//! ([`crate::versioning::import::commit_import`] /
+//! [`crate::versioning::import::commit_demographic_import`]), which records the
+//! local act of committal at `249|creation|` while preserving each wrapped
+//! original's identity, `commit_audit`, lifecycle, data, signature and
+//! attestations verbatim (master06 §Copying: "the `ORIGINAL_VERSION` instance is
+//! never modified").
 //!
 //! `import_ehr` clones a whole EHR into an empty target (a caller-fixed id, else
 //! the source EHR id reused — master06 §Copying Case 1; RM ehr §"EHR Identifier
 //! Allocation"); `import_ehr_extract` lands versioned objects into an existing
-//! EHR (Cases 2/3).
+//! EHR (Cases 2 and 3).
 //!
-//! NOTE (re-verify — import scope): imported COMPOSITION content is
-//! stored verbatim without re-linking its operational template
-//! (`vo_version.template_id` stays NULL) or re-running WebTemplate/RM validation
-//! — the OPT must already be provisioned in the target through the DEFINITION
-//! API. Re-validation on import is deferred (it would require the source's
-//! exact OPT); this matches the admin dump/load path, which master06 §Copying
-//! permits: "the `ORIGINAL_VERSION` instance is never modified".
+//! NOTE: imported COMPOSITION content is stored verbatim without re-linking its
+//! operational template (`vo_version.template_id` stays NULL) or re-running
+//! WebTemplate and RM validation, so the OPT must already be provisioned in the
+//! target through the DEFINITION API (master06 §Copying, the rule the admin
+//! dump/load path follows too).
 //!
-//! An imported EHR is a FULL local EHR, not a second-class one: the promoted
-//! `ehr` columns are re-derived from the landed `EHR_STATUS`
+//! An imported EHR is a full local EHR: the promoted `ehr` columns are re-derived
+//! from the landed `EHR_STATUS`
 //! ([`crate::service::FerroEhrService::resync_promoted_columns`]), so the clone
-//! is found by the subject lookup (SM `I_EHR_SERVICE.get_ehrs_for_subject`,
-//! `operations/ehr_get_by_subject.yaml`) and bound by the one-EHR-per-subject
-//! rule (RM ehr master04 §EHR Status) exactly like a created EHR — importing a
-//! clone of a subject the target already holds is therefore a conflict, not a
-//! silent duplicate. Where the extract carries no `EHR_ACCESS`, the whole-EHR
-//! clone completes the mandatory 1..1 `EHR.ehr_access` (RM ehr `ehr.adoc`
+//! is found by the subject lookup (SM `I_EHR_SERVICE.get_ehrs_for_subject`) and
+//! bound by the one-EHR-per-subject rule (RM ehr master04 §EHR Status) exactly
+//! like a created EHR, which makes importing a clone of an already-held subject a
+//! conflict. Where the extract carries no `EHR_ACCESS`, the whole-EHR clone
+//! completes the mandatory 1..1 `EHR.ehr_access` (RM ehr `ehr.adoc`
 //! `Ehr_access_valid`; master04 §EHR Creation) with the local default
 //! ([`crate::service::FerroEhrService::commit_default_ehr_access`]).
 

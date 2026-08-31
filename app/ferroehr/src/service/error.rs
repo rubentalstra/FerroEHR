@@ -20,18 +20,14 @@ use openehr_its::rest::runtime::ApiError;
 
 use super::status::{CallStatusType, SmError};
 
-/// One violated spec rule, carried as DATA rather than as a pre-formatted
+/// One violated spec rule, carried as data rather than as a pre-formatted
 /// sentence.
 ///
-/// A refusal has up to four independently useful facts — the RM attribute
-/// PATH it is about, the named INVARIANT it breaks, what is wrong (`detail`),
-/// and the machine-produced CAUSES a nested pass reported
-/// ([`InvariantViolation`], the RM validation data type). Formatting them into
-/// one string at the throw site destroys all four; this type keeps them and
-/// renders them exactly once, at the protocol edge
-/// (`From<ServiceError> for ApiError` / `for SmError`).
-///
-/// The rendering is `[<path> ]<detail>[: <cause>; …][ (<invariant>)]`.
+/// A refusal carries up to four independently useful facts: the RM attribute
+/// path, the named invariant it breaks, what is wrong (`detail`), and the causes
+/// a nested pass reported ([`InvariantViolation`]). They are rendered exactly
+/// once, at the protocol edge, as
+/// `[<path> ]<detail>[: <cause>; …][ (<invariant>)]`.
 #[derive(Debug, Clone)]
 pub struct Violation {
     /// The RM attribute path the violation is about (`ATTESTATION.items`).
@@ -351,12 +347,10 @@ fn internal_fault_caused(
 
 /// A [`std::fmt::Display`] view of an error and its remaining source chain.
 ///
-/// The hops are joined with `: ` — the log rendering of a carried cause
-/// ([RFC 0201](https://rust-lang.github.io/rfcs/0201-error-chaining.html)).
-///
-/// For a trace field only: a chain ends in whatever its innermost source knows
-/// (SQL text, a DSN, an internal URL), which is exactly what a 5xx response
-/// body must not disclose.
+/// The hops are joined with `: `, the log rendering of a carried cause
+/// ([RFC 0201](https://rust-lang.github.io/rfcs/0201-error-chaining.html)). For
+/// a trace field only: a chain ends in whatever its innermost source knows (SQL
+/// text, a DSN, an internal URL), which a 5xx response body must not disclose.
 ///
 /// # Examples
 ///
@@ -529,7 +523,7 @@ impl ServiceError {
     ///
     /// The commit route's whole purpose is a multi-member change set, so a
     /// member-scoped refusal names `versions[index]` the way the declared-key
-    /// check always has (#2590): SM-status rows prefix the message, violation
+    /// check always has: SM-status rows prefix the message, violation
     /// rows prefix the path, validation rows prefix each violation's path.
     /// Rows that are never member-scoped pass through unchanged.
     #[must_use]
@@ -610,13 +604,13 @@ impl ServiceError {
 }
 
 impl From<ServiceError> for SmError {
-    /// Map a service failure onto the SM native `CALL_STATUS_TYPE` error the
-    /// chapter methods return. This is the mirror of the
-    /// `From<ServiceError> for ApiError` table below, expressed in SM status
-    /// terms — the protocol adapter (`ferroehr-rest`)
-    /// then maps the status back to the ITS-REST status code
-    /// (`ferroehr-rest::overview::error::sm_api_error`), so the wire outcome is
-    /// identical row-for-row:
+    /// Maps a service failure onto the SM native `CALL_STATUS_TYPE` error the
+    /// chapter methods return.
+    ///
+    /// This mirrors the `From<ServiceError> for ApiError` table below in SM
+    /// status terms; the protocol adapter maps the status back to the ITS-REST
+    /// status code (`ferroehr-rest::overview::error::sm_api_error`), so the wire
+    /// outcome is identical row for row.
     ///
     /// | `ServiceError`            | `CallStatusType`             | HTTP |
     /// |---------------------------|------------------------------|------|
@@ -632,30 +626,17 @@ impl From<ServiceError> for SmError {
     /// | `Internal`                | `Exception` (curated)        | 500  |
     ///
     /// Every status-carrying row restores the [`SmError`] it was constructed
-    /// with ([`ServiceError::sm`]), so the round-trip is lossless —
-    /// `ehr_id_does_not_exist` stays `ehr_id_does_not_exist` and
-    /// `invalid_id_pattern` stays `invalid_id_pattern`, never a resurrected
-    /// generic. Only the `500`-class `Internal` row substitutes a curated
-    /// status and message, because its detail must not reach a client.
+    /// with ([`ServiceError::sm`]), so the round trip is lossless. Only the
+    /// `500`-class `Internal` row substitutes a curated status and message,
+    /// because its detail must not reach a client.
     ///
-    /// NOTE (wire — settled): the structured per-path violations of
-    /// `ValidationFailed` (the ITS-REST `Error.validationErrors[]` array) do
-    /// **not** survive the SM boundary, because `CALL_STATUS`
-    /// (`SM/docs/UML/classes/call_status.adoc` §Attributes) declares exactly
-    /// `code` + `call_name` + `call_string` + `meaning` + `message` — five
-    /// scalars, with no slot for a per-path violation list. They are joined into
-    /// `message` instead, so an SM-routed `422` renders as `{ error, message }`
-    /// where the direct `ApiError` route renders `{ message, validationErrors[] }`.
-    ///
-    /// The resulting route-dependence of the `422` BODY is spec-permitted:
-    /// the ITS-REST docs text assigns the 422 row a meaning only ("The request
-    /// was well-formed but was unable to be followed due to semantic errors",
-    /// overview `Requests_and_responses.md` §HTTP status codes) and no body
-    /// shape, and the released OAS `responses/422.yaml` declares no
-    /// `content`/`schema` at all (the `Error` object is formally bound to
-    /// `400`). Both renderings therefore satisfy the release; the status code —
-    /// the part the spec DOES assign — is identical on both routes, which is
-    /// what the conversion table above and its tests pin.
+    /// NOTE: `CALL_STATUS` (`SM/docs/UML/classes/call_status.adoc` §Attributes)
+    /// declares five scalars and no slot for a per-path violation list, so a
+    /// `ValidationFailed`'s violations are joined into `message` on the SM route
+    /// while the direct `ApiError` route keeps them as `validationErrors[]`.
+    /// Both renderings satisfy the release, which assigns the 422 row a meaning
+    /// but no body shape (overview `Requests_and_responses.md` §HTTP status
+    /// codes; `responses/422.yaml` declares no schema).
     fn from(e: ServiceError) -> Self {
         use super::status::CallStatusType as S;
         match e {

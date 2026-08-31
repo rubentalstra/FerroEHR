@@ -4,19 +4,18 @@
 //! The one server configuration tree — `ferroehr.toml` + `FERROEHR_*` env
 //! overrides.
 //!
-//! No openEHR spec governs configuration — this is entirely our own design.
-//! [`FerroEhrConfig`] is the single serde root; each section is owned by the
-//! crate that consumes it and referenced here. There is exactly one
-//! loader ([`load`]/[`assemble`]) replacing the fourteen former per-subsystem
-//! loaders — no figment, no per-subsystem `FERROEHR_*_CONFIG` file pointers.
+//! No openEHR spec governs configuration; this is entirely our own design.
+//! [`FerroEhrConfig`] is the single serde root, each section owned by the crate
+//! that consumes it and referenced here, with exactly one loader
+//! ([`load`]/[`assemble`]) and no per-subsystem `FERROEHR_*_CONFIG` file
+//! pointers.
 //!
-//! Precedence (lowest→highest): built-in `Default` impls, the config file, the
-//! `FERROEHR_*` environment (`__` = nesting), then `--set key=value` overrides. Two conventional aliases sit below
-//! their `FERROEHR_` forms within the env layer: `DATABASE_URL` → `db.url`,
-//! `RUST_LOG` → `log.filter`.
-//!
-//! [`assemble`] is a **pure function** of `(file, env_map, overrides)` — no
-//! process-global env — so the whole test plan runs on injected inputs.
+//! Precedence, lowest first: built-in `Default` impls, the config file, the
+//! `FERROEHR_*` environment (`__` for nesting), then `--set key=value`
+//! overrides. Two conventional aliases sit below their `FERROEHR_` forms within
+//! the env layer, `DATABASE_URL` for `db.url` and `RUST_LOG` for `log.filter`.
+//! [`assemble`] is a pure function of `(file, env_map, overrides)` with no
+//! process-global env, so the whole test plan runs on injected inputs.
 
 #![expect(
     clippy::disallowed_types,
@@ -274,32 +273,24 @@ impl FerroEhrConfig {
             .map_err(|e| ConfigError::semantic(format!("rendering config as TOML: {e}")))
     }
 
-    /// The effective configuration as a redacted JSON tree — the source of the
-    /// `GET /admin/config` admin endpoint and the `/management/env` snapshot the
-    /// binary builds at boot. No openEHR spec governs configuration — our own
+    /// The effective configuration as a redacted JSON tree, the source of the
+    /// `GET /admin/config` endpoint and the `/management/env` snapshot the binary
+    /// builds at boot. No openEHR spec governs configuration — our own
     /// design/extension.
     ///
-    /// # Redaction is structural (fail-closed by construction)
-    ///
-    /// Redaction is a property of the **leaf type**, never of a key-name scan:
-    /// every secret-bearing field in the tree is typed [`secret::Secret`] (whose
-    /// [`Serialize`] emits the fixed [`secret::REDACTED`] placeholder) or
-    /// [`secret::SecretUrl`] (whose [`Serialize`] masks the URL `userinfo`
-    /// component, keeping the connection form). Serializing `self` therefore
-    /// yields a tree in which every secret leaf is already `***`/`scheme://***@…`
-    /// — no post-hoc traversal renames or matches anything, so a field cannot
-    /// leak by being renamed and a secret nested anywhere is masked by its own
-    /// type.
-    ///
-    /// This is **fail-closed for a newly-added secret**: every secret field
-    /// is a `Secret`/`SecretUrl` with a `*_file` sibling, so a correctly
-    /// typed new secret is redacted automatically with no change here. A secret
-    /// smuggled in as a bare `String` breaks that property; the
-    /// `redacted_json_masks_every_secret_field` test enumerates the current
-    /// secret set as the standing CI backstop. Non-secret identifiers (a Basic
-    /// user's `username`/`roles`, `multimedia.access_key_id`, an OIDC `issuer`,
-    /// `auth.oidc.jwks_json` public verification material) are deliberately left
-    /// visible — they are not credentials.
+    /// Redaction is a property of the leaf type rather than of a key-name scan:
+    /// every secret-bearing field is typed [`secret::Secret`], whose
+    /// [`Serialize`] emits the fixed [`secret::REDACTED`] placeholder, or
+    /// [`secret::SecretUrl`], whose [`Serialize`] masks the URL `userinfo`
+    /// component. Serializing `self` therefore yields a tree whose secret leaves
+    /// are already masked, so a field cannot leak by being renamed and a secret
+    /// nested anywhere is masked by its own type. A correctly typed new secret is
+    /// redacted with no change here; one smuggled in as a bare `String` breaks
+    /// that property, and the `redacted_json_masks_every_secret_field` test
+    /// enumerates the current secret set as the standing backstop. Non-secret
+    /// identifiers, such as a Basic user's `username` and `roles`, an OIDC
+    /// `issuer`, or `auth.oidc.jwks_json` public verification material, stay
+    /// visible.
     ///
     /// # Errors
     /// [`ConfigError`] if the tree cannot be serialized to JSON.
@@ -504,10 +495,10 @@ pub fn discover_file(
 
 /// The `multimedia.endpoint` semantic checks.
 ///
-/// An enabled integration with a blank or scheme-less endpoint used to boot
-/// clean and then fail on the first `DV_MULTIMEDIA` commit (#2167) — a
-/// `${VAR:-}` compose pass-through and an empty Helm value both produce
-/// exactly that, so it is refused at boot where an operator can still act.
+/// An enabled integration with a blank or scheme-less endpoint would boot clean
+/// and then fail on the first `DV_MULTIMEDIA` commit. A `${VAR:-}` compose
+/// pass-through and an empty Helm value both produce exactly that, so it is
+/// refused at boot where an operator can still act.
 fn multimedia_endpoint_errors(
     config: &crate::extensions::multimedia::config::MultimediaConfig,
 ) -> Vec<ConfigError> {
@@ -1248,9 +1239,8 @@ mod tests {
 
     /// Whether the template declares `key` as a key line — live (`key = …`) or
     /// as a `#?` reference line for an optional/secret/derived one. A mention
-    /// inside another key's trailing comment does NOT count: that is exactly how
-    /// `auth.oidc.hmac_secret_file` and `jwks_json_file` stayed undiscoverable
-    /// (#2154), invisible to `ferroehr config default`.
+    /// inside another key's trailing comment does not count: a key mentioned
+    /// only that way stays invisible to `ferroehr config default`.
     fn template_declares(key: &str) -> bool {
         DEFAULT_TEMPLATE.lines().any(|line| {
             let line = line.trim_start();
@@ -1325,9 +1315,8 @@ mod tests {
     }
 
     /// Optional fields serialize away when `None`, so the walk above cannot see
-    /// them — and that is the class that shipped undeclared (#2154:
-    /// `auth.oidc.hmac_secret_file` and `jwks_json_file` existed only inside
-    /// another key's trailing comment).
+    /// them, which is the class an operator can least afford to have
+    /// undeclared.
     ///
     /// Covered here are the sections carrying secret or file-indirection keys,
     /// where an undiscoverable key costs an operator most. Adding another
@@ -1368,7 +1357,7 @@ mod tests {
     }
 
     /// An enabled multimedia integration with a blank or relative endpoint is a
-    /// BOOT error, not a panic on the first commit (#2167).
+    /// BOOT error, not a panic on the first commit.
     #[test]
     fn an_enabled_multimedia_integration_refuses_a_blank_or_relative_endpoint() {
         for bad in ["", "   ", "seaweedfs:8333", "/bucket"] {

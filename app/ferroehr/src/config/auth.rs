@@ -3,18 +3,16 @@
 
 //! Authentication configuration (Basic + OAuth2/OIDC bearer).
 //!
-//! No openEHR spec governs authentication mechanics (ITS-REST leaves the scheme
-//! open) — our own design, with the IETF OAuth2/JOSE RFCs as the authority for
+//! No openEHR spec governs authentication mechanics, ITS-REST leaving the scheme
+//! open — our own design, with the IETF OAuth2/JOSE RFCs as the authority for
 //! every rule enforced here. This is the `[auth]` section of the one server
-//! configuration tree; it carries **no
-//! loader of its own** — the whole tree is assembled once by `ferroehr::config`
-//! and this struct is deserialized as a field of it.
+//! configuration tree and carries no loader of its own.
 //!
-//! Secrets use the shared [`crate::config::secret::Secret`] newtype: a password hash
-//! or HMAC secret deserializes from a plain string but never renders itself
-//! (`Debug`, `/management/env`, `ferroehr config check` all show `***`). Each
-//! secret key has a `*_file` sibling for file-based indirection
-//! (Kubernetes/Docker secrets), resolved by the loader.
+//! Secrets use the shared [`crate::config::secret::Secret`] newtype: a password
+//! hash or HMAC secret deserializes from a plain string but never renders itself
+//! (`Debug`, `/management/env` and `ferroehr config check` all show `***`). Each
+//! secret key has a `*_file` sibling for file-based indirection, resolved by the
+//! loader.
 //!
 //! Boot validation lives in [`AuthConfig::validate`] and
 //! [`AuthConfig::require_mechanism`]: a configuration a resource server cannot

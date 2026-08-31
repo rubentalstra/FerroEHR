@@ -157,7 +157,7 @@ pub fn LoginPage() -> impl IntoView {
                     let oidc_button = if oidc {
                         // A plain anchor to the BFF's axum route, styled as the
                         // secondary design-system button (an <a> — nesting a
-                        // <button> inside would be invalid HTML, rules §8).
+                        // <button> inside would be invalid HTML).
                         view! {
                             <a
                                 href="/auth/oidc/login"
@@ -237,8 +237,8 @@ fn basic_login_form(
             <div class="flex flex-col gap-3">
                 // Plain labels + explicit stable input ids: thaw::Field
                 // hardwires its <label for> to a per-render random UUID,
-                // which breaks SSR↔hydration determinism (leptos-ui.md §8);
-                // an explicit id keeps the association deterministic.
+                // which breaks SSR↔hydration determinism; an explicit id
+                // keeps the association deterministic.
                 <label class=LABEL r#for="login-username">
                     "Username"
                 </label>

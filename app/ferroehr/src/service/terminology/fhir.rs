@@ -1,24 +1,20 @@
 // SPDX-FileCopyrightText: FerroEHR contributors
 // SPDX-License-Identifier: MIT
 
-//! [`FhirTerminologyProvider`] — a FHIR R4B terminology-server client
-//! realizing the SM `I_TERMINOLOGY_SERVICE` calls against a remote server,
-//! over `reqwest` (rustls).
+//! [`FhirTerminologyProvider`], a FHIR R4B terminology-server client realizing
+//! the SM `I_TERMINOLOGY_SERVICE` calls against a remote server over `reqwest`
+//! (rustls).
 //!
-//! The remote provider is one of the two the routing layer
-//! (`super::routing`) selects among; the in-process `openehr-term` bundle
-//! (`super::bundle`) is the enumerable local default. `arch-overview
-//! master12-terminology.adoc` models this concrete backend as an external
-//! "terminology query server", so it belongs with the interface realization.
-//!
-//! Design: our own — the client + the HAPI-FHIR/Snowstorm
-//! server it points at. SM contract:
-//! `docs/specs/openehr/SM/docs/UML/classes/i_terminology_service.adoc`.
-//! This module owns the HTTP client, the cache, and the SM error mapping;
-//! the FHIR resources themselves are decoded by
-//! [`ferroehr_ext::fhir::terminology`] over the typed `fhir-model` R4B model
-//! (the `fhir` cargo feature — a slim build refuses a configured provider at
-//! boot).
+//! The remote provider is one of the two the routing layer (`super::routing`)
+//! selects among; the in-process `openehr-term` bundle (`super::bundle`) is the
+//! enumerable local default. `arch-overview master12-terminology.adoc` models
+//! this concrete backend as an external "terminology query server". SM contract:
+//! `docs/specs/openehr/SM/docs/UML/classes/i_terminology_service.adoc`; the
+//! client and the server it points at are our own design. This module owns the
+//! HTTP client, the cache and the SM error mapping, while the FHIR resources are
+//! decoded by [`ferroehr_ext::fhir::terminology`] over the typed `fhir-model`
+//! R4B model (the `fhir` cargo feature; a slim build refuses a configured
+//! provider at boot).
 //!
 //! # SM call → FHIR operation mapping
 //!
@@ -29,36 +25,28 @@
 //! | `subsumes` | `CodeSystem/$subsumes` (outcome `subsumes`) |
 //! | `has_term` / `get_term` | `CodeSystem/$lookup` |
 //!
-//! NOTE (enumerating calls): `get_terminology_ids`,
-//! `get_terminology_description` and `has_terminology` have no faithful FHIR
-//! operation — a FHIR TS is a validation/expansion backend, not an enumerable
-//! openEHR terminology bundle. The routing layer answers them from the
-//! in-process `openehr-term` bundle, which remains the enumerable
-//! terminology; this provider's [`FhirTerminologyProvider::get_terminology_description`]
-//! is an explicit `NotImplemented`.
+//! The enumerating calls (`get_terminology_ids`, `get_terminology_description`,
+//! `has_terminology`) have no faithful FHIR operation, so the routing layer
+//! answers them from the in-process bundle and
+//! [`FhirTerminologyProvider::get_terminology_description`] is an explicit
+//! `NotImplemented`. The SM `at_date` (an `Iso8601_date` on
+//! `has_term`/`get_term`/`value_set_validate`) is forwarded as the FHIR `date`
+//! parameter of `$lookup`/`$validate-code`/`$expand`.
 //!
-//! NOTE (temporal): the SM `at_date` (`i_terminology_service.adoc`
-//! `has_term`/`get_term`/`value_set_validate`, an `Iso8601_date`) selects the
-//! terminology as it stood on a date. It is forwarded to the server as the
-//! FHIR `date` parameter of `$lookup`/`$validate-code`/`$expand`.
+//! A `ValueSet/$expand` may nest members under `contains`. The flat
+//! `Terminology_extract._terms_` keeps the membership view and
+//! `Terminology_extract._relationships_` preserves the tree as
+//! `Term_relationship`s under the `CHILD_RELATION` name
+//! (`terminology_extract.adoc` §Structured value set), defined in `_relations_`
+//! by the FHIR `child` concept property URI (`FHIR_CHILD_PROPERTY`), an
+//! `external_code` relation (`terminology_relation.adoc`
+//! `Inv_valid_definition`).
 //!
-//! NOTE (hierarchy): a FHIR `ValueSet/$expand` may nest
-//! members under `contains`. We keep the flat `Terminology_extract._terms_`
-//! (the membership view) **and** preserve the tree in
-//! `Terminology_extract._relationships_` as `Term_relationship`s under the
-//! `CHILD_RELATION` name (`terminology_extract.adoc` §Structured value
-//! set), defined in `_relations_` by the FHIR `child` concept property URI
-//! (`FHIR_CHILD_PROPERTY`) — an `external_code` relation
-//! (`terminology_relation.adoc` `Inv_valid_definition`).
-//!
-//! NOTE (errors): a value set / terminology / code the server does not know
-//! (HTTP `404`, or `$validate-code result=false` with no membership) is a
-//! `Pre_has_*` precondition failure → [`CallStatusType::VersionedObjectDoesNotExist`],
-//! matching the bundle provider in `super::bundle`; a transport fault
-//! (connect/read timeout, `5xx`, malformed body) → [`SmError::exception`]
-//! (`500`). The fail-open vs fail-closed choice belongs to the caller
-//! ([`config::ExternalTerminologyConfig::fail_on_error`](super::config::ExternalTerminologyConfig::fail_on_error)),
-//! never to the raw provider.
+//! NOTE: a value set, terminology or code the server does not know (HTTP `404`,
+//! or `$validate-code result=false`) is a `Pre_has_*` precondition failure
+//! ([`CallStatusType::VersionedObjectDoesNotExist`]) and a transport fault is
+//! [`SmError::exception`]; the fail-open choice belongs to the caller
+//! ([`config::ExternalTerminologyConfig::fail_on_error`](super::config::ExternalTerminologyConfig::fail_on_error)).
 
 use std::collections::BTreeMap;
 use std::sync::Arc;
@@ -284,10 +272,9 @@ impl FhirTerminologyProvider {
 
     /// A `Pre_has_*` precondition failure (`VersionedObjectDoesNotExist`).
     ///
-    /// The body carries only what the CLIENT can act on — the kind and id it
-    /// asked about; WHICH configured provider answered is deployment
-    /// configuration and goes to the trace record only (the #1809 adjudication
-    /// extended to the 4xx class, #1819).
+    /// The body carries only what the client can act on, the kind and id it
+    /// asked about; which configured provider answered is deployment
+    /// configuration and goes to the trace record only.
     fn not_found(&self, what: &str, id: &str) -> SmError {
         tracing::debug!(provider = %self.name, what, id, "terminology lookup: not found");
         SmError::new(

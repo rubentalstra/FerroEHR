@@ -8,7 +8,7 @@
 //! The reading itself is [`crate::scopes`] over the shared master08 grammar
 //! (`openehr_its::rest::smart_scopes`) — a pure function, so this module is a
 //! thin view: no server round-trip for a parse, and identical markup on the
-//! server pass and at hydration (`.claude/rules/leptos-ui.md` §8).
+//! server pass and at hydration.
 
 use leptos::prelude::*;
 
@@ -65,9 +65,8 @@ pub fn fact_row(label: &'static str, value: String) -> AnyView {
 /// A plain collected `Vec` rather than `<For>`: this is a derived projection
 /// replaced wholesale whenever the input changes, and a scope string is not a
 /// stable unique identity (a claim may legitimately repeat one), so there is no
-/// data-derived key to give `<For>` — and an index key is forbidden
-/// (`.claude/rules/leptos-ui.md` §4) — the same choice the document pane makes
-/// for its token stream.
+/// data-derived key to give `<For>` — and an index key is forbidden — the same
+/// choice the document pane makes for its token stream.
 #[must_use]
 pub fn grant_cards(rendered: Vec<Grant>) -> AnyView {
     let cards = rendered.into_iter().map(grant_card).collect::<Vec<_>>();
@@ -164,10 +163,10 @@ fn unrecognized_body(expected: Option<String>) -> AnyView {
 ///
 /// State is a local signal, deliberately not the URL: this is an ephemeral
 /// scratchpad inside an overlay drawer, not a listing filter — a `GET` form
-/// navigation would close the drawer it lives in (the URL-state rule,
-/// `.claude/rules/leptos-ui.md` §9, governs filter/search/pagination). The
-/// parse is client-side, so the field is inert until hydration; the session's
-/// own scopes above it are server-rendered and need no `WASM`.
+/// navigation would close the drawer it lives in (the URL-state rule governs
+/// filter/search/pagination). The parse is client-side, so the field is inert
+/// until hydration; the session's own scopes above it are server-rendered and
+/// need no `WASM`.
 #[expect(
     clippy::must_use_candidate,
     reason = "#[component] rewrites the fn; view!/mount always consumes the value"
@@ -175,7 +174,7 @@ fn unrecognized_body(expected: Option<String>) -> AnyView {
 #[component]
 pub fn ScopePreviewer() -> impl IntoView {
     let input = RwSignal::new(String::new());
-    // A derived memo, never an effect writing a signal (rules §2).
+    // A derived memo, never an effect writing a signal.
     let previewed = Memo::new(move |_| input.with(|text| grants(text.as_str())));
     let results = move || {
         if previewed.with(Vec::is_empty) {

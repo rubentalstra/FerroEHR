@@ -94,15 +94,13 @@ pub(crate) fn change_type_code(token: &str) -> Option<String> {
 /// (empty) or restated the default.
 ///
 /// ITS-REST overview §"openehr-version and openehr-audit-details" lists
-/// `change_type` among the attributes clients MAY supply and requires that
-/// "whatever is provided it MUST be merged" — so a legal divergent value
-/// (e.g. `250|amendment|` on an update) is honoured, not overwritten.
-/// Operation compatibility mirrors the CONTRIBUTION path
-/// (`versioning/contribution.rs` `classify`, RM common master06
-/// §Contributions): a direct create commits a first version (`249` only), a
-/// direct delete a logical deletion (`523` only), and a direct update a
-/// content-carrying new version of an existing object (any group code except
-/// `249`/`523`/`666`).
+/// `change_type` among the attributes clients may supply and requires that
+/// "whatever is provided it MUST be merged", so a legal divergent value such as
+/// `250|amendment|` on an update is honoured. Operation compatibility mirrors
+/// the CONTRIBUTION path (RM common master06 §Contributions): a direct create
+/// commits a first version (`249` only), a direct delete a logical deletion
+/// (`523` only), and a direct update any group code except `249`, `523` and
+/// `666`.
 ///
 /// # Errors
 /// [`ServiceError::Unprocessable`] — the token is not a member of the
@@ -210,11 +208,10 @@ impl AuditInput {
     /// provided it MUST be merged"; RM common master06 §Committal m4
     /// defaults):
     ///
-    /// - `change_type` — the caller's, when supplied: honoured verbatim after
+    /// - `change_type` — the caller's when supplied, honoured verbatim after
     ///   [`merged_change_type`] validates it against the `audit_change_type`
-    ///   group and the operation (an update legally carries `250|amendment|`
-    ///   as well as `251|modification|` — the wire HAS legal divergent
-    ///   values). Absent/empty → the operation's default;
+    ///   group and the operation; absent or empty takes the operation's
+    ///   default;
     /// - `description` — the caller's when supplied, else the server default;
     /// - `committer` — the caller's `PARTY_PROXY` (the protocol adapter has
     ///   already defaulted an absent committer to the authenticated
@@ -463,16 +460,15 @@ pub(crate) fn party_proxy(committer: &Value) -> Result<PartyProxy, ServiceError>
 ///
 /// - `AUDIT_DETAILS.System_id_valid`: `not system_id.is_empty` (RM
 ///   `UML/classes/org.openehr.rm.common.audit_details.adoc` §Invariants).
-///   Without this guard an empty client-supplied
-///   `system_id` reaches the DB `System_id_valid` CHECK and surfaces as a
-///   `500` — a validation failure must be `422`, not an internal error.
+///   Unguarded, an empty client-supplied `system_id` reaches the DB
+///   `System_id_valid` CHECK and surfaces as a `500` where a validation failure
+///   belongs at `422`.
 /// - the committer `PARTY_PROXY`'s own `PARTY_IDENTIFIED`/`PARTY_RELATED`
-///   invariants `Basic_validity` + `Name_valid` (RM
-///   `UML/classes/org.openehr.rm.common.party_identified.adoc` §Invariants),
-///   plus `Relationship_valid` for `PARTY_RELATED`
-///   (`…org.openehr.rm.common.party_related.adoc` §Invariants). A PARTY that appears
-///   as *content* is validated by the RM-invariant pass, but the audit
-///   committer is stored verbatim, so it is checked here.
+///   invariants `Basic_validity` and `Name_valid`, plus `Relationship_valid` for
+///   `PARTY_RELATED` (the §Invariants sections of
+///   `org.openehr.rm.common.party_identified.adoc` and `…party_related.adoc`).
+///   A PARTY appearing as content is validated by the RM-invariant pass, but the
+///   audit committer is stored verbatim, so it is checked here.
 pub(crate) fn validate_commit_audit(audit: &AuditInput) -> Result<(), ServiceError> {
     if audit.system_id.is_empty() {
         return Err(ServiceError::content_invalid(
@@ -491,26 +487,22 @@ pub(crate) fn validate_commit_audit(audit: &AuditInput) -> Result<(), ServiceErr
 /// (`…org.openehr.rm.common.party_related.adoc` §Invariants), and the
 /// structural conformance of the concrete `PARTY_PROXY` subtype.
 ///
-/// The rules are NOT restated here: the value goes through the unified
-/// dispatcher [`openehr_its::wire_validate::validate_rm_value`], the same one the
-/// whole-instance commit pass runs on every node of a committed RM document
-/// (`openehr_its::rm_instance::validate_rm_and_terminology_as`). That
-/// dispatcher is what runs the generated structural check, the typed invariant
-/// cores, the model-driven mandatory-container bounds and the
-/// terminology-backed invariants (all defined in `openehr_rm::v1_2::validate`).
+/// The rules are not restated here: the value goes through the unified
+/// dispatcher [`openehr_its::wire_validate::validate_rm_value`], the same one
+/// the whole-instance commit pass runs on every node of a committed RM document,
+/// which runs the generated structural check, the typed invariant cores, the
+/// model-driven mandatory-container bounds and the terminology-backed invariants
+/// (all defined in `openehr_rm::v1_2::validate`).
 ///
-/// It has to be invoked EXPLICITLY here because a commit audit is not part of
-/// any committed RM document: the `AUDIT_DETAILS` is written to its own row and
-/// never walked by the content pass, so without this call the committer would
-/// be the one `PARTY_PROXY` in the system that reaches storage unvalidated.
+/// It is invoked explicitly because a commit audit is not part of any committed
+/// RM document: the `AUDIT_DETAILS` is written to its own row and never walked
+/// by the content pass, so without this call the committer would be the one
+/// `PARTY_PROXY` reaching storage unvalidated.
 ///
-/// NOTE: the dispatcher's whole surface — the fast path, the typed tier, the
-/// mandatory-container bounds and the terminology-backed invariants — is
-/// canonical-JSON-valued ([`openehr_its::wire_validate::validate_rm_value`]
-/// takes a `&Value`), so a typed committer is serialized here to be judged;
-/// running only [`openehr_base::validate::Validate`] on the typed value would
-/// drop the terminology tier that decides `PARTY_RELATED.Relationship_valid` (RM
-/// `UML/classes/org.openehr.rm.common.party_related.adoc` §Invariants).
+/// NOTE: the dispatcher is canonical-JSON-valued, so a typed committer is
+/// serialized here to be judged; running only
+/// [`openehr_base::validate::Validate`] on the typed value would drop the
+/// terminology tier that decides `PARTY_RELATED.Relationship_valid`.
 fn validate_committer(committer: &PartyProxy) -> Result<(), ServiceError> {
     let mut violations = Vec::new();
     openehr_its::wire_validate::validate_rm_value(

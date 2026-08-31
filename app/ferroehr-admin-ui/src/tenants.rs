@@ -12,25 +12,21 @@
 //!
 //! **The console never CHOOSES a tenant.** Tenancy resolves per request from
 //! the caller's credential, and the CDR additionally honours a dev-only header
-//! override that wins over the claim — so a console-side switcher would either
-//! need console-local state (banned outright) or that header, which is an
-//! authorization bypass wearing a dropdown. The context card therefore reads
-//! `GET admin/tenant/current` and RENDERS it; there is no selector, no header
-//! injection, and nothing here that changes which tenant a request runs on.
+//! override that wins over the claim, so a console-side switcher would need
+//! either console-local state (banned outright) or that header, which is an
+//! authorization bypass. The context card reads `GET admin/tenant/current` and
+//! RENDERS it; nothing here changes which tenant a request runs on.
 //!
 //! **Probe-and-hide.** The group is config-gated on the CDR
-//! (`[tenancy] enabled`, off by default) and answers `404` for every route as
-//! if unmounted while it is off, so the console discovers it
-//! ([`probe_tenant_registry`]) before offering any of it — the same
-//! discover-and-hide pattern as [`crate::admin`] and [`crate::management`].
-//! Capability is not authorization: a mounted-but-refused group (`401`/`403`)
-//! still counts as present, and the refusal surfaces as copy on the screen that
-//! asked.
+//! (`[tenancy] enabled`, off by default) and answers `404` for every route as if
+//! unmounted while it is off, so the console discovers it
+//! ([`probe_tenant_registry`]) before offering any of it. Capability is not
+//! authorization: a mounted-but-refused group (`401`/`403`) still counts as
+//! present, and the refusal surfaces as copy on the screen that asked.
 //!
 //! Every `#[server]` fn guards with
 //! [`require_session`](crate::session::require_session) first (a server fn is a
-//! publicly reachable HTTP endpoint — rules §0) and keeps the CDR credential
-//! server-side.
+//! publicly reachable HTTP endpoint) and keeps the CDR credential server-side.
 
 #![allow(
     clippy::disallowed_types,
@@ -48,9 +44,9 @@ use crate::error::AdminUiError;
 /// One tenant as the registry serves it (`{id, name, system_id, created_at}`).
 ///
 /// Every field is a string, including the id and the timestamp: the record
-/// crosses the server-fn boundary and is rendered, never computed with (rules
-/// §1 — no `usize`, and no parsing the console would have to keep in step with
-/// the CDR's own formatting).
+/// crosses the server-fn boundary and is rendered, never computed with (no
+/// `usize`, and no parsing the console would have to keep in step with the
+/// CDR's own formatting).
 #[derive(Debug, Clone, PartialEq, Eq, Default, Serialize, Deserialize)]
 pub struct TenantRow {
     /// The tenant's UUID, as the CDR spelled it.
@@ -90,8 +86,8 @@ impl Default for CurrentTenant {
 
 /// Whether the CDR serves its tenant registry.
 ///
-/// Carries only fixed-size, client-safe data (rules §1) — it crosses the
-/// server-fn boundary.
+/// Carries only fixed-size, client-safe data — it crosses the server-fn
+/// boundary.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
 pub enum TenantAvailability {
     /// The group answered: it is mounted, so the registry screen is offered.
@@ -140,7 +136,7 @@ pub fn renders_tenant_registry(probe: &Result<TenantAvailability, AdminUiError>)
 /// The tenancy gate: one probe [`Resource`].
 ///
 /// Created in component setup — never inside a `Suspend` closure, which re-runs
-/// and would re-create the resource (rules §4).
+/// and would re-create the resource.
 #[must_use]
 pub fn tenant_gate() -> Resource<Result<TenantAvailability, AdminUiError>> {
     Resource::new(|| (), |()| async move { probe_tenant_registry().await })
@@ -149,12 +145,11 @@ pub fn tenant_gate() -> Resource<Result<TenantAvailability, AdminUiError>> {
 /// Render `affordance` only when the gate found the registry mounted;
 /// otherwise render nothing at all (probe-and-hide).
 ///
-/// The probe is resolved INSIDE the `<Suspense>` (an SSR'd `ErrorBoundary`
+/// The probe is resolved INSIDE the `<Suspense>`: an SSR'd `ErrorBoundary`
 /// fallback mismatches at hydration in leptos 0.8, and a render-time resource
-/// read is itself a hydration mismatch — rules §4/§6), and `affordance` creates
-/// no resources, so re-runs are safe. It is shared through an `Arc` because the
-/// `Suspend` closure re-runs on every notification of the resource it awaits
-/// and must therefore not consume its environment.
+/// read is itself a hydration mismatch. `affordance` creates no resources, so
+/// re-runs are safe, and it is shared through an `Arc` because the `Suspend`
+/// closure must not consume its environment.
 #[must_use]
 pub fn when_tenant_registry_usable(
     gate: Resource<Result<TenantAvailability, AdminUiError>>,
@@ -179,7 +174,7 @@ pub fn when_tenant_registry_usable(
 /// resolves to".
 ///
 /// Pure and unit-tested, so the copy is the same on the server pass and at
-/// hydration (rules §8) and the screen stays a thin renderer.
+/// hydration and the screen stays a thin renderer.
 #[must_use]
 pub fn context_line(current: &CurrentTenant) -> String {
     match current.tenant.as_ref() {
@@ -202,9 +197,8 @@ pub fn draft_is_complete(name: &str, system_id: &str) -> bool {
 /// read the RBAC gate turned down.
 ///
 /// Names the object, carries the CDR's own diagnostic verbatim, and names the
-/// next action. The registry's `409` is not the admin deletes' "still
-/// referenced by committed data" — it is either the reserved default tenant or
-/// a tenant that still owns data — so this family gets its own copy rather than
+/// next action. The registry's `409` is either the reserved default tenant or a
+/// tenant that still owns data, so this family gets its own copy rather than
 /// [`delete_failure_copy`](crate::admin::delete_failure_copy)'s wording.
 #[must_use]
 pub fn tenant_failure_copy(object: &str, error: &AdminUiError) -> String {
@@ -359,9 +353,8 @@ pub async fn create_tenant(
 /// Update one tenant's name and `system_id`
 /// (`PUT admin/tenant/{tenant_id}`, body `{name, system_id}`).
 ///
-/// The id is percent-encoded with the `urlencoding` crate (owner rule: all
-/// percent-coding goes through it) — the registry serves it as text, and the
-/// console never hand-rolls a codec for a path segment.
+/// The id is percent-encoded with the `urlencoding` crate — the registry serves
+/// it as text, and the console never hand-rolls a codec for a path segment.
 ///
 /// # Errors
 /// [`AdminUiError::Unauthenticated`] without a console session;
@@ -437,8 +430,7 @@ pub async fn delete_tenant(
 /// trimmed.
 ///
 /// Built through `serde_json` rather than string formatting so a name carrying
-/// a quote or a backslash is escaped by the encoder (owner rule: never
-/// hand-roll a codec).
+/// a quote or a backslash is escaped by the encoder.
 #[cfg(feature = "ssr")]
 fn tenant_definition(name: &str, system_id: &str) -> String {
     serde_json::json!({ "name": name.trim(), "system_id": system_id.trim() }).to_string()

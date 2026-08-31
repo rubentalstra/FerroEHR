@@ -13,18 +13,15 @@
 //! (`docs/specs/openehr/SM/docs/openehr_platform/master12-terminology_service.adoc`).
 //!
 //! Two shapes carry the screen. The **selection** is URL state
-//! (`?terminology=…`, rules §9) so a terminology is shareable and refresh-safe,
-//! and the two `Resource`s it drives are created in component SETUP — never
-//! inside a `Suspend`, which re-runs and would re-create them (rules §4). The
-//! three **lookups** are `Action`s: they answer a click, not a navigation, and
-//! each writes its own answer in the action's own async continuation, so no
-//! effect copies a signal into another (rules §2).
+//! (`?terminology=…`), and the two `Resource`s it drives are created in
+//! component SETUP — never inside a `Suspend`, which re-runs and would re-create
+//! them. The three **lookups** are `Action`s: each writes its own answer in the
+//! action's own async continuation.
 //!
-//! Everything here is a READ, so failures render inline and nothing toasts
-//! (the console's error-feedback rule). A `404` is never an error: the CDR
-//! answers it both for an absent terminology/code/value set and for the whole
-//! extension being switched off, so an absent answer is rendered as the state
-//! it is — and when the extension is off the screen is one empty-state card.
+//! Everything here is a READ, so failures render inline and nothing toasts. A
+//! `404` is never an error: the CDR answers it both for an absent
+//! terminology/code/value set and for the whole extension being switched off, so
+//! an absent answer is rendered as the state it is.
 
 use leptos::component;
 use leptos::prelude::*;
@@ -44,9 +41,8 @@ use crate::terminology::{
 
 /// The href that selects `terminology_id` on this screen.
 ///
-/// The id is percent-encoded (owner rule: all percent-coding goes through
-/// `urlencoding`) — a terminology id carrying `&`, `#` or `%` would otherwise
-/// forge a second query parameter.
+/// The id is percent-encoded — a terminology id carrying `&`, `#` or `%`
+/// would otherwise forge a second query parameter.
 #[must_use]
 pub fn select_href(terminology_id: &str) -> String {
     format!(
@@ -105,7 +101,7 @@ pub fn TerminologyPage() -> impl IntoView {
 /// instead of a page of cards that cannot work. The awaited resource's source
 /// is `()`, so this `Suspend` resolves once and never re-runs; the descriptor
 /// has its own nested `<Transition>` inside, and neither closure CREATES a
-/// resource (rules §4).
+/// resource.
 fn browser_section(
     terminologies: Resource<Result<Option<Vec<String>>, AdminUiError>>,
     descriptor: Resource<Result<Option<TerminologyDescriptor>, AdminUiError>>,
@@ -177,7 +173,7 @@ fn enabled_body(
 /// Plain anchors, not the router's `<A>`: the router intercepts every
 /// same-origin anchor once hydrated, and before the WASM bundle loads the
 /// browser follows the same href as an ordinary GET — so selecting a
-/// terminology never depends on JavaScript being live (rules §0/§9).
+/// terminology never depends on JavaScript being live.
 fn list_card(ids: Vec<String>, selected: Signal<String>) -> AnyView {
     if ids.is_empty() {
         return view! {
@@ -228,7 +224,7 @@ fn descriptor_card(
             <h2 class=CARD_TITLE>"Descriptor"</h2>
             // <Transition>, not <Suspense>: switching terminology refetches,
             // and the previous descriptor stays visible instead of flashing a
-            // skeleton (rules §6).
+            // skeleton.
             <Transition fallback=table_skeleton>
                 {move || Suspend::new(async move {
                     match descriptor.await {
@@ -303,8 +299,8 @@ fn fact_row(label: &'static str, value: String) -> AnyView {
 /// the extract's terms (and relationships, when the CDR sent any) or by an
 /// inline "unknown code" note.
 fn term_card(selected: Signal<String>) -> AnyView {
-    // UNCONTROLLED inputs read at dispatch (rules §5): a controlled input
-    // resets to its empty signal at hydration, wiping pre-WASM typing.
+    // UNCONTROLLED inputs read at dispatch: a controlled input resets to
+    // its empty signal at hydration, wiping pre-WASM typing.
     let code_ref = NodeRef::<leptos::html::Input>::new();
     let at_date_ref = NodeRef::<leptos::html::Input>::new();
     let validation = RwSignal::new(Option::<String>::None);

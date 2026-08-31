@@ -8,7 +8,7 @@
 //! `?path=` subtree panel. All are rendered outside the main directory
 //! `<Suspense>` with their own `<Transition>` boundaries; their read resources
 //! are created once in the section orchestrator and only fetch when their
-//! panel is open (rules §4/§6).
+//! panel is open.
 
 #![expect(
     clippy::disallowed_types,
@@ -51,8 +51,8 @@ fn row_class(selected: bool) -> &'static str {
 /// delete. Shown only when a directory exists. The existence flag comes from
 /// the shared directory resource, which MUST be resolved under a
 /// `<Transition>` boundary — a bare render-time read of a resource is a
-/// hydration mismatch in hydrate mode (rules §6/§8; caught live by the
-/// composed e2e battery: the mismatch killed page interactivity).
+/// hydration mismatch in hydrate mode (; caught live by the composed e2e
+/// battery: the mismatch killed page interactivity).
 pub(in crate::pages::ehr_detail::directory) fn directory_toolbar(
     ehr_id: Signal<String>,
     directory: Resource<Result<Option<DirectoryState>, AdminUiError>>,

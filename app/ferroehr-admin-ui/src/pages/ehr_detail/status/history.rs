@@ -17,21 +17,16 @@
 //!    `OBJECT_VERSION_ID` (`GET /ehr/{ehr_id}/ehr_status/{version_uid}`).
 //!
 //! Three of the four are the shared
-//! [`version_history`](crate::components::version_history) kit — the shape is
-//! the same for every versioned family — parameterized by this family's copy
-//! and DOM hooks; only the facts card is local, because its fields are the
-//! ones this family carries.
+//! [`version_history`](crate::components::version_history) kit, parameterized by
+//! this family's copy and DOM hooks; only the facts card is local.
 //!
-//! One reader per claim (crate `CLAUDE.md`): this tab never reads
-//! `GET /ehr/{ehr_id}/ehr_status` — the current-status document belongs to the
-//! Status tab. The split within the tab mirrors the composition viewer's:
-//! document CONTENT ← the `EHR_STATUS` resource at that version, commit history ←
-//! the revision history, the VERSION's envelope facts (lifecycle state,
-//! preceding version, contribution, signature) ← the direct VERSION read.
-//!
-//! Every resource is created ONCE in `status_history_section` — never inside a
-//! `Suspend` (rules §4) — and gated on the tab being active, so an unopened tab
-//! fetches nothing (rules §6).
+//! One reader per claim: this tab never reads `GET /ehr/{ehr_id}/ehr_status` —
+//! the current-status document belongs to the Status tab. Within the tab,
+//! document CONTENT comes from the `EHR_STATUS` resource at that version, commit
+//! history from the revision history, and the VERSION's envelope facts from the
+//! direct VERSION read. Every resource is created ONCE in
+//! `status_history_section` — never inside a `Suspend` — and gated on the tab
+//! being active.
 
 use leptos::prelude::*;
 
@@ -85,7 +80,7 @@ pub(in crate::pages::ehr_detail) fn status_history_section(
         async move {
             let resolved = fetch_status_version_at_time(ehr_id, at_time).await;
             // NOTE: the write rides the dispatched event's own continuation, so
-            // it is an event write rather than an Effect write (rules §2).
+            // it is an event write rather than an Effect write.
             if let Ok(version) = &resolved
                 && !version.is_empty()
             {

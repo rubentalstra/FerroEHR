@@ -10,13 +10,13 @@
 //! query, and directory deletion — plus the create-empty path for an EHR that
 //! has no directory yet.
 //!
-//! No openEHR spec governs an admin UI (our own design / product extension);
-//! the wire it reads/writes IS spec-bound: the DIRECTORY operations
-//! (ITS-REST `specifications/operations/directory_*.yaml`), the `FOLDER`
-//! schema (`specifications/schemas/ehr/Folder.yaml`), and RM common
+//! No openEHR spec governs an admin UI — our own design; the wire it
+//! reads/writes IS spec-bound: the DIRECTORY operations (ITS-REST
+//! `specifications/operations/directory_*.yaml`), the `FOLDER` schema
+//! (`specifications/schemas/ehr/Folder.yaml`), and RM common
 //! `master05-directory_package`. Every `#[server]` fn below authenticates the
-//! console session first (rules §0) and the CDR credential never reaches
-//! client-visible state.
+//! console session first and the CDR credential never reaches client-visible
+//! state.
 //!
 //! This module owns the DIRECTORY `#[server]` fns, the shared wire types, and
 //! the `directory_section` orchestrator; the view is split across
@@ -70,8 +70,8 @@ pub struct DirectoryState {
 /// One row of the directory version history: a past (or the current) FOLDER
 /// version summarized for the history panel.
 ///
-/// Carries fixed-size ints only so it is WASM-safe over the server-fn boundary
-/// (rules §1).
+/// Carries fixed-size ints only so it is WASM-safe over the server-fn
+/// boundary.
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub struct DirectoryVersion {
     /// The version's `OBJECT_VERSION_ID` (`uid.value`).
@@ -600,11 +600,10 @@ fn summarize_directory_version(body: &str, number: i32, is_latest: bool) -> Dire
 /// Directory tab: the toolbar (history / time / path / delete), the main
 /// content (the structured tree editor for an existing directory, or the
 /// create-empty section when the CDR 404s), and the history / time-travel /
-/// path panels. The directory resource depends on every write
-/// action's version, so a successful create/update/delete/restore refetches it
-/// (rules §6 — never fetch-in-effect). Every read resource is created ONCE
-/// here (never inside a `Suspend` — rules §4) and gated on the active tab plus
-/// its own trigger, so only the visible, opened surfaces fetch.
+/// path panels. The directory resource depends on every write action's version,
+/// so a successful create/update/delete/restore refetches it. Every read
+/// resource is created ONCE here, never inside a `Suspend`, and is gated on the
+/// active tab plus its own trigger.
 #[expect(
     clippy::too_many_lines,
     reason = "the tab's resources/actions/panels are wired as one unit; splitting would separate state from its wiring"
@@ -651,20 +650,17 @@ pub(super) fn directory_section(ehr_id: Signal<String>, selected: Memo<String>) 
     let reload = RwSignal::new(0u32);
 
     // The directory editor's long-lived reactive state, created ONCE here —
-    // ABOVE the `<Transition>`/`Suspend` — and re-seeded idempotently per
-    // loaded version. Creating these signals INSIDE the Suspend is the rules §4
-    // disposal defect this fixes: a Suspend re-runs on every resource
-    // notification (every write refetches the directory) and disposes the
-    // previous run's owner, leaving mounted DOM handlers / icon views pointing
-    // at dead signals (panic on the next interaction). The create-empty section
-    // needs no state of its own.
+    // ABOVE the `<Transition>`/`Suspend` — and re-seeded idempotently per loaded
+    // version. Signals created INSIDE the Suspend would die with it: a Suspend
+    // re-runs on every resource notification and disposes the previous run's
+    // owner, leaving mounted DOM handlers pointing at dead signals.
     let editor = EditorState::new(update);
 
-    // Toast EVERY write outcome (outside-world side-effect — rules §2; the
-    // console's mutation-feedback rule, crate CLAUDE.md): a `412` conflict
-    // gets the distinct "reload or save anyway" toast, any other failure the
-    // shared actionable copy. The CDR diagnostic ALSO stays inline in the
-    // relevant feedback pane, beside the folder tree it refused.
+    // Toast EVERY write outcome (outside-world side-effect; the console's
+    // mutation-feedback rule): a `412` conflict gets the distinct "reload
+    // or save anyway" toast, any other failure the shared actionable copy.
+    // The CDR diagnostic ALSO stays inline in the relevant feedback pane,
+    // beside the folder tree it refused.
     write_toast(
         toaster,
         create,
@@ -701,7 +697,7 @@ pub(super) fn directory_section(ehr_id: Signal<String>, selected: Memo<String>) 
     // tree from the server and silently discard the user's unsaved edits.
     // Each stamp Memo therefore sticks to its previous value on a failed
     // completion (the Memo's `prev` parameter), so only completed writes
-    // reload (rules §6).
+    // reload.
     let create_ok = completed_version(create);
     let update_ok = completed_version(update);
     let delete_ok = completed_version(delete);
@@ -818,7 +814,7 @@ pub(super) fn directory_section(ehr_id: Signal<String>, selected: Memo<String>) 
 
     // `<Transition>` (not `<Suspense>`): the directory resource reloads after
     // every write, and the old tree must stay visible instead of flashing the
-    // skeleton (rules §6, book async/12).
+    // skeleton (book async/12).
     let main = view! {
         <Transition fallback=table_skeleton>
             {move || Suspend::new(async move {
@@ -887,10 +883,9 @@ fn delete_toast<I: Send + Sync + 'static>(
 /// last completion SUCCEEDED — the refetch trigger for the reads it affects.
 ///
 /// `Action::version` increments on failures too; refetching on a failed save
-/// (a `412` conflict, a validation reject) would re-seed the working tree from
-/// the server and silently discard the user's unsaved edits. The stamp
-/// therefore sticks to its previous value on a failed completion (the Memo's
-/// `prev` parameter), so only completed writes reload (rules §6).
+/// would re-seed the working tree from the server and silently discard the
+/// user's unsaved edits. The stamp therefore sticks to its previous value on a
+/// failed completion, so only completed writes reload.
 fn completed_version<I, O>(action: Action<I, Result<O, AdminUiError>>) -> Memo<usize>
 where
     I: Send + Sync + 'static,

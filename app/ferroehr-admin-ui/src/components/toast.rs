@@ -24,13 +24,13 @@ pub fn toast_error(toaster: thaw::ToasterInjection, title: &str, body: &str) {
 ///
 /// `outcome` is an [`Action`]'s value carrying the name the mutation was
 /// dispatched under beside the CDR's answer, so both toasts can name the exact
-/// object (rules §6 — the action's value IS the mutation report). `titles` is
-/// the success title and the failure title; the two closures build each
-/// toast's body from that name.
+/// object (the action's value IS the mutation report). `titles` is the success
+/// title and the failure title; the two closures build each toast's body from
+/// that name.
 ///
 /// Dispatching a toast is a side effect on the outside world, so an `Effect` is
-/// its correct home (rules §2): it never writes a signal, and it never runs on
-/// the server pass.
+/// its correct home: it never writes a signal, and it never runs on the server
+/// pass.
 pub fn toast_outcome<T, S, F>(
     toaster: thaw::ToasterInjection,
     outcome: Signal<Option<(String, Result<T, crate::error::AdminUiError>)>>,

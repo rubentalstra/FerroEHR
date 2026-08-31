@@ -214,7 +214,7 @@ fn read_config_file(file: Option<&Path>, errors: &mut Vec<ConfigError>) -> Optio
 /// This whole layer sits BELOW the canonical source, so an `FERROEHR__` form
 /// always wins. Within the layer, a transaction-pooled endpoint (pgbouncer)
 /// hands statements to backend connections without the session `search_path`,
-/// which surfaces as intermittent 42P01 "relation does not exist" (#2716) — so
+/// which surfaces as intermittent 42P01 "relation does not exist" — so
 /// where a managed-Postgres integration offers the DIRECT endpoint beside the
 /// pooled one (Neon injects both), the direct one wins.
 fn conventional_aliases<S: std::hash::BuildHasher>(
@@ -256,7 +256,7 @@ fn conventional_aliases<S: std::hash::BuildHasher>(
 /// instead of a URL.
 ///
 /// The direct `PGHOST_UNPOOLED` host is preferred over the pooled `PGHOST`
-/// (#2716, the same transaction-pooling reason as `DATABASE_URL_UNPOOLED`).
+/// (the same transaction-pooling reason as `DATABASE_URL_UNPOOLED`).
 fn libpq_dsn<S: std::hash::BuildHasher>(env: &HashMap<String, String, S>) -> Option<String> {
     let host = env.get("PGHOST_UNPOOLED").or_else(|| env.get("PGHOST"))?;
     let mut dsn = String::from("postgres://");
@@ -300,7 +300,7 @@ fn env_source(map: HashMap<String, String>) -> Environment {
 /// its full section path with a did-you-mean (from serde's "expected one of"
 /// list), and attribute a file line only when the key is defined under THAT
 /// section — an env-sourced key is named as such instead of pointing the
-/// operator at an unrelated valid line (#2572).
+/// operator at an unrelated valid line.
 fn enrich(path: &str, err: &str, file: Option<&str>) -> ConfigError {
     let Some(field) = between(err, "unknown field `", "`") else {
         return ConfigError::new(format!("invalid configuration: {err}"));
@@ -369,8 +369,8 @@ fn expected_fields(err: &str) -> Vec<String> {
 
 /// The 1-based line where `key` is assigned UNDER `section` (`[section]` or
 /// `[[section]]` headers; the empty section is the top of the file before any
-/// header), for `file:line` diagnostics. A bare name match anywhere else is
-/// exactly the misattribution #2572 fixed.
+/// header), for `file:line` diagnostics. A bare name match anywhere else would
+/// misattribute the diagnostic to an unrelated line.
 fn find_key_line_in_section(content: &str, section: &str, key: &str) -> Option<usize> {
     let mut current = String::new();
     for (i, line) in content.lines().enumerate() {

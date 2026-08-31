@@ -3,22 +3,20 @@
 
 //! Lean metadata-only reads over `vo_version`.
 //!
-//! Joined with `audit` where the commit instant is needed: the `ETag`/`If-Match`
-//! identity reads, revision-history enumeration, and the
-//! existence/kind/ownership/count lookups — none of them pays the node
+//! Joined with `audit` where the commit instant is needed: the
+//! `ETag`/`If-Match` identity reads, revision-history enumeration, and the
+//! existence, kind, ownership and count lookups. None of them pays the node
 //! reassembly or attestation aggregation the full
 //! [`crate::storage::version_repo::read::read_current`] does.
 //!
-//! No openEHR spec governs the SQL — our own design. The version identity these reads serve is RM common master06
-//! §Version Identification; the commit instant is §Committal.
+//! No openEHR spec governs the SQL — our own design. The version identity these
+//! reads serve is RM common master06 §Version Identification and the commit
+//! instant is §Committal.
 //!
-//! NOTE (no openEHR spec governs storage tiering — our own design): every
-//! object-addressed lookup here reads the `vo_version_all` union view — ONE
-//! statement serving both tiers, so an archived object stays retrievable and
-//! a miss never pays a cold-tier retry transaction. The EHR-wide aggregate
-//! and enumeration reads at the bottom of this file stay primary-only: they
-//! answer for the operational store, which is precisely what an archived
-//! object has been moved out of.
+//! NOTE: no openEHR spec governs storage tiering — our own design; every
+//! object-addressed lookup here reads the `vo_version_all` union view, one
+//! statement serving both tiers, while the EHR-wide aggregate and enumeration
+//! reads at the bottom of this file stay primary-only.
 
 #![expect(
     clippy::disallowed_types,
@@ -569,10 +567,9 @@ pub async fn current_demographic_meta(
 
 /// The current trunk version of a COMPOSITION, reduced for the write pre-checks.
 ///
-/// Exactly what the modify/delete pre-checks need, in ONE
-/// `vo_version`⋈`audit`⋈`ehr` (LEFT JOIN `node`) statement — a single read
-/// serving the whole write pre-check (`If-Match` meta, modify pre-read, and
-/// `is_modifiable` together):
+/// Exactly what the modify and delete pre-checks need, in one
+/// `vo_version`⋈`audit`⋈`ehr` (LEFT JOIN `node`) statement serving the
+/// `If-Match` meta, the modify pre-read and `is_modifiable` together:
 ///
 /// - owning `ehr_id` (the ownership gate) + `lifecycle_state` (the deleted gate,
 ///   RM common master06 §Logical Deletion);
@@ -587,9 +584,9 @@ pub async fn current_demographic_meta(
 ///   check needs nothing else from the content.
 ///
 /// `stored_template` is `None` for a deleted current (`body` is NULL) or an
-/// undeclared template. `None` when the object has no current trunk version (a COMPOSITION
-/// always owns an `ehr`, so the inner join never drops a live row). No openEHR
-/// spec governs the SQL — our own design.
+/// undeclared template. The whole result is `None` when the object has no
+/// current trunk version; a COMPOSITION always owns an `ehr`, so the inner join
+/// never drops a live row. No openEHR spec governs the SQL — our own design.
 #[derive(Debug, Clone)]
 pub struct CurrentCompositionMeta {
     /// The owning EHR — the ownership gate.

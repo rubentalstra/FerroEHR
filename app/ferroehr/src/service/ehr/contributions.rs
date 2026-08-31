@@ -42,17 +42,16 @@ impl FerroEhrService {
     /// atomically and return the stored `CONTRIBUTION` with its resource
     /// metadata (the `contribution_uid` for the `201` `ETag`/`Location`).
     ///
-    /// NOTE: the SM native `commit_contribution(Vec<UpdateVersion>, UpdateAudit)`
-    /// is a *typed subset* of the wire CONTRIBUTION — `UPDATE_VERSION` mandates
-    /// `data` + `lifecycle_state` (SM `update_version.adoc`, both 1..1) and a
-    /// committer, so it cannot represent an attestation-only (`666`) member, a
-    /// delete (`523`) member, or a member inheriting `committer`/`system_id` from
-    /// the CONTRIBUTION audit (RM common master06 §Committal m4). This raw-body
-    /// seam carries the full-fidelity EHR CONTRIBUTION commit instead.
+    /// NOTE: the SM native `commit_contribution` is a typed subset of the wire
+    /// CONTRIBUTION, `UPDATE_VERSION` mandating `data`, `lifecycle_state` and a
+    /// committer (SM `update_version.adoc`), so it cannot represent an
+    /// attestation-only (`666`) member, a delete (`523`) member, or a member
+    /// inheriting `committer` or `system_id` from the CONTRIBUTION audit (RM
+    /// common master06 §Committal m4); this raw-body seam carries the
+    /// full-fidelity commit.
     ///
     /// All RM `change_control` semantics stay in
-    /// `crate::versioning::contribution::commit_version_set` (over the
-    /// `crate::versioning::CommitEnv` impl `FerroEhrService` provides).
+    /// `crate::versioning::contribution::commit_version_set`.
     ///
     /// # Errors
     /// [`SmError`] if the CONTRIBUTION fails classification, content
@@ -201,17 +200,15 @@ impl FerroEhrService {
     /// `{ "rows": [ { uid, time_committed, committer, change_type,
     /// change_type_rubric } ], "total" }`.
     ///
-    /// NOTE: OUR OWN EXTENSION — no openEHR spec governs it; the ITS-REST
-    /// contract defines only the by-uid CONTRIBUTION GET
-    /// (`operations/contribution_get.yaml`).
+    /// NOTE: no openEHR spec governs this listing — our own design/extension;
+    /// the ITS-REST contract defines only the by-uid CONTRIBUTION GET.
     ///
-    /// `committer` is the audit committer `PARTY_PROXY`'s `name` (a summary
-    /// string, not the full rendering the by-uid GET returns); `change_type` is
-    /// the stored `audit.change_type` code and `change_type_rubric` its display
-    /// rubric from the `audit_change_type` group — the same bundle mapping the
-    /// by-uid GET's `DV_CODED_TEXT.value` carries, so consumers never map codes
-    /// locally. `offset`/`fetch` are already clamped by the protocol adapter
-    /// (defaults 0/20, `fetch` capped at 100).
+    /// `committer` is the audit committer `PARTY_PROXY`'s `name`, a summary
+    /// string rather than the full rendering the by-uid GET returns;
+    /// `change_type` is the stored `audit.change_type` code and
+    /// `change_type_rubric` its display rubric from the `audit_change_type`
+    /// group, so consumers never map codes locally. `offset` and `fetch` are
+    /// already clamped by the protocol adapter.
     ///
     /// # Errors
     /// [`SmError`] — `Pre_has_ehr` fails (unknown EHR → 404), or a read fails.
@@ -266,14 +263,11 @@ impl FerroEhrService {
     /// [`SmError`] if the CONTRIBUTION fails classification, content
     /// validation, the optimistic lock, or its storage commit.
     ///
-    /// Both branches carry `Last-Modified` beside the `ETag`/`Location` uid:
-    /// ITS-REST `Requests_and_responses.md` §"`ETag` and `Last-Modified`" —
-    /// "Both `ETag` and `Last-Modified` SHOULD be included in responses for
-    /// VERSION, `VERSIONED_OBJECT`, or other resources that have versioning or
-    /// unique state identifiers" — and a CONTRIBUTION has one. The value is
-    /// the commit audit's `time_committed` as stored (RM common master06
-    /// §Committal and Audits), carried out of the commit rather than re-read
-    /// or re-clocked.
+    /// Both branches carry `Last-Modified` beside the `ETag` and `Location` uid,
+    /// a CONTRIBUTION being one of the resources ITS-REST
+    /// `Requests_and_responses.md` §"`ETag` and `Last-Modified`" names. The value
+    /// is the commit audit's `time_committed` as stored (RM common master06
+    /// §Committal and Audits), carried out of the commit rather than re-read.
     pub async fn ehr_contribution_commit(
         &self,
         an_ehr_id: EhrId,

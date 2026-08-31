@@ -48,12 +48,11 @@ static LOCATABLE_META_ATTRS: LazyLock<BTreeSet<&str>> = LazyLock::new(|| {
         .collect()
 });
 
-/// Legacy `(class, attribute)` pairs tolerated for prior-art OPT compatibility
-/// (NOTE) — **only the ones the generated RM model cannot answer**, each with
-/// the released text that says why it is absent from the model. Everything
-/// derivable is derived instead: an attribute the RM really declares under the
-/// British orthography is matched by [`is_us_orthography_of_rm_attribute`], so
-/// no spelling pair is hand-kept here.
+/// The `(class, attribute)` pairs tolerated for prior-art OPT compatibility:
+/// only the ones the generated RM model cannot answer, each with the released
+/// text that says why it is absent from the model. Everything derivable is
+/// derived instead, an attribute the RM declares under the British orthography
+/// being matched by [`is_us_orthography_of_rm_attribute`].
 ///
 /// - `EVENT.offset` / `POINT_EVENT.offset` / `INTERVAL_EVENT.offset` — a
 ///   FUNCTION, not an attribute, in RM 1.2.0:
@@ -67,11 +66,10 @@ static LOCATABLE_META_ATTRS: LazyLock<BTreeSet<&str>> = LazyLock::new(|| {
 ///   declares `rows` alone); an RM 1.0.x-era attribute that later releases
 ///   dropped.
 ///
-/// The generated RM model carries classes and ATTRIBUTES only, so none of these
-/// five can be resolved from it — they are not spellings of anything it knows.
-/// All appear in widely-deployed OPT 1.4 artifacts (the vendored RIPPLE /
-/// `clinical_content` / Better corpus templates), which the AOM2 VCARM rule
-/// would otherwise refuse wholesale.
+/// The generated RM model carries classes and attributes only, so none of these
+/// five resolves from it. All appear in widely-deployed OPT 1.4 artifacts (the
+/// vendored RIPPLE, `clinical_content` and Better corpus templates), which the
+/// AOM2 VCARM rule would otherwise refuse wholesale.
 const LEGACY_RM_ATTRS: &[(&str, &str)] = &[
     ("EVENT", "offset"),
     ("POINT_EVENT", "offset"),
@@ -233,14 +231,11 @@ fn rm_conformance(
 /// The fully-open `{0..*}` is read as "no cardinality override" rather than as
 /// a widening — see the in-body citations.
 ///
-/// NOTE: this is the *numeric* part only. The `ordered`/`unordered`/`unique`
-/// half of a cADL cardinality is deliberately NOT judged here: that is exactly
-/// what `ADL1.4/master05-cadl.adoc` line 268 hedges ("developers often use lists
-/// to facilitate integration, when the actual semantics are intended to be of a
-/// set … How such constraints are evaluated in practice may depend somewhat on
-/// knowledge of the software system"), and the hedge is about container
-/// SEMANTICS, not about the membership range the same paragraph calls a plain
-/// constraint.
+/// NOTE: only the numeric part is judged; `ADL1.4/master05-cadl.adoc` line 268
+/// hedges the `ordered`/`unordered`/`unique` half ("How such constraints are
+/// evaluated in practice may depend somewhat on knowledge of the software
+/// system"), and that hedge is about container semantics rather than the
+/// membership range.
 fn check_rm_cardinality(
     card: &Cardinality,
     attr_name: &str,

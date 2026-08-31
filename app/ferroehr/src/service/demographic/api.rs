@@ -65,35 +65,25 @@ fn party_kind_of(body: &Party) -> PartyKind {
     }
 }
 
-/// Full-`OBJECT_VERSION_ID` `If-Match` verification. ITS-REST overview
-/// `Requests_and_responses.md` §"If-Match and accidental overwrites": when the
-/// condition "evaluates to `false`, it MUST NOT perform the requested method.
-/// Instead, it MUST respond with HTTP status code `412 Precondition Failed`".
+/// Verifies a full-`OBJECT_VERSION_ID` `If-Match` precondition, which must
+/// answer `412 Precondition Failed` when it evaluates false (ITS-REST overview
+/// `Requests_and_responses.md` §"If-Match and accidental overwrites").
 ///
-/// The precondition names the current latest version **in full** — the
-/// `object_id :: creating_system_id :: version_tree_id` triple — and a
-/// mismatch in ANY segment is a `412`. Reducing the header to the
-/// version-tree number alone would accept a precondition naming a version
-/// this server never held.
+/// The precondition names the current latest version in full, the
+/// `object_id :: creating_system_id :: version_tree_id` triple, and a mismatch
+/// in any segment is a `412`. The comparison is case-insensitive, an
+/// `OBJECT_VERSION_ID` being a composite identifier whose case-differing forms
+/// "identify the same thing" (BASE `base_types`
+/// `master05-identification_package.adoc` §"Composite Identifiers and Case").
+/// This mirrors the EHR path's `ensure_if_match`.
 ///
-/// The comparison is case-**in**sensitive: an `OBJECT_VERSION_ID` is a
-/// composite identifier, and BASE `base_types`
-/// `master05-identification_package.adoc` §"Composite Identifiers and Case"
-/// makes two identifiers "identical apart from case … identify the same
-/// thing". Mirrors the EHR path's `ensure_if_match`.
-///
-/// The wire `ETag` syntax — the weak `W/"…"` form the overview §"`ETag` and
-/// Last-Modified" mandates on emitted `ETag`s, and the deprecated bare quoted
-/// form — is decoded by the ITS-REST adapter before the value reaches here;
-/// [`if_match_token`] applies the remaining quote tolerance so this compare and
-/// [`expected_from_if_match`] judge the same token.
-///
-/// Tokens that are not a full `OBJECT_VERSION_ID` are **not** silently skipped:
-/// the RFC 9110 `*` wildcard and the lenient bare `VERSION_TREE_ID` trunk
-/// number carry no full identity to compare (the versioning path enforces the
-/// tree precondition they do carry), and every other shape is rejected as
-/// malformed → `400` by [`expected_from_if_match`], which every caller of this
-/// function invokes on the same value.
+/// The wire `ETag` syntax is decoded by the ITS-REST adapter before the value
+/// reaches here; [`if_match_token`] applies the remaining quote tolerance so
+/// this compare and [`expected_from_if_match`] judge the same token. Tokens that
+/// are not a full `OBJECT_VERSION_ID` are not silently skipped: the RFC 9110 `*`
+/// wildcard and the bare `VERSION_TREE_ID` trunk number carry no full identity
+/// to compare, and every other shape is rejected as malformed by
+/// [`expected_from_if_match`], which every caller invokes on the same value.
 fn ensure_full_ovid_if_match(
     if_match: Option<&str>,
     current: Option<&ResourceMeta>,

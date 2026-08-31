@@ -171,12 +171,11 @@ impl FerroEhrService {
     /// [`Self::read_composition`] with the body kept as the stored canonical
     /// text wherever nothing needs it parsed — the JSON-accept passthrough.
     ///
-    /// The stored body is uid-stamped at commit
-    /// (`crate::versioning::change` — `stamp_version_uid` runs before
-    /// decomposition), and jsonb renders object keys length-first, so a
-    /// stamped COMPOSITION's text opens with its own `uid`: the prefix
-    /// compare below PROVES the stamp byte-exactly, and any other shape (a
-    /// verbatim-loaded foreign body) falls back to the parsed re-stamp path.
+    /// The stored body is uid-stamped at commit (`stamp_version_uid` runs before
+    /// decomposition) and jsonb renders object keys length-first, so a stamped
+    /// COMPOSITION's text opens with its own `uid` and the prefix compare below
+    /// proves the stamp byte-exactly. Any other shape, such as a verbatim-loaded
+    /// foreign body, falls back to the parsed re-stamp path.
     ///
     /// # Errors
     /// [`ServiceError::NotFound`] when the version does not exist or belongs
@@ -386,20 +385,19 @@ impl FerroEhrService {
         Ok(ServiceResponse::new(ov, meta))
     }
 
-    /// `update_composition` (SM `i_ehr_composition.adoc`): commit a new
-    /// version of `vo_id` from the caller's full `UPDATE_VERSION` envelope,
-    /// returning the committed version identity. The whole write pre-check —
-    /// the owning EHR (ownership → 404), the full-`OBJECT_VERSION_ID`
-    /// `If-Match` identity (412 — ITS-REST overview §Concurrency control),
-    /// the lifecycle (deleted → 404), the EHR's `is_modifiable` flag (409),
-    /// the stored template root fragment (422), and the version-tree
-    /// placement itself — rides ONE in-transaction statement
-    /// ([`crate::storage::version_repo::placement::update_placement`]) under
-    /// the per-vo advisory lock, so no pool pre-read round trip remains. The
-    /// CPU-side envelope resolution and content validation run BEFORE the
-    /// transaction (never under the lock — validation may consult the
-    /// template store and routed terminology); their failures surface in the
-    /// same order as before, after the in-transaction gates ahead of them.
+    /// `update_composition` (SM `i_ehr_composition.adoc`): commits a new version
+    /// of `vo_id` from the caller's full `UPDATE_VERSION` envelope, returning the
+    /// committed version identity.
+    ///
+    /// The whole write pre-check rides one in-transaction statement
+    /// ([`crate::storage::version_repo::placement::update_placement`]) under the
+    /// per-vo advisory lock: EHR ownership (404), the full-`OBJECT_VERSION_ID`
+    /// `If-Match` identity (412, ITS-REST overview §Concurrency control), the
+    /// lifecycle (deleted, 404), the EHR's `is_modifiable` flag (409), the stored
+    /// template root fragment (422) and the version-tree placement. The CPU-side
+    /// envelope resolution and content validation run before the transaction,
+    /// never under the lock, validation being free to consult the template store
+    /// and routed terminology.
     ///
     /// # Errors
     /// [`ServiceError::NotFound`] when the COMPOSITION does not exist in this
@@ -626,13 +624,15 @@ impl FerroEhrService {
         .flatten())
     }
 
-    /// `delete_composition` (SM `i_ehr_composition.adoc`): commit a
+    /// `delete_composition` (SM `i_ehr_composition.adoc`): commits a
     /// `523|deleted|` version of the addressed COMPOSITION (RM common master06
-    /// §Logical Deletion), returning the (now deleted) version identity
-    /// (`204_COMPOSITION_deleted`). NOTE: takes the full
-    /// `OBJECT_VERSION_ID` — the mandatory `preceding_version_uid`
-    /// (`composition_delete.yaml`) — stronger than the SM's `UUID`; the SM is
-    /// internally inconsistent (`has_composition` takes `OBJECT_VERSION_ID`).
+    /// §Logical Deletion), returning the now-deleted version identity
+    /// (`204_COMPOSITION_deleted`).
+    ///
+    /// NOTE: it takes the full `OBJECT_VERSION_ID`, the mandatory
+    /// `preceding_version_uid` of `composition_delete.yaml`, which is stronger
+    /// than the SM's `UUID`; the SM is internally inconsistent, its
+    /// `has_composition` taking an `OBJECT_VERSION_ID`.
     ///
     /// # Errors
     /// [`ServiceError::NotFound`] when the COMPOSITION does not exist in this
@@ -770,17 +770,16 @@ impl FerroEhrService {
         }
     }
 
-    /// The combined EHR-existence + content-writability content-write gate in
-    /// ONE round trip — equivalent to [`Self::ensure_ehr_exists`] followed by
-    /// [`Self::ensure_content_writable`] (a missing EHR → 404 *before* the
-    /// non-modifiable 409, unchanged order), but a single
-    /// [`crate::storage::ehr_repo::ehr_writability`] read instead of two pool
-    /// round trips. Returns the database `now()` read by that same statement,
-    /// which the create path passes on as the commit instant so the write
-    /// transaction spends no round trip fetching the clock. The guarded
-    /// concepts are RM ehr master04 §EHR Creation (existence) and §EHR Active
-    /// Status (`EHR_STATUS.is_modifiable`); no openEHR spec governs the query
-    /// shape (our own design).
+    /// The combined EHR-existence and content-writability gate in one round
+    /// trip.
+    ///
+    /// Equivalent to [`Self::ensure_ehr_exists`] followed by
+    /// [`Self::ensure_content_writable`], a missing EHR still answering 404
+    /// before the non-modifiable 409, over a single
+    /// [`crate::storage::ehr_repo::ehr_writability`] read. Returns the database
+    /// `now()` that statement read, which the create path passes on as the commit
+    /// instant. The guarded concepts are RM ehr master04 §EHR Creation and §EHR
+    /// Active Status; no openEHR spec governs the query shape (our own design).
     ///
     /// # Errors
     /// [`ServiceError::NotFound`] when the EHR does not exist;

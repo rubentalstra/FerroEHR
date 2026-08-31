@@ -13,22 +13,17 @@
 //! [`types`] = the SM information structures (`RESOURCE_STATUS`,
 //! `RESOURCE_INSTANCE_TYPE`, `LOCATION_DESC`, the `OBJECT_REF` subject key).
 //!
-//! NOTE: index entries are **not** versioned objects — the SM defines no
-//! versioning for the index — so these are plain SQL writes over the
-//! `ehr_index` table, emitting no CONTRIBUTION/version. No openEHR spec governs
-//! the storage mechanism (our own design); master07 governs the operation
-//! semantics + error names.
+//! NOTE: the SM defines no versioning for the index, so entries are plain SQL
+//! writes over the `ehr_index` table emitting no CONTRIBUTION or version; no
+//! openEHR spec governs the storage mechanism (our own design) while master07
+//! governs the operation semantics and error names.
 //!
-//! The index and the `ehr.subject_id` promotion (the Primary-instance fast path
-//! for `ehr_get_by_subject`) are intentionally decoupled: an EHR created through
-//! the normal API is not auto-indexed here, and the index models the full N:M
-//! state. The `ehr_index` + `ehr`-existence SQL is this domain's own direct-SQL
-//! design, so the table access lives here rather than behind a storage-owned
-//! repository.
-//!
-//! No wire is mounted (EHR Index has no ITS-REST contract — native-API-only,
-//! our own extension surface); the public methods exist for the SM native API
-//! and future extension routes.
+//! The index and the `ehr.subject_id` promotion are decoupled: an EHR created
+//! through the normal API is not auto-indexed here, and the index models the
+//! full N:M state. The `ehr_index` and `ehr`-existence SQL is this domain's own
+//! direct-SQL design, so the table access lives here rather than behind a
+//! storage-owned repository. No wire is mounted, EHR Index having no ITS-REST
+//! contract.
 
 pub mod conflicts;
 pub(crate) mod index;

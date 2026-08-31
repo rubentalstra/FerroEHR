@@ -26,16 +26,14 @@
 //!
 //! # Cross-module wiring
 //!
-//! - **`crate::storage`** — `dump_load` reassembles/decomposes version bodies
-//!   through the storage codec (`node_repo::read_version_canonical` /
-//!   `decompose` + `write_nodes`); `integrity` reassembles every stored
-//!   version through `node_repo::read_version_canonical_all` to compare it
-//!   with the materialized `vo_version.body`.
-//! - **`archive`** marks EHR/party versioned objects archived and physically
-//!   moves their rows into the spec-silent cold tier
-//!   ([`crate::storage::version_repo::tier`]), reversibly; `delete` and
-//!   `dump_load` reach both tiers because a physical delete and a repository
-//!   export are whole-repository operations by definition.
+//! `dump_load` reassembles and decomposes version bodies through the storage
+//! codec, and `integrity` reassembles every stored version through
+//! `node_repo::read_version_canonical_all` to compare it with the materialized
+//! `vo_version.body`. `archive` marks EHR and party versioned objects archived
+//! and reversibly moves their rows into the spec-silent cold tier
+//! ([`crate::storage::version_repo::tier`]); `delete` and `dump_load` reach both
+//! tiers, a physical delete and a repository export being whole-repository
+//! operations.
 
 mod archive;
 mod delete;

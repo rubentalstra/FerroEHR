@@ -132,19 +132,18 @@ pub struct StoredVersion {
 /// attestation read
 /// ([`crate::storage::version_repo::attestation::read_attestations_all`]) applies.
 ///
-/// They arrive SPLIT on `at_committal`, because the two halves stand in
-/// different relations to `VERSION.signature`: an attestation present at the act
-/// of committal is inside the version's signed canonical form ("serialising the
-/// entire Version object", master06 §Digital Signature), while one added later
-/// ("Attestations can be added at any time after committal", §Attestation) is
-/// not. The split uses the standard aggregate `FILTER` clause
+/// They arrive split on `at_committal`, the two halves standing in different
+/// relations to `VERSION.signature`: an attestation present at the act of
+/// committal is inside the version's signed canonical form ("serialising the
+/// entire Version object", master06 §Digital Signature) while one added later is
+/// not (§Attestation). The split uses the standard aggregate `FILTER` clause
 /// (<https://www.postgresql.org/docs/18/sql-expressions.html#SYNTAX-AGGREGATES>).
 ///
-/// The version's canonical body is the row's own `v.body` column — the form
-/// MATERIALIZED at write time from the same value the node rows decompose
-/// from — so a point read is ONE statement and one TOAST detoast, never a
-/// node-subtree re-aggregation. `NULL` is a logically deleted version (RM
-/// common master06 §Logical Deletion).
+/// The version's canonical body is the row's own `v.body` column, materialized
+/// at write time from the same value the node rows decompose from, so a point
+/// read is one statement and one TOAST detoast rather than a node-subtree
+/// re-aggregation. `NULL` is a logically deleted version (RM common master06
+/// §Logical Deletion).
 macro_rules! version_select {
     ($tail:literal) => {
         concat!(
@@ -169,7 +168,7 @@ macro_rules! version_select {
     };
 }
 
-/// [`version_select!`] — with the body column already text (#2913), the
+/// [`version_select!`] — with the body column already text, the
 /// raw-read list for the JSON-accept passthrough ([`read_current_raw`] /
 /// [`read_version_raw`]) is the same column list; the macro pair survives so
 /// the two intents keep their own names.
@@ -211,7 +210,7 @@ fn stored_version(vo_id: VoId, row: &PgRow) -> Result<StoredVersion, StorageErro
 }
 
 /// [`stored_version`] for a raw-read row: the body text arrives as the
-/// stored canonical bytes (#2913), kept verbatim in
+/// stored canonical bytes, kept verbatim in
 /// [`StoredVersion::canonical_text`] with `canonical = Value::Null` — the
 /// JSON-accept passthrough source (the caller parses the text wherever a
 /// typed value is still needed).
@@ -570,24 +569,17 @@ pub async fn read_versions_by_tree(
 ///
 /// `None` if the object had no trunk version then.
 ///
-/// NOTE: the trunk restriction is deliberate.
-/// `VERSIONED_OBJECT.version_at_time (a_time): VERSION[1]` returns exactly ONE
-/// version (`UML/classes/org.openehr.rm.common.versioned_object.adoc`
-/// §Functions), yet at any instant a container may have several valid tips (the
-/// trunk tip plus one per open branch), so an unrestricted as-of read has no
-/// single answer; the trunk is the lineage that makes it unique, and the class
-/// reads the trunk alone elsewhere too (`latest_trunk_version`,
-/// `trunk_lifecycle_state`).
+/// NOTE: `VERSIONED_OBJECT.version_at_time (a_time): VERSION[1]` returns exactly
+/// one version (`UML/classes/org.openehr.rm.common.versioned_object.adoc`
+/// §Functions), while a container may hold several valid tips at an instant, so
+/// the read is restricted to the trunk, the lineage that makes the answer
+/// unique.
 ///
-/// A container holding branches but NO trunk version — the one shape this
-/// returns `None` for that a caller might not expect — is a state RM common
+/// A container holding branches but no trunk version is a state RM common
 /// `master06-change_control_package.adoc` §Copying §Subsequent Local
-/// Modifications rules out: its second systematic rule is that "branch versions
-/// from the original systems that are copied to another system cannot be copied
-/// without their corresponding preceding versions on the same branch (if any)
-/// and trunk versions also being copied", and a locally authored branch forks
-/// from a version already held. So every branch in a well-formed container has
-/// its trunk ancestry beside it.
+/// Modifications rules out, branch versions never being copied without their
+/// trunk versions, so every branch in a well-formed container has its trunk
+/// ancestry beside it.
 ///
 /// # Errors
 /// Returns [`StorageError`] on a driver/reassembly failure.
@@ -703,7 +695,7 @@ pub async fn read_current_directory(
 /// The stored canonical body BYTES of one version, across both storage tiers
 /// (`vo_version_all`), parsed back to a value with the stored key order kept.
 ///
-/// This is the dump/export source (#2913): the archived payload carries the
+/// This is the dump/export source: the archived payload carries the
 /// codec's own field order because it IS the committed bytes — a node-row
 /// reassembly would surface the `node.data` fragments' jsonb key order
 /// instead. `Value::Null` for a deleted version or an absent row.

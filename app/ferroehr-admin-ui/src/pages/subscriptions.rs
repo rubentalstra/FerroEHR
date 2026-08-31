@@ -15,15 +15,6 @@
 //! is the queue key), so the edit card shows it and never offers to change it,
 //! and the update REPLACES the whole predicate set — which is why the form
 //! always submits all four, seeded from the row it opened on.
-//!
-//! Discipline (rules §0/§1/§4/§6/§8/§9): every `#[server]` fn guards the
-//! session first and keeps the CDR credential server-side; the view is composed
-//! from `.into_any()`-erased section locals; the read is a [`Resource`] whose
-//! `Result` resolves INSIDE the `<Transition>` (an SSR'd `ErrorBoundary`
-//! fallback mismatches at hydration in leptos 0.8); each mutation is an
-//! [`Action`] that toasts BOTH outcomes and keeps the CDR's own diagnostic
-//! inline beside the failure toast; the table is the shared [`paged_table`]
-//! with its explicit `<tbody>`, whose page state lives in the URL.
 
 use leptos::component;
 use leptos::prelude::*;
@@ -52,8 +43,8 @@ use crate::subscriptions::{
 type Listing = Resource<Result<Option<Vec<SubscriptionRow>>, AdminUiError>>;
 
 /// The create action: the name it was dispatched with, paired with the CDR's
-/// answer, so both toasts name the exact subscription (rules §6 — the action's
-/// value IS the mutation report).
+/// answer, so both toasts name the exact subscription (the action's value IS
+/// the mutation report).
 type CreateAction =
     Action<(String, SubscriptionPredicates), (String, Result<SubscriptionRow, AdminUiError>)>;
 
@@ -105,7 +96,7 @@ impl Draft {
 
     /// Fill the draft from a stored row (the Edit click seeds from the row's
     /// OWN values — a user event, so the write happens where it arrives and no
-    /// Effect reads a resource to fill a form; rules §2).
+    /// Effect reads a resource to fill a form).
     fn fill_from(self, row: &SubscriptionRow) {
         self.kind.set(row.kind.clone());
         self.change_type.set(row.change_type.clone());
@@ -170,7 +161,7 @@ impl Editor {
 pub fn SubscriptionsPage() -> impl IntoView {
     let toaster = thaw::ToasterInjection::expect_context();
     // The table's page window, read from the URL in SETUP (never inside the
-    // suspense that fetches the rows — rules §4).
+    // suspense that fetches the rows).
     let paging = paging_from_url();
     let editor = Editor {
         target: RwSignal::new(None),
@@ -184,7 +175,7 @@ pub fn SubscriptionsPage() -> impl IntoView {
 
     // Each mutation clears its own form in its OWN async continuation, never
     // from an Effect reading the action's value: a dispatch is the user event,
-    // so the answer is handled where it arrives (rules §2).
+    // so the answer is handled where it arrives.
     let create: CreateAction = Action::new(move |draft: &(String, SubscriptionPredicates)| {
         let (name, predicates) = draft.clone();
         async move {
@@ -256,9 +247,8 @@ pub fn SubscriptionsPage() -> impl IntoView {
 /// Wire the screen's three mutations to their success/failure toasts.
 ///
 /// Every mutation toasts on BOTH outcomes (the console's mutation-feedback
-/// rule — crate `CLAUDE.md`); the CDR's diagnostic ALSO stays inline beside
-/// each form, because a `400`/`409` on a subscription write names the exact
-/// field or conflict.
+/// rule); the CDR's diagnostic ALSO stays inline beside each form, because
+/// a `400`/`409` on a subscription write names the exact field or conflict.
 fn mutation_toasts(
     toaster: thaw::ToasterInjection,
     create: CreateAction,
@@ -301,7 +291,7 @@ fn write_failure(name: &str, error: &AdminUiError) -> String {
 /// form is empty on the first paint, so the control is inert before hydration —
 /// with the live state on `prop:disabled`: an attribute sets the INITIAL state
 /// and only a property carries the live one, so an attribute binding alone can
-/// leave a control stuck at whatever was serialized (rules §2).
+/// leave a control stuck at whatever was serialized.
 fn create_card(name: RwSignal<String>, draft: Draft, create: CreateAction) -> AnyView {
     let unusable = Signal::derive(move || !name_is_valid(&name.read()));
     let failure = failure_bar(Signal::derive(move || {
@@ -347,8 +337,8 @@ fn create_card(name: RwSignal<String>, draft: Draft, create: CreateAction) -> An
 ///
 /// Rendered ONCE outside the table, so a list refetch never re-creates it, and
 /// closed on both passes of the first render (the editor signal starts empty on
-/// server and client alike — rules §8). The name is shown and never editable:
-/// the CDR treats it as the queue key and ignores an echoed one.
+/// server and client alike). The name is shown and never editable: the CDR
+/// treats it as the queue key and ignores an echoed one.
 fn edit_card(editor: Editor, update: UpdateAction) -> AnyView {
     let failure = failure_bar(Signal::derive(move || {
         update.value().get().and_then(|(_, outcome)| outcome.err())
@@ -439,8 +429,8 @@ fn predicate_fields(form: &'static str, draft: Draft) -> AnyView {
 ///
 /// `initial` is the value the server pass renders as the `checked` ATTRIBUTE,
 /// which must match what the signal holds on the first render of both passes;
-/// the live state rides `prop:checked` (rules §2 — an attribute sets the
-/// initial state, a property carries the live one).
+/// the live state rides `prop:checked` (an attribute sets the initial state,
+/// a property carries the live one).
 fn enabled_toggle(id: &'static str, value: RwSignal<bool>, initial: bool) -> AnyView {
     view! {
         <label class="flex items-center gap-2 py-1.5 text-sm font-medium text-ink" r#for=id>
@@ -459,7 +449,7 @@ fn enabled_toggle(id: &'static str, value: RwSignal<bool>, initial: bool) -> Any
 }
 
 /// The listing table: the read under `<Transition>` (keep the current rows
-/// visible while a refetch runs — rules §6), resolving its `Result` inside the
+/// visible while a refetch runs), resolving its `Result` inside the
 /// transition, then the paged rows.
 fn listing_table(
     listing: Listing,
@@ -490,10 +480,9 @@ fn listing_table(
 /// The group sits under `/admin`, so the CDR's coarse RBAC classes every call
 /// here as admin work: a session without the role is answered `403`, and
 /// "forbidden" alone tells the reader nothing about what to do next. A `401` —
-/// the credential itself no longer accepted — lands here too, with its own next
-/// action. Capability
-/// is not authorization — the screen renders because the surface EXISTS, and
-/// this is where the per-request refusal lands.
+/// the credential itself not accepted — lands here too, with its own next
+/// action. Capability is not authorization: the screen renders because the
+/// surface EXISTS, and this is where the per-request refusal lands.
 fn read_error(error: &AdminUiError, object: &str) -> AnyView {
     match error {
         AdminUiError::CdrUnauthorized(_) | AdminUiError::Forbidden(_) => alert_note(
@@ -538,9 +527,8 @@ fn empty_listing() -> AnyView {
 /// Render the loaded rows: the paged table plus its footer.
 ///
 /// The window comes from the URL, so turning the page re-renders the rows
-/// without re-running the suspense that fetched them (rules §9), and the
-/// `<For>` key is the CDR id — stable and data-derived, never an index
-/// (rules §4).
+/// without re-running the suspense that fetched them, and the `<For>` key
+/// is the CDR id — stable and data-derived, never an index.
 fn rows_view(
     rows: Vec<SubscriptionRow>,
     paging: TablePaging,

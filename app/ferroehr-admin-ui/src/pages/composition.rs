@@ -10,25 +10,19 @@
 //! container + selected-VERSION envelope card, and the two write paths (commit
 //! a new version, logically delete the latest one). The document resource is
 //! keyed on `(version, format)` so either switch refetches, under a
-//! `<Transition>` (old document stays visible — rules §6).
+//! `<Transition>`.
 //!
-//! One reader per claim (crate `CLAUDE.md`): the document CONTENT comes from
-//! the COMPOSITION resource (the only one that negotiates the simplified
-//! formats), the commit history from the revision history, and the VERSION's
-//! own envelope facts — lifecycle state, preceding version, contribution,
-//! signature — from the `VERSIONED_COMPOSITION` version read. No fact is read
-//! twice from two endpoints.
+//! One reader per claim: the document CONTENT comes from the COMPOSITION
+//! resource (the only one that negotiates the simplified formats), the commit
+//! history from the revision history, and the VERSION's own envelope facts from
+//! the `VERSIONED_COMPOSITION` version read.
 //!
-//! No openEHR spec governs an admin UI — our own design / product extension.
-//! The wire it reads IS spec-bound: `Accept` negotiation follows the ITS-REST
-//! Simplified Formats spec
-//! (`docs/specs/openehr/ITS-REST/docs/simplified_formats/`); a `406` (a
-//! representation the CDR declines) surfaces the CDR diagnostic through the
-//! normal error path. Path segments are percent-encoded server-side.
-//!
-//! Every co-located `#[server]` fn guards with
-//! [`require_session`](crate::session::require_session) first (rules §0), and
-//! the CDR credential never reaches client-visible state.
+//! No openEHR spec governs an admin UI — our own design; the wire it reads is
+//! spec-bound (`Accept` negotiation per
+//! `docs/specs/openehr/ITS-REST/docs/simplified_formats/`). Every co-located
+//! `#[server]` fn guards with
+//! [`require_session`](crate::session::require_session) first, and the CDR
+//! credential never reaches client-visible state.
 
 #![allow(
     clippy::disallowed_types,
@@ -99,13 +93,11 @@ pub async fn fetch_versions(
 /// versioned-object id (the latest version) or a full `OBJECT_VERSION_ID` (that
 /// exact version).
 ///
-/// The `204` branch is `composition_get`'s own declared answer — "`204 No
-/// Content` is returned when the resource identified by the request parameters
-/// (at specified `version_at_time`) time has been deleted"
+/// The `204` branch is `composition_get`'s own declared answer for a version
+/// deleted at the specified time
 /// (`docs/specs/openehr/ITS-REST/specifications/responses/204_deleted_at_time.yaml`,
-/// referenced from `operations/composition_get.yaml`) — so it is a rendered
-/// absence, not a failure: the pane says the version is deleted and the history
-/// beside it stays readable.
+/// referenced from `operations/composition_get.yaml`), so it is a rendered
+/// absence rather than a failure.
 ///
 /// # Errors
 /// [`AdminUiError::Unauthenticated`] without a console session; CDR transport
@@ -267,23 +259,17 @@ pub async fn update_composition(
 /// Logically delete a COMPOSITION
 /// (`DELETE /ehr/{ehr_id}/composition/{version_uid}`).
 ///
-/// `version_uid` MUST be a full `OBJECT_VERSION_ID`: the spec requires the path
-/// id to be "in a form of an OBJECT_VERSION_ID identifier taken from the last
-/// (most recent) VERSION.uid.value, representing the `preceding_version_uid` to
-/// be deleted"
-/// (`docs/specs/openehr/ITS-REST/specifications/operations/composition_delete.yaml`),
-/// so a bare versioned-object id is rejected here rather than sent.
-///
-/// No `If-Match` is sent: the operation declares none, because the path IS the
-/// precondition (`operations/composition_delete.yaml` lists only the two path
-/// parameters). A header carrying the same uid the path already names can never
-/// evaluate to false, so it would protect nothing; latest-ness is enforced by
-/// the operation's own `409`, "supplied `uid_based_id` doesn't match the latest
-/// version". The success answer is `204`, and an already-deleted version is
-/// `400`.
+/// `version_uid` MUST be a full `OBJECT_VERSION_ID` — the path id is "in a form
+/// of an OBJECT_VERSION_ID identifier taken from the last (most recent)
+/// VERSION.uid.value, representing the `preceding_version_uid` to be deleted"
+/// (`docs/specs/openehr/ITS-REST/specifications/operations/composition_delete.yaml`)
+/// — so a bare versioned-object id is rejected here rather than sent. No
+/// `If-Match` is sent: the operation declares none, and latest-ness is enforced
+/// by its own `409`, "supplied `uid_based_id` doesn't match the latest version".
+/// The success answer is `204`; an already-deleted version is `400`.
 ///
 /// This is the openEHR LOGICAL delete: a new deleted-lifecycle version is
-/// committed and the history stays readable — not the admin physical delete.
+/// committed and the history stays readable.
 ///
 /// # Errors
 /// [`AdminUiError::Unauthenticated`] without a console session;
@@ -319,8 +305,7 @@ pub async fn delete_composition(
 }
 
 /// The `VERSIONED_COMPOSITION` container plus the selected VERSION's envelope
-/// facts, flattened for the versioned-object card. All fields fixed-size-safe
-/// (rules §1).
+/// facts, flattened for the versioned-object card.
 ///
 /// The attributes are the RM classes' own (files under
 /// `docs/specs/openehr/RM/docs/UML/classes/`): `VERSIONED_OBJECT._uid_`,
@@ -507,12 +492,11 @@ fn json_str(value: &Value, path: &[&str]) -> String {
 /// tab's rows link straight to the rendered clinical reading.
 ///
 /// Read UNTRACKED at setup: the pane's own tabs own the mode from then on, and
-/// an effect chasing the address bar would be exactly the signal-writes-signal
-/// shape rules §2 forbids. Untracked is sound because every way of arriving
-/// with a `?view=` is a fresh render of this route — a pasted URL is a document
-/// load, and an in-app link comes from a different path. Anything that adds an
-/// in-app link toggling `?view=` on THIS path must make the pane's mode
-/// reactive instead (the `/ehrs?find=` precedent).
+/// an effect chasing the address bar would be the signal-writes-signal shape
+/// the reactivity rules forbid. Untracked is sound because every way of
+/// arriving with a `?view=` is a fresh render of this route. Anything that adds
+/// an in-app link toggling `?view=` on THIS path must make the pane's mode
+/// reactive instead.
 fn pane_view_from_url() -> PaneView {
     leptos_router::hooks::use_query_map()
         .with_untracked(|q| q.get("view"))
@@ -523,10 +507,8 @@ fn pane_view_from_url() -> PaneView {
 
 /// Toasts the commit's outcome.
 ///
-/// Both outcomes toast (an outside-world side-effect — rules §2; the console's
-/// mutation-feedback rule — crate CLAUDE.md); the resources refetch via
-/// `update.version()` in their own sources, and the CDR's diagnostic ALSO
-/// stays inline in the editor, next to the edited body.
+/// Both outcomes toast; the resources refetch via `update.version()` in their
+/// own sources, and the CDR's diagnostic also stays inline in the editor.
 fn wire_commit_toast<I: Send + Sync + 'static>(
     toaster: thaw::ToasterInjection,
     update: Action<I, Result<String, AdminUiError>>,
@@ -554,8 +536,8 @@ fn wire_commit_toast<I: Send + Sync + 'static>(
 ///
 /// A success returns to the EHR's compositions tab, whose list then reloads
 /// with the deleted composition gone. Navigation is an outside-world
-/// side-effect, so an Effect is its correct home (rules §2); it never runs on
-/// the server.
+/// side-effect, so an `Effect` is its correct home; it never runs on the
+/// server.
 fn wire_delete_outcome<I: Send + Sync + 'static>(
     toaster: thaw::ToasterInjection,
     delete: Action<I, Result<(), AdminUiError>>,
@@ -570,8 +552,7 @@ fn wire_delete_outcome<I: Send + Sync + 'static>(
                 "The composition was logically deleted — its version history stays readable.",
             );
             // The route param is percent-encoded through the shared href
-            // builder — never interpolated raw into a path (owner rule: all
-            // percent-coding goes through `urlencoding`).
+            // builder — all percent-coding goes through `urlencoding`.
             navigate(
                 &format!(
                     "{}?tab=compositions",
@@ -610,12 +591,10 @@ pub fn CompositionPage() -> impl IntoView {
     // value is a specific OBJECT_VERSION_ID.
     let selected_version = RwSignal::new(String::new());
 
-    // The version_at_time picker: a `datetime-local` value resolves (server-side)
+    // The version_at_time picker: a `datetime-local` value resolves server-side
     // to the VERSION extant at that instant; on success its OBJECT_VERSION_ID
-    // becomes the shared `selected_version` and the document pane refetches
-    // through the existing resource keys. A `404` (no version at that time)
-    // stays an inline note in the toolbar (resolved from the action value in the
-    // view — rules §4), never an error bar.
+    // becomes the shared `selected_version` and the document pane refetches. A
+    // `404` (no version at that time) stays an inline note in the toolbar.
     let at_time_input = RwSignal::new(String::new());
     let version_at_time = Action::new(
         move |(ehr_id, versioned_object_uid, at_time): &(String, String, String)| {
@@ -624,8 +603,8 @@ pub fn CompositionPage() -> impl IntoView {
             let at_time = at_time.clone();
             async move {
                 let resolved = fetch_version_at_time(ehr_id, versioned_object_uid, at_time).await;
-                // NOTE: the write rides the dispatched event's own continuation, so
-                // it is an event write rather than an Effect write (rules §2).
+                // The write rides the dispatched event's own continuation: an
+                // event write, not an Effect write.
                 if let Ok(version) = &resolved {
                     selected_version.set(version.clone());
                 }
@@ -634,9 +613,8 @@ pub fn CompositionPage() -> impl IntoView {
         },
     );
 
-    // The "Edit as new version" affordance state and its commit action.
-    // Created before the resources so its `version()` can trigger their
-    // refetch after a successful commit (rules §6 — never fetch-in-effect).
+    // The "Edit as new version" affordance state and its commit action, created
+    // before the resources so its `version()` can trigger their refetch.
     let edit_open = RwSignal::new(false);
     let editor_body = RwSignal::new(String::new());
     let update = Action::new(
@@ -656,9 +634,8 @@ pub fn CompositionPage() -> impl IntoView {
         },
     );
 
-    // The logical-delete action + its confirmation state. Created before the
-    // resources for the same reason as `update`: its version() is a refetch
-    // trigger, so a delete that keeps the screen mounted still re-reads.
+    // The logical-delete action + its confirmation state, created before the
+    // resources so its `version()` is a refetch trigger.
     let confirming_delete = RwSignal::new(false);
     let delete = Action::new(|(ehr_id, version_uid): &(String, String)| {
         let ehr_id = ehr_id.clone();
@@ -699,10 +676,9 @@ pub fn CompositionPage() -> impl IntoView {
         },
     );
 
-    // Both outcomes toast (an outside-world side-effect — rules §2; the
-    // console's mutation-feedback rule — crate CLAUDE.md); the resources
-    // refetch via `update.version()` in their sources above, and the CDR's
-    // diagnostic ALSO stays inline in the editor, next to the edited body.
+    // Both outcomes toast; the resources refetch via `update.version()` in
+    // their sources above, and the CDR's diagnostic also stays inline in the
+    // editor, next to the edited body.
     let toaster = thaw::ToasterInjection::expect_context();
     wire_commit_toast(toaster, update);
     wire_delete_outcome(toaster, delete, ehr_id);
@@ -782,7 +758,7 @@ pub fn CompositionPage() -> impl IntoView {
 /// openEHR client has, unlike the physical EHR delete on the EHR-detail screen.
 /// The version it deletes is always the newest one the revision history reports
 /// (the `preceding_version_uid` the spec requires in the path), never the
-/// version the selector happens to be showing — a muted hint says so.
+/// version the selector happens to be showing.
 fn delete_section(
     ehr_id: Signal<String>,
     versions: Resource<Result<Vec<VersionEntry>, AdminUiError>>,
@@ -790,11 +766,9 @@ fn delete_section(
     delete: Action<(String, String), Result<(), AdminUiError>>,
 ) -> AnyView {
     // Reading a resource in an EVENT HANDLER is untracked — it takes the value
-    // already loaded for the version selector (the same pattern the editor's
-    // If-Match uses). Deliberately NOT read into the dialog copy: a resource
-    // read in a rendered signal would differ between the server pass and
-    // hydration (rules §4/§8), so the copy names the object structurally
-    // instead — this screen IS that composition, and its header carries the id.
+    // already loaded for the version selector. Deliberately not read into the
+    // dialog copy: a resource read in a rendered signal would differ between the
+    // server pass and hydration, so the copy names the object structurally.
     let latest = move || {
         versions
             .get()
@@ -843,12 +817,11 @@ fn delete_section(
 /// facts read directly from the VERSION resource — lifecycle state, preceding
 /// version, contribution, whether it is signed, and whether it still carries
 /// data (a logically deleted version does not).
-///
-/// A pure read under a `<Transition>` (the previous version's facts stay
-/// visible while another version loads — rules §6), resolving its `Result`
-/// INSIDE the transition: a failure renders inline where the data would be (the
-/// console's feedback rule), never through an `<ErrorBoundary>`, whose SSR'd
-/// fallback mismatches at hydration in leptos 0.8 (rules §4).
+/// A pure read under a `<Transition>` so the previous version's facts stay
+/// visible while another version loads, resolving its `Result` INSIDE the
+/// transition: a failure renders inline where the data would be, never through
+/// an `<ErrorBoundary>`, whose SSR'd fallback mismatches at hydration in
+/// leptos 0.8.
 fn versioned_section(
     versioned: Resource<Result<VersionedCompositionDetails, AdminUiError>>,
 ) -> AnyView {
@@ -929,12 +902,11 @@ fn versioned_row(label: &'static str, hook: &'static str, value: String) -> AnyV
 
 /// The "Edit as new version" affordance: a toggle button opening a
 /// prefilled-from-the-current-document editor that PUTs a new version. Editing
-/// is offered only when the current format is canonical JSON (the other
-/// formats show a switch hint). The `If-Match` always targets the NEWEST
-/// version (a muted hint says so), never the version selected in the dropdown —
-/// the update `commits on top of the latest version`. Structure is constant
-/// (visibility toggled with `class:hidden`) so server and client views match
-/// (rules §8).
+/// is offered only when the current format is canonical JSON (the other formats
+/// show a switch hint). The `If-Match` always targets the NEWEST version (a
+/// muted hint says so), never the version selected in the dropdown. Structure
+/// is constant (visibility toggled with `class:hidden`) so server and client
+/// views match.
 #[expect(
     clippy::too_many_arguments,
     reason = "the section wires several page-level signals + two resources"
@@ -1070,7 +1042,7 @@ fn toolbar_section(
                     Ok(entries) => version_select(entries, selected_version),
                     Err(_) => {
                         // Resolve inside the Suspense: an SSR'd ErrorBoundary fallback
-                        // mismatches at hydration in leptos 0.8 (E2E console gate).
+                        // mismatches at hydration in leptos 0.8.
                         view! { <span class="text-xs text-danger">"versions unavailable"</span> }
                             .into_any()
                     }
@@ -1088,11 +1060,9 @@ fn toolbar_section(
         }
     };
     // A 404 (no version at that time) is a neutral note; any other failure
-    // renders through the normal inline-error path. Deliberately NOT an
-    // EmptyState: this is the answer to the time-travel control standing right
-    // beside it, not a data region that came back empty — nothing was replaced
-    // by a void, and the kit's dashed box would read as a broken panel wedged
-    // into a toolbar row.
+    // renders through the normal inline-error path. Deliberately not an
+    // `EmptyState`: this answers the time-travel control beside it, not a data
+    // region that came back empty.
     let note = move || match version_at_time.value().get() {
         Some(Err(ref e)) if e.status_code() == Some(http::StatusCode::NOT_FOUND) => view! {
             <p class="mt-2 text-sm text-ink-muted">
@@ -1144,7 +1114,7 @@ fn toolbar_section(
 }
 
 /// The version `<select>`: a "Latest" option (empty value) plus one option per
-/// version. Driven by `prop:value` + `on:change` (rules §5 — no JS).
+/// version, driven by `prop:value` + `on:change`.
 fn version_select(entries: Vec<VersionEntry>, selected: RwSignal<String>) -> AnyView {
     let mut options = vec![view! { <option value="">"Latest"</option> }.into_any()];
     options.extend(entries.into_iter().map(|entry| {
@@ -1191,7 +1161,7 @@ fn document_section(
                     Ok(Some(body)) => {
                         let body_sig = RwSignal::new(body);
                         // Resolve inside the Transition: an SSR'd ErrorBoundary fallback
-                        // mismatches at hydration in leptos 0.8 (E2E console gate).
+                        // mismatches at hydration in leptos 0.8.
                         view! { <DocumentPane body=body_sig initial_view=initial_view /> }
                             .into_any()
                     }
@@ -1225,8 +1195,7 @@ fn deleted_pane() -> AnyView {
 /// The version timeline strip above the audit card: one chip per version,
 /// oldest→newest left-to-right, the selected chip accented and the newest
 /// tagged "current". Clicking a chip sets the shared selection (the newest →
-/// empty string = Latest, matching the dropdown). Resolved inside the existing
-/// suspense pattern (rules §4 — no resource is created here).
+/// empty string = Latest, matching the dropdown).
 fn timeline_section(
     versions: Resource<Result<Vec<VersionEntry>, AdminUiError>>,
     selected: RwSignal<String>,
@@ -1241,7 +1210,7 @@ fn timeline_section(
                         Ok(entries) => {
                             let stored = StoredValue::new(entries);
                             // Resolve inside the Suspense: an SSR'd ErrorBoundary fallback
-                            // mismatches at hydration in leptos 0.8 (E2E console gate). A
+                            // mismatches at hydration in leptos 0.8. A
                             // failed history renders nothing here (the document/toolbar
                             // sections surface the error).
                             view! {
@@ -1339,7 +1308,7 @@ fn audit_section(
                         Ok(entries) => {
                             let stored = StoredValue::new(entries);
                             // Resolve inside the Suspense: an SSR'd ErrorBoundary fallback
-                            // mismatches at hydration in leptos 0.8 (E2E console gate). A
+                            // mismatches at hydration in leptos 0.8. A
                             // failed history renders nothing here (the document/toolbar
                             // sections surface the error).
                             view! {

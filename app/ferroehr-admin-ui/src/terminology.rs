@@ -21,8 +21,7 @@
 //!
 //! Every `#[server]` fn guards with
 //! [`require_session`](crate::session::require_session) first (a server fn is a
-//! publicly reachable HTTP endpoint — rules §0) and keeps the CDR credential
-//! server-side.
+//! publicly reachable HTTP endpoint) and keeps the CDR credential server-side.
 
 #![expect(
     clippy::disallowed_types,
@@ -113,7 +112,7 @@ pub struct TerminologyExtractView {
     /// `terminology_version` — empty when the CDR published none.
     pub version: String,
     /// The extract's terms, code-sorted so both render passes agree
-    /// (hydration determinism — rules §8).
+    /// (hydration determinism).
     pub terms: Vec<TermRow>,
     /// The extract's relationships, in the order the CDR listed them.
     pub relationships: Vec<TermRelationshipRow>,
@@ -232,8 +231,7 @@ fn string_list(value: Option<&serde_json::Value>) -> Vec<String> {
 /// terminology/code/value set not existing, are all that one status.
 ///
 /// Guards the console session first: the server fns below are publicly
-/// reachable endpoints (rules §0), and this is the one place their CDR call is
-/// made.
+/// reachable endpoints, and this is the one place their CDR call is made.
 #[cfg(feature = "ssr")]
 async fn terminology_get(path: &str) -> Result<Option<serde_json::Value>, AdminUiError> {
     let session = crate::session::require_session().await?;

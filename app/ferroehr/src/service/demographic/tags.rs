@@ -224,19 +224,17 @@ impl FerroEhrService {
 }
 
 /// One stored demographic tag row as the RM `ITEM_TAG` it is
-/// (`item_tag.adoc`): `key`, optional `value`/`target_path`, `target` as a bare
-/// `UID_BASED_ID` — a `HIER_OBJECT_ID` for a container target, an
+/// (`item_tag.adoc`): `key`, optional `value` and `target_path`, and `target` as
+/// a bare `UID_BASED_ID`, a `HIER_OBJECT_ID` for a container target and an
 /// `OBJECT_VERSION_ID` for a VERSION target ("may be a `VERSIONED_OBJECT<T>` or
-/// a `VERSION<T>`") — exactly the EHR sibling's shape (the settled RM-target
-/// law; the released OAS `ItemTag` schema's `OBJECT_REF` wrapper loses the
-/// conflict to the RM).
+/// a `VERSION<T>`"). This is the EHR sibling's shape; the released OAS
+/// `ItemTag` schema's `OBJECT_REF` wrapper loses the conflict to the RM.
 ///
-/// NOTE: `owner_id` follows the released examples' shape — an `OBJECT_REF`
-/// `{namespace: local, type: SYSTEM}` whose `id` carries the server's
-/// configured system identifier (every
-/// `schemas/demographic/ItemTagOf<T>.yaml` example; no demographic class
-/// declares a `tags` containment, so the EHR side's `EHR.tags` anchor has no
-/// analogue here — a settled fixed handling).
+/// NOTE: `owner_id` follows the released examples' shape, an `OBJECT_REF`
+/// `{namespace: local, type: SYSTEM}` whose `id` carries the server's configured
+/// system identifier (every `schemas/demographic/ItemTagOf<T>.yaml` example); no
+/// demographic class declares a `tags` containment, so the EHR side's `EHR.tags`
+/// anchor has no analogue here.
 ///
 /// # Errors
 /// [`VersionIdError`] when the configured `system_id` or the stored tag target

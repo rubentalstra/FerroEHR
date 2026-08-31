@@ -20,10 +20,9 @@
 //! session the guard redirects to `/login`.
 //!
 //! The chrome is styled with STATIC Tailwind classes (the design-system
-//! tokens), never with thaw's runtime-injected widget styles: thaw CSS
-//! attaches at hydration, so layout-critical chrome built on it collapses
-//! into unstyled text on the pre-hydration paint (seen live in the
-//! 2026-07-18 captures). thaw stays for genuinely interactive widgets
+//! tokens), never with thaw's runtime-injected widget styles: thaw CSS attaches
+//! at hydration, so layout-critical chrome built on it collapses into unstyled
+//! text on the pre-hydration paint. thaw stays for genuinely interactive widgets
 //! (the user-menu popover, the scopes drawer, toasts).
 
 #![expect(
@@ -108,10 +107,10 @@ fn apply_dark(theme: RwSignal<thaw::Theme>, dark: bool) {
 /// the full chrome + `<Outlet/>`. The topbar status chip reads a second
 /// resource over `fetch_status`, re-polled every `HEALTH_POLL_MS` via
 /// [`use_interval_fn`] (a no-op on the server; the effect-safe browser timer
-/// pattern). Dark mode is applied through `apply_dark` (the `dark` root
-/// class + the thaw theme together) and persists to `localStorage`; the
-/// persisted choice is re-applied after hydration inside an [`Effect`],
-/// keeping the initial render deterministic (rules §8).
+/// pattern). Dark mode is applied through `apply_dark` (the `dark` root class
+/// + the thaw theme together) and persists to `localStorage`; the persisted
+/// choice is re-applied after hydration inside an [`Effect`], keeping the
+/// initial render deterministic.
 #[expect(
     clippy::must_use_candidate,
     reason = "#[component] rewrites the fn; view!/mount always consumes the value"
@@ -121,9 +120,8 @@ pub fn AppShell() -> impl IntoView {
     let session = Resource::new(|| (), |()| current_session());
     let status = Resource::new(|| (), |()| fetch_status());
     // The four surface probes are created HERE, in component setup — never
-    // inside a Suspend closure, which re-runs and would re-create the resource
-    // (rules §4). They gate the operations, tenants, FHIR and subscriptions nav
-    // entries.
+    // inside a Suspend closure, which re-runs and would re-create the resource.
+    // They gate the operations, tenants, FHIR and subscriptions nav entries.
     let management = crate::management::management_gate();
     let tenants = crate::tenants::tenant_gate();
     let fhir = crate::fhir::fhir_gate();
@@ -135,8 +133,8 @@ pub fn AppShell() -> impl IntoView {
     let logout_action = ServerAction::<Logout>::new();
 
     // Browser-only: re-apply the persisted theme after hydration. Reads the
-    // outside world (localStorage), so an Effect is the correct home (rules
-    // §2/§8); it never runs on the server.
+    // outside world (localStorage), so an Effect is the correct home; it
+    // never runs on the server.
     Effect::new(move |_| {
         if let Ok(Some(storage)) = window().local_storage()
             && let Ok(Some(pref)) = storage.get_item(THEME_STORAGE_KEY)
@@ -354,8 +352,8 @@ fn nav_divider() -> AnyView {
 
 /// Builds the authenticated chrome (topbar, nav, footer, scopes drawer) around
 /// the routed `<Outlet/>`. Split out of the component body so each section is a
-/// `.into_any()`-erased local (the section-boundary erasure rule, §1) and so
-/// the identity/scopes from the resolved session flow in as owned data.
+/// `.into_any()`-erased local and so the identity/scopes from the resolved
+/// session flow in as owned data.
 #[expect(
     clippy::too_many_arguments,
     reason = "one flat call carrying the shell's shared reactive state; a wrapper struct would not aid clarity"
@@ -388,7 +386,7 @@ fn authed_shell(
 
     // <Transition>, not <Suspense>: the 30 s poll refetches the resource and
     // Transition keeps the previous chip visible during reload instead of
-    // flashing the fallback every poll (leptos-ui.md §6, book async/12).
+    // flashing the fallback every poll (book async/12).
     let status_chip = view! {
         <Transition fallback=|| {
             view! { <span class="text-xs text-ink-faint">"checking…"</span> }

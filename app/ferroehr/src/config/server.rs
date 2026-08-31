@@ -3,9 +3,10 @@
 
 //! REST-adapter configuration types.
 //!
-//! No openEHR spec governs configuration mechanics — our own design. There is **no loader here**: the whole
-//! server configuration is one tree ([`crate::config::FerroEhrConfig`]) loaded
-//! once by the binary. This module owns the REST-adapter's slice of it:
+//! No openEHR spec governs configuration mechanics — our own design. There is no
+//! loader here: the whole server configuration is one tree
+//! ([`crate::config::FerroEhrConfig`]) loaded once by the binary. This module
+//! owns the REST-adapter's slice of it:
 //!
 //! - [`ServerConfig`] — the `[server]` section (the HTTP listener + REST
 //!   surface + the `OPTIONS /` System-Options identity).
@@ -59,17 +60,14 @@ pub struct ServerConfig {
     ///   Versioning. That value is stored per version, so changing this key
     ///   never rewrites identifiers already committed.
     ///
-    /// **Distinct from [`SystemOptionsConfig`] (`[server.identity]`)**: the
-    /// identity block is the *display* identity of the `OPTIONS` System-Options
-    /// manifest (who supplies the software and which profile it claims);
-    /// `system_id` names *which system authored the data*. They are set
-    /// independently. With multi-tenancy on, a resolved tenant's own
-    /// `system_id` takes precedence over this default for that request.
+    /// Distinct from [`SystemOptionsConfig`] (`[server.identity]`), which is the
+    /// display identity of the `OPTIONS` System-Options manifest; `system_id`
+    /// names which system authored the data. With multi-tenancy on, a resolved
+    /// tenant's own `system_id` takes precedence for that request.
     ///
-    /// Defaults to [`crate::service::DEFAULT_SYSTEM_ID`] — the pre-existing
-    /// value, so an unset key is byte-identical to previous behaviour. No
-    /// openEHR spec governs the configuration mechanism — our own design; the
-    /// specs govern only that a system HAS such an identifier.
+    /// Defaults to [`crate::service::DEFAULT_SYSTEM_ID`]. No openEHR spec
+    /// governs the configuration mechanism — our own design; the specs govern
+    /// only that a system has such an identifier.
     pub system_id: String,
     /// The `OPTIONS /` System-Options manifest identity
     /// (`[server.identity]`). Sourced from config so the public identity and advertised profile
@@ -195,33 +193,25 @@ impl ConnectionConfig {
 
 /// `[server.rate_limit]` — the two-tier request-rate ceiling.
 ///
-/// Rate limiting answers a different question from the load shed
-/// ([`ServerConfig::max_in_flight`]), and an operator must be able to tell them
-/// apart from the status alone:
+/// The limiter answers a different question from the load shed
+/// ([`ServerConfig::max_in_flight`]), and the statuses keep them apart: the shed
+/// protects capacity, refusing requests in flight at once with `503` plus
+/// `Retry-After` (RFC 9110 §15.6.4), while the limiter protects fairness,
+/// refusing one caller asking too often over time with `429` plus `Retry-After`
+/// (RFC 6585 §4).
 ///
-/// - the **shed** protects *capacity*: too many requests in flight AT ONCE, from
-///   anyone, and the excess is refused `503` + `Retry-After` (RFC 9110 §15.6.4);
-/// - the **limiter** protects *fairness*: one caller asking too often OVER TIME,
-///   refused `429` + `Retry-After` (RFC 6585 §4, the status the OWASP REST
-///   Security Cheat Sheet names for this control).
+/// The address tier sits outside authentication, so a flood of unauthenticated
+/// requests is refused before it can make the server verify a signature per
+/// request. The principal tier sits inside authentication, keyed on the
+/// authenticated subject, which is the only fair key for a clinical API: a
+/// hospital behind one NAT is a single address.
 ///
-/// Two tiers, because they defend different things. The **address** tier sits
-/// outside authentication, so a flood of unauthenticated requests is refused
-/// before it can make the server verify a signature per request — the limiter
-/// must not itself be the expensive path. The **principal** tier sits inside
-/// authentication, keyed on the authenticated subject, which is the only fair
-/// key for a clinical API: a hospital behind one NAT is a single address, so an
-/// address-keyed clinical limit would throttle a whole site for one busy client.
-///
-/// Both defaults are derived from this implementation's own measured ceiling
-/// rather than chosen: the committed step-load record
-/// (`docs/conformance/ferroehr/stress.json`) is the authority for maximum
-/// sustainable whole-server throughput on the reference SUT. The
-/// principal tier is set at twice that ceiling and the address tier at four times, so
-/// neither can refuse a caller until it is asking for more than the entire
-/// server could serve — below that line, capacity is the shed's job, and above
-/// it the traffic is not a client. A deployment that earns a higher volumetric
-/// class raises both in proportion.
+/// Both defaults derive from the committed step-load record
+/// (`docs/conformance/ferroehr/stress.json`), the authority for maximum
+/// sustainable whole-server throughput on the reference SUT: the principal tier
+/// is twice that ceiling and the address tier four times, so neither refuses a
+/// caller until it asks for more than the entire server could serve. A
+/// deployment that earns a higher volumetric class raises both in proportion.
 ///
 /// No openEHR spec governs request rates — our own design.
 #[derive(Debug, Clone, Copy, Serialize, Deserialize)]
@@ -257,25 +247,22 @@ impl Default for RateLimitConfig {
 
 /// `[server.limits]` — the largest request body each route family accepts.
 ///
-/// Two tiers, because the payloads differ by more than an order of magnitude.
-/// `body_bytes` governs the ordinary clinical surface; `bulk_body_bytes`
-/// governs the routes that accept bulk by design — operational-template
-/// upload, EHR-Extract import, and TDD import. A request over its tier's limit
-/// is refused `413 Payload Too Large`: not in the ITS-REST status table, but
-/// admitted there as an additional, non-conflicting code
-/// (`docs/specs/openehr/ITS-REST/specifications/docs/overview/Requests_and_responses.md`
-/// §HTTP status codes) and the code RFC 9110 §15.5.14 defines for exactly this
-/// refusal. No openEHR spec bounds a request body — our own design.
+/// The payloads differ by more than an order of magnitude, so there are two
+/// tiers: `body_bytes` governs the ordinary clinical surface and
+/// `bulk_body_bytes` the routes that accept bulk by design (operational-template
+/// upload, EHR-Extract import, TDD import). A request over its tier's limit is
+/// refused `413 Payload Too Large`, which the ITS-REST status table does not
+/// list but admits as an additional non-conflicting code (overview
+/// `Requests_and_responses.md` §HTTP status codes) and which RFC 9110 §15.5.14
+/// defines for this refusal. No openEHR spec bounds a request body — our own
+/// design.
 ///
-/// The defaults are sized against measured payloads rather than round numbers.
-/// The largest operational template in the vendored CKM corpus is 5.4 MB
-/// (`congenital-syphilis-case-investigation-form.opt`) and the largest example
+/// The defaults are sized against measured payloads: the largest operational
+/// template in the vendored CKM corpus is 5.4 MB and the largest example
 /// composition 526 KB, so the 16 MiB clinical tier clears the largest real
-/// template roughly threefold. The bulk tier is four times that, for payloads
-/// with no published bound: a whole-EHR extract, or a TDD batch. A deployment
-/// whose compositions embed large `DV_MULTIMEDIA` data — a base64 radiology
-/// image can exceed either tier on its own — raises `body_bytes`; that is a
-/// deliberate operator decision, not a default.
+/// template roughly threefold, and the bulk tier is four times that for payloads
+/// with no published bound. A deployment whose compositions embed large
+/// `DV_MULTIMEDIA` data raises `body_bytes` as a deliberate operator decision.
 #[derive(Debug, Clone, Copy, Serialize, Deserialize)]
 #[serde(default, deny_unknown_fields)]
 pub struct BodyLimits {
@@ -354,21 +341,15 @@ pub struct TlsConfig {
 
 /// The TLS protocol floor for the native listener.
 ///
-/// Defaults to **1.3**, with 1.2 available for compatibility — the OWASP
-/// Transport Layer Security Cheat Sheet's own position: "web applications must
-/// default to TLS 1.3 and may support TLS 1.2 for compatibility."
+/// Defaults to 1.3, with 1.2 available for compatibility, the OWASP Transport
+/// Layer Security Cheat Sheet's own position: "web applications must default to
+/// TLS 1.3 and may support TLS 1.2 for compatibility."
 ///
-/// 1.0 and 1.1 are not representable here at all, which is deliberate: they are
-/// formally deprecated by RFC 8996 (March 2021), forbidden by PCI DSS,
-/// disallowed by NIST SP 800-52 Rev. 2, and removed from every mainstream
-/// browser. A configuration key that could select them would be a footgun with
-/// no legitimate use, so the type has no variant for them and the rustls
-/// provider offers none either. `SSLv2` and `SSLv3` likewise do not exist in
-/// `rustls`.
-///
-/// Choose `V1_2` only when a real client requires it — an older integration
-/// engine or a pinned Java runtime. It is a deliberate widening, and naming it
-/// in configuration is what makes it visible.
+/// 1.0 and 1.1 are not representable: RFC 8996 deprecates them, PCI DSS forbids
+/// them and NIST SP 800-52 Rev. 2 disallows them, so the type has no variant for
+/// them and the rustls provider offers none either. Choose `V1_2` only when a
+/// real client requires it, such as an older integration engine or a pinned Java
+/// runtime.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, Default)]
 pub enum TlsVersion {
     /// TLS 1.3 only (RFC 8446) — the default.

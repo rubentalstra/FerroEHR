@@ -43,15 +43,12 @@ impl FerroEhrService {
     /// object, and an EHR Access object … created and committed in a
     /// Contribution". Shared by `POST /ehr` and `PUT /ehr/{ehr_id}`.
     ///
-    /// `committal` carries the client's `openehr-version` /
-    /// `openehr-audit-details` request-header metadata when the request
-    /// supplied any: EHR creation commits change-controlled content, so the
-    /// ITS-REST merge MUST applies here exactly as it does to a COMPOSITION
-    /// write (overview `Requests_and_responses.md` §"openehr-version and
-    /// openehr-audit-details": the headers MUST be accepted on `PUT`, `POST`
-    /// and `DELETE`, and "whatever is provided it MUST be merged with the
-    /// default VERSION and `VERSION.audit_details` attributes on commit
-    /// runtime"). `None` keeps the server-default attribution.
+    /// `committal` carries the client's `openehr-version` and
+    /// `openehr-audit-details` request-header metadata when the request supplied
+    /// any: EHR creation commits change-controlled content, so the ITS-REST
+    /// merge MUST applies exactly as it does to a COMPOSITION write (overview
+    /// `Requests_and_responses.md` §"openehr-version and openehr-audit-details").
+    /// `None` keeps the server-default attribution.
     ///
     /// # Errors
     /// [`ServiceError::Unprocessable`] when the supplied `EHR_STATUS` is
@@ -188,16 +185,15 @@ impl FerroEhrService {
         Ok(ServiceResponse::new(body, meta))
     }
 
-    /// Assemble the RM `EHR` wire body for a just-created EHR straight from the
-    /// CONTRIBUTION commit results — no storage reads. The status/access
-    /// version identities come from the
-    /// [`Committed`](crate::versioning::change::Committed) rows (`EHR_STATUS` then
-    /// `EHR_ACCESS`, RM ehr master04 §EHR Creation), the status ref carries its
-    /// `OBJECT_VERSION_ID` (the stored per-version `creating_system_id`,
-    /// master06 §Distributed Versioning), and a fresh EHR has no
-    /// `directory`/`folders` (RM ehr master04 §Folders, 0..1). Byte-identical
-    /// to [`Self::ehr_summary`] for a newly created EHR (pinned by a test) —
-    /// both go through [`ehr_object`], so they cannot drift apart.
+    /// Assembles the RM `EHR` wire body for a just-created EHR from the
+    /// CONTRIBUTION commit results, with no storage reads.
+    ///
+    /// The status and access version identities come from the
+    /// [`Committed`](crate::versioning::change::Committed) rows (RM ehr master04
+    /// §EHR Creation), the status ref carries its `OBJECT_VERSION_ID` (master06
+    /// §Distributed Versioning), and a fresh EHR has no `directory` or `folders`
+    /// (RM ehr master04 §Folders, 0..1). Both this and [`Self::ehr_summary`] go
+    /// through [`ehr_object`], so they cannot drift apart.
     ///
     /// # Errors
     /// [`ServiceError::Internal`] when the commit results carry no `EHR_STATUS`
@@ -229,12 +225,10 @@ impl FerroEhrService {
     /// `id.value` + `namespace`). Served from the promoted `ehr.subject_*`
     /// columns (unique per subject — `ehr_subject_uq`).
     ///
-    /// NOTE (`i_ehr_service.adoc` §`get_ehrs_for_subject`): the DB
-    /// constraint narrows the SM `List<EHR_SUMMARY>` to ≤1. CNF
-    /// `create_ehr-two_ehrs_same_patient` expects **409** on a second EHR for
-    /// the same subject, which supports the one-EHR-per-subject rule (RM ehr
-    /// master04 §EHR Status: the subject is 0..1 and identifies the EHR);
-    /// kept, cited.
+    /// NOTE: the DB constraint narrows the SM `List<EHR_SUMMARY>` of
+    /// `i_ehr_service.adoc` §`get_ehrs_for_subject` to at most one, per the
+    /// one-EHR-per-subject rule (RM ehr master04 §EHR Status; CNF
+    /// `create_ehr-two_ehrs_same_patient` expects `409` on a second EHR).
     ///
     /// # Errors
     /// [`ServiceError::NotFound`] when no EHR names the subject;

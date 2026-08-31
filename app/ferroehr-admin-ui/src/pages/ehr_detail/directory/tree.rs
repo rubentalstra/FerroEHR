@@ -10,17 +10,14 @@
 //! Also the shared read-only tree renderer used by the create preview and the
 //! history / time / path panels.
 //!
-//! The working tree is one `RwSignal<serde_json::Value>` seeded from the
-//! loaded FOLDER, then stamped with an ephemeral, client-only `_key` identity
-//! on every folder and every item reference (`super::edit::stamp_keys`);
-//! every mutation goes through the pure [`super::edit`] helpers, and every
-//! rendered datum reads the tree reactively. `<For>` rows and the collapse /
-//! rename / picker UI state are keyed by that stable, data-derived `_key`
-//! (never a positional path or index — rules §4), so a node keeps its own
-//! state and row after a sibling delete shifts indices; the live position is
-//! re-derived from the `_key` for each read and mutation (a folder's path with
-//! `super::edit::find_path_by_key`, an item's index within its folder with
-//! `super::edit::find_item_index`). The `_key` is stripped
+//! The working tree is one `RwSignal<serde_json::Value>` seeded from the loaded
+//! FOLDER, then stamped with an ephemeral, client-only `_key` identity on every
+//! folder and every item reference (`super::edit::stamp_keys`); every mutation
+//! goes through the pure [`super::edit`] helpers. `<For>` rows and the collapse
+//! / rename / picker UI state are keyed by that stable, data-derived `_key`
+//! (never a positional path or index), so a node keeps its own state and row
+//! after a sibling delete shifts indices; the live position is re-derived from
+//! the `_key` for each read and mutation. The `_key` is stripped
 //! (`super::edit::strip_keys`) from every body sent to the CDR and from the
 //! advanced-JSON view — it never leaves the console.
 
@@ -55,7 +52,7 @@ const ICON_BTN: &str = "inline-flex items-center justify-center rounded-control 
 const ICON_BTN_DANGER: &str = "inline-flex items-center justify-center rounded-control p-1 text-ink-muted hover:bg-danger-subtle hover:text-danger focus:outline-none focus:ring-2 focus:ring-danger";
 
 /// Serialize the working tree for the CDR with the ephemeral `_key` identity
-/// stripped (rules §4 contract — console-local identity never leaves the BFF).
+/// stripped (contract — console-local identity never leaves the BFF).
 fn strip_keys_to_string(tree: &Value) -> String {
     let mut stripped = tree.clone();
     strip_keys(&mut stripped);
@@ -67,16 +64,12 @@ fn strip_keys_to_string(tree: &Value) -> String {
 /// `<Transition>`/`Suspend` — and re-seeded (idempotent per loaded version) by
 /// [`seed`] on each Suspend re-run.
 ///
-/// This is the rules §4 disposal contract in signal form. A `Suspend` closure
-/// re-runs on every notification of the resources it awaits (the directory
-/// resource re-notifies right after every write refetch), and each re-run
-/// DISPOSES the previous run's reactive owner. Signals created *inside* the
-/// Suspend therefore die while the already-mounted DOM event handlers and icon
-/// `Signal::derive` views still reference them, so the next interaction panics
-/// ("you tried to access a reactive value … but it has already been disposed",
-/// then "unreachable" — the whole wasm runtime wedges). Held here, above the
-/// Suspend at the tab's owner, every signal outlives every re-run and each
-/// re-render simply re-reads it.
+/// This is the disposal contract in signal form. A `Suspend` closure re-runs on
+/// every notification of the resources it awaits, and each re-run DISPOSES the
+/// previous run's reactive owner. Signals created *inside* the Suspend would die
+/// while the already-mounted DOM event handlers and icon views still reference
+/// them, so the next interaction panics. Held here, above the Suspend at the
+/// tab's owner, every signal outlives every re-run.
 #[derive(Clone, Copy)]
 pub(in crate::pages::ehr_detail::directory) struct EditorState {
     /// The working FOLDER tree (mutated in place; the single source of truth).
@@ -115,7 +108,7 @@ pub(in crate::pages::ehr_detail::directory) struct EditorState {
     /// The picker modal's manual-entry `OBJECT_REF` namespace. The picker
     /// overlay is an always-mounted hidden `<div>`, so its `prop:value`
     /// closures reference these across Suspend re-runs too — they are hoisted
-    /// here for the same disposal reason (rules §4).
+    /// here for the same disposal reason.
     manual_namespace: RwSignal<String>,
     /// The manual-entry reference `type`.
     manual_type: RwSignal<String>,
@@ -124,17 +117,17 @@ pub(in crate::pages::ehr_detail::directory) struct EditorState {
     /// The manual-entry id value.
     manual_id: RwSignal<String>,
     /// Whether the working tree differs from `original` (drives the save bar).
-    /// Created ONCE at construction — never per Suspend run (rules §4).
+    /// Created ONCE at construction — never per Suspend run.
     dirty: Memo<bool>,
     /// Whether a `412` conflict landed on THIS loaded version (drives the
-    /// conflict banner). Created ONCE at construction (rules §4).
+    /// conflict banner). Created ONCE at construction.
     conflicted: Memo<bool>,
 }
 
 impl EditorState {
     /// Create the editor's long-lived state. The `dirty` and `conflicted`
-    /// memos are created here so they, too, outlive every Suspend re-run
-    /// (rules §4); `update` is the directory-update action they observe.
+    /// memos are created here so they, too, outlive every Suspend re-run;
+    /// `update` is the directory-update action they observe.
     pub(in crate::pages::ehr_detail::directory) fn new(
         update: Action<(String, String, String), Result<String, AdminUiError>>,
     ) -> Self {
@@ -173,15 +166,14 @@ impl EditorState {
 }
 
 /// Seed [`EditorState`] from the freshly-loaded directory `state`, ONCE per
-/// loaded version (rules §4 — the state lives above the Suspend, so a Suspend
-/// re-run for the same version must NOT re-parse over the user's edits). On a
-/// new version it parses the body, stamps a fresh ephemeral `_key` on every
-/// folder and item reference (see [`super::edit::stamp_keys`]), and resets the
-/// working tree + pristine baseline (the SAME stamped copy, so `dirty` stays a
-/// plain equality compare), the counter, `version_uid`, collapse/rename state,
-/// the parse error, the advanced-JSON draft (from the stripped new body), and
-/// the conflict baseline; `advanced` is left as the user set it. Every write runs
-/// during a render pass, so plain `.set()`/`.set_value()` is correct.
+/// loaded version — the state lives above the Suspend, so a re-run for the same
+/// version must NOT re-parse over the user's edits. On a new version it parses
+/// the body, stamps a fresh ephemeral `_key` on every folder and item reference
+/// ([`super::edit::stamp_keys`]), and resets the working tree, the pristine
+/// baseline (the SAME stamped copy, so `dirty` stays a plain equality compare),
+/// the counter, `version_uid`, collapse/rename state, the parse error, the
+/// advanced-JSON draft and the conflict baseline; `advanced` is left as the user
+/// set it.
 ///
 /// # Errors
 /// [`AdminUiError::Internal`] if the CDR body is not valid JSON (it always is;
@@ -207,7 +199,7 @@ pub(in crate::pages::ehr_detail::directory) fn seed(
     editor.renaming.set(None);
     editor.json_error.set(None);
     // The advanced-JSON draft shows the STRIPPED tree; the server body already
-    // carries no `_key`, so seeding it directly is correct (rules §4 contract).
+    // carries no `_key`, so seeding it directly is correct.
     editor
         .json_draft
         .set(pretty_body(&state.body, ReprFormat::CanonicalJson));
@@ -220,8 +212,8 @@ pub(in crate::pages::ehr_detail::directory) fn seed(
 
 /// The editor's shared, `Copy` handle threaded through the recursive render:
 /// the working tree plus its UI state and the composition picker. Built from
-/// the long-lived [`EditorState`] fields (rules §4) — the recursive renderers
-/// therefore capture only signals that outlive every Suspend re-run.
+/// the long-lived [`EditorState`] fields — the recursive renderers therefore
+/// capture only signals that outlive every Suspend re-run.
 #[derive(Clone, Copy)]
 struct TreeEditor {
     /// The working FOLDER tree (mutated in place; the single source of truth).
@@ -248,7 +240,7 @@ struct TreeEditor {
     /// The manual-entry id value.
     manual_id: RwSignal<String>,
     /// The composition list for the "add item" picker (created outside the
-    /// Suspend, read here — rules §4).
+    /// Suspend, read here).
     picker: PickerResource,
     /// The ephemeral `_key` of the folder awaiting an item (also opens the
     /// picker).
@@ -259,8 +251,8 @@ struct TreeEditor {
 /// dirty-state save bar (`PUT` with `If-Match`), an advanced raw-JSON mode,
 /// and the composition picker. ALL reactive state lives in the long-lived
 /// [`EditorState`] (seeded by [`seed`] above the Suspend) — this function
-/// creates NO signals of its own (rules §4), so it is safe to re-run on every
-/// directory refetch.
+/// creates NO signals of its own, so it is safe to re-run on every directory
+/// refetch.
 #[expect(
     clippy::too_many_lines,
     reason = "the editor view + save bar + advanced mode + picker assembled as one unit"
@@ -297,7 +289,7 @@ pub(in crate::pages::ehr_detail::directory) fn tree_editor(
     };
 
     // Save the working tree as a new version (PUT + If-Match). The ephemeral
-    // `_key` identity is stripped from the wire body (rules §4 contract).
+    // `_key` identity is stripped from the wire body.
     let on_save = move |_| {
         let body = editor.tree.with(strip_keys_to_string);
         update.dispatch((ehr_id.get(), editor.version_uid.get_untracked(), body));
@@ -457,8 +449,8 @@ pub(in crate::pages::ehr_detail::directory) fn tree_editor(
 /// `_key`). The root key is derived REACTIVELY through a `Memo`: the working
 /// tree is empty (`Null`) until [`seed`] runs, and this whole editor view is
 /// built ONCE — above the directory `Suspend` — so it survives every refetch
-/// (rules §4; the disposal defect otherwise re-creates the per-folder icon
-/// derives on each Suspend re-run). The root's `_key` is stable across seeds
+/// (; the disposal defect otherwise re-creates the per-folder icon derives on
+/// each Suspend re-run). The root's `_key` is stable across seeds
 /// (`stamp_keys` always numbers the root `n0`), so the folder tree is built
 /// exactly once after the first seed and then updated fine-grained (the inner
 /// `<For>`s + reactive reads) — never rebuilt on a plain edit or a re-seed.
@@ -475,23 +467,20 @@ fn tree_view(ed: TreeEditor) -> AnyView {
     .into_any()
 }
 
-/// Render one FOLDER node, identified by its ephemeral `_key` (`node_key`).
-/// Its live positional `path` is re-derived from that `_key` on every reactive
-/// read and mutation ([`find_path_by_key`]) so the row stays correct after a
-/// sibling delete shifts indices; the collapse / rename UI state and the child
-/// folder `<For>` key on `node_key`, and the item `<For>` keys on each item's
-/// own ephemeral `_key` ([`item_node_keys`]) — never a positional path or index
-/// (rules §4).
+/// Render one FOLDER node, identified by its ephemeral `_key` (`node_key`). Its
+/// live positional `path` is re-derived from that `_key` on every reactive read
+/// and mutation ([`find_path_by_key`]) so the row stays correct after a sibling
+/// delete shifts indices; the collapse / rename UI state and the child folder
+/// `<For>` key on `node_key`, and the item `<For>` keys on each item's own
+/// ephemeral `_key` ([`item_node_keys`]) — never a positional path or index.
 fn render_folder(ed: TreeEditor, node_key: String, is_root: bool) -> AnyView {
     let key_collapsed = node_key.clone();
     let is_collapsed = move || ed.collapsed.with(|c| c.contains(&key_collapsed));
 
     // Dynamic icons are VIEW branches over static icondata values, never a
     // derived `Signal<Icon>` fed into the `Icon` prop: the icon component's
-    // internal reactivity can fire against a row-owned derived signal after
-    // the row is disposed and panic-wedge the wasm runtime (proven live by
-    // the composed battery; the template-detail caret uses this same
-    // branch-the-view pattern).
+    // internal reactivity can fire against a row-owned derived signal after the
+    // row is disposed and panic-wedge the wasm runtime.
     let key_icon = node_key.clone();
     let folder_icon = move || {
         let expanded = ed.collapsed.with(|c| !c.contains(&key_icon));
@@ -641,7 +630,7 @@ fn name_area(ed: TreeEditor, node_key: String) -> AnyView {
 /// The per-folder action buttons: add subfolder, add item, rename, and (for
 /// non-root folders) delete. The folder is identified by its ephemeral `_key`;
 /// each mutation re-derives the live path from it before calling the pure
-/// path-based [`super::edit`] helpers (rules §4).
+/// path-based [`super::edit`] helpers.
 fn folder_actions(ed: TreeEditor, node_key: String, is_root: bool) -> AnyView {
     let add_folder_key = node_key.clone();
     let on_add_folder = move |_| {
@@ -733,14 +722,12 @@ fn folder_actions(ed: TreeEditor, node_key: String, is_root: bool) -> AnyView {
 /// One item reference row: the ref type + id value, with a remove button.
 /// Identified by the item's OWN ephemeral `_key` (`item_key`) inside the owning
 /// folder's `_key` (`parent_key`) — never the item's position, which every
-/// removal of an earlier sibling shifts, handing this row the next item's
-/// identity (rules §4). Both live positions are re-derived per use: the folder
-/// path from `parent_key` ([`find_path_by_key`]), the item index from
-/// `item_key` ([`find_item_index`]).
+/// removal of an earlier sibling shifts. Both live positions are re-derived per
+/// use: the folder path from `parent_key` ([`find_path_by_key`]), the item index
+/// from `item_key` ([`find_item_index`]).
 ///
-/// The row carries its referenced id as `data-item-id`, so a reader (and the
-/// sibling-delete browser journey) can name WHICH reference a row is rather
-/// than counting rows.
+/// The row carries its referenced id as `data-item-id`, so a reader can name
+/// WHICH reference a row is rather than counting rows.
 fn render_item(ed: TreeEditor, parent_key: String, item_key: String) -> AnyView {
     let summary_folder = parent_key.clone();
     let summary_item = item_key.clone();
@@ -788,7 +775,7 @@ fn render_item(ed: TreeEditor, parent_key: String, item_key: String) -> AnyView 
 fn picker_modal(ed: TreeEditor) -> AnyView {
     // The manual-entry form signals are long-lived (on [`EditorState`]) — this
     // overlay is an always-mounted hidden `<div>`, so its `prop:value` closures
-    // must reference signals that outlive every Suspend re-run (rules §4).
+    // must reference signals that outlive every Suspend re-run.
     let manual_namespace = ed.manual_namespace;
     let manual_type = ed.manual_type;
     let manual_id_type = ed.manual_id_type;
@@ -939,7 +926,7 @@ fn composition_choice(ed: TreeEditor, row: &[Value]) -> AnyView {
         if let Some(key) = ed.picker_target.get() {
             let item = object_ref("local", "COMPOSITION", "HIER_OBJECT_ID", &object_id);
             // Stamp the appended reference so its row has a stable identity
-            // (the same discipline as the manual-entry path above — rules §4).
+            // (the same discipline as the manual-entry path above).
             ed.counter.update_value(|c| {
                 ed.tree.update(|t| {
                     if let Some(p) = find_path_by_key(t, &key) {

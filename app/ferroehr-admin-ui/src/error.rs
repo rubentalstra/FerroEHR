@@ -56,10 +56,10 @@ impl AdminUiError {
     /// [`AdminUiError::Cdr`] transports the status as a `u16` because the enum
     /// crosses the server-fn boundary as JSON; every branch on it reads it back
     /// through here, so a status comparison names an [`http::StatusCode`]
-    /// constant instead of a bare literal (owner directive 2026-08-06). The two
-    /// refusals answer their own status, so a caller can tell "sign in again"
-    /// from "sign in as someone else"; [`AdminUiError::Unauthenticated`] answers
-    /// `None` because no CDR request was ever made.
+    /// constant instead of a bare literal. The two refusals answer their own
+    /// status, so a caller can tell "sign in again" from "sign in as someone
+    /// else"; [`AdminUiError::Unauthenticated`] answers `None` because no CDR
+    /// request was ever made.
     #[must_use]
     pub fn status_code(&self) -> Option<http::StatusCode> {
         match self {

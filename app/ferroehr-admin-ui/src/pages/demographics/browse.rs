@@ -17,9 +17,9 @@
 //! why opening a row asks
 //! [`resolve_party_kind`] where that id lives.
 //!
-//! Every filter, page and window lives in the URL (rules §9), and the lookup
-//! form is a plain `<form method="GET">` so finding a party works before the
-//! WASM bundle has loaded.
+//! Every filter, page and window lives in the URL, and the lookup form is a
+//! plain `<form method="GET">` so finding a party works before the WASM
+//! bundle has loaded.
 
 #![allow(
     clippy::disallowed_types,
@@ -70,10 +70,10 @@ pub fn DemographicsPage() -> impl IntoView {
 /// The section's not-found view, for a `:kind` outside the closed five-kind
 /// set.
 ///
-/// A route parameter is user input (rules §9), so an unknown kind is answered
-/// with the same "this does not exist" copy the router's own fallback uses,
-/// naming the five that do — never a screen full of failing reads against a
-/// path segment the CDR has no route for.
+/// A route parameter is user input, so an unknown kind is answered with the
+/// same "this does not exist" copy the router's own fallback uses, naming the
+/// five that do — never a screen full of failing reads against a path segment
+/// the CDR has no route for.
 #[must_use]
 pub fn unknown_kind_view(segment: &str) -> AnyView {
     let shown = segment.to_owned();
@@ -113,22 +113,15 @@ pub fn unknown_kind_view(segment: &str) -> AnyView {
 /// rerender, but only update the params" (`leptos_router` 0.8
 /// `src/nested_router.rs`) — so this body does NOT re-run. Reading the kind once
 /// would leave every label, form action, create body and paging base showing the
-/// previous kind while the address bar showed the new one. Rebuilding is the
-/// right response rather than threading a signal through every label: a
-/// different kind is a different resource family, and the create card's
-/// uncontrolled skeleton has to change with it.
+/// previous kind.
 ///
 /// `?find=<uid>` — what the lookup form submits when WASM has not loaded —
-/// short-circuits into a [`Redirect`] to that party's detail route, so
-/// find-by-id is a plain HTML round trip with no JavaScript at all. THAT one is
+/// short-circuits into a [`Redirect`] to that party's detail route. THAT one is
 /// read untracked, because it is a submitted request rather than screen state
-/// and it can only arrive by full document load: the hydrated form navigates
-/// straight to the detail route, no in-app link carries it, and the filter form
-/// is a plain `<form>` whose submit is a document load. Anything that adds an
-/// in-app `?find=` link — or swaps that plain form for the router's
+/// and can only arrive by full document load. Anything that adds an in-app
+/// `?find=` link — or swaps that plain form for the router's
 /// `<Form method="GET">`, whose submit is a same-route client-side navigation —
-/// must make this decision reactive too (the `/ehrs` finder carries the same
-/// note).
+/// must make this decision reactive too.
 #[expect(
     clippy::must_use_candidate,
     reason = "#[component] rewrites the fn; view!/mount always consumes the value"
@@ -164,8 +157,8 @@ pub fn PartyBrowserPage() -> impl IntoView {
 /// The variant is what makes a kind change replace the DOM instead of patching
 /// it: two `AnyView`s of the same shape rebuild in place, which leaves an
 /// uncontrolled control (the create card's seeded textarea) holding the previous
-/// kind's content. `EitherOf6` gives each kind its own branch, and rules §4
-/// names `Either`/`EitherOf…` as the way to express divergent branches.
+/// kind's content. `EitherOf6` gives each kind its own branch, which is how
+/// divergent branches are expressed.
 pub(super) fn kinded_screen<F>(
     kind: Memo<Option<PartyKind>>,
     segment: Memo<String>,
@@ -242,9 +235,9 @@ fn kind_switcher(current: PartyKind) -> AnyView {
 /// hydrated, its `on:submit` handler cancels the round trip and navigates
 /// client-side instead (identical outcome, one hop instead of two).
 ///
-/// The input is UNCONTROLLED and read at submit (rules §5): a controlled input
-/// resets to its empty signal at hydration, wiping anything typed before the
-/// WASM loaded.
+/// The input is UNCONTROLLED and read at submit: a controlled input resets to
+/// its empty signal at hydration, wiping anything typed before the WASM
+/// loaded.
 fn lookup_section(kind: PartyKind) -> AnyView {
     let lookup_ref = NodeRef::<leptos::html::Input>::new();
     let navigate = leptos_router::hooks::use_navigate();
@@ -395,8 +388,8 @@ pub fn minimal_party_body(kind: PartyKind) -> String {
 /// that assembled a party from console-side fields would have to invent the
 /// mandatory ones, and a party document is exactly what this screen must not
 /// re-model. The textarea is UNCONTROLLED with the skeleton as its child text,
-/// so the server and the client render identical markup (rules §8) and typing
-/// before hydration is never wiped.
+/// so the server and the client render identical markup and typing before
+/// hydration is never wiped.
 fn create_section(kind: PartyKind, toaster: thaw::ToasterInjection) -> AnyView {
     let body_ref = NodeRef::<leptos::html::Textarea>::new();
     let create: Action<String, Result<String, AdminUiError>> = Action::new(move |body: &String| {
@@ -584,8 +577,7 @@ fn tag_index_section(kind: PartyKind) -> AnyView {
 /// re-windows the rows already fetched; it never refetches.
 ///
 /// `<For>` keyed on the tag identity plus its target, which is unique across
-/// the whole demographic space (rules §4 — stable, data-derived, never an
-/// index).
+/// the whole demographic space (stable, data-derived, never an index).
 fn tag_index_table(
     kind: PartyKind,
     tags: Vec<ItemTagRow>,

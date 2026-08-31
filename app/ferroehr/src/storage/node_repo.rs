@@ -376,25 +376,20 @@ pub struct SubtreeAnchor {
 /// Each anchor's subtree is re-based so the anchor node becomes the fragment
 /// root (the codec requires `num == 0` and an empty path at the root).
 ///
-/// This closes the AQL result-assembly N+1 — a P-row whole-object projection
-/// page (e.g. `SELECT c FROM EHR e CONTAINS COMPOSITION c` on a dashboard)
-/// would otherwise issue P separate subtree SELECTs, one per candidate row.
-/// The rows of every anchor's subtree are instead fetched by a single
-/// `unnest`-array join over the anchors, tagged by anchor index, then
-/// reassembled per anchor in memory.
+/// This closes the AQL result-assembly N+1: a P-row whole-object projection page
+/// would otherwise issue P separate subtree SELECTs. The rows of every anchor's
+/// subtree are fetched by a single `unnest`-array join over the anchors, tagged
+/// by anchor index, then reassembled per anchor in memory.
 ///
-/// Anchors are de-duplicated: a page may project the same version more than once
-/// (repeated rows, or two whole-object columns), and each distinct subtree is
-/// reassembled exactly once. An anchor with no stored nodes (a logical delete —
-/// data Void, RM common master06 §Logical Deletion) is **absent** from the map;
-/// the caller treats a miss as [`Value::Null`], its empty-subtree result.
+/// Anchors are de-duplicated, so a page projecting the same version more than
+/// once reassembles each distinct subtree exactly once. An anchor with no stored
+/// nodes (a logical delete, RM common master06 §Logical Deletion) is absent from
+/// the map and the caller treats the miss as [`Value::Null`].
 ///
-/// A ROOT anchor (`num == 0` — the whole version, the dominant projection
-/// shape `SELECT c FROM … CONTAINS COMPOSITION c`) is served straight from the
-/// materialized `vo_version.body` with zero node rows and zero reassembly;
+/// A root anchor (`num == 0`, the dominant projection shape) is served straight
+/// from the materialized `vo_version.body` with no node rows and no reassembly;
 /// only genuine sub-tree anchors take the interval join. The two forms are
-/// byte-identical by the commit-time parity invariant (`body` is written from
-/// the same rows the node store holds).
+/// byte-identical by the commit-time parity invariant.
 ///
 /// # Errors
 /// Returns [`StorageError`] on a driver failure, or if any anchor's fetched rows

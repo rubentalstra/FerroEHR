@@ -77,12 +77,10 @@ fn validate_party_ref(reference: &Value, context: &str) -> Result<(), ServiceErr
 /// `Uid_mandatory` is met by the server injecting the `uid` on read (mirroring
 /// the COMPOSITION service), so an incoming body need not carry one.
 ///
-/// This is the RAW-BODY lane's gate — the CONTRIBUTION route, whose payload
-/// has never been through a typed door. The direct routes call
-/// [`party_invariants`] instead: they decoded the body as the ROUTED kind's
-/// concrete RM type before the commit, so re-deserializing the very same bytes
-/// into the very same type here would prove nothing already proven and cost a
-/// second full decode per write.
+/// This is the raw-body lane's gate, the CONTRIBUTION route, whose payload has
+/// never been through a typed door. The direct routes call [`party_invariants`]
+/// instead, having decoded the body as the routed kind's concrete RM type before
+/// the commit.
 ///
 /// # Errors
 /// [`ServiceError::BadRequest`] when the strict reader refuses the body;

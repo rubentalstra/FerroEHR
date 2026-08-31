@@ -43,8 +43,8 @@
 //!
 //! No openEHR spec governs an admin UI — our own design / product extension.
 //! Every co-located `#[server]` fn guards with
-//! [`require_session`](crate::session::require_session) first (rules §0), and
-//! the CDR credential never reaches client-visible state.
+//! [`require_session`](crate::session::require_session) first, and the CDR
+//! credential never reaches client-visible state.
 
 #![allow(
     clippy::disallowed_types,
@@ -183,7 +183,7 @@ impl VersionedFamily {
 
     /// The family a route segment names, or `None` for anything else.
     ///
-    /// Server functions are a public HTTP API (rules §0), so the segment they
+    /// Server functions are a public HTTP API, so the segment they
     /// interpolate into a CDR path is validated back into this closed set
     /// rather than trusted.
     #[must_use]
@@ -254,10 +254,9 @@ pub fn browse_href(kind: PartyKind) -> String {
 
 /// The `/demographics/{kind}/{uid}` detail href.
 ///
-/// The id is percent-encoded (owner rule: all percent-coding goes through
-/// `urlencoding`) — an id carrying `/`, `#`, `?` or `%` would otherwise address
-/// a different route, and the encoded form is also what makes the value safe to
-/// hand a server-side redirect.
+/// The id is percent-encoded — an id carrying `/`, `#`, `?` or `%` would
+/// otherwise address a different route, and the encoded form is also what makes
+/// the value safe to hand a server-side redirect.
 #[must_use]
 pub fn party_href(kind: PartyKind, uid: &str) -> String {
     format!(
@@ -350,9 +349,8 @@ pub async fn fetch_versioned_object(
 /// (`GET /demographic/{family}/{versioned_object_uid}/revision_history` —
 /// `operations/versioned_party_revision_history.yaml`).
 ///
-/// The rows are the shared [`VersionEntry`] every History tab renders, parsed
-/// by the same `parse_versions` — a `REVISION_HISTORY` is a `REVISION_HISTORY`
-/// whichever versioned object it belongs to.
+/// The rows are the shared [`VersionEntry`] every History tab renders, parsed by
+/// the same `parse_versions`.
 ///
 /// # Errors
 /// [`AdminUiError::Unauthenticated`] without a console session; CDR transport
@@ -692,7 +690,7 @@ mod tests {
             );
         }
         // …and nothing else does, so no caller-supplied string can steer a CDR
-        // path (rules §0 — a server function is a public HTTP endpoint).
+        // path (a server function is a public HTTP endpoint).
         for hostile in ["", "..", "ehr", "versioned_composition", "party", "/"] {
             assert_eq!(VersionedFamily::from_segment(hostile), None, "{hostile}");
             assert_eq!(

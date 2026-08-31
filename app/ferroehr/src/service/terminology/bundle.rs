@@ -5,60 +5,46 @@
 //! by the compile-time-embedded `openehr-term` bundle (TERM 3.1.0).
 //!
 //! Spec: `docs/specs/openehr/SM/docs/UML/classes/i_terminology_service.adoc`
-//! (the 9 calls + `Pre_has_terminology`/`Pre_has_term`/`Pre_has_value_set`)
+//! (the 9 calls plus `Pre_has_terminology`/`Pre_has_term`/`Pre_has_value_set`)
 //! and the extract model (`terminology_extract.adoc`, `term_code.adoc`,
-//! `defined_term.adoc`). Context: `BASE/docs/architecture_overview/
-//! master12-terminology.adoc` (RM coded attributes bound to the "openEHR"
-//! terminology + the six external code sets; archetype-internal terminology
-//! is flat, no server) grounds the "openehr" id + the group↔value-set split.
+//! `defined_term.adoc`). `BASE/docs/architecture_overview/
+//! master12-terminology.adoc` grounds the "openehr" id and the group/value-set
+//! split. The extract types live in [`super::types`]; this module is the
+//! DB-free mapping onto [`openehr_term::bundle::openehr`], the enumerable local
+//! default the routing layer ([`super::routing`]) selects between alongside the
+//! remote FHIR TS ([`super::fhir`]).
 //!
-//! The extract types live in [`super::types`]; this module is the concrete,
-//! DB-free mapping onto the bundle ([`openehr_term::bundle::openehr`]). It is
-//! one of the two providers the routing layer ([`super::routing`]) selects
-//! among — the enumerable local default; the remote FHIR TS ([`super::fhir`])
-//! is the other (`arch-overview master12` "terminology query server").
+//! # Bundle mapping
 //!
-//! # Bundle mapping (design decisions, each documented as a NOTE)
-//!
-//! - **Terminologies.** The primary terminology id is **`"openehr"`** — the
-//!   internal openEHR vocabulary (all `<group>`s + internal `<codeset>`s).
-//!   The bundle's four **external** code sets (ISO 639-1 languages,
-//!   ISO 3166-1 countries, IANA character sets, IANA media types) are
-//!   additionally exposed as separate terminologies, each addressed by its
-//!   `external_id` (`"ISO_639-1"`, …) — `get_terminology_ids` lists
-//!   `"openehr"` + those four.
-//! - **Terms vs value sets (NOTE).** openEHR terminology codes are
-//!   *group-scoped* (code `532` is `complete` in `version_lifecycle_state`
-//!   but `completed` in `instruction_states` — SPECPR-51). The code-only
-//!   `has_term`/`get_term` calls treat `"openehr"` as a flat terminology: a
-//!   term is any concept id present in **any** group, and `get_term` returns
-//!   the first matching group's rubric. Group-scoped access is the province
-//!   of the **value-set** calls (`value_set_id` = the group). This is the
-//!   faithful split for the two SM call families over a group-partitioned
-//!   vocabulary.
-//! - **Value sets.** For `"openehr"`, a `value_set_code` resolves (in order)
-//!   to an internal group by `openehr_id`, a group by display name, or an
-//!   internal code set by `openehr_id`. For an external terminology, the
-//!   code set is its own single value set (addressed by its id).
-//!   `value_set_validate` is set membership.
-//! - **`subsumes` (NOTE).** The openEHR vocabulary is flat (no
-//!   subsumption hierarchy), so `subsumes` answers identity only — and,
-//!   being **strict** (`i_terminology_service.adoc` `subsumes`), even the
-//!   identity case is `false`. Hierarchical subsumption is the FHIR
-//!   provider's `$subsumes`.
-//! - **`at_date` (NOTE — bundle side).** The bundle is a single
-//!   pinned version (TERM 3.1.0), so `at_date` never changes the answer
-//!   here; the temporal parameter is threaded to (and honoured by) the FHIR
+//! - Terminologies. The primary id is `"openehr"`, the internal openEHR
+//!   vocabulary (all `<group>`s and internal `<codeset>`s). The four external
+//!   code sets (ISO 639-1 languages, ISO 3166-1 countries, IANA character sets,
+//!   IANA media types) are exposed as separate terminologies addressed by their
+//!   `external_id`, so `get_terminology_ids` lists `"openehr"` plus those four.
+//! - Terms and value sets. openEHR terminology codes are group-scoped (code
+//!   `532` is `complete` in `version_lifecycle_state` and `completed` in
+//!   `instruction_states` — SPECPR-51), so the code-only `has_term`/`get_term`
+//!   calls treat `"openehr"` as flat: a term is any concept id present in any
+//!   group and `get_term` returns the first matching group's rubric.
+//!   Group-scoped access is the value-set calls, whose `value_set_id` is the
+//!   group.
+//! - Value sets. For `"openehr"` a `value_set_code` resolves in order to an
+//!   internal group by `openehr_id`, a group by display name, or an internal
+//!   code set by `openehr_id`; an external terminology's code set is its own
+//!   single value set. `value_set_validate` is set membership.
+//! - `subsumes`. The openEHR vocabulary is flat, so this answers identity only,
+//!   and being strict (`i_terminology_service.adoc`) even the identity case is
+//!   `false`. Hierarchical subsumption is the FHIR provider's `$subsumes`.
+//! - `at_date`. The bundle is a single pinned version, so the temporal
+//!   parameter never changes the answer here; it is honoured by the FHIR
 //!   provider.
-//! - **`attributes` (NOTE — bundle side).** No meta-model
-//!   attributes are defined for the openEHR bundle
+//! - `attributes`. No meta-model attributes are defined for the openEHR bundle
 //!   (`Terminology_description.attributes` is `None`), so the `get_term`
-//!   `attributes` allow-list has nothing to filter.
-//! - **URI (NOTE).** The TERM spec defines no canonical machine URI for
-//!   the internal terminology; we publish the openEHR terminology repository
-//!   URI (`TERM/docs/SupportTerminology/master00-amendment_record.adoc` cites
-//!   `https://github.com/openEHR/terminology`). External sets publish their
-//!   `external_id`.
+//!   allow-list has nothing to filter.
+//! - URI. The TERM spec defines no canonical machine URI for the internal
+//!   terminology, so we publish the openEHR terminology repository URI
+//!   (`TERM/docs/SupportTerminology/master00-amendment_record.adoc`). External
+//!   sets publish their `external_id`.
 
 use openehr_term::bundle::openehr;
 use openehr_term::v3_1::terminology::code_set::CodeSet;

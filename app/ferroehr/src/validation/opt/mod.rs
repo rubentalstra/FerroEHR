@@ -1,45 +1,42 @@
 // SPDX-FileCopyrightText: FerroEHR contributors
 // SPDX-License-Identifier: MIT
 
-//! Surface A1 — OPT 1.4 artefact validity (`I_DEFINITION_ADL14` upload).
+//! Surface A1: OPT 1.4 artefact validity (`I_DEFINITION_ADL14` upload).
 //!
-//! openEHR formalizes the validity rules a CDR should apply to an *uploaded*
-//! archetype/template artefact in the AOM2 validation catalogue
+//! openEHR formalizes the validity rules a CDR applies to an uploaded artefact
+//! in the AOM2 validation catalogue
 //! (`docs/specs/openehr/AM/docs/AOM2/master08-validation.adoc`) and the AOM2
 //! class-definition rule blocks
 //! (`AM/docs/AOM2/master04.5-constraint_model-class_definitions.adoc`,
 //! `AM/docs/AOM2/master07-terminology_package.adoc`). OPT 1.4 has no normative
-//! prose chapter, so the only formalized catalogue of standalone-artefact
-//! checks is AOM2/08; those rules are the oracle here, applied to the
-//! *flattened* OPT 1.4 tree (`openehr_its::opt14::types::OperationalTemplate`).
+//! prose chapter, so AOM2/08 is the oracle here, applied to the flattened OPT 1.4
+//! tree (`openehr_its::opt14::types::OperationalTemplate`).
 //!
 //! This module owns the tree walk (T1: the `C_COMPLEX_OBJECT`/`C_ATTRIBUTE`
-//! alternation) and the shared context; the per-*kind of check* rules live in
-//! sibling modules along the AOM2/08 catalogue's own section axis:
+//! alternation) and the shared context; the per-kind rules live in sibling
+//! modules along the AOM2/08 catalogue's own section axis:
 //!
 //! - `invariants` — AOM 1.4 constraint-model per-node-kind invariants
 //!   (`Existence_set`, `Members_valid`, `Target_path_valid`, VARID/VARDT, VACDF,
 //!   VDFAI, STCDC);
 //! - `rm_conformance` — VCORM/VCARM/VCAEX/VCACA/VCAM + VACMCO over
 //!   `openehr_rm::v1_2::model`;
-//! - `primitive` — `C_PRIMITIVE` + temporal/duration patterns + the
+//! - `primitive` — `C_PRIMITIVE`, temporal and duration patterns, the
 //!   `C_DOMAIN_TYPE` assumed-value rules;
-//! - `terminology` — VATID/VTTBK/VTCBK/VTLC + code collection;
-//! - `interval` — the BASE interval / multiplicity primitives.
+//! - `terminology` — VATID/VTTBK/VTCBK/VTLC plus code collection;
+//! - `interval` — the BASE interval and multiplicity primitives.
 //!
-//! It does **not** run `valid_value` (that is instance-time — surface B in
+//! It does not run `valid_value`, which is instance-time (surface B in
 //! [`crate::validation`]). Every violation is reported through
-//! [`ServiceError::ValidationFailed`] (→ ITS-REST `422`, the `Error` object
-//! with the AOM2 rule code in `validationErrors[]`): an AOM2 rule violation is
-//! a semantic error on a successfully parsed artefact (the overview status
-//! table's `422` row, `docs/specs/openehr/ITS-REST/specifications/docs/
-//! overview/Requests_and_responses.md` §HTTP status codes), distinct from the
-//! syntactic `400` branch of `responses/400.yaml` that owns not-well-formed
-//! content.
+//! [`ServiceError::ValidationFailed`], the ITS-REST `422` carrying the AOM2 rule
+//! code in `validationErrors[]`: an AOM2 rule violation is a semantic error on a
+//! successfully parsed artefact (overview `Requests_and_responses.md` §HTTP
+//! status codes), distinct from the syntactic `400` branch that owns
+//! not-well-formed content.
 //!
-//! The check sequence (terminology sets first, then the walk; per node:
-//! VCORM → VATID → per-kind invariants → recurse) reports the **first**
-//! violation found — the ordering is part of the behavioural contract.
+//! The check sequence — terminology sets first, then the walk, and per node
+//! VCORM, VATID, per-kind invariants, recurse — reports the first violation
+//! found, and that ordering is part of the behavioural contract.
 
 mod interval;
 mod invariants;

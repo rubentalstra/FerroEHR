@@ -73,10 +73,8 @@ impl ReprFormat {
 /// before the round-trip.
 ///
 /// This is the console's ONE normalizer for the parameter: every time-travel
-/// picker (composition, `EHR_STATUS`, demographic versions, the directory)
-/// goes through it, so one typed instant can never mean two things on the wire.
-/// Anything the two shapes above do not describe is completed the same way
-/// rather than passed through, and the CDR's own `400` is the arbiter.
+/// picker goes through it, so one typed instant can never mean two things on the
+/// wire, and the CDR's own `400` is the arbiter for anything else.
 ///
 /// NOTE: the zone is stamped deliberately — a zone-less parameter means "the
 /// local timezone is assumed"

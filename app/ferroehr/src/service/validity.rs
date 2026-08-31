@@ -6,25 +6,21 @@
 //! validation choke points.
 //!
 //! Spec: `docs/specs/openehr/SM/docs/openehr_platform/
-//! master03-common_package.adoc` §Class Definitions →
-//! `UML/classes/i_validity_checker.adoc` (the two calls `definitions_valid` /
-//! `content_valid`, both over a `LOCATABLE`). The SM keeps
-//! `I_VALIDITY_CHECKER` in its `common` package (not among the platform
-//! *services*), so its impl sits as a peer file `service/validity.rs`,
-//! mirroring the SM placement.
+//! master03-common_package.adoc` §Class Definitions and
+//! `UML/classes/i_validity_checker.adoc` (the two calls `definitions_valid` and
+//! `content_valid`, both over a `LOCATABLE`). The SM keeps `I_VALIDITY_CHECKER`
+//! in its `common` package rather than among the platform services, so its impl
+//! sits as the peer file `service/validity.rs`.
 //!
-//! Validation itself is owned by the validation register
-//! (`src/validation/`); this file is only the SM interface adapter over the
-//! shared choke points `FerroEhrService::web_template_for` and
+//! Validation itself is owned by the validation register (`src/validation/`);
+//! this file is only the SM interface adapter over the shared choke points
+//! `FerroEhrService::web_template_for` and
 //! `FerroEhrService::validate_for_commit`.
 //!
-//! NOTE: `definitions_valid` checks **template** identifiers only — the
-//! spec says "archetype and template identifiers", but there is no ADL2
-//! archetype store to resolve bare archetype ids against, so content that
-//! declares no template resolves `true` (nothing to look up). `content_valid`
-//! runs the same per-`Kind` structural validation every commit runs
-//! (`FerroEhrService::validate_for_commit`); an unrecognized root `_type` is
-//! `false`.
+//! NOTE: where the spec says "archetype and template identifiers",
+//! `definitions_valid` checks template identifiers only, so content declaring no
+//! template resolves `true`. `content_valid` runs the same per-`Kind` structural
+//! validation every commit runs, and an unrecognized root `_type` is `false`.
 
 #![expect(
     clippy::disallowed_types,
@@ -42,9 +38,11 @@ use crate::versioning::Kind;
 impl FerroEhrService {
     /// `definitions_valid` (`i_validity_checker.adoc`): "Return `True` if the
     /// definition identifiers (i.e. archetype and template identifiers) are
-    /// known in the local `definitions` service." Content that declares no
-    /// `archetype_details.template_id` resolves `true` (module NOTE);
-    /// otherwise `true` iff the declared template resolves to a stored OPT.
+    /// known in the local `definitions` service."
+    ///
+    /// Content declaring no `archetype_details.template_id` resolves `true` (the
+    /// module NOTE); otherwise the answer is whether the declared template
+    /// resolves to a stored OPT.
     ///
     /// # Errors
     ///

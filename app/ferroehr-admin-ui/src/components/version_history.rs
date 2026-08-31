@@ -11,11 +11,8 @@
 //! pinned version's document. The screens own their resources and their
 //! per-family copy ([`VersionHistoryLabels`]); this module owns the views.
 //!
-//! Discipline (rules §4/§6): every section resolves its `Result` INSIDE the
-//! `<Transition>` (an SSR'd `ErrorBoundary` fallback mismatches at hydration in
-//! leptos 0.8), the table's `<For>` is keyed on the version's own
-//! `OBJECT_VERSION_ID`, and nothing here creates a resource — the caller creates
-//! them once in setup and hands the handles over.
+//! Nothing here creates a resource: the caller creates them once in setup and
+//! hands the handles over.
 
 use leptos::prelude::*;
 
@@ -65,10 +62,10 @@ pub struct VersionHistoryLabels {
 /// The versioned-object card: the container's own facts plus the pinned
 /// VERSION's envelope facts, rendered by the family's own `card`.
 ///
-/// A `<Transition>` so switching version keeps the previous facts visible
-/// (rules §6), with the `Result` resolved inside it (rules §4). `card` is a
-/// plain function pointer, so each family lays its own facts out — the shape
-/// shared here is the loading, absent and failed states around it.
+/// A `<Transition>` so switching version keeps the previous facts visible,
+/// with the `Result` resolved inside it. `card` is a plain function pointer,
+/// so each family lays its own facts out — the shape shared here is the
+/// loading, absent and failed states around it.
 #[must_use]
 pub fn versioned_facts_section<T>(
     versioned: Resource<Result<Option<T>, AdminUiError>>,
@@ -137,7 +134,7 @@ pub fn revision_history_section(
 }
 
 /// Render the history rows in the shared table kit. `<For>` keyed on the
-/// version's own `OBJECT_VERSION_ID` — stable, unique, data-derived (rules §4).
+/// version's own `OBJECT_VERSION_ID` — stable, unique, data-derived.
 fn history_table(
     entries: Vec<VersionEntry>,
     pinned: RwSignal<String>,
@@ -262,8 +259,8 @@ pub fn at_time_lookup_section(
 
 /// The pinned version's document, read by its `OBJECT_VERSION_ID`.
 ///
-/// A `<Transition>` so switching version keeps the previous document visible
-/// (rules §6). Nothing pinned is a first-class empty state, not an error.
+/// A `<Transition>` so switching version keeps the previous document
+/// visible. Nothing pinned is a first-class empty state, not an error.
 #[must_use]
 pub fn pinned_document_section(
     document: DocumentResource,

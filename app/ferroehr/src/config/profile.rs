@@ -4,10 +4,9 @@
 //! The `spec_profile` key — which openEHR specification GENERATION SET the
 //! server runs.
 //!
-//! One coupled profile selects the whole set (owner hard rule 2026-08-05,
-//! issue #1936): per-component free choice would admit incoherent
-//! combinations (an RM modelled against a BASE it never included), so the
-//! enum's variants are the only representable states. The within-major
+//! One coupled profile selects the whole set: per-component free choice would
+//! admit incoherent combinations, an RM modelled against a BASE it never
+//! included, so the enum's variants are the only representable states. The within-major
 //! compatibility ground is the openEHR release strategy
 //! (<https://specifications.openehr.org/governance>): minor releases are
 //! additive, so every stable-generation instance is valid under the

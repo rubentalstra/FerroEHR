@@ -107,7 +107,7 @@ pub struct SubscriptionUpdate {
     pub template_id: Option<String>,
     /// Whether the publisher binds this subscription's queue. REQUIRED on an
     /// update: the operation is a full replace, and a defaulted `true` here
-    /// silently re-enabled a deliberately disabled subscription (#2598) — the
+    /// silently re-enabled a deliberately disabled subscription — the
     /// caller states the whole intent or the request is refused.
     pub enabled: Option<bool>,
 }

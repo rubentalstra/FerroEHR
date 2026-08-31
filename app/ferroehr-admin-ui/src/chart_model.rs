@@ -17,8 +17,8 @@
 //!
 //! Everything here is a pure, deterministic function of the fetched rows — no
 //! clock, no locale, no randomness, no I/O — which is what keeps the chart
-//! hydration-safe (`.claude/rules/leptos-ui.md` §8): the server pass and the
-//! browser hydration derive byte-identical series, axes, and tick labels.
+//! hydration-safe: the server pass and the browser hydration derive
+//! byte-identical series, axes, and tick labels.
 
 #![expect(
     clippy::disallowed_types,
@@ -42,9 +42,8 @@ pub struct SeriesSpec {
     /// used as the series name in the legend.
     pub name: String,
     /// The zero-based result-set column this series reads. Unique per series,
-    /// so it is also the legend's stable, data-derived key
-    /// (`.claude/rules/leptos-ui.md` §4). Fixed-size on purpose (WASM is
-    /// 32-bit — rules §1).
+    /// so it is also the legend's stable, data-derived key. Fixed-size on
+    /// purpose (WASM is 32-bit).
     pub column: u16,
 }
 

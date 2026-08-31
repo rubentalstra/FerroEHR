@@ -5,9 +5,8 @@
 //!
 //! A lookup form (jump straight to an EHR by id) over a recent-EHRs table
 //! sourced from an ad-hoc AQL query — ITS-REST has no unpaged EHR-list
-//! endpoint, so listing via AQL is the spec-honest route.
-//! Paging is URL-driven (`?offset=`, rules §9): shareable, refresh-safe, and
-//! WASM-optional.
+//! endpoint, so listing via AQL is the spec-honest route. Paging is
+//! URL-driven (`?offset=`): shareable, refresh-safe, and WASM-optional.
 //!
 //! No openEHR spec governs an admin UI — our own design / product extension.
 //! The wire it reads IS spec-bound: the AQL runs against `POST query/aql`
@@ -17,8 +16,8 @@
 //!
 //! Every co-located `#[server]` fn guards with
 //! [`require_session`](crate::session::require_session) first — server
-//! functions are a public HTTP API (rules §0) — and the CDR credential never
-//! reaches client-visible state.
+//! functions are a public HTTP API — and the CDR credential never reaches
+//! client-visible state.
 
 #![expect(
     clippy::disallowed_types,
@@ -54,7 +53,7 @@ const LIST_EHRS_AQL: &str =
 /// can build prev/next links).
 ///
 /// Shared across the EHR browse surfaces; carries only fixed-size ints so it
-/// is WASM-safe over the server-fn boundary (rules §1).
+/// is WASM-safe over the server-fn boundary.
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub struct ResultPage {
     /// The result-set column names (falling back to the column path).
@@ -283,8 +282,8 @@ pub async fn create_ehr(
             ));
         }
     };
-    // A server function is a public endpoint (rules §0): the client-side check
-    // is a courtesy, this one is the guard.
+    // A server function is a public endpoint: the client-side check is a
+    // courtesy, this one is the guard.
     if !ehr_id.is_empty() && !is_uuid(ehr_id) {
         return Err(AdminUiError::Invalid(format!(
             "{ehr_id:?} is not a UUID — the openEHR EHR API strongly recommends a UUID for a \
@@ -374,16 +373,13 @@ pub async fn find_ehr_by_subject(
 }
 
 /// The detail-route href for one EHR id. The id is user- or CDR-supplied, so
-/// the path segment is percent-encoded with `urlencoding` (owner rule: all
-/// percent-coding goes through it) — an id carrying `/`, `#`, `?` or `%`
-/// would otherwise address a different route.
+/// the path segment is percent-encoded with `urlencoding` — an id carrying `/`,
+/// `#`, `?` or `%` would otherwise address a different route.
 ///
 /// Encoding is also what keeps the `?find=` redirect safe: the returned path
 /// becomes a `Location` header value server-side, and `urlencoding::encode`
-/// emits only unreserved ASCII plus `%XX`, so a submitted id carrying a
-/// control character or a non-ASCII byte can never reach the header builder
-/// (trimming alone would not stop an interior newline). Never interpolate a
-/// raw request parameter into a redirect path.
+/// emits only unreserved ASCII plus `%XX`, so a submitted id carrying a control
+/// character or a non-ASCII byte can never reach the header builder.
 #[must_use]
 pub(crate) fn ehr_detail_href(ehr_id: &str) -> String {
     format!("/ehrs/{}", urlencoding::encode(ehr_id))
@@ -405,20 +401,14 @@ fn find_from_url() -> String {
 /// detail route, so find-by-id is a plain HTML round-trip with no JavaScript
 /// at all (`Redirect` sets the response redirect server-side; the
 /// authenticated routes render `SsrMode::Async`, so the header is still
-/// settable when the decision is made). Read untracked at setup: the
-/// parameter is a submitted request, not reactive screen state, and this way
-/// the redirect case creates no resources and issues no AQL.
-///
-/// Untracked is sound only because every route that can carry `?find=` is
-/// entered as a fresh render of this component: the hydrated form never
-/// navigates to `?find=` (it goes straight to the detail route), no in-app
-/// link carries the parameter, and an address-bar/pasted URL is a full
-/// document load. A same-path client-side navigation would NOT re-run this
-/// body (the router updates only the search query when the path is unchanged),
-/// so anything that adds an in-app `/ehrs?find=…` link — or swaps the plain
-/// form for the router's `<Form method="GET">` — must make this decision
-/// reactive (a `Memo` over `use_query_map()` around the `<Redirect>`, keeping
-/// the resource-free branch) instead.
+/// Read untracked at setup: the parameter is a submitted request, not reactive
+/// screen state, and this way the redirect case creates no resources and issues
+/// no AQL. Untracked is sound only because every route that can carry `?find=`
+/// is entered as a fresh render of this component — the hydrated form navigates
+/// straight to the detail route, and a pasted URL is a full document load. A
+/// same-path client-side navigation would NOT re-run this body, so anything
+/// that adds an in-app `/ehrs?find=…` link must make this decision reactive
+/// instead.
 #[expect(
     clippy::must_use_candidate,
     reason = "#[component] rewrites the fn; view!/mount always consumes the value"
@@ -456,23 +446,20 @@ pub fn EhrsPage() -> impl IntoView {
     .into_any()
 }
 
-/// The Create-EHR card: an optional client-supplied EHR id, an optional
-/// subject id + namespace (both or neither), a Create button dispatching the
-/// [`create_ehr`] action, and — on success — a toast plus client-side
-/// navigation to the new EHR's detail route. A failure toasts as well, with
-/// actionable copy (an id already in use is the CDR's `409`, whose copy says to
-/// open the existing EHR or change the id). The both-or-neither rule and the
-/// UUID shape of a supplied id are validated client-side (inline) before
-/// dispatch and re-checked server-side; a CDR validation diagnostic also
-/// surfaces inline verbatim.
+/// The Create-EHR card: an optional client-supplied EHR id, an optional subject
+/// id + namespace (both or neither), a Create button dispatching the
+/// [`create_ehr`] action, and — on success — a toast plus client-side navigation
+/// to the new EHR's detail route. The both-or-neither rule and the UUID shape of
+/// a supplied id are validated client-side before dispatch and re-checked
+/// server-side; a CDR validation diagnostic surfaces inline verbatim.
 #[expect(
     clippy::too_many_lines,
     reason = "one erased section: the create card's inputs + validation + action wiring (rules §1)"
 )]
 fn create_ehr_section(toaster: thaw::ToasterInjection) -> AnyView {
-    // UNCONTROLLED inputs, read at dispatch (rules §5) — a controlled input
-    // resets to its empty signal at hydration, wiping pre-WASM typing (the
-    // login form's proven pattern).
+    // UNCONTROLLED inputs, read at dispatch — a controlled input resets to
+    // its empty signal at hydration, wiping pre-WASM typing (the login
+    // form's proven pattern).
     let ehr_id_ref = NodeRef::<leptos::html::Input>::new();
     let subject_id_ref = NodeRef::<leptos::html::Input>::new();
     let subject_namespace_ref = NodeRef::<leptos::html::Input>::new();
@@ -486,10 +473,10 @@ fn create_ehr_section(toaster: thaw::ToasterInjection) -> AnyView {
 
     // Report the outcome and, on success, navigate to the new EHR. Both are
     // outside-world side-effects (the router, the thaw toaster), so an Effect
-    // is their correct home (rules §2); it never runs on the server pass. The
-    // route instance unmounts on navigation, cleaning the Effect up. Failure
-    // toasts too (the console's mutation-feedback rule — crate CLAUDE.md); the
-    // CDR's validation diagnostic also stays inline below the form.
+    // is their correct home; it never runs on the server pass. The route
+    // instance unmounts on navigation, cleaning the Effect up. Failure toasts
+    // too (the console's mutation-feedback rule); the CDR's validation
+    // diagnostic also stays inline below the form.
     let navigate = leptos_router::hooks::use_navigate();
     Effect::new(move |_| match create.value().get() {
         Some(Ok(new_id)) => {
@@ -627,7 +614,7 @@ fn create_ehr_section(toaster: thaw::ToasterInjection) -> AnyView {
 
 /// The offset the recent-EHRs table is paged at, read from `?offset=` and
 /// clamped to a valid `u32` (bad input reads as 0). Deterministic from the
-/// URL, so hydration-safe (rules §8/§9).
+/// URL, so hydration-safe.
 fn offset_from_url() -> Signal<u32> {
     let query = leptos_router::hooks::use_query_map();
     Signal::derive(move || {
@@ -655,9 +642,9 @@ fn finder_section() -> AnyView {
     // A PLAIN <form>, not the router's <Form>: pre-WASM the browser submits it
     // natively (GET /ehrs?find=…, which the page turns into a server-side
     // redirect), and post-hydration our own `on:submit` listener prevents the
-    // default and navigates to the detail route (rules §5). UNCONTROLLED
-    // input, read at submit (rules §5): a controlled input resets to its empty
-    // signal at hydration, wiping anything typed before the WASM loaded.
+    // default and navigates to the detail route. UNCONTROLLED input, read at
+    // submit: a controlled input resets to its empty signal at hydration,
+    // wiping anything typed before the WASM loaded.
     let lookup_ref = NodeRef::<leptos::html::Input>::new();
     let by_id_navigate = leptos_router::hooks::use_navigate();
     let on_lookup = move |ev: leptos::ev::SubmitEvent| {
@@ -685,7 +672,7 @@ fn finder_section() -> AnyView {
         let ns = ns.clone();
         async move { find_ehr_by_subject(id, ns).await }
     });
-    // Navigate to the found EHR is an outside-world side-effect (rules §2).
+    // Navigate to the found EHR is an outside-world side-effect.
     let by_subject_navigate = leptos_router::hooks::use_navigate();
     Effect::new(move |_| {
         if let Some(Ok(Some(id))) = find.value().get() {
@@ -718,13 +705,13 @@ fn finder_section() -> AnyView {
             <h2 class=CARD_TITLE>"Find an EHR"</h2>
             // method=GET + action=/ehrs: the no-JS submission lands on
             // /ehrs?find=<id>, which EhrsPage answers with a redirect to the
-            // detail route (rules §9 — lookup state travels in the URL).
+            // detail route (lookup state travels in the URL).
             <form method="GET" action="/ehrs" on:submit=on_lookup>
                 <div class="flex flex-wrap items-end gap-3">
                     <div class="flex flex-col gap-1">
                         // Plain label + explicit stable input id keep the SSR↔hydration
-                        // association deterministic (rules §8) and preserve the E2E
-                        // contract (`#ehr-lookup`).
+                        // association deterministic and preserve the E2E contract
+                        // (`#ehr-lookup`).
                         <label class=LABEL r#for="ehr-lookup">
                             "EHR id"
                         </label>
@@ -801,9 +788,9 @@ fn finder_section() -> AnyView {
 }
 
 /// The recent-EHRs table section: an AQL-backed [`Resource`] under a
-/// `<Transition>` (old rows stay visible across paging — rules §6) that
-/// resolves its `Result` inside the transition (an SSR'd `ErrorBoundary`
-/// fallback mismatches at hydration in leptos 0.8), and prev/next links.
+/// `<Transition>` (old rows stay visible across paging) that resolves
+/// its `Result` inside the transition (an SSR'd `ErrorBoundary` fallback
+/// mismatches at hydration in leptos 0.8), and prev/next links.
 fn recent_ehrs_section(
     offset: Signal<u32>,
     query: Memo<leptos_router::params::ParamsMap>,
@@ -886,7 +873,7 @@ fn ehrs_row(row: &[Value]) -> AnyView {
 
 /// Prev/next paging links for an AQL-paged table at `base` (e.g. `/ehrs`).
 /// Prev appears when `offset > 0`; next appears when the page is full (there
-/// may be more). Offsets use saturating arithmetic (reliability rule).
+/// may be more). Offsets use saturating arithmetic.
 ///
 /// `query` is the screen's whole query map, so a page link carries every OTHER
 /// parameter across — the tab a table sits on, the filters that produced it —
@@ -895,13 +882,11 @@ fn ehrs_row(row: &[Value]) -> AnyView {
 /// offset is written as its ABSENCE so the first page's URL stays clean.
 ///
 /// The map is read UNTRACKED: this control renders inside the table's
-/// `Suspend`, which already re-runs on every query change (the list resource's
-/// source reads the same parameters), so tracking here would only add a
-/// dependency the closure already has.
+/// `Suspend`, which already re-runs on every query change, so tracking here
+/// would only add a dependency the closure already has.
 ///
 /// Each step carries the same `data-page` hook the shared table footer's steps
-/// use (`prev`/`next`), so a journey addresses an offset control exactly as it
-/// addresses a footer one. The two never appear on the same screen: a table is
+/// use (`prev`/`next`). The two never appear on the same screen: a table is
 /// either server-windowed (this control) or paged from rows in hand (the
 /// footer).
 pub(crate) fn paging_controls(

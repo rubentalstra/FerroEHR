@@ -86,25 +86,19 @@ pub(crate) fn resolve_lifecycle(token: Option<String>) -> Result<String, Service
 
 /// Refuse `523|deleted|` on a commit that carries `data`.
 ///
-/// master06 §Logical Deletion states deletion as ONE indivisible procedure —
-/// "create a new Version in the normal way; delete its `_data_` (which will by
-/// default be a copy of the data of the previous Version); set the
+/// master06 §Logical Deletion states deletion as one indivisible procedure,
+/// "create a new Version in the normal way; delete its `_data_` …; set the
 /// `_lifecycle_state_` value to the code for `deleted`; commit in the normal
-/// way". The state and the data-Void are two steps of the same act, so a
-/// data-carrying version in the `deleted` state is not producible by the
-/// spec's own procedure: it would leave the repository serving `204` for the
-/// resource (the version says the item is gone) while its content stays
-/// stored and AQL-queryable. `ORIGINAL_VERSION.data` is typed `0..1`
-/// (`RM/docs/UML/classes/org.openehr.rm.common.original_version.adoc`
-/// §Attributes) precisely so the deleted version can carry none.
+/// way", so a data-carrying version in the `deleted` state is not producible by
+/// the spec's own procedure: it would serve `204` for the resource while its
+/// content stayed stored and AQL-queryable. `ORIGINAL_VERSION.data` is typed
+/// `0..1` precisely so a deleted version can carry none.
 ///
-/// The mirror of the CONTRIBUTION `classify` rule that already couples change
-/// type `523` to data-absence, applied to the *lifecycle* axis so both the
-/// CONTRIBUTION member (`UPDATE_VERSION.lifecycle_state`) and the direct
-/// route's `openehr-version: lifecycle_state.code_string="523"` header reach
-/// the same refusal. The code is the ITS-REST overview 422 row
-/// (`Requests_and_responses.md` §HTTP status codes: "The request was
-/// well-formed but was unable to be followed due to semantic errors").
+/// This mirrors the CONTRIBUTION `classify` rule coupling change type `523` to
+/// data-absence, on the lifecycle axis, so the CONTRIBUTION member
+/// (`UPDATE_VERSION.lifecycle_state`) and the direct route's `openehr-version`
+/// header reach the same refusal. The code is the ITS-REST overview 422 row
+/// (`Requests_and_responses.md` §HTTP status codes).
 ///
 /// # Errors
 /// [`ServiceError::Unprocessable`] when `lifecycle` is `523|deleted|`.
@@ -141,16 +135,16 @@ pub(crate) fn reject_deleted_with_data(lifecycle: &str) -> Result<(), ServiceErr
 /// | `abandoned`  | `incomplete` (retrieve), `deleted` (delete) |
 /// | `deleted`    | `complete`/`incomplete` (revert) |
 ///
-/// The machine draws self-`update` loops ONLY on `complete` and `incomplete`:
-/// a same-state re-commit of `inactive`/`abandoned`/`deleted` content is not a
-/// drawn transition (edit resumes via `reactivate`/`retrieve`/`revert` first).
+/// The machine draws self-`update` loops only on `complete` and `incomplete`, so
+/// a same-state re-commit of `inactive`, `abandoned` or `deleted` content is not
+/// a drawn transition; editing resumes through `reactivate`, `retrieve` or
+/// `revert` first.
 ///
-/// A transition outside this table is a `422` naming the state machine — e.g.
-/// `complete -> abandoned` (must pass through `incomplete`), `abandoned ->
-/// complete` (must `retrieve` to `incomplete` first). The import replay does
-/// **not** call this (it preserves source history verbatim — master06
-/// §Copying), and the logical-delete path targets `deleted` from any live state
-/// (master06 §Logical Deletion, matching the diagram's four `delete` edges).
+/// A transition outside this table is a `422` naming the state machine. The
+/// import replay does not call this, preserving source history verbatim
+/// (master06 §Copying), and the logical-delete path targets `deleted` from any
+/// live state (master06 §Logical Deletion, matching the diagram's four `delete`
+/// edges).
 pub(crate) fn validate_transition(from: Option<&str>, to: &str) -> Result<(), ServiceError> {
     use state::{ABANDONED, COMPLETE, DELETED, INACTIVE, INCOMPLETE};
 

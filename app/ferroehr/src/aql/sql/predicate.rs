@@ -370,7 +370,7 @@ impl Builder<'_> {
     /// apply; the caller falls back to the scalar comparison.
     /// The anchored data leaf of an existential-lowering candidate path —
     /// the same `PathTarget` arms [`exists_compare`](Self::exists_compare)
-    /// admits (#1448). `None` falls back to the scalar lowering.
+    /// admits. `None` falls back to the scalar lowering.
     fn existential_leaf(target: &PathTarget) -> Option<&LeafPath> {
         match target {
             PathTarget::Data(leaf) | PathTarget::EhrStatus(leaf) => Some(leaf),

@@ -3,24 +3,14 @@
 
 //! The `/queries/builder` screen: the point-and-click Query Builder.
 //!
-//! A template-first, cascading builder over the console's AQL engine. The user
-//! picks a template, walks its path catalog, and turns selectable data-value
-//! leaves into typed criteria and projection columns. The whole editable state
-//! is one [`BuilderQuery`] (`crate::builder::model`); the live AQL is produced
-//! by [`to_aql`] on every change (never hand-assembled here), and the result
-//! runs against `POST query/aql` through the shared [`run_aql`] server fn. No
-//! openEHR spec governs an admin UI — our own design / product extension; the
-//! wire it drives IS spec-bound (ITS-REST Query API).
+//! A template-first, cascading builder over the console's AQL engine. The whole
+//! editable state is one [`BuilderQuery`]; the live AQL is produced by
+//! [`to_aql`] on every change, and the result runs against `POST query/aql`
+//! through [`run_aql`]. No openEHR spec governs an admin UI — our own design;
+//! the wire it drives is spec-bound (ITS-REST Query API).
 //!
-//! Discipline (rules §0/§1/§2/§6/§8): no new `#[server]` fn is added — the
-//! screen reuses [`list_templates`], [`fetch_template_catalog`], [`run_aql`]
-//! and [`store_query`], each of which guards its own session. The view is
-//! composed from `.into_any()`-erased sections and recursive `AnyView` fns
-//! (the criterion tree and the path picker); refetching resources render under
-//! `<Transition>`. The whole builder state lives in one `RwSignal`; a separate
-//! `struct_ver` signal gates the tree/output re-renders so that typing into a
-//! field updates only the live preview (which subscribes to the query), never
-//! the surrounding editor — inputs keep focus.
+//! A separate `struct_ver` signal gates the tree/output re-renders, so typing
+//! into a field updates only the live preview and inputs keep focus.
 
 #![expect(
     clippy::disallowed_types,
@@ -75,10 +65,9 @@ struct BuilderCtx {
     /// The group a new criterion is added into (defaults to the root group).
     active_path: RwSignal<Vec<usize>>,
     /// The terminology ids the CDR serves, backing the coded editor's
-    /// datalist. Created ONCE in page setup rather than per criterion editor:
-    /// the criteria tree re-renders on every structural change (`struct_ver`),
-    /// so a resource created inside it would be re-created — and re-fetched —
-    /// on each one (rules §4).
+    /// datalist. Created once in page setup: the criteria tree re-renders on
+    /// every structural change, so a resource created inside it would be
+    /// re-created, and re-fetched, on each one.
     terminologies: Resource<Result<Option<Vec<String>>, AdminUiError>>,
 }
 
@@ -124,16 +113,14 @@ pub fn QueryBuilderPage() -> impl IntoView {
         version: save_version,
     };
 
-    // The "open in builder" hand-off from the stored-query list / raw editor:
-    // `?load=name@version` fetches the stored query and LIFTS it back into the
-    // builder state. `load` is URL-derived, identical on the server pass and the
-    // client hydration (hydration-safe), so the notice only renders when the
-    // parameter is actually present.
+    // `?load=name@version` fetches the stored query and lifts it back into the
+    // builder state. `load` is URL-derived, so it is identical on the server
+    // pass and on client hydration.
     let query_map = leptos_router::hooks::use_query_map();
     let has_load = query_map.with_untracked(|m| m.get("load").is_some_and(|s| !s.is_empty()));
     let load_resource = crate::pages::query_aql::loaded_query_resource(query_map);
-    // Why a lift was refused, when it was — the notice then offers the raw
-    // editor, which can hold any query (rules: never a lossy lift).
+    // Why a lift was refused, when it was; the notice then offers the raw
+    // editor, which can hold any query.
     let lift_refusal = RwSignal::new(Option::<LiftError>::None);
     seed_builder_from_stored_query(load_resource, ctx, save_fields, lift_refusal);
 
@@ -163,10 +150,8 @@ pub fn QueryBuilderPage() -> impl IntoView {
         let (name, version, aql) = input.clone();
         async move { store_query(name, version, aql).await }
     });
-    // Both outcomes toast (rules: Effect = sync with the outside world; no
-    // signal is written — and the console's mutation-feedback rule, crate
-    // CLAUDE.md). The CDR's diagnostic ALSO stays inline (save_feedback),
-    // beside the AQL it rejected.
+    // Both outcomes toast; the CDR's diagnostic also stays inline
+    // (`save_feedback`), beside the AQL it rejected.
     let toaster = thaw::ToasterInjection::expect_context();
     Effect::new(move |_| match save_action.value().get() {
         Some(Ok(())) => toast_success(toaster, "Query saved", ""),
@@ -190,10 +175,8 @@ pub fn QueryBuilderPage() -> impl IntoView {
         ().into_any()
     };
     // A lifted query arrives with its criteria already built, so their catalog
-    // metadata (labels, coded/ordinal option lists, unit lists) has to come from
-    // the template's catalog rather than from the click that would normally have
-    // added them. Only for the hand-off — the normal flow records each node as it
-    // is added.
+    // metadata has to come from the template's catalog rather than from the
+    // click that would normally have added them.
     if has_load {
         seed_leaf_meta_from_catalog(catalog, ctx);
     }
@@ -242,11 +225,10 @@ pub fn QueryBuilderPage() -> impl IntoView {
 /// coded criterion editor references by id (`list="qb-terminology-options"`).
 ///
 /// One element rather than one per criterion: two `<datalist>`s sharing an id
-/// would be invalid HTML, and hydration walks the DOM (rules §8). A CDR that
-/// does not serve the terminology surface answers `404`, which reads as no
-/// options at all — the field then behaves as the plain text input it has
-/// always been, because an AQL author must be able to name a terminology this
-/// server does not host.
+/// would be invalid HTML, and hydration walks the DOM. A CDR that does not
+/// serve the terminology surface answers `404`, which reads as no options at
+/// all, leaving the field the plain text input an AQL author needs to name a
+/// terminology this server does not host.
 fn terminology_options(ctx: BuilderCtx) -> AnyView {
     view! {
         <Suspense fallback=|| ()>
@@ -268,10 +250,8 @@ fn terminology_options(ctx: BuilderCtx) -> AnyView {
 // ---------------------------------------------------------------------------
 
 /// Build the link INTO this screen that lifts the stored query `name@version`
-/// back into the builder ([`crate::builder::lift::from_aql`]) — the counterpart
-/// of the raw editor's "open in editor" hand-off, sharing the same
-/// `?load=name@version` encoding
-/// ([`crate::query_namespace::load_href`]).
+/// back into the builder ([`crate::builder::lift::from_aql`]), sharing the
+/// `?load=name@version` encoding of [`crate::query_namespace::load_href`].
 #[must_use]
 pub(crate) fn load_href(name: &str, version: &str) -> String {
     crate::query_namespace::load_href("/queries/builder", name, version)
@@ -280,25 +260,20 @@ pub(crate) fn load_href(name: &str, version: &str) -> String {
 /// Lift a loaded stored query into the builder state, exactly once and
 /// client-side.
 ///
-/// This is the ONE seed on the screen that stays an `Effect` instead of moving
-/// into a `Suspend` the way the console seeds every other form (rules §2, and
-/// the sibling [`seed_leaf_meta`]): what it writes — `ctx.query.template_id` —
-/// is the SOURCE of the `catalog` resource that the always-mounted picker
-/// `<Transition>` renders. Seeding from inside a `Suspend` would therefore have
-/// one suspended view mutate another's resource source mid-render, so the
-/// server pass could resolve and serialize that resource twice while the client
-/// hydrates against whichever pass reached the buffer — the divergence class
-/// rules §4 exists to prevent. An `Effect` never runs on the server, which
-/// keeps the server pass deterministic: the lift is a client-only state
-/// transition, and the one-shot `StoredValue` guard keeps it from re-firing.
+/// The one seed on this screen that stays an `Effect`: what it writes,
+/// `ctx.query.template_id`, is the SOURCE of the `catalog` resource the
+/// always-mounted picker `<Transition>` renders, so seeding from inside a
+/// `Suspend` would have one suspended view mutate another's resource source
+/// mid-render. An `Effect` never runs on the server, which keeps the server
+/// pass deterministic, and a one-shot `StoredValue` guard keeps it from
+/// re-firing.
 ///
-/// The save fields are seeded the way the raw editor seeds them — the qualified
-/// name split back into namespace + bare name, and the NEXT version proposed,
-/// because the loaded `(name, version)` pair is immutable.
+/// The save fields are seeded with the qualified name split back into namespace
+/// and bare name, and the NEXT version proposed, because the loaded
+/// `(name, version)` pair is immutable.
 ///
-/// A query the builder cannot represent is NOT partially loaded: the refusal is
-/// recorded for the notice and the builder stays empty, so nothing on screen
-/// ever claims to be the stored definition when it is not.
+/// A query the builder cannot represent is not partially loaded: the refusal is
+/// recorded for the notice and the builder stays empty.
 fn seed_builder_from_stored_query(
     load_resource: Resource<Result<Option<LoadedQuery>, AdminUiError>>,
     ctx: BuilderCtx,
@@ -334,14 +309,12 @@ fn seed_builder_from_stored_query(
 /// metadata, once, so a LIFTED criterion shows its real label and its
 /// constrained code/ordinal/unit options instead of a bare path segment.
 ///
-/// A resource-reading `Effect`, kept deliberately (the written-justification
-/// case rules §2 admits): it writes `ctx.leaf_meta` and bumps the criteria
-/// version that the ALWAYS-MOUNTED criteria section renders from, outside the
-/// picker's `<Transition>` — a seed inside that `Suspend` would write them
-/// during the server pass and again during hydration replay, the mid-walk
-/// divergence reproduced live on `/queries/aql?load=…` as tachys'
-/// unrecoverable-hydration panic. One-shot; existing entries win, so a node
-/// the user added by hand is never overwritten.
+/// A resource-reading `Effect`, kept deliberately: it writes `ctx.leaf_meta`
+/// and bumps the criteria version that the always-mounted criteria section
+/// renders from, outside the picker's `<Transition>` — a seed inside that
+/// `Suspend` would write them during the server pass and again during hydration
+/// replay. One-shot; existing entries win, so a node the user added by hand is
+/// never overwritten.
 fn seed_leaf_meta_from_catalog(
     catalog: Resource<Result<Option<CatalogNode>, AdminUiError>>,
     ctx: BuilderCtx,
@@ -461,8 +434,7 @@ fn loaded_notice(qualified: &str, version: &str, refusal: RwSignal<Option<LiftEr
 
 /// The template picker: a `<select>` over the CDR's templates. Choosing a
 /// template re-seeds the whole builder state ([`BuilderQuery::new`]) and clears
-/// the catalog-derived metadata, the active target, and any prior run — a plain
-/// re-set, no confirmation dialog (rules §5: controlled `<select>`).
+/// the catalog-derived metadata, the active target, and any prior run.
 fn template_step_section(
     ctx: BuilderCtx,
     ran: RwSignal<Option<String>>,
@@ -529,8 +501,8 @@ fn template_select(
 // ---------------------------------------------------------------------------
 
 /// The path catalog pane: the template's [`CatalogNode`] tree under a
-/// `<Transition>` (rules §6), with click-to-add affordances on selectable
-/// data-value leaves.
+/// `<Transition>`, with click-to-add affordances on selectable data-value
+/// leaves.
 fn picker_section(
     ctx: BuilderCtx,
     catalog: Resource<Result<Option<CatalogNode>, AdminUiError>>,
@@ -542,7 +514,7 @@ fn picker_section(
                 match catalog.await {
                     Ok(None) => {
                         // Resolve inside the Transition: an SSR'd ErrorBoundary fallback
-                        // mismatches at hydration in leptos 0.8 (E2E console gate).
+                        // mismatches at hydration in leptos 0.8.
                         view! {
                             <p class="text-sm text-ink-muted">
                                 "Pick a template to browse its paths."
@@ -562,10 +534,6 @@ fn picker_section(
     .into_any()
 }
 
-/// One catalog node in the picker: non-selectable branches expand/collapse;
-/// selectable data-value leaves offer "+ condition" (always) and "+ column"
-/// (only when the shape is a data-value projection). Returns [`AnyView`] at
-/// every level so the recursion has a finite type (rules §1).
 /// The path-picker row's disclosure chevron. Icon-only control: the chevron is
 /// decoration, so the button carries the node it opens as its name and its
 /// open/closed state as `aria-expanded` (WAI-ARIA Authoring Practices,
@@ -755,7 +723,7 @@ fn criteria_section(ctx: BuilderCtx) -> AnyView {
 /// connective (AND/OR), a whole-group NOT, an "add group" and a remove/clear
 /// control, an "add here" target toggle, and its children (n-ary). A leaf shows
 /// a live readable sentence, its typed editor, a per-leaf NOT, and remove.
-/// Returns [`AnyView`] at every level (finite recursion type; rules §1).
+/// Returns [`AnyView`] at every level so the recursion has a finite type.
 fn criterion_view(node: CriterionNode, path: Vec<usize>, ctx: BuilderCtx) -> AnyView {
     match node {
         CriterionNode::Leaf(criterion) => leaf_card(&criterion, path, ctx),
@@ -1211,10 +1179,9 @@ fn remove_coded_code(ctx: BuilderCtx, coded: CodedCtx, path: &[usize], code: &st
 /// serves, a code entry that can look its rubric up before adding, and a value
 /// set whose members add with one click each.
 ///
-/// Only the EDITOR knows about terminology. A code added through a lookup and
+/// Only the editor knows about terminology: a code added through a lookup and
 /// one typed by hand are the same `Vec<String>` entry, so the model, the
-/// lowering and the lifting are untouched and the free-text path keeps working
-/// exactly as before.
+/// lowering and the lifting never see the difference.
 fn coded_editor(
     codes: Vec<String>,
     terminology: String,
@@ -1256,10 +1223,8 @@ fn coded_option_boxes(
     path: &[usize],
     ctx: BuilderCtx,
 ) -> AnyView {
-    // Deliberately an inline hint, not an EmptyState: this is one field inside a
-    // leaf-condition card, and the kit's dashed box is sized for a data region —
-    // here it would dwarf the editor it belongs to. The code entry below still
-    // gives the reader something to do.
+    // An inline hint, not an `EmptyState`: this is one field inside a
+    // leaf-condition card, and the kit's dashed box is sized for a data region.
     if options.is_empty() {
         return view! {
             <p class="text-xs text-ink-muted italic">
@@ -1346,9 +1311,9 @@ fn coded_terminology_field(
 /// The code entry: type a code, then either look its rubric up in the named
 /// terminology or add it as-is.
 ///
-/// The lookup's answer is written in the action's own async continuation
-/// (rules §2) — a `404` still adds the code, marked, because the builder must
-/// never refuse a code the CDR happens not to define.
+/// The lookup's answer is written in the action's own async continuation; a
+/// `404` still adds the code, marked, because the builder must never refuse a
+/// code the CDR happens not to define.
 fn coded_code_entry(key: &str, coded: CodedCtx, path: Vec<usize>, ctx: BuilderCtx) -> AnyView {
     let code_id = format!("qb-coded-code-{key}");
     let lookup_id = format!("qb-coded-lookup-{key}");
@@ -1481,7 +1446,6 @@ fn coded_value_set(key: &str, coded: CodedCtx, path: Vec<usize>, ctx: BuilderCtx
         let terminology = coded.terminology.get_untracked();
         async move {
             let found = fetch_value_set(terminology, value_set).await?;
-            // Written in the action's own async continuation (rules §2).
             let known = found.is_some();
             coded
                 .members
@@ -1596,7 +1560,7 @@ fn ordinal_editor(
         .collect::<Vec<_>>();
     if options.is_empty() {
         // An inline hint for the same reason as the coded editor's: a single
-        // field inside a leaf card, not a data region — see `coded_editor`.
+        // field inside a leaf card, not a data region.
         return view! {
             <p class="text-xs text-ink-muted italic">
                 "No ordinal steps in the template for this node."
@@ -1866,9 +1830,8 @@ fn shape_radio(ctx: BuilderCtx, current: QueryShape) -> AnyView {
 /// alias input and a remove button; empty invites adding from the catalog.
 fn columns_editor(ctx: BuilderCtx, columns: &[SelectedColumn]) -> AnyView {
     if columns.is_empty() {
-        // An inline hint, not an EmptyState: the columns editor is one row of the
-        // options strip beside "Order by" and "Limit" — a dashed box there would
-        // outweigh the two controls next to it.
+        // An inline hint, not an `EmptyState`: the columns editor is one row of
+        // the options strip beside "Order by" and "Limit".
         return view! {
             <p class="text-xs text-ink-muted">
                 "Add projection columns with \"+ column\" in the path catalog."
@@ -2081,14 +2044,11 @@ fn limit_editor(ctx: BuilderCtx, limit: Option<u32>) -> AnyView {
 /// Mirrors [`store_query`]'s parameters so the action is a thin pass-through.
 pub(crate) type SaveInput = (String, Option<String>, String);
 
-/// The save action both screens drive. Named because the type appears in three
-/// signatures and a bare `Action<(String, Option<String>, String), …>` reads as
-/// noise at each one.
+/// The save action both query screens drive.
 pub(crate) type SaveAction = Action<SaveInput, Result<(), AdminUiError>>;
 
 /// The three bound save fields, passed as one bundle so the version cannot be
-/// forgotten at a call site (all `Copy`, like the rest of the screen's signal
-/// bundles).
+/// forgotten at a call site.
 #[derive(Clone, Copy)]
 pub(crate) struct SaveFields {
     /// The optional namespace half of the qualified name.
@@ -2232,28 +2192,23 @@ fn save_feedback(save_action: SaveAction) -> AnyView {
 /// **namespace** beside the query **name**, plus the effective qualified name
 /// the save will write.
 ///
-/// The namespace is first-class because it is what the console groups by: a
-/// stored query's identifier is `[{namespace}::]{query-name}`, and the
-/// namespace exists precisely to separate stored queries "by teams, companies,
-/// etc." (ITS-REST `specifications/docs/query/Qualified_query_name.md`
-/// §Qualified query name). Typing a `namespace::` prefix into the NAME field
-/// still works — [`qualify`] lets it win — and the "Saves as" line always
-/// shows the exact name that will be written.
+/// A stored query's identifier is `[{namespace}::]{query-name}`, and the
+/// namespace exists to separate stored queries "by teams, companies, etc."
+/// (ITS-REST `specifications/docs/query/Qualified_query_name.md` §Qualified
+/// query name). A `namespace::` prefix typed into the NAME field still works —
+/// [`qualify`] lets it win — and the "Saves as" line always shows the exact
+/// name that will be written.
 ///
-/// The **version** field beside them is what makes the spec's versioning
-/// reachable: filled in, the save targets
-/// `PUT definition/query/{name}/{version}` — an immutable `(name, version)`
-/// pair (`409` if it exists); left empty, it targets
+/// The **version** field decides which store operation runs: filled in, the
+/// save targets `PUT definition/query/{name}/{version}`, an immutable
+/// `(name, version)` pair (`409` if it exists); left empty, it targets
 /// `PUT definition/query/{name}`, where the server assigns the version and
 /// replaces what is stored at it (ITS-REST
 /// `operations/definition_query_version_store.yaml` /
-/// `operations/definition_query_store.yaml`). The line under the fields always
-/// states which of the two a click will do, so an overwrite is never a
-/// surprise.
+/// `operations/definition_query_store.yaml`).
 ///
 /// `id_prefix` scopes the three field ids (`{id_prefix}-save-namespace` /
-/// `-save-name` / `-save-version`) so the two screens keep distinct, stable
-/// hooks.
+/// `-save-name` / `-save-version`).
 pub(crate) fn save_as_fields(id_prefix: &str, fields: SaveFields) -> AnyView {
     let SaveFields {
         namespace,
@@ -2351,7 +2306,7 @@ pub(crate) fn save_as_fields(id_prefix: &str, fields: SaveFields) -> AnyView {
 // ---------------------------------------------------------------------------
 
 /// The run result: a paged table (or a single big number for a count query)
-/// under a `<Transition>` so paging keeps the prior page visible (rules §6).
+/// under a `<Transition>` so paging keeps the prior page visible.
 fn results_section(
     ctx: BuilderCtx,
     results: Resource<Result<Option<ResultPage>, AdminUiError>>,
@@ -2370,7 +2325,7 @@ fn results_section(
                         let body = results_view(&page, is_count);
                         let export = export_forms(current_aql, params);
                         // Resolve inside the Transition: an SSR'd ErrorBoundary fallback
-                        // mismatches at hydration in leptos 0.8 (E2E console gate).
+                        // mismatches at hydration in leptos 0.8.
                         view! {
                             <section class=CARD_PAD>
                                 <div class="flex items-center justify-between gap-2 flex-wrap mb-3">
@@ -2391,12 +2346,12 @@ fn results_section(
     .into_any()
 }
 
-/// Result-export forms: two plain form-POSTs to the BFF `/export/aql` route —
-/// native submissions the client router does not intercept. Not a no-JS path:
-/// the pane hosting them renders only after a hydrated Run click, and the
-/// hidden inputs track the screen's query/parameters signals via `prop:value`
-/// (nothing lands in SSR markup). The route exports the query's own `LIMIT`
-/// window, or the CDR's default fetch limit. Shared with the raw editor.
+/// Result-export forms: two plain form-POSTs to the BFF `/export/aql` route,
+/// native submissions the client router does not intercept. The pane hosting
+/// them renders only after a hydrated Run click, and the hidden inputs track
+/// the screen's query/parameters signals via `prop:value`, so nothing lands in
+/// SSR markup. The route exports the query's own `LIMIT` window, or the CDR's
+/// default fetch limit. Shared with the raw editor.
 pub(crate) fn export_forms(current_aql: Signal<String>, params: Signal<String>) -> AnyView {
     view! {
         <div class="flex flex-wrap items-center gap-2">
@@ -2476,8 +2431,7 @@ pub(crate) fn results_view(page: &ResultPage, is_count: bool) -> AnyView {
     let table = table_shell(&header_refs, body);
 
     // Every non-empty page offers the table | chart pair: the chart derives one
-    // series per numeric column (`crate::chart_model`), and a page with nothing
-    // chartable says so in the chart pane rather than dropping the affordance.
+    // series per numeric column, and a page with nothing chartable says so.
     let show_chart = RwSignal::new(false);
     let chart = crate::components::results_chart::results_chart(&page.columns, &page.rows);
     view! {
@@ -2531,7 +2485,7 @@ fn result_row(row: &[serde_json::Value]) -> AnyView {
 
 /// Prev/next paging buttons wired to a local `offset` signal (page window is
 /// [`PAGE_SIZE`]). Prev is disabled at the first page; next when the page is
-/// not full. Offsets use saturating arithmetic (reliability rule).
+/// not full. Offsets use saturating arithmetic.
 pub(crate) fn paging_buttons(offset: RwSignal<u32>, row_count: usize) -> AnyView {
     let full = u32::try_from(row_count).unwrap_or(u32::MAX) >= PAGE_SIZE;
     let prev_disabled = Signal::derive(move || offset.get() == 0);

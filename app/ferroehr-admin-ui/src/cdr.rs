@@ -60,9 +60,8 @@ impl CdrResponse {
     /// Whether the response carries exactly this status.
     ///
     /// The status is typed all the way from `reqwest` to the branch that reads
-    /// it (owner directive 2026-08-06), so callers name an
-    /// [`http::StatusCode`] constant and a transposed code is a compile error
-    /// rather than a silent wrong branch.
+    /// it, so callers name an [`http::StatusCode`] constant and a transposed
+    /// code is a compile error rather than a silent wrong branch.
     #[must_use]
     pub fn is(&self, code: http::StatusCode) -> bool {
         self.status == code
@@ -463,7 +462,7 @@ fn validation_errors(value: &serde_json::Value) -> Vec<String> {
 /// `OperationOutcome` (the connector authors its refusals as outcomes — their
 /// `issue[].diagnostics` join into one line), falling back to the raw body or
 /// the bare status. ONE reader for both vocabularies, so no screen ever hands
-/// raw JSON to a toast (#2581).
+/// raw JSON to a toast.
 fn diagnostic_of(response: &CdrResponse) -> String {
     if let Ok(value) = serde_json::from_str::<serde_json::Value>(&response.body) {
         if value

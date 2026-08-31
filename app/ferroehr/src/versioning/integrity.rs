@@ -37,22 +37,18 @@ use crate::versioning::wire::{
 /// ([`crate::versioning::change`]) decides client-vs-server first: a
 /// client-supplied signature is stored verbatim and never reaches here.
 ///
-/// When signing is enabled, the fully-assembled `ORIGINAL_VERSION` — the
-/// *exact* value that will later be served (built by the shared
+/// When signing is enabled the fully-assembled `ORIGINAL_VERSION`, the exact
+/// value that will later be served (built by the shared
 /// [`build_original_version`] so commit-time and read-time bytes match,
-/// **including `other_input_version_uids` merge provenance**, which is part of
-/// the committed version) — is signed over its `canonical_form()` (the signature
-/// attribute Void during serialization).
+/// including `other_input_version_uids` merge provenance), is signed over its
+/// `canonical_form()` with the signature attribute Void.
 ///
-/// `attestations` are the COMPLETED `ATTESTATION`s committed WITH this version
-/// (`UPDATE_VERSION.attestations`, SM `UML/classes/update_version.adoc`
-/// §Attributes). They ARE signed: master06 §Digital Signature serialises "the
-/// entire Version object (note that the signature attribute will be Void at this
-/// point)", so `signature` is the only excluded attribute and an attestation
-/// present at committal is inside the signed form. An attestation added
-/// afterwards (§Attestation: "at any time after committal"; §Contributions: to
-/// "an existing `ORIGINAL_VERSION`") post-dates the signature and is appended
-/// outside it at read time.
+/// The `attestations` committed with this version
+/// (`UPDATE_VERSION.attestations`) are signed too: master06 §Digital Signature
+/// serialises "the entire Version object (note that the signature attribute will
+/// be Void at this point)", so `signature` is the only excluded attribute. An
+/// attestation added afterwards post-dates the signature and is appended outside
+/// it at read time.
 ///
 /// # Errors
 /// [`ServiceError::Signing`] when the canonical form cannot be produced or the

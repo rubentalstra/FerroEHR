@@ -4,19 +4,14 @@
 //! `PostgreSQL` bootstrap: connection settings, pool construction, and the
 //! two-schema migration sequence.
 //!
-//! No openEHR spec governs the persistence mechanism — the storage substrate
-//! is our own PG18-native design. This
-//! module is the single place the rest of the crate obtains a database
-//! handle: [`DbConfig`] (the `[db]` config section, a field of
-//! [`crate::config::FerroEhrConfig`]) feeds [`connect`] /
-//! [`connect_tenant_scoped`] (an `sqlx` [`PgPool`]), and [`run_migrations`]
-//! bootstraps the `ext` + `ehr` schemas and applies both embedded migration
+//! No openEHR spec governs the persistence mechanism; the storage substrate is
+//! our own PG18-native design. This module is the single place the rest of the
+//! crate obtains a database handle: [`DbConfig`] (the `[db]` config section)
+//! feeds [`connect`] and [`connect_tenant_scoped`], and [`run_migrations`]
+//! bootstraps the `ext` and `ehr` schemas and applies both embedded migration
 //! sets. The `sea-query` identifier vocabulary for the live schema lives in
-//! [`iden`].
-//!
-//! This is the defining module for the whole bootstrap surface (no
-//! re-exports): callers import `db::DbConfig`, `db::connect`,
-//! `db::run_migrations`, `db::DEFAULT_URL`, `db::DbError` directly.
+//! [`iden`]. This is the defining module for the whole bootstrap surface, with
+//! no re-exports.
 
 pub mod iden;
 
@@ -89,14 +84,12 @@ pub struct DbConfig {
     /// `statement_timeout` applied to every pooled connection, in
     /// milliseconds; `0` leaves the server default (usually unlimited).
     ///
-    /// This is the backstop the request timeout cannot be. A request that
-    /// exceeds the HTTP timeout is answered `408` by dropping the handler
-    /// future — which does not cancel the statement PostgreSQL is running
-    /// (<https://www.postgresql.org/docs/18/runtime-config-client.html>). Without
-    /// this, a handful of expensive queries can hold every pooled connection
-    /// while every one of their clients has already been given up on: the
-    /// clients see timeouts, the server looks idle, and the database is
-    /// saturated by work nobody is waiting for.
+    /// This is the backstop the request timeout cannot be. A request over the
+    /// HTTP timeout is answered `408` by dropping the handler future, which does
+    /// not cancel the statement PostgreSQL is running
+    /// (<https://www.postgresql.org/docs/18/runtime-config-client.html>), so
+    /// without this a handful of expensive queries can hold every pooled
+    /// connection while their clients have already been given up on.
     ///
     /// Set ABOVE the AQL engine's own budget
     /// ([`crate::service::query::config::QueryConfig::timeout_ms`]) so the
@@ -342,20 +335,13 @@ async fn stamp_tenant_guc(conn: &mut PgConnection) -> Result<(), sqlx::Error> {
 /// no tenant is in scope — so a reused connection never leaks the previous
 /// request's tenant.
 ///
-/// The GUC is stamped in **both** pool hooks, and both are required
-/// (docs.rs, `sqlx::pool::PoolOptions::before_acquire`: "This is _not_
-/// invoked for new connections. Use `after_connect` for those."):
-///
-/// * `after_connect` — covers a connection freshly opened by `acquire`
-///   itself (pool growth under load). Without it, that acquire would run
-///   with the GUC unset, i.e. as the reserved default tenant. A connection
-///   opened by the background `min_connections` maintainer has no request
-///   context and is stamped `''`; it is re-stamped on checkout.
-/// * `before_acquire` — re-stamps a previously idle connection on every
-///   checkout, replacing whatever tenant its session carried before.
-///
-/// Only intended to be wired when tenancy is on; the extra per-acquire
-/// statement is the multi-tenant cost, paid only in multi-tenant mode.
+/// The GUC is stamped in both pool hooks, and both are required (docs.rs,
+/// `sqlx::pool::PoolOptions::before_acquire`: "This is _not_ invoked for new
+/// connections. Use `after_connect` for those."): `after_connect` covers a
+/// connection freshly opened by `acquire` itself under pool growth, which would
+/// otherwise run as the reserved default tenant, and `before_acquire` re-stamps
+/// a previously idle connection on every checkout. Wire it only when tenancy is
+/// on; the extra per-acquire statement is the multi-tenant cost.
 ///
 /// # Errors
 ///
@@ -640,12 +626,11 @@ async fn apply_migrations(conn: &mut PgConnection) -> Result<(), DbError> {
 /// hits `relation "vo_version" already exists`, which is a permanent boot loop
 /// with no error naming the cause.
 ///
-/// Making the migration re-runnable is the wrong repair: those mirrors were built
-/// with `CREATE TABLE … (LIKE …)` against the primary tables as they stood at the
-/// time, so adopting a surviving one silently accepts a mirror that may no longer
-/// match the tier it mirrors — and it re-attaches clinical rows to a repository
-/// that no longer exists. The refusal is the answer, with the remedy in the
-/// message.
+/// Making the migration re-runnable would be the wrong repair: those mirrors
+/// were built with `CREATE TABLE … (LIKE …)` against the primary tables as they
+/// stood, so adopting a surviving one silently accepts a mirror that may not
+/// match the tier it mirrors and re-attaches clinical rows to a repository that
+/// is gone. The refusal carries the remedy in its message.
 ///
 /// `to_regclass` is used rather than a catalog join because it answers `NULL` for
 /// a missing relation instead of failing

@@ -22,24 +22,21 @@
 //!    and a tag collection carries neither `ETag` nor `Last-Modified`, which
 //!    `Requests_and_responses.md` §"`ETag` and `Last-Modified`" reserves for
 //!    resources "that have versioning or unique state identifiers". A tag write
-//!    is therefore last-writer-wins and commits no CONTRIBUTION; every panel
-//!    says so rather than implying a safety it does not have.
+//!    is last-writer-wins and commits no CONTRIBUTION; every panel says so.
 //! 2. **The container form and the VERSION form address DISJOINT collections.**
 //!    A `uid_based_id` is "an `OBJECT_VERSION_ID` … used to get the tags of a
 //!    particular (target) version … whereas the latter … is be used to get the
 //!    tags of the target `VERSIONED_COMPOSITION` container"
 //!    (`operations/composition_tags_get.yaml`), and an `ITEM_TAG` has exactly
 //!    one `target` (RM
-//!    `docs/specs/openehr/RM/docs/UML/classes/org.openehr.rm.common.item_tag.adoc`)
-//!    — so neither collection is a view of the other.
+//!    `docs/specs/openehr/RM/docs/UML/classes/org.openehr.rm.common.item_tag.adoc`),
+//!    so neither collection is a view of the other.
 //! 3. **An aggregate tag row names its target but not its target's KIND.** The
 //!    RM types `target` as a bare `UID_BASED_ID`, which carries no `type`
 //!    member, so opening a row asks the CDR which object holds that id
 //!    ([`resolve_ehr_target`]) exactly as the demographic tag index does.
-//! 4. **`GET /ehr/{ehr_id}/tags` filters, and an empty answer is `200 []`.**
-//!    "This list can be filtered by the given one or more `tag_key`,
-//!    `tag_value`, `tag_target_path` query parameters … This will return an
-//!    empty list when there is no matching `ITEM_TAG`"
+//! 4. **`GET /ehr/{ehr_id}/tags` filters, and an empty answer is `200 []`** —
+//!    "This will return an empty list when there is no matching `ITEM_TAG`"
 //!    (`operations/ehr_tags_get.yaml`); a `404` means the EHR itself is unknown.
 //!
 //! The row type, the wire codec, the merge, the editor panel and the filter
@@ -48,8 +45,8 @@
 //!
 //! No openEHR spec governs an admin UI — our own design / product extension.
 //! Every `#[server]` fn below guards with
-//! [`require_session`](crate::session::require_session) first (rules §0), the
-//! CDR credential never reaches client-visible state, and every path segment is
+//! [`require_session`](crate::session::require_session) first, the CDR
+//! credential never reaches client-visible state, and every path segment is
 //! percent-encoded server-side.
 
 #![allow(
@@ -113,9 +110,9 @@ impl EhrTargetKind {
 
     /// The kind a segment names, or `None` for anything else.
     ///
-    /// Server functions are a public HTTP API (rules §0), so a segment a caller
-    /// hands one is validated back into this closed set rather than
-    /// interpolated into a CDR path.
+    /// Server functions are a public HTTP API, so a segment a caller hands one
+    /// is validated back into this closed set rather than interpolated into a
+    /// CDR path.
     #[must_use]
     pub fn from_segment(segment: &str) -> Option<Self> {
         match segment {
@@ -140,8 +137,7 @@ impl EhrTargetKind {
     /// The console screen that owns an object of this kind.
     ///
     /// A composition has its own route; the status and the directory are tabs
-    /// of the EHR detail screen. Every id is percent-encoded (owner rule: all
-    /// percent-coding goes through `urlencoding`).
+    /// of the EHR detail screen. Every id is percent-encoded.
     #[must_use]
     pub fn href(self, ehr_id: &str, container: &str) -> String {
         let ehr = urlencoding::encode(ehr_id);
@@ -243,8 +239,8 @@ pub async fn set_ehr_tag(
 /// Insert-or-replace one tag in the collection at `url`.
 ///
 /// The plain function behind [`set_ehr_tag`] and [`set_status_tag`], so neither
-/// server function calls the other (rules §7 — a server fn is thin and the
-/// logic it shares lives in an ordinary function).
+/// server function calls the other (a server fn is thin and the logic it shares
+/// lives in an ordinary function).
 ///
 /// # Errors
 /// [`AdminUiError::Invalid`] on a blank key; CDR transport errors pass through;
@@ -328,8 +324,8 @@ pub async fn delete_ehr_tag(
 #[cfg(feature = "ssr")]
 /// Delete every tag under `key` from the collection at `url`.
 ///
-/// The plain function behind [`delete_ehr_tag`] and [`delete_status_tag`]
-/// (rules §7).
+/// The plain function behind [`delete_ehr_tag`] and
+/// [`delete_status_tag`].
 ///
 /// # Errors
 /// [`AdminUiError::Invalid`] on a blank key; CDR transport errors pass through;
@@ -400,12 +396,10 @@ pub async fn list_ehr_tags(
 /// Three steps, and the ORDER is load-bearing: the two IDENTITY comparisons run
 /// first — the EHR resource's own `ehr_status` reference, then the directory's
 /// `uid` — because each names its object exactly. Only then is the COMPOSITION
-/// resource read, which is the one step that infers a kind from a route
-/// answering at all (a `200`, or the `204` of a logically deleted composition).
-/// Inference cannot come first: it would claim every id the composition route
-/// happens to serve, identity comparisons cannot. Any answer other than `404`
-/// from that read is raised rather than read as "not a composition" —
-/// swallowing a refusal would report a reachable object as missing.
+/// resource read, the one step that infers a kind from a route answering at
+/// all, since inference would otherwise claim every id that route happens to
+/// serve. Any answer other than `404` from that read is raised rather than read
+/// as "not a composition".
 ///
 /// # Errors
 /// [`AdminUiError::Unauthenticated`] without a console session;
@@ -496,9 +490,8 @@ fn tags_url(
 /// `docs/specs/openehr/RM/docs/UML/classes/org.openehr.rm.ehr.ehr.adoc`), so
 /// its container part is the versioned object the panel edits.
 ///
-/// This is a second WINDOW of the endpoint the EHR-detail header already
-/// reads — for an identifier, not for a fact the screen shows — never a second
-/// reader of the same claim.
+/// This is a second WINDOW of the endpoint the EHR-detail header already reads,
+/// for an identifier rather than for a fact the screen shows.
 ///
 /// # Errors
 /// CDR transport errors pass through; a non-2xx answer normalizes via
@@ -622,9 +615,7 @@ pub async fn delete_status_tag(
 /// `uid` is whichever `uid_based_id` the viewer is showing: the
 /// `VERSIONED_COMPOSITION` container while the version selector says *Latest*,
 /// and the pinned `OBJECT_VERSION_ID` otherwise. Those are two DISJOINT
-/// collections (module docs fact 2), so the panel names the one it is editing
-/// and switching version switches collection — which is the wire's behaviour
-/// made visible rather than hidden.
+/// collections (module docs fact 2), so the panel names the one it is editing.
 #[must_use]
 pub(crate) fn composition_tags_section(ehr_id: Signal<String>, uid: Signal<String>) -> AnyView {
     target_tags_section(
@@ -781,10 +772,10 @@ fn target_tags_section(
 }
 
 /// Toast both outcomes of both tag writes (the console's mutation-feedback
-/// rule, crate `CLAUDE.md`), naming `object` in the failure copy.
+/// rule), naming `object` in the failure copy.
 ///
-/// An outside-world side-effect, which is what an `Effect` is for (rules §2);
-/// the resources refetch through the actions' version stamps instead.
+/// An outside-world side-effect, which is what an `Effect` is for; the
+/// resources refetch through the actions' version stamps instead.
 fn write_toasts<SetIn, DeleteIn>(
     toaster: thaw::ToasterInjection,
     set: Action<SetIn, Result<(), AdminUiError>>,
@@ -823,10 +814,10 @@ fn write_toasts<SetIn, DeleteIn>(
 /// The EHR detail's **Tags** tab: every tag in the EHR, grouped by the object
 /// it is on, each group opening that object's own screen.
 ///
-/// The three released filters are URL state submitted as a plain GET (rules
-/// §9), the rows are all in hand so the shared footer's row math applies, and
-/// the tab carries `?tab=tags` through the filter submit so filtering never
-/// drops the reader onto another tab.
+/// The three released filters are URL state submitted as a plain GET, the
+/// rows are all in hand so the shared footer's row math applies, and the tab
+/// carries `?tab=tags` through the filter submit so filtering never drops the
+/// reader onto another tab.
 #[must_use]
 pub(crate) fn ehr_tags_section(ehr_id: Signal<String>, selected: Memo<String>) -> AnyView {
     let query = leptos_router::hooks::use_query_map();
@@ -927,13 +918,12 @@ pub(crate) fn ehr_tags_section(ehr_id: Signal<String>, selected: Memo<String>) -
 }
 
 /// The browser's grouped table plus the shared paging footer, built where the
-/// groups are in hand — so the total is a plain value for this render and only
-/// the window is reactive (the tag index's pattern). Turning the page
-/// re-windows the groups already fetched; it never refetches.
+/// groups are in hand, so the total is a plain value for this render and only
+/// the window is reactive. Turning the page re-windows the groups already
+/// fetched; it never refetches.
 ///
 /// Paging is over TARGETS, not rows: a target's tags belong together, and the
-/// released aggregate operation declares no `offset`/`fetch` of its own, so
-/// every tag is in hand anyway.
+/// released aggregate operation declares no `offset`/`fetch` of its own.
 fn browser_table(
     ehr_id: Signal<String>,
     groups: Vec<TagGroup>,
@@ -1038,7 +1028,7 @@ mod tests {
             assert_eq!(EhrTargetKind::from_segment(kind.segment()), Some(kind));
         }
         // …and nothing else does, so no caller-supplied string can steer a CDR
-        // path (rules §0 — a server function is a public HTTP endpoint).
+        // path (a server function is a public HTTP endpoint).
         for hostile in ["", "..", "ehr", "versioned_composition", "tags", "/"] {
             assert_eq!(EhrTargetKind::from_segment(hostile), None, "{hostile}");
         }

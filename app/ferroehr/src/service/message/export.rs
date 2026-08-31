@@ -22,14 +22,11 @@
 //! returns — then its content references are rewritten to the extract-local
 //! namespace per the Creation-Semantics algorithm (see [`rewrite_content_refs`]).
 //!
-//! NOTE (synthetic archetype ids — master05 class tables + BASE
-//! `data_structures` `LOCATABLE.archetype_node_id` 1..1): the extract wrapper
-//! classes (`EXTRACT`, `EXTRACT_CHAPTER`, `OPENEHR_CONTENT_ITEM`) are
-//! `LOCATABLE`s whose `archetype_node_id` must be present, yet this server
-//! *synthesizes* these structural nodes with no generating archetype. We emit
-//! the RM class token (`"EXTRACT"` etc.) as a self-descriptive placeholder
-//! rather than fabricate a fake archetype id — a deliberate deviation, since no
-//! archetype exists for a programmatically-built extract skeleton.
+//! NOTE: the extract wrapper classes are `LOCATABLE`s whose
+//! `archetype_node_id` is 1..1 (master05 class tables) yet are synthesized here
+//! with no generating archetype, so the RM class token (`"EXTRACT"` and
+//! siblings) is emitted as a self-descriptive placeholder rather than a
+//! fabricated archetype id.
 
 #![expect(
     clippy::disallowed_types,
@@ -329,7 +326,7 @@ impl FerroEhrService {
         Ok(resolved)
     }
 
-    /// The `$ehr`-bound criteria primary set (#1736): evaluate each
+    /// The `$ehr`-bound criteria primary set: evaluate each
     /// `EXTRACT_SPEC.criteria` query against the entity's EHR and collect the
     /// version containers its result rows identify (RM `ehr_extract`
     /// `master04-common_package.adoc` §`EXTRACT_SPEC`: criteria "defines in the
@@ -337,27 +334,20 @@ impl FerroEhrService {
     /// entity's record"; "Query expressions use variables such as $ehr to
     /// mean the current EHR from the `manifest` list").
     ///
-    /// Realization decisions (the released text names AQL as an example
-    /// formalism and stops there — the mechanics below are our own design,
-    /// flagged per rule):
-    /// - The formalism must be AQL (`DV_PARSABLE.formalism`,
-    ///   case-insensitive `"aql"`) — any other formalism is a typed refusal,
-    ///   never a silent skip.
-    /// - The `$ehr` binding is realized twice over: the engine call is scoped
-    ///   to the entity's EHR (`ehr_ids = [entity]` — the SM
-    ///   `i_query_service.adoc` EHR scope), and a literal `$ehr` parameter in
-    ///   the query text binds to the EHR id, so both spellings work.
-    /// - A result row identifies a version container through any cell that is
-    ///   an `OBJECT_VERSION_ID`/UID string or an object carrying
-    ///   `uid.value`; cells that resolve to no container in this EHR are data
-    ///   values, not selections. The union across rows and criteria, in
-    ///   first-seen order, is the primary set — possibly empty (a criterion
-    ///   may legitimately match nothing).
-    /// - NOTE: the engine's SM population gate applies — a non-queryable EHR
-    ///   yields no rows (SM `i_query_service.adoc`: queries run over
-    ///   `is_queryable` EHRs). No openEHR spec relates EXTRACT criteria to
-    ///   that gate — our own design keeps criteria exactly as powerful as
-    ///   the query service they are defined in terms of.
+    /// The released text names AQL as an example formalism and stops there, so
+    /// the mechanics are our own design:
+    /// - the formalism must be AQL (`DV_PARSABLE.formalism`, case-insensitive
+    ///   `"aql"`), any other being a typed refusal rather than a silent skip;
+    /// - the `$ehr` binding is realized twice, the engine call being scoped to
+    ///   the entity's EHR and a literal `$ehr` parameter in the query text
+    ///   binding to the EHR id;
+    /// - a result row identifies a version container through any cell that is an
+    ///   `OBJECT_VERSION_ID` or UID string or an object carrying `uid.value`,
+    ///   and the union across rows and criteria in first-seen order is the
+    ///   primary set, possibly empty;
+    /// - the engine's SM population gate applies, so a non-queryable EHR yields
+    ///   no rows (SM `i_query_service.adoc`); no openEHR spec relates EXTRACT
+    ///   criteria to that gate.
     ///
     /// # Errors
     /// `precondition_violation` — a non-AQL formalism, or a criterion that
@@ -978,13 +968,11 @@ fn push_link_target_uuids(link: &Value, out: &mut Vec<VoId>) {
 /// validated against the bundle in [`validate_extract_type`] — the two value
 /// spaces are never reconciled upstream, so both are accepted.
 ///
-/// NOTE (RM `ehr_extract` `master04-common_package.adoc` §Content Criteria
-/// Specification): the RM's "etc" makes its list illustrative, so a service
-/// could accept anything. This one validates, because an unrecognized type
-/// silently exporting an openEHR-EHR extract would misdescribe its own
-/// payload — but the accepted set is a superset of every code the RM names
-/// (plus the catch-all `other`) and of the whole TERM group. Refusing a code
-/// either spec names would be refusing what must be accepted.
+/// NOTE: the RM's "etc" (`master04-common_package.adoc` §Content Criteria
+/// Specification) makes its list illustrative, and this service still validates,
+/// an unrecognized type silently exporting an openEHR-EHR extract being a
+/// payload that misdescribes itself; the accepted set is a superset of every
+/// code the RM names and of the whole TERM group.
 const EXTRACT_CONTENT_TYPES: [&str; 6] = [
     "openehr-ehr",
     "openehr-demographic",

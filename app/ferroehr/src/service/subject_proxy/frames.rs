@@ -12,19 +12,17 @@
 //! routes to the config-gated FHIR executor; `HL7v2` frames are typed
 //! rejections.
 //!
-//! NOTE (pipeline outcome model, `data_frame.adoc`):
-//! - **dispatch-impossible** (no method, unknown `model_type`/`call_name`, or a
-//!   not-yet-wired executor) ⇒ `Err(SmError::not_implemented)`;
-//! - **executed but failed** (backend down, no `query_text`, subject
-//!   unresolved, AQL error) ⇒ `Ok(SAMPLE{is_unavailable})` — a real sample per
-//!   `sample.adoc` ("Every retrieval attempt will generate a new Sample …
-//!   regardless of whether data was actually available or not").
+//! The pipeline outcome model (`data_frame.adoc`): a dispatch-impossible frame
+//! (no method, unknown `model_type` or `call_name`, an unwired executor) is
+//! `Err(SmError::not_implemented)`, while a frame that executed and failed
+//! (backend down, no `query_text`, subject unresolved, AQL error) is
+//! `Ok(SAMPLE{is_unavailable})`, a real sample per `sample.adoc` ("Every
+//! retrieval attempt will generate a new Sample … regardless of whether data was
+//! actually available or not").
 //!
-//! A failed/unavailable primary tries `fallback_method` when present. Frame-
-//! level `get_frame` does **not** persist samples — persistence is the job of
-//! the variable read paths (`get_variable`/`get_data_set`), which own the
-//! variable context the `sp_sample` FK requires; a bare `get_frame` has no
-//! variable to attach a sample to.
+//! A failed or unavailable primary tries `fallback_method` when present.
+//! Frame-level `get_frame` persists no samples: that belongs to the variable
+//! read paths, which own the variable context the `sp_sample` FK requires.
 
 #![expect(
     clippy::disallowed_types,

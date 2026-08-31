@@ -3,36 +3,28 @@
 
 //! Bounded AQL plan cache (the parse/plan overhead item).
 //!
-//! Parsing an AQL query (`logos` + `chumsky`, `openehr_query`) and lowering it
-//! to the typed [`QueryIr`] ([`crate::aql::lower_query`]) is a pure,
-//! deterministic function of the query **text**: no request parameter *value*,
-//! paging window (REST `fetch`/`offset` or AQL `LIMIT`/`OFFSET`), EHR scope,
-//! or system id is baked into the IR — those all bind at SQL-build time
-//! ([`crate::aql::sql::build`]). So a repeated query text can reuse one lowered
-//! plan; only the per-request binding differs. This cache holds that lowered
-//! plan keyed on the exact query text, sparing every repeat the parse + path
-//! analysis + IR lowering.
+//! Parsing an AQL query and lowering it to the typed [`QueryIr`]
+//! ([`crate::aql::lower_query`]) is a deterministic function of the query text:
+//! no parameter value, paging window, EHR scope or system id is baked into the
+//! IR, all of them binding at SQL-build time ([`crate::aql::sql::build`]). This
+//! cache holds the lowered plan keyed on the exact query text, sparing every
+//! repeat the parse, path analysis and IR lowering.
 //!
-//! No openEHR spec governs this cache — our own performance design/extension
-//! (openEHR defines the query *language*, not its execution). Two properties
-//! keep it semantically identical to the uncached path:
+//! No openEHR spec governs this cache — our own performance design/extension.
+//! Two properties keep it semantically identical to the uncached path:
 //!
-//! * **Nothing request-specific is keyed or stored.** The cached [`QueryIr`]
-//!   records only the *names* of the `$parameters` it references
-//!   ([`QueryIr::params`]); the query service re-runs
-//!   [`crate::aql::check_params`] against the caller's bindings on every
-//!   execution (hit or miss), and binds the values, paging, and scope
-//!   downstream — so two callers of the same query text with different
-//!   parameters, `fetch`, `offset`, or `ehr_ids` still get correct,
+//! * Nothing request-specific is keyed or stored. The cached [`QueryIr`] records
+//!   only the names of the `$parameters` it references ([`QueryIr::params`]);
+//!   the query service re-runs [`crate::aql::check_params`] against the caller's
+//!   bindings on every execution and binds the values, paging and scope
+//!   downstream, so two callers of the same text with different parameters get
 //!   independent results from the one shared plan.
-//! * **Terminology-resolving plans are never cached.** A query whose `WHERE`
-//!   uses `TERMINOLOGY(…)` (QUERY master03 §TERMINOLOGY) has its value lists
-//!   resolved through the terminology service at plan time
-//!   ([`crate::aql::terminology::expand_matches`]); that resolution may differ on a later
-//!   execution, so such a plan is *not* a pure function of the query text and
-//!   is excluded from the cache by the caller. This is the "expansion stays
-//!   out of the cached prefix" choice: no staleness window, rather than a TTL
-//!   that could serve a stale expansion.
+//! * Terminology-resolving plans are never cached. A query whose `WHERE` uses
+//!   `TERMINOLOGY(…)` (QUERY master03 §TERMINOLOGY) has its value lists resolved
+//!   through the terminology service at plan time
+//!   ([`crate::aql::terminology::expand_matches`]), and that resolution may
+//!   differ on a later execution, so the caller excludes such a plan. There is
+//!   no staleness window rather than a TTL that could serve a stale expansion.
 
 use std::sync::Arc;
 use std::sync::atomic::{AtomicU64, Ordering};

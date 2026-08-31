@@ -12,12 +12,11 @@
 //! §Access logging), so the store lives in its own `audit` schema, strictly
 //! outside the EHR data (`migrations/audit/0001_baseline.sql`).
 //!
-//! The canonical stored form is the **FHIR R4 `AuditEvent`** (IHE BALP
-//! shape, rendered by the `fhir` cargo feature) in the `fhir` jsonb column —
-//! the exact document
-//! the RESTful-ATNA ITI-81 search serves; the promoted columns are derived
-//! search keys, nothing more. Rows are append-only except the per-sink
-//! delivery stamps (the forwarding outbox) and retention reaping.
+//! The canonical stored form is the FHIR R4 `AuditEvent` (IHE BALP shape,
+//! rendered by the `fhir` cargo feature) in the `fhir` jsonb column, the exact
+//! document the RESTful-ATNA ITI-81 search serves; the promoted columns are
+//! derived search keys. Rows are append-only except the per-sink delivery stamps
+//! and retention reaping.
 
 #![expect(
     clippy::disallowed_types,
@@ -250,15 +249,14 @@ impl AuditStore {
     /// recorded chain state.
     ///
     /// An empty result means the trail is intact. Any returned
-    /// [`AuditChainFinding`] names one damaged record (or one damaged chain
-    /// boundary) and what is wrong with it — this is the report an operator
-    /// acts on, and the same answer `SELECT * FROM audit.verify_audit_chain()`
-    /// gives from `psql`.
+    /// [`AuditChainFinding`] names one damaged record or chain boundary and what
+    /// is wrong with it, the same answer
+    /// `SELECT * FROM audit.verify_audit_chain()` gives from `psql`.
     ///
     /// NOTE: no openEHR spec governs audit tamper detection — our own
     /// design/extension; the chain is unkeyed, so it detects modification and
-    /// deletion but cannot prevent a party with unrestricted write access from
-    /// recomputing the chain wholesale.
+    /// deletion but cannot stop a party with unrestricted write access from
+    /// recomputing it wholesale.
     ///
     /// # Errors
     /// [`AuditError::Store`] when the verification query cannot run — which is

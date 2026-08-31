@@ -206,40 +206,35 @@ pub(super) fn aql_like_to_sql(pattern: &str) -> String {
 ///
 /// When `value` parses as a full archetype id (BASE `base_types` master05
 /// §Archetype Identifiers, form `qualified_rm_entity.domain_concept.vN`), the
-/// predicate implements **query subsumption**: BASE `architecture_overview`
-/// master10 §Design-time Relationships — "the data created with any specialised
-/// archetype will always be matched by queries based on the parent archetype" —
-/// and AM master07 §Querying / §Supporting Archetype-based Querying, where the
-/// matching set for a query naming X is X, its older minor/patch variants, its
-/// specialisation parents and their older variants, bounded to one major version
-/// (the interface-reference major boundary is hard). The matching set is drawn
-/// from two sources.
+/// predicate implements query subsumption: "the data created with any
+/// specialised archetype will always be matched by queries based on the parent
+/// archetype" (BASE `architecture_overview` master10 §Design-time
+/// Relationships), with AM master07 §Supporting Archetype-based Querying making
+/// the matching set for a query naming X be X, its older minor and patch
+/// variants, its specialisation parents and their older variants, bounded to one
+/// major version. That set comes from two sources.
 ///
-/// The first is the ADL 1.4 naming convention, and applies to an ADL 1.4-form
-/// id ONLY (a major-only `.vN` version): a specialisation child is identified by
-/// extending the parent's `domain_concept` with a `-`-separated segment
-/// (master10 §Design-time Relationships), so a query naming a parent matches its
-/// own node plus every child whose `arch_concept` begins with `concept-`, scoped
-/// to the same `qualified_rm_entity` + major. All parts compare lowercased
-/// (master05 §"Composite Identifiers and Case"), served by
+/// The first is the ADL 1.4 naming convention, and applies to an ADL 1.4-form id
+/// only (a major-only `.vN` version): a specialisation child extends the
+/// parent's `domain_concept` with a `-`-separated segment, so a query naming a
+/// parent matches its own node plus every child whose `arch_concept` begins with
+/// `concept-`, scoped to the same `qualified_rm_entity` and major. All parts
+/// compare lowercased (master05 §"Composite Identifiers and Case"), served by
 /// `idx_node_arch_subsume`.
 ///
-/// The second source is `lineage` — the **stored** specialisation graph
-/// ([`ArchetypeLineage`], resolved from the `specialize` clauses of the ADL2 /
-/// OPT2 family before the SQL is built). AM `Identification` master07
-/// §Supporting Archetype-based Querying: "for specialised archetypes, the
+/// The second is `lineage`, the stored specialisation graph
+/// ([`ArchetypeLineage`] resolved from the `specialize` clauses of the ADL2 and
+/// OPT2 family before the SQL is built), since "for specialised archetypes, the
 /// specialisation lineage can only be obtained from the operational form of the
-/// archetype, found in the template used to create the data". Every stored
-/// descendant of the queried identity therefore joins the matching set on its
-/// own `(arch_entity, arch_major, arch_concept)` triple — a declared parent
-/// reference may name another major, so descendants are grouped by their own
-/// entity + major rather than assumed to share the query's. A queried
-/// identifier with no stored family resolves to itself, which is exactly the
-/// pre-lineage behaviour.
+/// archetype, found in the template used to create the data" (AM
+/// `Identification` master07). Every stored descendant joins the matching set on
+/// its own `(arch_entity, arch_major, arch_concept)` triple, a declared parent
+/// reference being free to name another major. A queried identifier with no
+/// stored family resolves to itself.
 ///
-/// Otherwise (at/id-codes, arbitrary strings, params resolving to non-HRIDs) the
+/// For at- and id-codes, arbitrary strings and params resolving to non-HRIDs the
 /// predicate is the case-folded equality on `archetype`, served by the
-/// `idx_node_archetype_lower` functional index — unchanged.
+/// `idx_node_archetype_lower` functional index.
 //
 // The `-`-prefix rule is exact for an ADL 1.4-form id (major-only `.vN`,
 // lineage encoded directly in the concept) and is applied ONLY to that form: AM

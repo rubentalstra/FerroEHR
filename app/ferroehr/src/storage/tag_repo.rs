@@ -121,33 +121,24 @@ pub async fn list_tags(
 ///
 /// Runs on the caller's transaction.
 ///
-/// **A tag that SURVIVES the replace keeps its original `created_at`.** The
-/// wire operation is a whole-collection replace, but an `ITEM_TAG` identity —
-/// the (`key`, `target_path`) pair within one target (ITS-REST overview
-/// `Requests_and_responses.md` §item-tag headers: "uniquely identified by their
-/// `key` and `target_path` pair attributes") — that appears in both the stored
-/// and the posted set is the SAME tag, re-asserted, not a new one. Resetting
-/// its creation instant on every unrelated edit to a sibling tag would destroy
-/// when it was first attached, and that instant is observable: the admin
-/// dump/export round-trips `item_tag.created_at`
-/// (`crate::service::admin::dump_load`). An identity absent from the posted set
-/// is genuinely removed, and a new identity is genuinely created, so both get
-/// the current instant.
+/// A tag that survives the replace keeps its original `created_at`. An
+/// `ITEM_TAG` identity, the (`key`, `target_path`) pair within one target
+/// (ITS-REST overview `Requests_and_responses.md` §item-tag headers), appearing
+/// in both the stored and the posted set is the same tag re-asserted, and its
+/// creation instant is observable through the admin dump/export. An identity
+/// absent from the posted set is removed and a new identity is created, so both
+/// take the current instant.
 ///
-/// NOTE: no openEHR spec governs this — our own design. RM common
-/// `master07-tags.adoc` and its normative home (RM ehr
-/// `master04-ehr_package.adoc` §Tags) model `ITEM_TAG` with no timestamp at
-/// all, and no released ITS-REST text assigns a tag a creation instant, so
-/// `created_at` is a storage column of ours and its behaviour across a replace
-/// is ours to fix.
+/// NOTE: no openEHR spec governs this — our own design; RM common
+/// `master07-tags.adoc` and RM ehr `master04-ehr_package.adoc` §Tags model
+/// `ITEM_TAG` with no timestamp, so `created_at` is a storage column of ours.
 ///
 /// The carry-forward is computed in three statements rather than one
-/// data-modifying CTE on purpose: a `WITH prior AS (DELETE … RETURNING) INSERT
-/// …` would have the insert's unique-index check race the CTE's delete within
-/// one command, which PostgreSQL does not define away
+/// data-modifying CTE because a `WITH prior AS (DELETE … RETURNING) INSERT …`
+/// would have the insert's unique-index check race the CTE's delete within one
+/// command, which PostgreSQL does not define away
 /// (<https://www.postgresql.org/docs/18/queries-with.html> §Data-Modifying
-/// Statements in WITH: the sub-statements "cannot see one another's effects on
-/// the target tables"). All three run on the caller's transaction, so the
+/// Statements in WITH). All three run on the caller's transaction, so the
 /// replace stays atomic.
 ///
 /// # Errors

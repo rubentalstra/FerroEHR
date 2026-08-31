@@ -6,11 +6,11 @@
 //! commit-activity trend and an EHR's contribution timeline.
 //!
 //! Charts are `leptos-chartistry` (pure Rust + SVG): the no-JavaScript mandate
-//! bans every charting-library binding (`.claude/rules/leptos-ui.md` §0). The
-//! chart draws client-side once the container is measured and renders a
-//! placeholder on the server pass, so the surrounding view structure is
-//! identical on both passes (§8); its points come from
-//! [`crate::activity::bucket_by_day`], a pure function of the wire data.
+//! bans every charting-library binding. The chart draws client-side once the
+//! container is measured and renders a placeholder on the server pass, so the
+//! surrounding view structure is identical on both passes; its points
+//! come from [`crate::activity::bucket_by_day`], a pure function of the wire
+//! data.
 
 use leptos::prelude::*;
 use leptos_chartistry::{

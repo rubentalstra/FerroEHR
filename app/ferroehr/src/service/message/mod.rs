@@ -1,7 +1,7 @@
 // SPDX-FileCopyrightText: FerroEHR contributors
 // SPDX-License-Identifier: MIT
 
-//! The Message service (`service/message/`) — the openEHR **Message component**.
+//! The Message service.
 //!
 //! The platform crate's realization of SM `I_MESSAGE_SERVICE` /
 //! `I_EHR_EXTRACT_SERVICE` / `I_TDD_SERVICE`
@@ -9,42 +9,36 @@
 //! and the UML classes `i_message_service.adoc`, `i_ehr_extract_service.adoc`,
 //! `i_tdd_service.adoc`).
 //!
-//! Layout mirrors the spec's own export / import / TDD decomposition, one file
-//! per concern, each carrying its public `FerroEhrService` methods and the
-//! machinery behind them:
+//! The layout mirrors the spec's own export / import / TDD decomposition, each
+//! file carrying its public `FerroEhrService` methods and the machinery behind
+//! them:
 //!
 //! - `export` — `I_EHR_EXTRACT_SERVICE.export_ehrs` / `export_ehr_extracts`:
 //!   the extract-building algorithm over the stored versions (RM EHR-Extract IM
 //!   `master05`/`master09`).
 //! - `import` — `I_EHR_EXTRACT_SERVICE.import_ehr` / `import_ehr_extract`:
-//!   parse a received `EXTRACT` and dispatch clone-vs-append; the
+//!   parse a received `EXTRACT` and dispatch clone against append; the
 //!   `IMPORTED_VERSION` replay is [`crate::versioning`] (RM common master06
 //!   §Copying).
-//! - `tdd` — `I_TDD_SERVICE.import_tdd` / `import_tdds`: TDD XML →
-//!   COMPOSITION → validated commit.
+//! - `tdd` — `I_TDD_SERVICE.import_tdd` / `import_tdds`: TDD XML to COMPOSITION
+//!   to validated commit.
 //!
 //! `I_MESSAGE_SERVICE` declares no functions (`i_message_service.adoc`), so it
 //! gets no code.
 //!
 //! # Cross-module wiring
 //!
-//! - **`crate::versioning`** — `import` reaches `commit_import` /
-//!   `commit_demographic_import` (`IMPORTED_VERSION` replay); `export` reaches
-//!   `original_version` / `versioned_object` / `revision_history` / the version
-//!   reads. These are the versioning-engine surface, called directly.
-//! - **`crate::templates` + `crate::validation`** — `tdd` resolves the OPT and
-//!   commits through the validated COMPOSITION path
-//!   (`FerroEhrService::web_template_for` / `get_template_xml` /
-//!   `create_composition`).
-//! - **ATNA audit** — a completed export/import emits one EHR-Extract audit
-//!   event (`FerroEhrService::emit_extract_audit`) for non-repudiation (BASE
-//!   `architecture_overview/master07-security.adoc` §Non-repudiation).
-//! - **`crate::aql`** — `EXTRACT_SPEC.criteria` / `commit_time_interval` remain
-//!   typed rejects pending the `$ehr`-bound AQL export wave (see the NOTEs
-//!   in `export`).
-//! - **The extension REST wire lives in `ferroehr-rest`**, not here (ITS-REST
-//!   vends no message endpoints — a message/admin extension route is
-//!   spec-silent transport, our own extension).
+//! `import` reaches [`crate::versioning`]'s `commit_import` /
+//! `commit_demographic_import`, and `export` reaches its `original_version` /
+//! `versioned_object` / `revision_history` and the version reads. `tdd` resolves
+//! the OPT and commits through the validated COMPOSITION path
+//! (`FerroEhrService::web_template_for` / `get_template_xml` /
+//! `create_composition`). A completed export or import emits one EHR-Extract
+//! audit event (`FerroEhrService::emit_extract_audit`) for non-repudiation (BASE
+//! `architecture_overview/master07-security.adoc` §Non-repudiation).
+//! `EXTRACT_SPEC.criteria` and `commit_time_interval` remain typed rejects (the
+//! NOTEs in `export`). The extension REST wire lives in `ferroehr-rest`, ITS-REST
+//! vending no message endpoints.
 
 mod export;
 mod import;

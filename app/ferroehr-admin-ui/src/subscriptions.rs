@@ -21,23 +21,19 @@
 //! **The console never renders a broker binding key.** Which queue an enabled
 //! subscription binds, and how a wildcard predicate is spelled in a topic key,
 //! is the CDR publisher's grammar; restating it here would be a second copy of
-//! a grammar this crate cannot import (it may depend only on `crates/openehr-*`
-//! and the network), free to drift from what the server actually binds. The
-//! screen therefore states the predicates in plain words.
+//! a grammar this crate cannot import. The screen states the predicates in
+//! plain words.
 //!
 //! **Probe-and-hide.** The group is config-gated on the CDR (`[events]
 //! admin_api`, off by default) and answers `404` for every route as if
 //! unmounted while it is off, so the console discovers it
-//! ([`probe_event_subscriptions`]) before offering any of it — the same
-//! discover-and-hide pattern as [`crate::admin`], [`crate::management`] and
-//! [`crate::tenants`]. Capability is not authorization: a mounted-but-refused
-//! group (`401`/`403`) still counts as present, and the refusal surfaces as
-//! copy on the screen that asked.
+//! ([`probe_event_subscriptions`]) before offering any of it. Capability is not
+//! authorization: a mounted-but-refused group (`401`/`403`) still counts as
+//! present, and the refusal surfaces as copy on the screen that asked.
 //!
 //! Every `#[server]` fn guards with
 //! [`require_session`](crate::session::require_session) first (a server fn is a
-//! publicly reachable HTTP endpoint — rules §0) and keeps the CDR credential
-//! server-side.
+//! publicly reachable HTTP endpoint) and keeps the CDR credential server-side.
 
 #![allow(
     clippy::disallowed_types,
@@ -57,10 +53,10 @@ use crate::error::AdminUiError;
 /// created_at}`).
 ///
 /// Every wire value is a string, including the id and the timestamp: the record
-/// crosses the server-fn boundary and is rendered, never computed with (rules
-/// §1 — no `usize`, and no parsing the console would have to keep in step with
-/// the CDR's own formatting). A predicate the CDR serves as `null` — its
-/// wildcard — arrives here as the empty string.
+/// crosses the server-fn boundary and is rendered, never computed with (no
+/// `usize`, and no parsing the console would have to keep in step with the
+/// CDR's own formatting). A predicate the CDR serves as `null` — its wildcard —
+/// arrives here as the empty string.
 #[derive(Debug, Clone, PartialEq, Eq, Default, Serialize, Deserialize)]
 pub struct SubscriptionRow {
     /// The subscription's UUID, as the CDR spelled it.
@@ -84,8 +80,7 @@ pub struct SubscriptionRow {
 ///
 /// One named struct rather than four adjacent `String` parameters at each
 /// dispatch site: the predicates are all the same type, so a transposition
-/// would otherwise be silent (the reliability rule's newtype/naming
-/// discipline).
+/// would otherwise be silent.
 #[derive(Debug, Clone, PartialEq, Eq, Default, Serialize, Deserialize)]
 pub struct SubscriptionPredicates {
     /// The versioned-object kind to match (empty = any).
@@ -100,8 +95,8 @@ pub struct SubscriptionPredicates {
 
 /// Whether the CDR serves its event-subscription admin API.
 ///
-/// Carries only fixed-size, client-safe data (rules §1) — it crosses the
-/// server-fn boundary.
+/// Carries only fixed-size, client-safe data — it crosses the server-fn
+/// boundary.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
 pub enum SubscriptionAvailability {
     /// The group answered: it is mounted, so the screen is offered. Whether
@@ -150,7 +145,7 @@ pub fn renders_event_subscriptions(probe: &Result<SubscriptionAvailability, Admi
 /// The eventing gate: one probe [`Resource`].
 ///
 /// Created in component setup — never inside a `Suspend` closure, which re-runs
-/// and would re-create the resource (rules §4).
+/// and would re-create the resource.
 #[must_use]
 pub fn event_subscription_gate() -> Resource<Result<SubscriptionAvailability, AdminUiError>> {
     Resource::new(|| (), |()| async move { probe_event_subscriptions().await })
@@ -159,12 +154,11 @@ pub fn event_subscription_gate() -> Resource<Result<SubscriptionAvailability, Ad
 /// Render `affordance` only when the gate found the group mounted; otherwise
 /// render nothing at all (probe-and-hide).
 ///
-/// The probe is resolved INSIDE the `<Suspense>` (an SSR'd `ErrorBoundary`
+/// The probe is resolved INSIDE the `<Suspense>`: an SSR'd `ErrorBoundary`
 /// fallback mismatches at hydration in leptos 0.8, and a render-time resource
-/// read is itself a hydration mismatch — rules §4/§6), and `affordance` creates
-/// no resources, so re-runs are safe. It is shared through an `Arc` because the
-/// `Suspend` closure re-runs on every notification of the resource it awaits
-/// and must therefore not consume its environment.
+/// read is itself a hydration mismatch. `affordance` creates no resources, so
+/// re-runs are safe, and it is shared through an `Arc` because the `Suspend`
+/// closure must not consume its environment.
 #[must_use]
 pub fn when_event_subscriptions_usable(
     gate: Resource<Result<SubscriptionAvailability, AdminUiError>>,
@@ -207,7 +201,7 @@ pub fn name_is_valid(name: &str) -> bool {
 /// How one predicate reads on screen: its value, or `any` for the wildcard.
 ///
 /// Pure and unit-tested, so the table cell and the summary sentence spell an
-/// absent predicate identically on the server pass and at hydration (rules §8).
+/// absent predicate identically on the server pass and at hydration.
 #[must_use]
 pub fn predicate_label(value: &str) -> String {
     if value.trim().is_empty() {
@@ -245,9 +239,7 @@ pub fn match_summary(row: &SubscriptionRow) -> String {
 ///
 /// Names the object, carries the CDR's own diagnostic verbatim, and names the
 /// next action. The `409` here is a duplicate NAME (the CDR's unique key), not
-/// the admin deletes' "still referenced by committed data", so this family gets
-/// its own wording rather than
-/// [`delete_failure_copy`](crate::admin::delete_failure_copy)'s.
+/// the admin deletes' "still referenced by committed data".
 #[must_use]
 pub fn subscription_failure_copy(object: &str, error: &AdminUiError) -> String {
     match error {
@@ -380,9 +372,8 @@ pub async fn create_event_subscription(
 /// The PUT REPLACES the whole predicate set: a predicate left empty becomes the
 /// wildcard, which is why the edit form always submits all four.
 ///
-/// The id is percent-encoded with the `urlencoding` crate (owner rule: all
-/// percent-coding goes through it) — the CDR serves it as text, and the console
-/// never hand-rolls a codec for a path segment.
+/// The id is percent-encoded with the `urlencoding` crate — the CDR serves it
+/// as text, and the console never hand-rolls a codec for a path segment.
 ///
 /// # Errors
 /// [`AdminUiError::Unauthenticated`] without a console session;
@@ -470,8 +461,7 @@ fn predicate_value(raw: &str) -> serde_json::Value {
 /// flag, each value trimmed.
 ///
 /// Built through `serde_json` rather than string formatting so a value carrying
-/// a quote or a backslash is escaped by the encoder (owner rule: never
-/// hand-roll a codec).
+/// a quote or a backslash is escaped by the encoder.
 #[cfg(feature = "ssr")]
 fn subscription_definition(name: &str, predicates: &SubscriptionPredicates) -> String {
     serde_json::json!({

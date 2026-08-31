@@ -16,30 +16,25 @@
 //! it, and renders no destructive affordance at all when it is not mounted.
 //!
 //! NOTE: admin availability is discovered via the System API conformance
-//! manifest (ITS-REST 1.1.0 System API, `OPTIONS {base_path}` → `endpoints[]`) —
-//! `docs/specs/openehr/ITS-REST/specifications/system.openapi.yaml`. That is
-//! the spec's own capability-discovery operation, so the console never has to
-//! poke a destructive group to learn whether it exists, and the answer is the
-//! server's live mounted-group set.
+//! manifest (`OPTIONS {base_path}` → `endpoints[]`,
+//! `docs/specs/openehr/ITS-REST/specifications/system.openapi.yaml`) — the
+//! spec's own capability-discovery operation, so the console never pokes a
+//! destructive group to learn whether it exists.
 //!
 //! **Capability is not authorization.** The manifest says the admin group is
-//! MOUNTED; whether THIS session may use it is answered per request by the
-//! CDR's RBAC (`401`/`403`). So the affordances render whenever `/admin` is
-//! advertised, and a refusal on click surfaces through
-//! [`delete_failure_copy`], naming the object and the missing permission.
+//! MOUNTED; whether THIS session may use it is answered per request by the CDR's
+//! RBAC (`401`/`403`), and a refusal on click surfaces through
+//! [`delete_failure_copy`].
 //!
-//! NOTE: no openEHR spec governs an admin UI, and none governs the template
-//! or stored-query deletes it drives either (the ITS-REST Admin API defines
-//! only EHR deletes) — our own design / product extension. The EHR delete is
-//! the spec-grounded one: SM `I_ADMIN_SERVICE.physical_ehr_delete`
+//! NOTE: no openEHR spec governs an admin UI, and none governs the template or
+//! stored-query deletes it drives either — our own design. The EHR delete is the
+//! spec-grounded one: SM `I_ADMIN_SERVICE.physical_ehr_delete`
 //! (`docs/specs/openehr/SM/docs/UML/classes/i_admin_service.adoc`
-//! §`physical_ehr_delete`), whose `ehr_id_does_not_exist` error is the `404`
-//! the copy below names.
+//! §`physical_ehr_delete`), whose `ehr_id_does_not_exist` error is the `404`.
 //!
 //! Every `#[server]` fn guards with
 //! [`require_session`](crate::session::require_session) first (a server fn is
-//! a public HTTP endpoint — rules §0) and keeps the CDR credential
-//! server-side.
+//! a public HTTP endpoint) and keeps the CDR credential server-side.
 
 use leptos::prelude::*;
 use leptos::server;
@@ -55,8 +50,8 @@ const ADMIN_ENDPOINT: &str = "/admin";
 
 /// Whether the CDR advertises its Admin API as mounted.
 ///
-/// Carries only fixed-size, client-safe data (rules §1) — it crosses the
-/// server-fn boundary.
+/// Carries only fixed-size, client-safe data — it crosses the server-fn
+/// boundary.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
 pub enum AdminAvailability {
     /// The conformance manifest lists `/admin`: the group is mounted, so the
@@ -113,7 +108,7 @@ pub async fn probe_admin_api() -> Result<AdminAvailability, AdminUiError> {
 /// The per-screen admin gate: one probe [`Resource`].
 ///
 /// Created in component setup — never inside a `Suspend` closure, which
-/// re-runs and would re-create the resource (rules §4).
+/// re-runs and would re-create the resource.
 #[must_use]
 pub fn admin_gate() -> Resource<Result<AdminAvailability, AdminUiError>> {
     Resource::new(|| (), |()| async move { probe_admin_api().await })
@@ -122,12 +117,11 @@ pub fn admin_gate() -> Resource<Result<AdminAvailability, AdminUiError>> {
 /// Render `affordance` only when the gate found the Admin API mounted;
 /// otherwise render nothing at all (discover-and-hide).
 ///
-/// The probe is resolved INSIDE the `<Suspense>` (an SSR'd `ErrorBoundary`
+/// The probe is resolved INSIDE the `<Suspense>`: an SSR'd `ErrorBoundary`
 /// fallback mismatches at hydration in leptos 0.8, and a render-time resource
-/// read is itself a hydration mismatch — rules §4/§6), and `affordance`
-/// creates no resources, so re-runs are safe. It is shared through an `Arc`
-/// because the `Suspend` closure re-runs on every notification of the resource
-/// it awaits and must therefore not consume its environment.
+/// read is itself a hydration mismatch. `affordance` creates no resources, so
+/// re-runs are safe, and it is shared through an `Arc` because the `Suspend`
+/// closure must not consume its environment.
 #[must_use]
 pub fn when_admin_usable(
     gate: Resource<Result<AdminAvailability, AdminUiError>>,
@@ -187,11 +181,10 @@ pub fn delete_failure_copy(object: &str, error: &AdminUiError) -> String {
 /// Physically delete an operational template
 /// (`DELETE admin/template/{template_id}`).
 ///
-/// The id is a CDR-supplied string, so the path segment is percent-encoded
-/// with the `urlencoding` crate (owner rule: all percent-coding goes through
-/// it) — a template id containing a `/`, `#`, `?` or `%` would otherwise
-/// address a different resource. A template still referenced by a committed
-/// version is refused `409` by the CDR; the diagnostic surfaces through
+/// The id is a CDR-supplied string, so the path segment is percent-encoded with
+/// the `urlencoding` crate — a template id containing a `/`, `#`, `?` or `%`
+/// would otherwise address a different resource. A template still referenced by
+/// a committed version is refused `409`; the diagnostic surfaces through
 /// [`delete_failure_copy`].
 ///
 /// # Errors

@@ -5,27 +5,19 @@
 //!
 //! This is a relational-algebra-flavoured, fully typed intermediate
 //! representation of an AQL `SELECT` query over the greenfield node store. It is
-//! produced by [`crate::aql::plan`] (path analysis in `super::analyze` +
-//! lowering in `super::lower`) and consumed by the *next* package (IR→SQL via
-//! `sea-query`). **No SQL strings appear anywhere in this module** — the IR
-//! records typed intent (structure hops, fragment jsonpaths, coercions, version
-//! scope, wildcard semantics) and leaves every SQL-shaped decision to the SQL
-//! package.
+//! produced by [`crate::aql::plan`] (path analysis in `super::analyze` plus
+//! lowering in `super::lower`) and consumed by the IR-to-SQL package. No SQL
+//! strings appear anywhere in this module: the IR records typed intent
+//! (structure hops, fragment jsonpaths, coercions, version scope, wildcard
+//! semantics) and leaves every SQL-shaped decision to the SQL package.
 //!
-//! ## Deviations from the design sketch (justified)
-//!
-//! * The design sketch lists `VersionScope::AtTime(param)` as a distinct
-//!   variant. AQL only expresses version-at-time as a *standard predicate* on
-//!   version metadata (there is no dedicated grammar), so all version-selection
-//!   predicates lower uniformly to [`VersionScope::Predicate`]; the common
-//!   at-time case is recognised via [`VersionScope::is_at_time`] rather than a
-//!   separate variant. This keeps one lowering path and mirrors the AST (which
-//!   only has `VersionPredicate::Standard`).
-//! * `Coercion::Magnitude` covers **both** `DV_ORDERED` value objects (extracted
-//!   via `ext.openehr_magnitude`) and numeric primitives (a direct numeric
-//!   cast). The analyzer records the candidate leaf [`TypeSet`] on the
-//!   [`LeafPath`]; the SQL package picks the exact extraction from it. This
-//!   preserves the design's 5-variant `Coercion` enum.
+//! AQL expresses version-at-time only as a standard predicate on version
+//! metadata, so every version-selection predicate lowers uniformly to
+//! [`VersionScope::Predicate`] and the common at-time case is recognised via
+//! [`VersionScope::is_at_time`]. `Coercion::Magnitude` covers both `DV_ORDERED`
+//! value objects (extracted via `ext.openehr_magnitude`) and numeric primitives
+//! (a direct numeric cast); the analyzer records the candidate leaf [`TypeSet`]
+//! on the [`LeafPath`] and the SQL package picks the exact extraction from it.
 
 use std::collections::HashMap;
 

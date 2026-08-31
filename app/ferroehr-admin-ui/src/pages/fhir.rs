@@ -21,17 +21,9 @@
 //! textarea sends the document verbatim and the CDR's own rejection comes back
 //! verbatim.
 //!
-//! Discipline (rules §0/§1/§2/§4/§6/§8/§9): every `#[server]` fn guards the
-//! session first and keeps the CDR credential server-side; the view is composed
-//! from `.into_any()`-erased section locals; reads are [`Resource`]s whose
-//! `Result` resolves INSIDE the `<Transition>` (an SSR'd `ErrorBoundary`
-//! fallback mismatches at hydration in leptos 0.8); the read scope lives in the
-//! URL behind a `<Form method="GET">`; the table is the shared [`table_shell`]
-//! with its explicit `<tbody>`, paged by the shared [`table_footer`]. **No
-//! Effect on this screen reads a resource**: the edit form is seeded by the
-//! row's own Edit click (a user event), so there is no seed to race hydration
-//! with, and every mutation's answer is handled in the action's own async
-//! continuation.
+//! **No Effect on this screen reads a resource**: the edit form is seeded by
+//! the row's own Edit click, so there is no seed to race hydration with, and
+//! every mutation's answer is handled in the action's own async continuation.
 
 use leptos::component;
 use leptos::prelude::*;
@@ -64,8 +56,8 @@ type Store = Resource<Result<Option<Vec<FhirMappingRow>>, AdminUiError>>;
 type ReadFacade = Resource<Result<Option<FhirAnswer>, AdminUiError>>;
 
 /// The create action: the name it was dispatched with, paired with the CDR's
-/// answer, so both toasts name the exact mapping (rules §6 — the action's value
-/// IS the mutation report).
+/// answer, so both toasts name the exact mapping (the action's value IS the
+/// mutation report).
 type CreateAction = Action<MappingDraft, (String, Result<FhirMappingRow, AdminUiError>)>;
 
 /// The update action, reporting the same way.
@@ -106,7 +98,7 @@ struct MappingEdit {
 ///
 /// Seeded from the row's OWN values when its Edit button is clicked — a user
 /// event, so the write happens where it arrives and no Effect reads a resource
-/// to fill a form (rules §2).
+/// to fill a form.
 #[derive(Debug, Clone, Copy)]
 struct Editor {
     /// The mapping being edited (`None` = the editor is closed).
@@ -163,7 +155,7 @@ struct DryRunForm {
 /// One carrier rather than a dozen parameters, and `Copy` throughout, because
 /// the sections are built inside a `Suspend` closure that re-runs on every
 /// notification of the listing it awaits: the closure must not consume its
-/// environment, and nothing it holds may be a resource it CREATES (rules §4).
+/// environment, and nothing it holds may be a resource it CREATES.
 #[derive(Clone, Copy)]
 struct Screen {
     /// The mapping listing — the screen's availability signal.
@@ -222,7 +214,7 @@ impl std::fmt::Debug for Screen {
 pub fn FhirPage() -> impl IntoView {
     let toaster = thaw::ToasterInjection::expect_context();
     // The table's page window and the read scope, both read from the URL in
-    // SETUP — never inside the suspense that fetches the rows (rules §4/§9).
+    // SETUP — never inside the suspense that fetches the rows.
     let paging = paging_from_url();
     let query = leptos_router::hooks::use_query_map();
     let read_type = Signal::derive(move || {
@@ -260,7 +252,7 @@ pub fn FhirPage() -> impl IntoView {
 
     // Each mutation clears its own form in its OWN async continuation, never
     // from an Effect reading the action's value: a dispatch is the user event,
-    // so the answer is handled where it arrives (rules §2).
+    // so the answer is handled where it arrives.
     let create: CreateAction = Action::new(move |new: &MappingDraft| {
         let new = new.clone();
         async move {
@@ -363,12 +355,12 @@ pub fn FhirPage() -> impl IntoView {
 /// Wire the screen's three mutations to their success/failure toasts.
 ///
 /// Every mutation toasts on BOTH outcomes (the console's mutation-feedback
-/// rule — crate `CLAUDE.md`); the CDR's diagnostic ALSO stays inline beside each
-/// form, because a rejected mapping document is worth reading line by line.
-/// Dispatching a toast is a side effect on the outside world, so an Effect is
-/// its correct home (rules §2) — it never writes a signal, and it never runs on
-/// the server pass. The dry run has no toast here on purpose: it writes
-/// nothing, so it is a read, and reads report inline only.
+/// rule); the CDR's diagnostic ALSO stays inline beside each form, because a
+/// rejected mapping document is worth reading line by line. Dispatching a toast
+/// is a side effect on the outside world, so an Effect is its correct home — it
+/// never writes a signal, and it never runs on the server pass. The dry run has
+/// no toast here on purpose: it writes nothing, so it is a read, and reads
+/// report inline only.
 fn mutation_toasts(
     toaster: thaw::ToasterInjection,
     create: CreateAction,
@@ -426,13 +418,11 @@ fn mutation_toasts(
 
 /// The whole screen body under ONE `<Transition>` over the mapping listing.
 ///
-/// The listing is what decides whether the surface exists at all, so the
-/// disabled state can be exactly what the requirement asks for — one card
-/// naming the switch instead of a store, a viewer and a dry run that cannot
-/// work. `<Transition>` (not `<Suspense>`): the listing refetches after every
-/// mutation and the previous rows must stay visible instead of flashing the
-/// skeleton (rules §6). Nothing inside the closure CREATES a resource, so its
-/// re-runs are safe (rules §4).
+/// The listing decides whether the surface exists at all, so a disabled
+/// connector renders one card naming the switch instead of a store, a viewer and
+/// a dry run that cannot work. `<Transition>` (not `<Suspense>`): the listing
+/// refetches after every mutation and the previous rows must stay visible.
+/// Nothing inside the closure CREATES a resource, so its re-runs are safe.
 ///
 /// A REFUSED listing is not an absent connector: the store sits under `/admin`
 /// while the read facade and the dry run are ordinary clinical calls, so a
@@ -556,7 +546,7 @@ fn read_error(error: &AdminUiError, object: &str) -> AnyView {
 /// form is empty on the first paint, so the control is inert before hydration —
 /// with the live state on `prop:disabled`: an attribute sets the INITIAL state
 /// and only a property carries the live one, so an attribute binding alone can
-/// leave a control stuck at whatever was serialized (rules §2).
+/// leave a control stuck at whatever was serialized.
 fn create_card(draft: Draft, create: CreateAction) -> AnyView {
     let unsendable = Signal::derive(move || {
         mapping_draft_complaint(&draft.name.read(), &draft.definition.read()).is_err()
@@ -565,7 +555,7 @@ fn create_card(draft: Draft, create: CreateAction) -> AnyView {
         let name = draft.name.get_untracked();
         let definition = draft.definition.get_untracked();
         // Client-side validation first, before any round trip; the server fn
-        // re-checks — it is a public endpoint (rules §0).
+        // re-checks — it is a public endpoint.
         if let Err(message) = mapping_draft_complaint(&name, &definition) {
             draft.validation.set(Some(message));
         } else {
@@ -657,13 +647,10 @@ fn create_card(draft: Draft, create: CreateAction) -> AnyView {
 ///
 /// Rendered as part of the store section, so it is created with the rows and a
 /// refetch never leaves a stale editor behind; it starts closed on both passes
-/// of the first render (the editor signal starts empty on server and client
-/// alike — rules §8). The name is not editable: the CDR treats it as the
-/// mapping's immutable deployable identity.
-///
-/// The save button carries no STATIC `disabled` twin, unlike the create card's:
-/// this card exists only after a click, so it is never server-rendered and
-/// there is no serialized attribute for hydration to trust (rules §2).
+/// of the first render. The name is not editable: the CDR treats it as the
+/// mapping's immutable deployable identity. The save button carries no STATIC
+/// `disabled` twin, unlike the create card's — this card exists only after a
+/// click, so it is never server-rendered.
 fn edit_card(editor: Editor, update: UpdateAction) -> AnyView {
     let unsendable =
         Signal::derive(move || definition_complaint(&editor.definition.read()).is_err());
@@ -813,9 +800,8 @@ fn diagnostic_pane(id: &'static str, error: Signal<Option<AdminUiError>>) -> Any
 /// Render the loaded mappings: the paged table plus its footer.
 ///
 /// The window comes from the URL, so turning the page re-renders the rows
-/// without re-running the suspense that fetched them (rules §9), and the
-/// `<For>` key is the store id — stable and data-derived, never an index
-/// (rules §4).
+/// without re-running the suspense that fetched them, and the `<For>` key
+/// is the store id — stable and data-derived, never an index.
 fn rows_view(
     rows: Vec<FhirMappingRow>,
     paging: TablePaging,
@@ -951,10 +937,10 @@ fn delete_dialog(
 
 /// The read-path viewer: what a stored mapping produces for one patient.
 ///
-/// The scope lives in the URL behind a `<Form method="GET">` (rules §9), so a
-/// read is shareable, survives a reload, and works before the WASM bundle
-/// loads. This is a pure READ: a refusal renders inline — VERBATIM, because the
-/// CDR authored it as a FHIR `OperationOutcome` — and never as a toast.
+/// The scope lives in the URL behind a `<Form method="GET">`, so a read is
+/// shareable, survives a reload, and works before the WASM bundle loads. This
+/// is a pure READ: a refusal renders inline — VERBATIM, because the CDR
+/// authored it as a FHIR `OperationOutcome` — and never as a toast.
 fn read_viewer(
     facade: ReadFacade,
     read_type: Signal<String>,

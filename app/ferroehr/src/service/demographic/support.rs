@@ -253,17 +253,16 @@ impl FerroEhrService {
     /// `VERSIONED_OBJECT.time_created` is the commit time of the earliest held
     /// version (for a locally-created object, v1).
     ///
-    /// NOTE: `VERSIONED_OBJECT.owner_id` (1..1 `OBJECT_REF`) has no EHR owner for
-    /// a demographic versioned object, so it names the serving system — the
-    /// "other relevant owning entity" limb of RM common
-    /// `UML/classes/org.openehr.rm.common.versioned_object.adoc` §Attributes — in
-    /// the shape the released `VersionedParty` example fixes in the vendored
-    /// demographic OAS (`{namespace: local, type: SYSTEM, id: HIER_OBJECT_ID}`),
-    /// with the configured system identifier as the `id`.
+    /// NOTE: `VERSIONED_OBJECT.owner_id` (1..1) has no EHR owner for a
+    /// demographic versioned object, so it names the serving system, the "other
+    /// relevant owning entity" limb of RM common
+    /// `UML/classes/org.openehr.rm.common.versioned_object.adoc` §Attributes, in
+    /// the shape the released `VersionedParty` example fixes
+    /// (`{namespace: local, type: SYSTEM, id: HIER_OBJECT_ID}`).
     ///
     /// The body is constructed as the generated [`VersionedObject`] subtype and
     /// serialized through the native codec, so it carries `_type` first and the
-    /// BMM's own attribute order rather than a hand-built literal's.
+    /// BMM's own attribute order.
     ///
     /// # Errors
     /// - [`ServiceError::NotFound`] — the object holds no versions (`label`

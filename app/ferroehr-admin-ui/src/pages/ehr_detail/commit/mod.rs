@@ -15,24 +15,17 @@
 //!
 //! The staging list is **console-session state only**: it lives in this tab's
 //! component state, so navigating away discards it. The console stores nothing
-//! of its own (crate `CLAUDE.md` §No console-local domain state), and the
-//! screen says so.
+//! of its own (§No console-local domain state), and the screen says so.
 //!
-//! Reads are reused, never re-implemented (crate `CLAUDE.md` §One reader per
-//! claim): the template list is [`list_templates`](crate::pages::templates::list_templates),
-//! the composition list is
-//! [`list_compositions`](crate::pages::ehr_detail::compositions::list_compositions),
-//! an amend seeds from
-//! [`fetch_composition`](crate::pages::composition::fetch_composition), and the
-//! status seeds from
-//! [`fetch_ehr_status`](crate::pages::ehr_detail::status::fetch_ehr_status).
-//! The one WRITE is [`commit_contribution`]; the body it posts is assembled by
-//! the component-free, unit-tested [`staged`] module.
+//! Reads are reused, never re-implemented: the template list, the composition
+//! list, an amend's seed and the status seed all come from the tabs that
+//! already own them. The one WRITE is [`commit_contribution`]; the body it
+//! posts is assembled by the component-free, unit-tested [`staged`] module.
 //!
 //! No openEHR spec governs an admin UI — our own design / product extension.
 //! The wire it writes IS spec-bound. The `#[server]` fn guards with
-//! [`require_session`](crate::session::require_session) first (rules §0), and
-//! the CDR credential never reaches client-visible state.
+//! [`require_session`](crate::session::require_session) first, and the CDR
+//! credential never reaches client-visible state.
 
 #![allow(
     clippy::disallowed_types,
@@ -73,7 +66,7 @@ const COMMIT_OBJECT: &str = "this contribution";
 /// commit MINTED — the `201` representation's `versions` are the `OBJECT_REF`s
 /// of exactly those (ITS-REST
 /// `specifications/responses/201_CONTRIBUTION.yaml`). All strings, so the type
-/// is safe across the server-fn boundary on the 32-bit WASM target (rules §1).
+/// is safe across the server-fn boundary on the 32-bit WASM target.
 #[derive(Debug, Clone, PartialEq, Eq, Default, Serialize, Deserialize)]
 pub struct CommitOutcome {
     /// `CONTRIBUTION.uid.value` — the id the contributions tab looks up.
@@ -175,10 +168,10 @@ fn parse_commit_outcome(body: &str) -> CommitOutcome {
 /// The staging area's long-lived reactive state, created ONCE in
 /// [`commit_section`] — above every `<Transition>` on the tab.
 ///
-/// Held at the tab's owner for the rules §4 disposal contract: a `Suspend`
-/// closure re-runs on every notification of the resources it awaits and each
-/// re-run disposes the previous run's reactive owner, so signals created inside
-/// one would die while the already-mounted form still references them.
+/// Held at the tab's owner for the disposal contract: a `Suspend` closure
+/// re-runs on every notification of the resources it awaits and each re-run
+/// disposes the previous run's reactive owner, so signals created inside one
+/// would die while the already-mounted form still references them.
 #[derive(Clone, Copy)]
 struct CommitForm {
     /// The staged changes, in staging order.
@@ -293,8 +286,8 @@ impl CommitForm {
 /// the contribution audit that commits them all as one CONTRIBUTION.
 ///
 /// Every resource is created here in setup and gated on the tab being active,
-/// so only the visible tab fetches (rules §6 — never fetch-in-effect), and none
-/// is created inside a `Suspend` (rules §4).
+/// so only the visible tab fetches (never fetch-in-effect), and none is created
+/// inside a `Suspend`.
 pub(super) fn commit_section(ehr_id: Signal<String>, selected: Memo<String>) -> AnyView {
     let toaster = thaw::ToasterInjection::expect_context();
     let form = CommitForm::new();
@@ -313,7 +306,7 @@ pub(super) fn commit_section(ehr_id: Signal<String>, selected: Memo<String>) -> 
                 .await;
                 // The staging survives a refusal and is cleared only by
                 // success — written in the action's own async continuation,
-                // never from an Effect reading its value (rules §2).
+                // never from an Effect reading its value.
                 if outcome.is_ok() {
                     form.staged.set(Vec::new());
                     form.preview.set(None);
@@ -324,8 +317,8 @@ pub(super) fn commit_section(ehr_id: Signal<String>, selected: Memo<String>) -> 
         });
     // A successful commit moves the EHR on, so the commit version is a source
     // of every read below: the composition list gains what was created and the
-    // seeds resolve against the versions this commit minted (rules §6 — the
-    // action's version is the refetch trigger, never an Effect).
+    // seeds resolve against the versions this commit minted (the action's
+    // version is the refetch trigger, never an Effect).
     let templates = Resource::new(
         move || active.get().then_some(()),
         |on| async move {
@@ -421,14 +414,14 @@ struct CommitRequest {
 
 /// Seed the draft from the picked composition's CURRENT version.
 ///
-/// A resource-reading `Effect`, kept deliberately (the written-justification
-/// case rules §2 admits): the textarea and the preceding-version readout it
-/// writes are ALWAYS mounted, outside the picker's own `<Transition>` — seeding
-/// from inside that `Suspend` would write them during the server pass and again
-/// during hydration replay, the mid-walk divergence that surfaces as tachys'
-/// unrecoverable-hydration panic. Two guards keep it from fighting the
-/// operator: the seed key (one seed per loaded version) and the empty-draft
-/// check (an in-progress document is never overwritten).
+/// A resource-reading `Effect`, kept deliberately: the textarea and the
+/// preceding-version readout it writes are ALWAYS mounted, outside the picker's
+/// own `<Transition>` — seeding from inside that `Suspend` would write them
+/// during the server pass and again during hydration replay, the mid-walk
+/// divergence that surfaces as tachys' unrecoverable-hydration panic. Two guards
+/// keep it from fighting the operator: the seed key (one seed per loaded
+/// version) and the empty-draft check (an in-progress document is never
+/// overwritten).
 fn seed_amend(form: CommitForm, resource: Resource<Result<Option<String>, AdminUiError>>) {
     Effect::new(move |_| {
         let Some(Ok(Some(body))) = resource.get() else {
@@ -490,8 +483,8 @@ fn staging_notice() -> AnyView {
 /// change-type picker, the document draft, and the Stage button.
 ///
 /// Every field is mounted in the same structure on the server and the client
-/// and toggled with `class:hidden` (rules §8), so switching kinds never changes
-/// the view's shape.
+/// and toggled with `class:hidden`, so switching kinds never changes the view's
+/// shape.
 fn add_change_card(
     form: CommitForm,
     templates: Resource<Result<Option<Vec<crate::pages::templates::TemplateRow>>, AdminUiError>>,
@@ -719,7 +712,7 @@ fn change_type_picker(form: CommitForm) -> AnyView {
 /// The draft document editor plus the Stage button and the client-side
 /// complaint about the draft.
 ///
-/// Inert-until-seeded is the two-part split rules §2 mandates: a live
+/// Inert-until-seeded is a two-part split: a live
 /// `prop:disabled` for the state after hydration, and a STATIC `disabled`
 /// attribute on the Stage button, which starts inert on both the server pass
 /// and the client because the draft starts empty.
@@ -780,10 +773,10 @@ fn draft_editor(form: CommitForm, unseeded: Signal<bool>) -> AnyView {
 /// The staging list: one row per pending change, each with a document preview
 /// and a Remove.
 ///
-/// `<Show>` memoizes the empty/non-empty branch and renders each once (rules
-/// §4), so the `<For>` inside it is created ONCE and updates row by row on a
-/// stable, data-derived key — never an index, which would re-key every row
-/// after a Remove.
+/// `<Show>` memoizes the empty/non-empty branch and renders each once, so
+/// the `<For>` inside it is created ONCE and updates row by row on a stable,
+/// data-derived key — never an index, which would re-key every row after a
+/// Remove.
 fn staging_list(form: CommitForm) -> AnyView {
     let table = view! {
         <Show
@@ -960,8 +953,8 @@ fn audit_card(
 }
 
 /// The commit's own result pane: the CDR's diagnostics verbatim on refusal (the
-/// toast is the notification, this is the detail worth reading line by line —
-/// crate `CLAUDE.md`), the committed contribution on success.
+/// toast is the notification, this is the detail worth reading line by line),
+/// the committed contribution on success.
 fn commit_result(
     ehr_id: Signal<String>,
     commit: Action<CommitRequest, Result<CommitOutcome, AdminUiError>>,

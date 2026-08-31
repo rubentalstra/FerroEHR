@@ -195,14 +195,12 @@ impl SmartConfig {
     ///
     /// - master06 §Deprecated Flows: the CDR must never advertise the Implicit
     ///   or Resource-Owner-Password grants.
-    /// - When SMART is enabled: `public_base_url` is required (master04
-    ///   §Services — `baseUrl` is an "Absolute URL … (required)", buildable
-    ///   only from a known external origin), and the three core
-    ///   Authorization-Server endpoints must be present — `issuer`,
-    ///   `authorization_endpoint`, `token_endpoint` (master04 §Authentication
-    ///   Endpoints delegates their requiredness to OIDC Discovery / the HL7
-    ///   SMART metadata, both of which require them; an enabled Platform
-    ///   without them serves an unusable document).
+    /// - When SMART is enabled, `public_base_url` is required (master04
+    ///   §Services types `baseUrl` as an "Absolute URL … (required)") and the
+    ///   three core Authorization-Server endpoints `issuer`,
+    ///   `authorization_endpoint` and `token_endpoint` must be present (master04
+    ///   §Authentication Endpoints delegates their requiredness to OIDC
+    ///   Discovery and the HL7 SMART metadata, both of which require them).
     ///
     /// # Errors
     /// A message naming the offending grant type or the missing required field.

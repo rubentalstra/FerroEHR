@@ -8,32 +8,24 @@
 //! The OWASP Logging Cheat Sheet §Log Injection asks that event data have
 //! "carriage return (CR), line feed (LF) and delimiter characters" sanitized
 //! (<https://cheatsheetseries.owasp.org/cheatsheets/Logging_Cheat_Sheet.html>).
-//! Three of the four sinks satisfy that by construction: the `json` log format
-//! escapes control characters as JSON string escapes, ATNA syslog framing is
-//! datagram- or octet-counted (`crate::system_log`), and the Audit Record
-//! Repository is parameterized SQL. The text format is the one that does not:
-//! `tracing_subscriber`'s default field visitor renders a `%`-sigil (`Display`)
-//! field and an interpolated event message verbatim, so a CR/LF in such a value
-//! reaches the log stream as a real line break — and the line break IS the
-//! record delimiter of a line-oriented log.
+//! Three of the four sinks satisfy that by construction: the `json` format
+//! escapes control characters, ATNA syslog framing is datagram- or
+//! octet-counted, and the Audit Record Repository is parameterized SQL. The text
+//! format does not: `tracing_subscriber`'s default field visitor renders a
+//! `%`-sigil field and an interpolated event message verbatim, and a line break
+//! is the record delimiter of a line-oriented log.
 //!
-//! The delimiters WITHIN a record (the space between fields, the `=` between
-//! name and value) are deliberately left alone: they cannot forge a record,
-//! and escaping them would mangle every message. ANSI/C1 escapes are
+//! The delimiters within a record cannot forge a record and are left alone;
+//! escaping them would mangle every message. ANSI and C1 escapes are
 //! `tracing_subscriber`'s own concern (`Writer::sanitizes_ansi_escapes`).
+//! [`crate::telemetry::layers`] wraps only the `pretty` and `auto` text `fmt`
+//! layer with [`LineSafe`], so a JSON record keeps its own single `\n` escape.
 //!
-//! **Scope: the text layer only.** [`crate::telemetry::layers`] wraps the
-//! `pretty`/`auto`-text `fmt` layer with [`LineSafe`] and leaves the `json`
-//! layer unwrapped, so a JSON record keeps its own single `\n` escape rather
-//! than gaining a second, doubly-escaped one.
-//!
-//! **A genuine line break in a VALUE is escaped, never dropped and never a
-//! reason to refuse the record**: a multi-line clinical text logged into a
-//! field appears as `line one\nline two` on one physical line, with every
-//! character preserved. So an absent line break in a text log is always this
-//! sanitizer and never missing data — at the cost that a value which literally
-//! contained the two characters `\` and `n` reads the same as an escaped break.
-//! The `json` format is the one that keeps values byte-exact.
+//! A genuine line break in a value is escaped rather than dropped, so a
+//! multi-line clinical text appears as `line one\nline two` on one physical
+//! line with every character preserved. The cost is that a value that literally
+//! contained `\` and `n` reads the same as an escaped break; the `json` format
+//! keeps values byte-exact.
 //!
 //! No openEHR spec governs logging — our own design/extension.
 

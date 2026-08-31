@@ -400,13 +400,11 @@ impl FerroEhrService {
     /// The directory-slot versioned-object id, the EHR's `is_modifiable`
     /// content-write flag, **and** the current version metadata, resolved and
     /// read in ONE `ehr_folder`⋈`vo_version`⋈`audit`⋈`ehr` statement
-    /// ([`crate::storage::ehr_repo::directory_current_meta`] — no node
-    /// reassembly, no attestation read). The slot JOIN, the metadata-only
-    /// current-version read, and the former standalone `is_modifiable`
-    /// side-SELECT are folded into a single round trip; threading the
-    /// `vo_id` and `is_modifiable` back to the caller lets the inner write skip
-    /// re-running the slot JOIN and the writability probe. `None` when the EHR
-    /// indexes no directory hierarchy.
+    /// ([`crate::storage::ehr_repo::directory_current_meta`], with no node
+    /// reassembly and no attestation read). Threading the `vo_id` and
+    /// `is_modifiable` back to the caller lets the inner write skip re-running
+    /// the slot JOIN and the writability probe. `None` when the EHR indexes no
+    /// directory hierarchy.
     ///
     /// # Errors
     /// [`ServiceError::Database`] if the merged read fails.

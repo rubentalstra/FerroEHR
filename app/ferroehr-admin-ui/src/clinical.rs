@@ -11,9 +11,8 @@
 //! template to show a document, so any composition — including one whose
 //! template was since removed — reads the same way. It is also a pure,
 //! deterministic function of the document text (no clock, no locale, no
-//! network), which is what makes the pane hydration-safe
-//! (`.claude/rules/leptos-ui.md` §8), and a READ-ONLY projection: nothing is
-//! stored, nothing is sent anywhere.
+//! network), which is what makes the pane hydration-safe, and a READ-ONLY
+//! projection: nothing is stored, nothing is sent anywhere.
 //!
 //! Every hard-coded attribute name below is the RM attribute of the same name.
 //! The attribute tables are cited at their definitions; the vendored class
@@ -41,7 +40,7 @@ pub enum RenderedNode {
 impl RenderedNode {
     /// The node's RM path key — unique within a document, derived from the
     /// walked attribute names and list indices, and therefore a stable `<For>`
-    /// key (`.claude/rules/leptos-ui.md` §4).
+    /// key.
     #[must_use]
     pub fn key(&self) -> &str {
         match self {

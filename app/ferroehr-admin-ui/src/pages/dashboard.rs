@@ -10,14 +10,11 @@
 //! parse-validated AQL consts — user input never reaches the query text.
 //!
 //! Every co-located `#[server]` fn guards with
-//! [`require_session`](crate::session::require_session) first (a server fn is a
-//! public HTTP API — rules §0); the CDR credential never reaches client-visible
-//! state. Each tile/section is an `.into_any()`-erased local with its own
-//! `<Suspense>`/`<Transition>` skeleton that resolves its `Result` inside the
-//! suspense (rendering [`inline_error`](crate::components::notice::inline_error)
-//! on failure) rather than through an `<ErrorBoundary>` — an SSR'd
-//! `ErrorBoundary` fallback mismatches at hydration in leptos 0.8 — so one
-//! failing section never blanks the dashboard (rules §1/§6).
+//! [`require_session`](crate::session::require_session) first, and the CDR
+//! credential never reaches client-visible state. Each tile resolves its
+//! `Result` inside its own suspense rather than through an `<ErrorBoundary>`,
+//! whose SSR'd fallback mismatches at hydration in leptos 0.8, so one failing
+//! section never blanks the dashboard.
 
 #![allow(
     clippy::disallowed_types,
@@ -111,8 +108,7 @@ pub async fn dashboard_counts() -> Result<(i64, i64, u32), AdminUiError> {
 /// One dashboard namespace tile: the derived group's heading, the summed match
 /// count of its member stored queries, and how many members that sum covers.
 ///
-/// Fixed-size ints only, so it is WASM-safe over the server-fn boundary (rules
-/// §1).
+/// Fixed-size ints only, so it is WASM-safe over the server-fn boundary.
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub struct NamespaceTile {
     /// The namespace, or the label for the bucket of names that carry none
@@ -133,8 +129,8 @@ pub struct NamespaceTile {
 /// [`run_stored_count`](crate::queries_api::run_stored_count) and summed.
 ///
 /// One round trip for the whole tile row (and no per-tile resource created
-/// inside a `Suspend` — rules §4). A member query the CDR refuses degrades
-/// only its own tile.
+/// inside a `Suspend`). A member query the CDR refuses degrades only its
+/// own tile.
 ///
 /// # Errors
 /// [`AdminUiError::Unauthenticated`] without a console session; CDR errors from
@@ -148,14 +144,11 @@ pub async fn namespace_tiles() -> Result<Vec<NamespaceTile>, AdminUiError> {
     let rows = crate::queries_api::list_stored_queries().await?;
     let groups = crate::query_namespace::group_by_namespace(&rows);
 
-    // The grouping is DERIVED — there is no stored member list to narrow
-    // by — so every member runs. ONE bounded stream drives every count
-    // across ALL groups; a per-group stream inside a serial group loop paid
-    // serial latency namespace by namespace (#2615, the class #2610 fixed
-    // on the repository-usage card). The identifiers are collected into
-    // owned, group-indexed triples BEFORE the stream: an async block
-    // borrowing out of `groups` is not general enough over lifetimes for
-    // the `#[server]` boundary's future.
+    // The grouping is DERIVED — there is no stored member list to narrow by —
+    // so every member runs, and ONE bounded stream drives every count across
+    // ALL groups. The identifiers are collected into owned, group-indexed
+    // triples BEFORE the stream: an async block borrowing out of `groups` is
+    // not general enough over lifetimes for the `#[server]` boundary's future.
     let members: Vec<(usize, String, String)> = groups
         .iter()
         .enumerate()
@@ -327,11 +320,11 @@ fn counts_section() -> AnyView {
             {move || Suspend::new(async move {
                 match resource.await {
                     Ok((ehrs, compositions, templates)) => {
-                        // Resolve the Result INSIDE the suspense and render either
-                        // branch as one erased view: hydrating an SSR'd
-                        // ErrorBoundary fallback mismatches in leptos 0.8 (caught
-                        // by the E2E console gate), and this keeps server/client
-                        // structure identical while errors stay visible.
+                        // Resolve the Result INSIDE the suspense and render
+                        // either branch as one erased view: hydrating an SSR'd
+                        // ErrorBoundary fallback mismatches in leptos 0.8, and
+                        // this keeps server/client structure identical while
+                        // errors stay visible.
                         view! {
                             <>
                                 {stat_tile(
@@ -394,7 +387,7 @@ fn stored_queries_tile() -> AnyView {
 
 /// The per-namespace match-count tiles, each linking to the stored-queries
 /// screen. ONE round trip builds the whole row ([`namespace_tiles`]), so no
-/// resource is created inside the `Suspend` (rules §4).
+/// resource is created inside the `Suspend`.
 fn namespaces_section() -> AnyView {
     let resource = Resource::new(|| (), |()| async move { namespace_tiles().await });
     view! {
@@ -433,8 +426,8 @@ fn namespace_tiles_view(tiles: Vec<NamespaceTile>) -> AnyView {
 /// One namespace tile: the namespace (or the unqualified-bucket label), the
 /// summed match count of its stored queries, and a link to the stored-queries
 /// screen. The whole tile is an `<A>` styled as a design-system card (block
-/// content only, so the anchor stays valid HTML — rules §8). A group whose
-/// member query the CDR refused shows "error" instead of a short count.
+/// content only, so the anchor stays valid HTML). A group whose member query
+/// the CDR refused shows "error" instead of a short count.
 /// `data-namespace-tile` is the stable E2E hook.
 fn namespace_tile(tile: NamespaceTile) -> AnyView {
     let value = tile.matches.map_or_else(

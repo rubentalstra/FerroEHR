@@ -74,10 +74,9 @@ fn console_title(mut section: String) -> String {
 }
 
 /// The root component: meta context, the `thaw` theme/config provider, and the
-/// router. The `theme_id` is fixed (never the component's default random
-/// UUID) so the server pass and client hydration emit an identical
-/// `data-thaw-id` and generated-style selector — a hydration-determinism
-/// requirement (rules §8).
+/// router. The `theme_id` is fixed (never the component's default random UUID)
+/// so the server pass and client hydration emit an identical `data-thaw-id`
+/// and generated-style selector — a hydration-determinism requirement.
 #[expect(
     clippy::must_use_candidate,
     reason = "#[component] rewrites the fn; view!/mount always consumes the value"
@@ -95,7 +94,7 @@ pub fn App() -> impl IntoView {
     // the client runtime is live and hydrated listeners exist. The E2E
     // harness waits on it before driving hydration-dependent controls — a
     // file set on the upload input BEFORE its listener exists fires no later
-    // event (#2285). Set post-hydration, it cannot mismatch the SSR document.
+    // event. Set post-hydration, it cannot mismatch the SSR document.
     Effect::new(|_| {
         if let Some(body) = document().body() {
             drop(body.set_attribute("data-hydrated", "true"));

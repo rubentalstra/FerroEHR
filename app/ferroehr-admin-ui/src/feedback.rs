@@ -4,12 +4,11 @@
 //! Mutation feedback: the console's one error-feedback rule and the
 //! actionable copy behind it.
 //!
-//! The rule (recorded in the crate `CLAUDE.md`): **a mutation toasts on
-//! success AND on failure**, a detailed inline `MessageBar` may stay beside
-//! the failure toast where the diagnostic is worth reading, and **pure reads
-//! render inline errors only**. A screen that quietly leaves a failed write's
-//! diagnostic below the fold looks like nothing happened — which on a
-//! clinical repository is the worst possible feedback.
+//! The rule: **a mutation toasts on success AND on failure**, a detailed
+//! inline `MessageBar` may stay beside the failure toast where the diagnostic
+//! is worth reading, and **pure reads render inline errors only**. A screen
+//! that quietly leaves a failed write's diagnostic below the fold looks like
+//! nothing happened.
 //!
 //! No openEHR spec governs an admin UI's feedback — our own design / product
 //! extension. The copy shape follows

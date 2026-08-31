@@ -145,7 +145,7 @@ pub enum AqlFeatureError {
     /// `COMPOSITION CONTAINS COMPOSITION`, `FOLDER CONTAINS EHR_STATUS`).
     /// Folder containment of versioned objects is `FOLDER.items` reference
     /// resolution (RM common master05); everything else this refuses used to
-    /// answer a silent cartesian product (#2880).
+    /// answer a silent cartesian product.
     #[error(
         "`{0} CONTAINS {1}` has no RM containment relationship (QUERY §FROM/Containment; RM common master05)"
     )]

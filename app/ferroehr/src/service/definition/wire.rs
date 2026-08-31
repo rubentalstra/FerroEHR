@@ -63,20 +63,16 @@ impl FerroEhrService {
     /// (`docs/specs/openehr/ITS-REST/specifications/operations/definition_template_adl1.4_list.yaml`).
     ///
     /// NOTE: the version value derives from the `template_id`'s `.vN` axis
-    /// (`crate::templates::identity::template_version`), which is also the
-    /// template's whole version/lifecycle mechanism — no parallel
-    /// lifecycle-state model exists, because that would re-model what the id
-    /// already carries.
+    /// (`crate::templates::identity::template_version`), which is the template's
+    /// whole version and lifecycle mechanism; no parallel lifecycle-state model
+    /// exists.
     ///
-    /// With `version` ABSENT the listing collapses to the latest version of
-    /// each template; `version=*` (or any glob) lists every matching stored
-    /// version. The ITS-REST docs text is silent, so the RELEASED OAS grounds
-    /// the behaviour: "Filter by version (e.g. `1.2.*` or use `*` for all
-    /// versions), taken from `template_id`; if missing, then only the latest
-    /// version will be returned"
-    /// (`docs/specs/openehr/ITS-REST/specifications/parameters/query/filter_version.yaml`,
-    /// bundled as `computable/OAS/definition-codegen.openapi.yaml`
-    /// §`components.parameters.filter_version`).
+    /// With `version` absent the listing collapses to the latest version of each
+    /// template, and any glob lists every matching stored version. The ITS-REST
+    /// docs text is silent, so the released OAS grounds it: "Filter by version
+    /// (e.g. `1.2.*` or use `*` for all versions), taken from `template_id`; if
+    /// missing, then only the latest version will be returned"
+    /// (`specifications/parameters/query/filter_version.yaml`).
     ///
     /// # Errors
     ///
@@ -147,12 +143,11 @@ impl FerroEhrService {
     /// return the stored `ARCHETYPE_HRID`; the dispatcher builds `Location` +
     /// the `Prefer` body from it (`201_Template_adl2_upload`).
     ///
-    /// Returns [`ServiceError`] (not `SmError`) so a semantic-validation failure
-    /// keeps its structured per-code violations for the ITS-REST `Error` body
-    /// (`schemas/others/Error.yaml`), exactly as the composition upload path
-    /// does. Duplicate handling diverges by surface: the REST contract declares
-    /// `409_template_already_exists.yaml`, while the SM native `upload_artefact`
-    /// replaces (`i_definition_adl2.adoc`) — an existing HRID is a `409` here.
+    /// Returns [`ServiceError`] rather than `SmError` so a semantic-validation
+    /// failure keeps its structured per-code violations for the ITS-REST `Error`
+    /// body. Duplicate handling diverges by surface: the REST contract declares
+    /// `409_template_already_exists.yaml` while the SM native `upload_artefact`
+    /// replaces (`i_definition_adl2.adoc`), so an existing HRID is a `409` here.
     ///
     /// # Errors
     ///
@@ -266,17 +261,16 @@ impl FerroEhrService {
             .await?)
     }
 
-    /// `PUT /definition/query/{qualified_query_name}[/{version}]` — store a
-    /// query under its qualified name. `query_type` is the query's formalism
-    /// (`QUERY_DESCRIPTOR.formalism`, default `AQL`, case-insensitive). The
-    /// build can only validate + store AQL, so a non-AQL formalism is an
-    /// honest *unsupported-formalism* reject (a distinct `400`, not a blanket
-    /// "invalid AQL"). AQL bodies fall through to the store-time AQL
-    /// syntactic check. Returns the **effective SEMVER the store wrote at**,
-    /// so the dispatcher's `Location` names exactly the stored resource
-    /// (`headers/Location_Query.yaml`: the header "indicates the URL of the
-    /// Stored Query resource") — never a neighbouring version recovered by a
-    /// lookup. The store response itself is bodyless.
+    /// `PUT /definition/query/{qualified_query_name}[/{version}]`: stores a
+    /// query under its qualified name.
+    ///
+    /// `query_type` is the query's formalism (`QUERY_DESCRIPTOR.formalism`,
+    /// default `AQL`, case-insensitive); the build validates and stores AQL
+    /// only, so a non-AQL formalism is a distinct unsupported-formalism `400`
+    /// and AQL bodies fall through to the store-time syntactic check. Returns
+    /// the effective SEMVER the store wrote at, so the dispatcher's `Location`
+    /// names exactly the stored resource (`headers/Location_Query.yaml`). The
+    /// store response itself is bodyless.
     ///
     /// # Errors
     ///
@@ -360,12 +354,10 @@ fn filter_templates(list: Vec<Value>, filter: &TemplateListFilter, page: Page) -
 /// numerically segment by segment (`1.10` > `1.2`); on a numeric-prefix tie
 /// the longer, more precise axis wins (`1.0` > `1`).
 ///
-/// NOTE: no openEHR spec relates an id WITHOUT a version axis to a versioned
-/// sibling (`Foo` vs `Foo.v1`) or orders numerically equal axes — treating an
-/// unversioned id as a version of another id would be a guess, so an
-/// unversioned id stays its own identity and is always listed; the
-/// prefix-tie rule is our own deterministic tiebreak (no openEHR spec governs
-/// this — our own design/extension).
+/// NOTE: no openEHR spec relates an id without a version axis to a versioned
+/// sibling or orders numerically equal axes, so an unversioned id stays its own
+/// identity and is always listed and the prefix-tie rule is our own
+/// deterministic tiebreak — our own design/extension.
 fn collapse_to_latest(rows: Vec<Value>) -> Vec<Value> {
     // The best (row index, version axis) seen per base identity, in first-seen
     // order so the collapse is stable with respect to the store's listing.

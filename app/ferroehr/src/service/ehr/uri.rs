@@ -4,17 +4,14 @@
 //! Local resolution of `ehr:` URIs (`DV_EHR_URI` / `LOCATABLE_REF`) to stored
 //! canonical-JSON content, over the versioned-object read surface.
 //!
-//! Spec + spec-silence flag: BASE
-//! `docs/specs/openehr/BASE/docs/architecture_overview/master11-paths.adoc`
-//! §"EHR URIs" defines the URI *grammar* (parsed by
-//! [`openehr_rm::v1_2::paths::EhrUri`]) but explicitly leaves *resolution* to an
-//! unspecified name-resolution service: "An `ehr:` URI implies the
-//! availability of a name resolution mechanism in ehr-space … Until such
-//! services are established, ad hoc means of dealing with `ehr:` URIs are
-//! likely to be used." **No openEHR spec governs how a server resolves such a
-//! URI to a node** — the local resolution here is our own extension, built on
-//! the same versioned-object machinery the REST reads use. Foreign-system
-//! resolution is out of scope (no cross-system name service exists).
+//! BASE `docs/architecture_overview/master11-paths.adoc` §"EHR URIs" defines the
+//! URI grammar, parsed by [`openehr_rm::v1_2::paths::EhrUri`], and leaves
+//! resolution to an unspecified name-resolution service ("Until such services
+//! are established, ad hoc means of dealing with `ehr:` URIs are likely to be
+//! used"). No openEHR spec governs how a server resolves such a URI to a node —
+//! the local resolution here is our own extension over the same
+//! versioned-object machinery the REST reads use. Foreign-system resolution is
+//! out of scope.
 //!
 //! The item-path portion is applied with the RM `PATHABLE` primitives
 //! (`docs/specs/openehr/RM/docs/UML/classes/org.openehr.rm.common.pathable.adoc`):

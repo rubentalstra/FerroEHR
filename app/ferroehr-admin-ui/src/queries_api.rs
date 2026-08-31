@@ -217,17 +217,13 @@ pub async fn fetch_stored_query(
 ///   version, and a query already stored at it is REPLACED.
 ///
 /// `name` is the qualified query name — `[{namespace}::]{query-name}`, the
-/// namespace optional (ITS-REST docs text,
-/// `docs/specs/openehr/ITS-REST/specifications/docs/query/Qualified_query_name.md`
-/// §Qualified query name).
-/// The save screens compose it from their namespace + name fields with
-/// [`qualify`](crate::query_namespace::qualify). Name and version are separate
-/// path segments, each percent-encoded via `urlencoding`. The AQL is validated
-/// BFF-locally first so an invalid query never reaches the CDR, and an explicit
+/// namespace optional (same file). The save screens compose it from their
+/// namespace + name fields with [`qualify`](crate::query_namespace::qualify).
+/// Name and version are separate path segments, each percent-encoded via
+/// `urlencoding`. The AQL is validated BFF-locally first, and an explicit
 /// version must be a concrete `major.minor.patch`
 /// ([`is_full_semver`](crate::query_namespace::is_full_semver)) — a partial
-/// pattern is the READ form (prefix resolution), not something to file a
-/// definition under.
+/// pattern is the READ form, not something to file a definition under.
 ///
 /// # Errors
 /// [`AdminUiError::Unauthenticated`] without a session;
@@ -302,26 +298,21 @@ pub async fn store_query(
 ///
 /// (Both quotes: ITS-REST `specifications/docs/query/Qualified_query_name.md`
 /// §Qualified query name. The console composes the segment with
-/// [`resolve_version`](crate::query_namespace::resolve_version), so a
-/// malformed pattern never reaches the CDR.)
+/// [`resolve_version`](crate::query_namespace::resolve_version).)
 ///
-/// `parameters_json` is the `query_parameters` object — the request body
-/// carries the bindings rather than the URL, which is what the spec recommends
-/// for anything long: "we recommend clients using the `POST` method instead of
-/// `GET`" (ITS-REST `specifications/docs/query/Request.md` §GET vs POST). The
-/// names are unprefixed (`temperature`, not `$temperature`) per that same
-/// document's §Common Headers and Query Parameters, and the console derives
-/// them from the stored AQL with
-/// [`placeholders`](crate::aql_text::placeholders).
+/// `parameters_json` is the `query_parameters` object — the request body carries
+/// the bindings rather than the URL: "we recommend clients using the `POST`
+/// method instead of `GET`" (ITS-REST `specifications/docs/query/Request.md`
+/// §GET vs POST). The names are unprefixed (`temperature`, not `$temperature`)
+/// per that document's §Common Headers and Query Parameters, and the console
+/// derives them with [`placeholders`](crate::aql_text::placeholders).
 ///
 /// `paged` says whether the REQUEST owns the row window: `true` sends
-/// `fetch`/`offset` (the console's page at `offset`), `false` sends neither
-/// because the stored definition carries its own AQL `LIMIT`/`TOP` and the two
-/// windows cannot be combined (`fetch` "cannot be combined with AQL-top", same
-/// §Common Headers and Query Parameters). The caller reads that from the
-/// definition it already loaded
-/// ([`carries_own_window`](crate::aql_text::carries_own_window)); a wrong answer
-/// costs only the CDR's own diagnostic, never a wrong result.
+/// `fetch`/`offset`, `false` sends neither because the stored definition carries
+/// its own AQL `LIMIT`/`TOP` and the two windows cannot be combined (`fetch`
+/// "cannot be combined with AQL-top", same section). The caller reads that from
+/// the definition it already loaded
+/// ([`carries_own_window`](crate::aql_text::carries_own_window)).
 ///
 /// # Errors
 /// [`AdminUiError::Unauthenticated`] without a session;
@@ -362,7 +353,7 @@ pub async fn run_stored_query(
         ));
     }
     // Name and version are separate path segments, each percent-encoded via
-    // `urlencoding` (owner rule: never a hand-rolled percent codec).
+    // `urlencoding`.
     let version = version.trim();
     let path = if version.is_empty() {
         format!("query/{}", urlencoding::encode(&name))
@@ -404,13 +395,11 @@ pub async fn run_stored_query(
 /// A `SELECT COUNT(*)` query answers one 1×1 numeric cell, and that cell IS the
 /// count. Every other query answers rows, and the count is how many rows came
 /// back on ONE page: the request sends no `fetch`, so the window is the stored
-/// definition's own AQL top, or — when it has none — the CDR's default page,
-/// whose size "depends on the implementation"
-/// (`docs/specs/openehr/ITS-REST/specifications/docs/query/Request.md`
-/// §Common Headers and Query Parameters). The console adds no `fetch` of its
-/// own deliberately: the parameter "cannot be combined with AQL-top" (same
-/// section), and a console-sized window would cap every tile at the table page
-/// size instead of reporting a magnitude.
+/// definition's own AQL top, or the CDR's default page, whose size "depends on
+/// the implementation" (`docs/specs/openehr/ITS-REST/specifications/docs/query/Request.md`
+/// §Common Headers and Query Parameters). No `fetch` is added deliberately: the
+/// parameter "cannot be combined with AQL-top", and a console-sized window would
+/// cap every tile at the table page size instead of reporting a magnitude.
 ///
 /// # Errors
 /// [`AdminUiError::Unauthenticated`] without a session; CDR errors

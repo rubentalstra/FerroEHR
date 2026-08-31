@@ -12,25 +12,18 @@
 //! valid for a new version (they are keyed to `(vo_id, sys_version)` and never
 //! copied forward).
 //!
-//! NOTE (which attestations the `VERSION.signature` covers, master06 §Digital
-//! Signature + §Attestation): the two arrival routes stand on opposite sides of
-//! the signature.
+//! The two arrival routes stand on opposite sides of the `VERSION.signature`
+//! (master06 §Digital Signature and §Attestation):
 //!
-//! * Committed WITH the version (`UPDATE_VERSION.attestations` — SM
-//!   `UML/classes/update_version.adoc` §Attributes; master06 §Attestation,
-//!   "Signing content at committal"): these are attributes of the Version at the
-//!   moment it is serialised, and §Digital Signature signs "the entire Version
-//!   object (note that the signature attribute will be Void at this point)" —
-//!   `signature` is the ONLY exclusion. They are therefore completed BEFORE the
-//!   signature is computed ([`complete_accompanying`]) and stored with
-//!   `at_committal = true`, so the bytes signed at commit are the bytes served
-//!   at read.
-//! * Added afterwards (the `666|attestation|` CONTRIBUTION member, [`attest`];
-//!   §Attestation: "Attestations can be added at any time after committal of the
-//!   content being attested"; §Contributions: "a new `ATTESTATION` is added to
-//!   the attestations list of an **existing** `ORIGINAL_VERSION`"): these
-//!   necessarily post-date the signature, so they are stored with
-//!   `at_committal = false` and appended to the served version AFTER
+//! * Committed with the version (`UPDATE_VERSION.attestations`): attributes of
+//!   the Version at the moment it is serialised, and §Digital Signature signs
+//!   "the entire Version object (note that the signature attribute will be Void
+//!   at this point)". They are completed before the signature is computed
+//!   ([`complete_accompanying`]) and stored with `at_committal = true`, so the
+//!   bytes signed at commit are the bytes served at read.
+//! * Added afterwards (the `666|attestation|` CONTRIBUTION member, [`attest`]):
+//!   these post-date the signature, so they are stored with
+//!   `at_committal = false` and appended to the served version after
 //!   verification, never entering its canonical form.
 
 #![expect(

@@ -15,10 +15,10 @@
 //! Shared, not screen-local: the manifest also carries the CDR's identity and
 //! conformance profile, which more than one screen wants.
 //!
-//! The manifest is served above CORS and outside authentication
-//! (`security: []`), so the fetch carries no CDR credential — but the server fn
-//! still guards the console session first, because every `#[server]` fn is a
-//! publicly reachable endpoint (rules §0).
+//! The manifest is served above CORS and outside authentication (`security:
+//! []`), so the fetch carries no CDR credential — but the server fn still
+//! guards the console session first, because every `#[server]` fn is a publicly
+//! reachable endpoint.
 
 use leptos::server;
 use serde::{Deserialize, Serialize};
@@ -28,7 +28,7 @@ use crate::error::AdminUiError;
 /// The System API conformance manifest — the `Options` schema, field for field.
 ///
 /// Every field is a plain `String`/`Vec<String>` (no `usize`), so the type is
-/// safe across the server-fn boundary on the 32-bit WASM target (rules §1).
+/// safe across the server-fn boundary on the 32-bit WASM target.
 ///
 /// Every member is optional-tolerant: `Options.yaml` declares no `required`
 /// list at all, so a conformant peer may omit any of them and the reader fills
@@ -70,11 +70,9 @@ impl ConformanceManifest {
 
 /// Fetch the CDR's System API conformance manifest.
 ///
-/// NOTE: capability discovery goes through the System API conformance manifest
-/// (ITS-REST 1.1.0 System API, `OPTIONS {base_path}` → `endpoints[]`) —
-/// `docs/specs/openehr/ITS-REST/specifications/system.openapi.yaml`. It reports
-/// what the server MOUNTS, never what the caller may DO: authorization stays a
-/// per-request answer (`401`/`403`) that the calling screen surfaces.
+/// The manifest reports what the server MOUNTS, never what the caller may DO:
+/// authorization stays a per-request answer (`401`/`403`) the calling screen
+/// surfaces.
 ///
 /// # Errors
 /// [`AdminUiError::Unauthenticated`] without a console session;

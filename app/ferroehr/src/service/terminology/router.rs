@@ -4,22 +4,18 @@
 //! [`TerminologyRouter`] — every configured terminology server, materialised,
 //! with the terminology → provider routing that picks one per call.
 //!
-//! # Why several servers
-//!
 //! `BASE/docs/architecture_overview/master12-terminology.adoc` §Overview names
-//! the ecosystem archetypes bind to — LOINC, `ICDx`, ICPC, SNOMED CT "and the
-//! many other terminologies and vocabularies used in healthcare" — and
+//! the ecosystem archetypes bind to (LOINC, `ICDx`, ICPC, SNOMED CT "and the
+//! many other terminologies and vocabularies used in healthcare") and
 //! §"Binding Terminology Value-sets to Archetypes" binds an ac-code "to queries
-//! to **one or more** external terminologies". A real deployment therefore
-//! serves several terminologies at once, from several terminology query
-//! servers, and the CDR must hold them all open simultaneously rather than
-//! picking one at boot.
+//! to one or more external terminologies", so the CDR holds every configured
+//! server open at once rather than picking one at boot.
 //!
 //! # The routing rule
 //!
 //! NOTE: no openEHR spec governs how a terminology is mapped to a server — our
-//! own design/extension. The rule is deliberately mechanical, so a deployment
-//! can predict which server answers a given call:
+//! own design/extension, kept mechanical so a deployment can predict which
+//! server answers a given call:
 //!
 //! 1. the caller offers one or more **candidate keys** in priority order (a
 //!    terminology id, a system URI, a value-set URL, the AQL `service_api`);

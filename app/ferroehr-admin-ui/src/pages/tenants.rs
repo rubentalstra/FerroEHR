@@ -11,18 +11,9 @@
 //!
 //! **There is no tenant switcher, and adding one is not an oversight to fix.**
 //! Tenancy is credential-derived; the only ways a console could change the
-//! answer are console-local state (banned outright — crate `CLAUDE.md`) or the
-//! CDR's dev-only override header, which in production is an authorization
-//! bypass. So the context card DISPLAYS and nothing here selects.
-//!
-//! Discipline (rules §0/§1/§4/§6/§8/§9): every `#[server]` fn guards the
-//! session first and keeps the CDR credential server-side; the view is composed
-//! from `.into_any()`-erased section locals; reads are [`Resource`]s whose
-//! `Result` resolves INSIDE the `<Transition>` (an SSR'd `ErrorBoundary`
-//! fallback mismatches at hydration in leptos 0.8); each mutation is an
-//! [`Action`] that toasts BOTH outcomes and keeps the CDR's own diagnostic
-//! inline beside the failure toast; the table is the shared [`paged_table`]
-//! with its explicit `<tbody>`, whose page state lives in the URL.
+//! answer are console-local state (banned outright) or the CDR's dev-only
+//! override header, which in production is an authorization bypass. So the
+//! context card DISPLAYS and nothing here selects.
 
 use leptos::component;
 use leptos::prelude::*;
@@ -49,8 +40,8 @@ use crate::tenants::{
 type Registry = Resource<Result<Option<Vec<TenantRow>>, AdminUiError>>;
 
 /// The create action: the name it was dispatched with, paired with the CDR's
-/// answer, so both toasts name the exact tenant (rules §6 — the action's value
-/// IS the mutation report).
+/// answer, so both toasts name the exact tenant (the action's value IS the
+/// mutation report).
 type CreateAction = Action<(String, String), (String, Result<TenantRow, AdminUiError>)>;
 
 /// The update action, reporting the same way.
@@ -74,7 +65,7 @@ struct TenantEdit {
 ///
 /// Seeded from the row's OWN values when its Edit button is clicked — a user
 /// event, so the write happens where it arrives and no Effect reads a resource
-/// to fill a form (rules §2).
+/// to fill a form.
 #[derive(Debug, Clone, Copy)]
 struct Editor {
     /// The row being edited (`None` = the editor is closed).
@@ -115,7 +106,7 @@ impl Editor {
 pub fn TenantsPage() -> impl IntoView {
     let toaster = thaw::ToasterInjection::expect_context();
     // The table's page window, read from the URL in SETUP (never inside the
-    // suspense that fetches the rows — rules §4).
+    // suspense that fetches the rows).
     let paging = paging_from_url();
     let editor = Editor {
         target: RwSignal::new(None),
@@ -130,7 +121,7 @@ pub fn TenantsPage() -> impl IntoView {
 
     // Each mutation clears its own form in its OWN async continuation, never
     // from an Effect reading the action's value: a dispatch is the user event,
-    // so the answer is handled where it arrives (rules §2).
+    // so the answer is handled where it arrives.
     let create: CreateAction = Action::new(move |draft: &(String, String)| {
         let (name, system_id) = draft.clone();
         async move {
@@ -211,9 +202,8 @@ pub fn TenantsPage() -> impl IntoView {
 /// Wire the screen's three mutations to their success/failure toasts.
 ///
 /// Every mutation toasts on BOTH outcomes (the console's mutation-feedback
-/// rule — crate `CLAUDE.md`); the CDR's diagnostic ALSO stays inline beside
-/// each form, because a `400`/`409` on a registry write is worth reading in
-/// full.
+/// rule); the CDR's diagnostic ALSO stays inline beside each form, because
+/// a `400`/`409` on a registry write is worth reading in full.
 fn mutation_toasts(
     toaster: thaw::ToasterInjection,
     create: CreateAction,
@@ -300,7 +290,7 @@ fn context_card(current: Resource<Result<Option<CurrentTenant>, AdminUiError>>) 
 /// form is empty on the first paint, so the control is inert before hydration
 /// — with the live state on `prop:disabled`: an attribute sets the INITIAL
 /// state and only a property carries the live one, so an attribute binding
-/// alone can leave a control stuck at whatever was serialized (rules §2).
+/// alone can leave a control stuck at whatever was serialized.
 fn create_card(
     name: RwSignal<String>,
     system_id: RwSignal<String>,
@@ -350,7 +340,7 @@ fn create_card(
 ///
 /// Rendered ONCE outside the table, so a list refetch never re-creates it, and
 /// closed on both passes of the first render (the editor signal starts empty on
-/// server and client alike — rules §8).
+/// server and client alike).
 fn edit_card(editor: Editor, update: UpdateAction) -> AnyView {
     let incomplete =
         Signal::derive(move || !draft_is_complete(&editor.name.read(), &editor.system_id.read()));
@@ -417,8 +407,8 @@ fn edit_card(editor: Editor, update: UpdateAction) -> AnyView {
 }
 
 /// The registry table: the listing read under `<Transition>` (keep the current
-/// rows visible while a refetch runs — rules §6), resolving its `Result` inside
-/// the transition, then the paged rows.
+/// rows visible while a refetch runs), resolving its `Result` inside the
+/// transition, then the paged rows.
 fn registry_table(
     registry: Registry,
     paging: TablePaging,
@@ -448,10 +438,9 @@ fn registry_table(
 /// The registry sits under `/admin`, so the CDR's coarse RBAC classes every
 /// call here as admin work: a session without the role is answered `403`, and
 /// "forbidden" alone tells the reader nothing about what to do next. A `401` —
-/// the credential itself no longer accepted — lands here too, with its own next
-/// action. Capability
-/// is not authorization — the screen renders because the surface EXISTS, and
-/// this is where the per-request refusal lands.
+/// the credential itself not accepted — lands here too, with its own next
+/// action. Capability is not authorization: the screen renders because the
+/// surface EXISTS, and this is where the per-request refusal lands.
 fn read_error(error: &AdminUiError, object: &str) -> AnyView {
     match error {
         AdminUiError::CdrUnauthorized(_) | AdminUiError::Forbidden(_) => {
@@ -496,9 +485,8 @@ fn empty_registry() -> AnyView {
 /// Render the loaded rows: the paged table plus its footer.
 ///
 /// The window comes from the URL, so turning the page re-renders the rows
-/// without re-running the suspense that fetched them (rules §9), and the
-/// `<For>` key is the registry id — stable and data-derived, never an index
-/// (rules §4).
+/// without re-running the suspense that fetched them, and the `<For>` key
+/// is the registry id — stable and data-derived, never an index.
 fn rows_view(
     rows: Vec<TenantRow>,
     paging: TablePaging,

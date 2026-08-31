@@ -45,28 +45,22 @@ impl FerroEhrService {
     /// shape — the `adl1.4` upload response body).
     ///
     /// The XML is parsed to validate it is a well-formed OPT and to pull the
-    /// `template_id` (the unique key), `concept`, and root archetype id, then
-    /// run through the standalone-artefact validity catalogue (the validation
-    /// seam) before any row is written (only validated templates are
-    /// stored).
+    /// `template_id` (the unique key), `concept` and root archetype id, then run
+    /// through the standalone-artefact validity catalogue before any row is
+    /// written.
     ///
-    /// Operational templates are **immutable on the `adl1.4` upload endpoint**:
-    /// re-uploading an existing `template_id` — under §Composite Identifiers
-    /// and Case, so a case variant counts as the same id — is a
-    /// **`Conflict`** (→ ITS-REST `409`), never a silent overwrite.
-    /// This matches
-    /// `docs/specs/openehr/ITS-REST/specifications/responses/409_template_already_exists.yaml`
-    /// ("409 Conflict is returned when a template with same `template_id`
-    /// already exists") and the CNF Robot case
-    /// `I_DEFINITION_ADL14.upload_opt-valid_opt_twice_conflict`.
+    /// Operational templates are immutable on the `adl1.4` upload endpoint:
+    /// re-uploading an existing `template_id`, a case variant counting as the
+    /// same id under §Composite Identifiers and Case, is a `Conflict` rather
+    /// than a silent overwrite (ITS-REST
+    /// `responses/409_template_already_exists.yaml`; CNF Robot case
+    /// `I_DEFINITION_ADL14.upload_opt-valid_opt_twice_conflict`).
     ///
-    /// The write is a single statement: `INSERT … ON CONFLICT
-    /// (lower(template_id)) DO NOTHING RETURNING …` on the case-insensitive
-    /// functional unique index (`ux_template_store_template_id_ci`, baseline
-    /// §`template_store`) makes both exact and case-variant duplicates
-    /// race-free (no overwrite, no SQLSTATE parsing) and hands back the stored
-    /// row for the response in the same round-trip — no pre-check `SELECT`, no
-    /// post-insert re-read.
+    /// The write is one statement: `INSERT … ON CONFLICT (lower(template_id)) DO
+    /// NOTHING RETURNING …` on the case-insensitive functional unique index
+    /// (`ux_template_store_template_id_ci`) makes exact and case-variant
+    /// duplicates race-free and hands back the stored row in the same round
+    /// trip.
     ///
     /// # Errors
     ///

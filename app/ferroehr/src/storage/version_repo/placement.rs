@@ -69,11 +69,11 @@ pub struct Placement {
 ///
 /// A new version must never land in the primary tier while its predecessors sit
 /// in the cold one, so the statement's leading data-modifying CTEs move any
-/// archived rows back first — primary-key probes finding nothing for the
-/// overwhelmingly common unarchived case. A same-statement `INSERT` is
-/// invisible to the sibling scans
-/// (<https://www.postgresql.org/docs/18/queries-with.html>), so the placement
-/// reads run over `vo_version` UNION ALL the thaw's own `RETURNING` rows.
+/// archived rows back first, as primary-key probes that find nothing in the
+/// common unarchived case. A same-statement `INSERT` is invisible to the sibling
+/// scans (<https://www.postgresql.org/docs/18/queries-with.html>), so the
+/// placement reads run over `vo_version` UNION ALL the thaw's own `RETURNING`
+/// rows.
 ///
 /// # Errors
 /// Returns [`StorageError::Database`] on a driver failure.

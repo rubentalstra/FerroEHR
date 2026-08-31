@@ -35,7 +35,7 @@ enum ExistsAnchor {
     /// Interval-anchored inside a node subtree of a shared versioned object:
     /// `num BETWEEN parent.num AND parent.num_cap`, same `(vo_id, sys_version)`.
     /// Carries the anchor operand's resolved types so the edge classifier can
-    /// decide the join shape (#2880).
+    /// decide the join shape.
     Vo(String, crate::aql::ir::TypeSet),
     /// Contained in an EHR as its own versioned object: `ehr_id` join + version
     /// scope.
@@ -43,7 +43,7 @@ enum ExistsAnchor {
 }
 
 /// How a `CONTAINS` edge renders in SQL, decided from the RM relationship
-/// between the parent and child operand types (#2880).
+/// between the parent and child operand types.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 enum EdgeKind {
     /// Content inside the parent's own node subtree: same `(vo_id,
@@ -60,13 +60,13 @@ enum EdgeKind {
     /// every folder row) and an items-referenced `VERSIONED_FOLDER`'s folder
     /// rows (RM common master05: `items` references name versioned objects
     /// "logically in this folder", with no target-type restriction — the same
-    /// ground as `FolderItems`; one reference hop, adjudicated on #2887). The
-    /// child opens its own version group either way.
+    /// ground as `FolderItems`, one reference hop). The child opens its own
+    /// version group either way.
     FolderChild,
 }
 
 /// Classifies a `CONTAINS` edge, or refuses a pair the RM defines no
-/// containment for (the class that used to answer a silent cartesian, #2880).
+/// containment for.
 fn classify_edge(
     parent: &crate::aql::ir::TypeSet,
     child: &crate::aql::ir::TypeSet,
@@ -89,7 +89,7 @@ fn classify_edge(
     }
 }
 
-/// The `FOLDER.items` reference-resolution correlation (#2880): some folder
+/// The `FOLDER.items` reference-resolution correlation: some folder
 /// row in the parent's subtree (the parent row itself included — transitive
 /// containment) carries an `items` `OBJECT_REF` whose uid root equals the
 /// child's versioned-object id. The ref uid is compared as TEXT against the
@@ -114,7 +114,7 @@ fn folder_items_exists(parent_node: &str, child_node: &str) -> Expr {
     Expr::exists(sub)
 }
 
-/// The by-value half of the `FOLDER CONTAINS FOLDER` union edge (#2887): the
+/// The by-value half of the `FOLDER CONTAINS FOLDER` union edge: the
 /// child row is a STRICT nested-set descendant of the parent row inside the
 /// same versioned folder tree (same `(vo_id, sys_version)`; strict, because
 /// the inclusive interval would self-match every folder row).
@@ -777,8 +777,8 @@ impl Builder<'_> {
     /// Correlate an `EXISTS` subquery's operand node (`alias`) to its anchor:
     /// the classified containment edge for a VO anchor (structural interval,
     /// strict folder-subtree interval, or the `FOLDER.items` reference
-    /// resolution — #2880), or an `ehr_id` join + version scope for a VO
-    /// contained in an EHR.
+    /// resolution), or an `ehr_id` join plus version scope for a VO contained in
+    /// an EHR.
     fn anchor_correlation(
         &mut self,
         sub: &mut SelectStatement,

@@ -16,11 +16,10 @@
 //! top: the `object_id` must be the UUID `vo_id` key, and the
 //! `version_tree_id` decodes into a [`TreeId`].
 //!
-//! One strict decoder replaces the several hand-rolled `::` splitters the
-//! service used to carry. Branch ids are first-class (RM common master06
-//! §Versioning Semantics → §Version Identification → §Local Versioning: "To
-//! support branching, a further pair of numbers is added … Both of these
-//! numbers also start at '1'").
+//! This is the service's one strict decoder, and branch ids are first-class (RM
+//! common master06 §Versioning Semantics → §Version Identification → §Local
+//! Versioning: "To support branching, a further pair of numbers is added … Both
+//! of these numbers also start at '1'").
 
 use std::fmt;
 use std::str::FromStr;
@@ -157,14 +156,14 @@ pub(crate) fn hier_object_id(raw: &str) -> Result<HierObjectId, VersionIdError> 
     })
 }
 
-/// The **typed** `OBJECT_VERSION_ID` for a version this CDR minted or stored:
-/// the same three parts [`object_version_id`] formats, composed through the
-/// BASE grammar instead of a struct literal.
+/// The typed `OBJECT_VERSION_ID` for a version this CDR minted or stored: the
+/// same three parts [`object_version_id`] formats, composed through the BASE
+/// grammar rather than a struct literal.
 ///
 /// The generated `OBJECT_VERSION_ID` carries a `pub(crate)` field behind a
 /// validating door, so this is the one place the platform library turns its
-/// storage triple into the spec type — a malformed identifier can no longer be
-/// smuggled into a served payload by a struct literal.
+/// storage triple into the spec type, and a malformed identifier cannot be
+/// smuggled into a served payload.
 ///
 /// Two of the three parts are valid by their Rust type ([`VoId`] is a UUID,
 /// [`TreeId`] renders `N` / `N.B.V` with every part `>= 1`). The third,

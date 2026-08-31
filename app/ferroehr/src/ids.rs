@@ -4,45 +4,30 @@
 //! Strongly-typed object identities.
 //!
 //! An EHR id and a versioned-object id are both UUIDs on the wire and in the
-//! store, but confusing them is a *clinical* fault: a swapped pair reads or
-//! writes another record's data and still type-checks. These newtypes make
-//! that mixup uncompilable (the API-guidelines C-NEWTYPE discipline: newtypes
-//! provide static distinctions). The wire shapes are unchanged — both
-//! serialize as the bare UUID (`#[serde(transparent)]`), and both bind to
-//! `PostgreSQL` `uuid` columns directly (`#[sqlx(transparent)]`).
+//! store, and confusing them is a clinical fault: a swapped pair reads or writes
+//! another record's data and still type-checks. These newtypes make that mixup
+//! uncompilable (the API-guidelines C-NEWTYPE discipline). The wire shapes are
+//! unchanged: both serialize as the bare UUID (`#[serde(transparent)]`) and both
+//! bind to `PostgreSQL` `uuid` columns (`#[sqlx(transparent)]`).
 //!
-//! Spec identities: the EHR id is RM ehr §EHR `ehr_id` (a `HIER_OBJECT_ID`);
-//! the versioned-object id is RM common master06 §Version Identification —
-//! the `object_id` part of an `OBJECT_VERSION_ID` / the
-//! `VERSIONED_OBJECT.uid`.
+//! Spec identities: the EHR id is RM ehr §EHR `ehr_id`, a `HIER_OBJECT_ID`; the
+//! versioned-object id is RM common master06 §Version Identification, the
+//! `object_id` part of an `OBJECT_VERSION_ID` and the `VERSIONED_OBJECT.uid`.
 //!
-//! NOTE (why the inner type is `Uuid` and not the full `HIER_OBJECT_ID`
-//! lexical space): the RM types `EHR.ehr_id` as a `HIER_OBJECT_ID`, whose
-//! grammar admits an ISO OID or internet-id root and an optional `::extension`
-//! (BASE `base_types/master05-identification_package.adoc` §Syntaxes). These
-//! newtypes deliberately carry only a UUID, on three released grounds:
+//! NOTE: the inner type is `Uuid` rather than the full `HIER_OBJECT_ID` lexical
+//! space because every ITS-REST 1.1.0 door that names an EHR types the parameter
+//! `format: uuid` (`specifications/parameters/path/ehr_id.yaml`,
+//! `query-codegen.openapi.yaml` §`components.parameters.ehr_id_Query`), and both
+//! server-minted ids are `uuidv7`.
 //!
-//! * **The wire pins it.** Every ITS-REST 1.1.0 door that names an EHR types
-//!   the parameter `string`/`format: uuid` — the path parameter
-//!   (`ITS-REST specifications/parameters/path/ehr_id.yaml` §schema, the same
-//!   text in the vendored codegen bundle
-//!   `crates/openehr-its/vendor/rest-oas/ehr-codegen.openapi.yaml`
-//!   §`components.parameters.ehr_id`) and the AQL `ehr_id` query parameter
-//!   (`query-codegen.openapi.yaml` §`components.parameters.ehr_id_Query`).
-//! * **We mint them.** A server-created EHR id is a `uuidv7` ([`EhrId::new`]),
-//!   as is every versioned-object id ([`VoId::new`]).
-//! * **We store them.** Both bind to PostgreSQL `uuid` columns.
-//!
-//! The narrowing is therefore real only for a CLIENT-SUPPLIED id on
-//! `PUT /ehr/{ehr_id}`, and there the release contradicts itself: the
-//! operation prose says the id "MUST be valid `HIER_OBJECT_ID` value. It is
-//! strongly RECOMMENDED that an UUID always be used for this"
-//! (`ITS-REST specifications/operations/ehr_create_with_id.yaml`
-//! §description), while the parameter schema it references admits only
-//! `format: uuid`. This file follows the parameter schema — the computable
-//! artifact that binds every ehr_id-carrying operation, not just this one —
-//! so a non-UUID id is refused at the door rather than admitted into a store
-//! and a query surface that cannot represent it.
+//! The narrowing is real only for a client-supplied id on `PUT /ehr/{ehr_id}`,
+//! where the release contradicts itself: the operation prose says the id "MUST
+//! be valid `HIER_OBJECT_ID` value. It is strongly RECOMMENDED that an UUID
+//! always be used for this" (`operations/ehr_create_with_id.yaml`) while the
+//! parameter schema it references admits only `format: uuid`. This file follows
+//! the parameter schema, the computable artifact binding every
+//! `ehr_id`-carrying operation, so a non-UUID id is refused at the door rather
+//! than admitted into a store and a query surface that cannot represent it.
 
 use serde::{Deserialize, Serialize};
 use uuid::Uuid;

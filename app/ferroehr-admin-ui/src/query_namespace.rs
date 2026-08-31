@@ -4,8 +4,8 @@
 //! Namespace-derived stored-query grouping: the pure rules the `/queries`
 //! screen, the dashboard tiles, and both save flows share.
 //!
-//! Component-free plain Rust with ordinary unit tests (crate discipline),
-//! compiled for both the `ssr` and `hydrate` targets.
+//! Component-free plain Rust with ordinary unit tests, compiled for both
+//! the `ssr` and `hydrate` targets.
 //!
 //! A stored query's group **is** the namespace of its qualified name. ITS-REST
 //! defines the stored-query identifier as `[{namespace}::]{query-name}`, with
@@ -117,13 +117,8 @@ pub fn qualify(namespace: &str, name: &str) -> String {
 /// design/extension, not a spec form.
 ///
 /// NOTE: the version is OPAQUE text here — never parsed, compared, or
-/// normalized. A stored-query version is SEMVER-style `major.minor.patch`, and
-/// a partial or absent version is resolved by the CDR to "the latest `version`
-/// with the supplied prefix" (ITS-REST
-/// `specifications/docs/query/Qualified_query_name.md` §Qualified query name),
-/// so prefix resolution is the server's job; a client-side semver assumption
-/// about a reference would be wrong. [`is_full_semver`] and [`next_minor`] do
-/// read the structure, but only where a STORE demands an exact version.
+/// normalized, because prefix resolution is the server's job (ITS-REST
+/// `specifications/docs/query/Qualified_query_name.md` §Qualified query name).
 #[must_use]
 pub fn split_query_ref(reference: &str) -> Option<(String, String)> {
     reference
@@ -136,14 +131,11 @@ pub fn split_query_ref(reference: &str) -> Option<(String, String)> {
 ///
 /// `name@version` ([`split_query_ref`]'s input) is percent-encoded as ONE
 /// query-string value: a qualified name may carry `::`, `/`, `&`, `=` or `#`,
-/// any of which would otherwise truncate the value or forge a second
-/// parameter. The router percent-DEcodes query parameters before a screen
-/// reads them, so the receiving page needs no decode of its own. All
-/// percent-coding goes through the `urlencoding` crate (owner rule).
+/// any of which would otherwise truncate the value or forge a second parameter.
+/// The router percent-DEcodes query parameters before a screen reads them.
 ///
 /// NOTE: no openEHR spec governs an admin UI's internal links — our own
-/// design/extension. Only the `name`/`version` pair it carries is spec-bound
-/// (see the module docs).
+/// design/extension.
 #[must_use]
 pub fn load_href(route: &str, name: &str, version: &str) -> String {
     format!(
@@ -305,14 +297,11 @@ pub fn is_semver_prefix(version: &str) -> bool {
 /// `{major}.{minor}`) means "the latest query version matching supplied
 /// prefix" (ITS-REST `specifications/docs/query/Qualified_query_name.md`
 /// §Qualified query name). Prefix RESOLUTION is a read concept: storing at a
-/// prefix would file a query under a version string that later prefix lookups
-/// would treat as a resolvable pattern rather than a concrete version, so the
-/// save screens require all three parts and leave prefixes to reads.
+/// prefix would file a query under a version string later prefix lookups would
+/// treat as a pattern, so the save screens require all three parts.
 ///
 /// NOTE: rejecting a prefix ON STORE is our own guard — the spec describes the
-/// prefix form for the shared path parameter without saying what storing at one
-/// means; nothing in the console interprets a version beyond this check and
-/// [`next_minor`].
+/// prefix form without saying what storing at one means.
 #[must_use]
 pub fn is_full_semver(version: &str) -> bool {
     let mut parts = version.split('.');
@@ -331,15 +320,14 @@ pub fn is_full_semver(version: &str) -> bool {
 /// `version` is not a full SEMVER triple or its minor part cannot be
 /// incremented.
 ///
-/// Used to pre-fill the save screens after loading a stored query, so editing
-/// a loaded definition proposes a NEW version instead of colliding with the
-/// immutable one it came from (an explicit `(name, version)` pair is never
-/// overwritten — ITS-REST `operations/definition_query_version_store.yaml`
-/// answers `409` for an existing pair).
+/// Used to pre-fill the save screens after loading a stored query, so editing a
+/// loaded definition proposes a NEW version instead of colliding with the
+/// immutable one it came from (ITS-REST
+/// `operations/definition_query_version_store.yaml` answers `409` for an
+/// existing pair).
 ///
 /// NOTE: which part to bump is our own UX choice — no openEHR spec governs an
-/// admin UI, and the SEMVER-style version says nothing about which change to a
-/// query definition warrants which increment. The field stays editable.
+/// admin UI. The field stays editable.
 #[must_use]
 pub fn next_minor(version: &str) -> Option<String> {
     if !is_full_semver(version) {

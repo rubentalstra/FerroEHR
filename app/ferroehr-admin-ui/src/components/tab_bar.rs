@@ -3,11 +3,11 @@
 
 //! The URL-driven tab strip's one pill link.
 //!
-//! A detail screen's tabs are `?tab=` links, not client state (rules §9), so a
-//! tab is shareable and refresh-safe and the strip works before the WASM bundle
-//! loads — the router intercepts the anchors once it does. Each screen still
-//! spells its own strip, because the tabs it offers and the route they hang off
-//! are its own; what is shared is one tab's look and its selected/idle split.
+//! A detail screen's tabs are `?tab=` links, not client state, so a tab is
+//! shareable and refresh-safe and the strip works before the WASM bundle loads
+//! — the router intercepts the anchors once it does. Each screen still spells
+//! its own strip, because the tabs it offers and the route they hang off are
+//! its own; what is shared is one tab's look and its selected/idle split.
 
 use leptos::prelude::*;
 

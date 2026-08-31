@@ -15,8 +15,7 @@
 //!
 //! Everything here is a pure function of the input string (no clock, no request,
 //! no I/O), which is what makes the previewer hydration-safe by construction and
-//! lets it run in the browser rather than round-tripping the BFF for a parse
-//! (`.claude/rules/leptos-ui.md` §8).
+//! lets it run in the browser rather than round-tripping the BFF for a parse.
 //!
 //! **Capability is not authorization.** A scope NARROWS what a token may ask
 //! for; it grants nothing by itself. master08 §Scopes: the Platform validates

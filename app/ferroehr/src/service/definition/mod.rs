@@ -28,20 +28,18 @@
 //! - [`types`] — the shared data shapes ([`types::TemplateListFilter`],
 //!   [`types::QueryDescriptor`]) the REST adapter consumes.
 //!
-//! NOTE (interchange form): the SM `I_DEFINITION_*` signatures take/return
-//! AOM object types (`ARCHETYPE`, `AUTHORED_ARCHETYPE`). openEHR publishes no
-//! BMM meta-model for AOM *instances*, so the interchange form is the artefact's
-//! serialization — ADL 1.4 / ADL2 source text and OPT 1.4 canonical XML — which
-//! is what these calls carry (`i_definition_adl14.adoc` / `i_definition_adl2.adoc`).
+//! NOTE: the SM `I_DEFINITION_*` signatures take and return AOM object types,
+//! but openEHR publishes no BMM meta-model for AOM instances, so the interchange
+//! form is the artefact's serialization — ADL 1.4 / ADL2 source text and OPT 1.4
+//! canonical XML — which is what these calls carry.
 //!
-//! Identity canonicalisation (BASE `master05-identification_package.adoc`
-//! §Composite Identifiers and Case): "two identifiers identical apart from case
-//! are considered to be identical, and therefore to identify the same thing"
-//! (l.169). Identity is therefore matched **case-insensitively** while storage
-//! is **case-preserving** — every lookup/existence/delete compares
-//! `lower(id) = lower($1)` and every write first removes any case-variant of
-//! the same id in the same transaction. This module is that single
-//! canonicalisation boundary for definition artefacts.
+//! Identity is matched case-insensitively while storage is case-preserving (BASE
+//! `master05-identification_package.adoc` §Composite Identifiers and Case: "two
+//! identifiers identical apart from case are considered to be identical"): every
+//! lookup, existence check and delete compares `lower(id) = lower($1)` and every
+//! write first removes any case-variant of the same id in the same transaction.
+//! This module is that single canonicalisation boundary for definition
+//! artefacts.
 
 mod adl14;
 mod adl2;

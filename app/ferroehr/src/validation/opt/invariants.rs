@@ -4,22 +4,21 @@
 //! AOM 1.4 constraint-model per-node-kind invariants for the OPT 1.4 pass
 //! (T4, T5b, T13, T14, T15, T16 of the AM constraint taxonomy).
 //!
-//! These are the invariants the AOM 1.4 constraint-model *class files* declare
+//! These are the invariants the AOM 1.4 constraint-model class files declare
 //! (`AM/docs/AOM1.4/master04-constraint_model_package.adoc`) plus the ADL 1.4
-//! identifier/slot syntax rules (`AM/docs/ADL1.4/master08-adl.adoc`,
-//! `master05-cadl.adoc`), decidable structurally on a flattened OPT tree
+//! identifier and slot syntax rules (`AM/docs/ADL1.4/master08-adl.adoc`,
+//! `master05-cadl.adoc`), all decidable structurally on a flattened OPT tree
 //! without running the `valid_value` cascade:
 //!
-//! - **`Rm_attribute_name_valid`** / **`Existence_set`** (`C_ATTRIBUTE`) and
-//!   **`Members_valid`** (`C_SINGLE_ATTRIBUTE`).
-//! - **VARID / VARDT** — archetype-identifier syntax + the RM type / id type
-//!   slot match (master08 lines 544/556).
-//! - **VDFAI** — a slot-referenced archetype id is well-formed (master08 573).
-//! - **`Target_path_valid`** — an `ARCHETYPE_INTERNAL_REF` target path.
-//! - **VACDF** — a `CONSTRAINT_REF` ac-code is defined (master08 566).
-//! - **STCDC** — a terminology-code list has no duplicate codes
-//!   (`ADL2/master04.6-cadl_validity_rules.adoc` STCDC; the same defect in an
-//!   OPT 1.4 `C_CODE_PHRASE` list).
+//! - `Rm_attribute_name_valid` and `Existence_set` (`C_ATTRIBUTE`),
+//!   `Members_valid` (`C_SINGLE_ATTRIBUTE`);
+//! - VARID and VARDT, archetype-identifier syntax and the RM type / id type slot
+//!   match (master08 lines 544/556);
+//! - VDFAI, a slot-referenced archetype id is well-formed (master08 573);
+//! - `Target_path_valid`, an `ARCHETYPE_INTERNAL_REF` target path;
+//! - VACDF, a `CONSTRAINT_REF` ac-code is defined (master08 566);
+//! - STCDC, a terminology-code list has no duplicate codes
+//!   (`ADL2/master04.6-cadl_validity_rules.adoc`).
 
 use std::collections::HashSet;
 

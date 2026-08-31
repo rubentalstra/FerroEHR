@@ -169,19 +169,16 @@ impl Builder<'_> {
     /// predicate holds when ANY node the path matches satisfies it.
     ///
     /// NOTE: QUERY master03 §WHERE is silent on predicates over multi-valued
-    /// paths — any-match is our own design decision (also the prior-art
-    /// convention): it is deterministic where a scalar `LIMIT 1` pick without
-    /// an ordering is not, and it lets the planner cost the filter as a
-    /// semi-join instead of an opaque scalar subquery (which the measured
-    /// cross-EHR profile showed collapsing cardinality estimates and
-    /// materializing bitmap plans under `LIMIT`).
+    /// paths, so any-match is our own design decision; it is deterministic where
+    /// a scalar `LIMIT 1` pick without an ordering is not, and it lets the
+    /// planner cost the filter as a semi-join rather than an opaque scalar
+    /// subquery.
     ///
-    /// The same any-match rule covers a MULTI-VALUED FRAGMENT tail:
-    /// a path crossing a list-valued fragment attribute (`links`,
-    /// `participations`, `identifiers`, `mappings`, …) yields one item per
-    /// match through the set-returning `jsonb_path_query` in the subquery's
-    /// FROM, and the predicate holds when ANY item satisfies it — the scalar
-    /// `jsonb_path_query_first` saw only the first match.
+    /// The same any-match rule covers a multi-valued fragment tail: a path
+    /// crossing a list-valued fragment attribute (`links`, `participations`,
+    /// `identifiers`, `mappings`) yields one item per match through the
+    /// set-returning `jsonb_path_query` in the subquery's FROM, where the scalar
+    /// `jsonb_path_query_first` would see only the first.
     ///
     /// Returns `Ok(None)` when the leaf is a single-valued inline read, uid
     /// synthesis, or a promoted column — the caller falls back to the scalar

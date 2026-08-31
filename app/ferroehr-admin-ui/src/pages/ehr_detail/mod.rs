@@ -4,40 +4,31 @@
 //! The `/ehrs/{ehr_id}` screen — EHR detail: status / status history /
 //! directory / compositions / contributions / commit / tags tabs.
 //!
-//! Seven URL-driven tabs (`?tab=`, rules §9) over one EHR. Each tab's data is a
-//! `#[server]` fn co-located with the tab in its own submodule — [`status`]
-//! (which owns BOTH status tabs: the current document plus its
-//! `VERSIONED_EHR_STATUS` history), [`directory`], [`compositions`],
-//! [`contributions`], [`commit`] (the atomic multi-change CONTRIBUTION
-//! staging area), and the EHR-wide tag browser in
-//! [`crate::pages::ehr_tags`] (which also owns the per-target tag panels the
-//! Status tab and the composition viewer mount). The resources are
-//! created once and their sources are gated on the active tab (a `Memo` over
-//! the query map), so only the visible tab fetches (rules §6 — never
-//! fetch-in-effect). The tab bodies are always mounted and toggled with
-//! `class:hidden`, keeping the server and client view structure identical
-//! (rules §8 — no `cfg!`-branched structure).
+//! Seven URL-driven tabs (`?tab=`) over one EHR. Each tab's data is a
+//! `#[server]` fn co-located with the tab in its own submodule: [`status`],
+//! which owns BOTH status tabs, then [`directory`], [`compositions`],
+//! [`contributions`], [`commit`] (the atomic multi-change CONTRIBUTION staging
+//! area), and the EHR-wide tag browser in [`crate::pages::ehr_tags`]. The
+//! resources are created once and their sources are gated on the active tab, so
+//! only the visible tab fetches. The tab bodies are always mounted and toggled
+//! with `class:hidden`, keeping the server and client view structure identical.
 //!
 //! This module owns the [`EhrDetailPage`] shell, the EHR summary header and the
-//! shared `tab_bar` strip. The header carries two reads, neither of them
-//! duplicated anywhere else on the screen: the EHR resource itself
-//! (`GET /ehr/{ehr_id}`, so an unknown id fails once at the top instead of once
-//! per tab) and — through [`status_feed`] — the current `EHR_STATUS`, which is
-//! the ONE read of the subject and the capability flags the Status tab also
-//! renders. That one is therefore NOT tab-gated: the header shows on every tab.
-//! A commit's new version uid is read by the console's ONE reader,
-//! [`uid_value_of`](crate::uid::uid_value_of).
+//! shared `tab_bar` strip. The header carries two reads, neither duplicated
+//! elsewhere on the screen: the EHR resource itself (`GET /ehr/{ehr_id}`, so an
+//! unknown id fails once at the top instead of once per tab) and — through
+//! [`status_feed`] — the current `EHR_STATUS`, which is the ONE read of the
+//! subject and the capability flags the Status tab also renders. That one is
+//! therefore NOT tab-gated: the header shows on every tab.
 //!
-//! No openEHR spec governs an admin UI — our own design / product extension.
-//! The wire it reads IS spec-bound (ITS-REST EHR + Query APIs). User input
-//! NEVER concatenates into AQL — the compositions listing's statement is
-//! assembled from compile-time fragments by [`composition_filter`] and every
-//! value, the `ehr_id` included, travels as an AQL `query_parameters` binding;
-//! path segments are percent-encoded server-side.
-//!
+//! No openEHR spec governs an admin UI — our own design; the wire it reads is
+//! spec-bound (ITS-REST EHR + Query APIs). User input NEVER concatenates into
+//! AQL — the compositions listing's statement is assembled from compile-time
+//! fragments by [`composition_filter`] and every value travels as an AQL
+//! `query_parameters` binding; path segments are percent-encoded server-side.
 //! Every co-located `#[server]` fn guards with
-//! [`require_session`](crate::session::require_session) first (rules §0), and
-//! the CDR credential never reaches client-visible state.
+//! [`require_session`](crate::session::require_session) first, and the CDR
+//! credential never reaches client-visible state.
 
 #![allow(
     clippy::disallowed_types,
@@ -77,7 +68,7 @@ use crate::pages::ehr_detail::status::{
 /// The EHR resource's own summary facts, flattened for the detail header.
 ///
 /// All fields are plain strings (no `usize`), so the type is safe across the
-/// server-fn boundary on the 32-bit WASM target (rules §1).
+/// server-fn boundary on the 32-bit WASM target.
 ///
 /// The attributes are the RM `EHR` class's own: `system_id` ("the identifier of
 /// the logical EHR management system in which this EHR was created"),
@@ -173,12 +164,11 @@ fn json_path(value: &Value, path: &[&str]) -> String {
 /// Two reads, two claims, one card. The identity strip is the screen's SHARED
 /// current-`EHR_STATUS` read ([`StatusFeed`]) — the subject and the two
 /// capability flags live on that document and nowhere else, and the Status tab
-/// shows them from this very same resource rather than fetching them again
-/// (crate `CLAUDE.md` §One reader per claim). The fact grid is the EHR resource
-/// itself. Both resolve their `Result` INSIDE their own boundary (an SSR'd
-/// `ErrorBoundary` fallback mismatches at hydration in leptos 0.8 — rules §4),
-/// and a `404` renders as the explicit "no such EHR" state: this is where a
-/// mistyped id is reported, once.
+/// shows them from this very same resource rather than fetching them again. The
+/// fact grid is the EHR resource itself. Both resolve their `Result` INSIDE
+/// their own boundary (an SSR'd `ErrorBoundary` fallback mismatches at
+/// hydration in leptos 0.8), and a `404` renders as the explicit "no such EHR"
+/// state: this is where a mistyped id is reported, once.
 fn summary_section(ehr_id: Signal<String>, status: StatusFeed) -> AnyView {
     let resource = Resource::new(
         move || ehr_id.get(),
@@ -225,10 +215,10 @@ fn summary_section(ehr_id: Signal<String>, status: StatusFeed) -> AnyView {
 /// badges, from the shared current-`EHR_STATUS` read.
 ///
 /// A `<Transition>`, because the same resource reloads after a status save and
-/// the header must not flash a skeleton while it does (rules §6). A failed read
-/// renders NOTHING here: an unknown `ehr_id` fails both reads, and the fact
-/// grid below already reports it once — the screen never renders an error as
-/// nothing (rules §4), it renders it in one place.
+/// the header must not flash a skeleton while it does. A failed read renders
+/// NOTHING here: an unknown `ehr_id` fails both reads, and the fact grid below
+/// already reports it once — the screen never renders an error as nothing, it
+/// renders it in one place.
 fn identity_strip(status: StatusFeed) -> AnyView {
     let resource = status.resource;
     view! {
@@ -325,8 +315,8 @@ pub fn EhrDetailPage() -> impl IntoView {
             .and_then(|s| s.parse::<u32>().ok())
             .unwrap_or(0)
     });
-    // Tab state lives in the URL (`?tab=`, rules §9): shareable and refresh-safe.
-    // A Memo (not an Effect) derives the active tab, defaulting to "status".
+    // Tab state lives in the URL (`?tab=`): shareable and refresh-safe. A Memo
+    // (not an Effect) derives the active tab, defaulting to "status".
     let selected: Memo<String> = Memo::new(move |_| {
         query
             .with(|q| q.get("tab"))
@@ -336,8 +326,8 @@ pub fn EhrDetailPage() -> impl IntoView {
 
     // The screen's ONE current-`EHR_STATUS` read, created before every consumer
     // so its resource id is allocated in the same place on both sides of
-    // hydration (rules §4): the header's identity strip and the Status tab both
-    // take this handle.
+    // hydration: the header's identity strip and the Status tab both take this
+    // handle.
     let status_feed = status_feed(ehr_id);
 
     let status = status_section(status_feed, ehr_id, selected);

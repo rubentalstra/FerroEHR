@@ -4,32 +4,25 @@
 //! The parsed `ferroehr.access_control.v1` scheme settings the protocol
 //! adapter's out-of-band access gate consumes.
 //!
-//! # Spec grounding
-//!
-//! `EHR_ACCESS` is a mandatory, versioned component of every EHR and is the
-//! openEHR access-decision **authority**: "All access decisions to data in the
-//! EHR must be made in accordance with the policies and rules in this object"
-//! (RM `org.openehr.rm.ehr.ehr_access.adoc` §`EHR_ACCESS` Class). Its
-//! `settings: ACCESS_CONTROL_SETTINGS [0..1]` is abstract and attribute-less —
+//! `EHR_ACCESS` is a mandatory, versioned component of every EHR and the
+//! openEHR access-decision authority: "All access decisions to data in the EHR
+//! must be made in accordance with the policies and rules in this object" (RM
+//! `org.openehr.rm.ehr.ehr_access.adoc` §`EHR_ACCESS` Class). Its
+//! `settings: ACCESS_CONTROL_SETTINGS [0..1]` is abstract and attribute-less,
 //! "Currently implementation dependent" (RM
-//! `org.openehr.rm.ehr.access_control_settings.adoc`) — and `scheme(): String`
+//! `org.openehr.rm.ehr.access_control_settings.adoc`), and `scheme(): String`
 //! names the concrete settings instance (`Scheme_valid: not scheme.is_empty`).
-//! The Architecture Overview describes what a scheme should provide — an
-//! access list, a gate-keeper, per-Composition privacy levels, and "sensible
-//! defaults" (BASE `architecture_overview/master07-security.adoc` §Access
-//! Control) — but notes "there is currently no published formal, proven model
-//! of access control for shared health information".
+//! BASE `architecture_overview/master07-security.adoc` §Access Control describes
+//! what a scheme should provide while noting "there is currently no published
+//! formal, proven model of access control for shared health information".
 //!
-//! # Our extension
-//!
-//! Everything below the store/version/audit obligation is therefore an
-//! extension: **no openEHR spec governs the concrete scheme — our own design**. Likewise the SM defines **no
-//! `I_EHR_ACCESS` interface** (authorisation is placed out of band — SM
-//! `openehr_platform/master02-overview.adoc` §General Assumptions), so the
+//! Everything below the store, version and audit obligation is therefore an
+//! extension: no openEHR spec governs the concrete scheme — our own design. The
+//! SM likewise defines no `I_EHR_ACCESS` interface, placing authorisation out of
+//! band (`openehr_platform/master02-overview.adoc` §General Assumptions), so the
 //! settings read (`FerroEhrService::current_ehr_access_settings`) is a
-//! native-API extension kept beside the other wire adapters. It exposes the
-//! current `EHR_ACCESS` scheme settings so the protocol adapter — the
-//! out-of-band decision point — can enforce them after authentication.
+//! native-API extension exposing the current scheme settings for the protocol
+//! adapter to enforce after authentication.
 
 #![expect(
     clippy::disallowed_types,

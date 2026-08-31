@@ -67,11 +67,9 @@ impl FerroEhrService {
     /// one operational template by its wire `template_id` (case-insensitive,
     /// §Composite Identifiers and Case), evicting its `WebTemplate` cache entry.
     ///
-    /// NOTE: no openEHR spec governs this operation — the ITS-REST Admin API
-    /// defines only EHR deletes (`admin.openapi.yaml`). Our own design/extension,
-    /// mirroring the SM `I_DEFINITION_ADL14` UUID-keyed delete
-    /// ([`Self::delete_opt`]) but addressed by the wire id and guarded against
-    /// orphaning committed clinical data.
+    /// NOTE: no openEHR spec governs this operation, the ITS-REST Admin API
+    /// defining only EHR deletes — our own design/extension, mirroring the SM
+    /// UUID-keyed delete ([`Self::delete_opt`]) but addressed by the wire id.
     ///
     /// # Errors
     /// - `versioned_object_does_not_exist` (`404`) — no template with that id.
@@ -88,10 +86,10 @@ impl FerroEhrService {
     /// case-insensitive on the qualified name (matching the PUT store path),
     /// exact on the version.
     ///
-    /// NOTE: no openEHR spec governs this operation — the ITS-REST Admin API
-    /// defines only EHR deletes. Our own design/extension; the SM
-    /// `I_DEFINITION_QUERY.delete_query` deletes *every* version by name, whereas
-    /// this admin surface targets a single `(name, version)` row.
+    /// NOTE: no openEHR spec governs this operation, the ITS-REST Admin API
+    /// defining only EHR deletes — our own design/extension; the SM
+    /// `I_DEFINITION_QUERY.delete_query` deletes every version by name while
+    /// this surface targets a single `(name, version)` row.
     ///
     /// # Errors
     /// - `versioned_object_does_not_exist` (`404`) — no stored query at that

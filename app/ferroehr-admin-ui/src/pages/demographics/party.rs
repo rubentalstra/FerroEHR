@@ -4,7 +4,7 @@
 //! The `/demographics/{kind}/{uid}` screen — one party, read, edited, walked
 //! version by version, related, and tagged.
 //!
-//! Four URL-driven tabs (`?tab=`, rules §9) over one versioned object:
+//! Four URL-driven tabs (`?tab=`) over one versioned object:
 //!
 //! - **Party** (default) — the CURRENT version
 //!   (`GET /demographic/{kind}/{uid_based_id}`): its facts, the `edit_form`
@@ -16,11 +16,10 @@
 //!   ([`relationship`](super::relationship)).
 //! - **Tags** — its `ITEM_TAG`s ([`tags`](super::tags)).
 //!
-//! One reader per claim (crate `CLAUDE.md`): the Party tab is the console's ONE
-//! reader of the current party document (and the edit form's merge base); the
-//! History tab never touches that route — it reads the versioned family for the
-//! container + envelope facts and pins a document by an explicit
-//! `OBJECT_VERSION_ID`.
+//! One reader per claim: the Party tab is the console's ONE reader of the
+//! current party document (and the edit form's merge base); the History tab
+//! never touches that route — it reads the versioned family for the container +
+//! envelope facts and pins a document by an explicit `OBJECT_VERSION_ID`.
 //!
 //! The edit form replaces exactly `identities` and `details` and re-sends
 //! everything else verbatim — never a re-model of the served document. Those
@@ -67,7 +66,7 @@ const PARTY_OBJECT: &str = "this party";
 ///
 /// The canonical document verbatim, the version that document IS, and the two
 /// attributes the edit form works on — flattened BFF-side so the browser never
-/// re-models the RM (rules §10), with fixed-size ints only (rules §1).
+/// re-models the RM, with fixed-size ints only.
 #[derive(Debug, Clone, PartialEq, Eq, Default, Serialize, Deserialize)]
 pub struct PartyState {
     /// The canonical party JSON exactly as the CDR served it — the base every
@@ -402,7 +401,7 @@ fn parse_party_state(body: &str, served_etag: Option<&str>) -> Result<PartyState
 
 #[cfg(feature = "ssr")]
 /// The length of a JSON array attribute as the fixed-size int the wire type
-/// carries (rules §1), saturating rather than wrapping.
+/// carries, saturating rather than wrapping.
 fn count_of(value: Option<&Value>) -> u32 {
     value
         .and_then(Value::as_array)
@@ -518,7 +517,7 @@ pub fn PartyDetailPage() -> impl IntoView {
         container_uid_of(&params.with(|p| p.get("uid").unwrap_or_default()))
     });
     let query = leptos_router::hooks::use_query_map();
-    // Tab state lives in the URL (`?tab=`, rules §9): shareable, refresh-safe.
+    // Tab state lives in the URL (`?tab=`): shareable, refresh-safe.
     let selected: Memo<String> = Memo::new(move |_| {
         query
             .with(|q| q.get("tab"))
@@ -526,14 +525,12 @@ pub fn PartyDetailPage() -> impl IntoView {
             .unwrap_or_else(|| "party".to_owned())
     });
 
-    // The kind is read REACTIVELY and the screen is rebuilt when it changes.
-    // A relationship end on the Relationships tab links party → party, and
+    // The kind is read REACTIVELY and the screen is rebuilt when it changes:
     // `leptos_router` answers a navigation to the same `<Route>` by updating the
     // params without re-running this body ("if two IDs are the same, we do not
     // rerender, but only update the params" — `leptos_router` 0.8
-    // `src/nested_router.rs`). A once-read kind would then address the previous
-    // family: the tag writes, the version reads and the relationship-create
-    // prefill would all carry the wrong RM type.
+    // `src/nested_router.rs`), and a relationship end on the Relationships tab
+    // links party → party, so a once-read kind would address the wrong family.
     view! {
         {move || {
             super::browse::kinded_screen(kind, segment, |kind| party_screen(kind, uid, selected))
@@ -640,8 +637,7 @@ struct PartyEdit {
 
 /// The edit form's long-lived reactive state, created ONCE in
 /// [`party_section`] — ABOVE the `<Transition>`, so it outlives every Suspend
-/// re-run (rules §4) — and re-seeded idempotently per loaded version by
-/// [`seed`].
+/// re-run — and re-seeded idempotently per loaded version by [`seed`].
 #[derive(Clone, Copy)]
 struct PartyForm {
     /// The `identities` draft.
@@ -690,10 +686,10 @@ impl PartyForm {
 
 /// Seed [`PartyForm`] from the freshly loaded party, ONCE per loaded version.
 ///
-/// A Suspend re-run for the SAME version is a no-op (rules §4 — the state
-/// lives above the Suspend, so re-seeding would overwrite edits in progress);
-/// a NEW version resets both drafts, the merge base, the `If-Match` value and
-/// the validation note.
+/// A Suspend re-run for the SAME version is a no-op (the state lives above
+/// the Suspend, so re-seeding would overwrite edits in progress); a NEW
+/// version resets both drafts, the merge base, the `If-Match` value and the
+/// validation note.
 fn seed(form: PartyForm, state: &PartyState) {
     if form.seeded_uid.get_untracked().as_deref() == Some(state.version_uid.as_str()) {
         return;
@@ -711,11 +707,9 @@ fn seed(form: PartyForm, state: &PartyState) {
 /// The Party tab: the facts card, the edit form, and the document.
 ///
 /// ONE resource, created in setup — the screen's single reader of the current
-/// party document (crate `CLAUDE.md` §One reader per claim), which is why it is
-/// NOT gated on the tab: the delete affordance above the tabs needs the latest
-/// version uid whichever tab is open, and a second read for that would be the
-/// same claim from the same endpoint twice. It publishes that uid into
-/// `latest_version` for the delete section to read.
+/// party document, which is why it is NOT gated on the tab: the delete
+/// affordance above the tabs needs the latest version uid whichever tab is open.
+/// It publishes that uid into `latest_version` for the delete section to read.
 ///
 /// The source carries a stamp that advances ONLY on a successful save, so a
 /// refused save (a `412`, a rejected body) leaves the operator's input on screen
@@ -747,7 +741,7 @@ fn party_section(
     });
     // `Action::version` increments on failures too; a refetch after a REFUSED
     // save would re-seed the form and discard the edits the operator still
-    // needs (the EHR-status tab's precedent).
+    // needs.
     let saved = Memo::new(move |prev: Option<&usize>| {
         let version = save.version().get();
         if save.value().with(|value| matches!(value, Some(Ok(_)))) {
@@ -762,8 +756,8 @@ fn party_section(
         move |(id, _)| async move { fetch_party(kind.segment().to_owned(), id).await },
     );
 
-    // Both outcomes toast (the console's mutation-feedback rule, crate
-    // `CLAUDE.md`); a `412` is the mid-air collision and gets its own title.
+    // Both outcomes toast (the console's mutation-feedback rule); a `412` is
+    // the mid-air collision and gets its own title.
     Effect::new(move |_| match save.value().get() {
         Some(Ok(uid)) => {
             let detail = if uid.is_empty() {
@@ -788,7 +782,7 @@ fn party_section(
     let facts = facts_section(resource, form, latest_version);
     let editor = edit_form(kind, form, save);
     // A failed read renders nothing in the pane — the facts section above
-    // states it once (the screen never renders an error as nothing; rules §4).
+    // states it once (the screen never renders an error as nothing).
     let document = document_section(resource, "party-document", |state| state.body.as_str());
     (
         view! { <div class="flex flex-col gap-4">{facts} {editor} {document}</div> }.into_any(),
@@ -801,8 +795,7 @@ fn party_section(
 ///
 /// A `<Transition>` (not `<Suspense>`): the resource reloads after every
 /// successful save and the previous facts must stay visible instead of flashing
-/// the skeleton (rules §6). The `Result` resolves INSIDE the transition (rules
-/// §4).
+/// the skeleton. The `Result` resolves INSIDE the transition.
 fn facts_section(
     resource: PartyResource,
     form: PartyForm,
@@ -875,8 +868,8 @@ pub(super) fn fact_row(label: &'static str, hook: &'static str, value: String) -
 /// diagnostic).
 ///
 /// Always mounted with a constant structure, so the server HTML and the client
-/// view match (rules §8); every value comes from the long-lived [`PartyForm`],
-/// so the card survives the facts section's Suspend re-runs (rules §4).
+/// view match; every value comes from the long-lived [`PartyForm`], so the
+/// card survives the facts section's Suspend re-runs.
 ///
 /// Both drafts and the save are DISABLED until [`seed`] has loaded a document
 /// into the form: the card is mounted before the read resolves, and an edit
@@ -895,7 +888,7 @@ fn edit_form(
         let identities = form.identities.get();
         let details = form.details.get();
         // Client-side validation first, before any round trip; the server fn
-        // re-checks — it is a public endpoint (rules §0).
+        // re-checks — it is a public endpoint.
         if let Err(message) = draft_complaint(&identities, &details) {
             form.validation.set(Some(message));
         } else {
@@ -1001,9 +994,8 @@ fn edit_form(
 /// are acceptable.
 ///
 /// It is the SAME judgement [`apply_party_edits`] makes server-side, called
-/// rather than restated: [`parse_identities`] and [`parse_details`] are pure
-/// and compile on both targets, so the inline complaint and the merge's
-/// refusal can never disagree.
+/// rather than restated: [`parse_identities`] and [`parse_details`] are pure and
+/// compile on both targets, so the two can never disagree.
 ///
 /// # Errors
 /// The operator-facing complaint naming the offending draft.
@@ -1025,8 +1017,7 @@ fn draft_complaint(identities: &str, details: &str) -> Result<(), String> {
 /// `version_uid` is the screen's ONE read of the party, published by
 /// [`facts_section`]: the delete addresses the version to supersede, not the
 /// container ("MUST be in a form of an `OBJECT_VERSION_ID` … representing the
-/// `preceding_version_uid` to be deleted", `operations/person_delete.yaml`), and
-/// a second read for that would be the same claim twice.
+/// `preceding_version_uid` to be deleted", `operations/person_delete.yaml`).
 fn delete_section(kind: PartyKind, uid: Signal<String>, version_uid: RwSignal<String>) -> AnyView {
     let delete: Action<String, Result<(), AdminUiError>> = Action::new(move |version: &String| {
         let version = version.clone();

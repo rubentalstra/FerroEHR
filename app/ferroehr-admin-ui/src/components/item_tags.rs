@@ -7,9 +7,8 @@
 //! The CDR serves tags on three families of route — the demographic party trio
 //! (`/demographic/{kind}/{uid_based_id}/tags`), the EHR-side COMPOSITION and
 //! `EHR_STATUS` trios (`/ehr/{ehr_id}/{kind}/{uid_based_id}/tags`), and the two
-//! aggregate lists (`/demographic/tags`, `/ehr/{ehr_id}/tags`) — but they all
-//! carry the SAME resource, so they get one kit rather than one editor per
-//! screen (the console's standing listing/editor rule, crate `CLAUDE.md`).
+//! aggregate lists (`/demographic/tags`, `/ehr/{ehr_id}/tags`) — all carrying
+//! the SAME resource, so they get one kit rather than one editor per screen.
 //!
 //! Three wire facts every caller is built around, all from the released
 //! operations (`docs/specs/openehr/ITS-REST/specifications/operations/`):
@@ -64,10 +63,10 @@ use crate::error::AdminUiError;
 ///
 /// The attributes are the RM class's own
 /// (`docs/specs/openehr/RM/docs/UML/classes/org.openehr.rm.common.item_tag.adoc`):
-/// `key`, the optional `value`, the optional `target_path`, the `target`
-/// (a `UID_BASED_ID` — a `HIER_OBJECT_ID` for a container target, an
+/// `key`, the optional `value`, the optional `target_path`, the `target` (a
+/// `UID_BASED_ID` — a `HIER_OBJECT_ID` for a container target, an
 /// `OBJECT_VERSION_ID` for one version) and the `owner_id` reference. Strings
-/// only, so the type is WASM-safe over the server-fn boundary (rules §1).
+/// only, so the type is WASM-safe over the server-fn boundary.
 #[derive(Debug, Clone, PartialEq, Eq, Default, Serialize, Deserialize)]
 pub struct ItemTagRow {
     /// `ITEM_TAG.key`.
@@ -84,8 +83,7 @@ pub struct ItemTagRow {
 
 impl ItemTagRow {
     /// The tag's identity — the `(key, target_path)` pair the released update
-    /// operation names — as the `<For>` key (rules §4: stable, unique,
-    /// data-derived).
+    /// operation names — as the `<For>` key (stable, unique, data-derived).
     #[must_use]
     pub fn identity(&self) -> String {
         format!("{}\u{1f}{}", self.key, self.target_path)
@@ -121,8 +119,8 @@ pub struct TagGroup {
 }
 
 /// The resource shape every tag panel reads: `None` while the panel's tab is
-/// inactive (so an unopened tab fetches nothing — rules §6), `Some(list)` once
-/// the CDR has answered.
+/// inactive (so an unopened tab fetches nothing), `Some(list)` once the CDR
+/// has answered.
 pub type TagList = Resource<Result<Option<Vec<ItemTagRow>>, AdminUiError>>;
 
 /// The copy one tag panel renders itself with — what the collection IS, so no
@@ -169,7 +167,7 @@ pub struct TagActions {
 /// The caller owns the resource (so IT decides when the collection is fetched
 /// and re-read) and the two write actions; this renders them. The `Result`
 /// resolves INSIDE the `<Transition>` — an SSR'd `ErrorBoundary` fallback
-/// mismatches at hydration in leptos 0.8 (rules §4).
+/// mismatches at hydration in leptos 0.8.
 #[must_use]
 pub fn tag_panel(
     copy: TagPanelCopy,
@@ -279,9 +277,8 @@ fn tag_row(tag: &ItemTagRow, actions: TagActions) -> AnyView {
 /// The set-a-tag card: key, value, target path, and the save that merges into
 /// the current collection.
 ///
-/// Uncontrolled inputs read at dispatch (rules §5) — a controlled input resets
-/// to its empty signal at hydration, wiping anything typed before the WASM
-/// loaded.
+/// Uncontrolled inputs read at dispatch — a controlled input resets to its
+/// empty signal at hydration, wiping anything typed before the WASM loaded.
 fn set_form(copy: TagPanelCopy, actions: TagActions) -> AnyView {
     let key_ref = NodeRef::<leptos::html::Input>::new();
     let value_ref = NodeRef::<leptos::html::Input>::new();
@@ -382,15 +379,15 @@ fn set_form(copy: TagPanelCopy, actions: TagActions) -> AnyView {
 }
 
 /// The three released tag filters as a plain `<form method="GET">` submitting
-/// to `action` (rules §9 — the filter lives in the URL, and filtering works
-/// before the WASM bundle has loaded).
+/// to `action` (the filter lives in the URL, and filtering works before the
+/// WASM bundle has loaded).
 ///
 /// `hidden` carries the screen's other URL state across the submit (a tab
 /// selector, say), which a GET form would otherwise drop. Each field's initial
 /// value is the filter already in the URL, as the `value` ATTRIBUTE rather than
 /// a controlled input: the value is deterministic on the server pass and at
-/// hydration alike (rules §8), and an uncontrolled field never loses what was
-/// typed before the WASM loaded (rules §5).
+/// hydration alike, and an uncontrolled field never loses what was typed before
+/// the WASM loaded.
 #[must_use]
 pub fn tag_filter_form(
     action: String,
@@ -559,7 +556,7 @@ fn string_at(value: &Value, path: &[&str]) -> String {
 /// target VERSION or `VERSIONED_OBJECT` within the EHR"), so the target is what
 /// a reader groups by. Pure and deterministic: targets in `BTreeMap` order,
 /// each group's tags by identity — no clock, no hash iteration, so the server
-/// pass and hydration render the same table (rules §8).
+/// pass and hydration render the same table.
 #[must_use]
 pub fn group_by_target(tags: Vec<ItemTagRow>) -> Vec<TagGroup> {
     let mut by_target: BTreeMap<String, Vec<ItemTagRow>> = BTreeMap::new();
@@ -738,7 +735,7 @@ mod wire_tests {
             "?tag_key=flag&tag_value=follow-up&tag_target_path=%2Fcontext%2Fstart_time%2Fvalue"
         );
         // A filter value can carry anything a key can, so it is percent-encoded
-        // rather than concatenated (owner rule: the `urlencoding` crate).
+        // rather than concatenated.
         assert_eq!(tag_filter_query("a&b=c", "", ""), "?tag_key=a%26b%3Dc");
     }
 }

@@ -5,42 +5,30 @@
 //! certificate the CDR presents (mutual TLS) and the trust anchors it verifies
 //! the server with.
 //!
-//! NOTE: no openEHR spec governs terminology-server transport security — our
-//! own design/extension. `BASE/docs/architecture_overview/master12-terminology.adoc`
-//! models the backend only as an external "terminology query server"; how the
-//! CDR authenticates the connection to it is entirely ours. The certificate
-//! formats themselves are PEM-encoded X.509 (RFC 7468) handled by the pinned
-//! `rustls` / `reqwest` stack — nothing here is hand-rolled crypto.
+//! NOTE: no openEHR spec governs terminology-server transport security — our own
+//! design/extension; the certificate formats are PEM-encoded X.509 (RFC 7468)
+//! handled by the pinned `rustls` and `reqwest` stack.
 //!
-//! # The identity is per provider, not per process
+//! The client identity is configured per
+//! `[terminology.external.providers.<name>]` rather than once per process,
+//! because a client certificate is a credential issued by the peer's PKI, as is
+//! the CA signing each server's certificate. Repeating the same paths degenerates
+//! to a shared identity; `[server.tls]` is inbound-only.
 //!
-//! NOTE (settled design): the client identity is configured on each
-//! `[terminology.external.providers.<name>]`, not once for the whole process,
-//! because a client certificate is a credential **issued by the peer's PKI** —
-//! exactly like the `OAuth2` client credentials a provider already names with
-//! `oauth2_client` — and so is the CA that signs each server's certificate. The
-//! per-provider shape degenerates to a shared one by repeating the same paths;
-//! `[server.tls]` is inbound-only and cannot be reused for an outbound identity.
-//!
-//! # Verification is never disabled
-//!
-//! There is no "insecure" / "skip verification" switch, by construction: this
-//! module only ever supplies *trust anchors* and a *client identity* to the
-//! `reqwest` builder. It never touches `danger_accept_invalid_certs` and never
-//! installs a custom certificate verifier, so server-certificate and hostname
-//! verification stay on for every provider. A configured
-//! [`FhirProviderConfig::ca_bundle_path`] **replaces** the default trust
+//! There is no insecure or skip-verification switch: this module only supplies
+//! trust anchors and a client identity to the `reqwest` builder, never touching
+//! `danger_accept_invalid_certs` and never installing a custom verifier, so
+//! server-certificate and hostname verification stay on for every provider. A
+//! configured [`FhirProviderConfig::ca_bundle_path`] replaces the default trust
 //! anchors for that provider (`reqwest::ClientBuilder::tls_certs_only`) rather
-//! than widening them — a terminology server issued by a private PKI is
-//! pinned to that PKI instead of also accepting the whole public web PKI.
+//! than widening them, pinning a privately issued terminology server to its own
+//! PKI.
 //!
-//! # Scope
-//!
-//! The material applies to the connection to the terminology server itself.
-//! The `OAuth2` token endpoint ([`super::oauth2::TokenSource`]) is a different
-//! host in a different trust domain and keeps the default TLS stack; presenting
-//! the terminology server's client certificate to an identity provider would be
-//! a credential leak, not a feature.
+//! The material applies to the connection to the terminology server itself. The
+//! `OAuth2` token endpoint ([`super::oauth2::TokenSource`]) is a different host
+//! in a different trust domain and keeps the default TLS stack; presenting the
+//! terminology server's client certificate to an identity provider would be a
+//! credential leak.
 
 use std::path::{Path, PathBuf};
 

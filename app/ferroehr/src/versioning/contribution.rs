@@ -131,11 +131,9 @@ fn resolve_change_type(token: Option<&str>, has_preceding: bool) -> Result<Strin
 /// carries data and no preceding version.
 ///
 /// # Errors
-/// [`ServiceError::Unprocessable`] for a preceding version (the released
-/// `400_CONTRIBUTION` trigger is DIRECTIONAL — "first version of a
-/// MODIFICATION" — and does not cover this mirror case, so it is the
-/// adjudicated 422: a well-formed envelope whose change-control semantics
-/// cannot be followed, RM `change_control` §Contributions) or for missing data.
+/// [`ServiceError::Unprocessable`] for a preceding version, the released
+/// `400_CONTRIBUTION` trigger being directional ("first version of a
+/// MODIFICATION") and not covering this mirror case, or for missing data.
 fn classify_creation(
     code: String,
     has_preceding: bool,
@@ -268,7 +266,7 @@ fn classify_modification(
 /// entry (see the parse pass in [`commit_version_set`]).
 struct PlannedVersion {
     /// The member's position in the submitted `versions` array — every
-    /// member-scoped refusal names it (#2590).
+    /// member-scoped refusal names it.
     index: usize,
     action: Action,
     /// The parsed `preceding_version_uid` target (modify/delete/attest).
@@ -284,59 +282,38 @@ struct PlannedVersion {
     accompanying: Vec<Value>,
 }
 
-/// The `_type` self-tags a CONTRIBUTION version member may carry: the class
-/// the released commit wire titles (`UPDATE_VERSION`) and the RM class that
-/// member becomes when committed (`ORIGINAL_VERSION`).
+/// The `_type` self-tags a CONTRIBUTION version member may carry: the class the
+/// released commit wire titles (`UPDATE_VERSION`) and the RM class that member
+/// becomes when committed (`ORIGINAL_VERSION`).
 ///
-/// Both names denote the SAME wire shape — the commit-wire PARTIAL of six
-/// properties (`preceding_version_uid`, `signature`, `lifecycle_state`,
-/// `attestations`, `data`, `commit_audit`; ITS-REST
-/// `schemas/ehr/UpdateVersion.yaml`, the only member schema
+/// Both names denote the same wire shape, the commit-wire partial of six
+/// properties (ITS-REST `schemas/ehr/UpdateVersion.yaml`, the only member schema
 /// `schemas/ehr/NewContribution.yaml` types `versions` items as). Admitting
-/// `ORIGINAL_VERSION` says which class the member BECOMES — the `_type` rule of
-/// `specifications/docs/overview/Resources.md` §Resource representation is about
-/// naming the RM type "whenever polymorphism is involved" — NOT that a complete
-/// RM `ORIGINAL_VERSION` instance may be posted: the server supplies every
-/// attribute the partial omits, `uid` (1..1 on that class,
-/// `RM/docs/UML/classes/org.openehr.rm.common.original_version.adoc`
-/// §Attributes) included, and the completed instance is what the READ serves.
-/// That is why [`reject_foreign_version_identity`] refuses a member-borne `uid`
-/// under EITHER tag without contradicting the class's own mandatory
-/// cardinality: the mandatory attribute is satisfied by the repository's
-/// allocation, at the only moment a version identity can exist.
+/// `ORIGINAL_VERSION` names the class the member becomes, per the `_type` rule
+/// of `specifications/docs/overview/Resources.md` §Resource representation; the
+/// server still supplies every attribute the partial omits, `uid` included, so
+/// [`reject_foreign_version_identity`] refuses a member-borne `uid` under either
+/// tag.
 const COMMITTABLE_MEMBER_TYPES: [&str; 2] = ["UPDATE_VERSION", "ORIGINAL_VERSION"];
 
-/// Refuse a CONTRIBUTION version member that declares a version identity this
-/// repository did not create — the three keys of an `IMPORTED_VERSION` shape.
+/// Refuses a CONTRIBUTION version member that declares a version identity this
+/// repository did not create: the three keys of an `IMPORTED_VERSION` shape.
 ///
-/// The released commit wire declares exactly six member properties —
-/// `preceding_version_uid`, `signature`, `lifecycle_state`, `attestations`,
-/// `data`, `commit_audit` (ITS-REST `schemas/ehr/UpdateVersion.yaml`) — and
-/// `schemas/ehr/NewContribution.yaml` types `versions` items as
-/// `UpdateVersion` with no `oneOf` and no discriminator. So no member can name
-/// its own `uid`, and none can carry the `item` an `IMPORTED_VERSION` wraps.
-/// RM common `master06-change_control_package.adoc` §Copying puts the import
-/// behind its own container operation — `VERSIONED_OBJECT.commit_imported_version`,
-/// whose description is "Details of version id etc come from the
-/// `ORIGINAL_VERSION`" (`UML/classes/org.openehr.rm.common.versioned_object.adoc`
-/// §Functions) — and the release defines no wire shape for it at all. The
-/// distributed-import capability is realized by the EHR-Extract
-/// import route instead, which carries a foreign `ORIGINAL_VERSION` verbatim.
+/// The released commit wire declares six member properties (ITS-REST
+/// `schemas/ehr/UpdateVersion.yaml`) and `schemas/ehr/NewContribution.yaml`
+/// types `versions` items as `UpdateVersion` with no `oneOf` and no
+/// discriminator, so no member can name its own `uid` or carry the `item` an
+/// `IMPORTED_VERSION` wraps. RM common `master06-change_control_package.adoc`
+/// §Copying puts the import behind `VERSIONED_OBJECT.commit_imported_version`,
+/// for which the release defines no wire shape; the EHR-Extract import route
+/// carries a foreign `ORIGINAL_VERSION` verbatim instead. Left accepted, such a
+/// member would commit as a locally created `ORIGINAL_VERSION` under a freshly
+/// minted uid, discarding the declared foreign identity without a diagnostic.
 ///
-/// Accepting these keys silently is the failure this refusal exists to
-/// prevent: a member carrying `_type: IMPORTED_VERSION` + `item` + a foreign
-/// `uid` would otherwise commit as a LOCALLY created `ORIGINAL_VERSION` under a
-/// freshly minted local uid, discarding the declared foreign identity and its
-/// provenance without a diagnostic. Refused as the shape failure it is
-/// (`400_CONTRIBUTION`: "syntactically invalid header, parameter or content"),
-/// exactly as the sibling `other_input_version_uids` refusal is.
-///
-/// NOTE: `_type` is the one of the three with a LEGAL value here — its value
-/// "MUST be the uppercase class name from the RM specification" (ITS-REST
-/// `specifications/docs/overview/Resources.md` §Resource representation), and
-/// the docs text outranks the OAS — but only a class this wire commits:
-/// [`COMMITTABLE_MEMBER_TYPES`]. Any other name declares a shape the release
-/// never defined.
+/// NOTE: `_type` is the one of the three keys with a legal value here, its value
+/// being "the uppercase class name from the RM specification" (ITS-REST
+/// `specifications/docs/overview/Resources.md` §Resource representation), but
+/// only for a class this wire commits ([`COMMITTABLE_MEMBER_TYPES`]).
 ///
 /// # Errors
 /// [`ServiceError::BadRequest`] naming the offending key.
@@ -678,13 +655,12 @@ fn parse_supplied_uid(body: &Value) -> Result<Option<Uuid>, ServiceError> {
 /// The CONTRIBUTION audit's committer and system id, which every version audit
 /// of the set defaults from.
 ///
-/// The `committer` is REQUIRED, exactly like the `change_type`: RM common
-/// `audit_details.adoc` §Attributes types `committer` 1..1 on the mandatory
-/// `CONTRIBUTION.audit`, and the released commit schema requires it on the
-/// wire (`NewContribution.yaml` over `UpdateAudit.yaml`). master06 §Committal
-/// (m4) then copies `system_id`/`committer`/`time_committed` of the
-/// CONTRIBUTION audit "into the `commit_audit` of each VERSION included in the
-/// CONTRIBUTION"; `time_committed` is always the server commit-act time.
+/// The `committer` is required: RM common `audit_details.adoc` §Attributes types
+/// it 1..1 on the mandatory `CONTRIBUTION.audit`, and the released commit schema
+/// requires it on the wire. master06 §Committal (m4) then copies
+/// `system_id`/`committer`/`time_committed` of the CONTRIBUTION audit into the
+/// `commit_audit` of each VERSION; `time_committed` is always the server
+/// commit-act time.
 ///
 /// # Errors
 /// [`ServiceError::Unprocessable`] when the committer is absent or is not a
@@ -712,14 +688,12 @@ fn parse_contribution_committer(
 
 /// The CONTRIBUTION's own audit, validated as an RM instance.
 ///
-/// Its change type is the CLIENT's account of the change set, and it is
-/// REQUIRED: RM common `audit_details.adoc` §Attributes types `change_type`
-/// 1..1 on the mandatory `CONTRIBUTION.audit`, and the released commit schema
-/// says the same (`schemas/ehr/NewContribution.yaml` over
-/// `schemas/common/UpdateAudit.yaml`). It is refused rather than derived:
-/// master06 §Contributions calls the aggregate "approximate, and not expected
-/// to be used as a computable value", so a server guess would put an
-/// approximation into the audit trail under the client's name.
+/// Its change type is the client's account of the change set and is required:
+/// RM common `audit_details.adoc` §Attributes types `change_type` 1..1 on the
+/// mandatory `CONTRIBUTION.audit`, and the released commit schema says the same
+/// (`schemas/ehr/NewContribution.yaml`). An absent one is refused rather than
+/// derived, master06 §Contributions calling the aggregate "approximate, and not
+/// expected to be used as a computable value".
 ///
 /// # Errors
 /// [`ServiceError::Unprocessable`] when the change type is absent, is not a
@@ -774,12 +748,10 @@ fn parse_contribution_audit(
 /// [`ServiceError::Unprocessable`] for a member-borne version identity, an
 /// unclassifiable change type, an unparsable preceding target or an invalid
 /// audit; [`ServiceError::precondition`] for a member carrying
-/// `other_input_version_uids` (not a member of `UPDATE_VERSION` on this wire —
-/// merge provenance is PRODUCE-only, so accepting it would let a client stamp
-/// arbitrary provenance onto a version this system never merged) or omitting
-/// the required `lifecycle_state`. The `666|attestation|` member is exempt from
-/// the lifecycle rule, and only it: it commits no new version (master06
-/// §Contributions), so it has no version lifecycle state to supply.
+/// `other_input_version_uids` (not a member of `UPDATE_VERSION` on this wire;
+/// merge provenance is produce-only) or omitting the required
+/// `lifecycle_state`. Only the `666|attestation|` member is exempt from the
+/// lifecycle rule, committing no new version (master06 §Contributions).
 fn plan_version(
     version: &Value,
     index: usize,
@@ -1197,24 +1169,14 @@ async fn reject_duplicate_singleton(
 /// The concrete `_type` values a commit audit may carry on the native
 /// CONTRIBUTION wire, and whether each one commits an `ATTESTATION`.
 ///
-/// The ITS-REST docs text points the native commit at the RM: "The 'native' way
-/// of committing is to use a CONTRIBUTION and wrap the content as a VERSION"
-/// (overview `Requests_and_responses.md` §"openehr-version and
-/// openehr-audit-details", linking the RM change-control package), and the RM
-/// makes `ATTESTATION` an admissible `VERSION.commit_audit` — master06
-/// §Committal and Audits ("`AUDIT_DETAILS` … or its subtype `ATTESTATION`"),
-/// §Attestation ("`ORIGINAL_VERSION._commit_audit_` is of type `ATTESTATION`
-/// rather than `AUDIT_DETAILS`"), and master04 §Attestation, which calls it
-/// "the most common scenario" when an attestation is required. The released OAS
-/// enumerates only `UPDATE_AUDIT` / `AUDIT_DETAILS` / an omitted `_type` for
-/// this attribute (`schemas/common/UpdateAudit.yaml` description), so the two
-/// sources disagree and the docs text wins (the ITS-REST oracle order). The
-/// `UPDATE_*` spellings are the released commit DTOs of the same two RM
-/// classes (`UpdateAudit.yaml` / `UpdateAttestation.yaml`), accepted for each
-/// alike so the wire pairing stays symmetric.
-///
-/// Anything else is refused: a `_type` naming another class is not a commit
-/// audit at all.
+/// The ITS-REST docs text points the native commit at the RM (overview
+/// `Requests_and_responses.md`), and RM common master06 §Committal and Audits
+/// makes `ATTESTATION` an admissible `VERSION.commit_audit` ("`AUDIT_DETAILS` …
+/// or its subtype `ATTESTATION`"). The released OAS enumerates only
+/// `UPDATE_AUDIT` / `AUDIT_DETAILS` / an omitted `_type`
+/// (`schemas/common/UpdateAudit.yaml`), and the docs text wins on that
+/// disagreement. The `UPDATE_*` spellings are the released commit DTOs of the
+/// same two RM classes, accepted alike. Any other `_type` is refused.
 fn commit_audit_is_attestation(audit: &Value) -> Result<bool, ServiceError> {
     match audit.get("_type").and_then(Value::as_str) {
         None | Some("UPDATE_AUDIT" | "AUDIT_DETAILS") => Ok(false),
@@ -1253,10 +1215,9 @@ fn accompanying(
 /// §Committal copy rule, m4).
 ///
 /// `attestable` is false for a `666|attestation|` member, whose `commit_audit`
-/// IS the `ATTESTATION` being attached to an existing version rather than that
-/// member's own commit audit (master06 §Contributions — such a member commits
-/// no version, so it writes no audit row); the attestation path
-/// ([`crate::versioning::attestation::complete_attestation`]) owns it there.
+/// is the `ATTESTATION` attached to an existing version rather than that
+/// member's own commit audit; the attestation path
+/// ([`crate::versioning::attestation::complete_attestation`]) owns it.
 ///
 /// # Errors
 /// [`ServiceError::Unprocessable`] when the `_type` names neither
@@ -1312,17 +1273,14 @@ fn parse_audit(
 // CONTRIBUTION-level change type "approximate, and not expected to be used as a
 // computable value", so the commit path refuses an omitted one instead.
 
-/// Enforce that a version's object kind matches the contribution's scope: a
-/// demographic contribution (`party_only`) may carry only party roots +
+/// Enforces that a version's object kind matches the contribution's scope: a
+/// demographic contribution (`party_only`) may carry only party roots and
 /// `PARTY_RELATIONSHIP`, and an EHR contribution may carry neither.
 ///
-/// NOTE: `FOLDER` is EHR-scoped in both directions, because no released
-/// service surface admits a demographic folder — SM
-/// `UML/classes/i_demographic_service.adoc` declares exactly `create_party`,
-/// `create_party_relationship`, `i_party`, `i_party_relationship`, with no
-/// folder or directory operation, and the ITS-REST demographic API defines no
-/// folder path at all (every `directory_*` operation is mounted EHR-scoped at
-/// `/ehr/{ehr_id}/directory` in `specifications/ehr.openapi.yaml`).
+/// NOTE: `FOLDER` is EHR-scoped in both directions, no released service surface
+/// admitting a demographic folder (SM `UML/classes/i_demographic_service.adoc`
+/// declares no folder operation and every ITS-REST `directory_*` operation is
+/// mounted at `/ehr/{ehr_id}/directory`).
 ///
 /// # Errors
 /// [`ServiceError::Unprocessable`] (`422`) on a scope mismatch in either
@@ -1390,22 +1348,16 @@ fn lifecycle_of(version: &Value) -> Option<String> {
         .map(str::to_owned)
 }
 
-/// Refuse a delete member whose declared `lifecycle_state` is not the
+/// Refuses a delete member whose declared `lifecycle_state` is not the
 /// `523|deleted|` its own change type commits.
 ///
-/// RM common `master06-change_control_package.adoc` §Logical Deletion states
-/// the deletion as ONE procedure whose third step is "set the
-/// `_lifecycle_state_` value to the code for `deleted`", so a member pairing
-/// change type `523|deleted|` with any other state asks for two contradictory
-/// things at once. Discarding the declared state would tell the client its
-/// instruction was followed when it was not; the direct DELETE wire refuses
-/// the same contradiction on its committal header. The code is the released
-/// `400_CONTRIBUTION` change-control trigger — "the modification type does
-/// not match the operation" (`responses/400_CONTRIBUTION.yaml`), the clause
-/// [`classify`]'s sibling mismatches already answer.
-///
-/// An absent state is not this function's business — [`commit_version_set`]
-/// requires one on every non-attest member.
+/// RM common `master06-change_control_package.adoc` §Logical Deletion states the
+/// deletion as one procedure whose third step sets `_lifecycle_state_` to the
+/// code for `deleted`, so a member pairing change type `523|deleted|` with any
+/// other state asks for two contradictory things. The code is the released
+/// `400_CONTRIBUTION` change-control trigger, "the modification type does not
+/// match the operation" (`responses/400_CONTRIBUTION.yaml`). An absent state is
+/// [`commit_version_set`]'s business, not this function's.
 ///
 /// # Errors
 /// [`ServiceError::BadRequest`] when `declared` resolves to a
@@ -1451,19 +1403,15 @@ fn data_kind(data: &Value) -> Result<Kind, ServiceError> {
 
 /// The strict canonical-JSON door over a raw commit member's `data`.
 ///
-/// A CONTRIBUTION member arrives raw (the envelope tolerates the 666/523
-/// member shapes the typed reader refuses), so the payload itself runs the
-/// same typed door every direct commit route passes through: content that
-/// cannot be converted to its RM resource is the 400 row, never the 422 one
-/// (ITS-REST overview `Requests_and_responses.md` §HTTP status codes; the
-/// released `responses/422.yaml` scopes 422 to content that "could be
-/// converted to a resource"). The demographic kinds keep their typed door in
-/// `service::demographic::validate` — this gate covers the EHR kinds whose
-/// commit validators walk the raw value.
-///
-/// A `553|incomplete|` commit skips the door: the generated types make
-/// mandatory attributes structural, and RM common master06 §Incomplete
-/// Content lifts precisely those bounds.
+/// A CONTRIBUTION member arrives raw, the envelope tolerating the 666/523 member
+/// shapes the typed reader refuses, so the payload runs the same typed door
+/// every direct commit route passes through: content that cannot be converted to
+/// its RM resource is the 400 row (ITS-REST overview `Requests_and_responses.md`
+/// §HTTP status codes). The demographic kinds keep their typed door in
+/// `service::demographic::validate`; this gate covers the EHR kinds. A
+/// `553|incomplete|` commit skips it, the generated types making mandatory
+/// attributes structural where RM common master06 §Incomplete Content lifts
+/// those bounds.
 ///
 /// # Errors
 /// [`ServiceError::BadRequest`] when the strict reader refuses the payload.

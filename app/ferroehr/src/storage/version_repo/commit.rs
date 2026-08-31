@@ -53,9 +53,9 @@ pub struct AuditRow<'a> {
     pub attestation: Option<Value>,
 }
 
-/// Take the per-vo transaction advisory lock that serializes concurrent
-/// writers of one versioned object (so branch writers no longer all contend
-/// on one current row).
+/// Takes the per-vo transaction advisory lock that serializes concurrent
+/// writers of one versioned object, so branch writers do not all contend on one
+/// current row.
 ///
 /// The versioning tree-placement decision calls this before it reads the
 /// preceding version.
@@ -142,18 +142,17 @@ pub async fn insert_contribution(
 /// [`StorageError::ContributionUidInUse`] conflict, never an overwrite
 /// (ITS-REST `contribution_create`).
 ///
-/// The audit → contribution insert is a dependent chain (the CONTRIBUTION and
-/// its `AUDIT_DETAILS` commit together — master06 §Committal and Audits); merging
-/// the two statements into one CTE is a round-trip optimisation only — the rows
-/// written and the values returned are byte-identical to two separate inserts,
-/// and both still run inside the caller's transaction so a conflict (or any
-/// later failure) rolls back the orphan audit row. No openEHR spec governs
-/// statement batching — our own design.
+/// The audit-to-contribution insert is a dependent chain, the CONTRIBUTION and
+/// its `AUDIT_DETAILS` committing together (master06 §Committal and Audits);
+/// merging the two statements into one CTE is a round-trip optimisation whose
+/// rows and returned values are byte-identical to two separate inserts, both
+/// inside the caller's transaction. No openEHR spec governs statement batching —
+/// our own design.
 ///
 /// On a `supplied`-uid conflict the `contribution` CTE inserts nothing (`ON
 /// CONFLICT DO NOTHING`), so the outer `LEFT JOIN` yields a NULL
-/// `contribution_id` → [`StorageError::ContributionUidInUse`]; the audit CTE has
-/// already run but is discarded when the transaction unwinds.
+/// `contribution_id` and [`StorageError::ContributionUidInUse`]; the audit CTE
+/// is discarded when the transaction unwinds.
 ///
 /// # Errors
 /// Returns [`StorageError::ContributionUidInUse`] on a duplicate supplied uid,
@@ -199,11 +198,11 @@ pub async fn write_contribution(
 /// a stored version EXCEPT `contribution_id`/`audit_id`, which come from the
 /// same statement's `contribution`/`audit` CTEs.
 ///
-/// `time_committed` is the caller's pre-read commit instant (master06
-/// §Committal m3 — still server-assigned: it is a database `now()` the caller
-/// fetched earlier on this request). Binding it makes the stored audit time,
-/// the `sys_period` open bound, and the instant the `VERSION.signature` was
-/// computed over one value BY CONSTRUCTION.
+/// `time_committed` is the caller's pre-read commit instant, a database `now()`
+/// fetched earlier on this request and so still server-assigned (master06
+/// §Committal m3). Binding it makes the stored audit time, the `sys_period` open
+/// bound and the instant the `VERSION.signature` was computed over one value by
+/// construction.
 ///
 /// A superseded lineage tip is closed INSIDE the same statement: when
 /// `close_ordinal` is set, the leading `cl` CTE closes that tip's `sys_period`
@@ -246,10 +245,10 @@ pub struct FoldedVersion<'a> {
     /// `spec_profile` gate consults. No openEHR spec governs runtime
     /// generation selection — our own design/extension.
     pub stable_compatible: bool,
-    /// The canonical body BYTES (`vo_version.body`, text — #2913): the
-    /// accepted, uid-stamped value serialized BEFORE node decomposition, so a
-    /// point read serves the codec's field order verbatim; `None` on a
-    /// logical delete (no content — RM common master06 §Logical Deletion).
+    /// The canonical body bytes (`vo_version.body`, text): the accepted,
+    /// uid-stamped value serialized before node decomposition, so a point read
+    /// serves the codec's field order verbatim. `None` on a logical delete (no
+    /// content, RM common master06 §Logical Deletion).
     pub body: Option<&'a str>,
     /// The commit instant: the database `now()` the caller read on this
     /// request (the placement read, the writability gate, or the owning
@@ -281,14 +280,12 @@ pub struct FoldedVersion<'a> {
 /// commit instant (master06 §Committal m3).
 ///
 /// This is the round-trip-collapsed equivalent of [`write_contribution`]
-/// followed by a plain `vo_version` insert: the rows written and the values
-/// returned are byte-identical (the version's `sys_period` and the audit both
-/// open at the caller's bound [`FoldedVersion::time_committed`] — the instant
-/// the `VERSION.signature` was computed over), and everything still runs
-/// inside the caller's transaction so any failure rolls the whole set back.
-/// Any lineage-tip close is a separate prior statement (see
-/// [`FoldedVersion`]). No openEHR spec governs statement batching — our own
-/// design.
+/// followed by a plain `vo_version` insert, byte-identical in the rows written
+/// and the values returned: the version's `sys_period` and the audit both open
+/// at the caller's bound [`FoldedVersion::time_committed`], and everything runs
+/// inside the caller's transaction. Any lineage-tip close is a separate prior
+/// statement (see [`FoldedVersion`]). No openEHR spec governs statement batching
+/// — our own design.
 ///
 /// # Errors
 /// Returns [`StorageError::ContributionUidInUse`] on a duplicate supplied uid

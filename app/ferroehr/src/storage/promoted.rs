@@ -7,10 +7,9 @@
 //! dedicated `node` column, so a hot AQL predicate / sort reads an indexed
 //! column instead of re-extracting the value through a correlated subtree scan.
 //!
-//! No openEHR spec governs storage columns or their derivation — this is our own
-//! design (the first entry realizes the
-//! patient-dashboard hot path). openEHR defines the *language*
-//! (QUERY master03), not how a leaf is physically materialized.
+//! No openEHR spec governs storage columns or their derivation — our own design;
+//! openEHR defines the language (QUERY master03), not how a leaf is physically
+//! materialized.
 //!
 //! One registry drives both directions, so the write side and the read side can
 //! never disagree on the mapping:
@@ -24,13 +23,12 @@
 //!
 //! ## Invariant on `rm_type`
 //!
-//! A promoted leaf's value lives on the **root** node (`num = 0`) of its
-//! versioned object, and the column is populated only there. The read side
-//! identifies the root by `rm_type`, so an entry's `rm_type` MUST be one that
-//! occurs **only** at `num = 0` — i.e. a versioned-object root that never nests
-//! inside its own tree. `COMPOSITION`, `EHR_STATUS`, and `EHR_ACCESS` satisfy
-//! this; `FOLDER` does **not** (folders nest), so a future `FOLDER` leaf would
-//! need an explicit `num = 0` guard on the read side before it could be added.
+//! A promoted leaf's value lives on the root node (`num = 0`) of its versioned
+//! object and the column is populated only there. The read side identifies the
+//! root by `rm_type`, so an entry's `rm_type` must occur only at `num = 0`, that
+//! is, a versioned-object root that never nests inside its own tree.
+//! `COMPOSITION`, `EHR_STATUS` and `EHR_ACCESS` satisfy this; `FOLDER` does not,
+//! so a `FOLDER` leaf would need an explicit `num = 0` guard on the read side.
 
 #![expect(
     clippy::disallowed_types,
