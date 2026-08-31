@@ -157,20 +157,15 @@ impl FerroEhrService {
             self.commit_default_ehr_access(&mut tx, ehr_id, "EHR Extract import: default access")
                 .await?;
         }
-        // The clone landed the EHR_STATUS directly (not via the service's
-        // sync_ehr_subject hook), so re-promote the `ehr` columns from the
-        // stored current status: the subject (`GET /ehr?subject_id` +
-        // one-EHR-per-subject, RM ehr master04 §EHR Status) and the
-        // `is_queryable` / `is_modifiable` flags the AQL full-population gate
-        // (SM I_QUERY_SERVICE) and the content-write guard (§EHR Active Status)
-        // read.
+        // The clone landed the EHR_STATUS directly, bypassing the service's
+        // sync hook, so the promoted `ehr` columns — subject, `is_queryable`,
+        // `is_modifiable` — are re-derived from the stored current status (RM
+        // ehr master04 §EHR Status / §EHR Active Status).
         self.resync_promoted_columns(&mut tx, ehr_id).await?;
         tx.commit().await.map_err(ServiceError::from)?;
-        // An imported EHR_ACCESS version changes the EHR's access policy — evict
-        // the cached settings the access gate consults (RM ehr master04 §EHR
-        // Access; the settings are change-controlled). A bootstrapped default
-        // carries no settings, so the clone is default-open: seed that entry
-        // instead, exactly as the create path does.
+        // An imported EHR_ACCESS version changes the EHR's access policy, so the
+        // cached settings are evicted (RM ehr master04 §EHR Access); a
+        // bootstrapped default carries none, so that entry is seeded open.
         if touches_ehr_access {
             self.invalidate_ehr_access(ehr_id).await;
         } else {
@@ -234,12 +229,9 @@ impl FerroEhrService {
         let touches_ehr_access = containers.iter().any(|c| c.kind == Kind::EhrAccess);
         commit_import(&mut tx, &signing, an_ehr_id, &audit, containers).await?;
         commit_demographic_import(&mut tx, &signing, &audit, parties).await?;
-        // An imported EHR_STATUS version can change the current status
-        // (Copying Case 3 append) — including its subject; re-promote the `ehr`
-        // columns from the stored current status so the subject lookup +
-        // one-EHR-per-subject rule (RM ehr master04 §EHR Status), the AQL
-        // full-population gate (SM I_QUERY_SERVICE) and the content-write guard
-        // (§EHR Active Status) all stay consistent with it.
+        // An imported EHR_STATUS version can change the current status, subject
+        // included (Copying Case 3 append), so the promoted `ehr` columns are
+        // re-derived from it (RM ehr master04 §EHR Status / §EHR Active Status).
         self.resync_promoted_columns(&mut tx, an_ehr_id).await?;
         tx.commit().await.map_err(ServiceError::from)?;
         // An imported EHR_ACCESS version changes the EHR's access policy — evict
@@ -571,14 +563,10 @@ fn parse_wrapped_commit_audit(ov: &Value) -> Result<Value, SmError> {
 /// `ORIGINAL_VERSION` instance is never modified"; `ehr_extract` master05
 /// `X_VERSIONED_OBJECT.versions: List<ORIGINAL_VERSION>`).
 fn parse_imported_version(ov: &Value) -> Result<(VoId, ImportVersion), SmError> {
-    // A member typed anything other than ORIGINAL_VERSION (e.g. an
-    // already-wrapped IMPORTED_VERSION) is invalid on TWO independent grounds:
-    // `X_VERSIONED_OBJECT.versions` is declared `List<ORIGINAL_VERSION<T>>` (RM
-    // ehr_extract `x_versioned_object.adoc` §Attributes), and master06 §Copying
-    // makes the ORIGINAL_VERSION the unit of copying, with each receiving system
-    // creating its OWN wrapper (§Committal and Audits). So a re-export ships the
-    // WRAPPED original, a re-import wraps that original afresh, and wrappers
-    // never nest.
+    // `X_VERSIONED_OBJECT.versions` is `List<ORIGINAL_VERSION<T>>`
+    // (`x_versioned_object.adoc` §Attributes) and master06 §Copying makes the
+    // ORIGINAL_VERSION the unit of copying, each receiving system creating its
+    // own wrapper — so wrappers never nest.
     match ov.get("_type").and_then(Value::as_str) {
         None | Some("ORIGINAL_VERSION") => {}
         Some(other) => {

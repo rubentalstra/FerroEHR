@@ -682,7 +682,6 @@ impl From<ServiceError> for SmError {
             // A raw `sqlx` error carries SQLSTATE/constraint detail: classify it
             // (integrity/serialization conflict → 409, pool exhaustion → 503)
             // instead of collapsing every database error to a blanket 500.
-            // The classifier emits the structured trace.
             ServiceError::Database(e) => crate::storage::error::classify_sqlx(&e),
             // A malformed payload the server was asked to read names its own
             // defect (`400`); a failure to serialize the server's own data is
@@ -726,9 +725,7 @@ impl From<ServiceError> for ApiError {
             ),
             // Storage/DB failures carry SQLSTATE/constraint detail: classify
             // them (integrity/serialization conflict → 409, pool exhaustion →
-            // 503) rather than blanket-500. A genuine fault stays 500. This
-            // path is secondary to the SM `SmError` bridge, but must stay
-            // consistent with it.
+            // 503) rather than blanket-500. A genuine fault stays 500.
             ServiceError::Storage(e) => sqlx_conflict_api_error(SmError::from(e)),
             ServiceError::Database(e) => {
                 sqlx_conflict_api_error(crate::storage::error::classify_sqlx(&e))

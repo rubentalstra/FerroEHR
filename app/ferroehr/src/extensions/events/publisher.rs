@@ -199,7 +199,6 @@ async fn run(
             last_prune = tokio::time::Instant::now();
         }
 
-        // Wait for the next poll tick or a shutdown signal.
         tokio::select! {
             _ = shutdown.changed() => {}
             () = tokio::time::sleep(poll_interval) => {}

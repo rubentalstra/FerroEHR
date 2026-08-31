@@ -267,12 +267,10 @@ impl FerroEhrService {
         let scope = self.resolve_patient_scope(patient).await?;
         let mut entries: Vec<Value> = Vec::new();
         // One entry per COMPOSITION, never per mapping: two enabled mappings
-        // sharing a template would otherwise serve the same versioned object
-        // twice under one fullUrl, which HL7 FHIR R4 bundle.html `bdl-7`
-        // forbids ("FullUrl must be unique in a bundle"). Definitions iterate
-        // in the ingest disposition's own precedence (profiled first, then
-        // id — `enabled_definitions_for_type`), so the mapping that wins a
-        // composition is the one ingest would have picked.
+        // sharing a template would serve one versioned object twice under one
+        // fullUrl, which HL7 FHIR R4 bundle.html `bdl-7` forbids. Definitions
+        // iterate in the ingest disposition's own precedence, so the mapping
+        // that wins a composition is the one ingest would have picked.
         let mut seen: std::collections::HashSet<VoId> = std::collections::HashSet::new();
         for raw in self.enabled_definitions_for_type(resource_type).await? {
             let def: FhirMappingDefinition = serde_json::from_value(raw)
@@ -445,9 +443,7 @@ impl FerroEhrService {
             let definition: Value = row.try_get("definition")?;
             // A STORED mapping definition that no longer parses is a
             // server-side fault, not a client error: the caller supplied
-            // nothing wrong, so the class is `exception` (500) with the
-            // diagnostic traced — the sibling read paths already classify it
-            // that way.
+            // nothing wrong, so it is an `exception` with the diagnostic traced.
             let def: FhirMappingDefinition = serde_json::from_value(definition).map_err(|e| {
                 ServiceError::internal(
                     format!("read a stored FHIR mapping definition for {resource_type}"),
@@ -704,13 +700,10 @@ impl FerroEhrService {
         );
         ferroehr_ext::fhir::feeder_audit::inject_feeder_audit(&mut composition, feeder);
 
-        // 5. Commit through the NORMAL validated path — a resource that maps to
-        //    an invalid COMPOSITION is rejected here (content_invalid → 422),
-        //    never partially stored.
-        // The converter emits a canonical COMPOSITION fragment; re-typing it
-        // through the strict reader is what hands the commit seam a typed
-        // value (a mapping that produced something else is content-invalid,
-        // never partially stored).
+        // 5. Commit through the NORMAL validated path: the converter emits a
+        //    canonical fragment, and re-typing it through the strict reader is
+        //    what hands the commit seam a typed value. A resource that maps to
+        //    an invalid COMPOSITION is rejected, never partially stored.
         let typed: openehr_rm::prelude::Composition =
             openehr_its::json::from_canonical_value(&composition).map_err(|e| {
                 SmError::new(

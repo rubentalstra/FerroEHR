@@ -113,14 +113,10 @@ pub(crate) async fn revision_history(
         )
     })?;
     let history = RevisionHistory { items };
-    // The history resource's `Last-Modified` value (ITS-REST overview
-    // `Requests_and_responses.md` §"`ETag` and Last-Modified": derived from
-    // `VERSION.commit_audit.time_committed.value`). On a `REVISION_HISTORY` that
-    // instant is what `REVISION_HISTORY.most_recent_version_time_committed`
-    // returns (`revision_history.adoc` §Functions, `Post: Result.is_equal
-    // (items.last.audits.first.time_committed.value)`), so the header is read
-    // off the built history through that function rather than re-derived from
-    // the rows — two expressions of one rule can drift apart, one cannot.
+    // The `Last-Modified` instant is read off the built history through
+    // `REVISION_HISTORY.most_recent_version_time_committed`
+    // (`revision_history.adoc` §Functions) rather than re-derived from the rows:
+    // two expressions of one rule can drift apart, one cannot.
     let last_modified = history
         .most_recent_version_time_committed()
         .ok_or_else(|| {
@@ -290,14 +286,10 @@ pub(crate) fn version_envelope(read: &VersionRead, signer: &Signer) -> Result<Va
         read.signature.as_deref(),
         read.signature_client_supplied,
     )?;
-    // The attestations the wrapped original carried AT the act of importing are
-    // already inside `item` (built by `build_wrapped_original` above), because
-    // master06 §Digital Signature signs an `IMPORTED_VERSION` the same way as an
-    // ORIGINAL_VERSION — "all attributes of the object are serialised" — and
-    // `item` is one of those attributes, wrapped whole. Anything attested
-    // AFTERWARDS ("Attestations can be added at any time after committal",
-    // §Attestation) post-dates the wrapper's signature and is appended here,
-    // after verification.
+    // The attestations the wrapped original carried AT importing are already
+    // inside `item`, which master06 §Digital Signature includes in the wrapper's
+    // signed serialisation. Anything attested AFTERWARDS post-dates that
+    // signature and is appended here, after verification.
     if let Some(item) = iv.get_mut("item") {
         append_after_committal_attestations(item, &read.attestations_after_committal);
     }
@@ -570,11 +562,10 @@ pub(crate) fn build_original_version(
         )),
     });
     if let Value::Object(map) = &mut ov {
-        // preceding_version_uid: the STORED prior OBJECT_VERSION_ID (absent for
-        // a first version). Stored — not synthesized — because under branching
-        // and import the preceding version may carry a different
-        // creating_system_id (RM common master06 §Distributed Versioning). A
-        // branch version always carries its real preceding uid here.
+        // preceding_version_uid: the STORED prior OBJECT_VERSION_ID, never
+        // synthesized, because under branching and import it may carry a
+        // different creating_system_id (RM common master06 §Distributed
+        // Versioning).
         //
         // NOTE: `VERSION.Preceding_version_uid_validity` is enforced in its
         // TRUNK-ONLY sense — BASE's `is_first` is "trunk_version is 1" alone,

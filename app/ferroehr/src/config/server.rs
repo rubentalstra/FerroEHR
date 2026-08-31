@@ -505,8 +505,7 @@ pub struct SystemOptionsConfig {
 impl Default for SystemOptionsConfig {
     fn default() -> Self {
         Self {
-            // `solution` (the product) and `vendor` (the organisation) are
-            // distinct — they were the same placeholder before the redesign.
+            // `solution` names the product, `vendor` the organisation.
             solution: "FerroEHR".to_owned(),
             solution_version: env!("CARGO_PKG_VERSION").to_owned(),
             vendor: "FerroEHR project".to_owned(),

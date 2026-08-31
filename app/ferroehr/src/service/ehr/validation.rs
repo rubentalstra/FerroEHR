@@ -162,14 +162,11 @@ impl FerroEhrService {
                 openehr_its::flat::validation::validate_archetype_conformance(composition, &wt)
             });
             template_failures = messages.len() - rm_terminology_failures;
-            // Archetype constraint bindings (ac-code → external value set)
-            // resolve against the routed terminology servers — a no-op, free of
-            // any remote call, unless `[terminology.external]` is configured
-            // (BASE `architecture_overview/master12-terminology.adoc`
-            // §"Binding Terminology Value-sets to Archetypes"). The relaxation
-            // for a `553|incomplete|` commit does not reach it: a code that IS
-            // present may not be wrong (RM common master06 §Incomplete
-            // Content). Counted as its own pass.
+            // Archetype constraint bindings resolve against the routed
+            // terminology servers (BASE `master12-terminology.adoc` §"Binding
+            // Terminology Value-sets to Archetypes"), and the `553|incomplete|`
+            // relaxation does not reach them: a code that IS present may not be
+            // wrong (RM common master06 §Incomplete Content).
             let bindings = self.constraint_binding_violations(composition, &wt).await;
             binding_failures = bindings.len();
             messages.extend(bindings);
@@ -241,11 +238,9 @@ impl FerroEhrService {
             Kind::EhrStatus => validate_ehr_status(data, incomplete),
             Kind::EhrAccess => validate_ehr_access(data, incomplete),
             Kind::Folder => validate_folder(data, incomplete),
-            // The demographic kinds arrive here from the raw-body
-            // CONTRIBUTION lane only (the `Kind` was derived from the
-            // payload's own `_type`), so they take the full check — decode
-            // included; the direct routes enter at `party_invariants`, having
-            // decoded already.
+            // The demographic kinds reach here from the raw-body CONTRIBUTION
+            // lane only, so they take the full check including the decode; the
+            // direct routes enter at `party_invariants`, already decoded.
             Kind::Agent | Kind::Group | Kind::Organisation | Kind::Person | Kind::Role => {
                 crate::service::demographic::validate::party_check(kind.as_str(), data, incomplete)
             }
@@ -575,14 +570,11 @@ pub(in crate::service) fn validate_ehr_access(
                 .to_owned(),
         ));
     }
-    // `EHR_ACCESS.settings` is the RM's one implementation-defined slot —
-    // "Instance is a subtype of the type `ACCESS_CONTROL_SETTINGS`, allowing for
-    // the use of different access control schemes"
-    // (`RM/docs/UML/classes/org.openehr.rm.ehr.ehr_access.adoc` §Attributes) —
-    // and that type is abstract with no attributes, no invariants and no
-    // RM-defined descendant, so the RM defines NOTHING inside it to judge while
-    // a pass that walked in would refuse every legal instance. `Scheme_valid`
-    // above is the whole of the RM's demand on the slot.
+    // `EHR_ACCESS.settings` is the RM's one implementation-defined slot
+    // (`org.openehr.rm.ehr.ehr_access.adoc` §Attributes) and its type is
+    // abstract with no attributes, invariants or RM-defined descendant, so a
+    // pass that walked in would refuse every legal instance; `Scheme_valid`
+    // above is the whole of the RM's demand on it.
     // NOTE: `settings` is therefore excluded from the whole-instance RM pass,
     // and only from it — the one RM-mandated OPEN slot.
     let mut without_settings = access.clone();
@@ -751,13 +743,10 @@ mod tests {
                 .insert("other_details".into(), other);
             st
         };
-        // Each subtype is spelled out at its own mandatory shape: `ITEM_SINGLE.item`
-        // is `ELEMENT [1..1]` (RM `data_structures`
-        // `org.openehr.rm.data_structures.item_single.adoc` §Attributes), while
-        // ITEM_TREE/ITEM_LIST `items` and ITEM_TABLE `rows` are 0..1. The
-        // whole-instance RM pass reaches `other_details`, so an ITEM_SINGLE
-        // without its item is refused on its own merits — the acceptance
-        // asserted here is of a *valid* instance of each subtype.
+        // Each subtype is spelled out at its own mandatory shape:
+        // `ITEM_SINGLE.item` is `ELEMENT [1..1]`
+        // (`org.openehr.rm.data_structures.item_single.adoc` §Attributes) while
+        // ITEM_TREE/ITEM_LIST `items` and ITEM_TABLE `rows` are 0..1.
         for other in [
             json!({ "_type": "ITEM_TREE", "name": { "_type": "DV_TEXT", "value": "d" },
                     "archetype_node_id": "at0001" }),
@@ -1112,8 +1101,7 @@ mod tests {
     //
     // The RM class invariants are properties of the instance, not of the
     // resource kind, so a defect BELOW the root of an EHR_STATUS / FOLDER /
-    // demographic body is a 422 exactly as it is inside a COMPOSITION. Before
-    // `validate_rm_invariants_for_commit` these arms saw only their root.
+    // demographic body is a 422 exactly as it is inside a COMPOSITION.
 
     /// `ARCHETYPED.Rm_version_valid` (`not rm_version.is_empty`, RM common
     /// `org.openehr.rm.common.archetyped.adoc` §Invariants) on an `EHR_STATUS`

@@ -48,13 +48,11 @@ pub(super) fn check_node_id(
     defined_at: &HashSet<String>,
 ) -> Result<(), RuleViolation> {
     if !archetype_node_id_is_term_code(node_id) {
-        // THE MALFORMED MIDDLE CLASS: a node id CARRYING the at/id leader but
-        // failing the code-body grammar (`at0abc`) is a malformed CLAIMED code,
-        // not free text — AOM2's own predicate is leader-based
-        // (`adl_code_definitions.adoc` §is_at_code: "Result =
-        // a_code.starts_with (At_code_leader)"), so the string claims code-hood
-        // and the body must then satisfy the code syntax. Refused here rather
-        // than falling between the code family and the free-text family.
+        // A node id CARRYING the at/id leader but failing the code-body grammar
+        // (`at0abc`) is a malformed CLAIMED code, not free text: AOM2's own
+        // predicate is leader-based (`adl_code_definitions.adoc` §is_at_code),
+        // so the string claims code-hood and its body must then satisfy the code
+        // syntax.
         let claims_code_leader = (node_id.starts_with("at") || node_id.starts_with("id"))
             && node_id.len() > 2
             && !openehr_rm::v1_2::paths::is_archetype_root_node_id(node_id);

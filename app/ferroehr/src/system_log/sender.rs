@@ -411,14 +411,13 @@ async fn drain(
     resolve_subject: bool,
     store_healthy: Arc<AtomicBool>,
 ) {
-    // Batched receive: under load one loop turn takes up to DRAIN_BATCH
-    // queued events at once, so the store sink can persist them in one
-    // multi-row INSERT instead of per-event round trips (the throughput
-    // defect behind a full queue at write-path rates).
+    // Batched receive: one loop turn takes up to DRAIN_BATCH queued events, so
+    // the store sink persists them in one multi-row INSERT rather than per-event
+    // round trips.
     let mut batch: Vec<AuditEvent> = Vec::with_capacity(DRAIN_BATCH);
     // The subject lookup memo: an EHR's subject id is immutable for audit
-    // purposes at write-path rates, and one awaited per-event lookup was the
-    // remaining drain bottleneck (a saturated queue at seeding-grade load).
+    // purposes at write-path rates, and one awaited per-event lookup is the
+    // remaining drain bottleneck.
     let subject_cache: SubjectCache = moka::future::Cache::builder()
         .max_capacity(100_000)
         .time_to_live(Duration::from_hours(1))

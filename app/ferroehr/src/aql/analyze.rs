@@ -450,10 +450,9 @@ fn version_field_from_parts(parts: &[&str]) -> Result<VersionField, AqlError> {
     match parts {
         ["uid", ..] => Ok(VersionField::Uid),
         // The two CODED version fields are sub-path-sensitive: the stored
-        // representation is the numeric group code, the rubric renders from
-        // the openEHR terminology group, and the terminology id is the
-        // constant `openehr` — a flat mapping would compare the rubric form
-        // against the code and silently never match (#976).
+        // representation is the numeric group code, the rubric renders from the
+        // openEHR terminology group, and the terminology id is the constant
+        // `openehr` — a flat mapping would silently never match.
         ["lifecycle_state", rest @ ..] => coded_version_field(
             rest,
             parts,
@@ -474,11 +473,9 @@ fn version_field_from_parts(parts: &[&str]) -> Result<VersionField, AqlError> {
             ),
             ["committer", ..] => Ok(VersionField::Committer),
             // AUDIT_DETAILS.description is a DV_TEXT whose DV_CODED_TEXT
-            // subtype carries a defining_code (RM common
-            // UML/classes/org.openehr.rm.common.audit_details.adoc
-            // §Attributes), so each addressed representation resolves to its
-            // own extraction — a flat mapping would compare a coded
-            // description's code against its display text and never match.
+            // subtype carries a defining_code (`audit_details.adoc`
+            // §Attributes), so each addressed representation resolves to its own
+            // extraction.
             ["description", rest @ ..] => match rest {
                 [] => Ok(VersionField::Description),
                 ["value"] => Ok(VersionField::DescriptionValue),
@@ -602,14 +599,11 @@ fn apply_standard(sp: &StandardPredicate, out: &mut NodeConstraint) -> Result<()
         });
         return Ok(());
     }
-    // `archetype_node_id = <code|hrid>` — the standard-predicate form the
-    // QUERY spec declares equivalent to the archetype/node shortcut predicates
-    // (master03 §Archetype predicate: "These predicates could also be written
-    // as standard predicates"). Which of the two the operand is, is decided by
-    // the RM's own reading of `LOCATABLE.archetype_node_id`
-    // (`openehr_rm::v1_2::paths`), never a leader guess: an id in `ARCHETYPE_ID`
-    // lexical form is an archetype root, an `at`/`id` term code is an interior
-    // node, and anything else addresses no node at all.
+    // `archetype_node_id = <code|hrid>` is the standard-predicate form of the
+    // archetype/node shortcut predicates (master03 §Archetype predicate). Which
+    // of the two the operand is comes from the RM's own reading of
+    // `LOCATABLE.archetype_node_id` (`openehr_rm::v1_2::paths`), never a leader
+    // guess.
     if sp.op == CompOp::Eq
         && parts == ["archetype_node_id"]
         && let Bind::Literal(TypedLit::String(s)) = &value

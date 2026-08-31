@@ -131,12 +131,9 @@ impl FerroEhrService {
         self.ensure_party_tag_target(kind, vo_id, target_version)
             .await?;
         // Validate + dedup (last wins) before touching the DB, keyed on the
-        // ITEM_TAG identity — the (key, target_path) PAIR, never the key alone
-        // (two same-key tags on different target_paths coexist). BTreeMap
-        // ordering matches the `ORDER BY key` read-back order on the leading
-        // component. The invariants and the `target_path: ""` normalization are
-        // the EHR family's, called rather than restated: one implementation of
-        // each, so the two families cannot diverge.
+        // ITEM_TAG identity — the (key, target_path) PAIR, never the key alone.
+        // The invariants and the `target_path: ""` normalization are the EHR
+        // family's, called rather than restated.
         let target = match target_version {
             Some(version) => UidBasedId::ObjectVersionId(version.clone()),
             // A bare container key is a UUID by type, so the conversion is
@@ -148,7 +145,7 @@ impl FerroEhrService {
         let mut deduped: BTreeMap<(String, Option<String>), Option<String>> = BTreeMap::new();
         for tag in tags {
             let target_path = normalized_target_path(tag.target_path.as_deref());
-            // Construction IS the invariant check (#1839).
+            // Construction IS the invariant check.
             ItemTag::new(
                 tag.key.clone(),
                 tag.value.clone(),
@@ -246,8 +243,7 @@ impl FerroEhrService {
 /// is not a well-formed BASE identifier.
 fn party_item_tag(system_id: &str, row: &tag_repo::TagRow) -> Result<ItemTag, ServiceError> {
     // A stored row that no longer constructs is storage corruption, not a
-    // client fault — fail loud (the write path validated at commit; #1839
-    // made construction the invariant check).
+    // client fault — fail loud.
     ItemTag::new(
         row.key.clone(),
         row.value.clone(),

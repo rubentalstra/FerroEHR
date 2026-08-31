@@ -864,11 +864,9 @@ fn original_version_envelope(
     audit: &AuditRow,
     attestations: &[&AttestationRow],
 ) -> Result<Value, ServiceError> {
-    // Same discipline as the version read-back: an archived
-    // `other_input_version_uids` that does not decode is a corrupt record, not
-    // an absent merge list — restoring the version without its merge inputs
-    // would silently rewrite history (RM common master06 §Distributed
-    // Versioning).
+    // An archived `other_input_version_uids` that does not decode is a corrupt
+    // record, not an absent merge list: restoring without the merge inputs
+    // would rewrite history (RM common master06 §Distributed Versioning).
     let other_input_version_uids: Vec<String> = v
         .other_input_version_uids
         .as_ref()
@@ -2060,14 +2058,11 @@ impl FerroEhrService {
 
         load_attestations(&mut tx, &record.attestations).await?;
 
-        // The load re-decomposed the EHR_STATUS versions directly, so the
-        // promoted `ehr` columns are re-derived from the loaded current status
-        // — the EHR_STATUS content is the truth, the exported columns only its
-        // cached projection. This makes a loaded EHR visible to the subject
-        // lookup (SM `I_EHR_SERVICE.get_ehrs_for_subject`) and bound by the
-        // one-EHR-per-subject rule (RM ehr master04 §EHR Status), and keeps
-        // `is_queryable`/`is_modifiable` matching the loaded state for the AQL
-        // full-population gate and the content-write guard (§EHR Active Status).
+        // The EHR_STATUS content is the truth and the promoted `ehr` columns
+        // only its cached projection, so they are re-derived from the loaded
+        // current status — which is what makes a loaded EHR visible to the
+        // subject lookup and bound by the one-EHR-per-subject rule (RM ehr
+        // master04 §EHR Status / §EHR Active Status).
         self.resync_promoted_columns(&mut tx, ehr_id).await?;
 
         // EHR.folders membership rows, verbatim (rank fidelity — RM ehr §EHR
@@ -2089,14 +2084,11 @@ impl FerroEhrService {
         insert_item_tag_rows(&mut tx, Some(ehr_id), &record.item_tags).await?;
         insert_archive_rows(&mut tx, &record.archives).await?;
 
-        // Lineage keys mirror the removed EXCLUDE constraints exactly: trunk
-        // rows are one lineage per vo_id; branch rows are per {vo, creating
-        // system, fork point, branch number}. The archive is the ONLY path
-        // writing explicit historical `sys_period` bounds, so it carries the
-        // per-lineage temporal non-overlap invariant check the regular write
-        // path holds by construction (RM common master06: one valid version per
-        // lineage at any instant). A corrupted archive with overlapping validity
-        // fails the whole record before commit.
+        // The archive is the ONLY path writing explicit historical `sys_period`
+        // bounds, so it checks the per-lineage temporal non-overlap invariant
+        // the regular write path holds by construction (RM common master06: one
+        // valid version per lineage at any instant) — trunk rows per vo_id,
+        // branch rows per {vo, creating system, fork point, branch number}.
         let overlap: bool = sqlx::query_scalar(
             "SELECT EXISTS ( \
                  SELECT 1 FROM vo_version a \

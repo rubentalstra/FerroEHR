@@ -242,7 +242,6 @@ fn walk_attribute(attr: &CAttribute, parent_rm: &str, ctx: &Ctx) -> Result<(), R
         rm_conformance::check_cardinality_occurrences(attr_name, parent_rm, card, children)?;
     }
 
-    // Recurse into each child object.
     for child in children {
         walk_object(child, ctx)?;
     }

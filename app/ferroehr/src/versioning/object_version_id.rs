@@ -252,7 +252,6 @@ pub(crate) fn parse_tree_id(raw: &str) -> Result<TreeId, VersionIdError> {
 /// into the storage key pair (`vo_id`, [`TreeId`]).
 pub(crate) fn parse_version_uid(raw: &str) -> Result<(VoId, TreeId), VersionIdError> {
     let (vo_id, _, tree) = parse_object_version_id(raw)?;
-    // The `object_id` of an `OBJECT_VERSION_ID` is a versioned-object id.
     Ok((VoId(vo_id), tree))
 }
 
@@ -299,7 +298,6 @@ fn components_of(
 /// version-id argument) into the storage key pair (`vo_id`, [`TreeId`]).
 pub(crate) fn components(ovid: &ObjectVersionId) -> Result<(VoId, TreeId), VersionIdError> {
     let (object_id, _, tree) = components_of(ovid, ovid.value())?;
-    // The `object_id` of an `OBJECT_VERSION_ID` is a versioned-object id.
     Ok((VoId(object_id), tree))
 }
 
@@ -354,17 +352,13 @@ pub fn parse_uid_based_id(raw: &str) -> Result<UidAddress, VersionIdError> {
     if raw.contains("::") {
         // ONE parse, ONE grammar: the strict `OBJECT_VERSION_ID` decode both
         // validates the wire value and yields the typed id, so the address can
-        // never carry a version id that the BASE grammar did not accept. (The
-        // struct-literal shortcut this replaced re-wrapped `raw` verbatim,
-        // bypassing the constructor; the generated field is `pub(crate)` now,
-        // so that shortcut is not expressible.)
+        // never carry a version id the BASE grammar did not accept.
         let ovid = ObjectVersionId::from_str(raw).map_err(|source| VersionIdError::Malformed {
             raw: raw.to_owned(),
             source,
         })?;
         let (object_id, _, tree) = components_of(&ovid, raw)?;
         Ok(UidAddress {
-            // The `object_id` of an `OBJECT_VERSION_ID` is a versioned-object id.
             vo_id: VoId(object_id),
             version: Some(ovid),
             tree: Some(tree),
@@ -454,7 +448,7 @@ mod tests {
         assert_eq!(vo_id, VoId(Uuid::parse_str(VO).unwrap()));
         assert_eq!(tree, TreeId::trunk(3));
 
-        // Two parts (the old `rsplit`/`nth(1)` splitters disagreed here).
+        // Two parts is not a valid lexical form.
         assert!(matches!(
             parse_version_uid(&format!("{VO}::2")),
             Err(VersionIdError::Malformed { .. })
@@ -567,7 +561,7 @@ mod tests {
         assert_eq!(expected_from_if_match("*").unwrap(), None);
         // A malformed `If-Match` is REJECTED (400), never silently discarded as
         // "no precondition" — ITS-REST overview §"If-Match and accidental
-        // overwrites" (the lost-update window fix).
+        // overwrites".
         assert!(matches!(
             expected_from_if_match("garbage"),
             Err(VersionIdError::Malformed { .. })

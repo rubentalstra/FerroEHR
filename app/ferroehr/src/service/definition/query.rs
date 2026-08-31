@@ -446,12 +446,9 @@ impl FerroEhrService {
             ));
         }
 
-        // ONE canonical key for every surface (SM master04 §Registered
-        // Queries: "If no namespace is supplied, the namespace \"misc\" is
-        // assumed") — the wire store previously keyed a bare name under
-        // ('', name) while the SM/admin/list paths keyed ('misc', name),
-        // making the same identifier resolve on one surface and 404 on the
-        // other.
+        // ONE canonical key for every surface (SM master04 §Registered Queries:
+        // "If no namespace is supplied, the namespace \"misc\" is assumed"), so
+        // the same identifier never resolves on one surface and 404s on another.
         let qualified = parse_qualified_name(qualified_name).qualified();
         let (rdn, semantic) = split_qualified(&qualified);
         let Some(v) = version else {
@@ -482,14 +479,10 @@ impl FerroEhrService {
             return Ok(DEFAULT_QUERY_VERSION.to_owned());
         };
 
-        // The versioned store requires an EXACT numeric `major.minor.patch` —
-        // ITS-REST `docs/query/Qualified_query_name.md`: "The `version`
-        // identifier is in the format specified by SEMVER style (i.e.
-        // `major.minor.patch`)". The partial-prefix form is a READ-resolution
-        // semantic stated over versions that ALREADY exist, so on a store it
-        // resolves either to an existing pair (which that operation assigns to
-        // `409`) or to nothing; accepting it verbatim would also break the
-        // surface's SEMVER ordering (`string_to_array(semver, '.')::int[]`).
+        // The versioned store requires an EXACT `major.minor.patch` (ITS-REST
+        // `docs/query/Qualified_query_name.md`): the partial-prefix form is a
+        // READ-resolution semantic over versions that already exist, and storing
+        // one verbatim would break the surface's SEMVER ordering.
         // NOTE: no released sentence completes a prefix into a version to
         // create, so the refusal status is the docs text's own generic client
         // error (`Requests_and_responses.md` §"HTTP status codes", `400`).

@@ -119,14 +119,11 @@ impl FerroEhrService {
         self.ensure_ehr_exists(ehr_id).await?;
         self.ensure_tag_target(ehr_id, target_vo_id, target_version, target_type)
             .await?;
-        // Validate every tag before writing; the storage replace dedupes the
-        // posted set on the ITEM_TAG identity — the (key, target_path) PAIR
-        // (ITS-REST Requests_and_responses.md §item-tag headers), last-wins.
-        // The judgement is the RM's own: each posted UPDATE_ITEM_TAG is turned
-        // into the ITEM_TAG the write would store — with the `target` and
-        // `owner_id` the server assigns, which is why the write schema omits
-        // them — and run through `ItemTag`'s single `Validate` impl, the same
-        // one the demographic seam uses.
+        // The storage replace dedupes the posted set on the ITEM_TAG identity —
+        // the (key, target_path) PAIR (ITS-REST Requests_and_responses.md
+        // §item-tag headers), last-wins. Each posted UPDATE_ITEM_TAG is first
+        // turned into the ITEM_TAG the write would store, with the server's own
+        // `target`/`owner_id`, and judged by `ItemTag`'s own `Validate` impl.
         let target = match target_version {
             Some(version) => UidBasedId::ObjectVersionId(version.clone()),
             None => UidBasedId::HierObjectId(HierObjectId::from(target_vo_id.0)),
@@ -136,8 +133,8 @@ impl FerroEhrService {
             Vec::with_capacity(tags.len());
         for tag in tags {
             let target_path = normalized_target_path(tag.target_path.as_deref());
-            // Construction IS the invariant check (#1839): a violating tag
-            // cannot exist as a typed ItemTag.
+            // Construction IS the invariant check: a violating tag cannot exist
+            // as a typed ItemTag.
             ItemTag::new(
                 tag.key.clone(),
                 tag.value.clone(),
@@ -285,8 +282,7 @@ impl FerroEhrService {
         row: &crate::storage::tag_repo::TagRow,
     ) -> Result<ItemTag, ServiceError> {
         // A stored row that no longer constructs is storage corruption, not a
-        // client fault — fail loud as the 500 class (the write path validated
-        // at commit; #1839 made construction the invariant check).
+        // client fault — fail loud as the 500 class.
         ItemTag::new(
             row.key.clone(),
             row.value.clone(),

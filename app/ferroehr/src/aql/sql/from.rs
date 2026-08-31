@@ -171,7 +171,7 @@ pub(super) fn streaming_plan(ir: &QueryIr) -> Option<StreamPlan> {
     // A FOLDER root is ineligible: the streaming shape binds the root at
     // `num = 0`, but `EHR CONTAINS FOLDER` matches every folder node
     // (containment is transitive — QUERY master03 §Containment), which only
-    // the flat shape's whole-table scan serves (#2880).
+    // the flat shape's whole-table scan serves.
     if r.rm_type.names().iter().any(|t| t == "FOLDER") {
         return None;
     }
@@ -659,11 +659,8 @@ impl Builder<'_> {
             self.q.and_where(cond);
         }
 
-        // The edge kind is classified from the RM relationship of the two
-        // operands' types (#2880). Before this, the join shape was inferred
-        // from the CHILD alone (VO root or not) — a VO-root child under a
-        // non-EHR parent silently dropped the parent edge entirely and
-        // answered a cartesian product.
+        // The edge kind is classified from the RM relationship of BOTH
+        // operands' types: the child alone does not determine the join shape.
         let edge = match vo {
             Some(parent) => Some(classify_edge(&parent.types, &r.rm_type)?),
             None => None,
@@ -697,13 +694,10 @@ impl Builder<'_> {
             self.group_vos.push(voa.clone());
             self.vo_alias.insert(sid, voa.clone());
             if let Some(e) = ehr {
-                // The EHR link binds on the version SPINE only: vo_version.
-                // ehr_id equals the node rows' by construction (one owning
-                // EHR per versioned object — RM ehr master04 §EHR), the node
-                // group already joins the spine on (vo_id, sys_version), and
-                // the spine predicate drives idx_vo_version_ehr. A node-side
-                // twin predicate bought no plan this route does not serve and
-                // cost a per-node-row index at every write (#2698).
+                // The EHR link binds on the version SPINE only: one owning EHR
+                // per versioned object (RM ehr master04 §EHR) makes the node
+                // rows' `ehr_id` equal by construction, and the spine predicate
+                // drives idx_vo_version_ehr with no per-node-row index.
                 self.q.and_where(col(&voa, "ehr_id").eq(col(e, "id")));
                 self.roots_linked_to_ehr.insert(node.clone());
             }
@@ -714,11 +708,10 @@ impl Builder<'_> {
             if let (Some(EdgeKind::FolderItems), Some(parent)) = (edge, vo) {
                 self.q.and_where(folder_items_exists(&parent.node, &node));
             }
-            // FolderChild: the union edge (#2887) — a by-value strict
-            // descendant in the parent's own tree, or any folder row of an
-            // items-referenced VERSIONED_FOLDER. The child's own version
-            // group serves both branches: in the by-value branch the child's
-            // spine row IS the parent's (same vo_id + sys_version).
+            // FolderChild is a union edge: a by-value strict descendant of the
+            // parent's own tree, or any folder row of an items-referenced
+            // VERSIONED_FOLDER. The child's version group serves both — a
+            // by-value child's spine row IS the parent's.
             if let (Some(EdgeKind::FolderChild), Some(parent)) = (edge, vo) {
                 self.q.and_where(
                     folder_by_value_child(&parent.node, &node)
@@ -805,12 +798,10 @@ impl Builder<'_> {
                         );
                     }
                     EdgeKind::FolderChild => {
-                        // The union edge (#2887): a by-value strict
-                        // descendant, or any folder row of an items-referenced
-                        // VERSIONED_FOLDER — the latter needs the child's own
-                        // version spine + scope (the FolderItems shape below;
-                        // by-value rows satisfy it too, sharing the parent's
-                        // spine row).
+                        // The union edge: an items-referenced VERSIONED_FOLDER
+                        // needs the child's own version spine + scope, which a
+                        // by-value descendant satisfies too by sharing the
+                        // parent's spine row.
                         let voa = format!("xv{}", self.next_ctr());
                         sub.from_as(VoVersion::Table, Alias::new(voa.as_str()));
                         sub.and_where(col(alias, "vo_id").eq(col(&voa, "vo_id")));
@@ -895,7 +886,6 @@ impl Builder<'_> {
         // single-`ehr_id` REST case is just the one-element set. Empty = no
         // explicit scope (the population gate takes over).
         if !self.ctx.ehr_ids.is_empty() {
-            // sea-query bind boundary: the `ehr_id` column is a plain `uuid`.
             let ids: Vec<Uuid> = self.ctx.ehr_ids.iter().map(|id| id.0).collect();
             for root in self.group_roots.clone() {
                 self.q.and_where(col(&root, "ehr_id").is_in(ids.clone()));
@@ -908,10 +898,9 @@ impl Builder<'_> {
                 self.q.and_where(col(&alias, "id").is_in(ids.clone()));
             }
         }
-        // ABAC patient scope (no openEHR spec governs this, our own
-        // access-control extension): restrict
-        // every VO root to the caller's patient EHRs. Rows outside are never
-        // fetched — regardless of the query's projection (the v1 defect-#1 fix).
+        // NOTE: the ABAC patient scope restricts every VO root to the caller's
+        // patient EHRs, so out-of-scope rows are never fetched whatever the
+        // projection (no openEHR spec governs this — our own extension).
         if let Some(subject) = self.ctx.subject_scope.clone() {
             for root in self.group_roots.clone() {
                 let mut sub = Query::select();
