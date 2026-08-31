@@ -1,8 +1,10 @@
 // SPDX-FileCopyrightText: FerroEHR contributors
 // SPDX-License-Identifier: MIT
 
-//! The Message service, the platform crate's realization of SM
-//! `I_MESSAGE_SERVICE` / `I_EHR_EXTRACT_SERVICE` / `I_TDD_SERVICE`
+//! The Message service.
+//!
+//! The platform crate's realization of SM `I_MESSAGE_SERVICE` /
+//! `I_EHR_EXTRACT_SERVICE` / `I_TDD_SERVICE`
 //! (`docs/specs/openehr/SM/docs/openehr_platform/master09-message_service.adoc`
 //! and the UML classes `i_message_service.adoc`, `i_ehr_extract_service.adoc`,
 //! `i_tdd_service.adoc`).
