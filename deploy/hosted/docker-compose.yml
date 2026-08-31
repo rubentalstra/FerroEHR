@@ -1,3 +1,6 @@
+# SPDX-FileCopyrightText: FerroEHR contributors
+# SPDX-License-Identifier: MIT
+#
 # What runs on the sandbox box: the CDR, the admin console, and a proxy that
 # gets its own certificate (#2974).
 #

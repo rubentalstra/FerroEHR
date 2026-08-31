@@ -58,7 +58,7 @@ extract() {
 }
 
 # One extracted script: non-empty, a bash shebang, syntactically valid, and
-# shellcheck-clean at the default severity floor.
+# clean under shellcheck at the default severity floor.
 check() {
   local cloud_init="$1"
   local script
@@ -106,6 +106,7 @@ if [[ "${1:-}" == "--self-test" ]]; then
     echo '    content: |'
     echo '      #!/usr/bin/env bash'
     echo '      set -euo pipefail'
+    # shellcheck disable=SC2016  # the literal unquoted $1 IS the seeded defect
     echo '      cat $1'
   } > "$seeded"
   if check "$seeded" >/dev/null 2>&1; then
