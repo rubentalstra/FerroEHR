@@ -22,9 +22,6 @@ workflow refuses a tag that has no matching section here.
   spec's own terms, and the conformance statement's AdminApi claims become
   exercisable against it. The public demo credential reaches the whole admin
   group, bulk delete included — it wipes what the nightly reset wipes anyway.
-
-### Changed
-
 - The repository's commit history on `main` now starts at a single labelled
   import commit holding the tree FerroEHR was forked from, followed only by
   this project's own commits. The 4864 inherited upstream commits and their
