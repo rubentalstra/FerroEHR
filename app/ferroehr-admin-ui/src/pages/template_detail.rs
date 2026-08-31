@@ -7,8 +7,9 @@
 //! Three tabs over one operational template: **WT** (the Web Template path
 //! catalog as an expandable tree + a node inspector), **OPT** (the raw
 //! canonical-XML operational template), and **Example** (the CDR-generated
-//! example composition, format-switchable). No openEHR spec governs an admin
-//! UI — our own design / product extension; the `WebTemplate` shape it renders
+//! example composition, switchable by representation, detail level and example
+//! form). No openEHR spec governs an admin UI — our own design / product
+//! extension; the `WebTemplate` shape it renders
 //! is `openehr_its::flat`'s (built from the CDR's OPT), per the ITS-REST
 //! Simplified Formats spec (`master04`).
 //!
@@ -36,6 +37,7 @@ use crate::components::page_header::{Crumb, PageHeader};
 use crate::components::surface::{CARD_PAD, CARD_TITLE};
 use crate::components::toast::{toast_error, toast_success};
 use crate::error::AdminUiError;
+use crate::example_options::{ExampleDetail, ExampleType};
 use crate::format::ReprFormat;
 
 /// Template identity + language metadata for the detail header card,
@@ -162,10 +164,28 @@ pub async fn fetch_template_catalog(
     Ok(fetch_template_detail(template_id).await?.catalog)
 }
 
+/// The ITS-REST path of the ADL 1.4 example resource for `template_id`, at
+/// `detail` and `kind`.
+///
+/// The two example options ride the query string
+/// ([`crate::example_options::example_query`]); the id is percent-encoded with
+/// the `urlencoding` crate (owner hard rule: never a hand-rolled codec)
+/// because an operational-template id is CDR-supplied text.
+#[must_use]
+pub fn example_path(template_id: &str, detail: ExampleDetail, kind: ExampleType) -> String {
+    format!(
+        "definition/template/adl1.4/{}/example{}",
+        urlencoding::encode(template_id),
+        crate::example_options::example_query(detail, kind)
+    )
+}
+
 /// Fetch the CDR-generated example composition for the template, in `format`.
 ///
 /// GET `definition/template/adl1.4/{template_id}/example` with `Accept` set to
-/// the selected representation's media type.
+/// the selected representation's media type, and the operator's `detail_level`
+/// and `type` on the query string
+/// (`docs/specs/openehr/ITS-REST/specifications/operations/definition_template_adl1.4_example_get.yaml`).
 ///
 /// # Errors
 /// [`AdminUiError::Unauthenticated`] without a console session;
@@ -177,13 +197,14 @@ pub async fn fetch_example(
     template_id: String,
     /// Which representation to negotiate for the example.
     format: ReprFormat,
+    /// How much of the template the example fills in (`detail_level`).
+    detail: ExampleDetail,
+    /// Which form the example is shaped for (`type`).
+    kind: ExampleType,
 ) -> Result<String, AdminUiError> {
     let session = crate::session::require_session().await?;
     let state: crate::state::AppState = expect_context();
-    let url = state.cdr.rest_v1(&format!(
-        "definition/template/adl1.4/{}/example",
-        urlencoding::encode(&template_id)
-    ));
+    let url = state.cdr.rest_v1(&example_path(&template_id, detail, kind));
     let response = state
         .cdr
         .get(&session.credential, &url, format.media_type())
@@ -235,6 +256,8 @@ pub fn TemplateDetailPage() -> impl IntoView {
     });
     let selected_node = RwSignal::new(None::<CatalogNode>);
     let example_format = RwSignal::new(ReprFormat::CanonicalJson);
+    let example_detail = RwSignal::new(ExampleDetail::default());
+    let example_kind = RwSignal::new(ExampleType::default());
 
     // ONE page-level read of the operational template, shared by every pane
     // that describes it — the metadata card (tab-independent by owner
@@ -250,11 +273,20 @@ pub fn TemplateDetailPage() -> impl IntoView {
     // and its format is a live selection — never run it for an unopened tab.
     let example: Resource<Result<Option<String>, AdminUiError>> = Resource::new(
         move || {
-            (selected_tab.get() == "example").then(|| (template_id.get(), example_format.get()))
+            (selected_tab.get() == "example").then(|| {
+                (
+                    template_id.get(),
+                    example_format.get(),
+                    example_detail.get(),
+                    example_kind.get(),
+                )
+            })
         },
         |active| async move {
             match active {
-                Some((id, format)) => fetch_example(id, format).await.map(Some),
+                Some((id, format, detail, kind)) => {
+                    fetch_example(id, format, detail, kind).await.map(Some)
+                }
                 None => Ok(None),
             }
         },
@@ -262,7 +294,7 @@ pub fn TemplateDetailPage() -> impl IntoView {
 
     let wt_pane = wt_tab(detail, selected_node);
     let opt_pane = opt_tab(detail);
-    let example_pane = example_tab(example, example_format);
+    let example_pane = example_tab(example, example_format, example_detail, example_kind);
     let meta_card = meta_section(detail);
     let delete_action = delete_section(template_id);
 
@@ -792,22 +824,22 @@ fn opt_tab(detail: Resource<Result<TemplateDetail, AdminUiError>>) -> AnyView {
     .into_any()
 }
 
-/// The Example tab: a format selector (JSON / XML / FLAT / STRUCTURED) over the
-/// shared selection signal — a change refetches the resource — plus the
-/// pretty-printed example composition in the document pane.
+/// The Example tab: the shared example controls over the selection signals —
+/// a change to any of them refetches the resource — plus the pretty-printed
+/// example composition in the document pane.
 fn example_tab(
     example: Resource<Result<Option<String>, AdminUiError>>,
     format: RwSignal<ReprFormat>,
+    detail: RwSignal<ExampleDetail>,
+    kind: RwSignal<ExampleType>,
 ) -> AnyView {
-    let offered = vec![
-        ReprFormat::CanonicalJson,
-        ReprFormat::CanonicalXml,
-        ReprFormat::Flat,
-        ReprFormat::Structured,
-    ];
     view! {
         <div class="space-y-3">
-            <crate::components::format_view::FormatSelector offered=offered selected=format />
+            <crate::components::example_controls::ExampleControls
+                format=format
+                detail=detail
+                kind=kind
+            />
             <Transition fallback=tree_skeleton>
                 {move || Suspend::new(async move {
                     match example.await {
@@ -833,7 +865,8 @@ fn example_tab(
 
 #[cfg(test)]
 mod tests {
-    use crate::pages::template_detail::tab_href;
+    use crate::example_options::{ExampleDetail, ExampleType};
+    use crate::pages::template_detail::{example_path, tab_href};
 
     /// The operational template the console's own e2e stack is seeded with
     /// (`scripts/ui-e2e.sh`), so the derivation is pinned against the same
@@ -929,5 +962,45 @@ mod tests {
                 id
             );
         }
+    }
+
+    #[test]
+    fn the_example_path_carries_the_selected_options() {
+        // Both parameters ride every request, defaults included, so the CDR
+        // generates exactly what the pane's controls show.
+        assert_eq!(
+            example_path(
+                "minimal_evaluation.en.v1",
+                ExampleDetail::default(),
+                ExampleType::default()
+            ),
+            "definition/template/adl1.4/minimal_evaluation.en.v1/example?detail_level=required&type=input"
+        );
+        assert_eq!(
+            example_path(
+                "minimal_evaluation.en.v1",
+                ExampleDetail::Complete,
+                ExampleType::Output
+            ),
+            "definition/template/adl1.4/minimal_evaluation.en.v1/example?detail_level=complete&type=output"
+        );
+    }
+
+    #[test]
+    fn the_example_path_re_encodes_the_decoded_route_param() {
+        // The id arrived percent-decoded from the route, so a reserved
+        // character must be escaped again or the request lands elsewhere.
+        assert_eq!(
+            example_path("a/b", ExampleDetail::Medium, ExampleType::Input),
+            "definition/template/adl1.4/a%2Fb/example?detail_level=medium&type=input"
+        );
+        assert_eq!(
+            example_path(
+                "temperatur-°C",
+                ExampleDetail::default(),
+                ExampleType::default()
+            ),
+            "definition/template/adl1.4/temperatur-%C2%B0C/example?detail_level=required&type=input"
+        );
     }
 }

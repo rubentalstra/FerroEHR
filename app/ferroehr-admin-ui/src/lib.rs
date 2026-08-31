@@ -44,6 +44,7 @@ pub mod chart_model;
 pub mod clinical;
 pub mod components;
 pub mod error;
+pub mod example_options;
 pub mod feedback;
 pub mod fhir;
 pub mod format;

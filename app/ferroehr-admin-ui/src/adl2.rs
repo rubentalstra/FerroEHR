@@ -19,6 +19,8 @@
 //! NOTE: no openEHR spec governs an admin UI's routes or family switch — our
 //! own design / product extension; only the wire paths are spec-bound.
 
+use crate::example_options::{ExampleDetail, ExampleType};
+
 /// Which template family a Template Manager view is showing.
 ///
 /// Serializable because the listing resource carries the family it fetched
@@ -303,15 +305,19 @@ pub fn artefact_path(artefact_id: &str) -> String {
 }
 
 /// The ITS-REST path of the CDR-generated example composition for one stored
-/// ADL2 template.
+/// ADL2 template, at `detail` and `kind`.
 ///
 /// The Definition API declares no versioned example resource, so the artefact
 /// the example is generated from is the one `template_id` itself resolves to.
+/// The two example options ride the query string
+/// ([`crate::example_options::example_query`]); the id is percent-encoded with
+/// the `urlencoding` crate (owner hard rule: never a hand-rolled codec).
 #[must_use]
-pub fn example_path(template_id: &str) -> String {
+pub fn example_path(template_id: &str, detail: ExampleDetail, kind: ExampleType) -> String {
     format!(
-        "definition/template/adl2/{}/example",
-        urlencoding::encode(template_id)
+        "definition/template/adl2/{}/example{}",
+        urlencoding::encode(template_id),
+        crate::example_options::example_query(detail, kind)
     )
 }
 
@@ -348,6 +354,7 @@ mod tests {
         Adl2Tab, TemplateFamily, artefact_path, detail_href, example_path, family_versions,
         split_hrid, template_path, view_href,
     };
+    use crate::example_options::{ExampleDetail, ExampleType};
 
     #[test]
     fn the_family_switch_reads_and_writes_its_query_value() {
@@ -451,8 +458,26 @@ mod tests {
             "definition/template/adl2/a%2Fb/1%2F2"
         );
         assert_eq!(
-            example_path("a b"),
-            "definition/template/adl2/a%20b/example"
+            example_path("a b", ExampleDetail::default(), ExampleType::default()),
+            "definition/template/adl2/a%20b/example?detail_level=required&type=input"
+        );
+    }
+
+    #[test]
+    fn the_example_path_carries_the_selected_options() {
+        // Both parameters ride every request, so the CDR generates exactly
+        // what the pane's controls show.
+        assert_eq!(
+            example_path(
+                "openEHR-EHR-COMPOSITION.cnf.v1.0.0",
+                ExampleDetail::Complete,
+                ExampleType::Output
+            ),
+            "definition/template/adl2/openEHR-EHR-COMPOSITION.cnf.v1.0.0/example?detail_level=complete&type=output"
+        );
+        assert_eq!(
+            example_path("id", ExampleDetail::Medium, ExampleType::Input),
+            "definition/template/adl2/id/example?detail_level=medium&type=input"
         );
     }
 
