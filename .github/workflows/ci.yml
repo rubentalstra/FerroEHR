@@ -1789,7 +1789,7 @@ jobs:
               echo "::error::crates/openehr-$c is at $v but the lockstep version is $ver — bump all eight together." >&2
               exit 1
             fi
-            locked=$(printf '%s\n' "$fuzz_lock" | awk -v n="\"openehr-$c\"" '$1 == "name" && $3 == n { hit = 1; next } hit && $1 == "version" { gsub(/"/, "", $3); print $3; exit }')
+            locked=$(awk -v n="\"openehr-$c\"" '$1 == "name" && $3 == n { hit = 1; next } hit && $1 == "version" { gsub(/"/, "", $3); print $3; exit }' <<< "$fuzz_lock")
             if [ "$locked" != "$ver" ]; then
               echo "::error::fuzz/Cargo.lock records openehr-$c ${locked:-nothing} but the lockstep version is $ver — refresh it with 'cargo update --manifest-path fuzz/Cargo.toml --workspace' and commit the lock in this PR." >&2
               exit 1
