@@ -612,8 +612,9 @@ rather than left to be discovered.
 - **[EHRbase](https://github.com/ehrbase/ehrbase):** FerroEHR began as a
   fork of EHRbase, developed by
   [vitasystems GmbH](https://www.vitagroup.ag/) and the
-  [Peter L. Reichertz Institute](https://www.plri.de/), and keeps that
-  lineage in its git history. It is not affiliated with or endorsed by the
+  [Peter L. Reichertz Institute](https://www.plri.de/), and records that
+  lineage in the labelled import commit at the root of this repository's
+  history. It is not affiliated with or endorsed by the
   EHRbase project; EHRbase itself remains Apache-2.0, and no code from it
   is present in this tree.
 - **[openEHR Foundation](https://www.openehr.org/):** publishes the openEHR

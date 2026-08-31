@@ -85,7 +85,8 @@ user terms; if you are new to openEHR itself, start with the
 
 > [!NOTE]
 > FerroEHR began as a fork of **EHRbase** (by vitasystems and the Peter L.
-> Reichertz Institute) and keeps that lineage in its git history, but it is an
+> Reichertz Institute) and records that lineage in the labelled import commit
+> at the root of its history, but it is an
 > independent, from-scratch Rust implementation with no EHRbase code in this
 > tree, and it is not affiliated with or endorsed by the EHRbase project.
 > FerroEHR's own code is MIT-licensed; vendored openEHR material keeps its

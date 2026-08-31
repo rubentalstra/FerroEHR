@@ -181,8 +181,9 @@ no merge; `cargo deny` is the gate.
   endorsed by** the openEHR Foundation.
 - FerroEHR began as a fork of **EHRbase**, developed by
   [vitasystems GmbH](https://www.vitagroup.ag/) and the
-  [Peter L. Reichertz Institute](https://www.plri.de/), and keeps that lineage in
-  its git history. EHRbase itself remains Apache-2.0; no code from it is present
+  [Peter L. Reichertz Institute](https://www.plri.de/), and records that lineage
+  in the labelled import commit at the root of its history. EHRbase itself
+  remains Apache-2.0; no code from it is present
   in this tree, and it is consulted as prior art only. FerroEHR is not affiliated
   with or endorsed by the EHRbase project. The measured
   [comparison](comparison.md) between the two is published in both directions.

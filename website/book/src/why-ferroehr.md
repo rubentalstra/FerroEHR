@@ -134,7 +134,8 @@ products built on open foundations are a perfectly good outcome, and we would
 rather your product succeed with FerroEHR inside it than not exist at all.
 
 It is also not a claim to be the only good openEHR CDR. FerroEHR began as a
-fork of EHRbase and keeps that lineage in its git history; today it is an
+fork of EHRbase and records that lineage in the labelled import commit at the
+root of its history; today it is an
 independent Rust implementation with none of that code left in the tree, and
 we measure ourselves against EHRbase with the same instrument, publishing both
 directions of the result. FerroEHR is an independent implementation of the
