@@ -58,8 +58,11 @@ jobs:
             | jq -r '.server_version // empty' 2>/dev/null || true)"
 
           # The console is the landing surface; a dead console with a live CDR
-          # is still a broken sandbox.
-          console="$(curl -sS -m 30 "${HOSTED_BASE}/" | grep -c "FerroEHR" || true)"
+          # is still a broken sandbox. -L: the landing page 302-redirects to
+          # /login, and an unfollowed redirect is an empty body that reads as
+          # a dead console (measured — the watch held its issue open against
+          # a healthy box).
+          console="$(curl -sSL -m 30 "${HOSTED_BASE}/" | grep -c "FerroEHR" || true)"
 
           # What it SHOULD serve: the release pointer's own version label.
           tok=$(curl -fsS "https://ghcr.io/token?scope=repository:${IMAGE#ghcr.io/}:pull" | sed -nE 's/.*"token":"([^"]+)".*/\1/p')
