@@ -195,3 +195,16 @@ async fn example_invalid_detail_level_is_400() {
     let (status, _content_type, _body) = get(&app, &uri, None).await;
     assert_eq!(status, StatusCode::BAD_REQUEST);
 }
+
+// A present-but-empty value is out of the closed enums, not the default: the
+// declared defaults apply to an ABSENT parameter only (ITS-REST
+// parameters/query/example_detail_level.yaml, example_type.yaml).
+#[tokio::test]
+async fn example_empty_query_values_are_400() {
+    let (_pg, app) = app_with_template().await;
+    for query in ["?detail_level=", "?type="] {
+        let uri = format!("{}{query}", example_uri());
+        let (status, _content_type, _body) = get(&app, &uri, None).await;
+        assert_eq!(status, StatusCode::BAD_REQUEST, "{query} must refuse");
+    }
+}
