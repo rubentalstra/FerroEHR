@@ -3,19 +3,16 @@
 
 //! The AMQP 0.9.1 (`RabbitMQ`) [`EventPublisher`] via `lapin`.
 //!
-//! **No openEHR spec governs this — our own design/extension** (master14's
-//! integration model is archetype data-conversion, not message brokers).
-//! Active only when the eventing extension is enabled.
+//! No openEHR spec governs this — our own design/extension. Active only when
+//! the eventing extension is enabled.
 //!
-//! Publishes to a **durable topic exchange** with **publisher confirms**: a
-//! publish resolves only after the broker acknowledges, so the drainer marks a
-//! row published exactly when delivery is guaranteed (at-least-once). The
-//! connection + channel are established lazily and re-established on loss, so
-//! a broker that is down at start (or restarts) is tolerated — the outbox
-//! simply stays pending until the broker returns. Every fresh connection
-//! advances the [`topology epoch`](EventPublisher::topology_epoch) so the
-//! drainer knows when subscription queues may need re-declaring (a broker
-//! replaced without our durable state).
+//! Publishes to a durable topic exchange with publisher confirms, so a publish
+//! resolves only after the broker acknowledges and the drainer marks a row
+//! published exactly when delivery is guaranteed. The connection and channel are
+//! established lazily and re-established on loss, so a broker that is down at
+//! start is tolerated and the outbox stays pending until it returns. Every fresh
+//! connection advances the [`topology epoch`](EventPublisher::topology_epoch),
+//! so the drainer knows when subscription queues may need re-declaring.
 
 use std::sync::atomic::{AtomicU64, Ordering};
 
@@ -121,9 +118,8 @@ impl EventPublisher for AmqpPublisher {
     }
 
     async fn declare_subscription(&self, queue: &str, binding_key: &str) -> Result<(), EventError> {
-        // Idempotent: a durable queue survives a broker restart (matching the
-        // persistent delivery mode), and re-declaring an existing queue/binding
-        // with the same arguments is a no-op.
+        // Idempotent: a durable queue survives a broker restart, and
+        // re-declaring one with the same arguments is a no-op.
         let channel = self.channel().await?;
         channel
             .queue_declare(

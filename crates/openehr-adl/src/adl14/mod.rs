@@ -30,18 +30,15 @@
 //!    encoding that step 2 reads back
 //!    ([`convert::convert_constraint`](convert)).
 //! 1. **Front end** — [`crate::assemble::parse_artefact`] in
-//!    [`crate::parse::Dialect::Adl14`] parses a 1.4
-//!    `.adl` into a *1.4-shaped* `openehr_am::v2_4` [`Archetype`](openehr_am::v2_4::aom2::archetype::archetype::Archetype) (at-code node
-//!    ids; qualified/listed terminology constraints preserved verbatim in the
-//!    `C_TERMINOLOGY_CODE.constraint` string; inline dADL `C_DV_QUANTITY`/
-//!    `C_DV_ORDINAL` lowered to `DV_QUANTITY`/`DV_ORDINAL` with an attribute
-//!    tuple). The converter core takes the assembled `Archetype`, not raw text.
-//!    NOTE: stored 1.4 operational templates convert through this same core —
-//!    an application-side front end (the OPT-1.4 DTOs live in `openehr-its`,
-//!    outside this crate's contract) decomposes a flattened OPT into one
-//!    1.4-shaped source `Archetype` per embedded root and runs each through
-//!    [`convert::convert`]. No openEHR spec governs 1.4 → 2 conversion — our
-//!    own design/extension.
+//!    [`crate::parse::Dialect::Adl14`] parses a 1.4 `.adl` into a 1.4-SHAPED
+//!    `openehr_am::v2_4` [`Archetype`](openehr_am::v2_4::aom2::archetype::archetype::Archetype):
+//!    at-code node ids, terminology constraints preserved verbatim in the
+//!    `C_TERMINOLOGY_CODE.constraint` string, inline dADL domain blocks lowered
+//!    to their `DV_*` types with an attribute tuple. The converter core takes
+//!    the assembled `Archetype`, not raw text, so a stored 1.4 operational
+//!    template converts through it too once an application-side front end has
+//!    decomposed the flattened OPT into one source `Archetype` per embedded
+//!    root.
 //! 2. **Converter core** ([`convert`]) — node-id renumbering (the `+1`
 //!    first-segment shift, separate id-/at-code spaces, `0.`-prefixed
 //!    new-at-level codes kept, missing ids synthesised in document order),

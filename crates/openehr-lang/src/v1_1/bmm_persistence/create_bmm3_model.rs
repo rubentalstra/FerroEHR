@@ -4,56 +4,38 @@
 
 //! The `P_BMM_SCHEMA` → **v3** (`org.openehr.lang.bmm3`) `BMM_MODEL` transform.
 //!
-//! The sibling of [`crate::v1_1::bmm_persistence::create_model`] against the other BMM
-//! generation's shapes. It lives in its own module because the two generations
-//! give the same Rust NAMES to structurally different types (`BmmModel`,
-//! `BmmClass`, `BmmSimpleType`, …) and this workspace forbids import renaming, so
-//! each transform imports exactly one generation.
+//! The sibling of [`crate::v1_1::bmm_persistence::create_model`] against the
+//! other BMM generation's shapes. It is a separate module because the two
+//! generations give the same Rust NAMES to structurally different types and this
+//! workspace forbids import renaming, so each transform imports one generation.
 //!
-//! Why a v3 transform at all: three things the v2.x materialisation must leave in
-//! the P_BMM graph have a declared destination in v3, so they reach a model here.
+//! Four things the v2.x materialisation must leave in the P_BMM graph have a
+//! declared destination in v3 and so reach a model here:
 //!
 //! * **A generic ancestor's parameter binding.** v3 states inheritance as a map
-//!   of TYPES — "the `_ancestors_` attribute … contains a list of _types_ rather
-//!   than classes" (`org.openehr.lang.bmm3.bmm_class.adoc` §Description), typed
-//!   `Hash<String, BMM_MODEL_TYPE>` (same §Attributes) — so
-//!   `P_BMM_CLASS.ancestor_defs`' `GENERIC_PARENT<T,SUPPLIER_B>`
-//!   (`LANG/docs/bmm_persistence/master04-syntax.adoc` §Inheritance) materialises
-//!   as a `BMM_GENERIC_TYPE` ancestor carrying its substitutions.
-//! * **A class's routines and constants.** v3 `BMM_CLASS` declares `features`,
-//!   `functions`, `procedures` and `static_properties` (same §Attributes), the
-//!   destination `P_BMM_CLASS.functions`/`constants` has in no v2 class.
-//! * **`value_constraint`.** v3 puts it on the TYPE
-//!   (`BMM_MODEL_TYPE.value_constraint: BMM_VALUE_SET_SPEC`,
-//!   `…bmm3.bmm_model_type.adoc` §Attributes), which is where
-//!   `P_BMM_BASE_TYPE.value_constraint` ("openEHR::languages",
-//!   `master04-syntax.adoc` §Value-set Constraints) belongs — the `::`-split of
+//!   of TYPES (`org.openehr.lang.bmm3.bmm_class.adoc` §Description,
+//!   `Hash<String, BMM_MODEL_TYPE>`), so `P_BMM_CLASS.ancestor_defs`'
+//!   `GENERIC_PARENT<T,SUPPLIER_B>` materialises as a `BMM_GENERIC_TYPE`
+//!   ancestor carrying its substitutions.
+//! * **A class's routines and constants**, which v3 `BMM_CLASS` declares as
+//!   `features`, `functions`, `procedures` and `static_properties`.
+//! * **`value_constraint`**, which v3 puts on the TYPE
+//!   (`…bmm3.bmm_model_type.adoc` §Attributes) — where
+//!   `P_BMM_BASE_TYPE.value_constraint` belongs, split on `::` per
 //!   `master07-core-classes.adoc` §Value-set Types.
+//! * **Generic-substituted properties**: where a class binds an ancestor's
+//!   formal parameter, the ancestor's properties typed by it reappear in the
+//!   descendant with `is_synthesised_generic` set.
 //!
-//! * **Generic-substituted properties.** Where a class binds an ancestor's
-//!   formal parameter, the ancestor's properties typed by that parameter
-//!   reappear in the descendant with the bound type and
-//!   `is_synthesised_generic` set (`synthesise_generic_properties`).
-//!
-//! Two boundaries are load-bearing and stated here rather than left implicit:
-//!
-//! * **Class invariants and routine pre-/post-conditions.** v3 requires them as
-//!   `BMM_ASSERTION` (`LANG/docs/bmm3/master10-expressions.adoc` §Usage in BMM
-//!   Models) where P_BMM persists an opaque expression string keyed by tag, so
-//!   they are parsed here by [`crate::v1_1::bmm_persistence::create_bmm3_assertion`]
-//!   over the vendored EL grammar. A string that is not EL, or whose names do
-//!   not resolve, is COLLECTED as a
-//!   [`crate::v1_1::bmm_persistence::validate::PBmmValidityFinding::AssertionNotMaterialised`]
-//!   and omitted, never a refusal of the schema.
-//! * **A constant stating no value.** `P_BMM_CONSTANT.value` is `0..1`
-//!   (`…bmm_persistence.p_bmm_constant.adoc` §Attributes) while the v3
-//!   `BMM_CONSTANT.generator` is `1..1` over a `1..1` `value_literal`
-//!   (`…bmm3.bmm_constant.adoc`, `…bmm3.bmm_literal_value.adoc` §Attributes),
-//!   and openEHR's own published LANG schemas omit the value on
-//!   `BMM_DEFINITIONS.Bmm_internal_version`. The constant is therefore
-//!   COLLECTED as a
-//!   [`crate::v1_1::bmm_persistence::validate::PBmmValidityFinding::ConstantNotMaterialised`]
-//!   and omitted; no empty serial form is invented.
+//! Two shapes are COLLECTED as a
+//! [`crate::v1_1::bmm_persistence::validate::PBmmValidityFinding`] and omitted
+//! rather than refusing the schema: an assertion string that is not EL or whose
+//! names do not resolve (v3 requires `BMM_ASSERTION`,
+//! `LANG/docs/bmm3/master10-expressions.adoc` §Usage in BMM Models, where P_BMM
+//! persists an opaque string), and a constant stating no value
+//! (`P_BMM_CONSTANT.value` is `0..1` while `BMM_CONSTANT.generator` is `1..1`,
+//! and openEHR's own schemas omit it on `BMM_DEFINITIONS.Bmm_internal_version`).
+//! No empty serial form is invented.
 //!
 //! NOTE (embedding depth, the same adjudication as the v2.x transform): a v3
 //! `BMM_CLASS.ancestors` entry is a type whose `base_class` is a `BMM_CLASS`, so
@@ -1510,7 +1492,7 @@ fn build_procedures(
 /// (`org.openehr.lang.bmm3.bmm_function.adoc` §Attributes) — and
 /// `Inv_result_type` states `type = Result.type`, so both carry the persisted
 /// result type. `pre_conditions`/`post_conditions` stay empty until the
-/// assertion work lands (#1878). `operator_definition` has no persisted
+/// assertion work lands. `operator_definition` has no persisted
 /// source (P_BMM declares no operator meta-data).
 fn build_function(
     builder: &Builder<'_>,

@@ -592,8 +592,8 @@ impl DvOrdered {
     pub fn is_simple(&self) -> bool {
         macro_rules! simple {
             ($x:expr) => {
-                // `other_reference_ranges` is `Option<NonEmptyVec<..>>`
-                // (#1730): present means non-empty by construction.
+                // `other_reference_ranges` is `Option<NonEmptyVec<..>>`:
+                // present means non-empty by construction.
                 $x.normal_range.is_none() && $x.other_reference_ranges.is_none()
             };
         }

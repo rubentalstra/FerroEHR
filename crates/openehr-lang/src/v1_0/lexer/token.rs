@@ -402,7 +402,7 @@ pub enum Token {
     /// §File Encoding), but RFC 3986 validity is deliberately NOT policed at
     /// the lexical layer: refusing here would punish real-world authored
     /// data, and URI validity is the consuming model's typed concern
-    /// (adjudicated at the #1122 §7.3 audit).
+    /// (adjudicated against §7.3).
     #[regex(r"<[ \t\r\n]*[a-zA-Z][a-zA-Z0-9+.\-]*:[^>]*>", |lex| lex.slice().to_owned())]
     EmbeddedUri(String),
     /// An ADL path (`base_lexer.g4 ADL_PATH`), each segment

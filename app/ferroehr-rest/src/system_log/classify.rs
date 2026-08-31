@@ -3,37 +3,22 @@
 
 //! Operation → DICOM audit classification for the IHE ATNA system log.
 //!
-//! The IHE **ATNA** profile records, per audited access, *who* did *what* to
-//! *which* resource with *what* outcome; the record payload is the DICOM Audit
-//! Message (DICOM PS3.15 §A.5). This table supplies the "*what* / *which*" half
-//! for one ITS-REST operation: its DICOM `EventActionCode` (PS3.15 §A.5.1 —
-//! `C`/`R`/`U`/`D`/`E`) and the resource `ObjectClass` that drives the
-//! `EventID`/participant-object rendering in the platform emitter. The
-//! transport-agnostic event model + emit seam is the SM `System Log` component
-//! (`ferroehr::service::SystemLog`); the DICOM/syslog rendering is the platform crate
-//! (`ferroehr::system_log`). openEHR itself is silent on audit-record shape — the
-//! only normative line is "System Log | IHE ATNA-compliant system log"
-//! (SM `master02-overview.adoc` §openEHR Platform Model) — so the DICOM/IHE
-//! mapping below is our own design over those external standards.
+//! ATNA records, per audited access, who did what to which resource with what
+//! outcome, as a DICOM Audit Message (PS3.15 §A.5). This table supplies the
+//! what-and-which half for one ITS-REST operation: its `EventActionCode`
+//! (§A.5.1) and the resource `ObjectClass` driving the participant-object
+//! rendering in the platform emitter. openEHR is silent on audit-record shape —
+//! the only normative line is "System Log | IHE ATNA-compliant system log" (SM
+//! `master02-overview.adoc` §openEHR Platform Model) — so the mapping here is
+//! our own design over those external standards.
 //!
-//! # Coverage discipline
-//!
-//! Keyed by the generated ITS-REST operation ids
-//! (`openehr_its::rest::generated`). Every operation id in every generated
-//! `ROUTES` table is **explicitly** classified here; the completeness test
-//! (`tests::every_generated_operation_is_explicit`) fails the build the moment
-//! a newly generated operation is not, mirroring the codegen drift guard.
-//!
-//! # Fail-closed default
-//!
-//! An operation id that is **not** in the table (an extension route —
-//! terminology, subject-proxy, events, FHIR — or a future operation) is never
-//! silently dropped: [`classify`] resolves it to the documented conservative
-//! default [`DEFAULT`] (`Execute` on the generic `ApplicationActivity` class),
-//! so an unrecognised but dispatched operation still produces one audit record
-//! attributing the caller/outcome without asserting a false resource class. An
-//! operation is left *unaudited* only by an **explicit** [`Classification::Unaudited`]
-//! entry — a deliberate, reviewable opt-out, not an omission.
+//! Every operation id in every generated `ROUTES` table is explicitly
+//! classified, and the completeness test fails the build the moment a newly
+//! generated one is not. An id absent from the table — an extension route or a
+//! future operation — resolves through the conservative [`DEFAULT`], so it is
+//! still recorded, attributing the caller and outcome without asserting a false
+//! resource class. An operation is left unaudited only by an explicit
+//! [`Classification::Unaudited`] entry.
 
 use ferroehr::system_log::event::{EventActionCode, ObjectClass};
 
@@ -47,12 +32,11 @@ pub enum Classification {
         /// The touched resource class (drives `EventID` + participant objects).
         object: ObjectClass,
     },
-    /// The operation is **deliberately** not audited (a reviewed non-clinical
-    /// opt-out — distinct from an unrecognised operation, which fails closed to
-    /// [`DEFAULT`]). No generated operation currently uses this: every generated
-    /// route is `Audited`, so the completeness test also asserts the unaudited
-    /// allowlist is empty. Kept as the explicit seam a future non-clinical route
-    /// would use.
+    /// The operation is deliberately not audited: a reviewed non-clinical
+    /// opt-out, distinct from an unrecognised operation, which fails closed to
+    /// [`DEFAULT`]. No generated operation uses this, and the completeness test
+    /// asserts the allowlist is empty; it is the seam a future non-clinical
+    /// route would use.
     Unaudited,
 }
 
@@ -65,11 +49,9 @@ impl Classification {
 
 /// The fail-closed classification for an operation id absent from the table.
 ///
-/// Such an operation is audited under the generic `ApplicationActivity` class
-/// as an `Execute`, so an unrecognized-but-dispatched operation is recorded
-/// rather than silently unaudited. Extension routes
-/// (terminology/subject-proxy/events/FHIR) and any future operation land here
-/// until given an explicit entry.
+/// Such an operation is audited as an `Execute` on the generic
+/// `ApplicationActivity` class rather than silently dropped; extension routes
+/// and future operations land here until given an explicit entry.
 pub const DEFAULT: Classification =
     Classification::audited(Execute, ObjectClass::ApplicationActivity);
 
@@ -127,22 +109,17 @@ pub fn lookup(op: &str) -> Option<Classification> {
             Classification::audited(Read, Directory)
         }
 
-        // ── CONTRIBUTION (op ids shared by the ehr + demographic groups) ─────
-        //
-        // The released OAS reuses these `operationId`s in BOTH bundles, and one
-        // classification is correct for both families: RM common master06 change
-        // control governs every VERSIONED_OBJECT, demographic content included.
-        // The `adjudicated_shared_ids` gate below fails on any NEW cross-group
-        // duplicate, so a future reuse must be adjudicated here first.
+        // The released OAS reuses these CONTRIBUTION `operationId`s in both
+        // bundles, and one classification is correct for both: RM common
+        // master06 change control governs every VERSIONED_OBJECT, demographic
+        // content included. The `adjudicated_shared_ids` gate below fails on any
+        // new cross-group duplicate.
         "contribution_create" => Classification::audited(Create, Contribution),
         "contribution_get" => Classification::audited(Read, Contribution),
 
-        // ── Item tags (clinical-resource metadata; audited on the parent
-        //    resource — PHI-adjacent, so recorded) ─────────────────────────────
-        //
         // NOTE: RM ehr `master04-ehr_package.adoc` §Tags puts ITEM_TAGs outside
         // change control, so auditing them at all is our own design/extension:
-        // each is audited under its parent's DICOM class (a tag has none).
+        // each is audited under its parent's DICOM class.
         "ehr_tags_get" | "ehr_status_tags_get" => Classification::audited(Read, Ehr),
         "ehr_status_tags_update" => Classification::audited(Update, Ehr),
         "ehr_status_tags_delete" => Classification::audited(Delete, Ehr),
@@ -230,23 +207,21 @@ pub fn lookup(op: &str) -> Option<Classification> {
     Some(c)
 }
 
-/// Classify an operation id for the request path: its explicit [`lookup`]
-/// entry, or the fail-closed [`DEFAULT`] when the id is unrecognised
-/// (extension routes, future operations).
+/// Classifies an operation id for the request path: its explicit [`lookup`]
+/// entry, or the fail-closed [`DEFAULT`] when the id is unrecognised.
 ///
-/// Never yields "unknown" — an unrecognised operation is audited under the
+/// Never yields "unknown": an unrecognised operation is audited under the
 /// generic class rather than dropped.
 #[must_use]
 pub fn classify(op: &str) -> Classification {
     lookup(op).unwrap_or(DEFAULT)
 }
 
-/// The `(action, object)` an operation is audited under, or `None` when it is
+/// Returns the `(action, object)` an operation is audited under, or `None` for
 /// an explicit [`Classification::Unaudited`] opt-out.
 ///
-/// This is the entry point the audit middleware calls; an unrecognised id
-/// resolves through [`DEFAULT`] to `Some(...)`, so only a deliberate opt-out
-/// suppresses the operation record.
+/// The entry point the audit middleware calls: an unrecognised id resolves
+/// through [`DEFAULT`], so only a deliberate opt-out suppresses the record.
 #[must_use]
 pub fn audit_for(op: &str) -> Option<(EventActionCode, ObjectClass)> {
     match classify(op) {

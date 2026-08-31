@@ -11,33 +11,24 @@
 //! (`openehr_am::v2_4::aom2::constraint_model`) directly — never a new model
 //! type — producing a [`CComplexObject`] tree for a `definition` section body.
 //!
-//! Recursive descent (not `chumsky`) is the deliberate choice here: the cADL
-//! primitive sub-grammar (`|…|` interval endpoints prefixed with relational
-//! operators, the duration `pattern/interval` mix, kind-classification of an
-//! interval by its endpoint token) is strongly context-sensitive and reads far
-//! more clearly as straight-line code than as a combinator tree. It also
-//! matches the existing outer parser idiom ([`crate::source`], hand-rolled RD
-//! over `&[Spanned]`).
+//! Recursive descent rather than `chumsky`: the cADL primitive sub-grammar —
+//! `|…|` interval endpoints prefixed with relational operators, the duration
+//! `pattern`/`interval` mix, kind-classification of an interval by its endpoint
+//! token — is strongly context-sensitive and reads more clearly as
+//! straight-line code, which also matches the outer parser idiom in
+//! [`crate::source`].
 //!
-//! Scope: full cADL object/attribute/tuple/slot/proxy/primitive
-//! coverage building the AOM2 tree, with the `S*` syntax-validity codes raised
-//! at position. Slot include/exclude **assertion** expressions are BEL
-//! expression trees built by [`crate::rules::parse_slot_assertions`] (as is
-//! the `rules` section); the common `archetype_id/value matches {/regex/}`
-//! form is additionally regex-compile checked (`SCSRE`). Semantic (V-code)
-//! validation is separate (`crate::validate`).
+//! Slot include/exclude assertion expressions are BEL trees built by
+//! [`crate::rules::parse_slot_assertions`], and the common
+//! `archetype_id/value matches {/regex/}` form is additionally regex-compile
+//! checked (`SCSRE`). Semantic (V-code) validation is `crate::validate`.
 //!
-//! Layout. This module carries what every production shares: the dialect
-//! selector, the parser state, the entry points, and the cursor/error
-//! helpers. [`parser`] holds the structure / attribute / tuple productions,
-//! [`refs`] the archetype-slot / archetype-root / internal-reference
-//! productions, [`primitives`] the inline `C_PRIMITIVE` family, [`values`]
-//! the value-list / interval / endpoint machinery, and [`patterns`] the
-//! date/time constraint-pattern validators. The ADL 1.4-only productions live
-//! in [`crate::adl14::lower`] (with the inline dADL domain lowering they drive
-//! in [`crate::adl14::domain`]); the dialect-gated dispatch points in
-//! `Parser::parse_type_object`, `Parser::parse_c_objects_body` and
-//! `Parser::parse_c_regular_object` are the only coupling to them.
+//! This module carries what every production shares — the dialect selector, the
+//! parser state, the entry points, the cursor/error helpers — and the
+//! productions live in [`parser`] (structure / attribute / tuple), [`refs`]
+//! (slot / root / internal reference), [`primitives`], [`values`] and
+//! [`patterns`]. The ADL 1.4-only productions are in [`crate::adl14::lower`],
+//! reached from three dialect-gated dispatch points.
 
 pub mod parser;
 pub mod patterns;

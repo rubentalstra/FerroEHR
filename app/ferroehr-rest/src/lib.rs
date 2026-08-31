@@ -31,10 +31,10 @@
 //! `ferroehr` crate monomorphizes it over its DB-backed `FerroEhrService` via
 //! [`AppState::with_backend`], and the tests over a mock.
 //!
-//! **Authentication** (Stage 1) is HTTP Basic + OAuth2/OIDC bearer, applied as
-//! one middleware over the API router; the coarse RBAC gate + fine-grained ABAC
-//! PEP compose on top when wired ([`extensions::access`]). Auth is out of band
-//! per the spec (`overview/Requests_and_responses.md` §Authentication).
+//! Authentication is HTTP Basic plus OAuth2/OIDC bearer, applied as one
+//! middleware over the API router, with the coarse RBAC gate and the ABAC PEP
+//! composing on top when wired ([`extensions::access`]). Auth is out of band per
+//! `overview/Requests_and_responses.md` §Authentication.
 
 // Doctests are copy-paste templates: they must use `?`, never unwrap
 // (C-QUESTION-MARK, https://rust-lang.github.io/api-guidelines/documentation.html#c-question-mark).
@@ -52,12 +52,10 @@ pub mod smart;
 pub mod state;
 pub mod system_log;
 
-// `access` (authn + authz config the binary wires) and `management`
-// (observability the binary assembles) are part of the crate's public surface;
-// the binary + tests reach every item at its defining module —
-// `ferroehr_rest::extensions::access::…` / `ferroehr_rest::extensions::management::…`
-// (no re-exports). The two shared protocol helpers (`negotiate`, `params`)
-// live under `overview` and are imported here for the dispatcher glue below.
+// `access` and `management` are part of the crate's public surface, reached at
+// their defining modules because the crate has no re-exports. The two shared
+// protocol helpers live under `overview` and are imported here for the
+// dispatcher glue below.
 use std::sync::Arc;
 
 use ferroehr::service::FerroEhrService;
@@ -95,13 +93,11 @@ pub fn build_with(
     Ok(router(state, authenticator))
 }
 
-/// Build and serve the application backed by a concrete service, with graceful
-/// shutdown on `SIGINT`/`SIGTERM`. Client peer addresses are captured via
-/// `ConnectInfo`.
+/// Builds and serves the application backed by a concrete service, with graceful
+/// shutdown on `SIGINT`/`SIGTERM` and client peer addresses from `ConnectInfo`.
 ///
-/// ATNA auditing (when enabled) is emitted through the platform service's SM
-/// `SystemLog` component; the binary boots the sender, injects it into the
-/// service, and drains its `AuditHandle` on shutdown.
+/// ATNA auditing is emitted through the platform service's SM `SystemLog`
+/// component, whose sender the binary boots, injects and drains on shutdown.
 ///
 /// # Errors
 /// [`ServeError::Auth`] on bad auth config; [`ServeError::Io`] on bind/serve failure.
@@ -116,12 +112,11 @@ pub async fn serve_with(
     run_server(app, &bind, &tls, connection).await
 }
 
-/// Build the application router with a concrete backend and a full
-/// [`Observability`] bundle (management surface + telemetry handles).
+/// Builds the application router with a concrete backend and a full
+/// [`Observability`] bundle.
 ///
-/// The management surface is merged into the returned router when it is
-/// enabled and not bound to a separate port. ATNA auditing lives in the
-/// backend's SM `SystemLog` component.
+/// The management surface is merged into the returned router when it is enabled
+/// and not bound to a separate port.
 ///
 /// # Errors
 /// [`ServeError::Auth`] if the OIDC key material/algorithms are invalid.
@@ -174,12 +169,10 @@ pub async fn serve_full(
     let state = AppState::with_parts(config, backend, authz, observability);
     let main_app = router(state.clone(), Arc::clone(&authenticator));
 
-    // Separate-port management listener: its own axum server task. It stays
-    // plain HTTP even with `[server.tls]` on — an internal ops-introspection
-    // surface (metrics/info/env/loggers), never exposed beyond the pod/host
-    // boundary. The health probes are not here: they are always on the main
-    // listener (`extensions::health`), so a separate-port deployment does not
-    // move them.
+    // The separate-port management listener stays plain HTTP even with
+    // `[server.tls]` on: an internal ops-introspection surface never exposed
+    // beyond the pod boundary. The health probes are always on the main
+    // listener, so a separate-port deployment does not move them.
     let management_task = if management_enabled && let Some(port) = management_port {
         let management_app = management_router(&state, authenticator);
         let management_bind = format!("0.0.0.0:{port}");
@@ -201,12 +194,12 @@ pub async fn serve_full(
     result
 }
 
-/// Serve one router: wrap it in the path-normalization layer, bind, and serve
-/// with graceful shutdown and per-connection peer info — plain HTTP, or
-/// native TLS with optional client-certificate (mutual-TLS) verification when
-/// `[server.tls]` is enabled (the IHE ATNA ITI-19 node-authentication
-/// posture; the protocol floor is TLS 1.3 unless `min_version = "1.2"`
-/// admits 1.2 alongside).
+/// Serves one router: wraps it in the path-normalization layer, binds, and
+/// serves with graceful shutdown and per-connection peer info.
+///
+/// Plain HTTP, or native TLS with optional client-certificate verification when
+/// `[server.tls]` is enabled — the IHE ATNA ITI-19 node-authentication posture,
+/// with a TLS 1.3 floor unless `min_version = "1.2"` admits 1.2 alongside.
 async fn run_server(
     app: axum::Router,
     bind: &str,
@@ -309,12 +302,10 @@ fn bound_connections(
 /// An acceptor that sets `TCP_NODELAY` on every accepted socket and otherwise
 /// passes it through.
 ///
-/// Small responses — the `204` and minimal write acknowledgements this API is
-/// full of — must not sit in Nagle's buffer waiting for an ACK; that is worth
-/// tens of milliseconds of tail latency per response on some stacks. This exists
-/// because the option is per-connection, so it cannot be set once on the
-/// listener. A failed `setsockopt` is logged and the connection served anyway:
-/// a latency optimisation must never refuse a request.
+/// The `204` and minimal write acknowledgements this API is full of must not sit
+/// in Nagle's buffer waiting for an ACK, and the option is per-connection, so it
+/// cannot be set once on the listener. A failed `setsockopt` is logged and the
+/// connection served anyway: a latency optimisation must never refuse a request.
 #[derive(Debug, Clone, Copy, Default)]
 struct NoDelayAcceptor;
 
@@ -333,10 +324,9 @@ impl<S> axum_server::accept::Accept<tokio::net::TcpStream, S> for NoDelayAccepto
 
 /// Builds the rustls server config for `[server.tls]`.
 ///
-/// Assembles the certificate chain + key, and — when `client_auth` is not
-/// `off` — a client-certificate verifier against the explicit
-/// `client_ca_file` trust anchor (never the web PKI). Public: the TLS tests
-/// (and any embedding binary) drive the same builder the server boots with.
+/// Assembles the certificate chain and key, and — when `client_auth` is not
+/// `off` — a client-certificate verifier against the explicit `client_ca_file`
+/// trust anchor, never the web PKI.
 ///
 /// # Errors
 /// [`std::io::Error`] when required key material is missing/unreadable or a

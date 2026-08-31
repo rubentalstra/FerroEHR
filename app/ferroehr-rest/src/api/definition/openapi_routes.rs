@@ -6,8 +6,7 @@
 //!
 //! Operation semantics are the ITS-REST Definition API
 //! (`docs/specs/openehr/ITS-REST`); no openEHR spec governs the OAS layout. Each
-//! handler forwards to the group dispatcher through [`guarded_dispatch`], so the
-//! wire behaviour is identical to the former table-driven `mount` adapter.
+//! handler forwards to the group dispatcher through [`guarded_dispatch`].
 //!
 //! NOTE (operation ids): a few generated operation ids carry `.` (e.g.
 //! `definition_template_adl1.4_list`, `definition_query_store.yaml`) — invalid
@@ -31,17 +30,14 @@
 //!   (spec-permitted); only `Prefer` is honoured.
 //! - **ADL 2 get / version get** (`definition_template_adl2_get.yaml`,
 //!   `_version_get.yaml` — the latter `deprecated: true`): the OAS lists a `400`
-//!   that is unreachable here (`template_id`/`version` are path segments, always
-//!   present); the build serves the `text/plain` ADL2 source and the
-//!   `application/json` `OperationalTemplateV2` canonical-JSON projection (the
-//!   OAS declares that schema as an opaque `type: object`, so the AOM2 canonical
-//!   JSON satisfies it). The response declares no `application/xml` body, so an
-//!   `Accept` naming *only* `application/xml` is a `406`.
-//! - **ADL 2 example get** (`_example_get`): the stored ADL2 template is compiled
-//!   to its operational template and turned into a Web Template (the `v2_4` front
-//!   end), which the shared example generator walks into an example COMPOSITION —
-//!   served across the four `Accept_LOCATABLE` forms (`200`), with `400`/`404`/
-//!   `406` exactly as the ADL 1.4 example endpoint.
+//!   that is unreachable here, since `template_id` and `version` are path
+//!   segments. The build serves the `text/plain` ADL2 source and the
+//!   `application/json` `OperationalTemplateV2` projection, and declares no
+//!   `application/xml` body, so an `Accept` naming only XML is a `406`.
+//! - **ADL 2 example get** (`_example_get`): the stored template is compiled to
+//!   its operational template and turned into a Web Template, which the shared
+//!   example generator walks into an example COMPOSITION, served across the four
+//!   `Accept_LOCATABLE` forms exactly as the ADL 1.4 example endpoint.
 //! - **ADL 1.4 upload** (`definition_template_adl1.4_upload.yaml`): the OAS
 //!   declares `201/400/409`; our wire additionally returns `422` when the OPT
 //!   parses as XML but is structurally invalid (the OAS folds that under `400`).

@@ -34,30 +34,17 @@
 //!   all has no components, so every declared invariant holds vacuously
 //!   (the same rule `version_tree_id_impl.rs` names for identifiers).
 //!
-//! NOTE: arithmetic needs every component of the value, and the openEHR spec
-//! says nothing about computing on a PARTIAL date (`2020`, `2020-06`) — the
-//! `add`/`diff` signatures simply take complete values. A partial (or
-//! unparseable) operand therefore yields `None`, the same undecidable answer
-//! this module's comparison gives, rather than an invented completion.
+//! NOTE: no openEHR spec governs arithmetic on a PARTIAL date, the rounding of
+//! a definite result, or date comparison (`Ordered` is abstract) — our own
+//! design/extension. A partial or unparseable operand yields `None` rather than
+//! an invented completion; a definite result returns the calendar date
+//! CONTAINING the resulting instant, the only reading that keeps `add` and
+//! `subtract` consistent; and `X < Y` holds only when every completion of `X`
+//! precedes every completion of `Y`, with `Some(Equal)` only for equal raw
+//! strings.
 //!
-//! NOTE: a definite result lands at an arbitrary instant (`P1M` is 30.42 days),
-//! but an `Iso8601_date` carries no time of day. We return the calendar date
-//! CONTAINING the resulting instant (truncation towards the start of the day, in
-//! both directions), which is the only reading that keeps `add` and `subtract`
-//! mutually consistent. No openEHR spec governs the rounding — our own
-//! design/extension.
-//!
-//! NOTE: the spec gives NO date comparison algorithm (`Ordered` is abstract),
-//! so the ordering is our own design/extension: a partial date denotes the
-//! interval of its completions and `X < Y` holds only when every completion
-//! of `X` precedes every completion of `Y`; `Some(Equal)` only for equal raw
-//! strings, so differently-written equal values (`20200615` vs `2020-06-15`)
-//! report incomparable, never equal.
-//!
-//! A consumer needing a TOTAL order (a query engine sorting stored values)
-//! must choose its own completion policy (e.g. flooring a partial to its
-//! first instant) — a deliberately different reading from this partial
-//! comparison, which never invents an order the value does not carry.
+//! A consumer needing a TOTAL order must choose its own completion policy; this
+//! comparison never invents an order the value does not carry.
 
 use std::cmp::Ordering;
 

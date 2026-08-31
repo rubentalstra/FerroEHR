@@ -3,39 +3,26 @@
 
 //! `DV_MULTIMEDIA` externalization to S3-compatible object storage.
 //!
-//! **No openEHR spec governs this — our own design/extension.** Server-side
-//! blob storage is spec-silent (master13 is informative deployment guidance and
-//! prescribes no blob-offload mechanism); this module fills it. The platform
-//! gates it behind its `multimedia.enabled` config switch and this crate's
-//! `multimedia` cargo feature.
+//! No openEHR spec governs server-side blob storage — our own design/extension,
+//! gated by the platform's `multimedia.enabled` switch and this crate's
+//! `multimedia` cargo feature. Off by default: with the switch disabled nothing
+//! here is constructed and the commit and read paths are byte-identical to
+//! inline behaviour.
 //!
 //! On commit, an inline `DV_MULTIMEDIA.data` larger than a configured threshold
-//! is written to a content-addressed blob store (keyed by its SHA-256) and the
+//! is written to a content-addressed blob store keyed by its SHA-256, and the
 //! canonical JSON is rewritten to reference it by `uri`, carrying the RM
 //! integrity fields and the mandatory unencoded `size`. On read it can be
-//! transparently re-inlined (`?expand_multimedia=true`), verifying the SHA-256
-//! before serving.
+//! re-inlined (`?expand_multimedia=true`), verifying the SHA-256 first. The data
+//! shape it rewrites is RM 1.2.0 `DV_MULTIMEDIA`: `uri`/`data` alternatives
+//! under `is_inline or is_external`, `integrity_check` implying
+//! `integrity_check_algorithm`, and the mandatory unencoded `size`.
 //!
-//! **Off by default**: with the switch disabled nothing here is constructed
-//! and the commit/read paths are byte-identical to inline behaviour (the
-//! zero-drift gate).
-//!
-//! Spec basis for the *data shape* it rewrites: RM 1.2.0 `DV_MULTIMEDIA`
-//! (`uri`/`data` alternatives under `is_inline or is_external`;
-//! `integrity_check` ⇒ `integrity_check_algorithm` from the openEHR `Integrity
-//! check algorithms` code set; mandatory unencoded `size`).
-//!
-//! ## Seams to versioning / storage
-//! The engine is attached to the platform's service via its
-//! `with_multimedia(...)` seam and consumed on the commit path (offload) and
-//! the read path (expand); those call sites live in the platform crate — this
-//! module only owns the engine + transforms, built from [`BlobStoreParams`]
-//! the platform's config glue supplies.
-//!
-//! ## Module map
-//! - `store` — the content-addressed [`BlobStore`] over `object_store` (+
-//!   [`BlobStoreParams`], the runtime connection parameters).
-//! - `offload` — the pure canonical-JSON transforms (externalize / expand).
+//! This module owns only the engine and its transforms, built from
+//! [`BlobStoreParams`]; the platform attaches it through its `with_multimedia`
+//! seam and calls it on the commit and read paths. `store` is the
+//! content-addressed [`BlobStore`] over `object_store`, `offload` the pure
+//! canonical-JSON transforms.
 
 #![expect(
     clippy::disallowed_types,

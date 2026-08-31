@@ -4,20 +4,15 @@
 //! Operation classification: a generated ITS-REST operation id → its coarse
 //! [`OperationClass`].
 //!
-//! Keyed by the ITS-REST operation ids (`openehr-its::rest::generated`). Every
-//! generated operation is **explicitly** classified; a new generated operation
-//! that is not returns `None` from [`class_of`], which the total-coverage guard
-//! test turns into a build failure until it is classified — the same discipline
-//! as the ATNA op-id table (`ferroehr::system_log`).
+//! Keyed by the ITS-REST operation ids. Every generated operation is explicitly
+//! classified; one that is not returns `None` from [`class_of`], which the
+//! total-coverage guard test turns into a build failure.
 //!
-//! Among the generated routes only the two `admin_*` operations are
-//! [`OperationClass::Admin`]; everything else is [`OperationClass::Clinical`]
-//! (any authenticated principal with a role) — only `/rest/admin/**` requires
-//! `ADMIN`, and everything else requires any authenticated user.
-//! [`OperationClass::Public`] is used by the REST layer to classify the
-//! *non-generated* surface (status/health/swagger), which never reaches
-//! [`class_of`]. The management surface is classified by its own per-endpoint
-//! guard against `[management.endpoints]`, not here.
+//! Only the two `admin_*` operations are [`OperationClass::Admin`]; every other
+//! generated route is [`OperationClass::Clinical`], requiring any authenticated
+//! principal with a role. [`OperationClass::Public`] classifies the non-generated
+//! surface, which never reaches [`class_of`], and the management surface is
+//! classified by its own per-endpoint guard against `[management.endpoints]`.
 
 use crate::extensions::access::authz::request::{AccessMode, ResourceKind};
 
@@ -88,13 +83,10 @@ pub fn class_of(op: &str) -> Option<OperationClass> {
         | "directory_delete"
         | "directory_get_by_version_id" => Clinical,
 
-        // ── CONTRIBUTION (op ids shared by the ehr + demographic groups) ─────
-        // ADJUDICATED SHARED IDS (#1707): the released OAS reuses these ids in
-        // the ehr AND demographic bundles; Clinical is deliberately correct
-        // for both families (RM change control governs demographic content
-        // identically), and the RBAC route map is (method, path)-keyed, so
-        // the two families never collide behaviourally. The system_log
-        // classifier's `adjudicated_shared_ids` gate pins collision-freedom.
+        // The released OAS reuses these CONTRIBUTION ids in both the ehr and
+        // demographic bundles, and Clinical is correct for both (RM change
+        // control governs demographic content identically); the RBAC route map
+        // is (method, path)-keyed, so the families never collide.
         "contribution_create" | "contribution_get" => Clinical,
 
         // ── Item tags (clinical-resource metadata) ───────────────────────────
@@ -194,25 +186,18 @@ pub fn kind_of(op: &str) -> Option<ResourceKind> {
     Some(kind)
 }
 
-/// Whether a generated ITS-REST operation id is a **write** (mutating) op.
+/// Returns whether a generated ITS-REST operation id is a mutating operation.
 ///
-/// Total over the same universe [`class_of`] covers (every generated route op
-/// across all groups). AQL execution (`query_execute_*`) is a **read** even
-/// though its wire verb is POST — a read-only principal must keep it. Every
-/// other GET-semantics op (get / list / `revision_history` — covering `*_get`,
-/// `*_get_by_*`, `*_get_at_time`, `*_version_get`, `*_example_get`, `*_tags_get`,
-/// `*_list`) is a read; everything else (create / update / delete / upload /
-/// store, `*_tags_update` / `*_tags_delete`, and the whole `admin_*` API) is a
-/// write.
+/// Total over the same universe [`class_of`] covers. AQL execution is a read
+/// despite its POST verb, so a read-only principal keeps it; every other
+/// GET-semantics op is a read and everything else a write.
 ///
-/// The classification is derived from the op-id verb (`write_verb`); an op-id
-/// with no recognized verb is treated as a **write** (fail-safe: the read-only
-/// restriction can never be bypassed by an unclassified future op). The
-/// total-coverage guard test turns any such fall-through into a build failure,
-/// so it never silently mis-reads a real op.
+/// The classification derives from the op-id verb (`write_verb`), and an op-id
+/// with no recognized verb is treated as a write, so the read-only restriction
+/// can never be bypassed by an unclassified future op; the total-coverage guard
+/// test turns any such fall-through into a build failure.
 ///
-/// No openEHR spec governs role semantics — our own design/extension (the SM
-/// places authorization out of band; §General Assumptions).
+/// No openEHR spec governs role semantics — our own design/extension.
 #[must_use]
 pub fn is_write(op: &str) -> bool {
     write_verb(op).unwrap_or(true)

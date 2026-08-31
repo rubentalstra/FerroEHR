@@ -108,9 +108,9 @@
 //!   system identifier").
 //! - [`error`] — the HTTP status-code table (`Requests_and_responses.md`
 //!   §HTTP status codes: 200/201/204/400/401/403/404/405/406/408/409/412/
-//!   415/422/500/501; §HTTP Methods: unrecognized method SHOULD → `501`,
-//!   known-but-not-allowed SHOULD → `405`, the former deviating to `405` as
-//!   [`crate::router::router`] explains) + the optional error body
+//!   415/422/500/501; §HTTP Methods: an unrecognized method SHOULD be `501` but
+//!   is answered `405` for the reason [`crate::router::router`] gives, and a
+//!   known-but-not-allowed one SHOULD be `405`) + the optional error body
 //!   ("if `Prefer: return=representation`")
 //!   + the single SM → HTTP mapping table (`CALL_STATUS_TYPE` meets the
 //!     wire here and only here).

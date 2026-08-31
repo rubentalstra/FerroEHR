@@ -4,11 +4,9 @@
 //! AQL abstract syntax tree, transcribed from `AqlParser.g4` (vendored at
 //! `vendor/grammar/`).
 //!
-//! Each grammar rule maps to a type here; the [`crate::parser`] builds these
-//! from the [`crate::lexer`] token stream.
-//!
-//! Scope note: this is the *syntactic* AST. Semantic concerns (resolving paths
-//! against Web Templates, typing quoted temporal literals) are later passes.
+//! Each grammar rule maps to a type here; [`crate::parser`] builds these from
+//! the [`crate::lexer`] token stream. This is the SYNTACTIC tree only —
+//! resolving paths and typing quoted temporal literals are semantic concerns.
 
 use crate::lexer::CompOp;
 
@@ -462,9 +460,8 @@ pub enum Primitive {
 // ── path text rendering (RESULT_SET column `path`) ─────────────────────────────
 //
 // ITS-REST 1.1.0 RESULT_SET columns carry the SELECT expression's path
-// (`{"name": "#0", "path": "/ehr_id/value"}`); the CNF query goldens compare it
-// verbatim, so the renderer reproduces the path exactly as written in the query
-// (minus the root variable) rather than a normalized reconstruction.
+// (`{"name": "#0", "path": "/ehr_id/value"}`) exactly as written in the query,
+// minus the root variable, rather than a normalized reconstruction.
 
 use std::fmt;
 

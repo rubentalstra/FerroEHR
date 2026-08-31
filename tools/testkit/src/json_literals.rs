@@ -6,20 +6,17 @@
 //! found by walking the calling crate's own `src/` tree.
 //!
 //! A `json!` literal carrying `"_type"` is a hand-rolled canonical openEHR
-//! fragment — `_type` is the canonical-JSON discriminator the native codec
-//! emits, so nothing else has any business writing it (issue #1686). The
-//! per-crate gates own their ALLOWLIST adjudications and assertion messages;
-//! this module owns only the mechanics, so the three gates can never drift
-//! apart on WHAT counts as an offending site.
+//! fragment: `_type` is the discriminator the native codec emits, so nothing
+//! else writes it. The per-crate gates own their allowlist adjudications; this
+//! module owns only what counts as an offending site.
 
 use std::path::{Path, PathBuf};
 
-/// Every `json!` invocation under `<manifest_dir>/src` whose body carries a
-/// `"_type"` key, as `(crate-relative path, 1-based line)`, sorted.
+/// Returns every `json!` invocation under `<manifest_dir>/src` whose body
+/// carries a `"_type"` key, as sorted `(crate-relative path, 1-based line)`.
 ///
-/// Unit-test fixtures are out of scope: everything from a file's first
-/// line-initial `#[cfg(test)]` on is fixture territory (the repo's
-/// test-placement rule keeps unit tests in a trailing module).
+/// Everything from a file's first line-initial `#[cfg(test)]` on is skipped as
+/// unit-test fixture territory.
 ///
 /// # Errors
 /// Any I/O failure walking or reading the crate's `src/` tree.
@@ -31,7 +28,7 @@ pub fn offending_sites(manifest_dir: &str) -> std::io::Result<Vec<(String, usize
     Ok(out)
 }
 
-/// Recursively walk `dir` (reached at crate-relative `prefix`), appending each
+/// Walks `dir` (reached at crate-relative `prefix`) recursively, appending each
 /// offending site to `out`.
 fn collect(dir: &Path, prefix: &str, out: &mut Vec<(String, usize)>) -> std::io::Result<()> {
     for entry in std::fs::read_dir(dir)? {
@@ -65,8 +62,8 @@ fn collect(dir: &Path, prefix: &str, out: &mut Vec<(String, usize)>) -> std::io:
     Ok(())
 }
 
-/// Byte offsets of every `json!` invocation in `src` whose delimited body
-/// contains a `"_type"` key.
+/// Returns the byte offset of every `json!` invocation in `src` whose delimited
+/// body contains a `"_type"` key.
 fn json_macro_bodies(src: &str) -> Vec<usize> {
     let bytes = src.as_bytes();
     let mut hits = Vec::new();
@@ -100,8 +97,8 @@ fn json_macro_bodies(src: &str) -> Vec<usize> {
     hits
 }
 
-/// The index of the delimiter closing the one at `open`, skipping over string
-/// literals so a brace inside a JSON string cannot unbalance the scan.
+/// Returns the index of the delimiter closing the one at `open`, skipping
+/// string literals so a brace inside a JSON string cannot unbalance the scan.
 fn matching_delimiter(bytes: &[u8], open: usize) -> Option<usize> {
     let mut depth = 0_i32;
     let mut in_string = false;
@@ -131,7 +128,7 @@ fn matching_delimiter(bytes: &[u8], open: usize) -> Option<usize> {
     None
 }
 
-/// The sites in `sites` not covered by `allowlist` — the gate's failing set.
+/// Returns the sites not covered by `allowlist` — the gate's failing set.
 #[must_use]
 pub fn unlisted<'a>(
     sites: &'a [(String, usize)],
@@ -143,7 +140,8 @@ pub fn unlisted<'a>(
         .collect()
 }
 
-/// The `allowlist` entries matching no site — stale licences the gate refuses.
+/// Returns the `allowlist` entries matching no site — stale licences the gate
+/// refuses.
 #[must_use]
 pub fn stale_entries<'a>(sites: &[(String, usize)], allowlist: &'a [(&str, &str)]) -> Vec<&'a str> {
     allowlist

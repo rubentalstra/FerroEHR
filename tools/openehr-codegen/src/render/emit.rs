@@ -1,36 +1,29 @@
 // SPDX-FileCopyrightText: FerroEHR contributors
 // SPDX-License-Identifier: MIT
 
-//! The Rust emitter: walks a merged BMM [`Model`] and produces
-//! idiomatic, strongly-typed Rust for the openEHR spec crates.
+//! Stage 4 — RENDER. Walks a merged BMM [`Model`] and produces deterministic,
+//! byte-stable Rust for the openEHR spec crates.
 //!
 //! Emission rules:
-//! - **Flattened concrete structs**: a concrete class inlines all inherited
-//!   fields (ancestor-first, `// inherited: X` banners); one hop to any field.
-//! - **`Option<T>`** for non-mandatory single properties; **`Vec<T>`** for
-//!   containers (optional containers get `default` + `skip_serializing_if`).
-//! - **Enums** (plain closed subtype sets) for abstract classes used as a
-//!   property type — the closed polymorphic slots (`DATA_VALUE`, `ITEM`, …).
-//! - **Transparent newtypes** for enumeration classes that are just a
-//!   primitive on the wire (`VALIDITY_KIND` → `String`).
-//! - **Generics** only for classes the BMM declares generic (`Interval<T>`);
-//!   the actual type argument is emitted at each use site.
-//! - Canonical-JSON (de)serialization and the `_type` discriminator are NOT
-//!   emitted here: the native `ToJson`/`FromJson` impls are generated into
-//!   `openehr-its` by `emit-json`. These type files carry no serde/derive.
-//! - Foundation **primitives / containers / marker traits** are mapped to Rust
-//!   (bool, i32, Vec, …) and never emitted (see
-//!   [`crate::plan::overrides::PRIMITIVES`] and
+//! - A concrete class inlines all inherited fields, ancestor-first, so any
+//!   field is one hop away.
+//! - `Option<T>` for non-mandatory single properties, `Vec<T>` for containers.
+//! - Untagged enums for abstract classes used as a property type — the closed
+//!   polymorphic slots (`DATA_VALUE`, `ITEM`, …).
+//! - Transparent newtypes for enumeration classes that are a bare primitive on
+//!   the wire (`VALIDITY_KIND` → `String`).
+//! - Generics only where the BMM declares them (`Interval<T>`); the type
+//!   argument is emitted at each use site.
+//! - Foundation primitives, containers and marker traits map to Rust types and
+//!   are never emitted ([`crate::plan::overrides::PRIMITIVES`],
 //!   [`crate::plan::overrides::MAPPED_CLASSES`]).
-//! - **Every emitted public item carries documentation**: the BMM
-//!   `documentation` where the vendored schema has it, else a deterministic
-//!   synthesized line ([`synth_class_doc`], [`synth_field_doc`]) — `missing_docs`
-//!   covers modules, structs, fields, enums and variants alike
-//!   (<https://doc.rust-lang.org/rustc/lints/listing/allowed-by-default.html>).
-//!   Verbatim spec prose is sanitized for rustdoc ([`sanitize_doc_prose`]).
+//! - Every emitted public item carries documentation: the BMM `documentation`
+//!   where the vendored schema has it, else a deterministic synthesized line
+//!   ([`synth_class_doc`], [`synth_field_doc`]), sanitized for rustdoc by
+//!   [`sanitize_doc_prose`].
 //!
-//! Stage 4 — RENDER. The only stage that produces text: the per-shape emit
-//! functions turn a planned class into deterministic, byte-stable Rust source.
+//! These type files carry no serde attributes or derives: `emit-json` generates
+//! the (de)serialization and the `_type` discriminator separately.
 
 use crate::analyze::{External, Model, class_paths};
 use crate::load::bmm::{
@@ -47,7 +40,7 @@ use crate::render::naming;
 use std::collections::{BTreeMap, BTreeSet};
 
 /// Prepend a file-root `#![expect(clippy::disallowed_types)]` to a generated
-/// body whose CODE mentions the workspace-banned `serde_json::Value` (#1694).
+/// body whose CODE mentions the workspace-banned `serde_json::Value`.
 ///
 /// Free-form JSON in generated output is admitted only where the model
 /// adjudicates it (`plan::overrides::UNTYPED_FIELDS` writes the citation NOTE
@@ -495,7 +488,7 @@ fn emit_lib(top: &BTreeSet<String>, comp: &CrateComposition) -> GenFile {
         b.push_str(&format!("pub mod {m};\n"));
     }
     b.push_str("pub mod prelude;\n");
-    // No crate-level SPEC_VERSION const (owner ruling 2026-08-05, #1942): a
+    // No crate-level SPEC_VERSION const (owner ruling 2026-08-05): a
     // multi-generation crate has no single implemented spec version — the
     // `Generation` enum is the authority (per-variant `spec_version()`, the
     // derived `Default` marking the current generation). A fixed crate-root
@@ -1238,8 +1231,7 @@ fn single_field_type(
 /// property.
 ///
 /// NOTE: every other container's shape follows its BMM existence and
-/// cardinality — the emission table in this crate's `CLAUDE.md` §Container
-/// shapes carries the adjudication and its citations.
+/// cardinality.
 #[expect(
     clippy::too_many_arguments,
     reason = "the field-shape decision threads the same resolution tables `field_type` takes; bundling them would hide which each renderer reads"

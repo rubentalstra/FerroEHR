@@ -5,26 +5,20 @@
 //! (`docs/specs/openehr/ITS-REST/docs/smart_app_launch/master08-scopes.adoc`
 //! §Scopes ¶2 + §Resource Scopes; master07 §Context Selection).
 //!
-//! This module is **pure**: [`evaluate`] takes the caller's parsed
-//! [`SmartScope`]s and the operation axes the ABAC PEP already resolves
-//! (`ResourceKind × AccessMode`, plus the resolved template id / query name) and
-//! returns an allow/deny decision together with the compartment binding the PEP
-//! must additionally enforce. It holds no state and issues no responses — the
-//! `403` mapping and the patient-compartment `ehrId` binding stay in the PEP,
-//! AND-composed after RBAC/Cedar (`crate::extensions::access::mod` layering:
-//! `EHR_ACCESS` gate → RBAC → ABAC → this SMART gate).
+//! This module is pure: [`evaluate`] takes the caller's parsed [`SmartScope`]s
+//! and the operation axes the ABAC PEP already resolves, and returns an
+//! allow/deny decision plus the compartment binding the PEP must additionally
+//! enforce. It holds no state and issues no responses — the `403` mapping and
+//! the patient-compartment `ehrId` binding stay in the PEP, AND-composed after
+//! RBAC and Cedar.
 //!
-//! [`evaluate`] is called from `crate::extensions::access::pep` (`smart_decide`
-//! / `smart_gate`), after the RBAC/Cedar `decide(...)` succeeds: the PEP parses
-//! `Principal.scopes` via [`SmartScope::parse_all`], maps the op with
-//! [`family_of_op`] + [`permission_of_op`], feeds the resolved template/query id
-//! and the `GateConfig` (from `SmartConfig::require_smart_scopes`) into
-//! [`evaluate`], routes a [`ScopeDecision::Deny`] to the ABAC `forbidden` 403,
-//! and — on `bind_patient_compartment` — binds the [`launch_context_ehr_id`]
+//! `crate::extensions::access::pep` calls it after the RBAC/Cedar decision
+//! succeeds: the PEP parses `Principal.scopes` with [`SmartScope::parse_all`],
+//! maps the op with [`family_of_op`] and [`permission_of_op`], feeds the
+//! resolved id and the `GateConfig` in, routes a [`ScopeDecision::Deny`] to a
+//! `403`, and on `bind_patient_compartment` binds the [`launch_context_ehr_id`]
 //! against the target EHR through the ABAC subject gate (master07 §Context
-//! Selection). Feeding the granted scopes into the Cedar `User.scopes` attribute
-//! is a purely additive extension left to the authz engine; the built-in gate
-//! here is the spec-mandated floor.
+//! Selection).
 
 #![expect(
     clippy::disallowed_types,

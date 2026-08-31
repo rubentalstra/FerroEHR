@@ -4,19 +4,14 @@
 //! The SPDX licensing header every emitted file carries (REUSE Specification
 //! 3.3, <https://reuse.software/spec-3.3/>).
 //!
-//! The repository declares licensing in bulk by glob in `REUSE.toml`, which is
-//! complete but does not travel with a file that is copied out. The
-//! specification's stated purpose is that licensing "is preserved when the file
-//! is copied and reused by third parties", which only a header inside the file
-//! achieves — and a generated file can only get one from here, because a hand
-//! edit is overwritten by the next `emit`.
+//! The repository's bulk `REUSE.toml` glob declaration does not travel with a
+//! file that is copied out, and the specification asks that licensing "is
+//! preserved when the file is copied and reused by third parties", which only an
+//! in-file header achieves.
 //!
-//! Placement: the header follows the `// @generated … DO NOT EDIT.` banner
-//! rather than preceding it, because that banner's presence ON THE FIRST LINE is
-//! what the purge, the sibling-impl loader and the comment-style guard all key
-//! on. REUSE asks for the header "as close to the top of the file as possible",
-//! and line two is as close as it gets in a file whose first line must warn a
-//! human not to edit it.
+//! The header follows the `// @generated … DO NOT EDIT.` banner rather than
+//! preceding it: that banner's presence on the FIRST line is what the purge, the
+//! sibling-impl loader and the comment-style guard key on.
 
 // Everything below WRITES SPDX tags rather than carrying them, and `reuse
 // lint` reads a tag wherever it appears — the specification's own remedy for a
@@ -24,11 +19,8 @@
 // REUSE-IgnoreStart
 
 /// This project's own copyright holder, spelled as the repository's
-/// `REUSE.toml` spells it.
-///
-/// A header that disagreed with the glob declaration covering the same file
-/// would make two different statements about one file, which is the drift this
-/// whole arrangement exists to prevent.
+/// `REUSE.toml` spells it, so a header and the glob declaration covering the
+/// same file cannot disagree.
 pub(crate) const PROJECT_COPYRIGHT: &str = "FerroEHR contributors";
 
 /// The copyright holder of the openEHR material a published spec crate carries

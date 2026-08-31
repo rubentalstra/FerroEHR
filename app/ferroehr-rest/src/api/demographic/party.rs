@@ -1,11 +1,11 @@
 // SPDX-FileCopyrightText: FerroEHR contributors
 // SPDX-License-Identifier: MIT
 
-//! The per-kind party CRUD operations (`{kind}_{create,get,update,delete}`) —
-//! `operations/person_create.yaml`, `person_get.yaml`, `person_update.yaml`,
-//! `person_delete.yaml` (and the field-identical `agent_*`/`group_*`/
-//! `organisation_*`/`role_*`). Party bodies use the **LOCATABLE** content
-//! negotiation (`Accept_LOCATABLE`/`ContentType_LOCATABLE`): canonical JSON + XML.
+//! The per-kind party CRUD operations (`{kind}_{create,get,update,delete}`).
+//!
+//! Spec: `operations/person_{create,get,update,delete}.yaml` and the
+//! field-identical `agent_*`/`group_*`/`organisation_*`/`role_*`. Party bodies
+//! use the LOCATABLE content negotiation: canonical JSON and XML.
 
 #![expect(
     clippy::disallowed_types,
@@ -53,12 +53,7 @@ pub(super) async fn run(
             // All per-kind `*CreateParams` are field-identical; reuse one.
             let _p = params::build::<AgentCreateParams>(&parts.path, q, h)?;
             let body = decode_party_body(kind, h, &parts.body, state.config().spec_profile)?;
-            // The wrapper-header tags are judged BEFORE the commit, so a
-            // defective tag refuses the request while nothing is durable.
             let pending_tags = pending_party_tags(h)?;
-            // person_create.yaml declares 201/400/422/404; a service NotFound
-            // maps to 404, PreconditionViolation to 400, ContentInvalid to 422
-            // (overview::error::sm_api_error) — `?` routes each to its status.
             let mut resp = state
                 .backend()
                 .party_create(
@@ -70,12 +65,9 @@ pub(super) async fn run(
                     )?,
                 )
                 .await?;
-            // the incoming `openehr-item-tag` request header (person_create.yaml)
-            // carries ITEM_TAGs to persist. The party must exist first
-            // (`item_tag.target_vo_id` FK), so tags are persisted after the create
-            // and the stored set is reflected on the response metadata seam.
+            // The party must exist first (`item_tag.target_vo_id` FK), so the
+            // request-header tags are persisted after the create.
             persist_request_tags(&state, kind, pending_tags, &mut resp).await?;
-            // 201 + ETag/Location; body per Prefer; + item-tag response headers.
             let mut out = write_party(
                 kind,
                 h,
@@ -103,8 +95,8 @@ pub(super) async fn run(
             let p = params::build::<AgentUpdateParams>(&parts.path, q, h)?;
             let uid = p.uid_based_id.clone();
             let body = decode_party_body(kind, h, &parts.body, state.config().spec_profile)?;
-            // The wrapper-header tags are judged BEFORE the commit, so a
-            // defective tag refuses the request while nothing is durable.
+            // Judged before the commit, so a defective tag refuses the request
+            // while nothing is durable.
             let pending_tags = pending_party_tags(h)?;
             match state
                 .backend()
@@ -124,9 +116,6 @@ pub(super) async fn run(
                 .await
             {
                 Ok(mut resp) => {
-                    // persist any `openehr-item-tag` request-header tags
-                    // against the updated party and reflect the stored set on the
-                    // response metadata (person_update.yaml).
                     persist_request_tags(&state, kind, pending_tags, &mut resp).await?;
                     let mut out = write_party(
                         kind,
@@ -159,19 +148,17 @@ pub(super) async fn run(
     }
 }
 
-/// Apply the `openehr-item-tag` / `openehr-version-item-tag` write-wrapper
-/// request headers to the just-written party, mirroring the EHR side
+/// Applies the `openehr-item-tag` / `openehr-version-item-tag` write-wrapper
+/// request headers to the just-written party
 /// (`Requests_and_responses.md` §"openehr-item-tag and openehr-version-item-tag"
-/// §Usage in Requests): the two headers address DISTINCT collections —
-/// `openehr-item-tag` replaces the `VERSIONED_OBJECT` container's tags
-/// (addressed by the bare object id) and `openehr-version-item-tag` the
-/// just-committed VERSION's own tags (addressed by the full `version_uid`).
-/// A present-but-empty header clears its collection; an absent header leaves
-/// its collection untouched and echoes nothing. The stored sets ride the
-/// response metadata per header so the echo confirms exactly what each target
-/// now holds. Both headers are accepted on create AND update — the released
-/// update declares `openehr-version-item-tag` and its own prose says
-/// "`openehr-item-tag` or `openehr-version-item-tag`" (adjudicated).
+/// §Usage in Requests).
+///
+/// The two headers address distinct collections: `openehr-item-tag` replaces the
+/// `VERSIONED_OBJECT` container's tags, `openehr-version-item-tag` the
+/// just-committed VERSION's own. A present-but-empty header clears its
+/// collection; an absent one leaves it untouched and echoes nothing. Both are
+/// accepted on create and update, per the released update's own prose
+/// ("`openehr-item-tag` or `openehr-version-item-tag`").
 async fn persist_request_tags(
     state: &AppState,
     kind: PartyKind,
@@ -189,13 +176,9 @@ async fn persist_request_tags(
         return Ok(());
     };
     // The VERSIONED_OBJECT the `openehr-item-tag` header addresses is the
-    // `object_id` of the committed version's OBJECT_VERSION_ID, read through
-    // the BASE accessor (`base_types` §Functions `object_id`;
-    // `docs/specs/openehr/BASE/docs/UML/classes/org.openehr.base.base_types.object_version_id.adoc`)
-    // rather than a local `::` split.
-    // The just-committed version uid is server-minted through the BASE
-    // construction door, so it parses; a value that does not is a server fault,
-    // never a client one.
+    // committed version's `OBJECT_VERSION_ID.object_id`, read through the BASE
+    // accessor (`base_types` §Functions) rather than a local `::` split. The uid
+    // is server-minted, so a value that fails to parse is a server fault.
     let container_uid = ObjectVersionId::new(version_uid.clone())
         .map_err(|e| {
             crate::overview::error::internal_fault(
@@ -228,7 +211,7 @@ async fn persist_request_tags(
 }
 
 /// The `ITEM_TAG` lists a party write's wrapper headers ask for, parsed and
-/// invariant-checked **before** the party is committed.
+/// invariant-checked before the party is committed.
 #[derive(Debug, Default)]
 struct PendingPartyTags {
     /// What `openehr-item-tag` asks to store on the `VERSIONED_OBJECT`.
@@ -237,10 +220,11 @@ struct PendingPartyTags {
     version: Option<Vec<UpdateItemTag>>,
 }
 
-/// Parse and validate both wrapper headers BEFORE the party write, mirroring
-/// the EHR side ([`crate::api::ehr::pending_item_tags`]): a defective tag
-/// header refuses the request while nothing is durable, and the tag WRITE stays
-/// after the commit because the tags target the version that commit mints.
+/// Parses and validates both wrapper headers before the party write, mirroring
+/// [`crate::api::ehr::pending_item_tags`].
+///
+/// A defective tag header refuses the request while nothing is durable; the tag
+/// write stays after the commit, because the tags target the version it mints.
 ///
 /// # Errors
 /// [`ApiError::BadRequest`] for a malformed header entry;
@@ -259,10 +243,9 @@ fn pending_party_tags(h: &HeaderMap) -> Result<PendingPartyTags, RestError> {
     })
 }
 
-/// One header's parsed entries → the demographic group's write DTOs, refusing
-/// any entry the RM `ITEM_TAG` invariants reject
-/// ([`crate::overview::params::validate_item_tag_entries`] — the one judgement
-/// both tag families share).
+/// Converts one header's parsed entries into the demographic group's write
+/// DTOs, refusing any entry the RM `ITEM_TAG` invariants reject
+/// ([`crate::overview::params::validate_item_tag_entries`]).
 fn validated_party_entries(
     entries: Option<Vec<params::ItemTagHeaderEntry>>,
     name: &str,
@@ -283,32 +266,25 @@ fn validated_party_entries(
     ))
 }
 
-/// `DELETE /demographic/{kind}/{uid_based_id}` — logical delete → `204` + the
-/// deleted version's `ETag` (no `Location`: overview §"Deprecated headers"
-/// deprecates `Location` on `DELETE` responses, §Location scopes it to
-/// creation/redirect).
+/// Logically deletes a party: `204` plus the deleted version's `ETag`, and no
+/// `Location` (overview §"Deprecated headers" deprecates it on `DELETE`).
 ///
-/// `person_delete.yaml` places the `preceding_version_uid` to delete in the
-/// **path** (`uid_based_id_as_version_uid` — an `OBJECT_VERSION_ID`), not in an
-/// `If-Match` header. Responses: `204_version_deleted`, `400_already_deleted`,
-/// `404`, `409_PERSON_with_uid_based_id` (supplied uid doesn't match the latest
-/// version; returns the latest `version_uid` in `ETag`).
+/// `person_delete.yaml` places the `preceding_version_uid` in the path, not in
+/// an `If-Match` header. Responses: `204_version_deleted`,
+/// `400_already_deleted`, `404`, and `409_PERSON_with_uid_based_id` when the
+/// supplied uid is not the latest version.
 async fn run_delete(
     state: &AppState,
     kind: PartyKind,
     parts: &RequestParts,
 ) -> Result<Response, RestError> {
     let h = &parts.headers;
-    // The generated `*DeleteParams` carries only `uid_based_id` (the preceding
-    // version_uid). All per-kind delete params are field-identical; reuse one.
+    // All per-kind delete params are field-identical; reuse one.
     let p = params::build::<AgentDeleteParams>(&parts.path, parts.query.as_deref(), h)?;
     let preceding = p.uid_based_id.clone();
-    // The service signals a stale uid via `version_mismatch` (→ 409, with the
-    // latest `version_uid` echoed in `ETag`) and an already-deleted target via
-    // `precondition_violation` (→ 400_already_deleted).
     // NOTE: the preceding version comes from the path `uid_based_id`, so
-    // `If-Match` is accepted but never required — ITS-REST overview §"If-Match
-    // and accidental overwrites" requires it only when the path lacks it.
+    // `If-Match` is accepted but never required — overview §"If-Match and
+    // accidental overwrites" requires it only when the path lacks it.
     match state
         .backend()
         .party_delete(
@@ -323,12 +299,11 @@ async fn run_delete(
         .await
     {
         Ok(resp) => {
-            // 204_version_deleted: the deleted version's ETag, no Location.
             let mut out = negotiate::empty(StatusCode::NO_CONTENT);
             super::set_versioning_headers(&mut out, resp.meta.as_ref());
             Ok(out)
         }
-        // 409_PERSON_with_uid_based_id: supplied uid_based_id ≠ latest version.
+        // 409_PERSON_with_uid_based_id: the supplied uid is not the latest.
         Err(e) if e.status == CallStatusType::VersionMismatch => {
             let meta = state
                 .backend()
@@ -341,21 +316,16 @@ async fn run_delete(
                 meta.as_ref(),
             ))
         }
-        // 400_already_deleted (precondition_violation → 400) and 404 (not-found
-        // family) map through overview::error::sm_api_error.
         Err(e) => Err(RestError::from(e)),
     }
 }
 
-/// Decode a party request body (canonical JSON or XML) into the concrete
-/// `openehr-rm` party type of the ROUTED kind, carried as the RM `PARTY` the
-/// service seam takes.
+/// Decodes a party request body into the concrete `openehr-rm` party type of the
+/// routed kind, carried as the RM `PARTY` the service seam takes.
 ///
 /// The routed kind picks the type, so a body whose `_type` names a different
-/// party class is refused by the strict reader itself — the parse class,
-/// `400` (ITS-REST overview `Requests_and_responses.md` §HTTP status codes:
-/// content that "could not be parsed or is invalid"). No later `_type`
-/// comparison is possible or needed: the value's class IS the route's.
+/// party class is refused by the strict reader itself — the parse class, `400`
+/// (overview `Requests_and_responses.md` §HTTP status codes).
 fn decode_party_body(
     kind: PartyKind,
     h: &HeaderMap,
@@ -387,24 +357,20 @@ fn decode_party_body(
     }
 }
 
-/// Decode one concrete party kind through the ACTIVE profile's acceptance
+/// Decodes one concrete party kind through the active profile's acceptance
 /// boundary.
 ///
-/// Under the STABLE profile a canonical-JSON body is read by the RM 1.1.0
-/// generation's own strict reader first, because the released generation's
-/// surface admits `PARTY.reverse_relationships`
-/// (`RM/docs/UML/classes/org.openehr.rm.demographic.party.adoc` 1.1.0;
-/// upstream SPECRM-124, `RM/docs/demographic/master00-amendment_record.adoc`,
-/// removed it in the development line) — the development reader refuses it
-/// as an undeclared key, and refusing a valid instance of the advertised
-/// generation would invent a prohibition. The validated value then enters
-/// the typed core with that one attribute dropped: SPECRM-124 records it as
-/// the computed inverse of `relationships`, so the server re-derives it and
-/// persists nothing the payload's copy adds.
+/// Under the stable profile a canonical-JSON body is read by the RM 1.1.0
+/// generation's own strict reader first, because that generation's surface
+/// admits `PARTY.reverse_relationships`
+/// (`RM/docs/UML/classes/org.openehr.rm.demographic.party.adoc` 1.1.0, removed
+/// in the development line by SPECRM-124) and the development reader would
+/// refuse it as an undeclared key. The validated value then enters the typed
+/// core with that attribute dropped: SPECRM-124 records it as the computed
+/// inverse of `relationships`, so the server re-derives it.
 ///
 /// The XML branch needs no profile split: the XSD-grounded reader skips
-/// undeclared elements in every profile, so a 1.1.0 `reverse_relationships`
-/// element is already tolerated there.
+/// undeclared elements in every profile.
 fn rm_party<Stable, Current>(
     h: &HeaderMap,
     body: &bytes::Bytes,
@@ -434,7 +400,7 @@ where
         .map_err(|e| ApiError::BadRequest(format!("invalid canonical JSON body: {e}")))
 }
 
-/// Render a party body as JSON or canonical XML (monomorphized per kind).
+/// Renders a party body as JSON or canonical XML, monomorphized per kind.
 fn respond_party(
     kind: PartyKind,
     h: &HeaderMap,
@@ -452,15 +418,13 @@ fn respond_party(
     }
 }
 
-/// A create/update response honouring `Prefer` and setting the demographic
-/// `ETag`/`Last-Modified` + the `Location` of the version this write committed
-/// (overview §Location — creation/redirect only; §"Prefer minimal…" — "the
-/// newly created or updated resource").
+/// Builds a create/update response honouring `Prefer` and setting the
+/// demographic `ETag`/`Last-Modified` plus the `Location` of the committed
+/// version (overview §Location, §"Prefer minimal…").
 ///
-/// The body + `Preference-Applied` go through the shared
-/// [`negotiate::write_negotiated`] seam, so a demographic write honours the
-/// full `Prefer` triad (representation / identifier / minimal) and declares
-/// the preference it applied exactly like every other write route.
+/// The body and `Preference-Applied` go through the shared
+/// [`negotiate::write_negotiated`] seam, so a demographic write honours the full
+/// `Prefer` triad and declares the preference it applied.
 fn write_party(
     kind: PartyKind,
     h: &HeaderMap,
@@ -480,10 +444,11 @@ fn write_party(
     out
 }
 
-/// A `200 OK` read of a party, setting the demographic `ETag`/`Last-Modified`
-/// and the `ITEM_TAG` response headers (`person_get.yaml`). No `Location` —
-/// overview §Location: the header "MUST NOT be used to indicate an alternate
-/// representation of an existing resource (e.g. via `GET` method)".
+/// Serves a `200 OK` read of a party with the demographic `ETag`/`Last-Modified`
+/// and `ITEM_TAG` response headers (`person_get.yaml`).
+///
+/// No `Location`: it "MUST NOT be used to indicate an alternate representation
+/// of an existing resource" (overview §Location).
 fn read_party(kind: PartyKind, h: &HeaderMap, resp: &ServiceResponse) -> Response {
     let mut out = respond_party(kind, h, StatusCode::OK, &resp.body);
     super::set_versioning_headers(&mut out, resp.meta.as_ref());

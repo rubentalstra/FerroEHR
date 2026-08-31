@@ -64,15 +64,14 @@ pub(super) async fn list_all(
     ))
 }
 
-/// `PUT …/definition/query/{qualified_query_name}` — store/upsert a query
-/// (server-assigned SEMVER).
+/// Stores or upserts a query at a server-assigned SEMVER
+/// (`PUT …/definition/query/{qualified_query_name}`).
 ///
-/// the `query_type` query parameter (default `AQL`,
-/// `parameters/query/query_type.yaml`) is now read and threaded to the store —
-/// no longer silently dropped. The store persists the declared formalism and,
-/// per `QUERY_DESCRIPTOR.formalism` ("may be any other string value"), an
-/// unsupported non-AQL formalism gets an honest unsupported-formalism reject
-/// (not a blanket "invalid AQL" 400).
+/// The `query_type` query parameter (default `AQL`,
+/// `parameters/query/query_type.yaml`) is threaded to the store, which persists
+/// the declared formalism; per `QUERY_DESCRIPTOR.formalism` ("may be any other
+/// string value") an unsupported non-AQL formalism gets an honest
+/// unsupported-formalism reject rather than a blanket "invalid AQL" 400.
 pub(super) async fn store(state: &AppState, parts: &RequestParts) -> Result<Response, RestError> {
     let h = &parts.headers;
     let p =

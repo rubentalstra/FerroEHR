@@ -23,7 +23,7 @@
 //! NOTE: `Min_hour_valid`/`Max_hour_valid` also require `hour > 0`, which would
 //! refuse `+00:00` while the same class defines `is_gmt` as "timezone `+0000`"
 //! — a released-text contradiction, adjudicated in `iso8601_parse.rs` in favour
-//! of `is_gmt` (reported as #2260), so the offset bounds enforced here are
+//! of `is_gmt`, so the offset bounds enforced here are
 //! `hour <= Min_timezone_hour` (west) and `hour <= Max_timezone_hour` (east).
 //!
 //! NOTE: the class doc's §Functions entry for `minute` reads "Extract the hour

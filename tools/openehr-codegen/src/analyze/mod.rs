@@ -5,15 +5,12 @@
 //!
 //! Consumes the loaded [`crate::load::bmm`] schemas and produces the semantic
 //! facts the later stages need: the merged include-closure ([`Model`]), the
-//! polymorphic seams (descendant/variant sets), the ownership graph and the
-//! back-reference edges that break its cycles, the constructibility proof, and
-//! the cross-schema re-emission closure. These are analysis results computed
-//! from the model — the text producers live in [`crate::render`], the shape
-//! decisions in [`crate::plan`].
+//! polymorphic seams, the ownership graph and the back-reference edges that
+//! break its cycles, the constructibility proof, and the cross-schema
+//! re-emission closure.
 //!
-//! The split runs through [`Model`]'s type resolution: the graph facts are here
-//! (which bounds fill a bare generic reference, which spec names a rendered type
-//! embeds), while the Rust type *text* they feed is a second `impl` block in
+//! [`Model`]'s type resolution splits across stages: the graph facts are here,
+//! while the Rust type TEXT they feed is a second `impl` block in
 //! [`crate::render::model_types`].
 
 use crate::load::bmm::{BmmClass, BmmPropKind, BmmSchema, BmmType};
@@ -789,7 +786,7 @@ pub(crate) fn nonempty_list_attribute(expression: &str) -> Option<String> {
 
 /// The `(declaring class, attribute)` pairs of every OPTIONAL container
 /// attribute carrying a present-implies-non-empty class invariant — emitted
-/// `Option<NonEmptyVec<T>>` so present-but-empty is unrepresentable (#1730).
+/// `Option<NonEmptyVec<T>>` so present-but-empty is unrepresentable.
 pub(crate) fn nonempty_optional_lists_cached(model: &Model) -> &BTreeSet<(String, String)> {
     model
         .nonempty_memo

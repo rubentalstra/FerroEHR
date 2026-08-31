@@ -3,51 +3,29 @@
 
 //! `OpenAPI` document + Swagger UI (discoverability).
 //!
-//! No openEHR spec governs an OAS-serving endpoint; this is our own surface. The
-//! Swagger UI's spec selector shows **only documents this server generates
-//! itself** — never a vendored OAS. Its entries are one filtered document per
-//! API family (`FAMILIES`, each served at
-//! `{api-docs}/ferroehr-{family}.openapi.json`) plus, last, the **complete
-//! server surface** — and every one of them is derived from that single
-//! composed document, which is built natively from every `#[utoipa::path]`
-//! handler via `utoipa-axum`'s [`OpenApiRouter`] (`.into_openapi()` per area,
-//! merged here):
+//! No openEHR spec governs an OAS-serving endpoint — our own surface. The
+//! Swagger UI's spec selector shows only documents this server generates itself,
+//! never a vendored OAS: one filtered document per API family (`FAMILIES`, at
+//! `{api-docs}/ferroehr-{family}.openapi.json`) plus the complete server surface
+//! last, each derived from the single composed document built natively from
+//! every `#[utoipa::path]` handler via `utoipa-axum`'s [`OpenApiRouter`]. Route
+//! and `OpenAPI` path are single-sourced from one handler, so the document
+//! cannot drift from the router. The vendored ITS-REST OAS bundles are codegen
+//! input for the generated group contract only, and are never served.
 //!
-//! - the standardised **ITS-REST API groups** — EHR / COMPOSITION / CONTRIBUTION
-//!   / DIRECTORY / DEMOGRAPHIC / DEFINITION / QUERY / ADMIN
-//!   (`crate::api::api_doc`);
-//! - the own-design extension groups (terminology, `PARTY_RELATIONSHIP`,
-//!   event-subscription, multi-tenancy, FHIR connector);
-//! - the always-on public health family (`/health`, `/health/liveness`,
-//!   `/health/readiness`), the `/status` endpoints, the management surface, the
-//!   SMART discovery document, and these `OpenAPI` endpoints.
+//! Authentication in the document is config-driven: the served document declares
+//! exactly the one scheme in effect per [`AuthConfig`] (`openehr_auth`, bearer
+//! JWT when OIDC is configured, else HTTP Basic; none when auth is disabled), so
+//! the Swagger "Authorize" dialog and the per-endpoint padlocks match the running
+//! server. The lock is applied to the authenticated surfaces only.
 //!
-//! Route and `OpenAPI` path are single-sourced from one `#[utoipa::path]` handler —
-//! the document cannot drift from the router. The vendored ITS-REST OAS bundles
-//! are only the **codegen input** for the generated group contract (`openehr-its`
-//! `emit-rest`); they are never served (owner rule: we serve only what we
-//! generate, never a vendored OAS).
-//!
-//! **Authentication in the document is config-driven** (owner requirement): the
-//! server accepts Basic *or* OAuth2/OIDC bearer per [`AuthConfig`], and the
-//! served document declares exactly the one scheme in effect (`openehr_auth`,
-//! bearer JWT when OIDC is configured, else HTTP Basic) — never both, and none
-//! when auth is disabled — so the Swagger "Authorize" dialog and the per-endpoint
-//! padlocks match the running server. The lock is applied to the authenticated
-//! surfaces (the API-nested extension groups + the management surface); the
-//! public endpoints (the health family, `/status`, SMART discovery, these OAS
-//! endpoints) carry no requirement.
-//!
-//! The UI assets are served through [`utoipa_swagger_ui::serve`] directly rather
-//! than [`utoipa_swagger_ui::SwaggerUi`]'s router, and the mount path redirects
-//! to `index.html` UNDER the mount. Both halves are load-bearing. The dist
-//! `index.html` references its assets relatively (`./swagger-ui.css`), so a body
-//! served at the slash-less mount path renders empty — the browser resolves them
-//! against the parent directory and every one `404`s. And the redirect target
-//! cannot be the trailing-slash form, which is what `SwaggerUi`'s own router
-//! answers with: the serve-time `NormalizePathLayer` strips the slash before
-//! routing, so that is an infinite loop. `index.html` has no trailing slash to
-//! strip.
+//! The UI assets are served through [`utoipa_swagger_ui::serve`] rather than
+//! [`utoipa_swagger_ui::SwaggerUi`]'s router, and the mount path redirects to
+//! `index.html` under the mount. Both halves are load-bearing: the dist
+//! `index.html` references its assets relatively, so a body served at the
+//! slash-less mount path renders empty, and the trailing-slash target
+//! `SwaggerUi`'s own router answers with is an infinite loop under the
+//! serve-time `NormalizePathLayer`.
 
 use std::sync::Arc;
 
@@ -149,8 +127,8 @@ const SECURITY_SCHEME: &str = "openehr_auth";
                        outside it — our own design."
     ),
     tags(
-        // ITS-REST resource tags (categorised exactly as the vendored group OAS
-        // documents do — one tag per RM resource, cross-referenced by path).
+        // One tag per RM resource, exactly as the vendored group OAS documents
+        // categorise them.
         (name = "EHR", description = "Management of EHRs — create/retrieve; physical delete (Admin API)."),
         (name = "EHR_STATUS", description = "Management of EHR_STATUS and its VERSIONED_EHR_STATUS reads."),
         (name = "COMPOSITION", description = "Management of COMPOSITION and its VERSIONED_COMPOSITION reads."),
@@ -208,10 +186,8 @@ struct ExtensionsInfo;
 pub fn extensions_document(cfg: &AppConfig) -> utoipa::openapi::OpenApi {
     let mut doc = ExtensionsInfo::openapi();
 
-    // Public (no lock): the always-on health family, operational status, SMART
-    // discovery, the OAS meta-endpoints. The health family is mounted at the
-    // process root and is base-path-independent by design, so it needs no
-    // re-homing; everything else here follows the configured paths.
+    // Public (no lock). The health family is mounted at the process root and is
+    // base-path-independent, so it needs no re-homing.
     doc.merge(health::openapi());
     let rest_root = cfg
         .server
@@ -220,15 +196,13 @@ pub fn extensions_document(cfg: &AppConfig) -> utoipa::openapi::OpenApi {
         .unwrap_or(&cfg.server.base_path);
     doc.merge(status::openapi(rest_root));
     doc.merge(crate::smart::discovery::openapi(cfg, rest_root));
-    // The System API's OPTIONS operation — a closure route mounted outside
-    // OpenApiRouter (above CORS), documented via its twin.
+    // The System API's OPTIONS operation is a closure route mounted outside
+    // `OpenApiRouter` (above CORS), documented via its twin.
     doc.merge(crate::api::system::options::openapi(&cfg.server.base_path));
     doc.merge(meta_openapi(cfg));
 
-    // Authenticated: the management surface + the entire API surface (every
-    // ITS-REST standard group + the own-design extension groups, all behind the
-    // auth layer). Paths for the API groups are nested under the configured base
-    // path so they read as full server paths.
+    // Authenticated: the management surface plus the entire API surface, nested
+    // under the configured base path so the paths read as full server paths.
     let mut protected = management::openapi();
     protected.merge(crate::api::api_doc(&cfg.server.base_path));
 
@@ -244,12 +218,10 @@ pub fn extensions_document(cfg: &AppConfig) -> utoipa::openapi::OpenApi {
             .add_security_scheme(SECURITY_SCHEME, scheme);
     }
 
-    // The implemented openEHR ITS-REST contract identity, stated as a
-    // document-level `x-` extension so it is machine-readable and cannot be
-    // confused with `info.version` (the product SemVer). The value is the one
-    // shared provenance constant every identity surface reports, so the
-    // document, `/status`, management `/info`, and the System Options manifest
-    // cannot drift apart.
+    // A document-level `x-` extension, so the contract identity is
+    // machine-readable and cannot be confused with `info.version` (the product
+    // SemVer). The value is the shared provenance constant every identity
+    // surface reports, so they cannot drift apart.
     doc.extensions = Some(utoipa::openapi::extensions::Extensions::from_iter([(
         ITS_REST_EXTENSION,
         provenance::ITS_REST,
@@ -259,19 +231,20 @@ pub fn extensions_document(cfg: &AppConfig) -> utoipa::openapi::OpenApi {
 }
 
 /// The document-level extension key carrying the implemented openEHR ITS-REST
-/// contract version. An `x-` prefixed key is the OAS-sanctioned place for
-/// vendor data (`https://spec.openapis.org/oas/v3.1.0#specification-extensions`).
+/// contract version.
+///
+/// An `x-` prefixed key is the OAS-sanctioned place for vendor data
+/// (<https://spec.openapis.org/oas/v3.1.0#specification-extensions>).
 const ITS_REST_EXTENSION: &str = "x-openehr-its-rest";
 
-/// Move one declared `#[utoipa::path]` literal to the path the live router
-/// actually mounts.
+/// Moves one declared `#[utoipa::path]` literal to the path the live router
+/// mounts.
 ///
-/// A `#[utoipa::path]` path is a string literal, so a declaration can only
-/// spell the DEFAULT deployment. A non-default `server.base_path` (or SMART
-/// `platform_base_url`) moves the live mount, and the served document must
-/// follow it — otherwise the document advertises a path this deployment does
-/// not serve. No openEHR spec governs where a server roots its API — our own
-/// design/extension. A no-op when the live path equals the declared one.
+/// A declared path is a string literal, so it can only spell the default
+/// deployment; a non-default `server.base_path` moves the live mount and the
+/// served document must follow, or it advertises a path this deployment does not
+/// serve. A no-op when the two are equal. No openEHR spec governs where a server
+/// roots its API — our own design/extension.
 pub(crate) fn rehome_path(doc: &mut utoipa::openapi::OpenApi, declared: &str, live: &str) {
     if live != declared
         && let Some(item) = doc.paths.paths.remove(declared)
@@ -280,11 +253,12 @@ pub(crate) fn rehome_path(doc: &mut utoipa::openapi::OpenApi, declared: &str, li
     }
 }
 
-/// The single security scheme the running server advertises, or `None` when
-/// authentication is disabled. Bearer JWT when OIDC is configured, else HTTP
-/// Basic — never both (owner requirement: one clean scheme per config). No
-/// openEHR spec governs the authorization scheme (ITS-REST places it out of
-/// band) — our own operational choice.
+/// Returns the single security scheme the running server advertises, or `None`
+/// when authentication is disabled.
+///
+/// Bearer JWT when OIDC is configured, else HTTP Basic — never both. No openEHR
+/// spec governs the authorization scheme (ITS-REST places it out of band) — our
+/// own operational choice.
 fn advertised_scheme(auth: &AuthConfig) -> Option<SecurityScheme> {
     if !auth.enabled {
         return None;
@@ -303,8 +277,8 @@ fn advertised_scheme(auth: &AuthConfig) -> Option<SecurityScheme> {
     }
 }
 
-/// Stamp the single `openehr_auth` security requirement onto every operation in
-/// `doc` (the per-endpoint padlock in Swagger).
+/// Stamps the single `openehr_auth` security requirement onto every operation in
+/// `doc`, the per-endpoint padlock in Swagger.
 fn require_auth(doc: &mut utoipa::openapi::OpenApi) {
     let requirement = SecurityRequirement::new(SECURITY_SCHEME, Vec::<String>::new());
     for item in doc.paths.paths.values_mut() {
@@ -328,30 +302,21 @@ fn require_auth(doc: &mut utoipa::openapi::OpenApi) {
 
 // ── The OAS meta-endpoints (documented + served by real handlers) ─────────────
 
-/// The served `OpenAPI` JSON document — the complete server surface
-/// (`GET /ferroehr/rest/api-docs/openapi.json`).
+/// Serves the complete server-surface `OpenAPI` JSON document.
 ///
 /// No openEHR spec governs an OAS-serving endpoint — our own discoverability
-/// surface. Public (no auth requirement) and always `200 application/json`.
-/// Config-gated by the Swagger UI: when it is disabled the route is not mounted
-/// and the path is absent (a router `404`). This handler carries the
+/// surface. Public, always `200 application/json`, and config-gated by the
+/// Swagger UI (a router `404` when disabled). This handler carries the
 /// `#[utoipa::path]` metadata that puts the endpoint into the composed document
-/// (via [`meta_openapi`]); the **live** route serves the document pre-serialized
-/// once at assembly ([`prebuild_docs`], [`swagger_router`]), so this body runs
-/// only if the endpoint is ever mounted directly.
+/// ([`meta_openapi`]); the live route serves the document pre-serialized at
+/// assembly ([`prebuild_docs`], [`swagger_router`]), so this body runs only if
+/// the endpoint is mounted directly.
 ///
-/// Sibling routes under the same `api-docs` root: the per-family filtered
-/// documents (`ferroehr-{family}.openapi.json`, documented by
-/// [`family_openapi_json`]) and — under the Swagger UI mount, not here — the
-/// embedded asset route (`{ui_path}/{*file}`), a plain static-file route that
-/// serves the UI's own JS/CSS/font bundle and answers `404` for an unknown
-/// asset. That asset route is deliberately NOT declared as an operation: it is
-/// UI packaging, carries no API contract, and its file set is the vendored
-/// `utoipa-swagger-ui` distribution rather than anything this server defines.
-///
-/// The declared path is the DEFAULT deployment spelling; the served document
-/// carries whatever `server.openapi_json_path()` resolves to
-/// ([`meta_openapi`] re-homes it).
+/// The sibling per-family documents are declared by [`family_openapi_json`]. The
+/// UI asset route is deliberately not declared as an operation: it is UI
+/// packaging from the vendored `utoipa-swagger-ui` distribution, with no API
+/// contract of its own. The declared path is the default deployment spelling;
+/// [`meta_openapi`] re-homes it.
 #[utoipa::path(
     get, path = "/ferroehr/rest/api-docs/openapi.json", tag = "openapi",
     responses((status = 200, description = "The complete server-surface `OpenAPI` document (JSON).", body = serde_json::Value))
@@ -362,18 +327,13 @@ async fn openapi_json(State(state): State<AppState>) -> Response {
     ([(header::CONTENT_TYPE, "application/json")], body).into_response()
 }
 
-/// The Swagger UI mount path (`GET /ferroehr/rest/swagger-ui`).
+/// Answers the Swagger UI mount path with a `307` to `index.html` under it.
 ///
 /// No openEHR spec governs a Swagger UI — our own discoverability surface.
-/// Public (no auth requirement); config-gated by the Swagger UI (absent — a
-/// router `404` — when disabled). Answers `307` to `index.html` under the mount;
-/// the sibling asset route (`{*file}`, a plain route, not documented here)
-/// serves the UI bundle and answers `404` for an unknown asset. The spec
-/// selector offers one document per API family — the standardised ITS-REST
-/// groups (`openEHR — …`, selected by resource path) and the server's own
-/// extensions (`FerroEHR — …`, selected by tag) — each filtered from the one
-/// server-generated composed document, plus that complete document last.
-/// Nothing vendored is served.
+/// Public, and config-gated by the Swagger UI (a router `404` when disabled).
+/// The sibling asset route serves the UI bundle. The spec selector offers one
+/// document per API family plus the complete document last, each filtered from
+/// the one server-generated composed document.
 #[utoipa::path(
     get, path = "/ferroehr/rest/swagger-ui", tag = "openapi",
     responses((status = 307, description = "Redirect to `index.html` under the mount path, \
@@ -383,14 +343,12 @@ async fn swagger_ui_index(State(state): State<AppState>) -> Response {
     redirect_to_index(&state.config().server.swagger_ui_path())
 }
 
-/// The mount path's redirect target: `index.html` under the mount.
+/// Redirects to `index.html` under the mount.
 ///
-/// The dist `index.html` references its assets RELATIVELY (`./swagger-ui.css`,
-/// `./swagger-ui-bundle.js`), so serving it at the slash-less mount path renders
-/// an empty page: the browser resolves those against the parent directory and
-/// every one of them `404`s. The target deliberately names `index.html` rather
-/// than the trailing-slash form, which `NormalizePathLayer` would strip straight
-/// back to this route
+/// The dist `index.html` references its assets relatively, so serving it at the
+/// slash-less mount path renders an empty page. The target names `index.html`
+/// rather than the trailing-slash form, which `NormalizePathLayer` would strip
+/// straight back to this route
 /// (<https://docs.rs/tower-http/latest/tower_http/normalize_path/index.html>).
 fn redirect_to_index(ui_path: &str) -> Response {
     (
@@ -400,26 +358,18 @@ fn redirect_to_index(ui_path: &str) -> Response {
         .into_response()
 }
 
-/// One spec-selector family document
-/// (`GET /ferroehr/rest/api-docs/ferroehr-{family}.openapi.json`).
+/// Declares one spec-selector family document.
 ///
 /// No openEHR spec governs an OAS-serving endpoint — our own discoverability
-/// surface. Public (no auth requirement); config-gated by the Swagger UI
-/// (absent — a router `404` — when disabled). Each document is the ONE
-/// server-generated composed document filtered to a single API family, so it
-/// can never drift from the router and nothing vendored is served.
+/// surface. Public, and config-gated by the Swagger UI. Each document is the one
+/// server-generated composed document filtered to a single API family, so it can
+/// never drift from the router.
 ///
-/// `family` is one of a FIXED set, not a free parameter — the live routes are
-/// twelve static routes, one per family, because an axum path capture spans a
-/// whole segment and cannot match part of the `ferroehr-….openapi.json`
-/// filename. The set is: the standardised ITS-REST groups `ehr`, `query`,
-/// `definition`, `demographic`, `admin`, and the server's own extension
-/// families `management` (status + management + these OAS endpoints),
-/// `terminology`, `relationships` (`PARTY_RELATIONSHIP`), `events`
-/// (event subscriptions), `tenancy`, `fhir` (connector, mapping store and the
-/// ITI-81 audit retrieval), `smart`. Any other value is not routed (`404`).
-/// This one parameterized declaration documents all twelve; the complete
-/// composed document is [`openapi_json`].
+/// `family` is a fixed set, not a free parameter: the live routes are one static
+/// route per family, because an axum path capture spans a whole segment and
+/// cannot match part of the `ferroehr-….openapi.json` filename. Any other value
+/// is not routed (`404`). This one parameterized declaration documents them all;
+/// the complete composed document is [`openapi_json`].
 #[utoipa::path(
     get, path = "/ferroehr/rest/api-docs/ferroehr-{family}.openapi.json", tag = "openapi",
     params(("family" = String, Path,
@@ -440,21 +390,16 @@ fn redirect_to_index(ui_path: &str) -> Response {
 )]
 fn family_openapi_json() {}
 
-/// The OAS meta-endpoints' `OpenAPI`, with every path re-homed to the one the
-/// live router mounts under `cfg` (a non-default `server.base_path` moves the
-/// REST root, and the document must follow — [`rehome_path`]). Public (no auth
-/// requirement).
+/// Returns the OAS meta-endpoints' `OpenAPI`, every path re-homed to the one the
+/// live router mounts under `cfg` ([`rehome_path`]).
 fn meta_openapi(cfg: &AppConfig) -> utoipa::openapi::OpenApi {
     #[derive(OpenApi)]
     #[openapi(paths(family_openapi_json))]
     struct FamilyDocs;
 
-    // These paths exist only when the Swagger surface is mounted
-    // (`crate::router::mount_public_surface` merges `swagger_router` behind the
-    // same flag). Declaring them unconditionally advertised the document's own
-    // URL, the per-family documents and the UI to a client that would get `404`
-    // from all three — inside the generator whose documented property is that
-    // every path it lists is one the live router mounts.
+    // These paths exist only when the Swagger surface is mounted, and the
+    // generator's documented property is that every path it lists is one the
+    // live router mounts.
     if !cfg.server.swagger_ui {
         return utoipa::openapi::OpenApiBuilder::new().build();
     }
@@ -486,12 +431,11 @@ fn meta_openapi(cfg: &AppConfig) -> utoipa::openapi::OpenApi {
 /// How a spec-selector family picks its operations out of the one composed
 /// server document.
 ///
-/// The standardised ITS-REST groups categorise by **resource path** (their
-/// operations carry per-resource tags — `EHR`/`EHR_STATUS`/`COMPOSITION`/…,
-/// exactly as the vendored group OAS documents tag them — so a shared tag no
-/// longer identifies a group; the base-path-relative path root does). The
-/// server's own extensions have no shared path root and are still identified by
-/// **tag**.
+/// The standardised ITS-REST groups categorise by resource path: their
+/// operations carry per-resource tags, exactly as the vendored group OAS
+/// documents tag them, so the base-path-relative path root identifies the group
+/// rather than a shared tag. The server's own extensions have no shared path
+/// root and are identified by tag.
 enum Members {
     /// Operations whose base-path-relative path starts with `include` (on a
     /// segment boundary) and starts with none of `exclude`, PLUS any operation
@@ -499,22 +443,21 @@ enum Members {
     Path {
         include: &'static str,
         exclude: &'static [&'static str],
-        /// Operations that belong to this family although their path is
-        /// outside `include` — the group's own-design routes, which sit under
-        /// sibling paths but are part of the same API group (and would
-        /// otherwise appear in no family document at all).
+        /// Operations belonging to this family although their path is outside
+        /// `include`: the group's own-design routes, which sit under sibling
+        /// paths but are part of the same API group.
         also_tagged: &'static [&'static str],
     },
     /// Operations carrying one of these tags.
     Tags(&'static [&'static str]),
 }
 
-/// Every API family offered as its own selector document:
-/// `(selector name, url slug, membership criterion)`. ALL of them are filtered
-/// from the one server-generated composed document — nothing vendored is served
-/// (the vendored ITS-REST bundles are reference material for authoring our
-/// schemas, never a served artifact) — so each family document inherits the
-/// config-driven security scheme and can never drift from the router.
+/// Every API family offered as its own selector document, as
+/// `(selector name, url slug, membership criterion)`.
+///
+/// All are filtered from the one server-generated composed document, so each
+/// inherits the config-driven security scheme and can never drift from the
+/// router.
 const FAMILIES: &[(&str, &str, Members)] = &[
     // The standardised ITS-REST groups (our generated wire), by resource path.
     (
@@ -561,11 +504,9 @@ const FAMILIES: &[(&str, &str, Members)] = &[
         Members::Path {
             include: "/admin/ehr",
             exclude: &[],
-            // The ADMIN group's own-design routes (template delete, stored-query
-            // version delete, the redacted config read, the activity report, the
-            // archive pair, the dump/load pair and the storage-parity sweep)
-            // live under sibling `/admin/*` paths, not under `/admin/ehr`; they
-            // are part of this group and belong in its document.
+            // The ADMIN group's own-design routes live under sibling
+            // `/admin/*` paths rather than `/admin/ehr`, but belong in this
+            // group's document.
             also_tagged: &[
                 "ADMIN",
                 "admin-report",
@@ -579,9 +520,8 @@ const FAMILIES: &[(&str, &str, Members)] = &[
     (
         "FerroEHR — Status & Management",
         "management",
-        // `system` = the ITS-REST System Options-and-Conformance manifest: a
-        // service-level document that sits beside `/status`, and the one
-        // released operation with no resource path of its own.
+        // `system` is the ITS-REST System Options-and-Conformance manifest, the
+        // one released operation with no resource path of its own.
         Members::Tags(&["status", "management", "openapi", "system"]),
     ),
     (
@@ -597,9 +537,8 @@ const FAMILIES: &[(&str, &str, Members)] = &[
     (
         "FerroEHR — Messaging",
         "messaging",
-        // The SM MESSAGE component realized on our own `/message/` routes
-        // (EHR-Extract export/import + TDD import); the release publishes no
-        // message API, so the whole family is an extension.
+        // The SM MESSAGE component on our own `/message/` routes; the release
+        // publishes no message API, so the whole family is an extension.
         Members::Tags(&["message"]),
     ),
     (
@@ -615,9 +554,8 @@ const FAMILIES: &[(&str, &str, Members)] = &[
     (
         "FerroEHR — FHIR Connector",
         "fhir",
-        // `audit` = the ITI-81 AuditEvent retrieval: a FHIR R4 surface served
-        // under the same `/fhir/r4` root, gated by the local audit repository
-        // rather than by the connector.
+        // `audit` is the ITI-81 AuditEvent retrieval, served under the same
+        // `/fhir/r4` root but gated by the local audit repository.
         Members::Tags(&["fhir", "audit"]),
     ),
     (
@@ -636,14 +574,13 @@ fn on_segment_boundary(rel: &str, prefix: &str) -> bool {
             .is_some_and(|tail| tail.starts_with('/'))
 }
 
-/// A copy of `doc` keeping the paths whose base-path-relative form is under
-/// `include` (segment-boundary) and under none of `exclude` — plus, from every
-/// other path, the individual operations tagged with one of `also_tagged`.
+/// Returns a copy of `doc` keeping the paths whose base-path-relative form is
+/// under `include` and under none of `exclude`, plus the individual operations
+/// tagged with one of `also_tagged`.
 ///
-/// A matched resource path is kept whole (an ITS-REST resource path belongs
-/// entirely to one group); the `also_tagged` operations are picked out
-/// individually, because they share their path item with nothing else in the
-/// group.
+/// A matched resource path is kept whole, since an ITS-REST resource path
+/// belongs entirely to one group; the `also_tagged` operations are picked out
+/// individually.
 fn filter_by_path(
     doc: &utoipa::openapi::OpenApi,
     base_path: &str,
@@ -666,7 +603,7 @@ fn filter_by_path(
     out
 }
 
-/// Drop from `item` every operation not carrying one of `tags`, and report
+/// Drops from `item` every operation not carrying one of `tags`, and reports
 /// whether any operation survived.
 fn retain_tagged_operations(item: &mut utoipa::openapi::path::PathItem, tags: &[&str]) -> bool {
     for op in [
@@ -798,21 +735,18 @@ fn json_document_response(body: Bytes) -> Response {
 
 // ── The Swagger router (serving; kept on the loop-free `serve()` mechanism) ───
 
-/// Build the docs router: the Swagger UI (loop-free), the complete
-/// `openapi.json`, and one filtered JSON document per API family — ALL
-/// server-generated (nothing vendored is served). Config paths come from
-/// [`AppConfig`].
+/// Builds the docs router: the Swagger UI, the complete `openapi.json`, and one
+/// filtered JSON document per API family, all server-generated. Config paths come
+/// from [`AppConfig`].
 pub(crate) fn swagger_router(cfg: &AppConfig) -> Router<AppState> {
     let ui_path = cfg.server.swagger_ui_path();
     let json_path = cfg.server.openapi_json_path();
     let api_docs_root = api_docs_root(&json_path);
 
-    // Build the composed document and every family document ONCE (they are pure
-    // functions of static configuration); every route below serves ready
-    // [`Bytes`], so a request never re-runs utoipa reflection or a deep clone.
+    // Built once — they are pure functions of static configuration — so a
+    // request serves ready bytes and never re-runs utoipa reflection.
     let docs = prebuild_docs(cfg);
 
-    // The complete composed document (tooling + the selector's full entry).
     let full = docs.full;
     let mut router = Router::new().route(
         &json_path,
@@ -822,10 +756,9 @@ pub(crate) fn swagger_router(cfg: &AppConfig) -> Router<AppState> {
         }),
     );
 
-    // One filtered document per API family (standard groups + extensions).
-    // One static route per family: axum path captures span a whole segment,
-    // so a `{family}` embedded inside the `ferroehr-….openapi.json` filename
-    // cannot be a route parameter.
+    // One static route per family: an axum path capture spans a whole segment,
+    // so a `{family}` inside the `ferroehr-….openapi.json` filename cannot be a
+    // route parameter.
     for ((_, slug, _), body) in FAMILIES.iter().zip(docs.families) {
         router = router.route(
             &format!("{api_docs_root}/ferroehr-{slug}.openapi.json"),
@@ -836,10 +769,8 @@ pub(crate) fn swagger_router(cfg: &AppConfig) -> Router<AppState> {
         );
     }
 
-    // The UI itself: assets straight from the embedded dist. The spec-selector
-    // config is also config-static — built once and shared by both the bare
-    // mount path (index.html; serve() maps "" to it — no redirect, no loop) and
-    // the asset path.
+    // Assets straight from the embedded dist; the spec-selector config is
+    // config-static, built once and shared by the mount path and the asset path.
     let config = swagger_config(cfg);
     let redirect_target = ui_path.clone();
     router
@@ -857,12 +788,10 @@ pub(crate) fn swagger_router(cfg: &AppConfig) -> Router<AppState> {
                 async move { serve_ui_file(&file, &config) }
             }),
         )
-        // Swagger UI is the one surface here that is genuinely RENDERED, so the
-        // API's `default-src 'none'` would blank it. Everything it loads is
-        // same-origin (the bundle is vendored), so `'self'` suffices with NO
-        // inline allowance — measured, not assumed, and pinned by a test.
-        // Set here with the outer layer using `if_not_present`, so this narrower
-        // policy survives instead of being overwritten on the way out.
+        // Swagger UI is genuinely rendered, so the API's `default-src 'none'`
+        // would blank it; everything it loads is same-origin, so `'self'`
+        // suffices with no inline allowance. The outer layer uses
+        // `if_not_present`, so this narrower policy survives.
         .layer(SetResponseHeaderLayer::if_not_present(
             header::CONTENT_SECURITY_POLICY,
             http::HeaderValue::from_static(SWAGGER_UI_CSP),
@@ -880,8 +809,8 @@ const SWAGGER_UI_CSP: &str = "default-src 'self'; \
      base-uri 'self'; \
      frame-ancestors 'none'";
 
-/// The `api-docs` directory the documents live under (the parent of the
-/// configured `openapi.json` path).
+/// Returns the `api-docs` directory the documents live under, the parent of the
+/// configured `openapi.json` path.
 fn api_docs_root(json_path: &str) -> String {
     json_path
         .rsplit_once('/')
@@ -889,12 +818,11 @@ fn api_docs_root(json_path: &str) -> String {
         .to_owned()
 }
 
-/// The Swagger UI spec-selector config: one entry per API family — the
-/// standardised groups (`openEHR — …`) and the server extensions
-/// (`FerroEHR — …`), every one filtered from the server's own generated
-/// document — with the complete composed document last. URLs must outlive the
-/// server, so the derived paths are leaked once at construction (the UI
-/// config requires `'static`).
+/// Builds the Swagger UI spec-selector config: one entry per API family, with
+/// the complete composed document last.
+///
+/// URLs must outlive the server, so the derived paths are leaked once at
+/// construction (the UI config requires `'static`).
 fn swagger_config(cfg: &AppConfig) -> Arc<Config<'static>> {
     let json_path = cfg.server.openapi_json_path();
     let root = api_docs_root(&json_path);
@@ -908,7 +836,7 @@ fn swagger_config(cfg: &AppConfig) -> Arc<Config<'static>> {
     Arc::new(Config::new(urls))
 }
 
-/// Serve one embedded Swagger UI asset (`""` → `index.html`).
+/// Serves one embedded Swagger UI asset, mapping `""` to `index.html`.
 fn serve_ui_file(file: &str, config: &Arc<Config<'static>>) -> Response {
     match utoipa_swagger_ui::serve(file, Arc::clone(config)) {
         Ok(Some(SwaggerFile {

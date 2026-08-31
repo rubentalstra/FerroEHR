@@ -629,12 +629,9 @@ mod tests {
     }
 
     // The party `_identifier:i` family (master05 §§PARTY_IDENTIFIED,
-    // PARTY_RELATED `/_identifier:i`) has exactly ONE emission site:
-    // `emit_party`. It used to be emitted a second time by
-    // `structures::emit_rm_attrs`'s PARTY arm — idempotent, so invisible on
-    // the wire, but a trap for the next change to either site. This pins the
-    // ownership split in both directions, so restoring either duplicate fails
-    // here rather than silently.
+    // PARTY_RELATED `/_identifier:i`) has exactly ONE emission site,
+    // `emit_party`. This pins the ownership split in both directions, so a
+    // second emission site fails here rather than silently.
     #[test]
     fn party_identifiers_have_exactly_one_emission_site() {
         let rm = json!({

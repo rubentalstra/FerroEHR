@@ -4,58 +4,25 @@
 //! The **construction-door** decision map: which generated spec classes hide
 //! their fields behind a validating constructor, and which stay plain records.
 //!
-//! # The scheme
+//! A spec class emits as a plain data record by default: every field `pub`,
+//! construction by struct literal. A class gets [`Door::Validated`] instead
+//! when the released spec states a constraint over its field values that is
+//! DECIDABLE FROM THOSE FIELDS ALONE — a lexical form (BASE
+//! `base_types/master05-identification_package.adoc` §Syntaxes gives an EBNF
+//! grammar per identifier class) or a class invariant over its own fields (RM
+//! `UML/classes/org.openehr.rm.common.item_tag.adoc` §Invariants states
+//! `Inv_key_valid`/`Inv_value_valid` over `ITEM_TAG`). An invariant needing
+//! anything the instance does not carry stays at the `Validate` tier.
 //!
-//! The generator emits a spec class as a plain data record by default: every
-//! field `pub`, construction by struct literal. That is correct wherever the
-//! released spec states no constraint over the field values — privacy there
-//! would guarantee nothing and only add ceremony.
+//! A validated class emits its fields `pub(crate)` plus read accessors, so
+//! outside the defining crate the only construction path is the hand-written
+//! `*_impl.rs` constructor, which every generated codec also routes through.
+//! `pub(crate)` and not private because the grammar itself is hand-written
+//! spec behaviour in a sibling module of the same crate.
 //!
-//! It is *wrong* wherever the released spec states a **constraint over the
-//! field values that is decidable from those fields alone**. Two shapes qualify:
-//!
-//! * a **lexical form** — BASE `base_types/master05-identification_package.adoc`
-//!   §Syntaxes gives an EBNF grammar for every identifier class, so a
-//!   `HIER_OBJECT_ID` whose `value` is `"1234-5678"` is not a valid instance of
-//!   the spec type at all;
-//! * a **class invariant over its own fields** — RM
-//!   `UML/classes/org.openehr.rm.common.item_tag.adoc` §Invariants states
-//!   `Inv_key_valid` and `Inv_value_valid` over `ITEM_TAG.key`/`.value`, so an
-//!   `ITEM_TAG` with an empty key is likewise not an instance of the class.
-//!
-//! With a public field the type can hold the invalid value anyway, and the
-//! validating constructor beside it is merely *a* door rather than *the* door.
-//!
-//! The boundary is decidability *from the fields*: an invariant that needs
-//! anything the instance does not carry — terminology lookup, the existence of
-//! the `target` an `ITEM_TAG` points at, a parent's node id — cannot move to the
-//! door and stays at the `Validate` tier or in the service layer.
-//!
-//! An entry with [`Door::Validated`] closes that: the emitter renders the
-//! class's fields `pub(crate)` and emits read accessors, so **outside the
-//! defining crate construction is only possible through the hand-written
-//! `*_impl.rs` constructor**, which runs the §Syntaxes grammar. Every generated
-//! codec (`emit-json`, `emit-xml`) is routed through the same constructor, so a
-//! malformed identifier in any document position refuses at parse rather than
-//! entering the model.
-//!
-//! # Why `pub(crate)` and not fully private
-//!
-//! The grammar itself is hand-written spec behaviour living in sibling modules
-//! of the same crate (`identification/lexical.rs`, `identification/*_impl.rs`) —
-//! a fully-private field would be invisible to the very code that validates it,
-//! and the generator cannot place hand-written code inside a `// @generated`
-//! file. The defining crate is therefore the trust boundary: inside
-//! `openehr-base` the identification package owns the grammar; outside it, every
-//! consumer (`openehr-rm`, `openehr-its`, `openehr-adl`, the `ferroehr-*`
-//! application) can only obtain a value that the grammar already accepted.
-//!
-//! # Scope discipline
-//!
-//! This map is declarative and exhaustive over the classes it speaks about: a
-//! class named here with [`Door::PlainRecord`] or [`Door::TierEnforced`] is a
-//! *recorded decision*, not an omission. Extending the validated set is a
-//! spec adjudication per class, never a sweep — see [`Door::TierEnforced`].
+//! The map is exhaustive over the classes it names: a [`Door::PlainRecord`] or
+//! [`Door::TierEnforced`] entry is a recorded decision, not an omission, and
+//! extending the validated set is a per-class spec adjudication.
 
 /// How a generated spec class is constructed.
 pub(crate) enum Door {
@@ -63,24 +30,16 @@ pub(crate) enum Door {
     /// validating `new(..) -> Result<Self, _>` (plus `FromStr`/`TryFrom`), and
     /// the generated codecs construct through it.
     Validated {
-        /// The hand-written constructor's parameters as `(field, type)` pairs
-        /// — the contract between the generated struct and the `*_impl.rs`
-        /// sibling, keyed by FIELD NAME so it is independent of any
-        /// generation's BMM declaration order (RM 1.1.0 and 1.2.0 declare
-        /// `ITEM_TAG`'s fields in different orders; a positional contract
-        /// mis-binds one of them). The emitters bind each decoded field to a
-        /// local of the declared type — so an `impl Into<String>` parameter
-        /// has no inference ambiguity — and call `new` in THIS declared
-        /// order, one canonical signature for every generation. A BMM change
-        /// that adds or renames a field fails loudly (a name/arity mismatch)
-        /// instead of silently emitting a call the constructor cannot
-        /// answer.
+        /// The hand-written constructor's parameters as `(field, type)` pairs,
+        /// keyed by FIELD NAME so the contract is independent of a
+        /// generation's BMM declaration order (RM 1.1.0 and 1.2.0 order
+        /// `ITEM_TAG`'s fields differently). `new` is called in THIS order, so
+        /// a BMM change that adds or renames a field fails as a name/arity
+        /// mismatch rather than emitting a call the constructor cannot answer.
         ///
         /// A parameter that is itself a spec type is written as the marker
-        /// `@<SPEC_CLASS>` (`@UID_BASED_ID`), never a literal Rust path: the
-        /// emitter resolves it per GENERATION (the declaring generation's own
-        /// module, or the paired dependency generation's), so one table row
-        /// serves every generation of the declaring crate.
+        /// `@<SPEC_CLASS>` (`@UID_BASED_ID`), which the emitter resolves per
+        /// generation, so one row serves every generation.
         params: &'static [(&'static str, &'static str)],
         /// `true` when `new` returns `Result` (the normal case: the constructor
         /// runs a grammar or an invariant over the incoming values). `false`
@@ -122,18 +81,11 @@ pub(crate) struct Construction {
 
 /// Every adjudicated construction decision.
 ///
-/// The identification family is the lexical-form half: it is the package where
-/// the released spec gives a complete machine-checkable grammar for the field
-/// value. `ITEM_TAG` is the invariant half — the RM class whose §Invariants are
-/// stated purely over its OWN fields, so the same door closes them.
-///
-/// **The set is adjudicated per class, never swept.** The emit-validate
-/// classification knows which invariants are mechanically evaluable, but
-/// mechanical evaluability is not sufficient: an invariant may only move to the
-/// door when it is decidable from the class's own fields AND refusing at
-/// construction is the right accept/reject boundary (see [`Door::TierEnforced`]
-/// for a case where it is not). The invariant families still at the `Validate`
-/// tier are recorded in `openehr-rm`'s generated realization register.
+/// The identification family is the lexical-form half; `ITEM_TAG` is the
+/// invariant half. Mechanical evaluability alone does not qualify a class: the
+/// invariant must be decidable from its own fields AND construction must be the
+/// right accept/reject boundary (see [`Door::TierEnforced`] for a case where it
+/// is not).
 pub(crate) static CONSTRUCTION: &[Construction] = &[
     // ── the UID hierarchy (uid = iso_oid | uuid | internet_id) ──────────────
     Construction {

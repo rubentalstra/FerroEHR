@@ -71,14 +71,10 @@ impl StructureScan<'_> {
         let nid = object_node_id(obj);
         let is_identified = !aom_type(obj).is_primitive();
 
-        // VCOID: every (non-primitive) object node must have a node id
-        // (master04.5 §`C_OBJECT`). In the ADL 1.4 dialect this is relaxed to
-        // the AOM 1.4 node_id rule via `require_node_id` (AOM1.4 master04
-        // §Node_id and Paths + ADL1.4 master08 §Definition Section: "any leaf
-        // or near-leaf node which has no sibling nodes from the same attribute
-        // can safely have no node_id"). A 1.4 `use_node` is a *reference*, not
-        // a node definition, and carries no node id of its own in 1.4, so it is
-        // exempt in that dialect.
+        // VCOID: every non-primitive object node must have a node id
+        // (master04.5 §`C_OBJECT`), relaxed under ADL 1.4 to the AOM 1.4 rule
+        // (AOM1.4 master04 §Node_id and Paths). A 1.4 `use_node` is a reference,
+        // not a node definition, so it is exempt in that dialect.
         let is_proxy_ref =
             self.dialect == Dialect::Adl14 && matches!(obj, CObject::CComplexObjectProxy(_));
         if is_identified && nid.is_empty() && require_node_id && !is_proxy_ref {
@@ -90,13 +86,9 @@ impl StructureScan<'_> {
             );
         }
         // VCOSU: object node ids must be unique archetype-wide (master04.5
-        // §`C_OBJECT`). Synthetic primitive ids are exempt. Deferred for a
-        // specialised archetype: a differential legitimately re-references an
-        // inherited node id, so uniqueness is a flat-form property (run in
-        // [`super::flat`]). AOM2-only: AOM 1.4 node ids are only
-        // *sibling*-unique (AOM1.4 master04 §Node_id and Paths), so the
-        // archetype-wide check is skipped in the 1.4 dialect, which instead
-        // gets the sibling-scoped check in [`StructureScan::walk_complex`].
+        // §`C_OBJECT`); synthetic primitive ids are exempt. A specialised
+        // archetype defers it to [`super::flat`], and the 1.4 dialect gets the
+        // sibling-scoped check instead (AOM1.4 master04 §Node_id and Paths).
         if is_identified
             && !nid.is_empty()
             && !self.v.is_specialised()
@@ -256,14 +248,12 @@ impl StructureScan<'_> {
         }
 
         // VACMCU/WACMCL compare a child's occurrences against its owning
-        // attribute's *stated* cardinality (master04.5 §`C_ATTRIBUTE`). They run
-        // only when a cardinality is present (which reliably means the attribute
-        // is a container) and the archetype is its own flat form — a specialised
-        // archetype may not restate the inherited cardinality.
+        // attribute's STATED cardinality (master04.5 §`C_ATTRIBUTE`), so they
+        // run only when a cardinality is present and the archetype is its own
+        // flat form.
         //
-        // NOTE: VACSO is a reference-model check — a single-valued attribute is
-        // `C_ATTRIBUTE._is_multiple_` False, which the parser's cardinality
-        // heuristic cannot supply — so it runs in [`super::rm`].
+        // NOTE: VACSO needs `C_ATTRIBUTE._is_multiple_`, which the parser's
+        // cardinality heuristic cannot supply, so it runs in [`super::rm`].
         if !self.v.is_specialised() && attr.is_multiple {
             self.check_container_cardinality(&attr_path, attr);
         }
@@ -410,15 +400,12 @@ impl StructureScan<'_> {
 
     fn check_slot(&mut self, path: &str, slot: &ArchetypeSlot) {
         // VDSEV / VDSIV: slot include/exclude consistency (master04.5
-        // §`ARCHETYPE_SLOT`, the verbatim Eiffel if/elseif chain — exactly one
-        // branch fires):
-        //   if      includes not empty and =  any then not (excludes empty or /= any) ==> VDSEV
-        //   elseif  includes not empty and /= any then not (excludes empty or =  any) ==> VDSEV
-        //   elseif  excludes not empty and =  any then not (includes empty or /= any) ==> VDSIV
-        //   elseif  excludes not empty and /= any then not (includes empty or =  any) ==> VDSIV
+        // §`ARCHETYPE_SLOT`), the spec's if/elseif chain, so exactly one branch
+        // fires.
+        //
         // NOTE: with the include-side branches first, VDSIV is unreachable on a
-        // real slot (which always has an `include`) — every inconsistency
-        // reports as VDSEV, though the spec defines both.
+        // real slot, which always has an `include`, so every inconsistency
+        // reports as VDSEV even though the spec defines both.
         let inc_empty = slot.includes.as_ref().is_none_or(Vec::is_empty);
         let exc_empty = slot.excludes.as_ref().is_none_or(Vec::is_empty);
         let inc_any = !inc_empty && slot.includes.iter().flatten().all(is_any_assertion);

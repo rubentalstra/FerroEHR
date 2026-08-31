@@ -46,13 +46,14 @@ use crate::state::AppState;
 use crate::{negotiate, params};
 use ferroehr::service::response::ServiceResponse;
 
-/// The `PARTY_RELATIONSHIP` extension routes as a native `utoipa-axum` router —
-/// **no ITS-REST contract** (see the module docs), realizing SM
-/// `I_PARTY_RELATIONSHIP` with our own wire. Group-relative paths (nested under
-/// `base_path`); every operation runs through [`guarded_dispatch`] with the
-/// demographic group [`dispatch`](super::dispatch::dispatch), which routes relationship
-/// ops back into [`run`] — so the wire behaviour is identical to the former
-/// table-driven mount.
+/// The `PARTY_RELATIONSHIP` extension routes as a native `utoipa-axum` router,
+/// realizing SM `I_PARTY_RELATIONSHIP` on our own wire with no ITS-REST contract
+/// (see the module docs).
+///
+/// Paths are group-relative, and every operation runs through
+/// [`guarded_dispatch`] with the demographic group
+/// [`dispatch`](super::dispatch::dispatch), which routes relationship ops back
+/// into [`run`].
 pub(crate) fn relationship_routes() -> OpenApiRouter<AppState> {
     // One `routes!` per PATH (the macro composes one method-router — handlers
     // in a single call must share the path; mixing paths panics at build with

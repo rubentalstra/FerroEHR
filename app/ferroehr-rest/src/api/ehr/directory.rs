@@ -6,6 +6,11 @@
 //! Spec: `docs/specs/openehr/ITS-REST/specifications/docs/ehr/` (DIRECTORY) +
 //! `specifications/operations/{directory_get_at_time,directory_update,
 //! directory_create,directory_delete,directory_get_by_version_id}.yaml`.
+//!
+//! Every read here carries `ETag` and `Last-Modified` and no `Location`
+//! (overview §"`ETag` and Last-Modified", §Location), and a `FOLDER`'s
+//! `DV_MULTIMEDIA` is externalized by the same generic versioning path as a
+//! COMPOSITION's, so it re-inlines on the same request.
 
 #![expect(
     clippy::disallowed_types,
@@ -38,8 +43,7 @@ pub(super) async fn run(
     op: &'static str,
     parts: RequestParts,
 ) -> Result<Response, RestError> {
-    // DIRECTORY (FOLDER) is not templated → no Simplified-Formats mapping;
-    // reject a simplified Content-Type/Accept uniformly (see `formats::dispatch`).
+    // DIRECTORY is not templated, so it has no Simplified-Formats mapping.
     crate::formats::dispatch::guard_non_templated(&parts.headers)?;
 
     match op {
@@ -69,15 +73,11 @@ async fn get_at_time(state: AppState, parts: RequestParts) -> Result<Response, R
         .backend()
         .get_directory_at_time(ehr_id, p.version_at_time, p.path)
         .await?;
-    // Deleted directory → 204 (directory_get_at_time.yaml 204_because_deleted_at_time).
+    // A deleted directory is a 204
+    // (directory_get_at_time.yaml `204_because_deleted_at_time`).
     if resp.body.is_null() {
         return Ok(negotiate::empty(no_content));
     }
-    // ETag + Last-Modified on the read too (overview §"ETag and
-    // Last-Modified": both SHOULD accompany versioned resources);
-    // no Location on GET (overview §Location).
-    // A FOLDER's DV_MULTIMEDIA is externalized by the same generic
-    // versioning path as a COMPOSITION's, so it re-inlines here.
     let mut resp = resp;
     resp.body = super::expand_multimedia_if_requested(&state, q, resp.body).await?;
     let mut out = negotiate::respond_rm::<Folder>(h, ok, &resp.body, "folder");
@@ -107,14 +107,11 @@ async fn update(state: AppState, parts: RequestParts) -> Result<Response, RestEr
         "DIRECTORY update",
         Some(require_if_match(&p.if_match)?),
     )?;
-    // 204_directory_updated (default) / 200_directory_updated
-    // (representation); ETag + Location on both. 412 → latest version_uid.
-    // Judge the wrapper-header tags before the commit (see
-    // `crate::api::ehr::pending_item_tags`); the write stays after it.
+    // Tags are judged before the commit and written after it (see
+    // `crate::api::ehr::pending_item_tags`).
     let pending_tags = super::pending_item_tags(h)?;
     match state.backend().update_directory(ehr_id, uv).await {
         Ok(meta) => {
-            // apply item-tag write-wrapper headers to the new version.
             let stored_tags =
                 super::apply_item_tag_headers(&state, ehr_id, "FOLDER", &meta.uid, pending_tags)
                     .await?;
@@ -171,11 +168,8 @@ async fn create(state: AppState, parts: RequestParts) -> Result<Response, RestEr
     let ehr_id = parse_ehr_id(&p.ehr_id)?;
     let body = negotiate::rm_value::<Folder>(h, &parts.body)?;
     let uv = super::mk_update_version(h, body, super::CHANGE_CREATION, "DIRECTORY creation", None)?;
-    // Judge the wrapper-header tags before the commit (see
-    // `crate::api::ehr::pending_item_tags`); the write stays after it.
     let pending_tags = super::pending_item_tags(h)?;
     let meta = state.backend().create_directory(ehr_id, uv).await?;
-    // apply item-tag write-wrapper headers to the committed FOLDER.
     let stored_tags =
         super::apply_item_tag_headers(&state, ehr_id, "FOLDER", &meta.uid, pending_tags).await?;
     let repr = if negotiate::prefers_representation(h) {
@@ -188,7 +182,6 @@ async fn create(state: AppState, parts: RequestParts) -> Result<Response, RestEr
         Value::Null
     };
     let resp = ServiceResponse::new(repr, meta);
-    // 201_directory: ETag + Location; body only on return=representation.
     let mut resp = negotiate::write_rm::<Folder>(
         h,
         &base,
@@ -213,11 +206,8 @@ async fn delete(state: AppState, parts: RequestParts) -> Result<Response, RestEr
     let base = state.config().server.base_path.clone();
     let p = params::build::<DirectoryDeleteParams>(&parts.path, q, h)?;
     let ehr_id = parse_ehr_id(&p.ehr_id)?;
-    // 204_because_deleted declares no headers; 412_directory → latest version_uid.
-    // A DELETE commits a `523|deleted|` version, so the committal
-    // request headers are accepted and merged here too (overview
-    // §"openehr-version and openehr-audit-details": PUT, POST and
-    // DELETE).
+    // A DELETE commits a `523|deleted|` version, so the committal headers apply
+    // here too (overview §"openehr-version and openehr-audit-details").
     let update_audit =
         crate::overview::committal::committal_audit_for_delete(h, super::committer_proxy())?;
     match state
@@ -229,10 +219,8 @@ async fn delete(state: AppState, parts: RequestParts) -> Result<Response, RestEr
         )
         .await
     {
-        // 204 with the NEW deleted version's weak ETag + Last-Modified
-        // (overview §"ETag and Last-Modified": both SHOULD accompany
-        // versioned resources; the delete commits a 523|deleted|
-        // version — RM common master06 §Logical Deletion).
+        // The 204 carries the new deleted version's weak `ETag` and
+        // `Last-Modified` (RM common master06 §Logical Deletion).
         Ok(resp) => Ok(negotiate::deleted_with_headers(
             &base,
             Some("directory"),
@@ -275,10 +263,6 @@ async fn get_by_version_id(state: AppState, parts: RequestParts) -> Result<Respo
     if resp.body.is_null() {
         return Ok(negotiate::empty(no_content));
     }
-    // ETag + Last-Modified on the version read (overview §"ETag and
-    // Last-Modified"); no Location on GET (overview §Location).
-    // A FOLDER's DV_MULTIMEDIA is externalized by the same generic
-    // versioning path as a COMPOSITION's, so it re-inlines here.
     let mut resp = resp;
     resp.body = super::expand_multimedia_if_requested(&state, q, resp.body).await?;
     let mut out = negotiate::respond_rm::<Folder>(h, ok, &resp.body, "folder");

@@ -31,37 +31,28 @@
 //!    - **fails** when no prefix is a token of that language at all, which is
 //!      exactly where its stand-alone lexer reported a lexical error.
 //!
-//! The pass is therefore not a filter but a total function from the union
-//! reading to each member reading, and the entry points [`lex_adl`],
-//! [`lex_odin`] and [`lex_bel`] are behaviour-identical to the three lexers
-//! they replace (pinned token-for-token, span-for-span, by the
-//! `lexer_equivalence` battery in `tests/it/`); [`lex_el`] joined them when
-//! the EL grammars were vendored.
+//! The pass is therefore a total function from the union reading to each member
+//! reading, not a filter, and the `lexer_equivalence` battery in `tests/it/`
+//! pins each entry point token-for-token and span-for-span.
 //!
-//! # Adjudications this layer encodes
+//! # Per-language adjudications
 //!
-//! - `// NOTE:` **ODIN reserves nothing.** `LANG/docs/odin/master03-basics.adoc`
-//!   §Keywords: "ODIN has no keywords of its own". Every cADL/BEL keyword is
-//!   therefore an ordinary ODIN attribute identifier, which is what the ODIN
-//!   pass demotes them to.
-//! - `// NOTE:` **cADL section keywords are not reserved either**
-//!   (`AM/docs/ADL2/master07.04`: they "can safely appear as identifiers in
-//!   the definition and terminology sections"), so they are NOT tokens here at
-//!   all — `language`, `definition`, … lex as `ALPHA_LC_ID` and the outer
-//!   parser recognises a section header positionally (column 0). This also
-//!   makes multi-line strings safe: a `STRING` maximally munches across
-//!   newlines, so a section word inside a quoted value can never read as a
-//!   header.
-//! - `// NOTE:` **Keyword matching is ASCII-case-insensitive** in the cADL
-//!   reading: `adl_keywords.g4` spells every keyword
-//!   `[Mm][Aa][Tt][Cc][Hh][Ee][Ss]`-style, and `ADL1.4/master05-cadl.adoc`
-//!   §Symbols L1326-1354 does the same in prose. ADL2's prose is silent, so the
-//!   grammar is the citation. `base_expressions.g4` spells BEL's operators
-//!   case-SENSITIVELY, and the BEL pass honours that.
-//! - `// NOTE:` The Expression Language reading takes the cADL layer wherever
-//!   `ElLexer.g4` declares nothing (it is an `import Cadl2Lexer, SymbolsLexer,
-//!   GeneralIdsLexer`) and `ElLexer.g4`'s own case-SENSITIVE spelling wherever
-//!   it does.
+//! - ODIN reserves nothing (`LANG/docs/odin/master03-basics.adoc` §Keywords:
+//!   "ODIN has no keywords of its own"), so the ODIN pass demotes every
+//!   cADL/BEL keyword to an attribute identifier.
+//! - cADL section keywords are not reserved either (`AM/docs/ADL2/master07.04`:
+//!   they "can safely appear as identifiers in the definition and terminology
+//!   sections"), so they are not tokens at all: `language`, `definition`, … lex
+//!   as `ALPHA_LC_ID` and the outer parser recognises a header positionally at
+//!   column 0. A section word inside a quoted multi-line value therefore cannot
+//!   read as a header.
+//! - Keyword matching is ASCII-case-insensitive in the cADL reading
+//!   (`adl_keywords.g4` spells every keyword `[Mm][Aa][Tt]…`-style;
+//!   `ADL1.4/master05-cadl.adoc` §Symbols L1326-1354 says the same in prose) and
+//!   case-SENSITIVE for BEL's operators, which `base_expressions.g4` spells that
+//!   way.
+//! - The EL reading takes the cADL layer wherever `ElLexer.g4` declares nothing
+//!   and `ElLexer.g4`'s own case-sensitive spelling wherever it does.
 
 mod reclassify;
 mod token;
@@ -73,8 +64,7 @@ use logos::Logos;
 /// Total by construction: every span reaching this function was produced by
 /// `logos` over the SAME `src`, so it always names a character boundary inside
 /// it. Returning an empty string instead would report a lexical defect with no
-/// text — a silent wrong diagnostic, which `.claude/rules/reliability.md`
-/// forbids dodging the lint with.
+/// text — a silent wrong diagnostic.
 #[expect(
     clippy::expect_used,
     reason = "the span comes from lexing this same `src`, so it always slices"
@@ -770,7 +760,7 @@ mod tests {
         for refused in ["$v", "{", ":", "%", "^", "!="] {
             assert!(lex_odin(refused).is_err(), "ODIN must refuse {refused:?}");
         }
-        // `@` IS an ODIN token since #1373: it opens the document prefix
+        // `@` IS an ODIN token: it opens the document prefix
         // `schema_identifier ::= '@' schema '=' URI`
         // (`LANG/docs/odin/master04-odin_artefacts` intro); a misplaced `@`
         // is the parser's refusal, not the lexer's.

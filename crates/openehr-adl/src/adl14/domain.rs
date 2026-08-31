@@ -187,7 +187,7 @@ pub(crate) enum DomainLoweringError {
 }
 
 /// One constrained-member-set partition of a domain block's `list` rows —
-/// the constraints of one sibling alternative (#1466).
+/// the constraints of one sibling alternative.
 struct Partition {
     /// The partition's per-attribute plain constraints.
     attributes: Vec<CAttribute>,
@@ -196,7 +196,7 @@ struct Partition {
 }
 
 /// Partition a domain block's `list` rows by the EXACT set of member names
-/// each row constrains (#1466).
+/// each row constrains.
 ///
 /// ADL 2 documents tuple rows only with a constraint in EVERY member
 /// (`ADL2/master04.4-cadl_second_order.adoc` §Tuple Constraints — no
@@ -328,7 +328,7 @@ fn build_attribute_tuple(
 
 /// Lower a parsed 1.4 inline dADL domain block into one or more
 /// `DV_QUANTITY`/`DV_ORDINAL` complex-object ALTERNATIVES — one per
-/// constrained-member-set partition of its `list` rows (#1466); homogeneous
+/// constrained-member-set partition of its `list` rows; homogeneous
 /// blocks (the common case) lower to exactly one.
 ///
 /// # Errors
@@ -340,16 +340,12 @@ pub(crate) fn lower_adl14_domain(
 ) -> Result<Vec<CObject>, DomainLoweringError> {
     let map = match untyped(odin) {
         OdinValue::Object(map) if !map.is_empty() => map,
-        // An EMPTY domain block — `C_DV_QUANTITY <>` (or `< >` with only
-        // whitespace) — constrains the TYPE and nothing else: it lowers to the
-        // open complex object, exactly `DV_QUANTITY matches {*}`. The upstream
-        // regression fixture `FAIL_c_dv_quantity_minimal.v1.adl` points the
-        // other way, but it is stalled reference DATA, not spec text; 9 CKM
-        // archetypes rely on the form.
+        // An EMPTY domain block — `C_DV_QUANTITY <>` — constrains the TYPE and
+        // nothing else, lowering to `DV_QUANTITY matches {*}`.
         //
-        // NOTE: the docs text ADMITS the form — the domain block's content is
+        // NOTE: the docs text admits the form — the domain block's content is
         // dADL (`ADL1.4/master05-cadl.adoc` §Symbols `V_C_DOMAIN_TYPE`) and the
-        // dADL grammar makes the empty block its FIRST alternative.
+        // dADL grammar makes the empty block its first alternative.
         OdinValue::Empty | OdinValue::Object(_) => {
             let target_rm = match rm_type {
                 "C_DV_ORDINAL" => "DV_ORDINAL",
@@ -403,7 +399,7 @@ pub(crate) fn lower_adl14_domain(
     }
 
     // `list` rows partition into one alternative per constrained member set
-    // (#1466) — see [`partition_list_rows`].
+    // — see [`partition_list_rows`].
     let mut partitions = match map.get("list") {
         Some(list) => partition_list_rows(list)?,
         None => Vec::new(),

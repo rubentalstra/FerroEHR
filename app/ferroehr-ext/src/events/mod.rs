@@ -3,43 +3,25 @@
 
 //! Contribution-outbox eventing.
 //!
-//! **No openEHR spec governs this — our own design/extension.** master14's
-//! integration model is archetype-to-archetype data conversion
-//! (`GENERIC_ENTRY` with `FEEDER_AUDIT`), not message brokers, topic routing,
-//! or outbound emission;
-//! master13 is informative deployment guidance and prescribes no eventing.
-//! Gate: `EventsConfig::enabled` (`events.enabled`, default off; the section
-//! struct lives in the consuming crate) — with it
-//! off the publisher is never spawned and the commit path is byte-identical
-//! (the zero-drift gate).
+//! No openEHR spec governs this — our own design/extension. Gated by
+//! `events.enabled` (default off), with which the publisher is never spawned and
+//! the commit path is byte-identical.
 //!
-//! ## Design
-//! - **At-least-once, per-EHR ordered.** A single background drainer reads
-//!   pending rows in sequence order, publishes with broker confirms, and only
-//!   then stamps `published_at`. A crash/retry may duplicate (consumers
-//!   deduplicate on `contribution_id`), never lose. The outbox is the buffer
-//!   when the broker is down — commits never block on the broker.
-//! - **PHI-free.** The payload is the stored envelope (contribution id,
-//!   `ehr_id`, `committed_at`, per-version `(vo_id, kind, sys_version,
-//!   change_type, template_id)`) plus the delivery `seq`. Identity and
-//!   provenance metadata only, never clinical content. The per-version entry
-//!   is built by `crate::versioning` (`Committed::envelope_entry`) and the row
-//!   is written inside the commit transaction by
-//!   `crate::storage::version_repo::commit::write_outbox`; this module drains that row.
-//! - **Broker abstraction, AMQP first.** [`EventPublisher`] is the seam;
-//!   [`amqp::AmqpPublisher`] is the `RabbitMQ` (lapin) implementation.
-//! - **Topology declared on connect/change only.** Subscription queues are
-//!   declared + bound when the broker connection is (re)established or the
-//!   enabled-subscription set changes — never re-declared per poll cycle
-//!   (see `publisher`).
-//! - **Retention.** Published rows are pruned after a configurable window
-//!   (default 7 days).
+//! Delivery is at-least-once and per-EHR ordered: a single background drainer
+//! reads pending rows in sequence order, publishes with broker confirms, and
+//! only then stamps `published_at`, so a crash may duplicate (consumers
+//! deduplicate on `contribution_id`) but never lose. The outbox buffers a broker
+//! outage, so commits never block on it, and published rows are pruned after a
+//! configurable window.
 //!
-//! ## Module map
-//! - `amqp` — the lapin [`amqp::AmqpPublisher`].
-//! - The `config` section struct (`EventsConfig`), the drainer task +
-//!   retention pruner (`EventsHandle`), and the `event_subscription` CRUD
-//!   live in the consuming crate's `extensions::events`.
+//! The payload is PHI-free: the stored envelope (contribution id, `ehr_id`,
+//! `committed_at`, and per version `(vo_id, kind, sys_version, change_type,
+//! template_id)`) plus the delivery `seq` — identity and provenance metadata
+//! only, never clinical content. [`EventPublisher`] is the broker seam and
+//! [`amqp::AmqpPublisher`] its `RabbitMQ` implementation, whose topology is
+//! declared when the connection is established or the subscription set changes,
+//! never per poll cycle. The drainer task, the retention pruner and the
+//! subscription CRUD live in the consuming crate.
 
 #![expect(
     clippy::disallowed_types,

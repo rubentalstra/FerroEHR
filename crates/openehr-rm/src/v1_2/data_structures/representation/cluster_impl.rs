@@ -76,8 +76,7 @@ mod tests {
     /// (`docs/specs/openehr/RM/docs/UML/classes/org.openehr.rm.data_structures.cluster.adoc`
     /// §Attributes), and the emission shape carries that bound, so an empty item
     /// list is refused at CONSTRUCTION rather than reported by the invariant
-    /// layer. (This replaces the former `empty_items_still_valid`: the state it
-    /// asserted was benign is now unrepresentable, which is strictly stronger.)
+    /// layer.
     #[test]
     fn an_empty_item_list_is_unrepresentable() {
         assert!(openehr_base::containers::NonEmptyVec::<Item>::new(Vec::new()).is_err());

@@ -1,51 +1,30 @@
 // SPDX-FileCopyrightText: FerroEHR contributors
 // SPDX-License-Identifier: MIT
 
-//! The `EHR_ACCESS` policy gate — the **spec-grounded** access-decision layer.
-//!
-//! # Why this leads
+//! The `EHR_ACCESS` policy gate — the spec-grounded access-decision layer.
 //!
 //! `EHR_ACCESS` is a mandatory, versioned RM object and the openEHR
 //! access-decision authority: "All access decisions to data in the EHR must be
 //! made in accordance with the policies and rules in this object" (RM
 //! `org.openehr.rm.ehr.ehr_access.adoc` §`EHR_ACCESS` Class). This gate is
-//! therefore the **foundational, always-on** access-control layer, built
-//! directly on the spec. The crate's RBAC + ABAC + SMART gates
-//! ([`crate::extensions::access::authz`], [`crate::extensions::access::pep`]) are
-//! our **own enterprise extensions** (SMART aside, which is spec-grounded) — no
-//! openEHR spec governs RBAC/ABAC, and the SM places authorisation out of band
-//! (SM `openehr_platform/master02-overview.adoc` §General Assumptions). They
-//! compose **on top of** this spec base as additive restrictions
-//! (AND-composition: a request must clear the `EHR_ACCESS` gate *and* any
-//! RBAC/ABAC/SMART policy), never the other way round. Accordingly the gate runs **first** in the pre-dispatch
-//! chain (the dispatch mount, `crate::api`), and it is never config-gated: every EHR
-//! carries an `EHR_ACCESS`, and the default (`open`, no settings) keeps every
-//! existing flow working (BASE `architecture_overview/master07-security.adoc`
-//! §Access Control — "sensible defaults").
+//! therefore the foundational, always-on layer, and the crate's RBAC and ABAC
+//! gates — our own enterprise extensions, since no openEHR spec governs them —
+//! compose on top of it as additive restrictions, never the other way round. It
+//! runs first in the pre-dispatch chain and is never config-gated: every EHR
+//! carries an `EHR_ACCESS`, and the `open` default keeps every flow working
+//! (BASE `architecture_overview/master07-security.adoc` §Access Control).
 //!
-//! # The three evaluation points
+//! There are three evaluation points: the per-EHR gate on every authenticated
+//! request to an `/ehr/{ehr_id}`-scoped route (`master07` access list), the
+//! composition privacy ceiling on Composition reads (`master07` privacy levels),
+//! and the gate-keeper preflight on CONTRIBUTION commits carrying an
+//! `EHR_ACCESS` version (`master07` gate-keeper; RM ehr
+//! `master04-ehr_package.adoc` §EHR Access). The concrete scheme evaluated,
+//! `ferroehr.access_control.v1`, is our own design.
 //!
-//! 1. **Per-EHR gate** — every authenticated request on an `/ehr/{ehr_id}`-
-//!    scoped route (`master07` access list; ITS-REST `401`/`403` discipline,
-//!    `ITS-REST/.../Requests_and_responses.md` §Authentication and authorization).
-//! 2. **Composition privacy ceiling** — Composition read routes, from the
-//!    settings + the target uid alone (`master07` privacy levels).
-//! 3. **Gate-keeper preflight** — CONTRIBUTION commits carrying an `EHR_ACCESS`
-//!    version (`master07` gate-keeper; RM ehr `master04-ehr_package.adoc`
-//!    §EHR Access — settings changes are CONTRIBUTION-wrapped + audited).
-//!
-//! The concrete scheme evaluated here (`ferroehr.access_control.v1`) is our own
-//! design — no openEHR spec governs it;
-//! the parsed [`EhrAccessSettings`] live in `ferroehr-sm`.
-//!
-//! # Scope boundary
-//!
-//! Privacy-level filtering of AQL RESULT ROWS is not evaluated: query execution
+//! Privacy-level filtering of AQL result ROWS is out of scope: query execution
 //! carries no principal context, so the gate cannot see individual rows. The
-//! per-EHR gate does apply to the REST query surface wherever an `ehr_id` is
-//! bound, which is every query addressing a single EHR.
-//!
-//! The PEP returns `Result<(), Response>` — the deny path is a ready `403`.
+//! per-EHR gate does apply wherever a query binds an `ehr_id`.
 
 #![allow(
     clippy::disallowed_types,

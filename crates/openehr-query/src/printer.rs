@@ -3,13 +3,11 @@
 
 //! Canonical AQL text rendering of the [`crate::ast`].
 //!
-//! This is the inverse of the
-//! parser, for programmatic query construction (a visual builder assembles
-//! the AST and renders it here; the grammar authority is
-//! `docs/specs/openehr/QUERY/docs/AQL/`). Keywords render in canonical
-//! uppercase; paths and predicates reuse the source-preserving `Display`
-//! impls in [`crate::ast`]. The invariant (corpus-verified): for every AST
-//! the parser produces, `parse(to_aql(ast)) == ast`.
+//! The inverse of the parser, for programmatic query construction. Keywords
+//! render in canonical uppercase; paths and predicates reuse the
+//! source-preserving `Display` impls in [`crate::ast`]. The corpus-verified
+//! invariant: for every AST the parser produces, `parse(to_aql(ast)) == ast`
+//! (grammar authority: `docs/specs/openehr/QUERY/docs/AQL/`).
 
 use std::fmt::Write;
 
@@ -62,15 +60,12 @@ fn order_by_clause(out: &mut String, query: &SelectQuery) {
     }
 }
 
-/// Escapes a raw string for embedding in an AQL single-quoted literal.
+/// Escapes a raw string for embedding in an AQL single-quoted literal, per
+/// `AqlLexer.g4 ESCAPE_SEQ`.
 ///
-/// The escapes are backslash escapes per the AQL lexer (`AqlLexer.g4`
-/// `ESCAPE_SEQ`). The parser DECODES escape sequences into the AST
-/// ([`Primitive::String`](crate::ast::Primitive::String) carries the decoded
-/// value), so every printer site that emits stored string content must pass
-/// it back through here — emitting the decoded bytes verbatim re-decodes
-/// them on reparse and drifts the AST (found by the fuzzer on a
-/// backslash-heavy `TERMINOLOGY` argument, #2746).
+/// The parser decodes escapes into the AST, so every printer site emitting
+/// stored string content passes it back through here: emitting the decoded
+/// bytes verbatim re-decodes them on reparse and drifts the AST.
 #[must_use]
 pub fn escape_string(raw: &str) -> String {
     let mut out = String::with_capacity(raw.len());
@@ -419,8 +414,8 @@ fn identified_expr(out: &mut String, expr: &IdentifiedExpr) {
             out.push_str(" MATCHES ");
             matches_operand(out, operand);
         }
-        // Never parser-produced (semantic-analysis artifact); render as the
-        // equivalent boolean literal comparison so output stays parseable.
+        // Never parser-produced; rendered as the equivalent boolean literal
+        // comparison so output stays parseable.
         IdentifiedExpr::Resolved(value) => {
             let _ = write!(out, "{value}={value}");
         }

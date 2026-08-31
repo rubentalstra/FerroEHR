@@ -4,28 +4,19 @@
 
 //! openEHR terminology loader + lookup API (TERM 3.1.0).
 //!
-//! Hand-written; preserved across `openehr-codegen` regeneration (it carries
-//! no generated-file marker, so `write_crate` keeps it and `lib.rs`
-//! auto-declares `pub mod bundle;`).
-//!
-//! The vendored terminology XML in `assets/` is compile-time-embedded with
-//! `include_str!` (no runtime file I/O) and parsed once into the generated TERM
-//! data model ([`Terminology`], [`CodeSet`], [`TerminologyGroup`], …) plus
-//! lookup indexes, cached in a [`LazyLock`]. The parsed bundle drives openEHR
-//! coded-value validation for the composition validator: the RM-mandated
-//! terminology groups (`composition_category`, `null_flavours`, `setting`,
-//! instruction states/transitions, participation function/mode, attestation
-//! reason, version lifecycle state, …), the external code sets (ISO country /
-//! language, IANA character-set / media-type), and the property↔unit table.
+//! The vendored terminology XML in `assets/` is embedded with `include_str!`
+//! and parsed once into the generated TERM data model ([`Terminology`],
+//! [`CodeSet`], [`TerminologyGroup`], …) plus lookup indexes, cached in a
+//! [`LazyLock`]. It carries the RM-mandated terminology groups, the external
+//! code sets (ISO country / language, IANA character-set / media-type), and
+//! the property↔unit table.
 //!
 //! # Error model
 //!
-//! Parsing is fallible ([`parse_terminology`]/[`parse_property_units`] return
-//! [`Result`]), but the public bundle exposes only infallible lookups: the
-//! assets are vendored, spec-pinned, and embedded at compile time, so a parse
-//! failure is a corrupt build artifact — a build-time invariant, not a runtime
-//! condition. [`openehr`] therefore panics (once, on first access) if an asset
-//! fails to parse, rather than propagating an error into every call site.
+//! [`parse_terminology`] and [`parse_property_units`] are fallible, but the
+//! public bundle exposes only infallible lookups: the assets are vendored and
+//! embedded at compile time, so a parse failure is a corrupt build artifact and
+//! [`openehr`] panics once on first access instead.
 
 use std::collections::{BTreeMap, HashMap, HashSet};
 use std::sync::{Arc, LazyLock};
@@ -50,8 +41,9 @@ const EXTERNAL_XML: &str = include_str!("../assets/openehr_external_terminologie
 const PROPERTY_UNITS_XML: &str = include_str!("../assets/PropertyUnitData.xml");
 
 /// ISO 639-1 code of the canonical (authoritative) terminology language.
-/// Codes and group membership are language-independent; only rubrics differ, so
-/// validity checks resolve against the English bundle.
+///
+/// Codes and group membership are language-independent — only rubrics differ —
+/// so validity checks resolve against the English bundle.
 const CANONICAL_LANG: &str = "en";
 
 /// The languages whose `openehr_terminology.xml` is vendored, paired with the
@@ -122,9 +114,8 @@ struct LanguageBundle {
     code_set_by_id: HashMap<String, usize>,
     /// group `openehr_id` → (concept `id` → index into that group's `concepts`).
     ///
-    /// A `BTreeMap` on purpose: [`OpenehrTerminology::concept_rubric`] scans
-    /// every group, and a hash map would make that scan order
-    /// implementation-defined (`clippy::iter_over_hash_type`).
+    /// A `BTreeMap` because [`OpenehrTerminology::concept_rubric`] scans every
+    /// group and hash order is implementation-defined.
     group_codes: BTreeMap<String, HashMap<String, usize>>,
 }
 
@@ -189,10 +180,8 @@ impl LanguageBundle {
 pub struct OpenehrTerminology {
     /// Parsed terminology per language (keyed by ISO 639-1 code); `en` is canonical.
     languages: HashMap<String, Arc<LanguageBundle>>,
-    /// The canonical (`en`) bundle, held directly so [`Self::canonical`] needs
-    /// no map lookup — the language-independent validity checks resolve against
-    /// it, and holding it makes its presence a construction guarantee rather
-    /// than a key assumption.
+    /// The canonical (`en`) bundle, held directly so its presence is a
+    /// construction guarantee rather than a key assumption.
     canonical: Arc<LanguageBundle>,
     /// External code sets (countries, languages, character sets, media types).
     external: Vec<CodeSet>,
@@ -305,13 +294,13 @@ impl OpenehrTerminology {
         Some(concept.rubric.as_str())
     }
 
-    /// The rubric (display text) of concept `code` in language `lang`,
-    /// searched across every group — openEHR terminology concept codes are
-    /// globally unique integers, so the first match is the concept. `None`
-    /// if the language or code is unknown. This is a *display* helper (e.g.
-    /// filling `DV_CODED_TEXT.value`, which is the displayable text of the
-    /// defining code — RM data_types §DV_CODED_TEXT); validation keeps using
-    /// the group-scoped [`Self::rubric`]/[`Self::is_valid_code`].
+    /// The rubric (display text) of concept `code` in language `lang`, searched
+    /// across every group; `None` if the language or code is unknown.
+    ///
+    /// openEHR concept codes are globally unique integers, so the first match
+    /// is the concept. A display helper for `DV_CODED_TEXT.value` (RM
+    /// data_types §DV_CODED_TEXT); validation uses the group-scoped
+    /// [`Self::rubric`] / [`Self::is_valid_code`].
     #[must_use]
     pub fn concept_rubric(&self, code: &str, lang: &str) -> Option<&str> {
         let b = self.languages.get(lang)?;
@@ -398,8 +387,8 @@ impl OpenehrTerminology {
 
     /// `VERSION.lifecycle_state` — the `version_lifecycle_state` group.
     ///
-    /// Note the SPECPR-51 quirk: code `532` is `complete` here but `completed`
-    /// in `instruction_states`.
+    /// NOTE: SPECPR-51 — code `532` is `complete` here and `completed` in
+    /// `instruction_states`.
     #[must_use]
     pub fn is_valid_version_lifecycle_state(&self, code: &str) -> bool {
         self.is_valid_code("version_lifecycle_state", code)
@@ -457,9 +446,7 @@ impl OpenehrTerminology {
     // ── External code sets (openehr_external_terminologies.xml) ──────────────
 
     /// Every external code set (`"countries"`, `"languages"`, `"character_sets"`,
-    /// `"media_types"`), in vendored order. Used by callers that expose the
-    /// external terminologies as first-class terminology ids (the SM
-    /// terminology service).
+    /// `"media_types"`), in vendored order.
     #[must_use]
     pub fn external_code_sets(&self) -> &[CodeSet] {
         &self.external
@@ -555,11 +542,10 @@ impl OpenehrTerminology {
     }
 }
 
-/// The shared, cached openEHR terminology bundle (TERM 3.1.0), parsed on first use.
+/// The shared, cached openEHR terminology bundle (TERM 3.1.0).
 static OPENEHR: LazyLock<OpenehrTerminology> = LazyLock::new(|| {
-    // NOTE: the terminology assets are vendored, spec-pinned (TERM 3.1.0) and
-    // embedded at compile time, so a parse failure is a corrupt build artifact
-    // — a build-time invariant, which this panic (once) reports.
+    // NOTE: the assets are vendored and embedded at compile time, so a parse
+    // failure is a corrupt build artifact, which this panic reports.
     #[expect(
         clippy::expect_used,
         reason = "the assets are `include_str!`-embedded at compile time and parsed by the crate's own tests, so an Err here is a corrupt build artifact, not a runtime condition; the message is should-phrased per the Book ch9 shape"
@@ -658,13 +644,12 @@ fn parse_group(node: &roxmltree::Node) -> TerminologyGroup {
     }
 }
 
-/// The optional `status` attribute the terminology XSDs declare on
-/// `codeset`/`code`/`group`/`concept`, parsed with the total,
-/// tolerance-preserving [`TerminologyStatus::from_wire`] (an out-of-set token
-/// survives as [`TerminologyStatus::Other`]). The pinned 3.1.0 assets carry no
-/// `status` attributes, so this reads `None` there — the field exists so a
-/// future re-vendored asset that populates the XSD-declared attribute parses
-/// losslessly into the modelled `TERMINOLOGY_STATUS` fields.
+/// Returns the optional `status` attribute the terminology XSDs declare on
+/// `codeset`/`code`/`group`/`concept`.
+///
+/// [`TerminologyStatus::from_wire`] is total, so an out-of-set token survives
+/// as [`TerminologyStatus::Other`]. The pinned 3.1.0 assets declare no `status`
+/// attributes, so this reads `None` there.
 fn status_attr(node: &roxmltree::Node) -> Option<TerminologyStatus> {
     attr(node, "status").map(TerminologyStatus::from_wire)
 }
@@ -956,8 +941,7 @@ mod tests {
 
     #[test]
     fn vendored_assets_carry_no_status_attributes() {
-        // Pins the current asset reality the doc comment on `status_attr`
-        // relies on: every parsed status is None at the 3.1.0 pin.
+        // Every parsed status is None at the 3.1.0 pin.
         let t = openehr();
         let no_status = |term: &Terminology| {
             code_sets(term)
@@ -993,7 +977,7 @@ mod tests {
 
     #[test]
     fn all_vendored_assets_load() {
-        // Exercises the LazyLock init: every vendored asset parses (build-time invariant).
+        // Exercises the LazyLock init: every vendored asset parses.
         let t = openehr();
         assert_eq!(t.terminology().language, "en");
         assert!(t.languages.contains_key("zh"));

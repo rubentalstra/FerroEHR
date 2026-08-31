@@ -1,36 +1,23 @@
 // SPDX-FileCopyrightText: FerroEHR contributors
 // SPDX-License-Identifier: MIT
 
-//! Authentication: HTTP Basic + OAuth2/OIDC bearer, plus the coarse **RBAC**
-//! gate.
-//!
-//! # Spec grounding
+//! Authentication: HTTP Basic + OAuth2/OIDC bearer, plus the coarse RBAC gate.
 //!
 //! ITS-REST leaves authentication a `SHOULD` and mandates no scheme
-//! (`docs/specs/openehr/ITS-REST/specifications/docs/overview/Requests_and_responses.md`
-//! §Authentication and authorization). But **when a framework is present the
-//! service MUST** use `WWW-Authenticate`/`Proxy-Authenticate` and return
-//! `401`/`403`/`407` as applicable — the normative bar this middleware meets:
-//! missing/invalid credentials → `401` with a `WWW-Authenticate` challenge
-//! (`Authenticator::challenge`); authenticated-but-refused → `403`, no
-//! challenge. (We serve no proxy, so `407`/`Proxy-Authenticate` do not apply.)
-//! The CNF security suites
-//! (`docs/specs/openehr/CNF/tests/platform/robot/SECURITY_TESTS/`) are the
-//! conformance reference for the Basic + bearer 401/403 flows.
-//!
-//! # RBAC (spec-silent)
+//! (`overview/Requests_and_responses.md` §Authentication and authorization), but
+//! when a framework IS present the service MUST use `WWW-Authenticate` and
+//! return `401`/`403`/`407` as applicable — the bar this middleware meets:
+//! missing or invalid credentials are a `401` with a challenge, and an
+//! authenticated-but-refused caller a `403` without one. The CNF security suites
+//! (`CNF/tests/platform/robot/SECURITY_TESTS/`) are the conformance reference.
 //!
 //! No openEHR spec governs role-based authorization — the SM places it out of
-//! band. The coarse RBAC gate is our own enterprise extension, kept clearly separate from the
-//! spec-grounded authn above.
-//!
-//! Applied as one axum middleware over the API router (not per handler). A
-//! successful authentication puts a [`Principal`] (with roles + retained JWT
-//! claims) into the request extensions for downstream handlers/the service
-//! layer. When an [`crate::extensions::access::authz::AuthzHandle`] is wired, the
-//! middleware then runs the RBAC gate over the matched operation's class: a deny
-//! is a `403` with the `Principal` attached to the response so the ATNA audit
-//! layer records it.
+//! band, so the coarse RBAC gate is our own enterprise extension. It runs as one
+//! axum middleware over the API router: a successful authentication puts a
+//! [`Principal`] into the request extensions, and when an
+//! [`crate::extensions::access::authz::AuthzHandle`] is wired the gate then
+//! judges the matched operation's class, denying with a `403` that carries the
+//! principal so the ATNA audit layer records it.
 
 #![expect(
     clippy::disallowed_types,
@@ -61,8 +48,7 @@ use jsonwebtoken::errors::ErrorKind;
 use jwt::JwtValidator;
 
 /// The state the [`middleware`] runs on: the authenticator plus the optional
-/// authorization handle (the RBAC gate; `None` restores authentication-only
-/// behaviour). Cheap to clone.
+/// authorization handle, where `None` is authentication-only.
 #[derive(Clone)]
 pub(crate) struct AuthLayer {
     pub(crate) authenticator: Arc<Authenticator>,
@@ -76,15 +62,14 @@ pub struct Principal {
     pub subject: String,
     /// `OAuth2` scopes granted to the caller (empty for Basic).
     pub scopes: Vec<String>,
-    /// Roles granted to the caller, normalized to upper-case. For Bearer they
-    /// come from the configured JWT claim paths (`authz.rbac.role_claims`,
-    /// defaulting to the RFC 9068 §2.2.3.1 carriers); for Basic from the user's
-    /// configured role list. Consumed by the RBAC gate. An OAuth2 scope is NOT
-    /// a role — see [`Self::scopes`].
+    /// Roles granted to the caller, normalized to upper-case: for Bearer from
+    /// the configured JWT claim paths (defaulting to the RFC 9068 §2.2.3.1
+    /// carriers), for Basic from the user's configured role list. An OAuth2
+    /// scope is not a role — see [`Self::scopes`].
     pub roles: Vec<String>,
-    /// The retained, validated JWT claim set (Bearer only; empty for Basic).
-    /// Kept so the ABAC layer can resolve subject attributes (organization,
-    /// patient) without re-parsing the token; unused by the RBAC gate.
+    /// The retained, validated JWT claim set (Bearer only; empty for Basic), so
+    /// the ABAC layer can resolve subject attributes without re-parsing the
+    /// token.
     pub claims: serde_json::Map<String, serde_json::Value>,
     /// Which mechanism authenticated the caller.
     pub method: AuthMethod,
@@ -99,16 +84,13 @@ pub enum AuthMethod {
     Bearer,
 }
 
-/// A successful authentication: the [`Principal`] plus whether THIS request
-/// performed a genuine credential verification (an actual authentication event,
-/// not a continuation of an established one). It is `true` only for a Basic
-/// verified-credential cache **miss** — the KDF actually ran, so the caller
-/// authenticated here and now. A cache hit (the same credential re-presented
-/// within the TTL) is a continuing session, and a Bearer request is federated
-/// (the authentication event happened out of band at the OIDC provider), so
-/// both are `false`. Used solely to decide whether to emit an IHE ATNA
-/// login/"Application Activity" record, which marks authentication events, not
-/// individual requests.
+/// A successful authentication: the [`Principal`] plus whether this request
+/// performed a genuine credential verification.
+///
+/// `fresh` is `true` only for a Basic verified-credential cache miss, where the
+/// KDF actually ran. A cache hit is a continuing session and a Bearer request is
+/// federated, so both are `false`. It decides whether to emit an IHE ATNA login
+/// record, which marks authentication events rather than requests.
 #[derive(Debug, Clone)]
 pub(crate) struct Authenticated {
     pub(crate) principal: Principal,
@@ -116,25 +98,18 @@ pub(crate) struct Authenticated {
 }
 
 /// Response-extension marker set by [`middleware`] when a request carried a
-/// genuine authentication event (see [`Authenticated::fresh`]). The outermost
-/// ATNA audit layer reads it to emit the login record only on real
-/// authentications rather than on every authenticated request.
+/// genuine authentication event (see [`Authenticated::fresh`]), which the
+/// outermost ATNA audit layer reads to emit the login record.
 #[derive(Debug, Clone, Copy)]
 pub(crate) struct FreshAuthentication;
 
 /// Why a bearer token was refused.
 ///
-/// RFC 6750 §3.1 gives every one of these the SAME challenge code —
-/// `invalid_token` covers a token that "is expired, revoked, malformed, or
-/// invalid for other reasons" — so this distinction never reaches the client.
-/// It exists for the operator and the cause chain: a burst of
-/// [`TokenRejection::Expired`] is clock skew or a token lifetime that is too
-/// short, while a burst of [`TokenRejection::Signature`] is someone presenting
-/// tokens this server was never meant to accept.
-///
-/// The variants built from `jsonwebtoken` carry that error as their
-/// [`std::error::Error::source`], so a caller can walk to the concrete kind
-/// instead of matching a substring of another crate's message text.
+/// RFC 6750 §3.1 gives every one of these the same `invalid_token` challenge
+/// code, so the distinction never reaches the client; it exists for the operator
+/// and the cause chain. The variants built from `jsonwebtoken` carry that error
+/// as their [`std::error::Error::source`], so a caller can walk to the concrete
+/// kind instead of matching another crate's message text.
 #[derive(Debug, Clone, thiserror::Error)]
 pub enum TokenRejection {
     /// The `exp` claim is in the past, beyond the configured clock-skew leeway.
@@ -156,7 +131,7 @@ pub enum TokenRejection {
     #[error("{0}")]
     Subject(#[source] jsonwebtoken::errors::Error),
     /// A required claim is absent, or carries the wrong JSON type. The message
-    /// names the CLAIM, never its value.
+    /// names the claim, never its value.
     #[error("{0}")]
     ClaimSet(#[source] jsonwebtoken::errors::Error),
     /// The credential is not a well-formed JWT at all: a bad shape, or base64 /
@@ -190,7 +165,7 @@ pub enum TokenRejection {
     )]
     AtJwtProfileRequired,
     /// The token claims the `at+jwt` profile but omits a claim RFC 9068 §2.2
-    /// then requires. Carries the claim NAME.
+    /// then requires. Carries the claim name.
     #[error("an `at+jwt` access token must carry `{0}` (RFC 9068 §2.2)")]
     AtJwtProfileClaimMissing(String),
     /// The token carries no usable `sub`, so the caller would be unattributable
@@ -288,7 +263,7 @@ pub enum AuthError {
     #[error("no credentials supplied")]
     MissingCredentials,
     /// An unknown user, or a password that does not match the stored Argon2
-    /// hash. A credential that was PRESENTED and REJECTED — RFC 6750 §3.1's
+    /// hash: a credential presented and rejected — RFC 6750 §3.1's
     /// `invalid_token` case for bearer, an ordinary 401 for Basic.
     #[error("invalid credentials")]
     InvalidCredentials,
@@ -296,19 +271,15 @@ pub enum AuthError {
     /// unparsable header, an unknown scheme, or a bearer credential outside the
     /// RFC 6750 §2.1 `b64token` grammar.
     ///
-    /// RFC 6750 §3.1 gives this its own code — "The request is missing a
-    /// required parameter, includes an unsupported parameter or parameter
-    /// value, repeats the same parameter, uses more than one method for
-    /// including an access token, or is otherwise malformed … 400 (Bad
-    /// Request)" — because it is a request defect, not a credential decision.
+    /// RFC 6750 §3.1 gives this its own `invalid_request` code and a `400`,
+    /// because it is a request defect rather than a credential decision.
     #[error("malformed authorization header: {0}")]
     MalformedRequest(String),
     /// A bearer token that failed structural, signature, or claim validation.
     ///
-    /// The [`TokenRejection`] names WHICH check refused it and carries the
-    /// underlying `jsonwebtoken` error as its source; RFC 6750 §3.1 keeps every
-    /// one of those on the single `invalid_token` challenge code, so the
-    /// distinction is an operator signal, never a wire one.
+    /// The [`TokenRejection`] names which check refused it and carries the
+    /// underlying `jsonwebtoken` error as its source; the distinction is an
+    /// operator signal, never a wire one.
     #[error("invalid bearer token: {0}")]
     InvalidToken(#[from] TokenRejection),
     /// The issuer's signing keys (JWKS) could not be fetched or parsed, so no
@@ -319,10 +290,9 @@ pub enum AuthError {
     /// branch of the ITS-REST 401-vs-403 split.
     #[error("forbidden: {0}")]
     Forbidden(String),
-    /// The server could not RUN credential verification at all (e.g. the
-    /// blocking Argon2 task panicked or was cancelled). A server fault, never
-    /// a statement about the credentials — maps to 500, not 401, so an
-    /// operator failure is never misreported as a client error.
+    /// The server could not run credential verification at all, for instance a
+    /// panicked blocking Argon2 task. A server fault, never a statement about
+    /// the credentials, so it maps to 500 rather than 401.
     #[error("credential verification unavailable: {0}")]
     VerificationUnavailable(String),
 }
@@ -331,38 +301,27 @@ impl AuthError {
     fn to_api_error(&self) -> ApiError {
         match self {
             AuthError::Forbidden(m) => ApiError::Forbidden(m.clone()),
-            // A server fault: the reason names an internal task/KDF failure,
-            // so it is traced and the body carries the curated message.
             AuthError::VerificationUnavailable(m) => {
                 crate::overview::error::internal_fault("verify the supplied credentials", m)
             }
             AuthError::MalformedRequest(m) => ApiError::BadRequest(m.clone()),
-            // The issuer's keys are unreachable, so NO token can be validated:
-            // the server cannot decide, which RFC 9110 §15.6.4 makes a 503 —
-            // "the server is currently unable to handle the request due to a
-            // temporary overload or scheduled maintenance". Answering 401 would
-            // tell a caller with a perfectly valid token that its credential was
-            // rejected, and a client that trusts that stops retrying.
+            // With the issuer's keys unreachable no token can be validated, so
+            // the server cannot decide: RFC 9110 §15.6.4 makes that a 503. A 401
+            // would tell a caller with a valid token its credential was
+            // rejected.
             AuthError::KeyResolution(m) => ApiError::ServiceUnavailable(m.clone()),
-            // The body says nothing about WHY, on purpose. Rendering the
-            // rejection told an UNAUTHENTICATED caller whether a token was
-            // expired or forged — an oracle that separates "a real token, just
-            // stale" from "my forgery was caught", which is exactly the
-            // distinction an attacker probes for. RFC 6750 §3 asks only that the
-            // challenge carry an `error` code, which it does; the reason stays
-            // in the log, where the operator can read it and the caller cannot.
+            // The body says nothing about why: rendering the rejection would
+            // tell an unauthenticated caller whether a token was expired or
+            // forged. The reason stays in the log.
             _ => ApiError::Unauthorized("authentication failed".to_owned()),
         }
     }
 
-    /// The RFC 6750 §3.1 `error` code this outcome carries on its
-    /// `WWW-Authenticate` challenge, or `None` when the challenge must carry no
-    /// code at all.
+    /// Returns the RFC 6750 §3.1 `error` code this outcome carries on its
+    /// `WWW-Authenticate` challenge, or `None` when it must carry none.
     ///
-    /// §3.1: "If the request lacks any authentication information …  the
-    /// resource server SHOULD NOT include an error code" — an unauthenticated
-    /// caller has not made a mistake yet, so naming one invites the client to
-    /// treat a first request as a failure.
+    /// §3.1: "If the request lacks any authentication information … the resource
+    /// server SHOULD NOT include an error code".
     const fn bearer_error_code(&self) -> Option<&'static str> {
         match self {
             AuthError::InvalidCredentials | AuthError::InvalidToken(_) => Some("invalid_token"),
@@ -379,8 +338,8 @@ impl AuthError {
     /// A stable, low-cardinality label naming this outcome.
     ///
     /// Carries no credential material, so it is safe as a structured log field
-    /// or a metric label; a bearer refusal delegates to
-    /// [`TokenRejection::label`] so expired-versus-invalid is countable.
+    /// or a metric label. A bearer refusal delegates to
+    /// [`TokenRejection::label`], so expired-versus-invalid is countable.
     pub(crate) const fn label(&self) -> &'static str {
         match self {
             AuthError::MissingCredentials => "missing_credentials",
@@ -395,20 +354,21 @@ impl AuthError {
 }
 
 /// The configured authenticator: the enabled mechanisms and the coarse admin
-/// gate. Cheap to clone (shared internals).
+/// gate.
 pub struct Authenticator {
     config: AuthConfig,
     jwt: Option<JwtValidator>,
-    /// Verified Basic-credential cache: SHA-256 of the presented
-    /// `Authorization` header → the verified [`Principal`]. An entry exists
-    /// only after a successful Argon2 verification; the TTL
-    /// (`config::AuthConfig::verified_cache_ttl_seconds`) bounds revocation
-    /// lag. `None` when the TTL is `0` (cache disabled). Argon2 verification
-    /// is tens of milliseconds of CPU per call by design — without this, a
-    /// busy client's request rate is capped by the KDF's work factor.
+    /// Verified Basic-credential cache, keyed by the SHA-256 of the presented
+    /// `Authorization` header.
+    ///
+    /// An entry exists only after a successful Argon2 verification, and the TTL
+    /// (`config::AuthConfig::verified_cache_ttl_seconds`) bounds revocation lag;
+    /// `None` disables it. Argon2 costs tens of milliseconds of CPU per call by
+    /// design, so without this a busy client's request rate is capped by the
+    /// KDF's work factor.
     verified: Option<moka::future::Cache<[u8; 32], Principal>>,
-    /// KDF verifications actually performed (cache misses) — a test seam and
-    /// a cheap operational signal.
+    /// KDF verifications actually performed: a test seam and a cheap
+    /// operational signal.
     kdf_verifications: std::sync::atomic::AtomicU64,
 }
 
@@ -423,8 +383,8 @@ impl std::fmt::Debug for Authenticator {
 }
 
 impl Authenticator {
-    /// Build from configuration, constructing the bearer validator if OIDC is
-    /// configured.
+    /// Builds an authenticator from configuration, constructing the bearer
+    /// validator if OIDC is configured.
     ///
     /// # Errors
     /// Returns a message if the OIDC key material/algorithms are invalid.
@@ -435,9 +395,9 @@ impl Authenticator {
         )
     }
 
-    /// Build from configuration with explicit RBAC role-claim paths (from
-    /// `authz.rbac.role_claims`), used when an [`crate::extensions::access::authz::AuthzHandle`] is
-    /// wired; [`Authenticator::new`] defaults them.
+    /// Builds an authenticator with explicit RBAC role-claim paths, used when an
+    /// [`crate::extensions::access::authz::AuthzHandle`] is wired;
+    /// [`Authenticator::new`] defaults them.
     ///
     /// # Errors
     /// Returns a message if the OIDC key material/algorithms are invalid.
@@ -469,20 +429,19 @@ impl Authenticator {
         self.config.enabled
     }
 
-    /// The `WWW-Authenticate` challenge advertising the enabled mechanisms.
+    /// Builds the `WWW-Authenticate` challenge advertising the enabled
+    /// mechanisms.
     pub(crate) fn challenge(&self, outcome: Option<&AuthError>) -> HeaderValue {
         let error = outcome.and_then(AuthError::bearer_error_code);
         let mut parts: Vec<String> = Vec::new();
         if self.config.basic.is_some() {
-            // RFC 7617 §2.1: `charset="UTF-8"` tells the client which encoding
-            // to use for the credential; the RFC defines `UTF-8` as its only
-            // legal value.
+            // RFC 7617 §2.1: `charset="UTF-8"` names the credential encoding,
+            // and is the RFC's only legal value.
             parts.push(r#"Basic realm="ferroehr", charset="UTF-8""#.to_owned());
         }
         if self.jwt.is_some() {
-            // RFC 6750 §3: the `Bearer` scheme's challenge carries `realm` and,
-            // when the request failed for a reason the client can act on, an
-            // `error` code from §3.1.
+            // RFC 6750 §3: the challenge carries `realm` and, when the client
+            // can act on the failure, an `error` code from §3.1.
             let bearer = match error {
                 Some(code) => format!(r#"Bearer realm="ferroehr", error="{code}""#),
                 None => r#"Bearer realm="ferroehr""#.to_owned(),
@@ -531,10 +490,9 @@ impl Authenticator {
                     .basic
                     .as_ref()
                     .ok_or(AuthError::InvalidCredentials)?;
-                // Verified-credential cache: key = SHA-256 of the presented
-                // header (never the plaintext). A hit skips the KDF entirely;
-                // a miss runs Argon2 on the blocking pool so the async workers
-                // are never parked on CPU-bound hashing.
+                // Keyed by the SHA-256 of the presented header, never the
+                // plaintext. A miss runs Argon2 on the blocking pool, so the
+                // async workers are never parked on CPU-bound hashing.
                 let key: [u8; 32] = {
                     use sha2::Digest as _;
                     sha2::Sha256::digest(auth.as_bytes()).into()
@@ -591,13 +549,13 @@ impl Authenticator {
     }
 }
 
-/// Extract the bearer credential from an `Authorization` header value, enforcing
-/// the RFC 6750 §2.1 grammar.
+/// Extracts the bearer credential from an `Authorization` header value,
+/// enforcing the RFC 6750 §2.1 grammar.
 ///
 /// The RFC is exact: `credentials = "Bearer" 1*SP b64token` with
 /// `b64token = 1*( ALPHA / DIGIT / "-" / "." / "_" / "~" / "+" / "/" ) *"="`.
-/// A value outside it is a malformed REQUEST, not a rejected credential, so it
-/// answers 400 rather than 401 (§3.1 `invalid_request`).
+/// A value outside it is a malformed request rather than a rejected credential,
+/// so it answers 400 (§3.1 `invalid_request`).
 ///
 /// # Errors
 /// [`AuthError::MalformedRequest`] when the scheme is not followed by at least
@@ -639,20 +597,17 @@ tokio::task_local! {
     static REQUEST_PRINCIPAL: Option<Principal>;
 }
 
-/// The authenticated principal for the current request, if any.
+/// Returns the authenticated principal for the current request, if any.
 ///
-/// Set by `middleware` for the duration of request handling; downstream layers
-/// (notably the service layer, when attributing a CONTRIBUTION's committer) read
-/// it without the principal having to be threaded through the generated trait
-/// signatures. Returns `None` when unauthenticated or called outside a request.
+/// Set by `middleware` for the duration of request handling, so downstream
+/// layers read it without the principal being threaded through the generated
+/// trait signatures. `None` when unauthenticated or called outside a request.
 #[must_use]
 pub fn current_principal() -> Option<Principal> {
     REQUEST_PRINCIPAL.try_with(Clone::clone).ok().flatten()
 }
 
-/// The authentication + RBAC middleware. Attached to the API router; public
-/// endpoints (status, health, Swagger) are mounted outside it.
-/// Count one refusal, tagged by the mechanism that produced it and the status
+/// Counts one refusal, tagged by the mechanism that produced it and the status
 /// the caller receives.
 fn count_auth_failure(mechanism: &'static str, status: &'static str) {
     ferroehr::telemetry::metrics::metrics().auth_failures.add(
@@ -664,6 +619,8 @@ fn count_auth_failure(mechanism: &'static str, status: &'static str) {
     );
 }
 
+/// The authentication and RBAC middleware, attached to the API router; the
+/// public endpoints are mounted outside it.
 pub(crate) async fn middleware(
     State(layer): State<AuthLayer>,
     mut req: Request,
@@ -680,7 +637,6 @@ pub(crate) async fn middleware(
                 return refusal;
             }
             req.extensions_mut().insert(principal.clone());
-            // Publish the principal for the service layer (committer attribution).
             let for_audit = principal.clone();
             let committer = committer_identity(&for_audit);
             let mut resp = REQUEST_PRINCIPAL
@@ -689,11 +645,9 @@ pub(crate) async fn middleware(
                     ferroehr::service::committer::with_committer(Some(committer), next.run(req)),
                 )
                 .await;
-            // Republish onto the response so the outer ATNA audit layer — which
-            // cannot observe request-extension mutations — can attribute events.
+            // The outer ATNA audit layer cannot observe request-extension
+            // mutations, so the principal is republished onto the response.
             resp.extensions_mut().insert(for_audit);
-            // Mark a genuine authentication event so the ATNA layer emits the
-            // login record only then, not on every authenticated request.
             if fresh {
                 resp.extensions_mut().insert(FreshAuthentication);
             }
@@ -703,14 +657,13 @@ pub(crate) async fn middleware(
     }
 }
 
-/// The RBAC gate over an authenticated caller: the matched operation's class
-/// against the caller's roles, then the read-only restriction.
+/// Runs the RBAC gate over an authenticated caller: the matched operation's
+/// class against the caller's roles, then the read-only restriction.
 ///
-/// A principal carrying the configured read-only role is refused on every
-/// write operation, overriding any grant. Both denials produce the same `403`,
-/// attributed to the authenticated caller so the outer ATNA audit layer
-/// records the denied access. A `None` authz handle is auth-only, and no
-/// openEHR spec governs role semantics — our own design/extension.
+/// A principal carrying the configured read-only role is refused on every write
+/// operation, overriding any grant. Both denials produce the same `403`,
+/// attributed to the caller so the ATNA audit layer records it. No openEHR spec
+/// governs role semantics — our own design/extension.
 fn rbac_refusal(layer: &AuthLayer, req: &Request, principal: &Principal) -> Option<Response> {
     let rbac = layer.authz.as_deref().and_then(AuthzHandle::rbac)?;
     let matched = req
@@ -734,16 +687,13 @@ fn rbac_refusal(layer: &AuthLayer, req: &Request, principal: &Principal) -> Opti
     Some(resp)
 }
 
-/// The platform committer identity published for the service layer.
+/// Returns the platform committer identity published for the service layer.
 ///
-/// A default-committer audit (a write whose request carried no committal
-/// headers) is attributed to the authenticated principal instead of the system
-/// identity (`AUDIT_DETAILS.committer` 1..1 — RM common master04 §Audit
-/// Details). A Bearer principal's subject was minted by the identity provider,
-/// so the issuing authority the audit records is the validated token issuer
-/// (`iss`, checked against the configured issuer in `jwt.rs` before the claim
-/// set is retained), never this server; Basic credentials are held locally and
-/// carry no external issuer.
+/// A write whose request carried no committal headers is attributed to the
+/// authenticated principal rather than the system identity
+/// (`AUDIT_DETAILS.committer` 1..1 — RM common master04 §Audit Details). A
+/// Bearer subject was minted by the identity provider, so the audit records the
+/// validated token issuer; Basic credentials are local and carry none.
 fn committer_identity(principal: &Principal) -> ferroehr::service::committer::CommitterIdentity {
     ferroehr::service::committer::CommitterIdentity {
         subject: principal.subject.clone(),
@@ -762,16 +712,13 @@ fn committer_identity(principal: &Principal) -> ferroehr::service::committer::Co
     }
 }
 
-/// The response for a refused authentication, metered and logged.
+/// Builds the response for a refused authentication, metered and logged.
 ///
-/// A refusal that presented no credential is routine (an unauthenticated
-/// probe); a presented-and-rejected one is the operator's signal. Neither
-/// record carries the token or a claim value.
-///
-/// ITS-REST §Authentication and authorization: a `401` MUST carry a
-/// `WWW-Authenticate` challenge. RFC 6750 §3 additionally carries one on a
-/// bearer `403` — the `insufficient_scope` case — because there the challenge
-/// tells the client WHAT it lacks rather than that it is unauthenticated.
+/// A refusal that presented no credential is routine; a presented-and-rejected
+/// one is the operator's signal. Neither record carries the token or a claim
+/// value. ITS-REST §Authentication and authorization makes the
+/// `WWW-Authenticate` challenge a MUST on a `401`, and RFC 6750 §3 carries one
+/// on a bearer `403` too, where it names what the client lacks.
 fn refusal_response(auth: &Authenticator, headers: &header::HeaderMap, e: &AuthError) -> Response {
     let api = e.to_api_error();
     let status = api.status();
@@ -908,8 +855,8 @@ fn scheme_label(headers: &http::HeaderMap) -> &'static str {
     }
 }
 
-/// Extractor for handlers/the service layer to read the authenticated caller.
-/// Yields 401 if no principal is present (auth disabled or middleware bypassed).
+/// Extractor for handlers and the service layer to read the authenticated
+/// caller, yielding a 401 when no principal is present.
 #[derive(Debug, Clone)]
 pub struct AuthenticatedUser(pub Principal);
 

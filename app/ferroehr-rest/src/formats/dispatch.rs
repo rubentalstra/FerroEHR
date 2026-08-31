@@ -4,31 +4,25 @@
 //! The Simplified-Formats payload adapter (ITS-REST
 //! `docs/specs/openehr/ITS-REST/docs/simplified_formats/`, STABLE).
 //!
-//! This is the wire seam between the negotiation core
+//! The wire seam between the negotiation core
 //! ([`crate::overview::negotiate`], which classifies the media type) and the
-//! `openehr_its::flat` conversion engine. It handles, in both directions, the
-//! FLAT (`application/openehr.wt.flat+json`) and STRUCTURED
-//! (`application/openehr.wt.structured+json`) representations of a versioned
-//! object:
+//! `openehr_its::flat` conversion engine, in both directions for the FLAT and
+//! STRUCTURED representations of a versioned object.
 //!
-//! * **request** — parse the simplified body per its media type, resolve the
-//!   template id from the `openehr-template-id` request header
-//!   (`Requests_and_responses.md §openehr-template-id`: the header is THE
-//!   mechanism for a simplified COMPOSITION commit, since the payload carries
-//!   no `archetype_details.template_id`), and build the canonical-JSON
-//!   COMPOSITION;
-//! * **response** — serialize a stored canonical COMPOSITION into the
-//!   negotiated simplified form (its template id read from
-//!   `archetype_details/template_id`).
-//!
-//! `WebTemplate` resolution is not this layer's concern: the service owns the
-//! one cache and exposes it through `state.backend().web_template(..)`.
+//! On a request it parses the simplified body per its media type, resolves the
+//! template id from the `openehr-template-id` request header — the mechanism for
+//! a simplified COMPOSITION commit, since the payload carries no
+//! `archetype_details.template_id` (`Requests_and_responses.md`
+//! §openehr-template-id) — and builds the canonical-JSON COMPOSITION. On a
+//! response it serializes a stored canonical COMPOSITION into the negotiated
+//! form, reading its template id from `archetype_details/template_id`.
+//! `WebTemplate` resolution is the service's concern, reached through
+//! `state.backend().web_template(..)`.
 //!
 //! CONTRIBUTION keeps the envelope canonical (`contribution_create.yaml`
-//! §Simplified Formats) — only each `versions[i].data` COMPOSITION is
-//! simplified. Non-templated resources (EHR, `EHR_STATUS`, FOLDER, demographic
-//! parties) have no Simplified-Formats mapping and are rejected uniformly
-//! (`guard_non_templated`).
+//! §Simplified Formats); only each `versions[i].data` COMPOSITION is simplified.
+//! Non-templated resources have no Simplified-Formats mapping and are rejected
+//! uniformly (`guard_non_templated`).
 
 #![expect(
     clippy::disallowed_types,
@@ -48,12 +42,12 @@ use crate::negotiate::WireFormat;
 use crate::overview::error::RestError;
 use crate::state::AppState;
 
-/// The `openehr-template-id` request header (`Requests_and_responses.md
-/// §openehr-template-id`). HTTP header names are case-insensitive; the deprecated
-/// `openEHR-TEMPLATE_ID` spelling (§Deprecated headers — "remain available for
-/// backward compatibility") is accepted as a fallback. The former
-/// `template_id`/`templateId` **query parameter is not read** — the spec defines
-/// only the header.
+/// Reads the `openehr-template-id` request header
+/// (`Requests_and_responses.md` §openehr-template-id).
+///
+/// HTTP header names are case-insensitive, and the deprecated
+/// `openEHR-TEMPLATE_ID` spelling is accepted as a fallback. No query parameter
+/// is read: the spec defines only the header.
 pub(crate) fn header_template_id(headers: &HeaderMap) -> Option<String> {
     headers
         .get("openehr-template-id")

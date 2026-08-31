@@ -14,14 +14,13 @@
 //! inaccessible terminologies should be flagged with a warning indicating that
 //! no verification was possible)."
 //!
-//! `openehr-adl` is a network-free spec engine (no app/SQL/REST — see the crate
-//! `CLAUDE.md`), so it cannot hold a live terminology-service client. VETDF is
-//! threaded through the [`TerminologyResolver`] seam, exactly like the
-//! [`RmModel`](super::rm::RmModel) reference-model seam: the application injects
-//! a resolver backed by its terminology service (the in-process `openehr-term`
-//! bundle + any configured external FHIR TS), and the full-validation entry
-//! points ([`super::validate`] / [`super::validate_source`]) consult it. Every
-//! entry point that takes no resolver behaves as if a [`NoTerminologyResolver`]
+//! `openehr-adl` is a network-free spec engine, so it holds no live
+//! terminology-service client. VETDF is threaded through the
+//! [`TerminologyResolver`] seam, like the [`RmModel`](super::rm::RmModel)
+//! reference-model seam: the application injects a resolver backed by its
+//! terminology service, and the full-validation entry points
+//! ([`super::validate`] / [`super::validate_source`]) consult it. Every entry
+//! point that takes no resolver behaves as if a [`NoTerminologyResolver`]
 //! were supplied (VETDF is silently not raised — no verification was possible),
 //! matching the spec's "subject to tool accessibility" carve-out.
 //!

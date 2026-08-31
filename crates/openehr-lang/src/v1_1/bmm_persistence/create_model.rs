@@ -22,41 +22,27 @@
 //! Rust values are not:
 //!
 //! * **Embedding depth.** `master03-model.adoc` §Overview calls the `bmm_xxx`
-//!   attributes "in-memory only references to reconstructed instances", i.e. the
-//!   reference semantics the BMM model assumes throughout. `BMM_CLASS.ancestors`
-//!   is a map of `BMM_CLASS` and `BMM_SIMPLE_TYPE.base_class` IS a `BMM_CLASS`,
-//!   so full embedding would not terminate (`DV_TEXT` has a property of type
-//!   `CODE_PHRASE`, whose ancestors reach back through the type system). This
-//!   transform therefore embeds: a class's ancestors as resolved copies carrying
-//!   their own properties, whose own ancestors are name-bearing stubs; and every
-//!   type's base class as a name-bearing stub (name, package, flags, no
-//!   properties, no ancestors). The complete definition of every class is always
-//!   `BMM_MODEL.class_definitions` — "All classes in this schema"
-//!   (`org.openehr.lang.bmm.bmm_model.adoc` §Attributes) — which is exactly the
-//!   source the model-level lookups
-//!   ([`crate::v1_1::bmm::core::bmm_model::BmmModel::property_definition`])
-//!   already prefer over embedded copies.
-//! * **`value_constraint` has no destination in the generation this
-//!   materialisation targets.** `P_BMM_BASE_TYPE.value_constraint`
-//!   (`master04-syntax.adoc` §Value-set Constraints) carries a value-set
-//!   reference such as `openEHR::languages`. This module materialises the **v2.x**
-//!   `BMM_MODEL` — P_BMM *is* the v2 generation's persistence form
-//!   (`LANG/docs/bmm/master06-persistence.adoc`; `LANG/docs/bmm/master01-preface.adoc`
-//!   §History calls the v2.x model "the normative, tool-implemented version",
-//!   and `master06-persistence.adoc` §Overview presents P_BMM as the serialised
-//!   form of that model) — and the v2 `BMM_SIMPLE_TYPE` declares only
-//!   `base_class` (`org.openehr.lang.bmm.bmm_simple_type.adoc` §Attributes),
-//!   with no v2 `BMM_*` class referencing `BMM_VALUE_SET_SPEC` at all. So in the
-//!   v2 generation the constraint is preserved in the P_BMM graph and NOT carried
-//!   further — a boundary of that generation's model, not of the openEHR specs.
-//!   The **v3** generation DOES declare the destination:
-//!   `org.openehr.lang.bmm3.bmm_model_type.adoc` §Attributes types
-//!   `value_constraint: BMM_VALUE_SET_SPEC` on every model type, and
-//!   `crate::v1_1::bmm3` emits it — and
-//!   [`crate::v1_1::bmm_persistence::create_bmm3_model::create_bmm3_model`] materialises
-//!   that generation from the same persisted schema, where the constraint DOES
-//!   land on the type. So the boundary is this transform's target generation, and
-//!   the other transform is the way to keep the constraint.
+//!   attributes "in-memory only references to reconstructed instances", and
+//!   `BMM_CLASS.ancestors` is a map of `BMM_CLASS` while
+//!   `BMM_SIMPLE_TYPE.base_class` IS a `BMM_CLASS`, so full embedding would not
+//!   terminate. A class's ancestors are therefore embedded as resolved copies
+//!   carrying their own properties, whose own ancestors are name-bearing stubs,
+//!   and every type's base class is such a stub. The complete definition of a
+//!   class is always `BMM_MODEL.class_definitions` — "All classes in this
+//!   schema" (`org.openehr.lang.bmm.bmm_model.adoc` §Attributes) — which the
+//!   model-level lookups already prefer over embedded copies.
+//! * **`value_constraint` has no destination in the v2.x generation this
+//!   transform targets.** `P_BMM_BASE_TYPE.value_constraint`
+//!   (`master04-syntax.adoc` §Value-set Constraints) carries a reference such as
+//!   `openEHR::languages`, but the v2 `BMM_SIMPLE_TYPE` declares only
+//!   `base_class` (`org.openehr.lang.bmm.bmm_simple_type.adoc` §Attributes) and
+//!   no v2 `BMM_*` class references `BMM_VALUE_SET_SPEC` at all. The constraint
+//!   is therefore preserved in the P_BMM graph and not carried further — a
+//!   boundary of that generation's model, not of the openEHR specs. The v3
+//!   generation declares the destination
+//!   (`org.openehr.lang.bmm3.bmm_model_type.adoc` §Attributes), so
+//!   [`crate::v1_1::bmm_persistence::create_bmm3_model::create_bmm3_model`] is
+//!   the transform that keeps it.
 
 use std::collections::BTreeMap;
 use std::collections::BTreeSet;

@@ -12,39 +12,30 @@
 //! string patterns), collecting *all* violations (not fail-fast). Paths are the
 //! archetype `aqlPath` of the constraining node.
 //!
-//! Everything here needs a template. The **template-independent** passes — the
-//! RM class invariants and the RM-mandated openEHR terminology, which are
-//! properties of the instance value alone — live in [`crate::rm_instance`],
-//! which also owns the shared [`ValidationMessage`] report shape and the
-//! composed [`crate::rm_instance::validate_composition`] entry point that runs
-//! all three passes.
+//! Everything here needs a template. The template-independent passes live in
+//! [`crate::rm_instance`], which also owns the shared [`ValidationMessage`]
+//! shape and the composed [`crate::rm_instance::validate_composition`] entry
+//! point.
 //!
-//! # Simplified-input surface
-//!
-//! The pass above sees the already-built RM tree. Two of the
-//! Simplified-Formats input rules the ITS-REST spec lists under
-//! `simplified_formats/master04-basic_concepts.adoc` §Validation are properties
-//! of the FLAT/parsed *input*, checked before conversion to RM:
-//! [`validate_flat_other`] (the `|other` open-value-set rules) and
-//! [`validate_context`] (the mandatory `ctx/language` + `ctx/territory` context
-//! fields). Both return the same [`ValidationMessage`] report shape.
+//! Two of the Simplified-Formats input rules
+//! (`simplified_formats/master04-basic_concepts.adoc` §Validation) are
+//! properties of the FLAT input rather than of the RM tree, so they are checked
+//! before conversion: [`validate_flat_other`] for the `|other` open-value-set
+//! rules and [`validate_context`] for the mandatory `ctx/language` +
+//! `ctx/territory` fields.
 //!
 //! # Fidelity
 //!
-//! The instance-validation *algorithm* is spec-underdetermined — the AOM 1.4
-//! constraint model defines a positive-only cascade (`Valid_value`) over the
-//! archetype constraint tree and is silent on unmatched instance nodes. We
-//! approximate that walk over the *compacted* `WebTemplate`: the wrapper nodes
-//! the AOM constraint tree carries (ELEMENT / `ITEM_STRUCTURE` / HISTORY / EVENT)
-//! are folded into a child's `aqlPath`, so we navigate the instance by the
-//! RM-attribute + `[archetype_node_id]` predicate chain that separates a
-//! `WebTemplate` child from its (compacted) parent, counting occurrences per
-//! intermediate container. The `C_DV_*` leaf semantics (unit-scoped magnitude
-//! ranges, coded-value membership, string patterns) are approximated from the
-//! `WebTemplate` `inputs`. Where a check cannot be made reliably (temporal
-//! ranges, precision, `depends_on` choices, unresolved archetype slots/internal
-//! refs, deep required nodes behind an absent optional wrapper) we skip rather
-//! than over-reject — biasing toward reporting only confident violations.
+//! The instance-validation algorithm is spec-underdetermined: the AOM 1.4
+//! constraint model defines a positive-only `Valid_value` cascade over the
+//! archetype constraint tree and is silent on unmatched instance nodes. The walk
+//! here approximates it over the COMPACTED `WebTemplate` — the wrapper nodes the
+//! AOM tree carries are folded into a child's `aqlPath`, so the instance is
+//! navigated by the RM-attribute + `[archetype_node_id]` chain that separates a
+//! child from its compacted parent, counting occurrences per intermediate
+//! container. `C_DV_*` leaf semantics are approximated from the `WebTemplate`
+//! `inputs`. A check that cannot be made reliably is skipped rather than
+//! over-rejected, so only confident violations are reported.
 
 #![expect(
     clippy::disallowed_types,

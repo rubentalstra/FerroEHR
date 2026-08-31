@@ -170,7 +170,7 @@ fn prune_child_nodes(value: &Value) -> Value {
             // An array of RM nodes: children are validated individually by
             // the composition validator, so keep ONE pruned member as the
             // structural witness — an empty array stays empty so the decode
-            // judges it (NonEmptyVec refuses `[]` on 1..* and on the #1730
+            // judges it (NonEmptyVec refuses `[]` on 1..* and on the
             // present-implies-non-empty fields; a plain optional accepts it).
             Value::Array(items) if items.iter().any(Value::is_object) => {
                 Value::Array(items.first().map(prune_child_nodes).into_iter().collect())
@@ -199,36 +199,26 @@ fn prune_child_nodes(value: &Value) -> Value {
 /// [`super::try_fast_validate`] may only *skip* it when its result is provably
 /// identical); also the oracle the fast-path equivalence tests compare against.
 ///
-/// The table below covers the concrete `openehr-rm` / `openehr-base` types that
-/// carry a non-terminology class invariant (the ones with a `*_impl.rs` sibling)
-/// — those need a typed value to run the invariant on. **Every other class falls
-/// through**, and the generated structural dispatch decodes the node into that
-/// class's own Rust type and discards it: the codec is the structural-conformance
-/// authority for the whole emitted model, so a class with no invariant is still
-/// refused when it is structurally defective (a missing mandatory attribute, a
-/// wrong JSON kind, an unresolvable nested slot `_type`). `DV_INTERVAL` is
-/// dispatched with a `DvOrdered` element type so the `Limits_consistent` ordering
-/// invariant is reached, falling back to `serde_json::Value` (own boundary-flag
-/// invariants only) when the limits do not deserialize as typed `DV_ORDERED`
-/// values. The other generic containers (`HISTORY`, `POINT_EVENT`,
-/// `INTERVAL_EVENT`) are checked with `serde_json::Value` as the element type —
-/// enough for their own (non-child) invariants.
+/// The table covers the concrete types carrying a non-terminology class
+/// invariant, which need a typed value to run it on. Every other class falls
+/// through to the generated structural dispatch, which decodes the node and
+/// discards it: the codec is the structural-conformance authority for the whole
+/// emitted model, so a class with no invariant is still refused when it is
+/// structurally defective.
 ///
-/// # The inherited LOCATABLE invariant
+/// `DV_INTERVAL` is dispatched with a `DvOrdered` element type so
+/// `Limits_consistent` is reached, falling back to `serde_json::Value` when the
+/// limits do not deserialize as typed `DV_ORDERED` values. `HISTORY`,
+/// `POINT_EVENT` and `INTERVAL_EVENT` use `serde_json::Value` throughout, which
+/// is enough for their own non-child invariants.
 ///
 /// The inherited `LOCATABLE.Archetype_node_id_valid`
-/// (`not archetype_node_id.is_empty`,
-/// `docs/specs/openehr/RM/docs/UML/classes/org.openehr.rm.common.locatable.adoc`
-/// §Invariants) is closed out for **every** concrete LOCATABLE descendant by the
-/// caller, via [`super::locatable_node_id_violation`], whose applicable-type set
-/// is the generated RM model's transitive concrete-descendant closure of
-/// LOCATABLE — not a hand-maintained list. The arms below realize it themselves
-/// through their typed `Validate` impls, so the violation is appended only when
-/// this node's own pass did not already report it (reported exactly once per
-/// node). The classes with no arm — `ITEM_TREE`, `ITEM_LIST`, `ITEM_SINGLE`,
-/// `EHR_STATUS`, and the demographic / EHR_EXTRACT LOCATABLEs — reach the
-/// generated structural fallthrough, which decodes but runs no invariant, so
-/// that is where the inherited invariant becomes theirs too.
+/// (`docs/specs/openehr/RM/docs/UML/classes/org.openehr.rm.common.locatable.adoc`
+/// §Invariants) is closed out by the caller via
+/// [`super::locatable_node_id_violation`] over the generated model's descendant
+/// closure. The arms below realize it themselves, so it is appended only when
+/// this node's own pass did not report it; the classes with no arm pick it up
+/// from that closeout after the structural fallthrough.
 #[must_use]
 #[expect(
     clippy::too_many_lines,
@@ -359,7 +349,7 @@ pub fn dispatch_typed(ty: &str, value: &Value, out: &mut Vec<InvariantViolation>
         "SECTION" => run_shallow::<Section>(ty, value, out),
         "FOLDER" => run_shallow::<Folder>(ty, value, out),
         "ITEM_TAG" => run::<ItemTag>(ty, value, out),
-        // authored-resource metadata + the EHR_EXTRACT request classes (#1623):
+        // authored-resource metadata + the EHR_EXTRACT request classes:
         // scalar-only own invariants, shallow where child collections are
         // large. RESOURCE_DESCRIPTION keeps the full decode — its
         // Details_valid reads the `details` map.

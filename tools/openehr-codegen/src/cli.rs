@@ -315,7 +315,7 @@ pub(crate) fn render_rest_files() -> Result<Vec<EmittedFile>, Box<dyn std::error
     let mut files = Vec::new();
     // `common` always emits from the merged per-name view (first declarer
     // wins; the copies are identical by the hoist analysis) — ONE emission
-    // path, so no representative-vs-merged equivalence needs testing (#1854).
+    // path, so no representative-vs-merged equivalence needs testing.
     {
         let merged = oas::Oas::merged_schemas(&bundles, &hoisted);
         files.push(EmittedFile {
@@ -410,9 +410,9 @@ pub(crate) fn render_xml_files() -> Result<XsdEmission, Box<dyn std::error::Erro
         emit_xml::XmlSchema {
             model: &rm_unit.model,
             // The XML codec covers the crate's re-emitted closure twins too
-            // (#1699: the BASE Interval/Iso8601 family re-emitted into
-            // openehr-rm) — the impls must exist for every type a field of
-            // the augmented schema names.
+            // (the BASE Interval/Iso8601 family re-emitted into openehr-rm):
+            // the impls must exist for every type a field of the augmented
+            // schema names.
             schema: &rm_aug,
             root: &rm_root,
             external: &rm.current().external,
@@ -486,7 +486,7 @@ pub(crate) fn render_json_files() -> Result<Vec<EmittedFile>, Box<dyn std::error
     // root — every generation is codec-complete, colliding twins included
     // (see `JsonSchema::root` for the adjudication).
     // Every generation's emission schema is the augmented one (`emit` renders
-    // the re-emission closure, so the codec must cover it too — #1699).
+    // the re-emission closure, so the codec must cover it too).
     struct PreparedUnit {
         root: String,
         aug: BmmSchema,
@@ -967,10 +967,10 @@ fn cmd_check_xsd() -> Result<(), Box<dyn std::error::Error>> {
 /// the generation's own classes extend) is re-emitted crate-locally at its
 /// source package path, so downstream references resolve against the widened
 /// local twin — the completeness hard rule (owner 2026-07-19), applied
-/// uniformly to EVERY generation (#1699: rm re-emits BASE's
-/// `Interval`/`Iso8601_type` family; AM 1.4 re-emits `AUTHORED_RESOURCE` +
-/// `RESOURCE_DESCRIPTION`). A generation with an empty closure comes back
-/// unchanged, so applying this unconditionally is safe by construction.
+/// uniformly to EVERY generation (rm re-emits BASE's `Interval`/`Iso8601_type`
+/// family; AM 1.4 re-emits `AUTHORED_RESOURCE` + `RESOURCE_DESCRIPTION`). A
+/// generation with an empty closure comes back unchanged, so applying this
+/// unconditionally is safe by construction.
 fn augmented_schema(g: &ComposedGeneration, u: &ComposedUnit) -> BmmSchema {
     let reemit = cross_schema_reemit(&u.model, &u.schema);
     let dep_refs: Vec<&BmmSchema> = g.dep_schemas.iter().collect();
@@ -1100,7 +1100,7 @@ pub(crate) fn render_emit_files() -> Result<Vec<EmittedFile>, Box<dyn std::error
 /// `plan::composition::COMPOSITIONS` table (see it for the `includes`
 /// citations). `cross_schema_reemit` grafts the COMPLETE set of upstream classes
 /// whose Rust form widens in a generation — a full, non-minimal re-emission
-/// (owner ruling 2026-07-19, #1699). `openehr-rm` additionally carries the
+/// (owner ruling 2026-07-19). `openehr-rm` additionally carries the
 /// static RM model and the invariant cores, emitted here so a plain `emit` keeps
 /// the crate self-consistent.
 ///
@@ -1142,7 +1142,7 @@ fn render_crate_files(
     if comp.key == "rm" {
         // EVERY RM generation carries its own attribute model + invariant cores
         // (the same uniform rule as the per-generation codecs): a selectable
-        // generation is a complete peer, not a types-only shell (#1942).
+        // generation is a complete peer, not a types-only shell.
         for (g, augs) in c.generations.iter().zip(&augmented) {
             let module = g.spec.module;
             let unit = g.unit()?;
@@ -1245,7 +1245,7 @@ fn write_crate(crate_name: &str, files: &[&EmittedFile]) -> Result<(), Box<dyn s
 /// The failure then surfaces far from its cause as unsatisfied
 /// `serde::Serialize` bounds in whichever crate builds first, and the recovery
 /// costs a full rebuild. Saying so at the end of the run is cheaper than
-/// discovering it (#2324).
+/// discovering it.
 const INCOMPLETE_AFTER_EMIT: &str = "\
 note: `emit` alone leaves the workspace UNBUILDABLE — it removes each crate's
       json_serde.rs, which only `emit-json` writes back. Run the full set:
@@ -1414,7 +1414,7 @@ mod emit_warning_tests {
 
     /// The note must name `emit-json` — the one target that restores what
     /// `emit` removed. A note that only says "run the others" sends the reader
-    /// back to the documentation the foot-gun already survived (#2324).
+    /// back to the documentation the foot-gun already survived.
     #[test]
     fn the_note_names_the_target_that_restores_the_tree() {
         assert!(INCOMPLETE_AFTER_EMIT.contains("emit-json"));

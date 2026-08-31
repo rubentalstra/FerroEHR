@@ -3,61 +3,31 @@
 
 //! `openehr-version` / `openehr-audit-details` committal request headers.
 //!
-//! ITS-REST overview §"openehr-version and openehr-audit-details"
-//! (`docs/specs/openehr/ITS-REST/specifications/docs/overview/Requests_and_responses.md`
-//! lines 72–96) makes it a **MUST** that a service accept these custom request
-//! headers on the direct-commit change-controlled writes (COMPOSITION /
-//! `EHR_STATUS` / directory FOLDER `POST`/`PUT`/`DELETE` — EHR creation
-//! included, since it commits the bootstrap `EHR_STATUS` + `EHR_ACCESS` in a
-//! CONTRIBUTION, RM ehr `master04-ehr_package.adoc` §EHR Creation) and merge
-//! whatever is provided with the server's default VERSION + `commit_audit`
-//! attributes:
+//! ITS-REST overview §"openehr-version and openehr-audit-details" makes it a
+//! MUST that a service accept these custom request headers on the direct-commit
+//! change-controlled writes — EHR creation included, since it commits the
+//! bootstrap `EHR_STATUS` and `EHR_ACCESS` in a CONTRIBUTION (RM ehr
+//! `master04-ehr_package.adoc` §EHR Creation) — and merge them with the server's
+//! defaults: "None of these headers are mandatory, but whatever is provided it
+//! MUST be merged with the default `VERSION` and `VERSION.audit_details` attributes
+//! on commit runtime."
 //!
-//! > "None of these headers are mandatory, but whatever is provided it MUST be
-//! >  merged with the default VERSION and VERSION.audit_details attributes on
-//! >  commit runtime."
+//! Release-1.1.0 moved each attribute path into the header value: the names are
+//! lowercase and the value is a comma-separated list of `attr_path.key="value"`
+//! pairs, as in `openehr-audit-details: change_type.code_string="251"`. A header
+//! MAY appear multiple times and all occurrences are merged. The deprecated
+//! Release-1.0.3 forms carried the attribute path in the header NAME
+//! (`openEHR-AUDIT_DETAILS.change_type` and siblings) with a bare `key="value"`
+//! list in the value; §"Deprecated headers" keeps them "available for backward
+//! compatibility", so they are still accepted, and the value-carrying form wins
+//! on conflict. A client MAY supply `system_id` here, and when it is absent "the
+//! server MUST set it to its own configured system identifier" — asserted at the
+//! versioning seam, not in this layer.
 //!
-//! **Release-1.1.0** moved each attribute path *into the header
-//! value*. The current header names are lowercase and the value is a
-//! comma-separated list of `attr_path.key="value"` pairs (worked example,
-//! lines 85–91):
-//!
-//! ```http
-//! openehr-version: lifecycle_state.code_string="532"
-//! openehr-audit-details: change_type.code_string="251"
-//! openehr-audit-details: description.value="An updated composition contribution description"
-//! openehr-audit-details: committer.name="John Doe",committer.external_ref.id="…",committer.external_ref.namespace="demographic",committer.external_ref.type="PERSON"
-//! openehr-audit-details: system_id="example.openehr.systemid"
-//! ```
-//!
-//! A header MAY appear multiple times (`openehr-audit-details` does above) and
-//! all occurrences are merged (`get_all`).
-//!
-//! The **deprecated Release-1.0.3 forms** carried the attribute path in the
-//! header *name* — `openEHR-VERSION.lifecycle_state`,
-//! `openEHR-AUDIT_DETAILS.change_type` / `.description` / `.committer` /
-//! `.system_id` — with a bare `key="value"` list in the value. §"Deprecated
-//! headers" keeps these "available for backward compatibility" (a MAY), so we
-//! still accept them; the new value-carrying form **wins on conflict**.
-//!
-//! `system_id` (Release-1.1.0): a client MAY supply it here; when it is
-//! absent "the server MUST set it to its own configured system identifier"
-//! (line 94). The header layer only carries a client-supplied value into
-//! `UpdateAudit::system_id`; the server default is asserted at the versioning
-//! seam, not here.
-//!
-//! NOTE (wire, spec-silent): the per-attribute value grammar is given only
-//! by example — the spec states no formal ABNF for the `attr.key="value"` list,
-//! its quoting, or escaping. We parse a tolerant comma-separated list of
-//! `path="value"` (or bare `path=value`) pairs, treating a quoted value as
-//! opaque (so a `description` value may itself contain commas). A header that
-//! does not yield the attribute it targets is ignored (the server default
-//! stands), never an error — the spec only says "merge whatever is provided".
-//!
-//! NOTE (wire, spec-silent): the `committer` `external_ref.id` is wrapped
-//! as a `HIER_OBJECT_ID` (the spec example is a UUID and gives no `OBJECT_ID`
-//! subtype); if the assembled `PARTY_IDENTIFIED` fails to type, the committer is
-//! left at the server default.
+//! NOTE: the per-attribute value grammar is given only by example, with no ABNF,
+//! so the tolerant `path="value"` reader here treating a quoted value as opaque
+//! is our own reading; a header that yields no attribute is ignored rather than
+//! refused, since the spec says only "merge whatever is provided".
 
 #![allow(
     clippy::disallowed_types,
@@ -86,14 +56,15 @@ use ferroehr::service::version_update::{
 const H_VERSION: &str = "openehr-version";
 const H_AUDIT_DETAILS: &str = "openehr-audit-details";
 
-/// Deprecated (Release-1.0.3) header names — the attribute path is the name
-/// suffix, the value is a bare `key="value"` list. Kept accepted per
-/// §"Deprecated headers" (a MAY).
+/// Deprecated (Release-1.0.3) header names: the attribute path is the name
+/// suffix and the value a bare `key="value"` list, kept accepted per
+/// §"Deprecated headers".
 const H_DEP_LIFECYCLE: &str = "openEHR-VERSION.lifecycle_state";
-/// The BARE deprecated header name from the §"Deprecated headers" table —
-/// distinct from the new name after lowercasing (`openehr-audit_details` vs
-/// `openehr-audit-details`), so it needs its own lookup. Value grammar is the
-/// attribute-path-in-value form, like the new header.
+/// The bare deprecated header name from the §"Deprecated headers" table.
+///
+/// It is distinct from the new name after lowercasing (`openehr-audit_details`
+/// against `openehr-audit-details`), so it needs its own lookup; its value
+/// grammar is the attribute-path-in-value form of the new header.
 const H_DEP_AUDIT_DETAILS_BARE: &str = "openEHR-AUDIT_DETAILS";
 const H_DEP_CHANGE_TYPE: &str = "openEHR-AUDIT_DETAILS.change_type";
 const H_DEP_DESCRIPTION: &str = "openEHR-AUDIT_DETAILS.description";
@@ -107,11 +78,11 @@ const T_DESCRIPTION: &str = "description";
 const T_COMMITTER: &str = "committer";
 const T_SYSTEM_ID: &str = "system_id";
 
-/// Merge any present committal headers (development-edition `openehr-version` /
-/// `openehr-audit-details`, or the deprecated dotted-name forms) into a
-/// synthesized [`UpdateVersion`] commit envelope, overriding the server defaults
-/// set by the caller. Absent headers leave the defaults intact; the new form
-/// wins over the deprecated form on conflict.
+/// Merges any present committal headers into a synthesized [`UpdateVersion`]
+/// commit envelope, overriding the server defaults the caller set.
+///
+/// Absent headers leave the defaults intact, and the new form wins over the
+/// deprecated form on conflict.
 ///
 /// # Errors
 /// [`ApiError::BadRequest`] when a header carries a malformed identifier (see
@@ -127,12 +98,13 @@ pub(crate) fn merge_committal_headers<T>(
     )
 }
 
-/// Overlay already-collected committal attributes onto the two halves of a
-/// commit envelope — the merge itself, split from the header collection so a
-/// caller that needs to know whether ANY attribute was supplied parses the
-/// headers exactly once. It touches nothing but the VERSION
-/// `lifecycle_state` and the `UPDATE_AUDIT` attributes, which is why it is
-/// independent of the envelope's content type.
+/// Overlays already-collected committal attributes onto the two halves of a
+/// commit envelope.
+///
+/// Split from the header collection so a caller that needs to know whether any
+/// attribute was supplied parses the headers once. It touches nothing but the
+/// VERSION `lifecycle_state` and the `UPDATE_AUDIT` attributes, which is why it
+/// is independent of the envelope's content type.
 fn apply_attrs(
     lifecycle_state: &mut DvCodedText,
     commit_audit: &mut UpdateAudit,
@@ -149,14 +121,10 @@ fn apply_attrs(
         *audit.change_type = change_type_coded(&code);
     }
     if let Some(desc) = attrs.get(T_DESCRIPTION).and_then(|p| scalar(p)) {
-        // The header grammar carries the attribute pre-flattened as the
-        // `description.value` subkey — the `DV_TEXT.value` string both
-        // `DV_TEXT` and `DV_CODED_TEXT` share — so a header-borne description
-        // is always a plain `DV_TEXT`: `DV_CODED_TEXT.defining_code` has no
-        // subkey to travel in (ITS-REST overview `Requests_and_responses.md`
-        // §"openehr-version and openehr-audit-details", the worked example).
-        // A coded description IS expressible where the whole
-        // `UPDATE_AUDIT` travels in the body.
+        // The grammar carries the attribute pre-flattened as the
+        // `description.value` subkey, so a header-borne description is always a
+        // plain `DV_TEXT`: `DV_CODED_TEXT.defining_code` has no subkey to travel
+        // in (overview §"openehr-version and openehr-audit-details").
         *audit.description = Some(plain_text(&desc));
     }
     if let Some(pairs) = attrs.get(T_COMMITTER)
@@ -170,28 +138,18 @@ fn apply_attrs(
     Ok(())
 }
 
-/// [`committal_commit`]'s audit half for a **DELETE** wire, which additionally REFUSES a
-/// committal header that names a lifecycle state other than `523|deleted|`.
+/// [`committal_commit`]'s audit half for a DELETE wire, which additionally
+/// refuses a committal header naming a lifecycle state other than `523|deleted|`.
 ///
-/// A `DELETE` on a change-controlled resource is the logical-deletion
-/// procedure, and that procedure fixes the state: "create a new Version in the
-/// normal way; delete its `_data_`; set the `_lifecycle_state_` value to the
-/// code for `deleted`; commit in the normal way" (RM common
-/// `master06-change_control_package.adoc` §Logical Deletion). A request that
-/// says `openehr-version: lifecycle_state.code_string="532"` on a DELETE is
-/// therefore asking for two contradictory things at once. The overview's merge
-/// duty — "whatever is provided it MUST be merged with the default VERSION and
-/// `VERSION.audit_details` attributes on commit runtime" (ITS-REST overview
-/// `Requests_and_responses.md` §"openehr-version and openehr-audit-details")
-/// — cannot be honoured for such a value, and silently discarding it is the
-/// leniency this refusal removes: the client is told its instruction was not
-/// followed rather than being led to believe it was. `400` is the shape class
-/// the overview assigns to "syntactically invalid header, parameter or
-/// content".
-///
-/// A DELETE with NO lifecycle attribute is unaffected — the header set is
-/// optional ("None of these headers are mandatory") — as is one that states
-/// the `523|deleted|` the operation already commits.
+/// A DELETE on a change-controlled resource is the logical-deletion procedure,
+/// and that procedure fixes the state (RM common
+/// `master06-change_control_package.adoc` §Logical Deletion), so a header asking
+/// for another state asks for two contradictory things at once. The overview's
+/// merge duty cannot be honoured for such a value, and discarding it silently
+/// would let the client believe its instruction was followed; `400` is the shape
+/// class the overview assigns to "syntactically invalid header, parameter or
+/// content". A DELETE with no lifecycle attribute, or one stating the
+/// `523|deleted|` the operation already commits, is unaffected.
 ///
 /// # Errors
 /// [`ApiError::BadRequest`] when a header carries a malformed identifier, or a
@@ -219,20 +177,15 @@ pub(crate) fn committal_audit_for_delete(
 /// master06 §Logical Deletion; openEHR terminology `version lifecycle state`).
 const DELETED_LIFECYCLE: &str = "523";
 
-/// The full committal metadata — merged `UPDATE_AUDIT` **and** the VERSION
-/// `lifecycle_state` — of a request that commits a change-controlled resource
-/// whose `UPDATE_VERSION` envelope never travels in the body: the bare EHR
-/// creates (`POST /ehr`, `PUT /ehr/{ehr_id}`), whose only committal channel is
-/// these headers (overview §"openehr-version and openehr-audit-details":
-/// "services MUST accept `openehr-version` and `openehr-audit-details` custom
-/// request headers" on the direct `PUT`/`POST`/`DELETE` commits, and
-/// "whatever is provided it MUST be merged with the default VERSION and
-/// `VERSION.audit_details` attributes on commit runtime").
+/// Returns the full committal metadata — the merged `UPDATE_AUDIT` and the
+/// VERSION `lifecycle_state` — of a request whose `UPDATE_VERSION` envelope
+/// never travels in the body.
 ///
-/// `committer` is the server default the merge starts from — the request's
-/// authenticated principal — so an unsupplied `committer` keeps it rather than
-/// being clobbered. `None` when the request carried no committal header at
-/// all, leaving the service on its own default attribution path.
+/// The bare EHR creates are that case, and these headers are their only
+/// committal channel (overview §"openehr-version and openehr-audit-details").
+/// `committer` is the server default the merge starts from, the request's
+/// authenticated principal, so an unsupplied one is kept rather than clobbered.
+/// `None` when the request carried no committal header at all.
 ///
 /// # Errors
 /// [`ApiError::BadRequest`] when a header carries a malformed identifier.
@@ -243,9 +196,10 @@ pub(crate) fn committal_commit(
     merged_committal(headers, Some(committer))
 }
 
-/// One header parse, both halves of the merge. `committer` seeds the audit's
-/// server default; `None` leaves this server's own system identity as the
-/// committer.
+/// Parses the headers once and returns both halves of the merge.
+///
+/// `committer` seeds the audit's server default; `None` leaves this server's own
+/// system identity as the committer.
 fn merged_committal(
     headers: &HeaderMap,
     committer: Option<PartyProxy>,
@@ -254,13 +208,9 @@ fn merged_committal(
     if attrs.is_empty() {
         return Ok(None);
     }
-    // A header-derived envelope states NO code until a header supplies one:
-    // the two coded members start unstated so only a header-carried value
-    // survives the merge — the service merges a NON-empty code verbatim
-    // (after group + operation validation) and falls back to the operation's
-    // default on empty (`versioning::audit`, `versioning::lifecycle`;
-    // overview §"openehr-version and openehr-audit-details": "whatever is
-    // provided it MUST be merged").
+    // The two coded members start unstated, so only a header-carried value
+    // survives the merge: the service merges a non-empty code verbatim and falls
+    // back to the operation's default on empty.
     let mut lifecycle_state = unstated_code();
     let mut commit_audit = UpdateAudit::UpdateAudit(UpdateAuditData {
         _type: None,
@@ -276,16 +226,16 @@ fn merged_committal(
     }))
 }
 
-/// Collect all committal-header attributes into `target → [(subkey, value)]`,
-/// deprecated forms first and the development-edition forms last so the new form
+/// Collects all committal-header attributes into `target` to `[(subkey, value)]`
+/// entries, deprecated forms first and the current forms last, so the new form
 /// wins on conflict.
 ///
 /// # Errors
 /// [`ApiError::BadRequest`] when a committal header carries an undecodable
 /// value ([`header_values`]).
 fn collect_attrs(headers: &HeaderMap) -> Result<IndexMap<String, Vec<(String, String)>>, ApiError> {
-    // Deprecated forms: the attribute target is the header NAME suffix; the value
-    // is a bare `key="value"` list (subkeys carry no `target.` prefix).
+    // Deprecated forms: the attribute target is the header name suffix and the
+    // value a bare `key="value"` list, whose subkeys carry no `target.` prefix.
     let mut attrs: IndexMap<String, Vec<(String, String)>> = IndexMap::new();
     for (name, target) in [
         (H_DEP_LIFECYCLE, T_LIFECYCLE),
@@ -299,14 +249,11 @@ fn collect_attrs(headers: &HeaderMap) -> Result<IndexMap<String, Vec<(String, St
         }
     }
 
-    // The BARE deprecated name from the §"Deprecated headers" table:
-    // `openEHR-AUDIT_DETAILS` (which lowercases to `openehr-audit_details`,
-    // a different name than the Release-1.1.0 `openehr-audit-details`). The
-    // table keeps it "available for backward compatibility"; it carries the
-    // same attribute-path-in-value grammar as the new form. Parsed between
-    // the dotted-suffix forms and the new form so precedence is
-    // dotted < bare-deprecated < new. (`openEHR-VERSION` needs no entry —
-    // it lowercases to the new `openehr-version` name and is read there.)
+    // The bare deprecated `openEHR-AUDIT_DETAILS` lowercases to a different name
+    // than `openehr-audit-details` and carries the new attribute-path-in-value
+    // grammar. Parsed between the dotted-suffix forms and the new form, so
+    // precedence runs dotted, bare-deprecated, new. `openEHR-VERSION` needs no
+    // entry: it lowercases onto the new name and is read there.
     let mut bare_dep: IndexMap<String, Vec<(String, String)>> = IndexMap::new();
     for raw in header_values(headers, H_DEP_AUDIT_DETAILS_BARE)? {
         collect_path_pairs(&raw, &mut bare_dep);
@@ -315,12 +262,9 @@ fn collect_attrs(headers: &HeaderMap) -> Result<IndexMap<String, Vec<(String, St
         attrs.insert(target, pairs);
     }
 
-    // Development-edition forms: the attribute path is the leading segment of
-    // each pair's key, inside the value. `openehr-version` carries VERSION
-    // attributes (lifecycle_state); `openehr-audit-details` carries AUDIT_DETAILS
-    // attributes (change_type/description/committer/system_id). Collected into a
-    // separate map so a dev-form target REPLACES the deprecated one entirely (the
-    // new form wins), rather than being appended to it.
+    // Current forms: the attribute path is the leading segment of each pair's
+    // key, inside the value. Collected into a separate map so a current-form
+    // target replaces the deprecated one entirely rather than appending to it.
     let mut dev: IndexMap<String, Vec<(String, String)>> = IndexMap::new();
     for name in [H_VERSION, H_AUDIT_DETAILS] {
         for raw in header_values(headers, name)? {
@@ -334,26 +278,25 @@ fn collect_attrs(headers: &HeaderMap) -> Result<IndexMap<String, Vec<(String, St
     Ok(attrs)
 }
 
-/// Parse an attribute-path-in-value header (`change_type.code_string="251"`)
-/// into `target → [(subkey, value)]` entries of `map`.
+/// Parses an attribute-path-in-value header (`change_type.code_string="251"`)
+/// into `target` to `[(subkey, value)]` entries of `map`.
 fn collect_path_pairs(raw: &str, map: &mut IndexMap<String, Vec<(String, String)>>) {
     for (full_key, value) in key_value_pairs(raw) {
         let (target, subkey) = match full_key.split_once('.') {
             Some((t, k)) => (t.to_owned(), k.to_owned()),
-            // No dot ⇒ the whole key is a scalar target (e.g. `system_id`).
+            // No dot means the whole key is a scalar target, like `system_id`.
             None => (full_key.clone(), String::new()),
         };
         map.entry(target).or_default().push((subkey, value));
     }
 }
 
-/// Every value of a (possibly repeated) request header.
+/// Returns every value of a possibly repeated request header.
 ///
-/// A value that is not decodable as text is a client defect the caller must
-/// hear about: dropping it silently would commit a version whose audit
-/// attributes differ from the ones the client sent, with nothing on the wire
-/// saying so. (No openEHR spec governs undecodable header bytes — our own
-/// design: refuse rather than guess.)
+/// A value that is not decodable as text is refused: dropping it would commit a
+/// version whose audit attributes differ from the ones the client sent, with
+/// nothing on the wire saying so. No openEHR spec governs undecodable header
+/// bytes — our own design.
 ///
 /// # Errors
 /// [`ApiError::BadRequest`] naming the header whose value is not decodable.
@@ -372,8 +315,9 @@ fn header_values(headers: &HeaderMap, name: &str) -> Result<Vec<String>, ApiErro
         .collect()
 }
 
-/// Build a `PARTY_IDENTIFIED` committer from the parsed `committer` header pairs,
-/// or `None` when the value carries nothing usable (→ keep the server default).
+/// Builds a `PARTY_IDENTIFIED` committer from the parsed `committer` header
+/// pairs, or `None` when the value carries nothing usable, which keeps the
+/// server default.
 ///
 /// # Errors
 /// [`ApiError::BadRequest`] when `external_ref.id` is not a well-formed
@@ -384,11 +328,10 @@ fn build_committer(pairs: &[(String, String)]) -> Result<Option<PartyProxy>, Api
     if name.is_none() && ext_id.is_none() {
         return Ok(None);
     }
-    // `external_ref.id` is client-supplied text, and `PARTY_REF.id` is an
-    // `OBJECT_ID` — here a `HIER_OBJECT_ID`, whose lexical form BASE
-    // `base_types/master05-identification_package.adoc` §Syntaxes defines. It
-    // goes through the validating construction door, so a malformed value is
-    // refused at the header rather than stamped into an AUDIT_DETAILS.
+    // `PARTY_REF.id` is an `OBJECT_ID`, here a `HIER_OBJECT_ID` whose lexical
+    // form BASE `master05-identification_package.adoc` §Syntaxes defines. The
+    // client-supplied text goes through the validating construction door, so a
+    // malformed value is refused rather than stamped into an AUDIT_DETAILS.
     let external_ref = match ext_id {
         Some(id) => Some(PartyRef {
             namespace: pair(pairs, "external_ref.namespace")
@@ -412,14 +355,13 @@ fn build_committer(pairs: &[(String, String)]) -> Result<Option<PartyProxy>, Api
     )))
 }
 
-/// The value of the first `key` in a parsed pair list.
+/// Returns the value of the first `key` in a parsed pair list.
 fn pair(pairs: &[(String, String)], key: &str) -> Option<String> {
     pairs.iter().find(|(k, _)| k == key).map(|(_, v)| v.clone())
 }
 
-/// The scalar value of a single-valued attribute: the `value` subkey (the
-/// `description.value` / deprecated `value="…"` form) or, failing that, a bare
-/// scalar subkey (the development-edition `system_id="…"` form).
+/// Returns the scalar value of a single-valued attribute: the `value` subkey,
+/// or failing that a bare scalar subkey.
 fn scalar(pairs: &[(String, String)]) -> Option<String> {
     pair(pairs, "value").or_else(|| pair(pairs, ""))
 }

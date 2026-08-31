@@ -38,36 +38,23 @@
 //! and `master06` §Primitive Time Types both forbid `24:00:00` "anywhere", so
 //! the invariant is enforced as `hour < 24`.
 //!
-//! NOTE: the timezone's own bounds are `Iso8601_timezone`'s invariants
-//! (`org.openehr.base.foundation_types.iso8601_timezone.adoc` §Invariants), a
-//! class an `Iso8601_time` carries only as a lexeme, so an out-of-range offset
-//! is reported as a lexical-form failure rather than under one of them.
+//! NOTE: an `Iso8601_time` carries its timezone only as a lexeme, so an
+//! out-of-range offset is reported as a lexical-form failure rather than under
+//! one of `Iso8601_timezone`'s own invariants.
 //!
-//! NOTE: arithmetic needs every component, and the openEHR spec says nothing
-//! about computing on a PARTIAL time (`hh`, `hh:mm`) — a partial (or
-//! unparseable) operand yields `None`, the same undecidable answer this
-//! module's comparison gives.
+//! NOTE: `Time_definitions.valid_iso8601_time` prose allows a `"60"` seconds
+//! field while the machine-checkable `valid_second` post-condition is
+//! `s < Seconds_in_minute` and `Second_valid` is stated in terms of it — an
+//! internal contradiction, resolved toward the invariant, so a `:60` second
+//! does not parse.
 //!
-//! NOTE: an `Iso8601_time` is a point on the clock face with no date behind it,
-//! so addition WRAPS modulo 24 h (`23:30:00 + PT1H` = `00:30:00`) and a
-//! difference is the signed distance between two clock readings, in
-//! `(-24 h, +24 h)`. No openEHR spec governs the overflow behaviour — our own
-//! design/extension, and the only one available without inventing a date.
-//!
-//! NOTE: `Time_definitions.valid_iso8601_time` prose allows a seconds field of
-//! `"00"`-`"60"` (a leap second), but the machine-checkable `valid_second`
-//! post-condition is `s < Seconds_in_minute` (i.e. `s <= 59`) and the
-//! `Iso8601_time.Second_valid` invariant is stated in terms of `valid_second`
-//! — an internal spec contradiction. We enforce the invariant: a `:60` second
-//! is not a valid time, so it does not parse and compares as incomparable
-//! (`None`).
-//!
-//! NOTE: the ordering algorithm is our own design/extension (the openEHR spec
-//! gives none — see `iso8601_parse.rs`). A partial time denotes the interval of
-//! its completions; both-zoned times are normalised to UTC (a uniform offset
-//! shift preserving order); a zoned time and an unzoned (local) time cannot be
-//! safely ordered and are incomparable. `partial_cmp` returns `Some(Equal)`
-//! ONLY for equal raw strings.
+//! NOTE: no openEHR spec governs arithmetic on a partial time, the 24-hour
+//! overflow, or ordering — our own design/extension. A partial or unparseable
+//! operand yields `None`; addition wraps modulo 24 h and a difference is the
+//! signed clock distance in `(-24 h, +24 h)`, the only reading available
+//! without inventing a date; a partial time denotes the interval of its
+//! completions, a zoned and an unzoned time are incomparable, and `partial_cmp`
+//! returns `Some(Equal)` only for equal raw strings.
 
 use std::cmp::Ordering;
 

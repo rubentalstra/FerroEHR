@@ -8,6 +8,12 @@
 //! versioned_ehr_status_revision_history,
 //! versioned_ehr_status_version_get_at_time,
 //! versioned_ehr_status_version_get_by_id}.yaml`.
+//!
+//! Every read here carries the container- or version-uid `ETag` and a
+//! `Last-Modified` derived from `VERSION.commit_audit.time_committed.value`
+//! (`Requests_and_responses.md` §"`ETag` and Last-Modified"), both taken from the
+//! service metadata; none carries `Location`, which "MUST NOT be used to
+//! indicate an alternate representation of an existing resource" (§Location).
 
 use axum::response::Response;
 
@@ -38,13 +44,6 @@ pub(super) async fn run(
         "versioned_ehr_status_get" => {
             let p = params::build::<VersionedEhrStatusGetParams>(&parts.path, q, h)?;
             let ehr_id = parse_ehr_id(&p.ehr_id)?;
-            // VERSIONED_OBJECT container — canonical JSON or XML
-            // (ITS-XML `Version.xsd`/`Common.xsd` define the shape; the generated
-            // `ToXml` for the concrete `VERSIONED_*` class serves it).
-            // Container-uid ETag + Last-Modified from the newest held version's
-            // commit instant (§"ETag and Last-Modified": both headers SHOULD
-            // accompany a VERSIONED_OBJECT response), carried in the service
-            // metadata.
             let resp = state
                 .backend()
                 .versioned_ehr_status_response(ehr_id)
@@ -60,10 +59,6 @@ pub(super) async fn run(
         "versioned_ehr_status_revision_history" => {
             let p = params::build::<VersionedEhrStatusRevisionHistoryParams>(&parts.path, q, h)?;
             let ehr_id = parse_ehr_id(&p.ehr_id)?;
-            // Container-uid ETag + newest-commit Last-Modified from the service
-            // metadata (the same container identity the versioned-object read
-            // serves — §"ETag and Last-Modified" names
-            // "VERSIONED_OBJECT.uid.value" as an ETag source).
             let resp = state
                 .backend()
                 .ehr_status_revision_history_response(ehr_id)
@@ -83,14 +78,6 @@ pub(super) async fn run(
                 .backend()
                 .ehr_status_version_at_time(ehr_id, p.version_at_time)
                 .await?;
-            // 200_VERSION_at_time: ETag(version_uid) + Last-Modified from the
-            // envelope's commit_audit.time_committed (§"ETag and
-            // Last-Modified": the value "should be derived from
-            // VERSION.commit_audit.time_committed.value"); no Location — a GET
-            // never carries one (§Location: "It MUST NOT be used to indicate
-            // an alternate representation of an existing resource"). Body is an
-            // ORIGINAL_VERSION<EHR_STATUS> (JSON or canonical XML).
-
             // The envelope carries the same externalized media the bare
             // resource does, so it re-inlines on the same request.
             let body = super::expand_multimedia_if_requested(&state, q, body).await?;
@@ -112,12 +99,8 @@ pub(super) async fn run(
                 .ehr_status_version_envelope(ehr_id, ferroehr::ids::VoId(vo_id), &version)
                 .await?;
             // Full-identity check as on the ehr_status by-version read
-            // (Resources.md §Identifier types; BASE master05 case rule).
+            // (`Resources.md` §Identifier types; BASE master05 case rule).
             super::ensure_served_version(&p.version_uid, &body)?;
-            // Version-uid ETag + Last-Modified from the envelope's
-            // commit_audit.time_committed (§"ETag and Last-Modified": both
-            // SHOULD accompany a VERSION response, and Last-Modified is
-            // "derived from VERSION.commit_audit.time_committed.value").
             // The VERSION envelope carries the same externalized media the bare
             // resource does, so it re-inlines on the same request.
             let body = super::expand_multimedia_if_requested(&state, q, body).await?;

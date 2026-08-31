@@ -12,25 +12,23 @@
 //! generation: `v1_4/`, `v2_4/`) as reference input for the
 //! hand-written `logos`/`chumsky` implementation — no ANTLR runtime.
 //!
-//! Components: the outer artefact parser ([`source`]), the
-//! shared typed [`error`] catalogue, and the cADL definition-section parser
-//! ([`parse`]) that builds the generated `openehr_am::v2_4::aom2` constraint
-//! model. Under all of it sits the shared substrate every component reads
-//! through: [`aom`] (AOM2 field accessors, constructors, interval arithmetic),
-//! [`artefact`] (artefact views + the parent/supplier repository), [`hrid`]
-//! (the archetype-id grammar), and [`odin`] (the ODIN reading bridge + the
-//! `master03` lexical decoding). Above it:
-//! [`codes`]/[`paths`] (code math + ADL paths), [`validate`] (the AOM2
-//! validation catalogue), [`flatten`] + [`opt`] (specialisation flattening +
-//! OPT2), the ADL2 serializer [`mod@print`], and [`adl14`] (ADL 1.4→2 conversion — our own
-//! design, no openEHR spec). ODIN sections are parsed by the
-//! `openehr_lang::v1_1::odin` reader (ODIN is a LANG-component spec). **This crate
-//! has no lexer of its own**: the cADL token stream is the shared workspace
-//! lexical layer read under its ADL reading
-//! ([`openehr_lang::v1_1::lexer::lex_adl`]). The `rules` body and the slot
-//! include/exclude assertions are full BEL/beom expression trees
-//! ([`rules`], over `openehr_lang::v1_1::bel`); their string form is rendered back
-//! from the tree ([`print::assertion_text`]), never parsed out of it.
+//! Components: the outer artefact parser ([`source`]), the shared typed
+//! [`error`] catalogue, and the cADL definition-section parser ([`parse`]) that
+//! builds the `openehr_am::v2_4::aom2` constraint model. The substrate under
+//! them is [`aom`] (field accessors, constructors, interval arithmetic),
+//! [`artefact`] (artefact views + the parent/supplier repository), [`hrid`] (the
+//! archetype-id grammar) and [`odin`] (the ODIN reading bridge). Above them:
+//! [`codes`]/[`paths`], [`validate`], [`flatten`] + [`opt`], the ADL2 serializer
+//! [`mod@print`], and [`adl14`] (1.4→2 conversion — our own design/extension, no
+//! openEHR spec).
+//!
+//! The crate has NO lexer of its own: the cADL token stream is the shared
+//! workspace lexical layer under its ADL reading
+//! ([`openehr_lang::v1_1::lexer::lex_adl`]), and ODIN sections go through the
+//! `openehr_lang::v1_1::odin` reader. The `rules` body and the slot
+//! include/exclude assertions are BEL expression trees ([`rules`]) whose string
+//! form is rendered back from the tree ([`print::assertion_text`]), never parsed
+//! out of it.
 
 // Doctests are copy-paste templates: they must use `?`, never unwrap
 // (C-QUESTION-MARK, https://rust-lang.github.io/api-guidelines/documentation.html#c-question-mark).

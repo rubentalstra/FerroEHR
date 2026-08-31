@@ -11,19 +11,15 @@
 //! polymorphic dispatch. Named `xs:simpleType` definitions are read alongside
 //! them, carrying the `xs:enumeration` facets that fix a closed value space.
 //!
-//! Each caller curates its OWN conflict-free file set — the RM *instance*
-//! closure (`BaseTypes`, Structure, Content, Composition, …), the AM/OPT
-//! constraint closure, or one of the two AOM2 archetype closures — because the
-//! constraint schemas redefine some RM type names (`ELEMENT`, `CODE_PHRASE`) for
-//! the archetype world and would collide in a single merged model. The file-list
-//! constants at the bottom of this module are those curated sets.
+//! Each caller curates its own conflict-free file set (the constants at the
+//! bottom of this module): the constraint schemas redefine RM type names
+//! (`ELEMENT`, `CODE_PHRASE`) for the archetype world and would collide in a
+//! single merged model.
 //!
-//! Named `xs:group` / `xs:attributeGroup` definitions are expanded in place, so a
-//! complexType whose content is `<xs:group ref="…"/>` carries the group's
-//! elements as if they were declared inline. The AOM2 archetype schemas
-//! (`Archetype.xsd`, `P_Archetype.xsd`) are the only vendored schemas that use
-//! the idiom, and they put the whole archetype body — `archetype_id`,
-//! `definition`, `terminology`, … — behind it.
+//! Named `xs:group` / `xs:attributeGroup` definitions are expanded in place, so
+//! a complexType whose content is `<xs:group ref="…"/>` carries the group's
+//! elements as if declared inline — the AOM2 archetype schemas put the whole
+//! archetype body behind that idiom.
 
 use std::collections::BTreeMap;
 use std::path::Path;

@@ -9,17 +9,13 @@
 //! valid string according to the HL7 UCUM specification"; RM data_types
 //! master06: `DV_QUANTITY.units` is a UCUM case-sensitive code by default).
 //!
-//! This is a SYNTAX validator over the UCUM grammar (unitsofmeasure.org §2.2
-//! "Syntax and Semantics" term grammar) — it does not carry the UCUM atom
-//! table, so it validates the shape (terms, `.`/`/` operators, exponents,
-//! factors, `[...]` atom segments, `{...}` annotations, parentheses), not
-//! whether an atom is a registered UCUM unit.
+//! A SYNTAX validator over the UCUM term grammar (unitsofmeasure.org §2.2
+//! "Syntax and Semantics"): it carries no UCUM atom table, so it validates the
+//! shape, not whether an atom is a registered unit.
 //!
-//! NOTE (CNF corpus adjudication): commit-time REJECTION of non-UCUM
-//! `DV_QUANTITY.units` is deliberately NOT wired — the CNF's own valid data
-//! sets carry non-UCUM units (`°C`, `mmHg`, `pH`), and the RM declares no
-//! `Units_valid` invariant on `DV_QUANTITY`; template-declared unit
-//! constraints are enforced by the archetype-conformance walker instead.
+//! NOTE: RM data_types master06 declares no `Units_valid` invariant on
+//! `DV_QUANTITY`, so commit-time rejection of non-UCUM units is not wired;
+//! template-declared unit constraints go through the conformance walker.
 
 /// `MEASUREMENT_SERVICE.is_valid_units_string`: UCUM syntax validity
 /// (case-sensitive form).

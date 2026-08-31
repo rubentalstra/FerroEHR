@@ -13,7 +13,7 @@
 //!
 //! This is the one public surface for "is this string a valid ISO-8601 X" in
 //! the workspace. `openehr-rm` used to answer it with a second, hand-written
-//! grammar; the two drifted twice, and both drifts shipped (#2273).
+//! grammar; the two drifted twice, and both drifts shipped.
 
 use crate::v1_2::foundation_types::time::iso8601_parse;
 
@@ -54,7 +54,7 @@ pub fn valid_day(y: i64, m: i64, d: i64) -> bool {
 ///
 /// NOTE: the second clause admits `24:00:00`, which `iso8601_time.adoc`
 /// §Description and `master06-time_types.adoc` forbid "anywhere" — a released
-/// contradiction, resolved toward the prohibition (#2276).
+/// contradiction, resolved toward the prohibition.
 #[must_use]
 pub fn valid_hour(h: i64, m: i64, s: i64) -> bool {
     (0..24).contains(&h) && valid_minute(m) && valid_second(s)
@@ -170,7 +170,7 @@ mod tests {
     }
 
     /// `24:00:00` is refused: the released `valid_hour` post-condition admits
-    /// it while the `Iso8601_time` class forbids it anywhere (#2276).
+    /// it while the `Iso8601_time` class forbids it anywhere.
     #[test]
     fn the_twenty_fourth_hour_is_refused() {
         assert!(valid_hour(23, 59, 59));

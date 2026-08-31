@@ -56,13 +56,11 @@ impl Parser<'_> {
     /// generic type.
     pub(crate) fn is_adl14_domain_block_start(&self) -> bool {
         // After the `<`: a lowercase attribute name (a populated dADL object),
-        // or an immediate `>` (the EMPTY block, `C_DV_QUANTITY <>` — legal
-        // dADL per `ADL1.4/master04-dadl.adoc` §Empty Sections and its own
-        // grammar, adjudicated in #1465). The empty form cannot be a generic
-        // cADL type: `master05-cadl.adoc` §Symbols `V_TYPE_IDENTIFIER`
-        // requires a NON-EMPTY generic parameter list
-        // (`[A-Z]{IDCHAR}*<[a-zA-Z0-9,_<>]+>`), so `<` directly followed by
-        // `>` is unambiguous.
+        // or an immediate `>` (the EMPTY block, legal dADL per
+        // `ADL1.4/master04-dadl.adoc` §Empty Sections). The empty form cannot be
+        // a generic cADL type: `master05-cadl.adoc` §Symbols
+        // `V_TYPE_IDENTIFIER` requires a NON-EMPTY generic parameter list, so
+        // `<` directly followed by `>` is unambiguous.
         matches!(self.peek(), Some(Token::AlphaUcId(_)))
             && matches!(self.peek_at(1), Some(Token::SymLt))
             && matches!(self.peek_at(2), Some(Token::AlphaLcId(_) | Token::SymGt))
@@ -482,14 +480,11 @@ impl Parser<'_> {
                 "expecting ')' after the domain type",
             )?;
         }
-        // The ODIN block spans from the opening '<' to its matching '>'. The
-        // `<`/`>` nesting depth is counted OUTSIDE `|…|` intervals only: a
-        // one-sided interval endpoint carries its own `<`/`>` relational
-        // operator (`magnitude = <|>0.0|>`), which would otherwise close the
-        // block early. The 1.4 chapter flags exactly this hazard
-        // (`ADL1.4/master05-cadl.adoc` §Symbols, `V_C_DOMAIN_TYPE`: "there can
-        // be '>' inside '||' ranges"), so the interval delimiter is tracked
-        // instead of scanning raw characters.
+        // Nesting depth is counted OUTSIDE `|…|` intervals only: a one-sided
+        // endpoint carries its own `<`/`>` operator (`magnitude = <|>0.0|>`),
+        // which would close the block early. `ADL1.4/master05-cadl.adoc`
+        // §Symbols `V_C_DOMAIN_TYPE` flags the hazard: "there can be '>' inside
+        // '||' ranges".
         let open = self.pos;
         if !matches!(self.peek(), Some(Token::SymLt)) {
             return self.err(

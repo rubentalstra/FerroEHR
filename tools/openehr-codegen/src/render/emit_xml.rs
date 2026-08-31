@@ -746,7 +746,7 @@ fn element_read_expr(f: &XmlField) -> String {
         // Zero occurrences of a repeated element is indistinguishable from the
         // attribute's absence in XML, so it reads back as `None` (see
         // `emit_write_field`). A present-implies-non-empty field
-        // (`Option<NonEmptyVec<T>>`, #1730) builds through the fallible
+        // (`Option<NonEmptyVec<T>>`) builds through the fallible
         // constructor — the branch guarantees non-emptiness, so the error arm
         // is unreachable but honest.
         let some = if f.nonempty {

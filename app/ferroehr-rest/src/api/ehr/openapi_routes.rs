@@ -4,9 +4,8 @@
 //! Native utoipa-axum routing for the EHR API group.
 //!
 //! No openEHR spec governs an OAS layout; the operation semantics are the
-//! ITS-REST EHR API (docs/specs/openehr/ITS-REST). Each handler forwards to
-//! the group dispatcher through `guarded_dispatch`, so wire behaviour is
-//! identical to the former `mount()` adapter.
+//! ITS-REST EHR API (`docs/specs/openehr/ITS-REST`). Each handler forwards to
+//! the group dispatcher through `guarded_dispatch`.
 
 #![expect(
     clippy::disallowed_types,
@@ -22,11 +21,12 @@ use utoipa_axum::routes;
 use crate::api::guarded_dispatch;
 use crate::state::AppState;
 
-/// The EHR-group routes as a native `utoipa-axum` router: each `#[utoipa::path]`
-/// handler single-sources its route and its `OpenAPI` path. Group-relative paths
-/// (nested under the configured `base_path`); every operation is served through
-/// [`guarded_dispatch`] → [`crate::api::ehr::dispatch::dispatch`], so the wire
-/// behaviour is identical to the former table-driven `mount` adapter.
+/// The EHR-group routes as a native `utoipa-axum` router, each
+/// `#[utoipa::path]` handler single-sourcing its route and its `OpenAPI` path.
+///
+/// Paths are group-relative, nested under the configured `base_path`, and every
+/// operation is served through [`guarded_dispatch`] onto
+/// [`crate::api::ehr::dispatch::dispatch`].
 pub(crate) fn routes() -> OpenApiRouter<AppState> {
     OpenApiRouter::new()
         .routes(routes!(ehr_get_by_subject, ehr_create))
@@ -64,11 +64,9 @@ pub(crate) fn routes() -> OpenApiRouter<AppState> {
         .routes(routes!(ehr_status_tags_delete))
 }
 
-// ── Handlers (ITS-REST EHR API semantics) ────────────────────────────────────
-// Every handler snapshots the request into `RequestParts` (identical to the
-// table-driven adapter) and runs it through the shared guarded dispatch onto the
-// EHR-group dispatcher, so the EHR_ACCESS gate, ABAC PEP, and ATNA audit tagging
-// apply uniformly and the wire behaviour is unchanged.
+// Every handler snapshots the request into `RequestParts` and runs it through
+// the shared guarded dispatch onto the EHR-group dispatcher, so the EHR_ACCESS
+// gate, the ABAC PEP and the ATNA audit tagging apply uniformly.
 
 // ── EHR ───────────────────────────────────────────────────────────────────────
 

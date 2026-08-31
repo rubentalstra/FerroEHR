@@ -21,21 +21,18 @@
 //!
 //! ## The four entry points
 //!
-//! The RM⇄sim walkers call exactly [`emit_leaf`] / [`build_leaf`] (a single
-//! `DATA_VALUE` leaf, both directions) and [`emit_rm_attrs`] / [`build_rm_attr`]
-//! (the `_`-prefixed optional RM-attribute families). The walker owns the tree
+//! The RM⇄sim walkers call exactly [`emit_leaf`] / [`build_leaf`] for a single
+//! `DATA_VALUE` leaf and [`emit_rm_attrs`] / [`build_rm_attr`] for the
+//! `_`-prefixed optional RM-attribute families. The walker owns the tree
 //! structure and the template resolution; this layer owns the per-datum shape.
 //!
-//! Split of the `_`-prefixed families between [`build_leaf`] and
-//! [`build_rm_attr`]: a `DATA_VALUE` leaf's *value-internal* families
-//! (`_normal_range`, `_other_reference_ranges:i`, `_accuracy`, `_language`,
-//! `_encoding`, `_mapping:i`, `_thumbnail`, `_charset` — master05 per-type
-//! tables) belong to the value and are consumed by [`build_leaf`]; the
-//! *LOCATABLE / ENTRY / EVENT_CONTEXT* families (`_uid`, `_link:i`,
-//! `_feeder_audit`, `_null_flavour`, …) are consumed by [`build_rm_attr`], one
-//! call per `_`-segment. [`build_rm_attr`] can also build the value-internal
-//! families, so a walker may route them either way; it must not route the same
-//! `_`-segment to both.
+//! A leaf's value-internal families (`_normal_range`, `_accuracy`, `_mapping:i`,
+//! … — the master05 per-type tables) belong to the value and go to
+//! [`build_leaf`]; the LOCATABLE / ENTRY / EVENT_CONTEXT families (`_uid`,
+//! `_link:i`, `_feeder_audit`, `_null_flavour`, …) go to [`build_rm_attr`], one
+//! call per `_`-segment. [`build_rm_attr`] can build the value-internal families
+//! too, so a walker may route them either way, but never the same `_`-segment to
+//! both.
 
 #![expect(
     clippy::disallowed_types,

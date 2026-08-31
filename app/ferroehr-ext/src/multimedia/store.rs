@@ -80,12 +80,10 @@ impl BlobStore {
             .with_region(&params.region)
             .with_allow_http(params.allow_http);
         if let Some(endpoint) = &params.endpoint {
-            // A blank or relative endpoint is refused HERE rather than passed
-            // to the builder, which accepts it and leaves object_store to
-            // panic on `RelativeUrlWithoutBase` at the first request — a panic
-            // on a request path from a configuration value the server took
-            // (#2167). `${VAR:-}` in a compose file and an empty Helm value
-            // both produce exactly this.
+            // Refused here rather than passed to the builder, which accepts it
+            // and leaves `object_store` to panic on `RelativeUrlWithoutBase` at
+            // the first request. `${VAR:-}` in a compose file and an empty Helm
+            // value both produce exactly this.
             let endpoint = endpoint.trim();
             if endpoint.is_empty() {
                 return Err(MultimediaError::Config(
