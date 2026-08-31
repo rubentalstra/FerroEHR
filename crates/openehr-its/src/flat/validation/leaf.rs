@@ -164,8 +164,9 @@ fn check_code_phrase(v: &mut Validator, instance: &Value, wt: &WebTemplateNode) 
     check_code_membership(v, wt, code_input, code, terminology);
 }
 
-/// `DV_ORDINAL` / `DV_SCALE` against a `C_DV_ORDINAL` / `C_DV_SCALE` list
-///. The constraint is a list of `ORDINAL{symbol: CODE_PHRASE, value:
+/// `DV_ORDINAL` / `DV_SCALE` against a `C_DV_ORDINAL` / `C_DV_SCALE` list.
+///
+/// The constraint is a list of `ORDINAL{symbol: CODE_PHRASE, value:
 /// Integer}` (Real for `DV_SCALE`) entries, and validity requires the instance's
 /// **(symbol, value) PAIR** to match one entry — not the symbol alone nor the
 /// value alone (AOM 1.4 `AM/docs/UML/classes/org.openehr.am.aom14.ordinal.adoc`

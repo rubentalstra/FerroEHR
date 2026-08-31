@@ -19,35 +19,25 @@
 //! plus the six customary quoted forms `\r \n \t \\ \" \'` of §Special
 //! Character Sequences.
 //!
-//! Those eight forms are the WHOLE set: §Special Character Sequences closes
-//! it with "Any other character combination starting with a backslash is
-//! illegal; to get the effect of a literal backslash, the `\\` sequence should
-//! always be used", so every other backslash sequence is a typed decode
-//! defect here rather than pass-through text. Regular expressions are the one
-//! exemption, and they never reach this decoder: the PERL classes a cADL
-//! string constraint carries "should not be treated as anything other than
-//! literal strings, since they are processed by a regular expression parser"
-//! (§Special Character Sequences, final paragraph), so `openehr-adl` decodes
-//! only the `;"assumed"` suffix of a regex constraint, never its body.
+//! Those eight forms are the whole set: §Special Character Sequences closes it
+//! with "Any other character combination starting with a backslash is illegal",
+//! so every other backslash sequence is a typed decode defect here. Regular
+//! expressions never reach this decoder — a cADL string constraint's PERL
+//! classes "should not be treated as anything other than literal strings"
+//! (same §), so `openehr-adl` decodes only the `;"assumed"` suffix.
 //!
-//! NOTE: the released text contradicts itself about `\u`. §File Encoding
-//! sanctions the two `\u` spellings; §Special Character Sequences, some ten
-//! lines later, closes its six-item list (which does NOT include `\u`) with
-//! "Any other character combination starting with a backslash is illegal".
-//! Adjudicated for §File Encoding — it is the specific rule, it states the
-//! ranges and defers to RFC 2781, and reading the general sentence as a ban
-//! would make the whole §File Encoding provision dead text. Both sections are
-//! cited here because both are normative as published.
+//! NOTE: the released text contradicts itself — §File Encoding sanctions the
+//! two `\u` spellings while §Special Character Sequences' closing sentence bans
+//! them — adjudicated for §File Encoding, the specific rule, since the general
+//! sentence would make that whole provision dead text.
 //!
-//! NOTE: no openEHR spec governs which UTF-16 spelling the eight digits carry
-//! — our own design/extension: both the surrogate-pair (RFC 2781) and the
-//! zero-filled scalar readings are decoded, disambiguated by the first four
-//! digits (a high surrogate opens `D800`-`DBFF`, the zero-filled spelling of
-//! `U+10000`-`U+1FFFF` opens `0000`-`0001` — disjoint by construction);
-//! anything else reads as the 4-digit form followed by literal hex text.
+//! NOTE: no openEHR spec governs which UTF-16 spelling the eight digits carry —
+//! our own design/extension: both the RFC 2781 surrogate-pair and the
+//! zero-filled scalar readings decode, disambiguated by the first four digits
+//! (`D800`-`DBFF` against `0000`-`0001`, disjoint by construction).
 //!
-//! NOTE: `master03-basics.adoc` is byte-identical in Release-1.0.0 (verified
-//! first-hand 2026-08-05), so one decoder is correct for every generation.
+//! NOTE: `master03-basics.adoc` is byte-identical in Release-1.0.0, so one
+//! decoder is correct for every generation.
 
 /// A `master03` escape-sequence defect.
 ///

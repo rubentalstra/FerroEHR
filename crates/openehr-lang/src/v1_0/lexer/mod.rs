@@ -33,14 +33,13 @@
 //!
 //! # Adjudications this layer encodes
 //!
-//! - `// NOTE:` **ODIN reserves nothing.** `LANG/docs/odin/master03-basics.adoc`
-//!   §Keywords: "ODIN has no keywords of its own". Every foreign keyword of
-//!   the shared superset is therefore an ordinary ODIN identifier, which is
-//!   what the reclassification pass demotes them to.
-//! - `// NOTE:` The 1.0.0-only lexical deltas — `,`-only fractional seconds
-//!   on times, `.`-only on durations, no `ALPHA_UNDERSCORE_ID` — are pinned
-//!   on the affected tokens in `token.rs` and in `reclassify`'s arms, each
-//!   with its Release-1.0.0 citation.
+//! - ODIN reserves nothing (`LANG/docs/odin/master03-basics.adoc` §Keywords:
+//!   "ODIN has no keywords of its own"), so the reclassification pass demotes
+//!   every foreign keyword of the shared superset to an identifier.
+//! - The 1.0.0-only lexical deltas — `,`-only fractional seconds on times,
+//!   `.`-only on durations, no `ALPHA_UNDERSCORE_ID` — are pinned on the
+//!   affected tokens in `token.rs` and in `reclassify`'s arms, each with its
+//!   Release-1.0.0 citation.
 
 mod reclassify;
 mod token;
@@ -52,8 +51,7 @@ use logos::Logos;
 /// Total by construction: every span reaching this function was produced by
 /// `logos` over the SAME `src`, so it always names a character boundary inside
 /// it. Returning an empty string instead would report a lexical defect with no
-/// text — a silent wrong diagnostic, which `.claude/rules/reliability.md`
-/// forbids dodging the lint with.
+/// text — a silent wrong diagnostic.
 #[expect(
     clippy::expect_used,
     reason = "the span comes from lexing this same `src`, so it always slices"
@@ -333,7 +331,7 @@ mod tests {
         // `<>` is not an ODIN `SYM_NE`: it splits into the `SYM_LT` `SYM_GT`
         // an empty ODIN block is written with.
         assert_eq!(odin("<>"), vec![Token::SymLt, Token::SymGt]);
-        // `@` IS an ODIN token since #1373: it opens the document prefix
+        // `@` IS an ODIN token: it opens the document prefix
         // `schema_identifier ::= '@' schema '=' URI`
         // (`LANG/docs/odin/master04-odin_artefacts` intro); a misplaced `@`
         // is the parser's refusal, not the lexer's.

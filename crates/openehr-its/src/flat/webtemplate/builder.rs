@@ -17,30 +17,21 @@
 //!    `EVENT`, promote an `ELEMENT`/`DATA_VALUE` single child, and drop empties;
 //! 3. **assign ids** (see `id`, master04 §"Node ID Generation Rules").
 //!
-//! Deliberate shape boundaries of the builder (design decisions, not omissions).
-//! The `web-template` mirrors the *constraint* tree of the OPT; RM structure that
-//! the operational template does not constrain is not synthesized into the tree
-//! here, and is instead completed and enforced where it is authoritative:
+//! The web template mirrors the CONSTRAINT tree of the OPT, so RM structure the
+//! operational template does not constrain is not synthesized here. Three
+//! boundaries follow from that:
 //!
-//! * **RM-mandatory attributes the OPT leaves unconstrained** are not injected as
-//!   web-template nodes. The FLAT/TDD composition builders fill the RM-mandatory
-//!   structural fields on `RM ← FLAT/TDD` (`flat::graph::fill_structural_mandatory`,
-//!   driven by the same `openehr_rm::v1_2::model` attribute model), and composition
-//!   validation enforces existence/occurrences (`crate::flat::validation`) — so the
-//!   produced COMPOSITION is RM-valid without the builder duplicating that
-//!   structure. Governing cardinalities: openEHR RM `common`/`composition`/
-//!   `data_structures`.
-//! * **The "any" (unconstrained) `ELEMENT` value**: an ELEMENT with no value
-//!   constraint is emitted without an enumerated per-`DATA_VALUE` `inputs`
-//!   expansion. No openEHR spec governs the shape of an unconstrained value node —
-//!   our own design/extension.
-//! * **Archetype internal-reference (`use_node`) target resolution**: an internal
-//!   reference is emitted as its own node rather than resolved to its target
-//!   subtree; full ADL/AOM reference resolution is part of the ADL2 work
-//!   track, not the OPT 1.4 web-template shape.
-//!
-//! Node- and coded-value-level external `termBindings` and the multiple-coded-text
-//! compaction are wired.
+//! * RM-mandatory attributes the OPT leaves unconstrained are not injected as
+//!   nodes. The FLAT/TDD composition builders fill them on `RM ← FLAT/TDD` and
+//!   [`crate::flat::validation`] enforces existence and occurrences, so the
+//!   produced COMPOSITION is RM-valid without the builder duplicating the
+//!   structure (cardinalities: openEHR RM `common` / `composition` /
+//!   `data_structures`).
+//! * An ELEMENT with no value constraint is emitted without an enumerated
+//!   per-`DATA_VALUE` `inputs` expansion. No openEHR spec governs the shape of
+//!   an unconstrained value node — our own design/extension.
+//! * An archetype internal reference (`use_node`) is emitted as its own node
+//!   rather than resolved to its target subtree.
 
 #![expect(
     clippy::disallowed_types,

@@ -2,9 +2,9 @@
 // SPDX-FileCopyrightText: FerroEHR contributors
 // SPDX-FileCopyrightText: openEHR Foundation
 // SPDX-License-Identifier: MIT AND Apache-2.0
-//! Static RM attribute/type model — the AQL planner's spec-pinned oracle
-//!, generated from the BASE + RM BMM meta-model (the same input as
-//! the `emit` target). No reflection, no hand-maintained tables.
+//! Static RM attribute/type model — the AQL planner's spec-pinned oracle,
+//! generated from the BASE + RM BMM meta-model (the same input as the `emit`
+//! target). No reflection, no hand-maintained tables.
 //!
 //! Covers every real spec class of `openehr-base` + `openehr-rm` (foundation
 //! primitives, containers, and marker types excluded). For each class it records
@@ -89,7 +89,7 @@ pub struct RmAttribute {
     /// attribute, or a container attribute the BMM leaves unconstrained).
     pub cardinality: Option<Cardinality>,
     /// An optional container carrying a present-implies-non-empty invariant:
-    /// emitted `Option<NonEmptyVec<T>>` (#1730), so `[]` refuses at parse.
+    /// emitted `Option<NonEmptyVec<T>>`, so `[]` refuses at parse.
     pub nonempty: bool,
 }
 

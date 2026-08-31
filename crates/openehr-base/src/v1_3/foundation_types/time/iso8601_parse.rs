@@ -524,7 +524,7 @@ fn validate_time(
 ///
 /// NOTE: both invariants also require `hour > 0`, which would refuse `+00:00`
 /// while the same class defines `is_gmt` as "timezone `+0000`" — a released-text
-/// contradiction, so that clause is not enforced (reported as #2260).
+/// contradiction, so that clause is not enforced.
 pub(crate) fn parse_timezone(tz: &str) -> Option<i32> {
     Some(scan_timezone(tz)?.offset_minutes())
 }

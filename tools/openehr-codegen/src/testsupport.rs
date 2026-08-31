@@ -791,9 +791,8 @@ pub fn attribute_delta(
     }
 }
 
-/// Compute the model delta from generation `older` to `newer` of crate
-/// `key` — the acceptance-boundary ledger's input (#1943; the REMOVED
-/// direction #1961; the RETYPE direction #2382).
+/// Computes the model delta from generation `older` to `newer` of crate `key` —
+/// the acceptance-boundary ledger's input.
 ///
 /// The comparison is over attribute SIGNATURES (`attribute_signature`), so a
 /// changed type, existence or container cardinality lands in
@@ -1611,7 +1610,7 @@ pub fn model_query_view(
 }
 
 /// Hand-written generation-twin pairs of `key`'s crate that are byte-identical
-/// modulo generation tokens — each MUST be a template (#1964).
+/// modulo generation tokens — each MUST be a template.
 ///
 /// Walks every non-current generation module against the current one; a
 /// hand-written file (no `@generated` first line) at the same relative path
@@ -1700,8 +1699,7 @@ fn hand_written_files(dir: &std::path::Path) -> Result<BTreeMap<String, String>,
 }
 
 /// BMM-declared functions whose realization DIFFERS between two generations of
-/// one crate, as `<CLASS>.<function>: realized in <gen>, missing in <gen>`
-/// (#2029).
+/// one crate, as `<CLASS>.<function>: realized in <gen>, missing in <gen>`.
 ///
 /// The staleness this catches: the generation-twin templates give every
 /// generation one source, so a class both generations declare must realize the
@@ -1868,7 +1866,7 @@ fn delimited_mention(haystack: &str, needle: &str) -> bool {
 }
 
 /// BMM-declared functions of `key`'s crate that no Rust method realizes, as
-/// `<generation>/<CLASS>.<function>` (#2029).
+/// `<generation>/<CLASS>.<function>`.
 ///
 /// The BMM declares functions by name and result type only, so their bodies are
 /// hand-written — normally in a `*_impl.rs` sibling. This projection reports,
@@ -1876,12 +1874,9 @@ fn delimited_mention(haystack: &str, needle: &str) -> bool {
 /// no `fn` item realizing it anywhere in that generation.
 ///
 /// A class's behaviour sibling is an INPUT to that test, never a gate on
-/// reporting it. Skipping classes that had no sibling made the instrument
-/// silent about exactly the classes with the most missing: 239 declared
-/// functions across 60 classes went unreported while the ratchet showed 75
-/// (#2247). A BMM `function` is a computed operation, not a property, so "a
-/// plain record realizes its functions as struct fields" — the old
-/// justification — was never true of them.
+/// reporting it: a BMM `function` is a computed operation, not a property, so a
+/// class with no sibling realizes none of its functions and must still be
+/// reported.
 ///
 /// # Errors
 /// Returns an error if the composition fails to load or a crate tree cannot be
@@ -1962,7 +1957,7 @@ fn bodies_of<'a>(name: &str, bodies: &'a BTreeMap<String, String>) -> [&'a str; 
 /// a MACRO applied elsewhere in the generation, so the witness searches every
 /// body — but such a body must name the type as an impl TARGET, not merely
 /// mention it: a mention credited `VERSION.data` to `imported_version_impl.rs`,
-/// a false NEGATIVE that silently drops a real gap (#2247).
+/// a false NEGATIVE that silently drops a real gap.
 fn function_is_realized(
     name: &str,
     function: &str,
@@ -2161,7 +2156,7 @@ pub struct LostVariant {
 /// discards no document shape, and it is the one worth checking, because the
 /// closures are full of slots typed above an abstract type (`EXPR_ITEM` over
 /// `EXPR_OPERATOR`, `C_OBJECT` over `C_DOMAIN_TYPE`, `OBJECT_ID` over
-/// `UID_BASED_ID`) rather than free of them (#2271).
+/// `UID_BASED_ID`) rather than free of them.
 ///
 /// # Errors
 /// When a closure's schema files cannot be read or parsed.

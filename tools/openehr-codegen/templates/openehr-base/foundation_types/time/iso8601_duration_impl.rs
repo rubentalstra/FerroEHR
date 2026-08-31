@@ -37,21 +37,15 @@
 //! from.
 //!
 //! NOTE: the class doc gives an algorithm for `add`/`subtract` (reduce both
-//! operands via `to_seconds`) but none for `multiply`/`divide`. Component-wise
-//! scaling is not even expressible — `P1Y * 1.5` would need a fractional year,
-//! and the `Fractional_second_valid` invariant is the only place the spec admits
-//! a fraction — so `multiply`/`divide` use the same sanctioned `to_seconds`
-//! reduction, and every computed result renders in the canonical
-//! definite-designator form (`iso8601_parse::render_duration`). Our own
-//! design/extension on the spec's own reduction.
+//! operands via `to_seconds`) but none for `multiply`/`divide` or comparison —
+//! our own design/extension on the spec's own reduction, since component-wise
+//! scaling is not expressible (`P1Y * 1.5` would need a fractional year).
 //!
-//! NOTE: the openEHR spec gives no duration comparison, but it DOES sanction
-//! reducing a duration to a scalar via `to_seconds` (with the average-length
-//! constants) for its own `add`/`subtract`. Ordering by that same scalar is our
-//! own design/extension on that sanctioned reduction, so `P1M` (30.42 days) >
-//! `P30D`. `partial_cmp` returns `Some(Equal)` ONLY for equal raw strings:
-//! durations of equal magnitude but different spellings (`PT1H30M` vs `PT90M`)
-//! are reported incomparable (`None`), consistent with the derived `PartialEq`.
+//! All four use `to_seconds`, results render in the canonical
+//! definite-designator form, and ordering by that scalar puts `P1M` (30.42
+//! days) above `P30D`. `partial_cmp` returns `Some(Equal)` only for equal raw
+//! strings, so `PT1H30M` and `PT90M` are incomparable, consistent with the
+//! derived `PartialEq`.
 
 use std::cmp::Ordering;
 

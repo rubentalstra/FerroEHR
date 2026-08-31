@@ -5,24 +5,19 @@
 //! invariants.
 //!
 //! `BMM_CLASS.invariants` records each invariant as an expression string in
-//! openEHR's Eiffel/UML **assertion** surface (NOT `base_expressions.g4`): forms
-//! like `not links.is_empty`, `X /= Void implies not X.is_empty`, `A xor B`,
-//! `size >= 0`, `valid_iso8601_date (value)`, and the terminology/repository
-//! predicates (`terminology (…).has_code_for_group_id (…)`,
-//! `code_set (…).has_code (…)`), quantifiers (`for_all …`), and cross-object
-//! navigation/arithmetic (`time.diff (parent.origin)`).
+//! openEHR's Eiffel/UML assertion surface, not `base_expressions.g4`:
+//! `not links.is_empty`, `X /= Void implies not X.is_empty`, `A xor B`,
+//! `valid_iso8601_date (value)`, the terminology/repository predicates,
+//! quantifiers (`for_all …`) and cross-object navigation.
 //!
-//! This module tokenizes an expression and **classifies** it into one of three
-//! R5 buckets (see [`Bucket`]) by a paren-aware, worst-bucket-wins recursion
-//! over the boolean structure. It never produces text — classification is plain
-//! analysis data (design doc §1: stage-2 outputs are unit-testable without
-//! rendering). The render stage consumes an [`Bucket::Emitted`] verdict to emit
-//! a check into the kept validator runtime; the other two buckets stay
-//! hand-written and are reported.
+//! This module tokenizes an expression and classifies it into one of the three
+//! [`Bucket`]s by a paren-aware, worst-bucket-wins recursion over the boolean
+//! structure; it produces no text. The render stage emits a check for a
+//! [`Bucket::Emitted`] verdict and reports the other two.
 //!
-//! Conservatism: an unrecognised leaf form classifies as [`Bucket::Complex`],
-//! never as `Emitted` — the classifier under-claims rather than over-claims, so
-//! a false "emittable" can never slip a new rejection onto the wire.
+//! An unrecognised leaf form classifies as [`Bucket::Complex`], never as
+//! `Emitted`: the classifier under-claims, so a false "emittable" can never
+//! slip a new rejection onto the wire.
 
 /// Which R5 emission bucket a BMM invariant expression falls into.
 #[derive(Debug, Clone, PartialEq, Eq)]

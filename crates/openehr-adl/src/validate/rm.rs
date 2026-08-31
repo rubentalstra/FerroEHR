@@ -470,16 +470,11 @@ impl RmScan<'_> {
     /// attribute and its child objects against the reference model.
     fn walk_complex(&mut self, path: &str, rm_type: &str, cco: &CComplexObject) {
         for attr in complex_attributes(cco) {
-            // A differential-path attribute does not introduce an attribute
-            // block on the enclosing object's RM type — it relocates the
-            // constraint to a node elsewhere in the flat parent (master04.5
-            // §C_ATTRIBUTE, VDIFP). Its RM validity is checked at the resolved
-            // location by the phase-2 specialisation walk, so VCARM/VCAEX/… do
-            // not apply against `rm_type` here.
-            //
-            // NOTE: the "valid with respect to the reference model" half of VDIFP
-            // (master04.5 §C_ATTRIBUTE) is subsumed by the resolution check in
-            // [`super::specialisation`], the flat parent being RM-valid already.
+            // A differential-path attribute relocates the constraint to a node
+            // elsewhere in the flat parent (master04.5 §C_ATTRIBUTE, VDIFP)
+            // rather than introducing an attribute block here, so VCARM/VCAEX
+            // do not apply against `rm_type`. Its RM validity is checked at the
+            // resolved location by the phase-2 specialisation walk.
             if attr.differential_path.is_some() {
                 continue;
             }

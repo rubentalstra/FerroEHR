@@ -37,8 +37,9 @@ pub enum Namespace {
     /// `http://schemas.openehr.org/v1` — the `Release-1.0.2v2` bundle, the
     /// RELEASED-STABLE lineage upstream directs stable consumers to. Every
     /// caller selects a namespace explicitly (no `Default` exists); the
-    /// template/archetype codecs pin V1, while the served RM wire defaults
-    /// to V2 (owner ruling 2026-08-03, issue #1666 — register AMB-185).
+    /// template/archetype codecs pin V1, while the served RM wire defaults to
+    /// V2, because only the v2 bundle's schemas model the RM 1.2.0 the server
+    /// emits.
     V1,
     /// `http://schemas.openehr.org/v2` — the `Release-2.0.0v2` bundle, TRIAL
     /// upstream ("These schemas are in *TRIAL* state and subject to change").
@@ -712,7 +713,7 @@ impl<'a> XmlReader<'a> {
                 // A DOCTYPE is REFUSED, not skipped. It is inert today only
                 // because quick-xml parses no DTDs — a property of a dependency's
                 // current behaviour, which is the kind that changes silently.
-                // Canonical openEHR XML has no use for one (#2065).
+                // Canonical openEHR XML has no use for one.
                 Event::DocType(_) => {
                     return Err(XmlError::Parse(
                         "a DOCTYPE declaration is not accepted".into(),

@@ -285,7 +285,7 @@ fn keyed_objects<'a>(
 /// includes the grammar as its normative text. §Container Objects prose says
 /// more broadly "any primitive comparable value is allowed as the key"; the
 /// syntax appendix is the specific syntax authority, so the five-type set
-/// stands and the tension is recorded here (#1376).
+/// stands and the tension is recorded here.
 ///
 /// The integer key takes the optional sign of `odin_values.g4`
 /// (`integer_value : ('+'|'-')? INTEGER`), and its lexeme is evaluated via

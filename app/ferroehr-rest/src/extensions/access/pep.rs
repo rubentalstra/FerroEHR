@@ -3,54 +3,27 @@
 
 //! The policy-enforcement point (PEP) for the ITS-REST surface.
 //!
-//! Composes the enterprise **ABAC** gate with the **SMART** resource-scope +
-//! launch-context gate, driven from the generic dispatch mount (`crate::api`)
-//! so no per-operation code is needed.
+//! Composes the ABAC gate with the SMART resource-scope + launch-context gate,
+//! driven from the generic dispatch mount (`crate::api`).
 //!
-//! # What the openEHR specs say (and don't)
+//! ABAC and RBAC are our own enterprise design — no openEHR spec governs them
+//! (the SM places authorisation out of band, SM
+//! `openehr_platform/master02-overview.adoc` §General Assumptions). SMART is
+//! spec-grounded: the scope grammar and launch-context binding come from
+//! `ITS-REST/docs/smart_app_launch/master08-scopes.adoc` §Resource Scopes and
+//! `master07-*.adoc` §Context Selection, and the 401/403 discipline from
+//! `.../overview/Requests_and_responses.md` §Authentication and authorization.
 //!
-//! - **ABAC / RBAC are NOT governed by any openEHR spec.** The SM places
-//!   authorisation out of band (SM `openehr_platform/master02-overview.adoc`
-//!   §General Assumptions), and no CNF profile carries an authorisation
-//!   requirement. The attribute model, the patient gate, and the PDP fan-out
-//!   here are **our own enterprise design**, not a spec surface — flagged explicitly per the repo rule that
-//!   spec-silent behaviour is called out rather than dressed as conformance.
-//! - **SMART App Launch IS spec-grounded.** The scope grammar and the
-//!   launch-context binding come from the vendored openEHR SMART edition
-//!   (`docs/specs/openehr/ITS-REST/docs/smart_app_launch/master08-scopes.adoc`
-//!   §Resource Scopes; `master07-*.adoc` §Context Selection). The 401/403
-//!   discipline the deny paths honour is ITS-REST
-//!   `.../overview/Requests_and_responses.md` §Authentication and authorization.
-//!
-//! # Composition order (the layering)
-//!
-//! `EHR_ACCESS` (spec base) → RBAC → **ABAC** → **SMART scope gate**. Each is an
-//! additive restriction (AND-composition: a request must clear every enabled
-//! gate). The SMART gate therefore runs **after** the RBAC/Cedar decision has
-//! already permitted (`decide(...)`), never in place of it.
-//!
-//! # ABAC timing
-//!
-//! - **Pre-checks** run before the backend call — they have the op id, the
-//!   resolved path params, the query string, and the request body (composition
-//!   template, contribution template set).
-//! - **Post-checks** run after the backend call on a successful response, using
-//!   the [`AuditObject`](crate::system_log::middleware::AuditObject) the dispatch already set
-//!   (owning EHR id + resource version uid) — no body re-parsing.
-//!
-//! Every deny is a `403` and every engine failure a `500` (fail-closed, v1
-//! parity), each carrying the [`Principal`] on the response extensions so the
-//! ATNA audit layer records it for free. Query execution's ABAC scope + post-check
-//! live in the query path. ABAC is inert unless an
-//! `crate::extensions::access::authz::AbacGate` is wired
-//! (`abac.enabled`); the SMART gate is inert until SMART is enabled (see
-//! `smart_config`). End-to-end coverage through the assembled router (pre-check
-//! deny/allow, post-check deny, and the ATNA deny record) lives in
-//! `tests/abac_e2e.rs`.
-//!
-//! The PEP helpers return `Result<(), Response>` (the deny/error path is a ready
-//! axum `Response`, which is a large type) — `result_large_err` is allowed
-//! module-wide accordingly.
+//! The gates AND-compose as `EHR_ACCESS` → RBAC → ABAC → SMART, each an
+//! additive restriction, so the SMART gate runs after the RBAC/Cedar decision
+//! has permitted, never in place of it. Pre-checks run before the backend call
+//! (op id, path params, query, body); post-checks run after it on a successful
+//! response, from the
+//! [`AuditObject`](crate::system_log::middleware::AuditObject) the dispatch set.
+//! Every deny is a `403` and every engine failure a `500` (fail-closed), each
+//! carrying the [`Principal`] on the response extensions for the ATNA layer.
+//! ABAC is inert without a wired `crate::extensions::access::authz::AbacGate`;
+//! the SMART gate is inert until SMART is enabled (`smart_config` decides).
 #![expect(
     clippy::result_large_err,
     reason = "the Err variant of every decision point in this module is a \
@@ -102,25 +75,24 @@ fn mode_of(op: &str) -> Mode {
         "ehr_create" | "ehr_create_with_id" | "ehr_get_by_id" | "ehr_get_by_subject" => Mode::Pre,
         "composition_create" | "composition_update" | "composition_delete" => Mode::Pre,
         "contribution_create" => Mode::Pre,
-        // The contribution-list extension is an EHR-scoped read: pre-check it on
-        // the target EHR (subject gate) exactly like the other EHR reads, before
-        // any backend work. `kind_of` already maps `contribution_*` to the
-        // Contribution resource; the ehr_id is a path param, so Pre suffices.
+        // The contribution-list extension is an EHR-scoped read whose `ehr_id`
+        // is a path parameter, so the subject gate runs before any backend work.
         "contribution_list" => Mode::Pre,
         "composition_get" => Mode::Post,
         "contribution_get" => Mode::Post,
         _ if op.starts_with("versioned_composition_") => Mode::Post,
         _ if op.starts_with("ehr_status_") || op.starts_with("versioned_ehr_status_") => Mode::Pre,
         _ if op.starts_with("directory_") => Mode::Pre,
-        // Item tags, query, definition/demographic/admin: not ABAC-checked.
         _ => Mode::Skip,
     }
 }
 
-/// The ABAC preparation for a query execution: the patient subject scope
-/// to thread into the SQL, and whether the executor should collect the touched
-/// EHR/template sets for the post-check. `Ok((None, false))` when ABAC is off.
-/// `Err(response)` is a ready 403 (a missing configured patient claim).
+/// Prepares a query execution: the patient subject scope to thread into the
+/// SQL, and whether the executor collects the touched EHR/template sets for the
+/// post-check.
+///
+/// `Ok((None, false))` when ABAC is off; `Err(response)` is a ready 403 for a
+/// missing configured patient claim.
 pub(crate) fn query_pre(
     state: &AppState,
     op: &'static str,
@@ -143,11 +115,11 @@ pub(crate) fn query_pre(
     Ok((patient, true))
 }
 
-/// The ABAC post-check for a query execution: the PDP fan-out over the
-/// touched template set: a query touching no template asks nothing of the PDP
-/// and is therefore not denied by it. The patient gate
-/// is already enforced by the subject-scope pre-filter (rows outside the
-/// caller's patient are never fetched), so it is not re-run per EHR here.
+/// Post-checks a query execution: the PDP fan-out over the touched template
+/// set.
+///
+/// A query touching no template asks nothing of the PDP. The patient gate is
+/// already enforced by the subject-scope pre-filter, so it is not re-run here.
 pub(crate) async fn query_post(
     state: &AppState,
     op: &'static str,
@@ -193,12 +165,9 @@ pub(crate) async fn pre_check(
     op: &'static str,
     parts: &RequestParts,
 ) -> Result<(), Response> {
-    // The SMART gate for the ABAC-`Skip` resource families (template + AQL,
-    // master08 §Resource Scopes) runs FIRST and independently of the ABAC
-    // wiring: those operations never reach the ABAC-integrated `smart_gate`
-    // below (query authz lives in the query path, template ops are RBAC-only),
-    // so their fine-grained scopes are enforced here, with the resource id
-    // resolved from the route's own path parameters.
+    // The template + AQL families are ABAC-`Skip`, so they never reach the
+    // `smart_gate` below; their scopes are enforced here off the route's own
+    // path parameters (master08 §Resource Scopes).
     smart_skip_family_gate(state, op, parts)?;
     let Some(handle) = state.authz() else {
         return Ok(());
@@ -225,7 +194,7 @@ pub(crate) async fn pre_check(
     let patient = resolve_patient_claim(abac, &principal)?;
     let ehr_id = parts.path.get("ehr_id").cloned();
 
-    // The local patient gate, before any engine call.
+    // Before any engine call.
     patient_gate(
         abac,
         &principal,
@@ -236,7 +205,6 @@ pub(crate) async fn pre_check(
     )
     .await?;
 
-    // Resolve the template attribute per resource kind.
     let template = pre_template(abac, &principal, op, kind, parts).await?;
 
     let req = AuthzRequest {
@@ -252,11 +220,8 @@ pub(crate) async fn pre_check(
     };
     decide(abac, &principal, &req).await?;
 
-    // The SMART resource-scope + launch-context gate, AND-composed after the
-    // RBAC/Cedar decision (master08 §Resource Scopes; master07 §Context
-    // Selection). The resource id is the template the ABAC pre-check already
-    // resolved (composition create/update); an unresolved id matches only a
-    // broad `*`/`**` scope.
+    // The resource id is the template the pre-check resolved; an unresolved id
+    // matches only a broad `*`/`**` scope (master08 §Resource Scopes).
     let resource_id = req.template.as_ref().and_then(attr_single);
     smart_gate(state, abac, &principal, op, resource_id, ehr_id.as_deref()).await
 }
@@ -320,9 +285,7 @@ pub(crate) async fn post_check(state: &AppState, op: &'static str, resp: Respons
     if let Err(deny) = decide(abac, &principal, &req).await {
         return deny;
     }
-    // The SMART gate on the post-resolved template (composition reads), AND-
-    // composed after the Cedar decision (master08 §Resource Scopes; master07
-    // §Context Selection).
+    // The SMART gate on the post-resolved template, after the Cedar decision.
     let resource_id = req.template.as_ref().and_then(attr_single);
     match smart_gate(state, abac, &principal, op, resource_id, ehr_id.as_deref()).await {
         Ok(()) => resp,
@@ -330,12 +293,10 @@ pub(crate) async fn post_check(state: &AppState, op: &'static str, resp: Respons
     }
 }
 
-/// Resolve the patient claim, if the gate is configured.
+/// Resolves the patient claim, if the gate is configured.
 ///
-/// A configured-but-missing claim is a 403: the deployment asked for patient
-/// scoping and the token does not carry it, so no decision can permit the
-/// request. It is not a 500 — the server is working correctly and the caller's
-/// token is the thing that is insufficient.
+/// A configured-but-missing claim is a 403, not a 500: the server is working
+/// and the caller's token is what is insufficient.
 fn resolve_patient_claim(
     abac: &AbacGate,
     principal: &Principal,
@@ -352,26 +313,21 @@ fn resolve_patient_claim(
     }
 }
 
-/// The organization attribute, if the claim is configured and present.
+/// Returns the organization attribute, if the claim is configured and present.
 fn organization(abac: &AbacGate, principal: &Principal) -> Option<String> {
     abac.organization_claim
         .as_ref()
         .and_then(|c| crate::extensions::access::authz::roles::claim_string(&principal.claims, c))
 }
 
-/// The full pre-check patient gate: the subject match for target-EHR ops, plus
-/// the by-subject special case, where the request parameter IS the subject.
+/// The pre-check patient gate: the subject match for target-EHR ops, plus the
+/// by-subject case, where the request parameter IS the subject.
 ///
-/// For `ehr_get_by_subject` an ABSENT `subject_id` deliberately passes this gate
-/// so the route answers `400`, not `403`. The released specification declares the
-/// parameter required (`specifications/parameters/query/subject_id.yaml`:
-/// `required: true`), so such a request is invalid for EVERY caller and no
-/// authorization decision could make it succeed — RFC 9110 §15.5.1's
-/// client-error case. Answering `403` would assert something false, that
-/// permission is the obstacle, and send an integrator hunting entitlements for a
-/// malformed request. The typed parameter
-/// (`EhrGetBySubjectParams::subject_id`, a non-optional `String`) is what
-/// produces the `400`.
+/// For `ehr_get_by_subject` an absent `subject_id` deliberately passes this gate
+/// so the route answers `400`, not `403`: the released specification declares
+/// the parameter required (`specifications/parameters/query/subject_id.yaml`),
+/// so the request is invalid for every caller and no authorization decision
+/// could make it succeed (RFC 9110 §15.5.1).
 async fn patient_gate(
     abac: &AbacGate,
     principal: &Principal,
@@ -381,8 +337,6 @@ async fn patient_gate(
     parts: &RequestParts,
 ) -> Result<(), Response> {
     if op == "ehr_get_by_subject" {
-        // Here the request parameter IS the subject, so the gate compares the
-        // caller's patient claim to it directly rather than resolving an EHR.
         if let Some(patient) = patient
             && let Some(subject) = params::query_param(parts.query.as_deref(), "subject_id")
             && subject != patient
@@ -394,7 +348,7 @@ async fn patient_gate(
     subject_gate(abac, principal, patient, ehr_id).await
 }
 
-/// The subject-match gate over a target EHR: the claim must equal the EHR's
+/// Gates a target EHR on the subject match: the claim must equal the EHR's
 /// subject external ref (a subject-less EHR passes).
 async fn subject_gate(
     abac: &AbacGate,
@@ -416,7 +370,7 @@ async fn subject_gate(
     }
 }
 
-/// The template attribute for a pre-checked op.
+/// Returns the template attribute for a pre-checked op.
 async fn pre_template(
     abac: &AbacGate,
     principal: &Principal,
@@ -451,8 +405,8 @@ async fn pre_template(
     }
 }
 
-/// The template of a returned composition version (post-check), via the version
-/// uid the dispatch recorded.
+/// Returns the template of a returned composition version, via the version uid
+/// the dispatch recorded.
 async fn post_template(
     abac: &AbacGate,
     principal: &Principal,
@@ -467,8 +421,7 @@ async fn post_template(
         .map_err(|e| engine_error(principal, "resolve the template attribute", &e))
 }
 
-/// Extract the composition template id from the request body: the canonical
-/// pointer `/archetype_details/template_id/value` (JSON or XML), or the
+/// Extracts the composition template id from the request body, or from the
 /// `openehr-template-id` request header for a FLAT/STRUCTURED body
 /// (`Requests_and_responses` §openehr-template-id).
 fn composition_template(parts: &RequestParts) -> Option<String> {
@@ -476,9 +429,9 @@ fn composition_template(parts: &RequestParts) -> Option<String> {
     if crate::formats::dispatch::is_simplified_body(h) {
         return crate::formats::dispatch::header_template_id(h);
     }
-    // The same typed decode the commit seam performs — the template id is
-    // read off the RM value's own `ARCHETYPED.template_id`, never a JSON
-    // pointer that a shape change could silently stop matching.
+    // The same typed decode the commit seam performs: the template id comes off
+    // `ARCHETYPED.template_id`, never a JSON pointer a shape change could
+    // silently stop matching.
     let composition = negotiate::rm_value::<Composition>(h, &parts.body).ok()?;
     composition
         .archetype_details
@@ -486,8 +439,10 @@ fn composition_template(parts: &RequestParts) -> Option<String> {
         .map(|id| id.value)
 }
 
-/// The set of COMPOSITION template ids in a contribution payload. A COMPOSITION
-/// version without a template is unresolvable → fail-closed (403).
+/// Returns the COMPOSITION template ids in a contribution payload.
+///
+/// A COMPOSITION version without a template is unresolvable, so it is
+/// fail-closed (403).
 fn contribution_templates(
     parts: &RequestParts,
     principal: &Principal,
@@ -505,13 +460,9 @@ fn contribution_templates(
             if data.get("_type").and_then(|t| t.as_str()) != Some("COMPOSITION") {
                 continue;
             }
-            // A CONTRIBUTION body is a wrapper (a version set + audit) with no
-            // canonical RM type of its own, so the enclosing value stays JSON —
-            // but each `versions[i].data` IS a canonical COMPOSITION, and the
-            // template id is read off the typed value's own
-            // `ARCHETYPED.template_id`, the same way `composition_template`
-            // does. A JSON pointer would keep compiling while silently matching
-            // nothing if the canonical shape moved.
+            // A CONTRIBUTION is a wrapper with no canonical RM type, so the
+            // enclosing value stays JSON; each `versions[i].data` is a canonical
+            // COMPOSITION, decoded so the template id comes off the typed value.
             let Ok(composition) = openehr_its::json::from_canonical_value::<Composition>(data)
             else {
                 // Undecodable: the dispatch answers 400 for this body, so there
@@ -536,7 +487,8 @@ fn contribution_templates(
     Ok(out)
 }
 
-/// Run the engine and map the verdict: permit → `Ok`, deny → 403, error → 500.
+/// Runs the engine and maps the verdict: permit to `Ok`, deny to 403, error to
+/// 500.
 async fn decide(
     abac: &AbacGate,
     principal: &Principal,
@@ -553,24 +505,17 @@ async fn decide(
     }
 }
 
-/// Decompose a `UID_BASED_ID` the PEP has to attribute — a bare
-/// `HIER_OBJECT_ID` or a full `OBJECT_VERSION_ID` — into the
-/// `(vo_id, version_tree_id)` pair the attribute resolvers take.
+/// Decomposes a `UID_BASED_ID` — a bare `HIER_OBJECT_ID` or a full
+/// `OBJECT_VERSION_ID` — into the `(vo_id, version_tree_id)` pair the attribute
+/// resolvers take.
 ///
-/// The identifier grammar is NOT restated here: the string goes through this
-/// adapter's one strict decoder ([`parse_uid_based_id`], which delegates the
-/// lexical form to `ObjectVersionId::from_str` in `openehr-base` — BASE
-/// `base_types` `master05-identification_package.adoc` §Syntaxes), so the PEP
-/// can never read an id differently from the route it is guarding.
-///
-/// A value that decoder rejects is **denied**, not silently degraded. This is
-/// the module's fail-closed rule (every attribute-resolution failure denies):
-/// the resource attributes the policy binds on cannot be computed for an
-/// unaddressable id, and permitting on an absent attribute would let a
-/// malformed path parameter walk past a template- or patient-scoped policy. It
-/// matches the existing hard deny for a CONTRIBUTION version whose template
-/// cannot be determined. Authorization decisions are our own design — no
-/// openEHR spec governs them (see the module header).
+/// The string goes through this adapter's one strict decoder
+/// ([`parse_uid_based_id`]; BASE `base_types`
+/// `master05-identification_package.adoc` §Syntaxes), so the PEP can never read
+/// an id differently from the route it guards. A value that decoder rejects is
+/// denied, not degraded: the attributes a policy binds on cannot be computed
+/// for an unaddressable id, and permitting on an absent one would walk a
+/// malformed path parameter past a template- or patient-scoped policy.
 fn resolve_target(principal: &Principal, uid: &str) -> Result<(String, Option<String>), Response> {
     match parse_uid_based_id(uid) {
         Ok(decoded) => Ok((
@@ -594,21 +539,20 @@ fn forbidden(principal: &Principal, detail: &str) -> Response {
     resp
 }
 
-/// A 403 for a request that reached a gate with NO authenticated principal.
+/// A 403 for a request that reached a gate with no authenticated principal.
 ///
 /// Nothing is attached to the response extensions because there is no principal
-/// to attribute: the ATNA layer records the denial from the request itself. This
-/// replaces a fabricated `UNKNOWN` principal — attributing a denial to an
-/// identity that never authenticated writes a false subject into the audit
-/// trail, which is worse than recording an unattributed denial.
+/// to attribute: attributing a denial to an identity that never authenticated
+/// would write a false subject into the audit trail, so the ATNA layer records
+/// the denial from the request itself.
 fn forbidden_unauthenticated(detail: &str) -> Response {
     RestError(ApiError::Forbidden(format!("access denied: {detail}"))).into_response()
 }
 
-/// A 500 (fail-closed) carrying the principal. `step` names what could not be
-/// done and `error` the failure that broke it, whole cause chain included —
-/// server-internal, so both go to the trace record and the body carries the
-/// curated opaque message.
+/// A 500 (fail-closed) carrying the principal.
+///
+/// `step` names what could not be done and `error` the failure that broke it;
+/// both go to the trace record, and the body carries the curated opaque message.
 fn engine_error(
     principal: &Principal,
     step: &'static str,
@@ -620,9 +564,9 @@ fn engine_error(
     resp
 }
 
-/// The single value of a resolved attribute, or `None` for an absent/multi-valued
-/// one (SMART maps one operation onto one resource id; a contribution's template
-/// *set* has no single id, and the CONTRIBUTION family is not SMART-governed).
+/// Returns the single value of a resolved attribute, or `None` for an absent or
+/// multi-valued one: SMART maps one operation onto one resource id, and a
+/// contribution's template set has no single id.
 fn attr_single(attr: &Attr) -> Option<&str> {
     match attr {
         Attr::One(s) => Some(s.as_str()),
@@ -630,22 +574,22 @@ fn attr_single(attr: &Attr) -> Option<&str> {
     }
 }
 
-/// The SMART configuration for this server, or `None` when SMART is disabled.
+/// Returns the SMART configuration for this server, or `None` when SMART is
+/// disabled.
 ///
-/// SMART is off by default and produces zero wire drift when disabled
-/// (`ferroehr::config::smart::SmartConfig`), so the gate below is inert unless an
-/// operator opts in via `FERROEHR_REST_SMART__ENABLED` (the `smart` field on
-/// `crate::config::AppConfig`).
+/// SMART is off by default and produces zero wire drift when disabled, so the
+/// gates are inert unless an operator opts in via `FERROEHR_REST_SMART__ENABLED`.
 fn smart_config(state: &AppState) -> Option<&SmartConfig> {
     let cfg = &state.config().smart;
     cfg.enabled.then_some(cfg)
 }
 
-/// Run the SMART gate for one operation, AND-composed after the RBAC/Cedar
-/// decision. A scope deny is a `403`; a `patient/` compartment grant additionally
-/// binds the launch context to the target EHR through the ABAC [`subject_gate`].
-/// Inert when SMART is disabled. Each deny carries the principal (audited by the
-/// ATNA layer).
+/// Runs the SMART gate for one operation, AND-composed after the RBAC/Cedar
+/// decision.
+///
+/// A scope deny is a `403`; a `patient/` compartment grant additionally binds
+/// the launch context to the target EHR through the ABAC [`subject_gate`].
+/// Inert when SMART is disabled.
 async fn smart_gate(
     state: &AppState,
     abac: &AbacGate,
@@ -659,15 +603,11 @@ async fn smart_gate(
     };
     match smart_decide(cfg, principal, op, resource_id) {
         Err(reason) => Err(forbidden(principal, &reason)),
-        // Permitted, no launch-context binding (a `user`/`system` scope, or no
-        // SMART resource family governs the op).
+        // A `user`/`system` scope, or no SMART family governs the op.
         Ok(None) => Ok(()),
-        // Permitted through a `patient/` compartment: bind the launch context to
-        // the EHR being accessed (master07 §Context Selection) by reusing the
-        // ABAC subject gate — it compares the target EHR's subject external ref to
-        // the resolved context value. A target-less op (query, create-without-id)
-        // passes the gate vacuously (no EHR to bind); per-row patient scoping then
-        // stays with the ABAC query subject-scope pre-filter.
+        // A `patient/` compartment binds the launch context to the EHR being
+        // accessed (master07 §Context Selection) through the ABAC subject gate;
+        // a target-less op passes vacuously.
         //
         // NOTE: the context value prefers the `ehrId` claim then the SMART
         // `patient` claim (master07 token-response table), matched against the
@@ -676,8 +616,10 @@ async fn smart_gate(
     }
 }
 
-/// The pure SMART scope decision (master08 §Resource Scopes) + launch-context
-/// resolution (master07 §Context Selection). Returns:
+/// Decides the SMART scope (master08 §Resource Scopes) and resolves the launch
+/// context (master07 §Context Selection).
+///
+/// Returns:
 /// - `Err(reason)` → deny (the reason is the audit/diagnostic detail);
 /// - `Ok(None)` → permit, no launch-context binding required;
 /// - `Ok(Some(ctx))` → permit, but a `patient/` compartment scope means the
@@ -718,23 +660,16 @@ fn smart_decide(
         })
 }
 
-/// The SMART resource-scope gate for the ABAC-`Skip` families — template and
-/// AQL (master08 §Resource Scopes: `template-…`, `aql-…`). The COMPOSITION
-/// family rides the ABAC-integrated [`smart_gate`] (it needs the ABAC-resolved
-/// template id + the launch-context subject binding); these two families carry
-/// their resource id in the route itself, so the gate runs directly off the
-/// path parameters, before and independently of any ABAC wiring:
+/// The SMART resource-scope gate for the ABAC-`Skip` families, template and AQL
+/// (master08 §Resource Scopes).
 ///
-/// - template ops → the `{template_id}` path parameter (uploads and lists have
-///   none — an unresolved id matches only a broad `*`/`**` scope, the
-///   documented fail-closed reading of [`enforce::evaluate`]);
-/// - AQL definition/stored-execution ops → `{qualified_query_name}` (ad-hoc
-///   execution has none — same broad-scope rule).
-///
-/// A `patient/` compartment permit needs no per-request EHR binding here:
-/// templates are unscoped and queries are cross-EHR — per-row patient scoping
-/// stays with the ABAC query subject-scope pre-filter (adjudicated),
-/// exactly as the ABAC-integrated gate treats target-less operations.
+/// Both carry their resource id in the route, so the gate runs off the path
+/// parameters independently of any ABAC wiring: `{template_id}` for template
+/// ops, `{qualified_query_name}` for AQL definition and stored execution. An
+/// operation with neither has an unresolved id, which matches only a broad
+/// `*`/`**` scope ([`enforce::evaluate`]). A `patient/` compartment permit needs
+/// no EHR binding here — templates are unscoped and queries are cross-EHR, so
+/// per-row patient scoping stays with the ABAC query subject-scope pre-filter.
 fn smart_skip_family_gate(
     state: &AppState,
     op: &str,
@@ -753,12 +688,9 @@ fn smart_skip_family_gate(
     ) {
         return Ok(());
     }
-    // No principal means no token, and therefore no SMART scopes — which is a
-    // state the configuration already has an answer for. Advisory mode
-    // (`smart.require_smart_scopes = false`) defers to the RBAC/ABAC tiers, so
-    // it defers here too; fail-closed mode refuses. Refusing unconditionally
-    // would brick `auth.enabled = false`, where the absence of a principal is
-    // the operator's explicit choice rather than a missing credential.
+    // No principal means no token and therefore no SMART scopes: advisory mode
+    // defers to the RBAC/ABAC tiers, fail-closed mode refuses. Refusing
+    // unconditionally would brick `auth.enabled = false`.
     let Some(principal) = current_principal() else {
         if cfg.require_smart_scopes {
             return Err(forbidden_unauthenticated(
@@ -774,8 +706,8 @@ fn smart_skip_family_gate(
         .map(String::as_str);
     match smart_decide(cfg, &principal, op, resource_id) {
         Err(reason) => Err(forbidden(&principal, &reason)),
-        // Permitted — including through a `patient/` compartment, whose EHR
-        // binding is vacuous for these target-less families (see the doc).
+        // A `patient/` compartment binding is vacuous for these target-less
+        // families (see the doc).
         Ok(_) => Ok(()),
     }
 }

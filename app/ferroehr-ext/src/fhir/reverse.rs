@@ -1,31 +1,25 @@
 // SPDX-FileCopyrightText: FerroEHR contributors
 // SPDX-License-Identifier: MIT
 
-//! The FHIR-connector **reverse** transform: canonical COMPOSITION → FHIR
-//! resource (the read façade + the outbound emitter share it).
+//! The FHIR-connector reverse transform: canonical COMPOSITION to FHIR
+//! resource, shared by the read façade and the outbound emitter.
 //!
-//! **No openEHR spec governs this — our own design/extension.** Gate: the
-//! connector's routes are config-gated in `ferroehr-rest`; the outbound emitter
-//! behind `FhirOutboundConfig` (the section struct lives in the consuming
-//! crate).
+//! No openEHR spec governs this — our own design/extension.
 //!
 //! The exact inverse of [`build_flat`](super::mapping::build_flat): the
-//! COMPOSITION is flattened to the same FLAT map
+//! COMPOSITION is flattened through
+//! [`composition_to_flat`](openehr_its::flat::convert::composition_to_flat) to
+//! the same FLAT map
 //! [`composition_from_flat`](openehr_its::flat::convert::composition_from_flat)
-//! consumes (via
-//! [`composition_to_flat`](openehr_its::flat::convert::composition_to_flat), so the
-//! leaf keys — `path|magnitude`, `path|unit`, `path|code`, `path|terminology`,
-//! `path|value` — are byte-identical to what an entry wrote inbound), then each
-//! mapping entry reads its leaf(s) back out and writes them to its
-//! `FHIRPath`-lite target, building the FHIR JSON. `code_map` is applied in
-//! reverse (`terminology_id` → FHIR system URL).
+//! consumes, so the leaf keys are byte-identical to what an entry wrote inbound;
+//! each mapping entry then reads its leaves back out and writes them to its
+//! `FHIRPath`-lite target. `code_map` is applied in reverse.
 //!
-//! NOTE: a `constant` entry is NOT reversed — it injected a fixed openEHR
-//! leaf inbound with no FHIR source, so it contributes nothing to the
-//! reconstructed resource (round-trip fidelity is defined over the FHIR-sourced
-//! mapped fields). The `subject` is reconstructed from the owning EHR's subject
-//! id (the façade/emitter supply it — the COMPOSITION does not carry it), with
-//! `strip_prefix` re-applied so the reference matches the inbound form.
+//! A `constant` entry is not reversed: it injected a fixed openEHR leaf with no
+//! FHIR source, so round-trip fidelity is defined over the FHIR-sourced fields
+//! only. The `subject` is reconstructed from the owning EHR's subject id, which
+//! the façade or emitter supplies, with `strip_prefix` re-applied so the
+//! reference matches the inbound form.
 
 #![expect(
     clippy::disallowed_types,
@@ -228,8 +222,8 @@ fn place(cur: &mut Value, segments: &[(&str, Option<usize>)], value: Value) {
                 arr.push(Value::Null);
             }
             // The loop above null-padded up to `*i`, so the element exists;
-            // fetched rather than indexed so the padding logic is the only
-            // thing that has to stay correct.
+            // fetched rather than indexed, so the padding is the only thing
+            // that has to stay correct.
             if let Some(elem) = arr.get_mut(*i) {
                 place(elem, rest, value);
             }

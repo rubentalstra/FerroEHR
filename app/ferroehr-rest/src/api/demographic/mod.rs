@@ -4,33 +4,25 @@
 //! HTTP dispatch for the ITS-REST **demographic API** (Release-1.1.0,
 //! DEVELOPMENT status).
 //!
-//! A machine-readable openEHR wire contract for demographics now exists: the
-//! ITS-REST **Demographic API** (`x-status: DEVELOPMENT`), vendored at
-//! `docs/specs/openehr/ITS-REST/specifications/demographic.openapi.yaml` and its
-//! per-operation contracts under `.../operations/` (`person_create.yaml`,
-//! `person_get.yaml`, `person_update.yaml`, `person_delete.yaml` and the
-//! identical `agent_*`/`group_*`/`organisation_*`/`role_*`; `versioned_party_*`;
-//! `demographic_contribution_*`; `demographic_tags_get` + the per-party
-//! `*_tags_*`). The route table + `*Params` structs are generated from that OAS
-//! into `openehr_its::rest::generated::demographic`; this module **implements
-//! that contract** over the `ferroehr-sm` native API — it is a spec-defined
-//! (development-maturity) wire, not an "extension by analogy with the EHR
-//! group". Where the EHR-group response envelope (`ETag`/`Location`/`Prefer`/
-//! `If-Match`) coincides with the demographic operation YAMLs it is kept, but
-//! justified from the demographic contract, not by analogy.
+//! The wire contract is the vendored ITS-REST Demographic API
+//! (`specifications/demographic.openapi.yaml` and its per-operation contracts
+//! under `.../operations/`), from which the route table and `*Params` structs
+//! are generated into `openehr_its::rest::generated::demographic`. This module
+//! implements that contract over the native API: a spec-defined,
+//! development-maturity wire rather than an extension by analogy with the EHR
+//! group, so where the two response envelopes coincide the shape is justified
+//! from the demographic contract.
 //!
-//! The **only** genuinely spec-absent surface is `PARTY_RELATIONSHIP` (see
-//! `relationship`): the vendored Demographic API defines no
-//! `party_relationship` paths — those routes are our own extension realizing SM
-//! `I_PARTY_RELATIONSHIP` and are excluded from conformance-profile claims.
+//! The only genuinely spec-absent surface is `PARTY_RELATIONSHIP` (see
+//! `relationship`), which the vendored API does not define: those routes are our
+//! own extension realizing SM `I_PARTY_RELATIONSHIP` and are excluded from
+//! conformance-profile claims.
 //!
-//! The five per-kind operation families are collapsed by mapping the
-//! operation-id prefix to a [`PartyKind`] (`parse_party_op`); the generated
-//! per-kind `*Params` structs are field-identical, so one representative struct
-//! is reused across kinds. File layout mirrors the spec resources:
-//! `party` (`{kind}` CRUD), `tags` (`ITEM_TAG` sub-resources +
-//! `demographic_tags_get`), `versioned_party`, `contribution`,
-//! `relationship` (extension), and `dispatch` as the operation-id match.
+//! The five per-kind operation families collapse by mapping the operation-id
+//! prefix to a [`PartyKind`] (`parse_party_op`), the generated per-kind
+//! `*Params` structs being field-identical. The file layout mirrors the spec
+//! resources: `party`, `tags`, `versioned_party`, `contribution`,
+//! `relationship`, and `dispatch` as the operation-id match.
 
 #![expect(
     clippy::disallowed_types,

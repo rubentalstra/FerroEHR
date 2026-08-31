@@ -5,15 +5,13 @@
 //!
 //! Operation semantics are the ITS-REST Query API (`docs/specs/openehr/ITS-REST`;
 //! AQL 1.1); no openEHR spec governs the OAS layout. Each handler forwards to the
-//! group dispatcher through [`guarded_dispatch`], so the wire behaviour is
-//! identical to the former table-driven `mount` adapter.
+//! group dispatcher through [`guarded_dispatch`].
 //!
-//! The Query API is one of the few groups with DEDICATED released prose
+//! The Query API is one of the few groups with dedicated released prose
 //! (`docs/query/Request.md`, `Response.md`, `Query_types.md`,
-//! `Qualified_query_name.md` — all STABLE in Release 1.1.0), so the declarations
-//! below quote that text over the released OAS wherever the two conflict
-//! (the docs text wins every conflict; the OAS grounds only what the docs
-//! text leaves silent — the oracle order).
+//! `Qualified_query_name.md`, all STABLE in Release 1.1.0), so the declarations
+//! below follow that text wherever it conflicts with the released OAS, which
+//! grounds only what the docs text leaves silent.
 //!
 //! ## Prose-vs-OAS reconciliations (documented real wire)
 //!

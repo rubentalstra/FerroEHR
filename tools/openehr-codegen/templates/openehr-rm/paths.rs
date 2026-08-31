@@ -2,78 +2,46 @@
 // SPDX-FileCopyrightText: openEHR Foundation
 // SPDX-License-Identifier: MIT AND Apache-2.0
 
-//! openEHR path machinery (hand-written spec behaviour; preserved
-//! across `openehr-codegen` regeneration like `validate.rs`).
+//! openEHR path machinery (hand-written spec behaviour).
 //!
-//! Implements the RM `PATHABLE` pathing functions —
-//! `item_at_path` / `items_at_path` / `path_exists` / `path_unique` /
-//! `path_of_item` / `parent` — over the **canonical-JSON value tree**
-//! (`serde_json::Value`), which is the repo's uniform RM representation (the
-//! node codec, the composition validator, and the FLAT converters all navigate it).
+//! Implements the RM `PATHABLE` pathing functions — `item_at_path` /
+//! `items_at_path` / `path_exists` / `path_unique` / `path_of_item` / `parent` —
+//! over the canonical-JSON value tree, which is this workspace's uniform RM
+//! representation. It also carries the two `LOCATABLE` node-id form predicates
+//! ([`archetype_node_id_is_term_code`], [`is_archetype_root_node_id`]) and the
+//! [`EhrUri`] structural parser for the `ehr:` URI scheme.
 //!
-//! Also carries the two `LOCATABLE` node-id form predicates —
-//! [`archetype_node_id_is_term_code`] and [`is_archetype_root_node_id`], the
-//! single definition of "is this node id an interior term code or an archetype
-//! root identifier?" that the wire validator and the TDD builder both call.
+//! Spec: RM
+//! `docs/specs/openehr/RM/docs/UML/classes/org.openehr.rm.common.pathable.adoc`
+//! for the function signatures and parent semantics, and BASE
+//! `docs/specs/openehr/BASE/docs/architecture_overview/master11-paths.adoc`
+//! §Basic Syntax / §Predicate Expressions / §Using a Uid-based Predicate /
+//! §Using Positional Parameters for the path grammar; the `ehr:` scheme is BASE
+//! `master11-paths` §"EHR URIs" and RM `data_types/master10-uri_package`
+//! §"DV_EHR_URI Syntax".
 //!
-//! Also carries the [`EhrUri`] structural parser for the `ehr:` URI scheme
-//! (BASE `master11-paths` §"EHR URIs"; RM `data_types/master10-uri_package`
-//! §"DV_EHR_URI Syntax"), which composes the path parser above for the
-//! `path_inside_top_level_structure` portion.
+//! Four shape decisions:
 //!
-//! Spec:
-//! - RM 1.2.0 `docs/specs/openehr/RM/docs/UML/classes/org.openehr.rm.common.pathable.adoc`
-//!   (the function signatures + parent semantics).
-//! - BASE `docs/specs/openehr/BASE/docs/architecture_overview/master11-paths.adoc`
-//!   the path syntax:
-//!   - §"Basic Syntax": `/`-separated attribute segments, relative vs absolute,
-//!     and the `//` path pattern ("matches any number of path segments").
-//!   - §"Predicate Expressions": the `[atNNNN]` archetype-node-id shortcut for
-//!     `[@archetype_node_id='atNNNN']`, the archetype-id predicate at chaining
-//!     points (`[openEHR-EHR-…]` / `[archetype_id=…]`), the
-//!     `[atNNNN and name/value='x']` form and its `[atNNNN,'name']` shortcut.
-//!   - §"Using a Uid-based Predicate": `[uid='…']` / `[atNNNN and uid='…']`.
-//!   - §"Using Positional Parameters": the XPath positional predicate `[n]`
-//!     (1-based) — "the only guaranteed unique paths are those based on
-//!     positional predicates".
-//!
-//! Design notes:
-//! - NOTE: `LOCATABLE.concept(): DV_TEXT` is **not realisable from an
-//!   instance** and is therefore absent here. RM
-//!   `UML/classes/org.openehr.rm.common.locatable.adoc` §Functions defines it
-//!   as the "Clinical concept of the archetype as a whole (= derived from the
-//!   `archetype_node_id` of the root node)", and
-//!   `common/master03-archetyped_package.adoc` §"The LOCATABLE Class" states
-//!   how that derivation runs: "The 'meaning' of any node is derived formally
-//!   from the archetype by obtaining the text value for the
-//!   `archetype_node_id` code from the archetype `ontology` section, in the
-//!   language required." The archetype terminology is not carried on the
-//!   instance, so the RM value tree cannot answer it — only an
-//!   archetype/template-resolving caller can, by looking the root node id up
-//!   in that archetype's terminology. What IS derivable from the instance
-//!   alone — whether a node id names an archetype root at all — is realised as
-//!   [`is_archetype_root_node_id`], and the root's archetype identifier is
-//!   read straight off `archetype_node_id`.
-//! - `PATHABLE.parent()` is a back-reference; per the repo convention (no
-//!   owning back-refs) it is realised as a root-anchored lookup
-//!   ([`parent_of`]), not a stored pointer.
-//! - The typed-`enum` RM tree is *not* walked directly: a second, typed
-//!   visitor over ~130 generated structs would duplicate this logic for no
-//!   wire gain — every consumer already holds the canonical JSON form.
-//! - General comparison predicates (§"Other Predicates", e.g.
-//!   `[at0007 and time >= '...']`,
-//!   `[at0002.1 and value/defining_code/code_string = 'A04']`) are supported
-//!   as [`Comparison`] conjuncts: a relative attribute path, an operator
-//!   (`=`, `!=`, `<`, `<=`, `>`, `>=`), and a quoted-string or numeric
-//!   literal, evaluated with XPath existential node-set semantics (strings
-//!   compare lexically — ISO 8601 date/times order temporally; numbers
-//!   numerically). Predicate text outside the grammar still fails loud as
+//! - `LOCATABLE.concept(): DV_TEXT` is absent, because it is not realisable
+//!   from an instance: `common/master03-archetyped_package.adoc` §"The
+//!   LOCATABLE Class" derives the meaning of a node from the archetype's
+//!   `ontology` section, which the instance does not carry. What the instance
+//!   does answer — whether a node id names an archetype root — is
+//!   [`is_archetype_root_node_id`].
+//! - `PATHABLE.parent()` is a back-reference, realised as the root-anchored
+//!   lookup [`parent_of`] rather than a stored pointer.
+//! - The typed RM tree is not walked directly: every consumer already holds the
+//!   canonical JSON form, so a second typed visitor would duplicate this logic
+//!   for no wire gain.
+//! - General comparison predicates (§"Other Predicates") are [`Comparison`]
+//!   conjuncts evaluated with XPath existential node-set semantics; predicate
+//!   text outside the grammar fails loud as
 //!   [`PathError::UnsupportedPredicate`].
-//! - NOTE: the `//` pattern and the positional predicate `[n]` are part of
-//!   the master11 *path* grammar (realised here), but are **not** part of the
-//!   AQL 1.1 path grammar (QUERY `master03` §"Predicates" enumerates only the
-//!   standard/archetype/node predicates) — this module is the RM/URI path
-//!   engine, not the AQL one, and the AQL parser (`openehr-query`) is untouched.
+//!
+//! NOTE: the `//` pattern and the positional predicate `[n]` belong to the
+//! master11 PATH grammar realised here, not to the AQL 1.1 path grammar (QUERY
+//! `master03` §"Predicates" enumerates only the standard/archetype/node
+//! predicates).
 
 #![expect(
     clippy::disallowed_types,
@@ -1789,7 +1757,7 @@ mod tests {
     #[test]
     fn general_comparison_predicate_parses() {
         // BASE master11-paths §"Other Predicates" — the spec's own example
-        // form is part of the path grammar (previously rejected; #742).
+        // form is part of the path grammar (previously rejected).
         let p = "/data/events[at0007 and time >= '2005-06-24T09:30:00']"
             .parse::<RmPath>()
             .unwrap();

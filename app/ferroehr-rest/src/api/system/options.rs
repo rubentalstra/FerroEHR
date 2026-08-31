@@ -148,9 +148,9 @@ impl SystemManifest {
         }
     }
 
-    /// The manifest as the GENERATED contract `Options` DTO (#1822) — the
-    /// wire carrier; every field is populated, so the DTO's skip-if-none
-    /// serialization is byte-identical to the former always-present view.
+    /// Returns the manifest as the generated contract `Options` DTO, the wire
+    /// carrier; every field is populated, so its skip-if-none serialization
+    /// emits them all.
     fn body(&self) -> openehr_its::rest::generated::system::Options {
         openehr_its::rest::generated::system::Options {
             solution: Some(self.config.solution.clone()),
@@ -197,8 +197,7 @@ impl SystemManifest {
 ///   2. it mounts this handler at the **API base-path root** (`cfg.base_path`,
 ///      e.g. `OPTIONS /ferroehr/rest/openehr/v1`) — the ONE location the
 ///      System API defines (`system.openapi.yaml` `servers` `{baseUrl}/v1`,
-///      path `/`); the former bare-`/` alias was our own duplication,
-///      removed;
+///      path `/`);
 ///   3. the mount sits **above** the `CorsLayer` (that layer treats every
 ///      `OPTIONS` as a CORS preflight and short-circuits it), which is why the
 ///      handler is added after the middleware stack in `crate::router::router`.

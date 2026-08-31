@@ -3,29 +3,27 @@
 
 //! Authorization for the `FerroEHR` CDR.
 //!
-//! Two composable layers inside the protocol adapter (authorization is an
-//! adapter concern by design).
+//! Two composable layers inside the protocol adapter, authorization being an
+//! adapter concern by design.
 //!
-//! **No openEHR spec governs this.** The SM places authorization out of band
-//! (SM `openehr_platform/master02-overview.adoc` §General Assumptions) and no
-//! CNF profile carries an RBAC/ABAC requirement — everything here is our own
-//! enterprise design, flagged as such rather than presented as conformance. The
-//! spec-grounded access authority is the sibling `EHR_ACCESS` gate
-//! ([`crate::extensions::access::ehr_access`]); these layers compose on top of it.
-//! The layers:
+//! No openEHR spec governs this: the SM places authorization out of band (SM
+//! `openehr_platform/master02-overview.adoc` §General Assumptions), so
+//! everything here is our own enterprise design. The spec-grounded access
+//! authority is the sibling `EHR_ACCESS` gate
+//! ([`crate::extensions::access::ehr_access`]), which these layers compose on
+//! top of:
 //!
-//! 1. **RBAC** (coarse, always on when auth is enabled): every generated
-//!    ITS-REST operation is classified ([`classify`]) and gated by a role model
+//! 1. RBAC, coarse and always on when auth is enabled: every generated ITS-REST
+//!    operation is classified ([`classify`]) and gated by a role model
 //!    ([`roles`]) driven by `ferroehr::config::authz::AuthzConfig`.
-//! 2. **ABAC** (fine-grained, opt-in `abac.enabled`): a policy-decision-point
-//!    seam ([`engine::PolicyEngine`]) consulted per clinical operation with
-//!    resolved attributes (organization/patient/template), behind two
-//!    interchangeable engines — an embedded Cedar engine ([`cedar`], the
-//!    default) and the [`remote::RemotePdp`].
+//! 2. ABAC, fine-grained and opt-in: a policy-decision-point seam
+//!    ([`engine::PolicyEngine`]) consulted per clinical operation with resolved
+//!    attributes, behind two interchangeable engines — the embedded [`cedar`]
+//!    default and the [`remote::RemotePdp`].
 //!
 //! This module also carries the per-server authorization handle wired onto
-//! [`AppState`](crate::state::AppState) (the RBAC + ABAC gates), built by the binary
-//! from `ferroehr::config::authz::AuthzConfig`.
+//! [`AppState`](crate::state::AppState), which the binary builds from
+//! `ferroehr::config::authz::AuthzConfig`.
 //!
 //! ## Module map
 //! - `config` — the `ferroehr::config::authz::AuthzConfig` serde struct (the `[authz]`

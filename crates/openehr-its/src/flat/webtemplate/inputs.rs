@@ -11,22 +11,17 @@
 //! (`DV_QUANTITY` → `magnitude`/`unit`, `DV_CODED_TEXT` → `code`/`value`/…), each
 //! input carrying its `type`, coded `list`, and `validation`.
 //!
-//! Deliberate scope of this mapping (the `inputs` describe the *constraint*, not
-//! resolved runtime values):
+//! The `inputs` describe the CONSTRAINT, not resolved runtime values, which
+//! fixes three boundaries:
 //!
-//! * **No `defaultValue` synthesis from assumed/RM-default values** —
-//!   `defaultValue` comes only from an explicit archetype assumed value; RM
-//!   defaults are a composition-build concern
-//!   (`flat::graph::fill_structural_mandatory`), not a template-input concern.
-//! * **External `otherTerminologies` are not expanded into coded lists** — only
-//!   the archetype-`local` value sets become coded `list` entries; bindings to
-//!   external terminologies are surfaced as `termBindings` (wired in
-//!   [`super::builder`]), and external code validation is the terminology
-//!   service's job, not the template builder's.
-//! * **Rubric source is the archetype ontology** ([`Labels`]); a code whose rubric
-//!   the archetype does not define (unknown code, or a non-`local` terminology)
-//!   uses the code string as its label — no openEHR spec governs the label
-//!   fallback (our own design/extension).
+//! * `defaultValue` comes only from an explicit archetype assumed value; RM
+//!   defaults are a composition-build concern.
+//! * Only archetype-`local` value sets become coded `list` entries; bindings to
+//!   external terminologies surface as `termBindings`, and validating an
+//!   external code is the terminology service's job.
+//! * Rubrics come from the archetype ontology ([`Labels`]); a code the archetype
+//!   does not define falls back to the code string as its label — no openEHR
+//!   spec governs that fallback (our own design/extension).
 
 #![expect(
     clippy::disallowed_types,

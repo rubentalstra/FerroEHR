@@ -4,28 +4,23 @@
 //! The management surface: **ops introspection only** — info, Prometheus,
 //! metrics, env, loggers, and the on-demand CPU flamegraph.
 //!
-//! NOTE: no openEHR spec governs this — our own operational surface;
-//! disposition recorded on issue #305. That disposition also draws the line
-//! this module now respects: **health probes do not live here.** `/health`,
-//! `/health/liveness`, and `/health/readiness` are always-on and public
-//! ([`crate::extensions::health`]) precisely because they must not depend on an
-//! operator remembering to enable an introspection surface, while the endpoints
-//! that remain here (the redacted effective config, the live log-filter
-//! control, the metric views) are sensitive and stay off by default.
+//! No openEHR spec governs this — our own operational surface. Health probes do
+//! not live here: `/health` and its siblings are always-on and public
+//! ([`crate::extensions::health`]) because they must not depend on an operator
+//! remembering to enable an introspection surface, while the endpoints that do
+//! live here — the redacted effective config, the live log-filter control, the
+//! metric views — are sensitive and stay off by default.
 //!
-//! Every endpoint is **off by default**, each opt-in via [`ManagementConfig`],
-//! gated by its own access-level layer (reusing the authentication primitives),
-//! and optionally served from a separate internal port.
-//! Observability must never widen the clinical API's attack surface.
+//! Every endpoint is off by default, opt-in via [`ManagementConfig`], gated by
+//! its own access-level layer and optionally served from a separate internal
+//! port: observability must never widen the clinical API's attack surface.
 //!
-//! Reachability note: every operation here is documented **unconditionally** in
-//! the served `OpenAPI` (see [`openapi`]), but the live [`router`] mounts only
-//! the opted-in endpoints — a disabled endpoint (or one whose access level is
-//! `Off`) is simply absent from the router and answers `404`. The access-level
-//! layer (`AccessGuard`) is what yields the `401`/`403` documented on the
-//! gated operations: `401` when the level is Private/AdminOnly and auth is
-//! enabled but the caller is unauthenticated, `403` when the level is `AdminOnly`
-//! and the caller lacks the RBAC `admin_role` (`authz.rbac.admin_role`).
+//! Every operation is documented unconditionally in the served `OpenAPI` (see
+//! [`openapi`]), but the live [`router`] mounts only the opted-in endpoints, so
+//! a disabled one is absent and answers `404`. The `AccessGuard` layer yields
+//! the documented `401`/`403`: `401` when the level is Private or `AdminOnly`
+//! and the caller is unauthenticated, `403` when the level is `AdminOnly` and
+//! the caller lacks `authz.rbac.admin_role`.
 
 #![expect(
     clippy::disallowed_types,

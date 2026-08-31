@@ -12,59 +12,24 @@
 //! the [`External`] full-path index the render stage consumes, so `cli.rs`
 //! never hand-merges schemas — the membership is data, not control flow.
 //!
-//! **One generation = one COMPONENT VERSION, emitted completely** at its own
+//! One generation is one COMPONENT VERSION, emitted completely at its own
 //! version-named top module (`v1_2`, `v2_4`, …) mirroring its source package
-//! structure. A component version can publish several machine-readable
-//! specification units (LANG 1.1.0: the BMM v2.x model beside the paused
-//! BMM3 model); each unit is emitted completely inside the one generation
-//! module, units are never merged into one class map — a merge silently
-//! picks one shape per colliding name and discards the other's attributes —
-//! and the prelude carries the version's stable units only. The crate
-//! prelude re-exports the CURRENT generation; an older generation's types
-//! are reached by full module path.
+//! structure. A component version can publish several specification units
+//! (LANG 1.1.0 publishes BMM v2.x beside BMM3); each unit is emitted completely
+//! inside the one generation module and units are never merged into one class
+//! map, because a merge picks one shape per colliding name and discards the
+//! other's attributes. The prelude carries the CURRENT generation's stable
+//! units; older generations are reached by full module path.
 //!
-//! # NOTE: the five RM/BASE twin classes are spec-mandated, not accidental
+//! NOTE: five classes are declared by BOTH the RM 1.2.0 and BASE 1.3.0 BMM with
+//! different shapes, and both twins are emitted, because RM
+//! `docs/common/master08-resource_package.adoc` retains its Resource package
+//! "only while needed by AOM 1.4 based archetypes and tools" and BASE
+//! `docs/foundation_types/master00-amendment_record.adoc` records SPECAM-82
+//! adding a legacy `CODE_PHRASE` for the same reason.
 //!
-//! `AUTHORED_RESOURCE`, `RESOURCE_DESCRIPTION`, `RESOURCE_DESCRIPTION_ITEM`,
-//! `TRANSLATION_DETAILS` and `CODE_PHRASE` are declared by BOTH the RM 1.2.0 and
-//! the BASE 1.3.0 BMM, with materially different shapes, and BOTH generations
-//! are emitted (the RM twin into `openehr-rm`, the BASE twin into
-//! `openehr-base`). That is what the vendored components state, first-hand:
-//!
-//! - **The resource package.** RM `docs/common/master08-resource_package.adoc`
-//!   opens with the normative note that "the version of the Resource package
-//!   described below is used only in ADL 1.4 archetypes, i.e. via the AOM 1.4
-//!   archetype model. A newer version of this package is defined in the openEHR
-//!   Resource Specification in the BASE component, and is used in ADL 2
-//!   archetypes … with the older form here retained only while needed by AOM 1.4
-//!   based archetypes and tools." Two versions of one package, kept side by side
-//!   on purpose — the AM 1.4/2.4 situation, in the components that own
-//!   them. The RM twin is therefore NOT a stale copy to retire, and the two
-//!   member-level differences that look like defects are the older generation's
-//!   real shape: `TRANSLATION_DETAILS.accreditaton` (RM
-//!   `docs/UML/classes/org.openehr.rm.common.translation_details.adoc`) and
-//!   `copyright` on `RESOURCE_DESCRIPTION_ITEM` rather than
-//!   `RESOURCE_DESCRIPTION` (RM
-//!   `docs/UML/classes/org.openehr.rm.common.resource_description_item.adoc`).
-//!   The published ADL-1.4 schema agrees on the second one — `Resource.xsd`
-//!   in the vendored `AM/Release-1.4` bundle declares `copyright` inside
-//!   `RESOURCE_DESCRIPTION_ITEM` — so only the `accreditaton` spelling is a
-//!   genuine upstream defect: BASE `docs/resource/master00-amendment_record.adoc`
-//!   records SPECPUB-6, "Correct spelling error in
-//!   `TRANSLATION_DETAILS._accreditation_`", against the BASE copy alone, and
-//!   every published `Resource.xsd` in BOTH ITS-XML lineages spells the element
-//!   `accreditation`, leaving the RM component's retained copy the only artifact
-//!   still carrying the typo. The emitter reproduces its input; correcting the
-//!   RM spelling is an upstream matter, not an override.
-//! - **`CODE_PHRASE`.** BASE `docs/foundation_types/master00-amendment_record.adoc`
-//!   records SPECAM-82 as "Add **legacy** `CODE_PHRASE` class to Foundation Types
-//!   to support AOM 1.4 model", and the vendored BASE 1.3.0 BMM's own class
-//!   documentation says "Retain for LEGACY only, while ADL1.4 requires
-//!   `CODE_PHRASE`" (that sentence is propagated into the generated
-//!   `openehr_base` type). It is an ADDITION for AM 1.4's benefit — AM's BMM
-//!   includes BASE, not RM — not a relocation of the RM class, so
-//!   `openehr_rm::…::text::CODE_PHRASE` stays the live domain type and
-//!   there is no move to finish.
+//! The RM twin's `TRANSLATION_DETAILS.accreditaton` spelling is an upstream
+//! defect the emitter reproduces: SPECPUB-6 corrected the BASE copy alone.
 
 use crate::analyze::{External, Model, emittable_specs};
 use crate::load::bmm::BmmSchema;
@@ -78,7 +43,7 @@ const VENDOR: &str = concat!(env!("CARGO_MANIFEST_DIR"), "/vendor/bmm");
 
 pub(crate) const BASE_BMM: &str = "components/BASE/json/openehr_base_1.3.0.bmm.json";
 /// BASE's latest RELEASED generation (1.2.0, 09-Apr-2021) — the `stable`
-/// profile's BASE pairing (#1936: RM 1.1.0 is modelled against BASE 1.2.0).
+/// profile's BASE pairing, RM 1.1.0 being modelled against it.
 pub(crate) const BASE12_BMM: &str = "components/BASE/json/openehr_base_1.2.0.bmm.json";
 pub(crate) const RM_BMM: &str = "components/RM/json/openehr_rm_1.2.0.bmm.json";
 /// RM's latest RELEASED generation (1.1.0, 29-Sep-2020); its BMM `includes`
@@ -92,10 +57,9 @@ pub(crate) const AM24_BMM: &str = "components/AM/json/openehr_am_2.4.0.bmm.json"
 /// (`…beom`, with `EXPR_*` and `STATEMENT_SET`/`ASSERTION`, which AM's rules/slots
 /// reference). `LANG/docs/bmm/master01-preface.adoc` §History calls this "the
 /// normative, tool-implemented version".
-/// LANG's released 1.0.0 machine-readable BMM (owner directive 2026-08-05:
-/// emitted FAITHFULLY despite its published defects — it declares no
-/// `includes`, so its BASE references stay open slots; BMM is TRIAL in that
-/// release; defect class reported upstream in #1927).
+/// LANG's released 1.0.0 machine-readable BMM, emitted FAITHFULLY despite its
+/// published defects: it declares no `includes`, so its BASE references stay
+/// open slots, and BMM is TRIAL in that release.
 pub(crate) const LANG10_BMM: &str = "components/LANG/json/openehr_lang_1.0.0.bmm.json";
 pub(crate) const LANG_BMM: &str = "components/LANG/json/openehr_lang_1.1.0.bmm.json";
 /// LANG's **v3 generation** (`org.openehr.lang.bmm3`): the evolved `BMM_*` object
@@ -295,9 +259,8 @@ pub(crate) const COMPOSITIONS: &[CrateComposition] = &[
                     in_prelude: true,
                 }],
                 current: false,
-                // The released file declares NO includes (its BASE references
-                // stay open slots) — emitted verbatim, owner directive
-                // 2026-08-05; upstream defect class in #1927.
+                // The released file declares NO includes, so its BASE
+                // references stay open slots; emitted verbatim.
                 model_deps: &[],
                 prelude_deps: &[],
             },

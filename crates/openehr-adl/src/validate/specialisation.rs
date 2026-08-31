@@ -7,25 +7,17 @@
 //!
 //! Orchestration follows
 //! `docs/specs/openehr/AM/docs/AOM2/master08-validation.adoc` §Phase 2 →
-//! Validate Specialised Definition; the individual rule texts are in
-//! `master04.5-constraint_model-class_definitions.adoc` §Validity Rules
-//! (`C_ATTRIBUTE` / `C_OBJECT` / `ARCHETYPE_SLOT` / `C_ARCHETYPE_ROOT` /
-//! `C_COMPLEX_OBJECT_PROXY`), and the conformance machinery they build on is
-//! [`super::conformance`]. Node correspondence uses path congruence
-//! (`ADL2/master09.02` §Path Congruence): a child node id matches a parent node
-//! id by `codes_conformant` (the child id is the same as, or a specialisation
-//! of, the parent id), so a differential path resolves against the flat parent
-//! without a separate id-reduction step.
+//! Validate Specialised Definition; the rule texts are in
+//! `master04.5-constraint_model-class_definitions.adoc` §Validity Rules and the
+//! conformance machinery is [`super::conformance`]. Node correspondence uses
+//! path congruence (`ADL2/master09.02` §Path Congruence): a child node id
+//! matches by `codes_conformant`, so a differential path resolves against the
+//! flat parent without a separate id-reduction step.
 //!
-//! Per `ADL2/master09.02` §Differential and Flat Forms a top-level parent is its
-//! own flat form; the caller ([`super::run_parent_conformance`]) only invokes this with
-//! such an available flat parent (a specialised parent needs the flattener —
-//! [`super::FlatParent::NeedsFlattener`]).
-//!
-//! The slot- and filler-redefinition half of the walk ([`ParentScan`]'s
-//! `check_slot_redefinition` / `check_slot_filler`) lives in [`super::slots`]
-//! beside the template-filler checks it shares its rule texts with; the
-//! invocation order from the walk is unchanged.
+//! The caller ([`super::run_parent_conformance`]) only invokes this with an
+//! available flat parent. The slot- and filler-redefinition half of the walk
+//! lives in [`super::slots`], beside the template-filler checks it shares its
+//! rule texts with.
 //!
 //! `Vunt` (`use_node` RM type validity, `master04.5` §`C_COMPLEX_OBJECT_PROXY`
 //! VUNT L479-480) is NOT raised here: the rule is "according to the reference

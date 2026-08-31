@@ -3,19 +3,16 @@
 
 //! The FHIR R4 `AuditEvent` renderer of the ATNA audit trail.
 //!
-//! The platform's system log decides WHAT an audit record says — the IHE
-//! BALP codings, role direction, entities, and profile claims. This module
-//! decides HOW that becomes a FHIR resource: it builds the typed
-//! [`fhir_model::r4b::resources::AuditEvent`] from the neutral
-//! [`AuditRecord`] description and serializes it.
+//! The platform's system log decides what an audit record says — the IHE BALP
+//! codings, role direction, entities and profile claims; this module decides how
+//! that becomes a FHIR resource, building the typed
+//! [`fhir_model::r4b::resources::AuditEvent`] from the neutral [`AuditRecord`].
 //!
-//! **No openEHR spec governs FHIR resource representation — our own
-//! design/extension.** The rendered document is R4 (the connector's release —
-//! see [`super`]); `AuditEvent` is unchanged between the releases, so the
-//! crate's `r4b` generation
-//! (<https://docs.rs/fhir-model/0.13.0/fhir_model/r4b/resources/struct.AuditEvent.html>)
-//! builds it faithfully — R4B's own page records "No Changes" for this
-//! resource (<https://hl7.org/fhir/R4B/auditevent.html>).
+//! No openEHR spec governs FHIR resource representation — our own
+//! design/extension. The rendered document is R4, and `AuditEvent` is unchanged
+//! between the releases — R4B's own page records "No Changes"
+//! (<https://hl7.org/fhir/R4B/auditevent.html>) — so the crate's `r4b`
+//! generation builds it faithfully.
 
 use fhir_model::r4b::codes::{AuditEventAction, AuditEventAgentNetworkType, AuditEventOutcome};
 use fhir_model::r4b::resources::{
@@ -180,9 +177,8 @@ pub fn render(record: &AuditRecord) -> Result<serde_json::Value, AuditRenderErro
     }
     let resource = builder
         .build()
-        // NOTE: RFC 1105 — carrying `fhir_model`'s builder error would leak a
-        // dependency type into ours, making its patch bumps breaking; the
-        // message already names the missing element.
+        // NOTE: carrying `fhir_model`'s builder error would leak a
+        // dependency type into ours, making its patch bumps breaking.
         .map_err(|e| AuditRenderError::Build(e.to_string()))?;
     Ok(serde_json::to_value(resource)?)
 }

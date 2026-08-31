@@ -4,43 +4,33 @@
 //! HTTP dispatch for the **FHIR R4 inbound connector** + mapping-store CRUD
 //! over the `ferroehr::service::FhirConnectorAdapter` seam.
 //!
-//! **No openEHR spec governs this — our own enterprise feature (E3, FHIR
-//! connectors + read façade).** A persistence-boundary connector, distinct from
-//! the SM Subject Proxy Service (master10): SPS *reads* subject variables via
-//! data-binding frames, whereas this connector *commits* inbound FHIR resources
-//! as COMPOSITIONs and *serves* them back — the roadmap's "FHIR/HL7v2 frames =
-//! the connector seam" means SPS reuses this machinery, not that either
-//! subsumes the other.
+//! No openEHR spec governs this — our own enterprise feature, excluded from the
+//! ITS-REST drift check. It is a persistence-boundary connector, distinct from
+//! the SM Subject Proxy Service (master10): SPS reads subject variables through
+//! data-binding frames, whereas this connector commits inbound FHIR resources as
+//! COMPOSITIONs and serves them back.
 //!
-//! Two surfaces, both config-gated (`AppConfig::fhir_api_enabled`, default
-//! `false`): when disabled every route answers `404` (an `OperationOutcome`)
-//! without touching the backend.
+//! Three surfaces, all config-gated (`AppConfig::fhir_api_enabled`, default
+//! `false`), answering `404` as an `OperationOutcome` when disabled:
 //!
-//! * `POST /fhir/r4/{resource_type}` — the inbound connector. A FHIR R4
-//!   resource is accepted, its mapping resolved by type + `meta.profile`, a
-//!   COMPOSITION built and committed through the NORMAL validated path with
-//!   `FEEDER_AUDIT` provenance. Only the starter resource
-//!   set (`STARTER_RESOURCES`) is supported; anything else is a typed
-//!   `501 OperationOutcome`.
-//! * `GET /fhir/r4/{resource_type}?patient=<ehr-subject-or-id>[&_count=N]` — the
-//!   read façade. Resolves the enabled mappings for the
-//!   type, runs the template-bound COMPOSITION query scoped to the patient, and
-//!   returns a FHIR `searchset` Bundle of reverse-mapped resources. The
-//!   `patient` scope is mandatory — a missing one is a typed `400` (explicit
-//!   params only; never generic FHIR Search). An
-//!   out-of-scope type is the same typed `501` as inbound.
-//! * `/admin/fhir_mapping[/{id}]` — CRUD over the deployable mapping artefacts
-//!   ("mapping-as-data"). Mounted under `/admin/` like the
-//!   event-subscription/tenant extensions (the coarse RBAC gate classes it
-//!   `Admin`).
+//! * `POST /fhir/r4/{resource_type}` — the inbound connector: the resource's
+//!   mapping is resolved by type and `meta.profile`, and a COMPOSITION is built
+//!   and committed through the normal validated path with `FEEDER_AUDIT`
+//!   provenance. Only `STARTER_RESOURCES` is supported; anything else is a typed
+//!   `501`.
+//! * `GET /fhir/r4/{resource_type}?patient=…[&_count=N]` — the read façade:
+//!   the enabled mappings for the type run a template-bound COMPOSITION query
+//!   scoped to the patient, returning a `searchset` Bundle of reverse-mapped
+//!   resources. The `patient` scope is mandatory (a missing one is a typed
+//!   `400`) and an out-of-scope type is the same `501` as inbound.
+//! * `/admin/fhir_mapping[/{id}]` — CRUD over the deployable mapping artefacts,
+//!   mounted under `/admin/`, so the coarse RBAC gate classes it `Admin`.
 //!
-//! NOTE: every error on this surface is a FHIR
-//! `OperationOutcome` (`severity`/`code`/`diagnostics`), NOT the openEHR error
-//! body — this is the FHIR boundary. Validator rejections surface the openEHR
-//! validator's message verbatim in `diagnostics` (the CDR's rules win: a
-//! resource that maps to an invalid COMPOSITION is rejected `422`, not partially
-//! stored). FHIR↔openEHR mapping is spec-silent — our own extension,
-//! so this is our own surface, excluded from the ITS-REST drift check.
+//! Every error on this surface is a FHIR `OperationOutcome` rather than the
+//! openEHR error body: this is the FHIR boundary. Validator rejections surface
+//! the openEHR validator's message verbatim in `diagnostics` — the CDR's rules
+//! win, so a resource mapping to an invalid COMPOSITION is rejected `422` rather
+//! than partially stored.
 
 #![expect(
     clippy::disallowed_types,

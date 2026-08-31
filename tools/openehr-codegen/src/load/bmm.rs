@@ -3,10 +3,9 @@
 
 //! BMM object model + loader (openEHR **LANG 1.0.0**, `P_BMM` persisted form).
 //!
-//! This is `openehr-codegen`'s **internal** BMM reader — the generator's own
-//! tooling, not an openEHR spec artifact (so it lives here, not in the generated
-//! `openehr-lang` crate). It models more of the meta-model than the emitter
-//! currently consumes, hence the module-wide `dead_code` allowance.
+//! The generator's own internal BMM reader, not an openEHR spec artifact. It
+//! models more of the meta-model than the emitter consumes, hence the
+//! module-wide `dead_code` allowance.
 #![allow(
     dead_code,
     reason = "the LOAD stage models the vendored P_BMM persisted form in full \
@@ -22,17 +21,11 @@
 //! class's ordered properties (single / generic / container, with cardinality
 //! and mandatory-ness).
 //!
-//! JSON is used rather than the ODIN form because it is a cleaner, structured
-//! serialization of the identical meta-model (real arrays, structured
-//! `cardinality`, explicit `_type` tags) and `serde_json` parses it robustly.
-//! (An ODIN text reader for ADL/ODIN *instance* parsing is future runtime work
-//! (P8/P9), not for BMM ingestion.
-//!
-//! This is the deterministic model that `openehr-codegen` walks to emit the
-//! openEHR spec crates. What BMM captures (and we model): structure.
-//! What it does not (function bodies, invariant logic) stays hand-written per
-//! by design — but invariant EL text and function signatures remain available in
-//! the JSON for scaffolding.
+//! The JSON form is read rather than the ODIN one: it serializes the identical
+//! meta-model with real arrays, structured `cardinality` and explicit `_type`
+//! tags. BMM captures structure; function bodies and invariant logic stay
+//! hand-written, though the invariant EL text and function signatures are
+//! present in the JSON.
 
 #![expect(
     clippy::disallowed_types,

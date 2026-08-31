@@ -6,37 +6,25 @@
 //! canonical-JSON RM tree, plus the report shape every validation surface of
 //! this crate speaks.
 //!
-//! These checks are properties of the *instance value alone*: they hold for
-//! every COMPOSITION, EHR_STATUS, FOLDER, or demographic PARTY tree whether or
+//! These checks are properties of the instance value alone, so they hold for
+//! every COMPOSITION, EHR_STATUS, FOLDER or demographic PARTY tree whether or
 //! not an operational template is referenced. Two collecting passes recurse the
-//! whole instance:
+//! whole instance, keying violations by RM instance path (`/content[0]/…`):
 //!
-//! 1. **RM-invariant pass** — for every node with a
-//!    `_type`, or whose parent attribute declares a concrete RM type
-//!    ([`openehr_rm::v1_2::model::declared_concrete_type`]), run its core RM class
-//!    invariants ([`crate::wire_validate::validate_rm_invariants_as`]) plus the
-//!    JSON-level per-node checks of [`openehr_rm::v1_2::validate`]
-//!    (mandatory-container lower bounds, the present-but-empty list family,
-//!    `LOCATABLE.Archetyped_valid`, the data-structure shape duties). This pass
-//!    is independent of any `WebTemplate`, so class invariants on nodes a
-//!    template would fold away (ELEMENT / `ITEM_TREE` / HISTORY / EVENT) are
-//!    still checked.
-//! 2. **Terminology pass** ([`terminology`]) — validates the RM-mandated openEHR
-//!    terminology-group and code-set codes (composition `category`, context
-//!    `setting`, `null_flavour`, `ISM_TRANSITION` `current_state`,
-//!    PARTICIPATION `function`/`mode`, …) against the shared binding table in
-//!    [`openehr_rm::v1_2::validate::terminology`], backed by [`openehr_term::bundle`].
+//! 1. the RM-invariant pass runs each node's core class invariants plus the
+//!    JSON-level per-node checks of [`openehr_rm::v1_2::validate`]. Being
+//!    template-independent, it still checks nodes a template would fold away
+//!    (ELEMENT / `ITEM_TREE` / HISTORY / EVENT);
+//! 2. the [`terminology`] pass validates the RM-mandated openEHR
+//!    terminology-group and code-set codes against
+//!    [`openehr_rm::v1_2::validate::terminology`], backed by
+//!    [`openehr_term::bundle`].
 //!
-//! Both key their violations by an RM **instance** path (`/content[0]/…`).
-//!
-//! The decisions themselves live in `openehr-rm` (pure RM value semantics);
-//! this module owns only the *walk* — recursing the tree, carrying the
-//! effective declared type down, and prefixing the absolute RM path onto each
-//! node-relative [`openehr_base::validate::InvariantViolation`].
-//!
-//! The third, template-driven pass (archetype conformance against a flattened
-//! `WebTemplate`) lives in [`crate::flat::validation`]; [`validate_composition`]
-//! is the composed entry point that runs all three.
+//! The decisions live in `openehr-rm`; this module owns the WALK — recursing,
+//! carrying the effective declared type down, and prefixing the absolute RM
+//! path onto each node-relative violation. The third, template-driven pass
+//! lives in [`crate::flat::validation`], and [`validate_composition`] composes
+//! all three.
 
 #![expect(
     clippy::disallowed_types,
@@ -159,15 +147,12 @@ pub fn validate_composition(composition: &Value, wt: &WebTemplate) -> Vec<Valida
 /// Validate only the **template-independent** passes: RM class invariants +
 /// the RM-mandated openEHR terminology.
 ///
-/// These hold for *every* RM instance whether or not an operational template
-/// is referenced (RM invariants and terminology bindings are properties of
-/// the instance, not of the archetype). A COMPOSITION committed without a
-/// declared `template_id` cannot be archetype-conformance- checked, but must
-/// still pass these.
+/// These hold for every RM instance whether or not an operational template is
+/// referenced, so a COMPOSITION committed without a `template_id` still passes
+/// them.
 ///
-/// The COMPOSITION-rooted wrapper over
-/// [`validate_rm_and_terminology_as`]; a caller committing another resource
-/// kind names its own root type there.
+/// The COMPOSITION-rooted wrapper over [`validate_rm_and_terminology_as`],
+/// where a caller committing another resource kind names its own root type.
 #[must_use]
 pub fn validate_rm_and_terminology(composition: &Value) -> Vec<ValidationMessage> {
     validate_rm_and_terminology_as(composition, "COMPOSITION")
@@ -175,27 +160,20 @@ pub fn validate_rm_and_terminology(composition: &Value) -> Vec<ValidationMessage
 
 /// [`validate_rm_and_terminology`] with the root node's declared RM type given.
 ///
-/// The caller supplies the **declared RM type of the root node**; this is the
-/// entry point for every non-COMPOSITION commit kind (`EHR_STATUS`,
+/// The entry point for every non-COMPOSITION commit kind (`EHR_STATUS`,
 /// `EHR_ACCESS`, `FOLDER`, the demographic PARTY types, …).
 ///
-/// The two passes are properties of the *instance*, not of the resource kind:
-/// `ARCHETYPED.Rm_version_valid`
-/// (`RM/docs/UML/classes/org.openehr.rm.common.archetyped.adoc` §Invariants),
-/// `LOCATABLE.Links_valid` / `Archetype_node_id_valid`
-/// (`…common.locatable.adoc` §Invariants), the `LINK` 1..1 attributes
-/// (`…common.link.adoc` §Attributes) and
-/// `FEEDER_AUDIT_DETAILS.System_id_valid`
-/// (`…common.feeder_audit_details.adoc` §Invariants) constrain every node
-/// carrying the shape, wherever it occurs — so the same walk applies to an
-/// `EHR_STATUS` or a FOLDER tree exactly as it does to a COMPOSITION.
+/// The invariants these passes run — `ARCHETYPED.Rm_version_valid`,
+/// `LOCATABLE.Links_valid` / `Archetype_node_id_valid`, the `LINK` 1..1
+/// attributes, `FEEDER_AUDIT_DETAILS.System_id_valid`
+/// (`RM/docs/UML/classes/org.openehr.rm.common.*.adoc` §Invariants) — constrain
+/// every node carrying the shape, so one walk serves every resource kind.
 ///
-/// `declared` is used only as the *root's* effective RM type for a root whose
-/// wire `_type` is legitimately absent (canonical JSON requires `_type` only
-/// on polymorphic slots); every descendant is dispatched from its own `_type`
-/// or its parent attribute's concretely-declared type
-/// ([`openehr_rm::v1_2::model::declared_concrete_type`]), so a root type that does
-/// not match a tagged root is simply overridden by the tag.
+/// `declared` is the ROOT's effective RM type, for a root whose wire `_type` is
+/// legitimately absent (canonical JSON requires `_type` only on polymorphic
+/// slots). Every descendant dispatches from its own `_type` or its parent
+/// attribute's concretely-declared type, and a tagged root overrides
+/// `declared`.
 #[must_use]
 pub fn validate_rm_and_terminology_as(root: &Value, declared: &str) -> Vec<ValidationMessage> {
     validate_with(root, declared, LowerBounds::Enforced)
@@ -215,16 +193,14 @@ pub fn validate_rm_and_terminology_as(root: &Value, declared: &str) -> Vec<Valid
 /// "respects the same template and archetype(s), but with all existence and
 /// cardinality lower limits set to zero".
 ///
-/// Concretely, exactly three things change relative to the strict entry point:
-/// [`openehr_rm::v1_2::validate::check_mandatory_containers`] is not run, the
-/// `CLUSTER.items` presence duty
-/// ([`openehr_rm::v1_2::validate::check_cluster_items_present`]) is not run, and the
-/// class-invariant tier goes through
+/// Exactly three things change against the strict entry point:
+/// [`openehr_rm::v1_2::validate::check_mandatory_containers`] and
+/// [`openehr_rm::v1_2::validate::check_cluster_items_present`] do not run, and
+/// the class-invariant tier goes through
 /// [`crate::wire_validate::validate_rm_invariants_relaxed_as`], which does not
-/// drive the TYPED construction of a node that is missing mandatory data (that
-/// tier's refusal IS the presence rule). The terminology pass,
-/// `LOCATABLE.Archetyped_valid`, the HISTORY shape duty, the undeclared-member
-/// refusal and every value-level invariant are untouched.
+/// drive typed construction of a node missing mandatory data. Everything else —
+/// terminology, `LOCATABLE.Archetyped_valid`, the HISTORY shape duty, the
+/// undeclared-member refusal, every value-level invariant — is untouched.
 #[must_use]
 pub fn validate_rm_and_terminology_incomplete_as(
     root: &Value,
@@ -248,12 +224,9 @@ pub(crate) enum LowerBounds {
 /// The shared body of the two public entry points.
 fn validate_with(root: &Value, declared: &str, bounds: LowerBounds) -> Vec<ValidationMessage> {
     let mut out = Vec::new();
-    // The ROOT arm of the declared-type conformance rule: the commit kind
-    // declares the root's RM type, and a wire `_type` claiming anything else
-    // is the same positive contradiction the per-slot rule refuses (a
-    // COMPOSITION committed to the directory resource is not a FOLDER,
-    // whatever it validates as). Never relaxed — RM common master06
-    // §Incomplete Content: "data may be missing, but it may not be wrong".
+    // The ROOT arm of the declared-type conformance rule. Never relaxed — RM
+    // common master06 §Incomplete Content: "data may be missing, but it may
+    // not be wrong".
     if let Some(wire) = root.get("_type").and_then(Value::as_str)
         && openehr_rm::v1_2::model::class(declared).is_some()
         && !openehr_rm::v1_2::model::is_a(wire, declared)
@@ -279,16 +252,13 @@ fn validate_with(root: &Value, declared: &str, bounds: LowerBounds) -> Vec<Valid
 /// invariants plus the JSON-level per-node checks of [`openehr_rm::v1_2::validate`],
 /// keyed by the running RM instance path.
 ///
-/// `path` is a single reusable buffer pushed/popped per recursion step: a
-/// node's running RM instance path is appended before descending and truncated
-/// back after, so the full path string is materialized only when a violation
-/// is actually recorded — not `format!`-allocated afresh at every one of the
-/// ~1.5k nodes an IPS commit visits.
+/// `path` is one reusable buffer pushed and truncated per recursion step, so
+/// the full path string is materialized only when a violation is recorded
+/// rather than allocated at every one of the ~1.5k nodes a commit visits.
 ///
 /// `declared` is the parent attribute's declared RM type when concrete — the
-/// effective type of a node whose wire `_type` is legitimately absent
-/// (canonical JSON requires `_type` only on polymorphic slots), so untagged
-/// nodes like `COMPOSITION.context` still run their class invariants
+/// effective type of a node whose wire `_type` is legitimately absent — so
+/// untagged nodes like `COMPOSITION.context` still run their class invariants
 /// ([`openehr_rm::v1_2::model::declared_concrete_type`]).
 pub(crate) fn rm_invariant_pass(
     out: &mut Vec<ValidationMessage>,
@@ -474,9 +444,8 @@ mod tests {
     // ── Declared-slot-type conformance (the WRONGNESS half of slot typing) ───
 
     /// RM ehr `composition.adoc` §Attributes types `content`
-    /// `List<CONTENT_ITEM>`: a `DV_TEXT` member is a positive type
-    /// contradiction and is refused — the #1655 shape (the shallow-pruned
-    /// typed dispatch validated it as the DV_TEXT it claims to be).
+    /// `List<CONTENT_ITEM>`, so a `DV_TEXT` member is a positive type
+    /// contradiction and is refused.
     #[test]
     fn foreign_type_in_a_list_slot_rejected() {
         let inst = json!({
@@ -491,9 +460,8 @@ mod tests {
         );
     }
 
-    /// The same contradiction on a SINGLE-VALUED slot (the #1816 shape):
-    /// `COMPOSITION.context` is declared `EVENT_CONTEXT`; a tagged foreign
-    /// object there was previously validated as the type it claims to be.
+    /// The same contradiction on a SINGLE-VALUED slot: `COMPOSITION.context` is
+    /// declared `EVENT_CONTEXT`, so a tagged foreign object there is refused.
     #[test]
     fn foreign_type_in_a_single_slot_rejected() {
         let inst = json!({
@@ -622,9 +590,9 @@ mod tests {
         );
     }
 
-    /// `locatable.adoc` §Invariants `Links_valid` — since #1730 the shape is
+    /// `locatable.adoc` §Invariants `Links_valid`: the shape is
     /// `Option<NonEmptyVec<LINK>>`, so a present-but-empty `links` refuses at
-    /// the typed tier's decode (parse class), on ANY LOCATABLE node.
+    /// the typed tier's decode, on any LOCATABLE node.
     #[test]
     fn links_present_but_empty_rejected() {
         let mut inst = root_node(

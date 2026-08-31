@@ -5,15 +5,14 @@
 //! (`docs/query/Request.md`, `docs/query/Response.md`).
 //!
 //! The ad-hoc ([`super::adhoc`]) and stored ([`super::stored`]) execution paths
-//! both normalize the request (`ehr_id` scope, `offset`/`fetch` paging window,
-//! `query_parameters` binds) and render the same `RESULT_SET` document
-//! (`schemas/query/ResultSet.yaml`). The decode helpers (`AdhocQueryExecute` /
-//! `Query` body, the `ehr_id`-from-query-or-header rule) and the `RESULT_SET`
-//! renderer live here so both paths stay identical.
+//! both normalize the request — the `ehr_id` scope, the `offset`/`fetch` paging
+//! window and the `query_parameters` binds — and render the same `RESULT_SET`
+//! document, so the decode helpers and the renderer live here and both paths
+//! stay identical.
 //!
-//! Spec: `ehr_id` may arrive as the `ehr_id` query parameter OR the
-//! `openehr-ehr-id` request header (`Request.md` §About the `ehr_id` parameter);
-//! the `200 OK` response carries an `ETag` identifying the `RESULT_SET`
+//! `ehr_id` may arrive as the `ehr_id` query parameter or the `openehr-ehr-id`
+//! request header (`Request.md` §About the `ehr_id` parameter), and the `200 OK`
+//! response carries an `ETag` identifying the `RESULT_SET`
 //! (`responses/200_Query.yaml` + `headers/ETag_RESULT_SET.yaml`).
 
 #![expect(
@@ -36,10 +35,11 @@ use crate::negotiate;
 use crate::overview::error::RestError;
 use ferroehr::service::query::request::AqlQueryRequest;
 
-/// The ABAC pre-filter derived from the request (`extensions::abac::query_pre`):
-/// the patient subject-scope id and the touched-attribute collection flag. Both
-/// are our own access-control extension — no openEHR spec governs them — and are
-/// applied uniformly to every normalized [`AqlQueryRequest`] before execution.
+/// The ABAC pre-filter derived from the request: the patient subject-scope id
+/// and the touched-attribute collection flag.
+///
+/// Both are applied uniformly to every normalized [`AqlQueryRequest`] before
+/// execution. No openEHR spec governs them — our own access-control extension.
 pub(super) struct QueryScope {
     /// The ABAC patient subject-scope id, if a scoped principal is configured.
     pub(super) subject_scope: Option<String>,
@@ -49,7 +49,7 @@ pub(super) struct QueryScope {
 }
 
 impl QueryScope {
-    /// Stamp the ABAC scope + collection flag onto a normalized request.
+    /// Stamps the ABAC scope and collection flag onto a normalized request.
     pub(super) fn apply(&self, mut request: AqlQueryRequest) -> AqlQueryRequest {
         request.subject_scope.clone_from(&self.subject_scope);
         request.collect_attributes = self.collect;
@@ -57,10 +57,10 @@ impl QueryScope {
     }
 }
 
-/// Decode a JSON request body into `T` (the `AdhocQueryExecute` / `Query`
-/// schema). The QUERY operations declare `application/json` only
-/// (`query-codegen.openapi.yaml`), so a non-JSON `Content-Type` is rejected by
-/// [`negotiate::json_value`].
+/// Decodes a JSON request body into `T`.
+///
+/// The QUERY operations declare `application/json` only, so a non-JSON
+/// `Content-Type` is rejected by [`negotiate::json_value`].
 pub(super) fn decode_body<T: serde::de::DeserializeOwned>(
     h: &HeaderMap,
     body: &bytes::Bytes,
@@ -73,45 +73,28 @@ pub(super) fn decode_body<T: serde::de::DeserializeOwned>(
     })
 }
 
-/// The canonical name of the `ehr_id` request header — `Request.md` §Common
-/// Headers and Query Parameters spells it `openehr-ehr-id`. The pre-1.1.0
-/// `openEHR-EHR-id` spelling is the DEPRECATED form of the same header
-/// (`Requests_and_responses.md` §Deprecated headers: "the deprecated headers
-/// remain available for backward compatibility"), and since HTTP field names
-/// are case-insensitive (RFC 9110 §5.1) both spellings resolve through this one
-/// lookup.
+/// The canonical name of the `ehr_id` request header, spelled `openehr-ehr-id`
+/// by `Request.md` §Common Headers and Query Parameters.
+///
+/// The pre-1.1.0 `openEHR-EHR-id` is the deprecated form of the same header and
+/// remains available; HTTP field names are case-insensitive (RFC 9110 §5.1), so
+/// both spellings resolve through this one lookup.
 pub(super) const H_EHR_ID: &str = "openehr-ehr-id";
 
-/// The single wire `ehr_id` scope of a query execution, resolved from the two
-/// spec-sanctioned forms and applied identically by every execution operation,
-/// `GET` and `POST` alike: the `ehr_id` query parameter (`query_ehr_id`, already
-/// decoded by the caller) and the [`H_EHR_ID`] request header. `Request.md`
-/// §About the `ehr_id` parameter: clients "MAY supply it as a query parameter
-/// `ehr_id` or alternatively as a request header named `openehr-ehr-id`".
+/// Resolves the single wire `ehr_id` scope of a query execution from the two
+/// spec-sanctioned forms, identically for `GET` and `POST`: the `ehr_id` query
+/// parameter and the [`H_EHR_ID`] request header, which clients "MAY supply
+/// … as a query parameter `ehr_id` or alternatively as a request header"
+/// (`Request.md` §About the `ehr_id` parameter).
 ///
-/// Returned as an [`Option`]; the caller collects it into the
-/// [`AqlQueryRequest::ehr_ids`] vec (a single wire `ehr_id` is the one-element
-/// case of the SM `List<UUID>` scope).
+/// The caller collects the result into [`AqlQueryRequest::ehr_ids`], a single
+/// wire `ehr_id` being the one-element case of the SM `List<UUID>` scope.
 ///
-/// # Precedence when both forms are supplied
-///
-/// `Request.md` says "or alternatively" and never states what happens when a
-/// request carries BOTH forms; the released text is silent, so the handling
-/// below is our own:
-///
-/// - exactly one form supplied → that value is the scope;
-/// - both supplied naming the SAME EHR → accepted (the request names one EHR,
-///   so there is nothing to arbitrate);
-/// - both supplied naming DIFFERENT EHRs → `400 Bad Request`. The request is
-///   self-contradictory and no released rule picks a winner
-///   (`Requests_and_responses.md` §HTTP status codes, row `400`: "the service
-///   cannot or will not process the request due to something that is perceived
-///   to be a client error"; the same section adds that `400` is "a generic
-///   client-side error, used when no other `4xx` error code is appropriate").
-///
-/// The query parameter is therefore the primary form and the header the
-/// alternative, but the two can never disagree on a request the service
-/// executes.
+/// The released text never says what happens when a request carries both forms,
+/// so the handling is our own: one form, or both naming the same EHR, is the
+/// scope; both naming different EHRs is a `400`, since the request is
+/// self-contradictory and no released rule picks a winner
+/// (`Requests_and_responses.md` §HTTP status codes).
 ///
 /// # Errors
 ///
@@ -123,9 +106,8 @@ pub(super) fn ehr_id_from_request(
 ) -> Result<Option<String>, RestError> {
     let mut from_header: Option<&str> = None;
     for raw in headers.get_all(H_EHR_ID) {
-        // An empty field value carries no EHR identifier — RFC 9110 §5.5 permits
-        // empty field values — so it is "not supplied" rather than a scope that
-        // conflicts with the query parameter.
+        // RFC 9110 §5.5 permits an empty field value, which carries no EHR
+        // identifier, so it is "not supplied" rather than a conflicting scope.
         let Some(value) = raw.to_str().ok().map(str::trim).filter(|v| !v.is_empty()) else {
             continue;
         };
@@ -144,7 +126,7 @@ pub(super) fn ehr_id_from_request(
 }
 
 /// The `400` for a request whose `ehr_id` query parameter and `openehr-ehr-id`
-/// header name different EHRs (see [`ehr_id_from_request`] §Precedence).
+/// header name different EHRs (see [`ehr_id_from_request`]).
 fn conflicting_ehr_id(first: &str, second: &str) -> RestError {
     RestError(ApiError::BadRequest(format!(
         "conflicting EHR scope: the `ehr_id` query parameter and the `{H_EHR_ID}` \
@@ -152,8 +134,8 @@ fn conflicting_ehr_id(first: &str, second: &str) -> RestError {
     )))
 }
 
-/// A required path segment (the generated `*BodyParams` for POST carry only the
-/// name/version path parts; read them directly from the matched path).
+/// Returns a required path segment, read directly from the matched path because
+/// the generated `*BodyParams` for POST carry only the name and version parts.
 pub(super) fn path_segment(parts: &RequestParts, key: &str) -> Result<String, RestError> {
     parts.path.get(key).cloned().ok_or_else(|| {
         RestError(ApiError::BadRequest(format!(
@@ -162,22 +144,19 @@ pub(super) fn path_segment(parts: &RequestParts, key: &str) -> Result<String, Re
     })
 }
 
-/// Render the assembled `RESULT_SET` as the `200 OK` response, emitting the
-/// spec-mandated `ETag` header.
+/// Renders the assembled `RESULT_SET` as the `200 OK` response with the
+/// spec-mandated `ETag`.
 ///
-/// `200_Query.yaml` declares an `ETag` response header — "an identifier of the
-/// `RESULT_SET`" — in the weak form (`headers/ETag_RESULT_SET.yaml`:
-/// `W/"…"`). The vendored `ResultSet` schema carries no `id` field, so the tag
-/// is a stable digest of the document's result-determining content, rendered as
-/// a weak `ETag` ([`result_set_etag`]): identical result sets get identical tags,
-/// which is exactly the `ETag` contract. The body itself is negotiated by
-/// [`negotiate::respond`] (JSON only — the QUERY operations declare no
-/// canonical-XML representation, so an XML `Accept` yields `406`, and the `ETag`
-/// is set only on the success path).
+/// `200_Query.yaml` declares a weak `ETag` "identifier of the `RESULT_SET`"
+/// (`headers/ETag_RESULT_SET.yaml`). The vendored `ResultSet` schema carries no
+/// `id` field, so the tag is a stable digest of the document's
+/// result-determining content ([`result_set_etag`]): identical result sets get
+/// identical tags. The body is negotiated by [`negotiate::respond`] — JSON only,
+/// the QUERY operations declaring no canonical-XML representation.
 pub(super) fn respond_result_set(headers: &HeaderMap, result_set: &serde_json::Value) -> Response {
     let mut resp = negotiate::respond(headers, StatusCode::OK, result_set);
-    // Only a genuine 200 carries a RESULT_SET identifier; a negotiated 406 (XML
-    // Accept) is an error body and gets no ETag.
+    // Only a genuine 200 carries a RESULT_SET identifier; a negotiated 406 is an
+    // error body and gets no `ETag`.
     if resp.status().is_success()
         && let Ok(value) = HeaderValue::from_str(&result_set_etag(result_set))
     {
@@ -186,23 +165,16 @@ pub(super) fn respond_result_set(headers: &HeaderMap, result_set: &serde_json::V
     resp
 }
 
-/// A weak `ETag` for a `RESULT_SET`: a deterministic 128-bit digest of the
-/// document's RESULT-DETERMINING content, rendered as `W/"{uuid}"` (the shape
-/// `headers/ETag_RESULT_SET.yaml` exemplifies).
+/// Returns a weak `ETag` for a `RESULT_SET`: a deterministic 128-bit digest of
+/// the document's result-determining content, rendered as `W/"{uuid}"`.
 ///
-/// The digest deliberately covers `name`, `q`, `meta._executed_aql`, `columns`
-/// and `rows`, and NOT the response-stamped metadata (`meta._created`, and any
-/// `_href`/`_generator` a response may carry): the overview requires an `ETag`
-/// to identify the resource and to change only with it — "acts as a unique
-/// identifier for a specific version of a resource. It helps clients determine
-/// whether a resource has changed between requests, supporting efficient
-/// caching" and "It changes as soon as the resource changes"
-/// (`Requests_and_responses.md` §`ETag` and Last-Modified) — while `Request.md`
-/// §Common Headers and Query Parameters names this one "A unique identifier of
-/// the resultSet". A digest over `_created` (stamped per response) would mint a
-/// fresh tag for an unchanged result set, which is the opposite of both
-/// sentences; the executed AQL is included because two different queries may
-/// coincidentally return the same rows and are not the same result set.
+/// The digest covers `name`, `q`, `meta._executed_aql`, `columns` and `rows`,
+/// and not the response-stamped metadata: an `ETag` "changes as soon as the
+/// resource changes" (`Requests_and_responses.md` §`ETag` and Last-Modified), so
+/// a digest over the per-response `_created` would mint a fresh tag for an
+/// unchanged result set. The executed AQL is included because two different
+/// queries may coincidentally return the same rows and are not the same result
+/// set.
 fn result_set_etag(result_set: &serde_json::Value) -> String {
     let identity = serde_json::json!({
         "name": result_set.get("name"),
@@ -215,9 +187,8 @@ fn result_set_etag(result_set: &serde_json::Value) -> String {
     format!("W/\"{}\"", stable_uuid(&bytes))
 }
 
-/// A deterministic UUID from a byte digest — two fixed-seed [`DefaultHasher`]
-/// passes (the second salted) fill the 128-bit value. `DefaultHasher::new`
-/// uses fixed keys, so the mapping is stable for identical input.
+/// Returns a deterministic UUID from a byte digest: two fixed-seed
+/// [`DefaultHasher`] passes, the second salted, fill the 128-bit value.
 fn stable_uuid(bytes: &[u8]) -> Uuid {
     let mut high = DefaultHasher::new();
     high.write(bytes);
@@ -227,13 +198,13 @@ fn stable_uuid(bytes: &[u8]) -> Uuid {
     Uuid::from_u64_pair(high.finish(), low.finish())
 }
 
-/// Merge a paging value carried in the POST body with the same-named URL
-/// query parameter. The docs-text SHOULD-list ("All query execution requests
-/// SHOULD support at least the following parameters", `Request.md` §Common
-/// Headers and Query Parameters) draws no GET/POST distinction, so the URL
-/// forms are accepted on the POSTs too; released text assigns no precedence,
-/// so a value carried in BOTH places must agree — a conflict is a `400`, the
-/// same rule the two `ehr_id` carriers follow.
+/// Merges a paging value carried in the POST body with the same-named URL query
+/// parameter.
+///
+/// The docs-text SHOULD-list draws no GET/POST distinction (`Request.md` §Common
+/// Headers and Query Parameters), so the URL forms are accepted on the POSTs
+/// too; released text assigns no precedence, so a value carried in both places
+/// must agree and a conflict is a `400`.
 pub(super) fn merge_body_and_url_i64(
     body: Option<i64>,
     query: Option<&str>,
@@ -262,10 +233,11 @@ pub(super) fn merge_body_and_url_i64(
     }
 }
 
-/// Merge the body `query_parameters` object with the URL's named
-/// `$parameter` binds (the same named-binding law the GETs follow,
-/// `Request.md` §Query parameters). A parameter carried in BOTH places must
-/// agree — a conflict is a `400`, the same rule the `ehr_id` carriers follow.
+/// Merges the body `query_parameters` object with the URL's named `$parameter`
+/// binds, the same named-binding law the GETs follow (`Request.md` §Query
+/// parameters).
+///
+/// A parameter carried in both places must agree; a conflict is a `400`.
 pub(super) fn merge_body_and_url_parameters(
     body: std::collections::BTreeMap<String, serde_json::Value>,
     query: Option<&str>,

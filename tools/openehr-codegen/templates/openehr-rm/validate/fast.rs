@@ -17,29 +17,20 @@
 //! # Design: vouch-or-fall-back
 //!
 //! The typed dispatcher deserializes every `_type` node into its concrete RM
-//! type just to run a handful of scalar invariant checks — on a populated
-//! composition that is ~1.5k full `serde_json::from_value` runs per commit
-//! (each enum-typed field additionally buffering an owned `Value` clone).
-//! This module removes that cost for the common case:
+//! type to run a handful of scalar checks — ~1.5k `serde_json::from_value` runs
+//! per populated commit. This module removes that cost for the common case:
 //!
-//! 1. **Structural conformance** is checked directly against the live
-//!    `&serde_json::Value` node, driven by the **generated static RM model**
-//!    ([`crate::v1_2::model`] — the same BMM the structs are generated from), so the
-//!    field tables can never drift from the generated types by hand-editing.
-//! 2. When the node **conforms**, the class invariants are evaluated straight
-//!    off the JSON map via the same `pub(crate)` invariant cores the typed
-//!    `Validate` impls call — one source of truth for every violation message,
-//!    byte-identical output by construction.
-//! 3. When the node does **not** verifiably conform — a shape this checker
-//!    does not model (`DV_INTERVAL` limits, `FEEDER_AUDIT`, …), a mandatory
-//!    field missing, a wrong JSON kind, an unknown `_type` in a slot — the
-//!    caller **falls back to the typed path**, which is authoritative: it
-//!    either produces the exact `does not conform to RM type …` serde error or
-//!    runs the typed invariants. The fast path never emits a rejection of its
+//! 1. structural conformance is checked directly against the live
+//!    `&serde_json::Value` node, driven by the generated static RM model
+//!    ([`crate::v1_2::model`]), so the field tables cannot drift from the
+//!    generated types;
+//! 2. a conforming node has its class invariants evaluated straight off the
+//!    JSON map through the same invariant cores the typed `Validate` impls
+//!    call, so the violation messages are byte-identical by construction;
+//! 3. a node this checker cannot verifiably vouch for falls back to the
+//!    authoritative typed path. The fast path never emits a rejection of its
 //!    own, so a vouching bug can only degrade to the slow-correct path, never
-//!    to a different wire result. Equivalence with the typed path over the
-//!    canonical corpus (valid nodes + per-key mutations) is pinned by the
-//!    tests below.
+//!    to a different wire result.
 //!
 //! # The conformance rules mirrored from the deserialize layer
 //!

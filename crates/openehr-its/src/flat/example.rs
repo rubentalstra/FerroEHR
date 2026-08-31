@@ -15,9 +15,7 @@
 //! * [`Medium`](DetailLevel::Medium) — the fully-populated single-instance
 //!   document: every optional branch descended to its leaves, one occurrence of
 //!   each node, the first alternative of any choice. Intended to be committable
-//!   as-is. (A former cut at "one level of optional elements" produced *empty*
-//!   `content` for the common template shape whose whole content chain is
-//!   optional — a populated example is the level's entire point.)
+//!   as-is.
 //! * [`Complete`](DetailLevel::Complete) — everything `medium` emits, plus a
 //!   second occurrence of each repeating node (demonstrating repetition); not
 //!   necessarily committable.
@@ -25,31 +23,20 @@
 //! The set of populated leaves is monotonic across the levels
 //! (`required ⊆ medium ⊆ complete`).
 //!
-//! # How it works
+//! The generator emits a FLAT map of deterministic example values and hands it
+//! to [`composition_from_flat`], which already materialises the compacted RM
+//! structure and fills every RM-mandatory field FLAT never surfaces. The result
+//! therefore round-trips through
+//! [`composition_to_flat`](crate::flat::convert::composition_to_flat) and
+//! deserialises as an `openehr-rm` `Composition`.
 //!
-//! Rather than re-implement the RM housekeeping
-//! ([`composition_from_flat`] already
-//! materialises the compacted RM structure and fills every RM-mandatory field
-//! FLAT never surfaces — language / territory / category / composer / context /
-//! ENTRY-mandatory fields / event & history scaffolding), the generator walks the
-//! tree to emit a **FLAT map** of deterministic example values and reuses
-//! [`composition_from_flat`] to assemble
-//! the canonical COMPOSITION. The result therefore round-trips cleanly through
-//! [`composition_to_flat`](crate::flat::convert::composition_to_flat) and deserialises
-//! as an `openehr-rm` `Composition`.
-//!
-//! # NOTE (non-normative)
-//!
-//! The endpoint is specified by ITS-REST Release-1.1.0 (a post-1.0.3
-//! addition to the Definition API), which states the example-generation algorithm is
-//! explicitly non-normative ("vendors may produce different results"). The value
-//! choices here (fixed instants, first coded value, range-clamped magnitudes) are
-//! ours; only the mandatory-skeleton-is-committable contract of the `required`
-//! level is load-bearing (verified by the composition validator in the crate tests).
-//! Reachable-in-content `PARTY_*` value leaves are skipped rather than fabricated:
-//! they are almost always optional, an `ENTRY.subject` left unset defaults to
-//! PARTY_SELF (master05 §OBSERVATION `/subject` row Note), and a party invented
-//! here would put a fictitious identified person into an example document.
+//! NOTE: ITS-REST Release-1.1.0 states the example-generation algorithm is
+//! non-normative ("vendors may produce different results"), so the value choices
+//! here are ours; only the `required` level's mandatory-skeleton-is-committable
+//! contract is load-bearing. Reachable `PARTY_*` value leaves are skipped rather
+//! than fabricated — an unset `ENTRY.subject` defaults to PARTY_SELF (master05
+//! §OBSERVATION `/subject` row Note), and an invented party would put a
+//! fictitious identified person into an example document.
 
 #![expect(
     clippy::disallowed_types,

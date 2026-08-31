@@ -4,15 +4,13 @@
 //! The hand-written `*_impl.rs` siblings a generated crate already carries.
 //!
 //! A generated type file may declare in its banner that hand-written spec
-//! behaviour lives beside it. That is a statement about the tree on disk, not
-//! about the BMM, so it is LOADED like any other input: the crate's `src/` is
-//! scanned once, and the render stage is handed the resulting set. Without it
-//! the banner would appear on every class, including the majority that have no
-//! sibling — pointing readers at a file that does not exist.
+//! behaviour lives beside it. That is a fact about the tree on disk, not about
+//! the BMM, so the crate's `src/` is scanned once and the render stage is handed
+//! the resulting set; otherwise the banner would point at files that do not
+//! exist.
 //!
-//! The scan uses the same rule that decides module wiring for these files
-//! (`crate::cli`): a `.rs` file whose first line does not mark it `@generated`
-//! is hand-written.
+//! The scan uses the same rule `crate::cli` uses for module wiring: a `.rs` file
+//! whose first line does not mark it `@generated` is hand-written.
 
 use std::collections::BTreeSet;
 use std::path::Path;

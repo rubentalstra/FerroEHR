@@ -9,14 +9,10 @@
 //! precedence order: a symmetric HMAC secret, a static JWKS document, or a JWKS
 //! discovered from the issuer's OIDC metadata (`openidconnect`) and cached.
 //!
-//! This is the SMART **resource-server** duty (the `org.openehr.rest` CDR):
-//! validate a presented access token, never issue one. Obtaining tokens (the
-//! authorization-code / client-credentials / JWT-bearer grants) is an
-//! Authorization-Server/client concern — out of scope for a CDR
-//! (`docs/specs/openehr/ITS-REST/docs/smart_app_launch/master06-authentication.adoc`
-//! §Supported Authentication Flows; the deprecated Implicit and
-//! Resource-Owner-Password grants that a CDR must never advertise are rejected
-//! by `ferroehr::config::smart::SmartConfig::validate`).
+//! This is the SMART resource-server duty: validate a presented access token,
+//! never issue one — obtaining tokens is an Authorization-Server concern
+//! (`ITS-REST/docs/smart_app_launch/master06-authentication.adoc` §Supported
+//! Authentication Flows).
 
 #![expect(
     clippy::disallowed_types,
@@ -51,14 +47,14 @@ pub(super) struct JwtValidator {
 }
 
 /// The RFC 9068 §2.1 media type for a JWT access token, as it appears in the
-/// `typ` header. The RFC admits the `application/` prefix being omitted
-/// ("`at+jwt`" and "`application/at+jwt`" are the same media type), and matching
-/// is case-insensitive.
+/// `typ` header.
+///
+/// The RFC admits the `application/` prefix being omitted, and matching is
+/// case-insensitive.
 const AT_JWT_TYP: &str = "at+jwt";
 
-// The role model (default claim paths + extraction algorithm) lives in the leaf
-// `access::authz` module so the REST layer and the RBAC gate share one
-// implementation.
+// The role model lives in `access::authz` so the REST layer and the RBAC gate
+// share one implementation.
 use crate::extensions::access::authz::roles::extract_roles;
 
 enum KeySource {
@@ -71,8 +67,8 @@ enum KeySource {
 }
 
 impl JwtValidator {
-    /// Build a validator with explicit RBAC role-claim paths (from
-    /// `authz.rbac.role_claims`).
+    /// Builds a validator with explicit RBAC role-claim paths, from
+    /// `authz.rbac.role_claims`.
     ///
     /// # Errors
     /// Returns a message when the algorithm list or key material is invalid.
@@ -118,7 +114,7 @@ impl JwtValidator {
         })
     }
 
-    /// Validate a raw bearer token (the value after `Bearer `).
+    /// Validates a raw bearer token, the value after `Bearer `.
     ///
     /// # Errors
     /// [`AuthError::InvalidToken`] for any signature/claim/format failure,
@@ -172,10 +168,9 @@ impl JwtValidator {
         validation.leeway = self.leeway_seconds;
 
         let key = self.decoding_key(header.kid.as_deref(), header.alg).await?;
-        // Decode into the full claim map so the validated claim set is retained
-        // for RBAC role extraction and ABAC attribute resolution;
-        // `jsonwebtoken` still validates `exp`/`iss`/`aud` from the raw payload
-        // independent of the deserialize target.
+        // The full claim map is retained for RBAC role extraction and ABAC
+        // attribute resolution; `jsonwebtoken` validates `exp`/`iss`/`aud` from
+        // the raw payload regardless of the deserialize target.
         let data = decode::<serde_json::Map<String, serde_json::Value>>(token, &key, &validation)
             .map_err(|e| AuthError::InvalidToken(TokenRejection::from(e)))?;
         let claims = data.claims;
@@ -191,11 +186,9 @@ impl JwtValidator {
             .ok_or(AuthError::InvalidToken(TokenRejection::SubjectMissing))?
             .to_owned();
 
-        // RFC 9068 §4 step 1: a token that CLAIMS the profile is held to the
-        // whole of §2.2 — `iat`, `jti` and `client_id` alongside the four the
-        // `Validation` above requires. A token that does not claim it is
-        // validated under the general JWT rules only, because the RFC
-        // prescribes nothing for it.
+        // RFC 9068 §4 step 1: a token that claims the profile is held to the
+        // whole of §2.2. One that does not is validated under the general JWT
+        // rules only, because the RFC prescribes nothing for it.
         if claims_at_jwt_profile {
             for required in ["iat", "jti", "client_id"] {
                 if !claims.contains_key(required) {
@@ -247,16 +240,13 @@ impl JwtValidator {
     }
 }
 
-/// Select the signing key for a token, honouring the JWK usage facets.
+/// Selects the signing key for a token, honouring the JWK usage facets.
 ///
-/// A `kid` names the key outright (RFC 7515 §4.1.4). Without one the candidate
-/// set is narrowed by the facets RFC 7517 defines for exactly this purpose —
-/// `use` §4.2 (`sig` for signature keys), `key_ops` §4.3 (`verify`), and `alg`
-/// §4.4 (the algorithm the key is intended for) — and an ambiguous remainder is
-/// REFUSED rather than resolved by position. Taking `keys.first()` would let a
-/// key rotation, or an encryption key sharing the document, silently decide
-/// which key verifies a clinical request (RFC 8725 §3.1 on algorithm/key
-/// confusion).
+/// A `kid` names the key outright (RFC 7515 §4.1.4). Without one the candidates
+/// are narrowed by `use` (RFC 7517 §4.2), `key_ops` (§4.3) and `alg` (§4.4), and
+/// an ambiguous remainder is refused rather than resolved by position: taking
+/// the first key would let a rotation, or an encryption key sharing the
+/// document, decide which key verifies a clinical request (RFC 8725 §3.1).
 ///
 /// # Errors
 /// [`AuthError::InvalidToken`] when no key matches, when more than one remains
@@ -310,10 +300,10 @@ const CACHE_KEY: &str = "jwks";
 
 /// A JWKS fetched from an issuer's OIDC discovery document, cached briefly.
 ///
-/// Both outcomes are cached, with different lifetimes ([`JwksExpiry`]): success
-/// for [`JWKS_TTL`], failure for `oidc.negative_cache_ttl_seconds`. Caching the
-/// failure is what keeps an issuer outage from turning every bearer request into
-/// a fresh discovery attempt. No openEHR spec governs this — our own design.
+/// Both outcomes are cached with different lifetimes ([`JwksExpiry`]): success
+/// for [`JWKS_TTL`], failure for `oidc.negative_cache_ttl_seconds`, which keeps
+/// an issuer outage from turning every bearer request into a fresh discovery
+/// attempt. No openEHR spec governs this — our own design.
 struct RemoteJwks {
     issuer: String,
     /// Built once, so the timeouts are a configuration-time property and the

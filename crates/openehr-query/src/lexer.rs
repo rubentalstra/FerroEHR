@@ -4,37 +4,21 @@
 //! AQL lexer — a `logos` tokenizer transcribed from the authoritative
 //! `AqlLexer.g4` (vendored at `vendor/grammar/`).
 //!
-//! No ANTLR runtime: the grammar is the spec, this is a hand-written DFA
-//! lexer against it.
+//! Two deliberate departures from a literal transcription:
 //!
-//! Faithfulness notes:
-//! - AQL keywords are **case-insensitive** (the grammar builds them from
-//!   case-insensitive letter fragments), so each keyword uses
-//!   `ignore(case)`.
-//! - The grammar's grouped function-id tokens (`STRING_FUNCTION_ID`,
-//!   `NUMERIC_FUNCTION_ID`, `DATE_TIME_FUNCTION_ID`) are **not** pre-grouped
-//!   here: names like `length`/`abs`/`now` lex as [`Token::Identifier`] and the
-//!   parser classifies a `name(args)` call. Structurally-distinct calls
-//!   (aggregates, `terminology(...)`) keep dedicated keyword tokens because
-//!   their argument grammar differs.
-//! - `// NOTE:` quoted temporal literals (`DATE`/`TIME`/`DATETIME` in the
-//!   grammar) are lexed as [`Token::String`]; typing them as temporals is a
-//!   later semantic concern (the parser accepts a string where a primitive is
-//!   expected). This keeps the lexer free of the fiddly ISO 8601-vs-string
-//!   priority tangle. Per the QUERY spec §Dates and Times NOTE, the *typing*
-//!   of a quoted value as a date/time is resolved from the identified-path
-//!   context in the semantic pass, not from the literal — so an untyped
-//!   `Token::String` is the faithful carrier here (all temporal literals are
-//!   indistinguishable from strings at this layer, by design).
-//! - `// NOTE:` the grammar's single-row function-id groups
-//!   (`STRING_FUNCTION_ID`/`NUMERIC_FUNCTION_ID`/`DATE_TIME_FUNCTION_ID` —
-//!   `length`, `abs`, `now`, …) are **not** reserved here: they lex as
-//!   [`Token::Identifier`] and the parser classifies a `name(args)` call
-//!   (`AqlParser.g4 functionCall` explicitly also admits a bare `IDENTIFIER`
-//!   name). This makes the accepted set a *superset* of the grammar (it never
-//!   rejects valid AQL; it additionally tolerates these words as identifiers).
-//!   a superset accept-envelope is the sanctioned direction; the
-//!   reserved-word restriction is a semantic concern, not a syntax one.
+//! - The grammar's function-id groups (`STRING_FUNCTION_ID`,
+//!   `NUMERIC_FUNCTION_ID`, `DATE_TIME_FUNCTION_ID` — `length`, `abs`, `now`,
+//!   …) are not reserved: they lex as [`Token::Identifier`] and the parser
+//!   classifies a `name(args)` call, which `AqlParser.g4 functionCall` also
+//!   admits for a bare `IDENTIFIER`. The accepted set is a superset of the
+//!   grammar, never a subset. Aggregates and `terminology(...)` keep dedicated
+//!   tokens because their argument grammar differs.
+//! - Quoted temporal literals (`DATE`/`TIME`/`DATETIME`) lex as
+//!   [`Token::String`]. QUERY §Dates and Times resolves the typing of a quoted
+//!   value from the identified-path context, not from the literal, so an
+//!   untyped string is the faithful carrier at this layer.
+//!
+//! AQL keywords are case-insensitive, so each keyword uses `ignore(case)`.
 
 use logos::Logos;
 
@@ -55,8 +39,7 @@ pub enum CompOp {
     Le,
 }
 
-/// An AQL token. Slices that carry text (identifiers, literals) hold an owned
-/// `String` lexed from the source.
+/// An AQL token; the text-carrying variants hold an owned `String`.
 #[derive(Logos, Debug, Clone, PartialEq)]
 #[logos(skip r"[ \t\r\n\f]+")] // WS -> skip (AqlLexer.g4 `WS`)
 #[logos(skip "\u{feff}")] // UNICODE_BOM -> skip (AqlLexer.g4 `UNICODE_BOM`)
@@ -220,12 +203,9 @@ pub enum Token {
     Minus,
     /// `--` — the grammar's `SYM_DOUBLE_DASH` optional statement terminator.
     ///
-    /// Per `AqlLexer.g4` `COMMENT`, `--` introduces a line comment on a hidden
-    /// channel when it is followed by a space (`-- text`) or immediately by an
-    /// end-of-line/EOF (bare `--\n` / `--<EOF>`); the callback skips
-    /// those, consuming to end of line. Only the rare `--` immediately followed
-    /// by a non-space, non-newline char (e.g. `--foo`, two minus signs) is
-    /// emitted as this token — matching ANTLR's `SYM_DOUBLE_DASH` fallback.
+    /// `AqlLexer.g4 COMMENT` claims `--` followed by a space or an
+    /// end-of-line/EOF, which the callback skips; only a `--` glued to a
+    /// non-space character is emitted as this token.
     #[token("--", line_comment)]
     DoubleDash,
 
@@ -234,7 +214,6 @@ pub enum Token {
     #[regex(r"\$[a-zA-Z][a-zA-Z0-9_]*", |lex| lex.slice().to_owned())]
     Parameter(String),
 
-    // `idNN[.NN]*` / `atNN[.NN]*` node codes (higher priority than Identifier).
     // The grammar's `CODE_STR` permits leading-zero runs (`at0001`), so a plain
     // `[0-9]+(.[0-9]+)*` after the `id`/`at` prefix is the faithful shape.
     /// An `idNN[.NN]*` archetype node code, slice included.
@@ -244,11 +223,9 @@ pub enum Token {
     #[regex(r"at[0-9]+(\.[0-9]+)*", |lex| lex.slice().to_owned())]
     AtCode(String),
 
-    // Archetype HRID, e.g. `openEHR-EHR-OBSERVATION.blood_pressure.v1`
-    // (optionally namespaced). Detected by the `-x-x.…vN` shape. The version
-    // tail admits the grammar's `VERSION_ID` `-rc`/`-alpha` pre-release suffix
-    // (`…v1.0.0-rc.2`), and the namespace prefix admits `-` per `NAMESPACE`/
-    // `LABEL` (`NAME_CHAR` includes `-`).
+    // Detected by the `-x-x.…vN` shape. The version tail admits the grammar's
+    // `VERSION_ID` `-rc`/`-alpha` suffix and the namespace prefix admits `-`
+    // per `NAMESPACE`/`LABEL` (`NAME_CHAR` includes `-`).
     #[regex(
         r"([a-zA-Z][a-zA-Z0-9_.\-]*::)?[a-zA-Z][a-zA-Z0-9_]*-[a-zA-Z][a-zA-Z0-9_]*-[a-zA-Z][a-zA-Z0-9_]*\.[a-zA-Z][a-zA-Z0-9_-]*\.v[0-9]+(\.[0-9]+)*((-rc|-alpha)(\.[0-9]+)?)?",
         |lex| lex.slice().to_owned()
@@ -257,12 +234,9 @@ pub enum Token {
     /// `openEHR-EHR-OBSERVATION.blood_pressure.v1`.
     ArchetypeHrid(String),
 
-    // A term code, e.g. `local::at0001`, `SNOMED-CT::1234|text|` or
-    // `ISO_639-1::en`. Per `AqlLexer.g4` `TERM_CODE`, every code segment is
-    // `TERM_CODE_CHAR+` where `TERM_CODE_CHAR = NAME_CHAR | '.'` and
-    // `NAME_CHAR = WORD_CHAR | '-'` — so hyphens are legal in both the
-    // terminology id and the code. A `::` is still required, so a
-    // bare subtraction like `a-b` (no `::`) is unaffected.
+    // `AqlLexer.g4 TERM_CODE`: every segment is `TERM_CODE_CHAR+`, where
+    // `TERM_CODE_CHAR = NAME_CHAR | '.'` and `NAME_CHAR = WORD_CHAR | '-'`, so
+    // hyphens are legal on both sides of the required `::`.
     #[regex(
         r"[a-zA-Z0-9._\-]+(\([a-zA-Z0-9._\-]+\))?::[a-zA-Z0-9._\-]+(\|[^|\[\]]+\|)?",
         |lex| lex.slice().to_owned()
@@ -276,9 +250,7 @@ pub enum Token {
     /// A URI, slice included — recognised by its `scheme://` lead.
     Uri(String),
 
-    // A contained regex, e.g. `{/pattern/}` or `{/pattern/; 'name'}` (used in a
-    // node predicate's `objectPath MATCHES CONTAINED_REGEX`). Whole thing is one
-    // token so its inner `/` and `{}` are not mistaken for other symbols.
+    // One token, so the inner `/` and `{}` are not mistaken for other symbols.
     #[regex(
         r"\{[ \t\r\n]*/(\\.|[^/\r\n])*/[ \t\r\n]*(;[ \t\r\n]*'([^'\\]|\\.)*')?[ \t\r\n]*\}",
         |lex| lex.slice().to_owned()
@@ -301,11 +273,8 @@ pub enum Token {
     #[regex(r"[0-9]+", |lex| lex.slice().to_owned())]
     Integer(String),
 
-    // Single- or double-quoted string (also carries quoted temporals; see the
-    // module NOTE). Escapes are preserved in the slice, unescaped later.
-    /// A single- or double-quoted string literal, quotes and escapes
-    /// preserved in the slice (also carries quoted temporals — see the module
-    /// docs).
+    /// A single- or double-quoted string literal, quotes and escapes preserved
+    /// in the slice; also carries quoted temporals (see the module docs).
     #[regex(r"'([^'\\]|\\.)*'", |lex| lex.slice().to_owned())]
     #[regex(r#""([^"\\]|\\.)*""#, |lex| lex.slice().to_owned())]
     String(String),
@@ -316,13 +285,11 @@ pub enum Token {
     Identifier(String),
 }
 
-/// Callback for the `--` token implementing `AqlLexer.g4` `COMMENT`.
+/// Callback for the `--` token implementing `AqlLexer.g4 COMMENT`.
 ///
-/// The grammar treats `--` as a line comment (hidden channel, i.e. skipped)
-/// when it is followed by a space and text, or immediately by end-of-line/EOF.
-/// Anything else (`--` glued to a non-space token) is emitted as the
-/// `SYM_DOUBLE_DASH` terminator. When skipping, the rest of the line is
-/// consumed (the trailing newline is handled by the `WS` skip).
+/// A `--` followed by a space and text, or immediately by end-of-line/EOF, is a
+/// line comment: the rest of the line is consumed and the token skipped.
+/// Anything else is emitted as the `SYM_DOUBLE_DASH` terminator.
 fn line_comment(lex: &mut logos::Lexer<Token>) -> logos::Filter<()> {
     let rem = lex.remainder();
     let is_comment = rem.is_empty() || rem.starts_with([' ', '\t', '\r', '\n']);
@@ -339,8 +306,8 @@ fn line_comment(lex: &mut logos::Lexer<Token>) -> logos::Filter<()> {
 ///
 /// [`SpannedTokens::tokens`] and [`SpannedTokens::spans`] are index-aligned:
 /// `spans()[i]` is the byte range of `src` that `tokens()[i]` was lexed from.
-/// They stay parallel rather than interleaved because a parser over this
-/// stream consumes a contiguous `&[Token]`.
+/// They stay parallel because a parser over this stream consumes a contiguous
+/// `&[Token]`.
 #[derive(Debug, Clone, PartialEq)]
 pub struct SpannedTokens {
     tokens: Vec<Token>,
@@ -405,9 +372,7 @@ pub fn lex(src: &str) -> Result<Vec<Token>, LexError> {
 
 /// Lexes `src` into tokens paired with the byte span each was lexed from.
 ///
-/// The spanned counterpart of [`lex`]: the same token sequence, plus the
-/// source positions [`lex`] discards, so a caller can map a token position
-/// back onto the text it came from.
+/// The spanned counterpart of [`lex`], which discards the positions.
 ///
 /// # Errors
 /// Returns [`LexError`] on the first unrecognized token.
@@ -547,8 +512,7 @@ mod tests {
 
     #[test]
     fn hyphenated_term_codes_lex_as_one_token() {
-        // TERM_CODE_CHAR includes '-' (via NAME_CHAR), so hyphenated
-        // terminology ids lex as a single TERM_CODE, not `id Minus code`.
+        // Hyphenated terminology ids lex as one TERM_CODE, not `id Minus code`.
         assert_eq!(
             toks("SNOMED-CT::1234"),
             vec![Token::TermCode("SNOMED-CT::1234".into())]
@@ -570,8 +534,7 @@ mod tests {
 
     #[test]
     fn subtraction_is_not_a_term_code_regression() {
-        // Plain subtraction must not regress: without `::` there is no
-        // TERM_CODE, so `a-b` and `a - 1` stay separate tokens.
+        // Without `::` there is no TERM_CODE, so `a-b` stays separate tokens.
         assert_eq!(
             toks("a-b"),
             vec![
@@ -592,8 +555,8 @@ mod tests {
 
     #[test]
     fn archetype_hrid_version_suffixes_and_namespace_hyphen() {
-        // `VERSION_ID` `-rc`/`-alpha` pre-release suffixes and a
-        // hyphenated namespace both lex as a single ARCHETYPE_HRID.
+        // A `-rc`/`-alpha` suffix and a hyphenated namespace both lex as one
+        // ARCHETYPE_HRID.
         assert_eq!(
             toks("openEHR-EHR-OBSERVATION.blood_pressure.v1.0.0-rc.2"),
             vec![Token::ArchetypeHrid(

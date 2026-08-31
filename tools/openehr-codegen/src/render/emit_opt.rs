@@ -11,65 +11,30 @@
 //! | `aom2` | `emit-aom2` | `P_Archetype.xsd` + includes | `<archetype>` = `P_AUTHORED_ARCHETYPE` |
 //! | `aom2_model` | `emit-aom2` | `Archetype.xsd` + includes | `<archetype>` = `AUTHORED_ARCHETYPE` |
 //!
-//! Unlike `emit-xml` (which drives off the BMM model), this emitter builds its
-//! [`XmlType`]s directly from the XSD closure. The generate/resolve partition
-//! (described below for `opt14`, and identical for the AOM2 targets):
+//! Unlike `emit-xml`, which drives off the BMM model, this emitter builds its
+//! [`XmlType`]s directly from the XSD closure. A complexType that
+//! `openehr-base`/`openehr-rm` already export resolves to that crate's prelude;
+//! every other complexType (the AOM/OPT constraint model, the OPT envelope, the
+//! `IntervalOf*` helpers) is generated.
 //!
-//! - a complexType that `openehr-base`/`openehr-rm` already export (with a
-//!   generated `ToXml`/`FromXml`) **resolves** to that crate's prelude — the RM
-//!   instance types (`CODE_PHRASE`, `DV_TEXT`, `DATA_VALUE`, …) are never
-//!   re-generated;
-//! - every other complexType (the AOM/OPT constraint model + the OPT envelope +
-//!   the `IntervalOf*` helpers) is **generated** into `opt14`.
+//! A named `xs:simpleType` whose restriction declares `xs:enumeration` facets is
+//! a closed value space, so it emits a fieldless enum over the XSD's own
+//! vocabulary and refuses text outside the set at parse. Abstract types used as
+//! polymorphic slots become untagged enums dispatching on `xsi:type`, whose
+//! codecs come from [`crate::render::emit_xml::emit_to_xml`] /
+//! [`crate::render::emit_xml::emit_from_xml`].
 //!
-//! A named `xs:simpleType` whose restriction declares `xs:enumeration` facets
-//! (`OPERATOR_KIND`, `VALIDITY_KIND`, `PROPORTION_KIND`) is a closed value space,
-//! so it emits a fieldless enum over the XSD's OWN vocabulary — variants named
-//! from the facet `id`s, the facet `value` as the verbatim wire form, and text
-//! outside the set refused at parse.
+//! NOTE: `opt14` re-generates the AOM 1.4 `C_*` constraint tree that the
+//! BMM-generated `openehr-am::v1_4` also carries, because the OPT-XML wire shape
+//! (`Template.xsd` + `OpenehrProfile.xsd`) and the AOM 1.4 BMM are not
+//! structurally reconcilable: different domain-type sets (`C_DV_STATE` and
+//! `C_CODE_REFERENCE` have no `v1_4` counterpart), differently typed
+//! `assumed_value`, the XSD `IntervalOf*` shape against
+//! `openehr_base::Interval<T>`, and OPT-envelope-only types.
 //!
-//! Abstract types used as polymorphic slots (`C_OBJECT`, `C_ATTRIBUTE`,
-//! `C_PRIMITIVE`, `EXPR_ITEM`, `STATE`) become untagged enums that dispatch on
-//! `xsi:type`; the type declarations are emitted here, and their `ToXml`/
-//! `FromXml` impls are produced by reusing [`crate::render::emit_xml::emit_to_xml`] /
-//! [`crate::render::emit_xml::emit_from_xml`] over the [`XmlType`]s this module builds.
-//!
-//! # NOTE: `opt14` is a deliberately-separate OPT-XML wire adapter
-//!
-//! This module re-generates the AOM 1.4 `C_*` constraint tree that
-//! `openehr-am::v1_4` (BMM-generated) already carries. That duplication is
-//! **intentional and scoped**, not an oversight — the two models are *not*
-//! structurally reconcilable. In summary, the Ocean **OPT-XML** wire shape
-//! (`Template.xsd` + `OpenehrProfile.xsd`, the codegen input here) diverges from
-//! the **AOM 1.4 BMM** logical model that drives `v1_4`:
-//!
-//! - **Different domain-type sets.** OPT-XML has `C_CODE_PHRASE`,
-//!   `C_CODE_REFERENCE`, `C_DV_ORDINAL`, `C_DV_QUANTITY`, `C_DV_STATE`; the BMM
-//!   `openehr_archetype_profile` has `C_CODED_TEXT`, `C_ORDINAL`, `C_QUANTITY`.
-//!   `C_DV_STATE` and `C_CODE_REFERENCE` have no `v1_4` counterpart at all.
-//! - **Different leaf shapes.** OPT-XML carries typed `assumed_value`
-//!   (`DV_QUANTITY`/`DV_ORDINAL`/`DV_STATE`/`CODE_PHRASE`) and `C_DV_ORDINAL.list`
-//!   of `DV_ORDINAL`; the BMM has `assumed_value: Any` (monomorphized to
-//!   `serde_json::Value`) and `C_ORDINAL.list` of the constraint type `ORDINAL`.
-//! - **Different `Interval` representation.** OPT-XML uses the XSD
-//!   `IntervalOf*` shape (generated as `Intervalof*` here); the BMM uses
-//!   `openehr_base::Interval<T>`.
-//! - **OPT-envelope-only types** with no BMM/AOM-1.4 counterpart
-//!   (`OPERATIONAL_TEMPLATE`, `C_ARCHETYPE_ROOT`, `T_COMPLEX_OBJECT`,
-//!   `T_ATTRIBUTE`, `T_CONSTRAINT`, `FLAT_ARCHETYPE_ONTOLOGY`, `STATE_MACHINE`).
-//!
-//! Resolving the shared `C_*` to `v1_4` (the way RM leaves resolve to
-//! `openehr_rm`/`openehr_base`) would force lossy mapping in both directions and
-//! would require synthesizing an XML codec against types whose shapes do not
-//! match the XSD element order / attribute split — the exact lossy shortcut
-//! the wire model rejects. So `opt14` stays a standalone XSD-shaped wire adapter.
-//!
-//! **Drift guard:** because the two models are generated independently (BMM →
-//! `v1_4`, XSD → `opt14`), an AOM-1.4 spec bump could silently drift them. The
-//! compile-time inventory sentinel in
-//! `crates/openehr-its/tests/opt14_v1_4_divergence.rs` fails the build if either
-//! model gains or loses a constraint type, forcing a reconciliation + a design-record
-//! update.
+//! The two models are generated independently, so
+//! `crates/openehr-its/tests/opt14_v1_4_divergence.rs` is a compile-time
+//! inventory sentinel that fails when either gains or loses a constraint type.
 
 use crate::load::xsd::{XsdEnumFacet, XsdModel, XsdSimpleType};
 use crate::plan::{XmlField, XmlType, XmlVariant};
@@ -163,9 +128,9 @@ const STRING_DICT_ITEM: &str = "StringDictionaryItem";
 /// type; it carries only presentation hints (`pass_through` markers), never the
 /// operational definition, so it is kept as read instead of modelled.
 ///
-/// `T_CONSTRAINT` (the top-level `<constraints>` block) is **no longer opaque**
-///: it is a named `T_ATTRIBUTE` → `T_COMPLEX_OBJECT` tree carrying
-/// node `default_value` overlays, generated like any other type. Its
+/// `T_CONSTRAINT` (the top-level `<constraints>` block) is not opaque: it is a
+/// named `T_ATTRIBUTE` → `T_COMPLEX_OBJECT` tree carrying node `default_value`
+/// overlays, generated like any other type. Its
 /// differential children may omit `rm_type_name`/`occurrences`/`node_id`
 /// (they carry only `default_value` + `differential_path`); [`lenient_default`]
 /// fills those, so the corpus parses cleanly and the `default_value`s are

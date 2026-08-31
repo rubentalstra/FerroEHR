@@ -32,15 +32,10 @@
 //!   structurally satisfied: `is_first` is DERIVED as
 //!   `trunk_version() == "1"`, so the equivalence holds by construction.
 //!
-//! Plus ONE rule of our own naming, because the class table declares none for
-//! it: a `value` that is not the `version_tree_id` production at all (neither
-//! one part nor three) satisfies every invariant above vacuously — the
-//! accessors simply read `Void` — yet is not a legal identifier. BASE
-//! `master05-identification_package.adoc` §Syntaxes gives the production
-//! (`version_tree_id = trunk_version, [ '.', branch_number, '.',
-//! branch_version ]`); no openEHR spec names an invariant for it, so this is
-//! our own name, `Value_lexical_form_valid`, in the same spirit as
-//! `OBJECT_VERSION_ID`'s (see `object_version_id_impl.rs`).
+//! Plus `Value_lexical_form_valid`, our own name: a `value` that is not the
+//! `version_tree_id` production at all satisfies every invariant above
+//! vacuously — the accessors read `Void` — yet is not a legal identifier. BASE
+//! `master05-identification_package.adoc` §Syntaxes gives the production.
 //!
 //! Accessor functions (`trunk_version`, `is_branch`, `is_first`,
 //! `branch_number`, `branch_version`) decompose the `value` string.

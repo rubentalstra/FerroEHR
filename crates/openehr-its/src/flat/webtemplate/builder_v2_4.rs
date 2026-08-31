@@ -4,36 +4,26 @@
 
 //! `v2_4` OPT2 → Web Template walk (the ADL2 front end).
 //!
-//! The dialect-neutral seam is the Web Template layer: `ITS-REST
+//! The Web Template layer is the dialect-neutral seam: `ITS-REST
 //! simplified_formats master04-basic_concepts.adoc` §"Web Template Metadata"
 //! defines a Web Template as "a processed representation of an openEHR
-//! Operational Template" — dialect-neutral, and an `v2_4` OPT2
-//! ([`openehr_am::v2_4::aom2::archetype::operational_template::OperationalTemplate`])
-//! *is* an Operational Template. [`build_web_template_v2_4`] walks the `v2_4`
-//! constraint tree into the **same** [`WebTemplate`] model the OPT-1.4 front end
-//! ([`super::builder`]) produces, then hands it to the shared dialect-neutral
-//! passes (`shape`: level removal, in-context synthesis, post-process)
-//! and `id` (node-id generation). The whole downstream — example
-//! generation, FLAT/STRUCTURED, validation — then works unchanged; there is no
-//! parallel pipeline.
+//! Operational Template", and a `v2_4` OPT2 is one.
+//! [`build_web_template_v2_4`] walks the `v2_4` constraint tree into the SAME
+//! [`WebTemplate`] model [`super::builder`] produces and hands it to the shared
+//! `shape` and `id` passes, so the whole downstream works unchanged and no
+//! parallel pipeline exists.
 //!
-//! The AOM2 constraint model differs from OPT 1.4:
-//! `openehr_am::v2_4::aom2` has no `C_DV_QUANTITY`/`C_DV_ORDINAL`/`C_CODE_PHRASE`
-//! classes — a DV leaf is a `C_COMPLEX_OBJECT` whose RM attributes are
-//! constrained by `C_ATTRIBUTE`s and co-varying `C_ATTRIBUTE_TUPLE`s (e.g.
-//! `[magnitude, units]` for `DV_QUANTITY`, `[value, symbol]` for `DV_ORDINAL`),
-//! and coded constraints are `C_TERMINOLOGY_CODE` (an at-code, or an ac-code
-//! resolving to an archetype-local value set). This module carries the
-//! `v2_4`-specific `build`/`inputs` half; the tree shaping is shared.
+//! The AOM2 constraint model differs from OPT 1.4: it has no
+//! `C_DV_QUANTITY`/`C_DV_ORDINAL`/`C_CODE_PHRASE` classes — a DV leaf is a
+//! `C_COMPLEX_OBJECT` whose RM attributes are constrained by `C_ATTRIBUTE`s and
+//! co-varying `C_ATTRIBUTE_TUPLE`s — and coded constraints are
+//! `C_TERMINOLOGY_CODE`. This module carries the `v2_4`-specific
+//! `build`/`inputs` half; the tree shaping is shared.
 //!
-//! NOTE: this front end populates both the consumer-facing node shape +
-//! `inputs` AND the validation-only constraint fields the
-//! archetype-conformance walk reads, from the AOM2 constraint model
-//! (`AM/docs/AOM2/master03-archetype_package.adoc` §C_ATTRIBUTE,
-//! §ARCHETYPE_SLOT) — so the walk runs against an ADL2 template exactly as
-//! against an OPT 1.4 one, the Web Template layer being the dialect-neutral
-//! seam. No openEHR spec governs the Web Template model itself — our own
-//! design/extension.
+//! NOTE: no openEHR spec governs the Web Template model itself — our own
+//! design/extension; the validation-only constraint fields it populates come
+//! from `AM/docs/AOM2/master03-archetype_package.adoc` §C_ATTRIBUTE,
+//! §ARCHETYPE_SLOT.
 
 #![expect(
     clippy::disallowed_types,

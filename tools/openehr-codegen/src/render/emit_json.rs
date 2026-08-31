@@ -6,44 +6,30 @@
 //! crate's own `src/json_serde.rs`, plus the `_type`-keyed structural dispatch
 //! in `openehr-its`.
 //!
-//! Every fact comes from the BMM ([`Model::json_types`]): field idents, wire
-//! names, omission kind, field defaults, enum variants + `_type` dispatch,
-//! generics. There is no XSD input — the canonical-JSON wire shape is `_type`
-//! first then BMM declaration order, with absent (rather than null or empty)
-//! optional attributes
+//! Every fact comes from the BMM ([`Model::json_types`]); there is no XSD
+//! input. The canonical-JSON wire shape is `_type` first, then BMM declaration
+//! order, with absent rather than null or empty optional attributes
 //! (`docs/specs/openehr/ITS-REST/specifications/docs/overview/Resources.md`
 //! §JSON Format).
 //!
-//! # Why manual impls and never a derive
+//! The impls are written out by hand rather than derived because the canonical
+//! wire is none of serde's four enum representations
+//! (<https://serde.rs/enum-representations.html>): the discriminator is a member
+//! of the object whose presence is context-dependent, it routes deep descendants
+//! onto an intermediate variant, and the closed key set must be enforced beside
+//! it (`deny_unknown_fields` is incompatible with `flatten`). Each class gets
+//! the long form from <https://serde.rs/deserialize-struct.html>.
 //!
-//! The canonical wire is not any of serde's four enum representations
-//! (<https://serde.rs/enum-representations.html>): the discriminator is a
-//! *member of the object* whose PRESENCE is context-dependent (mandatory on an
-//! abstract slot, optional on a concretely-typed one), it routes DEEP
-//! descendants onto an intermediate variant, and the closed key set has to be
-//! enforced alongside it (`deny_unknown_fields` is incompatible with
-//! `flatten`). So the emitter writes the long form from
-//! <https://serde.rs/deserialize-struct.html> — a field-identifier enum plus a
-//! visitor — per class, as plain explicit Rust: greppable, auditable, no
-//! attributes, no macros.
-//!
-//! # Why the impls live in the SPEC crates
-//!
-//! `serde::Serialize`/`Deserialize` and the spec types are both foreign to
-//! `openehr-its`, so an impl there would violate the orphan rule (E0117). The
-//! emitted impls therefore land in the crate that DEFINES each type, which also
-//! lets them construct through `pub(crate)` fields and the validated
-//! constructors ([`construction`]).
+//! They land in the crate that DEFINES each type, because both serde and the
+//! spec types are foreign to `openehr-its` (orphan rule, E0117); that also lets
+//! them construct through `pub(crate)` fields and the validated constructors
+//! ([`construction`]).
 //!
 //! The read side is STRICT over the generated RM model at our pin: an undeclared
-//! wire key is a refusal naming the offending key and the declared set (see
-//! [`emit_struct_deserialize`] for the released grounding), a repeated key is a
-//! refusal, and a mandatory attribute that is absent is a refusal. It keeps the
-//! remaining tolerance rules verbatim: out-of-order members,
-//! present-but-wrong `_type` = error, absent `_type` accepted on a concrete slot,
-//! `Option`/`Vec` defaulting, the `Interval` `*_included`/`*_unbounded` literal
-//! defaults, and `_type`-keyed polymorphic-slot dispatch (abstract slots reject a
-//! missing `_type`; concrete polymorphic slots default it to the base type).
+//! key, a repeated key and an absent mandatory attribute are all refusals (see
+//! [`emit_struct_deserialize`] for the released grounding). Out-of-order
+//! members, a missing `_type` on a concrete slot, `Option`/`Vec` defaulting and
+//! the `Interval` literal defaults are all accepted.
 
 use crate::analyze::Model;
 use crate::load::bmm::BmmSchema;
@@ -771,29 +757,20 @@ fn field_slot(f: &JsonField, elem: &str) -> FieldSlot {
     }
 }
 
-/// Emit `impl serde::Deserialize` for a struct (a polymorphic-concrete `Data`
-/// struct, or a plain struct): the long form from
+/// Emits `impl serde::Deserialize` for a struct: the long form from
 /// <https://serde.rs/deserialize-struct.html> — a field-identifier enum whose
 /// default arm refuses the key, plus a `visit_map` visitor.
 ///
-/// The STRICT reader: a key this class does not declare is a refusal, not a
-/// silently ignored member. Grounded on the RELEASED artifacts, in this order:
+/// The reader is STRICT — an undeclared key is a refusal — grounded on
+/// `docs/specs/openehr/ITS-REST/specifications/docs/overview/Resources.md` L75
+/// (the wildcard-free ITS-XML schemas cannot validate an undeclared element) and
+/// L87 ("SHOULD" for JSON), plus the published ITS-JSON schemas closing 128 of
+/// their 134 object definitions with `additionalProperties: false`.
 ///
-/// * `docs/specs/openehr/ITS-REST/specifications/docs/overview/Resources.md`
-///   L75 (XML) — the ITS-XML schemas are wildcard-free, so an undeclared
-///   element cannot validate; L87 (JSON) — "SHOULD" for the JSON encoding.
-/// * The openEHR-published ITS-JSON schemas close 128 of their 134 object
-///   definitions with `additionalProperties: false`, i.e. the wire model is
-///   closed BY DESIGN, not by omission.
-///
-/// The closure is over the GENERATED RM MODEL at our pin, never over the
-/// vendored ITS-JSON 1.1.0 schema, which is stale in both directions (it
-/// declares `property`/`reverse_relationships`, removed in RM 1.2.0, and
-/// lacks `EHR.tags`). NOTE: refusing where the released text says SHOULD is
-/// OUR decision at a SHOULD anchor — it is the only reading under which the
-/// JSON and XML encodings share one data model, and nothing released
-/// requires tolerance. The two-artifact upstream contradiction it exposes is
-/// reported as issue #1696.
+/// The closure is over the generated RM model at our pin, never over the
+/// vendored ITS-JSON 1.1.0 schema, which is stale in both directions. NOTE:
+/// refusing at a SHOULD anchor is our decision — it is the only reading under
+/// which the JSON and XML encodings share one data model.
 fn emit_struct_deserialize(
     b: &mut String,
     spec: &str,

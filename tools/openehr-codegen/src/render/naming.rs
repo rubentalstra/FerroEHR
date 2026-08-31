@@ -1,8 +1,7 @@
 // SPDX-FileCopyrightText: FerroEHR contributors
 // SPDX-License-Identifier: MIT
 
-//! Name conversions from openEHR spec identifiers to idiomatic Rust names
-//!.
+//! Name conversions from openEHR spec identifiers to idiomatic Rust names.
 
 /// Convert an openEHR class name to a Rust type name in `PascalCase`.
 ///

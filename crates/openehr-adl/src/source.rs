@@ -136,23 +136,16 @@ pub struct SourceArtefact {
 ///
 /// Three outer-structure behaviours differ under [`Dialect::Adl14`], each
 /// 1.4-only so ADL2 parsing is byte-identical:
-/// - **Section and artefact keywords are case-insensitive**
-///   (`AM/docs/ADL1.4/master08-adl` §Syntax Specification/§Symbols spells every
-///   one of them `^[Aa][Rr][Cc][Hh][Ee][Tt][Yy][Pp][Ee]`-style), so
-///   `ARCHETYPE`/`Specialise`/`CONCEPT`/`ONTOLOGY` are headers. Column-0
-///   anchoring is unchanged, so a keyword used as an identifier inside a
-///   section is still never a header (§Basics/§Keywords: "All of these words
-///   can safely appear as identifiers in the `definition` and `ontology`
-///   sections").
-/// - **A missing `language` section is accepted** when the ontology carries the
-///   old-form `primary_language` (§Language Section NOTE + §Ontology Header
-///   Statements NOTE); `crate::assemble::assemble` performs the upgrade for
-///   that dialect. With no `primary_language` to upgrade from, the
-///   [`SyntaxErrorCode::Salan`] of the grammar's mandatory-language reading
-///   stands.
-/// - **A malformed `concept` clause is refused** with
-///   [`SyntaxErrorCode::Saco`] (§Syntax Specification `arch_concept:
-///   SYM_CONCEPT V_LOCAL_TERM_CODE_REF | SYM_CONCEPT error`).
+/// - Section and artefact keywords are case-insensitive
+///   (`AM/docs/ADL1.4/master08-adl` §Syntax Specification/§Symbols). Column-0
+///   anchoring is unchanged, so a keyword used as an identifier inside a section
+///   is still never a header.
+/// - A missing `language` section is accepted when the ontology carries the
+///   old-form `primary_language` (§Language Section NOTE), which
+///   `crate::assemble::assemble` upgrades; with nothing to upgrade from,
+///   [`SyntaxErrorCode::Salan`] stands.
+/// - A malformed `concept` clause is refused with [`SyntaxErrorCode::Saco`]
+///   (§Syntax Specification `arch_concept`).
 ///
 /// # Errors
 /// Returns every [`SyntaxError`] found (lexical, identification, ODIN-section,

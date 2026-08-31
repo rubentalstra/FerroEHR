@@ -93,31 +93,27 @@ pub(super) async fn list(state: &AppState, parts: &RequestParts) -> Result<Respo
 /// `Prefer` is read. Recorded as residue, not a defect.
 pub(super) async fn upload(state: &AppState, parts: &RequestParts) -> Result<Response, RestError> {
     let h = &parts.headers;
-    // Built for its parameter validation only: the `Prefer` preference is read
-    // off the header map through the shared negotiation predicates, so every
-    // write route resolves (and declares) it the same way.
+    // Built for its parameter validation only: `Prefer` is read off the header
+    // map through the shared negotiation predicates, like every write route.
     params::build::<DefinitionTemplateAdl2UploadParams>(&parts.path, parts.query.as_deref(), h)?;
-    // ADL2 arrives as text/plain source — the operation's single declared body
-    // type (`operations/definition_template_adl2_upload.yaml`). A payload
-    // DECLARING another media type cannot be processed as that type, so it is
-    // refused 415 before parsing (`Resources.md` §format rules), exactly as
-    // the ADL 1.4 sibling refuses non-XML; an absent `Content-Type` declares
-    // nothing to refuse (the header is a client MAY).
+    // ADL2 arrives as `text/plain` source, the operation's single declared body
+    // type, so a payload declaring another media type is refused `415` before
+    // parsing (`Resources.md` §format rules). An absent `Content-Type` declares
+    // nothing to refuse.
     negotiate::require_text_plain(h)?;
     let source = negotiate::text_body(&parts.body)?;
-    // The engine validates: an unparseable source is a `400` (BadRequest), an
-    // AOM2-invalid one a `422` carrying the rule codes (ValidationFailed), a
-    // duplicate HRID a `409` (Conflict) — all via `ServiceError` so the `422`
-    // renders the ITS-REST `Error` object with per-code `validationErrors`.
+    // An unparseable source is a `400`, an AOM2-invalid one a `422` carrying the
+    // rule codes, and a duplicate HRID a `409` — all through `ServiceError`, so
+    // the `422` renders the `Error` object with per-code `validationErrors`.
     let hrid = state.backend().template_adl2_upload(source.clone()).await?;
     let hrid = hrid.as_str();
     let location = format!(
         "{}/definition/template/adl2/{hrid}",
         state.config().server.base_path
     );
-    // 201_Template_adl2_upload: body per `Prefer` — representation → the OPT
-    // source (text/plain); identifier → `{template_id}` (JSON); missing/minimal
-    // → empty. `Location` + the weak `ETag` on every case.
+    // 201_Template_adl2_upload: the body follows `Prefer` — the OPT source on
+    // representation, `{template_id}` on identifier, empty on minimal — with
+    // `Location` and the weak `ETag` in every case.
     let mut resp = upload_response(h, &location, hrid, source);
     set_template_etag(&mut resp, hrid);
     Ok(resp)
@@ -173,20 +169,18 @@ pub(super) async fn example_get(
         parts.query.as_deref(),
         h,
     )?;
-    // The backend compiles the stored ADL2 template to a WebTemplate and
-    // generates the canonical example COMPOSITION (an unknown template → 404; an
-    // invalid `type`/`detail_level` → 400; an uncompilable template → 422).
+    // An unknown template is a 404, an invalid `type`/`detail_level` a 400, and
+    // an uncompilable template a 422.
     let comp = state
         .backend()
         .template_adl2_example(p.template_id.clone(), p.detail_level, p.r#type)
         .await?;
-    // Negotiate the four representations the released OAS `Accept_LOCATABLE`
-    // enumerates (json / xml / wt.flat+json / wt.structured+json). Any other
-    // media type is a `406`.
+    // The four representations `Accept_LOCATABLE` enumerates; any other media
+    // type is a `406`.
     match negotiate::resolve_accept(h, EXAMPLE_FORMATS, WireFormat::CanonicalJson) {
         Some(WireFormat::Flat) => {
-            // The ADL2 template's WebTemplate is not in the ADL 1.4 store, so it
-            // is resolved via the v2_4 front end (not the generic resolver).
+            // The ADL2 template's WebTemplate is not in the ADL 1.4 store, so
+            // the `v2_4` front end resolves it.
             let wt = state.backend().web_template_adl2(&p.template_id).await?;
             crate::formats::dispatch::composition_flat_response_with(StatusCode::OK, &comp, &wt)
         }
@@ -292,8 +286,8 @@ fn negotiate_get(headers: &HeaderMap) -> Option<Adl2Repr> {
             _ => {}
         }
     }
-    // text/plain is the canonical ADL2 interchange form, so it wins when both
-    // are acceptable; JSON only when text is not.
+    // `text/plain` is the canonical ADL2 interchange form, so it wins when both
+    // are acceptable.
     if source_ok {
         Some(Adl2Repr::Source)
     } else if json_ok {

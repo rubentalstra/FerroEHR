@@ -25,17 +25,14 @@ use crate::overview::version_id::{parse_ehr_id, parse_uuid};
 use crate::state::AppState;
 use crate::{negotiate, params};
 
-/// The representations a CONTRIBUTION endpoint negotiates. The envelope is
-/// always canonical JSON; the Simplified types select the inner
-/// `versions[i].data` form (`contribution_create.yaml` / `contribution_get.yaml`
-/// §Simplified Formats: "the CONTRIBUTION envelope itself remains canonical
-/// JSON" — that sentence governs the wt.flat/wt.structured selection). XML is
-/// not offered because the release publishes no CONTRIBUTION XML document at
-/// all: ITS-REST overview `Resources.md` §XML Format requires responses to
-/// "conform to the published XSDs", and the published XSDs declare no global
-/// CONTRIBUTION document element (only the complexType) — so an XML `Accept`
-/// here "cannot fulfill this aspect of the request" and takes the section's
-/// 406 MUST.
+/// The representations a CONTRIBUTION endpoint negotiates.
+///
+/// The envelope is always canonical JSON and the Simplified types select the
+/// inner `versions[i].data` form ("the CONTRIBUTION envelope itself remains
+/// canonical JSON", `contribution_create.yaml` §Simplified Formats). XML is not
+/// offered: the published XSDs declare no global CONTRIBUTION document element,
+/// so an XML `Accept` "cannot fulfill this aspect of the request" and takes the
+/// 406 MUST of overview `Resources.md` §XML Format.
 const CONTRIBUTION_FORMATS: &[WireFormat] = &[
     WireFormat::CanonicalJson,
     WireFormat::Flat,
@@ -62,17 +59,14 @@ pub(super) async fn run(
         "contribution_create" => {
             let p = params::build::<ContributionCreateParams>(&parts.path, q, h)?;
             let ehr_id = parse_ehr_id(&p.ehr_id)?;
-            // Committed as the *raw wire body* through the
-            // `ContributionAdapter` seam, not the typed SM
+            // Committed as the raw wire body, not the typed SM
             // `commit_contribution`: the typed `UpdateVersion` envelope cannot
-            // represent attestation-only (666) or delete (523) members, or
-            // committer/system_id inheritance from the CONTRIBUTION audit (RM
-            // common master06 §Committal m4). A Simplified `Content-Type`
-            // rebuilds each `versions[i].data` COMPOSITION into canonical form
-            // before commit (`contribution_create.yaml` §Simplified Formats).
-            // NOTE: a CONTRIBUTION commit is a wrapper DTO (a version set +
-            // audit), not a single canonical RM value with a defined
-            // canonical-XML shape — so it is accepted as JSON only.
+            // represent attestation-only (666) or delete (523) members, nor
+            // committer inheritance from the CONTRIBUTION audit (RM common
+            // master06 §Committal m4).
+            // NOTE: a CONTRIBUTION commit is a wrapper DTO, not a single
+            // canonical RM value with a defined canonical-XML shape — so it is
+            // accepted as JSON only.
             let body = match negotiate::content_type_format(h) {
                 Some(WireFormat::CanonicalJson) => negotiate::json_value(h, &parts.body)?,
                 Some(fmt @ (WireFormat::Flat | WireFormat::Structured)) => {
@@ -93,10 +87,9 @@ pub(super) async fn run(
                     )));
                 }
             };
-            // Under `return=minimal` the response is headers-only (ETag +
-            // Location), so the composite CONTRIBUTION body is not built and its
-            // post-commit re-read is skipped; `return=representation` assembles
-            // it (ITS-REST `Requests_and_responses` §Representation details).
+            // Under `return=minimal` the response is headers-only, so the
+            // composite body and its post-commit re-read are skipped
+            // (`Requests_and_responses` §Representation details).
             let want_repr = negotiate::prefers_representation(h);
             let resp = state
                 .backend()
@@ -119,9 +112,7 @@ pub(super) async fn run(
                         );
                     }
                     // This branch is `want_repr` only, so the applied
-                    // preference is the representation the client asked for —
-                    // declared through the same seam as the canonical path
-                    // (`Requests_and_responses.md` §Representation details
+                    // preference is representation (§Representation details
                     // negotiation).
                     negotiate::set_preference_applied(&mut out, AppliedPreference::Representation);
                     Ok(out)
@@ -150,12 +141,10 @@ pub(super) async fn run(
             } else {
                 state.backend().get_contribution(ehr_id, cid).await?
             };
-            // Weak ETag (the contribution uid — the same identity the 201's
-            // ETag carries) + Last-Modified from `audit.time_committed`
-            // (overview §"ETag and Last-Modified": both SHOULD accompany
-            // resources with "versioning or unique state identifiers"; the
-            // released 200_CONTRIBUTION declares neither — our
-            // adjudicated reading of the SHOULD's reach).
+            // A weak `ETag` on the contribution uid plus `Last-Modified` from
+            // `audit.time_committed`: the released 200_CONTRIBUTION declares
+            // neither, so this is our reading of the reach of the SHOULD in
+            // overview §"ETag and Last-Modified".
             let meta = {
                 let mut m = ferroehr::service::response::ResourceMeta::new(
                     p.ehr_id.clone(),
@@ -173,10 +162,9 @@ pub(super) async fn run(
                 m
             };
             // The envelope stays canonical JSON; a Simplified `Accept`
-            // serializes each present `versions[i].data` COMPOSITION into the
-            // requested inner form (`contribution_get.yaml` §Simplified Formats).
-            // A non-COMPOSITION inner payload → 406; canonical JSON (or an
-            // unfulfillable Accept, e.g. XML) is answered by `respond`.
+            // serializes each `versions[i].data` COMPOSITION into the requested
+            // inner form (`contribution_get.yaml` §Simplified Formats), and a
+            // non-COMPOSITION inner payload is a 406.
             let mut out =
                 match negotiate::resolve_accept(h, CONTRIBUTION_FORMATS, WireFormat::CanonicalJson)
                 {
@@ -190,9 +178,8 @@ pub(super) async fn run(
             Ok(out)
         }
         "contribution_list" => {
-            // OUR OWN EXTENSION — the ITS-REST contract defines only the by-uid
-            // CONTRIBUTION GET; this paged, newest-first list of the EHR's
-            // CONTRIBUTIONs is not part of the openEHR REST API.
+            // NOTE: no openEHR spec governs this — our own extension; the
+            // contract defines only the by-uid CONTRIBUTION GET.
             let ehr_id_raw = parts.path.get("ehr_id").ok_or_else(|| {
                 RestError(ApiError::BadRequest(
                     "missing path parameter 'ehr_id'".to_owned(),

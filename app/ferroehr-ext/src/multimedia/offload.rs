@@ -1,25 +1,23 @@
 // SPDX-FileCopyrightText: FerroEHR contributors
 // SPDX-License-Identifier: MIT
 
-//! The canonical-JSON transforms: externalize large inline `DV_MULTIMEDIA.data`
-//! (commit path) and re-inline externalized blobs with integrity verification
-//! (read path). Pure functions over `serde_json::Value` — the async blob I/O is
-//! driven by [`MultimediaEngine`](super::MultimediaEngine).
+//! The canonical-JSON transforms: externalizing large inline
+//! `DV_MULTIMEDIA.data` on the commit path and re-inlining externalized blobs
+//! with integrity verification on the read path.
 //!
-//! **The blob-storage mechanism is spec-silent — no openEHR spec governs it —
-//! our own design/extension.** The `DV_MULTIMEDIA` *shape* this rewrites is RM
-//! data types, so the rewrite honours the RM invariants cited below.
+//! Pure functions over `serde_json::Value`; the async blob I/O is driven by
+//! [`MultimediaEngine`](super::MultimediaEngine). No openEHR spec governs the
+//! blob-storage mechanism — our own design/extension — but the shape being
+//! rewritten is RM data types, so the rewrite honours their invariants.
 //!
-//! Spec basis (RM 1.2.0 `DV_MULTIMEDIA`,
-//! `docs/specs/openehr/RM/docs/UML/classes/org.openehr.rm.data_types.dv_multimedia.adoc`):
-//! an externalized value drops inline `data`, gains a `uri` (`is_external`),
-//! carries the mandatory unencoded `size`, and — because it sets
-//! `integrity_check` — must also set `integrity_check_algorithm` from the
-//! openEHR `Integrity check algorithms` code set (invariants `Not_empty`,
-//! `Integrity_check_validity`, `Integrity_check_algorithm_validity`,
-//! `Size_valid`). The algorithm code is `SHA-256`
-//! (`docs/specs/openehr/TERM/.../codesets/openehr_terminology-codesets.adoc`,
-//! code set id `openehr_integrity_check_algorithms`).
+//! Per RM 1.2.0 `DV_MULTIMEDIA`
+//! (`RM/docs/UML/classes/org.openehr.rm.data_types.dv_multimedia.adoc`), an
+//! externalized value drops inline `data`, gains a `uri` (`is_external`),
+//! carries the mandatory unencoded `size`, and — setting `integrity_check` —
+//! must also set `integrity_check_algorithm` from the openEHR `Integrity check
+//! algorithms` code set (`Not_empty`, `Integrity_check_validity`,
+//! `Integrity_check_algorithm_validity`, `Size_valid`). The algorithm code is
+//! `SHA-256`.
 
 #![expect(
     clippy::doc_markdown,
@@ -168,9 +166,8 @@ fn offload_one(
         MultimediaError::Malformed("DV_MULTIMEDIA.data exceeds i64 byte range".to_owned())
     })?;
 
-    // Rewrite: drop inline data, become external, carry integrity + size — every
-    // DV_MULTIMEDIA invariant honoured (Not_empty via uri, Integrity_check_*,
-    // Size_valid).
+    // Drop inline data, become external, carry integrity and size: `Not_empty`
+    // via `uri`, `Integrity_check_*`, `Size_valid`.
     map.remove("data");
     map.insert(
         "uri".to_owned(),

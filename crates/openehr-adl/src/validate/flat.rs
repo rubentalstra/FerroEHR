@@ -25,26 +25,21 @@
 //! resolution target is a 1.4 artefact's own (standalone) definition.
 //!
 //! **Deferred basic-integrity halves for a SPECIALISED archetype**
-//! ([`validate_flat_form`]) — four integrity checks are properties of the *flat*
-//! form, not the differential. For a non-specialised archetype the differential
-//! *is* the flat form, so [`super::structure`] / [`super::terminology`] run them
-//! directly; for a specialised archetype they are deferred here:
+//! ([`validate_flat_form`]) — four checks are properties of the FLAT form. For a
+//! non-specialised archetype the differential is the flat form, so
+//! [`super::structure`] / [`super::terminology`] run them directly:
 //!
-//! * **VATDF** — every at-code used as a value in the definition must be defined
-//!   in the flattened terminology (`master03` §Validity Rules; the flat form
-//!   accumulates the parent's term definitions, so an inherited value code is
-//!   defined).
-//! * **VTVSMD** — every value-set member must be defined in the flattened
-//!   terminology (`master07` §Validity Rules).
+//! * **VATDF** — every at-code used as a value must be defined in the flattened
+//!   terminology (`master03` §Validity Rules).
+//! * **VTVSMD** — every value-set member must be defined there too (`master07`
+//!   §Validity Rules).
 //! * **VACMCU** (error) / **WACMCL** (warning) — a container attribute's child
-//!   occurrences vs its flattened cardinality (`master04.5` §`C_ATTRIBUTE`); a
-//!   specialised child may not restate the inherited cardinality, so this is
-//!   only decidable on the flat form.
-//! * **VCOSU** — object node ids must be unique archetype-wide in the flat form
-//!   (`master04.5` §`C_OBJECT`); a differential legitimately re-references an
-//!   inherited id at a redefinition, so uniqueness is a flat-form property —
-//!   judged per node IDENTITY, since flattening clones a redefined node's whole
-//!   subtree (see `check_node_id_unique`).
+//!   occurrences against its flattened cardinality (`master04.5`
+//!   §`C_ATTRIBUTE`); a specialised child may not restate the inherited
+//!   cardinality.
+//! * **VCOSU** — object node ids must be unique archetype-wide (`master04.5`
+//!   §`C_OBJECT`), judged per node IDENTITY because flattening clones a
+//!   redefined node's whole subtree.
 //!
 //! [`super::run_flat_form_checks`] runs that second group only for a specialised
 //! archetype whose flat form was produced, so no check double-fires.

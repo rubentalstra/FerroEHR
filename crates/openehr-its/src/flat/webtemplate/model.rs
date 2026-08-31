@@ -18,17 +18,14 @@
 //! polymorphic alternate id, the cardinality RM path) and captured constraints
 //! for validation — never serialized.
 //!
-//! Relationship to the vendored ITS-REST schema: the normative
-//! `schemas/web_template/{WebTemplate,Tree,Child,Input,…}.yaml` describe a
-//! *subset* of the metadata document. The model carries additive fields the
-//! master04 example and the ITS-REST schema do not list (`cardinalities`,
-//! `proportionTypes`, `dependsOn` resolution on nodes; `listOpen`, `terminology`
+//! The normative `schemas/web_template/*.yaml` describe a SUBSET of the metadata
+//! document. The model carries additive fields those schemas do not list
+//! (`cardinalities`, `proportionTypes`, `dependsOn`; `listOpen`, `terminology`
 //! on inputs; `ordinal`/`scale`/`termBindings` on coded values; `otherDetails`
-//! on the root) — no openEHR spec governs these fields; they are our own
-//! design/extension, consumed by validation and by interop consumers, and
-//! schema-legal because those schemas set no `additionalProperties: false`. The
-//! one place the schema is *stricter* than a naive render is its `Tree.required`
-//! list — satisfied by `serialize_root`.
+//! on the root) — no openEHR spec governs them, so they are our own
+//! design/extension, schema-legal because those schemas set no
+//! `additionalProperties: false`. The one place the schema is STRICTER is its
+//! `Tree.required` list, which `serialize_root` satisfies.
 
 #![expect(
     clippy::disallowed_types,
