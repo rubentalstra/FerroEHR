@@ -6,8 +6,8 @@
 //! Two `axum` middlewares, applied to the API router beside the ATNA audit
 //! layer:
 //!
-//! - [`root_span`] — replaces the default `tower-http` `TraceLayer` span-maker.
-//!   Names the root span by **route template** (`MatchedPath`), records the
+//! - [`root_span`] — the root span-maker installed over `tower-http`'s default.
+//!   Names the root span by route template (`MatchedPath`), records the
 //!   `OTel` HTTP semantic-convention attributes plus `request_id`, extracts the
 //!   W3C `traceparent` on ingress, and (only when the `OTel` export layer is
 //!   installed) records `trace_id`/`span_id` on the span and returns the

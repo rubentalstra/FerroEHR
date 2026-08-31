@@ -1,48 +1,38 @@
 // SPDX-FileCopyrightText: FerroEHR contributors
 // SPDX-License-Identifier: MIT
 
-//! The FHIR-connector **mapping definition** schema + the pure FHIR→FLAT
+//! The FHIR-connector mapping-definition schema and the pure FHIR-to-FLAT
 //! transform.
 //!
-//! **No openEHR spec governs this — our own design/extension.** FHIR↔openEHR
-//! mapping is spec-silent, so this schema is a design decision, not a
-//! transcription; master14's integration model maps *integration archetypes* →
-//! *designed archetypes* via `GENERIC_ENTRY`, whereas this connector maps
-//! directly to *designed* templates (mapping-as-data) — a different,
-//! spec-silent mechanism. The `FEEDER_AUDIT` builder (the one RM-typed part)
-//! lives in [`super::feeder_audit`]. Gate: the connector's inbound routes are
-//! config-gated in `ferroehr-rest`.
+//! No openEHR spec governs FHIR-to-openEHR mapping — our own design/extension:
+//! master14's integration model maps integration archetypes to designed ones
+//! via `GENERIC_ENTRY`, whereas this connector maps directly to designed
+//! templates as data. The `FEEDER_AUDIT` builder, the one RM-typed part, lives
+//! in [`super::feeder_audit`].
 //!
 //! A mapping definition binds one FHIR R4 resource profile to one openEHR
-//! template. Its `entries` each read a value out of the incoming FHIR resource
-//! (a **`FHIRPath`-lite** dot-path — see [`resolve`]) and write it to a
-//! template-relative **openEHR FLAT path** (the `id[:i]/…|suffix` key
-//! `openehr_its::flat` consumes, ITS-REST `simplified_formats` master04 §Field
-//! Identifiers). The resulting flat map is handed to
-//! [`composition_from_flat`](openehr_its::flat::convert::composition_from_flat) with
-//! the template's `WebTemplate` to build a canonical COMPOSITION, which then
-//! commits through the platform's NORMAL validated path. This module is
-//! protocol-free and DB-free: it is the deterministic transform, unit tested
-//! here; the orchestration (mapping-store lookup, EHR resolution, commit)
-//! lives in the parent [`super`] module on `FerroEhrService`.
+//! template. Each of its `entries` reads a value out of the incoming resource
+//! through a `FHIRPath`-lite dot-path (see [`resolve`]) and writes it to a
+//! template-relative openEHR FLAT path (the `id[:i]/…|suffix` key
+//! `openehr_its::flat` consumes, `simplified_formats` master04 §Field
+//! Identifiers). The resulting flat map goes to
+//! [`composition_from_flat`](openehr_its::flat::convert::composition_from_flat)
+//! with the template's `WebTemplate`, and the COMPOSITION it builds commits
+//! through the platform's normal validated path. This module is protocol-free
+//! and DB-free; the orchestration lives on `FerroEhrService`.
 //!
-//! The FHIR side is a deliberate **subset** of `FHIRPath`
+//! The FHIR side is a deliberate subset of `FHIRPath`
 //! (<https://hl7.org/fhirpath/>): object-field navigation, array indexing,
-//! `first()`, and single-condition `where(path = literal)` filters
-//! (`code.coding.where(system = 'http://loinc.org').code`,
-//! `component.where(code.coding[0].code = '8480-6').valueQuantity.value`) —
-//! never the full language (no other functions, unions, `$this`, arithmetic).
-//! `FHIRPath` defines `where()` over collections; this single-value subset
-//! takes the FIRST matching element, which is what the flat, single-value
-//! leaf extraction openEHR FLAT paths need.
+//! `first()`, and single-condition `where(path = literal)` filters — never the
+//! full language. `FHIRPath` defines `where()` over collections; this
+//! single-value subset takes the first matching element, which is what a flat
+//! single-value leaf needs.
 //!
-//! `code_map` binds a FHIR system URL to an openEHR `terminology_id` and
-//! passes the code through unchanged. A `coded` entry may additionally
-//! declare `translate`, requesting cross-terminology code translation: the
-//! orchestrator resolves each [`TranslationRequest`] (from
-//! [`collect_translations`]) through the platform's terminology seam (FHIR
-//! `ConceptMap/$translate`) and hands the answers back as
-//! [`CodeTranslations`] — this module stays pure and never talks to a
+//! `code_map` binds a FHIR system URL to an openEHR `terminology_id` and passes
+//! the code through unchanged. A `coded` entry may also declare `translate`:
+//! the orchestrator resolves each [`TranslationRequest`] (from
+//! [`collect_translations`]) through the platform's terminology seam and hands
+//! the answers back as [`CodeTranslations`], so this module never talks to a
 //! server. The built COMPOSITION's own terminology validation remains the
 //! authority on the result.
 

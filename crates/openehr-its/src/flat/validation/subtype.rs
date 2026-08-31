@@ -4,19 +4,15 @@
 
 //! RM subtype relation for type-conformance checks.
 //!
-//! Backed by the BMM-generated static RM model ([`openehr_rm::v1_2::model`]
-//! §3 `emit-rm-model`) — the spec-pinned type hierarchy, generated from the same
-//! BMM meta-model as the RM crate itself, regenerating on any spec bump. This
-//! replaces the former hand-maintained descendant allow-map (which was partial
-//! and had to be kept in sync by hand). [`conforms`] stays the single seam the
-//! validator walk calls; only its data source changed.
+//! Backed by the BMM-generated static RM model ([`openehr_rm::v1_2::model`]) —
+//! the spec-pinned type hierarchy, regenerated on any spec bump. [`conforms`] is
+//! the single seam the validator walk calls.
 //!
-//! Conformance is spec-correct where both types are known to the model and
-//! stays **permissive** where the *constraint* type is unknown to the model — a
-//! type the RM model does not carry is never used to reject an instance, so a
-//! future/foreign constraint type cannot cause a false positive. A known
-//! constraint type paired with an unknown/bogus instance type *is* rejected
-//! (a known concrete slot must be filled by a known conforming type).
+//! Conformance is spec-correct where both types are known to the model and stays
+//! PERMISSIVE where the CONSTRAINT type is unknown, so a future or foreign
+//! constraint type cannot cause a false positive. A known constraint type paired
+//! with an unknown instance type IS rejected: a known concrete slot must be
+//! filled by a known conforming type.
 
 /// Strip a generic argument (`DV_INTERVAL<DV_QUANTITY>` → `DV_INTERVAL`).
 fn base(t: &str) -> &str {
@@ -93,7 +89,6 @@ mod tests {
 
     #[test]
     fn demographic_party_family() {
-        // Types the former hand table listed under PARTY — now model-backed.
         assert!(conforms("PERSON", "PARTY"));
         assert!(conforms("ORGANISATION", "PARTY"));
         assert!(conforms("ROLE", "PARTY"));
@@ -120,9 +115,8 @@ mod tests {
 
     #[test]
     fn paragraph_is_not_a_text() {
-        // Spec-correct (RM 1.2.0): DV_PARAGRAPH inherits DATA_VALUE, not DV_TEXT
-        // (its `items` is a List<DV_TEXT>). The former hand table wrongly listed
-        // DV_PARAGRAPH as a DV_TEXT descendant; the model corrects it.
+        // RM 1.2.0: DV_PARAGRAPH inherits DATA_VALUE, not DV_TEXT (its `items`
+        // is a List<DV_TEXT>).
         assert!(!conforms("DV_PARAGRAPH", "DV_TEXT"));
         assert!(conforms("DV_PARAGRAPH", "DATA_VALUE"));
     }

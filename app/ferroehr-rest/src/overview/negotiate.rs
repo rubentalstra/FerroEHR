@@ -24,15 +24,12 @@
 //! recognized (Resources.md §Simplified Formats NOTE + §Alternative data
 //! formats) — they fall out as `406`/`415` like any other unsupported type.
 //!
-//! Request bodies and responses for the canonical formats are (de)serialized
-//! via `openehr-its` (`to_canonical_json`/`from_canonical_json`,
-//! `to_canonical_xml`/`from_canonical_xml`). The generated server traits
-//! exchange `serde_json::Value` at the boundary, so an XML body is decoded into
-//! its concrete `openehr-rm` type and re-emitted as the canonical JSON `Value`
-//! the trait expects (see `rm_value`), and an XML response re-types the
-//! canonical JSON into its `openehr-rm` type so the generated `ToXml` runs (see
-//! `respond_rm`). The Simplified-Formats payload conversion is the sibling
-//! `crate::formats` adapter.
+//! Canonical bodies and responses are (de)serialized via `openehr-its`. The
+//! generated server traits exchange `serde_json::Value` at the boundary, so an
+//! XML body is decoded into its concrete `openehr-rm` type and re-emitted as
+//! canonical JSON (`rm_value`), and an XML response re-types the canonical JSON
+//! so the generated `ToXml` runs (`respond_rm`). The Simplified-Formats payload
+//! conversion is the sibling `crate::formats` adapter.
 //!
 //! ## The `version` media-type parameter (ITS-XML lineage selection)
 //!

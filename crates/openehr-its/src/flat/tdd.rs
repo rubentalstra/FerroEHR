@@ -26,61 +26,38 @@
 //! NOTE: that account fixes neither a TDD grammar nor a mapping back to
 //! canonical form, so the matching rule below is our own design/extension.
 //!
-//! # The matching rule (derived from the vendored corpus + `WebTemplate`)
+//! # The matching rule
 //!
-//! The [`WebTemplate`] tree
-//! ([`build_web_template`](crate::flat::webtemplate::builder::build_web_template)) is the
-//! identity oracle. Each web-template node's `aqlPath` is the full RM path
-//! from the versioned-object root **with the compacted wrapper node-ids kept**
-//! (e.g. `…/data[at0001]/events[at0002]/data[at0003]/items[at0004]/value`), so it
-//! supplies every `archetype_node_id`, the concrete leaf RM type, and the wrapper
-//! chain to re-materialise. This converter therefore drives the build from the
-//! `WebTemplate` (the reverse of the FLAT builder
-//! [`composition_from_flat`](crate::flat::convert::composition_from_flat) — same
-//! `place`/wrapper-materialisation model) and sources each node's data from
-//! the TDD:
+//! The [`WebTemplate`] tree is the identity oracle: each node's `aqlPath` is the
+//! full RM path from the versioned-object root with the compacted wrapper
+//! node-ids kept, so it supplies every `archetype_node_id`, the concrete leaf RM
+//! type, and the wrapper chain to re-materialise. The build is driven from the
+//! `WebTemplate` — the reverse of
+//! [`composition_from_flat`](crate::flat::convert::composition_from_flat) — and
+//! each node's data is sourced from the TDD:
 //!
-//! * A TDD element **matches** a web-template node when the element's local name
-//!   (spaces ↔ `_`, and dropping an Ocean `…_as_<ConcreteType>` polymorphic
-//!   suffix) equals the node's `name` (its localised term). The child is located
-//!   by a **scoped search** of the parent element's subtree, so the compaction
-//!   difference between the TDD (some wrappers explicit, e.g. `HISTORY`/`EVENT`;
-//!   some omitted, e.g. an `ITEM_TREE` `description`) and the `WebTemplate` is
-//!   absorbed — the intermediate TDD wrapper elements are simply skipped, and the
-//!   canonical wrapper chain is rebuilt from the node's `aqlPath`.
-//! * The **composition/entry context** the `WebTemplate` does not model as tree
-//!   nodes (`COMPOSITION` `name`/`language`/`territory`/`composer`/`context`/
-//!   `links`; `ENTRY` `language`/`encoding`/`subject`/`other_participations`/
-//!   `narrative`/…) is read **directly** from the TDD elements and parsed through
-//!   the canonical-XML [`FromXml`](crate::xml::runtime::FromXml) codec (fully typed:
-//!   nested `_type`s, `xsi:type` dispatch, numeric coercion) — faithful to the
-//!   instance.
-//! * A **leaf** node's `DATA_VALUE` is the leaf element's `<value>` fragment,
-//!   re-serialised to canonical XML with the web-template-declared concrete type
-//!   as `xsi:type` and parsed as an [`openehr_rm::prelude::DataValue`].
+//! * A TDD element matches a web-template node when its local name (spaces ↔
+//!   `_`, dropping an Ocean `…_as_<ConcreteType>` suffix) equals the node's
+//!   localised `name`. The child is located by a scoped search of the parent's
+//!   subtree, which absorbs the compaction difference between the two trees:
+//!   intermediate TDD wrappers are skipped and the canonical wrapper chain is
+//!   rebuilt from `aqlPath`.
+//! * The composition/entry context the `WebTemplate` does not model as tree
+//!   nodes is read directly from the TDD elements through the canonical-XML
+//!   [`FromXml`](crate::xml::runtime::FromXml) codec.
+//! * A leaf's `DATA_VALUE` is its `<value>` fragment, re-serialised with the
+//!   web-template-declared concrete type as `xsi:type` and parsed as an
+//!   [`openehr_rm::prelude::DataValue`].
 //!
-//! # Scope this wave (`// NOTE`s below)
+//! Where the TDD spells out a wrapper the `WebTemplate` compacted
+//! (`HISTORY.origin`, `EVENT.time`), the re-materialised node takes the
+//! RM-mandatory default, as in the FLAT reverse converter; the leaf data values
+//! and the composition/entry context are faithful.
 //!
-//! The vendored corpus pairs (`persistent_minimal.en.v1`, `nested.en.v1`)
-//! convert and validate. Documented limits, none of which affect canonical
-//! validity of the produced COMPOSITION:
-//!
-//! * **Compacted-wrapper instance data is not carried.** Where the TDD spells out
-//!   a wrapper the `WebTemplate` compacted (`HISTORY.origin`, `EVENT.time`/`name`),
-//!   the re-materialised node takes the RM-mandatory default
-//!   (`DEFAULT_TIME`-equivalent), matching the FLAT reverse
-//!   converter — the *leaf data values* and the full composition/entry context
-//!   are faithful. Driving from the (uncompacted) OPT definition tree to recover
-//!   them is future work (the same BMM-RM-model dependency `from_flat` carries).
-//! * The multi-valued RM-attribute set used to re-materialise arrays is derived
-//!   from the generated BMM RM attribute model (`is_multiple_attr`) — the same
-//!   single source of truth the FLAT builder
-//!   ([`composition_from_flat`](crate::flat::convert::composition_from_flat)) delegates
-//!   to; no hard-coded list.
-//! * A construct outside the corpus (e.g. an archetyped `other_context`, choice
-//!   leaves) is handled on a best-effort basis; the SM `import_tdd` envelope
-//!   rejects an unconvertible TDD with a typed error rather than committing a
-//!   partial COMPOSITION.
+//! The multi-valued RM-attribute set used to re-materialise arrays comes from
+//! the generated BMM RM attribute model, never a hard-coded list. A construct
+//! outside the corpus is best-effort, and the SM `import_tdd` envelope rejects
+//! an unconvertible TDD rather than committing a partial COMPOSITION.
 
 #![expect(
     clippy::disallowed_types,

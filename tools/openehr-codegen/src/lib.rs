@@ -26,11 +26,9 @@
 //! `load` → `analyze` → `plan` → `render`, driven by `cli` (private modules —
 //! `cargo doc --document-private-items` renders them).
 //!
-//! The stages are library modules (not a binary-only tree) so the emitter's
-//! invariants — completeness, constructibility, determinism, source-package
-//! mirroring, downstream-closure correctness, decision-map integrity — are
-//! tested as properties over the real pipeline on the real vendored inputs
-//! (`tests/emitter_invariants.rs`), through the curated [`testsupport`] surface.
+//! The stages are library modules, not a binary-only tree, so the emitter's
+//! invariants are tested as properties over the real pipeline on the real
+//! vendored inputs (`tests/emitter_invariants.rs`) through [`testsupport`].
 //!
 //! Usage:
 //!   `openehr-codegen check`          — load + validate the vendored BMM schemas.

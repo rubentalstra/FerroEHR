@@ -7,17 +7,11 @@
 //! citation or the explicit "no openEHR spec governs this — our own design"
 //! flag, and (d) a one-line reason.
 //!
-//! Keeping these as data (not code) makes them greppable, diff-reviewable, and
-//! — via `tools/openehr-codegen/tests/emitter_invariants.rs` — machine-checked
-//! for integrity (every entry names a class/field that exists in the loaded
-//! schemas; every entry carries a non-empty citation). The lookup functions
-//! ([`back_reference`], [`class_binding`], [`type_override`], [`field_default`],
-//! [`primitive`], [`is_mapped_class`]) are thin scans over these tables — the
-//! only behaviour they encode is the table content, so a decision change is a
-//! data edit, never a control-flow edit.
-//!
-//! This is pure re-representation: the tables reproduce, byte-for-byte, the
-//! decisions the R1 pipeline made inline. Nothing here changes any output.
+//! `tests/emitter_invariants.rs` machine-checks the tables: every entry names a
+//! class or field that exists in the loaded schemas and carries a non-empty
+//! citation. The lookup functions ([`back_reference`], [`class_binding`],
+//! [`type_override`], [`field_default`], [`primitive`], [`is_mapped_class`]) are
+//! thin scans, so a decision change is a data edit, never a control-flow edit.
 
 use std::collections::BTreeMap;
 
@@ -103,7 +97,7 @@ pub(crate) const PRIMITIVES: &[Primitive] = &[
 ];
 
 /// The Rust type a primitive spec type maps to, or `None` if `name` is not a
-/// primitive. Behaviour-identical to the former inline `primitive` match.
+/// primitive.
 pub(crate) fn primitive(name: &str) -> Option<&'static str> {
     PRIMITIVES.iter().find(|p| p.spec == name).map(|p| p.rust)
 }
@@ -278,8 +272,7 @@ pub(crate) fn open_extension_point(name: &str) -> Option<&'static str> {
     (name == "ACCESS_CONTROL_SETTINGS").then_some("openehr_base::serde_support::OpenSubtype")
 }
 
-/// Is `name` a mapped/skipped foundation class (never emitted)? Behaviour-
-/// identical to the former `SKIP.contains(&name)`.
+/// Whether `name` is a mapped/skipped foundation class (never emitted).
 pub(crate) fn is_mapped_class(name: &str) -> bool {
     MAPPED_CLASSES.iter().any(|m| m.name == name)
 }
@@ -362,7 +355,6 @@ pub(crate) const CLASS_BINDINGS: &[ClassBinding] = &[
 ];
 
 /// The generic-parameter → concrete-type bindings for `class` (empty if none).
-/// Behaviour-identical to the former inline `class_binding`.
 pub(crate) fn class_binding(class: &str) -> BTreeMap<String, String> {
     CLASS_BINDINGS
         .iter()
@@ -511,8 +503,7 @@ pub(crate) const TYPE_OVERRIDES: &[TypeOverride] = &[TypeOverride {
              INTERNET_ID / OBJECT_VERSION_ID are NOT plain UUIDs.)",
 }];
 
-/// The Rust type override for `(class, field)`, or `None`. Behaviour-identical
-/// to the former inline `type_override`.
+/// The Rust type override for `(class, field)`, or `None`.
 pub(crate) fn type_override(class: &str, field: &str) -> Option<&'static str> {
     TYPE_OVERRIDES
         .iter()
@@ -950,24 +941,18 @@ pub(crate) struct BackReference {
 ///
 /// # Why the emitter special-cases these (owner ruling 2026-07-19)
 ///
-/// The spec is written in reference-semantics languages (Eiffel/Java) where an
-/// owner/parent pointer is a trivially-satisfiable back-pointer. In Rust value
-/// semantics an *owning* mandatory back-reference (`Box<Owner>`) makes the type
-/// a **non-constructible infinite value** (every `ARCHETYPE` owns a
-/// `terminology` whose `owner_archetype` is an `ARCHETYPE`, ad infinitum), so an
-/// owning emission is a mis-modeling of the spec, not extra strictness. These
-/// properties never appear on the canonical JSON/XML wire either. Per the repo
-/// convention (root `CLAUDE.md` §Conventions: "Behavioural back-references …
-/// use `Weak` or an index, never an owning reference") each is emitted as a
-/// non-data back-reference: omitted from the owned struct fields and from serde,
-/// behavioural access left to the hand-written `*_impl.rs`. This laxes no
-/// forward/owned data — every genuine composition field stays mandatory (see
-/// `Model::assert_constructible`, which proves every remaining cycle is broken
-/// only at a designated edge here).
+/// The spec is written in reference-semantics languages where an owner pointer
+/// is a trivially-satisfiable back-pointer. Under Rust value semantics an
+/// OWNING mandatory back-reference makes the type a non-constructible infinite
+/// value (every `ARCHETYPE` owns a `terminology` whose `owner_archetype` is an
+/// `ARCHETYPE`), so each is emitted as a non-data back-reference: omitted from
+/// the struct fields and from serde, behavioural access left to the
+/// hand-written `*_impl.rs`. They appear on no canonical wire either.
 ///
-/// The BMM carries no `is_im_runtime`/`is_im_infrastructure` flag on these
-/// (verified against the vendored BMM 2026-07-19), so the designation is an
-/// explicit, spec-cited override.
+/// Every genuine composition field stays mandatory: `Model::assert_constructible`
+/// proves every remaining cycle is broken only at an edge designated here. The
+/// BMM carries no `is_im_runtime`/`is_im_infrastructure` flag on these, so the
+/// designation is an explicit, spec-cited override.
 pub(crate) const BACK_REFERENCES: &[BackReference] = &[
     BackReference {
         class: "ARCHETYPE_TERMINOLOGY",
@@ -1072,9 +1057,10 @@ pub(crate) const BACK_REFERENCES: &[BackReference] = &[
 ];
 
 /// The spec citation if `(class, field)` is a designated owner/parent
-/// back-reference, else `None`. Behaviour-identical to the former inline
-/// `back_reference`; the returned string is emitted verbatim into generated
-/// output, so it is byte-stable.
+/// back-reference, else `None`.
+///
+/// The returned string is emitted verbatim into generated output, so it is
+/// byte-stable.
 pub(crate) fn back_reference(class: &str, field: &str) -> Option<&'static str> {
     BACK_REFERENCES
         .iter()
@@ -1109,8 +1095,8 @@ pub(crate) struct XmlBmmOnlyField {
 /// field NOT on this list fails codegen (the `check_bmm_field_coverage` guard in
 /// `render::emit_xml`), forcing an explicit decision instead of a silent drop.
 ///
-/// The governing spec citation for every entry is the pinned-version delta
-///: the emitted model is RM 1.2.0 / BASE 1.3.0, while the
+/// The governing spec citation for every entry is the pinned-version delta: the
+/// emitted model is RM 1.2.0 / BASE 1.3.0, while the
 /// vendored canonical-XML schemas are ITS-XML 1.0.2 (namespace `.../v1`) and, for
 /// the EHR/demographic/extract closure, ITS-XML 2.0.0 (RM 1.1.0). Where the model
 /// added or renamed a field after those XSDs were cut, no XSD slot exists.
@@ -2334,7 +2320,7 @@ pub(crate) const INVARIANT_REALIZATIONS: &[InvariantRealization] = &[
         spec_file: "org.openehr.rm.common.party_identified.adoc",
         reason: "the `x /= Void implies not x.is_empty` family: holds BY CONSTRUCTION since #1730 — an optional container carrying the invariant emits `Option<NonEmptyVec<T>>` (`analyze::nonempty_optional_lists`), so a present-but-empty value is unrepresentable and the strict readers refuse `[]` at parse.",
     },
-    // ── the complex-bucket adjudications (#2454): every classifier-Complex
+    // ── the complex-bucket adjudications: every classifier-Complex
     // invariant, venue-registered like the emitted bucket ──────────────────
     InvariantRealization {
         class: "DV_EHR_URI",
@@ -2729,7 +2715,7 @@ pub(crate) fn account_emitted<'a>(
 /// A complex invariant is still normative: it is realized at a hand-written
 /// or application venue, or carries an adjudicated exclusion — a complex rule
 /// with no register row is a silent enforcement gap, the same defect class
-/// the emitted-bucket accounting closes (#1621).
+/// the emitted-bucket accounting closes.
 pub(crate) fn account_complex<'a>(
     invariants: impl Iterator<Item = (&'a str, &'a str, &'a str)>,
 ) -> Vec<AccountedInvariant> {

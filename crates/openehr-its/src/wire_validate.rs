@@ -6,32 +6,20 @@
 //! that compose the validation tiers at the codec boundary.
 //!
 //! The tiers themselves are RM model semantics and live upstream in
-//! [`openehr_rm::v1_2::validate`]: the allocation-free fast path
-//! ([`openehr_rm::v1_2::validate::try_fast_validate`]) and the authoritative typed
-//! dispatch ([`openehr_rm::v1_2::validate::typed_dispatch::dispatch_typed`], the
-//! `_type` → concrete-RM-type table). What stays HERE is what genuinely needs
-//! this crate:
+//! [`openehr_rm::v1_2::validate`]: the allocation-free fast path and the
+//! authoritative typed dispatch. Three things stay here because they need this
+//! crate:
 //!
-//! - the GENERATED five-crate structural fallthrough
-//!   ([`structural_check`]) the typed table declines to — it spans
-//!   `openehr-base`/`-rm`/`-am`/`-term`/`-lang` at once, so it can only be
-//!   emitted downstream of all of them;
-//! - the undeclared-key refusal, which reads the generated declared-key table
-//!   ([`declared_fields`]) and renders the reader's own
-//!   [`crate::json::JsonParseError`];
-//! - the entry points themselves ([`validate_rm_value`],
-//!   [`validate_rm_invariants`], [`validate_rm_invariants_as`],
-//!   [`validate_rm_invariants_relaxed_as`], [`validate_rm_value_typed`]), which
-//!   fix the ORDER the tiers and orthogonal layers run in.
+//! - the generated five-crate structural fallthrough ([`structural_check`]),
+//!   which spans every spec crate at once and so can only be emitted
+//!   downstream of all of them;
+//! - the undeclared-key refusal, which reads [`declared_fields`] and renders
+//!   the reader's own [`crate::json::JsonParseError`];
+//! - the entry points, which fix the ORDER the tiers and the orthogonal layers
+//!   run in.
 //!
-//! # The invariant source
-//!
-//! The RM class invariants live upstream (`openehr-rm`'s generated cores +
-//! `*_impl.rs`, per the released class tables' §Invariants — the generated
-//! register is the per-invariant authority); this module only routes a node
-//! to the right tier. A node that does not deserialize into its declared concrete RM type
-//! surfaces `does not conform to RM type …` (see
-//! [`openehr_rm::v1_2::validate::typed_dispatch::record_type_mismatch`]).
+//! A node that does not deserialize into its declared concrete RM type surfaces
+//! `does not conform to RM type …`.
 
 #![expect(
     clippy::disallowed_types,
@@ -51,27 +39,19 @@ use crate::json_codec::generated::structural::{declared_fields, structural_check
 /// Run the **core** (non-terminology) RM class invariants for a single
 /// canonical-JSON node, dispatching on its `_type`.
 ///
-/// A node with no (or an unrecognised) `_type` runs no invariants (returns
-/// without appending).
+/// A node with no (or an unrecognised) `_type` runs no invariants.
 ///
-/// Two tiers (performance: the RM-invariant pass visits every `_type` node of a
-/// commit, ~1.5k for a populated composition, so the per-node cost is
-/// load-bearing):
+/// Two tiers, because the pass visits every `_type` node of a commit (~1.5k for
+/// a populated composition), so per-node cost is load-bearing:
 ///
-/// 1. the **fast path** ([`openehr_rm::v1_2::validate::try_fast_validate`]) verifies
-///    structural conformance directly against the live JSON node using the
-///    generated static RM model and runs the class invariants through the same
-///    cores the typed impls call — no deserialization, no allocation,
-///    byte-identical output;
-/// 2. anything the fast path cannot vouch for falls back to the authoritative
-///    **typed dispatch** below ([`validate_rm_value_typed`]), which
-///    deserializes into the concrete RM type (surfacing `does not conform to
-///    RM type …` for a structural mismatch) and runs the typed invariants.
+/// 1. [`openehr_rm::v1_2::validate::try_fast_validate`] checks conformance
+///    directly against the live JSON node through the same invariant cores the
+///    typed impls call — no deserialization, byte-identical output;
+/// 2. anything it cannot vouch for falls back to [`validate_rm_value_typed`].
 ///
-/// This is the tier the fast-path equivalence battery pins (the fast path must
-/// vouch only when byte-identical to the typed oracle). The terminology-backed
-/// invariants ([`openehr_rm::v1_2::validate::terminology`]) are an orthogonal layer
-/// added by [`validate_rm_value`], not part of the fast/typed equivalence.
+/// The equivalence battery pins this tier: the fast path may vouch only when it
+/// is byte-identical to the typed oracle. The terminology-backed invariants are
+/// an orthogonal layer [`validate_rm_value`] adds.
 pub fn validate_rm_invariants(value: &Value, out: &mut Vec<InvariantViolation>) {
     let Some(ty) = value.get("_type").and_then(Value::as_str) else {
         return;
@@ -110,27 +90,20 @@ pub fn validate_rm_invariants_as(ty: &str, value: &Value, out: &mut Vec<Invarian
 /// requirements must be satisfied. In other words, in an `incomplete` commit,
 /// data may be missing, but it may not be wrong."
 ///
-/// The three branches realize that sentence exactly:
+/// The three branches realize that sentence:
 ///
-/// 1. an **undeclared member** is wrong, never missing — refused first, as on
-///    the strict path;
-/// 2. a node with **nothing missing** ([`mandatory_data_present`](openehr_rm::v1_2::validate::incomplete::mandatory_data_present))
-///    runs the strict tiers unchanged: the relaxation costs it no strictness;
-/// 3. a node that **is** missing mandatory data does not have its TYPED
-///    construction driven — that tier's refusal IS the presence rule the state
-///    lifts (the generated types make existence and cardinality lower bounds
-///    structural). Wrongness is still judged: a positive type contradiction
-///    ([`contradicts_rm_type`](openehr_rm::v1_2::validate::incomplete::contradicts_rm_type))
-///    is reported through the authoritative typed tier, and the class
-///    invariants run wherever the fast path can still vouch for the node as it
-///    stands.
+/// 1. an undeclared member is wrong, never missing — refused first;
+/// 2. a node with nothing missing runs the strict tiers unchanged;
+/// 3. a node that IS missing mandatory data skips typed construction, because
+///    that tier's refusal is the presence rule the state lifts. Wrongness is
+///    still judged: a positive type contradiction goes through the typed tier,
+///    and the class invariants run wherever the fast path can still vouch for
+///    the node as it stands.
 ///
-/// The orthogonal layers the caller runs beside this one — terminology,
-/// `LOCATABLE.Archetyped_valid`, the data-structure shape duties, and the
-/// archetype-conformance pass — are NOT relaxed here; only the
-/// mandatory-presence and cardinality-lower-bound layers are
-/// (`openehr_rm::v1_2::validate::check_mandatory_containers`,
-/// which the relaxed walker skips).
+/// Only the mandatory-presence and cardinality-lower-bound layers relax. The
+/// orthogonal layers the caller runs beside this one — terminology,
+/// `LOCATABLE.Archetyped_valid`, the data-structure shape duties and the
+/// archetype-conformance pass — do not.
 pub fn validate_rm_invariants_relaxed_as(
     ty: &str,
     value: &Value,
@@ -205,58 +178,32 @@ pub fn validate_rm_value(value: &Value, out: &mut Vec<InvariantViolation>) {
 /// The typed dispatch tier of [`validate_rm_value`]: deserialize the node
 /// into its concrete RM type and run that type's `Validate` impl.
 ///
-/// Authoritative for every node (the fast path may only *skip* it when its
-/// result is provably identical); also the oracle the fast-path equivalence
-/// tests compare against.
+/// Authoritative for every node — the fast path may only skip it when the
+/// result is provably identical — and the oracle its equivalence tests compare
+/// against. Composed from three parts, in this order:
 ///
-/// The tier is composed here from three parts, in this exact order:
-///
-/// 1. the **undeclared-key refusal**, ahead of any decode (the private
-///    `undeclared_key` walk over [`declared_fields`]);
-/// 2. the **typed table**
-///    ([`openehr_rm::v1_2::validate::typed_dispatch::dispatch_typed`]), which covers
-///    the concrete `openehr-rm` / `openehr-base` types carrying a
-///    non-terminology class invariant — those need a typed value to run the
-///    invariant on;
-/// 3. for every class the table declines (`false`), the **GENERATED structural
-///    dispatch** ([`structural_check`], emitted by
-///    `openehr-codegen -- emit-json`), which decodes the
-///    node into that class's own Rust type and discards it: the codec is the
+/// 1. the undeclared-key refusal, ahead of any decode;
+/// 2. the typed table
+///    ([`openehr_rm::v1_2::validate::typed_dispatch::dispatch_typed`]), for the
+///    concrete types carrying a non-terminology class invariant;
+/// 3. for every class the table declines, the generated [`structural_check`],
+///    which decodes the node and discards it: the codec is the
 ///    structural-conformance authority for the whole emitted model, so a class
-///    with no invariant is still refused when it is structurally defective (a
-///    missing mandatory attribute, a wrong JSON kind, an unresolvable nested
-///    slot `_type`). This step is what keeps the composition here rather than
-///    upstream — the generated dispatch spans every spec crate at once.
+///    with no invariant is still refused when it is structurally defective.
 ///
-/// # The inherited LOCATABLE invariant
-///
-/// After the dispatch runs, the inherited `LOCATABLE.Archetype_node_id_valid`
-/// (`not archetype_node_id.is_empty`,
-/// `docs/specs/openehr/RM/docs/UML/classes/org.openehr.rm.common.locatable.adoc`
-/// §Invariants) is closed out for **every** concrete LOCATABLE descendant via
-/// [`openehr_rm::v1_2::validate::locatable_node_id_violation`], whose applicable-type
-/// set is the generated RM model's transitive concrete-descendant closure of
-/// LOCATABLE — not a hand-maintained list. The typed table's arms realize it
-/// themselves through their typed `Validate` impls, so the violation is appended
-/// only when this node's own pass did not already report it (reported exactly
-/// once per node). The classes with no arm — `ITEM_TREE`, `ITEM_LIST`,
-/// `ITEM_SINGLE`, `EHR_STATUS`, and the demographic / EHR_EXTRACT LOCATABLEs —
-/// reach the generated structural fallthrough, which decodes but runs no
-/// invariant, so this is where the inherited invariant becomes theirs too.
-///
-/// Placing the closeout in the typed tier (rather than above both tiers) keeps
-/// the fast-vs-typed equivalence property exact: the fast path vouches only for
-/// classes whose evaluator already calls the same core, so both tiers report
-/// the same single violation.
+/// Afterwards the inherited `LOCATABLE.Archetype_node_id_valid`
+/// (`docs/specs/openehr/RM/docs/UML/classes/org.openehr.rm.common.locatable.adoc`
+/// §Invariants) is closed out for every concrete LOCATABLE descendant via
+/// [`openehr_rm::v1_2::validate::locatable_node_id_violation`], whose applicable
+/// set is the generated model's descendant closure rather than a hand-kept
+/// list. It is appended only when this node's own pass did not already report
+/// it, so the violation appears exactly once. Closing it out in this tier — not
+/// above both — keeps the fast-vs-typed equivalence exact.
 pub fn validate_rm_value_typed(ty: &str, value: &Value, out: &mut Vec<InvariantViolation>) {
-    // The undeclared-key refusal is raised here too, ahead of the decode, so
-    // this tier's verdict does not depend on WHERE the offending member sits in
-    // the object: the reader streams members in document order (it never
-    // materializes the whole object first), so a node that is BOTH structurally
-    // defective and carries an undeclared key would otherwise report whichever
-    // defect the writer happened to put first. The tier above
-    // ([`validate_rm_invariants_as`]) applies the same check, so on that path
-    // this one never fires.
+    // Raised again ahead of the decode so this tier's verdict does not depend
+    // on WHERE the offending member sits: the reader streams members in
+    // document order, so a node that is both structurally defective and carries
+    // an undeclared key would otherwise report whichever came first.
     if let Some(violation) = undeclared_key(ty, value) {
         out.push(violation);
         return;

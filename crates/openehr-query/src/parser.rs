@@ -2,19 +2,14 @@
 // SPDX-License-Identifier: MIT
 
 //! AQL parser — a `chumsky` parser transcribed from `AqlParser.g4`, turning the
-//! [`crate::lexer`] token stream into an [`crate::ast::SelectQuery`]. No ANTLR
-//! runtime (see `.claude/rules/aql-engine.md`).
+//! [`crate::lexer`] token stream into an [`crate::ast::SelectQuery`].
 //!
 //! Precedence: within both `containsExpr` and `whereExpr`, `AND` binds tighter
 //! than `OR` (the grammar's left recursion is realized here as `or` over `and`
 //! over atoms), with parenthesized grouping.
 //!
-//! Coverage note: this covers the grammar (select/from/where/order/limit,
-//! `CONTAINS` trees, identified paths, standard/node/archetype predicates —
-//! including the `VERSION[standardPredicate]` and top-level
-//! `pathPredicate` standard forms — comparisons, primitives, params,
-//! aggregates, functions). Overflowing integer literals and `TOP`/`LIMIT`/
-//! `OFFSET` counts are reported as parse errors, never silently coerced.
+//! Overflowing integer literals and `TOP`/`LIMIT`/`OFFSET` counts are reported
+//! as parse errors, never silently coerced.
 
 use crate::ast::{
     AggregateCall, ArchetypePredicate, ClassExprOperand, ColumnExpr, CompareOperand,
@@ -38,10 +33,8 @@ type Err<'a> = chumsky::extra::Err<Simple<'a, Token>>;
 
 /// One position at which the token stream left the grammar.
 ///
-/// The position is reported twice, in the two coordinate systems a caller
-/// needs: [`SyntaxFault::tokens`] indexes the parser's own input, and
-/// [`SyntaxFault::bytes`] locates the same position in the source text, so a
-/// diagnostic can underline the offending characters.
+/// The position is reported twice: [`SyntaxFault::tokens`] indexes the parser's
+/// input and [`SyntaxFault::bytes`] locates it in the source text.
 #[derive(Debug, Clone, PartialEq)]
 pub struct SyntaxFault {
     /// The half-open range of token indices the parser was looking at.
@@ -68,9 +61,8 @@ impl std::fmt::Display for SyntaxFault {
 /// Why an AQL source failed to become a [`SelectQuery`].
 ///
 /// The two variants are the two passes, so a caller branches on the pass that
-/// refused rather than reading the message. Semantic rejections — an unknown
-/// archetype path, an unsupported construct — are NOT here: this crate stops
-/// at the AST, and those are typed errors of the engine that consumes it.
+/// refused rather than on the message. Semantic rejections belong to the
+/// engine that consumes the AST, not here.
 #[derive(Debug, Clone, PartialEq, thiserror::Error)]
 pub enum ParseError {
     /// The source did not tokenize.
@@ -130,8 +122,6 @@ fn run(tokens: &[Token], spanned: Option<&SpannedTokens>) -> Result<SelectQuery,
 /// # Errors
 /// [`ParseError::Lex`] if the source does not tokenize, otherwise
 /// [`ParseError::Syntax`], whose faults locate the failure in `src` itself.
-/// Its `Display` is the located diagnostic a client should see; its variant is
-/// what a caller branches on.
 pub fn parse_str(src: &str) -> Result<SelectQuery, ParseError> {
     parse_spanned(&crate::lexer::lex_spanned(src)?)
 }
@@ -142,14 +132,12 @@ fn ident<'a>() -> impl Parser<'a, &'a [Token], String, Err<'a>> + Clone {
     select! { Token::Identifier(s) => s }
 }
 
-/// Strip the surrounding quotes from a lexed string literal and unescape it per
-/// `AqlLexer.g4` `ESCAPE_SEQ` / `OCTAL_ESC` / `UTF8CHAR`, so the AST
-/// carries the decoded value that predicate matching / `LIKE` / `terminology()`
-/// operands compare against — not the raw escaped source text.
+/// Strips the quotes from a lexed string literal and unescapes it per
+/// `AqlLexer.g4` `ESCAPE_SEQ` / `OCTAL_ESC` / `UTF8CHAR`, so the AST carries
+/// the decoded value rather than the raw source text.
 fn unquote(s: &str) -> String {
-    // Strip one leading and one trailing byte (the ASCII quotes). A value too
-    // short to be quoted, or a range that is not a UTF-8 boundary, is passed
-    // through unchanged rather than panicking.
+    // A value too short to be quoted, or a range that is not a UTF-8 boundary,
+    // passes through unchanged rather than panicking.
     let inner = s
         .len()
         .checked_sub(1)
@@ -158,18 +146,15 @@ fn unquote(s: &str) -> String {
     unescape(inner)
 }
 
-/// Decode AQL string escapes: quotes, `\\`, the control escapes
-/// (`abfnrtv`), `UTF8CHAR: '\\u' HEX{4}`, and `OCTAL_ESC` (a `\` followed by
-/// 1–3 octal digits). Unknown escapes are passed through verbatim (the
-/// backslash is retained), which keeps the function total on any input.
+/// Decodes AQL string escapes: quotes, `\\`, the control escapes (`abfnrtv`),
+/// `UTF8CHAR: '\\u' HEX{4}`, and `OCTAL_ESC` (a `\` followed by 1–3 octal
+/// digits).
 ///
-/// `\?` is deliberately NOT a string escape, although the grammar's
-/// `ESCAPE_SEQ` lists `?`: QUERY AQL master03 §Operators/LIKE requires `\?`
-/// and `\*` in a pattern to match the literal character, which is only
-/// expressible when the string layer preserves them for the pattern layer —
-/// under the grammar reading, `\?` decodes to a bare wildcard and `'\*'` is
-/// not even lexable, so the docs text wins and both escapes pass through
-/// verbatim, symmetrically.
+/// An unknown escape passes through verbatim, backslash retained, so the
+/// function is total. `\?` and `\*` are not string escapes even though the
+/// grammar's `ESCAPE_SEQ` lists `?`: QUERY master03 §Operators/LIKE requires
+/// both to match the literal character in a pattern, which only works if the
+/// string layer preserves them for the pattern layer.
 fn unescape(inner: &str) -> String {
     if !inner.contains('\\') {
         return inner.to_string();
@@ -274,10 +259,11 @@ enum NumKind {
     SciInt,
 }
 
-/// Convert a lexed numeric to a [`Primitive`], returning `None` on overflow so
-/// the parser surfaces a hard error instead of silently coercing to `0`/`inf`
-///. `SCI_INTEGER` retains its integer-ness when the magnitude is
-/// integral and fits `i64`, else degrades to `Real`.
+/// Converts a lexed numeric to a [`Primitive`], returning `None` on overflow so
+/// the parser reports a hard error instead of coercing to `0`/`inf`.
+///
+/// `SCI_INTEGER` stays an integer when the magnitude is integral and fits
+/// `i64`, else degrades to `Real`.
 fn parse_number(kind: NumKind, s: &str) -> Option<Primitive> {
     match kind {
         NumKind::Int => s.parse::<i64>().ok().map(Primitive::Integer),
@@ -306,8 +292,7 @@ fn parse_number(kind: NumKind, s: &str) -> Option<Primitive> {
 }
 
 fn primitive<'a>() -> impl Parser<'a, &'a [Token], Primitive, Err<'a>> + Clone {
-    // A single unsigned numeric literal; overflow is a hard parse error, not a
-    // silent `0`/`inf`.
+    // Overflow is a hard parse error, not a silent `0`/`inf`.
     let unsigned = select! {
         Token::Integer(s) => (NumKind::Int, s),
         Token::Real(s) => (NumKind::Real, s),
@@ -340,11 +325,11 @@ fn parameter<'a>() -> impl Parser<'a, &'a [Token], String, Err<'a>> + Clone {
 
 // ── paths & predicates (mutually recursive: predicate ← objectPath ← predicate) ──
 
-/// Returns `(identified_path, path_predicate, standard_predicate)` parsers.
-/// Built together because a `pathPredicate` contains an `objectPath` which
-/// contains `pathPart`s that may themselves carry a `pathPredicate`. The bare
-/// `standardPredicate` parser is also handed back so the caller can wire it into
-/// `versionPredicate` (`AqlParser.g4` `versionPredicate` third alternative).
+/// Returns the `(identified_path, path_predicate, standard_predicate)` parsers.
+///
+/// They are built together because a `pathPredicate` contains an `objectPath`
+/// whose `pathPart`s may carry another `pathPredicate`. The bare
+/// `standardPredicate` is handed back for `AqlParser.g4 versionPredicate`.
 #[expect(
     clippy::type_complexity,
     reason = "the tuple of three mutually-recursive chumsky parsers is the return type; naming it would need an unnameable opaque-type alias per element"
@@ -355,13 +340,10 @@ fn path_parsers<'a>() -> (
     impl Parser<'a, &'a [Token], StandardPredicate, Err<'a>> + Clone,
 ) {
     // The only genuine recursion is objectPath → pathPart → pathPredicate →
-    // objectPath, expressed through `recursive`'s WEAK self-handle. The
-    // former three `Recursive::declare` handles owned each other through
-    // their definitions (object ⇄ predicate) — an Rc cycle chumsky never
-    // breaks, one leaked parser graph per `parse_str` call (#2746). The
-    // predicate family the caller receives is a second instance over the
-    // finished `object`, held OUTSIDE its definition, so it drops with the
-    // query parser.
+    // objectPath, through `recursive`'s WEAK self-handle: an owned handle
+    // embedded in its own definition is an Rc cycle chumsky never breaks. The
+    // predicate family handed back is a second instance over the finished
+    // `object`, held outside its definition, so it drops with the query parser.
     let object = recursive(|object| {
         let (predicate, _standard) = predicate_parsers(object);
         // pathPart : IDENTIFIER pathPredicate?
@@ -449,13 +431,10 @@ fn predicate_parsers<'a>(
     let node_archetype = select! { Token::ArchetypeHrid(s) => s }
         .then(just(Token::Comma).ignore_then(name_constraint).or_not())
         .map(|(hrid, name)| NodePredicate::Archetype { hrid, name });
-    // `AqlParser.g4` `nodePredicate`: its two `objectPath`-leading alternatives
-    // (`… COMPARISON_OPERATOR pathPredicateOperand`, `… MATCHES
-    // CONTAINED_REGEX`) are told apart by the token AFTER that shared prefix,
-    // so the prefix is parsed ONCE and the tail dispatches on it. Retrying each
-    // alternative from the top re-parses the prefix — and a `pathPart` inside
-    // it may carry another `pathPredicate`, so the doubling compounds per
-    // bracket nesting level.
+    // The two `objectPath`-leading `nodePredicate` alternatives differ only
+    // after the shared prefix, so the prefix is parsed once and the tail
+    // dispatches: retrying each alternative from the top would double the work
+    // per bracket nesting level.
     let node_path_tail = just(Token::Matches)
         .ignore_then(select! { Token::ContainedRegex(s) => s })
         .map(NodePathTail::Regex)
@@ -488,11 +467,9 @@ fn predicate_parsers<'a>(
     // pathPredicate : '[' (standardPredicate | archetypePredicate |
     // nodePredicate) ']'
     //
-    // A bare comparison (`[ehr_id/value='123']`) is *both* a standardPredicate
-    // and a nodePredicate; ANTLR lists `standardPredicate` first, so a lone
-    // comparison classifies as `PathPredicate::Standard`. We realise that split
-    // by parsing the node boolean tree and lifting a *top-level* bare
-    // `NodePredicate::Standard` back out; `archetype` wins for a plain HRID.
+    // A bare comparison (`[ehr_id/value='123']`) is both a standardPredicate
+    // and a nodePredicate; the grammar lists `standardPredicate` first, so a
+    // lone comparison is lifted back out of the parsed node boolean tree.
     let predicate = archetype
         .clone()
         .map(PathPredicate::Archetype)
@@ -546,9 +523,10 @@ fn function_parser<'a>(
     terminology_fn().map(FunctionCall::Terminology).or(named)
 }
 
-/// `aggregateFunctionCall`, given the `identified_path` parser (aggregates
-/// take a path or `*`, never a `terminal` — which is what lets this builder
-/// live outside the `terminal` recursion, #2746).
+/// `aggregateFunctionCall`, given the `identified_path` parser.
+///
+/// Aggregates take a path or `*`, never a `terminal`, which is what lets this
+/// builder live outside the `terminal` recursion.
 fn aggregate_parser<'a>(
     identified: impl Parser<'a, &'a [Token], IdentifiedPath, Err<'a>> + Clone + 'a,
 ) -> impl Parser<'a, &'a [Token], AggregateCall, Err<'a>> + Clone {
@@ -597,11 +575,9 @@ fn query<'a>() -> impl Parser<'a, &'a [Token], SelectQuery, Err<'a>> {
     let (identified, predicate, standard) = path_parsers();
 
     // terminal : primitive | PARAMETER | identifiedPath | functionCall
-    // (functionCall needs terminal → the self-reference goes through
-    // `recursive`'s WEAK handle. `Recursive::declare` hands out an OWNED
-    // handle, and embedding its clone in its own `define` is an Rc cycle
-    // chumsky never breaks — one leaked parser graph per `parse_str` call,
-    // found by the nightly LeakSanitizer lane, #2746.)
+    // functionCall needs terminal, so the self-reference goes through
+    // `recursive`'s WEAK handle; an owned handle embedded in its own `define`
+    // is an Rc cycle chumsky never breaks.
     let terminal = recursive(|terminal| {
         let function = function_parser(terminal);
         primitive()
@@ -610,9 +586,8 @@ fn query<'a>() -> impl Parser<'a, &'a [Token], SelectQuery, Err<'a>> {
             .or(function.map(Terminal::Function))
             .or(identified.clone().map(Terminal::Path))
     });
-    // The column-level functionCall is its own instance: it holds an OWNED
-    // handle to `terminal`, which is cycle-free because it lives outside
-    // terminal's definition and drops with the query parser.
+    // Its own instance: an owned handle to `terminal`, cycle-free because it
+    // lives outside terminal's definition.
     let function = function_parser(terminal.clone());
     let aggregate = aggregate_parser(identified.clone());
 
@@ -796,9 +771,8 @@ fn query<'a>() -> impl Parser<'a, &'a [Token], SelectQuery, Err<'a>> {
             .or_not(),
         )
         .map(|(path, order)| OrderByExpr { path, order });
-    // LIMIT/OFFSET counts; overflow is a parse error, not a silent `0`
-    //.
-    // `Simple` carries no cause payload, so the span IS the whole diagnostic.
+    // Overflow is a parse error, not a silent `0`; `Simple` carries no cause
+    // payload, so the span is the whole diagnostic.
     let int = select! { Token::Integer(s) => s }
         .try_map(|s: String, span| s.parse::<i64>().ok().ok_or_else(|| Simple::new(None, span)));
     let limit = just(Token::Limit)
@@ -857,9 +831,8 @@ mod tests {
     }
 
     /// QUERY master03 §Operators/LIKE: `\?` and `\*` in a pattern match the
-    /// literal character, so string decoding must preserve BOTH escapes for
-    /// the pattern layer — symmetrically (the 4.0.11 defect kept `\*` and
-    /// consumed `\?` into a bare wildcard, #2940).
+    /// literal character, so string decoding preserves both escapes for the
+    /// pattern layer.
     #[test]
     fn like_pattern_escapes_survive_string_decoding() {
         for (src, expected) in [
@@ -1221,7 +1194,6 @@ mod tests {
         ));
     }
 
-    // ── coverage: constructs previously untested ──────────────────────────
     #[test]
     fn like_operand_parses() {
         let q = parse_str("SELECT c FROM COMPOSITION c WHERE c/name/value LIKE 'blood%'")

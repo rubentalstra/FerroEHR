@@ -128,7 +128,7 @@ pub(crate) struct XmlField {
     pub multiple: bool,
     /// The container is `NonEmptyVec<T>` — a `1..*` bound, or an optional
     /// container carrying a present-implies-non-empty invariant
-    /// (`Option<NonEmptyVec<T>>`, #1730): the reader builds it through the
+    /// (`Option<NonEmptyVec<T>>`): the reader builds it through the
     /// type's fallible constructor.
     pub nonempty: bool,
     pub target: String,
@@ -490,7 +490,7 @@ impl Model {
                             && !cardinality_contradicted(&rp.owner, &p.name))
                             // An OPTIONAL container carrying a
                             // present-implies-non-empty invariant emits
-                            // `Option<NonEmptyVec<T>>` (#1730), so its reader
+                            // `Option<NonEmptyVec<T>>`, so its reader
                             // builds through the same fallible constructor.
                             // The invariant's declaring class may be an
                             // ANCESTOR of the flattened property's owner (a

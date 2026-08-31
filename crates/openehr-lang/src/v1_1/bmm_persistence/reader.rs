@@ -30,20 +30,16 @@
 //!
 //! **In-memory-only attributes are not read.** `master03-model.adoc` §Overview:
 //! "attributes named `_bmm_xxx_` and of type `BMM_XXX` … are in-memory only
-//! references to reconstructed instances of `BMM_XXX` types" — so `bmm_class`,
-//! `bmm_property`, `bmm_type`, `bmm_generic_parameter` and
-//! `bmm_package_definition` are left `None` here and the reconstruction is
-//! [`crate::v1_1::bmm_persistence::create_model`]'s job. Two further attributes are
-//! documented as set by processing rather than persisted and ARE stamped here,
-//! because their inputs are only available while reading the file:
-//! `P_BMM_CLASS.source_schema_id` ("Set during `BMM_SCHEMA` materialise") takes
-//! this schema's own [`crate::v1_1::bmm_persistence::p_bmm_schema::PBmmSchema::schema_id`],
-//! and `P_BMM_CLASS.uid` ("Assigned in post-load processing") is numbered from
-//! 1 in document order over `primitive_types` then `class_definitions`. A
-//! `(P_BMM_INTERFACE)` entry of either list declares neither attribute
-//! (`…p_bmm_interface.adoc` §Attributes), so it stamps neither: its number in
-//! the document order is simply unused, which leaves the remaining `uid`s
-//! document-ordered and unique.
+//! references to reconstructed instances", so they are left `None` here and
+//! [`crate::v1_1::bmm_persistence::create_model`] reconstructs them.
+//!
+//! Two attributes documented as set by processing ARE stamped here, because
+//! their inputs exist only while reading the file:
+//! `P_BMM_CLASS.source_schema_id` takes this schema's own `schema_id`, and
+//! `P_BMM_CLASS.uid` is numbered from 1 in document order over `primitive_types`
+//! then `class_definitions`. A `(P_BMM_INTERFACE)` entry declares neither
+//! (`…p_bmm_interface.adoc` §Attributes) and stamps neither, leaving the
+//! remaining `uid`s document-ordered and unique.
 
 #![expect(
     clippy::disallowed_types,

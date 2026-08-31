@@ -228,7 +228,7 @@ impl Oas {
                 name: name.to_string(),
                 location: location.to_string(),
                 required: p.get("required").and_then(Value::as_bool).unwrap_or(false),
-                // Kept VERBATIM (a `$ref` keeps its name — issue #1712); the
+                // Kept VERBATIM (a `$ref` keeps its name); the
                 // emitter's parameter mapper resolves structurally only where
                 // the name binds to nothing.
                 schema: p.get("schema").cloned().unwrap_or(Value::Null),
@@ -263,7 +263,7 @@ impl Oas {
     /// The schema is returned VERBATIM — a `$ref` keeps its name, so the
     /// emitter's type mapper can bind it to the named DTO or spec type instead
     /// of degrading a pre-resolved anonymous shape to `serde_json::Value`
-    /// (issue #1712; the same discipline `rust_type` applies to array items).
+    /// (the same discipline `rust_type` applies to array items).
     /// Container-level refs (the response/requestBody objects themselves) are
     /// still resolved by the callers before reaching here.
     fn first_json_schema(container: &Value) -> Option<Value> {

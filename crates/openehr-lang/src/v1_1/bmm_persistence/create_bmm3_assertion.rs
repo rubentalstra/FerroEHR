@@ -5,23 +5,17 @@
 //! The persisted assertion string → **v3** `BMM_ASSERTION` transform.
 //!
 //! P_BMM persists a class invariant and a routine pre-/post-condition as an
-//! opaque expression STRING keyed by tag (`P_BMM_CLASS.invariants`:
-//! "Invariants defined on this class, as a Hash of assertion expressions keyed
-//! by tag", `…bmm_persistence.p_bmm_class.adoc` §Attributes), while v3 requires
-//! them as `BMM_ASSERTION` — "Expressions as used in BMM models to express
-//! class invariants and routine pre- and post-conditions are always in the form
-//! of an `BMM_ASSERTION`" (`LANG/docs/bmm3/master10-expressions.adoc` §Usage in
-//! BMM Models) — whose `expression` is a `1..1` `EL_BOOLEAN_EXPRESSION`
-//! (`…bmm3.bmm_assertion.adoc` §Attributes). This module is the bridge: the
-//! hand-written [`crate::v1_1::el`] parser over the vendored EL grammar, driving a
-//! builder that materialises the v3 `EL_*` classes directly.
-//!
-//! # What a failure means
+//! opaque expression STRING keyed by tag (`…bmm_persistence.p_bmm_class.adoc`
+//! §Attributes), while v3 requires a `BMM_ASSERTION` whose `expression` is a
+//! `1..1` `EL_BOOLEAN_EXPRESSION` (`LANG/docs/bmm3/master10-expressions.adoc`
+//! §Usage in BMM Models; `…bmm3.bmm_assertion.adoc` §Attributes). This module is
+//! the bridge: the [`crate::v1_1::el`] parser over the vendored EL grammar,
+//! driving a builder that materialises the v3 `EL_*` classes.
 //!
 //! An assertion that does not parse, or whose names do not resolve, is NOT a
 //! refusal of the schema: it is collected as a
-//! [`PBmmValidityFinding::AssertionNotMaterialised`] and the assertion is
-//! omitted from the class. It stays readable in the P_BMM graph either way.
+//! [`PBmmValidityFinding::AssertionNotMaterialised`] and omitted from the class,
+//! staying readable in the P_BMM graph.
 //!
 //! # Resolution rules
 //!

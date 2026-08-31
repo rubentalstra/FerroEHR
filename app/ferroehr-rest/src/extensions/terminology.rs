@@ -4,43 +4,29 @@
 //! HTTP dispatch for the terminology extension API group over the
 //! `ferroehr::service::TerminologyService` seam.
 //!
-//! **Operation semantics — SM `I_TERMINOLOGY_SERVICE`**
-//! (`docs/specs/openehr/SM/docs/openehr_platform/master12-terminology_service.adoc`,
-//! which includes `docs/specs/openehr/SM/docs/UML/classes/i_terminology_service.adoc`):
-//! the nine calls `get_terminology_ids`, `has_terminology`,
-//! `get_terminology_description`, `has_term`, `get_term`, `subsumes`,
-//! `value_set_validate`, `has_value_set`, `get_value_set` and their
+//! The operation semantics are SM `I_TERMINOLOGY_SERVICE`
+//! (`SM/docs/openehr_platform/master12-terminology_service.adoc`): the nine
+//! calls from `get_terminology_ids` to `get_value_set`, with their
 //! `Pre_has_terminology` / `Pre_has_term` / `Pre_has_value_set` preconditions.
-//! Every handler below realizes one of those calls with its precondition
-//! mapping; the meaning of each is the master12 signature, cited inline.
+//! Every handler below realizes one of them, its meaning cited inline from the
+//! master12 signature.
 //!
-//! **Wire shape — no openEHR spec governs this; our own design/extension.**
-//! Neither the Release-1.1.0 OAS set nor Release-1.0.3 defines a
-//! terminology REST contract (there is no `terminology` group under
-//! `crates/openehr-its/src/rest/generated/`), so this surface is ours: exposed
-//! under the server's extension namespace (`/terminology`), shaped spec-first
-//! from the master12 call semantics, and excluded from the ITS-REST drift
-//! check. If/when openEHR publishes a contract, `emit-rest` takes over and these
-//! routes migrate.
+//! No openEHR spec governs the wire shape — our own design/extension. No
+//! released OAS set defines a terminology REST contract, so this surface is
+//! ours: exposed under the extension namespace `/terminology`, shaped from the
+//! master12 call semantics, and excluded from the ITS-REST drift check.
 //!
-//! NOTE (mount path): the extension groups (like the ADMIN group) are
-//! mounted inside the ITS-REST API router, so the full path is
-//! `{base_path}/terminology/...` — i.e. `/ferroehr/rest/openehr/v1/terminology`.
-//! Nesting them here keeps the auth / ATNA-audit / ABAC middleware stack
-//! uniform across the whole HTTP surface (our decision; the SM defines only the
-//! abstract interface, not a URL layout).
-//!
-//! NOTE (existence calls): the boolean `has_terminology` / `has_term` /
-//! `has_value_set` calls are surfaced implicitly through the `200`-vs-`404` of
-//! their `get`/description counterparts (the idiomatic REST existence check)
-//! rather than as separate boolean endpoints — mirroring the ADMIN group's
-//! decision not to over-model the surface. The bundle provider maps a failed
-//! precondition to `versioned_object_does_not_exist` (→ `404`), so no new SM
+//! The extension groups mount inside the ITS-REST API router, so the full path
+//! is `{base_path}/terminology/...`; nesting keeps the auth, ATNA-audit and ABAC
+//! middleware stack uniform across the whole HTTP surface, which the SM does not
+//! govern (it defines the abstract interface, not a URL layout). The boolean
+//! `has_*` calls are surfaced through the `200`-versus-`404` of their `get`
+//! counterparts rather than as separate endpoints: the bundle provider maps a
+//! failed precondition to `versioned_object_does_not_exist`, so no new SM
 //! `CALL_STATUS_TYPE` is needed.
 //!
 //! The group is config-gated (`AppConfig::terminology_api_enabled`, default
-//! `false`): when disabled every terminology route answers `404` without
-//! touching the backend.
+//! `false`), answering `404` on every route when disabled.
 
 #![expect(
     clippy::disallowed_types,

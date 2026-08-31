@@ -6,126 +6,59 @@
 //!
 //! Each `#[utoipa::path]` handler single-sources its route and its `OpenAPI`
 //! path, then forwards to the group dispatcher ([`super::dispatch::dispatch`])
-//! through [`guarded_dispatch`], so the wire behaviour is identical to the
-//! former table-driven `mount` adapter.
+//! through [`guarded_dispatch`].
 //!
-//! ## Release state
+//! The Admin API is `DEVELOPMENT`-state within ITS-REST Release-1.1.0
+//! (`docs/admin/Description.md` §Status). That is a reporting qualifier only:
+//! the BCP-14 requirement force of the released text is not state-qualified, so
+//! every MUST and SHOULD below binds as it would on a STABLE group.
 //!
-//! The Admin API is `DEVELOPMENT`-state within ITS-REST Release-1.1.0 — "This
-//! specification is in the `DEVELOPMENT` state"
-//! (`docs/specs/openehr/ITS-REST/specifications/docs/admin/Description.md`
-//! §Status). That is a **reporting qualifier only**: the BCP-14 requirement
-//! force of the released text is not state-qualified, so every MUST/SHOULD
-//! below binds exactly as it does on a STABLE group, and nothing here is marked
-//! `deprecated` except where the released docs text itself deprecates it. The
-//! declarations are pinned to that release, not to the upstream development
-//! branch.
+//! `specifications/admin.openapi.yaml` mounts exactly two operations, `DELETE
+//! /admin/ehr/{ehr_id}` and `DELETE /admin/ehr/all{?ehr_id*}`. The other three
+//! routes below are our own extension, governed by no ITS-REST operation and
+//! excluded from any conformance-profile claim.
 //!
-//! ## The released surface is two operations
+//! What the released responses declare shapes three properties here:
 //!
-//! `specifications/admin.openapi.yaml` mounts exactly `DELETE
-//! /admin/ehr/{ehr_id}` (`operations/admin_ehr_delete.yaml`) and `DELETE
-//! /admin/ehr/all{?ehr_id*}` (`operations/admin_ehr_delete_all.yaml`), both
-//! tagged `EHR`. The other three routes below (`/admin/template/{template_id}`,
-//! `/admin/query/{qualified_query_name}/{version}`, `/admin/config`) are **OUR
-//! OWN EXTENSION** — no ITS-REST operation governs them — and are excluded from
-//! any conformance-profile claim.
+//! - No released admin response carries a `headers:` block at all, so none is
+//!   declared. The one response header this group emits is the `Allow` on the
+//!   config-gate `405`, which comes from RFC 9110 rather than the openEHR text.
+//! - `Location` is never declared on any route of the group: §"Deprecated
+//!   headers" deprecates it on both `GET` and `DELETE` responses, and every
+//!   route here is one or the other.
+//! - Success is always `204`. Both operations declare a `202` for asynchronous
+//!   execution; every delete here is synchronous, so that branch is never
+//!   produced and is not declared — the served document describes only what this
+//!   server emits.
 //!
-//! ## What the released responses do (and do not) declare
+//! The group is config-gated (`AppConfig::admin.enabled`, default false), and
+//! while off every route answers `405` with the openEHR error body before the
+//! backend is touched. The ground differs per route and each declaration cites
+//! its own: `admin_ehr_delete_all` has released provenance (its own NOTE plus
+//! `responses/405.yaml`), while `admin_ehr_delete` and the three extensions rest
+//! on the cross-cutting "If a method is recognized but not allowed for the
+//! target resource, the response SHOULD be `405 Method Not Allowed`"
+//! (`Requests_and_responses.md` §"HTTP Methods"). Because that `405` comes from
+//! a matched handler, axum's allow-header machinery never runs, so the mandatory
+//! `Allow` (RFC 9110 §15.5.6) is set explicitly, with the empty field value
+//! §10.2.1 defines for a resource "temporarily disabled by configuration".
 //!
-//! - **No response header exists on any released admin response.** Every
-//!   response file the two operations `$ref` —
-//!   `responses/202.yaml`, `responses/204_deleted_hard.yaml`,
-//!   `responses/404.yaml`, `responses/404_unknown_ehr_id.yaml`,
-//!   `responses/405.yaml` — carries a `description:` and nothing else: no
-//!   `headers:` block anywhere. There is therefore no released response header
-//!   to declare on either operation, and none is declared. The ONE response
-//!   header this group emits at all is the `Allow` on the config-gate `405`
-//!   (below), which comes from RFC 9110, not from the openEHR text.
-//! - **`Location` is never declared, on any route of the group.**
-//!   `docs/overview/Requests_and_responses.md` §"Deprecated headers": the
-//!   `Location` response header on `GET` "was an incorrect use of the header,
-//!   and it is now deprecated", and "Similarly, the `Location` response header
-//!   was deprecated from responses of `DELETE` methods." Four routes here are
-//!   `DELETE` and the fifth is a `GET`, so no response of this group slots it.
-//! - **Success is always `204`, never `202`.** Both released operations say:
-//!   "The server may execute this operation asynchronously (e.g. in batches),
-//!   in which case returns status `202 Accepted`. If the deletion is processed
-//!   synchronously and completes successfully, the server returns status `204
-//!   No Content`." Every delete here is synchronous, so `204` is the only
-//!   success and the `202` branch (`responses/202.yaml`: "`202 Accepted` is
-//!   returned when the requested operation has been accepted for processing,
-//!   but processing has not been completed or may not have started (i.e. when
-//!   requests are processed asynchronously).") is NEVER produced. It is
-//!   documented in prose on both operations and deliberately NOT declared as a
-//!   served response — the served document describes only what this server
-//!   emits.
+//! Every released admin operation carries `security: []` and declares no
+//! `401`/`403`, so the branches declared on all five routes are our own design:
+//! everything under `/admin/` is `OperationClass::Admin` to the RBAC gate
+//! ([`crate::extensions::access::authz`]), which runs before the config gate, so
+//! an unauthenticated caller sees `401` and a non-admin principal `403` whether
+//! or not the group is enabled.
 //!
-//! ## `405` when the group is disabled — two different grounds
+//! `parameters/query/ehr_id_Admin.yaml` is `explode: true` and optional, so an
+//! absent or empty list means "delete ALL EHRs"; both the repeated form and a
+//! comma-separated single value are accepted, read from the raw query string for
+//! the reason `admin/dispatch.rs` gives.
 //!
-//! The group is config-gated (`AppConfig::admin.enabled`, default false); when
-//! off EVERY route here answers `405 Method Not Allowed` with the openEHR error
-//! body, uniformly, before the backend is touched (`admin/dispatch.rs`). The
-//! spec ground for that status differs per route and each declaration cites its
-//! own:
-//!
-//! - `admin_ehr_delete_all` has its OWN released provenance — the NOTE in
-//!   `operations/admin_ehr_delete_all.yaml`: "This functionality is intended
-//!   primarily for **development** or **testing** purposes and may be disabled
-//!   in **production** environments, in which case server may respond with `405
-//!   Method Not Allowed`." — with `responses/405.yaml` enumerated ("`405 Method
-//!   Not Allowed` is returned when the service knows the request method, but
-//!   the target resource doesn't support this method (e.g. due to security
-//!   concerns).").
-//! - `admin_ehr_delete` does NOT enumerate `405`, and the three extension
-//!   routes have no released file at all, so the bulk route's NOTE is not their
-//!   ground. Theirs is the cross-cutting overview rule: "If a method is
-//!   recognized but not allowed for the target resource, the response SHOULD be
-//!   `405 Method Not Allowed` status code"
-//!   (`docs/overview/Requests_and_responses.md` §"HTTP Methods").
-//!
-//! Because that `405` comes from a MATCHED handler, axum's allow-header
-//! machinery (which only decorates a *method fallback*) never runs, so the
-//! `Allow` RFC 9110 §15.5.6 makes mandatory on every `405` is set explicitly —
-//! with the EMPTY field value RFC 9110 §10.2.1 defines for a resource
-//! "temporarily disabled by configuration".
-//!
-//! ## Authorization is our own design
-//!
-//! Every released admin operation carries `security: []`
-//! (`specifications/admin.openapi.yaml`) and declares no `401`/`403`, and the
-//! overview only says services "SHOULD implement and support an HTTP
-//! Authentication and Authorization framework, though this specification does
-//! not mandate a specific authentication scheme"
-//! (`docs/overview/Requests_and_responses.md` §"Authentication and
-//! authorization"). The `401`/`403` branches declared on all five routes are
-//! therefore OUR OWN design — no openEHR spec governs them: everything under
-//! `/admin/` is classified `OperationClass::Admin` by the RBAC gate
-//! ([`crate::extensions::access::authz`]), which runs before the config gate,
-//! so an unauthenticated caller sees `401` and a non-admin principal `403`
-//! whether or not the group is enabled.
-//!
-//! ## The `ehr_id` query form
-//!
-//! `parameters/query/ehr_id_Admin.yaml` is `in: query`, `style: form`,
-//! `explode: true`, and "An optional parameter to perform the operation on a
-//! subset of EHRs" — so an ABSENT or empty list means "delete ALL EHRs"
-//! (`admin_ehr_delete_all.yaml`: "Deletes all or multiple EHRs, or a specified
-//! subset of EHRs identified using the `ehr_id` query parameter."). Both the
-//! exploded/repeated form (`?ehr_id=a&ehr_id=b`, which is what `explode: true`
-//! means) and a comma-separated single value (`?ehr_id=a,b`) are accepted.
-//! Reading the list straight from the RAW query string is deliberate, not an
-//! oversight: the generated `AdminEhrDeleteAllParams.ehr_id` is an
-//! `Option<String>` that the type-directed params deserializer collapses a
-//! repeated parameter into — the reasoning is spelled out at the
-//! `admin_ehr_delete_all` arm of `admin/dispatch.rs`.
-//!
-//! NOTE (path): the generated `admin_ehr_delete_all` route carries an RFC 6570
-//! query-expansion suffix (`/admin/ehr/all{?ehr_id*}`) that is not part of the
-//! resource path; the mounted and documented path is the plain
-//! `/admin/ehr/all` (the `ehr_id` list is read from the query string), which is
-//! the normalization [`crate::api::normalize_path`] applies to every generated
-//! template.
+//! NOTE: the generated `admin_ehr_delete_all` route carries an RFC 6570
+//! query-expansion suffix that is not part of the resource path, so the mounted
+//! and documented path is the plain `/admin/ehr/all` — the normalization
+//! [`crate::api::normalize_path`] applies to every generated template.
 
 #![expect(
     clippy::disallowed_types,

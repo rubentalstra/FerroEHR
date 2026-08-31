@@ -8,68 +8,44 @@
 //!
 //! Each `#[utoipa::path]` handler single-sources its route and its `OpenAPI`
 //! path, then forwards to the demographic group dispatcher
-//! ([`super::dispatch::dispatch`]) through [`guarded_dispatch`] — so the wire behaviour
-//! is identical to the former table-driven `mount()` adapter (same
-//! `EHR_ACCESS` gate, ABAC PEP, and ATNA audit tagging).
+//! ([`super::dispatch::dispatch`]) through [`guarded_dispatch`], so the
+//! `EHR_ACCESS` gate, the ABAC PEP and the ATNA audit tagging apply uniformly.
 //!
-//! ## Release state
-//!
-//! The Demographic API is `DEVELOPMENT`-state within ITS-REST Release-1.1.0 —
-//! "This specification is in the `DEVELOPMENT` state"
-//! (`docs/specs/openehr/ITS-REST/specifications/docs/demographic/Description.md`
-//! §Status), and its `Preface.md` §Conformance is `tbd.`. That is a **reporting
-//! qualifier only**: the BCP-14 requirement force of the released text is not
-//! state-qualified, so every MUST/SHOULD below binds exactly as it does on a
-//! STABLE group, and nothing here is marked `deprecated` except where the
-//! released docs text itself deprecates it. The declarations are pinned to that
-//! release, not to the upstream development branch.
-//!
-//! ## Where the declarations come from
+//! The Demographic API is `DEVELOPMENT`-state within ITS-REST Release-1.1.0
+//! (`docs/demographic/Description.md` §Status). That is a reporting qualifier
+//! only: the BCP-14 requirement force of the released text is not
+//! state-qualified, so every MUST and SHOULD below binds as it would on a STABLE
+//! group, and the declarations are pinned to that release rather than to the
+//! upstream development branch.
 //!
 //! The five party CRUD quintets are byte-identical across the kinds on the
-//! released wire, so each kind's declaration mirrors the same
-//! `operations/person_{create,get,update,delete}.yaml` + `$ref`d
-//! responses/parameters/headers, differing only in the RM type and its own
-//! `headers/Location_{PERSON,AGENT,GROUP,ORGANISATION,ROLE}.yaml`. The
-//! `versioned_party_*` and `demographic_contribution_*` families are declared
-//! from their own operation files, and the sixteen `ITEM_TAG` operations from
-//! theirs (five more byte-identical typed quintets plus the space-wide
-//! `demographic_tags_get.yaml` — see that section's own preamble, which carries
-//! the family-wide rules: canonical-JSON only, no change control, and the
-//! our-own-design `owner_id`). Everything the released files leave open is
-//! filled from the RELEASED overview chapters first (the docs text wins every
-//! conflict; the released OAS grounds only what the docs text leaves silent):
-//! `docs/overview/Requests_and_responses.md` (the weak `W/` `ETag` MUST, the
-//! `Prefer` triad + `Preference-Applied`, the committal-header
-//! `openehr-version`/`openehr-audit-details` MUST-accept rule, the `If-Match`
-//! `400`/`412` rules, and §Location's MUST-NOT on `GET`) and
-//! `docs/overview/Resources.md` (the `415`/`406` format MUSTs).
+//! released wire, so each kind mirrors the same
+//! `operations/person_{create,get,update,delete}.yaml` and its `$ref`d
+//! components, differing only in the RM type and its own `Location_*` header.
+//! The `versioned_party_*`, `demographic_contribution_*` and `ITEM_TAG`
+//! families are declared from their own operation files. Everything those files
+//! leave open is filled from the released overview chapters, the docs text
+//! winning every conflict: `Requests_and_responses.md` (the weak `W/` `ETag`
+//! MUST, the `Prefer` triad, the committal-header MUST-accept rule, the
+//! `If-Match` `400`/`412` rules, §Location's MUST-NOT on `GET`) and
+//! `Resources.md` (the `415`/`406` format MUSTs). Two consequences show up on
+//! every declaration:
 //!
-//! Two consequences are visible on every declaration below:
-//!
-//! - **`Location` is never declared on a read or a delete.** The released
-//!   `200_PERSON_retrieved.yaml`, `204_version_deleted.yaml`, `412_PERSON.yaml`
-//!   and `409_PERSON_with_uid_based_id.yaml` all slot
-//!   `headers/Location_deprecated.yaml`, and §Location says the header "MUST NOT
-//!   be used to indicate an alternate representation of an existing resource
-//!   (e.g. via `GET` method)" and "MUST ONLY be used for resource creation
-//!   (e.g., `201 Created`) or redirect responses". Those slots are therefore
-//!   left undeclared rather than declared-as-deprecated.
-//! - **Party resources are canonical-only.** The released operations reference
-//!   `parameters/header/Accept_LOCATABLE.yaml`, whose enum admits the two
-//!   Simplified MIME types — but a PARTY is not templated and
-//!   `Requests_and_responses.md` §openehr-template-id scopes the only
+//! - `Location` is never declared on a read or a delete. The released responses
+//!   slot `headers/Location_deprecated.yaml`, and §Location confines the header
+//!   to "resource creation (e.g., `201 Created`) or redirect responses", so
+//!   those slots are left undeclared rather than declared-as-deprecated.
+//! - Party resources are canonical-only. The released operations reference
+//!   `Accept_LOCATABLE.yaml`, whose enum admits the Simplified MIME types, but a
+//!   PARTY is not templated and §openehr-template-id scopes the only
 //!   template-naming header to "committing COMPOSITION", so a Simplified party
-//!   payload has no way to name the template it would have to be expanded
-//!   against. OUR handling of that gap (the released text fixes no other): the
-//!   Simplified types are refused on every party route — a Simplified
+//!   payload cannot name the template it would be expanded against. Our handling
+//!   of that gap, which the released text does not fix: a Simplified
 //!   `Content-Type` is `415` and a Simplified-only `Accept` is `406`, the two
-//!   MUSTs `Resources.md` §"Simplified Formats" states for a format the service
-//!   cannot process/fulfil ([`super::party`] runs `guard_non_templated` on every
-//!   party operation).
+//!   MUSTs `Resources.md` §"Simplified Formats" states.
 //!
-//! The own-design `PARTY_RELATIONSHIP` extension is *not* here — it lives in
-//! [`super::relationship`] (no ITS-REST operation governs it).
+//! The own-design `PARTY_RELATIONSHIP` extension lives in
+//! [`super::relationship`]; no ITS-REST operation governs it.
 
 #![expect(
     clippy::disallowed_types,
@@ -86,10 +62,10 @@ use crate::api::guarded_dispatch;
 use crate::state::AppState;
 
 /// The standard Demographic API group as a native `utoipa-axum` router.
-/// Group-relative paths (nested under the configured `base_path`); every
+///
+/// Paths are group-relative, nested under the configured `base_path`, and every
 /// operation runs through [`guarded_dispatch`] with the demographic group
-/// [`dispatch`](super::dispatch::dispatch), so the wire behaviour is identical to the
-/// former table-driven `mount` adapter.
+/// [`dispatch`](super::dispatch::dispatch).
 pub(crate) fn routes() -> OpenApiRouter<AppState> {
     OpenApiRouter::new()
         .routes(routes!(agent_create))

@@ -9,19 +9,16 @@
 //! REST layer wraps it in [`RestError`] so handlers can use `?` and every error
 //! leaves the server as a structured JSON body.
 //!
-//! ONE body shape, uniform across every non-2xx (adjudicated on #2604):
-//! `{ "error", "message", "validationErrors" }` — the openEHR `Error`
-//! object's members
-//! (`docs/specs/openehr/ITS-REST/specifications/schemas/others/Error.yaml`:
-//! `required: [message, validationErrors]`, additional members tolerated)
-//! plus our `error` reason-phrase extra. A semantic-validation failure
-//! ([`ApiError::ValidationFailed`], HTTP `422`) populates the list with its
-//! `"<path>: <message>"` violations; every other error carries it empty.
+//! One body shape, uniform across every non-2xx:
+//! `{ "error", "message", "validationErrors" }` — the openEHR `Error` object's
+//! members (`schemas/others/Error.yaml`: `required: [message,
+//! validationErrors]`, additional members tolerated) plus our `error`
+//! reason-phrase extra. A semantic-validation failure populates the list with
+//! its `"<path>: <message>"` violations; every other error carries it empty.
 //!
-//! NOTE: the released assignment is narrow — only the OAS `400.yaml` /
-//! `400_CONTRIBUTION.yaml` attach `Error.yaml`, the docs text makes the body
-//! a MAY with no shape, and `422.yaml` declares no content at all — so the
-//! uniform shape beyond the 400 surface is our own design, flagged here.
+//! NOTE: only the OAS `400.yaml` / `400_CONTRIBUTION.yaml` attach `Error.yaml`
+//! and the docs text makes the body a MAY with no shape, so the uniform shape
+//! beyond the 400 surface is our own design.
 
 #![allow(
     clippy::disallowed_types,
@@ -43,35 +40,32 @@ use openehr_its::rest::runtime::ApiError;
 #[derive(Debug)]
 pub struct RestError(pub ApiError);
 
-/// The client-visible message of a server-side fault (`500`) raised inside the
-/// protocol adapter. Deliberately opaque, for the same reason the platform's
-/// own 500-class message is: a codec/serializer diagnostic names Rust types,
-/// RM element names and parser offsets — server-internal detail the client can
-/// neither act on nor be trusted with. The detail rides one structured
-/// `tracing` record instead ([`internal_fault`]). ITS-REST overview §HTTP
-/// status codes fixes the `{ error, message }` shape but not the wording; the
-/// opacity is our own design.
+/// The client-visible message of a server-side fault raised inside the protocol
+/// adapter.
+///
+/// Deliberately opaque: a codec or serializer diagnostic names Rust types, RM
+/// element names and parser offsets, which the client can neither act on nor be
+/// trusted with, so the detail rides a structured `tracing` record instead
+/// ([`internal_fault`]). The overview fixes the body shape but not the wording;
+/// the opacity is our own design.
 pub(crate) const INTERNAL_MESSAGE: &str = "the server encountered an internal error";
 
-/// Record an adapter-side fault on the trace record and return the curated
+/// Records an adapter-side fault on the trace record and returns the curated
 /// opaque `500` [`ApiError`] its body carries.
 ///
-/// `context` names the step that failed (a static call-site label); `detail` is
-/// the raw diagnostic — a serde error, an XML codec failure, a middleware error
-/// — which is written to `tracing` and NEVER to the wire.
+/// `context` names the step that failed; `detail` is the raw diagnostic, which
+/// is written to `tracing` and never to the wire.
 pub(crate) fn internal_fault(context: &'static str, detail: &dyn std::fmt::Display) -> ApiError {
     tracing::error!(context, error = %detail, "protocol adapter: internal fault → 500");
     ApiError::Internal(INTERNAL_MESSAGE.to_owned())
 }
 
-/// Record an adapter-side fault AND its whole cause chain on the trace record,
-/// and return the curated opaque `500` [`ApiError`] its body carries.
+/// Records an adapter-side fault and its whole cause chain on the trace record,
+/// and returns the curated opaque `500` [`ApiError`] its body carries.
 ///
-/// The sibling of [`internal_fault`] for a fault that carries a
-/// [`std::error::Error`] source: the `cause` field is the walked
-/// [`std::error::Error::source`] chain ([`ErrorChain`]), which is the only place
-/// the underlying driver/codec diagnosis is readable — it never reaches the
-/// wire.
+/// The sibling of [`internal_fault`] for a fault carrying a
+/// [`std::error::Error`] source: the `cause` field is the walked chain
+/// ([`ErrorChain`]), the only place the underlying diagnosis is readable.
 pub(crate) fn internal_fault_caused(
     context: &'static str,
     error: &(dyn std::error::Error + 'static),
@@ -96,23 +90,21 @@ impl From<ApiError> for RestError {
 }
 
 impl From<VersionIdError> for RestError {
-    /// A malformed `uid_based_id` / `version_uid` wire value is a `400`: the
-    /// platform decoder ([`ferroehr::versioning::object_version_id`]) already
-    /// classifies *why* the identifier was rejected, and its own
-    /// [`ApiError`] mapping fixes the status — the adapter only lifts it into
-    /// the response wrapper.
+    /// A malformed `uid_based_id` or `version_uid` wire value is a `400`: the
+    /// platform decoder ([`ferroehr::versioning::object_version_id`]) classifies
+    /// why it was rejected and its own [`ApiError`] mapping fixes the status, so
+    /// the adapter only lifts it into the response wrapper.
     fn from(e: VersionIdError) -> Self {
         Self(ApiError::from(e))
     }
 }
 
-/// The single SM → HTTP mapping, owned by the protocol adapter: a native [`SmError`]
-/// carries only a `CALL_STATUS_TYPE`, and this adapter turns its status into the
-/// ITS-REST 1.1.0 status code. The wire oracle (ITS-REST) decides each row;
-/// where the SM name and the wire disagree, the wire's status wins here. Living
-/// in `ferroehr-rest` keeps `ferroehr-sm` protocol-free (no `openehr_its::rest`
-/// dependency). (A free function, not `impl From<SmError> for ApiError`, because
-/// both types are foreign to this crate — the orphan rule forbids that impl.)
+/// Maps an [`SmError`]'s `CALL_STATUS_TYPE` onto its ITS-REST 1.1.0 status code.
+///
+/// The wire oracle decides each row: where the SM name and the wire disagree,
+/// the wire's status wins. A free function rather than
+/// `impl From<SmError> for ApiError`, because both types are foreign to this
+/// crate and the orphan rule forbids that impl.
 #[must_use]
 pub(crate) fn sm_api_error(e: SmError) -> ApiError {
     use CallStatusType as S;
@@ -132,8 +124,6 @@ pub(crate) fn sm_api_error(e: SmError) -> ApiError {
         | S::SubjectIdDoesNotExist
         | S::VersionedCompositionDoesNotExist => ApiError::NotFound(message),
         S::VersionMismatch => ApiError::PreconditionFailed(message),
-        // The specific conflicts plus the storage-classified generic conflict
-        // (integrity/serialization) all map to `409`.
         S::EhrCreateFailDuplicateId
         | S::CompositionAlreadyExists
         | S::EhrForSubjectAlreadyExists
@@ -146,9 +136,8 @@ pub(crate) fn sm_api_error(e: SmError) -> ApiError {
         | S::DefinitionUnknown
         | S::ContentInvalid => ApiError::Unprocessable(message),
         S::NotImplemented => ApiError::NotImplemented,
-        // Backend resource exhaustion (pool acquire timeout; our overload
-        // contract, spec-silent — RFC 9110 §15.6.4 is the HTTP authority) → 503.
-        // `RestError::into_response` adds the `Retry-After` hint for any 503.
+        // NOTE: no openEHR spec governs backend resource exhaustion — our own
+        // overload contract, on RFC 9110 §15.6.4 as the HTTP authority.
         S::ServiceOverloaded => ApiError::ServiceUnavailable(message),
         // `success` is not an error; mapping it is defensively a 500.
         S::Success | S::FileNotWritable | S::Exception => ApiError::Internal(message),
@@ -162,45 +151,38 @@ impl From<SmError> for RestError {
 }
 
 impl From<ServiceError> for RestError {
-    /// Map a service failure straight onto the wire error, preserving the
-    /// structured per-path/per-code violations of
-    /// [`ServiceError::ValidationFailed`] (the ITS-REST `Error` object) that the
-    /// `SmError` bridge collapses into a flat message. Used by the wire methods
-    /// that surface validation codes directly (the ADL2 upload).
+    /// Maps a service failure straight onto the wire error, preserving the
+    /// per-path violations of [`ServiceError::ValidationFailed`] that the
+    /// `SmError` bridge collapses into a flat message.
     fn from(e: ServiceError) -> Self {
         Self(ApiError::from(e))
     }
 }
 
-/// The ONE JSON error body this server emits, uniform across every non-2xx.
+/// The one JSON error body this server emits, uniform across every non-2xx.
 ///
-/// The released assignment is narrow (adjudicated on #2604): only the OAS
-/// `responses/400.yaml` / `400_CONTRIBUTION.yaml` attach
-/// `schemas/others/Error.yaml` (`required: [message, validationErrors]`,
-/// additional members tolerated) to a 400 JSON body, and the docs text
-/// (`Requests_and_responses.md` §HTTP status codes) makes the body itself a
-/// MAY with no shape assignment — the `{message, code, errors}` block there
-/// is an example. Every other status's body is assigned by no source — our
-/// own design, kept uniform so a client parses one shape everywhere; `error`
-/// (the reason phrase) is our extra member on all of them.
+/// The released assignment is narrow: only the OAS `responses/400.yaml` and
+/// `400_CONTRIBUTION.yaml` attach `schemas/others/Error.yaml` to a 400 body, and
+/// `Requests_and_responses.md` §HTTP status codes makes the body itself a MAY
+/// with no shape. Every other status's body is our own design, kept uniform so a
+/// client parses one shape everywhere, with `error` as our extra member.
 #[derive(Debug, Serialize)]
 struct ErrorBody {
     /// Machine-readable status label (the reason phrase, e.g. `Not Found`).
     error: String,
     /// Human-readable detail.
     message: String,
-    /// Per-path violations (`"<path>: <message>"`); empty when the failure
-    /// carries none — always emitted, so the 400 surface satisfies
-    /// `Error.yaml`'s required member list.
+    /// Per-path violations (`"<path>: <message>"`), always emitted so the 400
+    /// surface satisfies `Error.yaml`'s required member list.
     #[serde(rename = "validationErrors")]
     validation_errors: Vec<String>,
 }
 
-/// Render an arbitrary status as the `{ error, message }` openEHR error body.
-/// Used for the method-status responses (`405`/`501`) that have no dedicated
-/// [`ApiError`] variant (the contract's `ApiError` cannot represent `405`), and
-/// for the transport-layer statuses (`408`/`413`) whose middleware default body
-/// is aligned onto this shape ([`crate::router()`]).
+/// Renders an arbitrary status as the `{ error, message }` openEHR error body.
+///
+/// Used for the method-status responses no [`ApiError`] variant can represent,
+/// and for the transport-layer statuses whose middleware default body is aligned
+/// onto this shape ([`crate::router()`]).
 pub(crate) fn status_error_response(status: StatusCode, message: &str) -> Response {
     let body = ErrorBody {
         error: status.canonical_reason().unwrap_or("Error").to_owned(),
@@ -216,35 +198,21 @@ pub(crate) fn status_error_response(status: StatusCode, message: &str) -> Respon
     resp
 }
 
-// ── HTTP-method status discipline (overview §HTTP Methods) ──────────────────
-// "A server receiving an unrecognized or unimplemented method SHOULD respond
-// with the `501 Not Implemented` status code. If a method is recognized but not
-// allowed for the target resource, the response SHOULD be `405 Method Not
-// Allowed`." [`method_not_allowed_handler`] is the API router's
-// `method_not_allowed_fallback`, rendering the openEHR `{ error, message }`
-// body with the `Allow` RFC 9110 §15.5.6 mandates; a recognised but
-// unimplemented *operation* answers `501` via `ApiError::NotImplemented`.
-// NOTE: no released text can be honoured for an *unrecognized method* here —
-// axum exposes no such seam — so it is answered `405`, itself a predefined code
-// in the spec's own status table; the rationale lives in `crate::router`.
+// NOTE: overview §HTTP Methods asks for `501` on an unrecognized method, which
+// axum exposes no seam for, so it is answered `405` — itself a predefined code
+// in the spec's own status table.
 
 /// Axum fallback for a request whose method is not served by the matched
-/// resource → `405 Method Not Allowed` (overview §HTTP Methods) with the
-/// openEHR `{ error, message }` body.
+/// resource: a `405` (overview §HTTP Methods) with the openEHR error body.
 ///
-/// The mandatory `Allow` header (RFC 9110 §15.5.6) is **supplied by axum, not
-/// here**, and deliberately so: only the router knows the matched path's method
-/// set, and axum decorates a method-fallback response with the `Allow` it
-/// accumulated from the route's registered methods — but only when the response
-/// does not already carry one (`axum::routing::Route`'s `set_allow_header`;
-/// <https://docs.rs/axum/0.8/axum/struct.Router.html#method.method_not_allowed_fallback>).
-/// Setting a hand-built `Allow` here would therefore *replace* the accurate
-/// per-route set with a guess. The header's presence is pinned by
-/// `app/ferroehr-rest/tests/http.rs`.
-///
-/// A `405` produced from a **matched** handler (the config-gated admin group)
-/// never reaches this decoration and must carry its own `Allow` — see
-/// [`method_not_allowed_response`].
+/// The mandatory `Allow` header (RFC 9110 §15.5.6) is supplied by axum, not
+/// here: only the router knows the matched path's method set, and axum decorates
+/// a method-fallback response with the `Allow` it accumulated unless the
+/// response already carries one
+/// (<https://docs.rs/axum/0.8/axum/struct.Router.html#method.method_not_allowed_fallback>),
+/// so a hand-built value would replace the accurate set with a guess. A `405`
+/// from a matched handler never reaches that decoration and must carry its own
+/// — see [`method_not_allowed_response`].
 pub(crate) async fn method_not_allowed_handler() -> Response {
     status_error_response(
         StatusCode::METHOD_NOT_ALLOWED,
@@ -252,20 +220,14 @@ pub(crate) async fn method_not_allowed_handler() -> Response {
     )
 }
 
-/// Render a `405 Method Not Allowed` **from a matched handler**, with the
-/// openEHR `{ error, message }` body and an explicit `Allow` header.
+/// Renders a `405 Method Not Allowed` from a matched handler, with the openEHR
+/// error body and an explicit `Allow` header.
 ///
-/// RFC 9110 §15.5.6: "The origin server MUST generate an Allow header field in
-/// a 405 response containing a list of the target resource's currently
-/// supported methods." A handler-produced `405` bypasses axum's allow-header
-/// machinery entirely (that decoration only runs on the *method fallback*, i.e.
-/// when no method route matched), so the caller states the set itself.
-///
-/// `allow` is the RFC 9110 §10.2.1 `Allow = #method` field value — a
-/// comma-separated method list, or the empty string where the resource
-/// currently supports no method at all ("An empty Allow field value indicates
-/// that the resource allows no methods, which might occur in a 405 response if
-/// the resource has been temporarily disabled by configuration").
+/// RFC 9110 §15.5.6 makes `Allow` mandatory on a `405`, and a handler-produced
+/// one bypasses axum's allow-header machinery, which runs only on the method
+/// fallback, so the caller states the set itself. `allow` is the §10.2.1
+/// `Allow = #method` field value: a comma-separated method list, or the empty
+/// string where the resource "has been temporarily disabled by configuration".
 ///
 /// # Panics
 /// If `allow` is not a valid header field value — impossible for the method
@@ -280,13 +242,10 @@ pub(crate) fn method_not_allowed_response(allow: &'static str, message: &str) ->
 
 impl IntoResponse for RestError {
     fn into_response(self) -> Response {
-        // 408 Request Timeout: a query-execution timeout is signalled by the
-        // platform as an `exception` `SmError` whose message is prefixed with
-        // [`QUERY_TIMEOUT_TAG`] (mapped to `ApiError::Internal` by `sm_api_error`).
-        // Rendered here as `408` with the clean detail
-        // (`Requests_and_responses.md` §HTTP status codes, row `408` — "Request
-        // maximum execution time is reached, therefore the server aborted the
-        // request"; `responses/408_Query.yaml`), stripping the sentinel.
+        // A query-execution timeout arrives as an `exception` `SmError` whose
+        // message carries [`QUERY_TIMEOUT_TAG`], and is rendered as the `408` of
+        // `Requests_and_responses.md` §HTTP status codes with the sentinel
+        // stripped.
         if let ApiError::Internal(raw) = &self.0
             && let Some(detail) = raw.strip_prefix(QUERY_TIMEOUT_TAG)
         {
@@ -294,10 +253,6 @@ impl IntoResponse for RestError {
         }
         let status = self.0.status();
         let message = self.0.to_string();
-        // One uniform body (see [`ErrorBody`]): a semantic-validation failure
-        // populates `validationErrors` with its per-path violations
-        // (`schemas/others/Error.yaml`); every other error carries the empty
-        // list.
         let validation_errors = if let ApiError::ValidationFailed(errors) = &self.0 {
             errors
                 .iter()
@@ -317,10 +272,8 @@ impl IntoResponse for RestError {
             header::CONTENT_TYPE,
             HeaderValue::from_static("application/json"),
         );
-        // Every `503 Service Unavailable` carries a `Retry-After` hint: the
-        // condition is transient by definition (RFC 9110 §15.6.4). This covers
-        // both the overload-shed path and a storage-classified pool-exhaustion
-        // `503`; no openEHR spec governs overload — our own design.
+        // A `503` condition is transient by definition (RFC 9110 §15.6.4), so
+        // every one carries a `Retry-After` hint.
         if status == StatusCode::SERVICE_UNAVAILABLE {
             resp.headers_mut()
                 .insert(header::RETRY_AFTER, HeaderValue::from_static("1"));

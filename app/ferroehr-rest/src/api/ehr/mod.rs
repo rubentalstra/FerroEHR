@@ -1,35 +1,23 @@
 // SPDX-FileCopyrightText: FerroEHR contributors
 // SPDX-License-Identifier: MIT
 
-//! The ITS-REST **ehr API** (Release-1.1.0, STABLE) —
-//! `docs/specs/openehr/ITS-REST/specifications/docs/ehr/` + the
-//! `ehr-*.openapi.yaml` OAS group (generated into `openehr_its::rest`).
+//! The ITS-REST ehr API (Release-1.1.0, STABLE).
 //!
-//! Governing spec: `docs/specs/openehr/ITS-REST/specifications/docs/ehr/`.
+//! Governing spec: `docs/specs/openehr/ITS-REST/specifications/docs/ehr/` and
+//! the `ehr-*.openapi.yaml` OAS group generated into `openehr_its::rest`.
 //!
-//! [`dispatch`] is the operation-id → resource-module router; the 33 EHR-group
-//! operations are implemented in one module per spec resource boundary
-//! (`docs/specs/openehr/ITS-REST/specifications/docs/ehr/`,
-//! `specifications/operations/*.yaml`):
+//! [`dispatch`] routes an operation id to one of seven resource modules, one per
+//! spec resource boundary: [`ehr_resource`], [`ehr_status`],
+//! [`versioned_ehr_status`], [`composition`], [`versioned_composition`],
+//! [`directory`] and [`contribution`].
 //!
-//! - [`ehr_resource`] — the `EHR` resource + EHR-level item tags
-//! - [`ehr_status`] — the `EHR_STATUS` resource + its item tags
-//! - [`versioned_ehr_status`] — the `VERSIONED_EHR_STATUS` container
-//! - [`composition`] — the `COMPOSITION` resource + its item tags
-//! - [`versioned_composition`] — the `VERSIONED_COMPOSITION` container
-//! - [`directory`] — the `DIRECTORY` (FOLDER) resource
-//! - [`contribution`] — the `CONTRIBUTION` resource
-//!
-//! Each arm rebuilds the operation's `*Params`, decodes wire strings into the
-//! SM catalog's native argument types (`uuid::Uuid`,
-//! [`openehr_base::prelude::ObjectVersionId`],
-//! [`UpdateVersion`]) via [`crate::overview::version_id`], decodes any body
-//! (RM-typed bodies accept JSON or canonical XML), calls the EHR-core SM catalog
-//! methods on the platform service `S`, and rebuilds a [`ServiceResponse`] (RM
-//! payload + typed [`ResourceMeta`]) from the native result — from which the
-//! `negotiate::*` helpers render the spec's `ETag`/`Location`/`Prefer`
-//! behaviour. The shared write/read/committal/item-tag helpers below back all
-//! seven resource modules.
+//! Each arm rebuilds the operation's `*Params`, decodes wire strings into the SM
+//! catalog's native argument types through [`crate::overview::version_id`],
+//! decodes any body (RM-typed bodies accept JSON or canonical XML), calls the
+//! SM catalog methods on the platform service `S`, and rebuilds a
+//! [`ServiceResponse`] from the result, which the `negotiate::*` helpers render
+//! with the spec's `ETag`/`Location`/`Prefer` behaviour. The shared
+//! write, read, committal and item-tag helpers below back all seven modules.
 
 #![expect(
     clippy::disallowed_types,
@@ -87,21 +75,13 @@ pub(super) const LIFECYCLE_COMPLETE: &str = "532";
 /// with an `ETag`/`Last-Modified` needs (the version id is the object's own
 /// `uid`).
 ///
-/// When the served body is a VERSION envelope (an `ORIGINAL_VERSION`, or an
-/// `IMPORTED_VERSION` whose `uid` is the effected function `item.uid` —
-/// `UML/classes/org.openehr.rm.common.imported_version.adoc` §Functions,
-/// `Post: Result = item.uid`), its
-/// `commit_audit.time_committed` is also read as the `Last-Modified` instant:
-/// ITS-REST overview `Requests_and_responses.md` §"`ETag` and Last-Modified"
-/// — "For openEHR resources, this value should be derived from
-/// `VERSION.commit_audit.time_committed.value`" — and both headers "SHOULD be
-/// included in responses for VERSION, `VERSIONED_OBJECT`, or other resources
-/// that have versioning or unique state identifiers".
+/// When the served body is a VERSION envelope, its `commit_audit.time_committed`
+/// is also read as the `Last-Modified` instant: "For openEHR resources, this
+/// value should be derived from `VERSION.commit_audit.time_committed.value`"
+/// (`Requests_and_responses.md` §"`ETag` and Last-Modified").
 ///
-/// A bare RM body (a COMPOSITION / `EHR_STATUS`, or a `VERSIONED_OBJECT`
-/// container) carries no commit audit; those routes take their metadata from
-/// the service layer instead, which reads the commit instant off the version
-/// row.
+/// A bare RM body carries no commit audit, so those routes take their metadata
+/// from the service layer, which reads the commit instant off the version row.
 fn resource_meta_from(ehr_id: &str, body: &Value) -> Option<ResourceMeta> {
     let uid = body
         .pointer("/uid/value")
@@ -130,34 +110,25 @@ fn commit_instant(body: &Value) -> Option<jiff::Timestamp> {
 /// The canonical-XML root tag for a served VERSION envelope: the document
 /// element the published ITS-XML schemas declare for the resource.
 ///
-/// ITS-REST overview `Resources.md` §"XML Format" requires that "both request
-/// payloads and responses MUST conform to the [published XSDs]", and the
-/// schemas publish exactly one document element for a VERSION —
-/// `<xs:element name="version" type="VERSION"/>`
-/// (the published-element fact is stated once in
-/// `openehr_its::xml::PUBLISHED_ROOTS`, the crate owning the schemas; both
-/// lineages spell it identically). `VERSION` is abstract there, so the
-/// concrete subtype is named by `xsi:type` on that same root rather than by a
-/// root element of its own — the serializer emits it from the declared type
-/// (`openehr_its::xml::declared_abstract_root_type`), which is how an
-/// `IMPORTED_VERSION` stays distinguishable from an `ORIGINAL_VERSION`
-/// (RM common master06 §Version and its Subtypes). Neither published lineage
-/// declares an `original_version` or `imported_version` document element, so
-/// no per-subtype root exists to serve.
+/// `Resources.md` §"XML Format" requires responses to "conform to the
+/// [published XSDs]", and the schemas publish exactly one document element for a
+/// VERSION, spelled identically in both lineages. `VERSION` is abstract there,
+/// so the concrete subtype is named by `xsi:type` on that same root, which is
+/// how an `IMPORTED_VERSION` stays distinguishable from an `ORIGINAL_VERSION`
+/// (RM common master06 §Version and its Subtypes).
 pub(super) const VERSION_ROOT_TAG: &str = "version";
 
-/// Re-inline externalized `DV_MULTIMEDIA` content when the caller asked for it
+/// Re-inlines externalized `DV_MULTIMEDIA` content when the caller asked for it
 /// with `?expand_multimedia=true`, verifying each blob's integrity.
 ///
 /// Every read that can return externalized content routes through here, because
-/// externalization is applied on the way IN by the generic versioning path —
-/// so a `DV_MULTIMEDIA` can leave the database from a COMPOSITION, an
-/// `EHR_STATUS` or a FOLDER alike, and a read that could not restore it would
-/// leave clinical content in the object store with no API that returns it.
+/// externalization is applied on the way in by the generic versioning path, so a
+/// read that could not restore it would leave clinical content in the object
+/// store with no API that returns it.
 ///
-/// NOTE: no openEHR spec governs this — our own design/extension; the
-/// parameter is read off the raw query string (the `template_id` precedent)
-/// rather than a generated params struct, since it is not in the contract.
+/// NOTE: no openEHR spec governs this — our own design/extension, so the
+/// parameter is read off the raw query string rather than a generated params
+/// struct.
 ///
 /// # Errors
 /// Propagates the service's failure when a referenced blob cannot be fetched or
@@ -217,16 +188,13 @@ pub(crate) fn committer_proxy() -> PartyProxy {
     PartyProxy::PartyIdentified(PartyIdentified::PartyIdentified(party))
 }
 
-/// Synthesize the SM `UPDATE_VERSION` commit envelope for a bare-RM-body write
-/// route (`POST`/`PUT` of a `COMPOSITION/EHR_STATUS/FOLDER)`: the RM object is the
-/// `data`, the `If-Match` is the `preceding_version_uid`, and the audit carries
-/// the change type + committer.
+/// Synthesizes the SM `UPDATE_VERSION` commit envelope for a bare-RM-body write
+/// route: the RM object is the `data`, the `If-Match` is the
+/// `preceding_version_uid`, and the audit carries the change type and committer.
 ///
-/// The server defaults (lifecycle `532|complete|`, the verb-derived change type,
-/// the authenticated committer) are then **merged** with any
-/// `openEHR-VERSION.*` / `openEHR-AUDIT_DETAILS.*` committal request headers the
-/// client supplied — the ITS-REST MUST (overview §"openEHR-VERSION and
-/// openEHR-AUDIT_DETAILS"; `crate::overview::committal`).
+/// The server defaults are then merged with any committal request headers the
+/// client supplied, the ITS-REST MUST of overview §"openehr-version and
+/// openehr-audit-details" (`crate::overview::committal`).
 ///
 /// # Errors
 /// [`ApiError::BadRequest`] when a committal header carries a malformed
@@ -256,10 +224,11 @@ pub(super) fn mk_update_version<T>(
     Ok(uv)
 }
 
-/// Decompose an [`ObjectVersionId`] into the `(versioned-object uuid,
-/// version_tree_id)` pair the SM `*_at_version` reads take. Branch version ids
-/// are first-class (RM common master06 §The 'Virtual Version Tree'; the former trunk-only
-/// rejection is retired).
+/// Decomposes an [`ObjectVersionId`] into the `(versioned-object uuid,
+/// version_tree_id)` pair the SM `*_at_version` reads take.
+///
+/// Branch version ids are first-class (RM common master06 §The 'Virtual Version
+/// Tree').
 /// Verify a version-addressed read served the VERSION the path named: the
 /// addressed `version_uid` must equal the served body's `uid.value` — the
 /// stored full `object_id :: creating_system_id :: version_tree_id` identity
@@ -377,25 +346,18 @@ pub(super) struct PendingItemTags {
     version: Option<Vec<UpdateItemTag>>,
 }
 
-/// Parse and validate both wrapper headers BEFORE the content write.
+/// Parses and validates both wrapper headers before the content write.
 ///
-/// The release gives the wrapper headers no atomicity semantics at all
-/// (`Requests_and_responses.md` §openehr-item-tag and openehr-version-item-tag
-/// says what the header MEANS and nothing about what happens when it cannot be
-/// honoured), so the ordering is ours. We refuse first: a
-/// header defect the server can detect without touching storage — a keyless
-/// entry, a key with surrounding whitespace, a set-but-empty value — rejects
-/// the whole request while NOTHING has been committed. Applying the tags after
-/// the commit and failing there would answer 4xx for a request whose VERSION is
-/// already durable and whose response carries no `ETag`/`Location`, so the
-/// client's only recovery is to re-POST and duplicate clinical content.
+/// The release gives the wrapper headers no atomicity semantics, so the ordering
+/// is ours: a header defect the server can detect without touching storage
+/// rejects the whole request while nothing has been committed, because failing
+/// after the commit would answer 4xx for a request whose VERSION is already
+/// durable and whose response carries no `ETag`/`Location`.
 ///
-/// The tag WRITE itself stays after the commit, and must: the tags target the
-/// version the commit mints, and RM common `master07-tags.adoc` (via RM ehr
-/// `master04-ehr_package.adoc` §Tags) forbids the tag from participating in the
-/// content's change control — "they do not cause re-versioning of the content".
-/// So this splits the JUDGEMENT (before) from the WRITE (after), which is the
-/// only split that keeps both properties.
+/// The tag write itself stays after the commit and must: the tags target the
+/// version the commit mints, and RM common `master07-tags.adoc` forbids a tag
+/// from participating in the content's change control — "they do not cause
+/// re-versioning of the content".
 ///
 /// # Errors
 /// [`ApiError::BadRequest`] for a malformed header entry;
@@ -452,29 +414,22 @@ pub(super) struct StoredItemTags {
     version: Option<Vec<ItemTag>>,
 }
 
-/// Echo the stored `ITEM_TAG` lists onto a create/update response — MAY-level
-/// confirmation (`Requests_and_responses.md §…§Usage in Responses`: "Servers
+/// Echoes the stored `ITEM_TAG` lists onto a create/update response: "Servers
 /// MAY include the `openehr-item-tag` or `openehr-version-item-tag` header in
 /// responses to confirm the actual list of `ITEM_TAGs` stored on the server
-/// side").
+/// side" (`Requests_and_responses.md` §Usage in Responses).
 ///
-/// **Each header carries its own target's collection and nothing else**: the
-/// confirmed list is "the actual list … stored" for the target that header
-/// applies to (§"openehr-item-tag and openehr-version-item-tag" — the
-/// `VERSIONED_OBJECT` for `openehr-item-tag`, the VERSION for
-/// `openehr-version-item-tag`), so a response never repeats one target's tags
-/// under the other target's name. A header the request did not carry is not
-/// echoed at all. Rendered via
-/// [`crate::overview::params::emit_item_tag_header`]; an empty list confirms a
-/// clear.
+/// Each header carries its own target's collection and nothing else, so a
+/// response never repeats one target's tags under the other target's name; a
+/// header the request did not carry is not echoed at all, and an empty list
+/// confirms a clear.
 ///
-/// A list that cannot be rendered as an HTTP field value (a tag carrying a
-/// control character, which nothing in the RM bars from a key) omits the
-/// header ENTIRELY rather than emitting an empty
-/// one — an empty `openehr-item-tag` is the release's "remove all `ITEM_TAGs`"
-/// instruction (§Usage in Requests), so echoing one would tell a mirroring
-/// client to wipe the collection this response just confirmed. The echo is a
-/// MAY, so declining to echo is always available; lying is not.
+/// A list that cannot be rendered as an HTTP field value — a tag carrying a
+/// control character, which nothing in the RM bars from a key — omits the header
+/// entirely rather than emitting an empty one: an empty `openehr-item-tag` is
+/// the release's "remove all `ITEM_TAGs`" instruction (§Usage in Requests), so
+/// echoing one would tell a mirroring client to wipe the collection this
+/// response just confirmed. The echo is a MAY, so declining is always available.
 pub(super) fn echo_item_tags(resp: &mut Response, stored: &StoredItemTags) {
     for (name, tags) in [
         (H_ITEM_TAG, stored.object.as_deref()),

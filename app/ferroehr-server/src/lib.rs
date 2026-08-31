@@ -277,21 +277,16 @@ fn mounted_management_endpoints(levels: EndpointLevels) -> String {
 /// Announces the deployment postures that are legal but easy to leave on by
 /// accident, once logging is up.
 ///
-/// The dev-default DSN is announced prominently rather than silently accepted
-/// (never a silent production trap). Permissive CORS is a deliberate
-/// weakening — every origin may read every response — and the kind of setting
-/// switched on for a demo and left on (OWASP REST Security Cheat Sheet). The
-/// HTTPS posture is stated rather than enforced: this server cannot tell
-/// "plaintext because misconfigured" from "plaintext because a TLS-terminating
-/// ingress sits in front", which is the ordinary deployment, so authentication
-/// over plaintext on a routable bind warns loudly and proceeds — the operator
-/// owns the edge.
+/// The dev-default DSN and permissive CORS are announced rather than silently
+/// accepted (OWASP REST Security Cheat Sheet). The HTTPS posture is stated
+/// rather than enforced: this server cannot tell plaintext-because-misconfigured
+/// from plaintext-behind-a-TLS-terminating-ingress, so authentication over
+/// plaintext on a routable bind warns loudly and proceeds.
 /// Assembles the platform service from the resolved config tree.
 ///
-/// Every optional collaborator the service carries is attached here: the audit
-/// sender, the local Audit Record Repository read side (the ITI-81 retrieval,
-/// wired only when auditing AND the store are on), terminology, the subject
-/// proxy, and the multimedia store.
+/// Every optional collaborator is attached here: the audit sender, the local
+/// Audit Record Repository read side (wired only when auditing and the store are
+/// both on), terminology, the subject proxy, and the multimedia store.
 ///
 /// # Errors
 /// Any collaborator whose configuration is enabled but unbuildable — a slim
@@ -323,16 +318,14 @@ fn assemble_service(
     attach_multimedia(service, config)
 }
 
-/// Wires authorization, which is active only when authentication is enabled:
-/// the RBAC gate plus the ABAC engine over the DB-backed attribute resolvers.
+/// Wires authorization, active only when authentication is enabled: the RBAC
+/// gate plus the ABAC engine over the DB-backed attribute resolvers.
 ///
-/// `None` when authentication is off, or when neither authorization layer is
-/// configured.
+/// `None` when authentication is off, or when neither layer is configured.
 ///
 /// # Errors
-/// A misconfigured ABAC block (enabled but unbuildable) aborts BOOT —
-/// configuration that promises fine-grained authorization must never degrade
-/// to authz-off.
+/// An ABAC block that is enabled but unbuildable aborts boot: configuration
+/// promising fine-grained authorization must never degrade to authz-off.
 fn wire_authz(
     config: &ferroehr::config::FerroEhrConfig,
     pool: &PgPool,
@@ -442,11 +435,10 @@ fn warn_boot_postures(config: &ferroehr::config::FerroEhrConfig) {
 /// Connects the pool the deployment's tenancy mode calls for and prepares the
 /// schema.
 ///
-/// Multi-tenant mode swaps in the tenant-scoped pool: every checked-out
-/// connection is stamped with the request's `ferroehr.tenant_id` session GUC,
-/// which the RLS `tenant_isolation` policy reads (no openEHR spec governs
-/// multi-tenancy — our own deployment extension). Single-tenant deployments
-/// keep the plain pool and pay no per-acquire cost.
+/// Multi-tenant mode swaps in the tenant-scoped pool, stamping every checked-out
+/// connection with the request's `ferroehr.tenant_id` session GUC that the RLS
+/// `tenant_isolation` policy reads; single-tenant deployments keep the plain
+/// pool. No openEHR spec governs multi-tenancy — our own deployment extension.
 ///
 /// # Errors
 /// A connection or migration failure, contextualized for the operator.
@@ -512,13 +504,12 @@ fn attach_subject_proxy(
     Ok(service.with_subject_proxy(Arc::new(fhir)))
 }
 
-/// Wires the opt-in `DV_MULTIMEDIA` externalization (the `multimedia` cargo
-/// feature; a slim build refuses an enabled config loudly).
+/// Wires the opt-in `DV_MULTIMEDIA` externalization behind the `multimedia`
+/// cargo feature; a slim build refuses an enabled config loudly.
 ///
-/// A store that is only there to READ BACK already-offloaded blobs (the
-/// integration is off but an endpoint remains) must never stop the server
-/// starting: turning a feature off cannot be a way to break boot. So an
-/// unbuildable store is fatal only when the integration is enabled.
+/// A store kept only to read back already-offloaded blobs must never stop the
+/// server starting, so an unbuildable store is fatal only when the integration
+/// is enabled.
 ///
 /// # Errors
 /// An unbuildable object store while the integration is enabled, or an enabled
@@ -604,9 +595,8 @@ async fn serve(config_path: Option<&Path>, overrides: &[(String, String)]) -> an
     warn_boot_postures(&config);
     let pool = connect_pool(&config).await?;
 
-    // ATNA audit (fail-open at boot). A slim build cannot render the FHIR
-    // `AuditEvent` the store and the ATX:FHIR Feed carry, so an enabled
-    // configuration is refused loudly instead.
+    // Fail-open at boot, except in a slim build, which cannot render the FHIR
+    // `AuditEvent` the store and the ATX:FHIR Feed carry.
     #[cfg(not(feature = "fhir"))]
     ferroehr::system_log::require_fhir_disabled(&config.audit).map_err(|e| anyhow::anyhow!(e))?;
     let audit_config: AuditConfig = config.audit.clone();
@@ -643,8 +633,8 @@ async fn serve(config_path: Option<&Path>, overrides: &[(String, String)]) -> an
 
     telemetry.start_samplers(pool.clone());
 
-    // `/management/env` reports the whole redacted config tree (secrets render
-    // `***` by construction of the Secret type).
+    // `/management/env` reports the whole config tree; secrets render `***` by
+    // construction of the `Secret` type.
     let env_snapshot = Arc::new(serde_json::to_value(&config).unwrap_or(serde_json::Value::Null));
 
     // Version signing (fail-closed at boot for `pgp` without a usable key).
@@ -656,9 +646,9 @@ async fn serve(config_path: Option<&Path>, overrides: &[(String, String)]) -> an
         "version signing configured"
     );
 
-    // The data-authoring identity every commit stamps into `EHR.system_id`,
-    // `AUDIT_DETAILS.system_id`, and `OBJECT_VERSION_ID.creating_system_id`
-    // (`[server] system_id`) — logged so an operator can see the key took.
+    // `[server] system_id` is stamped into `EHR.system_id`,
+    // `AUDIT_DETAILS.system_id` and `OBJECT_VERSION_ID.creating_system_id`;
+    // logged so an operator can see the key took.
     tracing::info!(system_id = %config.server.system_id, "openEHR system identifier");
 
     let audit_enabled = audit_sender.is_some();
@@ -670,9 +660,8 @@ async fn serve(config_path: Option<&Path>, overrides: &[(String, String)]) -> an
         signer,
     )?);
 
-    // FHIR outbound emitter (off by default; carries PHI). Gated on `fhir`:
-    // the outbound module exists only under ferroehr's `fhir` feature (which
-    // itself implies `events` for the broker transport).
+    // Off by default (it carries PHI) and gated on the `fhir` feature, which
+    // itself implies `events` for the broker transport.
     #[cfg(feature = "fhir")]
     let fhir_outbound_handle = if config.fhir.outbound.enabled {
         tracing::info!(
@@ -778,18 +767,16 @@ async fn start_audit(
     }
 }
 
-/// Build the full authorization handle the binary serves with: the RBAC gate
-/// (when `rbac.enabled`) plus the ABAC gate over the boot-built policy engine
-/// (when `abac.enabled`).
+/// Builds the full authorization handle the binary serves with: the RBAC gate
+/// plus the ABAC gate over the boot-built policy engine.
 ///
-/// `None` when neither layer is active (auth-only behaviour). Fine-grained
-/// authorization is our own extension — no openEHR spec governs it (ITS-REST
-/// places authorization out of band).
+/// `None` when neither layer is active. Fine-grained authorization is our own
+/// extension — no openEHR spec governs it (ITS-REST places authorization out of
+/// band).
 ///
 /// # Errors
-/// An ABAC block that is enabled but unbuildable (missing/invalid Cedar
-/// policies, an unbuildable remote-PDP client) — startup must abort rather
-/// than silently run without the promised gate.
+/// An ABAC block that is enabled but unbuildable: startup must abort rather than
+/// silently run without the promised gate.
 pub fn build_authz(
     config: &ferroehr::config::authz::AuthzConfig,
     base_path: &str,

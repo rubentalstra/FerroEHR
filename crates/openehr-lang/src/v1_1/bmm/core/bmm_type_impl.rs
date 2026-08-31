@@ -22,28 +22,19 @@
 //!   a container type (e.g. `ELEMENT` from the type `List<ELEMENT>`), and the
 //!   _root_ type from a generic type (e.g. `Interval` from `Interval<T>`)".
 //!
-//! plus §Classes and Types (the four design-time type meta-types) and the class
-//! definitions under `LANG/docs/UML/classes/`:
-//! `org.openehr.lang.bmm.bmm_classifier.adoc`,
-//! `…bmm.bmm_type.adoc`, `…bmm.bmm_simple_type.adoc`,
-//! `…bmm.bmm_generic_type.adoc`, `…bmm.bmm_container_type.adoc`,
-//! `…bmm.bmm_indexed_container_type.adoc`.
+//! plus §Classes and Types and the class definitions under
+//! `LANG/docs/UML/classes/org.openehr.lang.bmm.bmm_{classifier,type,simple_type,
+//! generic_type,container_type,indexed_container_type}.adoc`.
 //!
-//! This is the **v2.x** generation's surface and only that — the generation
-//! `LANG/docs/bmm/master01-preface.adoc` §History calls "the normative,
-//! tool-implemented version". The v3 development line's own type lattice
-//! (`BMM_PARAMETER_TYPE`, `BMM_SIGNATURE`, `BMM_TUPLE_TYPE`, `BMM_STATUS_TYPE`,
-//! `BMM_EFFECTIVE_TYPE`, `BMM_UNITARY_TYPE`, and its differently-shaped
-//! `BMM_TYPE`/`BMM_SIMPLE_TYPE`/`BMM_GENERIC_TYPE`/`BMM_CONTAINER_TYPE`) lives
-//! beside its own generated types in
-//! [`crate::v1_1::bmm3::core::entity::bmm_type_impl`]; the two generations share no
-//! impl, because they are different classes
-//! (`LANG/docs/bmm3/master00-amendment_record.adoc` SPECLANG-14, "Formalise the
-//! BMM v2/v3 split").
+//! This is the v2.x generation's surface only. The v3 line's own type lattice
+//! lives beside its own generated types in
+//! [`crate::v1_1::bmm3::core::entity::bmm_type_impl`], sharing no impl with this
+//! one, because they are different classes
+//! (`LANG/docs/bmm3/master00-amendment_record.adoc` SPECLANG-14).
 //!
-//! The per-class functions are implemented on the individual generated structs
-//! (which is where the class definitions declare them) and
-//! [`BmmType`]/[`crate::v1_1::bmm::core::bmm_classifier::BmmClassifier`] are pure
+//! The per-class functions are implemented on the individual generated structs,
+//! where the class definitions declare them, and
+//! [`BmmType`]/[`crate::v1_1::bmm::core::bmm_classifier::BmmClassifier`] are
 //! dispatchers over them.
 //!
 //! NOTE: v2's `flattened_type_list` flattens the WHOLE expression, container

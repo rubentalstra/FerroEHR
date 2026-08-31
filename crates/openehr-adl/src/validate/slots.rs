@@ -76,20 +76,11 @@ impl<'a> ParentScan<'a> {
             CObject::ArchetypeSlot(child_slot) => {
                 self.check_slot_identity(child_slot, parent_slot, path);
                 // VDSSM: a specialised slot must narrow the parent slot or be
-                // closed (`master04.5` §`ARCHETYPE_SLOT`), i.e. be a PROPER subset
-                // of its admitted-archetype set. Regex-language subset is
-                // undecidable, so three decidable checks stand in: no
-                // `includes`/`excludes` is no narrowing; one structurally identical
-                // to the parent's is a restatement; and a child `include` naming a
-                // literal archetype id the parent does not admit is a widening.
+                // closed (`master04.5` §`ARCHETYPE_SLOT`), i.e. be a PROPER
+                // subset of its admitted-archetype set. Regex-language subset is
+                // undecidable, so `slot_narrows` stands in with three decidable
+                // checks.
                 let narrows = slot_narrows(child_slot);
-                // VDSSM: a specialised slot must narrow the parent slot or be
-                // closed (`master04.5` §`ARCHETYPE_SLOT`), i.e. be a PROPER subset
-                // of its admitted-archetype set. Regex-language subset is
-                // undecidable, so three decidable checks stand in: no
-                // `includes`/`excludes` is no narrowing; one structurally identical
-                // to the parent's is a restatement; and a child `include` naming a
-                // literal archetype id the parent does not admit is a widening.
                 if !child_slot.is_closed {
                     if !narrows {
                         push_issue(

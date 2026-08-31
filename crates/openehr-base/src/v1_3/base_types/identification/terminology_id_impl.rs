@@ -14,8 +14,7 @@
 //! `Validate` impl below. Released QUERY 1.1.0
 //! (`docs/specs/openehr/QUERY/docs/AQL/master03-syntax.adoc` §Node predicate)
 //! publishes `terminology_id/value='snomed_ct(3.1)'`, which the master05
-//! §Syntaxes production forbids: enforcing it refused openEHR's own example
-//! (#2314).
+//! §Syntaxes production forbids: enforcing it refused openEHR's own example.
 
 use super::terminology_id::TerminologyId;
 
@@ -86,7 +85,7 @@ mod tests {
 
     /// The accessors read every shape a released component publishes as a
     /// `TERMINOLOGY_ID.value`, including the two the withdrawn production
-    /// refused (#2314).
+    /// refused.
     #[test]
     fn released_shapes_decompose() {
         // QUERY 1.1.0 `master03-syntax.adoc:239` spells this as a

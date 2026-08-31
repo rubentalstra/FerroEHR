@@ -4,14 +4,9 @@
 
 //! RM-level validation glue (hand-written spec behaviour).
 //!
-//! The module is preserved
-//! across `openehr-codegen` regeneration — the generator does not emit or overwrite it, so
-//! the generator's `declare_hand_written_modules` keeps it and `lib.rs`
-//! auto-declares `pub mod validate;`.
-//!
-//! Everything here judges a canonical-JSON RM node **as a value** — no codec,
-//! no template, no wire context — and reports [`InvariantViolation`]s relative
-//! to that node:
+//! Everything here judges a canonical-JSON RM node AS A VALUE — no codec, no
+//! template, no wire context — and reports [`InvariantViolation`]s relative to
+//! that node:
 //!
 //! 1. **The allocation-free fast-path RM class-invariant check**
 //!    ([`try_fast_validate`] → the private `fast` path) over a live canonical-JSON node, plus
@@ -26,7 +21,7 @@
 //!    the fast/typed core pair so the equivalence property between those two
 //!    stays exactly the core property. (The `x /= Void implies not x.is_empty`
 //!    family holds BY CONSTRUCTION — `Option<NonEmptyVec<T>>`/`NonEmptyVec<T>`
-//!    shapes make the forbidden state unrepresentable, #1730/#2445.)
+//!    shapes make the forbidden state unrepresentable.)
 //! 3. **The terminology-backed invariants**, in the sibling [`terminology`]
 //!    module (they need the openEHR terminology bundle, not just the node).
 //! 4. **The `553|incomplete|` presence relaxation predicates**, in the sibling
@@ -41,45 +36,32 @@
 //!    that class's `Validate` impl — the authoritative oracle the fast path may
 //!    only skip when its result is provably identical.
 //!
-//! Kept OUT of this crate, in `openehr-its`: the GENERATED five-crate
-//! structural dispatch that [`typed_dispatch::dispatch_typed`] falls through to
-//! (it spans `openehr-base`/`-rm`/`-am`/`-term`/`-lang` at once, so it can only
-//! be emitted downstream of all of them), the thin wire-boundary entry points
-//! that compose the tiers, and the walkers that recurse an instance and prefix
-//! absolute RM paths. The wire-boundary entry point
-//! `openehr_its::wire_validate::validate_rm_value` calls [`try_fast_validate`]
-//! then falls back to [`typed_dispatch::dispatch_typed`].
+//! Kept out of this crate, in `openehr-its`: the generated five-crate structural
+//! dispatch [`typed_dispatch::dispatch_typed`] falls through to (it spans every
+//! spec crate at once), the wire-boundary entry points that compose the tiers,
+//! and the walkers that prefix absolute RM paths.
 //!
 //! # The invariant source and the diagnostic form
 //!
-//! The RM class invariants realized here are the released class tables' own
-//! invariant expressions, machine-classified from the vendored BMM — the
-//! generated register at the head of the crate-private `generated` module
-//! (`validate/generated.rs`) is the per-invariant
-//! authority (venue + citation + adjudication). A failure renders the uniform
-//! message `Invariant <Name> failed on type <RM_TYPE>` (see
-//! `invariant_failed`): `<Name>` is the invariant's released class-table name
-//! (`docs/specs/openehr/RM/docs/UML/classes/*.adoc` §Invariants), so a
-//! violation is identifiable by the spec's own vocabulary. No openEHR spec
-//! governs the message wording itself — the `invariant_failed` helper below
+//! The invariants realized here are the released class tables' own expressions,
+//! machine-classified from the vendored BMM; the generated register in
+//! `validate/generated.rs` is the per-invariant authority. A failure renders
+//! `Invariant <Name> failed on type <RM_TYPE>`, where `<Name>` is the released
+//! class-table name (`docs/specs/openehr/RM/docs/UML/classes/*.adoc`
+//! §Invariants). No openEHR spec governs the message wording — `invariant_failed`
 //! is its single home.
 //!
-//! What deliberately does **not** run in the *core/typed* tiers:
-//! - **Terminology-bound invariants** (the class-table rules that invoke
-//!   `has_code_for_group_id` / `code_set (id).has_code` — `Language_valid`,
-//!   `Encoding_valid`, `Category_validity`, `Change_type_valid`, …). They
-//!   resolve a code against the openEHR terminology bundle rather than
-//!   inspecting the node alone, so they live in the sibling
-//!   [`terminology`] module (over `openehr-term`) and are run as a separate
-//!   post-core layer — never inside the fast/typed pair, whose equivalence
-//!   property is defined over the core invariants only.
-//! - **Invariants adjudicated out of the per-node layer** — each carries a
-//!   citation-pinned `Excluded` adjudication in the generated register
-//!   (aggregate/cross-object rules owned by another layer, derived-function
-//!   constraints, and rules over undeclared attributes).
-//! - **Cross-child recursion**: each `Validate` impl checks only its own class
-//!   invariants; the composition validator recurses into children (and prefixes
-//!   the absolute RM path onto each [`InvariantViolation`]).
+//! Three things deliberately do NOT run in the core/typed tiers:
+//!
+//! - terminology-bound invariants, which resolve a code against the openEHR
+//!   terminology bundle rather than inspecting the node, so they run as a
+//!   post-core layer in the sibling [`terminology`] module — never inside the
+//!   fast/typed pair, whose equivalence property covers the core invariants
+//!   only;
+//! - invariants adjudicated out of the per-node layer, each carrying a
+//!   citation-pinned `Excluded` adjudication in the generated register;
+//! - cross-child recursion: each `Validate` impl checks its own class
+//!   invariants, and the composition validator recurses.
 
 #![expect(
     clippy::disallowed_types,
@@ -186,7 +168,7 @@ pub fn locatable_node_id_violation(ty: &str, value: &Value) -> Option<InvariantV
 /// class uniformly. The OPTIONAL-attribute family (`x /= Void implies not
 /// x.is_empty`, e.g. `COMPOSITION.content`) needs no evaluator at all: those
 /// attributes emit as `Option<NonEmptyVec<T>>`, so the forbidden
-/// present-but-empty state is unrepresentable (#1730); this function judges
+/// present-but-empty state is unrepresentable; this function judges
 /// MANDATORY containers only.
 /// `List<Octet>` is exempt by shape: canonical JSON renders it as an inline
 /// base64 string, which presence-checks as a non-array member.
@@ -452,11 +434,8 @@ pub(crate) fn is_integral(v: f64) -> bool {
 // ── named runtime realizations of the BMM assertion-dialect predicates ────────
 //
 // These are the callable runtime helpers the assertion-dialect emitter maps its
-// leaf predicates onto (the `plan::overrides` dialect table names each). They
-// were previously inlined into the invariant cores below; extracting them under
-// the BMM predicate spelling makes the emitter's future generated cores call one
-// named runtime function per dialect predicate. Behaviour is identical to the
-// former inline forms.
+// leaf predicates onto (the `plan::overrides` dialect table names each), one
+// named runtime function per dialect predicate.
 
 /// BASE/RM `valid_magnitude_status (s)`: `s` is one of `= < > <= >= ~` — the
 /// DV_QUANTIFIED `Magnitude_status_valid` predicate
@@ -496,7 +475,7 @@ pub(crate) fn valid_proportion_kind(k: i32) -> bool {
 // are `valid_iso8601_date` / `_time` / `_date_time` / `_duration` (each class
 // page's §Invariants), and those are BASE `Time_Definitions` functions — so
 // this crate calls them rather than re-deriving the grammar. It used to carry
-// its own reader; the two drifted twice and both drifts shipped (#2273), each
+// its own reader; the two drifted twice and both drifts shipped, each
 // time letting a value pass validation, commit, and then behave as invalid.
 
 pub(crate) use openehr_base::v1_3::foundation_types::time::time_definitions::{

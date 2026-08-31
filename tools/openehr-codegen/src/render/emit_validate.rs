@@ -181,7 +181,7 @@ fn render_register_rows(
 /// A complex rule is still normative — it is realized at a hand-written or
 /// application venue, or carries an adjudicated exclusion; one with no row
 /// renders under an explicit `UNACCOUNTED-COMPLEX` heading (the
-/// emitter-invariant suite fails on a non-empty one, the #1621 discipline
+/// emitter-invariant suite fails on a non-empty one, the same discipline
 /// extended to the whole tripartition).
 fn complex_register(own_schema: &BmmSchema) -> String {
     let rows = account_complex(own_schema.classes.iter().flat_map(|(class, def)| {
@@ -343,8 +343,7 @@ use super::{
 };
 ";
 
-/// The invariant cores — fixed spec logic, moved verbatim from the former
-/// hand-written `push_*` siblings (same checks, same messages, `out` last).
+/// The invariant cores — fixed spec logic, so this is static text.
 const CORES: &str = r#"
 /// CODE_PHRASE `Code_string_valid`: the code string must be non-empty.
 pub(crate) fn code_phrase_core(code_string: &str, out: &mut Vec<InvariantViolation>) {

@@ -251,11 +251,11 @@ pub(super) fn reclassify(
         // a BEL literal: `LANG/docs/BEL/master03-language.adoc` §Literals
         // lists `Terminology_code` among the BEL primitive literal types, and
         // the BEL grammar reaches `TERM_CODE_REF` through its `odin_values`
-        // import (`constant_declaration`'s `primitive_object`). (#1402)
+        // import (`constant_declaration`'s `primitive_object`).
         Token::TermCodeRef(_) => Some(token.clone()),
         // An embedded URI has no `base_expressions.g4` production and the
         // §Literals `Uri` row shows a BARE URI (lexically unproductive in
-        // expression text) — the BEL boundary recorded at the #884 audit.
+        // expression text) — the BEL boundary.
         Token::EmbeddedUri(_) => match language {
             Language::Adl | Language::Odin => Some(token.clone()),
             Language::Bel | Language::El => None,

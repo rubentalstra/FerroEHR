@@ -9,7 +9,7 @@
 //! §Invariants — `Overall_validity`
 //! (`repeat_period /= Void or trigger_events /= Void`), evaluated by the
 //! generated core; `Trigger_events_validity` holds by construction
-//! (`Option<NonEmptyVec>`, the #1730 shape). `Send_changes_only_validity` invokes
+//! (`Option<NonEmptyVec>`). `Send_changes_only_validity` invokes
 //! `send_changes_only`, an attribute the class does NOT declare (the class
 //! carries `update_method: CODE_PHRASE`; only the intro prose speaks of "the
 //! `send_changes_only` flag") — an upstream defect, adjudicated `Excluded`
@@ -20,7 +20,7 @@ use openehr_base::validate::{InvariantViolation, Validate};
 
 impl Validate for ExtractUpdateSpec {
     fn validate_invariants(&self, out: &mut Vec<InvariantViolation>) {
-        // `Trigger_events_validity` holds by construction since #1730:
+        // `Trigger_events_validity` holds by construction:
         // `trigger_events` is `Option<NonEmptyVec<..>>`, so a present list is
         // non-empty. Only `Overall_validity` needs a runnable check.
         crate::v1_2::validate::generated::extract_update_spec_core(

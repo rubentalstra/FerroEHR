@@ -3,46 +3,28 @@
 
 //! The ADL 1.4 / ADL 2 **archetype + artefact** wire — **our own extension**.
 //!
-//! No openEHR ITS-REST operation governs any route in this module. The released
-//! Definition API provisions **operational templates only**: its ADL 1.4 group
-//! is `/definition/template/adl1.4*`
-//! (`specifications/operations/definition_template_adl1.4_{list,upload,get,example_get}.yaml`)
-//! and its ADL 2 group `/definition/template/adl2*` — neither declares an
-//! archetype resource, a generic artefact resource, a count, or a DELETE. The
-//! SM nevertheless declares those operations
-//! (`docs/specs/openehr/SM/docs/UML/classes/i_definition_adl14.adoc`:
-//! `upload_archetype` / `get_archetype` / `list_archetypes` /
-//! `delete_archetype`;
-//! `docs/specs/openehr/SM/docs/UML/classes/i_definition_adl2.adoc`:
-//! `list_archetypes` / `archetypes_count` / `list_artefacts` /
-//! `artefacts_count` / `delete_artefact`), so these routes are the honest
-//! realization of a *service* basis with no *wire* basis, for ADL 1.4 and
-//! ADL 2 alike.
+//! No openEHR ITS-REST operation governs any route in this module: the released
+//! Definition API provisions operational templates only, declaring no archetype
+//! resource, generic artefact resource, count, or DELETE. The SM does declare
+//! those operations (`SM/docs/UML/classes/i_definition_adl14.adoc` and
+//! `i_definition_adl2.adoc`), so these routes realize a service basis with no
+//! wire basis, for ADL 1.4 and ADL 2 alike.
 //!
-//! Every route here is therefore **excluded from ITS-REST wire conformance**:
-//! it gates the `Adl14ArchetypeProvisioning` / `Adl2ArchetypeProvisioning`
-//! CAPABILITY verdicts only. The envelope deliberately mirrors the released
-//! template surface (same base segment layout, same status vocabulary) so
-//! clients see one consistent Definition API, but every branch is ours — the
-//! overview conventions the routes follow are a convention they chose, never an
-//! obligation they inherit.
+//! Every route here is therefore excluded from ITS-REST wire conformance and
+//! gates the `Adl14ArchetypeProvisioning` / `Adl2ArchetypeProvisioning`
+//! capability verdicts only. The envelope mirrors the released template surface
+//! — same base segment layout, same status vocabulary — so clients see one
+//! consistent Definition API, but every branch is ours.
 //!
-//! Mount: inside the ITS-REST API router, so the full paths are
-//! `{base_path}/definition/archetype/adl1.4…`,
-//! `{base_path}/definition/archetype/adl2…` and
-//! `{base_path}/definition/artefact/adl2…`. Nesting keeps the auth /
-//! ATNA-audit / ABAC middleware stack uniform across the whole HTTP surface.
-//! There is no separate config gate: the archetype surface lives and dies with
-//! the DEFINITION group, exactly like the released template routes.
+//! The routes mount inside the ITS-REST API router, so the full paths are
+//! `{base_path}/definition/{archetype,artefact}/…`, which keeps the auth,
+//! ATNA-audit and ABAC middleware stack uniform. There is no separate config
+//! gate: the archetype surface lives and dies with the DEFINITION group.
 //!
-//! ## The refusal classes every route here carries
-//!
-//! NOTE (no openEHR spec governs role semantics on an unspecified route — our
-//! own design/extension): the shared authentication + RBAC layer answers before
-//! any handler runs — no valid principal is `401`, the configured read-only role
-//! is `403` on the writes (the upload and the deletes) and unaffected on the
-//! reads, and the coarse operation class is `Clinical` (not under `/admin/`, so
-//! no ADMIN role). Both branches are declared per operation below.
+//! NOTE: no openEHR spec governs role semantics on an unspecified route — our
+//! own design/extension. The shared authentication and RBAC layer answers before
+//! any handler runs: no valid principal is `401`, the configured read-only role
+//! is `403` on the writes, and the coarse operation class is `Clinical`.
 
 use axum::extract::State;
 use axum::response::{IntoResponse, Response};

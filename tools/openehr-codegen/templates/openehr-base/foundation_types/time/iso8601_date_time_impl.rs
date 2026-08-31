@@ -37,42 +37,24 @@
 //!   declares no rule for a value that is not the production at all (the same
 //!   rule `iso8601_date_impl.rs` names).
 //!
-//! NOTE: `Partial_validity_day` (`not day_unknown`) and `Partial_validity_hour`
-//! (`not hour_unknown` — a function this class never declares) are NOT
-//! enforced: `master06` §Primitive Time Types states that partial variants of
-//! this type "can include missing hours, days and months".
+//! NOTE: `Partial_validity_day`, `Partial_validity_hour` and
+//! `Partial_validity_year` are not enforced, because `master06` §Primitive Time
+//! Types states that partial variants of this type "can include missing hours,
+//! days and months".
 //!
-//! NOTE: `Partial_validity_year` carries `Partial_validity_month`'s identical
-//! expression (`not month_unknown`) rather than any year rule, and
-//! `Time_definitions.valid_iso8601_date_time` enumerates no date-only partial;
-//! both are refused on the same `master06` ground.
+//! NOTE: `add_nominal`/`subtract_nominal` are declared returning `Iso8601_date`
+//! while `add`/`subtract` return `Iso8601_date_time`, which would discard the
+//! time of day §Computational Functions says a nominal addition preserves; read
+//! here as a copy-paste defect, so both return `Iso8601_date_time`.
 //!
-//! NOTE: arithmetic needs every component, and the openEHR spec says nothing
-//! about computing on a PARTIAL date/time — a partial (or unparseable) operand
-//! yields `None`, the same undecidable answer this module's comparison gives.
-//!
-//! NOTE: `Iso8601_date_time.add_nominal`/`subtract_nominal` are declared in the
-//! class table as returning `Iso8601_date`, while `add`/`subtract` on the same
-//! class return `Iso8601_date_time`. Taken literally, a nominal addition would
-//! silently discard the time of day it is documented to preserve
-//! (§Computational Functions: "the nominal addition results in the same time on
-//! the next or previous day"). We read the declaration as a copy-paste defect
-//! from `Iso8601_date` and return `Iso8601_date_time`.
-//!
-//! NOTE: definite and nominal arithmetic both operate on the LOCAL reading and
-//! carry the timezone offset through unchanged (its spelling canonicalised to
-//! the extended form, `Z` for UTC): a uniform offset is invariant under a shift
-//! of the instant, and openEHR has no zone-rule database with which to
-//! re-derive one. No openEHR spec governs this — our own design/extension.
-//!
-//! NOTE: the ordering algorithm is our own design/extension (the openEHR spec
-//! gives none — see `iso8601_parse.rs`). A partial date/time denotes the
-//! interval of its completions on an absolute-seconds axis; both-zoned values
-//! are normalised to UTC (a uniform offset shift that may cross midnight and
-//! roll the day/month/year, computed with real calendar lengths); a zoned value
-//! and an unzoned one are incomparable. `partial_cmp` returns `Some(Equal)`
-//! ONLY for equal raw strings — a compact and an extended spelling of the same
-//! instant are reported incomparable, never equal.
+//! NOTE: no openEHR spec governs arithmetic on a PARTIAL date/time, timezone
+//! handling under a shift, or ordering — our own design/extension. A partial or
+//! unparseable operand yields `None`; the offset is carried through unchanged
+//! (canonicalised to the extended form, `Z` for UTC) because a uniform offset
+//! is invariant under a shift of the instant and openEHR has no zone-rule
+//! database; a partial value denotes the interval of its completions on an
+//! absolute-seconds axis, a zoned and an unzoned value are incomparable, and
+//! `partial_cmp` returns `Some(Equal)` only for equal raw strings.
 
 use std::cmp::Ordering;
 

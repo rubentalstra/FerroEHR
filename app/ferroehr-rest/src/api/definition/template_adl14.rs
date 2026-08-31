@@ -89,14 +89,10 @@ pub(super) async fn list(state: &AppState, parts: &RequestParts) -> Result<Respo
 pub(super) async fn upload(state: &AppState, parts: &RequestParts) -> Result<Response, RestError> {
     let h = &parts.headers;
     params::build::<DefinitionTemplateAdl14UploadParams>(&parts.path, parts.query.as_deref(), h)?;
-    // The OPT 1.4 template arrives as canonical XML — the operation's single
-    // body type. A payload DECLARING another media type cannot be processed as
-    // XML, so it is refused before parsing
-    // (`docs/specs/openehr/ITS-REST/specifications/docs/overview/Resources.md`
-    // §XML Format: "If the service cannot process the request payload as XML
-    // format, it MUST respond with HTTP status code `415 Unsupported Media
-    // Type`"). An absent `Content-Type` declares nothing to refuse (the same
-    // section makes the header a client MAY), so it reads as the XML body type.
+    // The OPT 1.4 template arrives as canonical XML, the operation's single body
+    // type, so a payload declaring another media type is refused before parsing
+    // (`overview/Resources.md` §XML Format, a `415` MUST). An absent
+    // `Content-Type` declares nothing to refuse and reads as the XML body type.
     negotiate::require_content_type(h, &[WireFormat::CanonicalXml], "application/xml")?;
     let xml = negotiate::text_body(&parts.body)?;
     let meta = state.backend().template_adl14_upload(xml.clone()).await?;
@@ -127,9 +123,8 @@ pub(super) async fn get(state: &AppState, parts: &RequestParts) -> Result<Respon
     let p =
         params::build::<DefinitionTemplateAdl14GetParams>(&parts.path, parts.query.as_deref(), h)?;
     let template_id = p.template_id.clone();
-    // Resolve the `Accept` before touching storage so an unsupported one is a
-    // clean `406` (`operations/definition_template_adl1.4_get.yaml` `406`).
-    // Absent / `*/*` default to the canonical OPT (application/xml).
+    // Resolved before touching storage, so an unsupported `Accept` is a clean
+    // `406`; absent or `*/*` defaults to the canonical OPT.
     let Some(fmt) = negotiate::resolve_accept(h, TEMPLATE_DEF_FORMATS, WireFormat::CanonicalXml)
     else {
         return Err(RestError(ApiError::NotAcceptable(
@@ -138,8 +133,8 @@ pub(super) async fn get(state: &AppState, parts: &RequestParts) -> Result<Respon
                 .to_owned(),
         )));
     };
-    // Unknown template → 404, so the XML fetch runs regardless (it is the
-    // existence probe as well as the canonical body).
+    // The XML fetch runs regardless: it is the existence probe (an unknown
+    // template is a 404) as well as the canonical body.
     let xml = state
         .backend()
         .template_adl14_get(template_id.clone())
@@ -150,10 +145,9 @@ pub(super) async fn get(state: &AppState, parts: &RequestParts) -> Result<Respon
             set_template_etag(&mut resp, &template_id);
             Ok(resp)
         }
-        // `application/openehr.wt+json` and a bare `application/json` both serve
-        // the Web Template document (the only JSON projection of an OPT), each
-        // under the media type the client negotiated (Resources.md §JSON
-        // Format: the response `Content-Type` MUST be the negotiated type).
+        // Both JSON forms serve the Web Template document, the only JSON
+        // projection of an OPT, under the media type the client negotiated
+        // (`Resources.md` §JSON Format).
         other => web_template_response(state, &template_id, other).await,
     }
 }
@@ -170,15 +164,13 @@ pub(super) async fn example_get(
         parts.query.as_deref(),
         h,
     )?;
-    // The backend generates the canonical example COMPOSITION (an unknown
-    // template → 404; an invalid `type`/`detail_level` → 400).
+    // An unknown template is a 404 and an invalid `type`/`detail_level` a 400.
     let comp = state
         .backend()
         .template_adl14_example(p.template_id, p.detail_level, p.r#type)
         .await?;
-    // Negotiate the four representations the released OAS `Accept_LOCATABLE`
-    // enumerates (json / xml / wt.flat+json / wt.structured+json). Any other
-    // media type is a `406` (the endpoint's `406` response).
+    // The four representations `Accept_LOCATABLE` enumerates; any other media
+    // type is the endpoint's `406`.
     match negotiate::resolve_accept(h, EXAMPLE_FORMATS, WireFormat::CanonicalJson) {
         Some(WireFormat::Flat) => {
             crate::formats::dispatch::composition_flat_response(state, StatusCode::OK, &comp).await
@@ -187,8 +179,7 @@ pub(super) async fn example_get(
             crate::formats::dispatch::composition_structured_response(state, StatusCode::OK, &comp)
                 .await
         }
-        // JSON (default) or canonical XML, via the single spec-typed COMPOSITION
-        // path (`respond_rm` re-types the value so the generated `ToXml` runs).
+        // `respond_rm` re-types the value, so the generated `ToXml` runs.
         Some(WireFormat::CanonicalJson | WireFormat::CanonicalXml) => {
             Ok(negotiate::respond_rm::<Composition>(
                 h,

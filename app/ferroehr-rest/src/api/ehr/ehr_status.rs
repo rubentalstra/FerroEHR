@@ -60,27 +60,20 @@ pub(super) async fn run(
             let p = params::build::<EhrStatusGetByVersionIdParams>(&parts.path, q, h)?;
             let ehr_id = parse_ehr_id(&p.ehr_id)?;
             let (vo_id, version) = super::version_components(&parse_version_uid(&p.version_uid)?)?;
-            // the bare EHR_STATUS at that version (not ORIGINAL_VERSION);
-            // 200_EHR_STATUS_retrieved: ETag(version_uid) + Last-Modified.
-            // The bare EHR_STATUS carries no commit_audit, so the commit
-            // instant the spec derives Last-Modified from
-            // (`VERSION.commit_audit.time_committed.value`,
-            // Requests_and_responses.md §"ETag and Last-Modified") comes from
-            // the service's version metadata, not the served body.
+            // A bare EHR_STATUS carries no `commit_audit`, so `Last-Modified`
+            // (Requests_and_responses.md §"ETag and Last-Modified") comes from
+            // the version metadata rather than the served body.
             let resp = state
                 .backend()
                 .ehr_status_at_version_response(ehr_id, ferroehr::ids::VoId(vo_id), &version)
                 .await?;
-            // The same expansion seam the COMPOSITION read carries: a
-            // DV_MULTIMEDIA committed in an EHR_STATUS is externalized by the
-            // generic versioning path, so this is where it comes back.
+            // A DV_MULTIMEDIA committed in an EHR_STATUS is externalized by
+            // the generic versioning path, so this is where it comes back.
             let mut resp = resp;
             resp.body = super::expand_multimedia_if_requested(&state, q, resp.body).await?;
             // The addressed version_uid must equal the served version's full
-            // three-part identity, case-insensitively (ITS-REST overview
-            // Resources.md §Identifier types; BASE master05 §Composite
-            // Identifiers and Case) — a fabricated creating_system_id names
-            // no VERSION here.
+            // three-part identity, case-insensitively (overview `Resources.md`
+            // §Identifier types; BASE master05 §Composite Identifiers and Case).
             super::ensure_served_version(&p.version_uid, &resp.body)?;
             Ok(negotiate::read_rm::<EhrStatus>(
                 h,
@@ -93,16 +86,12 @@ pub(super) async fn run(
         "ehr_status_get_at_time" => {
             let p = params::build::<EhrStatusGetAtTimeParams>(&parts.path, q, h)?;
             let ehr_id = parse_ehr_id(&p.ehr_id)?;
-            // Same derivation as the by-version read: the bare EHR_STATUS has
-            // no commit_audit, so the version metadata carries the
-            // Last-Modified instant (§"ETag and Last-Modified").
+            // Same derivation as the by-version read: the version metadata
+            // carries the `Last-Modified` instant.
             let resp = state
                 .backend()
                 .ehr_status_at_time_response(ehr_id, p.version_at_time)
                 .await?;
-            // The same expansion seam the COMPOSITION read carries: a
-            // DV_MULTIMEDIA committed in an EHR_STATUS is externalized by the
-            // generic versioning path, so this is where it comes back.
             let mut resp = resp;
             resp.body = super::expand_multimedia_if_requested(&state, q, resp.body).await?;
             Ok(negotiate::read_rm::<EhrStatus>(
@@ -124,20 +113,14 @@ pub(super) async fn run(
                 "EHR_STATUS update",
                 Some(require_if_match(&p.if_match)?),
             )?;
-            // 204_EHR_STATUS (default minimal) / 200_EHR_STATUS_updated
-            // (representation); ETag + Last-Modified + Location on all.
-            // The commit result's instant is the Last-Modified value
-            // (§"ETag and Last-Modified"), carried in the service metadata so
-            // the write path never re-reads the row it just wrote.
-            // 412 → latest version_uid.
-            // Judge the wrapper-header tags before the commit (see
-            // `crate::api::ehr::pending_item_tags`); the write stays after it.
+            // 204 on the default minimal preference, 200_EHR_STATUS_updated on
+            // representation; `ETag`, `Last-Modified` and `Location` on both,
+            // the instant taken from the commit result so the write path never
+            // re-reads the row it just wrote. Tags are judged before the commit
+            // and written after it.
             let pending_tags = super::pending_item_tags(h)?;
             match state.backend().replace_ehr_status_meta(ehr_id, uv).await {
                 Ok(meta) => {
-                    // apply the openehr-item-tag / openehr-version-item-tag
-                    // write-wrapper headers to the committed target
-                    // (Requests_and_responses.md §…§Usage in Requests).
                     let stored_tags = super::apply_item_tag_headers(
                         &state,
                         ehr_id,
@@ -197,19 +180,15 @@ pub(super) async fn run(
         "ehr_status_tags_update" => {
             let p = params::build::<EhrStatusTagsUpdateParams>(&parts.path, q, h)?;
             let ehr_id = parse_ehr_id(&p.ehr_id)?;
-            // Strict against `schemas/common/UpdateItemTag.yaml`
-            // (`additionalProperties: false`, `key` required): an undeclared
-            // member or a non-string `value`/`target_path` is a 400 naming the
-            // member, never a silent drop.
+            // Strict against `schemas/common/UpdateItemTag.yaml`: an undeclared
+            // member is a 400 naming it, never a silent drop.
             let body = negotiate::typed_json_vec::<UpdateItemTag>(h, &parts.body)?;
             let tags = state
                 .backend()
                 .target_tags_replace(ehr_id, p.uid_based_id, "EHR_STATUS", body)
                 .await?;
-            // ehr_status_tags_update.yaml — 200 (the stored ITEM_TAG list) on
-            // `Prefer: return=representation`; 204 (`204_updated.yaml`) when
-            // `Prefer` is missing or `return=minimal` (the default —
-            // overview §Prefer), with `Preference-Applied` declaring which.
+            // ehr_status_tags_update.yaml: 200 on `Prefer: return=representation`,
+            // 204 when `Prefer` is missing or `return=minimal` (overview §Prefer).
             Ok(negotiate::write_collection(
                 h,
                 no_content,

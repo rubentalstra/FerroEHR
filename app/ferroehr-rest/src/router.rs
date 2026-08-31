@@ -3,39 +3,27 @@
 
 //! Router assembly and the `tower-http` middleware stack.
 //!
-//! **Base-path rule** (ITS-REST overview `Resources.md` §Resource identification;
-//! `Requests_and_responses.md`): every ITS-REST resource path is relative to the
-//! configured API base path (`cfg.base_path`, default
-//! `/ferroehr/rest/openehr/v1`). The generated API surface ([`crate::api`]) is
-//! therefore nested under that base path; the `/rest/status` document hangs off
-//! the `/ferroehr/rest` root, the
-//! always-on health family (`/health`, `/health/liveness`,
-//! `/health/readiness`) answers at the process root, and the System Options
-//! manifest answers at the base-path root itself.
+//! Every ITS-REST resource path is relative to the configured API base path
+//! (overview `Resources.md` §Resource identification), so the generated API
+//! surface ([`crate::api`]) nests under `cfg.base_path`. The `/rest/status`
+//! document hangs off the `/ferroehr/rest` root, the always-on health family
+//! answers at the process root, and the System Options manifest answers at the
+//! base-path root itself.
 //!
-//! **Layer order** (innermost → outermost, over the nested API): authentication ·
-//! ATNA audit (SM System Log, wraps auth so it observes auth rejections) · HTTP
-//! metrics · root span · **overload shedding** (bounded in-flight concurrency +
-//! load shed; the API subtree's outermost layer, so a shed request is rejected
-//! before auth, audit, or reading the request body — `crate::overload`). The
-//! whole tree is then wrapped in the shared `tower-http` request stack
-//! (request-id, tracing, CORS, body limit, timeout, compression), so a shed
-//! `503` still carries a request id and is traced. Between the CORS layer and
-//! the body-limit/timeout pair sits `align_transport_error_body`, which
-//! re-renders the two responses those layers produce on their own (`408`,
-//! `413`) in the openEHR `{ error, message }` shape. The System Options `OPTIONS`
-//! endpoint is mounted **above** the CORS layer — `CorsLayer` treats every
-//! `OPTIONS` as a CORS preflight and would short-circuit a conformance probe —
-//! so it lives on the outer router with the CORS-wrapped application as its
-//! fallback service.
+//! Layer order over the nested API, innermost first: authentication, ATNA audit
+//! (wrapping auth so it observes auth rejections), HTTP metrics, root span, then
+//! overload shedding — outermost on that subtree, so a shed request is rejected
+//! before auth, audit, or reading the body. The whole tree is then wrapped in the
+//! shared `tower-http` stack (request-id, tracing, CORS, body limit, timeout,
+//! compression), with `align_transport_error_body` between the CORS layer and the
+//! body-limit/timeout pair to re-render their `408`/`413` in the openEHR
+//! `{ error, message }` shape. The System Options `OPTIONS` endpoint mounts above
+//! the CORS layer, which would otherwise treat it as a preflight.
 //!
-//! **Overload shedding is scoped to the API subtree only** (the openEHR API +
-//! its extensions, nested under the base path): the public operational
-//! endpoints — the health family, `/rest/status`, SMART discovery, and the
-//! management surface — are siblings, so they are never shed and an operator
-//! (or an orchestrator probe) can always reach an overloaded server. The bound
-//! is `cfg.max_in_flight` (default 1024); `0` installs no layer. No openEHR spec
-//! governs server overload — our own design (RFC 9110 §15.6.4).
+//! Shedding is scoped to the API subtree, so the health family, `/rest/status`,
+//! SMART discovery and the management surface are never shed and an operator can
+//! always reach an overloaded server. No openEHR spec governs server overload —
+//! our own design (RFC 9110 §15.6.4).
 //!
 //! `NormalizePathLayer` is applied at serve time (it must wrap the router to run
 //! before routing); see [`crate::serve_with`].
@@ -99,23 +87,18 @@ pub fn router(state: AppState, authenticator: Arc<Authenticator>) -> Router {
         .unwrap_or(&cfg.server.base_path)
         .to_owned();
 
-    // ── The generated ITS-REST surface, gated by authentication ──────────────
-    // A known path called with a method it does not serve renders `405` with
-    // the openEHR `{ error, message }` body (overview §HTTP Methods); axum
-    // supplies the mandatory `Allow` (RFC 9110 §15.5.6) from the matched route's
-    // method set, because `crate::overview::error::method_not_allowed_handler`
-    // sets none of its own. An unrecognized method is answered `405` too: axum
-    // exposes no such seam, and a catch-all fallback would report every unknown
-    // *path* `501` instead of `404`.
+    // A known path called with a method it does not serve renders `405` with the
+    // openEHR body (overview §HTTP Methods); axum supplies the mandatory `Allow`
+    // (RFC 9110 §15.5.6) from the matched route's method set. An unrecognized
+    // method is `405` too: a catch-all fallback would report every unknown path
+    // `501` instead of `404`.
     // NOTE: the overview's SHOULD-`501` (`Requests_and_responses.md` §HTTP
-    // Methods) is honoured for a recognised but unimplemented *operation* via
-    // `ApiError::NotImplemented`; `405` is a predefined code in its own table.
+    // Methods) is honoured for a recognised but unimplemented operation via
+    // `ApiError::NotImplemented`.
     let api =
         crate::api::api_router().method_not_allowed_fallback(error::method_not_allowed_handler);
-    // Tenant resolution sits inside the auth layer so it runs *after*
-    // authentication (the principal + its claims are established) and scopes the
-    // handler in the tenant task-local. Only installed when tenancy is on — a
-    // single-tenant server has no tenant middleware at all.
+    // Inside the auth layer, so it runs after authentication and scopes the
+    // handler in the tenant task-local. A single-tenant server installs none.
     let api = if cfg.tenancy.enabled {
         api.layer(from_fn_with_state(
             state.clone(),
@@ -131,25 +114,20 @@ pub fn router(state: AppState, authenticator: Arc<Authenticator>) -> Router {
         },
         authn::middleware,
     ));
-    // Always install the ATNA audit layer; it early-returns when the platform's
-    // SM `SystemLog` reports auditing off, so the no-audit case costs one check
-    // per request.
+    // Always installed: the layer early-returns when the SM `SystemLog` reports
+    // auditing off, so the no-audit case costs one check per request.
     let api = api.layer(from_fn_with_state(
         state.clone(),
         crate::system_log::middleware::middleware,
     ));
-    // The principal-keyed rate-limit tier (`crate::rate_limit`): added before the
-    // authentication layer, which in axum's outermost-last ordering is what puts
-    // it INSIDE — the subject it keys on only exists once authentication has run.
+    // Added before the authentication layer, which in axum's outermost-last
+    // ordering puts it inside: the subject it keys on exists only after auth.
     let api = match crate::rate_limit::principal_layer(&cfg.server.rate_limit) {
         Some(tier) => api.layer(tier),
         None => api,
     };
-    // Per-route-family body limits (`crate::limits`): the clinical tier for the
-    // ordinary surface, the bulk tier for template upload and the `/message`
-    // imports. Above the audit layer so an over-large body is refused before it
-    // is read, buffered, or audited; the outer `RequestBodyLimitLayer` remains
-    // the ceiling across the whole tree.
+    // Above the audit layer so an over-large body is refused before it is read,
+    // buffered or audited; the outer `RequestBodyLimitLayer` is the tree ceiling.
     let api = api.layer(from_fn_with_state(state.clone(), crate::limits::middleware));
     let api = api
         .layer(axum::middleware::from_fn(
@@ -159,14 +137,9 @@ pub fn router(state: AppState, authenticator: Arc<Authenticator>) -> Router {
             management::http_metrics::root_span,
         ));
 
-    // ── Ingress overload protection (the API subtree's outermost layer) ──────
-    // Bounded in-flight concurrency + load shedding: beyond `cfg.max_in_flight`
-    // concurrent API requests the server sheds the excess immediately as
-    // `503 Service Unavailable` + `Retry-After` rather than queueing them until
-    // it runs out of memory. Being outermost on this subtree, a shed request
-    // never reaches auth, audit, or the request body; scoped here so the public
-    // health/status/discovery/management endpoints are never shed. No openEHR
-    // spec governs server overload — our own design (RFC 9110 §15.6.4).
+    // Beyond `cfg.max_in_flight` concurrent API requests the excess is shed as
+    // `503` + `Retry-After` rather than queued until memory runs out; `0`
+    // installs no layer.
     let api = crate::overload::shed_layer(api, cfg.server.max_in_flight);
 
     let inner = mount_public_surface(&cfg, api, &rest_root);
@@ -177,10 +150,8 @@ pub fn router(state: AppState, authenticator: Arc<Authenticator>) -> Router {
         CorsLayer::new()
     };
 
-    // The address-keyed tier covers the WHOLE tree, the always-on health family
-    // included: an orchestrator probe is cheap and its rate is nowhere near this
-    // ceiling, while a flood arriving at any path is refused here before it
-    // reaches authentication.
+    // The address-keyed tier covers the whole tree, health family included: a
+    // flood at any path is refused here, before authentication.
     let inner = match crate::rate_limit::address_layer(&cfg.server.rate_limit) {
         Some(tier) => inner.layer(tier),
         None => inner,
@@ -188,17 +159,12 @@ pub fn router(state: AppState, authenticator: Arc<Authenticator>) -> Router {
 
     let inner: Router = with_shared_stack(inner, cfg.server.limits.ceiling(), cors, state);
 
-    // ── System Options and Conformance — `OPTIONS`, above the CORS layer ─────
-    // The manifest advertises the **live** mounted-group set (System API): the
-    // four always-on standardised groups plus `/admin` when its group is
-    // enabled, so it never advertises a group that answers 404. Its
-    // identity/conformance fields come from `cfg.server.identity`. Extension
-    // families are deliberately absent — the operation's job is "exposing
-    // service capabilities for a conformance manifest", and they declare
-    // themselves through the served OpenAPI document instead.
-    // NOTE: no released text says what `endpoints` must contain — the System
-    // API chapter is a stub and the OAS `schemas/others/Options.yaml` gives only
-    // `array of string` — so the content is adjudicated as above.
+    // The manifest advertises the live mounted-group set, so it never names a
+    // group that answers 404; extension families declare themselves through the
+    // served OpenAPI document instead.
+    // NOTE: no released text says what `endpoints` must contain — the System API
+    // chapter is a stub and `schemas/others/Options.yaml` gives only
+    // `array of string` — so the content above is our own adjudication.
     let mut endpoints = vec![
         "/ehr".to_owned(),
         "/definition".to_owned(),
@@ -213,20 +179,16 @@ pub fn router(state: AppState, authenticator: Arc<Authenticator>) -> Router {
         endpoints,
     ));
 
-    // Mount at the API base-path root — the ONE location the System API
-    // defines (`system.openapi.yaml`: servers `{baseUrl}/v1`, path `/` — the
-    // operation lives at the API root, nowhere else; the former bare-`/`
-    // alias was our own duplication and is removed, #420). Every other
-    // request falls through to the CORS-wrapped application. The mount sits
-    // above CORS so `OPTIONS` is not eaten as a preflight; real per-resource
-    // CORS preflights are on sub-paths and reach the CORS layer via the
-    // fallback.
+    // The API base-path root is the one location the System API defines
+    // (`system.openapi.yaml`: servers `{baseUrl}/v1`, path `/`). The mount sits
+    // above CORS so `OPTIONS` is not eaten as a preflight; every other request
+    // falls through to the CORS-wrapped application.
     let app: Router = Router::new()
         .route(&cfg.server.base_path, system::options::route(manifest))
         .fallback_service(inner);
 
-    // Merge the management surface only when enabled AND not bound to a separate
-    // port (the binary serves the separate-port case on its own listener).
+    // Only when enabled and not bound to a separate port (which the binary
+    // serves on its own listener).
     let app = if observability.management.enabled && observability.management.port.is_none() {
         let mgmt = management::router(ManagementState::from_observability(
             observability,
@@ -286,39 +248,20 @@ fn with_shared_stack(
         .with_state(state)
 }
 
-/// The response headers every surface carries, per the OWASP HTTP Headers Cheat
-/// Sheet — outermost, so they reach transport-layer responses (the `413` from the
-/// body-limit layer, the `408` from the timeout layer, the `500` from the panic
-/// handler) as well as handler ones.
+/// Applies the response headers every surface carries, per the OWASP HTTP
+/// Headers Cheat Sheet.
 ///
-/// The set is chosen for what this surface actually is — a clinical JSON API —
-/// rather than copied wholesale from browser advice:
+/// Outermost, so they reach transport-layer responses (the body-limit `413`, the
+/// timeout `408`, the panic-handler `500`) as well as handler ones. The set is
+/// chosen for a clinical JSON API: `Cache-Control: no-store` because responses
+/// carry patient data, `X-Content-Type-Options: nosniff`, a
+/// `Referrer-Policy` that keeps `ehr_id`-bearing paths out of cross-origin
+/// `Referer` headers, `Cross-Origin-Resource-Policy: same-site`, and
+/// `X-Frame-Options: DENY` plus a minimal CSP for the HTML this origin can serve.
 ///
-/// - `Cache-Control: no-store` is the load-bearing one. Responses carry patient
-///   data, and the cheat sheet names `no-store` for exactly that. It does not
-///   affect openEHR's `ETag`/`If-Match` concurrency control, which is a
-///   precondition mechanism rather than a caching one.
-/// - `X-Content-Type-Options: nosniff` stops a browser or proxy from re-guessing
-///   a declared `application/json` as something executable.
-/// - `Referrer-Policy: strict-origin-when-cross-origin` keeps request paths — which
-///   carry `ehr_id` and version identifiers — out of cross-origin `Referer`
-///   headers.
-/// - `Cross-Origin-Resource-Policy: same-site` refuses cross-site embedding of
-///   these responses.
-/// - `X-Frame-Options: DENY` and a minimal CSP are here for the HTML this origin
-///   can serve (Swagger UI, and any error page a proxy renders). The cheat sheet
-///   is explicit that CSP "might be meaningless in the response of a REST API
-///   that returns content that is not going to be rendered", so the value is the
-///   defensive minimum rather than a policy pretending to govern scripts:
-///   nothing may load, and nothing may frame it.
-///
-/// Deliberately absent: `Strict-Transport-Security`, because it is a property of
-/// the TLS edge rather than of this server — RFC 6797 §7.2 requires a browser to
-/// IGNORE it over plain HTTP, and this server is commonly reached over HTTP behind
-/// a terminating proxy that owns the header. Setting it here would be inert at
-/// best and misleading at worst. `X-XSS-Protection` and `X-Powered-By` are absent
-/// because the cheat sheet says to remove them, and hyper sends no `Server`
-/// header to begin with.
+/// `Strict-Transport-Security` is deliberately absent: RFC 6797 §7.2 requires a
+/// browser to ignore it over plain HTTP, and this server is commonly reached over
+/// HTTP behind a proxy that owns the header.
 fn with_security_headers(app: Router) -> Router {
     app.layer(
         ServiceBuilder::new()
@@ -342,11 +285,8 @@ fn with_security_headers(app: Router) -> Router {
                 header::X_FRAME_OPTIONS,
                 HeaderValue::from_static("DENY"),
             ))
-            // `if_not_present`, not `overriding`: a surface on this origin that
-            // is actually RENDERED needs its own policy, and being outermost
-            // this layer would otherwise erase it on the way out. Swagger UI
-            // sets one (`crate::extensions::openapi`); everything else gets this
-            // default, which says nothing loads and nothing frames.
+            // `if_not_present`, not `overriding`: a rendered surface needs its
+            // own policy, and this outermost layer would otherwise erase it.
             .layer(SetResponseHeaderLayer::if_not_present(
                 header::CONTENT_SECURITY_POLICY,
                 HeaderValue::from_static("default-src 'none'; frame-ancestors 'none'"),
@@ -354,20 +294,15 @@ fn with_security_headers(app: Router) -> Router {
     )
 }
 
-/// The `tower-http` request span, recording the path WITHOUT its query string.
+/// Builds the `tower-http` request span, recording the path without its query
+/// string.
 ///
-/// `DefaultMakeSpan` records `uri = %request.uri()`, which is the whole target
-/// including the query — and `subject_id`, an external patient identifier, is a
-/// query parameter by the specification's own definition (ITS-REST EHR API,
-/// `GET /ehr?subject_id=…&subject_namespace=…`). At `log.filter = debug` that
-/// would put a patient identifier into the ordinary application log, which is a
-/// place identified data must never reach. Dropping the query keeps the path —
-/// where the ids are system-assigned `ehr_id`/version uids that the audit log
-/// records anyway — and loses the one component that carries an external
-/// identifier.
-///
-/// The route TEMPLATE (never a concrete path) is recorded separately by
-/// [`management::http_metrics::root_span`], which is the span telemetry consumes.
+/// `DefaultMakeSpan` would record the whole target, and `subject_id` — an
+/// external patient identifier — is a query parameter (ITS-REST EHR API,
+/// `GET /ehr?subject_id=…`), which identified data must never reach the ordinary
+/// application log. The path keeps only system-assigned ids the audit log records
+/// anyway. The route template is recorded separately by
+/// [`management::http_metrics::root_span`], the span telemetry consumes.
 fn path_only_span(request: &http::Request<axum::body::Body>) -> tracing::Span {
     tracing::debug_span!(
         "request",
@@ -377,16 +312,13 @@ fn path_only_span(request: &http::Request<axum::body::Body>) -> tracing::Span {
     )
 }
 
-/// [`CatchPanicLayer`] handler: render a panicked handler as the standard
-/// openEHR `{ error, message }` error body with a `500`, the same shape every
-/// other error path emits ([`crate::overview::error`]) — never tower-http's
-/// default `text/plain` body. The panic payload is logged for diagnosis but
-/// **never echoed into the response** (it may carry internal detail). No openEHR
-/// spec governs the error-body shape (it is a MAY, ITS-REST
-/// `Requests_and_responses.md` §HTTP status codes) — our own design keeps every
-/// error path consistent.
-// The by-value `Box<dyn Any>` parameter is dictated by tower-http's
-// `ResponseForPanic` closure signature (`CatchPanicLayer::custom`), not a choice.
+/// Renders a panicked handler as a `500` in the openEHR `{ error, message }`
+/// body every other error path emits ([`crate::overview::error`]), never
+/// tower-http's default `text/plain`.
+///
+/// The panic payload is logged but never echoed into the response. No openEHR
+/// spec governs the error-body shape (a MAY, `Requests_and_responses.md` §HTTP
+/// status codes) — our own design.
 #[expect(
     clippy::needless_pass_by_value,
     reason = "tower-http's `CatchPanicLayer` handler contract hands the panic \
@@ -404,26 +336,20 @@ fn handle_panic(err: Box<dyn Any + Send + 'static>) -> Response {
     error::RestError(ApiError::Internal(error::INTERNAL_MESSAGE.to_owned())).into_response()
 }
 
-/// Align the two **transport-layer** error responses the `tower-http` stack
-/// renders on its own onto the openEHR `{ error, message }` body every other
-/// error path emits ([`crate::overview::error`]).
+/// Aligns the two transport-layer error responses the `tower-http` stack renders
+/// on its own onto the openEHR `{ error, message }` body
+/// ([`crate::overview::error`]).
 ///
-/// `TimeoutLayer` builds its `408` as a bare status with an empty body
-/// (`tower_http::timeout`) and `RequestBodyLimitLayer` builds its `413` as
-/// `text/plain; charset=utf-8` (`tower_http::limit`); neither passes through
-/// [`crate::overview::error::RestError`], so without this mapping the two would
-/// be the only error responses on the server in a foreign shape. `408` is a
-/// predefined status in the spec's table (ITS-REST `Requests_and_responses.md`
-/// §HTTP status codes — "Request maximum execution time is reached, therefore
-/// the server aborted the request"); `413` is one of the additional codes the
-/// same section permits ("Additional status codes MAY be used as long as they
-/// do not conflict with the predefined codes"). The error BODY itself is only a
-/// MAY there, so this is consistency across our own surface rather than a
-/// conformance requirement.
+/// `TimeoutLayer` builds its `408` as a bare status and `RequestBodyLimitLayer`
+/// its `413` as `text/plain`; neither passes through
+/// [`crate::overview::error::RestError`], so without this mapping they would be
+/// the only error responses in a foreign shape. `408` is a predefined status
+/// (`Requests_and_responses.md` §HTTP status codes) and `413` one of the
+/// additional codes the same section permits; the error body itself is a MAY
+/// there, so this is consistency across our own surface.
 ///
-/// A response that already carries a JSON body was produced by a handler (the
-/// AQL query-execution timeout renders its own `408` through `RestError`) and
-/// is passed through untouched.
+/// A response that already carries a JSON body came from a handler and passes
+/// through untouched.
 async fn align_transport_error_body(response: Response) -> Response {
     let status = response.status();
     let message = match status {
@@ -446,27 +372,23 @@ async fn align_transport_error_body(response: Response) -> Response {
     error::status_error_response(status, message)
 }
 
-/// Mount the public, pre-auth surface around the API tree: the always-on health
+/// Mounts the public, pre-auth surface around the API tree: the always-on health
 /// family, the REST-root status surface, the config-gated SMART
-/// `/.well-known/smart-configuration` document (served pre-auth, SMART master04
-/// §Service Discovery; an empty router when SMART is disabled, so the merge is a
-/// no-op and the path is absent), and the config-gated Swagger UI + `OpenAPI`
-/// documents.
+/// `/.well-known/smart-configuration` document (SMART master04 §Service
+/// Discovery; an empty router when SMART is disabled), and the config-gated
+/// Swagger UI plus `OpenAPI` documents.
 ///
-/// NOTE: no openEHR spec governs this — our own operational surface; disposition
-/// recorded on issue #305. The health family (`/health`, `/health/liveness`,
-/// `/health/readiness` — [`crate::extensions::health`]) is mounted
-/// **unconditionally and ungated** here, deliberately outside the API subtree:
-/// an orchestrator must be able to probe the server without credentials, without
-/// any configuration having been enabled, and without the overload-shed layer
-/// being able to shed the probe.
+/// No openEHR spec governs this — our own operational surface. The health family
+/// ([`crate::extensions::health`]) is mounted unconditionally and ungated,
+/// outside the API subtree, so an orchestrator can probe the server without
+/// credentials, without any configuration enabled, and without the overload-shed
+/// layer being able to shed the probe.
 fn mount_public_surface(
     cfg: &crate::config::AppConfig,
     api: Router<AppState>,
     rest_root: &str,
 ) -> Router<AppState> {
-    // The SMART discovery document is a pure function of static configuration
-    // (the openEHR/FHIR base URLs + OIDC issuer), built once inside the router.
+    // A pure function of static configuration, built once inside the router.
     let discovery = smart::discovery::router(cfg, rest_root);
 
     let mut inner = Router::new()
@@ -481,9 +403,9 @@ fn mount_public_surface(
     inner
 }
 
-/// The RBAC rules the management `AdminOnly` gate applies: the live handle's
-/// rule set, or a disabled rule set when no RBAC gate is wired (auth-only
-/// deployments — authenticated is then enough, issue #1879).
+/// Returns the RBAC rules the management `AdminOnly` gate applies: the live
+/// handle's rule set, or a disabled one when no RBAC gate is wired, where being
+/// authenticated is enough.
 fn management_rbac(state: &AppState) -> ferroehr::config::authz::RbacConfig {
     state
         .authz()
@@ -495,8 +417,8 @@ fn management_rbac(state: &AppState) -> ferroehr::config::authz::RbacConfig {
         })
 }
 
-/// Build the standalone management router (separate-port mode). The binary
-/// serves this on the management listener when `management.port` is set.
+/// Builds the standalone management router for separate-port mode, which the
+/// binary serves on the management listener when `management.port` is set.
 pub fn management_router(state: &AppState, authenticator: Arc<Authenticator>) -> Router {
     management::router(ManagementState::from_observability(
         state.observability().clone(),

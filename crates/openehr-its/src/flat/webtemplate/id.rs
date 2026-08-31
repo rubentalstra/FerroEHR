@@ -22,15 +22,12 @@
 //!
 //! Steps 1–6 are [`generate_node_id`]; step 7 is [`Deduplicator`].
 //!
-//! Beyond the spec's seven steps, [`build_ids`] also derives the *base name* a
-//! node's id is generated from, orders a polymorphic (choice) `ELEMENT`'s
-//! alternative `DV_*` children, and resolves the `cardinalities`/`dependsOn`
-//! child-id references. The openEHR Simplified Formats spec is silent on those
-//! mechanics (it defines only the name→id transform), so they are our own
-//! design/extension — the base-name fallback mirrors the metadata example
-//! (master04 §"Web Template Metadata": `context`/`category`/`language` take their
-//! id from the RM attribute path segment), and the polymorphic alternate id
-//! (`alt_json_id`) is consumed by the FLAT converters and the validation walk.
+//! Beyond those seven steps, [`build_ids`] derives the BASE NAME a node's id is
+//! generated from, orders a polymorphic `ELEMENT`'s alternative `DV_*` children,
+//! and resolves the `cardinalities`/`dependsOn` child-id references. The spec
+//! defines only the name→id transform, so those mechanics are our own
+//! design/extension; the base-name fallback mirrors the metadata example
+//! (master04 §"Web Template Metadata").
 
 use std::collections::{HashMap, HashSet};
 

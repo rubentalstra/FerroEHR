@@ -72,11 +72,8 @@ async fn decode_composition_body(
         Some(WireFormat::CanonicalJson | WireFormat::CanonicalXml) => {
             Ok(negotiate::rm_value::<Composition>(h, body)?)
         }
-        // The Simplified-Formats adapters build a canonical COMPOSITION
-        // fragment (their algorithms are defined over the wire form, not over
-        // the RM types — `simplified_formats/master04`), so the converted
-        // result re-enters the typed seam through the same strict reader every
-        // canonical-JSON body goes through: one decode, one refusal class.
+        // The converted fragment re-enters through the same strict reader as a
+        // canonical body: one decode, one refusal class.
         Some(WireFormat::Flat) => typed_composition(
             &crate::formats::dispatch::composition_from_flat(state, h, body).await?,
         ),
@@ -91,12 +88,8 @@ async fn decode_composition_body(
     }
 }
 
-/// Re-type a converted Simplified-Formats body as the RM `COMPOSITION` the
+/// Re-types a converted Simplified-Formats body as the RM `COMPOSITION` the
 /// commit seam takes.
-///
-/// The document was already readable AS FLAT/STRUCTURED (conversion
-/// succeeded), so a refusal here is template-mediated content that does not
-/// form a valid resource — the `422` row, never the `400` parse class.
 fn typed_composition(value: &Value) -> Result<Composition, RestError> {
     // NOTE: a post-conversion strict-reader refusal is the template-mediated
     // 422 class (master04 §Validation; `responses/422.yaml`).
@@ -144,9 +137,6 @@ async fn create(state: AppState, parts: RequestParts) -> Result<Response, RestEr
     let base = state.config().server.base_path.clone();
     let p = params::build::<CompositionCreateParams>(&parts.path, q, h)?;
     let ehr_id = parse_ehr_id(&p.ehr_id)?;
-    // A FLAT/STRUCTURED (wt.flat/structured+json) body is rebuilt into a
-    // canonical composition; canonical JSON/XML pass through the RM
-    // decoder; any other Content-Type is 415.
     let body = decode_composition_body(&state, h, &parts.body).await?;
     let uv = super::mk_update_version(
         h,
@@ -155,10 +145,8 @@ async fn create(state: AppState, parts: RequestParts) -> Result<Response, RestEr
         "COMPOSITION creation",
         None,
     )?;
-    // The item-tag wrapper headers are parsed + invariant-checked
-    // BEFORE the commit, so a defective tag refuses the request while
-    // nothing is durable (the WRITE stays post-commit — see
-    // `pending_item_tags`).
+    // Tags are judged before the commit, so a defective tag refuses while
+    // nothing is durable; the write itself stays post-commit.
     let pending_tags = super::pending_item_tags(h)?;
     let committed = state
         .backend()
@@ -166,9 +154,6 @@ async fn create(state: AppState, parts: RequestParts) -> Result<Response, RestEr
         .await
         .map_err(|e| RestError::from(ApiError::from(e)))?;
     let uid = committed.version_uid();
-    // apply the openehr-item-tag / openehr-version-item-tag
-    // write-wrapper headers to the committed COMPOSITION
-    // (Requests_and_responses.md §…§Usage in Requests).
     let stored_tags =
         super::apply_item_tag_headers(&state, ehr_id, "COMPOSITION", &uid, pending_tags).await?;
     let meta = commit_meta(ehr_id, uid, &committed);
@@ -193,12 +178,9 @@ async fn get(state: AppState, parts: RequestParts) -> Result<Response, RestError
     let p = params::build::<CompositionGetParams>(&parts.path, q, h)?;
     let ehr_id = parse_ehr_id(&p.ehr_id)?;
     let uid = parse_uid_based_id(&p.uid_based_id)?;
-    // The service returns the read PLUS its version metadata (uid +
-    // commit instant): the served body is a BARE COMPOSITION, which
-    // carries no `commit_audit`, so the `Last-Modified` instant the
-    // spec derives from `VERSION.commit_audit.time_committed.value`
-    // (Requests_and_responses.md §"ETag and Last-Modified") can only
-    // come from the version row the service already read.
+    // A bare COMPOSITION carries no `commit_audit`, so `Last-Modified`
+    // (Requests_and_responses.md §"ETag and Last-Modified") comes from the
+    // version row the service reads alongside the body.
     let read = if let Some(ovid) = uid.version {
         state
             .backend()
@@ -216,10 +198,8 @@ async fn get(state: AppState, parts: RequestParts) -> Result<Response, RestError
             .await?
     };
     let RawServiceResponse { body, meta } = read;
-    // The negotiated representation decides whether the stored
-    // canonical text can pass through verbatim: a plain JSON accept
-    // with no multimedia expansion serves the stored bytes (the body
-    // is uid-stamped at commit); every other representation parses.
+    // A plain JSON accept with no multimedia expansion serves the stored
+    // bytes verbatim (the body is uid-stamped at commit); the rest parse.
     let expand = params::query_param(q, "expand_multimedia").as_deref() == Some("true");
     let accept = negotiate::resolve_accept(h, COMPOSITION_FORMATS, WireFormat::CanonicalJson);
     let mut body = match body {
@@ -243,13 +223,9 @@ async fn get(state: AppState, parts: RequestParts) -> Result<Response, RestError
         return Ok(negotiate::empty(no_content));
     }
     body = super::expand_multimedia_if_requested(&state, q, body).await?;
-    // Negotiate the representation across `Accept_LOCATABLE`: FLAT /
-    // STRUCTURED via the adapter, else canonical JSON/XML through
-    // `read_rm` (which answers 406 for an unfulfillable Accept).
-    // The version-identity headers are representation-independent —
-    // "the `ETag` value is independent of its resource serialization
-    // format (JSON/XML)" (§"ETag and Last-Modified") — so the
-    // simplified representations carry them too.
+    // "The `ETag` value is independent of its resource serialization format
+    // (JSON/XML)" (§"ETag and Last-Modified"), so the simplified
+    // representations carry the version-identity headers too.
     match accept {
         Some(WireFormat::Flat) => {
             let mut out =
@@ -270,9 +246,8 @@ async fn get(state: AppState, parts: RequestParts) -> Result<Response, RestError
         }
         _ => {}
     }
-    // 200_COMPOSITION_retrieved: ETag(version_uid) + Last-Modified
-    // (§"ETag and Last-Modified": both SHOULD accompany a resource
-    // with a unique state identifier).
+    // `ETag` and `Last-Modified` both SHOULD accompany a resource with a
+    // unique state identifier (§"ETag and Last-Modified").
     let resp = ServiceResponse { body, meta };
     Ok(negotiate::read_rm::<Composition>(
         h,
@@ -298,19 +273,13 @@ async fn update(state: AppState, parts: RequestParts) -> Result<Response, RestEr
     let ehr_id = parse_ehr_id(&p.ehr_id)?;
     let uid = parse_uid_based_id(&p.uid_based_id)?;
     let body = decode_composition_body(&state, h, &parts.body).await?;
-    // A body-supplied COMPOSITION.uid must identify the same
-    // versioned object as the path `uid_based_id` — never a silent
-    // write to the path's object.
-    // NOTE: the rule is OAS-grounded (docs text silent) with no
-    // assigned status; the fitting released row is 422
-    // (Requests_and_responses.md §HTTP status codes) — adjudicated.
+    // A body `uid` must name the same versioned object as the path.
+    // NOTE: OAS-grounded (docs text silent) with no assigned status; the
+    // fitting released row is 422 (Requests_and_responses.md §HTTP status codes).
     if let Some(body_uid) = body.uid.as_ref() {
-        // The versioned object a body `uid` names is its
-        // OBJECT_VERSION_ID `object_id` (BASE `base_types` §Functions
-        // `object_id`). A non-UUID `object_id` cannot name the
-        // addressed object and a HIER_OBJECT_ID names no VERSION —
-        // both fail the comparison; a malformed identifier never gets
-        // here (the validating doors refuse it at parse, `400`).
+        // A body `uid` names its versioned object through the
+        // `OBJECT_VERSION_ID.object_id` (BASE `base_types` §Functions); a
+        // HIER_OBJECT_ID names no VERSION, so it fails the comparison.
         let body_vo = match body_uid {
             UidBasedId::ObjectVersionId(ovid) => object_id_uuid(ovid),
             UidBasedId::HierObjectId(_) => None,
@@ -332,8 +301,6 @@ async fn update(state: AppState, parts: RequestParts) -> Result<Response, RestEr
         "COMPOSITION update",
         Some(require_if_match(&p.if_match)?),
     )?;
-    // Judge the wrapper-header tags before the commit (see
-    // `pending_item_tags`); the write itself stays post-commit.
     let pending_tags = super::pending_item_tags(h)?;
     match state
         .backend()
@@ -342,7 +309,6 @@ async fn update(state: AppState, parts: RequestParts) -> Result<Response, RestEr
     {
         Ok(committed) => {
             let new_uid = committed.version_uid();
-            // apply item-tag write-wrapper headers to the new version.
             let stored_tags = super::apply_item_tag_headers(
                 &state,
                 ehr_id,
@@ -352,14 +318,9 @@ async fn update(state: AppState, parts: RequestParts) -> Result<Response, RestEr
             )
             .await?;
             let meta = commit_meta(ehr_id, new_uid, &committed);
-            // The minimal-preference update is 204 — the docs text's
-            // §"Prefer minimal…" ("If no response body is returned,
-            // the service SHOULD use `204 No Content`") over the
-            // released 204_version_updated.yaml ("returned when the
-            // update operation was successful and the `Prefer` header
-            // is missing or is set to `return=minimal`"); a bodyless
-            // 200 matches neither declared response. Create stays
-            // 201-only (composition_create.yaml declares no 204).
+            // The minimal-preference update is 204: "If no response body is
+            // returned, the service SHOULD use `204 No Content`" (§"Prefer
+            // minimal…"); create stays 201-only (composition_create.yaml).
             let mut resp =
                 composition_write_response(&state, h, &base, ehr_id, meta, no_content, ok).await?;
             super::echo_item_tags(&mut resp, &stored_tags);
@@ -402,21 +363,15 @@ async fn delete(state: AppState, parts: RequestParts) -> Result<Response, RestEr
             p.uid_based_id
         ))
     })?;
-    // The operation declares no `If-Match` parameter, but a RECEIVED
-    // one is honoured (overview §"If-Match and accidental
-    // overwrites": condition false → the method MUST NOT be
-    // performed). The service evaluates it AFTER its own 404/400/409
-    // pre-checks, per the RFC 9110 §13.2.1 precedence rule (ignore
-    // preconditions when the unconditioned answer is not 2xx/412);
-    // a malformed value is a 400 like every required-If-Match route.
+    // The operation declares no `If-Match`, but a received one is honoured
+    // (overview §"If-Match and accidental overwrites"); the service
+    // evaluates it after its own pre-checks (RFC 9110 §13.2.1).
     let volunteered_if_match = match h.get("if-match").and_then(|v| v.to_str().ok()) {
         Some(raw) => Some(require_if_match(raw)?),
         None => None,
     };
-    // A DELETE commits a `523|deleted|` version, so the committal
-    // request headers are accepted and merged here too (overview
-    // §"openehr-version and openehr-audit-details": PUT, POST and
-    // DELETE).
+    // A DELETE commits a `523|deleted|` version, so the committal headers
+    // apply here too (overview §"openehr-version and openehr-audit-details").
     let update_audit =
         crate::overview::committal::committal_audit_for_delete(h, super::committer_proxy())?;
     match state
@@ -430,11 +385,9 @@ async fn delete(state: AppState, parts: RequestParts) -> Result<Response, RestEr
         .await
     {
         Ok(committed) => {
-            // 204_COMPOSITION_deleted: the deleted version's ETag +
-            // Last-Modified — a logical delete commits a
-            // `523|deleted|` VERSION, so its commit instant is the
-            // resource's last modification (§"ETag and
-            // Last-Modified"; RM common master06 §Logical Deletion).
+            // A logical delete commits a `523|deleted|` VERSION, so its
+            // commit instant is the resource's last modification
+            // (RM common master06 §Logical Deletion).
             let uid = committed.version_uid();
             let resp = ServiceResponse::deleted(commit_meta(ehr_id, uid, &committed));
             Ok(negotiate::deleted_with_headers(
@@ -443,11 +396,9 @@ async fn delete(state: AppState, parts: RequestParts) -> Result<Response, RestEr
                 &resp,
             ))
         }
-        // 409_COMPOSITION_with_uid_based_id (stale / not-modifiable)
-        // and the volunteered-If-Match 412 → both decorated with the
-        // latest version_uid (overview §"If-Match and accidental
-        // overwrites": the 412 "SHOULD return also latest
-        // `version_uid` in the `ETag` response headers").
+        // The 409 and the volunteered-If-Match 412 both carry the latest
+        // `version_uid` in `ETag` (overview §"If-Match and accidental
+        // overwrites").
         Err(
             e @ (ferroehr::service::error::ServiceError::Conflict(_)
             | ferroehr::service::error::ServiceError::VersionConflict(_)),
@@ -502,19 +453,13 @@ async fn tags_update(state: AppState, parts: RequestParts) -> Result<Response, R
     let no_content = StatusCode::NO_CONTENT;
     let p = params::build::<CompositionTagsUpdateParams>(&parts.path, q, h)?;
     let ehr_id = parse_ehr_id(&p.ehr_id)?;
-    // Strict against `schemas/common/UpdateItemTag.yaml`
-    // (`additionalProperties: false`, `key` required): an undeclared
-    // member or a non-string `value`/`target_path` is a 400 naming the
-    // member, never a silent drop.
     let body = negotiate::typed_json_vec::<UpdateItemTag>(h, &parts.body)?;
     let tags = state
         .backend()
         .target_tags_replace(ehr_id, p.uid_based_id, "COMPOSITION", body)
         .await?;
-    // composition_tags_update.yaml — 200 (the stored ITEM_TAG list)
-    // on `Prefer: return=representation`; 204 (`204_updated.yaml`)
-    // when `Prefer` is missing or `return=minimal` (the default —
-    // overview §Prefer), with `Preference-Applied` declaring which.
+    // composition_tags_update.yaml: 200 on `Prefer: return=representation`,
+    // 204 when `Prefer` is missing or `return=minimal` (overview §Prefer).
     Ok(negotiate::write_collection(
         h,
         no_content,
@@ -540,12 +485,9 @@ async fn tags_delete(state: AppState, parts: RequestParts) -> Result<Response, R
     Ok(negotiate::empty(no_content))
 }
 
-/// The committed COMPOSITION version's [`ResourceMeta`]: the new
-/// `OBJECT_VERSION_ID` (the `ETag`/`Location` value) plus the server commit
-/// instant the commit result already carries — the `Last-Modified` value
-/// ITS-REST derives from `VERSION.commit_audit.time_committed.value`
-/// (`Requests_and_responses.md` §"`ETag` and Last-Modified"). Taken from the
-/// commit result, never re-read.
+/// Returns the committed version's [`ResourceMeta`]: its `OBJECT_VERSION_ID`
+/// and the commit instant ITS-REST derives `Last-Modified` from
+/// (`Requests_and_responses.md` §"`ETag` and Last-Modified").
 fn commit_meta(ehr_id: EhrId, uid: String, committed: &Committed) -> ResourceMeta {
     ResourceMeta::new(ehr_id.to_string(), uid).with_last_modified(committed.time_committed)
 }
@@ -562,9 +504,6 @@ async fn composition_write_response(
     minimal: StatusCode,
     repr: StatusCode,
 ) -> Result<Response, RestError> {
-    // A FLAT/STRUCTURED Accept returns the simplified representation (which
-    // needs the stored body regardless of `Prefer`); canonical JSON/XML (or an
-    // unfulfillable Accept) fall through to the `Prefer`-aware canonical write.
     if let Some(fmt @ (WireFormat::Flat | WireFormat::Structured)) =
         negotiate::resolve_accept(h, COMPOSITION_FORMATS, WireFormat::CanonicalJson)
     {
@@ -578,16 +517,13 @@ async fn composition_write_response(
         } else {
             crate::formats::dispatch::composition_flat_response(state, repr, &body).await?
         };
-        // Version-id headers are representation-independent: RFC 7231
-        // §6.3.2 requires `Location` on a `201` regardless of body form, and
-        // the ITS-REST response definitions declare `ETag` + `Location` on
-        // every COMPOSITION commit (`responses/201_COMPOSITION.yaml`,
-        // `200_COMPOSITION_updated.yaml`; overview `Requests_and_responses.md`
-        // §Prefer) — routed through the canonical write path's header helper.
+        // `Location` is required on a `201` regardless of body form
+        // (RFC 7231 §6.3.2), so the simplified representations get the same
+        // version-identity headers.
         negotiate::set_resource_headers(&mut out, base, Some("composition"), &meta);
-        // NOTE: a Simplified-Formats commit always returns the committed body
-        // in the negotiated form (`Accept` decides, not `Prefer`), so the
-        // applied preference is representation (§Representation details negotiation).
+        // NOTE: a Simplified-Formats commit returns the body in the negotiated
+        // form (`Accept` decides, not `Prefer`), so the applied preference is
+        // representation (§Representation details negotiation).
         negotiate::set_preference_applied(&mut out, AppliedPreference::Representation);
         return Ok(out);
     }

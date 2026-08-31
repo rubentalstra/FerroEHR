@@ -470,11 +470,11 @@ impl Ctx<'_> {
     /// inherited members and the spec type's strict reader.
     ///
     /// RM/BASE spec types resolve to the TYPED spec structs: since the
-    /// foundation rewrite (#1702) every spec type carries emitted manual
+    /// foundation rewrite every spec type carries emitted manual
     /// `serde::Serialize`/`Deserialize` impls (its crate's `json_serde.rs`),
     /// and those impls ARE the strict canonical-JSON reader — so a typed field
     /// is strict by construction where an untyped `Value` silently accepted
-    /// anything (#1712). A GENERIC-over hoisted schema has a group-local alias
+    /// anything. A GENERIC-over hoisted schema has a group-local alias
     /// (bare name); every other hoisted schema lives in `super::common`. A ref
     /// to something emitted nowhere is resolved and mapped structurally.
     fn ref_type(&self, name: &str, schema: &Value) -> String {
@@ -664,7 +664,7 @@ fn emit_dto(b: &mut String, name: &str, schema: &Value, ctx: &Ctx) {
     // `_type` (every released mapping uses `propertyName: _type`): it emits a
     // real enum over the mapping's targets, dispatched by the same strict
     // tag-anywhere machinery the spec crates' own emitted impls use — never an
-    // untyped alias (issue #1712; `Versionable` was `pub type … =
+    // untyped alias (`Versionable` was `pub type … =
     // serde_json::Value`).
     if let Some(mapping) = schema
         .get("discriminator")

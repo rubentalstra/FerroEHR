@@ -1,24 +1,20 @@
 // SPDX-FileCopyrightText: FerroEHR contributors
 // SPDX-License-Identifier: MIT
 
-//! Rebuild a generated `*Params` struct from the three HTTP sources.
+//! Rebuilds a generated `*Params` struct from the three HTTP sources.
 //!
-//! The ITS-REST contract combines an operation's path, query, and
-//! header parameters into a single generated `*Params` struct (see
-//! `openehr_its::rest::generated`). axum, by contrast, extracts those three
-//! sources separately. This module bridges the two with a small **type-directed
-//! deserializer**: it merges the sources into a multi-map keyed by parameter
-//! name (headers keyed by their canonical HTTP name, matching the `#[serde(rename
-//! = "…")]` the generator emits) and deserializes the target struct from it,
-//! coercing each value to whatever type the target field asks for.
+//! The ITS-REST contract combines an operation's path, query and header
+//! parameters into one generated `*Params` struct (`openehr_its::rest::generated`)
+//! while axum extracts the three separately. This module merges them into a
+//! multi-map keyed by parameter name — headers under the canonical HTTP name the
+//! generator's `#[serde(rename = "…")]` expects — and deserializes the struct
+//! from it.
 //!
-//! Why type-directed rather than building a `serde_json::Value`: query/header
-//! values arrive as strings, but the generated params mix `String`, `i64`
-//! (`offset`/`fetch`), `Option`, and `Vec` fields. A JSON map cannot represent
-//! `"5"`-the-string and `5`-the-integer without knowing the target type — so we
-//! let serde drive the coercion (`deserialize_i64` parses, `deserialize_str`
-//! passes through), which no off-the-shelf crate does across all three sources
-//! at once.
+//! The deserializer is type-directed rather than a `serde_json::Value` because
+//! query and header values all arrive as strings while the generated params mix
+//! `String`, `i64`, `Option` and `Vec` fields: a JSON map cannot represent
+//! `"5"`-the-string and `5`-the-integer without knowing the target type, so
+//! serde drives the coercion instead.
 
 #![expect(
     clippy::disallowed_types,
@@ -62,14 +58,11 @@ pub(crate) fn build<P: DeserializeOwned>(
         }
     }
     for name in headers.keys() {
-        // Header names are lower-cased by `http`; the generated renames use the
-        // canonical spelling (`Accept`, `Content-Type`, `openehr-item-tag`).
-        // Deserialization is case-sensitive on the rename, so expose both the
-        // wire name and the canonical spelling used by the contract.
-        // A header value that is not decodable as text is a client defect, not
-        // an absent parameter: dropping it would deserialize the request as if
-        // the header had never been sent. (No openEHR spec governs undecodable
-        // header bytes — our own design: refuse rather than guess.)
+        // Deserialization is case-sensitive on the generated rename, so the
+        // lower-cased wire name is exposed under the contract's spelling too.
+        // NOTE: no openEHR spec governs undecodable header bytes — our own
+        // design: refuse, because dropping the value would deserialize the
+        // request as if the header had never been sent.
         let entry: Vec<String> = headers
             .get_all(name)
             .iter()
@@ -92,9 +85,10 @@ pub(crate) fn build<P: DeserializeOwned>(
         .map_err(|e| ApiError::BadRequest(format!("invalid request parameters: {e}")))
 }
 
-/// Map a lower-cased header name to the canonical spelling the ITS-REST
-/// contract's `#[serde(rename)]` expects. Unknown headers are passed through
-/// unchanged (they simply do not match any field and are ignored).
+/// Maps a lower-cased header name to the canonical spelling the ITS-REST
+/// contract's `#[serde(rename)]` expects.
+///
+/// An unknown header passes through unchanged and matches no field.
 fn canonical_header_name(lower: &str) -> String {
     match lower {
         "accept" => "Accept".to_owned(),
@@ -106,32 +100,25 @@ fn canonical_header_name(lower: &str) -> String {
     }
 }
 
-/// Split a query string into decoded `application/x-www-form-urlencoded` pairs.
+/// Splits a query string into decoded `application/x-www-form-urlencoded` pairs.
 ///
-/// `form_urlencoded::parse` does the whole job — the pair split, the `+`→space
-/// rule and percent-decoding — to the WHATWG URL standard, maintained by the
-/// same people as the `url` crate. It replaces a local splitter whose stated
-/// reason for existing ("to avoid a dependency purely for query splitting") was
-/// not true: `form_urlencoded` is a dependency of `url`, which this workspace
-/// pins, so it was already compiled into the build.
+/// `form_urlencoded::parse` does the whole job — the pair split, the `+`-to-space
+/// rule and percent-decoding — to the WHATWG URL standard.
 fn form_urlencoded_pairs(query: &str) -> Vec<(String, String)> {
     form_urlencoded::parse(query.as_bytes())
         .map(|(key, value)| (key.into_owned(), value.into_owned()))
         .collect()
 }
 
-/// The spec's NAMED query parameters of a query-execution `GET` (ITS-REST
-/// `docs/query/Request.md` §"Query parameters": generically documented as
-/// `query_parameters`, "but in the real request they will have specific
-/// names (e.g. `uid`, `systolic_bp`)" — worked examples
-/// `?temperature_from=36&temperature_unit=Cel`). Every query-string key that
-/// is not a reserved request control becomes an AQL parameter bind; a `$`
-/// prefix is tolerated and stripped (same section: parameter names "SHOULD
-/// NOT be prefixed with `$`"). Values are read as JSON first (`36` → number,
-/// `true` → bool) and fall back to strings (a version uid keeps its text);
-/// repeats are last-wins. Binds from the literal `query_parameters=<JSON
-/// object>` form arrive in `base` — an accepted superset — and a name
-/// collision resolves to the NAMED form (the documented one).
+/// Returns the named query parameters of a query-execution `GET` as AQL binds
+/// (ITS-REST `docs/query/Request.md` §"Query parameters").
+///
+/// Every query-string key that is not a reserved request control becomes a
+/// bind; a `$` prefix is tolerated and stripped (parameter names "SHOULD NOT be
+/// prefixed with `$`"). Values are read as JSON first and fall back to strings,
+/// and repeats are last-wins. Binds from the literal `query_parameters=<JSON
+/// object>` form arrive in `base`, and a name collision resolves to the named
+/// form.
 pub(crate) fn named_query_parameters(
     query: Option<&str>,
     base: std::collections::BTreeMap<String, serde_json::Value>,
@@ -155,12 +142,12 @@ pub(crate) fn named_query_parameters(
     parameters
 }
 
-/// The reserved (non-parameter) query-string keys of the query-execution
-/// `GET`s: the request controls the contract itself defines.
+/// The reserved query-string keys of the query-execution `GET`s: the request
+/// controls the contract itself defines.
 pub(crate) const QUERY_RESERVED_KEYS: &[&str] =
     &["ehr_id", "offset", "fetch", "q", "query_parameters"];
 
-/// Look up a single (percent-decoded) query-string parameter by key.
+/// Looks up a single percent-decoded query-string parameter by key.
 pub(crate) fn query_param(query: Option<&str>, key: &str) -> Option<String> {
     let query = query?;
     form_urlencoded_pairs(query)
@@ -169,17 +156,14 @@ pub(crate) fn query_param(query: Option<&str>, key: &str) -> Option<String> {
         .map(|(_, v)| v)
 }
 
-// ── openehr-item-tag / openehr-version-item-tag headers (overview §"openehr- ─
-//    item-tag and openehr-version-item-tag") ──────────────────────────────────
-//
-// Lightweight wrappers over the dedicated ITEM_TAG operations:
-// `openehr-item-tag` targets a VERSIONED_OBJECT, `openehr-version-item-tag` a
-// specific VERSION. The value is a `;`-separated list of entries, each a
-// comma-separated `key`/`value`/`target_path` set. On `PUT`/`POST` the header
-// sets the target's tag list (empty removes all); responses MAY echo it.
+// The `openehr-item-tag` / `openehr-version-item-tag` wrappers over the
+// dedicated ITEM_TAG operations (overview §"openehr-item-tag and
+// openehr-version-item-tag"): a `;`-separated list of entries, each a
+// comma-separated `key`/`value`/`target_path` set, targeting a
+// VERSIONED_OBJECT or one VERSION respectively.
 // NOTE: this module owns only header parse/validate/emit; the EHR group
-// validates both headers BEFORE the content commit and writes them AFTER, so a
-// defective tag refuses the request and a tag never re-versions its content.
+// validates before the content commit and writes after it, so a defective tag
+// refuses the request and a tag never re-versions its content.
 
 /// The canonical HTTP header names for the two `ITEM_TAG` wrapper headers.
 pub(crate) const H_ITEM_TAG: &str = "openehr-item-tag";
@@ -191,11 +175,9 @@ pub(crate) const H_VERSION_ITEM_TAG: &str = "openehr-version-item-tag";
 /// (overview §"openehr-item-tag and openehr-version-item-tag").
 ///
 /// `value` is `Option` because `ITEM_TAG.value` is `0..1` and
-/// `Inv_value_valid` forbids a SET-but-empty one — so a valueless tag has no
-/// `value` at all, on the wire in either direction. A header entry spelling
-/// `value=""` normalizes to absent on the way in (the same reading
-/// `item_tags_from_header_entries` has always applied), and the echo renders
-/// no `value` token at all on the way out.
+/// `Inv_value_valid` forbids a set-but-empty one: a header entry spelling
+/// `value=""` normalizes to absent on the way in, and the echo renders no
+/// `value` token on the way out.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub(crate) struct ItemTagHeaderEntry {
     /// The tag key.
@@ -206,22 +188,19 @@ pub(crate) struct ItemTagHeaderEntry {
     pub(crate) target_path: Option<String>,
 }
 
-/// Split a wrapper-header value into its `;`-separated ENTRIES, quote-aware.
+/// Splits a wrapper-header value into its `;`-separated entries, quote-aware.
 ///
-/// A `target_path` is a quoted token that may legitimately contain a `;` (an
-/// AQL path predicate such as `[at0001, 'a;b']`), so splitting the raw string
-/// on `;` shatters such an entry into fragments that then parse as garbage.
-/// This scanner only breaks on a `;` that is OUTSIDE a double-quoted run,
-/// exactly as [`key_value_pairs`] already treats a quoted value as opaque at
-/// the `,` level.
+/// A `target_path` is a quoted token that may legitimately contain a `;` (an AQL
+/// path predicate such as `[at0001, 'a;b']`), so this scanner breaks only on a
+/// `;` outside a double-quoted run, exactly as [`key_value_pairs`] treats a
+/// quoted value as opaque at the `,` level.
 ///
-/// NOTE: the release gives this header no ABNF — the whole grammar is one
-/// worked example (`Requests_and_responses.md` §openehr-item-tag and
-/// openehr-version-item-tag), which shows quoted values and both separators
-/// but defines no escaping and no quoting rules. Treating a quoted run as
-/// opaque is OUR reading of that example, and it is the only
-/// reading under which the section's own `target_path="/composition/start_time/value"`
-/// token has a defined meaning when a path contains a separator.
+/// The release gives the header no ABNF — the grammar is one worked example
+/// (`Requests_and_responses.md` §openehr-item-tag and openehr-version-item-tag)
+/// showing quoted values and both separators but no escaping rules. Treating a
+/// quoted run as opaque is our own reading, and the only one under which the
+/// section's own `target_path="/composition/start_time/value"` token stays
+/// meaningful when a path contains a separator.
 fn split_item_tag_entries(input: &str) -> Vec<&str> {
     let mut out = Vec::new();
     let mut in_quotes = false;
@@ -244,27 +223,24 @@ fn split_item_tag_entries(input: &str) -> Vec<&str> {
     out
 }
 
-/// Parse an `ITEM_TAG` wrapper header (`name` = [`H_ITEM_TAG`] or
-/// [`H_VERSION_ITEM_TAG`]) into its entries, merging across repeated
-/// occurrences. Returns `None` when the header is absent; `Some(empty)` when the
-/// header is present but empty — the spec's "remove all `ITEM_TAGs`" signal.
+/// Parses an `ITEM_TAG` wrapper header ([`H_ITEM_TAG`] or
+/// [`H_VERSION_ITEM_TAG`]) into its entries, merging repeated occurrences.
+///
+/// Returns `None` when the header is absent and `Some(empty)` when it is present
+/// but empty — the spec's "remove all `ITEM_TAGs`" signal.
 ///
 /// # Errors
-/// [`ApiError::BadRequest`] when a non-blank entry carries no `key`. The
-/// released schema makes `key` the one REQUIRED member of an
-/// `UPDATE_ITEM_TAG` (`schemas/common/UpdateItemTag.yaml`), and the header is
-/// declared a "convenient wrapper around the dedicated `ITEM_TAG` operations", so
-/// the wrapper cannot admit what the operation refuses. Silently skipping such
-/// an entry would drop a tag the client believes it set. A blank segment (a
-/// trailing `;`, or an empty repeat of the header) carries no entry at all and
-/// is not an error — the release's empty-value form is itself meaningful.
+/// [`ApiError::BadRequest`] when a non-blank entry carries no `key`: the
+/// released schema makes `key` the one required member of an `UPDATE_ITEM_TAG`
+/// (`schemas/common/UpdateItemTag.yaml`), so the wrapper cannot admit what the
+/// operation refuses. A blank segment carries no entry at all and is not an
+/// error.
 pub(crate) fn parse_item_tag_header(
     headers: &HeaderMap,
     name: &str,
 ) -> Result<Option<Vec<ItemTagHeaderEntry>>, ApiError> {
-    // An undecodable value is refused, never skipped: silently dropping it
-    // would remove a tag the client believes it set (the same reasoning the
-    // doc comment above gives for a keyless entry).
+    // An undecodable value is refused, never skipped: dropping it would remove
+    // a tag the client believes it set.
     let raws: Vec<String> = headers
         .get_all(name)
         .iter()
@@ -308,16 +284,15 @@ pub(crate) fn parse_item_tag_header(
     Ok(Some(out))
 }
 
-/// Judge parsed wrapper-header entries against the RM `ITEM_TAG` invariants,
-/// **before** the request's content is committed.
+/// Judges parsed wrapper-header entries against the RM `ITEM_TAG` invariants,
+/// before the request's content is committed.
 ///
 /// The invariants are evaluated through `openehr_rm`'s own predicates
-/// ([`ItemTag::key_valid`] / [`ItemTag::value_valid`] — the two functions the
-/// `Validate` impl for `ItemTag` is written in terms of), so this pre-commit
-/// check and the service seam that finally writes the tags cannot disagree.
-/// They are reached as predicates rather than through the `Validate` trait
-/// because at this point in the request the server has not yet minted the
-/// version the tag's `target` names, so no `ITEM_TAG` instance exists yet.
+/// ([`ItemTag::key_valid`] / [`ItemTag::value_valid`]), which the `Validate` impl
+/// for `ItemTag` is written in terms of, so this check and the service seam that
+/// writes the tags cannot disagree. They are reached as predicates rather than
+/// through `Validate` because the version the tag's `target` names is not minted
+/// yet, so no `ITEM_TAG` instance exists.
 ///
 /// # Errors
 /// [`ApiError::Unprocessable`] naming the offending entry and the invariant it
@@ -346,33 +321,20 @@ pub(crate) fn validate_item_tag_entries(
     Ok(())
 }
 
-/// Render `ITEM_TAG` entries as a wrapper-header value (`key="…"[,value="…"]
-/// [,target_path="…"]` pairs, `;`-separated), for echoing stored tags on a
+/// Renders `ITEM_TAG` entries as a wrapper-header value (`;`-separated
+/// `key="…"[,value="…"][,target_path="…"]` pairs), for echoing stored tags on a
 /// response (overview §"Usage in Responses", a MAY).
 ///
-/// Returns `None` when the list cannot be rendered as a header value at all —
-/// a tag key or value carrying a byte HTTP forbids in a field value, in
-/// practice a control character (RFC 9110 §5.5; nothing in the RM bars one
-/// from an `ITEM_TAG.key`, so a client can store one through the tag `PUT`).
-/// **The caller must then omit the header entirely.**
-/// It must never fall back to an empty header: an empty value is not "nothing
-/// to say", it is the release's own instruction that "providing an empty value
-/// for this header will effectively remove all `ITEM_TAGs` associated with the
-/// given target" (§Usage in Requests). A client that mirrors an echoed empty
-/// header back on its next write would wipe the collection this response was
-/// supposed to be confirming.
-///
-/// A valueless tag renders WITHOUT a `value` token, for the same reason: a
-/// `value=""` echo describes a tag that violates `Inv_value_valid` and that
-/// this server never stored.
+/// Returns `None` when the list cannot be rendered as a header value — a key or
+/// value carrying a byte HTTP forbids in a field value (RFC 9110 §5.5), which
+/// nothing in the RM bars from an `ITEM_TAG.key`. The caller must then omit the
+/// header entirely and never fall back to an empty one: an empty value is the
+/// release's instruction that "providing an empty value for this header will
+/// effectively remove all `ITEM_TAGs` associated with the given target"
+/// (§Usage in Requests), so an echo of it would hand the client a destructive
+/// form as state. A valueless tag renders without a `value` token for the same
+/// reason: a `value=""` echo describes a tag violating `Inv_value_valid`.
 pub(crate) fn emit_item_tag_header(entries: &[ItemTagHeaderEntry]) -> Option<HeaderValue> {
-    // An EMPTY collection emits NO header: the empty header value is the
-    // "remove all `ITEM_TAG`s" REQUEST instruction (ITS-REST overview
-    // `Requests_and_responses.md` §openehr-item-tag: "Providing an empty
-    // value for this header will effectively remove all ITEM_TAGs"), so a
-    // response echoing one would hand the client the destructive form as if
-    // it were state (#1837 — the EHR echo path emitted it; the demographic
-    // path guarded it; one rule now lives here for both).
     if entries.is_empty() {
         return None;
     }
@@ -393,10 +355,9 @@ pub(crate) fn emit_item_tag_header(entries: &[ItemTagHeaderEntry]) -> Option<Hea
     HeaderValue::from_str(&rendered).ok()
 }
 
-/// Project one RM [`ItemTag`] (`common.item_tag`) onto the
-/// [`ItemTagHeaderEntry`] [`emit_item_tag_header`] renders — the three members
-/// the header grammar carries (`key`, `value`, `target_path`), read straight off
-/// the typed instance.
+/// Projects one RM [`ItemTag`] onto the [`ItemTagHeaderEntry`]
+/// [`emit_item_tag_header`] renders: the three members the header grammar
+/// carries, read off the typed instance.
 pub(crate) fn item_tag_to_header_entry(tag: &ItemTag) -> ItemTagHeaderEntry {
     ItemTagHeaderEntry {
         key: tag.key().to_owned(),
@@ -405,18 +366,19 @@ pub(crate) fn item_tag_to_header_entry(tag: &ItemTag) -> ItemTagHeaderEntry {
     }
 }
 
-/// The value of a parsed `key` in a tag-pair segment.
+/// Returns the value of a parsed `key` in a tag-pair segment.
 fn tag_value(pairs: &[(String, String)], key: &str) -> Option<String> {
     pairs.iter().find(|(k, _)| k == key).map(|(_, v)| v.clone())
 }
 
-/// Parse a tolerant comma-separated list of `key="value"` (or bare `key=value`)
-/// pairs — the one scanner behind both the tag-pair segments here and the
-/// committal attribute headers ([`crate::overview::committal`]). A
-/// double-quoted value is read opaquely (may contain commas); a bare value
-/// runs to the next top-level comma; whitespace around separators and keys is
-/// trimmed. Both grammars are example-only in the ITS-REST overview (no ABNF
-/// is given), hence the shared tolerant reader.
+/// Parses a tolerant comma-separated list of `key="value"` or bare `key=value`
+/// pairs.
+///
+/// The one scanner behind both the tag-pair segments here and the committal
+/// attribute headers ([`crate::overview::committal`]): a double-quoted value is
+/// read opaquely, a bare value runs to the next top-level comma, and whitespace
+/// around separators and keys is trimmed. Both grammars are example-only in the
+/// ITS-REST overview, hence the shared tolerant reader.
 pub(crate) fn key_value_pairs(input: &str) -> Vec<(String, String)> {
     let mut out = Vec::new();
     let mut rest = input;
@@ -459,9 +421,10 @@ pub(crate) fn key_value_pairs(input: &str) -> Vec<(String, String)> {
     out
 }
 
-/// Deserializer over the merged `name → [values]` multi-map. Only map/struct
-/// shapes are meaningful at the top level; everything routes through the map
-/// accessor.
+/// Deserializer over the merged `name` to `[values]` multi-map.
+///
+/// Only map and struct shapes are meaningful at the top level; everything
+/// routes through the map accessor.
 struct RequestValuesDeserializer {
     values: IndexMap<String, Vec<String>>,
 }
