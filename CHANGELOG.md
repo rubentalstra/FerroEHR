@@ -56,6 +56,10 @@ workflow refuses a tag that has no matching section here.
 
 ### Fixed
 
+- A template example request with a present but empty `detail_level` or
+  `type` query value is refused with `400`. The declared defaults apply only
+  to an absent parameter; an empty or whitespace-padded value is outside the
+  closed enums and was silently read as the default.
 - The admin console's System screen reports SMART correctly. It probed the
   discovery document at the origin instead of under the platform base path
   the CDR serves it from, and rendered whatever came back as a raw status

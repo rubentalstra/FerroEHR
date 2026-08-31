@@ -91,13 +91,19 @@ pub enum DetailLevel {
 }
 
 impl DetailLevel {
-    /// Parse the `detail_level` query value (default [`Required`](Self::Required)).
+    /// Parse the `detail_level` query value, absent meaning
+    /// [`Required`](Self::Required).
+    ///
+    /// The enum is closed and matched exactly — a present value that is not
+    /// one of its tokens (the empty string and padded spellings included) is
+    /// refused, since the declared default applies only to an absent
+    /// parameter (ITS-REST `parameters/query/example_detail_level.yaml`).
     ///
     /// # Errors
     /// A message (→ ITS-REST `400`) for a value outside `required|medium|complete`.
     pub fn from_query(value: Option<&str>) -> Result<Self, String> {
-        match value.map(str::trim) {
-            None | Some("" | "required") => Ok(Self::Required),
+        match value {
+            None | Some("required") => Ok(Self::Required),
             Some("medium") => Ok(Self::Medium),
             Some("complete") => Ok(Self::Complete),
             Some(other) => Err(format!(
@@ -117,13 +123,18 @@ pub enum ExampleType {
 }
 
 impl ExampleType {
-    /// Parse the `type` query value (default [`Input`](Self::Input)).
+    /// Parse the `type` query value, absent meaning [`Input`](Self::Input).
+    ///
+    /// The enum is closed and matched exactly — a present value that is not
+    /// one of its tokens (the empty string and padded spellings included) is
+    /// refused, since the declared default applies only to an absent
+    /// parameter (ITS-REST `parameters/query/example_type.yaml`).
     ///
     /// # Errors
     /// A message (→ ITS-REST `400`) for a value outside `input|output`.
     pub fn from_query(value: Option<&str>) -> Result<Self, String> {
-        match value.map(str::trim) {
-            None | Some("" | "input") => Ok(Self::Input),
+        match value {
+            None | Some("input") => Ok(Self::Input),
             Some("output") => Ok(Self::Output),
             Some(other) => Err(format!(
                 "unsupported type '{other}' (expected one of input, output)"
@@ -1321,10 +1332,35 @@ mod tests {
     fn parses_example_type() {
         assert_eq!(ExampleType::from_query(None), Ok(ExampleType::Input));
         assert_eq!(
+            ExampleType::from_query(Some("input")),
+            Ok(ExampleType::Input)
+        );
+        assert_eq!(
             ExampleType::from_query(Some("output")),
             Ok(ExampleType::Output)
         );
         assert!(ExampleType::from_query(Some("bogus")).is_err());
+    }
+
+    // A present out-of-enum value is refused even when it is empty or a
+    // whitespace-padded spelling of a token: the declared default applies
+    // only to an ABSENT parameter (ITS-REST
+    // parameters/query/example_detail_level.yaml, example_type.yaml — closed
+    // enums), so no present value may silently become one.
+    #[test]
+    fn refuses_present_out_of_enum_values() {
+        for bad in ["", " ", " required ", "REQUIRED", "required\n"] {
+            assert!(
+                DetailLevel::from_query(Some(bad)).is_err(),
+                "detail_level {bad:?} must refuse"
+            );
+        }
+        for bad in ["", " ", " input ", "INPUT", "output "] {
+            assert!(
+                ExampleType::from_query(Some(bad)).is_err(),
+                "type {bad:?} must refuse"
+            );
+        }
     }
 
     #[test]
