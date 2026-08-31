@@ -1,24 +1,24 @@
 // SPDX-FileCopyrightText: FerroEHR contributors
 // SPDX-License-Identifier: MIT
 
-//! Versioning + integrity: the openEHR change-control model realized over the
+//! Versioning and integrity: the openEHR change-control model realized over the
 //! greenfield PG18 storage.
 //!
-//! Spec oracles (precedence order):
+//! Spec oracles, in precedence order:
 //! - RM common `master06-change_control_package.adoc` — the change-control law
-//!   (`VERSIONED_OBJECT`, VERSION, ORIGINAL/IMPORTED, CONTRIBUTION, committal &
-//!   audits, Digital Signature, Attestation, version lifecycle, logical
-//!   deletion, version identification, copying/merging).
+//!   (`VERSIONED_OBJECT`, VERSION, ORIGINAL/IMPORTED, CONTRIBUTION, committal
+//!   and audits, digital signature, attestation, version lifecycle, logical
+//!   deletion, version identification, copying and merging).
 //! - RM common `master04-generic_package.adoc` — `AUDIT_DETAILS`, ATTESTATION,
 //!   `REVISION_HISTORY`(_ITEM), `PARTY_PROXY`.
-//! - BASE `base_types` `master05-identification_package.adoc` — `OBJECT_VERSION_ID`
-//!   / `VERSION_TREE_ID` lexical forms, composite-identifier case rules.
+//! - BASE `base_types` `master05-identification_package.adoc` —
+//!   `OBJECT_VERSION_ID` / `VERSION_TREE_ID` lexical forms and case rules.
 //! - BASE arch-overview `master07-security.adoc` §Integrity,
 //!   `master08-versioning.adoc`, `master09-identification.adoc`.
 //!
-//! Layout derives from the spec's own decomposition. The digital signature is a
-//! section of master06 (`change_control`), so the signer/verifier live **inside**
-//! this module ([`signature`]), not as a standalone sibling.
+//! The layout derives from the spec's own decomposition: the digital signature
+//! is a section of master06, so the signer and verifier live inside this module
+//! ([`signature`]) rather than as a standalone sibling.
 //!
 //! # Module tree
 //!
@@ -38,27 +38,20 @@
 //!
 //! # Seam with storage (`crate::storage`)
 //!
-//! This module owns the *decisions* (classify, tree placement, lifecycle
-//! transition, sign, attest, import policy) and the *builders*
-//! (`ORIGINAL_VERSION` / `VERSIONED_OBJECT` / `REVISION_HISTORY` value construction).
-//! All `sqlx` execution for the `vo_version` / `audit` / `contribution` /
-//! `vo_attestation` rows is delegated to a storage-owned repository.
+//! This module owns the decisions (classify, tree placement, lifecycle
+//! transition, sign, attest, import policy) and the builders
+//! (`ORIGINAL_VERSION` / `VERSIONED_OBJECT` / `REVISION_HISTORY` value
+//! construction). All `sqlx` execution is delegated to a storage-owned
+//! repository: [`crate::storage::version_repo`] for the `vo_version` / `audit` /
+//! `contribution` / `vo_attestation` spine plus the folder-membership and
+//! event-outbox writes, and [`crate::storage::node_repo`] for the `decompose` /
+//! `reassemble` codec and the `node` writes. The per-function docs there are the
+//! authority for each call this module makes.
 //!
-//! NOTE: decomposing a `VERSIONED_OBJECT` into relational rows is EXPLICITLY
-//! sanctioned, not merely spec-silent — RM common
-//! `master06-change_control_package.adoc` §Overview: "Although the figure
-//! implies physical containment of Versions by a Versioned object, this is only
-//! one possible implementation. Other implementations (e.g. using orthodox
-//! relational structures) might use references, separate compressed copies, or
-//! any other mechanism." The row shapes themselves are our own design; no
-//! openEHR spec governs the SQL.
-//!
-//! The concrete row-I/O contract lives in [`crate::storage::version_repo`] (the
-//! `vo_version` / `audit` / `contribution` / `vo_attestation` spine plus the
-//! folder-membership and event-outbox writes) and
-//! [`crate::storage::node_repo`] (the `decompose` / `reassemble` codec + the
-//! `node` writes); the per-function docs there are the authority for each call
-//! this module makes.
+//! NOTE: RM common `master06-change_control_package.adoc` §Overview explicitly
+//! sanctions relational decomposition of a `VERSIONED_OBJECT` ("Other
+//! implementations (e.g. using orthodox relational structures) might use
+//! references"); the row shapes are our own design.
 
 #![expect(
     clippy::disallowed_types,

@@ -99,11 +99,9 @@ impl FerroEhrService {
     /// `RESULT_SET`. `name` is the stored-query name for the result metadata
     /// (`None` for an ad-hoc query).
     ///
-    /// Emits the AQL metrics: `aql_query_duration_seconds{phase}` for `plan`
-    /// and `execute` (each recorded only when its phase completes), and
-    /// `aql_queries_total{outcome}` exactly once per call — the failure arms
-    /// all route through [`Failure`], so the count-once property holds by
-    /// construction.
+    /// Emits `aql_query_duration_seconds{phase}` for `plan` and `execute`, each
+    /// recorded only when its phase completes, and `aql_queries_total{outcome}`
+    /// exactly once per call, every failure arm routing through [`Failure`].
     ///
     /// # Errors
     ///
@@ -218,9 +216,9 @@ impl FerroEhrService {
     /// is independent of them.
     ///
     /// A plan whose `matches` operands were resolved through the terminology
-    /// service (`crate::aql::terminology::expand_matches` reported an expansion) is **not**
-    /// cached: the resolution may differ on a later execution (QUERY master03
-    /// §TERMINOLOGY), so such a query always re-parses and re-expands.
+    /// service is not cached, the resolution being free to differ on a later
+    /// execution (QUERY master03 §TERMINOLOGY), so such a query always re-parses
+    /// and re-expands.
     ///
     /// # Errors
     ///

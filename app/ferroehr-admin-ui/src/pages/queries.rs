@@ -17,14 +17,6 @@
 //! All data flows through the [`crate::queries_api`] server fns plus the admin
 //! gate + stored-query delete in [`crate::admin`] — each guards the session
 //! itself; this screen declares no server fn of its own.
-//!
-//! Discipline (rules §1/§4/§6/§8/§9): the view is composed from `.into_any()`-
-//! erased section locals; the stored-query list is a `<For>` keyed by
-//! `name@version`, windowed by the shared pagination footer whose page state
-//! lives in the URL (`?page=`/`?size=`); refetched data (the listing, the
-//! on-demand AQL detail) reads under `<Transition>`; the table emits an
-//! explicit `<tbody>`; internal navigation uses `<A>`; there is zero authored
-//! JavaScript (`on:` Rust listeners only).
 
 use leptos::component;
 use leptos::prelude::*;
@@ -64,7 +56,7 @@ pub fn QueriesPage() -> impl IntoView {
     let toaster = thaw::ToasterInjection::expect_context();
     // The admin probe and the CDR stored-query delete it gates (discover-and-hide:
     // no advertised admin group, no delete affordance). Created in setup so the
-    // gated view can re-render without re-creating them (rules §4).
+    // gated view can re-render without re-creating them.
     let gate = crate::admin::admin_gate();
     let cdr_delete: CdrQueryDelete = Action::new(|key: &(String, String)| {
         let key = key.clone();
@@ -76,8 +68,8 @@ pub fn QueriesPage() -> impl IntoView {
     });
     // ONE listing feeds both panes — the table (left) and the derived namespace
     // grouping (right); a Resource is Copy so both read it. A CDR delete bumps
-    // the action's version, which is the resource's source (rules §6), so the
-    // grouping re-derives with the table.
+    // the action's version, which is the resource's source, so the grouping
+    // re-derives with the table.
     let stored = Resource::new(
         move || cdr_delete.version().get(),
         |_| async move { list_stored_queries().await },
@@ -132,8 +124,8 @@ fn stored_queries_panel(
     cdr_delete: CdrQueryDelete,
 ) -> AnyView {
     // The table's page window, read from the URL here in SETUP — never inside
-    // the `Suspend` that awaits the listing (rules §4). Turning the page
-    // therefore re-renders the row window without refetching the listing.
+    // the `Suspend` that awaits the listing. Turning the page therefore
+    // re-renders the row window without refetching the listing.
     let paging = paging_from_url();
     // The row (name, version) whose AQL detail is currently expanded.
     let selected = RwSignal::new(Option::<(String, String)>::None);
@@ -205,9 +197,9 @@ fn cdr_delete_dialog(
 }
 
 /// The stored-queries table, read under `<Transition>` (a CDR delete refetches
-/// the list — keep the current rows visible instead of flashing the skeleton,
-/// rules §6). The admin probe is awaited in the SAME `Suspend` as the list, so
-/// every row agrees on whether the delete affordance exists.
+/// the list — keep the current rows visible instead of flashing the skeleton).
+/// The admin probe is awaited in the SAME `Suspend` as the list, so every row
+/// agrees on whether the delete affordance exists.
 fn stored_table(
     stored: Resource<Result<Vec<StoredQueryRow>, AdminUiError>>,
     selected: RwSignal<Option<(String, String)>>,
@@ -234,10 +226,10 @@ fn stored_table(
 
 /// Render the stored-query rows (or the empty state): one page of the listing
 /// plus the shared pagination footer. The row list is a `<For>` keyed by
-/// `name@version` (rules §4 — a stable, data-derived key), and its `each`
-/// closure is what tracks the URL's page window, so paging re-renders the rows
-/// without touching the listing resource. `data-stored-query` is the stable
-/// E2E hook for a row.
+/// `name@version` (a stable, data-derived key), and its `each` closure is what
+/// tracks the URL's page window, so paging re-renders the rows without
+/// touching the listing resource. `data-stored-query` is the stable E2E hook
+/// for a row.
 fn stored_rows_view(
     rows: Vec<StoredQueryRow>,
     selected: RwSignal<Option<(String, String)>>,
@@ -286,7 +278,7 @@ fn stored_rows_view(
 }
 
 /// One stored-query row. Clicking it toggles the single-select detail below the
-/// table (`on:click` is a Rust listener — zero authored JS, rules §0).
+/// table (`on:click` is a Rust listener — zero authored JS).
 fn stored_row(
     row: StoredQueryRow,
     selected: RwSignal<Option<(String, String)>>,
@@ -401,7 +393,7 @@ fn cdr_delete_button(
 
 /// The AQL detail below the table: the selected query's AQL in a
 /// [`DocumentPane`] plus a Run button. Read under `<Transition>` so the old
-/// detail stays visible while a new selection loads (rules §6).
+/// detail stays visible while a new selection loads.
 fn stored_detail(detail: Resource<Result<Option<String>, AdminUiError>>) -> AnyView {
     view! {
         <div class="mt-3">
@@ -459,8 +451,8 @@ fn detail_panel(aql: String) -> AnyView {
 /// create, edit, or remove here (and nothing stored console-side).
 fn namespaces_panel(stored: Resource<Result<Vec<StoredQueryRow>, AdminUiError>>) -> AnyView {
     // `<Transition>`: the listing refetches after a CDR delete — keep the
-    // current grouping visible instead of flashing a fallback (rules §6). The
-    // `Result` resolves INSIDE the `Suspend` (rules §4).
+    // current grouping visible instead of flashing a fallback. The `Result`
+    // resolves INSIDE the `Suspend`.
     let list = view! {
         <Transition fallback=|| {
             view! { <p class="text-sm text-ink-muted">"Loading namespaces…"</p> }

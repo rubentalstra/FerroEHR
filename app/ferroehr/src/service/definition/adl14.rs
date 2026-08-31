@@ -5,24 +5,24 @@
 //! Templates): ADL 1.4 source archetypes keyed by `ARCHETYPE_ID` (on
 //! `archetype_store`) and OPTs keyed by `UUID` (on `template_store`).
 //!
-//! ADL 1.4 archetype validity is the real `openehr-adl` engine, judged **as
-//! 1.4**: an upload parses via [`openehr_adl::assemble::parse_artefact`] in
-//! [`openehr_adl::parse::Dialect::Adl14`]
-//! (the 1.4-shaped `openehr_am::v2_4` model) and validates against the subset
-//! of the phase-1 catalogue that corresponds to the ADL 1.4 / AOM 1.4 standalone
-//! validity rules, plus the one 1.4 rule stated "according to the reference
-//! model" — VUNT ([`openehr_adl::validate::validate_adl14_source`]; ADL1.4
-//! `master08` §Validity Rules + `master05-cadl.adoc` §Internal References
-//! L512-513 + AOM1.4 class invariants). A 1.4 source is
-//! validated **as 1.4**, never post-conversion — converting the artefact would
-//! change what is being judged.
+//! ADL 1.4 archetype validity is the `openehr-adl` engine judged as 1.4: an
+//! upload parses via [`openehr_adl::assemble::parse_artefact`] in
+//! [`openehr_adl::parse::Dialect::Adl14`] (the 1.4-shaped `openehr_am::v2_4`
+//! model) and validates against the subset of the phase-1 catalogue
+//! corresponding to the ADL 1.4 / AOM 1.4 standalone validity rules, plus VUNT,
+//! the one 1.4 rule stated "according to the reference model"
+//! ([`openehr_adl::validate::validate_adl14_source`]; ADL1.4 `master08` §Validity
+//! Rules, `master05-cadl.adoc` §Internal References, AOM1.4 class invariants).
+//! A 1.4 source is never validated post-conversion, which would change what is
+//! being judged.
 //!
-//! An in-CDR 1.4 → ADL 2 migration is offered as a service capability
-//! ([`FerroEhrService::adl14_convert_to_adl2`]) — the stored 1.4 *source* text is
-//! converted through the `openehr_adl::adl14` converter. **NOTE: no openEHR spec
-//! governs 1.4 → 2 conversion — our own design/extension** (verified: the
-//! vendored ITS-REST OAS declares no conversion operation), so it is
-//! service-level only and never exposed on the wire.
+//! An in-CDR 1.4 to ADL 2 migration is offered as a service capability
+//! ([`FerroEhrService::adl14_convert_to_adl2`]), converting the stored 1.4 source
+//! text through the `openehr_adl::adl14` converter.
+//!
+//! NOTE: no openEHR spec governs 1.4 to 2 conversion and the vendored ITS-REST
+//! OAS declares no conversion operation — our own design/extension, service-level
+//! only and never exposed on the wire.
 
 use std::str::FromStr;
 
@@ -92,12 +92,13 @@ impl FerroEhrService {
     /// the id in the same transaction, then inserts the source verbatim — so a
     /// re-upload with different case *replaces* rather than duplicates.
     ///
-    /// Returns the stored `ARCHETYPE_ID` — the identity read out of the
-    /// submitted source. NOTE (`i_definition_adl14.adoc` types the operation's
-    /// return as void; no openEHR spec governs what a transport does with the
-    /// stored identity — our own design/extension): the id is returned so a
-    /// caller that persisted the artefact can address it without re-parsing the
-    /// source it just sent.
+    /// Returns the stored `ARCHETYPE_ID`, the identity read out of the submitted
+    /// source.
+    ///
+    /// NOTE: `i_definition_adl14.adoc` types the operation's return as void and
+    /// no openEHR spec governs what a transport does with the stored identity —
+    /// our own design/extension, so a caller can address the artefact without
+    /// re-parsing what it sent.
     ///
     /// # Errors
     ///
@@ -113,25 +114,18 @@ impl FerroEhrService {
         Ok(self.archetype_upload(&adl).await?)
     }
 
-    /// Convert a stored ADL 1.4 archetype (by `ARCHETYPE_ID`) to ADL 2 source
-    /// text via the `openehr_adl::adl14` converter (the in-CDR 1.4 → 2 migration
-    /// capability). The stored artefact is 1.4 *source* text (on
-    /// `archetype_store`), which the converter consumes directly.
+    /// Converts a stored ADL 1.4 archetype (by `ARCHETYPE_ID`) to ADL 2 source
+    /// text via the `openehr_adl::adl14` converter.
     ///
-    /// **NOTE: no openEHR spec governs 1.4 → 2 conversion — our own
-    /// design/extension** (the vendored ITS-REST OAS declares no conversion
-    /// operation), so there is no REST endpoint; this is a service capability
-    /// only.
+    /// The stored artefact is 1.4 source text on `archetype_store`, which the
+    /// converter consumes directly. A specialised source is base-converted,
+    /// renumbered against its own codes; re-differentialisation against a
+    /// converted and flattened parent is the converter's `differ`. Stored 1.4
+    /// operational templates go through the sibling
+    /// [`FerroEhrService::adl14_convert_opt_to_adl2`] instead.
     ///
-    /// A specialised 1.4 source is base-converted (renumbered against its own
-    /// codes); re-differentialisation against a converted+flattened parent is a
-    /// separate concern of the converter's `differ`.
-    ///
-    /// Stored 1.4 *operational templates* are converted by the sibling
-    /// [`FerroEhrService::adl14_convert_opt_to_adl2`] (an OPT is
-    /// specialisation-flattened, so it decomposes into one source per embedded
-    /// archetype root); this method handles the stored 1.4 *source archetype*
-    /// case, which the converter consumes directly.
+    /// NOTE: no openEHR spec governs 1.4 to 2 conversion — our own
+    /// design/extension, a service capability with no REST endpoint.
     ///
     /// # Errors
     ///
@@ -165,15 +159,12 @@ impl FerroEhrService {
     /// A 1.4 OPT is specialisation-flattened: its `definition` is one
     /// `C_ARCHETYPE_ROOT` tree with the component archetypes embedded as nested
     /// `C_ARCHETYPE_ROOT` nodes, each with its own at-code space. The
-    /// `super::opt14_convert` front end decomposes it into one scoped
-    /// 1.4-shaped `v2_4` source per embedded root and converts each; the
-    /// recovered composition structure is available on the front end's result
-    /// (not surfaced here — this method returns the converted sources).
+    /// `super::opt14_convert` front end decomposes it into one scoped 1.4-shaped
+    /// `v2_4` source per embedded root and converts each; the recovered
+    /// composition structure stays on the front end's result.
     ///
-    /// **NOTE: no openEHR spec governs 1.4 → 2 conversion — our own
-    /// design/extension** (the vendored ITS-REST OAS declares no conversion
-    /// operation), so there is no REST endpoint; this is a service capability
-    /// only.
+    /// NOTE: no openEHR spec governs 1.4 to 2 conversion — our own
+    /// design/extension, a service capability with no REST endpoint.
     ///
     /// # Errors
     ///
@@ -359,12 +350,10 @@ impl FerroEhrService {
     /// `an_opt_id` (a `UUID`), evicting its derived-runtime (`WebTemplate`)
     /// cache entry.
     ///
-    /// NOTE: the in-use refusal below is our own integrity design — the SM
-    /// operation (`i_definition_adl14.adoc` §`delete_opt`) defines only
-    /// `Pre_has_opt` and the `invalid_template` error and is silent on
-    /// committed data referencing the template; a physical delete must never
-    /// orphan the compositions built on it, so this path refuses exactly like
-    /// the admin wire delete ([`Self::admin_template_delete`]).
+    /// NOTE: `i_definition_adl14.adoc` §`delete_opt` is silent on committed data
+    /// referencing the template, so the in-use refusal is our own integrity
+    /// design, matching the admin wire delete
+    /// ([`Self::admin_template_delete`]).
     ///
     /// # Errors
     ///
@@ -686,12 +675,13 @@ fn archetype_validate(adl: &str) -> Result<(), ServiceError> {
     }
 }
 
-/// Map an ADL 1.4 archetype parse failure to a [`ServiceError::ValidationFailed`]
-/// carrying the S-code mnemonics — the archetype-provisioning operations are
-/// SM-only (`i_definition_adl14.adoc` `upload_archetype` `invalid_archetype`;
-/// ITS-REST 1.1.0 surfaces no archetype route — the registered realization
-/// gap), so no released wire status attaches and the SM error is the whole
-/// contract.
+/// Maps an ADL 1.4 archetype parse failure to a
+/// [`ServiceError::ValidationFailed`] carrying the S-code mnemonics.
+///
+/// The archetype-provisioning operations are SM-only
+/// (`i_definition_adl14.adoc` `upload_archetype` `invalid_archetype`; ITS-REST
+/// 1.1.0 surfaces no archetype route), so no released wire status attaches and
+/// the SM error is the whole contract.
 /// Promote the generic `content_invalid` of a [`ServiceError`] crossing an
 /// upload seam to the operation's declared artefact status.
 ///

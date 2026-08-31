@@ -4,14 +4,13 @@
 //! FHIR R4 `AuditEvent` rendering of the audit event model, following the
 //! IHE **BALP** (Basic Audit Log Patterns) content profiles.
 //!
-//! This is the modern half of the dual ATNA rendering (the classic half is
-//! the DICOM PS3.15 §A.5 XML in [`super::message`]): the same resolved
-//! [`super::event::AuditEvent`] renders to one FHIR R4
-//! `AuditEvent` JSON document. This module decides the BALP content; the
-//! resource itself is built and serialized by
-//! [`ferroehr_ext::fhir::audit`], over the typed `fhir-model` model.
-//! The BALP profiles pin the codings this module emits (IHE BALP v1.1.4,
-//! `IHE.BasicAudit.*` StructureDefinitions):
+//! This is the modern half of the dual ATNA rendering, the classic half being
+//! the DICOM PS3.15 §A.5 XML in [`super::message`]: the same resolved
+//! [`super::event::AuditEvent`] renders to one FHIR R4 `AuditEvent` JSON
+//! document. This module decides the BALP content and
+//! [`ferroehr_ext::fhir::audit`] builds and serializes the resource. The BALP
+//! profiles pin the codings emitted here (IHE BALP v1.1.4, `IHE.BasicAudit.*`
+//! StructureDefinitions):
 //!
 //! - `RESTful` operations: `type` = `rest`, `subtype` = the FHIR
 //!   restful-interaction class + the concrete ITS-REST operation id.

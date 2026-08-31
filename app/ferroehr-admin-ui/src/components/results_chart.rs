@@ -5,13 +5,12 @@
 //! page of an AQL `RESULT_SET`, shared by the query builder and the raw AQL
 //! editor.
 //!
-//! Pure Rust + SVG through `leptos-chartistry` (the no-JS mandate — rules §0):
-//! one line per mostly-numeric result column, an interactive legend that shows
-//! and hides series, and an X-axis picker offering every ISO 8601 column as a
-//! real time scale with the row order as the fallback. Every one of those
-//! decisions is derived by [`crate::chart_model`], a pure function of the
-//! fetched rows, so the server pass and the browser hydration build the same
-//! structure (rules §8).
+//! Pure Rust + SVG through `leptos-chartistry` (the no-JS mandate): one line
+//! per mostly-numeric result column, an interactive legend that shows and
+//! hides series, and an X-axis picker offering every ISO 8601 column as a real
+//! time scale with the row order as the fallback. Every one of those decisions
+//! is derived by [`crate::chart_model`], a pure function of the fetched rows,
+//! so the server pass and the browser hydration build the same structure.
 //!
 //! Hiding a series feeds `f64::NAN` for its Y values instead of rebuilding the
 //! chart: chartistry treats a `NaN` as missing data (a gap in the line) and
@@ -126,7 +125,7 @@ fn axis_picker(labels: &[String], axis: RwSignal<usize>) -> AnyView {
 fn legend_row(specs: &[SeriesSpec], visible: RwSignal<Vec<bool>>) -> AnyView {
     let shown = Memo::new(move |_| visible.with(|flags| flags.iter().filter(|on| **on).count()));
     // A static list built once (the series of one fetched page never change),
-    // so there is no <For> key to get wrong — rules §4.
+    // so there is no <For> key to get wrong.
     let chips = specs
         .iter()
         .enumerate()

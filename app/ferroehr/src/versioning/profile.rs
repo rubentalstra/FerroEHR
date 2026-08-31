@@ -4,21 +4,19 @@
 //! The `spec_profile` compatibility stamp and the read-time refusal it feeds.
 //!
 //! No openEHR spec governs runtime specification-generation selection — our own
-//! design/extension. The compatibility direction the design rests on IS
-//! spec-governed: the openEHR release strategy
+//! design/extension. The compatibility direction it rests on is spec-governed:
+//! the openEHR release strategy
 //! (<https://specifications.openehr.org/governance/release_strategy>) defines a
 //! minor release as "significant additions that do not change the semantics of
-//! the existing part of the release", so a body accepted by a RELEASED
-//! generation stays acceptable to a later development generation — never the
+//! the existing part of the release", so a body accepted by a released
+//! generation stays acceptable to a later development generation and never the
 //! reverse.
 //!
-//! Hence the asymmetry this module implements: a commit under the development
-//! generations additionally asks the RELEASED generation's reader whether it
-//! could read the same body, and stores the answer
-//! (`vo_version.stable_compatible`). A deployment later configured to the
-//! `stable` profile refuses to serve a version that answer says the released
-//! generations cannot express, rather than serving a body it does not
-//! implement or rewriting one it must not.
+//! A commit under the development generations therefore also asks the released
+//! generation's reader whether it could read the same body and stores the answer
+//! (`vo_version.stable_compatible`). A deployment configured to the `stable`
+//! profile refuses to serve a version that answer marks inexpressible, rather
+//! than serving a body it does not implement or rewriting one it must not.
 
 use serde_json::Value;
 
@@ -82,19 +80,12 @@ pub(crate) fn stable_compatible(profile: SpecProfile, kind: Kind, canonical: &Va
 /// Refuses to serve a stored version the active profile's generations cannot
 /// express.
 ///
-/// The refusal is the generic SM `conflict` status → `409` (the same bridge row
-/// every other `409` takes, `crate::service::error`). Adjudication: no openEHR
-/// spec governs runtime generation selection, so the status comes from HTTP
-/// itself — RFC 9110 §15.5.10 assigns `409` to "a conflict with the current
-/// state of the target resource" whose resolution the response should describe,
-/// which is precisely this case (the stored state conflicts with the profile
-/// the deployment declares, and switching the profile back resolves it). The
-/// ITS-REST overview `Requests_and_responses.md` §"HTTP status codes" row reads
-/// the same way ("a conflict"). `406` was rejected: RFC 9110 §15.5.7 scopes it
-/// to proactive content negotiation, and no request header can change this
-/// outcome. `500` was rejected: the condition is a deployment decision with a
-/// named remedy, and the 500-class bodies here are deliberately opaque
-/// (`INTERNAL_MESSAGE`), which would hide it.
+/// The refusal is the generic SM `conflict` status, `409`, taking the same
+/// bridge row every other `409` takes. No openEHR spec governs runtime
+/// generation selection, so the status comes from HTTP itself: RFC 9110
+/// §15.5.10 assigns `409` to "a conflict with the current state of the target
+/// resource" whose resolution the response should describe, which is this case,
+/// the stored state conflicting with the declared profile.
 fn refuse(
     profile: SpecProfile,
     kind: Kind,
@@ -163,22 +154,19 @@ pub(crate) fn gate(
 ///
 /// A whole-object projection serves a stored version body, so it answers the
 /// same question [`gate`] answers on the resource reads, keyed on the same
-/// per-VERSION stamp — a body the released generations cannot express is never
-/// served under `stable`, however it was reached. The refusal is the whole
-/// query, because the ITS-REST `RESULT_SET` is columns and rows of values with
-/// no per-row diagnostic channel (`docs/specs/openehr/SM/docs/UML/classes/
-/// result_set.adoc`; ITS-REST `specifications/responses/200_Query.yaml`), so
-/// the only per-row alternative would be dropping the row — a silent elision.
+/// per-version stamp. The refusal is the whole query: the ITS-REST `RESULT_SET`
+/// is columns and rows of values with no per-row diagnostic channel
+/// (`SM/docs/UML/classes/result_set.adoc`; `responses/200_Query.yaml`), so the
+/// only per-row alternative would be a silent elision.
 ///
-/// Scalar/leaf cells are NOT gated: they serve data VALUES over paths the
+/// Scalar and leaf cells are not gated: they serve data values over paths the
 /// planning gate already bounded to the active generation's declared surface
-/// (`crate::aql::analyze`), not version bodies.
+/// (`crate::aql::analyze`).
 ///
-/// Cost under the default `development` profile is zero — the first line
-/// returns. Under `stable` it is ONE key-lookup statement over the page's
-/// distinct `(vo_id, sys_version)` pairs that returns only versions NOT stamped
-/// compatible (the common case ends there), plus ONE batched body load for any
-/// it does return — never per row.
+/// Cost under the default `development` profile is zero, the first line
+/// returning. Under `stable` it is one key-lookup statement over the page's
+/// distinct `(vo_id, sys_version)` pairs returning only versions not stamped
+/// compatible, plus one batched body load for any it returns.
 ///
 /// # Errors
 /// The `409`-class [`ServiceError::Conflict`] of [`refuse`], naming the first

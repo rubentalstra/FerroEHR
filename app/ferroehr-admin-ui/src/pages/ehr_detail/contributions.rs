@@ -34,13 +34,13 @@ const CONTRIBUTION_FETCH: u32 = 20;
 /// timeline answers a different question than the list ("when was this EHR
 /// written to", not "which contributions are on this page"), so it reads its own
 /// window of the SAME endpoint — one reader per claim, never a second endpoint
-/// for the same fact (crate `CLAUDE.md` §One reader per claim).
+/// for the same fact.
 #[cfg(feature = "ssr")]
 const ACTIVITY_FETCH: u32 = 200;
 
-/// One row of the EHR's contribution list. Fixed-size-safe strings (rules §1);
-/// the shape is the CDR's contribution-list contract
-/// (`{uid, time_committed, committer, change_type, change_type_rubric}`).
+/// One row of the EHR's contribution list. Fixed-size-safe strings; the shape
+/// is the CDR's contribution-list contract (`{uid, time_committed, committer,
+/// change_type, change_type_rubric}`).
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub struct ContributionRow {
     /// The CONTRIBUTION uid.
@@ -58,7 +58,7 @@ pub struct ContributionRow {
 
 /// One page of an EHR's contributions: the rows plus the total count (for
 /// prev/next). Carries only fixed-size ints so it is WASM-safe over the
-/// server-fn boundary (rules §1).
+/// server-fn boundary.
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub struct ContributionPage {
     /// The contribution rows on this page.
@@ -220,7 +220,7 @@ pub async fn fetch_contribution(
 /// The per-EHR activity timeline: contributions per day, drawn with the shared
 /// [`activity_chart`] kit (the same chart the dashboard's commit trend uses).
 /// Its resource is created in setup and gated on the tab being active, so it
-/// fetches only when shown (rules §6 — never fetch-in-effect).
+/// fetches only when shown (never fetch-in-effect).
 fn activity_section(ehr_id: Signal<String>, selected: Memo<String>) -> AnyView {
     let resource = Resource::new(
         move || (selected.get() == "contributions").then(|| ehr_id.get()),
@@ -432,7 +432,7 @@ fn contribution_lookup(ehr_id: Signal<String>, selected: Memo<String>) -> AnyVie
                     Ok(Some(body)) => contribution_body(&body),
                     Ok(None) => {
                         // Resolve inside the Transition: an SSR'd ErrorBoundary fallback
-                        // mismatches at hydration in leptos 0.8 (E2E console gate).
+                        // mismatches at hydration in leptos 0.8.
                         view! {
                             <p class="text-sm text-ink-muted">
                                 "Enter a contribution uid to look it up."

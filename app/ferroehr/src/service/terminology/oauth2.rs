@@ -12,24 +12,19 @@
 //! lifetime rather than one per request.
 //!
 //! NOTE: no openEHR spec governs terminology-server authentication — our own
-//! design/extension. `BASE/docs/architecture_overview/master12-terminology.adoc`
-//! models the backend only as an external "terminology query server"; the
-//! grant itself is RFC 6749 §4.4 (client credentials), implemented by the
-//! `oauth2` crate rather than hand-rolled.
+//! design/extension; the grant is RFC 6749 §4.4 (client credentials),
+//! implemented by the `oauth2` crate.
 //!
-//! The `oauth2` crate is HTTP-client agnostic: it builds an
-//! `http::Request<Vec<u8>>` and parses the `http::Response<Vec<u8>>` through
-//! its `AsyncHttpClient` trait (docs.rs `oauth2::AsyncHttpClient`). Its own
-//! `reqwest` impl targets a different major version of that crate than the
-//! workspace pins, so `Oauth2HttpClient` supplies the pinned one — the token
-//! endpoint is then reached with the same TLS stack as the terminology
-//! operations themselves.
+//! That crate is HTTP-client agnostic, building an `http::Request<Vec<u8>>` and
+//! parsing the response through its `AsyncHttpClient` trait, and its own
+//! `reqwest` impl targets a different major version than the workspace pins, so
+//! `Oauth2HttpClient` supplies the pinned one and the token endpoint is reached
+//! with the same TLS stack as the terminology operations.
 //!
 //! NOTE: the transport trait is implemented on a concrete type rather than
-//! through the crate's blanket closure impl. The blanket impl leaves the
-//! future's `Send`-ness higher-ranked, which the compiler cannot discharge
-//! through the `#[async_trait]` call chain that reaches it (the AQL
-//! terminology seam); a named impl declares `Send` outright.
+//! through the crate's blanket closure impl, whose higher-ranked `Send`-ness the
+//! compiler cannot discharge through the `#[async_trait]` call chain that
+//! reaches it.
 
 use std::future::Future;
 use std::pin::Pin;

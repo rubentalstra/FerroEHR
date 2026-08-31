@@ -4,19 +4,16 @@
 //! The destructive-confirmation modal.
 //!
 //! ONE dialog every delete affordance in the console opens, so "are you sure?"
-//! looks and behaves identically everywhere (owner directive 2026-07-25 — a
-//! modal confirm is the industry standard; the inline two-step confirm this
-//! replaced is retired).
+//! looks and behaves identically everywhere.
 //!
 //! State is a single source of truth: the caller owns the signal saying WHICH
 //! object is awaiting confirmation, derives `open` from it, and clears it in
 //! `on_cancel` — so the trigger, Cancel, Esc and a backdrop click all write the
 //! same one signal, and no second copy of "is the dialog open" can drift.
 //!
-//! Hydration (rules §8): the dialog is closed on the first render of BOTH
-//! passes, and `thaw::Dialog` teleports nothing while closed, so the server HTML
-//! and the hydrated view agree (the same machinery as the shell's
-//! `OverlayDrawer`).
+//! Hydration: the dialog is closed on the first render of BOTH passes, and
+//! `thaw::Dialog` teleports nothing while closed, so the server HTML and the
+//! hydrated view agree (the same machinery as the shell's `OverlayDrawer`).
 
 use leptos::component;
 use leptos::prelude::*;

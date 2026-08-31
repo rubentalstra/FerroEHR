@@ -6,9 +6,9 @@
 //!
 //! The filters (template, a context-start-time window, composer) live in the
 //! query string — `?template=`/`?from=`/`?to=`/`?composer=`, submitted by a GET
-//! `<Form>` (rules §9) — so a filtered view is shareable, refresh-safe and
-//! reproducible before the WASM bundle loads. They are read in SETUP and feed
-//! the list resource's source, so a filter change refetches exactly once and a
+//! `<Form>` — so a filtered view is shareable, refresh-safe and reproducible
+//! before the WASM bundle loads. They are read in SETUP and feed the list
+//! resource's source, so a filter change refetches exactly once and a
 //! submission drops `?offset=`, putting the reader on the first page of the new
 //! result set. The statement they produce is assembled by the pure,
 //! component-free [`composition_filter`](super::composition_filter): operator
@@ -183,16 +183,16 @@ pub async fn commit_composition(
 /// whose uid cells open the composition viewer's RENDERED clinical reading
 /// (under `<Transition>` so paging keeps old rows visible), plus a "Commit
 /// composition" form below it. A successful commit bumps the commit action's
-/// version — a source of the list resource — refetching the table (rules §6 —
-/// never fetch-in-effect).
+/// version — a source of the list resource — refetching the table (never
+/// fetch-in-effect).
 pub(super) fn compositions_section(
     ehr_id: Signal<String>,
     offset: Signal<u32>,
     selected: Memo<String>,
 ) -> AnyView {
     let toaster = thaw::ToasterInjection::expect_context();
-    // URL state read in SETUP (rules §9): the filter values feed the resource
-    // source, and the paging links carry every one of them across.
+    // URL state read in SETUP: the filter values feed the resource source,
+    // and the paging links carry every one of them across.
     let query = leptos_router::hooks::use_query_map();
     let filter = Signal::derive(move || {
         query.with(|q| {
@@ -213,10 +213,9 @@ pub(super) fn compositions_section(
             async move { commit_composition(ehr_id, format, template_id, body).await }
         },
     );
-    // Both outcomes toast (an outside-world side-effect — rules §2; the
-    // console's mutation-feedback rule — crate CLAUDE.md); the CDR's
-    // validation diagnostic ALSO stays inline in the form, where the pasted
-    // body is.
+    // Both outcomes toast (an outside-world side-effect; the console's
+    // mutation-feedback rule); the CDR's validation diagnostic ALSO stays
+    // inline in the form, where the pasted body is.
     Effect::new(move |_| match commit.value().get() {
         Some(Ok(uid)) => {
             let detail = if uid.is_empty() {
@@ -280,8 +279,8 @@ pub(super) fn compositions_section(
     view! { <div>{filters} {table} {form}</div> }.into_any()
 }
 
-/// The row-filter bar: a GET `<Form>` whose fields ARE the URL state
-/// (rules §9).
+/// The row-filter bar: a GET `<Form>` whose fields ARE the URL
+/// state.
 ///
 /// Submitting navigates to `/ehrs/{id}?tab=compositions&…`, which drops
 /// `?offset=` — a new filter set starts at its own first page — and keeps
@@ -289,13 +288,11 @@ pub(super) fn compositions_section(
 /// natively; the router takes over once WASM loads).
 ///
 /// Each field shows what the URL says, through the attribute/property pair the
-/// console uses wherever server HTML and live state must agree (rules §2): the
-/// static `value` attribute is the server pass, so a shared link arrives with
-/// the boxes already filled; the `prop:value` binding follows the address bar
-/// afterwards, so **Clear** and the browser's back button empty and refill them
-/// instead of leaving stale text under a URL that no longer says it. Typing
-/// changes nothing the binding reads, so a draft survives until the next
-/// navigation — at which point the URL is the truth again.
+/// console uses wherever server HTML and live state must agree: the static
+/// `value` attribute is the server pass, so a shared link arrives with the boxes
+/// already filled; the `prop:value` binding follows the address bar afterwards,
+/// so **Clear** and the back button empty and refill them. Typing changes
+/// nothing the binding reads, so a draft survives until the next navigation.
 fn filter_bar(ehr_id: Signal<String>, query: Memo<ParamsMap>) -> AnyView {
     let initial = move |key: &str| query.read_untracked().get(key).unwrap_or_default();
     let current = move |key: &'static str| {
@@ -380,8 +377,8 @@ fn filter_bar(ehr_id: Signal<String>, query: Memo<ParamsMap>) -> AnyView {
 /// The "Commit composition" form: a format select, a template-id input shown
 /// only for FLAT (its `openehr-template-id` header is required there — kept in
 /// the DOM and toggled with `class:hidden` so the server and client view
-/// structure stay identical, rules §8), a large body textarea, and a Commit
-/// button dispatching the shared `commit` action.
+/// structure stay identical), a large body textarea, and a Commit button
+/// dispatching the shared `commit` action.
 fn commit_form(
     ehr_id: Signal<String>,
     commit: Action<(String, ReprFormat, String, String), Result<String, AdminUiError>>,
@@ -565,9 +562,8 @@ fn compositions_table(
 /// id, in the RENDERED clinical view (`?view=` — the composition viewer's
 /// deep-linkable pane mode); the full uid stays visible.
 ///
-/// Both path segments are percent-encoded (owner rule: all percent-coding goes
-/// through `urlencoding`) — an id carrying `/`, `#`, `?` or `%` would otherwise
-/// address a different route.
+/// Both path segments are percent-encoded — an id carrying `/`, `#`, `?` or `%`
+/// would otherwise address a different route.
 fn composition_row(row: &[Value], ehr_id: &str) -> AnyView {
     let uid = row.first().map(cell_text).unwrap_or_default();
     let vo_id = urlencoding::encode(&crate::uid::container_uid_of(&uid)).into_owned();

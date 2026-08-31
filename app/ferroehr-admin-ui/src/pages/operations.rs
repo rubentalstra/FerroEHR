@@ -6,9 +6,8 @@
 //! and the live log-filter control.
 //!
 //! No openEHR spec governs an admin UI, and none governs the surfaces it reads
-//! here either — our own operational extension (dispositions on issues #305 and
-//! #307; the wire shapes live in [`crate::management`], which carries the
-//! citations).
+//! here either — our own operational extension; the wire shapes live in
+//! [`crate::management`], which carries the citations.
 //!
 //! **Two deliberate divisions of labour**, both to keep exactly one console
 //! reader per claim:
@@ -26,15 +25,12 @@
 //!   one claim. The single viewer stays on `/system` — it reads the API base
 //!   URL the console is always configured for, whereas the management surface
 //!   may sit on an internal listener the console cannot reach at all — and this
-//!   screen cross-links to it. (The same reasoning as the audit-log tile on
-//!   `/system`: point at the one real surface, never build a second, worse one.)
+//!   screen cross-links to it.
 //!
-//! Each card is an `.into_any()`-erased section local (rules §1) with its own
-//! [`Resource`] + `<Suspense>` skeleton that resolves its `Result` INSIDE the
-//! suspense — an SSR'd `ErrorBoundary` fallback mismatches at hydration in
-//! leptos 0.8 (rules §4) — so one failing card never blanks the page, and a
-//! management endpoint the deployment left off renders as a first-class absent
-//! state rather than an error.
+//! Each card resolves its `Result` INSIDE its own `<Suspense>` — an SSR'd
+//! `ErrorBoundary` fallback mismatches at hydration in leptos 0.8 — so one
+//! failing card never blanks the page, and a management endpoint the deployment
+//! left off renders as a first-class absent state rather than an error.
 
 use leptos::component;
 use leptos::prelude::*;
@@ -59,7 +55,7 @@ use crate::management::{
 
 /// The log-filter apply action: the filter it was dispatched with, paired with
 /// the CDR's answer, so both toasts can name the exact directives (the
-/// mutation-feedback rule — crate `CLAUDE.md`).
+/// mutation-feedback rule).
 type ApplyFilterAction = Action<String, (String, Result<LoggerView, AdminUiError>)>;
 
 /// The log-filter reset action.
@@ -86,8 +82,8 @@ pub fn OperationsPage() -> impl IntoView {
 
     // Both mutation outcomes toast, success and failure alike (the console's
     // one feedback rule): dispatching a toast is a side effect on the outside
-    // world, so an Effect is its correct home (rules §2) and it never runs on
-    // the server pass.
+    // world, so an Effect is its correct home and it never runs on the server
+    // pass.
     Effect::new(move |_| match apply.value().get() {
         Some((filter, Ok(view))) => toast_success(
             toaster,
@@ -299,7 +295,7 @@ fn build_info_body(view: BuildInfoView) -> AnyView {
 
 /// The metrics card: headline tiles plus the registry browser (pick a metric,
 /// read its current samples). The selection lives in the URL (`?metric=…`), so
-/// a view is shareable, refresh-safe, and works before WASM loads (rules §9).
+/// a view is shareable, refresh-safe, and works before WASM loads.
 fn metrics_card(query: Memo<leptos_router::params::ParamsMap>) -> AnyView {
     let tiles = Resource::new(|| (), |()| async move { fetch_headline_metrics().await });
     let names = Resource::new(|| (), |()| async move { fetch_metric_names().await });

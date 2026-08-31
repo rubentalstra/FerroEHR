@@ -105,8 +105,8 @@ pub async fn fetch_party_tags(
 /// Read one party's container tag collection.
 ///
 /// The plain function behind [`fetch_party_tags`], so [`set_party_tag`]'s
-/// read-modify-write calls THIS rather than another public endpoint (rules §7 —
-/// a server fn is thin and the logic it shares lives in an ordinary function).
+/// read-modify-write calls THIS rather than another public endpoint (a server
+/// fn is thin and the logic it shares lives in an ordinary function).
 ///
 /// # Errors
 /// CDR transport errors pass through; a non-2xx answer normalizes via
@@ -241,8 +241,8 @@ fn tags_url(state: &crate::state::AppState, kind: PartyKind, uid: &str) -> Strin
 
 /// The party detail's **Tags** tab, drawn by the shared tag kit.
 ///
-/// One resource, created in setup and gated on the tab being active (rules §6),
-/// refetched after every successful write via the actions' version stamps.
+/// One resource, created in setup and gated on the tab being active, refetched
+/// after every successful write via the actions' version stamps.
 pub(super) fn tags_section(
     kind: PartyKind,
     uid: Signal<String>,

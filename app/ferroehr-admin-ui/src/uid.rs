@@ -3,9 +3,9 @@
 
 //! openEHR identifier handling shared by the console's screens.
 //!
-//! Component-free and unit-tested (rules §10), and compiled on BOTH targets:
-//! the same reduction runs server-side before a CDR path is built and
-//! client-side when a link is rendered.
+//! Component-free and unit-tested, and compiled on BOTH targets: the same
+//! reduction runs server-side before a CDR path is built and client-side
+//! when a link is rendered.
 
 /// The version CONTAINER id inside a `uid_based_id`: an `OBJECT_VERSION_ID`
 /// (`{uuid}::{system}::{tree}`) reduced to its `object_id`, a bare

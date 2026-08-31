@@ -3,17 +3,15 @@
 
 //! The wire shapes the shared component kit renders.
 //!
-//! A screen's own flattened types live with that screen. These two are
-//! different: they carry what SEVERAL screens read from the CDR's versioned
-//! surfaces, and what the shared kit
-//! ([`version_history`](crate::components::version_history)) renders. Keeping
-//! them here is what lets the kit stay a component — a `components` module that
-//! reached into `pages` for a type would invert the crate's one dependency
-//! arrow.
+//! A screen's own flattened types live with that screen. These two carry what
+//! SEVERAL screens read from the CDR's versioned surfaces, and what the shared
+//! kit ([`version_history`](crate::components::version_history)) renders: a
+//! `components` module reaching into `pages` for a type would invert the crate's
+//! one dependency arrow.
 //!
-//! Both are flattened BFF-side so the browser never re-models the RM (rules
-//! §10), and both carry fixed-size-safe fields only — no `usize` crosses a
-//! server-function boundary on a 32-bit target (rules §1).
+//! Both are flattened BFF-side so the browser never re-models the RM, and both
+//! carry fixed-size-safe fields only — no `usize` crosses a server-function
+//! boundary on a 32-bit target.
 
 use serde::{Deserialize, Serialize};
 

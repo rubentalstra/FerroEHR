@@ -24,13 +24,11 @@
 //!   identity, `lifecycle_state`, data and `attestations` ("the
 //!   `ORIGINAL_VERSION` instance is never modified", §Copying).
 //!
-//! Keeping the LOCAL act in the row's own audit is what makes §Copying's
-//! chronology rule hold for this store: "the commit times always reflect the
-//! local (more recent) act of committal, not the original committal … rather
-//! than giving the illusion that recently copied Versions were there earlier
-//! than the time of local committal" — so `VERSIONED_OBJECT.time_created`, the
+//! Keeping the local act in the row's own audit is what makes §Copying's
+//! chronology rule hold here ("the commit times always reflect the local (more
+//! recent) act of committal"), so `VERSIONED_OBJECT.time_created`, the
 //! `Last-Modified` header and every as-of-instant read are computed from the
-//! import, never from the source system's clock.
+//! import rather than the source system's clock.
 
 #![expect(
     clippy::disallowed_types,
@@ -220,7 +218,7 @@ pub(crate) async fn commit_demographic_import(
     Ok(())
 }
 
-/// Enforce the copy closure on one received container (#1770; RM common
+/// Enforce the copy closure on one received container (RM common
 /// master06 §Copying L275: branch versions "cannot be copied without their
 /// corresponding preceding versions on the same branch (if any) and trunk
 /// versions also being copied"). The rule binds the SENDER, but a

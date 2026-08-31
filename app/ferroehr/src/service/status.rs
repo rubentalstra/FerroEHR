@@ -6,41 +6,34 @@
 //! + the service-specific descendants `ehr_call_status_type.adoc`,
 //!   `definition_call_status_type.adoc`).
 //!
-//! The SM's stateful `I_STATUS.last_call_failed()`/`last_call_status()`
-//! protocol maps onto our stateless typed-error style — a mapping the spec
-//! explicitly sanctions (`master02-overview.adoc` §Functional Style: "Another
-//! common style is to include results as 'out' parameters, and to use the
-//! return value to return call status. Either style can be used, and can be
-//! trivially mapped from one to the other"). Every chapter method returns
-//! `Result<T, SmError>`; a failed call's [`CallStatus`] object is built on
-//! demand via [`SmError::into_call_status`].
+//! The SM's stateful `I_STATUS.last_call_failed()`/`last_call_status()` protocol
+//! maps onto a stateless typed-error style the spec sanctions
+//! (`master02-overview.adoc` §Functional Style: "Either style can be used, and
+//! can be trivially mapped from one to the other"), so every chapter method
+//! returns `Result<T, SmError>` and a failed call's [`CallStatus`] object is
+//! built on demand via [`SmError::into_call_status`].
 //!
-//! The single SM → HTTP table lives with the protocol adapter
-//! (`ferroehr-rest::overview::error`): this module is protocol-free. ITS-REST
-//! 1.0.3 + the CNF/ECC schedule remain the wire oracle: where the SM name and
-//! the wire disagree, the wire's status code wins in that adapter table.
+//! The single SM to HTTP table lives with the protocol adapter
+//! (`ferroehr-rest::overview::error`), so this module is protocol-free. Where
+//! the SM name and the wire disagree, the wire's status code wins in that
+//! table.
 
 use std::sync::Arc;
 
 /// `CALL_STATUS_TYPE` and its service-specific descendants, as one Rust enum.
 ///
-/// The SM models the extension as inheritance ("Particular services may add
-/// more codes by inheriting from this class and defining further specific
-/// codes", `master03-common_package.adoc` §Representing Call Status); a single
-/// flat Rust enum with the provenance documented per variant is the idiomatic
-/// equivalent — every abstract error name used by an SM interface has exactly
-/// one variant here.
+/// The SM models the extension as inheritance ("Particular services may add more
+/// codes by inheriting from this class and defining further specific codes",
+/// `master03-common_package.adoc` §Representing Call Status); one flat Rust enum
+/// with the provenance documented per variant is the idiomatic equivalent, and
+/// every abstract error name an SM interface uses has exactly one variant here.
+/// Variants marked *(prose-only)* appear in SM interface `.Errors` blocks but in
+/// no vendored enumeration.
 ///
-/// Variants marked *(prose-only)* appear in SM interface `.Errors` blocks but
-/// in no vendored enumeration — a catalogued spec gap; this enum is their one concrete
-/// home.
-///
-/// Deliberately **not** `#[non_exhaustive]`: this is an internal,
-/// unpublished workspace crate, so the attribute would buy no
-/// forward-compatibility — it would only force wildcard match arms in the
-/// protocol adapter's SM → HTTP table that silently swallow any future
-/// unmapped status. Leaving it exhaustive lets the compiler flag a missing
-/// SM → HTTP row when a variant is added (compile-time completeness).
+/// Deliberately not `#[non_exhaustive]`: this is an unpublished workspace crate,
+/// so the attribute would only force wildcard match arms in the protocol
+/// adapter's SM to HTTP table that silently swallow a future unmapped status.
+/// Exhaustive, the compiler flags a missing row when a variant is added.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub enum CallStatusType {
     // ── CALL_STATUS_TYPE (base; `call_status_type.adoc`) ────────────────────
@@ -317,14 +310,11 @@ pub struct CallStatus {
 /// The query chapter ([`super::query`]) aborts a query that overruns its
 /// configured execution budget and returns
 /// `SmError::exception(format!("{QUERY_TIMEOUT_TAG}{detail}"))`. The native SM
-/// error model carries only a `CALL_STATUS_TYPE` + message (no timeout
-/// status), so the timeout is tagged in the message and recognised by the
-/// protocol adapter, which strips the prefix and renders the response as
-/// `408 Request Timeout` (`Requests_and_responses.md` §HTTP status codes, row
-/// `408` — "Request maximum execution time is reached, therefore the server
-/// aborted the request"; `responses/408_Query.yaml`). The tag is a
-/// control-char sentinel so it can never collide with a genuine error message
-/// and is never shown to clients.
+/// error model carries only a `CALL_STATUS_TYPE` and message with no timeout
+/// status, so the protocol adapter recognises the tag, strips it and renders
+/// `408 Request Timeout` (`Requests_and_responses.md` §HTTP status codes;
+/// `responses/408_Query.yaml`). The tag is a control-char sentinel, so it can
+/// never collide with a genuine message and is never shown to clients.
 pub const QUERY_TIMEOUT_TAG: &str = "\u{1}query-execution-timeout\u{1}";
 
 #[cfg(test)]

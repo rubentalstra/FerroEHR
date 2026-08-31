@@ -9,18 +9,16 @@
 //! materialized projection point reads serve) and as the decomposed `node`
 //! rows (the AQL index), and their equality is an invariant of the commit path.
 //!
-//! This is the storage-parity sibling of the read-time signature verification
-//! in `crate::versioning::integrity`. That check covers the `body` copy: a
-//! signature is computed over the version's canonical serialized form (RM
-//! common `master06-change_control_package.adoc` §Digital Signature), and a
-//! point read recomputes it. It says nothing about the `node` rows, which no
-//! read-path check recomputes. This sweep closes that gap from the other side:
-//! it reassembles each version from its node rows and compares the result to
-//! the stored body, so a tampered or corrupt row in EITHER copy becomes
-//! visible through a supported channel.
+//! The read-time signature verification in `crate::versioning::integrity` covers
+//! the `body` copy, recomputing at a point read the signature taken over the
+//! version's canonical serialized form (RM common
+//! `master06-change_control_package.adoc` §Digital Signature), and says nothing
+//! about the `node` rows. This sweep reassembles each version from its node rows
+//! and compares the result to the stored body, so a tampered or corrupt row in
+//! either copy becomes visible.
 //!
-//! It runs off the request path, on an administrator's call, and reads every
-//! stored version in both storage tiers. It never logs content — a mismatch is
+//! It runs off the request path on an administrator's call and reads every
+//! stored version in both storage tiers. It never logs content; a mismatch is
 //! reported by identifier alone.
 
 #![expect(

@@ -1,21 +1,18 @@
 // SPDX-FileCopyrightText: FerroEHR contributors
 // SPDX-License-Identifier: MIT
 
-//! Shared version-metadata helpers: the cross-cutting glue every
-//! versioned kind (`EHR_STATUS`, COMPOSITION, DIRECTORY) needs to turn a
-//! loaded [`VersionRead`] into a wire [`ServiceResponse`] + its
-//! [`ResourceMeta`], plus the default commit-audit builder.
+//! Shared version-metadata helpers: the glue every versioned kind
+//! (`EHR_STATUS`, COMPOSITION, DIRECTORY) needs to turn a loaded
+//! [`VersionRead`] into a wire [`ServiceResponse`] and its [`ResourceMeta`],
+//! plus the default commit-audit builder.
 //!
 //! The `OBJECT_VERSION_ID` law is RM common
-//! `master06-change_control_package.adoc` §Version Identification + BASE
+//! `master06-change_control_package.adoc` §Version Identification and BASE
 //! `base_types/master05-identification_package.adoc` §Syntaxes; the
-//! `Last-Modified`/`ETag`/`Location` derivation from a version's commit audit
-//! is ITS-REST, carried in the [`ResourceMeta`] envelope (no openEHR spec
-//! governs that envelope — our own design).
-//!
-//! The `current_vo` row read is a storage seam
-//! ([`crate::storage::version_repo`]; no openEHR spec governs the SQL — our
-//! own design).
+//! `Last-Modified`, `ETag` and `Location` derivation from a version's commit
+//! audit is ITS-REST, carried in the [`ResourceMeta`] envelope. No openEHR spec
+//! governs that envelope, or the `current_vo` storage seam
+//! ([`crate::storage::version_repo`]) — our own design.
 
 #![expect(
     clippy::disallowed_types,
@@ -192,14 +189,13 @@ impl FerroEhrService {
     /// latest `version_uid` a `409`/`412` must echo in `ETag`/`Location`), or
     /// `None`.
     ///
-    /// Resolved and read in ONE metadata-only `vo_version`⋈`audit` statement
-    /// (`current_version_meta_by_kind`): the `409`/`412` path needs only the
-    /// full `OBJECT_VERSION_ID` + commit instant, never the reassembled
-    /// document or the attestations, so this avoids the node reassembly +
-    /// attestation read the full version read pays. The
-    /// full-`OBJECT_VERSION_ID` `If-Match` compare (ITS-REST overview
-    /// §Concurrency control) is unchanged — the emitted `ETag` is still
-    /// `object_id::creating_system_id::version_tree_id`.
+    /// Resolved and read in one metadata-only `vo_version`⋈`audit` statement
+    /// (`current_version_meta_by_kind`): the `409` and `412` paths need only the
+    /// full `OBJECT_VERSION_ID` and commit instant, so this avoids the node
+    /// reassembly and attestation read a full version read pays. The emitted
+    /// `ETag` is still `object_id::creating_system_id::version_tree_id`, the
+    /// token the `If-Match` compare uses (ITS-REST overview §Concurrency
+    /// control).
     ///
     /// # Errors
     /// [`ServiceError::Database`] if the metadata read fails.

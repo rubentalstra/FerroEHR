@@ -8,17 +8,10 @@
 //!
 //! # Why one provider
 //!
-//! The server previously ran two metric systems: the `metrics` crate facade
-//! behind `/management/prometheus`, and the `OpenTelemetry` SDK's own
-//! instruments behind the OTLP push. A family could therefore exist on one
-//! surface and not the other, and did — the OTLP push carried four of ten
-//! families, missing the build identity, the request histogram and the audit
-//! counters (#2175). That is a defect generator, not a one-off.
-//!
-//! Now there is one [`SdkMeterProvider`] with up to two readers: a Prometheus
-//! reader serving the pull surface, and — when `telemetry.metrics_push` is on —
-//! a periodic OTLP reader. Every instrument reaches both by construction, so
-//! the class of defect is gone rather than fixed.
+//! One [`SdkMeterProvider`] drives up to two readers: a Prometheus reader
+//! serving the pull surface and, when `telemetry.metrics_push` is on, a periodic
+//! OTLP reader. Every instrument reaches both by construction, so a family
+//! cannot exist on one surface and not the other.
 //!
 //! # Naming
 //!

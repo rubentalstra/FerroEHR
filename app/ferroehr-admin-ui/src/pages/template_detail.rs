@@ -16,15 +16,9 @@
 //! The WT catalog, the OPT source pane and the identity card are three views
 //! of ONE document, so the screen reads the operational template exactly once
 //! per render — a single page-level [`Resource`] over
-//! [`fetch_template_detail`], shared by every pane (the one-reader rule, crate
-//! `CLAUDE.md`). The Example tab keeps its own tab-gated resource: it is a
-//! different CDR resource whose fetch runs the CDR's example generator.
-//!
-//! Discipline (rules §0/§1/§6/§8): each `#[server]` fn guards the session
-//! first and keeps CDR credentials server-side; the view is composed from
-//! `.into_any()`-erased sections; the catalog tree is a recursive component
-//! that returns `AnyView` at every level (type erasure also breaks the
-//! infinite-type recursion); refetching resources render under `<Transition>`.
+//! [`fetch_template_detail`], shared by every pane. The Example tab keeps its
+//! own tab-gated resource: it is a different CDR resource whose fetch runs the
+//! CDR's example generator.
 
 use leptos::prelude::*;
 use leptos::{component, server};
@@ -62,10 +56,9 @@ pub struct TemplateMeta {
 /// Everything the template-detail screen shows about one operational template,
 /// distilled from a SINGLE fetch of its OPT source.
 ///
-/// The three panes of the screen are three views of the same document — the
-/// raw source, its identity metadata, and its Web Template path catalog — so
-/// they travel together and the screen reads the CDR once (the one-reader rule,
-/// crate `CLAUDE.md`).
+/// The three panes of the screen are three views of the same document — the raw
+/// source, its identity metadata, and its Web Template path catalog — so they
+/// travel together and the screen reads the CDR once.
 #[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
 pub struct TemplateDetail {
     /// The raw OPT 1.4 canonical XML the CDR served, verbatim.
@@ -169,8 +162,8 @@ pub async fn fetch_template_catalog(
 ///
 /// The two example options ride the query string
 /// ([`crate::example_options::example_query`]); the id is percent-encoded with
-/// the `urlencoding` crate (owner hard rule: never a hand-rolled codec)
-/// because an operational-template id is CDR-supplied text.
+/// the `urlencoding` crate, because an operational-template id is CDR-supplied
+/// text.
 #[must_use]
 pub fn example_path(template_id: &str, detail: ExampleDetail, kind: ExampleType) -> String {
     format!(
@@ -215,11 +208,10 @@ pub async fn fetch_example(
 /// The self-link back to this screen with a different `?tab=` selected.
 ///
 /// `template_id` arrives percent-DEcoded from the route param, so the path
-/// segment is re-encoded with the `urlencoding` crate (owner rule: all
-/// percent-coding goes through that crate); without it a tab click on a
-/// template id containing `/`, `#`, `?` or `%` would navigate off-route. The
-/// `tab` value is one of the three fixed literals below and is encoded for the
-/// same reason the segment is — no call site is trusted to be URL-safe.
+/// segment is re-encoded with the `urlencoding` crate; without it a tab click
+/// on a template id containing `/`, `#`, `?` or `%` would navigate off-route.
+/// The `tab` value is one of the three fixed literals below and is encoded for
+/// the same reason the segment is — no call site is trusted to be URL-safe.
 /// NOTE: no openEHR spec governs an admin UI's internal links — our own
 /// design/extension.
 fn tab_href(template_id: &str, tab: &str) -> String {
@@ -247,7 +239,7 @@ pub fn TemplateDetailPage() -> impl IntoView {
         Signal::derive(move || params.with(|map| map.get("template_id").unwrap_or_default()));
 
     // Tab state lives in the URL (`?tab=`), so it is shareable and
-    // refresh-safe (rules §9); it defaults to the WT catalog when absent.
+    // refresh-safe; it defaults to the WT catalog when absent.
     let query = use_query_map();
     let selected_tab = Memo::new(move |_| {
         query
@@ -262,8 +254,7 @@ pub fn TemplateDetailPage() -> impl IntoView {
     // ONE page-level read of the operational template, shared by every pane
     // that describes it — the metadata card (tab-independent by owner
     // directive 2026-07-18), the WT path catalog, and the OPT source view are
-    // three views of one document, so the screen fetches and parses it once
-    // (the one-reader rule, crate `CLAUDE.md`).
+    // three views of one document, so the screen fetches and parses it once.
     let detail = Resource::new(
         move || template_id.get(),
         |id| async move { fetch_template_detail(id).await },
@@ -298,11 +289,11 @@ pub fn TemplateDetailPage() -> impl IntoView {
     let meta_card = meta_section(detail);
     let delete_action = delete_section(template_id);
 
-    // The tabs are URL-driven pill links (rules §9): a static-Tailwind anchor
-    // per view, the active one styled from the `selected_tab` Memo. No thaw
-    // TabList — the selected view is a shareable query param, not private
-    // widget state. All three bodies stay mounted (toggled by `class:hidden`)
-    // so each pane keeps its loaded state across tab switches.
+    // The tabs are URL-driven pill links: a static-Tailwind anchor per view,
+    // the active one styled from the `selected_tab` Memo. No thaw TabList —
+    // the selected view is a shareable query param, not private widget state.
+    // All three bodies stay mounted (toggled by `class:hidden`) so each pane
+    // keeps its loaded state across tab switches.
     let tab_link = move |value: &'static str, label: &'static str| {
         let class = move || {
             let base = "rounded-control px-3 py-1.5 text-sm font-medium transition-colors";
@@ -372,8 +363,8 @@ fn delete_section(template_id: Signal<String>) -> AnyView {
     let confirming = RwSignal::new(false);
 
     // Toast + navigation are side-effects on the outside world (the thaw
-    // toaster, the router), so an Effect is their correct home (rules §2); it
-    // never runs on the server pass.
+    // toaster, the router), so an Effect is their correct home; it never runs
+    // on the server pass.
     let navigate = leptos_router::hooks::use_navigate();
     Effect::new(move |_| match delete.value().get() {
         Some((id, Ok(()))) => {
@@ -580,8 +571,7 @@ pub(crate) fn catalog_error_view(error: &AdminUiError, back_href: &'static str) 
 ///
 /// Returns [`AnyView`] at every level: the type erasure is what lets the
 /// component recurse (an un-erased recursive view would be an infinite type)
-/// and keeps rustc's layout-recursion depth bounded on plain `cargo` builds
-/// (rules §1).
+/// and keeps rustc's layout-recursion depth bounded on plain `cargo` builds.
 #[expect(
     clippy::must_use_candidate,
     reason = "#[component] rewrites the fn; view!/mount always consumes the value"
@@ -810,7 +800,7 @@ fn opt_tab(detail: Resource<Result<TemplateDetail, AdminUiError>>) -> AnyView {
                 match detail.await {
                     Ok(loaded) => {
                         // Resolve inside the Transition: an SSR'd ErrorBoundary fallback
-                        // mismatches at hydration in leptos 0.8 (E2E console gate).
+                        // mismatches at hydration in leptos 0.8.
                         view! {
                             <crate::components::format_view::DocumentPane body=loaded.source />
                         }
@@ -850,7 +840,7 @@ fn example_tab(
                                 format.get_untracked(),
                             );
                             // Resolve inside the Transition: an SSR'd ErrorBoundary fallback
-                            // mismatches at hydration in leptos 0.8 (E2E console gate).
+                            // mismatches at hydration in leptos 0.8.
                             view! { <crate::components::format_view::DocumentPane body=pretty /> }
                                 .into_any()
                         }

@@ -3,30 +3,26 @@
 
 //! The FHIR outbound emitter's background drainer + [`FhirOutboundHandle`].
 //!
-//! **No openEHR spec governs this — our own design/extension** (no openEHR
-//! outbound/FHIR transport). Gate: [`FhirOutboundConfig::enabled`]
-//! (`fhir.outbound.enabled`, default off) — a separate switch from the REST
-//! FHIR connector, because this stream carries PHI.
+//! No openEHR spec governs this — our own design/extension. The gate is
+//! [`FhirOutboundConfig::enabled`] (`fhir.outbound.enabled`, default off), a
+//! separate switch from the REST FHIR connector because this stream carries PHI.
 //!
-//! Wired like the contribution-outbox publisher, but reading committed
-//! `event_outbox` rows through its OWN persistent cursor
-//! (`fhir_outbound_cursor.last_seq`), so it never touches the events drainer's
-//! `published_at` watermark. A single tokio task polls the outbox for rows past
-//! the cursor in `seq` order. For each COMPOSITION version whose template
-//! matches an enabled `fhir_mapping`, it loads the committed version through
-//! the versioned read seam, reverse-maps it to a FHIR resource, and publishes
-//! it (with broker confirms) to the configured PHI exchange. The cursor
-//! advances only over the fully-published prefix, so a crash/retry re-emits
-//! from the unadvanced cursor (at-least-once; downstream FHIR systems upsert by
-//! resource id).
+//! It is wired like the contribution-outbox publisher but reads committed
+//! `event_outbox` rows through its own persistent cursor
+//! (`fhir_outbound_cursor.last_seq`), never touching the events drainer's
+//! `published_at` watermark. One tokio task polls the outbox for rows past the
+//! cursor in `seq` order; for each COMPOSITION version whose template matches an
+//! enabled `fhir_mapping` it loads the committed version through the versioned
+//! read seam, reverse-maps it to a FHIR resource and publishes it with broker
+//! confirms to the configured PHI exchange. The cursor advances only over the
+//! fully-published prefix, so a crash and retry re-emit at least once and
+//! downstream FHIR systems upsert by resource id.
 //!
-//! **Poison rows are parked, never allowed to block the stream:** a row whose
-//! reverse-mapping fails deterministically (a defective stored mapping or
-//! template) is retried `PARK_AFTER_FAILED_PASSES` times and then
-//! dead-lettered to the log — an `error`-level record naming the row — and the
-//! cursor advances past it, so one bad row cannot head-of-line-block every
-//! later commit. Broker (publish) and DB failures are transient and never
-//! park a row.
+//! A row whose reverse-mapping fails deterministically, from a defective stored
+//! mapping or template, is retried `PARK_AFTER_FAILED_PASSES` times, then
+//! dead-lettered to the log as an `error` record naming the row, and the cursor
+//! advances past it so one bad row cannot head-of-line-block later commits.
+//! Broker and database failures are transient and never park a row.
 
 #![expect(
     clippy::disallowed_types,

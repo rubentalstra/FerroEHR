@@ -3,35 +3,28 @@
 
 //! OPT 1.4 ingestion: canonical XML → [`OperationalTemplate`] parse.
 //!
-//! # Spec basis
+//! An operational template is the compiled, inheritance-flattened, standalone
+//! top-level artefact (`AM/docs/OPT2/master02-overview.adoc` §Purpose of the
+//! OPT, §Types of OPT; `master03-opt_raw.adoc` §Flattening) and, descending from
+//! `AUTHORED_RESOURCE` (`BASE/docs/resource/master02-resource_package.adoc`
+//! §Meta-data), carries the original language, translations,
+//! `RESOURCE_DESCRIPTION` and revision history.
 //!
-//! An operational template is the **compiled, inheritance-flattened, standalone
-//! top-level artefact** (`docs/specs/openehr/AM/docs/OPT2/master02-overview.adoc`
-//! §Purpose of the OPT, §Types of OPT; `master03-opt_raw.adoc` §Flattening) and,
-//! being a descendant of `AUTHORED_RESOURCE`
-//! (`docs/specs/openehr/BASE/docs/resource/master02-resource_package.adoc`
-//! §Meta-data), carries the meta-data (original language +
-//! translations, `RESOURCE_DESCRIPTION`, revision history).
+//! NOTE: OPT 1.4 has no normative prose chapter, the OPT2 masters describing the
+//! ADL2 successor, so the canonical XML ingested here is governed by the ITS-XML
+//! v1 Template XSD plus AOM 1.4, which are what a structure-conformance claim
+//! cites.
 //!
-//! NOTE (OPT 1.4 has no prose master): there is **no normative prose chapter**
-//! for the OPT 1.4 wire structure (the OPT2 masters describe the ADL2
-//! successor), so the canonical XML this module ingests is governed by the
-//! **ITS-XML v1 Template XSD** plus AOM 1.4 — cite those, never the OPT2
-//! masters, for structure conformance.
+//! The tolerant [`openehr_its::opt14`] codec decodes the document; the
+//! structural well-formedness gate closing that codec's leniency belongs to the
+//! artefact-validity area
+//! (`crate::validation::structure::validate_opt_structure`), which the store
+//! calls before every ingest.
 //!
-//! The tolerant [`openehr_its::opt14`] codec decodes it; the structural
-//! well-formedness gate closing the leniency that codec would otherwise accept
-//! is owned by the artefact-validity area
-//! (`crate::validation::structure::validate_opt_structure`) — the store calls it
-//! before every ingest (see [`crate::templates::store`]).
-//!
-//! NOTE (meta-data parsed, not surfaced): the
-//! meta-data (`language` / `description` / `translations` / `revision_history`)
-//! is parsed by the codec but we index only `template_id` / `concept` / root
-//! archetype for lookup and listing (see [`crate::templates::store`]); the spec
-//! permits an optional `_description_` (BASE resource master02 §Meta-data).
-//! Surfacing/querying the full `AUTHORED_RESOURCE` meta-data is not required by
-//! the provisioning surface.
+//! NOTE: the `AUTHORED_RESOURCE` meta-data is parsed by the codec but only
+//! `template_id`, `concept` and the root archetype are indexed for lookup and
+//! listing, the spec permitting an optional `_description_` (BASE resource
+//! master02 §Meta-data).
 
 use openehr_its::opt14::types::OperationalTemplate;
 

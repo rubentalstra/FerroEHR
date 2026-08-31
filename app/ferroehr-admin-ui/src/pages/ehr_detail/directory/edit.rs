@@ -5,8 +5,8 @@
 //!
 //! Navigation and mutation of a canonical `FOLDER` tree held as
 //! `serde_json::Value`, `OBJECT_REF` construction, and tree statistics. Kept
-//! out of the view code so the editing logic is unit-tested directly (rules
-//! §10 — business logic lives in plain types). The time-travel panel's
+//! out of the view code so the editing logic is unit-tested directly
+//! (business logic lives in plain types). The time-travel panel's
 //! `version_at_time` value goes through the console's one normalizer,
 //! [`crate::format::datetime_local_to_rfc3339`].
 //!
@@ -22,19 +22,16 @@
 //!
 //! `<For>` rows and the collapse / rename / picker UI state MUST be keyed by a
 //! stable, unique, data-derived identity — never a positional path or index — or
-//! a sibling that shifts into a deleted slot inherits the vacated row's state
-//! and `<For>` view (rules §4, `view/04_iteration`). To give each node such an
-//! identity, the working copy stamps every FOLDER object **and every `items`
-//! `OBJECT_REF`** with a `_key` string (`stamp_keys`), all drawn from one
-//! counter so folder and item keys share a namespace and can never collide.
-//! This is a **client-only artifact of the in-memory editing tree**: it is
-//! assigned after load, preserved across edits, and STRIPPED (`strip_keys`)
-//! from every body serialized for the CDR and from the advanced-JSON view — it
-//! never appears on the wire and no openEHR spec governs it (our own
-//! design/extension). Positions are then re-derived from the `_key` on demand
-//! (a folder's path with `find_path_by_key`, an item's index within its
-//! folder with `find_item_index`) so mutations keep targeting the `&[usize]`
-//! path + index pair, which stays correct after siblings shift.
+//! a sibling that shifts into a deleted slot inherits the vacated row's state and
+//! `<For>` view (`view/04_iteration`). The working copy therefore stamps every
+//! FOLDER object **and every `items` `OBJECT_REF`** with a `_key` string
+//! (`stamp_keys`), all drawn from one counter so folder and item keys can never
+//! collide. It is a **client-only artifact of the in-memory editing tree**,
+//! STRIPPED (`strip_keys`) from every body serialized for the CDR and from the
+//! advanced-JSON view — it never appears on the wire, and no openEHR spec governs
+//! it (our own design/extension). Positions are re-derived from the `_key` on
+//! demand (`find_path_by_key`, `find_item_index`), so mutations keep targeting
+//! the `&[usize]` path + index pair after siblings shift.
 
 #![expect(
     clippy::disallowed_types,
@@ -51,13 +48,12 @@ use crate::pages::ehr_detail::directory::{FOLDER_NODE_ID, folder_json};
 /// string (`"n0"`, `"n1"`, …) drawn from `counter`, inserting one only where
 /// absent — so it is idempotent and preserves the keys already carried by
 /// surviving nodes. The key is the stable, data-derived node identity that
-/// `<For>` rows and per-folder UI state key on (rules §4); folders and items
-/// draw from the same `counter`, so no item can ever be handed a folder's key.
-/// It is a console-local artifact of the working copy: never persisted to the
-/// CDR (see [`strip_keys`]), never rendered, and no openEHR spec governs it
-/// (our own design/extension). Determinism: a plain monotonic counter, no
-/// randomness or clock — hydration never observes these values (they are not
-/// emitted into the DOM), but keeping them deterministic costs nothing.
+/// `<For>` rows and per-folder UI state key on; folders and items draw from
+/// the same `counter`, so no item can ever be handed a folder's key. It is a
+/// console-local artifact of the working copy: never persisted to the CDR (see
+/// [`strip_keys`]), never rendered, and no openEHR spec governs it (our own
+/// design/extension). The counter is a plain monotonic one, no randomness or
+/// clock.
 pub(super) fn stamp_keys(tree: &mut Value, counter: &mut u64) {
     if let Some(obj) = tree.as_object_mut() {
         if !obj.contains_key("_key") {
@@ -104,7 +100,7 @@ pub(super) fn strip_keys(tree: &mut Value) {
 /// `key`, searched from `root` (`Some([])` for the root, `None` if no folder
 /// carries it). The `_key` is the durable identity; the path is re-derived
 /// from it on every reactive read and mutation so a folder's row stays
-/// correct after a sibling delete shifts indices (rules §4).
+/// correct after a sibling delete shifts indices.
 #[must_use]
 pub(crate) fn find_path_by_key(root: &Value, key: &str) -> Option<Vec<usize>> {
     fn walk(node: &Value, key: &str, path: &mut Vec<usize>) -> bool {
@@ -166,9 +162,9 @@ pub(crate) fn node_name(root: &Value, path: &[usize]) -> String {
 }
 
 /// The ephemeral identity keys of the child folders of `path`, in order — the
-/// stable, data-derived `<For>` keys for the folder rows (rules §4). Every
-/// folder in the working copy is stamped ([`stamp_keys`]), so each entry is a
-/// real identity.
+/// stable, data-derived `<For>` keys for the folder rows. Every folder in the
+/// working copy is stamped ([`stamp_keys`]), so each entry is a real
+/// identity.
 #[must_use]
 pub(crate) fn child_node_keys(root: &Value, path: &[usize]) -> Vec<String> {
     folder_at(root, path)
@@ -209,10 +205,10 @@ fn item_key(item: &Value, idx: usize) -> String {
 }
 
 /// The ephemeral identity keys of the item references of the folder at `path`,
-/// in order — the stable, data-derived `<For>` keys for the item rows
-/// (rules §4). Every item in the working copy is stamped ([`stamp_keys`]), so
-/// each entry is a real identity that survives a sibling removal shifting the
-/// remaining items down.
+/// in order — the stable, data-derived `<For>` keys for the item rows. Every
+/// item in the working copy is stamped ([`stamp_keys`]), so each entry is a
+/// real identity that survives a sibling removal shifting the remaining items
+/// down.
 #[must_use]
 pub(crate) fn item_node_keys(root: &Value, path: &[usize]) -> Vec<String> {
     folder_at(root, path)
@@ -231,7 +227,7 @@ pub(crate) fn item_node_keys(root: &Value, path: &[usize]) -> Vec<String> {
 /// item carrying the ephemeral identity `key` (`None` if no item there carries
 /// it). The `_key` is the durable identity; the index is re-derived from it for
 /// every reactive read and mutation so an item row stays correct after a
-/// sibling removal shifts indices (rules §4) — the item-side counterpart of
+/// sibling removal shifts indices — the item-side counterpart of
 /// [`find_path_by_key`].
 #[must_use]
 pub(crate) fn find_item_index(root: &Value, path: &[usize], key: &str) -> Option<usize> {
@@ -318,7 +314,7 @@ pub(crate) fn add_item(root: &mut Value, path: &[usize], item: Value) {
 
 /// Remove the `idx`-th item from the folder at `path`. Callers re-derive `idx`
 /// from the row's ephemeral item identity ([`find_item_index`]) at click time,
-/// so a shifted index can never remove the wrong sibling (rules §4).
+/// so a shifted index can never remove the wrong sibling.
 pub(crate) fn remove_item(root: &mut Value, path: &[usize], idx: usize) {
     if let Some(list) = folder_at_mut(root, path)
         .and_then(|f| f.get_mut("items"))

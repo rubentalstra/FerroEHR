@@ -30,26 +30,22 @@ use crate::storage::version_repo::meta::CurrentMeta;
 
 /// Inserts the `ehr` root row with its promoted `EHR_STATUS` columns.
 ///
-/// The row carries the id + the immutable `system_id`, and the promoted
-/// `EHR_STATUS` columns (`subject_id` / `subject_namespace` / `is_queryable` /
-/// `is_modifiable`) are set in the SAME statement — the create path knows these
-/// from the incoming `EHR_STATUS` before the row is written, so it never needs
-/// the follow-up
-/// `UPDATE ehr SET subject_id …` the [`crate::service`] sync hook runs on the
-/// update/contribution paths. Returns `Some(time_created)` — the server-assigned
-/// `EHR.time_created` (arch-overview master06 §The EHR), captured via `RETURNING`
-/// so the create path can build the `EHR` wire body without a follow-up `ehr`
-/// header read — or `None` when the **id** already existed (`ON CONFLICT (id) DO
-/// NOTHING`; the caller maps that to a 409). `EHR.system_id` is recorded at
+/// The row carries the id and the immutable `system_id`, and the promoted
+/// `EHR_STATUS` columns (`subject_id`, `subject_namespace`, `is_queryable`,
+/// `is_modifiable`) are set in the same statement, the create path knowing them
+/// from the incoming `EHR_STATUS`. Returns `Some(time_created)`, the
+/// server-assigned `EHR.time_created` (arch-overview master06 §The EHR) captured
+/// via `RETURNING`, or `None` when the id already existed (`ON CONFLICT (id) DO
+/// NOTHING`, which the caller maps to a 409). `EHR.system_id` is recorded at
 /// creation and immutable thereafter (arch-overview master06 §System Identity).
 ///
 /// The subject columns back the one-EHR-per-subject unique index
-/// (`uq_ehr_subject`, RM ehr master04 §EHR Status); a second EHR for the same
-/// subject violates that index — reported as [`StorageError::SubjectInUse`]
-/// (→ 409) distinctly from the id conflict. `is_queryable` backs the AQL
-/// full-population gate (SM `I_QUERY_SERVICE`); `is_modifiable` backs the
-/// content-write guard (RM ehr master04 §EHR Active Status). No openEHR spec
-/// governs the promoted columns — our own storage design.
+/// (`uq_ehr_subject`, RM ehr master04 §EHR Status), so a second EHR for the same
+/// subject is reported as [`StorageError::SubjectInUse`] distinctly from the id
+/// conflict. `is_queryable` backs the AQL full-population gate (SM
+/// `I_QUERY_SERVICE`) and `is_modifiable` the content-write guard (RM ehr
+/// master04 §EHR Active Status). No openEHR spec governs the promoted columns —
+/// our own storage design.
 ///
 /// # Errors
 /// Returns [`StorageError::SubjectInUse`] on a subject-uniqueness violation,

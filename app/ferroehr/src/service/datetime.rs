@@ -1,56 +1,42 @@
 // SPDX-FileCopyrightText: FerroEHR contributors
 // SPDX-License-Identifier: MIT
 
-//! The shared decoder for the ITS-REST **datetime request parameters** —
-//! `version_at_time` and the contribution `time_range` bounds — used by every
+//! The shared decoder for the ITS-REST datetime request parameters,
+//! `version_at_time` and the contribution `time_range` bounds, used by every
 //! at-time read of the EHR and DEMOGRAPHIC groups.
 //!
 //! ITS-REST `docs/overview/Resources.md` §"Datetime format" fixes the wire
-//! grammar: "HTTP query parameters and path segments that are dates,
-//! datetimes, or times, MUST always use the _extended_ ISO 8601 format. The
-//! general form of a datetime is `YYYY-MM-DDThh:mm:ss.sss[Z|±hh:mm]`, e.g.
-//! `2016-06-23T13:42:16.117+02:00`. Timezone SHOULD be only supplied when
-//! needed, otherwise the local timezone is assumed."
+//! grammar: query parameters and path segments that are dates, datetimes or
+//! times "MUST always use the _extended_ ISO 8601 format", general form
+//! `YYYY-MM-DDThh:mm:ss.sss[Z|±hh:mm]`, and "Timezone SHOULD be only supplied
+//! when needed, otherwise the local timezone is assumed". The offset is
+//! therefore optional and an offset-less datetime names a civil datetime the
+//! server resolves in its own local timezone. `jiff::Timestamp`'s grammar
+//! requires an offset, hence the two-step decode below: the offset-carrying form
+//! is the unchanged fast path and only a value it rejects is re-read as civil.
 //!
-//! So the offset is OPTIONAL on the wire and its absence is not a malformed
-//! value: an offset-less datetime names a *civil* datetime the server resolves
-//! in its own local timezone. `jiff::Timestamp`'s grammar requires an offset,
-//! hence the two-step decode below — the offset-carrying form stays the
-//! unchanged fast path, and only a value it rejects is re-read as civil.
+//! NOTE: the local timezone is the server process's system timezone
+//! ([`jiff::tz::TimeZone::system`]), the spec sentence assuming one ambient
+//! locale for the service and giving a client no way to name another; a
+//! CDR-private notion of "local" would make one request mean two instants on
+//! the same host, so there is no configuration knob.
 //!
-//! # Settled decisions
+//! NOTE: a date-only value (`2016-06-23`) is rejected with the same `400` as
+//! garbage, the parameter being "A given time in the extended ISO 8601 format"
+//! (`specifications/parameters/query/version_at_time.yaml`) while jiff's civil
+//! parser would silently default the time to midnight, so the decoder requires
+//! the ISO `T` designator.
 //!
-//! NOTE: the "local timezone" is the **server process's system timezone**
-//! ([`jiff::tz::TimeZone::system`] — `TZ` when set, else `/etc/localtime` on
-//! Unix / `GetDynamicTimeZoneInformation` on Windows, per that function's
-//! documentation). The spec sentence assumes one ambient locale for the
-//! service and gives a client no way to name another, so the deployment's own
-//! zone IS that locale. There is deliberately no configuration knob: a
-//! second, CDR-private notion of "local" would make one request mean two
-//! different instants on the same host.
+//! NOTE: a civil datetime falling inside a DST fold or gap resolves by jiff's
+//! `Disambiguation::Compatible` default, documented on
+//! [`jiff::civil::DateTime::to_zoned`] as selecting the earlier time in a fold
+//! and the later time in a gap; no openEHR spec governs the ambiguity of an
+//! offset-less local datetime — our own design, adopting the pinned crate's
+//! documented default.
 //!
-//! NOTE: a **date-only** value (`2016-06-23`) is rejected with the same `400`
-//! as garbage. The parameter is specified as "A given time in the extended
-//! ISO 8601 format" (`specifications/parameters/query/version_at_time.yaml`),
-//! and a bare `YYYY-MM-DD` names a day, not a time. jiff's civil parser
-//! accepts a date and silently defaults the time to midnight, which would
-//! turn an under-specified parameter into a precise instant the caller never
-//! asked for — a wrong version served without complaint — so the decoder
-//! requires the ISO `T` designator that the general form above names.
-//!
-//! NOTE: a civil datetime falling inside a DST **fold or gap** resolves by
-//! jiff's `Disambiguation::Compatible` default, the strategy
-//! [`jiff::civil::DateTime::to_zoned`] documents: "if a civil datetime occurs
-//! in a backward transition (called a fold), then the earlier time is
-//! selected. Or if a civil datetime occurs in a forward transition (called a
-//! gap), then the later time is selected." No openEHR spec governs the
-//! ambiguity of an offset-less local datetime — our own design, adopting the
-//! pinned crate's documented default rather than inventing a third rule.
-//!
-//! Basic-format ISO 8601 (`20160623T134216Z`) is rejected by an explicit
-//! guard: the spec's MUST is the *extended* format, and jiff's `Timestamp`
-//! grammar is Temporal's, which tolerates the basic date form — leniency the
-//! wire contract does not grant.
+//! Basic-format ISO 8601 (`20160623T134216Z`) is rejected by an explicit guard:
+//! the spec's MUST is the extended format, while jiff's `Timestamp` grammar is
+//! Temporal's and tolerates the basic date form.
 
 use crate::service::status::SmError;
 

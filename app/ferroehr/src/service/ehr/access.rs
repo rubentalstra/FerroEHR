@@ -79,16 +79,13 @@ impl FerroEhrService {
     /// that invariant permanently and serve an `EHR` body without the mandatory
     /// reference, so the missing object is created locally.
     ///
-    /// It is server-created content, NOT replayed extract content: it is
-    /// committed as a normal first `ORIGINAL_VERSION` (`249|creation|`,
-    /// server-signed when signing is enabled) under its OWN CONTRIBUTION rather
-    /// than folded into the import CONTRIBUTION — that one records the local
-    /// act of committal for the received originals, which "are never modified"
-    /// (RM common `master06-change_control_package.adoc` §Copying), and the
-    /// replay preserves each original's foreign identity/audit verbatim, which
-    /// a locally minted object has no business joining. Both CONTRIBUTIONs
-    /// commit in the caller's single transaction, so the created EHR is
-    /// complete atomically.
+    /// It is server-created content rather than replayed extract content, so it
+    /// commits as a normal first `ORIGINAL_VERSION` (`249|creation|`,
+    /// server-signed when signing is enabled) under its own CONTRIBUTION; the
+    /// import CONTRIBUTION records the local act of committal for received
+    /// originals, which "are never modified" (RM common master06 §Copying). Both
+    /// CONTRIBUTIONs commit in the caller's single transaction, so the created
+    /// EHR is complete atomically.
     ///
     /// # Errors
     /// The [`crate::versioning::change::commit_contribution`] write errors.

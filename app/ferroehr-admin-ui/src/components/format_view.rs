@@ -15,7 +15,7 @@
 //! is Rust: no JS highlighter, no clipboard shim (`leptos_use::use_clipboard`
 //! wraps the Clipboard API), and both the tokenizer and the renderer are pure
 //! functions of the body string, so the server pass and client hydration emit
-//! identical markup (`.claude/rules/leptos-ui.md` §8).
+//! identical markup.
 
 #![expect(
     clippy::disallowed_types,
@@ -163,9 +163,9 @@ impl PaneView {
 /// the server and the browser always render the same tabs.
 ///
 /// `initial_view` is the mode the pane OPENS in — a plain value, taken once, so
-/// the server pass and hydration agree (rules §8); the reader switches tabs
-/// freely afterwards. Callers derive it from the URL in their own setup, never
-/// from an effect chasing the address bar.
+/// the server pass and hydration agree; the reader switches tabs freely
+/// afterwards. Callers derive it from the URL in their own setup, never from an
+/// effect chasing the address bar.
 #[expect(
     clippy::must_use_candidate,
     reason = "#[component] rewrites the fn; view!/mount always consumes the value"
@@ -182,7 +182,7 @@ pub fn DocumentPane(
 ) -> impl IntoView {
     let view_mode = RwSignal::new(initial_view);
     // Deterministic, memoized derivations of the body — never effects writing
-    // signals (rules §2).
+    // signals.
     let tokens = Memo::new(move |_| body.with(|text| crate::highlight::tokenize(text.as_str())));
     let rendered = Memo::new(move |_| body.with(|text| crate::clinical::render(text.as_str())));
     let highlightable =
@@ -305,8 +305,8 @@ fn raw_pane(body: Signal<String>) -> AnyView {
 ///
 /// A plain collected `Vec` rather than `<For>`: the token stream is a derived
 /// projection replaced wholesale whenever the body changes, and a token has no
-/// data-derived identity to key on (rules §4 forbids index keys, and a
-/// synthetic key would be exactly that).
+/// data-derived identity to key on; an index key is forbidden, and a synthetic
+/// key would be exactly that.
 fn highlighted_pane(tokens: Memo<Vec<Token>>) -> AnyView {
     view! {
         <pre class=PANE>
@@ -353,7 +353,7 @@ fn rendered_pane(document: &RenderedSection) -> AnyView {
 /// One RM node as a titled section: heading, type chip, archetype chip, and its
 /// children indented under a hairline rule.
 ///
-/// `<For>` with the node's RM path as the key (rules §4: stable, unique,
+/// `<For>` with the node's RM path as the key (stable, unique,
 /// data-derived — never an index).
 fn section_view(section: RenderedSection) -> AnyView {
     let RenderedSection {
@@ -432,12 +432,11 @@ fn row_view(row: RenderedRow) -> AnyView {
 /// The pane a detail screen shows its loaded document in, over the SAME
 /// resource its facts section reads.
 ///
-/// A `<Transition>` so a refetch keeps the current document visible (rules §6),
-/// with the `Result` resolved inside it (rules §4). A failed or absent read
-/// renders nothing HERE, because the facts section above it states that once —
-/// the screen as a whole never renders an error as nothing. `body_of` picks the
-/// verbatim wire body out of the loaded state; `id` is the pane's stable E2E
-/// hook.
+/// A `<Transition>` so a refetch keeps the current document visible, with the
+/// `Result` resolved inside it. A failed or absent read renders nothing HERE,
+/// because the facts section above it states that once — the screen as a whole
+/// never renders an error as nothing. `body_of` picks the verbatim wire body
+/// out of the loaded state; `id` is the pane's stable E2E hook.
 #[must_use]
 pub fn document_section<T>(
     resource: Resource<Result<Option<T>, crate::error::AdminUiError>>,

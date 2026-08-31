@@ -7,93 +7,51 @@
 //! (`export_ehrs`, `load_ehrs`, error `file_not_writable`), `export_spec.adoc`
 //! (`EXPORT_SPEC`, incl. `segment_split_size` kb), `dump_load_fail_report.adoc`
 //! (`DUMP_LOAD_FAIL_REPORT`), `export_format.adoc` / `compression_format.adoc`
-//! (the format/compression enumerations). `master02-overview.adoc` frames Admin
-//! as "administrative facilities … such as back-up". No openEHR spec defines an
-//! on-disk archive format — the archive layout below is our own design
-//! (`0001_baseline.sql` is the source schema).
+//! (the enumerations). No openEHR spec defines an on-disk archive format, a
+//! container set, or a container-detection rule; the layout below is our own
+//! design/extension.
 //!
-//! The archive CONTAINER (SM `compression_format.adoc`): the entry set
+//! Export walks the greenfield storage and writes the entry set
 //! (`manifest.json`, `segment-NNNN.json`, `blobs/<hex>`,
-//! `versions/<version_uid>.xml`) is identical whichever container carries it —
-//! `compression_format` absent ⇒ loose files under `file_sys_loc`, `zip` ⇒ the
-//! same entries as DEFLATE members of one `archive.zip` there. `load_ehrs` takes
-//! only `file_sys_loc` (`i_admin_dump_load.adoc`), so it never receives the
-//! container choice and DETECTS it: a `manifest.json` in the directory is the
-//! loose form, else an `archive.zip`, else an `archive.7z`.
+//! `versions/<version_uid>.xml`) to `file_sys_loc`, splitting the skeleton
+//! segments at `segment_split_size` kb. The entries are identical whichever
+//! container carries them: `compression_format` absent gives loose files, `zip`
+//! gives DEFLATE members of one `archive.zip`. `load_ehrs` receives no container
+//! choice and detects it: a `manifest.json` in the directory is the loose form,
+//! else `archive.zip`, else `archive.7z`.
 //!
-//! NOTE: no openEHR spec defines the container set or the detection rule — our
-//! own design/extension.
+//! `EXPORT_SPEC.logical_format` governs the exported CONTENT ("flavour of XML,
+//! JSON etc." — `export_spec.adoc`), so only the payload changes between the two
+//! `EXPORT_FORMAT` members. The envelope stays JSON in both, the published
+//! ITS-XML bundles declaring no global element for `EHR`, `CONTRIBUTION` or a
+//! standalone `AUDIT_DETAILS`. `openehr_canonical_json` (the default) keeps each
+//! version's canonical JSON inline in the skeleton's `body`;
+//! `openehr_canonical_xml` externalizes it as `body_entry:
+//! "versions/<version_uid>.xml"`, a complete `ORIGINAL_VERSION` document under
+//! `ALL/Version.xsd`'s `<version>` root (RM common master06 §Version and its
+//! Subtypes) in the nsv1 lineage, never split. A logically-deleted version
+//! stores no content, so it gets neither document nor `body_entry`. The
+//! manifest's `format` member tells `load_ehrs` which form the archive holds.
 //!
-//! Export walks the greenfield storage and writes an archive to a file-system
-//! directory, split into segment entries no larger than `segment_split_size`
-//! kb. Each EHR is one record carrying its `ehr` row, its audit/contribution
-//! provenance, and one entry per stored version. Load reads the archive back
-//! and re-persists each EHR verbatim (preserved ids/times), re-decomposing each
-//! version payload through the same codec — so a read after load reassembles
-//! byte-equal canonical JSON. An EHR whose id already exists is reported in a
-//! `DUMP_LOAD_FAIL_REPORT` and skipped ("import EHRs with duplicate EHR ids
-//! will fail"), never a crash.
+//! `export_ehrs(an_ehr_id)` is EHR-scoped: `ehr`, `audit`, `contribution`,
+//! `vo_version`, `node`, `ehr_folder` (the `EHR.folders` membership rows — RM
+//! ehr master04 §Folders), `item_tag`, and any `vo_archive` markers. Global
+//! DEFINITION artefacts (templates via `vo_version.template_id`, `stored_query`)
+//! and demographic parties are not carried; a `COMPOSITION` referencing an
+//! absent template fails its FK on load and is reported per EHR.
 //!
-//! NOTE (`export_format.adoc` — what the two `EXPORT_FORMAT` members mean
-//! here, and why only the PAYLOAD changes between them). `EXPORT_SPEC`
-//! (`export_spec.adoc`) calls `logical_format` the "logical format to use, i.e.
-//! flavour of XML, JSON etc.", so it governs the serialization of the exported
-//! CONTENT, not the archive's envelope:
+//! Load re-persists each EHR verbatim (preserved ids and times) through the same
+//! codec, so a read after load reassembles byte-equal canonical JSON, and it
+//! synthesizes nothing: no missing `EHR_ACCESS` is minted, RM ehr master04 §EHR
+//! Creation governing creation rather than restore. The promoted `ehr` column
+//! projection is the one re-derived datum. A duplicate EHR id is reported in a
+//! `DUMP_LOAD_FAIL_REPORT` and skipped. The verbatim row insert is a storage
+//! seam ([`crate::storage::version_repo::import::insert_version_verbatim`]).
 //!
-//! * The **envelope** — `manifest.json`, the `segment-NNNN.json` skeleton of
-//!   storage rows, `blobs/` — stays JSON in BOTH members, because no XML form
-//!   of it exists to target: the published ITS-XML bundles declare NO global
-//!   element for `EHR`, `CONTRIBUTION` or a standalone `AUDIT_DETAILS` (both
-//!   lineages checked; `crates/openehr-its/schemas/xml/`), so an XML envelope
-//!   could only be invented. No openEHR spec defines an on-disk archive format
-//!   at all — our own design/extension.
-//! * The **payloads** DO have a published XML form, so they follow the member.
-//!   `openehr_canonical_json` (the default) keeps each version's reassembled
-//!   canonical openEHR JSON inline in the skeleton's `body`.
-//!   `openehr_canonical_xml` externalizes it exactly the way `blobs/` already
-//!   externalizes multimedia: the record carries `body_entry:
-//!   "versions/<version_uid>.xml"` and the entry is a complete
-//!   `ORIGINAL_VERSION` document under `ALL/Version.xsd`'s published
-//!   `<version>` root (RM common master06 §Version and its Subtypes), in the
-//!   nsv1 lineage the server also serves by default. A logically-deleted
-//!   version stores no content, so it gets no document and no `body_entry` —
-//!   symmetric with its `null` inline body.
-//!
-//! `segment_split_size` keeps its one meaning in both members (the skeleton
-//! segments split by cumulative byte size); an externalized payload is one
-//! document per version and is never split, like a blob. `load_ehrs` is passed
-//! no format (`i_admin_dump_load.adoc`: `load_ehrs(file_sys_loc)`), so the
-//! manifest's own `format` member tells it which payload form the archive
-//! holds.
-//!
-//! `export_ehrs(an_ehr_id)` is EHR-scoped, and the archive carries EHR-owned
-//! content only: `ehr`, `audit`, `contribution`, `vo_version`, `node`,
-//! `ehr_folder` (the `EHR.folders` membership rows — RM ehr master04 §Folders),
-//! `item_tag`, and any `vo_archive` markers for the EHR's versioned objects.
-//! Global DEFINITION artefacts a version references (OPT 1.4 / ADL2 templates
-//! via `vo_version.template_id` → `template_ref`, `stored_query`) are NOT
-//! carried — they are provisioned through the DEFINITION API and must pre-exist
-//! (a COMPOSITION referencing an absent template fails its FK on load, reported
-//! per EHR). Demographic parties (ehr-less versioned objects) are outside this
-//! EHR-scoped dump. The verbatim version-row re-persist is a storage seam
-//! ([`crate::storage::version_repo::import::insert_version_verbatim`]); this module
-//! keeps the archive format and orchestration.
-//!
-//! NOTE: `vo_attestation` rows are carried with their `at_committal` flag,
-//! because an at-committal attestation is inside the version's signed canonical
-//! form (RM common master06 §Digital Signature: "serialising the entire Version
-//! object") — a restored version's stored `signature` verifies only if its
-//! attestations restore with it.
-//!
-//! NOTE (load is a RESTORE, not an EHR creation): the load re-persists exactly
-//! what the archive holds and never synthesizes content — in particular it does
-//! NOT mint a missing `EHR_ACCESS` the way the EHR-Extract clone does, because
-//! RM ehr master04 §EHR Creation governs *creating* an EHR and an archive record
-//! is a previously-created one.
-//!
-//! The one thing the load re-derives rather than copies is the promoted `ehr`
-//! column projection (the subject + status-flag cache of the loaded
-//! `EHR_STATUS`), which is not content.
+//! NOTE: `vo_attestation` rows carry their `at_committal` flag because an
+//! at-committal attestation is inside the version's signed canonical form (RM
+//! common master06 §Digital Signature), so a restored version's `signature`
+//! verifies only if its attestations restore with it.
 
 #![expect(
     clippy::disallowed_types,
@@ -347,7 +305,7 @@ struct EhrRecord {
     archives: Vec<ArchiveRow>,
     /// Every `vo_attestation` row of the EHR's versioned objects (RM common
     /// master06 §Attestation), in commit order. `default` tolerates archives
-    /// dumped before attestations were carried (#1685).
+    /// dumped before attestations were carried.
     #[serde(default)]
     attestations: Vec<AttestationRow>,
 }
@@ -544,9 +502,10 @@ fn plan_segments(sizes: &[usize], limit_bytes: usize) -> Vec<std::ops::Range<usi
 }
 
 /// The wire message of every filesystem-access failure of these operations.
-/// Deliberately opaque: the configured `file_sys_loc` is SERVER deployment
-/// layout, and the OS error names the same path — neither belongs in a
-/// response body. The path and the OS diagnostic go to the trace record.
+///
+/// Deliberately opaque: the configured `file_sys_loc` is server deployment
+/// layout and the OS error names the same path, so both go to the trace record
+/// instead of the response body.
 const LOCATION_MESSAGE: &str =
     "the configured archive location could not be read or written; see the server log";
 
@@ -567,18 +526,13 @@ fn file_not_writable(path: &Path, err: &std::io::Error) -> SmError {
 /// but is not parseable as part of this archive format (a mangled manifest, a
 /// truncated or hand-edited segment).
 ///
-/// NOTE (`i_admin_dump_load.adoc` declares `file_not_writable` as the ONE error
-/// of both operations; no openEHR spec defines the on-disk archive format —
-/// our own design/extension): a corrupt entry and an unreadable entry are the
-/// same fact from the operation's point of view — `file_sys_loc` does not hold
-/// a readable archive — so they carry the SAME SM error. Reporting a corrupt
-/// input as `exception` instead would blame the server for the caller's
-/// archive.
+/// NOTE: `i_admin_dump_load.adoc` declares `file_not_writable` as the one error
+/// of both operations, and a corrupt entry says the same thing an unreadable
+/// one does, that `file_sys_loc` holds no readable archive.
 ///
-/// The body NAMES THE ENTRY — that is the caller-actionable fact about the
-/// caller's own archive — but carries neither the server path nor the serde
-/// diagnostic (offsets and Rust field names of our archive structs); both are
-/// traced.
+/// The body names the entry, the caller-actionable fact about the caller's own
+/// archive, and carries neither the server path nor the serde diagnostic; both
+/// are traced.
 fn unreadable_archive_entry(path: &Path, entry: &str, err: &serde_json::Error) -> SmError {
     tracing::warn!(
         path = %path.display(),
@@ -789,9 +743,8 @@ impl ArchiveReader {
     }
 }
 
-/// Build a `file_not_writable` [`SmError`] for a ZIP container fault — the
-/// same SM error the loose form raises, since from the operation's point of
-/// view the archive file could not be written/read either way.
+/// Builds a `file_not_writable` [`SmError`] for a 7z container fault, the same
+/// SM error the loose form raises.
 fn sevenz_fault(path: &Path, what: &str, err: &sevenz_rust2::Error) -> SmError {
     tracing::error!(
         path = %path.display(),
@@ -802,6 +755,8 @@ fn sevenz_fault(path: &Path, what: &str, err: &sevenz_rust2::Error) -> SmError {
     SmError::new(CallStatusType::FileNotWritable, LOCATION_MESSAGE.to_owned())
 }
 
+/// Builds a `file_not_writable` [`SmError`] for a ZIP container fault, the same
+/// SM error the loose form raises.
 fn zip_fault(path: &Path, what: &str, err: &zip::result::ZipError) -> SmError {
     tracing::error!(
         path = %path.display(),
@@ -817,11 +772,9 @@ fn zip_fault(path: &Path, what: &str, err: &zip::result::ZipError) -> SmError {
 /// The archive entry name carrying one version's `ORIGINAL_VERSION` document.
 ///
 /// The name is the version's own `OBJECT_VERSION_ID` (BASE
-/// `base_types/master05-identification_package.adoc` §Syntaxes:
-/// `object_id, '::', creating_system_id, '::', version_tree_id`), so an
-/// operator reading the
-/// archive sees the openEHR identity of every payload straight off the entry
-/// list. No openEHR spec defines an archive layout — our own design/extension.
+/// `base_types/master05-identification_package.adoc` §Syntaxes), so the entry
+/// list shows the openEHR identity of every payload. No openEHR spec defines an
+/// archive layout — our own design/extension.
 ///
 /// # Errors
 /// [`SmError`] `exception` when the composed name would escape the flat
@@ -840,19 +793,17 @@ fn version_entry_name(version_uid: &str) -> Result<String, SmError> {
     Ok(format!("{VERSIONS_PREFIX}{version_uid}.xml"))
 }
 
-/// Reassemble one archived version's `ORIGINAL_VERSION` envelope as canonical
-/// openEHR JSON, through the SAME builder the served version read uses
-/// ([`build_original_version`]) — so an archived document and a served one are
-/// the same object, not two renderings of it.
+/// Reassembles one archived version's `ORIGINAL_VERSION` envelope as canonical
+/// openEHR JSON, through the builder the served version read uses
+/// ([`build_original_version`]).
 ///
-/// `audit` is the record's `audit` row the version's `audit_id` names (RM
-/// common master06 §Version and its Subtypes: `VERSION.commit_audit` 1..1) —
-/// used only for a locally created version; an imported one renders the WRAPPED
-/// original's own foreign provenance instead (§Committal and Audits).
-/// `attestations` are the version's [`AttestationRow`]s: the at-committal ones
-/// render inside the built (signed) form and the after-committal ones append
-/// outside it — the same split the served read makes (RM common master06
-/// §Attestation / §Digital Signature; #1685).
+/// `audit` is the `audit` row the version's `audit_id` names (RM common
+/// master06 §Version and its Subtypes: `VERSION.commit_audit` 1..1), used only
+/// for a locally created version; an imported one renders the wrapped
+/// original's own foreign provenance (§Committal and Audits). Of the
+/// `attestations`, the at-committal ones render inside the signed form and the
+/// after-committal ones append outside it (RM common master06 §Attestation /
+/// §Digital Signature).
 ///
 /// # Errors
 /// [`ServiceError::Internal`] when the archived audit carries a commit time
@@ -1208,18 +1159,13 @@ fn resolve_versions(
 }
 
 impl FerroEhrService {
-    /// SM `export_ehrs`: export every EHR to an archive under `file_sys_loc`.
-    /// Returns a per-entity report; an empty list means every EHR was dumped
-    /// successfully (the report carries only failures).
+    /// Exports every EHR to an archive under `file_sys_loc` (SM `export_ehrs`).
     ///
-    /// Both SM enumerations (`export_format.adoc` / `compression_format.adoc`)
-    /// are realized in full. `COMPRESSION_FORMAT` — absent (loose files), `zip`,
-    /// and `7z` (`sevenz-rust2`). `EXPORT_FORMAT` — `openehr_canonical_json`
-    /// (the default when `logical_format` is absent, and translation-free: the
-    /// storage IS verbatim canonical JSON) and `openehr_canonical_xml`, which
-    /// externalizes each version payload as an `ORIGINAL_VERSION` document under
-    /// the published ITS-XML `<version>` root while the archive's own envelope
-    /// stays JSON in both members.
+    /// Returns a per-entity report carrying only failures, so an empty list
+    /// means every EHR was dumped. Both SM enumerations are realized in full:
+    /// `COMPRESSION_FORMAT` absent (loose files), `zip` or `7z`, and
+    /// `EXPORT_FORMAT` `openehr_canonical_json` (the default when
+    /// `logical_format` is absent) or `openehr_canonical_xml`.
     ///
     /// # Errors
     /// - `precondition_violation` (`400`) — a non-positive
@@ -1337,17 +1283,15 @@ impl FerroEhrService {
         Ok(Vec::new())
     }
 
-    /// SM `load_ehrs`: populate the repository from an archive under
-    /// `file_sys_loc`. Duplicate EHR ids — a subject this repository already
-    /// holds under another EHR, and a record whose externalized version
-    /// payload will not read — are reported (`dump_status = false`) and
-    /// skipped; all other EHRs are re-persisted verbatim.
+    /// Populates the repository from an archive under `file_sys_loc` (SM
+    /// `load_ehrs`).
     ///
-    /// The operation is passed no format (`i_admin_dump_load.adoc`:
-    /// `load_ehrs(file_sys_loc)`), so BOTH the container (loose / `zip` / `7z`)
-    /// and the payload form come from the archive itself: the container from
-    /// what the location holds, the payload form from the manifest's own
-    /// `EXPORT_FORMAT` member.
+    /// A duplicate EHR id, a subject this repository already holds under
+    /// another EHR, and a record whose externalized version payload will not
+    /// read are reported (`dump_status = false`) and skipped; all other EHRs
+    /// are re-persisted verbatim. The operation is passed no format
+    /// (`i_admin_dump_load.adoc`), so the container and the payload form both
+    /// come from the archive itself.
     ///
     /// # Errors
     /// - `file_not_writable` — `file_sys_loc` holds no archive container,
@@ -2175,7 +2119,7 @@ async fn insert_ehr_row(tx: &mut PgConnection, ehr: &EhrRow) -> Result<(), Servi
 /// statement, once their FK targets (the version and contribution rows)
 /// exist — an at-committal attestation is inside the version's signed
 /// canonical form (RM common master06 §Digital Signature), so a restore
-/// without them would break `verify_on_read` on the restored version (#1685).
+/// without them would break `verify_on_read` on the restored version.
 ///
 /// # Errors
 /// The underlying insert failure as [`ServiceError::Database`].

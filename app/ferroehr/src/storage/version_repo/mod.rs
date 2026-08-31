@@ -5,17 +5,16 @@
 //! `contribution`, `vo_attestation`, plus the folder-membership and
 //! event-outbox writes that ride along inside the same commit transaction.
 //!
-//! No openEHR spec governs the SQL schema —
-//! this module is pure plumbing. All **semantics** (change classification,
-//! version-tree placement, lifecycle, signing, attestation policy, import
-//! policy) stay in the versioning layer, which hands these functions plain
-//! value inputs and consumes the [`read::StoredVersion`] read shape. The change
-//! control law these rows realize is RM common master06 (§Contributions,
-//! §Committal and Audits, §The 'Virtual Version Tree', §Copying);
-//! `AUDIT_DETAILS`/
-//! `ATTESTATION` are master04. Every write runs inside a caller-owned `sqlx`
-//! transaction so a version + nodes + contribution + audit (+ outbox) commit
-//! atomically (master06 §Committal: "similar to nested transactions").
+//! No openEHR spec governs the SQL schema; this module is pure plumbing. Every
+//! semantic decision (change classification, version-tree placement, lifecycle,
+//! signing, attestation policy, import policy) stays in the versioning layer,
+//! which hands these functions plain value inputs and consumes the
+//! [`read::StoredVersion`] read shape. The change-control law these rows realize
+//! is RM common master06 (§Contributions, §Committal and Audits, §The 'Virtual
+//! Version Tree', §Copying), with `AUDIT_DETAILS` and `ATTESTATION` in master04.
+//! Every write runs inside a caller-owned `sqlx` transaction so a version, its
+//! nodes, contribution, audit and outbox row commit atomically (master06
+//! §Committal: "similar to nested transactions").
 //!
 //! One file per concern; consumers import each item from its defining
 //! submodule (no re-exports):

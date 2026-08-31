@@ -10,7 +10,7 @@
 //! (AES-256-GCM via the `cookie` crate's private jar), so any console
 //! instance holding the same key can read it — the console runs
 //! multi-instance on serverless platforms, keeps no database by mandate,
-//! and gets no sticky sessions there (#2949). The browser stores ciphertext
+//! and gets no sticky sessions there. The browser stores ciphertext
 //! only: CDR credentials never reach a signal, prop, serialized resource,
 //! or readable cookie. Idle expiry is a timestamp INSIDE the sealed payload,
 //! refreshed by the guard middleware on activity, so a stolen clock-limited
@@ -81,8 +81,7 @@ impl SessionKeys {
 
 /// The credential the BFF attaches to outbound CDR calls.
 ///
-/// `Debug` is manual and redacting: secrets must never appear in logs
-/// (reliability rule — log identifiers and shapes, not bodies).
+/// `Debug` is manual and redacting: log identifiers and shapes, never bodies.
 #[derive(Clone, Serialize, Deserialize)]
 pub enum Credential {
     /// Basic auth, validated against the CDR at login.
@@ -132,7 +131,7 @@ pub struct AdminSession {
 struct Envelope {
     touched: i64,
     // Each entry is its own JSON text — values decode straight to their
-    // types, so no untyped-carrier seam exists here (#1694).
+    // types, so no untyped-carrier seam exists here.
     entries: BTreeMap<String, String>,
 }
 

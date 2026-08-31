@@ -155,33 +155,29 @@ fn stored_attestation(stored: &Value) -> Result<AuditDetails, ServiceError> {
 }
 
 /// A versioned-object wire body for `vo_id` owned by `ehr_id`, carrying the
-/// **concrete** RM `_type` (`rm_type`: `VERSIONED_COMPOSITION` /
-/// `VERSIONED_EHR_STATUS` / `VERSIONED_FOLDER` — RM ehr master04 defines the
-/// concrete bindings of `VERSIONED_OBJECT<T>`; the ITS-REST
-/// `200_VERSIONED_COMPOSITION` schema pins the discriminator to the concrete
-/// class, never the generic `VERSIONED_OBJECT`), including the mandatory
-/// `time_created` (1..1) — the commit time of the object's first version
-/// (`VERSIONED_OBJECT.time_created`, RM common master06 §Versioned Objects).
+/// concrete RM `_type` (`VERSIONED_COMPOSITION`, `VERSIONED_EHR_STATUS` or
+/// `VERSIONED_FOLDER`; RM ehr master04 defines the concrete bindings of
+/// `VERSIONED_OBJECT<T>` and the ITS-REST `200_VERSIONED_COMPOSITION` schema
+/// pins the discriminator to the concrete class) and the mandatory
+/// `time_created`, the commit time of the object's first version (RM common
+/// master06 §Versioned Objects).
 ///
 /// The body is constructed as the generated [`VersionedObject`] subtype and
 /// serialized through the native codec, so it carries `_type` first and the
-/// BMM's own attribute order rather than a hand-built literal's.
+/// BMM's own attribute order.
 ///
-/// NOTE (EHR-Extract import, master06 §Copying): the earliest **held**
-/// version is used, not a hardcoded `sys_version = 1`. A latest-only clone
-/// (`import_ehr` over an `export_ehrs` extract) legitimately holds a partial
-/// trunk history whose lowest version is `> 1`; `time_created` is then the
-/// earliest version this repository received.
+/// NOTE: the earliest HELD version supplies `time_created` rather than a
+/// hardcoded `sys_version = 1`, a latest-only clone (master06 §Copying)
+/// legitimately holding a partial trunk history whose lowest version is above
+/// one.
 ///
-/// Returns the wire body plus the newest held version's commit instant — the
-/// container resource's `Last-Modified` value (ITS-REST overview
-/// `Requests_and_responses.md` §"`ETag` and Last-Modified": both headers
-/// "SHOULD be included in responses for VERSION, `VERSIONED_OBJECT`, or other
-/// resources that have versioning or unique state identifiers", the value
-/// "derived from `VERSION.commit_audit.time_committed.value`"). `None` when
-/// the object has no stored version OR is not owned by `ehr_id` — ownership
-/// rides the same statement as the bounds, and each caller maps the miss to
-/// its own resource's 404.
+/// Returns the wire body plus the newest held version's commit instant, the
+/// container resource's `Last-Modified` value "derived from
+/// `VERSION.commit_audit.time_committed.value`" (ITS-REST overview
+/// `Requests_and_responses.md` §"`ETag` and Last-Modified"). `None` when the
+/// object has no stored version or is not owned by `ehr_id`, ownership riding
+/// the same statement as the bounds, and each caller maps the miss to its own
+/// resource's 404.
 ///
 /// # Errors
 /// The storage read error of `version_repo::meta::commit_bounds`;
@@ -248,20 +244,17 @@ pub(crate) async fn versioned_object(
     )))
 }
 
-/// The VERSION resource's wire form for a loaded version: an
-/// `ORIGINAL_VERSION` for a locally created version, an `IMPORTED_VERSION`
-/// wrapping the received original for an imported one (RM common master06
-/// §Version and its Subtypes; ITS-REST 1.1.0 `UVersionOfComposition.yaml` /
-/// `UVersionOfEhrStatus.yaml` / `UVersionOfParty.yaml` declare the version
-/// resource as the `_type`-discriminated `ORIGINAL_VERSION | IMPORTED_VERSION`
-/// union).
+/// The VERSION resource's wire form for a loaded version: an `ORIGINAL_VERSION`
+/// for a locally created version and an `IMPORTED_VERSION` wrapping the received
+/// original for an imported one (RM common master06 §Version and its Subtypes;
+/// the ITS-REST 1.1.0 `UVersionOf*` schemas declare the version resource as that
+/// `_type`-discriminated union).
 ///
-/// Read-time signature verification (master06 §Digital Signature) applies to
-/// the served envelope: for an imported version that is the WRAPPER's own
-/// signature — "the `IMPORTED_VERSION` instance will carry its own signature
-/// which signifies the act of importing" — while the wrapped original's foreign
-/// signature is served verbatim and never re-verified. A `warn` mismatch logs +
-/// meters, a `strict` mismatch is a 5xx integrity failure.
+/// Read-time signature verification (master06 §Digital Signature) applies to the
+/// served envelope, which for an imported version is the wrapper's own
+/// signature, the wrapped original's foreign signature being served verbatim and
+/// never re-verified. A `warn` mismatch logs and meters; a `strict` mismatch is a
+/// 5xx integrity failure.
 ///
 /// # Errors
 /// [`ServiceError::Signing`] when `verify_on_read = strict` and the stored
@@ -297,13 +290,11 @@ pub(crate) fn version_envelope(read: &VersionRead, signer: &Signer) -> Result<Va
 }
 
 /// The `ORIGINAL_VERSION` view of a loaded version: for an imported version the
-/// WRAPPED original, reproduced with its own foreign contribution, commit audit
-/// and signature; otherwise the version itself. This is the form an EHR Extract
-/// carries — `X_VERSIONED_OBJECT.versions: List<ORIGINAL_VERSION<T>>` (RM
-/// `ehr_extract` `x_versioned_object.adoc` §Attributes) — so a re-export
-/// reproduces exactly what was received (master06 §Copying: "the
-/// `ORIGINAL_VERSION` instance is never modified ... it remains a faithful copy
-/// of its original, no matter how many systems it may be copied through").
+/// wrapped original with its own foreign contribution, commit audit and
+/// signature, otherwise the version itself. This is the form an EHR Extract
+/// carries (`X_VERSIONED_OBJECT.versions: List<ORIGINAL_VERSION<T>>`, RM
+/// `ehr_extract` `x_versioned_object.adoc` §Attributes), so a re-export
+/// reproduces what was received (master06 §Copying).
 ///
 /// Read-time signature verification runs only for a locally created version:
 /// the wrapped original's signature is foreign and is never re-verified
@@ -372,19 +363,18 @@ pub(crate) fn append_after_committal_attestations(ov: &mut Value, after_committa
     }
 }
 
-/// Rebuild the `ORIGINAL_VERSION` an `IMPORTED_VERSION` wraps: the row's own
-/// identity, lifecycle and content (which the import stored unchanged) plus the
-/// source system's `contribution` / `commit_audit` / `signature`, all verbatim
-/// (master06 §Copying), and the attestations the received original carried at
-/// the act of importing — part of the wrapper's signed form, since "all
-/// attributes of the object are serialised" and `item` is one of them (master06
-/// §Digital Signature). Attestations added AFTER the import are appended by the
+/// Rebuilds the `ORIGINAL_VERSION` an `IMPORTED_VERSION` wraps: the row's own
+/// identity, lifecycle and content, which the import stored unchanged, plus the
+/// source system's `contribution`, `commit_audit` and `signature` verbatim
+/// (master06 §Copying) and the attestations the received original carried at the
+/// act of importing, which are part of the wrapper's signed form (master06
+/// §Digital Signature). Attestations added after the import are appended by the
 /// caller.
 ///
 /// # Errors
 /// [`ServiceError::Unprocessable`] when the stored foreign `commit_audit` is not
-/// a canonical `AUDIT_DETAILS` object — the served `ORIGINAL_VERSION` would
-/// otherwise misreport the provenance it exists to preserve.
+/// a canonical `AUDIT_DETAILS` object, which would make the served
+/// `ORIGINAL_VERSION` misreport the provenance it exists to preserve.
 fn build_wrapped_original(
     read: &VersionRead,
     wrapped: &WrappedOriginal,

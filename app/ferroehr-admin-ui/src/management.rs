@@ -14,11 +14,9 @@
 //! metrics, config or logging resource at all.
 //!
 //! **Two health readers would be one too many.** The application shell's status
-//! pill polls the product status document (`/ferroehr/rest/status`: is the API
-//! answering, and at which version). This module reads the *other* health
-//! contract — `/health/readiness`, the dependency-health indicators (database
-//! ping, migrations applied, component flags) — and nothing else re-reads
-//! either claim.
+//! pill polls the product status document (`/ferroehr/rest/status`); this module
+//! reads the *other* health contract, `/health/readiness` — the dependency
+//! indicators — and nothing else re-reads either claim.
 //!
 //! **Probe-and-hide.** The management surface is off by default and each of its
 //! endpoints is independently opt-in, so the console discovers it
@@ -29,8 +27,7 @@
 //!
 //! Every `#[server]` fn guards with
 //! [`require_session`](crate::session::require_session) first (a server fn is a
-//! publicly reachable HTTP endpoint — rules §0) and keeps the CDR credential
-//! server-side.
+//! publicly reachable HTTP endpoint) and keeps the CDR credential server-side.
 
 #![expect(
     clippy::disallowed_types,
@@ -56,10 +53,9 @@ type HeadlineMetric = (
 /// The headline metric tiles, in display order.
 ///
 /// Each is a counter or gauge the CDR registers
-/// (`ferroehr::telemetry::metrics`); a histogram is deliberately absent —
-/// the CDR's actuator-style detail view folds a histogram's `_bucket`/`_sum`/
-/// `_count` lines into one sample list, so summing it would report a
-/// meaningless number.
+/// (`ferroehr::telemetry::metrics`); a histogram is deliberately absent, because
+/// the CDR's detail view folds a histogram's `_bucket`/`_sum`/`_count` lines
+/// into one sample list and summing it would report a meaningless number.
 // NOTE: these are the Prometheus exporter's RENDERED names — `_total` is derived
 // from the counter kind, never written on the instrument — and the correspondence
 // is pinned by the CDR's `exporter_renders_the_console_metric_names` test.
@@ -81,8 +77,8 @@ const HEADLINE_METRICS: [HeadlineMetric; 4] = [
 
 /// Whether the CDR serves its management surface at the configured base URL.
 ///
-/// Carries only fixed-size, client-safe data (rules §1) — it crosses the
-/// server-fn boundary.
+/// Carries only fixed-size, client-safe data — it crosses the server-fn
+/// boundary.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
 pub enum ManagementAvailability {
     /// The surface answered: it is mounted, so the operations panel is offered.
@@ -132,7 +128,7 @@ pub fn renders_management_ops(probe: &Result<ManagementAvailability, AdminUiErro
 /// The management gate: one probe [`Resource`].
 ///
 /// Created in component setup — never inside a `Suspend` closure, which re-runs
-/// and would re-create the resource (rules §4).
+/// and would re-create the resource.
 #[must_use]
 pub fn management_gate() -> Resource<Result<ManagementAvailability, AdminUiError>> {
     Resource::new(|| (), |()| async move { probe_management_api().await })
@@ -141,12 +137,11 @@ pub fn management_gate() -> Resource<Result<ManagementAvailability, AdminUiError
 /// Render `affordance` only when the gate found the management surface mounted;
 /// otherwise render nothing at all (probe-and-hide).
 ///
-/// The probe is resolved INSIDE the `<Suspense>` (an SSR'd `ErrorBoundary`
+/// The probe is resolved INSIDE the `<Suspense>`: an SSR'd `ErrorBoundary`
 /// fallback mismatches at hydration in leptos 0.8, and a render-time resource
-/// read is itself a hydration mismatch — rules §4/§6), and `affordance` creates
-/// no resources, so re-runs are safe. It is shared through an `Arc` because the
-/// `Suspend` closure re-runs on every notification of the resource it awaits
-/// and must therefore not consume its environment.
+/// read is itself a hydration mismatch. `affordance` creates no resources, so
+/// re-runs are safe, and it is shared through an `Arc` because the `Suspend`
+/// closure must not consume its environment.
 #[must_use]
 pub fn when_management_usable(
     gate: Resource<Result<ManagementAvailability, AdminUiError>>,
@@ -186,7 +181,7 @@ pub struct ReadinessView {
     /// The aggregate status (`UP` / `DEGRADED` / `DOWN`).
     pub status: String,
     /// Per-indicator rows, name-sorted so both render passes agree
-    /// (hydration determinism — rules §8).
+    /// (hydration determinism).
     pub components: Vec<IndicatorRow>,
 }
 
@@ -229,10 +224,10 @@ pub fn readiness_view(body: &serde_json::Value) -> ReadinessView {
 
 /// Read the CDR's dependency health (`GET /health/readiness`).
 ///
-/// The public health family is always mounted and ungated (adjudicated on issue
-/// #305), so this reads the CDR's API origin — never the management base URL —
-/// with no credential. `503` is the DOWN state, not a failure: the body carries
-/// the indicators that explain it, which is exactly what the panel renders.
+/// The public health family is always mounted and ungated, so this reads the
+/// CDR's API origin — never the management base URL — with no credential. `503`
+/// is the DOWN state, not a failure: the body carries the indicators that
+/// explain it, which is exactly what the panel renders.
 ///
 /// # Errors
 /// [`AdminUiError::Unauthenticated`] without a console session;
@@ -262,11 +257,9 @@ pub async fn fetch_readiness() -> Result<ReadinessView, AdminUiError> {
 /// `GET {management}/info` is the cheapest management operation (no I/O behind
 /// it — the build facts are captured at boot), so it is the availability
 /// signal: a `404` means the surface is not mounted for this deployment, any
-/// other answer means it is. NOTE: a deployment that mounts other management
-/// endpoints while leaving `info` at `Off` therefore hides the whole panel —
-/// deliberate, so the panel's presence rests on one cheap, stable answer rather
-/// than on probing five endpoints; the book says to enable `info` alongside the
-/// rest.
+/// other answer means it is. A deployment that mounts other management
+/// endpoints while leaving `info` at `Off` therefore hides the whole panel, so
+/// the panel's presence rests on one cheap, stable answer.
 ///
 /// # Errors
 /// [`AdminUiError::Unauthenticated`] without a console session;
@@ -496,9 +489,8 @@ pub async fn fetch_metric_names() -> Result<Option<Vec<String>>, AdminUiError> {
 /// Read one metric's current samples (`GET /management/metrics/{name}`).
 ///
 /// The name is a CDR-supplied string, so the path segment is percent-encoded
-/// with the `urlencoding` crate (owner rule: all percent-coding goes through
-/// it). `Ok(None)` = no such metric, or the endpoint is not mounted — both a
-/// `404`, both a first-class rendered state.
+/// with the `urlencoding` crate. `Ok(None)` = no such metric, or the endpoint is
+/// not mounted — both a `404`, both a first-class rendered state.
 ///
 /// # Errors
 /// [`AdminUiError::Invalid`] for an empty name; otherwise as
@@ -664,8 +656,7 @@ pub async fn reset_log_filter() -> Result<LoggerView, AdminUiError> {
 /// renders as a first-class absence rather than an error.
 ///
 /// Guards the console session first: the server fns above are publicly
-/// reachable endpoints (rules §0), and this is the one place their CDR call is
-/// made.
+/// reachable endpoints, and this is the one place their CDR call is made.
 #[cfg(feature = "ssr")]
 async fn management_get(path: &str) -> Result<Option<String>, AdminUiError> {
     let session = crate::session::require_session().await?;

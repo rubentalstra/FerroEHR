@@ -1,41 +1,38 @@
 // SPDX-FileCopyrightText: FerroEHR contributors
 // SPDX-License-Identifier: MIT
 
-//! IR → SQL lowering.
+//! IR to SQL lowering.
 //!
 //! Turns a typed [`QueryIr`] into one `SELECT` over the greenfield
 //! `node`/`vo_version`/`ehr`/`audit` store, built entirely with `sea-query`'s
-//! **typed** expression API + `sea-query-sqlx` — no string-concatenated SQL
-//! (`.claude/rules/sqlx-conventions.md`). Every table/column reference is an
-//! [`sea_query::Expr::col`], every literal binds through `Expr::val`
-//! (parameterized on build), and the PostgreSQL-specific pieces use the
+//! typed expression API and `sea-query-sqlx`, with no string-concatenated SQL.
+//! Every table and column reference is an [`sea_query::Expr::col`], every
+//! literal binds through `Expr::val`, and the PostgreSQL-specific pieces use the
 //! sanctioned typed escape hatches: [`sea_query::Func::cust`] for functions
-//! sea-query does not model (`jsonb_path_query_first` / `to_jsonb` /
-//! `upper_inf` / `openehr_magnitude`), the typed Postgres operators from
-//! [`sea_query::extension::postgres::PgExpr`] (`@>` = `contains`, `||` =
-//! `concatenate`), the built-in aggregates, and `cast_as` for casts. The only
-//! string-operator escapes are the sanctioned [`sea_query::BinOper::Custom`]
-//! set (`#>>`, `->>`). Runtime functions resolve unqualified (`search_path =
-//! ehr, ext, public`).
+//! sea-query does not model (`jsonb_path_query_first`, `to_jsonb`, `upper_inf`,
+//! `openehr_magnitude`), the typed Postgres operators from
+//! [`sea_query::extension::postgres::PgExpr`], the built-in aggregates, and
+//! `cast_as` for casts. The only string-operator escapes are the sanctioned
+//! [`sea_query::BinOper::Custom`] set (`#>>`, `->>`). Runtime functions resolve
+//! unqualified (`search_path = ehr, ext, public`).
 //!
-//! No openEHR spec governs the execution — openEHR defines the *language*, not
-//! its lowering; the SQL shapes are our own design.
-//! The construct-by-construct mapping to QUERY master03 lives in each submodule:
-//! `from` (FROM/containment + scope gates), `select` (SELECT/aggregates),
-//! `predicate` (WHERE/functions), `value` (the path split + coercions), and
-//! `expr` (the typed building blocks + the `LIKE`/archetype translations).
+//! No openEHR spec governs the execution: openEHR defines the language, not its
+//! lowering, so the SQL shapes are our own design. The construct-by-construct
+//! mapping to QUERY master03 lives in each submodule: `from` (FROM, containment
+//! and scope gates), `select` (SELECT and aggregates), `predicate` (WHERE and
+//! functions), `value` (the path split and coercions), and `expr` (the typed
+//! building blocks and the `LIKE`/archetype translations).
 //!
 //! ## Coupling to the storage schema
 //!
 //! The builder references the `node`/`vo_version`/`ehr`/`audit` column
-//! vocabulary directly and encodes the nested-set / `sys_period` /
+//! vocabulary directly and encodes the nested-set, `sys_period` and
 //! `branch_number` semantics of the greenfield store;
 //! `analyze::is_structure_root` must stay in lockstep with
-//! `storage::codec::STRUCTURE_TYPES` (the `emit-rm-model` generator enforces
-//! it). The `column_vocab` unit test (below) pins every column name the builder
-//! emits against the `CREATE TABLE` definitions in
-//! `migrations/ehr/0001_baseline.sql`, so a schema rename surfaces as a failing
-//! test rather than a runtime SQL error.
+//! `storage::codec::STRUCTURE_TYPES`, which the `emit-rm-model` generator
+//! enforces. The `column_vocab` unit test pins every column name the builder
+//! emits against `migrations/ehr/0001_baseline.sql`, so a schema rename surfaces
+//! as a failing test rather than a runtime SQL error.
 
 mod expr;
 mod from;
@@ -163,7 +160,7 @@ struct VoGroup {
     node: String,
     vo: String,
     /// The resolved RM types of the operand that created this group — the
-    /// containment-edge classifier's parent side (#2880).
+    /// containment-edge classifier's parent side.
     types: crate::aql::ir::TypeSet,
 }
 

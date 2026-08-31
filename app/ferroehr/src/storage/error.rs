@@ -75,7 +75,7 @@ pub enum StorageError {
 
     /// A stored `vo_version.body` text failed to parse as JSON — storage
     /// corruption, never a caller error (the column holds the canonical bytes
-    /// the commit serialized, #2913).
+    /// the commit serialized).
     #[error("stored canonical body does not parse: {0}")]
     BodyDecode(#[source] serde_json::Error),
 }
@@ -159,35 +159,30 @@ const CODEC_MESSAGE: &str = "the server encountered an internal storage-codec er
 /// §HTTP status codes: `409 Conflict`; RFC 9110 §15.6.4: `503 Service
 /// Unavailable`).
 ///
-/// **No driver string ever reaches a client body.** Every branch returns one of
-/// the three curated constants above; the SQLSTATE, constraint, table and the
-/// driver's own text are recorded on the trace record only. A PostgreSQL error
-/// message names schema objects (`ck_item_tag_target_type`, `item_tag`, …) — an
-/// internal detail the client can neither use nor be trusted with.
+/// No driver string ever reaches a client body: every branch returns one of the
+/// three curated constants above, and the SQLSTATE, constraint, table and
+/// driver text are recorded on the trace record only, a PostgreSQL message
+/// naming schema objects the client can neither use nor be trusted with.
 ///
 /// The SQLSTATE split follows the PostgreSQL error-code table
-/// (<https://www.postgresql.org/docs/18/errcodes-appendix.html>), and the
-/// question it answers is *whose* invariant broke:
+/// (<https://www.postgresql.org/docs/18/errcodes-appendix.html>) and answers
+/// whose invariant broke:
 ///
-/// - **`23505`** `unique_violation`, **`23503`** `foreign_key_violation`,
-///   **`23001`** `restrict_violation`, **`23P01`** `exclusion_violation` →
-///   `CallStatusType::Conflict` (`409`). These are collisions with data the
-///   repository already holds — a genuinely client-caused conflict, and exactly
-///   what `409` means ("the request could not be processed because it might
-///   generate a duplicate or a conflict", ITS-REST overview §HTTP status codes).
-/// - **`23514`** `check_violation`, **`23502`** `not_null_violation`, the
-///   generic **`23000`**, and any other class-23 code →
-///   `CallStatusType::Exception` (`500`). A CHECK or NOT NULL that reaches
-///   the driver is a violated *server-side* invariant: either the service layer
-///   failed to refuse a value it should have refused with a typed error, or the
-///   schema and the code have drifted. Neither is a conflict the client can
-///   resolve, and presenting it as `409` invites an endless retry loop against
-///   an optimistic-lock failure that never happened.
-/// - **`40001`** `serialization_failure` / **`40P01`** `deadlock_detected` →
+/// - `23505` `unique_violation`, `23503` `foreign_key_violation`, `23001`
+///   `restrict_violation`, `23P01` `exclusion_violation` →
+///   `CallStatusType::Conflict` (`409`): collisions with data the repository
+///   already holds, which is what `409` means (ITS-REST overview §HTTP status
+///   codes).
+/// - `23514` `check_violation`, `23502` `not_null_violation`, the generic
+///   `23000` and any other class-23 code → `CallStatusType::Exception` (`500`):
+///   a CHECK or NOT NULL reaching the driver is a violated server-side
+///   invariant, either a value the service layer failed to refuse or a drift
+///   between schema and code, and presenting it as `409` would invite an endless
+///   retry against an optimistic-lock failure that never happened.
+/// - `40001` `serialization_failure` and `40P01` `deadlock_detected` →
 ///   `CallStatusType::Conflict` (`409`, retryable).
-/// - **[`sqlx::Error::PoolTimedOut`]** (pool exhausted under load) →
-///   `CallStatusType::ServiceOverloaded` (`503` + `Retry-After`; the
-///   admission contract).
+/// - [`sqlx::Error::PoolTimedOut`] → `CallStatusType::ServiceOverloaded` (`503`
+///   plus `Retry-After`, the admission contract).
 /// - anything else → `CallStatusType::Exception` (`500`, a genuine fault).
 pub(crate) fn classify_sqlx(e: &sqlx::Error) -> crate::service::status::SmError {
     use crate::service::status::{CallStatusType, SmError};

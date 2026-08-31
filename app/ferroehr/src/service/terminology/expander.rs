@@ -86,13 +86,12 @@ impl TerminologyExpander for FerroEhrService {
         Ok(codes_of(extract))
     }
 
-    /// Evaluate the Boolean `TERMINOLOGY()` operations (QUERY master03
-    /// §TERMINOLOGY, third usage — `TERMINOLOGY('validate', …) = true`):
-    /// `validate` → `value_set_validate` (args from the `params_uri` query
-    /// string: `url` = the value set, `system` = the terminology, `code` =
-    /// the candidate); `subsumes` → `subsumes` (`system`, `codeA`, `codeB`).
-    /// `lookup`/`map` return complex structures with no boolean semantics —
-    /// typed reject.
+    /// Evaluates the Boolean `TERMINOLOGY()` operations (QUERY master03
+    /// §TERMINOLOGY, third usage): `validate` calls `value_set_validate` with
+    /// the `params_uri` arguments `url`, `system` and `code`, and `subsumes`
+    /// calls `subsumes` with `system`, `codeA` and `codeB`. `lookup` and `map`
+    /// return complex structures with no boolean semantics and are typed
+    /// rejects.
     ///
     /// # Errors
     ///

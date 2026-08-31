@@ -373,11 +373,10 @@ impl FerroEhrService {
     /// seam ([`crate::versioning::read::read_version_by_ordinal`]) and the
     /// reverse transform.
     ///
-    /// NOTE: the template is read from the COMPOSITION itself (as the
-    /// read façade's AQL also does), NOT from `vo_version.template_id` — the
+    /// NOTE: the template is read from the COMPOSITION itself, as the read
+    /// facade's AQL also does, rather than from `vo_version.template_id`: the
     /// canonical body is the authoritative carrier
-    /// (`archetype_details.template_id`), and deriving from it keeps this
-    /// reader independent of the envelope column's population rules.
+    /// (`archetype_details.template_id`).
     ///
     /// # Errors
     /// A database failure on the version/mapping/subject reads, or
@@ -723,14 +722,15 @@ impl FerroEhrService {
         Ok(self.committed_response(ehr_id, &committed))
     }
 
-    /// The ingest door's dry twin — FHIR R4 `$validate`: resolve the mapping,
-    /// map to FLAT, build and provenance-stamp the COMPOSITION exactly as
-    /// [`Self::fhir_ingest`] would, run the commit path's own validation, and
-    /// commit NOTHING. Returns the FHIR `OperationOutcome` carrying the
-    /// verdict: the validator's rejections verbatim as `error` issues, or the
-    /// valid verdict plus the EHR disposition (`would commit into …` /
-    /// `would create …` — the target EHR is resolved, never created) as
-    /// `information` issues.
+    /// The ingest door's dry twin, FHIR R4 `$validate`: resolves the mapping,
+    /// maps to FLAT, builds and provenance-stamps the COMPOSITION exactly as
+    /// [`Self::fhir_ingest`] would, runs the commit path's own validation and
+    /// commits nothing.
+    ///
+    /// Returns the FHIR `OperationOutcome` carrying the verdict: the validator's
+    /// rejections verbatim as `error` issues, or the valid verdict plus the EHR
+    /// disposition as `information` issues, the target EHR being resolved and
+    /// never created.
     ///
     /// NOTE: no openEHR spec governs FHIR interop — our own extension; the
     /// wire convention is HL7 FHIR R4 `resource-operation-validate`

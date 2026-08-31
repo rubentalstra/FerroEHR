@@ -9,8 +9,7 @@
 //! JSON (the Simplified Formats and Web Templates are JSON too) and canonical
 //! XML (compositions, operational templates).
 //!
-//! Two properties make the output hydration-safe (`.claude/rules/leptos-ui.md`
-//! §8) and honest:
+//! Two properties make the output hydration-safe and honest:
 //!
 //! * **Total** — concatenating every token's text reproduces the input byte for
 //!   byte (asserted by `tokens_reproduce_the_input`), so the pane still shows

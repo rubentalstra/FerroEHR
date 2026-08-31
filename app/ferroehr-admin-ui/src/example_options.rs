@@ -11,9 +11,9 @@
 //! `…/parameters/query/example_detail_level.yaml` and
 //! `…/parameters/query/example_type.yaml`.
 //!
-//! Component-free (crate `CLAUDE.md`): the query string a pane sends is a
-//! pure, unit-tested function of the controls the operator picked, so both
-//! template families ask the CDR the same way.
+//! Component-free: the query string a pane sends is a pure, unit-tested
+//! function of the controls the operator picked, so both template families
+//! ask the CDR the same way.
 
 use serde::{Deserialize, Serialize};
 

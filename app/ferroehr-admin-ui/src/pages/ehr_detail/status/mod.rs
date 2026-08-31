@@ -15,21 +15,18 @@
 //!   `version_at_time` lookup, and any version's document pinned by its
 //!   `OBJECT_VERSION_ID` (`GET /ehr/{ehr_id}/ehr_status/{version_uid}`).
 //!
-//! One reader per claim (crate `CLAUDE.md`): the **Status** tab is the console's
-//! ONE reader of the current status document; the **Status history** tab never
-//! touches that endpoint — it reads the versioned family for the commit history
-//! and the VERSION envelope, and pins a document by an explicit `version_uid`.
-//! The same split the composition viewer keeps between the COMPOSITION resource
-//! and its `VERSIONED_COMPOSITION`.
+//! One reader per claim: the **Status** tab is the console's ONE reader of the
+//! current status document; the **Status history** tab never touches that
+//! endpoint — it reads the versioned family for the commit history and the
+//! VERSION envelope, and pins a document by an explicit `version_uid`.
 //!
-//! No openEHR spec governs an admin UI — our own design / product extension.
-//! The wire it reads and writes IS spec-bound: the `EHR_STATUS` +
-//! `VERSIONED_EHR_STATUS` operations
-//! (the ITS-REST EHR API's `EHR_STATUS` + `VERSIONED_EHR_STATUS` families) over
-//! the RM `EHR_STATUS` (`docs/specs/openehr/RM/docs/ehr/master04-ehr_package.adoc`
-//! §`EHR_STATUS`). Path segments are
-//! percent-encoded server-side; every `#[server]` fn below authenticates the
-//! console session first (rules §0), and the CDR credential never reaches
+//! No openEHR spec governs an admin UI — our own design / product extension. The
+//! wire it reads and writes IS spec-bound: the `EHR_STATUS` +
+//! `VERSIONED_EHR_STATUS` operations (the ITS-REST EHR API's `EHR_STATUS` +
+//! `VERSIONED_EHR_STATUS` families) over the RM `EHR_STATUS`
+//! (`docs/specs/openehr/RM/docs/ehr/master04-ehr_package.adoc` §`EHR_STATUS`).
+//! Path segments are percent-encoded server-side; every `#[server]` fn below
+//! authenticates the console session first, and the CDR credential never reaches
 //! client-visible state.
 
 #![allow(
@@ -64,15 +61,14 @@ const STATUS_OBJECT: &str = "the EHR's status";
 ///
 /// The canonical document verbatim, the version that document IS, and the
 /// facts the edit form works on — flattened BFF-side so the browser never
-/// re-models the RM (rules §10) and so the type carries no `usize` (rules §1).
+/// re-models the RM and so the type carries no `usize`.
 ///
 /// The attributes are the RM `EHR_STATUS` class's own
 /// (`docs/specs/openehr/RM/docs/UML/classes/org.openehr.rm.ehr.ehr_status.adoc`):
-/// `is_queryable`, `is_modifiable`, the `subject` `PARTY_PROXY`, and the optional
-/// `other_details` `ITEM_STRUCTURE`. `uid` is the `OBJECT_VERSION_ID` of the
-/// served version — `EHR_STATUS` is `VERSIONABLE`
-/// (RM `docs/specs/openehr/RM/docs/ehr/master04-ehr_package.adoc` §`EHR_STATUS`; the served
-/// document carries its `OBJECT_VERSION_ID` as `uid`) —
+/// `is_queryable`, `is_modifiable`, the `subject` `PARTY_PROXY`, and the
+/// optional `other_details` `ITEM_STRUCTURE`. `uid` is the `OBJECT_VERSION_ID`
+/// of the served version — `EHR_STATUS` is `VERSIONABLE` (RM
+/// `docs/specs/openehr/RM/docs/ehr/master04-ehr_package.adoc` §`EHR_STATUS`) —
 /// and that value is the `If-Match` an update must carry.
 #[derive(Debug, Clone, PartialEq, Eq, Default, Serialize, Deserialize)]
 pub struct EhrStatusState {
@@ -104,8 +100,8 @@ pub struct EhrStatusState {
 /// The EHR's CURRENT `EHR_STATUS` (`GET /ehr/{ehr_id}/ehr_status`), flattened
 /// into an [`EhrStatusState`].
 ///
-/// This is the console's ONE reader of the current status document (crate
-/// `CLAUDE.md` §One reader per claim); the history tab reads versions.
+/// This is the console's ONE reader of the current status document; the history
+/// tab reads versions.
 ///
 /// # Errors
 /// [`AdminUiError::Unauthenticated`] without a console session; CDR transport
@@ -201,9 +197,8 @@ pub async fn fetch_ehr_status_version(
 /// `Prefer: return=representation` asks for the updated resource, whose
 /// `uid.value` is the new version; the operation also allows a bare `204`
 /// (`docs/specs/openehr/ITS-REST/specifications/docs/overview/Requests_and_responses.md`
-/// §Representation-negotiation: without `Prefer: return=representation` the
-/// update answers `204`), so an empty answer is
-/// a success with no uid to name.
+/// §Representation-negotiation), so an empty answer is a success with no uid to
+/// name.
 ///
 /// # Errors
 /// [`AdminUiError::Unauthenticated`] without a console session;
@@ -263,10 +258,8 @@ pub async fn update_ehr_status(
 /// The `VERSIONED_EHR_STATUS`'s revision history, newest-first
 /// (`GET /ehr/{ehr_id}/versioned_ehr_status/revision_history`).
 ///
-/// The rows are the shared [`VersionEntry`] every History tab renders, parsed
-/// by the same `crate::pages::composition::parse_versions` — a
-/// `REVISION_HISTORY` is a `REVISION_HISTORY` whichever versioned object it
-/// belongs to.
+/// The rows are the shared [`VersionEntry`] every History tab renders, parsed by
+/// the same `crate::pages::composition::parse_versions`.
 ///
 /// # Errors
 /// [`AdminUiError::Unauthenticated`] without a console session; CDR transport
@@ -362,8 +355,7 @@ pub async fn fetch_versioned_status(
 /// `OBJECT_VERSION_ID` (RM common — a VERSION's `uid` IS an
 /// `OBJECT_VERSION_ID`); that string is returned so the caller can pin it.
 ///
-/// The `datetime-local` → RFC 3339 completion is the composition viewer's
-/// shared
+/// The `datetime-local` → RFC 3339 completion is the composition viewer's shared
 /// `crate::format::datetime_local_to_rfc3339`.
 ///
 /// # Errors
@@ -408,8 +400,7 @@ pub async fn fetch_status_version_at_time(
 /// `served_etag` is the identifier the CDR's own `ETag` named
 /// ([`CdrResponse::etag_version_uid`](crate::cdr::CdrResponse::etag_version_uid));
 /// it wins over the document's `uid.value`, because the header is what the
-/// server offers for the conditional round-trip and the body's copy is only a
-/// convenience. `None` falls back to the body.
+/// server offers for the conditional round-trip. `None` falls back to the body.
 ///
 /// # Errors
 /// [`AdminUiError::Internal`] when the body is not valid JSON.
@@ -495,9 +486,8 @@ pub type StatusResource = Resource<Result<EhrStatusState, AdminUiError>>;
 ///
 /// Created once per EHR-detail screen by [`status_feed`] and handed to BOTH
 /// consumers — the page header's identity strip and the Status tab — because
-/// they show the same claim and the crate's one-reader-per-claim rule forbids a
-/// second GET for it. The resource is therefore UNGATED by the active tab: the
-/// header shows on every tab, so the read is needed on every tab.
+/// they show the same claim. The resource is therefore UNGATED by the active
+/// tab: the header shows on every tab, so the read is needed on every tab.
 #[derive(Clone, Copy)]
 pub struct StatusFeed {
     /// The current `EHR_STATUS`, read once per `(ehr_id, successful save)`.
@@ -520,7 +510,7 @@ impl std::fmt::Debug for StatusFeed {
 /// Call this ONCE, in the EHR-detail screen's setup: the save action has to
 /// exist before the resource (its stamp is the resource's refetch trigger), and
 /// resource ids are allocated in creation order, so both consumers taking the
-/// same handle is what keeps the server pass and hydration in step (rules §4).
+/// same handle is what keeps the server pass and hydration in step.
 #[must_use]
 pub fn status_feed(ehr_id: Signal<String>) -> StatusFeed {
     let save: Action<StatusEdit, Result<String, AdminUiError>> =
@@ -541,7 +531,7 @@ pub fn status_feed(ehr_id: Signal<String>) -> StatusFeed {
     // `Action::version` increments on failures too; a refetch after a REFUSED
     // save would re-seed the form and discard the edits the operator still
     // needs. The stamp therefore sticks to its previous value unless the
-    // completed save SUCCEEDED (rules §6 — the directory tab's precedent).
+    // completed save SUCCEEDED.
     let saved = Memo::new(move |prev: Option<&usize>| {
         let version = save.version().get();
         if save.value().with(|value| matches!(value, Some(Ok(_)))) {
@@ -570,11 +560,10 @@ fn status_toast_detail(uid: &str) -> String {
 
 /// Status tab: the current-status facts, the edit form, and the document.
 ///
-/// Reads the screen's SHARED [`StatusFeed`] rather than opening its own — the
-/// page header renders the same claim (crate `CLAUDE.md` §One reader per
-/// claim). The feed's source carries a stamp that advances ONLY on a successful
-/// save, so a refused save (a `412` conflict, a rejected body) leaves the
-/// operator's input on screen instead of re-seeding the form from the server.
+/// Reads the screen's SHARED [`StatusFeed`] rather than opening its own: the
+/// page header renders the same claim. The feed's source carries a stamp that
+/// advances ONLY on a successful save, so a refused save leaves the operator's
+/// input on screen instead of re-seeding the form from the server.
 pub(super) fn status_section(
     feed: StatusFeed,
     ehr_id: Signal<String>,
@@ -583,11 +572,11 @@ pub(super) fn status_section(
     let toaster = thaw::ToasterInjection::expect_context();
     let StatusFeed { resource, save } = feed;
 
-    // Both outcomes toast (an outside-world side-effect — rules §2; the
-    // console's mutation-feedback rule, crate `CLAUDE.md`). A `412` is the
-    // mid-air collision and gets its own title; the shared copy carries the
-    // CDR's diagnostic verbatim and names the next action. A refused body's
-    // diagnostic ALSO stays inline beside the form.
+    // Both outcomes toast (an outside-world side-effect; the console's
+    // mutation-feedback rule). A `412` is the mid-air collision and gets
+    // its own title; the shared copy carries the CDR's diagnostic
+    // verbatim and names the next action. A refused body's diagnostic
+    // ALSO stays inline beside the form.
     Effect::new(move |_| match save.value().get() {
         Some(Ok(uid)) => {
             toast_success(toaster, "EHR status updated", &status_toast_detail(&uid));
@@ -604,8 +593,8 @@ pub(super) fn status_section(
     });
 
     // The form's reactive state is created ONCE here — above the
-    // `<Transition>`, so it outlives every Suspend re-run (rules §4) — and is
-    // re-seeded idempotently per loaded version by `seed`.
+    // `<Transition>`, so it outlives every Suspend re-run — and is re-seeded
+    // idempotently per loaded version by `seed`.
     let form = StatusForm::new();
     let facts = facts_section(resource, form);
     let editor = edit_form(ehr_id, form, save);
@@ -625,9 +614,8 @@ pub(super) fn status_section(
 ///
 /// A `<Transition>` (not `<Suspense>`): the resource reloads after every
 /// successful save and the previous facts must stay visible instead of flashing
-/// the skeleton (rules §6). The `Result` resolves INSIDE the transition — an
-/// SSR'd `ErrorBoundary` fallback mismatches at hydration in leptos 0.8
-/// (rules §4).
+/// the skeleton. The `Result` resolves INSIDE the transition — an SSR'd
+/// `ErrorBoundary` fallback mismatches at hydration in leptos 0.8.
 fn facts_section(resource: StatusResource, form: StatusForm) -> AnyView {
     view! {
         <Transition fallback=table_skeleton>
@@ -708,7 +696,7 @@ fn facts_card(state: &EhrStatusState) -> AnyView {
 /// The current status document in the shared [`DocumentPane`].
 ///
 /// A failed read renders nothing here — the facts section above states it once
-/// (the screen as a whole never renders an error as nothing; rules §4).
+/// (the screen as a whole never renders an error as nothing).
 fn document_section(resource: StatusResource) -> AnyView {
     view! {
         <Transition fallback=table_skeleton>

@@ -5,25 +5,20 @@
 //! `archetype_node_id` predicate.
 //!
 //! AM `Identification` master07 §Supporting Archetype-based Querying fixes the
-//! matching set: "given an archetype X used to create data, the following
-//! archetypes could be used for querying: X; any previous minor or patch
-//! variant of X; any of the specialisation parents of X; any previous minor or
-//! patch variant of any of the specialisation parents of X" — and, decisively,
-//! "for specialised archetypes, the specialisation lineage can only be obtained
-//! from the operational form of the archetype, found in the template used to
-//! create the data". AM `Identification` master03 §Legacy ADL 1.4 Semantics
-//! removes the lineage meaning of the `-` separator for AOM2-era identifiers
-//! ("the '-' character is still be allowed, but no longer has any semantic
-//! significance … the level of specialisation can no longer be determined from
-//! the identifier"), so their lineage is *only* what the stored artefacts
-//! declare.
+//! matching set as X, its previous minor or patch variants, its specialisation
+//! parents and their previous variants, and adds that "for specialised
+//! archetypes, the specialisation lineage can only be obtained from the
+//! operational form of the archetype, found in the template used to create the
+//! data". AM `Identification` master03 §Legacy ADL 1.4 Semantics removes the
+//! lineage meaning of the `-` separator for AOM2-era identifiers ("the level of
+//! specialisation can no longer be determined from the identifier"), so their
+//! lineage is only what the stored artefacts declare.
 //!
-//! This module is the read-only side of that: a resolved child → parent graph
-//! over the stored ADL2/OPT2 family, inverted into parent → children, which
-//! answers "which stored archetypes descend from the one this query names".
-//! Loading it from the artefact store (and caching it) is the definition
-//! service's `lineage` module; the planner consumes it through
-//! [`crate::aql::sql::SqlCtx`].
+//! This module is the read-only side of that: a resolved child-to-parent graph
+//! over the stored ADL2 and OPT2 family, inverted into parent-to-children, which
+//! answers which stored archetypes descend from the one a query names. Loading
+//! and caching it is the definition service's `lineage` module; the planner
+//! consumes it through [`crate::aql::sql::SqlCtx`].
 
 use std::collections::{BTreeMap, BTreeSet, VecDeque};
 

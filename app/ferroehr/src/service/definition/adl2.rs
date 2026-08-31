@@ -60,12 +60,11 @@ const ADL2_CACHE_NS: &str = "adl2\u{1f}";
 
 /// A memoised [`TerminologyResolver`] for ADL2 VETDF validation.
 ///
-/// `openehr-adl` is a network-free spec engine: its VETDF check consults a
-/// *synchronous* [`TerminologyResolver`] seam, but a terminology lookup is
-/// *asynchronous*. So the service pre-resolves every external term binding of
-/// the uploaded archetype against its terminology service
-/// ([`FerroEhrService::has_term`], routed to the in-process bundle or the
-/// configured FHIR provider) and hands the validator this memoised map.
+/// `openehr-adl` is a network-free spec engine whose VETDF check consults a
+/// synchronous [`TerminologyResolver`] seam, while a terminology lookup is
+/// asynchronous. The service therefore pre-resolves every external term binding
+/// of the uploaded archetype against its terminology service
+/// ([`FerroEhrService::has_term`]) and hands the validator this memoised map.
 ///
 /// `code_exists` returns `Some(true)`/`Some(false)` for a binding the service
 /// could answer, and `None` for one it could not (no external provider
@@ -276,16 +275,13 @@ impl FerroEhrService {
     /// so the `openehr-adl` engine can resolve specialisation parents +
     /// `use_archetype` fillers when validating an upload or projecting an OPT.
     ///
-    /// A stored source that no longer parses (should not happen — every source
-    /// was engine-validated at its own upload) is skipped rather than failing
-    /// the whole build.
+    /// A stored source that no longer parses is skipped rather than failing the
+    /// whole build; every source was engine-validated at its own upload.
     ///
-    /// NOTE: the repository is re-parsed from the stored sources on every call,
-    /// deliberately — it is reached only when an ADL2 artefact is uploaded or an
-    /// OPT is projected, both administrative acts, so a memoized copy would add
-    /// invalidation on every ADL2 write and every specialisation-parent edit for
-    /// no clinical-path gain. No openEHR spec governs this — our own
-    /// design/extension.
+    /// NOTE: the repository is re-parsed on every call, this path being reached
+    /// only for an ADL2 upload or an OPT projection, so a memoized copy would
+    /// cost invalidation on every ADL2 write for no clinical-path gain. No
+    /// openEHR spec governs this — our own design/extension.
     async fn adl2_repository(&self) -> Result<ArchetypeRepository, ServiceError> {
         let sources: Vec<String> = sqlx::query_scalar("SELECT adl FROM adl2_artefact")
             .fetch_all(&self.pool)
@@ -303,17 +299,16 @@ impl FerroEhrService {
     /// its identity [`ArtefactSummary`].
     ///
     /// Invalidity splits on the syntax/semantics line: an unparseable source
-    /// (S-code syntax errors) is *syntactically invalid content* — the released
-    /// `400` branch (`responses/400.yaml`, via [`syntax_bad_request`]) — while
-    /// an AOM2 validation-phase failure (V-codes) on a parsed source is a
-    /// `ValidationFailed` (`422`), the wire rendering the ITS-REST `Error`
-    /// object with the rule-code mnemonics as `validationErrors[]`
-    /// (`schemas/others/Error.yaml`). The openEHR
-    /// [`ProductionRmModel`] governs openEHR-published archetypes; a foreign/test
-    /// model skips the RM pass (`AOM2/master04.3` §Reference Model Type Matching
-    /// — a model this build does not carry would false-fire VCORM). External
-    /// term bindings are verified through the terminology-service resolver
-    /// (VETDF, `master03` §Validity Rules — see [`Self::adl2_terminology_resolver`]).
+    /// (S-codes) is syntactically invalid content, the released `400` branch
+    /// (`responses/400.yaml`, via [`syntax_bad_request`]), while an AOM2
+    /// validation-phase failure (V-codes) on a parsed source is a
+    /// `ValidationFailed` (`422`) rendering the ITS-REST `Error` object with the
+    /// rule-code mnemonics as `validationErrors[]`. The openEHR
+    /// [`ProductionRmModel`] governs openEHR-published archetypes; a foreign or
+    /// test model skips the RM pass, which would false-fire VCORM
+    /// (`AOM2/master04.3` §Reference Model Type Matching). External term
+    /// bindings are verified through the terminology-service resolver (VETDF,
+    /// `master03` §Validity Rules; see [`Self::adl2_terminology_resolver`]).
     async fn adl2_validate(&self, source: &str) -> Result<ArtefactSummary, ServiceError> {
         let archetype =
             parse_artefact(source, Dialect::Adl2).map_err(|errs| syntax_bad_request(&errs))?;
@@ -560,14 +555,10 @@ impl FerroEhrService {
     /// the `v2_4` front end
     /// ([`openehr_its::flat::webtemplate::builder_v2_4::build_web_template_v2_4`]),
     /// and walked into a canonical example COMPOSITION at the requested
-    /// [`DetailLevel`] — the same shared generator the ADL 1.4 example endpoint
-    /// uses (`ITS-REST simplified_formats master04 §"Web Template Metadata"` is
-    /// the dialect-neutral seam). The `output` form ([`ExampleType::Output`])
-    /// carries a deterministic `uid`.
-    ///
-    /// Example generation is not spec-mandated (a convenience surface); a
-    /// generated example is self-consistent with its `WebTemplate` by construction
-    /// and validated by the template-independent RM-invariant + terminology pass
+    /// [`DetailLevel`] by the same generator the ADL 1.4 example endpoint uses.
+    /// The `output` form ([`ExampleType::Output`]) carries a deterministic `uid`.
+    /// Example generation is not spec-mandated; a generated example is validated
+    /// by the template-independent RM-invariant and terminology pass
     /// ([`openehr_its::rm_instance::validate_rm_and_terminology`]).
     ///
     /// # Errors
@@ -619,20 +610,19 @@ impl FerroEhrService {
     }
 
     /// The (cached) [`WebTemplate`] for a stored ADL2/OPT2 template on the
-    /// FLAT/STRUCTURED **commit** path — the ADL2 twin of
-    /// [`web_template_for`](crate::service::FerroEhrService::web_template_for)'s OPT
-    /// 1.4 resolution, reached as its fallback when a template id is not an ADL 1.4
-    /// template. The resulting Web Template carries the AOM2 archetype-conformance
-    /// constraints ([`build_web_template_v2_4`]), so a FLAT/STRUCTURED commit
-    /// against an ADL2 template is archetype-constraint-checked exactly as an OPT
-    /// 1.4 commit is.
+    /// FLAT/STRUCTURED commit path, the ADL2 twin of
+    /// [`web_template_for`](crate::service::FerroEhrService::web_template_for)'s
+    /// OPT 1.4 resolution and reached as its fallback when a template id is not
+    /// an ADL 1.4 template. The Web Template carries the AOM2
+    /// archetype-conformance constraints ([`build_web_template_v2_4`]), so such
+    /// a commit is constraint-checked exactly as an OPT 1.4 commit is.
     ///
     /// NOTE: the entry is cached under a dialect-namespaced key
-    /// ([`ADL2_CACHE_NS`]) in the shared `WebTemplate` cache, so an OPT 1.4 and
-    /// an ADL2 template sharing a `template_id` cannot collide there: the prefix
-    /// uses an ASCII control separator no grammar-legal id can contain (BASE
-    /// `docs/base_types/master05-identification_package.adoc` §Archetype
-    /// Identifiers). No openEHR spec governs the cache — our own design/extension.
+    /// ([`ADL2_CACHE_NS`]) whose ASCII control separator no grammar-legal id can
+    /// contain (BASE `docs/base_types/master05-identification_package.adoc`
+    /// §Archetype Identifiers), so an OPT 1.4 and an ADL2 template sharing a
+    /// `template_id` cannot collide. No openEHR spec governs the cache — our own
+    /// design/extension.
     ///
     /// # Errors
     ///

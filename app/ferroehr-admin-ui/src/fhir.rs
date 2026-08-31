@@ -21,26 +21,22 @@
 //! **Probe-and-hide.** The group is config-gated on the CDR (`[fhir]
 //! api_enabled`, off by default) and answers `404` for every route as if
 //! unmounted while it is off, so the console discovers it
-//! ([`probe_fhir_connector`]) before offering any of it — the same
-//! discover-and-hide pattern as [`crate::admin`], [`crate::management`] and
-//! [`crate::tenants`]. Capability is not authorization: a mounted-but-refused
-//! group (`401`/`403`) still counts as present, and the refusal surfaces as
-//! copy on the screen that asked.
+//! ([`probe_fhir_connector`]) before offering any of it. Capability is not
+//! authorization: a mounted-but-refused group (`401`/`403`) still counts as
+//! present, and the refusal surfaces as copy on the screen that asked.
 //!
 //! **Two error vocabularies meet on this surface, and ONE reader speaks
-//! both (#2581).** Every refusal the connector itself authors is a FHIR
+//! both.** Every refusal the connector itself authors is a FHIR
 //! `OperationOutcome` (`{resourceType, issue: [{severity, code,
 //! diagnostics}]}`); authentication and authorization refusals come from the
-//! layer ABOVE the handler and carry the openEHR `{error, message}` body.
-//! The shared reader ([`crate::cdr`]'s `expect_success`) extracts the human
-//! diagnostic from either shape, so this module keeps no refusal shim;
-//! [`outcome_summary`] remains for the VERDICT panel, which classifies
-//! outcomes rather than reading refusals.
+//! layer ABOVE the handler and carry the openEHR `{error, message}` body. The
+//! shared reader ([`crate::cdr`]'s `expect_success`) extracts the human
+//! diagnostic from either shape; [`outcome_summary`] serves the VERDICT panel,
+//! which classifies outcomes rather than reading refusals.
 //!
 //! Every `#[server]` fn guards with
 //! [`require_session`](crate::session::require_session) first (a server fn is a
-//! publicly reachable HTTP endpoint — rules §0) and keeps the CDR credential
-//! server-side.
+//! publicly reachable HTTP endpoint) and keeps the CDR credential server-side.
 
 #![allow(
     clippy::disallowed_types,
@@ -61,9 +57,9 @@ pub const FHIR_JSON: &str = "application/fhir+json";
 /// One stored mapping record as `/admin/fhir_mapping` serves it.
 ///
 /// Every field is a string or a `bool`: the record crosses the server-fn
-/// boundary and is rendered or edited, never computed with (rules §1 — no
-/// `usize`, and no parsing the console would have to keep in step with the
-/// CDR's own formatting). `definition` carries the whole deep mapping document
+/// boundary and is rendered or edited, never computed with (no `usize`, and no
+/// parsing the console would have to keep in step with the CDR's own
+/// formatting). `definition` carries the whole deep mapping document
 /// pretty-printed, because that document IS what the editor edits.
 #[derive(Debug, Clone, PartialEq, Eq, Default, Serialize, Deserialize)]
 pub struct FhirMappingRow {
@@ -194,8 +190,8 @@ pub fn verdict_of(answer: &FhirAnswer) -> DryRunVerdict {
 
 /// Whether the CDR serves its FHIR connector.
 ///
-/// Carries only fixed-size, client-safe data (rules §1) — it crosses the
-/// server-fn boundary.
+/// Carries only fixed-size, client-safe data — it crosses the server-fn
+/// boundary.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
 pub enum FhirAvailability {
     /// The group answered: it is mounted, so the screen is offered. Whether
@@ -241,7 +237,7 @@ pub fn renders_fhir_connector(probe: &Result<FhirAvailability, AdminUiError>) ->
 /// The connector gate: one probe [`Resource`].
 ///
 /// Created in component setup — never inside a `Suspend` closure, which re-runs
-/// and would re-create the resource (rules §4).
+/// and would re-create the resource.
 #[must_use]
 pub fn fhir_gate() -> Resource<Result<FhirAvailability, AdminUiError>> {
     Resource::new(|| (), |()| async move { probe_fhir_connector().await })
@@ -250,12 +246,11 @@ pub fn fhir_gate() -> Resource<Result<FhirAvailability, AdminUiError>> {
 /// Render `affordance` only when the gate found the connector mounted;
 /// otherwise render nothing at all (probe-and-hide).
 ///
-/// The probe is resolved INSIDE the `<Suspense>` (an SSR'd `ErrorBoundary`
+/// The probe is resolved INSIDE the `<Suspense>`: an SSR'd `ErrorBoundary`
 /// fallback mismatches at hydration in leptos 0.8, and a render-time resource
-/// read is itself a hydration mismatch — rules §4/§6), and `affordance` creates
-/// no resources, so re-runs are safe. It is shared through an `Arc` because the
-/// `Suspend` closure re-runs on every notification of the resource it awaits
-/// and must therefore not consume its environment.
+/// read is itself a hydration mismatch. `affordance` creates no resources, so
+/// re-runs are safe, and it is shared through an `Arc` because the `Suspend`
+/// closure must not consume its environment.
 #[must_use]
 pub fn when_fhir_connector_usable(
     gate: Resource<Result<FhirAvailability, AdminUiError>>,
@@ -282,8 +277,8 @@ pub fn when_fhir_connector_usable(
 /// It is the same judgement the CDR makes on upload — a non-empty name matching
 /// `[A-Za-z0-9_.-]`, and a `definition` that is a JSON object — checked here so
 /// the submit button is inert until the form can actually succeed. The server fn
-/// re-checks, because it is a public endpoint (rules §0), and the CDR checks
-/// again: this is convenience, never the authority.
+/// re-checks, because it is a public endpoint, and the CDR checks again: this is
+/// convenience, never the authority.
 ///
 /// # Errors
 /// The sentence to render inline when the draft cannot be sent.
@@ -689,9 +684,8 @@ pub async fn dry_run_fhir_resource(
 #[cfg(feature = "ssr")]
 fn fhir_answer(response: &crate::cdr::CdrResponse) -> Result<FhirAnswer, AdminUiError> {
     if (response.is(http::StatusCode::UNAUTHORIZED) || response.is(http::StatusCode::FORBIDDEN))
-        // NOTE: the shared reader speaks both refusal vocabularies (#2581),
-        // so the auth layer's openEHR body needs no FHIR-side shim; the
-        // refusal statuses always classify as Err, so no filler arm exists.
+        // NOTE: the shared reader speaks both refusal vocabularies, so the
+        // auth layer's openEHR body needs no FHIR-side shim.
         && let Err(e) = crate::cdr::CdrClient::expect_success(response.clone())
     {
         return Err(e);
@@ -713,8 +707,7 @@ fn fhir_answer(response: &crate::cdr::CdrResponse) -> Result<FhirAnswer, AdminUi
 ///
 /// Built through `serde_json` so the definition document travels as JSON rather
 /// than as an escaped string, and so a name carrying a quote is escaped by the
-/// encoder (owner rule: never hand-roll a codec). The update form omits the
-/// name, which the CDR treats as immutable.
+/// encoder. The update form omits the name, which the CDR treats as immutable.
 #[cfg(feature = "ssr")]
 fn mapping_body(
     name: Option<&str>,

@@ -1,59 +1,55 @@
 // SPDX-FileCopyrightText: FerroEHR contributors
 // SPDX-License-Identifier: MIT
 
-//! IHE **ATNA** (Audit Trail and Node Authentication) audit trail — the
-//! platform's realization of the SM **System Log** component (`I_SYSTEM_LOG`).
+//! IHE ATNA (Audit Trail and Node Authentication) audit trail, the platform's
+//! realization of the SM System Log component (`I_SYSTEM_LOG`).
 //!
 //! The one normative openEHR statement for this component is a single line of
-//! the SM platform component table — verbatim: "System Log | IHE
-//! ATNA-compliant system log"
-//! (`docs/specs/openehr/SM/docs/openehr_platform/master02-overview.adoc`); the
-//! `I_SYSTEM_LOG` interface (`.../UML/classes/i_system_log.adoc`) is an empty
-//! stub. Everything below therefore realizes that "IHE ATNA-compliant" mandate
-//! against the external standards it pulls in, cited as external standards
-//! (never as openEHR spec text).
+//! the SM platform component table, "System Log | IHE ATNA-compliant system
+//! log" (`docs/specs/openehr/SM/docs/openehr_platform/master02-overview.adoc`);
+//! the `I_SYSTEM_LOG` interface (`UML/classes/i_system_log.adoc`) is an empty
+//! stub. Everything below realizes that mandate against external standards,
+//! cited as external standards and never as openEHR spec text.
 //!
-//! One audit record per audited API operation, rendered in **both** official
-//! ATNA formats and fanned out to the configured sinks: the local **Audit
-//! Record Repository** (the `audit` schema — the durability anchor, on by
-//! default, served back via the RESTful-ATNA ITI-81 retrieval), the classic
-//! **DICOM Audit Message** feed (DICOM PS3.15 §A.5 XML — *not* openEHR
-//! ITS-XML — over RFC 5424 syslog; RFC 5426 UDP or RFC 5425 TLS; IHE ITI
-//! TF-2 ITI-20), and the **FHIR R4 `AuditEvent`** feed (IHE BALP shape;
-//! ITI-20 ATX:FHIR Feed). This is authorized defensive security-audit
-//! logging for a healthcare system.
+//! One audit record per audited API operation is rendered in both official ATNA
+//! formats and fanned out to the configured sinks: the local Audit Record
+//! Repository (the `audit` schema, the durability anchor, on by default, served
+//! back via the RESTful-ATNA ITI-81 retrieval), the classic DICOM Audit Message
+//! feed (DICOM PS3.15 §A.5 XML over RFC 5424 syslog; RFC 5426 UDP or RFC 5425
+//! TLS; IHE ITI TF-2 ITI-20), and the FHIR R4 `AuditEvent` feed (IHE BALP shape;
+//! ITI-20 ATX:FHIR Feed). This is authorized defensive security-audit logging
+//! for a healthcare system.
 //!
-//! ## Scope boundary (read/operation audit vs write/change-control audit)
-//! This ATNA system log is the *security surveillance* record of API access
-//! (who did what to which resource, with what outcome). It is **orthogonal to**
-//! the RM change-control audit: every VERSION/CONTRIBUTION write records its
-//! own authorship in `AUDIT_DETAILS` in the versioning path — "every write
-//! access of any kind … is logged with the user identification, time, reason"
-//! (BASE `architecture_overview/master07-security.adoc` §Integrity). That
-//! write-audit is **not** implemented here; do not duplicate it in this module.
+//! ## Scope boundary
+//!
+//! This ATNA system log is the security surveillance record of API access: who
+//! did what to which resource, with what outcome. The RM change-control audit is
+//! orthogonal and lives in the versioning path, where every VERSION or
+//! CONTRIBUTION write records its own authorship in `AUDIT_DETAILS` (BASE
+//! `architecture_overview/master07-security.adoc` §Integrity). Do not duplicate
+//! it here.
 //!
 //! ## Seams
-//! The ITS-REST operation → classification mapping is the protocol adapter's
+//!
+//! The ITS-REST operation to classification mapping is the protocol adapter's
 //! concern (`ferroehr-rest::system_log::classify`); its audit middleware builds
 //! an [`event::AuditEvent`] per request and hands it to the platform through
-//! [`FerroEhrService::emit`]. The binary (`ferroehr-server`) boots the subsystem
-//! via [`sender::start`] and supplies the DB-backed [`sender::SubjectResolver`]; the sender is
-//! installed on the service with
+//! [`FerroEhrService::emit`]. The binary boots the subsystem via
+//! [`sender::start`] and supplies the DB-backed [`sender::SubjectResolver`]; the
+//! sender is installed with
 //! [`FerroEhrService::with_audit`](crate::service::FerroEhrService::with_audit).
 //!
 //! ## Module map
 //! - [`event`] — the transport-agnostic audit event model.
-//! - [`codes`] — DCM / RFC-3881 code constants + the ATNA rendering of the
+//! - [`codes`] — DCM / RFC-3881 code constants and the ATNA rendering of the
 //!   event enums.
-//! - [`message`] — the DICOM `AuditMessage` model + `quick-xml` serializer.
+//! - [`message`] — the DICOM `AuditMessage` model and `quick-xml` serializer.
 //! - `fhir` — the FHIR R4 `AuditEvent` rendering per the IHE BALP content
-//!   profiles (the modern half of the dual format; the `fhir` cargo
-//!   feature, over `ferroehr_ext::fhir::audit`).
-//! - [`syslog`] — RFC 5424 assembly + RFC 5426 UDP / RFC 5425 TLS transports.
-//! - [`store`] — the local Audit Record Repository (the `audit` schema) +
-//!   the ITI-81 search filter.
-//! - [`sender`] — the bounded-mpsc sender + background drain + sink fan-out
-//!   + fail modes.
+//!   profiles (the `fhir` cargo feature, over `ferroehr_ext::fhir::audit`).
+//! - [`syslog`] — RFC 5424 assembly plus RFC 5426 UDP / RFC 5425 TLS transports.
+//! - [`store`] — the local Audit Record Repository and the ITI-81 search filter.
+//! - [`sender`] — the bounded-mpsc sender, background drain, sink fan-out and
+//!   fail modes.
 //! - [`config`] — the `[audit]` section struct ([`config::AuditConfig`]).
 
 #![expect(

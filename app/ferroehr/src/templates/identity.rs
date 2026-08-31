@@ -11,24 +11,22 @@
 //!   version segment is part of identity, so two versions are two distinct
 //!   archetypes.
 //! - `TEMPLATE_ID` (§Class Descriptions) — "Identifier for templates. Lexical
-//!   form to be determined." The generated [`openehr_base::prelude::TemplateId`]
-//!   carries only the opaque `value`; we therefore treat a `TEMPLATE_ID` as an
-//!   opaque composite identifier governed by the case rule below, and do **not**
-//!   attempt a multi-axial decomposition the spec has not yet fixed.
-//! - **§Composite Identifiers and Case** — the case law that governs template-id equality:
-//!   composite identifiers are *case-preserving* ("not change case due to
-//!   persistence, copying, transfer or other computation processes") **and**
-//!   *case-insensitive* ("two identifiers identical apart from case are
-//!   considered to be identical, and therefore to identify the same thing").
+//!   form to be determined." The generated
+//!   [`openehr_base::prelude::TemplateId`] carries only the opaque `value`, so a
+//!   `TEMPLATE_ID` is treated as an opaque composite identifier governed by the
+//!   case rule below rather than decomposed along axes the spec has not fixed.
+//! - §Composite Identifiers and Case — composite identifiers are
+//!   case-preserving ("not change case due to persistence, copying, transfer or
+//!   other computation processes") and case-insensitive ("two identifiers
+//!   identical apart from case are considered to be identical, and therefore to
+//!   identify the same thing").
 //!
-//! Coordination note: the SM `I_DEFINITION_ADL14` provisioning surface
-//! (`service/definition/adl14.rs`) enforces the same rule at its SQL boundary
-//! with `lower(<column>) = lower($1)`. This module is the
-//! in-process side of the identical law: [`canonical_key`] is the comparison
-//! form used for the derived-runtime cache key, so case variants of one stored
-//! template resolve to a single cache entry — while the persisted `template_id`
-//! stays case-preserved. Storage lookups likewise compare case-insensitively in
-//! SQL (see [`crate::templates::store`]).
+//! This module is the in-process side of that law: [`canonical_key`] is the
+//! comparison form the derived-runtime cache key uses, so case variants of one
+//! stored template resolve to a single entry while the persisted `template_id`
+//! stays case-preserved. Storage lookups and the SM `I_DEFINITION_ADL14`
+//! provisioning surface enforce the same rule in SQL with
+//! `lower(<column>) = lower($1)`.
 
 /// The §Composite Identifiers and Case *comparison* form of an identifier, for
 /// use as a map/cache KEY: surrounding whitespace trimmed off the wire token,

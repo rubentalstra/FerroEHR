@@ -2,7 +2,7 @@
 // SPDX-License-Identifier: MIT
 
 //! The shared form-control classes: ONE styled definition for text inputs,
-//! selects, and textareas (previously hand-duplicated per screen).
+//! selects, and textareas.
 //!
 //! These are class constants rather than wrapper components because half the
 //! console's inputs are deliberately uncontrolled (the login form) or carry
@@ -38,11 +38,11 @@ pub const BTN_DANGER: &str = "inline-flex items-center gap-1.5 rounded-control b
 
 /// One labelled text input bound to `value`, stacked label-over-control.
 ///
-/// `prop:value` carries the live state and `on:input` writes it back (rules
-/// §5 — the `value` attribute would only set the initial value, and an
-/// `oninput="…"` JS attribute is forbidden outright). `placeholder` is
-/// `None` where the field carries no example, which leaves the attribute off
-/// the element entirely.
+/// `prop:value` carries the live state and `on:input` writes it back (the
+/// `value` attribute would only set the initial value, and an `oninput="…"`
+/// JS attribute is forbidden outright). `placeholder` is `None` where the
+/// field carries no example, which leaves the attribute off the element
+/// entirely.
 #[must_use]
 pub fn text_field(
     id: String,

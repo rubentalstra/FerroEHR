@@ -25,8 +25,7 @@ use crate::pages::ehr_detail::directory::tree::read_only_tree;
 /// The no-directory view: a preview of the empty root `FOLDER` that will be
 /// committed, and the button that commits it through the shared `create`
 /// action. Stateless — it holds no signals of its own, so re-running it when
-/// the directory resource notifies (a `Suspend` re-run) disposes nothing
-/// (rules §4).
+/// the directory resource notifies (a `Suspend` re-run) disposes nothing.
 pub(in crate::pages::ehr_detail::directory) fn create_section(
     ehr_id: Signal<String>,
     create: Action<(String, String), Result<String, AdminUiError>>,

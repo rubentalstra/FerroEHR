@@ -146,29 +146,22 @@ impl VersionRead {
 /// Compose a [`VersionRead`] from the storage read shape
 /// ([`crate::storage::version_repo::read::StoredVersion`]): the tree id is rebuilt
 /// from its column ints and the flattened audit becomes the `commit_audit`.
-/// A LOCALLY committed deleted version (lifecycle `523`) stores no node rows,
-/// so storage already yields `canonical = Value::Null`: the delete route writes
-/// an empty row set, and every content-carrying local route refuses the
-/// `deleted` state outright
-/// ([`crate::versioning::lifecycle::reject_deleted_with_data`]) — master06
-/// §Logical Deletion states the two as one act ("delete its `_data_` … set the
-/// `_lifecycle_state_` value to the code for `deleted`"). The EHR-Extract
-/// IMPORT replay is the one exception, and a spec-mandated one: it reproduces a
-/// foreign `ORIGINAL_VERSION` verbatim (master06 §Copying — "the
-/// `ORIGINAL_VERSION` instance is never modified"), so a foreign `523` version
-/// that arrived carrying data keeps it and reads back with that content.
+/// A locally committed deleted version (lifecycle `523`) stores no node rows, so
+/// storage already yields `canonical = Value::Null`: master06 §Logical Deletion
+/// states the data removal and the state change as one act, and every
+/// content-carrying local route refuses the `deleted` state
+/// ([`crate::versioning::lifecycle::reject_deleted_with_data`]). The EHR-Extract
+/// import replay is the one exception, reproducing a foreign `ORIGINAL_VERSION`
+/// verbatim (master06 §Copying), so a foreign `523` version that arrived
+/// carrying data reads back with that content.
 ///
-/// This is also the ONE seam a stored version body passes through on its way
-/// out of `vo_version`+`node` — every full-body read in this module composes
-/// its result here — so it carries the read-time `spec_profile` gate
-/// ([`crate::versioning::profile::gate`]): under the `stable` profile a
-/// version whose body only the development generations can express is a typed
-/// refusal, never a body served under a generation set that does not define
-/// it. The gate sits here rather than per handler precisely because every
-/// served kind (COMPOSITION / `EHR_STATUS` / `EHR_ACCESS` / FOLDER / the
-/// demographic parties) reaches the wire through this function. AQL does not
-/// pass through here — the query engine reads `node` rows directly — so it
-/// carries the same gate twice over: on the query text at planning time
+/// This is also the one seam a stored version body passes through on its way out
+/// of `vo_version` and `node`, so it carries the read-time `spec_profile` gate
+/// ([`crate::versioning::profile::gate`]): under the `stable` profile a version
+/// whose body only the development generations can express is a typed refusal.
+/// The gate sits here rather than per handler because every served kind reaches
+/// the wire through this function. AQL reads `node` rows directly instead, so it
+/// carries the same gate twice: on the query text at planning time
 /// (`crate::aql::analyze`) and on every projected version body at result
 /// assembly (`crate::versioning::profile::gate_result_bodies`).
 ///

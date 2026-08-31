@@ -63,16 +63,14 @@ pub fn router(app_state: AppState, leptos_options: LeptosOptions) -> axum::Route
 
 /// The pre-render session guard: an unauthenticated document request to a
 /// guarded path answers `302 → /login` with an EMPTY body, before Leptos
-/// renders anything (#2702).
+/// renders anything.
 ///
-/// The in-view guard (`crate::pages::shell::AppShell`) already sets the same
-/// redirect on the response line, but it cannot suppress the body: the chrome
-/// and `<Outlet/>` deliberately live outside its `Suspense` (the hydration
-/// rules), so a signed-out hit still rendered the whole console — every
-/// screen's server functions ran and their failures were serialized into the
-/// response. This layer removes both the information exposure and the
-/// render amplification; the in-view guard stays as the client-side
-/// navigation gate.
+/// The in-view guard (`crate::pages::shell::AppShell`) sets the same redirect on
+/// the response line, but it cannot suppress the body: the chrome and
+/// `<Outlet/>` deliberately live outside its `Suspense`, so without this layer a
+/// signed-out hit renders the whole console and serializes every screen's
+/// server-function failures into the response. The in-view guard remains the
+/// client-side navigation gate.
 ///
 /// Scope: `GET`/`HEAD` on everything except the public paths
 /// (`is_public_path`). Server-function calls (`/api/…`) keep their own
@@ -244,12 +242,12 @@ async fn cache_control_layer(
 /// `/pkg/snippets/` is carved back out because cargo-leptos deliberately does
 /// NOT hash those files — the WebAssembly looks for them by their unhashed
 /// names — so their URLs are stable across builds and caching one for a year
-/// would pin a stale copy. This build emits none today; the carve-out is what
-/// keeps that from becoming a silent defect if a dependency ever adds one.
+/// would pin a stale copy. This build emits none; the carve-out keeps that from
+/// becoming a silent defect if a dependency ever adds one.
 ///
-/// Everything else keeps `no-store`, unchanged and for unchanged reasons —
-/// the console renders patient data into HTML, and each document carries a
-/// per-request CSP nonce that must not be replayed out of a cache.
+/// Everything else keeps `no-store`: the console renders patient data into HTML,
+/// and each document carries a per-request CSP nonce that must not be replayed
+/// out of a cache.
 ///
 /// A refused or missing asset is never cached: only a served body (2xx) and
 /// the `304` a revalidation answers with take the immutable directive, so a

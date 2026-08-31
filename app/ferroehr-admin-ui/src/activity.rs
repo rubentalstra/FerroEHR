@@ -5,10 +5,10 @@
 //! console derives its points from.
 //!
 //! Kept out of the components (and out of the `#[server]` bodies) on purpose —
-//! business logic lives in plain, unit-tested Rust and the views stay thin
-//! (`.claude/rules/leptos-ui.md` §10). It is also a pure, deterministic
-//! function of its input: no clock, no locale, no network, so a chart derived
-//! from it renders identically on the server pass and after hydration (§8).
+//! business logic lives in plain, unit-tested Rust and the views stay thin. It
+//! is also a pure, deterministic function of its input: no clock, no locale,
+//! no network, so a chart derived from it renders identically on the server
+//! pass and after hydration.
 //!
 //! No openEHR spec governs an admin UI — our own design / product extension.
 //! The timestamps it buckets ARE spec-bound: `AUDIT_DETAILS.time_committed`
@@ -21,8 +21,7 @@ use serde::{Deserialize, Serialize};
 /// One day of activity: the calendar day and how many events fell on it.
 ///
 /// The count is a fixed-size `u32` (never `usize`) because the type crosses the
-/// server-fn boundary onto the 32-bit WASM target
-/// (`.claude/rules/leptos-ui.md` §1).
+/// server-fn boundary onto the 32-bit WASM target.
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub struct ActivityPoint {
     /// The `YYYY-MM-DD` calendar day.

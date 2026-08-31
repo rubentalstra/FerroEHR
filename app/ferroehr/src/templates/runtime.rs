@@ -4,27 +4,20 @@
 //! Derived-runtime resolution: the cached [`WebTemplate`] and example
 //! COMPOSITION surfaces, thin over `openehr_its::flat`.
 //!
-//! # Spec basis
+//! Spec: `BASE/docs/architecture_overview/master10-archetypes.adoc`.
+//! §Archetypes and Templates at Runtime gives a template two runtime functions,
+//! validating data at capture and import against the RM and archetypes and
+//! serving as the design basis for AQL paths; the validation and commit path
+//! consumes [`FerroEhrService::web_template_for`]. §Deploying Archetypes and
+//! Templates blesses a compiled near-runtime form "compiled into a near-runtime
+//! form from the sharable openEHR form", which here is the [`WebTemplate`],
+//! memoised in a `moka` cache.
 //!
-//! `docs/specs/openehr/BASE/docs/architecture_overview/master10-archetypes.adoc`:
-//!
-//! - §Archetypes and Templates at Runtime: a template's runtime function
-//!   is (a) to validate data at capture/import against the RM + archetypes, and
-//!   (b) to be the design basis for AQL paths. The validation/commit path
-//!   consumes [`FerroEhrService::web_template_for`].
-//! - §Deploying Archetypes and Templates: the spec blesses a *compiled
-//!   near-runtime form* ("compiled into a near-runtime form from the sharable
-//!   openEHR form") that incorporates copies of the relevant archetypes for
-//!   performance and to guarantee only validated artefacts run. Our derived
-//!   form is the [`WebTemplate`], memoised in a `moka` cache.
-//!
-//! NOTE (`WebTemplate` format is spec-silent): the concrete
-//! `WebTemplate` JSON shape is **not openEHR-normative** — it is the Better
-//! `web-template` SDT format and lives entirely in `openehr_its::flat` (a
-//! hand-written spec-adjacent module). This module only *stores, resolves, and
-//! caches* it; it never presents `WebTemplate` as canonical openEHR, and the
-//! builder's own id-sanitisation is a **vendor** rule, distinct from the
-//! §Composite Identifiers and Case identity law applied to the cache key here
+//! NOTE: the concrete `WebTemplate` JSON shape is not openEHR-normative, being
+//! the Better `web-template` SDT format living in `openehr_its::flat`, so this
+//! module stores, resolves and caches it without presenting it as canonical
+//! openEHR; the builder's own id-sanitisation is a vendor rule, distinct from
+//! the §Composite Identifiers and Case identity law applied to the cache key
 //! (see [`crate::templates::identity`]).
 
 #![expect(
@@ -53,13 +46,10 @@ impl FerroEhrService {
     ///
     /// # Errors
     ///
-    /// - [`ServiceError::Unprocessable`] (→ ITS-REST `422`, **not** `NotFound`)
-    ///   when the template is not in the store: on a composition
-    ///   commit an unknown referenced template is a *semantic* error, per
-    ///   `docs/specs/openehr/ITS-REST/specifications/responses/422.yaml`
-    ///   ("semantic validation errors, such as the underlying template is not
-    ///   known") and the CNF Robot case
-    ///   `I_EHR_COMPOSITION.create_composition-event_bad_opt` asserting `422`.
+    /// - [`ServiceError::Unprocessable`] (ITS-REST `422`, not `NotFound`) when
+    ///   the template is not in the store: on a composition commit an unknown
+    ///   referenced template is a semantic error (`responses/422.yaml`, CNF
+    ///   Robot case `I_EHR_COMPOSITION.create_composition-event_bad_opt`).
     /// - [`ServiceError::Unprocessable`] when the stored XML fails to build
     ///   into a [`WebTemplate`].
     /// - [`ServiceError::Database`] — the store read failed.
@@ -100,18 +90,15 @@ impl FerroEhrService {
     /// Generate an example COMPOSITION for a stored operational template
     /// (`GET /definition/template/adl1.4/{template_id}/example`).
     ///
-    /// NOTE: example generation is **not spec-mandated** — it is a
-    /// convenience surface. The example is produced from the template's (cached)
-    /// [`WebTemplate`] by
-    /// [`example_composition`](openehr_its::flat::example::example_composition) at the
-    /// requested [`DetailLevel`], with a deterministic `uid` populated for
-    /// the `output` ([`ExampleType::Output`]) form.
+    /// NOTE: example generation is not spec-mandated; it is a convenience
+    /// surface, produced from the template's cached [`WebTemplate`] by
+    /// [`example_composition`](openehr_its::flat::example::example_composition)
+    /// at the requested [`DetailLevel`], with a deterministic `uid` for the
+    /// `output` ([`ExampleType::Output`]) form.
     ///
-    /// Existence is probed on every call (a template deleted from the store —
-    /// possibly by another replica whose delete never touched this instance's
-    /// cache — must not be served from a stale cache entry), but the probe is
-    /// `EXISTS`-shaped: the stored XML itself moves only for a cold-cache
-    /// build.
+    /// Existence is probed on every call so a template another replica deleted
+    /// is not served from a stale cache entry, but the probe is `EXISTS`-shaped
+    /// and the stored XML moves only for a cold-cache build.
     ///
     /// # Errors
     ///

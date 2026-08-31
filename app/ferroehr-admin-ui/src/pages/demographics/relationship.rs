@@ -218,7 +218,7 @@ pub async fn create_relationship(
     let state: crate::state::AppState = expect_context();
     // Flat string parameters rather than the draft struct: a server function is
     // a URL-encoded public endpoint, and a flat argument list has no nested
-    // encoding to get wrong (rules §5).
+    // encoding to get wrong.
     let body = relationship_body(&RelationshipDraft {
         archetype_node_id,
         name,
@@ -779,10 +779,9 @@ fn lookup_card() -> AnyView {
 /// The create card: both ends, the relationship type, its archetype id, and an
 /// optional `details` document.
 ///
-/// Uncontrolled inputs read at dispatch (rules §5). The `?source=` prefill is
-/// rendered as the input's `value` ATTRIBUTE (its initial value), which is
-/// deterministic from the URL and therefore identical on the server pass and at
-/// hydration (rules §8).
+/// Uncontrolled inputs read at dispatch. The `?source=` prefill is rendered as
+/// the input's `value` ATTRIBUTE (its initial value), which is deterministic
+/// from the URL and therefore identical on the server pass and at hydration.
 #[expect(
     clippy::too_many_lines,
     reason = "one erased section: the create card's seven fields + validation + action wiring (rules §1)"
@@ -865,7 +864,7 @@ fn create_card(source_uid: &str, source_kind: &str) -> AnyView {
                 .unwrap_or_default(),
         };
         // The same pure judgement the server function makes, run inline first
-        // so a blank field never costs a round trip (rules §5).
+        // so a blank field never costs a round trip.
         if let Err(message) = relationship_body(&draft) {
             validation.set(Some(message));
         } else {
@@ -988,7 +987,7 @@ fn create_card(source_uid: &str, source_kind: &str) -> AnyView {
 ///
 /// `selected` marks the initial option through the `selected` ATTRIBUTE rather
 /// than `prop:value` on the select: the value is a URL parameter, so the server
-/// pass and hydration agree without any client-side state (rules §5/§8).
+/// pass and hydration agree without any client-side state.
 fn kind_select(
     id: &'static str,
     selected: &str,
@@ -1119,9 +1118,9 @@ struct RelationshipEdit {
 /// the document.
 ///
 /// ONE resource, ungated by tab — the screen's single reader of the current
-/// relationship (crate `CLAUDE.md` §One reader per claim): the delete above the
-/// tabs addresses the latest version, which this read publishes into
-/// `latest_version` rather than reading the same claim twice.
+/// relationship: the delete above the tabs addresses the latest version, which
+/// this read publishes into `latest_version` rather than reading the same claim
+/// twice.
 #[expect(
     clippy::too_many_lines,
     reason = "one erased section: the relationship tab's facts + seeding + editor + document (rules §1)"
@@ -1143,7 +1142,7 @@ fn relationship_section(uid: Signal<String>, latest_version: RwSignal<String>) -
             }
         });
     // Only a SUCCESSFUL save refetches, so a refused one leaves the operator's
-    // input on screen (the party tab's precedent).
+    // input on screen.
     let saved = Memo::new(move |prev: Option<&usize>| {
         let version = save.version().get();
         if save.value().with(|value| matches!(value, Some(Ok(_)))) {
@@ -1231,7 +1230,7 @@ fn relationship_section(uid: Signal<String>, latest_version: RwSignal<String>) -
         save,
     );
     // A failed read renders nothing in the pane — the facts section above
-    // states it once (the screen never renders an error as nothing; rules §4).
+    // states it once (the screen never renders an error as nothing).
     let document = document_section(resource, "relationship-document", |state| {
         state.body.as_str()
     });
@@ -1391,14 +1390,11 @@ fn delete_section(uid: Signal<String>, version_uid: RwSignal<String>) -> AnyView
 ///
 /// The list is a projection of the party document the screen ALREADY read
 /// ([`PartyState::relationships`](super::party::PartyState::relationships)), not
-/// a second request: the inline list is part of that document, so re-reading it
-/// would be the same claim twice (crate `CLAUDE.md` §One reader per claim).
-/// A failed or absent read renders its own error HERE rather than deferring to
-/// the Party tab: on `?tab=relationships` that tab is `class:hidden`, so its
-/// message would be in the DOM and invisible (rules §4 — an error must never
-/// render as nothing). The same read decides whether to offer the create
-/// affordance, since relating a party the CDR cannot serve is a write against
-/// an unknown source.
+/// a second request. A failed or absent read renders its own error HERE rather
+/// than deferring to the Party tab: on `?tab=relationships` that tab is
+/// `class:hidden`, so its message would be in the DOM and invisible. The same
+/// read decides whether to offer the create affordance, since relating a party
+/// the CDR cannot serve is a write against an unknown source.
 pub(super) fn party_relationships_section(
     kind: PartyKind,
     uid: Signal<String>,
@@ -1478,8 +1474,8 @@ fn relationships_view(
 /// A plain collected `Vec` rather than `<For>`: the list is a derived
 /// projection of the party document, replaced wholesale whenever that document
 /// reloads, and an inline relationship carries no identity of its own to key on
-/// (`LOCATABLE.uid` is `0..1` and is normally absent inline) — rules §4 forbids
-/// an index key, and a synthetic one would be exactly that.
+/// (`LOCATABLE.uid` is `0..1` and is normally absent inline); an index key is
+/// forbidden, and a synthetic one would be exactly that.
 fn inline_table(items: &[InlineRelationship]) -> AnyView {
     let rows = items
         .iter()

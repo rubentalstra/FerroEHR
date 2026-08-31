@@ -238,7 +238,7 @@ fn contribution_view(state: &ContributionState) -> AnyView {
 /// to.
 ///
 /// `<For>` keyed on the version's own `OBJECT_VERSION_ID` — stable, unique,
-/// data-derived (rules §4).
+/// data-derived.
 fn versions_section(versions: Vec<ContributionVersion>) -> AnyView {
     if versions.is_empty() {
         return view! {

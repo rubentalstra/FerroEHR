@@ -196,19 +196,16 @@ pub struct VerbatimVersionRow<'a> {
 ///
 /// The node rows are re-decomposed and written by the caller.
 ///
-/// This is the ONE version writer that does not derive the version tree
-/// position itself: the two live write paths compute the next
-/// `VERSION_TREE_ID` from the container's own tip (a foreign tip forks a
-/// branch — RM common `master06-change_control_package.adoc` §Copying
-/// §Subsequent Local Modifications), so neither can produce a second TRUNK row
-/// at an occupied position. A record replayed from an archive can, since the
-/// file is arbitrary input, so the invariant is checked here before the insert
-/// and reported as [`StorageError::TrunkPositionInUse`] — the trunk line is one
-/// global sequence across creating systems (§Distributed Versioning's 3-part
-/// identifier makes BRANCH ids system-local, not trunk positions). The
-/// `uq_vo_version_trunk_position` partial unique index is the backstop; this
-/// check exists so the failure names the container, the position and the
-/// holder instead of surfacing as an opaque constraint violation.
+/// This is the one version writer that does not derive the version tree position
+/// itself: the live write paths compute the next `VERSION_TREE_ID` from the
+/// container's own tip (RM common master06 §Copying §Subsequent Local
+/// Modifications), so neither can produce a second trunk row at an occupied
+/// position, while a record replayed from an arbitrary archive file can. The
+/// invariant is therefore checked before the insert and reported as
+/// [`StorageError::TrunkPositionInUse`], the trunk line being one global
+/// sequence across creating systems (§Distributed Versioning makes branch ids
+/// system-local). The `uq_vo_version_trunk_position` partial unique index is the
+/// backstop; this check names the container, the position and the holder.
 ///
 /// # Errors
 /// Returns [`StorageError::TrunkPositionInUse`] when another creating system

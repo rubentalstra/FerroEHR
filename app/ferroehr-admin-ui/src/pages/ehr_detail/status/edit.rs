@@ -9,17 +9,16 @@
 //! (`is_queryable`, `is_modifiable`, `other_details`) and re-sends everything
 //! else — the `subject`, the `name`, the `archetype_node_id`, the `uid`, any
 //! attribute a future spec release adds — byte-for-byte as the CDR served it.
-//! That is what `apply_status_edits` guarantees: the console NEVER rebuilds an
-//! `EHR_STATUS` from its own model, so an edit cannot drop what the screen does
-//! not render. (`EHR_STATUS` requires `subject`, `is_queryable` and
-//! `is_modifiable` — RM `docs/specs/openehr/RM/docs/ehr/master04-ehr_package.adoc` §`EHR_STATUS`; a
-//! rebuild would have to invent them.)
+//! The console never rebuilds an `EHR_STATUS` from its own model, so an edit
+//! cannot drop what the screen does not render (`EHR_STATUS` requires
+//! `subject`, `is_queryable` and `is_modifiable` — RM
+//! `docs/specs/openehr/RM/docs/ehr/master04-ehr_package.adoc` §`EHR_STATUS`).
 //!
-//! The merge and the `other_details` check are pure functions with unit tests
-//! (rules §10); the view stays thin. `other_details` is optional and typed
-//! `UItemStructure` in that schema, so a blank editor REMOVES the attribute and
-//! a non-object value is refused before any round trip — the CDR's own
-//! validation is still the authority and its diagnostic is rendered verbatim.
+//! The merge and the `other_details` check are pure functions with unit tests;
+//! the view stays thin. `other_details` is optional and typed `UItemStructure`
+//! in that schema, so a blank editor REMOVES the attribute and a non-object
+//! value is refused before any round trip — the CDR's own validation is still
+//! the authority and its diagnostic is rendered verbatim.
 
 #![expect(
     clippy::disallowed_types,
@@ -61,10 +60,10 @@ pub(super) struct StatusEdit {
 /// [`status_section`](super::status_section) — ABOVE the `<Transition>` — and
 /// re-seeded (idempotent per loaded version) by [`seed`] on each Suspend re-run.
 ///
-/// This is the rules §4 disposal contract in signal form: a `Suspend` closure
-/// re-runs on every notification of the resource it awaits (the status resource
-/// re-notifies after every successful save) and each re-run disposes the previous
-/// run's reactive owner, so signals created inside it would die while the
+/// This is the disposal contract in signal form: a `Suspend` closure re-runs on
+/// every notification of the resource it awaits (the status resource re-notifies
+/// after every successful save) and each re-run disposes the previous run's
+/// reactive owner, so signals created inside it would die while the
 /// already-mounted form's event handlers still reference them. Held here, at the
 /// tab's owner, every signal outlives every re-run.
 #[derive(Clone, Copy)]
@@ -121,11 +120,11 @@ impl Default for StatusForm {
 
 /// Seed [`StatusForm`] from the freshly loaded status, ONCE per loaded version.
 ///
-/// A Suspend re-run for the SAME version is a no-op (rules §4 — the state lives
-/// above the Suspend, so re-seeding would overwrite edits in progress); a NEW
-/// version resets the toggles, the `other_details` draft, the merge base, the
+/// A Suspend re-run for the SAME version is a no-op (the state lives above the
+/// Suspend, so re-seeding would overwrite edits in progress); a NEW version
+/// resets the toggles, the `other_details` draft, the merge base, the
 /// `If-Match` value and the validation note. Every write runs during a render
-/// pass, so plain `.set()` is correct (the directory tab's `seed` precedent).
+/// pass, so plain `.set()` is correct.
 pub(super) fn seed(form: StatusForm, state: &EhrStatusState) {
     if form.seeded_uid.get_untracked().as_deref() == Some(state.version_uid.as_str()) {
         return;
@@ -142,12 +141,10 @@ pub(super) fn seed(form: StatusForm, state: &EhrStatusState) {
 /// Read an `other_details` draft: `None` for a blank draft (the attribute is
 /// removed), `Some(value)` for a JSON object.
 ///
-/// `EHR_STATUS.other_details` is an `ITEM_STRUCTURE`
-/// (RM `docs/specs/openehr/RM/docs/ehr/master04-ehr_package.adoc` §`EHR_STATUS` — `other_details: ITEM_STRUCTURE`, 0..1), so a
-/// non-object — an array, a bare string, a number — can never be valid and is
-/// refused here, before anything is sent. Everything beyond "it is an object" is
-/// the CDR's call: its `422` diagnostic is rendered verbatim rather than
-/// second-guessed BFF-side.
+/// `EHR_STATUS.other_details` is an `ITEM_STRUCTURE` `0..1` (RM
+/// `docs/specs/openehr/RM/docs/ehr/master04-ehr_package.adoc` §`EHR_STATUS`), so
+/// a non-object can never be valid and is refused here, before anything is
+/// sent.
 ///
 /// # Errors
 /// The operator-facing complaint when the draft is not parseable JSON or not a
@@ -222,12 +219,10 @@ pub(super) fn apply_status_edits(
 /// the CDR's verbatim diagnostic).
 ///
 /// Always mounted with a constant structure, so the server HTML and the client
-/// view match (rules §8); every value comes from the long-lived [`StatusForm`],
-/// so the card survives the facts section's Suspend re-runs (rules §4). The save
-/// is an `Action` (rules §6), and its outcome toasts in
-/// [`status_section`](super::status_section) — the inline pane keeps the
-/// diagnostic beside the input that caused it (the console's feedback rule,
-/// crate `CLAUDE.md`).
+/// view match; every value comes from the long-lived [`StatusForm`], so the card
+/// survives the facts section's Suspend re-runs. The save is an `Action`, and
+/// its outcome toasts in [`status_section`](super::status_section); the inline
+/// pane keeps the diagnostic beside the input that caused it.
 ///
 /// Every control is DISABLED until [`seed`] has loaded a document into the
 /// form: the card is mounted before the read resolves, and an edit made in it
@@ -245,8 +240,8 @@ pub(super) fn edit_form(
     let on_save = move |_| {
         let draft = form.other_details.get();
         // Client-side validation first: a malformed draft is refused inline,
-        // before any round trip (the EHR-create screen's precedent). The server
-        // fn re-checks — it is a public endpoint (rules §0).
+        // before any round trip. The server
+        // fn re-checks — it is a public endpoint.
         if let Err(message) = parse_other_details(&draft) {
             form.validation.set(Some(message));
         } else {
@@ -280,9 +275,8 @@ pub(super) fn edit_form(
         None => ().into_any(),
     }
     };
-    // The CDR's own diagnostic, kept beside the form it refused (the
-    // template-upload precedent): the toast is the notification, this is the
-    // detail worth reading line by line.
+    // The CDR's own diagnostic, kept beside the form it refused: the toast is
+    // the notification, this is the detail worth reading line by line.
     let diagnostic = move || match save.value().get() {
         Some(Err(error)) => {
             let detail = error.to_string();
@@ -356,13 +350,12 @@ pub(super) fn edit_form(
 
 /// One boolean attribute as a labelled checkbox with a one-line explanation.
 ///
-/// `prop:checked` + an `on:change` listener (rules §5 — the `checked` attribute
-/// would only set the initial state, and an `onchange="…"` JS attribute is
-/// forbidden outright). Inert-until-seeded is the same split: a STATIC
-/// `disabled` attribute for the server HTML (inert from first paint) and
-/// `prop:disabled` for the live state — the seed can land during hydration
-/// replay, before this binding exists, so only a property applied at
-/// hydration enables reliably (rules §2).
+/// `prop:checked` + an `on:change` listener (the `checked` attribute would only
+/// set the initial state, and an `onchange="…"` JS attribute is forbidden
+/// outright). Inert-until-seeded is the same split: a STATIC `disabled`
+/// attribute for the server HTML (inert from first paint) and `prop:disabled`
+/// for the live state — the seed can land during hydration replay, before this
+/// binding exists, so only a property applied at hydration enables reliably.
 fn toggle_row(
     id: &'static str,
     label: &'static str,

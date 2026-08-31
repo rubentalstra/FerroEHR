@@ -5,14 +5,14 @@
 //!
 //! A stored 1.4 operational template is a specialisation-flattened artefact
 //! whose `definition` embeds each component archetype as a nested
-//! `C_ARCHETYPE_ROOT` with its own independent at-code space, so it cannot be
-//! fed to `openehr_adl::adl14::convert::convert` (which takes one source
-//! archetype) as a whole: the component code spaces collide. This front end
-//! decomposes the OPT into one 1.4-shaped `openehr_am::v2_4` source archetype
-//! per embedded root, replacing each child by an `ARCHETYPE_SLOT` whose
-//! `include` assertion names it and recording the parent → child fill edge in
-//! [`OptConversion::structure`]. Anything a decomposed root cannot express is
-//! reported in `RESOURCE_DESCRIPTION.conversion_details`.
+//! `C_ARCHETYPE_ROOT` with its own at-code space, so the component code spaces
+//! collide if the whole is fed to `openehr_adl::adl14::convert::convert`, which
+//! takes one source archetype. This front end decomposes the OPT into one
+//! 1.4-shaped `openehr_am::v2_4` source archetype per embedded root, replacing
+//! each child by an `ARCHETYPE_SLOT` whose `include` assertion names it and
+//! recording the parent-to-child fill edge in [`OptConversion::structure`].
+//! Anything a decomposed root cannot express is reported in
+//! `RESOURCE_DESCRIPTION.conversion_details`.
 //!
 //! NOTE: no openEHR spec governs 1.4 → 2 conversion — the decomposition
 //! strategy, slot substitution and code allocation here are our own

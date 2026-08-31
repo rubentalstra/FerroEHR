@@ -121,17 +121,14 @@ impl Committed {
 /// [`COMPOSITIONS_COMMITTED`](crate::telemetry::metrics::COMPOSITIONS_COMMITTED)
 /// counter; kinds other than COMPOSITION are ignored.
 ///
-/// Every commit route calls this **after** its transaction has committed, so a
-/// rolled-back write is never counted — which is why the increment cannot live
-/// in [`apply_change`] (it runs inside the commit transaction).
+/// Every commit route calls this after its transaction has committed, so a
+/// rolled-back write is never counted; the increment therefore cannot live in
+/// [`apply_change`], which runs inside the commit transaction.
 ///
 /// NOTE: no openEHR spec governs telemetry — our own design/extension. The
-/// `change_type` label carries the numeric openEHR `audit_change_type` group
-/// code recorded on the version's audit (`249`/`251`/`523`/…), never its English
-/// rubric: the code is the value the RM stores
-/// (`AUDIT_DETAILS.Change_type_valid`, RM common master04 §Audit Details) and
-/// the value the contribution-list surface already returns, so the series stays
-/// stable when terminology display text changes.
+/// `change_type` label carries the numeric `audit_change_type` group code the RM
+/// stores (`AUDIT_DETAILS.Change_type_valid`, RM common master04 §Audit
+/// Details), so the series survives terminology display-text changes.
 pub(crate) fn meter_committed(committed: &Committed) {
     if committed.kind == Kind::Composition {
         crate::telemetry::metrics::metrics()
@@ -149,17 +146,15 @@ pub(crate) fn meter_committed(committed: &Committed) {
 /// One change applied within a CONTRIBUTION — the openEHR change-set unit
 /// (RM common master06 §Contributions).
 ///
-/// `signature` carries a **client-supplied** `UPDATE_VERSION.signature`
-/// (master06 §Digital Signature): present ⇒ stored verbatim, server does not
-/// re-sign; absent ⇒ the server signs the assembled `ORIGINAL_VERSION` if
-/// signing is enabled. The direct (non-CONTRIBUTION) endpoints always pass
-/// `None`.
+/// `signature` carries a client-supplied `UPDATE_VERSION.signature` (master06
+/// §Digital Signature): present, it is stored verbatim and the server does not
+/// re-sign; absent, the server signs the assembled `ORIGINAL_VERSION` if signing
+/// is enabled. The direct endpoints always pass `None`.
 ///
 /// `lifecycle_state` on `Create`/`Modify` carries the client-supplied
 /// `version_lifecycle_state` (master06 §Version Lifecycle); `None` defaults to
-/// `532|complete|`. `523|deleted|` is reserved to [`Change::Delete`]. Its
-/// legality against the preceding version's state is checked in [`apply_change`]
-///.
+/// `532|complete|`, and `523|deleted|` is reserved to [`Change::Delete`].
+/// [`apply_change`] checks its legality against the preceding version's state.
 pub(crate) enum Change {
     /// Create a new versioned object.
     Create {
@@ -441,7 +436,7 @@ struct ResolvedWrite {
     rows: Vec<NodeRow>,
     /// The canonical body BYTES, serialized from the accepted, uid-stamped
     /// value BEFORE decomposition — the stored `vo_version.body` text a point
-    /// read serves verbatim (#2913). `None` for a logical delete.
+    /// read serves verbatim. `None` for a logical delete.
     canonical_text: Option<String>,
     /// Whether the RELEASED generation set can express this body — the
     /// commit-time `vo_version.stable_compatible` stamp
@@ -464,18 +459,15 @@ struct ResolvedWrite {
 /// illegal lifecycle transition. Returns the [`Committed`] outcome and the
 /// enclosing `contribution_id` (for the caller's event-outbox envelope).
 ///
-/// The cross-area pre/post-commit hooks the legacy path ran inline here now
-/// belong to other layers and run around this write, driven by the CONTRIBUTION
+/// The cross-area hooks run AROUND this write, driven by the CONTRIBUTION
 /// orchestration ([`crate::versioning::CommitEnv`], called from
 /// [`super::contribution::commit_version_set`]) and by the direct write paths:
-/// - `CommitEnv::pre_composition_modify` — the `VERSIONED_COMPOSITION`
-///   cross-version invariants (`Archetype_node_id_valid` / `Persistent_validity`,
-///   RM ehr `versioned_composition.adoc`), before a COMPOSITION modify;
-/// - `CommitEnv::post_status_commit` — the EHR promoted-subject-column sync,
-///   after an `EHR_STATUS` version;
-/// - [`meter_committed`] — the `compositions_committed_total` metric, a
-///   cross-cutting service-layer concern (and one that must only count work
-///   that actually committed), not a storage write.
+/// `CommitEnv::pre_composition_modify` for the `VERSIONED_COMPOSITION`
+/// cross-version invariants before a COMPOSITION modify,
+/// `CommitEnv::post_status_commit` for the EHR promoted-subject-column sync
+/// after an `EHR_STATUS` version, and [`meter_committed`] for the
+/// `compositions_committed_total` metric, which must count only work that
+/// actually committed.
 ///
 /// # Errors
 /// The [`next_version`] placement errors (`NotFound` / `VersionConflict`) on
@@ -484,24 +476,19 @@ struct ResolvedWrite {
 /// commit ([`reject_deleted_with_data`]); [`ServiceError::Internal`] on a
 /// multimedia offload failure; plus the storage/signing errors of
 /// [`commit_resolved`].
-/// Stamp the version's own `OBJECT_VERSION_ID` into the canonical's root
-/// `uid` BEFORE decompose/sign, so the stored, signed, and served bytes all
-/// carry it — the copied-uid recommendation for top-level types (RM common
-/// `master03-archetyped_package.adoc` §Unique Node Identification; ITS-REST
-/// `Resources.md` §Identifier types: the enclosing VERSION's uid "should be
-/// copied"). The full three-part form is BASE `architecture_overview`
-/// master09 §Levels of Identification: "populated with a copy of the
-/// `OBJECT_VERSION_ID` from the containing `VERSION<X>` object" (the RM
-/// COMPOSITION class note's `object_id()` wording contradicts its own
-/// example — reported upstream).
+/// Stamps the version's own `OBJECT_VERSION_ID` into the canonical's root `uid`
+/// before decompose and sign, so the stored, signed and served bytes all carry
+/// it (RM common `master03-archetyped_package.adoc` §Unique Node Identification;
+/// ITS-REST `Resources.md` §Identifier types). The full three-part form is BASE
+/// `architecture_overview` master09 §Levels of Identification, "populated with a
+/// copy of the `OBJECT_VERSION_ID` from the containing `VERSION<X>` object".
 ///
-/// NOTE: a client-supplied create-body `uid` is overwritten — no released
-/// operation states a body-uid semantic for the content-object creates, and
-/// the identifier names a version that does not exist until this commit
-/// mints it (the party-side twin of this adjudication is #1578).
+/// NOTE: a client-supplied create-body `uid` is overwritten, no released
+/// operation stating a body-uid semantic for the content-object creates and the
+/// identifier naming a version that does not exist until this commit mints it.
 ///
-/// The EHR Extract import path does NOT run through here (foreign versions
-/// keep their carried bytes verbatim).
+/// The EHR Extract import path does not run through here; foreign versions keep
+/// their carried bytes verbatim.
 ///
 /// # Errors
 /// [`VersionIdError`] when `version_uid` is not a well-formed
@@ -755,18 +742,14 @@ async fn apply_change(
 ///
 /// The signature is computed over the assembled `ORIGINAL_VERSION` (RM common
 /// master06 §Digital Signature), which embeds `time_committed` and
-/// `contribution_id`. Both are known BEFORE any statement: the commit instant
-/// is the transaction timestamp (read by the placement query /
-/// [`tx_now`](crate::storage::version_repo::placement::tx_now); every row of the
-/// transaction stamps the same `now()`), and a standalone write generates its
-/// `contribution_id` here. So audit + contribution + `vo_version` always
-/// collapse into the one folded CTE
-/// ([`commit_new_version`](crate::storage::version_repo::commit::commit_new_version)
-/// / [`commit_version_into`](crate::storage::version_repo::commit::commit_version_into)).
-/// The lineage-tip close stays a separate prior statement (the
-/// one-open-row-per-lineage partial unique indexes need the old open row gone
-/// before the new open row is inserted). No openEHR spec governs statement
-/// batching — our own design.
+/// `contribution_id`. Both are known before any statement, the commit instant
+/// being the transaction timestamp
+/// ([`tx_now`](crate::storage::version_repo::placement::tx_now)) and a
+/// standalone write generating its `contribution_id` here, so audit,
+/// contribution and `vo_version` collapse into one folded CTE. The lineage-tip
+/// close stays a separate prior statement: the one-open-row-per-lineage partial
+/// unique indexes need the old open row gone before the new one is inserted. No
+/// openEHR spec governs statement batching — our own design.
 ///
 /// # Errors
 /// [`ServiceError::Signing`] when the canonical form cannot be produced or the
@@ -887,9 +870,9 @@ async fn commit_resolved(
     ))
 }
 
-/// Serialize the accepted, uid-stamped canonical value to the body BYTES a
-/// point read serves verbatim (`vo_version.body` — #2913: text, taken BEFORE
-/// node decomposition, so the served wire keeps the codec's `_type`-first,
+/// Serializes the accepted, uid-stamped canonical value to the body bytes a
+/// point read serves verbatim (`vo_version.body`, text taken before node
+/// decomposition, so the served wire keeps the codec's `_type`-first,
 /// BMM-declared field order).
 ///
 /// # Errors
@@ -1030,16 +1013,14 @@ pub(crate) fn not_modifiable_error(ehr_id: EhrId) -> ServiceError {
 /// The content-write gate, evaluated INSIDE the commit transaction.
 ///
 /// Reads the promoted `ehr.is_modifiable` under a row lock
-/// ([`crate::storage::ehr_repo::ehr_is_modifiable_locked`]), so the value that
-/// governs the change set is the one this transaction serializes against — a
-/// concurrent `EHR_STATUS` flip either commits first and is seen, or waits
-/// for this commit; a pre-transaction read could act on a flag another
-/// commit was flipping at that instant. A missing EHR row reads as
-/// modifiable (the existence gate answers 404 on its own).
+/// ([`crate::storage::ehr_repo::ehr_is_modifiable_locked`]), so a concurrent
+/// `EHR_STATUS` flip either commits first and is seen or waits for this commit.
+/// A missing EHR row reads as modifiable; the existence gate answers 404 on its
+/// own.
 ///
-/// NOTE: RM ehr master04 §EHR Active Status defines what the flag forbids;
-/// no released text states WHEN it is evaluated relative to a commit — the
-/// in-transaction snapshot is our own recorded semantics (#2673).
+/// NOTE: RM ehr master04 §EHR Active Status defines what the flag forbids and no
+/// released text states when it is evaluated relative to a commit, so the
+/// in-transaction snapshot is our own recorded semantics.
 ///
 /// # Errors
 /// [`ServiceError::Conflict`] when the EHR is not modifiable;
@@ -1213,7 +1194,7 @@ pub(crate) async fn update_with_placement(
 ///
 /// Takes only the client `signature` rather than a whole [`WriteEnvelope`]:
 /// deletion fixes the lifecycle state at `523|deleted|` itself, so an
-/// envelope lifecycle here would be a silently dropped instruction (#2450).
+/// envelope lifecycle here would be a silently dropped instruction.
 ///
 /// # Errors
 /// [`ServiceError::NotFound`] when `(ehr_id, kind, vo_id)` does not address a
@@ -1264,9 +1245,9 @@ pub(crate) async fn delete(
 /// `ATTESTATION`s attached to **existing** versions, committed in the
 /// same transaction but adding no new version.
 ///
-/// master06 §Committal (m4): a version item that omits `committer`/`system_id`
-/// inherits them from the CONTRIBUTION audit — realized by the callers
-/// building each version `AuditInput`; the attestation committer likewise
+/// Per master06 §Committal (m4) a version item that omits `committer` or
+/// `system_id` inherits it from the CONTRIBUTION audit, which the callers
+/// building each version `AuditInput` realize; the attestation committer
 /// defaults to the CONTRIBUTION committer here.
 ///
 /// # Errors

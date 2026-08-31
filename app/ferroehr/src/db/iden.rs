@@ -8,14 +8,12 @@
 //! design.
 //!
 //! One enum per table, in the official `sea-query` derive shape: the `Table`
-//! variant carries an explicit `#[iden = "..."]` and renders the table name;
-//! every other variant renders its `snake_cased` column name. This is the
-//! single typed name catalog — the AQL SQL generator consumes the `Table`
-//! variants, and dynamic SQL elsewhere addresses columns through these enums
-//! rather than string-duplicating names. Every rendered name is pinned to the
-//! deployed DDL byte-for-byte (asserted by the tests below); the catalog is
-//! kept complete against the schema, because a drifted catalog forces raw
-//! column strings — exactly what this file exists to prevent.
+//! variant carries an explicit `#[iden = "..."]` and renders the table name and
+//! every other variant renders its `snake_cased` column name. This is the single
+//! typed name catalog, consumed by the AQL SQL generator and by dynamic SQL
+//! elsewhere rather than string-duplicating names. Every rendered name is pinned
+//! to the deployed DDL byte-for-byte by the tests below, and the catalog is kept
+//! complete against the schema, a drifted catalog forcing raw column strings.
 
 /// `ehr` — one row per EHR.
 #[derive(Debug, Clone, Copy, sea_query::Iden)]

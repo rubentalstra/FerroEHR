@@ -4,38 +4,29 @@
 //! The `[terminology]` section — extension-API toggle + external-server
 //! validation config.
 //!
-//! No openEHR spec governs the transport/config mechanics — our own design
-//! (the client + the self-hostable FHIR R4B TS it points at).
-//! `BASE/docs/architecture_overview/master12-terminology.adoc`
-//! models the concrete backend as an external "terminology query server",
-//! which is why this config lives beside the interface realization in
-//! `service/terminology/`.
+//! No openEHR spec governs the transport or config mechanics — our own design.
+//! `BASE/docs/architecture_overview/master12-terminology.adoc` models the
+//! concrete backend as an external "terminology query server", which is why this
+//! config lives beside the interface realization in `service/terminology/`. It
+//! is a field of the one config tree ([`crate::config::FerroEhrConfig`]) with no
+//! loader of its own, grouping the extension-API toggle (`api_enabled`) with
+//! [`ExternalTerminologyConfig`] under `[terminology.external]`.
 //!
-//! A field of the one config tree ([`crate::config::FerroEhrConfig`]); no loader of its own.
-//! [`TerminologyConfig`] groups the extension-API toggle (`api_enabled`) with
-//! the external-server validation config ([`ExternalTerminologyConfig`],
-//! under `[terminology.external]`).
-//!
-//! Provider selection is **openEHR-bundle-by-default, FHIR opt-in**: with
-//! [`ExternalTerminologyConfig::enabled`] `false` (the default) no remote
+//! Provider selection is bundle-by-default and FHIR opt-in: with
+//! [`ExternalTerminologyConfig::enabled`] `false`, the default, no remote
 //! provider is built and composition validation stays on the in-process
-//! `openehr-term` bundle (`super::bundle`); FHIR providers are materialised
-//! only when a deployment opts in.
+//! `openehr-term` bundle.
 //!
-//! **Several servers at once.** `BASE/docs/architecture_overview/
-//! master12-terminology.adoc` §Overview names the target ecosystem — LOINC,
-//! `ICDx`, ICPC, SNOMED CT "and the many other terminologies and vocabularies
-//! used in healthcare" — so a deployment binds to several at the same time and
-//! the CDR must operate against several terminology servers simultaneously.
-//! Every entry of [`ExternalTerminologyConfig::providers`] is therefore
-//! materialised, and [`ExternalTerminologyConfig::routes`] maps a terminology
-//! id / system URI to the provider that serves it
-//! ([`super::router::TerminologyRouter`]).
+//! Every entry of [`ExternalTerminologyConfig::providers`] is materialised and
+//! [`ExternalTerminologyConfig::routes`] maps a terminology id or system URI to
+//! the provider that serves it ([`super::router::TerminologyRouter`]), because a
+//! deployment binds to several terminologies at once (BASE master12 §Overview
+//! names LOINC, `ICDx`, ICPC, SNOMED CT "and the many other terminologies and
+//! vocabularies used in healthcare").
 //!
-//! NOTE: no openEHR spec governs the routing-config mechanics (the named
-//! provider map, the route keys, the `default` fallback) — our own
-//! design/extension. Only the *requirement* to serve several terminologies
-//! simultaneously is the spec's (BASE master12 §Overview).
+//! NOTE: no openEHR spec governs the routing-config mechanics — our own
+//! design/extension; only the requirement to serve several terminologies
+//! simultaneously is the spec's.
 
 use std::collections::BTreeMap;
 use std::path::PathBuf;

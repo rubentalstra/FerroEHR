@@ -9,13 +9,12 @@
 //! paged tables share. Headers are NAMED — raw AQL column indexes (`#0`…) must
 //! never reach a header cell.
 //!
-//! Paging discipline (rules §9): a table's page and window size live in the
-//! URL (`?page=`/`?size=`), never in a private signal — the address bar is
+//! Paging discipline: a table's page and window size live in the URL
+//! (`?page=`/`?size=`), never in a private signal — the address bar is
 //! shareable, the browser's back/forward walk the pages, and the footer's
 //! plain links work before the WASM bundle has loaded. Both parameters are
 //! user input, so both are parsed defensively and clamped
-//! ([`paging_from_url`], [`page_window`]), and every offset is saturating
-//! (reliability rule).
+//! ([`paging_from_url`], [`page_window`]), and every offset is saturating.
 
 use leptos::prelude::*;
 use leptos_router::params::ParamsMap;
@@ -53,9 +52,9 @@ const PAGE_SIZE_CHOICES: [u32; 3] = [PAGE_SIZE, 50, 100];
 ///
 /// Renders the card surface, the muted uppercase header row, and an
 /// explicit `<tbody>` (hydration correctness: browsers insert one
-/// otherwise, breaking DOM↔view correspondence — rules §8). `body` is the
-/// collected `<tr>` views; build cells with [`CELL`]/[`CELL_MONO`] and
-/// rows with [`ROW`].
+/// otherwise, breaking DOM↔view correspondence). `body` is the collected
+/// `<tr>` views; build cells with [`CELL`]/[`CELL_MONO`] and rows with
+/// [`ROW`].
 ///
 /// Every header cell carries `scope="col"`, so a screen reader announces the
 /// column name with each body cell it reads (WAI-ARIA Authoring Practices,
@@ -113,8 +112,7 @@ pub fn table_skeleton() -> impl IntoView {
 /// parameters.
 ///
 /// Built with [`paging_from_url`]; both signals derive from the address bar
-/// alone, so the server pass and hydration agree on the rendered window
-/// (rules §8).
+/// alone, so the server pass and hydration agree on the rendered window.
 #[derive(Debug, Clone, Copy)]
 pub struct TablePaging {
     /// The zero-based page index from `?page=` (0 when absent or unparseable).
@@ -155,10 +153,10 @@ impl TablePaging {
 
 /// Read a table's paging state from the URL.
 ///
-/// Call this in SETUP, never inside a `Suspend` closure (rules §4): the
-/// returned signals are read where the rows are rendered, so turning the page
-/// re-renders the row window without re-running the suspense that fetched the
-/// rows — no refetch, and no re-created resources.
+/// Call this in SETUP, never inside a `Suspend` closure: the returned signals
+/// are read where the rows are rendered, so turning the page re-renders the
+/// row window without re-running the suspense that fetched the rows — no
+/// refetch, and no re-created resources.
 #[must_use]
 pub fn paging_from_url() -> TablePaging {
     let query = leptos_router::hooks::use_query_map();
@@ -232,8 +230,8 @@ pub fn page_rows<T: Clone>(rows: &[T], window: PageWindow) -> Vec<T> {
 
 /// A row count as the fixed-size int the paging math and the footer use.
 ///
-/// WASM is 32-bit and no shared type may carry a `usize` (rules §1), so a
-/// list's `.len()` converts here once, saturating rather than wrapping.
+/// WASM is 32-bit and no shared type may carry a `usize`, so a list's
+/// `.len()` converts here once, saturating rather than wrapping.
 #[must_use]
 pub fn row_total(len: usize) -> u32 {
     u32::try_from(len).unwrap_or(u32::MAX)
@@ -266,9 +264,9 @@ pub fn range_label(window: PageWindow, noun: &str) -> String {
 /// disagree.
 ///
 /// Every control is a plain link, so paging works before the WASM bundle loads
-/// and the browser's history walks the pages (rules §9). Server-windowed
-/// tables (an AQL result set, where only the current page is in hand) keep
-/// their own offset controls until the wire reports a total.
+/// and the browser's history walks the pages. Server-windowed tables (an AQL
+/// result set, where only the current page is in hand) keep their own offset
+/// controls until the wire reports a total.
 #[must_use]
 pub fn table_footer(base: &str, noun: &str, paging: TablePaging, total: Signal<u32>) -> AnyView {
     let base = base.to_owned();
@@ -327,11 +325,11 @@ pub fn table_footer(base: &str, noun: &str, paging: TablePaging, total: Signal<u
 /// window, and the footer that pages it.
 ///
 /// The window comes from the URL, so turning the page re-renders the rows
-/// without re-running the suspense that fetched them (rules §9), and the footer
-/// reads the SAME [`page_window`] inputs as the rows, so the two cannot
-/// disagree. `key` is the row's own stable, data-derived identity — never an
-/// index (rules §4). `base` is the screen's own path and `noun` names the rows
-/// in the plural, both for [`table_footer`].
+/// without re-running the suspense that fetched them, and the footer reads the
+/// SAME [`page_window`] inputs as the rows, so the two cannot disagree. `key`
+/// is the row's own stable, data-derived identity — never an index. `base` is
+/// the screen's own path and `noun` names the rows in the plural, both for
+/// [`table_footer`].
 #[must_use]
 pub fn paged_table<R, V>(
     rows: Vec<R>,
@@ -383,7 +381,7 @@ enum Step {
 /// A plain `<a>`, not the router's `<A>`: after hydration the client router
 /// intercepts same-origin anchors and pages client-side, and before the WASM
 /// bundle loads the browser follows the same href as an ordinary GET, so
-/// paging never depends on JavaScript being live (rules §0/§9).
+/// paging never depends on JavaScript being live.
 fn paging_step(href: Option<String>, step: Step) -> AnyView {
     let hook = match step {
         Step::Previous => "prev",

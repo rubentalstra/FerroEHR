@@ -1,60 +1,43 @@
 // SPDX-FileCopyrightText: FerroEHR contributors
 // SPDX-License-Identifier: MIT
 
-//! Commit-time resolution of archetype **constraint bindings** — the ac-code
-//! value sets a template binds to an external terminology query.
-//!
-//! # What the spec requires
+//! Commit-time resolution of archetype constraint bindings, the ac-code value
+//! sets a template binds to an external terminology query.
 //!
 //! BASE `docs/architecture_overview/master12-terminology.adoc` §"Binding
-//! Terminology Value-sets to Archetypes": where a terminology is the
-//! appropriate source of values, "an internal code is defined, in this case an
-//! 'ac' code ('ac' = archetype constraint), and this is bound to queries to one
-//! or more external terminologies, whose result would be a (possibly
-//! structured) value set from that terminology". The query is not part of the
-//! archetype — the archetype "simply hold\[s\] an identifier for a query; the
-//! query itself is defined within a 'terminology query server'". AOM 1.4
+//! Terminology Value-sets to Archetypes" defines an ac-code bound to queries
+//! against one or more external terminologies, the query itself living in a
+//! terminology query server rather than in the archetype; AOM 1.4
 //! `AM/docs/AOM1.4/master04-constraint_model_package.adoc` §Reference Objects
-//! says the same from the constraint-model side: a `CONSTRAINT_REF` is "a proxy
-//! for a set of constraints … expressed in the binding of the constraint
-//! reference (e.g. 'ac0004') to a query … into an external service (e.g. a
-//! terminology service)". AOM2 `AM/docs/AOM2/master08-validation.adoc`
-//! §Terminology places binding validity in the archetype-validation phase;
-//! the *data*-side consequence — an instance code must be in the bound value
-//! set — is what this module enforces at ingestion.
-//!
-//! # What this module does
+//! says the same from the constraint-model side. AOM2
+//! `AM/docs/AOM2/master08-validation.adoc` §Terminology places binding validity
+//! in archetype validation; the data-side consequence, that an instance code
+//! must be in the bound value set, is what this module enforces at ingestion.
 //!
 //! `openehr_its::flat::validation::collect_constraint_binding_checks` walks the
 //! COMPOSITION against its `WebTemplate` and returns one
 //! [`ConstraintBindingCheck`] per bound coded value present in the instance.
 //! Each check is resolved against the terminology server the binding routes to
 //! ([`super::router::TerminologyRouter`]) with the SM `value_set_validate`
-//! call, i.e. FHIR `ValueSet/$validate-code` (or `$expand` + membership, per
-//! the provider's configured operation).
+//! call, i.e. FHIR `ValueSet/$validate-code` or `$expand` plus membership.
 //!
 //! # Outcomes
 //!
-//! - **No external terminology configured** (the default): nothing runs and no
-//!   check is even collected — behaviour is byte-identical to a deployment
-//!   without this module.
-//! - **Resolved, code is a member**: accepted.
-//! - **Resolved, code is NOT a member**: a
-//!   [`ValidationKind::Terminology`] violation → `422`. This is a real
-//!   constraint violation, not a service failure, so `fail_on_error` does not
-//!   apply to it.
-//! - **Unresolvable** (terminology server down, `5xx`, unknown value set, no
-//!   provider routes to the binding's terminology): governed by
-//!   `[terminology.external] fail_on_error` — fail-closed rejects the
-//!   composition, fail-open (the default) accepts it and logs a warning.
+//! - No external terminology configured (the default): no check is collected
+//!   and behaviour is byte-identical to a deployment without this module.
+//! - Resolved and the code is a member: accepted.
+//! - Resolved and the code is not a member: a [`ValidationKind::Terminology`]
+//!   violation, `422`. It is a constraint violation rather than a service
+//!   failure, so `fail_on_error` does not apply.
+//! - Unresolvable (server down, `5xx`, unknown value set, no provider routes to
+//!   the binding's terminology): governed by `[terminology.external]
+//!   fail_on_error` — fail-closed rejects the composition, fail-open (the
+//!   default) accepts it and logs a warning.
 //!
-//! NOTE: the openEHR `CODE_PHRASE.terminology_id` is forwarded verbatim as the
-//! FHIR `system` parameter. No openEHR spec defines a mapping between
-//! `terminology_id` values (`SNOMED-CT`) and FHIR system URIs
-//! (`http://snomed.info/sct`) — our own design/extension: the value travels as
-//! written, and a deployment whose archetypes and terminology server disagree
-//! aligns them with the terminology-server configuration, not with a hidden
-//! alias table here.
+//! NOTE: no openEHR spec maps `CODE_PHRASE.terminology_id` values to FHIR system
+//! URIs, so the value is forwarded verbatim as the FHIR `system` parameter and a
+//! deployment aligns the two in its terminology-server configuration — our own
+//! design/extension.
 
 #![expect(
     clippy::disallowed_types,

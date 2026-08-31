@@ -17,13 +17,11 @@
 //! SMART discovery document follows
 //! `docs/specs/openehr/ITS-REST/docs/smart_app_launch/master04-service_discovery.adoc`.
 //!
-//! Each card is an `.into_any()`-erased section local (rules §1) with its own
-//! [`Resource`] + `<Suspense>` skeleton that resolves its `Result` inside the
-//! suspense (rendering an error bar on failure) rather than through an
-//! `<ErrorBoundary>` — an SSR'd `ErrorBoundary` fallback mismatches at hydration
-//! in leptos 0.8 — so one failing card never blanks the page. Every co-located
-//! `#[server]` fn guards with [`require_session`](crate::session::require_session)
-//! first — server functions are a public HTTP API (rules §0), and the CDR
+//! One failing card never blanks the page: each resolves its `Result` inside
+//! its own `<Suspense>` rather than through an `<ErrorBoundary>`, whose SSR'd
+//! fallback mismatches at hydration in leptos 0.8. Every co-located
+//! `#[server]` fn guards with
+//! [`require_session`](crate::session::require_session) first, and the CDR
 //! credential never reaches client-visible state.
 
 #![expect(
@@ -101,8 +99,7 @@ const OPENAPI_FAMILIES: &[(&str, &str)] = &[
 
 /// The known family slug `value` names, or the empty slug (the complete
 /// document) for anything else — an unknown `?openapi=` value in the address
-/// bar is user input, so it degrades to the default instead of failing
-/// (rules §9).
+/// bar is user input, so it degrades to the default instead of failing.
 #[must_use]
 fn openapi_family_slug(value: &str) -> String {
     OPENAPI_FAMILIES
@@ -127,8 +124,8 @@ pub async fn fetch_openapi(
 ) -> Result<String, AdminUiError> {
     let session = crate::session::require_session().await?;
     let state: crate::state::AppState = expect_context();
-    // A server fn is a public endpoint (rules §0): the family must be one of
-    // the documents we know the CDR serves, never a caller-shaped path segment.
+    // A server fn is a public endpoint: the family must be one of the documents
+    // we know the CDR serves, never a caller-shaped path segment.
     let family = family.trim();
     if !OPENAPI_FAMILIES.iter().any(|(slug, _)| *slug == family) {
         return Err(AdminUiError::Invalid(format!(
@@ -162,12 +159,12 @@ pub async fn fetch_openapi(
     Ok(crate::cdr::CdrClient::expect_success(response)?.body)
 }
 
-/// The `/system` screen: four independent, individually-failing cards.
-/// The redacted effective CDR configuration (`GET /admin/config` — the
-/// CDR's own extension endpoint; secrets are redacted structurally
-/// server-side, this fn only relays). A `404` means the admin API is
-/// disabled and `401`/`403` that the session lacks the ADMIN role — both
-/// first-class rendered states for the panel, not failures.
+/// The redacted effective CDR configuration (`GET /admin/config` — the CDR's own
+/// extension endpoint; secrets are redacted structurally server-side, this fn
+/// only relays).
+///
+/// A `404` means the admin API is disabled and `401`/`403` that the session
+/// lacks the ADMIN role — both first-class rendered states, not failures.
 ///
 /// # Errors
 /// [`AdminUiError::Unauthenticated`] without a console session; CDR
@@ -261,11 +258,10 @@ async fn template_count(
 /// when it is showing a truncated list.
 ///
 /// The counts fan out with the shared bounded concurrency
-/// ([`FANOUT_CONCURRENCY`](crate::cdr::FANOUT_CONCURRENCY)) rather than a
-/// serial await chain, so the card's latency is the slowest batch instead of
-/// the sum of every count. `buffered` yields in input order, so the sort below
-/// still breaks ties by the template listing's order, and `try_collect` keeps
-/// the serial loop's short circuit: a refused count abandons the rest.
+/// ([`FANOUT_CONCURRENCY`](crate::cdr::FANOUT_CONCURRENCY)) rather than a serial
+/// await chain. `buffered` yields in input order, so the sort below still breaks
+/// ties by the template listing's order, and `try_collect` keeps the serial
+/// loop's short circuit.
 ///
 /// # Errors
 /// [`AdminUiError::Unauthenticated`] without a console session; CDR errors
@@ -305,9 +301,10 @@ pub async fn template_usage() -> Result<(Vec<(String, i64)>, u32), AdminUiError>
 )]
 #[component]
 pub fn SystemPage() -> impl IntoView {
-    // Which OpenAPI document the card shows lives in the URL (`?openapi=`,
-    // rules §9): shareable, refresh-safe, and selectable before WASM loads
-    // (the selector is a plain GET form — the audit filter's pattern).
+    // Which OpenAPI document the card shows lives in the URL
+    // (`?openapi=`): shareable, refresh-safe, and selectable before WASM
+    // loads (the selector is a plain GET form — the audit filter's
+    // pattern).
     let query = leptos_router::hooks::use_query_map();
     let family = Memo::new(move |_| {
         openapi_family_slug(&query.with(|q| q.get("openapi").unwrap_or_default()))
@@ -340,11 +337,11 @@ pub fn SystemPage() -> impl IntoView {
 /// consuming the shared [`fetch_conformance_manifest`](crate::system_api::fetch_conformance_manifest)
 /// — the same reader the admin-capability probe uses, never a second fetcher.
 ///
-/// One reader per claim (crate `CLAUDE.md`): the manifest and the status
-/// document both carry a product version and an ITS-REST version, so this card
-/// shows only what the System API alone knows — the product identity, the
-/// claimed conformance profile, and the API groups the server actually mounts —
-/// and points at the Status card for the versions.
+/// One reader per claim: the manifest and the status document both carry a
+/// product version and an ITS-REST version, so this card shows only what the
+/// System API alone knows — the product identity, the claimed conformance
+/// profile, and the API groups the server mounts — and points at the Status card
+/// for the versions.
 fn manifest_card() -> AnyView {
     let resource = Resource::new(
         || (),
@@ -577,7 +574,7 @@ fn status_card() -> AnyView {
                 match resource.await.and_then(|body| status_body(&body)) {
                     Ok(view) => view,
                     Err(e) => {
-                        // Resolve inside the Suspense (E2E console gate): render the parsed
+                        // Resolve inside the Suspense: render the parsed
                         // status, or the explicit DOWN chip on transport/parse failure.
                         view! {
                             <div>
@@ -706,7 +703,7 @@ pub fn smart_probe_failure_copy(error: &AdminUiError) -> String {
         _ => {
             // A CDR body that only restates its own status ("HTTP 302") adds
             // nothing, so it is dropped rather than printed beside the code it
-            // repeats — the doubled echo this card used to show (#2954).
+            // repeats.
             let detail = match error {
                 AdminUiError::Cdr { status, message } => {
                     let restatement = format!("HTTP {status}");
@@ -827,8 +824,8 @@ fn smart_body(config: Option<String>) -> AnyView {
 ///
 /// The selected family is URL state (`?openapi=`), so the resource's source is
 /// the query memo and the selector is a plain GET form that works before WASM
-/// loads (rules §9). A `404` means this deployment does not serve that family
-/// document — a first-class state, not an error.
+/// loads. A `404` means this deployment does not serve that family document —
+/// a first-class state, not an error.
 fn openapi_card(family: Memo<String>) -> AnyView {
     let resource = Resource::new(
         move || family.get(),
@@ -990,7 +987,7 @@ fn scalar_rows(doc: &serde_json::Value) -> Vec<(String, String)> {
 /// Group an `OpenAPI` document's operations by their first `tag` (falling back
 /// to the first path segment, then `"default"`), as sorted `(group, rows)`
 /// where each row is `(METHOD, path)`. Sorted throughout so server and client
-/// render the identical structure (rules §8 — no non-deterministic order).
+/// render the identical structure (no non-deterministic order).
 fn group_openapi_paths(doc: &serde_json::Value) -> Vec<(String, Vec<(String, String)>)> {
     const METHODS: [&str; 8] = [
         "get", "put", "post", "delete", "patch", "options", "head", "trace",

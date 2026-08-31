@@ -23,12 +23,8 @@
 //! No openEHR spec governs an admin UI — our own design / product extension;
 //! the wire it reads is the ITS-REST Definition API.
 //!
-//! Discipline (rules §0/§1/§6/§8/§9): each `#[server]` fn guards the session
-//! first and keeps CDR credentials server-side; absence (`404`) is `Ok(None)`,
-//! a first-class state rather than an error; the view is composed from
-//! `.into_any()`-erased sections; every pane resolves its `Result` INSIDE the
-//! `<Transition>` (an SSR'd `ErrorBoundary` fallback mismatches at hydration in
-//! leptos 0.8); tab and version state live in the URL.
+//! Absence (`404`) is `Ok(None)`, a first-class state rather than an error;
+//! tab and version state live in the URL.
 
 use leptos::prelude::*;
 use leptos::{component, server};
@@ -123,16 +119,13 @@ pub async fn fetch_adl2_json(
 /// Build the Web-Template path catalog of one `OperationalTemplateV2`
 /// canonical-JSON body.
 ///
-/// The body is read with
-/// [`openehr_its::json::from_canonical_json`] into the AOM2
+/// The body is read with [`openehr_its::json::from_canonical_json`] into the
+/// AOM2
 /// [`OperationalTemplate`](openehr_am::v2_4::aom2::archetype::operational_template::OperationalTemplate)
 /// — the exact type the CDR serialized — then
 /// [`openehr_its::flat::webtemplate::builder_v2_4::build_web_template_v2_4`]
 /// produces the Web Template and [`crate::builder::catalog::from_web_template`]
-/// the slim tree the views render. Both stages are named in the error, so a
-/// reader can tell a body the console could not read from a template whose Web
-/// Template does not build.
-///
+/// the slim tree the views render. Both stages are named in the error.
 /// # Errors
 /// [`AdminUiError::Internal`] when the AOM2 JSON fails to parse or the Web
 /// Template fails to build (the diagnostic named, never a panic).
@@ -152,10 +145,9 @@ pub fn adl2_catalog_from_json(json: &str) -> Result<CatalogNode, AdminUiError> {
 /// The same resource and `Accept` as [`fetch_adl2_json`]: the ADL2 template
 /// GET's `application/json` 200 body IS the `OperationalTemplateV2` canonical
 /// form (`docs/specs/openehr/ITS-REST/specifications/responses/
-/// 200_Template_adl2_retrieved.yaml`). The catalog is then built console-side
-/// by [`adl2_catalog_from_json`] — by design, because the resource serves no
-/// `wt+json` representation to read one from. `404` → `Ok(None)`, the same
-/// absence the other panes render.
+/// 200_Template_adl2_retrieved.yaml`). The catalog is built console-side by
+/// [`adl2_catalog_from_json`], because the resource serves no `wt+json`
+/// representation. `404` → `Ok(None)`.
 ///
 /// # Errors
 /// [`AdminUiError::Unauthenticated`] without a console session;
@@ -299,8 +291,8 @@ pub fn Adl2TemplateDetailPage() -> impl IntoView {
     let template_id =
         Signal::derive(move || params.with(|map| map.get("template_id").unwrap_or_default()));
 
-    // Both view selections are URL state, read in setup (rules §9): the pane
-    // (`?tab=`) and the release version the reads are pinned to (`?version=`).
+    // Both view selections are URL state, read in setup: the pane (`?tab=`)
+    // and the release version the reads are pinned to (`?version=`).
     let query = use_query_map();
     let tab =
         Memo::new(move |_| Adl2Tab::from_query(&query.with(|q| q.get("tab").unwrap_or_default())));
@@ -366,9 +358,9 @@ pub fn Adl2TemplateDetailPage() -> impl IntoView {
         },
     );
     // The stored versions of this HRID family, read from the ONE listing
-    // endpoint the Template Manager already reads (crate CLAUDE.md — one
-    // reader per claim), so the version bar offers what the CDR actually
-    // holds instead of guessing at a range.
+    // endpoint the Template Manager already reads (one reader per
+    // claim), so the version bar offers what the CDR actually holds
+    // instead of guessing at a range.
     let listing: Resource<Result<Vec<TemplateRow>, AdminUiError>> = Resource::new(
         || (),
         |()| async move { crate::pages::templates::list_adl2_templates().await },
@@ -531,10 +523,10 @@ fn version_chip(
 }
 
 /// The free-text version box: a GET `<Form>` submitting `?version=` back to
-/// this screen, so it works before the WASM bundle loads (rules §9). The
-/// hidden `tab` field keeps the open pane across the submit — a GET form
-/// replaces the action's whole query string, so a `?tab=` in the action would
-/// be discarded.
+/// this screen, so it works before the WASM bundle loads. The hidden `tab`
+/// field keeps the open pane across the submit — a GET form replaces the
+/// action's whole query string, so a `?tab=` in the action would be
+/// discarded.
 fn version_form(
     template_id: Signal<String>,
     tab: Memo<Adl2Tab>,
@@ -551,8 +543,8 @@ fn version_form(
         <leptos_router::components::Form method="GET" action=action attr:class="mt-3">
             <div class="flex flex-wrap items-end gap-2">
                 // The hidden field carries live state on `prop:value` with the
-                // attribute for the server pass (rules §2 — attributes set the
-                // initial state, properties carry the live one).
+                // attribute for the server pass (attributes set the initial
+                // state, properties carry the live one).
                 <input
                     type="hidden"
                     name="tab"

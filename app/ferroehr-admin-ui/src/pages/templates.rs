@@ -3,23 +3,14 @@
 
 //! The `/templates` screen — the Template Manager list + template upload.
 //!
-//! One screen, two template FAMILIES, switched by `?family=` (rules §9 — the
-//! switch is deep-linkable URL state, not a private signal): ADL 1.4
-//! operational templates (`definition/template/adl1.4`, OPT/XML upload) and
-//! ADL2 ones (`definition/template/adl2`, `text/plain` ADL2 source upload).
-//! Each family has its own list, its own upload affordance, and its own detail
-//! route; the client-side text filter and the URL page window serve both. No
-//! openEHR spec governs an admin UI — our own design / product extension; the
-//! wire it reads/writes is the ITS-REST Definition API.
-//!
-//! Discipline (rules §0/§1/§6/§8/§9): every `#[server]` fn guards the session
-//! first (a server fn is a public HTTP endpoint) and never lets a CDR
-//! credential reach client-visible state; the view is composed from
-//! `.into_any()`-erased section locals; async is a [`Resource`] read under
-//! `<Transition>` and an [`Action`] per mutating upload (refetch the list on
-//! the action's version); the table is the shared [`table_shell`], which emits
-//! an explicit `<tbody>` (hydration correctness — rules §8), paged by the
-//! shared [`table_footer`] whose page state lives in the URL.
+//! One screen, two template FAMILIES, switched by `?family=` (the switch is
+//! deep-linkable URL state, not a private signal): ADL 1.4 operational
+//! templates (`definition/template/adl1.4`, OPT/XML upload) and ADL2 ones
+//! (`definition/template/adl2`, `text/plain` ADL2 source upload). Each family
+//! has its own list, its own upload affordance, and its own detail route; the
+//! client-side text filter and the URL page window serve both. No openEHR spec
+//! governs an admin UI — our own design / product extension; the wire it
+//! reads/writes is the ITS-REST Definition API.
 
 #![allow(
     clippy::disallowed_types,
@@ -51,7 +42,7 @@ type TemplateUploadAction = Action<String, Result<String, AdminUiError>>;
 
 /// The template-delete action: the target it was dispatched with, paired with
 /// the CDR's answer, so both the success and the failure toast can name the
-/// exact template (rules §6 — the action's value IS the mutation report).
+/// exact template (the action's value IS the mutation report).
 type TemplateDeleteAction = Action<DeleteTarget, (String, Result<(), AdminUiError>)>;
 
 /// Which template a delete addresses — the id, and the family that decides
@@ -73,7 +64,7 @@ pub struct DeleteTarget {
 /// shape (`template_id` / `concept` / `created_timestamp`).
 ///
 /// Shared across both compilation targets, so it carries only fixed-size,
-/// client-safe fields (rules §1 — no `usize` in serialized types).
+/// client-safe fields (no `usize` in serialized types).
 #[derive(Debug, Clone, PartialEq, serde::Serialize, serde::Deserialize)]
 pub struct TemplateRow {
     /// The operational-template id (the detail route segment).
@@ -313,27 +304,20 @@ pub async fn delete_adl2_artefact(
 /// The Template Manager screen: the family switch, an upload affordance, a
 /// client-side filter, and the filterable template table.
 ///
-/// The FAMILY (`?family=`) is URL state, so a link lands on the family it
-/// names and the listing, the upload card and the row links all follow it
-/// (rules §9). The filter is a private client-side `contains` over
-/// already-loaded rows (a bound signal, per the screen spec — no server
-/// round-trip, so URL state would add nothing here); the PAGE the filtered rows
-/// are windowed at does live in the URL (`?page=`/`?size=`), so a reload or a
-/// shared link lands on the same rows. A successful upload or delete bumps its
-/// action's version, all of which are the list resource's source, refetching
-/// it.
+/// The FAMILY (`?family=`) is URL state, so a link lands on the family it names
+/// and the listing, the upload card and the row links all follow it. The filter
+/// is a private client-side `contains` over already-loaded rows; the PAGE the
+/// filtered rows are windowed at does live in the URL (`?page=`/`?size=`). A
+/// successful upload or delete bumps its action's version, all of which are the
+/// list resource's source, refetching it.
 ///
 /// The per-row delete is admin-gated and serves BOTH families, each over the
-/// route that actually removes its store: the Admin API's
-/// `DELETE admin/template/{template_id}` for ADL 1.4, and the artefact
-/// resource `DELETE definition/artefact/adl2/{artefact_id}` for ADL2
+/// route that actually removes its store: `DELETE admin/template/{template_id}`
+/// for ADL 1.4, and `DELETE definition/artefact/adl2/{artefact_id}` for ADL2
 /// ([`delete_adl2_artefact`]). The buttons render when the
 /// [`admin_gate`](crate::admin::admin_gate) probe finds the CDR advertising its
-/// Admin API (discover-and-hide — no admin group, no buttons), which is the
-/// right gate for both: the ADL2 route is Admin-classed by the CDR's coarse
-/// RBAC even though it is not mounted under `/admin`. Whether the session may
-/// USE it is the CDR's per-request answer, surfaced as actionable copy on
-/// refusal.
+/// Admin API, which is the right gate for both: the ADL2 route is Admin-classed
+/// by the CDR's coarse RBAC even though it is not mounted under `/admin`.
 #[expect(
     clippy::must_use_candidate,
     reason = "#[component] rewrites the fn; view!/mount always consumes the value"
@@ -343,10 +327,10 @@ pub fn TemplatesPage() -> impl IntoView {
     let toaster = thaw::ToasterInjection::expect_context();
     let filter = RwSignal::new(String::new());
     // The table's page window, read from the URL in SETUP (never inside the
-    // suspense that fetches the list — rules §4).
+    // suspense that fetches the list).
     let paging = paging_from_url();
     // The family the screen is showing, derived from the URL in setup — the
-    // same value on the server pass and at hydration (rules §8).
+    // same value on the server pass and at hydration.
     let query = leptos_router::hooks::use_query_map();
     let family = Memo::new(move |_| {
         TemplateFamily::from_query(&query.with(|q| q.get("family").unwrap_or_default()))
@@ -354,13 +338,13 @@ pub fn TemplatesPage() -> impl IntoView {
     // The upload dialog's state, shared by both families: the source awaiting
     // upload (the picker fills it, the paste area edits it) and whether the
     // dialog is open. Only one family is on screen at a time, so ONE dialog and
-    // one source signal serve both (#2955).
+    // one source signal serve both.
     let upload_open = RwSignal::new(false);
     let upload_source = RwSignal::new(String::new());
     // The accepted source is cleared, and the dialog closed, in each action's
     // OWN async continuation — never from an Effect reading the action's
     // value: a dispatch is the user event, so the answer is written where it
-    // arrives (rules §2).
+    // arrives.
     let upload: TemplateUploadAction = Action::new(move |opt_xml: &String| {
         let opt_xml = opt_xml.clone();
         async move {
@@ -384,7 +368,7 @@ pub fn TemplatesPage() -> impl IntoView {
         }
     });
     // The admin probe, and the delete action it gates. Both live in setup so
-    // the gated view can re-render without re-creating them (rules §4).
+    // the gated view can re-render without re-creating them.
     let gate = crate::admin::admin_gate();
     let delete: TemplateDeleteAction = Action::new(|target: &DeleteTarget| {
         let target = target.clone();
@@ -401,14 +385,11 @@ pub fn TemplatesPage() -> impl IntoView {
     // The template awaiting confirmation in the modal (`None` = no dialog).
     // ONE dialog serves every row — the signal is both "which row" and "open".
     let pending_delete = RwSignal::new(Option::<DeleteTarget>::None);
-    // The resource carries the family it fetched BESIDE the rows. That is not
-    // decoration: reading the family signal inside the table's `Suspend` makes
-    // the suspense re-run the instant the URL changes — disposing the mounted
-    // table's owner while the same URL change is still notifying the footer's
-    // page signals, which then read a disposed value and panic in the browser
-    // (reproduced live on the family switch). Sourcing it and reading it back
-    // off the data keeps the suspense driven by resource arrival alone, and
-    // makes the rows and their family agree by construction.
+    // The resource carries the family it fetched BESIDE the rows: reading the
+    // family signal inside the table's `Suspend` makes the suspense re-run the
+    // instant the URL changes — disposing the mounted table's owner while the
+    // same URL change is still notifying the footer's page signals, which then
+    // read a disposed value and panic in the browser.
     let list: Resource<(TemplateFamily, Result<Vec<TemplateRow>, AdminUiError>)> = Resource::new(
         move || {
             (
@@ -431,8 +412,8 @@ pub fn TemplatesPage() -> impl IntoView {
 
     // ONE upload affordance for both families: the same header-slot trigger in
     // the same position, opening the same dialog, with only the copy and the
-    // accepted input differing (#2955). The family comes from the URL, so both
-    // branches render identically on the server pass and at hydration.
+    // accepted input differing. The family comes from the URL, so both branches
+    // render identically on the server pass and at hydration.
     let action_slot = upload_trigger(upload_open, family);
     let upload_dialog = upload_dialog_view(upload_open, upload_source, family, upload, adl2_upload);
     let switch = family_switch(family);
@@ -467,12 +448,11 @@ pub fn TemplatesPage() -> impl IntoView {
 
 /// Wire the screen's three mutations to their success/failure toasts.
 ///
-/// Every mutation toasts on BOTH outcomes (the console's mutation-feedback
-/// rule — crate CLAUDE.md); an upload rejection ALSO keeps its inline
-/// `MessageBar`, because a validation diagnostic is worth reading line by line.
-/// Dispatching a toast is a side-effect on the outside world (the thaw
-/// toaster), so an Effect is its correct home (rules §2) — it never writes a
-/// signal, and it never runs on the server pass.
+/// Every mutation toasts on BOTH outcomes; an upload rejection also keeps its
+/// inline `MessageBar`, because a validation diagnostic is worth reading line by
+/// line. Dispatching a toast is a side-effect on the outside world, so an
+/// `Effect` is its correct home: it writes no signal and never runs on the
+/// server pass.
 fn mutation_toasts(
     toaster: thaw::ToasterInjection,
     upload: TemplateUploadAction,
@@ -528,10 +508,10 @@ fn mutation_toasts(
     });
 }
 
-/// The family switch: one URL-driven pill link per template family (rules §9 —
-/// the selected family is a shareable query parameter, not private widget
-/// state). Each href carries the family alone, so switching never inherits the
-/// other listing's page window.
+/// The family switch: one URL-driven pill link per template family (the
+/// selected family is a shareable query parameter, not private widget state).
+/// Each href carries the family alone, so switching never inherits the other
+/// listing's page window.
 fn family_switch(family: Memo<TemplateFamily>) -> AnyView {
     let link = move |target: TemplateFamily| {
         let class = move || {
@@ -564,7 +544,7 @@ fn family_switch(family: Memo<TemplateFamily>) -> AnyView {
 
 /// The screen's ONE upload dialog, serving both families: the copy, the
 /// accepted file types and the dispatched action follow the URL family, and
-/// nothing else about the flow differs (#2955).
+/// nothing else about the flow differs.
 ///
 /// It is rendered once outside the table (a list refetch never re-creates it)
 /// and is inert while closed. Success is reported by each action's own
@@ -652,8 +632,7 @@ fn delete_dialog(
 /// Each family names the object it actually removes — an ADL 1.4 delete takes
 /// the operational template out of the Admin API's template store, an ADL2
 /// delete takes the whole AOM2 artefact out of the definition store — and both
-/// state the never-orphan guard, which the CDR enforces over committed
-/// versions in either store.
+/// state the never-orphan guard the CDR enforces over committed versions.
 fn delete_prompt(target: &DeleteTarget) -> String {
     let id = &target.template_id;
     match target.family {
@@ -689,16 +668,14 @@ fn upload_trigger(open: RwSignal<bool>, family: Memo<TemplateFamily>) -> AnyView
 }
 
 /// The template table: the list resource read under `<Transition>` (keep the
-/// current rows visible while a refetch runs — rules §6), resolving its
-/// `Result` inside the transition (an SSR'd `ErrorBoundary` fallback mismatches
-/// at hydration in leptos 0.8), then the filtered rows.
+/// current rows visible while a refetch runs), resolving its `Result` inside
+/// the transition (an SSR'd `ErrorBoundary` fallback mismatches at hydration in
+/// leptos 0.8), then the filtered rows.
 ///
-/// The admin probe is awaited in the SAME `Suspend` as the list (rules §6 —
-/// several resources awaited in one suspend, no nested `Option` matching), so
-/// the header row and the rows agree on whether the delete column exists. The
-/// family comes off the list resource, never from a signal read here: a signal
-/// read inside the suspense re-runs it (and disposes the mounted table) on the
-/// URL change itself, which panics the browser (see `TemplatesPage`).
+/// The admin probe is awaited in the SAME `Suspend` as the list, so the header
+/// row and the rows agree on whether the delete column exists. The family comes
+/// off the list resource, never from a signal read here: a signal read inside
+/// the suspense re-runs it, disposes the mounted table and panics the browser.
 fn templates_table(
     filter: RwSignal<String>,
     paging: TablePaging,
@@ -729,8 +706,8 @@ fn templates_table(
 ///
 /// The filtered listing is a [`Memo`], so the rendered window and the footer's
 /// total are computed from ONE derivation of the filter and can never disagree
-/// (rules §2 — a derived value, not an effect writing a signal). The window
-/// itself comes from the URL, so paging never re-runs the enclosing suspense.
+/// (a derived value, not an effect writing a signal). The window itself comes
+/// from the URL, so paging never re-runs the enclosing suspense.
 fn rows_view(
     rows: Vec<TemplateRow>,
     filter: RwSignal<String>,
@@ -752,13 +729,13 @@ fn rows_view(
             .collect::<Vec<_>>()
     });
     // `.read()` guards, never `.get()`: the filtered listing is a collection
-    // and cloning it per read would be wasted work (rules §2).
+    // and cloning it per read would be wasted work.
     let total = Signal::derive(move || row_total(matched.read().len()));
     let none_match = move || {
         // Two statements on purpose: the filter guard must be released before
         // `matched` is read, because recomputing the memo reads the filter
-        // again (rules §2 — never hold one signal's guard across another read
-        // that depends on it).
+        // again (never hold one signal's guard across another read that
+        // depends on it).
         let filtering = !filter.read().is_empty();
         filtering && matched.read().is_empty()
     };
@@ -811,13 +788,12 @@ fn matches_filter(row: &TemplateRow, needle: &str) -> bool {
 
 /// The `/templates/{template_id}` detail-route link for one template id.
 ///
-/// The id is a CDR-supplied string, so the path segment is percent-encoded
-/// with the `urlencoding` crate: reserved characters (`/`, `#`, `?`, `%`) and
+/// The id is a CDR-supplied string, so the path segment is percent-encoded with
+/// the `urlencoding` crate: reserved characters (`/`, `#`, `?`, `%`) and
 /// non-ASCII bytes would otherwise split the segment or truncate the URL.
-/// `leptos_router` percent-DEcodes route params on both targets
-/// (`ParamsMap::insert` → `Url::unescape`), so `use_params_map` in
-/// [`crate::pages::template_detail`] reads the original id back — the encode
-/// here is the whole round trip, and no decode belongs on the read side.
+/// `leptos_router` percent-DEcodes route params on both targets, so
+/// [`crate::pages::template_detail`] reads the original id back.
+///
 /// NOTE: no openEHR spec governs an admin UI's internal links — our own
 /// design/extension.
 fn detail_href(template_id: &str) -> String {

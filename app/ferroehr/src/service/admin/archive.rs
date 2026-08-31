@@ -8,24 +8,19 @@
 //! `archive_ehrs` "Move selected EHRs to archival storage", `archive_parties`
 //! "Move selected Parties and relationships to archival storage".
 //!
-//! NOTE (`i_admin_archive.adoc` says "Move … to archival storage" and defines
-//! no storage form): the archival tier is spec-silent — no openEHR spec governs
-//! storage tiering, so the cold schema and this movement are our own design.
+//! NOTE: `i_admin_archive.adoc` defines no storage form, so the cold schema and
+//! this movement are our own design — no openEHR spec governs storage tiering.
 //!
-//! Each call writes the `vo_archive` markers AND physically moves the marked
-//! objects' `vo_version` / `node` / `vo_attestation` rows into the cold tier
-//! ([`crate::storage::version_repo::tier`]), both in one transaction. The move
-//! is reversible ([`FerroEhrService::restore_archived_ehrs`] /
+//! Each call writes the `vo_archive` markers and physically moves the marked
+//! objects' `vo_version`, `node` and `vo_attestation` rows into the cold tier
+//! ([`crate::storage::version_repo::tier`]) in one transaction. The move is
+//! reversible ([`FerroEhrService::restore_archived_ehrs`],
 //! [`FerroEhrService::restore_archived_parties`]) and invisible on the wire:
-//! object-addressed reads fall back to the cold tier on a primary-tier miss, so
-//! an archived object stays retrievable, and a write thaws it first so a
-//! versioned object is never split across tiers. All-or-nothing — an unknown id
-//! aborts the transaction before anything is written or moved.
-//!
-//! NOTE (no openEHR spec governs storage tiering — our own design): the AQL
-//! engine queries the primary tier alone, so archived content leaves the
-//! queryable store until it is restored — which is what shedding the query
-//! tables' rows and indexes means.
+//! object-addressed reads fall back to the cold tier on a primary-tier miss and
+//! a write thaws the object first, so a versioned object is never split across
+//! tiers. An unknown id aborts the transaction before anything is written or
+//! moved. The AQL engine queries the primary tier alone, so archived content
+//! leaves the queryable store until it is restored.
 
 use uuid::Uuid;
 
@@ -56,10 +51,10 @@ impl FerroEhrService {
     /// SM `archive_parties`: move each party's versioned object to the cold
     /// archival tier (idempotent).
     ///
-    /// NOTE (keep — `i_admin_archive.adoc` "Move selected Parties and
-    /// relationships"): only the party VO is moved, not the related
-    /// `PARTY_RELATIONSHIP`s, which stay independently addressable versioned
-    /// objects a caller archives in their own right.
+    /// NOTE: under `i_admin_archive.adoc` "Move selected Parties and
+    /// relationships", only the party VO is moved; the related
+    /// `PARTY_RELATIONSHIP`s stay independently addressable versioned objects a
+    /// caller archives in their own right.
     ///
     /// # Errors
     /// - `precondition_violation` (`400`) — any id in the list is not a
@@ -78,10 +73,9 @@ impl FerroEhrService {
     /// reverse of [`Self::archive_ehrs`], and idempotent in the same way (an
     /// EHR with nothing archived restores nothing and succeeds).
     ///
-    /// NOTE (`i_admin_archive.adoc` declares only the two archive operations):
-    /// the SM has no un-archive call, so this operation and its admin route
-    /// (`POST /admin/archive/ehrs/restore`) are both our own extension — the
-    /// reverse an archival tier must have to be trustworthy.
+    /// NOTE: `i_admin_archive.adoc` declares only the two archive operations, so
+    /// this operation and its admin route (`POST /admin/archive/ehrs/restore`)
+    /// are our own extension.
     ///
     /// # Errors
     /// - `precondition_violation` (`400`) — any id is not a well-formed UUID.

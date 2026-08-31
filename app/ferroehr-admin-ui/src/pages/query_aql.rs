@@ -10,13 +10,10 @@
 //! for us. No openEHR spec governs an admin UI — our own design / product
 //! extension; the wire it drives IS spec-bound (ITS-REST Query/Definition APIs).
 //!
-//! Discipline (rules §0/§1/§5/§6/§8): no new `#[server]` fn — the screen reuses
-//! [`validate_aql`], [`run_aql`] and [`store_query`], each of which guards its
-//! own session. The editor is a controlled `<textarea>` (child text +
-//! `prop:value`); the result table renders under `<Transition>` and reuses the
+//! No new `#[server]` fn: the screen reuses [`validate_aql`], [`run_aql`] and
+//! [`store_query`], each of which guards its own session, and it reuses the
 //! shared render helpers from [`crate::pages::query_builder`] and
-//! [`crate::pages::ehrs`]. The view is composed from `.into_any()`-erased
-//! sections.
+//! [`crate::pages::ehrs`].
 
 use leptos::component;
 use leptos::prelude::*;
@@ -49,14 +46,12 @@ pub(crate) type LoadedQueryResource = Resource<Result<Option<LoadedQuery>, Admin
 /// Build the link INTO this screen that pre-fills the editor with `aql`.
 ///
 /// The AQL becomes one query-string value, percent-encoded with the
-/// `urlencoding` crate (owner rule: all percent-coding goes through that
-/// crate). AQL is full of URL-reserved characters — a space, the `/` in every
-/// path, `#`, `&`, `=`, `'`, `%` — any one of which would truncate the value or
-/// split it into extra parameters. The router percent-DEcodes query params
-/// (`ParamsMap::insert` → `Url::unescape`), which is why
-/// [`QueryAqlPage`]'s `?aql=` read needs no decode of its own.
-/// NOTE: no openEHR spec governs an admin UI's internal links — our own
-/// design/extension.
+/// `urlencoding` crate. AQL is full of URL-reserved characters — a space, the
+/// `/` in every path, `#`, `&`, `=`, `'`, `%` — any one of which would truncate
+/// the value or split it into extra parameters. The router percent-DEcodes
+/// query params (`ParamsMap::insert` → `Url::unescape`), which is why
+/// [`QueryAqlPage`]'s `?aql=` read needs no decode of its own. NOTE: no openEHR
+/// spec governs an admin UI's internal links — our own design/extension.
 pub(crate) fn aql_href(aql: &str) -> String {
     format!("/queries/aql?aql={}", urlencoding::encode(aql))
 }
@@ -115,9 +110,9 @@ pub fn QueryAqlPage() -> impl IntoView {
         async move { store_query(name, version, aql).await }
     });
     // Both outcomes toast (rules: Effect = sync with the outside world; no
-    // signal is written — and the console's mutation-feedback rule, crate
-    // CLAUDE.md). The CDR's diagnostic ALSO stays inline (save_feedback),
-    // beside the AQL it rejected.
+    // signal is written — and the console's mutation-feedback rule). The
+    // CDR's diagnostic ALSO stays inline (save_feedback), beside the AQL
+    // it rejected.
     let toaster = thaw::ToasterInjection::expect_context();
     Effect::new(move |_| match save_action.value().get() {
         Some(Ok(())) => toast_success(toaster, "Query saved", ""),
@@ -198,8 +193,8 @@ pub(crate) fn loaded_query_resource(
 /// Seed the editor and the save fields from a loaded stored query, exactly once
 /// and client-side.
 ///
-/// A resource-reading `Effect`, kept deliberately (the written-justification
-/// case rules §2 admits): the targets — the editor `aql` and the save fields —
+/// A resource-reading `Effect`, kept deliberately: the targets — the editor
+/// `aql` and the save fields —
 /// render in ALWAYS-MOUNTED sections outside the load `<Transition>`, so a
 /// seed inside that `Suspend` writes them during the server pass and again
 /// during hydration replay, changing already-serialized reactive text mid-walk
@@ -477,7 +472,7 @@ fn results_section(
                         let body = results_view(&page, false);
                         let export = export_forms(current_aql, params);
                         // Resolve inside the Transition: an SSR'd ErrorBoundary fallback
-                        // mismatches at hydration in leptos 0.8 (E2E console gate).
+                        // mismatches at hydration in leptos 0.8.
                         view! {
                             <section class=CARD_PAD>
                                 <div class="flex items-center justify-between gap-2 flex-wrap mb-3">

@@ -11,15 +11,8 @@
 //! extension; the wire it reads is IHE's (the `RESTful` ATNA supplement's
 //! ITI-81 FHIR search), served by the CDR.
 //!
-//! Discipline (rules §0/§1/§6/§8/§9): the `#[server]` fn guards the session
-//! first and keeps CDR credentials server-side; filter/pagination state
-//! lives in the URL (a GET `<Form>` → `use_query_map` → the resource source
-//! — shareable, refresh-safe, WASM-optional); the resource is read under
-//! `<Transition>` with the `Result` resolved inside the `Suspend`; the view
-//! is composed from `.into_any()`-erased section locals; the table is the
-//! shared [`table_shell`] (explicit `<tbody>`). The CDR answering `404`
-//! (the local audit store disabled) is a first-class rendered state, not an
-//! error.
+//! The CDR answering `404` (the local audit store disabled) is a first-class
+//! rendered state, not an error.
 
 #![allow(
     clippy::disallowed_types,
@@ -41,7 +34,7 @@ use crate::error::AdminUiError;
 
 /// One distilled audit record: the promoted facts the table shows plus the
 /// full stored `AuditEvent` JSON for the raw view. Client-safe fields only
-/// (rules §1 — fixed-size ints, no `usize`).
+/// (fixed-size ints, no `usize`).
 #[derive(Debug, Clone, PartialEq, Eq, serde::Serialize, serde::Deserialize)]
 pub struct AuditRow {
     /// The event instant (`AuditEvent.recorded`), as stored.
@@ -283,7 +276,7 @@ pub fn AuditPage() -> impl IntoView {
     let q = move |key: &str| query.read().get(key).unwrap_or_default();
 
     // The resource source is the full filter tuple pulled from the URL
-    // (tracked); the fetcher itself is untracked by design (rules §6).
+    // (tracked); the fetcher itself is untracked by design.
     let page: Resource<Result<AuditPage, AdminUiError>> = Resource::new(
         move || {
             (
@@ -319,8 +312,8 @@ pub fn AuditPage() -> impl IntoView {
 
 /// The GET filter form (router `<Form>`): submits to `/audit` with the
 /// filters as query parameters — shareable, refresh-safe, and functional
-/// before WASM loads (rules §9). Initial values come from the current URL so
-/// a reload keeps the form filled.
+/// before WASM loads. Initial values come from the current URL so a reload
+/// keeps the form filled.
 fn filter_form(query: Memo<leptos_router::params::ParamsMap>) -> AnyView {
     let initial = move |key: &str| query.read_untracked().get(key).unwrap_or_default();
     let select_class = "rounded-control border border-edge bg-raised px-2 py-1.5 text-sm text-ink";
@@ -422,8 +415,8 @@ fn filter_form(query: Memo<leptos_router::params::ParamsMap>) -> AnyView {
 }
 
 /// The record table: the page resource under `<Transition>` (old rows stay
-/// visible while a filter/page change loads — rules §6), resolving the
-/// `Result` inside the `Suspend` (rules §4).
+/// visible while a filter/page change loads), resolving the `Result`
+/// inside the `Suspend`.
 fn audit_table(
     page: Resource<Result<AuditPage, AdminUiError>>,
     query: Memo<leptos_router::params::ParamsMap>,
@@ -492,7 +485,7 @@ fn page_view(page: AuditPage, query: Memo<leptos_router::params::ParamsMap>) -> 
 }
 
 /// One record row. The raw stored `AuditEvent` opens in a native
-/// `<details>` disclosure (valid HTML, zero script — rules §0/§8).
+/// `<details>` disclosure (valid HTML, zero script).
 fn row_view(row: AuditRow) -> impl IntoView {
     let outcome_class = if row.success {
         "px-3 py-2 align-top text-success"

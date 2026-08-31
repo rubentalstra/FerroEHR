@@ -5,9 +5,7 @@
 //!
 //! ONE dialog every upload affordance opens, so "give me the artefact" looks
 //! and behaves identically wherever it appears — the same doctrine as
-//! [`crate::components::confirm_dialog`] (#2955, which retired a screen where
-//! one family uploaded from a header button and the other from a permanent
-//! card that pushed the listing down the page).
+//! [`crate::components::confirm_dialog`].
 //!
 //! The picker and the paste area feed ONE source signal on purpose: a chosen
 //! file is loaded into the editor so it can be read, and corrected, before it
@@ -18,9 +16,9 @@
 //! own async continuation on success — so the trigger, Cancel, Esc, a backdrop
 //! click and a successful upload all write that same one signal.
 //!
-//! Hydration (rules §8): the dialog is closed on the first render of BOTH
-//! passes and `thaw::Dialog` teleports nothing while closed, so the server HTML
-//! and the hydrated view agree.
+//! Hydration: the dialog is closed on the first render of BOTH passes and
+//! `thaw::Dialog` teleports nothing while closed, so the server HTML and the
+//! hydrated view agree.
 
 use leptos::component;
 use leptos::prelude::*;
@@ -93,7 +91,7 @@ pub fn UploadDialog(
     });
     // `custom_request` runs only in the browser (a file-selection event), so
     // reading the file with the Web `File`/`Blob` API here is hydration-safe
-    // (rules §8 — browser-only APIs never run on the server pass).
+    // (browser-only APIs never run on the server pass).
     let custom_request = move |files: thaw::FileList| {
         let Some(file) = files.get(0) else {
             return;
@@ -163,8 +161,7 @@ pub fn UploadDialog(
                         </button>
                         // Inert from first paint (a static `disabled` attribute
                         // for the server HTML) with the live state on
-                        // `prop:disabled` — properties carry live state
-                        // (rules §2).
+                        // `prop:disabled` — properties carry live state.
                         <button
                             id=submit_id
                             type="button"

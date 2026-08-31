@@ -8,8 +8,8 @@
 //! paths, and the `VERSIONED_COMPOSITION` cross-version invariants.
 //!
 //! Every kind's validator pairs its hand-written root rules with the
-//! whole-instance RM class-invariant + terminology pass
-//! ([`validate_rm_invariants_for_commit`]) — the RM class invariants are
+//! whole-instance RM class-invariant and terminology pass
+//! ([`validate_rm_invariants_for_commit`]); the RM class invariants are
 //! properties of the instance, so they bind below the root of an `EHR_STATUS`
 //! or FOLDER exactly as they do inside a COMPOSITION.
 //!
@@ -98,27 +98,23 @@ impl FerroEhrService {
         Ok(())
     }
 
-    /// Validate an incoming COMPOSITION against its operational template
-    /// before it is persisted (the single choke point for the JSON and FLAT
-    /// dispatch paths). RM class-invariant + terminology passes run
-    /// unconditionally (template-independent); the archetype-conformance pass
-    /// is gated on a declared+resolved template. A
-    /// declared-but-failing template, or any RM/terminology violation, is a
-    /// `422` (ITS-REST `responses/422.yaml`); syntactic parse
-    /// failures are `400` and caught earlier at the REST negotiation edge.
+    /// Validates an incoming COMPOSITION against its operational template before
+    /// it is persisted, the single choke point for the JSON and FLAT dispatch
+    /// paths.
     ///
-    /// `incomplete` (a `553|incomplete|` commit, RM common master06
-    /// §Incomplete Content) relaxes the existence & cardinality **lower**
-    /// limits to zero on BOTH template-driven and RM-driven layers — the
-    /// archetype-conformance pass and the RM mandatory-presence layers alike
-    /// ("mandatory attributes may be absent … even though they may have
-    /// minimum existence and cardinality respectively of one"). Every other
-    /// check — class invariants, types, terminology, patterns, coded values —
-    /// stays at full strictness ("data may be missing, but it may not be
-    /// wrong").
+    /// The RM class-invariant and terminology passes run unconditionally; the
+    /// archetype-conformance pass is gated on a declared and resolved template.
+    /// A declared-but-failing template, or any RM or terminology violation, is a
+    /// `422` (ITS-REST `responses/422.yaml`); syntactic parse failures are `400`
+    /// and caught earlier at the REST negotiation edge.
     ///
-    /// The template lookup goes through `web_template_for`; the
-    /// template-independent passes run through
+    /// `incomplete` (a `553|incomplete|` commit, RM common master06 §Incomplete
+    /// Content) relaxes the existence and cardinality lower limits to zero on
+    /// both the template-driven and RM-driven layers. Every other check stays at
+    /// full strictness ("data may be missing, but it may not be wrong").
+    ///
+    /// The template lookup goes through `web_template_for`, the
+    /// template-independent passes through
     /// `openehr_its::rm_instance::validate_rm_and_terminology` and the
     /// archetype-conformance pass through
     /// `openehr_its::flat::validation::validate_archetype_conformance*`.
@@ -251,24 +247,18 @@ impl FerroEhrService {
     }
 }
 
-/// Run the **template-independent** RM class-invariant + openEHR-terminology
+/// Runs the template-independent RM class-invariant and openEHR-terminology
 /// passes over a non-COMPOSITION commit body, folding every violation into one
 /// `422`.
 ///
-/// The RM class invariants are properties of the *instance*, not of the
-/// resource kind: `ARCHETYPED.Rm_version_valid`
-/// (`RM/docs/UML/classes/org.openehr.rm.common.archetyped.adoc` §Invariants),
-/// `LOCATABLE.Links_valid` and `Archetype_node_id_valid`
-/// (`…org.openehr.rm.common.locatable.adoc` §Invariants), `LINK`'s three 1..1
-/// attributes `meaning`/`type`/`target`
-/// (`…org.openehr.rm.common.link.adoc` §Attributes) and
-/// `FEEDER_AUDIT_DETAILS.System_id_valid`
-/// (`…org.openehr.rm.common.feeder_audit_details.adoc` §Invariants) bind every
-/// node carrying the shape, at any depth — so the pass the COMPOSITION arm
-/// runs ([`FerroEhrService::validate_composition_for_commit`]) applies
-/// unchanged to `EHR_STATUS` / `EHR_ACCESS` / FOLDER / demographic bodies.
-/// Without it, a defect below the root of those kinds is invisible: only the
-/// hand-written root checks above ever looked at them.
+/// The RM class invariants are properties of the instance rather than of the
+/// resource kind: `ARCHETYPED.Rm_version_valid`, `LOCATABLE.Links_valid` and
+/// `Archetype_node_id_valid`, `LINK`'s three 1..1 attributes
+/// `meaning`/`type`/`target`, and `FEEDER_AUDIT_DETAILS.System_id_valid` (the
+/// §Invariants and §Attributes sections of their
+/// `RM/docs/UML/classes/org.openehr.rm.common.*.adoc` classes) bind every node
+/// carrying the shape at any depth, so the pass the COMPOSITION arm runs applies
+/// unchanged to `EHR_STATUS`, `EHR_ACCESS`, FOLDER and demographic bodies.
 ///
 /// `declared` is the root node's RM type, used only when the root's wire
 /// `_type` is absent (canonical JSON requires `_type` only on polymorphic
@@ -316,14 +306,11 @@ pub(in crate::service) fn validate_rm_invariants_for_commit(
 ///   version's — the persistence category (`431|persistent|`) is fixed for
 ///   the container's life.
 ///
-/// A violating modification is a `422` naming the invariant. Lifted out of the
-/// versioning write path — the EHR chapter owns it. The first-version root
-/// read goes through `crate::storage::node_repo`.
-///
-/// Both write flows run this: the direct update path
-/// ([`composition`](super::composition)) inline, and the CONTRIBUTION path
-/// (`crate::versioning::contribution::commit_version_set`) through the
-/// [`crate::versioning::CommitEnv::pre_composition_modify`] hook — each in its
+/// A violating modification is a `422` naming the invariant; the first-version
+/// root read goes through `crate::storage::node_repo`. Both write flows run
+/// this, the direct update path ([`composition`](super::composition)) inline and
+/// the CONTRIBUTION path through the
+/// [`crate::versioning::CommitEnv::pre_composition_modify`] hook, each in its
 /// own commit transaction.
 ///
 /// # Errors
@@ -415,13 +402,10 @@ fn is_persistent(composition: &Value) -> bool {
 /// `locatable.adoc` §Invariants) means such a root MUST carry the `ARCHETYPED`
 /// block, with its mandatory `archetype_id`.
 ///
-/// That direction is the one a per-node pass cannot express: only this chapter
-/// knows that an `EHR_STATUS` or `EHR_ACCESS` *is* a root. The other direction
-/// (a term-coded node must NOT carry `archetype_details`) and the root-identity
-/// rule (`archetype_node_id` equals the stringified
-/// `archetype_details.archetype_id`) are the whole-instance pass's
-/// (`openehr_rm::v1_2::validate::check_archetyped_valid`), as is
-/// `LOCATABLE.Links_valid`, which it applies to every node carrying `links`.
+/// A per-node pass cannot express that direction, only this chapter knowing that
+/// an `EHR_STATUS` or `EHR_ACCESS` is a root. The other direction, the
+/// root-identity rule and `LOCATABLE.Links_valid` belong to the whole-instance
+/// pass (`openehr_rm::v1_2::validate::check_archetyped_valid`).
 pub(in crate::service) fn validate_root_locatable(
     obj: &serde_json::Map<String, Value>,
     kind: &str,
@@ -470,24 +454,19 @@ pub(in crate::service) fn validate_root_locatable(
 /// - the ROOT half of `LOCATABLE.Archetyped_valid`
 ///   ([`validate_root_locatable`]).
 ///
-/// Everything else RM ehr `ehr_status.adoc` and the inherited `LOCATABLE`
-/// demand is enforced by the whole-instance pass
-/// ([`validate_rm_invariants_for_commit`]) from the generated model, not
-/// restated here: `name` / `is_queryable` / `is_modifiable` / `subject`
-/// mandatoriness and typing (`EHR_STATUS.subject` is monomorphic `PARTY_SELF`,
-/// and an empty `{}` still decodes to the valid **anonymous** subject of RM ehr
-/// master04 §EHR Status), the `ITEM_STRUCTURE` typing of `other_details`, the
-/// `OBJECT_REF.Id_exists` / `Namespace_valid` rules on a present
-/// `subject.external_ref`, `Archetype_node_id_valid`, `Links_valid`, and every
-/// invariant below the root.
+/// Everything else RM ehr `ehr_status.adoc` and the inherited `LOCATABLE` demand
+/// is enforced by the whole-instance pass
+/// ([`validate_rm_invariants_for_commit`]) from the generated model rather than
+/// restated here: `name`, `is_queryable`, `is_modifiable` and `subject`
+/// mandatoriness and typing, the `ITEM_STRUCTURE` typing of `other_details`, the
+/// `OBJECT_REF` rules on a present `subject.external_ref`, and every invariant
+/// below the root.
 ///
-/// `incomplete` (a `553|incomplete|` commit) relaxes the whole-instance
-/// pass's existence and cardinality lower bounds, exactly as for every other
-/// committable kind — RM common master06 §Incomplete Content defines the
-/// relaxation generically, with no content-type exclusion in any released
-/// text. The two slot rules stay unconditional: the incomplete state lifts
-/// lower bounds, never typing ("All other validity requirements must be
-/// satisfied").
+/// `incomplete` (a `553|incomplete|` commit) relaxes that pass's existence and
+/// cardinality lower bounds, as for every other committable kind (RM common
+/// master06 §Incomplete Content, which carries no content-type exclusion). The
+/// two slot rules stay unconditional, the incomplete state lifting lower bounds
+/// and never typing ("All other validity requirements must be satisfied").
 ///
 /// # Errors
 /// [`ServiceError::Unprocessable`] for the two slot rules above, or
@@ -589,19 +568,17 @@ pub(in crate::service) fn validate_ehr_access(
 /// class-invariant + terminology pass ([`validate_rm_invariants_for_commit`]),
 /// which now carries EVERY rule this function once restated by hand:
 ///
-/// - the declared-slot-type conformance rule (root + every member), from the
-///   generated RM model — `FOLDER.items` → `OBJECT_REF`, `FOLDER.folders` →
-///   `FOLDER`, so a COMPOSITION committed by value into `items` is refused
+/// - the declared-slot-type conformance rule (root and every member) from the
+///   generated RM model: `FOLDER.items` takes `OBJECT_REF` and `FOLDER.folders`
+///   takes `FOLDER`, so a COMPOSITION committed by value into `items` is refused
 ///   whatever the lifecycle state ("Folder structures do not contain
-///   Compositions, only references to them", RM ehr master04 §Folders; RM
-///   common master06 §Incomplete Content — "data may be missing, but it may
-///   not be wrong");
-/// - the PRESENCE layer (`OBJECT_REF`'s mandatory `id`/`namespace`/`type`,
+///   Compositions, only references to them", RM ehr master04 §Folders);
+/// - the presence layer (`OBJECT_REF`'s mandatory `id`/`namespace`/`type`,
 ///   `LOCATABLE.name`, `Archetype_node_id_valid`, `Links_valid`, the
-///   archetype-root identity rule), which relaxes exactly on a
-///   `553|incomplete|` commit — so no lifecycle special-casing is needed.
-///   `archetype_details` stays OPTIONAL on a FOLDER (the RM types it 0..1 and
-///   FOLDER carries no `Is_archetype_root` invariant).
+///   archetype-root identity rule), which relaxes on a `553|incomplete|` commit,
+///   so no lifecycle special-casing is needed. `archetype_details` stays
+///   optional on a FOLDER, the RM typing it 0..1 with no `Is_archetype_root`
+///   invariant.
 ///
 /// # Errors
 /// [`ServiceError::ValidationFailed`] carrying every violation found in the

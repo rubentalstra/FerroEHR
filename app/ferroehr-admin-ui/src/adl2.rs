@@ -10,11 +10,10 @@
 //! carries the release version, and the ITS-REST Definition API exposes a
 //! version segment beside it (`specifications/operations/
 //! definition_template_adl2_version_get.yaml` under
-//! `docs/specs/openehr/ITS-REST/`).
-//! Every derivation the two screens need from those facts — the family stem,
-//! the release version, the versions one listing holds for a family, the
-//! wire paths, the console hrefs — lives here as pure functions with unit
-//! tests, so the views stay thin (rules §10).
+//! `docs/specs/openehr/ITS-REST/`). Every derivation the two screens need
+//! from those facts — the family stem, the release version, the versions one
+//! listing holds for a family, the wire paths, the console hrefs — lives
+//! here as pure functions with unit tests, so the views stay thin.
 //!
 //! NOTE: no openEHR spec governs an admin UI's routes or family switch — our
 //! own design / product extension; only the wire paths are spec-bound.
@@ -208,8 +207,7 @@ pub fn split_hrid(hrid: &str) -> (&str, Option<&str>) {
     // A release version carries no `v`, so the LAST `.v` followed by a digit
     // is the version marker even when a namespace prefix contains dots.
     // `.get(..)` throughout, never `&s[..]`: the id is CDR-supplied text and a
-    // panicking slice on request-path data is denied (the reliability rules'
-    // `string_slice` lint).
+    // panicking slice on request-path data is denied.
     if let Some(at) = hrid.rfind(".v")
         && let Some(version) = hrid.get(at.saturating_add(2)..)
         && version.starts_with(|c: char| c.is_ascii_digit())
@@ -269,8 +267,8 @@ fn version_key(version: &str) -> (u32, u32, u32) {
 /// prefix, in a form of `{major}` or `{major}.{minor}` … in which case the
 /// highest (latest) version matching the prefix will be considered"
 /// (`docs/specs/openehr/ITS-REST/specifications/parameters/path/version.yaml`).
-/// Both segments are percent-encoded with the `urlencoding` crate (owner hard
-/// rule: never a hand-rolled codec) — an HRID is CDR-supplied text.
+/// Both segments are percent-encoded with the `urlencoding` crate — an HRID is
+/// CDR-supplied text.
 #[must_use]
 pub fn template_path(template_id: &str, version: Option<&str>) -> String {
     let id = urlencoding::encode(template_id);
@@ -294,8 +292,8 @@ pub fn template_path(template_id: &str, version: Option<&str>) -> String {
 /// (`docs/specs/openehr/SM/docs/UML/classes/i_definition_adl2.adoc`), whose
 /// `artefact_does_not_exist` error is the `404`.
 ///
-/// The id is percent-encoded with the `urlencoding` crate (owner hard rule:
-/// never a hand-rolled codec) — an HRID is CDR-supplied text.
+/// The id is percent-encoded with the `urlencoding` crate — an HRID is
+/// CDR-supplied text.
 #[must_use]
 pub fn artefact_path(artefact_id: &str) -> String {
     format!(
@@ -311,7 +309,7 @@ pub fn artefact_path(artefact_id: &str) -> String {
 /// the example is generated from is the one `template_id` itself resolves to.
 /// The two example options ride the query string
 /// ([`crate::example_options::example_query`]); the id is percent-encoded with
-/// the `urlencoding` crate (owner hard rule: never a hand-rolled codec).
+/// the `urlencoding` crate.
 #[must_use]
 pub fn example_path(template_id: &str, detail: ExampleDetail, kind: ExampleType) -> String {
     format!(

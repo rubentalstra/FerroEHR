@@ -14,13 +14,8 @@
 //! the wire it drives IS spec-bound (ITS-REST Query API,
 //! `docs/specs/openehr/ITS-REST/specifications/docs/query/`).
 //!
-//! Discipline (rules §0/§1/§4/§6/§8): the only `#[server]` fns it calls are
-//! [`run_stored_query`] and the shared `?load=` fetch, each of which guards its
-//! own session; running a stored query is a pure READ, so failures render
-//! INLINE and never toast (crate CLAUDE.md); the view is composed from
-//! `.into_any()`-erased sections; the results table reuses
-//! `results_view`/`paging_buttons`; there is zero authored JavaScript
-//! (`on:` Rust listeners only).
+//! Running a stored query is a pure READ, so failures render inline and never
+//! toast.
 
 use std::collections::BTreeMap;
 
@@ -129,7 +124,7 @@ pub fn QueryStoredPage() -> impl IntoView {
 
 /// The stored definition the link named: its AQL, read once and shown verbatim
 /// so the parameter and resolution choices below are made against what the CDR
-/// actually holds. A pure read — the failure renders inline (crate CLAUDE.md).
+/// actually holds. A pure read — the failure renders inline.
 fn definition_section(
     definition: Resource<Result<Option<LoadedQuery>, AdminUiError>>,
     name: &str,

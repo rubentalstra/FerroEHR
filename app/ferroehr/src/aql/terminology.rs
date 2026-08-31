@@ -15,23 +15,21 @@
 //!                              TERMINOLOGY('expand', 'hl7.org/fhir/4.0', '<vs-url>')}
 //! ```
 //!
-//! This module is the semantic-analysis pre-pass that realises that merge: it
+//! This module is the semantic-analysis pre-pass that realises the merge: it
 //! resolves each `expand` call through a [`TerminologyExpander`] (the SM
-//! `I_TERMINOLOGY_SERVICE` seam — the in-process `openehr-term` bundle by
-//! default, a remote FHIR TS when configured) and rewrites the AST value list
-//! *in place* to explicit string codes, **before** planning/SQL generation. The
-//! engine planner (`super::lower`) then sees an ordinary `matches { … }` value
-//! list and needs no terminology awareness.
+//! `I_TERMINOLOGY_SERVICE` seam, the in-process `openehr-term` bundle by default
+//! and a remote FHIR TS when configured) and rewrites the AST value list in
+//! place to explicit string codes before planning and SQL generation, so the
+//! planner (`super::lower`) sees an ordinary `matches { … }` value list.
 //!
 //! All three master03 §TERMINOLOGY usage forms are realised here:
 //!
-//! * `expand` as (or inside) a `matches` operand — merged into the value list;
-//! * the **Boolean value expression** (`TERMINOLOGY('validate', …) = true`) —
-//!   evaluated once (the arguments are constant strings) and the comparison
-//!   replaced with its constant truth value;
-//! * the **terminology-URI operand** (`matches { terminology://… }`,
-//!   master03 §matches/URI) — expanded through the same seam into an explicit
-//!   value list (a URI operand identifies a set; matching = membership).
+//! * `expand` as, or inside, a `matches` operand, merged into the value list;
+//! * the Boolean value expression (`TERMINOLOGY('validate', …) = true`),
+//!   evaluated once over its constant string arguments and replaced with its
+//!   truth value;
+//! * the terminology-URI operand (`matches { terminology://… }`, master03
+//!   §matches/URI), expanded through the same seam into an explicit value list.
 //!
 //! Operations with no defined comparison semantics in AQL (`lookup`, `map`)
 //! remain typed rejects at the seam implementation.
