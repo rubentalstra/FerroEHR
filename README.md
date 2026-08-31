@@ -212,7 +212,16 @@ on the documentation site.
 The fastest path is the [live sandbox](https://sandbox.ferroehr.eu): it opens
 the admin console over a running FerroEHR, with the same server's Swagger UI at
 [/ferroehr/rest/swagger-ui](https://sandbox.ferroehr.eu/ferroehr/rest/swagger-ui)
-(credentials `ferroehr` / `ferroehr`, demo data, wiped nightly). One step up,
+(credentials `ferroehr` / `ferroehr`, demo data, wiped nightly). So everyone
+knows what it runs on and what it costs:
+
+| | |
+|---|---|
+| Server | one Hetzner Cloud CPX22 — 2 vCPU, 4 GB RAM, 80 GB SSD — at €23.58/month |
+| Location | Nuremberg, Germany (`eu-central`), dual-stack, behind a Caddy proxy terminating TLS |
+| Database | Neon serverless PostgreSQL 18, Frankfurt, on its direct (non-pooled) endpoint |
+
+The whole posture is committed at [`deploy/hosted/`](deploy/hosted/). One step up,
 [open a GitHub Codespace](https://codespaces.new/rubentalstra/FerroEHR)
 and the published stack (server, PostgreSQL 18, admin console) boots in your
 browser. Details in [Try it in Codespaces](https://ferroehr.eu/docs/latest/installation/codespaces.html).
