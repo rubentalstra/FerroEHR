@@ -590,12 +590,10 @@ impl FerroEhrService {
     /// UUID → `400`.
     async fn opt_delete(&self, an_opt_id: &str) -> Result<(), ServiceError> {
         let id = parse_opt_uuid(an_opt_id)?;
-        // Resolve, count references, and delete in ONE transaction so the
-        // friendly 409 is consistent with the delete (mirroring the admin
-        // wire delete, `delete_template_by_id`); the `vo_version.template_id`
-        // → `template_ref` foreign key (`0001_baseline.sql`, NO ACTION)
-        // remains the underlying integrity guard even under a concurrent
-        // commit. Absent row → 404.
+        // Resolve, count references and delete in ONE transaction so the 409 is
+        // consistent with the delete; the `vo_version.template_id` →
+        // `template_ref` foreign key stays the integrity guard under a
+        // concurrent commit.
         let mut tx = self.pool.begin().await?;
         let template_id: Option<String> =
             sqlx::query_scalar("SELECT template_id FROM template_store WHERE id = $1")
@@ -608,13 +606,10 @@ impl FerroEhrService {
                 format!("OPT {an_opt_id}"),
             ));
         };
-        // Physical deletes never orphan clinical data (no openEHR spec governs
-        // the in-use refusal — our own integrity design; the SM operation
-        // defines only `Pre_has_opt`/`invalid_template`).
         // Counted over BOTH storage tiers: the cold archival mirror carries no
         // `template_ref` foreign key, so an archived composition's reference is
         // invisible to the constraint and deleting under it would make that
-        // object unrestorable.
+        // object unrestorable (no openEHR spec governs the in-use refusal).
         let refs: i64 =
             sqlx::query_scalar("SELECT count(*) FROM vo_version_all WHERE template_id = $1")
                 .bind(&template_id)
@@ -643,12 +638,9 @@ impl FerroEhrService {
         .execute(&mut *tx)
         .await?;
         tx.commit().await?;
-        // Delete is the only mutation that ends a stored template's lifetime
-        // (uploads are create-only), so this is the single cache-invalidation
-        // point. Key on the identity-canonical form so a case variant of the id
-        // is evicted too (BASE master05 §Composite Identifiers and Case). No
-        // openEHR spec governs the cache; cross-instance eviction is out of
-        // scope for this single-node optimisation — our own design.
+        // Uploads are create-only, so delete is the single cache-invalidation
+        // point. The key is the identity-canonical form, so a case variant is
+        // evicted too (BASE master05 §Composite Identifiers and Case).
         self.web_templates
             .invalidate(&crate::templates::identity::canonical_key(&template_id))
             .await;

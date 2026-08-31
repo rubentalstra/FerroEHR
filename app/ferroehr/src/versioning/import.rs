@@ -538,13 +538,9 @@ async fn import_one_version(
             lifecycle_state: &version.lifecycle_state,
             data: &served,
             // The received original's own attestations are attributes of
-            // `item`, so they ride inside the wrapper's signed form: master06
-            // §Digital Signature says of an IMPORTED_VERSION that "all
-            // attributes of the object are serialised and then used to generate
-            // a signature". They are the version's at-committal attestations for
-            // this repository — the local act of importing supplies none of its
-            // own (§Copying: "the `ORIGINAL_VERSION` instance is never
-            // modified").
+            // `item`, so they ride inside the wrapper's signed form (master06
+            // §Digital Signature). They are this repository's at-committal
+            // attestations: the local act of importing supplies none of its own.
             attestations: &version.attestations,
             signature: version.signature.as_deref(),
         },
@@ -651,14 +647,11 @@ async fn commit_import_scoped(
     containers: Vec<ImportContainer>,
     skip_existing: bool,
 ) -> Result<Uuid, ServiceError> {
-    // One instant anchors the whole import's temporal chain — the DATABASE
-    // transaction timestamp (returned by the audit insert), never the app clock:
-    // under app↔DB skew an app-clock base could close an existing open lineage
-    // at an instant before that row's lower bound. This ONE audit row is the
+    // The DATABASE transaction timestamp anchors the whole import's temporal
+    // chain, never the app clock: under skew an app-clock base could close an
+    // open lineage before that row's lower bound. This ONE audit row is the
     // local act of committal for the CONTRIBUTION and every IMPORTED_VERSION it
-    // carries: master06 §Committal and Audits requires the CONTRIBUTION audit's
-    // `system_id`, `committer` and `time_committed` to be copied into each
-    // VERSION's `commit_audit`, and an import's `change_type` is `249|creation|`.
+    // carries (master06 §Committal and Audits).
     let (contribution_audit_id, import_time) =
         crate::storage::version_repo::commit::insert_audit(tx, &import_audit.row()).await?;
     let base = import_time;

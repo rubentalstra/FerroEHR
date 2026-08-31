@@ -3,44 +3,20 @@
 
 //! OPT-1.4 → ADL2 conversion front end.
 //!
-//! The in-CDR 1.4 → 2 converter (`openehr_adl::adl14::convert::convert`) takes an
-//! assembled *source archetype* (`openehr_am::v2_4`), so only stored 1.4 source
-//! archetypes convert directly. A stored 1.4 **operational template** is a
-//! *specialisation-flattened* artefact whose `definition` is a single
-//! `C_ARCHETYPE_ROOT` tree with the component archetypes embedded inline as
-//! nested `C_ARCHETYPE_ROOT` nodes — each embedded root carries its own
-//! independent at-code space. Feeding that flattened tree to the converter as
-//! one archetype is impossible: the component code spaces collide (every
-//! embedded archetype re-uses `at0000`, `at0001`, …).
+//! A stored 1.4 operational template is a specialisation-flattened artefact
+//! whose `definition` embeds each component archetype as a nested
+//! `C_ARCHETYPE_ROOT` with its own independent at-code space, so it cannot be
+//! fed to `openehr_adl::adl14::convert::convert` (which takes one source
+//! archetype) as a whole: the component code spaces collide. This front end
+//! decomposes the OPT into one 1.4-shaped `openehr_am::v2_4` source archetype
+//! per embedded root, replacing each child by an `ARCHETYPE_SLOT` whose
+//! `include` assertion names it and recording the parent → child fill edge in
+//! [`OptConversion::structure`]. Anything a decomposed root cannot express is
+//! reported in `RESOURCE_DESCRIPTION.conversion_details`.
 //!
-//! This front end therefore **decomposes** the OPT into one 1.4-shaped `v2_4`
-//! source archetype per embedded `C_ARCHETYPE_ROOT` (the top root plus each
-//! nested one), each with its own scoped at-code space, and converts each
-//! through the existing converter core. At every embedded-root boundary the
-//! child is replaced in the parent by an `ARCHETYPE_SLOT` (a fresh
-//! parent-space at-code the converter renumbers) whose `include` assertion
-//! names the archetype that filled it, and the parent → child fill edge is
-//! additionally recorded in the returned [`OptConversion::structure`] so the
-//! composition structure the flattening erased is preserved. Anything a
-//! decomposed root cannot express (out-of-scope bindings, tuple assumed
-//! values, `DV_STATE` machines, unconvertible slot assertions) is reported in
-//! the converted archetype's `RESOURCE_DESCRIPTION.conversion_details`.
-//!
-//! NOTE: no openEHR spec governs 1.4 → 2 conversion — the entire `adl14` design,
-//! including this OPT front end (decomposition strategy, slot substitution, code
-//! allocation), is **our own design/extension** (the vendored ITS-REST OAS
-//! declares no conversion operation; `openehr_adl::adl14` carries the same
-//! flag). The `opt14` object model is `openehr_its::opt14` (the AOM 1.4 / OPT 1.4
-//! model); the target is `openehr_am::v2_4::aom2` in the 1.4-shaped form
-//! `openehr_adl::assemble::parse_artefact` produces from ADL 1.4 text, so
-//! the converter core is fed exactly the shape it was built for.
-//!
-//! Home: this lives in the `ferroehr` service layer (not `openehr-adl`) because
-//! the `opt14` DTOs live in `openehr-its`, and `openehr-adl`'s crate contract is
-//! "no REST" — `openehr-its` carries the ITS-REST contract, so an
-//! `openehr-adl → openehr-its` dependency would invert that boundary. The
-//! service layer already depends on both `openehr_its::opt14` and
-//! `openehr_adl::adl14`, so it is the existing meeting point.
+//! NOTE: no openEHR spec governs 1.4 → 2 conversion — the decomposition
+//! strategy, slot substitution and code allocation here are our own
+//! design/extension, as is `openehr_adl::adl14` itself.
 
 use std::collections::BTreeMap;
 
@@ -149,13 +125,6 @@ pub(crate) fn convert_opt_to_adl2(
     Ok(OptConversion { roots, structure })
 }
 
-/// The conversion core: decompose the OPT and convert each embedded root,
-/// returning the converted `v2_4` archetypes (id + object) and the recovered
-/// fill structure. [`convert_opt_to_adl2`] prints these to ADL2 text; tests
-/// validate the objects directly (the converter's `validate_integrity` oracle).
-///
-/// # Errors
-/// As [`convert_opt_to_adl2`].
 /// One decomposed source per embedded OPT root, keyed by its archetype id.
 pub(crate) type ConvertedRoots = Vec<(String, Archetype)>;
 
@@ -185,6 +154,11 @@ fn minimal_description(conversion_details: BTreeMap<String, String>) -> Resource
     }
 }
 
+/// Decomposes the OPT and converts each embedded root, returning the converted
+/// `v2_4` archetypes and the recovered fill structure.
+///
+/// # Errors
+/// As [`convert_opt_to_adl2`].
 pub(crate) fn convert_opt_to_archetypes(
     opt: &opt14::types::OperationalTemplate,
 ) -> Result<(ConvertedRoots, Vec<FillEdge>), OptConvertError> {
@@ -200,11 +174,9 @@ pub(crate) fn convert_opt_to_archetypes(
     dx.process_root(&opt.definition, "", true);
 
     let cfg = ConvertConfig {
-        // A flattened OPT inlines `-`-specialised roots standalone, where
-        // the differential lineage is unresolvable — emit them UNSPECIALISED
-        // with every dotted code collapsed into the flat space (VARCN/VACSD
-        // at depth 0; see the flag's contract). No openEHR spec governs
-        // 1.4→2 conversion — our own design.
+        // NOTE: a flattened OPT inlines `-`-specialised roots standalone with
+        // no resolvable lineage, so they emit unspecialised at depth 0 (no
+        // openEHR spec governs 1.4→2 conversion — our own design).
         collapse_specialised_codes: true,
         ..ConvertConfig::default()
     };
@@ -223,13 +195,6 @@ pub(crate) fn convert_opt_to_archetypes(
             rm_overlay: None,
             uid: None,
             original_language: term_code("ISO_639-1", &dx.language),
-            // A decomposed OPT root carries no RESOURCE_DESCRIPTION of its own,
-            // but VARD (`master03` §Validity Rules) requires one — synthesize
-            // the minimal valid description with the converter's own lifecycle
-            // mapping (`unmanaged`; see `adl14::convert::transform_description`)
-            // and this root's conversion-report entries in
-            // `conversion_details`. No openEHR spec governs 1.4→2 conversion —
-            // our own design.
             description: Some(Box::new(minimal_description(unit.notes))),
             is_controlled: None,
             annotations: None,
@@ -308,12 +273,9 @@ impl Decomposer<'_> {
     /// for the archetype's flattened terminology.
     fn process_root(&mut self, root: &opt14::types::CArchetypeRoot, path: &str, is_top: bool) {
         let archetype_id = root.archetype_id.value.clone();
-        // Slot at-codes are allocated strictly above every at-code node id used
-        // by THIS root's own retained subtree (child roots are excluded — their
-        // codes belong to the child's space), so a substituted slot never
-        // collides with a real node in the parent's code space. Minted ac codes
-        // likewise allocate above the flattened ontology's constraint
-        // definitions.
+        // Slot at-codes and minted ac codes allocate strictly above this root's
+        // own retained subtree and its flattened ontology, so a substituted slot
+        // never collides with a real node in the parent's code space.
         let ontology = self.ontology_for(&archetype_id, is_top);
         let defined_acs: std::collections::BTreeSet<String> = ontology
             .iter()
@@ -438,14 +400,10 @@ impl Decomposer<'_> {
         cx: &mut RootCx,
     ) -> CObject {
         match obj {
-            // An embedded archetype root: decompose it as its own source and
-            // leave a slot (fresh parent-space code) in this parent whose
-            // `include` assertion names the archetype that filled it — the
-            // canonical `archetype_id/value matches {/…/}` form
-            // (`org.openehr.am.aom2.archetype_slot.adoc`: "an expression of
-            // the form EXPR_ARCHETYPE_REF matches EXPR_ARCHETYPE_ID_CONSTRAINT").
-            // The fill edge is additionally recorded in the conversion
-            // structure.
+            // An embedded root becomes its own source, leaving a slot in this
+            // parent whose `include` names the archetype that filled it — the
+            // `EXPR_ARCHETYPE_REF matches EXPR_ARCHETYPE_ID_CONSTRAINT` form of
+            // `org.openehr.am.aom2.archetype_slot.adoc`.
             opt14::types::CObject::CArchetypeRoot(child) => {
                 let slot_node_id = format!("at{}", cx.slot_num);
                 cx.slot_num += 1;
@@ -509,13 +467,6 @@ impl Decomposer<'_> {
                     target_path: r.target_path.clone(),
                 })
             }
-            // A retained (unfilled) 1.4 slot: its include/exclude ASSERTION
-            // trees (AOM 1.4 `EXPR_BINARY_OPERATOR`/`EXPR_LEAF`,
-            // `AOM1.4/master05-assertion_package.adoc`) map onto the AOM2
-            // `beom` assertion form via the BEL parser — the same
-            // `archetype_id/value matches {/…/}` shape both models share. An
-            // assertion that cannot be rendered/parsed falls back to an open
-            // slot, reported in `conversion_details`.
             opt14::types::CObject::ArchetypeSlot(s) => {
                 let includes = map_slot_assertions(&s.includes, &s.node_id, "include", cx);
                 let excludes = map_slot_assertions(&s.excludes, &s.node_id, "exclude", cx);
@@ -533,8 +484,6 @@ impl Decomposer<'_> {
                     is_closed: false,
                 })
             }
-            // A coded-value constraint → the 1.4-shaped `C_TERMINOLOGY_CODE` the
-            // converter rewrites (`terminology::code[,code…][;assumed]`).
             opt14::types::CObject::CCodePhrase(c) => terminology_code(
                 &c.rm_type_name,
                 &c.node_id,
@@ -545,42 +494,10 @@ impl Decomposer<'_> {
                     c.assumed_value.as_ref().map(|a| a.code_string.as_str()),
                 ),
             ),
-            // A `C_CODE_REFERENCE` names an external reference set by URI. With
-            // no inline code list that is exactly the AOM2 ac-code term-binding
-            // pattern, whose binding URI "will designate a ref-set or value set"
-            // (`AOM2/master07-terminology_package.adoc` §Overview), so a minted
-            // ac-code + definition + binding is emitted. When an inline code
-            // list is ALSO present the list constraint wins and the URI is
-            // carried in `conversion_details` (no openEHR spec governs 1.4→2
-            // conversion — our own design).
             opt14::types::CObject::CCodeReference(c) => map_code_reference(c, cx),
-            // A `CONSTRAINT_REF` names an ac-code whose definition lives in the
-            // flattened ontology's `constraint_definitions` (AOM 1.4
-            // `constraint_ref.adoc`); ADL2 folds those into
-            // `term_definitions`/`term_bindings` (`master07.13` §Terminology
-            // section), so the ac-code constraint resolves (VACDF/VTCBK). An
-            // ac-code the ontology does NOT define would dangle — it stays an
-            // unconstrained node, reported in `conversion_details`.
             opt14::types::CObject::ConstraintRef(r) => map_constraint_ref(r, cx),
-            // DV_ORDINAL: the 1.4 domain constrainer becomes the AOM2
-            // `[value, symbol]` attribute tuple (`master04.4-cadl_second_order.adoc`
-            // §Tuple Constraints — "the tuple constraint type replaces all
-            // domain-specific constraint types defined in ADL/AOM 1.4").
             opt14::types::CObject::CDvOrdinal(c) => ordinal_tuple(c, cx),
-            // DV_QUANTITY: property → a `property` terminology-code attribute;
-            // the per-unit magnitude (and, where present, precision) lists →
-            // the `[units, magnitude(, precision)]` attribute tuple (the
-            // `master04.4` §Tuple Constraints units/magnitude matrix; the
-            // vendored `C_QUANTITY_ITEM` carries no precision — including it
-            // as a third tuple member uses the generic tuple mechanism, no
-            // vendored spec section shows it: our own design).
             opt14::types::CObject::CDvQuantity(c) => quantity_tuple(c, cx),
-            // DV_STATE: the 1.4 constrainer carries a state machine; the
-            // vendored AM defines no ADL2/AOM2 constraint form for it (the
-            // tuple mechanism covers co-varying attribute values, not state
-            // machines) — a loose domain-typed complex object is the honest
-            // valid constraint. No vendored openEHR spec governs DV_STATE
-            // conversion — our own design; recorded in `conversion_details`.
             opt14::types::CObject::CDvState(c) => dv_state_loose(c, cx),
             opt14::types::CObject::CPrimitiveObject(c) => map_primitive_object(c, cx),
         }
@@ -625,7 +542,6 @@ impl Decomposer<'_> {
             merge_ontology(ont, &mut term_definitions, &mut term_bindings);
         }
 
-        // Entries minted during the definition walk (reference-set ac codes).
         {
             let inline = term_definitions.entry(self.language.clone()).or_default();
             for t in &cx.extra_terms {
@@ -928,13 +844,6 @@ fn map_primitive_object(c: &opt14::types::CPrimitiveObject, cx: &mut RootCx) -> 
                 constraint,
             })
         }
-        // Temporal constraints: the range converts to `Interval<Iso8601_*>`
-        // and the assumed value is carried. C_DURATION carries pattern AND
-        // range together (the combined `"PWD/|P0W..P50W|"` form —
-        // `org.openehr.am.aom2.c_duration.adoc`); for date/time/date-time the
-        // ADL2 surface defines pattern XOR range (`master04.5` §Mixed Pattern
-        // and Interval is duration-only), so a 1.4 node carrying both keeps
-        // the range and reports the dropped pattern.
         opt14::types::CPrimitive::CDate(p) => CObject::CDate(CDate {
             parent: None,
             soc_parent: None,
@@ -1209,10 +1118,9 @@ fn map_code_reference(c: &opt14::types::CCodeReference, cx: &mut RootCx) -> CObj
         description: format!("External reference set {}", c.referenceSetUri),
         other_items: None,
     });
-    // The binding's terminology key: the node's terminology id when declared,
-    // else the generic "external" bucket (the 1.4 referenceSetUri carries no
-    // terminology name — no openEHR spec governs the key choice, our own
-    // design).
+    // NOTE: the 1.4 `referenceSetUri` carries no terminology name, so an
+    // undeclared one keys under a generic bucket (no openEHR spec governs the
+    // key choice — our own design).
     let term_key = c
         .terminology_id
         .as_ref()
@@ -1650,13 +1558,10 @@ fn quantity_tuple(c: &opt14::types::CDvQuantity, cx: &mut RootCx) -> CObject {
             is_multiple: false,
         });
     }
-    // Tuple members co-vary: a tuple is emitted only when EVERY item constrains
-    // the magnitude (the reference corpus renders a units-only constraint as a
-    // plain `units` attribute). A mixed set widens to the plain units list — the
-    // safe direction, since a widened constraint never rejects valid data — with
-    // the dropped per-unit ranges reported. Precision joins the tuple only when
-    // every item carries one. No openEHR spec governs 1.4→2 conversion — our own
-    // design.
+    // Tuple arity must be uniform, so a tuple is emitted only when EVERY item
+    // constrains the magnitude; a mixed set widens to the plain units list,
+    // which never rejects valid data (no openEHR spec governs 1.4→2 conversion
+    // — our own design).
     let all_magnitude = !c.list.is_empty() && c.list.iter().all(|i| i.magnitude.is_some());
     let all_precision = !c.list.is_empty() && c.list.iter().all(|i| i.precision.is_some());
     let some_dropped = c

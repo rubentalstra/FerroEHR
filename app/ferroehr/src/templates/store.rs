@@ -154,13 +154,10 @@ impl FerroEhrService {
             .await?;
         tx.commit().await?;
 
-        // No `WebTemplate`-cache invalidation is needed on the create path: this
-        // insert is create-only (`ON CONFLICT DO NOTHING` never overwrites), and
-        // `web_template_for` only caches a *successful* build, so no stale or
-        // negative entry can pre-exist for a freshly stored template_id. The
-        // cache is invalidated only where a template's lifetime ends — the delete
-        // path (`service/definition/adl14.rs::opt_delete`). No openEHR spec
-        // governs the cache; this is our own design.
+        // The create path needs no `WebTemplate`-cache invalidation: the insert
+        // never overwrites and `web_template_for` caches only successful builds,
+        // so a freshly stored template_id can have no pre-existing entry. The
+        // cache is invalidated where a template's lifetime ends, in the delete.
         Self::template_json(&row)
     }
 

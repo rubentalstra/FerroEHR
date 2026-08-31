@@ -89,10 +89,8 @@ pub async fn attestation_target(
     kind: &str,
 ) -> Result<Option<AttestTargetRow>, StorageError> {
     // Attesting an archived version appends a row that references it, so the
-    // statement's leading CTEs bring the object back to the primary tier —
-    // the same merged thaw the commit path's placement read carries
-    // (`crate::storage::version_repo::placement::next_placement`); the lookup
-    // reads `vo_version` UNION ALL the thaw's own `RETURNING` rows because a
+    // leading CTEs thaw the object back to the primary tier. The lookup reads
+    // `vo_version` UNION ALL the thaw's own `RETURNING` rows, because a
     // same-statement `INSERT` is invisible to the sibling scans
     // (<https://www.postgresql.org/docs/18/queries-with.html>).
     let (t, b, v) = tree;

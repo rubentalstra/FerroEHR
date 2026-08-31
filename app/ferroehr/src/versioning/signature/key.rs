@@ -146,11 +146,9 @@ impl PgpKey {
         let (secret, _headers) = SignedSecretKey::from_string(armored).map_err(KeyError::Parse)?;
         let public = secret.to_public_key();
         // The secret is exposed HERE and nowhere earlier: `pgp`'s `Password` is
-        // the one consumer that must have the plaintext, so the value stays
-        // inside its `secrecy`-backed wrapper — which zeroizes on drop — until
-        // this line. Taking it as a `&str` at the boundary would leave an
-        // ordinary copy in freed memory afterwards, which is the guarantee the
-        // crate is pinned to provide.
+        // the one consumer that needs the plaintext, so the value stays inside
+        // its `secrecy`-backed wrapper — which zeroizes on drop — until this
+        // line.
         let password = match passphrase {
             Some(secret) => Password::from(secret.expose()),
             None => Password::empty(),
@@ -209,8 +207,7 @@ impl PgpKey {
     /// # Errors
     /// [`PgpSignError`] if signing or armoring fails.
     pub fn sign(&self, data: &[u8]) -> Result<String, PgpSignError> {
-        // A certificate with no signing subkey signs with the primary key, as
-        // before — an upgrade changes nothing for a single-key deployment.
+        // A certificate with no signing subkey signs with the primary key.
         let sig = match self
             .signing_subkey
             .and_then(|index| self.secret.secret_subkeys.get(index))

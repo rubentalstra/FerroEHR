@@ -61,7 +61,7 @@ fn validate_party_ref(reference: &Value, context: &str) -> Result<(), ServiceErr
     let violations = typed.invariants();
     if !violations.is_empty() {
         // The class's own `InvariantViolation`s travel on as data; only the
-        // first is rendered, exactly as before.
+        // first is rendered.
         return Err(ServiceError::content_invalid(
             Violation::new("fails its BASE class invariants")
                 .with_path(context)
@@ -141,12 +141,10 @@ pub(super) fn party_invariants(
     incomplete: bool,
 ) -> Result<(), ServiceError> {
     // PARTY is unconditionally an archetype root (`demographic.party.adoc`
-    // §Invariants `Is_archetype_root: is_archetype_root` — no antecedent), so
-    // the same root-only rule the EHR_STATUS/EHR_ACCESS commits enforce applies
-    // here: `Archetyped_valid`'s "a root MUST carry ARCHETYPED" direction, the
-    // one a per-node pass cannot express. The root-identity rule
-    // (`archetype_node_id` = the stringified `archetype_details.archetype_id`)
-    // and `Links_valid` are the whole-instance pass's, run below.
+    // §Invariants `Is_archetype_root`), so `Archetyped_valid`'s "a root MUST
+    // carry ARCHETYPED" direction applies here — the one a per-node pass cannot
+    // express. Root identity and `Links_valid` belong to the whole-instance
+    // pass run below.
     if let Some(obj) = data.as_object() {
         crate::service::ehr::validation::validate_root_locatable(obj, rm_type)?;
     }
@@ -156,13 +154,10 @@ pub(super) fn party_invariants(
     // `553|incomplete|` lane skips typed construction (master06 §Incomplete).
 
     // Relationships_validity, second arm (party.adoc): every inline
-    // relationship's `source` must reference THIS party. The comparison is
-    // against the party's CONTAINER id, not the version id: RM demographic
-    // `master02-demographic_package.adoc` §Party Relationships requires
-    // "`OBJECT_REFs` containing `HIER_OBJECT_IDs` to denote the Version
-    // container of a Party", while a served party's `uid` is the three-part
-    // `OBJECT_VERSION_ID`, so the body's uid is reduced to its `object_id`
-    // (BASE `master05-identification_package.adoc` §Syntaxes).
+    // relationship's `source` must reference THIS party's CONTAINER id — RM
+    // demographic master02 §Party Relationships requires `HIER_OBJECT_ID`s
+    // there, while a served party's `uid` is the three-part
+    // `OBJECT_VERSION_ID`, so it is reduced to its `object_id`.
     if let (Some(uid), Some(relationships)) = (
         data.pointer("/uid/value").and_then(Value::as_str),
         data.get("relationships").and_then(Value::as_array),
@@ -201,13 +196,9 @@ pub(super) fn party_invariants(
         validate_party_ref(performer, "ROLE.performer")?;
     }
 
-    // The whole-instance RM class-invariant + terminology pass, rooted at the
-    // concrete party type. The checks above are root-scoped; the RM class
-    // invariants bind every node of the body (`ARCHETYPED.Rm_version_valid`,
-    // `LOCATABLE.Links_valid`, the `LINK` 1..1 attributes,
-    // `FEEDER_AUDIT_DETAILS.System_id_valid`, …), so an identity, contact or
-    // nested CLUSTER below the root is judged by the same rules a COMPOSITION's
-    // nodes are.
+    // The checks above are root-scoped, but the RM class invariants bind every
+    // node, so this whole-instance pass judges an identity, contact or nested
+    // CLUSTER below the root by the rules a COMPOSITION's nodes get.
     crate::service::ehr::validation::validate_rm_invariants_for_commit(data, rm_type, incomplete)
 }
 
@@ -223,13 +214,10 @@ pub(super) fn party_invariants(
 pub(crate) fn relationship_check(data: &Value, incomplete: bool) -> Result<(), ServiceError> {
     use openehr_base::prelude::ObjectId;
     use openehr_rm::prelude::PartyRelationship;
-    // The decode is the validating ACT, and its result is the carrier the two
-    // ref rules below are judged on — `source`/`target` are mandatory
-    // `PARTY_REF`s on the RM type, so once this succeeds their PRESENCE and
-    // SHAPE are facts of the type, not things to re-check (the Rust Book ch9.3
-    // custom-validation-type pattern). A body that does NOT construct is handed
-    // to the relaxed whole-instance pass, which enforces everything except
-    // presence.
+    // The decode is the validating ACT: `source`/`target` are mandatory
+    // `PARTY_REF`s on the RM type, so once it succeeds their presence and shape
+    // are facts of the type. A body that does NOT construct is handed to the
+    // relaxed whole-instance pass, which enforces everything except presence.
     // NOTE: on a `553|incomplete|` commit the decode is not the gate —
     // mandatory `source`/`target` may be absent (RM common master06 §Incomplete
     // Content), which is exactly what the decode refuses.

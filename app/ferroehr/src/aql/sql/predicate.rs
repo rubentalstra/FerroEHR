@@ -106,13 +106,10 @@ impl Builder<'_> {
         coercion: Coercion,
         positive: bool,
     ) -> Result<Expr, AqlError> {
-        // Typed EHR-id equality: `e/ehr_id/value = <uuid>` as a uuid comparison
-        // on `ehr.id` instead of a text-cast on both sides (which blinded the
-        // btree on `ehr.id` and left the join unbounded). uuid equality is
-        // value-based — case-insensitive — which is also the
-        // identifier-equality semantics (BASE base_types master05 §Composite
-        // Identifiers and Case); a literal that is not a uuid can match no EHR
-        // (constant).
+        // `e/ehr_id/value = <uuid>` compares as uuid on `ehr.id`, keeping the
+        // btree usable where a two-sided text cast would not. uuid equality is
+        // case-insensitive, which is also the identifier-equality semantics
+        // (BASE base_types master05 §Composite Identifiers and Case).
         if let Some(expr) = self.ehr_id_typed_compare(lhs, op, rhs)? {
             return Ok(expr);
         }
@@ -448,10 +445,7 @@ impl Builder<'_> {
                 // A function operand joins the comparison in the requested
                 // coercion space like any literal: the date/time functions
                 // render ISO-8601 text (QUERY master03 §Date and time
-                // functions), so a temporal comparison casts them to
-                // timestamptz exactly as it casts a temporal literal —
-                // otherwise a promoted timestamptz column has no operator
-                // against text.
+                // functions), which a temporal comparison must cast.
                 Ok(match coercion {
                     Coercion::Temporal => cast(expr, "timestamptz"),
                     _ => expr,

@@ -160,11 +160,9 @@ pub(super) fn result_set_json(
             // and it is left absent rather than fabricated.
             _generator: None,
             _executed_aql: Some(executed.to_owned()),
-            // The OAS declares `ResultSetMetadata` `additionalProperties: true`
-            // (`crates/openehr-its/vendor/rest-oas/query-*.openapi.yaml`
-            // §`components.schemas.ResultSetMetadata`); this server publishes
-            // no metadata extension, so the map stays empty (and serializes to
-            // nothing).
+            // The OAS declares `ResultSetMetadata` `additionalProperties: true`,
+            // but this server publishes no metadata extension, so the map stays
+            // empty and serializes to nothing.
             additional_properties: std::collections::BTreeMap::new(),
         }),
         name: name.map(ToOwned::to_owned),

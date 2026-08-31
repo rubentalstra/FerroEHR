@@ -138,9 +138,8 @@ pub(super) fn check_attribute(
         return Ok(());
     }
     match model::attribute(parent_rm, attr_name) {
-        // (Prior art, named only as where the shape is OBSERVED and never as
-        // its authority: archie/openEHR-SDK-generated OPTs model every
-        // constrainable node as Locatable and emit exactly these constraints.)
+        // The shape is OBSERVED in archie/openEHR-SDK-generated OPTs, which
+        // model every constrainable node as Locatable — prior art, not authority.
         // NOTE: a LOCATABLE meta attribute constrained on a PATHABLE-only class
         // (e.g. ISM_TRANSITION) binds to a field that node's canonical
         // serialization carries, so it has a referent and is not a VCARM breach.

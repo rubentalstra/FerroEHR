@@ -245,12 +245,10 @@ impl AuditInput {
                 .map_or_else(|| fallback_system_id.to_owned(), str::to_owned),
             change_type,
             // The wire types `description` as `DV_TEXT`
-            // (`schemas/common/UpdateAudit.yaml`), whose `DV_CODED_TEXT`
-            // subtype substitutes for it — so a client-supplied description
-            // is kept WHOLE: reducing it to its `value` would drop the
-            // `defining_code` of a coded description permanently (RM common
-            // `UML/classes/org.openehr.rm.common.audit_details.adoc`
-            // §Attributes types the attribute `DV_TEXT`).
+            // (`schemas/common/UpdateAudit.yaml`), whose `DV_CODED_TEXT` subtype
+            // substitutes for it, so it is kept WHOLE: reducing it to its
+            // `value` would permanently drop a coded description's
+            // `defining_code`.
             description: Some(
                 base.description
                     .filter(|d| !crate::service::version_update::text_value(d).is_empty())
@@ -259,12 +257,10 @@ impl AuditInput {
             ),
             committer: base.committer.clone(),
             // `UPDATE_VERSION.commit_audit` is polymorphic on the released wire
-            // (`UpdateAudit.yaml` carries a `discriminator.mapping` to
-            // `UPDATE_ATTESTATION`), which is the RM's own pair: "the committing
+            // (`UpdateAudit.yaml`), which is the RM's own pair: "the committing
             // party … `AUDIT_DETAILS` … or its subtype `ATTESTATION`" (RM common
-            // master06 §Committal and Audits). The shared
-            // [`crate::versioning::attestation::AttestationInput`] decoder is
-            // the one place the subtype's invariants are evaluated.
+            // master06 §Committal and Audits). The shared decoder is the one
+            // place the subtype's invariants are evaluated.
             attestation: match update {
                 UpdateAudit::UpdateAudit(_) => None,
                 UpdateAudit::UpdateAttestation(att) => Some(Box::new(

@@ -185,11 +185,8 @@ impl FerroEhrService {
     ///   not parse (defensive; the uid is server-generated).
     pub async fn create_party(&self, a_version: UpdateVersion<Party>) -> Result<VoId, SmError> {
         let kind = party_kind_of(&a_version.data);
-        // The ONE serialization boundary of this commit, taken before any
-        // await (`crate::service::ehr::canonicalize`).
         let a_version = crate::service::ehr::canonicalize(a_version);
         let committal = envelope_committal(&a_version);
-        // Reuse the wire-seam domain logic (validation + versioned create).
         let resp = self
             .commit_new_party(kind, a_version.data, Some(&committal))
             .await?;
@@ -322,8 +319,6 @@ impl FerroEhrService {
         a_version: UpdateVersion<Party>,
     ) -> Result<String, SmError> {
         let kind = party_kind_of(&a_version.data);
-        // The ONE serialization boundary of this commit, taken before any
-        // await (`crate::service::ehr::canonicalize`).
         let a_version = crate::service::ehr::canonicalize(a_version);
         let expected = match &a_version.preceding_version_uid {
             Some(ovid) => Some(components(ovid)?.1),
@@ -383,9 +378,6 @@ impl FerroEhrService {
         body: Party,
         committal: Option<Committal>,
     ) -> Result<ServiceResponse, SmError> {
-        // The ONE serialization boundary of this commit, taken before any
-        // await so the typed RM value does not ride the whole write
-        // transaction.
         let body = openehr_its::json::to_canonical_value(&body);
         // A freshly created party has no stored ITEM_TAGs by construction, so
         // the response seam needs no tag read here; when the request carried
@@ -447,9 +439,6 @@ impl FerroEhrService {
         body: Party,
         committal: Option<Committal>,
     ) -> Result<ServiceResponse, SmError> {
-        // The ONE serialization boundary of this commit, taken before any
-        // await so the typed RM value does not ride the whole write
-        // transaction.
         let body = openehr_its::json::to_canonical_value(&body);
         let vo_id = parse_uid_based_id(&uid_based_id)?.vo_id;
         // Resolve the current version ONCE (lean, kind-checked): the same handle
@@ -532,14 +521,10 @@ impl FerroEhrService {
     ) -> Result<ServiceResponse, SmError> {
         let vo_id = parse_uid_based_id(&versioned_object_uid)?.vo_id;
         let body = self.versioned_party(vo_id).await?;
-        // The container response carries `Last-Modified` from the newest
-        // version's commit instant — ITS-REST overview §"ETag and
-        // Last-Modified": "Both ETag and Last-Modified SHOULD be included in
-        // responses for VERSION, VERSIONED_OBJECT, or other resources that
-        // have versioning", derived "from VERSION.commit_audit.
-        // time_committed.value". The container BODY exposes no commit audit,
-        // so the instant comes from the version spine (the EHR-side
-        // versioned_composition precedent), never scraped from the body.
+        // ITS-REST overview §"ETag and Last-Modified" derives `Last-Modified`
+        // from `VERSION.commit_audit.time_committed.value`, and the container
+        // body exposes no commit audit, so the instant comes from the version
+        // spine rather than the body.
         let newest = crate::storage::version_repo::meta::all_version_meta(&self.pool, vo_id)
             .await
             .map_err(ServiceError::from)?
@@ -768,8 +753,6 @@ impl FerroEhrService {
         &self,
         a_version: UpdateVersion<PartyRelationship>,
     ) -> Result<VoId, SmError> {
-        // The ONE serialization boundary of this commit, taken before any
-        // await (`crate::service::ehr::canonicalize`).
         let a_version = crate::service::ehr::canonicalize(a_version);
         let committal = envelope_committal(&a_version);
         let resp = self
@@ -881,8 +864,6 @@ impl FerroEhrService {
         a_versioned_party_rel_id: VoId,
         a_version: UpdateVersion<PartyRelationship>,
     ) -> Result<String, SmError> {
-        // The ONE serialization boundary of this commit, taken before any
-        // await (`crate::service::ehr::canonicalize`).
         let a_version = crate::service::ehr::canonicalize(a_version);
         let expected = match &a_version.preceding_version_uid {
             Some(ovid) => Some(components(ovid)?.1),
@@ -943,9 +924,6 @@ impl FerroEhrService {
         body: PartyRelationship,
         committal: Option<Committal>,
     ) -> Result<ServiceResponse, SmError> {
-        // The ONE serialization boundary of this commit, taken before any
-        // await so the typed RM value does not ride the whole write
-        // transaction.
         let body = openehr_its::json::to_canonical_value(&body);
         Ok(self.create_relationship(body, committal.as_ref()).await?)
     }
@@ -991,9 +969,6 @@ impl FerroEhrService {
         body: PartyRelationship,
         committal: Option<Committal>,
     ) -> Result<ServiceResponse, SmError> {
-        // The ONE serialization boundary of this commit, taken before any
-        // await so the typed RM value does not ride the whole write
-        // transaction.
         let body = openehr_its::json::to_canonical_value(&body);
         let vo_id = parse_uid_based_id(&uid_based_id)?.vo_id;
         let current = self.relationship_current(vo_id).await?;

@@ -76,13 +76,10 @@ impl FerroEhrService {
         // first status version is complete — full strictness.
         super::validation::validate_ehr_status(&status, false)?;
 
-        // The creation commit's AUDIT_DETAILS: the server default, or — when the
-        // request carried committal headers — the merge of the client's
-        // attributes over it. Built BEFORE the transaction so an illegal client
-        // `change_type` is a plain 400/422 without a storage round trip.
+        // The creation commit's AUDIT_DETAILS, built BEFORE the transaction so
+        // an illegal client `change_type` refuses without a storage round trip.
         // `from_update` constrains the code to `249|creation|`: a create commits
-        // a first version, so any other group code is a change-control mismatch
-        // (RM common master06 §Contributions).
+        // a first version (RM common master06 §Contributions).
         let audit = match committal {
             Some(c) => crate::versioning::audit::AuditInput::from_update(
                 &c.audit,
@@ -95,14 +92,11 @@ impl FerroEhrService {
 
         let mut tx = self.pool.begin().await?;
 
-        // EHR.system_id is recorded at creation, immutable thereafter (arch
-        // master06 §System Identity — a stored value, not the live config), and
-        // `time_created` (§The EHR) comes back from the INSERT. The promoted
-        // subject / is_queryable columns are set in this same INSERT, so the
-        // create path never runs the separate `sync_ehr_subject` UPDATE the
-        // update/contribution paths use. A subject already owned by another EHR
-        // is a distinct 409 (RM ehr master04 §EHR Status; ITS-REST
-        // `409_EHR.yaml`).
+        // EHR.system_id is recorded at creation and immutable thereafter (arch
+        // master06 §System Identity — a stored value, not the live config); the
+        // promoted subject / is_queryable columns ride the same INSERT, so no
+        // separate `sync_ehr_subject` UPDATE runs. A subject already owned by
+        // another EHR is a distinct 409 (RM ehr master04 §EHR Status).
         let (subject_id, subject_namespace, is_queryable, is_modifiable) =
             super::status::ehr_promoted_columns(&status);
         let time_created = match crate::storage::ehr_repo::insert_ehr(
@@ -175,9 +169,6 @@ impl FerroEhrService {
             &self.signing_ctx(),
         )
         .await?;
-        // The promoted subject / is_queryable columns were set in the initial
-        // `insert_ehr` (folded, no separate UPDATE) — one EHR per subject (RM
-        // ehr master04 §EHR Status).
         tx.commit().await?;
 
         // The EHR is created with the settings-less default EHR_ACCESS
@@ -185,14 +176,11 @@ impl FerroEhrService {
         // is a hit, not a DB miss (the access gate runs on every such request).
         self.prewarm_ehr_access_open(ehr_id).await;
 
-        // Build the RM `EHR` wire body straight from the commit results — the
-        // status/access version identities are already in `Committed`,
-        // `time_created` came back from the row INSERT, and a fresh EHR indexes
-        // no folder hierarchy — so the create path never re-reads via
-        // `ehr_summary` (its five header/version/folder reads). The body is
-        // byte-identical to `ehr_summary` for a new EHR (pinned by a test); it
-        // is stashed so `ehr_created_object` serves a
-        // `Prefer: return=representation` response without a re-read.
+        // The RM `EHR` wire body is built from the commit results rather than
+        // re-read through `ehr_summary`: the version identities are in
+        // `Committed`, `time_created` came back from the INSERT, and a fresh EHR
+        // indexes no folder hierarchy. It is stashed so a
+        // `Prefer: return=representation` response needs no re-read.
         let body = self.ehr_object_from_committed(ehr_id, time_created, &committed.versions)?;
         self.created_ehr_repr.insert(ehr_id, body.clone()).await;
         let meta = ResourceMeta::new(ehr_id.to_string(), ehr_id.to_string())
@@ -279,11 +267,10 @@ impl FerroEhrService {
         &self,
         ehr_id: EhrId,
     ) -> Result<ServiceResponse, ServiceError> {
-        // ONE statement for the whole representation (the former four serial
-        // reads — header, EHR_STATUS identity, EHR_ACCESS ref, folder
-        // hierarchies — merged; read batching is spec-silent, our own design).
-        // EHR.system_id is IMMUTABLE after creation (arch master06 §System
-        // Identity) — the stored per-EHR value, never the live config.
+        // ONE statement for the whole representation — header, EHR_STATUS
+        // identity, EHR_ACCESS ref and folder hierarchies. EHR.system_id is
+        // IMMUTABLE after creation (arch master06 §System Identity): the stored
+        // per-EHR value, never the live config.
         let read = crate::storage::ehr_repo::ehr_summary_read(&self.pool, ehr_id)
             .await?
             .ok_or_else(|| {
@@ -688,11 +675,10 @@ impl FerroEhrService {
 // ── ITS-REST create-response adapter (adapter-support extension) ──────────────
 //
 // The SM creates return only the new `ehr_id`, but ITS-REST
-// `Requests_and_responses.md` §"`ETag` and Last-Modified" mandates both headers
-// on "resources that have versioning or unique state identifiers": for an EHR
-// the `ETag` is "`EHR.ehr_id.value`" and `Last-Modified` the creating
-// CONTRIBUTION's commit time, returned in [`ResourceMeta`]. No openEHR spec
-// governs this envelope — our own design.
+// `Requests_and_responses.md` §"`ETag` and Last-Modified" mandates both headers,
+// the `ETag` being `EHR.ehr_id.value` and `Last-Modified` the creating
+// CONTRIBUTION's commit time, so these siblings also return a [`ResourceMeta`]
+// (no openEHR spec governs the envelope — our own design).
 
 impl FerroEhrService {
     /// [`Self::create_ehr`] returning the new `ehr_id` together with the
@@ -737,9 +723,6 @@ impl FerroEhrService {
         committal: Option<&crate::service::version_update::Committal>,
     ) -> Result<ResourceMeta, SmError> {
         // see `create_ehr` — `Pre_no_subject` deliberately not enforced.
-        // The ONE serialization boundary of the bootstrap commit: the caller's
-        // typed EHR_STATUS (or the server default) becomes its canonical
-        // fragment once, here.
         let status = an_ehr_status.map_or_else(initial_ehr_status, |s| {
             openehr_its::json::to_canonical_value(&s)
         });

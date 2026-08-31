@@ -76,7 +76,7 @@ pub enum TelemetryError {
 pub fn init(cfg: &TelemetryConfig, build: &BuildInfo) -> Result<TelemetryGuard, TelemetryError> {
     // 1) Metrics: ONE meter provider. The Prometheus reader always serves the
     //    pull surface; the OTLP periodic reader is added when the push is on,
-    //    so both surfaces carry every instrument (#2181).
+    //    so both surfaces carry every instrument.
     let mut tracer_provider = None;
     let mut tracer = None;
 

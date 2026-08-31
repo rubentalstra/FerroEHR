@@ -542,9 +542,7 @@ mod tests {
     #[test]
     fn concrete_version_glob_filters_without_collapsing() {
         // The OAS's own shape (`1.*`, filter_version.yaml) against the ids'
-        // version AXES: every matching version, no collapse. The pre-fix
-        // whole-id workaround glob (`*v1.*`) belongs to the defect #2567
-        // fixed and must no longer be needed.
+        // version AXES: every matching version, no collapse.
         let out = filter_templates(
             rows(&["T.v1.0", "T.v1.5", "T.v2.0"]),
             &TemplateListFilter {
@@ -558,10 +556,10 @@ mod tests {
 
     #[test]
     fn exact_version_glob_matches_the_axis_alone() {
-        // #2567 regression: `?version=1.0` matched NOTHING while T.v1.0 was
-        // stored, because the glob was compiled anchored and evaluated
-        // against the whole template_id. The subject is the version axis
-        // ("taken from template_id" — filter_version.yaml).
+        // The glob's subject is the version AXIS ("taken from template_id" —
+        // filter_version.yaml), never the whole template_id: matching against
+        // the whole id made `?version=1.0` match nothing while T.v1.0 was
+        // stored.
         let out = filter_templates(
             rows(&["T.v1.0", "T.v1.5"]),
             &TemplateListFilter {
