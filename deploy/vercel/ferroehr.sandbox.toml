@@ -3,11 +3,15 @@
 #
 # The hosted-sandbox posture (#2710, sandbox.ferroehr.eu), baked into the
 # Vercel image by Dockerfile.vercel. It differs from the compose quickstart
-# where a PUBLIC endpoint demands it: the admin API and the management
-# introspection stay OFF (defaults), so the public demo credentials can read
-# and write clinical data and nothing else. The database DSN comes from the
-# environment, never from this file — the Neon integration's injected
-# DATABASE_URL(_UNPOOLED), mapped to db.url by the config aliases (#2716).
+# where a PUBLIC endpoint demands it: the management introspection stays OFF
+# (default). The admin API is ON (owner ruling, #2965): the sandbox resets
+# nightly, so it is disposable by design — the development/testing posture the
+# released admin operations describe — and the conformance statement's
+# AdminApi claims become exercisable against this deployment. The public bulk
+# delete is accepted: it wipes what the nightly reset wipes anyway. The
+# database DSN comes from the environment, never from this file — the Neon
+# integration's injected DATABASE_URL(_UNPOOLED), mapped to db.url by the
+# config aliases (#2716).
 
 [server]
 # Vercel's default container port; the PORT environment convention lands on
@@ -19,6 +23,11 @@ cors_permissive = true
 [auth]
 enabled = true
 
+# The whole admin group behind the demo credential — no partial enablement,
+# no separate admin user (owner ruling, #2965).
+[admin]
+enabled = true
+
 # The demo user: ferroehr / ferroehr (the hash is Argon2id of "ferroehr").
 # Public by design; the sandbox holds demo data only and is wiped on a
 # schedule.
@@ -27,7 +36,7 @@ username = "ferroehr"
 password_hash = "$argon2id$v=19$m=19456,t=2,p=1$ZmVycm9laHJEZXZTYWx0$be5nPwWjfUl1qvSrvkvqvdMOuCgM0VFcN/VN4MFLjT8"
 roles = ["USER"]
 
-# Authentication only, no role gate — one demo user, no admin surface exists
-# to separate (admin + management stay disabled above by default).
+# Authentication only, no role gate — the one demo user deliberately reaches
+# every enabled surface, the admin group included (#2965).
 [authz.rbac]
 enabled = false

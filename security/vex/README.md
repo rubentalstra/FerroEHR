@@ -29,6 +29,7 @@ re-evaluate.
 | File | Subject | Authored |
 |---|---|---|
 | `postgres-gosu.openvex.json` | Go standard-library advisories in `/usr/local/bin/gosu`, the privilege-dropping helper the upstream `postgres` image ships. Not reachable: gosu sets uid/gid and execs, opening no socket and parsing no untrusted input. | by hand |
+| `distroless-libssl.openvex.json` | CVE-2026-14456 in the `libssl3t64` the distroless base ships. Not reachable: nothing in the shipped binaries links libssl (rustls/aws-lc everywhere, no `openssl-sys` in `Cargo.lock`); goes when distroless rebuilds with openssl 3.5.7 (#2747). | by hand |
 | `rust-advisories.openvex.json` | The Rust dependency advisories: the five accepted by the advisory gate, plus the one a lock-file-reading scanner reports for a crate our feature set never compiles. Each statement additionally carries a `ferroehr:reachability` block — our own extension, since OpenVEX defines none — naming the crates the affected package is reached through. | **generated** |
 
 ## The generated document

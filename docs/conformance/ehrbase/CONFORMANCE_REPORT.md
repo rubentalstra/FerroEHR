@@ -80,14 +80,14 @@ Selected gating cases per claimed capability. `inconclusive` counts cases whose 
 | Adl14OptProvisioning | FAIL | 3 | 7 | 8 | 8 |
 | QueryProvisioning | FAIL | 15 | 10 | 1 | 0 |
 | EhrOperations | FAIL | 18 | 2 | 0 | 3 |
-| EhrStatus | FAIL | 14 | 26 | 3 | 6 |
-| CompositionOps | INCONCLUSIVE (errored rows — never green by absorption) | 5 | 0 | 51 | 3 |
-| DirectoryOps | FAIL | 61 | 13 | 1 | 11 |
-| ChangeSets | FAIL | 7 | 13 | 58 | 26 |
+| EhrStatus | FAIL | 14 | 26 | 3 | 9 |
+| CompositionOps | INCONCLUSIVE (errored rows — never green by absorption) | 5 | 0 | 51 | 6 |
+| DirectoryOps | FAIL | 61 | 13 | 1 | 21 |
+| ChangeSets | FAIL | 7 | 13 | 58 | 30 |
 | Versioning | FAIL | 8 | 3 | 50 | 8 |
-| ArchetypeValidation | FAIL | 0 | 67 | 54 | 4 |
-| AqlBasic | FAIL | 5 | 3 | 26 | 1 |
-| AqlAdvanced | INCONCLUSIVE (errored rows — never green by absorption) | 0 | 0 | 3 | 0 |
+| ArchetypeValidation | FAIL | 0 | 67 | 54 | 15 |
+| AqlBasic | FAIL | 5 | 3 | 26 | 17 |
+| AqlAdvanced | INCONCLUSIVE (errored rows — never green by absorption) | 0 | 0 | 3 | 1 |
 | PhysicalDeletion | not evidenced | 0 | 0 | 0 | 2 |
 | DefinitionApi | FAIL | 0 | 1 | 0 | 0 |
 | EhrApi | FAIL | 1 | 1 | 0 | 0 |
@@ -137,7 +137,7 @@ Percentiles re-derive from the embedded HDR V2 histograms; the class verdict is 
 
 ## Honesty
 
-Coverage: 571 of 650 selected cases driven.
+Coverage: 571 of 692 selected cases driven.
 
 Not-executed verdicts (each cited):
 

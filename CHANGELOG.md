@@ -23,9 +23,20 @@ workflow refuses a tag that has no matching section here.
   the form the example is shaped for (**Input** as submitted, **Output** as
   retrieved). The pane opens on Required/Input, as before, and changing either
   control asks the CDR for a fresh example.
+### Security
+
+- The `ferroehr-postgres` image builds from the respun upstream `postgres:18.6`
+  base (the tag was re-pointed upstream with rebuilt base packages and bundled
+  binaries); the digest pin follows it everywhere it appears. The rebuilt
+  candidate scans clean at the published-image gate.
 
 ### Changed
 
+- The hosted sandbox (sandbox.ferroehr.eu) now serves the Admin API: the
+  nightly-reset demo is a development/testing deployment in the released
+  spec's own terms, and the conformance statement's AdminApi claims become
+  exercisable against it. The public demo credential reaches the whole admin
+  group, bulk delete included — it wipes what the nightly reset wipes anyway.
 - The repository's commit history on `main` now starts at a single labelled
   import commit holding the tree FerroEHR was forked from, followed only by
   this project's own commits. The 4864 inherited upstream commits and their

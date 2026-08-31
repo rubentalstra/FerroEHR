@@ -9,20 +9,21 @@
 # superuser. Schema CONTENT is owned by the app's sqlx migrators at boot; this
 # image bakes NO migration state (see README.md).
 #
-# Digest-pinned (resolved 2026-08-18): a mutable tag can be re-pointed, a digest
-# cannot (docs.docker.com/build/building/best-practices — "pinning to a digest
+# Digest-pinned (resolved 2026-08-31, the upstream same-version respin): a
+# mutable tag can be re-pointed, a digest cannot
+# (docs.docker.com/build/building/best-practices — "pinning to a digest
 # guarantees the same image version"). 18.6 is the latest PG 18 patch
 # (docs/VERSIONS.md; 18.5 was never released upstream); bump the tag AND the
 # digest together — the full pin-site checklist is
 # .claude/rules/image-security.md.
-FROM postgres:18.6@sha256:06cad38a5d9f5d24b4d83d86def30795d5e4b757fedbf5281172b576dedcd941
+FROM postgres:18.6@sha256:4ef4dbc939d61acea57712655ddb4b4ab27419c913f94cca0cd57cb3ea3c2280
 
 # Debian security updates, applied at OUR build time (issue #2408). The
 # upstream image rebuilds on its own cadence, so a fix already published in
-# trixie-security can sit unpulled for weeks in the pinned base — postgres:18.6
-# (built 2026-08-13) still ships the util-linux packages whose CVE-2026-53615
-# fix trixie-security carries. Plain `upgrade`, never `dist-upgrade`: packages
-# are only patched, none added or removed.
+# trixie-security can sit unpulled for weeks in the pinned base — the
+# 2026-08-13 build of postgres:18.6 shipped util-linux packages whose
+# CVE-2026-53615 fix trixie-security already carried. Plain `upgrade`, never
+# `dist-upgrade`: packages are only patched, none added or removed.
 RUN set -eux; \
     apt-get update; \
     apt-get -y upgrade; \
@@ -48,4 +49,4 @@ LABEL org.opencontainers.image.title="FerroEHR PostgreSQL" \
       org.opencontainers.image.authors="Ruben Talstra <https://github.com/rubentalstra>" \
       org.opencontainers.image.licenses="MIT AND PostgreSQL" \
       org.opencontainers.image.base.name="postgres:18.6" \
-      org.opencontainers.image.base.digest="sha256:06cad38a5d9f5d24b4d83d86def30795d5e4b757fedbf5281172b576dedcd941"
+      org.opencontainers.image.base.digest="sha256:4ef4dbc939d61acea57712655ddb4b4ab27419c913f94cca0cd57cb3ea3c2280"
