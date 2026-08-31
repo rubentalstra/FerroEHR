@@ -129,9 +129,6 @@ impl FerroEhrService {
         version: UpdateVersion<EhrStatus>,
         if_match: &str,
     ) -> Result<crate::versioning::change::Committed, ServiceError> {
-        // The ONE serialization boundary of this commit, taken before any
-        // await so the typed RM value does not ride the whole write
-        // transaction (`super::canonicalize`).
         let version = super::canonicalize(version);
         let super::CommitParts {
             audit,
@@ -162,7 +159,7 @@ impl FerroEhrService {
         )
         .await?;
         // Keep the promoted subject columns in sync (the subject may have
-        // changed); the is_queryable promotion (Fix B) rides this same UPDATE.
+        // changed); the is_queryable promotion rides this same UPDATE.
         self.sync_ehr_subject(&mut tx, ehr_id, &body).await?;
         tx.commit().await?;
 
@@ -218,11 +215,9 @@ impl FerroEhrService {
             .as_ref()
             .map(|m| m.uid.clone())
             .unwrap_or_default();
-        // The stored fragment decodes ONCE into the typed EHR_STATUS and the
-        // mutation operates on the typed value (#1846 — no Map round trip):
-        // a mutation that cannot produce a legal EHR_STATUS is unrepresentable
-        // (the typed fields) or refused by the closure itself (the
-        // client-supplied `other_details` decode, SM `i_ehr_status.adoc`
+        // The stored fragment decodes ONCE into the typed EHR_STATUS, so a
+        // mutation that cannot produce a legal one is either unrepresentable or
+        // refused by the closure itself (SM `i_ehr_status.adoc`
         // §update_other_details).
         let mut status: EhrStatus = openehr_its::json::from_canonical_value(&current.body)
             .map_err(|e| {
@@ -766,9 +761,8 @@ impl FerroEhrService {
         // Boxed: the typed EHR_STATUS envelope makes the mutate future large
         // enough to matter on the stack (clippy `large_futures`).
         Ok(Box::pin(self.status_mutate(an_ehr_id, move |s| {
-            // The client-supplied details decode through the strict reader —
-            // a non-ITEM_STRUCTURE refuses here, path-named (the same
-            // judgement the retired post-mutation re-decode made).
+            // The client-supplied details decode through the strict reader, so
+            // a non-ITEM_STRUCTURE refuses here, path-named.
             s.other_details = Some(openehr_its::json::from_canonical_value(&a_details).map_err(
                 |e| {
                     ServiceError::content_invalid(
@@ -850,11 +844,10 @@ impl FerroEhrService {
 // ── ITS-REST read/write-response adapter (adapter-support extension) ──────────
 //
 // The SM `I_EHR_STATUS` calls return the bare `EHR_STATUS` (or its new version
-// uid), neither of which carries the commit instant ITS-REST wants:
-// `Requests_and_responses.md` §"`ETag` and Last-Modified" derives it from
-// `VERSION.commit_audit.time_committed.value`. These siblings hand the adapter
-// the same result PLUS its [`ResourceMeta`] — no second read. No openEHR spec
-// governs this envelope — our own design.
+// uid), neither of which carries the commit instant `Requests_and_responses.md`
+// §"`ETag` and Last-Modified" wants, so these siblings return the same result
+// plus its [`ResourceMeta`] with no second read (no openEHR spec governs the
+// envelope — our own design).
 
 impl FerroEhrService {
     /// [`Self::get_ehr_status_at_time`] with the version metadata the wire's

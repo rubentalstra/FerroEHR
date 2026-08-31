@@ -62,13 +62,9 @@ impl FerroEhrService {
         ehr_id: EhrId,
         version: UpdateVersion<Folder>,
     ) -> Result<ServiceResponse, ServiceError> {
-        // The ONE serialization boundary of this commit, taken before any
-        // await so the typed RM value does not ride the whole write
-        // transaction (`super::canonicalize`).
         let version = super::canonicalize(version);
-        // 553|incomplete| relaxes the existence/cardinality lower bounds
-        // (RM common master06 §Incomplete Content), exactly as on the
-        // COMPOSITION direct route.
+        // 553|incomplete| relaxes the existence/cardinality lower bounds (RM
+        // common master06 §Incomplete Content).
         let super::CommitParts {
             audit,
             envelope,
@@ -87,12 +83,11 @@ impl FerroEhrService {
         // content (RM ehr master04 §EHR Active Status).
         self.ensure_content_writable(ehr_id).await?;
         // `POST /directory` manages the single directory slot = EHR.directory
-        // (= folders[1], RM ehr §EHR Class Directory_in_folders); it conflicts
-        // only when a LIVE hierarchy occupies that slot. NOTE: no released
-        // sentence states whether a logically DELETED directory still occupies
-        // the slot — register AMB-79 records both leans; our choice is that a
-        // deleted directory does not block a re-create, and the conflict
-        // status 409 is likewise our choice on the unbound status-table row.
+        // (= folders[1], RM ehr §EHR Class Directory_in_folders), conflicting
+        // only when a LIVE hierarchy occupies it.
+        // NOTE: no released sentence says whether a logically DELETED directory
+        // still occupies the slot — our choice is that it does not block a
+        // re-create, and 409 is likewise ours.
         if crate::storage::ehr_repo::live_directory_exists(&self.pool, ehr_id).await? {
             return Err(ServiceError::conflict(format!(
                 "EHR {ehr_id} already has a directory"
@@ -115,10 +110,8 @@ impl FerroEhrService {
         tx.commit().await?;
 
         // The write response is metadata-only: `Committed` already carries the
-        // written version identity + the commit instant (RM common master06
-        // §Committal), so the create path never re-reads the row it just wrote
-        // — a representation response re-reads at the protocol layer. This
-        // mirrors the COMPOSITION create path.
+        // version identity and commit instant (RM common master06 §Committal),
+        // so a representation response re-reads at the protocol layer instead.
         Ok(self.committed_response(ehr_id, &committed))
     }
 
@@ -137,9 +130,8 @@ impl FerroEhrService {
         path: Option<&str>,
     ) -> Result<ServiceResponse, ServiceError> {
         // The current read folds the `ehr_folder` slot resolution into the
-        // version statement (same slot choice as `directory_vo`); the as-of
-        // read keeps the two-step so the slot is still chosen by CURRENT
-        // state, exactly as before.
+        // version statement; the as-of read keeps the two-step so the slot is
+        // still chosen by CURRENT state.
         let read = match at {
             Some(at) => {
                 let vo_id = self.directory_vo(ehr_id).await?;
@@ -293,9 +285,6 @@ impl FerroEhrService {
         expected: Option<TreeId>,
         is_modifiable: bool,
     ) -> Result<ServiceResponse, ServiceError> {
-        // The ONE serialization boundary of this commit, taken before any
-        // await so the typed RM value does not ride the whole write
-        // transaction (`super::canonicalize`).
         let version = super::canonicalize(version);
         let super::CommitParts {
             audit,
@@ -310,11 +299,8 @@ impl FerroEhrService {
         )?;
         validate_folder(&folder, incomplete)?;
         check_folder_item_refs(&self.pool, ehr_id, &self.effective_system_id(), &folder).await?;
-        // is_modifiable = False forbids content writes (RM ehr master04 §EHR
-        // Active Status) — the directory is EHR content. Folded from the
-        // standalone `ensure_content_writable` side-SELECT into the merged
-        // pre-read; the 409 outcome and its ordering (after validate_folder's
-        // 422) are unchanged.
+        // is_modifiable = False forbids content writes to the directory (RM ehr
+        // master04 §EHR Active Status), after validate_folder's 422.
         if !is_modifiable {
             return Err(crate::versioning::change::not_modifiable_error(ehr_id));
         }
@@ -335,8 +321,6 @@ impl FerroEhrService {
         .await?;
         tx.commit().await?;
 
-        // Metadata-only write response from `Committed` (see
-        // `commit_new_directory`).
         Ok(self.committed_response(ehr_id, &committed))
     }
 
@@ -358,8 +342,7 @@ impl FerroEhrService {
         update_audit: Option<&openehr_its::rest::generated::common::UpdateAudit>,
     ) -> Result<ServiceResponse, ServiceError> {
         // is_modifiable = False forbids content writes (RM ehr master04 §EHR
-        // Active Status) — folded from the standalone `ensure_content_writable`
-        // side-SELECT into the merged pre-read; the 409 outcome is unchanged.
+        // Active Status).
         if !is_modifiable {
             return Err(crate::versioning::change::not_modifiable_error(ehr_id));
         }
@@ -573,11 +556,9 @@ impl FerroEhrService {
         an_ehr_id: EhrId,
         a_dir_struct: UpdateVersion<Folder>,
     ) -> Result<ResourceMeta, SmError> {
-        // Resolve the directory-slot vo_id + its current version metadata + the
-        // EHR's is_modifiable flag ONCE (the `If-Match` pre-read); a missing
-        // directory is `NotFound` (the same error the inner write's slot
-        // resolution produced). The vo_id + is_modifiable are threaded into the
-        // write so neither the slot JOIN nor the writability probe is re-run.
+        // The slot vo_id, its current version metadata and the EHR's
+        // is_modifiable flag resolve ONCE here and are threaded into the write,
+        // so neither the slot JOIN nor the writability probe runs twice.
         let Some((vo_id, is_modifiable, latest)) = self.directory_meta_with_vo(an_ehr_id).await?
         else {
             return Err(ServiceError::sm(

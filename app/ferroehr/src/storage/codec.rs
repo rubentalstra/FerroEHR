@@ -87,13 +87,10 @@ fn walk(
         .and_then(Value::as_str)
         .unwrap_or_default()
         .to_owned();
-    // Case-folded at write: openEHR identifiers are defined "to be
-    // case-insensitive - two identifiers identical apart from case are
-    // considered to be identical" (BASE `base_types` master05
-    // §Composite Identifiers and Case), so the promoted predicate column stores the
-    // lowercase form and AQL archetype equality is plain indexed equality
-    // with honest statistics (no `LOWER()` on the column). The canonical
-    // `data` fragment keeps the original casing.
+    // openEHR identifiers are case-insensitive (BASE `base_types` master05
+    // §Composite Identifiers and Case), so the promoted predicate column stores
+    // the lowercase form and AQL archetype equality stays plain indexed equality
+    // with honest statistics. The canonical `data` fragment keeps its casing.
     let archetype = json
         .get("archetype_node_id")
         .and_then(Value::as_str)

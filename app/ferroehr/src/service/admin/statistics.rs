@@ -101,14 +101,11 @@ impl FerroEhrService {
         let Some(ehr_scoped) = contribution_ehr_scoped(a_service) else {
             return Ok(0);
         };
-        // Two static shapes, selected in Rust rather than by an in-SQL OR:
-        // the measured corpus holds ~10^6 contributions and the 2026-07-29
-        // idle-box POC window put this count's p99 at 2.9 s — the unbounded
-        // form was paying a full `audit` hash join it never filters, and the
+        // Two static shapes, selected in Rust rather than by an in-SQL OR: a
         // `($3 AND …) OR (NOT $3 AND …)` scoping predicate resists index
-        // planning. Unbounded: an index-only count over
-        // `idx_contribution_ehr_id`. Bounded: the audit join with
-        // `idx_audit_time_committed` behind it (0001_baseline.sql).
+        // planning. Unbounded takes an index-only count over
+        // `idx_contribution_ehr_id`, bounded the audit join behind
+        // `idx_audit_time_committed` (0001_baseline.sql).
         let count: i64 = if lo.is_none() && hi.is_none() {
             let sql = if ehr_scoped {
                 "SELECT count(*) FROM contribution WHERE ehr_id IS NOT NULL"
@@ -162,8 +159,7 @@ impl FerroEhrService {
         if a_service != PlatformService::Ehr {
             return Ok(0);
         }
-        // Unbounded: no reason to touch `audit` at all (the 2026-07-29
-        // measured-window finding on the sibling count).
+        // Unbounded: no reason to touch `audit` at all.
         let count: i64 = if lo.is_none() && hi.is_none() {
             sqlx::query_scalar(
                 "SELECT count(DISTINCT vo_id) FROM vo_version_all WHERE kind = 'COMPOSITION'",

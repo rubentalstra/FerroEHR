@@ -235,14 +235,11 @@ impl Builder<'_> {
         sub.expr(Expr::val(1));
         sub.and_where(cond(coerce_value(base, mode, leaf)));
         if self.streaming {
-            // STREAMING shape: the EXISTS must stay CORRELATED. As a bare WHERE
-            // sublink the planner may pull it up into a semi-join and
-            // DECORRELATE its inner side into a corpus-wide Materialize, which
-            // costs seconds per execution where the correlated probe runs in
-            // milliseconds. Hosting the EXISTS inside a LATERAL subquery behind
-            // the `OFFSET 0` fence pins the correlated per-row SubPlan by
-            // construction (a `LIMIT 1` inside the sublink is NOT a fence).
-            // Identical semantics: one boolean per outer row.
+            // The EXISTS must stay CORRELATED: as a bare WHERE sublink the
+            // planner may pull it up and decorrelate its inner side into a
+            // corpus-wide Materialize. Hosting it in a LATERAL behind the
+            // `OFFSET 0` fence pins the per-row SubPlan (a `LIMIT 1` inside the
+            // sublink is NOT a fence); semantics are one boolean per outer row.
             let probe = format!("p{}", self.next_ctr());
             let mut wrapper = Query::select();
             wrapper.expr_as(Expr::exists(sub), Alias::new("hit"));
@@ -344,7 +341,6 @@ impl Builder<'_> {
         {
             return None;
         }
-        // Flattened attribute path: anchor hops then fragment names.
         let path: Vec<&str> = leaf
             .anchor
             .iter()
@@ -466,13 +462,10 @@ impl Builder<'_> {
         for key in self.ir.order_by.clone() {
             let OrderKey { path, ascending } = key;
             let order = if ascending { Order::Asc } else { Order::Desc };
-            // SELECT DISTINCT: PostgreSQL requires every ORDER BY expression
-            // to appear in the select list, so a sort key that IS a selected
-            // column orders by that output column (jsonb ordering of the
-            // projected cell — numbers numeric, strings lexical), and an
-            // unselected sort key is a typed reject: QUERY master03 §DISTINCT
-            // defines no semantics for sorting a de-duplicated projection by
-            // an expression outside it.
+            // PostgreSQL requires every ORDER BY expression of a SELECT
+            // DISTINCT to appear in the select list, so a selected sort key
+            // orders by its output column and an unselected one is a typed
+            // reject — QUERY master03 §DISTINCT defines no semantics for it.
             if self.ir.distinct {
                 let selected = self.ir.select.iter().position(
                     |c| matches!(&c.value, crate::aql::ir::SelectValue::Path(p) if *p == path),
@@ -487,13 +480,11 @@ impl Builder<'_> {
                     }
                 }
             }
-            // ORDER BY `e/ehr_id[/value]` sorts by the raw `ehr.id` uuid column,
-            // not the `CAST(id AS text)` the projection reads: a UUID's canonical
-            // text form is fixed-length lowercase hex (BASE base_types master05
-            // §Basic Types — Uuid), so lexical text order and the uuid binary
-            // order coincide — the row sequence is byte-identical while the raw
-            // column is index-served instead of forcing a per-row cast. The text
-            // cast stays in the projection path.
+            // ORDER BY `e/ehr_id[/value]` sorts by the raw `ehr.id` column: a
+            // UUID's canonical text form is fixed-length lowercase hex (BASE
+            // base_types master05 §Basic Types — Uuid), so text and binary
+            // order coincide and the index serves the sort without a per-row
+            // cast. The projection path keeps the text cast.
             if let PathTarget::Ehr {
                 source,
                 field: EhrField::EhrId | EhrField::Whole,
@@ -544,7 +535,7 @@ pub(super) fn coerce_value(base: Expr, mode: ValueMode, leaf: &LeafPath) -> Expr
         ValueMode::Value(Coercion::Boolean) => cast(as_text(base), "boolean"),
         // NOTE: RM data_types master07 §Partial Date/Times admits reduced
         // precision, so the leaf reads through the total `ext.openehr_timestamp`
-        // — floor completion, NULL for garbage (the recorded semantics, #1493).
+        // — floor completion, NULL for garbage.
         ValueMode::Value(Coercion::Temporal) => call("openehr_timestamp", vec![as_text(base)]),
         ValueMode::Value(Coercion::Text | Coercion::Raw) => as_text(base),
         // a mixed-type (`Raw`) leaf being compared/matched against a
@@ -591,7 +582,7 @@ pub(super) fn coerce_rhs(value: sea_query::Value, coercion: Coercion) -> Result<
 fn is_iso_temporal(s: &str) -> bool {
     static ISO_TEMPORAL: std::sync::LazyLock<regex::Regex> = std::sync::LazyLock::new(|| {
         // The separator set includes the space form PostgreSQL's own parser
-        // accepts, so previously-working SQL-style literals keep working.
+        // accepts.
         let time = r"\d{2}(:\d{2}(:\d{2}([.,]\d+)?)?|\d{2}(\d{2}([.,]\d+)?)?)?";
         let offset = r"([Zz]|[+-]\d{2}(:?\d{2})?)?";
         let date = r"\d{4}(-\d{2}(-\d{2})?|\d{2}(\d{2})?)?";
@@ -667,9 +658,7 @@ pub(super) fn version_field_expr(
         VersionField::SystemId => col(&audit(), "system_id"),
         VersionField::ChangeType => col(&audit(), "change_type"),
         // The rubric renders from the openEHR terminology group at SQL-build
-        // time (the bundle is the authority, never a hardcoded rubric — the
-        // same rule as the versioning render edge); the terminology id of
-        // both coded version fields is the constant `openehr` (#976).
+        // time — the bundle is the authority, never a hardcoded rubric.
         VersionField::ChangeTypeRubric => {
             coded_rubric_case(&col(&audit(), "change_type"), "audit_change_type")
         }
@@ -708,7 +697,7 @@ pub(super) fn version_field_expr(
             coded_rubric_case(&col(voa, "lifecycle_state"), "version_lifecycle_state")
         }
         // Both coded version fields belong to the constant `openehr`
-        // terminology (#976).
+        // terminology.
         VersionField::ChangeTypeTerminology | VersionField::LifecycleStateTerminology => {
             Expr::val("openehr")
         }

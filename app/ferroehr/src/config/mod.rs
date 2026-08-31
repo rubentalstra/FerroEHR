@@ -456,8 +456,8 @@ pub fn load(
     let file = loader::discover_file(cli_config, &env)?;
     let config = assemble(file.as_deref(), &env, overrides)?;
 
-    // Review condition 1: never a silent production trap — announce the dev
-    // default DSN prominently at boot.
+    // The dev default DSN is announced prominently at boot so it is never a
+    // silent production trap.
     if config.db.is_dev_default() {
         tracing::warn!(
             url = crate::db::DEFAULT_URL,
@@ -596,14 +596,12 @@ mod tests {
         // file overrides default (20).
         let c = assemble_ok(Some(file.path()), &env(&[]), &[]);
         assert_eq!(c.db.max_connections, 5);
-        // env overrides file.
         let c = assemble_ok(
             Some(file.path()),
             &env(&[("FERROEHR__DB__MAX_CONNECTIONS", "9")]),
             &[],
         );
         assert_eq!(c.db.max_connections, 9);
-        // --set overrides env.
         let c = assemble_ok(
             Some(file.path()),
             &env(&[("FERROEHR__DB__MAX_CONNECTIONS", "9")]),
@@ -614,10 +612,8 @@ mod tests {
 
     #[test]
     fn conventional_aliases_lose_to_ferroehr_forms() {
-        // DATABASE_URL alone binds db.url.
         let c = assemble_ok(None, &env(&[("DATABASE_URL", "postgres://a@h/x")]), &[]);
         assert_eq!(c.db.url.expose(), "postgres://a@h/x");
-        // FERROEHR__DB__URL wins over DATABASE_URL.
         let c = assemble_ok(
             None,
             &env(&[
@@ -649,7 +645,6 @@ mod tests {
             c.db.url.expose(),
             "postgres://demo:p%40ss%2Fw@db.example.neon.tech/ferroehr?sslmode=require"
         );
-        // DATABASE_URL wins over the assembled form.
         let c = assemble_ok(
             None,
             &env(&[
@@ -660,7 +655,6 @@ mod tests {
             &[],
         );
         assert_eq!(c.db.url.expose(), "postgres://a@h/x");
-        // FERROEHR__DB__URL wins over everything.
         let c = assemble_ok(
             None,
             &env(&[
@@ -675,8 +669,8 @@ mod tests {
 
     #[test]
     fn unpooled_endpoints_win_over_pooled_ones() {
-        // A transaction-pooled endpoint drops the session search_path (#2716),
-        // so the direct form outranks the pooled one within the alias layer.
+        // A transaction-pooled endpoint drops the session search_path, so the
+        // direct form outranks the pooled one within the alias layer.
         let c = assemble_ok(
             None,
             &env(&[
@@ -686,7 +680,6 @@ mod tests {
             &[],
         );
         assert_eq!(c.db.url.expose(), "postgres://direct@h/x");
-        // The libpq assembly prefers the direct host too.
         let c = assemble_ok(
             None,
             &env(&[
@@ -709,7 +702,6 @@ mod tests {
         // platform convention: Vercel/Cloud Run/Heroku inject only the port).
         let c = assemble_ok(None, &env(&[("PORT", "3123")]), &[]);
         assert_eq!(c.server.bind, "0.0.0.0:3123");
-        // FERROEHR__SERVER__BIND wins over PORT.
         let c = assemble_ok(
             None,
             &env(&[
@@ -721,7 +713,7 @@ mod tests {
         assert_eq!(c.server.bind, "127.0.0.1:9000");
     }
 
-    // ── 2. Mapping (the test class whose absence let the dead env form ship) ──
+    // ── 2. Mapping ────────────────────────────────────────────────────────────
 
     #[test]
     fn env_mapping_scalars_maps_and_lists() {
@@ -775,7 +767,7 @@ mod tests {
         let c = assemble_ok(
             None,
             &env(&[
-                // The key #2122's rotation keyring depends on.
+                // The key the signing rotation keyring depends on.
                 (
                     "FERROEHR__SIGNING__RETIRED_KEY_PATHS",
                     "/etc/ferroehr/retired-2025.pub.asc",
@@ -890,17 +882,14 @@ mod tests {
     /// the compatibility default, the file value, and the `FERROEHR__` env form.
     #[test]
     fn server_system_id_default_file_and_env() {
-        // Default: unchanged from the service-layer constant, so an unset key
-        // boots byte-identically to previous behaviour.
+        // Unset, the default is the service-layer constant.
         let c = assemble_ok(None, &env(&[]), &[]);
         assert_eq!(c.server.system_id, crate::service::DEFAULT_SYSTEM_ID);
 
-        // File.
         let file = toml_file("[server]\nsystem_id = \"cdr.hospital.example\"\n");
         let c = assemble_ok(Some(file.path()), &env(&[]), &[]);
         assert_eq!(c.server.system_id, "cdr.hospital.example");
 
-        // Env wins over the file (the uniform `__` grammar).
         let c = assemble_ok(
             Some(file.path()),
             &env(&[("FERROEHR__SERVER__SYSTEM_ID", "cdr.env.example")]),
@@ -926,7 +915,7 @@ mod tests {
 
     #[test]
     fn near_miss_prefix_suggests_the_uniform_spelling() {
-        // The old mixed form (single `_` after the prefix) no longer binds; the
+        // The mixed form (a single `_` after the prefix) does not bind; the
         // sweep names the exact uniform spelling.
         let err = assemble(None, &env(&[("FERROEHR_DB__URL", "postgres://x")]), &[])
             .expect_err("near-miss");
@@ -991,7 +980,6 @@ mod tests {
         let rendered = c.to_redacted_toml().expect("toml");
         assert!(!rendered.contains("topsecret"), "secret leaked: {rendered}");
         assert!(!serde_json::to_string(&c).unwrap().contains("topsecret"));
-        // *_file resolution.
         let secret = assert_fs::NamedTempFile::new("pass").expect("temp");
         secret.write_str("s3cret\n").expect("write");
         let file = toml_file(&format!(
@@ -1455,7 +1443,6 @@ mod tests {
             ..FerroEhrConfig::default()
         };
 
-        // Disagreeing issuers.
         let err = tree(
             "https://as.example/realms/ferroehr",
             Some("https://other-as.example/realms/ferroehr"),
@@ -1659,7 +1646,6 @@ mod tests {
         let err = c.validate().expect_err("a dangling route must be rejected");
         assert!(err.to_string().contains("snomed"), "got {err}");
 
-        // Pointing the route at the configured provider resolves it.
         c.terminology
             .external
             .routes
@@ -1697,8 +1683,8 @@ mod tests {
         assert!(err.to_string().contains("ts-client"), "got {err}");
 
         // A client table with none of its mandatory keys: each is named. The
-        // section reads its defaults from one `Default` impl, so serde no
-        // longer reports the missing keys and this pass owns all three.
+        // section reads its defaults from one `Default` impl, so serde reports
+        // none of them and this pass owns all three.
         c.terminology.external.oauth2_clients.insert(
             "ts-client".to_owned(),
             crate::service::terminology::config::TerminologyOauth2Config::default(),

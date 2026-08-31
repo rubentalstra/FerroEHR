@@ -129,8 +129,6 @@ impl FerroEhrService {
                 format!("template {template_id}"),
             ));
         };
-        // Physical deletes never orphan clinical data (no openEHR spec
-        // governs the FK graph — our own design).
         // Counted over BOTH storage tiers: the cold archival mirror is
         // foreign-key-free, so an archived composition's reference is invisible
         // to the `template_ref` FK and would be orphaned silently.
@@ -286,9 +284,8 @@ impl FerroEhrService {
         } else {
             ehr_ids.to_vec()
         };
-        // Batched: three set statements per chunk instead of a per-EHR
-        // transaction loop; a missing id simply deletes zero rows (idempotent
-        // bulk, same semantics as before). `DELETE … RETURNING id` counts the
+        // Three set statements per chunk, not a per-EHR transaction loop; a
+        // missing id deletes zero rows, and `DELETE … RETURNING id` counts the
         // EHRs actually removed.
         let mut deleted = 0u64;
         for chunk in targets.chunks(CHUNK) {

@@ -46,14 +46,10 @@ pub(super) fn strict_env<S: std::hash::BuildHasher>(
             }
             continue;
         }
-        // `FERROEHR_` but not `FERROEHR__`, and not allowlisted: a near-miss
-        // for the uniform grammar — a single separator where the grammar wants
-        // two is the easiest mistake to make. Repair it mechanically:
-        // (a) insert the missing prefix separator; if the first `__`-segment
-        // then names a known section, suggest that verbatim; (b) else, for a
-        // flat tail (`DB_MAX_CONNECTIONS`), match the leading word against the
-        // known sections and double that boundary too. Otherwise fall back to
-        // a section did-you-mean.
+        // `FERROEHR_` but not `FERROEHR__`, and not allowlisted: a near-miss for
+        // the uniform grammar, repaired mechanically — insert the missing prefix
+        // separator, else double the leading word's boundary too, else fall back
+        // to a section did-you-mean.
         let tail = key.strip_prefix("FERROEHR_").unwrap_or_default();
         let first = tail.split("__").next().unwrap_or_default();
         let section = first.to_ascii_lowercase();

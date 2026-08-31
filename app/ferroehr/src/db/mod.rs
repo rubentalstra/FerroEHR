@@ -30,9 +30,7 @@ use sqlx::{Connection, PgConnection, PgPool};
 
 use crate::config::secret::SecretUrl;
 
-// ---------------------------------------------------------------------------
-// Settings — the `[db]` config section
-// ---------------------------------------------------------------------------
+// ── Settings — the `[db]` config section ─────────────────────────────────────
 
 /// The zero-config dev DSN (matches the compose dev stack). Production MUST
 /// override it; the boot path warns prominently when
@@ -153,9 +151,7 @@ impl DbConfig {
     }
 }
 
-// ---------------------------------------------------------------------------
-// Error
-// ---------------------------------------------------------------------------
+// ── Error ────────────────────────────────────────────────────────────────────
 
 /// Errors produced by the persistence foundation.
 #[derive(Debug, thiserror::Error)]
@@ -248,9 +244,7 @@ pub enum SchemaMismatch {
     },
 }
 
-// ---------------------------------------------------------------------------
-// Pool
-// ---------------------------------------------------------------------------
+// ── Pool ─────────────────────────────────────────────────────────────────────
 
 /// Search path applied to every pooled connection: the application tables live
 /// in `ehr`, the AQL support functions and the `"C"`/`en_US` collations in
@@ -284,14 +278,11 @@ fn pool_options(settings: &DbConfig) -> PgPoolOptions {
             Box::pin(async move {
                 sqlx::query(SET_SEARCH_PATH_SQL).execute(&mut *conn).await?;
                 if let Some(statement_timeout) = statement_timeout {
-                    // `SET LOCAL` would last only the current transaction, so
-                    // this is a session-level SET on the physical connection —
-                    // it survives every checkout of that connection.
-                    // `AssertSqlSafe` because PostgreSQL's `SET` takes no bind
-                    // placeholder, so the value has to be rendered into the
-                    // statement. Audited: it is a `u64` from our own
-                    // configuration formatted with `{}`, never client input, so
-                    // no string can reach here that is not decimal digits.
+                    // A session-level SET on the physical connection, surviving
+                    // every checkout, where `SET LOCAL` would last one
+                    // transaction. `AssertSqlSafe` is audited: PostgreSQL's
+                    // `SET` takes no bind placeholder and the value is a `u64`
+                    // from our own configuration, never client input.
                     sqlx::query(sqlx::AssertSqlSafe(statement_timeout))
                         .execute(&mut *conn)
                         .await?;
@@ -406,9 +397,7 @@ pub async fn connect_tenant_scoped(settings: &DbConfig) -> Result<PgPool, DbErro
     Ok(pool)
 }
 
-// ---------------------------------------------------------------------------
-// Migrations
-// ---------------------------------------------------------------------------
+// ── Migrations ───────────────────────────────────────────────────────────────
 
 /// The `ext` schema: our openEHR support functions (`openehr_magnitude` and
 /// its ISO-8601 helpers). Runs before `ehr`.

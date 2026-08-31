@@ -64,9 +64,6 @@ impl FerroEhrService {
         ehr_id: EhrId,
         version: UpdateVersion<Composition>,
     ) -> Result<crate::versioning::change::Committed, ServiceError> {
-        // The ONE serialization boundary of this commit, taken before any
-        // await so the typed RM value does not ride the whole write
-        // transaction (`super::canonicalize`).
         let version = super::canonicalize(version);
         // 553|incomplete| relaxes validation strictness (master06 §Version
         // Lifecycle).
@@ -83,8 +80,7 @@ impl FerroEhrService {
         )?;
         // The EHR-existence (404) and content-writability (409) gates in one
         // round trip: a COMPOSITION is EHR content (RM ehr master04 §EHR
-        // Creation / §EHR Active Status). Same errors, same order as the
-        // separate `ensure_ehr_exists` + `ensure_content_writable` checks.
+        // Creation / §EHR Active Status).
         let commit_now = self.ensure_ehr_content_writable(ehr_id).await?;
         self.validate_composition_for_commit(&composition, incomplete)
             .await?;
@@ -97,12 +93,10 @@ impl FerroEhrService {
         // stamps it exactly like the CONTRIBUTION route.
         let template_id = composition_template_id(&composition).map(str::to_owned);
 
-        // With no accompanying attestations and no event outbox, the whole
-        // commit is the ONE folded statement — atomic on its own, so the
-        // explicit transaction's BEGIN/COMMIT round trips are skipped.
-        // Boxed: the versioned-write future is by far the widest state this
-        // call holds, and inlining it puts the whole node-decomposition
-        // machinery on every caller's stack (clippy `large_futures`).
+        // With no attestations and no event outbox the commit is ONE folded,
+        // self-atomic statement, so the explicit BEGIN/COMMIT is skipped. The
+        // versioned-write future is boxed: inlining it puts the whole
+        // node-decomposition machinery on every caller's stack.
         let signing_ctx = self.signing_ctx();
         let committed = if envelope.attestations.is_empty() && !signing_ctx.outbox_enabled {
             let mut conn = self.pool.acquire().await?;
@@ -140,8 +134,6 @@ impl FerroEhrService {
             .add(1, &[opentelemetry::KeyValue::new("outcome", "commit")]);
         crate::versioning::change::meter_committed(&committed);
 
-        // The write result is the committed version identity itself — a
-        // representation response re-reads at the protocol layer.
         Ok(committed)
     }
 
@@ -425,17 +417,12 @@ impl FerroEhrService {
         vo_id: VoId,
         version: UpdateVersion<Composition>,
     ) -> Result<crate::versioning::change::Committed, ServiceError> {
-        // The ONE serialization boundary of this commit, taken before any
-        // await so the typed RM value does not ride the whole write
-        // transaction (`super::canonicalize`).
         let version = super::canonicalize(version);
         let preceding_version_uid = version.preceding_version_uid.clone();
-        // The CPU-side envelope resolution and the content validation run
-        // BEFORE the write transaction: validation may consult the template
-        // store and the routed terminology servers, so neither the pool
-        // connection nor the per-vo advisory lock is ever held across it.
-        // Both RESULTS are held and surfaced below in the pre-check order the
-        // in-transaction gates define.
+        // Envelope resolution and content validation run BEFORE the write
+        // transaction — validation may consult the template store and the
+        // routed terminology servers, so no pool connection or advisory lock
+        // is held across it; both results surface below in pre-check order.
         let resolved = resolve_envelope(
             version,
             change_type::MODIFICATION,
@@ -487,18 +474,15 @@ impl FerroEhrService {
             ));
         }
         // is_modifiable = False forbids content writes (RM ehr master04 §EHR
-        // Active Status); the 409 outcome and its ordering (after the deleted
-        // 404, before the template 422) are unchanged.
+        // Active Status), after the deleted 404 and before the template 422.
         if pre.is_modifiable == Some(false) {
             return Err(crate::versioning::change::not_modifiable_error(ehr_id));
         }
-        // Reject an update whose body declares a *different* template than the
-        // stored composition it supersedes — a semantic 422. NOTE: no openEHR
-        // spec governs template stability across versions (RM ehr
-        // `versioned_composition.adoc` pins archetype_node_id and
-        // is_persistent across versions but not
-        // archetype_details.template_id) — our own design convention,
-        // consistent with those container invariants.
+        // An update declaring a *different* template than the version it
+        // supersedes is a semantic 422.
+        // NOTE: `versioned_composition.adoc` pins archetype_node_id and
+        // is_persistent across versions but not template_id, so this
+        // convention is our own design.
         let stored_template = pre.stored_template.as_deref();
         if let (Some(stored), Some(incoming)) =
             (stored_template, composition_template_id(&composition))
@@ -516,8 +500,6 @@ impl FerroEhrService {
             validation?;
         }
 
-        // Same template stamping as the create arm — every version row carries
-        // the template it was committed against.
         let template_id = composition_template_id(&composition).map(str::to_owned);
 
         // VERSIONED_COMPOSITION cross-version invariants (RM ehr
@@ -593,11 +575,9 @@ impl FerroEhrService {
         ehr_id: EhrId,
         vo_id: VoId,
     ) -> Result<Option<ResourceMeta>, ServiceError> {
-        // Lean `vo_version`⋈`audit` read scoped to the EHR: the
-        // `ETag`/`If-Match` compare needs only the full `OBJECT_VERSION_ID` +
-        // commit instant (RM common master06 §Version Identification /
-        // §Committal), never the reassembled document the full `read_current`
-        // pays.
+        // The `ETag`/`If-Match` compare needs only the full `OBJECT_VERSION_ID`
+        // + commit instant (RM common master06 §Version Identification /
+        // §Committal), never the document reassembly `read_current` pays.
         let Some(m) = crate::storage::version_repo::meta::current_version_meta_scoped(
             &self.pool, vo_id, ehr_id,
         )
@@ -668,11 +648,9 @@ impl FerroEhrService {
         update_audit: Option<&openehr_its::rest::generated::common::UpdateAudit>,
     ) -> Result<crate::versioning::change::Committed, ServiceError> {
         let (vo_id, expected) = components(a_version_uid)?;
-        // Lean delete pre-read: the pre-checks need only the owning EHR, the
-        // lifecycle (already-deleted → 400), and the current
-        // `VERSION_TREE_ID` (the `preceding_version_uid` conflict compare) —
-        // not a full node reassembly (the deleted version stores no nodes
-        // anyway).
+        // The delete pre-checks need only the owning EHR, the lifecycle and the
+        // current `VERSION_TREE_ID` — never a node reassembly (a deleted
+        // version stores no nodes anyway).
         let current =
             crate::storage::version_repo::meta::current_composition_meta(&self.pool, vo_id)
                 .await?
@@ -689,10 +667,8 @@ impl FerroEhrService {
             )));
         }
         // is_modifiable = False forbids content writes (RM ehr master04 §EHR
-        // Active Status) — folded from the standalone `ensure_content_writable`
-        // side-SELECT into the pre-read; the 409 outcome and its ordering
-        // (after the already-deleted 400, before the stale-precondition 409)
-        // unchanged.
+        // Active Status), after the already-deleted 400 and before the
+        // stale-precondition 409.
         if !current.is_modifiable {
             return Err(crate::versioning::change::not_modifiable_error(ehr_id));
         }
@@ -701,14 +677,11 @@ impl FerroEhrService {
             current.branch_number,
             current.branch_version,
         );
-        // The addressed preceding_version_uid must identify THE latest
-        // VERSION by its full three-part identity — object_id ::
-        // creating_system_id :: version_tree_id (ITS-REST overview
-        // Resources.md §Identifier types: the version_uid "uniquely
-        // identifies a VERSION"; RM common master06 §Distributed
-        // Versioning) — compared case-insensitively (BASE master05
-        // §Composite Identifiers and Case). Comparing the tree id alone
-        // let a fabricated creating_system_id delete the latest version.
+        // The addressed preceding_version_uid must identify THE latest VERSION
+        // by its full three-part identity (Resources.md §Identifier types; RM
+        // common master06 §Distributed Versioning), compared case-insensitively
+        // (BASE master05 §Composite Identifiers and Case): the tree id alone
+        // would let a fabricated creating_system_id delete the latest version.
         let latest_uid = crate::versioning::object_version_id::object_version_id(
             vo_id,
             &current.creating_system_id,
@@ -720,13 +693,10 @@ impl FerroEhrService {
                 a_version_uid.value()
             )));
         }
-        // A client MAY volunteer `If-Match` although this route carries the
-        // version in the path. It is evaluated HERE — after the 404/400/409
-        // pre-checks — so the RFC 9110 §13.2.1 precedence holds by
-        // construction (preconditions are ignored when the unconditioned
-        // answer would not be 2xx), and a false condition refuses the
-        // delete (ITS-REST overview Requests_and_responses §"If-Match and
-        // accidental overwrites": the method MUST NOT be performed → 412).
+        // A volunteered `If-Match` is evaluated after the 404/400/409
+        // pre-checks, so the RFC 9110 §13.2.1 precedence holds by construction;
+        // a false condition refuses the delete with 412 (ITS-REST overview
+        // Requests_and_responses §"If-Match and accidental overwrites").
         if let Some(condition) = volunteered_if_match
             && !composite_ids_equal(&latest_uid, condition.value())
         {
@@ -767,7 +737,6 @@ impl FerroEhrService {
             .db_transactions
             .add(1, &[opentelemetry::KeyValue::new("outcome", "commit")]);
         crate::versioning::change::meter_committed(&committed);
-        // 204_COMPOSITION_deleted: the (now deleted) version identity.
         Ok(committed)
     }
 
@@ -1049,12 +1018,11 @@ impl FerroEhrService {
 
 // ── ITS-REST read-response adapter (adapter-support extension) ────────────────
 //
-// The SM `I_EHR_COMPOSITION` reads above return the bare COMPOSITION, which
-// carries no commit audit — yet ITS-REST requires `Last-Modified` "derived from
-// `VERSION.commit_audit.time_committed.value`" (`Requests_and_responses.md`
-// §"`ETag` and Last-Modified"). These siblings therefore hand the adapter the
-// same read PLUS its [`ResourceMeta`] (version uid + commit instant). No
-// openEHR spec governs this envelope — our own design.
+// The SM reads above return the bare COMPOSITION, which carries no commit
+// audit, yet ITS-REST derives `Last-Modified` from
+// `VERSION.commit_audit.time_committed.value` (`Requests_and_responses.md`
+// §"`ETag` and Last-Modified"), so these siblings return the read plus its
+// [`ResourceMeta`] (no openEHR spec governs the envelope — our own design).
 
 impl FerroEhrService {
     /// [`Self::get_composition_latest`] with the version metadata the wire's
@@ -1139,11 +1107,10 @@ impl FerroEhrService {
     #[cfg(feature = "multimedia")]
     pub async fn expand_multimedia(&self, body: Value) -> Result<Value, SmError> {
         let Some(engine) = &self.multimedia else {
-            // No store is reachable. Serving the stored form is correct only
-            // when there is nothing to expand; a record that DOES reference a
-            // blob is clinical content this server externalized, and answering
-            // 200 with the compact reference would drop the caller's request
-            // on the floor without saying so.
+            // With no store reachable, serving the stored form is correct only
+            // when there is nothing to expand: answering 200 with a compact
+            // reference would silently withhold clinical content this server
+            // externalized.
             if ferroehr_ext::multimedia::references_external_blob(&body) {
                 return Err(internal_fault(
                     "expand a multimedia reference",

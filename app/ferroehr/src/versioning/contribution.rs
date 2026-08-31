@@ -341,14 +341,11 @@ const COMMITTABLE_MEMBER_TYPES: [&str; 2] = ["UPDATE_VERSION", "ORIGINAL_VERSION
 /// # Errors
 /// [`ServiceError::BadRequest`] naming the offending key.
 fn reject_foreign_version_identity(version: &Value, index: usize) -> Result<(), ServiceError> {
-    // THE CLOSED MEMBER READ (#1753): the released commit wire declares
-    // exactly six member properties (ITS-REST `schemas/ehr/UpdateVersion.yaml`
-    // — `preceding_version_uid`, `signature`, `lifecycle_state`,
-    // `attestations`, `data`, `commit_audit`), plus the adjudicated `_type`
-    // self-tag (overview `Resources.md` §Resource representation — the docs
-    // text outranks the OAS). Everything else is refused with the member
-    // index in the path, exactly like the strict reader everywhere else
-    // post-#1702 — the three keys below keep their richer diagnostics.
+    // Anything outside the declared set is refused with the member index in
+    // the path.
+    // NOTE: the commit wire declares exactly these six member properties
+    // (ITS-REST `schemas/ehr/UpdateVersion.yaml`) plus the `_type` self-tag
+    // (overview `Resources.md` §Resource representation).
     const DECLARED: [&str; 7] = [
         "preceding_version_uid",
         "signature",
@@ -455,13 +452,9 @@ pub(crate) async fn commit_version_set(
     let supplied_uid = parse_supplied_uid(body)?;
     let (contrib_committer, contrib_system_id) = parse_contribution_committer(cx, body)?;
 
-    // ── ONE parse pass over the version set ────────────────────────────────
-    // Each UPDATE_VERSION is read exactly once into a typed plan entry:
-    // classification (master06 §Change Type), the parsed preceding target,
-    // the merged per-version audit (m4 committer/system_id copy-down), the
-    // lifecycle/signature/attestation envelope. The modification targets are
-    // then existence/kind-checked in ONE batched statement, and the plan is
-    // resolved to [`Change`]s without re-reading any JSON.
+    // Each UPDATE_VERSION is read exactly once into a typed plan entry; the
+    // modification targets are then existence/kind-checked in ONE batched
+    // statement and resolved without re-reading any JSON.
     let mut plan: Vec<PlannedVersion> = Vec::with_capacity(versions.len());
     for (index, version) in versions.iter().enumerate() {
         plan.push(plan_version(
@@ -474,7 +467,6 @@ pub(crate) async fn commit_version_set(
 
     let target_kinds = read_target_kinds(cx, &plan).await?;
 
-    // ── Resolve the plan to changes ────────────────────────────────────────
     let mut changes: Vec<(AuditInput, Change)> = Vec::with_capacity(plan.len());
     // 666 attestations of existing versions (committing no new version).
     let mut attests: Vec<PendingAttest> = Vec::new();
@@ -497,10 +489,8 @@ pub(crate) async fn commit_version_set(
     let contribution_audit =
         parse_contribution_audit(body, &contrib_committer, &contrib_system_id)?;
 
-    // Cross-area commit hooks — the single site of truth for the CONTRIBUTION
-    // path (the direct create/update paths run the same fns inline on their own
-    // write flow). Collect the EHR_STATUS bodies before `changes` is moved into
-    // the commit engine, since the subject-sync hook runs after the commit.
+    // The subject-sync hook runs after the commit, so the EHR_STATUS bodies
+    // are collected before `changes` moves into the commit engine.
     let status_commits: Vec<Value> = changes
         .iter()
         .filter_map(|(_, c)| match c {
@@ -1281,14 +1271,10 @@ fn parse_audit(
     default_system_id: &str,
     attestable: bool,
 ) -> Result<AuditInput, ServiceError> {
-    // AUDIT_DETAILS.description is a DV_TEXT (0..1). The two released sources
-    // spell it differently and BOTH spellings are accepted: ITS-REST types it
-    // `UDvText`, `oneOf` [`DV_TEXT`, `DV_CODED_TEXT`] discriminated on `_type`
-    // (`schemas/data_types/UDvText.yaml` — an object, never a bare string),
-    // while SM `UPDATE_AUDIT.description` is `String [0..1]`
-    // (`update_audit.adoc` §Attributes), which grounds the plain-string branch.
-    // The whole fragment is kept for the object spelling: a DV_CODED_TEXT
-    // description's defining_code is part of the committed audit.
+    // Both released spellings of `description` are accepted: the ITS-REST
+    // `UDvText` object (`schemas/data_types/UDvText.yaml`) and the SM
+    // `String [0..1]` (`update_audit.adoc` §Attributes). The object spelling is
+    // kept whole — a DV_CODED_TEXT's `defining_code` is part of the audit.
     let description = audit
         .and_then(|a| a.get("description"))
         .filter(|d| !d.is_null())
@@ -1620,12 +1606,9 @@ pub(crate) async fn get_contribution(
                     format!("VERSION {vo_id}::{tree}"),
                 )
             })?;
-            // The resolved object is the VERSION the CONTRIBUTION lists
-            // (`CONTRIBUTION.versions`, master06 §Contributions: "a
-            // CONTRIBUTION object will be created, listing the affected
-            // VERSION objects"), so an imported member resolves to its
-            // IMPORTED_VERSION — the version that actually sits in the
-            // container — not to the ORIGINAL_VERSION it wraps.
+            // `CONTRIBUTION.versions` lists the affected VERSION objects
+            // (master06 §Contributions), so an imported member resolves to its
+            // IMPORTED_VERSION, not the ORIGINAL_VERSION it wraps.
             versions.push(version_envelope(&loaded, signer)?);
         } else {
             versions.push(openehr_its::json::to_canonical_value(
@@ -1967,11 +1950,8 @@ mod tests {
     fn classify_rejects_spec_invalid_combinations() {
         // A non-creation change type as the FIRST version is THE released
         // `400_CONTRIBUTION` trigger ("the modification type does not match
-        // the operation - i.e. first version of a MODIFICATION") → 400;
-        // creation WITH a preceding is its unassigned mirror → the
+        // the operation"); creation WITH a preceding is its unassigned mirror,
         // adjudicated 422.
-        // Each refusal is asserted on its DATA — the attribute path it is
-        // about, the named rule it breaks — not on a substring of the prose.
         let creation_with_preceding = classify_err(Some("249"), true, true);
         assert_eq!(creation_with_preceding.path(), Some("change_type"));
         assert_eq!(

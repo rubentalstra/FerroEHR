@@ -77,9 +77,8 @@ impl FerroEhrService {
         version: Option<String>,
         request: AqlQueryRequest,
     ) -> Result<QueryOutcome, SmError> {
-        // Resolve the stored AQL text (exact/partial SEMVER, or the latest)
-        // via the DEFINITION store, then execute it exactly like an ad-hoc
-        // query.
+        // The stored AQL text resolves through the DEFINITION store by
+        // exact/partial SEMVER, or the latest.
         let stored = self
             .get_stored_query(&qualified_query_name, version.as_deref())
             .await?;
@@ -139,11 +138,9 @@ impl FerroEhrService {
     ) -> Result<QueryOutcome, Failure> {
         let plan_start = Instant::now();
         let params = build_params(request);
-        // Parse + terminology-expand + lower to the typed IR, reusing a
-        // cached plan when the query text has been seen. The IR is a pure
-        // function of the query text; the parameter *values*, paging, and
-        // scope all bind downstream, so a cached plan serves every caller of
-        // the same text correctly.
+        // The IR is a pure function of the query text — parameter values,
+        // paging and scope all bind downstream — so a cached plan serves every
+        // caller of the same text correctly.
         let ir = self.plan_query(aql, &params).await?;
         record_phase("plan", plan_start);
 
@@ -177,14 +174,11 @@ impl FerroEhrService {
         };
 
         let exec_start = Instant::now();
-        // Query-level execution budget (`[query].timeout_ms`, our own
-        // operational extension — no openEHR spec governs a query timeout):
-        // when set, the DB execution is bounded so an over-long query is
-        // `408` instead of hanging to the global request timeout. The ABAC
-        // scope collection (our own access-control extension) stays a
-        // separate statement — the main query is paged, folding the sets in
-        // would scope only the served page — but runs CONCURRENTLY with it,
-        // both under the one budget.
+        // `[query].timeout_ms` bounds the DB execution so an over-long query is
+        // `408` rather than hanging to the global request timeout. The ABAC
+        // scope collection stays a separate statement — the main query is paged,
+        // so folding the sets in would scope only the served page — but runs
+        // concurrently under the same budget (our own extension).
         let run = async {
             let exec = aql::exec::execute(&self.pool, &ir, &params, &ctx, self.spec_profile);
             if request.collect_attributes {
@@ -470,14 +464,11 @@ fn map_plan_error(e: AqlError) -> SmError {
 /// ([`internal_fault`]).
 fn map_exec_error(e: AqlError) -> SmError {
     match e {
-        // A data-exception the DRIVER raises on this path is the caller's own
-        // binding failing Postgres coercion — the lowered literals are typed,
-        // so only client `query_parameters` reach text→type casts here. 22007
-        // invalid_datetime_format / 22008 datetime_field_overflow / 22P02
-        // invalid_text_representation (PostgreSQL Appendix A, errcodes) are
-        // therefore a 400 naming the defect class, never the write paths'
-        // opaque 500 (#2593: "not-a-date" against a temporal predicate
-        // answered 500).
+        // A data-exception the DRIVER raises here is the caller's own binding
+        // failing Postgres coercion: the lowered literals are typed, so only
+        // client `query_parameters` reach text→type casts. 22007 / 22008 / 22P02
+        // (PostgreSQL Appendix A, errcodes) are therefore a 400 naming the
+        // defect class, never an opaque 500.
         AqlError::Exec(ExecError::Database(db))
             if matches!(
                 db.as_database_error()

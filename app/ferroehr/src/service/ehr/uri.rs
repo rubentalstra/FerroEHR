@@ -134,12 +134,10 @@ impl FerroEhrService {
         } else {
             let attribute = &locator.attribute;
             // An attribute with no id addresses the EHR's single current object
-            // of that kind (e.g. `directory`, `ehr_status`). `directory` (and a
-            // bare `folders`, whose only spec-pinned member is `folders.item(1)`
-            // = the directory — RM ehr §EHR Class `Directory_in_folders`) must
-            // resolve deterministically among multiple hierarchies, so it goes
-            // through the rank-ordered directory lookup, never a bare
-            // kind-scan.
+            // of that kind. `directory` — and a bare `folders`, whose only
+            // spec-pinned member is `folders.item(1)` (RM ehr §EHR Class
+            // `Directory_in_folders`) — must resolve deterministically among
+            // multiple hierarchies, so it takes the rank-ordered lookup.
             let vo_id = match attribute.as_str() {
                 "directory" | "folders" => {
                     self.directory_vo_opt(ehr_id).await?.ok_or_else(|| {
