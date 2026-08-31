@@ -15,6 +15,8 @@ workflow refuses a tag that has no matching section here.
 
 ## [Unreleased]
 
+## [4.0.14] - 2026-09-01
+
 ### Added
 
 - The admin console's template Example tab lets you pick how the example is
@@ -7929,7 +7931,8 @@ but has not yet run in production.
   seccomp, default-deny NetworkPolicy) and golden-render validation.
 
 
-[unreleased]: https://github.com/rubentalstra/FerroEHR/compare/v4.0.13...HEAD
+[unreleased]: https://github.com/rubentalstra/FerroEHR/compare/v4.0.14...HEAD
+[4.0.14]: https://github.com/rubentalstra/FerroEHR/compare/v4.0.13...v4.0.14
 [4.0.13]: https://github.com/rubentalstra/FerroEHR/compare/v4.0.12...v4.0.13
 [4.0.12]: https://github.com/rubentalstra/FerroEHR/compare/v4.0.11...v4.0.12
 [4.0.11]: https://github.com/rubentalstra/FerroEHR/compare/v4.0.10...v4.0.11
