@@ -1,0 +1,66 @@
+# SPDX-FileCopyrightText: FerroEHR contributors
+# SPDX-License-Identifier: MIT
+#
+# The MANUAL redeploy of sandbox.ferroehr.eu (#2974). Every step of the deploy
+# lives in `.github/actions/hosted-deploy`, which `release.yml`'s `sandbox`
+# job calls too, so a manual redeploy and a release deploy run the identical
+# steps. Read that action for the posture and the deploy mechanics; this file
+# is a trigger, an environment and a call.
+#
+# This workflow has no `workflow_call` trigger, deliberately: environment
+# secrets are not available to a job inside a `workflow_call` workflow even
+# when the job names the environment
+# (https://github.com/actions/runner/issues/1490, closed as not planned), so
+# the release pipeline calls the ACTION from an ordinary job of its own.
+#
+# There is deliberately NO push trigger either. The posture files travel
+# INSIDE the published ferroehr image at /opt/sandbox-posture, and the one
+# script the deploy key may run installs them out of the image it pulled — so
+# a posture change reaches the box with the release that carries it. A push to
+# `deploy/hosted/**` publishes no image, so a push-triggered run would go
+# green having applied nothing.
+#
+# Provisioning is the owner action on #2974, once: the box (cloud-init.yaml as
+# user data), the DNS, and the deploy key restricted to one command, stored in
+# the `hosted` ENVIRONMENT rather than as repository secrets. An empty secret
+# is a hard failure in the deploy action, never a skip (#2755).
+name: Hosted deploy
+
+on:
+  workflow_dispatch:
+
+permissions: {}
+
+# One deploy at a time, whichever caller started it: `release.yml`'s `sandbox`
+# job and the reseed's restart name this same group, so nothing races for the
+# box.
+concurrency:
+  group: hosted-deploy
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    name: deploy the hosted sandbox and verify
+    # Upstream only: a fork has no key and no box.
+    if: github.repository == 'rubentalstra/FerroEHR'
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    # The deploy key and the host key are ENVIRONMENT secrets, reachable only
+    # from a job that names this environment. This job reads them and passes
+    # them to the action as inputs — the only way a composite action can
+    # receive a secret.
+    environment: hosted
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      # No expected version: a manual redeploy changes no image, so the action
+      # derives what the sandbox must serve from `:latest`'s version label.
+      - name: Deploy the hosted sandbox
+        uses: ./.github/actions/hosted-deploy
+        with:
+          ssh-key: ${{ secrets.HOSTED_SSH_KEY }}
+          known-hosts: ${{ secrets.HOSTED_KNOWN_HOSTS }}

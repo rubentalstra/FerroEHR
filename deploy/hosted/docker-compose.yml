@@ -1,0 +1,97 @@
+# SPDX-FileCopyrightText: FerroEHR contributors
+# SPDX-License-Identifier: MIT
+#
+# What runs on the sandbox box: the CDR, the admin console, and a proxy that
+# gets its own certificate (#2974).
+#
+# The file lives at /opt/ferroehr-sandbox/docker-compose.yml on the host, and
+# it gets there from inside the ferroehr image: it is COPYed to
+# /opt/sandbox-posture/ (docker/Dockerfile) and the deploy script installs it
+# out of the image it just pulled. So an edit here reaches the box with the
+# release that carries it, and never before one.
+#
+# The database is a standalone Neon project: `.env` carries its DIRECT
+# (non-pooled) connection string as DATABASE_URL, which the config alias layer
+# maps to db.url (app/ferroehr/src/config/alias.rs). The pooled `-pooler`
+# endpoint is unsuitable — transaction-mode PgBouncer breaks the session GUCs
+# and the boot migrations (https://neon.com/docs/connect/connection-pooling).
+
+services:
+  ferroehr:
+    # The release pointer the image lane moves on real release tags. `.env`
+    # names the exact reference so a rollback can pin an older one.
+    image: ${FERROEHR_IMAGE:-ghcr.io/rubentalstra/ferroehr:latest}
+    container_name: ferroehr-sandbox
+    restart: unless-stopped
+    # The image is its own health probe (`ferroehr healthcheck`): the
+    # distroless base carries no shell and no curl. The deploy lane waits on
+    # this before it verifies anything from outside.
+    healthcheck:
+      test: ["CMD", "/usr/local/bin/ferroehr", "healthcheck"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 30s
+    # Sized for the box (a CPX21: 3 vCPU, 4 GB), not for an aspiration. On a
+    # resize the three limits below move together, and none is a code change.
+    deploy:
+      resources:
+        limits:
+          memory: 2048m
+    environment:
+      FERROEHR_CONFIG: /etc/ferroehr/ferroehr.toml
+    env_file:
+      # DATABASE_URL (the Neon direct string) and FERROEHR_IMAGE. The
+      # operator's file, readable by the service user alone; no automation
+      # writes it and CI never holds the connection string.
+      - .env
+    volumes:
+      - ./ferroehr.sandbox.toml:/etc/ferroehr/ferroehr.toml:ro
+    expose:
+      - "8080"
+
+  console:
+    image: ${FERROEHR_ADMIN_UI_IMAGE:-ghcr.io/rubentalstra/ferroehr-admin-ui:latest}
+    container_name: ferroehr-sandbox-console
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "/usr/local/bin/ferroehr-admin-ui", "healthcheck"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 15s
+    deploy:
+      resources:
+        limits:
+          memory: 768m
+    environment:
+      FERROEHR_ADMIN_CONFIG: /etc/ferroehr/admin-ui.toml
+    volumes:
+      - ./ferroehr-admin-ui.sandbox.toml:/etc/ferroehr/admin-ui.toml:ro
+    depends_on:
+      - ferroehr
+    expose:
+      - "3000"
+
+  caddy:
+    image: caddy:2-alpine
+    container_name: ferroehr-sandbox-caddy
+    restart: unless-stopped
+    ports:
+      - "80:80"
+      - "443:443"
+      - "443:443/udp"
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      # The certificate and the account key survive a redeploy. Losing them
+      # means asking for a new certificate on every deploy, which is how a
+      # deploy loop meets a rate limit.
+      - caddy_data:/data
+      - caddy_config:/config
+    depends_on:
+      - ferroehr
+      - console
+
+volumes:
+  caddy_data:
+  caddy_config:

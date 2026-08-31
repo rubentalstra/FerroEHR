@@ -148,7 +148,7 @@ jobs:
       # themselves differently; the TAG POLICY is fixed here so every image
       # tags identically by construction.
       # `latest` is the RELEASE pointer (the hosted sandbox tracks it —
-      # deploy/vercel/README.md); a prerelease tag must not move it.
+      # deploy/hosted/README.md); a prerelease tag must not move it.
       # The prerelease rule — one definition: .github/actions/release-kind. Still
       # spelled inline here: this lane's tag policy is read by every image, and
       # moving it onto the composite's output is part of forming the release

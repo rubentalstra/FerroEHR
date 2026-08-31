@@ -1,0 +1,37 @@
+# TLS for sandbox.ferroehr.eu, which Caddy obtains and renews on its own.
+#
+# The file reaches the box from inside the ferroehr image (/opt/sandbox-posture,
+# docker/Dockerfile) and is installed by the deploy script, which restarts the
+# caddy service when it changed — a bind-mounted file's contents changing does
+# not recreate the container that mounts it.
+#
+# The routing table is the one vercel.json used to hold: the CDR owns its base
+# path and the operational families, the console is the landing surface for
+# everything else.
+
+sandbox.ferroehr.eu {
+	encode zstd gzip
+
+	header {
+		Strict-Transport-Security "max-age=31536000; includeSubDomains"
+		X-Content-Type-Options "nosniff"
+		Referrer-Policy "strict-origin-when-cross-origin"
+		-Server
+	}
+
+	redir /favicon.ico /ferroehr/rest/swagger-ui/favicon-32x32.png
+
+	@cdr path /ferroehr/* /health /health/* /management /management/* /.well-known/*
+	handle @cdr {
+		reverse_proxy ferroehr:8080
+	}
+
+	handle {
+		reverse_proxy console:3000
+	}
+
+	log {
+		output stdout
+		format console
+	}
+}

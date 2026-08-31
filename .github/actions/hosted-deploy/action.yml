@@ -1,0 +1,213 @@
+# SPDX-FileCopyrightText: FerroEHR contributors
+# SPDX-License-Identifier: MIT
+
+# .github/actions/hosted-deploy — THE hosted-sandbox deploy, every step of it
+# (#2974, the Veredictum deploy/hosted posture adapted for two services).
+#
+# ONE owner of hosted-sandbox delivery: sandbox.ferroehr.eu runs on a Hetzner
+# box this repository provisions (deploy/hosted/), because the Vercel request
+# platform was slow and structurally wrong for a server whose migrations run
+# at boot (#2941/#2947/#2948 are the workaround trail). Three callers, all
+# thin, running identical steps because the steps are here:
+#
+#   - `.github/workflows/hosted-deploy.yml` — a manual redeploy; no expected
+#     version, so the expectation is derived from `:latest`'s own label.
+#   - `.github/workflows/release.yml`, the `sandbox` job — a real release,
+#     after scan-and-tag moved `:latest`, with the tag's version supplied.
+#   - `.github/workflows/sandbox-reseed.yml` — verb `restart`: recreate the
+#     CDR so a fresh boot re-runs the migrations after the schema wipe.
+#
+# WHY an action and not a reusable workflow: the deploy key and the host key
+# are `hosted` ENVIRONMENT secrets, and environment secrets are not available
+# to a job inside a `workflow_call` workflow even when that job names the
+# environment (https://github.com/actions/runner/issues/1490, closed as not
+# planned). So every caller is an ordinary job that names the environment,
+# reads the secrets, and hands them to this action as inputs.
+#
+# The box mounts no checkout and this deploy builds nothing: the posture
+# (compose file, Caddyfile, the two sandbox configuration files) travels
+# INSIDE the ferroehr image at /opt/sandbox-posture, and the one script the
+# deploy key may run installs it out of the image it pulled. The database
+# credential never passes through here: it lives in the box's own `.env`.
+name: Deploy the hosted sandbox
+description: Deploy sandbox.ferroehr.eu from the published images and verify what it serves.
+
+inputs:
+  verb:
+    description: >-
+      What the restricted key is asked to run: `deploy` (pull + install the
+      posture + recreate) or `restart` (recreate the CDR so a fresh boot
+      re-runs the migrations — the reseed's step after its wipe).
+    required: false
+    default: deploy
+  expected-version:
+    description: >-
+      The version string the sandbox must serve before a deploy counts as done
+      (`X.Y.Z`, no `v`). Empty means "derive it from the `:latest` image's own
+      version label" — what a manual redeploy wants, since it changes no
+      image. Ignored for verb `restart`.
+    required: false
+    default: ""
+  ssh-key:
+    description: >-
+      The deploy key, restricted on the box to the one deploy command. An
+      environment secret the calling job reads; a composite action cannot
+      read `secrets` itself.
+    required: true
+  known-hosts:
+    description: The box's host key, from the same environment as `ssh-key`.
+    required: true
+  image:
+    description: The published image the box pulls (and the posture source).
+    required: false
+    default: ghcr.io/rubentalstra/ferroehr
+  host:
+    description: The box the deploy key opens.
+    required: false
+    default: sandbox.ferroehr.eu
+  verify-base:
+    description: The public base URL the deploy's own verification fetches.
+    required: false
+    default: https://sandbox.ferroehr.eu
+
+runs:
+  using: composite
+  steps:
+    # A release deploy means `:latest` must ALREADY be the tag's image,
+    # because `:latest` is what the box pulls. A stale tag fails here, before
+    # any deploy. Anonymous registry reads: the image is public.
+    - name: The :latest tag is the release image
+      if: inputs.verb == 'deploy' && inputs.expected-version != ''
+      shell: bash
+      env:
+        IMAGE: ${{ inputs.image }}
+        EXPECTED: ${{ inputs.expected-version }}
+      run: |
+        set -euo pipefail
+        tok=$(curl -fsS "https://ghcr.io/token?scope=repository:${IMAGE#ghcr.io/}:pull" | sed -nE 's/.*"token":"([^"]+)".*/\1/p')
+        digest_of() {
+          curl -fsS -o /dev/null -w '%{header_json}' \
+            -H "Authorization: Bearer ${tok}" \
+            -H "Accept: application/vnd.oci.image.index.v1+json, application/vnd.docker.distribution.manifest.list.v2+json" \
+            "https://ghcr.io/v2/${IMAGE#ghcr.io/}/manifests/$1" \
+            | sed -nE 's/.*"docker-content-digest":\["([^"]+)"\].*/\1/p'
+        }
+        latest=$(digest_of latest)
+        tagged=$(digest_of "$EXPECTED")
+        if [ -z "$latest" ] || [ -z "$tagged" ] || [ "$latest" != "$tagged" ]; then
+          echo "::error::${IMAGE}:latest (${latest:-unreadable}) is not the ${EXPECTED} image (${tagged:-unreadable}) — the deploy would ship the OLD release; the tag-apply leg must land first." >&2
+          exit 1
+        fi
+        echo "${IMAGE}:latest == ${EXPECTED} (${latest})"
+
+    # The box mounts no checkout, so an image without the posture at
+    # /opt/sandbox-posture cannot be installed from. The release image carries
+    # it and says so with a label; this refuses to deploy one that does not —
+    # which is what makes the cutover safe: an older release, or a rollback to
+    # one, fails here instead of on the box.
+    - name: The image carries the sandbox posture
+      if: inputs.verb == 'deploy'
+      shell: bash
+      env:
+        IMAGE: ${{ inputs.image }}
+        REF: ${{ inputs.expected-version || 'latest' }}
+      run: |
+        set -euo pipefail
+        tok=$(curl -fsS "https://ghcr.io/token?scope=repository:${IMAGE#ghcr.io/}:pull" | sed -nE 's/.*"token":"([^"]+)".*/\1/p')
+        idx=$(curl -fsS -H "Authorization: Bearer ${tok}" \
+          -H "Accept: application/vnd.oci.image.index.v1+json, application/vnd.docker.distribution.manifest.list.v2+json" \
+          "https://ghcr.io/v2/${IMAGE#ghcr.io/}/manifests/${REF}")
+        child=$(printf '%s' "$idx" | jq -r '[.manifests[] | select(.platform.os == "linux")][0].digest // empty')
+        cfg=$(curl -fsS -H "Authorization: Bearer ${tok}" \
+          -H "Accept: application/vnd.oci.image.manifest.v1+json, application/vnd.docker.distribution.manifest.v2+json" \
+          "https://ghcr.io/v2/${IMAGE#ghcr.io/}/manifests/${child}" | jq -r '.config.digest // empty')
+        carries=$(curl -fsSL -H "Authorization: Bearer ${tok}" \
+          "https://ghcr.io/v2/${IMAGE#ghcr.io/}/blobs/${cfg}" \
+          | jq -r '.config.Labels["eu.ferroehr.image.carries-sandbox-posture"] // empty')
+        if [ "$carries" != "true" ]; then
+          echo "::error::${IMAGE}:${REF} does not declare eu.ferroehr.image.carries-sandbox-posture=true, so it carries no posture at /opt/sandbox-posture. The box mounts no checkout; deploy a release built after #2974." >&2
+          exit 1
+        fi
+        echo "${IMAGE}:${REF} carries the sandbox posture"
+
+    # What the CDR must serve for this deploy to count. A release deploy is
+    # told the version its tag names; a manual redeploy derives it from the
+    # `:latest` image's own version label — what it declares is exactly what
+    # a successful deploy must serve. A bare 200 is never proof: the
+    # deployment being replaced answers 200 too (measured at 4.0.4 and
+    # 4.0.10 on the Vercel posture).
+    - name: What the sandbox must serve
+      if: inputs.verb == 'deploy'
+      id: expect
+      shell: bash
+      env:
+        IMAGE: ${{ inputs.image }}
+        EXPECTED: ${{ inputs.expected-version }}
+      run: |
+        set -euo pipefail
+        expected="${EXPECTED:-}"
+        if [ -z "$expected" ]; then
+          tok=$(curl -fsS "https://ghcr.io/token?scope=repository:${IMAGE#ghcr.io/}:pull" | sed -nE 's/.*"token":"([^"]+)".*/\1/p')
+          idx=$(curl -fsS -H "Authorization: Bearer ${tok}" \
+            -H "Accept: application/vnd.oci.image.index.v1+json, application/vnd.docker.distribution.manifest.list.v2+json" \
+            "https://ghcr.io/v2/${IMAGE#ghcr.io/}/manifests/latest")
+          child=$(printf '%s' "$idx" | jq -r '[.manifests[] | select(.platform.os == "linux")][0].digest // empty')
+          cfg=$(curl -fsS -H "Authorization: Bearer ${tok}" \
+            -H "Accept: application/vnd.oci.image.manifest.v1+json, application/vnd.docker.distribution.manifest.v2+json" \
+            "https://ghcr.io/v2/${IMAGE#ghcr.io/}/manifests/${child}" | jq -r '.config.digest // empty')
+          expected=$(curl -fsSL -H "Authorization: Bearer ${tok}" \
+            "https://ghcr.io/v2/${IMAGE#ghcr.io/}/blobs/${cfg}" \
+            | jq -r '.config.Labels["org.opencontainers.image.version"] // empty')
+          if [ -z "$expected" ]; then
+            echo "::error::could not derive the expected version from :latest's org.opencontainers.image.version label — a verification that cannot decide must not pass." >&2
+            exit 1
+          fi
+          echo "expectation derived from :latest — waiting for '${expected}'"
+        fi
+        echo "version=${expected}" >> "$GITHUB_OUTPUT"
+
+    # The deploy (or the reseed's restart), and the proof. The action issues
+    # exactly one command — the key on the box runs the deploy script whatever
+    # is asked, and SSH_ORIGINAL_COMMAND selects the verb — then fetches the
+    # public status document from THIS runner and requires the served version.
+    - name: Deploy to the box and verify it serves the release
+      if: inputs.verb == 'deploy'
+      uses: rubentalstra/hetzner-deploy-action@23e875e1249a2fe2a27107291a638ab40da0172b # v1.0.1
+      with:
+        host: ${{ inputs.host }}
+        user: deploy
+        ssh-key: ${{ inputs.ssh-key }}
+        known-hosts: ${{ inputs.known-hosts }}
+        remote-command: deploy
+        verify-url: ${{ inputs.verify-base }}/ferroehr/rest/status
+        verify-contains: '"server_version":"${{ steps.expect.outputs.version }}"'
+        verify-timeout: "600"
+
+    # The console is the landing surface; a deploy that left it dead would
+    # still pass the CDR check above. Served markup, not a bare 200.
+    - name: The console serves its sign-in surface
+      if: inputs.verb == 'deploy'
+      shell: bash
+      env:
+        BASE: ${{ inputs.verify-base }}
+      run: |
+        set -euo pipefail
+        deadline=$(( $(date +%s) + 300 ))
+        until body=$(curl -fsS -m 30 "$BASE/" 2>/dev/null) && printf '%s' "$body" | grep -q "FerroEHR"; do
+          if [ "$(date +%s)" -ge "$deadline" ]; then
+            echo "::error::the console did not serve its sign-in surface within 5 minutes of the deploy." >&2
+            exit 1
+          fi
+          sleep 10
+        done
+        echo "console serving"
+
+    - name: Restart the CDR (fresh boot re-runs the migrations)
+      if: inputs.verb == 'restart'
+      uses: rubentalstra/hetzner-deploy-action@23e875e1249a2fe2a27107291a638ab40da0172b # v1.0.1
+      with:
+        host: ${{ inputs.host }}
+        user: deploy
+        ssh-key: ${{ inputs.ssh-key }}
+        known-hosts: ${{ inputs.known-hosts }}
+        remote-command: restart
