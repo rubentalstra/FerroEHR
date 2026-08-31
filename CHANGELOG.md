@@ -62,6 +62,12 @@ workflow refuses a tag that has no matching section here.
 
 ### Fixed
 
+- The admin console's two template Example panes report a failed example read
+  the same way: an inline error in the pane, in both template families. The
+  ADL 1.4 pane used to render the whole-screen error with a back link even
+  though the template itself had loaded.
+- The hosted sandbox serves the console's content-hashed script and wasm
+  bundle with immutable caching, so a repeat visit stops re-downloading it.
 - A template example request with a present but empty `detail_level` or
   `type` query value is refused with `400`. The declared defaults apply only
   to an absent parameter; an empty or whitespace-padded value is outside the
