@@ -164,7 +164,7 @@ pub fn assemble<S: std::hash::BuildHasher>(
         // `serde_path_to_error` wraps the deserializer so a refusal names the
         // SECTION PATH ("auth.oidc"), which plain serde errors do not carry —
         // the ingredient that lets `enrich` attribute the right file line, or
-        // honestly say the key came from the environment (#2572).
+        // honestly say the key came from the environment.
         Ok(built) => match serde_path_to_error::deserialize::<_, FerroEhrConfig>(built) {
             Ok(config) => Some(config),
             Err(e) => {
@@ -562,9 +562,9 @@ mod tests {
 
     #[test]
     fn an_env_sourced_unknown_key_names_its_section_and_the_variable() {
-        // #2572 regression: FERROEHR__AUTH__OIDC__ENABLED built a nested
-        // auth.oidc.enabled that OidcConfig rejects — the diagnostic must name
-        // the full path and the environment spelling, never a file line.
+        // FERROEHR__AUTH__OIDC__ENABLED builds a nested auth.oidc.enabled that
+        // OidcConfig rejects: the diagnostic must name the full path and the
+        // environment spelling, never a file line.
         let env: HashMap<String, String> = [(
             "FERROEHR__AUTH__OIDC__ENABLED".to_owned(),
             "false".to_owned(),
@@ -597,7 +597,7 @@ mod tests {
             find_key_line_in_section(content, "admin", "enabled"),
             Some(2)
         );
-        // The pre-fix behaviour: the bare name from the WRONG section.
+        // The bare name from the WRONG section resolves to nothing.
         assert_eq!(
             find_key_line_in_section(content, "auth.oidc", "enabled"),
             None

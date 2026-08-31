@@ -71,26 +71,20 @@ impl FerroEhrService {
         // to the single entry for the same template.
         let key = identity::canonical_key(template_id);
 
-        // Fast path: a built WebTemplate is already resident — serve it without
-        // touching `template_store`. This is the hot commit path: composition
-        // validation calls `web_template_for` once per commit, and once a
-        // template is warm every subsequent commit is a pure in-memory hit (no
-        // per-commit OPT read). No openEHR spec governs this cache — the spec blesses
-        // a compiled near-runtime form; the caching mechanics are our own design.
+        // A resident WebTemplate is served without touching `template_store`:
+        // composition validation calls this once per commit, so a warm template
+        // makes every later commit a pure in-memory hit (no openEHR spec governs
+        // the cache — our own design).
         if let Some(wt) = self.web_templates.get(&key).await {
             note_cache_event("hit");
             return Ok(wt);
         }
         note_cache_event("miss");
 
-        // Miss: load the stored OPT XML (the one store read, amortised across
-        // every future commit for this template). When the id is not an ADL 1.4
-        // template, fall back to the ADL2/OPT2 store
-        // (`web_template_adl2_cached`), so a FLAT/STRUCTURED commit keyed to an
-        // ADL2-registered template resolves and is archetype-constraint-checked.
-        // Only after *both* stores miss is the id "operational template not
-        // known" (the commit-path 422). No openEHR spec governs the internal
-        // resolver wiring — our own design/extension.
+        // On a miss the stored OPT XML is loaded once, and an id that is not an
+        // ADL 1.4 template falls back to the ADL2/OPT2 store so a FLAT/STRUCTURED
+        // commit against an ADL2-registered template still resolves. Only after
+        // BOTH stores miss is the id unknown (the commit-path 422).
         let xml = match self.get_template_xml(template_id).await {
             Ok(xml) => xml,
             Err(ServiceError::NotFound(_)) => {

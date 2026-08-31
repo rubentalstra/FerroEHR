@@ -95,9 +95,8 @@ pub(crate) async fn attest(
     contribution_id: Uuid,
     time_committed: jiff::Timestamp,
 ) -> Result<Committed, ServiceError> {
-    // The target lookup (`version_repo::attestation::attestation_target`) yields the owning
-    // EHR (compared against the caller's), the storage ordinal the attestation
-    // keys to, and the target's `creating_system_id` (carried into the outbox).
+    // The target's owning EHR is compared against the caller's, its ordinal
+    // keys the attestation, and its `creating_system_id` rides the outbox.
     let target = crate::storage::version_repo::attestation::attestation_target(
         tx,
         vo_id,
@@ -278,14 +277,10 @@ impl AttestationParts {
                         .with_path("ATTESTATION.is_pending"),
                 )
             })?;
-        // items (0..1); Items_valid: non-empty when present.
-        //
-        // A JSON `null` is the ABSENT encoding of an optional attribute, not a
-        // present-but-invalid list — the same reading `attested_view` and `proof`
-        // below apply, and the one the native `UPDATE_VERSION` DTO emits for
-        // `Option::None`. So it is filtered out before `Items_valid` is
-        // evaluated; a present-but-EMPTY list (`[]`) still fails, which is what
-        // the invariant actually forbids.
+        // items (0..1); Items_valid: non-empty when present. A JSON `null` is
+        // the ABSENT encoding of an optional attribute (the one the native
+        // `UPDATE_VERSION` DTO emits for `Option::None`), so it is filtered out
+        // before `Items_valid`; a present-but-EMPTY list still fails.
         // NOTE: the released text's two statements of `items` SCOPE conflict
         // (master04 §Attestation vs the class table on `attestation.adoc`); the
         // class model is enforced — `Items_valid`, and NO containment check.
@@ -301,10 +296,8 @@ impl AttestationParts {
                 .filter(|v| !v.is_null())
                 .map(|v| decode(v, "ATTESTATION.attested_view", "DV_MULTIMEDIA"))
                 .transpose()?,
-            // This is NOT the VERSION `signature` mechanism, which this server
-            // does generate and verify for its own signatures (master06 §Digital
-            // Signature — `crate::versioning::integrity`); there the server owns
-            // both the canonicalisation and the key.
+            // Not the VERSION `signature` mechanism, where the server owns both
+            // the canonicalisation and the key (master06 §Digital Signature).
             // NOTE: `proof` is an OPAQUE CLIENT FACT — no released text defines a
             // canonical form to recompute against ("The exact serialisation is
             // not yet defined by openEHR", master04 §Attestation).
@@ -402,14 +395,11 @@ impl AttestationInput {
     /// `PARTY_PROXY` or `description` is neither a string nor a canonical
     /// `DV_TEXT`.
     pub(crate) fn decode(partial: &Value) -> Result<Self, ServiceError> {
-        // description: the inherited AUDIT_DETAILS.description (0..1). ITS-REST
-        // types it `UDvText` — `oneOf` [`DV_TEXT`, `DV_CODED_TEXT`]
-        // (`schemas/data_types/UDvText.yaml`) — while SM
-        // `UPDATE_AUDIT.description` is `String [0..1]` (`update_audit.adoc`),
-        // which grounds the plain-string branch. Both spellings are read, and
-        // the object spelling is decoded WHOLE: reducing a `DV_CODED_TEXT` to
-        // its `value` would permanently drop the `defining_code` of a committed
-        // attestation (RM common `audit_details.adoc` §Attributes).
+        // description: the inherited AUDIT_DETAILS.description (0..1). Both
+        // released spellings are read — the ITS-REST `UDvText` object and the SM
+        // `String [0..1]` (`update_audit.adoc`) — and the object is decoded
+        // WHOLE: reducing a `DV_CODED_TEXT` to its `value` would drop the
+        // `defining_code` of a committed attestation.
         let description = partial
             .get("description")
             .filter(|d| !d.is_null())

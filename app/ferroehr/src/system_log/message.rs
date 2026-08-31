@@ -140,7 +140,6 @@ impl AuditMessage {
         let mut w = Writer::new_with_indent(Vec::new(), b' ', 2);
         w.write_event(Event::Start(BytesStart::new("AuditMessage")))?;
 
-        // EventIdentification
         let mut ev = BytesStart::new("EventIdentification");
         ev.push_attribute(("EventActionCode", self.action.to_string().as_str()));
         ev.push_attribute(("EventDateTime", self.event_datetime.as_str()));
@@ -157,7 +156,6 @@ impl AuditMessage {
         w.write_event(Event::End(BytesEnd::new("EventOutcomeDescription")))?;
         w.write_event(Event::End(BytesEnd::new("EventIdentification")))?;
 
-        // ActiveParticipant(s)
         for p in &self.participants {
             let mut ap = BytesStart::new("ActiveParticipant");
             ap.push_attribute(("UserID", p.user_id.as_str()));
@@ -169,7 +167,6 @@ impl AuditMessage {
             w.write_event(Event::End(BytesEnd::new("ActiveParticipant")))?;
         }
 
-        // AuditSourceIdentification
         let mut src = BytesStart::new("AuditSourceIdentification");
         src.push_attribute(("AuditEnterpriseSiteID", self.enterprise_site_id.as_str()));
         src.push_attribute(("AuditSourceID", self.source_id.as_str()));
@@ -177,7 +174,6 @@ impl AuditMessage {
         write_code(&mut w, "AuditSourceTypeCode", &self.source_type)?;
         w.write_event(Event::End(BytesEnd::new("AuditSourceIdentification")))?;
 
-        // ParticipantObjectIdentification(s)
         for obj in &self.objects {
             let mut po = BytesStart::new("ParticipantObjectIdentification");
             po.push_attribute(("ParticipantObjectID", obj.id.as_str()));
@@ -235,12 +231,10 @@ fn build_objects(
     }
 
     if object_class.has_object_uri() {
-        // Patient-centric classes already carry the Patient-Number object; the
-        // URI object is added when the id is known. Non-patient classes
-        // (template / demographic) always carry the URI object, filled with
-        // `value_if_missing` when unknown (DICOM PS3.15 §A.5 mandatory-field
-        // rule — a required element is never absent) so every record
-        // identifies its participant object.
+        // Patient-centric classes already carry the Patient-Number object and
+        // add the URI object when the id is known; non-patient classes always
+        // carry it, filled with `value_if_missing` when unknown, so no required
+        // element is absent (DICOM PS3.15 §A.5).
         let id = event.object_id.clone();
         if let Some(id) = id {
             objects.push(uri_object(id, event));

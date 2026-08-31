@@ -383,10 +383,9 @@ async fn next_version(
         // at the preceding version's trunk fork point (master06 §Distributed
         // Versioning); the copied version itself stays valid.
         //
-        // Consequence: a trunk whose creating system changes mid-line is
-        // unrepresentable THROUGH THIS COMMIT ENGINE, while storage and the read
-        // paths tolerate one, so a container that arrives already carrying such
-        // a lineage (an archive load, an extract import) serves correctly.
+        // A trunk whose creating system changes mid-line is unrepresentable
+        // through this engine, but storage and the read paths tolerate one, so
+        // an imported container carrying such a lineage still serves.
         // NOTE: master06 §Copying §Subsequent Local Modifications and §Moving
         // Version Containers contradict each other on the identical observable
         // state; §Copying is followed — the rule with a procedure and a wire.
@@ -521,11 +520,9 @@ fn stamp_version_uid(canonical: &mut Value, version_uid: &str) -> Result<(), Ver
             // Replacing keeps the key's existing position.
             map.insert("uid".to_owned(), value);
         } else {
-            // A fresh `uid` must land at its BMM-declared position — the RM
-            // BMM declares LOCATABLE as (name, archetype_node_id, uid, …), so
-            // in the canonical encoding it follows `archetype_node_id`. A
-            // plain insert appends at the map's end, and the stored body is
-            // now served byte-verbatim (#2913), so placement is wire-visible.
+            // The RM BMM declares LOCATABLE as (name, archetype_node_id, uid,
+            // …), and the stored body is served byte-verbatim, so a fresh uid
+            // must land after `archetype_node_id` rather than at the map's end.
             let anchor = ["archetype_node_id", "name", "_type"]
                 .iter()
                 .find_map(|k| map.keys().position(|key| key == k));
@@ -678,10 +675,9 @@ async fn apply_change(
                     .map_err(|e| ServiceError::internal("externalize multimedia", e))?;
             }
             let lifecycle = resolve_lifecycle(lifecycle_state)?;
-            // Same coupling as the create arm: a modification carries content,
-            // so it can never be the `deleted` version (master06 §Logical
-            // Deletion). Refused before the placement read, so a data-carrying
-            // `523` never reaches storage.
+            // A modification carries content, so it can never be the `deleted`
+            // version (master06 §Logical Deletion) — refused before the
+            // placement read, so a data-carrying `523` never reaches storage.
             reject_deleted_with_data(&lifecycle)?;
             let next =
                 next_version(tx, ehr_id, vo_id, kind, expected, &ctx.system_id, preplaced).await?;
@@ -794,12 +790,10 @@ async fn commit_resolved(
         ContributionCtx::Existing(cid) => cid,
     };
 
-    // The attestations committed WITH this version, completed ONCE — before the
-    // signature, because they are inside the signed canonical form (master06
-    // §Digital Signature signs "the entire Version object", `signature` alone
-    // excluded), and reused verbatim for the insert below so the signed bytes
-    // and the stored bytes are the same bytes. `r.time_committed` is the
-    // transaction timestamp every row of this transaction stamps.
+    // The accompanying attestations are completed ONCE before the signature —
+    // master06 §Digital Signature signs "the entire Version object" — and
+    // reused verbatim for the insert, so signed bytes and stored bytes are the
+    // same bytes.
     let at_committal_attestations: Vec<Value> = attestation::complete_accompanying(
         &r.attestations,
         &ctx.system_id,
@@ -862,8 +856,6 @@ async fn commit_resolved(
         }
     };
 
-    // The shared commit tail: folder membership + attestations (the node rows
-    // rode the folded statement itself, through its node CTE).
     // A newly created FOLDER hierarchy joins `EHR.folders` as a new member (RM
     // ehr master04 §Folders). Recorded only on CREATION.
     if r.is_first_folder
