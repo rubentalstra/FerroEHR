@@ -15,6 +15,13 @@ workflow refuses a tag that has no matching section here.
 
 ## [Unreleased]
 
+### Security
+
+- The `ferroehr-postgres` image builds from the respun upstream `postgres:18.6`
+  base (the tag was re-pointed upstream with rebuilt base packages and bundled
+  binaries); the digest pin follows it everywhere it appears. The rebuilt
+  candidate scans clean at the published-image gate.
+
 ### Changed
 
 - The repository's commit history on `main` now starts at a single labelled

@@ -71,9 +71,10 @@ for target in "${targets[@]}"; do
   [[ -n "$platform" ]] && platform_args=(--platform "$platform")
   safe=$(printf '%s' "${ref}_${platform}" | tr '/:@' '___')
   report="$out_dir/${safe}.json"
-  echo "── scanning ${ref} ${platform:-'(as built)'}"
+  echo "── scanning ${ref} ${platform:-(as built)}"
   trivy image --skip-version-check --config trivy.yaml --scanners vuln \
-    "${platform_args[@]}" "${vex_args[@]}" -f json -o "$report" "$ref"
+    ${platform_args[@]+"${platform_args[@]}"} ${vex_args[@]+"${vex_args[@]}"} \
+    -f json -o "$report" "$ref"
   count=$(jq '[.Results[]?.Vulnerabilities // [] | .[]] | length' "$report")
   if [[ "$count" -gt 0 ]]; then
     jq -r '.Results[]? | .Target as $t | (.Vulnerabilities // [])[]
