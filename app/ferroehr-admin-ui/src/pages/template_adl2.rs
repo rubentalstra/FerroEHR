@@ -41,6 +41,7 @@ use crate::components::field::{BTN_SECONDARY, INPUT};
 use crate::components::page_header::{Crumb, PageHeader};
 use crate::components::surface::{CARD_PAD, CARD_TITLE};
 use crate::error::AdminUiError;
+use crate::example_options::{ExampleDetail, ExampleType};
 use crate::format::ReprFormat;
 use crate::pages::template_detail::{
     CatalogTreeNode, catalog_error_view, node_inspector, tree_skeleton,
@@ -190,9 +191,12 @@ pub async fn fetch_adl2_catalog(
 /// `format`.
 ///
 /// GET `definition/template/adl2/{template_id}/example` with `Accept` set to
-/// the selected representation's media type. The Definition API declares no
-/// VERSIONED example resource, so the example is generated from the artefact
-/// `template_id` itself resolves to. `404` → `Ok(None)`.
+/// the selected representation's media type, and the operator's `detail_level`
+/// and `type` on the query string
+/// (`docs/specs/openehr/ITS-REST/specifications/operations/definition_template_adl2_example_get.yaml`).
+/// The Definition API declares no VERSIONED example resource, so the example is
+/// generated from the artefact `template_id` itself resolves to.
+/// `404` → `Ok(None)`.
 ///
 /// # Errors
 /// [`AdminUiError::Unauthenticated`] without a console session;
@@ -205,10 +209,16 @@ pub async fn fetch_adl2_example(
     template_id: String,
     /// Which representation to negotiate for the example.
     format: ReprFormat,
+    /// How much of the template the example fills in (`detail_level`).
+    detail: ExampleDetail,
+    /// Which form the example is shaped for (`type`).
+    kind: ExampleType,
 ) -> Result<Option<String>, AdminUiError> {
     let session = crate::session::require_session().await?;
     let state: crate::state::AppState = expect_context();
-    let url = state.cdr.rest_v1(&crate::adl2::example_path(&template_id));
+    let url = state
+        .cdr
+        .rest_v1(&crate::adl2::example_path(&template_id, detail, kind));
     let response = state
         .cdr
         .get(&session.credential, &url, format.media_type())
@@ -301,6 +311,8 @@ pub fn Adl2TemplateDetailPage() -> impl IntoView {
             .filter(|value| !value.is_empty())
     });
     let example_format = RwSignal::new(ReprFormat::CanonicalJson);
+    let example_detail = RwSignal::new(ExampleDetail::default());
+    let example_kind = RwSignal::new(ExampleType::default());
     let selected_node = RwSignal::new(None::<CatalogNode>);
 
     // Each pane's resource is gated on its tab being active so only the
@@ -334,10 +346,21 @@ pub fn Adl2TemplateDetailPage() -> impl IntoView {
         },
     );
     let example: Resource<Result<PaneBody, AdminUiError>> = Resource::new(
-        move || (tab.get() == Adl2Tab::Example).then(|| (template_id.get(), example_format.get())),
+        move || {
+            (tab.get() == Adl2Tab::Example).then(|| {
+                (
+                    template_id.get(),
+                    example_format.get(),
+                    example_detail.get(),
+                    example_kind.get(),
+                )
+            })
+        },
         |active| async move {
             match active {
-                Some((id, format)) => Ok(PaneBody::of(fetch_adl2_example(id, format).await?)),
+                Some((id, format, detail, kind)) => Ok(PaneBody::of(
+                    fetch_adl2_example(id, format, detail, kind).await?,
+                )),
                 None => Ok(PaneBody::Idle),
             }
         },
@@ -355,7 +378,7 @@ pub fn Adl2TemplateDetailPage() -> impl IntoView {
     let source_pane = source_tab(source);
     let json_pane = json_tab(json);
     let catalog_pane = catalog_tab(catalog, selected_node);
-    let example_pane = example_tab(example, example_format);
+    let example_pane = example_tab(example, example_format, example_detail, example_kind);
 
     let tab_link = move |value: Adl2Tab| {
         let class = move || {
@@ -670,18 +693,15 @@ fn json_tab(json: Resource<Result<PaneBody, AdminUiError>>) -> AnyView {
     .into_any()
 }
 
-/// The Example pane: a format selector over the four representations the
-/// example resource negotiates, then the generated composition.
+/// The Example pane: the shared example controls — representation, detail
+/// level, and the form the example is shaped for — then the generated
+/// composition.
 fn example_tab(
     example: Resource<Result<PaneBody, AdminUiError>>,
     format: RwSignal<ReprFormat>,
+    detail: RwSignal<ExampleDetail>,
+    kind: RwSignal<ExampleType>,
 ) -> AnyView {
-    let offered = vec![
-        ReprFormat::CanonicalJson,
-        ReprFormat::CanonicalXml,
-        ReprFormat::Flat,
-        ReprFormat::Structured,
-    ];
     view! {
         <div class="space-y-3">
             <p class="text-sm text-ink-muted">
@@ -689,7 +709,11 @@ fn example_tab(
                  declares no versioned example resource, so the version bar above does not change
                  it."
             </p>
-            <crate::components::format_view::FormatSelector offered=offered selected=format />
+            <crate::components::example_controls::ExampleControls
+                format=format
+                detail=detail
+                kind=kind
+            />
             <Transition fallback=tree_skeleton>
                 {move || Suspend::new(async move {
                     match example.await {
