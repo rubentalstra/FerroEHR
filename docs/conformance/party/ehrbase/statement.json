@@ -53,6 +53,7 @@
   ],
   "options": [
     "adl14-partial-id-exact",
+    "aql-nonnumeric-aggregate-refused",
     "contribution-xml-unsupported",
     "directory-xml-supported",
     "directory-xml-write-accepted",
@@ -60,6 +61,8 @@
     "ehr-status-xml-write-accepted",
     "ehr-xml-supported",
     "ehr-xml-write-accepted",
+    "undefined-containment-empty",
+    "unmatched-member-refused",
     "xml-namespace-fixed"
   ],
   "served_extensions": [],

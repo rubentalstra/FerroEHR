@@ -83,17 +83,17 @@ Selected gating cases per claimed capability. `inconclusive` counts cases whose 
 | TemplateExamples | pass | 3 | 0 | 0 | 0 |
 | QueryProvisioning | pass | 27 | 0 | 0 | 0 |
 | EhrOperations | pass | 22 | 0 | 0 | 2 |
-| EhrStatus | pass | 45 | 0 | 0 | 5 |
-| CompositionOps | pass | 60 | 0 | 0 | 0 |
-| DirectoryOps | pass | 78 | 0 | 0 | 8 |
-| ChangeSets | pass | 104 | 0 | 0 | 5 |
+| EhrStatus | pass | 45 | 0 | 0 | 8 |
+| CompositionOps | pass | 60 | 0 | 0 | 3 |
+| DirectoryOps | pass | 78 | 0 | 0 | 18 |
+| ChangeSets | pass | 104 | 0 | 0 | 9 |
 | Versioning | pass | 75 | 0 | 0 | 0 |
-| ArchetypeValidation | pass | 125 | 0 | 0 | 0 |
-| PartyOperations | pass | 88 | 0 | 0 | 4 |
+| ArchetypeValidation | pass | 125 | 0 | 0 | 11 |
+| PartyOperations | pass | 88 | 0 | 0 | 5 |
 | PartyRelationshipOperations | pass | 19 | 0 | 0 | 0 |
 | DemographicArchetypeValidation | pass | 11 | 0 | 0 | 0 |
-| AqlBasic | pass | 36 | 0 | 0 | 0 |
-| AqlAdvanced | pass | 3 | 0 | 0 | 0 |
+| AqlBasic | pass | 36 | 0 | 0 | 16 |
+| AqlAdvanced | pass | 3 | 0 | 0 | 1 |
 | AqlTerminology | pass | 6 | 0 | 0 | 0 |
 | ActivityReport | pass | 15 | 0 | 0 | 0 |
 | PhysicalDeletion | pass | 9 | 0 | 0 | 2 |
@@ -105,7 +105,7 @@ Selected gating cases per claimed capability. `inconclusive` counts cases whose 
 | Tds | pass | 16 | 0 | 0 | 0 |
 | DefinitionApi | pass | 1 | 0 | 0 | 0 |
 | EhrApi | pass | 2 | 0 | 0 | 0 |
-| DemographicApi | pass | 63 | 0 | 0 | 1 |
+| DemographicApi | pass | 63 | 0 | 0 | 2 |
 | QueryApi | pass | 22 | 0 | 0 | 0 |
 | AdminApi | pass | 8 | 0 | 0 | 0 |
 | MessageApi | pass | 4 | 0 | 0 | 0 |
@@ -175,7 +175,7 @@ Percentiles re-derive from the embedded HDR V2 histograms; the class verdict is 
 
 ## Honesty
 
-Coverage: 1064 of 1102 selected cases driven.
+Coverage: 1064 of 1145 selected cases driven.
 
 Not-executed verdicts (each cited):
 
