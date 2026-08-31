@@ -1,0 +1,161 @@
+# SPDX-FileCopyrightText: FerroEHR contributors
+# SPDX-License-Identifier: MIT
+#
+# Is the hosted sandbox up, and is it serving the release it should? (#2974)
+#
+# The sandbox runs on a box this repository owns, so nothing outside this
+# repository is watching it. Four layers do, and this is the fourth: the
+# containers' own healthchecks answer "is the process serving", the restart
+# policy answers "is it coming back", the deploy's verification answers "did
+# what we shipped land" — and none of them notices a box that stopped
+# answering at 3am on a Sunday.
+#
+# It opens an ISSUE rather than sending mail, because an issue is a record
+# with a history. One issue, reused: a box that is down for a day should not
+# produce 96 of them.
+name: Hosted watch
+
+on:
+  schedule:
+    # Every fifteen minutes. Cheap, and the window in which nobody notices is
+    # the number that matters here.
+    - cron: "*/15 * * * *"
+  workflow_dispatch:
+
+permissions: {}
+
+concurrency:
+  group: hosted-watch
+  cancel-in-progress: true
+
+env:
+  HOSTED_BASE: https://sandbox.ferroehr.eu
+  IMAGE: ghcr.io/rubentalstra/ferroehr
+  ISSUE_TITLE: "The hosted sandbox is not serving what it should"
+
+jobs:
+  watch:
+    name: is it up, and is it the right version
+    if: github.repository == 'rubentalstra/FerroEHR'
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      issues: write
+    steps:
+      - name: Ask the sandbox
+        id: ask
+        run: |
+          set -euo pipefail
+
+          # /health is always-on and ungated, outside the API subtree, so it
+          # answers even when everything else is broken. It claims only that
+          # the server accepts connections, which is the first question.
+          health="$(curl -sS -m 20 -o /dev/null -w '%{http_code}' "${HOSTED_BASE}/health" || echo 000)"
+
+          # And the served version, from the status document. A 200 is not
+          # enough: an old deployment answers 200 too.
+          served="$(curl -sS -m 30 "${HOSTED_BASE}/ferroehr/rest/status" \
+            | jq -r '.server_version // empty' 2>/dev/null || true)"
+
+          # The console is the landing surface; a dead console with a live CDR
+          # is still a broken sandbox.
+          console="$(curl -sS -m 30 "${HOSTED_BASE}/" | grep -c "FerroEHR" || true)"
+
+          # What it SHOULD serve: the release pointer's own version label.
+          tok=$(curl -fsS "https://ghcr.io/token?scope=repository:${IMAGE#ghcr.io/}:pull" | sed -nE 's/.*"token":"([^"]+)".*/\1/p')
+          idx=$(curl -fsS -H "Authorization: Bearer ${tok}" \
+            -H "Accept: application/vnd.oci.image.index.v1+json, application/vnd.docker.distribution.manifest.list.v2+json" \
+            "https://ghcr.io/v2/${IMAGE#ghcr.io/}/manifests/latest" || true)
+          child=$(printf '%s' "$idx" | jq -r '[.manifests[] | select(.platform.os == "linux")][0].digest // empty')
+          expected=""
+          if [ -n "$child" ]; then
+            cfg=$(curl -fsS -H "Authorization: Bearer ${tok}" \
+              -H "Accept: application/vnd.oci.image.manifest.v1+json, application/vnd.docker.distribution.manifest.v2+json" \
+              "https://ghcr.io/v2/${IMAGE#ghcr.io/}/manifests/${child}" | jq -r '.config.digest // empty')
+            expected=$(curl -fsSL -H "Authorization: Bearer ${tok}" \
+              "https://ghcr.io/v2/${IMAGE#ghcr.io/}/blobs/${cfg}" \
+              | jq -r '.config.Labels["org.opencontainers.image.version"] // empty')
+          fi
+
+          verdict=ok
+          detail=""
+          if [ "$health" != "200" ]; then
+            verdict=down
+            detail="\`/health\` answered ${health}. The box is not serving at all, or not reachable."
+          elif [ -z "$served" ]; then
+            verdict=degraded
+            detail="\`/health\` answered 200 and \`/ferroehr/rest/status\` carries no \`server_version\`. The proxy is up and the CDR is not answering."
+          elif [ -n "$expected" ] && [ "$served" != "$expected" ]; then
+            verdict=stale
+            detail="It serves \`${served}\` and the release pointer names \`${expected}\`. A deploy did not land, or landed and was rolled back."
+          elif [ "$console" = "0" ]; then
+            verdict=degraded
+            detail="The CDR serves \`${served}\` and the landing surface carries no console markup. The console container is not answering."
+          fi
+
+          {
+            echo "verdict=${verdict}"
+            echo "served=${served:-none}"
+            echo "expected=${expected:-unknown}"
+            echo "detail=${detail}"
+          } >> "$GITHUB_OUTPUT"
+          echo "verdict=${verdict} served=${served:-none} expected=${expected:-unknown}"
+
+      # One issue, reused, and a comment only when the DIAGNOSIS CHANGES.
+      - name: Say so, once
+        if: steps.ask.outputs.verdict != 'ok'
+        env:
+          GH_TOKEN: ${{ github.token }}
+          REPO: ${{ github.repository }}
+          VERDICT: ${{ steps.ask.outputs.verdict }}
+          DETAIL: ${{ steps.ask.outputs.detail }}
+          RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+        run: |
+          set -euo pipefail
+          existing="$(gh issue list --repo "$REPO" --state open --search "$ISSUE_TITLE in:title" \
+            --json number --jq '.[0].number // empty')"
+          headline="**${VERDICT}** — ${DETAIL}"
+          note="${headline}
+
+          Checked at $(date -u +%Y-%m-%dT%H:%M:%SZ) by [this run](${RUN_URL})."
+          if [ -n "$existing" ]; then
+            # The last diagnosis this watch recorded. An unchanged one is
+            # already on the issue; the run history carries every check.
+            # shellcheck disable=SC2016  # $opened is a jq variable, not a shell one
+            said="$(gh issue view "$existing" --repo "$REPO" --json comments,body --jq '
+              ([.body | split("\n")[] | select(startswith("**"))] | last // "") as $opened
+              | [.comments[] | select(.body | startswith("**")) | .body | split("\n")[0]]
+              | last // $opened')"
+            if [ "$said" = "$headline" ]; then
+              echo "unchanged since the last comment on #${existing}: ${headline}"
+              exit 0
+            fi
+            gh issue comment "$existing" --repo "$REPO" --body "$note"
+            echo "commented on #${existing}"
+          else
+            gh issue create --repo "$REPO" --title "$ISSUE_TITLE" \
+              --label bug --label P0 \
+              --body "The scheduled watch found the hosted sandbox not serving what it should. This issue is reused for as long as that holds, gains a comment whenever the diagnosis changes, and closes when a check finds it healthy again. Every individual check is in the workflow run history.
+
+          ${note}
+
+          The sandbox runs on a box this repository provisions (deploy/hosted/, #2974), so nothing outside this repository is watching it. What to look at, in order: whether the box answers at all, then \`docker compose ps\` and the container logs on the box, then whether the deploy lane's last run went green."
+            echo "opened a new issue"
+          fi
+
+      # And closed when it recovers, so an open issue always means a live
+      # problem rather than one somebody forgot to tidy.
+      - name: Close it when it recovers
+        if: steps.ask.outputs.verdict == 'ok'
+        env:
+          GH_TOKEN: ${{ github.token }}
+          REPO: ${{ github.repository }}
+          SERVED: ${{ steps.ask.outputs.served }}
+          RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+        run: |
+          set -euo pipefail
+          existing="$(gh issue list --repo "$REPO" --state open --search "$ISSUE_TITLE in:title" \
+            --json number --jq '.[0].number // empty')"
+          [ -n "$existing" ] || { echo "healthy, and nothing was open"; exit 0; }
+          gh issue close "$existing" --repo "$REPO" --comment "Recovered: the sandbox serves \`${SERVED}\` again, seen by [this run](${RUN_URL})."
+          echo "closed #${existing}"

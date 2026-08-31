@@ -43,8 +43,9 @@
 # RE-RUNNING is the recovery for every partial failure, and each leg is
 # idempotent by construction: images push by digest and are re-tagged, the
 # GitHub release updates its draft until it is published, docs-freeze is a
-# green no-op on an already-cut version, the sandbox hook ping is naturally
-# repeatable, and the crates leg treats an already-published version as done.
+# green no-op on an already-cut version, the sandbox deploy is a pull-and-
+# recreate the box repeats harmlessly, and the crates leg treats an
+# already-published version as done.
 # The ONE leg that is not is the chart: a published chart version is immutable,
 # so a failure after `helm push` means the fix ships as the next chart version
 # (that lane says so at the point of failure). A crates.io version is immutable
@@ -236,7 +237,7 @@ jobs:
       - name: .zenodo.json is in sync with CITATION.cff
         run: bash scripts/render/zenodo-json.sh --check
 
-      - name: docker-compose.yml and Dockerfile.vercel image tags match the version
+      - name: docker-compose.yml and the hosted compose image tags match their policy
         run: bash scripts/checks/compose-image-tags.sh
 
       - name: Documented keys resolve in their source
@@ -957,31 +958,50 @@ jobs:
       release-tag: ${{ needs.plan.outputs.tag }}
       sha: ${{ github.sha }}
 
-  # ── The hosted sandbox ──────────────────────────────────────────────────────
-  # Keyed on apply-tags, never on a run conclusion: the sandbox image is
-  # `FROM ghcr.io/rubentalstra/ferroehr:latest`, which scan-and-tag has just
-  # moved, and an advisory scanner elsewhere in this run can no longer suppress
-  # the deploy (v4.0.3). A prerelease moves no `:latest`, so there is nothing
-  # to deploy — hence the release-only condition.
+  # ── The hosted sandbox (#2974: the Hetzner box) ─────────────────────────────
+  # Keyed on apply-tags, never on a run conclusion: the box pulls
+  # `ghcr.io/rubentalstra/ferroehr:latest`, which scan-and-tag has just moved,
+  # and an advisory scanner elsewhere in this run can no longer suppress the
+  # deploy (v4.0.3). A prerelease moves no `:latest`, so there is nothing to
+  # deploy — hence the release-only condition.
   #
-  # The expected version arrives as an INPUT. It used to be parsed out of a
-  # `workflow_run` payload's `head_branch`, which is why that trigger existed
-  # at all.
+  # An ordinary job rather than a workflow call, because the deploy key lives
+  # in the `hosted` environment and the caller of a reusable workflow cannot
+  # name one (actions/runner#1490 — the same reason Veredictum's release
+  # pipeline calls its action from an ordinary job). Every deploy step lives
+  # in .github/actions/hosted-deploy, shared with the manual dispatch lane.
   sandbox:
     name: sandbox
     needs: [plan, scan-and-tag]
     if: needs.plan.outputs.is-release == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    environment: hosted
+    concurrency:
+      group: hosted-deploy
+      cancel-in-progress: false
     permissions:
       contents: read
-    # The deploy hook is a repository secret and the reseed's database URL an
-    # environment secret; a called workflow sees only what the caller passes,
-    # and an environment secret cannot be passed explicitly because the caller
-    # cannot read it. `inherit` reproduces exactly the secret visibility this
-    # workflow had when the tag triggered it directly.
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Deploy the hosted sandbox
+        uses: ./.github/actions/hosted-deploy
+        with:
+          expected-version: ${{ needs.plan.outputs.version }}
+          ssh-key: ${{ secrets.HOSTED_SSH_KEY }}
+          known-hosts: ${{ secrets.HOSTED_KNOWN_HOSTS }}
+
+  # After the deploy, the reseed: a release that edits the baseline migration
+  # heals at deploy time instead of at the next midnight. Environment secrets
+  # reach the called workflow's own environment-naming jobs here (measured:
+  # the v4.0.13 release's reseed succeeded through two call hops).
+  sandbox-reseed:
+    name: sandbox reseed
+    needs: sandbox
     secrets: inherit # zizmor: ignore[secrets-inherit]
-    uses: ./.github/workflows/sandbox-deploy.yml
-    with:
-      expected-version: ${{ needs.plan.outputs.version }}
+    uses: ./.github/workflows/sandbox-reseed.yml
 
   # ── Freeze /docs/vX.Y.Z/ ────────────────────────────────────────────────────
   # Moved out of docs.yml (#2776), which had no prerelease guard: an `-rc1` tag
@@ -1145,6 +1165,7 @@ jobs:
       - admin-ui-smoke
       - chart
       - sandbox
+      - sandbox-reseed
       - docs-freeze
       - crates
     runs-on: ubuntu-latest
@@ -1179,6 +1200,7 @@ jobs:
           R_ADMIN_UI_SMOKE: ${{ needs.admin-ui-smoke.result }}
           R_CHART: ${{ needs.chart.result }}
           R_SANDBOX: ${{ needs.sandbox.result }}
+          R_SANDBOX_RESEED: ${{ needs.sandbox-reseed.result }}
           R_DOCS_FREEZE: ${{ needs.docs-freeze.result }}
           R_CRATES: ${{ needs.crates.result }}
         run: |
@@ -1219,6 +1241,7 @@ jobs:
           check "admin-ui smoke" "$R_ADMIN_UI_SMOKE"
           check "chart" "$R_CHART"
           check "sandbox" "$R_SANDBOX" prerelease
+          check "sandbox reseed" "$R_SANDBOX_RESEED" prerelease
           check "docs freeze" "$R_DOCS_FREEZE" prerelease
           check "crates.io" "$R_CRATES" prerelease
 

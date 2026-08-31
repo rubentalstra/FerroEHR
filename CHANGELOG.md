@@ -32,6 +32,12 @@ workflow refuses a tag that has no matching section here.
 
 ### Changed
 
+- The hosted sandbox (sandbox.ferroehr.eu) moved off Vercel onto a dedicated
+  Hetzner server (`deploy/hosted/` is the whole committed posture: cloud-init,
+  compose, Caddy TLS, a key-restricted deploy script). No more scale-to-zero
+  cold starts or free-compute slowdowns; the same URL, credentials, nightly
+  reset and released images. The database is a standalone Neon project on its
+  direct endpoint, no longer a platform integration.
 - The hosted sandbox (sandbox.ferroehr.eu) now serves the Admin API: the
   nightly-reset demo is a development/testing deployment in the released
   spec's own terms, and the conformance statement's AdminApi claims become

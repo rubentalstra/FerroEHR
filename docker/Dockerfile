@@ -139,7 +139,18 @@ LABEL org.opencontainers.image.title="FerroEHR" \
       org.opencontainers.image.base.name="gcr.io/distroless/cc-debian13:nonroot" \
       org.opencontainers.image.base.digest="sha256:a77defd6fedbb3392b175ba8ea3d1c22be963c1597c248c3ba987ddd80bfb512" \
       org.opencontainers.image.version="${VERSION}" \
-      org.opencontainers.image.revision="${REVISION}"
+      org.opencontainers.image.revision="${REVISION}" \
+      eu.ferroehr.image.carries-sandbox-posture="true"
+
+# ── The hosted-sandbox posture travels in the image (#2974) ────────────────────
+# The compose file, the Caddyfile and the two sandbox configuration files the
+# Hetzner box runs (deploy/hosted/): the box holds no checkout, so its deploy
+# script extracts these from the image it just pulled and installs them with a
+# parse check and .prev rollback. A posture change therefore arrives with the
+# release that carries it, with that artifact's provenance.
+COPY deploy/hosted/docker-compose.yml deploy/hosted/Caddyfile \
+     deploy/hosted/ferroehr.sandbox.toml deploy/hosted/ferroehr-admin-ui.sandbox.toml \
+     /opt/sandbox-posture/
 
 # ── runtime-from-source: compose/local (COPY the in-image build) ───────────────
 FROM runtime-base AS runtime-from-source

@@ -502,6 +502,27 @@ jobs:
       - name: Every shell program is clean at severity=style
         run: bash scripts/checks/shellcheck-lane.sh
 
+  # The hosted box's deploy script lives inside deploy/hosted/cloud-init.yaml
+  # as a write_files block, where no other gate reads shell (#2974); this
+  # extracts and shellchecks it, and checks that docker/Dockerfile bakes every
+  # posture path the script reads out of the image.
+  hosted-deploy-script:
+    name: hosted-deploy-script
+    if: github.event_name == 'pull_request' || github.event_name == 'merge_group'
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: taiki-e/install-action@b6ff580856c41316412a0b9b60540fbc6f8c82cc # v2.86.7
+        with:
+          tool: shellcheck@0.11.0
+      - name: The embedded deploy script is clean and its posture paths are baked
+        run: bash scripts/checks/hosted-deploy-script.sh
+
   # Comment-style guard (.claude/rules/comments.md, RFC 505/1574): block
   # comments, TODO(#N) form, NOTE/essay line budgets — over the WHOLE tree
   # hand-written .rs files (the legacy essay sweep #1870 closed; the step runs
@@ -2097,6 +2118,7 @@ jobs:
       - workflow-audit
       - workflow-lint
       - shellcheck
+      - hosted-deploy-script
       - comment-style
       - default-style
       - docs-claims

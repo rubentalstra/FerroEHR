@@ -210,8 +210,9 @@ on the documentation site.
 ## Quick start
 
 The fastest path is the [live sandbox](https://sandbox.ferroehr.eu): it opens
-straight into the Swagger UI of a running FerroEHR (credentials
-`ferroehr` / `ferroehr`, demo data, wiped nightly). One step up,
+the admin console over a running FerroEHR, with the same server's Swagger UI at
+[/ferroehr/rest/swagger-ui](https://sandbox.ferroehr.eu/ferroehr/rest/swagger-ui)
+(credentials `ferroehr` / `ferroehr`, demo data, wiped nightly). One step up,
 [open a GitHub Codespace](https://codespaces.new/rubentalstra/FerroEHR)
 and the published stack (server, PostgreSQL 18, admin console) boots in your
 browser. Details in [Try it in Codespaces](https://ferroehr.eu/docs/latest/installation/codespaces.html).

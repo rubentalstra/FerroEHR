@@ -55,15 +55,13 @@ what it runs on and what to expect from it:
 
 | | |
 |---|---|
-| Compute | Vercel Fluid (a container function that scales to zero when idle) |
-| Database | Neon serverless PostgreSQL 18, region Frankfurt (`fra1`) |
-| Database plan | Neon free tier: 0.5 GB storage, up to 2 CU / 8 GB RAM, 100 CU-hours of compute per month |
+| Compute | one dedicated Hetzner Cloud server (Nuremberg, `eu-central`), running the published container images behind a Caddy proxy that terminates TLS |
+| Database | Neon serverless PostgreSQL 18, region Frankfurt, over its direct (non-pooled) endpoint |
 | Data durability | none by design: **every night around midnight UTC the whole store is wiped and fresh demo data is seeded** |
 
-Both layers scale to zero, so the first request after an idle period pays a
-double cold start and can take a few seconds; after that it responds at
-normal speed. The free compute budget means the sandbox may be unavailable
-near the end of a heavy month. It is a demo, never a place for real data.
+The server does not scale to zero, so there is no cold start; it is still a
+single small machine shared by every visitor. It is a demo, never a place for
+real data.
 
 The sandbox image is pinned to the latest release tag, so it always runs a
 released FerroEHR rather than a development snapshot.

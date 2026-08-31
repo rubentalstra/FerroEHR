@@ -33,10 +33,10 @@ optional:
   + the default image tags in `docker-compose.yml` — the `ghcr.io/…:X.Y.Z`
   fallbacks the standalone quickstart pulls — guarded by
   `scripts/checks/compose-image-tags.sh` / the `compose-version-guard` CI
-  job (the hosted sandbox carries NO release-cut step since #2724: its
-  `Dockerfile.vercel` tracks the `:latest` release pointer and
-  `sandbox-deploy.yml` redeploys + reseeds it automatically after the tag's
-  Containers run — `deploy/vercel/README.md`), + the chart's `appVersion` and
+  job (the hosted sandbox carries NO release-cut step: its compose defaults
+  track the `:latest` release pointer and the release pipeline's `sandbox` +
+  `sandbox-reseed` legs redeploy + reseed the Hetzner box automatically after
+  the tag's images apply — `deploy/hosted/README.md`, #2974), + the chart's `appVersion` and
   `artifacthub.io/images` tags (#2890, the same sweep — details in the Helm
   chart bullet below), + the book's pinned versions — `website/book/src/installation/
   kubernetes.md` pins the chart `--version` and `image.tag`, and

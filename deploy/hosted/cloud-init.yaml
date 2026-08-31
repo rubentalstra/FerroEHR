@@ -1,0 +1,217 @@
+#cloud-config
+# sandbox.ferroehr.eu, from a fresh Hetzner box to serving state on first boot
+# (#2974 — the posture is Veredictum's deploy/hosted, adapted for two
+# services).
+#
+# Committed rather than remembered: a host built by hand is a host nobody can
+# rebuild. Pass this as the server's user data at creation.
+#
+# What it deliberately does NOT do: fetch anything from this repository. The
+# box holds no checkout. The posture the box runs — docker-compose.yml, the
+# Caddyfile, the two sandbox configuration files — travels INSIDE the
+# published ferroehr image at /opt/sandbox-posture, and the one script the CI
+# key may run installs it out of the image it just pulled.
+
+users:
+  - name: deploy
+    lock_passwd: true
+    shell: /bin/bash
+    # No `groups: [docker]` here: users are created before Docker is
+    # installed, so the group does not exist yet — runcmd joins it after the
+    # install.
+    #
+    # The keys are REAL and that is deliberate: a public key is not a secret,
+    # and a cloud-init carrying placeholders cannot rebuild the box, which is
+    # the one thing this file exists to do.
+    ssh_authorized_keys:
+      # A person, for logging in and looking around.
+      - ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIGFOMcuGIZKPwC0aHkleBo7MNO1jEz3wyNSUKTNpQSBJ RubenTalstra1211@outlook.com
+      # CI, restricted to one command: SSH runs the deploy script whatever the
+      # client asks for, so a leaked key runs one script rather than a shell.
+      # Two lines while the owner consolidates (#2974): the first is the same
+      # deploy key the Veredictum box trusts; the second is the key whose
+      # private half is already stored as HOSTED_SSH_KEY in this repository's
+      # `hosted` environment. Whichever the environment secret carries is the
+      # one CI uses; delete the other line at will.
+      - command="/opt/ferroehr-sandbox/deploy.sh",no-agent-forwarding,no-port-forwarding,no-user-rc,no-pty ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIGc2TtLLov6GBGjR0e/bMbwSHDhfBE93mqwq8YBv/F5W deploy@ci
+      - command="/opt/ferroehr-sandbox/deploy.sh",no-agent-forwarding,no-port-forwarding,no-user-rc,no-pty ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAINW1YiuIELdJXAxzDmtVVhRc0IPLltJEnZs/YIXF/NLA deploy@ci-ferroehr-sandbox
+
+ssh_pwauth: false
+disable_root: true
+
+package_update: true
+package_upgrade: true
+packages:
+  - ca-certificates
+  - curl
+  - ufw
+  - unattended-upgrades
+
+write_files:
+  # A box nobody logs into still takes security updates.
+  - path: /etc/apt/apt.conf.d/20auto-upgrades
+    content: |
+      APT::Periodic::Update-Package-Lists "1";
+      APT::Periodic::Unattended-Upgrade "1";
+
+  # Container logs are the likeliest thing to fill a small disk, and a full
+  # disk fails in a way that looks like nothing at all.
+  - path: /etc/docker/daemon.json
+    content: |
+      {
+        "log-driver": "json-file",
+        "log-opts": { "max-size": "10m", "max-file": "3" },
+        "live-restore": true
+      }
+
+  # The ONE command the CI key may run. It reads SSH_ORIGINAL_COMMAND and
+  # accepts exactly two verbs: `deploy` (the default — pull, extract the
+  # posture out of the pulled image, recreate) and `restart` (recreate the CDR
+  # so a fresh boot re-runs the migrations — what the reseed needs after its
+  # wipe). Nothing is built here, and nothing is fetched from the repository.
+  - path: /opt/ferroehr-sandbox/deploy.sh
+    permissions: "0755"
+    owner: deploy:deploy
+    # Deferred to the final stage: `write-files` runs BEFORE `users-groups` in
+    # the default module order, so an owner naming this user cannot be applied
+    # any earlier.
+    defer: true
+    content: |
+      #!/usr/bin/env bash
+      # SSH runs this whatever the client asked for — that is the point of the
+      # command= restriction on the key — and the client's request arrives in
+      # SSH_ORIGINAL_COMMAND, which selects one of two verbs below.
+      #
+      # The posture this box runs — docker-compose.yml, the Caddyfile and the
+      # two sandbox configuration files — travels INSIDE the published
+      # ferroehr image at /opt/sandbox-posture (docker/Dockerfile), so a
+      # committed posture change arrives with the release that carries it.
+      # This script extracts it from the image it just pulled and installs it
+      # only after the compose file parses.
+      #
+      # It does NOT rewrite itself: installing a new version of THIS file
+      # stays a manual step on the box (or a rebuild from cloud-init).
+      set -euo pipefail
+      cd /opt/ferroehr-sandbox
+
+      verb="${SSH_ORIGINAL_COMMAND:-deploy}"
+      case "$verb" in
+        deploy|restart) ;;
+        *)
+          echo "deploy: unknown verb '$verb' (this key runs 'deploy' or 'restart')" >&2
+          exit 1
+          ;;
+      esac
+
+      # `restart` exists for the reseed: after the schema wipe the CDR must
+      # boot fresh to re-run its migrations, and `docker compose up -d` alone
+      # recreates nothing when the image and config are unchanged.
+      if [[ "$verb" == "restart" ]]; then
+        docker compose restart ferroehr
+        exit 0
+      fi
+
+      # `.env` is the operator's file and no automation writes it, so it is
+      # what names the image to interrogate. No fallback: an unnamed image is
+      # a stop, never a guess at which artifact the posture should come from.
+      image="$(sed -n 's/^[[:space:]]*FERROEHR_IMAGE=//p' .env | tail -n 1)"
+      image="${image%\"}"
+      image="${image#\"}"
+      if [[ -z "$image" ]]; then
+        echo "deploy: .env names no FERROEHR_IMAGE, so no image can be read" >&2
+        exit 1
+      fi
+
+      docker pull -q "$image"
+
+      # The created container and the candidate files go away on every exit
+      # path, including a refusal below.
+      cleanup() {
+        if [[ -n "$cid" ]]; then
+          docker rm -f "$cid" >/dev/null 2>&1 || true
+        fi
+        rm -f docker-compose.yml.candidate Caddyfile.candidate \
+          ferroehr.sandbox.toml.candidate ferroehr-admin-ui.sandbox.toml.candidate
+      }
+      cid=""
+      trap cleanup EXIT
+
+      # The base is distroless and carries no shell, so `docker run … cat` can
+      # never work: a container is CREATED and never started, and the files
+      # are copied out of it
+      # (https://docs.docker.com/reference/cli/docker/container/cp/).
+      cid="$(docker create "$image")"
+      docker cp "$cid:/opt/sandbox-posture/docker-compose.yml" docker-compose.yml.candidate
+      docker cp "$cid:/opt/sandbox-posture/Caddyfile" Caddyfile.candidate
+      docker cp "$cid:/opt/sandbox-posture/ferroehr.sandbox.toml" ferroehr.sandbox.toml.candidate
+      docker cp "$cid:/opt/sandbox-posture/ferroehr-admin-ui.sandbox.toml" ferroehr-admin-ui.sandbox.toml.candidate
+
+      # `set -e` fails a failed copy; an EMPTY file it cannot see. A truncated
+      # posture stops the deploy here rather than recreating with the old
+      # files and reporting success.
+      for candidate in docker-compose.yml.candidate Caddyfile.candidate \
+        ferroehr.sandbox.toml.candidate ferroehr-admin-ui.sandbox.toml.candidate; do
+        if [[ ! -s "$candidate" ]]; then
+          echo "deploy: $candidate came out of $image empty" >&2
+          exit 1
+        fi
+      done
+
+      # A compose file that does not parse must never be installed: the next
+      # deploy could not run at all, and the box would be reachable only by
+      # hand.
+      docker compose -f docker-compose.yml.candidate config --quiet
+
+      caddy_changed=0
+      cmp -s Caddyfile.candidate Caddyfile || caddy_changed=1
+
+      # The replaced copy stays on the box, so a bad posture is recoverable
+      # without anyone editing YAML over SSH.
+      for f in docker-compose.yml Caddyfile ferroehr.sandbox.toml ferroehr-admin-ui.sandbox.toml; do
+        if ! cmp -s "$f.candidate" "$f"; then
+          if [[ -f "$f" ]]; then
+            cp -p "$f" "$f.prev"
+          fi
+          mv "$f.candidate" "$f"
+          echo "deploy: $f installed from $image (previous: $f.prev)"
+        fi
+      done
+
+      docker compose pull -q
+      docker compose up -d --remove-orphans
+
+      # A bind-mounted file's CONTENTS changing is not a configuration change,
+      # so compose does not recreate the container that mounts it
+      # (https://docs.docker.com/reference/cli/docker/compose/up/) and Caddy
+      # keeps serving the old configuration until it is restarted.
+      if [[ "$caddy_changed" -eq 1 ]]; then
+        docker compose restart caddy
+      fi
+
+      # Images the sandbox no longer runs. A running container's image is
+      # never pruned, so this cannot take the release out from under itself.
+      docker image prune -f --filter "until=168h"
+
+runcmd:
+  # Two firewalls that agree. The Hetzner Cloud Firewall keeps traffic off the
+  # NIC; this is what the box itself says, and a disagreement between them is
+  # a question worth answering.
+  - [ufw, default, deny, incoming]
+  - [ufw, default, allow, outgoing]
+  - [ufw, allow, "22/tcp"]
+  - [ufw, allow, "80/tcp"]
+  - [ufw, allow, "443/tcp"]
+  - [ufw, --force, enable]
+  - [sh, -c, "curl -fsSL https://get.docker.com | sh"]
+  - [systemctl, enable, --now, docker]
+  - [install, -d, -o, deploy, -g, deploy, /opt/ferroehr-sandbox]
+  # The group exists now, so the deploy user can join it. A group change takes
+  # effect at the next login, and every deploy is its own SSH session.
+  - [usermod, -aG, docker, deploy]
+  - [systemctl, enable, --now, unattended-upgrades]
+
+final_message: >-
+  the box is up after $UPTIME seconds. Write /opt/ferroehr-sandbox/.env (the
+  Neon DIRECT connection string as DATABASE_URL, and FERROEHR_IMAGE), then run
+  the hosted deploy lane: it installs the compose file, the Caddyfile and the
+  sandbox configuration out of the image it pulls.

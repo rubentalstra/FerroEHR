@@ -1,35 +1,30 @@
 # SPDX-FileCopyrightText: FerroEHR contributors
 # SPDX-License-Identifier: MIT
 #
-# The sandbox reset (#2710, sandbox.ferroehr.eu): wipe the Neon database's
-# schemas, promote a FRESH Vercel deployment whose cold boots re-run the
-# migrations, then seed demo data through the PUBLIC API
+# The sandbox reset (#2710, rewritten for the Hetzner posture in #2974): wipe
+# the standalone Neon database's schemas, restart the CDR container so a fresh
+# boot re-runs the migrations, then seed demo data through the PUBLIC API
 # (scripts/sandbox/reseed.sh). Visitors can create, change and delete
 # anything; every night the demo returns to a known state.
 #
-# Why a redeploy and not a wait (#2941 follow-up, measured 2026-08-30): the
-# server runs its migrations ONLY at boot, so after the wipe the schemas come
-# back exclusively through a cold start. The original design slept out
-# Vercel's 5-minute idle scale-in window and let the next request boot a
-# fresh instance — sound while the sandbox was a Swagger page polled by
-# nobody at 03:00, structurally dead once the admin console became the
-# landing surface: the console's own backend calls the CDR, visitors supply
-# traffic at any hour, and even the readiness poll is traffic — so a wiped
-# warm instance never idles out and answers an honest 503 forever (observed
-# live: a 15-minute 503 loop). Pinging the Deploy Hook instead promotes a
-# deployment on which EVERY instance is a fresh boot — deterministic, quiet
-# hours not required, and a pull-and-retag build measured in minutes. On the
-# deploy-called path this is a second build per event; accepted for the
-# determinism.
+# The restart replaces the Vercel-era "promote a fresh deployment" dance
+# (#2941/#2948): the server runs its migrations only at boot, and on one box
+# a fresh boot is one `docker compose restart ferroehr` away — issued through
+# the same restricted deploy key the deploy lane uses (SSH_ORIGINAL_COMMAND
+# verb `restart`; deploy/hosted/cloud-init.yaml).
 #
-# The wipe is direct SQL because the sandbox deliberately serves no admin
-# API. Safety fence: the job refuses to run against any host that is not a
-# Neon endpoint, so a mispasted secret can never wipe a real deployment.
+# The wipe is direct SQL from the runner because the sandbox's bulk-delete
+# surface is not the reset instrument. Safety fence: the job refuses to run
+# against any host that is not a Neon endpoint, so a mispasted secret can
+# never wipe a real deployment.
 #
-# Secrets: SANDBOX_DATABASE_URL — the Neon DIRECT (non-pooled) connection
-# string, in the sandbox-reseed environment. SANDBOX_DEPLOY_HOOK_URL — the
-# project's Deploy Hook (repo secret, shared with sandbox-deploy.yml); an
-# empty hook is a hard failure, never a skip (#2755).
+# Secrets: SANDBOX_DATABASE_URL — the standalone Neon project's DIRECT
+# (non-pooled) connection string, in the sandbox-reseed environment.
+# HOSTED_SSH_KEY / HOSTED_KNOWN_HOSTS — the deploy key, in the hosted
+# environment. An empty secret is a hard failure, never a skip (#2755).
+# Environment secrets demonstrably reach these jobs on the workflow_call path
+# in this repository (the v4.0.13 release's reseed succeeded through two
+# call hops).
 
 name: Sandbox reseed
 
@@ -37,42 +32,25 @@ on:
   schedule:
     - cron: "0 0 * * *" # nightly, around midnight UTC
   workflow_dispatch: {}
-  # The Sandbox deploy workflow calls this after every successful redeploy
-  # (#2724), so a release that edits the baseline migration heals at deploy
-  # time; the nightly run stays as the janitor.
+  # The release pipeline calls this after the hosted deploy (#2724), so a
+  # release that edits the baseline migration heals at deploy time; the
+  # nightly run stays as the janitor.
   workflow_call: {}
 
 permissions: {}
 
 concurrency:
-  group: sandbox-reseed
+  group: hosted-deploy
   cancel-in-progress: false
 
 jobs:
-  reset:
-    name: wipe, redeploy and reseed
+  wipe:
+    name: wipe the sandbox schemas
+    if: github.repository == 'rubentalstra/FerroEHR'
     runs-on: ubuntu-latest
-    timeout-minutes: 30
+    timeout-minutes: 10
     environment: sandbox-reseed
-    permissions:
-      contents: read
     steps:
-      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-        with:
-          persist-credentials: false
-
-      # The hook is checked BEFORE the wipe: with no way to redeploy, a wipe
-      # would leave the sandbox serving 503 until someone intervened.
-      - name: The deploy hook exists
-        env:
-          HOOK_URL: ${{ secrets.SANDBOX_DEPLOY_HOOK_URL }}
-        run: |
-          set -euo pipefail
-          if [ -z "$HOOK_URL" ]; then
-            echo "::error::SANDBOX_DEPLOY_HOOK_URL is empty — the reset needs it to promote the fresh deployment that re-runs the migrations. Create the Deploy Hook on the Vercel project and run: gh secret set SANDBOX_DEPLOY_HOOK_URL" >&2
-            exit 1
-          fi
-
       - name: Wipe the sandbox schemas
         env:
           SANDBOX_DATABASE_URL: ${{ secrets.SANDBOX_DATABASE_URL }}
@@ -92,30 +70,48 @@ jobs:
           DROP SCHEMA IF EXISTS cold CASCADE;
           SQL
 
-      # Every instance of the promoted deployment is a fresh boot, and boot
-      # re-runs the migrations against the wiped database. The hook job id is
-      # the one handle linking this run to the deployment it triggered.
-      - name: Trigger a fresh deployment
+  restart:
+    name: restart the CDR (fresh boot re-runs the migrations)
+    needs: wipe
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    environment: hosted
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      # The wipe already happened, so a restart that cannot run leaves the
+      # sandbox serving an honest readiness DOWN — fail loudly, by name.
+      - name: The deploy key exists
         env:
-          HOOK_URL: ${{ secrets.SANDBOX_DEPLOY_HOOK_URL }}
+          KEY: ${{ secrets.HOSTED_SSH_KEY }}
         run: |
           set -euo pipefail
-          body=$(curl -fsS -X POST "$HOOK_URL")
-          job_id=$(printf '%s' "$body" | sed -nE 's/.*"id":"([^"]+)".*/\1/p')
-          echo "redeploy triggered (hook job ${job_id:-<no id in response>})"
+          if [ -z "$KEY" ]; then
+            echo "::error::HOSTED_SSH_KEY is empty in the hosted environment — the reset needs it to restart the CDR after the wipe." >&2
+            exit 1
+          fi
+
+      - name: Restart the CDR
+        uses: ./.github/actions/hosted-deploy
+        with:
+          verb: restart
+          ssh-key: ${{ secrets.HOSTED_SSH_KEY }}
+          known-hosts: ${{ secrets.HOSTED_KNOWN_HOSTS }}
 
       # Readiness 200 means: database reachable AND the migrations are back
       # (the readiness probe distinguishes the two — a wiped schema is an
-      # honest DOWN). Whichever instance migrates first satisfies the reseed's
-      # precondition, so a cold boot of the outgoing deployment passing early
-      # is also a valid green — both deployments run the same :latest bytes.
+      # honest DOWN).
       - name: Wait until the sandbox is migrated and ready
         run: |
           set -euo pipefail
-          deadline=$(( $(date +%s) + 900 ))
+          deadline=$(( $(date +%s) + 600 ))
           until code=$(curl -sS -m 30 -o /dev/null -w '%{http_code}' https://sandbox.ferroehr.eu/health/readiness); [ "$code" = "200" ]; do
             if [ "$(date +%s)" -ge "$deadline" ]; then
-              echo "::error::the sandbox did not become ready within 15 minutes of the wipe + redeploy — read the Vercel build log for the hook job above; the database side (the wipe) already succeeded, so the suspect is the build or the boot-time migration run." >&2
+              echo "::error::the sandbox did not become ready within 10 minutes of the wipe + restart — the wipe already succeeded, so the suspect is the boot-time migration run; read the container log on the box." >&2
               exit 1
             fi
             echo "readiness answered ${code:-nothing}; waiting"
@@ -123,5 +119,16 @@ jobs:
           done
           echo "sandbox ready"
 
+  seed:
+    name: seed the demo data
+    needs: restart
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
       - name: Seed the demo data
         run: bash scripts/sandbox/reseed.sh
