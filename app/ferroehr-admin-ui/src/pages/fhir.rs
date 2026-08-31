@@ -586,10 +586,10 @@ fn create_card(draft: Draft, create: CreateAction) -> AnyView {
         <section id="fhir-create" class=format!("{CARD_PAD} mb-4")>
             <h2 class=CARD_TITLE>"Store a mapping"</h2>
             <p class="mb-3 text-xs text-ink-muted">
-                "The definition is the mapping document itself — the resource type it binds, the
-                 profile URL it matches, the openEHR template it builds under, the subject binding
-                 and the field entries. It is sent verbatim; the CDR validates it and its rejection
-                 is shown here in full. The name is the deployable identity and cannot be changed
+                "The definition is the mapping document itself — the resource type it binds, the \
+                 profile URL it matches, the openEHR template it builds under, the subject binding \
+                 and the field entries. It is sent verbatim; the CDR validates it and its rejection \
+                 is shown here in full. The name is the deployable identity and cannot be changed \
                  afterwards."
             </p>
             <div class="flex flex-col gap-3">
@@ -966,8 +966,8 @@ fn read_viewer(
         <section id="fhir-read" class=format!("{CARD_PAD} mb-4")>
             <h2 class=CARD_TITLE>"Read path"</h2>
             <p class="mb-3 text-xs text-ink-muted">
-                "Ask the connector what a stored mapping produces on READ for one patient. The
-                 facade serves only this explicit scope — a resource type and a patient — never a
+                "Ask the connector what a stored mapping produces on READ for one patient. The \
+                 facade serves only this explicit scope — a resource type and a patient — never a \
                  general FHIR search, and it reads committed data without changing anything."
             </p>
             <leptos_router::components::Form method="GET" action="/fhir" attr:class="mb-3">
@@ -1043,12 +1043,12 @@ fn dry_run_panel(form: DryRunForm, dry_run: DryRunAction) -> AnyView {
         <section id="fhir-dry-run" class=CARD_PAD>
             <h2 class=CARD_TITLE>"Dry run (validate only)"</h2>
             <p class="mb-3 text-xs text-ink-muted">
-                "Runs the resource through its stored mapping and the full commit validation, then
+                "Runs the resource through its stored mapping and the full commit validation, then \
                  reports the verdict. "
                 <span class="font-medium text-ink">
                     "Nothing is committed — no EHR, no COMPOSITION, no version."
                 </span>
-                " Sending a resource for real is the connector's integration door, and the console
+                " Sending a resource for real is the connector's integration door, and the console \
                  deliberately offers no path to it."
             </p>
             <div class="flex flex-col gap-3">

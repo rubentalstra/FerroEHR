@@ -284,8 +284,8 @@ fn context_card(current: Resource<Result<Option<CurrentTenant>, AdminUiError>>) 
                 })}
             </Transition>
             <p class="mt-2 text-xs text-ink-muted">
-                "Tenancy is derived from the credential the request carries. The console displays
-                 the resolved tenant and never selects one: signing in with a different credential
+                "Tenancy is derived from the credential the request carries. The console displays \
+                 the resolved tenant and never selects one: signing in with a different credential \
                  is the only way to work in another tenant."
             </p>
         </section>
@@ -335,8 +335,8 @@ fn create_card(
                 </button>
             </div>
             <p class="mt-2 text-xs text-ink-muted">
-                "The name is unique across the registry and is what a credential's tenant claim
-                 resolves by; the system_id is the openEHR system identifier the tenant's data is
+                "The name is unique across the registry and is what a credential's tenant claim \
+                 resolves by; the system_id is the openEHR system identifier the tenant's data is \
                  committed under."
             </p>
             {failure}

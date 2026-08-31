@@ -854,7 +854,7 @@ fn example_tab(
                             view! { <crate::components::format_view::DocumentPane body=pretty /> }
                                 .into_any()
                         }
-                        Err(e) => catalog_error_view(&e, "/templates"),
+                        Err(e) => crate::components::notice::inline_error(&e),
                     }
                 })}
             </Transition>

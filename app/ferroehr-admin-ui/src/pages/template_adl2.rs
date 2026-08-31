@@ -592,7 +592,7 @@ fn catalog_tab(
             <section class=CARD_PAD>
                 <h2 class=CARD_TITLE>"Path catalog (WT tree)"</h2>
                 <p class="mb-2 text-xs text-ink-muted">
-                    "Built by the console from the served OperationalTemplateV2: the ADL2 resource
+                    "Built by the console from the served OperationalTemplateV2: the ADL2 resource \
                      serves no Web Template representation of its own."
                 </p>
                 <div class="overflow-auto max-h-[70vh]">
@@ -705,8 +705,8 @@ fn example_tab(
     view! {
         <div class="space-y-3">
             <p class="text-sm text-ink-muted">
-                "The example is generated from the artefact this route names — the Definition API
-                 declares no versioned example resource, so the version bar above does not change
+                "The example is generated from the artefact this route names — the Definition API \
+                 declares no versioned example resource, so the version bar above does not change \
                  it."
             </p>
             <crate::components::example_controls::ExampleControls

@@ -62,9 +62,14 @@ inputs:
     required: false
     default: ghcr.io/rubentalstra/ferroehr
   host:
-    description: The box the deploy key opens.
+    description: >-
+      The box the deploy key opens — the IPv4 address, not the DNS name:
+      GitHub-hosted runners have no IPv6 route, and the name's AAAA record
+      makes ssh fail with "Network is unreachable" (measured, run
+      33426489417). HOSTED_KNOWN_HOSTS is keyed to this address. The public
+      verification below keeps the DNS name; curl falls back to IPv4 itself.
     required: false
-    default: sandbox.ferroehr.eu
+    default: "167.233.172.220"
   verify-base:
     description: The public base URL the deploy's own verification fetches.
     required: false

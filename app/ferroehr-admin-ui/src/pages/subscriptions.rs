@@ -332,8 +332,8 @@ fn create_card(name: RwSignal<String>, draft: Draft, create: CreateAction) -> An
                 </button>
             </div>
             <p class="mt-2 text-xs text-ink-muted">
-                "The name is unique on the CDR and cannot be changed afterwards — it may hold only
-                 letters, digits, and “_”, “.” or “-”. Every predicate left empty matches anything,
+                "The name is unique on the CDR and cannot be changed afterwards — it may hold only \
+                 letters, digits, and “_”, “.” or “-”. Every predicate left empty matches anything, \
                  so a subscription with none of them set receives every committed version."
             </p>
             {failure}
