@@ -94,6 +94,13 @@ extension); the wire it consumes IS spec-bound (`docs/specs/openehr/ITS-REST/`
   unit-tested function (no clock, no locale — that is what keeps the chart
   hydration-stable), and charts are `leptos-chartistry` (pure Rust + SVG); a
   JS charting binding is banned by the no-JavaScript mandate.
+- **Every template example pane is controlled by ONE kit —
+  `components::example_controls` over `crate::example_options`** (#2894):
+  format, `detail_level` and `type` are three segmented controls whose
+  signals feed the pane's resource source, the query string is the pure
+  unit-tested `example_query`, and every segmented control anywhere in the
+  console draws through `format_view::segment_button`. Never build a second
+  example-options control or query builder.
 
 ## Error feedback: toast vs inline (one rule, 2026-07-25)
 

@@ -15,6 +15,15 @@ workflow refuses a tag that has no matching section here.
 
 ## [Unreleased]
 
+### Added
+
+- The admin console's template Example tab lets you pick how the example is
+  generated. Beside the format selector, both template families (ADL 1.4 and
+  ADL 2) now offer a detail level (**Required**, **Medium**, **Complete**) and
+  the form the example is shaped for (**Input** as submitted, **Output** as
+  retrieved). The pane opens on Required/Input, as before, and changing either
+  control asks the CDR for a fresh example.
+
 ### Changed
 
 - The repository's commit history on `main` now starts at a single labelled

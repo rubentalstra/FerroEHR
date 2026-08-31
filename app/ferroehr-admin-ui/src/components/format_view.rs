@@ -30,15 +30,42 @@ use crate::clinical::{RenderedNode, RenderedRow, RenderedSection};
 use crate::format::ReprFormat;
 use crate::highlight::{Language, Token, TokenKind};
 
-/// The segmented-control wrapper shared by the format selector and the pane's
-/// view-mode tabs.
-const SEGMENTED: &str = "inline-flex overflow-hidden rounded-control border border-edge-strong divide-x divide-edge-strong";
+/// The segmented-control wrapper shared by the format selector, the pane's
+/// view-mode tabs and the example controls.
+pub(crate) const SEGMENTED: &str = "inline-flex overflow-hidden rounded-control border border-edge-strong divide-x divide-edge-strong";
 
 /// A selected segment.
 const SEGMENT_ON: &str = "px-3 py-1.5 text-sm font-medium bg-accent text-on-accent";
 
 /// An unselected segment.
 const SEGMENT_OFF: &str = "px-3 py-1.5 text-sm font-medium text-ink-muted hover:bg-sunken";
+
+/// One button of a segmented control: its label, whether it is the current
+/// choice, and what picking it does.
+///
+/// The ONE segment implementation the console draws — the format selector, the
+/// pane's view tabs and the example controls all call it, so a segmented
+/// control looks and behaves the same wherever it appears. The label stays a
+/// plain visible string so the E2E suite can click it by text.
+pub(crate) fn segment_button(
+    label: &'static str,
+    active: Signal<bool>,
+    on_select: impl Fn() + 'static,
+) -> AnyView {
+    let class = move || {
+        if active.get() {
+            SEGMENT_ON
+        } else {
+            SEGMENT_OFF
+        }
+    };
+    view! {
+        <button type="button" class=class on:click=move |_| on_select()>
+            {label}
+        </button>
+    }
+    .into_any()
+}
 
 /// The scroll container both text views share: monospaced, both-axis
 /// scrollable, whitespace preserved.
@@ -49,10 +76,8 @@ const PANE: &str = "overflow-auto max-h-[70vh] whitespace-pre rounded-card borde
 const RENDERED_PANE: &str =
     "overflow-auto max-h-[70vh] rounded-card border border-edge bg-sunken p-3 text-sm text-ink";
 
-/// The format-selector strip: a segmented control, one `<button>` per offered
-/// format, driving the shared `selected` signal. The buttons keep their plain
-/// visible labels (JSON/XML/FLAT/STRUCTURED) so the E2E suite can click them
-/// by text.
+/// The format-selector strip: a segmented control, one [`segment_button`] per
+/// offered format, driving the shared `selected` signal.
 #[expect(
     clippy::must_use_candidate,
     reason = "#[component] rewrites the fn; view!/mount always consumes the value"
@@ -68,19 +93,11 @@ pub fn FormatSelector(
     let buttons = offered
         .into_iter()
         .map(|format| {
-            let class = move || {
-                if selected.get() == format {
-                    SEGMENT_ON
-                } else {
-                    SEGMENT_OFF
-                }
-            };
-            view! {
-                <button type="button" class=class on:click=move |_| selected.set(format)>
-                    {format.label()}
-                </button>
-            }
-            .into_any()
+            segment_button(
+                format.label(),
+                Signal::derive(move || selected.get() == format),
+                move || selected.set(format),
+            )
         })
         .collect::<Vec<_>>();
     view! { <div class=SEGMENTED>{buttons}</div> }
@@ -218,19 +235,11 @@ fn pane_toolbar(
 
 /// One view tab.
 fn view_tab(mode: PaneView, view_mode: RwSignal<PaneView>) -> AnyView {
-    let class = move || {
-        if view_mode.get() == mode {
-            SEGMENT_ON
-        } else {
-            SEGMENT_OFF
-        }
-    };
-    view! {
-        <button type="button" class=class on:click=move |_| view_mode.set(mode)>
-            {mode.label()}
-        </button>
-    }
-    .into_any()
+    segment_button(
+        mode.label(),
+        Signal::derive(move || view_mode.get() == mode),
+        move || view_mode.set(mode),
+    )
 }
 
 /// The copy affordance: writes the raw document text to the system clipboard

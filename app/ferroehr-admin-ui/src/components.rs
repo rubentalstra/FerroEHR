@@ -21,6 +21,7 @@ pub mod brand;
 pub mod confirm_dialog;
 pub mod data_table;
 pub mod empty_state;
+pub mod example_controls;
 pub mod facts;
 pub mod field;
 pub mod format_view;
