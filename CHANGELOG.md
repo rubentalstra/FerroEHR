@@ -17,6 +17,16 @@ workflow refuses a tag that has no matching section here.
 
 ### Changed
 
+- The repository's commit history on `main` now starts at a single labelled
+  import commit holding the tree FerroEHR was forked from, followed only by
+  this project's own commits. The 4864 inherited upstream commits and their
+  authors are no longer part of `main`. Nothing published changed: all release
+  tags still point at the commits they were cut from, release assets, Sigstore
+  bundles, image attestations and archived deposits verify exactly as before,
+  and the pre-rewrite lineage stays reachable in this repository through those
+  tags. Existing clones must be re-cloned rather than pulled, and comparisons
+  spanning the rewrite (for example `git describe` against `main`, or a tag
+  range that crosses it) no longer share ancestry.
 - The admin console's Template Manager uploads both template families the same
   way: one button in the page header (**Upload OPT** / **Upload ADL2**) opens a
   dialog offering a file picker and a paste area for either family, so ADL 1.4

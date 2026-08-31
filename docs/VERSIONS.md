@@ -259,12 +259,21 @@ This is a fork; its import point is recorded so provenance is unambiguous:
 | Original reasoning authored against | EHRbase v2.31.0 |
 | Tree actually imported at (Phase 0) | EHRbase v2.33.0 |
 | Enterprise-capability prior art | upstream EHRbase tag v0.32.0 (last pre-v2) |
+| How the import is recorded | the root commit of `main`, `Import: EHRbase as the fork point` |
 
 The original design reasoning was authored against v2.31.0. By the time this
 fork's Phase 0 reorganization ran, upstream had advanced to v2.33.0, and that
 is the tree actually imported into the Cargo workspace. EHRbase v2.33.0 is the
 *prior-art* reference, consulted via its upstream repo — never an in-tree copy
 and never a parity oracle (acceptance is the openEHR CNF suite).
+
+The inherited commit history is not part of `main`. `main` begins at a single
+labelled import commit carrying the imported tree, and every commit after it is
+this project's own work (history rewritten 2026-08-31, issue #2962). The
+upstream commit history that produced the imported tree stays reachable in this
+repository through the release tags `v3.0.0` and later, whose ancestry predates
+that rewrite, so the provenance remains checkable first-hand rather than only
+asserted here.
 
 Work on enterprise capabilities not yet built (the plugin system and peers)
 may consult the upstream EHRbase v0.32.0 tag — the last release before the
