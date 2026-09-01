@@ -17,7 +17,12 @@ by the `crate-version-guard` CI job.
   `include` list ships: `src/**`, `assets/**` (term), the embedded ITS-JSON
   schema (its), `README.md`, the `LICENSE-*` texts, and `Cargo.toml` itself.
   Tests, fixtures, vendored codegen inputs, and `CLAUDE.md` are NOT packaged
-  and need no bump.
+  and need no bump. **The root `[workspace.dependencies]` table is part of
+  this rule too** (#3036): changing an entry a `crates/*` member consumes
+  with `workspace = true` changes that member's PACKAGED manifest —
+  `cargo package` renders the concrete requirement — so a workspace-table
+  version bump of a crates-consumed dependency needs the lockstep step even
+  though no `crates/*` file moves; both guard halves detect it.
 - **Bumps are lockstep across all eight** (`0.0.x` — cargo treats every
   `0.0.x` as its own compatibility set, so the internal `version =`
   requirements must move together): bump every crate's `version` AND every
