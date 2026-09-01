@@ -31,7 +31,7 @@
 //!    addresses the version to supersede ("MUST be in a form of an
 //!    `OBJECT_VERSION_ID` … representing the `preceding_version_uid` to be
 //!    deleted", `operations/person_delete.yaml`), and a read takes either. The
-//!    console routes on the container uid
+//!    viewer routes on the container uid
 //!    ([`container_uid_of`]) and takes the
 //!    served document's own `uid.value` for `If-Match` and for the delete path.
 //! 3. **`PARTY_RELATIONSHIP` has no released wire.** The vendored Demographic
@@ -48,7 +48,7 @@
 
 #![allow(
     clippy::disallowed_types,
-    reason = "the console consumes the CDR JSON wire over ITS-REST — not the CDR internal seams \
+    reason = "the viewer consumes the CDR JSON wire over ITS-REST — not the CDR internal seams \
               (#1694); the carriers here are ssr-only, so #[expect] would be unfulfilled on the \
               hydrate target"
 )]
@@ -102,7 +102,7 @@ impl PartyKind {
     ];
 
     /// The URL path segment of this family (`person`, `organisation`, …) — the
-    /// released route segment and the console's own route segment alike.
+    /// released route segment and the viewer's own route segment alike.
     #[must_use]
     pub fn segment(self) -> &'static str {
         match self {
@@ -296,7 +296,7 @@ pub fn contribution_href(uid: &str) -> String {
 /// (`operations/versioned_party_version_get_at_time.yaml`).
 ///
 /// # Errors
-/// [`ViewerError::Unauthenticated`] without a console session; CDR transport
+/// [`ViewerError::Unauthenticated`] without a viewer session; CDR transport
 /// errors pass through; a non-2xx CDR answer (the `404` for an unknown
 /// container or version included) normalizes via
 /// [`CdrClient::expect_success`](crate::cdr::CdrClient::expect_success);
@@ -353,7 +353,7 @@ pub async fn fetch_versioned_object(
 /// the same `parse_versions`.
 ///
 /// # Errors
-/// [`ViewerError::Unauthenticated`] without a console session; CDR transport
+/// [`ViewerError::Unauthenticated`] without a viewer session; CDR transport
 /// errors pass through; a non-2xx CDR answer (a `404` for an unknown container
 /// included) normalizes via
 /// [`CdrClient::expect_success`](crate::cdr::CdrClient::expect_success);
@@ -398,7 +398,7 @@ pub async fn fetch_demographic_revision_history(
 /// `OBJECT_VERSION_ID`; the string is returned so the caller can pin it.
 ///
 /// # Errors
-/// [`ViewerError::Unauthenticated`] without a console session;
+/// [`ViewerError::Unauthenticated`] without a viewer session;
 /// [`ViewerError::Invalid`] when `at_time` is empty; CDR transport errors pass
 /// through; a non-2xx CDR answer (the `404` for no version at that time
 /// included, which the UI renders as an inline note) normalizes via
@@ -448,7 +448,7 @@ pub async fn resolve_demographic_version_at_time(
 /// [`fetch_versioned_object`] instead.
 ///
 /// # Errors
-/// [`ViewerError::Unauthenticated`] without a console session;
+/// [`ViewerError::Unauthenticated`] without a viewer session;
 /// [`ViewerError::Invalid`] when no version uid is given; CDR transport errors
 /// pass through; a non-2xx CDR answer normalizes via
 /// [`CdrClient::expect_success`](crate::cdr::CdrClient::expect_success).
@@ -501,7 +501,7 @@ pub async fn fetch_demographic_version_document(
 /// without this.
 ///
 /// # Errors
-/// [`ViewerError::Unauthenticated`] without a console session;
+/// [`ViewerError::Unauthenticated`] without a viewer session;
 /// [`ViewerError::Invalid`] when `uid` is empty; CDR transport errors pass
 /// through; a refusal or any non-`404` failure normalizes via
 /// [`CdrClient::expect_success`](crate::cdr::CdrClient::expect_success) rather
@@ -606,7 +606,7 @@ mod tests {
 
     #[test]
     fn a_segment_outside_the_closed_set_is_not_a_kind() {
-        // The console's own reserved segments must never read as a kind, or the
+        // The viewer's own reserved segments must never read as a kind, or the
         // relationship/contribution routes would be shadowed.
         for segment in [
             "",
@@ -672,7 +672,7 @@ mod tests {
 
     #[test]
     fn a_segment_a_server_function_receives_is_validated_back_into_the_closed_set() {
-        // Every segment the console itself can spell round-trips…
+        // Every segment the viewer itself can spell round-trips…
         for family in [VersionedFamily::Party, VersionedFamily::PartyRelationship] {
             assert_eq!(
                 VersionedFamily::from_segment(family.segment()),

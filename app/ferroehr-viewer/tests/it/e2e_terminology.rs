@@ -29,7 +29,7 @@ use crate::e2e_browse::{TEMPLATE_ID, ensure_template_present};
 
 use common::{Harness, click_until_css, is_visible, login_basic, retype, wait_text_contains};
 
-/// The console origin's terminology screen, with `openehr` already selected.
+/// The viewer origin's terminology screen, with `openehr` already selected.
 const OPENEHR_ROW: &str = "[data-terminology-id='openehr']";
 
 /// Refuse to run against a CDR that serves the terminology routes as if

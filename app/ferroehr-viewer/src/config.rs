@@ -1,24 +1,24 @@
 // SPDX-FileCopyrightText: FerroEHR contributors
 // SPDX-License-Identifier: MIT
 
-//! Console configuration: one TOML file (`ferroehr-viewer.toml`) with
+//! Viewer configuration: one TOML file (`ferroehr-viewer.toml`) with
 //! `FERROEHR_VIEWER__…` environment overrides, mirroring the CDR's
 //! one-file/strict/env-grammar convention.
 //!
-//! No openEHR spec governs configuration — our own design. The console is
+//! No openEHR spec governs configuration — our own design. The viewer is
 //! stateless: sessions ride a sealed cookie, and there is no database or local store
 //! of domain state either — every fact it shows lives in the CDR and is read
 //! over ITS-REST.
 
 use serde::Deserialize;
 
-/// The single configuration root for the console.
+/// The single configuration root for the viewer.
 #[derive(Debug, Clone, Deserialize, Default)]
 #[serde(default, deny_unknown_fields)]
 pub struct ViewerConfig {
     /// The CDR connection.
     pub cdr: CdrConfig,
-    /// Console login modes.
+    /// Viewer login modes.
     pub auth: AuthConfig,
     /// Login-screen presentation.
     pub login: LoginConfig,
@@ -40,7 +40,7 @@ pub struct CdrConfig {
     ///
     /// One knob covers both ways a deployment can move that surface: the CDR
     /// can serve it from its own internal listener (`management.port`) and can
-    /// rename its base path (`management.base_path`), so the console takes the
+    /// rename its base path (`management.base_path`), so the viewer takes the
     /// whole prefix rather than guessing a port and a path separately. No
     /// openEHR spec governs a management surface — our own operational
     /// extension.
@@ -87,7 +87,7 @@ pub struct LoginConfig {
     pub links: Vec<crate::auth::LoginLink>,
 }
 
-/// Which login modes the console offers (design: both ship in v1).
+/// Which login modes the viewer offers (design: both ship in v1).
 #[derive(Debug, Clone, Deserialize)]
 #[serde(default, deny_unknown_fields)]
 pub struct AuthConfig {
@@ -107,7 +107,7 @@ impl Default for AuthConfig {
     }
 }
 
-/// OIDC (Keycloak-style) settings for the console's own login.
+/// OIDC (Keycloak-style) settings for the viewer's own login.
 #[derive(Debug, Clone, Deserialize, Default)]
 #[serde(default, deny_unknown_fields)]
 pub struct OidcConfig {
@@ -115,17 +115,17 @@ pub struct OidcConfig {
     pub enabled: bool,
     /// Issuer URL (discovery is derived from it).
     pub issuer: String,
-    /// The `OAuth2` client id registered for the console.
+    /// The `OAuth2` client id registered for the viewer.
     pub client_id: String,
     /// The `OAuth2` client secret (prefer `client_secret_file` in deployments).
     pub client_secret: String,
     /// Path to a file holding the client secret; wins over `client_secret`.
     pub client_secret_file: String,
-    /// Externally visible base URL of the console (for the redirect URI),
+    /// Externally visible base URL of the viewer (for the redirect URI),
     /// e.g. `http://localhost:3000`.
     pub public_base_url: String,
     /// Split-horizon DNS override for the issuer host, `host=ip:port`
-    /// (e.g. `keycloak=127.0.0.1:8081`). Lets the console reach an issuer
+    /// (e.g. `keycloak=127.0.0.1:8081`). Lets the viewer reach an issuer
     /// whose canonical hostname only resolves inside a container network
     /// while browsers and tokens keep the canonical URL. Empty = none.
     pub resolve: String,
@@ -139,7 +139,9 @@ pub struct OidcConfig {
 pub struct SessionConfig {
     /// Idle expiry, minutes.
     pub idle_minutes: u64,
-    /// Set the `Secure` cookie flag (turn on behind TLS).
+    /// Set the `Secure` cookie flag. On by default (fail closed): a
+    /// plain-HTTP context (local development, the e2e harness) opts OUT
+    /// explicitly, production behind TLS needs nothing.
     pub cookie_secure: bool,
     /// The cookie-sealing secret, base64 of at least 64 bytes. Every
     /// instance of a scaled deployment must hold the same value — the
@@ -155,7 +157,7 @@ impl Default for SessionConfig {
     fn default() -> Self {
         Self {
             idle_minutes: 60,
-            cookie_secure: false,
+            cookie_secure: true,
             secret: String::new(),
             secret_file: String::new(),
         }
@@ -167,7 +169,7 @@ impl Default for SessionConfig {
 #[error("{0}")]
 pub struct ConfigError(String);
 
-/// Load the console configuration: defaults < file < environment.
+/// Load the viewer configuration: defaults < file < environment.
 ///
 /// File discovery: `$FERROEHR_VIEWER_CONFIG` → `./ferroehr-viewer.toml` →
 /// `/etc/ferroehr/viewer.toml` (search-order files are optional; an
@@ -187,7 +189,7 @@ pub fn load() -> Result<ViewerConfig, ConfigError> {
     // source exists.
     #[expect(
         clippy::disallowed_methods,
-        reason = "this IS the console's config-tree loader; the config-file pointer is its bootstrap input and has no earlier source to come from"
+        reason = "this IS the viewer's config-tree loader; the config-file pointer is its bootstrap input and has no earlier source to come from"
     )]
     if let Ok(explicit) = std::env::var("FERROEHR_VIEWER_CONFIG") {
         builder = builder.add_source(config::File::new(&explicit, config::FileFormat::Toml));

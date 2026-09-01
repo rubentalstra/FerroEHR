@@ -46,7 +46,7 @@ cd "$(dirname "$0")/../.."
 
 # `--all` covers the WHOLE tree. Both parked sweeps have landed: the runner
 # (#2054) holds `StatusCode` in memory and applies `.as_u16()` only where a
-# number is rendered or serialized, and the console (#2055) compares through
+# number is rendered or serialized, and the viewer (#2055) compares through
 # `CdrResponse::is(StatusCode)` and named constants, its `status: u16` DTO
 # fields staying numeric because they are deserialized from and rendered into
 # wire JSON. `--all-really` is kept as an alias so callers written against

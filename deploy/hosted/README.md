@@ -60,10 +60,10 @@ Two operational lessons, learned live at the cutover and load-bearing:
 | File | What it is | How the box gets it |
 |---|---|---|
 | `cloud-init.yaml` | A fresh box to serving state on first boot: the `deploy` user, key-only SSH, both firewalls, unattended upgrades, Docker, capped logs, and the one command the CI key may run | the server's user data at creation, once |
-| `docker-compose.yml` | What runs on the box: the CDR and the console with their healthchecks and memory limits, behind Caddy | baked into the ferroehr image at `/opt/sandbox-posture/`, and `deploy.sh` installs it from the image it pulled |
-| `Caddyfile` | Automatic TLS, and the routing table (the CDR owns `/ferroehr/*`, `/health*`, `/management*`, `/.well-known/*`; the console is everything else) | the same way; a change to it restarts Caddy |
+| `docker-compose.yml` | What runs on the box: the CDR and the viewer with their healthchecks and memory limits, behind Caddy | baked into the ferroehr image at `/opt/sandbox-posture/`, and `deploy.sh` installs it from the image it pulled |
+| `Caddyfile` | Automatic TLS, and the routing table (the CDR owns `/ferroehr/*`, `/health*`, `/management*`, `/.well-known/*`; the viewer is everything else) | the same way; a change to it restarts Caddy |
 | `ferroehr.sandbox.toml` | The CDR's sandbox posture (demo user, admin API on per #2965, management off) | the same way |
-| `ferroehr-viewer.sandbox.toml` | The console's sandbox posture | the same way |
+| `ferroehr-viewer.sandbox.toml` | The viewer's sandbox posture | the same way |
 | `env.example` | A copy-to-`.env` template: the DB box's private-network DSN and the image references | never. `.env` is the operator's file, written by hand on the box |
 | `cloud-init-postgres.yaml` | The DATABASE box, fresh to serving state: the `deploy` user, key-only SSH, both firewalls, Docker, and the `ferroehr-postgres` compose posture bound to the private address | the DB server's user data at creation, once |
 
@@ -118,7 +118,7 @@ hand, or by rebuilding the box from `cloud-init.yaml`.
 Four layers, each answering a different question: the containers' own
 healthchecks plus `restart: unless-stopped`; the deploy's own verification;
 `.github/workflows/hosted-watch.yml` every fifteen minutes (up, the served
-version against the release pointer, and the console's landing markup — one
+version against the release pointer, and the viewer's landing markup — one
 reused issue, closed on recovery); and size-capped log rotation, because a
 box that fills its disk fails in a way that looks like nothing at all.
 

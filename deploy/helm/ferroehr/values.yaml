@@ -800,39 +800,39 @@ extraVolumeMounts: []
 # without it. Enabling it renders a second Deployment/Service (and optionally an
 # Ingress) alongside the server.
 #
-# It reaches the CDR STRICTLY over ITS-REST — that is the console's binding
+# It reaches the CDR STRICTLY over ITS-REST — that is the viewer's binding
 # mandate, not an implementation detail — so its egress is narrow and the
 # NetworkPolicy below enforces it rather than trusting it.
 viewer:
   # -- Deploy the viewer alongside the CDR.
   enabled: false
-  # -- Replica count. The console holds session state in process, so more than
+  # -- Replica count. The viewer holds session state in process, so more than
   # one replica needs sticky sessions at the ingress or users get logged out on
   # a reroute; left at 1 deliberately.
   replicaCount: 1
   image:
-    # -- Console image repository.
+    # -- Viewer image repository.
     repository: ghcr.io/rubentalstra/ferroehr-viewer
     # -- Pull policy.
     pullPolicy: IfNotPresent
-    # -- Image tag. Empty falls back to .Chart.appVersion, so the console and
+    # -- Image tag. Empty falls back to .Chart.appVersion, so the viewer and
     # the server move together by default.
     tag: ""
     # -- Image digest (`sha256:…`); wins over `tag` when set, exactly as the
     # server's `image.digest` does.
     digest: ""
   service:
-    # -- Service type for the console.
+    # -- Service type for the viewer.
     type: ClusterIP
     # -- Service port. The container always listens on 3000.
     port: 3000
   ingress:
-    # -- Publish the console through an Ingress. The console is a human-facing
+    # -- Publish the viewer through an Ingress. The viewer is a human-facing
     # web UI, so unlike the API this is the normal way to reach it.
     enabled: false
     # -- IngressClass name.
     className: ""
-    # -- Extra annotations for the console Ingress.
+    # -- Extra annotations for the viewer Ingress.
     annotations: {}
     # -- Hosts and paths.
     hosts: []
@@ -840,7 +840,7 @@ viewer:
     tls: []
   auth:
     oidc:
-      # -- Authenticate console users through OIDC. Off means the console's own
+      # -- Authenticate viewer users through OIDC. Off means the viewer's own
       # session auth is whatever its defaults provide — acceptable for a private
       # cluster, not for anything reachable by a person who should not see PHI.
       enabled: false
@@ -848,10 +848,10 @@ viewer:
       issuer: ""
       # -- OAuth2 client id.
       clientId: ""
-      # -- The console's own externally-reachable base URL, used to build the
+      # -- The viewer's own externally-reachable base URL, used to build the
       # OIDC redirect. Must match what the identity provider has registered.
       publicBaseUrl: ""
-  # -- Name of an existing Secret holding the console's OIDC client secret. The
+  # -- Name of an existing Secret holding the viewer's OIDC client secret. The
   # chart mounts that key as a FILE and passes only its path, so the credential
   # never enters the pod's environment — the same discipline the server's DSN
   # uses.
@@ -859,13 +859,13 @@ viewer:
   # -- Key within `existingSecret` carrying the client secret.
   existingSecretKey: FERROEHR_VIEWER__AUTH__OIDC__CLIENT_SECRET
   networkPolicy:
-    # -- Install a NetworkPolicy for the console. Egress admits the CDR Service
-    # and DNS, and nothing else — the console is a REST client of the CDR by
+    # -- Install a NetworkPolicy for the viewer. Egress admits the CDR Service
+    # and DNS, and nothing else — the viewer is a REST client of the CDR by
     # mandate, so that half is enforceable rather than aspirational. Ingress
-    # narrows the console's PORT unconditionally and its SOURCES only when
+    # narrows the viewer's PORT unconditionally and its SOURCES only when
     # `ingressFrom` is set.
     enabled: true
-    # -- Ingress `from` selectors admitted to the console port. Empty means the
+    # -- Ingress `from` selectors admitted to the viewer port. Empty means the
     # rule carries no `from`, which admits EVERY source — other namespaces and
     # off-cluster clients included
     # (https://kubernetes.io/docs/concepts/services-networking/network-policies/).
@@ -873,9 +873,9 @@ viewer:
     # ingress-controller namespace/pods.
     ingressFrom: []
     # -- Admit every source while `ingressFrom` is empty — the posture this chart
-    # SHIPS for the console, stated as a value rather than left implicit in an
+    # SHIPS for the viewer, stated as a value rather than left implicit in an
     # empty list. Set it to `false` to have the render REFUSED while `ingressFrom`
-    # is empty, instead of quietly exposing the console to everything. It only
+    # is empty, instead of quietly exposing the viewer to everything. It only
     # decides the empty case — a non-empty `ingressFrom` always narrows.
     ingressAllowAll: true
   # -- Pod-level security context. Mirrors the server's; a second workload is
@@ -903,7 +903,7 @@ viewer:
       drop: [ALL]
     seccompProfile:
       type: RuntimeDefault
-  # -- Termination grace period for the console. Shorter than the server's: it
+  # -- Termination grace period for the viewer. Shorter than the server's: it
   # holds no write in flight and nothing to drain but in-flight page renders.
   terminationGracePeriodSeconds: 20
   # -- Lame-duck pause before SIGTERM, in seconds (0 disables) — the same
@@ -922,5 +922,5 @@ viewer:
   tolerations: []
   # -- Affinity.
   affinity: {}
-  # -- Extra environment for the console (escape hatch).
+  # -- Extra environment for the viewer (escape hatch).
   extraEnv: []

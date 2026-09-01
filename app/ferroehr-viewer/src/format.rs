@@ -1,7 +1,7 @@
 // SPDX-FileCopyrightText: FerroEHR contributors
 // SPDX-License-Identifier: MIT
 
-//! Representation formats the console negotiates with the CDR.
+//! Representation formats the viewer negotiates with the CDR.
 //!
 //! The ITS-REST canonical forms plus the Simplified Formats media types.
 //! FLAT and STRUCTURED are the two the format spec itself defines
@@ -11,7 +11,7 @@
 //! §Data representation / Simplified Formats). Negotiation is strict
 //! `Accept`/`Content-Type` — there is no `?format=` parameter.
 //!
-//! Beside the media types, the one VALUE format the console completes by hand:
+//! Beside the media types, the one VALUE format the viewer completes by hand:
 //! [`datetime_local_to_rfc3339`], which turns a browser `datetime-local`
 //! control's value into the instant `version_at_time` takes — the same
 //! `Resources.md` the media types above cite.
@@ -72,7 +72,7 @@ impl ReprFormat {
 /// unchanged. Empty input yields an empty string, which every caller rejects
 /// before the round-trip.
 ///
-/// This is the console's ONE normalizer for the parameter: every time-travel
+/// This is the viewer's ONE normalizer for the parameter: every time-travel
 /// picker goes through it, so one typed instant can never mean two things on the
 /// wire, and the CDR's own `400` is the arbiter for anything else.
 ///

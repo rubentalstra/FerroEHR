@@ -402,7 +402,7 @@ it serves HTML and hydrates WebAssembly. Its `Cache-Control` has one scoped
 exception to `no-store`: the hydration bundle under `/pkg/` is served
 `public, max-age=31536000, immutable`. Those filenames carry a content hash, so
 a rebuilt asset is a different URL and a cached copy can never be stale, and the
-bundle holds nothing clinical — the console reaches the CDR through its own
+bundle holds nothing clinical — the viewer reaches the CDR through its own
 server functions, never from the browser. Every document still carries
 `no-store`, because documents carry patient data and a per-request CSP nonce.
 A `/pkg/` response that is not a served body (a `404`, a redirect) is never

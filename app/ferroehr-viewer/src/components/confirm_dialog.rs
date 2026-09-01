@@ -3,7 +3,7 @@
 
 //! The destructive-confirmation modal.
 //!
-//! ONE dialog every delete affordance in the console opens, so "are you sure?"
+//! ONE dialog every delete affordance in the viewer opens, so "are you sure?"
 //! looks and behaves identically everywhere.
 //!
 //! State is a single source of truth: the caller owns the signal saying WHICH

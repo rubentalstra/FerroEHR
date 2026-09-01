@@ -294,6 +294,10 @@ services:
         condition: service_healthy
     environment:
       FERROEHR_VIEWER__CDR__BASE_URL: http://ferroehr:8080
+      # The quickstart serves plain HTTP on localhost, so the secure-by-default
+      # session cookie flag opts out here; a TLS-fronted deployment (the hosted
+      # sandbox, the chart behind an ingress) keeps the default `true`.
+      FERROEHR_VIEWER__SESSION__COOKIE_SECURE: "false"
     ports:
       - "${FERROEHR_BIND_HOST:-127.0.0.1}:${FERROEHR_VIEWER_PORT:-3000}:3000"
     cap_drop: [ALL]

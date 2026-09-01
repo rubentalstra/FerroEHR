@@ -101,7 +101,7 @@ pub(crate) async fn tenant_create(
 /// Read-only session context for operators: the tenant-resolution middleware
 /// has already resolved the caller (claim, or the dev header override) by the
 /// time any handler runs, so this answers from that ambient scope — never a
-/// console-side computation, never a selector. An unscoped request reports the
+/// viewer-side computation, never a selector. An unscoped request reports the
 /// reserved default tenant (`{"default": true, "tenant": null}`); a scoped one
 /// carries its registry record (`{"default": false, "tenant": {…}}`). The
 /// static `current` segment cannot collide with a tenant id — ids are UUIDs.

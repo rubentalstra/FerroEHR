@@ -11,7 +11,7 @@
 //! `<Routes>` tree, which no public API constructs standalone. The only way in
 //! is to render the WHOLE route tree for a concrete URL.
 //!
-//! So this module renders the console the way its own binary does. Every
+//! So this module renders the viewer the way its own binary does. Every
 //! authenticated route declares `ssr=leptos_router::SsrMode::Async`
 //! ([`ferroehr_viewer::app::App`]), and `leptos_axum` answers that mode with
 //! `app.to_html_stream_in_order().collect::<String>().await` over
@@ -64,7 +64,7 @@ struct ServerPass {
     html: String,
 }
 
-/// Renders one URL through the console's own async server pass.
+/// Renders one URL through the viewer's own async server pass.
 ///
 /// `Accept: text/html` is a browser's own header, and `leptos_axum::redirect`
 /// reads it to decide between setting only `Location` (a server-fn caller) and
@@ -78,7 +78,7 @@ struct ServerPass {
 )]
 async fn render_route(url: &str) -> ServerPass {
     // The one public `leptos_axum` entry point that initializes the reactive
-    // executor (`Executor::init_tokio`) the way the console's own server does;
+    // executor (`Executor::init_tokio`) the way the viewer's own server does;
     // an app fn with no `<Router>` yields no routes and does no work.
     drop(leptos_axum::generate_route_list(|| ()));
     let options = LeptosOptions::builder()
@@ -241,7 +241,7 @@ async fn the_shell_renders_the_same_sidebar_around_a_second_screen_and_moves_the
 }
 
 /// The four optional CDR surfaces are probe-and-hide: this pass has no session,
-/// so every probe fails before it reaches the CDR and the console offers no link
+/// so every probe fails before it reaches the CDR and the viewer offers no link
 /// to a screen it cannot know is served.
 #[tokio::test]
 async fn a_probe_that_cannot_answer_leaves_its_nav_entry_out_of_the_sidebar() {
@@ -303,7 +303,7 @@ async fn the_closed_access_drawer_contributes_nothing_to_the_server_document() {
 // ------------------------------------------------------------------- footer
 
 #[tokio::test]
-async fn the_footer_reports_the_console_version_and_this_session_s_scope_count() {
+async fn the_footer_reports_the_viewer_version_and_this_session_s_scope_count() {
     let pass = render_route("/").await;
     let footer = pass
         .html
@@ -311,7 +311,7 @@ async fn the_footer_reports_the_console_version_and_this_session_s_scope_count()
         .and_then(|(_, rest)| rest.split_once("</footer>"))
         .map_or("", |(inside, _)| inside);
     assert!(
-        footer.contains(&format!("console v{}", env!("CARGO_PKG_VERSION"))),
+        footer.contains(&format!("viewer v{}", env!("CARGO_PKG_VERSION"))),
         "{footer}"
     );
     // No session, so no scopes — the count is a fact about the session, not a
@@ -429,7 +429,7 @@ async fn the_login_screen_is_served_without_a_session() {
 /// The link cannot come from a component body any more: with content-hashed
 /// `/pkg` filenames its href is a build fact the server reads out of the
 /// cargo-leptos hash manifest, which only the shell has (`LeptosOptions`).
-/// Losing it renders a console that works and looks broken, and no other test
+/// Losing it renders a viewer that works and looks broken, and no other test
 /// would notice — the screens assert their own markup, never the head.
 #[tokio::test]
 async fn the_shell_links_the_bundle_stylesheet_from_the_document_head() {

@@ -26,7 +26,7 @@ PostgreSQL image is a thin, `COPY`-only layer over the upstream `postgres` image
 (it adds initialization scripts and nothing else) so its package set is
 upstream's, and its CVEs arrive on upstream's schedule rather than ours. The chart
 deploys **none** of the second and third: it takes an external DSN and can
-optionally render the console.
+optionally render the viewer.
 
 **What distroless costs, stated before an incident rather than during one: there
 is no shell in the image, so `kubectl exec … -- sh` does not work.** That is the

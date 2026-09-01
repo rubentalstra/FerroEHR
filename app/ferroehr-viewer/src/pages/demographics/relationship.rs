@@ -8,7 +8,7 @@
 //! all — these routes are the CDR's own extension realizing SM
 //! `I_PARTY_RELATIONSHIP` (`docs/specs/openehr/SM/docs/UML/classes/i_party_relationship.adoc`).
 //!
-//! A relationship therefore exists in the CDR in TWO shapes, and the console
+//! A relationship therefore exists in the CDR in TWO shapes, and the viewer
 //! shows both because the spec models both:
 //!
 //! - **Inline, on its source party.** `PARTY.relationships` is
@@ -34,7 +34,7 @@
 
 #![allow(
     clippy::disallowed_types,
-    reason = "the console consumes the CDR JSON wire over ITS-REST — not the CDR internal seams \
+    reason = "the viewer consumes the CDR JSON wire over ITS-REST — not the CDR internal seams \
               (#1694); the carriers here are ssr-only, so #[expect] would be unfulfilled on the \
               hydrate target"
 )]
@@ -65,21 +65,21 @@ use crate::uid::container_uid_of;
 /// The noun phrase every relationship write-failure toast is built around.
 const RELATIONSHIP_OBJECT: &str = "this relationship";
 
-/// The `PARTY_REF` namespace the console writes.
+/// The `PARTY_REF` namespace the viewer writes.
 ///
 /// `OBJECT_REF.namespace` is a free string with only a legality rule — "local",
 /// "unknown", or the standard regex — and the class documentation's own
 /// examples are "terminology" and "demographic"
 /// (`docs/specs/openehr/BASE/docs/UML/classes/org.openehr.base.base_types.object_ref.adoc`).
 /// No openEHR spec fixes which namespace a demographic party ref carries, so
-/// "demographic" is the console's own choice, matching the RM's example.
+/// "demographic" is the viewer's own choice, matching the RM's example.
 const REF_NAMESPACE: &str = "demographic";
 
 /// One end of a relationship, as its `PARTY_REF` carries it.
 ///
 /// `PARTY_REF` inherits `OBJECT_REF`'s mandatory `namespace`, `type` and `id`
 /// (`org.openehr.base.base_types.object_ref.adoc`), and its `type` names the
-/// referenced party class — which is what lets the console link the end to that
+/// referenced party class — which is what lets the viewer link the end to that
 /// kind's route.
 #[derive(Debug, Clone, PartialEq, Eq, Default, Serialize, Deserialize)]
 pub struct PartyRefView {
@@ -91,7 +91,7 @@ pub struct PartyRefView {
     pub id: String,
 }
 
-/// The console's view of one `PARTY_RELATIONSHIP` version.
+/// The viewer's view of one `PARTY_RELATIONSHIP` version.
 #[derive(Debug, Clone, PartialEq, Eq, Default, Serialize, Deserialize)]
 pub struct RelationshipState {
     /// The canonical relationship JSON exactly as the CDR served it — the base
@@ -115,7 +115,7 @@ pub struct RelationshipState {
     /// `PARTY_RELATIONSHIP.details` pretty-printed, empty when absent.
     pub details: String,
     /// `PARTY_RELATIONSHIP.time_validity` as compact JSON, empty when absent —
-    /// shown as a fact, never edited by the console.
+    /// shown as a fact, never edited by the viewer.
     pub time_validity: String,
 }
 
@@ -142,7 +142,7 @@ pub struct InlineRelationship {
 /// the party read.
 ///
 /// # Errors
-/// [`ViewerError::Unauthenticated`] without a console session;
+/// [`ViewerError::Unauthenticated`] without a viewer session;
 /// [`ViewerError::Invalid`] on an empty id; CDR transport errors pass through;
 /// a non-2xx CDR answer normalizes via
 /// [`CdrClient::expect_success`](crate::cdr::CdrClient::expect_success) — a
@@ -190,7 +190,7 @@ pub async fn fetch_relationship(
 /// `OBJECT_VERSION_ID` there.
 ///
 /// # Errors
-/// [`ViewerError::Unauthenticated`] without a console session;
+/// [`ViewerError::Unauthenticated`] without a viewer session;
 /// [`ViewerError::Invalid`] when a mandatory field is blank, an endpoint kind
 /// is outside the five, or `details` is not a JSON object; CDR transport errors
 /// pass through; any non-2xx CDR answer (the `422` ref-invariant diagnostics
@@ -259,10 +259,10 @@ pub async fn create_relationship(
 /// sent is `base_body` with `name` and `details` replaced; `source`, `target`,
 /// `time_validity`, `uid` and everything else travel back verbatim — changing
 /// which parties a relationship joins would make it a different relationship,
-/// so the console does not offer it.
+/// so the viewer does not offer it.
 ///
 /// # Errors
-/// [`ViewerError::Unauthenticated`] without a console session;
+/// [`ViewerError::Unauthenticated`] without a viewer session;
 /// [`ViewerError::Invalid`] on a missing version uid, a blank name, or a
 /// `details` draft that is not a JSON object; CDR transport errors pass
 /// through; any non-2xx CDR answer (the `412` collision included) normalizes
@@ -321,7 +321,7 @@ pub async fn update_relationship(
 /// the CDR answers `409` when it is not the latest.
 ///
 /// # Errors
-/// [`ViewerError::Unauthenticated`] without a console session;
+/// [`ViewerError::Unauthenticated`] without a viewer session;
 /// [`ViewerError::Invalid`] when the id is not a full `OBJECT_VERSION_ID`; CDR
 /// transport errors pass through; any non-2xx CDR answer normalizes via
 /// [`CdrClient::expect_success`](crate::cdr::CdrClient::expect_success).

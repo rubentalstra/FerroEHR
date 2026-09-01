@@ -26,7 +26,7 @@
 
 #![expect(
     clippy::disallowed_types,
-    reason = "the console consumes the CDR JSON wire over ITS-REST — not the CDR internal seams \
+    reason = "the viewer consumes the CDR JSON wire over ITS-REST — not the CDR internal seams \
               (#1694)"
 )]
 
@@ -57,7 +57,7 @@ const SMART_DISCOVERY_PATH: &str = "ferroehr/rest/.well-known/smart-configuratio
 /// error).
 ///
 /// # Errors
-/// [`ViewerError::Unauthenticated`] without a console session; CDR transport
+/// [`ViewerError::Unauthenticated`] without a viewer session; CDR transport
 /// errors pass through; a non-2xx, non-404 CDR answer normalizes via
 /// [`CdrClient::expect_success`](crate::cdr::CdrClient::expect_success).
 #[server]
@@ -113,7 +113,7 @@ fn openapi_family_slug(value: &str) -> String {
 /// filtered document.
 ///
 /// # Errors
-/// [`ViewerError::Unauthenticated`] without a console session;
+/// [`ViewerError::Unauthenticated`] without a viewer session;
 /// [`ViewerError::Invalid`] for a `family` the CDR has no document for; CDR
 /// transport errors pass through; a non-2xx CDR answer normalizes via
 /// [`CdrClient::expect_success`](crate::cdr::CdrClient::expect_success).
@@ -167,7 +167,7 @@ pub async fn fetch_openapi(
 /// lacks the ADMIN role — both first-class rendered states, not failures.
 ///
 /// # Errors
-/// [`ViewerError::Unauthenticated`] without a console session; CDR
+/// [`ViewerError::Unauthenticated`] without a viewer session; CDR
 /// transport errors pass through; non-2xx answers normalize via
 /// [`CdrClient::expect_success`](crate::cdr::CdrClient::expect_success).
 #[server]
@@ -221,7 +221,7 @@ const USAGE_TEMPLATES: usize = 25;
 #[cfg(feature = "ssr")]
 async fn template_count(
     state: &crate::state::AppState,
-    session: &crate::session::AdminSession,
+    session: &crate::session::ViewerSession,
     template_id: String,
 ) -> Result<(String, i64), ViewerError> {
     let url = state.cdr.rest_v1("query/aql");
@@ -264,7 +264,7 @@ async fn template_count(
 /// loop's short circuit.
 ///
 /// # Errors
-/// [`ViewerError::Unauthenticated`] without a console session; CDR errors
+/// [`ViewerError::Unauthenticated`] without a viewer session; CDR errors
 /// normalized by the underlying calls.
 #[server]
 pub async fn template_usage() -> Result<(Vec<(String, i64)>, u32), ViewerError> {
@@ -415,7 +415,7 @@ fn manifest_body(manifest: &crate::system_api::ConformanceManifest) -> AnyView {
                     })}
             </div>
             <p class="mt-3 text-xs text-ink-muted">
-                "The product and openEHR REST versions are in the Status card — the manifest and the status document report the same versions, so the console reads them in one place."
+                "The product and openEHR REST versions are in the Status card — the manifest and the status document report the same versions, so the viewer reads them in one place."
             </p>
         </div>
     }
@@ -680,7 +680,7 @@ fn smart_card() -> AnyView {
 
 /// What to say when the SMART discovery probe could not be read.
 ///
-/// Component-free and unit-tested (the console's failure-copy convention —
+/// Component-free and unit-tested (the viewer's failure-copy convention —
 /// `crate::feedback::write_failure_copy`): every branch names what was asked
 /// for and what to do next, and none of them echoes a bare status code back
 /// at the reader.
@@ -942,7 +942,7 @@ fn openapi_body(doc: &serde_json::Value) -> AnyView {
 }
 
 /// Activity-log card: a compact pointer into the `/audit` screen, which is
-/// the console's real activity browser (the CDR's local Audit Record
+/// the viewer's real activity browser (the CDR's local Audit Record
 /// Repository over the RESTful-ATNA ITI-81 retrieval). This card deliberately
 /// fetches nothing — duplicating a filterable, paged browser inside a panel
 /// tile would be a second, worse audit surface.

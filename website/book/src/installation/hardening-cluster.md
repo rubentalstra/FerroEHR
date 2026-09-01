@@ -181,7 +181,7 @@ and repeated because they matter here: with `networkPolicy.ingressFrom` empty th
 rule carries no `from` and therefore admits **every** source, including other
 namespaces (only the port list is narrowed in that state; set
 `networkPolicy.ingressAllowAll: false` to have the chart refuse to render that
-state at all, and the same pair exists for the console under
+state at all, and the same pair exists for the viewer under
 `viewer.networkPolicy`); and a NetworkPolicy is only as real as the CNI that
 implements it.
 

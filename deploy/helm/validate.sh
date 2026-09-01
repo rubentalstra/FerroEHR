@@ -79,7 +79,7 @@ fi
 
 # The value sets to validate: <label>:<values-file>
 # The viewer overlay is here because its ABSENCE was a hole, not a saving:
-# the console is the second pod-bearing workload, the restricted-profile gate is
+# the viewer is the second pod-bearing workload, the restricted-profile gate is
 # per-container, and until this line the gate never saw a render containing it.
 # The chart's own docs claimed the gate checked both workloads; it could not.
 declare -a CASES=(
@@ -138,7 +138,7 @@ yaml_ok() {
 # (https://kubernetes.io/docs/concepts/workloads/controllers/deployment/), so a
 # change here is not a diff to review — it is an upgrade that fails on every
 # existing release with an error most operators read as a chart bug. The obvious
-# way to separate the console's pods from the server's is to add `component` to
+# way to separate the viewer's pods from the server's is to add `component` to
 # the shared selectorLabels helper, which is exactly the change this forbids.
 #
 # Pinned as an explicit expectation rather than left to the golden diff: a
@@ -172,7 +172,7 @@ assert_selector_stable() {
 # checked per CONTAINER, not by grepping the file. A substring search passes as
 # soon as one container carries a field, so with two workloads in a render — the
 # server and the optional viewer — a compliant server would vouch for a
-# non-compliant console. That is compliance by luck, and this render is the only
+# non-compliant viewer. That is compliance by luck, and this render is the only
 # place it can be caught before a cluster refuses the pod.
 assert_security() {
   local file="$1"
@@ -306,20 +306,20 @@ secret_leak_gate
 # golden: this is where the SHIPPED posture is a checked claim rather than
 # whatever the template happens to emit.
 #
-# BOTH pod-bearing workloads are covered. The console carries the same ingress
+# BOTH pod-bearing workloads are covered. The viewer carries the same ingress
 # shape, and it is the HUMAN-facing surface — the §3 lesson applies here too: a
-# gate that only ever saw the server's policy would let the console's regress
+# gate that only ever saw the server's policy would let the viewer's regress
 # while reporting the property as checked.
 network_policy_gate() {
   bold "── NetworkPolicy ingress postures ───────────────────────"
-  local base="${CI_DIR}/default-values.yaml" console="${CI_DIR}/viewer-values.yaml"
+  local base="${CI_DIR}/default-values.yaml" viewer="${CI_DIR}/viewer-values.yaml"
   local out values
 
   # The sanctioned postures, read back off the rendered policy — per workload.
   # <label>|<values file>|<policy name>|<the values key prefix>|<the template>
   local -a workloads=(
     "server|${base}|ferroehr|networkPolicy|templates/networkpolicy.yaml"
-    "console|${console}|ferroehr-viewer|viewer.networkPolicy|templates/viewer.yaml"
+    "viewer|${viewer}|ferroehr-viewer|viewer.networkPolicy|templates/viewer.yaml"
   )
   local label name prefix template policy posture=0
   for case in "${workloads[@]}"; do
@@ -369,7 +369,7 @@ network_policy_gate() {
     fi
   done
   if [[ "$posture" -eq 0 ]]; then
-    echo "  server and console: the shipped default renders no \`from\` and says so; a set ingressFrom reaches the policy"
+    echo "  server and viewer: the shipped default renders no \`from\` and says so; a set ingressFrom reaches the policy"
   else
     FAIL=1
   fi
@@ -403,7 +403,7 @@ refusal_registry_gate() {
   bold "── template refusals: every \`fail\` is probed ────────────"
   local base="${CI_DIR}/default-values.yaml"
   local basic="${CI_DIR}/basic-auth-values.yaml"
-  local console="${CI_DIR}/viewer-values.yaml"
+  local viewer="${CI_DIR}/viewer-values.yaml"
   local -a registry=(
     "deployment.yaml|no authentication mechanism is configured|${base}|--set config.auth.oidc.issuer=null|config.auth.basic.users;config.auth.oidc.issuer"
     "migration-job.yaml|requires migrations.job.existingSecret|${base}|--set migrations.job.enabled=true|migrations.job.existingSecret"
@@ -413,7 +413,7 @@ refusal_registry_gate() {
     "_helpers.tpl|has no client declared at config.terminology.external.oauth2_clients|${base}|--set-string secrets.terminologyOauth2ClientSecrets.ghost=SENTINEL_PROBE|config.terminology.external.oauth2_clients.ghost"
     "networkpolicy.yaml|networkPolicy.ingressAllowAll=false with an empty|${base}|--set networkPolicy.ingressAllowAll=false|networkPolicy.ingressFrom;hardening-network-policy.md"
     "networkpolicy.yaml|with no destination for the database|${base}|--set networkPolicy.egress.enabled=true|networkPolicy.egress.database.to;hardening-network-policy.md"
-    "viewer.yaml|viewer.networkPolicy.ingressAllowAll=false with an empty|${console}|--set viewer.networkPolicy.ingressAllowAll=false|viewer.networkPolicy.ingressFrom;hardening-network-policy.md"
+    "viewer.yaml|viewer.networkPolicy.ingressAllowAll=false with an empty|${viewer}|--set viewer.networkPolicy.ingressAllowAll=false|viewer.networkPolicy.ingressFrom;hardening-network-policy.md"
   )
 
   local record values probe wants want out refused=0

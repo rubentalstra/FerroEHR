@@ -19,11 +19,11 @@
 //! after a sibling delete shifts indices; the live position is re-derived from
 //! the `_key` for each read and mutation. The `_key` is stripped
 //! (`super::edit::strip_keys`) from every body sent to the CDR and from the
-//! advanced-JSON view — it never leaves the console.
+//! advanced-JSON view — it never leaves the viewer.
 
 #![expect(
     clippy::disallowed_types,
-    reason = "the console consumes the CDR JSON wire over ITS-REST — not the CDR internal seams \
+    reason = "the viewer consumes the CDR JSON wire over ITS-REST — not the CDR internal seams \
               (#1694)"
 )]
 
@@ -52,7 +52,7 @@ const ICON_BTN: &str = "inline-flex items-center justify-center rounded-control 
 const ICON_BTN_DANGER: &str = "inline-flex items-center justify-center rounded-control p-1 text-ink-muted hover:bg-danger-subtle hover:text-danger focus:outline-none focus:ring-2 focus:ring-danger";
 
 /// Serialize the working tree for the CDR with the ephemeral `_key` identity
-/// stripped (contract — console-local identity never leaves the BFF).
+/// stripped (contract — viewer-local identity never leaves the BFF).
 fn strip_keys_to_string(tree: &Value) -> String {
     let mut stripped = tree.clone();
     strip_keys(&mut stripped);
@@ -301,7 +301,7 @@ pub(in crate::pages::ehr_detail::directory) fn tree_editor(
     };
 
     // Advanced mode: toggling on seeds the JSON draft from the current tree
-    // (with `_key` stripped — the user never sees console-local identity);
+    // (with `_key` stripped — the user never sees viewer-local identity);
     // "Apply" parses it back into the working tree and re-stamps.
     let on_toggle_advanced = move |_| {
         editor.advanced.update(|open| {

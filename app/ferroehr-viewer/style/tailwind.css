@@ -1,7 +1,7 @@
 /* Tailwind CSS v4 entry point (standalone binary via cargo-leptos — no
    Node/npm; pin the binary with LEPTOS_TAILWIND_VERSION=v4.3.3).
 
-   The console design system: every screen styles against the SEMANTIC
+   The viewer design system: every screen styles against the SEMANTIC
    tokens below (bg-surface / bg-raised / text-ink / border-edge /
    text-accent …), never against raw palette utilities (slate-, teal-)
    and never with per-element `dark:` overrides — dark mode is the same
@@ -139,7 +139,7 @@
 /* thaw's Popover surface draws from the stock Fluent neutral ramp
    (thaw/src/popover/popover.css: `--colorNeutralBackground1`, a Fluent
    `--shadow16`), so the user menu floated in a chrome that matched no other
-   panel in the console. The surface is restated in the design tokens ONCE
+   panel in the viewer. The surface is restated in the design tokens ONCE
    here, for every popover, instead of per call site: thaw prepends its
    <style> to <head>, so this later rule of equal specificity wins, while a
    Tailwind class on the widget would not (utilities are layered, and an

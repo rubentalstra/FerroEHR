@@ -2,7 +2,7 @@
 // SPDX-License-Identifier: MIT
 
 //! The scope previewer's presentation model: one pure function from a SMART
-//! scope string to the grant the console renders for it.
+//! scope string to the grant the viewer renders for it.
 //!
 //! **The parse is never ours.** It is `openehr_its::rest::smart_scopes` — the
 //! ONE SMART on openEHR grammar
@@ -152,23 +152,23 @@ pub struct PolicySource {
 /// The policy source for a session's authentication method (`"basic"` /
 /// `"oidc"`, as [`crate::auth::SessionInfo::method`] reports it).
 ///
-/// The console states only what the session actually carries: a Basic session
+/// The viewer states only what the session actually carries: a Basic session
 /// replays a CDR account, an OIDC session carries a token whose scopes it can
 /// show. Roles are the CDR's own resolution from that same credential — the
-/// console never claims to know them.
+/// viewer never claims to know them.
 #[must_use]
 pub fn policy_source(method: &str) -> PolicySource {
     match method {
         "basic" => PolicySource {
             label: "Basic authentication",
-            note: "The console replays this account's CDR credentials on every call, so the CDR applies that account's own privileges. A Basic session carries no SMART scopes.",
+            note: "The viewer replays this account's CDR credentials on every call, so the CDR applies that account's own privileges. A Basic session carries no SMART scopes.",
         },
         "oidc" => PolicySource {
             label: "OIDC bearer token",
             note: "The CDR resolves this session's roles and permissions from the same access token; the scopes below are the ones the token was issued with.",
         },
         _ => PolicySource {
-            label: "Console session",
+            label: "Viewer session",
             note: "The CDR decides every request from the credential this session holds.",
         },
     }

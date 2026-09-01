@@ -20,7 +20,7 @@
     reason = "test fixtures and wire assertions are raw JSON by the testing rule \
               (.claude/rules/testing.md §Test-fixture construction)"
 )]
-//! End-to-end journeys over the console's **FHIR connector** screen (`/fhir`):
+//! End-to-end journeys over the viewer's **FHIR connector** screen (`/fhir`):
 //! the mapping-store round trip, the validate-only dry run in all three of its
 //! verdicts, and the read-path viewer.
 //!
@@ -33,7 +33,7 @@
 //! split as the admin-group, management and tenant journeys.
 //!
 //! **Nothing here commits a FHIR resource through the connector, because the
-//! console offers no path that could.** The read scene needs committed content
+//! viewer offers no path that could.** The read scene needs committed content
 //! to read, so it seeds an EHR and a COMPOSITION over the openEHR REST API
 //! directly — out of band, the way this harness seeds everything else — and the
 //! connector only ever READS it back.
@@ -63,17 +63,17 @@ use thirtyfour::prelude::*;
 const TEMPLATE_ID: &str = "minimal_evaluation.en.v1";
 
 /// The mapping the CRUD round trip owns.
-const ROUND_TRIP_MAPPING: &str = "e2e-console-fhir";
+const ROUND_TRIP_MAPPING: &str = "e2e-viewer-fhir";
 
 /// The valid mapping the dry-run scene owns.
-const DRY_RUN_MAPPING: &str = "e2e-console-fhir-dry";
+const DRY_RUN_MAPPING: &str = "e2e-viewer-fhir-dry";
 
 /// The mapping the dry-run scene owns whose context sets an invalid territory,
 /// so the CDR's own validator refuses the COMPOSITION it builds.
-const DRY_RUN_BAD_MAPPING: &str = "e2e-console-fhir-dry-bad";
+const DRY_RUN_BAD_MAPPING: &str = "e2e-viewer-fhir-dry-bad";
 
 /// The mapping the read scene owns.
-const READ_MAPPING: &str = "e2e-console-fhir-read";
+const READ_MAPPING: &str = "e2e-viewer-fhir-read";
 
 /// The `meta.profile` each fixture mapping matches on: the connector resolves a
 /// mapping by resource type + profile, so a per-scene profile keeps concurrent
@@ -102,7 +102,7 @@ fn rest_v1(cdr: &str) -> String {
     format!("{cdr}/ferroehr/rest/openehr/v1")
 }
 
-/// One mapping definition document, as the console's textarea carries it.
+/// One mapping definition document, as the viewer's textarea carries it.
 fn definition(mapping: &str, territory: &str) -> serde_json::Value {
     serde_json::json!({
         "resource_type": "Observation",
@@ -134,7 +134,7 @@ fn definition(mapping: &str, territory: &str) -> serde_json::Value {
 fn observation(mapping: &str, patient: &str, magnitude: f64) -> serde_json::Value {
     serde_json::json!({
         "resourceType": "Observation",
-        "id": "e2e-console-obs",
+        "id": "e2e-viewer-obs",
         "meta": { "versionId": "1", "profile": [profile_of(mapping)] },
         "status": "final",
         "subject": { "reference": format!("Patient/{patient}") },
@@ -257,7 +257,7 @@ async fn seed_mapping(cdr: &str, name: &str, territory: &str) {
 /// read facade has something to reverse-map.
 ///
 /// Out of band on purpose: the connector's own ingest door commits, and the
-/// console offers no path to it — the read scene needs data, not a console
+/// viewer offers no path to it — the read scene needs data, not a viewer
 /// write.
 ///
 /// # Panics
@@ -321,7 +321,7 @@ async fn seed_committed_observation(cdr: &str, patient: &str, magnitude: f64) {
             serde_json::json!({
                 "ctx/language": "en",
                 "ctx/territory": "US",
-                "ctx/composer_name": "e2e console seed",
+                "ctx/composer_name": "e2e viewer seed",
                 "ctx/time": "2026-07-14T08:00:00Z",
                 "minimal/minimal/quantity|magnitude": magnitude,
                 "minimal/minimal/quantity|unit": "kg"
@@ -494,9 +494,9 @@ async fn a_rejected_mapping_document_surfaces_the_diagnostic_verbatim() {
     login_basic_as(&h, &user, &pass).await;
     open_connector(&h).await;
 
-    // A document the console can send (valid JSON, an object) but the CDR
+    // A document the viewer can send (valid JSON, an object) but the CDR
     // refuses: no template_id at all.
-    retype(&h, "#fhir-create-name", "e2e-console-fhir-rejected").await;
+    retype(&h, "#fhir-create-name", "e2e-viewer-fhir-rejected").await;
     retype(
         &h,
         "#fhir-create-definition",
@@ -510,7 +510,7 @@ async fn a_rejected_mapping_document_surfaces_the_diagnostic_verbatim() {
         .await
         .expect("send the rejected document");
 
-    // The CDR's own words, unedited — the console never paraphrases a
+    // The CDR's own words, unedited — the viewer never paraphrases a
     // diagnostic it did not author.
     wait_text_contains(
         &h,
@@ -520,7 +520,7 @@ async fn a_rejected_mapping_document_surfaces_the_diagnostic_verbatim() {
     .await;
     wait_text_contains(&h, "#fhir-create-diagnostic", "template_id").await;
     // The refusal ALSO toasts: an inline-only failure reads as "nothing
-    // happened" (the console's mutation-feedback rule).
+    // happened" (the viewer's mutation-feedback rule).
     assert!(
         wait_text(&h, "Mapping not stored").await,
         "a refused store must toast as well as render the diagnostic inline"
@@ -528,7 +528,7 @@ async fn a_rejected_mapping_document_surfaces_the_diagnostic_verbatim() {
     h.shot(1, "fhir-mapping-rejected").await;
 
     // Nothing was stored: no row carries the refused name.
-    wait_css_absent(&h, "tr[data-fhir-mapping='e2e-console-fhir-rejected']").await;
+    wait_css_absent(&h, "tr[data-fhir-mapping='e2e-viewer-fhir-rejected']").await;
 
     // The 400 the CDR answered the server fn with is the point of this journey.
     h.assert_console_clean(&["400", "Failed to load resource"])
@@ -563,7 +563,7 @@ async fn the_dry_run_reports_every_verdict_and_commits_nothing() {
     // 1. A completed validation that passed.
     dry_run(
         &h,
-        &observation(DRY_RUN_MAPPING, "e2e-console-fhir-p1", 118.0).to_string(),
+        &observation(DRY_RUN_MAPPING, "e2e-viewer-fhir-p1", 118.0).to_string(),
     )
     .await;
     h.wait_css("#fhir-dry-run-verdict[data-fhir-verdict='valid']")
@@ -576,7 +576,7 @@ async fn the_dry_run_reports_every_verdict_and_commits_nothing() {
     //    rides the outcome, and the openEHR validator's message is verbatim.
     dry_run(
         &h,
-        &observation(DRY_RUN_BAD_MAPPING, "e2e-console-fhir-p1", 118.0).to_string(),
+        &observation(DRY_RUN_BAD_MAPPING, "e2e-viewer-fhir-p1", 118.0).to_string(),
     )
     .await;
     h.wait_css("#fhir-dry-run-verdict[data-fhir-verdict='invalid']")
@@ -586,7 +586,7 @@ async fn the_dry_run_reports_every_verdict_and_commits_nothing() {
 
     // 3. A resource the operation could not validate at all: the CDR never
     //    reached a verdict, and the screen says so instead of claiming one.
-    let mut garbage = observation(DRY_RUN_MAPPING, "e2e-console-fhir-p1", 118.0);
+    let mut garbage = observation(DRY_RUN_MAPPING, "e2e-viewer-fhir-p1", 118.0);
     garbage["valueQuantity"]["value"] = serde_json::Value::from("not-a-number");
     dry_run(&h, &garbage.to_string()).await;
     h.wait_css("#fhir-dry-run-verdict[data-fhir-verdict='not-run']")
@@ -598,7 +598,7 @@ async fn the_dry_run_reports_every_verdict_and_commits_nothing() {
     // facade still answers an empty searchset for it.
     let facade = reqwest::Client::new()
         .get(format!(
-            "{}/fhir/r4/Observation?patient=e2e-console-fhir-p1",
+            "{}/fhir/r4/Observation?patient=e2e-viewer-fhir-p1",
             rest_v1(&cdr)
         ))
         .basic_auth(&user, Some(&pass))
@@ -637,9 +637,9 @@ async fn the_read_path_viewer_answers_for_a_patient() {
     seed_template(&cdr).await;
     remove_mappings(&cdr, &[READ_MAPPING]).await;
     seed_mapping(&cdr, READ_MAPPING, "US").await;
-    // Committed out of band over the openEHR API: the console has no committing
+    // Committed out of band over the openEHR API: the viewer has no committing
     // path, and the facade needs stored content to reverse-map.
-    let patient = "e2e-console-fhir-read-p1";
+    let patient = "e2e-viewer-fhir-read-p1";
     seed_committed_observation(&cdr, patient, 118.0).await;
     let (user, pass) = admin_credentials();
     login_basic_as(&h, &user, &pass).await;
@@ -648,7 +648,7 @@ async fn the_read_path_viewer_answers_for_a_patient() {
     // A patient with nothing committed: an empty searchset Bundle, which is an
     // answer rather than an error.
     retype(&h, "#fhir-read-type", "Observation").await;
-    retype(&h, "#fhir-read-patient", "e2e-console-fhir-nobody").await;
+    retype(&h, "#fhir-read-patient", "e2e-viewer-fhir-nobody").await;
     h.wait_css("#fhir-read-submit")
         .await
         .click()
@@ -722,7 +722,7 @@ async fn a_session_without_the_admin_role_reads_the_refusal_on_the_screen() {
     wait_text_contains(&h, "#fhir-refused", "ADMIN").await;
     h.shot(1, "fhir-refused").await;
 
-    // A refused READ never toasts (the console's one feedback rule).
+    // A refused READ never toasts (the viewer's one feedback rule).
     assert!(
         h.driver
             .find_all(By::Css(".thaw-toast-body"))

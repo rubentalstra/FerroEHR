@@ -17,7 +17,7 @@
 //! pass — the property `.claude/rules/leptos-ui.md` §8 requires, since markup
 //! the server emits and the client does not is a hydration mismatch.
 //!
-//! `ssr`-gated: `to_html` is the server-pass renderer, and the console's
+//! `ssr`-gated: `to_html` is the server-pass renderer, and the viewer's
 //! `ssr` feature is what puts `leptos-use`/`thaw`/`leptos-chartistry` on their
 //! non-`WASM` code paths (`Cargo.toml` §features).
 
@@ -49,7 +49,7 @@ fn render(build: impl FnOnce() -> AnyView) -> String {
 }
 
 /// The `thaw` kit's chrome: every thaw widget resolves `ConfigInjection`, so a
-/// test that renders one wraps its body exactly like the console's own shell.
+/// test that renders one wraps its body exactly like the viewer's own shell.
 ///
 /// The body is a CLOSURE, not a built view: `thaw::ConfigProvider` provides its
 /// injection inside a child owner and then calls `children()`, so a body built

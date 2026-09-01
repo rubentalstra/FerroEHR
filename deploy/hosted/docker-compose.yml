@@ -34,7 +34,7 @@ services:
       retries: 3
       start_period: 30s
     # Sized for the box (a CX33: 4 vCPU, 8 GB), not for an aspiration. On a
-    # resize this limit and the console's move together, and neither is a
+    # resize this limit and the viewer's move together, and neither is a
     # code change.
     deploy:
       resources:
@@ -52,9 +52,9 @@ services:
     expose:
       - "8080"
 
-  console:
+  viewer:
     image: ${FERROEHR_VIEWER_IMAGE:-ghcr.io/rubentalstra/ferroehr-viewer:latest}
-    container_name: ferroehr-sandbox-console
+    container_name: ferroehr-sandbox-viewer
     restart: unless-stopped
     healthcheck:
       test: ["CMD", "/usr/local/bin/ferroehr-viewer", "healthcheck"]
@@ -92,7 +92,7 @@ services:
       - caddy_config:/config
     depends_on:
       - ferroehr
-      - console
+      - viewer
 
 volumes:
   caddy_data:

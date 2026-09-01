@@ -28,7 +28,7 @@ openehr-query = { path = "../../crates/openehr-query" }
 
 # Taken WITHOUT default features, so on both targets it contributes only the
 # std-only SMART scope grammar (`openehr_its::rest::smart_scopes`, master08) —
-# the ONE parser the CDR's scope gate and the console's scope previewer share, so
+# the ONE parser the CDR's scope gate and the viewer's scope previewer share, so
 # what the drawer explains can never drift from what the CDR enforces. Parsing a
 # scope string is a pure function, so the previewer runs in the browser rather
 # than round-tripping the BFF; that is why this dependency is unconditional.
@@ -91,7 +91,7 @@ reqwest = { workspace = true, optional = true }
 config = { workspace = true, optional = true }
 # The sealed session cookie (AES-256-GCM private jar, #2949): the whole
 # session rides one encrypted cookie so every instance can read it — the
-# console runs multi-instance on serverless platforms and keeps no store.
+# viewer runs multi-instance on serverless platforms and keeps no store.
 cookie = { workspace = true, optional = true }
 base64 = { workspace = true, optional = true }
 # The browser security-header layer (`SetResponseHeaderLayer`). Server-only:
@@ -172,12 +172,12 @@ indexmap.workspace = true
 # security layer in-process, with no listener.
 tower.workspace = true
 # E2E journeys (tests/e2e_*.rs): Rust-native WebDriver + the async runtime;
-# the console gate reads the browser log via thirtyfour's legacy-log API.
+# the browser-console gate reads the browser log via thirtyfour's legacy-log API.
 thirtyfour.workspace = true
 tokio = { workspace = true, features = ["macros", "rt-multi-thread", "time"] }
 # The docs-shots journey seeds stored queries over the Definition API
 # directly (bypassing the UI) — a plain HTTP client for test setup. `form`
-# (test-only): the export journey re-posts the console's own
+# (test-only): the export journey re-posts the viewer's own
 # `<form method="post">` to /export/aql, which is url-encoded by definition.
 reqwest = { workspace = true, features = ["form"] }
 

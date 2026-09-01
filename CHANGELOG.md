@@ -17,6 +17,15 @@ workflow refuses a tag that has no matching section here.
 
 ### Changed
 
+- The generic noun "console" is retired from everything a human reads: the
+  Helm chart's `viewer.*` value descriptions (which Artifact Hub publishes),
+  the viewer's own on-screen copy, the book, and the doc comments all say
+  "viewer" now. The hosted sandbox's Compose service is renamed `console` to
+  `viewer` and its container `ferroehr-sandbox-console` to
+  `ferroehr-sandbox-viewer`, which the box picks up at the next release
+  deploy. The Helm chart is version 7.0.1. The name of the entry the viewer
+  keeps inside its encrypted session cookie changes too, so open sessions
+  need one fresh sign-in after the upgrade.
 - The hosted sandbox (sandbox.ferroehr.eu) runs on a Hetzner CX33 (4 shared
   vCPU, 8 GB RAM, 80 GB NVMe), resized in place from the CPX22. The hosted
   compose memory limits that ship inside the server image move with it: the
@@ -60,7 +69,7 @@ workflow refuses a tag that has no matching section here.
   `<release>-admin-ui` to `<release>-viewer` and its
   `app.kubernetes.io/name` label from `<name>-admin-ui` to `<name>-viewer`.
   A Deployment's selector is immutable, so a release that already runs the
-  console with `adminUi.enabled: true` must have that Deployment, Service,
+  viewer with `adminUi.enabled: true` must have that Deployment, Service,
   ServiceAccount and NetworkPolicy deleted before the upgrade, or be
   reinstalled. The CDR's own objects are untouched.
 
@@ -76,6 +85,12 @@ workflow refuses a tag that has no matching section here.
 
 ### Fixed
 
+- The FerroEHR Viewer's session cookie sets `Secure` by default
+  (`session.cookie_secure` now defaults to `true`, fail closed): a TLS-fronted
+  deployment needs nothing, and plain-HTTP contexts (the compose quickstart on
+  localhost, local development, the e2e harness) opt out explicitly. If you
+  serve the viewer over plain HTTP without one of those postures, set
+  `FERROEHR_VIEWER__SESSION__COOKIE_SECURE=false` or logins will not stick.
 - TDD import no longer discards instance data a TDD spells out on wrappers
   the WebTemplate compacted: `HISTORY.origin`, an event's `time` and `name`,
   and the other LOCATABLE metadata (`uid`, `links`, `feeder_audit`) now land

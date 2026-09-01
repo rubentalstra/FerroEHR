@@ -3,7 +3,7 @@
 The **FHIR** screen administers the CDR's FHIR mapping store (the definitions
 that translate between FHIR resources and openEHR compositions) and gives you
 two ways to check a mapping does what you meant, without writing anything.
-Everything on it comes from the CDR's own FHIR API over HTTP; the console has no
+Everything on it comes from the CDR's own FHIR API over HTTP; the viewer has no
 privileged channel and keeps no mapping state of its own.
 
 ![FHIR connector](img/fhir/fhir.png)
@@ -16,17 +16,17 @@ privileged channel and keeps no mapping state of its own.
 > [HL7 FHIR R4](https://hl7.org/fhir/R4/). What the connector does with a
 > mapping, and every status code it answers, is described in
 > [FHIR connectors](../beyond-core/fhir.md); this page is about driving it from
-> the console.
+> the viewer.
 
-## The console never sends a resource for real
+## The viewer never sends a resource for real
 
 The connector's inbound door (`POST /fhir/r4/{type}`) maps a FHIR resource,
 validates it, and **commits** it as an openEHR composition. That is an
 integration act (something a sending system does, with its own credentials and
-its own audit trail) so the console deliberately offers **no path to it**. You
+its own audit trail) so the viewer deliberately offers **no path to it**. You
 cannot ingest a resource from this screen, by design.
 
-What the console does offer is the two read-only ways to verify a mapping:
+What the viewer does offer is the two read-only ways to verify a mapping:
 
 - the **read path**, which shows what a stored mapping produces when openEHR
   data is read back out as FHIR;
@@ -35,7 +35,7 @@ What the console does offer is the two read-only ways to verify a mapping:
 
 ## When it appears
 
-The screen is **probe-and-hide**: on every page load the console asks the CDR
+The screen is **probe-and-hide**: on every page load the viewer asks the CDR
 for `GET /admin/fhir_mapping`, and the sidebar entry appears only if that route
 exists. A `404` (the CDR's answer when the connector is off, which is the
 default) hides the entry entirely; any other answer counts as present, so a
@@ -71,7 +71,7 @@ and its store id, newest first, paged by the shared footer under the table (see
 definition is a deep, open-ended structure (the subject binding, the commit
 context, and one entry per mapped field with its own path and transform) whose
 shape the CDR owns. A form built out of boxes here would be a second model of it
-that drifts the moment the connector grows a field, so the console sends the
+that drifts the moment the connector grows a field, so the viewer sends the
 document you wrote, verbatim, and shows the CDR's answer, verbatim. The
 definition's shape is documented under
 [Mappings are data you manage](../beyond-core/fhir.md#mappings-are-data-you-manage).
@@ -79,7 +79,7 @@ definition's shape is documented under
 - **Store a mapping** with the card above the table: a name and the definition
   document. The button stays disabled until the name is addressable (letters,
   digits, `_`, `.` and `-`) and the definition parses as a JSON object; that
-  much the console checks before spending a round trip; everything else is the
+  much the viewer checks before spending a round trip; everything else is the
   CDR's judgement, and its rejection is shown in full beside the failure
   notification. The most common one on a fresh deployment is an unknown
   `template_id`: upload the operational template first.
@@ -108,7 +108,7 @@ equally visible, so a refused change never looks like nothing happened.
 
 ![Read path and dry run](img/fhir/fhir-verify.png)
 
-Enter a resource type and a patient, then **Read**. The console calls the CDR's
+Enter a resource type and a patient, then **Read**. The viewer calls the CDR's
 read façade (`GET /fhir/r4/{type}?patient=…`) and shows the FHIR Bundle it
 answers with, each entry produced by running a stored mapping in reverse over a
 committed composition.

@@ -45,7 +45,7 @@ const HYDRATION_WAIT: Duration = Duration::from_mins(1);
 pub(crate) struct Harness {
     /// The `WebDriver` session.
     pub(crate) driver: WebDriver,
-    /// The console origin (`http://…`).
+    /// The viewer origin (`http://…`).
     pub(crate) base: String,
     shots_dir: String,
     journey: &'static str,
@@ -58,7 +58,7 @@ pub(crate) struct Harness {
 /// Environment lookup for a journey credential/URL.
 #[expect(
     clippy::disallowed_methods,
-    reason = "the E2E harness is configured by the environment the CI job / scripts/ui-e2e.sh exports; there is no console config tree on the test side"
+    reason = "the E2E harness is configured by the environment the CI job / scripts/ui-e2e.sh exports; there is no viewer config tree on the test side"
 )]
 pub(crate) fn env(name: &str) -> Option<String> {
     std::env::var(name).ok().filter(|v| !v.is_empty())
@@ -87,7 +87,7 @@ impl Harness {
         let mut caps = DesiredCapabilities::chrome();
         caps.add_arg("--headless=new").expect("caps");
         caps.add_arg("--window-size=1440,900").expect("caps");
-        // Image-mode OIDC: the composed console advertises the in-network
+        // Image-mode OIDC: the composed viewer advertises the in-network
         // issuer host (`keycloak`); the browser resolves it to the host-
         // mapped port. A no-op in host mode (nothing references the name).
         caps.add_arg("--host-resolver-rules=MAP keycloak 127.0.0.1")
@@ -106,12 +106,12 @@ impl Harness {
         })
     }
 
-    /// Navigate to a console path.
+    /// Navigate to a viewer path.
     ///
     /// # Panics
     /// On navigation failure (journeys are assertive end-to-end).
     pub(crate) async fn goto(&self, path: &str) {
-        // Sweep the console BEFORE leaving the current page: a SEVERE entry
+        // Sweep the browser console BEFORE leaving the page: a SEVERE entry
         // is attributed to the page that produced it, not discovered by the
         // end-of-journey sweep with no locality (`get_log` drains, so the
         // final sweep still covers everything after the last navigation).
@@ -209,7 +209,7 @@ impl Harness {
         let mut caps = DesiredCapabilities::chrome();
         caps.add_arg("--headless=new").expect("caps");
         caps.add_arg("--window-size=1440,900").expect("caps");
-        // Image-mode OIDC: the composed console advertises the in-network
+        // Image-mode OIDC: the composed viewer advertises the in-network
         // issuer host (`keycloak`); the browser resolves it to the host-
         // mapped port. A no-op in host mode (nothing references the name).
         caps.add_arg("--host-resolver-rules=MAP keycloak 127.0.0.1")
@@ -279,7 +279,7 @@ impl Harness {
     /// Explicit wait on an `XPath` that additionally requires the element to be
     /// CLICKABLE — displayed and enabled — before returning it.
     ///
-    /// A control the console disables until its form is valid is already
+    /// A control the viewer disables until its form is valid is already
     /// PRESENT, so [`Self::wait_xpath`] hands it back and the click is
     /// INTERCEPTED by whatever sits above it. That is an error rather than a
     /// lost interaction, so the re-click loop other journeys use for
@@ -408,7 +408,7 @@ impl Harness {
             .expect("screenshot");
     }
 
-    /// The standing console gate: read the browser log (thirtyfour's
+    /// The standing browser-console gate: read the browser log (thirtyfour's
     /// legacy-log support over chromedriver) and fail on any SEVERE entry
     /// (hydration errors and panics land there). Network 4xx from
     /// deliberate negative steps can be allowed by substring.
@@ -489,7 +489,7 @@ pub(crate) async fn upload_via_dialog(h: &Harness, path: &str) {
 
 /// Poll until the control at `css` is present and ENABLED.
 ///
-/// The console keeps an edit form inert until the document it edits has been
+/// The viewer keeps an edit form inert until the document it edits has been
 /// seeded into it, so this is the condition that makes typing (or saving) safe:
 /// input accepted earlier would be replaced by the seed and the save would then
 /// commit the pre-seed draft.
@@ -645,7 +645,7 @@ pub(crate) async fn wait_visible(h: &Harness, css: &str) {
 ///
 /// Deliberately not `WebDriver`'s element-clear command: measured on the
 /// event-subscription journey, clearing that way empties the DOM value without
-/// the console's `on:input` listener ever running, so the form's state keeps
+/// the viewer's `on:input` listener ever running, so the form's state keeps
 /// the old value and the save sends it back — a green screen and a wrong wire.
 /// Backspacing is what a person does, and it fires the events the binding
 /// listens for. ([`retype`] is unaffected: the keystrokes it sends after

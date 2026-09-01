@@ -1,7 +1,7 @@
 // SPDX-FileCopyrightText: FerroEHR contributors
 // SPDX-License-Identifier: MIT
 
-//! openEHR identifier handling shared by the console's screens.
+//! openEHR identifier handling shared by the viewer's screens.
 //!
 //! Component-free and unit-tested, and compiled on BOTH targets: the same
 //! reduction runs server-side before a CDR path is built and client-side
@@ -33,7 +33,7 @@ pub fn container_uid_of(uid: &str) -> String {
 /// `uid.value` — an `OBJECT_VERSION_ID` on a VERSION, a `HIER_OBJECT_ID` on a
 /// container (RM
 /// `docs/specs/openehr/RM/docs/UML/classes/org.openehr.rm.common.versioned_object.adoc`)
-/// — so one reader serves every body the console has to identify.
+/// — so one reader serves every body the viewer has to identify.
 ///
 /// Compiled on BOTH targets: a BFF write reads the uid out of the answer it
 /// just received, and the Commit tab's amend seed reads it out of the document
@@ -43,7 +43,7 @@ pub fn container_uid_of(uid: &str) -> String {
 pub fn uid_value_of(body: &str) -> String {
     #[expect(
         clippy::disallowed_types,
-        reason = "the console reads the CDR JSON wire over ITS-REST — not the CDR internal seams (#1694)"
+        reason = "the viewer reads the CDR JSON wire over ITS-REST — not the CDR internal seams (#1694)"
     )]
     serde_json::from_str::<serde_json::Value>(body)
         .map(|doc| uid_value_of_document(&doc))
@@ -57,7 +57,7 @@ pub fn uid_value_of(body: &str) -> String {
 /// the string form above parses and then calls this, so both answer identically.
 #[expect(
     clippy::disallowed_types,
-    reason = "the console reads the CDR JSON wire over ITS-REST — not the CDR internal seams (#1694)"
+    reason = "the viewer reads the CDR JSON wire over ITS-REST — not the CDR internal seams (#1694)"
 )]
 #[must_use]
 pub fn uid_value_of_document(doc: &serde_json::Value) -> String {
@@ -91,7 +91,7 @@ mod tests {
 
     #[test]
     fn a_served_bodys_uid_reads_back_or_is_empty() {
-        // Every versioned family the console commits answers the same shape.
+        // Every versioned family the viewer commits answers the same shape.
         for rm_type in ["FOLDER", "COMPOSITION", "EHR_STATUS", "PERSON"] {
             let body = format!(
                 r#"{{"_type":"{rm_type}","uid":{{"_type":"OBJECT_VERSION_ID","value":"7d44::sys::1"}}}}"#
@@ -110,7 +110,7 @@ mod tests {
             r#"{"_type":"COMPOSITION","uid":{"_type":"OBJECT_VERSION_ID","value":"7d44::sys::2"}}"#;
         #[expect(
             clippy::disallowed_types,
-            reason = "the console reads the CDR JSON wire over ITS-REST — not the CDR internal seams (#1694)"
+            reason = "the viewer reads the CDR JSON wire over ITS-REST — not the CDR internal seams (#1694)"
         )]
         let doc: serde_json::Value = serde_json::from_str(body).expect("a served body");
         assert_eq!(super::uid_value_of_document(&doc), "7d44::sys::2");
@@ -122,7 +122,7 @@ mod tests {
         for shape in ["{}", r#"{"uid":"7d44"}"#, r#"{"uid":{"value":7}}"#, "[]"] {
             #[expect(
                 clippy::disallowed_types,
-                reason = "the console reads the CDR JSON wire over ITS-REST — not the CDR internal seams (#1694)"
+                reason = "the viewer reads the CDR JSON wire over ITS-REST — not the CDR internal seams (#1694)"
             )]
             let doc: serde_json::Value = serde_json::from_str(shape).expect("valid JSON");
             assert_eq!(super::uid_value_of_document(&doc), "", "{shape}");

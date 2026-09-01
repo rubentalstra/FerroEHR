@@ -1,6 +1,6 @@
-# The console-enabled overlay: the CDR plus its optional viewer, both
+# The viewer-enabled overlay: the CDR plus its optional viewer, both
 # rendered and both booted by the acceptance lane. Without this, `viewer` is a
-# code path only `helm template` ever exercises, and the console's pod-security
+# code path only `helm template` ever exercises, and the viewer's pod-security
 # posture is never checked against the restricted profile.
 #
 # The Basic-auth shape is reused verbatim from basic-auth-values.yaml so no new

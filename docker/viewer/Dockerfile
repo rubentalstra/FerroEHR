@@ -1,7 +1,7 @@
 # syntax=docker/dockerfile:1
 #
-# The single Dockerfile for the `ferroehr-viewer` console image (issue #282
-# D1/D5) — the third OCI image next to the app + postgres images. The console
+# The single Dockerfile for the `ferroehr-viewer` image (issue #282
+# D1/D5) — the third OCI image next to the app + postgres images. The viewer
 # is a standalone Leptos SSR binary + WASM/CSS assets built by cargo-leptos; at
 # runtime it is a pure ITS-REST client of the CDR — no database.
 #
@@ -90,7 +90,7 @@ RUN --mount=type=cache,target=/opt/tool-cache,sharing=locked \
     install -m0755 "$cache/wasm-bindgen-${WASM_BINDGEN_VERSION}" /usr/local/bin/wasm-bindgen; \
     install -m0755 "$cache/tailwindcss-${TAILWIND_VERSION}" /usr/local/bin/tailwindcss
 COPY . .
-# The console has no provenance build.rs, so it carries no compile-time SHA env;
+# The viewer has no provenance build.rs, so it carries no compile-time SHA env;
 # its image provenance is the OCI-standard REVISION LABEL on the shared runtime
 # stage below (docs.docker.com/build/building/best-practices).
 ENV LEPTOS_TAILWIND_VERSION=${TAILWIND_VERSION}
@@ -104,7 +104,7 @@ ENV LEPTOS_TAILWIND_VERSION=${TAILWIND_VERSION}
 # the compose dev overlay forwards the variable.
 ARG CARGO_BUILD_JOBS=2
 ENV CARGO_BUILD_JOBS=${CARGO_BUILD_JOBS}
-# `cargo leptos` reads its configuration from the console crate's own manifest
+# `cargo leptos` reads its configuration from the viewer crate's own manifest
 # directory, so the build runs from there — as a WORKDIR rather than a `cd`
 # inside RUN, which would silently not apply to any later instruction.
 WORKDIR /app/app/ferroehr-viewer

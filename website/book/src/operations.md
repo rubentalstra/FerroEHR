@@ -188,7 +188,7 @@ cannot do for you (applying the namespace enforcement label, and narrowing the
 NetworkPolicy's ingress sources: the shipped policy narrows the *ports* and,
 until you set `networkPolicy.ingressFrom`, admits every source on them; set
 `networkPolicy.ingressAllowAll: false`, and `viewer.networkPolicy.ingressAllowAll`
-for the console, to have that state refused at render instead), are covered in
+for the viewer, to have that state refused at render instead), are covered in
 [Installation → The workload: security context & admission](installation/hardening-workload.md)
 and [Namespaces, network & policy →
 Ingress](installation/hardening-network-policy.md#ingress-ports-are-narrowed-sources-are-yours).

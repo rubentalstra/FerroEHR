@@ -1,7 +1,7 @@
 // SPDX-FileCopyrightText: FerroEHR contributors
 // SPDX-License-Identifier: MIT
 
-//! The CDR's **tenant registry** surface the console consumes.
+//! The CDR's **tenant registry** surface the viewer consumes.
 //!
 //! The availability probe the registry screen and its nav entry are gated on,
 //! the five registry operations (list / create / read-by-id / update / delete),
@@ -10,16 +10,16 @@
 //! NOTE: no openEHR spec governs multi-tenancy — our own enterprise extension;
 //! the whole group (paths, payloads, status codes) is the CDR's own design.
 //!
-//! **The console never CHOOSES a tenant.** Tenancy resolves per request from
+//! **The viewer never CHOOSES a tenant.** Tenancy resolves per request from
 //! the caller's credential, and the CDR additionally honours a dev-only header
-//! override that wins over the claim, so a console-side switcher would need
-//! either console-local state (banned outright) or that header, which is an
+//! override that wins over the claim, so a viewer-side switcher would need
+//! either viewer-local state (banned outright) or that header, which is an
 //! authorization bypass. The context card reads `GET admin/tenant/current` and
 //! RENDERS it; nothing here changes which tenant a request runs on.
 //!
 //! **Probe-and-hide.** The group is config-gated on the CDR
 //! (`[tenancy] enabled`, off by default) and answers `404` for every route as if
-//! unmounted while it is off, so the console discovers it
+//! unmounted while it is off, so the viewer discovers it
 //! ([`probe_tenant_registry`]) before offering any of it. Capability is not
 //! authorization: a mounted-but-refused group (`401`/`403`) still counts as
 //! present, and the refusal surfaces as copy on the screen that asked.
@@ -30,7 +30,7 @@
 
 #![allow(
     clippy::disallowed_types,
-    reason = "the console consumes the CDR JSON wire over ITS-REST — not the CDR internal seams \
+    reason = "the viewer consumes the CDR JSON wire over ITS-REST — not the CDR internal seams \
               (#1694); the carriers here are ssr-only, so #[expect] would be unfulfilled on the \
               hydrate target"
 )]
@@ -45,7 +45,7 @@ use crate::error::ViewerError;
 ///
 /// Every field is a string, including the id and the timestamp: the record
 /// crosses the server-fn boundary and is rendered, never computed with (no
-/// `usize`, and no parsing the console would have to keep in step with the
+/// `usize`, and no parsing the viewer would have to keep in step with the
 /// CDR's own formatting).
 #[derive(Debug, Clone, PartialEq, Eq, Default, Serialize, Deserialize)]
 pub struct TenantRow {
@@ -99,7 +99,7 @@ pub enum TenantAvailability {
 }
 
 impl TenantAvailability {
-    /// Whether the console may offer the tenant registry.
+    /// Whether the viewer may offer the tenant registry.
     #[must_use]
     pub fn usable(self) -> bool {
         matches!(self, Self::Available)
@@ -234,7 +234,7 @@ pub fn tenant_failure_copy(object: &str, error: &ViewerError) -> String {
 /// answer means it is.
 ///
 /// # Errors
-/// [`ViewerError::Unauthenticated`] without a console session;
+/// [`ViewerError::Unauthenticated`] without a viewer session;
 /// [`ViewerError::CdrUnreachable`] on transport failure.
 #[server]
 pub async fn probe_tenant_registry() -> Result<TenantAvailability, ViewerError> {
@@ -255,7 +255,7 @@ pub async fn probe_tenant_registry() -> Result<TenantAvailability, ViewerError> 
 /// as its own first-class state.
 ///
 /// # Errors
-/// [`ViewerError::Unauthenticated`] without a console session;
+/// [`ViewerError::Unauthenticated`] without a viewer session;
 /// [`ViewerError::CdrUnauthorized`] / [`ViewerError::Forbidden`] / [`ViewerError::Cdr`] /
 /// [`ViewerError::CdrUnreachable`] from the CDR; [`ViewerError::Internal`]
 /// when the body is not valid JSON.
@@ -287,7 +287,7 @@ pub async fn list_tenants() -> Result<Option<Vec<TenantRow>>, ViewerError> {
 /// `Ok(None)` is the disabled-extension `404`, exactly as in [`list_tenants`].
 ///
 /// # Errors
-/// [`ViewerError::Unauthenticated`] without a console session;
+/// [`ViewerError::Unauthenticated`] without a viewer session;
 /// [`ViewerError::CdrUnauthorized`] / [`ViewerError::Forbidden`] / [`ViewerError::Cdr`] /
 /// [`ViewerError::CdrUnreachable`] from the CDR; [`ViewerError::Internal`]
 /// when the body is not valid JSON.
@@ -316,7 +316,7 @@ pub async fn fetch_current_tenant() -> Result<Option<CurrentTenant>, ViewerError
 /// [`CdrClient::expect_success`](crate::cdr::CdrClient::expect_success).
 ///
 /// # Errors
-/// [`ViewerError::Unauthenticated`] without a console session;
+/// [`ViewerError::Unauthenticated`] without a viewer session;
 /// [`ViewerError::Invalid`] when a field is blank;
 /// [`ViewerError::CdrUnauthorized`] / [`ViewerError::Forbidden`] / [`ViewerError::Cdr`] /
 /// [`ViewerError::CdrUnreachable`] from the CDR; [`ViewerError::Internal`]
@@ -354,10 +354,10 @@ pub async fn create_tenant(
 /// (`PUT admin/tenant/{tenant_id}`, body `{name, system_id}`).
 ///
 /// The id is percent-encoded with the `urlencoding` crate — the registry serves
-/// it as text, and the console never hand-rolls a codec for a path segment.
+/// it as text, and the viewer never hand-rolls a codec for a path segment.
 ///
 /// # Errors
-/// [`ViewerError::Unauthenticated`] without a console session;
+/// [`ViewerError::Unauthenticated`] without a viewer session;
 /// [`ViewerError::Invalid`] for an empty id or a blank field;
 /// [`ViewerError::CdrUnauthorized`] / [`ViewerError::Forbidden`] / [`ViewerError::Cdr`] /
 /// [`ViewerError::CdrUnreachable`] from the CDR; [`ViewerError::Internal`]
@@ -404,7 +404,7 @@ pub async fn update_tenant(
 /// still owns data; the diagnostic surfaces through [`tenant_failure_copy`].
 ///
 /// # Errors
-/// [`ViewerError::Unauthenticated`] without a console session;
+/// [`ViewerError::Unauthenticated`] without a viewer session;
 /// [`ViewerError::Invalid`] for an empty id;
 /// [`ViewerError::CdrUnauthorized`] / [`ViewerError::Forbidden`] / [`ViewerError::Cdr`] /
 /// [`ViewerError::CdrUnreachable`] from the CDR.

@@ -22,12 +22,12 @@
 )]
 // e2e journeys are assertive by design; skip-with-reason prints; the shared
 // harness module is per-test-binary (the corpus.rs test-file precedent)
-//! End-to-end journeys over the console's **`EHR_STATUS` write path** — the
+//! End-to-end journeys over the viewer's **`EHR_STATUS` write path** — the
 //! openEHR operation every client has (`PUT /ehr/{ehr_id}/ehr_status` with
 //! `If-Match`), plus the `VERSIONED_EHR_STATUS` history it produces:
 //!
 //! - **the edit round trip**: unticking `is_queryable` on the Status tab commits
-//!   a new version, the console reports the commit, the capability badge flips,
+//!   a new version, the viewer reports the commit, the capability badge flips,
 //!   and the Status-history tab lists a second version whose document opens by
 //!   its own `OBJECT_VERSION_ID`;
 //! - **the mid-air collision**: after that edit, another client commits a third
@@ -175,10 +175,10 @@ async fn checkbox_state(field: &WebElement) -> bool {
 /// Wait until the checkbox at `css` reports `expected`; returns whether it did.
 ///
 /// This is also the journey's HYDRATION signal for the edit form: the
-/// server-rendered checkbox carries no `checked` attribute (the console drives it
+/// server-rendered checkbox carries no `checked` attribute (the viewer drives it
 /// with `prop:checked`, which is applied when the WASM bundle hydrates), so the
 /// box reporting the value the CDR served proves the form is live. Interacting
-/// before that would flip the DOM checkbox natively while the console's own state
+/// before that would flip the DOM checkbox natively while the viewer's own state
 /// stayed untouched — and the save would then commit the value the operator
 /// thought they had changed.
 async fn wait_checkbox(h: &Harness, css: &str, expected: bool) -> bool {
@@ -192,7 +192,7 @@ async fn wait_checkbox(h: &Harness, css: &str, expected: bool) -> bool {
     false
 }
 
-/// Set `is_queryable` to `desired` and save, retrying until the console reports
+/// Set `is_queryable` to `desired` and save, retrying until the viewer reports
 /// the commit; returns whether it did.
 ///
 /// The toggle is an `on:change` listener and the save an `on:click` one, so an
@@ -305,7 +305,7 @@ async fn ehr_status_edit_commits_a_version_and_flips_the_badge() {
 }
 
 /// The mid-air collision: a save whose `If-Match` names a superseded version is
-/// refused with the CDR's `412`, the console says so with the next action, and
+/// refused with the CDR's `412`, the viewer says so with the next action, and
 /// the earlier version still reads by its own uid.
 #[tokio::test]
 async fn a_stale_if_match_is_refused_and_the_old_version_still_reads() {
@@ -337,7 +337,7 @@ async fn a_stale_if_match_is_refused_and_the_old_version_still_reads() {
     h.wait_css("[data-status-flag='queryable'][data-status-value='false']")
         .await;
 
-    // The console's screen now holds version 2 as its If-Match. Another client
+    // The viewer's screen now holds version 2 as its If-Match. Another client
     // commits version 3 on top of it.
     let mut status = current_status(&http, &v1, &ehr_id).await;
     let version_two = status["uid"]["value"]
@@ -346,7 +346,7 @@ async fn a_stale_if_match_is_refused_and_the_old_version_still_reads() {
         .to_owned();
     assert!(
         version_two.ends_with("::2"),
-        "the console's edit must have produced version 2 (got {version_two})"
+        "the viewer's edit must have produced version 2 (got {version_two})"
     );
     status["is_modifiable"] = serde_json::Value::Bool(false);
     put_status(&http, &v1, &ehr_id, &version_two, &status).await;

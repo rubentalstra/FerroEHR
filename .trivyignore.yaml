@@ -6,7 +6,7 @@
 misconfigurations:
   # AVD-DS-0002 "specify at least 1 USER command with a non-root user".
   #
-  # The app and console images state `USER 65532:65532` explicitly, so this
+  # The app and viewer images state `USER 65532:65532` explicitly, so this
   # exception is for the PostgreSQL image alone — where satisfying the check
   # would break the container. The upstream `postgres` entrypoint must start as
   # root: it initializes or chowns the data directory and only then drops to the

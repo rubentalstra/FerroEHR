@@ -26,7 +26,7 @@
 
 #![allow(
     clippy::disallowed_types,
-    reason = "the console consumes the CDR JSON wire over ITS-REST — not the CDR internal seams \
+    reason = "the viewer consumes the CDR JSON wire over ITS-REST — not the CDR internal seams \
               (#1694); the carriers here are ssr-only, so #[expect] would be unfulfilled on the \
               hydrate target"
 )]
@@ -56,7 +56,7 @@ use crate::format::ReprFormat;
 /// The revision history of a versioned composition, newest-first.
 ///
 /// # Errors
-/// [`ViewerError::Unauthenticated`] without a console session; CDR transport
+/// [`ViewerError::Unauthenticated`] without a viewer session; CDR transport
 /// errors pass through; a non-2xx CDR answer normalizes via
 /// [`CdrClient::expect_success`](crate::cdr::CdrClient::expect_success);
 /// [`ViewerError::Internal`] when the history is not valid JSON.
@@ -100,7 +100,7 @@ pub async fn fetch_versions(
 /// absence rather than a failure.
 ///
 /// # Errors
-/// [`ViewerError::Unauthenticated`] without a console session; CDR transport
+/// [`ViewerError::Unauthenticated`] without a viewer session; CDR transport
 /// errors pass through; a non-2xx CDR answer (a `406` for a declined
 /// representation included) normalizes via
 /// [`CdrClient::expect_success`](crate::cdr::CdrClient::expect_success).
@@ -142,7 +142,7 @@ pub async fn fetch_composition(
 /// `OBJECT_VERSION_ID`); that string is returned so the caller can select it.
 ///
 /// # Errors
-/// [`ViewerError::Unauthenticated`] without a console session;
+/// [`ViewerError::Unauthenticated`] without a viewer session;
 /// [`ViewerError::Invalid`] when `at_time` is empty; CDR transport errors pass
 /// through; a non-2xx CDR answer (a `404` for no version at that time included,
 /// which the UI renders as an inline note) normalizes via
@@ -192,7 +192,7 @@ pub async fn fetch_version_at_time(
 /// the editor would name the wrong version.
 ///
 /// # Errors
-/// [`ViewerError::Unauthenticated`] without a console session;
+/// [`ViewerError::Unauthenticated`] without a viewer session;
 /// [`ViewerError::Invalid`] on an empty body, a missing current version, or a
 /// `412` mid-air collision (prefixed with a reload hint, the CDR diagnostic
 /// appended); CDR transport errors pass through; any other non-2xx CDR answer
@@ -272,7 +272,7 @@ pub async fn update_composition(
 /// committed and the history stays readable.
 ///
 /// # Errors
-/// [`ViewerError::Unauthenticated`] without a console session;
+/// [`ViewerError::Unauthenticated`] without a viewer session;
 /// [`ViewerError::Invalid`] when no full `OBJECT_VERSION_ID` is known; CDR
 /// transport errors pass through; a non-2xx CDR answer (the `409` stale-uid
 /// branch and the `400` for an already-deleted version included) normalizes via
@@ -355,7 +355,7 @@ pub struct VersionedCompositionDetails {
 /// §description).
 ///
 /// # Errors
-/// [`ViewerError::Unauthenticated`] without a console session; CDR transport
+/// [`ViewerError::Unauthenticated`] without a viewer session; CDR transport
 /// errors pass through; a non-2xx CDR answer (a `404` for an unknown
 /// object/version included) normalizes via
 /// [`CdrClient::expect_success`](crate::cdr::CdrClient::expect_success);

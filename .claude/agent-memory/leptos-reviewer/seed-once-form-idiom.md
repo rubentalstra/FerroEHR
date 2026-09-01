@@ -1,6 +1,6 @@
 ---
 name: seed-once-form-idiom
-description: The console's accepted edit-form shape — long-lived signals above the Transition, seeded_uid idempotent re-seed, success-only refetch memo, controlled textarea with prop:value + get_untracked child text
+description: The viewer's accepted edit-form shape — long-lived signals above the Transition, seeded_uid idempotent re-seed, success-only refetch memo, controlled textarea with prop:value + get_untracked child text
 metadata:
   type: project
 ---

@@ -219,7 +219,7 @@ jsonwebtoken = { version = "11.0.0", features = ["aws_lc_rs"] }   # JWT encode/d
 oauth2 = { version = "5", default-features = false } # OAuth2 client (HTTP-client agnostic: we supply the pinned reqwest)
 openidconnect = "4"                 # OIDC / Keycloak          (verify latest 4.x)
 argon2 = "0.5"                      # password hashing (Argon2id); its `password-hash` feature re-exports the PHC string traits
-cookie = { version = "0.18", features = ["private"] } # sealed session cookies: AES-256-GCM private jar (the console's multi-instance session, #2949)
+cookie = { version = "0.18", features = ["private"] } # sealed session cookies: AES-256-GCM private jar (the viewer's multi-instance session, #2949)
 secrecy = "0.10"                   # wrap secrets, avoid logging
 # RBAC/ABAC policy engine for the Stage 2 access-control restoration (pick one at S2):
 cedar-policy = "4"                  # alternative policy engine (verify latest)
@@ -325,7 +325,7 @@ icondata_core = "0.1"               # the `Icon` type itself (named in component
 wasm-bindgen = "0.2.126"
 wasm-bindgen-futures = "0.4"       # JsFuture for browser-side file reads (compiles on native, runs in wasm)
 console_error_panic_hook = "0.1"
-thirtyfour = "0.37.2"               # E2E WebDriver client (dev-dep of the console)
+thirtyfour = "0.37.2"               # E2E WebDriver client (dev-dep of the viewer)
 
 # ── Observability (opentelemetry set is lockstep: keep versions equal) ────────
 tracing = "0.1"

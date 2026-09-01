@@ -20,7 +20,7 @@ pub fn toast_error(toaster: thaw::ToasterInjection, title: &str, body: &str) {
     dispatch(toaster, thaw::ToastIntent::Error, title, body);
 }
 
-/// Report one mutation's outcome as the console's two toasts.
+/// Report one mutation's outcome as the viewer's two toasts.
 ///
 /// `outcome` is an [`Action`]'s value carrying the name the mutation was
 /// dispatched under beside the CDR's answer, so both toasts can name the exact

@@ -8,7 +8,7 @@
 //! mandates: Rust only (zero authored JavaScript), the CDR is reached ONLY
 //! over ITS-REST (never `app/ferroehr` / `app/ferroehr-rest` in-process), and
 //! every `#[server]` fn is a publicly reachable endpoint that enforces the
-//! console's own session auth itself.
+//! viewer's own session auth itself.
 
 // Doctests are copy-paste templates: they must use `?`, never unwrap
 // (C-QUESTION-MARK, https://rust-lang.github.io/api-guidelines/documentation.html#c-question-mark).

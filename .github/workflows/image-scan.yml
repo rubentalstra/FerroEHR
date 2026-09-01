@@ -16,7 +16,7 @@
 #
 # `ferroehr-postgres` is the image this will actually fire on: it is built on the
 # upstream `postgres` image, so its OS package set is not ours and its CVEs arrive
-# on someone else's schedule. The distroless app and console images carry almost
+# on someone else's schedule. The distroless app and viewer images carry almost
 # no OS surface by comparison.
 #
 # The adjudicated exceptions carry over rather than being re-argued: `trivy.yaml`

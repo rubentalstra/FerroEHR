@@ -20,7 +20,7 @@
   (
     # A Service/PDB selector is a SUBSET match, so a selector naming only the
     # labels two workloads share silently selects both. Key sets alone cannot
-    # catch this: after the CDR/console fix both Deployments have the SAME
+    # catch this: after the CDR/viewer fix both Deployments have the SAME
     # selector keys and differ only in the name's value.
     [ $docs[]
       | select(.kind == "Service" or .kind == "PodDisruptionBudget")

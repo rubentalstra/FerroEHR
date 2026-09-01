@@ -21,7 +21,7 @@
 
 #![expect(
     clippy::disallowed_types,
-    reason = "the console consumes the CDR JSON wire over ITS-REST — not the CDR internal seams \
+    reason = "the viewer consumes the CDR JSON wire over ITS-REST — not the CDR internal seams \
               (#1694)"
 )]
 
@@ -122,7 +122,7 @@ pub(crate) fn parse_result_set(body: &str, offset: u32) -> Result<ResultPage, Vi
 /// List EHRs newest-first via `LIST_EHRS_AQL`, one page at `offset`.
 ///
 /// # Errors
-/// [`ViewerError::Unauthenticated`] without a console session; CDR transport
+/// [`ViewerError::Unauthenticated`] without a viewer session; CDR transport
 /// errors pass through; a non-2xx CDR answer normalizes via
 /// [`CdrClient::expect_success`](crate::cdr::CdrClient::expect_success);
 /// [`ViewerError::Internal`] when the result set is not valid JSON.
@@ -217,7 +217,7 @@ pub(crate) fn parse_ehr_id(body: &str) -> Result<String, ViewerError> {
 /// The EHR API's client-supplied id "MUST be valid `HIER_OBJECT_ID` value. It is
 /// strongly RECOMMENDED that an UUID always be used for this"
 /// (`docs/specs/openehr/ITS-REST/specifications/operations/ehr_create_with_id.yaml`
-/// §description), so the console requires a UUID and says so — a typed id is
+/// §description), so the viewer requires a UUID and says so — a typed id is
 /// checked before the round-trip and again in the server function.
 ///
 /// Byte-wise (never `&value[..n]`, which can panic on a non-char boundary — the
@@ -249,7 +249,7 @@ pub(crate) fn is_uuid(value: &str) -> bool {
 /// and returns the new `ehr_id`.
 ///
 /// # Errors
-/// [`ViewerError::Unauthenticated`] without a console session;
+/// [`ViewerError::Unauthenticated`] without a viewer session;
 /// [`ViewerError::Invalid`] when exactly one subject field is filled or the
 /// supplied `ehr_id` is not a UUID; CDR transport errors pass through; a
 /// non-2xx CDR answer (the `409` for an id already in use, and any validation
@@ -336,7 +336,7 @@ pub async fn create_ehr(
 /// state, not an error).
 ///
 /// # Errors
-/// [`ViewerError::Unauthenticated`] without a console session;
+/// [`ViewerError::Unauthenticated`] without a viewer session;
 /// [`ViewerError::Invalid`] when either subject field is empty; CDR transport
 /// errors pass through; a non-2xx, non-404 CDR answer normalizes via
 /// [`CdrClient::expect_success`](crate::cdr::CdrClient::expect_success).
@@ -475,7 +475,7 @@ fn create_ehr_section(toaster: thaw::ToasterInjection) -> AnyView {
     // outside-world side-effects (the router, the thaw toaster), so an Effect
     // is their correct home; it never runs on the server pass. The route
     // instance unmounts on navigation, cleaning the Effect up. Failure toasts
-    // too (the console's mutation-feedback rule); the CDR's validation
+    // too (the viewer's mutation-feedback rule); the CDR's validation
     // diagnostic also stays inline below the form.
     let navigate = leptos_router::hooks::use_navigate();
     Effect::new(move |_| match create.value().get() {

@@ -9,7 +9,7 @@
 //! here either — our own operational extension; the wire shapes live in
 //! [`crate::management`], which carries the citations.
 //!
-//! **Two deliberate divisions of labour**, both to keep exactly one console
+//! **Two deliberate divisions of labour**, both to keep exactly one viewer
 //! reader per claim:
 //!
 //! * *Health.* The application shell's topbar pill polls the product status
@@ -23,8 +23,8 @@
 //!   `FerroEhrConfig::to_redacted_json` value, the management route adding a
 //!   second redaction pass), so a viewer here would be a duplicate reader of
 //!   one claim. The single viewer stays on `/system` — it reads the API base
-//!   URL the console is always configured for, whereas the management surface
-//!   may sit on an internal listener the console cannot reach at all — and this
+//!   URL the viewer is always configured for, whereas the management surface
+//!   may sit on an internal listener the viewer cannot reach at all — and this
 //!   screen cross-links to it.
 //!
 //! Each card resolves its `Result` INSIDE its own `<Suspense>` — an SSR'd
@@ -80,7 +80,7 @@ pub fn OperationsPage() -> impl IntoView {
     });
     let reset: ResetFilterAction = Action::new(|(): &()| async move { reset_log_filter().await });
 
-    // Both mutation outcomes toast, success and failure alike (the console's
+    // Both mutation outcomes toast, success and failure alike (the viewer's
     // one feedback rule): dispatching a toast is a side effect on the outside
     // world, so an Effect is its correct home and it never runs on the server
     // pass.
@@ -476,13 +476,13 @@ fn metric_subtitle(kind: &str, help: &str) -> String {
 ///
 /// `/management/env` and `/admin/config` serve the same redacted snapshot (see
 /// the module doc), so this card deliberately fetches nothing — a second viewer
-/// of one claim is exactly the duplication the console avoids.
+/// of one claim is exactly the duplication the viewer avoids.
 fn config_card() -> AnyView {
     let body = view! {
         <div class="flex flex-col items-start gap-3">
             <p class="text-sm text-ink-muted">
                 "The CDR's effective configuration, with every secret redacted. The CDR serves the "
-                "same snapshot on its management surface and its admin API, so the console reads it "
+                "same snapshot on its management surface and its admin API, so the viewer reads it "
                 "in exactly one place — the System screen, over the API base URL it is always "
                 "configured for."
             </p>

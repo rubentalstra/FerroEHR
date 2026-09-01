@@ -7,8 +7,8 @@
 //! security rule) — "only my UI calls this" is never assumed.
 //!
 //! The whole session lives in ONE encrypted, authenticated cookie
-//! (AES-256-GCM via the `cookie` crate's private jar), so any console
-//! instance holding the same key can read it — the console runs
+//! (AES-256-GCM via the `cookie` crate's private jar), so any viewer
+//! instance holding the same key can read it — the viewer runs
 //! multi-instance on serverless platforms, keeps no database by mandate,
 //! and gets no sticky sessions there. The browser stores ciphertext
 //! only: CDR credentials never reach a signal, prop, serialized resource,
@@ -24,12 +24,12 @@ use serde::{Deserialize, Serialize};
 
 use crate::error::ViewerError;
 
-/// The [`AdminSession`] record's entry key inside the sealed cookie payload.
+/// The [`ViewerSession`] record's entry key inside the sealed cookie payload.
 ///
 /// The viewer keeps no session store of any kind: the payload is a small
 /// keyed map carried whole in the encrypted [`SESSION_COOKIE`], so this names
 /// an entry in that map rather than a record held anywhere on a server.
-pub const SESSION_KEY: &str = "admin_session";
+pub const SESSION_KEY: &str = "viewer_session";
 
 /// The sealed session cookie's name.
 pub const SESSION_COOKIE: &str = "ferroehr_viewer_session";
@@ -95,7 +95,7 @@ pub enum Credential {
         /// The CDR password (sealed cookie only, never plaintext client-side).
         password: String,
     },
-    /// A bearer token from the console's OIDC login.
+    /// A bearer token from the viewer's OIDC login.
     Bearer {
         /// The access token (sealed cookie only, never plaintext client-side).
         access_token: String,
@@ -118,9 +118,9 @@ impl std::fmt::Debug for Credential {
     }
 }
 
-/// One authenticated console session.
+/// One authenticated viewer session.
 #[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct AdminSession {
+pub struct ViewerSession {
     /// Display identity (username or OIDC `preferred_username`/`sub`).
     pub identity: String,
     /// How the session authenticates to the CDR.
@@ -139,14 +139,16 @@ struct Envelope {
     entries: BTreeMap<String, String>,
 }
 
-/// One request's decoded session view — mutate it, then [`commit`] (or
-/// attach [`set_cookie`] on a plain axum response) to persist the change.
+/// One request's decoded view of the sealed cookie's keyed payload.
+///
+/// Mutate it, then [`commit`] (or attach [`set_cookie`] on a plain axum
+/// response) to persist the change.
 #[derive(Debug, Default)]
-pub struct ConsoleSession {
+pub struct CookieSession {
     entries: BTreeMap<String, String>,
 }
 
-impl ConsoleSession {
+impl CookieSession {
     /// Read one typed entry (`None` when absent or of a different shape).
     #[must_use]
     pub fn get<T: DeserializeOwned>(&self, key: &str) -> Option<T> {
@@ -192,24 +194,24 @@ fn now_seconds() -> i64 {
 /// thing — no authenticated caller — and the guard turns that into a
 /// redirect or a typed `Unauthenticated`, never a 500.
 #[must_use]
-pub fn unseal(keys: &SessionKeys, headers: &http::HeaderMap, idle_minutes: u64) -> ConsoleSession {
+pub fn unseal(keys: &SessionKeys, headers: &http::HeaderMap, idle_minutes: u64) -> CookieSession {
     let Some(sealed) = cookie_value(headers) else {
-        return ConsoleSession::default();
+        return CookieSession::default();
     };
     let mut jar = cookie::CookieJar::new();
     jar.add_original(cookie::Cookie::new(SESSION_COOKIE, sealed));
     let Some(open) = jar.private(&keys.key).get(SESSION_COOKIE) else {
-        return ConsoleSession::default();
+        return CookieSession::default();
     };
     let Ok(envelope) = serde_json::from_str::<Envelope>(open.value()) else {
-        return ConsoleSession::default();
+        return CookieSession::default();
     };
     // Inclusive, so a zero-minute idle window admits no session at all.
     let idle = i64::try_from(idle_minutes.saturating_mul(60)).unwrap_or(i64::MAX);
     if now_seconds().saturating_sub(envelope.touched) >= idle {
-        return ConsoleSession::default();
+        return CookieSession::default();
     }
-    ConsoleSession {
+    CookieSession {
         entries: envelope.entries,
     }
 }
@@ -235,7 +237,7 @@ fn cookie_value(headers: &http::HeaderMap) -> Option<String> {
 /// sealed value is not a valid header (both bugs, surfaced loudly).
 pub fn set_cookie(
     keys: &SessionKeys,
-    session: &ConsoleSession,
+    session: &CookieSession,
     cookie_secure: bool,
     idle_minutes: u64,
 ) -> Result<http::HeaderValue, ViewerError> {
@@ -297,7 +299,7 @@ fn removal_cookie(cookie_secure: bool) -> cookie::Cookie<'static> {
 ///
 /// # Errors
 /// [`ViewerError::Internal`] when called outside a request (a bug).
-pub async fn http_session() -> Result<ConsoleSession, ViewerError> {
+pub async fn http_session() -> Result<CookieSession, ViewerError> {
     let (keys, idle) = context_keys()?;
     let headers: http::HeaderMap = leptos_axum::extract()
         .await
@@ -310,7 +312,7 @@ pub async fn http_session() -> Result<ConsoleSession, ViewerError> {
 ///
 /// # Errors
 /// [`ViewerError::Internal`] outside a request or on a sealing failure.
-pub fn commit(session: &ConsoleSession) -> Result<(), ViewerError> {
+pub fn commit(session: &CookieSession) -> Result<(), ViewerError> {
     let state = app_state()?;
     let header = set_cookie(
         &state.session_keys,
@@ -333,10 +335,10 @@ pub fn commit(session: &ConsoleSession) -> Result<(), ViewerError> {
 /// # Errors
 /// [`ViewerError::Unauthenticated`] without a live session;
 /// [`ViewerError::Internal`] outside a request (a bug).
-pub async fn require_session() -> Result<AdminSession, ViewerError> {
+pub async fn require_session() -> Result<ViewerSession, ViewerError> {
     http_session()
         .await?
-        .get::<AdminSession>(SESSION_KEY)
+        .get::<ViewerSession>(SESSION_KEY)
         .ok_or(ViewerError::Unauthenticated)
 }
 
@@ -364,7 +366,7 @@ mod tests {
     )]
 
     use super::{
-        AdminSession, ConsoleSession, Credential, SESSION_COOKIE, SESSION_KEY, SessionKeys,
+        CookieSession, Credential, SESSION_COOKIE, SESSION_KEY, SessionKeys, ViewerSession,
         set_cookie, unseal,
     };
 
@@ -390,12 +392,12 @@ mod tests {
         headers
     }
 
-    fn session_with_admin() -> ConsoleSession {
-        let mut session = ConsoleSession::default();
+    fn session_with_viewer() -> CookieSession {
+        let mut session = CookieSession::default();
         session
             .insert(
                 SESSION_KEY,
-                &AdminSession {
+                &ViewerSession {
                     identity: "demo".to_owned(),
                     credential: Credential::Basic {
                         username: "demo".to_owned(),
@@ -411,18 +413,18 @@ mod tests {
     #[test]
     fn seals_and_unseals_across_instances_sharing_the_key() {
         let sealing = keys();
-        let header = set_cookie(&sealing, &session_with_admin(), true, 60).unwrap();
+        let header = set_cookie(&sealing, &session_with_viewer(), true, 60).unwrap();
         // A DIFFERENT SessionKeys value from the same secret — the
         // multi-instance property under test.
         let other_instance = SessionKeys::from_secret(&base64_of(&[0u8; 96])).unwrap();
         let restored = unseal(&other_instance, &headers_with(&header), 60);
-        let admin: AdminSession = restored.get(SESSION_KEY).unwrap();
-        assert_eq!(admin.identity, "demo");
+        let restored_session: ViewerSession = restored.get(SESSION_KEY).unwrap();
+        assert_eq!(restored_session.identity, "demo");
     }
 
     #[test]
     fn the_cookie_is_ciphertext_with_the_hardening_attributes() {
-        let header = set_cookie(&keys(), &session_with_admin(), true, 60).unwrap();
+        let header = set_cookie(&keys(), &session_with_viewer(), true, 60).unwrap();
         let text = header.to_str().unwrap();
         assert!(!text.contains("hunter2"), "credential visible: {text}");
         assert!(!text.contains("demo"), "identity visible: {text}");
@@ -434,7 +436,7 @@ mod tests {
 
     #[test]
     fn a_wrong_key_and_a_tampered_value_both_read_as_no_session() {
-        let header = set_cookie(&keys(), &session_with_admin(), false, 60).unwrap();
+        let header = set_cookie(&keys(), &session_with_viewer(), false, 60).unwrap();
         let stranger = SessionKeys::from_secret(&base64_of(&[7u8; 96])).unwrap();
         assert!(unseal(&stranger, &headers_with(&header), 60).is_empty());
 
@@ -453,14 +455,14 @@ mod tests {
     #[test]
     fn an_idle_expired_payload_reads_as_no_session() {
         let sealing = keys();
-        let header = set_cookie(&sealing, &session_with_admin(), false, 60).unwrap();
+        let header = set_cookie(&sealing, &session_with_viewer(), false, 60).unwrap();
         // idle_minutes = 0 makes any positive age expired.
         assert!(unseal(&sealing, &headers_with(&header), 0).is_empty());
     }
 
     #[test]
     fn an_emptied_session_seals_to_the_removal_cookie() {
-        let header = set_cookie(&keys(), &ConsoleSession::default(), true, 60).unwrap();
+        let header = set_cookie(&keys(), &CookieSession::default(), true, 60).unwrap();
         let text = header.to_str().unwrap();
         assert!(text.contains("Max-Age=0"), "not a removal cookie: {text}");
         assert!(text.starts_with(&format!("{SESSION_COOKIE}=;")));

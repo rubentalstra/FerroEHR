@@ -79,7 +79,7 @@ async fn login_basic_authenticates_and_rejects_bad_credentials() {
 }
 
 /// The OIDC button starts the Keycloak redirect flow; after authenticating
-/// at Keycloak the browser lands back on the console with a session.
+/// at Keycloak the browser lands back on the viewer with a session.
 #[tokio::test]
 async fn login_oidc_round_trips_through_keycloak() {
     let Some(h) = Harness::start("login-oidc").await else {
@@ -114,13 +114,13 @@ async fn login_oidc_round_trips_through_keycloak() {
         .click()
         .await
         .expect("kc submit");
-    // Back on the console, authenticated.
+    // Back on the viewer, authenticated.
     h.wait_css("footer").await;
-    h.shot(2, "console-after-oidc").await;
+    h.shot(2, "viewer-after-oidc").await;
     let url = h.driver.current_url().await.expect("url");
     assert!(
         !url.as_str().contains("/login"),
-        "OIDC flow must land on the console, not back at /login (got {url})"
+        "OIDC flow must land on the viewer, not back at /login (got {url})"
     );
     h.assert_console_clean(&["401", "Failed to load resource"])
         .await;
@@ -128,7 +128,7 @@ async fn login_oidc_round_trips_through_keycloak() {
 }
 
 /// Hydration proof: after first paint an interaction actually mutates the
-/// DOM (WASM attached), and the console log carries no hydration error.
+/// DOM (WASM attached), and the browser console log carries no hydration error.
 #[tokio::test]
 async fn hydration_attaches_interactivity() {
     let Some(h) = Harness::start("hydration").await else {

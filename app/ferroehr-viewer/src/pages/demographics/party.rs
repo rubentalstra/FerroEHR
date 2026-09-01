@@ -16,7 +16,7 @@
 //!   ([`relationship`](super::relationship)).
 //! - **Tags** — its `ITEM_TAG`s ([`tags`](super::tags)).
 //!
-//! One reader per claim: the Party tab is the console's ONE reader of the
+//! One reader per claim: the Party tab is the viewer's ONE reader of the
 //! current party document (and the edit form's merge base); the History tab
 //! never touches that route — it reads the versioned family for the container +
 //! envelope facts and pins a document by an explicit `OBJECT_VERSION_ID`.
@@ -33,7 +33,7 @@
 
 #![allow(
     clippy::disallowed_types,
-    reason = "the console consumes the CDR JSON wire over ITS-REST — not the CDR internal seams \
+    reason = "the viewer consumes the CDR JSON wire over ITS-REST — not the CDR internal seams \
               (#1694); the carriers here are ssr-only, so #[expect] would be unfulfilled on the \
               hydrate target"
 )]
@@ -62,7 +62,7 @@ use crate::uid::container_uid_of;
 /// ([`crate::feedback::write_failure_copy`]).
 const PARTY_OBJECT: &str = "this party";
 
-/// The console's view of one party version.
+/// The viewer's view of one party version.
 ///
 /// The canonical document verbatim, the version that document IS, and the two
 /// attributes the edit form works on — flattened BFF-side so the browser never
@@ -106,7 +106,7 @@ pub struct PartyState {
 /// `operations/person_get.yaml`) — a first-class state, not an error.
 ///
 /// # Errors
-/// [`ViewerError::Unauthenticated`] without a console session;
+/// [`ViewerError::Unauthenticated`] without a viewer session;
 /// [`ViewerError::Invalid`] on an unknown kind segment or an empty id; CDR
 /// transport errors pass through; a non-2xx CDR answer (the `404` for an
 /// unknown id, or for an id held by a DIFFERENT kind, included) normalizes via
@@ -148,12 +148,12 @@ pub async fn fetch_party(
 /// `operations/person_create.yaml`, answering `201`).
 ///
 /// `body` is the operator's canonical-JSON party document, sent verbatim: the
-/// console never assembles a party from its own model, so nothing it does not
+/// viewer never assembles a party from its own model, so nothing it does not
 /// render can be dropped. `Prefer: return=representation` asks for the created
 /// resource, whose `uid.value` is the new version.
 ///
 /// # Errors
-/// [`ViewerError::Unauthenticated`] without a console session;
+/// [`ViewerError::Unauthenticated`] without a viewer session;
 /// [`ViewerError::Invalid`] on an unknown kind segment, a body that is not a
 /// JSON object, or a body whose `_type` names a different kind than the route;
 /// CDR transport errors pass through; any non-2xx CDR answer (the `400` parse
@@ -214,7 +214,7 @@ pub async fn create_party(
 /// replaced (`apply_party_edits`); everything else travels back verbatim.
 ///
 /// # Errors
-/// [`ViewerError::Unauthenticated`] without a console session;
+/// [`ViewerError::Unauthenticated`] without a viewer session;
 /// [`ViewerError::Invalid`] on an unknown kind segment, a missing version uid,
 /// an `identities` draft that is not a non-empty JSON array, or a `details`
 /// draft that is not a JSON object; CDR transport errors pass through; any
@@ -286,7 +286,7 @@ pub async fn update_party(
 /// every earlier version stays readable by its own uid.
 ///
 /// # Errors
-/// [`ViewerError::Unauthenticated`] without a console session;
+/// [`ViewerError::Unauthenticated`] without a viewer session;
 /// [`ViewerError::Invalid`] on an unknown kind segment or a version uid that
 /// is not a full `OBJECT_VERSION_ID`; CDR transport errors pass through; any
 /// non-2xx CDR answer (the `409` stale-uid and `400` already-deleted branches
@@ -755,7 +755,7 @@ fn party_section(
         move |(id, _)| async move { fetch_party(kind.segment().to_owned(), id).await },
     );
 
-    // Both outcomes toast (the console's mutation-feedback rule); a `412` is
+    // Both outcomes toast (the viewer's mutation-feedback rule); a `412` is
     // the mid-air collision and gets its own title.
     Effect::new(move |_| match save.value().get() {
         Some(Ok(uid)) => {
@@ -1011,7 +1011,7 @@ fn draft_complaint(identities: &str, details: &str) -> Result<(), String> {
 /// copy states what a logical delete does: it commits a `523|deleted|` version,
 /// so the party stops resolving as current while every earlier version stays
 /// readable by its own uid (RM common master06 §Logical Deletion). On success
-/// the console returns to the kind's browser screen with a toast.
+/// the viewer returns to the kind's browser screen with a toast.
 ///
 /// `version_uid` is the screen's ONE read of the party, published by
 /// [`facts_section`]: the delete addresses the version to supersede, not the

@@ -36,8 +36,8 @@ output.
 - **The viewer (`viewer.enabled`) is covered by the automated harness**
   (`scripts/deploy-probe-k8s.sh`, the `P-K8S-UI-*` family: off/boot/runtime
   posture/PSA admission/served login page/narrowed-ingress install). What
-  remains manual-only for the console: its OIDC sign-in path, screens behind a
-  session, and the console→CDR REST hop (a served login page is not evidence of
+  remains manual-only for the viewer: its OIDC sign-in path, screens behind a
+  session, and the viewer→CDR REST hop (a served login page is not evidence of
   it — the login form renders even when the CDR is unreachable).
 
 ## Four facts people get wrong

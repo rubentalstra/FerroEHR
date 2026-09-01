@@ -39,7 +39,7 @@ documentation correction, or measurement from your own hardware all count.
 cargo build --workspace
 cargo nextest run --workspace          # unit + integration (real PG 18 via Docker)
 cargo test --workspace --doc
-# clippy is THREE lanes: the console's hydrate/ssr features are mutually
+# clippy is THREE lanes: the viewer's hydrate/ssr features are mutually
 # exclusive (compile_error!-guarded), so it is excluded from --all-features
 # and linted per feature + per target:
 cargo clippy --workspace --exclude ferroehr-viewer --all-targets --all-features -- -D warnings

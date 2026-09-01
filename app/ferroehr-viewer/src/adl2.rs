@@ -3,7 +3,7 @@
 
 //! ADL2 template identity, links, and REST paths — component-free.
 //!
-//! The console's Template Manager serves two families: the ADL 1.4
+//! The viewer's Template Manager serves two families: the ADL 1.4
 //! operational templates and the ADL2 ones, switched by `?family=` on
 //! `/templates`. An ADL2 artefact is keyed by its AOM2 archetype HRID
 //! (`openEHR-EHR-COMPOSITION.concept.v1.0.0`), whose trailing `.v{semver}`
@@ -12,7 +12,7 @@
 //! definition_template_adl2_version_get.yaml` under
 //! `docs/specs/openehr/ITS-REST/`). Every derivation the two screens need
 //! from those facts — the family stem, the release version, the versions one
-//! listing holds for a family, the wire paths, the console hrefs — lives
+//! listing holds for a family, the wire paths, the viewer hrefs — lives
 //! here as pure functions with unit tests, so the views stay thin.
 //!
 //! NOTE: no openEHR spec governs the viewer's routes or family switch — our
@@ -154,7 +154,7 @@ pub enum Adl2Tab {
     Source,
     /// The `OperationalTemplateV2` canonical JSON, read as `application/json`.
     Json,
-    /// The Web-Template path catalog, built console-side from that JSON.
+    /// The Web-Template path catalog, built viewer-side from that JSON.
     Catalog,
     /// The CDR-generated example composition.
     Example,
@@ -223,7 +223,7 @@ pub fn split_hrid(hrid: &str) -> (&str, Option<&str>) {
 ///
 /// Ordering is by the numeric `major.minor.patch` triple, with the literal
 /// string as the tie-break, so `1.10.0` sorts after `1.9.0`. A component that
-/// is not a plain integer counts as `0` — the console orders what the CDR
+/// is not a plain integer counts as `0` — the viewer orders what the CDR
 /// listed, it does not validate SEMVER.
 #[must_use]
 pub fn family_versions(template_ids: &[String], stem: &str) -> Vec<String> {
@@ -491,7 +491,7 @@ mod tests {
     }
 
     #[test]
-    fn the_console_hrefs_encode_the_template_id() {
+    fn the_viewer_hrefs_encode_the_template_id() {
         assert_eq!(
             detail_href("openEHR-EHR-COMPOSITION.cnf.v1.0.0"),
             "/templates/adl2/openEHR-EHR-COMPOSITION.cnf.v1.0.0"

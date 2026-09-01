@@ -38,7 +38,7 @@ kubectl -n ferroehr create secret generic ferroehr-db \
   --from-literal=FERROEHR__DB__URL='postgres://ferroehr_app:***@pg-host:5432/ferroehr?sslmode=verify-full'
 
 helm install ferroehr oci://ghcr.io/rubentalstra/charts/ferroehr \
-  --version 7.0.0 -n ferroehr \
+  --version 7.0.1 -n ferroehr \
   --set database.existingSecret=ferroehr-db \
   --set image.tag=4.0.15
 ```
@@ -55,7 +55,7 @@ helm install ferroehr oci://ghcr.io/rubentalstra/charts/ferroehr \
 reference. To read the chart's metadata without installing it:
 
 ```shell
-helm show chart oci://ghcr.io/rubentalstra/charts/ferroehr --version 7.0.0
+helm show chart oci://ghcr.io/rubentalstra/charts/ferroehr --version 7.0.1
 ```
 
 ### Pin two versions, not one
@@ -68,7 +68,7 @@ against.
 
 | | Selects | Pin with | Line |
 |---|---|---|---|
-| Chart version | templates, values schema, defaults | `--version 7.0.0` | SemVer over the chart's own contract |
+| Chart version | templates, values schema, defaults | `--version 7.0.1` | SemVer over the chart's own contract |
 | Image tag | the server binary | `--set image.tag=4.0.15` (or `image.digest`) | the application's SemVer line |
 
 Always pin the image to an immutable version or, better, a `@sha256` digest,
@@ -167,7 +167,7 @@ metadata lists: the server, and the optional viewer.
 > the image itself as the authority:
 >
 > ```shell
-> helm template ferroehr oci://ghcr.io/rubentalstra/charts/ferroehr --version 7.0.0 \
+> helm template ferroehr oci://ghcr.io/rubentalstra/charts/ferroehr --version 7.0.1 \
 >   -s templates/configmap.yaml --set database.existingSecret=ferroehr-db \
 >   | sed -n '/ferroehr.toml/,$p' | sed '1d;s/^    //' > /tmp/ferroehr.toml
 > docker run --rm -v /tmp/ferroehr.toml:/etc/ferroehr/ferroehr.toml:ro \
@@ -410,7 +410,7 @@ narrowed in that state, so set `ingressFrom` to your ingress controller for a PH
 workload, and set `networkPolicy.ingressAllowAll: false` if an open ingress rule
 must never render at all; the full treatment is
 [§Ingress](hardening-network-policy.md#ingress-ports-are-narrowed-sources-are-yours).
-The console's own policy carries the same pair under `viewer.networkPolicy`.
+The viewer's own policy carries the same pair under `viewer.networkPolicy`.
 Second, a NetworkPolicy is only as real as the CNI that implements it:
 on a cluster whose network plugin does not enforce NetworkPolicy the object is
 documentation rather than a control, and nothing in Kubernetes reports that.
@@ -556,7 +556,7 @@ config:
 
 ```shell
 helm upgrade ferroehr oci://ghcr.io/rubentalstra/charts/ferroehr \
-  --version 7.0.0 -n ferroehr --reuse-values \
+  --version 7.0.1 -n ferroehr --reuse-values \
   --set config.query.plan_cache_capacity=512
 ```
 
@@ -611,36 +611,36 @@ Full detail on each is in [Beyond the core](../beyond-core/index.md),
 `viewer.enabled` renders a second Deployment and Service for the Leptos viewer
 beside the CDR, from its own image
 (`viewer.image.repository`, tagged `appVersion` by default so the two move
-together). It is off by default: the console is a separate product surface with
+together). It is off by default: the viewer is a separate product surface with
 its own attack surface, and a CDR is complete without it.
 
 Three properties are worth knowing before you switch it on:
 
 - **It reaches the CDR strictly over the REST API**, which
   `viewer.networkPolicy.enabled` (on by default) *enforces* rather than
-  assumes: the console's egress admits the CDR Service, DNS and outbound HTTPS
+  assumes: the viewer's egress admits the CDR Service, DNS and outbound HTTPS
   for an identity provider, and nothing else. It holds no database credential.
 - **It is a human-facing web UI**, so `viewer.ingress.enabled` is the normal way
   to reach it, and `viewer.auth.oidc.enabled` with an issuer, client id and
   `viewer.auth.oidc.publicBaseUrl` is how you keep a person who should not see
   PHI out of it. Its client secret comes from `viewer.existingSecret`, mounted
   as a file exactly as the server's DSN is.
-- **`viewer.replicaCount` is 1 deliberately.** The console holds session state
+- **`viewer.replicaCount` is 1 deliberately.** The viewer holds session state
   in process, so a second replica needs sticky sessions at the ingress or users
   are logged out on a reroute.
 
-The console carries the same security context as the server, and the chart's
+The viewer carries the same security context as the server, and the chart's
 render gate holds it to the same Restricted profile and the same pod-isolation
 settings: a release whose two workloads disagreed about `hostUsers` would be a
 posture nobody could state in one sentence. The deployment probe harness then
-reads that back off the *running* console container, exactly as it does for the
+reads that back off the *running* viewer container, exactly as it does for the
 server: its uid, its empty capability bounding set, its read-only root and its
 seccomp filter come from the container runtime's own spec, its admission from an
 `enforce=restricted` namespace, and its login page from an HTTP request made
-inside the cluster through the console Service, so the second workload is never
+inside the cluster through the viewer Service, so the second workload is never
 vouched for by the first. What that run does **not** establish is stated in its
-own record: the console's OIDC path, the screens behind a session, and whether a
-CNI enforces the console's NetworkPolicy. Its screens are documented in the
+own record: the viewer's OIDC path, the screens behind a session, and whether a
+CNI enforces the viewer's NetworkPolicy. Its screens are documented in the
 [viewer](../viewer/index.md) chapter.
 
 ## Staying available while things move
@@ -709,7 +709,7 @@ Preview an upgrade against what you have installed with
 `helm diff`, or render the new chart version and read it:
 
 ```shell
-helm template ferroehr oci://ghcr.io/rubentalstra/charts/ferroehr --version 7.0.0 \
+helm template ferroehr oci://ghcr.io/rubentalstra/charts/ferroehr --version 7.0.1 \
   -n ferroehr -f my-values.yaml | less
 ```
 

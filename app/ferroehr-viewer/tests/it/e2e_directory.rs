@@ -26,11 +26,11 @@
 //! editor (add a subfolder + save with `If-Match`), the item picker's
 //! add/remove round trip, version history with restore, and the two-step
 //! directory delete with the create state coming back. Each journey creates its
-//! OWN anonymous EHR through the console (never the seeded one — these journeys
+//! OWN anonymous EHR through the viewer (never the seeded one — these journeys
 //! mutate/delete the directory) and fails on any browser console error (the
 //! standing hydration gate).
 //!
-//! The console keeps no folder-shape library of its own, so the create-empty
+//! The viewer keeps no folder-shape library of its own, so the create-empty
 //! root plus the tree editor is the ONLY way directory structure is built —
 //! which is what every journey here drives.
 //!
@@ -44,7 +44,7 @@ use crate::common;
 use common::{Harness, env, login_basic, wait_css_absent, wait_text};
 use thirtyfour::prelude::*;
 
-/// Create an anonymous EHR through the console and land on its detail page,
+/// Create an anonymous EHR through the viewer and land on its detail page,
 /// returning the new EHR id (parsed from the navigated URL).
 async fn create_ehr(h: &Harness) -> String {
     h.goto("/ehrs").await;
@@ -78,7 +78,7 @@ async fn create_ehr(h: &Harness) -> String {
 }
 
 /// Create the EHR's directory through the create-empty flow — the ONLY create
-/// path now that the console keeps no folder-shape library of its own — and
+/// path now that the viewer keeps no folder-shape library of its own — and
 /// wait for the edit view. Structure is built afterwards in the tree editor,
 /// which is exactly what each journey below exercises.
 async fn create_empty_directory(h: &Harness, ehr_id: &str) {
@@ -485,7 +485,7 @@ fn history_row_xpath(number: u32) -> String {
 /// page, "load older" reaches the versions below it, and a version reached
 /// that way still restores.
 ///
-/// The console cannot ask the CDR for a FOLDER revision history (ITS-REST
+/// The viewer cannot ask the CDR for a FOLDER revision history (ITS-REST
 /// 1.1.0 exposes none — register AMB-24, upstream report #1490), so it
 /// synthesizes the uid list and reads it in windows; this journey is the proof
 /// that the window is real and that the rest stays reachable.

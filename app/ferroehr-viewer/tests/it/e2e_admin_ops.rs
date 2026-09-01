@@ -17,7 +17,7 @@
 )]
 // e2e journeys are assertive by design; skip-with-reason prints; the shared
 // harness module is per-test-binary (the corpus.rs test-file precedent)
-//! End-to-end journeys over the console's **admin destructive operations**:
+//! End-to-end journeys over the viewer's **admin destructive operations**:
 //! template delete (from the list row and from the detail screen), stored-query
 //! save + namespace grouping + delete against the CDR store, and physical EHR
 //! delete — each a create → delete → assert-gone round trip through the real
@@ -62,7 +62,7 @@ const DETAIL_FIXTURE: &str = "minimal_instruction.opt";
 const DETAIL_TEMPLATE_ID: &str = "minimal_instruction.en.v1";
 
 /// The namespace half of the qualified stored-query name this battery saves.
-/// It is typed into its OWN field and is what the console groups by (a query's
+/// It is typed into its OWN field and is what the viewer groups by (a query's
 /// group IS its namespace).
 const QUERY_NAMESPACE: &str = "org.example";
 /// The bare name half, typed into the query-name field.
@@ -207,7 +207,7 @@ async fn admin_deletes_a_template_from_the_detail_screen() {
 /// from the CDR store and watch the row go.
 ///
 /// The namespace card (`data-query-namespace`) is the assertion that the two
-/// fields composed exactly the spec's `namespace::name`: the console creates no
+/// fields composed exactly the spec's `namespace::name`: the viewer creates no
 /// grouping of its own, it reads the namespace back out of the stored name.
 #[tokio::test]
 async fn admin_saves_a_namespaced_stored_query_and_deletes_it() {
@@ -220,7 +220,7 @@ async fn admin_saves_a_namespaced_stored_query_and_deletes_it() {
     // Save the query through the real editor (its Save button stays disabled
     // until the AQL and the query name hold text, which is also the hydration
     // signal — retry the typing until it enables, the login-submit precedent).
-    // The namespace goes into its own field; the console composes the qualified
+    // The namespace goes into its own field; the viewer composes the qualified
     // name from the two.
     h.goto("/queries/aql").await;
     // Save/Run dispatch is hydrated behaviour (#2285's class).
@@ -288,7 +288,7 @@ async fn admin_saves_a_namespaced_stored_query_and_deletes_it() {
 /// `(name, version)` pair is immutable, store a second version beside it, and
 /// prove that loading a version proposes the next one instead of a collision.
 ///
-/// This is the console half of the spec's versioning model: a qualified name is
+/// This is the viewer half of the spec's versioning model: a qualified name is
 /// `[{namespace}::]{query-name}` and its version is SEMVER-style, with an
 /// explicit `(name, version)` store being immutable (ITS-REST
 /// `specifications/docs/query/Qualified_query_name.md` §Qualified query name,
@@ -319,7 +319,7 @@ async fn admin_versions_a_stored_query() {
     h.shot(1, "stored-query-v1").await;
 
     // Re-storing the SAME pair is refused: the pair is immutable, so the CDR
-    // answers 409 and the console surfaces it inline (role="alert") beside the
+    // answers 409 and the viewer surfaces it inline (role="alert") beside the
     // editor. The listing must still hold exactly the one version.
     h.goto("/queries/aql").await;
     // Save/Run dispatch is hydrated behaviour (#2285's class).
@@ -444,7 +444,7 @@ async fn admin_deletes_an_ehr() {
     let (user, pass) = admin_credentials();
     login_basic_as(&h, &user, &pass).await;
 
-    // Create an anonymous EHR; the console navigates to its detail route.
+    // Create an anonymous EHR; the viewer navigates to its detail route.
     // The create dispatch + navigation are hydrated behaviour, and a click
     // landing before hydration is silently lost (#2285's class).
     h.goto("/ehrs").await;
@@ -517,7 +517,7 @@ async fn plain_user_is_refused_the_admin_delete() {
     );
 
     // Deliberate negative step: the CDR's refusal reaches the browser as a
-    // failed server-fn call, which the console gate must allow.
+    // failed server-fn call, which the browser-console gate must allow.
     h.assert_console_clean(&[
         "403",
         "Forbidden",
