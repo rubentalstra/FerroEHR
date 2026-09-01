@@ -2031,6 +2031,69 @@ mod tests {
         assert!(walk_only(&good, &prop).is_empty());
     }
 
+    /// `C_QUANTITY_ITEM.precision` (`OpenehrProfile.xsd`, surfaced as
+    /// `inputs[].validation.precision`): the instance's `DV_QUANTITY.precision`
+    /// must lie in the interval; an absent instance precision violates
+    /// nothing (#3027).
+    #[test]
+    fn quantity_precision_interval() {
+        let mut q = node("DV_QUANTITY", "/q");
+        let mut input = WebTemplateInput::new(WebTemplateInputType::Decimal, Some("magnitude"));
+        input.validation = Some(WebTemplateValidation {
+            pattern: None,
+            range: None,
+            precision: Some(WebTemplateRange {
+                min_op: Some(">=".to_owned()),
+                min: Some(json!(0)),
+                max_op: Some("<=".to_owned()),
+                max: Some(json!(1)),
+            }),
+        });
+        q.inputs = vec![input];
+
+        let over =
+            json!({"_type": "DV_QUANTITY", "magnitude": 5.25, "units": "kg", "precision": 3});
+        assert!(
+            kinds(&walk_only(&over, &q)).contains(&ValidationKind::RangeError),
+            "precision 3 violates [0, 1]"
+        );
+        let ok = json!({"_type": "DV_QUANTITY", "magnitude": 5.2, "units": "kg", "precision": 1});
+        assert!(walk_only(&ok, &q).is_empty());
+        let absent = json!({"_type": "DV_QUANTITY", "magnitude": 5.2, "units": "kg"});
+        assert!(
+            walk_only(&absent, &q).is_empty(),
+            "an absent optional precision violates nothing"
+        );
+    }
+
+    /// `DV_PROPORTION.precision` under the same interval contract as
+    /// `DV_QUANTITY` (the `|precision` suffix in the `master05` table; #3027).
+    #[test]
+    fn proportion_precision_interval() {
+        let mut prop = node("DV_PROPORTION", "/p");
+        let mut input = WebTemplateInput::new(WebTemplateInputType::Decimal, Some("numerator"));
+        input.validation = Some(WebTemplateValidation {
+            pattern: None,
+            range: None,
+            precision: Some(WebTemplateRange {
+                min_op: Some(">=".to_owned()),
+                min: Some(json!(0)),
+                max_op: Some("<=".to_owned()),
+                max: Some(json!(0)),
+            }),
+        });
+        prop.inputs = vec![input];
+        let bad = json!({"_type": "DV_PROPORTION", "numerator": 42.0, "denominator": 100.0,
+            "type": 2, "precision": 2});
+        assert!(
+            kinds(&walk_only(&bad, &prop)).contains(&ValidationKind::RangeError),
+            "precision 2 violates [0, 0]"
+        );
+        let ok = json!({"_type": "DV_PROPORTION", "numerator": 42.0, "denominator": 100.0,
+            "type": 2, "precision": 0});
+        assert!(walk_only(&ok, &prop).is_empty());
+    }
+
     /// `C_DATE` pattern + range (master17.4 CONT-DV_DATE-validate_constraint/-range).
     #[test]
     fn temporal_pattern_and_range() {

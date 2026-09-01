@@ -8,13 +8,11 @@
 //!
 //! For each input we validate the corresponding datum of the instance value,
 //! keyed by the input `suffix` / `type`: coded-value membership (unless the list
-//! is open or the code is from an external terminology), numeric range (honoring
-//! `minOp`/`maxOp`), and string patterns. RM well-formedness of
-//! date/time/duration VALUES is covered by the RM-invariant pass; a leaf's
-//! declared temporal RANGE and decimal PRECISION constraints are not yet
-//! enforced here.
-// TODO(#3027): enforce (or record the adjudicated boundary for) WebTemplate
-// temporal-range and decimal-precision leaf constraints.
+//! is open or the code is from an external terminology), numeric and temporal
+//! ranges (honoring `minOp`/`maxOp`), decimal-precision intervals on
+//! `DV_QUANTITY`/`DV_PROPORTION` (#3027), string patterns, duration
+//! field/range constraints, and timezone validity. RM well-formedness of
+//! date/time/duration VALUES stays with the RM-invariant pass.
 
 #![expect(
     clippy::disallowed_types,
@@ -395,6 +393,27 @@ fn check_quantity(v: &mut Validator, instance: &Value, wt: &WebTemplateNode) {
             );
         }
     }
+
+    // DV_QUANTITY.precision against the constrained precision interval
+    // (`OpenehrProfile.xsd` `C_QUANTITY_ITEM.precision : IntervalOfInteger`;
+    // the Web Template surfaces it as `inputs[].validation.precision` — the
+    // ITS-REST `simplified_formats` `master04` model). The RM attribute is
+    // 0..1, so an instance that omits it violates nothing (#3027).
+    if let Some(prec) = instance.get("precision").and_then(as_f64) {
+        let range = input_with_suffix(wt, "magnitude")
+            .and_then(|i| i.validation.as_ref())
+            .and_then(|val| val.precision.as_ref())
+            .or_else(|| unit_scoped_precision(unit_input, unit));
+        if let Some(range) = range
+            && !in_range(prec, range)
+        {
+            v.push(
+                &wt.aql_path,
+                format!("precision {prec} is outside the constrained precision range"),
+                ValidationKind::RangeError,
+            );
+        }
+    }
 }
 
 fn unit_scoped_range<'a>(
@@ -407,6 +426,21 @@ fn unit_scoped_range<'a>(
         .find(|cv| cv.value == u)
         .and_then(|cv| cv.validation.as_ref())
         .and_then(|val| val.range.as_ref())
+}
+
+/// The precision interval scoped to the instance's unit, when the constraint
+/// carries per-unit validation (the `master04` example model attaches both
+/// `range` and `precision` to each coded unit value).
+fn unit_scoped_precision<'a>(
+    unit_input: Option<&'a WebTemplateInput>,
+    unit: Option<&str>,
+) -> Option<&'a WebTemplateRange> {
+    let (ui, u) = (unit_input?, unit?);
+    ui.list
+        .iter()
+        .find(|cv| cv.value == u)
+        .and_then(|cv| cv.validation.as_ref())
+        .and_then(|val| val.precision.as_ref())
 }
 
 fn check_count(v: &mut Validator, instance: &Value, wt: &WebTemplateNode) {
@@ -449,6 +483,22 @@ fn check_proportion(v: &mut Validator, instance: &Value, wt: &WebTemplateNode) {
                 ValidationKind::CodedValue,
             );
         }
+    }
+    // DV_PROPORTION.precision against the constrained interval, the same
+    // contract as DV_QUANTITY (the `|precision` suffix in `master05`'s
+    // DV_PROPORTION table; RM attribute 0..1, absent violates nothing).
+    if let Some(prec) = instance.get("precision").and_then(as_f64)
+        && let Some(range) = wt
+            .inputs
+            .iter()
+            .find_map(|i| i.validation.as_ref().and_then(|val| val.precision.as_ref()))
+        && !in_range(prec, range)
+    {
+        v.push(
+            &wt.aql_path,
+            format!("precision {prec} is outside the constrained precision range"),
+            ValidationKind::RangeError,
+        );
     }
     for part in ["numerator", "denominator"] {
         let Some(value) = instance.get(part).and_then(as_f64) else {
