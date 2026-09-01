@@ -36,8 +36,10 @@ inputs:
   verb:
     description: >-
       What the restricted key is asked to run: `deploy` (pull + install the
-      posture + recreate) or `restart` (recreate the CDR so a fresh boot
-      re-runs the migrations — the reseed's step after its wipe).
+      posture + recreate), `restart` (recreate the CDR so a fresh boot
+      re-runs the migrations — the reseed's step after its wipe), or `wipe`
+      (drop the CDR's schemas on the private database box, using the DSN the
+      app box already holds — the reseed's first step; #3015).
     required: false
     default: deploy
   expected-version:
@@ -216,3 +218,16 @@ runs:
         ssh-key: ${{ inputs.ssh-key }}
         known-hosts: ${{ inputs.known-hosts }}
         remote-command: restart
+
+    # The wipe runs on the app box, which reaches the database box over the
+    # private network with the DSN in its own .env — no runner ever opens a
+    # SQL connection and CI holds no database credential (#3015).
+    - name: Wipe the sandbox schemas (on the box, over the private network)
+      if: inputs.verb == 'wipe'
+      uses: rubentalstra/hetzner-deploy-action@23e875e1249a2fe2a27107291a638ab40da0172b # v1.0.1
+      with:
+        host: ${{ inputs.host }}
+        user: deploy
+        ssh-key: ${{ inputs.ssh-key }}
+        known-hosts: ${{ inputs.known-hosts }}
+        remote-command: wipe

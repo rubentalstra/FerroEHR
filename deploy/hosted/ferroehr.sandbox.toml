@@ -11,7 +11,7 @@
 # conformance statement's AdminApi claims are exercisable against this
 # deployment. The public bulk delete is accepted: it wipes what the nightly
 # reset wipes anyway. The database DSN comes from the box's `.env`, never from
-# this file — the standalone Neon project's DIRECT connection string as
+# this file — the DB box's private-network connection string as
 # DATABASE_URL, mapped to db.url by the config aliases (#2716).
 
 [server]
