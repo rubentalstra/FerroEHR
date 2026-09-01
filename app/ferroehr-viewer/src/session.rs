@@ -24,7 +24,11 @@ use serde::{Deserialize, Serialize};
 
 use crate::error::ViewerError;
 
-/// The session-store key for the one [`AdminSession`] record.
+/// The [`AdminSession`] record's entry key inside the sealed cookie payload.
+///
+/// The viewer keeps no session store of any kind: the payload is a small
+/// keyed map carried whole in the encrypted [`SESSION_COOKIE`], so this names
+/// an entry in that map rather than a record held anywhere on a server.
 pub const SESSION_KEY: &str = "admin_session";
 
 /// The sealed session cookie's name.

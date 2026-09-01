@@ -65,7 +65,7 @@ services:
         limits:
           memory: 768m
     environment:
-      FERROEHR_ADMIN_CONFIG: /etc/ferroehr/viewer.toml
+      FERROEHR_VIEWER_CONFIG: /etc/ferroehr/viewer.toml
     volumes:
       - ./ferroehr-viewer.sandbox.toml:/etc/ferroehr/viewer.toml:ro
     depends_on:

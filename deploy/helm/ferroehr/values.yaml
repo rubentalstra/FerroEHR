@@ -857,7 +857,7 @@ viewer:
   # uses.
   existingSecret: ""
   # -- Key within `existingSecret` carrying the client secret.
-  existingSecretKey: FERROEHR_ADMIN__AUTH__OIDC__CLIENT_SECRET
+  existingSecretKey: FERROEHR_VIEWER__AUTH__OIDC__CLIENT_SECRET
   networkPolicy:
     # -- Install a NetworkPolicy for the console. Egress admits the CDR Service
     # and DNS, and nothing else — the console is a REST client of the CDR by

@@ -24,7 +24,7 @@ Standalone, point it at any CDR:
 
 ```bash
 docker run -p 3000:3000 \
-  -e FERROEHR_ADMIN__CDR__BASE_URL=https://cdr.example.org \
+  -e FERROEHR_VIEWER__CDR__BASE_URL=https://cdr.example.org \
   ghcr.io/rubentalstra/ferroehr-viewer
 ```
 
@@ -121,7 +121,7 @@ and a previewed grant is an upper bound.
 
 One TOML file (`ferroehr-viewer.toml`, searched in the working directory
 and `/etc/ferroehr/viewer.toml`, or pointed at with
-`FERROEHR_ADMIN_CONFIG`), with `FERROEHR_ADMIN__<SECTION>__<KEY>` environment
+`FERROEHR_VIEWER_CONFIG`), with `FERROEHR_VIEWER__<SECTION>__<KEY>` environment
 overrides. Unknown keys are refused at startup, exactly as on the CDR:
 
 | Key | Default | Meaning |

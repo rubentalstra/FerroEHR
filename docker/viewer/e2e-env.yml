@@ -35,9 +35,9 @@ services:
 
   ferroehr-viewer:
     environment:
-      FERROEHR_ADMIN__CDR__BASE_URL: http://ferroehr:8080
-      FERROEHR_ADMIN__AUTH__OIDC__ENABLED: "true"
-      FERROEHR_ADMIN__AUTH__OIDC__ISSUER: http://keycloak:8081/auth/realms/ferroehr
-      FERROEHR_ADMIN__AUTH__OIDC__CLIENT_ID: ferroehr
-      FERROEHR_ADMIN__AUTH__OIDC__CLIENT_SECRET: bT5T4oWn3xNdBytQsl2cfpBDi1pp15Va
-      FERROEHR_ADMIN__AUTH__OIDC__PUBLIC_BASE_URL: http://127.0.0.1:3000
+      FERROEHR_VIEWER__CDR__BASE_URL: http://ferroehr:8080
+      FERROEHR_VIEWER__AUTH__OIDC__ENABLED: "true"
+      FERROEHR_VIEWER__AUTH__OIDC__ISSUER: http://keycloak:8081/auth/realms/ferroehr
+      FERROEHR_VIEWER__AUTH__OIDC__CLIENT_ID: ferroehr
+      FERROEHR_VIEWER__AUTH__OIDC__CLIENT_SECRET: bT5T4oWn3xNdBytQsl2cfpBDi1pp15Va
+      FERROEHR_VIEWER__AUTH__OIDC__PUBLIC_BASE_URL: http://127.0.0.1:3000

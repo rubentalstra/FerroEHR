@@ -848,7 +848,7 @@ jobs:
           set -euo pipefail
           # A dummy CDR base URL: the login page renders without a CDR.
           docker run -d --rm --name viewer-smoke -p 127.0.0.1:3000:3000 \
-            -e FERROEHR_ADMIN__CDR__BASE_URL=http://127.0.0.1:9 \
+            -e FERROEHR_VIEWER__CDR__BASE_URL=http://127.0.0.1:9 \
             ferroehr-viewer:smoke
           for i in $(seq 1 30); do
             curl -sf -o /dev/null http://127.0.0.1:3000/login && break

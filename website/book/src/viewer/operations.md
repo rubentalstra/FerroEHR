@@ -44,7 +44,7 @@ If the CDR serves management on its own internal listener
 the console at it with one setting, the full prefix, including the path:
 
 ```bash
-FERROEHR_ADMIN__CDR__MANAGEMENT_BASE_URL=http://cdr.internal:9100/management
+FERROEHR_VIEWER__CDR__MANAGEMENT_BASE_URL=http://cdr.internal:9100/management
 ```
 
 Unset, the console derives `{cdr.base_url}/management`.

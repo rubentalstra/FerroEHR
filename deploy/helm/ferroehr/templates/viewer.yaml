@@ -93,22 +93,22 @@ spec:
           env:
             # The CDR is addressed by its in-cluster Service — the console never
             # talks to the database, and the egress policy below enforces that.
-            - name: FERROEHR_ADMIN__CDR__BASE_URL
+            - name: FERROEHR_VIEWER__CDR__BASE_URL
               value: {{ printf "http://%s:%v" (include "ferroehr.fullname" .) .Values.service.port | quote }}
             {{- if .Values.viewer.auth.oidc.enabled }}
-            - name: FERROEHR_ADMIN__AUTH__OIDC__ENABLED
+            - name: FERROEHR_VIEWER__AUTH__OIDC__ENABLED
               value: "true"
-            - name: FERROEHR_ADMIN__AUTH__OIDC__ISSUER
+            - name: FERROEHR_VIEWER__AUTH__OIDC__ISSUER
               value: {{ .Values.viewer.auth.oidc.issuer | quote }}
-            - name: FERROEHR_ADMIN__AUTH__OIDC__CLIENT_ID
+            - name: FERROEHR_VIEWER__AUTH__OIDC__CLIENT_ID
               value: {{ .Values.viewer.auth.oidc.clientId | quote }}
-            - name: FERROEHR_ADMIN__AUTH__OIDC__PUBLIC_BASE_URL
+            - name: FERROEHR_VIEWER__AUTH__OIDC__PUBLIC_BASE_URL
               value: {{ .Values.viewer.auth.oidc.publicBaseUrl | quote }}
             {{- if .Values.viewer.existingSecret }}
             # The client secret is a mounted FILE and only its path is
             # environment: an env VALUE is readable through /proc/<pid>/environ
             # and inherited by every child process.
-            - name: FERROEHR_ADMIN__AUTH__OIDC__CLIENT_SECRET_FILE
+            - name: FERROEHR_VIEWER__AUTH__OIDC__CLIENT_SECRET_FILE
               value: /etc/ferroehr-viewer-secrets/client_secret
             {{- end }}
             {{- end }}

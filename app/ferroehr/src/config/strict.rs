@@ -197,7 +197,7 @@ mod tests {
 
     /// The compose service that runs the CDR binary this crate configures.
     /// Every other service (the database, the viewer with its own
-    /// `FERROEHR_ADMIN__…` namespace, an upstream SUT) is unrelated.
+    /// `FERROEHR_VIEWER__…` namespace, an upstream SUT) is unrelated.
     const CDR_SERVICE: &str = "ferroehr";
 
     /// The repository root — this crate lives at `app/ferroehr`.

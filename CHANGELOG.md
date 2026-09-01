@@ -28,11 +28,21 @@ workflow refuses a tag that has no matching section here.
   `./ferroehr-viewer.toml` then `/etc/ferroehr/viewer.toml` (was
   `ferroehr-admin-ui.toml` / `/etc/ferroehr/admin-ui.toml`), the binary and
   crate are `ferroehr-viewer`, and the session cookie is
-  `ferroehr_viewer_session`, so open sessions need one fresh sign-in. The
-  environment grammar `FERROEHR_ADMIN__…` and the `FERROEHR_ADMIN_CONFIG`
-  file pointer are unchanged. Documentation moved from `/docs/*/admin-ui/` to
-  `/docs/*/viewer/`, with redirects from the old pages. The Helm chart is
-  version 6.1.0.
+  `ferroehr_viewer_session`, so open sessions need one fresh sign-in.
+  Documentation moved from `/docs/*/admin-ui/` to `/docs/*/viewer/`, with
+  redirects from the old pages. The Helm chart is version 7.0.0.
+- The viewer's own configuration environment grammar is renamed with it:
+  every `FERROEHR_ADMIN__<SECTION>__<KEY>` variable becomes
+  `FERROEHR_VIEWER__<SECTION>__<KEY>` (so `FERROEHR_ADMIN__CDR__BASE_URL` is
+  now `FERROEHR_VIEWER__CDR__BASE_URL`), and the config-file pointer
+  `FERROEHR_ADMIN_CONFIG` becomes `FERROEHR_VIEWER_CONFIG`. The chart's
+  default `viewer.existingSecretKey` moves from
+  `FERROEHR_ADMIN__AUTH__OIDC__CLIENT_SECRET` to
+  `FERROEHR_VIEWER__AUTH__OIDC__CLIENT_SECRET`, so an existing Secret needs
+  its key renamed or `viewer.existingSecretKey` set to the old spelling. A
+  variable left under the old prefix is not read and not reported: the
+  viewer's strict deserialization only sees what arrives under its own
+  prefix.
 - The Helm chart renames the viewer's Kubernetes objects from
   `<release>-admin-ui` to `<release>-viewer` and its
   `app.kubernetes.io/name` label from `<name>-admin-ui` to `<name>-viewer`.
@@ -50,7 +60,7 @@ workflow refuses a tag that has no matching section here.
   shipped binaries (the TLS stack is rustls/aws-lc throughout); the bounded
   scanner exception and its VEX statement are removed now that the fixed base
   exists.
-  
+
 ### Fixed
 
 - The platform validity checker (`definitions_valid`) now checks archetype

@@ -2,7 +2,7 @@
 // SPDX-License-Identifier: MIT
 
 //! Console configuration: one TOML file (`ferroehr-viewer.toml`) with
-//! `FERROEHR_ADMIN__…` environment overrides, mirroring the CDR's
+//! `FERROEHR_VIEWER__…` environment overrides, mirroring the CDR's
 //! one-file/strict/env-grammar convention.
 //!
 //! No openEHR spec governs configuration — our own design. The console is
@@ -169,11 +169,11 @@ pub struct ConfigError(String);
 
 /// Load the console configuration: defaults < file < environment.
 ///
-/// File discovery: `$FERROEHR_ADMIN_CONFIG` → `./ferroehr-viewer.toml` →
+/// File discovery: `$FERROEHR_VIEWER_CONFIG` → `./ferroehr-viewer.toml` →
 /// `/etc/ferroehr/viewer.toml` (search-order files are optional; an
 /// explicitly pointed-at file must exist). Env overrides use the uniform
-/// grammar `FERROEHR_ADMIN__<SECTION>__<KEY>` (e.g.
-/// `FERROEHR_ADMIN__CDR__BASE_URL`).
+/// grammar `FERROEHR_VIEWER__<SECTION>__<KEY>` (e.g.
+/// `FERROEHR_VIEWER__CDR__BASE_URL`).
 ///
 /// # Errors
 /// Returns a [`ConfigError`] on an unreadable/invalid file, an unknown key
@@ -189,7 +189,7 @@ pub fn load() -> Result<ViewerConfig, ConfigError> {
         clippy::disallowed_methods,
         reason = "this IS the console's config-tree loader; the config-file pointer is its bootstrap input and has no earlier source to come from"
     )]
-    if let Ok(explicit) = std::env::var("FERROEHR_ADMIN_CONFIG") {
+    if let Ok(explicit) = std::env::var("FERROEHR_VIEWER_CONFIG") {
         builder = builder.add_source(config::File::new(&explicit, config::FileFormat::Toml));
     } else {
         builder = builder
@@ -204,7 +204,7 @@ pub fn load() -> Result<ViewerConfig, ConfigError> {
 
     let assembled = builder
         .add_source(
-            config::Environment::with_prefix("FERROEHR_ADMIN")
+            config::Environment::with_prefix("FERROEHR_VIEWER")
                 .prefix_separator("__")
                 .separator("__"),
         )

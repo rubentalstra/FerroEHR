@@ -285,7 +285,7 @@ services:
   # BFF that consumes the CDR strictly over ITS-REST — never the database.
   # Opt-in (`docker compose --profile viewer up`); Basic login proxies the
   # CDR's quickstart user (ferroehr/ferroehr). For OIDC set the
-  # FERROEHR_ADMIN__AUTH__OIDC__* variables at your identity provider.
+  # FERROEHR_VIEWER__AUTH__OIDC__* variables at your identity provider.
   ferroehr-viewer:
     profiles: [viewer]
     image: ${FERROEHR_VIEWER_IMAGE:-ghcr.io/rubentalstra/ferroehr-viewer:4.0.15}
@@ -293,7 +293,7 @@ services:
       ferroehr:
         condition: service_healthy
     environment:
-      FERROEHR_ADMIN__CDR__BASE_URL: http://ferroehr:8080
+      FERROEHR_VIEWER__CDR__BASE_URL: http://ferroehr:8080
     ports:
       - "${FERROEHR_BIND_HOST:-127.0.0.1}:${FERROEHR_VIEWER_PORT:-3000}:3000"
     cap_drop: [ALL]

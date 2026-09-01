@@ -150,10 +150,10 @@ boot_one() {
 
   # The env replay below must see the CDR Deployment's environment and NOTHING
   # else. The chart renders a second workload (the viewer, an OPTIONAL
-  # separate binary with its own config root and its own `FERROEHR_ADMIN__…`
+  # separate binary with its own config root and its own `FERROEHR_VIEWER__…`
   # grammar — app/ferroehr-viewer/src/config.rs), and handing one workload's
   # environment to another image is not a boot check of anything: the CDR's
-  # strict sweep refuses `FERROEHR_ADMIN__CDR__BASE_URL` as an unknown key and
+  # strict sweep refuses `FERROEHR_VIEWER__CDR__BASE_URL` as an unknown key and
   # reports a crash-loop for a deployment that runs correctly.
   local cdr="${work}/cdr-deployment.yaml"
   if ! helm template "$RELEASE_NAME" "$CHART_DIR" -n "$NAMESPACE" -f "$values" \

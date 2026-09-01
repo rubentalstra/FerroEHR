@@ -2,7 +2,7 @@
 
 Pure-Rust, openEHR-conformant clinical data repository (ITS-REST 1.1.0 + AQL 1.1). A single static binary deployed with a hardened-by-default security posture: runs as a non-root, read-only-rootfs workload whose NetworkPolicy admits its serving port only, and that connects to an EXTERNAL PostgreSQL 18 as an unprivileged app role (migrations are run out of band by a separate migrator role).
 
-![Version: 6.1.0](https://img.shields.io/badge/Version-6.1.0-informational?style=flat-square) ![Type: application](https://img.shields.io/badge/Type-application-informational?style=flat-square) ![AppVersion: 4.0.15](https://img.shields.io/badge/AppVersion-4.0.15-informational?style=flat-square)
+![Version: 7.0.0](https://img.shields.io/badge/Version-7.0.0-informational?style=flat-square) ![Type: application](https://img.shields.io/badge/Type-application-informational?style=flat-square) ![AppVersion: 4.0.15](https://img.shields.io/badge/AppVersion-4.0.15-informational?style=flat-square)
 
 FerroEHR is a pure-Rust openEHR Clinical Data Repository: ITS-REST 1.1.0 at the
 API, AQL 1.1 as the query language, PostgreSQL 18-native storage, shipped as a
@@ -33,7 +33,7 @@ to add; `helm repo add` does not apply to this chart:
 
 ```console
 helm install ferroehr oci://ghcr.io/rubentalstra/charts/ferroehr \
-  --version 6.1.0 \
+  --version 7.0.0 \
   --namespace ferroehr --create-namespace \
   --set database.existingSecret=ferroehr-db \
   --set image.tag=4.0.15
@@ -47,7 +47,7 @@ They are independent SemVer lines and they move independently:
 
 | What | Set with | This release |
 |---|---|---|
-| the **chart** (templates, defaults, this document) | `--version` | `6.1.0` |
+| the **chart** (templates, defaults, this document) | `--version` | `7.0.0` |
 | the **server image** | `image.tag` | `4.0.15` |
 
 `appVersion` is the image the chart defaults to; pinning `image.tag` explicitly
@@ -59,7 +59,7 @@ The chart carries two keyless Sigstore artifacts, and they answer different
 questions. A **cosign signature:** who signed this:
 
 ```console
-cosign verify ghcr.io/rubentalstra/charts/ferroehr:6.1.0 \
+cosign verify ghcr.io/rubentalstra/charts/ferroehr:7.0.0 \
   --certificate-identity-regexp '^https://github\.com/rubentalstra/FerroEHR/\.github/workflows/publish-chart\.yml@' \
   --certificate-oidc-issuer https://token.actions.githubusercontent.com
 ```
@@ -67,7 +67,7 @@ cosign verify ghcr.io/rubentalstra/charts/ferroehr:6.1.0 \
 A **SLSA build provenance attestation:** what source it was built from, and how:
 
 ```console
-gh attestation verify oci://ghcr.io/rubentalstra/charts/ferroehr:6.1.0 \
+gh attestation verify oci://ghcr.io/rubentalstra/charts/ferroehr:7.0.0 \
   -R rubentalstra/FerroEHR
 gh attestation verify oci://ghcr.io/rubentalstra/ferroehr:4.0.15 \
   -R rubentalstra/FerroEHR
@@ -335,7 +335,7 @@ Kubernetes: `>=1.36.0-0`
 | viewer.auth.oidc.publicBaseUrl | string | `""` | The console's own externally-reachable base URL, used to build the OIDC redirect. Must match what the identity provider has registered. |
 | viewer.enabled | bool | `false` | Deploy the viewer alongside the CDR. |
 | viewer.existingSecret | string | `""` | Name of an existing Secret holding the console's OIDC client secret. The chart mounts that key as a FILE and passes only its path, so the credential never enters the pod's environment — the same discipline the server's DSN uses. |
-| viewer.existingSecretKey | string | `"FERROEHR_ADMIN__AUTH__OIDC__CLIENT_SECRET"` | Key within `existingSecret` carrying the client secret. |
+| viewer.existingSecretKey | string | `"FERROEHR_VIEWER__AUTH__OIDC__CLIENT_SECRET"` | Key within `existingSecret` carrying the client secret. |
 | viewer.extraEnv | list | `[]` | Extra environment for the console (escape hatch). |
 | viewer.image.digest | string | `""` | Image digest (`sha256:…`); wins over `tag` when set, exactly as the server's `image.digest` does. |
 | viewer.image.pullPolicy | string | `"IfNotPresent"` | Pull policy. |
