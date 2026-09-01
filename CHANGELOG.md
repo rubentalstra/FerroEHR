@@ -90,6 +90,12 @@ workflow refuses a tag that has no matching section here.
 
 ### Fixed
 
+- Composition validation now enforces a template's decimal-precision
+  constraint on `DV_QUANTITY` and `DV_PROPORTION` leaves: an instance whose
+  optional `precision` attribute falls outside the constrained interval is
+  refused (422) instead of silently accepted. Temporal-range constraints
+  were already enforced; the module documentation claiming otherwise was
+  stale and now states the real contract.
 - The FerroEHR Viewer's session cookie sets `Secure` by default
   (`session.cookie_secure` now defaults to `true`, fail closed): a TLS-fronted
   deployment needs nothing, and plain-HTTP contexts (the compose quickstart on
