@@ -6,6 +6,12 @@ version: 2
 updates:
   - package-ecosystem: "cargo"
     directory: "/"
+    # Dependency bumps default to the changelog-guard escape (the triage
+    # discipline adds a real entry when a bump is user-visible, which also
+    # satisfies the guard with the label present).
+    labels:
+      - "dependencies"
+      - "no-changelog"
     schedule:
       interval: "weekly"
     # A delay between a release being published and this bot proposing it, so a
@@ -46,6 +52,12 @@ updates:
   # https://docs.github.com/en/code-security/dependabot/working-with-dependabot/dependabot-options-reference
   - package-ecosystem: "cargo"
     directory: "/fuzz"
+    # Dependency bumps default to the changelog-guard escape (the triage
+    # discipline adds a real entry when a bump is user-visible, which also
+    # satisfies the guard with the label present).
+    labels:
+      - "dependencies"
+      - "no-changelog"
     schedule:
       interval: "weekly"
     # The same window as the root cargo entry: these dependencies execute in a
@@ -76,6 +88,12 @@ updates:
       - "/docker"
       - "/docker/postgres"
       - "/docker/viewer"
+    # Dependency bumps default to the changelog-guard escape (the triage
+    # discipline adds a real entry when a bump is user-visible, which also
+    # satisfies the guard with the label present).
+    labels:
+      - "dependencies"
+      - "no-changelog"
     schedule:
       interval: "weekly"
     # Between the cargo and actions windows. A base image ships in the product,
@@ -93,6 +111,12 @@ updates:
       prefix: "deps"
   - package-ecosystem: "github-actions"
     directory: "/"
+    # Dependency bumps default to the changelog-guard escape (the triage
+    # discipline adds a real entry when a bump is user-visible, which also
+    # satisfies the guard with the label present).
+    labels:
+      - "dependencies"
+      - "no-changelog"
     schedule:
       interval: "weekly"
     # Shorter than cargo: an action runs in CI but does not ship in the product,

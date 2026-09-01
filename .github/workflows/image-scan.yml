@@ -74,6 +74,7 @@ jobs:
       contents: read
       packages: read # pull the published images
       issues: write # file/update the one tracking issue below
+      security-events: write # the per-architecture SARIF uploads (#3033)
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
@@ -145,6 +146,37 @@ jobs:
           path: "*.json"
           if-no-files-found: warn
           retention-days: 30
+
+      # The findings mirror into GitHub code scanning (#3033): the JSON
+      # reports the scan already wrote convert locally (`trivy convert` — no
+      # second registry read) and merge into one SARIF per architecture, so a
+      # CVE in a published image is an alert that closes when a later scan of
+      # a re-released image stops reporting it. Runs only after a successful
+      # scan (a failed probe uploads nothing); zero findings upload an empty
+      # run, which is what keeps the tools page listing Trivy. The mirror
+      # gates nothing — the run-colour rule above is unchanged.
+      - name: Convert the reports to one SARIF per architecture
+        run: |
+          set -euo pipefail
+          for arch in amd64 arm64; do
+            for image in ferroehr ferroehr-postgres ferroehr-viewer; do
+              trivy convert --format sarif --output "${image}.${arch}.sarif" "${image}.${arch}.json"
+            done
+            jq -s '{ "$schema": .[0]."$schema", version: .[0].version, runs: [.[].runs[]] }' \
+              ferroehr."${arch}".sarif ferroehr-postgres."${arch}".sarif ferroehr-viewer."${arch}".sarif \
+              > "trivy-${arch}.sarif"
+            jq -r --arg arch "$arch" '"trivy-\($arch): \([.runs[].results | length] | add) result(s) across \(.runs | length) run(s)"' "trivy-${arch}.sarif"
+          done
+      - name: Upload the amd64 findings to code scanning
+        uses: github/codeql-action/upload-sarif@db488ddef3bf6cb639b32c2e9a7c0a7ea8271d28 # v4.37.8
+        with:
+          sarif_file: trivy-amd64.sarif
+          category: trivy-image/amd64
+      - name: Upload the arm64 findings to code scanning
+        uses: github/codeql-action/upload-sarif@db488ddef3bf6cb639b32c2e9a7c0a7ea8271d28 # v4.37.8
+        with:
+          sarif_file: trivy-arm64.sarif
+          category: trivy-image/arm64
 
       # An issue with no failing check can be closed without the finding being
       # addressed, so the issue says what the remedy is and the remediation law

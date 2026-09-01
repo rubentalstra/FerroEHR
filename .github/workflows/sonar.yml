@@ -87,15 +87,20 @@ jobs:
   scan:
     name: analyze
     needs: changes
-    # PR analysis authenticates with SONAR_TOKEN, which fork PRs cannot read.
-    # A main push always scans; a pull request scans only when it touched
-    # scanned code (#2777).
-    if: github.event_name == 'push' || (github.event.pull_request.head.repo.full_name == github.repository && needs.changes.outputs.code == 'true')
+    # PR analysis authenticates with SONAR_TOKEN, which fork PRs cannot read —
+    # and neither can DEPENDABOT PRs: a dependabot-actor pull_request run reads
+    # Dependabot secrets, not Actions secrets, so the scan died on
+    # "Not authorized" for every dependency bump (#3024's red batch). A lock
+    # bump has nothing to decorate anyway, and the post-merge main push scans
+    # the merged result in full. A main push always scans; a pull request scans
+    # only when it touched scanned code (#2777).
+    if: github.event_name == 'push' || (github.actor != 'dependabot[bot]' && github.event.pull_request.head.repo.full_name == github.repository && needs.changes.outputs.code == 'true')
     runs-on: ubuntu-26.04
     timeout-minutes: 90
     permissions:
       contents: read
       pull-requests: read # PR decoration reads the PR metadata
+      security-events: write # the push-only SARIF mirror below (#3032)
     # Coverage rides this lane (owner directive 2026-08-24): the instrumented
     # nextest run below produces the lcov the scan imports
     # (sonar.rust.lcov.reportPaths — docs.sonarsource.com/sonarqube-cloud/
@@ -172,3 +177,24 @@ jobs:
       - uses: SonarSource/sonarqube-scan-action@22918119ff8e1ca75a623e15c8296b6ea4fbe28f # v8.2.1
         env:
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+
+      # The findings mirror into GitHub code scanning (#3032). Sonar's own
+      # GitHub App uploads SECURITY-only analyses that arrive empty here, so
+      # the tools page listed SonarCloud with 0 results while the dashboard
+      # carried the real set. Push-only: a pull request keeps Sonar's own
+      # decoration, and the alert set is main's. The script waits on this
+      # run's compute task and excludes ACCEPTED/FALSE_POSITIVE, so a
+      # disposition recorded in the dashboard closes its GitHub alert on the
+      # next push — the two surfaces cannot disagree for longer than one
+      # analysis. The mirror gates nothing (ai-code-review.md).
+      - name: Export the analysis' open findings as SARIF
+        if: github.event_name == 'push'
+        env:
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+        run: bash scripts/sonar/issues-to-sarif.sh rubentalstra_FerroEHR sonar-findings.sarif
+      - name: Upload the findings to code scanning
+        if: github.event_name == 'push'
+        uses: github/codeql-action/upload-sarif@db488ddef3bf6cb639b32c2e9a7c0a7ea8271d28 # v4.37.8
+        with:
+          sarif_file: sonar-findings.sarif
+          category: sonarcloud
