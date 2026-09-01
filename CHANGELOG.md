@@ -15,6 +15,16 @@ workflow refuses a tag that has no matching section here.
 
 ## [Unreleased]
 
+### Security
+
+- The `ferroehr` and `ferroehr-admin-ui` images build from the rebuilt
+  `gcr.io/distroless/cc-debian13:nonroot` base carrying openssl
+  `3.5.7-1~deb13u2`, which fixes CVE-2026-14456 (QUIC denial of service) and
+  nine sibling advisories in `libssl3t64`. The library was never linked by the
+  shipped binaries (the TLS stack is rustls/aws-lc throughout); the bounded
+  scanner exception and its VEX statement are removed now that the fixed base
+  exists.
+  
 ### Fixed
 
 - The `ETag` served with a query `RESULT_SET` now derives from SHA-256, a

@@ -338,7 +338,6 @@ tooling at them (`trivy --vex`, and most SCA platforms take an OpenVEX feed).
 |---|---|
 | `rust-advisories.openvex.json` | the Rust dependency advisories: the ones the advisory gate accepts, plus one that only a `Cargo.lock`-reading scanner reports |
 | `postgres-gosu.openvex.json` | Go standard-library findings in the `gosu` helper the upstream `postgres` image ships |
-| `distroless-libssl.openvex.json` | an openssl finding in the `libssl3t64` library the distroless base ships but nothing in the binaries links |
 
 The Rust document is **generated** from `deny.toml` (the gate that actually
 decides whether a build passes) joined with the published reasoning, and a CI
