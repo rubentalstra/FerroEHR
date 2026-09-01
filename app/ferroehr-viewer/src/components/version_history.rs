@@ -202,7 +202,7 @@ fn history_row(entry: &VersionEntry, pinned: RwSignal<String>, row_hook: &'stati
 /// The `404` answer ("no version at that time") is a neutral note beside the
 /// control, not an error bar — it is the answer to the question asked. Any other
 /// failure renders through the normal inline-error path (a pure read, so no
-/// toast — the console's feedback rule). `subject` is the id the lookup is
+/// toast — the viewer's feedback rule). `subject` is the id the lookup is
 /// dispatched for (the EHR, or the demographic object).
 #[must_use]
 pub fn at_time_lookup_section(

@@ -30,7 +30,7 @@ pub const CELL: &str = "px-3 py-2 align-top";
 /// Class set for a monospace body cell (ids, paths, AQL).
 pub const CELL_MONO: &str = "px-3 py-2 align-top font-mono text-xs";
 
-/// Rows per page across the console's tables.
+/// Rows per page across the viewer's tables.
 ///
 /// The AQL fetch window (`fetch`/`_count` on the wire) and the default window
 /// of the tables that page rows already in hand, so every listing pages in the
@@ -58,7 +58,7 @@ const PAGE_SIZE_CHOICES: [u32; 3] = [PAGE_SIZE, 50, 100];
 ///
 /// Every header cell carries `scope="col"`, so a screen reader announces the
 /// column name with each body cell it reads (WAI-ARIA Authoring Practices,
-/// "Table" pattern; the HTML `th` `scope` attribute) — the console's tables
+/// "Table" pattern; the HTML `th` `scope` attribute) — the viewer's tables
 /// are all simple column-headed grids, which is exactly the case `scope`
 /// covers.
 #[must_use]
@@ -92,7 +92,7 @@ pub fn table_shell(headers: &[&str], body: AnyView) -> AnyView {
 /// The `<Transition>`/`<Suspense>` fallback every listing shares: three
 /// skeleton bars standing in for the rows while the data loads.
 ///
-/// ONE definition for the whole console — passed as the fallback itself
+/// ONE definition for the whole viewer — passed as the fallback itself
 /// (`fallback=table_skeleton`).
 #[must_use]
 pub fn table_skeleton() -> impl IntoView {

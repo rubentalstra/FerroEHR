@@ -122,13 +122,13 @@ else
 fi
 
 # ── The honest half ───────────────────────────────────────────────────────────
-uncovered "NetworkPolicy enforcement, for the server policy and for the console policy this run installs narrowed" \
-  "whether a policy is enforced is a property of the CNI, so this run proves the narrowed console recipe installs and still serves the peer it names, never that a peer outside ingressFrom is refused"
+uncovered "NetworkPolicy enforcement, for the server policy and for the viewer policy this run installs narrowed" \
+  "whether a policy is enforced is a property of the CNI, so this run proves the narrowed viewer recipe installs and still serves the peer it names, never that a peer outside ingressFrom is refused"
 uncovered "load balancing across replicas" \
   "kube-proxy distributes connections, which needs conntrack on the node — readable only on a local-container node"
 uncovered "horizontal autoscaling" \
   "the HPA needs a metrics API that a stock local cluster does not ship"
-uncovered "Ingress and TLS termination, for the API and for the console" \
+uncovered "Ingress and TLS termination, for the API and for the viewer" \
   "no controller is installed by this harness; both Ingress objects the chart renders are never reached"
 
 probe_report "$PROBE_OUT" "kubernetes"

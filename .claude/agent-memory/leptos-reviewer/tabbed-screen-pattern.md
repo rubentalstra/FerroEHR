@@ -1,11 +1,11 @@
 ---
 name: tabbed-screen-pattern
-description: The established correct pattern for thaw::TabList screens in this console (always-mounted bodies + class:hidden + tab-gated resource sources)
+description: The established correct pattern for thaw::TabList screens in this viewer (always-mounted bodies + class:hidden + tab-gated resource sources)
 metadata:
   type: project
 ---
 
-The correct multi-tab screen shape in this console (exemplar: `pages/ehr_detail.rs`):
+The correct multi-tab screen shape in this viewer (exemplar: `pages/ehr_detail.rs`):
 
 - All tab bodies are **always mounted**, toggled with `class:hidden=move || selected.get() != "x"`
   — identical server/client view structure (leptos-ui.md §8, no cfg!-branched structure).

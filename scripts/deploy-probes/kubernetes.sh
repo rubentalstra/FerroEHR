@@ -44,20 +44,20 @@ K8S_BASIC="clinician:ferroehr"
 K8S_AUTH_VALUES="deploy/helm/ci/basic-auth-values.yaml"
 K8S_PF_PID=""
 
-# The console workload the chart renders behind `viewer.enabled` — a second
+# The viewer workload the chart renders behind `viewer.enabled` — a second
 # Deployment, Service, ServiceAccount and NetworkPolicy from a second image.
 # The name is what the chart's viewerFullname helper produces for this release,
-# and the label is the console's OWN app.kubernetes.io/name: the two workloads
+# and the label is the viewer's OWN app.kubernetes.io/name: the two workloads
 # deliberately do not share a selector, so a probe that reused the server's
 # label would silently measure the server.
 K8S_UI="ferroehr-viewer"
 K8S_UI_LABEL="app.kubernetes.io/name=$K8S_UI"
 # The label the narrowed-ingress probe puts on its client pod, and which the
-# console NetworkPolicy's `from` selector then names.
+# viewer NetworkPolicy's `from` selector then names.
 K8S_UI_CLIENT_LABEL="ferroehr.probe/client=viewer"
-# The console image under probe. Empty means the chart's own default, which is
+# The viewer image under probe. Empty means the chart's own default, which is
 # what an operator installing this chart gets; set PROBE_K8S_VIEWER_IMAGE to
-# probe a locally built console instead.
+# probe a locally built viewer instead.
 K8S_UI_IMAGE="${PROBE_K8S_VIEWER_IMAGE:-}"
 
 # The compose database this cluster is pointed at. It binds 0.0.0.0 because a
@@ -173,9 +173,9 @@ k8s_install() {
 
 k8s_rollout() { kc rollout status "deploy/$K8S_RELEASE" --timeout="${1:-180s}" >/dev/null 2>&1; }
 
-# The same install with the console switched on. Everything else stays at the
-# chart's defaults, including the console's image: an overlay that pins a
-# hand-built console would stop measuring what `viewer.enabled=true` gives an
+# The same install with the viewer switched on. Everything else stays at the
+# chart's defaults, including the viewer's image: an overlay that pins a
+# hand-built viewer would stop measuring what `viewer.enabled=true` gives an
 # operator.
 k8s_ui_install() {
   local args=(--set viewer.enabled=true)
@@ -186,11 +186,11 @@ k8s_ui_install() {
   k8s_install "${args[@]}" "$@"
 }
 
-# 300s by default: the console's own startup probe allows two minutes before it
+# 300s by default: the viewer's own startup probe allows two minutes before it
 # gives up, and a first run also pulls the image.
 k8s_ui_rollout() { kc rollout status "deploy/$K8S_UI" --timeout="${1:-300s}" >/dev/null 2>&1; }
 
-# An HTTP GET issued from INSIDE the cluster, through the console's Service.
+# An HTTP GET issued from INSIDE the cluster, through the viewer's Service.
 #
 # Deliberately not a port-forward: a forward is the kubelet reaching a pod
 # directly, which skips Service resolution, cluster DNS and every ingress rule
@@ -202,7 +202,7 @@ k8s_ui_rollout() { kc rollout status "deploy/$K8S_UI" --timeout="${1:-300s}" >/d
 # a short-lived container regularly completes before the attach is established
 # ("couldn't attach … falling back to streaming logs: unable to upgrade
 # connection"), and the body then arrives EMPTY, which reads exactly like a
-# console that did not answer. That cost a red row here before it was understood.
+# viewer that did not answer. That cost a red row here before it was understood.
 k8s_ui_get() {
   local name="probe-ui-$$-$RANDOM" out phase _i
   kubectl -n "$K8S_NS" run "$name" --image=busybox:1.37 --restart=Never \
@@ -342,7 +342,7 @@ probes_k8s_boot() {
 }
 
 # The hardened posture, asserted against a container runtime spec — shared by
-# the server and the console because a second workload is exactly where such a
+# the server and the viewer because a second workload is exactly where such a
 # posture is quietly lost, and a weaker check for the second one would hide it.
 k8s_assert_hardened() {
   local spec="$1"
@@ -588,9 +588,9 @@ probes_k8s_viewer() {
   bold "the viewer workload (viewer.enabled)"
 
   # The OFF state, on the release the probes above have been measuring: the gate
-  # must render nothing at all, not merely a scaled-down console.
+  # must render nothing at all, not merely a scaled-down viewer.
   probe "P-K8S-UI-OFF" "off" "chart" "-" \
-    "the shipped default renders no console object at all"
+    "the shipped default renders no viewer object at all"
   local off
   off="$(kc get deploy,svc,serviceaccount,networkpolicy -l "$K8S_UI_LABEL" \
          -o name 2>/dev/null | tr '\n' ' ')"
@@ -598,12 +598,12 @@ probes_k8s_viewer() {
     "viewer.enabled defaults to false, so anything found here means the gate leaks"
   probe_done
 
-  # The BROKEN state of the console's ingress posture: asking for a narrowed
+  # The BROKEN state of the viewer's ingress posture: asking for a narrowed
   # ingress while naming no peer must be REFUSED at render, because the
   # alternative is a NetworkPolicy that reads as default-deny and admits every
   # source to a login page.
   probe "P-K8S-UI-NETPOL-GUARD" "broken" "chart" "-" \
-    "a console with ingressAllowAll=false and no ingressFrom is refused at render"
+    "a viewer with ingressAllowAll=false and no ingressFrom is refused at render"
   local guard
   guard="$(helm template "$K8S_RELEASE" deploy/helm/ferroehr -n "$K8S_NS" \
              -f "$K8S_AUTH_VALUES" --set database.existingSecret=ferroehr-db \
@@ -614,24 +614,24 @@ probes_k8s_viewer() {
   probe_done
 
   probe "P-K8S-UI-BOOT" "working" "chart" "-" \
-    "viewer.enabled installs the console workload and it rolls out"
+    "viewer.enabled installs the viewer workload and it rolls out"
   if ! k8s_ui_install; then
-    probe_fail "a successful helm upgrade --install with the console on" \
+    probe_fail "a successful helm upgrade --install with the viewer on" \
       "helm refused the release" \
       "re-run k8s_ui_install without the output redirect to see the render error"
     probe_done
-    uncovered "every console probe after P-K8S-UI-BOOT" \
-      "the console workload never installed, so nothing about it could be observed"
+    uncovered "every viewer probe after P-K8S-UI-BOOT" \
+      "the viewer workload never installed, so nothing about it could be observed"
     return 0
   fi
   if ! k8s_ui_rollout; then
-    probe_fail "a rolled-out console Deployment" \
+    probe_fail "a rolled-out viewer Deployment" \
       "$(kc logs -l "$K8S_UI_LABEL" --tail=6 --all-containers 2>&1 | tail -6
          kc get pod -l "$K8S_UI_LABEL" -o jsonpath='{.items[0].status.containerStatuses[0].state.waiting.reason} {.items[0].status.containerStatuses[0].state.waiting.message}' 2>/dev/null)" \
-      "an unpullable console image and a console that cannot start under the hardened context both land here"
+      "an unpullable viewer image and a viewer that cannot start under the hardened context both land here"
     probe_done
-    uncovered "every console probe after P-K8S-UI-BOOT" \
-      "the console workload never became ready, so nothing about it could be observed"
+    uncovered "every viewer probe after P-K8S-UI-BOOT" \
+      "the viewer workload never became ready, so nothing about it could be observed"
     return 0
   fi
   probe_done
@@ -642,19 +642,19 @@ probes_k8s_viewer() {
   probes_k8s_ui_netpol
 }
 
-# The console's applied posture, read from the container runtime for the same
-# reason the server's is: `securityContext` is a request, and the console's copy
+# The viewer's applied posture, read from the container runtime for the same
+# reason the server's is: `securityContext` is a request, and the viewer's copy
 # of it is a second place for that request to go unhonoured.
 probes_k8s_ui_runtime() {
   local node cid spec
   node="$(k8s_node_container)"
   if [[ -z "$node" ]]; then
-    uncovered "the console's applied runtime posture (uid, capabilities, seccomp, read-only root)" \
+    uncovered "the viewer's applied runtime posture (uid, capabilities, seccomp, read-only root)" \
       "this cluster node is not a local container, so its runtime spec is not readable from here"
     return 0
   fi
   probe "P-K8S-UI-RUNTIME" "working" "chart" "-" \
-    "the console container runs under the same hardened posture as the server"
+    "the viewer container runs under the same hardened posture as the server"
   cid="$(docker exec "$node" crictl ps --name viewer -q 2>/dev/null | head -1)"
   if [[ -z "$cid" ]]; then
     probe_fail "a running viewer container on the node" "crictl listed none"
@@ -666,16 +666,16 @@ probes_k8s_ui_runtime() {
 }
 
 # Admission, for the second workload. The server passing under enforce=restricted
-# says nothing about the console: the profile is judged per pod, and the console
+# says nothing about the viewer: the profile is judged per pod, and the viewer
 # carries its own security context rather than inheriting the server's.
 probes_k8s_ui_psa() {
   probe "P-K8S-UI-PSA" "working" "chart" "-" \
-    "the console pod is admitted under the Restricted profile"
+    "the viewer pod is admitted under the Restricted profile"
   kubectl label namespace "$K8S_NS" \
     pod-security.kubernetes.io/enforce=restricted --overwrite >/dev/null 2>&1
   kc rollout restart "deploy/$K8S_UI" >/dev/null 2>&1
   if ! k8s_ui_rollout 240s; then
-    probe_fail "an admitted console rollout under enforce=restricted" \
+    probe_fail "an admitted viewer rollout under enforce=restricted" \
       "$(kc get events --sort-by=.lastTimestamp 2>/dev/null | grep -i 'violate\|forbidden' | tail -3)" \
       "the chart holds both workloads to Restricted; admission is what settles it for the second one"
   fi
@@ -687,26 +687,26 @@ probes_k8s_ui_psa() {
 
 probes_k8s_ui_serve() {
   probe "P-K8S-UI-SERVE" "working" "server" "-" \
-    "the console serves its login page through its Service, to a client inside the cluster"
+    "the viewer serves its login page through its Service, to a client inside the cluster"
   local page
   page="$(k8s_ui_get /login)"
   assert_contains "$page" 'name="username"' \
     "the sign-in form must be in the first response: /login renders SsrMode::Async so it works without JavaScript"
   assert_contains "$page" "FerroEHR Viewer" \
-    "the page served must be the console's own, not an error page from something else on that port"
+    "the page served must be the viewer's own, not an error page from something else on that port"
   probe_done
 
   # What a served login page does NOT prove, said here rather than left to the
-  # reader: login_modes falls back to the console's own configuration when the
+  # reader: login_modes falls back to the viewer's own configuration when the
   # CDR is unreachable, so the form renders either way.
-  uncovered "the console reaching the CDR over the in-cluster Service" \
-    "the login page renders from the console configuration alone when the CDR is unreachable, so serving it is not evidence of the REST hop"
-  uncovered "the console screens behind a session, and its OIDC sign-in path" \
+  uncovered "the viewer reaching the CDR over the in-cluster Service" \
+    "the login page renders from the viewer configuration alone when the CDR is unreachable, so serving it is not evidence of the REST hop"
+  uncovered "the viewer screens behind a session, and its OIDC sign-in path" \
     "scripts/ui-e2e.sh drives the browser journeys against compose, and OIDC needs an identity provider plus a client secret this harness does not run"
 }
 
 # The narrowed ingress posture, which no run had ever installed: the chart's
-# console policy admits every source unless `ingressFrom` names peers, and the
+# viewer policy admits every source unless `ingressFrom` names peers, and the
 # narrowing path had only ever been rendered.
 probes_k8s_ui_netpol() {
   cat > "$PROBE_TMP/viewer-narrow.yaml" <<YAML
@@ -720,7 +720,7 @@ viewer:
 YAML
 
   probe "P-K8S-UI-NETPOL-NARROW" "working" "chart" "-" \
-    "the narrowed console ingress installs, is stored as written, and still admits the peer it names"
+    "the narrowed viewer ingress installs, is stored as written, and still admits the peer it names"
   if ! k8s_ui_install -f "$PROBE_TMP/viewer-narrow.yaml"; then
     probe_fail "an install with ingressAllowAll=false and a non-empty ingressFrom" \
       "helm refused the release" \

@@ -22,7 +22,7 @@
 #         ├─ postgres-image ────────────────┘                    └─ sandbox
 #         ├─ docs-freeze
 #         └─ (smoke hangs off app-image; viewer-smoke off both images —
-#             it drives the console against this run's own CDR)
+#             it drives the viewer against this run's own CDR)
 #   announce ── needs everything, if: always()
 #
 # `crates` is the one leg that PAUSES: it runs in the `crates-io` environment,
@@ -802,15 +802,15 @@ jobs:
       postgres-digest: ${{ needs.postgres-image.outputs.digest }}
       postgres-tags: ${{ needs.postgres-image.outputs.tags }}
 
-  # The pushed CONSOLE artifact is assembled from two jobs (the per-arch ssr
+  # The pushed VIEWER artifact is assembled from two jobs (the per-arch ssr
   # binary + the once-built site bundle), so its one novel failure class is
   # ASSEMBLY: a binary and a site tree that disagree. The from-source e2e
   # battery (ci.yml) never sees the assembled artifact — which is exactly how
-  # a console whose pages 404 their own wasm published green (issue #2550,
+  # a viewer whose pages 404 their own wasm published green (issue #2550,
   # found live on the 3.20.0 image during #2164). This smoke drives the very
   # image this run pushed: every asset the served page references must exist
   # in the artifact that serves it, AND a real browser must log in through
-  # them — the second half exists because 4.0.8 shipped a console nobody had
+  # them — the second half exists because 4.0.8 shipped a viewer nobody had
   # ever driven in a browser (#2871).
   viewer-smoke:
     name: viewer smoke (amd64)
@@ -835,7 +835,7 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Pull pushed console image (by digest)
+      - name: Pull pushed viewer image (by digest)
         env:
           DIGEST: ${{ needs.viewer-image.outputs.digest }}
         run: |
@@ -853,7 +853,7 @@ jobs:
           for i in $(seq 1 30); do
             curl -sf -o /dev/null http://127.0.0.1:3000/login && break
             sleep 1
-            [ "$i" = 30 ] && { echo "console never served /login"; docker logs viewer-smoke; exit 1; }
+            [ "$i" = 30 ] && { echo "viewer never served /login"; docker logs viewer-smoke; exit 1; }
           done
           html=$(curl -sf http://127.0.0.1:3000/login)
           # Every /pkg/ asset the page references (script srcs, stylesheet and
@@ -869,7 +869,7 @@ jobs:
             [ "$code" = "200" ] || fail=1
           done <<< "$assets"
           docker stop viewer-smoke >/dev/null
-          [ "$fail" = 0 ] || { echo "the pushed console image references assets it does not ship (#2550)"; exit 1; }
+          [ "$fail" = 0 ] || { echo "the pushed viewer image references assets it does not ship (#2550)"; exit 1; }
 
       - name: Pull pushed app image (by digest)
         env:
@@ -884,8 +884,8 @@ jobs:
       # The asset-chain step proves the image SERVES its assets; nothing proved
       # a browser can log in THROUGH them, and 4.0.8 shipped with this lane
       # green (#2871). Both CDR images are this run's own, so the release that
-      # ships the console proves the console it ships.
-      - name: Browser-driven login against the pushed console image
+      # ships the viewer proves the viewer it ships.
+      - name: Browser-driven login against the pushed viewer image
         shell: bash
         run: |
           FERROEHR_VIEWER_IMAGE=ferroehr-viewer:smoke \

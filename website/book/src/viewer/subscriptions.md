@@ -3,7 +3,7 @@
 The **Subscriptions** screen administers the CDR's event subscriptions: the
 server-side filters that decide which committed versions are published to your
 message broker, and to which queue. Everything on it comes from the CDR's own
-subscription API over HTTP; the console has no privileged channel and keeps no
+subscription API over HTTP; the viewer has no privileged channel and keeps no
 subscription state of its own.
 
 ![Subscriptions](img/subscriptions/subscriptions.png)
@@ -18,7 +18,7 @@ payloads, its status codes) is this CDR's own design, and it is off unless a
 deployment turns it on. See [Change events (AMQP)](../beyond-core/amqp.md) for
 what the stream carries and how a queue is bound.
 
-The screen is **probe-and-hide**: on every page load the console asks the CDR
+The screen is **probe-and-hide**: on every page load the viewer asks the CDR
 for `GET /admin/event_subscription`, and the sidebar entry appears only if that
 route exists. A `404` (the CDR's answer while the subscription API is off,
 which is the default) hides the entry entirely; any other answer counts as
@@ -61,7 +61,7 @@ facet of a committed version:
 | Change type | the audit change-type code | `249` (creation), `251` (modification), `523` (deletion) |
 | Template id | the template a composition was committed against | `vital_signs.v2` |
 
-**A field left empty matches anything.** The console says so in every cell (an
+**A field left empty matches anything.** The viewer says so in every cell (an
 unset predicate reads `any`, never a blank) and each row carries a
 plain-words line saying what it selects, so "matches every committed version"
 is visible rather than inferred from four empty boxes.

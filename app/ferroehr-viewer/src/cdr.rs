@@ -5,12 +5,12 @@
 //!
 //! One `reqwest` client, the ITS-REST base path, credential injection, strict
 //! `Accept`/`Content-Type` negotiation (`crate::format`), and error
-//! normalization into [`crate::error::ViewerError`]. The console reaches the
+//! normalization into [`crate::error::ViewerError`]. The viewer reaches the
 //! CDR ONLY here.
 
 #![expect(
     clippy::disallowed_types,
-    reason = "the console consumes the CDR JSON wire over ITS-REST — not the CDR internal seams \
+    reason = "the viewer consumes the CDR JSON wire over ITS-REST — not the CDR internal seams \
               (#1694)"
 )]
 
@@ -31,7 +31,7 @@ pub const FANOUT_CONCURRENCY: usize = 8;
 /// A normalized CDR response: status, the named response headers the ITS-REST
 /// wire contract defines, and the raw body.
 ///
-/// The header subset is named rather than a whole map because the console is a
+/// The header subset is named rather than a whole map because the viewer is a
 /// typed client: `ETag` and `Last-Modified` are the state identifiers a
 /// versioned resource carries, `Location` is the created resource's URL, and
 /// `Preference-Applied` reports which `Prefer` the CDR honoured
@@ -115,7 +115,7 @@ fn header_text(headers: &http::HeaderMap, name: &str) -> Option<String> {
 /// The weak form is what the release mandates and the bare form is the
 /// deprecated one it still permits
 /// (`docs/specs/openehr/ITS-REST/specifications/docs/overview/Requests_and_responses.md`
-/// §`ETag` and `Last-Modified`), so a console that reads either can talk to both.
+/// §`ETag` and `Last-Modified`), so a viewer that reads either can talk to both.
 fn strip_etag(raw: &str) -> &str {
     let trimmed = raw.trim();
     let unweak = trimmed
@@ -249,7 +249,7 @@ impl CdrClient {
     /// with a `WWW-Authenticate` challenge listing exactly the enabled
     /// mechanisms (RFC 9110 §11.6.1; the ITS-REST overview requires the
     /// challenge). A non-401 answer means the CDR runs with auth disabled —
-    /// every mechanism the console offers can then "succeed", so both count
+    /// every mechanism the viewer offers can then "succeed", so both count
     /// as advertised.
     ///
     /// # Errors
@@ -628,7 +628,7 @@ mod tests {
             "http://localhost:8080/management/metrics/aql_queries_total"
         );
         // The surface may live on its own internal listener, unrelated to the
-        // API origin the rest of the console talks to.
+        // API origin the rest of the viewer talks to.
         let split = CdrClient::new(&crate::config::CdrConfig {
             base_url: "http://cdr:8080".to_owned(),
             management_base_url: "http://cdr:9464/management".to_owned(),

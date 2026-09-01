@@ -2,7 +2,7 @@
 # SPDX-License-Identifier: MIT
 
 # Compose override for the image-mode E2E run (scripts/ui-e2e.sh with
-# UI_E2E_IMAGE=1): the composed console image receives the same OIDC test
+# UI_E2E_IMAGE=1): the composed viewer image receives the same OIDC test
 # wiring the host-mode harness passes as process env. The issuer uses the
 # in-network hostname at the aligned port (docker-compose.dev.yml keycloak
 # KC_HTTP_PORT) so the SAME URL resolves for the container (docker DNS)
@@ -11,7 +11,7 @@
 # (docker/keycloak/import) — test-only, never a production credential.
 #
 # The CDR block turns four opt-in extensions on for the run, all of which
-# answer `404` as if unmounted while they are off — so the console's journeys
+# answer `404` as if unmounted while they are off — so the viewer's journeys
 # over them would otherwise have nothing but a disabled empty state to drive:
 # the terminology surface (`[terminology] api_enabled`), the tenant registry
 # (`[tenancy] enabled`), the FHIR connector (`[fhir] api_enabled`, which

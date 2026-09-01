@@ -46,7 +46,7 @@ Confirmed-good (don't re-flag): all 9 `#[server]` fns call
 `crate::session::require_session().await?` before any CDR call; no usize/isize
 in server-fn args/returns or serialized types (DirectoryVersion uses i32); no
 authored JS / onxxx strings; icondata_lu icons only (the `·`/`…` in strings are
-established punctuation across the whole console — app.rs/shell.rs/dashboard.rs
+established punctuation across the whole viewer — app.rs/shell.rs/dashboard.rs
 etc. — NOT icon-substitute glyphs, do not flag); `<textarea>` has child text +
 prop:value; every section `.into_any()`-erased; no thaw::Field (plain `<label
 r#for>` + explicit id); ul/li trees (no invalid tables); error arms render

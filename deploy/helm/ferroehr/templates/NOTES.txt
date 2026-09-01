@@ -110,9 +110,9 @@ SECURITY POSTURE
      set networkPolicy.ingressAllowAll=false to have the render refuse this state.
 {{- end }}
 {{- if .Values.viewer.enabled }}
-  console NetworkPolicy:   {{ if .Values.viewer.networkPolicy.enabled }}{{ if .Values.viewer.networkPolicy.ingressFrom }}ingress on the console port only, from the viewer.networkPolicy.ingressFrom peers{{ else }}ports narrowed to the console port, sources NOT narrowed{{ end }}; egress the CDR + DNS only{{ else }}DISABLED — enable viewer.networkPolicy{{ end }}
+  viewer NetworkPolicy:   {{ if .Values.viewer.networkPolicy.enabled }}{{ if .Values.viewer.networkPolicy.ingressFrom }}ingress on the viewer port only, from the viewer.networkPolicy.ingressFrom peers{{ else }}ports narrowed to the viewer port, sources NOT narrowed{{ end }}; egress the CDR + DNS only{{ else }}DISABLED — enable viewer.networkPolicy{{ end }}
 {{- if and .Values.viewer.networkPolicy.enabled (not .Values.viewer.networkPolicy.ingressFrom) }}
-  ⚠  viewer.networkPolicy.ingressFrom is empty, so the console's login page is
+  ⚠  viewer.networkPolicy.ingressFrom is empty, so the viewer's login page is
      reachable from EVERY source the cluster network reaches. Set it to your
      ingress controller's namespace/pods, or set
      viewer.networkPolicy.ingressAllowAll=false to have the render refuse this.

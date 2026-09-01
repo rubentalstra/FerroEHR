@@ -73,7 +73,7 @@ on:
         type: string
         default: ""
       site-artifact:
-        description: If set, download this run artifact into site/ (the console's site bundle).
+        description: If set, download this run artifact into site/ (the viewer's site bundle).
         required: false
         type: string
         default: ""

@@ -5,7 +5,7 @@ metadata:
   type: project
 ---
 
-The console navigates internal routes with plain `<a href>` and thaw `NavItem
+The viewer navigates internal routes with plain `<a href>` and thaw `NavItem
 href=…` rather than `leptos_router::components::A`.
 
 **The earlier claim in this memory — that those do FULL-PAGE reloads — was

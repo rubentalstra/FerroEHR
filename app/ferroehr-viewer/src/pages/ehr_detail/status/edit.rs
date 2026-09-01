@@ -9,7 +9,7 @@
 //! (`is_queryable`, `is_modifiable`, `other_details`) and re-sends everything
 //! else — the `subject`, the `name`, the `archetype_node_id`, the `uid`, any
 //! attribute a future spec release adds — byte-for-byte as the CDR served it.
-//! The console never rebuilds an `EHR_STATUS` from its own model, so an edit
+//! The viewer never rebuilds an `EHR_STATUS` from its own model, so an edit
 //! cannot drop what the screen does not render (`EHR_STATUS` requires
 //! `subject`, `is_queryable` and `is_modifiable` — RM
 //! `docs/specs/openehr/RM/docs/ehr/master04-ehr_package.adoc` §`EHR_STATUS`).
@@ -22,7 +22,7 @@
 
 #![expect(
     clippy::disallowed_types,
-    reason = "the console consumes the CDR JSON wire over ITS-REST — not the CDR internal seams \
+    reason = "the viewer consumes the CDR JSON wire over ITS-REST — not the CDR internal seams \
               (#1694)"
 )]
 

@@ -20,7 +20,7 @@
     reason = "test fixtures and wire assertions are raw JSON by the testing rule \
               (.claude/rules/testing.md §Test-fixture construction)"
 )]
-//! End-to-end journeys over the console's **CONTRIBUTION authoring** path —
+//! End-to-end journeys over the viewer's **CONTRIBUTION authoring** path —
 //! `POST /ehr/{ehr_id}/contribution`, the openEHR-native atomic change set:
 //!
 //! - **the atomic commit**: stage a COMPOSITION creation AND an `EHR_STATUS`
@@ -282,7 +282,7 @@ async fn two_staged_changes_commit_as_one_contribution_with_two_versions() {
     );
 
     // The staging list is empty again, and the committed contribution opens in
-    // the EXISTING contributions tab — the console has one contribution viewer.
+    // the EXISTING contributions tab — the viewer has one contribution viewer.
     wait_staged_rows(&h, 0, "a successful commit").await;
     let contribution_uid = reported
         .split_whitespace()
@@ -340,7 +340,7 @@ async fn a_refused_member_commits_nothing_and_keeps_the_staging() {
     // the all-or-nothing property is what is being measured.
     stage_composition_create(&h, &document).await;
     // The SAME document naming a template the CDR does not hold: well-formed
-    // (so the console stages it and the envelope parses) but unvalidatable, so
+    // (so the viewer stages it and the envelope parses) but unvalidatable, so
     // the refusal is the per-version validation branch rather than a parse
     // failure — and its diagnostic names the template verbatim.
     let unvalidatable = document.replace(SEED_TEMPLATE, MISSING_TEMPLATE);

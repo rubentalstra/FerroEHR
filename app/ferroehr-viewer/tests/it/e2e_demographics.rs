@@ -20,10 +20,10 @@
     reason = "test fixtures and wire assertions are raw JSON by the testing rule \
               (.claude/rules/testing.md §Test-fixture construction)"
 )]
-//! End-to-end journeys over the console's **demographics** section — the
+//! End-to-end journeys over the viewer's **demographics** section — the
 //! openEHR Demographic API plus this CDR's `PARTY_RELATIONSHIP` extension:
 //!
-//! - **the party lifecycle**: creating a PERSON from the console's minimal
+//! - **the party lifecycle**: creating a PERSON from the viewer's minimal
 //!   skeleton, reading it, committing a second version through the edit form,
 //!   and finding both versions in the History tab, each opening its own
 //!   document;
@@ -37,7 +37,7 @@
 //! - **the no-JavaScript contract**: the by-id lookup as a plain HTML round
 //!   trip, and an unknown `:kind` answered as a not-found screen.
 //!
-//! Isolation: every journey creates its OWN parties (over the console for the
+//! Isolation: every journey creates its OWN parties (over the viewer for the
 //! lifecycle one, over ITS-REST for the others), so none touches the fixtures
 //! the other journeys or the documentation-screenshot pass depend on.
 
@@ -109,7 +109,7 @@ fn party_body(rm_type: &str, segment: &str, label: &str) -> serde_json::Value {
 }
 
 /// Create a party of `segment`/`rm_type` over ITS-REST and return its
-/// versioned-object uid (the id every console route addresses).
+/// versioned-object uid (the id every viewer route addresses).
 ///
 /// # Panics
 /// When the CDR refuses the create (a broken stack, not a skip).
@@ -149,7 +149,7 @@ async fn create_party_over_rest(
 }
 
 /// The version container inside an `OBJECT_VERSION_ID` (`{uuid}::{system}::{n}`)
-/// — the id the console's routes use.
+/// — the id the viewer's routes use.
 fn container_of(version_uid: &str) -> String {
     version_uid
         .split("::")
@@ -163,9 +163,9 @@ fn container_of(version_uid: &str) -> String {
 ///
 /// The party's own `relationships` list and a standalone `PARTY_RELATIONSHIP`
 /// resource are DISJOINT records in openEHR — neither is a view of the other —
-/// so the console's Relationships tab, which reads the inline list, needs the
+/// so the viewer's Relationships tab, which reads the inline list, needs the
 /// inline form put there explicitly. The update re-sends the served document
-/// with one attribute added, exactly as the console's own edit does.
+/// with one attribute added, exactly as the viewer's own edit does.
 ///
 /// # Panics
 /// When the read or the conditional update is refused (a broken stack).
@@ -261,7 +261,7 @@ async fn wait_kind_screen(h: &Harness, plural: &str, rm_type: &str) -> bool {
     false
 }
 
-/// The party lifecycle through the console alone: create a PERSON from the
+/// The party lifecycle through the viewer alone: create a PERSON from the
 /// seeded skeleton, read it, commit a second version, and walk both versions in
 /// the History tab.
 #[tokio::test]
@@ -305,9 +305,9 @@ async fn party_create_read_update_and_history() {
         "switching back must re-render the PERSON screen"
     );
 
-    // Create from the console's own minimal skeleton, with a unique identity so
+    // Create from the viewer's own minimal skeleton, with a unique identity so
     // the created party is recognizable in its own document.
-    let label = format!("console-person-{}", jitter());
+    let label = format!("viewer-person-{}", jitter());
     let body = serde_json::to_string(&party_body("PERSON", "person", &label))
         .expect("serialize the party");
     retype(&h, "#party-create-body", &body).await;
@@ -545,7 +545,7 @@ async fn party_tags_are_set_indexed_and_deleted() {
     let v1 = format!("{cdr}/ferroehr/rest/openehr/v1");
     let person = create_party_over_rest(&http, &v1, "person", "PERSON", "tagged-person").await;
     // A unique key, so the index filter finds exactly this journey's tag.
-    let key = format!("console-tag-{}", jitter());
+    let key = format!("viewer-tag-{}", jitter());
 
     login_basic(&h).await;
     h.goto(&format!("/demographics/person/{person}?tab=tags"))

@@ -29,7 +29,7 @@ Two paths matching the same `<Route>` (`/x/person` vs `/x/organisation` under
 `with_untracked`/`get_untracked` at setup ONLY if no reachable in-app anchor
 or `navigate()` reaches another value of it under the same `<Route>`. Because
 plain `<a>` is intercepted too ([[internal-nav-uses-plain-anchor]]), a
-"kind switcher" of anchors is exactly such a navigation. The console's own
+"kind switcher" of anchors is exactly such a navigation. The viewer's own
 exemplars (`pages/ehr_detail/mod.rs:263`, `pages/composition.rs:568`) make
 EVERY path param a `Signal::derive`; the only sanctioned untracked reads are
 of QUERY params that arrive solely by full document load (`ehrs.rs:378`

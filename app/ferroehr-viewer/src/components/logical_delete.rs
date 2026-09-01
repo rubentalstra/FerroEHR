@@ -40,7 +40,7 @@ pub struct LogicalDeleteCopy {
 ///
 /// `delete` is dispatched with `version_uid` — the version to SUPERSEDE, which
 /// the screen's one read of the object publishes — and `message` is the
-/// consequence copy the modal states. On success the console toasts and
+/// consequence copy the modal states. On success the viewer toasts and
 /// navigates to `return_href`; on failure it toasts the CDR's own reason
 /// ([`crate::feedback::logical_delete_failure_copy`]).
 #[must_use]

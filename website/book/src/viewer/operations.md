@@ -1,9 +1,9 @@
 # Operations panel
 
-The **Operations** screen is the console's operator view of a running CDR:
+The **Operations** screen is the viewer's operator view of a running CDR:
 dependency health, what exactly is deployed, the live metric registry, and
 runtime log control. Everything on it comes from the CDR's own operational
-endpoints over HTTP; the console has no privileged channel.
+endpoints over HTTP; the viewer has no privileged channel.
 
 ![Operations panel](img/operations/operations.png)
 
@@ -11,7 +11,7 @@ endpoints over HTTP; the console has no privileged channel.
 
 ## When it appears
 
-The panel is **probe-and-hide**: on every page load the console asks the CDR for
+The panel is **probe-and-hide**: on every page load the viewer asks the CDR for
 `GET /management/info`, and the sidebar entry appears only if that endpoint
 exists. A `404` (the CDR's answer when the management surface is off, which is
 the default) hides the entry entirely; any other answer counts as present, so a
@@ -41,17 +41,17 @@ probe, so leaving `info` at `off` hides the whole panel.
 
 If the CDR serves management on its own internal listener
 (`management.port`) or under a renamed base path (`management.base_path`), point
-the console at it with one setting, the full prefix, including the path:
+the viewer at it with one setting, the full prefix, including the path:
 
 ```bash
 FERROEHR_VIEWER__CDR__MANAGEMENT_BASE_URL=http://cdr.internal:9100/management
 ```
 
-Unset, the console derives `{cdr.base_url}/management`.
+Unset, the viewer derives `{cdr.base_url}/management`.
 
 > [!NOTE]
 > The management endpoints are gated server-side at the level you chose. The
-> console shows the panel whenever the surface exists; being allowed to read a
+> viewer shows the panel whenever the surface exists; being allowed to read a
 > particular endpoint is the CDR's per-request decision, and a refusal is
 > reported on the card that asked, naming what to do about it.
 
@@ -71,7 +71,7 @@ topbar, which polls the product status document (`GET /ferroehr/rest/status`):
 | topbar pill | is the API answering at all, and at which version? |
 | health card | are the CDR's dependencies healthy enough to serve? |
 
-The card states that split on screen, and nothing else in the console re-reads
+The card states that split on screen, and nothing else in the viewer re-reads
 either claim.
 
 ## Build & spec provenance
@@ -103,7 +103,7 @@ panel is for looking, not for collecting.
 ## Runtime configuration
 
 The CDR serves its redacted effective configuration on both its management
-surface and its admin API, and it is the same snapshot, so the console reads it
+surface and its admin API, and it is the same snapshot, so the viewer reads it
 in exactly **one** place: the [System screen](index.md#the-screens). This card
 links there rather than rendering a second copy.
 

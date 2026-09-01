@@ -115,7 +115,7 @@ pub fn template_detail_from_opt(source: String) -> Result<TemplateDetail, Viewer
 /// [`template_detail_from_opt`].
 ///
 /// # Errors
-/// [`ViewerError::Unauthenticated`] without a console session;
+/// [`ViewerError::Unauthenticated`] without a viewer session;
 /// [`ViewerError::Cdr`] (e.g. `404` for an unknown template) /
 /// [`ViewerError::CdrUnauthorized`] / [`ViewerError::Forbidden`] /
 /// [`ViewerError::CdrUnreachable`] from the CDR;
@@ -181,7 +181,7 @@ pub fn example_path(template_id: &str, detail: ExampleDetail, kind: ExampleType)
 /// (`docs/specs/openehr/ITS-REST/specifications/operations/definition_template_adl1.4_example_get.yaml`).
 ///
 /// # Errors
-/// [`ViewerError::Unauthenticated`] without a console session;
+/// [`ViewerError::Unauthenticated`] without a viewer session;
 /// [`ViewerError::Cdr`] / [`ViewerError::CdrUnauthorized`] / [`ViewerError::Forbidden`] /
 /// [`ViewerError::CdrUnreachable`] from the CDR.
 #[server]
@@ -858,7 +858,7 @@ mod tests {
     use crate::example_options::{ExampleDetail, ExampleType};
     use crate::pages::template_detail::{example_path, tab_href};
 
-    /// The operational template the console's own e2e stack is seeded with
+    /// The operational template the viewer's own e2e stack is seeded with
     /// (`scripts/ui-e2e.sh`), so the derivation is pinned against the same
     /// document the browser journeys inspect.
     #[cfg(feature = "ssr")]

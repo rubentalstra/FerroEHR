@@ -17,7 +17,7 @@
 )]
 // e2e journeys are assertive by design; skip-with-reason prints; the shared
 // harness module is per-test-binary (the corpus.rs test-file precedent)
-//! End-to-end journey over the console's ACCESS DRAWER ("View scopes"): the
+//! End-to-end journey over the viewer's ACCESS DRAWER ("View scopes"): the
 //! effective identity of the session and the SMART scope previewer.
 //!
 //! What it pins:

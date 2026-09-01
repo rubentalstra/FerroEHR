@@ -41,7 +41,7 @@ findings:
   Extracting or macro-izing it would hide the citation surface, not remove
   repetition the wire does not itself carry.
 - **`sonar.coverage.exclusions`** carries `app/ferroehr-viewer/**`: the
-  console's acceptance instrument is the browser journey battery
+  viewer's acceptance instrument is the browser journey battery
   (`scripts/ui-e2e.sh`) and the published-image login probe, which no lcov
   run can observe (browser/wasm execution) — the metric misstated verified
   code, and view-macro unit tests would be the line-execution-only class

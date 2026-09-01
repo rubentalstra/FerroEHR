@@ -410,7 +410,7 @@ switches the stack to the from-source developer posture:
 docker compose -f docker-compose.yml -f docker-compose.dev.yml up --build
 ```
 
-That builds the server, database and console images from the current sources
+That builds the server, database and viewer images from the current sources
 (the `:local` tags) instead of pulling published ones, and replaces the inline
 quickstart configuration with `docker/ferroehr.dev.toml`: three Basic users
 (`ferroehr`, `ferroehr-admin`, `ferroehr-readonly`, all with password
@@ -478,7 +478,7 @@ push carries every metric family the scrape endpoint would, and
 wants to compare the two.
 
 Grafana's port 3000 is the same one the viewer would use, but the two
-never collide by accident: the console only starts when you ask for the
+never collide by accident: the viewer only starts when you ask for the
 `viewer` profile. If you want both at once, move one of them
 (`FERROEHR_VIEWER_PORT=3001` or `GRAFANA_PORT=3001`).
 

@@ -10,8 +10,8 @@
 //! a two-step delete.
 //!
 //! **There is no tenant switcher, and adding one is not an oversight to fix.**
-//! Tenancy is credential-derived; the only ways a console could change the
-//! answer are console-local state (banned outright) or the CDR's dev-only
+//! Tenancy is credential-derived; the only ways a viewer could change the
+//! answer are viewer-local state (banned outright) or the CDR's dev-only
 //! override header, which in production is an authorization bypass. So the
 //! context card DISPLAYS and nothing here selects.
 
@@ -187,7 +187,7 @@ pub fn TenantsPage() -> impl IntoView {
         <div id="tenants-screen" class="p-6">
             <PageHeader
                 title="Tenants"
-                subtitle="The CDR's tenant registry, and the tenant this console session resolves to."
+                subtitle="The CDR's tenant registry, and the tenant this viewer session resolves to."
             />
             {context}
             {create_card}
@@ -201,7 +201,7 @@ pub fn TenantsPage() -> impl IntoView {
 
 /// Wire the screen's three mutations to their success/failure toasts.
 ///
-/// Every mutation toasts on BOTH outcomes (the console's mutation-feedback
+/// Every mutation toasts on BOTH outcomes (the viewer's mutation-feedback
 /// rule); the CDR's diagnostic ALSO stays inline beside each form, because
 /// a `400`/`409` on a registry write is worth reading in full.
 fn mutation_toasts(
@@ -241,7 +241,7 @@ fn write_failure(name: &str, error: &ViewerError) -> String {
 
 /// The context card: which tenant this session's credential resolves to.
 ///
-/// A pure READ, so a failure renders inline and never toasts (the console's one
+/// A pure READ, so a failure renders inline and never toasts (the viewer's one
 /// feedback rule). The sentence itself comes from the unit-tested
 /// [`context_line`], so the server pass and hydration render the same text.
 fn context_card(current: Resource<Result<Option<CurrentTenant>, ViewerError>>) -> AnyView {
@@ -274,7 +274,7 @@ fn context_card(current: Resource<Result<Option<CurrentTenant>, ViewerError>>) -
                 })}
             </Transition>
             <p class="mt-2 text-xs text-ink-muted">
-                "Tenancy is derived from the credential the request carries. The console displays \
+                "Tenancy is derived from the credential the request carries. The viewer displays \
                  the resolved tenant and never selects one: signing in with a different credential \
                  is the only way to work in another tenant."
             </p>
@@ -431,7 +431,7 @@ fn registry_table(
     .into_any()
 }
 
-/// A failed READ, rendered inline (never a toast — the console's one feedback
+/// A failed READ, rendered inline (never a toast — the viewer's one feedback
 /// rule) and, for a refusal, as ACTIONABLE copy rather than the bare wire
 /// error.
 ///

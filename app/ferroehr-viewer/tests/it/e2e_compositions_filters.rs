@@ -67,7 +67,7 @@ const COMPOSER_B: &str = "Bruno Bell";
 const START_A: &str = "2026-03-04T09:15:00Z";
 
 /// The later composition's `context.start_time` — mid-day, so a one-day upper
-/// bound only includes it if the console completes the bound to end-of-day.
+/// bound only includes it if the viewer completes the bound to end-of-day.
 const START_B: &str = "2026-06-11T14:45:00Z";
 
 /// The UTC day [`START_B`] falls on.

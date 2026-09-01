@@ -54,7 +54,7 @@ async fn admin_browses_audit_records_and_the_empty_state() {
     login_basic_as(&h, &user, &pass).await;
 
     // Generate at least one guaranteed audit record before browsing: the
-    // console's own CDR calls are audited, so touching the dashboard is
+    // viewer's own CDR calls are audited, so touching the dashboard is
     // enough — but be explicit and load the templates list too.
     h.goto("/templates").await;
     h.wait_css("footer").await;
@@ -95,7 +95,7 @@ async fn plain_user_is_refused_the_audit_surface() {
     login_basic(&h).await;
     h.goto("/audit").await;
     h.wait_css("footer").await;
-    // The CDR's 403 surfaces through the console's inline error rendering.
+    // The CDR's 403 surfaces through the viewer's inline error rendering.
     h.wait_xpath("//*[contains(translate(text(), 'FORBIDDEN', 'forbidden'), 'forbidden') or contains(text(), '403')]")
         .await;
     // The refusal is a deliberate negative step: the CDR's 403 lands in the

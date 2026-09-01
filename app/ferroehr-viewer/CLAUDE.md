@@ -13,7 +13,7 @@ extension); the wire it consumes IS spec-bound (`docs/specs/openehr/ITS-REST/`
 2. **The CDR is reached ONLY over ITS-REST.** Never depend on `app/ferroehr`
    or `app/ferroehr-rest`; allowed deps: `crates/openehr-*` + the network.
 3. **Every `#[server]` fn is a publicly reachable HTTP endpoint** — each one
-   enforces the console's own session auth itself; "only my UI calls this"
+   enforces the viewer's own session auth itself; "only my UI calls this"
    is never assumed.
 
 ## Discipline
@@ -35,7 +35,7 @@ extension); the wire it consumes IS spec-bound (`docs/specs/openehr/ITS-REST/`
   layout-recursion depth in `cargo test` codegen.
 - **Every listing table comes from ONE kit — `components::data_table`**: the
   table shell, the loading skeleton (`table_skeleton`; never re-declare a
-  per-screen copy), the console-wide `PAGE_SIZE`, and the pagination footer
+  per-screen copy), the viewer-wide `PAGE_SIZE`, and the pagination footer
   (`table_footer`) whose page + window size are URL state (`?page=`/`?size=`,
   read in SETUP via `paging_from_url` — never inside a `Suspend`, so paging
   re-renders the window without refetching). The footer's row math
@@ -51,10 +51,10 @@ extension); the wire it consumes IS spec-bound (`docs/specs/openehr/ITS-REST/`
   series is drawn as `f64::NAN` — chartistry's missing-data marker — rather than
   by rebuilding the chart, and each line pins its palette colour by index so
   hiding one never recolours the others.
-- **Every scope string the console EXPLAINS is read by ONE grammar and rendered
+- **Every scope string the viewer EXPLAINS is read by ONE grammar and rendered
   by ONE kit.**
   The parse is `openehr_its::rest::smart_scopes` — the same master08 module the
-  CDR's scope gate enforces with, so the console's explanation can never drift
+  CDR's scope gate enforces with, so the viewer's explanation can never drift
   from the server's behaviour; NEVER write a second scope parser here. It is
   reachable on BOTH targets because the crate is taken
   `default-features = false` (the grammar is a dependency-free island; the heavy
@@ -99,7 +99,7 @@ extension); the wire it consumes IS spec-bound (`docs/specs/openehr/ITS-REST/`
   format, `detail_level` and `type` are three segmented controls whose
   signals feed the pane's resource source, the query string is the pure
   unit-tested `example_query`, and every segmented control anywhere in the
-  console draws through `format_view::segment_button`. Never build a second
+  viewer draws through `format_view::segment_button`. Never build a second
   example-options control or query builder.
 
 ## Error feedback: toast vs inline (one rule, 2026-07-25)
@@ -124,9 +124,9 @@ extension); the wire it consumes IS spec-bound (`docs/specs/openehr/ITS-REST/`
   control, the deleted/unknown section notices, the CDR's verbatim diagnostic
   under a refused form, and the write-failure message bar.
 
-## No console-local domain state (owner ruling, 2026-07-25)
+## No viewer-local domain state (owner ruling, 2026-07-25)
 
-- **The console stores NOTHING of its own** — no database, no JSON store beside
+- **The viewer stores NOTHING of its own** — no database, no JSON store beside
   the binary, no state directory. Its only state is the sealed session cookie. Every fact a screen shows is read from the CDR over ITS-REST, so it is
   visible to other clients, survives a restart, is covered by the CDR's backups,
   and is identical across replicas. The two former stores (`groups.rs` →
@@ -144,8 +144,8 @@ extension); the wire it consumes IS spec-bound (`docs/specs/openehr/ITS-REST/`
 
 ## One reader per claim (owner adjudication, 2026-07-25)
 
-- **No two console surfaces may read the same claim from two endpoints.** Where
-  the CDR exposes one fact on more than one endpoint, the console picks ONE
+- **No two viewer surfaces may read the same claim from two endpoints.** Where
+  the CDR exposes one fact on more than one endpoint, the viewer picks ONE
   reader and every other screen cross-links to it. Live cases: the topbar pill
   reads the status document (`/ferroehr/rest/status` — API up + version) while
   the operations panel's health card reads `/health/readiness` (dependency
@@ -194,12 +194,12 @@ extension); the wire it consumes IS spec-bound (`docs/specs/openehr/ITS-REST/`
   the text and the bindings drift apart — the CDR answers `400 unbound query
   parameter` for a named parameter it was not given.
 - **CONTRIBUTION authoring has ONE writer and no readers of its own.** The EHR
-  detail's Commit tab (`pages::ehr_detail::commit`) is the console's only caller
+  detail's Commit tab (`pages::ehr_detail::commit`) is the viewer's only caller
   of `POST /ehr/{ehr_id}/contribution` — the openEHR-native atomic change set —
   and it re-uses the existing readers for everything it shows: the template list,
   the EHR's composition list, the composition body, and the current `EHR_STATUS`.
   It adds no viewer either: a committed contribution opens in the Contributions
-  tab. Its staging list is component state, never a store (§No console-local
+  tab. Its staging list is component state, never a store (§No viewer-local
   domain state), and the body it posts is built by the component-free,
   unit-tested `commit::staged` — never inline in a view.
 - **Two windows of ONE endpoint are not two readers.** The contributions tab
@@ -218,7 +218,7 @@ extension); the wire it consumes IS spec-bound (`docs/specs/openehr/ITS-REST/`
 macOS/aarch64 bin links print Apple ld's `__eh_frame section too large (max
 16MB) to encode dwarf unwind offsets in compact unwind table, performance of
 exception handling might be affected`. Accepted with record: the shipped
-console is a Linux ELF image (Apple's compact-unwind machinery never applies
+viewer is a Linux ELF image (Apple's compact-unwind machinery never applies
 to production), and on local macOS builds the cost is slower DWARF unwinding
 on the already-exceptional panic path — the `panic = "unwind"` contract needs
 unwinding to WORK, not to be fast. Do not re-file it, and do not silence

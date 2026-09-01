@@ -14,7 +14,7 @@ catch-panic 500, from a plain query string such as `?find=%0Aevil`.
 
 `urlencoding::encode` emits only `[0-9A-Za-z\-._~]` plus `%XX`
 (`urlencoding-2.1.3/src/enc.rs:98-103`), so encoding closes it and also keeps
-the value inside its intended path segment (`/`, `?`, `#`, `%`). The console's
+the value inside its intended path segment (`/`, `?`, `#`, `%`). The viewer's
 `ehrs::ehr_detail_href` is therefore load-bearing for server safety, not just
 link cosmetics — never "simplify" it away, and never `format!` a raw param into
 a `<Redirect path=…>`.

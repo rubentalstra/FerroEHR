@@ -21,19 +21,19 @@
 //! (`docs/specs/openehr/TERM/docs/SupportTerminology/master04-representation.adoc`
 //! §`terminology`): the `audit_change_type` group for a member's change type and
 //! `532|complete|` of the `version_lifecycle_state` group for every member the
-//! console authors — it commits whole documents, never an `incomplete` or
+//! viewer authors — it commits whole documents, never an `incomplete` or
 //! `deleted` member.
 
 #![expect(
     clippy::disallowed_types,
-    reason = "the console consumes the CDR JSON wire over ITS-REST — not the CDR internal seams \
+    reason = "the viewer consumes the CDR JSON wire over ITS-REST — not the CDR internal seams \
               (#1694)"
 )]
 
 use serde::{Deserialize, Serialize};
 use serde_json::{Value, json};
 
-/// The `version_lifecycle_state` code every console-authored member carries.
+/// The `version_lifecycle_state` code every viewer-authored member carries.
 const LIFECYCLE_COMPLETE: &str = "532";
 
 /// Which openEHR change one staged row commits.
@@ -160,8 +160,8 @@ impl ChangeType {
 
 /// One pending change in the staging area.
 ///
-/// Console-session state only: the list lives in the tab's component state, so
-/// navigating away discards it (the console stores nothing of its own). Every
+/// Viewer-session state only: the list lives in the tab's component state, so
+/// navigating away discards it (the viewer stores nothing of its own). Every
 /// field is fixed-size-safe so the row crosses the server-fn boundary on the
 /// 32-bit WASM target.
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
@@ -426,7 +426,7 @@ mod tests {
         // with two OBJECT_REFs.
         let body = contribution_body(
             &[create(), status_modify()],
-            "Dr Console",
+            "Dr Viewer",
             "Encounter recorded; status refreshed",
         )
         .expect("the envelope assembles");
@@ -462,7 +462,7 @@ mod tests {
         );
         assert_eq!(
             versions[0]["commit_audit"]["committer"]["name"],
-            "Dr Console"
+            "Dr Viewer"
         );
 
         // Member 2: a modification naming the version it supersedes.
@@ -488,7 +488,7 @@ mod tests {
             doc["audit"]["change_type"]["defining_code"]["code_string"],
             "251"
         );
-        assert_eq!(doc["audit"]["committer"]["name"], "Dr Console");
+        assert_eq!(doc["audit"]["committer"]["name"], "Dr Viewer");
         assert_eq!(
             doc["audit"]["description"]["value"],
             "Encounter recorded; status refreshed"

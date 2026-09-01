@@ -1,7 +1,7 @@
 // SPDX-FileCopyrightText: FerroEHR contributors
 // SPDX-License-Identifier: MIT
 
-//! The CDR's **operational surfaces** the console consumes.
+//! The CDR's **operational surfaces** the viewer consumes.
 //!
 //! The public health family (`/health/readiness`) and the CDR's management
 //! surface (build info, metric views, the redacted effective config, the live
@@ -19,7 +19,7 @@
 //! indicators — and nothing else re-reads either claim.
 //!
 //! **Probe-and-hide.** The management surface is off by default and each of its
-//! endpoints is independently opt-in, so the console discovers it
+//! endpoints is independently opt-in, so the viewer discovers it
 //! ([`probe_management_api`]) before offering any of it, exactly as
 //! [`crate::admin`] discovers the CDR's admin group. Capability is not
 //! authorization: a mounted-but-refused endpoint (`401`/`403`) still counts as
@@ -31,7 +31,7 @@
 
 #![expect(
     clippy::disallowed_types,
-    reason = "the console consumes the CDR JSON wire over ITS-REST — not the CDR internal seams \
+    reason = "the viewer consumes the CDR JSON wire over ITS-REST — not the CDR internal seams \
               (#1694)"
 )]
 
@@ -58,7 +58,7 @@ type HeadlineMetric = (
 /// into one sample list and summing it would report a meaningless number.
 // NOTE: these are the Prometheus exporter's RENDERED names — `_total` is derived
 // from the counter kind, never written on the instrument — and the correspondence
-// is pinned by the CDR's `exporter_renders_the_console_metric_names` test.
+// is pinned by the CDR's `exporter_renders_the_viewer_metric_names` test.
 #[cfg(feature = "ssr")]
 const HEADLINE_METRICS: [HeadlineMetric; 4] = [
     ("http_server_active_requests", "In-flight requests", None),
@@ -90,7 +90,7 @@ pub enum ManagementAvailability {
 }
 
 impl ManagementAvailability {
-    /// Whether the console may offer the operations panel.
+    /// Whether the viewer may offer the operations panel.
     #[must_use]
     pub fn usable(self) -> bool {
         matches!(self, Self::Available)
@@ -230,7 +230,7 @@ pub fn readiness_view(body: &serde_json::Value) -> ReadinessView {
 /// explain it, which is exactly what the panel renders.
 ///
 /// # Errors
-/// [`ViewerError::Unauthenticated`] without a console session;
+/// [`ViewerError::Unauthenticated`] without a viewer session;
 /// [`ViewerError::CdrUnreachable`] on transport failure;
 /// [`ViewerError::Cdr`] on any status other than `200`/`503`;
 /// [`ViewerError::Internal`] when the body is not JSON.
@@ -262,7 +262,7 @@ pub async fn fetch_readiness() -> Result<ReadinessView, ViewerError> {
 /// the panel's presence rests on one cheap, stable answer.
 ///
 /// # Errors
-/// [`ViewerError::Unauthenticated`] without a console session;
+/// [`ViewerError::Unauthenticated`] without a viewer session;
 /// [`ViewerError::CdrUnreachable`] when the management listener is unreachable.
 #[server]
 pub async fn probe_management_api() -> Result<ManagementAvailability, ViewerError> {
@@ -329,7 +329,7 @@ fn scalar_rows(value: &serde_json::Value) -> Vec<(String, String)> {
 /// not an error.
 ///
 /// # Errors
-/// [`ViewerError::Unauthenticated`] without a console session;
+/// [`ViewerError::Unauthenticated`] without a viewer session;
 /// [`ViewerError::CdrUnauthorized`] when the CDR no longer accepts this
 /// session, [`ViewerError::Forbidden`] when the endpoint's access level
 /// refuses it; [`ViewerError::Cdr`] / [`ViewerError::CdrUnreachable`] from the
@@ -598,7 +598,7 @@ pub async fn fetch_loggers() -> Result<Option<LoggerView>, ViewerError> {
 /// carries its own diagnostic verbatim.
 ///
 /// # Errors
-/// [`ViewerError::Unauthenticated`] without a console session;
+/// [`ViewerError::Unauthenticated`] without a viewer session;
 /// [`ViewerError::Invalid`] for an empty filter;
 /// [`ViewerError::CdrUnauthorized`] / [`ViewerError::Forbidden`] / [`ViewerError::Cdr`] /
 /// [`ViewerError::CdrUnreachable`] from the CDR; [`ViewerError::Internal`]
@@ -655,7 +655,7 @@ pub async fn reset_log_filter() -> Result<LoggerView, ViewerError> {
 /// `404` to `Ok(None)` — the "endpoint not mounted" state every management read
 /// renders as a first-class absence rather than an error.
 ///
-/// Guards the console session first: the server fns above are publicly
+/// Guards the viewer session first: the server fns above are publicly
 /// reachable endpoints, and this is the one place their CDR call is made.
 #[cfg(feature = "ssr")]
 async fn management_get(path: &str) -> Result<Option<String>, ViewerError> {

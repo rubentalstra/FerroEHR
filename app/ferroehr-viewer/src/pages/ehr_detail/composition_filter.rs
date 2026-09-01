@@ -24,7 +24,7 @@
 
 #![expect(
     clippy::disallowed_types,
-    reason = "the console consumes the CDR JSON wire over ITS-REST — not the CDR internal seams \
+    reason = "the viewer consumes the CDR JSON wire over ITS-REST — not the CDR internal seams \
               (#1694)"
 )]
 
@@ -131,7 +131,7 @@ pub struct CompositionQuery {
 ///
 /// # Errors
 /// [`ViewerError::Invalid`] when a date bound is neither a date nor an
-/// instant — the console refuses it here rather than sending a value the CDR's
+/// instant — the viewer refuses it here rather than sending a value the CDR's
 /// temporal comparison cannot read.
 pub fn composition_query(
     ehr_id: &str,
@@ -435,7 +435,7 @@ mod tests {
     #[test]
     fn an_unreadable_date_bound_is_refused_before_the_round_trip() {
         // The CDR answers 500 for a bound its temporal comparison cannot cast
-        // (observed 2026-08-23, tracked upstream of this screen); the console
+        // (observed 2026-08-23, tracked upstream of this screen); the viewer
         // never sends one.
         for bad in ["not-a-date", "2026-13-40", "yesterday", "2026-07-14T99:99"] {
             let error = composition_query(EHR, &CompositionFilter::new("", bad, "", ""))

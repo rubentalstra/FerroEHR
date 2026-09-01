@@ -17,7 +17,7 @@
 )]
 // e2e journeys are assertive by design; skip-with-reason prints; the shared
 // harness module is per-test-binary (the corpus.rs test-file precedent)
-//! End-to-end journeys over the console's **operations panel** (`/operations`):
+//! End-to-end journeys over the viewer's **operations panel** (`/operations`):
 //! the dependency-health card over the CDR's public readiness probe, the build +
 //! spec provenance card, the metric registry browser, and the live log-filter
 //! control (apply → assert effective → reset).
@@ -71,7 +71,7 @@ async fn operations_panel_reports_dependency_health_and_provenance() {
     };
     login_basic(&h).await;
 
-    // The nav entry is present at all: the console probed the CDR's management
+    // The nav entry is present at all: the viewer probed the CDR's management
     // surface and found it mounted (the composed stack enables it).
     h.wait_css("a[href='/operations']").await;
 

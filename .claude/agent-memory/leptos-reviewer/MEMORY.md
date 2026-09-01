@@ -15,5 +15,5 @@
 - [Redirect paths must be encoded](redirect-path-must-be-percent-encoded.md) — leptos_axum::redirect `expect`s HeaderValue::from_str → remotely triggerable panic without `urlencoding::encode`
 - [No-JS journeys must click](no-js-journeys-must-click.md) — the "inert `<template>` fragments" excuse is stale (authed routes are Async); source-substring assertions don't prove the contract
 - [Directory tree editor](directory-tree-editor.md) — positional-path For keys + reactive-by-path reads: content/delete correct but collapse/rename state bleeds (§4); editor re-seeded on every refetch → 412 discards edits + Suspense (not Transition) flashes skeleton on write
-- [Seed-once form idiom](seed-once-form-idiom.md) — long-lived form signals above the Transition + `seeded_uid` no-op + success-only refetch memo: the console's accepted shape, don't re-flag
+- [Seed-once form idiom](seed-once-form-idiom.md) — long-lived form signals above the Transition + `seeded_uid` no-op + success-only refetch memo: the viewer's accepted shape, don't re-flag
 - [default-style guard blind spot](default-style-guard-untracked-blindspot.md) — single-reader `DEFAULT_*` rule is `--all`-only over git-tracked files: new untracked consts pass locally, fail CI

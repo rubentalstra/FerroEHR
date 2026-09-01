@@ -63,7 +63,7 @@ docs/conformance/*/perf-corpus-*.json
 # The viewer keeps NO local store: query grouping is derived from the
 # namespace in each stored query's qualified name, and the directory create
 # flow commits an empty root, so nothing is written beside the binary any more.
-# These names are the belt against an OLDER console binary run inside the
+# These names are the belt against an OLDER viewer binary run inside the
 # checkout ever re-appearing as tracked files.
 /viewer-groups.json
 /viewer-folder-templates.json

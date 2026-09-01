@@ -1,6 +1,6 @@
 # Templates & EHR browsing
 
-These are the console's read-and-write screens over clinical content: the
+These are the viewer's read-and-write screens over clinical content: the
 templates the CDR validates against, and the EHRs, folders, compositions and
 contributions committed under them. Every screen here is a view of the CDR's
 public API, so anything you change is a normal openEHR write that every other
@@ -54,7 +54,7 @@ nothing is sent until you confirm there. The CDR refuses a template that a
 committed composition still uses; the refusal is shown with the referencing
 count, so delete or migrate those compositions first, and it likewise refuses
 a session without the ADMIN role, naming what is missing. If the admin API is
-off, no delete button is shown at all: the console asks the server which API
+off, no delete button is shown at all: the viewer asks the server which API
 groups it serves (the openEHR System API conformance manifest) before offering
 any of them.
 
@@ -94,7 +94,7 @@ derived view:
 - **Example:** a composition the CDR generates from the template, in
   canonical JSON, canonical XML, FLAT or STRUCTURED.
 - **Path catalog:** the same expandable tree and node inspector the ADL 1.4
-  detail shows, built by the console from the AOM2 JSON.
+  detail shows, built by the viewer from the AOM2 JSON.
 
 ![ADL 2 template detail](img/templates/template-adl2-detail.png)
 
@@ -109,8 +109,8 @@ named and does not follow the version bar: the CDR publishes no versioned
 example resource.
 
 > [!NOTE]
-> The ADL 2 path catalog is built by the console itself: the CDR serves no
-> Web Template representation of an ADL 2 artefact, so the console reads the
+> The ADL 2 path catalog is built by the viewer itself: the CDR serves no
+> Web Template representation of an ADL 2 artefact, so the viewer reads the
 > AOM2 JSON and derives the same tree the ADL 1.4 detail shows. The CDR wire
 > stays exactly the released REST API.
 
@@ -185,7 +185,7 @@ With the CDR's admin API enabled, the EHR detail screen offers **Delete EHR**
 above the tabs. The confirmation dialog spells out the EHR id and what goes
 with it: this is the CDR's *physical* delete, so every composition,
 contribution and audit record under the EHR is removed, and it cannot be
-undone. On success the console returns to the EHR list; a session without the
+undone. On success the viewer returns to the EHR list; a session without the
 ADMIN role is refused with a message naming what is missing. Without the
 admin API the button is not rendered at all.
 
@@ -240,12 +240,12 @@ The **change type** offered for each entry is exactly what the openEHR wire
 accepts for it: a creation for a new composition, an amendment or a
 modification for anything that supersedes an existing version. The
 **contribution audit** below the list carries the change set's description
-and, optionally, a committer name; leave it blank and your console identity
+and, optionally, a committer name; leave it blank and your viewer identity
 is used. The commit button always states what it is about to do
 ("Commit 2 changes as one contribution").
 
 > [!NOTE]
-> Staged changes live in the open browser tab only. The console stores nothing
+> Staged changes live in the open browser tab only. The viewer stores nothing
 > of its own, so leaving the screen discards them, and nothing reaches the
 > CDR until you press commit.
 
@@ -259,7 +259,7 @@ you can correct the offending document and commit again.
 
 The Directory tab creates the EHR's FOLDER directory when none exists: it
 commits the empty root folder, which the tree editor then fills. There is no
-console-side library of folder shapes; the console stores nothing of its own,
+viewer-side library of folder shapes; the viewer stores nothing of its own,
 and every folder you build is an ordinary directory version the CDR owns and
 every other openEHR client can see.
 
@@ -294,13 +294,13 @@ type) is shown alongside.
 
 ![Composition viewer](img/ehrs/compositions/viewer.png)
 
-Every document pane in the console (the composition viewer, the EHR status
+Every document pane in the viewer (the composition viewer, the EHR status
 tab, the directory raw mode, a contribution, a template's OPT and example
 tabs) is the same viewer:
 
 - **Highlighted** (the default): the document exactly as the CDR returned it,
   with JSON and XML syntax highlighting. The highlighter is pure Rust, like
-  everything else in the console; very large documents are shown unstyled
+  everything else in the viewer; very large documents are shown unstyled
   rather than tokenized.
 - **Raw**: the same text with no highlighting.
 - **Rendered**: a template-free clinical reading of a canonical openEHR JSON
@@ -348,7 +348,7 @@ one. Three things about them are worth knowing before you use them:
   to exactly one target) so a tag set on the container is not visible on any
   version, and vice versa.
 - **Saving re-sends the whole collection**, because that is what the openEHR
-  tag update does. The console reads the current tags and merges yours in, so
+  tag update does. The viewer reads the current tags and merges yours in, so
   nothing is lost by accident, but the tag operations carry no version check
   at all, so a tag another client added between your load and your save can
   be. Reload before editing a busy composition.
@@ -407,7 +407,7 @@ exactly as the CDR served it, so nothing the form does not show can be lost.
 
 > [!NOTE]
 > The save is conditional on the loaded version. If another client committed a
-> new status in the meantime, the CDR refuses the write and the console says
+> new status in the meantime, the CDR refuses the write and the viewer says
 > so ("EHR status changed on the server") instead of overwriting the change:
 > reload the tab and reapply your edit. A rejected document keeps the CDR's own
 > diagnostic on screen, beside the form.

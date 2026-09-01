@@ -1,7 +1,7 @@
 // SPDX-FileCopyrightText: FerroEHR contributors
 // SPDX-License-Identifier: MIT
 
-//! The console-wide error type, shared by both compilation targets so the UI
+//! The viewer-wide error type, shared by both compilation targets so the UI
 //! can render domain errors (CDR status + diagnostic) instead of opaque
 //! strings.
 //!
@@ -18,11 +18,11 @@ use serde::{Deserialize, Serialize};
 /// Every failure a server function can hand the UI.
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, thiserror::Error)]
 pub enum ViewerError {
-    /// No console session — the UI redirects to `/login`.
+    /// No viewer session — the UI redirects to `/login`.
     #[error("not authenticated")]
     Unauthenticated,
     /// The CDR answered `401`: the credential this session carries is no
-    /// longer valid for the CDR, whatever the console's own session says.
+    /// longer valid for the CDR, whatever the viewer's own session says.
     #[error("unauthorized: {0}")]
     CdrUnauthorized(String),
     /// The CDR answered `403`: the credential is valid and the CDR refuses to
@@ -45,7 +45,7 @@ pub enum ViewerError {
     /// message to render inline.
     #[error("{0}")]
     Invalid(String),
-    /// Console-internal failure (config, session store, serialization).
+    /// Viewer-internal failure (config, session store, serialization).
     #[error("internal error: {0}")]
     Internal(String),
 }

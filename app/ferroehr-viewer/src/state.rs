@@ -10,7 +10,7 @@ use std::sync::Arc;
 /// Everything the BFF side needs per request.
 #[derive(Debug, Clone)]
 pub struct AppState {
-    /// The loaded console configuration.
+    /// The loaded viewer configuration.
     pub config: Arc<crate::config::ViewerConfig>,
     /// The one CDR client.
     pub cdr: crate::cdr::CdrClient,

@@ -7,14 +7,14 @@
 //! One call is an extension rather than a released operation: the unfiltered
 //! stored-query listing ([`list_stored_queries`]), which flags itself.
 //!
-//! The console persists nothing of its own here (nor anywhere): a stored
+//! The viewer persists nothing of its own here (nor anywhere): a stored
 //! query's grouping is derived from the namespace in its qualified name
 //! (`crate::query_namespace`), so it lives in the CDR and reads identically
 //! for every API client.
 
 #![allow(
     clippy::disallowed_types,
-    reason = "the console consumes the CDR JSON wire over ITS-REST — not the CDR internal seams \
+    reason = "the viewer consumes the CDR JSON wire over ITS-REST — not the CDR internal seams \
               (#1694); the carriers here are ssr-only, so #[expect] would be unfulfilled on the \
               hydrate target"
 )]
@@ -59,7 +59,7 @@ pub async fn validate_aql(
 /// object as text), one page at `offset`.
 ///
 /// A query that carries its own AQL window is sent bare. The spec bars only
-/// `fetch` beside an AQL top; withholding `offset` as well is the console's own
+/// `fetch` beside an AQL top; withholding `offset` as well is the viewer's own
 /// conservative choice, so such a query reaches the CDR exactly as written.
 ///
 /// # Errors
@@ -120,7 +120,7 @@ pub async fn run_aql(
 /// Definition API declares only `GET /definition/query/{qualified_query_name}`,
 /// whose wildcard is a PATH segment
 /// (`docs/specs/openehr/ITS-REST/specifications/operations/definition_query_list.yaml`),
-/// so the segment-less listing the console reads is the CDR's own route.
+/// so the segment-less listing the viewer reads is the CDR's own route.
 ///
 /// # Errors
 /// [`ViewerError::Unauthenticated`] without a session; CDR errors
@@ -284,7 +284,7 @@ pub async fn store_query(
 ///
 /// The two ITS-REST stored-query execution operations are addressed by whether a
 /// `version` is supplied — which is the spec's version-resolution contract, not a
-/// console convention. `version` is the path segment to send, EMPTY meaning "send
+/// viewer convention. `version` is the path segment to send, EMPTY meaning "send
 /// none" (a plain `String` rather than an `Option` so nothing about the request
 /// depends on how an optional field survives the server-fn encoding):
 ///
@@ -297,14 +297,14 @@ pub async fn store_query(
 ///   will be used."
 ///
 /// (Both quotes: ITS-REST `specifications/docs/query/Qualified_query_name.md`
-/// §Qualified query name. The console composes the segment with
+/// §Qualified query name. The viewer composes the segment with
 /// [`resolve_version`](crate::query_namespace::resolve_version).)
 ///
 /// `parameters_json` is the `query_parameters` object — the request body carries
 /// the bindings rather than the URL: "we recommend clients using the `POST`
 /// method instead of `GET`" (ITS-REST `specifications/docs/query/Request.md`
 /// §GET vs POST). The names are unprefixed (`temperature`, not `$temperature`)
-/// per that document's §Common Headers and Query Parameters, and the console
+/// per that document's §Common Headers and Query Parameters, and the viewer
 /// derives them with [`placeholders`](crate::aql_text::placeholders).
 ///
 /// `paged` says whether the REQUEST owns the row window: `true` sends
@@ -398,7 +398,7 @@ pub async fn run_stored_query(
 /// definition's own AQL top, or the CDR's default page, whose size "depends on
 /// the implementation" (`docs/specs/openehr/ITS-REST/specifications/docs/query/Request.md`
 /// §Common Headers and Query Parameters). No `fetch` is added deliberately: the
-/// parameter "cannot be combined with AQL-top", and a console-sized window would
+/// parameter "cannot be combined with AQL-top", and a viewer-sized window would
 /// cap every tile at the table page size instead of reporting a magnitude.
 ///
 /// # Errors

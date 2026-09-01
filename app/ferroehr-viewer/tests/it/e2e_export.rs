@@ -20,10 +20,10 @@
     reason = "test fixtures and wire assertions are raw JSON by the testing rule \
               (.claude/rules/testing.md §Test-fixture construction)"
 )]
-//! End-to-end journey over the `RESULT_SET` **export** — the one console
+//! End-to-end journey over the `RESULT_SET` **export** — the one viewer
 //! surface whose outcome is a file rather than a screen.
 //!
-//! The export is a plain HTML `<form method="post">` to the console's own
+//! The export is a plain HTML `<form method="post">` to the viewer's own
 //! `/export/aql` BFF route (`ferroehr_viewer::export`), so a browser click
 //! hands the bytes to the download manager and `WebDriver` never sees them. The
 //! journey therefore does what the button does: it runs the query on screen,
@@ -79,7 +79,7 @@ struct PostedForm {
 
 /// Read one hidden field's LIVE value off `form`.
 ///
-/// `prop`, not `attr`: the console binds these fields with `prop:value`, so the
+/// `prop`, not `attr`: the viewer binds these fields with `prop:value`, so the
 /// DOM property is where the current query lives (rules §5 — an attribute only
 /// carries the initial value).
 ///
@@ -122,7 +122,7 @@ async fn posted_form(h: &Harness, format: &str) -> PostedForm {
     panic!("no `/export/aql` form on screen carries format `{format}`");
 }
 
-/// The browser's cookies for the console origin, as one `Cookie` header.
+/// The browser's cookies for the viewer origin, as one `Cookie` header.
 ///
 /// This is what makes the re-post honest: the request travels on the SAME
 /// session the signed-in browser holds, not on a credential the test invented.
@@ -134,10 +134,10 @@ async fn session_cookie_header(h: &Harness) -> String {
         .driver
         .get_all_cookies()
         .await
-        .expect("the browser's cookies for the console origin");
+        .expect("the browser's cookies for the viewer origin");
     assert!(
         !cookies.is_empty(),
-        "a signed-in console browser must hold a session cookie"
+        "a signed-in viewer browser must hold a session cookie"
     );
     cookies
         .iter()
@@ -373,7 +373,7 @@ async fn the_result_export_serves_the_rows_on_screen() {
     assert_eq!(
         refused.status(),
         StatusCode::SEE_OTHER,
-        "an export request with no console session is redirected, never served"
+        "an export request with no viewer session is redirected, never served"
     );
     assert_eq!(
         header(&refused, reqwest::header::LOCATION),

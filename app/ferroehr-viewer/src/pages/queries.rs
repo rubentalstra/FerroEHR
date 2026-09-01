@@ -10,7 +10,7 @@
 //! grouping is **derived, never stored**: a query's group IS its namespace
 //! (`crate::query_namespace`, which cites the name format), so the right pane
 //! is a projection of the very listing the left pane shows — one round trip,
-//! no console-local state, and the same grouping every API client sees. There
+//! no viewer-local state, and the same grouping every API client sees. There
 //! is therefore no group CRUD: a query joins a group by being saved under that
 //! namespace.
 //!
@@ -448,7 +448,7 @@ fn detail_panel(aql: String) -> AnyView {
 /// The namespace panel: the SAME stored-query listing the table shows, grouped
 /// by the namespace of each qualified name. Read-only by construction — a query
 /// joins a group by being saved under that namespace, so there is nothing to
-/// create, edit, or remove here (and nothing stored console-side).
+/// create, edit, or remove here (and nothing stored viewer-side).
 fn namespaces_panel(stored: Resource<Result<Vec<StoredQueryRow>, ViewerError>>) -> AnyView {
     // `<Transition>`: the listing refetches after a CDR delete — keep the
     // current grouping visible instead of flashing a fallback. The `Result`
@@ -472,7 +472,7 @@ fn namespaces_panel(stored: Resource<Result<Vec<StoredQueryRow>, ViewerError>>) 
             <p class="text-sm text-ink-muted">
                 "A query's group is the namespace of its qualified name ("
                 <span class="font-mono">"namespace::name"</span>
-                "), chosen when you save it. The console stores no grouping of its own, so every openEHR client sees the same one."
+                "), chosen when you save it. The viewer stores no grouping of its own, so every openEHR client sees the same one."
             </p>
             {list}
         </section>

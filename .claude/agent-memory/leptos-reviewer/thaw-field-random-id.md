@@ -12,7 +12,7 @@ that uuid onto the label as a **static** `attr:for` and provides it (via
 **reactive** `id=Signal`. So SSR emits uuid X, hydration mints uuid Y; the
 static label `for` keeps X while the reactive input `id` can become Y →
 label↔input association breaks post-hydration and it can trip a hydration
-attribute-mismatch console warning (the J2 E2E gate fails on any console
+attribute-mismatch browser-console warning (the J2 E2E gate fails on any console
 error).
 
 **Rule:** `.claude/rules/leptos-ui.md` §8 — "No non-determinism in initial

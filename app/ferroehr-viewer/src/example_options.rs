@@ -85,7 +85,7 @@ impl ExampleType {
 /// The query string an example request carries, `?` included.
 ///
 /// Both parameters are always spelled, defaults included, so the request the
-/// console sends states exactly what the pane's controls show. Every value is
+/// viewer sends states exactly what the pane's controls show. Every value is
 /// a fixed token of the two enums above, so nothing here is user input to
 /// encode.
 #[must_use]

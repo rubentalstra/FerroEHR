@@ -190,9 +190,9 @@ runs:
         verify-contains: '"server_version":"${{ steps.expect.outputs.version }}"'
         verify-timeout: "600"
 
-    # The console is the landing surface; a deploy that left it dead would
+    # The viewer is the landing surface; a deploy that left it dead would
     # still pass the CDR check above. Served markup, not a bare 200.
-    - name: The console serves its sign-in surface
+    - name: The viewer serves its sign-in surface
       if: inputs.verb == 'deploy'
       shell: bash
       env:
@@ -202,12 +202,12 @@ runs:
         deadline=$(( $(date +%s) + 300 ))
         until body=$(curl -fsSL -m 30 "$BASE/" 2>/dev/null) && printf '%s' "$body" | grep -q "FerroEHR"; do
           if [ "$(date +%s)" -ge "$deadline" ]; then
-            echo "::error::the console did not serve its sign-in surface within 5 minutes of the deploy." >&2
+            echo "::error::the viewer did not serve its sign-in surface within 5 minutes of the deploy." >&2
             exit 1
           fi
           sleep 10
         done
-        echo "console serving"
+        echo "viewer serving"
 
     - name: Restart the CDR (fresh boot re-runs the migrations)
       if: inputs.verb == 'restart'

@@ -5,7 +5,7 @@
 //! selects, and textareas.
 //!
 //! These are class constants rather than wrapper components because half the
-//! console's inputs are deliberately uncontrolled (the login form) or carry
+//! viewer's inputs are deliberately uncontrolled (the login form) or carry
 //! bespoke wiring (the builder's per-datatype editors) — the kit standardizes
 //! the LOOK, each screen keeps its own behaviour. [`text_field`] is the one
 //! assembled control: the plain labelled text input bound to a signal, which

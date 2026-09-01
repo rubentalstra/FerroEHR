@@ -70,7 +70,7 @@
   # Pod-level ISOLATION, recorded per workload rather than asserted per workload.
   # These are not restricted-profile controls, so the property that matters is
   # not "every pod sets X" but that every pod of one release AGREES. A release
-  # whose console shares the host user namespace while its server does not has a
+  # whose viewer shares the host user namespace while its server does not has a
   # posture nobody can state.
   ( [ $workloads[]
       | { k: "\(.kind)/\(.name)",

@@ -13,9 +13,9 @@
 //! a new COMPOSITION *and* the EHR status it belongs with — is one commit here
 //! instead of two independent ones.
 //!
-//! The staging list is **console-session state only**: it lives in this tab's
-//! component state, so navigating away discards it. The console stores nothing
-//! of its own (§No console-local domain state), and the screen says so.
+//! The staging list is **viewer-session state only**: it lives in this tab's
+//! component state, so navigating away discards it. The viewer stores nothing
+//! of its own (§No viewer-local domain state), and the screen says so.
 //!
 //! Reads are reused, never re-implemented: the template list, the composition
 //! list, an amend's seed and the status seed all come from the tabs that
@@ -29,7 +29,7 @@
 
 #![allow(
     clippy::disallowed_types,
-    reason = "the console consumes the CDR JSON wire over ITS-REST — not the CDR internal seams \
+    reason = "the viewer consumes the CDR JSON wire over ITS-REST — not the CDR internal seams \
               (#1694); the carriers here are ssr-only, so #[expect] would be unfulfilled on the \
               hydrate target"
 )]
@@ -79,7 +79,7 @@ pub struct CommitOutcome {
 /// (`POST /ehr/{ehr_id}/contribution`).
 ///
 /// The envelope is assembled by [`staged::contribution_body`] from the staged
-/// rows; `committer` falls back to the console session's own identity when the
+/// rows; `committer` falls back to the viewer session's own identity when the
 /// operator leaves it blank, because the wire REQUIRES one
 /// (`specifications/schemas/common/UpdateAudit.yaml`: `required: [change_type,
 /// committer]`) and the session identity is the honest answer to "who committed
@@ -87,7 +87,7 @@ pub struct CommitOutcome {
 /// CONTRIBUTION and every version it minted.
 ///
 /// # Errors
-/// [`ViewerError::Unauthenticated`] without a console session;
+/// [`ViewerError::Unauthenticated`] without a viewer session;
 /// [`ViewerError::Invalid`] when nothing is staged or a staged change is
 /// structurally unusable; CDR transport errors pass through; a non-2xx CDR
 /// answer (its validation diagnostics, which the UI renders verbatim,
@@ -472,7 +472,7 @@ fn staging_notice() -> AnyView {
                 "A CONTRIBUTION is openEHR's atomic change set: every staged change is committed together, or none of them is. Stage the changes that belong together — a new composition and the EHR status it goes with — then commit once."
             </p>
             <p class="mt-2 text-xs text-ink-faint">
-                "Staged changes live in this browser tab only. The console stores nothing of its own, so leaving this screen discards them; nothing reaches the CDR until you commit."
+                "Staged changes live in this browser tab only. The viewer stores nothing of its own, so leaving this screen discards them; nothing reaches the CDR until you commit."
             </p>
         </section>
     }
@@ -910,7 +910,7 @@ fn audit_card(
                             id="stage-committer"
                             type="text"
                             class=INPUT
-                            placeholder="defaults to your console identity"
+                            placeholder="defaults to your viewer identity"
                             prop:value=move || form.committer.get()
                             on:input:target=move |ev| form.committer.set(ev.target().value())
                         />
