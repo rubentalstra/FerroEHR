@@ -15,8 +15,8 @@
 //! page and invariant name it enforces. What the specifications leave
 //! underdetermined is the *algorithm* — openEHR's AOM2 `validation` spec covers
 //! ARCHETYPE validation, not RM-instance validation — so the traversal,
-//! violation shape and sub-path reporting below are our own design; the
-//! `// NOTE:` markers in the impls flag each such choice.
+//! violation shape and sub-path reporting below are our own design; a NOTE
+//! comment in the impls flags each such choice.
 
 /// An RM class-invariant violation: a human-readable message plus the RM
 /// sub-path (relative to the value being checked) it applies to.

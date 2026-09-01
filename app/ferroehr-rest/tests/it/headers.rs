@@ -1490,10 +1490,9 @@ async fn an_undecodable_header_value_is_refused_not_dropped() {
 /// wrapper-header value is the release's "remove all `ITEM_TAG`s" REQUEST
 /// instruction (overview `Requests_and_responses.md` §"openehr-item-tag and
 /// openehr-version-item-tag": "Providing an empty value for this header will
-/// effectively remove all `ITEM_TAG`s"), so a response echoing one would hand a
-/// mirroring client the destructive form as if it were state (#1837 — the EHR
-/// echo path emitted it; the guard now lives in `emit_item_tag_header` for
-/// both echo paths).
+/// effectively remove all `ITEM_TAG`s"), so a response echoing one would hand
+/// a mirroring client the destructive form as if it were state. The guard is
+/// `params::emit_item_tag_header`, shared by both echo paths.
 #[tokio::test]
 async fn an_emptied_item_tag_collection_echoes_no_header_not_an_empty_one() {
     let (_pg, app) = app().await;

@@ -81,9 +81,13 @@ history carries it. A comment describes the code as it IS.
 ## Enforcement register
 
 - `scripts/checks/comment-style.sh` — block comments, TODO(#N) form, banned
-  marker vocabulary, NOTE ≤ 3 lines, `//` runs ≤ 8 lines. Runs per-edit (the
-  `rust_fmt_clippy.sh` PostToolUse hook) and on PRs (the `comment-style` CI
-  job, running `--all` over the whole tree — the legacy sweep (#1870) is done).
+  marker vocabulary, NOTE ≤ 3 lines (≤ 8 in doc comments), `//` runs ≤ 8
+  lines, punctuation-only comment lines (sweep residue), backtick-quoted
+  markers used AS markers on doc lines (leading/bullet/parenthetical — a
+  mid-sentence description stays legal), and empty `# Errors`/`# Panics`
+  doc sections (#2981). Runs per-edit (the `rust_fmt_clippy.sh` PostToolUse
+  hook) and on PRs (the `comment-style` CI job, running `--all` over the
+  whole tree — the legacy sweep (#1870) is done).
 - `clippy::too_long_first_doc_paragraph` (nursery cherry-pick, CI
   `-D warnings`) — the RFC 1574 summary line.
 - Already-active doc lints: `doc_markdown`, `missing_errors_doc`,
@@ -92,4 +96,8 @@ history carries it. A comment describes the code as it IS.
   job.
 - Review-enforced (no tool can judge them): change-narration, prose
   deferrals, third-person summary phrasing, essays relocated into doc
-  comments to dodge the `//` budget.
+  comments to dodge the `//` budget, and module-doc (`//!`) block LENGTH —
+  adjudicated on #2981: the tree's longest module docs are governing-section
+  maps and matching-rule contracts, longer than any essay the #2942 sweep
+  condensed, so a numeric cap either catches nothing or forces condensing
+  legitimate reference docs; essay-vs-reference is judgment.

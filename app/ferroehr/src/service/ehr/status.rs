@@ -84,8 +84,7 @@ impl FerroEhrService {
     }
 
     /// The **bare** `EHR_STATUS` at a specific version (not the
-    /// `ORIGINAL_VERSION` wrapper) — `GET …/ehr_status/{version_uid}`
-    ///.
+    /// `ORIGINAL_VERSION` wrapper) — `GET …/ehr_status/{version_uid}`.
     ///
     /// # Errors
     /// [`ServiceError::NotFound`] when the version does not exist or belongs to

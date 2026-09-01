@@ -12,7 +12,7 @@
 //! decided by [`super::reclassify()`], not here — see the module docs of
 //! [`super`] for the two-stage contract.
 //!
-//! `// NOTE:` The Expression Language (`LANG/docs/EL/`) is deliberately NOT
+//! NOTE: The Expression Language (`LANG/docs/EL/`) is deliberately NOT
 //! part of the union: it uses `#`-prefixed codes, a different bracket algebra
 //! and `|`-delimited comments, all of which would change the reading of text
 //! in the four languages above. EL is DEVELOPMENT status with no vendored

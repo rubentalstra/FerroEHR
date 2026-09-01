@@ -279,7 +279,7 @@ fn leader_budget(src: &str, start: usize) -> usize {
 /// `raw` after the first (see [`leader_budget`]). Single-line strings are
 /// returned untouched.
 ///
-/// `// NOTE:` The stripping runs AFTER the shared lexer has validated the raw
+/// NOTE: The stripping runs AFTER the shared lexer has validated the raw
 /// literal's `master03` escapes, and cannot change that verdict: the removed
 /// run always begins immediately after a newline, so the character preceding
 /// it is never a backslash and no escape sequence can be created or destroyed.

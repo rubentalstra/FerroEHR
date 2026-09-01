@@ -591,8 +591,7 @@ impl FerroEhrService {
     /// (`definition_query_list.yaml`: the name is a **prefix** — a bare
     /// `org.openehr` prefix "will list all versions of all queries with names
     /// starting with `org.openehr`"; empty ⇒ wildcard). All stored versions of
-    /// every matching name are returned. The prefix match is case-insensitive
-    ///.
+    /// every matching name are returned. The prefix match is case-insensitive.
     pub(super) async fn list_stored_queries(
         &self,
         name_pattern: &str,

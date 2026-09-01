@@ -476,7 +476,7 @@ fn iso_date_time(language: Language, text: &str) -> Option<Token> {
 /// (`ADL1.4/master05-cadl.adoc` §Symbols L1422, with the literal-field,
 /// ASCII-timezone and `[T ]`-separator widenings the chapter grants).
 ///
-/// `// NOTE:` This is the LEXICAL shape only — the token's regex, needed here
+/// NOTE: This is the LEXICAL shape only — the token's regex, needed here
 /// because the space-separated ODIN date-time widening overlaps it and the
 /// cADL reading must recover the pattern token at the same span. It is not a
 /// second home for pattern VALIDITY: the `master04.5` valid-pattern tables
@@ -714,7 +714,7 @@ fn leader_budget(src: &str, start: usize) -> usize {
 /// `raw` after the first (see [`leader_budget`]). Single-line strings are
 /// returned untouched.
 ///
-/// `// NOTE:` The stripping runs AFTER the shared lexer has validated the raw
+/// NOTE: The stripping runs AFTER the shared lexer has validated the raw
 /// literal's `master03` escapes, and cannot change that verdict: the removed
 /// run always begins immediately after a newline, so the character preceding
 /// it is never a backslash and no escape sequence can be created or destroyed.
