@@ -53,18 +53,17 @@
 //!   template uploads, the `ITEM_TAG` collection writes, and the
 //!   Simplified-Formats commit. A request with no `Prefer` gets the applied
 //!   default, `return=minimal`.
-//! - **Item-tag headers — DONE (EHR group).** The parse/emit helpers
-//!   (`params::parse_item_tag_header` / `params::emit_item_tag_header`) are
-//!   consumed by the EHR/COMPOSITION dispatch:
-//!   `api::ehr::apply_item_tag_headers` folds
-//!   the request wrapper headers onto the `ITEM_TAG` service on change-controlled
-//!   writes (empty value ⇒ delete all) and
-//!   `api::ehr::echo_item_tags` echoes each stored
+//! - **Item-tag headers — DONE (EHR + demographic groups).** The parse/emit
+//!   helpers (`params::parse_item_tag_header` / `params::emit_item_tag_header`)
+//!   are consumed through the one shared write-wrapper
+//!   (`crate::api::item_tags`): `pending` reads the request wrapper headers,
+//!   `persist` folds them onto the `ITEM_TAG` service on change-controlled
+//!   writes (empty value ⇒ delete all), and `echo` emits each stored
 //!   collection under ITS OWN header — `openehr-item-tag` confirms the
-//!   `VERSIONED_OBJECT`'s tags, `openehr-version-item-tag` the VERSION's, never
-//!   merged. The demographic group emits both headers from the same set by
-//!   design (its tags are `VERSIONED_OBJECT`-scoped only — see
-//!   `crate::api::demographic`).
+//!   `VERSIONED_OBJECT`'s tags, `openehr-version-item-tag` the VERSION's,
+//!   never merged. The demographic group writes and echoes the same DISTINCT
+//!   collections (pinned by `tests/it/demographic_tags_http.rs`
+//!   `wrapper_headers_write_distinct_collections_on_update`).
 //! - **Method status — DONE.** `error::method_not_allowed_handler`
 //!   (`405`) is mounted as the API router's `method_not_allowed_fallback`
 //!   (`crate::router::router`), so a known path called with a disallowed method renders
@@ -83,7 +82,7 @@
 //!   `crate::extensions::provenance::ITS_REST`) and `openehr-uri` is not emitted.
 //!
 //! All the cross-folder wiring the redesign deferred has since landed: the
-//! item-tag dispatch (the EHR group's `apply_item_tag_headers` / `echo_item_tags`),
+//! item-tag dispatch (the shared `crate::api::item_tags` write-wrapper),
 //! the `405` router-fallback mount + the `501` `ApiError` seam, the per-API
 //! identifier bodies, and the `UpdateAudit.system_id` field (set by
 //! `api::ehr::mk_update_version` and merged from the

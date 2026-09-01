@@ -517,10 +517,13 @@ pub(crate) fn json_vec(
 ///
 /// The one caller family today is the `ITEM_TAG` PUT
 /// (`schemas/common/UpdateItemTag.yaml`: required `key`, optional
-/// `value`/`target_path`, `additionalProperties: false`). The oracle order puts
-/// this on the released OAS: the ITS-REST docs text is silent on the write
-/// body's member set, so the released schema grounds it
-/// (`.claude/rules/spec-adherence.md` §the ITS-REST wire-oracle order).
+/// `value`/`target_path`, `additionalProperties: false`). The ITS-REST docs
+/// text is silent on the write body's member set, and where the docs text is
+/// silent the released OAS grounds the expectation — the release presents its
+/// OAS files as its computable specification artifacts (ITS-REST overview
+/// `Specifications.md`: "Specifications can be downloaded as YAML files in
+/// OpenAPI Specification 3.0 format") — so the released schema is the ground
+/// here.
 ///
 /// # Errors
 /// [`ApiError::UnsupportedMediaType`] if the `Content-Type` is not canonical
