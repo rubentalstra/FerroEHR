@@ -36,10 +36,30 @@ base="$(git merge-base HEAD origin/main 2>/dev/null || true)"
 [ -n "$base" ] || exit 0
 
 changed="$(git diff --name-only "$base" HEAD 2>/dev/null || true)"
-if ! printf '%s\n' "$changed" |
+packaged_change=0
+if printf '%s\n' "$changed" |
   grep -qE '^crates/openehr-[a-z]+/(src/|assets/|schemas/json/|README\.md|LICENSE-|Cargo\.toml)'; then
-  exit 0
+  packaged_change=1
 fi
+
+# A ROOT [workspace.dependencies] version change alters the PACKAGED manifest
+# of every crates/* member that consumes the entry with `workspace = true` —
+# `cargo package` renders the concrete requirement — without touching any
+# crates/* file, which is how PR #3021 slipped past the path scope (#3036).
+if [ "$packaged_change" -eq 0 ] && printf '%s\n' "$changed" | grep -qx 'Cargo.toml'; then
+  table_names="$(awk '/^\[workspace\.dependencies\]/{f=1;next} /^\[/{f=0} f && /^[A-Za-z0-9_-]+[. =]/{print $1}' Cargo.toml | sed 's/\.workspace$//' | sort -u)"
+  diff_names="$(git diff "$base" HEAD -- Cargo.toml | grep -E '^[+-][A-Za-z0-9_-]+(\.workspace)?[[:space:]]*=' | sed -E 's/^[+-]//; s/[[:space:]]*=.*//; s/\.workspace$//' | sort -u)"
+  for name in $diff_names; do
+    printf '%s\n' "$table_names" | grep -qx "$name" || continue
+    if grep -lE "^${name}(\.workspace)?[[:space:]]*=" crates/openehr-*/Cargo.toml >/dev/null 2>&1; then
+      packaged_change=1
+      echo "crate-bump-guard: workspace dependency '$name' changed and crates/* members consume it — packaged requirements move." >&2
+      break
+    fi
+  done
+fi
+
+[ "$packaged_change" -eq 1 ] || exit 0
 
 old_ver="$(git show "$base:crates/openehr-base/Cargo.toml" 2>/dev/null | grep -m1 '^version = ' || true)"
 new_ver="$(grep -m1 '^version = ' crates/openehr-base/Cargo.toml 2>/dev/null || true)"

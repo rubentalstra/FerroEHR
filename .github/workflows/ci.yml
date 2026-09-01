@@ -1788,7 +1788,28 @@ jobs:
             echo "no-crate-bump label set — guard skipped."; exit 0
           fi
           changed=$(git diff --name-only "$BASE" "$HEAD")
-          if ! echo "$changed" | grep -qE '^crates/openehr-[a-z]+/(src/|assets/|schemas/json/|README\.md|LICENSE-|Cargo\.toml)'; then
+          packaged=0
+          if echo "$changed" | grep -qE '^crates/openehr-[a-z]+/(src/|assets/|schemas/json/|README\.md|LICENSE-|Cargo\.toml)'; then
+            packaged=1
+          fi
+          # A ROOT [workspace.dependencies] version change alters the PACKAGED
+          # manifest of every crates/* member consuming the entry with
+          # `workspace = true` (cargo package renders the concrete
+          # requirement) without touching any crates/* file — the path scope
+          # alone let PR #3021 through (#3036).
+          if [ "$packaged" -eq 0 ] && echo "$changed" | grep -qx 'Cargo.toml'; then
+            table=$(git show "$HEAD:Cargo.toml" | awk '/^\[workspace\.dependencies\]/{f=1;next} /^\[/{f=0} f && /^[A-Za-z0-9_-]+[. =]/{print $1}' | sed 's/\.workspace$//' | sort -u)
+            names=$(git diff "$BASE" "$HEAD" -- Cargo.toml | grep -E '^[+-][A-Za-z0-9_-]+(\.workspace)?[[:space:]]*=' | sed -E 's/^[+-]//; s/[[:space:]]*=.*//; s/\.workspace$//' | sort -u)
+            for name in $names; do
+              echo "$table" | grep -qx "$name" || continue
+              if git grep -lE "^${name}(\.workspace)?[[:space:]]*=" "$HEAD" -- 'crates/openehr-*/Cargo.toml' >/dev/null 2>&1; then
+                echo "workspace dependency '$name' changed and crates/* members consume it — packaged requirements move."
+                packaged=1
+                break
+              fi
+            done
+          fi
+          if [ "$packaged" -eq 0 ]; then
             echo "No packaged crate content touched — guard not required."; exit 0
           fi
           old=$(git show "$BASE:crates/openehr-base/Cargo.toml" | grep -m1 '^version = ')
