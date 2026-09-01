@@ -17,10 +17,12 @@
 //! `FerroEhrService::web_template_for` and
 //! `FerroEhrService::validate_for_commit`.
 //!
-//! NOTE: where the spec says "archetype and template identifiers",
-//! `definitions_valid` checks template identifiers only, so content declaring no
-//! template resolves `true`. `content_valid` runs the same per-`Kind` structural
-//! validation every commit runs, and an unrecognized root `_type` is `false`.
+//! NOTE: `i_validity_checker.adoc` §`definitions_valid` covers "archetype and
+//! template identifiers", so the check collects every `ARCHETYPED` declaration
+//! in the content and resolves archetype ids against both stored repositories
+//! (ADL 1.4 + ADL 2) and template ids against both template stores.
+//! `content_valid` runs the same per-`Kind` structural validation every commit
+//! runs, and an unrecognized root `_type` is `false`.
 
 #![expect(
     clippy::disallowed_types,
@@ -40,23 +42,51 @@ impl FerroEhrService {
     /// definition identifiers (i.e. archetype and template identifiers) are
     /// known in the local `definitions` service."
     ///
-    /// Content declaring no `archetype_details.template_id` resolves `true` (the
-    /// module NOTE); otherwise the answer is whether the declared template
-    /// resolves to a stored OPT.
+    /// Every `archetype_details` (RM `ARCHETYPED`) declaration in the content
+    /// contributes its `archetype_id` and, where present, its `template_id`.
+    /// A template id is known when it resolves through the same store lookup
+    /// every commit uses (OPT 1.4 with the ADL2/OPT2 fallback). An archetype
+    /// id is known when a declared template's own node tree carries it — an
+    /// operational template inlines its constituent archetypes (AM OPT2
+    /// `master03-opt_raw.adoc` §Semantics), so template-scoped content
+    /// resolves through the template, not the source repositories — or when
+    /// either stored repository holds it (the ADL 1.4 store or the ADL 2
+    /// store; the clause names no dialect). Identity is compared
+    /// case-insensitively (BASE `master05-identification_package.adoc`
+    /// §Composite Identifiers and Case).
+    /// Content declaring no definition identifiers at all resolves `true`:
+    /// nothing is used, so nothing is unknown.
     ///
     /// # Errors
     ///
-    /// Infallible in the current realization — a template that fails to
-    /// resolve answers `Ok(false)`, never an error; the `Result` is the SM
-    /// call shape.
+    /// An unknown identifier answers `Ok(false)`, never an error; a database
+    /// or template-store fault propagates as its [`SmError`] mapping.
     pub async fn definitions_valid(&self, a_content: &Value) -> Result<bool, SmError> {
-        let template_id = a_content
-            .pointer("/archetype_details/template_id/value")
-            .and_then(Value::as_str);
-        match template_id {
-            None => Ok(true),
-            Some(id) => Ok(self.web_template_for(id).await.is_ok()),
+        let mut archetype_ids = std::collections::BTreeSet::new();
+        let mut template_ids = std::collections::BTreeSet::new();
+        collect_definition_ids(a_content, &mut archetype_ids, &mut template_ids);
+
+        // Resolve the declared templates first: each one that resolves also
+        // vouches for the archetype ids its node tree inlines.
+        let mut template_covered = std::collections::BTreeSet::new();
+        for id in template_ids {
+            match self.web_template_for(&id).await {
+                Ok(wt) => collect_template_node_ids(&wt.tree, &mut template_covered),
+                Err(ServiceError::Unprocessable { .. } | ServiceError::NotFound(_)) => {
+                    return Ok(false);
+                }
+                Err(other) => return Err(other.into()),
+            }
         }
+        for id in archetype_ids {
+            if template_covered.contains(&id.to_lowercase()) {
+                continue;
+            }
+            if !self.has_archetype(id.clone()).await? && !self.has_artefact(id).await? {
+                return Ok(false);
+            }
+        }
+        Ok(true)
     }
 
     /// `content_valid` (`i_validity_checker.adoc`): "Return `True` if the
@@ -105,5 +135,58 @@ impl FerroEhrService {
             ) => Ok(Some(SmError::from(rejection).message)),
             Err(other) => Err(other.into()),
         }
+    }
+}
+
+/// Collects, lowercased, every node id a resolved template's tree carries, so
+/// archetype ids the operational template inlines resolve through it.
+fn collect_template_node_ids(
+    node: &openehr_its::flat::webtemplate::model::WebTemplateNode,
+    covered: &mut std::collections::BTreeSet<String>,
+) {
+    if let Some(node_id) = &node.node_id {
+        covered.insert(node_id.to_lowercase());
+    }
+    for child in &node.children {
+        collect_template_node_ids(child, covered);
+    }
+}
+
+/// Collects every definition identifier an `ARCHETYPED` declaration in the
+/// content carries: `archetype_details/archetype_id/value` and
+/// `archetype_details/template_id/value`, at any depth (RM common
+/// `master03-archetyped_package.adoc` §ARCHETYPED Class — every archetype
+/// root node carries one).
+fn collect_definition_ids(
+    value: &Value,
+    archetype_ids: &mut std::collections::BTreeSet<String>,
+    template_ids: &mut std::collections::BTreeSet<String>,
+) {
+    match value {
+        Value::Object(map) => {
+            if let Some(details) = map.get("archetype_details") {
+                if let Some(id) = details
+                    .pointer("/archetype_id/value")
+                    .and_then(Value::as_str)
+                {
+                    archetype_ids.insert(id.to_owned());
+                }
+                if let Some(id) = details
+                    .pointer("/template_id/value")
+                    .and_then(Value::as_str)
+                {
+                    template_ids.insert(id.to_owned());
+                }
+            }
+            for child in map.values() {
+                collect_definition_ids(child, archetype_ids, template_ids);
+            }
+        }
+        Value::Array(items) => {
+            for child in items {
+                collect_definition_ids(child, archetype_ids, template_ids);
+            }
+        }
+        _ => {}
     }
 }
