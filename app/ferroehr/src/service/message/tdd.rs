@@ -85,20 +85,6 @@ struct TddEnvelope {
     template_id: String,
 }
 
-/// Decode an XML attribute value as UTF-8 (`template_id` / `xmlns` are plain
-/// text — no entity unescaping needed).
-fn decode_attr(attr: &quick_xml::events::attributes::Attribute) -> Result<String, SmError> {
-    std::str::from_utf8(&attr.value)
-        .map(str::to_owned)
-        .map_err(|e| {
-            SmError::new(
-                CallStatusType::ContentInvalid,
-                format!("TDD attribute value is not valid UTF-8: {e}"),
-            )
-            .with_source(e)
-        })
-}
-
 /// Parse the TDD XML envelope: locate the root element, require the Ocean
 /// templates namespace, and read its `template_id`. A document that is not
 /// well-formed XML, is not in the templates namespace, or carries no
@@ -124,10 +110,10 @@ fn parse_tdd_envelope(tdd: &str) -> Result<TddEnvelope, SmError> {
                     let key = attr.key.as_ref();
                     // The default-namespace declaration `xmlns="..."` (the
                     // TDD root declares the templates namespace as default).
-                    if key == b"xmlns" {
-                        namespace = Some(decode_attr(&attr)?);
-                    } else if key == b"template_id" {
-                        template_id = Some(decode_attr(&attr)?);
+                    if key == "xmlns" {
+                        namespace = Some(attr.value.as_ref().to_owned());
+                    } else if key == "template_id" {
+                        template_id = Some(attr.value.as_ref().to_owned());
                     }
                 }
 

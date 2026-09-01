@@ -17,6 +17,11 @@ workflow refuses a tag that has no matching section here.
 
 ### Changed
 
+- The canonical-XML reader and the TDD/OPT XML readers refuse a non-UTF-8
+  document at the first read (quick-xml 0.42 validates encoding while
+  constructing events) instead of tolerating invalid bytes into text values.
+  Well-formed UTF-8 documents — the entire wire corpus — are unaffected; the
+  full serialization fidelity battery passes unchanged.
 - The generic noun "console" is retired from everything a human reads: the
   Helm chart's `viewer.*` value descriptions (which Artifact Hub publishes),
   the viewer's own on-screen copy, the book, and the doc comments all say

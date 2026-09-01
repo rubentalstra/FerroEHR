@@ -2678,7 +2678,7 @@ dependencies = [
  "pgp",
  "pprof",
  "prometheus",
- "quick-xml",
+ "quick-xml 0.42.0",
  "rand 0.8.7",
  "regex",
  "reqwest 0.13.4",
@@ -4017,7 +4017,7 @@ dependencies = [
  "log",
  "num-format",
  "once_cell",
- "quick-xml",
+ "quick-xml 0.41.0",
  "rgb",
  "str_stack",
 ]
@@ -5353,7 +5353,7 @@ dependencies = [
  "nix 0.31.3",
  "parking_lot",
  "percent-encoding",
- "quick-xml",
+ "quick-xml 0.41.0",
  "rand 0.10.2",
  "reqwest 0.13.4",
  "rustls-pki-types",
@@ -5431,7 +5431,7 @@ checksum = "c08d65885ee38876c4f86fa503fb49d7b507c2b62552df7c70b2fce627e06381"
 
 [[package]]
 name = "openehr-adl"
-version = "0.0.52"
+version = "0.0.53"
 dependencies = [
  "indexmap 2.14.0",
  "openehr-am",
@@ -5447,7 +5447,7 @@ dependencies = [
 
 [[package]]
 name = "openehr-am"
-version = "0.0.52"
+version = "0.0.53"
 dependencies = [
  "openehr-base",
  "openehr-lang",
@@ -5457,7 +5457,7 @@ dependencies = [
 
 [[package]]
 name = "openehr-base"
-version = "0.0.52"
+version = "0.0.53"
 dependencies = [
  "serde",
  "serde_json",
@@ -5476,7 +5476,7 @@ dependencies = [
 
 [[package]]
 name = "openehr-its"
-version = "0.0.52"
+version = "0.0.53"
 dependencies = [
  "async-trait",
  "axum",
@@ -5492,7 +5492,7 @@ dependencies = [
  "openehr-lang",
  "openehr-rm",
  "openehr-term",
- "quick-xml",
+ "quick-xml 0.42.0",
  "regex",
  "serde",
  "serde_json",
@@ -5506,7 +5506,7 @@ dependencies = [
 
 [[package]]
 name = "openehr-lang"
-version = "0.0.52"
+version = "0.0.53"
 dependencies = [
  "assert_fs",
  "chumsky",
@@ -5520,7 +5520,7 @@ dependencies = [
 
 [[package]]
 name = "openehr-query"
-version = "0.0.52"
+version = "0.0.53"
 dependencies = [
  "chumsky",
  "logos",
@@ -5529,7 +5529,7 @@ dependencies = [
 
 [[package]]
 name = "openehr-rm"
-version = "0.0.52"
+version = "0.0.53"
 dependencies = [
  "insta",
  "jsonschema",
@@ -5547,7 +5547,7 @@ dependencies = [
 
 [[package]]
 name = "openehr-term"
-version = "0.0.52"
+version = "0.0.53"
 dependencies = [
  "openehr-base",
  "roxmltree",
@@ -6547,6 +6547,16 @@ name = "quick-xml"
 version = "0.41.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "e660451e55124f798a69a5af3f49ccfbefbd41910eefd25caf2393e1f3473ec1"
+dependencies = [
+ "memchr",
+ "serde",
+]
+
+[[package]]
+name = "quick-xml"
+version = "0.42.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "41b1177fdf999d2321d3fb46ff47159d9c1fb9ad66a4879f8c50a0b504615e9b"
 dependencies = [
  "memchr",
  "serde",

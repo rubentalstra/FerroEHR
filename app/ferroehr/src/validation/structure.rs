@@ -56,8 +56,8 @@ pub(super) fn validate_opt_structure(xml: &str) -> Result<(), ServiceError> {
     let mut reader = Reader::from_str(xml);
     let mut depth: i32 = 0;
     let mut seen: HashMap<String, u32> = HashMap::new();
-    let mut check = |raw: &[u8]| -> Result<(), ServiceError> {
-        let name = String::from_utf8_lossy(raw).into_owned();
+    let mut check = |raw: &str| -> Result<(), ServiceError> {
+        let name = raw.to_owned();
         if !OPT_TOP_LEVEL.contains(&name.as_str()) {
             return Err(ServiceError::content_invalid(
                 Violation::new(

@@ -261,7 +261,7 @@ serde_json = { version = "1", features = ["preserve_order"] }
 # ryu (the chosen canonical REAL lexeme — spec-silent, our own design; see
 # openehr-its/src/json_codec/runtime.rs).
 serde_path_to_error = "0.1"
-quick-xml = { version = "0.41.0", features = ["serialize"] }   # verify latest 0.3x
+quick-xml = { version = "0.42.0", features = ["serialize"] }   # verify latest 0.3x
 roxmltree = "0.21"                   # read-only XML DOM — XSD reader for the XML codegen
 serde_norway = "0.9"                 # maintained serde_yaml fork — parse vendored OAS YAML for the REST codegen
 base64 = "0.23"
