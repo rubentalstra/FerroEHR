@@ -24,6 +24,14 @@ workflow refuses a tag that has no matching section here.
   shipped binaries (the TLS stack is rustls/aws-lc throughout); the bounded
   scanner exception and its VEX statement are removed now that the fixed base
   exists.
+  
+### Fixed
+
+- The `ETag` served with a query `RESULT_SET` now derives from SHA-256, a
+  pinned published algorithm, instead of the standard library's default
+  hasher, whose algorithm may change between Rust releases. Query ETags are
+  now stable across server builds; every served query ETag changes value once
+  at this upgrade.
 
 ## [4.0.15] - 2026-09-01
 
