@@ -68,6 +68,13 @@ workflow refuses a tag that has no matching section here.
 
 ### Fixed
 
+- TDD import no longer discards instance data a TDD spells out on wrappers
+  the WebTemplate compacted: `HISTORY.origin`, an event's `time` and `name`,
+  and the other LOCATABLE metadata (`uid`, `links`, `feeder_audit`) now land
+  on the re-materialised nodes instead of RM-mandatory defaults, each value
+  parsed as its model-declared type. Spelled-out wrapper data that cannot
+  legally sit on the corresponding node is refused with a named error rather
+  than silently dropped.
 - The platform validity checker (`definitions_valid`) now checks archetype
   identifiers, not just template identifiers, per the SM clause it realizes:
   every `archetype_details` declaration in the checked content contributes its
