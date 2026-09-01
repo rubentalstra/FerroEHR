@@ -227,11 +227,8 @@ struct XsdType {
 }
 
 /// The local part of a possibly-prefixed XML name.
-fn local_name(qname: &[u8]) -> &[u8] {
-    match qname.iter().rposition(|b| *b == b':') {
-        Some(i) => qname.get(i + 1..).unwrap_or(qname),
-        None => qname,
-    }
+fn local_name(qname: &str) -> &str {
+    qname.rsplit(':').next().unwrap_or(qname)
 }
 
 /// Drop a `ns:` prefix from an XSD `QName`.
@@ -277,14 +274,14 @@ fn xsd_attr(element: &BytesStart<'_>, key: &str) -> Option<String> {
     element
         .attributes()
         .flatten()
-        .find(|a| local_name(a.key.as_ref()) == key.as_bytes())
-        .map(|a| String::from_utf8_lossy(a.value.as_ref()).into_owned())
+        .find(|a| local_name(a.key.as_ref()) == key)
+        .map(|a| a.value.as_ref().to_owned())
 }
 
 /// Leaves the `complexType` the reader is closing, clearing the current type
 /// name once the outermost one ends.
 fn close_element(element: &BytesEnd<'_>, current: &mut Option<String>, depth: &mut usize) {
-    if local_name(element.name().as_ref()) != b"complexType" {
+    if local_name(element.name().as_ref()) != "complexType" {
         return;
     }
     *depth = depth.saturating_sub(1);
@@ -304,11 +301,10 @@ fn record_element(
     depth: &mut usize,
     types: &mut BTreeMap<String, XsdType>,
 ) {
-    let local = local_name(element.name().as_ref()).to_vec();
-    match local.as_slice() {
-        b"complexType" => open_complex_type(element, empty, current, depth, types),
-        b"extension" | b"restriction" => record_base(element, current.as_deref(), types),
-        b"element" | b"attribute" => record_member(element, current.as_deref(), types),
+    match local_name(element.name().as_ref()) {
+        "complexType" => open_complex_type(element, empty, current, depth, types),
+        "extension" | "restriction" => record_base(element, current.as_deref(), types),
+        "element" | "attribute" => record_member(element, current.as_deref(), types),
         _ => {}
     }
 }
