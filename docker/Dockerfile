@@ -149,7 +149,7 @@ LABEL org.opencontainers.image.title="FerroEHR" \
 # parse check and .prev rollback. A posture change therefore arrives with the
 # release that carries it, with that artifact's provenance.
 COPY deploy/hosted/docker-compose.yml deploy/hosted/Caddyfile \
-     deploy/hosted/ferroehr.sandbox.toml deploy/hosted/ferroehr-admin-ui.sandbox.toml \
+     deploy/hosted/ferroehr.sandbox.toml deploy/hosted/ferroehr-viewer.sandbox.toml \
      /opt/sandbox-posture/
 
 # ── runtime-from-source: compose/local (COPY the in-image build) ───────────────

@@ -170,7 +170,7 @@ sha256sum ferroehr-<tag>-<arch>-unknown-linux-gnu.tar.gz
 
 ## A container image
 
-The three images (`ferroehr`, `ferroehr-admin-ui`, `ferroehr-postgres`) each
+The three images (`ferroehr`, `ferroehr-viewer`, `ferroehr-postgres`) each
 carry a Sigstore-signed SLSA provenance attestation, plus the SPDX SBOM and
 provenance the builder writes onto the image index itself.
 

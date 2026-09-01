@@ -75,7 +75,7 @@ updates:
     directories:
       - "/docker"
       - "/docker/postgres"
-      - "/docker/admin-ui"
+      - "/docker/viewer"
     schedule:
       interval: "weekly"
     # Between the cargo and actions windows. A base image ships in the product,

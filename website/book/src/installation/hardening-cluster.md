@@ -106,12 +106,12 @@ _are_ ours**, and an operator hardening
   `off`**, so nothing is exposed until you name an endpoint and a level. Set
   `config.management.port` to move the whole surface onto its own listener so it
   is never reachable on the clinical API port.
-- **The admin console:** a separate image with its own Deployment, which this
-  chart can render but leaves off (`adminUi.enabled`). It consumes the CDR
+- **The viewer:** a separate image with its own Deployment, which this
+  chart can render but leaves off (`viewer.enabled`). It consumes the CDR
   strictly over the REST API and holds no database credential, but it is a
   privileged UI and belongs behind the same authenticating edge you would put in
-  front of a dashboard, which is what `adminUi.auth.oidc.enabled` and
-  `adminUi.ingress.enabled` are for.
+  front of a dashboard, which is what `viewer.auth.oidc.enabled` and
+  `viewer.ingress.enabled` are for.
 
 ## etcd and what our secrets contain
 
@@ -156,7 +156,7 @@ port:
 |---|---|---|
 | `8080` (`service.port`) | the openEHR REST API, the always-on `/health` family, and `/management/*` when `config.management.port` is unset | your ingress controller or gateway, not the internet directly |
 | `config.management.port` (unset by default) | `/management/*` on its own listener when set | operators and your Prometheus, never clinical clients |
-| `3000` (`adminUi.service.port`) | the admin console, only when `adminUi.enabled` | your ingress controller, in front of an authenticating edge |
+| `3000` (`viewer.service.port`) | the viewer, only when `viewer.enabled` | your ingress controller, in front of an authenticating edge |
 
 Read off the running pod rather than the template, from the listening sockets in
 the container's own network namespace: the default posture binds one port and
@@ -182,7 +182,7 @@ rule carries no `from` and therefore admits **every** source, including other
 namespaces (only the port list is narrowed in that state; set
 `networkPolicy.ingressAllowAll: false` to have the chart refuse to render that
 state at all, and the same pair exists for the console under
-`adminUi.networkPolicy`); and a NetworkPolicy is only as real as the CNI that
+`viewer.networkPolicy`); and a NetworkPolicy is only as real as the CNI that
 implements it.
 
 ## Cluster API access
@@ -217,7 +217,7 @@ plugin, so a compromised kubelet cannot edit objects belonging to other nodes.
 `serviceAccount.automountServiceAccountToken: false`. That is not an omission to
 be tidied up later: the workload never calls the Kubernetes API, so it needs no
 permissions, and it is not given a token with which to try. The same holds for the
-admin console's own ServiceAccount when that workload is enabled. Checkable on a
+viewer's own ServiceAccount when that workload is enabled. Checkable on a
 live release:
 
 ```shell

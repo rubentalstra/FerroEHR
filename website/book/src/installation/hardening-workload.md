@@ -30,7 +30,7 @@ sidecars, so the context above is the whole pod.
 
 What keeps it true is not this page. `deploy/helm/validate.sh` parses the rendered
 objects and asserts the Restricted fields **per container, for every workload in
-the render** (including the optional admin console and the migration Job) and
+the render** (including the optional viewer and the migration Job) and
 the golden renders pin the exact bytes, so even a changed default fails a diff.
 Both run in CI on any change to the chart. That structure is deliberate: the gate
 this replaced grepped the rendered file for field names, so one compliant

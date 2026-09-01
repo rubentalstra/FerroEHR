@@ -514,7 +514,7 @@ mod tests {
         }
     }
 
-    /// The admin console's headline tiles and metric deep links, as the pairs
+    /// The viewer's headline tiles and metric deep links, as the pairs
     /// `(instrument name, the name the Prometheus exporter renders it under)`.
     ///
     /// The console reads the rendered view over `/management/metrics`, so the
@@ -527,7 +527,7 @@ mod tests {
         (DB_POOL_CONNECTIONS, "db_pool_connections"),
     ];
 
-    /// Pins the exporter-derived name of every instrument the admin console
+    /// Pins the exporter-derived name of every instrument the viewer
     /// names as a literal.
     ///
     /// The console's `HEADLINE_METRICS` (and its `/operations?metric=…` deep

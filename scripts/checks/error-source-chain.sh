@@ -39,7 +39,7 @@ cd "$(dirname "$0")/../.." || exit 1
 #   app/ferroehr           `prometheus::Error` has no source-bearing variant.
 #   app/ferroehr-ext       `fhir_model`'s builder error is a dependency type
 #                          (RFC 1105 — see the site's NOTE).
-#   app/ferroehr-admin-ui  `AdminUiError` crosses the server-fn boundary, so
+#   app/ferroehr-viewer  `ViewerError` crosses the server-fn boundary, so
 #                          `FromServerFnError` requires Serialize/Deserialize;
 #                          `LiftError` is held in an `RwSignal`, so it must be
 #                          Clone + Eq. No underlying error is any of those.
@@ -57,7 +57,7 @@ cd "$(dirname "$0")/../.." || exit 1
 declare -a BUDGETS=(
   "app/ferroehr:1"
   "app/ferroehr-ext:1"
-  "app/ferroehr-admin-ui:6"
+  "app/ferroehr-viewer:6"
 )
 
 fail=0

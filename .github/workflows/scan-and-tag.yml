@@ -40,18 +40,18 @@ on:
         description: The newline-separated tag list to apply to the app digest.
         required: true
         type: string
-      admin-ui-image:
-        description: The admin-console image name.
+      viewer-image:
+        description: The viewer image name.
         required: false
         type: string
         default: ""
-      admin-ui-digest:
-        description: The admin-console image's pushed digest, empty when its build did not succeed.
+      viewer-digest:
+        description: The viewer image's pushed digest, empty when its build did not succeed.
         required: false
         type: string
         default: ""
-      admin-ui-tags:
-        description: The newline-separated tag list to apply to the admin-console digest.
+      viewer-tags:
+        description: The newline-separated tag list to apply to the viewer digest.
         required: false
         type: string
         default: ""
@@ -190,12 +190,12 @@ jobs:
       # An empty digest is the caller saying "that build did not succeed", so
       # there is nothing to tag; the postgres image legitimately skips on most
       # pushes (it builds on docker/postgres changes and on a release).
-      - name: Tag the admin-ui image
-        if: inputs.admin-ui-digest != ''
+      - name: Tag the viewer image
+        if: inputs.viewer-digest != ''
         env:
-          IMAGE: ${{ inputs.admin-ui-image }}
-          DIGEST: ${{ inputs.admin-ui-digest }}
-          TAGS: ${{ inputs.admin-ui-tags }}
+          IMAGE: ${{ inputs.viewer-image }}
+          DIGEST: ${{ inputs.viewer-digest }}
+          TAGS: ${{ inputs.viewer-tags }}
         run: |
           set -euo pipefail
           args=()

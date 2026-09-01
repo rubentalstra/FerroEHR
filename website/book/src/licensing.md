@@ -10,7 +10,7 @@ summary for evaluators and deployers, not legal advice.
 ## FerroEHR's own code — MIT, with one Apache-2.0 carve-out
 
 Everything written for this project (the server and application crates, the
-code generator and tooling, the admin console, and the hand-written
+code generator and tooling, the viewer, and the hand-written
 specification engines `openehr-query` and `openehr-adl`) is licensed under the
 [MIT License](https://github.com/rubentalstra/FerroEHR/blob/main/LICENSE).
 You can use, modify, and redistribute it freely, including commercially,

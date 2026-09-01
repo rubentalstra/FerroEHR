@@ -12,7 +12,7 @@
 //! Hand-written (like the `flat` module, SMART App Launch is an ITS-REST
 //! sub-specification with no machine-readable model): ONE grammar, consumed by
 //! the CDR's scope gate (`ferroehr-rest::smart`) and by any REST client that
-//! previews what a scope string grants (the admin console) — the two can never
+//! previews what a scope string grants (the viewer) — the two can never
 //! drift because they parse with the same code.
 //!
 //! A **total** parser: [`SmartScope::parse`] maps every scope string the token's

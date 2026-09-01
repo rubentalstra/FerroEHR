@@ -9,7 +9,7 @@
 set -Eeuo pipefail
 cd "$(dirname "${BASH_SOURCE[0]}")/.."
 
-docker compose -f docker-compose.yml --profile admin-ui up -d --wait
+docker compose -f docker-compose.yml --profile viewer up -d --wait
 
 cat <<'EOF'
 
@@ -17,7 +17,7 @@ FerroEHR is up.
 
   API + Swagger UI   http://localhost:8080/ferroehr/rest/swagger-ui
   Health             http://localhost:8080/health
-  Admin console      http://localhost:3000
+  Viewer             http://localhost:3000
   Credentials        ferroehr / ferroehr
 
 In a Codespace, open the forwarded ports 8080 and 3000 from the PORTS panel.

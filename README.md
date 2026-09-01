@@ -60,7 +60,7 @@ can actually run: complete, openly developed, permissively licensed, and
 measured against the specification itself. That is what FerroEHR is for.
 
 So the whole thing is MIT, with no open-core tier. Multi-tenancy, RBAC/ABAC,
-ATNA audit, signatures, FHIR, events and the admin console are all in this
+ATNA audit, signatures, FHIR, events and the viewer are all in this
 repository under the same licence, and nothing is held back to be sold back
 to you. **Build on it and sell what you build: that is the point.**
 Integrate it, embed it, host it, white-label it, build closed products on
@@ -210,20 +210,20 @@ on the documentation site.
 ## Quick start
 
 The fastest path is the [live sandbox](https://sandbox.ferroehr.eu): it opens
-the admin console over a running FerroEHR, with the same server's Swagger UI at
+the viewer over a running FerroEHR, with the same server's Swagger UI at
 [/ferroehr/rest/swagger-ui](https://sandbox.ferroehr.eu/ferroehr/rest/swagger-ui)
 (credentials `ferroehr` / `ferroehr`, demo data, wiped nightly). So everyone
 knows what it runs on and what it costs:
 
 | | |
 |---|---|
-| Server | one Hetzner Cloud CPX22 — 2 vCPU, 4 GB RAM, 80 GB SSD — at €23.58/month |
+| Server | one Hetzner Cloud CX33 — 4 shared vCPU, 8 GB RAM, 80 GB NVMe SSD — at €8.49/month net |
 | Location | Nuremberg, Germany (`eu-central`), dual-stack, behind a Caddy proxy terminating TLS |
 | Database | Neon serverless PostgreSQL 18, Frankfurt, on its direct (non-pooled) endpoint |
 
 The whole posture is committed at [`deploy/hosted/`](deploy/hosted/). One step up,
 [open a GitHub Codespace](https://codespaces.new/rubentalstra/FerroEHR)
-and the published stack (server, PostgreSQL 18, admin console) boots in your
+and the published stack (server, PostgreSQL 18, viewer) boots in your
 browser. Details in [Try it in Codespaces](https://ferroehr.eu/docs/latest/installation/codespaces.html).
 
 Or run it locally with Docker Compose: one downloaded file, no checkout
@@ -252,8 +252,8 @@ curl -u ferroehr:ferroehr -H 'Content-Type: application/json' \
 Interactive OpenAPI documentation is served at
 `http://localhost:8080/ferroehr/rest/swagger-ui`, and the hosted sandbox runs
 the same UI at <https://sandbox.ferroehr.eu/ferroehr/rest/swagger-ui> if you
-want to look before installing anything. The admin console is
-opt-in: `docker compose --profile admin-ui up`, then `http://localhost:3000`
+want to look before installing anything. The viewer is
+opt-in: `docker compose --profile viewer up`, then `http://localhost:3000`
 with the same credentials.
 
 To try OAuth2/OIDC instead of Basic auth, download the
@@ -271,8 +271,8 @@ Published images: [`ghcr.io/rubentalstra/ferroehr`](https://github.com/rubentals
 [`ghcr.io/rubentalstra/ferroehr-postgres`](https://github.com/rubentalstra/FerroEHR/pkgs/container/ferroehr-postgres)
 (PostgreSQL 18 with roles, schemas, and extensions pre-created; the server
 runs its own migrations at boot), and
-[`ghcr.io/rubentalstra/ferroehr-admin-ui`](https://github.com/rubentalstra/FerroEHR/pkgs/container/ferroehr-admin-ui)
-(the admin console). The Compose file pins the release's exact image versions.
+[`ghcr.io/rubentalstra/ferroehr-viewer`](https://github.com/rubentalstra/FerroEHR/pkgs/container/ferroehr-viewer)
+(the viewer). The Compose file pins the release's exact image versions.
 Configuration is environment-driven (`FERROEHR_*`) on top of the config the
 Compose file carries inline; that config ships **one** development user with
 role-based access control **disabled:** dev defaults that must be replaced
@@ -390,7 +390,7 @@ flowchart TB
         rest["ferroehr-rest<br/>ITS-REST 1.1.0 protocol adapter (axum)<br/>+ access (authn · RBAC/ABAC) + wire mapping"]
         core["ferroehr<br/>the platform library: PG18 node storage · versioning ·<br/>AQL→SQL engine · validation · signing · templates ·<br/>audit — one service module<br/>per SM Platform Service Model chapter"]
         bin["ferroehr-server<br/>the wiring-only binary"]
-        adminui["ferroehr-admin-ui<br/>the Leptos SSR admin console (own OCI image,<br/>consumes the CDR strictly over ITS-REST)"]
+        viewer["ferroehr-viewer<br/>the Leptos SSR viewer (own OCI image,<br/>consumes the CDR strictly over ITS-REST)"]
         ext["ferroehr-ext<br/>optional integrations behind additive features:<br/>FHIR conversion · AMQP events · multimedia store"]
     end
 
@@ -633,7 +633,7 @@ rather than left to be discovered.
   FerroEHR is an independent implementation of the openEHR® specifications
   and is not endorsed by the Foundation.
 - **[Cabolabs EHRServer](https://github.com/ppazos/cabolabs-ehrserver)** —
-  the admin console's feature set (the Template Manager, the point-and-click
+  the viewer's feature set (the Template Manager, the point-and-click
   Query Builder, saved/grouped/cohort queries) is inspired by EHRServer by
   Pablo Pazos / CaboLabs Health Informatics (Apache-2.0). The UX is
   reimplemented fresh in Rust over this project's own AQL engine — no code

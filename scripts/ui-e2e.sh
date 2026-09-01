@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # SPDX-FileCopyrightText: FerroEHR contributors
 # SPDX-License-Identifier: MIT
-# Admin-console E2E harness: compose up the CDR stack +
+# Viewer E2E harness: compose up the CDR stack +
 # Keycloak, build + run the console on the host, start chromedriver, run the
 # e2e journeys via nextest, tear down. Mirrors scripts/conformance.sh.
 #
@@ -10,7 +10,7 @@
 #
 # Env:
 #   UI_E2E_IMAGE        if set, run the journeys against the COMPOSED console
-#                       image (docker compose build of docker/admin-ui/
+#                       image (docker compose build of docker/viewer/
 #                       Dockerfile + the e2e-env override) instead of a host
 #                       cargo-leptos build — the shipped-artifact battery.
 #                       Its caller is the weekly
@@ -30,11 +30,11 @@
 #   UI_E2E_PREBUILT_CONSOLE
 #                       if set, skip the host cargo-leptos build and run the
 #                       console binary + site tree already at
-#                       target/debug/ferroehr-admin-ui + target/site (CI builds
+#                       target/debug/ferroehr-viewer + target/site (CI builds
 #                       them in a parallel job and downloads the artifact).
 #   UI_E2E_NEXTEST_ARCHIVE
 #                       if set, run the journeys from this prebuilt nextest
-#                       archive (`cargo nextest archive -p ferroehr-admin-ui
+#                       archive (`cargo nextest archive -p ferroehr-viewer
 #                       --features ssr`) via --archive-file/--workspace-remap
 #                       instead of compiling the test binaries here.
 #   UI_E2E_KEEP_UP      if set, skip teardown (local debugging).
@@ -67,10 +67,10 @@ export COMPOSE_PROJECT_NAME=ferroehr-e2e
 # on the `up` left the trap's `down -v` blind to keycloak and leaked the
 # container on every run. COMPOSE_PROFILES scopes EVERY compose call below —
 # `up`, `stop` and the teardown alike. Comma-separate any profile added here.
-# `admin-ui` is here because the console service now carries that profile: the
-# export is what keeps the image mode's `stop ferroehr-admin-ui` cleanup and
+# `viewer` is here because the console service now carries that profile: the
+# export is what keeps the image mode's `stop ferroehr-viewer` cleanup and
 # the trap's `down -v` able to see the container at all.
-export COMPOSE_PROFILES=keycloak,admin-ui
+export COMPOSE_PROFILES=keycloak,viewer
 # Build provenance for the compose-built images: the OCI-standard REVISION arg
 # (forwarded by the compose build.args block, bridged into build.rs by the
 # server Dockerfile). Degrades to `unknown` off-checkout.
@@ -91,13 +91,13 @@ mkdir -p "$SHOTS_DIR"
 
 # ── Working-tree residue guard ──────────────────────────────────────────────
 # A battery run must not change tracked files. The screenshot pass is the one
-# legitimate writer (it regenerates website/book/src/admin-ui/img), so it is
+# legitimate writer (it regenerates website/book/src/viewer/img), so it is
 # excluded from the comparison; everything else must match the state we started
 # from — a pre-existing dirty tree is fine, NEW residue is not.
 # Tolerates a non-checkout (no git, no repo): both samples come back empty and
 # the comparison is trivially satisfied — there are no tracked files to dirty.
 git_tree_state() {
-  git -C "$ROOT" status --porcelain -- . ':(exclude)website/book/src/admin-ui/img' 2>/dev/null || true
+  git -C "$ROOT" status --porcelain -- . ':(exclude)website/book/src/viewer/img' 2>/dev/null || true
 }
 TREE_STATE_BEFORE="$(git_tree_state)"
 assert_no_tree_residue() {
@@ -116,7 +116,7 @@ DRIVER_PID=""
 cleanup() {
   [[ -n "$CONSOLE_PID" ]] && kill "$CONSOLE_PID" 2>/dev/null || true
   if [[ -n "${UI_E2E_IMAGE:-}" ]] && [[ -z "${UI_E2E_KEEP_UP:-}" ]]; then
-    docker compose stop ferroehr-admin-ui >/dev/null 2>&1 || true
+    docker compose stop ferroehr-viewer >/dev/null 2>&1 || true
   fi
   [[ -n "$DRIVER_PID" ]] && kill "$DRIVER_PID" 2>/dev/null || true
   if [[ -z "${UI_E2E_NO_COMPOSE:-}" ]] && [[ -z "${UI_E2E_KEEP_UP:-}" ]]; then
@@ -150,7 +150,7 @@ if [[ -z "${UI_E2E_NO_COMPOSE:-}" ]]; then
   # block (tenancy on, terminology on) never reached the host-mode CDR — the
   # lane CI actually runs.
   docker compose -f docker-compose.yml -f docker-compose.dev.yml \
-    -f docker/admin-ui/e2e-env.yml \
+    -f docker/viewer/e2e-env.yml \
     up -d "${BUILD_ARGS[@]}" ferroehr-postgres ferroehr keycloak
 fi
 wait_http "$CDR_URL/ferroehr/rest/status" 150
@@ -199,7 +199,7 @@ curl -sf -X PUT -H "Authorization: Bearer $KC_TOKEN" -H "Content-Type: applicati
 #        by construction; no hand-built fixture).
 echo "── seeding an EHR + a two-version composition"
 CDR_V1="$CDR_URL/ferroehr/rest/openehr/v1"
-SEED_OPT="app/ferroehr-admin-ui/tests/fixtures/minimal_evaluation.opt"
+SEED_OPT="app/ferroehr-viewer/tests/fixtures/minimal_evaluation.opt"
 SEED_TEMPLATE="minimal_evaluation.en.v1"
 # Template upload is idempotent for the harness: 201 (created) or 409 (there).
 opt_status=$(curl -s -o /dev/null -w "%{http_code}" -u ferroehr:ferroehr -X POST \
@@ -248,22 +248,22 @@ echo "   seeded 3 extra FLAT compositions with quantity magnitudes"
 # ── 3. The console under test ────────────────────────────────────────────────
 if [[ -n "${UI_E2E_IMAGE:-}" ]]; then
   # Image mode — the TRUE shipped artifact: compose-build the console image
-  # (docker/admin-ui/Dockerfile) with the e2e-env override supplying the OIDC
+  # (docker/viewer/Dockerfile) with the e2e-env override supplying the OIDC
   # test wiring; the issuer (http://keycloak:8081) resolves in-network via
   # docker DNS and in the E2E browser via the harness host-resolver mapping.
   # The explicit -f chain here MATCHES the CDR up in step 1 (base + override +
   # the e2e overlay): compose recreates any dependency whose model differs, so
   # if this call's model gave `ferroehr` a different config than the running
-  # container, `up ferroehr-admin-ui` would RECREATE the server mid-run —
+  # container, `up ferroehr-viewer` would RECREATE the server mid-run —
   # breaking the lane. The bare calls (stop/down/logs) recreate nothing.
   if [[ -n "${UI_E2E_IMAGE_REF:-}" ]]; then
     echo "── compose up the PUBLISHED console image ($UI_E2E_IMAGE_REF)"
-    FERROEHR_ADMIN_UI_IMAGE="$UI_E2E_IMAGE_REF" \
+    FERROEHR_VIEWER_IMAGE="$UI_E2E_IMAGE_REF" \
       docker compose -f docker-compose.yml -f docker-compose.dev.yml \
-      -f docker/admin-ui/e2e-env.yml \
-      up -d --no-build --pull always ferroehr-admin-ui
+      -f docker/viewer/e2e-env.yml \
+      up -d --no-build --pull always ferroehr-viewer
   else
-    # `up --build ferroehr-admin-ui` would also rebuild the whole `depends_on`
+    # `up --build ferroehr-viewer` would also rebuild the whole `depends_on`
     # closure — a full CDR compile even when the caller supplied both images
     # (#2882) — so the build is a separate, service-scoped step (`compose
     # build` never builds dependencies) and the `up` itself never builds.
@@ -272,19 +272,19 @@ if [[ -n "${UI_E2E_IMAGE:-}" ]]; then
     else
       echo "── compose build the console image (build from source)"
       docker compose -f docker-compose.yml -f docker-compose.dev.yml \
-        -f docker/admin-ui/e2e-env.yml \
-        build ferroehr-admin-ui
+        -f docker/viewer/e2e-env.yml \
+        build ferroehr-viewer
     fi
     docker compose -f docker-compose.yml -f docker-compose.dev.yml \
-      -f docker/admin-ui/e2e-env.yml \
-      up -d --no-build ferroehr-admin-ui
+      -f docker/viewer/e2e-env.yml \
+      up -d --no-build ferroehr-viewer
   fi
 else
   if [[ -n "${UI_E2E_PREBUILT_CONSOLE:-}" ]]; then
     echo "── using the prebuilt console (UI_E2E_PREBUILT_CONSOLE)"
     # hash.txt is as load-bearing as the binary: without it the renderer names
     # the unhashed /pkg files, which the hashed bundle does not contain.
-    for p in "$ROOT/target/debug/ferroehr-admin-ui" "$ROOT/target/debug/hash.txt" \
+    for p in "$ROOT/target/debug/ferroehr-viewer" "$ROOT/target/debug/hash.txt" \
              "$ROOT/target/site/pkg"; do
       [[ -e "$p" ]] || { echo "FATAL: UI_E2E_PREBUILT_CONSOLE set but $p is missing" >&2; exit 1; }
     done
@@ -299,16 +299,16 @@ else
   # files this build produced.
   LEPTOS_SITE_ROOT="$ROOT/target/site" \
   LEPTOS_SITE_ADDR="$CONSOLE_ADDR" \
-  LEPTOS_OUTPUT_NAME="ferroehr-admin-ui" \
+  LEPTOS_OUTPUT_NAME="ferroehr-viewer" \
   LEPTOS_HASH_FILES="true" \
-  FERROEHR_ADMIN__CDR__BASE_URL="$CDR_URL" \
-  FERROEHR_ADMIN__AUTH__OIDC__ENABLED="true" \
-  FERROEHR_ADMIN__AUTH__OIDC__ISSUER="http://keycloak:8081/auth/realms/ferroehr" \
-  FERROEHR_ADMIN__AUTH__OIDC__RESOLVE="keycloak=127.0.0.1:8081" \
-  FERROEHR_ADMIN__AUTH__OIDC__CLIENT_ID="ferroehr" \
-  FERROEHR_ADMIN__AUTH__OIDC__CLIENT_SECRET="bT5T4oWn3xNdBytQsl2cfpBDi1pp15Va" \
-  FERROEHR_ADMIN__AUTH__OIDC__PUBLIC_BASE_URL="$CONSOLE_URL" \
-    "$ROOT/target/debug/ferroehr-admin-ui" &
+  FERROEHR_VIEWER__CDR__BASE_URL="$CDR_URL" \
+  FERROEHR_VIEWER__AUTH__OIDC__ENABLED="true" \
+  FERROEHR_VIEWER__AUTH__OIDC__ISSUER="http://keycloak:8081/auth/realms/ferroehr" \
+  FERROEHR_VIEWER__AUTH__OIDC__RESOLVE="keycloak=127.0.0.1:8081" \
+  FERROEHR_VIEWER__AUTH__OIDC__CLIENT_ID="ferroehr" \
+  FERROEHR_VIEWER__AUTH__OIDC__CLIENT_SECRET="bT5T4oWn3xNdBytQsl2cfpBDi1pp15Va" \
+  FERROEHR_VIEWER__AUTH__OIDC__PUBLIC_BASE_URL="$CONSOLE_URL" \
+    "$ROOT/target/debug/ferroehr-viewer" &
   CONSOLE_PID=$!
 fi
 wait_http "$CONSOLE_URL/login"
@@ -352,7 +352,7 @@ wait_http "http://127.0.0.1:$DRIVER_PORT/status"
 # workspace metadata back at this checkout (compile-time env!(...) paths are
 # unaffected — CI builds the archive on the same runner image + workspace
 # path, which the workflow documents).
-NEXTEST_TARGET=(-p ferroehr-admin-ui --features ssr)
+NEXTEST_TARGET=(-p ferroehr-viewer --features ssr)
 if [[ -n "${UI_E2E_NEXTEST_ARCHIVE:-}" ]]; then
   NEXTEST_TARGET=(--archive-file "$UI_E2E_NEXTEST_ARCHIVE" --workspace-remap "$ROOT")
 fi
@@ -386,7 +386,7 @@ fi
 
 # ── 6. The documentation-screenshot pass (opt-in) ────────────────────────────
 # When UI_E2E_DOCS_SHOTS is set, capture the canonical per-screen screenshots
-# for website/book (writes into website/book/src/admin-ui/img). Runs after the
+# for website/book (writes into website/book/src/viewer/img). Runs after the
 # journeys so the browse journeys have seeded the fixture template.
 if [[ -n "${UI_E2E_DOCS_SHOTS:-}" ]]; then
   echo "── capturing documentation screenshots"

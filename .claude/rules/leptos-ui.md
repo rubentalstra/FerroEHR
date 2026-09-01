@@ -1,12 +1,12 @@
 ---
-paths: ["app/ferroehr-admin-ui/**"]
+paths: ["app/ferroehr-viewer/**"]
 ---
 
-# Leptos admin-UI rules (`app/ferroehr-admin-ui` — and any Leptos code)
+# Leptos viewer rules (`app/ferroehr-viewer` — and any Leptos code)
 
 Authored 2026-07-13 from a full read of the official Leptos book
 (leptos-rs/book `main`, targets Leptos 0.8) + the owner mandates recorded
-in `app/ferroehr-admin-ui/CLAUDE.md`. Citations are book chapters
+in `app/ferroehr-viewer/CLAUDE.md`. Citations are book chapters
 (`view/04_iteration`, `ssr/24_hydration_bugs`, …). The UI stack pins live
 in the root `[workspace.dependencies]`: Leptos 0.8 SSR/full-stack,
 `cargo-leptos`, Tailwind v4, `thaw` (a pinned main rev until 0.5 stable),
@@ -281,16 +281,16 @@ in the root `[workspace.dependencies]`: Leptos 0.8 SSR/full-stack,
   `thirtyfour` (WebDriver, built on `fantoccini`) driving headless Chromium
   against the composed stack (`scripts/ui-e2e.sh`); journeys are plain
   `#[tokio::test]`s in the `e2e_*` modules of the one integration binary
-  (`app/ferroehr-admin-ui/tests/it/`), skip-with-
+  (`app/ferroehr-viewer/tests/it/`), skip-with-
   reason when `UI_E2E_BASE_URL` is unset (CI always sets it). Every journey
   fails on any browser-console hydration error or panic. Explicit waits on
   elements/conditions, never `sleep`; a flaky journey is fixed, never
   `#[ignore]`d or retried-by-default. NOT Playwright/JS (the no-JS mandate
   covers the test suite).
-- Gates for every UI change: `cargo clippy -p ferroehr-admin-ui
+- Gates for every UI change: `cargo clippy -p ferroehr-viewer
   --all-targets` green on native **and**
   `--target wasm32-unknown-unknown` (lib); `cargo nextest run -p
-  ferroehr-admin-ui`; `leptosfmt` + `cargo fmt` clean;
+  ferroehr-viewer`; `leptosfmt` + `cargo fmt` clean;
   `bash scripts/cargo-leptos.sh build` completes — always the wrapper, never a
   bare `cargo leptos`, which resolves the workspace through an unlocked
   `cargo metadata` of its own and rewrites `Cargo.lock`. Target-dir discipline from CLAUDE.md applies unchanged.
@@ -298,8 +298,8 @@ in the root `[workspace.dependencies]`: Leptos 0.8 SSR/full-stack,
   traces in the browser — `getting_started/leptos_dx`). RustRover users:
   leptosfmt runs via the FileWatchers plugin (no rust-analyzer there).
 - **The `ui-screenshot-guard` CI job** (`.github/workflows/ci.yml`): any PR
-  that touches `app/ferroehr-admin-ui/src/` or `style/` must EITHER commit
-  refreshed captures under `website/book/src/admin-ui/img/` (run
+  that touches `app/ferroehr-viewer/src/` or `style/` must EITHER commit
+  refreshed captures under `website/book/src/viewer/img/` (run
   `scripts/ui-e2e.sh` with `UI_E2E_DOCS_SHOTS=1` and commit the PNGs) OR
   carry the **`no-ui-visual-change`** PR label — reserved for changes with
   zero visual effect (doc comments, server-side-only logic, test-only

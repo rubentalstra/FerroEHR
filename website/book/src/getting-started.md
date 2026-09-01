@@ -37,8 +37,8 @@ out of the box.
 
 Published ports bind `127.0.0.1` by default, so the stack is reachable from
 this machine and not from the network. Three things are optional and stay down
-until you ask for them: the [admin console](admin-ui/index.md)
-(`docker compose --profile admin-ui up`, then <http://localhost:3000>), a
+until you ask for them: the [viewer](viewer/index.md)
+(`docker compose --profile viewer up`, then <http://localhost:3000>), a
 SeaweedFS S3 gateway for multimedia (`--profile s3`), and a ready-made Keycloak
 identity provider for bearer-token auth (a second downloadable overlay,
 `docker-compose.keycloak.yml`). See [Docker Compose](installation/compose.md)
@@ -57,7 +57,7 @@ It answers a small JSON document: `status`, `server_version`,
 the base path `/ferroehr/rest/openehr/v1`. Interactive OpenAPI documentation is
 served at <http://localhost:8080/ferroehr/rest/swagger-ui>. If you have no
 server yet, use the hosted sandbox: <https://sandbox.ferroehr.eu> opens the
-admin console over a live CDR, and the same server's Swagger UI is at
+viewer over a live CDR, and the same server's Swagger UI is at
 <https://sandbox.ferroehr.eu/ferroehr/rest/swagger-ui>. Both take the public
 demo credentials `ferroehr` / `ferroehr`. The sandbox runs on best-effort
 free compute and resets nightly: expect it to slow down under heavy use.
@@ -185,7 +185,7 @@ drift from the routes it actually serves. When authentication is enabled the
 Bearer/JWT when OIDC is set up, otherwise HTTP Basic). The hosted sandbox runs
 the same UI at <https://sandbox.ferroehr.eu/ferroehr/rest/swagger-ui> if you
 want to try it before running anything locally — and
-<https://sandbox.ferroehr.eu> itself opens the [admin console](admin-ui/index.md)
+<https://sandbox.ferroehr.eu> itself opens the [viewer](viewer/index.md)
 on that server, with the demo credentials `ferroehr` / `ferroehr`.
 
 ## Next steps

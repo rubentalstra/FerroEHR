@@ -131,7 +131,7 @@ write_files:
           docker rm -f "$cid" >/dev/null 2>&1 || true
         fi
         rm -f docker-compose.yml.candidate Caddyfile.candidate \
-          ferroehr.sandbox.toml.candidate ferroehr-admin-ui.sandbox.toml.candidate
+          ferroehr.sandbox.toml.candidate ferroehr-viewer.sandbox.toml.candidate
       }
       cid=""
       trap cleanup EXIT
@@ -144,13 +144,13 @@ write_files:
       docker cp "$cid:/opt/sandbox-posture/docker-compose.yml" docker-compose.yml.candidate
       docker cp "$cid:/opt/sandbox-posture/Caddyfile" Caddyfile.candidate
       docker cp "$cid:/opt/sandbox-posture/ferroehr.sandbox.toml" ferroehr.sandbox.toml.candidate
-      docker cp "$cid:/opt/sandbox-posture/ferroehr-admin-ui.sandbox.toml" ferroehr-admin-ui.sandbox.toml.candidate
+      docker cp "$cid:/opt/sandbox-posture/ferroehr-viewer.sandbox.toml" ferroehr-viewer.sandbox.toml.candidate
 
       # `set -e` fails a failed copy; an EMPTY file it cannot see. A truncated
       # posture stops the deploy here rather than recreating with the old
       # files and reporting success.
       for candidate in docker-compose.yml.candidate Caddyfile.candidate \
-        ferroehr.sandbox.toml.candidate ferroehr-admin-ui.sandbox.toml.candidate; do
+        ferroehr.sandbox.toml.candidate ferroehr-viewer.sandbox.toml.candidate; do
         if [[ ! -s "$candidate" ]]; then
           echo "deploy: $candidate came out of $image empty" >&2
           exit 1
@@ -167,7 +167,7 @@ write_files:
 
       # The replaced copy stays on the box, so a bad posture is recoverable
       # without anyone editing YAML over SSH.
-      for f in docker-compose.yml Caddyfile ferroehr.sandbox.toml ferroehr-admin-ui.sandbox.toml; do
+      for f in docker-compose.yml Caddyfile ferroehr.sandbox.toml ferroehr-viewer.sandbox.toml; do
         if ! cmp -s "$f.candidate" "$f"; then
           if [[ -f "$f" ]]; then
             cp -p "$f" "$f.prev"

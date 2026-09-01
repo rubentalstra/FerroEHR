@@ -10,4 +10,4 @@
 set -Eeuo pipefail
 cd "$(dirname "${BASH_SOURCE[0]}")/.."
 
-docker compose -f docker-compose.yml --profile admin-ui pull
+docker compose -f docker-compose.yml --profile viewer pull

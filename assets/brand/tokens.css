@@ -1,5 +1,5 @@
 /* FerroEHR brand palette — "Oxide & Iron" (owner-approved 2026-07-31, issue #1353).
- * The single source for brand colours; the admin console and website book
+ * The single source for brand colours; the viewer and website book
  * consume these custom properties during the rename programme.
  * Semantic colours (success / warning / error) are deliberately NOT brand
  * colours — define them per surface, never from this file. */

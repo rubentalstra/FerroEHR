@@ -40,7 +40,7 @@ findings:
   exclusion: ~20.5k of the 30.8k duplicated lines (67%) sat in that class.
   Extracting or macro-izing it would hide the citation surface, not remove
   repetition the wire does not itself carry.
-- **`sonar.coverage.exclusions`** carries `app/ferroehr-admin-ui/**`: the
+- **`sonar.coverage.exclusions`** carries `app/ferroehr-viewer/**`: the
   console's acceptance instrument is the browser journey battery
   (`scripts/ui-e2e.sh`) and the published-image login probe, which no lcov
   run can observe (browser/wasm execution) — the metric misstated verified

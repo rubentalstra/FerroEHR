@@ -19,7 +19,7 @@ type: application
 # A published OCI version is immutable by refusal rather than by the registry —
 # `helm push` over an existing tag replaces it silently — so a correction always
 # ships as a NEW version and the published one stands as it was.
-version: 6.0.33
+version: 7.0.0
 # The DEFAULT container image tag (overridable via image.tag). Equals the
 # workspace version in Cargo.toml, bumped in the release PR beside the
 # docker-compose.yml image tags — one version sweep, the compose treatment
@@ -156,17 +156,18 @@ annotations:
       platforms:
         - linux/amd64
         - linux/arm64
-    # The admin console — an OPTIONAL companion an operator may run alongside
-    # the CDR. Listed deliberately (owner call) so its vulnerability surface is
-    # visible to anyone considering it. See #2193: this chart cannot deploy it
-    # yet, so today the entry advertises intent rather than chart behaviour.
-    - name: ferroehr-admin-ui
-      image: ghcr.io/rubentalstra/ferroehr-admin-ui:4.0.15
+    # The viewer — an OPTIONAL companion workload this chart deploys when
+    # `viewer.enabled` is set (templates/viewer.yaml renders its Deployment,
+    # Service, ServiceAccount, Ingress and NetworkPolicy). Off by default, so
+    # the entry describes a surface an operator opts into rather than one every
+    # install carries, and it is listed so that surface is scanned.
+    - name: ferroehr-viewer
+      image: ghcr.io/rubentalstra/ferroehr-viewer:4.0.15
       platforms:
         - linux/amd64
         - linux/arm64
   artifacthub.io/screenshots: |
     - title: Dashboard
-      url: https://ferroehr.eu/docs/latest/admin-ui/img/dashboard/dashboard.png
+      url: https://ferroehr.eu/docs/latest/viewer/img/dashboard/dashboard.png
     - title: AQL query console
-      url: https://ferroehr.eu/docs/latest/admin-ui/img/queries/queries-admin-delete.png
+      url: https://ferroehr.eu/docs/latest/viewer/img/queries/queries-admin-delete.png

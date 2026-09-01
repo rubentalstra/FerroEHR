@@ -15,16 +15,57 @@ workflow refuses a tag that has no matching section here.
 
 ## [Unreleased]
 
+### Changed
+
+- The hosted sandbox (sandbox.ferroehr.eu) runs on a Hetzner CX33 (4 shared
+  vCPU, 8 GB RAM, 80 GB NVMe), resized in place from the CPX22. The hosted
+  compose memory limits that ship inside the server image move with it: the
+  CDR container to 4096m and the FerroEHR Viewer container to 1536m, so the
+  services actually use the larger box.
+- The admin console is now **FerroEHR Viewer**, and every name it carries
+  changes with it. Deployments must switch their references: the OCI image is
+  `ghcr.io/rubentalstra/ferroehr-viewer` (was `ferroehr-admin-ui`), the Compose
+  service and profile are both `viewer` (`docker compose --profile viewer up`,
+  was `--profile admin-ui`), the Compose image and port overrides are
+  `FERROEHR_VIEWER_IMAGE` and `FERROEHR_VIEWER_PORT`, the Helm values key is
+  `viewer` (was `adminUi`) and its OIDC client secret mounts at
+  `/etc/ferroehr-viewer-secrets`, the config file the viewer looks for is
+  `./ferroehr-viewer.toml` then `/etc/ferroehr/viewer.toml` (was
+  `ferroehr-admin-ui.toml` / `/etc/ferroehr/admin-ui.toml`), the binary and
+  crate are `ferroehr-viewer`, and the session cookie is
+  `ferroehr_viewer_session`, so open sessions need one fresh sign-in.
+  Documentation moved from `/docs/*/admin-ui/` to `/docs/*/viewer/`, with
+  redirects from the old pages. The Helm chart is version 7.0.0.
+- The viewer's own configuration environment grammar is renamed with it:
+  every `FERROEHR_ADMIN__<SECTION>__<KEY>` variable becomes
+  `FERROEHR_VIEWER__<SECTION>__<KEY>` (so `FERROEHR_ADMIN__CDR__BASE_URL` is
+  now `FERROEHR_VIEWER__CDR__BASE_URL`), and the config-file pointer
+  `FERROEHR_ADMIN_CONFIG` becomes `FERROEHR_VIEWER_CONFIG`. The chart's
+  default `viewer.existingSecretKey` moves from
+  `FERROEHR_ADMIN__AUTH__OIDC__CLIENT_SECRET` to
+  `FERROEHR_VIEWER__AUTH__OIDC__CLIENT_SECRET`, so an existing Secret needs
+  its key renamed or `viewer.existingSecretKey` set to the old spelling. A
+  variable left under the old prefix is not read and not reported: the
+  viewer's strict deserialization only sees what arrives under its own
+  prefix.
+- The Helm chart renames the viewer's Kubernetes objects from
+  `<release>-admin-ui` to `<release>-viewer` and its
+  `app.kubernetes.io/name` label from `<name>-admin-ui` to `<name>-viewer`.
+  A Deployment's selector is immutable, so a release that already runs the
+  console with `adminUi.enabled: true` must have that Deployment, Service,
+  ServiceAccount and NetworkPolicy deleted before the upgrade, or be
+  reinstalled. The CDR's own objects are untouched.
+
 ### Security
 
-- The `ferroehr` and `ferroehr-admin-ui` images build from the rebuilt
+- The `ferroehr` and `ferroehr-viewer` images build from the rebuilt
   `gcr.io/distroless/cc-debian13:nonroot` base carrying openssl
   `3.5.7-1~deb13u2`, which fixes CVE-2026-14456 (QUIC denial of service) and
   nine sibling advisories in `libssl3t64`. The library was never linked by the
   shipped binaries (the TLS stack is rustls/aws-lc throughout); the bounded
   scanner exception and its VEX statement are removed now that the fixed base
   exists.
-  
+
 ### Fixed
 
 - The platform validity checker (`definitions_valid`) now checks archetype

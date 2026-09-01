@@ -238,9 +238,9 @@ bin is still named `ferroehr`), `ferroehr-ext` (the feature-gated
 optional-integration crate — FHIR conversion core, events transport,
 multimedia store — one additive cargo feature per integration, default all-on,
 slim builds compile them out with loud boot refusals for enabled-but-unbuilt
-integrations), and `ferroehr-admin-ui` (the Leptos SSR admin
-console — its own binary/OCI image, consuming the CDR strictly over
-ITS-REST); **`tools/*`** holds the dev/verification
+integrations), and `ferroehr-viewer` (the Leptos SSR viewer — its own
+binary/OCI image, consuming the CDR strictly over ITS-REST);
+**`tools/*`** holds the dev/verification
 tooling that is *not* part of the shipped application
 (`testkit` — the shared test-database harness, and
 `openehr-codegen` — the BMM/XSD/OAS → Rust generator); **`crates/*`** holds the

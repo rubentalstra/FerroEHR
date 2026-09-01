@@ -60,7 +60,7 @@ published container image is distroless and non-root, with no shell and no
 package manager. (It is not a *static* binary: the server links the system C
 library dynamically, which is why the image is the `cc` distroless variant. See
 [Operations](../operations.md#the-container-image-and-pod-hardening).) The
-[admin console](../admin-ui/index.md) is a separate, optional binary and image
+[viewer](../viewer/index.md) is a separate, optional binary and image
 that talks to the server strictly over the public REST API.
 
 ## Two specification generations, one selectable set

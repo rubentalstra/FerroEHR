@@ -397,7 +397,7 @@ requires a browser to *ignore* it over plain HTTP, which is how this server is
 commonly reached behind a terminating proxy. Set it at the proxy or ingress that
 owns TLS; sending it from here would be inert at best and misleading at worst.
 
-**The admin console** additionally carries the browser set with a real CSP, because
+**The viewer** additionally carries the browser set with a real CSP, because
 it serves HTML and hydrates WebAssembly. Its `Cache-Control` has one scoped
 exception to `no-store`: the hydration bundle under `/pkg/` is served
 `public, max-age=31536000, immutable`. Those filenames carry a content hash, so

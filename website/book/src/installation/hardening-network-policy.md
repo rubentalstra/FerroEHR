@@ -13,7 +13,7 @@ pages that is not free.
 **Ours, and satisfied by construction.** Every object the chart renders is
 namespace-scoped: Deployment, Service, ConfigMap, Secret, ServiceAccount,
 NetworkPolicy, PodDisruptionBudget, HorizontalPodAutoscaler, Ingress,
-ServiceMonitor, the migration Job, and the admin console's own Deployment,
+ServiceMonitor, the migration Job, and the viewer's own Deployment,
 Service, ServiceAccount, NetworkPolicy and Ingress when that workload is enabled.
 There is **no ClusterRole, no ClusterRoleBinding, no CustomResourceDefinition, no
 cluster-scoped object of any kind**, and no template hard-codes a namespace: every
@@ -46,7 +46,7 @@ What a mesh would provide, and what already provides it:
 | Mesh benefit | Already covered by |
 |---|---|
 | mTLS between services | the server terminates TLS natively (`config.server.tls`), including client-certificate authentication for the IHE ATNA node-authentication posture; the database connection uses `sslmode=verify-full` |
-| East-west traffic restriction | the shipped NetworkPolicy, and for the admin console an egress policy that admits the CDR Service, DNS and outbound HTTPS and nothing else |
+| East-west traffic restriction | the shipped NetworkPolicy, and for the viewer an egress policy that admits the CDR Service, DNS and outbound HTTPS and nothing else |
 | Request-level observability | OTLP traces and Prometheus metrics from the application, which sees openEHR operations rather than an L7 proxy's view of opaque HTTP |
 | An audit trail of access | the ATNA/BALP audit trail, which records *who read which patient's record*, a property no proxy can reconstruct |
 
@@ -118,7 +118,7 @@ The chart's bounds, and where they come from:
 Those figures are for a modest replica. Tune them from your own metrics rather than
 treating them as a recommendation, and remember that raising `replicaCount`
 multiplies the request, which is what a namespace quota will notice first. The
-admin console has its own, smaller bounds under `adminUi.resources`.
+viewer has its own, smaller bounds under `viewer.resources`.
 
 **The layering is the point**, and an operator should see it as one story: four
 nested bounds, each catching what the next cannot:
@@ -205,13 +205,13 @@ networkPolicy:
   ingressAllowAll: false                               # refuse to ever render the open rule
 ```
 
-The admin console does not need an entry: when `adminUi.enabled` is on, the chart
+The viewer does not need an entry: when `viewer.enabled` is on, the chart
 appends the console's own pod selector to whatever you list, because a narrowed
 policy that forgets it locks the console out of the CDR and presents as the CDR
 being down.
 
 **The console's own policy works exactly the same way**, under
-`adminUi.networkPolicy.ingressFrom` and `adminUi.networkPolicy.ingressAllowAll`,
+`viewer.networkPolicy.ingressFrom` and `viewer.networkPolicy.ingressAllowAll`,
 with the same refusal on `false` + empty. Its egress half is genuinely closed
 (the CDR Service and DNS, nothing else) but its ingress half ships open like the
 CDR's, and what sits behind it is a login page. Narrow both.
@@ -290,7 +290,7 @@ only the rows you have switched on:
 | FHIR audit repository | `config.audit.fhir_feed.enabled` plus `secrets.auditFhirFeedUrl` | 443 | off-cluster |
 | Subject-proxy source system | a `config.subject_proxy.systems` entry's `base_url` | 443 | off-cluster |
 
-The admin console, when enabled, carries its own egress policy rather than
+The viewer, when enabled, carries its own egress policy rather than
 appearing in this table: it admits the CDR Service, DNS, and outbound HTTPS for an
 identity provider. Narrow that last rule to your issuer's address if you can.
 

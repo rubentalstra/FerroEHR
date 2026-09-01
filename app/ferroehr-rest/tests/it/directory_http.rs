@@ -1121,7 +1121,7 @@ async fn duplicate_sibling_folder_names_accepted() {
 
 /// The read decorates the root FOLDER with its `uid` (`OBJECT_VERSION_ID`,
 /// RM FOLDER class NOTE); an editor that fetches, mutates, and PUTs the SAME
-/// body back (the admin console's flow) must succeed — the stale embedded
+/// body back (the viewer's flow) must succeed — the stale embedded
 /// `uid` is versioning metadata, not client intent (`directory_update.yaml`).
 #[tokio::test]
 async fn update_with_a_fetched_body_round_trips() {

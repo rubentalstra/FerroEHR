@@ -25,7 +25,7 @@ if [[ -z "$version" ]]; then
 fi
 
 rc=0
-for var in FERROEHR_IMAGE FERROEHR_POSTGRES_IMAGE FERROEHR_ADMIN_UI_IMAGE; do
+for var in FERROEHR_IMAGE FERROEHR_POSTGRES_IMAGE FERROEHR_VIEWER_IMAGE; do
   # The default is the `:-` fallback inside `${VAR:-ghcr.io/owner/name:tag}`.
   ref="$(grep -oE "\\\$\{$var:-[^}]+\}" "$COMPOSE_FILE" | head -1 \
     | sed -E "s/^\\\$\{$var:-//; s/\}$//")"
@@ -47,7 +47,7 @@ done
 # tracks the `:latest` release pointer the image lane moves (#2974), so this
 # guard only pins them to that pointer — a versioned default reappearing would
 # resurrect the release-cut bump this guard used to police.
-for pair in "FERROEHR_IMAGE ghcr.io/rubentalstra/ferroehr:latest"   "FERROEHR_ADMIN_UI_IMAGE ghcr.io/rubentalstra/ferroehr-admin-ui:latest"; do
+for pair in "FERROEHR_IMAGE ghcr.io/rubentalstra/ferroehr:latest"   "FERROEHR_VIEWER_IMAGE ghcr.io/rubentalstra/ferroehr-viewer:latest"; do
   var="${pair%% *}"
   want="${pair#* }"
   ref="$(grep -oE "\\$\{$var:-[^}]+\}" "$HOSTED_COMPOSE" | head -1     | sed -E "s/^\\$\{$var:-//; s/\}$//")"

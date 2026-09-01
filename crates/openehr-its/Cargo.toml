@@ -1,6 +1,6 @@
 [package]
 name = "openehr-its"
-version = "0.0.50"
+version = "0.0.51"
 description = "openEHR ITS (Implementation Technology Specifications): canonical JSON + canonical XML serialization of the RM, the generated ITS-REST 1.1.0 API contract, OPT 1.4 and AOM2 archetype XML codecs, and the Simplified Formats (FLAT / STRUCTURED / Web Template)"
 edition.workspace = true
 rust-version.workspace = true
@@ -15,7 +15,7 @@ include = ["src/**", "schemas/json/openehr_rm_1.1.0_all.json", "README.md", "LIC
 # EVERY dependency rides the default `full` feature (see [features] below), so
 # `default-features = false` yields the dependency-free `rest::smart_scopes`
 # island alone — the std-only SMART scope grammar, which a REST client compiled
-# to `wasm32-unknown-unknown` (the admin console) can then parse with.
+# to `wasm32-unknown-unknown` (the viewer) can then parse with.
 [dependencies]
 serde = { workspace = true, optional = true }
 serde_json = { workspace = true, optional = true }
@@ -41,14 +41,14 @@ regex = { workspace = true, optional = true }
 fancy-regex = { workspace = true, optional = true }
 # The generated XML (de)serializers impl the crate's ToXml/FromXml traits for the
 # RM/BASE spec types, so these are real (non-dev) deps.
-openehr-base = { path = "../openehr-base", version = "0.0.50", optional = true }
-openehr-rm = { path = "../openehr-rm", version = "0.0.50", optional = true }
+openehr-base = { path = "../openehr-base", version = "0.0.51", optional = true }
+openehr-rm = { path = "../openehr-rm", version = "0.0.51", optional = true }
 # The native canonical-JSON codec (`json_codec/generated`, emit-json) implements
 # `ToJson` for EVERY generated spec type the `OpenEhrType` derive covers, so it
 # spans all five spec crates (not just the RM/BASE the XML codec needs).
-openehr-lang = { path = "../openehr-lang", version = "0.0.50", optional = true }
-openehr-am = { path = "../openehr-am", version = "0.0.50", optional = true }
-openehr-term = { path = "../openehr-term", version = "0.0.50", optional = true }
+openehr-lang = { path = "../openehr-lang", version = "0.0.51", optional = true }
+openehr-am = { path = "../openehr-am", version = "0.0.51", optional = true }
+openehr-term = { path = "../openehr-term", version = "0.0.51", optional = true }
 
 # `full` — every ITS surface (canonical JSON/XML, the generated ITS-REST
 # contract, `opt14`, Simplified Formats). ON BY DEFAULT, so every consumer sees

@@ -1,0 +1,300 @@
+{{- if .Values.viewer.enabled }}
+{{- /*
+The viewer — an OPTIONAL companion workload (#2193).
+
+Everything here is gated on `viewer.enabled`, so the default render is
+byte-identical to a chart without this file. The console is a REST client of the
+CDR by mandate (it may never reach the database or the platform library), which
+is what makes the egress policy below enforceable rather than advisory.
+
+The pod-security posture is NOT inherited from the server's values: a second
+workload is exactly where a hardened posture is quietly lost, so the console
+carries its own copy and the chart's security gate checks both.
+*/}}
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: {{ include "ferroehr.viewerFullname" . }}
+  labels:
+    {{- include "ferroehr.viewerLabels" . | nindent 4 }}
+automountServiceAccountToken: false
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ include "ferroehr.viewerFullname" . }}
+  annotations:
+    kubernetes.io/description: >-
+      In-cluster address for the FerroEHR Viewer. The console is a REST client of the CDR and holds no data of its own; it is the human-facing surface, so this is the Service an Ingress normally publishes.
+  labels:
+    {{- include "ferroehr.viewerLabels" . | nindent 4 }}
+spec:
+  {{- /* Rendered only when it differs from the API default, per
+         https://kubernetes.io/docs/concepts/configuration/overview/
+         "Don't specify default values unnecessarily" — as on the CDR Service.
+         `protocol: TCP` is gone from the port for the same reason. */}}
+  {{- if ne .Values.viewer.service.type "ClusterIP" }}
+  type: {{ .Values.viewer.service.type }}
+  {{- end }}
+  ports:
+    - name: http
+      port: {{ .Values.viewer.service.port }}
+      targetPort: http
+      appProtocol: http
+  selector:
+    {{- include "ferroehr.viewerSelectorLabels" . | nindent 4 }}
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "ferroehr.viewerFullname" . }}
+  annotations:
+    kubernetes.io/description: >-
+      The FerroEHR Viewer: a Leptos SSR web UI that consumes the CDR strictly over ITS-REST. It never reaches the database, which the console NetworkPolicy enforces rather than assumes.
+  labels:
+    {{- include "ferroehr.viewerLabels" . | nindent 4 }}
+spec:
+  replicas: {{ .Values.viewer.replicaCount }}
+  selector:
+    matchLabels:
+      {{- include "ferroehr.viewerSelectorLabels" . | nindent 6 }}
+  template:
+    metadata:
+      labels:
+        {{- include "ferroehr.viewerSelectorLabels" . | nindent 8 }}
+    spec:
+      {{- with .Values.imagePullSecrets }}
+      imagePullSecrets:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      serviceAccountName: {{ include "ferroehr.viewerFullname" . }}
+      automountServiceAccountToken: false
+      # Same reason as the server's: the kubelet's per-Service link variables
+      # land in the reserved `FERROEHR_` namespace for any Service named
+      # `ferroehr*`, and a strict boot-time sweep then refuses to start
+      # (https://kubernetes.io/docs/concepts/services-networking/service/#environment-variables).
+      enableServiceLinks: false
+      terminationGracePeriodSeconds: {{ .Values.viewer.terminationGracePeriodSeconds }}
+      {{- if not .Values.hostUsers }}
+      {{- include "ferroehr.hostUsers" . | nindent 6 }}
+      {{- end }}
+      securityContext:
+        {{- toYaml .Values.viewer.podSecurityContext | nindent 8 }}
+      containers:
+        - name: viewer
+          image: "{{ include "ferroehr.viewerImage" . }}"
+          imagePullPolicy: {{ .Values.viewer.image.pullPolicy }}
+          securityContext:
+            {{- toYaml .Values.viewer.securityContext | nindent 12 }}
+          ports:
+            - name: http
+              containerPort: 3000
+              protocol: TCP
+          env:
+            # The CDR is addressed by its in-cluster Service — the console never
+            # talks to the database, and the egress policy below enforces that.
+            - name: FERROEHR_VIEWER__CDR__BASE_URL
+              value: {{ printf "http://%s:%v" (include "ferroehr.fullname" .) .Values.service.port | quote }}
+            {{- if .Values.viewer.auth.oidc.enabled }}
+            - name: FERROEHR_VIEWER__AUTH__OIDC__ENABLED
+              value: "true"
+            - name: FERROEHR_VIEWER__AUTH__OIDC__ISSUER
+              value: {{ .Values.viewer.auth.oidc.issuer | quote }}
+            - name: FERROEHR_VIEWER__AUTH__OIDC__CLIENT_ID
+              value: {{ .Values.viewer.auth.oidc.clientId | quote }}
+            - name: FERROEHR_VIEWER__AUTH__OIDC__PUBLIC_BASE_URL
+              value: {{ .Values.viewer.auth.oidc.publicBaseUrl | quote }}
+            {{- if .Values.viewer.existingSecret }}
+            # The client secret is a mounted FILE and only its path is
+            # environment: an env VALUE is readable through /proc/<pid>/environ
+            # and inherited by every child process.
+            - name: FERROEHR_VIEWER__AUTH__OIDC__CLIENT_SECRET_FILE
+              value: /etc/ferroehr-viewer-secrets/client_secret
+            {{- end }}
+            {{- end }}
+            {{- with .Values.viewer.extraEnv }}
+            {{- toYaml . | nindent 12 }}
+            {{- end }}
+          livenessProbe:
+            httpGet:
+              path: /
+              port: http
+            initialDelaySeconds: 10
+            periodSeconds: 20
+          readinessProbe:
+            httpGet:
+              path: /
+              port: http
+            initialDelaySeconds: 5
+            periodSeconds: 10
+          {{- /* The console serves one page tree from one process, so `/` is
+                 both "the process answers" and "the process can serve" — the
+                 two probe roles genuinely coincide here, unlike the server's,
+                 where readiness owns the database. What it still needs is the
+                 third role: a startup probe, so a slow first render is not
+                 read as a wedged process and restarted mid-boot
+                 (https://kubernetes.io/docs/concepts/workloads/pods/probes/). */}}
+          startupProbe:
+            httpGet:
+              path: /
+              port: http
+            periodSeconds: 5
+            failureThreshold: 24
+          {{- if gt (int .Values.viewer.preStopSleepSeconds) 0 }}
+          lifecycle:
+            preStop:
+              sleep:
+                seconds: {{ int .Values.viewer.preStopSleepSeconds }}
+          {{- end }}
+          resources:
+            {{- toYaml .Values.viewer.resources | nindent 12 }}
+          volumeMounts:
+            # `readOnlyRootFilesystem: true` leaves nowhere to write, so the
+            # writable scratch the runtime needs is an explicit emptyDir.
+            - name: tmp
+              mountPath: /tmp
+            {{- if and .Values.viewer.auth.oidc.enabled .Values.viewer.existingSecret }}
+            - name: admin-secrets
+              mountPath: /etc/ferroehr-viewer-secrets
+              readOnly: true
+            {{- end }}
+      volumes:
+        - name: tmp
+          emptyDir: {}
+        {{- if and .Values.viewer.auth.oidc.enabled .Values.viewer.existingSecret }}
+        - name: admin-secrets
+          secret:
+            secretName: {{ .Values.viewer.existingSecret }}
+            items:
+              - key: {{ .Values.viewer.existingSecretKey }}
+                path: client_secret
+        {{- end }}
+      {{- with .Values.viewer.nodeSelector }}
+      nodeSelector:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.viewer.tolerations }}
+      tolerations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.viewer.affinity }}
+      affinity:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+{{- if .Values.viewer.ingress.enabled }}
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: {{ include "ferroehr.viewerFullname" . }}
+  labels:
+    {{- include "ferroehr.viewerLabels" . | nindent 4 }}
+  {{- with .Values.viewer.ingress.annotations }}
+  annotations:
+    {{- toYaml . | nindent 4 }}
+  {{- end }}
+spec:
+  {{- with .Values.viewer.ingress.className }}
+  ingressClassName: {{ . | quote }}
+  {{- end }}
+  {{- with .Values.viewer.ingress.tls }}
+  tls:
+    {{- toYaml . | nindent 4 }}
+  {{- end }}
+  rules:
+    {{- range .Values.viewer.ingress.hosts }}
+    - host: {{ .host | quote }}
+      http:
+        paths:
+          {{- range .paths }}
+          - path: {{ .path }}
+            pathType: {{ .pathType | default "Prefix" }}
+            backend:
+              service:
+                name: {{ include "ferroehr.viewerFullname" $ }}
+                port:
+                  number: {{ $.Values.viewer.service.port }}
+          {{- end }}
+    {{- end }}
+{{- end }}
+{{- if .Values.viewer.networkPolicy.enabled }}
+---
+# The console's ingress half has the same three states the CDR's policy has, and
+# for the same API reason: an ingress rule with no `from` admits every source —
+# other namespaces and off-cluster clients included
+# (https://kubernetes.io/docs/concepts/services-networking/network-policies/ —
+# "If no ... from is specified ... it allows all traffic"). The console is the
+# HUMAN-facing surface, so an accidentally open rule here is a login page reachable
+# from anywhere the cluster network reaches.
+#   ingressFrom set                                     → sources narrowed
+#   ingressFrom empty, ingressAllowAll true             → EVERY source (shipped)
+#   ingressFrom empty, ingressAllowAll false            → refused at render, below
+{{- if and (not .Values.viewer.networkPolicy.ingressFrom) (not .Values.viewer.networkPolicy.ingressAllowAll) }}
+{{- fail "viewer.networkPolicy.ingressAllowAll=false with an empty viewer.networkPolicy.ingressFrom: set viewer.networkPolicy.ingressFrom to the peers that may reach the console (a namespaceSelector/podSelector for your ingress controller, or an ipBlock), or set viewer.networkPolicy.ingressAllowAll=true to admit every source deliberately. An ingress rule with no `from` admits EVERY source — other namespaces and off-cluster clients — while `kubectl get networkpolicy` and every summary of it still read as default-deny, and what is exposed here is the console's login page. The narrowing recipe is in the book, installation/hardening-network-policy.md §Ingress." }}
+{{- end }}
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: {{ include "ferroehr.viewerFullname" . }}
+  annotations:
+    {{- /* The posture THIS render has, not the one the chart could produce — the
+           same honesty the CDR's policy carries, because `kubectl describe` is
+           where an operator reads a policy back. */}}
+    kubernetes.io/description: >-
+      {{ if .Values.viewer.networkPolicy.ingressFrom }}Ingress for the viewer: only its HTTP port, and only from the viewer.networkPolicy.ingressFrom peers. Egress admits the CDR Service and DNS only.{{ else }}Ingress for the viewer: only its HTTP port, but from EVERY source — this policy narrows ports, NOT sources (viewer.networkPolicy.ingressAllowAll=true). Set viewer.networkPolicy.ingressFrom for a PHI workload. Egress admits the CDR Service and DNS only.{{ end }}
+  labels:
+    {{- include "ferroehr.viewerLabels" . | nindent 4 }}
+spec:
+  podSelector:
+    matchLabels:
+      {{- include "ferroehr.viewerSelectorLabels" . | nindent 6 }}
+  policyTypes:
+    - Ingress
+    - Egress
+  ingress:
+    {{- /* An empty `ingressFrom` renders NO `from`, which admits every source —
+           sanctioned only by `ingressAllowAll` (refused above otherwise). */}}
+    - {{- with .Values.viewer.networkPolicy.ingressFrom }}
+      from:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      ports:
+        - protocol: TCP
+          port: 3000
+  egress:
+    # The CDR, by pod selector — the console's ONLY application destination.
+    #
+    # This selects the server's pods exactly: the console carries its own
+    # `app.kubernetes.io/name`, so the two label sets no longer overlap and
+    # this rule cannot admit console→console traffic.
+    - to:
+        - podSelector:
+            matchLabels:
+              {{- include "ferroehr.selectorLabels" . | nindent 14 }}
+      ports:
+        - protocol: TCP
+          port: 8080
+    # DNS. Without this the Service name above does not resolve and the console
+    # fails in a way that looks like the CDR being down.
+    - to:
+        - namespaceSelector: {}
+          podSelector:
+            matchLabels:
+              k8s-app: kube-dns
+      ports:
+        - protocol: UDP
+          port: 53
+        - protocol: TCP
+          port: 53
+    {{- if .Values.viewer.auth.oidc.enabled }}
+    # The OIDC issuer is off-cluster in nearly every deployment, and the
+    # NetworkPolicy API cannot name a DNS host
+    # (https://kubernetes.io/docs/concepts/services-networking/network-policies/
+    # — "you cannot ... target Services or Pods by name"), so the issuer is
+    # admitted as an explicit egress rule the operator narrows with an ipBlock.
+    - ports:
+        - protocol: TCP
+          port: 443
+    {{- end }}
+{{- end }}
+{{- end }}

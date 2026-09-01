@@ -6,7 +6,7 @@ description: >
   markdown (README, CONTRIBUTING and siblings), and other human-facing
   prose. It writes to the repo's prose rule (writing-style.md — no AI
   tells), keeps every technical claim byte-exact, and leaves the docs gates
-  green. Not for the Leptos admin console (ui-implementer), Rust code
+  green. Not for the Leptos viewer (ui-implementer), Rust code
   (implementer), or the vendored specs (never edited).
 model: opus
 color: green

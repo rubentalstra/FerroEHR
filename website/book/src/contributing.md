@@ -57,17 +57,17 @@ cargo build --workspace
 cargo nextest run --workspace          # unit + integration (real PostgreSQL 18)
 cargo fmt --all --check
 
-# clippy is three lanes: the admin console's `hydrate` and `ssr` features are
+# clippy is three lanes: the viewer's `hydrate` and `ssr` features are
 # mutually exclusive, so it is excluded from the workspace lane and linted
 # per-feature on both of its targets.
-cargo clippy --workspace --exclude ferroehr-admin-ui --all-targets --all-features -- -D warnings
-cargo clippy -p ferroehr-admin-ui --all-targets --features ssr -- -D warnings
-cargo clippy -p ferroehr-admin-ui --target wasm32-unknown-unknown --features hydrate -- -D warnings
+cargo clippy --workspace --exclude ferroehr-viewer --all-targets --all-features -- -D warnings
+cargo clippy -p ferroehr-viewer --all-targets --features ssr -- -D warnings
+cargo clippy -p ferroehr-viewer --target wasm32-unknown-unknown --features hydrate -- -D warnings
 
 # rustdoc lints + doctests (the rustdoc lint table is inert without a doc run)
-RUSTDOCFLAGS='-D warnings' cargo doc --workspace --exclude ferroehr-admin-ui \
+RUSTDOCFLAGS='-D warnings' cargo doc --workspace --exclude ferroehr-viewer \
   --all-features --no-deps --document-private-items
-RUSTDOCFLAGS='-D warnings' cargo doc -p ferroehr-admin-ui --features ssr --no-deps
+RUSTDOCFLAGS='-D warnings' cargo doc -p ferroehr-viewer --features ssr --no-deps
 cargo test --workspace --doc
 
 cargo deny check                       # subsumes cargo-audit: same RustSec DB, plus yanked/licenses/bans/sources
@@ -86,7 +86,7 @@ what to fix.
 
 CI adds a few gates that need more than a checkout: a container smoke test that
 composes the built server image against the database image, the browser
-end-to-end battery for the admin console (`bash scripts/ui-e2e.sh`), the Helm
+end-to-end battery for the viewer (`bash scripts/ui-e2e.sh`), the Helm
 chart render and boot lanes, and the changelog, crate-version, and attribution
 guards. Console-only work has its own local battery; see the repository's
 `CONTRIBUTING.md`.

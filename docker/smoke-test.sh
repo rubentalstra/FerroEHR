@@ -6,8 +6,8 @@
 # explicit -f. (The dev overlay stopped auto-merging in #2868 — its explicit
 # name keeps this pin as belt-and-braces, not as the defence.)
 #
-# Only postgres + the server start (the admin console sits behind the
-# `admin-ui` profile). The server configuration is the quickstart posture the
+# Only postgres + the server start (the viewer sits behind the
+# `viewer` profile). The server configuration is the quickstart posture the
 # compose `configs:` block carries inline — Basic user ferroehr/ferroehr,
 # RBAC off. The steps:
 #   1. waits for the app healthcheck to report healthy;
@@ -27,7 +27,7 @@ ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 # Own project (docs.docker.com/compose/how-tos/project-name) so the `down -v`
 # teardown is scoped to `ferroehr-smoke` and never wipes a running dev
 # (`ferroehr`) stack (issue #282 D3). Only the two core services are started
-# (the admin console and seaweedfs are behind profiles and stay down).
+# (the viewer and seaweedfs are behind profiles and stay down).
 export COMPOSE_PROJECT_NAME=ferroehr-smoke
 # The single compose model for every call below: the standalone quickstart file
 # ONLY. An explicit -f suppresses the automatic override merge

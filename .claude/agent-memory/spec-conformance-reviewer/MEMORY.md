@@ -31,4 +31,4 @@
 - [sqlx baseline-migration rewrite pitfall](sqlx-baseline-migration-rewrite.md) — 0001_baseline.sql edited in place while 0002+ exist = VersionMismatch on upgrade; CI cannot see it
 - [RM common/validate/paths templates (#2255)](rm-common-validate-paths-templates.md) — 3 disagreeing ISO-8601 duration readers, ATTESTATION change_type terminology gap, stale Option<NonEmptyVec> NOTEs, the comment-guard blind spot
 - [RM Common ch.2-4 fix verification](rm-common-ch234-fix-verification.md) — what the #898/#899/#900 fixes really closed (do not re-report) + the 4 enforcement-proof weaknesses left
-- [Admin-console ITS-REST consumption](admin-console-wire-consumption.md) — AQL backslash-escaping, headerless CdrResponse, the two error-body shapes, OAS-vs-docs-text citation traps, the 204 branches
+- [Viewer ITS-REST consumption](viewer-wire-consumption.md) — AQL backslash-escaping, headerless CdrResponse, the two error-body shapes, OAS-vs-docs-text citation traps, the 204 branches

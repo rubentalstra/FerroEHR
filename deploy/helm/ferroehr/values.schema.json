@@ -843,8 +843,8 @@
         "type": "object"
       }
     },
-    "adminUi": {
-      "description": "The optional admin console, deployed as its own workload. Off by default: it is a separate product surface with its own attack surface, and a CDR is complete without it. It reaches the CDR strictly over ITS-REST, which is what makes its egress policy enforceable.",
+    "viewer": {
+      "description": "The optional viewer, deployed as its own workload. Off by default: it is a separate product surface with its own attack surface, and a CDR is complete without it. It reaches the CDR strictly over ITS-REST, which is what makes its egress policy enforceable.",
       "type": "object",
       "additionalProperties": false,
       "properties": {

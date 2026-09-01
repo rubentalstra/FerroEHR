@@ -64,7 +64,7 @@ ignore = [
   # drops proc-macro-error2 — cargo's future-incompat report flags the crate
   # too, so upstream has two reasons to move.
   # https://rustsec.org/advisories/RUSTSEC-2026-0173
-  { id = "RUSTSEC-2026-0173", reason = "unmaintained advisory; compile-time proc-macro via leptos_macro (admin console), no runtime exposure" },
+  { id = "RUSTSEC-2026-0173", reason = "unmaintained advisory; compile-time proc-macro via leptos_macro (viewer), no runtime exposure" },
   # 2026-07-15: `paste` (proc-macro) is archived/unmaintained — pulled in by
   # utoipa-axum 0.2.0 (still the LATEST release, re-verified 2026-08-15; no
   # paste-free release exists). Compile-time-only token pasting, no runtime
@@ -83,7 +83,7 @@ allow = [
   "BSD-2-Clause",
   "BSD-3-Clause",
   # Boost Software License (OSI-approved, permissive): xxhash-rust via
-  # leptos server_fn (the admin console, 2026-07-18).
+  # leptos server_fn (the viewer, 2026-07-18).
   "BSL-1.0",
   "ISC",
   "Zlib",
@@ -131,7 +131,7 @@ skip-tree = []
 unknown-registry = "deny"
 unknown-git = "deny"
 allow-registry = ["https://github.com/rust-lang/crates.io-index"]
-# thaw (admin console UI kit): pinned to a main rev because the only Leptos-0.8
+# thaw (viewer UI kit): pinned to a main rev because the only Leptos-0.8
 # crates.io release (0.5.0-beta) lacks `#![recursion_limit = "256"]` and fails
 # non-erase_components codegen on rustc 1.96; main has the fix (2026-07-17).
 # Remove when thaw 0.5 stable ships and the pin returns to crates.io.

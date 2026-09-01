@@ -1,8 +1,8 @@
 # The ONE authoritative build-context ignore for every image built from the
-# repo root (docker/Dockerfile + docker/admin-ui/Dockerfile, both targets).
+# repo root (docker/Dockerfile + docker/viewer/Dockerfile, both targets).
 # A Dockerfile-adjacent *.dockerignore would SHADOW this file entirely
 # (docs.docker.com/build/concepts/context — "a Dockerfile-specific ignore-file
-# takes precedence"), which is exactly the split that let the admin-UI context
+# takes precedence"), which is exactly the split that let the viewer context
 # ship the whole ~200 MB .git while the server context dropped it; there is now
 # only this file (issue #282 F1/D4).
 #

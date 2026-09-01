@@ -60,14 +60,14 @@ website/book/src/comparison-assets/*
 __pycache__/
 docs/conformance/*/perf-corpus-*.json
 
-# The admin console keeps NO local store: query grouping is derived from the
+# The viewer keeps NO local store: query grouping is derived from the
 # namespace in each stored query's qualified name, and the directory create
 # flow commits an empty root, so nothing is written beside the binary any more.
 # These names are the belt against an OLDER console binary run inside the
 # checkout ever re-appearing as tracked files.
-/admin-ui-groups.json
-/admin-ui-folder-templates.json
-/admin-ui-*.json.tmp
+/viewer-groups.json
+/viewer-folder-templates.json
+/viewer-*.json.tmp
 
 # insta pending snapshots — never committed (see the snapshot-root issue)
 **/*.snap.new

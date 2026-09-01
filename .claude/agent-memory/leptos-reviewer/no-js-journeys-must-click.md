@@ -5,7 +5,7 @@ metadata:
   type: project
 ---
 
-The no-JS e2e journeys in `app/ferroehr-admin-ui/tests/e2e_composition.rs` carry a
+The no-JS e2e journeys in `app/ferroehr-viewer/tests/e2e_composition.rs` carry a
 comment claiming the authenticated shell arrives as inert `<template>` fragments
 without JavaScript (out-of-order streaming), and therefore assert on
 `driver.source()` substrings instead of interacting.

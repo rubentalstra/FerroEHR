@@ -78,7 +78,7 @@ if [[ "$ACTUAL_HELM" != "$PINNED_HELM" ]]; then
 fi
 
 # The value sets to validate: <label>:<values-file>
-# The admin-ui overlay is here because its ABSENCE was a hole, not a saving:
+# The viewer overlay is here because its ABSENCE was a hole, not a saving:
 # the console is the second pod-bearing workload, the restricted-profile gate is
 # per-container, and until this line the gate never saw a render containing it.
 # The chart's own docs claimed the gate checked both workloads; it could not.
@@ -86,7 +86,7 @@ declare -a CASES=(
   "default:${CI_DIR}/default-values.yaml"
   "all-features:${CI_DIR}/all-features-values.yaml"
   "basic-auth:${CI_DIR}/basic-auth-values.yaml"
-  "admin-ui:${CI_DIR}/admin-ui-values.yaml"
+  "viewer:${CI_DIR}/viewer-values.yaml"
 )
 
 # ── Rendered-manifest structure check (awk; there is no Python in this repo) ───
@@ -171,7 +171,7 @@ assert_selector_stable() {
 # (https://kubernetes.io/docs/concepts/security/pod-security-standards/) is
 # checked per CONTAINER, not by grepping the file. A substring search passes as
 # soon as one container carries a field, so with two workloads in a render — the
-# server and the optional admin console — a compliant server would vouch for a
+# server and the optional viewer — a compliant server would vouch for a
 # non-compliant console. That is compliance by luck, and this render is the only
 # place it can be caught before a cluster refuses the pod.
 assert_security() {
@@ -312,14 +312,14 @@ secret_leak_gate
 # while reporting the property as checked.
 network_policy_gate() {
   bold "── NetworkPolicy ingress postures ───────────────────────"
-  local base="${CI_DIR}/default-values.yaml" console="${CI_DIR}/admin-ui-values.yaml"
+  local base="${CI_DIR}/default-values.yaml" console="${CI_DIR}/viewer-values.yaml"
   local out values
 
   # The sanctioned postures, read back off the rendered policy — per workload.
   # <label>|<values file>|<policy name>|<the values key prefix>|<the template>
   local -a workloads=(
     "server|${base}|ferroehr|networkPolicy|templates/networkpolicy.yaml"
-    "console|${console}|ferroehr-admin-ui|adminUi.networkPolicy|templates/admin-ui.yaml"
+    "console|${console}|ferroehr-viewer|viewer.networkPolicy|templates/viewer.yaml"
   )
   local label name prefix template policy posture=0
   for case in "${workloads[@]}"; do
@@ -403,7 +403,7 @@ refusal_registry_gate() {
   bold "── template refusals: every \`fail\` is probed ────────────"
   local base="${CI_DIR}/default-values.yaml"
   local basic="${CI_DIR}/basic-auth-values.yaml"
-  local console="${CI_DIR}/admin-ui-values.yaml"
+  local console="${CI_DIR}/viewer-values.yaml"
   local -a registry=(
     "deployment.yaml|no authentication mechanism is configured|${base}|--set config.auth.oidc.issuer=null|config.auth.basic.users;config.auth.oidc.issuer"
     "migration-job.yaml|requires migrations.job.existingSecret|${base}|--set migrations.job.enabled=true|migrations.job.existingSecret"
@@ -413,7 +413,7 @@ refusal_registry_gate() {
     "_helpers.tpl|has no client declared at config.terminology.external.oauth2_clients|${base}|--set-string secrets.terminologyOauth2ClientSecrets.ghost=SENTINEL_PROBE|config.terminology.external.oauth2_clients.ghost"
     "networkpolicy.yaml|networkPolicy.ingressAllowAll=false with an empty|${base}|--set networkPolicy.ingressAllowAll=false|networkPolicy.ingressFrom;hardening-network-policy.md"
     "networkpolicy.yaml|with no destination for the database|${base}|--set networkPolicy.egress.enabled=true|networkPolicy.egress.database.to;hardening-network-policy.md"
-    "admin-ui.yaml|adminUi.networkPolicy.ingressAllowAll=false with an empty|${console}|--set adminUi.networkPolicy.ingressAllowAll=false|adminUi.networkPolicy.ingressFrom;hardening-network-policy.md"
+    "viewer.yaml|viewer.networkPolicy.ingressAllowAll=false with an empty|${console}|--set viewer.networkPolicy.ingressAllowAll=false|viewer.networkPolicy.ingressFrom;hardening-network-policy.md"
   )
 
   local record values probe wants want out refused=0
@@ -532,7 +532,7 @@ schema_gate() {
     "service.port=70000|/service/port"
     "metrics.serviceMonitor.interval=30|/metrics/serviceMonitor/interval"
     "networkPolicy.ingressAllowAll=maybe|/networkPolicy/ingressAllowAll"
-    "adminUi.networkPolicy.ingressAllowAll=maybe|/adminUi/networkPolicy/ingressAllowAll"
+    "viewer.networkPolicy.ingressAllowAll=maybe|/viewer/networkPolicy/ingressAllowAll"
   )
   local refused=0 probe want out
   for case in "${refusals[@]}"; do
