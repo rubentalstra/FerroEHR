@@ -1,0 +1,138 @@
+#cloud-config
+# The sandbox DATABASE box (ferroehr-sandbox-postgres): a dedicated CX33
+# running the project's own ferroehr-postgres image (PG 18 with uuid-ossp,
+# pgcrypto and pg_trgm), reachable ONLY over the Hetzner private network
+# (ferroehr-sandbox-net, 10.0.0.0/24). Pass this as the server's user data at
+# creation; provisioned 2026-09-01 (#3015).
+#
+# Committed rather than remembered, like the app box's cloud-init.yaml: a
+# host built by hand is a host nobody can rebuild. Unlike the app box, this
+# box's posture is owned by THIS file — no deploy lane touches it, the
+# release pipeline never connects to it, and the database image moves only by
+# hand (docker compose pull + up -d in /opt/ferroehr-postgres).
+#
+# The network posture, layer by layer: PostgreSQL binds to the box's PRIVATE
+# address only (the compose ports entry — Docker's published ports bypass
+# ufw, so the bind address is the real gate); ufw admits 5432 solely from the
+# private subnet as the belt; the Hetzner Cloud Firewall on the public side
+# admits SSH alone (cloud firewalls do not filter private-network traffic).
+# postgres.ferroehr.eu names the PUBLIC address for SSH and operations only —
+# its 5432 must never answer.
+
+users:
+  - name: deploy
+    lock_passwd: true
+    shell: /bin/bash
+    # The key is REAL and that is deliberate: a public key is not a secret,
+    # and a cloud-init carrying placeholders cannot rebuild the box. No CI
+    # key here — nothing deploys to this box.
+    ssh_authorized_keys:
+      # A person, for logging in and looking around (same key as the app box).
+      - ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIGFOMcuGIZKPwC0aHkleBo7MNO1jEz3wyNSUKTNpQSBJ RubenTalstra1211@outlook.com
+
+ssh_pwauth: false
+disable_root: true
+
+package_update: true
+package_upgrade: true
+packages:
+  - ca-certificates
+  - curl
+  - ufw
+  - unattended-upgrades
+
+write_files:
+  # A box nobody logs into still takes security updates.
+  - path: /etc/apt/apt.conf.d/20auto-upgrades
+    content: |
+      APT::Periodic::Update-Package-Lists "1";
+      APT::Periodic::Unattended-Upgrade "1";
+
+  # Container logs are the likeliest thing to fill a small disk, and a full
+  # disk fails in a way that looks like nothing at all.
+  - path: /etc/docker/daemon.json
+    content: |
+      {
+        "log-driver": "json-file",
+        "log-opts": { "max-size": "10m", "max-file": "3" },
+        "live-restore": true
+      }
+
+  # What runs here. The operator's .env beside it carries POSTGRES_PASSWORD
+  # (the bootstrap superuser), PG_INIT_PASSWORD (the ferroehr app role the
+  # image's init script creates — the password in the app box's
+  # DATABASE_URL), and PG_BIND_IP (this box's private 10.0.0.x address).
+  - path: /opt/ferroehr-postgres/docker-compose.yml
+    owner: deploy:deploy
+    # Deferred to the final stage: `write-files` runs BEFORE `users-groups`
+    # in the default module order, so an owner naming this user cannot be
+    # applied any earlier.
+    defer: true
+    content: |
+      services:
+        postgres:
+          image: ${FERROEHR_POSTGRES_IMAGE:-ghcr.io/rubentalstra/ferroehr-postgres:latest}
+          container_name: ferroehr-sandbox-postgres
+          restart: unless-stopped
+          # Docker's default 64MB /dev/shm starves PostgreSQL's dynamic
+          # shared memory (parallel workers fail with "could not resize
+          # shared memory segment") — same floor the quickstart compose sets.
+          shm_size: 1gb
+          environment:
+            POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?write .env first}
+            PG_INIT_USER: ferroehr
+            PG_INIT_PASSWORD: ${PG_INIT_PASSWORD:?write .env first}
+            PG_INIT_DB: ferroehr
+          # Sized for the box (a CX33: 4 vCPU, 8 GB) — the one resident.
+          command:
+            - postgres
+            - -c
+            - shared_buffers=2GB
+            - -c
+            - max_wal_size=4GB
+          # Bound to the PRIVATE IP only: Docker's published ports bypass
+          # ufw, so the bind address is the real gate — the public interface
+          # never carries 5432.
+          ports:
+            - "${PG_BIND_IP:?write .env first}:5432:5432"
+          healthcheck:
+            test: ["CMD-SHELL", "pg_isready -U postgres"]
+            interval: 30s
+            timeout: 5s
+            retries: 3
+            start_period: 30s
+          # The PG 18 image expects its volume at /var/lib/postgresql (data
+          # lands in a subdirectory, which is what lets pg_upgrade --link
+          # work across majors); mounting the old …/data path crash-loops.
+          # Learned live at provisioning — do not "correct" this back.
+          volumes:
+            - pgdata:/var/lib/postgresql
+          env_file:
+            - .env
+      volumes:
+        pgdata:
+
+runcmd:
+  # Two firewalls that agree. The Hetzner Cloud Firewall keeps public traffic
+  # off the NIC (SSH alone); this is what the box itself says — including
+  # about the private network, which the cloud firewall cannot see.
+  - [ufw, default, deny, incoming]
+  - [ufw, default, allow, outgoing]
+  - [ufw, allow, "22/tcp"]
+  # Belt beside the bind-address gate: 5432 only from the private subnet.
+  - [ufw, allow, from, "10.0.0.0/24", to, any, port, "5432", proto, tcp]
+  - [ufw, --force, enable]
+  - [sh, -c, "curl -fsSL https://get.docker.com | sh"]
+  - [systemctl, enable, --now, docker]
+  - [install, -d, -o, deploy, -g, deploy, /opt/ferroehr-postgres]
+  # The group exists now, so the deploy user can join it. A group change
+  # takes effect at the next login.
+  - [usermod, -aG, docker, deploy]
+  - [systemctl, enable, --now, unattended-upgrades]
+
+final_message: >-
+  the postgres box is up after $UPTIME seconds. Write
+  /opt/ferroehr-postgres/.env (POSTGRES_PASSWORD, PG_INIT_PASSWORD, and
+  PG_BIND_IP = this box's private 10.0.0.x address), chmod 600 it, then run
+  `docker compose up -d` in /opt/ferroehr-postgres and point the app box's
+  DATABASE_URL at ferroehr@<PG_BIND_IP>:5432/ferroehr.

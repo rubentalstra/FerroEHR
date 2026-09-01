@@ -10,11 +10,12 @@
 # out of the image it just pulled. So an edit here reaches the box with the
 # release that carries it, and never before one.
 #
-# The database is a standalone Neon project: `.env` carries its DIRECT
-# (non-pooled) connection string as DATABASE_URL, which the config alias layer
-# maps to db.url (app/ferroehr/src/config/alias.rs). The pooled `-pooler`
-# endpoint is unsuitable — transaction-mode PgBouncer breaks the session GUCs
-# and the boot migrations (https://neon.com/docs/connect/connection-pooling).
+# The database is the dedicated DB box (ferroehr-sandbox-postgres, a second
+# CX33 provisioned by deploy/hosted/cloud-init-postgres.yaml): `.env` carries
+# its private-network connection string as DATABASE_URL, which the config
+# alias layer maps to db.url (app/ferroehr/src/config/alias.rs). The database
+# has no public port; the app reaches it over the Hetzner private network
+# (10.0.0.0/24) alone.
 
 services:
   ferroehr:
@@ -42,9 +43,9 @@ services:
     environment:
       FERROEHR_CONFIG: /etc/ferroehr/ferroehr.toml
     env_file:
-      # DATABASE_URL (the Neon direct string) and FERROEHR_IMAGE. The
-      # operator's file, readable by the service user alone; no automation
-      # writes it and CI never holds the connection string.
+      # DATABASE_URL (the DB box's private-network string) and the image
+      # references. The operator's file, readable by the service user alone;
+      # no automation writes it and CI never holds the connection string.
       - .env
     volumes:
       - ./ferroehr.sandbox.toml:/etc/ferroehr/ferroehr.toml:ro

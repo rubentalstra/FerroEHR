@@ -22,6 +22,14 @@ workflow refuses a tag that has no matching section here.
   compose memory limits that ship inside the server image move with it: the
   CDR container to 4096m and the FerroEHR Viewer container to 1536m, so the
   services actually use the larger box.
+- The sandbox database moved from Neon to a second, dedicated CX33 running
+  the published `ferroehr-postgres` image (PostgreSQL 18), reachable only
+  over a Hetzner private network — no public database port exists. The
+  committed posture gains `deploy/hosted/cloud-init-postgres.yaml`; the
+  nightly reseed's schema wipe now runs on the app box through the deploy
+  script's new `wipe` verb instead of a `psql` from the CI runner, so CI no
+  longer holds any database credential (the `SANDBOX_DATABASE_URL` secret is
+  retired).
 - The admin console is now **FerroEHR Viewer**, and every name it carries
   changes with it. Deployments must switch their references: the OCI image is
   `ghcr.io/rubentalstra/ferroehr-viewer` (was `ferroehr-admin-ui`), the Compose

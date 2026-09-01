@@ -84,7 +84,8 @@ regenerates everything and fails on any diff.
 Grounded in docs-verified PostgreSQL physics (JSONB has no partial detoast —
 big single documents pay whole-document decompression per leaf access; GIN
 serves no range/ordering), the storage is a **decomposed node model designed
-fresh** (the diagrammed deep-dive is `docs/storage.md`):
+fresh** (the diagrammed deep-dive is the book's Storage architecture page,
+`website/book/src/concepts/storage.md`):
 
 - **`node`** — one unified table for all versioned-object content
   (COMPOSITION / EHR_STATUS / FOLDER). One row per RM structure node with a

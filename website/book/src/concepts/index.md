@@ -1,7 +1,7 @@
 # Concepts
 
-This part explains the ideas you need to use FerroEHR effectively. Two
-chapters, read in either order:
+This part explains the ideas you need to use FerroEHR effectively. Four
+chapters; the first two read in either order, the last two go deeper:
 
 - **[openEHR primer](openehr-primer.md):** the standard itself: the Reference
   Model, archetypes and templates, compositions, versioning, and AQL, with no
@@ -11,6 +11,13 @@ chapters, read in either order:
   together and where your data actually lives, so the behaviour you see through
   the API makes sense: why the specification layer is generated, how storage and
   versioning work on PostgreSQL, and how an AQL query becomes SQL.
+- **[Storage architecture](storage.md):** the deep-dive on the tables: the
+  temporal version table, the decomposed node model with its nested-set
+  index, the one-transaction write path, and the cold archival tier, each
+  with a diagram.
+- **[The AQL engine](aql-engine.md):** the query pipeline from lexer to
+  `RESULT_SET`, what each stage refuses, and the design reasons queries are
+  fast.
 
 Neither chapter is a prerequisite for [Getting started](../getting-started.md);
 you can commit a composition and run a query without them. Come back when you
