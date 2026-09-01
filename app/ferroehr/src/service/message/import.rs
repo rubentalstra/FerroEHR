@@ -36,6 +36,14 @@
 //! target through the DEFINITION API (master06 §Copying, the rule the admin
 //! dump/load path follows too).
 //!
+//! Re-validation on import is nowhere required (adjudicated on #2988):
+//! master06 §The Copy Operation keeps the wrapped original "a faithful copy of
+//! its original", `commit_imported_version` is the only `VERSIONED_OBJECT`
+//! commit function with no `Pre` clause, SM `i_ehr_extract_service.adoc`
+//! declares the import operations without preconditions, and BASE
+//! `master10-archetypes.adoc` §Validation during Data Capture makes archetype
+//! validation in an import service a "can", never a must.
+//!
 //! An imported EHR is a full local EHR: the promoted `ehr` columns are re-derived
 //! from the landed `EHR_STATUS`
 //! ([`crate::service::FerroEhrService::resync_promoted_columns`]), so the clone
