@@ -9,10 +9,12 @@
 //! For each input we validate the corresponding datum of the instance value,
 //! keyed by the input `suffix` / `type`: coded-value membership (unless the list
 //! is open or the code is from an external terminology), numeric range (honoring
-//! `minOp`/`maxOp`), and string patterns. Temporal ranges and decimal precision
-//! are intentionally not checked here (`// NOTE:` — RM well-formedness of
-//! date/time/duration values is covered by the RM-invariant pass; precise
-//! temporal-range and precision semantics are deferred).
+//! `minOp`/`maxOp`), and string patterns. RM well-formedness of
+//! date/time/duration VALUES is covered by the RM-invariant pass; a leaf's
+//! declared temporal RANGE and decimal PRECISION constraints are not yet
+//! enforced here.
+// TODO(#3027): enforce (or record the adjudicated boundary for) WebTemplate
+// temporal-range and decimal-precision leaf constraints.
 
 #![expect(
     clippy::disallowed_types,

@@ -15,6 +15,22 @@
 #   5. essay budget        a plain `//` comment run is at most $RUN_MAX lines;
 #                          longer prose belongs in doc comments, the PR
 #                          description, or the tracker — not in code.
+#   6. orphaned lines      a comment whose whole content is punctuation
+#                          (`//.`, `///:` …) is sweep residue, not prose.
+#   7. quoted markers      a doc line carrying a backtick-quoted marker
+#                          (`` `// NOTE:` `` …) reads as a marker to a human
+#                          and is invisible to checks 2-4 — describe the
+#                          marker in words instead.
+#   8. empty sections      a bare `/// # Errors` / `# Panics` heading with no
+#                          body satisfies the doc lints and tells a caller
+#                          nothing.
+#
+# NOT machine-checked, deliberately (#2981): module-doc (`//!`) block LENGTH.
+# The tree's longest module docs are governing-section maps and matching-rule
+# contracts, longer than any essay the #2942 sweep condensed — a cap loose
+# enough to keep them catches nothing, and a cap tight enough to catch
+# essays would force condensing legitimate reference docs. Essay-vs-reference
+# is judgment; review carries it (comments.md §Enforcement register).
 #
 # Usage:
 #   scripts/checks/comment-style.sh --all               # whole tree
@@ -93,6 +109,11 @@ for f in "${files[@]}"; do
         printf ":%d: NOTE paragraph in a doc comment is %d lines (max %d) — an adjudication essay lives on the PR/issue, not in rustdoc\n", doc_note_start, doc_note_len, RUN_MAX
       doc_note_len = 0
     }
+    function flush_sec() {
+      if (sec_start)
+        printf ":%d: `# %s` doc section has no body — it satisfies the doc lint and tells a caller nothing; write the contract or drop the heading\n", sec_start, sec_name
+      sec_start = 0
+    }
     {
       line = $0
       sub(/^[[:space:]]+/, "", line)
@@ -121,6 +142,20 @@ for f in "${files[@]}"; do
           printf ":%d: unsanctioned comment marker — the only forms are TODO(#NNNN): / NOTE: / SAFETY:\n", NR
       }
 
+      # 6. orphaned punctuation-only comment lines — residue an earlier
+      # rewriting sweep left behind (`//.`, `///:`, `//!,` …).
+      if ((is_doc || is_line) && line ~ /^\/\/[\/!]?[[:space:]]*[.;:,)]+[[:space:]]*$/)
+        printf ":%d: comment line carries punctuation only — sweep residue; delete it\n", NR
+
+      # 7. a backtick-quoted marker USED AS a marker — leading the doc
+      # line, leading a bullet, or opening a parenthetical — reads as a
+      # marker to a human and is invisible to checks 2-4 (#2981). A
+      # mid-sentence DESCRIPTION ("the emitter writes a `// NOTE:` …")
+      # stays legal: precision over recall keeps the guard trusted.
+      if (is_doc && (line ~ /^\/\/[\/!][[:space:]]*([-*][[:space:]]+)?`\/\/[[:space:]]?(NOTE|TODO|SAFETY)/ \
+          || line ~ /\(`\/\/[[:space:]]?(NOTE|TODO|SAFETY)/))
+        printf ":%d: doc line uses a backtick-quoted comment marker as a marker — invisible to the marker checks; write a real NOTE/TODO or plain prose\n", NR
+
       # 4 + 5. NOTE / plain-run budgets
       if (is_line) {
         if (line ~ /^\/\/[[:space:]]*NOTE/) {
@@ -134,7 +169,7 @@ for f in "${files[@]}"; do
         }
         next
       }
-      # 6. the NOTE budget inside doc comments (`/// NOTE:` / `//! NOTE:`) —
+      # The NOTE budget inside doc comments (`/// NOTE:` / `//! NOTE:`) —
       # a doc-relocated essay is the same essay (#2441). The paragraph ends
       # at a blank doc line, per rustdoc paragraph semantics.
       if (is_doc) {
@@ -151,12 +186,25 @@ for f in "${files[@]}"; do
             flush_doc_note()
           else doc_note_len++
         }
+        # 8. a lint-required section heading must carry a body: a bare
+        # `# Errors` / `# Panics` satisfies missing_errors_doc /
+        # missing_panics_doc while documenting nothing. Pending state
+        # clears on the first non-blank, non-heading doc line and trips on
+        # another heading or the end of the doc block.
+        if (line ~ /^\/\/[\/!][[:space:]]*#[[:space:]]*(Errors|Panics)[[:space:]]*$/) {
+          flush_sec()
+          sec_start = NR
+          sec_name = (line ~ /Errors/) ? "Errors" : "Panics"
+        } else if (sec_start) {
+          if (line ~ /^\/\/[\/!][[:space:]]*#/) flush_sec()
+          else if (line !~ /^\/\/[\/!][[:space:]]*$/) sec_start = 0
+        }
         flush_note(); flush_run()
         next
       }
-      flush_note(); flush_run(); flush_doc_note()
+      flush_note(); flush_run(); flush_doc_note(); flush_sec()
     }
-    END { flush_note(); flush_run(); flush_doc_note() }
+    END { flush_note(); flush_run(); flush_doc_note(); flush_sec() }
   ' "$f")"
   if [[ -n "$out" ]]; then
     printf '%s\n' "$out" | sed "s|^|$f|"
