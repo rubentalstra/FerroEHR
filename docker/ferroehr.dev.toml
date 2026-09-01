@@ -46,7 +46,7 @@ enabled = true
 enabled = true
 
 # Per-endpoint access levels (dev posture): the read-only introspection an
-# authenticated console session may see, the Prometheus text left public so a
+# authenticated viewer session may see, the Prometheus text left public so a
 # scrape needs no credentials, and the two sensitive endpoints (the effective
 # configuration and the live log-filter control) admin-gated.
 [management.endpoints]

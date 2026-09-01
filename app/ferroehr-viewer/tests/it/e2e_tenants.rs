@@ -20,7 +20,7 @@
     reason = "test fixtures and wire assertions are raw JSON by the testing rule \
               (.claude/rules/testing.md §Test-fixture construction)"
 )]
-//! End-to-end journeys over the console's **tenant registry** (`/tenants`):
+//! End-to-end journeys over the viewer's **tenant registry** (`/tenants`):
 //! the read-only tenant-context card, the registry CRUD round trip, and the
 //! duplicate-name conflict surfacing the CDR's diagnostic verbatim.
 //!
@@ -37,7 +37,7 @@
 //! user; the last scene signs in as the ordinary one to pin the refusal copy.
 //! Neither credential carries a tenant claim, which is why the context card's
 //! expected answer is the reserved default tenant — the whole point of the
-//! card: tenancy is credential-derived and the console never selects it.
+//! card: tenancy is credential-derived and the viewer never selects it.
 //!
 //! Isolation: every fixture tenant this file registers is removed over the
 //! registry API before AND after the scene that owns it, so a shared stack is
@@ -54,10 +54,10 @@ use common::{
 use thirtyfour::prelude::*;
 
 /// The tenant the CRUD round trip owns.
-const ROUND_TRIP_TENANT: &str = "e2e-console-tenant";
+const ROUND_TRIP_TENANT: &str = "e2e-viewer-tenant";
 
 /// The tenant the conflict scene seeds, then tries to register a second time.
-const CONFLICT_TENANT: &str = "e2e-console-duplicate";
+const CONFLICT_TENANT: &str = "e2e-viewer-duplicate";
 
 /// Every fixture tenant this file may leave behind.
 const FIXTURE_TENANTS: [&str; 2] = [ROUND_TRIP_TENANT, CONFLICT_TENANT];
@@ -327,7 +327,7 @@ async fn a_duplicate_tenant_name_surfaces_the_conflict_verbatim() {
 
     register_tenant(&h, CONFLICT_TENANT, "second.example.org").await;
 
-    // The CDR's own words, unedited — the console never paraphrases a
+    // The CDR's own words, unedited — the viewer never paraphrases a
     // diagnostic it did not author.
     wait_text_contains(
         &h,
@@ -336,7 +336,7 @@ async fn a_duplicate_tenant_name_surfaces_the_conflict_verbatim() {
     )
     .await;
     // The refusal ALSO toasts: an inline-only failure reads as "nothing
-    // happened" (the console's mutation-feedback rule).
+    // happened" (the viewer's mutation-feedback rule).
     assert!(
         wait_text(&h, "Registration failed").await,
         "a refused registration must toast as well as render the diagnostic inline"
@@ -418,7 +418,7 @@ async fn a_session_without_the_admin_role_reads_the_refusal_on_the_screen() {
     wait_text_contains(&h, "#tenant-refused", "ADMIN").await;
     h.shot(1, "tenant-refused").await;
 
-    // A refused READ never toasts (the console's one feedback rule).
+    // A refused READ never toasts (the viewer's one feedback rule).
     assert!(
         h.driver
             .find_all(By::Css(".thaw-toast-body"))

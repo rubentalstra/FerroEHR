@@ -13,9 +13,9 @@
 //! name, which allows for separation of use of stored queries by teams,
 //! companies, etc."
 //! (`ITS-REST specifications/docs/query/Qualified_query_name.md` §Qualified
-//! query name) — so the grouping the console shows is the separation the
+//! query name) — so the grouping the viewer shows is the separation the
 //! identifier already carries: durable in the CDR, visible to every API
-//! client, and nothing the console has to store.
+//! client, and nothing the viewer has to store.
 //!
 //! NOTE: the *presentation* of that grouping (headings, tiles, the label for
 //! the unqualified bucket) is our own design/extension — no openEHR spec
@@ -69,7 +69,7 @@ pub fn bare_name_of(qualified_name: &str) -> &str {
     }
 }
 
-/// Split a qualified name into the console's two save fields: `(namespace,
+/// Split a qualified name into the viewer's two save fields: `(namespace,
 /// bare name)`, with an empty namespace for an unqualified name.
 ///
 /// This is what pre-fills the save form when a stored query is opened in the
@@ -111,7 +111,7 @@ pub fn qualify(namespace: &str, name: &str) -> String {
 /// Splits on the LAST `@` so a qualified name is never mistaken for the
 /// version.
 ///
-/// `name@version` is the console's own reference form for one stored-query
+/// `name@version` is the viewer's own reference form for one stored-query
 /// VERSION (the raw editor's `?load=` hand-off carries it) — the openEHR REST
 /// API keeps the two as separate path segments, so this pairing is our
 /// design/extension, not a spec form.
@@ -588,7 +588,7 @@ mod tests {
         assert!(!is_full_semver("1.0"));
         assert!(!is_full_semver("1.0.0.0"));
         // Non-numeric, empty, signed, and pre-release/build forms all fail:
-        // the console stores only a concrete triple.
+        // the viewer stores only a concrete triple.
         assert!(!is_full_semver(""));
         assert!(!is_full_semver("1.0."));
         assert!(!is_full_semver(".0.0"));

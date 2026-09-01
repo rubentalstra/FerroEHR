@@ -2,7 +2,7 @@
 // SPDX-License-Identifier: MIT
 
 //! Activity timelines: the pure day-bucketing every activity chart in the
-//! console derives its points from.
+//! viewer derives its points from.
 //!
 //! Kept out of the components (and out of the `#[server]` bodies) on purpose —
 //! business logic lives in plain, unit-tested Rust and the views stay thin. It
@@ -89,7 +89,7 @@ mod tests {
 
     #[test]
     fn an_offset_timestamp_buckets_on_its_written_day() {
-        // The wire value's own date prefix is the day — the console does not
+        // The wire value's own date prefix is the day — the viewer does not
         // re-zone a committed timestamp (no clock, no locale: that is what
         // keeps the derived chart hydration-stable).
         assert_eq!(

@@ -63,7 +63,7 @@ jobs:
         run: cargo update
       - name: Check the workspace against it
         id: check
-        # The console is excluded from --all-features lanes (mutually
+        # The viewer is excluded from --all-features lanes (mutually
         # exclusive hydrate/ssr, compile_error!-guarded) and checked
         # per-feature instead — the same split as ci.yml.
         #

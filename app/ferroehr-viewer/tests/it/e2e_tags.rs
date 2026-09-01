@@ -20,14 +20,14 @@
     reason = "test fixtures and wire assertions are raw JSON by the testing rule \
               (.claude/rules/testing.md §Test-fixture construction)"
 )]
-//! End-to-end journey over the console's **EHR-side `ITEM_TAG` surfaces** — the
+//! End-to-end journey over the viewer's **EHR-side `ITEM_TAG` surfaces** — the
 //! openEHR tag operations every client has:
 //!
 //! - the composition viewer's tag panel sets two tags and lists them as rows;
 //! - the EHR detail's **Tags** tab finds them grouped under the composition
 //!   they are on, and its **Open** action resolves the tagged id back to the
 //!   composition viewer (a tag names its target without naming that target's
-//!   kind, so the console has to ask the CDR);
+//!   kind, so the viewer has to ask the CDR);
 //! - deleting one tag by key leaves the other, which is the released
 //!   delete-by-key contract.
 //!
@@ -88,7 +88,7 @@ async fn create_ehr(http: &reqwest::Client, v1: &str) -> String {
 }
 
 /// Commit one composition into `ehr_id` over ITS-REST and return its
-/// versioned-object uid (the id the console's viewer route addresses).
+/// versioned-object uid (the id the composition-viewer route addresses).
 ///
 /// The body is the CDR's OWN generated example for the seeded template
 /// (`GET /definition/template/adl1.4/{template_id}/example`) — spec-valid by
@@ -178,8 +178,8 @@ async fn composition_tags_are_set_browsed_and_deleted() {
     let ehr_id = create_ehr(&http, &v1).await;
     let composition = create_composition(&http, &v1, &ehr_id).await;
     // Unique keys, so the browser's filter finds exactly this journey's tags.
-    let kept = format!("console-kept-{}", jitter());
-    let removed = format!("console-removed-{}", jitter());
+    let kept = format!("viewer-kept-{}", jitter());
+    let removed = format!("viewer-removed-{}", jitter());
 
     login_basic(&h).await;
     h.goto(&format!("/ehrs/{ehr_id}/compositions/{composition}"))
@@ -268,7 +268,7 @@ async fn ehr_status_tags_are_their_own_collection() {
     let http = reqwest::Client::new();
     let v1 = format!("{cdr}/ferroehr/rest/openehr/v1");
     let ehr_id = create_ehr(&http, &v1).await;
-    let key = format!("console-status-{}", jitter());
+    let key = format!("viewer-status-{}", jitter());
 
     login_basic(&h).await;
     h.goto(&format!("/ehrs/{ehr_id}?tab=status")).await;

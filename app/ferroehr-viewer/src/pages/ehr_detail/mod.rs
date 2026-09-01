@@ -32,7 +32,7 @@
 
 #![allow(
     clippy::disallowed_types,
-    reason = "the console consumes the CDR JSON wire over ITS-REST — not the CDR internal seams \
+    reason = "the viewer consumes the CDR JSON wire over ITS-REST — not the CDR internal seams \
               (#1694); the carriers here are ssr-only, so #[expect] would be unfulfilled on the \
               hydrate target"
 )]
@@ -94,7 +94,7 @@ pub struct EhrSummary {
 
 /// Read the EHR resource itself (`GET /ehr/{ehr_id}`) for the detail header.
 ///
-/// This is the console's ONE reader of the EHR resource's own FACTS: an
+/// This is the viewer's ONE reader of the EHR resource's own FACTS: an
 /// unknown or mistyped id surfaces here, once, at the top of the screen — the
 /// tabs read their own sub-resources. (The status tag panel reads the same
 /// endpoint server-side for the one identifier that addresses the status's tag
@@ -102,7 +102,7 @@ pub struct EhrSummary {
 /// claim.)
 ///
 /// # Errors
-/// [`ViewerError::Unauthenticated`] without a console session; CDR transport
+/// [`ViewerError::Unauthenticated`] without a viewer session; CDR transport
 /// errors pass through; a non-2xx CDR answer (the `404` for an unknown
 /// `ehr_id` included) normalizes via
 /// [`CdrClient::expect_success`](crate::cdr::CdrClient::expect_success);
@@ -386,7 +386,7 @@ pub fn EhrDetailPage() -> impl IntoView {
 /// the CDR's PHYSICAL delete (SM `I_ADMIN_SERVICE.physical_ehr_delete` —
 /// `docs/specs/openehr/SM/docs/UML/classes/i_admin_service.adoc`), not the
 /// openEHR logical delete: the versions, contributions and audit trail go with
-/// it. On success the console returns to `/ehrs` (this screen's subject is
+/// it. On success the viewer returns to `/ehrs` (this screen's subject is
 /// gone) with a toast naming the deleted id.
 fn delete_section(ehr_id: Signal<String>) -> AnyView {
     let toaster = thaw::ToasterInjection::expect_context();

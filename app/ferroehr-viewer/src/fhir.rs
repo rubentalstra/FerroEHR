@@ -1,7 +1,7 @@
 // SPDX-FileCopyrightText: FerroEHR contributors
 // SPDX-License-Identifier: MIT
 
-//! The CDR's **FHIR connector** surface the console consumes.
+//! The CDR's **FHIR connector** surface the viewer consumes.
 //!
 //! The availability probe the whole screen and its nav entry are gated on, the
 //! five mapping-store operations (list / create / read-by-id / update /
@@ -11,16 +11,16 @@
 //! standard is HL7 FHIR R4 (<https://hl7.org/fhir/R4/>), and the whole group
 //! (paths, payloads, status codes) is the CDR's own design.
 //!
-//! **The console never commits a FHIR resource.** `POST /fhir/r4/{type}` is the
+//! **The viewer never commits a FHIR resource.** `POST /fhir/r4/{type}` is the
 //! connector's real inbound door — it maps, validates and COMMITS — and it has
-//! no console path at all. Verification here is read-only in effect: the read
+//! no viewer path at all. Verification here is read-only in effect: the read
 //! facade shows what a stored mapping produces on read, and the dry run
 //! (`POST /fhir/r4/{type}/$validate`) reports the verdict the ingest door would
 //! reach while committing nothing.
 //!
 //! **Probe-and-hide.** The group is config-gated on the CDR (`[fhir]
 //! api_enabled`, off by default) and answers `404` for every route as if
-//! unmounted while it is off, so the console discovers it
+//! unmounted while it is off, so the viewer discovers it
 //! ([`probe_fhir_connector`]) before offering any of it. Capability is not
 //! authorization: a mounted-but-refused group (`401`/`403`) still counts as
 //! present, and the refusal surfaces as copy on the screen that asked.
@@ -40,7 +40,7 @@
 
 #![allow(
     clippy::disallowed_types,
-    reason = "the console consumes the CDR JSON wire over ITS-REST — not the CDR internal seams \
+    reason = "the viewer consumes the CDR JSON wire over ITS-REST — not the CDR internal seams \
               (#1694); the FHIR carriers here are read on both targets, and the ssr-only ones \
               would leave an #[expect] unfulfilled on the hydrate target"
 )]
@@ -58,7 +58,7 @@ pub const FHIR_JSON: &str = "application/fhir+json";
 ///
 /// Every field is a string or a `bool`: the record crosses the server-fn
 /// boundary and is rendered or edited, never computed with (no `usize`, and no
-/// parsing the console would have to keep in step with the CDR's own
+/// parsing the viewer would have to keep in step with the CDR's own
 /// formatting). `definition` carries the whole deep mapping document
 /// pretty-printed, because that document IS what the editor edits.
 #[derive(Debug, Clone, PartialEq, Eq, Default, Serialize, Deserialize)]
@@ -105,7 +105,7 @@ impl OutcomeIssue {
     }
 }
 
-/// One answer from a FHIR-connector route, as the console renders it.
+/// One answer from a FHIR-connector route, as the viewer renders it.
 ///
 /// The body travels VERBATIM (pretty-printed only) because both verification
 /// panels show the CDR's own document — a Bundle, or an `OperationOutcome`
@@ -203,7 +203,7 @@ pub enum FhirAvailability {
 }
 
 impl FhirAvailability {
-    /// Whether the console may offer the FHIR connector screen.
+    /// Whether the viewer may offer the FHIR connector screen.
     #[must_use]
     pub fn usable(self) -> bool {
         matches!(self, Self::Available)
@@ -422,7 +422,7 @@ pub fn outcome_summary(body: &str) -> Option<String> {
 /// other answer means it is.
 ///
 /// # Errors
-/// [`ViewerError::Unauthenticated`] without a console session;
+/// [`ViewerError::Unauthenticated`] without a viewer session;
 /// [`ViewerError::CdrUnreachable`] on transport failure.
 #[server]
 pub async fn probe_fhir_connector() -> Result<FhirAvailability, ViewerError> {
@@ -443,7 +443,7 @@ pub async fn probe_fhir_connector() -> Result<FhirAvailability, ViewerError> {
 /// first-class state.
 ///
 /// # Errors
-/// [`ViewerError::Unauthenticated`] without a console session;
+/// [`ViewerError::Unauthenticated`] without a viewer session;
 /// [`ViewerError::CdrUnauthorized`] / [`ViewerError::Forbidden`] / [`ViewerError::Cdr`] /
 /// [`ViewerError::CdrUnreachable`] from the CDR; [`ViewerError::Internal`]
 /// when the body is not valid JSON.
@@ -477,7 +477,7 @@ pub async fn list_fhir_mappings() -> Result<Option<Vec<FhirMappingRow>>, ViewerE
 /// `OperationOutcome` text.
 ///
 /// # Errors
-/// [`ViewerError::Unauthenticated`] without a console session;
+/// [`ViewerError::Unauthenticated`] without a viewer session;
 /// [`ViewerError::Invalid`] when the draft cannot be sent;
 /// [`ViewerError::CdrUnauthorized`] / [`ViewerError::Forbidden`] / [`ViewerError::Cdr`] /
 /// [`ViewerError::CdrUnreachable`] from the CDR; [`ViewerError::Internal`]
@@ -513,10 +513,10 @@ pub async fn create_fhir_mapping(
 /// (`PUT admin/fhir_mapping/{mapping_id}`).
 ///
 /// The name is NOT sent: the CDR treats it as the immutable deployable
-/// identity, so the console does not offer to change it.
+/// identity, so the viewer does not offer to change it.
 ///
 /// # Errors
-/// [`ViewerError::Unauthenticated`] without a console session;
+/// [`ViewerError::Unauthenticated`] without a viewer session;
 /// [`ViewerError::Invalid`] for an empty id or an unsendable document;
 /// [`ViewerError::CdrUnauthorized`] / [`ViewerError::Forbidden`] / [`ViewerError::Cdr`] /
 /// [`ViewerError::CdrUnreachable`] from the CDR; [`ViewerError::Internal`]
@@ -557,7 +557,7 @@ pub async fn update_fhir_mapping(
 /// Delete one stored mapping (`DELETE admin/fhir_mapping/{mapping_id}`).
 ///
 /// # Errors
-/// [`ViewerError::Unauthenticated`] without a console session;
+/// [`ViewerError::Unauthenticated`] without a viewer session;
 /// [`ViewerError::Invalid`] for an empty id;
 /// [`ViewerError::CdrUnauthorized`] / [`ViewerError::Forbidden`] / [`ViewerError::Cdr`] /
 /// [`ViewerError::CdrUnreachable`] from the CDR.
@@ -591,7 +591,7 @@ pub async fn delete_fhir_mapping(
 /// the authentication layer, an unreachable CDR) is an `Err`.
 ///
 /// # Errors
-/// [`ViewerError::Unauthenticated`] without a console session;
+/// [`ViewerError::Unauthenticated`] without a viewer session;
 /// [`ViewerError::Invalid`] when either scope field is blank;
 /// [`ViewerError::CdrUnauthorized`] / [`ViewerError::Forbidden`] on an
 /// authentication or authorization refusal;
@@ -629,10 +629,10 @@ pub async fn read_fhir_resources(
 /// operation-level refusal (no mapping, an unsupported type, a malformed
 /// resource) is also a FHIR document and is rendered verbatim the same way.
 /// **Nothing is committed either way** — this is the ingest door's dry twin,
-/// and the console offers no path to the ingest door itself.
+/// and the viewer offers no path to the ingest door itself.
 ///
 /// # Errors
-/// [`ViewerError::Unauthenticated`] without a console session;
+/// [`ViewerError::Unauthenticated`] without a viewer session;
 /// [`ViewerError::Invalid`] for a blank resource type or body;
 /// [`ViewerError::CdrUnauthorized`] / [`ViewerError::Forbidden`] on an
 /// authentication or authorization refusal;

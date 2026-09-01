@@ -15,7 +15,7 @@
 //! `specifications/operations/directory_*.yaml`), the `FOLDER` schema
 //! (`specifications/schemas/ehr/Folder.yaml`), and RM common
 //! `master05-directory_package`. Every `#[server]` fn below authenticates the
-//! console session first and the CDR credential never reaches client-visible
+//! viewer session first and the CDR credential never reaches client-visible
 //! state.
 //!
 //! This module owns the DIRECTORY `#[server]` fns, the shared wire types, and
@@ -26,7 +26,7 @@
 
 #![expect(
     clippy::disallowed_types,
-    reason = "the console consumes the CDR JSON wire over ITS-REST — not the CDR internal seams \
+    reason = "the viewer consumes the CDR JSON wire over ITS-REST — not the CDR internal seams \
               (#1694)"
 )]
 
@@ -177,7 +177,7 @@ pub(crate) fn is_conflict(error: &ViewerError) -> bool {
 /// state, not an error).
 ///
 /// # Errors
-/// [`ViewerError::Unauthenticated`] without a console session; CDR transport
+/// [`ViewerError::Unauthenticated`] without a viewer session; CDR transport
 /// errors pass through; a non-2xx, non-404 CDR answer normalizes via
 /// [`CdrClient::expect_success`](crate::cdr::CdrClient::expect_success).
 #[server]
@@ -208,7 +208,7 @@ pub async fn fetch_directory(
 }
 
 #[cfg(feature = "ssr")]
-/// Take a served FOLDER answer as the console's [`DirectoryState`], reading the
+/// Take a served FOLDER answer as the viewer's [`DirectoryState`], reading the
 /// version the CDR named in its `ETag` and falling back to the body's `uid`.
 ///
 /// The `ETag` "value is usually taken from e.g. `VERSIONED_OBJECT.uid.value`,
@@ -235,7 +235,7 @@ fn directory_state(response: crate::cdr::CdrResponse) -> DirectoryState {
 /// `specifications/operations/directory_create.yaml`.
 ///
 /// # Errors
-/// [`ViewerError::Unauthenticated`] without a console session;
+/// [`ViewerError::Unauthenticated`] without a viewer session;
 /// [`ViewerError::Invalid`] on an empty body; CDR transport errors pass
 /// through; a non-2xx CDR answer (its validation diagnostics, which the UI
 /// renders verbatim, included) normalizes via
@@ -280,7 +280,7 @@ pub async fn create_directory(
 /// answered `412` by the CDR and surfaces as `is_conflict`.
 ///
 /// # Errors
-/// [`ViewerError::Unauthenticated`] without a console session;
+/// [`ViewerError::Unauthenticated`] without a viewer session;
 /// [`ViewerError::Invalid`] on an empty body or missing current version uid;
 /// CDR transport errors pass through; a non-2xx CDR answer (its validation
 /// diagnostics, which the UI renders verbatim, included) normalizes via
@@ -336,7 +336,7 @@ pub async fn update_directory(
 /// `412` and surfaces as `is_conflict`.
 ///
 /// # Errors
-/// [`ViewerError::Unauthenticated`] without a console session;
+/// [`ViewerError::Unauthenticated`] without a viewer session;
 /// [`ViewerError::Invalid`] on a missing current version uid; CDR transport
 /// errors pass through; a non-2xx CDR answer normalizes via
 /// [`CdrClient::expect_success`](crate::cdr::CdrClient::expect_success).
@@ -389,7 +389,7 @@ pub async fn delete_directory(
 /// latest version number rather than read from the CDR.
 ///
 /// # Errors
-/// [`ViewerError::Unauthenticated`] without a console session; CDR transport
+/// [`ViewerError::Unauthenticated`] without a viewer session; CDR transport
 /// errors pass through; a non-2xx, non-404 CDR answer normalizes via
 /// [`CdrClient::expect_success`](crate::cdr::CdrClient::expect_success).
 #[server]
@@ -485,7 +485,7 @@ fn version_window(latest_n: i32, window: u32) -> Vec<i32> {
 /// `404` → [`DirectoryAtTime::NoneAtTime`].
 ///
 /// # Errors
-/// [`ViewerError::Unauthenticated`] without a console session;
+/// [`ViewerError::Unauthenticated`] without a viewer session;
 /// [`ViewerError::Invalid`] on an empty time; CDR transport errors pass
 /// through; any other non-2xx answer normalizes via
 /// [`CdrClient::expect_success`](crate::cdr::CdrClient::expect_success).
@@ -528,7 +528,7 @@ pub async fn fetch_directory_at_time(
 /// `200` → [`DirectorySubtree::Found`], `404` → [`DirectorySubtree::Missing`].
 ///
 /// # Errors
-/// [`ViewerError::Unauthenticated`] without a console session;
+/// [`ViewerError::Unauthenticated`] without a viewer session;
 /// [`ViewerError::Invalid`] on an empty path; CDR transport errors pass
 /// through; any other non-2xx answer normalizes via
 /// [`CdrClient::expect_success`](crate::cdr::CdrClient::expect_success).
@@ -656,7 +656,7 @@ pub(super) fn directory_section(ehr_id: Signal<String>, selected: Memo<String>) 
     // owner, leaving mounted DOM handlers pointing at dead signals.
     let editor = EditorState::new(update);
 
-    // Toast EVERY write outcome (outside-world side-effect; the console's
+    // Toast EVERY write outcome (outside-world side-effect; the viewer's
     // mutation-feedback rule): a `412` conflict gets the distinct "reload
     // or save anyway" toast, any other failure the shared actionable copy.
     // The CDR diagnostic ALSO stays inline in the relevant feedback pane,
@@ -750,7 +750,7 @@ pub(super) fn directory_section(ehr_id: Signal<String>, selected: Memo<String>) 
     let path_input = RwSignal::new(String::new());
 
     // How much of the history the panel currently holds. It starts at one
-    // console page and grows by another page per "load older" click, so the
+    // viewer page and grows by another page per "load older" click, so the
     // initial load is bounded no matter how deep the version tree runs
     // (the read side of AMB-24 / #1490 — see `list_directory_versions`).
     let history_window = RwSignal::new(crate::components::data_table::PAGE_SIZE);

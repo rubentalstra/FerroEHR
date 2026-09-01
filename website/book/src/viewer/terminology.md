@@ -4,7 +4,7 @@ The **Terminology** screen browses the coded vocabularies the CDR can answer
 questions about: which terminologies it serves, what a code means, which codes a
 value set holds, whether a given code is one of them, and whether one code
 subsumes another. Everything on it is a read of the CDR's public API; nothing
-is stored on the console's side.
+is stored on the viewer's side.
 
 ![The terminology browser](img/terminology/terminology.png)
 

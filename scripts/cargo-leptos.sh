@@ -3,8 +3,8 @@
 # SPDX-License-Identifier: MIT
 # `cargo leptos` for the viewer, with the workspace lockfile frozen.
 #
-# Every other build in this repository runs `--locked`; the console's did not,
-# and a console build re-resolved and rewrote Cargo.lock in the working tree
+# Every other build in this repository runs `--locked`; the viewer's did not,
+# and a viewer build re-resolved and rewrote Cargo.lock in the working tree
 # (#2877). `cargo leptos` cannot simply be handed the flag: before it compiles
 # anything it resolves the workspace through its own `cargo metadata` call
 # (cargo_metadata's MetadataCommand, which cargo-leptos passes no extra flags
@@ -26,19 +26,19 @@
 set -Eeuo pipefail
 
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
-CONSOLE_DIR="$ROOT/app/ferroehr-viewer"
+VIEWER_DIR="$ROOT/app/ferroehr-viewer"
 
 if ! cargo metadata --locked --format-version 1 \
-  --manifest-path "$CONSOLE_DIR/Cargo.toml" >/dev/null; then
+  --manifest-path "$VIEWER_DIR/Cargo.toml" >/dev/null; then
   echo "FATAL: Cargo.lock does not satisfy the workspace manifests." >&2
   echo "       Re-resolve deliberately (cargo check --workspace) and commit the" >&2
-  echo "       lockfile change; a console build must never do it silently." >&2
+  echo "       lockfile change; a viewer build must never do it silently." >&2
   exit 1
 fi
 
-# `cargo leptos` reads its configuration from the console crate's own manifest
+# `cargo leptos` reads its configuration from the viewer crate's own manifest
 # directory, so the build runs from there.
-cd "$CONSOLE_DIR"
+cd "$VIEWER_DIR"
 exec cargo leptos "$@" \
   --lib-cargo-args=--locked \
   --bin-cargo-args=--locked

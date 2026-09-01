@@ -1,7 +1,7 @@
 // SPDX-FileCopyrightText: FerroEHR contributors
 // SPDX-License-Identifier: MIT
 
-//! The CDR's **event-subscription** surface the console consumes.
+//! The CDR's **event-subscription** surface the viewer consumes.
 //!
 //! The availability probe the subscriptions screen and its nav entry are gated
 //! on, and the four operations the screen drives over
@@ -18,7 +18,7 @@
 //! and an `enabled` flag, so the screen edits it with ordinary form fields
 //! rather than a document editor.
 //!
-//! **The console never renders a broker binding key.** Which queue an enabled
+//! **The viewer never renders a broker binding key.** Which queue an enabled
 //! subscription binds, and how a wildcard predicate is spelled in a topic key,
 //! is the CDR publisher's grammar; restating it here would be a second copy of
 //! a grammar this crate cannot import. The screen states the predicates in
@@ -26,7 +26,7 @@
 //!
 //! **Probe-and-hide.** The group is config-gated on the CDR (`[events]
 //! admin_api`, off by default) and answers `404` for every route as if
-//! unmounted while it is off, so the console discovers it
+//! unmounted while it is off, so the viewer discovers it
 //! ([`probe_event_subscriptions`]) before offering any of it. Capability is not
 //! authorization: a mounted-but-refused group (`401`/`403`) still counts as
 //! present, and the refusal surfaces as copy on the screen that asked.
@@ -37,7 +37,7 @@
 
 #![allow(
     clippy::disallowed_types,
-    reason = "the console consumes the CDR JSON wire over ITS-REST — not the CDR internal seams \
+    reason = "the viewer consumes the CDR JSON wire over ITS-REST — not the CDR internal seams \
               (#1694); the carriers here are ssr-only, so #[expect] would be unfulfilled on the \
               hydrate target"
 )]
@@ -54,7 +54,7 @@ use crate::error::ViewerError;
 ///
 /// Every wire value is a string, including the id and the timestamp: the record
 /// crosses the server-fn boundary and is rendered, never computed with (no
-/// `usize`, and no parsing the console would have to keep in step with the
+/// `usize`, and no parsing the viewer would have to keep in step with the
 /// CDR's own formatting). A predicate the CDR serves as `null` — its wildcard —
 /// arrives here as the empty string.
 #[derive(Debug, Clone, PartialEq, Eq, Default, Serialize, Deserialize)]
@@ -108,7 +108,7 @@ pub enum SubscriptionAvailability {
 }
 
 impl SubscriptionAvailability {
-    /// Whether the console may offer the subscriptions screen.
+    /// Whether the viewer may offer the subscriptions screen.
     #[must_use]
     pub fn usable(self) -> bool {
         matches!(self, Self::Available)
@@ -275,7 +275,7 @@ pub fn subscription_failure_copy(object: &str, error: &ViewerError) -> String {
 /// answer means it is.
 ///
 /// # Errors
-/// [`ViewerError::Unauthenticated`] without a console session;
+/// [`ViewerError::Unauthenticated`] without a viewer session;
 /// [`ViewerError::CdrUnreachable`] on transport failure.
 #[server]
 pub async fn probe_event_subscriptions() -> Result<SubscriptionAvailability, ViewerError> {
@@ -297,7 +297,7 @@ pub async fn probe_event_subscriptions() -> Result<SubscriptionAvailability, Vie
 /// renders it as its own first-class state.
 ///
 /// # Errors
-/// [`ViewerError::Unauthenticated`] without a console session;
+/// [`ViewerError::Unauthenticated`] without a viewer session;
 /// [`ViewerError::CdrUnauthorized`] / [`ViewerError::Forbidden`] / [`ViewerError::Cdr`] /
 /// [`ViewerError::CdrUnreachable`] from the CDR; [`ViewerError::Internal`]
 /// when the body is not valid JSON.
@@ -330,7 +330,7 @@ pub async fn list_event_subscriptions() -> Result<Option<Vec<SubscriptionRow>>, 
 /// through [`CdrClient::expect_success`](crate::cdr::CdrClient::expect_success).
 ///
 /// # Errors
-/// [`ViewerError::Unauthenticated`] without a console session;
+/// [`ViewerError::Unauthenticated`] without a viewer session;
 /// [`ViewerError::Invalid`] when the name cannot be accepted;
 /// [`ViewerError::CdrUnauthorized`] / [`ViewerError::Forbidden`] / [`ViewerError::Cdr`] /
 /// [`ViewerError::CdrUnreachable`] from the CDR; [`ViewerError::Internal`]
@@ -373,10 +373,10 @@ pub async fn create_event_subscription(
 /// wildcard, which is why the edit form always submits all four.
 ///
 /// The id is percent-encoded with the `urlencoding` crate — the CDR serves it
-/// as text, and the console never hand-rolls a codec for a path segment.
+/// as text, and the viewer never hand-rolls a codec for a path segment.
 ///
 /// # Errors
-/// [`ViewerError::Unauthenticated`] without a console session;
+/// [`ViewerError::Unauthenticated`] without a viewer session;
 /// [`ViewerError::Invalid`] for an empty id;
 /// [`ViewerError::CdrUnauthorized`] / [`ViewerError::Forbidden`] / [`ViewerError::Cdr`] /
 /// [`ViewerError::CdrUnreachable`] from the CDR; [`ViewerError::Internal`]
@@ -417,7 +417,7 @@ pub async fn update_event_subscription(
 /// (`DELETE admin/event_subscription/{subscription_id}`).
 ///
 /// # Errors
-/// [`ViewerError::Unauthenticated`] without a console session;
+/// [`ViewerError::Unauthenticated`] without a viewer session;
 /// [`ViewerError::Invalid`] for an empty id;
 /// [`ViewerError::CdrUnauthorized`] / [`ViewerError::Forbidden`] / [`ViewerError::Cdr`] /
 /// [`ViewerError::CdrUnreachable`] from the CDR.

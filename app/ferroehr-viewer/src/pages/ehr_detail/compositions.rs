@@ -16,7 +16,7 @@
 
 #![expect(
     clippy::disallowed_types,
-    reason = "the console consumes the CDR JSON wire over ITS-REST — not the CDR internal seams \
+    reason = "the viewer consumes the CDR JSON wire over ITS-REST — not the CDR internal seams \
               (#1694)"
 )]
 
@@ -54,7 +54,7 @@ use crate::pages::ehrs::{aql_request_body, parse_result_set};
 /// builds the statement and the bindings together.
 ///
 /// # Errors
-/// [`ViewerError::Unauthenticated`] without a console session;
+/// [`ViewerError::Unauthenticated`] without a viewer session;
 /// [`ViewerError::Invalid`] when a date bound is neither a date nor an
 /// instant; CDR transport errors pass through; a non-2xx CDR answer normalizes
 /// via [`CdrClient::expect_success`](crate::cdr::CdrClient::expect_success);
@@ -97,7 +97,7 @@ pub async fn list_compositions(
 
 /// The EHR's compositions with NO filter applied.
 ///
-/// The console's composition PICKERS (the Commit tab's amend selector, the
+/// The viewer's composition PICKERS (the Commit tab's amend selector, the
 /// directory editor's item selector) offer every composition in the EHR, not
 /// the view the tab happens to be filtered to — this names that intent at the
 /// call site instead of four empty strings.
@@ -127,7 +127,7 @@ pub async fn all_compositions(ehr_id: String, offset: u32) -> Result<ResultPage,
 /// version uid.
 ///
 /// # Errors
-/// [`ViewerError::Unauthenticated`] without a console session;
+/// [`ViewerError::Unauthenticated`] without a viewer session;
 /// [`ViewerError::Invalid`] on an empty body or a FLAT commit without a
 /// template id; CDR transport errors pass through; a non-2xx CDR answer (its
 /// validation diagnostics, which the UI renders verbatim, included)
@@ -213,7 +213,7 @@ pub(super) fn compositions_section(
             async move { commit_composition(ehr_id, format, template_id, body).await }
         },
     );
-    // Both outcomes toast (an outside-world side-effect; the console's
+    // Both outcomes toast (an outside-world side-effect; the viewer's
     // mutation-feedback rule); the CDR's validation diagnostic ALSO stays
     // inline in the form, where the pasted body is.
     Effect::new(move |_| match commit.value().get() {
@@ -288,7 +288,7 @@ pub(super) fn compositions_section(
 /// natively; the router takes over once WASM loads).
 ///
 /// Each field shows what the URL says, through the attribute/property pair the
-/// console uses wherever server HTML and live state must agree: the static
+/// viewer uses wherever server HTML and live state must agree: the static
 /// `value` attribute is the server pass, so a shared link arrives with the boxes
 /// already filled; the `prop:value` binding follows the address bar afterwards,
 /// so **Clear** and the back button empty and refill them. Typing changes

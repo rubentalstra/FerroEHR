@@ -3,7 +3,7 @@
 
 //! The shared page header: breadcrumbs, title, subtitle, and an action
 //! slot — every routed screen opens with one so the page rhythm (header →
-//! toolbar → content) is identical across the console.
+//! toolbar → content) is identical across the viewer.
 
 use leptos::prelude::*;
 use leptos_router::components::A;

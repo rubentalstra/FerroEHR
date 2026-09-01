@@ -2,8 +2,8 @@
 
 The **Tenants** screen administers the CDR's tenant registry (the named
 tenants a credential's claim resolves against) and shows which tenant the
-console session you are looking at actually runs as. Everything on it comes
-from the CDR's own tenant API over HTTP; the console has no privileged channel
+viewer session you are looking at actually runs as. Everything on it comes
+from the CDR's own tenant API over HTTP; the viewer has no privileged channel
 and keeps no tenant state of its own.
 
 ![Tenants](img/tenants/tenants.png)
@@ -12,7 +12,7 @@ and keeps no tenant state of its own.
 
 ## When it appears
 
-The screen is **probe-and-hide**: on every page load the console asks the CDR
+The screen is **probe-and-hide**: on every page load the viewer asks the CDR
 for `GET /admin/tenant`, and the sidebar entry appears only if that route
 exists. A `404` (the CDR's answer when multi-tenancy is off, which is the
 default) hides the entry entirely; any other answer counts as present, so a
@@ -42,7 +42,7 @@ be read.
 ## The tenant this session resolves to
 
 The card at the top of the screen answers one question: **which tenant does
-this console session's credential put you in?** It reads the CDR's own answer
+this viewer session's credential put you in?** It reads the CDR's own answer
 (`GET /admin/tenant/current`) rather than deriving anything locally, and it
 shows either the resolved tenant's name and `system_id`, or *the reserved
 default tenant* when the session runs unscoped, which is what happens when
@@ -52,7 +52,7 @@ without one).
 **There is no tenant switcher, and that is deliberate.** Tenancy is derived
 from the credential on each request
 ([Security & multi-tenancy](../security.md)), so the only honest ways a
-console could change it would be to keep a tenant of its own beside the CDR
+viewer could change it would be to keep a tenant of its own beside the CDR
 (state that would be invisible to every other client) or to send the CDR's
 development-only tenant override header, which in production is an
 authorization bypass. So the card displays and never selects: to work in

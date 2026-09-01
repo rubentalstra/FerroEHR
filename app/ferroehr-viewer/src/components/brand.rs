@@ -7,7 +7,7 @@
 
 use leptos::prelude::*;
 
-/// The console wordmark (mark + name), sized for the topbar.
+/// The viewer wordmark (mark + name), sized for the topbar.
 #[expect(
     clippy::must_use_candidate,
     reason = "#[component] rewrites the fn; view!/mount always consumes the value"

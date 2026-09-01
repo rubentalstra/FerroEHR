@@ -9,7 +9,7 @@
 //! `operationId: options`; body schema
 //! `docs/specs/openehr/ITS-REST/specifications/schemas/others/Options.yaml`).
 //! Its `endpoints` array is the server's live mounted-group set, which is how
-//! the console discovers optional API groups instead of poking one of their
+//! the viewer discovers optional API groups instead of poking one of their
 //! operations.
 //!
 //! Shared, not screen-local: the manifest also carries the CDR's identity and
@@ -17,7 +17,7 @@
 //!
 //! The manifest is served above CORS and outside authentication (`security:
 //! []`), so the fetch carries no CDR credential — but the server fn still
-//! guards the console session first, because every `#[server]` fn is a publicly
+//! guards the viewer session first, because every `#[server]` fn is a publicly
 //! reachable endpoint.
 
 use leptos::server;
@@ -75,7 +75,7 @@ impl ConformanceManifest {
 /// surfaces.
 ///
 /// # Errors
-/// [`ViewerError::Unauthenticated`] without a console session;
+/// [`ViewerError::Unauthenticated`] without a viewer session;
 /// [`ViewerError::CdrUnreachable`] on transport failure;
 /// [`ViewerError::Cdr`] when the CDR answers non-2xx;
 /// [`ViewerError::Internal`] when the body is not the `Options` shape.

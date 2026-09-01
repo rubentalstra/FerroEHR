@@ -1,19 +1,19 @@
 # SPDX-FileCopyrightText: FerroEHR contributors
 # SPDX-License-Identifier: MIT
 
-# The full viewer E2E battery against the PUBLISHED console image
+# The full viewer E2E battery against the PUBLISHED viewer image
 # (issue #2876).
 #
 # scripts/ui-e2e.sh has carried a shipped-artifact mode
-# (UI_E2E_IMAGE/UI_E2E_IMAGE_REF) since the console lane was built, and nothing
-# ever called it: every gate ran the battery against a console cargo-leptos
+# (UI_E2E_IMAGE/UI_E2E_IMAGE_REF) since the viewer lane was built, and nothing
+# ever called it: every gate ran the battery against a viewer cargo-leptos
 # built on the runner. A capability no lane runs is decoration, so this is its
 # caller.
 #
 # WHY WEEKLY AND NOT THE RELEASE PIPELINE. Measured 2026-08-28 against a
 # locally built image on an arm64 host: 139 journeys in 256s, and 7m17s for
 # everything the battery does once the images exist (compose up, Keycloak
-# setup, REST seeding, console start, chromedriver, the journeys, teardown).
+# setup, REST seeding, viewer start, chromedriver, the journeys, teardown).
 # What is NOT cheap is the input it needs — the e2e test binaries, compiled
 # from this checkout. release.yml is a PUBLISHING pipeline, and a publishing
 # lane restores no build cache (.claude/rules/reliability.md), so that compile
@@ -30,7 +30,7 @@
 # `main` would not guarantee.
 #
 # RUN COLOUR. This is a test battery, not a probe: a failing journey is a real
-# defect in the shipped console and the run goes RED.
+# defect in the shipped viewer and the run goes RED.
 name: ui-e2e (published images)
 
 on:
@@ -54,7 +54,7 @@ concurrency:
 
 jobs:
   battery:
-    name: ui-e2e (published console image)
+    name: ui-e2e (published viewer image)
     runs-on: ubuntu-latest
     timeout-minutes: 90
     permissions:
@@ -103,8 +103,8 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
-      # UI_E2E_IMAGE_REF is the console artifact under test; the two CDR images
-      # are FIXTURES, pinned to the same release so a red run names the console
+      # UI_E2E_IMAGE_REF is the viewer artifact under test; the two CDR images
+      # are FIXTURES, pinned to the same release so a red run names the viewer
       # rather than a version skew. UI_E2E_NO_BUILD keeps compose from
       # rebuilding either of them from this checkout.
       - name: Run the battery against the published images

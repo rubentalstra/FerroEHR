@@ -57,12 +57,12 @@ jobs:
           served="$(curl -sS -m 30 "${HOSTED_BASE}/ferroehr/rest/status" \
             | jq -r '.server_version // empty' 2>/dev/null || true)"
 
-          # The console is the landing surface; a dead console with a live CDR
+          # The viewer is the landing surface; a dead viewer with a live CDR
           # is still a broken sandbox. -L: the landing page 302-redirects to
           # /login, and an unfollowed redirect is an empty body that reads as
-          # a dead console (measured — the watch held its issue open against
+          # a dead viewer (measured — the watch held its issue open against
           # a healthy box).
-          console="$(curl -sSL -m 30 "${HOSTED_BASE}/" | grep -c "FerroEHR" || true)"
+          viewer="$(curl -sSL -m 30 "${HOSTED_BASE}/" | grep -c "FerroEHR" || true)"
 
           # What it SHOULD serve: the release pointer's own version label.
           tok=$(curl -fsS "https://ghcr.io/token?scope=repository:${IMAGE#ghcr.io/}:pull" | sed -nE 's/.*"token":"([^"]+)".*/\1/p')
@@ -91,9 +91,9 @@ jobs:
           elif [ -n "$expected" ] && [ "$served" != "$expected" ]; then
             verdict=stale
             detail="It serves \`${served}\` and the release pointer names \`${expected}\`. A deploy did not land, or landed and was rolled back."
-          elif [ "$console" = "0" ]; then
+          elif [ "$viewer" = "0" ]; then
             verdict=degraded
-            detail="The CDR serves \`${served}\` and the landing surface carries no console markup. The console container is not answering."
+            detail="The CDR serves \`${served}\` and the landing surface carries no viewer markup. The viewer container is not answering."
           fi
 
           {

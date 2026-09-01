@@ -2,7 +2,7 @@
 // SPDX-License-Identifier: MIT
 
 //! The shared `ITEM_TAG` kit: ONE row type, ONE wire codec, ONE editor panel
-//! and ONE filter form for every tag surface in the console.
+//! and ONE filter form for every tag surface in the viewer.
 //!
 //! The CDR serves tags on three families of route — the demographic party trio
 //! (`/demographic/{kind}/{uid_based_id}/tags`), the EHR-side COMPOSITION and
@@ -40,7 +40,7 @@
 
 #![allow(
     clippy::disallowed_types,
-    reason = "the console consumes the CDR JSON wire over ITS-REST — not the CDR internal seams \
+    reason = "the viewer consumes the CDR JSON wire over ITS-REST — not the CDR internal seams \
               (#1694); the carriers here are ssr-only, so #[expect] would be unfulfilled on the \
               hydrate target"
 )]
@@ -436,7 +436,7 @@ pub fn tag_filter_form(
 /// behaviour: "In case no such parameter is provided then all `ITEM_TAG`
 /// resources will be retrieved" (`operations/ehr_tags_get.yaml`, and the same
 /// sentence in `demographic_tags_get.yaml`). The parameter names are the
-/// released ones, which the console's own argument names deliberately do not
+/// released ones, which the viewer's own argument names deliberately do not
 /// repeat (`tag_key` on both sides would only stutter).
 #[cfg(feature = "ssr")]
 #[must_use]

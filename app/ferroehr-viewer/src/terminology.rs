@@ -1,11 +1,11 @@
 // SPDX-FileCopyrightText: FerroEHR contributors
 // SPDX-License-Identifier: MIT
 
-//! The CDR's **terminology surface** as the console consumes it.
+//! The CDR's **terminology surface** as the viewer consumes it.
 //!
 //! Six reads — the known terminology ids, one terminology's descriptor, a term
 //! definition, a strict subsumption test, a value set's members, and a
-//! value-set membership test — behind the console's own session guard.
+//! value-set membership test — behind the viewer's own session guard.
 //!
 //! NOTE: no openEHR spec governs this wire shape — the CDR's own extension
 //! realizing SM `I_TERMINOLOGY_SERVICE`
@@ -25,7 +25,7 @@
 
 #![expect(
     clippy::disallowed_types,
-    reason = "the console consumes the CDR JSON wire over ITS-REST — not the CDR internal seams \
+    reason = "the viewer consumes the CDR JSON wire over ITS-REST — not the CDR internal seams \
               (#1694)"
 )]
 
@@ -80,7 +80,7 @@ impl TermRow {
     /// Renders the term as `code — text`, or the bare code when the extract
     /// carried no text.
     ///
-    /// The one rubric spelling in the console: the terminology browser's table
+    /// The one rubric spelling in the viewer: the terminology browser's table
     /// and the query builder's validated code chips both read it, so a term
     /// looks the same wherever it appears.
     #[must_use]
@@ -230,7 +230,7 @@ fn string_list(value: Option<&serde_json::Value>) -> Vec<String> {
 /// `404` to `Ok(None)` — the extension being off, and the addressed
 /// terminology/code/value set not existing, are all that one status.
 ///
-/// Guards the console session first: the server fns below are publicly
+/// Guards the viewer session first: the server fns below are publicly
 /// reachable endpoints, and this is the one place their CDR call is made.
 #[cfg(feature = "ssr")]
 async fn terminology_get(path: &str) -> Result<Option<serde_json::Value>, ViewerError> {
@@ -280,7 +280,7 @@ fn require_value(value: &str, what: &str) -> Result<String, ViewerError> {
 /// the routes were unmounted), not an error.
 ///
 /// # Errors
-/// [`ViewerError::Unauthenticated`] without a console session;
+/// [`ViewerError::Unauthenticated`] without a viewer session;
 /// [`ViewerError::CdrUnauthorized`] / [`ViewerError::Forbidden`] when the CDR
 /// refuses this session;
 /// [`ViewerError::Cdr`] / [`ViewerError::CdrUnreachable`] from the CDR;

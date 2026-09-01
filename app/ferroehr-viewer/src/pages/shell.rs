@@ -7,7 +7,7 @@
 //! icons, topbar with the wordmark + CDR status chip, user menu + access
 //! drawer, dark-mode toggle, footer) around the routed `<Outlet/>`.
 //!
-//! The access drawer ("View scopes") is the console's effective-identity
+//! The access drawer ("View scopes") is the viewer's effective-identity
 //! surface: the authenticated principal, the policy source deciding what it may
 //! do, this session's scopes rendered as their parsed SMART grants, and a free
 //! previewer for any scope string — all through [`crate::scopes`] over the ONE
@@ -16,7 +16,7 @@
 //!
 //! The shell is a layout, not a route: it is the `view` of the guarded
 //! `ParentRoute` in [`crate::app`], and it renders the matched child screen
-//! through `<Outlet/>`. Access is gated on a live console session — with no
+//! through `<Outlet/>`. Access is gated on a live viewer session — with no
 //! session the guard redirects to `/login`.
 //!
 //! The chrome is styled with STATIC Tailwind classes (the design-system
@@ -27,7 +27,7 @@
 
 #![expect(
     clippy::disallowed_types,
-    reason = "the console consumes the CDR JSON wire over ITS-REST — not the CDR internal seams \
+    reason = "the viewer consumes the CDR JSON wire over ITS-REST — not the CDR internal seams \
               (#1694)"
 )]
 
@@ -85,9 +85,9 @@ fn nav_key(path: &str) -> &'static str {
 /// Browser-only callers (Effect / click handlers).
 fn apply_dark(theme: RwSignal<thaw::Theme>, dark: bool) {
     theme.set(if dark {
-        crate::theme::console_dark()
+        crate::theme::viewer_dark()
     } else {
-        crate::theme::console_light()
+        crate::theme::viewer_light()
     });
     if let Some(root) = document().document_element() {
         let list = root.class_list();
@@ -544,7 +544,7 @@ fn authed_shell(
     // (`crate::scopes` over the ONE shared grammar). It resolves the session
     // inside its own resource-free Suspend — safe to re-run, since it allocates
     // no resources — and renders ONLY facts the session actually carries: the
-    // console never invents a claim it was not given.
+    // viewer never invents a claim it was not given.
     let effective_access = view! {
         <Suspense fallback=|| ()>
             {move || {
@@ -564,7 +564,7 @@ fn authed_shell(
                         // from here.
                         view! {
                             <p class="text-sm text-ink-muted">
-                                "No scopes — Basic authentication grants full console access."
+                                "No scopes — Basic authentication grants full viewer access."
                             </p>
                         }
                             .into_any()
@@ -660,7 +660,7 @@ fn authed_shell(
 
     let footer = view! {
         <footer class="flex h-10 shrink-0 items-center gap-2 border-t border-edge bg-raised px-4 text-xs text-ink-muted">
-            <span>{format!("console v{}", env!("CARGO_PKG_VERSION"))}</span>
+            <span>{format!("viewer v{}", env!("CARGO_PKG_VERSION"))}</span>
             <span>"·"</span>
             <Suspense fallback=|| ()>
                 {move || {

@@ -110,7 +110,7 @@ pub fn QueryAqlPage() -> impl IntoView {
         async move { store_query(name, version, aql).await }
     });
     // Both outcomes toast (rules: Effect = sync with the outside world; no
-    // signal is written — and the console's mutation-feedback rule). The
+    // signal is written — and the viewer's mutation-feedback rule). The
     // CDR's diagnostic ALSO stays inline (save_feedback), beside the AQL
     // it rejected.
     let toaster = thaw::ToasterInjection::expect_context();

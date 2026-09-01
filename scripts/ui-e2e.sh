@@ -2,14 +2,14 @@
 # SPDX-FileCopyrightText: FerroEHR contributors
 # SPDX-License-Identifier: MIT
 # Viewer E2E harness: compose up the CDR stack +
-# Keycloak, build + run the console on the host, start chromedriver, run the
+# Keycloak, build + run the viewer on the host, start chromedriver, run the
 # e2e journeys via nextest, tear down. Mirrors scripts/conformance.sh.
 #
 # Usage:
 #   scripts/ui-e2e.sh [FILTER]      # FILTER = nextest -E test(...) substring
 #
 # Env:
-#   UI_E2E_IMAGE        if set, run the journeys against the COMPOSED console
+#   UI_E2E_IMAGE        if set, run the journeys against the COMPOSED viewer
 #                       image (docker compose build of docker/viewer/
 #                       Dockerfile + the e2e-env override) instead of a host
 #                       cargo-leptos build — the shipped-artifact battery.
@@ -27,9 +27,11 @@
 #                       building from source. CI pre-builds the app image with
 #                       a layer cache exported to GHCR and sets this, so the
 #                       cold runner does not pay the full compile.
-#   UI_E2E_PREBUILT_CONSOLE
+#   UI_E2E_PREBUILT_VIEWER
+#                       (was UI_E2E_PREBUILT_CONSOLE before the product was
+#                       named FerroEHR Viewer; the CI job sets the new name)
 #                       if set, skip the host cargo-leptos build and run the
-#                       console binary + site tree already at
+#                       viewer binary + site tree already at
 #                       target/debug/ferroehr-viewer + target/site (CI builds
 #                       them in a parallel job and downloads the artifact).
 #   UI_E2E_NEXTEST_ARCHIVE
@@ -45,7 +47,7 @@
 #                       runner images' variable), else chromedriver on PATH.
 #
 # The journeys themselves read:
-#   UI_E2E_BASE_URL        the console origin (set by this script)
+#   UI_E2E_BASE_URL        the viewer origin (set by this script)
 #   UI_E2E_WEBDRIVER_URL   the chromedriver endpoint (set by this script)
 #   UI_E2E_SHOTS_DIR       screenshot output dir (set by this script)
 # and skip-with-reason when unset, so a plain `cargo nextest run --workspace`
@@ -67,7 +69,7 @@ export COMPOSE_PROJECT_NAME=ferroehr-e2e
 # on the `up` left the trap's `down -v` blind to keycloak and leaked the
 # container on every run. COMPOSE_PROFILES scopes EVERY compose call below —
 # `up`, `stop` and the teardown alike. Comma-separate any profile added here.
-# `viewer` is here because the console service now carries that profile: the
+# `viewer` is here because the viewer service now carries that profile: the
 # export is what keeps the image mode's `stop ferroehr-viewer` cleanup and
 # the trap's `down -v` able to see the container at all.
 export COMPOSE_PROFILES=keycloak,viewer
@@ -77,12 +79,12 @@ export COMPOSE_PROFILES=keycloak,viewer
 export REVISION="${REVISION:-$(git -C "$ROOT" rev-parse --short=12 HEAD 2>/dev/null || echo unknown)}"
 
 if [[ -n "${UI_E2E_IMAGE:-}" ]]; then
-  # Image mode: the composed console publishes the quickstart port.
-  CONSOLE_ADDR="127.0.0.1:3000"
+  # Image mode: the composed viewer publishes the quickstart port.
+  VIEWER_ADDR="127.0.0.1:3000"
 else
-  CONSOLE_ADDR="127.0.0.1:3300"
+  VIEWER_ADDR="127.0.0.1:3300"
 fi
-CONSOLE_URL="http://${CONSOLE_ADDR}"
+VIEWER_URL="http://${VIEWER_ADDR}"
 CDR_URL="http://localhost:8080"
 KEYCLOAK_URL="http://localhost:8081"
 DRIVER_PORT=9515
@@ -111,10 +113,10 @@ assert_no_tree_residue() {
   echo "── working tree clean of run residue"
 }
 
-CONSOLE_PID=""
+VIEWER_PID=""
 DRIVER_PID=""
 cleanup() {
-  [[ -n "$CONSOLE_PID" ]] && kill "$CONSOLE_PID" 2>/dev/null || true
+  [[ -n "$VIEWER_PID" ]] && kill "$VIEWER_PID" 2>/dev/null || true
   if [[ -n "${UI_E2E_IMAGE:-}" ]] && [[ -z "${UI_E2E_KEEP_UP:-}" ]]; then
     docker compose stop ferroehr-viewer >/dev/null 2>&1 || true
   fi
@@ -172,16 +174,16 @@ for pair in "ferroehr-admin:E2ePass-admin1!" "ferroehr-user:E2ePass-user1!"; do
     "$KEYCLOAK_URL/auth/admin/realms/ferroehr/users/$uid/reset-password"
 done
 
-# Register the console's redirect URI on the realm client (the shipped
+# Register the viewer's redirect URI on the realm client (the shipped
 # export's relative "/*" is rootUrl-relative and rejects our origin) — via
 # the admin API, never by editing the realm file.
-echo "── registering the console redirect URI on the ferroehr client"
+echo "── registering the viewer redirect URI on the ferroehr client"
 CLIENT_ID=$(curl -sf -H "Authorization: Bearer $KC_TOKEN" \
   "$KEYCLOAK_URL/auth/admin/realms/ferroehr/clients?clientId=ferroehr" \
   | jq -r '.[0].id')
 curl -sf -H "Authorization: Bearer $KC_TOKEN" \
   "$KEYCLOAK_URL/auth/admin/realms/ferroehr/clients/$CLIENT_ID" \
-  | jq --arg origin "$CONSOLE_URL" '
+  | jq --arg origin "$VIEWER_URL" '
       # Union-then-sort, as the previous version did: `unique` in jq both
       # de-duplicates and sorts, so re-running this script is idempotent rather
       # than accumulating duplicate redirect URIs on the Keycloak client.
@@ -245,9 +247,9 @@ for magnitude in 36.5 37.8 39.1; do
 done
 echo "   seeded 3 extra FLAT compositions with quantity magnitudes"
 
-# ── 3. The console under test ────────────────────────────────────────────────
+# ── 3. The viewer under test ─────────────────────────────────────────────────
 if [[ -n "${UI_E2E_IMAGE:-}" ]]; then
-  # Image mode — the TRUE shipped artifact: compose-build the console image
+  # Image mode — the TRUE shipped artifact: compose-build the viewer image
   # (docker/viewer/Dockerfile) with the e2e-env override supplying the OIDC
   # test wiring; the issuer (http://keycloak:8081) resolves in-network via
   # docker DNS and in the E2E browser via the harness host-resolver mapping.
@@ -257,7 +259,7 @@ if [[ -n "${UI_E2E_IMAGE:-}" ]]; then
   # container, `up ferroehr-viewer` would RECREATE the server mid-run —
   # breaking the lane. The bare calls (stop/down/logs) recreate nothing.
   if [[ -n "${UI_E2E_IMAGE_REF:-}" ]]; then
-    echo "── compose up the PUBLISHED console image ($UI_E2E_IMAGE_REF)"
+    echo "── compose up the PUBLISHED viewer image ($UI_E2E_IMAGE_REF)"
     FERROEHR_VIEWER_IMAGE="$UI_E2E_IMAGE_REF" \
       docker compose -f docker-compose.yml -f docker-compose.dev.yml \
       -f docker/viewer/e2e-env.yml \
@@ -268,9 +270,9 @@ if [[ -n "${UI_E2E_IMAGE:-}" ]]; then
     # (#2882) — so the build is a separate, service-scoped step (`compose
     # build` never builds dependencies) and the `up` itself never builds.
     if [[ -n "${UI_E2E_NO_BUILD:-}" ]]; then
-      echo "── compose up the console image (UI_E2E_NO_BUILD: images as provided)"
+      echo "── compose up the viewer image (UI_E2E_NO_BUILD: images as provided)"
     else
-      echo "── compose build the console image (build from source)"
+      echo "── compose build the viewer image (build from source)"
       docker compose -f docker-compose.yml -f docker-compose.dev.yml \
         -f docker/viewer/e2e-env.yml \
         build ferroehr-viewer
@@ -280,25 +282,25 @@ if [[ -n "${UI_E2E_IMAGE:-}" ]]; then
       up -d --no-build ferroehr-viewer
   fi
 else
-  if [[ -n "${UI_E2E_PREBUILT_CONSOLE:-}" ]]; then
-    echo "── using the prebuilt console (UI_E2E_PREBUILT_CONSOLE)"
+  if [[ -n "${UI_E2E_PREBUILT_VIEWER:-}" ]]; then
+    echo "── using the prebuilt viewer (UI_E2E_PREBUILT_VIEWER)"
     # hash.txt is as load-bearing as the binary: without it the renderer names
     # the unhashed /pkg files, which the hashed bundle does not contain.
     for p in "$ROOT/target/debug/ferroehr-viewer" "$ROOT/target/debug/hash.txt" \
              "$ROOT/target/site/pkg"; do
-      [[ -e "$p" ]] || { echo "FATAL: UI_E2E_PREBUILT_CONSOLE set but $p is missing" >&2; exit 1; }
+      [[ -e "$p" ]] || { echo "FATAL: UI_E2E_PREBUILT_VIEWER set but $p is missing" >&2; exit 1; }
     done
   else
-    echo "── building the console (cargo-leptos)"
+    echo "── building the viewer (cargo-leptos)"
     LEPTOS_TAILWIND_VERSION=v4.3.3 bash scripts/cargo-leptos.sh build
   fi
-  echo "── starting the console on $CONSOLE_ADDR"
+  echo "── starting the viewer on $VIEWER_ADDR"
   # LEPTOS_HASH_FILES is the runtime half of the crate manifest's `hash-files`
   # (leptos_config reads it from the environment, with no compile-time
   # fallback): it is what makes the served page name the content-hashed /pkg
   # files this build produced.
   LEPTOS_SITE_ROOT="$ROOT/target/site" \
-  LEPTOS_SITE_ADDR="$CONSOLE_ADDR" \
+  LEPTOS_SITE_ADDR="$VIEWER_ADDR" \
   LEPTOS_OUTPUT_NAME="ferroehr-viewer" \
   LEPTOS_HASH_FILES="true" \
   FERROEHR_VIEWER__CDR__BASE_URL="$CDR_URL" \
@@ -308,21 +310,21 @@ else
   FERROEHR_VIEWER__AUTH__OIDC__RESOLVE="keycloak=127.0.0.1:8081" \
   FERROEHR_VIEWER__AUTH__OIDC__CLIENT_ID="ferroehr" \
   FERROEHR_VIEWER__AUTH__OIDC__CLIENT_SECRET="bT5T4oWn3xNdBytQsl2cfpBDi1pp15Va" \
-  FERROEHR_VIEWER__AUTH__OIDC__PUBLIC_BASE_URL="$CONSOLE_URL" \
+  FERROEHR_VIEWER__AUTH__OIDC__PUBLIC_BASE_URL="$VIEWER_URL" \
     "$ROOT/target/debug/ferroehr-viewer" &
-  CONSOLE_PID=$!
+  VIEWER_PID=$!
 fi
-wait_http "$CONSOLE_URL/login"
+wait_http "$VIEWER_URL/login"
 
-# Warm the served asset chain once: the first journey after a cold console
+# Warm the served asset chain once: the first journey after a cold viewer
 # start otherwise pays the whole debug-build wasm read (measured 100s+ cold)
 # against the harness's hydration budget.
-curl -sf "$CONSOLE_URL/login" \
+curl -sf "$VIEWER_URL/login" \
   | grep -oE '(href|src)="/pkg/[^"]+"' \
   | sed -E 's/^(href|src)="//; s/"$//' \
   | sort -u \
   | while IFS= read -r asset; do
-      curl -sf -o /dev/null "$CONSOLE_URL$asset" || true
+      curl -sf -o /dev/null "$VIEWER_URL$asset" || true
     done
 
 # ── 4. chromedriver ──────────────────────────────────────────────────────────
@@ -370,7 +372,7 @@ echo "── running e2e journeys"
 # than through the UI, whose own paths have their own journeys.
 NEXTEST_FILTER=(-E 'binary(it) - test(/^e2e_docs_shots::/)')
 [[ -n "$FILTER" ]] && NEXTEST_FILTER=(-E "test($FILTER)")
-UI_E2E_BASE_URL="$CONSOLE_URL" \
+UI_E2E_BASE_URL="$VIEWER_URL" \
 UI_E2E_WEBDRIVER_URL="http://127.0.0.1:$DRIVER_PORT" \
 UI_E2E_SHOTS_DIR="$SHOTS_DIR" \
 UI_E2E_BASIC_USER="ferroehr" \
@@ -391,7 +393,7 @@ fi
 # journeys so the browse journeys have seeded the fixture template.
 if [[ -n "${UI_E2E_DOCS_SHOTS:-}" ]]; then
   echo "── capturing documentation screenshots"
-  UI_E2E_BASE_URL="$CONSOLE_URL" \
+  UI_E2E_BASE_URL="$VIEWER_URL" \
   UI_E2E_WEBDRIVER_URL="http://127.0.0.1:$DRIVER_PORT" \
   UI_E2E_SHOTS_DIR="$SHOTS_DIR" \
   UI_E2E_BASIC_USER="ferroehr" \

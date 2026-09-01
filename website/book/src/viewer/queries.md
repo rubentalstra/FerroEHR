@@ -1,10 +1,10 @@
 # Dashboard & queries
 
-The console's query surfaces are three views of the same thing: the dashboard
+The viewer's query surfaces are three views of the same thing: the dashboard
 summarises what the repository holds, the Query Builder assembles AQL from a
 template's own paths, and the raw editor runs AQL you wrote yourself. All three
 save to, and run against, the CDR's own stored-query registry; nothing is kept
-on the console's side.
+on the viewer's side.
 
 <!-- toc -->
 
@@ -171,12 +171,12 @@ namespace optional and, when present, a reverse domain name whose purpose in
 the openEHR REST specification is exactly "separation of use of stored
 queries by teams, companies, etc."
 
-The console therefore does **not** invent a grouping of its own: a query's
+The viewer therefore does **not** invent a grouping of its own: a query's
 group *is* its namespace, chosen when you save it. The right-hand panel on
 **Queries** and the cohort tiles on the **Dashboard** are both derived live
 from `GET /definition/query`. There is nothing to create, edit, or remove:
-and nothing kept on the console's disk, so the grouping is durable in the
-CDR and reads identically for every openEHR client and every console
+and nothing kept on the viewer's disk, so the grouping is durable in the
+CDR and reads identically for every openEHR client and every viewer
 replica. Queries saved without a namespace collect under **unqualified**.
 
 Both save surfaces (the builder and the raw editor) therefore offer the
@@ -194,7 +194,7 @@ which of the two openEHR store operations a click will perform:
 | Version field | What a save does |
 | --- | --- |
 | empty | `PUT /definition/query/{name}`; the CDR files it at the default slot `1.0.0` and **replaces** whatever was stored there |
-| `1.2.0` | `PUT /definition/query/{name}/{version}`; stores a **new, immutable** version; if that exact `(name, version)` pair already exists the CDR refuses it (`409`) and the console says so |
+| `1.2.0` | `PUT /definition/query/{name}/{version}`; stores a **new, immutable** version; if that exact `(name, version)` pair already exists the CDR refuses it (`409`) and the viewer says so |
 
 Because an explicit version is immutable, **Open in editor** and **Open in
 builder** both propose the next minor version (opening `1.0.0` fills the field
@@ -205,7 +205,7 @@ that a version you type is a complete triple.
 A shorter pattern like `1` or `1.0` is a **read** form, not a store form: when
 *fetching or executing* a stored query, openEHR resolves a partial version to
 the latest one matching that prefix, and omitting the version entirely means
-the latest of all. The console therefore refuses a partial version in the save
+the latest of all. The viewer therefore refuses a partial version in the save
 field (with an explanation) rather than filing a definition under a string that
 later lookups would treat as a pattern. The CDR refuses one too, with a `400`:
 a prefix names no version a store could create, and openEHR assigns the write

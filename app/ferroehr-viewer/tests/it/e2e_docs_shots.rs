@@ -20,10 +20,10 @@
     reason = "test fixtures posted through a REST seam are raw JSON by the testing rule \
               (.claude/rules/testing.md §Test-fixture construction)"
 )]
-// A capture pass, not an assertive journey: it drives the console and writes
+// A capture pass, not an assertive journey: it drives the viewer and writes
 // the canonical per-screen screenshots the website book embeds. Gated behind
 // UI_E2E_DOCS_SHOTS so the normal E2E run (and plain `cargo nextest`) skips it.
-//! Documentation-screenshot capture — one full-window PNG per console screen,
+//! Documentation-screenshot capture — one full-window PNG per viewer screen,
 //! written directly under `website/book/src/viewer/img/`. Run via
 //! `scripts/ui-e2e.sh` with `UI_E2E_DOCS_SHOTS` set; skips with a printed
 //! reason when the harness environment or the gate flag is absent.
@@ -235,7 +235,7 @@ async fn pick_composition(h: &Harness) {
         .expect("pick the seeded composition");
 }
 
-/// The settle a themed capture needs: the console's surfaces animate
+/// The settle a themed capture needs: the viewer's surfaces animate
 /// `transition-colors`, and a screenshot racing the token switch freezes a
 /// half-themed frame. An animation wait, not a condition wait.
 const THEME_SETTLE: std::time::Duration = std::time::Duration::from_millis(700);
@@ -385,11 +385,11 @@ async fn capture_stored_query_screens(h: &Harness, dir: &Path, cdr: &str, user: 
     shot_to(h, dir, "dashboard/dashboard").await;
 }
 
-/// Capture the canonical documentation screenshots for every console screen.
+/// Capture the canonical documentation screenshots for every viewer screen.
 #[tokio::test]
 #[expect(
     clippy::too_many_lines,
-    reason = "one linear capture script over every console view — sectioning it would obscure the walkthrough order"
+    reason = "one linear capture script over every viewer view — sectioning it would obscure the walkthrough order"
 )]
 async fn capture_documentation_screenshots() {
     let Some(h) = Harness::start("docs-shots").await else {
@@ -600,7 +600,7 @@ async fn capture_documentation_screenshots() {
     }
 
     // ── The feature VIEWS (owner directive 2026-07-18: every view has a
-    //    published screenshot so the console can be reviewed without
+    //    published screenshot so the viewer can be reviewed without
     //    running it). ─────────────────────────────────────────────────────
     if let (Some(ehr_id), Some(vo_id)) = (env("UI_E2E_SEEDED_EHR_ID"), env("UI_E2E_SEEDED_VO_ID")) {
         // EHR detail: the status tab (URL-driven tab state) — the current
@@ -832,7 +832,7 @@ async fn capture_documentation_screenshots() {
 
     // Dark mode: flipped ONCE (the preference persists for the rest of this
     // session) and then swept over the same screens, so the book documents the
-    // whole console in both themes rather than one representative shot. The
+    // whole viewer in both themes rather than one representative shot. The
     // sweep is this session's last act, so the theme is never flipped back.
     h.goto("/").await;
     enable_dark_mode(&h).await;
@@ -849,7 +849,7 @@ async fn capture_documentation_screenshots() {
 /// Its admin-gated other half is [`dark_admin_screens`] — the same split the
 /// light captures make, and for the same reason: a screen reading an `/admin`
 /// route answers this session `403`, so a capture taken here would publish the
-/// console's refusal card.
+/// viewer's refusal card.
 async fn dark_ordinary_screens(h: &Harness, dir: &Path) {
     capture_dark(
         h,
@@ -959,14 +959,14 @@ async fn dark_admin_screens(h: &Harness, dir: &Path) {
 ///
 /// **Every admin-gated capture belongs here, and nowhere else.** The main pass
 /// signs in as the ORDINARY dev user, and a screen reading an `/admin` route
-/// answers that session `403` — so a capture taken there publishes the console's
+/// answers that session `403` — so a capture taken there publishes the viewer's
 /// refusal card instead of the screen the book documents. That is not
 /// hypothetical: the committed `/tenants` shot was exactly that (issue #2578),
 /// and `/system`'s runtime-configuration card and the whole `/fhir` screen have
 /// the same shape. One session, one place to add the next one.
 ///
 /// A fresh [`Harness`] rather than a re-login: a new browser session starts with
-/// no console cookie, so the admin sign-in cannot land on top of the ordinary
+/// no viewer cookie, so the admin sign-in cannot land on top of the ordinary
 /// one. The main pass has already finished by the time this runs, so nothing
 /// later depends on the ordinary session.
 #[expect(

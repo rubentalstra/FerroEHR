@@ -1,7 +1,7 @@
 // SPDX-FileCopyrightText: FerroEHR contributors
 // SPDX-License-Identifier: MIT
 
-//! The console's thaw widget theme.
+//! The viewer's thaw widget theme.
 //!
 //! The design system's teal accent as the Fluent brand ramp, so thaw widgets
 //! (buttons, radios, tabs, links) and the Tailwind token layer
@@ -37,12 +37,12 @@ fn ramp() -> HashMap<i32, &'static str> {
 
 /// The light widget theme (teal brand).
 #[must_use]
-pub fn console_light() -> thaw::Theme {
+pub fn viewer_light() -> thaw::Theme {
     thaw::Theme::custom_light(&ramp())
 }
 
 /// The dark widget theme (teal brand).
 #[must_use]
-pub fn console_dark() -> thaw::Theme {
+pub fn viewer_dark() -> thaw::Theme {
     thaw::Theme::custom_dark(&ramp())
 }

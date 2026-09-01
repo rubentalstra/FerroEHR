@@ -6,7 +6,7 @@
 # not recreate the container that mounts it.
 #
 # The routing table is the one vercel.json used to hold: the CDR owns its base
-# path and the operational families, the console is the landing surface for
+# path and the operational families, the viewer is the landing surface for
 # everything else.
 
 sandbox.ferroehr.eu {
@@ -34,7 +34,7 @@ sandbox.ferroehr.eu {
 	}
 
 	handle {
-		reverse_proxy console:3000
+		reverse_proxy viewer:3000
 	}
 
 	log {

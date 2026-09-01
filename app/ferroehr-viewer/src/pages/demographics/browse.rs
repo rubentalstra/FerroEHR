@@ -23,7 +23,7 @@
 
 #![allow(
     clippy::disallowed_types,
-    reason = "the console consumes the CDR JSON wire over ITS-REST — not the CDR internal seams \
+    reason = "the viewer consumes the CDR JSON wire over ITS-REST — not the CDR internal seams \
               (#1694); the create skeleton is assembled as that wire's canonical JSON"
 )]
 
@@ -385,7 +385,7 @@ pub fn minimal_party_body(kind: PartyKind) -> String {
 /// a toast plus client-side navigation to the new party's detail route.
 ///
 /// The body is the operator's own canonical JSON, sent verbatim: a create form
-/// that assembled a party from console-side fields would have to invent the
+/// that assembled a party from viewer-side fields would have to invent the
 /// mandatory ones, and a party document is exactly what this screen must not
 /// re-model. The textarea is UNCONTROLLED with the skeleton as its child text,
 /// so the server and the client render identical markup and typing before

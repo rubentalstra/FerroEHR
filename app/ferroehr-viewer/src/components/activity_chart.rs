@@ -2,7 +2,7 @@
 // SPDX-License-Identifier: MIT
 
 //! The shared activity chart: ONE pure-Rust SVG line chart every
-//! events-per-day timeline in the console draws with — the dashboard's
+//! events-per-day timeline in the viewer draws with — the dashboard's
 //! commit-activity trend and an EHR's contribution timeline.
 //!
 //! Charts are `leptos-chartistry` (pure Rust + SVG): the no-JavaScript mandate

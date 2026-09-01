@@ -82,7 +82,7 @@ apply.
 The same reasoning drives `podSecurityContext.supplementalGroupsPolicy: Strict`,
 so the process gets only the groups the manifest names: a group baked into an
 image cannot widen file access. And the chart's render gate asserts that this
-isolation set is **identical across every workload of a release**: a console that
+isolation set is **identical across every workload of a release**: a viewer that
 shared the host user namespace while the server did not would be a posture nobody
 could state in one sentence, and that is exactly the shape of drift a second
 workload introduces. That is also why `hostUsers` is a release-wide key rather

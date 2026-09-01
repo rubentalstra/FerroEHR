@@ -3,7 +3,7 @@
 
 //! Syntax tokenizer for the shared document viewer — pure Rust, hand-rolled.
 //!
-//! The console ships ZERO authored JavaScript, so a browser highlighter is not
+//! The viewer ships ZERO authored JavaScript, so a browser highlighter is not
 //! an option, and a general highlighter crate would drag `regex`/grammar
 //! machinery into the WASM bundle for two grammars we already know: canonical
 //! JSON (the Simplified Formats and Web Templates are JSON too) and canonical

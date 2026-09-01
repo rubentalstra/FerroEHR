@@ -1,11 +1,11 @@
 // SPDX-FileCopyrightText: FerroEHR contributors
 // SPDX-License-Identifier: MIT
 
-//! The console's OIDC authorization-code login (with PKCE): two plain axum
+//! The viewer's OIDC authorization-code login (with PKCE): two plain axum
 //! routes (`/auth/oidc/login`, `/auth/oidc/callback`) on the BFF.
 //!
 //! The bearer token is stored server-side in the session; the browser only
-//! ever holds the console's session cookie.
+//! ever holds the viewer's session cookie.
 
 use axum::response::{IntoResponse, Redirect, Response};
 use http::StatusCode;
@@ -139,7 +139,7 @@ pub async fn login(
 /// Attach the sealed session cookie to a handler's response.
 fn with_session_cookie(
     state: &crate::state::AppState,
-    session: &crate::session::ConsoleSession,
+    session: &crate::session::CookieSession,
     response: impl IntoResponse,
 ) -> Response {
     let sealed = match crate::session::set_cookie(
@@ -229,7 +229,7 @@ pub async fn callback(
         .scopes()
         .map(|s| s.iter().map(|scope| scope.to_string()).collect())
         .unwrap_or_default();
-    let admin = crate::session::AdminSession {
+    let admin = crate::session::ViewerSession {
         identity,
         credential: crate::session::Credential::Bearer {
             access_token: tokens.access_token().secret().clone(),

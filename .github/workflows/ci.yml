@@ -216,7 +216,7 @@ jobs:
           # execute repo scripts, so a new watcher/site/release script must
           # not cost a Rust run. Allowlist the ONLY scripts a code-gated CI
           # job actually executes (the drift check, the e2e harness, and the
-          # frozen-lockfile cargo-leptos wrapper the console build runs).
+          # frozen-lockfile cargo-leptos wrapper the viewer build runs).
           # The deployment harness drives the composed stack, so it is relevant
           # to its own scripts, the compose files, and the server image — and to
           # the code, since what it probes IS the server.
@@ -238,7 +238,7 @@ jobs:
             echo "No build-relevant paths touched — cargo jobs will be skipped."
             echo "code=false" >> "$GITHUB_OUTPUT"
           fi
-          # Viewer E2E trigger: the console crate, its harness, the
+          # Viewer E2E trigger: the viewer crate, its harness, the
           # composed stack it drives — AND the inputs to the CDR artifact the
           # battery runs against. `Cargo.lock`, `docker/Dockerfile` and this
           # workflow itself were missing (issue #335): a dependency bump, a
@@ -915,7 +915,7 @@ jobs:
   clippy:
     name: clippy
     needs: changes
-    # The three lanes below (workspace-minus-console, console ssr, console
+    # The three lanes below (workspace-minus-viewer, viewer ssr, viewer
     # wasm hydrate) are this file's own recipe, so a change to it runs them
     # (#2373).
     if: needs.changes.outputs.code == 'true' || needs.changes.outputs.workflows == 'true'
@@ -935,7 +935,7 @@ jobs:
           components: clippy
           target: wasm32-unknown-unknown
           cache-save-if: ${{ github.ref == 'refs/heads/main' }}
-      # The console's `hydrate`/`ssr` features are mutually exclusive (a
+      # The viewer's `hydrate`/`ssr` features are mutually exclusive (a
       # compile_error! guard per the Cargo book §Mutually exclusive features),
       # so the workspace lane excludes it and the crate gets its own two
       # per-feature lanes — the same split as /ui-gates. `--locked` everywhere:
@@ -1122,7 +1122,7 @@ jobs:
       - uses: taiki-e/install-action@b6ff580856c41316412a0b9b60540fbc6f8c82cc # v2.86.7
         with:
           tool: cargo-nextest
-      # The console is excluded from --all-features lanes (mutually exclusive
+      # The viewer is excluded from --all-features lanes (mutually exclusive
       # hydrate/ssr, compile_error!-guarded) and tested per-feature instead.
       # The explicit `cargo build` is NOT redundant with nextest: nextest
       # compiles test targets only, this is the one place every workspace BIN
@@ -1430,7 +1430,7 @@ jobs:
           fi
       # Cache 1 — the binary itself. The key covers every path the server build
       # reads and nothing else; app/ferroehr-viewer/ is deliberately absent
-      # because the console is not in ferroehr-server's dependency graph (that is
+      # because the viewer is not in ferroehr-server's dependency graph (that is
       # ferroehr + ferroehr-rest), which is exactly why a viewer PR can
       # reuse the binary. Exact key, NO restore-keys: a near-match would package
       # a binary that does not correspond to this tree
@@ -1480,21 +1480,21 @@ jobs:
           if-no-files-found: error
           retention-days: 1
 
-  # ── Console + e2e test binaries, prebuilt in parallel (issue #335) ─────────
+  # ── Viewer + e2e test binaries, prebuilt in parallel (issue #335) ──────────
   # The second half of the compile-nothing-in-the-battery split: the host
   # cargo-leptos build and the nextest test-binary compile were 8m32s of the
   # measured battery step, all of it parallelizable with ui-e2e-binary. This
   # job builds both and ships them as one artifact; the battery job then only
   # composes, seeds, and drives the browser.
   #
-  # Runs on the BARE runner (not a container) deliberately: the console binary
+  # Runs on the BARE runner (not a container) deliberately: the viewer binary
   # executes on the battery job's host, and the e2e binaries bake
   # env!("CARGO_MANIFEST_DIR") paths at compile time — both jobs being
   # ubuntu-latest gives them the same glibc AND the same workspace path
   # (/home/runner/work/<repo>/<repo>), so the baked paths resolve. Keep this
   # job and ui-e2e on the same runner image always.
-  ui-e2e-console:
-    name: ui-e2e console + test binaries
+  ui-e2e-viewer:
+    name: ui-e2e viewer + test binaries
     needs: changes
     if: needs.changes.outputs.viewer == 'true'
     runs-on: ubuntu-latest
@@ -1507,26 +1507,28 @@ jobs:
           persist-credentials: false
       # Cache 1 — the built outputs themselves, exact key, no restore-keys
       # (the ui-e2e-binary pattern above): the key covers everything the
-      # console + its e2e binaries read. app/ferroehr, app/ferroehr-rest,
-      # app/ferroehr-server are deliberately absent — the console consumes the
+      # viewer + its e2e binaries read. app/ferroehr, app/ferroehr-rest,
+      # app/ferroehr-server are deliberately absent — the viewer consumes the
       # CDR strictly over ITS-REST and never links those crates, so a
-      # server-only PR reuses the console artifact.
-      - id: console-cache
+      # server-only PR reuses the viewer artifact.
+      # NOTE: `ui-e2e-console-*` here is a cache/artifact IDENTITY string, not
+      # prose — renaming it would strand every stored entry, so it stays.
+      - id: viewer-cache
         uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
         with:
           path: ui-e2e-console-stage
           key: ui-e2e-console-1.97.1-${{ hashFiles('Cargo.toml', 'Cargo.lock', 'rust-toolchain.toml', '.cargo/**', 'crates/**', 'app/ferroehr-viewer/**', 'scripts/cargo-leptos.sh') }}
       - uses: actions-rust-lang/setup-rust-toolchain@166cdcfd11aee3cb47222f9ddb555ce30ddb9659 # v1.17.0
-        if: steps.console-cache.outputs.cache-hit != 'true'
+        if: steps.viewer-cache.outputs.cache-hit != 'true'
         with:
           target: wasm32-unknown-unknown
           # Registry-only cache; sccache owns compilation caching (the same
           # split, for the same lockfile-rotation reason, as the jobs above).
           cache-targets: false
       - uses: mozilla-actions/sccache-action@fc920bf0ec8de6ee65d409111f7ec508035751ba # v0.0.11
-        if: steps.console-cache.outputs.cache-hit != 'true'
+        if: steps.viewer-cache.outputs.cache-hit != 'true'
       - uses: taiki-e/install-action@b6ff580856c41316412a0b9b60540fbc6f8c82cc # v2.86.7
-        if: steps.console-cache.outputs.cache-hit != 'true'
+        if: steps.viewer-cache.outputs.cache-hit != 'true'
         with:
           # wasm-bindgen pinned to the workspace's wasm-bindgen version;
           # cargo-leptos resolves its external tools from PATH before its
@@ -1534,14 +1536,14 @@ jobs:
           # and Tailwind are preinstalled deterministically.
           tool: cargo-nextest,cargo-leptos@0.3.7,wasm-bindgen@0.2.126
       - name: Install the Tailwind v4 standalone binary
-        if: steps.console-cache.outputs.cache-hit != 'true'
+        if: steps.viewer-cache.outputs.cache-hit != 'true'
         run: |
           curl -sSfL -o /usr/local/bin/tailwindcss \
             https://github.com/tailwindlabs/tailwindcss/releases/download/v4.3.3/tailwindcss-linux-x64
           chmod +x /usr/local/bin/tailwindcss
           tailwindcss --help | head -1
-      - name: Build the console + archive the e2e test binaries
-        if: steps.console-cache.outputs.cache-hit != 'true'
+      - name: Build the viewer + archive the e2e test binaries
+        if: steps.viewer-cache.outputs.cache-hit != 'true'
         env:
           SCCACHE_GHA_ENABLED: "true"
           RUSTC_WRAPPER: sccache
@@ -1557,24 +1559,24 @@ jobs:
           # wasm FILENAME at compile time (leptos 0.8 hydration/mod.rs:
           # `option_env!("LEPTOS_OUTPUT_NAME")` absent ⇒ it appends `_bg` to
           # the preload path). An archive-after-leptos order clobbers the
-          # console binary with a `_bg.wasm`-referencing build while the site
+          # viewer binary with a `_bg.wasm`-referencing build while the site
           # tree holds `<name>.wasm`, and every page 404s its wasm. Archive
           # FIRST, cargo-leptos LAST, stage immediately.
           cargo nextest archive -p ferroehr-viewer --features ssr \
             --archive-file ui-e2e-tests.tar.zst
           bash scripts/cargo-leptos.sh build
-          # One staging tree = one artifact = one cache path. The console
+          # One staging tree = one artifact = one cache path. The viewer
           # binary's executable bit is restored by the battery job (GitHub
           # artifacts do not preserve file permissions). hash.txt is the
           # content-hash manifest the renderer reads the /pkg filenames back
-          # from; without it the console 404s its own hashed wasm.
+          # from; without it the viewer 404s its own hashed wasm.
           mkdir -p ui-e2e-console-stage/site
           cp target/debug/ferroehr-viewer ui-e2e-console-stage/
           cp target/debug/hash.txt ui-e2e-console-stage/
           cp ui-e2e-tests.tar.zst ui-e2e-console-stage/
           cp -R target/site/. ui-e2e-console-stage/site/
       - name: sccache statistics
-        if: always() && steps.console-cache.outputs.cache-hit != 'true'
+        if: always() && steps.viewer-cache.outputs.cache-hit != 'true'
         env:
           SCCACHE_GHA_ENABLED: "true"
         run: ${SCCACHE_PATH} --show-stats
@@ -1585,14 +1587,14 @@ jobs:
           if-no-files-found: error
           retention-days: 1
 
-  # ── Viewer E2E (merge gate for console-touching changes) ────────────────────
+  # ── Viewer E2E (merge gate for viewer-touching changes) ────────────────────
   # Runs the full composed journey battery (scripts/ui-e2e.sh): postgres +
-  # ferroehr + Keycloak via compose, the console + e2e binaries prebuilt by the
+  # ferroehr + Keycloak via compose, the viewer + e2e binaries prebuilt by the
   # jobs above, chromedriver journeys with the browser-console gate. Screenshots
   # upload on success AND failure (human review — no pixel-diff assertions).
   ui-e2e:
     name: ui-e2e
-    needs: [changes, ui-e2e-binary, ui-e2e-console]
+    needs: [changes, ui-e2e-binary, ui-e2e-viewer]
     if: needs.changes.outputs.viewer == 'true'
     runs-on: ubuntu-latest
     timeout-minutes: 30
@@ -1606,7 +1608,7 @@ jobs:
         with:
           persist-credentials: false
       # NOTHING compiles in this job any more (issue #335): the server binary,
-      # the console, and the e2e test binaries all arrive as artifacts from
+      # the viewer, and the e2e test binaries all arrive as artifacts from
       # the two parallel jobs above. The toolchain stays only because
       # `cargo nextest run --archive-file` is a cargo subcommand; rust-cache
       # keeps just the registry (nextest resolves no dependencies here, but
@@ -1637,15 +1639,15 @@ jobs:
         with:
           name: ui-e2e-server-binary
           path: bin/amd64
-      # The prebuilt console + e2e binaries from the ui-e2e-console job. The
+      # The prebuilt viewer + e2e binaries from the ui-e2e-viewer job. The
       # artifact download strips the executable bit (GitHub artifacts do not
-      # preserve file permissions) — restored here for the console binary; the
+      # preserve file permissions) — restored here for the viewer binary; the
       # binaries inside the nextest archive keep theirs (tar preserves modes).
       - uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
         with:
           name: ui-e2e-console
           path: ui-e2e-console-stage
-      - name: Place the prebuilt console where the harness expects it
+      - name: Place the prebuilt viewer where the harness expects it
         run: |
           set -euo pipefail
           mkdir -p target/debug target/site
@@ -1667,11 +1669,11 @@ jobs:
         run: docker buildx build --load -t ferroehr-postgres:ui-e2e docker/postgres
       - name: Run the E2E journey battery
         # UI_E2E_NO_BUILD makes ui-e2e.sh `up --no-build` the pre-built
-        # images; the two PREBUILT vars make it run the console + e2e
-        # binaries the ui-e2e-console job compiled — zero rustc here.
+        # images; the two PREBUILT vars make it run the viewer + e2e
+        # binaries the ui-e2e-viewer job compiled — zero rustc here.
         env:
           UI_E2E_NO_BUILD: "1"
-          UI_E2E_PREBUILT_CONSOLE: "1"
+          UI_E2E_PREBUILT_VIEWER: "1"
           UI_E2E_NEXTEST_ARCHIVE: ${{ github.workspace }}/ui-e2e-console-stage/ui-e2e-tests.tar.zst
           FERROEHR_IMAGE: ferroehr:ui-e2e
           FERROEHR_POSTGRES_IMAGE: ferroehr-postgres:ui-e2e
@@ -1714,7 +1716,7 @@ jobs:
           push: false
 
   # Screenshot-freshness guard (the changelog-guard pattern): a PR that
-  # changes the console UI must re-capture the published book screenshots in
+  # changes the viewer UI must re-capture the published book screenshots in
   # the same PR (freshness, not pixels — owner decision). Escape hatch: the
   # `no-ui-visual-change` label for BFF-only/comment/test changes.
   #
@@ -1745,7 +1747,7 @@ jobs:
           fi
           changed=$(git diff --name-only "$BASE" "$HEAD")
           if ! echo "$changed" | grep -qE '^app/ferroehr-viewer/(src|style)/'; then
-            echo "No console UI paths touched — guard not required."; exit 0
+            echo "No viewer UI paths touched — guard not required."; exit 0
           fi
           if echo "$changed" | grep -qE '^website/book/src/viewer/img/'; then
             echo "Screenshots refreshed — OK."; exit 0
@@ -2143,7 +2145,7 @@ jobs:
       - helm-golden
       - unused-deps
       - ui-e2e-binary
-      - ui-e2e-console
+      - ui-e2e-viewer
       - ui-e2e
       - deploy-probe
       - server-image-from-source

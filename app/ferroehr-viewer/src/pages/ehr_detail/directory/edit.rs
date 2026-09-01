@@ -7,7 +7,7 @@
 //! `serde_json::Value`, `OBJECT_REF` construction, and tree statistics. Kept
 //! out of the view code so the editing logic is unit-tested directly
 //! (business logic lives in plain types). The time-travel panel's
-//! `version_at_time` value goes through the console's one normalizer,
+//! `version_at_time` value goes through the viewer's one normalizer,
 //! [`crate::format::datetime_local_to_rfc3339`].
 //!
 //! The FOLDER shape these operate on IS spec-bound (ITS-REST
@@ -35,7 +35,7 @@
 
 #![expect(
     clippy::disallowed_types,
-    reason = "the console consumes the CDR JSON wire over ITS-REST — not the CDR internal seams \
+    reason = "the viewer consumes the CDR JSON wire over ITS-REST — not the CDR internal seams \
               (#1694)"
 )]
 
@@ -50,7 +50,7 @@ use crate::pages::ehr_detail::directory::{FOLDER_NODE_ID, folder_json};
 /// surviving nodes. The key is the stable, data-derived node identity that
 /// `<For>` rows and per-folder UI state key on; folders and items draw from
 /// the same `counter`, so no item can ever be handed a folder's key. It is a
-/// console-local artifact of the working copy: never persisted to the CDR (see
+/// viewer-local artifact of the working copy: never persisted to the CDR (see
 /// [`strip_keys`]), never rendered, and no openEHR spec governs it (our own
 /// design/extension). The counter is a plain monotonic one, no randomness or
 /// clock.
@@ -78,7 +78,7 @@ pub(super) fn stamp_keys(tree: &mut Value, counter: &mut u64) {
 /// Remove the ephemeral `_key` identity from every node in `tree` (the root
 /// FOLDER, every descendant FOLDER, and every `items` `OBJECT_REF`),
 /// recursively — the inverse of [`stamp_keys`]. Applied to the body serialized
-/// for every save path and to the advanced-JSON view so the console-local
+/// for every save path and to the advanced-JSON view so the viewer-local
 /// identity never reaches the CDR or the user.
 pub(super) fn strip_keys(tree: &mut Value) {
     if let Some(obj) = tree.as_object_mut() {

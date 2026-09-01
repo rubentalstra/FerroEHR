@@ -17,7 +17,7 @@
 )]
 // e2e journeys are assertive by design; skip-with-reason prints; the shared
 // harness module is per-test-binary (the corpus.rs test-file precedent)
-//! End-to-end journeys over the **stored-query lifecycle** the console closes:
+//! End-to-end journeys over the **stored-query lifecycle** the viewer closes:
 //! the reverse LIFT of a stored definition back into the point-and-click
 //! builder, and the parameterised server-side RUN of a stored query through the
 //! three openEHR version-resolution forms.
@@ -298,11 +298,11 @@ async fn stored_query_runs_with_parameters_in_every_resolution_form() {
     run_and_expect_results(&h, "exact").await;
     h.shot(2, "stored-query-run-exact").await;
 
-    // Prefix: a partial pattern. The console's job is to compose
+    // Prefix: a partial pattern. The viewer's job is to compose
     // `POST query/{name}/1` and to SAY that the CDR resolves it to the latest
     // matching version, which is what this step asserts; RESOLVING the prefix is
     // the server's behaviour and belongs to the CDR's own conformance run, not to
-    // a console journey.
+    // a viewer journey.
     fresh_runner(&h).await;
     select_mode(&h, "prefix", Some("1"), "latest version matching it").await;
     assert_request(&h, &format!("POST query/{RUNNER_QUERY_NAME}/1")).await;

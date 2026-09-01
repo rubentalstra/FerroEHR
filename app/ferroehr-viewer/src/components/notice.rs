@@ -13,7 +13,7 @@
 //! and the message bar a failed write shows beside its failure toast
 //! ([`failure_bar`]).
 //!
-//! The console's feedback rule decides which one applies: a pure READ renders
+//! The viewer's feedback rule decides which one applies: a pure READ renders
 //! inline and never toasts; a MUTATION toasts on both outcomes and may keep
 //! the detail inline beside the toast.
 

@@ -1117,7 +1117,7 @@ async fn duplicate_sibling_folder_names_accepted() {
     );
 }
 
-// ── 21. round-trip: PUT the FETCHED body back (the console's edit flow) ──────
+// ── 21. round-trip: PUT the FETCHED body back (the viewer's edit flow) ──────
 
 /// The read decorates the root FOLDER with its `uid` (`OBJECT_VERSION_ID`,
 /// RM FOLDER class NOTE); an editor that fetches, mutates, and PUTs the SAME

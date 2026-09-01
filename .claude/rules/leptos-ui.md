@@ -21,13 +21,13 @@ in the root `[workspace.dependencies]`: Leptos 0.8 SSR/full-stack,
   listener instead). The only JS in the product is the `wasm-bindgen`
   bootstrap the toolchain generates. JS-wrapping crates (ECharts/Plotly
   bindings etc.) are banned; charts are `leptos-chartistry` (pure Rust+SVG).
-- **REST boundary:** the console reaches the CDR only over ITS-REST from the
+- **REST boundary:** the viewer reaches the CDR only over ITS-REST from the
   BFF (server functions → `reqwest`). It may depend on `crates/openehr-*`;
   it must NEVER depend on `app/ferroehr` or
   `app/ferroehr-rest` (the REST-only boundary in the crate CLAUDE.md).
 - **Server functions are a public HTTP API** (`server/25_server_functions`
   security warning). Every `#[server]` fn that touches the CDR or session
-  state MUST enforce the console's auth (session/token check) inside the
+  state MUST enforce the viewer's auth (session/token check) inside the
   function or via a mounted middleware layer — never assume "only my UI
   calls this". CDR credentials never leave the server; never put tokens in
   client-readable signals, props, or serialized resource data.
@@ -152,14 +152,14 @@ in the root `[workspace.dependencies]`: Leptos 0.8 SSR/full-stack,
 - Errors must never silently render as nothing — but in SSR'd data
   sections do NOT reach for `<ErrorBoundary>` inside `<Suspense>`:
   **hydrating a server-rendered ErrorBoundary fallback mismatches in
-  Leptos 0.8** (proven live by the E2E console gate, 2026-07-17). The
+  Leptos 0.8** (proven live by the E2E viewer gate, 2026-07-17). The
   standing pattern: resolve the `Result` INSIDE the `Suspend` and render
   content-or-`notice::inline_error(&e)` as one `.into_any()`-erased
-  view (see any `*_section` fn in the console pages). `<ErrorBoundary>`
+  view (see any `*_section` fn in the viewer pages). `<ErrorBoundary>`
   remains fine for non-suspense render-time `Result`s (`view/07_errors`).
 - **Never create Resources (or render `<Outlet/>`/any resource-owning
   subtree) inside a `Suspend` closure** (found live 2026-07-18 by the E2E
-  console gate). A `Suspend` closure re-runs on every notification of the
+  viewer gate). A `Suspend` closure re-runs on every notification of the
   resources it awaits, and each re-run RE-CREATES everything inside it.
   Resource ids are allocated in creation order and serialized by id — when
   the server and client re-run a different number of times, their id
@@ -216,7 +216,7 @@ in the root `[workspace.dependencies]`: Leptos 0.8 SSR/full-stack,
 - `#[server]` fns are thin: authenticate, pull typed context, call the
   ITS-REST client, map errors. Business logic lives in ordinary testable
   modules the server fn calls.
-- Errors: a console-wide error enum implementing `FromServerFnError`
+- Errors: a viewer-wide error enum implementing `FromServerFnError`
   (`server/25`) so the UI can render domain errors (CDR status code,
   openEHR error body) — don't stringify everything into
   `ServerFnError::ServerError`.
@@ -313,7 +313,7 @@ in the root `[workspace.dependencies]`: Leptos 0.8 SSR/full-stack,
 
 `#[island]` mode (`islands`) can cut WASM size ~50% by shipping only
 interactive islands, and lets `#[component]` bodies run server-only. It is
-NOT enabled for the console v1: the widget kit (`thaw` beta) + heavy
+NOT enabled for the viewer v1: the widget kit (`thaw` beta) + heavy
 interactivity (query builder, tables) make full hydration the safer start.
 Revisit as a measured optimization; if enabled, islands must stay small
 (pass server-rendered `children` into them — "donut" pattern) and props must

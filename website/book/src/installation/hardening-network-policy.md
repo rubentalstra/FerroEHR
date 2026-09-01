@@ -206,11 +206,11 @@ networkPolicy:
 ```
 
 The viewer does not need an entry: when `viewer.enabled` is on, the chart
-appends the console's own pod selector to whatever you list, because a narrowed
-policy that forgets it locks the console out of the CDR and presents as the CDR
+appends the viewer's own pod selector to whatever you list, because a narrowed
+policy that forgets it locks the viewer out of the CDR and presents as the CDR
 being down.
 
-**The console's own policy works exactly the same way**, under
+**The viewer's own policy works exactly the same way**, under
 `viewer.networkPolicy.ingressFrom` and `viewer.networkPolicy.ingressAllowAll`,
 with the same refusal on `false` + empty. Its egress half is genuinely closed
 (the CDR Service and DNS, nothing else) but its ingress half ships open like the

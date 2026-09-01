@@ -3,7 +3,7 @@
 
 //! The `/queries/builder` screen: the point-and-click Query Builder.
 //!
-//! A template-first, cascading builder over the console's AQL engine. The whole
+//! A template-first, cascading builder over the viewer's AQL engine. The whole
 //! editable state is one [`BuilderQuery`]; the live AQL is produced by
 //! [`to_aql`] on every change, and the result runs against `POST query/aql`
 //! through [`run_aql`]. No openEHR spec governs the viewer — our own design;
@@ -14,7 +14,7 @@
 
 #![expect(
     clippy::disallowed_types,
-    reason = "the console consumes the CDR JSON wire over ITS-REST — not the CDR internal seams \
+    reason = "the viewer consumes the CDR JSON wire over ITS-REST — not the CDR internal seams \
               (#1694)"
 )]
 

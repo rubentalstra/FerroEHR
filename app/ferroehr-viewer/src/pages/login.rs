@@ -177,7 +177,7 @@ pub fn LoginPage() -> impl IntoView {
                     let none_available = if basic || oidc {
                         ().into_any()
                     } else {
-                        // The intersection of the console's configured modes and
+                        // The intersection of the viewer's configured modes and
                         // the CDR's advertised schemes can be empty — say so
                         // instead of rendering a blank card.
                         view! {
@@ -185,9 +185,9 @@ pub fn LoginPage() -> impl IntoView {
                                 role="alert"
                                 class="rounded-control border border-warn/40 bg-warn-subtle px-3 py-2 text-sm text-ink"
                             >
-                                "No sign-in method is available: the console's configured "
+                                "No sign-in method is available: the viewer's configured "
                                 "login modes and the CDR's advertised authentication "
-                                "schemes do not overlap. Align the console auth "
+                                "schemes do not overlap. Align the viewer auth "
                                 "configuration with the CDR's."
                             </div>
                         }

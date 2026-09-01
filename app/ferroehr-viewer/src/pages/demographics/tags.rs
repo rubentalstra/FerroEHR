@@ -25,7 +25,7 @@
 
 #![allow(
     clippy::disallowed_types,
-    reason = "the console consumes the CDR JSON wire over ITS-REST — not the CDR internal seams \
+    reason = "the viewer consumes the CDR JSON wire over ITS-REST — not the CDR internal seams \
               (#1694); the carriers here are ssr-only, so #[expect] would be unfulfilled on the \
               hydrate target"
 )]
@@ -49,7 +49,7 @@ use crate::pages::demographics::PartyKind;
 /// `404`.
 ///
 /// # Errors
-/// [`ViewerError::Unauthenticated`] without a console session; CDR transport
+/// [`ViewerError::Unauthenticated`] without a viewer session; CDR transport
 /// errors pass through; a non-2xx CDR answer normalizes via
 /// [`CdrClient::expect_success`](crate::cdr::CdrClient::expect_success);
 /// [`ViewerError::Internal`] when the list is not valid JSON.
@@ -81,7 +81,7 @@ pub async fn list_demographic_tags(
 /// `VERSIONED_PARTY`'s own tags (module docs).
 ///
 /// # Errors
-/// [`ViewerError::Unauthenticated`] without a console session;
+/// [`ViewerError::Unauthenticated`] without a viewer session;
 /// [`ViewerError::Invalid`] on an unknown kind segment; CDR transport errors
 /// pass through; a non-2xx CDR answer (the `404` for an unknown id included)
 /// normalizes via
@@ -133,7 +133,7 @@ async fn read_party_tags(
 /// or replaces the requested `(key, target_path)` entry.
 ///
 /// # Errors
-/// [`ViewerError::Unauthenticated`] without a console session;
+/// [`ViewerError::Unauthenticated`] without a viewer session;
 /// [`ViewerError::Invalid`] on an unknown kind segment or a blank key; CDR
 /// transport errors pass through; any non-2xx CDR answer (the `422` for a tag
 /// that breaks an `ITEM_TAG` invariant included) normalizes via
@@ -197,7 +197,7 @@ pub async fn set_party_tag(
 /// is its `404`.
 ///
 /// # Errors
-/// [`ViewerError::Unauthenticated`] without a console session;
+/// [`ViewerError::Unauthenticated`] without a viewer session;
 /// [`ViewerError::Invalid`] on an unknown kind segment or a blank key; CDR
 /// transport errors pass through; any non-2xx CDR answer normalizes via
 /// [`CdrClient::expect_success`](crate::cdr::CdrClient::expect_success).
@@ -284,7 +284,7 @@ pub(super) fn tags_section(
         },
     );
 
-    // Every write toasts both outcomes (the console's mutation-feedback rule).
+    // Every write toasts both outcomes (the viewer's mutation-feedback rule).
     Effect::new(move |_| match set.value().get() {
         Some(Ok(())) => crate::components::toast::toast_success(
             toaster,

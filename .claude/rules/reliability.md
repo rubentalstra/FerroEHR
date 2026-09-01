@@ -217,7 +217,7 @@ chapters, the Clippy book, and the Cargo/rustdoc books.)
   choice; `cargo vet` = Mozilla, not adopted (a standing-commitment decision
   for the tracker if ever). Feature discipline: mutually exclusive features
   carry a `compile_error!` guard (the Cargo book's prescription — the
-  console's `hydrate`/`ssr` pair), and `--all-features` lanes exclude the
+  viewer's `hydrate`/`ssr` pair), and `--all-features` lanes exclude the
   guarded crate, testing it per-feature.
 - **Comment style is machine-enforced** (owner rulings 2026-07-17,
   2026-08-01, 2026-08-04; the full guide is `comments.md` — RFC 505 +

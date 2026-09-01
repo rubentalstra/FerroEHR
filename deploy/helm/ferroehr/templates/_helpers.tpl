@@ -372,7 +372,7 @@ the older counting. A graceful degradation, so it is not version-gated.
 
 {{/*
 The viewer's resource name: the release fullname plus a suffix, so the
-console's objects never collide with the server's and are obvious in `kubectl
+viewer's objects never collide with the server's and are obvious in `kubectl
 get`.
 */}}
 {{- define "ferroehr.viewerFullname" -}}
@@ -380,19 +380,19 @@ get`.
 {{- end }}
 
 {{/*
-Console labels.
+Viewer labels.
 
-The console carries its own `app.kubernetes.io/name` rather than the server's
+The viewer carries its own `app.kubernetes.io/name` rather than the server's
 name plus a `component`. That is the documented convention — the recommended-
 labels example gives a WordPress chart's MySQL workload `name: mysql`,
 `component: database`, `part-of: wordpress`
 (https://kubernetes.io/docs/concepts/overview/working-with-objects/common-labels/)
 — and here it is load-bearing, not cosmetic.
 
-A Service selector is a SUBSET match. While the console's pods carried the
+A Service selector is a SUBSET match. While the viewer's pods carried the
 server's `name` and `instance` plus an extra `component`, they matched the
 server's own Service and PodDisruptionBudget, whose selectors are exactly that
-pair. Because the console's container port is also named `http`, the Service's
+pair. Because the viewer's container port is also named `http`, the Service's
 `targetPort: http` resolved to 3000 on those pods, so a share of openEHR API
 requests were answered by the viewer — and the PDB counted three pods
 where it guards two, inflating `disruptionsAllowed` enough for a drain to evict
@@ -418,7 +418,7 @@ app.kubernetes.io/instance: {{ .Release.Name }}
 {{- end }}
 
 {{/*
-The console image reference — digest wins over tag, as for the server.
+The viewer image reference — digest wins over tag, as for the server.
 */}}
 {{- define "ferroehr.viewerImage" -}}
 {{- if .Values.viewer.image.digest }}

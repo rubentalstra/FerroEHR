@@ -10,7 +10,7 @@
 # https://www.sonarsource.com/blog/introducing-rust-in-sonarqube/): the
 # analyzer runs Clippy itself from the root Cargo.toml — 85 Clippy rules
 # managed as quality-profile rules, plus complexity metrics. That run uses
-# the workspace DEFAULT features (the console compiles as an empty shell
+# the workspace DEFAULT features (the viewer compiles as an empty shell
 # with neither ssr nor hydrate), so it sees less than our own deny-tier
 # clippy lanes; it is a second, independent configuration on purpose.
 # Scope (what is scanned vs excluded) lives in sonar-project.properties.
@@ -146,7 +146,7 @@ jobs:
         with:
           tool: cargo-llvm-cov,cargo-nextest
 
-      # The same two lanes as the CI test job (the console is excluded from
+      # The same two lanes as the CI test job (the viewer is excluded from
       # --all-features — mutually exclusive hydrate/ssr — and measured under
       # the ssr shape it ships): --no-report accumulates both into one
       # profile, `report` merges them into the single lcov the scan imports.

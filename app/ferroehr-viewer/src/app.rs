@@ -9,7 +9,7 @@
 //! through its `<Outlet/>`.
 //!
 //! Every routed view sets a `<Title/>` carrying its BARE section name; the
-//! product suffix is appended in exactly one place, `console_title`, through
+//! product suffix is appended in exactly one place, `viewer_title`, through
 //! the root `<Title formatter=…/>`.
 
 use leptos::prelude::*;
@@ -28,7 +28,7 @@ use leptos_router::path;
 pub fn shell(options: LeptosOptions) -> impl IntoView {
     view! {
         <!DOCTYPE html>
-        // The console ships one locale, and its copy is written in English, so
+        // The viewer ships one locale, and its copy is written in English, so
         // `en` is the honest declaration rather than a placeholder — an
         // assistive technology must be told which language it is reading.
         // TODO(#300): drive lang from the active locale when a second locale lands.
@@ -48,7 +48,7 @@ pub fn shell(options: LeptosOptions) -> impl IntoView {
     }
 }
 
-/// The product name as a human reads it — the console's own display name.
+/// The product name as a human reads it — the viewer's own display name.
 ///
 /// Lowercase `ferroehr-viewer` stays reserved for technical identifiers (the
 /// crate, the asset paths, the `thaw` theme id, the `localStorage` theme key).
@@ -64,7 +64,7 @@ const PRODUCT: &str = "FerroEHR Viewer";
 ///
 /// The owned `String` argument is `leptos_meta::Formatter`'s own signature
 /// (`Fn(String) -> String`), so the suffix is appended in place.
-fn console_title(mut section: String) -> String {
+fn viewer_title(mut section: String) -> String {
     if section.is_empty() || section == PRODUCT {
         return PRODUCT.to_owned();
     }
@@ -101,10 +101,10 @@ pub fn App() -> impl IntoView {
         }
     });
     view! {
-        <Title formatter=console_title text=PRODUCT />
+        <Title formatter=viewer_title text=PRODUCT />
         <thaw::ConfigProvider
             theme_id="ferroehr-viewer".to_owned()
-            theme=RwSignal::new(crate::theme::console_light())
+            theme=RwSignal::new(crate::theme::viewer_light())
         >
             <Router>
                 <Routes fallback=|| view! { <NotFound /> }>
@@ -239,33 +239,33 @@ pub fn NotFound() -> impl IntoView {
 
 #[cfg(test)]
 mod tests {
-    use super::{PRODUCT, console_title};
+    use super::{PRODUCT, viewer_title};
 
     #[test]
     fn a_section_name_gains_the_product_suffix() {
         assert_eq!(
-            console_title("Templates".to_owned()),
+            viewer_title("Templates".to_owned()),
             "Templates · FerroEHR Viewer"
         );
         assert_eq!(
-            console_title("Not found".to_owned()),
+            viewer_title("Not found".to_owned()),
             "Not found · FerroEHR Viewer"
         );
         // The per-object screens format their own prefix; the suffix still
         // lands exactly once, at the end.
         assert_eq!(
-            console_title("Template · vitals.v1".to_owned()),
+            viewer_title("Template · vitals.v1".to_owned()),
             "Template · vitals.v1 · FerroEHR Viewer"
         );
     }
 
     /// `leptos_meta` applies the formatter to whatever text is on top of the
     /// title stack — including the root `<Title/>`'s own product name, which
-    /// is what the console shows before a screen pushes its section. Suffixing
+    /// is what the viewer shows before a screen pushes its section. Suffixing
     /// that would read `FerroEHR Viewer · FerroEHR Viewer`.
     #[test]
     fn the_product_name_is_never_suffixed_with_itself() {
-        assert_eq!(console_title(PRODUCT.to_owned()), PRODUCT);
-        assert_eq!(console_title(String::new()), PRODUCT);
+        assert_eq!(viewer_title(PRODUCT.to_owned()), PRODUCT);
+        assert_eq!(viewer_title(String::new()), PRODUCT);
     }
 }

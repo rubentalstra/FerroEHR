@@ -51,7 +51,7 @@
 
 #![allow(
     clippy::disallowed_types,
-    reason = "the console consumes the CDR JSON wire over ITS-REST — not the CDR internal seams \
+    reason = "the viewer consumes the CDR JSON wire over ITS-REST — not the CDR internal seams \
               (#1694); the carriers here are ssr-only, so #[expect] would be unfulfilled on the \
               hydrate target"
 )]
@@ -98,7 +98,7 @@ pub enum EhrTargetKind {
 
 impl EhrTargetKind {
     /// This kind's own route segment (`composition`, `ehr_status`,
-    /// `directory`) — the console's wire key for the kind.
+    /// `directory`) — the viewer's wire key for the kind.
     #[must_use]
     pub fn segment(self) -> &'static str {
         match self {
@@ -134,7 +134,7 @@ impl EhrTargetKind {
         }
     }
 
-    /// The console screen that owns an object of this kind.
+    /// The viewer screen that owns an object of this kind.
     ///
     /// A composition has its own route; the status and the directory are tabs
     /// of the EHR detail screen. Every id is percent-encoded.
@@ -161,7 +161,7 @@ impl EhrTargetKind {
 /// not exist is a `404`.
 ///
 /// # Errors
-/// [`ViewerError::Unauthenticated`] without a console session;
+/// [`ViewerError::Unauthenticated`] without a viewer session;
 /// [`ViewerError::Invalid`] on a kind that has no tag routes; CDR transport
 /// errors pass through; a non-2xx CDR answer (the `404` for an unknown
 /// `ehr_id`/`uid_based_id` included) normalizes via
@@ -200,7 +200,7 @@ pub async fn fetch_ehr_tags(
 /// 1).
 ///
 /// # Errors
-/// [`ViewerError::Unauthenticated`] without a console session;
+/// [`ViewerError::Unauthenticated`] without a viewer session;
 /// [`ViewerError::Invalid`] on a kind that has no tag routes or a blank key;
 /// CDR transport errors pass through; any non-2xx CDR answer (the `422` for a
 /// tag that breaks an `ITEM_TAG` invariant included) normalizes via
@@ -300,7 +300,7 @@ async fn set_tag_at(
 /// the OTHER collection of the same versioned object.
 ///
 /// # Errors
-/// [`ViewerError::Unauthenticated`] without a console session;
+/// [`ViewerError::Unauthenticated`] without a viewer session;
 /// [`ViewerError::Invalid`] on a kind that has no tag routes or a blank key;
 /// CDR transport errors pass through; any non-2xx CDR answer normalizes via
 /// [`CdrClient::expect_success`](crate::cdr::CdrClient::expect_success).
@@ -357,7 +357,7 @@ async fn delete_tag_at(
 /// the released "omitted parameter constrains nothing" behaviour.
 ///
 /// # Errors
-/// [`ViewerError::Unauthenticated`] without a console session; CDR transport
+/// [`ViewerError::Unauthenticated`] without a viewer session; CDR transport
 /// errors pass through; a non-2xx CDR answer (the `404` for an unknown
 /// `ehr_id`) normalizes via
 /// [`CdrClient::expect_success`](crate::cdr::CdrClient::expect_success);
@@ -402,7 +402,7 @@ pub async fn list_ehr_tags(
 /// as "not a composition".
 ///
 /// # Errors
-/// [`ViewerError::Unauthenticated`] without a console session;
+/// [`ViewerError::Unauthenticated`] without a viewer session;
 /// [`ViewerError::Invalid`] when `uid` is empty; CDR transport errors pass
 /// through; a refusal or any non-`404` failure normalizes via
 /// [`CdrClient::expect_success`](crate::cdr::CdrClient::expect_success).
@@ -522,7 +522,7 @@ async fn ehr_status_container(
 /// the container the EHR itself names.
 ///
 /// # Errors
-/// [`ViewerError::Unauthenticated`] without a console session; CDR transport
+/// [`ViewerError::Unauthenticated`] without a viewer session; CDR transport
 /// errors pass through; a non-2xx CDR answer normalizes via
 /// [`CdrClient::expect_success`](crate::cdr::CdrClient::expect_success);
 /// [`ViewerError::Internal`] when a body is not valid JSON.
@@ -771,7 +771,7 @@ fn target_tags_section(
     )
 }
 
-/// Toast both outcomes of both tag writes (the console's mutation-feedback
+/// Toast both outcomes of both tag writes (the viewer's mutation-feedback
 /// rule), naming `object` in the failure copy.
 ///
 /// An outside-world side-effect, which is what an `Effect` is for; the
