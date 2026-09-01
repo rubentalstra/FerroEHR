@@ -677,10 +677,10 @@ impl<'a> XmlReader<'a> {
                     return Ok(XmlEvent::End);
                 }
                 Event::Text(t) => {
-                    let raw = t
-                        .decode()
-                        .map_err(|e| XmlError::parse_source("decoding element text", e))?;
-                    let s = quick_xml::escape::unescape(&raw)
+                    // quick-xml 0.42 constructs events as validated UTF-8
+                    // `&str` (a non-UTF-8 document fails at `read_event`), so
+                    // only the entity unescape remains on this side.
+                    let s = quick_xml::escape::unescape(t.as_ref())
                         .map_err(|e| XmlError::parse_source("unescaping element text", e))?;
                     return Ok(XmlEvent::Text(s.into_owned()));
                 }
@@ -695,10 +695,8 @@ impl<'a> XmlReader<'a> {
                     {
                         return Ok(XmlEvent::Text(c.to_string()));
                     }
-                    let name = e
-                        .decode()
-                        .map_err(|e| XmlError::parse_source("decoding an entity reference", e))?;
-                    let resolved = match name.as_ref() {
+                    let name: &str = e.as_ref();
+                    let resolved = match name {
                         "amp" => "&",
                         "lt" => "<",
                         "gt" => ">",
@@ -750,15 +748,13 @@ fn to_start_tag(e: &BytesStart<'_>) -> Result<StartTag, XmlError> {
     // Attribute keys are left intact, since `xsi:type` dispatch keys on the
     // `xsi:` prefix. A default-namespace (unprefixed) name is unaffected.
     let qname = e.name();
-    let raw = String::from_utf8_lossy(qname.as_ref());
-    let name = raw.rsplit(':').next().unwrap_or(&raw).to_string();
+    let raw = qname.as_ref();
+    let name = raw.rsplit(':').next().unwrap_or(raw).to_string();
     let mut attrs = Vec::new();
     for a in e.attributes() {
         let a = a.map_err(|e| XmlError::parse_source("reading a start-tag attribute", e))?;
-        let k = String::from_utf8_lossy(a.key.as_ref()).into_owned();
-        let raw = std::str::from_utf8(&a.value)
-            .map_err(|e| XmlError::parse_source("decoding an attribute value", e))?;
-        let v = quick_xml::escape::unescape(raw)
+        let k = a.key.as_ref().to_owned();
+        let v = quick_xml::escape::unescape(a.value.as_ref())
             .map_err(|e| XmlError::parse_source("unescaping an attribute value", e))?
             .into_owned();
         attrs.push((k, v));

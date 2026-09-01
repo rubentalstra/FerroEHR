@@ -127,9 +127,8 @@ impl El {
 }
 
 /// Local element name with the namespace prefix stripped (`rm:value` → `value`).
-fn local_name(raw: &[u8]) -> String {
-    let s = String::from_utf8_lossy(raw);
-    s.rsplit(':').next().unwrap_or(&s).to_string()
+fn local_name(raw: &str) -> String {
+    raw.rsplit(':').next().unwrap_or(raw).to_string()
 }
 
 /// Parse a TDD document into the generic [`El`] tree.
@@ -157,14 +156,12 @@ fn parse_tree(xml: &str) -> Result<El, FlatError> {
             }
             Event::End(_) => close_element(&mut stack, &mut root),
             Event::Text(t) => {
-                let txt = t
-                    .decode()
-                    .map_err(|e| FlatError::Conversion(format!("TDD text decode: {e}")))?;
-                push_text(&mut stack, txt.trim());
+                // quick-xml 0.42 constructs events as validated UTF-8 `&str`
+                // (a non-UTF-8 document fails at `read_event` above).
+                push_text(&mut stack, t.as_ref().trim());
             }
             Event::CData(t) => {
-                let bytes = t.into_inner();
-                push_text(&mut stack, &String::from_utf8_lossy(&bytes));
+                push_text(&mut stack, t.as_ref());
             }
             Event::Eof => break,
             _ => {}
@@ -182,8 +179,8 @@ fn start_element(e: &quick_xml::events::BytesStart<'_>) -> Result<El, FlatError>
     for a in e.attributes() {
         let a =
             a.map_err(|err| FlatError::Conversion(format!("malformed TDD attribute: {err}")))?;
-        let key = String::from_utf8_lossy(a.key.as_ref()).into_owned();
-        let val = String::from_utf8_lossy(&a.value).into_owned();
+        let key = a.key.as_ref().to_owned();
+        let val = a.value.as_ref().to_owned();
         attrs.push((key, val));
     }
     Ok(El {
