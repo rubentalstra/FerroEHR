@@ -24,6 +24,8 @@
 - [Concepts](concepts/index.md)
   - [openEHR primer](concepts/openehr-primer.md)
   - [System architecture](concepts/architecture.md)
+  - [Storage architecture](concepts/storage.md)
+  - [The AQL engine](concepts/aql-engine.md)
 - [Using the API](using-the-api/index.md)
   - [Resource walkthroughs](using-the-api/resources.md)
   - [Content negotiation & errors](using-the-api/content-negotiation.md)

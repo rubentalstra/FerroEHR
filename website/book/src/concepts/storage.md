@@ -1,22 +1,22 @@
 # Storage architecture
 
-How FerroEHR physically stores clinical data. This is a living reference
-document beside `docs/architecture.md` (the overall design) and
-`docs/postgres-features.md` (the PostgreSQL 18 feature map); the authoritative
-definition of every column is the schema itself
-(`app/ferroehr/migrations/`), whose `COMMENT ON` lines carry the per-column
-spec citations.
+How FerroEHR physically stores clinical data. This page goes one level below
+the [system architecture](architecture.md): the tables, the write path, the
+read paths, and the reasons the layout looks the way it does. If you read the
+source, the schema itself is the authority: every column in
+`app/ferroehr/migrations/` carries a `COMMENT ON` line with its citation.
 
 One thing up front: **openEHR defines no SQL schema.** What the specs do
 define, and what this storage realizes, are the versioning and change-control
-semantics (RM common `master06-change_control_package.adoc`), canonical data
-fidelity (ITS-JSON), and the contribution/audit duties. The relational layout
-below is our own PG18-native design, and the RM explicitly sanctions that
-freedom: "Although the figure implies physical containment of Versions by a
-Versioned object, this is only one possible implementation. Other
+semantics (RM `common` change control), canonical data fidelity (ITS-JSON),
+and the contribution and audit duties. The relational layout below is
+FerroEHR's own PostgreSQL-18-native design, and the RM explicitly sanctions
+that freedom: "Although the figure implies physical containment of Versions
+by a Versioned object, this is only one possible implementation. Other
 implementations (e.g. using orthodox relational structures) might use
-references, separate compressed copies, or any other mechanism" (RM common
-master06 §Overview).
+references, separate compressed copies, or any other mechanism."
+
+<!-- toc -->
 
 ## The big picture
 
@@ -33,8 +33,8 @@ transaction:
 
 ```mermaid
 flowchart LR
-    client[REST client] --> rest["ferroehr-rest<br/>(ITS-REST adapter)"]
-    rest --> svc["FerroEhrService<br/>(validation, versioning)"]
+    client[REST client] --> rest["ITS-REST adapter"]
+    rest --> svc["service layer<br/>(validation, versioning)"]
     svc --> tx{{"one transaction<br/>per commit"}}
     tx --> audit[(audit)]
     tx --> contrib[(contribution)]
@@ -46,12 +46,12 @@ flowchart LR
 
 The database is PostgreSQL 18, split into four schemas:
 
-| Schema | Holds | Migrations |
-|---|---|---|
-| `ehr` | the CDR proper: versions, nodes, EHRs, contributions, templates, queries, tags | `app/ferroehr/migrations/ehr/` |
-| `ext` | our own `IMMUTABLE` helper functions (`openehr_magnitude`, `openehr_timestamp`) and the tenant context | `app/ferroehr/migrations/ext/` |
-| `audit` | the IHE ATNA Audit Record Repository (`audit_event`), fed by `ferroehr::system_log` | `app/ferroehr/migrations/audit/` |
-| `cold` | the archival tier: FK-free mirrors of `vo_version` / `node` / `vo_attestation` | `ehr/0007_cold_archive_tier.sql` |
+| Schema | Holds |
+|---|---|
+| `ehr` | the CDR proper: versions, nodes, EHRs, contributions, templates, queries, tags |
+| `ext` | FerroEHR's own `IMMUTABLE` helper functions (`openehr_magnitude`, `openehr_timestamp`) and the tenant context |
+| `audit` | the IHE ATNA Audit Record Repository (`audit_event`) |
+| `cold` | the archival tier: FK-free mirrors of `vo_version` / `node` / `vo_attestation` |
 
 ## Core tables and how they relate
 
@@ -101,13 +101,13 @@ erDiagram
 
 Supporting tables not drawn above: `stored_query` (stored AQL, qualified name
 plus SemVer), `archetype_store` and `adl2_artefact` (the two DEFINITION
-dialects), `ehr_index` (SM `I_EHR_INDEX`), `vo_archive` (the admin archive
-marker), and the `sp_*` family (Subject Proxy Service). The `ehr` table itself
-carries the three creation-immutable values (RM ehr master04 §Root EHR
-Object: `system_id`, `id`, `time_created`) plus promoted copies of the current
-EHR_STATUS subject reference and `is_queryable` / `is_modifiable` flags, which
-back the one-EHR-per-subject index, the AQL full-population gate, and the
-content-write guard without probing a JSON root per request.
+dialects), `ehr_index`, `vo_archive` (the admin archive marker), and the
+`sp_*` family (Subject Proxy Service). The `ehr` table itself carries the
+three creation-immutable values the RM names (`system_id`, `id`,
+`time_created`) plus promoted copies of the current EHR_STATUS subject
+reference and `is_queryable` / `is_modifiable` flags, which back the
+one-EHR-per-subject rule, the AQL full-population gate, and the content-write
+guard without probing a JSON root per request.
 
 ## Versioning: one temporal table, no history pairs
 
@@ -118,34 +118,32 @@ predicate, not a location.
 - Every version row carries `sys_period tstzrange`, the half-open validity
   interval `[committed, superseded)`. The current trunk version of an object
   is simply the row with `upper_inf(sys_period) AND branch_number = 0`, held
-  unique by a partial index (`uq_vo_version_current`), which realizes RM
-  common master06 `latest_trunk_version`.
+  unique by a partial index, which is what realizes the RM's
+  `latest_trunk_version`.
 - `ALL_VERSIONS` is the unfiltered table; `LATEST_VERSION` is that partial
   index. Time travel is a range containment test on `sys_period`.
 - The spec-facing version identity is the three-part `OBJECT_VERSION_ID`
-  `{object_id, creating_system_id, version_tree_id}` (RM common master06
-  §Distributed versioning), stored as `vo_id` + `creating_system_id` +
-  the `trunk_version`/`branch_number`/`branch_version` triple and held unique
-  by `uq_vo_version_tree`. `sys_version` is deliberately not that number: it
-  is an opaque per-object commit ordinal (1..n across trunk and branch
-  commits) used as the join key for `node` and `vo_attestation`.
+  `{object_id, creating_system_id, version_tree_id}`, stored as `vo_id` +
+  `creating_system_id` + the `trunk_version`/`branch_number`/`branch_version`
+  triple and held unique together. `sys_version` is deliberately not that
+  number: it is an opaque per-object commit ordinal (1..n across trunk and
+  branch commits) used as the join key for `node` and `vo_attestation`.
 - Version keys and generated ids use PostgreSQL 18's native `uuidv7()`, so
   keys are time-ordered and index-friendly.
-- A logical delete writes a content-less version with lifecycle state `523`
-  (RM common master06 §Logical Deletion); nothing is physically deleted.
+- A logical delete writes a content-less version with lifecycle state `523`;
+  nothing is physically deleted.
 - An import (EHR-Extract, archive load) stores the wrapped
   `ORIGINAL_VERSION`'s own provenance verbatim in `wrapped_original`, while
-  the row's own contribution/audit columns record the local act of committal
-  (master06 §Committal and Audits). `NULL` there means a locally created
-  `ORIGINAL_VERSION`; `NOT NULL` means the row is an `IMPORTED_VERSION`.
+  the row's own contribution and audit columns record the local act of
+  committal. `NULL` there means a locally created `ORIGINAL_VERSION`;
+  `NOT NULL` means the row is an `IMPORTED_VERSION`.
 
 Non-overlap per lineage (one valid version per lineage at any instant) is
 enforced by construction rather than by GiST exclusion constraints, which
 were measured to serialize concurrent inserts: at most one open row per
 lineage exists (the partial unique indexes), and every write closes the open
 row and inserts its successor at the same `now()` inside one transaction, so
-half-open ranges meet exactly. No openEHR spec governs the enforcement
-mechanism; the semantics stay master06.
+half-open ranges meet exactly.
 
 ```mermaid
 flowchart TD
@@ -163,10 +161,9 @@ flowchart TD
 
 At commit, the accepted composition is decomposed into one row per RM
 structure node. Each row stores the node's **canonical openEHR JSON fragment
-verbatim** (the `openehr-its` ITS-JSON encoding) with its structure children
-pruned out: no alias compaction, no synthetic fields, so what sits in
-`node.data` is byte-identical in shape to what the API serves. Storage equals
-wire.
+verbatim** (the ITS-JSON encoding) with its structure children pruned out: no
+alias compaction, no synthetic fields, so what sits in `node.data` is
+byte-identical in shape to what the API serves. Storage equals wire.
 
 The tree shape is captured as a **nested-set interval**: nodes are numbered
 in pre-order (`num`, root = 0), and each row records the maximum number in
@@ -191,36 +188,30 @@ Beside the interval, each row promotes the predicates AQL actually filters
 on, so hot paths never open the JSON:
 
 - `rm_type` (full RM type names, never compacted), `name`, `archetype`
-  (case-folded at write, per BASE base_types master05 §Composite Identifiers
-  and Case);
+  (case-folded at write, because openEHR identifier equality is
+  case-insensitive);
 - the archetype-subsumption columns `arch_entity` / `arch_concept` /
   `arch_major`, parsed from full archetype HRIDs so a query naming a parent
-  archetype matches specialisation children via an indexed prefix scan (BASE
-  architecture_overview master10 §Design-time Relationships; the major
-  boundary stays hard per AM master07 §Querying);
+  archetype matches specialised children through an indexed prefix scan (the
+  major-version boundary stays hard, as the AM requires);
 - `citem_num`, the nearest archetyped ancestor, for archetype-anchored path
   resolution;
 - `context_start`, the promoted `EVENT_CONTEXT.start_time` on COMPOSITION
-  roots, serving the dashboard ORDER BY from a partial index;
+  roots, serving dashboard ordering from a partial index;
 - `path`, the materialized path from the root (`COLLATE "C"`, so byte order
   equals tree order), used only for reassembly, never as an AQL predicate.
 
-The promoted-column registry lives in `app/ferroehr/src/storage/promoted.rs`.
-All of this is our own storage design; no openEHR spec governs storage
-columns.
-
 ## The write path: one transaction per commit
 
-Every write realizes the openEHR contribution rule: "a `CONTRIBUTION` object
-will be created, listing the affected `VERSION` objects, and including its
-own audit object" (RM common master06 §Contributions), and a Contribution
-commits only if every member commits (master06 §Committal and Audits). In
-storage terms, one `sqlx::Transaction` per service-level write:
+Every write realizes the openEHR contribution rule: a `CONTRIBUTION` lists
+the affected `VERSION`s and carries its own audit, and it commits only if
+every member commits. In storage terms, one transaction per service-level
+write:
 
 ```mermaid
 sequenceDiagram
-    participant R as ferroehr-rest
-    participant S as FerroEhrService
+    participant R as REST adapter
+    participant S as service layer
     participant PG as PostgreSQL 18
 
     R->>S: commit (COMPOSITION, EHR_STATUS, ...)
@@ -238,19 +229,14 @@ sequenceDiagram
 
 Details that matter:
 
-- `time_committed` is always server-computed (master06 §Committal and
-  Audits: it "should therefore be computed on the server"), never
-  client-supplied.
+- `time_committed` is always server-computed, never client-supplied; the RM
+  requires the committal time to reflect the EHR server's own clock.
 - The close-out UPDATE and the successor INSERT use the same `now()`, which
   is what makes the half-open intervals meet with no gap and no overlap.
 - The body bytes in `vo_version.body` are materialized from the accepted,
   uid-stamped value **before** decomposition, stored as `text` (not `jsonb`,
-  which would re-order keys) so a point read serves the codec's
-  `_type`-first, BMM-declared field order verbatim.
-- `vo_version.stable_compatible` (migration `0008`) stamps at commit whether
-  the released-generation reader can express the body, which is what the
-  `spec_profile` read gate consults (see `docs/VERSIONS.md` §Spec version
-  policy).
+  which would re-order keys) so a point read serves the canonical
+  `_type`-first field order verbatim.
 
 ## Read paths
 
@@ -262,14 +248,12 @@ re-aggregation, zero translation between storage and wire.
 chains become nested-set interval joins, class and archetype predicates hit
 the promoted columns and their indexes, and leaf values are extracted from
 the canonical fragments with `jsonb_path_query_first`, jsonpath item
-methods, and `ext.openehr_magnitude` (our `IMMUTABLE` helper realizing
-DV_ORDERED ordering semantics). `JSON_TABLE` (PG 17+) serves array
-unnesting. The full construct-by-construct envelope lives in
-`.claude/rules/aql-engine.md`; the AQL population gate filters the promoted
-`ehr.is_queryable` column directly (SM `i_query_service.adoc`).
+methods, and `ext.openehr_magnitude` (the `IMMUTABLE` helper realizing
+DV_ORDERED ordering semantics). `JSON_TABLE` serves array unnesting. The
+whole pipeline has [its own page](aql-engine.md).
 
-**Time travel** (VERSIONED_OBJECT version-at-time, REST `version_at_time`)
-is a `sys_period @> timestamptz` containment test on the same one table.
+**Time travel** (a version at a point in time) is a `sys_period @>
+timestamptz` containment test on the same one table.
 
 ## The cold archival tier
 
@@ -279,7 +263,7 @@ Admin-archived objects move physically out of the primary tables into the
 deliberate and visible:
 
 - point reads retry cold only on a primary miss;
-- whole-repository readers (exports, dumps) use the `*_all` union views;
+- whole-repository readers (exports, dumps) use the union views;
 - **AQL stays primary-only**: archived content leaves the queryable store
   until restored;
 - a write to an archived object thaws it back to the primary tier first.
@@ -297,27 +281,26 @@ flowchart LR
     pv -- "admin archive (transactional move)" --> cv
     cv -- "restore / thaw-on-write" --> pv
     pv -. "AQL reads primary only" .-> aql[AQL engine]
-    pv & cv -. "*_all union views" .-> dump[whole-repo readers]
+    pv & cv -. "union views" .-> dump[whole-repo readers]
 ```
 
-No openEHR spec governs archival tiers; this is our own design, recorded
-here and in the migration (`ehr/0007_cold_archive_tier.sql`).
+No openEHR spec governs archival tiers; this is FerroEHR's own design.
 
 ## Why this design
 
-The shape follows measured PostgreSQL physics rather than habit
-(`docs/postgres-features.md` has the feature map):
+The shape follows measured PostgreSQL physics rather than habit:
 
 - JSONB has no partial detoast: a big single-document design pays
-  whole-document decompression for every leaf access. Decomposed ~360 B
-  fragments stay under TOAST and each read touches only the rows it needs.
+  whole-document decompression for every leaf access. Decomposed fragments
+  average a few hundred bytes, stay under TOAST, and each read touches only
+  the rows it needs.
 - GIN indexes serve neither ranges nor ordering, so CONTAINS and ORDER BY
   ride integers and promoted btree columns instead.
-- PG 18's temporal machinery (`tstzrange`, partial unique indexes,
+- PostgreSQL 18's temporal machinery (`tstzrange`, partial unique indexes,
   `uuidv7()`, `RETURNING OLD/NEW`) makes the single temporal version table
   cheaper than current/history pairs, with `ALL_VERSIONS` a plain scan of
   one relation.
 
-Every table and column comment in the migrations either cites the vendored
-spec clause it realizes or states "our own storage design"; when this
-document and the migrations disagree, the migrations win.
+The performance this buys is measured, not asserted: see
+[Performance](../performance.md) for the earned deployment classes and the
+committed measurement records behind them.
