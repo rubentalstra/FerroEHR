@@ -15,7 +15,12 @@ workflow refuses a tag that has no matching section here.
 
 ## [Unreleased]
 
-## [4.0.14] - 2026-09-01
+## [4.0.15] - 2026-09-01
+
+This release carries everything prepared for 4.0.14, which was tagged but
+never published: its release pipeline failed before any artifact was built,
+and the `v4.0.14` tag is immutable, so the content ships here under the next
+patch number. No 4.0.14 artifacts (release, images, chart, crates) exist.
 
 ### Added
 
@@ -7931,8 +7936,8 @@ but has not yet run in production.
   seccomp, default-deny NetworkPolicy) and golden-render validation.
 
 
-[unreleased]: https://github.com/rubentalstra/FerroEHR/compare/v4.0.14...HEAD
-[4.0.14]: https://github.com/rubentalstra/FerroEHR/compare/v4.0.13...v4.0.14
+[unreleased]: https://github.com/rubentalstra/FerroEHR/compare/v4.0.15...HEAD
+[4.0.15]: https://github.com/rubentalstra/FerroEHR/compare/v4.0.13...v4.0.15
 [4.0.13]: https://github.com/rubentalstra/FerroEHR/compare/v4.0.12...v4.0.13
 [4.0.12]: https://github.com/rubentalstra/FerroEHR/compare/v4.0.11...v4.0.12
 [4.0.11]: https://github.com/rubentalstra/FerroEHR/compare/v4.0.10...v4.0.11
