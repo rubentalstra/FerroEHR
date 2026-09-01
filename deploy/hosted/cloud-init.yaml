@@ -65,10 +65,13 @@ write_files:
       }
 
   # The ONE command the CI key may run. It reads SSH_ORIGINAL_COMMAND and
-  # accepts exactly two verbs: `deploy` (the default — pull, extract the
-  # posture out of the pulled image, recreate) and `restart` (recreate the CDR
+  # accepts exactly three verbs: `deploy` (the default — pull, extract the
+  # posture out of the pulled image, recreate), `restart` (recreate the CDR
   # so a fresh boot re-runs the migrations — what the reseed needs after its
-  # wipe). Nothing is built here, and nothing is fetched from the repository.
+  # wipe), and `wipe` (drop the CDR's schemas on the private database, using
+  # the DSN this box already holds — the database has no public port and CI
+  # holds no database credential). Nothing is built here, and nothing is
+  # fetched from the repository.
   - path: /opt/ferroehr-sandbox/deploy.sh
     permissions: "0755"
     owner: deploy:deploy
@@ -80,7 +83,7 @@ write_files:
       #!/usr/bin/env bash
       # SSH runs this whatever the client asked for — that is the point of the
       # command= restriction on the key — and the client's request arrives in
-      # SSH_ORIGINAL_COMMAND, which selects one of two verbs below.
+      # SSH_ORIGINAL_COMMAND, which selects one of the verbs below.
       #
       # The posture this box runs — docker-compose.yml, the Caddyfile and the
       # two sandbox configuration files — travels INSIDE the published
@@ -96,12 +99,34 @@ write_files:
 
       verb="${SSH_ORIGINAL_COMMAND:-deploy}"
       case "$verb" in
-        deploy|restart) ;;
+        deploy|restart|wipe) ;;
         *)
-          echo "deploy: unknown verb '$verb' (this key runs 'deploy' or 'restart')" >&2
+          echo "deploy: unknown verb '$verb' (this key runs 'deploy', 'restart' or 'wipe')" >&2
           exit 1
           ;;
       esac
+
+      # `wipe` is the nightly reset's schema drop (sandbox-reseed.yml),
+      # executed HERE because the database lives on the private network with
+      # no public port, and CI holds no database credential: the DSN is the
+      # same .env value the CDR runs with, so this can only ever wipe the
+      # database this box is configured against. psql comes from the
+      # ferroehr-postgres image (the CDR image is distroless).
+      if [[ "$verb" == "wipe" ]]; then
+        dsn="$(sed -n 's/^DATABASE_URL=//p' .env | tail -n 1)"
+        if [[ -z "$dsn" ]]; then
+          echo "wipe: .env names no DATABASE_URL, so there is nothing to wipe" >&2
+          exit 1
+        fi
+        docker run --rm --entrypoint psql \
+          ghcr.io/rubentalstra/ferroehr-postgres:latest "$dsn" \
+          -v ON_ERROR_STOP=1 \
+          -c 'DROP SCHEMA IF EXISTS ehr CASCADE' \
+          -c 'DROP SCHEMA IF EXISTS audit CASCADE' \
+          -c 'DROP SCHEMA IF EXISTS ext CASCADE' \
+          -c 'DROP SCHEMA IF EXISTS cold CASCADE'
+        exit 0
+      fi
 
       # `restart` exists for the reseed: after the schema wipe the CDR must
       # boot fresh to re-run its migrations, and `docker compose up -d` alone
@@ -212,6 +237,7 @@ runcmd:
 
 final_message: >-
   the box is up after $UPTIME seconds. Write /opt/ferroehr-sandbox/.env (the
-  Neon DIRECT connection string as DATABASE_URL, and FERROEHR_IMAGE), then run
+  DB box's private-network connection string as DATABASE_URL, plus the
+  image references), then run
   the hosted deploy lane: it installs the compose file, the Caddyfile and the
   sandbox configuration out of the image it pulls.

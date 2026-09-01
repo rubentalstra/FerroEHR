@@ -219,7 +219,7 @@ knows what it runs on and what it costs:
 |---|---|
 | Server | one Hetzner Cloud CX33 — 4 shared vCPU, 8 GB RAM, 80 GB NVMe SSD — at €8.49/month net |
 | Location | Nuremberg, Germany (`eu-central`), dual-stack, behind a Caddy proxy terminating TLS |
-| Database | Neon serverless PostgreSQL 18, Frankfurt, on its direct (non-pooled) endpoint |
+| Database | a second CX33 running the project's own `ferroehr-postgres` image (PostgreSQL 18), reachable only over a Hetzner private network |
 
 The whole posture is committed at [`deploy/hosted/`](deploy/hosted/). One step up,
 [open a GitHub Codespace](https://codespaces.new/rubentalstra/FerroEHR)
