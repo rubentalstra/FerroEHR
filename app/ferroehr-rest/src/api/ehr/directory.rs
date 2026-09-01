@@ -33,6 +33,7 @@ use ferroehr::service::response::ServiceResponse;
 use ferroehr::service::status::CallStatusType;
 
 use crate::api::RequestParts;
+use crate::api::item_tags;
 use crate::overview::error::{RestError, sm_api_error};
 use crate::overview::version_id::{parse_ehr_id, parse_version_uid, require_if_match};
 use crate::state::AppState;
@@ -108,13 +109,20 @@ async fn update(state: AppState, parts: RequestParts) -> Result<Response, RestEr
         Some(require_if_match(&p.if_match)?),
     )?;
     // Tags are judged before the commit and written after it (see
-    // `crate::api::ehr::pending_item_tags`).
-    let pending_tags = super::pending_item_tags(h)?;
+    // `crate::api::item_tags::pending`).
+    let pending_tags = item_tags::pending(h)?;
     match state.backend().update_directory(ehr_id, uv).await {
         Ok(meta) => {
-            let stored_tags =
-                super::apply_item_tag_headers(&state, ehr_id, "FOLDER", &meta.uid, pending_tags)
-                    .await?;
+            let stored_tags = item_tags::persist(
+                &state,
+                item_tags::TagTarget::EhrContent {
+                    ehr_id,
+                    target_type: "FOLDER",
+                },
+                &meta.uid,
+                pending_tags,
+            )
+            .await?;
             let repr = if negotiate::prefers_representation(h) {
                 state
                     .backend()
@@ -134,7 +142,7 @@ async fn update(state: AppState, parts: RequestParts) -> Result<Response, RestEr
                 &resp,
                 "folder",
             );
-            super::echo_item_tags(&mut resp, &stored_tags);
+            stored_tags.echo(&mut resp);
             Ok(resp)
         }
         Err(e) if e.status == CallStatusType::VersionMismatch => {
@@ -168,10 +176,18 @@ async fn create(state: AppState, parts: RequestParts) -> Result<Response, RestEr
     let ehr_id = parse_ehr_id(&p.ehr_id)?;
     let body = negotiate::rm_value::<Folder>(h, &parts.body)?;
     let uv = super::mk_update_version(h, body, super::CHANGE_CREATION, "DIRECTORY creation", None)?;
-    let pending_tags = super::pending_item_tags(h)?;
+    let pending_tags = item_tags::pending(h)?;
     let meta = state.backend().create_directory(ehr_id, uv).await?;
-    let stored_tags =
-        super::apply_item_tag_headers(&state, ehr_id, "FOLDER", &meta.uid, pending_tags).await?;
+    let stored_tags = item_tags::persist(
+        &state,
+        item_tags::TagTarget::EhrContent {
+            ehr_id,
+            target_type: "FOLDER",
+        },
+        &meta.uid,
+        pending_tags,
+    )
+    .await?;
     let repr = if negotiate::prefers_representation(h) {
         state
             .backend()
@@ -191,7 +207,7 @@ async fn create(state: AppState, parts: RequestParts) -> Result<Response, RestEr
         &resp,
         "folder",
     );
-    super::echo_item_tags(&mut resp, &stored_tags);
+    stored_tags.echo(&mut resp);
     Ok(resp)
 }
 

@@ -18,7 +18,6 @@ use axum::response::Response;
 use http::StatusCode;
 use serde_json::Value;
 
-use openehr_its::rest::generated::common::UpdateItemTag;
 use openehr_its::rest::generated::ehr::{
     EhrStatusGetAtTimeParams, EhrStatusGetByVersionIdParams, EhrStatusTagsDeleteParams,
     EhrStatusTagsGetParams, EhrStatusTagsUpdateParams, EhrStatusUpdateParams,
@@ -30,6 +29,7 @@ use ferroehr::service::response::ServiceResponse;
 use ferroehr::service::status::CallStatusType;
 
 use crate::api::RequestParts;
+use crate::api::item_tags;
 use crate::overview::error::{RestError, sm_api_error};
 use crate::overview::version_id::{parse_ehr_id, parse_version_uid, require_if_match};
 use crate::state::AppState;
@@ -118,13 +118,15 @@ pub(super) async fn run(
             // the instant taken from the commit result so the write path never
             // re-reads the row it just wrote. Tags are judged before the commit
             // and written after it.
-            let pending_tags = super::pending_item_tags(h)?;
+            let pending_tags = item_tags::pending(h)?;
             match state.backend().replace_ehr_status_meta(ehr_id, uv).await {
                 Ok(meta) => {
-                    let stored_tags = super::apply_item_tag_headers(
+                    let stored_tags = item_tags::persist(
                         &state,
-                        ehr_id,
-                        "EHR_STATUS",
+                        item_tags::TagTarget::EhrContent {
+                            ehr_id,
+                            target_type: "EHR_STATUS",
+                        },
                         &meta.uid,
                         pending_tags,
                     )
@@ -144,7 +146,7 @@ pub(super) async fn run(
                         &resp,
                         "ehr_status",
                     );
-                    super::echo_item_tags(&mut resp, &stored_tags);
+                    stored_tags.echo(&mut resp);
                     Ok(resp)
                 }
                 Err(e) if e.status == CallStatusType::VersionMismatch => {
@@ -180,9 +182,7 @@ pub(super) async fn run(
         "ehr_status_tags_update" => {
             let p = params::build::<EhrStatusTagsUpdateParams>(&parts.path, q, h)?;
             let ehr_id = parse_ehr_id(&p.ehr_id)?;
-            // Strict against `schemas/common/UpdateItemTag.yaml`: an undeclared
-            // member is a 400 naming it, never a silent drop.
-            let body = negotiate::typed_json_vec::<UpdateItemTag>(h, &parts.body)?;
+            let body = item_tags::write_body(h, &parts.body)?;
             let tags = state
                 .backend()
                 .target_tags_replace(ehr_id, p.uid_based_id, "EHR_STATUS", body)
