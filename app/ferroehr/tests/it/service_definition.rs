@@ -1324,3 +1324,87 @@ async fn adl2_template_with_filler_projects_the_filled_web_template() {
         "the filler's constrained leaf must appear in the projected WebTemplate"
     );
 }
+
+// ── I_VALIDITY_CHECKER: definitions_valid over archetype ids (#2987) ──────────
+
+/// `definitions_valid` resolves every declared definition identifier —
+/// "archetype and template identifiers" (SM `i_validity_checker.adoc`
+/// §`definitions_valid`) — against the stored repositories: archetype ids
+/// against BOTH the ADL 1.4 store and the ADL 2 store, template ids through
+/// the commit-path template lookup, collected from `archetype_details` at any
+/// depth.
+#[tokio::test]
+async fn definitions_valid_resolves_archetype_ids_against_the_stored_repositories() {
+    const ADL2_HRID: &str = "openEHR-EHR-SECTION.validity_known.v1.0.0";
+
+    let db = testkit::db().await.expect("testkit database");
+    let svc = FerroEhrService::new(db.pool());
+    svc.upload_archetype(fixture(ARCHETYPE_REL))
+        .await
+        .expect("upload the ADL 1.4 archetype");
+    svc.upload_artefact(adl2_source("archetype", ADL2_HRID, None))
+        .await
+        .expect("upload the ADL 2 archetype");
+
+    // A root declaring the stored ADL 1.4 archetype and a nested node
+    // declaring the stored ADL 2 archetype: every id resolves → true.
+    let content = |root_id: &str, nested_id: &str| {
+        serde_json::json!({
+            "_type": "COMPOSITION",
+            "archetype_details": { "archetype_id": { "value": root_id } },
+            "content": [{
+                "_type": "SECTION",
+                "archetype_details": { "archetype_id": { "value": nested_id } },
+            }],
+        })
+    };
+    assert!(
+        svc.definitions_valid(&content(ARCHETYPE_ID, ADL2_HRID))
+            .await
+            .expect("definitions_valid"),
+        "ids known to the ADL 1.4 and ADL 2 repositories both resolve"
+    );
+
+    // An unknown ROOT archetype id refuses, even with the nested id known.
+    assert!(
+        !svc.definitions_valid(&content(
+            "openEHR-EHR-COMPOSITION.never_stored.v1",
+            ADL2_HRID
+        ))
+        .await
+        .expect("definitions_valid"),
+        "an archetype id neither repository holds is unknown"
+    );
+
+    // An unknown NESTED archetype id refuses too: collection recurses past the
+    // root (`master03-archetyped_package.adoc` — every archetype root node
+    // carries its own ARCHETYPED).
+    assert!(
+        !svc.definitions_valid(&content(
+            ARCHETYPE_ID,
+            "openEHR-EHR-SECTION.never_stored.v1"
+        ))
+        .await
+        .expect("definitions_valid"),
+        "an unknown archetype id below the root is still checked"
+    );
+
+    // An unknown template id refuses (the pre-#2987 check, retained).
+    let mut with_template = content(ARCHETYPE_ID, ADL2_HRID);
+    with_template["archetype_details"]["template_id"] =
+        serde_json::json!({ "value": "never stored template" });
+    assert!(
+        !svc.definitions_valid(&with_template)
+            .await
+            .expect("definitions_valid"),
+        "an unknown template id is unknown"
+    );
+
+    // Content declaring no definition identifiers uses none → true.
+    assert!(
+        svc.definitions_valid(&serde_json::json!({ "_type": "COMPOSITION" }))
+            .await
+            .expect("definitions_valid"),
+        "no declared identifiers means nothing is unknown"
+    );
+}

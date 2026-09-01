@@ -27,6 +27,12 @@ workflow refuses a tag that has no matching section here.
   
 ### Fixed
 
+- The platform validity checker (`definitions_valid`) now checks archetype
+  identifiers, not just template identifiers, per the SM clause it realizes:
+  every `archetype_details` declaration in the checked content contributes its
+  archetype id and template id, archetype ids resolve through a declared
+  template's inlined nodes or against the stored ADL 1.4 and ADL 2
+  repositories, and an unknown identifier at any depth now answers `false`.
 - The `ETag` served with a query `RESULT_SET` now derives from SHA-256, a
   pinned published algorithm, instead of the standard library's default
   hasher, whose algorithm may change between Rust releases. Query ETags are
