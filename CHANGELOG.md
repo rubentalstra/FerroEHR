@@ -15,6 +15,16 @@ workflow refuses a tag that has no matching section here.
 
 ## [Unreleased]
 
+### Security
+
+- The `ferroehr` and `ferroehr-admin-ui` images build from the rebuilt
+  `gcr.io/distroless/cc-debian13:nonroot` base carrying openssl
+  `3.5.7-1~deb13u2`, which fixes CVE-2026-14456 (QUIC denial of service) and
+  nine sibling advisories in `libssl3t64`. The library was never linked by the
+  shipped binaries (the TLS stack is rustls/aws-lc throughout); the bounded
+  scanner exception and its VEX statement are removed now that the fixed base
+  exists.
+  
 ### Fixed
 
 - The platform validity checker (`definitions_valid`) now checks archetype
@@ -23,6 +33,11 @@ workflow refuses a tag that has no matching section here.
   archetype id and template id, archetype ids resolve through a declared
   template's inlined nodes or against the stored ADL 1.4 and ADL 2
   repositories, and an unknown identifier at any depth now answers `false`.
+- The `ETag` served with a query `RESULT_SET` now derives from SHA-256, a
+  pinned published algorithm, instead of the standard library's default
+  hasher, whose algorithm may change between Rust releases. Query ETags are
+  now stable across server builds; every served query ETag changes value once
+  at this upgrade.
 
 ## [4.0.15] - 2026-09-01
 

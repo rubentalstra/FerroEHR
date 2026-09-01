@@ -21,9 +21,6 @@
               negotiate seam produced once (stored-content serving / commit interior)"
 )]
 
-use std::collections::hash_map::DefaultHasher;
-use std::hash::Hasher;
-
 use axum::response::Response;
 use http::{HeaderMap, HeaderValue, StatusCode, header};
 use uuid::Uuid;
@@ -187,15 +184,19 @@ fn result_set_etag(result_set: &serde_json::Value) -> String {
     format!("W/\"{}\"", stable_uuid(&bytes))
 }
 
-/// Returns a deterministic UUID from a byte digest: two fixed-seed
-/// [`DefaultHasher`] passes, the second salted, fill the 128-bit value.
+/// Returns a deterministic UUID from a byte digest: the first 128 bits of the
+/// input's SHA-256 digest.
+///
+/// SHA-256 (the pinned `sha2` crate) is a fixed, published algorithm, so the
+/// derived value is stable across program runs, Rust toolchains, and server
+/// versions — a served `ETag` must never change for an unchanged `RESULT_SET`.
 fn stable_uuid(bytes: &[u8]) -> Uuid {
-    let mut high = DefaultHasher::new();
-    high.write(bytes);
-    let mut low = DefaultHasher::new();
-    low.write_u8(0x5b);
-    low.write(bytes);
-    Uuid::from_u64_pair(high.finish(), low.finish())
+    use sha2::Digest as _;
+    let digest: [u8; 32] = sha2::Sha256::digest(bytes).into();
+    let (half, _) = digest.split_at(16);
+    let mut arr = [0u8; 16];
+    arr.copy_from_slice(half);
+    Uuid::from_bytes(arr)
 }
 
 /// Merges a paging value carried in the POST body with the same-named URL query
@@ -291,6 +292,22 @@ mod tests {
     fn stable_uuid_is_deterministic_and_content_sensitive() {
         assert_eq!(stable_uuid(b"abc"), stable_uuid(b"abc"));
         assert_ne!(stable_uuid(b"abc"), stable_uuid(b"abd"));
+    }
+
+    /// Pins a known `RESULT_SET` to its exact served `ETag` so a change to the
+    /// digest algorithm (or the identity-document shape it hashes) fails
+    /// loudly: a served `ETag` must never change for an unchanged `RESULT_SET`
+    /// ("It changes as soon as the resource changes",
+    /// `Requests_and_responses.md` §`ETag` and Last-Modified). The expected
+    /// value is the first 128 bits of the SHA-256 digest of the identity
+    /// document, computed independently with `openssl dgst -sha256`.
+    #[test]
+    fn result_set_etag_is_pinned_to_a_known_vector() {
+        let rs = serde_json::json!({"rows": [["x"]]});
+        assert_eq!(
+            result_set_etag(&rs),
+            "W/\"e9a0328f-52cf-352e-db43-ff1abe1de874\""
+        );
     }
 
     #[test]
