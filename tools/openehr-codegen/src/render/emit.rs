@@ -1230,8 +1230,33 @@ fn single_field_type(
 /// like other broader-than-a-crate openEHR types; its optionality follows the
 /// property.
 ///
-/// NOTE: every other container's shape follows its BMM existence and
-/// cardinality.
+/// Every other container's shape follows its BMM existence and cardinality:
+///
+/// - mandatory with cardinality `0..*` is `Vec<T>` (the model genuinely
+///   admits zero members);
+/// - mandatory `1..*` is `NonEmptyVec<T>` — the declared lower bound is a
+///   structural statement about the model, so the type carries it and the
+///   strict readers refuse `[]` at parse;
+/// - optional with no non-empty rule is `Option<Vec<T>>`, because the RM
+///   distinguishes Void from empty on a `0..1` container — `FOLDER.items` /
+///   `FOLDER.folders` are both `0..1` with no non-empty invariant
+///   (`org.openehr.rm.common.folder.adoc` §Attributes), so "absent" and
+///   "present-but-empty" are two legitimate model states;
+/// - optional under an invariant of the `x /= Void implies not x.is_empty`
+///   family is `Option<NonEmptyVec<T>>` — no valid instance can carry
+///   present-but-empty, so it stops being representable
+///   (`LOCATABLE.Links_valid`, `org.openehr.rm.common.locatable.adoc`
+///   §Invariants).
+///
+/// The `1..*` source is the BMM minus
+/// [`crate::plan::overrides::cardinality_contradicted`] (a class whose own
+/// invariants contradict its declared lower bound). The write direction is
+/// unaffected either way: the canonical-JSON writer omits an empty list
+/// whether it is `None` or `Some(vec![])` (ITS-REST overview `Resources.md`
+/// §JSON Format — "attributes (even required ones) that are `Null` or an
+/// empty list (array) SHOULD be absent when serialized"); the reader is the
+/// direction that gains (`absent` → `None`, `[]` → `Some(vec![])`, or a
+/// refusal where the type is `NonEmptyVec`).
 #[expect(
     clippy::too_many_arguments,
     reason = "the field-shape decision threads the same resolution tables `field_type` takes; bundling them would hide which each renderer reads"
