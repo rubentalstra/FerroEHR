@@ -20,7 +20,7 @@
     reason = "test fixtures and wire assertions are raw JSON by the testing rule \
               (.claude/rules/testing.md §Test-fixture construction)"
 )]
-//! End-to-end journeys over the console's **event subscriptions**
+//! End-to-end journeys over the viewer's **event subscriptions**
 //! (`/subscriptions`): the CRUD round trip, and the CDR's duplicate-name
 //! refusal surfacing verbatim beside the failure toast.
 //!
@@ -50,10 +50,10 @@ use common::{
 use thirtyfour::prelude::*;
 
 /// The subscription the CRUD round trip owns.
-const ROUND_TRIP_SUBSCRIPTION: &str = "e2e-console-subscription";
+const ROUND_TRIP_SUBSCRIPTION: &str = "e2e-viewer-subscription";
 
 /// The subscription the conflict scene seeds, then tries to create again.
-const CONFLICT_SUBSCRIPTION: &str = "e2e-console-duplicate";
+const CONFLICT_SUBSCRIPTION: &str = "e2e-viewer-duplicate";
 
 /// Every fixture subscription this file may leave behind.
 const FIXTURE_SUBSCRIPTIONS: [&str; 2] = [ROUND_TRIP_SUBSCRIPTION, CONFLICT_SUBSCRIPTION];
@@ -322,7 +322,7 @@ async fn edit_and_assert_row(h: &Harness) {
 /// (including clearing one and disabling it), then delete it through the
 /// confirmation dialog and watch the row go.
 #[tokio::test]
-async fn the_console_creates_edits_and_deletes_a_subscription() {
+async fn the_viewer_creates_edits_and_deletes_a_subscription() {
     let Some(h) = Harness::start("event-subscriptions").await else {
         return;
     };
@@ -387,7 +387,7 @@ async fn a_refused_subscription_name_never_leaves_or_reaches_the_reader_verbatim
     open_subscriptions(&h).await;
 
     // A name outside the CDR's `[A-Za-z0-9_.-]` rule keeps the submit inert:
-    // the console refuses it before any round trip.
+    // the viewer refuses it before any round trip.
     retype(&h, "#subscription-create-name", "not a valid name").await;
     wait_disabled(&h, "#subscription-create-submit").await;
     h.shot(1, "subscription-name-inert").await;
@@ -409,7 +409,7 @@ async fn a_refused_subscription_name_never_leaves_or_reaches_the_reader_verbatim
     )
     .await;
     // The refusal ALSO toasts: an inline-only failure reads as "nothing
-    // happened" (the console's mutation-feedback rule).
+    // happened" (the viewer's mutation-feedback rule).
     assert!(
         wait_text(&h, "Create failed").await,
         "a refused create must toast as well as render the diagnostic inline"

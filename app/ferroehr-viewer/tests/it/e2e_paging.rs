@@ -22,7 +22,7 @@
 )]
 // e2e journeys are assertive by design; skip-with-reason prints; the shared
 // harness module is per-test-binary (the corpus.rs test-file precedent)
-//! End-to-end journeys over the console's TWO paging surfaces.
+//! End-to-end journeys over the viewer's TWO paging surfaces.
 //!
 //! **The shared table footer** (`?page=`/`?size=`), driven on the
 //! stored-queries screen (`/queries`), for tables whose rows are all in hand.
@@ -44,7 +44,7 @@
 //! (`UI_E2E_CDR_URL`) — test setup deliberately bypasses the UI, whose
 //! save/delete paths have their own journeys. The footer journey uses `?size=1`
 //! so two rows are enough to prove the window moves; the offset journeys have
-//! no such knob (the AQL fetch window is the console-wide page size), so the
+//! no such knob (the AQL fetch window is the viewer-wide page size), so the
 //! compositions journey commits a full page and one more.
 
 use crate::common;
@@ -269,7 +269,7 @@ async fn stored_queries_page_through_the_shared_footer() {
     h.finish().await;
 }
 
-/// The console-wide page size — also the AQL fetch window the offset controls
+/// The viewer-wide page size — also the AQL fetch window the offset controls
 /// step by (`components::data_table::PAGE_SIZE`). A full page plus one is the
 /// smallest fixture that produces a second page.
 const PAGE_SIZE: usize = 25;

@@ -1,7 +1,7 @@
 // SPDX-FileCopyrightText: FerroEHR contributors
 // SPDX-License-Identifier: MIT
 
-//! The CDR **Admin API** surface the console consumes.
+//! The CDR **Admin API** surface the viewer consumes.
 //!
 //! The availability probe every admin affordance is gated on, plus the three
 //! destructive operations (template delete, stored-query delete, physical EHR
@@ -12,13 +12,13 @@
 //! route exists but supports no method — ITS-REST overview
 //! `Requests_and_responses.md` §HTTP Methods: "If a method is recognized but not
 //! allowed for the target resource, the response SHOULD be 405 Method Not
-//! Allowed"). The console therefore discovers the group before offering any of
+//! Allowed"). The viewer therefore discovers the group before offering any of
 //! it, and renders no destructive affordance at all when it is not mounted.
 //!
 //! NOTE: admin availability is discovered via the System API conformance
 //! manifest (`OPTIONS {base_path}` → `endpoints[]`,
 //! `docs/specs/openehr/ITS-REST/specifications/system.openapi.yaml`) — the
-//! spec's own capability-discovery operation, so the console never pokes a
+//! spec's own capability-discovery operation, so the viewer never pokes a
 //! destructive group to learn whether it exists.
 //!
 //! **Capability is not authorization.** The manifest says the admin group is
@@ -95,7 +95,7 @@ pub fn renders_admin_ops(probe: &Result<AdminAvailability, ViewerError>) -> bool
 /// manifest (see this module's NOTE for the spec citation).
 ///
 /// # Errors
-/// [`ViewerError::Unauthenticated`] without a console session;
+/// [`ViewerError::Unauthenticated`] without a viewer session;
 /// [`ViewerError::CdrUnreachable`] on transport failure;
 /// [`ViewerError::Cdr`] / [`ViewerError::Internal`] when the manifest cannot
 /// be read.
@@ -172,7 +172,7 @@ pub fn delete_failure_copy(object: &str, error: &ViewerError) -> String {
              Sign in again and retry."
         ),
         ViewerError::Unauthenticated => format!(
-            "The console session expired before {object} was deleted — sign in again and retry."
+            "The viewer session expired before {object} was deleted — sign in again and retry."
         ),
         other => format!("Deleting {object} failed: {other}"),
     }
@@ -188,7 +188,7 @@ pub fn delete_failure_copy(object: &str, error: &ViewerError) -> String {
 /// [`delete_failure_copy`].
 ///
 /// # Errors
-/// [`ViewerError::Unauthenticated`] without a console session;
+/// [`ViewerError::Unauthenticated`] without a viewer session;
 /// [`ViewerError::Invalid`] for an empty id;
 /// [`ViewerError::Cdr`] / [`ViewerError::CdrUnauthorized`] / [`ViewerError::Forbidden`] /
 /// [`ViewerError::CdrUnreachable`] from the CDR.
@@ -218,7 +218,7 @@ pub async fn admin_delete_template(
 /// Both segments are percent-encoded (the qualified name carries `::`).
 ///
 /// # Errors
-/// [`ViewerError::Unauthenticated`] without a console session;
+/// [`ViewerError::Unauthenticated`] without a viewer session;
 /// [`ViewerError::Invalid`] for an empty name or version;
 /// [`ViewerError::Cdr`] / [`ViewerError::CdrUnauthorized`] / [`ViewerError::Forbidden`] /
 /// [`ViewerError::CdrUnreachable`] from the CDR.
@@ -254,7 +254,7 @@ pub async fn admin_delete_stored_query(
 /// audit trail are gone.
 ///
 /// # Errors
-/// [`ViewerError::Unauthenticated`] without a console session;
+/// [`ViewerError::Unauthenticated`] without a viewer session;
 /// [`ViewerError::Invalid`] for an empty id;
 /// [`ViewerError::Cdr`] / [`ViewerError::CdrUnauthorized`] / [`ViewerError::Forbidden`] /
 /// [`ViewerError::CdrUnreachable`] from the CDR.

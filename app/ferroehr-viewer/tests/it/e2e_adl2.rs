@@ -18,10 +18,10 @@
 //! End-to-end journeys over the ADL2 template family of the Template Manager
 //! (`/templates?family=adl2` and `/templates/adl2/{template_id}`).
 //!
-//! What they pin is the whole ADL2 surface the console consumes: the
+//! What they pin is the whole ADL2 surface the viewer consumes: the
 //! `text/plain` source upload with the openEHR-ADL engine's diagnostics
 //! surfaced verbatim, the listing, the stored SOURCE and `OperationalTemplateV2`
-//! JSON representations, the console-built path catalog over that JSON, the
+//! JSON representations, the viewer-built path catalog over that JSON, the
 //! CDR-generated example composition, and the versioned get — both an exact
 //! release version and the wire's `{major}` prefix resolution, driven through
 //! the screen's own version bar.
@@ -74,7 +74,7 @@ fn admin_credentials() -> (String, String) {
     )
 }
 
-/// Remove the artefacts a scene seeded, over the same route the console's
+/// Remove the artefacts a scene seeded, over the same route the viewer's
 /// delete affordance drives (`204` deleted, `404` already gone).
 ///
 /// Without `UI_E2E_CDR_URL` the scene has no way to reach the CDR directly and
@@ -193,7 +193,7 @@ async fn ensure_adl2_template_present(h: &Harness, relative: &str, hrid: &str) -
 /// Uploading an ADL2 source lists it under the ADL2 family, and its detail
 /// screen serves both stored representations — the artefact SOURCE verbatim and
 /// the `OperationalTemplateV2` canonical JSON — plus the path catalog the
-/// console builds from that JSON.
+/// viewer builds from that JSON.
 #[tokio::test]
 async fn adl2_upload_lists_and_serves_source_and_json() {
     let Some(h) = Harness::start("adl2-detail").await else {
@@ -230,7 +230,7 @@ async fn adl2_upload_lists_and_serves_source_and_json() {
     h.shot(3, "adl2-source-pane").await;
 
     // The AOM2 JSON pane serves the OperationalTemplateV2 projection. The
-    // pretty-printed spelling (`"key": value`) only exists when the console
+    // pretty-printed spelling (`"key": value`) only exists when the viewer
     // PARSED the body — the wire sends it unformatted.
     h.wait_css("a[data-adl2-tab='json']")
         .await
@@ -242,7 +242,7 @@ async fn adl2_upload_lists_and_serves_source_and_json() {
     wait_text_contains(&h, "#adl2-json-pane", "\"release_version\": \"1.0.0\"").await;
     h.shot(4, "adl2-json-pane").await;
 
-    // The path catalog is built by the console from that same JSON, and it
+    // The path catalog is built by the viewer from that same JSON, and it
     // renders with the ADL 1.4 screen's own tree + inspector components: a tree
     // node exists only once the AOM2 parse and the WebTemplate build both
     // succeeded. The standing "no path catalog" note is gone with it.
@@ -277,7 +277,7 @@ async fn adl2_versioned_get_reaches_both_stored_versions() {
     ensure_adl2_template_present(&h, "versioned.v1_0_0.adls", VERSIONED_V100).await;
     ensure_adl2_template_present(&h, "versioned.v1_1_0.adls", VERSIONED_V110).await;
 
-    // Both versions are separate rows in the listing: the console asks for the
+    // Both versions are separate rows in the listing: the viewer asks for the
     // FULL inventory (`?version=*`), not the latest of each family.
     h.wait_css(&row_link(VERSIONED_V100)).await;
     h.wait_css(&row_link(VERSIONED_V110)).await;
@@ -392,7 +392,7 @@ async fn an_unparseable_adl2_source_surfaces_the_engine_diagnostic() {
     wait_text_contains(&h, ".thaw-message-bar", "missing terminology section").await;
     wait_text_contains(&h, ".thaw-message-bar", "SAON").await;
     // The failure ALSO toasts — an inline-only refusal reads as "nothing
-    // happened" (the console's mutation-feedback rule).
+    // happened" (the viewer's mutation-feedback rule).
     assert!(
         wait_text(&h, "Upload failed").await,
         "a refused upload must toast as well as render the diagnostic inline"

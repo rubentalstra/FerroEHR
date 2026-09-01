@@ -15,7 +15,7 @@
 //!   `version_at_time` lookup, and any version's document pinned by its
 //!   `OBJECT_VERSION_ID` (`GET /ehr/{ehr_id}/ehr_status/{version_uid}`).
 //!
-//! One reader per claim: the **Status** tab is the console's ONE reader of the
+//! One reader per claim: the **Status** tab is the viewer's ONE reader of the
 //! current status document; the **Status history** tab never touches that
 //! endpoint — it reads the versioned family for the commit history and the
 //! VERSION envelope, and pins a document by an explicit `version_uid`.
@@ -26,12 +26,12 @@
 //! `VERSIONED_EHR_STATUS` families) over the RM `EHR_STATUS`
 //! (`docs/specs/openehr/RM/docs/ehr/master04-ehr_package.adoc` §`EHR_STATUS`).
 //! Path segments are percent-encoded server-side; every `#[server]` fn below
-//! authenticates the console session first, and the CDR credential never reaches
+//! authenticates the viewer session first, and the CDR credential never reaches
 //! client-visible state.
 
 #![allow(
     clippy::disallowed_types,
-    reason = "the console consumes the CDR JSON wire over ITS-REST — not the CDR internal seams \
+    reason = "the viewer consumes the CDR JSON wire over ITS-REST — not the CDR internal seams \
               (#1694); the carriers here are ssr-only, so #[expect] would be unfulfilled on the \
               hydrate target"
 )]
@@ -57,7 +57,7 @@ use crate::pages::ehr_detail::status::edit::{StatusEdit, StatusForm, edit_form, 
 /// ([`crate::feedback::write_failure_copy`]).
 const STATUS_OBJECT: &str = "the EHR's status";
 
-/// The console's view of an EHR's CURRENT `EHR_STATUS`.
+/// The viewer's view of an EHR's CURRENT `EHR_STATUS`.
 ///
 /// The canonical document verbatim, the version that document IS, and the
 /// facts the edit form works on — flattened BFF-side so the browser never
@@ -100,11 +100,11 @@ pub struct EhrStatusState {
 /// The EHR's CURRENT `EHR_STATUS` (`GET /ehr/{ehr_id}/ehr_status`), flattened
 /// into an [`EhrStatusState`].
 ///
-/// This is the console's ONE reader of the current status document; the history
+/// This is the viewer's ONE reader of the current status document; the history
 /// tab reads versions.
 ///
 /// # Errors
-/// [`ViewerError::Unauthenticated`] without a console session; CDR transport
+/// [`ViewerError::Unauthenticated`] without a viewer session; CDR transport
 /// errors pass through; a non-2xx CDR answer normalizes via
 /// [`CdrClient::expect_success`](crate::cdr::CdrClient::expect_success);
 /// [`ViewerError::Internal`] when the body is not valid JSON.
@@ -136,7 +136,7 @@ pub async fn fetch_ehr_status(
 /// ids the CDR itself reported.
 ///
 /// # Errors
-/// [`ViewerError::Unauthenticated`] without a console session;
+/// [`ViewerError::Unauthenticated`] without a viewer session;
 /// [`ViewerError::Invalid`] when no version is given; CDR transport errors pass
 /// through; a non-2xx CDR answer (the `404` for an unknown
 /// `ehr_id`/`version_uid` included) normalizes via
@@ -179,7 +179,7 @@ pub async fn fetch_ehr_status_version(
 /// `other_details` (removed when the text is blank, since the attribute is
 /// optional). Everything else, the `subject` included, travels back verbatim
 /// (the merge is `edit::apply_status_edits`), so an edit can never silently
-/// drop an attribute the console does not render.
+/// drop an attribute the viewer does not render.
 ///
 /// `current_version_uid` is the identifier the seeding read's `ETag` named (its
 /// `uid.value` only when the CDR sent no `ETag`) and travels quoted in
@@ -201,7 +201,7 @@ pub async fn fetch_ehr_status_version(
 /// name.
 ///
 /// # Errors
-/// [`ViewerError::Unauthenticated`] without a console session;
+/// [`ViewerError::Unauthenticated`] without a viewer session;
 /// [`ViewerError::Invalid`] on a missing version uid or an `other_details`
 /// value that is not a JSON object; CDR transport errors pass through; any
 /// non-2xx CDR answer (the `412` concurrency failure and the `400`/`422`
@@ -262,7 +262,7 @@ pub async fn update_ehr_status(
 /// the same `crate::pages::composition::parse_versions`.
 ///
 /// # Errors
-/// [`ViewerError::Unauthenticated`] without a console session; CDR transport
+/// [`ViewerError::Unauthenticated`] without a viewer session; CDR transport
 /// errors pass through; a non-2xx CDR answer (the `404` for an unknown `ehr_id`
 /// included) normalizes via
 /// [`CdrClient::expect_success`](crate::cdr::CdrClient::expect_success);
@@ -303,7 +303,7 @@ pub async fn fetch_status_revision_history(
 /// (`…/versioned_ehr_status/version?version_at_time=` — latest when omitted).
 ///
 /// # Errors
-/// [`ViewerError::Unauthenticated`] without a console session; CDR transport
+/// [`ViewerError::Unauthenticated`] without a viewer session; CDR transport
 /// errors pass through; a non-2xx CDR answer (a `404` for an unknown
 /// `ehr_id`/version included) normalizes via
 /// [`CdrClient::expect_success`](crate::cdr::CdrClient::expect_success);
@@ -359,7 +359,7 @@ pub async fn fetch_versioned_status(
 /// `crate::format::datetime_local_to_rfc3339`.
 ///
 /// # Errors
-/// [`ViewerError::Unauthenticated`] without a console session;
+/// [`ViewerError::Unauthenticated`] without a viewer session;
 /// [`ViewerError::Invalid`] when `at_time` is empty; CDR transport errors pass
 /// through; a non-2xx CDR answer (the `404` for no version at that time
 /// included, which the UI renders as an inline note) normalizes via
@@ -481,7 +481,7 @@ fn json_str(value: &Value, path: &[&str]) -> String {
 /// header.
 pub type StatusResource = Resource<Result<EhrStatusState, ViewerError>>;
 
-/// The console's ONE read of an EHR's current `EHR_STATUS`, plus the action
+/// The viewer's ONE read of an EHR's current `EHR_STATUS`, plus the action
 /// whose successful saves refetch it.
 ///
 /// Created once per EHR-detail screen by [`status_feed`] and handed to BOTH
@@ -571,7 +571,7 @@ pub(super) fn status_section(
     let toaster = thaw::ToasterInjection::expect_context();
     let StatusFeed { resource, save } = feed;
 
-    // Both outcomes toast (an outside-world side-effect; the console's
+    // Both outcomes toast (an outside-world side-effect; the viewer's
     // mutation-feedback rule). A `412` is the mid-air collision and gets
     // its own title; the shared copy carries the CDR's diagnostic
     // verbatim and names the next action. A refused body's diagnostic

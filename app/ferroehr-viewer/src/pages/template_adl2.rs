@@ -13,7 +13,7 @@
 //! (`definition/template/adl2/{template_id}/{version}`) as `?version=` URL
 //! state, so a pinned view is shareable.
 //!
-//! The fourth, **Path catalog**, is built console-side: the ADL2 resource
+//! The fourth, **Path catalog**, is built viewer-side: the ADL2 resource
 //! serves no Web Template representation, so the BFF reads the same
 //! `application/json` body, parses the AOM2 operational template, builds its
 //! Web Template and projects the [`crate::builder::catalog::CatalogNode`] tree
@@ -55,7 +55,7 @@ use crate::pages::templates::TemplateRow;
 /// renders, not a failure.
 ///
 /// # Errors
-/// [`ViewerError::Unauthenticated`] without a console session;
+/// [`ViewerError::Unauthenticated`] without a viewer session;
 /// [`ViewerError::CdrUnauthorized`] / [`ViewerError::Forbidden`] / [`ViewerError::Cdr`] /
 /// [`ViewerError::CdrUnreachable`] from the CDR.
 #[server]
@@ -90,7 +90,7 @@ pub async fn fetch_adl2_source(
 /// canonical-JSON projection of the operational template. `404` → `Ok(None)`.
 ///
 /// # Errors
-/// [`ViewerError::Unauthenticated`] without a console session;
+/// [`ViewerError::Unauthenticated`] without a viewer session;
 /// [`ViewerError::CdrUnauthorized`] / [`ViewerError::Forbidden`] / [`ViewerError::Cdr`] /
 /// [`ViewerError::CdrUnreachable`] from the CDR.
 #[server]
@@ -145,12 +145,12 @@ pub fn adl2_catalog_from_json(json: &str) -> Result<CatalogNode, ViewerError> {
 /// The same resource and `Accept` as [`fetch_adl2_json`]: the ADL2 template
 /// GET's `application/json` 200 body IS the `OperationalTemplateV2` canonical
 /// form (`docs/specs/openehr/ITS-REST/specifications/responses/
-/// 200_Template_adl2_retrieved.yaml`). The catalog is built console-side by
+/// 200_Template_adl2_retrieved.yaml`). The catalog is built viewer-side by
 /// [`adl2_catalog_from_json`], because the resource serves no `wt+json`
 /// representation. `404` → `Ok(None)`.
 ///
 /// # Errors
-/// [`ViewerError::Unauthenticated`] without a console session;
+/// [`ViewerError::Unauthenticated`] without a viewer session;
 /// [`ViewerError::CdrUnauthorized`] / [`ViewerError::Forbidden`] / [`ViewerError::Cdr`] /
 /// [`ViewerError::CdrUnreachable`] from the CDR;
 /// [`ViewerError::Internal`] when the served JSON fails to parse or its Web
@@ -191,7 +191,7 @@ pub async fn fetch_adl2_catalog(
 /// `404` → `Ok(None)`.
 ///
 /// # Errors
-/// [`ViewerError::Unauthenticated`] without a console session;
+/// [`ViewerError::Unauthenticated`] without a viewer session;
 /// [`ViewerError::CdrUnauthorized`] / [`ViewerError::Forbidden`] / [`ViewerError::Cdr`] /
 /// [`ViewerError::CdrUnreachable`] from the CDR (a template that cannot be
 /// compiled into a Web Template answers `422`).
@@ -584,7 +584,7 @@ fn catalog_tab(
             <section class=CARD_PAD>
                 <h2 class=CARD_TITLE>"Path catalog (WT tree)"</h2>
                 <p class="mb-2 text-xs text-ink-muted">
-                    "Built by the console from the served OperationalTemplateV2: the ADL2 resource \
+                    "Built by the viewer from the served OperationalTemplateV2: the ADL2 resource \
                      serves no Web Template representation of its own."
                 </p>
                 <div class="overflow-auto max-h-[70vh]">

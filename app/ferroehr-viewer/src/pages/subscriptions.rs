@@ -246,7 +246,7 @@ pub fn SubscriptionsPage() -> impl IntoView {
 
 /// Wire the screen's three mutations to their success/failure toasts.
 ///
-/// Every mutation toasts on BOTH outcomes (the console's mutation-feedback
+/// Every mutation toasts on BOTH outcomes (the viewer's mutation-feedback
 /// rule); the CDR's diagnostic ALSO stays inline beside each form, because
 /// a `400`/`409` on a subscription write names the exact field or conflict.
 fn mutation_toasts(
@@ -473,7 +473,7 @@ fn listing_table(
     .into_any()
 }
 
-/// A failed READ, rendered inline (never a toast — the console's one feedback
+/// A failed READ, rendered inline (never a toast — the viewer's one feedback
 /// rule) and, for a refusal, as ACTIONABLE copy rather than the bare wire
 /// error.
 ///

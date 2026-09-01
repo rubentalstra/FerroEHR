@@ -8,9 +8,9 @@
 //! `specifications/operations/directory_create.yaml`), then build the tree in
 //! the structured editor.
 //!
-//! NOTE: create-empty is the ONLY create path. The console offers no library of
+//! NOTE: create-empty is the ONLY create path. The viewer offers no library of
 //! folder shapes of its own — no openEHR spec governs a viewer convenience
-//! like that (our own design/extension), and a console-local library would be
+//! like that (our own design/extension), and a viewer-local library would be
 //! state invisible to every other openEHR client. Structure is built in the
 //! tree editor, which commits it as ordinary directory versions the CDR owns.
 

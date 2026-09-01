@@ -1,7 +1,7 @@
 // SPDX-FileCopyrightText: FerroEHR contributors
 // SPDX-License-Identifier: MIT
 
-//! The console's axum service: the router assembly, the pre-render session
+//! The viewer's axum service: the router assembly, the pre-render session
 //! guard, and the browser security headers.
 //!
 //! Lives in the lib (ssr-gated) rather than the binary so the integration
@@ -13,10 +13,10 @@ use axum::Extension;
 use leptos::prelude::LeptosOptions;
 use leptos_axum::LeptosRoutes;
 
-use crate::session::{AdminSession, SESSION_KEY};
+use crate::session::{SESSION_KEY, ViewerSession};
 use crate::state::AppState;
 
-/// Assembles the console's full axum service.
+/// Assembles the viewer's full axum service.
 ///
 /// OIDC routes, the export POST, the Leptos routes with the per-request
 /// context, the static-file fallback, and the layer stack (state → session
@@ -29,7 +29,7 @@ pub fn router(app_state: AppState, leptos_options: LeptosOptions) -> axum::Route
     let context_state = app_state.clone();
     // One context closure for both render entry points (the routed app and the
     // 404 shell): the app state plus this request's CSP nonce.
-    let provide_console_context = move || {
+    let provide_viewer_context = move || {
         leptos::context::provide_context(context_state.clone());
         provide_request_nonce();
     };
@@ -40,17 +40,17 @@ pub fn router(app_state: AppState, leptos_options: LeptosOptions) -> axum::Route
             axum::routing::get(crate::oidc::callback),
         )
         // Result export: a plain form-POST download (no WASM required); the
-        // handler enforces the console session itself like every server fn.
+        // handler enforces the viewer session itself like every server fn.
         .route(
             "/export/aql",
             axum::routing::post(crate::export::export_aql),
         )
-        .leptos_routes_with_context(&leptos_options, routes, provide_console_context.clone(), {
+        .leptos_routes_with_context(&leptos_options, routes, provide_viewer_context.clone(), {
             let options = leptos_options.clone();
             move || crate::app::shell(options.clone())
         })
         .fallback(leptos_axum::file_and_error_handler_with_context(
-            provide_console_context,
+            provide_viewer_context,
             crate::app::shell,
         ))
         // Ahead of every render: a document request without a session never
@@ -68,7 +68,7 @@ pub fn router(app_state: AppState, leptos_options: LeptosOptions) -> axum::Route
 /// The in-view guard (`crate::pages::shell::AppShell`) sets the same redirect on
 /// the response line, but it cannot suppress the body: the chrome and
 /// `<Outlet/>` deliberately live outside its `Suspense`, so without this layer a
-/// signed-out hit renders the whole console and serializes every screen's
+/// signed-out hit renders the whole viewer and serializes every screen's
 /// server-function failures into the response. The in-view guard remains the
 /// client-side navigation gate.
 ///
@@ -95,7 +95,7 @@ pub async fn login_guard(
     });
     let authenticated = session
         .as_ref()
-        .is_some_and(|s| s.get::<AdminSession>(SESSION_KEY).is_some());
+        .is_some_and(|s| s.get::<ViewerSession>(SESSION_KEY).is_some());
 
     let method = request.method();
     let guarded = (method == http::Method::GET || method == http::Method::HEAD)
@@ -137,7 +137,7 @@ fn sets_session_cookie(headers: &http::HeaderMap) -> bool {
     })
 }
 
-/// Whether a path is served without a console session: the sign-in screen,
+/// Whether a path is served without a viewer session: the sign-in screen,
 /// the OIDC handshake, the hydration assets, the favicon, and the server-fn
 /// endpoints (each of which enforces the session itself with a typed
 /// refusal, which its WASM caller expects instead of a redirect).
@@ -149,22 +149,22 @@ fn is_public_path(path: &str) -> bool {
         || path.starts_with("/api/")
 }
 
-/// The browser security-header set for the console, per the OWASP HTTP Headers
+/// The browser security-header set for the viewer, per the OWASP HTTP Headers
 /// Cheat Sheet.
 ///
-/// This is a stricter problem than the API's: the console serves HTML, hydrates
+/// This is a stricter problem than the API's: the viewer serves HTML, hydrates
 /// WebAssembly, and holds a session cookie, so a policy here has to survive
 /// contact with a real hydrating application.
 ///
 /// - `Content-Security-Policy` — `'wasm-unsafe-eval'` is required, and is the
 ///   narrow modern replacement for `'unsafe-eval'`: it permits WebAssembly
 ///   compilation without permitting `eval` of JavaScript. `connect-src 'self'`
-///   is correct because the console reaches the CDR through its own server
+///   is correct because the viewer reaches the CDR through its own server
 ///   functions, never the browser calling the CDR directly (the BFF boundary in
 ///   `.claude/rules/leptos-ui.md`), so a policy that forbids cross-origin
 ///   connections costs nothing and forecloses exfiltration.
 /// - `script-src` carries no inline allowance: the one inline script the
-///   console emits is Leptos's hydration bootstrap, and it is authorized by a
+///   viewer emits is Leptos's hydration bootstrap, and it is authorized by a
 ///   per-request nonce ([`csp_nonce_layer`]) instead.
 /// - `style-src 'unsafe-inline'` stays, and it is the honest remainder of this
 ///   policy rather than an oversight. `thaw` mounts its generated stylesheets
@@ -174,10 +174,10 @@ fn is_public_path(path: &str) -> bool {
 ///   inherits. Adding a nonce here would make it strictly WORSE, not better:
 ///   CSP Level 3 says a nonce in a directive causes `'unsafe-inline'` in that
 ///   same directive to be ignored, so a nonced `style-src` would block every
-///   one of those and leave the console unstyled.
+///   one of those and leave the viewer unstyled.
 /// - `X-Frame-Options: DENY` plus `frame-ancestors 'none'` — belt and braces
-///   against clickjacking a console that performs administrative writes.
-/// - `Cache-Control` — `no-store` on every document, because the console
+///   against clickjacking a viewer that performs administrative writes.
+/// - `Cache-Control` — `no-store` on every document, because the viewer
 ///   renders patient data into HTML and because a nonced document must never
 ///   sit in a shared cache; the hashed `/pkg/*` bundle is the one exception
 ///   ([`cache_control_for`]).
@@ -212,7 +212,7 @@ fn with_security_headers(router: axum::Router<LeptosOptions>) -> axum::Router<Le
 /// otherwise treat as a reason to ask again (RFC 8246 §2).
 const IMMUTABLE_ASSET_CACHE_CONTROL: &str = "public, max-age=31536000, immutable";
 
-/// The console default: never store the response anywhere (RFC 9111 §5.2.2.5).
+/// The viewer default: never store the response anywhere (RFC 9111 §5.2.2.5).
 const NO_STORE_CACHE_CONTROL: &str = "no-store";
 
 /// Stamps each response with the caching directive its path and status earn.
@@ -236,7 +236,7 @@ async fn cache_control_layer(
 /// (`hash-files` in the crate manifest), so a changed asset is a changed URL
 /// and a cached copy can never go stale — which is what makes `immutable` an
 /// honest claim rather than a bet on the deploy cadence. The bundle holds no
-/// patient data either: the console reaches the CDR through its own server
+/// patient data either: the viewer reaches the CDR through its own server
 /// functions, so nothing clinical is ever compiled into it.
 ///
 /// `/pkg/snippets/` is carved back out because cargo-leptos deliberately does
@@ -245,7 +245,7 @@ async fn cache_control_layer(
 /// would pin a stale copy. This build emits none; the carve-out keeps that from
 /// becoming a silent defect if a dependency ever adds one.
 ///
-/// Everything else keeps `no-store`: the console renders patient data into HTML,
+/// Everything else keeps `no-store`: the viewer renders patient data into HTML,
 /// and each document carries a per-request CSP nonce that must not be replayed
 /// out of a cache.
 ///
@@ -278,9 +278,9 @@ async fn csp_nonce_layer(
     let nonce = leptos::nonce::Nonce::new();
     #[expect(
         clippy::expect_used,
-        reason = "console_csp interpolates a base64url nonce into an ASCII template, so every byte is a legal header-value character; falling back to no policy would silently ship the console unprotected"
+        reason = "viewer_csp interpolates a base64url nonce into an ASCII template, so every byte is a legal header-value character; falling back to no policy would silently ship the viewer unprotected"
     )]
-    let policy = http::HeaderValue::from_str(&console_csp(&nonce))
+    let policy = http::HeaderValue::from_str(&viewer_csp(&nonce))
         .expect("an ASCII policy string should be a valid header value");
     request.extensions_mut().insert(nonce);
     let mut response = next.run(request).await;
@@ -296,7 +296,7 @@ async fn csp_nonce_layer(
 /// closure runs, and that one is not the value the response header authorizes.
 /// Overriding it here is what makes the two the same string; without it the
 /// bootstrap script carries a nonce the browser has never been told to trust,
-/// and the console renders but never hydrates.
+/// and the viewer renders but never hydrates.
 fn provide_request_nonce() {
     let Some(parts) = leptos::context::use_context::<http::request::Parts>() else {
         return;
@@ -306,9 +306,9 @@ fn provide_request_nonce() {
     }
 }
 
-/// The console's Content-Security-Policy for one request, naming that
+/// The viewer's Content-Security-Policy for one request, naming that
 /// request's script nonce.
-fn console_csp(nonce: &str) -> String {
+fn viewer_csp(nonce: &str) -> String {
     format!(
         "default-src 'self'; \
          script-src 'self' 'wasm-unsafe-eval' 'nonce-{nonce}'; \
@@ -332,8 +332,8 @@ mod tests {
     )]
 
     use super::{
-        IMMUTABLE_ASSET_CACHE_CONTROL, NO_STORE_CACHE_CONTROL, cache_control_for, console_csp,
-        csp_nonce_layer, is_public_path, provide_request_nonce,
+        IMMUTABLE_ASSET_CACHE_CONTROL, NO_STORE_CACHE_CONTROL, cache_control_for, csp_nonce_layer,
+        is_public_path, provide_request_nonce, viewer_csp,
     };
     use tower::util::ServiceExt;
 
@@ -366,7 +366,7 @@ mod tests {
     }
 
     /// The hydration bundle is the ONLY thing that may be cached, and every
-    /// document — the sign-in screen included — keeps `no-store`: the console
+    /// document — the sign-in screen included — keeps `no-store`: the viewer
     /// renders patient data into HTML and stamps a per-request CSP nonce on
     /// it.
     #[test]
@@ -434,7 +434,7 @@ mod tests {
     }
 
     /// Stands in for the Leptos render: it takes the request's `Parts` into a
-    /// reactive owner the way `leptos_axum` does, runs the console's context
+    /// reactive owner the way `leptos_axum` does, runs the viewer's context
     /// step, and reports whatever `use_nonce` then answers.
     async fn render_nonce(request: axum::extract::Request) -> axum::response::Response {
         let (parts, _body) = request.into_parts();
@@ -485,7 +485,7 @@ mod tests {
 
     /// The whole point of the exercise: the value the renderer stamps on the
     /// hydration bootstrap is the value the response header authorizes. A
-    /// mismatch is invisible server-side and leaves the console dead in the
+    /// mismatch is invisible server-side and leaves the viewer dead in the
     /// browser.
     #[tokio::test]
     async fn the_rendered_nonce_is_the_one_the_header_authorizes() {
@@ -504,7 +504,7 @@ mod tests {
     #[test]
     fn the_bootstrap_script_carries_the_authorized_nonce() {
         let nonce = leptos::nonce::Nonce::new();
-        let policy = console_csp(&nonce);
+        let policy = viewer_csp(&nonce);
         let owner = leptos::prelude::Owner::new();
         let html = owner.with(|| {
             leptos::context::provide_context(nonce);
@@ -541,12 +541,12 @@ mod tests {
     /// The directives the policy must carry, each for a stated reason.
     #[test]
     fn the_policy_carries_the_audited_directives() {
-        let policy = console_csp(SAMPLE_NONCE);
+        let policy = viewer_csp(SAMPLE_NONCE);
         for expected in [
             "default-src 'self'",
             // WebAssembly compilation, without permitting eval of JavaScript.
             "'wasm-unsafe-eval'",
-            // The console reaches the CDR through its own server functions, so
+            // The viewer reaches the CDR through its own server functions, so
             // the browser never needs a cross-origin connection.
             "connect-src 'self'",
             "object-src 'none'",
@@ -565,7 +565,7 @@ mod tests {
     /// error with the bigger hammer.
     #[test]
     fn the_policy_never_permits_eval() {
-        assert!(!console_csp(SAMPLE_NONCE).contains("'unsafe-eval'"));
+        assert!(!viewer_csp(SAMPLE_NONCE).contains("'unsafe-eval'"));
     }
 
     /// The script half is strict: a nonce and no inline allowance. Re-adding
@@ -574,7 +574,7 @@ mod tests {
     /// carries a nonce — so the regression would look like a working policy.
     #[test]
     fn script_src_is_nonce_only() {
-        let policy = console_csp(SAMPLE_NONCE);
+        let policy = viewer_csp(SAMPLE_NONCE);
         let script_src = directive(&policy, "script-src");
         assert!(script_src.contains(&format!("'nonce-{SAMPLE_NONCE}'")));
         assert!(
@@ -585,10 +585,10 @@ mod tests {
 
     /// The style half keeps its inline allowance and must never gain a nonce:
     /// `thaw` creates its stylesheets through the DOM without one, so a nonced
-    /// `style-src` would suppress `'unsafe-inline'` and unstyle the console.
+    /// `style-src` would suppress `'unsafe-inline'` and unstyle the viewer.
     #[test]
     fn style_src_keeps_its_inline_allowance_and_no_nonce() {
-        let policy = console_csp(SAMPLE_NONCE);
+        let policy = viewer_csp(SAMPLE_NONCE);
         let style_src = directive(&policy, "style-src");
         assert!(style_src.contains("'unsafe-inline'"));
         assert!(

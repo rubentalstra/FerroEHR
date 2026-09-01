@@ -7,7 +7,7 @@
 //! Section headings for the structural RM nodes, label/value rows for the
 //! `ELEMENT` leaves, and honest formatting for each `DV_*` data value.
 //!
-//! It is **template-free on purpose**: the console never needs the operational
+//! It is **template-free on purpose**: the viewer never needs the operational
 //! template to show a document, so any composition — including one whose
 //! template was since removed — reads the same way. It is also a pure,
 //! deterministic function of the document text (no clock, no locale, no
@@ -22,7 +22,7 @@
 
 #![expect(
     clippy::disallowed_types,
-    reason = "the console consumes the CDR JSON wire over ITS-REST — not the CDR internal seams \
+    reason = "the viewer consumes the CDR JSON wire over ITS-REST — not the CDR internal seams \
               (#1694)"
 )]
 

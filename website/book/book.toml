@@ -17,7 +17,7 @@ smart-punctuation = true
 [output.html.search]
 enable = true
 
-# The viewer section moved from `admin-ui/` to `viewer/` when the console was
+# The viewer section moved from `admin-ui/` to `viewer/` when the product was
 # renamed FerroEHR Viewer. mdBook writes an HTML shim at each old path so links
 # already published keep resolving
 # (https://rust-lang.github.io/mdBook/format/configuration/renderers.html).

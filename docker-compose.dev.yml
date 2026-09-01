@@ -97,7 +97,7 @@ services:
       # In-network port == default host port (8081): one issuer hostname:port
       # (http://keycloak:8081) is then valid from BOTH the docker network and
       # the host (the E2E browser maps `keycloak` to 127.0.0.1), so the
-      # containerized console and a host browser can share one OIDC issuer.
+      # containerized viewer and a host browser can share one OIDC issuer.
       KC_HTTP_PORT: 8081
       # ONE canonical issuer regardless of which host the caller used —
       # token `iss` claims stay stable, so the CDR can validate bearer

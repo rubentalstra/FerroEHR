@@ -1,7 +1,7 @@
 // SPDX-FileCopyrightText: FerroEHR contributors
 // SPDX-License-Identifier: MIT
 
-//! Mutation feedback: the console's one error-feedback rule and the
+//! Mutation feedback: the viewer's one error-feedback rule and the
 //! actionable copy behind it.
 //!
 //! The rule: **a mutation toasts on success AND on failure**, a detailed
@@ -72,7 +72,7 @@ pub fn write_failure_copy(object: &str, error: &ViewerError) -> String {
              carries the required role and retry."
         ),
         ViewerError::Unauthenticated => format!(
-            "The console session expired before {object} was saved — sign in again and retry; \
+            "The viewer session expired before {object} was saved — sign in again and retry; \
              your input is still on screen."
         ),
         ViewerError::CdrUnreachable(message) => format!(
@@ -80,7 +80,7 @@ pub fn write_failure_copy(object: &str, error: &ViewerError) -> String {
              retry."
         ),
         ViewerError::Internal(message) => format!(
-            "{object} could not be saved: {message}. Retry; if it persists, check the console \
+            "{object} could not be saved: {message}. Retry; if it persists, check the viewer \
              logs."
         ),
     }

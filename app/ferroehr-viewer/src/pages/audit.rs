@@ -16,7 +16,7 @@
 
 #![allow(
     clippy::disallowed_types,
-    reason = "the console consumes the CDR JSON wire over ITS-REST — not the CDR internal seams \
+    reason = "the viewer consumes the CDR JSON wire over ITS-REST — not the CDR internal seams \
               (#1694); the carriers here are ssr-only, so #[expect] would be unfulfilled on the \
               hydrate target"
 )]
@@ -79,7 +79,7 @@ pub struct AuditPage {
 /// `date=ge…`/`date=le…` bounds; values are percent-encoded.
 ///
 /// # Errors
-/// [`ViewerError::Unauthenticated`] without a console session;
+/// [`ViewerError::Unauthenticated`] without a viewer session;
 /// [`ViewerError::CdrUnauthorized`] when the CDR no longer accepts this
 /// session, [`ViewerError::Forbidden`] when the caller lacks the CDR's admin
 /// role (the audit trail is an operator surface); [`ViewerError::Cdr`] /

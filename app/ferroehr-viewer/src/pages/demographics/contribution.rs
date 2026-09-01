@@ -21,7 +21,7 @@
 
 #![allow(
     clippy::disallowed_types,
-    reason = "the console consumes the CDR JSON wire over ITS-REST — not the CDR internal seams \
+    reason = "the viewer consumes the CDR JSON wire over ITS-REST — not the CDR internal seams \
               (#1694); the carriers here are ssr-only, so #[expect] would be unfulfilled on the \
               hydrate target"
 )]
@@ -54,7 +54,7 @@ pub struct ContributionVersion {
     pub version_uid: String,
 }
 
-/// The console's view of one demographic CONTRIBUTION.
+/// The viewer's view of one demographic CONTRIBUTION.
 #[derive(Debug, Clone, PartialEq, Eq, Default, Serialize, Deserialize)]
 pub struct ContributionState {
     /// The canonical CONTRIBUTION JSON, pretty-printed for the pane.
@@ -76,7 +76,7 @@ pub struct ContributionState {
 /// Read one demographic CONTRIBUTION.
 ///
 /// # Errors
-/// [`ViewerError::Unauthenticated`] without a console session;
+/// [`ViewerError::Unauthenticated`] without a viewer session;
 /// [`ViewerError::Invalid`] on an empty uid; CDR transport errors pass
 /// through; a non-2xx CDR answer (the `404` for an unknown contribution, or for
 /// an EHR-scoped one, included) normalizes via
@@ -297,7 +297,7 @@ fn version_row(version: &ContributionVersion) -> AnyView {
     .into_any()
 }
 
-/// The console route for a changed object, from the RM type its `OBJECT_REF`
+/// The viewer route for a changed object, from the RM type its `OBJECT_REF`
 /// declares: a party kind, the relationship extension, or `None` for anything
 /// else (an EHR-scoped type can never appear on a demographic contribution, but
 /// a link is only offered where one is real).

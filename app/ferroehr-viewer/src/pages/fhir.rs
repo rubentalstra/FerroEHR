@@ -9,7 +9,7 @@
 //! read-path viewer (what a stored mapping produces for one patient), and the
 //! validate-only dry run (the verdict the ingest door would reach).
 //!
-//! **No console path commits a FHIR resource, and that is the design.** The
+//! **No viewer path commits a FHIR resource, and that is the design.** The
 //! connector's inbound door (`POST /fhir/r4/{type}`) maps, validates and
 //! commits a COMPOSITION; sending a real resource is an integration act, not an
 //! operator affordance. Everything here either reads or dry-runs.
@@ -354,7 +354,7 @@ pub fn FhirPage() -> impl IntoView {
 
 /// Wire the screen's three mutations to their success/failure toasts.
 ///
-/// Every mutation toasts on BOTH outcomes (the console's mutation-feedback
+/// Every mutation toasts on BOTH outcomes (the viewer's mutation-feedback
 /// rule); the CDR's diagnostic ALSO stays inline beside each form, because a
 /// rejected mapping document is worth reading line by line. Dispatching a toast
 /// is a side effect on the outside world, so an Effect is its correct home — it
@@ -513,7 +513,7 @@ fn empty_store() -> AnyView {
     .into_any()
 }
 
-/// A failed READ, rendered inline (never a toast — the console's one feedback
+/// A failed READ, rendered inline (never a toast — the viewer's one feedback
 /// rule) and, for a refusal, as ACTIONABLE copy rather than the bare wire error.
 ///
 /// The mapping store sits under `/admin`, so the CDR's coarse RBAC classes every
@@ -752,7 +752,7 @@ fn edit_card(editor: Editor, update: UpdateAction) -> AnyView {
     .into_any()
 }
 
-/// The console's own complaint about a draft it refused to send.
+/// The viewer's own complaint about a draft it refused to send.
 fn complaint_bar(id: &'static str, complaint: RwSignal<Option<String>>) -> AnyView {
     view! {
         {move || {
@@ -775,7 +775,7 @@ fn complaint_bar(id: &'static str, complaint: RwSignal<Option<String>>) -> AnyVi
 }
 
 /// The CDR's own diagnostic for a refused write, verbatim, inline BESIDE the
-/// failure toast (the console's feedback rule: a rejected mapping document
+/// failure toast (the viewer's feedback rule: a rejected mapping document
 /// names the field or the conflict, and that is worth reading line by line).
 fn diagnostic_pane(id: &'static str, error: Signal<Option<ViewerError>>) -> AnyView {
     view! {
@@ -1005,7 +1005,7 @@ fn read_viewer(
 
 /// The dry-run panel: validate a resource against its mapping, commit nothing.
 ///
-/// Not a mutation, so it reports inline only — the console's toast rule covers
+/// Not a mutation, so it reports inline only — the viewer's toast rule covers
 /// writes to the CDR, and this operation is the ingest door's dry twin
 /// precisely because it writes nothing.
 fn dry_run_panel(form: DryRunForm, dry_run: DryRunAction) -> AnyView {
@@ -1034,7 +1034,7 @@ fn dry_run_panel(form: DryRunForm, dry_run: DryRunAction) -> AnyView {
                 <span class="font-medium text-ink">
                     "Nothing is committed — no EHR, no COMPOSITION, no version."
                 </span>
-                " Sending a resource for real is the connector's integration door, and the console \
+                " Sending a resource for real is the connector's integration door, and the viewer \
                  deliberately offers no path to it."
             </p>
             <div class="flex flex-col gap-3">

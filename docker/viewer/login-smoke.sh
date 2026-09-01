@@ -1,28 +1,28 @@
 #!/usr/bin/env bash
 # SPDX-FileCopyrightText: FerroEHR contributors
 # SPDX-License-Identifier: MIT
-# Browser-driven login against the BUILT console image (issue #2871).
+# Browser-driven login against the BUILT viewer image (issue #2871).
 #
 # The asset-chain smoke beside this one proves the pushed image SERVES every
 # /pkg asset its own page references. Nothing proved a browser can log in
 # through them: the host `scripts/ui-e2e.sh` battery drives a browser, but at a
-# console cargo-leptos built on the runner, never at the shipped artifact. This
+# viewer cargo-leptos built on the runner, never at the shipped artifact. This
 # closes that gap by driving real Chrome over the W3C WebDriver protocol
 # (curl + jq — this repository authors no JavaScript) and asserting BOTH
 # halves of a working login:
 #
 #   1. the browser leaves /login and lands on the authenticated Dashboard;
 #   2. the credential POST was a hydrated `fetch`, not the no-JS form
-#      navigation — a console whose WASM never attaches still logs in through
+#      navigation — a viewer whose WASM never attaches still logs in through
 #      progressive enhancement (the #2164 class), so (1) alone passes on a
 #      broken client bundle.
 #
 # Required (no defaults — a gate that passes without its artifact is not a
 # gate):
-#   FERROEHR_VIEWER_IMAGE   the console image under test
-#   FERROEHR_IMAGE            the CDR the console authenticates against
+#   FERROEHR_VIEWER_IMAGE   the viewer image under test
+#   FERROEHR_IMAGE            the CDR the viewer authenticates against
 #   FERROEHR_POSTGRES_IMAGE   the CDR's database
-# The two CDR images are FIXTURES; the console image is the artifact under test.
+# The two CDR images are FIXTURES; the viewer image is the artifact under test.
 # CHROMEDRIVER, else CHROMEWEBDRIVER (the GitHub runner images' variable),
 # else `chromedriver` on PATH selects the driver binary.
 set -Eeuo pipefail
@@ -48,8 +48,8 @@ command -v "$DRIVER_BIN" >/dev/null 2>&1 || {
   exit 1
 }
 
-# Own compose project + the console's profile on EVERY call, so the teardown
-# below can see the console container and can never reach another stack
+# Own compose project + the viewer's profile on EVERY call, so the teardown
+# below can see the viewer container and can never reach another stack
 # (docs.docker.com/compose/how-tos/project-name, /profiles).
 export COMPOSE_PROJECT_NAME=ferroehr-ui-login-smoke
 export COMPOSE_PROFILES=viewer
@@ -57,8 +57,8 @@ export COMPOSE_PROFILES=viewer
 # override merge, so this drives what a downloader runs
 # (docs.docker.com/compose/how-tos/multiple-compose-files).
 COMPOSE=(docker compose -f "$ROOT_DIR/docker-compose.yml")
-CONSOLE_PORT="${FERROEHR_VIEWER_PORT:-3000}"
-CONSOLE_URL="http://127.0.0.1:${CONSOLE_PORT}"
+VIEWER_PORT="${FERROEHR_VIEWER_PORT:-3000}"
+VIEWER_URL="http://127.0.0.1:${VIEWER_PORT}"
 DRIVER_URL="http://127.0.0.1:9515"
 DRIVER_PID=""
 SESSION=""
@@ -68,15 +68,15 @@ cleanup() {
     curl -sS -X DELETE "$DRIVER_URL/session/$SESSION" >/dev/null 2>&1 || true
   fi
   [[ -n "$DRIVER_PID" ]] && kill "$DRIVER_PID" 2>/dev/null || true
-  echo "::group::console logs"
+  echo "::group::viewer logs"
   "${COMPOSE[@]}" logs ferroehr-viewer || true
   echo "::endgroup::"
   "${COMPOSE[@]}" down -v --remove-orphans || true
 }
 trap cleanup EXIT
 
-echo "── compose up (postgres + CDR + the console image under test)"
-echo "   console: $FERROEHR_VIEWER_IMAGE"
+echo "── compose up (postgres + CDR + the viewer image under test)"
+echo "   viewer: $FERROEHR_VIEWER_IMAGE"
 "${COMPOSE[@]}" up -d --wait ferroehr-postgres ferroehr ferroehr-viewer
 
 echo "── chromedriver: $DRIVER_BIN"
@@ -134,9 +134,9 @@ dump_browser_log() {
     -d '{"type":"browser"}' | jq -r '.value[]? | "\(.level) \(.message)"' || true
 }
 
-echo "── driving the login form at $CONSOLE_URL/login"
+echo "── driving the login form at $VIEWER_URL/login"
 curl -sS -X POST "$S/url" -H 'Content-Type: application/json' \
-  -d "{\"url\":\"$CONSOLE_URL/login\"}" >/dev/null
+  -d "{\"url\":\"$VIEWER_URL/login\"}" >/dev/null
 
 USER_EL=""
 for _ in $(seq 1 30); do
@@ -145,7 +145,7 @@ for _ in $(seq 1 30); do
   sleep 1
 done
 [[ -n "$USER_EL" ]] || {
-  echo "FATAL: the console never rendered a username input" >&2
+  echo "FATAL: the viewer never rendered a username input" >&2
   dump_browser_log
   exit 1
 }
@@ -192,7 +192,7 @@ echo "   login POST resource types: ${LOGIN_TYPES:-<none>}"
 
 case "$URL" in
   */login*)
-    echo "::error::the console image cannot be logged into from a browser: the submit click left the page on /login (issue #2871)"
+    echo "::error::the viewer image cannot be logged into from a browser: the submit click left the page on /login (issue #2871)"
     dump_browser_log
     exit 1
     ;;
@@ -212,4 +212,4 @@ grep -qx 'Fetch' <<<"$LOGIN_TYPES" || {
 }
 
 dump_browser_log
-echo "── the console image logs in through a real browser: Dashboard reached, hydrated fetch dispatched"
+echo "── the viewer image logs in through a real browser: Dashboard reached, hydrated fetch dispatched"

@@ -8,7 +8,7 @@
 //! integration makes for the server pass — with no browser, no composed stack
 //! and no CDR.
 //!
-//! What makes that possible is the console's own discipline. A screen's data
+//! What makes that possible is the viewer's own discipline. A screen's data
 //! lives in `Resource`s read under `<Suspense>`/`<Transition>`, and everything
 //! else — the page header, the URL-driven forms, the tab strip, the skeletons —
 //! is built in component SETUP, outside any `Suspend` closure (rules §2/§4/§9).
@@ -19,12 +19,12 @@
 //! sees before any data arrives.
 //!
 //! The harness provides the contexts a page reads at setup, mirroring what the
-//! running console provides:
+//! running viewer provides:
 //!
 //! * `leptos_meta` — every routed screen sets a `<Title/>`.
 //! * `thaw::ConfigProvider` + `thaw::ToasterProvider` — the widget kit's
 //!   injections; screens resolve `ToasterInjection` in setup, and the shell is
-//!   where the running console mounts the toaster.
+//!   where the running viewer mounts the toaster.
 //! * `<Router>` + a `RequestUrl` — filter/search/paging state is URL state
 //!   (rules §9), read in setup through `use_query_map`.
 //! * The matched route's params (an `ArcMemo<ParamsMap>`, what a matched
@@ -59,7 +59,7 @@ fn render_page(
     build: impl FnOnce() -> AnyView + Send + 'static,
 ) -> String {
     // The one public `leptos_axum` entry point that initializes the reactive
-    // executor (`Executor::init_tokio`) the way the console's own server does;
+    // executor (`Executor::init_tokio`) the way the viewer's own server does;
     // an app fn with no `<Router>` yields no routes and does no work. Without
     // it, creating the first `Resource` panics.
     drop(leptos_axum::generate_route_list(|| ()));

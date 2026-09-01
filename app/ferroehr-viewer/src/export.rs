@@ -9,7 +9,7 @@
 //! hidden inputs are `prop:value`-bound (nothing lands in SSR markup), so a
 //! WASM-less browser never reaches a filled form.
 //!
-//! The route enforces the console session exactly like every server fn (the
+//! The route enforces the viewer session exactly like every server fn (the
 //! public-endpoint rule) and runs the AQL through the same CDR client.
 //!
 //! The query is sent to the CDR as-is (no `fetch`/`offset` paging): a
@@ -18,7 +18,7 @@
 
 #![expect(
     clippy::disallowed_types,
-    reason = "the console consumes the CDR JSON wire over ITS-REST — not the CDR internal seams \
+    reason = "the viewer consumes the CDR JSON wire over ITS-REST — not the CDR internal seams \
               (#1694)"
 )]
 
@@ -41,7 +41,7 @@ pub struct ExportForm {
 
 /// `POST /export/aql` — run the query and answer with a file download.
 ///
-/// Callers without a console session are redirected to `/login` (the form is
+/// Callers without a viewer session are redirected to `/login` (the form is
 /// a full-page navigation, so a redirect is the correct UX and the correct
 /// security answer) — a missing, tampered or idle-expired cookie all read as
 /// no session. A CDR-side refusal of the session's credential instead
@@ -57,7 +57,7 @@ pub async fn export_aql(
         &headers,
         state.config.session.idle_minutes,
     );
-    let Some(admin) = session.get::<crate::session::AdminSession>(crate::session::SESSION_KEY)
+    let Some(admin) = session.get::<crate::session::ViewerSession>(crate::session::SESSION_KEY)
     else {
         return axum::response::Redirect::to("/login").into_response();
     };
@@ -70,7 +70,7 @@ pub async fn export_aql(
 
 async fn run(
     state: &crate::state::AppState,
-    admin: &crate::session::AdminSession,
+    admin: &crate::session::ViewerSession,
     form: &ExportForm,
 ) -> Result<Response, ViewerError> {
     let parameters: serde_json::Value = if form.parameters_json.trim().is_empty() {

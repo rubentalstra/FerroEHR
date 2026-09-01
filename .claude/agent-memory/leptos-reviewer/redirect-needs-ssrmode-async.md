@@ -33,7 +33,7 @@ Hydration: a redirect branch chosen purely from the URL is deterministic, not a
 load (it follows the 302). Client-side arrivals take `Redirect`'s
 `use_navigate()` branch.
 
-Nuance seen in the console: the shell's session gate (`/login`) and a child
+Nuance seen in the viewer: the shell's session gate (`/login`) and a child
 route's `<Redirect>` can both write `Location` in one pass; `insert_header`
 replaces, so the last one to resolve wins — worst case one extra hop, no leak
 (every `#[server]` fn guards independently).

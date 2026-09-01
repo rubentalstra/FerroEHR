@@ -22,7 +22,7 @@ you make is an ordinary openEHR write that every other client sees.
 Pick a kind with the switcher across the top (**People**, **Organisations**,
 **Groups**, **Agents**, **Roles**) then open a party by its id.
 
-There is no party list, and that is the API rather than a gap in the console:
+There is no party list, and that is the API rather than a gap in the viewer:
 openEHR's demographic API publishes no "list all people" endpoint, and AQL
 queries EHRs, not parties. A party is reached by its id. Two id forms work:
 
@@ -52,10 +52,10 @@ attribute in it is required by openEHR:
 
 Replace the archetype ids and the identity details with the ones your own
 demographic archetypes use, then create. The document is sent exactly as you
-wrote it, so nothing the console does not display can be lost; if the CDR
+wrote it, so nothing the viewer does not display can be lost; if the CDR
 refuses it, the refusal is shown verbatim with the offending path.
 
-On success the console opens the new party.
+On success the viewer opens the new party.
 
 ## Reading and editing a party
 
@@ -65,7 +65,7 @@ opens on that tab.
 **Party** shows its facts (type, name, archetype, current version, how many
 identities and inline relationships it carries) the whole document, and the
 edit form. The document pane offers the same three views as everywhere else in
-the console (highlighted, raw, and a rendered reading) and a copy button.
+the viewer (highlighted, raw, and a rendered reading) and a copy button.
 
 The edit form changes exactly two things: `identities` (which openEHR requires,
 so it can never be emptied) and `details` (optional: clear the box to remove
@@ -104,7 +104,7 @@ employment, an authority, a care relationship.
 > [!NOTE]
 > Relationship endpoints are **this server's own extension**. The openEHR
 > release publishes no relationship API at all, so a different openEHR server
-> will not serve them, and the console reports the resulting "not found"
+> will not serve them, and the viewer reports the resulting "not found"
 > plainly rather than hiding it.
 
 openEHR models a relationship in two ways, and both are visible here:
@@ -143,7 +143,7 @@ lists what it carries, sets a tag, and deletes one.
 Two openEHR behaviours shape the panel:
 
 - **Saving a tag re-sends the whole collection**, because that is what the
-  openEHR tag update does. The console reads the current tags and merges yours
+  openEHR tag update does. The viewer reads the current tags and merges yours
   in, so nothing is lost by accident, but a tag another client added between
   your load and your save can be. Reload before editing a busy party.
 - **A tag is identified by its key and target path together**, so the same key

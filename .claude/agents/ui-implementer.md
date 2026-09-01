@@ -28,7 +28,7 @@ Non-negotiables (violations are rejected at review):
   ITS-REST. The crate may depend on `crates/openehr-*`; it must NEVER
   depend on `app/ferroehr` or `app/ferroehr-rest`.
 - **Server fns are public endpoints:** every one that touches the CDR or
-  session state enforces the console auth; CDR credentials never reach
+  session state enforces the viewer auth; CDR credentials never reach
   client-visible state (signals, props, serialized resources).
 - **Hydration safety:** identical view structure on server and client (no
   `cfg!`-branched views), valid HTML (explicit `<tbody>`, no block elements

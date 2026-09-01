@@ -18,7 +18,7 @@
 
 #![allow(
     clippy::disallowed_types,
-    reason = "the console consumes the CDR JSON wire over ITS-REST — not the CDR internal seams \
+    reason = "the viewer consumes the CDR JSON wire over ITS-REST — not the CDR internal seams \
               (#1694); the carriers here are ssr-only, so #[expect] would be unfulfilled on the \
               hydrate target"
 )]
@@ -56,7 +56,7 @@ const TREND_FETCH: u32 = 500;
 #[cfg(feature = "ssr")]
 async fn run_count_aql(
     state: &crate::state::AppState,
-    session: &crate::session::AdminSession,
+    session: &crate::session::ViewerSession,
     aql: &str,
 ) -> Result<i64, ViewerError> {
     let url = state.cdr.rest_v1("query/aql");
@@ -90,7 +90,7 @@ async fn run_count_aql(
 /// [`list_templates`](crate::pages::templates::list_templates).
 ///
 /// # Errors
-/// [`ViewerError::Unauthenticated`] without a console session; CDR errors
+/// [`ViewerError::Unauthenticated`] without a viewer session; CDR errors
 /// normalized via
 /// [`CdrClient::expect_success`](crate::cdr::CdrClient::expect_success);
 /// [`ViewerError::Internal`] on an unparseable result set.
@@ -133,7 +133,7 @@ pub struct NamespaceTile {
 /// own tile.
 ///
 /// # Errors
-/// [`ViewerError::Unauthenticated`] without a console session; CDR errors from
+/// [`ViewerError::Unauthenticated`] without a viewer session; CDR errors from
 /// the stored-query LISTING normalized (a failure there means no grouping at
 /// all); a failing member RUN is confined to its own tile's `matches: None`.
 #[server]
@@ -209,7 +209,7 @@ pub async fn namespace_tiles() -> Result<Vec<NamespaceTile>, ViewerError> {
 /// [`bucket_by_day`](crate::activity::bucket_by_day).
 ///
 /// # Errors
-/// [`ViewerError::Unauthenticated`] without a console session; CDR errors
+/// [`ViewerError::Unauthenticated`] without a viewer session; CDR errors
 /// normalized; [`ViewerError::Internal`] on an unparseable result set.
 #[server]
 pub async fn commit_trend() -> Result<Vec<ActivityPoint>, ViewerError> {

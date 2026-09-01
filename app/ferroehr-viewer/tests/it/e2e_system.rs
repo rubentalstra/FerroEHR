@@ -17,7 +17,7 @@
 )]
 // e2e journeys are assertive by design; skip-with-reason prints; the shared
 // harness module is per-test-binary (the corpus.rs test-file precedent)
-//! End-to-end journeys over the console's **System panel** (`/system`): the
+//! End-to-end journeys over the viewer's **System panel** (`/system`): the
 //! openEHR System API conformance manifest and the per-family `OpenAPI` document
 //! selector.
 //!

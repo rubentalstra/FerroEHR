@@ -14,7 +14,7 @@
 
 #![allow(
     clippy::disallowed_types,
-    reason = "the console consumes the CDR JSON wire over ITS-REST — not the CDR internal seams \
+    reason = "the viewer consumes the CDR JSON wire over ITS-REST — not the CDR internal seams \
               (#1694); the carriers here are ssr-only, so #[expect] would be unfulfilled on the \
               hydrate target"
 )]
@@ -84,11 +84,11 @@ pub struct TemplateRow {
 /// defensively (missing fields become empty strings) into [`TemplateRow`]s.
 /// `version=*` pins the FULL inventory: an absent `version` collapses the
 /// CDR's listing to the latest version of each template (the released OAS
-/// `parameters/query/filter_version.yaml`), and a management console must
+/// `parameters/query/filter_version.yaml`), and a management client must
 /// show every stored version, not just the latest.
 ///
 /// # Errors
-/// [`ViewerError::Unauthenticated`] without a console session;
+/// [`ViewerError::Unauthenticated`] without a viewer session;
 /// [`ViewerError::CdrUnauthorized`] / [`ViewerError::Forbidden`] / [`ViewerError::Cdr`] /
 /// [`ViewerError::CdrUnreachable`] from the CDR; [`ViewerError::Internal`]
 /// when the CDR body is not valid JSON.
@@ -140,7 +140,7 @@ fn template_row(item: &serde_json::Value) -> TemplateRow {
 /// and refetches the list.
 ///
 /// # Errors
-/// [`ViewerError::Unauthenticated`] without a console session;
+/// [`ViewerError::Unauthenticated`] without a viewer session;
 /// [`ViewerError::Invalid`] for empty content;
 /// [`ViewerError::CdrUnauthorized`] / [`ViewerError::Forbidden`] / [`ViewerError::Cdr`] /
 /// [`ViewerError::CdrUnreachable`] from the CDR (the diagnostic verbatim).
@@ -180,10 +180,10 @@ pub async fn upload_template(
 /// parser. `version=*` pins the FULL inventory: without it the CDR collapses
 /// the listing to the latest version of each HRID family (the released OAS
 /// `parameters/query/filter_version.yaml`), which would hide every superseded
-/// ADL2 artefact from a management console.
+/// ADL2 artefact from a management client.
 ///
 /// # Errors
-/// [`ViewerError::Unauthenticated`] without a console session;
+/// [`ViewerError::Unauthenticated`] without a viewer session;
 /// [`ViewerError::CdrUnauthorized`] / [`ViewerError::Forbidden`] / [`ViewerError::Cdr`] /
 /// [`ViewerError::CdrUnreachable`] from the CDR; [`ViewerError::Internal`]
 /// when the CDR body is not valid JSON.
@@ -218,7 +218,7 @@ pub async fn list_adl2_templates() -> Result<Vec<TemplateRow>, ViewerError> {
 /// [`CdrClient::expect_success`](crate::cdr::CdrClient::expect_success).
 ///
 /// # Errors
-/// [`ViewerError::Unauthenticated`] without a console session;
+/// [`ViewerError::Unauthenticated`] without a viewer session;
 /// [`ViewerError::Invalid`] for empty content;
 /// [`ViewerError::CdrUnauthorized`] / [`ViewerError::Forbidden`] / [`ViewerError::Cdr`] /
 /// [`ViewerError::CdrUnreachable`] from the CDR (the diagnostic verbatim).
@@ -279,7 +279,7 @@ fn accepted_template_id(body: &str) -> String {
 /// through [`delete_failure_copy`](crate::admin::delete_failure_copy).
 ///
 /// # Errors
-/// [`ViewerError::Unauthenticated`] without a console session;
+/// [`ViewerError::Unauthenticated`] without a viewer session;
 /// [`ViewerError::Invalid`] for an empty id;
 /// [`ViewerError::Cdr`] / [`ViewerError::CdrUnauthorized`] / [`ViewerError::Forbidden`] /
 /// [`ViewerError::CdrUnreachable`] from the CDR.

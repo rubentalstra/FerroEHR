@@ -88,7 +88,7 @@ CI adds a few gates that need more than a checkout: a container smoke test that
 composes the built server image against the database image, the browser
 end-to-end battery for the viewer (`bash scripts/ui-e2e.sh`), the Helm
 chart render and boot lanes, and the changelog, crate-version, and attribution
-guards. Console-only work has its own local battery; see the repository's
+guards. Viewer-only work has its own local battery; see the repository's
 `CONTRIBUTING.md`.
 
 > [!IMPORTANT]

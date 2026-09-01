@@ -19,7 +19,7 @@
 
 #![expect(
     clippy::disallowed_types,
-    reason = "the console consumes the CDR JSON wire over ITS-REST — not the CDR internal seams \
+    reason = "the viewer consumes the CDR JSON wire over ITS-REST — not the CDR internal seams \
               (#1694)"
 )]
 
@@ -43,7 +43,7 @@ const SEGMENT_OFF: &str = "px-3 py-1.5 text-sm font-medium text-ink-muted hover:
 /// One button of a segmented control: its label, whether it is the current
 /// choice, and what picking it does.
 ///
-/// The ONE segment implementation the console draws — the format selector, the
+/// The ONE segment implementation the viewer draws — the format selector, the
 /// pane's view tabs and the example controls all call it, so a segmented
 /// control looks and behaves the same wherever it appears. The label stays a
 /// plain visible string so the E2E suite can click it by text.

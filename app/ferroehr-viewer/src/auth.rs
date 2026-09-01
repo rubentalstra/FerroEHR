@@ -1,7 +1,7 @@
 // SPDX-FileCopyrightText: FerroEHR contributors
 // SPDX-License-Identifier: MIT
 
-//! Console authentication: the login/logout/session server functions.
+//! Viewer authentication: the login/logout/session server functions.
 //!
 //! Server functions are a public HTTP API — each one enforces auth itself
 //! (Leptos book `server/25`); the CDR credential never leaves the server.
@@ -57,7 +57,7 @@ pub struct SessionInfo {
 /// [`ViewerError::CdrUnreachable`] when the CDR misbehaves.
 #[server]
 pub async fn login_basic(
-    /// The CDR username the console authenticates as.
+    /// The CDR username the viewer authenticates as.
     username: String,
     /// The matching CDR password; it never leaves the server.
     password: String,
@@ -92,7 +92,7 @@ pub async fn login_basic(
     let mut session = crate::session::http_session().await?;
     session.insert(
         crate::session::SESSION_KEY,
-        &crate::session::AdminSession {
+        &crate::session::ViewerSession {
             identity: username,
             credential,
             scopes: Vec::new(),
@@ -118,7 +118,7 @@ pub async fn logout() -> Result<(), ViewerError> {
     // decoded content is irrelevant — sign-out overwrites the cookie.
     crate::session::http_session().await?;
     // Committing the EMPTY session sets the removal cookie.
-    crate::session::commit(&crate::session::ConsoleSession::default())?;
+    crate::session::commit(&crate::session::CookieSession::default())?;
     leptos_axum::redirect("/login");
     Ok(())
 }
@@ -131,7 +131,7 @@ pub async fn logout() -> Result<(), ViewerError> {
 #[server]
 pub async fn current_session() -> Result<Option<SessionInfo>, ViewerError> {
     let session = crate::session::http_session().await?;
-    let admin = session.get::<crate::session::AdminSession>(crate::session::SESSION_KEY);
+    let admin = session.get::<crate::session::ViewerSession>(crate::session::SESSION_KEY);
     Ok(admin.map(|s| SessionInfo {
         identity: s.identity,
         method: match s.credential {
@@ -150,10 +150,10 @@ pub async fn current_session() -> Result<Option<SessionInfo>, ViewerError> {
 #[server]
 pub async fn fetch_login_screen() -> Result<LoginScreen, ViewerError> {
     let state: crate::state::AppState = leptos::prelude::expect_context();
-    // The console offers only what BOTH sides support: its own configured
+    // The viewer offers only what BOTH sides support: its own configured
     // modes intersected with the schemes the CDR advertises in its
     // `WWW-Authenticate` challenge (a Basic form against a bearer-only CDR
-    // can never succeed). An unreachable CDR falls back to the console's
+    // can never succeed). An unreachable CDR falls back to the viewer's
     // config alone so the login page still renders — the login attempt
     // itself then surfaces the outage.
     let (cdr_basic, cdr_bearer) = state.cdr.advertised_schemes().await.unwrap_or((true, true));

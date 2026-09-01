@@ -17,6 +17,15 @@ workflow refuses a tag that has no matching section here.
 
 ### Changed
 
+- The generic noun "console" is retired from everything a human reads: the
+  Helm chart's `viewer.*` value descriptions (which Artifact Hub publishes),
+  the viewer's own on-screen copy, the book, and the doc comments all say
+  "viewer" now. The hosted sandbox's Compose service is renamed `console` to
+  `viewer` and its container `ferroehr-sandbox-console` to
+  `ferroehr-sandbox-viewer`, which the box picks up at the next release
+  deploy. The Helm chart is version 7.0.1. The name of the entry the viewer
+  keeps inside its encrypted session cookie changes too, so open sessions
+  need one fresh sign-in after the upgrade.
 - The hosted sandbox (sandbox.ferroehr.eu) runs on a Hetzner CX33 (4 shared
   vCPU, 8 GB RAM, 80 GB NVMe), resized in place from the CPX22. The hosted
   compose memory limits that ship inside the server image move with it: the
@@ -60,7 +69,7 @@ workflow refuses a tag that has no matching section here.
   `<release>-admin-ui` to `<release>-viewer` and its
   `app.kubernetes.io/name` label from `<name>-admin-ui` to `<name>-viewer`.
   A Deployment's selector is immutable, so a release that already runs the
-  console with `adminUi.enabled: true` must have that Deployment, Service,
+  viewer with `adminUi.enabled: true` must have that Deployment, Service,
   ServiceAccount and NetworkPolicy deleted before the upgrade, or be
   reinstalled. The CDR's own objects are untouched.
 

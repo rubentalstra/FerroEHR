@@ -1,9 +1,9 @@
 # FerroEHR Viewer
 
-`ferroehr-viewer` is a standalone web console for managing an
+`ferroehr-viewer` is a standalone web UI for managing an
 ITS-REST-1.1.0 CDR, this server or any other. It is a **pure REST client**:
 everything it does goes through the CDR's public API (never the database),
-so what you see in the console is exactly what the API serves. The whole
+so what you see in the viewer is exactly what the API serves. The whole
 application is Rust (Leptos SSR + WebAssembly); there is no hand-written
 JavaScript anywhere, including its browser tests.
 
@@ -11,7 +11,7 @@ JavaScript anywhere, including its browser tests.
 
 ## Running it
 
-The quickstart compose ships the console as the `ferroehr-viewer` service on
+The quickstart compose ships the viewer as the `ferroehr-viewer` service on
 port 3000, behind the `viewer` [profile](../installation/compose.md), so it
 is opt-in and does not start with a plain `docker compose up`:
 
@@ -30,9 +30,9 @@ docker run -p 3000:3000 \
 
 ### On Kubernetes
 
-The Helm chart deploys the console as its own Deployment, Service and
+The Helm chart deploys the viewer as its own Deployment, Service and
 ServiceAccount, with an optional Ingress and a NetworkPolicy that confines its
-egress to the CDR and DNS: the console is a REST client of the CDR by mandate,
+egress to the CDR and DNS: the viewer is a REST client of the CDR by mandate,
 so the chart enforces that rather than trusting it. Off by default, and off
 renders nothing:
 
@@ -43,7 +43,7 @@ viewer:
   ingress:
     enabled: true
     hosts:
-      - host: console.example.org
+      - host: viewer.example.org
         paths:
           - path: /
             pathType: Prefix
@@ -51,20 +51,20 @@ viewer:
     oidc:
       enabled: true
       issuer: https://keycloak.example/realms/ferroehr
-      clientId: ferroehr-console
-      publicBaseUrl: https://console.example.org
+      clientId: ferroehr-viewer
+      publicBaseUrl: https://viewer.example.org
   # the OIDC client secret is MOUNTED from a Secret you create, never env-borne
-  existingSecret: console-oidc
+  existingSecret: viewer-oidc
 ```
 
 It needs no database credential and never reaches the database. **Before you
 enable OIDC:** a registered client whose redirect URI matches `publicBaseUrl`,
-and a Secret holding its client secret. **To turn the console off**, set
-`viewer.enabled: false` and upgrade; every console object is removed and the
+and a Secret holding its client secret. **To turn the viewer off**, set
+`viewer.enabled: false` and upgrade; every viewer object is removed and the
 CDR is untouched.
 
 > [!NOTE]
-> To scale the console past one replica, set the same `session.secret` on
+> To scale the viewer past one replica, set the same `session.secret` on
 > every replica: the session is a sealed cookie any key-holding replica can
 > serve. Without a configured secret each replica seals with its own
 > ephemeral key, and visitors get signed out whenever a request lands on
@@ -73,20 +73,20 @@ CDR is untouched.
 ## Signing in
 
 The sign-in page offers exactly the methods that can actually work: the
-console's configured login modes intersected with the authentication
+viewer's configured login modes intersected with the authentication
 schemes the CDR advertises (its `WWW-Authenticate` challenge). A Basic
 form is never shown against a bearer-only CDR, and vice versa. If the CDR
-cannot be reached at all, the page falls back to the console's own
+cannot be reached at all, the page falls back to the viewer's own
 configuration and renders anyway, and the outage then surfaces on the login
 attempt instead of hiding the page. Sign-in is served fully rendered and works
 with JavaScript disabled.
 
-The console manages no accounts of its own: it authenticates you against the
+The viewer manages no accounts of its own: it authenticates you against the
 CDR (Basic) or your identity provider (OIDC), and there are no user, role, or
 password screens to find; those live in the CDR's configuration and in your
 IdP.
 
-The console ships a full dark theme (the toggle persists per browser), and every
+The viewer ships a full dark theme (the toggle persists per browser), and every
 screen in this chapter has one, and [Dark mode](dark-mode.md) is the gallery.
 The user menu opens the access drawer:
 
@@ -110,7 +110,7 @@ The user menu opens the access drawer:
   malformed explains what the grammar expected instead of quietly reading as
   nothing.
 
-The reading is not the console's own interpretation: it parses with the same
+The reading is not the viewer's own interpretation: it parses with the same
 module the CDR's SMART scope gate enforces with, so the two can never drift.
 Scopes **narrow** access and never grant it; the CDR remains the enforcer,
 and a previewed grant is an upper bound.
@@ -131,8 +131,8 @@ overrides. Unknown keys are refused at startup, exactly as on the CDR:
 | `cdr.management_base_url` | derived from `cdr.base_url` | The CDR's management surface, base path included; set it when the CDR serves management on its own internal listener (`management.port`) or under a renamed base path. Drives the [Operations panel](operations.md). |
 | `auth.basic_enabled` | `true` | Offer the username/password form (validated against the CDR; held server-side). |
 | `auth.oidc.enabled` | `false` | Offer OIDC login (authorization code + PKCE). |
-| `auth.oidc.issuer` / `client_id` / `client_secret` (`_file`) / `public_base_url` / `scopes` | — | The OIDC client registration; `public_base_url` is the console's externally visible origin for the redirect URI. Enabling OIDC without issuer, client id and public base URL is a startup error. |
-| `auth.oidc.resolve` | — | A `host=ip:port` override for the issuer host, for split-horizon DNS: the console reaches an issuer whose canonical name only resolves inside the container network, while browsers and tokens keep the canonical URL. |
+| `auth.oidc.issuer` / `client_id` / `client_secret` (`_file`) / `public_base_url` / `scopes` | — | The OIDC client registration; `public_base_url` is the viewer's externally visible origin for the redirect URI. Enabling OIDC without issuer, client id and public base URL is a startup error. |
+| `auth.oidc.resolve` | — | A `host=ip:port` override for the issuer host, for split-horizon DNS: the viewer reaches an issuer whose canonical name only resolves inside the container network, while browsers and tokens keep the canonical URL. |
 | `login.notice` | empty | Informational text on the sign-in card, line breaks preserved. A demo or evaluation deployment states its public credentials and usage expectations here. |
 | `login.links` | empty | Links under the sign-in card, each `{ label, href }` — an API reference, a documentation page. |
 | `session.idle_minutes` | `60` | Session idle expiry (sliding; carried inside the sealed cookie). |
@@ -140,7 +140,7 @@ overrides. Unknown keys are refused at startup, exactly as on the CDR:
 | `session.secret` | empty | The session-cookie sealing key: base64 of at least 64 bytes (`openssl rand -base64 64`). Every replica of a scaled deployment must hold the same value. Empty = an ephemeral per-instance key, fine for exactly one replica. |
 | `session.secret_file` | — | Path to a file holding the sealing key; wins over `session.secret`. |
 
-The console is **stateless**: it has no database and keeps no local files of
+The viewer is **stateless**: it has no database and keeps no local files of
 its own. Everything it shows, including how stored queries are grouped,
 which is derived from the namespace in each query's qualified name, lives in
 the CDR and is read over ITS-REST, so nothing here needs backing up and
@@ -148,7 +148,7 @@ every replica shows the same repository. Sessions are a **sealed cookie**
 (AES-256-GCM, keyed by `session.secret`), so any replica holding the key can
 serve any signed-in visitor.
 
-Login and sessions live in the console's backend; the browser stores only
+Login and sessions live in the viewer's backend; the browser stores only
 the encrypted session cookie — CDR credentials and bearer tokens never reach
 it in readable form.
 
@@ -186,7 +186,7 @@ it in readable form.
   management surface. See [Operations panel](operations.md).
 - **Tenants:** the tenant registry, and the tenant this session's credential
   resolves to. Appears only when the CDR runs with multi-tenancy on. There is
-  no tenant switcher: tenancy is credential-derived, and the console displays
+  no tenant switcher: tenancy is credential-derived, and the viewer displays
   it rather than choosing it. See [Tenant registry](tenants.md).
 - **Subscriptions:** the event subscriptions that decide which committed
   versions the CDR publishes to a message broker. Appears only when the CDR
@@ -194,13 +194,13 @@ it in readable form.
   [Event subscriptions](subscriptions.md).
 
 Every one of them is themed twice; [Dark mode](dark-mode.md) shows the dark
-half of the console screen by screen.
+half of the viewer screen by screen.
 
 ### Paging
 
 Every listing is paged, and the page lives in the **URL**: a page is
 shareable and bookmarkable, a reload lands on the same rows, and the browser's
-back and forward buttons walk the pages. The tables the console holds in full
+back and forward buttons walk the pages. The tables the viewer holds in full
 (**Templates**, **Queries**) share one footer under the table: which rows are on
 screen out of how many (`26–50 of 137 templates`), previous/next, and a
 rows-per-page choice of 25/50/100 (`?page=` and `?size=`). The AQL-backed

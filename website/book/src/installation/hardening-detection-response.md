@@ -29,7 +29,7 @@ you can judge the exposure rather than reading "secrets" generically.
 | AMQP broker URLs | `secrets.eventsUrl`, `secrets.fhirOutboundUrl` | the FHIR outbound stream **carries PHI**; the events stream is PHI-free by design |
 | The audit repository URL | `secrets.auditFhirFeedUrl` | the ability to read or forge audit records at the repository |
 | S3 credentials | `secrets.multimediaSecretAccessKey` (with `secrets.multimediaAccessKeyId`) | offloaded `DV_MULTIMEDIA` blobs, which **are PHI** |
-| The console's OIDC client secret | `viewer.existingSecret`, when the console is enabled | the ability to impersonate the console at your identity provider |
+| The viewer's OIDC client secret | `viewer.existingSecret`, when the viewer is enabled | the ability to impersonate the viewer at your identity provider |
 
 The rendered `ferroehr.toml` itself is **not** in that list, and that is worth
 stating because it used to be: while a Basic user's hash had nowhere secure to go,
@@ -140,7 +140,7 @@ A starter Falco rule set exploiting exactly that:
 
 Tune the port list to the destinations you actually enabled; the point of the
 third rule is that the list is short enough to be worth writing. The macro matches
-the console's image too, whose only expected process is its own server binary.
+the viewer's image too, whose only expected process is its own server binary.
 
 **What each layer sees, and cannot.** The syscall layer sees process execution,
 file writes and raw connections (a compromise of the *container*) but it has no
@@ -256,7 +256,7 @@ annotation and rolls the Deployment by itself.)
 | S3 credentials | update, then restart | or remove them entirely with IRSA or Workload Identity |
 | Audit repository URL | update, then restart | still an environment value (no `*_file` sibling) |
 | Basic user password hash | update, then restart | rotate the password and re-hash at the OWASP Argon2id floor, which the server checks at boot |
-| Console OIDC client secret | update, then restart the console | rotate at the identity provider in the same window |
+| Viewer OIDC client secret | update, then restart the viewer | rotate at the identity provider in the same window |
 | **Version signing key** | **read the next section first** | rotate the signing *subkey*, not the certificate |
 
 ### Rotating the version signing key

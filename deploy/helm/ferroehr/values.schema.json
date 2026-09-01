@@ -849,7 +849,7 @@
       "additionalProperties": false,
       "properties": {
         "enabled": {
-          "description": "Deploy the console alongside the CDR.",
+          "description": "Deploy the viewer alongside the CDR.",
           "type": "boolean"
         },
         "replicaCount": {
@@ -858,7 +858,7 @@
           "minimum": 0
         },
         "image": {
-          "description": "Console image.",
+          "description": "Viewer image.",
           "type": "object",
           "additionalProperties": false,
           "properties": {
@@ -945,7 +945,7 @@
                   "type": "string"
                 },
                 "publicBaseUrl": {
-                  "description": "The console's externally-reachable base URL, used to build the OIDC redirect.",
+                  "description": "The viewer's externally-reachable base URL, used to build the OIDC redirect.",
                   "type": "string"
                 }
               }
@@ -971,7 +971,7 @@
               "type": "array"
             },
             "ingressAllowAll": {
-              "description": "Whether an empty `ingressFrom` may render an ingress rule with no `from` \u2014 which admits every source to the console. true (the shipped default) renders it; false refuses the render while `ingressFrom` is empty. A non-empty `ingressFrom` narrows the sources regardless.",
+              "description": "Whether an empty `ingressFrom` may render an ingress rule with no `from` \u2014 which admits every source to the viewer. true (the shipped default) renders it; false refuses the render while `ingressFrom` is empty. A non-empty `ingressFrom` narrows the sources regardless.",
               "type": "boolean"
             }
           }

@@ -6,7 +6,7 @@
 
 #![allow(
     clippy::disallowed_types,
-    reason = "the console consumes the CDR JSON wire over ITS-REST — not the CDR internal seams \
+    reason = "the viewer consumes the CDR JSON wire over ITS-REST — not the CDR internal seams \
               (#1694); the carriers here are ssr-only, so #[expect] would be unfulfilled on the \
               hydrate target"
 )]
@@ -52,7 +52,7 @@ pub struct ContributionRow {
     /// `AUDIT_DETAILS.change_type` group code (e.g. `249`).
     pub change_type: String,
     /// The CDR-resolved display rubric for the code (e.g. `creation`) — the
-    /// console never maps codes locally; empty when the CDR sent none.
+    /// viewer never maps codes locally; empty when the CDR sent none.
     pub change_type_rubric: String,
 }
 
@@ -77,7 +77,7 @@ pub struct ContributionPage {
 /// `{rows, total}` envelope are the CDR's own.
 ///
 /// # Errors
-/// [`ViewerError::Unauthenticated`] without a console session; CDR transport
+/// [`ViewerError::Unauthenticated`] without a viewer session; CDR transport
 /// errors pass through; a non-2xx CDR answer normalizes via
 /// [`CdrClient::expect_success`](crate::cdr::CdrClient::expect_success) — a
 /// `404`/`405` from an older CDR that lacks the list route surfaces there as
@@ -157,7 +157,7 @@ fn contribution_field(value: &Value, key: &str) -> String {
 /// `AUDIT_DETAILS.time_committed`).
 ///
 /// # Errors
-/// [`ViewerError::Unauthenticated`] without a console session; CDR transport
+/// [`ViewerError::Unauthenticated`] without a viewer session; CDR transport
 /// errors pass through; a non-2xx CDR answer normalizes via
 /// [`CdrClient::expect_success`](crate::cdr::CdrClient::expect_success);
 /// [`ViewerError::Internal`] when the page is not valid JSON.
@@ -192,7 +192,7 @@ pub async fn contribution_activity(
 /// `contributions_section`). Returns the raw canonical JSON.
 ///
 /// # Errors
-/// [`ViewerError::Unauthenticated`] without a console session; CDR transport
+/// [`ViewerError::Unauthenticated`] without a viewer session; CDR transport
 /// errors pass through; a non-2xx CDR answer (a `404` for an unknown uid
 /// included) normalizes via
 /// [`CdrClient::expect_success`](crate::cdr::CdrClient::expect_success).
