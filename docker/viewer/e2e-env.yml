@@ -36,6 +36,9 @@ services:
   ferroehr-viewer:
     environment:
       FERROEHR_VIEWER__CDR__BASE_URL: http://ferroehr:8080
+      # The e2e stack serves plain HTTP, so the secure-by-default session
+      # cookie flag opts out here (production behind TLS needs nothing).
+      FERROEHR_VIEWER__SESSION__COOKIE_SECURE: "false"
       FERROEHR_VIEWER__AUTH__OIDC__ENABLED: "true"
       FERROEHR_VIEWER__AUTH__OIDC__ISSUER: http://keycloak:8081/auth/realms/ferroehr
       FERROEHR_VIEWER__AUTH__OIDC__CLIENT_ID: ferroehr
