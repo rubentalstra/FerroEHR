@@ -49,10 +49,17 @@
 //!   web-template-declared concrete type as `xsi:type` and parsed as an
 //!   [`openehr_rm::prelude::DataValue`].
 //!
-//! Where the TDD spells out a wrapper the `WebTemplate` compacted
-//! (`HISTORY.origin`, `EVENT.time`), the re-materialised node takes the
-//! RM-mandatory default, as in the FLAT reverse converter; the leaf data values
-//! and the composition/entry context are faithful.
+//! Where the TDD spells out a wrapper the `WebTemplate` compacted, the
+//! wrapper's own instance data travels: the skipped elements on the path to a
+//! match are kept, and when a re-materialised node corresponds to one (its
+//! element name matches the RM attribute, its Ocean `…_as_<ConcreteType>`
+//! suffix names the node's type, or its metadata keys discriminate the node —
+//! `origin`/`time`), that element's `WRAPPER_METADATA` children
+//! (`HISTORY.origin`, `EVENT.time`, `name`, `uid`, `links`, `feeder_audit`)
+//! are parsed as their model-declared types and placed on the node. The
+//! RM-mandatory temporal defaults apply only when the TDD carries no value; a
+//! spelled-out wrapper whose metadata cannot legally sit on the corresponding
+//! node is refused, never silently dropped.
 //!
 //! The multi-valued RM-attribute set used to re-materialise arrays comes from
 //! the generated BMM RM attribute model, never a hard-coded list. A construct
@@ -66,7 +73,7 @@
               (#1694)"
 )]
 
-use std::collections::HashSet;
+use std::collections::{HashSet, VecDeque};
 use std::sync::LazyLock;
 
 use openehr_rm::v1_2::paths::{PathSegment, is_archetype_root_node_id};
@@ -85,9 +92,10 @@ pub const TDD_TEMPLATE_NS: &str = "http://schemas.oceanehr.com/templates";
 /// converter's `RM_VERSION`.
 const RM_VERSION: &str = "1.2.0";
 
-/// RM-mandatory temporal default for wrapper nodes whose instance value the TDD
-/// leaves in a compacted wrapper this wave does not carry (see the module
-/// `NOTE`). Matches the FLAT converter's `DEFAULT_TIME`.
+/// RM-mandatory temporal default for re-materialised wrapper nodes whose
+/// instance value the TDD does not carry at all (a fully compacted chain —
+/// a spelled-out wrapper's own value wins over this, see the module doc).
+/// Matches the FLAT converter's `DEFAULT_TIME`.
 const DEFAULT_TIME: &str = "1970-01-01T00:00:00Z";
 
 // ── generic XML tree ─────────────────────────────────────────────────────────
@@ -279,11 +287,12 @@ fn xml_escape(s: &str) -> String {
 /// content, which is what the `400`/`422` body must show the caller.
 fn parse_typed(el: &El, type_name: &str) -> Result<Value, FlatError> {
     use crate::xml::from_canonical_xml as fx;
+    use openehr_base::prelude::UidBasedId;
     use openehr_rm::prelude::{
         CodePhrase, DataValue, DvBoolean, DvCodedText, DvCount, DvDate, DvDateTime, DvDuration,
         DvEhrUri, DvIdentifier, DvMultimedia, DvOrdinal, DvParagraph, DvParsable, DvProportion,
-        DvQuantity, DvScale, DvState, DvText, DvTime, DvUri, EventContext, IsmTransition, Link,
-        Participation, PartyProxy,
+        DvQuantity, DvScale, DvState, DvText, DvTime, DvUri, EventContext, FeederAudit,
+        IsmTransition, Link, Participation, PartyProxy,
     };
 
     let resolved = el.xsi_type().unwrap_or(type_name);
@@ -321,6 +330,10 @@ fn parse_typed(el: &El, type_name: &str) -> Result<Value, FlatError> {
         "EVENT_CONTEXT" => p!(EventContext),
         "LINK" => p!(Link),
         "ISM_TRANSITION" => p!(IsmTransition),
+        "FEEDER_AUDIT" => p!(FeederAudit),
+        // A LOCATABLE `uid` on a spelled-out wrapper: the closed UID_BASED_ID
+        // set, dispatched on the element's own `xsi:type`.
+        "UID_BASED_ID" | "HIER_OBJECT_ID" | "OBJECT_VERSION_ID" => p!(UidBasedId),
         // Any DV slot with an unknown/absent concrete hint dispatches through the
         // DATA_VALUE enum on the element's own xsi:type.
         _ => p!(DataValue),
@@ -436,11 +449,12 @@ pub fn from_tdd(tdd_xml: &str, wt: &WebTemplate) -> Result<Value, FlatError> {
 /// at least one match (the compaction rule in the module doc). Anything else
 /// is content the template-derived TDS does not define — a conversion error
 /// naming the offending element, so the refusal localizes.
-/// Compacted-wrapper instance metadata (the module doc's documented limit): a
-/// TDD may spell out RM fields of a wrapper the `WebTemplate` compacted
-/// (`HISTORY.origin`, `EVENT.time`/`name`) plus universal LOCATABLE metadata —
-/// RM attribute names, never template content, deliberately not carried by
-/// the build. Everything else is content the TDS does not define.
+/// Compacted-wrapper instance metadata: the RM fields a TDD may spell out on
+/// a wrapper the `WebTemplate` compacted (`HISTORY.origin`, `EVENT.time`,
+/// plus the universal LOCATABLE metadata) — RM attribute names, never
+/// template content. Conformance tolerates them here; the build carries them
+/// onto the re-materialised node via [`WrapperMeta`]. Everything else is
+/// content the TDS does not define.
 const WRAPPER_METADATA: [&str; 6] = ["name", "uid", "links", "feeder_audit", "origin", "time"];
 
 fn check_conformance(el: &El, wt: &WebTemplateNode, rm_type: &str) -> Result<(), FlatError> {
@@ -633,7 +647,7 @@ fn build_content_children(
         {
             continue;
         }
-        for cel in find_matches(el, node_display(wc)) {
+        for (wrappers, cel) in find_matches_with_wrappers(el, node_display(wc)) {
             let child_value = if wc.has_input() {
                 // A leaf: the ELEMENT wrapper is materialised by `place`; the
                 // datum is the leaf element's `<value>` fragment.
@@ -641,7 +655,17 @@ fn build_content_children(
             } else {
                 build_node(cel, wc, concrete_type(&wc.rm_type), &wc.aql_path, false)?
             };
-            place(obj, &rel, child_value, wc);
+            let mut metas = WrapperMeta::carriers(&wrappers);
+            place(obj, &rel, child_value, wc, &mut metas)?;
+            if let Some(unused) = metas.front() {
+                return Err(FlatError::Conversion(format!(
+                    "TDD wrapper <{}> carries instance data ({}) that corresponds to no \
+                     re-materialised node on the path to {:?}",
+                    unused.el.name,
+                    unused.keys.join(", "),
+                    wc.id
+                )));
+            }
         }
     }
     Ok(())
@@ -724,20 +748,169 @@ pub(crate) fn is_multiple_attr(attr: &str) -> bool {
     MULTIVALUED_ATTRS.contains(attr)
 }
 
+/// A spelled-out wrapper element carrying instance data for a compacted RM
+/// node: the element plus the [`WRAPPER_METADATA`] child names present on it.
+///
+/// Queued in document order along the scoped search's skip chain and consumed
+/// positionally as [`place`] re-materialises the compacted chain: the front
+/// wrapper attaches to the first node it corresponds to, and is never consumed
+/// out of order — a front that corresponds to nothing at the current node
+/// simply waits for a deeper one.
+struct WrapperMeta<'a> {
+    el: &'a El,
+    keys: Vec<&'a str>,
+}
+
+impl<'a> WrapperMeta<'a> {
+    /// The metadata carriers among `wrappers` (skip-chain order kept; a
+    /// wrapper with no [`WRAPPER_METADATA`] children carries nothing and is
+    /// not queued).
+    fn carriers(wrappers: &[&'a El]) -> VecDeque<WrapperMeta<'a>> {
+        wrappers
+            .iter()
+            .filter_map(|w| {
+                let mut keys: Vec<&str> = w
+                    .children
+                    .iter()
+                    .map(|c| c.name.as_str())
+                    .filter(|n| WRAPPER_METADATA.contains(n))
+                    .collect();
+                keys.dedup();
+                if keys.is_empty() {
+                    None
+                } else {
+                    Some(WrapperMeta { el: w, keys })
+                }
+            })
+            .collect()
+    }
+
+    /// Whether this wrapper is the spelled-out form of the node materialised
+    /// at `attribute`/`rm_type`: its element name matches the RM attribute,
+    /// its Ocean `…_as_<ConcreteType>` suffix names the node's type, or — for
+    /// a wrapper whose keys discriminate the node kind (`origin`/`time`) —
+    /// every key it carries is an attribute of the node.
+    fn corresponds(&self, attribute: &str, rm_type: &str) -> bool {
+        if name_matches(&self.el.name, attribute) {
+            return true;
+        }
+        if let Some((_, suffix)) = self.el.name.rsplit_once("_as_")
+            && suffix.eq_ignore_ascii_case(rm_type)
+        {
+            return true;
+        }
+        (self.keys.contains(&"origin") || self.keys.contains(&"time")) && self.fits(rm_type)
+    }
+
+    /// Whether every metadata key this wrapper carries is an RM attribute of
+    /// `rm_type`, inherited attributes included.
+    fn fits(&self, rm_type: &str) -> bool {
+        self.keys
+            .iter()
+            .all(|k| carried_attribute(rm_type, k).is_some())
+    }
+
+    /// Parse this wrapper's metadata children as their model-declared types
+    /// and set them on the re-materialised node (a spelled-out value replaces
+    /// the RM-mandatory default; a multi-valued attribute collects every
+    /// same-named child).
+    ///
+    /// # Errors
+    /// [`FlatError::Conversion`] when a key is not an attribute of `rm_type`
+    /// (spelled-out instance data is never silently dropped) or a fragment
+    /// does not parse as the declared type.
+    fn apply(&self, rm_type: &str, obj: &mut Map<String, Value>) -> Result<(), FlatError> {
+        for key in &self.keys {
+            let Some(attr) = carried_attribute(rm_type, key) else {
+                return Err(FlatError::Conversion(format!(
+                    "TDD wrapper <{}> spells out `{key}`, which is not an attribute of the \
+                     re-materialised {rm_type}",
+                    self.el.name
+                )));
+            };
+            let children = self.el.children.iter().filter(|c| c.name == **key);
+            if attr.container == openehr_rm::v1_2::model::Container::None {
+                if let Some(c) = children.into_iter().next() {
+                    obj.insert((*key).to_owned(), parse_typed(c, attr.declared_type)?);
+                }
+            } else {
+                let mut arr = Vec::new();
+                for c in children {
+                    arr.push(parse_typed(c, attr.declared_type)?);
+                }
+                obj.insert((*key).to_owned(), Value::Array(arr));
+            }
+        }
+        Ok(())
+    }
+}
+
+/// The model attribute `rm_type` carries under `attr` — declared on the class
+/// itself or inherited from an ancestor (the generated model records each
+/// attribute on its declaring class).
+fn carried_attribute(
+    rm_type: &str,
+    attr: &str,
+) -> Option<&'static openehr_rm::v1_2::model::RmAttribute> {
+    openehr_rm::v1_2::model::attribute(rm_type, attr).or_else(|| {
+        openehr_rm::v1_2::model::ancestors(rm_type)
+            .iter()
+            .find_map(|a| openehr_rm::v1_2::model::attribute(a, attr))
+    })
+}
+
+/// Pop the front wrapper when it corresponds to the node at `attribute`/
+/// `rm_type` (creation and revisit paths both consume, so a second match under
+/// the same spelled-out wrapper does not re-apply what creation already set).
+fn take_corresponding<'a>(
+    attribute: &str,
+    rm_type: &str,
+    metas: &mut VecDeque<WrapperMeta<'a>>,
+) -> Option<WrapperMeta<'a>> {
+    if metas
+        .front()
+        .is_some_and(|m| m.corresponds(attribute, rm_type))
+    {
+        metas.pop_front()
+    } else {
+        None
+    }
+}
+
+/// Consume (and discard) the front wrapper against an EXISTING node — the
+/// values were applied when the node was created from the same wrapper.
+fn discard_corresponding(
+    existing: Option<&Value>,
+    attribute: &str,
+    metas: &mut VecDeque<WrapperMeta<'_>>,
+) {
+    if let Some(ty) = existing
+        .and_then(|v| v.get("_type"))
+        .and_then(Value::as_str)
+    {
+        let _consumed = take_corresponding(attribute, ty, metas);
+    }
+}
+
 /// Insert `child_value` into `parent` at relative path `rel`, materialising the
 /// compacted RM structural nodes it passes through (mirrors the FLAT builder's
-/// `place`).
+/// `place`) and attaching queued spelled-out wrapper instance data
+/// ([`WrapperMeta`]) to the nodes it corresponds to.
+///
+/// # Errors
+/// [`FlatError::Conversion`] from [`WrapperMeta::apply`].
 fn place(
     parent: &mut Map<String, Value>,
     rel: &[PathSegment],
     child_value: Value,
     wc: &WebTemplateNode,
-) {
+    metas: &mut VecDeque<WrapperMeta<'_>>,
+) -> Result<(), FlatError> {
     if rel.is_empty() {
-        return;
+        return Ok(());
     }
     let id_idx = rel.iter().rposition(|s| is_multiple(&s.attribute));
-    place_rec(parent, rel, 0, id_idx, child_value, wc);
+    place_rec(parent, rel, 0, id_idx, child_value, wc, metas)
 }
 
 #[expect(
@@ -751,70 +924,98 @@ fn place_rec(
     id_idx: Option<usize>,
     child_value: Value,
     wc: &WebTemplateNode,
-) {
+    metas: &mut VecDeque<WrapperMeta<'_>>,
+) -> Result<(), FlatError> {
     let seg = &rel[i];
     let node_id = seg.predicate.archetype_node_id.as_deref();
     let last = i + 1 == rel.len();
 
     if Some(i) == id_idx {
-        let Some(arr) = cur
+        let mut entry = if last {
+            let mut el = child_value;
+            set_node_id(&mut el, node_id);
+            el
+        } else {
+            let mut el = new_struct(seg, rel.get(i + 1), wc.name.as_deref(), metas)?;
+            if let Value::Object(m) = &mut el {
+                place(m, &rel[i + 1..], child_value, wc, metas)?;
+            }
+            el
+        };
+        if let Some(arr) = cur
             .entry(seg.attribute.clone())
             .or_insert_with(|| json!([]))
             .as_array_mut()
-        else {
-            return;
-        };
-        if last {
-            let mut el = child_value;
-            set_node_id(&mut el, node_id);
-            arr.push(el);
-        } else {
-            let mut el = new_struct(seg, rel.get(i + 1), wc.name.as_deref());
-            if let Value::Object(m) = &mut el {
-                place(m, &rel[i + 1..], child_value, wc);
-            }
-            arr.push(el);
+        {
+            arr.push(std::mem::take(&mut entry));
         }
-        return;
+        return Ok(());
     }
 
     if is_multiple(&seg.attribute) {
-        let Some(arr) = cur
-            .entry(seg.attribute.clone())
-            .or_insert_with(|| json!([]))
-            .as_array_mut()
-        else {
-            return;
+        let created = {
+            let Some(arr) = cur
+                .entry(seg.attribute.clone())
+                .or_insert_with(|| json!([]))
+                .as_array_mut()
+            else {
+                return Ok(());
+            };
+            arr.iter()
+                .position(|e| e.get("archetype_node_id").and_then(Value::as_str) == node_id)
         };
-        let pos = arr
-            .iter()
-            .position(|e| e.get("archetype_node_id").and_then(Value::as_str) == node_id);
-        let idx = pos.unwrap_or_else(|| {
-            arr.push(new_struct(seg, rel.get(i + 1), None));
+        let idx = if let Some(pos) = created {
+            pos
+        } else {
+            let fresh = new_struct(seg, rel.get(i + 1), None, metas)?;
+            let Some(arr) = cur.get_mut(&seg.attribute).and_then(Value::as_array_mut) else {
+                return Ok(());
+            };
+            arr.push(fresh);
             arr.len() - 1
-        });
-        if let Some(Value::Object(m)) = arr.get_mut(idx) {
-            place_rec(m, rel, i + 1, id_idx, child_value, wc);
+        };
+        let Some(arr) = cur.get_mut(&seg.attribute).and_then(Value::as_array_mut) else {
+            return Ok(());
+        };
+        if created.is_some() {
+            discard_corresponding(arr.get(idx), &seg.attribute, metas);
         }
-        return;
+        if let Some(Value::Object(m)) = arr.get_mut(idx) {
+            place_rec(m, rel, i + 1, id_idx, child_value, wc, metas)?;
+        }
+        return Ok(());
     }
 
     if last {
         cur.insert(seg.attribute.clone(), child_value);
-        return;
+        return Ok(());
     }
-    if !cur.contains_key(&seg.attribute) {
-        cur.insert(seg.attribute.clone(), new_struct(seg, rel.get(i + 1), None));
+    if cur.contains_key(&seg.attribute) {
+        discard_corresponding(cur.get(&seg.attribute), &seg.attribute, metas);
+    } else {
+        let fresh = new_struct(seg, rel.get(i + 1), None, metas)?;
+        cur.insert(seg.attribute.clone(), fresh);
     }
     if let Some(Value::Object(m)) = cur.get_mut(&seg.attribute) {
-        place_rec(m, rel, i + 1, id_idx, child_value, wc);
+        place_rec(m, rel, i + 1, id_idx, child_value, wc, metas)?;
     }
+    Ok(())
 }
 
 /// Create a compacted structural RM node for `seg` with its RM-mandatory fields
 /// filled (mirrors the FLAT builder's `new_struct`, plus `archetype_details` for an
-/// archetyped wrapper root the TDD omitted, e.g. an `ITEM_TREE` `description`).
-fn new_struct(seg: &PathSegment, next: Option<&PathSegment>, name: Option<&str>) -> Value {
+/// archetyped wrapper root the TDD omitted, e.g. an `ITEM_TREE` `description`),
+/// then overlay the instance data of the corresponding spelled-out wrapper, if
+/// the TDD carries one ([`WrapperMeta`]).
+///
+/// # Errors
+/// [`FlatError::Conversion`] from [`WrapperMeta::apply`].
+fn new_struct(
+    seg: &PathSegment,
+    next: Option<&PathSegment>,
+    name: Option<&str>,
+    metas: &mut VecDeque<WrapperMeta<'_>>,
+) -> Result<Value, FlatError> {
     let rm_type = infer_type(&seg.attribute, next.map(|s| s.attribute.as_str()));
     let node_id = seg.predicate.archetype_node_id.as_deref();
     let mut o = Map::new();
@@ -846,7 +1047,10 @@ fn new_struct(seg: &PathSegment, next: Option<&PathSegment>, name: Option<&str>)
         }
         _ => {}
     }
-    Value::Object(o)
+    if let Some(meta) = take_corresponding(&seg.attribute, rm_type, metas) {
+        meta.apply(rm_type, &mut o)?;
+    }
+    Ok(Value::Object(o))
 }
 
 fn infer_type(attr: &str, next: Option<&str>) -> &'static str {
@@ -1004,14 +1208,34 @@ fn normalise(s: &str) -> String {
 /// each match, so a match's own subtree is not searched). Scoped so the TDD's
 /// explicit wrapper elements between a parent and its template child are skipped.
 fn find_matches<'a>(parent: &'a El, display: &str) -> Vec<&'a El> {
-    let mut out = Vec::new();
-    for c in &parent.children {
-        if name_matches(&c.name, display) {
-            out.push(c);
-        } else {
-            out.extend(find_matches(c, display));
+    find_matches_with_wrappers(parent, display)
+        .into_iter()
+        .map(|(_, el)| el)
+        .collect()
+}
+
+/// [`find_matches`] plus, per match, the skipped wrapper elements on the path
+/// from `parent` to it (outermost first, both endpoints excluded) — the
+/// carriers of compacted-wrapper instance data ([`WrapperMeta`]).
+fn find_matches_with_wrappers<'a>(parent: &'a El, display: &str) -> Vec<(Vec<&'a El>, &'a El)> {
+    fn walk<'a>(
+        parent: &'a El,
+        display: &str,
+        chain: &mut Vec<&'a El>,
+        out: &mut Vec<(Vec<&'a El>, &'a El)>,
+    ) {
+        for c in &parent.children {
+            if name_matches(&c.name, display) {
+                out.push((chain.clone(), c));
+            } else {
+                chain.push(c);
+                walk(c, display, chain, out);
+                chain.pop();
+            }
         }
     }
+    let mut out = Vec::new();
+    walk(parent, display, &mut Vec::new(), &mut out);
     out
 }
 

@@ -109,9 +109,18 @@ fn persistent_minimal_converts_and_validates() {
     let history = &obs["data"];
     assert_eq!(history["_type"], "HISTORY");
     assert_eq!(history["archetype_node_id"], "at0001");
+    // The TDD spells the compacted HISTORY out as a <data> wrapper carrying
+    // its own <origin>: the instance value travels, never the RM-mandatory
+    // 1970 default (#2982).
+    assert_eq!(history["origin"]["value"], "2021-05-20T16:47:47.044+03:00");
     let event = &history["events"][0];
     assert_eq!(event["_type"], "POINT_EVENT");
     assert_eq!(event["archetype_node_id"], "at0002");
+    // Same for the spelled-out event wrapper (<Cualquier_evento_as_Point_Event>,
+    // corresponding to the POINT_EVENT via its Ocean `_as_` suffix): its <time>
+    // and <name> instance data land on the re-materialised node.
+    assert_eq!(event["time"]["value"], "2021-05-20T16:47:47.044+03:00");
+    assert_eq!(event["name"]["value"], "Cualquier evento");
     let item_tree = &event["data"];
     assert_eq!(item_tree["_type"], "ITEM_TREE");
     assert_eq!(item_tree["archetype_node_id"], "at0003");
@@ -189,6 +198,31 @@ fn nested_converts_and_validates() {
     assert_eq!(nested2["items"][0]["value"]["value"], false);
     assert_eq!(nested2["items"][1]["value"]["_type"], "DV_COUNT");
     assert_eq!(nested2["items"][1]["value"]["magnitude"], 99265);
+}
+
+/// The refusal twin of the wrapper-instance-data recovery (#2982): a
+/// spelled-out wrapper whose metadata cannot legally sit on the node it
+/// corresponds to is a typed conversion error, never silently dropped —
+/// here a `<time>` on the `<data>` wrapper, which re-materialises as a
+/// HISTORY, and HISTORY carries no `time` attribute.
+#[test]
+fn ill_fitting_wrapper_metadata_is_refused_not_dropped() {
+    let opt = format!("{CORPUS}/valid_templates/minimal_persistent/persistent_minimal.opt");
+    let wt = wt_from(&opt);
+    let tdd = std::fs::read_to_string(format!(
+        "{CORPUS}/compositions/TDD/persistent_minimal.en.v1__full.xml"
+    ))
+    .expect("read corpus TDD");
+    let mutated = tdd.replace(
+        "<origin>",
+        "<time><rm:value>2021-01-01T00:00:00Z</rm:value></time><origin>",
+    );
+    assert_ne!(mutated, tdd, "the fixture must carry the mutation");
+    let err = from_tdd(&mutated, &wt).expect_err("time on a HISTORY wrapper must refuse");
+    assert!(
+        err.to_string().contains("not an attribute"),
+        "the refusal names the illegal key: {err}"
+    );
 }
 
 /// A payload whose root does not match the template root is a typed conversion
