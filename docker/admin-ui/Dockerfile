@@ -131,11 +131,11 @@ RUN --mount=type=cache,target=/app/target,sharing=locked \
     && cp /app/target/release/hash.txt /out/site/hash.txt
 
 # ── runtime-base: the SHARED final base (digest-pinned distroless, non-root) ───
-# gcr.io/distroless/cc-debian13:nonroot, digest-pinned, resolved 2026-07-24 —
+# gcr.io/distroless/cc-debian13:nonroot, digest-pinned, resolved 2026-09-01 —
 # same base + `cc`-not-base-nossl rationale (libgcc_s.so.1) as docker/Dockerfile.
 # The HEALTHCHECK the previous split baked ONLY into the CI image (F8) is baked
 # here once, so both targets carry it identically.
-FROM gcr.io/distroless/cc-debian13:nonroot@sha256:a77defd6fedbb3392b175ba8ea3d1c22be963c1597c248c3ba987ddd80bfb512 AS runtime-base
+FROM gcr.io/distroless/cc-debian13:nonroot@sha256:c31ff9abcb1910f3ab25c7957bdaf0bfe12a01eb546e8df2282f1c8f682b606c AS runtime-base
 # The `:nonroot` tag already runs as uid 65532, but a scanner reading the
 # Dockerfile cannot see a base image.s user — and neither can a reader. Stating
 # it makes the posture a property of this file rather than of a tag someone
@@ -179,7 +179,7 @@ LABEL org.opencontainers.image.title="FerroEHR admin console" \
       org.opencontainers.image.authors="Ruben Talstra <https://github.com/rubentalstra>" \
       org.opencontainers.image.licenses="MIT" \
       org.opencontainers.image.base.name="gcr.io/distroless/cc-debian13:nonroot" \
-      org.opencontainers.image.base.digest="sha256:a77defd6fedbb3392b175ba8ea3d1c22be963c1597c248c3ba987ddd80bfb512" \
+      org.opencontainers.image.base.digest="sha256:c31ff9abcb1910f3ab25c7957bdaf0bfe12a01eb546e8df2282f1c8f682b606c" \
       org.opencontainers.image.version="${VERSION}" \
       org.opencontainers.image.revision="${REVISION}"
 
