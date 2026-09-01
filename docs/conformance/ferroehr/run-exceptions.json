@@ -21,6 +21,13 @@
     }
   },
   {
+    "case": "CONT-ITEM-unmatched_member_refused",
+    "exception": {
+      "kind": "unrealized",
+      "detail": "option unmatched-member-refused: the ICS declares unmatched-member-accepted for register AMB-229's `unmatched-member` option family (statement.options), and the arms are mutually exclusive — ISO/IEC 9646 test selection"
+    }
+  },
+  {
     "case": "I_EHR_CONTRIBUTION.list_contributions-ehr_containing_directory",
     "exception": {
       "kind": "unrealized",
@@ -87,7 +94,7 @@
     "case": "I_DEFINITION_ADL14.get_opt-retrieve_latest_version",
     "exception": {
       "kind": "unrealized",
-      "detail": "option adl14-partial-id-latest: the ICS does not declare this register branch (statement.options) — ISO/IEC 9646 test selection"
+      "detail": "option adl14-partial-id-latest: the ICS declares adl14-partial-id-exact for register AMB-104's `adl14-partial-id` option family (statement.options), and the arms are mutually exclusive — ISO/IEC 9646 test selection"
     }
   },
   {
@@ -129,42 +136,42 @@
     "case": "I_DEMOGRAPHIC_SERVICE.create_party-xml",
     "exception": {
       "kind": "unrealized",
-      "detail": "option party-xml-write-refused: the ICS does not declare this register branch (statement.options) — ISO/IEC 9646 test selection"
+      "detail": "option party-xml-write-refused: the ICS declares party-xml-write-accepted for register AMB-167's `party-xml-write` option family (statement.options), and the arms are mutually exclusive — ISO/IEC 9646 test selection"
     }
   },
   {
     "case": "I_DEMOGRAPHIC_SERVICE.get_party-xml_not_acceptable",
     "exception": {
       "kind": "unrealized",
-      "detail": "option party-xml-unsupported: the ICS does not declare this register branch (statement.options) — ISO/IEC 9646 test selection"
+      "detail": "option party-xml-unsupported: the ICS declares party-xml-supported for register AMB-167's `party-xml` option family (statement.options), and the arms are mutually exclusive — ISO/IEC 9646 test selection"
     }
   },
   {
     "case": "I_DEMOGRAPHIC_SERVICE.update_party-xml",
     "exception": {
       "kind": "unrealized",
-      "detail": "option party-xml-write-refused: the ICS does not declare this register branch (statement.options) — ISO/IEC 9646 test selection"
+      "detail": "option party-xml-write-refused: the ICS declares party-xml-write-accepted for register AMB-167's `party-xml-write` option family (statement.options), and the arms are mutually exclusive — ISO/IEC 9646 test selection"
     }
   },
   {
     "case": "I_ITS_REST_VERSIONED_PARTY.versioned_party_get-xml",
     "exception": {
       "kind": "unrealized",
-      "detail": "option versioned-party-xml-supported: the ICS does not declare this register branch (statement.options) — ISO/IEC 9646 test selection"
+      "detail": "option versioned-party-xml-supported: the ICS declares versioned-party-xml-unsupported for register AMB-167's `versioned-party-xml` option family (statement.options), and the arms are mutually exclusive — ISO/IEC 9646 test selection"
     }
   },
   {
     "case": "I_EHR_DIRECTORY.create_directory-xml",
     "exception": {
       "kind": "unrealized",
-      "detail": "option directory-xml-write-refused: the ICS does not declare this register branch (statement.options) — ISO/IEC 9646 test selection"
+      "detail": "option directory-xml-write-refused: the ICS declares directory-xml-write-accepted for register AMB-167's `directory-xml-write` option family (statement.options), and the arms are mutually exclusive — ISO/IEC 9646 test selection"
     }
   },
   {
     "case": "I_EHR_DIRECTORY.get_directory-xml_not_acceptable",
     "exception": {
       "kind": "unrealized",
-      "detail": "option directory-xml-unsupported: the ICS does not declare this register branch (statement.options) — ISO/IEC 9646 test selection"
+      "detail": "option directory-xml-unsupported: the ICS declares directory-xml-supported for register AMB-167's `directory-xml` option family (statement.options), and the arms are mutually exclusive — ISO/IEC 9646 test selection"
     }
   },
   {
@@ -192,56 +199,70 @@
     "case": "I_EHR_DIRECTORY.update_directory-xml",
     "exception": {
       "kind": "unrealized",
-      "detail": "option directory-xml-write-refused: the ICS does not declare this register branch (statement.options) — ISO/IEC 9646 test selection"
+      "detail": "option directory-xml-write-refused: the ICS declares directory-xml-write-accepted for register AMB-167's `directory-xml-write` option family (statement.options), and the arms are mutually exclusive — ISO/IEC 9646 test selection"
     }
   },
   {
     "case": "I_EHR_SERVICE.create_ehr-xml",
     "exception": {
       "kind": "unrealized",
-      "detail": "option ehr-xml-write-refused: the ICS does not declare this register branch (statement.options) — ISO/IEC 9646 test selection"
+      "detail": "option ehr-xml-write-refused: the ICS declares ehr-xml-write-accepted for register AMB-167's `ehr-xml-write` option family (statement.options), and the arms are mutually exclusive — ISO/IEC 9646 test selection"
     }
   },
   {
     "case": "I_EHR_SERVICE.get_ehr-xml_not_acceptable",
     "exception": {
       "kind": "unrealized",
-      "detail": "option ehr-xml-unsupported: the ICS does not declare this register branch (statement.options) — ISO/IEC 9646 test selection"
+      "detail": "option ehr-xml-unsupported: the ICS declares ehr-xml-supported for register AMB-167's `ehr-xml` option family (statement.options), and the arms are mutually exclusive — ISO/IEC 9646 test selection"
     }
   },
   {
     "case": "I_EHR_STATUS.clear_ehr_modifiable-xml_body",
     "exception": {
       "kind": "unrealized",
-      "detail": "option ehr-status-xml-write-refused: the ICS does not declare this register branch (statement.options) — ISO/IEC 9646 test selection"
+      "detail": "option ehr-status-xml-write-refused: the ICS declares ehr-status-xml-write-accepted for register AMB-167's `ehr-status-xml-write` option family (statement.options), and the arms are mutually exclusive — ISO/IEC 9646 test selection"
     }
   },
   {
     "case": "I_EHR_STATUS.clear_ehr_queryable-xml_body",
     "exception": {
       "kind": "unrealized",
-      "detail": "option ehr-status-xml-write-refused: the ICS does not declare this register branch (statement.options) — ISO/IEC 9646 test selection"
+      "detail": "option ehr-status-xml-write-refused: the ICS declares ehr-status-xml-write-accepted for register AMB-167's `ehr-status-xml-write` option family (statement.options), and the arms are mutually exclusive — ISO/IEC 9646 test selection"
     }
   },
   {
     "case": "I_EHR_STATUS.get_ehr_status-xml_not_acceptable",
     "exception": {
       "kind": "unrealized",
-      "detail": "option ehr-status-xml-unsupported: the ICS does not declare this register branch (statement.options) — ISO/IEC 9646 test selection"
+      "detail": "option ehr-status-xml-unsupported: the ICS declares ehr-status-xml-supported for register AMB-167's `ehr-status-xml` option family (statement.options), and the arms are mutually exclusive — ISO/IEC 9646 test selection"
     }
   },
   {
     "case": "I_EHR_STATUS.set_ehr_modifiable-xml_body",
     "exception": {
       "kind": "unrealized",
-      "detail": "option ehr-status-xml-write-refused: the ICS does not declare this register branch (statement.options) — ISO/IEC 9646 test selection"
+      "detail": "option ehr-status-xml-write-refused: the ICS declares ehr-status-xml-write-accepted for register AMB-167's `ehr-status-xml-write` option family (statement.options), and the arms are mutually exclusive — ISO/IEC 9646 test selection"
     }
   },
   {
     "case": "I_EHR_STATUS.set_ehr_queryable-xml_body",
     "exception": {
       "kind": "unrealized",
-      "detail": "option ehr-status-xml-write-refused: the ICS does not declare this register branch (statement.options) — ISO/IEC 9646 test selection"
+      "detail": "option ehr-status-xml-write-refused: the ICS declares ehr-status-xml-write-accepted for register AMB-167's `ehr-status-xml-write` option family (statement.options), and the arms are mutually exclusive — ISO/IEC 9646 test selection"
+    }
+  },
+  {
+    "case": "I_QUERY_SERVICE.execute_ad_hoc_query-aggregates_non_numeric_executed",
+    "exception": {
+      "kind": "unrealized",
+      "detail": "option aql-nonnumeric-aggregate-executed: the ICS declares aql-nonnumeric-aggregate-refused for register AMB-227's `aql-nonnumeric-aggregate` option family (statement.options), and the arms are mutually exclusive — ISO/IEC 9646 test selection"
+    }
+  },
+  {
+    "case": "I_QUERY_SERVICE.execute_ad_hoc_query-undefined_containment_empty",
+    "exception": {
+      "kind": "unrealized",
+      "detail": "option undefined-containment-empty: the ICS declares undefined-containment-refused for register AMB-220's `undefined-containment` option family (statement.options), and the arms are mutually exclusive — ISO/IEC 9646 test selection"
     }
   },
   {
@@ -262,14 +283,14 @@
     "case": "SF-DEPRECATED-media_supported",
     "exception": {
       "kind": "unrealized",
-      "detail": "option sf-deprecated-types-supported: the ICS does not declare this register branch (statement.options) — ISO/IEC 9646 test selection"
+      "detail": "option sf-deprecated-types-supported: the ICS declares sf-deprecated-types-unsupported for register AMB-39's `sf-deprecated-types` option family (statement.options), and the arms are mutually exclusive — ISO/IEC 9646 test selection"
     }
   },
   {
     "case": "SF-LEGACY-nc_flat_media_supported",
     "exception": {
       "kind": "unrealized",
-      "detail": "option legacy-alt-formats-supported: the ICS does not declare this register branch (statement.options) — ISO/IEC 9646 test selection"
+      "detail": "option legacy-alt-formats-supported: the ICS declares legacy-alt-formats-unsupported for register AMB-61's `legacy-alt-formats` option family (statement.options), and the arms are mutually exclusive — ISO/IEC 9646 test selection"
     }
   }
 ]

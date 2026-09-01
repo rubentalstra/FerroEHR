@@ -1,11 +1,11 @@
 {
   "sut": {
     "name": "ferroehr",
-    "version": "4.0.10"
+    "version": "4.0.15"
   },
   "runner": {
     "name": "veredictum",
-    "version": "0.1.0",
+    "version": "0.1.5",
     "verification_pack_status": "passed"
   },
   "schedule_release": "cnf-2.0-w2",
@@ -16,9 +16,12 @@
       "canonical-xml",
       "wt-flat",
       "wt-structured"
-    ]
+    ],
+    "source": "declared"
   },
-  "ixit_digest": "a79538e1e8652ec3",
+  "ixit_digest": "60ab312f3d083668",
+  "statement_digest": "94161899de2835be",
+  "selection_basis": "statement",
   "restapi_specs_version": "1.1.0",
   "outcomes": [
     {
@@ -409,6 +412,12 @@
       "rows_total": 1
     },
     {
+      "case": "I_EHR_COMPOSITION.create_composition-client_supplied_uid",
+      "status": "passed",
+      "rows_driven": 1,
+      "rows_total": 1
+    },
+    {
       "case": "I_EHR_COMPOSITION.create_composition-cluster_no_items",
       "status": "passed",
       "rows_driven": 1,
@@ -726,6 +735,12 @@
     },
     {
       "case": "I_EHR_COMPOSITION.delete_composition-contradictory_lifecycle_header",
+      "status": "passed",
+      "rows_driven": 1,
+      "rows_total": 1
+    },
+    {
+      "case": "I_EHR_COMPOSITION.delete_composition-ehr_not_modifiable",
       "status": "passed",
       "rows_driven": 1,
       "rows_total": 1
@@ -1149,6 +1164,12 @@
       "rows_total": 1
     },
     {
+      "case": "I_EHR_COMPOSITION.update_composition-ehr_not_modifiable",
+      "status": "passed",
+      "rows_driven": 1,
+      "rows_total": 1
+    },
+    {
       "case": "I_EHR_COMPOSITION.update_composition-event",
       "status": "passed",
       "rows_driven": 1,
@@ -1266,6 +1287,12 @@
       "status": "passed",
       "rows_driven": 1,
       "rows_total": 1
+    },
+    {
+      "case": "CONT-CLUSTER-items_cardinality",
+      "status": "passed",
+      "rows_driven": 20,
+      "rows_total": 20
     },
     {
       "case": "CONT-COMP-content_card_1plus-context_any",
@@ -1808,6 +1835,12 @@
       "rows_total": 6
     },
     {
+      "case": "CONT-DV_TEXT-validate_pattern",
+      "status": "passed",
+      "rows_driven": 4,
+      "rows_total": 4
+    },
+    {
       "case": "CONT-DV_TIME-validate_constraint",
       "status": "passed",
       "rows_driven": 63,
@@ -1842,6 +1875,12 @@
       "status": "passed",
       "rows_driven": 2,
       "rows_total": 2
+    },
+    {
+      "case": "CONT-ELEMENT-value_null_flavour_existence",
+      "status": "passed",
+      "rows_driven": 12,
+      "rows_total": 12
     },
     {
       "case": "CONT-EVENT-state_ex_mand",
@@ -1952,6 +1991,43 @@
       "rows_total": 6
     },
     {
+      "case": "CONT-ITEM-type_any",
+      "status": "passed",
+      "rows_driven": 2,
+      "rows_total": 2
+    },
+    {
+      "case": "CONT-ITEM-type_cluster",
+      "status": "passed",
+      "rows_driven": 1,
+      "rows_total": 1
+    },
+    {
+      "case": "CONT-ITEM-type_element",
+      "status": "passed",
+      "rows_driven": 1,
+      "rows_total": 1
+    },
+    {
+      "case": "CONT-ITEM-unmatched_member_accepted",
+      "status": "passed",
+      "rows_driven": 2,
+      "rows_total": 2
+    },
+    {
+      "case": "CONT-ITEM-unmatched_member_refused",
+      "status": "not_applicable",
+      "rows_driven": 0,
+      "rows_total": 1,
+      "citation": "option unmatched-member-refused: the ICS declares unmatched-member-accepted for register AMB-229's `unmatched-member` option family (statement.options), and the arms are mutually exclusive — ISO/IEC 9646 test selection"
+    },
+    {
+      "case": "CONT-ITEM_LIST-items_cardinality",
+      "status": "passed",
+      "rows_driven": 24,
+      "rows_total": 24
+    },
+    {
       "case": "CONT-ITEM_STR-type_any",
       "status": "passed",
       "rows_driven": 4,
@@ -1980,6 +2056,18 @@
       "status": "passed",
       "rows_driven": 4,
       "rows_total": 4
+    },
+    {
+      "case": "CONT-ITEM_TABLE-rows_cardinality",
+      "status": "passed",
+      "rows_driven": 24,
+      "rows_total": 24
+    },
+    {
+      "case": "CONT-ITEM_TREE-items_cardinality",
+      "status": "passed",
+      "rows_driven": 24,
+      "rows_total": 24
     },
     {
       "case": "CONT-OBS-state_ex_mand-protocol_ex_mand",
@@ -2155,6 +2243,12 @@
       "rows_total": 1
     },
     {
+      "case": "I_EHR_CONTRIBUTION.commit_contribution-deactivating_mixed_change_set_composition_container",
+      "status": "passed",
+      "rows_driven": 1,
+      "rows_total": 1
+    },
+    {
       "case": "I_EHR_CONTRIBUTION.commit_contribution-delete",
       "status": "passed",
       "rows_driven": 1,
@@ -2216,6 +2310,12 @@
     },
     {
       "case": "I_EHR_CONTRIBUTION.commit_contribution-ehr_status_invalid_change_type_deleted",
+      "status": "passed",
+      "rows_driven": 1,
+      "rows_total": 1
+    },
+    {
+      "case": "I_EHR_CONTRIBUTION.commit_contribution-ehr_status_only_deactivated_ehr",
       "status": "passed",
       "rows_driven": 1,
       "rows_total": 1
@@ -2415,6 +2515,12 @@
       "rows_total": 1
     },
     {
+      "case": "I_EHR_CONTRIBUTION.commit_contribution-mixed_change_set_stays_deactivated",
+      "status": "passed",
+      "rows_driven": 1,
+      "rows_total": 1
+    },
+    {
       "case": "I_EHR_CONTRIBUTION.commit_contribution-multiple_valid_event_compositions",
       "status": "passed",
       "rows_driven": 1,
@@ -2495,6 +2601,12 @@
     },
     {
       "case": "I_EHR_CONTRIBUTION.commit_contribution-reactivating_mixed_change_set",
+      "status": "passed",
+      "rows_driven": 1,
+      "rows_total": 1
+    },
+    {
+      "case": "I_EHR_CONTRIBUTION.commit_contribution-reactivating_mixed_change_set_composition_container",
       "status": "passed",
       "rows_driven": 1,
       "rows_total": 1
@@ -2795,7 +2907,7 @@
       "status": "not_applicable",
       "rows_driven": 0,
       "rows_total": 1,
-      "citation": "option adl14-partial-id-latest: the ICS does not declare this register branch (statement.options) — ISO/IEC 9646 test selection"
+      "citation": "option adl14-partial-id-latest: the ICS declares adl14-partial-id-exact for register AMB-104's `adl14-partial-id` option family (statement.options), and the arms are mutually exclusive — ISO/IEC 9646 test selection"
     },
     {
       "case": "I_DEFINITION_ADL14.get_opt-retrieve_single",
@@ -3415,6 +3527,12 @@
       "rows_total": 1
     },
     {
+      "case": "I_DEMOGRAPHIC_SERVICE.create_party-error_body_content_type",
+      "status": "passed",
+      "rows_driven": 1,
+      "rows_total": 1
+    },
+    {
       "case": "I_DEMOGRAPHIC_SERVICE.create_party-group_contact_addresses_empty",
       "status": "passed",
       "rows_driven": 1,
@@ -3583,7 +3701,7 @@
       "status": "not_applicable",
       "rows_driven": 0,
       "rows_total": 1,
-      "citation": "option party-xml-write-refused: the ICS does not declare this register branch (statement.options) — ISO/IEC 9646 test selection"
+      "citation": "option party-xml-write-refused: the ICS declares party-xml-write-accepted for register AMB-167's `party-xml-write` option family (statement.options), and the arms are mutually exclusive — ISO/IEC 9646 test selection"
     },
     {
       "case": "I_DEMOGRAPHIC_SERVICE.create_party_relationship-aaaa",
@@ -3687,7 +3805,7 @@
       "status": "not_applicable",
       "rows_driven": 0,
       "rows_total": 1,
-      "citation": "option party-xml-unsupported: the ICS does not declare this register branch (statement.options) — ISO/IEC 9646 test selection"
+      "citation": "option party-xml-unsupported: the ICS declares party-xml-supported for register AMB-167's `party-xml` option family (statement.options), and the arms are mutually exclusive — ISO/IEC 9646 test selection"
     },
     {
       "case": "I_DEMOGRAPHIC_SERVICE.get_party_at_time-aaaa",
@@ -3967,7 +4085,7 @@
       "status": "not_applicable",
       "rows_driven": 0,
       "rows_total": 1,
-      "citation": "option party-xml-write-refused: the ICS does not declare this register branch (statement.options) — ISO/IEC 9646 test selection"
+      "citation": "option party-xml-write-refused: the ICS declares party-xml-write-accepted for register AMB-167's `party-xml-write` option family (statement.options), and the arms are mutually exclusive — ISO/IEC 9646 test selection"
     },
     {
       "case": "I_DEMOGRAPHIC_SERVICE.update_party_relationship-aaaa",
@@ -4310,7 +4428,7 @@
       "status": "not_applicable",
       "rows_driven": 0,
       "rows_total": 1,
-      "citation": "option versioned-party-xml-supported: the ICS does not declare this register branch (statement.options) — ISO/IEC 9646 test selection"
+      "citation": "option versioned-party-xml-supported: the ICS declares versioned-party-xml-unsupported for register AMB-167's `versioned-party-xml` option family (statement.options), and the arms are mutually exclusive — ISO/IEC 9646 test selection"
     },
     {
       "case": "I_ITS_REST_VERSIONED_PARTY.versioned_party_get-xml_not_acceptable",
@@ -4326,6 +4444,12 @@
     },
     {
       "case": "I_EHR_DIRECTORY.create_directory-bad_ehr",
+      "status": "passed",
+      "rows_driven": 1,
+      "rows_total": 1
+    },
+    {
+      "case": "I_EHR_DIRECTORY.create_directory-client_supplied_uid",
       "status": "passed",
       "rows_driven": 1,
       "rows_total": 1
@@ -4424,6 +4548,12 @@
       "rows_total": 1
     },
     {
+      "case": "I_EHR_DIRECTORY.create_directory-root_node_id_empty",
+      "status": "passed",
+      "rows_driven": 1,
+      "rows_total": 1
+    },
+    {
       "case": "I_EHR_DIRECTORY.create_directory-versioned_id_items",
       "status": "passed",
       "rows_driven": 1,
@@ -4446,10 +4576,16 @@
       "status": "not_applicable",
       "rows_driven": 0,
       "rows_total": 1,
-      "citation": "option directory-xml-write-refused: the ICS does not declare this register branch (statement.options) — ISO/IEC 9646 test selection"
+      "citation": "option directory-xml-write-refused: the ICS declares directory-xml-write-accepted for register AMB-167's `directory-xml-write` option family (statement.options), and the arms are mutually exclusive — ISO/IEC 9646 test selection"
     },
     {
       "case": "I_EHR_DIRECTORY.delete_directory-bad_ehr",
+      "status": "passed",
+      "rows_driven": 1,
+      "rows_total": 1
+    },
+    {
+      "case": "I_EHR_DIRECTORY.delete_directory-ehr_not_modifiable",
       "status": "passed",
       "rows_driven": 1,
       "rows_total": 1
@@ -4544,7 +4680,7 @@
       "status": "not_applicable",
       "rows_driven": 0,
       "rows_total": 1,
-      "citation": "option directory-xml-unsupported: the ICS does not declare this register branch (statement.options) — ISO/IEC 9646 test selection"
+      "citation": "option directory-xml-unsupported: the ICS declares directory-xml-supported for register AMB-167's `directory-xml` option family (statement.options), and the arms are mutually exclusive — ISO/IEC 9646 test selection"
     },
     {
       "case": "I_EHR_DIRECTORY.get_directory_at_time-bad_ehr",
@@ -4789,6 +4925,12 @@
       "rows_total": 1
     },
     {
+      "case": "I_EHR_DIRECTORY.update_directory-ehr_not_modifiable",
+      "status": "passed",
+      "rows_driven": 1,
+      "rows_total": 1
+    },
+    {
       "case": "I_EHR_DIRECTORY.update_directory-ehr_with_directory",
       "status": "passed",
       "rows_driven": 1,
@@ -4848,7 +4990,7 @@
       "status": "not_applicable",
       "rows_driven": 0,
       "rows_total": 1,
-      "citation": "option directory-xml-write-refused: the ICS does not declare this register branch (statement.options) — ISO/IEC 9646 test selection"
+      "citation": "option directory-xml-write-refused: the ICS declares directory-xml-write-accepted for register AMB-167's `directory-xml-write` option family (statement.options), and the arms are mutually exclusive — ISO/IEC 9646 test selection"
     },
     {
       "case": "I_EHR_COMPOSITION.create_composition-bulk_load_depth",
@@ -4941,7 +5083,7 @@
       "status": "not_applicable",
       "rows_driven": 0,
       "rows_total": 1,
-      "citation": "option ehr-xml-write-refused: the ICS does not declare this register branch (statement.options) — ISO/IEC 9646 test selection"
+      "citation": "option ehr-xml-write-refused: the ICS declares ehr-xml-write-accepted for register AMB-167's `ehr-xml-write` option family (statement.options), and the arms are mutually exclusive — ISO/IEC 9646 test selection"
     },
     {
       "case": "I_EHR_SERVICE.get_ehr-existing_ehr_by_ehr_id",
@@ -4985,7 +5127,7 @@
       "status": "not_applicable",
       "rows_driven": 0,
       "rows_total": 1,
-      "citation": "option ehr-xml-unsupported: the ICS does not declare this register branch (statement.options) — ISO/IEC 9646 test selection"
+      "citation": "option ehr-xml-unsupported: the ICS declares ehr-xml-supported for register AMB-167's `ehr-xml` option family (statement.options), and the arms are mutually exclusive — ISO/IEC 9646 test selection"
     },
     {
       "case": "I_EHR_SERVICE.get_ehrs_for_subject-xml",
@@ -5067,10 +5209,16 @@
       "status": "not_applicable",
       "rows_driven": 0,
       "rows_total": 1,
-      "citation": "option ehr-status-xml-write-refused: the ICS does not declare this register branch (statement.options) — ISO/IEC 9646 test selection"
+      "citation": "option ehr-status-xml-write-refused: the ICS declares ehr-status-xml-write-accepted for register AMB-167's `ehr-status-xml-write` option family (statement.options), and the arms are mutually exclusive — ISO/IEC 9646 test selection"
     },
     {
       "case": "I_EHR_STATUS.clear_ehr_queryable-bad_ehr",
+      "status": "passed",
+      "rows_driven": 1,
+      "rows_total": 1
+    },
+    {
+      "case": "I_EHR_STATUS.clear_ehr_queryable-client_supplied_uid",
       "status": "passed",
       "rows_driven": 1,
       "rows_total": 1
@@ -5104,7 +5252,7 @@
       "status": "not_applicable",
       "rows_driven": 0,
       "rows_total": 1,
-      "citation": "option ehr-status-xml-write-refused: the ICS does not declare this register branch (statement.options) — ISO/IEC 9646 test selection"
+      "citation": "option ehr-status-xml-write-refused: the ICS declares ehr-status-xml-write-accepted for register AMB-167's `ehr-status-xml-write` option family (statement.options), and the arms are mutually exclusive — ISO/IEC 9646 test selection"
     },
     {
       "case": "I_EHR_STATUS.get_ehr_status-at_time_before_first_version",
@@ -5154,7 +5302,7 @@
       "status": "not_applicable",
       "rows_driven": 0,
       "rows_total": 1,
-      "citation": "option ehr-status-xml-unsupported: the ICS does not declare this register branch (statement.options) — ISO/IEC 9646 test selection"
+      "citation": "option ehr-status-xml-unsupported: the ICS declares ehr-status-xml-supported for register AMB-167's `ehr-status-xml` option family (statement.options), and the arms are mutually exclusive — ISO/IEC 9646 test selection"
     },
     {
       "case": "I_EHR_STATUS.get_ehr_status_at_version-addressed_version",
@@ -5242,6 +5390,12 @@
       "rows_total": 1
     },
     {
+      "case": "I_EHR_STATUS.set_ehr_modifiable-deactivated_ehr",
+      "status": "passed",
+      "rows_driven": 1,
+      "rows_total": 1
+    },
+    {
       "case": "I_EHR_STATUS.set_ehr_modifiable-existing_ehr",
       "status": "passed",
       "rows_driven": 1,
@@ -5260,6 +5414,12 @@
       "rows_total": 1
     },
     {
+      "case": "I_EHR_STATUS.set_ehr_modifiable-root_archetype_id_mismatch",
+      "status": "passed",
+      "rows_driven": 1,
+      "rows_total": 1
+    },
+    {
       "case": "I_EHR_STATUS.set_ehr_modifiable-stale_if_match",
       "status": "passed",
       "rows_driven": 1,
@@ -5270,7 +5430,7 @@
       "status": "not_applicable",
       "rows_driven": 0,
       "rows_total": 1,
-      "citation": "option ehr-status-xml-write-refused: the ICS does not declare this register branch (statement.options) — ISO/IEC 9646 test selection"
+      "citation": "option ehr-status-xml-write-refused: the ICS declares ehr-status-xml-write-accepted for register AMB-167's `ehr-status-xml-write` option family (statement.options), and the arms are mutually exclusive — ISO/IEC 9646 test selection"
     },
     {
       "case": "I_EHR_STATUS.set_ehr_queryable-audit_change_type",
@@ -5344,7 +5504,7 @@
       "status": "not_applicable",
       "rows_driven": 0,
       "rows_total": 1,
-      "citation": "option ehr-status-xml-write-refused: the ICS does not declare this register branch (statement.options) — ISO/IEC 9646 test selection"
+      "citation": "option ehr-status-xml-write-refused: the ICS declares ehr-status-xml-write-accepted for register AMB-167's `ehr-status-xml-write` option family (statement.options), and the arms are mutually exclusive — ISO/IEC 9646 test selection"
     },
     {
       "case": "I_EHR_STATUS.update_other_details-round_trip",
@@ -5888,6 +6048,25 @@
       "rows_total": 1
     },
     {
+      "case": "I_QUERY_SERVICE.execute_ad_hoc_query-aggregates_non_numeric",
+      "status": "passed",
+      "rows_driven": 1,
+      "rows_total": 1
+    },
+    {
+      "case": "I_QUERY_SERVICE.execute_ad_hoc_query-aggregates_non_numeric_executed",
+      "status": "not_applicable",
+      "rows_driven": 0,
+      "rows_total": 1,
+      "citation": "option aql-nonnumeric-aggregate-executed: the ICS declares aql-nonnumeric-aggregate-refused for register AMB-227's `aql-nonnumeric-aggregate` option family (statement.options), and the arms are mutually exclusive — ISO/IEC 9646 test selection"
+    },
+    {
+      "case": "I_QUERY_SERVICE.execute_ad_hoc_query-aggregates_non_numeric_refused",
+      "status": "passed",
+      "rows_driven": 1,
+      "rows_total": 1
+    },
+    {
       "case": "I_QUERY_SERVICE.execute_ad_hoc_query-all_versions",
       "status": "passed",
       "rows_driven": 1,
@@ -6002,6 +6181,48 @@
       "rows_total": 1
     },
     {
+      "case": "I_QUERY_SERVICE.execute_ad_hoc_query-folder_composition_pairs",
+      "status": "passed",
+      "rows_driven": 1,
+      "rows_total": 1
+    },
+    {
+      "case": "I_QUERY_SERVICE.execute_ad_hoc_query-folder_folder_pairs",
+      "status": "passed",
+      "rows_driven": 1,
+      "rows_total": 1
+    },
+    {
+      "case": "I_QUERY_SERVICE.execute_ad_hoc_query-folder_name_scoped",
+      "status": "passed",
+      "rows_driven": 1,
+      "rows_total": 1
+    },
+    {
+      "case": "I_QUERY_SERVICE.execute_ad_hoc_query-folder_nodes_order_invariant",
+      "status": "passed",
+      "rows_driven": 1,
+      "rows_total": 1
+    },
+    {
+      "case": "I_QUERY_SERVICE.execute_ad_hoc_query-folder_not_contains",
+      "status": "passed",
+      "rows_driven": 1,
+      "rows_total": 1
+    },
+    {
+      "case": "I_QUERY_SERVICE.execute_ad_hoc_query-folder_unreferenced_never_pairs",
+      "status": "passed",
+      "rows_driven": 1,
+      "rows_total": 1
+    },
+    {
+      "case": "I_QUERY_SERVICE.execute_ad_hoc_query-like_escaped_wildcard",
+      "status": "passed",
+      "rows_driven": 1,
+      "rows_total": 1
+    },
+    {
       "case": "I_QUERY_SERVICE.execute_ad_hoc_query-like_wildcards",
       "status": "passed",
       "rows_driven": 1,
@@ -6015,6 +6236,24 @@
     },
     {
       "case": "I_QUERY_SERVICE.execute_ad_hoc_query-malformed_queries",
+      "status": "passed",
+      "rows_driven": 1,
+      "rows_total": 1
+    },
+    {
+      "case": "I_QUERY_SERVICE.execute_ad_hoc_query-multivalued_link_no_match",
+      "status": "passed",
+      "rows_driven": 1,
+      "rows_total": 1
+    },
+    {
+      "case": "I_QUERY_SERVICE.execute_ad_hoc_query-multivalued_link_second_match",
+      "status": "passed",
+      "rows_driven": 1,
+      "rows_total": 1
+    },
+    {
+      "case": "I_QUERY_SERVICE.execute_ad_hoc_query-multivalued_participation_second_match",
       "status": "passed",
       "rows_driven": 1,
       "rows_total": 1
@@ -6044,6 +6283,12 @@
       "rows_total": 1
     },
     {
+      "case": "I_QUERY_SERVICE.execute_ad_hoc_query-order_by_non_numeric",
+      "status": "passed",
+      "rows_driven": 1,
+      "rows_total": 1
+    },
+    {
       "case": "I_QUERY_SERVICE.execute_ad_hoc_query-post_fetch_conflict",
       "status": "passed",
       "rows_driven": 1,
@@ -6063,6 +6308,12 @@
     },
     {
       "case": "I_QUERY_SERVICE.execute_ad_hoc_query-result_set_etag",
+      "status": "passed",
+      "rows_driven": 1,
+      "rows_total": 1
+    },
+    {
+      "case": "I_QUERY_SERVICE.execute_ad_hoc_query-result_set_meta",
       "status": "passed",
       "rows_driven": 1,
       "rows_total": 1
@@ -6141,6 +6392,19 @@
     },
     {
       "case": "I_QUERY_SERVICE.execute_ad_hoc_query-uncoercible_parameter",
+      "status": "passed",
+      "rows_driven": 1,
+      "rows_total": 1
+    },
+    {
+      "case": "I_QUERY_SERVICE.execute_ad_hoc_query-undefined_containment_empty",
+      "status": "not_applicable",
+      "rows_driven": 0,
+      "rows_total": 1,
+      "citation": "option undefined-containment-empty: the ICS declares undefined-containment-refused for register AMB-220's `undefined-containment` option family (statement.options), and the arms are mutually exclusive — ISO/IEC 9646 test selection"
+    },
+    {
+      "case": "I_QUERY_SERVICE.execute_ad_hoc_query-undefined_containment_refused",
       "status": "passed",
       "rows_driven": 1,
       "rows_total": 1
@@ -6423,7 +6687,7 @@
       "status": "not_applicable",
       "rows_driven": 0,
       "rows_total": 1,
-      "citation": "option sf-deprecated-types-supported: the ICS does not declare this register branch (statement.options) — ISO/IEC 9646 test selection"
+      "citation": "option sf-deprecated-types-supported: the ICS declares sf-deprecated-types-unsupported for register AMB-39's `sf-deprecated-types` option family (statement.options), and the arms are mutually exclusive — ISO/IEC 9646 test selection"
     },
     {
       "case": "SF-DEPRECATED-media_unsupported",
@@ -6556,7 +6820,7 @@
       "status": "not_applicable",
       "rows_driven": 0,
       "rows_total": 1,
-      "citation": "option legacy-alt-formats-supported: the ICS does not declare this register branch (statement.options) — ISO/IEC 9646 test selection"
+      "citation": "option legacy-alt-formats-supported: the ICS declares legacy-alt-formats-unsupported for register AMB-61's `legacy-alt-formats` option family (statement.options), and the arms are mutually exclusive — ISO/IEC 9646 test selection"
     },
     {
       "case": "SF-LEGACY-nc_flat_media_unsupported",
@@ -15011,5 +15275,74 @@
       }
     }
   ],
-  "ambiguity_dispositions": []
+  "ambiguity_dispositions": [
+    {
+      "ambiguity": "AMB-39",
+      "option": "sf-deprecated-types-unsupported"
+    },
+    {
+      "ambiguity": "AMB-61",
+      "option": "legacy-alt-formats-unsupported"
+    },
+    {
+      "ambiguity": "AMB-104",
+      "option": "adl14-partial-id-exact"
+    },
+    {
+      "ambiguity": "AMB-167",
+      "option": "ehr-xml-supported"
+    },
+    {
+      "ambiguity": "AMB-167",
+      "option": "ehr-status-xml-supported"
+    },
+    {
+      "ambiguity": "AMB-167",
+      "option": "directory-xml-supported"
+    },
+    {
+      "ambiguity": "AMB-167",
+      "option": "party-xml-supported"
+    },
+    {
+      "ambiguity": "AMB-167",
+      "option": "versioned-party-xml-unsupported"
+    },
+    {
+      "ambiguity": "AMB-167",
+      "option": "contribution-xml-unsupported"
+    },
+    {
+      "ambiguity": "AMB-167",
+      "option": "ehr-xml-write-accepted"
+    },
+    {
+      "ambiguity": "AMB-167",
+      "option": "ehr-status-xml-write-accepted"
+    },
+    {
+      "ambiguity": "AMB-167",
+      "option": "directory-xml-write-accepted"
+    },
+    {
+      "ambiguity": "AMB-167",
+      "option": "party-xml-write-accepted"
+    },
+    {
+      "ambiguity": "AMB-169",
+      "option": "xml-namespace-negotiated"
+    },
+    {
+      "ambiguity": "AMB-220",
+      "option": "undefined-containment-refused"
+    },
+    {
+      "ambiguity": "AMB-227",
+      "option": "aql-nonnumeric-aggregate-refused"
+    },
+    {
+      "ambiguity": "AMB-229",
+      "option": "unmatched-member-accepted"
+    }
+  ]
 }

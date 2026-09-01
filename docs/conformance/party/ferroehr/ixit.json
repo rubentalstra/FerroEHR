@@ -2,6 +2,7 @@
   "instances": {
     "sut": {
       "base_url": "http://localhost:8080/ferroehr/rest/openehr/v1",
+      "administrative": false,
       "auth": {
         "mode": "bearer_mint",
         "subject": "cnf-user",
@@ -16,6 +17,7 @@
     },
     "admin": {
       "base_url": "http://localhost:8080/ferroehr/rest/openehr/v1",
+      "administrative": true,
       "auth": {
         "mode": "bearer_mint",
         "subject": "cnf-admin",
@@ -31,6 +33,7 @@
     },
     "readonly": {
       "base_url": "http://localhost:8080/ferroehr/rest/openehr/v1",
+      "administrative": false,
       "auth": {
         "mode": "bearer_mint",
         "subject": "cnf-readonly",
@@ -63,6 +66,7 @@
     },
     "sut_pgp": {
       "base_url": "http://localhost:8081/ferroehr/rest/openehr/v1",
+      "administrative": false,
       "auth": {
         "mode": "bearer_mint",
         "subject": "cnf-user",
@@ -113,6 +117,7 @@
     },
     "sut_stable": {
       "base_url": "http://localhost:8082/ferroehr/rest/openehr/v1",
+      "administrative": false,
       "auth": {
         "mode": "bearer_mint",
         "subject": "cnf-user",

@@ -4,9 +4,9 @@
 
 | Field | Value |
 | --- | --- |
-| Solution | ferroehr 4.0.10 |
+| Solution | ferroehr 4.0.15 |
 | Vendor | Ruben Talstra |
-| Runner | veredictum 0.1.0 |
+| Runner | veredictum 0.1.5 |
 | Infrastructure | ixit.json#/environment |
 
 ## Scope of Test

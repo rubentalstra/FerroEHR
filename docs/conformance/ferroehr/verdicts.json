@@ -241,37 +241,37 @@
     [
       "EhrStatus",
       {
-        "passed": 45,
+        "passed": 48,
+        "failed": 0,
+        "inconclusive": 0,
+        "unevidenced": 5
+      }
+    ],
+    [
+      "CompositionOps",
+      {
+        "passed": 63,
+        "failed": 0,
+        "inconclusive": 0,
+        "unevidenced": 0
+      }
+    ],
+    [
+      "DirectoryOps",
+      {
+        "passed": 88,
         "failed": 0,
         "inconclusive": 0,
         "unevidenced": 8
       }
     ],
     [
-      "CompositionOps",
-      {
-        "passed": 60,
-        "failed": 0,
-        "inconclusive": 0,
-        "unevidenced": 3
-      }
-    ],
-    [
-      "DirectoryOps",
-      {
-        "passed": 78,
-        "failed": 0,
-        "inconclusive": 0,
-        "unevidenced": 18
-      }
-    ],
-    [
       "ChangeSets",
       {
-        "passed": 104,
+        "passed": 108,
         "failed": 0,
         "inconclusive": 0,
-        "unevidenced": 9
+        "unevidenced": 5
       }
     ],
     [
@@ -286,19 +286,19 @@
     [
       "ArchetypeValidation",
       {
-        "passed": 125,
+        "passed": 135,
         "failed": 0,
         "inconclusive": 0,
-        "unevidenced": 11
+        "unevidenced": 1
       }
     ],
     [
       "PartyOperations",
       {
-        "passed": 88,
+        "passed": 89,
         "failed": 0,
         "inconclusive": 0,
-        "unevidenced": 5
+        "unevidenced": 4
       }
     ],
     [
@@ -322,19 +322,19 @@
     [
       "AqlBasic",
       {
-        "passed": 36,
+        "passed": 50,
         "failed": 0,
         "inconclusive": 0,
-        "unevidenced": 16
+        "unevidenced": 2
       }
     ],
     [
       "AqlAdvanced",
       {
-        "passed": 3,
+        "passed": 4,
         "failed": 0,
         "inconclusive": 0,
-        "unevidenced": 1
+        "unevidenced": 0
       }
     ],
     [
@@ -439,10 +439,10 @@
     [
       "DemographicApi",
       {
-        "passed": 63,
+        "passed": 64,
         "failed": 0,
         "inconclusive": 0,
-        "unevidenced": 2
+        "unevidenced": 1
       }
     ],
     [
@@ -589,8 +589,8 @@
   ],
   "coverage": {
     "selected": 1145,
-    "driven": 1064,
-    "passed": 1064,
+    "driven": 1104,
+    "passed": 1104,
     "failed": 0,
     "inconclusive": 0
   }
