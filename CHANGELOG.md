@@ -17,6 +17,11 @@ workflow refuses a tag that has no matching section here.
 
 ### Changed
 
+- The hosted sandbox (sandbox.ferroehr.eu) runs on a Hetzner CX33 (4 shared
+  vCPU, 8 GB RAM, 80 GB NVMe), resized in place from the CPX22. The hosted
+  compose memory limits that ship inside the server image move with it: the
+  CDR container to 4096m and the FerroEHR Viewer container to 1536m, so the
+  services actually use the larger box.
 - The admin console is now **FerroEHR Viewer**, and every name it carries
   changes with it. Deployments must switch their references: the OCI image is
   `ghcr.io/rubentalstra/ferroehr-viewer` (was `ferroehr-admin-ui`), the Compose

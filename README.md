@@ -217,7 +217,7 @@ knows what it runs on and what it costs:
 
 | | |
 |---|---|
-| Server | one Hetzner Cloud CPX22 — 2 vCPU, 4 GB RAM, 80 GB SSD — at €23.58/month |
+| Server | one Hetzner Cloud CX33 — 4 shared vCPU, 8 GB RAM, 80 GB NVMe SSD — at €8.49/month net |
 | Location | Nuremberg, Germany (`eu-central`), dual-stack, behind a Caddy proxy terminating TLS |
 | Database | Neon serverless PostgreSQL 18, Frankfurt, on its direct (non-pooled) endpoint |
 

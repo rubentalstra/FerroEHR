@@ -32,12 +32,13 @@ services:
       timeout: 5s
       retries: 3
       start_period: 30s
-    # Sized for the box (a CPX21: 3 vCPU, 4 GB), not for an aspiration. On a
-    # resize the three limits below move together, and none is a code change.
+    # Sized for the box (a CX33: 4 vCPU, 8 GB), not for an aspiration. On a
+    # resize this limit and the console's move together, and neither is a
+    # code change.
     deploy:
       resources:
         limits:
-          memory: 2048m
+          memory: 4096m
     environment:
       FERROEHR_CONFIG: /etc/ferroehr/ferroehr.toml
     env_file:
@@ -63,7 +64,7 @@ services:
     deploy:
       resources:
         limits:
-          memory: 768m
+          memory: 1536m
     environment:
       FERROEHR_VIEWER_CONFIG: /etc/ferroehr/viewer.toml
     volumes:

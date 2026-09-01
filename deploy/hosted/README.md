@@ -18,10 +18,14 @@ directory states.
 
 ## The machine
 
-A Hetzner **CPX22** — 2 vCPU x86, 4 GB RAM, 80 GB SSD — in Nuremberg
-(`eu-central`), dual-stack (167.233.172.220 / 2a01:4f8:1c16:5d4::/64),
-provisioned once from `cloud-init.yaml`. The compose memory limits are sized
-for this box; on a resize they move with it, and neither is a code change.
+A Hetzner **CX33** — 4 shared vCPU, 8 GB RAM, 80 GB NVMe SSD, 20 TB included
+traffic; €8.49/month net (€0.0136/h, DE list price since 15 June 2026,
+<https://docs.hetzner.com/general/infrastructure-and-availability/price-adjustment/>) —
+in Nuremberg (`eu-central`), dual-stack (167.233.172.220 /
+2a01:4f8:1c16:5d4::/64), provisioned once from `cloud-init.yaml` and resized
+in place from the original CPX22 on 2026-09-01. The compose memory limits are
+sized for this box; on a resize they move with it, and neither is a code
+change.
 
 The database is NOT on the box: a standalone Neon project (PostgreSQL 18,
 Frankfurt) consumed over its **direct** (non-pooled) endpoint — Neon's pooler

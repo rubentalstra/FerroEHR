@@ -55,7 +55,7 @@ what it runs on and what to expect from it:
 
 | | |
 |---|---|
-| Compute | one dedicated Hetzner Cloud CPX22 (2 vCPU, 4 GB RAM, 80 GB SSD; Nuremberg, `eu-central`; €23.58/month), running the published container images behind a Caddy proxy that terminates TLS |
+| Compute | one dedicated Hetzner Cloud CX33 (4 shared vCPU, 8 GB RAM, 80 GB NVMe SSD; Nuremberg, `eu-central`; €8.49/month net), running the published container images behind a Caddy proxy that terminates TLS |
 | Database | Neon serverless PostgreSQL 18, region Frankfurt, over its direct (non-pooled) endpoint |
 | Data durability | none by design: **every night around midnight UTC the whole store is wiped and fresh demo data is seeded** |
 
