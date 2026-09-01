@@ -98,6 +98,12 @@ pub enum TestkitError {
         /// The last connection error observed.
         last: String,
     },
+    /// No database is available on this box: `FERROEHR_TEST_PG_URL` is unset
+    /// and no Docker daemon answered, so container-backed tests cannot run
+    /// here. The message carries the probe result and the way out; a broken
+    /// setup with a REACHABLE daemon still fails through the other variants.
+    #[error("testkit: {0}")]
+    DockerUnavailable(String),
 }
 
 /// One fresh, fully migrated database for one test: a clone of the migrated
@@ -266,14 +272,17 @@ async fn server() -> Result<&'static str, TestkitError> {
 /// container (started or adopted).
 #[expect(
     clippy::disallowed_methods,
-    reason = "`FERROEHR_TEST_PG_URL` is the harness's OWN environment contract (CI \
-              hands it the workflow server); testkit is test tooling and must not \
-              depend on the server's config tree, which is what that ban protects"
+    reason = "`FERROEHR_TEST_PG_URL` and `DOCKER_HOST` are the harness's OWN \
+              environment contracts (CI hands it the workflow server; Docker's \
+              own variable names the daemon); testkit is test tooling and must \
+              not depend on the server's config tree, which is what that ban \
+              protects"
 )]
 async fn resolve_server_url() -> Result<String, TestkitError> {
     if let Ok(url) = std::env::var(ENV_URL) {
         return Ok(url);
     }
+    probe_docker(std::env::var("DOCKER_HOST").ok().as_deref())?;
     let container = CONTAINER.get_or_try_init(start_container).await?;
     let host = container.get_host().await?.to_string();
     let port = container.get_host_port_ipv4(5432).await?;
@@ -286,6 +295,60 @@ async fn resolve_server_url() -> Result<String, TestkitError> {
 ///
 /// Concurrent first boots race on the fixed name; the losers retry and the
 /// reuse lookup then finds the winner's container.
+/// Fails fast, with the way out in the message, when no Docker daemon can
+/// answer — BEFORE testcontainers burns its retry ladder on connection
+/// refusals.
+///
+/// The live failure class this closes (#3009): `/var/run/docker.sock` on a
+/// developer box can be a dead symlink to another runtime's socket (a podman
+/// machine that is not running) while Docker Desktop serves its real socket
+/// at `~/.docker/run/docker.sock`; testcontainers then reports a bare
+/// `ConnectionRefused` per test. `std::env::set_var` is unsafe in edition
+/// 2024 and this workspace forbids `unsafe`, so the harness cannot switch
+/// sockets itself — it names the exact `DOCKER_HOST` to run with instead.
+///
+/// An explicit `DOCKER_HOST` is trusted as given: a TCP endpoint is not
+/// probed here (testcontainers owns that connection), and a Unix endpoint is
+/// probed so a dead override still gets the fast, named failure.
+fn probe_docker(docker_host: Option<&str>) -> Result<(), TestkitError> {
+    fn answers(path: &std::path::Path) -> bool {
+        std::os::unix::net::UnixStream::connect(path).is_ok()
+    }
+    if let Some(host) = docker_host {
+        if let Some(path) = host.strip_prefix("unix://") {
+            if answers(std::path::Path::new(path)) {
+                return Ok(());
+            }
+            return Err(TestkitError::DockerUnavailable(format!(
+                "DOCKER_HOST is set to {host}, but nothing answers on that socket — start \
+                 that daemon, unset DOCKER_HOST, or export {ENV_URL} to use an external \
+                 PostgreSQL; container-backed tests cannot run until one of those holds"
+            )));
+        }
+        return Ok(());
+    }
+    let default = std::path::PathBuf::from("/var/run/docker.sock");
+    if answers(&default) {
+        return Ok(());
+    }
+    let desktop = std::env::home_dir().map(|h| h.join(".docker/run/docker.sock"));
+    if let Some(desktop) = desktop.filter(|p| answers(p)) {
+        return Err(TestkitError::DockerUnavailable(format!(
+            "/var/run/docker.sock answers nothing (often a dead symlink to another \
+             runtime's socket), but a live Docker Desktop daemon answered at \
+             {socket} — run the tests with DOCKER_HOST=unix://{socket} (or export \
+             {ENV_URL} to use an external PostgreSQL)",
+            socket = desktop.display()
+        )));
+    }
+    Err(TestkitError::DockerUnavailable(format!(
+        "no Docker daemon reachable (probed /var/run/docker.sock and the Docker \
+         Desktop socket under $HOME/.docker/run/) and {ENV_URL} is unset — \
+         container-backed tests are not exercised on this box; start Docker or \
+         export {ENV_URL}"
+    )))
+}
+
 async fn start_container() -> Result<ContainerAsync<Postgres>, TestkitError> {
     let mut last = None;
     for attempt in 0..5u32 {
@@ -683,8 +746,8 @@ fn stale(name: &str, current_template: &str, now_secs: u64) -> bool {
 #[cfg(test)]
 mod tests {
     use super::{
-        DB_PREFIX, SQLSTATE_OBJECT_IN_USE, SWEEP_GRACE, clone_url, fresh_name, redacted,
-        refusal_is_benign, stale,
+        DB_PREFIX, SQLSTATE_OBJECT_IN_USE, SWEEP_GRACE, clone_url, fresh_name, probe_docker,
+        redacted, refusal_is_benign, stale,
     };
 
     #[test]
@@ -760,5 +823,32 @@ mod tests {
         assert!(!refusal_is_benign(Some("42501"))); // insufficient_privilege
         assert!(!refusal_is_benign(Some("3D000"))); // invalid_catalog_name
         assert!(!refusal_is_benign(None)); // transport/pool failure
+    }
+
+    #[test]
+    fn probe_trusts_a_tcp_docker_host_without_probing() {
+        assert!(probe_docker(Some("tcp://127.0.0.1:2375")).is_ok());
+    }
+
+    #[test]
+    fn probe_accepts_a_unix_docker_host_that_answers() {
+        let dir = std::env::temp_dir().join(format!("testkit-probe-{}", std::process::id()));
+        std::fs::create_dir_all(&dir).expect("scratch dir");
+        let sock = dir.join("live.sock");
+        drop(std::fs::remove_file(&sock));
+        let listener = std::os::unix::net::UnixListener::bind(&sock).expect("bind scratch socket");
+        let host = format!("unix://{}", sock.display());
+        assert!(probe_docker(Some(&host)).is_ok());
+        drop(listener);
+        drop(std::fs::remove_file(&sock));
+    }
+
+    #[test]
+    fn probe_names_a_dead_unix_docker_host() {
+        let err = probe_docker(Some("unix:///nonexistent/testkit-probe.sock"))
+            .expect_err("a dead override must fail fast");
+        let text = err.to_string();
+        assert!(text.contains("DOCKER_HOST"), "{text}");
+        assert!(text.contains("FERROEHR_TEST_PG_URL"), "{text}");
     }
 }
