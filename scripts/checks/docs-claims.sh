@@ -47,9 +47,14 @@
 # Widening the check to every page turns that into a false failure, so the check
 # reads the chart pages and the chart pages only.
 #
-# Usage: scripts/checks/docs-claims.sh [--all | <file>...]
-#   no args  → the book files changed against origin/main
+# Usage: scripts/checks/docs-claims.sh [--all | --diff [base] | <file>...]
+#   no args  → every tracked book page (same as --all; the CI job's scope).
+#              The old default scoped to the diff against origin/main, which
+#              examined ZERO pages on uncommitted work and printed OK — a
+#              local run before committing was vacuous (#3010).
 #   --all    → every tracked book page
+#   --diff   → only the book files changed against [base] (default
+#              origin/main); the explicit opt-in for a scoped run
 set -euo pipefail
 cd "$(dirname "$0")/../.."
 
@@ -68,13 +73,18 @@ for required in "$TOML" "$VALUES"; do
 done
 
 collect() {
-  if [[ "${1:-}" = "--all" ]]; then
+  if [[ "$#" -eq 0 || "${1:-}" = "--all" ]]; then
     git ls-files "$BOOK/**/*.md" "$BOOK/*.md"
-  elif [[ "$#" -gt 0 ]]; then
-    printf '%s\n' "$@"
+  elif [[ "${1:-}" = "--diff" ]]; then
+    # The explicit scoped mode. Uncommitted work is invisible to a
+    # commit-range diff, so the worktree diff is included too.
+    local base="${2:-origin/main}"
+    {
+      git diff --name-only "$base"...HEAD -- "$BOOK/*.md" "$BOOK/**/*.md" 2>/dev/null || true
+      git diff --name-only -- "$BOOK/*.md" "$BOOK/**/*.md" 2>/dev/null || true
+    } | sort -u
   else
-    git diff --name-only origin/main...HEAD -- "$BOOK/*.md" "$BOOK/**/*.md" 2>/dev/null \
-      || git ls-files "$BOOK/**/*.md" "$BOOK/*.md"
+    printf '%s\n' "$@"
   fi
 }
 
@@ -447,4 +457,7 @@ if [[ "$failures" -gt 0 ]]; then
   echo "  source if the page is describing what the software should do." >&2
   exit 1
 fi
-echo "docs-claims: OK."
+# The examined-page count is part of the verdict: "OK over 0 pages" is how
+# the old diff-scoped default passed vacuously on uncommitted work (#3010).
+page_count=$(printf '%s\n' "$files" | grep -c . || true)
+echo "docs-claims: OK ($page_count pages examined)."
