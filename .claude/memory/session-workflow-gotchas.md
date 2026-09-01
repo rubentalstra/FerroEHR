@@ -235,3 +235,5 @@ commit-message wording. Late labels: since #2777 applying a label raises a fresh
   (the book's conformance SVGs) both re-render release-day facts and are
   diff-gated by the Docs lane — run them in the release PR whenever the party
   statement or the committed results stamp moved.
+
+**PR labels at creation poison the required fan-in (2026-09-01):** `gh pr create --label X` fires `opened` + `labeled` events, raising two CI runs in one concurrency group; the cancelled one's `conclusion` fan-in completes as FAILURE on the same head SHA, and the ruleset's required `conclusion` context then blocks auto-merge even though the survivor run is green. Create the PR bare, apply labels in a SECOND call only if a guard needs them (that raises a labeled run with the label in payload), and clear a poisoned SHA with one empty commit.
