@@ -997,9 +997,17 @@ jobs:
   # heals at deploy time instead of at the next midnight. Environment secrets
   # reach the called workflow's own environment-naming jobs here (measured:
   # the v4.0.13 release's reseed succeeded through two call hops).
+  #
+  # The permissions block is load-bearing: a called workflow's jobs can never
+  # exceed the caller JOB's grant, and under the workflow-level
+  # `permissions: {}` an ungranted call-job allows nothing — the reseed's own
+  # jobs request `contents: read`, so omitting this fails the ENTIRE pipeline
+  # at startup, before any job runs (#2991, the v4.0.14 first cut).
   sandbox-reseed:
     name: sandbox reseed
     needs: sandbox
+    permissions:
+      contents: read
     secrets: inherit # zizmor: ignore[secrets-inherit]
     uses: ./.github/workflows/sandbox-reseed.yml
 
