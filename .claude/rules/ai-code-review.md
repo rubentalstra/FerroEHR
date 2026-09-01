@@ -95,6 +95,23 @@ upgrade would only ever cover the website's JS/TS. Re-evaluate if Sonar ships
 Rust support for it AND the plan changes; the architecture record remains
 `docs/architecture.md`, which no analyzer output outranks.
 
+## The findings mirror into GitHub code scanning (#3032)
+
+Sonar's own GitHub App uploads SECURITY-only code-scanning analyses, which
+arrive empty here — the tools page listed SonarCloud with 0 results while
+the dashboard carried the real set. A push to `main` therefore exports the
+project's OPEN and CONFIRMED findings as SARIF
+(`scripts/sonar/issues-to-sarif.sh`) and uploads them under the `sonarcloud`
+category. The dashboard stays canonical: the query excludes ACCEPTED and
+FALSE_POSITIVE, so a disposition recorded there closes its GitHub alert on
+the next push, and the two surfaces cannot disagree for longer than one
+analysis. Pull requests keep Sonar's own decoration; the mirror gates
+nothing. The App's native (empty) security uploads stay enabled — they cost
+nothing and would cover the vulnerability class if the mirror lane ever
+broke. Dependabot pull requests skip the scan entirely: a dependabot-actor
+run reads Dependabot secrets, not the Actions `SONAR_TOKEN`, and the
+post-merge main push analyzes the merged result anyway.
+
 ## It does not gate a merge, and it never writes
 
 No quality gate blocks a merge. Findings worth acting on are written by
