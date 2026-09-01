@@ -1,6 +1,6 @@
 # Conformance Statement (SDoC)
 
-Product: FerroEHR 4.0.14 — Ruben Talstra (urn:rubentalstra:ferroehr)
+Product: FerroEHR 4.0.15 — Ruben Talstra (urn:rubentalstra:ferroehr)
 Schedule release: cnf-2.0-w2
 
 ## Declared spec versions
