@@ -42,9 +42,9 @@ cargo test --workspace --doc
 # clippy is THREE lanes: the console's hydrate/ssr features are mutually
 # exclusive (compile_error!-guarded), so it is excluded from --all-features
 # and linted per feature + per target:
-cargo clippy --workspace --exclude ferroehr-admin-ui --all-targets --all-features -- -D warnings
-cargo clippy -p ferroehr-admin-ui --all-targets --features ssr -- -D warnings
-cargo clippy -p ferroehr-admin-ui --target wasm32-unknown-unknown --features hydrate -- -D warnings
+cargo clippy --workspace --exclude ferroehr-viewer --all-targets --all-features -- -D warnings
+cargo clippy -p ferroehr-viewer --all-targets --features ssr -- -D warnings
+cargo clippy -p ferroehr-viewer --target wasm32-unknown-unknown --features hydrate -- -D warnings
 cargo fmt --all --check
 cargo deny check && cargo machete      # deny subsumes cargo-audit (same RustSec DB + yanked/licenses/bans/sources)
 cargo hack check --rust-version --workspace  # the declared MSRV actually builds

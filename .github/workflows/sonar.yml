@@ -150,8 +150,8 @@ jobs:
       # --all-features — mutually exclusive hydrate/ssr — and measured under
       # the ssr shape it ships): --no-report accumulates both into one
       # profile, `report` merges them into the single lcov the scan imports.
-      - run: cargo llvm-cov --no-report nextest --locked --workspace --exclude ferroehr-admin-ui --all-features --no-tests=pass --profile ci
-      - run: cargo llvm-cov --no-report nextest --locked -p ferroehr-admin-ui --features ssr --no-tests=pass --profile ci
+      - run: cargo llvm-cov --no-report nextest --locked --workspace --exclude ferroehr-viewer --all-features --no-tests=pass --profile ci
+      - run: cargo llvm-cov --no-report nextest --locked -p ferroehr-viewer --features ssr --no-tests=pass --profile ci
       - run: cargo llvm-cov report --lcov --output-path lcov.info
       - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:

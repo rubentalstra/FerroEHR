@@ -149,9 +149,9 @@ boot_one() {
   fi
 
   # The env replay below must see the CDR Deployment's environment and NOTHING
-  # else. The chart renders a second workload (the admin console, an OPTIONAL
+  # else. The chart renders a second workload (the viewer, an OPTIONAL
   # separate binary with its own config root and its own `FERROEHR_ADMIN__…`
-  # grammar — app/ferroehr-admin-ui/src/config.rs), and handing one workload's
+  # grammar — app/ferroehr-viewer/src/config.rs), and handing one workload's
   # environment to another image is not a boot check of anything: the CDR's
   # strict sweep refuses `FERROEHR_ADMIN__CDR__BASE_URL` as an unknown key and
   # reports a crash-loop for a deployment that runs correctly.

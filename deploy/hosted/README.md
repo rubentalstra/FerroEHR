@@ -1,6 +1,6 @@
 # The hosted sandbox (sandbox.ferroehr.eu)
 
-sandbox.ferroehr.eu is the public demo: the admin console as the landing
+sandbox.ferroehr.eu is the public demo: the viewer as the landing
 surface over a live CDR, the demo credentials `ferroehr` / `ferroehr`, demo
 data wiped nightly. This directory is the whole deployment posture, mirrored
 from Veredictum's `deploy/hosted` (#2974).
@@ -38,7 +38,7 @@ it.
 | `docker-compose.yml` | What runs on the box: the CDR and the console with their healthchecks and memory limits, behind Caddy | baked into the ferroehr image at `/opt/sandbox-posture/`, and `deploy.sh` installs it from the image it pulled |
 | `Caddyfile` | Automatic TLS, and the routing table (the CDR owns `/ferroehr/*`, `/health*`, `/management*`, `/.well-known/*`; the console is everything else) | the same way; a change to it restarts Caddy |
 | `ferroehr.sandbox.toml` | The CDR's sandbox posture (demo user, admin API on per #2965, management off) | the same way |
-| `ferroehr-admin-ui.sandbox.toml` | The console's sandbox posture | the same way |
+| `ferroehr-viewer.sandbox.toml` | The console's sandbox posture | the same way |
 | `env.example` | A copy-to-`.env` template: the Neon direct DSN and the image references | never. `.env` is the operator's file, written by hand on the box |
 
 The box holds **no checkout of this repository** and fetches nothing from it

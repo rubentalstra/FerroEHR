@@ -794,8 +794,8 @@ extraVolumes: []
 # -- Mounts for extraVolumes, in the server container.
 extraVolumeMounts: []
 
-# ── Admin console (optional companion workload) ──────────────────────────────
-# The Leptos admin console. OFF by default: it is a separate product surface
+# ── Viewer (optional companion workload) ──────────────────────────────
+# The Leptos viewer. OFF by default: it is a separate product surface
 # with its own OCI image and its own attack surface, and a CDR is complete
 # without it. Enabling it renders a second Deployment/Service (and optionally an
 # Ingress) alongside the server.
@@ -803,8 +803,8 @@ extraVolumeMounts: []
 # It reaches the CDR STRICTLY over ITS-REST — that is the console's binding
 # mandate, not an implementation detail — so its egress is narrow and the
 # NetworkPolicy below enforces it rather than trusting it.
-adminUi:
-  # -- Deploy the admin console alongside the CDR.
+viewer:
+  # -- Deploy the viewer alongside the CDR.
   enabled: false
   # -- Replica count. The console holds session state in process, so more than
   # one replica needs sticky sessions at the ingress or users get logged out on
@@ -812,7 +812,7 @@ adminUi:
   replicaCount: 1
   image:
     # -- Console image repository.
-    repository: ghcr.io/rubentalstra/ferroehr-admin-ui
+    repository: ghcr.io/rubentalstra/ferroehr-viewer
     # -- Pull policy.
     pullPolicy: IfNotPresent
     # -- Image tag. Empty falls back to .Chart.appVersion, so the console and

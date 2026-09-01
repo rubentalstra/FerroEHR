@@ -28,7 +28,7 @@ not a user store; production deployments authenticate with OIDC bearer
 tokens.
 
 > [!NOTE]
-> The admin console follows the same rule: it authenticates against the same
+> The viewer follows the same rule: it authenticates against the same
 > credentials the CDR accepts (the same OIDC issuer, or Basic) and has no
 > user-management screens. To create, disable, or re-role a user, use your IdP's
 > own administration surface.
@@ -151,7 +151,7 @@ The broker owns the LDAP bind; the CDR sees only signed tokens.
 Tenancy is also credential-derived: the tenant is read from a JWT claim per
 request (see [multi-tenancy](security.md#multi-tenancy)), so a multi-tenant
 IdP setup simply issues the tenant claim alongside the roles. No client
-(including the admin console) chooses a tenant; the credential does. There is a
+(including the viewer) chooses a tenant; the credential does. There is a
 development header override, and setting it hands tenant selection to the
 client, so leave it unset.
 

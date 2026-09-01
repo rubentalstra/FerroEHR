@@ -1,7 +1,7 @@
 # SPDX-FileCopyrightText: FerroEHR contributors
 # SPDX-License-Identifier: MIT
 
-# The full admin-console E2E battery against the PUBLISHED console image
+# The full viewer E2E battery against the PUBLISHED console image
 # (issue #2876).
 #
 # scripts/ui-e2e.sh has carried a shipped-artifact mode
@@ -21,7 +21,7 @@
 # WITH sccache. Paying that on the critical path of every release buys little:
 # the highest-value slice of this battery — a real browser logging in through
 # the shipped artifact — the release already gates, via
-# docker/admin-ui/login-smoke.sh. Here the compile caches like any test lane
+# docker/viewer/login-smoke.sh. Here the compile caches like any test lane
 # and the wall clock gates nothing.
 #
 # WHAT IT DRIVES. The three images of the latest RELEASE, and the repository
@@ -110,7 +110,7 @@ jobs:
       - name: Run the battery against the published images
         env:
           UI_E2E_IMAGE: "1"
-          UI_E2E_IMAGE_REF: ghcr.io/${{ github.repository_owner }}/ferroehr-admin-ui:${{ steps.release.outputs.version }}
+          UI_E2E_IMAGE_REF: ghcr.io/${{ github.repository_owner }}/ferroehr-viewer:${{ steps.release.outputs.version }}
           UI_E2E_NO_BUILD: "1"
           FERROEHR_IMAGE: ghcr.io/${{ github.repository_owner }}/ferroehr:${{ steps.release.outputs.version }}
           FERROEHR_POSTGRES_IMAGE: ghcr.io/${{ github.repository_owner }}/ferroehr-postgres:${{ steps.release.outputs.version }}

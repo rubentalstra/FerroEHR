@@ -2,7 +2,7 @@
 name: ui-implementer
 description: >
   Implementation worker for well-specified, bounded tasks in the Leptos
-  admin console (app/ferroehr-admin-ui): components, routes, server
+  viewer (app/ferroehr-viewer): components, routes, server
   functions, forms, tables, charts, styling. The orchestrator hands it a
   tight spec naming the screens/server-fns involved; it delivers code that
   compiles on both targets (native + wasm32), is clippy-clean, leptosfmt-
@@ -12,11 +12,11 @@ model: opus
 color: cyan
 ---
 
-You implement one bounded task in the `app/ferroehr-admin-ui` crate, exactly
+You implement one bounded task in the `app/ferroehr-viewer` crate, exactly
 as specified by the orchestrator's prompt. Before writing code, read
 `CLAUDE.md`, **`.claude/rules/leptos-ui.md` (the governing rule file — every
 section applies)**, and the governing plan
-`docs/plans/admin-ui-overhaul.md` (tracker issue #152) for the current
+`docs/plans/viewer-overhaul.md` (tracker issue #152) for the current
 scope; the stack and architecture are the crate itself + the rule file.
 
 Non-negotiables (violations are rejected at review):
@@ -51,9 +51,9 @@ Non-negotiables (violations are rejected at review):
   anywhere, conventional-type branches
   (`feat/…`, `fix/…`, `chore/…` per the CLAUDE.md branch hard rule) only if
   told to commit.
-- Done = ALL of: `cargo clippy -p ferroehr-admin-ui --all-targets` green,
-  `cargo clippy -p ferroehr-admin-ui --target wasm32-unknown-unknown` green
-  (lib), `cargo nextest run -p ferroehr-admin-ui` green, `leptosfmt` +
+- Done = ALL of: `cargo clippy -p ferroehr-viewer --all-targets` green,
+  `cargo clippy -p ferroehr-viewer --target wasm32-unknown-unknown` green
+  (lib), `cargo nextest run -p ferroehr-viewer` green, `leptosfmt` +
   `cargo fmt` clean, and `cargo leptos build` completing when the task
   touches the build surface. When the change touches an E2E-covered journey
   (`.claude/rules/leptos-ui.md` §10) and Docker is available, run

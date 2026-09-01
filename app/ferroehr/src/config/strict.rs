@@ -196,7 +196,7 @@ mod tests {
     // our own design.
 
     /// The compose service that runs the CDR binary this crate configures.
-    /// Every other service (the database, the admin console with its own
+    /// Every other service (the database, the viewer with its own
     /// `FERROEHR_ADMIN__…` namespace, an upstream SUT) is unrelated.
     const CDR_SERVICE: &str = "ferroehr";
 

@@ -49,16 +49,16 @@ spec:
         {{- end }}
       {{- /* An empty `ingressFrom` renders NO `from`, which admits every source —
              sanctioned only by `ingressAllowAll` (refused above otherwise). Once
-             an operator narrows it, the admin console must still be admitted or
-             enabling both this policy and `adminUi` locks the console out of the
+             an operator narrows it, the viewer must still be admitted or
+             enabling both this policy and `viewer` locks the console out of the
              CDR — a failure that looks like the CDR being down. */}}
       {{- if .Values.networkPolicy.ingressFrom }}
       from:
         {{- toYaml .Values.networkPolicy.ingressFrom | nindent 8 }}
-        {{- if .Values.adminUi.enabled }}
+        {{- if .Values.viewer.enabled }}
         - podSelector:
             matchLabels:
-              {{- include "ferroehr.adminUiSelectorLabels" . | nindent 14 }}
+              {{- include "ferroehr.viewerSelectorLabels" . | nindent 14 }}
         {{- end }}
       {{- end }}
   {{- if .Values.networkPolicy.egress.enabled }}

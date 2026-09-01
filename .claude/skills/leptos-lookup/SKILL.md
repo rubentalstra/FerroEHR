@@ -5,7 +5,7 @@ description: >
   effects, <For>, resources, Suspense/Transition, server functions,
   extractors, SSR modes, hydration bugs, router, ActionForm, islands,
   binary size) in the official Leptos book, cached locally. Use before
-  implementing or reviewing any admin-UI (app/ferroehr-admin-ui) behaviour
+  implementing or reviewing any viewer (app/ferroehr-viewer) behaviour
   the rule file doesn't fully settle, or when a "how does Leptos do X"
   question comes up.
 allowed-tools: [Read, Grep, Glob, Bash]

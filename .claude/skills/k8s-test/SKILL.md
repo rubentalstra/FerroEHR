@@ -33,7 +33,7 @@ output.
 - **Fix findings in the chart, not in the test.** Bending the values overlay
   until it works hides exactly what this exercise exists to surface.
 - Chart behaviour changes regenerate the goldens: `deploy/helm/validate.sh --update`.
-- **The admin console (`adminUi.enabled`) is covered by the automated harness**
+- **The viewer (`viewer.enabled`) is covered by the automated harness**
   (`scripts/deploy-probe-k8s.sh`, the `P-K8S-UI-*` family: off/boot/runtime
   posture/PSA admission/served login page/narrowed-ingress install). What
   remains manual-only for the console: its OIDC sign-in path, screens behind a

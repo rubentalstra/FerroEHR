@@ -29,7 +29,7 @@ you can judge the exposure rather than reading "secrets" generically.
 | AMQP broker URLs | `secrets.eventsUrl`, `secrets.fhirOutboundUrl` | the FHIR outbound stream **carries PHI**; the events stream is PHI-free by design |
 | The audit repository URL | `secrets.auditFhirFeedUrl` | the ability to read or forge audit records at the repository |
 | S3 credentials | `secrets.multimediaSecretAccessKey` (with `secrets.multimediaAccessKeyId`) | offloaded `DV_MULTIMEDIA` blobs, which **are PHI** |
-| The console's OIDC client secret | `adminUi.existingSecret`, when the console is enabled | the ability to impersonate the console at your identity provider |
+| The console's OIDC client secret | `viewer.existingSecret`, when the console is enabled | the ability to impersonate the console at your identity provider |
 
 The rendered `ferroehr.toml` itself is **not** in that list, and that is worth
 stating because it used to be: while a Basic user's hash had nowhere secure to go,

@@ -8,7 +8,7 @@ description: >
   CLAUDE.md. Use when a plan calls for standing up a crate that does not
   exist yet.
 allowed-tools: [Read, Write, Bash]
-argument-hint: "<crate-name, e.g. ferroehr-admin-ui>"
+argument-hint: "<crate-name, e.g. ferroehr-viewer>"
 ---
 
 # /crate-scaffold
@@ -26,7 +26,7 @@ the current three-directory workspace).
 > banned — never scaffold one:** `openehr-foundation`, `ferroehr-sm`,
 > `ferroehr-audit`, `ferroehr-signing`, `ferroehr-authz`, `ferroehr-compat`.
 > The application is exactly four crates: `ferroehr`, `ferroehr-rest`,
-> `ferroehr-server`, `ferroehr-admin-ui`.
+> `ferroehr-server`, `ferroehr-viewer`.
 
 ## Steps
 
@@ -35,7 +35,7 @@ the current three-directory workspace).
    (`docs/plans/`, if one exists) for its role and dependency arrows. Dependencies point downward only:
    `tools/* → app/* → crates/openehr-*`; never `app → app` unless the
    architecture doc names the seam (`ferroehr-server → {ferroehr-rest,
-   ferroehr}`, `ferroehr-rest → ferroehr`; `ferroehr-admin-ui` depends on
+   ferroehr}`, `ferroehr-rest → ferroehr`; `ferroehr-viewer` depends on
    `crates/openehr-*` only, never on `ferroehr`/`ferroehr-rest`).
 2. **Create `<dir>/<name>/Cargo.toml`**:
    - `[package]`: `name`, plus `version`, `edition`, `rust-version`,

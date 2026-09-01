@@ -192,7 +192,7 @@ jobs:
 
           # 2. The two Dockerfiles: the build arg, the digest-pinned FROM, and
           #    the prose that names the same tag.
-          for f in docker/Dockerfile docker/admin-ui/Dockerfile; do
+          for f in docker/Dockerfile docker/viewer/Dockerfile; do
             sed -i -E "s|^ARG RUST_VERSION=.*|ARG RUST_VERSION=${NEW_VERSION}|" "$f"
             sed -i -E "s|^(FROM rust:[^@]*@)sha256:[0-9a-f]{64}|\1${NEW_DIGEST}|" "$f"
             sed -i -E "s|rust:${old_re}-|rust:${NEW_VERSION}-|g" "$f"
@@ -241,7 +241,7 @@ jobs:
           # exactly the half-bump this lane exists to prevent, so it fails here
           # rather than opening a PR that looks complete.
           residual=$(grep -Fn "$OLD_VERSION" \
-            rust-toolchain.toml docker/Dockerfile docker/admin-ui/Dockerfile \
+            rust-toolchain.toml docker/Dockerfile docker/viewer/Dockerfile \
             .github/workflows/ci.yml .github/workflows/containers.yml \
             .github/workflows/release.yml || true)
           if [ -n "$residual" ]; then
@@ -254,7 +254,7 @@ jobs:
           # digest. Stated as "none may differ" rather than "N must match", so
           # a pin site added later is covered without editing this check.
           pinned=$(grep -nE 'rust:[^@[:space:]]*@sha256:[0-9a-f]{64}' \
-            docker/Dockerfile docker/admin-ui/Dockerfile \
+            docker/Dockerfile docker/viewer/Dockerfile \
             .github/workflows/ci.yml .github/workflows/containers.yml \
             .github/workflows/release.yml || true)
           stale=$(printf '%s\n' "$pinned" | grep -v '^$' | grep -Fv "$NEW_DIGEST" || true)

@@ -2,7 +2,7 @@
 // SPDX-License-Identifier: MIT
 //
 // The tester sandbox (#2709): "Open in GitHub Codespaces" boots the published
-// FerroEHR images and forwards the API + admin console, so trying FerroEHR
+// FerroEHR images and forwards the API + viewer, so trying FerroEHR
 // needs nothing installed locally. This is deliberately NOT a Rust
 // development environment — repo development uses a local checkout and the
 // compose override (see website/book/src/installation/compose.md).
@@ -40,7 +40,7 @@
             "onAutoForward": "notify"
         },
         "3000": {
-            "label": "FerroEHR admin console",
+            "label": "FerroEHR Viewer",
             "onAutoForward": "notify"
         }
     },

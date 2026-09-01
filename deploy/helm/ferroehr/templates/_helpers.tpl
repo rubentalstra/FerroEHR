@@ -371,12 +371,12 @@ the older counting. A graceful degradation, so it is not version-gated.
 {{- end }}
 
 {{/*
-The admin console's resource name: the release fullname plus a suffix, so the
+The viewer's resource name: the release fullname plus a suffix, so the
 console's objects never collide with the server's and are obvious in `kubectl
 get`.
 */}}
-{{- define "ferroehr.adminUiFullname" -}}
-{{- printf "%s-admin-ui" (include "ferroehr.fullname" .) | trunc 63 | trimSuffix "-" }}
+{{- define "ferroehr.viewerFullname" -}}
+{{- printf "%s-viewer" (include "ferroehr.fullname" .) | trunc 63 | trimSuffix "-" }}
 {{- end }}
 
 {{/*
@@ -394,38 +394,38 @@ server's `name` and `instance` plus an extra `component`, they matched the
 server's own Service and PodDisruptionBudget, whose selectors are exactly that
 pair. Because the console's container port is also named `http`, the Service's
 `targetPort: http` resolved to 3000 on those pods, so a share of openEHR API
-requests were answered by the admin console — and the PDB counted three pods
+requests were answered by the viewer — and the PDB counted three pods
 where it guards two, inflating `disruptionsAllowed` enough for a drain to evict
 both server replicas at once. Adding `component` to the SERVER's selectors
 instead would have fixed the same overlap, but a Service applied before its
 Deployment selects zero pods until the new ReplicaSet is Ready: a brief total
 outage on a clinical API at every upgrade.
 */}}
-{{- define "ferroehr.adminUiLabels" -}}
+{{- define "ferroehr.viewerLabels" -}}
 helm.sh/chart: {{ include "ferroehr.chart" . }}
-{{ include "ferroehr.adminUiSelectorLabels" . }}
+{{ include "ferroehr.viewerSelectorLabels" . }}
 {{- if .Chart.AppVersion }}
 app.kubernetes.io/version: {{ .Chart.AppVersion | quote }}
 {{- end }}
 app.kubernetes.io/managed-by: {{ .Release.Service }}
 app.kubernetes.io/part-of: ferroehr
-app.kubernetes.io/component: admin-ui
+app.kubernetes.io/component: viewer
 {{- end }}
 
-{{- define "ferroehr.adminUiSelectorLabels" -}}
-app.kubernetes.io/name: {{ printf "%s-admin-ui" (include "ferroehr.name" .) }}
+{{- define "ferroehr.viewerSelectorLabels" -}}
+app.kubernetes.io/name: {{ printf "%s-viewer" (include "ferroehr.name" .) }}
 app.kubernetes.io/instance: {{ .Release.Name }}
 {{- end }}
 
 {{/*
 The console image reference — digest wins over tag, as for the server.
 */}}
-{{- define "ferroehr.adminUiImage" -}}
-{{- if .Values.adminUi.image.digest }}
-{{- $digest := .Values.adminUi.image.digest }}
+{{- define "ferroehr.viewerImage" -}}
+{{- if .Values.viewer.image.digest }}
+{{- $digest := .Values.viewer.image.digest }}
 {{- if not (hasPrefix "sha256:" $digest) }}{{- $digest = printf "sha256:%s" $digest }}{{- end }}
-{{- printf "%s@%s" .Values.adminUi.image.repository $digest }}
+{{- printf "%s@%s" .Values.viewer.image.repository $digest }}
 {{- else }}
-{{- printf "%s:%s" .Values.adminUi.image.repository (.Values.adminUi.image.tag | default .Chart.AppVersion) }}
+{{- printf "%s:%s" .Values.viewer.image.repository (.Values.viewer.image.tag | default .Chart.AppVersion) }}
 {{- end }}
 {{- end }}

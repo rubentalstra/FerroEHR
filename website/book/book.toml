@@ -17,6 +17,22 @@ smart-punctuation = true
 [output.html.search]
 enable = true
 
+# The viewer section moved from `admin-ui/` to `viewer/` when the console was
+# renamed FerroEHR Viewer. mdBook writes an HTML shim at each old path so links
+# already published keep resolving
+# (https://rust-lang.github.io/mdBook/format/configuration/renderers.html).
+[output.html.redirect]
+"/admin-ui/index.html" = "../viewer/index.html"
+"/admin-ui/queries.html" = "../viewer/queries.html"
+"/admin-ui/browsing.html" = "../viewer/browsing.html"
+"/admin-ui/demographics.html" = "../viewer/demographics.html"
+"/admin-ui/terminology.html" = "../viewer/terminology.html"
+"/admin-ui/operations.html" = "../viewer/operations.html"
+"/admin-ui/tenants.html" = "../viewer/tenants.html"
+"/admin-ui/fhir.html" = "../viewer/fhir.html"
+"/admin-ui/subscriptions.html" = "../viewer/subscriptions.html"
+"/admin-ui/dark-mode.html" = "../viewer/dark-mode.html"
+
 [preprocessor.mermaid]
 command = "mdbook-mermaid"
 

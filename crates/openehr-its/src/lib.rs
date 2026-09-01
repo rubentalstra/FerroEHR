@@ -52,8 +52,8 @@
 //! Every surface above rides the default `full` feature. Taken with
 //! `default-features = false` the crate compiles to `rest::smart_scopes` alone —
 //! the std-only SMART scope grammar, with no dependency of any kind — so a REST
-//! client that must parse scope strings on `wasm32-unknown-unknown` (the admin
-//! console's scope previewer) shares the very grammar the CDR enforces instead
+//! client that must parse scope strings on `wasm32-unknown-unknown` (the
+//! viewer's scope previewer) shares the very grammar the CDR enforces instead
 //! of carrying a second parser.
 
 // Doctests are copy-paste templates: they must use `?`, never unwrap

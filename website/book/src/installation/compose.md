@@ -32,7 +32,7 @@ FerroEHR publishes three container images to GHCR:
 |---|---|
 | `ghcr.io/rubentalstra/ferroehr` | The `ferroehr` server binary on a distroless, non-root, shell-less multi-arch base (amd64 + arm64). Configured by a mounted TOML file and/or `FERROEHR__*` environment variables. |
 | `ghcr.io/rubentalstra/ferroehr-postgres` | `postgres:18.6` (with Debian security updates applied at image build) plus init scripts that pre-create the application login role, the three group roles (`ferroehr_migrator`, `ferroehr_app`, `ferroehr_reader`), the database, the schemas (`ehr`, `ext`, `audit`) and the extensions (`uuid-ossp`, `pgcrypto`, `pg_trgm`, `btree_gist`), so the app role never needs superuser. |
-| `ghcr.io/rubentalstra/ferroehr-admin-ui` | The [admin console](../admin-ui/index.md), a standalone web application that talks to the CDR strictly over ITS-REST. Optional; see the `admin-ui` profile below. |
+| `ghcr.io/rubentalstra/ferroehr-viewer` | The [viewer](../viewer/index.md), a standalone web application that talks to the CDR strictly over ITS-REST. Optional; see the `viewer` profile below. |
 
 Each image is published under several tags:
 
@@ -122,7 +122,7 @@ Swagger UI at `http://localhost:8080/ferroehr/rest/swagger-ui`.
 ## Container engines: Docker and Podman
 
 The quickstart runs on Docker and on Podman. Both were verified first-hand on
-2026-08-24: the core stack, the `admin-ui` and `s3` profiles, and both
+2026-08-24: the core stack, the `viewer` and `s3` profiles, and both
 overlays boot to healthy under `podman compose` exactly as under
 `docker compose`, with the same commands:
 
@@ -181,7 +181,7 @@ evaluation, not for production:
   separation is switched on by setting `[authz.rbac] enabled = true` and giving
   each user an explicit `roles` list; see
   [Security & multi-tenancy](../security.md).
-- **Admin API enabled:** so the optional admin console's panels work.
+- **Admin API enabled:** so the optional viewer's panels work.
 - **Management introspection enabled**, with `info` and `metrics` at `private`,
   `prometheus` at `public`, and `env` and `loggers` at `admin_only`.
 - **Permissive CORS:** any origin may call the API from a browser.
@@ -254,12 +254,12 @@ sit behind a [Compose
 profile](https://docs.docker.com/compose/how-tos/profiles/) and stay down until
 you ask for them:
 
-- **`ferroehr-admin-ui`** (`--profile admin-ui`): the
-  [admin console](../admin-ui/index.md) on port 3000, pointed at the server
+- **`ferroehr-viewer`** (`--profile viewer`): the
+  [viewer](../viewer/index.md) on port 3000, pointed at the server
   inside the Compose network. Start the stack with it:
 
   ```shell
-  docker compose --profile admin-ui up
+  docker compose --profile viewer up
   # → http://localhost:3000  (log in with ferroehr / ferroehr)
   ```
 
@@ -317,7 +317,7 @@ file. When `docker compose up` refuses with `port is already allocated` (or
 FERROEHR_PORT=8081 docker compose up
 ```
 
-The same works for the other ports (`FERROEHR_ADMIN_UI_PORT`,
+The same works for the other ports (`FERROEHR_VIEWER_PORT`,
 `FERROEHR_S3_PORT`; PostgreSQL publishes no host port — see
 [Connecting to the database](#connecting-to-the-database)). The defaults stay
 fixed on purpose: every URL in this book assumes `localhost:8080`, and
@@ -367,10 +367,10 @@ Set these in your shell (or an `.env` file) to retune without editing anything:
 |---|---|---|
 | `FERROEHR_IMAGE` | `ghcr.io/rubentalstra/ferroehr:<release>` | Server image to run. |
 | `FERROEHR_POSTGRES_IMAGE` | `ghcr.io/rubentalstra/ferroehr-postgres:<release>` | Database image to run. |
-| `FERROEHR_ADMIN_UI_IMAGE` | `ghcr.io/rubentalstra/ferroehr-admin-ui:<release>` | Admin console image (the `admin-ui` profile). |
+| `FERROEHR_VIEWER_IMAGE` | `ghcr.io/rubentalstra/ferroehr-viewer:<release>` | Viewer image (the `viewer` profile). |
 | `FERROEHR_BIND_HOST` | `127.0.0.1` | Host interface every published port binds. |
 | `FERROEHR_PORT` | `8080` | Host port mapped to the server. |
-| `FERROEHR_ADMIN_UI_PORT` | `3000` | Host port mapped to the admin console. |
+| `FERROEHR_VIEWER_PORT` | `3000` | Host port mapped to the viewer. |
 | `FERROEHR_DB_PORT` | not published | Host port for PostgreSQL, read only by the `db-publish` overlay (default `5432` there). |
 | `FERROEHR_S3_PORT` | `8333` | Host port mapped to the S3 gateway (the `s3` profile). |
 | `FERROEHR_CPUS` / `FERROEHR_MEM` | `4` / `4G` | Server container resource ceiling. |
@@ -477,10 +477,10 @@ push carries every metric family the scrape endpoint would, and
 `/management/prometheus` stays reachable on the Compose network for anyone who
 wants to compare the two.
 
-Grafana's port 3000 is the same one the admin console would use, but the two
+Grafana's port 3000 is the same one the viewer would use, but the two
 never collide by accident: the console only starts when you ask for the
-`admin-ui` profile. If you want both at once, move one of them
-(`FERROEHR_ADMIN_UI_PORT=3001` or `GRAFANA_PORT=3001`).
+`viewer` profile. If you want both at once, move one of them
+(`FERROEHR_VIEWER_PORT=3001` or `GRAFANA_PORT=3001`).
 
 This is the easiest way to see the server's metrics and traces without wiring
 up a collector by hand. See [Operations](../operations.md) for what the server

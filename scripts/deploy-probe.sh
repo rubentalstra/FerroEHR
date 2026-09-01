@@ -126,7 +126,7 @@ run_family terminology && probes_terminology
 # somebody still has to write; none of them is silently absent.
 uncovered "kubernetes platform" \
   "a separate harness covers it — scripts/deploy-probe-k8s.sh, recorded in kubernetes.json"
-uncovered "admin console journeys (#2164)" \
+uncovered "viewer journeys (#2164)" \
   "scripts/ui-e2e.sh already drives these with a real browser; folding it in is the next step"
 
 

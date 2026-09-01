@@ -25,7 +25,7 @@ Two conditions make it work, and both must be checked in review:
    `String`), so a redirect decided anywhere in the tree still lands. Under the
    default **out-of-order streaming the head is flushed first and the redirect
    would be lost** — a `<Redirect>` decided from a route body is therefore
-   coupled to the route's `ssr=SsrMode::Async` (admin console: the authenticated
+   coupled to the route's `ssr=SsrMode::Async` (viewer: the authenticated
    `ParentRoute` in `src/app.rs`). Require that coupling in a written comment.
 
 Hydration: a redirect branch chosen purely from the URL is deterministic, not a

@@ -46,10 +46,10 @@ WORKFLOWS=".github/workflows/containers.yml
 .github/workflows/release.yml"
 # image name : Dockerfile. Each publishing lane is a `uses:` call of the
 # reusable build-image.yml, keyed by its full `image:` input ref matched to
-# end-of-line — `ferroehr` is a prefix of `ferroehr-admin-ui`, so a bare name
+# end-of-line — `ferroehr` is a prefix of `ferroehr-viewer`, so a bare name
 # match would read the wrong lane's labels.
 IMAGES="ferroehr:docker/Dockerfile
-ferroehr-admin-ui:docker/admin-ui/Dockerfile
+ferroehr-viewer:docker/viewer/Dockerfile
 ferroehr-postgres:docker/postgres/Dockerfile"
 BUILD_WORKFLOW=.github/workflows/build-image.yml
 

@@ -1,7 +1,7 @@
 # SPDX-FileCopyrightText: FerroEHR contributors
 # SPDX-License-Identifier: MIT
 #
-# What runs on the sandbox box: the CDR, the admin console, and a proxy that
+# What runs on the sandbox box: the CDR, the viewer, and a proxy that
 # gets its own certificate (#2974).
 #
 # The file lives at /opt/ferroehr-sandbox/docker-compose.yml on the host, and
@@ -51,11 +51,11 @@ services:
       - "8080"
 
   console:
-    image: ${FERROEHR_ADMIN_UI_IMAGE:-ghcr.io/rubentalstra/ferroehr-admin-ui:latest}
+    image: ${FERROEHR_VIEWER_IMAGE:-ghcr.io/rubentalstra/ferroehr-viewer:latest}
     container_name: ferroehr-sandbox-console
     restart: unless-stopped
     healthcheck:
-      test: ["CMD", "/usr/local/bin/ferroehr-admin-ui", "healthcheck"]
+      test: ["CMD", "/usr/local/bin/ferroehr-viewer", "healthcheck"]
       interval: 30s
       timeout: 5s
       retries: 3
@@ -65,9 +65,9 @@ services:
         limits:
           memory: 768m
     environment:
-      FERROEHR_ADMIN_CONFIG: /etc/ferroehr/admin-ui.toml
+      FERROEHR_ADMIN_CONFIG: /etc/ferroehr/viewer.toml
     volumes:
-      - ./ferroehr-admin-ui.sandbox.toml:/etc/ferroehr/admin-ui.toml:ro
+      - ./ferroehr-viewer.sandbox.toml:/etc/ferroehr/viewer.toml:ro
     depends_on:
       - ferroehr
     expose:

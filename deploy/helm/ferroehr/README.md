@@ -2,7 +2,7 @@
 
 Pure-Rust, openEHR-conformant clinical data repository (ITS-REST 1.1.0 + AQL 1.1). A single static binary deployed with a hardened-by-default security posture: runs as a non-root, read-only-rootfs workload whose NetworkPolicy admits its serving port only, and that connects to an EXTERNAL PostgreSQL 18 as an unprivileged app role (migrations are run out of band by a separate migrator role).
 
-![Version: 6.0.33](https://img.shields.io/badge/Version-6.0.33-informational?style=flat-square) ![Type: application](https://img.shields.io/badge/Type-application-informational?style=flat-square) ![AppVersion: 4.0.15](https://img.shields.io/badge/AppVersion-4.0.15-informational?style=flat-square)
+![Version: 6.1.0](https://img.shields.io/badge/Version-6.1.0-informational?style=flat-square) ![Type: application](https://img.shields.io/badge/Type-application-informational?style=flat-square) ![AppVersion: 4.0.15](https://img.shields.io/badge/AppVersion-4.0.15-informational?style=flat-square)
 
 FerroEHR is a pure-Rust openEHR Clinical Data Repository: ITS-REST 1.1.0 at the
 API, AQL 1.1 as the query language, PostgreSQL 18-native storage, shipped as a
@@ -33,7 +33,7 @@ to add; `helm repo add` does not apply to this chart:
 
 ```console
 helm install ferroehr oci://ghcr.io/rubentalstra/charts/ferroehr \
-  --version 6.0.33 \
+  --version 6.1.0 \
   --namespace ferroehr --create-namespace \
   --set database.existingSecret=ferroehr-db \
   --set image.tag=4.0.15
@@ -47,7 +47,7 @@ They are independent SemVer lines and they move independently:
 
 | What | Set with | This release |
 |---|---|---|
-| the **chart** (templates, defaults, this document) | `--version` | `6.0.33` |
+| the **chart** (templates, defaults, this document) | `--version` | `6.1.0` |
 | the **server image** | `image.tag` | `4.0.15` |
 
 `appVersion` is the image the chart defaults to; pinning `image.tag` explicitly
@@ -59,7 +59,7 @@ The chart carries two keyless Sigstore artifacts, and they answer different
 questions. A **cosign signature:** who signed this:
 
 ```console
-cosign verify ghcr.io/rubentalstra/charts/ferroehr:6.0.33 \
+cosign verify ghcr.io/rubentalstra/charts/ferroehr:6.1.0 \
   --certificate-identity-regexp '^https://github\.com/rubentalstra/FerroEHR/\.github/workflows/publish-chart\.yml@' \
   --certificate-oidc-issuer https://token.actions.githubusercontent.com
 ```
@@ -67,7 +67,7 @@ cosign verify ghcr.io/rubentalstra/charts/ferroehr:6.0.33 \
 A **SLSA build provenance attestation:** what source it was built from, and how:
 
 ```console
-gh attestation verify oci://ghcr.io/rubentalstra/charts/ferroehr:6.0.33 \
+gh attestation verify oci://ghcr.io/rubentalstra/charts/ferroehr:6.1.0 \
   -R rubentalstra/FerroEHR
 gh attestation verify oci://ghcr.io/rubentalstra/ferroehr:4.0.15 \
   -R rubentalstra/FerroEHR
@@ -156,37 +156,6 @@ Kubernetes: `>=1.36.0-0`
 
 | Key | Type | Default | Description |
 |-----|------|---------|-------------|
-| adminUi.affinity | object | `{}` | Affinity. |
-| adminUi.auth.oidc.clientId | string | `""` | OAuth2 client id. |
-| adminUi.auth.oidc.enabled | bool | `false` | Authenticate console users through OIDC. Off means the console's own session auth is whatever its defaults provide — acceptable for a private cluster, not for anything reachable by a person who should not see PHI. |
-| adminUi.auth.oidc.issuer | string | `""` | Issuer URL (must be https for anything but local development). |
-| adminUi.auth.oidc.publicBaseUrl | string | `""` | The console's own externally-reachable base URL, used to build the OIDC redirect. Must match what the identity provider has registered. |
-| adminUi.enabled | bool | `false` | Deploy the admin console alongside the CDR. |
-| adminUi.existingSecret | string | `""` | Name of an existing Secret holding the console's OIDC client secret. The chart mounts that key as a FILE and passes only its path, so the credential never enters the pod's environment — the same discipline the server's DSN uses. |
-| adminUi.existingSecretKey | string | `"FERROEHR_ADMIN__AUTH__OIDC__CLIENT_SECRET"` | Key within `existingSecret` carrying the client secret. |
-| adminUi.extraEnv | list | `[]` | Extra environment for the console (escape hatch). |
-| adminUi.image.digest | string | `""` | Image digest (`sha256:…`); wins over `tag` when set, exactly as the server's `image.digest` does. |
-| adminUi.image.pullPolicy | string | `"IfNotPresent"` | Pull policy. |
-| adminUi.image.repository | string | `"ghcr.io/rubentalstra/ferroehr-admin-ui"` | Console image repository. |
-| adminUi.image.tag | string | `""` | Image tag. Empty falls back to .Chart.appVersion, so the console and the server move together by default. |
-| adminUi.ingress.annotations | object | `{}` | Extra annotations for the console Ingress. |
-| adminUi.ingress.className | string | `""` | IngressClass name. |
-| adminUi.ingress.enabled | bool | `false` | Publish the console through an Ingress. The console is a human-facing web UI, so unlike the API this is the normal way to reach it. |
-| adminUi.ingress.hosts | list | `[]` | Hosts and paths. |
-| adminUi.ingress.tls | list | `[]` | TLS blocks. |
-| adminUi.networkPolicy.enabled | bool | `true` | Install a NetworkPolicy for the console. Egress admits the CDR Service and DNS, and nothing else — the console is a REST client of the CDR by mandate, so that half is enforceable rather than aspirational. Ingress narrows the console's PORT unconditionally and its SOURCES only when `ingressFrom` is set. |
-| adminUi.networkPolicy.ingressAllowAll | bool | `true` | Admit every source while `ingressFrom` is empty — the posture this chart SHIPS for the console, stated as a value rather than left implicit in an empty list. Set it to `false` to have the render REFUSED while `ingressFrom` is empty, instead of quietly exposing the console to everything. It only decides the empty case — a non-empty `ingressFrom` always narrows. |
-| adminUi.networkPolicy.ingressFrom | list | `[]` | Ingress `from` selectors admitted to the console port. Empty means the rule carries no `from`, which admits EVERY source — other namespaces and off-cluster clients included (https://kubernetes.io/docs/concepts/services-networking/network-policies/). This is the human-facing login surface, so SET this to your ingress-controller namespace/pods. |
-| adminUi.nodeSelector | object | `{}` | Node selector. |
-| adminUi.podSecurityContext | object | `{"fsGroup":65532,"fsGroupChangePolicy":"OnRootMismatch","runAsGroup":65532,"runAsNonRoot":true,"runAsUser":65532,"seccompProfile":{"type":"RuntimeDefault"},"supplementalGroupsPolicy":"Strict"}` | Pod-level security context. Mirrors the server's; a second workload is where a hardened posture is most easily lost. The user-namespace setting is NOT mirrored here — it is the release-wide `hostUsers` key, because a posture that differs between two workloads of one release is a posture nobody can state. |
-| adminUi.preStopSleepSeconds | int | `5` | Lame-duck pause before SIGTERM, in seconds (0 disables) — the same endpoint-propagation race the server's `preStopSleepSeconds` covers. |
-| adminUi.replicaCount | int | `1` | Replica count. The console holds session state in process, so more than one replica needs sticky sessions at the ingress or users get logged out on a reroute; left at 1 deliberately. |
-| adminUi.resources | object | `{"limits":{"memory":"512Mi"},"requests":{"cpu":"50m","memory":"128Mi"}}` | Resource requests/limits. |
-| adminUi.securityContext | object | `{"allowPrivilegeEscalation":false,"capabilities":{"drop":["ALL"]},"privileged":false,"readOnlyRootFilesystem":true,"runAsNonRoot":true,"runAsUser":65532,"seccompProfile":{"type":"RuntimeDefault"}}` | Container-level security context. Mirrors the server's. |
-| adminUi.service.port | int | `3000` | Service port. The container always listens on 3000. |
-| adminUi.service.type | string | `"ClusterIP"` | Service type for the console. |
-| adminUi.terminationGracePeriodSeconds | int | `20` | Termination grace period for the console. Shorter than the server's: it holds no write in flight and nothing to drain but in-flight page renders. |
-| adminUi.tolerations | list | `[]` | Tolerations. |
 | affinity | object | `{}` | Pod affinity/anti-affinity rules. Empty = none. |
 | autoscaling.behavior | object | `{}` | Scaling behaviour, passed through verbatim to `spec.behavior`. Empty leaves the documented defaults, which are already asymmetric in the right direction for a clinical API: scale-up is immediate, scale-down waits out a 300-second stabilization window so a traffic trough cannot tear down capacity that is about to be needed. Set this only to make it MORE conservative — e.g. a `scaleDown.policies` entry capping how many pods may go per minute (https://kubernetes.io/docs/tasks/run-application/horizontal-pod-autoscale/#configurable-scaling-behavior). |
 | autoscaling.enabled | bool | `false` | Horizontal pod autoscaling. When on, the chart omits replicas and the HPA owns the count. |
@@ -359,6 +328,37 @@ Kubernetes: `>=1.36.0-0`
 | terminationGracePeriodSeconds | int | `30` | Termination grace period (audit/outbox drain has a 5s window in-binary). |
 | tolerations | list | `[]` | Tolerations for tainted nodes. Empty = none. |
 | topologySpreadConstraints | list | `[]` | Spread replicas across nodes. Empty does NOT mean "no spreading": it means the chart's own default constraint applies — one soft `maxSkew: 1` over `kubernetes.io/hostname`, so two replicas prefer two nodes and a node failure does not take the whole CDR with it. It is `ScheduleAnyway`, not `DoNotSchedule`, so a single-node or capacity-constrained cluster still schedules rather than leaving a pod Pending forever.  A non-empty list REPLACES that default entirely — give the full constraint, including its own `labelSelector`. Add a `topology.kubernetes.io/zone` constraint here if your cluster spans zones; the chart does not assume one (https://kubernetes.io/docs/concepts/scheduling-eviction/topology-spread-constraints/). |
+| viewer.affinity | object | `{}` | Affinity. |
+| viewer.auth.oidc.clientId | string | `""` | OAuth2 client id. |
+| viewer.auth.oidc.enabled | bool | `false` | Authenticate console users through OIDC. Off means the console's own session auth is whatever its defaults provide — acceptable for a private cluster, not for anything reachable by a person who should not see PHI. |
+| viewer.auth.oidc.issuer | string | `""` | Issuer URL (must be https for anything but local development). |
+| viewer.auth.oidc.publicBaseUrl | string | `""` | The console's own externally-reachable base URL, used to build the OIDC redirect. Must match what the identity provider has registered. |
+| viewer.enabled | bool | `false` | Deploy the viewer alongside the CDR. |
+| viewer.existingSecret | string | `""` | Name of an existing Secret holding the console's OIDC client secret. The chart mounts that key as a FILE and passes only its path, so the credential never enters the pod's environment — the same discipline the server's DSN uses. |
+| viewer.existingSecretKey | string | `"FERROEHR_ADMIN__AUTH__OIDC__CLIENT_SECRET"` | Key within `existingSecret` carrying the client secret. |
+| viewer.extraEnv | list | `[]` | Extra environment for the console (escape hatch). |
+| viewer.image.digest | string | `""` | Image digest (`sha256:…`); wins over `tag` when set, exactly as the server's `image.digest` does. |
+| viewer.image.pullPolicy | string | `"IfNotPresent"` | Pull policy. |
+| viewer.image.repository | string | `"ghcr.io/rubentalstra/ferroehr-viewer"` | Console image repository. |
+| viewer.image.tag | string | `""` | Image tag. Empty falls back to .Chart.appVersion, so the console and the server move together by default. |
+| viewer.ingress.annotations | object | `{}` | Extra annotations for the console Ingress. |
+| viewer.ingress.className | string | `""` | IngressClass name. |
+| viewer.ingress.enabled | bool | `false` | Publish the console through an Ingress. The console is a human-facing web UI, so unlike the API this is the normal way to reach it. |
+| viewer.ingress.hosts | list | `[]` | Hosts and paths. |
+| viewer.ingress.tls | list | `[]` | TLS blocks. |
+| viewer.networkPolicy.enabled | bool | `true` | Install a NetworkPolicy for the console. Egress admits the CDR Service and DNS, and nothing else — the console is a REST client of the CDR by mandate, so that half is enforceable rather than aspirational. Ingress narrows the console's PORT unconditionally and its SOURCES only when `ingressFrom` is set. |
+| viewer.networkPolicy.ingressAllowAll | bool | `true` | Admit every source while `ingressFrom` is empty — the posture this chart SHIPS for the console, stated as a value rather than left implicit in an empty list. Set it to `false` to have the render REFUSED while `ingressFrom` is empty, instead of quietly exposing the console to everything. It only decides the empty case — a non-empty `ingressFrom` always narrows. |
+| viewer.networkPolicy.ingressFrom | list | `[]` | Ingress `from` selectors admitted to the console port. Empty means the rule carries no `from`, which admits EVERY source — other namespaces and off-cluster clients included (https://kubernetes.io/docs/concepts/services-networking/network-policies/). This is the human-facing login surface, so SET this to your ingress-controller namespace/pods. |
+| viewer.nodeSelector | object | `{}` | Node selector. |
+| viewer.podSecurityContext | object | `{"fsGroup":65532,"fsGroupChangePolicy":"OnRootMismatch","runAsGroup":65532,"runAsNonRoot":true,"runAsUser":65532,"seccompProfile":{"type":"RuntimeDefault"},"supplementalGroupsPolicy":"Strict"}` | Pod-level security context. Mirrors the server's; a second workload is where a hardened posture is most easily lost. The user-namespace setting is NOT mirrored here — it is the release-wide `hostUsers` key, because a posture that differs between two workloads of one release is a posture nobody can state. |
+| viewer.preStopSleepSeconds | int | `5` | Lame-duck pause before SIGTERM, in seconds (0 disables) — the same endpoint-propagation race the server's `preStopSleepSeconds` covers. |
+| viewer.replicaCount | int | `1` | Replica count. The console holds session state in process, so more than one replica needs sticky sessions at the ingress or users get logged out on a reroute; left at 1 deliberately. |
+| viewer.resources | object | `{"limits":{"memory":"512Mi"},"requests":{"cpu":"50m","memory":"128Mi"}}` | Resource requests/limits. |
+| viewer.securityContext | object | `{"allowPrivilegeEscalation":false,"capabilities":{"drop":["ALL"]},"privileged":false,"readOnlyRootFilesystem":true,"runAsNonRoot":true,"runAsUser":65532,"seccompProfile":{"type":"RuntimeDefault"}}` | Container-level security context. Mirrors the server's. |
+| viewer.service.port | int | `3000` | Service port. The container always listens on 3000. |
+| viewer.service.type | string | `"ClusterIP"` | Service type for the console. |
+| viewer.terminationGracePeriodSeconds | int | `20` | Termination grace period for the console. Shorter than the server's: it holds no write in flight and nothing to drain but in-flight page renders. |
+| viewer.tolerations | list | `[]` | Tolerations. |
 
 ## More
 

@@ -7,13 +7,13 @@ JVM, so all you choose is how to run it and where the database lives. This part
 covers the three paths and the full configuration surface.
 
 - **[Try it in Codespaces](codespaces.md):** one click boots the published
-  images in a GitHub Codespace in your browser, with the Swagger UI and admin
-  console forwarded. Nothing to install. Made for evaluating FerroEHR; a real
+  images in a GitHub Codespace in your browser, with the Swagger UI and the
+  viewer forwarded. Nothing to install. Made for evaluating FerroEHR; a real
   deployment uses one of the paths below.
 - **[Docker Compose](compose.md):** the fastest way to run the server plus a
   preconfigured PostgreSQL 18, for development and evaluation. One downloadable
   file that pulls the published images and needs no configuration. Optional
-  admin console, OIDC, and observability overlays.
+  viewer, OIDC, and observability overlays.
 - **[Kubernetes & Helm](kubernetes.md):** the production path, a hardened
   non-root workload that connects to an externally managed PostgreSQL 18. Its
   companion, [Cluster hardening](kubernetes-hardening.md), covers what the

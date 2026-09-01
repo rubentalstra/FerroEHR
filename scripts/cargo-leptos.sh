@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # SPDX-FileCopyrightText: FerroEHR contributors
 # SPDX-License-Identifier: MIT
-# `cargo leptos` for the admin console, with the workspace lockfile frozen.
+# `cargo leptos` for the viewer, with the workspace lockfile frozen.
 #
 # Every other build in this repository runs `--locked`; the console's did not,
 # and a console build re-resolved and rewrote Cargo.lock in the working tree
@@ -26,7 +26,7 @@
 set -Eeuo pipefail
 
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
-CONSOLE_DIR="$ROOT/app/ferroehr-admin-ui"
+CONSOLE_DIR="$ROOT/app/ferroehr-viewer"
 
 if ! cargo metadata --locked --format-version 1 \
   --manifest-path "$CONSOLE_DIR/Cargo.toml" >/dev/null; then

@@ -99,7 +99,7 @@ plan, not a sign anything regressed.
 | Crate | Licence | Adjudication |
 |---|---|---|
 | `r-efi 5.3.0`, `6.0.0` | `MIT OR Apache-2.0 OR LGPL-2.1-or-later` | **We elect MIT.** The licence is disjunctive, so no LGPL obligation attaches — the same form of election recorded for the ISO 13606 reference models under MPL-1.1 in `crates/openehr-adl/tests/corpus/rm/PROVENANCE.md`. |
-| `leptos-chartistry 0.2.3` | `MPL-2.0` | Genuinely MPL, and the only finding whose licence FOSSA read from the declared metadata. MPL-2.0 is weak copyleft at **file** level: modifications to its own files stay MPL, and distributing it alongside MIT code is permitted. Reached only by the admin console. |
+| `leptos-chartistry 0.2.3` | `MPL-2.0` | Genuinely MPL, and the only finding whose licence FOSSA read from the declared metadata. MPL-2.0 is weak copyleft at **file** level: modifications to its own files stay MPL, and distributing it alongside MIT code is permitted. Reached only by the viewer. |
 
 ## Already adjudicated elsewhere
 

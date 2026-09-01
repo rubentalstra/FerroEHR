@@ -18,10 +18,10 @@
 #
 #   plan ─┬─ github-release ── build-binaries ─── finalize-release ── crates
 #         ├─ binary ─────────── app-image ──┐
-#         ├─ admin-ui-binary ── admin-ui-image ─┼─ scan-and-tag ─┬─ chart
+#         ├─ viewer-binary ── viewer-image ─┼─ scan-and-tag ─────┬─ chart
 #         ├─ postgres-image ────────────────┘                    └─ sandbox
 #         ├─ docs-freeze
-#         └─ (smoke hangs off app-image; admin-ui-smoke off both images —
+#         └─ (smoke hangs off app-image; viewer-smoke off both images —
 #             it drives the console against this run's own CDR)
 #   announce ── needs everything, if: always()
 #
@@ -607,12 +607,12 @@ jobs:
         org.opencontainers.image.base.name=gcr.io/distroless/cc-debian13:nonroot
         org.opencontainers.image.base.digest=sha256:c31ff9abcb1910f3ab25c7957bdaf0bfe12a01eb546e8df2282f1c8f682b606c
 
-  # ── Admin console: server binary per arch + the arch-independent site ───────
+  # ── Viewer: server binary per arch + the arch-independent site ──────────────
   # The WASM/JS/CSS site bundle is architecture-independent, so cargo-leptos
   # runs ONCE (amd64: bin + site); the arm64 job builds only the ssr binary
   # with plain cargo. Same glibc rationale as the app binary job.
-  admin-ui-binary:
-    name: admin-ui binary (${{ matrix.platform }})
+  viewer-binary:
+    name: viewer binary (${{ matrix.platform }})
     needs: plan
     runs-on: ${{ matrix.runner }}
     timeout-minutes: 60
@@ -650,7 +650,7 @@ jobs:
       # Same publishing-lane reasoning as the app binary job above.
       - uses: Swatinem/rust-cache@6323deb102c322ba6fcbdcafc7e3dddab59af2b6 # v2.9.2
         with: # zizmor: ignore[cache-poisoning]
-          shared-key: containers-admin-ui-${{ matrix.platform }}
+          shared-key: containers-viewer-${{ matrix.platform }}
           save-if: "false"
 
       - name: Build the ssr server binary (release, native)
@@ -662,16 +662,16 @@ jobs:
         # the published 3.20.0 image, #2164). cargo-leptos exports it for the
         # from-source Dockerfile path; this plain cargo build must match.
         env:
-          LEPTOS_OUTPUT_NAME: ferroehr-admin-ui
-        run: cargo build --release --locked --no-default-features --features ssr -p ferroehr-admin-ui
+          LEPTOS_OUTPUT_NAME: ferroehr-viewer
+        run: cargo build --release --locked --no-default-features --features ssr -p ferroehr-viewer
 
       - name: Strip
-        run: strip target/release/ferroehr-admin-ui
+        run: strip target/release/ferroehr-viewer
 
       - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
-          name: ferroehr-admin-ui-${{ matrix.platform }}
-          path: target/release/ferroehr-admin-ui
+          name: ferroehr-viewer-${{ matrix.platform }}
+          path: target/release/ferroehr-viewer
           if-no-files-found: error
           retention-days: 1
 
@@ -711,15 +711,15 @@ jobs:
       - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         if: matrix.platform == 'amd64'
         with:
-          name: ferroehr-admin-ui-site
+          name: ferroehr-viewer-site
           path: target/site
           if-no-files-found: error
           retention-days: 1
 
-  # ── Package + push the multi-arch admin-console image (COPY-only) ───────────
-  admin-ui-image:
-    name: admin-ui image
-    needs: admin-ui-binary
+  # ── Package + push the multi-arch viewer image (COPY-only) ──────────────────
+  viewer-image:
+    name: viewer image
+    needs: viewer-binary
     permissions:
       contents: read
       packages: write # push the image to GHCR
@@ -728,15 +728,15 @@ jobs:
     # The reusable SLSA Build L3 lane; see the app image above.
     uses: ./.github/workflows/build-image.yml
     with:
-      image: ghcr.io/${{ github.repository_owner }}/ferroehr-admin-ui
+      image: ghcr.io/${{ github.repository_owner }}/ferroehr-viewer
       defer-tags: true
-      dockerfile: docker/admin-ui/Dockerfile
+      dockerfile: docker/viewer/Dockerfile
       target: runtime-prebuilt
-      binary-artifact-prefix: ferroehr-admin-ui
-      site-artifact: ferroehr-admin-ui-site
+      binary-artifact-prefix: ferroehr-viewer
+      site-artifact: ferroehr-viewer-site
       labels: |
-        org.opencontainers.image.title=FerroEHR admin console
-        org.opencontainers.image.description=Admin console for openEHR ITS-REST CDRs — pure-Rust Leptos web app (template manager, visual AQL query builder, EHR browser)
+        org.opencontainers.image.title=FerroEHR Viewer
+        org.opencontainers.image.description=Viewer for openEHR ITS-REST CDRs — pure-Rust Leptos web app (template manager, visual AQL query builder, EHR browser)
         org.opencontainers.image.source=https://github.com/rubentalstra/FerroEHR
         org.opencontainers.image.url=https://ferroehr.eu/
         org.opencontainers.image.documentation=https://ferroehr.eu/docs/latest/
@@ -786,7 +786,7 @@ jobs:
   # image, the sandbox tracks `:latest`, and both exist by construction here.
   scan-and-tag:
     name: scan + tag
-    needs: [app-image, admin-ui-image, postgres-image]
+    needs: [app-image, viewer-image, postgres-image]
     permissions:
       contents: read
       packages: write # pull the pushed digests, then tag them
@@ -795,9 +795,9 @@ jobs:
       app-image: ghcr.io/${{ github.repository_owner }}/ferroehr
       app-digest: ${{ needs.app-image.outputs.digest }}
       app-tags: ${{ needs.app-image.outputs.tags }}
-      admin-ui-image: ghcr.io/${{ github.repository_owner }}/ferroehr-admin-ui
-      admin-ui-digest: ${{ needs.admin-ui-image.outputs.digest }}
-      admin-ui-tags: ${{ needs.admin-ui-image.outputs.tags }}
+      viewer-image: ghcr.io/${{ github.repository_owner }}/ferroehr-viewer
+      viewer-digest: ${{ needs.viewer-image.outputs.digest }}
+      viewer-tags: ${{ needs.viewer-image.outputs.tags }}
       postgres-image: ghcr.io/${{ github.repository_owner }}/ferroehr-postgres
       postgres-digest: ${{ needs.postgres-image.outputs.digest }}
       postgres-tags: ${{ needs.postgres-image.outputs.tags }}
@@ -812,16 +812,16 @@ jobs:
   # in the artifact that serves it, AND a real browser must log in through
   # them — the second half exists because 4.0.8 shipped a console nobody had
   # ever driven in a browser (#2871).
-  admin-ui-smoke:
-    name: admin-ui smoke (amd64)
+  viewer-smoke:
+    name: viewer smoke (amd64)
     runs-on: ubuntu-26.04
     timeout-minutes: 20
     permissions:
       contents: read
       packages: read # pull the image this run just pushed
-    needs: [admin-ui-image, app-image]
+    needs: [viewer-image, app-image]
     env:
-      ADMIN_UI_IMAGE: ghcr.io/${{ github.repository_owner }}/ferroehr-admin-ui
+      VIEWER_IMAGE: ghcr.io/${{ github.repository_owner }}/ferroehr-viewer
       APP_IMAGE: ghcr.io/${{ github.repository_owner }}/ferroehr
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
@@ -837,23 +837,23 @@ jobs:
 
       - name: Pull pushed console image (by digest)
         env:
-          DIGEST: ${{ needs.admin-ui-image.outputs.digest }}
+          DIGEST: ${{ needs.viewer-image.outputs.digest }}
         run: |
-          docker pull "${ADMIN_UI_IMAGE}@${DIGEST}"
-          docker tag  "${ADMIN_UI_IMAGE}@${DIGEST}" ferroehr-admin-ui:smoke
+          docker pull "${VIEWER_IMAGE}@${DIGEST}"
+          docker tag  "${VIEWER_IMAGE}@${DIGEST}" ferroehr-viewer:smoke
 
       - name: Serve and verify the asset chain
         shell: bash
         run: |
           set -euo pipefail
           # A dummy CDR base URL: the login page renders without a CDR.
-          docker run -d --rm --name adminui-smoke -p 127.0.0.1:3000:3000 \
+          docker run -d --rm --name viewer-smoke -p 127.0.0.1:3000:3000 \
             -e FERROEHR_ADMIN__CDR__BASE_URL=http://127.0.0.1:9 \
-            ferroehr-admin-ui:smoke
+            ferroehr-viewer:smoke
           for i in $(seq 1 30); do
             curl -sf -o /dev/null http://127.0.0.1:3000/login && break
             sleep 1
-            [ "$i" = 30 ] && { echo "console never served /login"; docker logs adminui-smoke; exit 1; }
+            [ "$i" = 30 ] && { echo "console never served /login"; docker logs viewer-smoke; exit 1; }
           done
           html=$(curl -sf http://127.0.0.1:3000/login)
           # Every /pkg/ asset the page references (script srcs, stylesheet and
@@ -868,7 +868,7 @@ jobs:
             echo "$a -> $code"
             [ "$code" = "200" ] || fail=1
           done <<< "$assets"
-          docker stop adminui-smoke >/dev/null
+          docker stop viewer-smoke >/dev/null
           [ "$fail" = 0 ] || { echo "the pushed console image references assets it does not ship (#2550)"; exit 1; }
 
       - name: Pull pushed app image (by digest)
@@ -888,10 +888,10 @@ jobs:
       - name: Browser-driven login against the pushed console image
         shell: bash
         run: |
-          FERROEHR_ADMIN_UI_IMAGE=ferroehr-admin-ui:smoke \
+          FERROEHR_VIEWER_IMAGE=ferroehr-viewer:smoke \
           FERROEHR_IMAGE=ferroehr:smoke \
           FERROEHR_POSTGRES_IMAGE=ferroehr-postgres:smoke \
-            bash docker/admin-ui/login-smoke.sh
+            bash docker/viewer/login-smoke.sh
 
   # ── Smoke test (amd64): pull the pushed image, compose up, exercise the API ──
   smoke:
@@ -1165,12 +1165,12 @@ jobs:
       - finalize-release
       - binary
       - app-image
-      - admin-ui-binary
-      - admin-ui-image
+      - viewer-binary
+      - viewer-image
       - postgres-image
       - scan-and-tag
       - smoke
-      - admin-ui-smoke
+      - viewer-smoke
       - chart
       - sandbox
       - sandbox-reseed
@@ -1192,7 +1192,7 @@ jobs:
           VERSION: ${{ needs.plan.outputs.version }}
           IS_RELEASE: ${{ needs.plan.outputs.is-release }}
           APP_DIGEST: ${{ needs.app-image.outputs.digest }}
-          ADMIN_UI_DIGEST: ${{ needs.admin-ui-image.outputs.digest }}
+          VIEWER_DIGEST: ${{ needs.viewer-image.outputs.digest }}
           POSTGRES_DIGEST: ${{ needs.postgres-image.outputs.digest }}
           R_PLAN: ${{ needs.plan.result }}
           R_GITHUB_RELEASE: ${{ needs.github-release.result }}
@@ -1200,12 +1200,12 @@ jobs:
           R_FINALIZE: ${{ needs.finalize-release.result }}
           R_BINARY: ${{ needs.binary.result }}
           R_APP_IMAGE: ${{ needs.app-image.result }}
-          R_ADMIN_UI_BINARY: ${{ needs.admin-ui-binary.result }}
-          R_ADMIN_UI_IMAGE: ${{ needs.admin-ui-image.result }}
+          R_VIEWER_BINARY: ${{ needs.viewer-binary.result }}
+          R_VIEWER_IMAGE: ${{ needs.viewer-image.result }}
           R_POSTGRES_IMAGE: ${{ needs.postgres-image.result }}
           R_SCAN_AND_TAG: ${{ needs.scan-and-tag.result }}
           R_SMOKE: ${{ needs.smoke.result }}
-          R_ADMIN_UI_SMOKE: ${{ needs.admin-ui-smoke.result }}
+          R_VIEWER_SMOKE: ${{ needs.viewer-smoke.result }}
           R_CHART: ${{ needs.chart.result }}
           R_SANDBOX: ${{ needs.sandbox.result }}
           R_SANDBOX_RESEED: ${{ needs.sandbox-reseed.result }}
@@ -1241,12 +1241,12 @@ jobs:
           check "github release (published)" "$R_FINALIZE"
           check "image binaries" "$R_BINARY"
           check "app image" "$R_APP_IMAGE"
-          check "admin-ui binaries" "$R_ADMIN_UI_BINARY"
-          check "admin-ui image" "$R_ADMIN_UI_IMAGE"
+          check "viewer binaries" "$R_VIEWER_BINARY"
+          check "viewer image" "$R_VIEWER_IMAGE"
           check "postgres image" "$R_POSTGRES_IMAGE"
           check "scan + tag" "$R_SCAN_AND_TAG"
           check "compose smoke" "$R_SMOKE"
-          check "admin-ui smoke" "$R_ADMIN_UI_SMOKE"
+          check "viewer smoke" "$R_VIEWER_SMOKE"
           check "chart" "$R_CHART"
           check "sandbox" "$R_SANDBOX" prerelease
           check "sandbox reseed" "$R_SANDBOX_RESEED" prerelease
@@ -1263,8 +1263,8 @@ jobs:
             printf '| release | %s/releases/tag/%s |\n' "$repo_url" "$TAG"
             printf '| app image | `ghcr.io/%s/ferroehr:%s` `@%s` |\n' \
               "$GITHUB_REPOSITORY_OWNER" "$VERSION" "${APP_DIGEST:-not pushed}"
-            printf '| admin-ui image | `ghcr.io/%s/ferroehr-admin-ui:%s` `@%s` |\n' \
-              "$GITHUB_REPOSITORY_OWNER" "$VERSION" "${ADMIN_UI_DIGEST:-not pushed}"
+            printf '| viewer image | `ghcr.io/%s/ferroehr-viewer:%s` `@%s` |\n' \
+              "$GITHUB_REPOSITORY_OWNER" "$VERSION" "${VIEWER_DIGEST:-not pushed}"
             printf '| postgres image | `ghcr.io/%s/ferroehr-postgres:%s` `@%s` |\n' \
               "$GITHUB_REPOSITORY_OWNER" "$VERSION" "${POSTGRES_DIGEST:-not pushed}"
             printf '| `:latest` moved | %s |\n' "$([ "$IS_RELEASE" = "true" ] && echo yes || echo 'no — pre-release')"

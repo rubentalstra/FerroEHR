@@ -22,7 +22,7 @@ sandbox.ferroehr.eu {
 	redir /favicon.ico /ferroehr/rest/swagger-ui/favicon-32x32.png
 
 	# The hydration bundle is served under content-hashed names
-	# (LEPTOS_HASH_FILES; docker/admin-ui/Dockerfile), so a changed build is a
+	# (LEPTOS_HASH_FILES; docker/viewer/Dockerfile), so a changed build is a
 	# changed URL and the bytes behind one URL never change — the RFC 9111
 	# immutable case. Repeat visits skip re-downloading the wasm entirely.
 	@bundle path /pkg/*

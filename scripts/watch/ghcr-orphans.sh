@@ -47,7 +47,7 @@
 set -euo pipefail
 
 OWNER="rubentalstra"
-PACKAGES=(ferroehr ferroehr-admin-ui ferroehr-postgres)
+PACKAGES=(ferroehr ferroehr-viewer ferroehr-postgres)
 OUT=""
 
 while [[ "$#" -gt 0 ]]; do

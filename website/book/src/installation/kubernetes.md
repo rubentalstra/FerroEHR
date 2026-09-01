@@ -159,7 +159,7 @@ check entirely if you ever need to bypass it.
 The chart is also listed on **[Artifact
 Hub](https://artifacthub.io/packages/helm/ferroehr/ferroehr)**, which renders the
 chart's metadata plus a security report over the two images the chart's own
-metadata lists: the server, and the optional admin console.
+metadata lists: the server, and the optional viewer.
 
 > [!WARNING]
 > Between releases the chart's `config` defaults track development and can be
@@ -410,7 +410,7 @@ narrowed in that state, so set `ingressFrom` to your ingress controller for a PH
 workload, and set `networkPolicy.ingressAllowAll: false` if an open ingress rule
 must never render at all; the full treatment is
 [§Ingress](hardening-network-policy.md#ingress-ports-are-narrowed-sources-are-yours).
-The console's own policy carries the same pair under `adminUi.networkPolicy`.
+The console's own policy carries the same pair under `viewer.networkPolicy`.
 Second, a NetworkPolicy is only as real as the CNI that implements it:
 on a cluster whose network plugin does not enforce NetworkPolicy the object is
 documentation rather than a control, and nothing in Kubernetes reports that.
@@ -606,26 +606,26 @@ is an explicit, auditable decision:
 Full detail on each is in [Beyond the core](../beyond-core/index.md),
 [Security & multi-tenancy](../security.md), and [Operations](../operations.md).
 
-### The admin console (a second workload, off by default)
+### FerroEHR Viewer (a second workload, off by default)
 
-`adminUi.enabled` renders a second Deployment and Service for the Leptos admin
-console beside the CDR, from its own image
-(`adminUi.image.repository`, tagged `appVersion` by default so the two move
+`viewer.enabled` renders a second Deployment and Service for the Leptos viewer
+beside the CDR, from its own image
+(`viewer.image.repository`, tagged `appVersion` by default so the two move
 together). It is off by default: the console is a separate product surface with
 its own attack surface, and a CDR is complete without it.
 
 Three properties are worth knowing before you switch it on:
 
 - **It reaches the CDR strictly over the REST API**, which
-  `adminUi.networkPolicy.enabled` (on by default) *enforces* rather than
+  `viewer.networkPolicy.enabled` (on by default) *enforces* rather than
   assumes: the console's egress admits the CDR Service, DNS and outbound HTTPS
   for an identity provider, and nothing else. It holds no database credential.
-- **It is a human-facing web UI**, so `adminUi.ingress.enabled` is the normal way
-  to reach it, and `adminUi.auth.oidc.enabled` with an issuer, client id and
-  `adminUi.auth.oidc.publicBaseUrl` is how you keep a person who should not see
-  PHI out of it. Its client secret comes from `adminUi.existingSecret`, mounted
+- **It is a human-facing web UI**, so `viewer.ingress.enabled` is the normal way
+  to reach it, and `viewer.auth.oidc.enabled` with an issuer, client id and
+  `viewer.auth.oidc.publicBaseUrl` is how you keep a person who should not see
+  PHI out of it. Its client secret comes from `viewer.existingSecret`, mounted
   as a file exactly as the server's DSN is.
-- **`adminUi.replicaCount` is 1 deliberately.** The console holds session state
+- **`viewer.replicaCount` is 1 deliberately.** The console holds session state
   in process, so a second replica needs sticky sessions at the ingress or users
   are logged out on a reroute.
 
@@ -641,7 +641,7 @@ inside the cluster through the console Service, so the second workload is never
 vouched for by the first. What that run does **not** establish is stated in its
 own record: the console's OIDC path, the screens behind a session, and whether a
 CNI enforces the console's NetworkPolicy. Its screens are documented in the
-[admin console](../admin-ui/index.md) chapter.
+[viewer](../viewer/index.md) chapter.
 
 ## Staying available while things move
 

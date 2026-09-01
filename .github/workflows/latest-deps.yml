@@ -74,8 +74,8 @@ jobs:
           set -uo pipefail
           status=0
           {
-            cargo check --workspace --exclude ferroehr-admin-ui --all-targets --all-features &&
-              cargo check -p ferroehr-admin-ui --all-targets --features ssr
+            cargo check --workspace --exclude ferroehr-viewer --all-targets --all-features &&
+              cargo check -p ferroehr-viewer --all-targets --features ssr
           } 2>&1 | tee check.log || status=$?
           echo "status=$status" >> "$GITHUB_OUTPUT"
           echo "cargo check exited ${status}"
@@ -90,7 +90,7 @@ jobs:
             printf ' longer compiles (Cargo book: verifying latest dependencies).\n\n'
             printf 'Run: %s\n\n' "$RUN_URL"
             printf 'Triage: reproduce with `cargo update && cargo check --workspace --exclude'
-            printf ' ferroehr-admin-ui --all-targets --all-features`, then either fix the'
+            printf ' ferroehr-viewer --all-targets --all-features`, then either fix the'
             printf ' incompatibility or pin the offending range with a dated comment.\n\n'
             printf '<details><summary>Last 200 lines of the check log</summary>\n\n```\n'
             tail -n 200 check.log

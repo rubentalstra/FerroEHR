@@ -13,7 +13,7 @@ Creating a Codespace on the FerroEHR repository starts a container that pulls
 the published quickstart images and runs `docker compose up` for you:
 
 - the FerroEHR server with a preconfigured PostgreSQL 18,
-- the admin console,
+- the viewer,
 - the Swagger UI for the full REST API.
 
 The stack boots automatically. When the terminal prints `FerroEHR is up.`,
@@ -22,7 +22,7 @@ open the **PORTS** panel and follow the forwarded ports:
 | Port | What it serves |
 |---|---|
 | `8080` | the REST API, with the Swagger UI at `/ferroehr/rest/swagger-ui` |
-| `3000` | the admin console |
+| `3000` | the viewer |
 
 Sign in with the quickstart credentials, `ferroehr` / `ferroehr`. From there
 the [Getting started](../getting-started.md) walkthrough applies unchanged:

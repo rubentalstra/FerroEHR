@@ -80,7 +80,7 @@ user terms; if you are new to openEHR itself, start with the
   explains how templates drive what the server will accept.
 - **Reviewing it for a deployment?** [Security & multi-tenancy](security.md)
   and the [Threat model](threat-model.md) state what is enforced and what is
-  yours to enforce; the [Admin console](admin-ui/index.md) is the optional web
+  yours to enforce; the [FerroEHR Viewer](viewer/index.md) is the optional web
   UI over the same public API.
 
 > [!NOTE]

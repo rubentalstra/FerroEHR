@@ -24,7 +24,7 @@
 #
 # The conformance lanes do NOT use this file — they compose the self-contained
 # SUT stack docker/sut-ferroehr.yml (scripts/conformance.sh). The ui-e2e lane
-# (scripts/ui-e2e.sh, project ferroehr-e2e, COMPOSE_PROFILES=keycloak,admin-ui)
+# (scripts/ui-e2e.sh, project ferroehr-e2e, COMPOSE_PROFILES=keycloak,viewer)
 # runs on bare compose calls, so this override IS its model.
 #
 # Build provenance uses the OCI-standard REVISION build-arg only (no bespoke
@@ -64,11 +64,11 @@ services:
       # images may predate the key, whose strict sweep would refuse it at boot).
       FERROEHR__SPEC_PROFILE: ${FERROEHR__SPEC_PROFILE:-development}
 
-  ferroehr-admin-ui:
-    image: ${FERROEHR_ADMIN_UI_IMAGE:-ghcr.io/rubentalstra/ferroehr-admin-ui:local}
+  ferroehr-viewer:
+    image: ${FERROEHR_VIEWER_IMAGE:-ghcr.io/rubentalstra/ferroehr-viewer:local}
     build:
       context: .
-      dockerfile: docker/admin-ui/Dockerfile
+      dockerfile: docker/viewer/Dockerfile
       target: runtime-from-source
       args:
         REVISION: ${REVISION:-}
@@ -102,7 +102,7 @@ services:
       # ONE canonical issuer regardless of which host the caller used —
       # token `iss` claims stay stable, so the CDR can validate bearer
       # tokens against a single configured issuer (ferroehr.dev.toml
-      # [auth.oidc]). Override for human admin-console browsing if needed.
+      # [auth.oidc]). Override for human viewer browsing if needed.
       # NOTE: a URL-form KC_HOSTNAME replaces the whole base — Keycloak does
       # NOT append KC_HTTP_RELATIVE_PATH to it, so /auth must be included.
       KC_HOSTNAME: ${KEYCLOAK_HOSTNAME:-http://keycloak:8081/auth}

@@ -36,7 +36,7 @@ enabled = true
 enabled = true
 
 # Dev-only: expose the ops-introspection surface (`/management/...`) on the main
-# listener so the admin console's Operations panel has something to read and the
+# listener so the viewer's Operations panel has something to read and the
 # browser E2E battery can exercise it. The surface is OFF by default on the bare
 # binary and each endpoint is independently opt-in; production deployments enable
 # only what they need, and preferably on a separate internal port
@@ -61,7 +61,7 @@ loggers = "admin_only"
 # docker-compose.dev.yml; the CDR resolves the JWKS lazily from the issuer's
 # discovery document (cached, refreshed — key rotation just works, exactly
 # like any real OAuth2 resource server; no static key material). With this
-# the CDR advertises `Basic, Bearer` and an OIDC-logged-in admin console can
+# the CDR advertises `Basic, Bearer` and an OIDC-logged-in viewer can
 # query it. Do NOT copy into production; configure your real issuer instead.
 [auth.oidc]
 issuer = "http://keycloak:8081/auth/realms/ferroehr"
@@ -75,7 +75,7 @@ audiences = ["ferroehr"]
 algorithms = ["RS256"]
 
 # The read-only terminology extension API (six GETs over the in-process
-# openEHR vocabulary bundle) is ON in the dev stack so the admin console's
+# openEHR vocabulary bundle) is ON in the dev stack so the viewer's
 # terminology browser and code picker work out of the box. Off by default in
 # a bare deployment; this flag only mounts reads, never a provider.
 [terminology]

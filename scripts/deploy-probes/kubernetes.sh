@@ -44,21 +44,21 @@ K8S_BASIC="clinician:ferroehr"
 K8S_AUTH_VALUES="deploy/helm/ci/basic-auth-values.yaml"
 K8S_PF_PID=""
 
-# The console workload the chart renders behind `adminUi.enabled` — a second
+# The console workload the chart renders behind `viewer.enabled` — a second
 # Deployment, Service, ServiceAccount and NetworkPolicy from a second image.
-# The name is what the chart's adminUiFullname helper produces for this release,
+# The name is what the chart's viewerFullname helper produces for this release,
 # and the label is the console's OWN app.kubernetes.io/name: the two workloads
 # deliberately do not share a selector, so a probe that reused the server's
 # label would silently measure the server.
-K8S_UI="ferroehr-admin-ui"
+K8S_UI="ferroehr-viewer"
 K8S_UI_LABEL="app.kubernetes.io/name=$K8S_UI"
 # The label the narrowed-ingress probe puts on its client pod, and which the
 # console NetworkPolicy's `from` selector then names.
-K8S_UI_CLIENT_LABEL="ferroehr.probe/client=admin-ui"
+K8S_UI_CLIENT_LABEL="ferroehr.probe/client=viewer"
 # The console image under probe. Empty means the chart's own default, which is
-# what an operator installing this chart gets; set PROBE_K8S_ADMINUI_IMAGE to
+# what an operator installing this chart gets; set PROBE_K8S_VIEWER_IMAGE to
 # probe a locally built console instead.
-K8S_UI_IMAGE="${PROBE_K8S_ADMINUI_IMAGE:-}"
+K8S_UI_IMAGE="${PROBE_K8S_VIEWER_IMAGE:-}"
 
 # The compose database this cluster is pointed at. It binds 0.0.0.0 because a
 # pod reaches the host through the Docker Desktop gateway, which a loopback bind
@@ -175,13 +175,13 @@ k8s_rollout() { kc rollout status "deploy/$K8S_RELEASE" --timeout="${1:-180s}" >
 
 # The same install with the console switched on. Everything else stays at the
 # chart's defaults, including the console's image: an overlay that pins a
-# hand-built console would stop measuring what `adminUi.enabled=true` gives an
+# hand-built console would stop measuring what `viewer.enabled=true` gives an
 # operator.
 k8s_ui_install() {
-  local args=(--set adminUi.enabled=true)
+  local args=(--set viewer.enabled=true)
   if [[ -n "$K8S_UI_IMAGE" ]]; then
-    args+=(--set adminUi.image.repository="${K8S_UI_IMAGE%:*}"
-           --set adminUi.image.tag="${K8S_UI_IMAGE##*:}")
+    args+=(--set viewer.image.repository="${K8S_UI_IMAGE%:*}"
+           --set viewer.image.tag="${K8S_UI_IMAGE##*:}")
   fi
   k8s_install "${args[@]}" "$@"
 }
@@ -576,16 +576,16 @@ probes_k8s_readiness() {
   probe_done
 }
 
-# The admin console, the chart's optional second workload (#2354).
+# The viewer, the chart's optional second workload (#2354).
 #
 # It is off by default, which is exactly why it needs probing: the chart renders
 # a full Deployment, Service, ServiceAccount and NetworkPolicy behind
-# `adminUi.enabled`, from a second image, with its own copy of the hardened
+# `viewer.enabled`, from a second image, with its own copy of the hardened
 # security context — and a posture carried in a second place is a posture that
 # is quietly lost. Everything below runs LAST, because it changes the release's
 # shape and the probes above measure the shipped default.
-probes_k8s_admin_ui() {
-  bold "the admin console workload (adminUi.enabled)"
+probes_k8s_viewer() {
+  bold "the viewer workload (viewer.enabled)"
 
   # The OFF state, on the release the probes above have been measuring: the gate
   # must render nothing at all, not merely a scaled-down console.
@@ -595,7 +595,7 @@ probes_k8s_admin_ui() {
   off="$(kc get deploy,svc,serviceaccount,networkpolicy -l "$K8S_UI_LABEL" \
          -o name 2>/dev/null | tr '\n' ' ')"
   assert_eq "" "${off// /}" \
-    "adminUi.enabled defaults to false, so anything found here means the gate leaks"
+    "viewer.enabled defaults to false, so anything found here means the gate leaks"
   probe_done
 
   # The BROKEN state of the console's ingress posture: asking for a narrowed
@@ -607,14 +607,14 @@ probes_k8s_admin_ui() {
   local guard
   guard="$(helm template "$K8S_RELEASE" deploy/helm/ferroehr -n "$K8S_NS" \
              -f "$K8S_AUTH_VALUES" --set database.existingSecret=ferroehr-db \
-             --set adminUi.enabled=true \
-             --set adminUi.networkPolicy.ingressAllowAll=false 2>&1)"
-  assert_contains "$guard" "adminUi.networkPolicy.ingressFrom" \
+             --set viewer.enabled=true \
+             --set viewer.networkPolicy.ingressAllowAll=false 2>&1)"
+  assert_contains "$guard" "viewer.networkPolicy.ingressFrom" \
     "a refusal that does not name the key that narrows the sources is just a wall"
   probe_done
 
   probe "P-K8S-UI-BOOT" "working" "chart" "-" \
-    "adminUi.enabled installs the console workload and it rolls out"
+    "viewer.enabled installs the console workload and it rolls out"
   if ! k8s_ui_install; then
     probe_fail "a successful helm upgrade --install with the console on" \
       "helm refused the release" \
@@ -655,9 +655,9 @@ probes_k8s_ui_runtime() {
   fi
   probe "P-K8S-UI-RUNTIME" "working" "chart" "-" \
     "the console container runs under the same hardened posture as the server"
-  cid="$(docker exec "$node" crictl ps --name admin-ui -q 2>/dev/null | head -1)"
+  cid="$(docker exec "$node" crictl ps --name viewer -q 2>/dev/null | head -1)"
   if [[ -z "$cid" ]]; then
-    probe_fail "a running admin-ui container on the node" "crictl listed none"
+    probe_fail "a running viewer container on the node" "crictl listed none"
   else
     spec="$(docker exec "$node" crictl inspect "$cid" 2>/dev/null | jq -c '.info.runtimeSpec')"
     k8s_assert_hardened "$spec"
@@ -692,7 +692,7 @@ probes_k8s_ui_serve() {
   page="$(k8s_ui_get /login)"
   assert_contains "$page" 'name="username"' \
     "the sign-in form must be in the first response: /login renders SsrMode::Async so it works without JavaScript"
-  assert_contains "$page" "ferroehr-admin" \
+  assert_contains "$page" "FerroEHR Viewer" \
     "the page served must be the console's own, not an error page from something else on that port"
   probe_done
 
@@ -709,8 +709,8 @@ probes_k8s_ui_serve() {
 # console policy admits every source unless `ingressFrom` names peers, and the
 # narrowing path had only ever been rendered.
 probes_k8s_ui_netpol() {
-  cat > "$PROBE_TMP/adminui-narrow.yaml" <<YAML
-adminUi:
+  cat > "$PROBE_TMP/viewer-narrow.yaml" <<YAML
+viewer:
   networkPolicy:
     ingressAllowAll: false
     ingressFrom:
@@ -721,7 +721,7 @@ YAML
 
   probe "P-K8S-UI-NETPOL-NARROW" "working" "chart" "-" \
     "the narrowed console ingress installs, is stored as written, and still admits the peer it names"
-  if ! k8s_ui_install -f "$PROBE_TMP/adminui-narrow.yaml"; then
+  if ! k8s_ui_install -f "$PROBE_TMP/viewer-narrow.yaml"; then
     probe_fail "an install with ingressAllowAll=false and a non-empty ingressFrom" \
       "helm refused the release" \
       "the guard above must fire only on an EMPTY ingressFrom; refusing this one makes the narrowing path unusable"

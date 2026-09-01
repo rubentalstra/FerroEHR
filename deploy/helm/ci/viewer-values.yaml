@@ -1,0 +1,27 @@
+# The console-enabled overlay: the CDR plus its optional viewer, both
+# rendered and both booted by the acceptance lane. Without this, `viewer` is a
+# code path only `helm template` ever exercises, and the console's pod-security
+# posture is never checked against the restricted profile.
+#
+# The Basic-auth shape is reused verbatim from basic-auth-values.yaml so no new
+# credential-shaped string enters the tree: the hash arrives through `secrets:`
+# and the chart injects `password_hash_file`, keeping it out of the ConfigMap
+# and out of the environment.
+database:
+  existingSecret: ferroehr-db
+  existingSecretKey: FERROEHR__DB__URL
+
+secrets:
+  basicUserPasswordHashes:
+    clinician: "$argon2id$v=19$m=19456,t=2,p=1$ZmVycm9laHJEZXZTYWx0$be5nPwWjfUl1qvSrvkvqvdMOuCgM0VFcN/VN4MFLjT8"
+
+config:
+  auth:
+    enabled: true
+    basic:
+      users:
+        - username: clinician
+          roles: [ADMIN]
+
+viewer:
+  enabled: true

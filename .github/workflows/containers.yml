@@ -44,7 +44,7 @@ concurrency:
 env:
   REGISTRY: ghcr.io
   APP_IMAGE: ghcr.io/${{ github.repository_owner }}/ferroehr
-  ADMIN_UI_IMAGE: ghcr.io/${{ github.repository_owner }}/ferroehr-admin-ui
+  VIEWER_IMAGE: ghcr.io/${{ github.repository_owner }}/ferroehr-viewer
 
 permissions: {}
 
@@ -69,7 +69,7 @@ jobs:
       # used to warn and diff the whole tree — same outcome, accidental
       # mechanism).
       app: ${{ steps.everything.outputs.all || steps.filter.outputs.app }}
-      admin_ui: ${{ steps.everything.outputs.all || steps.filter.outputs.admin_ui }}
+      viewer: ${{ steps.everything.outputs.all || steps.filter.outputs.viewer }}
       postgres: ${{ steps.everything.outputs.all || steps.filter.outputs.postgres }}
     steps:
       - name: A dispatch builds everything
@@ -84,7 +84,7 @@ jobs:
         if: steps.everything.outcome == 'skipped'
         with:
           # The app filter mirrors the ui-e2e-binary cache key in ci.yml (the
-          # inputs the server build reads); admin_ui mirrors the ui-e2e-console
+          # inputs the server build reads); viewer mirrors the ui-e2e-console
           # key plus its own Dockerfile and the compose file its smoke lane
           # drives. Shared workspace manifests appear in both — a lockfile bump
           # rebuilds both images, correctly.
@@ -103,14 +103,14 @@ jobs:
               - 'docker/smoke-test.sh'
               - 'docker-compose.yml'
               - '.github/workflows/containers.yml'
-            admin_ui:
+            viewer:
               - 'crates/**'
-              - 'app/ferroehr-admin-ui/**'
+              - 'app/ferroehr-viewer/**'
               - 'Cargo.toml'
               - 'Cargo.lock'
               - 'rust-toolchain.toml'
               - '.cargo/**'
-              - 'docker/admin-ui/**'
+              - 'docker/viewer/**'
               - 'docker-compose.yml'
               # The frozen-lockfile wrapper the console site build runs, and
               # the battery its smoke lane drives.
@@ -134,7 +134,7 @@ jobs:
         dockerfile:
           - docker/Dockerfile
           - docker/postgres/Dockerfile
-          - docker/admin-ui/Dockerfile
+          - docker/viewer/Dockerfile
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
@@ -293,16 +293,16 @@ jobs:
         org.opencontainers.image.base.name=gcr.io/distroless/cc-debian13:nonroot
         org.opencontainers.image.base.digest=sha256:c31ff9abcb1910f3ab25c7957bdaf0bfe12a01eb546e8df2282f1c8f682b606c
 
-  # ── Admin console: server binary per arch + the arch-independent site ───────
+  # ── Viewer: server binary per arch + the arch-independent site ──────────────
   # The WASM/JS/CSS site bundle is architecture-independent, so cargo-leptos
   # runs ONCE (amd64: bin + site); the arm64 job builds only the ssr binary
   # with plain cargo. Same glibc rationale as the app binary job.
-  admin-ui-binary:
-    name: admin-ui binary (${{ matrix.platform }})
+  viewer-binary:
+    name: viewer binary (${{ matrix.platform }})
     needs: changes
-    # Same cascade as the app lane: admin-ui-image skips with this job.
+    # Same cascade as the app lane: viewer-image skips with this job.
     if: >-
-      needs.changes.outputs.admin_ui == 'true' ||
+      needs.changes.outputs.viewer == 'true' ||
       github.event_name == 'workflow_dispatch'
     runs-on: ${{ matrix.runner }}
     timeout-minutes: 60
@@ -339,7 +339,7 @@ jobs:
       # Same publishing-lane reasoning as the app binary job above.
       - uses: Swatinem/rust-cache@6323deb102c322ba6fcbdcafc7e3dddab59af2b6 # v2.9.2
         with: # zizmor: ignore[cache-poisoning]
-          shared-key: containers-admin-ui-${{ matrix.platform }}
+          shared-key: containers-viewer-${{ matrix.platform }}
 
       - name: Build the ssr server binary (release, native)
         # LEPTOS_OUTPUT_NAME must be in the COMPILER's environment: leptos's
@@ -350,16 +350,16 @@ jobs:
         # the published 3.20.0 image, #2164). cargo-leptos exports it for the
         # from-source Dockerfile path; this plain cargo build must match.
         env:
-          LEPTOS_OUTPUT_NAME: ferroehr-admin-ui
-        run: cargo build --release --locked --no-default-features --features ssr -p ferroehr-admin-ui
+          LEPTOS_OUTPUT_NAME: ferroehr-viewer
+        run: cargo build --release --locked --no-default-features --features ssr -p ferroehr-viewer
 
       - name: Strip
-        run: strip target/release/ferroehr-admin-ui
+        run: strip target/release/ferroehr-viewer
 
       - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
-          name: ferroehr-admin-ui-${{ matrix.platform }}
-          path: target/release/ferroehr-admin-ui
+          name: ferroehr-viewer-${{ matrix.platform }}
+          path: target/release/ferroehr-viewer
           if-no-files-found: error
           retention-days: 1
 
@@ -397,15 +397,15 @@ jobs:
       - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         if: matrix.platform == 'amd64'
         with:
-          name: ferroehr-admin-ui-site
+          name: ferroehr-viewer-site
           path: target/site
           if-no-files-found: error
           retention-days: 1
 
-  # ── Package + push the multi-arch admin-console image (COPY-only) ───────────
-  admin-ui-image:
-    name: admin-ui image
-    needs: admin-ui-binary
+  # ── Package + push the multi-arch viewer image (COPY-only) ──────────────────
+  viewer-image:
+    name: viewer image
+    needs: viewer-binary
     permissions:
       contents: read
       packages: write # push the image to GHCR
@@ -414,15 +414,15 @@ jobs:
     # The reusable SLSA Build L3 lane; see the app image above.
     uses: ./.github/workflows/build-image.yml
     with:
-      image: ghcr.io/${{ github.repository_owner }}/ferroehr-admin-ui
+      image: ghcr.io/${{ github.repository_owner }}/ferroehr-viewer
       defer-tags: true
-      dockerfile: docker/admin-ui/Dockerfile
+      dockerfile: docker/viewer/Dockerfile
       target: runtime-prebuilt
-      binary-artifact-prefix: ferroehr-admin-ui
-      site-artifact: ferroehr-admin-ui-site
+      binary-artifact-prefix: ferroehr-viewer
+      site-artifact: ferroehr-viewer-site
       labels: |
-        org.opencontainers.image.title=FerroEHR admin console
-        org.opencontainers.image.description=Admin console for openEHR ITS-REST CDRs — pure-Rust Leptos web app (template manager, visual AQL query builder, EHR browser)
+        org.opencontainers.image.title=FerroEHR Viewer
+        org.opencontainers.image.description=Viewer for openEHR ITS-REST CDRs — pure-Rust Leptos web app (template manager, visual AQL query builder, EHR browser)
         org.opencontainers.image.source=https://github.com/rubentalstra/FerroEHR
         org.opencontainers.image.url=https://ferroehr.eu/
         org.opencontainers.image.documentation=https://ferroehr.eu/docs/latest/
@@ -479,7 +479,7 @@ jobs:
   # the app image was actually pushed, whatever the other two lanes did.
   scan-and-tag:
     name: scan + tag
-    needs: [app-image, admin-ui-image, postgres-image]
+    needs: [app-image, viewer-image, postgres-image]
     if: >-
       !cancelled() && needs.app-image.result == 'success'
     permissions:
@@ -490,9 +490,9 @@ jobs:
       app-image: ghcr.io/${{ github.repository_owner }}/ferroehr
       app-digest: ${{ needs.app-image.outputs.digest }}
       app-tags: ${{ needs.app-image.outputs.tags }}
-      admin-ui-image: ghcr.io/${{ github.repository_owner }}/ferroehr-admin-ui
-      admin-ui-digest: ${{ needs.admin-ui-image.outputs.digest }}
-      admin-ui-tags: ${{ needs.admin-ui-image.outputs.tags }}
+      viewer-image: ghcr.io/${{ github.repository_owner }}/ferroehr-viewer
+      viewer-digest: ${{ needs.viewer-image.outputs.digest }}
+      viewer-tags: ${{ needs.viewer-image.outputs.tags }}
       postgres-image: ghcr.io/${{ github.repository_owner }}/ferroehr-postgres
       postgres-digest: ${{ needs.postgres-image.outputs.digest }}
       postgres-tags: ${{ needs.postgres-image.outputs.tags }}
@@ -507,8 +507,8 @@ jobs:
   # in the artifact that serves it, AND a real browser must log in through
   # them — the second half exists because 4.0.8 shipped a console nobody had
   # ever driven in a browser (#2871).
-  admin-ui-smoke:
-    name: admin-ui smoke (amd64)
+  viewer-smoke:
+    name: viewer smoke (amd64)
     runs-on: ubuntu-26.04
     timeout-minutes: 20
     permissions:
@@ -517,11 +517,11 @@ jobs:
     # The browser-login step pulls the CDR fixture by its `:main` tag, and
     # `scan-and-tag` is what APPLIES that tag — without the edge the smoke
     # raced it and pulled a tag that did not exist yet (#2904). `skipped` is
-    # accepted so an admin-ui-only run keeps driving the last published
+    # accepted so a viewer-only run keeps driving the last published
     # fixture (the designed behaviour); a failed tag application refuses.
-    needs: [admin-ui-image, scan-and-tag]
+    needs: [viewer-image, scan-and-tag]
     if: >-
-      !cancelled() && needs.admin-ui-image.result == 'success' &&
+      !cancelled() && needs.viewer-image.result == 'success' &&
       contains(fromJSON('["success", "skipped"]'), needs.scan-and-tag.result)
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
@@ -536,23 +536,23 @@ jobs:
 
       - name: Pull pushed console image (by digest)
         env:
-          DIGEST: ${{ needs.admin-ui-image.outputs.digest }}
+          DIGEST: ${{ needs.viewer-image.outputs.digest }}
         run: |
-          docker pull "${ADMIN_UI_IMAGE}@${DIGEST}"
-          docker tag  "${ADMIN_UI_IMAGE}@${DIGEST}" ferroehr-admin-ui:smoke
+          docker pull "${VIEWER_IMAGE}@${DIGEST}"
+          docker tag  "${VIEWER_IMAGE}@${DIGEST}" ferroehr-viewer:smoke
 
       - name: Serve and verify the asset chain
         shell: bash
         run: |
           set -euo pipefail
           # A dummy CDR base URL: the login page renders without a CDR.
-          docker run -d --rm --name adminui-smoke -p 127.0.0.1:3000:3000 \
+          docker run -d --rm --name viewer-smoke -p 127.0.0.1:3000:3000 \
             -e FERROEHR_ADMIN__CDR__BASE_URL=http://127.0.0.1:9 \
-            ferroehr-admin-ui:smoke
+            ferroehr-viewer:smoke
           for i in $(seq 1 30); do
             curl -sf -o /dev/null http://127.0.0.1:3000/login && break
             sleep 1
-            [ "$i" = 30 ] && { echo "console never served /login"; docker logs adminui-smoke; exit 1; }
+            [ "$i" = 30 ] && { echo "console never served /login"; docker logs viewer-smoke; exit 1; }
           done
           html=$(curl -sf http://127.0.0.1:3000/login)
           # Every /pkg/ asset the page references (script srcs, stylesheet and
@@ -567,7 +567,7 @@ jobs:
             echo "$a -> $code"
             [ "$code" = "200" ] || fail=1
           done <<< "$assets"
-          docker stop adminui-smoke >/dev/null
+          docker stop viewer-smoke >/dev/null
           [ "$fail" = 0 ] || { echo "the pushed console image references assets it does not ship (#2550)"; exit 1; }
 
       - name: Build the postgres image (amd64; COPY-only, seconds)
@@ -581,10 +581,10 @@ jobs:
       - name: Browser-driven login against the pushed console image
         shell: bash
         run: |
-          FERROEHR_ADMIN_UI_IMAGE=ferroehr-admin-ui:smoke \
+          FERROEHR_VIEWER_IMAGE=ferroehr-viewer:smoke \
           FERROEHR_IMAGE="${APP_IMAGE}:main" \
           FERROEHR_POSTGRES_IMAGE=ferroehr-postgres:smoke \
-            bash docker/admin-ui/login-smoke.sh
+            bash docker/viewer/login-smoke.sh
 
   # ── Smoke test (amd64): pull the pushed image, compose up, exercise the API ──
   smoke:

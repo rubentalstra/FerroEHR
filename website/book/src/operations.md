@@ -187,7 +187,7 @@ posture read back from a running container, plus the two things the chart
 cannot do for you (applying the namespace enforcement label, and narrowing the
 NetworkPolicy's ingress sources: the shipped policy narrows the *ports* and,
 until you set `networkPolicy.ingressFrom`, admits every source on them; set
-`networkPolicy.ingressAllowAll: false`, and `adminUi.networkPolicy.ingressAllowAll`
+`networkPolicy.ingressAllowAll: false`, and `viewer.networkPolicy.ingressAllowAll`
 for the console, to have that state refused at render instead), are covered in
 [Installation → The workload: security context & admission](installation/hardening-workload.md)
 and [Namespaces, network & policy →
@@ -550,10 +550,10 @@ curl -u admin:… -o flamegraph.svg \
 - Best results come from the container images and release builds, which keep
   line tables (`debug = "line-tables-only"`) so frames resolve to `file:line`.
 
-With the surface enabled, the admin console grows an **Operations** screen over
+With the surface enabled, the viewer grows an **Operations** screen over
 it (dependency health, build provenance, the metric registry, and runtime log
 control) which appears only while the CDR serves `/management/info`. See
-[Admin console → Operations panel](admin-ui/operations.md).
+[Viewer → Operations panel](viewer/operations.md).
 
 ## Next
 

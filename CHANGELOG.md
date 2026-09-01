@@ -15,9 +15,35 @@ workflow refuses a tag that has no matching section here.
 
 ## [Unreleased]
 
+### Changed
+
+- The admin console is now **FerroEHR Viewer**, and every name it carries
+  changes with it. Deployments must switch their references: the OCI image is
+  `ghcr.io/rubentalstra/ferroehr-viewer` (was `ferroehr-admin-ui`), the Compose
+  service and profile are both `viewer` (`docker compose --profile viewer up`,
+  was `--profile admin-ui`), the Compose image and port overrides are
+  `FERROEHR_VIEWER_IMAGE` and `FERROEHR_VIEWER_PORT`, the Helm values key is
+  `viewer` (was `adminUi`) and its OIDC client secret mounts at
+  `/etc/ferroehr-viewer-secrets`, the config file the viewer looks for is
+  `./ferroehr-viewer.toml` then `/etc/ferroehr/viewer.toml` (was
+  `ferroehr-admin-ui.toml` / `/etc/ferroehr/admin-ui.toml`), the binary and
+  crate are `ferroehr-viewer`, and the session cookie is
+  `ferroehr_viewer_session`, so open sessions need one fresh sign-in. The
+  environment grammar `FERROEHR_ADMIN__…` and the `FERROEHR_ADMIN_CONFIG`
+  file pointer are unchanged. Documentation moved from `/docs/*/admin-ui/` to
+  `/docs/*/viewer/`, with redirects from the old pages. The Helm chart is
+  version 6.1.0.
+- The Helm chart renames the viewer's Kubernetes objects from
+  `<release>-admin-ui` to `<release>-viewer` and its
+  `app.kubernetes.io/name` label from `<name>-admin-ui` to `<name>-viewer`.
+  A Deployment's selector is immutable, so a release that already runs the
+  console with `adminUi.enabled: true` must have that Deployment, Service,
+  ServiceAccount and NetworkPolicy deleted before the upgrade, or be
+  reinstalled. The CDR's own objects are untouched.
+
 ### Security
 
-- The `ferroehr` and `ferroehr-admin-ui` images build from the rebuilt
+- The `ferroehr` and `ferroehr-viewer` images build from the rebuilt
   `gcr.io/distroless/cc-debian13:nonroot` base carrying openssl
   `3.5.7-1~deb13u2`, which fixes CVE-2026-14456 (QUIC denial of service) and
   nine sibling advisories in `libssl3t64`. The library was never linked by the

@@ -2713,50 +2713,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "ferroehr-admin-ui"
-version = "4.0.15"
-dependencies = [
- "anyhow",
- "axum",
- "base64 0.23.1",
- "config",
- "console_error_panic_hook",
- "cookie",
- "csv",
- "futures",
- "http",
- "icondata_core",
- "icondata_lu",
- "indexmap 2.14.0",
- "jiff",
- "leptos",
- "leptos-chartistry",
- "leptos-use 0.19.0",
- "leptos_axum",
- "leptos_icons",
- "leptos_meta",
- "leptos_router",
- "openehr-am",
- "openehr-its",
- "openehr-query",
- "openidconnect",
- "reqwest 0.13.4",
- "serde",
- "serde_json",
- "thaw",
- "thirtyfour",
- "thiserror 2.0.20",
- "tokio",
- "tower",
- "tower-http 0.7.0",
- "tracing",
- "tracing-subscriber",
- "urlencoding",
- "wasm-bindgen",
- "wasm-bindgen-futures",
-]
-
-[[package]]
 name = "ferroehr-ext"
 version = "4.0.15"
 dependencies = [
@@ -2854,6 +2810,50 @@ dependencies = [
  "tokio",
  "tracing",
  "uuid",
+]
+
+[[package]]
+name = "ferroehr-viewer"
+version = "4.0.15"
+dependencies = [
+ "anyhow",
+ "axum",
+ "base64 0.23.1",
+ "config",
+ "console_error_panic_hook",
+ "cookie",
+ "csv",
+ "futures",
+ "http",
+ "icondata_core",
+ "icondata_lu",
+ "indexmap 2.14.0",
+ "jiff",
+ "leptos",
+ "leptos-chartistry",
+ "leptos-use 0.19.0",
+ "leptos_axum",
+ "leptos_icons",
+ "leptos_meta",
+ "leptos_router",
+ "openehr-am",
+ "openehr-its",
+ "openehr-query",
+ "openidconnect",
+ "reqwest 0.13.4",
+ "serde",
+ "serde_json",
+ "thaw",
+ "thirtyfour",
+ "thiserror 2.0.20",
+ "tokio",
+ "tower",
+ "tower-http 0.7.0",
+ "tracing",
+ "tracing-subscriber",
+ "urlencoding",
+ "wasm-bindgen",
+ "wasm-bindgen-futures",
 ]
 
 [[package]]

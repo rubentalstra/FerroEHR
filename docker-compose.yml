@@ -33,7 +33,7 @@
 # ── Profiles (docs.docker.com/compose/how-tos/profiles) ───────────────────────
 # Core services (postgres, ferroehr) are profile-less and start on every `up`.
 # Optional services are opt-in:
-#   --profile admin-ui        the admin console on port 3000
+#   --profile viewer          the viewer on port 3000
 #   --profile s3              SeaweedFS S3 gateway for DV_MULTIMEDIA (off by default)
 #
 # ── Container isolation posture ──────────────────────────────────────────────
@@ -70,7 +70,7 @@
 #
 # Port already in use? Every published port is a variable (#2869) — no edit:
 #   FERROEHR_PORT=8081 docker compose up
-# (Likewise FERROEHR_DB_PORT / FERROEHR_ADMIN_UI_PORT / FERROEHR_S3_PORT.)
+# (Likewise FERROEHR_DB_PORT / FERROEHR_VIEWER_PORT / FERROEHR_S3_PORT.)
 # Defaults stay fixed deliberately: the docs assume localhost:8080, and
 # Docker's own auto-allocation exists only for mappings that omit the host
 # port entirely (docs.docker.com/engine/network/port-publishing) — a server
@@ -281,21 +281,21 @@ services:
       retries: 5
       start_period: 20s
 
-  # The admin console (ferroehr-admin-ui): a standalone Leptos SSR web app +
+  # The viewer (ferroehr-viewer): a standalone Leptos SSR web app +
   # BFF that consumes the CDR strictly over ITS-REST — never the database.
-  # Opt-in (`docker compose --profile admin-ui up`); Basic login proxies the
+  # Opt-in (`docker compose --profile viewer up`); Basic login proxies the
   # CDR's quickstart user (ferroehr/ferroehr). For OIDC set the
   # FERROEHR_ADMIN__AUTH__OIDC__* variables at your identity provider.
-  ferroehr-admin-ui:
-    profiles: [admin-ui]
-    image: ${FERROEHR_ADMIN_UI_IMAGE:-ghcr.io/rubentalstra/ferroehr-admin-ui:4.0.15}
+  ferroehr-viewer:
+    profiles: [viewer]
+    image: ${FERROEHR_VIEWER_IMAGE:-ghcr.io/rubentalstra/ferroehr-viewer:4.0.15}
     depends_on:
       ferroehr:
         condition: service_healthy
     environment:
       FERROEHR_ADMIN__CDR__BASE_URL: http://ferroehr:8080
     ports:
-      - "${FERROEHR_BIND_HOST:-127.0.0.1}:${FERROEHR_ADMIN_UI_PORT:-3000}:3000"
+      - "${FERROEHR_BIND_HOST:-127.0.0.1}:${FERROEHR_VIEWER_PORT:-3000}:3000"
     cap_drop: [ALL]
     security_opt:
       - no-new-privileges:true
@@ -313,7 +313,7 @@ services:
           cpus: "1"
           memory: 512M
     healthcheck:
-      test: ["CMD", "/usr/local/bin/ferroehr-admin-ui", "healthcheck"]
+      test: ["CMD", "/usr/local/bin/ferroehr-viewer", "healthcheck"]
       interval: 10s
       timeout: 5s
       retries: 5
@@ -467,13 +467,13 @@ configs:
       enabled = false
 
       # The admin API (DELETE /admin/...) — on for the quickstart so the
-      # optional admin console's panels work; keep off in production unless
+      # optional viewer's panels work; keep off in production unless
       # operationally needed.
       [admin]
       enabled = true
 
       # Ops introspection (/management/...) on the main listener, for the
-      # optional admin console and for curl-based poking. The health probes
+      # optional viewer and for curl-based poking. The health probes
       # (/health, /health/liveness, /health/readiness) are always served and
       # need none of this.
       [management]

@@ -111,7 +111,7 @@ jobs:
   # code-touching PR, which is acceptable.
   #
   # TWO NARROW EXCEPTIONS to "not build-relevant" (#2373), both instances of
-  # the rule the admin_ui/helm/chart_boot filters below already state — a
+  # the rule the viewer/helm/chart_boot filters below already state — a
   # change to a job's own recipe exercises the job it changes:
   #   * `workflows` — this file. A workflow-only PR skipped EVERY cargo lane,
   #     including the lane whose recipe it was editing, so a narrowed clippy
@@ -139,7 +139,7 @@ jobs:
       contents: read
     outputs:
       code: ${{ steps.filter.outputs.code }}
-      admin_ui: ${{ steps.filter.outputs.admin_ui }}
+      viewer: ${{ steps.filter.outputs.viewer }}
       server_dockerfile: ${{ steps.filter.outputs.server_dockerfile }}
       helm: ${{ steps.filter.outputs.helm }}
       chart_boot: ${{ steps.filter.outputs.chart_boot }}
@@ -183,7 +183,7 @@ jobs:
             echo "Base $base unavailable — treating as a change to everything."
             {
               echo "code=true"
-              echo "admin_ui=true"
+              echo "viewer=true"
               echo "server_dockerfile=true"
               echo "helm=true"
               echo "chart_boot=true"
@@ -202,7 +202,7 @@ jobs:
           if [ -z "$changed" ]; then
             {
               echo "code=false"
-              echo "admin_ui=false"
+              echo "viewer=false"
               echo "server_dockerfile=false"
               echo "helm=false"
               echo "chart_boot=false"
@@ -238,17 +238,17 @@ jobs:
             echo "No build-relevant paths touched — cargo jobs will be skipped."
             echo "code=false" >> "$GITHUB_OUTPUT"
           fi
-          # Admin-console E2E trigger: the console crate, its harness, the
+          # Viewer E2E trigger: the console crate, its harness, the
           # composed stack it drives — AND the inputs to the CDR artifact the
           # battery runs against. `Cargo.lock`, `docker/Dockerfile` and this
           # workflow itself were missing (issue #335): a dependency bump, a
           # Dockerfile change, or a change to the job's own build recipe each
           # alter what is under test, and without them a build/caching-only PR
           # could not even run the job it changes.
-          if echo "$changed" | grep -qE '^(app/ferroehr-admin-ui/|scripts/ui-e2e\.sh$|scripts/cargo-leptos\.sh$|docker-compose\.yml$|docker-compose\.override\.yml$|docker-compose\.keycloak\.yml$|docker/Dockerfile$|docker/admin-ui/|docker/keycloak/|docker/postgres/|Cargo\.lock$|\.github/workflows/ci\.yml$)' ; then
-            echo "admin_ui=true" >> "$GITHUB_OUTPUT"
+          if echo "$changed" | grep -qE '^(app/ferroehr-viewer/|scripts/ui-e2e\.sh$|scripts/cargo-leptos\.sh$|docker-compose\.yml$|docker-compose\.override\.yml$|docker-compose\.keycloak\.yml$|docker/Dockerfile$|docker/viewer/|docker/keycloak/|docker/postgres/|Cargo\.lock$|\.github/workflows/ci\.yml$)' ; then
+            echo "viewer=true" >> "$GITHUB_OUTPUT"
           else
-            echo "admin_ui=false" >> "$GITHUB_OUTPUT"
+            echo "viewer=false" >> "$GITHUB_OUTPUT"
           fi
           # The compose/local image target (docker/Dockerfile
           # `runtime-from-source`) is not built by ui-e2e, which packages
@@ -941,9 +941,9 @@ jobs:
       # per-feature lanes — the same split as /ui-gates. `--locked` everywhere:
       # CI must fail on new commits only, never on registry drift
       # (https://doc.rust-lang.org/cargo/faq.html#why-have-cargolock-in-version-control).
-      - run: cargo clippy --locked --workspace --exclude ferroehr-admin-ui --all-targets --all-features -- -D warnings
-      - run: cargo clippy --locked -p ferroehr-admin-ui --all-targets --features ssr -- -D warnings
-      - run: cargo clippy --locked -p ferroehr-admin-ui --target wasm32-unknown-unknown --features hydrate -- -D warnings
+      - run: cargo clippy --locked --workspace --exclude ferroehr-viewer --all-targets --all-features -- -D warnings
+      - run: cargo clippy --locked -p ferroehr-viewer --all-targets --features ssr -- -D warnings
+      - run: cargo clippy --locked -p ferroehr-viewer --target wasm32-unknown-unknown --features hydrate -- -D warnings
 
   # ── The slim server: the optional-integration features, subtracted ──────────
   # The clippy job above compiles the workspace with --all-features, so nothing
@@ -1014,8 +1014,8 @@ jobs:
       # --document-private-items: stale intra-doc links can hide behind
       # non-pub items the public build never evaluates (#1838; measured
       # cost ~10s incremental over the public-only run).
-      - run: cargo doc --locked --workspace --exclude ferroehr-admin-ui --all-features --no-deps --document-private-items
-      - run: cargo doc --locked -p ferroehr-admin-ui --features ssr --no-deps
+      - run: cargo doc --locked --workspace --exclude ferroehr-viewer --all-features --no-deps --document-private-items
+      - run: cargo doc --locked -p ferroehr-viewer --features ssr --no-deps
       # Doc tests live HERE, not in the pg18 test job: nextest cannot run
       # doctests, so `cargo test --doc` is its own compile (default features —
       # doctests document what a default consumer gets), and this job is ~1/10
@@ -1127,11 +1127,11 @@ jobs:
       # The explicit `cargo build` is NOT redundant with nextest: nextest
       # compiles test targets only, this is the one place every workspace BIN
       # actually links (clippy type-checks but never links).
-      - run: cargo build --locked --workspace --exclude ferroehr-admin-ui --all-features
-      - run: cargo build --locked -p ferroehr-admin-ui --features ssr
+      - run: cargo build --locked --workspace --exclude ferroehr-viewer --all-features
+      - run: cargo build --locked -p ferroehr-viewer --features ssr
       # --no-tests=pass: empty crates are expected until P17 (nextest exits 4 otherwise)
-      - run: cargo nextest run --locked --workspace --exclude ferroehr-admin-ui --all-features --no-tests=pass --profile ci
-      - run: cargo nextest run --locked -p ferroehr-admin-ui --features ssr --no-tests=pass --profile ci
+      - run: cargo nextest run --locked --workspace --exclude ferroehr-viewer --all-features --no-tests=pass --profile ci
+      - run: cargo nextest run --locked -p ferroehr-viewer --features ssr --no-tests=pass --profile ci
       # Doc tests moved to the rustdoc job: `cargo test --doc` is a third
       # feature configuration (default features) and compiled the whole
       # workspace again at the tail of THE critical-path job.
@@ -1353,7 +1353,7 @@ jobs:
   # CI runner never has warm anyway). The ~190 kLoC
   # first-party release build therefore ran cold on EVERY run (measured locally
   # on an isolated buildx builder: 714 s cold; 6 s with nothing changed; 407 s
-  # after touching ONE admin-console source file, with the cook layer reported
+  # after touching ONE viewer source file, with the cook layer reported
   # CACHED and the whole first-party graph recompiling behind it).
   #
   # So the binary is compiled here the way containers.yml compiles the
@@ -1365,7 +1365,7 @@ jobs:
   #
   # Two caches, strongest first:
   #   1. the finished binary, keyed on the exact content of every input the
-  #      server build reads. An admin-console-only PR touches none of them, so
+  #      server build reads. A viewer-only PR touches none of them, so
   #      the key hits and no compile runs at all.
   #   2. sccache (per compilation unit) for the miss case — a lockfile bump or
   #      a server-side change then recompiles only what actually changed
@@ -1388,7 +1388,7 @@ jobs:
   ui-e2e-binary:
     name: ui-e2e server binary
     needs: changes
-    if: needs.changes.outputs.admin_ui == 'true' || needs.changes.outputs.chart_boot == 'true'
+    if: needs.changes.outputs.viewer == 'true' || needs.changes.outputs.chart_boot == 'true'
     runs-on: ubuntu-latest
     # Generous: a binary-cache miss with a cold sccache is a full release
     # build of the ~190 kLoC first-party graph (714 s measured cold, plus
@@ -1429,9 +1429,9 @@ jobs:
             exit 1
           fi
       # Cache 1 — the binary itself. The key covers every path the server build
-      # reads and nothing else; app/ferroehr-admin-ui/ is deliberately absent
+      # reads and nothing else; app/ferroehr-viewer/ is deliberately absent
       # because the console is not in ferroehr-server's dependency graph (that is
-      # ferroehr + ferroehr-rest), which is exactly why an admin-console PR can
+      # ferroehr + ferroehr-rest), which is exactly why a viewer PR can
       # reuse the binary. Exact key, NO restore-keys: a near-match would package
       # a binary that does not correspond to this tree
       # (docs.github.com/en/actions/reference/workflows-and-actions/dependency-caching).
@@ -1496,7 +1496,7 @@ jobs:
   ui-e2e-console:
     name: ui-e2e console + test binaries
     needs: changes
-    if: needs.changes.outputs.admin_ui == 'true'
+    if: needs.changes.outputs.viewer == 'true'
     runs-on: ubuntu-latest
     timeout-minutes: 45
     permissions:
@@ -1515,7 +1515,7 @@ jobs:
         uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
         with:
           path: ui-e2e-console-stage
-          key: ui-e2e-console-1.97.1-${{ hashFiles('Cargo.toml', 'Cargo.lock', 'rust-toolchain.toml', '.cargo/**', 'crates/**', 'app/ferroehr-admin-ui/**', 'scripts/cargo-leptos.sh') }}
+          key: ui-e2e-console-1.97.1-${{ hashFiles('Cargo.toml', 'Cargo.lock', 'rust-toolchain.toml', '.cargo/**', 'crates/**', 'app/ferroehr-viewer/**', 'scripts/cargo-leptos.sh') }}
       - uses: actions-rust-lang/setup-rust-toolchain@166cdcfd11aee3cb47222f9ddb555ce30ddb9659 # v1.17.0
         if: steps.console-cache.outputs.cache-hit != 'true'
         with:
@@ -1560,7 +1560,7 @@ jobs:
           # console binary with a `_bg.wasm`-referencing build while the site
           # tree holds `<name>.wasm`, and every page 404s its wasm. Archive
           # FIRST, cargo-leptos LAST, stage immediately.
-          cargo nextest archive -p ferroehr-admin-ui --features ssr \
+          cargo nextest archive -p ferroehr-viewer --features ssr \
             --archive-file ui-e2e-tests.tar.zst
           bash scripts/cargo-leptos.sh build
           # One staging tree = one artifact = one cache path. The console
@@ -1569,7 +1569,7 @@ jobs:
           # content-hash manifest the renderer reads the /pkg filenames back
           # from; without it the console 404s its own hashed wasm.
           mkdir -p ui-e2e-console-stage/site
-          cp target/debug/ferroehr-admin-ui ui-e2e-console-stage/
+          cp target/debug/ferroehr-viewer ui-e2e-console-stage/
           cp target/debug/hash.txt ui-e2e-console-stage/
           cp ui-e2e-tests.tar.zst ui-e2e-console-stage/
           cp -R target/site/. ui-e2e-console-stage/site/
@@ -1585,7 +1585,7 @@ jobs:
           if-no-files-found: error
           retention-days: 1
 
-  # ── Admin-console E2E (merge gate for console-touching changes) ─────────────
+  # ── Viewer E2E (merge gate for console-touching changes) ────────────────────
   # Runs the full composed journey battery (scripts/ui-e2e.sh): postgres +
   # ferroehr + Keycloak via compose, the console + e2e binaries prebuilt by the
   # jobs above, chromedriver journeys with the browser-console gate. Screenshots
@@ -1593,7 +1593,7 @@ jobs:
   ui-e2e:
     name: ui-e2e
     needs: [changes, ui-e2e-binary, ui-e2e-console]
-    if: needs.changes.outputs.admin_ui == 'true'
+    if: needs.changes.outputs.viewer == 'true'
     runs-on: ubuntu-latest
     timeout-minutes: 30
     # `contents: read` (now also the workflow-level default) is all it needs:
@@ -1624,7 +1624,7 @@ jobs:
       # rationale is on the ui-e2e-binary job above). `runtime-prebuilt` is
       # COPY-only, so this is a seconds-long step with no layer-cache backend
       # involved at all — which is why GHCR stays product-images-only
-      # (ferroehr, ferroehr-postgres, ferroehr-admin-ui) and no
+      # (ferroehr, ferroehr-postgres, ferroehr-viewer) and no
       # `build-cache` package is published beside them (owner call 2026-07-26).
       # `load: true` puts the result in the docker store so the compose
       # `--no-build` below finds it.
@@ -1649,7 +1649,7 @@ jobs:
         run: |
           set -euo pipefail
           mkdir -p target/debug target/site
-          install -m0755 ui-e2e-console-stage/ferroehr-admin-ui target/debug/ferroehr-admin-ui
+          install -m0755 ui-e2e-console-stage/ferroehr-viewer target/debug/ferroehr-viewer
           # leptos resolves the hash manifest as current_exe().parent()/hash.txt.
           cp ui-e2e-console-stage/hash.txt target/debug/hash.txt
           cp -R ui-e2e-console-stage/site/. target/site/
@@ -1744,13 +1744,13 @@ jobs:
             echo "no-ui-visual-change label set — guard skipped."; exit 0
           fi
           changed=$(git diff --name-only "$BASE" "$HEAD")
-          if ! echo "$changed" | grep -qE '^app/ferroehr-admin-ui/(src|style)/'; then
+          if ! echo "$changed" | grep -qE '^app/ferroehr-viewer/(src|style)/'; then
             echo "No console UI paths touched — guard not required."; exit 0
           fi
-          if echo "$changed" | grep -qE '^website/book/src/admin-ui/img/'; then
+          if echo "$changed" | grep -qE '^website/book/src/viewer/img/'; then
             echo "Screenshots refreshed — OK."; exit 0
           fi
-          echo "::error::This PR changes the admin-console UI but does not refresh website/book/src/admin-ui/img/ (run scripts/ui-e2e.sh with UI_E2E_DOCS_SHOTS=1 and commit the captures), and does not carry the 'no-ui-visual-change' label." >&2
+          echo "::error::This PR changes the viewer UI but does not refresh website/book/src/viewer/img/ (run scripts/ui-e2e.sh with UI_E2E_DOCS_SHOTS=1 and commit the captures), and does not carry the 'no-ui-visual-change' label." >&2
           exit 1
 
   # Crate-version guard (the changelog-guard pattern): a PR that changes

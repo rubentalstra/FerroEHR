@@ -28,10 +28,10 @@
 #                     added since that release makes the appVersion image refuse
 #                     to boot — that is a real finding, and P-K8S-BOOT reports it
 #                     against the chart rather than hiding it.
-#   PROBE_K8S_ADMINUI_IMAGE
-#                     repo:tag of the admin-console image. Defaults to the
+#   PROBE_K8S_VIEWER_IMAGE
+#                     repo:tag of the viewer image. Defaults to the
 #                     chart's own (appVersion), which is what an operator
-#                     enabling adminUi.enabled gets.
+#                     enabling viewer.enabled gets.
 #   PROBE_K8S_NS      namespace (default ferroehr-probe; created and deleted).
 #   PROBE_OUT         where the machine-readable record lands.
 set -uo pipefail
@@ -114,7 +114,7 @@ if probes_k8s_boot; then
   probes_k8s_service_links
   probes_k8s_secrets
   probes_k8s_readiness
-  probes_k8s_admin_ui
+  probes_k8s_viewer
 else
   red "the release never served — the probes that need a running CDR were not run"
   uncovered "every probe after P-K8S-SERVE" \

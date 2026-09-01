@@ -21,7 +21,7 @@ do it.
 | Non-root by construction | the image declares `USER 65532:65532` (numeric, so the kubelet can verify it without reading `/etc/passwd`), and the pod pins `runAsNonRoot` plus uid 65532 independently |
 
 Three images are published, and they are not equivalent in risk. The server and
-the admin console are distroless and carry almost no OS package surface. The
+the viewer are distroless and carry almost no OS package surface. The
 PostgreSQL image is a thin, `COPY`-only layer over the upstream `postgres` image
 (it adds initialization scripts and nothing else) so its package set is
 upstream's, and its CVEs arrive on upstream's schedule rather than ours. The chart
@@ -149,7 +149,7 @@ spec:
         - imageReferences:
             - "ghcr.io/rubentalstra/ferroehr"
             - "ghcr.io/rubentalstra/ferroehr:*"
-            - "ghcr.io/rubentalstra/ferroehr-admin-ui*"
+            - "ghcr.io/rubentalstra/ferroehr-viewer*"
           # Sigstore bundle format, GitHub Artifact Attestations. Omitting
           # this defaults to Cosign, which looks for a signature that does not
           # exist and refuses every image.

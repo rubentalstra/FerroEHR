@@ -15,7 +15,7 @@ include = ["src/**", "schemas/json/openehr_rm_1.1.0_all.json", "README.md", "LIC
 # EVERY dependency rides the default `full` feature (see [features] below), so
 # `default-features = false` yields the dependency-free `rest::smart_scopes`
 # island alone — the std-only SMART scope grammar, which a REST client compiled
-# to `wasm32-unknown-unknown` (the admin console) can then parse with.
+# to `wasm32-unknown-unknown` (the viewer) can then parse with.
 [dependencies]
 serde = { workspace = true, optional = true }
 serde_json = { workspace = true, optional = true }

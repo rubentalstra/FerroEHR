@@ -112,7 +112,7 @@ jobs:
           # dual-arch — so every variant is scanned explicitly (#2412).
           total=0
           : > findings.md
-          for image in ferroehr ferroehr-postgres ferroehr-admin-ui; do
+          for image in ferroehr ferroehr-postgres ferroehr-viewer; do
             ref="ghcr.io/${OWNER}/${image}:${SCAN_TAG}"
             digest=$(docker buildx imagetools inspect "$ref" --format '{{.Manifest.Digest}}')
             for platform in linux/amd64 linux/arm64; do

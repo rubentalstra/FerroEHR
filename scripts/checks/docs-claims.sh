@@ -246,7 +246,7 @@ for f in $files; do
     # authority for the leaf, and no file in this repo can stand in for it.
     case "$path" in
       securityContext.*|podSecurityContext.*|autoscaling.behavior.*|\
-      adminUi.securityContext.*|adminUi.podSecurityContext.*) continue ;;
+      viewer.securityContext.*|viewer.podSecurityContext.*) continue ;;
       *) ;;
     esac
     report "$f" "documents Helm value \`$path\`, which the chart does not define"
@@ -268,7 +268,7 @@ for f in $files; do
     # authority for the leaf, and no file in this repo can stand in for it.
     case "$path" in
       securityContext.*|podSecurityContext.*|autoscaling.behavior.*|\
-      adminUi.securityContext.*|adminUi.podSecurityContext.*) continue ;;
+      viewer.securityContext.*|viewer.podSecurityContext.*) continue ;;
       *) ;;
     esac
     report "$f" "\`--set $path=\` names a value the chart does not define"
@@ -310,7 +310,7 @@ for f in $files; do
     [[ -n "$v" ]] || continue
     [[ "$v" = "$app_version" ]] \
       || report "$f" "pins image tag \`$v\`; the workspace version is $app_version"
-  done < <(grep -ohE '(ferroehr(-admin-ui)?:|image\.tag=)[0-9]+\.[0-9]+\.[0-9]+(-[0-9A-Za-z.]+)?' "$f" \
+  done < <(grep -ohE '(ferroehr(-viewer)?:|image\.tag=)[0-9]+\.[0-9]+\.[0-9]+(-[0-9A-Za-z.]+)?' "$f" \
     | sed -E 's/^.*[:=]//' | sort -u)
 done
 # Every page (and the landing): a fully-spelled ghcr image reference must carry
@@ -326,7 +326,7 @@ for f in $files website/landing/index.html; do
     [[ -n "$v" ]] || continue
     [[ "$v" = "$app_version" ]] \
       || report "$f" "pins ghcr image tag \`$v\`; the workspace version is $app_version"
-  done < <(grep -ohE 'ghcr\.io/rubentalstra/(ferroehr|ferroehr-admin-ui|ferroehr-postgres):[0-9]+\.[0-9]+\.[0-9]+(-[0-9A-Za-z.]+)?' "$f" | sed 's/.*://' | sort -u)
+  done < <(grep -ohE 'ghcr\.io/rubentalstra/(ferroehr|ferroehr-viewer|ferroehr-postgres):[0-9]+\.[0-9]+\.[0-9]+(-[0-9A-Za-z.]+)?' "$f" | sed 's/.*://' | sort -u)
 done
 # The from-source page: a Rust version literal must be the toolchain channel
 # (with or without its patch) or the EXACT declared MSRV ("Rust 1.96.1"
