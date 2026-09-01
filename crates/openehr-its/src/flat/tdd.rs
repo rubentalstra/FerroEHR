@@ -54,7 +54,7 @@
 //! match are kept, and when a re-materialised node corresponds to one (its
 //! element name matches the RM attribute, its Ocean `…_as_<ConcreteType>`
 //! suffix names the node's type, or its metadata keys discriminate the node —
-//! `origin`/`time`), that element's [`WRAPPER_METADATA`] children
+//! `origin`/`time`), that element's `WRAPPER_METADATA` children
 //! (`HISTORY.origin`, `EVENT.time`, `name`, `uid`, `links`, `feeder_audit`)
 //! are parsed as their model-declared types and placed on the node. The
 //! RM-mandatory temporal defaults apply only when the TDD carries no value; a
