@@ -43,6 +43,11 @@
 //! - [`system`] — the System API manifest ([`system::options::SystemManifest`],
 //!   `ferroehr::config::server::SystemOptionsConfig`), assembled and mounted by [`crate::router::router`].
 //!
+//! `item_tags` is not a group: it is the one `ITEM_TAG` write-wrapper
+//! implementation (`item_tags::pending` / `item_tags::persist` /
+//! `item_tags::echo` / `item_tags::write_body`) the EHR and demographic
+//! dispatchers share, so the two cannot drift.
+//!
 //! Every group — the standardised ITS-REST groups above and the own-design
 //! extension surfaces ([`crate::extensions`]: terminology, event subscription,
 //! multi-tenancy admin, FHIR connector) — is built as a native `utoipa-axum`
@@ -56,6 +61,7 @@ pub mod admin;
 pub mod definition;
 pub mod demographic;
 pub mod ehr;
+pub(crate) mod item_tags;
 pub mod message;
 pub mod query;
 pub mod system;

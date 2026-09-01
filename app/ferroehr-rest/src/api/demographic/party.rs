@@ -16,8 +16,6 @@
 use axum::response::Response;
 use http::{HeaderMap, StatusCode};
 
-use openehr_base::prelude::ObjectVersionId;
-use openehr_its::rest::generated::common::UpdateItemTag;
 use openehr_its::rest::generated::demographic::{
     AgentCreateParams, AgentDeleteParams, AgentGetParams, AgentUpdateParams,
 };
@@ -25,6 +23,7 @@ use openehr_its::rest::runtime::ApiError;
 use openehr_rm::prelude::{Agent, Group, Organisation, Party, Person, Role};
 
 use crate::api::RequestParts;
+use crate::api::item_tags;
 use crate::overview::error::{RestError, sm_api_error};
 use crate::state::AppState;
 use crate::{negotiate, params};
@@ -53,7 +52,7 @@ pub(super) async fn run(
             // All per-kind `*CreateParams` are field-identical; reuse one.
             let _p = params::build::<AgentCreateParams>(&parts.path, q, h)?;
             let body = decode_party_body(kind, h, &parts.body, state.config().spec_profile)?;
-            let pending_tags = pending_party_tags(h)?;
+            let pending_tags = item_tags::pending(h)?;
             let mut resp = state
                 .backend()
                 .party_create(
@@ -97,7 +96,7 @@ pub(super) async fn run(
             let body = decode_party_body(kind, h, &parts.body, state.config().spec_profile)?;
             // Judged before the commit, so a defective tag refuses the request
             // while nothing is durable.
-            let pending_tags = pending_party_tags(h)?;
+            let pending_tags = item_tags::pending(h)?;
             match state
                 .backend()
                 .party_update(
@@ -148,122 +147,50 @@ pub(super) async fn run(
     }
 }
 
-/// Applies the `openehr-item-tag` / `openehr-version-item-tag` write-wrapper
-/// request headers to the just-written party
-/// (`Requests_and_responses.md` §"openehr-item-tag and openehr-version-item-tag"
-/// §Usage in Requests).
+/// Stores the `ITEM_TAG` lists the wrapper headers asked for on the just-written
+/// party, and hands the stored lists to the response metadata seam.
 ///
-/// The two headers address distinct collections: `openehr-item-tag` replaces the
-/// `VERSIONED_OBJECT` container's tags, `openehr-version-item-tag` the
-/// just-committed VERSION's own. A present-but-empty header clears its
-/// collection; an absent one leaves it untouched and echoes nothing. Both are
-/// accepted on create and update, per the released update's own prose
-/// ("`openehr-item-tag` or `openehr-version-item-tag`").
+/// The write itself is [`item_tags::persist`], the one wrapper
+/// implementation this group shares with the EHR group; what is party-specific
+/// is only the response plumbing — a demographic write echoes its tags off
+/// [`ServiceResponse::meta`], not off the stored lists directly. A party that
+/// minted no version metadata has no target to tag, so nothing is written.
+///
+/// Both wrapper headers are accepted on create and update alike, per the
+/// released update's own prose ("`openehr-item-tag` or
+/// `openehr-version-item-tag`").
+///
+/// # Errors
+/// Whatever the shared write refuses: a server-fault version uid, or a storage
+/// failure.
 async fn persist_request_tags(
     state: &AppState,
     kind: PartyKind,
-    pending: PendingPartyTags,
+    pending: item_tags::PendingItemTags,
     resp: &mut ServiceResponse,
 ) -> Result<(), RestError> {
-    let PendingPartyTags {
-        object: object_entries,
-        version: version_entries,
-    } = pending;
-    if object_entries.is_none() && version_entries.is_none() {
+    if pending.is_empty() {
         return Ok(());
     }
     let Some(version_uid) = resp.meta.as_ref().map(|m| m.uid.clone()) else {
         return Ok(());
     };
-    // The VERSIONED_OBJECT the `openehr-item-tag` header addresses is the
-    // committed version's `OBJECT_VERSION_ID.object_id`, read through the BASE
-    // accessor (`base_types` §Functions) rather than a local `::` split. The uid
-    // is server-minted, so a value that fails to parse is a server fault.
-    let container_uid = ObjectVersionId::new(version_uid.clone())
-        .map_err(|e| {
-            crate::overview::error::internal_fault(
-                "read the committed version uid",
-                &format!("{version_uid:?}: {e}"),
-            )
-        })?
-        .object_id()
-        .value()
-        .into_owned();
-    if let Some(tags) = object_entries {
-        let stored = state
-            .backend()
-            .party_tags_update(kind, container_uid, tags)
-            .await?;
-        if let Some(meta) = resp.meta.as_mut() {
-            meta.item_tags = Some(stored);
+    let stored = item_tags::persist(
+        state,
+        item_tags::TagTarget::Party(kind),
+        &version_uid,
+        pending,
+    )
+    .await?;
+    if let Some(meta) = resp.meta.as_mut() {
+        if let Some(tags) = stored.object {
+            meta.item_tags = Some(tags);
         }
-    }
-    if let Some(tags) = version_entries {
-        let stored = state
-            .backend()
-            .party_tags_update(kind, version_uid, tags)
-            .await?;
-        if let Some(meta) = resp.meta.as_mut() {
-            meta.version_item_tags = Some(stored);
+        if let Some(tags) = stored.version {
+            meta.version_item_tags = Some(tags);
         }
     }
     Ok(())
-}
-
-/// The `ITEM_TAG` lists a party write's wrapper headers ask for, parsed and
-/// invariant-checked before the party is committed.
-#[derive(Debug, Default)]
-struct PendingPartyTags {
-    /// What `openehr-item-tag` asks to store on the `VERSIONED_OBJECT`.
-    object: Option<Vec<UpdateItemTag>>,
-    /// What `openehr-version-item-tag` asks to store on the committed VERSION.
-    version: Option<Vec<UpdateItemTag>>,
-}
-
-/// Parses and validates both wrapper headers before the party write, mirroring
-/// [`crate::api::ehr::pending_item_tags`].
-///
-/// A defective tag header refuses the request while nothing is durable; the tag
-/// write stays after the commit, because the tags target the version it mints.
-///
-/// # Errors
-/// [`ApiError::BadRequest`] for a malformed header entry;
-/// [`ApiError::Unprocessable`] for an entry that breaks an RM `ITEM_TAG`
-/// invariant.
-fn pending_party_tags(h: &HeaderMap) -> Result<PendingPartyTags, RestError> {
-    Ok(PendingPartyTags {
-        object: validated_party_entries(
-            params::parse_item_tag_header(h, params::H_ITEM_TAG)?,
-            params::H_ITEM_TAG,
-        )?,
-        version: validated_party_entries(
-            params::parse_item_tag_header(h, params::H_VERSION_ITEM_TAG)?,
-            params::H_VERSION_ITEM_TAG,
-        )?,
-    })
-}
-
-/// Converts one header's parsed entries into the demographic group's write
-/// DTOs, refusing any entry the RM `ITEM_TAG` invariants reject
-/// ([`crate::overview::params::validate_item_tag_entries`]).
-fn validated_party_entries(
-    entries: Option<Vec<params::ItemTagHeaderEntry>>,
-    name: &str,
-) -> Result<Option<Vec<UpdateItemTag>>, RestError> {
-    let Some(entries) = entries else {
-        return Ok(None);
-    };
-    params::validate_item_tag_entries(&entries, name)?;
-    Ok(Some(
-        entries
-            .into_iter()
-            .map(|entry| UpdateItemTag {
-                key: entry.key,
-                value: entry.value,
-                target_path: entry.target_path,
-            })
-            .collect(),
-    ))
 }
 
 /// Logically deletes a party: `204` plus the deleted version's `ETag`, and no

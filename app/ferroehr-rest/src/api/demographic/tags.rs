@@ -17,7 +17,6 @@
 
 use axum::response::Response;
 
-use openehr_its::rest::generated::common::UpdateItemTag;
 use openehr_its::rest::generated::demographic::{
     AgentTagsDeleteParams, AgentTagsGetParams, AgentTagsUpdateParams, DemographicTagsGetParams,
     GroupTagsDeleteParams, GroupTagsGetParams, GroupTagsUpdateParams, OrganisationTagsDeleteParams,
@@ -28,6 +27,7 @@ use openehr_its::rest::generated::demographic::{
 use openehr_its::rest::runtime::ApiError;
 
 use crate::api::RequestParts;
+use crate::api::item_tags;
 use crate::overview::error::RestError;
 use crate::state::AppState;
 use crate::{negotiate, params};
@@ -90,11 +90,7 @@ pub(super) async fn run(
                     params::build::<RoleTagsUpdateParams>(&parts.path, q, h)?.uid_based_id
                 }
             };
-            // Strict against `schemas/common/UpdateItemTag.yaml`
-            // (`additionalProperties: false`, `key` required): an undeclared
-            // member or a non-string `value`/`target_path` is a 400 naming the
-            // member, never a silent drop.
-            let body = negotiate::typed_json_vec::<UpdateItemTag>(h, &parts.body)?;
+            let body = item_tags::write_body(h, &parts.body)?;
             let tags = state
                 .backend()
                 .party_tags_update(kind, uid_based_id, body)

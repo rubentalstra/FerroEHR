@@ -36,7 +36,6 @@ use http::{HeaderMap, HeaderValue, header};
 use openehr_its::rest::runtime::ApiError;
 
 use crate::overview::error::RestError;
-use crate::overview::params::ItemTagHeaderEntry;
 use ferroehr::service::demographic::types::PartyKind;
 use ferroehr::service::response::{ResourceMeta, ServiceResponse};
 use ferroehr::service::status::{CallStatusType, SmError};
@@ -234,45 +233,24 @@ fn read_versioned(h: &HeaderMap, versioned_object_uid: &str, body: &serde_json::
     out
 }
 
-/// Emit the `openehr-item-tag` / `openehr-version-item-tag` **response** headers
-/// mandated by `responses/201_PERSON.yaml` (create) and `person_get.yaml` (get)
-/// when a party carries `ITEM_TAGs` — the server-set tags ride the response
-/// metadata seam ([`ResourceMeta::item_tags`], a canonical `ITEM_TAG` list) and
-/// are rendered through [`crate::overview::params::emit_item_tag_header`]
-/// (`headers/openehr-item-tag.yaml`, `headers/openehr-version-item-tag.yaml`).
+/// Emits the `openehr-item-tag` / `openehr-version-item-tag` **response**
+/// headers mandated by `responses/201_PERSON.yaml` (create) and `person_get.yaml`
+/// (get) when a party carries `ITEM_TAGs`.
 ///
-/// Each header carries its OWN target's collection (overview §"openehr-item-tag
-/// and openehr-version-item-tag": `openehr-item-tag` applies to the
-/// `VERSIONED_OBJECT`, `openehr-version-item-tag` to a specific VERSION within
-/// it) — the container's set from [`ResourceMeta::item_tags`], the served
-/// VERSION's own set from [`ResourceMeta::version_item_tags`]; the two are
-/// never merged.
+/// A party's stored tags ride the response metadata seam
+/// ([`ResourceMeta::item_tags`] for the `VERSIONED_OBJECT` container,
+/// [`ResourceMeta::version_item_tags`] for the served VERSION), so this is the
+/// group's adapter onto [`crate::api::item_tags::echo`], where the rendering and
+/// its spec grounds live once for every group.
 fn set_item_tag_headers(resp_out: &mut Response, resp: &ServiceResponse) {
     let Some(meta) = resp.meta.as_ref() else {
         return;
     };
-    for (name, tags) in [
-        (crate::overview::params::H_ITEM_TAG, meta.item_tags.as_ref()),
-        (
-            crate::overview::params::H_VERSION_ITEM_TAG,
-            meta.version_item_tags.as_ref(),
-        ),
-    ] {
-        let Some(tags) = tags else {
-            continue;
-        };
-        let entries: Vec<ItemTagHeaderEntry> = tags
-            .iter()
-            .map(crate::overview::params::item_tag_to_header_entry)
-            .collect();
-        // The empty-collection guard (an empty header is the "remove all
-        // ITEM_TAGs" request instruction, overview §Usage in Requests) lives
-        // in `emit_item_tag_header` itself — one rule for both echo paths
-        // (#1837).
-        if let Some(value) = crate::overview::params::emit_item_tag_header(&entries) {
-            resp_out.headers_mut().insert(name, value);
-        }
-    }
+    crate::api::item_tags::echo(
+        resp_out,
+        meta.item_tags.as_deref(),
+        meta.version_item_tags.as_deref(),
+    );
 }
 
 /// Render an error, additionally echoing the latest version in the `ETag` the

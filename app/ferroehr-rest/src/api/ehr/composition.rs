@@ -23,7 +23,6 @@ use serde_json::Value;
 
 use openehr_base::prelude::UidBasedId;
 
-use openehr_its::rest::generated::common::UpdateItemTag;
 use openehr_its::rest::generated::ehr::{
     CompositionCreateParams, CompositionDeleteParams, CompositionGetParams,
     CompositionTagsDeleteParams, CompositionTagsGetParams, CompositionTagsUpdateParams,
@@ -39,6 +38,7 @@ use ferroehr::versioning::change::Committed;
 use ferroehr::versioning::object_version_id::parse_uid_based_id;
 
 use crate::api::RequestParts;
+use crate::api::item_tags;
 use crate::negotiate::{AppliedPreference, WireFormat};
 use crate::overview::error::RestError;
 use crate::overview::version_id::{
@@ -147,19 +147,27 @@ async fn create(state: AppState, parts: RequestParts) -> Result<Response, RestEr
     )?;
     // Tags are judged before the commit, so a defective tag refuses while
     // nothing is durable; the write itself stays post-commit.
-    let pending_tags = super::pending_item_tags(h)?;
+    let pending_tags = item_tags::pending(h)?;
     let committed = state
         .backend()
         .create_composition(ehr_id, uv)
         .await
         .map_err(|e| RestError::from(ApiError::from(e)))?;
     let uid = committed.version_uid();
-    let stored_tags =
-        super::apply_item_tag_headers(&state, ehr_id, "COMPOSITION", &uid, pending_tags).await?;
+    let stored_tags = item_tags::persist(
+        &state,
+        item_tags::TagTarget::EhrContent {
+            ehr_id,
+            target_type: "COMPOSITION",
+        },
+        &uid,
+        pending_tags,
+    )
+    .await?;
     let meta = commit_meta(ehr_id, uid, &committed);
     let mut resp =
         composition_write_response(&state, h, &base, ehr_id, meta, created, created).await?;
-    super::echo_item_tags(&mut resp, &stored_tags);
+    stored_tags.echo(&mut resp);
     Ok(resp)
 }
 
@@ -301,7 +309,7 @@ async fn update(state: AppState, parts: RequestParts) -> Result<Response, RestEr
         "COMPOSITION update",
         Some(require_if_match(&p.if_match)?),
     )?;
-    let pending_tags = super::pending_item_tags(h)?;
+    let pending_tags = item_tags::pending(h)?;
     match state
         .backend()
         .update_composition(ehr_id, uid.vo_id, uv)
@@ -309,10 +317,12 @@ async fn update(state: AppState, parts: RequestParts) -> Result<Response, RestEr
     {
         Ok(committed) => {
             let new_uid = committed.version_uid();
-            let stored_tags = super::apply_item_tag_headers(
+            let stored_tags = item_tags::persist(
                 &state,
-                ehr_id,
-                "COMPOSITION",
+                item_tags::TagTarget::EhrContent {
+                    ehr_id,
+                    target_type: "COMPOSITION",
+                },
                 &new_uid,
                 pending_tags,
             )
@@ -323,7 +333,7 @@ async fn update(state: AppState, parts: RequestParts) -> Result<Response, RestEr
             // minimal…"); create stays 201-only (composition_create.yaml).
             let mut resp =
                 composition_write_response(&state, h, &base, ehr_id, meta, no_content, ok).await?;
-            super::echo_item_tags(&mut resp, &stored_tags);
+            stored_tags.echo(&mut resp);
             Ok(resp)
         }
         Err(e @ ferroehr::service::error::ServiceError::VersionConflict(_)) => {
@@ -444,8 +454,8 @@ async fn tags_get(state: AppState, parts: RequestParts) -> Result<Response, Rest
 /// `composition_tags_update` — replace the item tags of a COMPOSITION.
 ///
 /// # Errors
-/// The parameter and body rejections the operation declares — the body is
-/// strict against `schemas/common/UpdateItemTag.yaml`.
+/// The parameter rejections the operation declares, plus the body rejections
+/// [`crate::api::item_tags::write_body`] states.
 async fn tags_update(state: AppState, parts: RequestParts) -> Result<Response, RestError> {
     let h = &parts.headers;
     let q = parts.query.as_deref();
@@ -453,7 +463,7 @@ async fn tags_update(state: AppState, parts: RequestParts) -> Result<Response, R
     let no_content = StatusCode::NO_CONTENT;
     let p = params::build::<CompositionTagsUpdateParams>(&parts.path, q, h)?;
     let ehr_id = parse_ehr_id(&p.ehr_id)?;
-    let body = negotiate::typed_json_vec::<UpdateItemTag>(h, &parts.body)?;
+    let body = item_tags::write_body(h, &parts.body)?;
     let tags = state
         .backend()
         .target_tags_replace(ehr_id, p.uid_based_id, "COMPOSITION", body)
