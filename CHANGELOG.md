@@ -76,6 +76,12 @@ workflow refuses a tag that has no matching section here.
 
 ### Fixed
 
+- The FerroEHR Viewer's session cookie sets `Secure` by default
+  (`session.cookie_secure` now defaults to `true`, fail closed): a TLS-fronted
+  deployment needs nothing, and plain-HTTP contexts (the compose quickstart on
+  localhost, local development, the e2e harness) opt out explicitly. If you
+  serve the viewer over plain HTTP without one of those postures, set
+  `FERROEHR_VIEWER__SESSION__COOKIE_SECURE=false` or logins will not stick.
 - TDD import no longer discards instance data a TDD spells out on wrappers
   the WebTemplate compacted: `HISTORY.origin`, an event's `time` and `name`,
   and the other LOCATABLE metadata (`uid`, `links`, `feeder_audit`) now land

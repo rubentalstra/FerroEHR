@@ -136,7 +136,7 @@ overrides. Unknown keys are refused at startup, exactly as on the CDR:
 | `login.notice` | empty | Informational text on the sign-in card, line breaks preserved. A demo or evaluation deployment states its public credentials and usage expectations here. |
 | `login.links` | empty | Links under the sign-in card, each `{ label, href }` — an API reference, a documentation page. |
 | `session.idle_minutes` | `60` | Session idle expiry (sliding; carried inside the sealed cookie). |
-| `session.cookie_secure` | `false` | Set behind TLS. |
+| `session.cookie_secure` | `true` | On by default; set `false` only for plain-HTTP local development. |
 | `session.secret` | empty | The session-cookie sealing key: base64 of at least 64 bytes (`openssl rand -base64 64`). Every replica of a scaled deployment must hold the same value. Empty = an ephemeral per-instance key, fine for exactly one replica. |
 | `session.secret_file` | — | Path to a file holding the sealing key; wins over `session.secret`. |
 

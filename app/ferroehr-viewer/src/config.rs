@@ -139,7 +139,9 @@ pub struct OidcConfig {
 pub struct SessionConfig {
     /// Idle expiry, minutes.
     pub idle_minutes: u64,
-    /// Set the `Secure` cookie flag (turn on behind TLS).
+    /// Set the `Secure` cookie flag. On by default (fail closed): a
+    /// plain-HTTP context (local development, the e2e harness) opts OUT
+    /// explicitly, production behind TLS needs nothing.
     pub cookie_secure: bool,
     /// The cookie-sealing secret, base64 of at least 64 bytes. Every
     /// instance of a scaled deployment must hold the same value — the
@@ -155,7 +157,7 @@ impl Default for SessionConfig {
     fn default() -> Self {
         Self {
             idle_minutes: 60,
-            cookie_secure: false,
+            cookie_secure: true,
             secret: String::new(),
             secret_file: String::new(),
         }
