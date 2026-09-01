@@ -1468,6 +1468,19 @@ fn unrealized_bmm_functions_match_the_ratchet() {
 /// be a template (`tools/openehr-codegen/templates/<crate>/…`) — one source,
 /// per-generation copies stamped by `emit` — so twins can never silently
 /// diverge. A non-empty list here names the families to convert.
+///
+/// The `openehr-lang` `v1_0`/`v1_1` sibling pairs (`lexer/mod.rs`,
+/// `lexer/token.rs`, `lexer/reclassify.rs`, `odin/parser.rs`) are NOT covered,
+/// and that is the adjudicated outcome (#2984), not a gap: measured on
+/// 2026-09-01 they diverge by 117–892 diff lines per pair, because `v1_0` is
+/// the faithful Release-1.0.0 generation — an ODIN-only lexer over the
+/// release's own grammar set, no EL/BEL (`docs/VERSIONS.md` §LANG; the #1946
+/// faithful-emission decision) — while `v1_1` carries the development
+/// generation's larger token and reclassification surface. Whole-file-verbatim
+/// overrides cannot express an eighty-percent-shared file, so conversion would
+/// re-house the divergence without removing the duplication. The identity
+/// check below stays the machine half: if a pair ever converges to
+/// identical-modulo-tokens, it appears in this list and MUST convert then.
 #[test]
 fn hand_written_twins_are_templates() {
     for key in ["base", "rm", "am", "term", "lang"] {
