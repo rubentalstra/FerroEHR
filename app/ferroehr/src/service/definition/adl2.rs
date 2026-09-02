@@ -125,10 +125,13 @@ impl FerroEhrService {
     }
 
     /// `upload_artefact` (Pre `valid_artefact`, Post `has_artefact`) — validate a
-    /// full ADL2 artefact through the `openehr-adl` engine and store it,
-    /// replacing any existing one with the same `ARCHETYPE_HRID` ("If an
-    /// artefact with the same physical identifier and namespace exists, replace
-    /// it" — `i_definition_adl2.adoc`).
+    /// full ADL2 artefact through the `openehr-adl` engine and store it.
+    ///
+    /// An existing artefact with the same `ARCHETYPE_HRID` is a conflict, never
+    /// replaced: the released REST API answers `409` (ITS-REST definition OAS,
+    /// `POST /definition/template/adl2` → `409_template_already_exists`), and
+    /// the wire is the API oracle where the SM's `i_definition_adl2.adoc`
+    /// wording ("replace it") differs.
     ///
     /// # Errors
     ///
