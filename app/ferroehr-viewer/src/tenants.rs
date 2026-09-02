@@ -236,7 +236,7 @@ pub fn tenant_failure_copy(object: &str, error: &ViewerError) -> String {
 /// # Errors
 /// [`ViewerError::Unauthenticated`] without a viewer session;
 /// [`ViewerError::CdrUnreachable`] on transport failure.
-#[server]
+#[server(client = crate::session_client::SessionAwareClient)]
 pub async fn probe_tenant_registry() -> Result<TenantAvailability, ViewerError> {
     let session = crate::session::require_session().await?;
     let state: crate::state::AppState = expect_context();
@@ -259,7 +259,7 @@ pub async fn probe_tenant_registry() -> Result<TenantAvailability, ViewerError> 
 /// [`ViewerError::CdrUnauthorized`] / [`ViewerError::Forbidden`] / [`ViewerError::Cdr`] /
 /// [`ViewerError::CdrUnreachable`] from the CDR; [`ViewerError::Internal`]
 /// when the body is not valid JSON.
-#[server]
+#[server(client = crate::session_client::SessionAwareClient)]
 pub async fn list_tenants() -> Result<Option<Vec<TenantRow>>, ViewerError> {
     let session = crate::session::require_session().await?;
     let state: crate::state::AppState = expect_context();
@@ -291,7 +291,7 @@ pub async fn list_tenants() -> Result<Option<Vec<TenantRow>>, ViewerError> {
 /// [`ViewerError::CdrUnauthorized`] / [`ViewerError::Forbidden`] / [`ViewerError::Cdr`] /
 /// [`ViewerError::CdrUnreachable`] from the CDR; [`ViewerError::Internal`]
 /// when the body is not valid JSON.
-#[server]
+#[server(client = crate::session_client::SessionAwareClient)]
 pub async fn fetch_current_tenant() -> Result<Option<CurrentTenant>, ViewerError> {
     let session = crate::session::require_session().await?;
     let state: crate::state::AppState = expect_context();
@@ -321,7 +321,7 @@ pub async fn fetch_current_tenant() -> Result<Option<CurrentTenant>, ViewerError
 /// [`ViewerError::CdrUnauthorized`] / [`ViewerError::Forbidden`] / [`ViewerError::Cdr`] /
 /// [`ViewerError::CdrUnreachable`] from the CDR; [`ViewerError::Internal`]
 /// when the created record is not valid JSON.
-#[server]
+#[server(client = crate::session_client::SessionAwareClient)]
 pub async fn create_tenant(
     /// The tenant name (unique in the registry).
     name: String,
@@ -362,7 +362,7 @@ pub async fn create_tenant(
 /// [`ViewerError::CdrUnauthorized`] / [`ViewerError::Forbidden`] / [`ViewerError::Cdr`] /
 /// [`ViewerError::CdrUnreachable`] from the CDR; [`ViewerError::Internal`]
 /// when the stored record is not valid JSON.
-#[server]
+#[server(client = crate::session_client::SessionAwareClient)]
 pub async fn update_tenant(
     /// The tenant to update, by registry id.
     tenant_id: String,
@@ -408,7 +408,7 @@ pub async fn update_tenant(
 /// [`ViewerError::Invalid`] for an empty id;
 /// [`ViewerError::CdrUnauthorized`] / [`ViewerError::Forbidden`] / [`ViewerError::Cdr`] /
 /// [`ViewerError::CdrUnreachable`] from the CDR.
-#[server]
+#[server(client = crate::session_client::SessionAwareClient)]
 pub async fn delete_tenant(
     /// The tenant to delete, by registry id.
     tenant_id: String,

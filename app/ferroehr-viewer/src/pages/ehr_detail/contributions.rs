@@ -83,7 +83,7 @@ pub struct ContributionPage {
 /// `404`/`405` from an older CDR that lacks the list route surfaces there as
 /// [`ViewerError::Cdr`] (the tab renders it inline);
 /// [`ViewerError::Internal`] when the page is not valid JSON.
-#[server]
+#[server(client = crate::session_client::SessionAwareClient)]
 pub async fn list_contributions(
     /// The EHR whose contributions to list.
     ehr_id: String,
@@ -161,7 +161,7 @@ fn contribution_field(value: &Value, key: &str) -> String {
 /// errors pass through; a non-2xx CDR answer normalizes via
 /// [`CdrClient::expect_success`](crate::cdr::CdrClient::expect_success);
 /// [`ViewerError::Internal`] when the page is not valid JSON.
-#[server]
+#[server(client = crate::session_client::SessionAwareClient)]
 pub async fn contribution_activity(
     /// The EHR whose contribution instants feed the timeline.
     ehr_id: String,
@@ -196,7 +196,7 @@ pub async fn contribution_activity(
 /// errors pass through; a non-2xx CDR answer (a `404` for an unknown uid
 /// included) normalizes via
 /// [`CdrClient::expect_success`](crate::cdr::CdrClient::expect_success).
-#[server]
+#[server(client = crate::session_client::SessionAwareClient)]
 pub async fn fetch_contribution(
     /// The EHR holding the contribution.
     ehr_id: String,

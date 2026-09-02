@@ -234,7 +234,7 @@ pub fn readiness_view(body: &serde_json::Value) -> ReadinessView {
 /// [`ViewerError::CdrUnreachable`] on transport failure;
 /// [`ViewerError::Cdr`] on any status other than `200`/`503`;
 /// [`ViewerError::Internal`] when the body is not JSON.
-#[server]
+#[server(client = crate::session_client::SessionAwareClient)]
 pub async fn fetch_readiness() -> Result<ReadinessView, ViewerError> {
     crate::session::require_session().await?;
     let state: crate::state::AppState = expect_context();
@@ -264,7 +264,7 @@ pub async fn fetch_readiness() -> Result<ReadinessView, ViewerError> {
 /// # Errors
 /// [`ViewerError::Unauthenticated`] without a viewer session;
 /// [`ViewerError::CdrUnreachable`] when the management listener is unreachable.
-#[server]
+#[server(client = crate::session_client::SessionAwareClient)]
 pub async fn probe_management_api() -> Result<ManagementAvailability, ViewerError> {
     let session = crate::session::require_session().await?;
     let state: crate::state::AppState = expect_context();
@@ -334,7 +334,7 @@ fn scalar_rows(value: &serde_json::Value) -> Vec<(String, String)> {
 /// session, [`ViewerError::Forbidden`] when the endpoint's access level
 /// refuses it; [`ViewerError::Cdr`] / [`ViewerError::CdrUnreachable`] from the
 /// CDR; [`ViewerError::Internal`] when the body is not JSON.
-#[server]
+#[server(client = crate::session_client::SessionAwareClient)]
 pub async fn fetch_build_info() -> Result<Option<BuildInfoView>, ViewerError> {
     let Some(body) = management_get("info").await? else {
         return Ok(None);
@@ -464,7 +464,7 @@ pub fn format_metric(value: f64) -> String {
 ///
 /// # Errors
 /// As [`fetch_build_info`].
-#[server]
+#[server(client = crate::session_client::SessionAwareClient)]
 pub async fn fetch_metric_names() -> Result<Option<Vec<String>>, ViewerError> {
     let Some(body) = management_get("metrics").await? else {
         return Ok(None);
@@ -495,7 +495,7 @@ pub async fn fetch_metric_names() -> Result<Option<Vec<String>>, ViewerError> {
 /// # Errors
 /// [`ViewerError::Invalid`] for an empty name; otherwise as
 /// [`fetch_build_info`].
-#[server]
+#[server(client = crate::session_client::SessionAwareClient)]
 pub async fn fetch_metric_detail(
     /// The metric name to read, as listed by the metrics index.
     name: String,
@@ -520,7 +520,7 @@ pub async fn fetch_metric_detail(
 ///
 /// # Errors
 /// As [`fetch_build_info`].
-#[server]
+#[server(client = crate::session_client::SessionAwareClient)]
 pub async fn fetch_headline_metrics() -> Result<Option<Vec<MetricTile>>, ViewerError> {
     let Some(names) = fetch_metric_names().await? else {
         return Ok(None);
@@ -579,7 +579,7 @@ pub fn logger_view(body: &serde_json::Value) -> LoggerView {
 ///
 /// # Errors
 /// As [`fetch_build_info`].
-#[server]
+#[server(client = crate::session_client::SessionAwareClient)]
 pub async fn fetch_loggers() -> Result<Option<LoggerView>, ViewerError> {
     let Some(body) = management_get("loggers").await? else {
         return Ok(None);
@@ -603,7 +603,7 @@ pub async fn fetch_loggers() -> Result<Option<LoggerView>, ViewerError> {
 /// [`ViewerError::CdrUnauthorized`] / [`ViewerError::Forbidden`] / [`ViewerError::Cdr`] /
 /// [`ViewerError::CdrUnreachable`] from the CDR; [`ViewerError::Internal`]
 /// when the body is not JSON.
-#[server]
+#[server(client = crate::session_client::SessionAwareClient)]
 pub async fn set_log_filter(
     /// The replacement log filter, one or more `target=level` directives.
     filter: String,
@@ -639,7 +639,7 @@ pub async fn set_log_filter(
 ///
 /// # Errors
 /// As [`set_log_filter`], minus the empty-input case.
-#[server]
+#[server(client = crate::session_client::SessionAwareClient)]
 pub async fn reset_log_filter() -> Result<LoggerView, ViewerError> {
     let session = crate::session::require_session().await?;
     let state: crate::state::AppState = expect_context();

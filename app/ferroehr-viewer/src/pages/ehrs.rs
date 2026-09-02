@@ -126,7 +126,7 @@ pub(crate) fn parse_result_set(body: &str, offset: u32) -> Result<ResultPage, Vi
 /// errors pass through; a non-2xx CDR answer normalizes via
 /// [`CdrClient::expect_success`](crate::cdr::CdrClient::expect_success);
 /// [`ViewerError::Internal`] when the result set is not valid JSON.
-#[server]
+#[server(client = crate::session_client::SessionAwareClient)]
 pub async fn list_ehrs(
     /// First row of the page to return.
     offset: u32,
@@ -255,7 +255,7 @@ pub(crate) fn is_uuid(value: &str) -> bool {
 /// non-2xx CDR answer (the `409` for an id already in use, and any validation
 /// diagnostic, included) normalizes via
 /// [`CdrClient::expect_success`](crate::cdr::CdrClient::expect_success).
-#[server]
+#[server(client = crate::session_client::SessionAwareClient)]
 pub async fn create_ehr(
     /// The EHR id to create under; empty lets the CDR assign one.
     ehr_id: String,
@@ -340,7 +340,7 @@ pub async fn create_ehr(
 /// [`ViewerError::Invalid`] when either subject field is empty; CDR transport
 /// errors pass through; a non-2xx, non-404 CDR answer normalizes via
 /// [`CdrClient::expect_success`](crate::cdr::CdrClient::expect_success).
-#[server]
+#[server(client = crate::session_client::SessionAwareClient)]
 pub async fn find_ehr_by_subject(
     /// The subject's external id to look up.
     subject_id: String,

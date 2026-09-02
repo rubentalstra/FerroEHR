@@ -59,7 +59,7 @@ use crate::pages::ehrs::{aql_request_body, parse_result_set};
 /// instant; CDR transport errors pass through; a non-2xx CDR answer normalizes
 /// via [`CdrClient::expect_success`](crate::cdr::CdrClient::expect_success);
 /// [`ViewerError::Internal`] when the result set is not valid JSON.
-#[server]
+#[server(client = crate::session_client::SessionAwareClient)]
 pub async fn list_compositions(
     /// The EHR whose compositions to list.
     ehr_id: String,
@@ -133,7 +133,7 @@ pub async fn all_compositions(ehr_id: String, offset: u32) -> Result<ResultPage,
 /// validation diagnostics, which the UI renders verbatim, included)
 /// normalizes via
 /// [`CdrClient::expect_success`](crate::cdr::CdrClient::expect_success).
-#[server]
+#[server(client = crate::session_client::SessionAwareClient)]
 pub async fn commit_composition(
     /// The EHR to commit into.
     ehr_id: String,

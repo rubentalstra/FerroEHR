@@ -117,6 +117,26 @@ and a previewed grant is an upper bound.
 
 ![Access scopes](img/dashboard/scopes-drawer.png)
 
+### When your session ends
+
+A session ends when you sign out, when its idle window
+(`session.idle_minutes`) passes with no request from your browser, or when
+the CDR stops accepting the credential behind it (an expired or revoked
+token). The viewer notices on its own. Every call it makes to its backend is
+checked for a signed-out answer, and the shell re-checks the session on its
+own schedule as well, so a session that ends while a screen is open is
+detected within seconds even if you touch nothing. The authenticated screens
+then unmount and you land on the sign-in page with a notice that the session
+ended. Signing in again, with Basic or with OIDC, returns you to the page you
+were on. There is no in-between state where the header reports the CDR as
+offline while the rest of the screen still accepts input.
+
+![Session ended](img/login/login-expired.png)
+
+The idle window slides on any authenticated request, and the shell's own
+status poll is one, so a tab you leave open stays signed in while it is open.
+Closing the browser ends the session.
+
 ## Configuration
 
 One TOML file (`ferroehr-viewer.toml`, searched in the working directory

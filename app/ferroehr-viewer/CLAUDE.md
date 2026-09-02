@@ -102,6 +102,24 @@ extension); the wire it consumes IS spec-bound (`docs/specs/openehr/ITS-REST/`
   viewer draws through `format_view::segment_button`. Never build a second
   example-options control or query builder.
 
+## Every `#[server]` fn carries the session backstop (#3044)
+
+- **A server function is declared `#[server(client =
+  crate::session_client::SessionAwareClient)]` — with no exceptions.** That
+  transport wrapper is what watches every answer for
+  `ViewerError::Unauthenticated` / `CdrUnauthorized` (server_fn renders an
+  application error as a `500` carrying the encoded error, so the detection
+  reads the BODY, not the status) and bumps the counter the shell turns into
+  the signed-out transition. A bare `#[server]` is a hole in that net; the
+  unit test `session_client::tests::
+  every_server_function_in_this_crate_is_declared_with_the_session_aware_client`
+  fails on one.
+- **The signed-out transition has ONE destination —
+  `session_client::signed_out_url`** (`/login?expired=1&next=…`), used by both
+  the shell's session gate and its backstop Effect. The login screen renders
+  the "your session ended" notice from `?expired=1` alone, so the state is a
+  URL, not a signal.
+
 ## Error feedback: toast vs inline (one rule, 2026-07-25)
 
 - **A mutation toasts on success AND on failure.** Every action that writes to

@@ -79,7 +79,7 @@ impl ConformanceManifest {
 /// [`ViewerError::CdrUnreachable`] on transport failure;
 /// [`ViewerError::Cdr`] when the CDR answers non-2xx;
 /// [`ViewerError::Internal`] when the body is not the `Options` shape.
-#[server]
+#[server(client = crate::session_client::SessionAwareClient)]
 pub async fn fetch_conformance_manifest() -> Result<ConformanceManifest, ViewerError> {
     crate::session::require_session().await?;
     let state: crate::state::AppState = leptos::prelude::expect_context();

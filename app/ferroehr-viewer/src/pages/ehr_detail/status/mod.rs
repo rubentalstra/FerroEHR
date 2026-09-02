@@ -108,7 +108,7 @@ pub struct EhrStatusState {
 /// errors pass through; a non-2xx CDR answer normalizes via
 /// [`CdrClient::expect_success`](crate::cdr::CdrClient::expect_success);
 /// [`ViewerError::Internal`] when the body is not valid JSON.
-#[server]
+#[server(client = crate::session_client::SessionAwareClient)]
 pub async fn fetch_ehr_status(
     /// The EHR whose current status document to read.
     ehr_id: String,
@@ -141,7 +141,7 @@ pub async fn fetch_ehr_status(
 /// through; a non-2xx CDR answer (the `404` for an unknown
 /// `ehr_id`/`version_uid` included) normalizes via
 /// [`CdrClient::expect_success`](crate::cdr::CdrClient::expect_success).
-#[server]
+#[server(client = crate::session_client::SessionAwareClient)]
 pub async fn fetch_ehr_status_version(
     /// The EHR holding the versioned status.
     ehr_id: String,
@@ -207,7 +207,7 @@ pub async fn fetch_ehr_status_version(
 /// non-2xx CDR answer (the `412` concurrency failure and the `400`/`422`
 /// validation diagnostics, which the UI renders verbatim, included) normalizes
 /// via [`CdrClient::expect_success`](crate::cdr::CdrClient::expect_success).
-#[server]
+#[server(client = crate::session_client::SessionAwareClient)]
 pub async fn update_ehr_status(
     /// The EHR whose status to update.
     ehr_id: String,
@@ -267,7 +267,7 @@ pub async fn update_ehr_status(
 /// included) normalizes via
 /// [`CdrClient::expect_success`](crate::cdr::CdrClient::expect_success);
 /// [`ViewerError::Internal`] when the history is not valid JSON.
-#[server]
+#[server(client = crate::session_client::SessionAwareClient)]
 pub async fn fetch_status_revision_history(
     /// The EHR whose status revision history to read.
     ehr_id: String,
@@ -308,7 +308,7 @@ pub async fn fetch_status_revision_history(
 /// `ehr_id`/version included) normalizes via
 /// [`CdrClient::expect_success`](crate::cdr::CdrClient::expect_success);
 /// [`ViewerError::Internal`] when either body is not valid JSON.
-#[server]
+#[server(client = crate::session_client::SessionAwareClient)]
 pub async fn fetch_versioned_status(
     /// The EHR holding the versioned status.
     ehr_id: String,
@@ -364,7 +364,7 @@ pub async fn fetch_versioned_status(
 /// through; a non-2xx CDR answer (the `404` for no version at that time
 /// included, which the UI renders as an inline note) normalizes via
 /// [`CdrClient::expect_success`](crate::cdr::CdrClient::expect_success).
-#[server]
+#[server(client = crate::session_client::SessionAwareClient)]
 pub async fn fetch_status_version_at_time(
     /// The EHR holding the versioned status.
     ehr_id: String,

@@ -112,7 +112,7 @@ pub struct PartyState {
 /// unknown id, or for an id held by a DIFFERENT kind, included) normalizes via
 /// [`CdrClient::expect_success`](crate::cdr::CdrClient::expect_success);
 /// [`ViewerError::Internal`] when the body is not valid JSON.
-#[server]
+#[server(client = crate::session_client::SessionAwareClient)]
 pub async fn fetch_party(
     /// The party family, as its route segment ([`PartyKind::segment`]).
     kind: String,
@@ -161,7 +161,7 @@ pub async fn fetch_party(
 /// normalizes via
 /// [`CdrClient::expect_success`](crate::cdr::CdrClient::expect_success);
 /// [`ViewerError::Internal`] when the created resource carries no `uid`.
-#[server]
+#[server(client = crate::session_client::SessionAwareClient)]
 pub async fn create_party(
     /// The party family, as its route segment ([`PartyKind::segment`]).
     kind: String,
@@ -221,7 +221,7 @@ pub async fn create_party(
 /// non-2xx CDR answer (the `412` collision and the `400`/`422` diagnostics
 /// included) normalizes via
 /// [`CdrClient::expect_success`](crate::cdr::CdrClient::expect_success).
-#[server]
+#[server(client = crate::session_client::SessionAwareClient)]
 pub async fn update_party(
     /// The party family, as its route segment ([`PartyKind::segment`]).
     kind: String,
@@ -292,7 +292,7 @@ pub async fn update_party(
 /// non-2xx CDR answer (the `409` stale-uid and `400` already-deleted branches
 /// included) normalizes via
 /// [`CdrClient::expect_success`](crate::cdr::CdrClient::expect_success).
-#[server]
+#[server(client = crate::session_client::SessionAwareClient)]
 pub async fn delete_party(
     /// The party family, as its route segment ([`PartyKind::segment`]).
     kind: String,

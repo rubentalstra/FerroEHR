@@ -414,6 +414,19 @@ async fn capture_documentation_screenshots() {
         .expect("write the login screenshot");
     println!("captured login -> {}", login_out.display());
 
+    // The same card as the shell's signed-out transition delivers it: the
+    // session-ended notice above the credential form. This is the ONE state
+    // the plain capture above cannot show, and it is reached by URL alone —
+    // no session has to be made to expire for the book to document it.
+    h.goto("/login?expired=1").await;
+    h.wait_css("#session-expired").await;
+    let expired_out = dir.join("login").join("login-expired.png");
+    h.driver
+        .screenshot(&expired_out)
+        .await
+        .expect("write the expired-login screenshot");
+    println!("captured login-expired -> {}", expired_out.display());
+
     login_basic(&h).await;
 
     // Both template families' capture fixtures, seeded by this pass itself so

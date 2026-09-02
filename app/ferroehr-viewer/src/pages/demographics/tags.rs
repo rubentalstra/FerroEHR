@@ -53,7 +53,7 @@ use crate::pages::demographics::PartyKind;
 /// errors pass through; a non-2xx CDR answer normalizes via
 /// [`CdrClient::expect_success`](crate::cdr::CdrClient::expect_success);
 /// [`ViewerError::Internal`] when the list is not valid JSON.
-#[server]
+#[server(client = crate::session_client::SessionAwareClient)]
 pub async fn list_demographic_tags(
     /// Exact `ITEM_TAG.key` filter; empty constrains nothing.
     key: String,
@@ -87,7 +87,7 @@ pub async fn list_demographic_tags(
 /// normalizes via
 /// [`CdrClient::expect_success`](crate::cdr::CdrClient::expect_success);
 /// [`ViewerError::Internal`] when the list is not valid JSON.
-#[server]
+#[server(client = crate::session_client::SessionAwareClient)]
 pub async fn fetch_party_tags(
     /// The party family, as its route segment ([`PartyKind::segment`]).
     kind: String,
@@ -139,7 +139,7 @@ async fn read_party_tags(
 /// that breaks an `ITEM_TAG` invariant included) normalizes via
 /// [`CdrClient::expect_success`](crate::cdr::CdrClient::expect_success);
 /// [`ViewerError::Internal`] when the current list is not valid JSON.
-#[server]
+#[server(client = crate::session_client::SessionAwareClient)]
 pub async fn set_party_tag(
     /// The party family, as its route segment ([`PartyKind::segment`]).
     kind: String,
@@ -201,7 +201,7 @@ pub async fn set_party_tag(
 /// [`ViewerError::Invalid`] on an unknown kind segment or a blank key; CDR
 /// transport errors pass through; any non-2xx CDR answer normalizes via
 /// [`CdrClient::expect_success`](crate::cdr::CdrClient::expect_success).
-#[server]
+#[server(client = crate::session_client::SessionAwareClient)]
 pub async fn delete_party_tag(
     /// The party family, as its route segment ([`PartyKind::segment`]).
     kind: String,

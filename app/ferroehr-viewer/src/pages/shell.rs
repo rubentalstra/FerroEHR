@@ -34,7 +34,7 @@
 use leptos::prelude::*;
 use leptos_icons::Icon;
 use leptos_router::components::{Outlet, Redirect};
-use leptos_use::use_interval_fn;
+use leptos_use::{UseTimeoutFnReturn, use_interval_fn, use_timeout_fn};
 // The `view!` macro rejects a module-pathed name in slot position, so the
 // slot component alone is imported directly (a plain import, not a rename).
 use thaw::PopoverTrigger;
@@ -43,9 +43,16 @@ use crate::auth::{Logout, SessionInfo, current_session, fetch_status};
 use crate::components::brand::Wordmark;
 use crate::components::scope_grants::{ScopePreviewer, capability_note, fact_row, grant_cards};
 use crate::scopes::{grants_of, policy_source};
+use crate::session_client::{session_ended_epoch, session_ended_signal, signed_out_url};
 
 /// How often (ms) the topbar re-polls the CDR `{rest root}/status` health endpoint.
 const HEALTH_POLL_MS: u64 = 30_000;
+
+/// How long (ms) after the session's reported deadline the browser re-checks it.
+///
+/// One second past it, so the re-check reads a cookie the server has already
+/// stopped honouring rather than racing it by a hair.
+const EXPIRY_GRACE_MS: f64 = 1_000.0;
 
 /// The browser `localStorage` key the dark-mode preference persists under.
 const THEME_STORAGE_KEY: &str = "ferroehr-viewer-theme";
@@ -111,6 +118,16 @@ fn apply_dark(theme: RwSignal<thaw::Theme>, dark: bool) {
 /// + the thaw theme together) and persists to `localStorage`; the persisted
 /// choice is re-applied after hydration inside an [`Effect`], keeping the
 /// initial render deterministic.
+///
+/// The shell never stays interactive over a dead session, and three browser
+/// timers/watchers see to it: the session resource is re-checked on the health
+/// poll's tick, again on the session's own deadline
+/// ([`crate::auth::SessionInfo::expires_in_secs`] plus `EXPIRY_GRACE_MS`), and
+/// immediately when [`crate::session_client`]'s transport backstop reports that
+/// some server function answered `Unauthenticated` or `CdrUnauthorized`. All
+/// three land on the same signed-out URL ([`signed_out_url`]), which unmounts
+/// the whole chrome, so there is no window in which menus and forms accept
+/// input against an expired credential.
 #[expect(
     clippy::must_use_candidate,
     reason = "#[component] rewrites the fn; view!/mount always consumes the value"
@@ -145,13 +162,74 @@ pub fn AppShell() -> impl IntoView {
         }
     });
 
-    // Browser-only: poll the CDR health endpoint on an interval.
+    // The signed-out destination, computed from the URL the user is on so
+    // signing in again returns them to it. Read untracked: it is the
+    // transition's argument, never a dependency of it.
+    let location = leptos_router::hooks::use_location();
+    let pathname = location.pathname;
+    let search = location.search;
+    let signed_out = move || signed_out_url(&pathname.get_untracked(), &search.get_untracked());
+
+    // Whether a session has ever resolved as PRESENT in this shell, which is
+    // what separates an expiry from a fresh visit to a guarded URL. Plain
+    // storage rather than a signal: the gate writes it while rendering, and a
+    // reactive write there would re-run the gate that wrote it.
+    let seen_session = StoredValue::new(false);
+
+    // Browser-only: poll the CDR health endpoint on an interval, and re-check
+    // the session on the same tick — a revocation the browser never asked
+    // about surfaces within one poll even if nothing else is happening.
     let _pausable = use_interval_fn(
         move || {
             status.refetch();
+            session.refetch();
         },
         HEALTH_POLL_MS,
     );
+
+    // Browser-only: the session's reported deadline schedules its own
+    // re-check, which catches an idle expiry the poll above cannot — a
+    // throttled background tab, a machine that slept. `use_timeout_fn` reads
+    // the delay when `start` is called, so the derived signal always hands it
+    // the freshly resolved session's remaining seconds, and each start
+    // replaces the pending timer.
+    let expiry_delay = Signal::derive(move || {
+        session
+            .get()
+            .and_then(|answer| answer.ok().flatten())
+            .map_or(EXPIRY_GRACE_MS, |info| {
+                f64::from(info.expires_in_secs).mul_add(1_000.0, EXPIRY_GRACE_MS)
+            })
+    });
+    let UseTimeoutFnReturn {
+        start: start_expiry_check,
+        ..
+    } = use_timeout_fn(
+        move |()| {
+            session.refetch();
+        },
+        expiry_delay,
+    );
+    Effect::new(move |_| {
+        if matches!(session.get(), Some(Ok(Some(_)))) {
+            start_expiry_check(());
+        }
+    });
+
+    // Browser-only: the transport backstop. Every server fn runs through
+    // `SessionAwareClient`, which bumps the session-ended counter when one of
+    // them answers `Unauthenticated` or `CdrUnauthorized` — including a CDR
+    // revocation the viewer's own cookie knows nothing about. The baseline is
+    // read here, at setup, so a shell mounted after a fresh sign-in never acts
+    // on an older detection and no reset write is needed.
+    let navigate = leptos_router::hooks::use_navigate();
+    let session_ended = session_ended_signal();
+    let session_ended_baseline = session_ended_epoch();
+    Effect::new(move |_| {
+        if session_ended.get() != session_ended_baseline {
+            navigate(&signed_out(), leptos_router::NavigateOptions::default());
+        }
+    });
 
     // The chrome (and the routed <Outlet/>) is created exactly ONCE, outside
     // any Suspend closure; the session gate below renders ONLY the redirect
@@ -167,7 +245,18 @@ pub fn AppShell() -> impl IntoView {
                 {move || {
                     Suspend::new(async move {
                         match session.await {
-                            Ok(Some(_)) => ().into_any(),
+                            Ok(Some(_)) => {
+                                seen_session.set_value(true);
+                                ().into_any()
+                            }
+                            Ok(None) if seen_session.get_value() => {
+                                // A session that WAS present and is now gone is an
+                                // expiry: say so, and carry the screen the user was
+                                // on. A first resolution with no session is just a
+                                // guarded URL visited signed out.
+                                view! { <Redirect path=signed_out() /> }
+                                    .into_any()
+                            }
                             _ => view! { <Redirect path="/login" /> }.into_any(),
                         }
                     })
@@ -424,6 +513,10 @@ fn authed_shell(
                                 _ => chip("bg-warn", "text-ink", "CDR DEGRADED".to_owned()),
                             }
                         }
+                        Err(
+                            crate::error::ViewerError::Unauthenticated
+                            | crate::error::ViewerError::CdrUnauthorized(_),
+                        ) => chip("bg-warn", "text-ink", "Session ended".to_owned()),
                         Err(_) => chip("bg-danger", "text-danger", "CDR DOWN".to_owned()),
                     }
                 })
