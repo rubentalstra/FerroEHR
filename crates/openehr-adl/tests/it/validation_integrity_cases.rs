@@ -136,6 +136,98 @@ fn vcatu_duplicate_sibling_attribute() {
     assert_raises(&issues, ValidationCode::Vcatu);
 }
 
+/// A minimal specialisation of [`BASE`] whose two root-level differential paths
+/// end in the same RM attribute name (`element_attr`) yet address different
+/// parent nodes.
+const CHILD_WITH_DIFFERENTIAL_PATHS: &str = r#"archetype (adl_version=2.0.5; rm_release=1.0.2)
+    openEHR-EHR-ENTRY.integrity_base-child.v1.0.0
+
+specialise
+    openEHR-EHR-ENTRY.integrity_base.v1.0.0
+
+language
+    original_language = <[ISO_639-1::en]>
+
+description
+    lifecycle_state = <"draft">
+
+definition
+    ENTRY[id1.1] matches {
+        /element_attr matches {
+            ELEMENT[id0.1]
+        }
+        /element_attr[id2]/element_attr matches {
+            ELEMENT[id0.2]
+        }
+    }
+
+terminology
+    term_definitions = <
+        ["en"] = <
+            ["id1.1"] = < text = <"child"> description = <"child"> >
+            ["id0.1"] = < text = <"new"> description = <"new"> >
+            ["id0.2"] = < text = <"nested"> description = <"nested"> >
+        >
+    >
+"#;
+
+#[test]
+fn vcatu_differential_paths_sharing_a_leading_segment_are_distinct() {
+    // master04.5 §C_COMPLEX_OBJECT — VCATU judges sibling attributes; in a
+    // differential archetype `/element_attr` and `/element_attr[id2]/element_attr`
+    // are different attributes of the flat parent (ADL2 master09.02
+    // §Differential Paths), not a duplicate.
+    let issues =
+        validate_source_integrity(CHILD_WITH_DIFFERENTIAL_PATHS, Dialect::Adl2, None).unwrap();
+    assert!(
+        !mnemonics(&issues).contains(&"VCATU"),
+        "differential paths must not be read as duplicate siblings: {issues:?}"
+    );
+}
+
+#[test]
+fn vasid_stated_parent_absent_from_the_repository() {
+    // master03 §Validity Rules — VASID: the stated parent must be the identifier
+    // of the immediate parent archetype; an id the repository cannot resolve is
+    // not that, and phase 2 (master08) cannot run without the flat parent.
+    let empty = ArchetypeRepository::new();
+    let issues =
+        validate_source_integrity(CHILD_WITH_DIFFERENTIAL_PATHS, Dialect::Adl2, Some(&empty))
+            .unwrap();
+    assert_raises(&issues, ValidationCode::Vasid);
+
+    let mut with_parent = ArchetypeRepository::new();
+    with_parent.insert(parse(BASE));
+    let issues = validate_source_integrity(
+        CHILD_WITH_DIFFERENTIAL_PATHS,
+        Dialect::Adl2,
+        Some(&with_parent),
+    )
+    .unwrap();
+    assert!(
+        !mnemonics(&issues).contains(&"VASID"),
+        "a resolvable parent satisfies VASID: {issues:?}"
+    );
+}
+
+#[test]
+fn vasid_absent_parent_is_not_raised_for_an_operational_template() {
+    // master08 §Phase 3 — an operational template is the flat form itself, so
+    // its `specialise` clause records lineage and needs no stored parent.
+    let src = CHILD_WITH_DIFFERENTIAL_PATHS
+        .replacen("archetype (adl_version", "operational_template (adl_version", 1)
+        .replace(
+            "        /element_attr matches {\n            ELEMENT[id0.1]\n        }\n        /element_attr[id2]/element_attr matches {\n            ELEMENT[id0.2]\n        }\n",
+            "        element_attr matches {\n            ELEMENT[id0.1]\n            ELEMENT[id0.2]\n        }\n",
+        );
+    let empty = ArchetypeRepository::new();
+    let issues = validate_source_integrity(&src, Dialect::Adl2, Some(&empty)).unwrap();
+    assert!(
+        !mnemonics(&issues).contains(&"VASID"),
+        "an operational template validates without its parent: {issues:?}"
+    );
+}
+
 #[test]
 fn vcosu_duplicate_node_id() {
     // master04.5 §C_OBJECT — VCOSU: object node ids must be unique within the

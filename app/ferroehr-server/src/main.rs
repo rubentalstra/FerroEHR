@@ -8,7 +8,17 @@
 
 use clap::Parser;
 
-#[tokio::main]
-async fn main() -> anyhow::Result<()> {
-    ferroehr_server::run(ferroehr_server::Cli::parse()).await
+/// The stack of every runtime thread, workers and the blocking pool alike.
+///
+/// Tokio's default is 2 MiB, which the AOM engine's recursive walks over a
+/// well-stocked archetype repository crossed in a debug build (#3062). The
+/// reservation is virtual: pages are committed only as a stack actually grows.
+const RUNTIME_THREAD_STACK_BYTES: usize = 16 * 1024 * 1024;
+
+fn main() -> anyhow::Result<()> {
+    let runtime = tokio::runtime::Builder::new_multi_thread()
+        .enable_all()
+        .thread_stack_size(RUNTIME_THREAD_STACK_BYTES)
+        .build()?;
+    runtime.block_on(ferroehr_server::run(ferroehr_server::Cli::parse()))
 }

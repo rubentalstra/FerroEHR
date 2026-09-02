@@ -6,7 +6,7 @@
     "editing this file plus a body under scripts/sandbox/seed/, never the walker.",
     "",
     "What one run loads, in about 590 requests: 16 ADL 1.4 operational templates",
-    "(the curated CKM pack), 226 artefacts out of the 322-file vendored ADL 2",
+    "(the curated CKM pack), 233 artefacts out of the 322-file vendored ADL 2",
     "archetype corpus, 8 ADL 2 artefacts of this repository's own, 8 EHRs carrying",
     "166 ADL 1.4 + 16 ADL 2 compositions, 6 further COMPOSITION versions, 2",
     "further EHR_STATUS versions, 11 demographic parties, a directory in every",
@@ -72,8 +72,8 @@
   "adl2": {
     "archetype_library": {
       "root": "corpus/archetypes/adl2/ckm-2013-12-09",
-      "accepted": 226,
-      "refused": 96
+      "accepted": 233,
+      "refused": 89
     },
     "artefacts": [
       "corpus/fixtures/adl2/archetype/minimal.adls",

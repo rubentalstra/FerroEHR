@@ -143,15 +143,25 @@ impl StructureScan<'_> {
         }
 
         // VCATU: sibling attributes uniquely named (master04.5 §`C_COMPLEX_OBJECT`).
+        // In a differential archetype a root-level attribute is identified by
+        // its whole differential path: `/items` and `/items[id9]/items` end in
+        // the same RM attribute name yet address different nodes of the flat
+        // parent (ADL2 master09.02 §Differential Paths).
         let mut seen_attrs = BTreeSet::new();
         for attr in complex_attributes(cco) {
-            if !seen_attrs.insert(attr.rm_attribute_name.as_str()) {
+            let key = (
+                attr.differential_path.as_deref(),
+                attr.rm_attribute_name.as_str(),
+            );
+            if !seen_attrs.insert(key) {
                 push_issue(
                     &mut self.issues,
                     ValidationCode::Vcatu,
                     format!(
                         "attribute {:?} is defined more than once",
-                        attr.rm_attribute_name
+                        attr.differential_path
+                            .as_deref()
+                            .unwrap_or(&attr.rm_attribute_name)
                     ),
                     path,
                 );
