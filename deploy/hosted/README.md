@@ -103,6 +103,56 @@ deployment being replaced answers 200 too.
 No Hetzner API token exists in CI at all — the deploy talks to the host and
 nothing else, so a leaked key cannot destroy the server.
 
+## The demo dataset
+
+`scripts/sandbox/reseed.sh` fills the wiped sandbox, driving only the public
+REST API: the seed is the same surface a visitor uses, so a green seed run is
+itself evidence that the deployment serves what it claims. The script is a
+walker over `scripts/sandbox/seed/manifest.json`, and the bodies live as files
+beside it, so **adding content is editing data**: a template slug, an EHR
+subject, an AQL file, a party. The walker itself never changes.
+
+One run loads, in about 590 requests:
+
+| What | How much |
+|---|---|
+| ADL 1.4 operational templates | 16 (the curated CKM pack, `corpus/templates/ckm/`) |
+| ADL 2 archetypes | 228 — 225 from the vendored 2013 CKM corpus plus 3 of our own |
+| ADL 2 templates | 5 (4 of our own plus one carried by the corpus); two of ours are SOURCE templates the CDR flattens against that archetype library |
+| EHRs | 8, each with a distinct subject and a mixed record |
+| Compositions | 182 (166 ADL 1.4, 16 from CDR-generated ADL 2 examples) |
+| Further versions | 6 COMPOSITION, 2 EHR_STATUS |
+| Demographic parties | 6 persons, 3 roles, 2 party relationships |
+| Directories | one FOLDER tree per EHR, its items real composition references |
+| Stored AQL queries | 5, under the `eu.ferroehr.sandbox` namespace |
+
+The ADL 2 archetype step offers the whole 322-file corpus and pins both
+outcomes in the manifest: 226 artefacts stored, 96 refused with a `422` because
+the 2013 conversions carry reference-model attributes the pinned RM no longer
+declares (`DV_QUANTITY.property` and its neighbours). A change in either count
+fails the run instead of passing quietly. Two of the eight EHRs end the run with
+a second `EHR_STATUS` version: one not queryable, one not modifiable, so both
+flags are visible on live data.
+
+Measured on 2026-09-02 against the composed quickstart stack on an 8-CPU/8 GB
+Docker VM: **39–45 s** from an empty schema, under a second on a repeat run.
+The data is ~9 MB of canonical composition JSON and leaves a **24 MB**
+database. Against the box, the ~590 sequential HTTPS round trips dominate the
+wall clock, and the `seed` job's `timeout-minutes: 20` covers that with room
+for the 12 × 15 s retry budget.
+
+Repeats are safe. The definition surfaces answer `409` when the artefact is
+already there and the walker accepts that; the EHRs resolve by subject before
+being created; and a marker EHR (`sandbox-seed-complete`) written last records
+completion, so a second run reports "already seeded" and touches nothing.
+
+The terminology seed under `docker/terminology/seed/` belongs to the
+conformance lane and stays out of this deployment. Its two synthetic code
+systems live under `cnf.example.test`, and no example in the CKM pack
+references them; the coded text those examples do carry (`openehr`, ISO 639-1,
+ISO 3166-1, plus external SNOMED CT references) resolves against the server's
+own in-process terminology bundle.
+
 ## Bootstrap and recovery
 
 The first posture on a fresh box (or recovery from a broken one) is manual by

@@ -59,8 +59,39 @@ served at <http://localhost:8080/ferroehr/rest/swagger-ui>. If you have no
 server yet, use the hosted sandbox: <https://sandbox.ferroehr.eu> opens the
 viewer over a live CDR, and the same server's Swagger UI is at
 <https://sandbox.ferroehr.eu/ferroehr/rest/swagger-ui>. Both take the public
-demo credentials `ferroehr` / `ferroehr`. The sandbox runs on best-effort
-free compute and resets nightly: expect it to slow down under heavy use.
+demo credentials `ferroehr` / `ferroehr`. The sandbox is a shared demo server
+that resets every night, so treat anything you write there as temporary and
+expect it to slow down under heavy use.
+
+### What is already in the sandbox
+
+The nightly reset reloads a fixed demo dataset, so the server always answers
+with something to look at:
+
+- **8 EHRs**, each with a mixed record and its own subject id
+  (`sandbox-patient-01` … `-08` in the `ferroehr-sandbox` namespace, so
+  `GET /ehr?subject_id=sandbox-patient-01&subject_namespace=ferroehr-sandbox`
+  finds one). Two of them carry a second `EHR_STATUS` version: patient 07 is
+  not queryable and so never appears in AQL results, patient 08 is not
+  modifiable and refuses writes with a `409`.
+- **182 compositions** across **16 ADL 1.4 templates** from the openEHR CKM —
+  vital signs, problem and medicines lists, lab results, referrals, an
+  International Patient Summary, and several statutory case-report forms. Six
+  compositions have more than one version, so `LATEST_VERSION` and
+  `ALL_VERSIONS` differ on real data.
+- **228 ADL 2 archetypes and 5 ADL 2 templates**, browsable under
+  `definition/archetype/adl2` and `definition/template/adl2`. Two of the
+  templates are ADL 2 source templates whose slots the server flattens against
+  that archetype library, and the compositions committed from them came out of
+  the server's own `…/example` generator.
+- **11 demographic parties** (persons, roles, party relationships) and a
+  **FOLDER directory** in every EHR whose items reference real compositions.
+- **5 stored AQL queries** under `eu.ferroehr.sandbox`, all of which return
+  rows: `composition_index`, `blood_pressure`, `case_reports`,
+  `composition_versions`, and `patient_record` (takes an `$ehr_id` parameter).
+  Run one with
+  `GET /query/eu.ferroehr.sandbox::composition_index`, or open the viewer's
+  query screen.
 
 There are also three always-on, unauthenticated health endpoints: `/health`,
 `/health/liveness` and `/health/readiness`; the last one reports each

@@ -1,0 +1,175 @@
+{
+  "notes": [
+    "The hosted sandbox demo dataset (issue #3045). scripts/sandbox/reseed.sh walks",
+    "this file and drives the PUBLIC REST API only, so a green seed run is itself",
+    "evidence that the deployment serves what it claims. Adding content means",
+    "editing this file plus a body under scripts/sandbox/seed/, never the walker.",
+    "",
+    "What one run loads, in about 590 requests: 16 ADL 1.4 operational templates",
+    "(the curated CKM pack), 226 artefacts out of the 322-file vendored ADL 2",
+    "archetype corpus, 8 ADL 2 artefacts of this repository's own, 8 EHRs carrying",
+    "166 ADL 1.4 + 16 ADL 2 compositions, 6 further COMPOSITION versions, 2",
+    "further EHR_STATUS versions, 11 demographic parties, a directory in every",
+    "EHR, and 5 stored AQL queries. One marker EHR records completion, so a second",
+    "run exits immediately and the instance data is never doubled.",
+    "",
+    "Measured 2026-09-02 against the composed quickstart stack on an 8-CPU/8 GB",
+    "Docker VM: 39-45 s from an empty schema, under a second on a second run. The",
+    "loaded data is ~9 MB of canonical composition JSON and leaves a 24 MB",
+    "database (17 373 node rows, 227 versions).",
+    "",
+    "Placeholders in the body files are substituted by the walker: __SUBJECT_ID__",
+    "(an EHR subject), __PERFORMER__ / __SOURCE__ / __TARGET__ (a seeded party's",
+    "VERSIONED_OBJECT uid), __COMPOSITION_n__ (the n-th composition committed into",
+    "the EHR the folder is written to), and __EHR_n__ (the n-th seeded EHR id) in",
+    "stored-query verification parameters."
+  ],
+
+  "subject_namespace": "ferroehr-sandbox",
+  "marker": {
+    "subject": "sandbox-seed-complete",
+    "status": "ehr_status/marker.json"
+  },
+
+  "ehrs": [
+    { "subject": "sandbox-patient-01", "status": "ehr_status/active.json" },
+    { "subject": "sandbox-patient-02", "status": "ehr_status/active.json" },
+    { "subject": "sandbox-patient-03", "status": "ehr_status/active.json" },
+    { "subject": "sandbox-patient-04", "status": "ehr_status/active.json" },
+    { "subject": "sandbox-patient-05", "status": "ehr_status/active.json" },
+    { "subject": "sandbox-patient-06", "status": "ehr_status/active.json" },
+    {
+      "subject": "sandbox-patient-07",
+      "status": "ehr_status/active.json",
+      "final_status": "ehr_status/not-queryable.json"
+    },
+    {
+      "subject": "sandbox-patient-08",
+      "status": "ehr_status/active.json",
+      "final_status": "ehr_status/locked.json"
+    }
+  ],
+
+  "adl14_templates": [
+    { "slug": "vital-signs", "ehrs": [0, 1, 2, 3, 4, 5, 6, 7], "compositions_per_ehr": 4, "extra_versions": 2 },
+    { "slug": "problem-list", "ehrs": [0, 1, 2, 3, 4, 5, 6, 7], "compositions_per_ehr": 3, "extra_versions": 2 },
+    { "slug": "medicines-list", "ehrs": [0, 1, 2, 3, 4, 5, 6, 7], "compositions_per_ehr": 3, "extra_versions": 2 },
+    { "slug": "generic-lab-test-result", "ehrs": [0, 1, 2, 3, 4, 5, 6, 7], "compositions_per_ehr": 3, "extra_versions": 0 },
+    { "slug": "international-patient-summary", "ehrs": [0, 1, 2, 3, 4, 5, 6, 7], "compositions_per_ehr": 1, "extra_versions": 0 },
+    { "slug": "eprescription-fhir", "ehrs": [0, 1, 2, 3, 4, 5], "compositions_per_ehr": 2, "extra_versions": 0 },
+    { "slug": "gp-data-set", "ehrs": [0, 1, 2, 3, 4, 5], "compositions_per_ehr": 1, "extra_versions": 0 },
+    { "slug": "ereferral", "ehrs": [0, 1, 2, 3, 4, 5], "compositions_per_ehr": 1, "extra_versions": 0 },
+    { "slug": "ccta-report", "ehrs": [0, 2, 4, 6], "compositions_per_ehr": 1, "extra_versions": 0 },
+    { "slug": "bc-breast-cancer-report", "ehrs": [1, 3, 5, 7], "compositions_per_ehr": 1, "extra_versions": 0 },
+    { "slug": "treat-registry-report", "ehrs": [0, 3, 4, 7], "compositions_per_ehr": 1, "extra_versions": 0 },
+    { "slug": "covid19-infection-report", "ehrs": [0, 1, 4, 5], "compositions_per_ehr": 2, "extra_versions": 0 },
+    { "slug": "sars-event-notification", "ehrs": [2, 3, 6, 7], "compositions_per_ehr": 1, "extra_versions": 0 },
+    { "slug": "diphtheria-case-investigation", "ehrs": [1, 5], "compositions_per_ehr": 1, "extra_versions": 0 },
+    { "slug": "poisoning-case-investigation", "ehrs": [2, 6], "compositions_per_ehr": 1, "extra_versions": 0 },
+    { "slug": "congenital-syphilis-case-investigation", "ehrs": [3, 7], "compositions_per_ehr": 1, "extra_versions": 0 }
+  ],
+
+  "adl2": {
+    "archetype_library": {
+      "root": "corpus/archetypes/adl2/ckm-2013-12-09",
+      "accepted": 226,
+      "refused": 96
+    },
+    "artefacts": [
+      "corpus/fixtures/adl2/archetype/minimal.adls",
+      "corpus/fixtures/adl2/archetype/cnf_count_a.adls",
+      "corpus/fixtures/adl2/archetype/cnf_count_b.adls"
+    ],
+    "templates": [
+      {
+        "file": "corpus/fixtures/adl2/opt/vitals.adls",
+        "id": "openEHR-EHR-COMPOSITION.cnf_vitals.v1.0.0",
+        "ehrs": [0, 1, 2, 3, 4, 5, 6, 7],
+        "compositions_per_ehr": 1
+      },
+      {
+        "file": "corpus/fixtures/adl2/opt/versioned.v1_0_0.adls",
+        "id": "openEHR-EHR-COMPOSITION.cnf_adl2_versioned.v1.0.0",
+        "ehrs": [],
+        "compositions_per_ehr": 0
+      },
+      {
+        "file": "corpus/fixtures/adl2/opt/versioned.v1_1_0.adls",
+        "id": "openEHR-EHR-COMPOSITION.cnf_adl2_versioned.v1.1.0",
+        "ehrs": [0, 1, 2, 3],
+        "compositions_per_ehr": 1
+      },
+      {
+        "file": "corpus/fixtures/adl2/opt/flat_parity_a.adls",
+        "id": "openEHR-EHR-COMPOSITION.cnf_adl2_flat_a.v1.0.0",
+        "ehrs": [0, 1],
+        "compositions_per_ehr": 1
+      },
+      {
+        "file": "corpus/fixtures/adl2/opt/flat_parity_b.adls",
+        "id": "openEHR-EHR-COMPOSITION.cnf_adl2_flat_b.v1.0.0",
+        "ehrs": [2, 3],
+        "compositions_per_ehr": 1
+      }
+    ]
+  },
+
+  "demographics": {
+    "persons": [
+      "parties/person-01.json",
+      "parties/person-02.json",
+      "parties/person-03.json",
+      "parties/person-04.json",
+      "parties/person-05.json",
+      "parties/person-06.json"
+    ],
+    "roles": [
+      { "file": "parties/role-general-practitioner.json", "performer": 0 },
+      { "file": "parties/role-specialist-nurse.json", "performer": 1 },
+      { "file": "parties/role-consultant-cardiologist.json", "performer": 2 }
+    ],
+    "relationships": [
+      { "file": "parties/relationship-registered-with.json", "source": 3, "target": 0 },
+      { "file": "parties/relationship-next-of-kin.json", "source": 4, "target": 5 }
+    ]
+  },
+
+  "directory": {
+    "folder": "folders/episodes.json",
+    "ehrs": [0, 1, 2, 3, 4, 5, 6, 7]
+  },
+
+  "stored_queries": [
+    {
+      "name": "eu.ferroehr.sandbox::composition_index",
+      "version": "1.0.0",
+      "file": "queries/composition_index.aql",
+      "min_rows": 150
+    },
+    {
+      "name": "eu.ferroehr.sandbox::blood_pressure",
+      "version": "1.0.0",
+      "file": "queries/blood_pressure.aql",
+      "min_rows": 30
+    },
+    {
+      "name": "eu.ferroehr.sandbox::case_reports",
+      "version": "1.0.0",
+      "file": "queries/case_reports.aql",
+      "min_rows": 40
+    },
+    {
+      "name": "eu.ferroehr.sandbox::composition_versions",
+      "version": "1.0.0",
+      "file": "queries/composition_versions.aql",
+      "min_rows": 160
+    },
+    {
+      "name": "eu.ferroehr.sandbox::patient_record",
+      "version": "1.0.0",
+      "file": "queries/patient_record.aql",
+      "min_rows": 20,
+      "parameters": { "ehr_id": "__EHR_0__" }
+    }
+  ]
+}
