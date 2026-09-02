@@ -15,6 +15,8 @@ workflow refuses a tag that has no matching section here.
 
 ## [Unreleased]
 
+## [4.0.16] - 2026-09-02
+
 ### Changed
 
 - The canonical-XML reader and the TDD/OPT XML readers refuse a non-UTF-8
@@ -28,7 +30,7 @@ workflow refuses a tag that has no matching section here.
   "viewer" now. The hosted sandbox's Compose service is renamed `console` to
   `viewer` and its container `ferroehr-sandbox-console` to
   `ferroehr-sandbox-viewer`, which the box picks up at the next release
-  deploy. The Helm chart is version 7.0.1. The name of the entry the viewer
+  deploy. The Helm chart is version 7.0.2. The name of the entry the viewer
   keeps inside its encrypted session cookie changes too, so open sessions
   need one fresh sign-in after the upgrade.
 - The hosted sandbox (sandbox.ferroehr.eu) runs on a Hetzner CX33 (4 shared
@@ -57,7 +59,7 @@ workflow refuses a tag that has no matching section here.
   crate are `ferroehr-viewer`, and the session cookie is
   `ferroehr_viewer_session`, so open sessions need one fresh sign-in.
   Documentation moved from `/docs/*/admin-ui/` to `/docs/*/viewer/`, with
-  redirects from the old pages. The Helm chart is version 7.0.0.
+  redirects from the old pages. This rename is the chart's 7.0.0 major bump.
 - The viewer's own configuration environment grammar is renamed with it:
   every `FERROEHR_ADMIN__<SECTION>__<KEY>` variable becomes
   `FERROEHR_VIEWER__<SECTION>__<KEY>` (so `FERROEHR_ADMIN__CDR__BASE_URL` is
@@ -8043,6 +8045,7 @@ but has not yet run in production.
 
 
 [unreleased]: https://github.com/rubentalstra/FerroEHR/compare/v4.0.15...HEAD
+[4.0.16]: https://github.com/rubentalstra/FerroEHR/compare/v4.0.15...v4.0.16
 [4.0.15]: https://github.com/rubentalstra/FerroEHR/compare/v4.0.13...v4.0.15
 [4.0.13]: https://github.com/rubentalstra/FerroEHR/compare/v4.0.12...v4.0.13
 [4.0.12]: https://github.com/rubentalstra/FerroEHR/compare/v4.0.11...v4.0.12
