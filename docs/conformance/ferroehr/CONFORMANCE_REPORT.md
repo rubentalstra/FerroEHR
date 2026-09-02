@@ -1,18 +1,18 @@
 # Conformance Report
 
-SUT: FerroEHR 4.0.10 (sut `ferroehr`) · schedule cnf-2.0-w2 · ITS its-rest
-Runner: veredictum 0.1.0 · verification pack: passed
+SUT: FerroEHR 4.0.15 (sut `ferroehr`) · schedule cnf-2.0-w2 · ITS its-rest
+Runner: veredictum 0.1.5 · verification pack: passed
 
 ## Summary
 
 | Status | Count |
 | --- | --- |
-| passed | 1064 |
+| passed | 1104 |
 | failed | 0 |
 | errored | 0 |
 | skipped | 0 |
-| not_applicable | 38 |
-| total | 1102 |
+| not_applicable | 41 |
+| total | 1145 |
 
 ## By chapter
 
@@ -20,23 +20,23 @@ Grouping is the published per-chapter chart's taxonomy: chapters with their band
 
 | Chapter / band | passed | failed | errored | cited n/a |
 | --- | --- | --- | --- | --- |
-| **EHR** | 474 | 0 | 0 | 18 |
+| **EHR** | 488 | 0 | 0 | 18 |
 | — EHR resource | 25 | 0 | 0 | 2 |
-| — EHR_STATUS | 47 | 0 | 0 | 5 |
-| — COMPOSITION | 142 | 0 | 0 | 0 |
-| — DIRECTORY | 80 | 0 | 0 | 6 |
-| — CONTRIBUTION | 112 | 0 | 0 | 5 |
+| — EHR_STATUS | 50 | 0 | 0 | 5 |
+| — COMPOSITION | 145 | 0 | 0 | 0 |
+| — DIRECTORY | 84 | 0 | 0 | 6 |
+| — CONTRIBUTION | 116 | 0 | 0 | 5 |
 | — Item tags | 62 | 0 | 0 | 0 |
 | — Revision history | 6 | 0 | 0 | 0 |
 | **Definitions** | 103 | 0 | 0 | 10 |
 | — ADL 1.4 templates | 39 | 0 | 0 | 5 |
 | — ADL 2 artefacts | 36 | 0 | 0 | 2 |
 | — Stored queries | 28 | 0 | 0 | 3 |
-| **Query** | 60 | 0 | 0 | 0 |
-| — Ad-hoc AQL | 49 | 0 | 0 | 0 |
+| **Query** | 75 | 0 | 0 | 2 |
+| — Ad-hoc AQL | 64 | 0 | 0 | 2 |
 | — Stored query execution | 11 | 0 | 0 | 0 |
-| **Demographic** | 110 | 0 | 0 | 4 |
-| — Parties | 85 | 0 | 0 | 3 |
+| **Demographic** | 111 | 0 | 0 | 4 |
+| — Parties | 86 | 0 | 0 | 3 |
 | — Party relationships | 19 | 0 | 0 | 0 |
 | — Versioned party | 6 | 0 | 0 | 1 |
 | **Messaging** | 50 | 0 | 0 | 0 |
@@ -48,10 +48,10 @@ Grouping is the published per-chapter chart's taxonomy: chapters with their band
 | — Dump & load | 15 | 0 | 0 | 0 |
 | **System** | 1 | 0 | 0 | 0 |
 | — Conformance manifest | 1 | 0 | 0 | 0 |
-| **Content validation** | 123 | 0 | 0 | 0 |
-| — Data types | 52 | 0 | 0 | 0 |
+| **Content validation** | 133 | 0 | 0 | 1 |
+| — Data types | 53 | 0 | 0 | 0 |
 | — Interval data types | 30 | 0 | 0 | 0 |
-| — Structure & cardinality | 41 | 0 | 0 | 0 |
+| — Structure & cardinality | 50 | 0 | 0 | 1 |
 | **Simplified formats** | 69 | 0 | 0 | 2 |
 | — FLAT & STRUCTURED | 22 | 0 | 0 | 0 |
 | — Web Template | 5 | 0 | 0 | 0 |
@@ -83,17 +83,17 @@ Selected gating cases per claimed capability. `inconclusive` counts cases whose 
 | TemplateExamples | pass | 3 | 0 | 0 | 0 |
 | QueryProvisioning | pass | 27 | 0 | 0 | 0 |
 | EhrOperations | pass | 22 | 0 | 0 | 2 |
-| EhrStatus | pass | 45 | 0 | 0 | 8 |
-| CompositionOps | pass | 60 | 0 | 0 | 3 |
-| DirectoryOps | pass | 78 | 0 | 0 | 18 |
-| ChangeSets | pass | 104 | 0 | 0 | 9 |
+| EhrStatus | pass | 48 | 0 | 0 | 5 |
+| CompositionOps | pass | 63 | 0 | 0 | 0 |
+| DirectoryOps | pass | 88 | 0 | 0 | 8 |
+| ChangeSets | pass | 108 | 0 | 0 | 5 |
 | Versioning | pass | 75 | 0 | 0 | 0 |
-| ArchetypeValidation | pass | 125 | 0 | 0 | 11 |
-| PartyOperations | pass | 88 | 0 | 0 | 5 |
+| ArchetypeValidation | pass | 135 | 0 | 0 | 1 |
+| PartyOperations | pass | 89 | 0 | 0 | 4 |
 | PartyRelationshipOperations | pass | 19 | 0 | 0 | 0 |
 | DemographicArchetypeValidation | pass | 11 | 0 | 0 | 0 |
-| AqlBasic | pass | 36 | 0 | 0 | 16 |
-| AqlAdvanced | pass | 3 | 0 | 0 | 1 |
+| AqlBasic | pass | 50 | 0 | 0 | 2 |
+| AqlAdvanced | pass | 4 | 0 | 0 | 0 |
 | AqlTerminology | pass | 6 | 0 | 0 | 0 |
 | ActivityReport | pass | 15 | 0 | 0 | 0 |
 | PhysicalDeletion | pass | 9 | 0 | 0 | 2 |
@@ -105,7 +105,7 @@ Selected gating cases per claimed capability. `inconclusive` counts cases whose 
 | Tds | pass | 16 | 0 | 0 | 0 |
 | DefinitionApi | pass | 1 | 0 | 0 | 0 |
 | EhrApi | pass | 2 | 0 | 0 | 0 |
-| DemographicApi | pass | 63 | 0 | 0 | 2 |
+| DemographicApi | pass | 64 | 0 | 0 | 1 |
 | QueryApi | pass | 22 | 0 | 0 | 0 |
 | AdminApi | pass | 8 | 0 | 0 | 0 |
 | MessageApi | pass | 4 | 0 | 0 | 0 |
@@ -175,47 +175,50 @@ Percentiles re-derive from the embedded HDR V2 histograms; the class verdict is 
 
 ## Honesty
 
-Coverage: 1064 of 1145 selected cases driven.
+Coverage: 1104 of 1145 selected cases driven.
 
 Not-executed verdicts (each cited):
 
 | Case | Citation |
 | --- | --- |
+| CONT-ITEM-unmatched_member_refused | option unmatched-member-refused: the ICS declares unmatched-member-accepted for register AMB-229's `unmatched-member` option family (statement.options), and the arms are mutually exclusive — ISO/IEC 9646 test selection |
 | I_ADMIN_SERVICE.physical_party_delete-delete_existing | I_ADMIN_SERVICE.physical_party_delete: AMB-33 |
 | I_ADMIN_SERVICE.physical_party_delete-delete_non_existing | I_ADMIN_SERVICE.physical_party_delete: AMB-33 |
 | I_DEFINITION_ADL14.delete_opt-delete_existing | I_DEFINITION_ADL14.delete_opt: AMB-17 |
 | I_DEFINITION_ADL14.delete_opt-delete_latest_version | I_DEFINITION_ADL14.delete_opt: AMB-17 |
 | I_DEFINITION_ADL14.delete_opt-delete_non_existing | I_DEFINITION_ADL14.delete_opt: AMB-17 |
 | I_DEFINITION_ADL14.delete_opt-delete_specific_version | I_DEFINITION_ADL14.delete_opt: AMB-17 |
-| I_DEFINITION_ADL14.get_opt-retrieve_latest_version | option adl14-partial-id-latest: the ICS does not declare this register branch (statement.options) — ISO/IEC 9646 test selection |
+| I_DEFINITION_ADL14.get_opt-retrieve_latest_version | option adl14-partial-id-latest: the ICS declares adl14-partial-id-exact for register AMB-104's `adl14-partial-id` option family (statement.options), and the arms are mutually exclusive — ISO/IEC 9646 test selection |
 | I_DEFINITION_ADL2.opts_count-unrealized | I_DEFINITION_ADL2.opts_count: AMB-37 |
 | I_DEFINITION_ADL2.templates_count-unrealized | I_DEFINITION_ADL2.templates_count: AMB-37 |
 | I_DEFINITION_QUERY.delete_query-delete_existing | I_DEFINITION_QUERY.delete_query: AMB-127 |
 | I_DEFINITION_QUERY.list_matching_queries-id_pattern | I_DEFINITION_QUERY.list_matching_queries: AMB-121 |
 | I_DEFINITION_QUERY.queries_count-count | I_DEFINITION_QUERY.queries_count: AMB-127 |
-| I_DEMOGRAPHIC_SERVICE.create_party-xml | option party-xml-write-refused: the ICS does not declare this register branch (statement.options) — ISO/IEC 9646 test selection |
-| I_DEMOGRAPHIC_SERVICE.get_party-xml_not_acceptable | option party-xml-unsupported: the ICS does not declare this register branch (statement.options) — ISO/IEC 9646 test selection |
-| I_DEMOGRAPHIC_SERVICE.update_party-xml | option party-xml-write-refused: the ICS does not declare this register branch (statement.options) — ISO/IEC 9646 test selection |
+| I_DEMOGRAPHIC_SERVICE.create_party-xml | option party-xml-write-refused: the ICS declares party-xml-write-accepted for register AMB-167's `party-xml-write` option family (statement.options), and the arms are mutually exclusive — ISO/IEC 9646 test selection |
+| I_DEMOGRAPHIC_SERVICE.get_party-xml_not_acceptable | option party-xml-unsupported: the ICS declares party-xml-supported for register AMB-167's `party-xml` option family (statement.options), and the arms are mutually exclusive — ISO/IEC 9646 test selection |
+| I_DEMOGRAPHIC_SERVICE.update_party-xml | option party-xml-write-refused: the ICS declares party-xml-write-accepted for register AMB-167's `party-xml-write` option family (statement.options), and the arms are mutually exclusive — ISO/IEC 9646 test selection |
 | I_EHR_CONTRIBUTION.list_contributions-ehr_containing_directory | I_EHR_CONTRIBUTION.list_contributions: AMB-22 |
 | I_EHR_CONTRIBUTION.list_contributions-ehr_containing_ehr_status | I_EHR_CONTRIBUTION.list_contributions: AMB-22 |
 | I_EHR_CONTRIBUTION.list_contributions-empty | I_EHR_CONTRIBUTION.list_contributions: AMB-22 |
 | I_EHR_CONTRIBUTION.list_contributions-non_existing_ehr | I_EHR_CONTRIBUTION.list_contributions: AMB-22 |
 | I_EHR_CONTRIBUTION.list_contributions-post_commit | I_EHR_CONTRIBUTION.list_contributions: AMB-22 |
-| I_EHR_DIRECTORY.create_directory-xml | option directory-xml-write-refused: the ICS does not declare this register branch (statement.options) — ISO/IEC 9646 test selection |
-| I_EHR_DIRECTORY.get_directory-xml_not_acceptable | option directory-xml-unsupported: the ICS does not declare this register branch (statement.options) — ISO/IEC 9646 test selection |
+| I_EHR_DIRECTORY.create_directory-xml | option directory-xml-write-refused: the ICS declares directory-xml-write-accepted for register AMB-167's `directory-xml-write` option family (statement.options), and the arms are mutually exclusive — ISO/IEC 9646 test selection |
+| I_EHR_DIRECTORY.get_directory-xml_not_acceptable | option directory-xml-unsupported: the ICS declares directory-xml-supported for register AMB-167's `directory-xml` option family (statement.options), and the arms are mutually exclusive — ISO/IEC 9646 test selection |
 | I_EHR_DIRECTORY.get_versioned_directory-bad_ehr | I_EHR_DIRECTORY.get_versioned_directory: AMB-24 |
 | I_EHR_DIRECTORY.get_versioned_directory-directory_with_two_versions | I_EHR_DIRECTORY.get_versioned_directory: AMB-24 |
 | I_EHR_DIRECTORY.get_versioned_directory-empty_ehr | I_EHR_DIRECTORY.get_versioned_directory: AMB-24 |
-| I_EHR_DIRECTORY.update_directory-xml | option directory-xml-write-refused: the ICS does not declare this register branch (statement.options) — ISO/IEC 9646 test selection |
-| I_EHR_SERVICE.create_ehr-xml | option ehr-xml-write-refused: the ICS does not declare this register branch (statement.options) — ISO/IEC 9646 test selection |
-| I_EHR_SERVICE.get_ehr-xml_not_acceptable | option ehr-xml-unsupported: the ICS does not declare this register branch (statement.options) — ISO/IEC 9646 test selection |
-| I_EHR_STATUS.clear_ehr_modifiable-xml_body | option ehr-status-xml-write-refused: the ICS does not declare this register branch (statement.options) — ISO/IEC 9646 test selection |
-| I_EHR_STATUS.clear_ehr_queryable-xml_body | option ehr-status-xml-write-refused: the ICS does not declare this register branch (statement.options) — ISO/IEC 9646 test selection |
-| I_EHR_STATUS.get_ehr_status-xml_not_acceptable | option ehr-status-xml-unsupported: the ICS does not declare this register branch (statement.options) — ISO/IEC 9646 test selection |
-| I_EHR_STATUS.set_ehr_modifiable-xml_body | option ehr-status-xml-write-refused: the ICS does not declare this register branch (statement.options) — ISO/IEC 9646 test selection |
-| I_EHR_STATUS.set_ehr_queryable-xml_body | option ehr-status-xml-write-refused: the ICS does not declare this register branch (statement.options) — ISO/IEC 9646 test selection |
-| I_ITS_REST_VERSIONED_PARTY.versioned_party_get-xml | option versioned-party-xml-supported: the ICS does not declare this register branch (statement.options) — ISO/IEC 9646 test selection |
-| SF-DEPRECATED-media_supported | option sf-deprecated-types-supported: the ICS does not declare this register branch (statement.options) — ISO/IEC 9646 test selection |
-| SF-LEGACY-nc_flat_media_supported | option legacy-alt-formats-supported: the ICS does not declare this register branch (statement.options) — ISO/IEC 9646 test selection |
+| I_EHR_DIRECTORY.update_directory-xml | option directory-xml-write-refused: the ICS declares directory-xml-write-accepted for register AMB-167's `directory-xml-write` option family (statement.options), and the arms are mutually exclusive — ISO/IEC 9646 test selection |
+| I_EHR_SERVICE.create_ehr-xml | option ehr-xml-write-refused: the ICS declares ehr-xml-write-accepted for register AMB-167's `ehr-xml-write` option family (statement.options), and the arms are mutually exclusive — ISO/IEC 9646 test selection |
+| I_EHR_SERVICE.get_ehr-xml_not_acceptable | option ehr-xml-unsupported: the ICS declares ehr-xml-supported for register AMB-167's `ehr-xml` option family (statement.options), and the arms are mutually exclusive — ISO/IEC 9646 test selection |
+| I_EHR_STATUS.clear_ehr_modifiable-xml_body | option ehr-status-xml-write-refused: the ICS declares ehr-status-xml-write-accepted for register AMB-167's `ehr-status-xml-write` option family (statement.options), and the arms are mutually exclusive — ISO/IEC 9646 test selection |
+| I_EHR_STATUS.clear_ehr_queryable-xml_body | option ehr-status-xml-write-refused: the ICS declares ehr-status-xml-write-accepted for register AMB-167's `ehr-status-xml-write` option family (statement.options), and the arms are mutually exclusive — ISO/IEC 9646 test selection |
+| I_EHR_STATUS.get_ehr_status-xml_not_acceptable | option ehr-status-xml-unsupported: the ICS declares ehr-status-xml-supported for register AMB-167's `ehr-status-xml` option family (statement.options), and the arms are mutually exclusive — ISO/IEC 9646 test selection |
+| I_EHR_STATUS.set_ehr_modifiable-xml_body | option ehr-status-xml-write-refused: the ICS declares ehr-status-xml-write-accepted for register AMB-167's `ehr-status-xml-write` option family (statement.options), and the arms are mutually exclusive — ISO/IEC 9646 test selection |
+| I_EHR_STATUS.set_ehr_queryable-xml_body | option ehr-status-xml-write-refused: the ICS declares ehr-status-xml-write-accepted for register AMB-167's `ehr-status-xml-write` option family (statement.options), and the arms are mutually exclusive — ISO/IEC 9646 test selection |
+| I_ITS_REST_VERSIONED_PARTY.versioned_party_get-xml | option versioned-party-xml-supported: the ICS declares versioned-party-xml-unsupported for register AMB-167's `versioned-party-xml` option family (statement.options), and the arms are mutually exclusive — ISO/IEC 9646 test selection |
+| I_QUERY_SERVICE.execute_ad_hoc_query-aggregates_non_numeric_executed | option aql-nonnumeric-aggregate-executed: the ICS declares aql-nonnumeric-aggregate-refused for register AMB-227's `aql-nonnumeric-aggregate` option family (statement.options), and the arms are mutually exclusive — ISO/IEC 9646 test selection |
+| I_QUERY_SERVICE.execute_ad_hoc_query-undefined_containment_empty | option undefined-containment-empty: the ICS declares undefined-containment-refused for register AMB-220's `undefined-containment` option family (statement.options), and the arms are mutually exclusive — ISO/IEC 9646 test selection |
+| SF-DEPRECATED-media_supported | option sf-deprecated-types-supported: the ICS declares sf-deprecated-types-unsupported for register AMB-39's `sf-deprecated-types` option family (statement.options), and the arms are mutually exclusive — ISO/IEC 9646 test selection |
+| SF-LEGACY-nc_flat_media_supported | option legacy-alt-formats-supported: the ICS declares legacy-alt-formats-unsupported for register AMB-61's `legacy-alt-formats` option family (statement.options), and the arms are mutually exclusive — ISO/IEC 9646 test selection |
 | SIG-VERSION-directory_signature_present | I_EHR_DIRECTORY.get_versioned_directory: AMB-24 |
 | SIG-VERSION-directory_verifiable | I_EHR_DIRECTORY.get_versioned_directory: AMB-24 |

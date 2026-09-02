@@ -45,3 +45,5 @@
 - [PGP subkey signature the runner cannot verify](pgp-subkey-signature-runner-cannot-verify.md) — RUNNER bin: rpgp 0.20 `SignedPublicKey::verify` is primary-only; the app signs with the `[S]` subkey since 7a8a8c9a3
 - [Baseline commit = where the run was RECORDED](baseline-commit-is-where-the-run-was-recorded.md) — diff the whole range since the previous results.json, never trust a handed-down "prime suspect"
 - [ehr_id scope is SM-grounded](ehr-id-scope-semantics-is-sm-grounded.md) — SM `_ehr_ids_` defines the effect (AMB-101 overstates the silence); EHRbase 2.34.0 discards both carriers
+- [`equivalent` refused on text-document grounds](equivalent-refused-on-text-document-grounds.md) — RUNNER bin: 0.1.4 keys the refusal on the served media type, not the ground; OPT-XML/ADL2-text compares are judgeable
+- [IXIT `administrative` posture](ixit-administrative-posture.md) — AMB-228: 6 role-boundary rows guard out until OUR ixit declares the split; fixed in this repo, not Veredictum
