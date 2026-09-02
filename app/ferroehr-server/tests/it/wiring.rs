@@ -143,17 +143,21 @@ fn healthcheck_url_is_optional_with_a_derived_default() -> Result<(), clap::Erro
         format!("{defaulted:?}").contains("url: None"),
         "an absent URL must stay absent at parse time: {defaulted:?}"
     );
-    let default_url = ferroehr_server::healthcheck_url(None, &[]).expect("default config loads");
+    // Built directly rather than loaded: the loader snapshots the process
+    // environment, and a test runner's own `FERROEHR_*` variables are not
+    // this test's subject.
+    let mut config = ferroehr::config::FerroEhrConfig::default();
+    let default_url = ferroehr_server::healthcheck_url(&config).expect("a port is configured");
     assert_eq!(default_url, "http://127.0.0.1:8080/ferroehr/rest/status");
-    let shortened = ferroehr_server::healthcheck_url(
-        None,
-        &[
-            ("server.base_path".to_owned(), "/ferroehr/v1".to_owned()),
-            ("server.bind".to_owned(), "0.0.0.0:9090".to_owned()),
-        ],
-    )
-    .expect("overridden config loads");
+    config.server.base_path = "/ferroehr/v1".to_owned();
+    config.server.bind = "0.0.0.0:9090".to_owned();
+    let shortened = ferroehr_server::healthcheck_url(&config).expect("a port is configured");
     assert_eq!(shortened, "http://127.0.0.1:9090/ferroehr/status");
+    config.server.bind = "no-port".to_owned();
+    assert!(
+        ferroehr_server::healthcheck_url(&config).is_err(),
+        "a bind address without a port must be refused, not probed"
+    );
     Ok(())
 }
 
