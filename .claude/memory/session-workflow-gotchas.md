@@ -239,3 +239,27 @@ commit-message wording. Late labels: since #2777 applying a label raises a fresh
 **PR labels at creation poison the required fan-in (2026-09-01):** `gh pr create --label X` fires `opened` + `labeled` events, raising two CI runs in one concurrency group; the cancelled one's `conclusion` fan-in completes as FAILURE on the same head SHA, and the ruleset's required `conclusion` context then blocks auto-merge even though the survivor run is green. Create the PR bare, apply labels in a SECOND call only if a guard needs them (that raises a labeled run with the label in payload), and clear a poisoned SHA with one empty commit.
 
 **Release tags are truly immutable — a failed cut burns the version (2026-09-01):** the `release-tags` ruleset (deletion + non-fast-forward + signatures, ZERO bypass actors) makes a pushed `v*` tag unmovable even for the owner, and a `workflow_dispatch` recovery reads the workflow file FROM THE TAG, so a tag whose release.yml is itself broken can never re-run. Recovery is a version skip: fix on main, re-cut as the next patch (rename the unpublished changelog section, full version sweep, chart version bumps again), move the open next-milestone issues up one, move the shipped issues into the skipped-to milestone, delete the burned milestone. The v4.0.14→v4.0.15 case: a reusable-workflow call-job without a `permissions:` block fails the WHOLE run at startup when the called jobs request `contents: read` (under workflow-level `permissions: {}` a call-job grants nothing) — every `uses: ./.github/workflows/*.yml` job needs an explicit permissions grant covering the called jobs' requests.
+
+9. **Never edit a bash script while it is running** (hit 2026-09-02): bash
+   reads the file incrementally, so a comment edit two lines longer than the
+   original made the running `reseed.sh` fail with `syntax error near
+   unexpected token` at a line that was fine. Copying the script does not
+   help either (`ROOT_DIR` resolves from the copy's location); freeze edits
+   until the run ends.
+
+10. **Local DB-backed tests and stacks on this Mac** (2026-09-02): testkit
+    needs `DOCKER_HOST=unix:///Users/rubentalstra/.docker/run/docker.sock`
+    (the default socket is a dead symlink); the compose postgres publishes no
+    host port, so for a locally built server use a throwaway
+    `docker run -p 5433:5432 -e POSTGRES_PASSWORD=postgres -e PG_INIT_USER=…
+    -e PG_INIT_PASSWORD=… -e PG_INIT_DB=… ghcr.io/rubentalstra/ferroehr-postgres:<tag>`
+    plus `FERROEHR__DB__URL` and `--config deploy/hosted/ferroehr.sandbox.toml`
+    (basic user ferroehr/ferroehr, admin on). A debug build of the seed takes
+    ~120 s versus 39–45 s on the release image.
+
+11. **`cargo clean` is a cold-rebuild decision, not a reflex**: check
+    `pgrep -fl 'cargo|rustc'` FIRST and skip the clean while anything (IDE
+    included) is compiling; after a clean, every gate in the session runs cold
+    and the 10-minute foreground tool limit kills it — run cold gates as
+    `nohup caffeinate -i bash -c '…' > log &` with a background `until grep`
+    waiter.
