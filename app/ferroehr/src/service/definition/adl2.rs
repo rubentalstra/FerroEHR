@@ -313,18 +313,26 @@ impl FerroEhrService {
     /// bindings are verified through the terminology-service resolver (VETDF,
     /// `master03` §Validity Rules; see [`Self::adl2_terminology_resolver`]).
     async fn adl2_validate(&self, source: &str) -> Result<ArtefactSummary, ServiceError> {
-        let archetype =
-            parse_artefact(source, Dialect::Adl2).map_err(|errs| syntax_bad_request(&errs))?;
+        let owned = source.to_owned();
+        let archetype = on_engine_stack(move || parse_artefact(&owned, Dialect::Adl2))
+            .await?
+            .map_err(|errs| syntax_bad_request(&errs))?;
         let repo = self.adl2_repository().await?;
-        let issues = if production_model_governs(&archetype) {
-            // VETDF: external term bindings are verified against the terminology
-            // service, pre-resolved here into the synchronous validator seam
-            // (`master03` §Validity Rules; see [`AdlTerminologyResolver`]).
-            let resolver = self.adl2_terminology_resolver(&archetype).await;
-            validate_source(source, Some(&repo), &ProductionRmModel, &resolver)
+        let governed = production_model_governs(&archetype);
+        // VETDF: external term bindings are verified against the terminology
+        // service, pre-resolved here into the synchronous validator seam
+        // (`master03` §Validity Rules; see [`AdlTerminologyResolver`]).
+        let resolver = if governed {
+            Some(self.adl2_terminology_resolver(&archetype).await)
         } else {
-            validate_source_integrity(source, Dialect::Adl2, Some(&repo))
-        }
+            None
+        };
+        let owned = source.to_owned();
+        let issues = on_engine_stack(move || match resolver {
+            Some(resolver) => validate_source(&owned, Some(&repo), &ProductionRmModel, &resolver),
+            None => validate_source_integrity(&owned, Dialect::Adl2, Some(&repo)),
+        })
+        .await?
         .map_err(|errs| syntax_bad_request(&errs))?;
 
         let errors: Vec<InvariantViolation> = issues
@@ -963,6 +971,40 @@ fn version_prefix_matches(full: &str, prefix: &str) -> bool {
 fn cmp_version(a: &str, b: &str) -> std::cmp::Ordering {
     let parse = |v: &str| -> Vec<u64> { v.split('.').map(|p| p.parse().unwrap_or(0)).collect() };
     parse(a).cmp(&parse(b))
+}
+
+/// The stack the AOM engine runs on.
+///
+/// Parsing, flattening and validating an archetype recurse over the artefact
+/// and over the stored repository (slot fillers, specialisation parents), and
+/// a well-stocked store crossed a tokio worker's 2 MiB stack (#3062). The
+/// reservation is virtual: pages are committed only as the stack grows.
+const ENGINE_STACK_BYTES: usize = 256 * 1024 * 1024;
+
+/// Run `f` on a dedicated thread with [`ENGINE_STACK_BYTES`] of stack and await
+/// its result without blocking the runtime.
+///
+/// # Errors
+/// [`ServiceError::Internal`] when the thread cannot be spawned or ends without
+/// delivering a result (a panic inside `f` surfaces as that, never as an abort
+/// of the process).
+async fn on_engine_stack<T, F>(f: F) -> Result<T, ServiceError>
+where
+    T: Send + 'static,
+    F: FnOnce() -> T + Send + 'static,
+{
+    let (tx, rx) = tokio::sync::oneshot::channel();
+    std::thread::Builder::new()
+        .name("adl2-engine".to_owned())
+        .stack_size(ENGINE_STACK_BYTES)
+        .spawn(move || {
+            // The receiver is gone only when the request was cancelled, in
+            // which case the result has no reader left.
+            drop(tx.send(f()));
+        })
+        .map_err(|e| ServiceError::internal("spawning the ADL2 engine thread", e))?;
+    rx.await
+        .map_err(|e| ServiceError::internal("the ADL2 engine thread ended without a result", e))
 }
 
 #[cfg(test)]

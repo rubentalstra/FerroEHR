@@ -658,3 +658,34 @@ async fn upload_empty_source_is_400() {
          content (responses/400.yaml): {body}"
     );
 }
+
+/// A specialised upload whose `specialise` clause names a parent the repository
+/// does not hold is refused as `422` carrying VASID: without the flat parent
+/// the archetype cannot validate (AOM2 master03 VASID, master08 §Phase 2; SM
+/// `upload_artefact` "The artefact must validate"), and storing it unchecked
+/// would let a child uploaded before its parent skip conformance for good.
+#[tokio::test]
+async fn upload_with_absent_parent_is_422_with_vasid() {
+    let (_db, app) = app().await;
+    let src = "archetype (adl_version=2.0.6; rm_release=1.1.0)\n    \
+         openEHR-EHR-CLUSTER.orphan-child.v1.0.0\n\n\
+         specialise\n    openEHR-EHR-CLUSTER.orphan.v1.0.0\n\n\
+         language\n    original_language = <[ISO_639-1::en]>\n\n\
+         description\n    lifecycle_state = <\"published\">\n    details = <\n        \
+         [\"en\"] = <\n            language = <[ISO_639-1::en]>\n        >\n    >\n\n\
+         definition\n    CLUSTER[id1.1] matches { *}\n\n\
+         terminology\n    term_definitions = <\n        [\"en\"] = <\n            \
+         [\"id1.1\"] = <text = <\"Child\"> description = <\"Child.\">>\n        >\n    >\n";
+    let req = Request::builder()
+        .method("POST")
+        .uri(format!("{BASE}/definition/template/adl2"))
+        .header(header::CONTENT_TYPE, "text/plain")
+        .body(Body::from(src))
+        .unwrap();
+    let (status, _h, body) = send(&app, req).await;
+    assert_eq!(status, StatusCode::UNPROCESSABLE_ENTITY, "{body}");
+    assert!(
+        body.contains("VASID") && body.contains("openEHR-EHR-CLUSTER.orphan.v1.0.0"),
+        "the 422 names VASID and the missing parent: {body}"
+    );
+}

@@ -403,6 +403,8 @@ fn run_parent_conformance(
                 ));
             }
         }
+        // NOTE: a stated parent absent from the repository is VASID, raised by
+        // the identification pass (`specialisation::check_specialisation_depth`).
         FlatParent::NotSpecialised | FlatParent::NotFound => {}
     }
 }

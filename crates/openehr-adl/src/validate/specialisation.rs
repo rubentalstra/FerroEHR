@@ -925,8 +925,28 @@ pub(super) fn check_specialisation_depth(
         ));
     }
 
-    let Some(parent) = repo.and_then(|r| r.get(parent_id)) else {
-        return; // parent unresolved (missing parent is a separate concern)
+    let Some(repo) = repo else {
+        return; // standalone validation: the parent-dependent half needs a repository
+    };
+    let Some(parent) = repo.get(parent_id) else {
+        // An operational template is already the flat form (master08 §Phase 3):
+        // its `specialise` clause records lineage, and no phase-2 conformance
+        // against a parent applies to it.
+        if v.kind == crate::source::ArtefactKind::OperationalTemplate {
+            return;
+        }
+        // The stated id resolves to nothing, so it is not "the identifier of the
+        // immediate specialisation parent archetype" (master03 VASID), and
+        // phase 2 (master08 §Validation of Specialised Archetype Against Flat
+        // Parent) cannot run: the archetype has not validated.
+        out.push(ValidationIssue::new(
+            ValidationCode::Vasid,
+            format!(
+                "stated parent archetype {parent_id:?} is not in the repository, so the \
+                 specialised archetype cannot be validated against its flat parent"
+            ),
+        ));
+        return;
     };
     let parent_view = view(parent);
     let parent_level = parent_view.specialisation_level();

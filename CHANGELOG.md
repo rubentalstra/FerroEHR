@@ -44,7 +44,7 @@ workflow refuses a tag that has no matching section here.
   shortened. The URL it probes under the defaults is unchanged.
 - The hosted sandbox (sandbox.ferroehr.eu) now holds a complete demo dataset
   instead of four templates in three EHRs. Each nightly reset loads 16 ADL 1.4
-  operational templates from the openEHR CKM pack, 228 ADL 2 archetypes and 5
+  operational templates from the openEHR CKM pack, 235 ADL 2 archetypes and 5
   ADL 2 templates (two of them source templates the server flattens against
   that archetype library), 8 EHRs carrying 182 compositions with mixed
   records, 6 compositions with more than one version and 2 EHRs with a second
@@ -53,12 +53,29 @@ workflow refuses a tag that has no matching section here.
   stored AQL queries under `eu.ferroehr.sandbox` that all return rows. The
   seeder (`scripts/sandbox/reseed.sh`) still drives only the public REST API
   and is now a walker over `scripts/sandbox/seed/manifest.json`, so adding
-  demo content is editing data. A run takes 39–45 s against a local stack and
+  demo content is editing data. The ADL 2 corpus is uploaded parents before
+  children, and the split it pins (233 stored, 89 refused by AOM2 validation)
+  is the one the corpus gate in `openehr-adl` adjudicates file by file. A run takes 39–45 s against a local stack and
   leaves a 24 MB database; a repeat run detects the marker EHR it wrote and
   exits without changing anything.
 
 ### Fixed
 
+- An ADL 2 upload can no longer take the server down. The AOM engine's
+  validation now runs on a dedicated thread with a stack sized for its
+  recursive walks over the stored repository, and every runtime thread starts
+  with a larger stack; previously a deep enough artefact overflowed a worker's
+  2 MiB stack and the process aborted with every in-flight request.
+- ADL 2 validation no longer reports VCATU (duplicate sibling attribute) for a
+  specialised archetype whose root-level differential paths end in the same
+  attribute name (`/items` beside `/items[id9]/items`): the two address
+  different nodes of the flat parent. Twenty-nine archetypes of the vendored
+  2013 CKM export were refused on that false positive.
+- An ADL 2 upload whose `specialise` clause names a parent that is not in the
+  repository is refused with `422` carrying VASID and the missing parent's id,
+  on both validation paths. Previously the parent-conformance checks were
+  skipped and the archetype was stored as valid, so a child uploaded before its
+  parent was never checked against it.
 - An AQL `SELECT` that mixes an aggregate function with a non-aggregated
   column (`SELECT e/ehr_id/value, COUNT(c/uid/value) …`) is refused with a
   typed `400` naming the rule. AQL 1.1 defines the aggregate functions over

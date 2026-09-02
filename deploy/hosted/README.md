@@ -117,7 +117,7 @@ One run loads, in about 590 requests:
 | What | How much |
 |---|---|
 | ADL 1.4 operational templates | 16 (the curated CKM pack, `corpus/templates/ckm/`) |
-| ADL 2 archetypes | 228 — 225 from the vendored 2013 CKM corpus plus 3 of our own |
+| ADL 2 archetypes | 235 — 232 from the vendored 2013 CKM corpus plus 3 of our own |
 | ADL 2 templates | 5 (4 of our own plus one carried by the corpus); two of ours are SOURCE templates the CDR flattens against that archetype library |
 | EHRs | 8, each with a distinct subject and a mixed record |
 | Compositions | 182 (166 ADL 1.4, 16 from CDR-generated ADL 2 examples) |
@@ -126,11 +126,16 @@ One run loads, in about 590 requests:
 | Directories | one FOLDER tree per EHR, its items real composition references |
 | Stored AQL queries | 5, under the `eu.ferroehr.sandbox` namespace |
 
-The ADL 2 archetype step offers the whole 322-file corpus and pins both
-outcomes in the manifest: 226 artefacts stored, 96 refused with a `422` because
-the 2013 conversions carry reference-model attributes the pinned RM no longer
-declares (`DV_QUANTITY.property` and its neighbours). A change in either count
-fails the run instead of passing quietly. Two of the eight EHRs end the run with
+The ADL 2 archetype step offers the whole 322-file corpus, parents before
+children, and pins both outcomes in the manifest: 233 artefacts stored, 89
+refused with a `422`. The refusals are AOM2 validity findings on the 2013
+conversions: constraints on attributes the RM does not declare
+(`DV_QUANTITY.property`, and the RM functions `is_integral` and `offset` the
+machine-readable RM omits), languages, slots and node ids that do not conform
+to the flat parent, and eight children of refused parents that therefore have
+no flat parent to validate against. Every refused file is adjudicated by name
+in the corpus gate (`crates/openehr-adl/tests/it/ckm_archetype_packs.rs`), and
+a change in either count fails the run instead of passing quietly. Two of the eight EHRs end the run with
 a second `EHR_STATUS` version: one not queryable, one not modifiable, so both
 flags are visible on live data.
 

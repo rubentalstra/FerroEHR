@@ -154,11 +154,27 @@ echo "==> $adl14_count ADL 1.4 operational templates"
 
 # ── 3. the ADL 2 archetype library ───────────────────────────────────────────
 #
-# The whole vendored corpus is offered and both outcomes are pinned in the
-# manifest: an artefact the CDR stores, and one its AOM2 validation refuses
-# because the 2013 CKM conversion carries reference-model attributes the pinned
-# RM no longer declares (DV_QUANTITY.property and its neighbours). A change in
-# either count fails the run rather than passing quietly.
+# The whole vendored corpus is offered, parents before children, and both
+# outcomes are pinned in the manifest: an artefact the CDR stores, and one its
+# AOM2 validation refuses (the 2013 conversions constrain attributes the RM
+# does not declare, restate or renumber parent slots, or specialise a refused
+# parent). The per-file adjudication is the corpus gate in
+# crates/openehr-adl/tests/it/ckm_archetype_packs.rs; a change in either count
+# fails the run rather than passing quietly.
+
+# Parents before children: a specialised archetype validates against its flat
+# parent, and the CDR refuses one whose parent is not stored yet (VASID). The
+# specialisation depth is the number of `-` in the id's concept segment
+# (`CLUSTER.exam-abdomen` specialises `CLUSTER.exam`), so the list is ordered
+# by that depth first and by name second; plain `LC_ALL=C sort` put `exam-…`
+# before `exam.` because `-` sorts before `.`.
+adls_parents_first() {
+  find "$1" -name '*.adls' | while read -r f; do
+    concept="$(basename "$f" | cut -d. -f2)"
+    depth="${concept//[^-]/}"
+    printf '%d\t%s\n' "${#depth}" "$f"
+  done | LC_ALL=C sort -k1,1n -k2,2 | cut -f2-
+}
 
 lib_root="$ROOT_DIR/$(mf '.adl2.archetype_library.root')"
 want_accepted="$(mf '.adl2.archetype_library.accepted')"
@@ -173,7 +189,7 @@ while read -r adls; do
     422) refused=$((refused + 1)) ;;
     *) expect "archetype $(basename "$adls")" "$code" 201 409 422 ;;
   esac
-done < <(find "$lib_root" -name '*.adls' | LC_ALL=C sort)
+done < <(adls_parents_first "$lib_root")
 
 if [[ "$accepted" != "$want_accepted" ]] || [[ "$refused" != "$want_refused" ]]; then
   echo "::error::the ADL 2 archetype library loaded $accepted accepted / $refused refused; the manifest pins $want_accepted / $want_refused. Re-check the corpus and the manifest together." >&2

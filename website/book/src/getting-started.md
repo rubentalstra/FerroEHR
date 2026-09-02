@@ -79,7 +79,7 @@ with something to look at:
   International Patient Summary, and several statutory case-report forms. Six
   compositions have more than one version, so `LATEST_VERSION` and
   `ALL_VERSIONS` differ on real data.
-- **228 ADL 2 archetypes and 5 ADL 2 templates**, browsable under
+- **235 ADL 2 archetypes and 5 ADL 2 templates**, browsable under
   `definition/archetype/adl2` and `definition/template/adl2`. Two of the
   templates are ADL 2 source templates whose slots the server flattens against
   that archetype library, and the compositions committed from them came out of

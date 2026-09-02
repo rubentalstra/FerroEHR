@@ -173,7 +173,8 @@ pub enum ValidationCode {
     /// VARD — description specified (`master03` §Validity Rules).
     Vard,
     /// VASID — specialisation parent identifier validity (`master03` §Validity
-    /// Rules; fires only when the parent is supplied).
+    /// Rules; needs a repository: a stated parent that is absent from it, or
+    /// that is not the immediate parent, both fail).
     Vasid,
     /// VALC — archetype language conformance (`master03` §Validity Rules; fires
     /// only when the parent is supplied).

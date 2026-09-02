@@ -37,9 +37,14 @@
 
 use std::path::{Path, PathBuf};
 
+use openehr_adl::artefact::ArchetypeRepository;
 use openehr_adl::assemble::parse_artefact;
 use openehr_adl::error::SyntaxErrorCode;
 use openehr_adl::parse::Dialect;
+use openehr_adl::validate::bindings::NoTerminologyResolver;
+use openehr_adl::validate::catalogue::{Severity, ValidationCode};
+use openehr_adl::validate::rm::{ProductionRmModel, production_model_governs};
+use openehr_adl::validate::{validate_source, validate_source_integrity};
 
 /// Archetypes the conformant reader MUST refuse, with the syntax code the
 /// refusal must carry and the adjudication behind it.
@@ -312,15 +317,13 @@ fn ckm_adl14_pack_is_resource_meta_clean() {
     let mut offenders = Vec::new();
     for path in &files {
         let src = std::fs::read_to_string(path).expect("archetype is readable");
-        let Ok(issues) = openehr_adl::validate::validate_adl14_source(
-            &src,
-            &openehr_adl::validate::rm::ProductionRmModel,
-        ) else {
+        let Ok(issues) = openehr_adl::validate::validate_adl14_source(&src, &ProductionRmModel)
+        else {
             continue; // adjudicated parse refusals are ckm_adl14_pack_parses' claim
         };
         for issue in issues
             .iter()
-            .filter(|i| i.severity == openehr_adl::validate::catalogue::Severity::Error)
+            .filter(|i| i.severity == Severity::Error)
             .filter(|i| resource_codes.contains(&i.code.mnemonic()))
         {
             offenders.push(format!(
@@ -335,5 +338,605 @@ fn ckm_adl14_pack_is_resource_meta_clean() {
         offenders.is_empty(),
         "CKM archetypes refused by the resource-meta pass (adjudicate, never silence):\n{}",
         offenders.join("\n")
+    );
+}
+
+/// A vendored ADL 2 archetype the AOM2 validator MUST refuse, with the
+/// validity code the refusal must carry and the adjudication behind it.
+///
+/// The validation-level twin of [`Refusal`]: these files parse, and the CDR's
+/// own upload path (`POST /definition/template/adl2`) refuses them with `422`
+/// on exactly these codes, so the sandbox seed's pinned accepted/refused split
+/// has this table as its authority.
+type ValidityRefusal = (&'static str, ValidationCode, &'static str);
+
+/// The adjudicated validity refusals over the 2013 CKM ADL 2 export.
+const ADJUDICATED_ADL2_VALIDITY: &[ValidityRefusal] = &[
+    (
+        "openEHR-DEMOGRAPHIC-PARTY_IDENTITY.person_name-individual_provider.v1.0.0.adls",
+        ValidationCode::Vacdf,
+        "constraint codes used in the definition are undefined in the terminology (master03 VACDF)",
+    ),
+    (
+        "openEHR-DEMOGRAPHIC-PERSON.person-patient.v1.0.0.adls",
+        ValidationCode::Vacdf,
+        "constraint codes used in the definition are undefined in the terminology (master03 VACDF)",
+    ),
+    (
+        "openEHR-EHR-CLUSTER.ambient_oxygen.v1.0.0.adls",
+        ValidationCode::Vcarm,
+        "constrains `property` on DV_QUANTITY (undefined in RM 1.2.0) and the RM function(s) `is_integral`, which VCARM admits but the vendored BMM does not declare (#3061)",
+    ),
+    (
+        "openEHR-EHR-CLUSTER.anatomical_location-precise.v1.0.0.adls",
+        ValidationCode::Vasid,
+        "its parent openEHR-EHR-CLUSTER.anatomical_location.v1.0.0 is refused above, so no flat parent exists to validate against (master03 VASID)",
+    ),
+    (
+        "openEHR-EHR-CLUSTER.anatomical_location.v1.0.0.adls",
+        ValidationCode::Vcarm,
+        "constrains `property` on DV_QUANTITY, which RM 1.2.0 does not define (the 2013 converter carried ADL 1.4 C_DV_QUANTITY.property into an attribute position)",
+    ),
+    (
+        "openEHR-EHR-CLUSTER.auscultation-chest.v1.0.0.adls",
+        ValidationCode::Vpov,
+        "a redefined value-set member is not in the parent value set (master03 VPOV)",
+    ),
+    (
+        "openEHR-EHR-CLUSTER.dimensions.v1.0.0.adls",
+        ValidationCode::Vcarm,
+        "constrains `property` on DV_QUANTITY, which RM 1.2.0 does not define (the 2013 converter carried ADL 1.4 C_DV_QUANTITY.property into an attribute position)",
+    ),
+    (
+        "openEHR-EHR-CLUSTER.environmental_conditions.v1.0.0.adls",
+        ValidationCode::Vcarm,
+        "constrains `property` on DV_QUANTITY, which RM 1.2.0 does not define (the 2013 converter carried ADL 1.4 C_DV_QUANTITY.property into an attribute position)",
+    ),
+    (
+        "openEHR-EHR-CLUSTER.exam-abdomen.v1.0.0.adls",
+        ValidationCode::Vdssm,
+        "a specialised slot restates the parent slot constraints instead of narrowing them (master03 VDSSM)",
+    ),
+    (
+        "openEHR-EHR-CLUSTER.exam-uterine_cervix.v1.0.0.adls",
+        ValidationCode::Valc,
+        "declares language(s) es-cl absent from the flat parent (master03 VALC)",
+    ),
+    (
+        "openEHR-EHR-CLUSTER.exam_pupils.v1.0.0.adls",
+        ValidationCode::Vcarm,
+        "constrains `property` on DV_QUANTITY, which RM 1.2.0 does not define (the 2013 converter carried ADL 1.4 C_DV_QUANTITY.property into an attribute position)",
+    ),
+    (
+        "openEHR-EHR-CLUSTER.fluid.v1.0.0.adls",
+        ValidationCode::Vcarm,
+        "constrains `property` on DV_QUANTITY, which RM 1.2.0 does not define (the 2013 converter carried ADL 1.4 C_DV_QUANTITY.property into an attribute position)",
+    ),
+    (
+        "openEHR-EHR-CLUSTER.health_event-poisoning.v1.0.0.adls",
+        ValidationCode::Valc,
+        "declares language(s) ar-sy, es-ar absent from the flat parent (master03 VALC)",
+    ),
+    (
+        "openEHR-EHR-CLUSTER.inspection-skin-wound.v1.0.0.adls",
+        ValidationCode::Vcosu,
+        "an object node id recurs in the flat form (master04.5 VCOSU)",
+    ),
+    (
+        "openEHR-EHR-CLUSTER.level_of_exertion.v1.0.0.adls",
+        ValidationCode::Vcarm,
+        "constrains `property` on DV_QUANTITY, which RM 1.2.0 does not define (the 2013 converter carried ADL 1.4 C_DV_QUANTITY.property into an attribute position)",
+    ),
+    (
+        "openEHR-EHR-CLUSTER.lymph_node_metastases.v1.0.0.adls",
+        ValidationCode::Vcarm,
+        "constrains `property` on DV_QUANTITY, which RM 1.2.0 does not define (the 2013 converter carried ADL 1.4 C_DV_QUANTITY.property into an attribute position)",
+    ),
+    (
+        "openEHR-EHR-CLUSTER.macroscopy_colorectal_carcinoma.v1.0.0.adls",
+        ValidationCode::Vcarm,
+        "constrains `property` on DV_QUANTITY, which RM 1.2.0 does not define (the 2013 converter carried ADL 1.4 C_DV_QUANTITY.property into an attribute position)",
+    ),
+    (
+        "openEHR-EHR-CLUSTER.medication_amount.v1.0.0.adls",
+        ValidationCode::Vcarm,
+        "constrains `property` on DV_QUANTITY, which RM 1.2.0 does not define (the 2013 converter carried ADL 1.4 C_DV_QUANTITY.property into an attribute position)",
+    ),
+    (
+        "openEHR-EHR-CLUSTER.menstrual_cycle.v1.0.0.adls",
+        ValidationCode::Vcarm,
+        "constrains `property` on DV_QUANTITY, which RM 1.2.0 does not define (the 2013 converter carried ADL 1.4 C_DV_QUANTITY.property into an attribute position)",
+    ),
+    (
+        "openEHR-EHR-CLUSTER.microscopy_colorectal_carcinoma.v1.0.0.adls",
+        ValidationCode::Vcarm,
+        "constrains `property` on DV_QUANTITY, which RM 1.2.0 does not define (the 2013 converter carried ADL 1.4 C_DV_QUANTITY.property into an attribute position)",
+    ),
+    (
+        "openEHR-EHR-CLUSTER.microscopy_melanoma.v1.0.0.adls",
+        ValidationCode::Vcarm,
+        "constrains `property` on DV_QUANTITY (undefined in RM 1.2.0) and the RM function(s) `is_integral`, which VCARM admits but the vendored BMM does not declare (#3061)",
+    ),
+    (
+        "openEHR-EHR-CLUSTER.microscopy_prostate_carcinoma.v1.0.0.adls",
+        ValidationCode::Vcarm,
+        "constrains the RM function(s) `is_integral`; VCARM admits computed attributes, but the vendored BMM declares no functions (#3061)",
+    ),
+    (
+        "openEHR-EHR-CLUSTER.move-joint.v1.0.0.adls",
+        ValidationCode::Vasid,
+        "its parent openEHR-EHR-CLUSTER.move.v1.0.0 is refused above, so no flat parent exists to validate against (master03 VASID)",
+    ),
+    (
+        "openEHR-EHR-CLUSTER.move-spine.v1.0.0.adls",
+        ValidationCode::Vasid,
+        "its parent openEHR-EHR-CLUSTER.move.v1.0.0 is refused above, so no flat parent exists to validate against (master03 VASID)",
+    ),
+    (
+        "openEHR-EHR-CLUSTER.move.v1.0.0.adls",
+        ValidationCode::Vcarm,
+        "constrains `property` on DV_QUANTITY, which RM 1.2.0 does not define (the 2013 converter carried ADL 1.4 C_DV_QUANTITY.property into an attribute position)",
+    ),
+    (
+        "openEHR-EHR-CLUSTER.physical_properties.v1.0.0.adls",
+        ValidationCode::Vcarm,
+        "constrains `property` on DV_QUANTITY, which RM 1.2.0 does not define (the 2013 converter carried ADL 1.4 C_DV_QUANTITY.property into an attribute position)",
+    ),
+    (
+        "openEHR-EHR-CLUSTER.refraction_details.v1.0.0.adls",
+        ValidationCode::Vcarm,
+        "constrains `property` on DV_QUANTITY, which RM 1.2.0 does not define (the 2013 converter carried ADL 1.4 C_DV_QUANTITY.property into an attribute position)",
+    ),
+    (
+        "openEHR-EHR-CLUSTER.specimen.v1.0.0.adls",
+        ValidationCode::Vcarm,
+        "constrains `property` on DV_QUANTITY, which RM 1.2.0 does not define (the 2013 converter carried ADL 1.4 C_DV_QUANTITY.property into an attribute position)",
+    ),
+    (
+        "openEHR-EHR-CLUSTER.specimen_preparation.v1.0.0.adls",
+        ValidationCode::Vcaca,
+        "cardinality {0..1} narrows below the RM cardinality {1..*} of CLUSTER.items (master04.5 VCACA)",
+    ),
+    (
+        "openEHR-EHR-CLUSTER.symptom-pain.v1.0.0.adls",
+        ValidationCode::Valc,
+        "declares language(s) es absent from the flat parent (master03 VALC)",
+    ),
+    (
+        "openEHR-EHR-CLUSTER.timing.v1.0.0.adls",
+        ValidationCode::Vcarm,
+        "constrains `property` on DV_QUANTITY, which RM 1.2.0 does not define (the 2013 converter carried ADL 1.4 C_DV_QUANTITY.property into an attribute position)",
+    ),
+    (
+        "openEHR-EHR-CLUSTER.tumour_resection_margins.v1.0.0.adls",
+        ValidationCode::Vcarm,
+        "constrains `property` on DV_QUANTITY, which RM 1.2.0 does not define (the 2013 converter carried ADL 1.4 C_DV_QUANTITY.property into an attribute position)",
+    ),
+    (
+        "openEHR-EHR-CLUSTER.waveform.v1.0.0.adls",
+        ValidationCode::Vcarm,
+        "constrains `property` on DV_QUANTITY, which RM 1.2.0 does not define (the 2013 converter carried ADL 1.4 C_DV_QUANTITY.property into an attribute position)",
+    ),
+    (
+        "openEHR-EHR-EVALUATION.goal.v1.0.0.adls",
+        ValidationCode::Vcarm,
+        "constrains `property` on DV_QUANTITY, which RM 1.2.0 does not define (the 2013 converter carried ADL 1.4 C_DV_QUANTITY.property into an attribute position)",
+    ),
+    (
+        "openEHR-EHR-EVALUATION.pregnancy.v1.0.0.adls",
+        ValidationCode::Vcarm,
+        "constrains `property` on DV_QUANTITY, which RM 1.2.0 does not define (the 2013 converter carried ADL 1.4 C_DV_QUANTITY.property into an attribute position)",
+    ),
+    (
+        "openEHR-EHR-EVALUATION.problem_diagnosis.v1.0.0.adls",
+        ValidationCode::Vcarm,
+        "constrains `property` on DV_QUANTITY, which RM 1.2.0 does not define (the 2013 converter carried ADL 1.4 C_DV_QUANTITY.property into an attribute position)",
+    ),
+    (
+        "openEHR-EHR-INSTRUCTION.request-procedure.v1.0.0.adls",
+        ValidationCode::Vdifp,
+        "a differential path names an attribute the flat parent does not have (master08 VDIFP)",
+    ),
+    (
+        "openEHR-EHR-INSTRUCTION.transfusion.v1.0.0.adls",
+        ValidationCode::Vcarm,
+        "constrains `property` on DV_QUANTITY, which RM 1.2.0 does not define (the 2013 converter carried ADL 1.4 C_DV_QUANTITY.property into an attribute position)",
+    ),
+    (
+        "openEHR-EHR-ITEM_TREE.gas_administration.v1.0.0.adls",
+        ValidationCode::Vcarm,
+        "constrains `property` on DV_QUANTITY, which RM 1.2.0 does not define (the 2013 converter carried ADL 1.4 C_DV_QUANTITY.property into an attribute position)",
+    ),
+    (
+        "openEHR-EHR-ITEM_TREE.intravenous_fluids.v1.0.0.adls",
+        ValidationCode::Vcarm,
+        "constrains `property` on DV_QUANTITY, which RM 1.2.0 does not define (the 2013 converter carried ADL 1.4 C_DV_QUANTITY.property into an attribute position)",
+    ),
+    (
+        "openEHR-EHR-OBSERVATION.apgar.v1.0.0.adls",
+        ValidationCode::Vttbk,
+        "term binding keys name paths that do not exist in the archetype (master03 VTTBK)",
+    ),
+    (
+        "openEHR-EHR-OBSERVATION.blood_pressure.v1.0.0.adls",
+        ValidationCode::Vcarm,
+        "constrains `property` on DV_QUANTITY, which RM 1.2.0 does not define (the 2013 converter carried ADL 1.4 C_DV_QUANTITY.property into an attribute position)",
+    ),
+    (
+        "openEHR-EHR-OBSERVATION.bodily_output-defaecation.v1.0.0.adls",
+        ValidationCode::Vdssid,
+        "a specialised slot is renumbered instead of keeping the parent slot id (master03 VDSSID)",
+    ),
+    (
+        "openEHR-EHR-OBSERVATION.bodily_output-urination.v1.0.0.adls",
+        ValidationCode::Vdssid,
+        "a specialised slot is renumbered instead of keeping the parent slot id (master03 VDSSID)",
+    ),
+    (
+        "openEHR-EHR-OBSERVATION.body_mass_index.v1.0.0.adls",
+        ValidationCode::Vcarm,
+        "constrains `property` on DV_QUANTITY, which RM 1.2.0 does not define (the 2013 converter carried ADL 1.4 C_DV_QUANTITY.property into an attribute position)",
+    ),
+    (
+        "openEHR-EHR-OBSERVATION.body_surface_area.v1.0.0.adls",
+        ValidationCode::Vcarm,
+        "constrains `property` on DV_QUANTITY, which RM 1.2.0 does not define (the 2013 converter carried ADL 1.4 C_DV_QUANTITY.property into an attribute position)",
+    ),
+    (
+        "openEHR-EHR-OBSERVATION.body_temperature.v1.0.0.adls",
+        ValidationCode::Vcarm,
+        "constrains `property` on DV_QUANTITY, which RM 1.2.0 does not define (the 2013 converter carried ADL 1.4 C_DV_QUANTITY.property into an attribute position)",
+    ),
+    (
+        "openEHR-EHR-OBSERVATION.body_weight-adjusted.v1.0.0.adls",
+        ValidationCode::Vasid,
+        "its parent openEHR-EHR-OBSERVATION.body_weight.v1.0.0 is refused above, so no flat parent exists to validate against (master03 VASID)",
+    ),
+    (
+        "openEHR-EHR-OBSERVATION.body_weight-birth.v1.0.0.adls",
+        ValidationCode::Vasid,
+        "its parent openEHR-EHR-OBSERVATION.body_weight.v1.0.0 is refused above, so no flat parent exists to validate against (master03 VASID)",
+    ),
+    (
+        "openEHR-EHR-OBSERVATION.body_weight.v1.0.0.adls",
+        ValidationCode::Vcarm,
+        "constrains `property` on DV_QUANTITY, which RM 1.2.0 does not define (the 2013 converter carried ADL 1.4 C_DV_QUANTITY.property into an attribute position)",
+    ),
+    (
+        "openEHR-EHR-OBSERVATION.chest_expansion.v1.0.0.adls",
+        ValidationCode::Vcarm,
+        "constrains `property` on DV_QUANTITY, which RM 1.2.0 does not define (the 2013 converter carried ADL 1.4 C_DV_QUANTITY.property into an attribute position)",
+    ),
+    (
+        "openEHR-EHR-OBSERVATION.demo.v1.0.0.adls",
+        ValidationCode::Vcarm,
+        "constrains `property` on DV_QUANTITY (undefined in RM 1.2.0) and the RM function(s) `is_integral`, `offset`, which VCARM admits but the vendored BMM does not declare (#3061)",
+    ),
+    (
+        "openEHR-EHR-OBSERVATION.distraction_hearing_test.v1.0.0.adls",
+        ValidationCode::Vcarm,
+        "constrains `property` on DV_QUANTITY, which RM 1.2.0 does not define (the 2013 converter carried ADL 1.4 C_DV_QUANTITY.property into an attribute position)",
+    ),
+    (
+        "openEHR-EHR-OBSERVATION.ecg.v1.0.0.adls",
+        ValidationCode::Vcarm,
+        "constrains `property` on DV_QUANTITY, which RM 1.2.0 does not define (the 2013 converter carried ADL 1.4 C_DV_QUANTITY.property into an attribute position)",
+    ),
+    (
+        "openEHR-EHR-OBSERVATION.electroacoustic_hearing_test.v1.0.0.adls",
+        ValidationCode::Vcarm,
+        "constrains `property` on DV_QUANTITY, which RM 1.2.0 does not define (the 2013 converter carried ADL 1.4 C_DV_QUANTITY.property into an attribute position)",
+    ),
+    (
+        "openEHR-EHR-OBSERVATION.faeces.v1.0.0.adls",
+        ValidationCode::Vcarm,
+        "constrains `property` on DV_QUANTITY, which RM 1.2.0 does not define (the 2013 converter carried ADL 1.4 C_DV_QUANTITY.property into an attribute position)",
+    ),
+    (
+        "openEHR-EHR-OBSERVATION.fetal_heart-monitoring.v1.0.0.adls",
+        ValidationCode::Vasid,
+        "its parent openEHR-EHR-OBSERVATION.fetal_heart.v1.0.0 is refused above, so no flat parent exists to validate against (master03 VASID)",
+    ),
+    (
+        "openEHR-EHR-OBSERVATION.fetal_heart.v1.0.0.adls",
+        ValidationCode::Vcarm,
+        "constrains `property` on DV_QUANTITY, which RM 1.2.0 does not define (the 2013 converter carried ADL 1.4 C_DV_QUANTITY.property into an attribute position)",
+    ),
+    (
+        "openEHR-EHR-OBSERVATION.hearing_screening.v1.0.0.adls",
+        ValidationCode::Vcarm,
+        "constrains `property` on DV_QUANTITY, which RM 1.2.0 does not define (the 2013 converter carried ADL 1.4 C_DV_QUANTITY.property into an attribute position)",
+    ),
+    (
+        "openEHR-EHR-OBSERVATION.height.v1.0.0.adls",
+        ValidationCode::Vcarm,
+        "constrains `property` on DV_QUANTITY, which RM 1.2.0 does not define (the 2013 converter carried ADL 1.4 C_DV_QUANTITY.property into an attribute position)",
+    ),
+    (
+        "openEHR-EHR-OBSERVATION.indirect_oximetry.v1.0.0.adls",
+        ValidationCode::Vcarm,
+        "constrains `property` on DV_QUANTITY (undefined in RM 1.2.0) and the RM function(s) `is_integral`, which VCARM admits but the vendored BMM does not declare (#3061)",
+    ),
+    (
+        "openEHR-EHR-OBSERVATION.infant_feeding.v1.0.0.adls",
+        ValidationCode::Vcarm,
+        "constrains `property` on DV_QUANTITY, which RM 1.2.0 does not define (the 2013 converter carried ADL 1.4 C_DV_QUANTITY.property into an attribute position)",
+    ),
+    (
+        "openEHR-EHR-OBSERVATION.intraocular_pressure.v1.0.0.adls",
+        ValidationCode::Vcarm,
+        "constrains `property` on DV_QUANTITY, which RM 1.2.0 does not define (the 2013 converter carried ADL 1.4 C_DV_QUANTITY.property into an attribute position)",
+    ),
+    (
+        "openEHR-EHR-OBSERVATION.intravascular_pressure-cvp.v1.0.0.adls",
+        ValidationCode::Vasid,
+        "its parent openEHR-EHR-OBSERVATION.intravascular_pressure.v1.0.0 is refused above, so no flat parent exists to validate against (master03 VASID)",
+    ),
+    (
+        "openEHR-EHR-OBSERVATION.intravascular_pressure-jvp.v1.0.0.adls",
+        ValidationCode::Vasid,
+        "its parent openEHR-EHR-OBSERVATION.intravascular_pressure.v1.0.0 is refused above, so no flat parent exists to validate against (master03 VASID)",
+    ),
+    (
+        "openEHR-EHR-OBSERVATION.intravascular_pressure.v1.0.0.adls",
+        ValidationCode::Vcarm,
+        "constrains `property` on DV_QUANTITY, which RM 1.2.0 does not define (the 2013 converter carried ADL 1.4 C_DV_QUANTITY.property into an attribute position)",
+    ),
+    (
+        "openEHR-EHR-OBSERVATION.lab_test-blood_gases.v1.0.0.adls",
+        ValidationCode::Valc,
+        "declares language(s) es-ar absent from the flat parent (master03 VALC)",
+    ),
+    (
+        "openEHR-EHR-OBSERVATION.lab_test-full_blood_count.v1.0.0.adls",
+        ValidationCode::Vsonin,
+        "new object node ids are not valid new ids at this specialisation level (master03 VSONIN)",
+    ),
+    (
+        "openEHR-EHR-OBSERVATION.mantoux.v1.0.0.adls",
+        ValidationCode::Vcarm,
+        "constrains `property` on DV_QUANTITY, which RM 1.2.0 does not define (the 2013 converter carried ADL 1.4 C_DV_QUANTITY.property into an attribute position)",
+    ),
+    (
+        "openEHR-EHR-OBSERVATION.menstruation.v1.0.0.adls",
+        ValidationCode::Vcarm,
+        "constrains `property` on DV_QUANTITY, which RM 1.2.0 does not define (the 2013 converter carried ADL 1.4 C_DV_QUANTITY.property into an attribute position)",
+    ),
+    (
+        "openEHR-EHR-OBSERVATION.msfc_score.v1.0.0.adls",
+        ValidationCode::Vcarm,
+        "constrains `property` on DV_QUANTITY, which RM 1.2.0 does not define (the 2013 converter carried ADL 1.4 C_DV_QUANTITY.property into an attribute position)",
+    ),
+    (
+        "openEHR-EHR-OBSERVATION.oral_fluid_intake.v1.0.0.adls",
+        ValidationCode::Vcarm,
+        "constrains `property` on DV_QUANTITY, which RM 1.2.0 does not define (the 2013 converter carried ADL 1.4 C_DV_QUANTITY.property into an attribute position)",
+    ),
+    (
+        "openEHR-EHR-OBSERVATION.pathology_test-blood_glucose.v1.0.0.adls",
+        ValidationCode::Vdifp,
+        "a differential path names an attribute the flat parent does not have (master08 VDIFP)",
+    ),
+    (
+        "openEHR-EHR-OBSERVATION.pathology_test-lipids.v1.0.0.adls",
+        ValidationCode::Vdifp,
+        "a differential path names an attribute the flat parent does not have (master08 VDIFP)",
+    ),
+    (
+        "openEHR-EHR-OBSERVATION.pulmonary_function.v1.0.0.adls",
+        ValidationCode::Vcarm,
+        "constrains `property` on DV_QUANTITY, which RM 1.2.0 does not define (the 2013 converter carried ADL 1.4 C_DV_QUANTITY.property into an attribute position)",
+    ),
+    (
+        "openEHR-EHR-OBSERVATION.pulse.v1.0.0.adls",
+        ValidationCode::Vcarm,
+        "constrains `property` on DV_QUANTITY, which RM 1.2.0 does not define (the 2013 converter carried ADL 1.4 C_DV_QUANTITY.property into an attribute position)",
+    ),
+    (
+        "openEHR-EHR-OBSERVATION.respiration.v1.0.0.adls",
+        ValidationCode::Vcarm,
+        "constrains `property` on DV_QUANTITY, which RM 1.2.0 does not define (the 2013 converter carried ADL 1.4 C_DV_QUANTITY.property into an attribute position)",
+    ),
+    (
+        "openEHR-EHR-OBSERVATION.substance_use-alcohol.v1.0.0.adls",
+        ValidationCode::Vcarm,
+        "constrains `property` on DV_QUANTITY, which RM 1.2.0 does not define (the 2013 converter carried ADL 1.4 C_DV_QUANTITY.property into an attribute position)",
+    ),
+    (
+        "openEHR-EHR-OBSERVATION.substance_use-caffeine.v1.0.0.adls",
+        ValidationCode::Vcosu,
+        "an object node id recurs in the flat form (master04.5 VCOSU)",
+    ),
+    (
+        "openEHR-EHR-OBSERVATION.temperature.v1.0.0.adls",
+        ValidationCode::Vcarm,
+        "constrains `property` on DV_QUANTITY, which RM 1.2.0 does not define (the 2013 converter carried ADL 1.4 C_DV_QUANTITY.property into an attribute position)",
+    ),
+    (
+        "openEHR-EHR-OBSERVATION.tympanogram_226hz.v1.0.0.adls",
+        ValidationCode::Vcarm,
+        "constrains `property` on DV_QUANTITY, which RM 1.2.0 does not define (the 2013 converter carried ADL 1.4 C_DV_QUANTITY.property into an attribute position)",
+    ),
+    (
+        "openEHR-EHR-OBSERVATION.tympanogram_hf.v1.0.0.adls",
+        ValidationCode::Vcarm,
+        "constrains `property` on DV_QUANTITY (undefined in RM 1.2.0) and the RM function(s) `is_integral`, which VCARM admits but the vendored BMM does not declare (#3061)",
+    ),
+    (
+        "openEHR-EHR-OBSERVATION.urine_output.v1.0.0.adls",
+        ValidationCode::Vcarm,
+        "constrains `property` on DV_QUANTITY, which RM 1.2.0 does not define (the 2013 converter carried ADL 1.4 C_DV_QUANTITY.property into an attribute position)",
+    ),
+    (
+        "openEHR-EHR-OBSERVATION.uterine_contractions.v1.0.0.adls",
+        ValidationCode::Vcarm,
+        "constrains `property` on DV_QUANTITY, which RM 1.2.0 does not define (the 2013 converter carried ADL 1.4 C_DV_QUANTITY.property into an attribute position)",
+    ),
+    (
+        "openEHR-EHR-OBSERVATION.visual_acuity.v1.0.0.adls",
+        ValidationCode::Vcarm,
+        "constrains `property` on DV_QUANTITY (undefined in RM 1.2.0) and the RM function(s) `is_integral`, which VCARM admits but the vendored BMM does not declare (#3061)",
+    ),
+    (
+        "openEHR-EHR-OBSERVATION.visual_field_measurement.v1.0.0.adls",
+        ValidationCode::Vcarm,
+        "constrains `property` on DV_QUANTITY (undefined in RM 1.2.0) and the RM function(s) `is_integral`, which VCARM admits but the vendored BMM does not declare (#3061)",
+    ),
+    (
+        "openEHR-EHR-OBSERVATION.waist_hip.v1.0.0.adls",
+        ValidationCode::Vcarm,
+        "constrains `property` on DV_QUANTITY, which RM 1.2.0 does not define (the 2013 converter carried ADL 1.4 C_DV_QUANTITY.property into an attribute position)",
+    ),
+    (
+        "openEHR-EHR-OBSERVATION.warble_tones_hearing_test.v1.0.0.adls",
+        ValidationCode::Vcarm,
+        "constrains `property` on DV_QUANTITY, which RM 1.2.0 does not define (the 2013 converter carried ADL 1.4 C_DV_QUANTITY.property into an attribute position)",
+    ),
+    (
+        "openEHR-EHR-OBSERVATION.word_list_hearing_test.v1.0.0.adls",
+        ValidationCode::Vcarm,
+        "constrains `property` on DV_QUANTITY, which RM 1.2.0 does not define (the 2013 converter carried ADL 1.4 C_DV_QUANTITY.property into an attribute position)",
+    ),
+];
+
+/// The outcome of validating a whole pack the way the CDR validates an upload.
+struct ValidityOutcome {
+    /// Files refused with no adjudication covering them (`name: CODE message`).
+    failures: Vec<String>,
+    /// Adjudications that no longer describe reality.
+    broken_adjudications: Vec<String>,
+    /// Files validating with no error-severity issue.
+    clean: usize,
+    /// Adjudicated refusals that carried exactly the expected code.
+    refused: usize,
+}
+
+/// The specialisation depth an ADL 2 id states in its concept segment
+/// (`CLUSTER.exam-abdomen` specialises `CLUSTER.exam`: one `-`, depth 1).
+fn id_depth(name: &str) -> usize {
+    name.split('.')
+        .nth(1)
+        .map_or(0, |concept| concept.matches('-').count())
+}
+
+/// The pack in upload order: parents before children (depth, then name) — the
+/// order the sandbox seed uses, so a child always meets its stored parent.
+fn parents_first(files: &[PathBuf]) -> Vec<PathBuf> {
+    let mut ordered: Vec<PathBuf> = files.to_vec();
+    ordered.sort_by_cached_key(|p| {
+        let name = file_name(p);
+        (id_depth(&name), name)
+    });
+    ordered
+}
+
+/// Validate every parseable `.adls` of the pack exactly as the CDR does on
+/// upload, in upload order: the full AOM2 catalogue against the production RM
+/// for an openEHR RM archetype, the integrity pass alone otherwise, each over a
+/// repository holding only the archetypes ACCEPTED so far — a refused parent is
+/// never a flat parent, and a child whose parent is absent is VASID.
+fn validate_all(files: &[PathBuf], adjudicated: &[ValidityRefusal]) -> ValidityOutcome {
+    let mut repo = ArchetypeRepository::new();
+    let mut out = ValidityOutcome {
+        failures: Vec::new(),
+        broken_adjudications: Vec::new(),
+        clean: 0,
+        refused: 0,
+    };
+    for path in parents_first(files) {
+        let name = file_name(&path);
+        let src = std::fs::read_to_string(&path).expect("read archetype source");
+        let Ok(archetype) = parse_artefact(&src, Dialect::Adl2) else {
+            // Parse refusals are the parse-level table's business.
+            continue;
+        };
+        let issues = if production_model_governs(&archetype) {
+            validate_source(
+                &src,
+                Some(&repo),
+                &ProductionRmModel,
+                &NoTerminologyResolver,
+            )
+        } else {
+            validate_source_integrity(&src, Dialect::Adl2, Some(&repo))
+        }
+        .expect("a parsed source validates without syntax errors");
+        let errors: Vec<_> = issues
+            .iter()
+            .filter(|i| i.severity == Severity::Error)
+            .collect();
+        let expected = adjudicated
+            .iter()
+            .find(|(file, _, _)| *file == name)
+            .map(|(_, code, reason)| (*code, *reason));
+        match (errors.is_empty(), expected) {
+            (true, None) => {
+                out.clean += 1;
+                repo.insert(archetype);
+            }
+            (true, Some((code, reason))) => out.broken_adjudications.push(format!(
+                "{name}: expected refusal {code} ({reason}) but the file now VALIDATES — \
+                 remove the adjudication if that is a genuine fix, or investigate a \
+                 loosened validator"
+            )),
+            (false, None) => out.failures.push(format!(
+                "{name}: {}",
+                errors
+                    .iter()
+                    .map(|i| {
+                        let at = i
+                            .path
+                            .as_ref()
+                            .map_or(String::new(), |p| format!(" (at {p})"));
+                        format!("{} {}{at}", i.code, i.message)
+                    })
+                    .collect::<Vec<_>>()
+                    .join(" | ")
+            )),
+            (false, Some((code, reason))) => {
+                if errors.iter().any(|i| i.code == code) {
+                    out.refused += 1;
+                } else {
+                    out.broken_adjudications.push(format!(
+                        "{name}: expected refusal {code} ({reason}) but got {:?}",
+                        errors.iter().map(|i| i.code).collect::<Vec<_>>()
+                    ));
+                }
+            }
+        }
+    }
+    out
+}
+
+/// Every parseable archetype of the 2013 CKM ADL 2 export validates as the CDR
+/// validates an upload, or is refused on an adjudicated validity code.
+#[test]
+fn upstream_adl2_pack_validates_or_is_adjudicated() {
+    let dir = artifacts_root().join("adl2/ckm-2013-12-09");
+    let files = files_with_extension(&dir, "adls");
+    assert!(!files.is_empty(), "no .adls files under {}", dir.display());
+    let out = validate_all(&files, ADJUDICATED_ADL2_VALIDITY);
+    assert!(
+        out.broken_adjudications.is_empty(),
+        "adl2 validity: adjudications that no longer describe reality:\n{}",
+        out.broken_adjudications.join("\n")
+    );
+    assert!(
+        out.failures.is_empty(),
+        "adl2 validity: {} files are refused and not adjudicated:\n{}",
+        out.failures.len(),
+        out.failures.join("\n")
+    );
+    assert_eq!(
+        out.refused,
+        ADJUDICATED_ADL2_VALIDITY.len(),
+        "adl2 validity: {} of {} adjudicated refusals were exercised",
+        out.refused,
+        ADJUDICATED_ADL2_VALIDITY.len()
+    );
+    assert_eq!(
+        out.clean + out.refused,
+        files.len() - expected_refusals(&files, ADJUDICATED_PAIRS),
+        "adl2 validity: accounting mismatch over the parseable pack"
     );
 }
