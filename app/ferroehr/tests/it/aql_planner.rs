@@ -357,6 +357,30 @@ fn version_field_in_select() {
 
 // ── SELECT / DISTINCT / aggregates / TOP / LIMIT ──────────────────────────────
 
+/// An aggregate beside a plain projection is refused at planning: AQL 1.1
+/// defines no grouping (QUERY master03 §Aggregate functions), so the shape
+/// has no defined result and must never reach SQL, where it surfaced as an
+/// ungrouped-column database error (#3054).
+#[test]
+fn an_aggregate_beside_a_plain_projection_is_refused() {
+    for q in [
+        "SELECT e/ehr_id/value, COUNT(c/uid/value) FROM EHR e CONTAINS COMPOSITION c",
+        "SELECT COUNT(*), c/name/value FROM EHR e CONTAINS COMPOSITION c",
+        "SELECT MAX(c/context/start_time/value), c FROM EHR e CONTAINS COMPOSITION c",
+    ] {
+        assert!(
+            matches!(
+                plan_err(q),
+                AqlError::Feature(AqlFeatureError::MixedAggregateProjection)
+            ),
+            "{q} must be refused as a mixed aggregate projection"
+        );
+    }
+    // Literals beside an aggregate are constant per row set and stay accepted.
+    let ir = plan_ok("SELECT 'n', COUNT(*) FROM EHR e CONTAINS COMPOSITION c");
+    assert_eq!(ir.select.len(), 2);
+}
+
 #[test]
 fn distinct_and_alias() {
     let ir = plan_ok("SELECT DISTINCT c/name/value AS cname FROM EHR e CONTAINS COMPOSITION c");

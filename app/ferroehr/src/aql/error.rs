@@ -187,6 +187,17 @@ pub enum AqlFeatureError {
     /// RM 1.2.0 `EHR.ehr_status` (`docs/specs/openehr/RM/docs/ehr/`).
     #[error("EHR path form `{0}` is not supported (RM EHR.ehr_status)")]
     UnsupportedEhrStatusPath(String),
+
+    /// A SELECT mixing an aggregate function with a plain projection. QUERY
+    /// master03 §Aggregate functions defines the five functions over the rows
+    /// the FROM/WHERE clauses select and no grouping construct, explicit or
+    /// implicit, so the mixed shape has no defined result under the released
+    /// text; the engine refuses it rather than inventing `GROUP BY` semantics.
+    #[error(
+        "a SELECT cannot mix an aggregate function with a non-aggregated column \
+         (AQL 1.1 defines no grouping; QUERY master03 §Aggregate functions)"
+    )]
+    MixedAggregateProjection,
 }
 
 /// A path-analysis / typing failure against the generated RM model

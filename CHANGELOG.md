@@ -76,7 +76,12 @@ workflow refuses a tag that has no matching section here.
   on both validation paths. Previously the parent-conformance checks were
   skipped and the archetype was stored as valid, so a child uploaded before its
   parent was never checked against it.
-
+- An AQL `SELECT` that mixes an aggregate function with a non-aggregated
+  column (`SELECT e/ehr_id/value, COUNT(c/uid/value) …`) is refused with a
+  typed `400` naming the rule. AQL 1.1 defines the aggregate functions over
+  the selected rows and no grouping construct, so the shape has no defined
+  result; previously the ungrouped SQL reached the database and its error
+  surfaced as a `500`.
 - The FerroEHR Viewer no longer leaves an interactive shell over a session that
   has ended. When a session expires or is revoked, the viewer moves the whole UI
   to the signed-out state on its own — no manual refresh — and lands on the

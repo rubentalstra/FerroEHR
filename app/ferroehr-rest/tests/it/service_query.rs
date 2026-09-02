@@ -206,3 +206,26 @@ async fn no_version_store_upserts_and_returns_200() {
         "no-version store updated text: {body}"
     );
 }
+
+/// A SELECT mixing an aggregate with a plain projection is a typed `400`, not
+/// the database's ungrouped-column error surfacing as a `500` (#3054; QUERY
+/// master03 §Aggregate functions defines no grouping).
+#[tokio::test]
+async fn mixed_aggregate_projection_is_a_typed_400() {
+    let db = testkit::db().await.expect("testkit database");
+    let (status, body) = post_json(
+        app(db.pool().clone()),
+        &format!("{BASE}/query/aql"),
+        r#"{"q":"SELECT e/ehr_id/value, COUNT(c/uid/value) FROM EHR e CONTAINS COMPOSITION c"}"#,
+    )
+    .await;
+    assert_eq!(
+        status,
+        StatusCode::BAD_REQUEST,
+        "mixed aggregate → 400: {body}"
+    );
+    assert!(
+        body.contains("aggregate"),
+        "the refusal names the rule, not a database error: {body}"
+    );
+}
