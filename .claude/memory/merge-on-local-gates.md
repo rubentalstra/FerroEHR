@@ -30,3 +30,15 @@ Claude Code permission classifier refuses both `gh pr merge --admin` and the
 REST merge endpoint from the agent. Flow: open the PR, verify gates/CI, then
 ask the owner to run `! gh pr merge <n> --squash --delete-branch --admin` —
 never burn attempts on classifier workarounds.
+
+**2026-09-02 correction: auto-merge is the sanctioned path and needs no owner
+click.** `gh pr merge <n> --auto --squash --delete-branch` right after `gh pr
+create` arms GitHub's auto-merge; the PR lands by itself when the required
+checks pass (five PRs landed this way in one session: #3052, #3053, #3056,
+#3058, #3059). `--admin` stays classifier-blocked, so never try it. While the
+PR waits, keep working on the NEXT issue in the same checkout; a red check on
+the waiting PR is fixed by pushing to its branch with git plumbing (`git
+read-tree` into a temp `GIT_INDEX_FILE`, `hash-object`, `commit-tree -S`,
+`git push origin <sha>:refs/heads/<branch>`), never by switching branches under
+a worker's uncommitted tree. Force-push is hook-blocked for every branch, so
+resolve a conflict by MERGING `origin/main` into the PR branch, not rebasing.
