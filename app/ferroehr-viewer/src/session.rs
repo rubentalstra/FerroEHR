@@ -13,8 +13,12 @@
 //! and gets no sticky sessions there. The browser stores ciphertext
 //! only: CDR credentials never reach a signal, prop, serialized resource,
 //! or readable cookie. Idle expiry is a timestamp INSIDE the sealed payload,
-//! refreshed by the guard middleware on activity, so a stolen clock-limited
-//! cookie cannot be revived by editing its attributes.
+//! so a stolen clock-limited cookie cannot be revived by editing its
+//! attributes. The anchor SLIDES on any authenticated request:
+//! [`crate::server::login_guard`] re-seals the cookie on every authenticated
+//! response, and that includes requests the browser makes by itself — the
+//! shell's own health poll among them — so the window measures traffic from
+//! this session, not deliberate user activity.
 
 use std::collections::BTreeMap;
 
@@ -146,9 +150,34 @@ struct Envelope {
 #[derive(Debug, Default)]
 pub struct CookieSession {
     entries: BTreeMap<String, String>,
+    touched: Option<i64>,
 }
 
 impl CookieSession {
+    /// Seconds left before the idle window closes on the cookie this session
+    /// was decoded from.
+    ///
+    /// The anchor slides: [`crate::server::login_guard`] re-seals the cookie
+    /// with a fresh one on every authenticated response, so this is the
+    /// deadline as of the cookie the caller PRESENTED — a lower bound on the
+    /// real one, which the very response carrying this number extends again.
+    /// That is what the client wants it for: it re-checks its session at that
+    /// point, and a session still alive simply reschedules. A session that was
+    /// never sealed (a fresh [`CookieSession::default`]) has no anchor and
+    /// answers `0`.
+    #[must_use]
+    pub fn expires_in_secs(&self, idle_minutes: u64) -> u32 {
+        let Some(touched) = self.touched else {
+            return 0;
+        };
+        let idle = i64::try_from(idle_minutes.saturating_mul(60)).unwrap_or(i64::MAX);
+        let left = touched
+            .saturating_add(idle)
+            .saturating_sub(now_seconds())
+            .clamp(0, i64::from(u32::MAX));
+        u32::try_from(left).unwrap_or(u32::MAX)
+    }
+
     /// Read one typed entry (`None` when absent or of a different shape).
     #[must_use]
     pub fn get<T: DeserializeOwned>(&self, key: &str) -> Option<T> {
@@ -213,6 +242,7 @@ pub fn unseal(keys: &SessionKeys, headers: &http::HeaderMap, idle_minutes: u64) 
     }
     CookieSession {
         entries: envelope.entries,
+        touched: Some(envelope.touched),
     }
 }
 
@@ -458,6 +488,18 @@ mod tests {
         let header = set_cookie(&sealing, &session_with_viewer(), false, 60).unwrap();
         // idle_minutes = 0 makes any positive age expired.
         assert!(unseal(&sealing, &headers_with(&header), 0).is_empty());
+    }
+
+    #[test]
+    fn a_decoded_session_reports_the_seconds_left_on_its_idle_window() {
+        let sealing = keys();
+        let header = set_cookie(&sealing, &session_with_viewer(), false, 60).unwrap();
+        let restored = unseal(&sealing, &headers_with(&header), 60);
+        // Sealed a moment ago, so the whole window minus at most that moment.
+        let left = restored.expires_in_secs(60);
+        assert!((3595..=3600).contains(&left), "{left}");
+        // A session nobody sealed carries no anchor.
+        assert_eq!(CookieSession::default().expires_in_secs(60), 0);
     }
 
     #[test]

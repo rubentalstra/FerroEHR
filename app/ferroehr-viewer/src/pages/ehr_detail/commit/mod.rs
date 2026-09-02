@@ -93,7 +93,7 @@ pub struct CommitOutcome {
 /// answer (its validation diagnostics, which the UI renders verbatim,
 /// included) normalizes via
 /// [`CdrClient::expect_success`](crate::cdr::CdrClient::expect_success).
-#[server(input = server_fn::codec::Json)]
+#[server(input = server_fn::codec::Json, client = crate::session_client::SessionAwareClient)]
 pub async fn commit_contribution(
     /// The EHR to commit the change set into.
     ehr_id: String,

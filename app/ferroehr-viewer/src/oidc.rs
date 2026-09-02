@@ -28,9 +28,42 @@ struct FlowState {
     pkce_verifier: String,
     csrf: String,
     nonce: String,
+    next: String,
 }
 
 const FLOW_KEY: &str = "oidc_flow";
+
+/// The shell root, and the destination every refused `next` falls back to.
+const DEFAULT_NEXT: &str = "/";
+
+/// `/auth/oidc/login`'s query: where the completed round trip should land.
+#[derive(Debug, Deserialize)]
+pub struct LoginParams {
+    next: Option<String>,
+}
+
+/// The post-login destination a `next` value is allowed to name.
+///
+/// Only a same-origin relative path is honoured. The value must begin with a
+/// single `/` — never `//` or `/\`, which a browser reads as protocol-relative
+/// and would follow to another site — and carry only visible ASCII, so nothing
+/// can smuggle a control character into the `Location` header this ends up in.
+/// Everything else (an absolute URL, a `javascript:` payload, an empty value)
+/// falls back to [`DEFAULT_NEXT`], because an open redirect on the login route
+/// is a phishing primitive: it lends this deployment's origin to someone
+/// else's page at the exact moment the user has just proved who they are.
+fn same_origin_next(raw: Option<&str>) -> String {
+    let candidate = raw.unwrap_or_default();
+    let mut bytes = candidate.bytes();
+    if bytes.next() != Some(b'/') || matches!(bytes.next(), Some(b'/' | b'\\')) {
+        return DEFAULT_NEXT.to_owned();
+    }
+    if candidate.bytes().all(|byte| byte.is_ascii_graphic()) {
+        candidate.to_owned()
+    } else {
+        DEFAULT_NEXT.to_owned()
+    }
+}
 
 /// Run OIDC discovery against the configured issuer.
 ///
@@ -94,10 +127,17 @@ fn error_page(status: StatusCode, message: &str) -> Response {
     (status, format!("OIDC login failed: {message}")).into_response()
 }
 
-/// `GET /auth/oidc/login` — park PKCE/CSRF/nonce in the sealed session
-/// cookie and redirect to the authorization endpoint.
+/// `GET /auth/oidc/login` — park PKCE/CSRF/nonce plus the post-login
+/// destination in the sealed session cookie and redirect to the authorization
+/// endpoint.
+///
+/// `?next=` names where the completed round trip lands, filtered through
+/// [`same_origin_next`]; it rides the sealed cookie rather than the OAuth2
+/// `state` parameter, so the provider never sees it and it cannot be edited
+/// between the two legs.
 pub async fn login(
     axum::Extension(state): axum::Extension<crate::state::AppState>,
+    axum::extract::Query(params): axum::extract::Query<LoginParams>,
     headers: http::HeaderMap,
 ) -> Response {
     let Some(oidc) = state.oidc.as_ref() else {
@@ -124,6 +164,7 @@ pub async fn login(
         pkce_verifier: pkce_verifier.secret().clone(),
         csrf: csrf.secret().clone(),
         nonce: nonce.secret().clone(),
+        next: same_origin_next(params.next.as_deref()),
     };
     let mut session = crate::session::unseal(
         &state.session_keys,
@@ -169,7 +210,8 @@ pub struct CallbackParams {
 }
 
 /// `GET /auth/oidc/callback` — exchange the code (PKCE), validate the ID
-/// token nonce, store the session, land on `/`.
+/// token nonce, store the session, and land on the destination the login leg
+/// parked (the shell root when there was none).
 pub async fn callback(
     axum::Extension(state): axum::Extension<crate::state::AppState>,
     headers: http::HeaderMap,
@@ -239,5 +281,42 @@ pub async fn callback(
     if let Err(e) = session.insert(crate::session::SESSION_KEY, &admin) {
         return error_page(StatusCode::INTERNAL_SERVER_ERROR, &e.to_string());
     }
-    with_session_cookie(&state, &session, Redirect::to("/"))
+    // Re-validated at the point of use: the destination rode a sealed,
+    // authenticated cookie, so this cannot fail — and that is exactly why it is
+    // cheap to prove rather than assume, since `Redirect::to` panics on a value
+    // no `Location` header can carry.
+    let next = same_origin_next(Some(&flow.next));
+    with_session_cookie(&state, &session, Redirect::to(&next))
+}
+
+#[cfg(test)]
+mod tests {
+    use super::same_origin_next;
+
+    /// The login route's `next` is attacker-supplied by construction — it
+    /// arrives in a link anyone can craft — so what it accepts is the whole
+    /// security property, and it is pinned from both sides.
+    #[test]
+    fn only_a_same_origin_relative_path_survives_as_the_post_login_destination() {
+        assert_eq!(same_origin_next(Some("/ehrs?x=1")), "/ehrs?x=1");
+        assert_eq!(same_origin_next(Some("/")), "/");
+        assert_eq!(
+            same_origin_next(Some("/ehrs/01a06375?tab=status#top")),
+            "/ehrs/01a06375?tab=status#top"
+        );
+
+        // Protocol-relative: a browser reads both as "another origin".
+        assert_eq!(same_origin_next(Some("//evil.example")), "/");
+        assert_eq!(same_origin_next(Some("/\\evil.example")), "/");
+        // Absolute and scheme-bearing values never begin with `/` at all.
+        assert_eq!(same_origin_next(Some("https://evil.example")), "/");
+        assert_eq!(same_origin_next(Some("javascript:alert(1)")), "/");
+        assert_eq!(same_origin_next(Some("ehrs")), "/");
+        // Nothing that no `Location` header could carry.
+        assert_eq!(same_origin_next(Some("/ehrs\r\nSet-Cookie: x=1")), "/");
+        assert_eq!(same_origin_next(Some("/ehrs with space")), "/");
+        // Absent or empty.
+        assert_eq!(same_origin_next(None), "/");
+        assert_eq!(same_origin_next(Some("")), "/");
+    }
 }

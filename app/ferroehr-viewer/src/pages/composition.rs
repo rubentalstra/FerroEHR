@@ -60,7 +60,7 @@ use crate::format::ReprFormat;
 /// errors pass through; a non-2xx CDR answer normalizes via
 /// [`CdrClient::expect_success`](crate::cdr::CdrClient::expect_success);
 /// [`ViewerError::Internal`] when the history is not valid JSON.
-#[server]
+#[server(client = crate::session_client::SessionAwareClient)]
 pub async fn fetch_versions(
     /// The EHR holding the versioned composition.
     ehr_id: String,
@@ -104,7 +104,7 @@ pub async fn fetch_versions(
 /// errors pass through; a non-2xx CDR answer (a `406` for a declined
 /// representation included) normalizes via
 /// [`CdrClient::expect_success`](crate::cdr::CdrClient::expect_success).
-#[server]
+#[server(client = crate::session_client::SessionAwareClient)]
 pub async fn fetch_composition(
     /// The EHR holding the composition.
     ehr_id: String,
@@ -147,7 +147,7 @@ pub async fn fetch_composition(
 /// through; a non-2xx CDR answer (a `404` for no version at that time included,
 /// which the UI renders as an inline note) normalizes via
 /// [`CdrClient::expect_success`](crate::cdr::CdrClient::expect_success).
-#[server]
+#[server(client = crate::session_client::SessionAwareClient)]
 pub async fn fetch_version_at_time(
     /// The EHR holding the versioned composition.
     ehr_id: String,
@@ -198,7 +198,7 @@ pub async fn fetch_version_at_time(
 /// appended); CDR transport errors pass through; any other non-2xx CDR answer
 /// (its validation diagnostics included) normalizes via
 /// [`CdrClient::expect_success`](crate::cdr::CdrClient::expect_success).
-#[server]
+#[server(client = crate::session_client::SessionAwareClient)]
 pub async fn update_composition(
     /// The EHR holding the composition.
     ehr_id: String,
@@ -277,7 +277,7 @@ pub async fn update_composition(
 /// transport errors pass through; a non-2xx CDR answer (the `409` stale-uid
 /// branch and the `400` for an already-deleted version included) normalizes via
 /// [`CdrClient::expect_success`](crate::cdr::CdrClient::expect_success).
-#[server]
+#[server(client = crate::session_client::SessionAwareClient)]
 pub async fn delete_composition(
     /// The EHR holding the composition.
     ehr_id: String,
@@ -360,7 +360,7 @@ pub struct VersionedCompositionDetails {
 /// object/version included) normalizes via
 /// [`CdrClient::expect_success`](crate::cdr::CdrClient::expect_success);
 /// [`ViewerError::Internal`] when either body is not valid JSON.
-#[server]
+#[server(client = crate::session_client::SessionAwareClient)]
 pub async fn fetch_versioned_composition(
     /// The EHR holding the versioned composition.
     ehr_id: String,

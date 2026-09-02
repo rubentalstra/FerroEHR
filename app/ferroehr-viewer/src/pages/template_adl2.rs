@@ -58,7 +58,7 @@ use crate::pages::templates::TemplateRow;
 /// [`ViewerError::Unauthenticated`] without a viewer session;
 /// [`ViewerError::CdrUnauthorized`] / [`ViewerError::Forbidden`] / [`ViewerError::Cdr`] /
 /// [`ViewerError::CdrUnreachable`] from the CDR.
-#[server]
+#[server(client = crate::session_client::SessionAwareClient)]
 pub async fn fetch_adl2_source(
     /// The ADL2 template to read (a full HRID, or a partial that resolves to
     /// the latest matching version).
@@ -93,7 +93,7 @@ pub async fn fetch_adl2_source(
 /// [`ViewerError::Unauthenticated`] without a viewer session;
 /// [`ViewerError::CdrUnauthorized`] / [`ViewerError::Forbidden`] / [`ViewerError::Cdr`] /
 /// [`ViewerError::CdrUnreachable`] from the CDR.
-#[server]
+#[server(client = crate::session_client::SessionAwareClient)]
 pub async fn fetch_adl2_json(
     /// The ADL2 template to read.
     template_id: String,
@@ -155,7 +155,7 @@ pub fn adl2_catalog_from_json(json: &str) -> Result<CatalogNode, ViewerError> {
 /// [`ViewerError::CdrUnreachable`] from the CDR;
 /// [`ViewerError::Internal`] when the served JSON fails to parse or its Web
 /// Template fails to build.
-#[server]
+#[server(client = crate::session_client::SessionAwareClient)]
 pub async fn fetch_adl2_catalog(
     /// The ADL2 template to build the path catalog from.
     template_id: String,
@@ -195,7 +195,7 @@ pub async fn fetch_adl2_catalog(
 /// [`ViewerError::CdrUnauthorized`] / [`ViewerError::Forbidden`] / [`ViewerError::Cdr`] /
 /// [`ViewerError::CdrUnreachable`] from the CDR (a template that cannot be
 /// compiled into a Web Template answers `422`).
-#[server]
+#[server(client = crate::session_client::SessionAwareClient)]
 pub async fn fetch_adl2_example(
     /// The ADL2 template to generate an example composition for.
     template_id: String,

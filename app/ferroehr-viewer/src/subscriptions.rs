@@ -277,7 +277,7 @@ pub fn subscription_failure_copy(object: &str, error: &ViewerError) -> String {
 /// # Errors
 /// [`ViewerError::Unauthenticated`] without a viewer session;
 /// [`ViewerError::CdrUnreachable`] on transport failure.
-#[server]
+#[server(client = crate::session_client::SessionAwareClient)]
 pub async fn probe_event_subscriptions() -> Result<SubscriptionAvailability, ViewerError> {
     let session = crate::session::require_session().await?;
     let state: crate::state::AppState = expect_context();
@@ -301,7 +301,7 @@ pub async fn probe_event_subscriptions() -> Result<SubscriptionAvailability, Vie
 /// [`ViewerError::CdrUnauthorized`] / [`ViewerError::Forbidden`] / [`ViewerError::Cdr`] /
 /// [`ViewerError::CdrUnreachable`] from the CDR; [`ViewerError::Internal`]
 /// when the body is not valid JSON.
-#[server]
+#[server(client = crate::session_client::SessionAwareClient)]
 pub async fn list_event_subscriptions() -> Result<Option<Vec<SubscriptionRow>>, ViewerError> {
     let session = crate::session::require_session().await?;
     let state: crate::state::AppState = expect_context();
@@ -335,7 +335,7 @@ pub async fn list_event_subscriptions() -> Result<Option<Vec<SubscriptionRow>>, 
 /// [`ViewerError::CdrUnauthorized`] / [`ViewerError::Forbidden`] / [`ViewerError::Cdr`] /
 /// [`ViewerError::CdrUnreachable`] from the CDR; [`ViewerError::Internal`]
 /// when the created record is not valid JSON.
-#[server]
+#[server(client = crate::session_client::SessionAwareClient)]
 pub async fn create_event_subscription(
     /// The subscription name (unique on the CDR, immutable afterwards).
     name: String,
@@ -381,7 +381,7 @@ pub async fn create_event_subscription(
 /// [`ViewerError::CdrUnauthorized`] / [`ViewerError::Forbidden`] / [`ViewerError::Cdr`] /
 /// [`ViewerError::CdrUnreachable`] from the CDR; [`ViewerError::Internal`]
 /// when the stored record is not valid JSON.
-#[server]
+#[server(client = crate::session_client::SessionAwareClient)]
 pub async fn update_event_subscription(
     /// The subscription to update, by CDR id.
     subscription_id: String,
@@ -421,7 +421,7 @@ pub async fn update_event_subscription(
 /// [`ViewerError::Invalid`] for an empty id;
 /// [`ViewerError::CdrUnauthorized`] / [`ViewerError::Forbidden`] / [`ViewerError::Cdr`] /
 /// [`ViewerError::CdrUnreachable`] from the CDR.
-#[server]
+#[server(client = crate::session_client::SessionAwareClient)]
 pub async fn delete_event_subscription(
     /// The subscription to delete, by CDR id.
     subscription_id: String,

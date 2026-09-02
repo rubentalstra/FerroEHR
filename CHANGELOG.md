@@ -45,6 +45,24 @@ workflow refuses a tag that has no matching section here.
 
 ### Fixed
 
+- The FerroEHR Viewer no longer leaves an interactive shell over a session that
+  has ended. When a session expires or is revoked, the viewer moves the whole UI
+  to the signed-out state on its own — no manual refresh — and lands on the
+  sign-in screen with "Your session ended. Sign in again to continue." plus the
+  screen the user was on, so signing back in returns them to it. Two things
+  drive it: any request the CDR or the viewer refuses with a `401`/no-session
+  answer signs the UI out immediately (this covers a revocation the browser
+  could not have predicted), and the browser also re-checks the session on the
+  session's own deadline and on the connection indicator's poll, so an expiry
+  nobody clicks through is caught as well. The indicator itself now reads
+  "Session ended" rather than blaming the CDR for a refusal that is not its.
+  The OIDC sign-in path carries the destination too: `/auth/oidc/login` accepts
+  a `next` parameter and the callback lands on it, so an OIDC user is returned
+  to the screen they were on instead of the dashboard. Only a same-origin
+  relative path is honoured — an absolute URL or a protocol-relative value
+  falls back to the dashboard, so the login route cannot be used as an open
+  redirect.
+
 - The hosted-sandbox CDR no longer crashloops when the box's `.env` carries a
   `FERROEHR_`-prefixed Compose image variable the server does not recognise.
   The CDR service in `deploy/hosted/docker-compose.yml` stops loading the whole

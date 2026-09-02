@@ -44,7 +44,7 @@ pub struct StoredQueryRow {
 /// # Errors
 /// [`ViewerError::Unauthenticated`] without a session;
 /// [`ViewerError::Invalid`] carrying the parse diagnostic.
-#[server]
+#[server(client = crate::session_client::SessionAwareClient)]
 pub async fn validate_aql(
     /// The AQL text to parse.
     aql: String,
@@ -67,7 +67,7 @@ pub async fn validate_aql(
 /// [`ViewerError::Invalid`] when `parameters_json` is not a JSON object;
 /// CDR errors normalized via
 /// [`CdrClient::expect_success`](crate::cdr::CdrClient::expect_success).
-#[server]
+#[server(client = crate::session_client::SessionAwareClient)]
 pub async fn run_aql(
     /// The AQL to execute.
     aql: String,
@@ -125,7 +125,7 @@ pub async fn run_aql(
 /// # Errors
 /// [`ViewerError::Unauthenticated`] without a session; CDR errors
 /// normalized; [`ViewerError::Internal`] on an unparseable body.
-#[server]
+#[server(client = crate::session_client::SessionAwareClient)]
 pub async fn list_stored_queries() -> Result<Vec<StoredQueryRow>, ViewerError> {
     let session = crate::session::require_session().await?;
     let state: crate::state::AppState = leptos::prelude::expect_context();
@@ -172,7 +172,7 @@ pub async fn list_stored_queries() -> Result<Vec<StoredQueryRow>, ViewerError> {
 /// # Errors
 /// [`ViewerError::Unauthenticated`] without a session; CDR errors
 /// normalized (a `404` for an unknown name included).
-#[server]
+#[server(client = crate::session_client::SessionAwareClient)]
 pub async fn fetch_stored_query(
     /// The qualified stored-query name.
     name: String,
@@ -230,7 +230,7 @@ pub async fn fetch_stored_query(
 /// [`ViewerError::Invalid`] for a bad name, a non-triple version, or
 /// unparseable AQL; CDR errors normalized (notably `409` for an existing
 /// `(name, version)` pair).
-#[server]
+#[server(client = crate::session_client::SessionAwareClient)]
 pub async fn store_query(
     /// The qualified name to file the definition under.
     name: String,
@@ -321,7 +321,7 @@ pub async fn store_query(
 /// [`CdrClient::expect_success`](crate::cdr::CdrClient::expect_success)
 /// (notably `404` when no stored version matches the resolution form);
 /// [`ViewerError::Internal`] when the result set is not valid JSON.
-#[server]
+#[server(client = crate::session_client::SessionAwareClient)]
 pub async fn run_stored_query(
     /// The qualified stored-query name.
     name: String,
@@ -404,7 +404,7 @@ pub async fn run_stored_query(
 /// # Errors
 /// [`ViewerError::Unauthenticated`] without a session; CDR errors
 /// normalized; [`ViewerError::Internal`] on an unparseable result.
-#[server]
+#[server(client = crate::session_client::SessionAwareClient)]
 pub async fn run_stored_count(
     /// The qualified stored-query name.
     name: String,

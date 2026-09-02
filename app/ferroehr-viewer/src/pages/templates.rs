@@ -92,7 +92,7 @@ pub struct TemplateRow {
 /// [`ViewerError::CdrUnauthorized`] / [`ViewerError::Forbidden`] / [`ViewerError::Cdr`] /
 /// [`ViewerError::CdrUnreachable`] from the CDR; [`ViewerError::Internal`]
 /// when the CDR body is not valid JSON.
-#[server]
+#[server(client = crate::session_client::SessionAwareClient)]
 pub async fn list_templates() -> Result<Vec<TemplateRow>, ViewerError> {
     let session = crate::session::require_session().await?;
     let state: crate::state::AppState = expect_context();
@@ -144,7 +144,7 @@ fn template_row(item: &serde_json::Value) -> TemplateRow {
 /// [`ViewerError::Invalid`] for empty content;
 /// [`ViewerError::CdrUnauthorized`] / [`ViewerError::Forbidden`] / [`ViewerError::Cdr`] /
 /// [`ViewerError::CdrUnreachable`] from the CDR (the diagnostic verbatim).
-#[server]
+#[server(client = crate::session_client::SessionAwareClient)]
 pub async fn upload_template(
     /// The operational-template XML to upload, as read in the browser.
     opt_xml: String,
@@ -187,7 +187,7 @@ pub async fn upload_template(
 /// [`ViewerError::CdrUnauthorized`] / [`ViewerError::Forbidden`] / [`ViewerError::Cdr`] /
 /// [`ViewerError::CdrUnreachable`] from the CDR; [`ViewerError::Internal`]
 /// when the CDR body is not valid JSON.
-#[server]
+#[server(client = crate::session_client::SessionAwareClient)]
 pub async fn list_adl2_templates() -> Result<Vec<TemplateRow>, ViewerError> {
     let session = crate::session::require_session().await?;
     let state: crate::state::AppState = expect_context();
@@ -222,7 +222,7 @@ pub async fn list_adl2_templates() -> Result<Vec<TemplateRow>, ViewerError> {
 /// [`ViewerError::Invalid`] for empty content;
 /// [`ViewerError::CdrUnauthorized`] / [`ViewerError::Forbidden`] / [`ViewerError::Cdr`] /
 /// [`ViewerError::CdrUnreachable`] from the CDR (the diagnostic verbatim).
-#[server]
+#[server(client = crate::session_client::SessionAwareClient)]
 pub async fn upload_adl2_template(
     /// The ADL2 operational-template source, pasted or read from a file.
     adl2_source: String,
@@ -283,7 +283,7 @@ fn accepted_template_id(body: &str) -> String {
 /// [`ViewerError::Invalid`] for an empty id;
 /// [`ViewerError::Cdr`] / [`ViewerError::CdrUnauthorized`] / [`ViewerError::Forbidden`] /
 /// [`ViewerError::CdrUnreachable`] from the CDR.
-#[server]
+#[server(client = crate::session_client::SessionAwareClient)]
 pub async fn delete_adl2_artefact(
     /// The AOM2 artefact HRID to remove.
     artefact_id: String,

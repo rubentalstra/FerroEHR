@@ -63,7 +63,7 @@ const SMART_DISCOVERY_PATH: &str = ".well-known/smart-configuration";
 /// [`ViewerError::Unauthenticated`] without a viewer session; CDR transport
 /// errors pass through; a non-2xx, non-404 CDR answer normalizes via
 /// [`CdrClient::expect_success`](crate::cdr::CdrClient::expect_success).
-#[server]
+#[server(client = crate::session_client::SessionAwareClient)]
 pub async fn fetch_smart_config() -> Result<Option<String>, ViewerError> {
     crate::session::require_session().await?;
     let state: crate::state::AppState = expect_context();
@@ -120,7 +120,7 @@ fn openapi_family_slug(value: &str) -> String {
 /// [`ViewerError::Invalid`] for a `family` the CDR has no document for; CDR
 /// transport errors pass through; a non-2xx CDR answer normalizes via
 /// [`CdrClient::expect_success`](crate::cdr::CdrClient::expect_success).
-#[server]
+#[server(client = crate::session_client::SessionAwareClient)]
 pub async fn fetch_openapi(
     /// Which served OpenAPI document to read, as an API-family slug.
     family: String,
@@ -173,7 +173,7 @@ pub async fn fetch_openapi(
 /// [`ViewerError::Unauthenticated`] without a viewer session; CDR
 /// transport errors pass through; non-2xx answers normalize via
 /// [`CdrClient::expect_success`](crate::cdr::CdrClient::expect_success).
-#[server]
+#[server(client = crate::session_client::SessionAwareClient)]
 pub async fn fetch_admin_config() -> Result<String, ViewerError> {
     let session = crate::session::require_session().await?;
     let state: crate::state::AppState = expect_context();
@@ -269,7 +269,7 @@ async fn template_count(
 /// # Errors
 /// [`ViewerError::Unauthenticated`] without a viewer session; CDR errors
 /// normalized by the underlying calls.
-#[server]
+#[server(client = crate::session_client::SessionAwareClient)]
 pub async fn template_usage() -> Result<(Vec<(String, i64)>, u32), ViewerError> {
     use futures::stream::{StreamExt, TryStreamExt};
 

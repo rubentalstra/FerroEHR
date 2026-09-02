@@ -47,6 +47,14 @@ pub struct SessionInfo {
     pub method: String,
     /// OIDC token scopes (empty for Basic).
     pub scopes: Vec<String>,
+    /// Seconds left before this session's idle window closes, as of the cookie
+    /// the request carried.
+    ///
+    /// The anchor slides on every authenticated response, so this is a lower
+    /// bound on the real deadline; the browser schedules its own re-check on
+    /// it, which is what catches an expiry nobody clicks through. A `u32`
+    /// because WASM is 32-bit and this crosses the server-fn boundary.
+    pub expires_in_secs: u32,
 }
 
 /// Basic login: validate the credentials against the CDR (an authenticated
@@ -55,7 +63,7 @@ pub struct SessionInfo {
 /// # Errors
 /// [`ViewerError::Invalid`] on wrong credentials, [`ViewerError::Cdr`] /
 /// [`ViewerError::CdrUnreachable`] when the CDR misbehaves.
-#[server]
+#[server(client = crate::session_client::SessionAwareClient)]
 pub async fn login_basic(
     /// The CDR username the viewer authenticates as.
     username: String,
@@ -112,7 +120,7 @@ pub async fn login_basic(
 ///
 /// # Errors
 /// [`ViewerError::Internal`] outside a request or on a sealing failure.
-#[server]
+#[server(client = crate::session_client::SessionAwareClient)]
 pub async fn logout() -> Result<(), ViewerError> {
     // The extraction is the in-request proof (it fails outside one); its
     // decoded content is irrelevant — sign-out overwrites the cookie.
@@ -128,9 +136,11 @@ pub async fn logout() -> Result<(), ViewerError> {
 ///
 /// # Errors
 /// [`ViewerError::Internal`] when called outside a request (a bug).
-#[server]
+#[server(client = crate::session_client::SessionAwareClient)]
 pub async fn current_session() -> Result<Option<SessionInfo>, ViewerError> {
+    let state: crate::state::AppState = leptos::prelude::expect_context();
     let session = crate::session::http_session().await?;
+    let expires_in_secs = session.expires_in_secs(state.config.session.idle_minutes);
     let admin = session.get::<crate::session::ViewerSession>(crate::session::SESSION_KEY);
     Ok(admin.map(|s| SessionInfo {
         identity: s.identity,
@@ -139,6 +149,7 @@ pub async fn current_session() -> Result<Option<SessionInfo>, ViewerError> {
             crate::session::Credential::Bearer { .. } => "oidc".to_owned(),
         },
         scopes: s.scopes,
+        expires_in_secs,
     }))
 }
 
@@ -147,7 +158,7 @@ pub async fn current_session() -> Result<Option<SessionInfo>, ViewerError> {
 ///
 /// # Errors
 /// None in practice; the signature is fallible per the server-fn contract.
-#[server]
+#[server(client = crate::session_client::SessionAwareClient)]
 pub async fn fetch_login_screen() -> Result<LoginScreen, ViewerError> {
     let state: crate::state::AppState = leptos::prelude::expect_context();
     // The viewer offers only what BOTH sides support: its own configured
@@ -171,7 +182,7 @@ pub async fn fetch_login_screen() -> Result<LoginScreen, ViewerError> {
 /// # Errors
 /// [`ViewerError::Unauthenticated`] without a session (the shell only
 /// polls when logged in); CDR transport errors pass through.
-#[server]
+#[server(client = crate::session_client::SessionAwareClient)]
 pub async fn fetch_status() -> Result<String, ViewerError> {
     crate::session::require_session().await?;
     let state: crate::state::AppState = leptos::prelude::expect_context();

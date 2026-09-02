@@ -315,17 +315,32 @@ impl Harness {
     /// Wait until the current URL contains `fragment` (redirect chains).
     ///
     /// # Panics
-    /// When the URL never matches within 15 s.
+    /// When the URL never matches within [`WAIT`].
     pub(crate) async fn wait_url_contains(&self, fragment: &str) {
-        for _ in 0..75 {
+        self.wait_url_contains_for(fragment, WAIT).await;
+    }
+
+    /// [`Self::wait_url_contains`] with an explicit budget, for a transition
+    /// the browser makes on its OWN schedule rather than in answer to a click
+    /// — the session-expiry journeys wait out a whole poll interval.
+    ///
+    /// # Panics
+    /// When the URL never matches within `budget`.
+    pub(crate) async fn wait_url_contains_for(&self, fragment: &str, budget: Duration) {
+        let step = Duration::from_millis(200);
+        let mut waited = Duration::ZERO;
+        loop {
             let url = self.driver.current_url().await.expect("current url");
             if url.as_str().contains(fragment) {
                 return;
             }
-            tokio::time::sleep(Duration::from_millis(200)).await;
+            assert!(
+                waited < budget,
+                "URL never contained `{fragment}` (last: {url})"
+            );
+            tokio::time::sleep(step).await;
+            waited += step;
         }
-        let url = self.driver.current_url().await.expect("current url");
-        panic!("URL never contained `{fragment}` (last: {url})");
     }
 
     /// Wait until no toast card is on screen (a visible `thaw` toast overlays

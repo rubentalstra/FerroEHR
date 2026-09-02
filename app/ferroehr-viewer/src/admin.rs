@@ -99,7 +99,7 @@ pub fn renders_admin_ops(probe: &Result<AdminAvailability, ViewerError>) -> bool
 /// [`ViewerError::CdrUnreachable`] on transport failure;
 /// [`ViewerError::Cdr`] / [`ViewerError::Internal`] when the manifest cannot
 /// be read.
-#[server]
+#[server(client = crate::session_client::SessionAwareClient)]
 pub async fn probe_admin_api() -> Result<AdminAvailability, ViewerError> {
     let manifest = crate::system_api::fetch_conformance_manifest().await?;
     Ok(availability_of(&manifest))
@@ -192,7 +192,7 @@ pub fn delete_failure_copy(object: &str, error: &ViewerError) -> String {
 /// [`ViewerError::Invalid`] for an empty id;
 /// [`ViewerError::Cdr`] / [`ViewerError::CdrUnauthorized`] / [`ViewerError::Forbidden`] /
 /// [`ViewerError::CdrUnreachable`] from the CDR.
-#[server]
+#[server(client = crate::session_client::SessionAwareClient)]
 pub async fn admin_delete_template(
     /// The `template_id` of the OPT to delete.
     template_id: String,
@@ -222,7 +222,7 @@ pub async fn admin_delete_template(
 /// [`ViewerError::Invalid`] for an empty name or version;
 /// [`ViewerError::Cdr`] / [`ViewerError::CdrUnauthorized`] / [`ViewerError::Forbidden`] /
 /// [`ViewerError::CdrUnreachable`] from the CDR.
-#[server]
+#[server(client = crate::session_client::SessionAwareClient)]
 pub async fn admin_delete_stored_query(
     /// The qualified stored-query name (`[{namespace}::]{query-name}`).
     name: String,
@@ -258,7 +258,7 @@ pub async fn admin_delete_stored_query(
 /// [`ViewerError::Invalid`] for an empty id;
 /// [`ViewerError::Cdr`] / [`ViewerError::CdrUnauthorized`] / [`ViewerError::Forbidden`] /
 /// [`ViewerError::CdrUnreachable`] from the CDR.
-#[server]
+#[server(client = crate::session_client::SessionAwareClient)]
 pub async fn admin_delete_ehr(
     /// The EHR to delete, with everything committed under it.
     ehr_id: String,

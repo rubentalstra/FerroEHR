@@ -11,7 +11,10 @@
 //! secondary design-system button. Which paths appear — and the
 //! deployment-configured notice and links around them — is decided by
 //! [`crate::auth::fetch_login_screen`]. The post-login destination is carried
-//! through the `next` query parameter.
+//! through the `next` query parameter on BOTH paths: the Basic form posts it
+//! as a hidden field, the OIDC link appends it to its href. An arrival
+//! carrying `?expired=1` — the shell's signed-out transition — opens the card
+//! with the notice that the previous session ended.
 
 use leptos::prelude::*;
 
@@ -25,7 +28,9 @@ use crate::components::surface::CARD_PAD;
 /// Renders a centered auth card — the wordmark over the Basic credential form
 /// and/or the OIDC button, gated on the CDR's enabled auth modes (read once via
 /// a `Resource` under `<Suspense>`). The action's error value renders in a
-/// MessageBar; the submit button reflects the action's pending state.
+/// MessageBar; the submit button reflects the action's pending state. A
+/// `?expired=1` arrival — the shell's signed-out transition — additionally
+/// opens the card with the notice that the previous session ended.
 #[expect(
     clippy::must_use_candidate,
     reason = "#[component] rewrites the fn; view!/mount always consumes the value"
@@ -49,6 +54,30 @@ pub fn LoginPage() -> impl IntoView {
             .with(|q| q.get("next"))
             .unwrap_or_else(|| "/".to_owned())
     });
+    // `?expired=1` is set by the shell's signed-out transition
+    // (`crate::session_client::signed_out_url`): the user did not come here to
+    // sign in, their session ended under them, and the card says so instead of
+    // looking like a plain sign-in they asked for.
+    let expired = Signal::derive(move || query.with(|q| q.get("expired").is_some()));
+
+    let expiry_notice = view! {
+        {move || {
+            expired
+                .get()
+                .then(|| {
+                    view! {
+                        <div
+                            id="session-expired"
+                            role="status"
+                            class="rounded-control border border-warn/40 bg-warn-subtle px-3 py-2 text-sm text-ink"
+                        >
+                            "Your session ended. Sign in again to continue."
+                        </div>
+                    }
+                })
+        }}
+    }
+        .into_any();
 
     let error_bar = view! {
         {move || {
@@ -160,7 +189,11 @@ pub fn LoginPage() -> impl IntoView {
                         // <button> inside would be invalid HTML).
                         view! {
                             <a
-                                href="/auth/oidc/login"
+                                // The destination rides the query string, so
+                                // the OIDC round trip returns the user to the
+                                // screen an expiry took them off — the same
+                                // `next` the Basic form posts.
+                                href=move || oidc_login_href(&next.get())
                                 // rel=external: the client router must NOT
                                 // intercept this same-origin anchor — it is a
                                 // BFF axum route, not a client route.
@@ -214,11 +247,27 @@ pub fn LoginPage() -> impl IntoView {
                     <div class="flex justify-center">
                         <Wordmark />
                     </div>
+                    {expiry_notice}
                     {error_bar}
                     {forms}
                 </div>
             </div>
         </main>
+    }
+}
+
+/// The BFF's OIDC sign-in URL, carrying the post-login destination.
+///
+/// The shell root is the route's own fallback, so it is left off rather than
+/// spelled out. Everything else is percent-encoded with the `urlencoding`
+/// crate (the owner's never-hand-roll-a-codec rule); what the route then
+/// ACCEPTS is decided server-side by `crate::oidc::same_origin_next`, since a
+/// link is not a place a security property can live.
+fn oidc_login_href(next: &str) -> String {
+    if next == "/" {
+        "/auth/oidc/login".to_owned()
+    } else {
+        format!("/auth/oidc/login?next={}", urlencoding::encode(next))
     }
 }
 
@@ -275,5 +324,19 @@ fn basic_login_form(
                 </button>
             </div>
         </ActionForm>
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::oidc_login_href;
+
+    #[test]
+    fn the_oidc_link_carries_an_encoded_destination_and_omits_the_default_one() {
+        assert_eq!(oidc_login_href("/"), "/auth/oidc/login");
+        assert_eq!(
+            oidc_login_href("/ehrs/01a06375?tab=status"),
+            "/auth/oidc/login?next=%2Fehrs%2F01a06375%3Ftab%3Dstatus"
+        );
     }
 }

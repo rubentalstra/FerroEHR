@@ -107,7 +107,7 @@ pub struct EhrSummary {
 /// `ehr_id` included) normalizes via
 /// [`CdrClient::expect_success`](crate::cdr::CdrClient::expect_success);
 /// [`ViewerError::Internal`] when the body is not valid JSON.
-#[server]
+#[server(client = crate::session_client::SessionAwareClient)]
 pub async fn fetch_ehr_summary(
     /// The EHR whose summary facts to read.
     ehr_id: String,

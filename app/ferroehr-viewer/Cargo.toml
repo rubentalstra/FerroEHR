@@ -98,16 +98,18 @@ base64 = { workspace = true, optional = true }
 # headers are a response property, so the hydrate target never needs it.
 tower-http = { workspace = true, optional = true }
 csv = { workspace = true, optional = true }
-# Bounded concurrent fan-out for the BFF's multi-request reads — the dashboard
-# namespace tiles, the repository-usage counts, the directory history window
-# (ssr only; the client never issues those reads).
-futures = { workspace = true, optional = true }
 openidconnect = { workspace = true, optional = true }
 # Percent-encoding is ALWAYS the `urlencoding` crate (owner hard rule —
 # never hand-rolled). Non-optional: the audit screen builds
 # filter-preserving pagination hrefs on every target (ssr, hydrate, and
 # plain featureless test builds); the crate is tiny and wasm-clean.
 urlencoding = { workspace = true }
+# `Stream`/`Sink` name the server-fn transport's own signatures, which
+# `crate::session_client` re-implements on BOTH targets, and the BFF's bounded
+# concurrent fan-out (`cdr::FANOUT_CONCURRENCY`) rides the same crate. Already
+# in the wasm graph through leptos's own spawner, so the browser bundle carries
+# nothing new.
+futures = { workspace = true }
 # Typed status comparisons on every target (owner directive 2026-08-06,
 # issue #2055): `http::StatusCode` names the codes the pages branch on, and
 # the crate is tiny and wasm-clean — so it is non-optional, like urlencoding.
@@ -152,7 +154,6 @@ ssr = [
     "dep:tracing-subscriber",
     "dep:anyhow",
     "dep:reqwest",
-    "dep:futures",
     "dep:config",
     "dep:cookie",
     "dep:base64",
