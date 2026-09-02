@@ -15,6 +15,17 @@ workflow refuses a tag that has no matching section here.
 
 ## [Unreleased]
 
+### Fixed
+
+- The hosted-sandbox CDR no longer crashloops when the box's `.env` carries a
+  `FERROEHR_`-prefixed Compose image variable the server does not recognise.
+  The CDR service in `deploy/hosted/docker-compose.yml` stops loading the whole
+  `.env` into the container and now receives only `DATABASE_URL` (interpolated,
+  and a boot error if unset) plus its config-file path. Compose image variables
+  stay substitution-only and never reach the server's strict configuration
+  check, so a renamed or stale image variable in the operator's `.env` cannot
+  stop the server from starting.
+
 ## [4.0.16] - 2026-09-02
 
 ### Changed

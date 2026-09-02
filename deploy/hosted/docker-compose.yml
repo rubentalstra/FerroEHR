@@ -42,11 +42,17 @@ services:
           memory: 4096m
     environment:
       FERROEHR_CONFIG: /etc/ferroehr/ferroehr.toml
-    env_file:
-      # DATABASE_URL (the DB box's private-network string) and the image
-      # references. The operator's file, readable by the service user alone;
-      # no automation writes it and CI never holds the connection string.
-      - .env
+      # The DB box's private-network string, interpolated from `.env` (Compose
+      # reads `.env` for ${...} substitution regardless), so the ONLY thing the
+      # container's environment gains from `.env` is this one key — the config
+      # alias layer maps DATABASE_URL to db.url (app/ferroehr/src/config/alias.rs).
+      # Not `env_file: .env`: that injected EVERY operator var, including the
+      # compose-only FERROEHR_*_IMAGE substitution names, and the CDR's strict
+      # boot sweep (app/ferroehr/src/config/strict.rs) rejects any FERROEHR_ name
+      # it does not allowlist — so a stale image var in `.env` crashlooped the
+      # CDR (a renamed image var and its allowlist entry drifting apart). An
+      # explicit key list cannot drift with the operator's file.
+      DATABASE_URL: ${DATABASE_URL:?DATABASE_URL must be set in /opt/ferroehr-sandbox/.env}
     volumes:
       - ./ferroehr.sandbox.toml:/etc/ferroehr/ferroehr.toml:ro
     expose:
