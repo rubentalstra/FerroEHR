@@ -59,6 +59,13 @@ workflow refuses a tag that has no matching section here.
 
 ### Fixed
 
+- An AQL `SELECT` that mixes an aggregate function with a non-aggregated
+  column (`SELECT e/ehr_id/value, COUNT(c/uid/value) …`) is refused with a
+  typed `400` naming the rule. AQL 1.1 defines the aggregate functions over
+  the selected rows and no grouping construct, so the shape has no defined
+  result; previously the ungrouped SQL reached the database and its error
+  surfaced as a `500`.
+
 - The hosted-sandbox CDR no longer crashloops when the box's `.env` carries a
   `FERROEHR_`-prefixed Compose image variable the server does not recognise.
   The CDR service in `deploy/hosted/docker-compose.yml` stops loading the whole

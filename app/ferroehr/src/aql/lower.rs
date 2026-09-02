@@ -43,6 +43,7 @@ pub(crate) fn lower(
         .iter()
         .map(|c| planner.lower_select_column(c))
         .collect::<Result<Vec<_>, _>>()?;
+    refuse_mixed_aggregates(&select)?;
 
     let filter = query
         .where_
@@ -70,6 +71,24 @@ pub(crate) fn lower(
         offset,
         params: Vec::new(), // filled by `plan`
     })
+}
+
+/// Refuse a SELECT that mixes an aggregate with a plain projection.
+///
+/// Literals may sit beside aggregates (they are constant per row set); an
+/// identified path or a scalar function beside an aggregate has no defined
+/// value without grouping, which AQL 1.1 does not define.
+fn refuse_mixed_aggregates(select: &[SelectColumn]) -> Result<(), AqlError> {
+    let has_aggregate = select
+        .iter()
+        .any(|c| matches!(c.value, SelectValue::Aggregate { .. }));
+    let has_plain = select
+        .iter()
+        .any(|c| matches!(c.value, SelectValue::Path(_) | SelectValue::Function { .. }));
+    if has_aggregate && has_plain {
+        return Err(AqlFeatureError::MixedAggregateProjection.into());
+    }
+    Ok(())
 }
 
 /// The FROM-clause lowering state: the growing source list and variable
