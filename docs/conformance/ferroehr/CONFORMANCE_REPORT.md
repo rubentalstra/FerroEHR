@@ -1,6 +1,6 @@
 # Conformance Report
 
-SUT: FerroEHR 4.0.15 (sut `ferroehr`) · schedule cnf-2.0-w2 · ITS its-rest
+SUT: FerroEHR 4.0.16 (sut `ferroehr`) · schedule cnf-2.0-w2 · ITS its-rest
 Runner: veredictum 0.1.5 · verification pack: passed
 
 ## Summary
