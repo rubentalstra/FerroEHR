@@ -1,0 +1,11 @@
+SELECT
+    e/ehr_id/value AS ehr_id,
+    v/uid/value AS version_uid,
+    v/commit_audit/time_committed/value AS committed_at,
+    v/commit_audit/change_type/value AS change_type,
+    c/name/value AS title
+FROM EHR e
+    CONTAINS VERSION v[ALL_VERSIONS]
+        CONTAINS COMPOSITION c
+ORDER BY v/uid/value ASC
+LIMIT 200

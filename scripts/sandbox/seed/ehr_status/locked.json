@@ -1,0 +1,30 @@
+{
+  "_type": "EHR_STATUS",
+  "archetype_node_id": "openEHR-EHR-EHR_STATUS.generic.v1",
+  "archetype_details": {
+    "_type": "ARCHETYPED",
+    "archetype_id": {
+      "_type": "ARCHETYPE_ID",
+      "value": "openEHR-EHR-EHR_STATUS.generic.v1"
+    },
+    "rm_version": "1.2.0"
+  },
+  "name": {
+    "_type": "DV_TEXT",
+    "value": "EHR Status (locked)"
+  },
+  "subject": {
+    "_type": "PARTY_SELF",
+    "external_ref": {
+      "_type": "PARTY_REF",
+      "namespace": "ferroehr-sandbox",
+      "type": "PERSON",
+      "id": {
+        "_type": "HIER_OBJECT_ID",
+        "value": "__SUBJECT_ID__"
+      }
+    }
+  },
+  "is_queryable": true,
+  "is_modifiable": false
+}

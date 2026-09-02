@@ -1,0 +1,36 @@
+{
+  "_type": "ROLE",
+  "archetype_node_id": "openEHR-DEMOGRAPHIC-ROLE.role.v1",
+  "archetype_details": {
+    "_type": "ARCHETYPED",
+    "archetype_id": { "_type": "ARCHETYPE_ID", "value": "openEHR-DEMOGRAPHIC-ROLE.role.v1" },
+    "rm_version": "1.2.0"
+  },
+  "name": { "_type": "DV_TEXT", "value": "general practitioner" },
+  "identities": [
+    {
+      "_type": "PARTY_IDENTITY",
+      "archetype_node_id": "at0001",
+      "name": { "_type": "DV_TEXT", "value": "role name" },
+      "details": {
+        "_type": "ITEM_TREE",
+        "archetype_node_id": "at0002",
+        "name": { "_type": "DV_TEXT", "value": "structure" },
+        "items": [
+          {
+            "_type": "ELEMENT",
+            "archetype_node_id": "at0003",
+            "name": { "_type": "DV_TEXT", "value": "role" },
+            "value": { "_type": "DV_TEXT", "value": "general practitioner" }
+          }
+        ]
+      }
+    }
+  ],
+  "performer": {
+    "_type": "PARTY_REF",
+    "namespace": "demographic",
+    "type": "PERSON",
+    "id": { "_type": "HIER_OBJECT_ID", "value": "__PERFORMER__" }
+  }
+}

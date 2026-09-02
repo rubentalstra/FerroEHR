@@ -1,0 +1,8 @@
+SELECT
+    c/archetype_details/template_id/value AS template_id,
+    c/name/value AS title,
+    c/context/start_time/value AS start_time,
+    c/uid/value AS version_uid
+FROM EHR e[ehr_id/value=$ehr_id]
+    CONTAINS COMPOSITION c
+ORDER BY c/archetype_details/template_id/value ASC, c/uid/value ASC

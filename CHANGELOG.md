@@ -42,6 +42,20 @@ workflow refuses a tag that has no matching section here.
   server and probes `http://127.0.0.1:<server.bind port><REST root>/status`, so
   the container health check keeps working when `server.base_path` is
   shortened. The URL it probes under the defaults is unchanged.
+- The hosted sandbox (sandbox.ferroehr.eu) now holds a complete demo dataset
+  instead of four templates in three EHRs. Each nightly reset loads 16 ADL 1.4
+  operational templates from the openEHR CKM pack, 228 ADL 2 archetypes and 5
+  ADL 2 templates (two of them source templates the server flattens against
+  that archetype library), 8 EHRs carrying 182 compositions with mixed
+  records, 6 compositions with more than one version and 2 EHRs with a second
+  `EHR_STATUS` version (one not queryable, one not modifiable), 11 demographic
+  parties, a FOLDER directory per EHR referencing real compositions, and 5
+  stored AQL queries under `eu.ferroehr.sandbox` that all return rows. The
+  seeder (`scripts/sandbox/reseed.sh`) still drives only the public REST API
+  and is now a walker over `scripts/sandbox/seed/manifest.json`, so adding
+  demo content is editing data. A run takes 39–45 s against a local stack and
+  leaves a 24 MB database; a repeat run detects the marker EHR it wrote and
+  exits without changing anything.
 
 ### Fixed
 
