@@ -128,10 +128,11 @@ fn config_without_a_utility_is_rejected() {
     );
 }
 
-/// `healthcheck` takes an explicit URL and otherwise defaults to the local
-/// status endpoint.
+/// `healthcheck` takes an explicit URL and otherwise derives the local status
+/// endpoint from the effective configuration, so the probe follows a
+/// shortened `server.base_path` and a moved `server.bind` port.
 #[test]
-fn healthcheck_url_is_optional_with_a_default() -> Result<(), clap::Error> {
+fn healthcheck_url_is_optional_with_a_derived_default() -> Result<(), clap::Error> {
     let explicit = Cli::try_parse_from(["ferroehr", "healthcheck", "--url", "http://h:8080/x"])?;
     assert!(
         format!("{explicit:?}").contains("http://h:8080/x"),
@@ -139,9 +140,20 @@ fn healthcheck_url_is_optional_with_a_default() -> Result<(), clap::Error> {
     );
     let defaulted = Cli::try_parse_from(["ferroehr", "healthcheck"])?;
     assert!(
-        format!("{defaulted:?}").contains("/ferroehr/rest/status"),
-        "default URL missing: {defaulted:?}"
+        format!("{defaulted:?}").contains("url: None"),
+        "an absent URL must stay absent at parse time: {defaulted:?}"
     );
+    let default_url = ferroehr_server::healthcheck_url(None, &[]).expect("default config loads");
+    assert_eq!(default_url, "http://127.0.0.1:8080/ferroehr/rest/status");
+    let shortened = ferroehr_server::healthcheck_url(
+        None,
+        &[
+            ("server.base_path".to_owned(), "/ferroehr/v1".to_owned()),
+            ("server.bind".to_owned(), "0.0.0.0:9090".to_owned()),
+        ],
+    )
+    .expect("overridden config loads");
+    assert_eq!(shortened, "http://127.0.0.1:9090/ferroehr/status");
     Ok(())
 }
 

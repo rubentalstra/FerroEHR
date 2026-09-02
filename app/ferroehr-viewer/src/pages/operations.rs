@@ -13,7 +13,7 @@
 //! reader per claim:
 //!
 //! * *Health.* The application shell's topbar pill polls the product status
-//!   document (`/ferroehr/rest/status`: is the API answering, at which version).
+//!   document (`{rest root}/status`: is the API answering, at which version).
 //!   The health card here reads the OTHER contract — the public
 //!   `/health/readiness` indicators (database ping, migrations applied,
 //!   component flags) — and the card says so on screen, so the two are never

@@ -31,6 +31,8 @@ spec_profile = "development"
 # ── [server] — HTTP listener + REST surface ──────────────────────────────────
 [server]
 bind = "0.0.0.0:8080"
+# Shortening is supported (e.g. "/ferroehr/v1" behind a path-prefixed proxy);
+# the first segment must be /ferroehr and the last must be v1.
 base_path = "/ferroehr/rest/openehr/v1"
 max_in_flight = 256          # concurrent-request admission cap; 0 disables shedding
 swagger_ui = true            # PROD: consider false

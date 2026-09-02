@@ -15,6 +15,34 @@ workflow refuses a tag that has no matching section here.
 
 ## [Unreleased]
 
+### Added
+
+- `server.base_path` (`FERROEHR__SERVER__BASE_PATH`) is a supported, validated
+  knob: a deployment behind a path-prefixed reverse proxy can shorten the REST
+  base path to as little as `/ferroehr/v1` instead of stacking the proxy prefix
+  on top of the full default. The API nest, `Location` headers, the System
+  Options manifest, the served OpenAPI documents, the Swagger UI, the status
+  document and SMART discovery all follow the configured value; the health
+  family stays at the process root. The default is unchanged.
+- The FerroEHR Viewer gained the mirror key `cdr.base_path`
+  (`FERROEHR_VIEWER__CDR__BASE_PATH`, default `/ferroehr/rest/openehr/v1`), so a
+  viewer can drive a CDR that shortened its base path.
+
+### Changed
+
+- `server.base_path` is now checked at boot, and a value that breaks a rule
+  stops the server with an error naming the key and every rule it broke. The
+  first segment must be `ferroehr`, the last must be the openEHR API version
+  segment `v1`, and the value must carry no trailing slash, no empty segment,
+  and only unreserved URL characters. Values that previously booted and served a
+  broken surface are now refused: a trailing slash, a missing `/ferroehr`
+  segment, a path not ending in `v1`. The default value is unaffected.
+- `ferroehr healthcheck` no longer hard-codes the default REST root: with no
+  `--url`/`FERROEHR_HEALTHCHECK_URL` it loads the same configuration as the
+  server and probes `http://127.0.0.1:<server.bind port><REST root>/status`, so
+  the container health check keeps working when `server.base_path` is
+  shortened. The URL it probes under the defaults is unchanged.
+
 ### Fixed
 
 - The hosted-sandbox CDR no longer crashloops when the box's `.env` carries a

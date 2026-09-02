@@ -106,6 +106,7 @@ impl FerroEhrConfig {
     pub fn validate(&self) -> Result<(), ConfigErrors> {
         let mut errors = Vec::new();
         self.validate_system_id(&mut errors);
+        self.validate_base_path(&mut errors);
         self.validate_mechanisms(&mut errors);
         self.validate_signing(&mut errors);
         self.validate_key_sources(&mut errors);
@@ -148,6 +149,68 @@ impl FerroEhrConfig {
                  OBJECT_VERSION_ID",
                 self.server.system_id
             )));
+        }
+    }
+
+    /// `server.base_path` names this deployment's API root, and every rule it
+    /// breaks is reported at once.
+    ///
+    /// The last segment is the ITS-REST API version `v1`: the overview locates
+    /// the API at a deployment-chosen base followed by that segment
+    /// (`ITS-REST/specifications/docs/overview/Resources.md` §Resource
+    /// identification — "the request is made to an openEHR API (of version
+    /// `v1`), located at `https://openEHRSys.example.com`"), and the REST
+    /// policy is single-version. The first segment is `ferroehr`, which is our
+    /// own rule and not configurable away. In between, any segment of RFC 3986
+    /// unreserved characters is free, with no trailing slash and no empty
+    /// segment.
+    fn validate_base_path(&self, errors: &mut Vec<ConfigError>) {
+        let path = self.server.base_path.as_str();
+        let mut refuse = |rule: &str| {
+            errors.push(ConfigError::semantic(format!(
+                "server.base_path {path:?} {rule}"
+            )));
+        };
+
+        if !path.starts_with('/') {
+            refuse("must start with `/`");
+        }
+        let trailing_slash = path.len() > 1 && path.ends_with('/');
+        if trailing_slash {
+            refuse("must not end with `/`");
+        }
+
+        let body = path.strip_prefix('/').unwrap_or(path);
+        let body = if trailing_slash {
+            body.strip_suffix('/').unwrap_or(body)
+        } else {
+            body
+        };
+        let segments: Vec<&str> = body.split('/').collect();
+
+        if segments.first() != Some(&"ferroehr") {
+            refuse(
+                "must begin with the `/ferroehr` segment (the product root is not configurable \
+                 away)",
+            );
+        }
+        if segments.last() != Some(&"v1") {
+            refuse(
+                "must end with the ITS-REST API version segment `v1` (overview Resources.md \
+                 §Resource identification)",
+            );
+        }
+        if segments.iter().any(|segment| segment.is_empty()) {
+            refuse("must not contain an empty path segment (`//`)");
+        }
+        for segment in segments
+            .iter()
+            .filter(|segment| !segment.is_empty() && !segment.chars().all(is_unreserved))
+        {
+            refuse(&format!(
+                "segment {segment:?} must use only RFC 3986 unreserved characters \
+                 (A-Z a-z 0-9 - . _ ~)"
+            ));
         }
     }
 
@@ -298,6 +361,12 @@ impl FerroEhrConfig {
         serde_json::to_value(self)
             .map_err(|e| ConfigError::semantic(format!("rendering config as JSON: {e}")))
     }
+}
+
+/// Whether `c` is an RFC 3986 §2.3 unreserved character, the set a path
+/// segment may carry without percent-encoding.
+const fn is_unreserved(c: char) -> bool {
+    c.is_ascii_alphanumeric() || matches!(c, '-' | '.' | '_' | '~')
 }
 
 /// The port component of a `host:port` bind string, if parseable.
@@ -1517,6 +1586,74 @@ mod tests {
         assert!(c.validate().is_err());
         c.management.port = Some(9100);
         assert!(c.validate().is_ok());
+    }
+
+    /// The default base path and every shortened shape an operator may reach
+    /// for satisfy the rules.
+    #[test]
+    fn validate_accepts_the_default_and_shortened_base_paths() {
+        for base_path in [
+            "/ferroehr/rest/openehr/v1",
+            "/ferroehr/v1",
+            "/ferroehr/openehr/v1",
+            "/ferroehr/cdr/v1",
+            "/ferroehr/rest-api/openehr-1.2.0/v1",
+        ] {
+            let mut c = FerroEhrConfig::default();
+            c.server.base_path = base_path.to_owned();
+            assert!(c.validate().is_ok(), "{base_path} must be accepted");
+        }
+    }
+
+    /// Each rule refuses on its own, naming the key and the rule it broke.
+    #[test]
+    fn validate_refuses_a_malformed_base_path() {
+        for (base_path, expected) in [
+            ("ferroehr/rest/openehr/v1", "must start with `/`"),
+            ("/ferroehrx/v1", "must begin with the `/ferroehr` segment"),
+            ("/x/ferroehr/v1", "must begin with the `/ferroehr` segment"),
+            (
+                "/ferroehr",
+                "must end with the ITS-REST API version segment",
+            ),
+            (
+                "/ferroehr/v2",
+                "must end with the ITS-REST API version segment",
+            ),
+            ("/ferroehr/v1/", "must not end with `/`"),
+            ("/ferroehr//v1", "must not contain an empty path segment"),
+            ("/ferroehr/re st/v1", "RFC 3986 unreserved characters"),
+        ] {
+            let mut c = FerroEhrConfig::default();
+            c.server.base_path = base_path.to_owned();
+            let err = c
+                .validate()
+                .expect_err("a malformed base path must be refused")
+                .to_string();
+            assert!(err.contains("server.base_path"), "{base_path}: {err}");
+            assert!(err.contains(expected), "{base_path}: {err}");
+        }
+    }
+
+    /// Validation is aggregated: a value breaking several rules reports them
+    /// all in one boot error, so an operator fixes the key in one iteration.
+    #[test]
+    fn validate_reports_every_broken_base_path_rule_at_once() {
+        let mut c = FerroEhrConfig::default();
+        c.server.base_path = "cdr//api/".to_owned();
+        let err = c
+            .validate()
+            .expect_err("a multiply-malformed base path must be refused")
+            .to_string();
+        for expected in [
+            "must start with `/`",
+            "must not end with `/`",
+            "must begin with the `/ferroehr` segment",
+            "must end with the ITS-REST API version segment",
+            "must not contain an empty path segment",
+        ] {
+            assert!(err.contains(expected), "{expected} missing from: {err}");
+        }
     }
 
     /// `server.system_id` is judged by the openEHR `uid` grammar itself.

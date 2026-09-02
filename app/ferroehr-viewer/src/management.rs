@@ -14,7 +14,7 @@
 //! metrics, config or logging resource at all.
 //!
 //! **Two health readers would be one too many.** The application shell's status
-//! pill polls the product status document (`/ferroehr/rest/status`); this module
+//! pill polls the product status document (`{rest root}/status`); this module
 //! reads the *other* health contract, `/health/readiness` — the dependency
 //! indicators — and nothing else re-reads either claim.
 //!

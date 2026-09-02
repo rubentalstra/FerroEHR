@@ -34,6 +34,7 @@ mod audit_iti81;
 mod authz_cedar_engine;
 mod authz_remote_pdp;
 mod authz_route_matrix;
+mod base_path_http;
 mod composition_validation_http;
 mod connection_bounds;
 mod definition_adl2_http;

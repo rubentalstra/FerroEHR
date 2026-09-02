@@ -67,13 +67,11 @@ pub struct Cli {
 pub enum Command {
     /// Probe the running server's status endpoint; exit 0 on 2xx, 1 otherwise.
     Healthcheck {
-        /// The status URL to probe.
-        #[arg(
-            long,
-            env = "FERROEHR_HEALTHCHECK_URL",
-            default_value = "http://127.0.0.1:8080/ferroehr/rest/status"
-        )]
-        url: String,
+        /// The status URL to probe. Unset, it is derived from the effective
+        /// configuration: `http://127.0.0.1:<server.bind port><REST root>/status`,
+        /// so a shortened `server.base_path` moves the probe with it.
+        #[arg(long, env = "FERROEHR_HEALTHCHECK_URL")]
+        url: Option<String>,
     },
     /// Configuration utilities (validate / print the annotated default).
     Config {
@@ -129,7 +127,13 @@ fn parse_override(raw: &str) -> Result<(String, String), String> {
 /// subcommand; the process exit code follows from `main` returning it.
 pub async fn run(cli: Cli) -> anyhow::Result<()> {
     match cli.command {
-        Some(Command::Healthcheck { url }) => healthcheck(&url).await,
+        Some(Command::Healthcheck { url }) => {
+            let url = match url {
+                Some(url) => url,
+                None => healthcheck_url(cli.config.as_deref(), &cli.set)?,
+            };
+            healthcheck(&url).await
+        }
         Some(Command::Config { cmd }) => run_config(&cmd, cli.config.as_deref(), &cli.set),
         Some(Command::Db { cmd }) => run_db(&cmd, cli.config.as_deref(), &cli.set).await,
         None => serve(cli.config.as_deref(), &cli.set).await,
@@ -205,6 +209,33 @@ fn run_config(
             Ok(())
         }
     }
+}
+
+/// The default healthcheck URL, derived from the effective configuration.
+///
+/// The probe runs inside the container beside the server, so it reads the same
+/// configuration the server booted with: the port of `server.bind` and the REST
+/// root `server.base_path` derives. Loopback is fixed; the bind address is
+/// whatever the listener accepts from, which is not necessarily dialable.
+///
+/// # Errors
+/// The configuration fails to load, or `server.bind` carries no port.
+pub fn healthcheck_url(
+    config_path: Option<&Path>,
+    overrides: &[(String, String)],
+) -> anyhow::Result<String> {
+    let config =
+        ferroehr::config::load(config_path, overrides).map_err(|e| anyhow::anyhow!("{e}"))?;
+    let port = config
+        .server
+        .bind
+        .rsplit_once(':')
+        .map(|(_, port)| port)
+        .with_context(|| format!("server.bind `{}` carries no port", config.server.bind))?;
+    Ok(format!(
+        "http://127.0.0.1:{port}{}/status",
+        config.server.rest_root()
+    ))
 }
 
 /// Probe `url`; `Ok(())` iff the response status is 2xx.

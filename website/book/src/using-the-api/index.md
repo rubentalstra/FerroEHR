@@ -25,15 +25,18 @@ All clinical API routes hang off a configurable base path, which defaults to:
 
 Every path in these chapters is relative to that base. So "`POST /ehr`" means
 `POST http://your-host:8080/ferroehr/rest/openehr/v1/ehr`. The base path is set
-with `FERROEHR__SERVER__BASE_PATH` (see
-[Server, database & telemetry](../installation/config-server.md#server)).
+with `FERROEHR__SERVER__BASE_PATH`, and it may be shortened as far as
+`/ferroehr/v1` (see
+[Shortening the REST base path](../installation/config-server.md#base_path-shortening-the-rest-base-path)).
 
-The status, health and documentation routes hang off the base path's **parent**
-(`/ferroehr/rest` by default), not off the base path itself: the public,
-unauthenticated status probe is at `/ferroehr/rest/status`, and interactive docs
-at `/ferroehr/rest/swagger-ui` when `swagger_ui` is on. Every deployment serves
-that UI from its own routes, so your own server always documents its own
-surface.
+The status and documentation routes hang off the **REST root**, which the server
+derives from the base path by dropping the segments that name the openEHR API:
+`/ferroehr/rest` by default. The public, unauthenticated status probe is at
+`/ferroehr/rest/status` and interactive docs at `/ferroehr/rest/swagger-ui` when
+`swagger_ui` is on. Every deployment serves that UI from its own routes, so your
+own server always documents its own surface. The health probes stay at the
+process root whatever the base path is: `/health`, `/health/liveness`,
+`/health/readiness`.
 
 ## Capability discovery
 

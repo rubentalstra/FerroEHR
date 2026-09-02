@@ -44,7 +44,7 @@ use crate::components::brand::Wordmark;
 use crate::components::scope_grants::{ScopePreviewer, capability_note, fact_row, grant_cards};
 use crate::scopes::{grants_of, policy_source};
 
-/// How often (ms) the topbar re-polls the CDR `/ferroehr/rest/status` health endpoint.
+/// How often (ms) the topbar re-polls the CDR `{rest root}/status` health endpoint.
 const HEALTH_POLL_MS: u64 = 30_000;
 
 /// The browser `localStorage` key the dark-mode preference persists under.
