@@ -24,7 +24,7 @@ system_id = "ferroehr.local"
 | Key | Type | Default | Description |
 |---|---|---|---|
 | `bind` | string | `0.0.0.0:8080` | Socket address the API listener binds. |
-| `base_path` | string | `/ferroehr/rest/openehr/v1` | ITS-REST base path all API routes hang off. The status, health and documentation routes hang off its parent (`/ferroehr/rest` by default), and the served OpenAPI document describes whatever paths this setting produces, never the defaults. |
+| `base_path` | string | `/ferroehr/rest/openehr/v1` | ITS-REST base path all API routes hang off. Shortening it is supported; see [below](#base_path-shortening-the-rest-base-path). The served OpenAPI document describes whatever paths this setting produces, never the defaults. |
 | `max_in_flight` | int | `256` | Concurrent-request admission cap (not a rate). Requests beyond it are shed immediately with `503` + `Retry-After`, never queued, so offered load beyond capacity cannot exhaust memory. `0` installs no shedding layer at all. |
 | `swagger_ui` | bool | `true` | Serve Swagger UI + the OpenAPI JSON under the REST root. Consider `false` in production. |
 | `cors_permissive` | bool | `false` | Permissive (development) CORS. Left on, any origin may read API responses, so the server warns loudly at boot. Production configures explicit origins at the edge. |
@@ -33,6 +33,75 @@ system_id = "ferroehr.local"
 The shed sits on the clinical API subtree only, as its outermost layer: a shed
 request never reaches authentication, auditing, or the request body, and the
 always-on status, health, discovery and management routes are never shed.
+
+### `base_path`: shortening the REST base path
+
+ITS-REST leaves the API base to the deployment and fixes only the version
+segment at its end, so you may shorten `base_path`. The shape is checked at
+boot, and a value that breaks a rule stops the server with an error naming the
+key and every rule it broke:
+
+- The first segment is `ferroehr`. `/ferroehrx/v1` and `/x/ferroehr/v1` are
+  refused. This segment is not configurable away.
+- The last segment is `v1`, the openEHR API version this server implements.
+  The shortest accepted value is therefore `/ferroehr/v1`.
+- No trailing slash, no empty segment (`//`), and every segment uses only the
+  unreserved URL characters `A-Z a-z 0-9 - . _ ~`.
+
+The status and documentation routes hang off the **REST root**, which the server
+derives from `base_path` by dropping the segments that name the openEHR API: the
+trailing `v1`, plus an `openehr` segment directly before it when you spell one.
+
+| `base_path` | REST root | Status document |
+|---|---|---|
+| `/ferroehr/rest/openehr/v1` (default) | `/ferroehr/rest` | `/ferroehr/rest/status` |
+| `/ferroehr/openehr/v1` | `/ferroehr` | `/ferroehr/status` |
+| `/ferroehr/v1` | `/ferroehr` | `/ferroehr/status` |
+| `/ferroehr/cdr/v1` | `/ferroehr/cdr` | `/ferroehr/cdr/status` |
+
+The Swagger UI (`{rest root}/swagger-ui`), the OpenAPI documents
+(`{rest root}/api-docs/…`) and the SMART discovery document
+(`{rest root}/.well-known/smart-configuration`) move with it. The health family
+stays at the process root: `/health`, `/health/liveness`, `/health/readiness`.
+
+Set it from the environment with:
+
+```bash
+FERROEHR__SERVER__BASE_PATH=/ferroehr/v1
+```
+
+> [!NOTE]
+> The `ferroehr healthcheck` subcommand, which the published container images
+> run as their Docker health check, derives its default URL from the effective
+> configuration (`http://127.0.0.1:<port><REST root>/status`), so it follows a
+> shortened base path on its own. An explicit `FERROEHR_HEALTHCHECK_URL` still
+> wins, for example to probe `/health/readiness`, which no base path affects.
+
+### Behind a path-prefixed reverse proxy
+
+A proxy that mounts the CDR under a prefix stacks that prefix on top of
+`base_path`. A proxy serving the server at `/cdr` with the default base path
+gives clients URLs like:
+
+```text
+https://cdr.example.org/cdr/ferroehr/rest/openehr/v1/definition/template/adl1.4
+```
+
+Two ways to shorten that. Strip the prefix at the proxy, so the server sees the
+path it serves (nginx `proxy_pass http://cdr:8080/;` with the trailing slash,
+Caddy `handle_path`, Traefik `StripPrefix`). Or shorten the base path:
+
+```bash
+FERROEHR__SERVER__BASE_PATH=/ferroehr/v1
+```
+
+which gives `https://cdr.example.org/cdr/ferroehr/v1/definition/template/adl1.4`.
+
+Whichever you choose, tell every client. The server builds its `Location`
+headers, its served OpenAPI paths and its SMART discovery document from its own
+`base_path`, and it cannot see a prefix the proxy adds. The
+[FerroEHR Viewer](../viewer/index.md) has its own mirror key, `cdr.base_path`,
+which must match.
 
 ### `[server.limits]`: request-body sizes
 

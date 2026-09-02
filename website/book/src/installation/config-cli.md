@@ -57,7 +57,7 @@ the container `HEALTHCHECK` and the Kubernetes exec-probe fallback.
 
 | Variable | Type | Default | Description |
 |---|---|---|---|
-| `FERROEHR_HEALTHCHECK_URL` | URL | `http://127.0.0.1:8080/ferroehr/rest/status` | The URL the subcommand probes; also settable as `--url`. Not part of `ferroehr.toml`. |
+| `FERROEHR_HEALTHCHECK_URL` | URL | derived: `http://127.0.0.1:<server.bind port><REST root>/status` (`http://127.0.0.1:8080/ferroehr/rest/status` with the defaults) | The URL the subcommand probes; also settable as `--url`. Not part of `ferroehr.toml`. Unset, the subcommand loads the same configuration as the server (file, environment, `--set`) and follows `server.bind` and `server.base_path`, so a shortened base path moves the probe with it. |
 
 ## Zero-config boot and the production checklist
 

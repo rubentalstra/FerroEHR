@@ -398,12 +398,29 @@ impl ServerConfig {
         format!("{}/api-docs/openapi.json", self.rest_root())
     }
 
-    /// The `/ferroehr/rest` root (the base path with the trailing `/openehr/v1`
-    /// removed), where status/health/docs live.
-    fn rest_root(&self) -> String {
-        self.base_path
-            .strip_suffix("/openehr/v1")
-            .unwrap_or(&self.base_path)
+    /// The deployment's product root, where the non-openEHR surfaces live
+    /// (`/status`, `/swagger-ui`, `/api-docs/openapi.json`,
+    /// `/.well-known/smart-configuration`).
+    ///
+    /// The rule is the base path with the segments that name the openEHR API
+    /// removed: the trailing `v1` API-version segment, which
+    /// [`crate::config::FerroEhrConfig::validate`] guarantees is present, and an
+    /// `openehr` segment immediately before it when the deployment spells one.
+    /// So the default `/ferroehr/rest/openehr/v1` roots at `/ferroehr/rest`,
+    /// `/ferroehr/openehr/v1` and `/ferroehr/v1` both root at `/ferroehr`, and
+    /// `/ferroehr/cdr/v1` roots at `/ferroehr/cdr`. The result is always a
+    /// strict parent of the base path, so a root-hosted route can never collide
+    /// with the API nest. No openEHR spec governs where a server roots its
+    /// non-API surfaces — our own design/extension.
+    #[must_use]
+    pub fn rest_root(&self) -> String {
+        let without_version = self
+            .base_path
+            .strip_suffix("/v1")
+            .unwrap_or(&self.base_path);
+        without_version
+            .strip_suffix("/openehr")
+            .unwrap_or(without_version)
             .to_owned()
     }
 }
@@ -492,6 +509,38 @@ impl Default for SystemOptionsConfig {
             vendor: "FerroEHR project".to_owned(),
             restapi_specs_version: crate::telemetry::provenance::ITS_REST.to_owned(),
             conformance_profile: crate::telemetry::provenance::CONFORMANCE_PROFILE.to_owned(),
+        }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use crate::config::server::ServerConfig;
+
+    /// The REST root drops the openEHR API segments and nothing else, for every
+    /// base-path shape `FerroEhrConfig::validate` admits.
+    #[test]
+    fn rest_root_drops_the_openehr_api_segments() {
+        for (base_path, expected) in [
+            ("/ferroehr/rest/openehr/v1", "/ferroehr/rest"),
+            ("/ferroehr/v1", "/ferroehr"),
+            ("/ferroehr/openehr/v1", "/ferroehr"),
+            ("/ferroehr/cdr/v1", "/ferroehr/cdr"),
+            (
+                "/ferroehr/rest/openehr/v1/openehr/v1",
+                "/ferroehr/rest/openehr/v1",
+            ),
+        ] {
+            let cfg = ServerConfig {
+                base_path: base_path.to_owned(),
+                ..ServerConfig::default()
+            };
+            assert_eq!(cfg.rest_root(), expected, "base_path {base_path}");
+            assert_eq!(cfg.swagger_ui_path(), format!("{expected}/swagger-ui"));
+            assert_eq!(
+                cfg.openapi_json_path(),
+                format!("{expected}/api-docs/openapi.json")
+            );
         }
     }
 }

@@ -131,6 +131,13 @@ pub struct CdrClient {
     http: reqwest::Client,
     /// scheme://host:port — no trailing slash.
     origin: String,
+    /// The CDR's ITS-REST base path — leading slash, no trailing slash
+    /// ([`CdrConfig::rest_base_path`](crate::config::CdrConfig::rest_base_path)).
+    base_path: String,
+    /// The CDR's product root, where `/status`, `/api-docs/…` and the SMART
+    /// discovery document live
+    /// ([`CdrConfig::rest_root`](crate::config::CdrConfig::rest_root)).
+    rest_root: String,
     /// The management surface's base URL including its base path — no trailing
     /// slash. Derived from the configuration
     /// ([`CdrConfig::management_base`](crate::config::CdrConfig::management_base)),
@@ -153,18 +160,22 @@ impl CdrClient {
         Ok(Self {
             http,
             origin: cfg.base_url.trim_end_matches('/').to_owned(),
+            base_path: cfg.rest_base_path().to_owned(),
+            rest_root: cfg.rest_root().to_owned(),
             management_base: cfg.management_base(),
         })
     }
 
-    /// The ITS-REST v1 base (`{origin}/ferroehr/rest/openehr/v1`). Endpoint
-    /// paths appended to this come from the generated `openehr-its` REST
-    /// contract; the served `openapi.json` is the cross-check.
+    /// The ITS-REST v1 base (`{origin}{base_path}`, default
+    /// `/ferroehr/rest/openehr/v1`). Endpoint paths appended to this come from
+    /// the generated `openehr-its` REST contract; the served `openapi.json` is
+    /// the cross-check.
     #[must_use]
     pub fn rest_v1(&self, path: &str) -> String {
         format!(
-            "{}/ferroehr/rest/openehr/v1/{}",
+            "{}{}/{}",
             self.origin,
+            self.base_path,
             path.trim_start_matches('/')
         )
     }
@@ -175,11 +186,24 @@ impl CdrClient {
     /// so the trailing slash `rest_v1("")` would add must not be sent.
     #[must_use]
     pub fn rest_v1_root(&self) -> String {
-        format!("{}/ferroehr/rest/openehr/v1", self.origin)
+        format!("{}{}", self.origin, self.base_path)
     }
 
-    /// A URL directly under the CDR origin (`/ferroehr/rest/status`,
-    /// `/.well-known/smart-configuration`, the served `openapi.json`).
+    /// A URL under the CDR's product root — the surfaces that sit beside the
+    /// openEHR API rather than inside it (`status`, `api-docs/openapi.json`,
+    /// `.well-known/smart-configuration`).
+    #[must_use]
+    pub fn rest_root_url(&self, path: &str) -> String {
+        format!(
+            "{}{}/{}",
+            self.origin,
+            self.rest_root,
+            path.trim_start_matches('/')
+        )
+    }
+
+    /// A URL directly under the CDR origin (the always-on health family, and
+    /// anything else the server mounts at the process root).
     #[must_use]
     pub fn origin_url(&self, path: &str) -> String {
         format!("{}/{}", self.origin, path.trim_start_matches('/'))
@@ -613,6 +637,46 @@ mod tests {
             r#"{"message":"Validation failed","validationErrors":[]}"#,
         );
         assert_eq!(diagnostic_of(&plain), "Validation failed");
+    }
+
+    /// The viewer mirrors the CDR's own base-path rule: the API hangs off
+    /// `cdr.base_path`, and the product root drops the trailing `v1` segment
+    /// plus an `openehr` segment directly before it. Restated here because the
+    /// viewer reaches the CDR strictly over ITS-REST and never links against
+    /// its crates.
+    #[test]
+    fn every_url_family_follows_the_configured_base_path() {
+        for (base_path, expected_root) in [
+            ("/ferroehr/rest/openehr/v1", "/ferroehr/rest"),
+            ("/ferroehr/v1", "/ferroehr"),
+            ("/ferroehr/openehr/v1", "/ferroehr"),
+            ("/ferroehr/cdr/v1", "/ferroehr/cdr"),
+            // A trailing slash is normalized away rather than doubling a
+            // separator into every derived URL.
+            ("/ferroehr/v1/", "/ferroehr"),
+        ] {
+            let client = CdrClient::new(&crate::config::CdrConfig {
+                base_url: "http://cdr:8080".to_owned(),
+                base_path: base_path.to_owned(),
+                ..crate::config::CdrConfig::default()
+            })
+            .expect("client");
+            let base = base_path.trim_end_matches('/');
+            assert_eq!(
+                client.rest_v1("query/aql"),
+                format!("http://cdr:8080{base}/query/aql")
+            );
+            assert_eq!(client.rest_v1_root(), format!("http://cdr:8080{base}"));
+            assert_eq!(
+                client.rest_root_url("status"),
+                format!("http://cdr:8080{expected_root}/status")
+            );
+            // A leading slash on the path is not a second separator.
+            assert_eq!(
+                client.rest_root_url("/api-docs/openapi.json"),
+                format!("http://cdr:8080{expected_root}/api-docs/openapi.json")
+            );
+        }
     }
 
     #[test]

@@ -31,9 +31,17 @@ pub struct ViewerConfig {
 #[serde(default, deny_unknown_fields)]
 pub struct CdrConfig {
     /// Base URL of the CDR (scheme://host:port, no trailing path) — the
-    /// ITS-REST base path `/ferroehr/rest/openehr/v1` is appended by the
-    /// client.
+    /// ITS-REST base path ([`Self::base_path`]) is appended by the client.
     pub base_url: String,
+    /// The CDR's ITS-REST base path, the mirror of its own `server.base_path`
+    /// (default `/ferroehr/rest/openehr/v1`).
+    ///
+    /// A deployment that shortens the CDR's base path sets the same value here,
+    /// or the viewer calls paths the CDR does not serve. The CDR validates the
+    /// shape at its own boot (first segment `ferroehr`, last segment `v1`); the
+    /// viewer only normalizes a trailing slash away. No openEHR spec governs
+    /// where a server roots its API — our own design/extension.
+    pub base_path: String,
     /// Base URL of the CDR's management surface **including its base path**
     /// (e.g. `http://cdr.internal:9464/management`). Empty = derive it from
     /// [`Self::base_url`] with the CDR's default `/management` base path.
@@ -53,6 +61,7 @@ impl Default for CdrConfig {
     fn default() -> Self {
         Self {
             base_url: "http://localhost:8080".to_owned(),
+            base_path: "/ferroehr/rest/openehr/v1".to_owned(),
             management_base_url: String::new(),
             request_timeout_secs: 30,
         }
@@ -60,6 +69,32 @@ impl Default for CdrConfig {
 }
 
 impl CdrConfig {
+    /// The configured ITS-REST base path with no trailing slash.
+    #[must_use]
+    pub fn rest_base_path(&self) -> &str {
+        self.base_path.trim_end_matches('/')
+    }
+
+    /// The CDR's product root: the base path with the segments that name the
+    /// openEHR API removed.
+    ///
+    /// The rule mirrors the CDR's own `server.base_path` → REST-root
+    /// derivation, restated here because the viewer talks to the CDR strictly
+    /// over ITS-REST and never links against its crates: the trailing `v1`
+    /// API-version segment comes off, and an `openehr` segment directly before
+    /// it when the deployment spells one. So `/ferroehr/rest/openehr/v1` roots
+    /// at `/ferroehr/rest` and `/ferroehr/v1` at `/ferroehr`. That root is
+    /// where the CDR serves `/status`, `/api-docs/…` and
+    /// `/.well-known/smart-configuration`.
+    #[must_use]
+    pub fn rest_root(&self) -> &str {
+        let base = self.rest_base_path();
+        let without_version = base.strip_suffix("/v1").unwrap_or(base);
+        without_version
+            .strip_suffix("/openehr")
+            .unwrap_or(without_version)
+    }
+
     /// The management-surface base URL with no trailing slash: the configured
     /// value, or `{base_url}/management` (the CDR's default base path) when it
     /// is empty.
@@ -262,6 +297,32 @@ pub fn load() -> Result<ViewerConfig, ConfigError> {
 #[cfg(test)]
 mod tests {
     use super::{CdrConfig, ViewerConfig};
+
+    /// The base path defaults to the CDR's own default, and the product root
+    /// derives from it by the CDR's rule: drop the trailing `v1` segment, and
+    /// an `openehr` segment directly before it when the deployment spells one.
+    #[test]
+    fn the_rest_root_derives_from_the_configured_base_path() {
+        assert_eq!(
+            CdrConfig::default().base_path,
+            "/ferroehr/rest/openehr/v1",
+            "the viewer default must mirror the CDR default"
+        );
+        for (base_path, expected) in [
+            ("/ferroehr/rest/openehr/v1", "/ferroehr/rest"),
+            ("/ferroehr/v1", "/ferroehr"),
+            ("/ferroehr/openehr/v1", "/ferroehr"),
+            ("/ferroehr/cdr/v1", "/ferroehr/cdr"),
+            ("/ferroehr/v1/", "/ferroehr"),
+        ] {
+            let cfg = CdrConfig {
+                base_path: base_path.to_owned(),
+                ..CdrConfig::default()
+            };
+            assert_eq!(cfg.rest_root(), expected, "base_path {base_path}");
+            assert_eq!(cfg.rest_base_path(), base_path.trim_end_matches('/'));
+        }
+    }
 
     #[test]
     fn management_base_defaults_to_the_cdr_origin() {

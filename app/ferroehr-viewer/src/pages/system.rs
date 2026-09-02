@@ -42,15 +42,18 @@ use crate::components::page_header::PageHeader;
 use crate::components::surface::titled_card;
 use crate::error::ViewerError;
 
-/// Where the CDR serves its SMART service-discovery document.
+/// Where the CDR serves its SMART service-discovery document, relative to the
+/// CDR's product root.
 ///
-/// Relative to the PLATFORM base URL, which this platform gives a path
-/// segment: ITS-REST `smart_app_launch/master04-service_discovery.adoc`
+/// The document hangs off the PLATFORM base URL, which this platform gives a
+/// path segment: ITS-REST `smart_app_launch/master04-service_discovery.adoc`
 /// §"the configuration endpoint" — "If the base URL includes a path segment
 /// as `https://platform.example.com/gateway/v1`, then the configuration
 /// should be accessible at
 /// `https://platform.example.com/gateway/v1/.well-known/smart-configuration`".
-const SMART_DISCOVERY_PATH: &str = "ferroehr/rest/.well-known/smart-configuration";
+/// That segment is deployment-configured (`cdr.base_path`), so the absolute
+/// path is derived per deployment rather than spelled here.
+const SMART_DISCOVERY_PATH: &str = ".well-known/smart-configuration";
 
 /// The CDR's SMART service-discovery document, or `None` when the CDR
 /// advertises none (a `404` is a first-class "SMART disabled" state, not an
@@ -64,7 +67,7 @@ const SMART_DISCOVERY_PATH: &str = "ferroehr/rest/.well-known/smart-configuratio
 pub async fn fetch_smart_config() -> Result<Option<String>, ViewerError> {
     crate::session::require_session().await?;
     let state: crate::state::AppState = expect_context();
-    let url = state.cdr.origin_url(SMART_DISCOVERY_PATH);
+    let url = state.cdr.rest_root_url(SMART_DISCOVERY_PATH);
     let response = state.cdr.get_public(&url, "application/json").await?;
     if response.is(http::StatusCode::NOT_FOUND) {
         return Ok(None);
@@ -133,21 +136,21 @@ pub async fn fetch_openapi(
         )));
     }
     // NOTE: no openEHR spec governs an OAS-serving endpoint — our own design;
-    // the CDR serves only its own natively generated documents under this
-    // default directory ("/ferroehr/rest/api-docs/", configurable CDR-side).
+    // the CDR serves only its own natively generated documents, under the
+    // `api-docs/` directory of its product root.
     let url = if family.is_empty() {
-        state.cdr.origin_url("ferroehr/rest/api-docs/openapi.json")
+        state.cdr.rest_root_url("api-docs/openapi.json")
     } else {
-        state.cdr.origin_url(&format!(
-            "ferroehr/rest/api-docs/ferroehr-{family}.openapi.json"
-        ))
+        state
+            .cdr
+            .rest_root_url(&format!("api-docs/ferroehr-{family}.openapi.json"))
     };
     let response = state.cdr.get_public(&url, "application/json").await?;
     // Public surface; if a deployment happens to gate it, retry with the
     // session credential before giving up.
     // NOTE: the credential's audience is exactly the configured CDR origin —
-    // `url` is built by `origin_url`, so the retry can only ever re-send it to
-    // the same host the session authenticated against.
+    // `url` is built by `rest_root_url`, so the retry can only ever re-send it
+    // to the same host the session authenticated against.
     let response = if response.is(http::StatusCode::UNAUTHORIZED) {
         state
             .cdr
@@ -608,7 +611,7 @@ fn card_error(error: &ViewerError) -> AnyView {
     .into_any()
 }
 
-/// Render the parsed `/ferroehr/rest/status` document: an UP/DOWN pill plus every
+/// Render the parsed `{rest root}/status` document: an UP/DOWN pill plus every
 /// scalar field as a definition list.
 ///
 /// # Errors
@@ -1044,13 +1047,12 @@ mod tests {
     /// PLATFORM base URL, which carries a path segment here (ITS-REST
     /// `smart_app_launch/master04-service_discovery.adoc` §"the configuration
     /// endpoint"). The origin-level path is a different resource, and on a
-    /// single-origin deployment it is not the CDR's at all.
+    /// single-origin deployment it is not the CDR's at all. The constant is
+    /// therefore root-relative, and `CdrClient::rest_root_url` supplies that
+    /// segment from `cdr.base_path`.
     #[test]
     fn discovery_is_probed_under_the_platform_base_path() {
-        assert_eq!(
-            SMART_DISCOVERY_PATH,
-            "ferroehr/rest/.well-known/smart-configuration"
-        );
+        assert_eq!(SMART_DISCOVERY_PATH, ".well-known/smart-configuration");
     }
 
     /// No failure branch echoes a bare status back at the reader; each names

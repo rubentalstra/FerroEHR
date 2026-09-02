@@ -80,12 +80,7 @@ pub fn router(state: AppState, authenticator: Arc<Authenticator>) -> Router {
     let cfg = state.config().clone();
     let mgmt_rbac = management_rbac(&state);
     let observability = state.observability().clone();
-    let rest_root = cfg
-        .server
-        .base_path
-        .strip_suffix("/openehr/v1")
-        .unwrap_or(&cfg.server.base_path)
-        .to_owned();
+    let rest_root = cfg.server.rest_root();
 
     // A known path called with a method it does not serve renders `405` with the
     // openEHR body (overview §HTTP Methods); axum supplies the mandatory `Allow`

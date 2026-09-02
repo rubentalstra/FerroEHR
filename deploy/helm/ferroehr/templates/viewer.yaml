@@ -95,6 +95,12 @@ spec:
             # talks to the database, and the egress policy below enforces that.
             - name: FERROEHR_VIEWER__CDR__BASE_URL
               value: {{ printf "http://%s:%v" (include "ferroehr.fullname" .) .Values.service.port | quote }}
+            {{- with (dig "server" "base_path" "" (.Values.config | default dict)) }}
+            # The viewer's base path mirrors the CDR's own, so shortening
+            # config.server.base_path cannot leave the two disagreeing.
+            - name: FERROEHR_VIEWER__CDR__BASE_PATH
+              value: {{ . | quote }}
+            {{- end }}
             {{- if .Values.viewer.auth.oidc.enabled }}
             - name: FERROEHR_VIEWER__AUTH__OIDC__ENABLED
               value: "true"

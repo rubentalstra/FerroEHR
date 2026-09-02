@@ -642,6 +642,10 @@ spec:
             # talks to the database, and the egress policy below enforces that.
             - name: FERROEHR_VIEWER__CDR__BASE_URL
               value: "http://ferroehr:8080"
+            # The viewer's base path mirrors the CDR's own, so shortening
+            # config.server.base_path cannot leave the two disagreeing.
+            - name: FERROEHR_VIEWER__CDR__BASE_PATH
+              value: "/ferroehr/rest/openehr/v1"
           livenessProbe:
             httpGet:
               path: /

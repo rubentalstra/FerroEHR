@@ -189,13 +189,9 @@ pub fn extensions_document(cfg: &AppConfig) -> utoipa::openapi::OpenApi {
     // Public (no lock). The health family is mounted at the process root and is
     // base-path-independent, so it needs no re-homing.
     doc.merge(health::openapi());
-    let rest_root = cfg
-        .server
-        .base_path
-        .strip_suffix("/openehr/v1")
-        .unwrap_or(&cfg.server.base_path);
-    doc.merge(status::openapi(rest_root));
-    doc.merge(crate::smart::discovery::openapi(cfg, rest_root));
+    let rest_root = cfg.server.rest_root();
+    doc.merge(status::openapi(&rest_root));
+    doc.merge(crate::smart::discovery::openapi(cfg, &rest_root));
     // The System API's OPTIONS operation is a closure route mounted outside
     // `OpenApiRouter` (above CORS), documented via its twin.
     doc.merge(crate::api::system::options::openapi(&cfg.server.base_path));
