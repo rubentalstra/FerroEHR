@@ -94,7 +94,7 @@ async fn run_count_aql(
 /// normalized via
 /// [`CdrClient::expect_success`](crate::cdr::CdrClient::expect_success);
 /// [`ViewerError::Internal`] on an unparseable result set.
-#[server]
+#[server(client = crate::session_client::SessionAwareClient)]
 pub async fn dashboard_counts() -> Result<(i64, i64, u32), ViewerError> {
     let session = crate::session::require_session().await?;
     let state: crate::state::AppState = expect_context();
@@ -136,7 +136,7 @@ pub struct NamespaceTile {
 /// [`ViewerError::Unauthenticated`] without a viewer session; CDR errors from
 /// the stored-query LISTING normalized (a failure there means no grouping at
 /// all); a failing member RUN is confined to its own tile's `matches: None`.
-#[server]
+#[server(client = crate::session_client::SessionAwareClient)]
 pub async fn namespace_tiles() -> Result<Vec<NamespaceTile>, ViewerError> {
     use futures::stream::StreamExt;
 
@@ -211,7 +211,7 @@ pub async fn namespace_tiles() -> Result<Vec<NamespaceTile>, ViewerError> {
 /// # Errors
 /// [`ViewerError::Unauthenticated`] without a viewer session; CDR errors
 /// normalized; [`ViewerError::Internal`] on an unparseable result set.
-#[server]
+#[server(client = crate::session_client::SessionAwareClient)]
 pub async fn commit_trend() -> Result<Vec<ActivityPoint>, ViewerError> {
     let session = crate::session::require_session().await?;
     let state: crate::state::AppState = expect_context();

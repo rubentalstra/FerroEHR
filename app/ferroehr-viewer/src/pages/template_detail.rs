@@ -121,7 +121,7 @@ pub fn template_detail_from_opt(source: String) -> Result<TemplateDetail, Viewer
 /// [`ViewerError::CdrUnreachable`] from the CDR;
 /// [`ViewerError::Internal`] when the OPT fails to parse or the Web Template
 /// fails to build.
-#[server]
+#[server(client = crate::session_client::SessionAwareClient)]
 pub async fn fetch_template_detail(
     /// The template whose OPT to read.
     template_id: String,
@@ -149,7 +149,7 @@ pub async fn fetch_template_detail(
 ///
 /// # Errors
 /// As [`fetch_template_detail`].
-#[server]
+#[server(client = crate::session_client::SessionAwareClient)]
 pub async fn fetch_template_catalog(
     /// The template to build the path catalog from.
     template_id: String,
@@ -184,7 +184,7 @@ pub fn example_path(template_id: &str, detail: ExampleDetail, kind: ExampleType)
 /// [`ViewerError::Unauthenticated`] without a viewer session;
 /// [`ViewerError::Cdr`] / [`ViewerError::CdrUnauthorized`] / [`ViewerError::Forbidden`] /
 /// [`ViewerError::CdrUnreachable`] from the CDR.
-#[server]
+#[server(client = crate::session_client::SessionAwareClient)]
 pub async fn fetch_example(
     /// The template to generate an example composition for.
     template_id: String,

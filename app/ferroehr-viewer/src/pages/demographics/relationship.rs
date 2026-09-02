@@ -148,7 +148,7 @@ pub struct InlineRelationship {
 /// [`CdrClient::expect_success`](crate::cdr::CdrClient::expect_success) — a
 /// `404` from a CDR that does not serve this extension surfaces there;
 /// [`ViewerError::Internal`] when the body is not valid JSON.
-#[server]
+#[server(client = crate::session_client::SessionAwareClient)]
 pub async fn fetch_relationship(
     /// The relationship's `uid_based_id` (either form; the container is used).
     uid: String,
@@ -197,7 +197,7 @@ pub async fn fetch_relationship(
 /// included) normalizes via
 /// [`CdrClient::expect_success`](crate::cdr::CdrClient::expect_success);
 /// [`ViewerError::Internal`] when the created resource carries no `uid`.
-#[server]
+#[server(client = crate::session_client::SessionAwareClient)]
 pub async fn create_relationship(
     /// The relationship's `archetype_node_id`.
     archetype_node_id: String,
@@ -267,7 +267,7 @@ pub async fn create_relationship(
 /// `details` draft that is not a JSON object; CDR transport errors pass
 /// through; any non-2xx CDR answer (the `412` collision included) normalizes
 /// via [`CdrClient::expect_success`](crate::cdr::CdrClient::expect_success).
-#[server]
+#[server(client = crate::session_client::SessionAwareClient)]
 pub async fn update_relationship(
     /// The version container to update.
     versioned_object_uid: String,
@@ -325,7 +325,7 @@ pub async fn update_relationship(
 /// [`ViewerError::Invalid`] when the id is not a full `OBJECT_VERSION_ID`; CDR
 /// transport errors pass through; any non-2xx CDR answer normalizes via
 /// [`CdrClient::expect_success`](crate::cdr::CdrClient::expect_success).
-#[server]
+#[server(client = crate::session_client::SessionAwareClient)]
 pub async fn delete_relationship(
     /// The version to supersede, as a full `OBJECT_VERSION_ID`.
     version_uid: String,

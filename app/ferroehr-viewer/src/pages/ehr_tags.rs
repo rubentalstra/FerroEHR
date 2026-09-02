@@ -167,7 +167,7 @@ impl EhrTargetKind {
 /// `ehr_id`/`uid_based_id` included) normalizes via
 /// [`CdrClient::expect_success`](crate::cdr::CdrClient::expect_success);
 /// [`ViewerError::Internal`] when the list is not valid JSON.
-#[server]
+#[server(client = crate::session_client::SessionAwareClient)]
 pub async fn fetch_ehr_tags(
     /// The EHR that owns the tagged object.
     ehr_id: String,
@@ -206,7 +206,7 @@ pub async fn fetch_ehr_tags(
 /// tag that breaks an `ITEM_TAG` invariant included) normalizes via
 /// [`CdrClient::expect_success`](crate::cdr::CdrClient::expect_success);
 /// [`ViewerError::Internal`] when the current list is not valid JSON.
-#[server]
+#[server(client = crate::session_client::SessionAwareClient)]
 pub async fn set_ehr_tag(
     /// The EHR that owns the tagged object.
     ehr_id: String,
@@ -304,7 +304,7 @@ async fn set_tag_at(
 /// [`ViewerError::Invalid`] on a kind that has no tag routes or a blank key;
 /// CDR transport errors pass through; any non-2xx CDR answer normalizes via
 /// [`CdrClient::expect_success`](crate::cdr::CdrClient::expect_success).
-#[server]
+#[server(client = crate::session_client::SessionAwareClient)]
 pub async fn delete_ehr_tag(
     /// The EHR that owns the tagged object.
     ehr_id: String,
@@ -362,7 +362,7 @@ async fn delete_tag_at(
 /// `ehr_id`) normalizes via
 /// [`CdrClient::expect_success`](crate::cdr::CdrClient::expect_success);
 /// [`ViewerError::Internal`] when the list is not valid JSON.
-#[server]
+#[server(client = crate::session_client::SessionAwareClient)]
 pub async fn list_ehr_tags(
     /// The EHR whose tags to list.
     ehr_id: String,
@@ -406,7 +406,7 @@ pub async fn list_ehr_tags(
 /// [`ViewerError::Invalid`] when `uid` is empty; CDR transport errors pass
 /// through; a refusal or any non-`404` failure normalizes via
 /// [`CdrClient::expect_success`](crate::cdr::CdrClient::expect_success).
-#[server]
+#[server(client = crate::session_client::SessionAwareClient)]
 pub async fn resolve_ehr_target(
     /// The EHR that owns the tagged object.
     ehr_id: String,
@@ -526,7 +526,7 @@ async fn ehr_status_container(
 /// errors pass through; a non-2xx CDR answer normalizes via
 /// [`CdrClient::expect_success`](crate::cdr::CdrClient::expect_success);
 /// [`ViewerError::Internal`] when a body is not valid JSON.
-#[server]
+#[server(client = crate::session_client::SessionAwareClient)]
 pub async fn fetch_status_tags(
     /// The EHR whose status tags to read.
     ehr_id: String,
@@ -567,7 +567,7 @@ async fn status_tags_url(
 ///
 /// # Errors
 /// As [`set_ehr_tag`], plus the EHR read's own failures.
-#[server]
+#[server(client = crate::session_client::SessionAwareClient)]
 pub async fn set_status_tag(
     /// The EHR whose status to tag.
     ehr_id: String,
@@ -597,7 +597,7 @@ pub async fn set_status_tag(
 ///
 /// # Errors
 /// As [`delete_ehr_tag`], plus the EHR read's own failures.
-#[server]
+#[server(client = crate::session_client::SessionAwareClient)]
 pub async fn delete_status_tag(
     /// The EHR whose status tag to remove.
     ehr_id: String,

@@ -275,10 +275,13 @@ async fn the_topbar_carries_the_wordmark_the_health_pill_the_user_menu_and_the_d
     assert!(header.contains("href=\"/\""), "{header}");
     assert!(header.contains("FerroEHR"), "{header}");
     // The health pill is a <Transition>, so "checking…" is only ever the
-    // reload fallback; an async pass always serves a DECIDED chip, and an
-    // unreachable status document is the down state.
-    assert!(header.contains("CDR DOWN"), "{header}");
-    assert!(header.contains("bg-danger"), "{header}");
+    // reload fallback; an async pass always serves a DECIDED chip. This pass
+    // carries no session, so the status read is refused before it ever reaches
+    // the CDR — and the chip says the session ended rather than blaming the
+    // CDR for a refusal that is not its.
+    assert!(header.contains("Session ended"), "{header}");
+    assert!(!header.contains("CDR DOWN"), "{header}");
+    assert!(!header.contains("bg-danger"), "{header}");
     assert!(!header.contains("checking…"), "{header}");
     // The user menu's stable trigger id (the E2E journeys target it) and the
     // dark-mode control, which starts on the light theme's moon icon.
@@ -421,6 +424,39 @@ async fn the_login_screen_is_served_without_a_session() {
         pass.html.contains("<title>"),
         "the login document renders: {}",
         pass.html
+    );
+}
+
+/// The signed-out transition's landing: `?expired=1` opens the sign-in card
+/// with the session-ended notice, and a plain visit to `/login` does not.
+///
+/// The notice is server-rendered from the URL alone, which is what keeps it
+/// hydration-stable and what the expiry journeys wait on
+/// (`#session-expired`).
+#[tokio::test]
+async fn the_login_screen_says_the_session_ended_only_when_the_url_says_so() {
+    let expired = render_route("/login?expired=1&next=%2Fehrs").await;
+    assert!(
+        expired.html.contains("id=\"session-expired\""),
+        "{}",
+        expired.html
+    );
+    assert!(
+        expired
+            .html
+            .contains("Your session ended. Sign in again to continue."),
+        "{}",
+        expired.html
+    );
+    // The destination survives the round trip, so signing in returns the user
+    // to the screen the expiry took them off.
+    assert!(expired.html.contains("value=\"/ehrs\""), "{}", expired.html);
+
+    let plain = render_route("/login").await;
+    assert!(
+        !plain.html.contains("id=\"session-expired\""),
+        "{}",
+        plain.html
     );
 }
 

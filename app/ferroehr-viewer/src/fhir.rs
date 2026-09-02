@@ -424,7 +424,7 @@ pub fn outcome_summary(body: &str) -> Option<String> {
 /// # Errors
 /// [`ViewerError::Unauthenticated`] without a viewer session;
 /// [`ViewerError::CdrUnreachable`] on transport failure.
-#[server]
+#[server(client = crate::session_client::SessionAwareClient)]
 pub async fn probe_fhir_connector() -> Result<FhirAvailability, ViewerError> {
     let session = crate::session::require_session().await?;
     let state: crate::state::AppState = expect_context();
@@ -447,7 +447,7 @@ pub async fn probe_fhir_connector() -> Result<FhirAvailability, ViewerError> {
 /// [`ViewerError::CdrUnauthorized`] / [`ViewerError::Forbidden`] / [`ViewerError::Cdr`] /
 /// [`ViewerError::CdrUnreachable`] from the CDR; [`ViewerError::Internal`]
 /// when the body is not valid JSON.
-#[server]
+#[server(client = crate::session_client::SessionAwareClient)]
 pub async fn list_fhir_mappings() -> Result<Option<Vec<FhirMappingRow>>, ViewerError> {
     let session = crate::session::require_session().await?;
     let state: crate::state::AppState = expect_context();
@@ -482,7 +482,7 @@ pub async fn list_fhir_mappings() -> Result<Option<Vec<FhirMappingRow>>, ViewerE
 /// [`ViewerError::CdrUnauthorized`] / [`ViewerError::Forbidden`] / [`ViewerError::Cdr`] /
 /// [`ViewerError::CdrUnreachable`] from the CDR; [`ViewerError::Internal`]
 /// when the stored record is not valid JSON.
-#[server]
+#[server(client = crate::session_client::SessionAwareClient)]
 pub async fn create_fhir_mapping(
     /// The deployable mapping name (unique in the store, immutable afterwards).
     name: String,
@@ -521,7 +521,7 @@ pub async fn create_fhir_mapping(
 /// [`ViewerError::CdrUnauthorized`] / [`ViewerError::Forbidden`] / [`ViewerError::Cdr`] /
 /// [`ViewerError::CdrUnreachable`] from the CDR; [`ViewerError::Internal`]
 /// when the stored record is not valid JSON.
-#[server]
+#[server(client = crate::session_client::SessionAwareClient)]
 pub async fn update_fhir_mapping(
     /// The mapping to update, by store id.
     mapping_id: String,
@@ -561,7 +561,7 @@ pub async fn update_fhir_mapping(
 /// [`ViewerError::Invalid`] for an empty id;
 /// [`ViewerError::CdrUnauthorized`] / [`ViewerError::Forbidden`] / [`ViewerError::Cdr`] /
 /// [`ViewerError::CdrUnreachable`] from the CDR.
-#[server]
+#[server(client = crate::session_client::SessionAwareClient)]
 pub async fn delete_fhir_mapping(
     /// The mapping to delete, by store id.
     mapping_id: String,
@@ -596,7 +596,7 @@ pub async fn delete_fhir_mapping(
 /// [`ViewerError::CdrUnauthorized`] / [`ViewerError::Forbidden`] on an
 /// authentication or authorization refusal;
 /// [`ViewerError::CdrUnreachable`] on transport failure.
-#[server]
+#[server(client = crate::session_client::SessionAwareClient)]
 pub async fn read_fhir_resources(
     /// The FHIR resource type to read.
     resource_type: String,
@@ -637,7 +637,7 @@ pub async fn read_fhir_resources(
 /// [`ViewerError::CdrUnauthorized`] / [`ViewerError::Forbidden`] on an
 /// authentication or authorization refusal;
 /// [`ViewerError::CdrUnreachable`] on transport failure.
-#[server]
+#[server(client = crate::session_client::SessionAwareClient)]
 pub async fn dry_run_fhir_resource(
     /// The FHIR resource type to validate against.
     resource_type: String,

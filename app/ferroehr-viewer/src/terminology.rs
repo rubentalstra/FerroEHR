@@ -285,7 +285,7 @@ fn require_value(value: &str, what: &str) -> Result<String, ViewerError> {
 /// refuses this session;
 /// [`ViewerError::Cdr`] / [`ViewerError::CdrUnreachable`] from the CDR;
 /// [`ViewerError::Internal`] when the body is not JSON.
-#[server]
+#[server(client = crate::session_client::SessionAwareClient)]
 pub async fn list_terminologies() -> Result<Option<Vec<String>>, ViewerError> {
     let Some(body) = terminology_get("terminology").await? else {
         return Ok(None);
@@ -300,7 +300,7 @@ pub async fn list_terminologies() -> Result<Option<Vec<String>>, ViewerError> {
 /// # Errors
 /// [`ViewerError::Invalid`] for a blank id; otherwise as
 /// [`list_terminologies`].
-#[server]
+#[server(client = crate::session_client::SessionAwareClient)]
 pub async fn fetch_terminology_description(
     /// The terminology to describe.
     terminology_id: String,
@@ -322,7 +322,7 @@ pub async fn fetch_terminology_description(
 /// # Errors
 /// [`ViewerError::Invalid`] for a blank terminology id or code; otherwise as
 /// [`list_terminologies`].
-#[server]
+#[server(client = crate::session_client::SessionAwareClient)]
 pub async fn fetch_term(
     /// The terminology holding the code.
     terminology_id: String,
@@ -354,7 +354,7 @@ pub async fn fetch_term(
 /// # Errors
 /// [`ViewerError::Invalid`] for a blank terminology id or code; otherwise as
 /// [`list_terminologies`].
-#[server]
+#[server(client = crate::session_client::SessionAwareClient)]
 pub async fn check_subsumption(
     /// The terminology both codes belong to.
     terminology_id: String,
@@ -385,7 +385,7 @@ pub async fn check_subsumption(
 /// # Errors
 /// [`ViewerError::Invalid`] for a blank terminology id or value-set id;
 /// otherwise as [`list_terminologies`].
-#[server]
+#[server(client = crate::session_client::SessionAwareClient)]
 pub async fn fetch_value_set(
     /// The terminology holding the value set.
     terminology_id: String,
@@ -413,7 +413,7 @@ pub async fn fetch_value_set(
 /// # Errors
 /// [`ViewerError::Invalid`] for a blank terminology id, value-set id or
 /// candidate code; otherwise as [`list_terminologies`].
-#[server]
+#[server(client = crate::session_client::SessionAwareClient)]
 pub async fn validate_value_set_code(
     /// The terminology holding the value set.
     terminology_id: String,

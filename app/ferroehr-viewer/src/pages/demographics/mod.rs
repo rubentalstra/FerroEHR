@@ -301,7 +301,7 @@ pub fn contribution_href(uid: &str) -> String {
 /// container or version included) normalizes via
 /// [`CdrClient::expect_success`](crate::cdr::CdrClient::expect_success);
 /// [`ViewerError::Internal`] when either body is not valid JSON.
-#[server]
+#[server(client = crate::session_client::SessionAwareClient)]
 pub async fn fetch_versioned_object(
     /// Which versioned-object family the container belongs to, as its route
     /// segment ([`VersionedFamily::segment`]).
@@ -358,7 +358,7 @@ pub async fn fetch_versioned_object(
 /// included) normalizes via
 /// [`CdrClient::expect_success`](crate::cdr::CdrClient::expect_success);
 /// [`ViewerError::Internal`] when the history is not valid JSON.
-#[server]
+#[server(client = crate::session_client::SessionAwareClient)]
 pub async fn fetch_demographic_revision_history(
     /// Which versioned-object family the container belongs to, as its route
     /// segment ([`VersionedFamily::segment`]).
@@ -403,7 +403,7 @@ pub async fn fetch_demographic_revision_history(
 /// through; a non-2xx CDR answer (the `404` for no version at that time
 /// included, which the UI renders as an inline note) normalizes via
 /// [`CdrClient::expect_success`](crate::cdr::CdrClient::expect_success).
-#[server]
+#[server(client = crate::session_client::SessionAwareClient)]
 pub async fn resolve_demographic_version_at_time(
     /// Which versioned-object family the container belongs to, as its route
     /// segment ([`VersionedFamily::segment`]).
@@ -452,7 +452,7 @@ pub async fn resolve_demographic_version_at_time(
 /// [`ViewerError::Invalid`] when no version uid is given; CDR transport errors
 /// pass through; a non-2xx CDR answer normalizes via
 /// [`CdrClient::expect_success`](crate::cdr::CdrClient::expect_success).
-#[server]
+#[server(client = crate::session_client::SessionAwareClient)]
 pub async fn fetch_demographic_version_document(
     /// Which resource family the version belongs to, as its route segment
     /// ([`DemographicResource::segment`]).
@@ -506,7 +506,7 @@ pub async fn fetch_demographic_version_document(
 /// through; a refusal or any non-`404` failure normalizes via
 /// [`CdrClient::expect_success`](crate::cdr::CdrClient::expect_success) rather
 /// than being read as "not found".
-#[server]
+#[server(client = crate::session_client::SessionAwareClient)]
 pub async fn resolve_party_kind(
     /// The party id to place, in either `uid_based_id` form.
     uid: String,

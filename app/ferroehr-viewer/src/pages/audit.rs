@@ -85,7 +85,7 @@ pub struct AuditPage {
 /// role (the audit trail is an operator surface); [`ViewerError::Cdr`] /
 /// [`ViewerError::CdrUnreachable`] from the CDR; [`ViewerError::Internal`]
 /// on an unparseable Bundle.
-#[server]
+#[server(client = crate::session_client::SessionAwareClient)]
 pub async fn search_audit(
     /// Inclusive lower bound on the record instant; empty means unbounded.
     from: String,

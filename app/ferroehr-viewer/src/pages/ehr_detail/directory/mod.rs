@@ -180,7 +180,7 @@ pub(crate) fn is_conflict(error: &ViewerError) -> bool {
 /// [`ViewerError::Unauthenticated`] without a viewer session; CDR transport
 /// errors pass through; a non-2xx, non-404 CDR answer normalizes via
 /// [`CdrClient::expect_success`](crate::cdr::CdrClient::expect_success).
-#[server]
+#[server(client = crate::session_client::SessionAwareClient)]
 pub async fn fetch_directory(
     /// The EHR whose directory to read.
     ehr_id: String,
@@ -240,7 +240,7 @@ fn directory_state(response: crate::cdr::CdrResponse) -> DirectoryState {
 /// through; a non-2xx CDR answer (its validation diagnostics, which the UI
 /// renders verbatim, included) normalizes via
 /// [`CdrClient::expect_success`](crate::cdr::CdrClient::expect_success).
-#[server]
+#[server(client = crate::session_client::SessionAwareClient)]
 pub async fn create_directory(
     /// The EHR to create the directory in.
     ehr_id: String,
@@ -285,7 +285,7 @@ pub async fn create_directory(
 /// CDR transport errors pass through; a non-2xx CDR answer (its validation
 /// diagnostics, which the UI renders verbatim, included) normalizes via
 /// [`CdrClient::expect_success`](crate::cdr::CdrClient::expect_success).
-#[server]
+#[server(client = crate::session_client::SessionAwareClient)]
 pub async fn update_directory(
     /// The EHR holding the directory.
     ehr_id: String,
@@ -340,7 +340,7 @@ pub async fn update_directory(
 /// [`ViewerError::Invalid`] on a missing current version uid; CDR transport
 /// errors pass through; a non-2xx CDR answer normalizes via
 /// [`CdrClient::expect_success`](crate::cdr::CdrClient::expect_success).
-#[server]
+#[server(client = crate::session_client::SessionAwareClient)]
 pub async fn delete_directory(
     /// The EHR holding the directory.
     ehr_id: String,
@@ -392,7 +392,7 @@ pub async fn delete_directory(
 /// [`ViewerError::Unauthenticated`] without a viewer session; CDR transport
 /// errors pass through; a non-2xx, non-404 CDR answer normalizes via
 /// [`CdrClient::expect_success`](crate::cdr::CdrClient::expect_success).
-#[server]
+#[server(client = crate::session_client::SessionAwareClient)]
 pub async fn list_directory_versions(
     /// The EHR whose directory version list to read.
     ehr_id: String,
@@ -489,7 +489,7 @@ fn version_window(latest_n: i32, window: u32) -> Vec<i32> {
 /// [`ViewerError::Invalid`] on an empty time; CDR transport errors pass
 /// through; any other non-2xx answer normalizes via
 /// [`CdrClient::expect_success`](crate::cdr::CdrClient::expect_success).
-#[server]
+#[server(client = crate::session_client::SessionAwareClient)]
 pub async fn fetch_directory_at_time(
     /// The EHR holding the directory.
     ehr_id: String,
@@ -532,7 +532,7 @@ pub async fn fetch_directory_at_time(
 /// [`ViewerError::Invalid`] on an empty path; CDR transport errors pass
 /// through; any other non-2xx answer normalizes via
 /// [`CdrClient::expect_success`](crate::cdr::CdrClient::expect_success).
-#[server]
+#[server(client = crate::session_client::SessionAwareClient)]
 pub async fn fetch_directory_subtree(
     /// The EHR holding the directory.
     ehr_id: String,
