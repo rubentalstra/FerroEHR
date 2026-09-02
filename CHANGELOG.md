@@ -15,6 +15,8 @@ workflow refuses a tag that has no matching section here.
 
 ## [Unreleased]
 
+## [4.0.17] - 2026-09-02
+
 ### Added
 
 - `server.base_path` (`FERROEHR__SERVER__BASE_PATH`) is a supported, validated
@@ -8138,7 +8140,8 @@ but has not yet run in production.
   seccomp, default-deny NetworkPolicy) and golden-render validation.
 
 
-[unreleased]: https://github.com/rubentalstra/FerroEHR/compare/v4.0.15...HEAD
+[unreleased]: https://github.com/rubentalstra/FerroEHR/compare/v4.0.17...HEAD
+[4.0.17]: https://github.com/rubentalstra/FerroEHR/compare/v4.0.16...v4.0.17
 [4.0.16]: https://github.com/rubentalstra/FerroEHR/compare/v4.0.15...v4.0.16
 [4.0.15]: https://github.com/rubentalstra/FerroEHR/compare/v4.0.13...v4.0.15
 [4.0.13]: https://github.com/rubentalstra/FerroEHR/compare/v4.0.12...v4.0.13

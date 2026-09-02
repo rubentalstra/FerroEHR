@@ -26,7 +26,7 @@ metadata:
     helm.sh/chart: ferroehr-7.0.3
     app.kubernetes.io/name: ferroehr
     app.kubernetes.io/instance: ferroehr
-    app.kubernetes.io/version: "4.0.16"
+    app.kubernetes.io/version: "4.0.17"
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/part-of: ferroehr
 spec:
@@ -100,7 +100,7 @@ metadata:
     helm.sh/chart: ferroehr-7.0.3
     app.kubernetes.io/name: ferroehr
     app.kubernetes.io/instance: ferroehr
-    app.kubernetes.io/version: "4.0.16"
+    app.kubernetes.io/version: "4.0.17"
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/part-of: ferroehr
 spec:
@@ -121,7 +121,7 @@ metadata:
     helm.sh/chart: ferroehr-7.0.3
     app.kubernetes.io/name: ferroehr
     app.kubernetes.io/instance: ferroehr
-    app.kubernetes.io/version: "4.0.16"
+    app.kubernetes.io/version: "4.0.17"
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/part-of: ferroehr
   annotations:
@@ -153,7 +153,7 @@ metadata:
     helm.sh/chart: ferroehr-7.0.3
     app.kubernetes.io/name: ferroehr
     app.kubernetes.io/instance: ferroehr
-    app.kubernetes.io/version: "4.0.16"
+    app.kubernetes.io/version: "4.0.17"
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/part-of: ferroehr
 type: Opaque
@@ -179,7 +179,7 @@ metadata:
     helm.sh/chart: ferroehr-7.0.3
     app.kubernetes.io/name: ferroehr
     app.kubernetes.io/instance: ferroehr
-    app.kubernetes.io/version: "4.0.16"
+    app.kubernetes.io/version: "4.0.17"
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/part-of: ferroehr
 type: Opaque
@@ -200,7 +200,7 @@ metadata:
     helm.sh/chart: ferroehr-7.0.3
     app.kubernetes.io/name: ferroehr
     app.kubernetes.io/instance: ferroehr
-    app.kubernetes.io/version: "4.0.16"
+    app.kubernetes.io/version: "4.0.17"
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/part-of: ferroehr
 data:
@@ -404,7 +404,7 @@ metadata:
     helm.sh/chart: ferroehr-7.0.3
     app.kubernetes.io/name: ferroehr
     app.kubernetes.io/instance: ferroehr
-    app.kubernetes.io/version: "4.0.16"
+    app.kubernetes.io/version: "4.0.17"
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/part-of: ferroehr
     grafana_dashboard: "1"
@@ -655,7 +655,7 @@ metadata:
     helm.sh/chart: ferroehr-7.0.3
     app.kubernetes.io/name: ferroehr
     app.kubernetes.io/instance: ferroehr
-    app.kubernetes.io/version: "4.0.16"
+    app.kubernetes.io/version: "4.0.17"
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/part-of: ferroehr
   annotations:
@@ -689,7 +689,7 @@ metadata:
     helm.sh/chart: ferroehr-7.0.3
     app.kubernetes.io/name: ferroehr
     app.kubernetes.io/instance: ferroehr
-    app.kubernetes.io/version: "4.0.16"
+    app.kubernetes.io/version: "4.0.17"
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/part-of: ferroehr
 spec:
@@ -739,7 +739,7 @@ spec:
         supplementalGroupsPolicy: Strict
       containers:
         - name: ferroehr
-          image: "ghcr.io/rubentalstra/ferroehr:4.0.16"
+          image: "ghcr.io/rubentalstra/ferroehr:4.0.17"
           imagePullPolicy: IfNotPresent
           securityContext:
             allowPrivilegeEscalation: false
@@ -922,7 +922,7 @@ metadata:
     helm.sh/chart: ferroehr-7.0.3
     app.kubernetes.io/name: ferroehr
     app.kubernetes.io/instance: ferroehr
-    app.kubernetes.io/version: "4.0.16"
+    app.kubernetes.io/version: "4.0.17"
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/part-of: ferroehr
 spec:
@@ -956,7 +956,7 @@ metadata:
     helm.sh/chart: ferroehr-7.0.3
     app.kubernetes.io/name: ferroehr
     app.kubernetes.io/instance: ferroehr
-    app.kubernetes.io/version: "4.0.16"
+    app.kubernetes.io/version: "4.0.17"
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/part-of: ferroehr
 spec:
@@ -994,7 +994,7 @@ metadata:
     helm.sh/chart: ferroehr-7.0.3
     app.kubernetes.io/name: ferroehr
     app.kubernetes.io/instance: ferroehr
-    app.kubernetes.io/version: "4.0.16"
+    app.kubernetes.io/version: "4.0.17"
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/part-of: ferroehr
     release: kube-prometheus-stack
