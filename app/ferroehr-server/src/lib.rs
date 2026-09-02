@@ -128,9 +128,12 @@ fn parse_override(raw: &str) -> Result<(String, String), String> {
 pub async fn run(cli: Cli) -> anyhow::Result<()> {
     match cli.command {
         Some(Command::Healthcheck { url }) => {
-            let url = match url {
-                Some(url) => url,
-                None => healthcheck_url(cli.config.as_deref(), &cli.set)?,
+            let url = if let Some(url) = url {
+                url
+            } else {
+                let config = ferroehr::config::load(cli.config.as_deref(), &cli.set)
+                    .map_err(|e| anyhow::anyhow!("{e}"))?;
+                healthcheck_url(&config)?
             };
             healthcheck(&url).await
         }
@@ -213,19 +216,15 @@ fn run_config(
 
 /// The default healthcheck URL, derived from the effective configuration.
 ///
-/// The probe runs inside the container beside the server, so it reads the same
-/// configuration the server booted with: the port of `server.bind` and the REST
-/// root `server.base_path` derives. Loopback is fixed; the bind address is
-/// whatever the listener accepts from, which is not necessarily dialable.
+/// The probe runs inside the container beside the server, so the caller hands
+/// it the configuration the server booted with: the port of `server.bind` and
+/// the REST root `server.base_path` derives. Loopback is fixed; the bind
+/// address is whatever the listener accepts from, which is not necessarily
+/// dialable.
 ///
 /// # Errors
-/// The configuration fails to load, or `server.bind` carries no port.
-pub fn healthcheck_url(
-    config_path: Option<&Path>,
-    overrides: &[(String, String)],
-) -> anyhow::Result<String> {
-    let config =
-        ferroehr::config::load(config_path, overrides).map_err(|e| anyhow::anyhow!("{e}"))?;
+/// `server.bind` carries no port.
+pub fn healthcheck_url(config: &ferroehr::config::FerroEhrConfig) -> anyhow::Result<String> {
     let port = config
         .server
         .bind
