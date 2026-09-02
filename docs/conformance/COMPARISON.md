@@ -20,7 +20,7 @@
 | | ferroehr | EHRbase |
 |---|---|---|
 | Product | ferroehr 4.0.15 | ehrbase 2.34.0 |
-| Run date | 2026-09-01 | 2026-08-14 |
+| Run date | 2026-09-02 | 2026-08-14 |
 | Party statement | committed with the runner (declares ITS-REST pin, signing, terminology posture) | committed with the runner |
 | Stack | the project's own compose stack, built from the current sources | a dedicated compose stack of the official EHRbase images |
 
@@ -58,7 +58,7 @@ claimed. The verdict-bearing comparison below is therefore each party's
 
 ## In-scope outcomes
 
-Runs compared: **ferroehr** (run of 2026-09-01) vs **EHRbase
+Runs compared: **ferroehr** (run of 2026-09-02) vs **EHRbase
 2.34.0** (run of 2026-08-14) — the SAME catalogue through the same
 runner, each with its own committed party statement. Per the presentation
 rule, the headline is each party's VERDICT SCOPE (the cases its own
