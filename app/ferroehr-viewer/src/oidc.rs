@@ -132,7 +132,7 @@ fn error_page(status: StatusCode, message: &str) -> Response {
 /// endpoint.
 ///
 /// `?next=` names where the completed round trip lands, filtered through
-/// [`same_origin_next`]; it rides the sealed cookie rather than the OAuth2
+/// `same_origin_next`; it rides the sealed cookie rather than the OAuth2
 /// `state` parameter, so the provider never sees it and it cannot be edited
 /// between the two legs.
 pub async fn login(
