@@ -1,8 +1,8 @@
 # Why FerroEHR exists
 
 This chapter is the project's position: what makes openEHR worth implementing,
-what this implementation commits to, and what it asks of the organisations that
-build on it. Read it if you are deciding whether to depend on FerroEHR, or
+what this implementation commits to, and what it offers the organisations that
+run it and build on it. Read it if you are deciding whether to depend on FerroEHR, or
 whether to contribute to it.
 
 <!-- toc -->
@@ -75,7 +75,7 @@ FerroEHR is source-available under the Business Source License 1.1:
 - Read it, build it, modify it and redistribute it without a fee. One licence
   covers the whole repository, and no feature is held back for a paid tier.
 - Each version becomes Apache 2.0 four years after it is published, so what
-  ships today is permissively licensed on a published schedule.
+  ships today opens up on a published schedule.
 - Two uses need a commercial licence from the Licensor: offering FerroEHR, or
   a work derived from it, to third parties as a hosted, managed or embedded
   service through which anyone outside your organisation stores, manages or
@@ -84,10 +84,14 @@ FerroEHR is source-available under the Business Source License 1.1:
   The contact is the maintainer named in
   [`MAINTAINERS.md`](https://github.com/rubentalstra/FerroEHR/blob/main/MAINTAINERS.md).
 
-Commercial adoption is the goal here. Standards reach patients through
-products, and products are built by organisations that need to earn a living.
-What matters is that they can do it on a shared, conformant foundation instead
-of rebuilding one in private.
+Building products on FerroEHR is welcome, and it is how standards reach
+patients. Two kinds of use ask for a conversation first: hosting FerroEHR for
+other organisations, and shipping it inside a product you sell. A commercial
+licence covers both, on terms meant to make such products possible on a
+sustainable footing, and it is how the shared, conformant foundation gets
+maintained by the people who build on it instead of every vendor rebuilding
+one in private. Talk to the maintainer early; that conversation is usually
+short.
 
 ## What we ask in return
 
@@ -139,9 +143,10 @@ tracker.
 
 ## What this is not
 
-This is not an argument against commercial or proprietary software. Closed
-products built on open foundations are a perfectly good outcome, and we would
-rather your product succeed with FerroEHR inside it than not exist at all.
+This is not an argument against commercial or proprietary software. A product
+with FerroEHR inside it is a good outcome, and we would rather it succeed than
+not exist at all; a commercial licence is how that product and this foundation
+support each other.
 
 It is also not a claim to be the only good openEHR CDR. FerroEHR began as a
 fork of EHRbase and records that lineage in the labelled import commit at the
@@ -168,5 +173,5 @@ can verify instead of trusting it — is the repository's
 ---
 
 _Maintained by Ruben Talstra and the FerroEHR contributors. If your
-organisation is building on FerroEHR, we would like to hear about it: open
-an issue or say hello on the tracker._
+organisation runs FerroEHR, or is thinking about building a product on it, we
+would like to hear about it early: open an issue or say hello on the tracker._

@@ -10,8 +10,8 @@ separate agreement to sign; the terms a contribution lands under are set out
 in
 [CONTRIBUTING.md](https://github.com/rubentalstra/FerroEHR/blob/main/CONTRIBUTING.md)
 § Licensing of contributions.
-[Why FerroEHR exists](why-ferroehr.md) explains what the project asks
-of the companies that build on it, and why.
+[Why FerroEHR exists](why-ferroehr.md) explains what the project offers
+the organisations that run it and build on it, and what it asks in return.
 
 A bug report with a reproducing request, a
 conformance case for behaviour nothing covers yet, a specification ambiguity you
