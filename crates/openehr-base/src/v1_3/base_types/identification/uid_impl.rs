@@ -1,7 +1,7 @@
 // @generated-from-template templates/openehr-base/base_types/identification/uid_impl.rs — DO NOT EDIT; edit the source and re-run `openehr-codegen -- emit`.
 // SPDX-FileCopyrightText: Ruben Talstra
 // SPDX-FileCopyrightText: openEHR Foundation
-// SPDX-License-Identifier: BUSL-1.1 AND Apache-2.0
+// SPDX-License-Identifier: Apache-2.0
 //! Hand-written accessor for the abstract `UID` class.
 //!
 //! Spec: BASE 1.3.0

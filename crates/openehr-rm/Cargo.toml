@@ -4,13 +4,13 @@ version = "0.0.58"
 description = "openEHR RM Reference Model, generated from BMM: generations v1_1 (RM 1.1.0) and v1_2 (RM 1.2.0, current)"
 edition.workspace = true
 rust-version.workspace = true
-license = "BUSL-1.1 AND Apache-2.0"
+license = "Apache-2.0"
 repository.workspace = true
 documentation = "https://docs.rs/openehr-rm"
 readme = "README.md"
 keywords = ["openehr", "healthcare", "ehr", "reference-model", "clinical-data"]
 categories = ["data-structures", "science"]
-include = ["src/**", "README.md", "LICENSE-BUSL-1.1", "LICENSE-APACHE-2.0"]
+include = ["src/**", "README.md", "LICENSE-APACHE-2.0"]
 
 [dependencies]
 openehr-base = { path = "../openehr-base", version = "0.0.58" }

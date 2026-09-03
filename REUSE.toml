@@ -45,13 +45,13 @@ precedence = "closest"
 SPDX-FileCopyrightText = "Ruben Talstra"
 SPDX-License-Identifier = "BUSL-1.1"
 
-# ── The published spec crates: BUSL-1.1 AND Apache-2.0 ─────────────────────
-# Their own manifests already declare `BUSL-1.1 AND Apache-2.0` and ship both texts
-# in the package, because the emitted Rust is this project's while the
-# specification documentation text, terminology XML and JSON Schema carried
-# inside it are openEHR's. Declaring only BUSL-1.1 here would flatten exactly the
-# dual position the crates were careful to state. The vendored inputs and
-# assets INSIDE these crates are narrowed further below.
+# ── The published spec crates: Apache-2.0 ──────────────────────────────────
+# Owner decision 2026-09-03: the eight `openehr-*` crates stay Apache-2.0, the
+# licence of the openEHR inputs they are generated from, so any Rust project can
+# consume them; the Business Source License covers the application and tooling
+# only. Six of them embed openEHR specification text, terminology XML or JSON
+# Schema and name the openEHR Foundation as a second holder. The vendored inputs
+# and assets INSIDE these crates are narrowed further below.
 [[annotations]]
 path = [
   "crates/openehr-base/**",
@@ -63,7 +63,17 @@ path = [
 ]
 precedence = "closest"
 SPDX-FileCopyrightText = ["Ruben Talstra", "openEHR Foundation"]
-SPDX-License-Identifier = "BUSL-1.1 AND Apache-2.0"
+SPDX-License-Identifier = "Apache-2.0"
+
+# The two hand-written spec crates carry no openEHR text, so one holder.
+[[annotations]]
+path = [
+  "crates/openehr-query/**",
+  "crates/openehr-adl/**",
+]
+precedence = "closest"
+SPDX-FileCopyrightText = "Ruben Talstra"
+SPDX-License-Identifier = "Apache-2.0"
 
 # ── openEHR machine-readable artifacts — Apache-2.0 ─────────────────────────
 # The BMM meta-models, XML Schemas, OpenAPI documents, JSON Schemas and ANTLR

@@ -107,7 +107,8 @@ request:
 
 - **No copyright assignment.** You keep your copyright. Contributions are
   licensed under the project's Business Source License 1.1 for everyone
-  including the maintainer, become Apache 2.0 on each version's Change Date,
+  including the maintainer (Apache License 2.0 for the `openehr-*` spec
+  crates), become Apache 2.0 on each version's Change Date,
   and carry the relicensing grant in CONTRIBUTING.md § Licensing of
   contributions so the work stays one work under one licensor. This is a
   deliberate position, not an oversight.

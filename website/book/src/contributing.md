@@ -1,8 +1,8 @@
 # Contributing
 
 FerroEHR is source-available (the Business Source License 1.1 for the
-project's own code, with vendored third-party material under its upstream
-terms; see [Licensing & legal](licensing.md)) and welcomes contributions. This
+application, Apache 2.0 for the `openehr-*` spec crates, and vendored
+third-party material under its upstream terms; see [Licensing & legal](licensing.md)) and welcomes contributions. This
 chapter is a short orientation for anyone who wants to file an issue, report a
 vulnerability, or open a pull request; the authoritative documents live in the
 repository and are linked below. You keep your copyright, and there is no

@@ -1,7 +1,7 @@
 // @generated-from-template templates/openehr-rm/validate.rs — DO NOT EDIT; edit the source and re-run `openehr-codegen -- emit`.
 // SPDX-FileCopyrightText: Ruben Talstra
 // SPDX-FileCopyrightText: openEHR Foundation
-// SPDX-License-Identifier: BUSL-1.1 AND Apache-2.0
+// SPDX-License-Identifier: Apache-2.0
 //! RM-level validation glue (hand-written spec behaviour).
 //!
 //! Everything here judges a canonical-JSON RM node AS A VALUE — no codec, no

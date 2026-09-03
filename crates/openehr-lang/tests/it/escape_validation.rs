@@ -1,6 +1,6 @@
 // SPDX-FileCopyrightText: Ruben Talstra
 // SPDX-FileCopyrightText: openEHR Foundation
-// SPDX-License-Identifier: BUSL-1.1 AND Apache-2.0
+// SPDX-License-Identifier: Apache-2.0
 
 //! Escape-sequence validation in the ODIN and BEL lexers
 //! (`AM/docs/ADL2/master03-file_encoding.adoc` §Special Character Sequences):

@@ -1,6 +1,6 @@
 # Memory index
 
-- [Licence is BUSL 1.1](license-busl.md) — own code is Business Source License 1.1 since 2026-09-03, holder Ruben Talstra, source-available never "open source"; grant text is owner legal text; stale-MIT guard in licensing-declarations.sh
+- [Licence is BUSL 1.1](license-busl.md) — application+tooling are Business Source License 1.1 since 2026-09-03 (non-commercial production only), the eight openehr-* crates stay Apache-2.0, holder Ruben Talstra, source-available never "open source"; grant text is owner legal text; stale-MIT guard in licensing-declarations.sh
 - [Owner work style](owner-work-style.md) — defer nothing; no quick fixes (proper rewrites welcome); orchestrator codes context-heavy work itself; big-bang rewrites converge once at the end (no intermediate stubs); specs re-read first-hand; never copy a number forward; rerun `scripts/conformance.sh` after runner/validation merges
 - [Autonomous phase flow](autonomous-phase-flow.md) — standing: PR+merge each phase, checkout main, start the next without asking; never branch while finished work sits unmerged
 - [Merge on local gates](merge-on-local-gates.md) — local gates green (fmt+clippy+nextest+CNF validate) → merge the PR immediately; CI is a post-merge backstop

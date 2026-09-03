@@ -1,6 +1,6 @@
 // SPDX-FileCopyrightText: Ruben Talstra
 // SPDX-FileCopyrightText: openEHR Foundation
-// SPDX-License-Identifier: BUSL-1.1 AND Apache-2.0
+// SPDX-License-Identifier: Apache-2.0
 
 //! Where the `TERMINOLOGY_SERVICE` spec functions are realized — and why none
 //! of them is realized HERE (documentation only, by design).

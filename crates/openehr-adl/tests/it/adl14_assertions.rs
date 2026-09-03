@@ -1,5 +1,5 @@
 // SPDX-FileCopyrightText: Ruben Talstra
-// SPDX-License-Identifier: BUSL-1.1
+// SPDX-License-Identifier: Apache-2.0
 
 //! The ADL 1.4 assertion sub-language operator/symbol matrix
 //! (`ADL1.4/master06-assertions.adoc`): every operator the chapter defines —

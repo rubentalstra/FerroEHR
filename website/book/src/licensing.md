@@ -63,17 +63,20 @@ project under Apache-2.0, and the conformance pipeline here consumes it at a
 pinned version. The vendored test corpora this repository still carries keep
 their upstream terms exactly as the table below states.
 
-Five of the published spec crates that **embed** openEHR-derived material
+**The eight published `openehr-*` spec crates are the exception: they are
+Apache-2.0, not BUSL-1.1.** They are the generated openEHR model, the canonical
+codecs, the REST contract, the AQL parser and the ADL engine, published on
+crates.io under the licence of the openEHR machine-readable artifacts they are
+generated from, so any Rust project can use them, in proprietary and hosted
+products included, with no commercial licence involved. Five of them
 (`openehr-base`, `openehr-rm`, `openehr-am`, `openehr-lang`, `openehr-its`)
-declare `BUSL-1.1 AND Apache-2.0` and ship both license texts in the package:
-the emitted Rust is this project's, while the specification documentation text
-carried in the generated doc comments and the vendored JSON Schema are
-openEHR's. `openehr-term` embeds that material **and** the official openEHR
-terminology XML, which is CC-BY-SA 3.0 (see the table below) and is
-redistributed verbatim with attribution, so it declares
-`BUSL-1.1 AND Apache-2.0 AND CC-BY-SA-3.0` and ships all three texts.
-`openehr-query` and `openehr-adl` declare plain `BUSL-1.1`. See
-[Rust crates](crates.md#licensing).
+embed openEHR-derived material (specification documentation text in the
+generated doc comments, the vendored JSON Schema), which is Apache-2.0 as well;
+their generated files name the openEHR Foundation as a second copyright holder.
+`openehr-term` also embeds the official openEHR terminology XML, which is
+CC-BY-SA 3.0 (see the table below) and is redistributed verbatim with
+attribution, so it declares `Apache-2.0 AND CC-BY-SA-3.0` and ships both
+texts. See [Rust crates](crates.md#licensing).
 
 ## Vendored third-party material
 
@@ -152,9 +155,9 @@ So licensing is **also** published in the machine-readable form the
 - **Every first-party source file carries the header inside itself:** an
   `SPDX-FileCopyrightText` line and an `SPDX-License-Identifier` line stating the
   same position `REUSE.toml` declares for it, so a file copied out of this
-  repository takes its licensing along. Rust files of the six published spec
-  crates state `BUSL-1.1 AND Apache-2.0`; every other first-party Rust, shell,
-  SQL and YAML file states `BUSL-1.1`. A copied migration or script arrives
+  repository takes its licensing along. Rust files of the eight published spec
+  crates state `Apache-2.0`; every other first-party Rust, shell, SQL and YAML
+  file states `BUSL-1.1`. A copied migration or script arrives
   licensed, which is the whole point.
 
 The vendored trees are glob-declared rather than headered for a reason that is

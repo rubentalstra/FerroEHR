@@ -1,7 +1,7 @@
 // @generated-from-template templates/openehr-rm/data_types/quantity/date_time/dv_temporal_impl.rs — DO NOT EDIT; edit the source and re-run `openehr-codegen -- emit`.
 // SPDX-FileCopyrightText: Ruben Talstra
 // SPDX-FileCopyrightText: openEHR Foundation
-// SPDX-License-Identifier: BUSL-1.1 AND Apache-2.0
+// SPDX-License-Identifier: Apache-2.0
 //! Hand-written RM spec functions for `DV_TEMPORAL`.
 //!
 //! `DV_TEMPORAL` is abstract, so the generated `DvTemporal` is the closed

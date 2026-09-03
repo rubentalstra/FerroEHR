@@ -4,13 +4,13 @@ version = "0.0.58"
 description = "openEHR LANG BMM/P_BMM object model, generated from BMM: generations v1_0 (LANG 1.0.0) and v1_1 (LANG 1.1.0, current; the stable BMM v2.x unit beside the paused BMM3 unit), plus hand-written ODIN/BEL/EL readers"
 edition.workspace = true
 rust-version.workspace = true
-license = "BUSL-1.1 AND Apache-2.0"
+license = "Apache-2.0"
 repository.workspace = true
 documentation = "https://docs.rs/openehr-lang"
 readme = "README.md"
 keywords = ["openehr", "bmm", "odin", "metamodel", "parser"]
 categories = ["parser-implementations", "data-structures"]
-include = ["src/**", "README.md", "LICENSE-BUSL-1.1", "LICENSE-APACHE-2.0"]
+include = ["src/**", "README.md", "LICENSE-APACHE-2.0"]
 
 [dependencies]
 openehr-base = { path = "../openehr-base", version = "0.0.58" }

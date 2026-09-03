@@ -17,9 +17,9 @@
 # (shell, SQL, YAML) are outside this gate.
 #
 # THE EXPECTED HEADER is derived from `REUSE.toml`, so the two can never
-# disagree: files of the six published spec crates are offered under
-# `BUSL-1.1 AND Apache-2.0` — the emitted Rust is this project's, the specification
-# text carried inside it is openEHR's — and everything else is plain BUSL-1.1. A
+# disagree: every published spec crate is Apache-2.0 (the licence of the openEHR
+# inputs it is generated from; the six that embed specification text also name
+# the openEHR Foundation as a holder), and everything else is BUSL-1.1. A
 # generation-twin template under `tools/openehr-codegen/templates/<crate>/`
 # follows the crate it is stamped INTO, because its content is that crate's
 # content.
@@ -44,10 +44,12 @@ readonly PROJECT_COPYRIGHT='// SPDX-FileCopyrightText: Ruben Talstra'
 readonly OPENEHR_COPYRIGHT='// SPDX-FileCopyrightText: openEHR Foundation'
 readonly BUSL_HEADER="$PROJECT_COPYRIGHT
 // SPDX-License-Identifier: BUSL-1.1"
+readonly APACHE_HEADER="$PROJECT_COPYRIGHT
+// SPDX-License-Identifier: Apache-2.0"
 readonly DUAL_HEADER="$PROJECT_COPYRIGHT
 $OPENEHR_COPYRIGHT
-// SPDX-License-Identifier: BUSL-1.1 AND Apache-2.0"
-# The six crates whose manifests and REUSE.toml declare `BUSL-1.1 AND Apache-2.0`.
+// SPDX-License-Identifier: Apache-2.0"
+# The six crates whose headers carry the openEHR Foundation as a second holder.
 readonly -a DUAL_CRATES=(
   openehr-am
   openehr-base
@@ -95,6 +97,10 @@ expected_header() {
       return
     fi
   done
+  if [[ -n "$krate" ]]; then
+    printf '%s' "$APACHE_HEADER"
+    return
+  fi
   printf '%s' "$BUSL_HEADER"
 }
 

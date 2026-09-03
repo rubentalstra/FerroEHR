@@ -1,6 +1,6 @@
 // SPDX-FileCopyrightText: Ruben Talstra
 // SPDX-FileCopyrightText: openEHR Foundation
-// SPDX-License-Identifier: BUSL-1.1 AND Apache-2.0
+// SPDX-License-Identifier: Apache-2.0
 
 //! The model validity checker over a resolved `P_BMM_SCHEMA` and the v2.x
 //! `BMM_MODEL` materialised from it.

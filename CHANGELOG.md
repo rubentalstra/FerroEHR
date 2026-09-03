@@ -33,11 +33,11 @@ workflow refuses a tag that has no matching section here.
   Artifact Hub licence, the citation metadata and every page that named MIT
   follow, and a CI guard now fails on a stale MIT claim in a first-party file.
   Releases v3.0.0 through v4.0.17 stay under the MIT terms they were published
-  with; the eight `openehr-*` crates move to `BUSL-1.1` (`openehr-query`,
-  `openehr-adl`), `BUSL-1.1 AND Apache-2.0` (`openehr-base`, `openehr-rm`,
-  `openehr-am`, `openehr-lang`, `openehr-its`) and
-  `BUSL-1.1 AND Apache-2.0 AND CC-BY-SA-3.0` (`openehr-term`) at 0.0.58, with
-  0.0.56 and earlier staying `MIT AND Apache-2.0` as published.
+  with. The eight `openehr-*` spec crates on crates.io are NOT under the BUSL:
+  they are `Apache-2.0` (`openehr-term` also `CC-BY-SA-3.0` for the
+  terminology XML it carries) from 0.0.58, the licence of the openEHR inputs
+  they are generated from, so any Rust project can consume them; 0.0.56 and
+  earlier stay `MIT AND Apache-2.0` as published.
 - Contributions now carry an inbound relicensing grant (`CONTRIBUTING.md`
   § Licensing of contributions): contributors keep their copyright and license
   their work under the project licence, and additionally grant the Licensor the

@@ -1,5 +1,5 @@
 // SPDX-FileCopyrightText: Ruben Talstra
-// SPDX-License-Identifier: BUSL-1.1
+// SPDX-License-Identifier: Apache-2.0
 
 //! Basic-integrity structural topic: the definition-tree walk and the rules that are
 //! decidable from the archetype's own constraint structure — node identity and

@@ -1,6 +1,6 @@
 // SPDX-FileCopyrightText: Ruben Talstra
 // SPDX-FileCopyrightText: openEHR Foundation
-// SPDX-License-Identifier: BUSL-1.1 AND Apache-2.0
+// SPDX-License-Identifier: Apache-2.0
 
 //! Hand-written spec functions of the BMM **v3** `BMM_TYPE` family — the type
 //! naming surface of the v3 (`org.openehr.lang.bmm3`) generation.

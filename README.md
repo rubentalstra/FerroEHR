@@ -79,7 +79,9 @@ or a work derived from it, for third parties as a hosted, managed or embedded
 service, and selling, sublicensing or otherwise distributing it for a fee on
 its own or inside another product, need a commercial licence in every case.
 Each version becomes Apache License 2.0 four years after that version is
-published. Companies and care providers building on FerroEHR are wanted here,
+published. The eight `openehr-*` spec crates are outside all of this: they are
+Apache-2.0 on crates.io, so any Rust project can use them without a licence
+conversation. Companies and care providers building on FerroEHR are wanted here,
 and the commercial licence is the normal path for them. It starts with a
 short conversation with the maintainer named in
 [MAINTAINERS.md](MAINTAINERS.md).
@@ -659,7 +661,8 @@ rather than left to be discovered.
 
 | Material                                                                                                                                                                                              | License                                                                                                                   |
 |-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|---------------------------------------------------------------------------------------------------------------------------|
-| **FerroEHR's own code:** the application, the tooling, and the generated crates                                                                                                                       | [BUSL-1.1](LICENSE)                                                                                                       |
+| **FerroEHR's own code:** the application, the tooling, the viewer and the documentation                                                                                                                       | [BUSL-1.1](LICENSE)                                                                                                       |
+| The eight **`openehr-*` spec crates** on crates.io (the generated openEHR model, codecs, REST contract, AQL parser, ADL engine)                                                                                                                       | [Apache-2.0](LICENSE-APACHE-2.0) (`openehr-term` also CC-BY-SA-3.0 for the terminology XML)                                                                                                       |
 | openEHR **machine-readable artifacts** (BMM, XSDs, OpenAPI, JSON Schemas — the `specifications-ITS-*` repos) and the vendored **test corpora** (archie, Better `web-template-tests`, the EHRbase SDK) | [Apache-2.0](LICENSE-APACHE-2.0)                                                                                          |
 | openEHR **specification text** (vendored for conformance work)                                                                                                                                        | [CC-BY-SA 3.0](LICENSE-CC-BY-SA-3.0)                                                                                      |
 | **CKM-derived clinical models** (test corpora)                                                                                                                                                        | per-file `licence` metadata — a mix of [CC-BY-SA 4.0](LICENSES/CC-BY-SA-4.0.txt) and [CC-BY-SA 3.0](LICENSE-CC-BY-SA-3.0) |

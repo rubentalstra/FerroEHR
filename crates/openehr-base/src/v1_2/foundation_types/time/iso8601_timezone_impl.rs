@@ -1,7 +1,7 @@
 // @generated-from-template templates/openehr-base/foundation_types/time/iso8601_timezone_impl.rs — DO NOT EDIT; edit the source and re-run `openehr-codegen -- emit`.
 // SPDX-FileCopyrightText: Ruben Talstra
 // SPDX-FileCopyrightText: openEHR Foundation
-// SPDX-License-Identifier: BUSL-1.1 AND Apache-2.0
+// SPDX-License-Identifier: Apache-2.0
 //! Hand-written `Iso8601_timezone` spec behaviour.
 //!
 //! Covers the eight functions the class declares (`hour`, `minute`, `sign`,

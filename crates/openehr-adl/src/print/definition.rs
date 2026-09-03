@@ -1,5 +1,5 @@
 // SPDX-FileCopyrightText: Ruben Talstra
-// SPDX-License-Identifier: BUSL-1.1
+// SPDX-License-Identifier: Apache-2.0
 
 //! The `definition` section — cADL (`ADL2/master04`, grammar `cadl2.g4` +
 //! `cadl2_primitives.g4`): the object/attribute/tuple productions, archetype

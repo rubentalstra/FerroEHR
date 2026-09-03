@@ -4,13 +4,13 @@ version = "0.0.58"
 description = "openEHR ITS (Implementation Technology Specifications): canonical JSON + canonical XML serialization of the RM, the generated ITS-REST 1.1.0 API contract, OPT 1.4 and AOM2 archetype XML codecs, and the Simplified Formats (FLAT / STRUCTURED / Web Template)"
 edition.workspace = true
 rust-version.workspace = true
-license = "BUSL-1.1 AND Apache-2.0"
+license = "Apache-2.0"
 repository.workspace = true
 documentation = "https://docs.rs/openehr-its"
 readme = "README.md"
 keywords = ["openehr", "serialization", "rest", "healthcare", "json"]
 categories = ["encoding", "web-programming"]
-include = ["src/**", "schemas/json/openehr_rm_1.1.0_all.json", "README.md", "LICENSE-BUSL-1.1", "LICENSE-APACHE-2.0"]
+include = ["src/**", "schemas/json/openehr_rm_1.1.0_all.json", "README.md", "LICENSE-APACHE-2.0"]
 
 # EVERY dependency rides the default `full` feature (see [features] below), so
 # `default-features = false` yields the dependency-free `rest::smart_scopes`

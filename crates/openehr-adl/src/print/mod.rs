@@ -1,5 +1,5 @@
 // SPDX-FileCopyrightText: Ruben Talstra
-// SPDX-License-Identifier: BUSL-1.1
+// SPDX-License-Identifier: Apache-2.0
 
 //! The ADL2 serializer: render an assembled `openehr_am::v2_4::aom2`
 //! [`Archetype`] back to ADL2 source text.

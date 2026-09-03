@@ -1,7 +1,7 @@
 // @generated-from-template templates/openehr-rm/data_types/quantity/date_time/dv_duration_impl.rs — DO NOT EDIT; edit the source and re-run `openehr-codegen -- emit`.
 // SPDX-FileCopyrightText: Ruben Talstra
 // SPDX-FileCopyrightText: openEHR Foundation
-// SPDX-License-Identifier: BUSL-1.1 AND Apache-2.0
+// SPDX-License-Identifier: Apache-2.0
 //! Hand-written RM class invariants for `DV_DURATION`.
 //!
 //! `Value_valid`: `value` is a valid ISO-8601 duration (openEHR permits a

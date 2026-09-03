@@ -4,13 +4,13 @@ version = "0.0.58"
 description = "openEHR ADL 2.4.0: hand-written ADL2/cADL/ODIN parser, AOM2 validation catalogue, specialisation flattener, OPT2 generator, and ADL 1.4→2 conversion over the generated openehr_am::v2_4::aom2 model"
 edition.workspace = true
 rust-version.workspace = true
-license.workspace = true
+license = "Apache-2.0"
 repository.workspace = true
 documentation = "https://docs.rs/openehr-adl"
 readme = "README.md"
 keywords = ["openehr", "adl", "archetype", "parser", "aom"]
 categories = ["parser-implementations", "science"]
-include = ["src/**", "README.md", "LICENSE-BUSL-1.1"]
+include = ["src/**", "README.md", "LICENSE-APACHE-2.0"]
 
 [dependencies]
 thiserror.workspace = true   # typed SyntaxError

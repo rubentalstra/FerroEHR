@@ -1,5 +1,5 @@
 // SPDX-FileCopyrightText: Ruben Talstra
-// SPDX-License-Identifier: BUSL-1.1
+// SPDX-License-Identifier: Apache-2.0
 
 //! The `terminology` section (`ADL2/master07.13`): term definitions, term
 //! bindings, and value sets. The body printer is shared with the OPT-only
