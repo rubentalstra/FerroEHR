@@ -79,6 +79,7 @@ Requires the `project` token scope (`gh auth refresh -s project`).
 | Start work on #n | `scripts/gh/project.sh status <n> in-progress` |
 | Park #n (work stopped, not done) | `scripts/gh/project.sh status <n> todo` |
 | Put #n on the board (auto-add missed it) | `scripts/gh/project.sh add <n>` |
+| Move #n to another repository (drops its card in the same step) | `scripts/gh/project.sh transfer <n> <owner/repo>` |
 | Read #n's board status | `scripts/gh/project.sh show <n>` |
 | Print the whole board by column | `scripts/gh/project.sh board` |
 | Print the project URL | `scripts/gh/project.sh url` |
@@ -87,7 +88,14 @@ Requires the `project` token scope (`gh auth refresh -s project`).
 
 Never move `Done` by hand, never `gh project item-edit` raw, and never
 `item-archive`/`item-delete` — closed items stay visible as the shipped
-record (the built-in auto-archive workflow stays OFF).
+record (the built-in auto-archive workflow stays OFF). The ONE deletion the
+helper performs belongs to a transfer: GitHub moves a project item along with
+an issue transferred to another repository, so the board would otherwise show
+a foreign issue as ours (found 2026-09-03 after #2646 and #2652 moved to
+FerroBRIDGE). An issue therefore leaves this repository ONLY through
+`scripts/gh/project.sh transfer <n> <owner/repo>`, which moves it and drops its
+card in one step; `project.sh transferred <owner/repo>#<n>` repairs a transfer
+someone ran raw. Never run `gh issue transfer` by hand.
 
 ## Status updates (the board's progress narrative)
 
