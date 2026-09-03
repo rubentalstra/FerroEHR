@@ -23,20 +23,29 @@ OSI-approved open-source licence, and this project does not claim that it is.
 
 **What the licence allows without asking anyone.** You can read the source,
 build it, modify it, and redistribute it without a fee. All non-production use
-is permitted: development, testing and evaluation. Production use is permitted
-for your own organisation and its affiliates, including a contractor operating
-FerroEHR solely on your behalf. A hospital, a research institution or a public
-body running FerroEHR for its own patients or population is squarely allowed.
+is permitted: development, testing, evaluation and prototyping. Production use
+is permitted for Non-Commercial Purposes, which the licence defines as
+personal use, academic or scientific research, teaching, and use by a
+non-profit organisation or public body that is not in the course of a
+business, does not deliver a service for payment, and is not for commercial
+advantage.
 
-**What needs a commercial licence from the Licensor.** Two things:
+**What needs a commercial licence from the Licensor.** Any other production
+use, including the delivery of health care or any other service for payment.
+A hospital, clinic or care provider running FerroEHR for its patients needs a
+commercial licence, and so does a vendor, integrator or any company running it
+in production. Two uses need one in every case, whoever you are:
 
 - offering FerroEHR, or a work derived from it, to third parties as a hosted,
-  managed or embedded service, meaning a service through which anyone outside
-  your organisation stores, manages or queries health data held by it;
+  managed or embedded service, meaning a service through which anyone other
+  than you and your affiliates stores, manages or queries health data held by
+  it;
 - selling, sublicensing or otherwise distributing FerroEHR for a fee, on its
   own or as a component of another product.
 
-The contact for a commercial licence is the maintainer named in
+Companies and care providers building on FerroEHR are wanted here, and the
+commercial licence is the normal path for them. It starts with a short
+conversation with the maintainer named in
 [`MAINTAINERS.md`](https://github.com/rubentalstra/FerroEHR/blob/main/MAINTAINERS.md):
 Ruben Talstra, `@rubentalstra` on GitHub.
 
