@@ -250,11 +250,19 @@ why they are written as your checklist rather than as our claim.
 
 ## Upgrades
 
-- **Backward-compatible migrations.** Migrations are append-only and never
-  edited once applied. A rolling upgrade must be compatible with the
-  _previous_ schema for the window where both versions run: apply additive
-  changes first, and defer destructive changes to a later release once every
-  pod is on the new version.
+- **The schema is still greenfield: a release may change the migration
+  files, and a database created by an earlier release is then recreated, not
+  upgraded in place.** The server records the checksum of every applied
+  migration and refuses to start against a database whose recorded checksums
+  differ from the files it carries (`migration 1 was previously applied but
+  has been modified`). Until the project declares the schema stable, treat a
+  version change as "recreate the database and reload the data": drop the
+  `ehr`, `ext`, `audit` and `cold` schemas (or the database) and let the new
+  version boot. The 4.0.18 release changed every migration file this way (a
+  licence header was added to each). Once stability is declared, migrations
+  become append-only and a rolling upgrade must stay compatible with the
+  _previous_ schema for the window where both versions run: additive changes
+  first, destructive changes a release later.
 - **Bound the DDL yourself.** Every pooled connection carries the
   `db.statement_timeout_ms` value (60 seconds by default), and the migration
   step runs on that pool, so a runaway statement is cut off, but there is **no

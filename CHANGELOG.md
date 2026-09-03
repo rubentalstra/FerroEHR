@@ -43,6 +43,12 @@ workflow refuses a tag that has no matching section here.
   their work under the project licence, and additionally grant the Licensor the
   right to sublicense and relicense it, so the work stays one work under one
   licensor.
+- Every migration file carries a licence header, which changes its recorded
+  checksum: a database created by 4.0.17 or earlier refuses to start this
+  version with `migration 1 was previously applied but has been modified`.
+  The schema is greenfield (see the operations chapter, "Upgrades"), so the
+  remedy is to recreate the database, or drop the `ehr`, `ext`, `audit` and
+  `cold` schemas, and reload; the hosted sandbox was reset the same way.
 
 ## [4.0.17] - 2026-09-02
 
