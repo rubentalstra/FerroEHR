@@ -65,18 +65,25 @@ FHIR, events and the viewer are all in this repository under the same
 licence, and nothing is held back to be sold back to you.
 
 The licence lets you read, build, modify and redistribute the source without
-a fee and without asking anyone, use it for development, testing and
-evaluation, and run it in production for your own organisation and its
-affiliates, including a contractor operating it solely on your behalf. A
-hospital, a research institution or a public body running FerroEHR for its
-own patients or population is squarely allowed. Two things need a commercial
-licence from the Licensor: offering FerroEHR, or a work derived from it, to
-third parties as a hosted, managed or embedded service, meaning a service
-through which anyone outside your organisation stores, manages or queries
-health data held by it; and selling, sublicensing or otherwise distributing
-it for a fee, on its own or as a component of another product. Each version
-becomes Apache License 2.0 four years after that version is published. The
-contact for a commercial licence is the maintainer named in
+a fee and without asking anyone, and it covers every non-production use:
+development, testing, evaluation and prototyping. Production use is free for
+Non-Commercial Purposes, which the licence defines as personal use, academic
+or scientific research, teaching, and use by a non-profit organisation or
+public body that is not in the course of a business, does not deliver a
+service for payment, and is not for commercial advantage. Any other
+production use needs a commercial licence from the Licensor, including the
+delivery of health care or any other service for payment. A hospital, clinic
+or care provider running FerroEHR for its patients needs one, and so does a
+vendor, integrator or any company running it in production. Hosting FerroEHR,
+or a work derived from it, for third parties as a hosted, managed or embedded
+service, and selling, sublicensing or otherwise distributing it for a fee on
+its own or inside another product, need a commercial licence in every case.
+Each version becomes Apache License 2.0 four years after that version is
+published. The eight `openehr-*` spec crates are outside all of this: they are
+Apache-2.0 on crates.io, so any Rust project can use them without a licence
+conversation. Companies and care providers building on FerroEHR are wanted here,
+and the commercial licence is the normal path for them. It starts with a
+short conversation with the maintainer named in
 [MAINTAINERS.md](MAINTAINERS.md).
 
 What we ask in return, and cannot require, is that improvements come back.
@@ -654,7 +661,8 @@ rather than left to be discovered.
 
 | Material                                                                                                                                                                                              | License                                                                                                                   |
 |-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|---------------------------------------------------------------------------------------------------------------------------|
-| **FerroEHR's own code:** the application, the tooling, and the generated crates                                                                                                                       | [BUSL-1.1](LICENSE)                                                                                                       |
+| **FerroEHR's own code:** the application, the tooling, the viewer and the documentation                                                                                                                       | [BUSL-1.1](LICENSE)                                                                                                       |
+| The eight **`openehr-*` spec crates** on crates.io (the generated openEHR model, codecs, REST contract, AQL parser, ADL engine)                                                                                                                       | [Apache-2.0](LICENSE-APACHE-2.0) (`openehr-term` also CC-BY-SA-3.0 for the terminology XML)                                                                                                       |
 | openEHR **machine-readable artifacts** (BMM, XSDs, OpenAPI, JSON Schemas — the `specifications-ITS-*` repos) and the vendored **test corpora** (archie, Better `web-template-tests`, the EHRbase SDK) | [Apache-2.0](LICENSE-APACHE-2.0)                                                                                          |
 | openEHR **specification text** (vendored for conformance work)                                                                                                                                        | [CC-BY-SA 3.0](LICENSE-CC-BY-SA-3.0)                                                                                      |
 | **CKM-derived clinical models** (test corpora)                                                                                                                                                        | per-file `licence` metadata — a mix of [CC-BY-SA 4.0](LICENSES/CC-BY-SA-4.0.txt) and [CC-BY-SA 3.0](LICENSE-CC-BY-SA-3.0) |

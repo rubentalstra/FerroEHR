@@ -20,22 +20,24 @@ workflow refuses a tag that has no matching section here.
 ### Changed
 
 - **The licence of the project's own code is the Business Source License 1.1**
-  (`LICENSE`, SPDX `BUSL-1.1`; owner decision 2026-09-03). Production use is
-  allowed for your own organization and its affiliates, including through a
-  contractor operating it on your behalf; offering FerroEHR or a derived work to
-  third parties as a hosted, managed or embedded service, or distributing it
-  for a fee on its own or inside another product, needs a commercial licence
-  from the Licensor. Each version becomes Apache License 2.0 four years after
+  (`LICENSE`, SPDX `BUSL-1.1`; owner decision 2026-09-03). All non-production
+  use is free, and production use is free for Non-Commercial Purposes only
+  (personal use, academic or scientific research, teaching, and non-profit or
+  public bodies outside the course of a business); any other production use,
+  including the delivery of health care or another service for payment, and in
+  every case offering FerroEHR or a derived work to third parties as a hosted,
+  managed or embedded service or distributing it for a fee, needs a commercial
+  licence from the Licensor. Each version becomes Apache License 2.0 four years after
   its publication. The copyright holder named everywhere is Ruben Talstra.
   Every SPDX header, manifest, badge, OCI image label, the Helm chart's
   Artifact Hub licence, the citation metadata and every page that named MIT
   follow, and a CI guard now fails on a stale MIT claim in a first-party file.
   Releases v3.0.0 through v4.0.17 stay under the MIT terms they were published
-  with; the eight `openehr-*` crates move to `BUSL-1.1` (`openehr-query`,
-  `openehr-adl`), `BUSL-1.1 AND Apache-2.0` (`openehr-base`, `openehr-rm`,
-  `openehr-am`, `openehr-lang`, `openehr-its`) and
-  `BUSL-1.1 AND Apache-2.0 AND CC-BY-SA-3.0` (`openehr-term`) at 0.0.57, with
-  0.0.56 and earlier staying `MIT AND Apache-2.0` as published.
+  with. The eight `openehr-*` spec crates on crates.io are NOT under the BUSL:
+  they are `Apache-2.0` (`openehr-term` also `CC-BY-SA-3.0` for the
+  terminology XML it carries) from 0.0.58, the licence of the openEHR inputs
+  they are generated from, so any Rust project can consume them; 0.0.56 and
+  earlier stay `MIT AND Apache-2.0` as published.
 - Contributions now carry an inbound relicensing grant (`CONTRIBUTING.md`
   § Licensing of contributions): contributors keep their copyright and license
   their work under the project licence, and additionally grant the Licensor the

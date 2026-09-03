@@ -23,20 +23,29 @@ OSI-approved open-source licence, and this project does not claim that it is.
 
 **What the licence allows without asking anyone.** You can read the source,
 build it, modify it, and redistribute it without a fee. All non-production use
-is permitted: development, testing and evaluation. Production use is permitted
-for your own organisation and its affiliates, including a contractor operating
-FerroEHR solely on your behalf. A hospital, a research institution or a public
-body running FerroEHR for its own patients or population is squarely allowed.
+is permitted: development, testing, evaluation and prototyping. Production use
+is permitted for Non-Commercial Purposes, which the licence defines as
+personal use, academic or scientific research, teaching, and use by a
+non-profit organisation or public body that is not in the course of a
+business, does not deliver a service for payment, and is not for commercial
+advantage.
 
-**What needs a commercial licence from the Licensor.** Two things:
+**What needs a commercial licence from the Licensor.** Any other production
+use, including the delivery of health care or any other service for payment.
+A hospital, clinic or care provider running FerroEHR for its patients needs a
+commercial licence, and so does a vendor, integrator or any company running it
+in production. Two uses need one in every case, whoever you are:
 
 - offering FerroEHR, or a work derived from it, to third parties as a hosted,
-  managed or embedded service, meaning a service through which anyone outside
-  your organisation stores, manages or queries health data held by it;
+  managed or embedded service, meaning a service through which anyone other
+  than you and your affiliates stores, manages or queries health data held by
+  it;
 - selling, sublicensing or otherwise distributing FerroEHR for a fee, on its
   own or as a component of another product.
 
-The contact for a commercial licence is the maintainer named in
+Companies and care providers building on FerroEHR are wanted here, and the
+commercial licence is the normal path for them. It starts with a short
+conversation with the maintainer named in
 [`MAINTAINERS.md`](https://github.com/rubentalstra/FerroEHR/blob/main/MAINTAINERS.md):
 Ruben Talstra, `@rubentalstra` on GitHub.
 
@@ -54,17 +63,20 @@ project under Apache-2.0, and the conformance pipeline here consumes it at a
 pinned version. The vendored test corpora this repository still carries keep
 their upstream terms exactly as the table below states.
 
-Five of the published spec crates that **embed** openEHR-derived material
+**The eight published `openehr-*` spec crates are the exception: they are
+Apache-2.0, not BUSL-1.1.** They are the generated openEHR model, the canonical
+codecs, the REST contract, the AQL parser and the ADL engine, published on
+crates.io under the licence of the openEHR machine-readable artifacts they are
+generated from, so any Rust project can use them, in proprietary and hosted
+products included, with no commercial licence involved. Five of them
 (`openehr-base`, `openehr-rm`, `openehr-am`, `openehr-lang`, `openehr-its`)
-declare `BUSL-1.1 AND Apache-2.0` and ship both license texts in the package:
-the emitted Rust is this project's, while the specification documentation text
-carried in the generated doc comments and the vendored JSON Schema are
-openEHR's. `openehr-term` embeds that material **and** the official openEHR
-terminology XML, which is CC-BY-SA 3.0 (see the table below) and is
-redistributed verbatim with attribution, so it declares
-`BUSL-1.1 AND Apache-2.0 AND CC-BY-SA-3.0` and ships all three texts.
-`openehr-query` and `openehr-adl` declare plain `BUSL-1.1`. See
-[Rust crates](crates.md#licensing).
+embed openEHR-derived material (specification documentation text in the
+generated doc comments, the vendored JSON Schema), which is Apache-2.0 as well;
+their generated files name the openEHR Foundation as a second copyright holder.
+`openehr-term` also embeds the official openEHR terminology XML, which is
+CC-BY-SA 3.0 (see the table below) and is redistributed verbatim with
+attribution, so it declares `Apache-2.0 AND CC-BY-SA-3.0` and ships both
+texts. See [Rust crates](crates.md#licensing).
 
 ## Vendored third-party material
 
@@ -143,9 +155,9 @@ So licensing is **also** published in the machine-readable form the
 - **Every first-party source file carries the header inside itself:** an
   `SPDX-FileCopyrightText` line and an `SPDX-License-Identifier` line stating the
   same position `REUSE.toml` declares for it, so a file copied out of this
-  repository takes its licensing along. Rust files of the six published spec
-  crates state `BUSL-1.1 AND Apache-2.0`; every other first-party Rust, shell,
-  SQL and YAML file states `BUSL-1.1`. A copied migration or script arrives
+  repository takes its licensing along. Rust files of the eight published spec
+  crates state `Apache-2.0`; every other first-party Rust, shell, SQL and YAML
+  file states `BUSL-1.1`. A copied migration or script arrives
   licensed, which is the whole point.
 
 The vendored trees are glob-declared rather than headered for a reason that is

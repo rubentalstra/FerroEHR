@@ -49,11 +49,12 @@ Rust 1.96 (edition 2024).
 
 ## License
 
-Licensed as **BUSL-1.1 AND Apache-2.0**:
+Apache License 2.0 ([`LICENSE-APACHE-2.0`](LICENSE-APACHE-2.0)) for the whole
+package. The `openehr-*` crates are Apache-2.0 so any Rust project can use
+them; the Business Source License of the FerroEHR application does not apply to
+them.
 
-- The Rust code and hand-written parts are under the Business Source License
-  1.1 ([`LICENSE-BUSL-1.1`](LICENSE-BUSL-1.1)); each published version becomes
-  available under the Apache License 2.0 four years after it is published.
+- The Rust code and hand-written parts are the project's own, under Apache-2.0.
 - The package embeds material derived from the official openEHR
   machine-readable specification artifacts, which openEHR publishes under
   Apache-2.0 ([`LICENSE-APACHE-2.0`](LICENSE-APACHE-2.0)) — the generated types and their doc text derive from the vendored AM BMM schemas.

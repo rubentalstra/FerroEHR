@@ -1,5 +1,5 @@
 // SPDX-FileCopyrightText: Ruben Talstra
-// SPDX-License-Identifier: BUSL-1.1
+// SPDX-License-Identifier: Apache-2.0
 
 //! The ODIN bridge — one home for reading an `openehr_lang::v1_1::odin` value tree
 //! into AOM/BASE types, plus the `master03` lexical decoding both ODIN and cADL

@@ -28,7 +28,7 @@ years, by software nobody has written yet, that is the whole game.
 
 A standard becomes real when there is something you can start with one
 command, read the source of, check against the specification yourself, and
-deploy for your own organisation without first negotiating a licence. Without
+run for research, teaching or a non-profit deployment without a fee. Without
 that, an excellent specification stays an idea that only well-funded
 organisations can act on.
 
@@ -58,8 +58,9 @@ and published*.
   upstream.
 - **The specification layer as reusable libraries.** The generated openEHR
   model, the canonical codecs, the REST contract, the ADL engine and the AQL
-  parser are published on crates.io as [standalone crates](crates.md), so the
-  next Rust project does not have to re-model openEHR to get started.
+  parser are published on crates.io as [standalone crates](crates.md) under the
+  Apache License 2.0, so the next Rust project does not have to re-model
+  openEHR to get started, and needs no licence conversation to use them.
 - **Maintenance in the open.** Public roadmap, public issue tracker,
   changelog-driven releases, signed artifacts, and a security policy with a
   private reporting channel.
@@ -68,30 +69,35 @@ and published*.
 
 FerroEHR is source-available under the Business Source License 1.1:
 
-- Run it in production for your own organisation and its affiliates, for any
-  purpose, commercial ones included. A contractor operating it solely on your
-  behalf is covered, and all non-production use (development, testing,
-  evaluation) is unrestricted.
 - Read it, build it, modify it and redistribute it without a fee. One licence
   covers the whole repository, and no feature is held back for a paid tier.
+- All non-production use is free: development, testing, evaluation and
+  prototyping.
+- Production use is free for Non-Commercial Purposes, which the licence
+  defines as personal use, academic or scientific research, teaching, and use
+  by a non-profit organisation or public body that is not in the course of a
+  business, does not deliver a service for payment, and is not for commercial
+  advantage.
+- Any other production use needs a commercial licence from the Licensor,
+  including the delivery of health care or any other service for payment. A
+  hospital, clinic or care provider running FerroEHR for its patients needs
+  one, and so does a vendor, integrator or any company running it in
+  production. Hosting FerroEHR, or a work derived from it, for third parties
+  as a hosted, managed or embedded service, and selling, sublicensing or
+  otherwise distributing it for a fee on its own or inside another product,
+  need one in every case.
 - Each version becomes Apache 2.0 four years after it is published, so what
   ships today opens up on a published schedule.
-- Two uses need a commercial licence from the Licensor: offering FerroEHR, or
-  a work derived from it, to third parties as a hosted, managed or embedded
-  service through which anyone outside your organisation stores, manages or
-  queries health data held by it; and selling, sublicensing or otherwise
-  distributing it for a fee, on its own or as a component of another product.
-  The contact is the maintainer named in
-  [`MAINTAINERS.md`](https://github.com/rubentalstra/FerroEHR/blob/main/MAINTAINERS.md).
 
 Building products on FerroEHR is welcome, and it is how standards reach
-patients. Two kinds of use ask for a conversation first: hosting FerroEHR for
-other organisations, and shipping it inside a product you sell. A commercial
-licence covers both, on terms meant to make such products possible on a
-sustainable footing, and it is how the shared, conformant foundation gets
-maintained by the people who build on it instead of every vendor rebuilding
-one in private. Talk to the maintainer early; that conversation is usually
-short.
+patients. Companies and care providers running FerroEHR are wanted here, and
+the commercial licence is the normal path for them, on terms meant to make
+those deployments and products possible on a sustainable footing. It is also
+how the shared, conformant foundation gets maintained by the people who build
+on it instead of every vendor rebuilding one in private. It starts with a
+conversation with the maintainer named in
+[`MAINTAINERS.md`](https://github.com/rubentalstra/FerroEHR/blob/main/MAINTAINERS.md),
+and that conversation is usually short. Talk to us early.
 
 ## What we ask in return
 
@@ -144,9 +150,9 @@ tracker.
 ## What this is not
 
 This is not an argument against commercial or proprietary software. A product
-with FerroEHR inside it is a good outcome, and we would rather it succeed than
-not exist at all; a commercial licence is how that product and this foundation
-support each other.
+with FerroEHR inside it, or a care provider running it for its patients, is a
+good outcome, and we would rather those succeed than not exist at all; a
+commercial licence is how they and this foundation support each other.
 
 It is also not a claim to be the only good openEHR CDR. FerroEHR began as a
 fork of EHRbase and records that lineage in the labelled import commit at the

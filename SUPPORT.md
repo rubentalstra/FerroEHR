@@ -22,8 +22,9 @@ than a reply:
   public demo credentials `ferroehr` / `ferroehr`.
 - **[`docs/architecture.md`](docs/architecture.md):** the design, in one file.
 
-There is no commercial support offering, no service-level agreement, and no
-paid tier. Answers come when the maintainer is at a keyboard
+There is no commercial support offering and no service-level agreement, and no
+feature is held back for a paid tier. Answers come when the maintainer is at a
+keyboard
 ([MAINTAINERS.md](MAINTAINERS.md) is honest about how many keyboards that is).
 
 ## I found a defect

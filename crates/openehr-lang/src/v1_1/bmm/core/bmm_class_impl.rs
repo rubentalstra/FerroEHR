@@ -1,6 +1,6 @@
 // SPDX-FileCopyrightText: Ruben Talstra
 // SPDX-FileCopyrightText: openEHR Foundation
-// SPDX-License-Identifier: BUSL-1.1 AND Apache-2.0
+// SPDX-License-Identifier: Apache-2.0
 
 //! Hand-written spec functions of `BMM_CLASS` (and its `BMM_GENERIC_CLASS`
 //! refinement) — the BMM v2 core class-level computed features.

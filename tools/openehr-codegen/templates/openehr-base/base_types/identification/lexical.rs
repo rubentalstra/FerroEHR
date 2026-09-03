@@ -1,6 +1,6 @@
 // SPDX-FileCopyrightText: Ruben Talstra
 // SPDX-FileCopyrightText: openEHR Foundation
-// SPDX-License-Identifier: BUSL-1.1 AND Apache-2.0
+// SPDX-License-Identifier: Apache-2.0
 
 //! Hand-written lexical-form parsing shared by the BASE identification types
 //! (hand-written spec behaviour; auto-declared beside the `// @generated` files).

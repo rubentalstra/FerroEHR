@@ -1,6 +1,6 @@
 // SPDX-FileCopyrightText: Ruben Talstra
 // SPDX-FileCopyrightText: openEHR Foundation
-// SPDX-License-Identifier: BUSL-1.1 AND Apache-2.0
+// SPDX-License-Identifier: Apache-2.0
 
 //! The **v3** (`org.openehr.lang.bmm3`) behavioural surface, through its public
 //! API: the type lattice of `LANG/docs/bmm3/master06-core-types.adoc`, the

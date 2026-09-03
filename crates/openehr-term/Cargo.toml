@@ -1,6 +1,6 @@
 [package]
 name = "openehr-term"
-version = "0.0.57"
+version = "0.0.58"
 description = "openEHR TERM terminology data model, generated from BMM (generation v3_1 = TERM 3.1.0), plus the embedded official terminology XML bundle"
 edition.workspace = true
 rust-version.workspace = true
@@ -8,7 +8,7 @@ rust-version.workspace = true
 # verbatim under the CC-BY-SA 3.0 of its upstream repository
 # (<https://github.com/openEHR/specifications-TERM/blob/master/LICENSE>), so the
 # expression names it beside MIT and Apache-2.0 and the package ships its text.
-license = "BUSL-1.1 AND Apache-2.0 AND CC-BY-SA-3.0"
+license = "Apache-2.0 AND CC-BY-SA-3.0"
 repository.workspace = true
 documentation = "https://docs.rs/openehr-term"
 readme = "README.md"
@@ -28,13 +28,13 @@ include = [
     "assets/*.xml",
     "assets/*/openehr_terminology.xml",
     "README.md",
-    "LICENSE-BUSL-1.1",
+    "LICENSE-APACHE-2.0",
     "LICENSE-APACHE-2.0",
     "LICENSE-CC-BY-SA-3.0",
 ]
 
 [dependencies]
-openehr-base = { path = "../openehr-base", version = "0.0.57" }
+openehr-base = { path = "../openehr-base", version = "0.0.58" }
 # Canonical-JSON (de)serialization is EMITTED manual `serde` impls on the spec
 # types (`openehr-codegen -- emit-json`, into `src/json_serde.rs`) — never a
 # derive.

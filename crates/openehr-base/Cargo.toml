@@ -1,16 +1,16 @@
 [package]
 name = "openehr-base"
-version = "0.0.57"
+version = "0.0.58"
 description = "openEHR BASE foundation + base types, generated from BMM: generations v1_2 (BASE 1.2.0) and v1_3 (BASE 1.3.0, current)"
 edition.workspace = true
 rust-version.workspace = true
-license = "BUSL-1.1 AND Apache-2.0"
+license = "Apache-2.0"
 repository.workspace = true
 documentation = "https://docs.rs/openehr-base"
 readme = "README.md"
 keywords = ["openehr", "healthcare", "ehr", "foundation", "types"]
 categories = ["data-structures", "science"]
-include = ["src/**", "README.md", "LICENSE-BUSL-1.1", "LICENSE-APACHE-2.0"]
+include = ["src/**", "README.md", "LICENSE-APACHE-2.0"]
 
 [dependencies]
 # Canonical-JSON (de)serialization is EMITTED serde impls (`openehr-codegen --

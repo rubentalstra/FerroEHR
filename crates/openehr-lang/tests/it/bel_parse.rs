@@ -1,6 +1,6 @@
 // SPDX-FileCopyrightText: Ruben Talstra
 // SPDX-FileCopyrightText: openEHR Foundation
-// SPDX-License-Identifier: BUSL-1.1 AND Apache-2.0
+// SPDX-License-Identifier: Apache-2.0
 
 //! Public-API tests for the pure-BEL parser (`openehr_lang::v1_1::bel`, the
 //! [`BeomBuilder`] path). Structural assertions over the generated `beom` tree;

@@ -7,7 +7,7 @@
 | Status | Active |
 | Author and owner | Ruben Talstra, maintainer |
 | Canonical location | `AI_STATEMENT.md` at the repository root |
-| Licence | Business Source License 1.1, like the rest of the project's own text |
+| Licence | Business Source License 1.1, like the rest of the project's own text (the `openehr-*` spec crates are Apache 2.0) |
 | Review | at every major or minor release, and on any trigger in §13 |
 
 **Abstract.** This document discloses how artificial-intelligence tools are

@@ -28,11 +28,12 @@ pub(crate) const PROJECT_COPYRIGHT: &str = "Ruben Talstra";
 /// comments, the terminology assets and the schemas.
 pub(crate) const OPENEHR_COPYRIGHT: &str = "openEHR Foundation";
 
-/// The crates whose packaged content is offered under `BUSL-1.1 AND Apache-2.0`.
+/// The crates whose emitted files carry openEHR's copyright line beside the
+/// project's own.
 ///
-/// The list is the one their own manifests declare and `REUSE.toml` repeats:
-/// the emitted Rust is this project's, while the specification text carried
-/// inside it is openEHR's. Any other crate is plain BUSL-1.1.
+/// Every published `openehr-*` crate is Apache-2.0 (the licence of the openEHR
+/// inputs it is generated from); these six additionally embed specification
+/// text, so their headers name the openEHR Foundation as a second holder.
 pub(crate) const DUAL_LICENSED_CRATES: &[&str] = &[
     "openehr-am",
     "openehr-base",
@@ -60,10 +61,10 @@ pub(crate) fn header(crate_name: &str) -> String {
         format!(
             "{COPYRIGHT_TAG}{PROJECT_COPYRIGHT}\n\
              {COPYRIGHT_TAG}{OPENEHR_COPYRIGHT}\n\
-             {LICENSE_TAG}BUSL-1.1 AND Apache-2.0\n"
+             {LICENSE_TAG}Apache-2.0\n"
         )
     } else {
-        format!("{COPYRIGHT_TAG}{PROJECT_COPYRIGHT}\n{LICENSE_TAG}BUSL-1.1\n")
+        format!("{COPYRIGHT_TAG}{PROJECT_COPYRIGHT}\n{LICENSE_TAG}Apache-2.0\n")
     }
 }
 
@@ -116,15 +117,15 @@ mod tests {
         let h = header("openehr-rm");
         assert!(h.contains("SPDX-FileCopyrightText: Ruben Talstra"));
         assert!(h.contains("SPDX-FileCopyrightText: openEHR Foundation"));
-        assert!(h.ends_with("SPDX-License-Identifier: BUSL-1.1 AND Apache-2.0\n"));
+        assert!(h.ends_with("SPDX-License-Identifier: Apache-2.0\n"));
     }
 
     #[test]
-    fn other_crates_are_plain_busl() {
+    fn other_crates_are_plain_apache() {
         assert_eq!(
             header("openehr-query"),
             "// SPDX-FileCopyrightText: Ruben Talstra\n\
-             // SPDX-License-Identifier: BUSL-1.1\n"
+             // SPDX-License-Identifier: Apache-2.0\n"
         );
     }
 
@@ -145,10 +146,7 @@ mod tests {
         let lines: Vec<&str> = out.lines().collect();
         assert_eq!(lines[0], "// @generated x — DO NOT EDIT.");
         assert_eq!(lines[1], "// SPDX-FileCopyrightText: Ruben Talstra");
-        assert_eq!(
-            lines[3],
-            "// SPDX-License-Identifier: BUSL-1.1 AND Apache-2.0"
-        );
+        assert_eq!(lines[3], "// SPDX-License-Identifier: Apache-2.0");
         assert_eq!(lines[4], "");
         assert_eq!(lines[5], "pub mod a;");
     }
@@ -159,7 +157,7 @@ mod tests {
         assert_eq!(
             out,
             "// SPDX-FileCopyrightText: Ruben Talstra\n\
-             // SPDX-License-Identifier: BUSL-1.1\n\
+             // SPDX-License-Identifier: Apache-2.0\n\
              pub mod a;\n"
         );
     }
@@ -173,7 +171,7 @@ mod tests {
     #[test]
     fn a_leading_header_is_stripped_with_its_blank_line() {
         let text = "// SPDX-FileCopyrightText: Ruben Talstra\n\
-                    // SPDX-License-Identifier: BUSL-1.1\n\
+                    // SPDX-License-Identifier: Apache-2.0\n\
                     \n\
                     //! Docs.\n";
         assert_eq!(strip_leading_header(text), "//! Docs.\n");

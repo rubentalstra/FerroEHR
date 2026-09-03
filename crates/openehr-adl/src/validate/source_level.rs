@@ -1,5 +1,5 @@
 // SPDX-FileCopyrightText: Ruben Talstra
-// SPDX-License-Identifier: BUSL-1.1
+// SPDX-License-Identifier: Apache-2.0
 
 //! Phase-1 source-level topic: the two checks that read the RAW parsed source
 //! rather than the assembled AOM model.

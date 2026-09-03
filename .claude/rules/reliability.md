@@ -321,10 +321,13 @@ chapters, the Clippy book, and the Cargo/rustdoc books.)
 - **C-PERMISSIVE — not followed; the project's own code is under the Business
   Source License 1.1** (owner decision 2026-09-03, superseding the MIT decision
   of 2026-07-31; coverage corrected 2026-08-04, issue #1883). BUSL-1.1 is
-  source-available, not open source: production use is free for your own
-  organization and its affiliates, offering the work to third parties as a
-  hosted, managed or embedded service or distributing it for a fee needs a
-  commercial licence from the Licensor (Ruben Talstra, who is also the sole
+  The eight `openehr-*` spec crates are the EXCEPTION: they publish under
+  Apache-2.0 (the licence of their openEHR inputs) so any Rust project can
+  consume them; C-PERMISSIVE holds for them. The application is source-available, not open source: non-production use is free, production
+  use is free for Non-Commercial Purposes only (research, teaching, personal
+  use, non-profit or public bodies outside the course of a business), and any
+  other production use, hosting for third parties, or distribution for a fee
+  needs a commercial licence from the Licensor (Ruben Talstra, who is also the sole
   copyright holder every SPDX header names), and each version becomes Apache
   License 2.0 four years after publication (`LICENSE` carries the parameters;
   releases up to v4.0.17 and crate versions up to 0.0.56 stay MIT as
