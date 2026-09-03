@@ -21,10 +21,11 @@
 #     for breadth gates over the OPT 1.4 reader / WebTemplate builder.
 #
 # CKM REST PAGINATION GOTCHA (cost an afternoon once — do not relearn it):
-# the list endpoints page with `?page=N&size=M`. `limit`, `pageSize`,
-# `maxResults`, `offset`, `count`, `rows` are all silently IGNORED and you
+# the list endpoints page with `?size=M&offset=N` (the Swagger 2.0 document at
+# `/rest/v1/swagger.json`, verified on the wire 2026-09-03). `page`, `limit`,
+# `pageSize`, `maxResults`, `count`, `rows` are all silently IGNORED and you
 # get a 20-row first page, which reads exactly like "CKM only publishes 20
-# templates". Always page with page/size, and assert the count grew.
+# templates". Always fetch with size/offset, and assert the count grew.
 #
 # Some CKM resources live in a private incubator and 404 without an account;
 # those are recorded as unreachable in the provenance file rather than
@@ -170,17 +171,17 @@ fi
 # ── the full library ─────────────────────────────────────────────────────
 if [[ "$MODE" != curated ]]; then
   mkdir -p "$FULL"
-  echo "==> listing the full CKM template library (page/size pagination)"
-  curl -fsS "$CKM/templates?page=0&size=10000" -H "Accept: application/json" \
+  echo "==> listing the full CKM template library (size/offset pagination)"
+  curl -fsS "$CKM/templates?size=10000&offset=0" -H "Accept: application/json" \
     -o "$WORK/templates.json"
 
   # Slugs come from CKM display names, so they collide: the counter suffixes the
   # second and later occurrences of a base. The 20-row floor is the CKM paging
-  # trap — every parameter other than page/size is silently ignored and yields a
+  # trap — every parameter other than size/offset is silently ignored and yields a
   # 20-row first page that reads like the whole library.
   jq '
     if length <= 20 then
-      error("::error::the list endpoint returned only \(length) rows — CKM ignored the pagination parameters (use ?page=N&size=M)")
+      error("::error::the list endpoint returned only \(length) rows — CKM ignored the pagination parameters (use ?size=M&offset=N)")
     else . end
     | sort_by(.cid)
     | reduce .[] as $t ({ seen: {}, rows: [] };

@@ -13,20 +13,26 @@
 #     archetype header). This is the ONLY ADL CKM publishes.
 #   * `GET /archetypes/{cid}/xml` -> the AM 1.4 ARCHETYPE XML of the same
 #     archetype (opt-in here via --with-xml; roughly +40% bytes).
-#   * There is NO ADL 2 export: `/adl2`, `/adl14`, `/adl2.4`, `/opt2` and
+#   * `/rest/v1` publishes NO ADL 2: `/adl2`, `/adl14`, `/adl2.4`, `/opt2` and
 #     `/source` all 404, and `?format=ADL2` / `?version=2` are silently
-#     ignored (byte-identical 1.4 response). The ADL 2.4 corpus therefore
-#     comes from a DIFFERENT official source —
+#     ignored (byte-identical 1.4 response). The legacy servlet
+#     `GET /ckm/retrieveArchetype?cid-archetype=<cid>&format=ADL2` DOES return
+#     an `.adls` file, but its header carries the `generated` flag: it is
+#     Ocean's own 1.4->2 conversion, not an authored ADL 2 source (verified
+#     2026-09-03). The ADL 2.4 corpus therefore comes from a DIFFERENT
+#     official source —
 #     `scripts/vendor/adl2-archetypes.sh` (openEHR/adl-archetypes).
 #     Never present a CKM export as ADL 2, and never fill the ADL 2 side by
 #     running our own 1.4->2 converter over CKM output: that would test the
 #     converter against itself.
 #
-# CKM REST PAGINATION GOTCHA: the list endpoints page with `?page=N&size=M`.
-# `limit`, `pageSize`, `maxResults`, `offset`, `count` and `rows` are all
-# silently IGNORED and you get a 20-row first page — which reads exactly like
-# "CKM only publishes 20 archetypes". Always page with page/size and assert
-# the count grew.
+# CKM REST PAGINATION GOTCHA: the list endpoints page with `?size=M&offset=N`
+# (the Swagger 2.0 document at `/rest/v1/swagger.json`, verified on the wire
+# 2026-09-03: `?size=2&offset=2` shifts the window, `?page=5&size=2` does not).
+# `page`, `limit`, `pageSize`, `maxResults`, `count` and `rows` are all silently
+# IGNORED and you get a 20-row first page — which reads exactly like "CKM only
+# publishes 20 archetypes". Always fetch with size/offset and assert the count
+# grew.
 #
 # Usage:
 #   scripts/vendor/ckm-archetypes.sh                # ADL 1.4 texts
@@ -72,8 +78,8 @@ WORK=$(mktemp -d)
 trap 'rm -rf "$WORK"' EXIT
 STAMP=$(date -u +%Y-%m-%dT%H:%M:%SZ)
 
-echo "==> listing the full CKM archetype library (page/size pagination)"
-curl -fsS "$CKM/archetypes?page=0&size=10000" -H "Accept: application/json" \
+echo "==> listing the full CKM archetype library (size/offset pagination)"
+curl -fsS "$CKM/archetypes?size=10000&offset=0" -H "Accept: application/json" \
   -o "$WORK/archetypes.json"
 
 # The list is turned into two job files and a provenance TSV with jq. The
@@ -84,7 +90,7 @@ curl -fsS "$CKM/archetypes?page=0&size=10000" -H "Accept: application/json" \
 published=$(jq 'length' "$WORK/archetypes.json")
 if [[ "$published" -le 20 ]]; then
   echo "::error::the list endpoint returned only $published rows — CKM ignored the" \
-       "pagination parameters (use ?page=N&size=M)" >&2
+       "pagination parameters (use ?size=M&offset=N)" >&2
   exit 1
 fi
 
@@ -151,9 +157,9 @@ XML_EXPORTS=$(grep -cE '^(OK|BAD|FAIL) ' "$WORK/xml.log" || true)
   echo "## Dialect"
   echo
   echo "\`adl14/\` holds CKM's \`GET /archetypes/{cid}/adl\` response — **ADL 1.4**"
-  echo "text (\`adl_version=1.4\`). CKM publishes NO ADL 2 export (\`/adl2\`,"
-  echo "\`/adl14\`, \`/opt2\` 404; \`?format=ADL2\` is ignored and returns the same"
-  echo "1.4 bytes), so the **ADL 2.4 half of the corpus comes from"
+  echo "text (\`adl_version=1.4\`). \`/rest/v1\` publishes NO ADL 2 (\`/adl2\`,"
+  echo "\`/adl14\`, \`/opt2\` 404; \`?format=ADL2\` is ignored); the legacy servlet's"
+  echo "\`format=ADL2\` export is Ocean's own GENERATED 1.4->2 conversion, so the **ADL 2.4 half of the corpus comes from"
   echo "\`scripts/vendor/adl2-archetypes.sh\`** (openEHR/adl-archetypes). A CKM"
   echo "export is never labelled ADL 2, and the ADL 2 side is never produced by"
   echo "running our own 1.4->2 converter over these files — that would test the"
