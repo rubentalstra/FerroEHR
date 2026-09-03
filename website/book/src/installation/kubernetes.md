@@ -38,7 +38,7 @@ kubectl -n ferroehr create secret generic ferroehr-db \
   --from-literal=FERROEHR__DB__URL='postgres://ferroehr_app:***@pg-host:5432/ferroehr?sslmode=verify-full'
 
 helm install ferroehr oci://ghcr.io/rubentalstra/charts/ferroehr \
-  --version 7.0.4 -n ferroehr \
+  --version 7.0.5 -n ferroehr \
   --set database.existingSecret=ferroehr-db \
   --set image.tag=4.0.17
 ```
@@ -55,7 +55,7 @@ helm install ferroehr oci://ghcr.io/rubentalstra/charts/ferroehr \
 reference. To read the chart's metadata without installing it:
 
 ```shell
-helm show chart oci://ghcr.io/rubentalstra/charts/ferroehr --version 7.0.4
+helm show chart oci://ghcr.io/rubentalstra/charts/ferroehr --version 7.0.5
 ```
 
 ### Pin two versions, not one
@@ -68,7 +68,7 @@ against.
 
 | | Selects | Pin with | Line |
 |---|---|---|---|
-| Chart version | templates, values schema, defaults | `--version 7.0.4` | SemVer over the chart's own contract |
+| Chart version | templates, values schema, defaults | `--version 7.0.5` | SemVer over the chart's own contract |
 | Image tag | the server binary | `--set image.tag=4.0.17` (or `image.digest`) | the application's SemVer line |
 
 Always pin the image to an immutable version or, better, a `@sha256` digest,
@@ -167,7 +167,7 @@ metadata lists: the server, and the optional viewer.
 > the image itself as the authority:
 >
 > ```shell
-> helm template ferroehr oci://ghcr.io/rubentalstra/charts/ferroehr --version 7.0.4 \
+> helm template ferroehr oci://ghcr.io/rubentalstra/charts/ferroehr --version 7.0.5 \
 >   -s templates/configmap.yaml --set database.existingSecret=ferroehr-db \
 >   | sed -n '/ferroehr.toml/,$p' | sed '1d;s/^    //' > /tmp/ferroehr.toml
 > docker run --rm -v /tmp/ferroehr.toml:/etc/ferroehr/ferroehr.toml:ro \
@@ -556,7 +556,7 @@ config:
 
 ```shell
 helm upgrade ferroehr oci://ghcr.io/rubentalstra/charts/ferroehr \
-  --version 7.0.4 -n ferroehr --reuse-values \
+  --version 7.0.5 -n ferroehr --reuse-values \
   --set config.query.plan_cache_capacity=512
 ```
 
@@ -709,7 +709,7 @@ Preview an upgrade against what you have installed with
 `helm diff`, or render the new chart version and read it:
 
 ```shell
-helm template ferroehr oci://ghcr.io/rubentalstra/charts/ferroehr --version 7.0.4 \
+helm template ferroehr oci://ghcr.io/rubentalstra/charts/ferroehr --version 7.0.5 \
   -n ferroehr -f my-values.yaml | less
 ```
 
