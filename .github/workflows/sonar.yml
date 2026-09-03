@@ -147,7 +147,7 @@ jobs:
           components: llvm-tools-preview
           cache-shared-key: sonar
           cache-save-if: ${{ github.ref == 'refs/heads/main' }}
-      - uses: taiki-e/install-action@742a3317eac7bd62f91cd888b4eead5e784ba833 # v2.87.1
+      - uses: taiki-e/install-action@1ed6d7be6168f6c9046541087ff549b6bc581fdf # v2.87.2
         with:
           tool: cargo-llvm-cov,cargo-nextest
 
@@ -194,7 +194,7 @@ jobs:
         run: bash scripts/sonar/issues-to-sarif.sh rubentalstra_FerroEHR sonar-findings.sarif
       - name: Upload the findings to code scanning
         if: github.event_name == 'push'
-        uses: github/codeql-action/upload-sarif@db488ddef3bf6cb639b32c2e9a7c0a7ea8271d28 # v4.37.8
+        uses: github/codeql-action/upload-sarif@cdf488f595d80d6e07e03d4674febd5ab45fa938 # v4.37.9
         with:
           sarif_file: sonar-findings.sarif
           category: sonarcloud
