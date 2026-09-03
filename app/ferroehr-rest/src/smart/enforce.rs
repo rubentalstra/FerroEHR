@@ -1,5 +1,5 @@
-// SPDX-FileCopyrightText: FerroEHR contributors
-// SPDX-License-Identifier: MIT
+// SPDX-FileCopyrightText: Ruben Talstra
+// SPDX-License-Identifier: BUSL-1.1
 
 //! SMART scope + launch-context enforcement
 //! (`docs/specs/openehr/ITS-REST/docs/smart_app_launch/master08-scopes.adoc`

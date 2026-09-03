@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
-# SPDX-FileCopyrightText: FerroEHR contributors
-# SPDX-License-Identifier: MIT
+# SPDX-FileCopyrightText: Ruben Talstra
+# SPDX-License-Identifier: BUSL-1.1
 # Every first-party Rust source file states its licensing INSIDE itself.
 #
 # `REUSE.toml` already covers the whole tree by glob and `reuse lint` proves it
@@ -18,8 +18,8 @@
 #
 # THE EXPECTED HEADER is derived from `REUSE.toml`, so the two can never
 # disagree: files of the six published spec crates are offered under
-# `MIT AND Apache-2.0` — the emitted Rust is this project's, the specification
-# text carried inside it is openEHR's — and everything else is plain MIT. A
+# `BUSL-1.1 AND Apache-2.0` — the emitted Rust is this project's, the specification
+# text carried inside it is openEHR's — and everything else is plain BUSL-1.1. A
 # generation-twin template under `tools/openehr-codegen/templates/<crate>/`
 # follows the crate it is stamped INTO, because its content is that crate's
 # content.
@@ -40,14 +40,14 @@ cd "$(dirname "$0")/../.."
 # specification's own remedy for a file that quotes the syntax it checks. This
 # file's licensing comes from REUSE.toml, like every other script here.
 # REUSE-IgnoreStart
-readonly PROJECT_COPYRIGHT='// SPDX-FileCopyrightText: FerroEHR contributors'
+readonly PROJECT_COPYRIGHT='// SPDX-FileCopyrightText: Ruben Talstra'
 readonly OPENEHR_COPYRIGHT='// SPDX-FileCopyrightText: openEHR Foundation'
-readonly MIT_HEADER="$PROJECT_COPYRIGHT
-// SPDX-License-Identifier: MIT"
+readonly BUSL_HEADER="$PROJECT_COPYRIGHT
+// SPDX-License-Identifier: BUSL-1.1"
 readonly DUAL_HEADER="$PROJECT_COPYRIGHT
 $OPENEHR_COPYRIGHT
-// SPDX-License-Identifier: MIT AND Apache-2.0"
-# The six crates whose manifests and REUSE.toml declare `MIT AND Apache-2.0`.
+// SPDX-License-Identifier: BUSL-1.1 AND Apache-2.0"
+# The six crates whose manifests and REUSE.toml declare `BUSL-1.1 AND Apache-2.0`.
 readonly -a DUAL_CRATES=(
   openehr-am
   openehr-base
@@ -95,7 +95,7 @@ expected_header() {
       return
     fi
   done
-  printf '%s' "$MIT_HEADER"
+  printf '%s' "$BUSL_HEADER"
 }
 
 is_generated() {

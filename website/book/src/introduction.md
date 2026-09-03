@@ -64,8 +64,9 @@ user terms; if you are new to openEHR itself, start with the
 ## Where to go next
 
 - **Wondering why this exists?** [Why FerroEHR exists](why-ferroehr.md) is the
-  project's position: what openEHR is worth, what we commit to, and why
-  companies are invited to build on, resell and contribute back to it.
+  project's position: what openEHR is worth, what we commit to, what the
+  licence lets you do, and why companies are invited to build on it and
+  contribute back.
 - **Just want to try it?** [Getting started](getting-started.md) takes you from
   `docker compose up` to a stored composition and an AQL result in a few
   minutes.
@@ -89,7 +90,8 @@ user terms; if you are new to openEHR itself, start with the
 > at the root of its history, but it is an
 > independent, from-scratch Rust implementation with no EHRbase code in this
 > tree, and it is not affiliated with or endorsed by the EHRbase project.
-> FerroEHR's own code is MIT-licensed; vendored openEHR material keeps its
-> upstream terms: Apache-2.0 for the machine-readable artifacts, CC-BY-SA 3.0
-> for the specification text, and CC-BY-SA 3.0 and 4.0 for the clinical models
-> (see [Licensing & legal](licensing.md)).
+> FerroEHR's own code is source-available under the Business Source License
+> 1.1; vendored openEHR material keeps its upstream terms: Apache-2.0 for the
+> machine-readable artifacts, CC-BY-SA 3.0 for the specification text, and
+> CC-BY-SA 3.0 and 4.0 for the clinical models (see
+> [Licensing & legal](licensing.md)).

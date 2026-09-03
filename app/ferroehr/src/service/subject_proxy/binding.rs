@@ -1,5 +1,5 @@
-// SPDX-FileCopyrightText: FerroEHR contributors
-// SPDX-License-Identifier: MIT
+// SPDX-FileCopyrightText: Ruben Talstra
+// SPDX-License-Identifier: BUSL-1.1
 
 //! Bindings: `ENV_BINDING`, `DATA_FRAME`, and the `SYSTEM_CALL` retrieval
 //! methods (`env_binding.adoc`, `data_frame.adoc`; master10 §Bindings +

@@ -1,5 +1,5 @@
-// SPDX-FileCopyrightText: FerroEHR contributors
-// SPDX-License-Identifier: MIT
+// SPDX-FileCopyrightText: Ruben Talstra
+// SPDX-License-Identifier: BUSL-1.1
 
 //! Phase-1 terminology topic: the archetype's own `term_definitions`,
 //! `constraint_definitions` and `value_sets`, and the codes the definition

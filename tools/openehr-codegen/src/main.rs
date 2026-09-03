@@ -1,5 +1,5 @@
-// SPDX-FileCopyrightText: FerroEHR contributors
-// SPDX-License-Identifier: MIT
+// SPDX-FileCopyrightText: Ruben Talstra
+// SPDX-License-Identifier: BUSL-1.1
 
 //! `openehr-codegen` binary entry point — a thin wrapper over the library's
 //! [`openehr_codegen::run`]; all pipeline logic lives in the library so the

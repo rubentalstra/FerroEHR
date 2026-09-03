@@ -1,5 +1,5 @@
-// SPDX-FileCopyrightText: FerroEHR contributors
-// SPDX-License-Identifier: MIT
+// SPDX-FileCopyrightText: Ruben Talstra
+// SPDX-License-Identifier: BUSL-1.1
 
 //! `I_DEMOGRAPHIC_SERVICE` (`i_demographic_service.adoc`: "Primary interface
 //! to `DEMOGRAPHIC_SERVICE`") and `I_PARTY` (`i_party.adoc`: "Interface for

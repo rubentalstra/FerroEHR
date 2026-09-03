@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
-# SPDX-FileCopyrightText: FerroEHR contributors
-# SPDX-License-Identifier: MIT
+# SPDX-FileCopyrightText: Ruben Talstra
+# SPDX-License-Identifier: BUSL-1.1
 #
 # Seed the hosted sandbox (#2710, dataset #3045) with demo data through the
 # PUBLIC API — the same surface visitors use, so the seed itself proves the

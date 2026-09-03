@@ -1,7 +1,7 @@
 // @generated-from-template templates/openehr-rm/validate/terminology.rs — DO NOT EDIT; edit the source and re-run `openehr-codegen -- emit`.
-// SPDX-FileCopyrightText: FerroEHR contributors
+// SPDX-FileCopyrightText: Ruben Talstra
 // SPDX-FileCopyrightText: openEHR Foundation
-// SPDX-License-Identifier: MIT AND Apache-2.0
+// SPDX-License-Identifier: BUSL-1.1 AND Apache-2.0
 //! The **terminology-backed RM class invariants**.
 //!
 //! These are the RM invariants whose

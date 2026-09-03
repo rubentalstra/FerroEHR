@@ -26,7 +26,7 @@ ITS-REST 1.1.0 &nbsp;·&nbsp; AQL 1.1 &nbsp;·&nbsp; RM 1.2.0 **+ 1.1.0** &nbsp;
 [![GHCR](https://img.shields.io/badge/ghcr.io-ferroehr-2496ED.svg?logo=docker&logoColor=white)](https://github.com/rubentalstra/FerroEHR/pkgs/container/ferroehr)
 [![Artifact Hub](https://img.shields.io/endpoint?url=https://artifacthub.io/badge/repository/ferroehr)](https://artifacthub.io/packages/search?repo=ferroehr)
 [![DOI](https://zenodo.org/badge/1286429270.svg)](https://doi.org/10.5281/zenodo.21940279)
-[![License](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
+[![License: BUSL-1.1](https://img.shields.io/badge/License-BUSL--1.1-blue.svg)](LICENSE)
 
 [![openEHR CNF conformance](https://img.shields.io/endpoint?url=https%3A%2F%2Fraw.githubusercontent.com%2Frubentalstra%2Fferroehr%2Fmain%2Fdocs%2Fconformance%2Fferroehr%2Fbadge.json)](docs/conformance/ferroehr/CONFORMANCE_REPORT.md)
 [![CNF performance](https://img.shields.io/endpoint?url=https%3A%2F%2Fraw.githubusercontent.com%2Frubentalstra%2Fferroehr%2Fmain%2Fdocs%2Fconformance%2Fferroehr%2Fbadge-performance.json)](docs/conformance/ferroehr/CONFORMANCE_CERTIFICATE.md)
@@ -56,17 +56,28 @@ openEHR is one of the few places in health IT where clinical meaning is
 written down as a shared, computable, vendor-neutral model. That is what
 lets a record outlive the application, the vendor and the procurement cycle
 that produced it. A specification that good deserves an implementation anyone
-can actually run: complete, openly developed, permissively licensed, and
+can actually run: complete, openly developed, source-available, and
 measured against the specification itself. That is what FerroEHR is for.
 
-So the whole thing is MIT, with no open-core tier. Multi-tenancy, RBAC/ABAC,
-ATNA audit, signatures, FHIR, events and the viewer are all in this
-repository under the same licence, and nothing is held back to be sold back
-to you. **Build on it and sell what you build: that is the point.**
-Integrate it, embed it, host it, white-label it, build closed products on
-top and charge for them. There is no contributor licence agreement, no
-copyright assignment and no "commercial licence" conversation to have.
-Contributors keep their copyright, and what you build stays yours.
+The whole thing is source-available under the Business Source License 1.1,
+with no open-core tier. Multi-tenancy, RBAC/ABAC, ATNA audit, signatures,
+FHIR, events and the viewer are all in this repository under the same
+licence, and nothing is held back to be sold back to you.
+
+The licence lets you read, build, modify and redistribute the source without
+a fee and without asking anyone, use it for development, testing and
+evaluation, and run it in production for your own organisation and its
+affiliates, including a contractor operating it solely on your behalf. A
+hospital, a research institution or a public body running FerroEHR for its
+own patients or population is squarely allowed. Two things need a commercial
+licence from the Licensor: offering FerroEHR, or a work derived from it, to
+third parties as a hosted, managed or embedded service, meaning a service
+through which anyone outside your organisation stores, manages or queries
+health data held by it; and selling, sublicensing or otherwise distributing
+it for a fee, on its own or as a component of another product. Each version
+becomes Apache License 2.0 four years after that version is published. The
+contact for a commercial licence is the maintainer named in
+[MAINTAINERS.md](MAINTAINERS.md).
 
 What we ask in return, and cannot require, is that improvements come back.
 A private fork inherits the entire maintenance surface (spec releases,
@@ -643,7 +654,7 @@ rather than left to be discovered.
 
 | Material                                                                                                                                                                                              | License                                                                                                                   |
 |-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|---------------------------------------------------------------------------------------------------------------------------|
-| **FerroEHR's own code:** the application, the tooling, and the generated crates                                                                                                                       | [MIT](LICENSE)                                                                                                            |
+| **FerroEHR's own code:** the application, the tooling, and the generated crates                                                                                                                       | [BUSL-1.1](LICENSE)                                                                                                       |
 | openEHR **machine-readable artifacts** (BMM, XSDs, OpenAPI, JSON Schemas — the `specifications-ITS-*` repos) and the vendored **test corpora** (archie, Better `web-template-tests`, the EHRbase SDK) | [Apache-2.0](LICENSE-APACHE-2.0)                                                                                          |
 | openEHR **specification text** (vendored for conformance work)                                                                                                                                        | [CC-BY-SA 3.0](LICENSE-CC-BY-SA-3.0)                                                                                      |
 | **CKM-derived clinical models** (test corpora)                                                                                                                                                        | per-file `licence` metadata — a mix of [CC-BY-SA 4.0](LICENSES/CC-BY-SA-4.0.txt) and [CC-BY-SA 3.0](LICENSE-CC-BY-SA-3.0) |

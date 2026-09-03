@@ -1,5 +1,5 @@
-// SPDX-FileCopyrightText: FerroEHR contributors
-// SPDX-License-Identifier: MIT
+// SPDX-FileCopyrightText: Ruben Talstra
+// SPDX-License-Identifier: BUSL-1.1
 
 //! The EHR-side `ITEM_TAG` surfaces: the per-target tag panels the composition
 //! viewer and the EHR-status tab mount, and the EHR-wide tag browser.

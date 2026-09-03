@@ -1,5 +1,5 @@
-// SPDX-FileCopyrightText: FerroEHR contributors
-// SPDX-License-Identifier: MIT
+// SPDX-FileCopyrightText: Ruben Talstra
+// SPDX-License-Identifier: BUSL-1.1
 
 //! `frame_path` extraction: turn a `DATA_FRAME_SAMPLE` into a typed
 //! `VARIABLE_VALUE` (`subject_variable.adoc` `value()`: "Extract the value

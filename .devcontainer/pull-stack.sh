@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
-# SPDX-FileCopyrightText: FerroEHR contributors
-# SPDX-License-Identifier: MIT
+# SPDX-FileCopyrightText: Ruben Talstra
+# SPDX-License-Identifier: BUSL-1.1
 #
 # Codespace create-time image pull (#2709): fetch the published quickstart
 # images once, so the first `postStartCommand` boot is fast. Explicit `-f`

@@ -1,5 +1,5 @@
-// SPDX-FileCopyrightText: FerroEHR contributors
-// SPDX-License-Identifier: MIT
+// SPDX-FileCopyrightText: Ruben Talstra
+// SPDX-License-Identifier: BUSL-1.1
 
 //! The EHR-detail Contributions tab: the per-EHR activity timeline, the paged
 //! contribution list, and the by-uid CONTRIBUTION lookup box.

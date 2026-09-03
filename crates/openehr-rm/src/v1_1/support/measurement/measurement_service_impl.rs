@@ -1,7 +1,7 @@
 // @generated-from-template templates/openehr-rm/support/measurement/measurement_service_impl.rs — DO NOT EDIT; edit the source and re-run `openehr-codegen -- emit`.
-// SPDX-FileCopyrightText: FerroEHR contributors
+// SPDX-FileCopyrightText: Ruben Talstra
 // SPDX-FileCopyrightText: openEHR Foundation
-// SPDX-License-Identifier: MIT AND Apache-2.0
+// SPDX-License-Identifier: BUSL-1.1 AND Apache-2.0
 //! Why the `MEASUREMENT_SERVICE` spec functions are not realized on the value
 //! (documentation only, by design).
 //!

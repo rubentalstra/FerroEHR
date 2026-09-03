@@ -1,6 +1,6 @@
-// SPDX-FileCopyrightText: FerroEHR contributors
+// SPDX-FileCopyrightText: Ruben Talstra
 // SPDX-FileCopyrightText: openEHR Foundation
-// SPDX-License-Identifier: MIT AND Apache-2.0
+// SPDX-License-Identifier: BUSL-1.1 AND Apache-2.0
 
 //! Public-API battery for the `rm_access` schema-loading facade
 //! (`openehr_lang::v1_1::bmm::rm_access`): a schema DIRECTORY scanned, selected,

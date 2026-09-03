@@ -1,5 +1,5 @@
-// SPDX-FileCopyrightText: FerroEHR contributors
-// SPDX-License-Identifier: MIT
+// SPDX-FileCopyrightText: Ruben Talstra
+// SPDX-License-Identifier: BUSL-1.1
 
 //! IHE ATNA (Audit Trail and Node Authentication) audit trail, the platform's
 //! realization of the SM System Log component (`I_SYSTEM_LOG`).

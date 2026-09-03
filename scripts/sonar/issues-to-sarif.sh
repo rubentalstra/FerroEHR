@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
-# SPDX-FileCopyrightText: FerroEHR contributors
-# SPDX-License-Identifier: MIT
+# SPDX-FileCopyrightText: Ruben Talstra
+# SPDX-License-Identifier: BUSL-1.1
 #
 # Exports the SonarQube Cloud project's OPEN and CONFIRMED findings as SARIF
 # 2.1.0, so `sonar.yml` can upload them to GitHub code scanning (#3032).

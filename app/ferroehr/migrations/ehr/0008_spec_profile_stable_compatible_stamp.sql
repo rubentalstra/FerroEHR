@@ -1,5 +1,5 @@
--- SPDX-FileCopyrightText: FerroEHR contributors
--- SPDX-License-Identifier: MIT
+-- SPDX-FileCopyrightText: Ruben Talstra
+-- SPDX-License-Identifier: BUSL-1.1
 
 -- ehr schema: the commit-time spec-profile compatibility stamp on a stored
 -- version, and its cold-tier mirror column.

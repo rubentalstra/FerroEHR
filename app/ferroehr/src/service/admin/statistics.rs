@@ -1,5 +1,5 @@
-// SPDX-FileCopyrightText: FerroEHR contributors
-// SPDX-License-Identifier: MIT
+// SPDX-FileCopyrightText: Ruben Talstra
+// SPDX-License-Identifier: BUSL-1.1
 
 //! Admin statistics (SM `I_ADMIN_SERVICE.list_contributions` /
 //! `contribution_count` / `versioned_composition_count` /

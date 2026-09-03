@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
-# SPDX-FileCopyrightText: FerroEHR contributors
-# SPDX-License-Identifier: MIT
+# SPDX-FileCopyrightText: Ruben Talstra
+# SPDX-License-Identifier: BUSL-1.1
 # .claude/hooks/crate_version_bump_guard.sh
 #
 # Claude Code PreToolUse hook (matcher: Bash). Blocks `git push` when the

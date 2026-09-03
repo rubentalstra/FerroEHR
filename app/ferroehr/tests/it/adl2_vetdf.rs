@@ -1,5 +1,5 @@
-// SPDX-FileCopyrightText: FerroEHR contributors
-// SPDX-License-Identifier: MIT
+// SPDX-FileCopyrightText: Ruben Talstra
+// SPDX-License-Identifier: BUSL-1.1
 
 //! ADL2 VETDF validation over the terminology-service resolver seam, end to
 //! end (AM ADL2 `master03-archetype_package.adoc` §Validity Rules).

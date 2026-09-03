@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
-# SPDX-FileCopyrightText: FerroEHR contributors
-# SPDX-License-Identifier: MIT
+# SPDX-FileCopyrightText: Ruben Talstra
+# SPDX-License-Identifier: BUSL-1.1
 # RFC 0201: an error carries its cause (#2034).
 #
 # `Error::source` is part of the `Error` contract, and `map_err(|e| V(e.to_string()))`

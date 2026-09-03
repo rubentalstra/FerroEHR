@@ -1,5 +1,5 @@
-// SPDX-FileCopyrightText: FerroEHR contributors
-// SPDX-License-Identifier: MIT
+// SPDX-FileCopyrightText: Ruben Talstra
+// SPDX-License-Identifier: BUSL-1.1
 
 //! The FHIR-ingest cross-terminology translation seam (no openEHR spec
 //! governs FHIR conversion — our own design/extension): a `translate`

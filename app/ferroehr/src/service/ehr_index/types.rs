@@ -1,5 +1,5 @@
-// SPDX-FileCopyrightText: FerroEHR contributors
-// SPDX-License-Identifier: MIT
+// SPDX-FileCopyrightText: Ruben Talstra
+// SPDX-License-Identifier: BUSL-1.1
 
 //! The EHR Index information structures (`resource_status.adoc`,
 //! `resource_instance_type.adoc`, `location_desc.adoc`).

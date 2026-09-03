@@ -1,5 +1,5 @@
-// SPDX-FileCopyrightText: FerroEHR contributors
-// SPDX-License-Identifier: MIT
+// SPDX-FileCopyrightText: Ruben Talstra
+// SPDX-License-Identifier: BUSL-1.1
 
 //! The canonical-JSON transforms: externalizing large inline
 //! `DV_MULTIMEDIA.data` on the commit path and re-inlining externalized blobs

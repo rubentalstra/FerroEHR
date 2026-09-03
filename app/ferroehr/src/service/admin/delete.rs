@@ -1,5 +1,5 @@
-// SPDX-FileCopyrightText: FerroEHR contributors
-// SPDX-License-Identifier: MIT
+// SPDX-FileCopyrightText: Ruben Talstra
+// SPDX-License-Identifier: BUSL-1.1
 
 //! Physical deletion (SM `I_ADMIN_SERVICE.physical_ehr_delete` /
 //! `physical_party_delete` + the `admin_ehr_delete_all` bulk extension).

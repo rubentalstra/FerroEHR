@@ -1,9 +1,10 @@
 #!/usr/bin/env bash
-# SPDX-FileCopyrightText: FerroEHR contributors
-# SPDX-License-Identifier: MIT
+# SPDX-FileCopyrightText: Ruben Talstra
+# SPDX-License-Identifier: BUSL-1.1
 # Refuses copyleft licence TEXT inside this project's own source.
 #
-# This project's own code is MIT (.claude/rules/reliability.md §C-PERMISSIVE).
+# This project's own code is under the Business Source License 1.1
+# (.claude/rules/reliability.md §C-PERMISSIVE).
 # A GPL-family or SSPL grant appearing in a file WE wrote is a licence conflict
 # that no reviewer reliably catches by eye, so it is checked here.
 #
@@ -23,7 +24,7 @@ set -euo pipefail
 
 cd "$(dirname "$0")/../.."
 
-# The forbidden grants. Copyleft families incompatible with shipping MIT source.
+# The forbidden grants. Copyleft families incompatible with shipping BUSL-1.1 source.
 readonly PATTERN='GNU (Affero |Lesser )?General Public License|Server Side Public License'
 
 # Mirrors .fossa.yml `paths.exclude`, plus build/VCS output. Keep the two in
@@ -80,7 +81,7 @@ if matches=$(git grep -InE "$PATTERN" -- . "${EXCLUDED[@]}" "${PROSE[@]}"); then
   echo >&2
   echo "$matches" >&2
   echo >&2
-  echo "This project's own code is MIT. A GPL-family or SSPL grant here is a" >&2
+  echo "This project's own code is BUSL-1.1. A GPL-family or SSPL grant here is a" >&2
   echo "licence conflict. If the file is vendored third-party material, add its" >&2
   echo "tree to BOTH the exclusion list in this script and paths.exclude in" >&2
   echo ".fossa.yml, and record its terms in that tree's PROVENANCE.md." >&2

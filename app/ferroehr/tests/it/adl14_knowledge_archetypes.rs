@@ -1,5 +1,5 @@
-// SPDX-FileCopyrightText: FerroEHR contributors
-// SPDX-License-Identifier: MIT
+// SPDX-FileCopyrightText: Ruben Talstra
+// SPDX-License-Identifier: BUSL-1.1
 
 //! Parse gate over the ADL 1.4 archetype resources this crate ships as test
 //! knowledge (`tests/resources/service/knowledge/archetypes/`).

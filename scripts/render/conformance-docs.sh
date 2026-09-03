@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
-# SPDX-FileCopyrightText: FerroEHR contributors
-# SPDX-License-Identifier: MIT
+# SPDX-FileCopyrightText: Ruben Talstra
+# SPDX-License-Identifier: BUSL-1.1
 # Regenerate the DERIVED party documents (verdicts.json, the three
 # CONFORMANCE_*.md renders, the shields.io badges) FROM the committed inputs —
 # the party statement, that party's committed results.json, and the pinned

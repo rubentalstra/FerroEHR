@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
-# SPDX-FileCopyrightText: FerroEHR contributors
-# SPDX-License-Identifier: MIT
+# SPDX-FileCopyrightText: Ruben Talstra
+# SPDX-License-Identifier: BUSL-1.1
 # openEHR spec-update watcher (tracker issue #137; design dossier: recorded on tracker issue #137
 # — every mechanism live-verified 2026-07-20). Three detection sources; A and B
 # file ONE GitHub issue per completed upstream spec change, C maintains ONE

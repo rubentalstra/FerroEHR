@@ -1,5 +1,5 @@
-// SPDX-FileCopyrightText: FerroEHR contributors
-// SPDX-License-Identifier: MIT
+// SPDX-FileCopyrightText: Ruben Talstra
+// SPDX-License-Identifier: BUSL-1.1
 
 //! SELECT-clause lowering (QUERY master03 §SELECT, §DISTINCT, §Aggregate
 //! functions): identified paths, literals, aggregates, and scalar functions;

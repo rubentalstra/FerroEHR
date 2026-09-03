@@ -1,6 +1,6 @@
-// SPDX-FileCopyrightText: FerroEHR contributors
+// SPDX-FileCopyrightText: Ruben Talstra
 // SPDX-FileCopyrightText: openEHR Foundation
-// SPDX-License-Identifier: MIT AND Apache-2.0
+// SPDX-License-Identifier: BUSL-1.1 AND Apache-2.0
 
 //! **Archetype-conformance validation** — the template-driven pass, plus the
 //! Simplified-Formats input checks.

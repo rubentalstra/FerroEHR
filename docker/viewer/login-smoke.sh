@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
-# SPDX-FileCopyrightText: FerroEHR contributors
-# SPDX-License-Identifier: MIT
+# SPDX-FileCopyrightText: Ruben Talstra
+# SPDX-License-Identifier: BUSL-1.1
 # Browser-driven login against the BUILT viewer image (issue #2871).
 #
 # The asset-chain smoke beside this one proves the pushed image SERVES every

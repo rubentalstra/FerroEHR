@@ -1,5 +1,5 @@
-// SPDX-FileCopyrightText: FerroEHR contributors
-// SPDX-License-Identifier: MIT
+// SPDX-FileCopyrightText: Ruben Talstra
+// SPDX-License-Identifier: BUSL-1.1
 
 //! Corpus gate: every ADL2 corpus source with a `rules` section must parse that
 //! section cleanly into the AM-level statement set. Sources with no `rules`

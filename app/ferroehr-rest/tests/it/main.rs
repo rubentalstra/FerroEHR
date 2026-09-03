@@ -1,5 +1,5 @@
-// SPDX-FileCopyrightText: FerroEHR contributors
-// SPDX-License-Identifier: MIT
+// SPDX-FileCopyrightText: Ruben Talstra
+// SPDX-License-Identifier: BUSL-1.1
 
 //! Integration tests for `ferroehr-rest` — the ITS-REST protocol adapter: the
 //! assembled axum router end to end (routing, content negotiation, committal and

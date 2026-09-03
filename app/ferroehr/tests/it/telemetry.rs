@@ -1,5 +1,5 @@
-// SPDX-FileCopyrightText: FerroEHR contributors
-// SPDX-License-Identifier: MIT
+// SPDX-FileCopyrightText: Ruben Talstra
+// SPDX-License-Identifier: BUSL-1.1
 
 //! Telemetry tests: the metric-name + bucket registry snapshot
 //! (renames become deliberate), the OTLP export smokes for traces AND metrics

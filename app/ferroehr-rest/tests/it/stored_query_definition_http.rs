@@ -1,5 +1,5 @@
-// SPDX-FileCopyrightText: FerroEHR contributors
-// SPDX-License-Identifier: MIT
+// SPDX-FileCopyrightText: Ruben Talstra
+// SPDX-License-Identifier: BUSL-1.1
 
 //! End-to-end HTTP tests for the stored-query DEFINITION wire (group-11 audit,
 //! `I_DEFINITION_QUERY`): the version-less `PUT /definition/query/{name}`

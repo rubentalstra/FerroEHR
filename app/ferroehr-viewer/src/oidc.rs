@@ -1,5 +1,5 @@
-// SPDX-FileCopyrightText: FerroEHR contributors
-// SPDX-License-Identifier: MIT
+// SPDX-FileCopyrightText: Ruben Talstra
+// SPDX-License-Identifier: BUSL-1.1
 
 //! The viewer's OIDC authorization-code login (with PKCE): two plain axum
 //! routes (`/auth/oidc/login`, `/auth/oidc/callback`) on the BFF.

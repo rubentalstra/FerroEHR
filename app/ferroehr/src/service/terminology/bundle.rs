@@ -1,5 +1,5 @@
-// SPDX-FileCopyrightText: FerroEHR contributors
-// SPDX-License-Identifier: MIT
+// SPDX-FileCopyrightText: Ruben Talstra
+// SPDX-License-Identifier: BUSL-1.1
 
 //! The in-process openEHR-bundle provider for `I_TERMINOLOGY_SERVICE`, backed
 //! by the compile-time-embedded `openehr-term` bundle (TERM 3.1.0).

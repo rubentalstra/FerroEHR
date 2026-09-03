@@ -1,5 +1,5 @@
-// SPDX-FileCopyrightText: FerroEHR contributors
-// SPDX-License-Identifier: MIT
+// SPDX-FileCopyrightText: Ruben Talstra
+// SPDX-License-Identifier: BUSL-1.1
 
 //! The shared page header: breadcrumbs, title, subtitle, and an action
 //! slot — every routed screen opens with one so the page rhythm (header →

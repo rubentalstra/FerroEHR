@@ -1,5 +1,5 @@
-// SPDX-FileCopyrightText: FerroEHR contributors
-// SPDX-License-Identifier: MIT
+// SPDX-FileCopyrightText: Ruben Talstra
+// SPDX-License-Identifier: BUSL-1.1
 
 //! Typed `sea-query` building blocks shared across the SQL submodules, plus the
 //! two lexical translations the AQL language pins exactly — the `LIKE` pattern

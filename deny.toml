@@ -75,7 +75,10 @@ ignore = [
 
 [licenses]
 version = 2
-# Allow permissive licenses compatible with an MIT-licensed project.
+# Permissive licences the project's own Business Source License 1.1 code may
+# depend on. BUSL-1.1 itself is NOT in this list: it is the workspace's own
+# licence and is admitted per member below, so a BUSL-licensed DEPENDENCY still
+# fails the check (its production-use limits would bind our deployments).
 allow = [
   "Apache-2.0",
   "Apache-2.0 WITH LLVM-exception",
@@ -104,11 +107,27 @@ exceptions = [
   # dependency of the profiling instrument; nothing of ours is derivative.
   # Scoped exception, not a blanket allow (2026-08-04, issue #1861).
   { allow = ["CDDL-1.0"], crate = "inferno" },
-  # openehr-term is OUR OWN crate, and it declares CC-BY-SA-3.0 because it
-  # redistributes openEHR's terminology XML verbatim (upstream
-  # specifications-TERM) alongside our MIT code. Scoped to that one crate — never
-  # a blanket allow of a copyleft DEPENDENCY.
-  { allow = ["CC-BY-SA-3.0"], crate = "openehr-term" },
+  # The workspace members are the project's own code under the Business Source
+  # License 1.1 (owner decision 2026-09-03), admitted one crate at a time so the
+  # identifier never becomes a blanket allow for a dependency. openehr-term also
+  # declares CC-BY-SA-3.0 because it redistributes openEHR's terminology XML
+  # verbatim (upstream specifications-TERM) alongside our code.
+  { allow = ["BUSL-1.1"], crate = "openehr-base" },
+  { allow = ["BUSL-1.1"], crate = "openehr-rm" },
+  { allow = ["BUSL-1.1"], crate = "openehr-am" },
+  { allow = ["BUSL-1.1", "CC-BY-SA-3.0"], crate = "openehr-term" },
+  { allow = ["BUSL-1.1"], crate = "openehr-lang" },
+  { allow = ["BUSL-1.1"], crate = "openehr-its" },
+  { allow = ["BUSL-1.1"], crate = "openehr-query" },
+  { allow = ["BUSL-1.1"], crate = "openehr-adl" },
+  { allow = ["BUSL-1.1"], crate = "ferroehr" },
+  { allow = ["BUSL-1.1"], crate = "ferroehr-rest" },
+  { allow = ["BUSL-1.1"], crate = "ferroehr-server" },
+  { allow = ["BUSL-1.1"], crate = "ferroehr-ext" },
+  { allow = ["BUSL-1.1"], crate = "ferroehr-viewer" },
+  { allow = ["BUSL-1.1"], crate = "openehr-codegen" },
+  { allow = ["BUSL-1.1"], crate = "testkit" },
+  { allow = ["BUSL-1.1"], crate = "docs-meta" },
 ]
 
 [bans]

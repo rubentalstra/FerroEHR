@@ -105,9 +105,12 @@ that table is in MAINTAINERS.md and is kept truthful.
 Recorded here so the questions do not have to be re-litigated in each pull
 request:
 
-- **No contributor licence agreement, and no copyright assignment.** You keep
-  your copyright; the licence stays MIT for everyone including the maintainer.
-  This is a deliberate position, not an oversight.
+- **No copyright assignment.** You keep your copyright. Contributions are
+  licensed under the project's Business Source License 1.1 for everyone
+  including the maintainer, become Apache 2.0 on each version's Change Date,
+  and carry the relicensing grant in CONTRIBUTING.md § Licensing of
+  contributions so the work stays one work under one licensor. This is a
+  deliberate position, not an oversight.
 - **No re-modelling of the openEHR specification by hand.** The specification
   crates are generated from the machine-readable artifacts; a change goes into
   the generator.

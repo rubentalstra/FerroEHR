@@ -1,6 +1,6 @@
-// SPDX-FileCopyrightText: FerroEHR contributors
+// SPDX-FileCopyrightText: Ruben Talstra
 // SPDX-FileCopyrightText: openEHR Foundation
-// SPDX-License-Identifier: MIT AND Apache-2.0
+// SPDX-License-Identifier: BUSL-1.1 AND Apache-2.0
 
 //! Public-API conformance battery for the hand-written `openehr_lang::v1_1::odin`
 //! reader against the 17 vendored ODIN fixtures under `tests/vendor/odin/`.

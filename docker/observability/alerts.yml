@@ -1,5 +1,5 @@
-# SPDX-FileCopyrightText: FerroEHR contributors
-# SPDX-License-Identifier: MIT
+# SPDX-FileCopyrightText: Ruben Talstra
+# SPDX-License-Identifier: BUSL-1.1
 
 # Alert starter pack — documented, not imposed. Load into a Prometheus/Grafana
 # alerting instance and calibrate every threshold against real traffic: these

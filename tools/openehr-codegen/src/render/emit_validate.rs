@@ -1,5 +1,5 @@
-// SPDX-FileCopyrightText: FerroEHR contributors
-// SPDX-License-Identifier: MIT
+// SPDX-FileCopyrightText: Ruben Talstra
+// SPDX-License-Identifier: BUSL-1.1
 
 //! `emit-validate`: emit the **RM class-invariant cores** into `openehr-rm`
 //! (`src/validate/generated.rs`), the single source both the typed `Validate`

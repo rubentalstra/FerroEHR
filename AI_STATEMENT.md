@@ -7,18 +7,18 @@
 | Status | Active |
 | Author and owner | Ruben Talstra, maintainer |
 | Canonical location | `AI_STATEMENT.md` at the repository root |
-| Licence | MIT, like the rest of the project's own text |
+| Licence | Business Source License 1.1, like the rest of the project's own text |
 | Review | at every major or minor release, and on any trigger in §13 |
 
 **Abstract.** This document discloses how artificial-intelligence tools are
-used to develop FerroEHR, an open-source openEHR clinical data repository.
-It states what the tools do and do not touch, who is accountable, which
-controls bound the work and how each is enforced, the licensing and data
-posture, the rules for contributors, the uses that are prohibited, and the
-limitations that survive all of it. It is a self-declaration by the
-maintainer, written for evaluators and regulated adopters performing
-supplier due diligence, and it changes in the same pull request that
-changes the practice it describes.
+used to develop FerroEHR, a source-available openEHR clinical data
+repository. It states what the tools do and do not touch, who is
+accountable, which controls bound the work and how each is enforced, the
+licensing and data posture, the rules for contributors, the uses that are
+prohibited, and the limitations that survive all of it. It is a
+self-declaration by the maintainer, written for evaluators and regulated
+adopters performing supplier due diligence, and it changes in the same pull
+request that changes the practice it describes.
 
 The key words **shall**, **should**, and **may** are used as ISO/IEC
 Directives Part 2 defines them: requirement, recommendation, permission.
@@ -149,17 +149,18 @@ What these controls do **not** prove is stated in §12.
 
 ## 8. Licensing and provenance of AI output
 
-The project is MIT-licensed. The position taken here follows the Apache
-Software Foundation's and LLVM's published reasoning rather than wishful
-shortcuts: an AI tool's output does not launder anyone's copyright, the
-full provenance of generated text is generally not knowable, and prompting
-alone is not treated as authorship. In practice: contributions of
-substantially copied third-party material are refused however they were
-produced; generated code is held to the same originality expectations as
-human code, under the same review; and if identifiable third-party
-material is found in the tree, it is removed or licensed properly, exactly
-as it would be for a human-introduced copy. The tools are used under terms
-that do not restrict the output's use in MIT-licensed software.
+The project is licensed under the Business Source License 1.1. The position
+taken here follows the Apache Software Foundation's and LLVM's published
+reasoning rather than wishful shortcuts: an AI tool's output does not
+launder anyone's copyright, the full provenance of generated text is
+generally not knowable, and prompting alone is not treated as authorship. In
+practice: contributions of substantially copied third-party material are
+refused however they were produced; generated code is held to the same
+originality expectations as human code, under the same review; and if
+identifiable third-party material is found in the tree, it is removed or
+licensed properly, exactly as it would be for a human-introduced copy. The
+tools are used under terms that do not restrict the output's use in software
+under the project's licence.
 
 ## 9. Data
 
@@ -248,8 +249,8 @@ answered on the tracker, and never silently absorbed.
 ## 15. References
 
 **Normative for this project** (the documents that bind the practice
-described here): the [MIT licence](LICENSE); the vendored openEHR
-specifications (`docs/specs/openehr/`); the repository's rule set
+described here): the [Business Source License 1.1](LICENSE); the vendored
+openEHR specifications (`docs/specs/openehr/`); the repository's rule set
 (`.claude/rules/`, in particular `reliability.md`, `cnf-triage.md`,
 `ai-code-review.md`, `writing-style.md`); [GOVERNANCE.md](GOVERNANCE.md),
 [MAINTAINERS.md](MAINTAINERS.md), [CONTRIBUTING.md](CONTRIBUTING.md),

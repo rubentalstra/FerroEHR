@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
-# SPDX-FileCopyrightText: FerroEHR contributors
-# SPDX-License-Identifier: MIT
+# SPDX-FileCopyrightText: Ruben Talstra
+# SPDX-License-Identifier: BUSL-1.1
 # Profiling harness: run ONE capacity step
 # of the hospital-day workload against the composed ferroehr stack and dump
 # the PostgreSQL statement profile + the AQL dashboard plans into a committed

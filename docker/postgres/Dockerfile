@@ -37,8 +37,8 @@ COPY initdb/ /docker-entrypoint-initdb.d/
 # above, kept in step by scripts/checks/image-labels.sh.
 #
 # `licenses` is an SPDX EXPRESSION and this image genuinely is one: our init
-# scripts are MIT, and every layer under them is upstream `postgres`, which is
-# PostgreSQL-licensed. Claiming only MIT would understate what the image
+# scripts are BUSL-1.1, and every layer under them is upstream `postgres`, which
+# is PostgreSQL-licensed. Claiming only BUSL-1.1 would understate what the image
 # contains.
 LABEL org.opencontainers.image.title="FerroEHR PostgreSQL" \
       org.opencontainers.image.description="PostgreSQL 18 preconfigured (role/db/schemas/extensions) for ferroehr" \
@@ -47,6 +47,6 @@ LABEL org.opencontainers.image.title="FerroEHR PostgreSQL" \
       org.opencontainers.image.source="https://github.com/rubentalstra/FerroEHR" \
       org.opencontainers.image.vendor="FerroEHR" \
       org.opencontainers.image.authors="Ruben Talstra <https://github.com/rubentalstra>" \
-      org.opencontainers.image.licenses="MIT AND PostgreSQL" \
+      org.opencontainers.image.licenses="BUSL-1.1 AND PostgreSQL" \
       org.opencontainers.image.base.name="postgres:18.6" \
       org.opencontainers.image.base.digest="sha256:4ef4dbc939d61acea57712655ddb4b4ab27419c913f94cca0cd57cb3ea3c2280"

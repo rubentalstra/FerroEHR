@@ -1,5 +1,5 @@
-// SPDX-FileCopyrightText: FerroEHR contributors
-// SPDX-License-Identifier: MIT
+// SPDX-FileCopyrightText: Ruben Talstra
+// SPDX-License-Identifier: BUSL-1.1
 
 //! End-to-end ABAC PEP over the real axum app: the fine-grained layer through the
 //! assembled router (auth → RBAC → dispatch → ABAC pre/post checks → backend)

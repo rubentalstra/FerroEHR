@@ -28,19 +28,21 @@ years, by software nobody has written yet, that is the whole game.
 
 A standard becomes real when there is something you can start with one
 command, read the source of, check against the specification yourself, and
-deploy without first negotiating a licence. Without that, an excellent
-specification stays an idea that only well-funded organisations can act on.
+deploy for your own organisation without first negotiating a licence. Without
+that, an excellent specification stays an idea that only well-funded
+organisations can act on.
 
 That is the gap this project set out to close: one complete, openly
-developed, permissively licensed openEHR CDR whose conformance is *measured
+developed, source-available openEHR CDR whose conformance is *measured
 and published*.
 
 ## What we commit to
 
-- **MIT for all of our own code, with no open-core tier.** Multi-tenancy,
-  role- and attribute-based access control, IHE ATNA audit, per-version
-  digital signatures, the FHIR R4 connectors, change events, the viewer —
-  one repository, one licence. Nothing is held back to be sold back
+- **One licence for all of our own code, with no open-core tier.**
+  Multi-tenancy, role- and attribute-based access control, IHE ATNA audit,
+  per-version digital signatures, the FHIR R4 connectors, change events and
+  the viewer are in one repository under the Business Source License 1.1.
+  Nothing is held back to be sold back
   to you. (Vendored openEHR material keeps its own upstream terms, and the
   spec crates that embed it say so in their own metadata; see
   [Licensing & legal](licensing.md).)
@@ -62,17 +64,25 @@ and published*.
   changelog-driven releases, signed artifacts, and a security policy with a
   private reporting channel.
 
-## Commercial use is the point
+## Running FerroEHR commercially
 
-FerroEHR is MIT-licensed, and we mean it as an invitation:
+FerroEHR is source-available under the Business Source License 1.1:
 
-- Integrate it into your product, embed it in your platform, or run it as a
-  hosted service.
-- Redistribute it, package it, white-label it, and build closed products on
-  top of it. Charge for them.
-- There is no contributor licence agreement, no copyright assignment, no dual
-  licence and no "commercial licence" conversation to have. Contributors keep
-  their copyright, and what you build on top stays yours.
+- Run it in production for your own organisation and its affiliates, for any
+  purpose, commercial ones included. A contractor operating it solely on your
+  behalf is covered, and all non-production use (development, testing,
+  evaluation) is unrestricted.
+- Read it, build it, modify it and redistribute it without a fee. One licence
+  covers the whole repository, and no feature is held back for a paid tier.
+- Each version becomes Apache 2.0 four years after it is published, so what
+  ships today is permissively licensed on a published schedule.
+- Two uses need a commercial licence from the Licensor: offering FerroEHR, or
+  a work derived from it, to third parties as a hosted, managed or embedded
+  service through which anyone outside your organisation stores, manages or
+  queries health data held by it; and selling, sublicensing or otherwise
+  distributing it for a fee, on its own or as a component of another product.
+  The contact is the maintainer named in
+  [`MAINTAINERS.md`](https://github.com/rubentalstra/FerroEHR/blob/main/MAINTAINERS.md).
 
 Commercial adoption is the goal here. Standards reach patients through
 products, and products are built by organisations that need to earn a living.

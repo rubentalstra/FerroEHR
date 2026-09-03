@@ -1,5 +1,5 @@
-// SPDX-FileCopyrightText: FerroEHR contributors
-// SPDX-License-Identifier: MIT
+// SPDX-FileCopyrightText: Ruben Talstra
+// SPDX-License-Identifier: BUSL-1.1
 
 //! AOM 1.4 constraint-model per-node-kind invariants for the OPT 1.4 pass
 //! (T4, T5b, T13, T14, T15, T16 of the AM constraint taxonomy).

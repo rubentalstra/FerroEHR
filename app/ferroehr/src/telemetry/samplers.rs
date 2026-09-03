@@ -1,5 +1,5 @@
-// SPDX-FileCopyrightText: FerroEHR contributors
-// SPDX-License-Identifier: MIT
+// SPDX-FileCopyrightText: Ruben Talstra
+// SPDX-License-Identifier: BUSL-1.1
 
 //! Background metric samplers: the DB pool gauges, the tokio runtime gauges
 //! (stable `Handle::metrics()` subset), and the periodic Prometheus recorder

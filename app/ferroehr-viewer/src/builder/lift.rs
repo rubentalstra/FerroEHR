@@ -1,5 +1,5 @@
-// SPDX-FileCopyrightText: FerroEHR contributors
-// SPDX-License-Identifier: MIT
+// SPDX-FileCopyrightText: Ruben Talstra
+// SPDX-License-Identifier: BUSL-1.1
 
 //! Lifting stored AQL back into [`BuilderQuery`] — the exact inverse of
 //! [`crate::builder::lower`], and nothing more.

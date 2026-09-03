@@ -15,7 +15,7 @@ members = ["crates/*", "app/*", "tools/*"]
 version = "4.0.17"
 edition = "2024"
 rust-version = "1.96"
-license = "MIT"
+license = "BUSL-1.1"
 repository = "https://github.com/rubentalstra/FerroEHR"
 # No `authors`, deliberately. The cargo manifest reference opens that section
 # with "Warning: This field is deprecated"

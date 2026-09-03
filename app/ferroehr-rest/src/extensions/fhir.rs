@@ -1,5 +1,5 @@
-// SPDX-FileCopyrightText: FerroEHR contributors
-// SPDX-License-Identifier: MIT
+// SPDX-FileCopyrightText: Ruben Talstra
+// SPDX-License-Identifier: BUSL-1.1
 
 //! HTTP dispatch for the **FHIR R4 inbound connector** + mapping-store CRUD
 //! over the `ferroehr::service::FhirConnectorAdapter` seam.

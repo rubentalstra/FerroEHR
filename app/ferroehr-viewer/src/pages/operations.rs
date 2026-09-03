@@ -1,5 +1,5 @@
-// SPDX-FileCopyrightText: FerroEHR contributors
-// SPDX-License-Identifier: MIT
+// SPDX-FileCopyrightText: Ruben Talstra
+// SPDX-License-Identifier: BUSL-1.1
 
 //! The `/operations` screen: the operator's panel over the CDR's operational
 //! surfaces — dependency health, build + spec provenance, the metric registry,

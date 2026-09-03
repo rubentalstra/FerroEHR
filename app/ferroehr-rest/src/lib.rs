@@ -1,5 +1,5 @@
-// SPDX-FileCopyrightText: FerroEHR contributors
-// SPDX-License-Identifier: MIT
+// SPDX-FileCopyrightText: Ruben Talstra
+// SPDX-License-Identifier: BUSL-1.1
 
 //! openEHR **ITS-REST 1.1.0** server surface (`axum`) — the protocol adapter
 //! over the SM native API (`ferroehr-sm`).

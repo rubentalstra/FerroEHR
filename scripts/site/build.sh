@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
-# SPDX-FileCopyrightText: FerroEHR contributors
-# SPDX-License-Identifier: MIT
+# SPDX-FileCopyrightText: Ruben Talstra
+# SPDX-License-Identifier: BUSL-1.1
 # Assemble the full Pages site tree into ./_site, exactly as CI does — so
 # "works on my machine" == the deployed layout (URL scheme, frozen versions,
 # and workflow all match the Docs CI job).

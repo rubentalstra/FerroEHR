@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
-# SPDX-FileCopyrightText: FerroEHR contributors
-# SPDX-License-Identifier: MIT
+# SPDX-FileCopyrightText: Ruben Talstra
+# SPDX-License-Identifier: BUSL-1.1
 # Preconfigure the ferroehr database. Runs once, as the bootstrap superuser
 # (POSTGRES_USER), on first initialisation of an empty data directory.
 #

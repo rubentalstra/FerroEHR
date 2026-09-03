@@ -19,7 +19,7 @@ type: application
 # A published OCI version is immutable by refusal rather than by the registry —
 # `helm push` over an existing tag replaces it silently — so a correction always
 # ships as a NEW version and the published one stands as it was.
-version: 7.0.4
+version: 7.0.5
 # The DEFAULT container image tag (overridable via image.tag). Equals the
 # workspace version in Cargo.toml, bumped in the release PR beside the
 # docker-compose.yml image tags — one version sweep, the compose treatment
@@ -125,7 +125,7 @@ annotations:
   # `database` is the closest TRUE statement of the eight; `skip-prediction`
   # would only remove the chart from category browsing without saying anything.
   artifacthub.io/category: database
-  artifacthub.io/license: MIT
+  artifacthub.io/license: BUSL-1.1
   artifacthub.io/links: |
     - name: source
       url: https://github.com/rubentalstra/FerroEHR

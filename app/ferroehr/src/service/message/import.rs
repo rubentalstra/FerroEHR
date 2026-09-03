@@ -1,5 +1,5 @@
-// SPDX-FileCopyrightText: FerroEHR contributors
-// SPDX-License-Identifier: MIT
+// SPDX-FileCopyrightText: Ruben Talstra
+// SPDX-License-Identifier: BUSL-1.1
 
 //! EHR-Extract import (SM `I_EHR_EXTRACT_SERVICE.import_ehr` /
 //! `import_ehr_extract`), the inverse of export: each received

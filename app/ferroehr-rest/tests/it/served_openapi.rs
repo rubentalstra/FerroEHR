@@ -1,5 +1,5 @@
-// SPDX-FileCopyrightText: FerroEHR contributors
-// SPDX-License-Identifier: MIT
+// SPDX-FileCopyrightText: Ruben Talstra
+// SPDX-License-Identifier: BUSL-1.1
 
 //! Structural completeness gate over the SERVED `OpenAPI` document — the only
 //! `OpenAPI` we publish (owner hard rule: serve only what we generate). The

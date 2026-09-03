@@ -1,5 +1,5 @@
-// SPDX-FileCopyrightText: FerroEHR contributors
-// SPDX-License-Identifier: MIT
+// SPDX-FileCopyrightText: Ruben Talstra
+// SPDX-License-Identifier: BUSL-1.1
 
 //! `OpenPGP`-mode integration tests: sign→verify round-trip with a
 //! generated key, tamper detection, armor-parse failures, the fail-closed

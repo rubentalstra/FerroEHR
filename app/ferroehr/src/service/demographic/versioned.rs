@@ -1,5 +1,5 @@
-// SPDX-FileCopyrightText: FerroEHR contributors
-// SPDX-License-Identifier: MIT
+// SPDX-FileCopyrightText: Ruben Talstra
+// SPDX-License-Identifier: BUSL-1.1
 
 //! `VERSIONED_PARTY` read surface — the demographic analogue of the EHR
 //! `versioned_composition` reads (`VERSIONED_PARTY`, its `REVISION_HISTORY`, and

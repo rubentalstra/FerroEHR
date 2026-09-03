@@ -1,5 +1,5 @@
-// SPDX-FileCopyrightText: FerroEHR contributors
-// SPDX-License-Identifier: MIT
+// SPDX-FileCopyrightText: Ruben Talstra
+// SPDX-License-Identifier: BUSL-1.1
 
 //! Every text-producing emit target — `emit`, `emit-json`, `emit-xml`,
 //! `emit-rest`, `emit-opt`, `emit-aom2`, `emit-rm-model`, `emit-validate` — as

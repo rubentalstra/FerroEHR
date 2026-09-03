@@ -1,5 +1,5 @@
-// SPDX-FileCopyrightText: FerroEHR contributors
-// SPDX-License-Identifier: MIT
+// SPDX-FileCopyrightText: Ruben Talstra
+// SPDX-License-Identifier: BUSL-1.1
 
 //! The FHIR-connector reverse transform: canonical COMPOSITION to FHIR
 //! resource, shared by the read façade and the outbound emitter.

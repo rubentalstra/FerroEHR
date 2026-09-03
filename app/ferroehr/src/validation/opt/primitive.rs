@@ -1,5 +1,5 @@
-// SPDX-FileCopyrightText: FerroEHR contributors
-// SPDX-License-Identifier: MIT
+// SPDX-FileCopyrightText: Ruben Talstra
+// SPDX-License-Identifier: BUSL-1.1
 
 //! `C_PRIMITIVE` leaves, temporal/duration pattern validity, and the
 //! `C_DOMAIN_TYPE` assumed-value rules for the OPT 1.4 pass

@@ -1,5 +1,5 @@
-// SPDX-FileCopyrightText: FerroEHR contributors
-// SPDX-License-Identifier: MIT
+// SPDX-FileCopyrightText: Ruben Talstra
+// SPDX-License-Identifier: BUSL-1.1
 
 //! End-to-end HTTP tests for the demographic `ITEM_TAG` wire (group-13 audit,
 //! #389): the released dual-form `uid_based_id` addresses DISTINCT tag

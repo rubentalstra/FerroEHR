@@ -1,5 +1,5 @@
-// SPDX-FileCopyrightText: FerroEHR contributors
-// SPDX-License-Identifier: MIT
+// SPDX-FileCopyrightText: Ruben Talstra
+// SPDX-License-Identifier: BUSL-1.1
 
 //! Simultaneous multi-terminology-server operation + terminology-server
 //! authentication, driven by `wiremock` — several hermetic FHIR R4B servers in

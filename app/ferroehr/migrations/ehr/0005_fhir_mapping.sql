@@ -1,5 +1,5 @@
--- SPDX-FileCopyrightText: FerroEHR contributors
--- SPDX-License-Identifier: MIT
+-- SPDX-FileCopyrightText: Ruben Talstra
+-- SPDX-License-Identifier: BUSL-1.1
 
 -- ehr schema: the FHIR-connector mapping store (an extension — no openEHR
 -- spec governs FHIR interop; E3 — FHIR R4

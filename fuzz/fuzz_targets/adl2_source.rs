@@ -1,5 +1,5 @@
-// SPDX-FileCopyrightText: FerroEHR contributors
-// SPDX-License-Identifier: MIT
+// SPDX-FileCopyrightText: Ruben Talstra
+// SPDX-License-Identifier: BUSL-1.1
 
 //! The ADL source parser (`openehr_adl::source`): archetype text arrives on the
 //! definition surface as an upload, so the cADL/ODIN lexer and the outer

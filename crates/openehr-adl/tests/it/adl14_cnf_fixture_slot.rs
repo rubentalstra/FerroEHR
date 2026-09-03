@@ -1,5 +1,5 @@
-// SPDX-FileCopyrightText: FerroEHR contributors
-// SPDX-License-Identifier: MIT
+// SPDX-FileCopyrightText: Ruben Talstra
+// SPDX-License-Identifier: BUSL-1.1
 
 //! The #679 reproduction: the CNF corpus fixture uses the ANONYMOUS
 //! archetype-slot form ADL1.4 master05-cadl.adoc §Archetype Slots itself

@@ -1,5 +1,5 @@
-// SPDX-FileCopyrightText: FerroEHR contributors
-// SPDX-License-Identifier: MIT
+// SPDX-FileCopyrightText: Ruben Talstra
+// SPDX-License-Identifier: BUSL-1.1
 
 //! End-to-end inbound FHIR connector tests against a real `PostgreSQL` 18
 //! (the shared `testkit` harness), driven through the assembled `ferroehr-rest`

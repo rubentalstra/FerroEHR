@@ -1,5 +1,5 @@
-// SPDX-FileCopyrightText: FerroEHR contributors
-// SPDX-License-Identifier: MIT
+// SPDX-FileCopyrightText: Ruben Talstra
+// SPDX-License-Identifier: BUSL-1.1
 
 //! Contribution-outbox eventing tests against a real `PostgreSQL` 18
 //! (shared testkit harness) — the transactional-outbox half of the eventing extension (tasks 2/3).

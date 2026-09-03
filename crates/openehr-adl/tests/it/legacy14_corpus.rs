@@ -1,5 +1,5 @@
-// SPDX-FileCopyrightText: FerroEHR contributors
-// SPDX-License-Identifier: MIT
+// SPDX-FileCopyrightText: Ruben Talstra
+// SPDX-License-Identifier: BUSL-1.1
 
 //! The ADL 1.4 `.adl` corpus coverage harness — every `.adl` source file under
 //! `tests/corpus` is exercised with an asserted outcome, closing the `.adl`

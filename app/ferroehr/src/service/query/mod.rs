@@ -1,5 +1,5 @@
-// SPDX-FileCopyrightText: FerroEHR contributors
-// SPDX-License-Identifier: MIT
+// SPDX-FileCopyrightText: Ruben Talstra
+// SPDX-License-Identifier: BUSL-1.1
 
 //! The QUERY component of the platform crate — the openEHR **Query** service
 //! seam (`I_QUERY_SERVICE`, `i_query_service.adoc`; `master08-query_service.adoc`).

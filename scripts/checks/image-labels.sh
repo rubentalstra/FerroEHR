@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
-# SPDX-FileCopyrightText: FerroEHR contributors
-# SPDX-License-Identifier: MIT
+# SPDX-FileCopyrightText: Ruben Talstra
+# SPDX-License-Identifier: BUSL-1.1
 # Image-metadata guard: the OCI annotation keys are declared once, correctly, and
 # the two places that declare them agree.
 #
@@ -13,9 +13,9 @@
 #   * Six of the spec's fourteen predefined keys were unset, including
 #     `documentation` (we publish a docs site and never pointed at it) and
 #     `base.name`/`base.digest`, whose values were already pinned in the `FROM`.
-#   * All three Dockerfiles declared `licenses="Apache-2.0"` for an MIT project.
+#   * All three Dockerfiles declared `licenses="Apache-2.0"` for a then-MIT project.
 #     That was invisible on GHCR because `build-push-action`'s `labels:` input
-#     overrides a Dockerfile LABEL, so CI published the correct `MIT` — and
+#     overrides a Dockerfile LABEL, so CI published the correct licence — and
 #     anyone building the Dockerfile directly, the documented compose path,
 #     shipped an image asserting a licence the project does not use.
 #

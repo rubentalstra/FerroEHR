@@ -1,13 +1,16 @@
 # Contributing
 
-FerroEHR is open source (MIT for the project's own code, with vendored
-third-party material under its upstream terms; see
-[Licensing & legal](licensing.md)) and welcomes contributions. This chapter
-is a short orientation for anyone who wants to file an issue, report a
+FerroEHR is source-available (the Business Source License 1.1 for the
+project's own code, with vendored third-party material under its upstream
+terms; see [Licensing & legal](licensing.md)) and welcomes contributions. This
+chapter is a short orientation for anyone who wants to file an issue, report a
 vulnerability, or open a pull request; the authoritative documents live in the
-repository and are linked below. There is no contributor licence agreement and
-no copyright assignment: you keep your copyright, and the licence stays MIT for
-everyone. [Why FerroEHR exists](why-ferroehr.md) explains what the project asks
+repository and are linked below. You keep your copyright, and there is no
+separate agreement to sign; the terms a contribution lands under are set out
+in
+[CONTRIBUTING.md](https://github.com/rubentalstra/FerroEHR/blob/main/CONTRIBUTING.md)
+§ Licensing of contributions.
+[Why FerroEHR exists](why-ferroehr.md) explains what the project asks
 of the companies that build on it, and why.
 
 A bug report with a reproducing request, a

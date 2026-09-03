@@ -1,5 +1,5 @@
-// SPDX-FileCopyrightText: FerroEHR contributors
-// SPDX-License-Identifier: MIT
+// SPDX-FileCopyrightText: Ruben Talstra
+// SPDX-License-Identifier: BUSL-1.1
 
 //! The `VERSIONED_PARTY` reads — `operations/versioned_party_get.yaml`,
 //! `versioned_party_revision_history.yaml`,

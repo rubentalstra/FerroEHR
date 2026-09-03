@@ -1,5 +1,5 @@
-// SPDX-FileCopyrightText: FerroEHR contributors
-// SPDX-License-Identifier: MIT
+// SPDX-FileCopyrightText: Ruben Talstra
+// SPDX-License-Identifier: BUSL-1.1
 
 //! Corpus outer-parse gate: every well-formed ADL2 source (`*.adls`) in the
 //! vendored openEHR ADL2 reference library must outer-parse into a

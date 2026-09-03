@@ -1,5 +1,5 @@
-// SPDX-FileCopyrightText: FerroEHR contributors
-// SPDX-License-Identifier: MIT
+// SPDX-FileCopyrightText: Ruben Talstra
+// SPDX-License-Identifier: BUSL-1.1
 
 //! The demographic `ITEM_TAG` surface: the space-wide tag index the browser
 //! screen lists, and the per-party tag editor on the party detail's Tags tab.

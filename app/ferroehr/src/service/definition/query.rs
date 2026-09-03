@@ -1,5 +1,5 @@
-// SPDX-FileCopyrightText: FerroEHR contributors
-// SPDX-License-Identifier: MIT
+// SPDX-FileCopyrightText: Ruben Talstra
+// SPDX-License-Identifier: BUSL-1.1
 
 //! `I_DEFINITION_QUERY` (`i_definition_query.adoc`; `master04` §Registered
 //! Queries, §Query Formalism) + `QUERY_DESCRIPTOR` (`query_descriptor.adoc`),

@@ -1,6 +1,6 @@
-// SPDX-FileCopyrightText: FerroEHR contributors
+// SPDX-FileCopyrightText: Ruben Talstra
 // SPDX-FileCopyrightText: openEHR Foundation
-// SPDX-License-Identifier: MIT AND Apache-2.0
+// SPDX-License-Identifier: BUSL-1.1 AND Apache-2.0
 
 //! Hand-written spec functions of `BMM_MODEL` (plus the `schema_id` it inherits
 //! from `BMM_SCHEMA_CORE`) — the model-level lookups and the type-conformance

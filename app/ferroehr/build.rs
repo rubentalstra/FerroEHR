@@ -1,5 +1,5 @@
-// SPDX-FileCopyrightText: FerroEHR contributors
-// SPDX-License-Identifier: MIT
+// SPDX-FileCopyrightText: Ruben Talstra
+// SPDX-License-Identifier: BUSL-1.1
 
 //! Capture build-time provenance for `/management/info` and the
 //! `ferroehr_build_info` gauge: the git commit, the build timestamp, and the

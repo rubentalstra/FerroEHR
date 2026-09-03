@@ -1,5 +1,5 @@
-// SPDX-FileCopyrightText: FerroEHR contributors
-// SPDX-License-Identifier: MIT
+// SPDX-FileCopyrightText: Ruben Talstra
+// SPDX-License-Identifier: BUSL-1.1
 
 //! RFC 5425 TLS framing round-trip (§8.5): send an octet-counted syslog record
 //! over a real TLS connection to an in-process rustls listener that trusts a

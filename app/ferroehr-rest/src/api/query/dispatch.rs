@@ -1,5 +1,5 @@
-// SPDX-FileCopyrightText: FerroEHR contributors
-// SPDX-License-Identifier: MIT
+// SPDX-FileCopyrightText: Ruben Talstra
+// SPDX-License-Identifier: BUSL-1.1
 
 //! HTTP dispatch for the `query` API group — ad-hoc + stored AQL execution
 //! (ITS-REST 1.1.0 QUERY API). This module is the operation match: it runs the

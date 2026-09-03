@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
-# SPDX-FileCopyrightText: FerroEHR contributors
-# SPDX-License-Identifier: MIT
+# SPDX-FileCopyrightText: Ruben Talstra
+# SPDX-License-Identifier: BUSL-1.1
 # `cargo leptos` for the viewer, with the workspace lockfile frozen.
 #
 # Every other build in this repository runs `--locked`; the viewer's did not,

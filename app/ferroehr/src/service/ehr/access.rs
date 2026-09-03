@@ -1,5 +1,5 @@
-// SPDX-FileCopyrightText: FerroEHR contributors
-// SPDX-License-Identifier: MIT
+// SPDX-FileCopyrightText: Ruben Talstra
+// SPDX-License-Identifier: BUSL-1.1
 
 //! `EHR_ACCESS` — the EHR-wide access-control top-level structure
 //! (arch-overview `master06-design_of_the_ehr.adoc` §`EHR_ACCESS`; RM ehr

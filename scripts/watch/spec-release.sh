@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
-# SPDX-FileCopyrightText: FerroEHR contributors
-# SPDX-License-Identifier: MIT
+# SPDX-FileCopyrightText: Ruben Talstra
+# SPDX-License-Identifier: BUSL-1.1
 # openEHR RELEASE watcher (tracker issue #179) — the companion of
 # scripts/watch/spec-update.sh: that one tracks individual completed spec
 # CHANGES; this one makes sure a component RELEASE event is never missed

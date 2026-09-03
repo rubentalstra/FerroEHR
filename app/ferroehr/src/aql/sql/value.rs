@@ -1,5 +1,5 @@
-// SPDX-FileCopyrightText: FerroEHR contributors
-// SPDX-License-Identifier: MIT
+// SPDX-FileCopyrightText: Ruben Talstra
+// SPDX-License-Identifier: BUSL-1.1
 
 //! Value-expression lowering: the design's **path split** for a data leaf, the
 //! typed coercions (QUERY master03 §Comparison operators + §ORDER BY), VERSION /

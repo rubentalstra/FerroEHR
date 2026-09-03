@@ -1,5 +1,5 @@
-// SPDX-FileCopyrightText: FerroEHR contributors
-// SPDX-License-Identifier: MIT
+// SPDX-FileCopyrightText: Ruben Talstra
+// SPDX-License-Identifier: BUSL-1.1
 
 //! `RemotePdp` wire-contract tests,
 //! driven by `wiremock`: URL = base + policy name; a flat JSON body with exactly

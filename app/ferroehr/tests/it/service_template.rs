@@ -1,5 +1,5 @@
-// SPDX-FileCopyrightText: FerroEHR contributors
-// SPDX-License-Identifier: MIT
+// SPDX-FileCopyrightText: Ruben Talstra
+// SPDX-License-Identifier: BUSL-1.1
 
 //! End-to-end service tests for OPT 1.4 operational-template ingestion against a
 //! real `PostgreSQL` 18 (shared testkit harness): upload a corpus `.opt` template, list it,

@@ -1,5 +1,5 @@
--- SPDX-FileCopyrightText: FerroEHR contributors
--- SPDX-License-Identifier: MIT
+-- SPDX-FileCopyrightText: Ruben Talstra
+-- SPDX-License-Identifier: BUSL-1.1
 
 -- ext schema: multi-tenancy session context (an extension — no openEHR spec
 -- governs multi-tenancy; E2).

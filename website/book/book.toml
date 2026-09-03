@@ -1,6 +1,6 @@
 [book]
 title = "FerroEHR Documentation"
-authors = ["FerroEHR contributors"]
+authors = ["Ruben Talstra"]
 description = "User documentation for FerroEHR, a pure-Rust openEHR Clinical Data Repository."
 language = "en"
 src = "src"

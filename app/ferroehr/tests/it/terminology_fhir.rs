@@ -1,5 +1,5 @@
-// SPDX-FileCopyrightText: FerroEHR contributors
-// SPDX-License-Identifier: MIT
+// SPDX-FileCopyrightText: Ruben Talstra
+// SPDX-License-Identifier: BUSL-1.1
 
 //! `FhirTerminologyProvider` wire-contract tests,
 //! driven by `wiremock` — a hermetic FHIR R4B terminology server: canned

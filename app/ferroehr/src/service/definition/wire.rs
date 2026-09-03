@@ -1,5 +1,5 @@
-// SPDX-FileCopyrightText: FerroEHR contributors
-// SPDX-License-Identifier: MIT
+// SPDX-FileCopyrightText: Ruben Talstra
+// SPDX-License-Identifier: BUSL-1.1
 
 //! The ITS-REST wire-shaped DEFINITION extension methods: the rich shapes the
 //! `DEFINITION` API group returns (template summaries, the example

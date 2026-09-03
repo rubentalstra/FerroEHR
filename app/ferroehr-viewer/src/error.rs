@@ -1,5 +1,5 @@
-// SPDX-FileCopyrightText: FerroEHR contributors
-// SPDX-License-Identifier: MIT
+// SPDX-FileCopyrightText: Ruben Talstra
+// SPDX-License-Identifier: BUSL-1.1
 
 //! The viewer-wide error type, shared by both compilation targets so the UI
 //! can render domain errors (CDR status + diagnostic) instead of opaque

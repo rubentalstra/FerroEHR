@@ -1,11 +1,13 @@
 #!/usr/bin/env bash
-# SPDX-FileCopyrightText: FerroEHR contributors
-# SPDX-License-Identifier: MIT
+# SPDX-FileCopyrightText: Ruben Talstra
+# SPDX-License-Identifier: BUSL-1.1
 # One copyright holder, stated identically everywhere it is stated.
 #
-# `LICENSE` said "Ruben Talstra" while `REUSE.toml`, the codegen header constant
-# and 2470 file headers said "FerroEHR contributors". Both are defensible
-# positions; asserting both means a downstream redistributor reading a file
+# `LICENSE` once said "Ruben Talstra" while `REUSE.toml`, the codegen header
+# constant and 2470 file headers said "FerroEHR contributors" (#2325). Since the
+# 2026-09-03 relicensing the Business Source License names Ruben Talstra as the
+# Licensor and copyright holder, so every source states that. Asserting two
+# holders means a downstream redistributor reading a file
 # header and a lawyer reading LICENSE come away with different answers about who
 # holds the copyright — the exact ambiguity per-file licensing exists to remove.
 #
@@ -18,7 +20,7 @@ set -euo pipefail
 
 cd "$(dirname "$0")/../.."
 
-readonly HOLDER='FerroEHR contributors'
+readonly HOLDER='Ruben Talstra'
 
 fail=0
 check() {
@@ -31,9 +33,9 @@ check() {
   fi
 }
 
-# `LICENSE` — the MIT notice line.
+# `LICENSE` — the Business Source License's "The Licensed Work is (c) YYYY …" line.
 check "LICENSE" \
-  "$(sed -n 's/^Copyright (c) [0-9]\{4\} //p' LICENSE | head -1)"
+  "$(sed -n 's/^.*The Licensed Work is (c) [0-9]\{4\} \(.*\)\.$/\1/p' LICENSE | head -1)"
 
 # `REUSE.toml` — the first-party annotation (the openEHR Foundation appears as a
 # SECOND holder on vendored-derived files, which is a different statement).

@@ -1,5 +1,5 @@
-# SPDX-FileCopyrightText: FerroEHR contributors
-# SPDX-License-Identifier: MIT
+# SPDX-FileCopyrightText: Ruben Talstra
+# SPDX-License-Identifier: BUSL-1.1
 
 # The release build, as a REUSABLE workflow — the SLSA Build Level 3 lane
 # (SLSA v1.2, the current spec; v1.0 is marked Retired on slsa.dev and the

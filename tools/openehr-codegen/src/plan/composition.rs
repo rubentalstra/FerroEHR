@@ -1,5 +1,5 @@
-// SPDX-FileCopyrightText: FerroEHR contributors
-// SPDX-License-Identifier: MIT
+// SPDX-FileCopyrightText: Ruben Talstra
+// SPDX-License-Identifier: BUSL-1.1
 
 //! The **crate → generation table**: declarative data recording, per emitted
 //! spec crate, the BMM GENERATIONS it carries — vendored input file, emitted

@@ -1,5 +1,5 @@
-// SPDX-FileCopyrightText: FerroEHR contributors
-// SPDX-License-Identifier: MIT
+// SPDX-FileCopyrightText: Ruben Talstra
+// SPDX-License-Identifier: BUSL-1.1
 
 //! The `/ehrs/{ehr_id}` screen — EHR detail: status / status history /
 //! directory / compositions / contributions / commit / tags tabs.

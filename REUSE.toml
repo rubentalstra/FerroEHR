@@ -35,20 +35,21 @@
 
 version = 1
 
-# ── Catch-all: everything in this repository is FerroEHR's own, MIT ──────────
-# Narrowed by every table below. `closest` means a file carrying its own SPDX
+# ── Catch-all: everything in this repository is the project's own, BUSL-1.1 ──
+# The Business Source License 1.1 (owner decision 2026-09-03; the parameters are
+# in the root LICENSE). Narrowed by every table below. `closest` means a file carrying its own SPDX
 # header wins over this declaration.
 [[annotations]]
 path = "**"
 precedence = "closest"
-SPDX-FileCopyrightText = "FerroEHR contributors"
-SPDX-License-Identifier = "MIT"
+SPDX-FileCopyrightText = "Ruben Talstra"
+SPDX-License-Identifier = "BUSL-1.1"
 
-# ── The published spec crates: MIT AND Apache-2.0 ───────────────────────────
-# Their own manifests already declare `MIT AND Apache-2.0` and ship both texts
+# ── The published spec crates: BUSL-1.1 AND Apache-2.0 ─────────────────────
+# Their own manifests already declare `BUSL-1.1 AND Apache-2.0` and ship both texts
 # in the package, because the emitted Rust is this project's while the
 # specification documentation text, terminology XML and JSON Schema carried
-# inside it are openEHR's. Declaring only MIT here would flatten exactly the
+# inside it are openEHR's. Declaring only BUSL-1.1 here would flatten exactly the
 # dual position the crates were careful to state. The vendored inputs and
 # assets INSIDE these crates are narrowed further below.
 [[annotations]]
@@ -61,8 +62,8 @@ path = [
   "crates/openehr-its/**",
 ]
 precedence = "closest"
-SPDX-FileCopyrightText = ["FerroEHR contributors", "openEHR Foundation"]
-SPDX-License-Identifier = "MIT AND Apache-2.0"
+SPDX-FileCopyrightText = ["Ruben Talstra", "openEHR Foundation"]
+SPDX-License-Identifier = "BUSL-1.1 AND Apache-2.0"
 
 # ── openEHR machine-readable artifacts — Apache-2.0 ─────────────────────────
 # The BMM meta-models, XML Schemas, OpenAPI documents, JSON Schemas and ANTLR
@@ -197,8 +198,8 @@ SPDX-License-Identifier = "MPL-1.1"
 [[annotations]]
 path = "fuzz/regressions/**"
 precedence = "override"
-SPDX-FileCopyrightText = "FerroEHR contributors"
-SPDX-License-Identifier = "MIT"
+SPDX-FileCopyrightText = "Ruben Talstra"
+SPDX-License-Identifier = "BUSL-1.1"
 
 # ── Self-hosted KaTeX assets — MIT ──────────────────────────────────────────
 # The documentation site pre-renders maths at build time and self-hosts the
@@ -245,5 +246,5 @@ path = [
   ".github/cff-schema/PROVENANCE.md",
 ]
 precedence = "override"
-SPDX-FileCopyrightText = "FerroEHR contributors"
-SPDX-License-Identifier = "MIT"
+SPDX-FileCopyrightText = "Ruben Talstra"
+SPDX-License-Identifier = "BUSL-1.1"

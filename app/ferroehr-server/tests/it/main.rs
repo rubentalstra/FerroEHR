@@ -1,5 +1,5 @@
-// SPDX-FileCopyrightText: FerroEHR contributors
-// SPDX-License-Identifier: MIT
+// SPDX-FileCopyrightText: Ruben Talstra
+// SPDX-License-Identifier: BUSL-1.1
 
 //! Integration tests for `ferroehr-server` — the wiring binary's testable
 //! library half (`src/lib.rs` behind a thin `main.rs`, the Rust Book ch12.3

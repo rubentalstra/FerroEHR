@@ -1,5 +1,5 @@
-// SPDX-FileCopyrightText: FerroEHR contributors
-// SPDX-License-Identifier: MIT
+// SPDX-FileCopyrightText: Ruben Talstra
+// SPDX-License-Identifier: BUSL-1.1
 
 //! Audit configuration ([`AuditConfig`]) — the `[audit]` section of the one
 //! config tree ([`crate::config::FerroEhrConfig`]); no loader of its own.

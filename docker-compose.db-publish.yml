@@ -1,5 +1,5 @@
-# SPDX-FileCopyrightText: FerroEHR contributors
-# SPDX-License-Identifier: MIT
+# SPDX-FileCopyrightText: Ruben Talstra
+# SPDX-License-Identifier: BUSL-1.1
 #
 # OPT-IN overlay: publish PostgreSQL to a host port, for psql or GUI clients
 # (pgAdmin, DBeaver) running on the host. The quickstart deliberately

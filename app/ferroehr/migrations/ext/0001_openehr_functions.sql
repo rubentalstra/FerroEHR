@@ -1,5 +1,5 @@
--- SPDX-FileCopyrightText: FerroEHR contributors
--- SPDX-License-Identifier: MIT
+-- SPDX-FileCopyrightText: Ruben Talstra
+-- SPDX-License-Identifier: BUSL-1.1
 
 -- ext schema: openEHR support functions + the cluster role/grant baseline
 -- (openEHR-semantics helper functions; no openEHR spec governs SQL helpers —

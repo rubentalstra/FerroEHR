@@ -1,5 +1,5 @@
-// SPDX-FileCopyrightText: FerroEHR contributors
-// SPDX-License-Identifier: MIT
+// SPDX-FileCopyrightText: Ruben Talstra
+// SPDX-License-Identifier: BUSL-1.1
 
 //! Stage 1 — LOAD. Parse the vendored inputs into verbatim in-memory models,
 //! with no analysis or decisions: the BMM meta-model ([`bmm`]), the XSD reader

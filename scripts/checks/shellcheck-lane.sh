@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
-# SPDX-FileCopyrightText: FerroEHR contributors
-# SPDX-License-Identifier: MIT
+# SPDX-FileCopyrightText: Ruben Talstra
+# SPDX-License-Identifier: BUSL-1.1
 # ShellCheck over every shell program this repository WROTE.
 #
 # The tooling languages here are bash and Rust (.claude/rules/rust-style.md
