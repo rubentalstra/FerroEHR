@@ -24,6 +24,8 @@
 # Usage:
 #   scripts/gh/project.sh status <issue> <todo|in-progress|done>  # move an issue's board Status
 #   scripts/gh/project.sh add    <issue>                          # add an issue to the board (auto-add normally does this)
+#   scripts/gh/project.sh transfer <issue> <owner/repo>            # move an issue to another repo AND drop its card (the only way out)
+#   scripts/gh/project.sh transferred <owner/repo>#<n>              # repair: drop the card of an issue moved with a raw gh issue transfer
 #   scripts/gh/project.sh show   <issue>                          # print the issue's current board Status
 #   scripts/gh/project.sh board                                   # print the whole board grouped by Status
 #   scripts/gh/project.sh url                                     # print the project URL
@@ -124,6 +126,52 @@ cmd_add() {
   gh project item-add "$PROJ_NUMBER" --owner "$OWNER" \
     --url "https://github.com/$REPO/issues/$n" >/dev/null
   echo "ok: #$n is on the board"
+}
+
+# `transfer` is the ONE way an issue leaves this repository: it moves the
+# issue with `gh issue transfer` and removes its card from this board in the
+# same step, because GitHub carries the project item along with the issue and
+# the board would otherwise show a foreign issue as ours.
+cmd_transfer() {
+  local n="${1:?issue number}" dest="${2:?owner/repo}"
+  need_int "$n"
+  [[ "$dest" =~ ^[A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+$ ]] || die "transfer: expected owner/repo, got '$dest'"
+  [[ "$dest" != "$REPO" ]] || die "transfer: $dest is this repository"
+  resolve_project
+  local item url
+  item="$(item_id_for_issue "$n")"
+  url="$(gh issue transfer "$n" "$dest")"
+  if [[ -n "$item" ]]; then
+    gh project item-delete "$PROJ_NUMBER" --owner "$OWNER" --id "$item" >/dev/null
+    echo "ok: #$n moved to $url and its card left the board"
+  else
+    echo "ok: #$n moved to $url (it had no card on the board)"
+  fi
+}
+
+# An issue transferred to another repository keeps its card on this board
+# (GitHub moves project items with the issue), so the board then shows a
+# foreign issue as if it were ours. The card is looked up from the ISSUE side
+# in its new repository, so no whole-board listing is needed.
+cmd_transferred() {
+  local ref="${1:?owner/repo#number}"
+  [[ "$ref" =~ ^([A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+)#([0-9]+)$ ]] \
+    || die "transferred: expected owner/repo#number, got '$ref'"
+  local new_repo="${BASH_REMATCH[1]}" n="${BASH_REMATCH[2]}"
+  [[ "$new_repo" != "$REPO" ]] \
+    || die "transferred: $ref is this repository's own issue; only a transferred-out issue is removed"
+  resolve_project
+  local item
+  # shellcheck disable=SC2016 # GraphQL variables, bound by the -f flags
+  item="$(gh api graphql \
+    -f owner="${new_repo%%/*}" -f name="${new_repo##*/}" -F number="$n" \
+    -f query='query($owner:String!,$name:String!,$number:Int!){
+      repository(owner:$owner,name:$name){issue(number:$number){
+        projectItems(first:20){nodes{id project{id}}}}}}' \
+    --jq ".data.repository.issue.projectItems.nodes[] | select(.project.id == \"$PROJ_ID\") | .id")"
+  [[ -n "$item" ]] || die "transferred: $ref has no card on this board"
+  gh project item-delete "$PROJ_NUMBER" --owner "$OWNER" --id "$item" >/dev/null
+  echo "ok: removed the card of $ref (transferred out of $REPO)"
 }
 
 cmd_status() {
@@ -293,6 +341,8 @@ main() {
   case "$sub" in
     status) cmd_status "$@" ;;
     add) cmd_add "$@" ;;
+    transfer) cmd_transfer "$@" ;;
+    transferred) cmd_transferred "$@" ;;
     show) cmd_show "$@" ;;
     board) cmd_board "$@" ;;
     url) cmd_url "$@" ;;
