@@ -20,7 +20,7 @@ on:
   # three runs — the concurrency group below collapses them, because PR runs
   # supersede within the pull request.
   pull_request:
-    types: [opened, synchronize, reopened, labeled, unlabeled]
+    types: [opened, synchronize, reopened, edited, labeled, unlabeled]
   # Declared before any merge queue exists, because a queue reports its checks
   # on this event alone: "you need to update the workflows to include the
   # merge_group event as an additional trigger. Otherwise, status checks will
@@ -1992,6 +1992,27 @@ jobs:
   # already gated on the pull request. The structure half is a whole-file
   # check, but it is not worth splitting into a second job for a queue that
   # cannot change the file between the pull request and the merge.
+  # A person's pull request records acceptance of the contribution licensing
+  # terms (CONTRIBUTING.md § Licensing of contributions) through the template's
+  # checkbox; this gate is what makes the checkbox binding. Bot authors are
+  # skipped: a bot cannot accept terms and its bumps carry no expression of its
+  # own. `edited` is in the pull_request trigger so ticking the box re-runs it.
+  contribution-licence:
+    name: contribution-licence-guard
+    if: github.event_name == 'pull_request' && github.event.pull_request.user.type != 'Bot'
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: The pull request body accepts the contribution licensing terms
+        env:
+          PR_BODY: ${{ github.event.pull_request.body }}
+        run: bash scripts/checks/contribution-licence.sh
+
   changelog:
     name: changelog-guard
     if: github.event_name == 'pull_request'
@@ -2171,6 +2192,7 @@ jobs:
       - deploy-probe
       - server-image-from-source
       - ui-screenshot-guard
+      - contribution-licence
       - changelog
       - citation
       - compose-version-guard
