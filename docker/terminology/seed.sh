@@ -1,6 +1,6 @@
 #!/bin/sh
-# SPDX-FileCopyrightText: FerroEHR contributors
-# SPDX-License-Identifier: MIT
+# SPDX-FileCopyrightText: Ruben Talstra
+# SPDX-License-Identifier: BUSL-1.1
 # Seed the composed FHIR R4 terminology server with the CNF test terminologies.
 #
 # POSIX sh ON PURPOSE (the one non-bash script in the tree): the terminology

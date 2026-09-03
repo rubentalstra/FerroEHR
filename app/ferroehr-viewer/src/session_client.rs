@@ -1,5 +1,5 @@
-// SPDX-FileCopyrightText: FerroEHR contributors
-// SPDX-License-Identifier: MIT
+// SPDX-FileCopyrightText: Ruben Talstra
+// SPDX-License-Identifier: BUSL-1.1
 
 //! The transport backstop that turns "this session is over" into one signal,
 //! and the `/login` URL the signed-out transition lands on.

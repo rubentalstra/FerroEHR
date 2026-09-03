@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
-# SPDX-FileCopyrightText: FerroEHR contributors
-# SPDX-License-Identifier: MIT
+# SPDX-FileCopyrightText: Ruben Talstra
+# SPDX-License-Identifier: BUSL-1.1
 # Generate the committed example skeletons for the CKM journey template
 # pack: upload every vendored OPT to a running ferroehr SUT, fetch its
 # example composition (the ITS-REST "Get example data by template"

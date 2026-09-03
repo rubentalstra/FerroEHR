@@ -1,5 +1,5 @@
-// SPDX-FileCopyrightText: FerroEHR contributors
-// SPDX-License-Identifier: MIT
+// SPDX-FileCopyrightText: Ruben Talstra
+// SPDX-License-Identifier: BUSL-1.1
 
 //! Error chaining at the wire seam: a REAL `sqlx` failure keeps its cause
 //! walkable for the operator and out of the client's `500` body.

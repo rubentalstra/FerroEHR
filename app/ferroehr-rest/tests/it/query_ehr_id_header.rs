@@ -1,5 +1,5 @@
-// SPDX-FileCopyrightText: FerroEHR contributors
-// SPDX-License-Identifier: MIT
+// SPDX-FileCopyrightText: Ruben Talstra
+// SPDX-License-Identifier: BUSL-1.1
 
 //! The `openehr-ehr-id` request header as the single-EHR query scope, end to
 //! end through the assembled router over a **real** `FerroEhrService` on a real

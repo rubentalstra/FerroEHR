@@ -1,5 +1,5 @@
-// SPDX-FileCopyrightText: FerroEHR contributors
-// SPDX-License-Identifier: MIT
+// SPDX-FileCopyrightText: Ruben Talstra
+// SPDX-License-Identifier: BUSL-1.1
 
 //! End-to-end HTTP tests for the MUST-level ITS-REST protocol tail (B6 cluster
 //! 4): the `openEHR-VERSION.*` / `openEHR-AUDIT_DETAILS.*` committal request

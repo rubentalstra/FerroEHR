@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
-# SPDX-FileCopyrightText: FerroEHR contributors
-# SPDX-License-Identifier: MIT
+# SPDX-FileCopyrightText: Ruben Talstra
+# SPDX-License-Identifier: BUSL-1.1
 # Vendors the openEHR specification *documentation* (the normative spec text)
 # into docs/specs/openehr/, pinned per docs/VERSIONS.md. Text formats only
 # (adoc/md/txt/csv/json/yaml) — bitmap images, UML .xmi, XSDs, and other

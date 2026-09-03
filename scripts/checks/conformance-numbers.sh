@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
-# SPDX-FileCopyrightText: FerroEHR contributors
-# SPDX-License-Identifier: MIT
+# SPDX-FileCopyrightText: Ruben Talstra
+# SPDX-License-Identifier: BUSL-1.1
 # The stale-numbers gate (CI, docs workflow): fails the build if a hand-typed
 # conformance OR performance claim appears in the site SOURCES. Conformance
 # numbers/verdicts and performance rates/latencies on the website are derived

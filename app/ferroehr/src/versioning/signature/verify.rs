@@ -1,5 +1,5 @@
-// SPDX-FileCopyrightText: FerroEHR contributors
-// SPDX-License-Identifier: MIT
+// SPDX-FileCopyrightText: Ruben Talstra
+// SPDX-License-Identifier: BUSL-1.1
 
 //! Read-time verification. We do not persist a signature's provenance (the
 //! schema stores only `signature text`), so `verify` classifies by

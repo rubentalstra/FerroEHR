@@ -1,5 +1,5 @@
-// SPDX-FileCopyrightText: FerroEHR contributors
-// SPDX-License-Identifier: MIT
+// SPDX-FileCopyrightText: Ruben Talstra
+// SPDX-License-Identifier: BUSL-1.1
 
 //! The results pane's chart view: a grouped multi-series line chart over one
 //! page of an AQL `RESULT_SET`, shared by the query builder and the raw AQL

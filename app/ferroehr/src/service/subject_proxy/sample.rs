@@ -1,5 +1,5 @@
-// SPDX-FileCopyrightText: FerroEHR contributors
-// SPDX-License-Identifier: MIT
+// SPDX-FileCopyrightText: Ruben Talstra
+// SPDX-License-Identifier: BUSL-1.1
 
 //! The `SAMPLE<T>` hierarchy (`sample.adoc`, `data_frame_sample.adoc`,
 //! `openehr_sample.adoc`, `hl7v2_sample.adoc`, `hl7_fhir_sample.adoc`,

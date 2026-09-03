@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
-# SPDX-FileCopyrightText: FerroEHR contributors
-# SPDX-License-Identifier: MIT
+# SPDX-FileCopyrightText: Ruben Talstra
+# SPDX-License-Identifier: BUSL-1.1
 # Vendor the Citation File Format 1.2.0 JSON Schema (#2791).
 #
 # The citation-guard CI job validates CITATION.cff against this schema with a

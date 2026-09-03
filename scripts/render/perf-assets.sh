@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
-# SPDX-FileCopyrightText: FerroEHR contributors
-# SPDX-License-Identifier: MIT
+# SPDX-FileCopyrightText: Ruben Talstra
+# SPDX-License-Identifier: BUSL-1.1
 # Render the published performance SVG assets FROM the committed measurement
 # records (docs/conformance/<sut>/results.json measurements block, plus the
 # stress report when one exists) via `veredictum perf-assets`. Deterministic

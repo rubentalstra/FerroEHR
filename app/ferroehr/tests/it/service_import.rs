@@ -1,5 +1,5 @@
-// SPDX-FileCopyrightText: FerroEHR contributors
-// SPDX-License-Identifier: MIT
+// SPDX-FileCopyrightText: Ruben Talstra
+// SPDX-License-Identifier: BUSL-1.1
 
 //! End-to-end service tests for the EHR Extract **import** path (SM
 //! `I_EHR_EXTRACT_SERVICE.import_ehr` / `import_ehr_extract`) against a real

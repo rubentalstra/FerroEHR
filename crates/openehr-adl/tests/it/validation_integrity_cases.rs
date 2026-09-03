@@ -1,5 +1,5 @@
-// SPDX-FileCopyrightText: FerroEHR contributors
-// SPDX-License-Identifier: MIT
+// SPDX-FileCopyrightText: Ruben Talstra
+// SPDX-License-Identifier: BUSL-1.1
 
 //! Hand-written phase-1 validation cases — one per catalogue code that has no
 //! coverage in the vendored corpus (INVENTORY §3b), so every phase-1 code that

@@ -1,5 +1,5 @@
-# SPDX-FileCopyrightText: FerroEHR contributors
-# SPDX-License-Identifier: MIT
+# SPDX-FileCopyrightText: Ruben Talstra
+# SPDX-License-Identifier: BUSL-1.1
 
 # Compose override for the image-mode E2E run (scripts/ui-e2e.sh with
 # UI_E2E_IMAGE=1): the composed viewer image receives the same OIDC test

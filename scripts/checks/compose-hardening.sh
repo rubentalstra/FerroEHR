@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
-# SPDX-FileCopyrightText: FerroEHR contributors
-# SPDX-License-Identifier: MIT
+# SPDX-FileCopyrightText: Ruben Talstra
+# SPDX-License-Identifier: BUSL-1.1
 # Compose hardening guard (OWASP Docker Security Cheat Sheet; issues #1993–#2001).
 #
 # The Kubernetes path is hardened by `deploy/helm/ferroehr/values.yaml`, which a

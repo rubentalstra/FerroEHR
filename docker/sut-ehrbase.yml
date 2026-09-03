@@ -1,5 +1,5 @@
-# SPDX-FileCopyrightText: FerroEHR contributors
-# SPDX-License-Identifier: MIT
+# SPDX-FileCopyrightText: Ruben Talstra
+# SPDX-License-Identifier: BUSL-1.1
 
 # Upstream EHRbase as a CNF system-under-test — composed ONLY by
 # `CONF_SUT=ehrbase scripts/conformance.sh` (issue #232: the public CDR

@@ -125,7 +125,7 @@ annotations:
   # `database` is the closest TRUE statement of the eight; `skip-prediction`
   # would only remove the chart from category browsing without saying anything.
   artifacthub.io/category: database
-  artifacthub.io/license: MIT
+  artifacthub.io/license: BUSL-1.1
   artifacthub.io/links: |
     - name: source
       url: https://github.com/rubentalstra/FerroEHR

@@ -1,5 +1,5 @@
-// SPDX-FileCopyrightText: FerroEHR contributors
-// SPDX-License-Identifier: MIT
+// SPDX-FileCopyrightText: Ruben Talstra
+// SPDX-License-Identifier: BUSL-1.1
 
 //! The XSD-driven constraint-model emitter: generates a typed Rust model +
 //! canonical-XML `ToXml`/`FromXml` impls for each vendored ARCHETYPE-family XSD

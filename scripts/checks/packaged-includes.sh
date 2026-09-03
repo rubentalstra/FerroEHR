@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
-# SPDX-FileCopyrightText: FerroEHR contributors
-# SPDX-License-Identifier: MIT
+# SPDX-FileCopyrightText: Ruben Talstra
+# SPDX-License-Identifier: BUSL-1.1
 # A packaged source file may only embed a file the PACKAGE carries.
 #
 # `include_str!`/`include_bytes!` resolve against the source file's directory,

@@ -1,7 +1,7 @@
 // @generated-from-template templates/openehr-rm/data_types/encapsulated/dv_parsable_impl.rs — DO NOT EDIT; edit the source and re-run `openehr-codegen -- emit`.
-// SPDX-FileCopyrightText: FerroEHR contributors
+// SPDX-FileCopyrightText: Ruben Talstra
 // SPDX-FileCopyrightText: openEHR Foundation
-// SPDX-License-Identifier: MIT AND Apache-2.0
+// SPDX-License-Identifier: BUSL-1.1 AND Apache-2.0
 //! Hand-written RM class invariants + functions for `DV_PARSABLE`.
 //!
 //! Spec: RM 1.2.0

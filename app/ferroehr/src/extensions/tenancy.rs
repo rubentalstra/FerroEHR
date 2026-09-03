@@ -1,5 +1,5 @@
-// SPDX-FileCopyrightText: FerroEHR contributors
-// SPDX-License-Identifier: MIT
+// SPDX-FileCopyrightText: Ruben Talstra
+// SPDX-License-Identifier: BUSL-1.1
 
 //! The tenant registry: CRUD over the `tenant` table + claim/header →
 //! [`TenantContext`] resolution, as methods on `FerroEhrService`.

@@ -1,5 +1,5 @@
-// SPDX-FileCopyrightText: FerroEHR contributors
-// SPDX-License-Identifier: MIT
+// SPDX-FileCopyrightText: Ruben Talstra
+// SPDX-License-Identifier: BUSL-1.1
 
 //! The EHR-detail Compositions tab: the AQL-driven composition list, its
 //! URL-borne row filters, and the "Commit composition" form.

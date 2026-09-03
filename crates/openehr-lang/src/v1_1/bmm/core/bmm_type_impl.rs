@@ -1,6 +1,6 @@
-// SPDX-FileCopyrightText: FerroEHR contributors
+// SPDX-FileCopyrightText: Ruben Talstra
 // SPDX-FileCopyrightText: openEHR Foundation
-// SPDX-License-Identifier: MIT AND Apache-2.0
+// SPDX-License-Identifier: BUSL-1.1 AND Apache-2.0
 
 //! Hand-written spec functions of the `BMM_TYPE` family — the BMM v2 core
 //! type-level computed features (the naming trio plus type substitutions).

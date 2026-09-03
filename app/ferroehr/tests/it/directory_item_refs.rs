@@ -1,5 +1,5 @@
-// SPDX-FileCopyrightText: FerroEHR contributors
-// SPDX-License-Identifier: MIT
+// SPDX-FileCopyrightText: Ruben Talstra
+// SPDX-License-Identifier: BUSL-1.1
 
 //! FOLDER `items` referential validation (issue #1951, register AMB-211):
 //! a reference whose namespace claims THIS system must resolve to a

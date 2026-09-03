@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
-# SPDX-FileCopyrightText: FerroEHR contributors
-# SPDX-License-Identifier: MIT
+# SPDX-FileCopyrightText: Ruben Talstra
+# SPDX-License-Identifier: BUSL-1.1
 # Comment-style guard (.claude/rules/comments.md — RFC 505 / RFC 1574).
 #
 # Checks HAND-WRITTEN .rs files (files carrying the `@generated` marker are

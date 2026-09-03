@@ -1,5 +1,5 @@
-# SPDX-FileCopyrightText: FerroEHR contributors
-# SPDX-License-Identifier: MIT
+# SPDX-FileCopyrightText: Ruben Talstra
+# SPDX-License-Identifier: BUSL-1.1
 #
 # The sandbox reset (#2710; Hetzner posture #2974; dedicated database box
 # #3015): wipe the sandbox database's schemas, restart the CDR container so a

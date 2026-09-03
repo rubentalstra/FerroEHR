@@ -1,5 +1,5 @@
-// SPDX-FileCopyrightText: FerroEHR contributors
-// SPDX-License-Identifier: MIT
+// SPDX-FileCopyrightText: Ruben Talstra
+// SPDX-License-Identifier: BUSL-1.1
 
 //! The Simplified-Formats payload adapter (ITS-REST
 //! `docs/specs/openehr/ITS-REST/docs/simplified_formats/`, STABLE).

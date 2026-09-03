@@ -1,5 +1,5 @@
-// SPDX-FileCopyrightText: FerroEHR contributors
-// SPDX-License-Identifier: MIT
+// SPDX-FileCopyrightText: Ruben Talstra
+// SPDX-License-Identifier: BUSL-1.1
 
 //! `RESULT_SET` assembly (`result_set.adoc`; ITS-REST 1.1.0
 //! `schemas/query/ResultSet`) and AQL parameter substitution

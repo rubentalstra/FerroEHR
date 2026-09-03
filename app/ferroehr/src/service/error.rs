@@ -1,5 +1,5 @@
-// SPDX-FileCopyrightText: FerroEHR contributors
-// SPDX-License-Identifier: MIT
+// SPDX-FileCopyrightText: Ruben Talstra
+// SPDX-License-Identifier: BUSL-1.1
 
 //! The service-layer error model and its status-mapping tables — the single
 //! SM ↔ [`ServiceError`] ↔ HTTP correspondence.

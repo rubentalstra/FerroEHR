@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
-# SPDX-FileCopyrightText: FerroEHR contributors
-# SPDX-License-Identifier: MIT
+# SPDX-FileCopyrightText: Ruben Talstra
+# SPDX-License-Identifier: BUSL-1.1
 # Rerun the published-image vulnerability scan locally — the same scan
 # image-scan.yml runs on Mondays, byte-for-byte in configuration: trivy over
 # `trivy.yaml` (HIGH/CRITICAL floor, ignore-unfixed, `.trivyignore.yaml`) with

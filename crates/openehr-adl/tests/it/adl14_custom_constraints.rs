@@ -1,5 +1,5 @@
-// SPDX-FileCopyrightText: FerroEHR contributors
-// SPDX-License-Identifier: MIT
+// SPDX-FileCopyrightText: Ruben Talstra
+// SPDX-License-Identifier: BUSL-1.1
 
 //! The ADL 1.4 custom constraint forms of
 //! `docs/specs/openehr/AM/docs/ADL1.4/master09-customising_adl.adoc`

@@ -1,5 +1,5 @@
-// SPDX-FileCopyrightText: FerroEHR contributors
-// SPDX-License-Identifier: MIT
+// SPDX-FileCopyrightText: Ruben Talstra
+// SPDX-License-Identifier: BUSL-1.1
 
 //! The `VARIABLE_VALUE` hierarchy (`variable_value.adoc` +
 //! `variable_value_{single,list,time_series}.adoc`).

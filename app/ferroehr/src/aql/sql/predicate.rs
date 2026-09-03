@@ -1,5 +1,5 @@
-// SPDX-FileCopyrightText: FerroEHR contributors
-// SPDX-License-Identifier: MIT
+// SPDX-FileCopyrightText: Ruben Talstra
+// SPDX-License-Identifier: BUSL-1.1
 
 //! WHERE-clause lowering (QUERY master03 §WHERE, §Operators, §Logical
 //! operators), the whitelisted scalar functions (§Functions), and the node/

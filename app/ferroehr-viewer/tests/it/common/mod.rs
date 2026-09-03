@@ -1,5 +1,5 @@
-// SPDX-FileCopyrightText: FerroEHR contributors
-// SPDX-License-Identifier: MIT
+// SPDX-FileCopyrightText: Ruben Talstra
+// SPDX-License-Identifier: BUSL-1.1
 
 //! Shared E2E journey harness: env-gated `WebDriver` setup (skip-with-reason
 //! when the stack isn't up), step screenshots, explicit waits, and the

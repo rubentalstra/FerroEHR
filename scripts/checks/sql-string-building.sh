@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
-# SPDX-FileCopyrightText: FerroEHR contributors
-# SPDX-License-Identifier: MIT
+# SPDX-FileCopyrightText: Ruben Talstra
+# SPDX-License-Identifier: BUSL-1.1
 # String-built-SQL guard for every layer that builds SQL at runtime.
 #
 # The AQL engine builds SQL dynamically from attacker-controlled query text, so

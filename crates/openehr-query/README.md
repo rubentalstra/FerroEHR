@@ -43,9 +43,10 @@ Rust 1.96 (edition 2024).
 
 ## License
 
-MIT ([`LICENSE-MIT`](LICENSE-MIT)). The crate is hand-written; the openEHR
-specification text it implements is the authority but is not embedded in the
-package.
+Business Source License 1.1 ([`LICENSE-BUSL-1.1`](LICENSE-BUSL-1.1)); each
+published version becomes available under the Apache License 2.0 four years
+after it is published. The crate is hand-written; the openEHR specification
+text it implements is the authority but is not embedded in the package.
 
 ## Part of FerroEHR
 

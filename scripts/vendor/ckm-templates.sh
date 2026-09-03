@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
-# SPDX-FileCopyrightText: FerroEHR contributors
-# SPDX-License-Identifier: MIT
+# SPDX-FileCopyrightText: Ruben Talstra
+# SPDX-License-Identifier: BUSL-1.1
 # Vendor the official openEHR CKM template library as OPT 1.4 XML.
 #
 # Source: the public openEHR Clinical Knowledge Manager REST API

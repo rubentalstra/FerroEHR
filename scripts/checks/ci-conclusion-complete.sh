@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
-# SPDX-FileCopyrightText: FerroEHR contributors
-# SPDX-License-Identifier: MIT
+# SPDX-FileCopyrightText: Ruben Talstra
+# SPDX-License-Identifier: BUSL-1.1
 # Every job in a gated workflow must be reachable from that workflow's sink.
 #
 # Branch protection points at ci.yml's `conclusion` alone, on purpose: that is

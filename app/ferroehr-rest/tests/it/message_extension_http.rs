@@ -1,5 +1,5 @@
-// SPDX-FileCopyrightText: FerroEHR contributors
-// SPDX-License-Identifier: MIT
+// SPDX-FileCopyrightText: Ruben Talstra
+// SPDX-License-Identifier: BUSL-1.1
 
 //! End-to-end HTTP tests for the **MESSAGE** extension group — the SM
 //! EHR-Extract service (`/message/export*`, `/message/import*`,

@@ -1,5 +1,5 @@
-// SPDX-FileCopyrightText: FerroEHR contributors
-// SPDX-License-Identifier: MIT
+// SPDX-FileCopyrightText: Ruben Talstra
+// SPDX-License-Identifier: BUSL-1.1
 
 //! `OBJECT_VERSION_ID` / `VERSION_TREE_ID` decoding — the identification law of
 //! the versioning core.

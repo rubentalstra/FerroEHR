@@ -10,7 +10,7 @@
 name = "ferroehr-fuzz"
 version = "0.0.0"
 edition = "2024"
-license = "MIT"
+license = "BUSL-1.1"
 publish = false
 
 [package.metadata]

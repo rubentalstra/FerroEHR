@@ -1,5 +1,5 @@
-// SPDX-FileCopyrightText: FerroEHR contributors
-// SPDX-License-Identifier: MIT
+// SPDX-FileCopyrightText: Ruben Talstra
+// SPDX-License-Identifier: BUSL-1.1
 
 //! The binary's command-line seam: `--set` override parsing, the subcommand
 //! shapes, and the one dispatch branch of `run` that touches nothing external.

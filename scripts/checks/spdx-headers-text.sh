@@ -1,12 +1,12 @@
 #!/usr/bin/env bash
-# SPDX-FileCopyrightText: FerroEHR contributors
-# SPDX-License-Identifier: MIT
+# SPDX-FileCopyrightText: Ruben Talstra
+# SPDX-License-Identifier: BUSL-1.1
 # Every first-party shell, SQL and YAML file states its licensing INSIDE itself.
 #
 # The sibling gate `spdx-headers.sh` does this for Rust. This one exists rather
 # than extending it because the two populations differ in three ways at once:
 # the comment syntax (`#` and `--`, not `//`), the placement (a shebang must
-# stay on line 1), and the licensing (these files are plain MIT — none carries
+# stay on line 1), and the licensing (these files are plain BUSL-1.1 — none carries
 # openEHR specification text, so the dual-licence rule the Rust gate applies to
 # the published spec crates has nothing to act on here). One gate with a mode
 # matrix would be harder to read than two that each do one thing.
@@ -44,8 +44,8 @@ esac
 # licensing, and `reuse lint` reads a tag wherever it appears — the
 # specification's own remedy for a file that quotes the syntax it checks.
 # REUSE-IgnoreStart
-readonly COPYRIGHT='SPDX-FileCopyrightText: FerroEHR contributors'
-readonly LICENSE='SPDX-License-Identifier: MIT'
+readonly COPYRIGHT='SPDX-FileCopyrightText: Ruben Talstra'
+readonly LICENSE='SPDX-License-Identifier: BUSL-1.1'
 # REUSE-IgnoreEnd
 
 # Vendored and third-party trees: their licensing is recorded in each tree's

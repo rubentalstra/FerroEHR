@@ -120,24 +120,31 @@ internal requirements unresolvable for every consumer.
 
 ## Licensing
 
-`openehr-query` and `openehr-adl` are plain **MIT**: their packages ship only
-their own Rust sources, the README, and the MIT text. Five of the crates that
-embed material derived from the official openEHR machine-readable artifacts
-(generated types carrying specification documentation text, and the vendored
-ITS-JSON schema) declare **`MIT AND Apache-2.0`** and ship both license texts
-in the package. `openehr-its` is the one of them that packages a third-party
-file as bytes rather than as generated code, so its README carries that file's
-attribution (upstream repository, the exact vendored commit, and the license)
-inside the package, where it travels with any redistribution.
+`openehr-query` and `openehr-adl` are plain **`BUSL-1.1`**: their packages
+ship only their own Rust sources, the README, and the `LICENSE-BUSL-1.1` text.
+Five of the crates that embed material derived from the official openEHR
+machine-readable artifacts (generated types carrying specification
+documentation text, and the vendored ITS-JSON schema) declare
+**`BUSL-1.1 AND Apache-2.0`** and ship both license texts in the package
+(`LICENSE-BUSL-1.1` and `LICENSE-APACHE-2.0`). `openehr-its` is the one of
+them that packages a third-party file as bytes rather than as generated code,
+so its README carries that file's attribution (upstream repository, the exact
+vendored commit, and the license) inside the package, where it travels with
+any redistribution.
 
 `openehr-term` carries a third term, because it embeds a different kind of
 openEHR material: the official terminology XML (the five language bundles, the
 external-terminology index, and the property/unit data) is **CC-BY-SA 3.0**,
 redistributed verbatim with attribution. Its manifest declares
-**`MIT AND Apache-2.0 AND CC-BY-SA-3.0`** and the package ships all three
+**`BUSL-1.1 AND Apache-2.0 AND CC-BY-SA-3.0`** and the package ships all three
 license texts, so the declaration a consumer reads names every license the
 crate's own bytes are under. If you redistribute the crate, the terminology data
-travels under CC-BY-SA 3.0. The full picture, including the vendored material
-that never reaches a published package, is in [Licensing](licensing.md).
+travels under CC-BY-SA 3.0.
+
+Each published version becomes available under the Apache License 2.0 four
+years after it is published. Versions 0.0.56 and earlier were published under
+the MIT terms in force at the time and keep them. The full picture, including
+the vendored material that never reaches a published package, is in
+[Licensing](licensing.md).
 
 The openEHR specifications themselves are © the openEHR Foundation.

@@ -1,5 +1,5 @@
-// SPDX-FileCopyrightText: FerroEHR contributors
-// SPDX-License-Identifier: MIT
+// SPDX-FileCopyrightText: Ruben Talstra
+// SPDX-License-Identifier: BUSL-1.1
 
 //! The AQL lexer and parser: any authenticated caller can post arbitrary query
 //! text to the query surface, so this is the widest attacker-controlled grammar

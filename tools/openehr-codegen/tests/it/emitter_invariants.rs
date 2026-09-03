@@ -1,5 +1,5 @@
-// SPDX-FileCopyrightText: FerroEHR contributors
-// SPDX-License-Identifier: MIT
+// SPDX-FileCopyrightText: Ruben Talstra
+// SPDX-License-Identifier: BUSL-1.1
 
 //! Emitter invariants, tested as properties over the **real** pipeline on the
 //! **real** vendored BMM inputs (design doc §1). Each test drives

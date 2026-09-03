@@ -1,5 +1,5 @@
-// SPDX-FileCopyrightText: FerroEHR contributors
-// SPDX-License-Identifier: MIT
+// SPDX-FileCopyrightText: Ruben Talstra
+// SPDX-License-Identifier: BUSL-1.1
 
 //! End-to-end SM-3 tests against a real PostgreSQL 18 (shared testkit harness): the
 //! `PARTY_RELATIONSHIP` CRUD + versioning + `VERSIONED_OBJECT` + revision

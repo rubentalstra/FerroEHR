@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
-# SPDX-FileCopyrightText: FerroEHR contributors
-# SPDX-License-Identifier: MIT
+# SPDX-FileCopyrightText: Ruben Talstra
+# SPDX-License-Identifier: BUSL-1.1
 # openEHR CNF 2.0 conformance pipeline — the acceptance instrument.
 #
 # Drives Veredictum, the independent conformance instrument, end to end at the

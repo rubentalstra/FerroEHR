@@ -1,5 +1,5 @@
-// SPDX-FileCopyrightText: FerroEHR contributors
-// SPDX-License-Identifier: MIT
+// SPDX-FileCopyrightText: Ruben Talstra
+// SPDX-License-Identifier: BUSL-1.1
 
 //! `ETag` expectations use the weak form (`W/"…"`): the ITS-REST overview
 //! §"`ETag` and Last-Modified" makes the `ETag` weak-type ("should have a

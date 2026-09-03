@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
-# SPDX-FileCopyrightText: FerroEHR contributors
-# SPDX-License-Identifier: MIT
+# SPDX-FileCopyrightText: Ruben Talstra
+# SPDX-License-Identifier: BUSL-1.1
 #
 # Derive the per-release Artifact Hub annotations from CHANGELOG.md, so the hub
 # listing has ONE source of truth rather than a second changelog that drifts.

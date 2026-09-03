@@ -1,5 +1,5 @@
-// SPDX-FileCopyrightText: FerroEHR contributors
-// SPDX-License-Identifier: MIT
+// SPDX-FileCopyrightText: Ruben Talstra
+// SPDX-License-Identifier: BUSL-1.1
 
 //! The background metric samplers (`ferroehr::telemetry::samplers`): the
 //! instrumented pool acquisition and the periodic pool/runtime gauge task.

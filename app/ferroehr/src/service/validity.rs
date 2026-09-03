@@ -1,5 +1,5 @@
-// SPDX-FileCopyrightText: FerroEHR contributors
-// SPDX-License-Identifier: MIT
+// SPDX-FileCopyrightText: Ruben Talstra
+// SPDX-License-Identifier: BUSL-1.1
 
 //! The **Validity Checking** component of the platform crate: the SM
 //! `I_VALIDITY_CHECKER` interface realized on [`FerroEhrService`]'s existing

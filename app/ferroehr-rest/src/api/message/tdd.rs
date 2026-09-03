@@ -1,5 +1,5 @@
-// SPDX-FileCopyrightText: FerroEHR contributors
-// SPDX-License-Identifier: MIT
+// SPDX-FileCopyrightText: Ruben Talstra
+// SPDX-License-Identifier: BUSL-1.1
 
 //! `I_TDD_SERVICE` over the MESSAGE extension wire — **our own extension**
 //! (see [`super`] for the whole group's spec-silence flag).

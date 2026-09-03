@@ -1,5 +1,5 @@
-// SPDX-FileCopyrightText: FerroEHR contributors
-// SPDX-License-Identifier: MIT
+// SPDX-FileCopyrightText: Ruben Talstra
+// SPDX-License-Identifier: BUSL-1.1
 
 //! JSON emitter: emits `impl serde::Serialize` + `impl serde::Deserialize` for
 //! the generated spec types (BASE / RM / AM / TERM / LANG), into each spec

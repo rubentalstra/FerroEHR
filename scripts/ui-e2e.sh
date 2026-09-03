@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
-# SPDX-FileCopyrightText: FerroEHR contributors
-# SPDX-License-Identifier: MIT
+# SPDX-FileCopyrightText: Ruben Talstra
+# SPDX-License-Identifier: BUSL-1.1
 # Viewer E2E harness: compose up the CDR stack +
 # Keycloak, build + run the viewer on the host, start chromedriver, run the
 # e2e journeys via nextest, tear down. Mirrors scripts/conformance.sh.

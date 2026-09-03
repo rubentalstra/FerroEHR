@@ -1,5 +1,5 @@
-// SPDX-FileCopyrightText: FerroEHR contributors
-// SPDX-License-Identifier: MIT
+// SPDX-FileCopyrightText: Ruben Talstra
+// SPDX-License-Identifier: BUSL-1.1
 
 //! End-to-end tests for `DV_MULTIMEDIA` externalization against a real
 //! S3 backend — a `SeaweedFS` S3 gateway in a testcontainer — plus a real

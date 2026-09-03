@@ -1,5 +1,5 @@
-# SPDX-FileCopyrightText: FerroEHR contributors
-# SPDX-License-Identifier: MIT
+# SPDX-FileCopyrightText: Ruben Talstra
+# SPDX-License-Identifier: BUSL-1.1
 
 # .github/actions/hosted-deploy — THE hosted-sandbox deploy, every step of it
 # (#2974, the Veredictum deploy/hosted posture adapted for two services).

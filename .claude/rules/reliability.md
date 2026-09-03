@@ -318,9 +318,20 @@ chapters, the Clippy book, and the Cargo/rustdoc books.)
   BY THE BMM; a forced `_ =>` arm would turn a modelled fact into a silent
   fallthrough and defeat the exhaustiveness checking that makes a spec-model
   change a compile error. 1672 sites, and the rejection is on merit, not cost.
-- **C-PERMISSIVE — MIT for the project's own code** (owner decision
-  2026-07-31; coverage corrected 2026-08-04, issue #1883): the project's own
-  code is MIT-licensed throughout. The Apache-2.0 carve-out that covered the
+- **C-PERMISSIVE — not followed; the project's own code is under the Business
+  Source License 1.1** (owner decision 2026-09-03, superseding the MIT decision
+  of 2026-07-31; coverage corrected 2026-08-04, issue #1883). BUSL-1.1 is
+  source-available, not open source: production use is free for your own
+  organization and its affiliates, offering the work to third parties as a
+  hosted, managed or embedded service or distributing it for a fee needs a
+  commercial licence from the Licensor (Ruben Talstra, who is also the sole
+  copyright holder every SPDX header names), and each version becomes Apache
+  License 2.0 four years after publication (`LICENSE` carries the parameters;
+  releases up to v4.0.17 and crate versions up to 0.0.56 stay MIT as
+  published). The chosen licence deliberately blocks resale and hosted
+  offering by others; contributions carry the relicensing grant in
+  `CONTRIBUTING.md` so the work stays one work under one licensor. The
+  Apache-2.0 carve-out that covered the
   conformance instrument (#2787) left with it — the instrument is now the
   separate Veredictum project, Apache-2.0 under its own root, pinned here by
   `scripts/lib/veredictum.sh` (#2811). Vendored third-party material keeps its upstream

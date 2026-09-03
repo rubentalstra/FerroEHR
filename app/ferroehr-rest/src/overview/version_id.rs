@@ -1,5 +1,5 @@
-// SPDX-FileCopyrightText: FerroEHR contributors
-// SPDX-License-Identifier: MIT
+// SPDX-FileCopyrightText: Ruben Talstra
+// SPDX-License-Identifier: BUSL-1.1
 
 //! Wire-string decoding for the EHR-core routes: path/header identifiers into
 //! the SM catalog's native argument types (`uuid::Uuid`,

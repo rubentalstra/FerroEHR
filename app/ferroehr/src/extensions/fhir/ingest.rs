@@ -1,5 +1,5 @@
-// SPDX-FileCopyrightText: FerroEHR contributors
-// SPDX-License-Identifier: MIT
+// SPDX-FileCopyrightText: Ruben Talstra
+// SPDX-License-Identifier: BUSL-1.1
 
 //! The FHIR inbound-connector service glue: mapping store CRUD, inbound
 //! ingest onto the EHR index + commit seam, and the read facade — the

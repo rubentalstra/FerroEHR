@@ -7,17 +7,46 @@ summary for evaluators and deployers, not legal advice.
 
 <!-- toc -->
 
-## FerroEHR's own code — MIT, with one Apache-2.0 carve-out
+## FerroEHR's own code: the Business Source License 1.1
 
 Everything written for this project (the server and application crates, the
 code generator and tooling, the viewer, and the hand-written
 specification engines `openehr-query` and `openehr-adl`) is licensed under the
-[MIT License](https://github.com/rubentalstra/FerroEHR/blob/main/LICENSE).
-You can use, modify, and redistribute it freely, including commercially,
-provided the copyright and permission notice are preserved. The copyright holder
-is stated as *FerroEHR contributors*, identically in `LICENSE`, in `REUSE.toml`,
+[Business Source License 1.1](https://github.com/rubentalstra/FerroEHR/blob/main/LICENSE),
+SPDX identifier `BUSL-1.1`. The Licensor is Ruben Talstra. The copyright holder
+is stated as *Ruben Talstra*, identically in `LICENSE`, in `REUSE.toml`,
 and in every first-party file header; a CI gate compares the three so they
 cannot drift apart.
+
+FerroEHR is source-available. The Business Source License 1.1 is not an
+OSI-approved open-source licence, and this project does not claim that it is.
+
+**What the licence allows without asking anyone.** You can read the source,
+build it, modify it, and redistribute it without a fee. All non-production use
+is permitted: development, testing and evaluation. Production use is permitted
+for your own organisation and its affiliates, including a contractor operating
+FerroEHR solely on your behalf. A hospital, a research institution or a public
+body running FerroEHR for its own patients or population is squarely allowed.
+
+**What needs a commercial licence from the Licensor.** Two things:
+
+- offering FerroEHR, or a work derived from it, to third parties as a hosted,
+  managed or embedded service, meaning a service through which anyone outside
+  your organisation stores, manages or queries health data held by it;
+- selling, sublicensing or otherwise distributing FerroEHR for a fee, on its
+  own or as a component of another product.
+
+The contact for a commercial licence is the maintainer named in
+[`MAINTAINERS.md`](https://github.com/rubentalstra/FerroEHR/blob/main/MAINTAINERS.md):
+Ruben Talstra, `@rubentalstra` on GitHub.
+
+**The Change Date.** Each version becomes available under the Apache License
+2.0, its Change License, four years after that version is published.
+
+**What the change does not affect.** Releases v3.0.0 through v4.0.17 stay under
+the MIT terms they were published with, and so do the `openehr-*` crate
+versions 0.0.56 and earlier on crates.io (MIT AND Apache-2.0 for the crates
+that embed openEHR-derived material). Relicensing changes future versions only.
 
 The conformance instrument is no longer part of this repository. It is
 [Veredictum](https://github.com/rubentalstra/Veredictum), an independent
@@ -27,13 +56,14 @@ their upstream terms exactly as the table below states.
 
 Five of the published spec crates that **embed** openEHR-derived material
 (`openehr-base`, `openehr-rm`, `openehr-am`, `openehr-lang`, `openehr-its`)
-declare `MIT AND Apache-2.0` and ship both license texts in the package: the
-emitted Rust is this project's, while the specification documentation text
+declare `BUSL-1.1 AND Apache-2.0` and ship both license texts in the package:
+the emitted Rust is this project's, while the specification documentation text
 carried in the generated doc comments and the vendored JSON Schema are
 openEHR's. `openehr-term` embeds that material **and** the official openEHR
 terminology XML, which is CC-BY-SA 3.0 (see the table below) and is
 redistributed verbatim with attribution, so it declares
-`MIT AND Apache-2.0 AND CC-BY-SA-3.0` and ships all three texts. See
+`BUSL-1.1 AND Apache-2.0 AND CC-BY-SA-3.0` and ships all three texts.
+`openehr-query` and `openehr-adl` declare plain `BUSL-1.1`. See
 [Rust crates](crates.md#licensing).
 
 ## Vendored third-party material
@@ -97,15 +127,15 @@ compliance review finds and a summary table hides:
 The `PROVENANCE.md` arrangement above is accurate, and it stays. What it does
 not do is survive a file leaving this repository: someone who lifts a single
 archetype out of a test corpus takes a CC-BY-SA file bearing no marking they
-copied. Since the stated premise of this project is that people build on it,
-ship it and sell it, downstream file-level redistribution is the expected case.
+copied. People build on this project and redistribute it, so downstream
+file-level redistribution is the expected case.
 
 So licensing is **also** published in the machine-readable form the
 [REUSE Specification 3.3](https://reuse.software/spec-3.3/) defines:
 
 - **[`LICENSES/`](https://github.com/rubentalstra/FerroEHR/tree/main/LICENSES)**
   holds the full text of every license any file in the tree is offered under,
-  named by SPDX identifier: `MIT`, `Apache-2.0`, `CC-BY-SA-3.0`,
+  named by SPDX identifier: `BUSL-1.1`, `MIT`, `Apache-2.0`, `CC-BY-SA-3.0`,
   `CC-BY-SA-4.0`, `CC-BY-4.0`, `MPL-1.1`, `AGPL-3.0-only`.
 - **[`REUSE.toml`](https://github.com/rubentalstra/FerroEHR/blob/main/REUSE.toml)**
   declares, by glob, which files are offered under which, including the two
@@ -114,9 +144,9 @@ So licensing is **also** published in the machine-readable form the
   `SPDX-FileCopyrightText` line and an `SPDX-License-Identifier` line stating the
   same position `REUSE.toml` declares for it, so a file copied out of this
   repository takes its licensing along. Rust files of the six published spec
-  crates state `MIT AND Apache-2.0`; every other first-party Rust, shell, SQL and
-  YAML file states `MIT`. A copied migration or script arrives licensed, which is
-  the whole point.
+  crates state `BUSL-1.1 AND Apache-2.0`; every other first-party Rust, shell,
+  SQL and YAML file states `BUSL-1.1`. A copied migration or script arrives
+  licensed, which is the whole point.
 
 The vendored trees are glob-declared rather than headered for a reason that is
 not convenience: **no vendored file may be edited**, so a header sweep over
@@ -149,10 +179,11 @@ redistributes updates this chapter in the same pull request.
 
 The CC-BY-SA specification text and clinical models are redistributed
 **verbatim, with attribution**: they are reference and test material, not part
-of the compiled server. The FerroEHR binary you deploy is built from MIT code,
-plus the Apache-2.0 machine-readable inputs the generated crates carry, plus the
-CC-BY-SA 3.0 openEHR terminology bundle `openehr-term` compiles in (five
-languages, the external-terminology index, and the property/unit data). No
+of the compiled server. The FerroEHR binary you deploy is built from this
+project's own BUSL-1.1 code, plus the Apache-2.0 machine-readable inputs the
+generated crates carry, plus the CC-BY-SA 3.0 openEHR terminology bundle
+`openehr-term` compiles in (five languages, the external-terminology index,
+and the property/unit data). No
 copyleft obligation beyond those attribution-and-share-alike terms on the
 verbatim data attaches to anything shipped.
 

@@ -1,5 +1,5 @@
-// SPDX-FileCopyrightText: FerroEHR contributors
-// SPDX-License-Identifier: MIT
+// SPDX-FileCopyrightText: Ruben Talstra
+// SPDX-License-Identifier: BUSL-1.1
 
 //! The `I_SUBJECT_PROXY_SERVICE` operations (`i_subject_proxy_service.adoc`;
 //! master10 `subject_proxy_service`) on [`FerroEhrService`], plus the

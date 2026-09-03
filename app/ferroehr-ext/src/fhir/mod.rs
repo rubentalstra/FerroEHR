@@ -1,5 +1,5 @@
-// SPDX-FileCopyrightText: FerroEHR contributors
-// SPDX-License-Identifier: MIT
+// SPDX-FileCopyrightText: Ruben Talstra
+// SPDX-License-Identifier: BUSL-1.1
 
 //! The FHIR integration core: the mapping model and FLAT builder, the outbound
 //! reverse-map, the feeder-audit probe, the ATNA `AuditEvent` renderer, and the

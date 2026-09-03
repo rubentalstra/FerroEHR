@@ -1,5 +1,5 @@
-// SPDX-FileCopyrightText: FerroEHR contributors
-// SPDX-License-Identifier: MIT
+// SPDX-FileCopyrightText: Ruben Talstra
+// SPDX-License-Identifier: BUSL-1.1
 
 //! `I_DEFINITION_ADL14` (`i_definition_adl14.adoc`; `master04` §Archetypes and
 //! Templates): ADL 1.4 source archetypes keyed by `ARCHETYPE_ID` (on

@@ -1,5 +1,5 @@
-// SPDX-FileCopyrightText: FerroEHR contributors
-// SPDX-License-Identifier: MIT
+// SPDX-FileCopyrightText: Ruben Talstra
+// SPDX-License-Identifier: BUSL-1.1
 
 //! The demographic `ITEM_TAG` surface — the RM `common.item_tag` class applied
 //! to parties (ehr-less: `ehr_id IS NULL`). The wire contract is RELEASED:

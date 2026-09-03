@@ -1,5 +1,5 @@
-// SPDX-FileCopyrightText: FerroEHR contributors
-// SPDX-License-Identifier: MIT
+// SPDX-FileCopyrightText: Ruben Talstra
+// SPDX-License-Identifier: BUSL-1.1
 
 //! `PLATFORM_SERVICE` (`master03-common_package.adoc` §Overview: "an
 //! enumeration of the available services, used in various interfaces";

@@ -1,5 +1,5 @@
-// SPDX-FileCopyrightText: FerroEHR contributors
-// SPDX-License-Identifier: MIT
+// SPDX-FileCopyrightText: Ruben Talstra
+// SPDX-License-Identifier: BUSL-1.1
 
 //! The SPDX licensing header every emitted file carries (REUSE Specification
 //! 3.3, <https://reuse.software/spec-3.3/>).
@@ -21,18 +21,18 @@
 /// This project's own copyright holder, spelled as the repository's
 /// `REUSE.toml` spells it, so a header and the glob declaration covering the
 /// same file cannot disagree.
-pub(crate) const PROJECT_COPYRIGHT: &str = "FerroEHR contributors";
+pub(crate) const PROJECT_COPYRIGHT: &str = "Ruben Talstra";
 
 /// The copyright holder of the openEHR material a published spec crate carries
 /// — the specification documentation text propagated into the emitted doc
 /// comments, the terminology assets and the schemas.
 pub(crate) const OPENEHR_COPYRIGHT: &str = "openEHR Foundation";
 
-/// The crates whose packaged content is offered under `MIT AND Apache-2.0`.
+/// The crates whose packaged content is offered under `BUSL-1.1 AND Apache-2.0`.
 ///
 /// The list is the one their own manifests declare and `REUSE.toml` repeats:
 /// the emitted Rust is this project's, while the specification text carried
-/// inside it is openEHR's. Any other crate is plain MIT.
+/// inside it is openEHR's. Any other crate is plain BUSL-1.1.
 pub(crate) const DUAL_LICENSED_CRATES: &[&str] = &[
     "openehr-am",
     "openehr-base",
@@ -60,10 +60,10 @@ pub(crate) fn header(crate_name: &str) -> String {
         format!(
             "{COPYRIGHT_TAG}{PROJECT_COPYRIGHT}\n\
              {COPYRIGHT_TAG}{OPENEHR_COPYRIGHT}\n\
-             {LICENSE_TAG}MIT AND Apache-2.0\n"
+             {LICENSE_TAG}BUSL-1.1 AND Apache-2.0\n"
         )
     } else {
-        format!("{COPYRIGHT_TAG}{PROJECT_COPYRIGHT}\n{LICENSE_TAG}MIT\n")
+        format!("{COPYRIGHT_TAG}{PROJECT_COPYRIGHT}\n{LICENSE_TAG}BUSL-1.1\n")
     }
 }
 
@@ -114,17 +114,17 @@ mod tests {
     #[test]
     fn dual_crates_state_both_positions() {
         let h = header("openehr-rm");
-        assert!(h.contains("SPDX-FileCopyrightText: FerroEHR contributors"));
+        assert!(h.contains("SPDX-FileCopyrightText: Ruben Talstra"));
         assert!(h.contains("SPDX-FileCopyrightText: openEHR Foundation"));
-        assert!(h.ends_with("SPDX-License-Identifier: MIT AND Apache-2.0\n"));
+        assert!(h.ends_with("SPDX-License-Identifier: BUSL-1.1 AND Apache-2.0\n"));
     }
 
     #[test]
-    fn other_crates_are_plain_mit() {
+    fn other_crates_are_plain_busl() {
         assert_eq!(
             header("openehr-query"),
-            "// SPDX-FileCopyrightText: FerroEHR contributors\n\
-             // SPDX-License-Identifier: MIT\n"
+            "// SPDX-FileCopyrightText: Ruben Talstra\n\
+             // SPDX-License-Identifier: BUSL-1.1\n"
         );
     }
 
@@ -144,8 +144,11 @@ mod tests {
         );
         let lines: Vec<&str> = out.lines().collect();
         assert_eq!(lines[0], "// @generated x — DO NOT EDIT.");
-        assert_eq!(lines[1], "// SPDX-FileCopyrightText: FerroEHR contributors");
-        assert_eq!(lines[3], "// SPDX-License-Identifier: MIT AND Apache-2.0");
+        assert_eq!(lines[1], "// SPDX-FileCopyrightText: Ruben Talstra");
+        assert_eq!(
+            lines[3],
+            "// SPDX-License-Identifier: BUSL-1.1 AND Apache-2.0"
+        );
         assert_eq!(lines[4], "");
         assert_eq!(lines[5], "pub mod a;");
     }
@@ -155,8 +158,8 @@ mod tests {
         let out = stamp("openehr-query", "pub mod a;\n");
         assert_eq!(
             out,
-            "// SPDX-FileCopyrightText: FerroEHR contributors\n\
-             // SPDX-License-Identifier: MIT\n\
+            "// SPDX-FileCopyrightText: Ruben Talstra\n\
+             // SPDX-License-Identifier: BUSL-1.1\n\
              pub mod a;\n"
         );
     }
@@ -169,8 +172,8 @@ mod tests {
 
     #[test]
     fn a_leading_header_is_stripped_with_its_blank_line() {
-        let text = "// SPDX-FileCopyrightText: FerroEHR contributors\n\
-                    // SPDX-License-Identifier: MIT\n\
+        let text = "// SPDX-FileCopyrightText: Ruben Talstra\n\
+                    // SPDX-License-Identifier: BUSL-1.1\n\
                     \n\
                     //! Docs.\n";
         assert_eq!(strip_leading_header(text), "//! Docs.\n");

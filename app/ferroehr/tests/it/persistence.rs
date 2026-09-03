@@ -1,5 +1,5 @@
-// SPDX-FileCopyrightText: FerroEHR contributors
-// SPDX-License-Identifier: MIT
+// SPDX-FileCopyrightText: Ruben Talstra
+// SPDX-License-Identifier: BUSL-1.1
 
 //! Persistence integration tests: the greenfield schema applies
 //! cleanly on a real `PostgreSQL` 18, the `ext` magnitude functions follow

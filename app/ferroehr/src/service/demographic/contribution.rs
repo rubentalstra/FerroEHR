@@ -1,5 +1,5 @@
-// SPDX-FileCopyrightText: FerroEHR contributors
-// SPDX-License-Identifier: MIT
+// SPDX-FileCopyrightText: Ruben Talstra
+// SPDX-License-Identifier: BUSL-1.1
 
 //! Demographic (ehr-less) CONTRIBUTION — commit + retrieval, per the
 //! Demographic API of ITS-REST Release-1.1.0 (DEVELOPMENT lifecycle within

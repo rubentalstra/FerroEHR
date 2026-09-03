@@ -62,10 +62,12 @@ There is no succession plan that a document can create. What exists instead:
   crate publish. The support window in [SECURITY.md](SECURITY.md) (only the
   newest release is supported) becomes, in that situation, no supported
   release at all.
-- **The work is not lost.** The licence is MIT, the history is public, every
-  gate is a committed script and every design decision is in the tree or on
-  the tracker. A fork is a complete and legitimate continuation, and the
-  project's position is that it should be taken rather than waited on.
+- **The work is not lost.** The source is available under the Business Source
+  License 1.1 and every version becomes Apache 2.0 four years after its
+  release, the history is public, every gate is a committed script and every
+  design decision is in the tree or on the tracker. A fork is a legitimate
+  continuation within those terms, and the project's position is that it
+  should be taken rather than waited on.
 - **A vulnerability report has a fallback.** If a private report receives no
   acknowledgement within the window [SECURITY.md](SECURITY.md) commits to, the
   policy already tells you to escalate publicly, and publishing becomes your

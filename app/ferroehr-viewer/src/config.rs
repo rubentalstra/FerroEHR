@@ -1,5 +1,5 @@
-// SPDX-FileCopyrightText: FerroEHR contributors
-// SPDX-License-Identifier: MIT
+// SPDX-FileCopyrightText: Ruben Talstra
+// SPDX-License-Identifier: BUSL-1.1
 
 //! Viewer configuration: one TOML file (`ferroehr-viewer.toml`) with
 //! `FERROEHR_VIEWER__…` environment overrides, mirroring the CDR's

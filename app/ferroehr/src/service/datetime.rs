@@ -1,5 +1,5 @@
-// SPDX-FileCopyrightText: FerroEHR contributors
-// SPDX-License-Identifier: MIT
+// SPDX-FileCopyrightText: Ruben Talstra
+// SPDX-License-Identifier: BUSL-1.1
 
 //! The shared decoder for the ITS-REST datetime request parameters,
 //! `version_at_time` and the contribution `time_range` bounds, used by every

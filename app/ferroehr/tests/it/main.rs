@@ -1,5 +1,5 @@
-// SPDX-FileCopyrightText: FerroEHR contributors
-// SPDX-License-Identifier: MIT
+// SPDX-FileCopyrightText: Ruben Talstra
+// SPDX-License-Identifier: BUSL-1.1
 
 //! Integration tests for `ferroehr` — the platform library: the SM service
 //! layer (EHR / `EHR_STATUS` / COMPOSITION / DIRECTORY / CONTRIBUTION,

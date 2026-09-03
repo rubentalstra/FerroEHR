@@ -1,5 +1,5 @@
-// SPDX-FileCopyrightText: FerroEHR contributors
-// SPDX-License-Identifier: MIT
+// SPDX-FileCopyrightText: Ruben Talstra
+// SPDX-License-Identifier: BUSL-1.1
 
 //! The public DEMOGRAPHIC seam on [`FerroEhrService`] — the SM
 //! `I_DEMOGRAPHIC_SERVICE` / `I_PARTY` / `I_PARTY_RELATIONSHIP` operations

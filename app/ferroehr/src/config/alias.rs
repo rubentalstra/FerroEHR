@@ -1,5 +1,5 @@
-// SPDX-FileCopyrightText: FerroEHR contributors
-// SPDX-License-Identifier: MIT
+// SPDX-FileCopyrightText: Ruben Talstra
+// SPDX-License-Identifier: BUSL-1.1
 
 //! The reserved-namespace allowlist, the section registry, the two permanent
 //! conventional aliases, and the list-typed key registry. No openEHR spec governs

@@ -1,5 +1,5 @@
-// SPDX-FileCopyrightText: FerroEHR contributors
-// SPDX-License-Identifier: MIT
+// SPDX-FileCopyrightText: Ruben Talstra
+// SPDX-License-Identifier: BUSL-1.1
 
 //! Currency / freshness semantics (SM master10 §Samples: `effective_time` "is
 //! comparable to `currency` in order to determine the freshness of the data";

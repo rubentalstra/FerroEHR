@@ -1,5 +1,5 @@
-// SPDX-FileCopyrightText: FerroEHR contributors
-// SPDX-License-Identifier: MIT
+// SPDX-FileCopyrightText: Ruben Talstra
+// SPDX-License-Identifier: BUSL-1.1
 
 //! End-to-end HTTP tests for the two ADMIN **extension** groups — the SM
 //! activity report (`/admin/report/*`, `I_ADMIN_SERVICE` statistics) and the SM

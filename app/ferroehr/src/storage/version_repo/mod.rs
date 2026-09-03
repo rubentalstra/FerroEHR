@@ -1,5 +1,5 @@
-// SPDX-FileCopyrightText: FerroEHR contributors
-// SPDX-License-Identifier: MIT
+// SPDX-FileCopyrightText: Ruben Talstra
+// SPDX-License-Identifier: BUSL-1.1
 
 //! Row I/O for the versioned-object spine: `vo_version`, `audit`,
 //! `contribution`, `vo_attestation`, plus the folder-membership and

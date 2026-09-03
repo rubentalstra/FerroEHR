@@ -24,7 +24,7 @@ identifiers:
   - type: doi
     value: 10.5281/zenodo.21940279
     description: "The concept DOI of the Zenodo software archive; resolves to the latest archived release."
-license: MIT
+license: BUSL-1.1
 keywords:
   - openEHR
   - clinical data repository

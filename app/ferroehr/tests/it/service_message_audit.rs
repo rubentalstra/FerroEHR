@@ -1,5 +1,5 @@
-// SPDX-FileCopyrightText: FerroEHR contributors
-// SPDX-License-Identifier: MIT
+// SPDX-FileCopyrightText: Ruben Talstra
+// SPDX-License-Identifier: BUSL-1.1
 
 //! The Message component's EHR-Extract audit emission
 //! (`ferroehr::service::message`) against a real `PostgreSQL` 18 (shared testkit

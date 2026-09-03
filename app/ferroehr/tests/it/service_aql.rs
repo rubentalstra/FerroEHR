@@ -1,5 +1,5 @@
-// SPDX-FileCopyrightText: FerroEHR contributors
-// SPDX-License-Identifier: MIT
+// SPDX-FileCopyrightText: Ruben Talstra
+// SPDX-License-Identifier: BUSL-1.1
 
 //! End-to-end AQL engine tests against a real PostgreSQL 18 (shared testkit harness):
 //! seed EHRs + COMPOSITIONs through the service, then execute AQL through the

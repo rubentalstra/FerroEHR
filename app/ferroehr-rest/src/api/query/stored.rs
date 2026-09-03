@@ -1,5 +1,5 @@
-// SPDX-FileCopyrightText: FerroEHR contributors
-// SPDX-License-Identifier: MIT
+// SPDX-FileCopyrightText: Ruben Talstra
+// SPDX-License-Identifier: BUSL-1.1
 
 //! Stored-query execution — `GET`/`POST /query/{qualified_query_name}` (latest)
 //! and `.../{version}` (explicit version).

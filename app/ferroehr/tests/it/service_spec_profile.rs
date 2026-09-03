@@ -1,5 +1,5 @@
-// SPDX-FileCopyrightText: FerroEHR contributors
-// SPDX-License-Identifier: MIT
+// SPDX-FileCopyrightText: Ruben Talstra
+// SPDX-License-Identifier: BUSL-1.1
 
 //! End-to-end tests of the `spec_profile` compatibility stamp and its
 //! read-time gate, against a real PostgreSQL 18 (shared testkit harness).

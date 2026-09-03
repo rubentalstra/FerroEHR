@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
-# SPDX-FileCopyrightText: FerroEHR contributors
-# SPDX-License-Identifier: MIT
+# SPDX-FileCopyrightText: Ruben Talstra
+# SPDX-License-Identifier: BUSL-1.1
 # Regenerate the published conformance visuals (the capability heat grid +
 # the per-chapter outcome bars) FROM the committed party artifacts — the
 # render-perf-assets.sh pattern for functional conformance: deterministic,

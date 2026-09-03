@@ -1,5 +1,5 @@
-// SPDX-FileCopyrightText: FerroEHR contributors
-// SPDX-License-Identifier: MIT
+// SPDX-FileCopyrightText: Ruben Talstra
+// SPDX-License-Identifier: BUSL-1.1
 
 //! `vo_attestation` row I/O: attach an `ATTESTATION` to a stored version, look
 //! up the version an attestation item addresses, and enumerate an object's

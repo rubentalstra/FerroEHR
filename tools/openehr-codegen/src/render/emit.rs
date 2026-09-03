@@ -1,5 +1,5 @@
-// SPDX-FileCopyrightText: FerroEHR contributors
-// SPDX-License-Identifier: MIT
+// SPDX-FileCopyrightText: Ruben Talstra
+// SPDX-License-Identifier: BUSL-1.1
 
 //! Stage 4 — RENDER. Walks a merged BMM [`Model`] and produces deterministic,
 //! byte-stable Rust for the openEHR spec crates.

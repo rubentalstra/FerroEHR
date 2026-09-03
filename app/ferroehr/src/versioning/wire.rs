@@ -1,5 +1,5 @@
-// SPDX-FileCopyrightText: FerroEHR contributors
-// SPDX-License-Identifier: MIT
+// SPDX-FileCopyrightText: Ruben Talstra
+// SPDX-License-Identifier: BUSL-1.1
 
 //! The served wire builders: `ORIGINAL_VERSION` / `VERSIONED_OBJECT` /
 //! `REVISION_HISTORY` canonical-JSON value construction.

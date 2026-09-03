@@ -1,5 +1,5 @@
-// SPDX-FileCopyrightText: FerroEHR contributors
-// SPDX-License-Identifier: MIT
+// SPDX-FileCopyrightText: Ruben Talstra
+// SPDX-License-Identifier: BUSL-1.1
 
 //! The SM call-status model (`master03-common_package.adoc` §Representing
 //! Call Status; `i_status.adoc`, `call_status.adoc`, `call_status_type.adoc`

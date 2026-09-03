@@ -1,5 +1,5 @@
-// SPDX-FileCopyrightText: FerroEHR contributors
-// SPDX-License-Identifier: MIT
+// SPDX-FileCopyrightText: Ruben Talstra
+// SPDX-License-Identifier: BUSL-1.1
 
 //! [`TokenSource`] — `OAuth2` client-credentials authentication to a
 //! terminology server, over the pinned `oauth2` crate.

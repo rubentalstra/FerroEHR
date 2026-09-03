@@ -1,5 +1,5 @@
-// SPDX-FileCopyrightText: FerroEHR contributors
-// SPDX-License-Identifier: MIT
+// SPDX-FileCopyrightText: Ruben Talstra
+// SPDX-License-Identifier: BUSL-1.1
 
 //! openEHR QUERY (AQL 1.1.0): a hand-written lexer, parser, and AST over the
 //! canonical ANTLR4 grammar vendored at `vendor/grammar/`, with no ANTLR

@@ -1,5 +1,5 @@
-// SPDX-FileCopyrightText: FerroEHR contributors
-// SPDX-License-Identifier: MIT
+// SPDX-FileCopyrightText: Ruben Talstra
+// SPDX-License-Identifier: BUSL-1.1
 
 //! HTTP dispatch for the event-subscription admin extension API group over the
 //! `ferroehr::service::EventSubscriptionAdapter` seam.

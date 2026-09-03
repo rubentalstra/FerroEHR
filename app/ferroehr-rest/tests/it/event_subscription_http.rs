@@ -1,5 +1,5 @@
-// SPDX-FileCopyrightText: FerroEHR contributors
-// SPDX-License-Identifier: MIT
+// SPDX-FileCopyrightText: Ruben Talstra
+// SPDX-License-Identifier: BUSL-1.1
 
 //! End-to-end HTTP tests for the event-subscription admin extension API group:
 //! the config gate (`AppConfig::events_admin_api`), the `200`/`201`/`204`/`404`/

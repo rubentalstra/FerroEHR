@@ -1,5 +1,5 @@
-// SPDX-FileCopyrightText: FerroEHR contributors
-// SPDX-License-Identifier: MIT
+// SPDX-FileCopyrightText: Ruben Talstra
+// SPDX-License-Identifier: BUSL-1.1
 
 //! Structure tests for the AOM rules / slot-assertion composition
 //! (`openehr_adl::rules`). Deep-structure assertions hand-derived from the

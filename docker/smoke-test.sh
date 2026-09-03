@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
-# SPDX-FileCopyrightText: FerroEHR contributors
-# SPDX-License-Identifier: MIT
+# SPDX-FileCopyrightText: Ruben Talstra
+# SPDX-License-Identifier: BUSL-1.1
 # End-to-end smoke test for the two container images (amd64), run against the
 # TRUE end-user artifact: the standalone docker-compose.yml, pinned with an
 # explicit -f. (The dev overlay stopped auto-merging in #2868 — its explicit

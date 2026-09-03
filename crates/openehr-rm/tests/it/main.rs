@@ -1,6 +1,6 @@
-// SPDX-FileCopyrightText: FerroEHR contributors
+// SPDX-FileCopyrightText: Ruben Talstra
 // SPDX-FileCopyrightText: openEHR Foundation
-// SPDX-License-Identifier: MIT AND Apache-2.0
+// SPDX-License-Identifier: BUSL-1.1 AND Apache-2.0
 
 //! Integration tests for `openehr-rm`: the generated RM type layer, in both
 //! emitted generations (`v1_1` + `v1_2`) — the static RM attribute/type model

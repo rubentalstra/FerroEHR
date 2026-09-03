@@ -1,5 +1,5 @@
-// SPDX-FileCopyrightText: FerroEHR contributors
-// SPDX-License-Identifier: MIT
+// SPDX-FileCopyrightText: Ruben Talstra
+// SPDX-License-Identifier: BUSL-1.1
 
 //! Shared version-metadata helpers: the glue every versioned kind
 //! (`EHR_STATUS`, COMPOSITION, DIRECTORY) needs to turn a loaded

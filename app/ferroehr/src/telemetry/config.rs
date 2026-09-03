@@ -1,5 +1,5 @@
-// SPDX-FileCopyrightText: FerroEHR contributors
-// SPDX-License-Identifier: MIT
+// SPDX-FileCopyrightText: Ruben Talstra
+// SPDX-License-Identifier: BUSL-1.1
 
 //! Telemetry configuration: the `[log]` ([`LogConfig`]) and `[telemetry]`
 //! ([`OtelConfig`]) sections of the one config tree.

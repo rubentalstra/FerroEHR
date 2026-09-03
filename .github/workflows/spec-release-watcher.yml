@@ -1,5 +1,5 @@
-# SPDX-FileCopyrightText: FerroEHR contributors
-# SPDX-License-Identifier: MIT
+# SPDX-FileCopyrightText: Ruben Talstra
+# SPDX-License-Identifier: BUSL-1.1
 
 # openEHR RELEASE watcher (tracker issue #179) — the companion of
 # spec-update-watcher.yml: that workflow tracks individual completed spec

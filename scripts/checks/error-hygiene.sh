@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
-# SPDX-FileCopyrightText: FerroEHR contributors
-# SPDX-License-Identifier: MIT
+# SPDX-FileCopyrightText: Ruben Talstra
+# SPDX-License-Identifier: BUSL-1.1
 # Error-body hygiene guard (OWASP REST Security Cheat Sheet, issue #2021):
 # "Do not pass technical details (e.g. call stacks or other internal hints) to
 # the client."

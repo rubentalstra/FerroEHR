@@ -1,5 +1,5 @@
-// SPDX-FileCopyrightText: FerroEHR contributors
-// SPDX-License-Identifier: MIT
+// SPDX-FileCopyrightText: Ruben Talstra
+// SPDX-License-Identifier: BUSL-1.1
 
 //! The artefact header sections: the identification line (`ADL2/master07.04`),
 //! `language` (`master07.07`), `description` (`master07.08`), `annotations`

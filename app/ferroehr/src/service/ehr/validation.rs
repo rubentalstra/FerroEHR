@@ -1,5 +1,5 @@
-// SPDX-FileCopyrightText: FerroEHR contributors
-// SPDX-License-Identifier: MIT
+// SPDX-FileCopyrightText: Ruben Talstra
+// SPDX-License-Identifier: BUSL-1.1
 
 //! The commit-validation choke point for every EHR-owned kind — the
 //! structural validators for `EHR_STATUS` / `EHR_ACCESS` / FOLDER, the

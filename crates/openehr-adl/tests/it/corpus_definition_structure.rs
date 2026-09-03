@@ -1,5 +1,5 @@
-// SPDX-FileCopyrightText: FerroEHR contributors
-// SPDX-License-Identifier: MIT
+// SPDX-FileCopyrightText: Ruben Talstra
+// SPDX-License-Identifier: BUSL-1.1
 
 //! Structural spot-checks of the cADL parser against real vendored corpus
 //! files: whole `.adls` sources (outer parse + the definition span, exactly

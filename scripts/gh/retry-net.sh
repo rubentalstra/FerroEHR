@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
-# SPDX-FileCopyrightText: FerroEHR contributors
-# SPDX-License-Identifier: MIT
+# SPDX-FileCopyrightText: Ruben Talstra
+# SPDX-License-Identifier: BUSL-1.1
 # scripts/gh/retry-net.sh — the two network idioms a publishing lane may use.
 #
 # WHY THIS EXISTS (#2775): a publishing lane runs under `set -euo pipefail`, and

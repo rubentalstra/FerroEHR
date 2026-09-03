@@ -1,5 +1,5 @@
-// SPDX-FileCopyrightText: FerroEHR contributors
-// SPDX-License-Identifier: MIT
+// SPDX-FileCopyrightText: Ruben Talstra
+// SPDX-License-Identifier: BUSL-1.1
 
 //! `I_DATA_BINDING` implementation (`i_data_binding.adoc`): execute a retrieve
 //! frame for a subject, with the primary→fallback pipeline of

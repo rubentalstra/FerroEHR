@@ -1,5 +1,5 @@
-// SPDX-FileCopyrightText: FerroEHR contributors
-// SPDX-License-Identifier: MIT
+// SPDX-FileCopyrightText: Ruben Talstra
+// SPDX-License-Identifier: BUSL-1.1
 
 //! Inbound-body validation for the demographic chapter — the RM
 //! PARTY/ACTOR/ROLE/`PARTY_RELATIONSHIP` invariants and the BASE

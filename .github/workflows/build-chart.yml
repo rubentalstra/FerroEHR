@@ -1,5 +1,5 @@
-# SPDX-FileCopyrightText: FerroEHR contributors
-# SPDX-License-Identifier: MIT
+# SPDX-FileCopyrightText: Ruben Talstra
+# SPDX-License-Identifier: BUSL-1.1
 
 # The chart package + publish, as a REUSABLE workflow — the SLSA Build
 # Level 3 lane for the Helm chart (the mirror of release-build.yml and
