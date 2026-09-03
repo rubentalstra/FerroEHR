@@ -23,16 +23,19 @@ commit the result.
 
 ## The openEHR CKM REST API — facts, verified 2026-08-01
 
-Base: `https://ckm.openehr.org/ckm/rest/v1`. There is no published OpenAPI
-document (`swagger.json`, `openapi.json`, `v3/api-docs` all 404), so these
-observations ARE the reference — re-verify with a probe before trusting a
-guess.
+Base: `https://ckm.openehr.org/ckm/rest/v1`. The API IS documented: a
+Swagger 2.0 document at `/rest/v1/swagger.json` ("CKM REST API" 1.6.0, 39
+paths) with Swagger UI at `/ckm/rest-doc/` (verified 2026-09-03; the 2026-08-01
+probe tried `openapi.json` and `v3/api-docs` and wrongly concluded none
+existed). Read it first, then re-verify on the wire before trusting a guess.
 
-- **Pagination is `?page=N&size=M` and nothing else.** `limit`, `pageSize`,
-  `maxResults`, `offset`, `count`, `rows`, `resultsPerPage`, `startIndex` are
-  all silently IGNORED and you get a **20-row first page** — which reads
-  exactly like "CKM only publishes 20 resources". This has burned time twice.
-  Every list fetch pages with page/size **and asserts the row count grew**
+- **Pagination is `?size=M&offset=N` and nothing else** (corrected
+  2026-09-03: the earlier `page` claim was wrong; `?page=0&size=10000` worked
+  only because `size` did). `page`, `limit`, `pageSize`, `maxResults`, `count`,
+  `rows`, `resultsPerPage`, `startIndex` are all silently IGNORED and you get a
+  **20-row first page** — which reads exactly like "CKM only publishes 20
+  resources". This has burned time twice. Every list fetch uses size/offset
+  **and asserts the row count grew**
   (both vendor scripts fail loud on `<= 20` rows).
 - Resource lists: `GET /templates`, `GET /archetypes`. Both return a flat JSON
   array of metadata (`cid`, `resourceType`, `resourceMainId`,
@@ -41,6 +44,13 @@ guess.
 - Exports: `GET /templates/{cid}/opt` (OPT 1.4 XML),
   `GET /archetypes/{cid}/adl` (ADL text), `GET /archetypes/{cid}/xml`
   (AM 1.4 ARCHETYPE XML). `GET /{kind}/{cid}` returns the metadata.
+- **ADL 2 exists only as Ocean's generated conversion.** `/rest/v1` has no
+  ADL 2 export, but the legacy servlet
+  `GET /ckm/retrieveArchetype?cid-archetype=<cid>&format=ADL2` returns an
+  `.adls` whose header carries `generated` (verified 2026-09-03). It is a
+  1.4->2 conversion, never an authored source, so the ADL 2 corpus stays
+  `openEHR/adl-archetypes`. Bulk: `GET /ckm/retrieveResources` with no
+  parameters ships the whole published archetype library as one zip.
 - **A 404 on an export is usually not a bug**: resources held in a private
   CKM incubator are only exportable by a signed-in account with access. Record
   them as unreachable in `PROVENANCE.md` — never silently skip, never drop the
