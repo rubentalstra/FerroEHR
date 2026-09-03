@@ -15,6 +15,8 @@ workflow refuses a tag that has no matching section here.
 
 ## [Unreleased]
 
+## [4.0.18] - 2026-09-03
+
 ### Changed
 
 - **The licence of the project's own code is the Business Source License 1.1**
@@ -8165,7 +8167,8 @@ but has not yet run in production.
   seccomp, default-deny NetworkPolicy) and golden-render validation.
 
 
-[unreleased]: https://github.com/rubentalstra/FerroEHR/compare/v4.0.17...HEAD
+[unreleased]: https://github.com/rubentalstra/FerroEHR/compare/v4.0.18...HEAD
+[4.0.18]: https://github.com/rubentalstra/FerroEHR/compare/v4.0.17...v4.0.18
 [4.0.17]: https://github.com/rubentalstra/FerroEHR/compare/v4.0.16...v4.0.17
 [4.0.16]: https://github.com/rubentalstra/FerroEHR/compare/v4.0.15...v4.0.16
 [4.0.15]: https://github.com/rubentalstra/FerroEHR/compare/v4.0.13...v4.0.15
