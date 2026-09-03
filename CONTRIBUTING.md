@@ -3,8 +3,8 @@
 Thank you for your interest in contributing. This document covers the practical
 rules; the architectural ground rules live in
 [`docs/architecture.md`](docs/architecture.md) and the root `CLAUDE.md`, and
-the project's position (why it exists, and what it asks of the companies
-that build on it) is
+the project's position (why it exists, and what it offers the organisations
+that run it and build on it) is
 [Why FerroEHR exists](https://ferroehr.eu/docs/latest/why-ferroehr.html).
 
 You keep your copyright, and there is no separate agreement to sign; the terms
