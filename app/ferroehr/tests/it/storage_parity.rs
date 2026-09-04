@@ -27,7 +27,7 @@ use uuid::Uuid;
 
 use ferroehr::ids::EhrId;
 use ferroehr::service::FerroEhrService;
-use ferroehr::service::admin::integrity::StorageParityDefect;
+use ferroehr::service::admin::integrity::{StorageParityDefect, StorageParityScope};
 
 use crate::fixtures::{composition, folder, uv};
 
@@ -78,7 +78,10 @@ async fn a_committed_composition_sweeps_clean() {
     let svc = FerroEhrService::new(db.pool());
     seed_ehr_with_composition(&svc).await;
 
-    let report = svc.verify_storage_parity().await.expect("sweep");
+    let report = svc
+        .verify_storage_parity(StorageParityScope::default())
+        .await
+        .expect("sweep");
 
     assert!(
         report.is_clean(),
@@ -114,7 +117,10 @@ async fn a_tampered_node_row_is_reported_as_content_differs() {
     )
     .await;
 
-    let report = svc.verify_storage_parity().await.expect("sweep");
+    let report = svc
+        .verify_storage_parity(StorageParityScope::default())
+        .await
+        .expect("sweep");
 
     assert_eq!(
         report.mismatch_count, 1,
@@ -146,7 +152,10 @@ async fn a_tampered_version_body_is_reported_as_content_differs() {
     )
     .await;
 
-    let report = svc.verify_storage_parity().await.expect("sweep");
+    let report = svc
+        .verify_storage_parity(StorageParityScope::default())
+        .await
+        .expect("sweep");
 
     assert_eq!(report.mismatch_count, 1, "{report:?}");
     let found = &report.mismatches[0];
@@ -171,7 +180,10 @@ async fn a_version_whose_node_rows_are_gone_is_reported_as_nodes_missing() {
     )
     .await;
 
-    let report = svc.verify_storage_parity().await.expect("sweep");
+    let report = svc
+        .verify_storage_parity(StorageParityScope::default())
+        .await
+        .expect("sweep");
 
     assert_eq!(report.mismatch_count, 1, "{report:?}");
     let found = &report.mismatches[0];
@@ -205,7 +217,10 @@ async fn a_logically_deleted_version_sweeps_clean() {
     .expect("count");
     assert_eq!(bodiless, 1, "the delete must store one bodiless version");
 
-    let report = svc.verify_storage_parity().await.expect("sweep");
+    let report = svc
+        .verify_storage_parity(StorageParityScope::default())
+        .await
+        .expect("sweep");
 
     assert!(report.is_clean(), "{report:?}");
     assert_eq!(report.versions_without_body, 1);
@@ -243,11 +258,127 @@ async fn node_rows_under_a_bodiless_version_are_reported_as_unexpected_nodes() {
     .rows_affected();
     assert!(inserted > 0, "the fixture must actually insert stray rows");
 
-    let report = svc.verify_storage_parity().await.expect("sweep");
+    let report = svc
+        .verify_storage_parity(StorageParityScope::default())
+        .await
+        .expect("sweep");
 
     assert_eq!(report.mismatch_count, 1, "{report:?}");
     let found = &report.mismatches[0];
     assert_eq!(found.vo_id, vo_id);
     assert_eq!(found.sys_version, sys_version);
     assert_eq!(found.defect, StorageParityDefect::UnexpectedNodes);
+}
+
+/// A scoped sweep reads only what its bounds cover, which is how an operator
+/// verifies one record without reading the whole repository (#3110).
+///
+/// The tamper lives in one EHR; a sweep scoped to the other reports clean and
+/// never even counts the damaged version, while the unscoped sweep finds it.
+#[tokio::test]
+async fn a_scoped_sweep_covers_only_its_own_ehr() {
+    let db = testkit::db().await.expect("testkit database");
+    let pool = db.pool();
+    let svc = FerroEhrService::new(pool.clone());
+
+    let damaged = seed_ehr_with_composition(&svc).await;
+    let intact = seed_ehr_with_composition(&svc).await;
+    let (vo_id, sys_version) = one_version(&pool, damaged, "COMPOSITION").await;
+    tamper(
+        &pool,
+        "UPDATE vo_version SET body = '{\"_type\":\"COMPOSITION\"}' \
+         WHERE vo_id = $1 AND sys_version = $2",
+        vo_id,
+        sys_version,
+    )
+    .await;
+
+    let clean = svc
+        .verify_storage_parity(StorageParityScope {
+            ehr_id: Some(intact.0),
+            committed_since: None,
+        })
+        .await
+        .expect("scoped sweep");
+    assert!(clean.is_clean(), "the intact EHR sweeps clean: {clean:?}");
+    assert!(
+        clean.versions_checked > 0,
+        "the scoped sweep still read that EHR's own versions: {clean:?}"
+    );
+
+    let scoped = svc
+        .verify_storage_parity(StorageParityScope {
+            ehr_id: Some(damaged.0),
+            committed_since: None,
+        })
+        .await
+        .expect("scoped sweep");
+    assert_eq!(scoped.mismatch_count, 1, "the tamper is in this EHR");
+
+    let whole = svc
+        .verify_storage_parity(StorageParityScope::default())
+        .await
+        .expect("unscoped sweep");
+    assert_eq!(whole.mismatch_count, 1);
+    assert!(
+        whole.versions_checked > scoped.versions_checked,
+        "the unscoped sweep reads more than one EHR's versions: {whole:?} vs {scoped:?}"
+    );
+}
+
+/// A `committed_since` bound covers only versions written at or after it, so
+/// an operator can verify what changed since an incident (#3110).
+#[tokio::test]
+async fn a_committed_since_bound_excludes_earlier_versions() {
+    let db = testkit::db().await.expect("testkit database");
+    let pool = db.pool();
+    let svc = FerroEhrService::new(pool.clone());
+
+    seed_ehr_with_composition(&svc).await;
+    let before = svc
+        .verify_storage_parity(StorageParityScope::default())
+        .await
+        .expect("unscoped sweep");
+    assert!(before.versions_checked > 0);
+
+    // The cutoff is read from the database, not the process: `sys_period` is
+    // stamped by PostgreSQL's own clock, and a container's clock need not agree
+    // with this process's to the millisecond.
+    let cutoff: jiff_sqlx::Timestamp = sqlx::query_scalar("SELECT now()")
+        .fetch_one(&pool)
+        .await
+        .expect("the database's own clock");
+    let cutoff = cutoff.to_jiff();
+
+    // Everything seeded so far is older than the cutoff, so it covers nothing;
+    // the sweep succeeds and reports an empty count rather than failing or
+    // silently falling back to the whole store.
+    let after = svc
+        .verify_storage_parity(StorageParityScope {
+            ehr_id: None,
+            committed_since: Some(cutoff),
+        })
+        .await
+        .expect("bounded sweep");
+    assert_eq!(after.versions_checked, 0, "{after:?}");
+
+    // A version committed after the cutoff is covered.
+    seed_ehr_with_composition(&svc).await;
+    let later = svc
+        .verify_storage_parity(StorageParityScope {
+            ehr_id: None,
+            committed_since: Some(cutoff),
+        })
+        .await
+        .expect("bounded sweep");
+    assert!(later.versions_checked > 0, "{later:?}");
+
+    let whole = svc
+        .verify_storage_parity(StorageParityScope::default())
+        .await
+        .expect("unscoped sweep");
+    assert!(
+        later.versions_checked < whole.versions_checked,
+        "the bound still excludes the versions written before it: {later:?} vs {whole:?}"
+    );
 }
