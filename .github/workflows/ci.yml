@@ -1982,6 +1982,32 @@ jobs:
           fi
           echo "pin bump carries a refreshed docs/conformance/ferroehr/ record — OK."
 
+  # Every per-instance ixit parameter the PINNED instrument defines is declared
+  # on every instance of our party set, or its absence is adjudicated in the
+  # register beside the ixit (#3041). The parameter set comes from the pinned
+  # tag's own schema, fetched here, so a pin bump that introduces one fails this
+  # job until the party declares or adjudicates it — before the pipeline would
+  # silently guard its cases out.
+  ixit-declarations:
+    name: ixit-declarations
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: The party ixit declares every instance parameter the pinned schema defines
+        run: |
+          set -euo pipefail
+          version=$(grep -m1 '^VEREDICTUM_VERSION=' scripts/lib/veredictum.sh | cut -d'"' -f2)
+          curl -fsSL --retry 3 \
+            "https://raw.githubusercontent.com/rubentalstra/Veredictum/v${version}/schemas/ixit.schema.json" \
+            -o /tmp/ixit.schema.json
+          bash scripts/checks/ixit-declarations.sh --schema /tmp/ixit.schema.json docs/conformance/party/ferroehr
+
   # Changelog guard (Keep a Changelog discipline): a PR that changes
   # user-visible surfaces must update CHANGELOG.md's [Unreleased] section in
   # the same PR. Escape hatch: the `no-changelog` label for genuinely
@@ -2193,6 +2219,7 @@ jobs:
       - server-image-from-source
       - ui-screenshot-guard
       - contribution-licence
+      - ixit-declarations
       - changelog
       - citation
       - compose-version-guard

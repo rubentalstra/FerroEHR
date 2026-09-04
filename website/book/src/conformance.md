@@ -125,6 +125,19 @@ exposes, each of which switches on the cases that depend on it:
 A party that declares none of these has the dependent cases recorded
 not-applicable rather than checked against a guess.
 
+That silence has a cost, and the pipeline makes it visible before a run. The
+instrument's ixit schema also defines parameters per instance (the
+`administrative` posture of a principal, an instance's own `signing`,
+`terminology` or `spec_profile` when it differs from the party's), and an
+absent one is undeclared, never a default: every case that requires it is
+guarded out. `scripts/checks/ixit-declarations.sh` reads that parameter set
+from the pinned schema itself and refuses to run the catalogue while an
+instance leaves one undeclared, unless `ixit-undeclared.json` beside the ixit
+records why that instance leaves it so (an unauthenticated instance has no
+principal to be administrative, for example). A pin bump that introduces a
+parameter therefore fails the pipeline until the party declares or adjudicates
+it, instead of quietly losing the cases it guards.
+
 ## Running the suite yourself
 
 The suite runs against a real, deployed server (the same container image and
