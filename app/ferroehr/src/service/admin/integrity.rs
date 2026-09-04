@@ -27,6 +27,7 @@
               round-trip drops forward-compatible keys (the openEHR release strategy: minors are compatible supersets)"
 )]
 
+use std::collections::HashMap;
 use std::time::Instant;
 
 use serde_json::Value;
@@ -36,14 +37,23 @@ use crate::ids::VoId;
 use crate::service::FerroEhrService;
 use crate::service::error::ServiceError;
 use crate::service::status::SmError;
-use crate::storage::node_repo::read_version_canonical_all;
+use crate::storage::codec::reassemble;
+use crate::storage::node_repo::read_version_rows_all;
 
 /// How many version rows one page of the sweep's cursor query returns.
 ///
 /// The page carries identifiers only (no content), so it stays small whatever
-/// the documents weigh; each version's body and node rows are then read one
-/// version at a time, which bounds the sweep's memory to a single document.
+/// the documents weigh; content is then read a [`CONTENT_CHUNK`] at a time.
 const PAGE_SIZE: i64 = 500;
+
+/// How many versions' contents are read per round trip.
+///
+/// The sweep needs both copies of every version, so its cost is two statements
+/// per chunk rather than two per version: a 60 000-version store goes from
+/// about 120 000 round trips to under 4 000. The chunk is what bounds memory —
+/// the reassembled tree and the stored body of 32 documents at once, not of a
+/// whole 500-row page, and not one version at a time either.
+const CONTENT_CHUNK: usize = 32;
 
 /// How many mismatches the returned report carries in full.
 ///
@@ -124,6 +134,22 @@ impl StorageParityReport {
     }
 }
 
+/// Which stored versions a sweep covers.
+///
+/// A sweep reads every byte of the versions it covers, so an operator
+/// verifying one record, or everything committed since an incident, should not
+/// have to read the whole repository to do it. Both bounds are optional and
+/// compose; the default covers everything.
+///
+/// No openEHR spec governs storage mechanics — our own design/extension.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Default)]
+pub struct StorageParityScope {
+    /// Cover only versions belonging to this EHR.
+    pub ehr_id: Option<Uuid>,
+    /// Cover only versions whose validity begins at or after this instant.
+    pub committed_since: Option<jiff::Timestamp>,
+}
+
 /// One page row of the sweep cursor: the identifiers of a stored version plus
 /// whether it carries a body. No content is fetched here.
 struct VersionKey {
@@ -152,12 +178,18 @@ impl FerroEhrService {
     /// - `exception` — a database fault while enumerating or reading versions.
     ///   A version whose node rows are unreadable is a REPORTED mismatch, not
     ///   an error: one damaged record must not abort the sweep that found it.
-    pub async fn verify_storage_parity(&self) -> Result<StorageParityReport, SmError> {
-        Ok(self.sweep_storage_parity().await?)
+    pub async fn verify_storage_parity(
+        &self,
+        scope: StorageParityScope,
+    ) -> Result<StorageParityReport, SmError> {
+        Ok(self.sweep_storage_parity(scope).await?)
     }
 
     /// The sweep itself, over the storage error domain.
-    async fn sweep_storage_parity(&self) -> Result<StorageParityReport, ServiceError> {
+    async fn sweep_storage_parity(
+        &self,
+        scope: StorageParityScope,
+    ) -> Result<StorageParityReport, ServiceError> {
         let started = Instant::now();
         let mut report = StorageParityReport {
             versions_checked: 0,
@@ -171,19 +203,21 @@ impl FerroEhrService {
         let mut cursor: Option<(Uuid, i32)> = None;
 
         loop {
-            let page = self.parity_page(cursor).await?;
+            let page = self.parity_page(cursor, scope).await?;
             let Some(last) = page.last() else { break };
             cursor = Some((last.vo_id, last.sys_version));
 
-            for key in &page {
-                report.versions_checked += 1;
-                if key.has_body {
-                    report.versions_with_body += 1;
-                } else {
-                    report.versions_without_body += 1;
-                }
-                if let Some(defect) = self.version_parity_defect(key).await? {
-                    record(&mut report, key, defect);
+            for chunk in page.chunks(CONTENT_CHUNK) {
+                for (key, defect) in self.chunk_parity_defects(chunk).await? {
+                    report.versions_checked += 1;
+                    if key.has_body {
+                        report.versions_with_body += 1;
+                    } else {
+                        report.versions_without_body += 1;
+                    }
+                    if let Some(defect) = defect {
+                        record(&mut report, key, defect);
+                    }
                 }
             }
         }
@@ -192,12 +226,86 @@ impl FerroEhrService {
         Ok(report)
     }
 
+    /// Compare one chunk of versions in two round trips: the reassembled node
+    /// content of all of them, then their stored bodies.
+    ///
+    /// Returns one verdict per input key, in input order, so the caller's
+    /// counters follow the enumeration rather than the map's iteration.
+    async fn chunk_parity_defects<'k>(
+        &self,
+        chunk: &'k [VersionKey],
+    ) -> Result<Vec<(&'k VersionKey, Option<StorageParityDefect>)>, ServiceError> {
+        let keys: Vec<(VoId, i32)> = chunk
+            .iter()
+            .map(|key| (VoId(key.vo_id), key.sys_version))
+            .collect();
+        let rows = read_version_rows_all(&self.pool, &keys).await?;
+        let bodies = self.chunk_bodies(&keys).await?;
+
+        Ok(chunk
+            .iter()
+            .map(|key| {
+                let id = (VoId(key.vo_id), key.sys_version);
+                // A set of rows that does not form one tree is a verdict, never
+                // a propagated error: the sweep exists to find damaged records,
+                // so it reports them and keeps going.
+                let nodes = rows.get(&id).map(|rows| reassemble(rows));
+                let defect = match (key.has_body, bodies.get(&id), nodes) {
+                    // A logical delete (RM common master06 §Logical Deletion)
+                    // stores no body, so any node row for it is unexpected.
+                    (false, _, Some(_)) => Some(StorageParityDefect::UnexpectedNodes),
+                    // Nothing to compare: a logical delete with no node rows is
+                    // correct, and a version with no body left the primary tier
+                    // or the repository between the page read and this one.
+                    (false, _, None) | (true, None, _) => None,
+                    (true, Some(_), None) => Some(StorageParityDefect::NodesMissing),
+                    (true, Some(_), Some(Err(_))) => Some(StorageParityDefect::NodesUnreadable),
+                    (true, Some(body), Some(Ok(value))) => {
+                        (&value != body).then_some(StorageParityDefect::ContentDiffers)
+                    }
+                };
+                (key, defect)
+            })
+            .collect())
+    }
+
+    /// The materialized bodies of one chunk of versions, in one statement.
+    ///
+    /// A version with a `NULL` body, or one that left the repository between
+    /// the page read and this one, is absent from the map.
+    async fn chunk_bodies(
+        &self,
+        keys: &[(VoId, i32)],
+    ) -> Result<HashMap<(VoId, i32), Value>, ServiceError> {
+        let vo_ids: Vec<Uuid> = keys.iter().map(|(vo_id, _)| vo_id.0).collect();
+        let sys_versions: Vec<i32> = keys.iter().map(|(_, version)| *version).collect();
+        let rows: Vec<(Uuid, i32, String)> = sqlx::query_as(
+            "SELECT v.vo_id, v.sys_version, v.body \
+             FROM unnest($1::uuid[], $2::int[]) AS k(vo_id, sys_version) \
+             JOIN vo_version_all v \
+               ON v.vo_id = k.vo_id AND v.sys_version = k.sys_version \
+             WHERE v.body IS NOT NULL",
+        )
+        .bind(&vo_ids)
+        .bind(&sys_versions)
+        .fetch_all(&self.pool)
+        .await?;
+        let mut out = HashMap::with_capacity(rows.len());
+        for (vo_id, sys_version, text) in rows {
+            let body = serde_json::from_str(&text)
+                .map_err(|e| ServiceError::internal("parse the stored canonical body", e))?;
+            out.insert((VoId(vo_id), sys_version), body);
+        }
+        Ok(out)
+    }
+
     /// One page of stored-version identifiers after `cursor`, in
     /// `(vo_id, sys_version)` order — a keyset walk, so a long sweep never
     /// pays a growing `OFFSET`.
     async fn parity_page(
         &self,
         cursor: Option<(Uuid, i32)>,
+        scope: StorageParityScope,
     ) -> Result<Vec<VersionKey>, ServiceError> {
         let (after_vo, after_version) = match cursor {
             Some((vo_id, sys_version)) => (Some(vo_id), Some(sys_version)),
@@ -207,12 +315,16 @@ impl FerroEhrService {
             "SELECT vo_id, sys_version, kind, body IS NOT NULL \
              FROM vo_version_all \
              WHERE ($1::uuid IS NULL OR (vo_id, sys_version) > ($1::uuid, $2::int)) \
+               AND ($4::uuid IS NULL OR ehr_id = $4::uuid) \
+               AND ($5::timestamptz IS NULL OR lower(sys_period) >= $5::timestamptz) \
              ORDER BY vo_id, sys_version \
              LIMIT $3",
         )
         .bind(after_vo)
         .bind(after_version)
         .bind(PAGE_SIZE)
+        .bind(scope.ehr_id)
+        .bind(scope.committed_since.map(jiff_sqlx::Timestamp::from))
         .fetch_all(&self.pool)
         .await?;
         Ok(rows
@@ -224,54 +336,6 @@ impl FerroEhrService {
                 has_body,
             })
             .collect())
-    }
-
-    /// How one stored version's two copies disagree, or `None` when they
-    /// agree.
-    ///
-    /// A reassembly failure is a verdict, never a propagated error: the sweep
-    /// exists to find damaged records, so it reports them and keeps going.
-    async fn version_parity_defect(
-        &self,
-        key: &VersionKey,
-    ) -> Result<Option<StorageParityDefect>, ServiceError> {
-        let reassembled =
-            read_version_canonical_all(&self.pool, VoId(key.vo_id), key.sys_version).await;
-        if !key.has_body {
-            return Ok(match reassembled {
-                Ok(Value::Null) => None,
-                Ok(_) | Err(_) => Some(StorageParityDefect::UnexpectedNodes),
-            });
-        }
-        let Some(body) = self.stored_body(key).await? else {
-            // The version left the primary tier (an archive move) or the
-            // repository (a physical delete) between the page read and this
-            // one; there is nothing left to compare, and no defect to claim.
-            return Ok(None);
-        };
-        Ok(match reassembled {
-            Ok(Value::Null) => Some(StorageParityDefect::NodesMissing),
-            Ok(value) if value == body => None,
-            Ok(_) => Some(StorageParityDefect::ContentDiffers),
-            Err(_) => Some(StorageParityDefect::NodesUnreadable),
-        })
-    }
-
-    /// The materialized body of one stored version, read one version at a time
-    /// so the sweep holds a single document in memory.
-    async fn stored_body(&self, key: &VersionKey) -> Result<Option<Value>, ServiceError> {
-        let row: Option<(Option<String>,)> =
-            sqlx::query_as("SELECT body FROM vo_version_all WHERE vo_id = $1 AND sys_version = $2")
-                .bind(key.vo_id)
-                .bind(key.sys_version)
-                .fetch_optional(&self.pool)
-                .await?;
-        row.and_then(|(body,)| body)
-            .map(|text| {
-                serde_json::from_str(&text)
-                    .map_err(|e| ServiceError::internal("parse the stored canonical body", e))
-            })
-            .transpose()
     }
 }
 

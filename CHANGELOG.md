@@ -48,6 +48,17 @@ workflow refuses a tag that has no matching section here.
 
 ### Changed
 
+- **The storage-parity sweep reads a page of versions per round trip instead of
+  one, and can be scoped** (#3110). `POST /admin/integrity/verify` compared each
+  stored version's node rows with its materialized body using two sequential
+  statements per version, so a store of 60 000 versions cost about 120 000 round
+  trips and the request died at the 30 s timeout with the report lost. Content
+  is now read 32 versions at a time, two statements per chunk: the same store
+  costs under 4 000 round trips. Two optional query parameters narrow what a
+  sweep covers, `ehr_id` and `committed_since`, so verifying one record or
+  everything committed since an incident no longer means reading the whole
+  repository. The report, its defect vocabulary and its status codes are
+  unchanged.
 - **A tenant key that names no registered tenant is refused instead of running
   unscoped** (#3111). It used to fall through to the reserved default tenant,
   on the argument that a cross-tenant access should look like an empty result
@@ -61,7 +72,6 @@ workflow refuses a tag that has no matching section here.
   tenant key at all is unchanged. With tenancy enabled, boot now counts the
   default tenant's stored versions and warns when it holds any, because both
   paths lead there.
-
 - **A composition commit checks out one pooled connection instead of three**
   (#3097). The EHR-writability gate, the persistent-duplicate gate and the
   commit each took their own connection from the pool. With multi-tenancy on

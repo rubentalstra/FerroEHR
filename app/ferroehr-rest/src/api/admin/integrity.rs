@@ -48,12 +48,12 @@ use utoipa_axum::routes;
 
 use openehr_its::rest::runtime::ApiError;
 
-use ferroehr::service::admin::integrity::StorageParityReport;
+use ferroehr::service::admin::integrity::{StorageParityReport, StorageParityScope};
 
 use crate::api::{BoxResponse, RequestParts, guarded_dispatch};
-use crate::negotiate;
 use crate::overview::error::RestError;
 use crate::state::AppState;
+use crate::{negotiate, params};
 
 /// The storage-integrity extension route as a native `utoipa-axum` router —
 /// **no ITS-REST contract** (see the module docs). Group-relative path (nested
@@ -72,6 +72,16 @@ pub(crate) fn integrity_routes() -> OpenApiRouter<AppState> {
 /// materialized body; the response is the resulting report.
 #[utoipa::path(
     post, path = "/admin/integrity/verify", tag = "admin-integrity",
+    params(
+        ("ehr_id" = Option<String>, Query,
+         description = "Cover only versions belonging to this EHR. A sweep reads \
+                        every byte of what it covers, so this is how an operator \
+                        verifies one record without reading the repository."),
+        ("committed_since" = Option<String>, Query,
+         description = "Cover only versions whose validity begins at or after \
+                        this RFC 3339 instant, for verifying what changed since \
+                        an incident."),
+    ),
     responses(
         (status = 200, description = "The sweep ran. The body is the report: \
                                       how many stored versions were read, how \
@@ -148,7 +158,8 @@ async fn run(
     }
     match op {
         "admin_verify_storage_parity" => {
-            let report = state.backend().verify_storage_parity().await?;
+            let scope = parity_scope(parts.query.as_deref())?;
+            let report = state.backend().verify_storage_parity(scope).await?;
             Ok(negotiate::respond(
                 &parts.headers,
                 StatusCode::OK,
@@ -159,6 +170,37 @@ async fn run(
             "unrouted admin integrity operation: {other}"
         )))),
     }
+}
+
+/// The optional bounds narrowing which stored versions the sweep covers.
+///
+/// A sweep reads every byte of what it covers, so an operator verifying one
+/// record, or everything committed since an incident, should not have to read
+/// the whole repository. Both parameters are optional and compose.
+///
+/// Our own extension — no ITS-REST operation governs this route at all.
+fn parity_scope(query: Option<&str>) -> Result<StorageParityScope, RestError> {
+    let ehr_id = match params::query_param(query, "ehr_id") {
+        Some(raw) => Some(raw.parse::<uuid::Uuid>().map_err(|e| {
+            RestError(ApiError::BadRequest(format!(
+                "query parameter `ehr_id` must be a UUID, got {raw:?}: {e}"
+            )))
+        })?),
+        None => None,
+    };
+    let committed_since = match params::query_param(query, "committed_since") {
+        Some(raw) => Some(raw.parse::<jiff::Timestamp>().map_err(|e| {
+            RestError(ApiError::BadRequest(format!(
+                "query parameter `committed_since` must be an RFC 3339 timestamp, got \
+                 {raw:?}: {e}"
+            )))
+        })?),
+        None => None,
+    };
+    Ok(StorageParityScope {
+        ehr_id,
+        committed_since,
+    })
 }
 
 /// Render the storage-parity report as the response body.

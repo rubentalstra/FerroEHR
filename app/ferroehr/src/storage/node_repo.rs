@@ -351,6 +351,66 @@ pub async fn read_version_canonical_all(
     reassemble(&rows)
 }
 
+/// Fetch the read rows of whole stored versions in **one** statement, keyed by
+/// `(vo_id, sys_version)` and ordered by `num` within each version.
+///
+/// This is the row half of [`read_version_canonical_all`] for a page of
+/// versions: the same tier-inclusive rows, one round trip instead of one per
+/// version. A version with no stored nodes (a logical delete, RM common
+/// master06 §Logical Deletion) is absent from the map.
+///
+/// It returns rows rather than reassembled values on purpose. Its caller is the
+/// storage-parity sweep, for which a set of rows that does not form a tree is a
+/// REPORTED defect rather than a failure: reassembling here would turn one
+/// damaged record into an error that aborts the sweep that found it. For the
+/// same reason it never shortcuts to the materialized `vo_version.body` the way
+/// [`read_subtrees_canonical`] does for a root anchor — the sweep exists to
+/// compare the node rows against that body.
+///
+/// No openEHR spec governs the `node` store — our own decomposed design.
+///
+/// # Errors
+/// Returns [`StorageError`] on a driver failure or an undecodable row.
+pub async fn read_version_rows_all(
+    pool: &PgPool,
+    keys: &[(VoId, i32)],
+) -> Result<BTreeMap<(VoId, i32), Vec<ReadRow>>, StorageError> {
+    if keys.is_empty() {
+        return Ok(BTreeMap::new());
+    }
+    let vo_ids: Vec<Uuid> = keys.iter().map(|(vo_id, _)| vo_id.0).collect();
+    let sys_versions: Vec<i32> = keys.iter().map(|(_, sys_version)| *sys_version).collect();
+
+    let db_rows = sqlx::query(
+        "SELECT n.vo_id, n.sys_version, n.num, n.num_cap, n.parent_num, n.path, n.data \
+         FROM unnest($1::uuid[], $2::int[]) AS k(vo_id, sys_version) \
+         JOIN node_all n ON n.vo_id = k.vo_id AND n.sys_version = k.sys_version",
+    )
+    .bind(&vo_ids)
+    .bind(&sys_versions)
+    .fetch_all(pool)
+    .await?;
+
+    let mut grouped: BTreeMap<(VoId, i32), Vec<ReadRow>> = BTreeMap::new();
+    for row in db_rows {
+        let key = (VoId(row.try_get("vo_id")?), row.try_get("sys_version")?);
+        grouped.entry(key).or_default().push(ReadRow {
+            num: row.try_get("num")?,
+            num_cap: row.try_get("num_cap")?,
+            parent_num: row.try_get("parent_num")?,
+            path: row.try_get("path")?,
+            data: row.try_get("data")?,
+        });
+    }
+
+    for rows in grouped.values_mut() {
+        // `read_rows` orders by `num` in SQL; the join above cannot, because one
+        // statement carries every version's rows interleaved.
+        rows.sort_by_key(|row| row.num);
+    }
+    Ok(grouped)
+}
+
 /// One whole-object cell's subtree locator: the `[num, num_cap]` interval of
 /// a stored version.
 ///
