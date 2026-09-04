@@ -1,4 +1,5 @@
 // SPDX-FileCopyrightText: Ruben Talstra
+// SPDX-FileCopyrightText: openEHR Foundation
 // SPDX-License-Identifier: Apache-2.0
 
 //! The nesting bound every recursive reader and walker in the openEHR
