@@ -554,6 +554,7 @@ server behaves byte-for-byte as a single-tenant system.
 | `FERROEHR__TENANCY__ENABLED` | `false` | enable multi-tenancy |
 | `FERROEHR__TENANCY__CLAIM` | `tenant` | the JWT claim (a dotted path) carrying the tenant key |
 | `FERROEHR__TENANCY__HEADER` | unset | a development header override for the tenant |
+| `FERROEHR__TENANCY__UNKNOWN_TENANT` | `refuse` | what a tenant key naming no registered tenant gets: `refuse` (a `403`) or `default_tenant` (run unscoped) |
 
 A request's tenant is resolved from the configured JWT claim (a dotted path
 such as `realm_access.tenant` is walked through nested objects). Isolation is
@@ -570,10 +571,25 @@ table owner is subject to them.
 
 Isolation is otherwise fail-safe by design, and the three cases are distinct:
 
-- **No tenant key, or an unknown one:** the request runs unscoped against a
-  reserved default tenant rather than guessing, and a cross-tenant access
-  surfaces as an empty result set, never a `403` that would leak the existence
-  of another tenant's data.
+- **A tenant key naming no registered tenant:** a `403`. The alternative,
+  running the request unscoped, hands the caller the reserved default tenant,
+  and that tenant owns every row written while tenancy was off. On a deployment
+  that enabled tenancy after going live it therefore holds the entire
+  pre-tenancy store, so a misspelled claim, a renamed tenant or a drifted
+  issuer mapping would read and write all of it.
+
+  Set `FERROEHR__TENANCY__UNKNOWN_TENANT=default_tenant` to restore the
+  fall-through. It buys one thing: a cross-tenant access then surfaces as an
+  empty result set rather than a `403` confirming another tenant exists. That
+  is a real property, and it holds only while the default tenant is empty,
+  which is true on a deployment that ran with tenancy on from its first write.
+  The server counts that tenant's stored versions at boot and warns when it
+  holds any.
+
+- **No tenant key at all:** the request runs unscoped against the reserved
+  default tenant. `UNKNOWN_TENANT` governs a key that does not resolve, not the
+  absence of one, so the same boot warning applies: with tenancy on and content
+  in the default tenant, a token carrying no tenant claim reads it.
 - **A tenant registry that cannot be reached:** a `503`, like any other
   dependency failure. A resolution *error* is never quietly read as "no
   tenant", because that would fall through to the default tenant.

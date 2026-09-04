@@ -485,7 +485,41 @@ async fn connect_pool(config: &ferroehr::config::FerroEhrConfig) -> anyhow::Resu
     db::prepare(&config.db, &pool)
         .await
         .context("preparing the database schema")?;
+    if config.tenancy.enabled {
+        warn_on_occupied_default_tenant(&pool).await?;
+    }
     Ok(pool)
+}
+
+/// Says at boot how much content the reserved default tenant holds, because a
+/// request the tenancy middleware cannot scope reads exactly that.
+///
+/// The default tenant owns every row written while tenancy was off, so on a
+/// deployment that enables tenancy over an existing store it IS the legacy
+/// repository. Two request shapes still land there: one carrying no tenant key
+/// at all, and, under `tenancy.unknown_tenant = "default_tenant"`, one whose
+/// key names no registered tenant.
+///
+/// A warning rather than a refusal: an operator enabling tenancy on a live
+/// store has no in-product way to reassign those rows yet, so refusing would
+/// strand the deployment instead of protecting it.
+///
+/// # Errors
+/// A database failure reading the count.
+async fn warn_on_occupied_default_tenant(pool: &PgPool) -> anyhow::Result<()> {
+    let versions = db::default_tenant_versions(pool)
+        .await
+        .context("counting the reserved default tenant's stored versions")?;
+    if versions > 0 {
+        tracing::warn!(
+            default_tenant_versions = versions,
+            "tenancy is enabled and the reserved default tenant owns stored versions: a request \
+             with no tenant key reads them, and so does an unresolvable key unless \
+             tenancy.unknown_tenant is \"refuse\". Move this content into a named tenant, or \
+             treat the deployment as single-tenant."
+        );
+    }
+    Ok(())
 }
 
 /// Wires the opt-in external FHIR terminology servers — ALL configured
