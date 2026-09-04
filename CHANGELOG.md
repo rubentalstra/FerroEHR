@@ -26,6 +26,17 @@ workflow refuses a tag that has no matching section here.
   below the ceiling is served as written. The page is refused rather than
   shortened because a client paging with its own `fetch` as the stride would
   silently skip rows.
+- **An ADL 2 upload can no longer take the server down through unbounded
+  recursion** (#3062). The ADL engine now carries one nesting bound of 512
+  levels: the cADL, ODIN and rule-expression readers refuse an artefact nested
+  past it with a `400` that names the bound (the `SUNK` syntax bucket), the
+  flattener refuses a specialisation lineage longer than the bound or a flat
+  form that composes deeper than it, and the operational-template transform
+  refuses fillers that reference each other in a cycle (naming the cycle) or
+  inline past the bound, as a `422`. Every remaining engine call, including
+  compiling a stored template to its operational form and loading the stored
+  repository, runs on the dedicated engine thread. Published archetypes and
+  templates stay far below the bound.
 
 ## [4.0.18] - 2026-09-03
 

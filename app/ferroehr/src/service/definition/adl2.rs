@@ -289,13 +289,16 @@ impl FerroEhrService {
         let sources: Vec<String> = sqlx::query_scalar("SELECT adl FROM adl2_artefact")
             .fetch_all(&self.pool)
             .await?;
-        let mut repo = ArchetypeRepository::new();
-        for src in &sources {
-            if let Ok(archetype) = parse_artefact(src, Dialect::Adl2) {
-                repo.insert(archetype);
+        on_engine_stack(move || {
+            let mut repo = ArchetypeRepository::new();
+            for src in &sources {
+                if let Ok(archetype) = parse_artefact(src, Dialect::Adl2) {
+                    repo.insert(archetype);
+                }
             }
-        }
-        Ok(repo)
+            repo
+        })
+        .await
     }
 
     /// Validate one uploaded ADL2 source with the `openehr-adl` engine and return
@@ -538,23 +541,7 @@ impl FerroEhrService {
     /// - The OPT cannot be compiled (an unresolved constituent reference) →
     ///   `Unprocessable` (`422`).
     pub(super) async fn adl2_opt_json(&self, source: &str) -> Result<String, ServiceError> {
-        let archetype = parse_artefact(source, Dialect::Adl2).map_err(|errs| {
-            ServiceError::exception(format!(
-                "stored ADL2 source no longer parses: {}",
-                join_syntax_errors(&errs)
-            ))
-        })?;
-        if let Archetype::AuthoredArchetype(a) = &archetype
-            && let AuthoredArchetype::OperationalTemplate(opt) = a.as_ref()
-        {
-            return Ok(openehr_its::json::to_canonical_json(opt.as_ref()));
-        }
-        let repo = self.adl2_repository().await?;
-        let opt = create_opt(&archetype, &repo).map_err(|e| {
-            ServiceError::content_invalid(
-                Violation::new(format!("cannot project OperationalTemplateV2: {e}")).with_source(e),
-            )
-        })?;
+        let opt = self.adl2_operational_template(source).await?;
         Ok(openehr_its::json::to_canonical_json(&opt))
     }
 
@@ -702,28 +689,43 @@ impl FerroEhrService {
 
     /// Compile stored ADL2 `source` to its operational template: a stored
     /// `operational_template` is parsed as-is; any other kind is flattened +
-    /// compiled via `create_opt` (OPT2 master03).
+    /// compiled via `create_opt` (OPT2 master03). Both steps run on the
+    /// engine stack ([`on_engine_stack`]).
+    ///
+    /// # Errors
+    ///
+    /// - The stored source no longer parses → `Internal` (`500`; a stored source
+    ///   was engine-valid at upload, so this is a server fault).
+    /// - The OPT cannot be compiled (an unresolved or cyclic constituent
+    ///   reference, a lineage or nesting past the engine bound) →
+    ///   `Unprocessable` (`422`).
     async fn adl2_operational_template(
         &self,
         source: &str,
     ) -> Result<OperationalTemplate, ServiceError> {
-        let archetype = parse_artefact(source, Dialect::Adl2).map_err(|errs| {
-            ServiceError::exception(format!(
-                "stored ADL2 source no longer parses: {}",
-                join_syntax_errors(&errs)
-            ))
-        })?;
+        let owned = source.to_owned();
+        let archetype = on_engine_stack(move || parse_artefact(&owned, Dialect::Adl2))
+            .await?
+            .map_err(|errs| {
+                ServiceError::exception(format!(
+                    "stored ADL2 source no longer parses: {}",
+                    join_syntax_errors(&errs)
+                ))
+            })?;
         if let Archetype::AuthoredArchetype(a) = &archetype
             && let AuthoredArchetype::OperationalTemplate(opt) = a.as_ref()
         {
             return Ok(opt.as_ref().clone());
         }
         let repo = self.adl2_repository().await?;
-        create_opt(&archetype, &repo).map_err(|e| {
-            ServiceError::content_invalid(
-                Violation::new(format!("cannot compile operational template: {e}")).with_source(e),
-            )
-        })
+        on_engine_stack(move || create_opt(&archetype, &repo))
+            .await?
+            .map_err(|e| {
+                ServiceError::content_invalid(
+                    Violation::new(format!("cannot compile operational template: {e}"))
+                        .with_source(e),
+                )
+            })
     }
 
     /// The ADL2 source of the artefact with `ARCHETYPE_HRID` `an_id`; absent

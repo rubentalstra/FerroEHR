@@ -83,6 +83,16 @@ pub enum BelError {
         /// Why the builder rejected it.
         message: String,
     },
+    /// Expressions nest deeper than [`crate::nesting::MAX_NESTING_DEPTH`] —
+    /// an implementation bound, not a spec rule; the parser refuses rather
+    /// than recursing without limit.
+    #[error("BEL parse error at byte {at}: expression nesting exceeds the limit of {limit} levels")]
+    NestingTooDeep {
+        /// Byte offset of the token that crossed the bound.
+        at: usize,
+        /// The bound that was crossed.
+        limit: usize,
+    },
 }
 
 /// A manifest literal recognised by the BEL lexer, handed to

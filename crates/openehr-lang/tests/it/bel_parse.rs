@@ -238,3 +238,60 @@ fn terminology_code_literals_and_container_literal_boundary() {
         );
     }
 }
+
+// ── the nesting bound ─────────────────────────────────────────────────────
+
+/// Run `f` on a thread whose stack fits a walk at the bound: the bound is
+/// set for the engine's 256 MiB thread, not the 2 MiB test thread.
+fn on_big_stack<T: Send + 'static>(f: impl FnOnce() -> T + Send + 'static) -> T {
+    std::thread::Builder::new()
+        .stack_size(256 << 20)
+        .spawn(f)
+        .unwrap()
+        .join()
+        .unwrap()
+}
+
+fn parenthesised(levels: usize) -> String {
+    format!("{}1{} > 0", "(".repeat(levels), ")".repeat(levels))
+}
+
+#[test]
+fn expression_nesting_past_the_bound_is_a_typed_refusal() {
+    // The parser recurses up to the bound before refusing, so the refusal
+    // too needs the stack the bound is sized for.
+    let err = on_big_stack(|| {
+        parse_statements(&parenthesised(openehr_lang::nesting::MAX_NESTING_DEPTH + 1))
+            .expect_err("an expression nested past the bound is refused, never recursed into")
+    });
+    assert!(
+        matches!(err, BelError::NestingTooDeep { limit, .. }
+            if limit == openehr_lang::nesting::MAX_NESTING_DEPTH),
+        "got {err:?}"
+    );
+}
+
+#[test]
+fn expression_nesting_well_within_the_bound_parses() {
+    on_big_stack(|| {
+        let e = one_assertion(&parenthesised(
+            openehr_lang::nesting::MAX_NESTING_DEPTH.div_ceil(2),
+        ));
+        let (op, l, r) = binary(&e);
+        assert_eq!(op, "gt");
+        assert!(is_int(l, 1) && is_int(r, 0));
+    });
+}
+
+#[test]
+fn a_not_chain_past_the_bound_is_a_typed_refusal() {
+    let src = format!(
+        "{}$flag",
+        "not ".repeat(openehr_lang::nesting::MAX_NESTING_DEPTH + 1)
+    );
+    let err = parse_statements(&src).expect_err("a unary chain recurses per operator");
+    assert!(
+        matches!(err, BelError::NestingTooDeep { .. }),
+        "got {err:?}"
+    );
+}
