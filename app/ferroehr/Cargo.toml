@@ -163,6 +163,10 @@ inferno.workspace = true
 name = "aql"
 harness = false
 
+[[bench]]
+name = "validation"
+harness = false
+
 [lints]
 workspace = true
 
