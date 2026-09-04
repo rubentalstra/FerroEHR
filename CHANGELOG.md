@@ -17,6 +17,15 @@ workflow refuses a tag that has no matching section here.
 
 ### Added
 
+- **A terminology server that answers with the wrong FHIR resource is refused
+  by name** (#3099). The R4B `Parameters` resource has no mandatory member, so
+  any JSON object decoded as an empty view: a `$validate-code` answered with a
+  `ValueSet` or an `OperationOutcome` read as "no result" instead of the wrong
+  answer it was. The decoders now check the `resourceType` first and report
+  `unexpected FHIR resource: expected Parameters, got OperationOutcome`, which
+  `terminology.external.fail_on_error` then decides on like any other upstream
+  fault.
+
 - **A refused OPT or canonical-XML document says where the defect is** (#3067).
   A mandatory element or attribute that is absent used to be reported as
   `xml parse error: missing element id`, with no position and a token that

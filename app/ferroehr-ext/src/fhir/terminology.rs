@@ -27,6 +27,36 @@ pub enum TerminologyDecodeError {
     /// The body is not a valid R4B resource of the expected type.
     #[error("malformed FHIR response: {0}")]
     Malformed(#[from] serde_json::Error),
+    /// The body is a well-formed resource of another type. The concrete R4B
+    /// structs carry no `resourceType` discriminator of their own (only the
+    /// `Resource` enum does), and `Parameters` has no mandatory member, so
+    /// without this check any JSON object would read as an empty `Parameters`.
+    #[error("unexpected FHIR resource: expected {expected}, got {found}")]
+    WrongResource {
+        /// The resource type the operation answers with.
+        expected: &'static str,
+        /// The `resourceType` the body declares (`(none)` when it declares none).
+        found: String,
+    },
+}
+
+/// The `resourceType` a body declares, checked before the typed decode.
+#[derive(serde::Deserialize)]
+struct ResourceHeader {
+    #[serde(rename = "resourceType")]
+    resource_type: Option<String>,
+}
+
+/// Refuses a body whose `resourceType` is not `expected`.
+fn expect_resource(body: &[u8], expected: &'static str) -> Result<(), TerminologyDecodeError> {
+    let header: ResourceHeader = serde_json::from_slice(body)?;
+    match header.resource_type {
+        Some(found) if found == expected => Ok(()),
+        found => Err(TerminologyDecodeError::WrongResource {
+            expected,
+            found: found.unwrap_or_else(|| "(none)".to_owned()),
+        }),
+    }
 }
 
 /// The named scalar values a `Parameters` response carries, by parameter name.
@@ -72,9 +102,11 @@ pub struct ExpansionMember {
 ///
 /// # Errors
 ///
-/// [`TerminologyDecodeError::Malformed`] when the body is not a valid R4B
-/// `Parameters` resource.
+/// [`TerminologyDecodeError::WrongResource`] when the body declares another
+/// `resourceType`; [`TerminologyDecodeError::Malformed`] when it is not a
+/// valid R4B `Parameters` resource.
 pub fn decode_parameters(body: &[u8]) -> Result<ParametersView, TerminologyDecodeError> {
+    expect_resource(body, "Parameters")?;
     let parameters: Parameters = serde_json::from_slice(body)?;
     let mut view = ParametersView::default();
     for parameter in parameters.parameter.iter().flatten() {
@@ -122,9 +154,11 @@ fn translate_match(parameter: &fhir_model::r4b::resources::ParametersParameter) 
 ///
 /// # Errors
 ///
-/// [`TerminologyDecodeError::Malformed`] when the body is not a valid R4B
-/// `ValueSet` resource.
+/// [`TerminologyDecodeError::WrongResource`] when the body declares another
+/// `resourceType`; [`TerminologyDecodeError::Malformed`] when it is not a
+/// valid R4B `ValueSet` resource.
 pub fn decode_expansion(body: &[u8]) -> Result<Vec<ExpansionMember>, TerminologyDecodeError> {
+    expect_resource(body, "ValueSet")?;
     let value_set: ValueSet = serde_json::from_slice(body)?;
     Ok(value_set
         .expansion

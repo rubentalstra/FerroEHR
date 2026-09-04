@@ -37,6 +37,16 @@ integrations out.
   gated glue maps config → params.
 - Features are additive — no `compile_error!` pairs; the `--all-features`
   workspace lanes stay valid.
+- **One integration-test binary, one module per integration**
+  (`tests/it/main.rs` + `terminology_decode` / `events_contract` /
+  `multimedia_engine`), each `#[cfg(feature)]`-gated so `--all-features` runs
+  everything and the slim build compiles none of it. They drive this crate's
+  PUBLIC seams with no broker and no network: the typed FHIR decoders over
+  fixture bodies, the `EventPublisher` contract (a recording double plus the
+  AMQP publisher's pre-broker behaviour), the multimedia engine over the
+  in-memory `object_store`. The broker-backed and wiremock-backed journeys
+  stay in `app/ferroehr/tests/it` where the platform wires the integrations
+  in — never duplicated here.
 - Gates: `cargo clippy -p ferroehr-ext --all-targets --all-features` +
   `cargo nextest run -p ferroehr-ext --all-features`, plus a
   `--no-default-features` check lane (the slim build).
