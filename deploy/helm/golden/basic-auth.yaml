@@ -208,7 +208,7 @@ data:
       base_path = "/ferroehr/rest/openehr/v1"
       bind = "0.0.0.0:8080"
       cors_permissive = false
-      swagger_ui = true
+      swagger_ui = "private"
       [server.connection]
         header_read_timeout_secs = 10.0
         http2_keep_alive_interval_secs = 30.0
@@ -302,7 +302,7 @@ spec:
         # secret values. Hashing the ConfigMap template alone missed the last two,
         # so a rotated passphrase or an edited Cedar policy propagated into the
         # volume while every pod kept running on the value it read at startup.
-        checksum/config: 9f7825f9e384ed704dfb70f4c080135ed3f0f1711849db0e0c8dae5644089559
+        checksum/config: 8eac5e0a787f90f460619ced75c95b9757895a17eb5c75d784c5b9bbab5f4113
       labels:
         app.kubernetes.io/name: ferroehr
         app.kubernetes.io/instance: ferroehr

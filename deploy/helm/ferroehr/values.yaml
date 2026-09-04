@@ -292,8 +292,10 @@ config:
   server:
     bind: "0.0.0.0:8080"
     base_path: /ferroehr/rest/openehr/v1
-    # Serve Swagger UI + the OpenAPI JSON. Consider false in production.
-    swagger_ui: true
+    # Who may read the Swagger UI + the OpenAPI JSON: off, admin_only, private
+    # (any authenticated principal) or public. The documents list the whole
+    # enabled operation surface, so public discloses it anonymously.
+    swagger_ui: private
     # Permissive CORS — DEV ONLY. Production configures explicit origins.
     cors_permissive: false
     # [server.limits] — the largest accepted request body per route family.

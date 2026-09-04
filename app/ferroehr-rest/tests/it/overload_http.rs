@@ -61,7 +61,7 @@ fn config(max_in_flight: usize) -> AppConfig {
             bind: "127.0.0.1:0".to_owned(),
             base_path: BASE.to_owned(),
             max_in_flight,
-            swagger_ui: false,
+            swagger_ui: ferroehr::config::management::AccessLevel::Off,
             ..Default::default()
         },
         auth: AuthConfig {

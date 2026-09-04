@@ -538,16 +538,16 @@ fn recorder_unavailable() -> Response {
 /// The per-endpoint access guard: the shared authenticator plus the required
 /// level for one route.
 #[derive(Clone)]
-struct AccessGuard {
-    authenticator: Arc<Authenticator>,
-    rbac: RbacConfig,
-    level: AccessLevel,
+pub(crate) struct AccessGuard {
+    pub(crate) authenticator: Arc<Authenticator>,
+    pub(crate) rbac: RbacConfig,
+    pub(crate) level: AccessLevel,
 }
 
 /// The access-level middleware: enforce the guard's level, then run the route
 /// (or short-circuit with `401`/`403`/`404`). Installed per-route via the `mk`
-/// closure in [`router`].
-async fn access_middleware(
+/// closure in [`router`], and around the Swagger surface by the main router.
+pub(crate) async fn access_middleware(
     State(guard): State<AccessGuard>,
     req: axum::extract::Request,
     next: Next,

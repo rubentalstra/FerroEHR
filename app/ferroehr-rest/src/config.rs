@@ -50,7 +50,10 @@ mod tests {
         let c = ServerConfig::default();
         assert_eq!(c.base_path, "/ferroehr/rest/openehr/v1");
         assert_eq!(c.max_in_flight, 256);
-        assert!(c.swagger_ui);
+        assert_eq!(
+            c.swagger_ui,
+            ferroehr::config::management::AccessLevel::Private
+        );
         assert!(!c.cors_permissive);
         assert_eq!(c.swagger_ui_path(), "/ferroehr/rest/swagger-ui");
         assert_eq!(

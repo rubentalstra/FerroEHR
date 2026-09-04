@@ -212,7 +212,7 @@ Kubernetes: `>=1.36.0-0`
 | config.server.rate_limit.enabled | bool | `true` |  |
 | config.server.rate_limit.principal_burst | int | `2048` |  |
 | config.server.rate_limit.principal_per_second | int | `1024` |  |
-| config.server.swagger_ui | bool | `true` |  |
+| config.server.swagger_ui | string | `"private"` |  |
 | config.signing.enabled | bool | `true` |  |
 | config.signing.mode | string | `"digest"` |  |
 | config.signing.verify_on_read | string | `"strict"` |  |

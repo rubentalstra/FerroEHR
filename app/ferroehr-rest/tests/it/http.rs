@@ -64,7 +64,7 @@ fn config(enabled: bool) -> AppConfig {
             bind: "127.0.0.1:0".to_owned(),
             base_path: BASE.to_owned(),
             max_in_flight: 1024,
-            swagger_ui: false,
+            swagger_ui: ferroehr::config::management::AccessLevel::Off,
             cors_permissive: false,
             ..Default::default()
         },
@@ -881,7 +881,7 @@ async fn every_response_carries_the_security_headers() {
 async fn app_with_swagger() -> (testkit::TestDb, Router) {
     let (pg, service) = common::test_service().await;
     let mut cfg = config(false);
-    cfg.server.swagger_ui = true;
+    cfg.server.swagger_ui = ferroehr::config::management::AccessLevel::Public;
     (pg, common::router_with(cfg, service))
 }
 
@@ -1220,7 +1220,7 @@ async fn subject_lookup_by_query_parameter_still_answers() {
 async fn the_served_document_omits_paths_whose_features_are_off() {
     let (pg, service) = common::test_service().await;
     let mut cfg = config(false);
-    cfg.server.swagger_ui = false;
+    cfg.server.swagger_ui = ferroehr::config::management::AccessLevel::Off;
     cfg.smart.enabled = false;
     let app = common::router_with(cfg, service);
     let _keep = pg;

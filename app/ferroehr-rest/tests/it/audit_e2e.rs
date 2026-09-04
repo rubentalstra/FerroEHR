@@ -129,7 +129,7 @@ fn auth_on() -> AuthConfig {
 fn rest_config() -> AppConfig {
     AppConfig {
         server: ServerConfig {
-            swagger_ui: false,
+            swagger_ui: ferroehr::config::management::AccessLevel::Off,
             ..Default::default()
         },
         auth: auth_on(),
@@ -140,7 +140,7 @@ fn rest_config() -> AppConfig {
 fn auth_off_config() -> AppConfig {
     AppConfig {
         server: ServerConfig {
-            swagger_ui: false,
+            swagger_ui: ferroehr::config::management::AccessLevel::Off,
             ..Default::default()
         },
         auth: AuthConfig {

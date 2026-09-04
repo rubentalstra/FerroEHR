@@ -307,7 +307,7 @@ data:
       base_path = "/ferroehr/rest/openehr/v1"
       bind = "0.0.0.0:8080"
       cors_permissive = false
-      swagger_ui = true
+      swagger_ui = "public"
       [server.connection]
         header_read_timeout_secs = 10.0
         http2_keep_alive_interval_secs = 30.0
@@ -711,7 +711,7 @@ spec:
         # secret values. Hashing the ConfigMap template alone missed the last two,
         # so a rotated passphrase or an edited Cedar policy propagated into the
         # volume while every pod kept running on the value it read at startup.
-        checksum/config: 32e6a6263f321cf9c91faca2dab0e819c018923bb8a9ef743407192638db1269
+        checksum/config: 5c705d3dba9f0ba88c7bed60c774c3eaf73bd249afbb7cedc944d32fcef1e420
         prometheus.io/scrape: "true"
         prometheus.io/port: "9100"
         prometheus.io/path: "/management/prometheus"
