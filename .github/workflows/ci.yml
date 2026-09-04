@@ -1672,12 +1672,23 @@ jobs:
   # ferroehr + Keycloak via compose, the viewer + e2e binaries prebuilt by the
   # jobs above, chromedriver journeys with the browser-console gate. Screenshots
   # upload on success AND failure (human review — no pixel-diff assertions).
+  # The pipeline's critical path (#3120): this job cannot start until the
+  # binaries it downloads exist, so the wall clock is `ui-e2e-binary` plus this.
+  # The journeys run `-j 1` because all 139 share one composed stack and one
+  # browser; sharding gives each shard its own stack, so the serialization holds
+  # inside a shard and the shards divide the wall clock. That sidesteps the
+  # question of which journeys are order-dependent rather than answering it —
+  # the answer is worth having, and it is not this file's to give.
   ui-e2e:
-    name: ui-e2e
+    name: ui-e2e ${{ matrix.shard }}/3
     needs: [changes, ui-e2e-binary, ui-e2e-viewer]
     if: needs.changes.outputs.viewer == 'true'
     runs-on: ubuntu-latest
     timeout-minutes: 30
+    strategy:
+      fail-fast: false
+      matrix:
+        shard: [1, 2, 3]
     # `contents: read` (now also the workflow-level default) is all it needs:
     # nothing here writes to a registry any more (the GHCR buildx layer cache
     # was removed, and the image is now packaged locally from a job artifact).
@@ -1757,12 +1768,13 @@ jobs:
           UI_E2E_NEXTEST_ARCHIVE: ${{ github.workspace }}/ui-e2e-console-stage/ui-e2e-tests.tar.zst
           FERROEHR_IMAGE: ferroehr:ui-e2e
           FERROEHR_POSTGRES_IMAGE: ferroehr-postgres:ui-e2e
+          UI_E2E_PARTITION: hash:${{ matrix.shard }}/3
         run: bash scripts/ui-e2e.sh
       - name: Upload journey screenshots
         if: always()
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
-          name: ui-e2e-screenshots
+          name: ui-e2e-screenshots-${{ matrix.shard }}
           path: target/ui-e2e/screenshots/
           if-no-files-found: ignore
 

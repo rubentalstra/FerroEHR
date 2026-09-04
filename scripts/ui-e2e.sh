@@ -372,6 +372,14 @@ echo "── running e2e journeys"
 # than through the UI, whose own paths have their own journeys.
 NEXTEST_FILTER=(-E 'binary(it) - test(/^e2e_docs_shots::/)')
 [[ -n "$FILTER" ]] && NEXTEST_FILTER=(-E "test($FILTER)")
+# UI_E2E_PARTITION splits the battery across several runs of this script, each
+# against its OWN composed stack (#3120). The journeys run `-j 1` because they
+# share one server and one browser; a partition gives each shard a server of its
+# own, so the serialization is preserved inside a shard and the shards divide
+# the wall clock between them. Unset means the whole battery, which is what a
+# local run and a single-job CI lane both do.
+NEXTEST_PARTITION=()
+[[ -n "${UI_E2E_PARTITION:-}" ]] && NEXTEST_PARTITION=(--partition "$UI_E2E_PARTITION")
 UI_E2E_BASE_URL="$VIEWER_URL" \
 UI_E2E_WEBDRIVER_URL="http://127.0.0.1:$DRIVER_PORT" \
 UI_E2E_SHOTS_DIR="$SHOTS_DIR" \
@@ -384,7 +392,7 @@ UI_E2E_OIDC_USER="ferroehr-admin" \
 UI_E2E_OIDC_PASS="E2ePass-admin1!" \
 UI_E2E_SEEDED_EHR_ID="$SEEDED_EHR_ID" \
 UI_E2E_SEEDED_VO_ID="$SEEDED_VO_ID" \
-  cargo nextest run "${NEXTEST_TARGET[@]}" -j 1 "${NEXTEST_FILTER[@]}"
+  cargo nextest run "${NEXTEST_TARGET[@]}" -j 1 "${NEXTEST_FILTER[@]}" "${NEXTEST_PARTITION[@]}"
 fi
 
 # ── 6. The documentation-screenshot pass (opt-in) ────────────────────────────
