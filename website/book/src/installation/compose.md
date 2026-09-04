@@ -94,7 +94,8 @@ This pulls and starts the two core services (no profile needed):
   because the image has no shell.
 
 The API is then at `http://localhost:8080/ferroehr/rest/openehr/v1`, with
-Swagger UI at `http://localhost:8080/ferroehr/rest/swagger-ui`.
+Swagger UI at `http://localhost:8080/ferroehr/rest/swagger-ui` (the browser asks
+for the API credential; `server.swagger_ui` chooses who may read it).
 
 > [!IMPORTANT]
 > **Every published port binds the loopback interface by default**

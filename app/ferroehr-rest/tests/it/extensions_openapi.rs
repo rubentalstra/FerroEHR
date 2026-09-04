@@ -526,7 +526,7 @@ fn log_reload() -> LogReload {
 fn app_config() -> AppConfig {
     AppConfig {
         server: ServerConfig {
-            swagger_ui: true,
+            swagger_ui: AccessLevel::Public,
             ..Default::default()
         },
         auth: AuthConfig {

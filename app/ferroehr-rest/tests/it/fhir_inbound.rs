@@ -60,7 +60,7 @@ fn config(fhir_enabled: bool) -> AppConfig {
     AppConfig {
         server: ServerConfig {
             base_path: BASE.to_owned(),
-            swagger_ui: false,
+            swagger_ui: ferroehr::config::management::AccessLevel::Off,
             ..ServerConfig::default()
         },
         auth: AuthConfig {

@@ -16,7 +16,7 @@ The HTTP listener and REST surface.
 bind = "0.0.0.0:8080"
 base_path = "/ferroehr/rest/openehr/v1"
 max_in_flight = 256
-swagger_ui = true
+swagger_ui = "private"
 cors_permissive = false
 system_id = "ferroehr.local"
 ```
@@ -26,7 +26,7 @@ system_id = "ferroehr.local"
 | `bind` | string | `0.0.0.0:8080` | Socket address the API listener binds. |
 | `base_path` | string | `/ferroehr/rest/openehr/v1` | ITS-REST base path all API routes hang off. Shortening it is supported; see [below](#base_path-shortening-the-rest-base-path). The served OpenAPI document describes whatever paths this setting produces, never the defaults. |
 | `max_in_flight` | int | `256` | Concurrent-request admission cap (not a rate). Requests beyond it are shed immediately with `503` + `Retry-After`, never queued, so offered load beyond capacity cannot exhaust memory. `0` installs no shedding layer at all. |
-| `swagger_ui` | bool | `true` | Serve Swagger UI + the OpenAPI JSON under the REST root. Consider `false` in production. |
+| `swagger_ui` | enum{off,admin_only,private,public} | `private` | Who may read the Swagger UI and the OpenAPI documents under the REST root: `off` does not mount them, `admin_only` needs the admin role, `private` needs any authenticated principal (unauthenticated is `401` with the server's `WWW-Authenticate` challenge, so a browser prompts for the Basic credential), `public` needs nothing. The documents list the whole enabled operation surface, admin and message groups included, so `public` discloses it to anyone who can reach the port; the [hosted sandbox](https://sandbox.ferroehr.eu/ferroehr/rest/swagger-ui) sets it deliberately. With authentication off the guard admits everyone, as the management endpoints do. |
 | `cors_permissive` | bool | `false` | Permissive (development) CORS. Left on, any origin may read API responses, so the server warns loudly at boot. Production configures explicit origins at the edge. |
 | `system_id` | string | `ferroehr.local` | **This deployment's own openEHR system identifier**; see [below](#system_id-the-data-authoring-identity). Set a stable, deployment-unique name in production (`FERROEHR__SERVER__SYSTEM_ID`). |
 
