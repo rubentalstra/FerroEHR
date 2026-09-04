@@ -263,3 +263,8 @@ commit-message wording. Late labels: since #2777 applying a label raises a fresh
     and the 10-minute foreground tool limit kills it — run cold gates as
     `nohup caffeinate -i bash -c '…' > log &` with a background `until grep`
     waiter.
+  - `gh pr create --body` bypasses the PR template, and the
+    `contribution-licence-guard` CI job then fails on the missing ticked
+    line. Every PR body must carry, verbatim and ticked:
+    `- [x] I accept the terms in [CONTRIBUTING.md § Licensing of contributions](../CONTRIBUTING.md#licensing-of-contributions): …`
+    (PR #3090 merged red on exactly this).

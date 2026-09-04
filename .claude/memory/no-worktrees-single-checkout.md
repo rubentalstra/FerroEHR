@@ -27,3 +27,10 @@ split into a second tree.
 
 See also [[concurrent-sessions-shared-tree]] for the ONE `./target` rule,
 which has the same motivation: one tree, one build.
+
+**The `docs-dist` trap (2026-09-04):** a stale `git worktree` at
+`./docs-dist` (the frozen-docs branch, gitignored so `git status` stays
+clean) sat inside the checkout for weeks and made the IDE show two active
+branches; the owner found it very annoying. `docs-dist` is a remote-only
+branch the docs pipeline writes; never check it out locally, and run
+`git worktree list` when the IDE shows a second branch.
