@@ -139,7 +139,8 @@ bash scripts/conformance.sh   # compose up --build (fresh volumes) → the CNF c
 # measured performance (hour-plus, exclusive SUT): CONF_PERF_CLASS=POC|S|L|R [CONF_PERF_HOURS=1|2|4|6|8|12] bash scripts/conformance.sh
 # step-load STRESS (exploration only, never a conformance record): source scripts/lib/veredictum.sh; "$(veredictum_bin)" stress --root "$(veredictum_artifacts)" --ixit docs/conformance/party/<sut>/ixit.json --out docs/conformance/<sut>/stress.json
 # published perf/stress SVGs + summary regenerate FROM committed artifacts: bash scripts/render/perf-assets.sh (CI diff-guards) — full canonical CLI table: Veredictum's own CLAUDE.md
-# CPU profiling / hotspot hunting (exploration only, never a conformance record): the /flamegraph skill — GET /management/flamegraph on a running server (opt-in), `cargo bench -p ferroehr --bench aql -- --profile-time 10` for a code path, cargo-flamegraph locally
+# DB-side statement attribution (exploration only, never a conformance record): source scripts/lib/veredictum.sh; "$(veredictum_bin)" aql-probe --root "$(veredictum_artifacts)" --ixit docs/conformance/party/<sut>/ixit.json --out <aql-probe.json> — seeds the class corpus, fires the AQL set, attributes cost per statement via pg_stat_statements (the compose files load it for exactly this)
+# CPU profiling / hotspot hunting (exploration only, never a conformance record): the /flamegraph skill — GET /management/flamegraph on a running server (opt-in), `cargo bench -p ferroehr --bench aql -- --profile-time 10` or `--bench validation` for a code path, cargo-flamegraph locally
 # viewer gates: /ui-gates (both-target clippy, nextest, leptosfmt, cargo-leptos build)
 bash scripts/ui-e2e.sh        # the browser journey battery against the composed stack (merge gate in CI)
 bash scripts/deploy-probe.sh  # the DEPLOYMENT-conformance harness: brings a real stack up and probes observable

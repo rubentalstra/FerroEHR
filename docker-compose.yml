@@ -109,11 +109,11 @@ services:
       PG_INIT_USER: ${PG_INIT_USER:-ferroehr}
       PG_INIT_PASSWORD: ${PG_INIT_PASSWORD:-ferroehr}
       PG_INIT_DB: ${PG_INIT_DB:-ferroehr}
-    # pg_stat_statements is loaded so the P20 profiling harness
-    # (scripts/profile.sh) can attribute time per statement; negligible
+    # pg_stat_statements is loaded so the optimization probe
+    # (`veredictum aql-probe`) can attribute time per statement; negligible
     # overhead, ships in the stock image.
-    # The same PG tuning floor the measurement instruments assume, so local
-    # profiling (scripts/profile.sh) measures the tuned configuration.
+    # The same PG tuning floor the measurement instruments assume, so a local
+    # probe measures the tuned configuration.
     command:
       - postgres
       - -c

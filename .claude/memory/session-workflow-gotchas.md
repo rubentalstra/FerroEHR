@@ -116,6 +116,13 @@ commit-message wording. Late labels: since #2777 applying a label raises a fresh
   closes only #1. Every issue needs its own `Closes #N` (one per line is
   clearest). Happened on PR #1821 (14 of 15 left open, owner-corrected
   2026-08-03); Batch A (#1812) had the correct per-issue form.
+- **Editing a PR body CANCELS the in-flight CI run** and raises a fresh one
+  (`ci.yml` listens for the `edited` pull-request type, and the concurrency
+  group cancels the previous run). `gh pr checks` then reports every cancelled
+  job as `fail`, which reads exactly like a real breakage — check
+  `gh run list --branch <b>` for a newer run before chasing any of them. Cost
+  two full CI cycles on 2026-09-04 (#3112, #3115). Write the body once, with
+  the licensing checkbox included, rather than editing it after opening.
 - **A hung `docker-credential-desktop` silently blocks every `docker pull`**
   (hit 2026-08-14, cost ~2 h): pulls/builds hang with NO output while
   `docker run`/`images`/host curl all work — the client stalls calling the

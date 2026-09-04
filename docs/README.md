@@ -58,5 +58,8 @@ externalization; acceptance is the openEHR conformance suite. See
   (`ferroehr/`: `results.json`, `verdicts.json`). `ehrbase/` +
   `COMPARISON.md` are frozen comparison data until the CNF pipeline re-bases
   the public comparison. Numbers live ONLY in these committed artifacts.
-- `profiles/` — per-statement profiling captures (`scripts/profile.sh`),
-  operator evidence for optimization rungs.
+Statement-level profiling evidence is not produced here. `veredictum aql-probe`
+seeds a class-scale corpus, fires the measurement machinery's AQL set against
+the composed stack, and attributes the database-side cost per statement through
+`pg_stat_statements`; its report is exploration evidence and never a
+conformance record.
