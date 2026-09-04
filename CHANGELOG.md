@@ -50,6 +50,18 @@ workflow refuses a tag that has no matching section here.
   `openehr-lang`, `openehr-term`) stay Apache-2.0. Published versions keep the
   licence they were published with: the three engines are Apache-2.0 up to
   0.0.59 and BUSL-1.1 from 0.0.60.
+- **`server.swagger_ui` is an access level, and the Swagger UI needs a credential
+  by default** (#3094). The key used to be a boolean that mounted the UI and the
+  OpenAPI documents outside the authentication layer, on by default, so an
+  unauthenticated client received the complete operation surface, admin and
+  message groups included. It now takes the management vocabulary `off`,
+  `admin_only`, `private` (any authenticated principal; the new default) or
+  `public`, and the non-public levels sit behind the same access guard the
+  management endpoints use: unauthenticated is `401` with the `WWW-Authenticate`
+  challenge, so a browser prompts for the Basic credential. An existing
+  `swagger_ui = true` or `false` is a boot error naming the new spellings;
+  the hosted sandbox keeps the UI `public` explicitly. The Helm chart default
+  follows (`config.server.swagger_ui: private`).
 
 ### Fixed
 

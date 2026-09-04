@@ -396,7 +396,7 @@ fn meta_openapi(cfg: &AppConfig) -> utoipa::openapi::OpenApi {
     // These paths exist only when the Swagger surface is mounted, and the
     // generator's documented property is that every path it lists is one the
     // live router mounts.
-    if !cfg.server.swagger_ui {
+    if !cfg.server.swagger_ui.is_mounted() {
         return utoipa::openapi::OpenApiBuilder::new().build();
     }
 

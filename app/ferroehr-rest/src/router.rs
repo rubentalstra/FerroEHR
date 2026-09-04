@@ -66,6 +66,7 @@ use crate::extensions::openapi;
 use crate::overview::{error, status};
 use crate::smart;
 use crate::state::AppState;
+use ferroehr::config::management::AccessLevel;
 
 /// Per-request timeout.
 const REQUEST_TIMEOUT: Duration = Duration::from_secs(30);
@@ -137,7 +138,7 @@ pub fn router(state: AppState, authenticator: Arc<Authenticator>) -> Router {
     // installs no layer.
     let api = crate::overload::shed_layer(api, cfg.server.max_in_flight);
 
-    let inner = mount_public_surface(&cfg, api, &rest_root);
+    let inner = mount_public_surface(&cfg, &state, &authenticator, api, &rest_root);
 
     let cors = if cfg.server.cors_permissive {
         CorsLayer::very_permissive()
@@ -370,8 +371,10 @@ async fn align_transport_error_body(response: Response) -> Response {
 /// Mounts the public, pre-auth surface around the API tree: the always-on health
 /// family, the REST-root status surface, the config-gated SMART
 /// `/.well-known/smart-configuration` document (SMART master04 §Service
-/// Discovery; an empty router when SMART is disabled), and the config-gated
-/// Swagger UI plus `OpenAPI` documents.
+/// Discovery; an empty router when SMART is disabled), and the Swagger UI plus
+/// `OpenAPI` documents at the access level `server.swagger_ui` names — `public`
+/// sits beside the health family, `private`/`admin_only` sit behind the same
+/// access guard the management endpoints use, `off` is not mounted.
 ///
 /// No openEHR spec governs this — our own operational surface. The health family
 /// ([`crate::extensions::health`]) is mounted unconditionally and ungated,
@@ -380,6 +383,8 @@ async fn align_transport_error_body(response: Response) -> Response {
 /// layer being able to shed the probe.
 fn mount_public_surface(
     cfg: &crate::config::AppConfig,
+    state: &AppState,
+    authenticator: &Arc<Authenticator>,
     api: Router<AppState>,
     rest_root: &str,
 ) -> Router<AppState> {
@@ -392,8 +397,19 @@ fn mount_public_surface(
         .merge(status::router(rest_root))
         .merge(discovery);
 
-    if cfg.server.swagger_ui {
-        inner = inner.merge(openapi::swagger_router(cfg));
+    match cfg.server.swagger_ui {
+        AccessLevel::Off => {}
+        AccessLevel::Public => inner = inner.merge(openapi::swagger_router(cfg)),
+        level @ (AccessLevel::Private | AccessLevel::AdminOnly) => {
+            inner = inner.merge(openapi::swagger_router(cfg).layer(from_fn_with_state(
+                management::AccessGuard {
+                    authenticator: Arc::clone(authenticator),
+                    rbac: management_rbac(state),
+                    level,
+                },
+                management::access_middleware,
+            )));
+        }
     }
     inner
 }

@@ -41,7 +41,7 @@ async fn short_base_router() -> (testkit::TestDb, Router) {
             bind: "127.0.0.1:0".to_owned(),
             base_path: SHORT_BASE.to_owned(),
             max_in_flight: 1024,
-            swagger_ui: true,
+            swagger_ui: ferroehr::config::management::AccessLevel::Public,
             cors_permissive: false,
             ..Default::default()
         },

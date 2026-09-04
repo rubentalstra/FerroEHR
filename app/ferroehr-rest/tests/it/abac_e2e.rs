@@ -120,7 +120,7 @@ impl PolicyEngine for PermitAll {
 fn rest_config() -> AppConfig {
     AppConfig {
         server: ServerConfig {
-            swagger_ui: false,
+            swagger_ui: ferroehr::config::management::AccessLevel::Off,
             ..Default::default()
         },
         auth: common::hs256_auth_config(ISSUER, AUDIENCE, HMAC_SECRET),

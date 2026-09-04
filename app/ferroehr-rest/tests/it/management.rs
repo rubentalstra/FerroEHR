@@ -69,7 +69,7 @@ fn auth_config(roles: &[&str]) -> AuthConfig {
 fn base_config(auth: AuthConfig) -> AppConfig {
     AppConfig {
         server: ServerConfig {
-            swagger_ui: false,
+            swagger_ui: AccessLevel::Off,
             ..Default::default()
         },
         auth,
