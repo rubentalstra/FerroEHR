@@ -341,6 +341,14 @@ from nothing on page one. Either way, the number that dominates is how much your
 `FROM`/`CONTAINS` matched, not how deep you paged: narrow the query and both
 columns shrink.
 
+One more reason to order a paged query, if the deployment runs attribute-based
+authorization: the authorization decision is made over every EHR and template
+the query would touch, not over the page it served, so that set is collected
+whatever the page size. An ordered query pays nothing extra for it, because it
+was producing the whole matched set anyway. An unordered `LIMIT 10` that would
+have answered in 2 ms took 136 ms on the same 131 000-composition store. Narrow
+the query, and order it.
+
 > [!TIP]
 > The more specific your `FROM`/`CONTAINS` (name the archetype, scope by
 > `ehr_id`), the faster the query: those constraints map to indexed columns,
