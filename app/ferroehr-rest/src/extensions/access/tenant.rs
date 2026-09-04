@@ -15,14 +15,27 @@
 //! application's tenant-scoped pool then reads that scope on every acquired
 //! connection to set `ferroehr.tenant_id` for RLS.
 //!
-//! Only installed when `tenancy.enabled` (`crate::router::router`), so single-tenant
-//! deployments pay nothing. A request that carries no tenant key, or an
-//! unknown/unresolvable one, runs **unscoped** → the reserved default tenant:
-//! cross-tenant access is an engine-level empty set, never a `403`.
+//! Only installed when `tenancy.enabled` (`crate::router::router`), so
+//! single-tenant deployments pay nothing.
+//!
+//! A request carrying NO tenant key runs **unscoped** → the reserved default
+//! tenant. A key that names no registered tenant is refused `403` under the
+//! default `tenancy.unknown_tenant = "refuse"`, because the fall-through would
+//! hand the caller that same default tenant, and it owns every row written
+//! while tenancy was off. `"default_tenant"` restores the fall-through for a
+//! deployment that prefers a cross-tenant access to look like an empty result
+//! set rather than a `403` confirming another tenant exists; that argument
+//! holds only while the default tenant is empty, which boot checks.
+//!
+//! A resolution ERROR is not an unknown tenant: an unreachable registry
+//! answers `503`, never the default tenant.
 
 use axum::extract::{Request, State};
 use axum::middleware::Next;
 use axum::response::{IntoResponse, Response};
+
+use ferroehr::config::server::UnknownTenant;
+use openehr_its::rest::runtime::ApiError;
 
 use crate::extensions::access::authn::current_principal;
 use crate::extensions::access::authz::roles::claim_string;
@@ -44,15 +57,21 @@ pub async fn middleware(State(state): State<AppState>, req: Request, next: Next)
         .map(str::to_owned)
         .or_else(|| current_principal().and_then(|p| claim_string(&p.claims, &cfg.claim)));
 
-    // Resolve to a context. An UNKNOWN key leaves the request unscoped
-    // (default tenant) — an engine-level empty set, not a 403 (documented
-    // policy; the resolver negative-caches the outcome). A resolution ERROR
-    // (registry unreachable ≠ unknown tenant) must NEVER silently fall
-    // through to the default tenant — it answers 503 like any other
-    // dependency failure, with the standard openEHR error body.
+    // Resolve to a context. An UNKNOWN key is refused under the default
+    // `unknown_tenant = "refuse"` and falls through to the default tenant only
+    // when the deployment asks for it (module docs). A resolution ERROR
+    // (registry unreachable ≠ unknown tenant) never falls through either — it
+    // answers 503 like any other dependency failure.
     let ctx = match key {
         Some(k) => match state.backend().tenant_resolve(&k).await {
-            Ok(ctx) => ctx,
+            Ok(Some(ctx)) => Some(ctx),
+            Ok(None) if cfg.unknown_tenant == UnknownTenant::Refuse => {
+                return crate::overview::error::RestError::from(ApiError::Forbidden(
+                    "the request's tenant is not registered".to_owned(),
+                ))
+                .into_response();
+            }
+            Ok(None) => None,
             Err(e) => {
                 return crate::overview::error::RestError::from(e).into_response();
             }

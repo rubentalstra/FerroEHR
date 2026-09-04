@@ -59,7 +59,19 @@ workflow refuses a tag that has no matching section here.
   everything committed since an incident no longer means reading the whole
   repository. The report, its defect vocabulary and its status codes are
   unchanged.
-
+- **A tenant key that names no registered tenant is refused instead of running
+  unscoped** (#3111). It used to fall through to the reserved default tenant,
+  on the argument that a cross-tenant access should look like an empty result
+  set rather than a `403` confirming another tenant exists. That argument holds
+  only while the default tenant is empty, and the default tenant owns every row
+  written while tenancy was off: on a deployment that enabled tenancy after
+  going live, a misspelled claim read and wrote the entire pre-tenancy store.
+  Such a request now gets a `403`. Set
+  `FERROEHR__TENANCY__UNKNOWN_TENANT=default_tenant` to restore the old
+  behaviour where the existence-hiding is worth more. A request carrying no
+  tenant key at all is unchanged. With tenancy enabled, boot now counts the
+  default tenant's stored versions and warns when it holds any, because both
+  paths lead there.
 - **A composition commit checks out one pooled connection instead of three**
   (#3097). The EHR-writability gate, the persistent-duplicate gate and the
   commit each took their own connection from the pool. With multi-tenancy on

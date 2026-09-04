@@ -531,6 +531,33 @@ pub async fn verify_migrations(pool: &PgPool) -> Result<(), DbError> {
     Ok(())
 }
 
+/// How many stored versions the reserved default tenant owns.
+///
+/// The default tenant is the nil uuid, and `ext.current_tenant_id()` resolves
+/// an unset `ferroehr.tenant_id` GUC to it, so it owns every row written while
+/// tenancy was off. A request that reaches the tenancy middleware without a
+/// resolvable tenant runs unscoped and therefore reads exactly this content,
+/// which is why a deployment enabling tenancy over an existing store is told
+/// at boot what that tenant holds.
+///
+/// The count is taken over the primary tier only: an archived version is not
+/// reachable by a query, and the number exists to say whether the default
+/// tenant is empty, not to size the store.
+///
+/// No openEHR spec governs multi-tenancy — our own design/extension.
+///
+/// # Errors
+///
+/// [`DbError::Sqlx`] when the connection or the count fails.
+pub async fn default_tenant_versions(pool: &PgPool) -> Result<i64, DbError> {
+    let count: i64 = sqlx::query_scalar(
+        "SELECT count(*) FROM ehr.vo_version WHERE tenant_id = '00000000-0000-0000-0000-000000000000'::uuid",
+    )
+    .fetch_one(pool)
+    .await?;
+    Ok(count)
+}
+
 /// Compare one migration set's bookkeeping table against its embedded source.
 async fn verify_set(pool: &PgPool, schema: &str, migrator: &Migrator) -> Result<(), DbError> {
     // The schema name is one of the three literals in `MIGRATION_SETS`, never

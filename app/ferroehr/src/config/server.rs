@@ -460,6 +460,8 @@ pub struct TenancyConfig {
     /// GUC and the GUC follows this header. Set it only on a development
     /// deployment that accepts exactly that.
     pub insecure_header_override: bool,
+    /// What a request whose tenant key names no registered tenant gets.
+    pub unknown_tenant: UnknownTenant,
 }
 
 impl Default for TenancyConfig {
@@ -469,8 +471,33 @@ impl Default for TenancyConfig {
             claim: "tenant".to_owned(),
             header: None,
             insecure_header_override: false,
+            unknown_tenant: UnknownTenant::Refuse,
         }
     }
+}
+
+/// What a request whose tenant key names no registered tenant gets.
+///
+/// No openEHR spec governs multi-tenancy — our own design/extension.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, Default)]
+#[serde(rename_all = "snake_case")]
+pub enum UnknownTenant {
+    /// Refuse with `403`.
+    ///
+    /// The default, because the alternative grants the caller the reserved
+    /// default tenant, which owns every row written while tenancy was off. A
+    /// key that does not resolve is a misspelled claim, a renamed tenant or a
+    /// drifted issuer mapping, and none of those should read data.
+    #[default]
+    Refuse,
+    /// Run unscoped, against the reserved default tenant, so a cross-tenant
+    /// access is an empty result set rather than a `403` that would confirm
+    /// another tenant's existence.
+    ///
+    /// That argument holds only while the default tenant is empty. On a
+    /// deployment that enabled tenancy after going live it holds the whole
+    /// pre-tenancy store, and boot says so.
+    DefaultTenant,
 }
 
 /// Configuration of the ADMIN API group (`[admin]`; SM `I_ADMIN_SERVICE`).
