@@ -441,10 +441,19 @@ pub struct TenancyConfig {
     /// The JWT-claim path carrying the tenant key (a tenant name or uuid). A
     /// dotted path (e.g. `realm_access.tenant`) walks nested claim objects.
     pub claim: String,
-    /// Optional dev-only request-header override for the tenant key. When set
-    /// and present on the request it wins over the JWT claim. Leave unset in
-    /// production (a client-supplied header must not select a tenant).
+    /// Optional development-only request-header override for the tenant key.
+    /// When set and present on the request it wins over the JWT claim, so any
+    /// caller selects any tenant: with authentication enabled, boot refuses it
+    /// unless [`Self::insecure_header_override`] accepts that explicitly.
     pub header: Option<String>,
+    /// Accept `header` together with an enabled authentication scheme.
+    ///
+    /// Off by default. The name says what it grants: on a deployment with real
+    /// users, an authenticated caller can read and write every tenant by naming
+    /// it in a request header, because row-level security follows the tenant
+    /// GUC and the GUC follows this header. Set it only on a development
+    /// deployment that accepts exactly that.
+    pub insecure_header_override: bool,
 }
 
 impl Default for TenancyConfig {
@@ -453,6 +462,7 @@ impl Default for TenancyConfig {
             enabled: false,
             claim: "tenant".to_owned(),
             header: None,
+            insecure_header_override: false,
         }
     }
 }

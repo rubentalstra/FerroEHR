@@ -207,7 +207,8 @@ single-tenant deployment is unchanged.
 |---|---|---|---|
 | `enabled` | bool | `false` | Activate the tenant middleware and row-level scoping. |
 | `claim` | string | `tenant` | JWT-claim path carrying the tenant key (a tenant name or uuid). A dotted path walks nested claim objects. |
-| `header` | string | unset | Development-only request-header tenant override; when set and present on the request it wins over the JWT claim. Leave unset in production: a client-supplied header must not select a tenant. |
+| `header` | string | unset | Development-only request-header tenant override; when set and present on the request it wins over the JWT claim. With `auth.enabled = true` the server refuses to boot on this key unless `insecure_header_override` is set: a client-supplied header must not select a tenant on a deployment with real users. |
+| `insecure_header_override` | bool | `false` | Accept `header` together with an enabled authentication scheme. The name says what it grants: any authenticated caller then reads and writes any tenant by naming it in the header. Development deployments only. |
 
 ## `[smart]`
 
