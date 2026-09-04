@@ -40,6 +40,63 @@ use crate::service::ehr::category::code;
 use crate::service::error::{ServiceError, Violation};
 use crate::versioning::{Kind, lifecycle};
 
+/// The instance size, in JSON nodes, above which the COMPOSITION validation
+/// passes hand their worker off before running.
+///
+/// The two passes cost about 260 ns per JSON node, measured by
+/// `benches/validation.rs` over the vendored CKM corpus: 52 nodes in 11.2 µs,
+/// 4601 in 1.23 ms, 9678 in 2.55 ms. Tokio documents 10 to 100 µs as the
+/// budget for a task between await points
+/// (<https://docs.rs/tokio/latest/tokio/task/fn.block_in_place.html>), so 400
+/// nodes is where a pass first reaches the top of that budget.
+const VALIDATION_HANDOFF_NODES: usize = 400;
+
+/// Runs one CPU-bound validation pass, relieving this worker of its other
+/// tasks first when `hand_off` says the instance is large enough to hold it
+/// past tokio's budget.
+///
+/// The passes are pure functions of borrowed data, so the hand-off is
+/// [`tokio::task::block_in_place`] rather than a spawn: no owned copy of a
+/// multi-megabyte instance has to be made to cross a task boundary. That call
+/// panics outside a multi-thread runtime, so the flavor is checked and a
+/// current-thread runtime runs the pass inline, which is what it would do
+/// anyway — a single-threaded runtime has no other worker to relieve.
+///
+/// No openEHR spec governs runtime scheduling — our own design.
+fn run_validation_pass<T>(hand_off: bool, pass: impl FnOnce() -> T) -> T {
+    if hand_off
+        && matches!(
+            tokio::runtime::Handle::try_current().map(|h| h.runtime_flavor()),
+            Ok(tokio::runtime::RuntimeFlavor::MultiThread)
+        )
+    {
+        return tokio::task::block_in_place(pass);
+    }
+    pass()
+}
+
+/// Returns whether `value` carries more than `limit` JSON nodes.
+///
+/// The walk stops as soon as the answer is known, so a large instance costs
+/// `limit` steps and a small one costs its own size. It is iterative because
+/// the depth of a submitted instance is the client's choice.
+fn exceeds_node_count(value: &Value, limit: usize) -> bool {
+    let mut pending = vec![value];
+    let mut seen: usize = 0;
+    while let Some(node) = pending.pop() {
+        seen += 1;
+        if seen > limit {
+            return true;
+        }
+        match node {
+            Value::Array(items) => pending.extend(items.iter()),
+            Value::Object(fields) => pending.extend(fields.values()),
+            _ => {}
+        }
+    }
+    false
+}
+
 impl FerroEhrService {
     /// Enforce the CNF persistent-COMPOSITION uniqueness convention: an EHR may
     /// hold only one *live* persistent COMPOSITION per template.
@@ -51,12 +108,18 @@ impl FerroEhrService {
     /// We adopt the CNF criterion (`create_composition-same_opt_twice`). Only
     /// persistent COMPOSITIONs with a declared template are constrained.
     ///
+    /// Runs on the CALLER'S executor so the create path spends one pooled
+    /// connection on its gates and its commit: with multi-tenancy on, every
+    /// checkout costs a `set_config` round trip (`crate::db`), so the acquire
+    /// count is the cost (measured on #3097).
+    ///
     /// # Errors
     /// [`ServiceError::Conflict`] when a live persistent COMPOSITION for the
     /// same template already exists in the EHR; [`ServiceError::Database`] on
     /// a storage failure.
-    pub(super) async fn reject_duplicate_persistent(
+    pub(super) async fn reject_duplicate_persistent<'e>(
         &self,
+        executor: impl sqlx::PgExecutor<'e>,
         ehr_id: EhrId,
         composition: &Value,
     ) -> Result<(), ServiceError> {
@@ -75,7 +138,7 @@ impl FerroEhrService {
         // schedule's, still "under debate in the openEHR SEC"
         // (`CNF/docs/platform_test_schedule/master07-func_tc_ehr_composition.adoc`).
         let exists = crate::storage::version_repo::meta::persistent_template_exists(
-            &self.pool,
+            executor,
             ehr_id,
             template_id,
             code::PERSISTENT,
@@ -133,14 +196,17 @@ impl FerroEhrService {
         composition: &Value,
         incomplete: bool,
     ) -> Result<(), ServiceError> {
-        let mut messages = if incomplete {
-            openehr_its::rm_instance::validate_rm_and_terminology_incomplete_as(
-                composition,
-                "COMPOSITION",
-            )
-        } else {
-            openehr_its::rm_instance::validate_rm_and_terminology(composition)
-        };
+        let hand_off = exceeds_node_count(composition, VALIDATION_HANDOFF_NODES);
+        let mut messages = run_validation_pass(hand_off, || {
+            if incomplete {
+                openehr_its::rm_instance::validate_rm_and_terminology_incomplete_as(
+                    composition,
+                    "COMPOSITION",
+                )
+            } else {
+                openehr_its::rm_instance::validate_rm_and_terminology(composition)
+            }
+        });
         let rm_terminology_failures = messages.len();
         let mut template_failures = 0;
         let mut binding_failures = 0;
@@ -149,14 +215,16 @@ impl FerroEhrService {
             .and_then(Value::as_str)
         {
             let wt = self.web_template_for(template_id).await?;
-            messages.extend(if incomplete {
-                openehr_its::flat::validation::validate_archetype_conformance_incomplete(
-                    composition,
-                    &wt,
-                )
-            } else {
-                openehr_its::flat::validation::validate_archetype_conformance(composition, &wt)
-            });
+            messages.extend(run_validation_pass(hand_off, || {
+                if incomplete {
+                    openehr_its::flat::validation::validate_archetype_conformance_incomplete(
+                        composition,
+                        &wt,
+                    )
+                } else {
+                    openehr_its::flat::validation::validate_archetype_conformance(composition, &wt)
+                }
+            }));
             template_failures = messages.len() - rm_terminology_failures;
             // Archetype constraint bindings resolve against the routed
             // terminology servers (BASE `master12-terminology.adoc` §"Binding
@@ -701,8 +769,8 @@ mod tests {
     use serde_json::{Value, json};
 
     use super::{
-        collect_local_item_refs, item_ref_root, validate_ehr_access, validate_ehr_status,
-        validate_folder,
+        collect_local_item_refs, exceeds_node_count, item_ref_root, run_validation_pass,
+        validate_ehr_access, validate_ehr_status, validate_folder,
     };
     use crate::service::ehr::access::initial_ehr_access;
     use crate::service::ehr::service::initial_ehr_status;
@@ -1335,5 +1403,29 @@ mod tests {
         );
         assert_eq!(item_ref_root("not-a-uuid"), None);
         assert_eq!(item_ref_root(""), None);
+    }
+
+    #[test]
+    fn the_node_probe_answers_both_sides_of_its_limit() {
+        // Five nodes: the root object, its two members, the inner object and its
+        // one member.
+        let small = json!({"_type": "COMPOSITION", "content": [{"_type": "SECTION"}]});
+        assert!(!exceeds_node_count(&small, 400));
+        assert!(!exceeds_node_count(&small, 5));
+        assert!(exceeds_node_count(&small, 4));
+        let wide = json!({"content": (0..500).map(|i| json!({"n": i})).collect::<Vec<_>>()});
+        assert!(exceeds_node_count(&wide, 400));
+        let deep = (0..64).fold(json!(1), |acc, _| json!({"items": [acc]}));
+        assert!(!exceeds_node_count(&deep, 400));
+    }
+
+    #[tokio::test(flavor = "multi_thread", worker_threads = 2)]
+    async fn a_large_instance_hands_the_worker_off_and_still_returns_the_pass_answer() {
+        assert_eq!(run_validation_pass(true, || 7_u8), 7);
+    }
+
+    #[tokio::test]
+    async fn a_current_thread_runtime_runs_the_pass_inline_instead_of_panicking() {
+        assert_eq!(run_validation_pass(true, || 7_u8), 7);
     }
 }

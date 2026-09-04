@@ -48,6 +48,26 @@ workflow refuses a tag that has no matching section here.
 
 ### Changed
 
+- **A composition commit checks out one pooled connection instead of three**
+  (#3097). The EHR-writability gate, the persistent-duplicate gate and the
+  commit each took their own connection from the pool. With multi-tenancy on
+  every checkout costs a `set_config` round trip that stamps the tenant GUC, so
+  the acquire count was the cost: measured over 100 commits, the path went from
+  9.3 to 6.3 connection checkouts each. Behaviour is unchanged — the gates run
+  in the same order, answer the same statuses, and the commit is still one
+  folded statement (or one transaction when attestations or the outbox are in
+  play).
+
+- **A large composition no longer holds a request worker through its whole
+  validation** (#3097). The RM, terminology and archetype-conformance passes
+  are CPU work that ran inline on the async worker, costing about 260 ns per
+  JSON node: the largest form the CKM publishes takes 2.5 ms, and at the
+  default 16 MiB body limit a single commit could hold one worker for tens of
+  milliseconds while every other request on it waited. Above 400 nodes the
+  passes now tell the runtime to relieve the worker first. Validation itself is
+  unchanged: the same passes run in the same order and refuse the same
+  content.
+
 - **`openehr-query`, `openehr-adl` and `openehr-its` move to the Business Source
   License 1.1** (owner decision 2026-09-04). The three hand-written engines (the
   AQL parser, the ADL 2 engine, and the canonical codecs, REST contract and

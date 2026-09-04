@@ -428,15 +428,15 @@ pub async fn ehr_is_modifiable_locked(
 ///
 /// # Errors
 /// Returns [`StorageError::Database`] on a driver failure.
-pub async fn ehr_writability(
-    pool: &PgPool,
+pub async fn ehr_writability<'e>(
+    executor: impl PgExecutor<'e>,
     ehr_id: EhrId,
 ) -> Result<(bool, Option<bool>, jiff::Timestamp), StorageError> {
     let row = sqlx::query(
         "SELECT (SELECT is_modifiable FROM ehr WHERE id = $1) AS is_modifiable, now() AS ts",
     )
     .bind(ehr_id)
-    .fetch_one(pool)
+    .fetch_one(executor)
     .await?;
     let is_modifiable: Option<bool> = row.try_get("is_modifiable")?;
     let now = row.try_get::<jiff_sqlx::Timestamp, _>("ts")?.to_jiff();

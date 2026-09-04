@@ -78,13 +78,18 @@ impl FerroEhrService {
             "COMPOSITION creation",
             &self.effective_system_id(),
         )?;
+        // ONE pooled connection carries both gates AND the commit. Every
+        // checkout costs a `set_config` round trip while multi-tenancy is on
+        // (`crate::db::stamp_tenant_guc`), and this path used to take three or
+        // four of them: measured at +0.4 ms per commit on #3097.
+        let mut conn = self.pool.acquire().await?;
         // The EHR-existence (404) and content-writability (409) gates in one
         // round trip: a COMPOSITION is EHR content (RM ehr master04 §EHR
         // Creation / §EHR Active Status).
-        let commit_now = self.ensure_ehr_content_writable(ehr_id).await?;
+        let commit_now = self.ensure_ehr_content_writable(&mut *conn, ehr_id).await?;
         self.validate_composition_for_commit(&composition, incomplete)
             .await?;
-        self.reject_duplicate_persistent(ehr_id, &composition)
+        self.reject_duplicate_persistent(&mut *conn, ehr_id, &composition)
             .await?;
 
         // The committed template identity is promoted to `vo_version.template_id`
@@ -99,7 +104,6 @@ impl FerroEhrService {
         // node-decomposition machinery on every caller's stack.
         let signing_ctx = self.signing_ctx();
         let committed = if envelope.attestations.is_empty() && !signing_ctx.outbox_enabled {
-            let mut conn = self.pool.acquire().await?;
             Box::pin(create(
                 &mut conn,
                 Some(ehr_id),
@@ -113,7 +117,7 @@ impl FerroEhrService {
             ))
             .await?
         } else {
-            let mut tx = self.pool.begin().await?;
+            let mut tx = sqlx::Connection::begin(&mut *conn).await?;
             let committed = Box::pin(create(
                 &mut tx,
                 Some(ehr_id),
@@ -781,16 +785,22 @@ impl FerroEhrService {
     /// instant. The guarded concepts are RM ehr master04 §EHR Creation and §EHR
     /// Active Status; no openEHR spec governs the query shape (our own design).
     ///
+    /// Runs on the CALLER'S executor so a write path can spend one pooled
+    /// connection on its gates and its commit: with multi-tenancy on, every
+    /// checkout costs a `set_config` round trip (`crate::db`), so the acquire
+    /// count is the cost (measured on #3097).
+    ///
     /// # Errors
     /// [`ServiceError::NotFound`] when the EHR does not exist;
     /// [`ServiceError::Conflict`] when it is not modifiable;
     /// [`ServiceError::Database`] if the read fails.
-    pub(in crate::service) async fn ensure_ehr_content_writable(
+    pub(in crate::service) async fn ensure_ehr_content_writable<'e>(
         &self,
+        executor: impl sqlx::PgExecutor<'e>,
         ehr_id: EhrId,
     ) -> Result<jiff::Timestamp, ServiceError> {
         let (exists, is_modifiable, now) =
-            crate::storage::ehr_repo::ehr_writability(&self.pool, ehr_id).await?;
+            crate::storage::ehr_repo::ehr_writability(executor, ehr_id).await?;
         if !exists {
             return Err(ServiceError::sm(
                 CallStatusType::EhrIdDoesNotExist,
