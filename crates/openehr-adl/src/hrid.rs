@@ -1,5 +1,5 @@
 // SPDX-FileCopyrightText: Ruben Talstra
-// SPDX-License-Identifier: Apache-2.0
+// SPDX-License-Identifier: BUSL-1.1
 
 //! The archetype human-readable-identifier (HRID) grammar — the single home for
 //! reading, writing, and keying an `ARCHETYPE_HRID`.

@@ -1,5 +1,5 @@
 // SPDX-FileCopyrightText: Ruben Talstra
-// SPDX-License-Identifier: Apache-2.0
+// SPDX-License-Identifier: BUSL-1.1
 
 //! AQL parser — a `chumsky` parser transcribed from `AqlParser.g4`, turning the
 //! [`crate::lexer`] token stream into an [`crate::ast::SelectQuery`].

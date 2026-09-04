@@ -1,6 +1,6 @@
 // SPDX-FileCopyrightText: Ruben Talstra
 // SPDX-FileCopyrightText: openEHR Foundation
-// SPDX-License-Identifier: Apache-2.0
+// SPDX-License-Identifier: BUSL-1.1 AND Apache-2.0
 
 //! Convert a canonical-JSON RM instance to a canonical serialization — the
 //! offline generator for corpus fixtures (e.g. the CNF catalogue's request-body

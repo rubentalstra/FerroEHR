@@ -1,5 +1,5 @@
 // SPDX-FileCopyrightText: Ruben Talstra
-// SPDX-License-Identifier: Apache-2.0
+// SPDX-License-Identifier: BUSL-1.1
 
 //! The `rules` section (`ADL2/master07.11`) and the BEL expression printers
 //! that also serve slot include/exclude assertions (`master04.6`). Expressions

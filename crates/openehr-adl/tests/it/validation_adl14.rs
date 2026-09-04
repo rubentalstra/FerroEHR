@@ -1,5 +1,5 @@
 // SPDX-FileCopyrightText: Ruben Talstra
-// SPDX-License-Identifier: Apache-2.0
+// SPDX-License-Identifier: BUSL-1.1
 
 //! The ADL 1.4 phase-1 validation subset
 //! ([`openehr_adl::validate::validate_source_integrity`] in

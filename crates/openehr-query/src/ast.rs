@@ -1,5 +1,5 @@
 // SPDX-FileCopyrightText: Ruben Talstra
-// SPDX-License-Identifier: Apache-2.0
+// SPDX-License-Identifier: BUSL-1.1
 
 //! AQL abstract syntax tree, transcribed from `AqlParser.g4` (vendored at
 //! `vendor/grammar/`).

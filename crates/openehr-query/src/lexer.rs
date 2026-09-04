@@ -1,5 +1,5 @@
 // SPDX-FileCopyrightText: Ruben Talstra
-// SPDX-License-Identifier: Apache-2.0
+// SPDX-License-Identifier: BUSL-1.1
 
 //! AQL lexer — a `logos` tokenizer transcribed from the authoritative
 //! `AqlLexer.g4` (vendored at `vendor/grammar/`).

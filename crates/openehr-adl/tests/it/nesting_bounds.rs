@@ -1,5 +1,5 @@
 // SPDX-FileCopyrightText: Ruben Talstra
-// SPDX-License-Identifier: Apache-2.0
+// SPDX-License-Identifier: BUSL-1.1
 
 //! The engine's nesting bound as a typed refusal at every recursive seam:
 //! the cADL parser, the flattener (lineage length and composed depth) and

@@ -17,6 +17,17 @@ workflow refuses a tag that has no matching section here.
 
 ### Added
 
+- **A refused OPT or canonical-XML document says where the defect is** (#3067).
+  A mandatory element or attribute that is absent used to be reported as
+  `xml parse error: missing element id`, with no position and a token that
+  matches hundreds of unrelated attributes. The refusal now names the element
+  that should hold it with its `xsi:type`, its line and column, its path from
+  the root with sibling ordinals, and the class attribute the child realises:
+  `element <default_value xsi:type="DV_IDENTIFIER"> at line 4270, column 13
+  (/template/definition[1]/…/children[1]/default_value[1]) is missing
+  mandatory child <id> (DV_IDENTIFIER.id)`. A value a class constructor
+  rejects, and an empty `1..*` container, carry the same location. The
+  wording no longer calls a cardinality refusal a parse error.
 - **`tenancy.header` is refused at boot when authentication is enabled**
   (#3093). The header override lets a request name its own tenant and wins
   over the JWT claim, so on a deployment with real users any authenticated
@@ -27,6 +38,18 @@ workflow refuses a tag that has no matching section here.
   changes.
 
 ### Changed
+
+- **`openehr-query`, `openehr-adl` and `openehr-its` move to the Business Source
+  License 1.1** (owner decision 2026-09-04). The three hand-written engines (the
+  AQL parser, the ADL 2 engine, and the canonical codecs, REST contract and
+  Simplified Formats) now carry the same licence as the application, each with
+  its own `LICENSE` naming the crate as the Licensed Work; `openehr-its`
+  declares `BUSL-1.1 AND Apache-2.0` and keeps the Apache-2.0 text for the
+  openEHR-derived codecs, contract and ITS-JSON schema it embeds. The five
+  generated model crates (`openehr-base`, `openehr-rm`, `openehr-am`,
+  `openehr-lang`, `openehr-term`) stay Apache-2.0. Published versions keep the
+  licence they were published with: the three engines are Apache-2.0 up to
+  0.0.59 and BUSL-1.1 from 0.0.60.
 
 - **`server.swagger_ui` is an access level, and the Swagger UI needs a credential
   by default** (#3094). The key used to be a boolean that mounted the UI and the

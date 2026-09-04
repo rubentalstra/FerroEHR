@@ -337,3 +337,51 @@ async fn opt_upload_well_formed_non_opt_is_422() {
          branch (overview §HTTP status codes), not the syntactic 400: {body}"
     );
 }
+
+/// An OPT whose typed `default_value` has no content, the shape Archetype
+/// Designer emits by itself, is refused `422` with a message that names the
+/// element, its line and the class attribute the absent child realises, so
+/// the author can find an element that is not there (#3067). The refusal
+/// itself is unchanged: `DV_IDENTIFIER.id` is mandatory (RM `Id_valid`).
+#[tokio::test]
+async fn opt_upload_with_an_empty_typed_default_value_names_the_place() {
+    let (_pg, app) = empty_app().await;
+    // The overlay Archetype Designer emits for a blank default value, appended
+    // before the closing `</template>`; its `default_value` is the block's
+    // fifth line, indented eight spaces.
+    let source = common::ips_opt_xml();
+    let closing = source
+        .lines()
+        .position(|l| l.trim() == "</template>")
+        .expect("the IPS OPT closes its template element");
+    let block = "  <constraints>\n    <attributes>\n      <rm_attribute_name>value</rm_attribute_name>\n      \
+                 <children>\n        <default_value xsi:type=\"DV_IDENTIFIER\"/>\n      </children>\n      \
+                 <differential_path>/content[openEHR-EHR-SECTION.medications_ips.v0]</differential_path>\n    \
+                 </attributes>\n  </constraints>\n";
+    let mut body = String::with_capacity(source.len() + block.len());
+    for (index, l) in source.lines().enumerate() {
+        if index == closing {
+            body.push_str(block);
+        }
+        body.push_str(l);
+        body.push('\n');
+    }
+    let line = closing + 5;
+    let (status, text) = upload_body(&app, &body).await;
+    assert_eq!(status, StatusCode::UNPROCESSABLE_ENTITY, "{text}");
+    let message = serde_json::from_str::<Value>(&text).expect("an error document")["message"]
+        .as_str()
+        .expect("message")
+        .to_owned();
+    for expected in [
+        r#"element <default_value xsi:type="DV_IDENTIFIER">"#,
+        &format!("at line {line}, column 9"),
+        "is missing mandatory child <id> (DV_IDENTIFIER.id)",
+    ] {
+        assert!(
+            message.contains(expected),
+            "{expected:?} not in {message:?}"
+        );
+    }
+    assert!(!message.contains("xml parse error"), "{message}");
+}

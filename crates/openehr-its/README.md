@@ -79,17 +79,24 @@ and are not packaged.
 
 ## License
 
-Apache License 2.0 ([`LICENSE-APACHE-2.0`](LICENSE-APACHE-2.0)) for the whole
-package. The `openehr-*` crates are Apache-2.0 so any Rust project can use
-them; the Business Source License of the FerroEHR application does not apply to
-them.
+`BUSL-1.1 AND Apache-2.0`: two positions, both shipped in the package.
 
-- The Rust code and hand-written parts are the project's own, under Apache-2.0.
+- The Rust code, generated and hand-written alike, is the project's own under
+  the Business Source License 1.1 ([`LICENSE`](LICENSE)), the licence of the
+  FerroEHR application: all non-production use is free, production use is free
+  for Non-Commercial Purposes, and any other production use, hosting for third
+  parties or distribution for a fee needs a commercial licence from the
+  Licensor, Ruben Talstra. Each version becomes Apache License 2.0 four years
+  after it is published.
 - The package embeds material derived from the official openEHR
   machine-readable specification artifacts, which openEHR publishes under
-  Apache-2.0 ([`LICENSE-APACHE-2.0`](LICENSE-APACHE-2.0)) — the generated
-  codecs/contract derive from the vendored ITS XSD/OpenAPI/BMM artifacts, and
-  the package embeds the official ITS-JSON RM schema attributed above.
+  Apache-2.0 ([`LICENSE-APACHE-2.0`](LICENSE-APACHE-2.0)): the generated
+  codecs and contract derive from the vendored ITS XSD/OpenAPI/BMM artifacts,
+  and the package embeds the official ITS-JSON RM schema attributed above. Every
+  file names the openEHR Foundation as the second copyright holder for that
+  reason.
+
+Versions up to 0.0.59 were published under Apache-2.0 and keep it.
 
 ## Part of FerroEHR
 

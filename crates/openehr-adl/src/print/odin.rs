@@ -1,5 +1,5 @@
 // SPDX-FileCopyrightText: Ruben Talstra
-// SPDX-License-Identifier: Apache-2.0
+// SPDX-License-Identifier: BUSL-1.1
 
 //! Generic ODIN rendering shared by every ODIN-shaped section: optional string
 //! attributes, keyed string maps and lists, the `_default` pseudo-attribute

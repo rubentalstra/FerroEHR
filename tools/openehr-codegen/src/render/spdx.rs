@@ -28,20 +28,24 @@ pub(crate) const PROJECT_COPYRIGHT: &str = "Ruben Talstra";
 /// comments, the terminology assets and the schemas.
 pub(crate) const OPENEHR_COPYRIGHT: &str = "openEHR Foundation";
 
-/// The crates whose emitted files carry openEHR's copyright line beside the
-/// project's own.
+/// The generated model crates whose emitted files are Apache-2.0 and carry
+/// openEHR's copyright line beside the project's own.
 ///
-/// Every published `openehr-*` crate is Apache-2.0 (the licence of the openEHR
-/// inputs it is generated from); these six additionally embed specification
-/// text, so their headers name the openEHR Foundation as a second holder.
+/// These five are the openEHR model generated from Apache-2.0 inputs and embed
+/// specification text, so their headers name the openEHR Foundation as a second
+/// holder and keep the inputs' licence (owner decision 2026-09-03).
 pub(crate) const DUAL_LICENSED_CRATES: &[&str] = &[
     "openehr-am",
     "openehr-base",
-    "openehr-its",
     "openehr-lang",
     "openehr-rm",
     "openehr-term",
 ];
+
+/// The crate whose generated files carry the project's Business Source
+/// License over the Apache-2.0 openEHR-derived material they are generated
+/// from (owner decision 2026-09-04): both holders, both licences.
+pub(crate) const BUSL_OVER_APACHE_CRATE: &str = "openehr-its";
 
 /// The tag prefix a copyright line carries.
 const COPYRIGHT_TAG: &str = "// SPDX-FileCopyrightText: ";
@@ -63,8 +67,14 @@ pub(crate) fn header(crate_name: &str) -> String {
              {COPYRIGHT_TAG}{OPENEHR_COPYRIGHT}\n\
              {LICENSE_TAG}Apache-2.0\n"
         )
+    } else if crate_name == BUSL_OVER_APACHE_CRATE {
+        format!(
+            "{COPYRIGHT_TAG}{PROJECT_COPYRIGHT}\n\
+             {COPYRIGHT_TAG}{OPENEHR_COPYRIGHT}\n\
+             {LICENSE_TAG}BUSL-1.1 AND Apache-2.0\n"
+        )
     } else {
-        format!("{COPYRIGHT_TAG}{PROJECT_COPYRIGHT}\n{LICENSE_TAG}Apache-2.0\n")
+        format!("{COPYRIGHT_TAG}{PROJECT_COPYRIGHT}\n{LICENSE_TAG}BUSL-1.1\n")
     }
 }
 
@@ -121,11 +131,18 @@ mod tests {
     }
 
     #[test]
-    fn other_crates_are_plain_apache() {
+    fn the_its_crate_states_both_licences() {
+        let h = header("openehr-its");
+        assert!(h.contains("SPDX-FileCopyrightText: openEHR Foundation"));
+        assert!(h.ends_with("SPDX-License-Identifier: BUSL-1.1 AND Apache-2.0\n"));
+    }
+
+    #[test]
+    fn other_crates_are_plain_busl() {
         assert_eq!(
             header("openehr-query"),
             "// SPDX-FileCopyrightText: Ruben Talstra\n\
-             // SPDX-License-Identifier: Apache-2.0\n"
+             // SPDX-License-Identifier: BUSL-1.1\n"
         );
     }
 
@@ -157,7 +174,7 @@ mod tests {
         assert_eq!(
             out,
             "// SPDX-FileCopyrightText: Ruben Talstra\n\
-             // SPDX-License-Identifier: Apache-2.0\n\
+             // SPDX-License-Identifier: BUSL-1.1\n\
              pub mod a;\n"
         );
     }

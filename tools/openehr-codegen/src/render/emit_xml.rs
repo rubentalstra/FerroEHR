@@ -635,7 +635,7 @@ fn emit_struct_from_xml(
     // path, one grammar.
     let values: Vec<(String, String)> = fields
         .iter()
-        .map(|f| (f.rust_name.clone(), read_expr(f, &attrs)))
+        .map(|f| (f.rust_name.clone(), read_expr(f, &attrs, target.spec)))
         .collect();
     emit_read_construction(b, target, &values, door_env);
     b.push_str("}\n}\n\n");
@@ -707,9 +707,9 @@ fn emit_read_loop(b: &mut String, fields: &[XmlField], attrs: &BTreeSet<String>)
 
 /// The Rust expression that yields one field's value once the read loop has
 /// finished.
-fn read_expr(f: &XmlField, attrs: &BTreeSet<String>) -> String {
+fn read_expr(f: &XmlField, attrs: &BTreeSet<String>, spec: &str) -> String {
     match read_shape(f, attrs) {
-        ReadShape::Attribute => attr_read_expr(f),
+        ReadShape::Attribute => attr_read_expr(f, spec),
         ReadShape::ComplexHash => "Default::default()".to_owned(),
         ReadShape::StringHash { .. } => {
             let var = acc_var(&f.rust_name);
@@ -719,28 +719,33 @@ fn read_expr(f: &XmlField, attrs: &BTreeSet<String>) -> String {
                 var
             }
         }
-        ReadShape::Multiple | ReadShape::Single => element_read_expr(f),
+        ReadShape::Multiple | ReadShape::Single => element_read_expr(f, spec),
     }
 }
 
-/// The value expression for a field carried as an XSD attribute.
-fn attr_read_expr(f: &XmlField) -> String {
+/// The value expression for a field carried as an XSD attribute. A mandatory
+/// attribute's absence is reported through the reader, which knows the
+/// element just read and where it sits (`XmlReader::missing_attribute`).
+fn attr_read_expr(f: &XmlField, spec: &str) -> String {
     let wire = &f.wire_name;
     if f.optional {
         format!("start.attr(\"{wire}\").map(|s| s.to_string())")
     } else {
         format!(
-            "start.attr(\"{wire}\").ok_or_else(|| crate::xml::runtime::XmlError::Parse(\"missing attribute {wire}\".into()))?.to_string()"
+            "start.attr(\"{wire}\").ok_or_else(|| reader.missing_attribute(\"{spec}\", \"{wire}\"))?.to_string()"
         )
     }
 }
 
-/// The value expression for a field carried as one or more child elements.
-fn element_read_expr(f: &XmlField) -> String {
+/// The value expression for a field carried as one or more child elements. A
+/// mandatory child's absence, and an empty `1..*` container, are reported
+/// through the reader, which knows the element just read and where it sits
+/// (`XmlReader::missing_child`, `XmlReader::invalid_content`).
+fn element_read_expr(f: &XmlField, spec: &str) -> String {
     let var = acc_var(&f.rust_name);
     let wire = &f.wire_name;
     let nonempty_new = format!(
-        "openehr_base::containers::NonEmptyVec::new({var}).map_err(|__e| crate::xml::runtime::XmlError::Parse(::std::format!(\"element {wire}: {{__e}}\", ).into()))?"
+        "openehr_base::containers::NonEmptyVec::new({var}).map_err(|__e| reader.invalid_content(::std::format!(\"element {wire}: {{__e}}\")))?"
     );
     if f.multiple && f.optional {
         // Zero occurrences of a repeated element is indistinguishable from the
@@ -769,9 +774,7 @@ fn element_read_expr(f: &XmlField) -> String {
         // default when the element is absent.
         return format!("{var}.unwrap_or({default})");
     }
-    format!(
-        "{var}.ok_or_else(|| crate::xml::runtime::XmlError::Parse(\"missing element {wire}\".into()))?"
-    )
+    format!("{var}.ok_or_else(|| reader.missing_child(\"{spec}\", \"{wire}\"))?")
 }
 
 /// Emits the construction of the read value — through the class's validating
@@ -796,7 +799,7 @@ fn emit_read_construction(
     if fallible {
         let _ = writeln!(
             b,
-            "{path}::{rust}::new({args}).map_err(|__e| crate::xml::runtime::XmlError::Parse(::std::format!(\"{}: {{__e}}\").into()))",
+            "{path}::{rust}::new({args}).map_err(|__e| reader.invalid_content(::std::format!(\"{}: {{__e}}\")))",
             target.spec
         );
     } else {
