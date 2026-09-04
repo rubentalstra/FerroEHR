@@ -146,6 +146,7 @@ jobs:
       deploy: ${{ steps.filter.outputs.deploy }}
       workflows: ${{ steps.filter.outputs.workflows }}
       vex: ${{ steps.filter.outputs.vex }}
+      msrv: ${{ steps.filter.outputs.msrv }}
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
@@ -184,6 +185,7 @@ jobs:
             {
               echo "code=true"
               echo "viewer=true"
+              echo "msrv=true"
               echo "server_dockerfile=true"
               echo "helm=true"
               echo "chart_boot=true"
@@ -209,6 +211,7 @@ jobs:
               echo "deploy=false"
               echo "workflows=false"
               echo "vex=false"
+              echo "msrv=false"
             } >> "$GITHUB_OUTPUT"
             exit 0
           fi
@@ -237,6 +240,21 @@ jobs:
           else
             echo "No build-relevant paths touched — cargo jobs will be skipped."
             echo "code=false" >> "$GITHUB_OUTPUT"
+          fi
+          # MSRV trigger: `cargo hack check --rust-version` compiles the whole
+          # workspace under every feature permutation to verify one manifest
+          # field, and it cost 556 s on every pull request (#3120). The property
+          # it checks — that no crate needs more than the declared
+          # `rust-version` — can only change when a manifest declares a
+          # different floor, a dependency arrives or moves, or the toolchain
+          # itself does. Source edits cannot change it: the compiler that
+          # accepts them is the same one either way, and a source-level MSRV
+          # violation is `clippy::incompatible_msrv`, which is deny-tier on
+          # every cargo lane.
+          if echo "$changed" | grep -qE '(^|/)Cargo\.toml$|^Cargo\.lock$|^rust-toolchain\.toml$|^clippy\.toml$|^\.github/workflows/ci\.yml$'; then
+            echo "msrv=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "msrv=false" >> "$GITHUB_OUTPUT"
           fi
           # Viewer E2E trigger: the viewer crate, its harness, the
           # composed stack it drives — AND the inputs to the CDR artifact the
@@ -1031,7 +1049,7 @@ jobs:
   msrv:
     name: msrv (cargo-hack)
     needs: changes
-    if: needs.changes.outputs.code == 'true'
+    if: needs.changes.outputs.msrv == 'true'
     runs-on: ubuntu-latest
     timeout-minutes: 20
     permissions:
@@ -1073,9 +1091,25 @@ jobs:
   # the separate Veredictum project (pinned in scripts/lib/veredictum.sh), and
   # its catalogue is validated by its own CI. The e2e CNF run stays where it
   # was: the Docker compose stack (scripts/conformance.sh) at phase gates.
+  # The critical-path job, split three ways because the single job it replaced
+  # ran 21.75 minutes and was the pipeline's whole wall clock (#3120). Measured
+  # there: 276 s linking every bin, 197 s + 164 s compiling the viewer under
+  # `ssr` to run 2.3 s of viewer tests, 186 s compiling the workspace's test
+  # targets and 427 s running 4614 of them. Splitting lets the four costs run
+  # beside each other instead of end to end; sharding the 427 s divides the one
+  # cost that no cache can remove.
   test:
-    name: build & test (pg18)
+    name: build & test (pg18) ${{ matrix.shard }}/3
     needs: changes
+    strategy:
+      fail-fast: false
+      matrix:
+        # Three shards, hash-partitioned by nextest so a slow suite cannot land
+        # them all in one shard (https://nexte.st/docs/ci-features/partitioning/).
+        # Each shard gets its own PostgreSQL service, which is what makes the
+        # split safe: the testkit harness clones a template database per test,
+        # so two shards never share one.
+        shard: [1, 2, 3]
     # The service container, its pinned image and the env the suite runs
     # against are all this file's recipe (#2373).
     if: needs.changes.outputs.code == 'true' || needs.changes.outputs.workflows == 'true'
@@ -1123,18 +1157,64 @@ jobs:
         with:
           tool: cargo-nextest
       # The viewer is excluded from --all-features lanes (mutually exclusive
-      # hydrate/ssr, compile_error!-guarded) and tested per-feature instead.
-      # The explicit `cargo build` is NOT redundant with nextest: nextest
-      # compiles test targets only, this is the one place every workspace BIN
-      # actually links (clippy type-checks but never links).
-      - run: cargo build --locked --workspace --exclude ferroehr-viewer --all-features
-      - run: cargo build --locked -p ferroehr-viewer --features ssr
+      # hydrate/ssr, compile_error!-guarded) and has its own job below.
       # --no-tests=pass: empty crates are expected until P17 (nextest exits 4 otherwise)
-      - run: cargo nextest run --locked --workspace --exclude ferroehr-viewer --all-features --no-tests=pass --profile ci
-      - run: cargo nextest run --locked -p ferroehr-viewer --features ssr --no-tests=pass --profile ci
+      # The shard index reaches the command through `env:`, never interpolated
+      # into the script (the workflow-security rule in reliability.md).
+      - run: cargo nextest run --locked --workspace --exclude ferroehr-viewer --all-features --no-tests=pass --profile ci --partition "hash:${SHARD}/3"
+        env:
+          SHARD: ${{ matrix.shard }}
       # Doc tests moved to the rustdoc job: `cargo test --doc` is a third
       # feature configuration (default features) and compiled the whole
       # workspace again at the tail of THE critical-path job.
+
+  # ── Every workspace BIN actually links here ────────────────────────────────
+  # `cargo clippy` type-checks but never links, and `nextest` compiles test
+  # targets only, so without this step a broken bin reaches main. It was the
+  # first 276 s of the old test job and needs no database, so it runs beside
+  # the shards instead of in front of them.
+  build:
+    name: build (link every bin)
+    needs: changes
+    if: needs.changes.outputs.code == 'true' || needs.changes.outputs.workflows == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions-rust-lang/setup-rust-toolchain@166cdcfd11aee3cb47222f9ddb555ce30ddb9659 # v1.17.0
+        with:
+          cache-save-if: ${{ github.ref == 'refs/heads/main' }}
+      - run: cargo build --locked --workspace --exclude ferroehr-viewer --all-features
+
+  # ── The viewer's own build + unit tests ────────────────────────────────────
+  # The viewer compiles under `ssr`, a different feature configuration from the
+  # rest of the workspace, so it shares no build cache with them. In the old
+  # test job that cost 361 s of the critical path to run 551 tests in 2.3 s.
+  # It needs no database.
+  test-viewer:
+    name: build & test (viewer, ssr)
+    needs: changes
+    if: needs.changes.outputs.code == 'true' || needs.changes.outputs.workflows == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions-rust-lang/setup-rust-toolchain@166cdcfd11aee3cb47222f9ddb555ce30ddb9659 # v1.17.0
+        with:
+          cache-save-if: ${{ github.ref == 'refs/heads/main' }}
+      - uses: taiki-e/install-action@742a3317eac7bd62f91cd888b4eead5e784ba833 # v2.87.1
+        with:
+          tool: cargo-nextest
+      - run: cargo build --locked -p ferroehr-viewer --features ssr
+      - run: cargo nextest run --locked -p ferroehr-viewer --features ssr --no-tests=pass --profile ci
 
   # ── The Helm chart's lint + golden renders (issue #2110) ────────────────────
   # deploy/helm/validate.sh is the only check in the repository that pins the
@@ -2209,7 +2289,9 @@ jobs:
       - doc
       - msrv
       - codegen-drift
+      - build
       - test
+      - test-viewer
       - helm-golden
       - unused-deps
       - ui-e2e-binary
