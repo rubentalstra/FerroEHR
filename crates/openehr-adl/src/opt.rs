@@ -67,6 +67,7 @@ use crate::flatten::{FlattenError, flat_form};
 use crate::hrid::hrid_to_string;
 use crate::odin::nil_uuid;
 use crate::paths::parse_path;
+use openehr_lang::nesting::Nesting;
 
 /// A failure while generating or profiling an operational template.
 #[derive(Debug, Clone, PartialEq, Eq, thiserror::Error)]
@@ -93,6 +94,20 @@ pub enum OptError {
     /// remains".
     #[error("language filtering would remove every language (at least one must remain)")]
     NoLanguagesLeft,
+    /// A filler inlines an archetype that is already being inlined above it —
+    /// the constituents reference each other in a cycle, which no finite OPT
+    /// can flatten (master03 §Flattening inlines every filler). Carries the
+    /// chain of archetype references from the outermost to the repeated one.
+    #[error("archetype references form a cycle: {}", .0.join(" -> "))]
+    CyclicReference(Vec<String>),
+    /// Inlining fillers and `use_node` targets composes objects deeper than
+    /// the engine bound ([`openehr_lang::nesting::MAX_NESTING_DEPTH`]) — an
+    /// implementation limit, not a spec rule.
+    #[error("the operational template nests deeper than the limit of {limit} levels")]
+    NestingTooDeep {
+        /// The bound that was crossed.
+        limit: usize,
+    },
 }
 
 /// Generate the raw operational template from a source `root` template (or
@@ -107,7 +122,9 @@ pub enum OptError {
 /// # Errors
 /// [`OptError::Flatten`] if the lineage cannot be flattened,
 /// [`OptError::UnresolvedReference`] if a filler / external reference is absent
-/// from `repo`.
+/// from `repo`, [`OptError::CyclicReference`] if the fillers reference each
+/// other in a cycle, [`OptError::NestingTooDeep`] if inlining composes a tree
+/// past the engine bound.
 pub fn create_opt(
     root: &Archetype,
     repo: &ArchetypeRepository,
@@ -129,8 +146,14 @@ pub fn create_opt(
 
     // Apply the OPT-specific transform to the flat definition, gathering the
     // constituent terminologies as fillers are inlined.
-    let mut components: BTreeMap<String, ArchetypeTerminology> = BTreeMap::new();
-    let opt_def = opt_complex(parts.definition.clone(), &work, &mut components, &root_id)?;
+    let mut transform = Transform {
+        work: &work,
+        components: BTreeMap::new(),
+        root_id: &root_id,
+        inlining: vec![root_id.clone()],
+    };
+    let opt_def = transform.complex(parts.definition.clone(), Nesting::ROOT)?;
+    let components = transform.components;
 
     Ok(OperationalTemplate {
         // A top-level standalone artefact — no specialisation parent
@@ -161,187 +184,210 @@ pub fn create_opt(
 
 // ── the OPT flattening transform (master03 §Flattening) ────────────────────
 
-/// OPT-transform a `C_COMPLEX_OBJECT` (or `C_ARCHETYPE_ROOT`) root: strip
-/// sibling markers and rewrite its attribute list. `proxy_root` is the enclosing
-/// flat artefact against which `use_node` target paths resolve.
-fn opt_complex(
-    def: CComplexObject,
-    work: &ArchetypeRepository,
-    components: &mut BTreeMap<String, ArchetypeTerminology>,
-    root_id: &str,
-) -> Result<CComplexObject, OptError> {
-    let proxy_root = def.clone();
-    match def {
-        CComplexObject::CComplexObject(mut d) => {
-            d.sibling_order = None;
-            d.attributes = openehr_base::containers::present(opt_attributes(
-                d.attributes.unwrap_or_default(),
-                &proxy_root,
-                work,
-                components,
-                root_id,
-            )?);
-            Ok(CComplexObject::CComplexObject(d))
-        }
-        CComplexObject::CArchetypeRoot(mut r) => {
-            r.sibling_order = None;
-            r.attributes = openehr_base::containers::present(opt_attributes(
-                r.attributes.unwrap_or_default(),
-                &proxy_root,
-                work,
-                components,
-                root_id,
-            )?);
-            Ok(CComplexObject::CArchetypeRoot(r))
-        }
-    }
+/// The state one OPT transform carries down the tree: the constituent
+/// repository, the terminologies gathered as fillers are inlined, the root
+/// template's id (whose terminology is not a component), and the chain of
+/// archetypes currently being inlined, which detects reference cycles.
+struct Transform<'a> {
+    work: &'a ArchetypeRepository,
+    components: BTreeMap<String, ArchetypeTerminology>,
+    root_id: &'a str,
+    inlining: Vec<String>,
 }
 
-/// OPT-transform an attribute list: drop `existence matches {0}` attributes
-/// (master03 §Flattening — deleted attributes removed), and rewrite each
-/// attribute's children through [`opt_object`].
-fn opt_attributes(
-    attrs: Vec<CAttribute>,
-    proxy_root: &CComplexObject,
-    work: &ArchetypeRepository,
-    components: &mut BTreeMap<String, ArchetypeTerminology>,
-    root_id: &str,
-) -> Result<Vec<CAttribute>, OptError> {
-    let mut out = Vec::new();
-    for mut attr in attrs {
-        // `existence matches {0}` — a logically-removed attribute (master03
-        // §Flattening: "attribute nodes that have `existence matches {0}` … are
-        // removed").
-        if attr
-            .existence
-            .as_ref()
-            .is_some_and(MultiplicityInterval::is_prohibited)
-        {
-            continue;
-        }
-        let mut kept = Vec::new();
-        for child in std::mem::take(&mut attr.children).into_iter().flatten() {
-            if let Some(node) = opt_object(child, proxy_root, work, components, root_id)? {
-                kept.push(node);
+impl Transform<'_> {
+    /// OPT-transform a `C_COMPLEX_OBJECT` (or `C_ARCHETYPE_ROOT`) root at
+    /// `level`: strip sibling markers and rewrite its attribute list. The
+    /// object is its own proxy root — the flat artefact against which its
+    /// `use_node` target paths resolve.
+    fn complex(&mut self, def: CComplexObject, level: Nesting) -> Result<CComplexObject, OptError> {
+        let proxy_root = def.clone();
+        match def {
+            CComplexObject::CComplexObject(mut d) => {
+                d.sibling_order = None;
+                d.attributes = openehr_base::containers::present(self.attributes(
+                    d.attributes.unwrap_or_default(),
+                    &proxy_root,
+                    level,
+                )?);
+                Ok(CComplexObject::CComplexObject(d))
+            }
+            CComplexObject::CArchetypeRoot(mut r) => {
+                r.sibling_order = None;
+                r.attributes = openehr_base::containers::present(self.attributes(
+                    r.attributes.unwrap_or_default(),
+                    &proxy_root,
+                    level,
+                )?);
+                Ok(CComplexObject::CArchetypeRoot(r))
             }
         }
-        attr.children = openehr_base::containers::present(kept);
-        // Differential paths do not survive into a flat/OPT form.
-        attr.differential_path = None;
-        out.push(attr);
     }
-    Ok(out)
-}
 
-/// OPT-transform a single object node. Returns `None` when the node is removed
-/// (`occurrences matches {0}` object or a `closed` slot; master03 §Flattening).
-fn opt_object(
-    obj: CObject,
-    proxy_root: &CComplexObject,
-    work: &ArchetypeRepository,
-    components: &mut BTreeMap<String, ArchetypeTerminology>,
-    root_id: &str,
-) -> Result<Option<CObject>, OptError> {
-    // `occurrences matches {0}` — a logically-removed object (master03
-    // §Flattening: "object … nodes with `occurrences matches {0}` [are
-    // removed]").
-    if child_occurrences(&obj).is_some_and(MultiplicityInterval::is_prohibited) {
-        return Ok(None);
-    }
-    match obj {
-        // A `closed` slot is removed; an open slot is a valid runtime extension
-        // point and is kept (master03 §Flattening: "all `closed` slots are
-        // removed").
-        CObject::ArchetypeSlot(mut s) => {
-            if s.is_closed {
-                return Ok(None);
+    /// OPT-transform an attribute list: drop `existence matches {0}` attributes
+    /// (master03 §Flattening — deleted attributes removed), and rewrite each
+    /// attribute's children one level deeper through [`Self::object`].
+    fn attributes(
+        &mut self,
+        attrs: Vec<CAttribute>,
+        proxy_root: &CComplexObject,
+        level: Nesting,
+    ) -> Result<Vec<CAttribute>, OptError> {
+        let child_level = level
+            .descend()
+            .map_err(|e| OptError::NestingTooDeep { limit: e.limit })?;
+        let mut out = Vec::new();
+        for mut attr in attrs {
+            // `existence matches {0}` — a logically-removed attribute (master03
+            // §Flattening: "attribute nodes that have `existence matches {0}` … are
+            // removed").
+            if attr
+                .existence
+                .as_ref()
+                .is_some_and(MultiplicityInterval::is_prohibited)
+            {
+                continue;
             }
-            s.sibling_order = None;
-            Ok(Some(CObject::ArchetypeSlot(s)))
+            let mut kept = Vec::new();
+            for child in std::mem::take(&mut attr.children).into_iter().flatten() {
+                if let Some(node) = self.object(child, proxy_root, child_level)? {
+                    kept.push(node);
+                }
+            }
+            attr.children = openehr_base::containers::present(kept);
+            // Differential paths do not survive into a flat/OPT form.
+            attr.differential_path = None;
+            out.push(attr);
         }
-        // A `use_node` proxy is replaced by an inline copy of its target
-        // (master03 §Flattening: "`use_node` internal references are replaced by
-        // an inline copy of the target structure").
-        CObject::CComplexObjectProxy(p) => {
-            let inlined = inline_proxy(&p, proxy_root)?;
-            opt_object(inlined, proxy_root, work, components, root_id)
-        }
-        CObject::CComplexObject(CComplexObject::CArchetypeRoot(r)) => {
-            let node = inline_filler(*r, work, components, root_id)?;
-            Ok(Some(node))
-        }
-        CObject::CComplexObject(CComplexObject::CComplexObject(mut d)) => {
-            d.sibling_order = None;
-            d.attributes = openehr_base::containers::present(opt_attributes(
-                d.attributes.unwrap_or_default(),
-                proxy_root,
-                work,
-                components,
-                root_id,
-            )?);
-            Ok(Some(CObject::CComplexObject(
-                CComplexObject::CComplexObject(d),
-            )))
-        }
-        // Primitive leaves survive as-is; strip any sibling marker.
-        mut other => {
-            strip_sibling_order(&mut other);
-            Ok(Some(other))
-        }
-    }
-}
-
-/// Inline a `C_ARCHETYPE_ROOT` slot-filler / external reference: resolve its
-/// `archetype_ref` to a constituent, flatten that constituent, and populate the
-/// root with the constituent's flattened structure and full-version id
-/// (master03 §Archetype References + §Flattening). The constituent's flat
-/// terminology is gathered under `components` (master03 §Terminology).
-fn inline_filler(
-    mut r: CArchetypeRoot,
-    work: &ArchetypeRepository,
-    components: &mut BTreeMap<String, ArchetypeTerminology>,
-    root_id: &str,
-) -> Result<CObject, OptError> {
-    let Some(constituent) = work.get(&r.archetype_ref) else {
-        return Err(OptError::UnresolvedReference(r.archetype_ref.clone()));
-    };
-    let full_id = hrid_to_string(view(constituent).archetype_id);
-    let flat = flat_form(constituent, work)?;
-    let flat_view = view(&flat);
-
-    // Gather the constituent's flat terminology (master03 §Terminology: the flat
-    // terminology of every constituent except the root template). The
-    // `component_terminologies` ODIN block carries only the term/binding/value-set
-    // maps keyed by archetype id (master10), not the within-archetype
-    // `concept_code`, so it is normalised away for serialisation fidelity.
-    if full_id != root_id {
-        components.entry(full_id.clone()).or_insert_with(|| {
-            let mut term = flat_view.terminology.clone();
-            term.concept_code = String::new();
-            term
-        });
+        Ok(out)
     }
 
-    // The filler's structure (recursively OPT-transformed, so nested fillers /
-    // proxies / deletions inside the constituent are handled too).
-    let opt_def = opt_complex(flat_view.definition.clone(), work, components, root_id)?;
-    let (rm_type, attributes, attribute_tuples) = match opt_def {
-        CComplexObject::CComplexObject(d) => (d.rm_type_name, d.attributes, d.attribute_tuples),
-        CComplexObject::CArchetypeRoot(cr) => (cr.rm_type_name, cr.attributes, cr.attribute_tuples),
-    };
-
-    // The filler keeps the slot node id it was placed at; the RM type falls back
-    // to the constituent's root type where the reference did not carry one.
-    if r.rm_type_name.is_empty() {
-        r.rm_type_name = rm_type;
+    /// OPT-transform a single object node. Returns `None` when the node is
+    /// removed (`occurrences matches {0}` object or a `closed` slot; master03
+    /// §Flattening).
+    fn object(
+        &mut self,
+        obj: CObject,
+        proxy_root: &CComplexObject,
+        level: Nesting,
+    ) -> Result<Option<CObject>, OptError> {
+        // `occurrences matches {0}` — a logically-removed object (master03
+        // §Flattening: "object … nodes with `occurrences matches {0}` [are
+        // removed]").
+        if child_occurrences(&obj).is_some_and(MultiplicityInterval::is_prohibited) {
+            return Ok(None);
+        }
+        match obj {
+            // A `closed` slot is removed; an open slot is a valid runtime extension
+            // point and is kept (master03 §Flattening: "all `closed` slots are
+            // removed").
+            CObject::ArchetypeSlot(mut s) => {
+                if s.is_closed {
+                    return Ok(None);
+                }
+                s.sibling_order = None;
+                Ok(Some(CObject::ArchetypeSlot(s)))
+            }
+            // A `use_node` proxy is replaced by an inline copy of its target
+            // (master03 §Flattening: "`use_node` internal references are replaced by
+            // an inline copy of the target structure"). The copy re-enters one
+            // level deeper: a target that contains the proxy itself would
+            // otherwise re-inline without end, and the bound turns that into a
+            // refusal.
+            CObject::CComplexObjectProxy(p) => {
+                let inlined = inline_proxy(&p, proxy_root)?;
+                let deeper = level
+                    .descend()
+                    .map_err(|e| OptError::NestingTooDeep { limit: e.limit })?;
+                self.object(inlined, proxy_root, deeper)
+            }
+            CObject::CComplexObject(CComplexObject::CArchetypeRoot(r)) => {
+                let node = self.inline_filler(*r, level)?;
+                Ok(Some(node))
+            }
+            CObject::CComplexObject(CComplexObject::CComplexObject(mut d)) => {
+                d.sibling_order = None;
+                d.attributes = openehr_base::containers::present(self.attributes(
+                    d.attributes.unwrap_or_default(),
+                    proxy_root,
+                    level,
+                )?);
+                Ok(Some(CObject::CComplexObject(
+                    CComplexObject::CComplexObject(d),
+                )))
+            }
+            // Primitive leaves survive as-is; strip any sibling marker.
+            mut other => {
+                strip_sibling_order(&mut other);
+                Ok(Some(other))
+            }
+        }
     }
-    r.archetype_ref = full_id;
-    r.sibling_order = None;
-    r.attributes = attributes;
-    r.attribute_tuples = attribute_tuples;
-    Ok(CObject::CComplexObject(CComplexObject::CArchetypeRoot(
-        Box::new(r),
-    )))
+
+    /// Inline a `C_ARCHETYPE_ROOT` slot-filler / external reference: resolve its
+    /// `archetype_ref` to a constituent, flatten that constituent, and populate
+    /// the root with the constituent's flattened structure and full-version id
+    /// (master03 §Archetype References + §Flattening). The constituent's flat
+    /// terminology is gathered under `components` (master03 §Terminology).
+    ///
+    /// The constituent joins the inlining chain for the duration of its own
+    /// transform: meeting it again below itself is a reference cycle.
+    fn inline_filler(
+        &mut self,
+        mut r: CArchetypeRoot,
+        level: Nesting,
+    ) -> Result<CObject, OptError> {
+        let Some(constituent) = self.work.get(&r.archetype_ref) else {
+            return Err(OptError::UnresolvedReference(r.archetype_ref.clone()));
+        };
+        let full_id = hrid_to_string(view(constituent).archetype_id);
+        if self.inlining.contains(&full_id) {
+            let mut chain = self.inlining.clone();
+            chain.push(full_id);
+            return Err(OptError::CyclicReference(chain));
+        }
+        let flat = flat_form(constituent, self.work)?;
+        let flat_view = view(&flat);
+
+        // Gather the constituent's flat terminology (master03 §Terminology: the flat
+        // terminology of every constituent except the root template). The
+        // `component_terminologies` ODIN block carries only the term/binding/value-set
+        // maps keyed by archetype id (master10), not the within-archetype
+        // `concept_code`, so it is normalised away for serialisation fidelity.
+        if full_id != self.root_id {
+            self.components.entry(full_id.clone()).or_insert_with(|| {
+                let mut term = flat_view.terminology.clone();
+                term.concept_code = String::new();
+                term
+            });
+        }
+
+        // The filler's structure (recursively OPT-transformed, so nested fillers /
+        // proxies / deletions inside the constituent are handled too), at the
+        // level of the slot it fills.
+        self.inlining.push(full_id.clone());
+        let opt_def = self.complex(flat_view.definition.clone(), level);
+        self.inlining.pop();
+        let (rm_type, attributes, attribute_tuples) = match opt_def? {
+            CComplexObject::CComplexObject(d) => (d.rm_type_name, d.attributes, d.attribute_tuples),
+            CComplexObject::CArchetypeRoot(cr) => {
+                (cr.rm_type_name, cr.attributes, cr.attribute_tuples)
+            }
+        };
+
+        // The filler keeps the slot node id it was placed at; the RM type falls back
+        // to the constituent's root type where the reference did not carry one.
+        if r.rm_type_name.is_empty() {
+            r.rm_type_name = rm_type;
+        }
+        r.archetype_ref = full_id;
+        r.sibling_order = None;
+        r.attributes = attributes;
+        r.attribute_tuples = attribute_tuples;
+        Ok(CObject::CComplexObject(CComplexObject::CArchetypeRoot(
+            Box::new(r),
+        )))
+    }
 }
 
 /// Inline a `use_node` proxy: copy the object at `proxy.target_path` in

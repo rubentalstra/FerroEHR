@@ -25,6 +25,28 @@ workflow refuses a tag that has no matching section here.
   `tenancy.insecure_header_override = true` accepts it explicitly for a
   development deployment. With authentication off, or tenancy off, nothing
   changes.
+### Fixed
+
+- **An explicit `fetch` or AQL `LIMIT` can no longer ask for a page larger than
+  `query.max_result_rows`** (#3092). The ceiling used to apply only to a query
+  that carried neither bound, so `fetch=10000000` materialised the whole
+  matched set into one `RESULT_SET`. A page above the ceiling is now refused
+  with `400` naming the requested size and the ceiling; the effective page
+  (the smaller of `LIMIT` and `fetch`) is what is checked, and a page at or
+  below the ceiling is served as written. The page is refused rather than
+  shortened because a client paging with its own `fetch` as the stride would
+  silently skip rows.
+- **An ADL 2 upload can no longer take the server down through unbounded
+  recursion** (#3062). The ADL engine now carries one nesting bound of 512
+  levels: the cADL, ODIN and rule-expression readers refuse an artefact nested
+  past it with a `400` that names the bound (the `SUNK` syntax bucket), the
+  flattener refuses a specialisation lineage longer than the bound or a flat
+  form that composes deeper than it, and the operational-template transform
+  refuses fillers that reference each other in a cycle (naming the cycle) or
+  inline past the bound, as a `422`. Every remaining engine call, including
+  compiling a stored template to its operational form and loading the stored
+  repository, runs on the dedicated engine thread. Published archetypes and
+  templates stay far below the bound.
 
 ## [4.0.18] - 2026-09-03
 

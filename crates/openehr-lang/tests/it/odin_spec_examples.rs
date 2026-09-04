@@ -748,3 +748,53 @@ fn ch9_plug_in_blocks_parse() {
     assert!(parse("a = <# no tag #>").is_err());
     assert!(parse("a = (cadl) <# never closed").is_err());
 }
+
+// ── the nesting bound ─────────────────────────────────────────────────────
+
+fn nested_object(levels: usize) -> String {
+    format!("{}\"leaf\"{}", "a = <".repeat(levels), ">".repeat(levels))
+}
+
+#[test]
+fn object_nesting_past_the_bound_is_refused_before_the_parser_recurses() {
+    let err = parse(&nested_object(openehr_lang::nesting::MAX_NESTING_DEPTH + 1))
+        .expect_err("a document nested past the bound is refused, never recursed into");
+    assert_eq!(
+        err.kind,
+        OdinErrorKind::NestingTooDeep(openehr_lang::nesting::MAX_NESTING_DEPTH)
+    );
+    // The refusal points at the block that crossed the bound.
+    assert_eq!(err.line, 1);
+    let err_v1_0 = openehr_lang::v1_0::odin::parse(&nested_object(
+        openehr_lang::nesting::MAX_NESTING_DEPTH + 1,
+    ))
+    .expect_err("the 1.0.0 reader carries the same implementation bound");
+    assert_eq!(
+        err_v1_0.kind,
+        openehr_lang::v1_0::odin::OdinErrorKind::NestingTooDeep(
+            openehr_lang::nesting::MAX_NESTING_DEPTH
+        )
+    );
+}
+
+#[test]
+fn object_nesting_at_the_bound_parses() {
+    // The bound is set for the engine's 256 MiB thread, not the 2 MiB test
+    // thread, so the walk at the bound runs on a thread sized like the engine's.
+    std::thread::Builder::new()
+        .stack_size(256 << 20)
+        .spawn(|| {
+            let doc = parse(&nested_object(openehr_lang::nesting::MAX_NESTING_DEPTH))
+                .expect("a document at the bound parses");
+            let mut depth = 0usize;
+            let mut cur = &doc;
+            while let OdinValue::Object(map) = cur {
+                depth += 1;
+                cur = map.get("a").expect("the single attribute");
+            }
+            assert_eq!(depth, openehr_lang::nesting::MAX_NESTING_DEPTH);
+        })
+        .expect("spawn")
+        .join()
+        .expect("join");
+}

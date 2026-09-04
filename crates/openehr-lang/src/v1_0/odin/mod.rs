@@ -29,6 +29,7 @@ mod parser;
 
 use indexmap::IndexMap;
 
+use crate::v1_0::lexer::Token;
 use crate::v1_0::position::line_col;
 
 /// A parsed ODIN value.
@@ -295,6 +296,11 @@ pub enum OdinErrorKind {
     /// their typed values, so `[01]` duplicates `[1]`. Carries the repeated
     /// key in its path-predicate rendering.
     DuplicateKey(String),
+    /// Object blocks (or generic type parameters) nest deeper than
+    /// [`crate::nesting::MAX_NESTING_DEPTH`] — an implementation bound, not
+    /// a spec rule; the reader refuses rather than recursing without limit.
+    /// Carries the bound.
+    NestingTooDeep(usize),
 }
 
 /// An ODIN parse or lex failure, with a 1-based line/column and a byte span.
@@ -375,6 +381,21 @@ pub fn parse_document(src: &str) -> Result<OdinDocument, OdinError> {
             span: failure.span,
         }
     })?;
+    if let Err((index, exceeded)) = crate::nesting::check_bracket_nesting(
+        &spanned,
+        |t| t.token == Token::SymLt,
+        |t| t.token == Token::SymGt,
+    ) {
+        let offset = spanned.get(index).map_or(src.len(), |t| t.span.start);
+        let (line, column) = line_col(src, offset);
+        return Err(OdinError {
+            kind: OdinErrorKind::NestingTooDeep(exceeded.limit),
+            message: exceeded.to_string(),
+            line,
+            column,
+            span: offset..offset,
+        });
+    }
     parser::parse_tokens(&spanned).map_err(|located| {
         let (line, column) = line_col(src, located.offset);
         let (kind, message) = match located.failure {

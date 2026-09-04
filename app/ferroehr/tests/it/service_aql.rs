@@ -51,6 +51,7 @@ use openehr_rm::prelude::PartyProxy;
 use uuid::Uuid;
 
 use ferroehr::service::FerroEhrService;
+use ferroehr::service::query::config::QueryConfig;
 use ferroehr::service::query::request::AqlQueryRequest;
 use ferroehr::service::status::{CallStatusType, SmError};
 
@@ -2533,5 +2534,81 @@ async fn folder_contains_folder_reaches_items_referenced_versioned_folders() {
         childless,
         vec!["plan-week-1".to_owned()],
         "every non-leaf folder has a union-edge child, so only the leaf survives the anti-join"
+    );
+}
+
+/// `query.max_result_rows` is the largest page one execution serves: a query
+/// nothing bounds takes it as its page, an explicit `fetch` or AQL `LIMIT` at
+/// or below it is served as written, and a page above it is refused as a
+/// precondition (`400`) rather than silently shortened (#3092). ITS-REST leaves
+/// the `fetch` default and maximum to the implementation (query `Request.md`
+/// §Common Headers and Query Parameters).
+#[tokio::test]
+async fn an_explicit_page_above_the_result_ceiling_is_refused() {
+    let db = testkit::db().await.expect("testkit database");
+    let svc = FerroEhrService::new(db.pool()).with_query_config(&QueryConfig {
+        max_result_rows: 2,
+        ..QueryConfig::default()
+    });
+    let ehr_id = create_ehr(&svc).await;
+    for magnitude in [80.0, 90.0, 100.0, 110.0] {
+        create_comp(&svc, &ehr_id, "BP", magnitude).await;
+    }
+    let aql = "SELECT c/uid/value FROM EHR e CONTAINS COMPOSITION c";
+    let scoped = |fetch: Option<i64>| AqlQueryRequest {
+        fetch,
+        ..ehr_scope(&ehr_id)
+    };
+    let refused = |aql: &str, request: AqlQueryRequest| {
+        let aql = aql.to_owned();
+        let svc = &svc;
+        async move {
+            let err = svc
+                .execute_ad_hoc_query(aql, request)
+                .await
+                .expect_err("a page above the ceiling is refused");
+            assert!(
+                matches!(
+                    &err,
+                    SmError {
+                        status: CallStatusType::PreconditionViolation,
+                        message,
+                        ..
+                    } if message.contains("exceeds the largest page") && message.contains("2 rows")
+                ),
+                "got {err:?}"
+            );
+        }
+    };
+
+    // Nothing bounds the query: the ceiling is the page.
+    assert_eq!(rows(&run_aql(&svc, aql, scoped(None)).await).len(), 2);
+    // `fetch` at the ceiling is served as written; above it is refused.
+    assert_eq!(rows(&run_aql(&svc, aql, scoped(Some(2))).await).len(), 2);
+    refused(aql, scoped(Some(3))).await;
+    // AQL `LIMIT` alone: the same rule.
+    assert_eq!(
+        rows(&run_aql(&svc, &format!("{aql} LIMIT 2"), scoped(None)).await).len(),
+        2
+    );
+    refused(&format!("{aql} LIMIT 3"), scoped(None)).await;
+    // `LIMIT` + `fetch`: the effective page (the smaller) is what is checked.
+    assert_eq!(
+        rows(&run_aql(&svc, &format!("{aql} LIMIT 4"), scoped(Some(2))).await).len(),
+        2
+    );
+    assert_eq!(
+        rows(&run_aql(&svc, &format!("{aql} LIMIT 2"), scoped(Some(4))).await).len(),
+        2
+    );
+    refused(&format!("{aql} LIMIT 4"), scoped(Some(3))).await;
+    // `0` means unbounded: the same page is then served whole.
+    let unbounded = FerroEhrService::new(db.pool()).with_query_config(&QueryConfig {
+        max_result_rows: 0,
+        ..QueryConfig::default()
+    });
+    assert_eq!(
+        rows(&run_aql(&unbounded, aql, scoped(Some(1_000))).await).len(),
+        4
     );
 }

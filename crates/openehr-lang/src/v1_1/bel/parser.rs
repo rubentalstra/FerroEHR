@@ -17,6 +17,7 @@
 //! grammar); a future EL parser must take its precedence from the EL tables,
 //! never from this ordering.
 
+use crate::nesting::Nesting;
 use crate::v1_1::bel::{BelBuilder, BelError, BelLiteral};
 use crate::v1_1::beom::core::operator_kind::OperatorKind;
 use crate::v1_1::lexer::{Spanned, Token};
@@ -27,6 +28,7 @@ pub(crate) struct Parser<'a, 'b, B: BelBuilder> {
     toks: &'a [Spanned],
     pos: usize,
     builder: &'b mut B,
+    nesting: Nesting,
 }
 
 impl<'a, 'b, B: BelBuilder> Parser<'a, 'b, B> {
@@ -36,7 +38,27 @@ impl<'a, 'b, B: BelBuilder> Parser<'a, 'b, B> {
             toks,
             pos: 0,
             builder,
+            nesting: Nesting::ROOT,
         }
+    }
+
+    /// Run `production` one nesting level deeper, refusing past the bound.
+    ///
+    /// Every self-recursive production (a parenthesised or quantified
+    /// sub-expression, a `not` or sign chain) enters through here, so the
+    /// parser's native recursion is bounded by [`Nesting`].
+    fn nested<T>(
+        &mut self,
+        production: impl FnOnce(&mut Self) -> Result<T, BelError>,
+    ) -> Result<T, BelError> {
+        let outer = self.nesting;
+        self.nesting = outer.descend().map_err(|e| BelError::NestingTooDeep {
+            at: self.at(),
+            limit: e.limit,
+        })?;
+        let result = production(self);
+        self.nesting = outer;
+        result
     }
 
     // ── cursor helpers ────────────────────────────────────────────────────
@@ -284,12 +306,14 @@ impl<'a, 'b, B: BelBuilder> Parser<'a, 'b, B> {
     // ── expressions (precedence climbing) ─────────────────────────────────
     /// `expression`/`boolean_expr` entry: lowest-precedence `implies`.
     fn parse_expr(&mut self) -> Result<B::Expr, BelError> {
-        let mut left = self.parse_or()?;
-        while self.eat(&Token::SymImplies) {
-            let right = self.parse_or()?;
-            left = self.builder.binary(kind("implies"), "implies", left, right);
-        }
-        Ok(left)
+        self.nested(|p| {
+            let mut left = p.parse_or()?;
+            while p.eat(&Token::SymImplies) {
+                let right = p.parse_or()?;
+                left = p.builder.binary(kind("implies"), "implies", left, right);
+            }
+            Ok(left)
+        })
     }
 
     fn parse_or(&mut self) -> Result<B::Expr, BelError> {
@@ -321,7 +345,7 @@ impl<'a, 'b, B: BelBuilder> Parser<'a, 'b, B> {
 
     fn parse_not(&mut self) -> Result<B::Expr, BelError> {
         if self.eat(&Token::SymNot) {
-            let operand = self.parse_not()?;
+            let operand = self.nested(Self::parse_not)?;
             return Ok(self.builder.unary(kind("not"), "not", operand));
         }
         self.parse_comparison()
@@ -387,11 +411,11 @@ impl<'a, 'b, B: BelBuilder> Parser<'a, 'b, B> {
 
     fn parse_unary(&mut self) -> Result<B::Expr, BelError> {
         if self.eat(&Token::SymMinus) {
-            let operand = self.parse_unary()?;
+            let operand = self.nested(Self::parse_unary)?;
             return Ok(self.builder.unary(kind("minus"), "-", operand));
         }
         if self.eat(&Token::SymPlus) {
-            return self.parse_unary();
+            return self.nested(Self::parse_unary);
         }
         self.parse_primary()
     }

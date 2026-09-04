@@ -33,20 +33,22 @@ pub struct QueryConfig {
     /// overrun surfaces as this engine's typed refusal rather than a driver
     /// error.
     pub timeout_ms: u64,
-    /// The largest number of rows a query may return when neither the AQL nor
-    /// the request bounds it; `0` means unbounded.
+    /// The largest page of rows one query execution serves; `0` means
+    /// unbounded.
     ///
-    /// Without this a query carrying no `LIMIT`, called with no `fetch`,
+    /// A query that neither the AQL nor the request bounds takes it as its
+    /// page: without that, a query carrying no `LIMIT`, called with no `fetch`,
     /// generates SQL with no `LIMIT` and materialises every matching row before
     /// the `RESULT_SET` is built — so a one-line request is an unbounded,
     /// caller-chosen allocation (the OWASP Denial of Service Cheat Sheet's
-    /// "input-based resource allocation control").
+    /// "input-based resource allocation control"). A page asked for explicitly,
+    /// by AQL `LIMIT` or the `fetch` parameter, is served as written up to the
+    /// ceiling and refused above it with a `400` naming the ceiling, never
+    /// silently shortened.
     ///
-    /// ITS-REST leaves the `fetch` default to the implementation — query
-    /// `Request.md` §Common Headers and Query Parameters: "the default depends
-    /// on the implementation" — so a default ceiling is spec-permitted. It
-    /// applies ONLY where nothing else bounds the query: an explicit AQL `LIMIT`
-    /// or a `fetch` parameter is honoured as written, up to this ceiling.
+    /// ITS-REST leaves both the `fetch` default and its maximum to the
+    /// implementation — query `Request.md` §Common Headers and Query
+    /// Parameters: "the default depends on the implementation".
     pub max_result_rows: i64,
 }
 

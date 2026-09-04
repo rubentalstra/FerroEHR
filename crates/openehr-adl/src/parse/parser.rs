@@ -926,6 +926,11 @@ impl Parser<'_> {
     /// negated-regex semantics from defective prose would be a silent wrong
     /// answer.
     fn parse_c_regular_object(&mut self) -> PResult<CObject> {
+        self.nested(Self::parse_c_regular_object_at_level)
+    }
+
+    /// [`Self::parse_c_regular_object`] at the level the caller entered.
+    fn parse_c_regular_object_at_level(&mut self) -> PResult<CObject> {
         if self.at_regex_match_operator() {
             return self.err(
                 SyntaxErrorCode::Sccog,
