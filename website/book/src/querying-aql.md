@@ -307,13 +307,17 @@ which one you hit:
 | Bound | Where it comes from | Effect |
 |---|---|---|
 | `LIMIT`/`OFFSET`, or `fetch`/`offset` | your query or request | Exactly the window you asked for. |
-| [`query.max_result_rows`](installation/config-integrations.md#query) | server config, default `10000` | The ceiling applied when neither the AQL nor the request bounds the result. `0` means unbounded. |
+| [`query.max_result_rows`](installation/config-integrations.md#query) | server config, default `10000` | The largest page one execution serves: the page of a query nothing else bounds, and the maximum a `LIMIT` or `fetch` may ask for. `0` means unbounded. |
 | [`query.timeout_ms`](installation/config-integrations.md#query) | server config, default `30000` | Per-query database execution budget. **On by default**; `0` disables it. |
 
 A query that exceeds the time budget returns **408 Request Timeout**; narrow it
 (add archetype constraints, an `ehr_id` scope, or a `WHERE` filter) rather than
-retrying it unchanged. A result truncated by the row ceiling is a signal to page
-explicitly with `offset`/`fetch` instead of relying on the default.
+retrying it unchanged. A `LIMIT` or `fetch` larger than the row ceiling returns
+**400 Bad Request** naming the ceiling; the page is never silently shortened,
+because a client paging with its own `fetch` as the stride would skip rows
+without noticing. Page with `offset` and a `fetch` at or below the ceiling. A
+result that stops at the ceiling without either bound set is the default page:
+page explicitly to read past it.
 
 > [!TIP]
 > The more specific your `FROM`/`CONTAINS` (name the archetype, scope by

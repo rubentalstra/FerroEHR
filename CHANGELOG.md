@@ -15,6 +15,18 @@ workflow refuses a tag that has no matching section here.
 
 ## [Unreleased]
 
+### Fixed
+
+- **An explicit `fetch` or AQL `LIMIT` can no longer ask for a page larger than
+  `query.max_result_rows`** (#3092). The ceiling used to apply only to a query
+  that carried neither bound, so `fetch=10000000` materialised the whole
+  matched set into one `RESULT_SET`. A page above the ceiling is now refused
+  with `400` naming the requested size and the ceiling; the effective page
+  (the smaller of `LIMIT` and `fetch`) is what is checked, and a page at or
+  below the ceiling is served as written. The page is refused rather than
+  shortened because a client paging with its own `fetch` as the stride would
+  silently skip rows.
+
 ## [4.0.18] - 2026-09-03
 
 ### Changed
