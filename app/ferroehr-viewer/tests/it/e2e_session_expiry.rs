@@ -35,7 +35,7 @@ use crate::common;
 
 use std::time::Duration;
 
-use common::{Harness, login_basic, wait_css_absent};
+use common::{Harness, env, login_basic, wait_css_absent};
 
 /// The sealed session cookie's name (`ferroehr_viewer::session::SESSION_COOKIE`,
 /// which is server-only and so cannot be imported here).
@@ -115,6 +115,198 @@ async fn a_revoked_session_signs_the_ui_out_with_no_interaction_at_all() {
     h.wait_url_contains_for("expired=1", UNATTENDED_WAIT).await;
     assert_signed_out(&h).await;
     h.shot(2, "signed-out").await;
+    h.assert_console_clean(&EXPECTED_CONSOLE).await;
+    h.finish().await;
+}
+
+// ── signing in AGAIN inside the same WASM runtime (#3066) ────────────────────
+
+/// Type the Basic credentials into the login card ALREADY on screen and
+/// submit. Deliberately no `goto`: a reload would start a fresh runtime and
+/// mask any state the first session left behind, which is the defect under
+/// test.
+async fn sign_in_on_this_page(h: &Harness) {
+    let user = env("UI_E2E_BASIC_USER").unwrap_or_else(|| "ferroehr".to_owned());
+    let pass = env("UI_E2E_BASIC_PASS").unwrap_or_else(|| "ferroehr".to_owned());
+    h.wait_css("#login-username")
+        .await
+        .send_keys(&user)
+        .await
+        .expect("type user");
+    h.wait_css("#login-password")
+        .await
+        .send_keys(&pass)
+        .await
+        .expect("type pass");
+    h.wait_css("button[type=submit]")
+        .await
+        .click()
+        .await
+        .expect("submit the login card");
+}
+
+/// Assert the authenticated chrome is back on screen and the login card is
+/// gone, without any reload having happened.
+async fn assert_signed_in_again(h: &Harness) {
+    for chrome in AUTHED_CHROME {
+        h.wait_css(chrome).await;
+    }
+    wait_css_absent(h, "#login-username").await;
+}
+
+/// The signed-out transition lands on `/login?expired=1&next=…`; signing in
+/// from THAT card returns to `next` with the chrome rendered, in the same
+/// runtime, without a reload.
+#[tokio::test]
+async fn signing_in_from_the_expired_card_returns_to_the_screen_without_a_reload() {
+    let Some(h) = Harness::start("session-expiry-sign-in-again").await else {
+        return;
+    };
+    login_basic(&h).await;
+    h.goto("/templates").await;
+    revoke_session(&h).await;
+    h.wait_css("a[href='/ehrs']")
+        .await
+        .click()
+        .await
+        .expect("navigate to EHRs");
+    h.wait_url_contains("expired=1").await;
+    assert_signed_out(&h).await;
+    h.shot(1, "expired-card").await;
+    sign_in_on_this_page(&h).await;
+    // `next` is the screen the refusal interrupted.
+    h.wait_url_contains("/ehrs").await;
+    assert_signed_in_again(&h).await;
+    h.shot(2, "signed-in-again").await;
+    h.assert_console_clean(&EXPECTED_CONSOLE).await;
+    h.finish().await;
+}
+
+/// The explicit Sign out → sign in path shares the machinery: the second
+/// sign-in in the same runtime must render the chrome too.
+#[tokio::test]
+async fn signing_in_again_after_an_explicit_sign_out_renders_the_chrome() {
+    let Some(h) = Harness::start("session-expiry-sign-out-sign-in").await else {
+        return;
+    };
+    login_basic(&h).await;
+    h.goto("/templates").await;
+    h.wait_css("#user-menu-trigger button")
+        .await
+        .click()
+        .await
+        .expect("open the user menu");
+    h.wait_css(".thaw-popover-surface").await;
+    h.wait_xpath("//button[normalize-space()='Sign out']")
+        .await
+        .click()
+        .await
+        .expect("sign out");
+    h.wait_url_contains("/login").await;
+    for chrome in AUTHED_CHROME {
+        wait_css_absent(&h, chrome).await;
+    }
+    h.shot(1, "signed-out-explicitly").await;
+    sign_in_on_this_page(&h).await;
+    assert_signed_in_again(&h).await;
+    h.shot(2, "signed-in-again").await;
+    h.assert_console_clean(&EXPECTED_CONSOLE).await;
+    h.finish().await;
+}
+
+/// The unattended expiry on the dashboard: the shell notices on its own poll,
+/// lands on `/login?expired=1&next=%2F`, and signing in from that card, after
+/// the page has sat there a moment, renders the dashboard chrome again — the
+/// `next=/` case, where the parent route and its index child share the path.
+#[tokio::test]
+async fn signing_in_from_the_unattended_expired_card_renders_the_dashboard_again() {
+    let Some(h) = Harness::start("session-expiry-unattended-sign-in-again").await else {
+        return;
+    };
+    login_basic(&h).await;
+    h.goto("/").await;
+    revoke_session(&h).await;
+    h.wait_url_contains_for("expired=1", UNATTENDED_WAIT).await;
+    assert_signed_out(&h).await;
+    h.shot(1, "expired-card").await;
+    // The card sits for a moment first: any timer the first shell left behind
+    // gets its chance to fire before the second sign-in.
+    tokio::time::sleep(Duration::from_secs(8)).await;
+    sign_in_on_this_page(&h).await;
+    assert_signed_in_again(&h).await;
+    assert!(
+        !h.driver
+            .current_url()
+            .await
+            .expect("url")
+            .as_str()
+            .contains("/login"),
+        "the address bar left /login"
+    );
+    h.shot(2, "signed-in-again").await;
+    h.assert_console_clean(&EXPECTED_CONSOLE).await;
+    h.finish().await;
+}
+
+/// The OIDC return from the expired card. The card's OIDC anchor carries the
+/// interrupted screen as `next` and is a top-level redirect through the BFF,
+/// so the browser leaves the WASM runtime entirely; with Keycloak's own SSO
+/// session still alive it comes straight back to `next` with the chrome
+/// rendered. Recorded because it is the other half of #3066's question, not
+/// because it shares the client-side machinery. Skips without a Keycloak.
+#[tokio::test]
+async fn returning_through_oidc_from_the_expired_card_renders_the_chrome() {
+    let Some(h) = Harness::start("session-expiry-oidc-return").await else {
+        return;
+    };
+    let (Some(user), Some(pass)) = (env("UI_E2E_OIDC_USER"), env("UI_E2E_OIDC_PASS")) else {
+        println!("SKIP oidc return from the expired card: UI_E2E_OIDC_USER/PASS unset");
+        h.finish().await;
+        return;
+    };
+    h.goto("/login").await;
+    h.wait_css("a[href='/auth/oidc/login']")
+        .await
+        .click()
+        .await
+        .expect("oidc button");
+    h.wait_url_contains("/auth/realms/ferroehr").await;
+    h.wait_css("#username")
+        .await
+        .send_keys(&user)
+        .await
+        .expect("kc user");
+    h.wait_css("#password")
+        .await
+        .send_keys(&pass)
+        .await
+        .expect("kc pass");
+    h.wait_css("#kc-login")
+        .await
+        .click()
+        .await
+        .expect("kc submit");
+    h.wait_css("footer").await;
+    h.goto("/templates").await;
+    revoke_session(&h).await;
+    h.wait_css("a[href='/ehrs']")
+        .await
+        .click()
+        .await
+        .expect("navigate to EHRs");
+    h.wait_url_contains("expired=1").await;
+    assert_signed_out(&h).await;
+    h.shot(1, "expired-card").await;
+    // The anchor now carries `?next=%2Fehrs`; Keycloak still holds its SSO
+    // session, so no second credential prompt is expected.
+    h.wait_css("a[href^='/auth/oidc/login']")
+        .await
+        .click()
+        .await
+        .expect("oidc from the expired card");
+    h.wait_url_contains("/ehrs").await;
+    assert_signed_in_again(&h).await;
+    h.shot(2, "signed-in-again").await;
     h.assert_console_clean(&EXPECTED_CONSOLE).await;
     h.finish().await;
 }
