@@ -127,10 +127,16 @@ probes_tenancy() {
 
   # An UNREGISTERED tenant key. Recorded because it is the behaviour a typo in a
   # JWT claim produces, and because a reader of this file would otherwise have to
-  # guess: the key does not resolve to alpha's data.
+  # guess: the request is refused before it reaches any tenant's data.
+  #
+  # It used to answer 404, because an unknown key ran on the reserved default
+  # tenant and alpha's record was invisible there. That is no longer the shipped
+  # default (#3111): the default tenant owns everything written before tenancy
+  # was enabled, so the fall-through was a way into the legacy store. The
+  # refusal is the stronger outcome — the read never happens at all.
   probe "P-TEN-UNKNOWN" "broken" "server" "#2178" \
-    "an unregistered tenant key cannot read a registered tenant's record"
-  assert_eq "404" "$(http_code -u "$BASIC" -H "${TENANT_HEADER}: nosuchtenant" "$API/ehr/$a")" \
+    "an unregistered tenant key is refused before it reads anything"
+  assert_eq "403" "$(http_code -u "$BASIC" -H "${TENANT_HEADER}: nosuchtenant" "$API/ehr/$a")" \
     "an unknown key must not be a way around the boundary"
   probe_done
 
