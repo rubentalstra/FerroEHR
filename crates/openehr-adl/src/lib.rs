@@ -1,5 +1,5 @@
 // SPDX-FileCopyrightText: Ruben Talstra
-// SPDX-License-Identifier: Apache-2.0
+// SPDX-License-Identifier: BUSL-1.1
 
 //! openEHR ADL 2.4.0 — the hand-written ADL2 engine: ADL2/cADL/ODIN source
 //! parser, the AOM2 validation catalogue, specialisation flattening, OPT2

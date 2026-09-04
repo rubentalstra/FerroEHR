@@ -1,6 +1,6 @@
 // SPDX-FileCopyrightText: Ruben Talstra
 // SPDX-FileCopyrightText: openEHR Foundation
-// SPDX-License-Identifier: Apache-2.0
+// SPDX-License-Identifier: BUSL-1.1 AND Apache-2.0
 
 //! Hand-written runtime for canonical-XML (de)serialization (ITS-XML).
 //!
@@ -74,6 +74,40 @@ pub enum XmlError {
     /// has no underlying failure.
     #[error("xml parse error: {0}")]
     Parse(String),
+    /// A mandatory child element is absent from the element the reader just
+    /// finished. Carries where that element sits in the document and which
+    /// class attribute the child realises, so an author can find an element
+    /// that is not there by the element that should hold it.
+    #[error("{location} is missing mandatory child <{child}> ({owner}.{child})")]
+    MissingChild {
+        /// The element that should hold the child.
+        location: Box<Location>,
+        /// The class whose attribute the child realises.
+        owner: String,
+        /// The absent child element's name.
+        child: String,
+    },
+    /// A mandatory attribute is absent from the element the reader just
+    /// finished.
+    #[error("{location} is missing mandatory attribute {attribute} ({owner}.{attribute})")]
+    MissingAttribute {
+        /// The element that should carry the attribute.
+        location: Box<Location>,
+        /// The class whose attribute it realises.
+        owner: String,
+        /// The absent attribute's name.
+        attribute: String,
+    },
+    /// The element the reader just finished carries content its class refuses:
+    /// an empty `1..*` container, or a value its validating constructor
+    /// rejects. The detail is the class's own diagnosis.
+    #[error("{location}: {detail}")]
+    Content {
+        /// The element whose content was refused.
+        location: Box<Location>,
+        /// The class's diagnosis.
+        detail: String,
+    },
     /// A reader, decoder, or lexical conversion failed underneath the parse.
     ///
     /// The cause is carried as [`std::error::Error::source`] (RFC 0201) so a
@@ -603,10 +637,62 @@ pub enum XmlEvent {
     Eof,
 }
 
+/// Where an element sits in the document being read.
+///
+/// Its start tag as the author wrote it (name and `xsi:type`), its 1-based
+/// line and column, and its path from the root with 1-based sibling ordinals
+/// per element name.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct Location {
+    /// The element name.
+    pub element: String,
+    /// The element's `xsi:type`, when it carries one.
+    pub xsi_type: Option<String>,
+    /// 1-based line of the start tag.
+    pub line: usize,
+    /// 1-based column of the start tag.
+    pub column: usize,
+    /// The path from the root, `/template/definition[1]/attributes[2]/…`.
+    pub path: String,
+}
+
+impl std::fmt::Display for Location {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "element <{}", self.element)?;
+        if let Some(t) = &self.xsi_type {
+            write!(f, " xsi:type=\"{t}\"")?;
+        }
+        write!(
+            f,
+            "> at line {}, column {} ({})",
+            self.line, self.column, self.path
+        )
+    }
+}
+
+/// One open element while reading: what a [`Location`] is built from, plus
+/// the per-name count of the children seen so far, which gives each child its
+/// sibling ordinal.
+struct Frame {
+    element: String,
+    xsi_type: Option<String>,
+    offset: usize,
+    ordinal: u32,
+    children_seen: std::collections::BTreeMap<String, u32>,
+}
+
 /// Reads canonical openEHR XML, yielding owned [`XmlEvent`]s. Empty elements are
 /// expanded to Start+End so callers only handle those four cases.
+///
+/// The reader keeps the stack of open elements and remembers the element it
+/// closed most recently, so a `FromXml` impl that finds a mandatory child
+/// absent once its element is fully read can say WHICH element, where, and
+/// under which class ([`XmlReader::missing_child`]).
 pub struct XmlReader<'a> {
     r: Reader<&'a [u8]>,
+    src: &'a str,
+    frames: Vec<Frame>,
+    last_closed: Option<Location>,
     /// Current element nesting depth, so a document cannot recurse the reader's
     /// consumers off the stack. See [`MAX_DEPTH`].
     depth: u32,
@@ -649,7 +735,102 @@ impl<'a> XmlReader<'a> {
     pub fn new(xml: &'a str) -> Self {
         let mut r = Reader::from_str(xml);
         r.config_mut().expand_empty_elements = true;
-        Self { r, depth: 0 }
+        Self {
+            r,
+            src: xml,
+            frames: Vec::new(),
+            last_closed: None,
+            depth: 0,
+        }
+    }
+
+    /// Push the frame of the element opened by `start` at byte `offset`.
+    fn open(&mut self, start: &StartTag, offset: usize) {
+        let ordinal = match self.frames.last_mut() {
+            Some(parent) => {
+                let seen = parent.children_seen.entry(start.name.clone()).or_insert(0);
+                *seen = seen.saturating_add(1);
+                *seen
+            }
+            None => 1,
+        };
+        self.frames.push(Frame {
+            element: start.name.clone(),
+            xsi_type: start.xsi_type().map(str::to_owned),
+            offset,
+            ordinal,
+            children_seen: std::collections::BTreeMap::new(),
+        });
+    }
+
+    /// Pop the frame of the element just closed, remembering it as the element
+    /// a following construction failure describes.
+    fn close(&mut self) {
+        let mut path = String::new();
+        for (i, frame) in self.frames.iter().enumerate() {
+            path.push('/');
+            path.push_str(&frame.element);
+            if i > 0 {
+                path.push('[');
+                path.push_str(&frame.ordinal.to_string());
+                path.push(']');
+            }
+        }
+        if let Some(frame) = self.frames.pop() {
+            let (line, column) = line_col(self.src, frame.offset);
+            self.last_closed = Some(Location {
+                element: frame.element,
+                xsi_type: frame.xsi_type,
+                line,
+                column,
+                path,
+            });
+        }
+    }
+
+    /// The element a construction failure describes: the one closed most
+    /// recently, because a `FromXml` impl builds its value right after it has
+    /// consumed its own end tag. Before any element closed, the document.
+    fn located(&self) -> Location {
+        self.last_closed.clone().unwrap_or_else(|| Location {
+            element: "document".to_owned(),
+            xsi_type: None,
+            line: 1,
+            column: 1,
+            path: "/".to_owned(),
+        })
+    }
+
+    /// The refusal for a mandatory `child` element absent from the element just
+    /// read, which realises `owner`'s attribute of that name.
+    #[must_use]
+    pub fn missing_child(&self, owner: &str, child: &str) -> XmlError {
+        XmlError::MissingChild {
+            location: Box::new(self.located()),
+            owner: owner.to_owned(),
+            child: child.to_owned(),
+        }
+    }
+
+    /// The refusal for a mandatory `attribute` absent from the element just
+    /// read, which realises `owner`'s attribute of that name.
+    #[must_use]
+    pub fn missing_attribute(&self, owner: &str, attribute: &str) -> XmlError {
+        XmlError::MissingAttribute {
+            location: Box::new(self.located()),
+            owner: owner.to_owned(),
+            attribute: attribute.to_owned(),
+        }
+    }
+
+    /// The refusal for content of the element just read that its class rejects,
+    /// with the class's own `detail`.
+    #[must_use]
+    pub fn invalid_content(&self, detail: impl Into<String>) -> XmlError {
+        XmlError::Content {
+            location: Box::new(self.located()),
+            detail: detail.into(),
+        }
     }
 
     /// Read the next meaningful event.
@@ -658,6 +839,7 @@ impl<'a> XmlReader<'a> {
     /// Propagates parse errors.
     pub fn read(&mut self) -> Result<XmlEvent, XmlError> {
         loop {
+            let at = usize::try_from(self.r.buffer_position()).unwrap_or(usize::MAX);
             let ev = self
                 .r
                 .read_event()
@@ -670,10 +852,13 @@ impl<'a> XmlReader<'a> {
                             "element nesting exceeds the {MAX_DEPTH}-level limit"
                         )));
                     }
-                    return Ok(XmlEvent::Start(to_start_tag(&e)?));
+                    let start = to_start_tag(&e)?;
+                    self.open(&start, at);
+                    return Ok(XmlEvent::Start(start));
                 }
                 Event::End(_) => {
                     self.depth = self.depth.saturating_sub(1);
+                    self.close();
                     return Ok(XmlEvent::End);
                 }
                 Event::Text(t) => {
@@ -760,6 +945,15 @@ fn to_start_tag(e: &BytesStart<'_>) -> Result<StartTag, XmlError> {
         attrs.push((k, v));
     }
     Ok(StartTag { name, attrs })
+}
+
+/// The 1-based line and column of byte `offset` in `src`; the column counts
+/// characters.
+fn line_col(src: &str, offset: usize) -> (usize, usize) {
+    let head = src.get(..offset.min(src.len())).unwrap_or(src);
+    let line = head.matches('\n').count() + 1;
+    let column = head.rsplit('\n').next().map_or(0, |l| l.chars().count()) + 1;
+    (line, column)
 }
 
 /// Deserialize a value from an openEHR canonical-XML document.

@@ -1,5 +1,5 @@
 // SPDX-FileCopyrightText: Ruben Talstra
-// SPDX-License-Identifier: Apache-2.0
+// SPDX-License-Identifier: BUSL-1.1
 
 //! Corpus round-trip gate: for every corpus `.adls` that fully
 //! assembles, `parse_artefact → print → parse_artefact` must reconstruct a

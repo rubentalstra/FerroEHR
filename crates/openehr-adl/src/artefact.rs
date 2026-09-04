@@ -1,5 +1,5 @@
 // SPDX-FileCopyrightText: Ruben Talstra
-// SPDX-License-Identifier: Apache-2.0
+// SPDX-License-Identifier: BUSL-1.1
 
 //! Artefact-level views and the parent/supplier repository — the crate-wide
 //! access layer over an assembled `openehr_am::v2_4::aom2` [`Archetype`].

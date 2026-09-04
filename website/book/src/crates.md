@@ -120,20 +120,29 @@ internal requirements unresolvable for every consumer.
 
 ## Licensing
 
-The eight `openehr-*` crates are **`Apache-2.0`**, the licence of the openEHR
+The eight crates fall into two groups.
+
+The five generated model crates (`openehr-base`, `openehr-rm`, `openehr-am`,
+`openehr-lang`, `openehr-term`) are **`Apache-2.0`**, the licence of the openEHR
 machine-readable artifacts they are generated from, so any Rust project can use
-them, in proprietary and hosted products included. The Business Source License
-of the FerroEHR application does not apply to them. `openehr-query` and
-`openehr-adl` ship only their own Rust sources, the README, and the
-`LICENSE-APACHE-2.0` text. Five of the crates embed material derived from the
-official openEHR machine-readable artifacts (generated types carrying
-specification documentation text, and the vendored ITS-JSON schema), which is
-Apache-2.0 as well, and their generated files name the openEHR Foundation as a
-second copyright holder. `openehr-its` is the one of
-them that packages a third-party file as bytes rather than as generated code,
-so its README carries that file's attribution (upstream repository, the exact
-vendored commit, and the license) inside the package, where it travels with
-any redistribution.
+them, in proprietary and hosted products included. They embed material derived
+from those artifacts (generated types carrying specification documentation
+text), which is Apache-2.0 as well, and their generated files name the openEHR
+Foundation as a second copyright holder.
+
+The three hand-written engines are under the **Business Source License 1.1**,
+the licence of the FerroEHR application (each ships its `LICENSE` with the
+parameters): `openehr-query` and `openehr-adl` declare **`BUSL-1.1`** and ship
+only their own Rust sources, the README and that text; `openehr-its` declares
+**`BUSL-1.1 AND Apache-2.0`**, because its generated codecs and REST contract
+derive from the Apache-2.0 openEHR XSD, OpenAPI and BMM artifacts and it
+packages the vendored ITS-JSON schema as bytes, so it ships both texts and its
+README carries that file's attribution (upstream repository, the exact vendored
+commit, and the licence) inside the package, where it travels with any
+redistribution. Non-production use of these three is free, production use is
+free for Non-Commercial Purposes, and any other production use, hosting for
+third parties or distribution for a fee needs a commercial licence, exactly as
+for the application.
 
 `openehr-term` carries a third term, because it embeds a different kind of
 openEHR material: the official terminology XML (the five language bundles, the
@@ -145,7 +154,9 @@ travels under CC-BY-SA 3.0.
 
 Versions 0.0.56 and earlier were published under the MIT terms in force at the
 time (MIT AND Apache-2.0 for the crates that embed openEHR material) and keep
-them; 0.0.57 was never published; from 0.0.58 the crates are Apache-2.0. The full picture, including
+them; 0.0.57 was never published; 0.0.58 and 0.0.59 are Apache-2.0 for all
+eight; from 0.0.60 the three engines are BUSL-1.1 as stated above. Published
+versions keep the licence they were published with. The full picture, including
 the vendored material that never reaches a published package, is in
 [Licensing](licensing.md).
 

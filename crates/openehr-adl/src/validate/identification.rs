@@ -1,5 +1,5 @@
 // SPDX-FileCopyrightText: Ruben Talstra
-// SPDX-License-Identifier: Apache-2.0
+// SPDX-License-Identifier: BUSL-1.1
 
 //! Phase-1 identification / header topic: the archetype identifier, the
 //! definition root typename and concept code, the ADL/RM version metadata, the

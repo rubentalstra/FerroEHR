@@ -1,5 +1,5 @@
 // SPDX-FileCopyrightText: Ruben Talstra
-// SPDX-License-Identifier: Apache-2.0
+// SPDX-License-Identifier: BUSL-1.1
 
 //! Field accessors over the closed AOM2 `C_OBJECT` / `C_COMPLEX_OBJECT`
 //! subtype sets.

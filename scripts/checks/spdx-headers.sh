@@ -44,16 +44,21 @@ readonly PROJECT_COPYRIGHT='// SPDX-FileCopyrightText: Ruben Talstra'
 readonly OPENEHR_COPYRIGHT='// SPDX-FileCopyrightText: openEHR Foundation'
 readonly BUSL_HEADER="$PROJECT_COPYRIGHT
 // SPDX-License-Identifier: BUSL-1.1"
-readonly APACHE_HEADER="$PROJECT_COPYRIGHT
-// SPDX-License-Identifier: Apache-2.0"
+# The five generated model crates: the project's code and the openEHR-derived
+# material it carries, both Apache-2.0 (owner decision 2026-09-03).
 readonly DUAL_HEADER="$PROJECT_COPYRIGHT
 $OPENEHR_COPYRIGHT
 // SPDX-License-Identifier: Apache-2.0"
-# The six crates whose headers carry the openEHR Foundation as a second holder.
+# openehr-its: the project's BUSL-1.1 code over the Apache-2.0 openEHR-derived
+# codecs, contract and schema it embeds (owner decision 2026-09-04). The other
+# two hand-written engines, openehr-adl and openehr-query, embed nothing and
+# carry the plain BUSL header like the application.
+readonly ITS_HEADER="$PROJECT_COPYRIGHT
+$OPENEHR_COPYRIGHT
+// SPDX-License-Identifier: BUSL-1.1 AND Apache-2.0"
 readonly -a DUAL_CRATES=(
   openehr-am
   openehr-base
-  openehr-its
   openehr-lang
   openehr-rm
   openehr-term
@@ -97,8 +102,8 @@ expected_header() {
       return
     fi
   done
-  if [[ -n "$krate" ]]; then
-    printf '%s' "$APACHE_HEADER"
+  if [[ "$krate" = openehr-its ]]; then
+    printf '%s' "$ITS_HEADER"
     return
   fi
   printf '%s' "$BUSL_HEADER"

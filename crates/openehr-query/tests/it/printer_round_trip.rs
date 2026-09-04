@@ -1,5 +1,5 @@
 // SPDX-FileCopyrightText: Ruben Talstra
-// SPDX-License-Identifier: Apache-2.0
+// SPDX-License-Identifier: BUSL-1.1
 
 //! The printer's own documented invariant, asserted over every boolean shape:
 //! for any AST the parser produces, `parse(to_aql(ast)) == ast`.
