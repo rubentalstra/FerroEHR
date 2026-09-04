@@ -19,6 +19,9 @@
 bind = "0.0.0.0:8080"
 # Browser tinkering against the demo is the point.
 cors_permissive = true
+# The public API reference the documentation links to; the default asks for the
+# API credential.
+swagger_ui = "public"
 
 [auth]
 enabled = true

@@ -31,6 +31,10 @@ services:
       FERROEHR__TENANCY__ENABLED: "true"
       FERROEHR__TENANCY__CLAIM: tenant
       FERROEHR__TENANCY__HEADER: ${TENANT_HEADER}
+      # The probe stack authenticates, and the server refuses a tenant header
+      # under authentication unless the deployment accepts it by name (#3093).
+      # This harness is exactly the development deployment that does.
+      FERROEHR__TENANCY__INSECURE_HEADER_OVERRIDE: "true"
 YAML
   printf '%s' "$out"
 }

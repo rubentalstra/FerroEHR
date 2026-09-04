@@ -33,7 +33,7 @@ config:
   server:
     bind: "0.0.0.0:8080"
     base_path: /ferroehr/rest/openehr/v1
-    swagger_ui: true
+    swagger_ui: public
     cors_permissive: false
   db:
     max_connections: 10

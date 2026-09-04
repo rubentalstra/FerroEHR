@@ -75,7 +75,7 @@ fn user(name: &str, roles: &[&str]) -> BasicUser {
 fn rest_config(auth_enabled: bool) -> AppConfig {
     AppConfig {
         server: ServerConfig {
-            swagger_ui: false,
+            swagger_ui: ferroehr::config::management::AccessLevel::Off,
             ..Default::default()
         },
         auth: AuthConfig {

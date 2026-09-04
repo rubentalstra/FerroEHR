@@ -55,7 +55,9 @@ curl http://localhost:8080/ferroehr/rest/status
 It answers a small JSON document: `status`, `server_version`,
 `openehr_rest_api_version` and a `timestamp`. All clinical API routes live under
 the base path `/ferroehr/rest/openehr/v1`. Interactive OpenAPI documentation is
-served at <http://localhost:8080/ferroehr/rest/swagger-ui>. If you have no
+served at <http://localhost:8080/ferroehr/rest/swagger-ui>; sign in with the
+API credential when the browser asks (the UI is served to authenticated users by
+default, see [`server.swagger_ui`](installation/config-server.md#server)). If you have no
 server yet, use the hosted sandbox: <https://sandbox.ferroehr.eu> opens the
 viewer over a live CDR, and the same server's Swagger UI is at
 <https://sandbox.ferroehr.eu/ferroehr/rest/swagger-ui>. Both take the public
@@ -203,8 +205,9 @@ feature set.
 
 ## 7. Explore the API interactively
 
-Open <http://localhost:8080/ferroehr/rest/swagger-ui> to browse and try every
-endpoint from your browser. The UI's spec selector carries one entry per API
+Open <http://localhost:8080/ferroehr/rest/swagger-ui> (signing in with the API
+credential when the browser asks) to browse and try every endpoint from your
+browser. The UI's spec selector carries one entry per API
 family: the standardised openEHR groups (EHR, Query, Definition, Demographic,
 Admin) and the server's own extensions (status & management, terminology, party
 relationships, messaging, event subscriptions, multi-tenancy, the FHIR

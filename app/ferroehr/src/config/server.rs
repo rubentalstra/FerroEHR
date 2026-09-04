@@ -22,6 +22,8 @@
 
 use serde::{Deserialize, Serialize};
 
+use crate::config::management::AccessLevel;
+
 /// The `[server]` section — the HTTP listener and REST surface.
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(default, deny_unknown_fields)]
@@ -36,9 +38,13 @@ pub struct ServerConfig {
     /// limited. No openEHR spec governs server overload — our own design
     /// (RFC 9110 §15.6.4).
     pub max_in_flight: usize,
-    /// Serve the Swagger UI + the `OpenAPI` JSON at the REST root. Consider
-    /// `false` in production.
-    pub swagger_ui: bool,
+    /// Who may read the Swagger UI and the `OpenAPI` documents at the REST
+    /// root: `off` (not mounted), `admin_only`, `private` (any authenticated
+    /// principal; the default) or `public`. The documents list the whole
+    /// enabled operation surface, admin and message groups included, so
+    /// `public` discloses it to anyone who can reach the port. The same
+    /// vocabulary the management endpoints use.
+    pub swagger_ui: AccessLevel,
     /// Permissive CORS (dev only). Production configures explicit origins.
     pub cors_permissive: bool,
     /// This CDR's own openEHR **system identifier** — the identity the
@@ -371,7 +377,7 @@ impl Default for ServerConfig {
             // in-flight clinical commits) while still permitting ~10k req/s at
             // 25 ms latency (throughput = in-flight / latency, Little's law).
             max_in_flight: 256,
-            swagger_ui: true,
+            swagger_ui: AccessLevel::Private,
             cors_permissive: false,
             // The service layer's own default, so an unset `[server] system_id`
             // boots exactly as the service does.

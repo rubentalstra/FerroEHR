@@ -44,6 +44,7 @@ use std::sync::Arc;
 use axum::Router;
 use axum::body::Body;
 use ferroehr::config::authz::AuthzConfig;
+use ferroehr::config::management::AccessLevel;
 use ferroehr::config::server::{AdminConfig, ServerConfig};
 use ferroehr::config::smart::SmartConfig;
 use ferroehr_rest::config::AppConfig;
@@ -438,7 +439,7 @@ fn matrix_config() -> AppConfig {
             // ON: the PUBLIC table declares the OAS/Swagger routes, and they are
             // mounted only when this is set — with it off the coverage assertion
             // reports them as declared-but-unmounted.
-            swagger_ui: true,
+            swagger_ui: AccessLevel::Public,
             ..Default::default()
         },
         auth: common::hs256_auth_config(ISSUER, AUDIENCE, HMAC_SECRET),
@@ -738,5 +739,77 @@ async fn the_public_family_needs_no_credential_and_the_gated_surface_does() {
         gated.status,
         StatusCode::UNAUTHORIZED,
         "an unauthenticated read of a gated route must be 401"
+    );
+}
+
+/// `server.swagger_ui` is an access level over the Swagger UI and the OpenAPI
+/// documents (#3094): `private` needs a credential (`401` with the server's
+/// `WWW-Authenticate` challenge for an anonymous request, so a browser prompts),
+/// `admin_only` needs the admin role (`403` for a role-less principal), `off`
+/// mounts nothing (`404`). No openEHR spec governs the documentation surface —
+/// our own design.
+#[tokio::test]
+async fn the_swagger_surface_honours_its_access_level() {
+    async fn app_at(level: AccessLevel) -> (testkit::TestDb, Router) {
+        let (pg, pool) = common::migrated_pool().await;
+        let cfg = AppConfig {
+            server: ServerConfig {
+                swagger_ui: level,
+                ..Default::default()
+            },
+            ..matrix_config()
+        };
+        let app = ferroehr_rest::build_full(
+            cfg,
+            Arc::new(ferroehr::service::FerroEhrService::new(pool)),
+            authz(),
+            ferroehr_rest::extensions::management::Observability::default(),
+        )
+        .expect("build app");
+        (pg, app)
+    }
+    let ui = "/ferroehr/rest/swagger-ui";
+    let doc = "/ferroehr/rest/api-docs/openapi.json";
+
+    let (_pg, app) = app_at(AccessLevel::Private).await;
+    for path in [ui, doc] {
+        assert_eq!(
+            probe(&app, "GET", path, None).await.status,
+            StatusCode::UNAUTHORIZED,
+            "{path} needs a credential under `private`"
+        );
+        let authed = probe(&app, "GET", path, Some(&[])).await.status;
+        assert!(
+            authed.is_success() || authed.is_redirection(),
+            "{path} is served to any authenticated principal under `private`, got {authed}"
+        );
+    }
+    let anonymous = app
+        .clone()
+        .oneshot(Request::get(ui).body(Body::empty()).expect("request"))
+        .await
+        .expect("oneshot");
+    assert!(
+        anonymous.headers().contains_key("www-authenticate"),
+        "the refusal carries the challenge a browser answers"
+    );
+
+    let (_pg, app) = app_at(AccessLevel::AdminOnly).await;
+    assert_eq!(
+        probe(&app, "GET", ui, Some(&[])).await.status,
+        StatusCode::FORBIDDEN,
+        "a role-less principal is refused under `admin_only`"
+    );
+    assert_eq!(
+        probe(&app, "GET", ui, Some(&["ADMIN"])).await.status,
+        StatusCode::TEMPORARY_REDIRECT,
+        "the admin role reaches the UI under `admin_only`"
+    );
+
+    let (_pg, app) = app_at(AccessLevel::Off).await;
+    assert_eq!(
+        probe(&app, "GET", ui, None).await.status,
+        StatusCode::NOT_FOUND,
+        "`off` mounts nothing"
     );
 }

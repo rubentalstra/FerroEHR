@@ -35,7 +35,7 @@ bind = "0.0.0.0:8080"
 # the first segment must be /ferroehr and the last must be v1.
 base_path = "/ferroehr/rest/openehr/v1"
 max_in_flight = 256          # concurrent-request admission cap; 0 disables shedding
-swagger_ui = true            # PROD: consider false
+swagger_ui = "private"       # off | admin_only | private | public — "public" discloses the whole operation surface anonymously
 cors_permissive = false      # PROD: keep false; configure explicit origins
 # This CDR's own openEHR system identifier: stamped into EHR.system_id, the
 # AUDIT_DETAILS.system_id server default, and every
