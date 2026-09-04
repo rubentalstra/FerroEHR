@@ -51,12 +51,18 @@ impl FerroEhrService {
     /// We adopt the CNF criterion (`create_composition-same_opt_twice`). Only
     /// persistent COMPOSITIONs with a declared template are constrained.
     ///
+    /// Runs on the CALLER'S executor so the create path spends one pooled
+    /// connection on its gates and its commit: with multi-tenancy on, every
+    /// checkout costs a `set_config` round trip (`crate::db`), so the acquire
+    /// count is the cost (measured on #3097).
+    ///
     /// # Errors
     /// [`ServiceError::Conflict`] when a live persistent COMPOSITION for the
     /// same template already exists in the EHR; [`ServiceError::Database`] on
     /// a storage failure.
-    pub(super) async fn reject_duplicate_persistent(
+    pub(super) async fn reject_duplicate_persistent<'e>(
         &self,
+        executor: impl sqlx::PgExecutor<'e>,
         ehr_id: EhrId,
         composition: &Value,
     ) -> Result<(), ServiceError> {
@@ -75,7 +81,7 @@ impl FerroEhrService {
         // schedule's, still "under debate in the openEHR SEC"
         // (`CNF/docs/platform_test_schedule/master07-func_tc_ehr_composition.adoc`).
         let exists = crate::storage::version_repo::meta::persistent_template_exists(
-            &self.pool,
+            executor,
             ehr_id,
             template_id,
             code::PERSISTENT,

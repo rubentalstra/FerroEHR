@@ -335,8 +335,8 @@ const EXISTS_SQL: &str = "SELECT EXISTS(SELECT 1 FROM vo_version_all WHERE vo_id
 ///
 /// # Errors
 /// Returns [`StorageError::Database`] on a driver failure.
-pub async fn persistent_template_exists(
-    pool: &PgPool,
+pub async fn persistent_template_exists<'e>(
+    executor: impl sqlx::PgExecutor<'e>,
     ehr_id: EhrId,
     template_id: &str,
     persistent_code: &str,
@@ -352,7 +352,7 @@ pub async fn persistent_template_exists(
     .bind(deleted_state)
     .bind(template_id)
     .bind(persistent_code)
-    .fetch_one(pool)
+    .fetch_one(executor)
     .await?)
 }
 
