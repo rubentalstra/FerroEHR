@@ -174,7 +174,13 @@ impl Harness {
         {
             Ok(element) => element,
             Err(e) => {
-                // Failure evidence: where the browser actually was.
+                // Failure evidence: where the browser actually was, and what
+                // its console says. The console half is what separates "the
+                // screen simply has not got there yet" from "the client
+                // runtime is dead": an unrecoverable hydration error traps the
+                // WASM module, after which no client-side navigation completes
+                // and the page only moves on a full reload. Without it a
+                // timeout reports a missing selector and hides its cause.
                 let url = self
                     .driver
                     .current_url()
@@ -183,7 +189,25 @@ impl Harness {
                     .unwrap_or_default();
                 let path = format!("{}/{}-fail.png", self.shots_dir, self.journey);
                 drop(self.driver.screenshot(std::path::Path::new(&path)).await);
-                panic!("waiting for `{css}` at {url}: {e}");
+                let console: Vec<String> = self
+                    .driver
+                    .get_log("browser")
+                    .await
+                    .unwrap_or_default()
+                    .into_iter()
+                    .filter(|entry| entry.level == "SEVERE")
+                    .map(|entry| entry.message)
+                    .collect();
+                let console = if console.is_empty() {
+                    "  (no SEVERE console entries)".to_owned()
+                } else {
+                    console
+                        .iter()
+                        .map(|m| format!("  {m}"))
+                        .collect::<Vec<_>>()
+                        .join("\n")
+                };
+                panic!("waiting for `{css}` at {url}: {e}\nbrowser console:\n{console}");
             }
         }
     }
