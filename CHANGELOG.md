@@ -95,6 +95,17 @@ workflow refuses a tag that has no matching section here.
 
 ### Fixed
 
+- **A large operational template uploads in milliseconds again** (#3114). The
+  XML reader resolved every closing element's line and column by scanning the
+  document from byte zero, which made a parse quadratic in document size: the
+  International Patient Summary template, 1.9 MB, took 10.08 s, and the largest
+  form the CKM publishes was on track for about 59 s. A template upload holds
+  that CPU on the request, and large uploads were answering
+  `408 Request Timeout`.
+  The position and the element path are now resolved when a refusal is raised
+  rather than on every close, so a refused document names exactly what it named
+  before. The same two templates parse in 10.2 ms and 25.1 ms.
+
 - **An explicit `fetch` or AQL `LIMIT` can no longer ask for a page larger than
   `query.max_result_rows`** (#3092). The ceiling used to apply only to a query
   that carried neither bound, so `fetch=10000000` materialised the whole
