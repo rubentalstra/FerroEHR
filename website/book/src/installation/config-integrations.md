@@ -23,7 +23,7 @@ max_result_rows = 10000
 |---|---|---|---|
 | `plan_cache_capacity` | int | `256` | Maximum distinct cached query plans; `0` disables the cache and every lookup runs the full parse-and-lower path. Cache activity is reported by the `aql_plan_cache_events` counter. |
 | `timeout_ms` | int | `30000` | Per-query database execution budget; `0` disables it. Overrun is refused `408`. |
-| `max_result_rows` | int | `10000` | The result-row ceiling for a query that neither the AQL nor the request bounds; `0` means unbounded. |
+| `max_result_rows` | int | `10000` | The largest page one query execution serves: the page of a query nothing else bounds, and the maximum an explicit `LIMIT` or `fetch` may ask for (a larger page is refused `400`); `0` means unbounded. |
 
 **`timeout_ms` is on by default, and deliberately tighter than
 [`db.statement_timeout_ms`](config-server.md#db).** The HTTP request timeout
@@ -33,12 +33,17 @@ holding pooled connections after their callers had been given up on. Keeping
 this budget the tighter of the two means an overrun surfaces as the engine's own
 typed `408` rather than a driver error.
 
-**`max_result_rows` bounds only the case where nothing else does.** Without it,
+**`max_result_rows` is the largest page one execution serves.** Without it,
 `SELECT c FROM COMPOSITION c` with no `fetch` generates SQL with no `LIMIT` and
-materialises every matching row: one request, unbounded allocation. An explicit
-AQL `LIMIT` or a `fetch` parameter is honoured as written. ITS-REST leaves the
-`fetch` default to the implementation, so a default ceiling is spec-permitted; a
-bulk consumer asks for more explicitly, which is the point.
+materialises every matching row: one request, unbounded allocation. A query that
+nothing else bounds takes the ceiling as its page. An explicit AQL `LIMIT` or a
+`fetch` parameter is honoured as written up to the ceiling; a page larger than the
+ceiling is refused with `400` naming the ceiling. The refusal is deliberate: a
+silently shortened page would let a client that pages with its own `fetch` as the
+stride skip the rows between the shortened page and its next `offset`, and the
+`RESULT_SET` has nothing to say so. ITS-REST leaves both the `fetch` default and
+its maximum to the implementation. A bulk consumer pages with `offset` and a
+`fetch` at or below the ceiling, or the operator raises the ceiling deliberately.
 
 ## `[events]`
 

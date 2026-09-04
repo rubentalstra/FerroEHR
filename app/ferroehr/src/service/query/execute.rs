@@ -143,17 +143,7 @@ impl FerroEhrService {
         record_phase("plan", plan_start);
 
         let (limit, offset) = compose_paging(ir.limit, ir.offset, ir.limit_is_top, request)?;
-        // The ceiling applies ONLY where nothing else bounds the query. An AQL
-        // `LIMIT` or a `fetch` parameter is honoured as written; a query with
-        // neither would otherwise generate SQL with no `LIMIT` and materialise
-        // every matching row before the RESULT_SET is built, which makes one
-        // request an unbounded caller-chosen allocation. ITS-REST leaves the
-        // `fetch` default to the implementation (query `Request.md` §Common
-        // Headers and Query Parameters), so a default ceiling is spec-permitted.
-        let limit = match (limit, self.query_result_ceiling) {
-            (None, Some(ceiling)) => Some(ceiling),
-            (bounded, _) => bounded,
-        };
+        let limit = apply_result_ceiling(limit, self.query_result_ceiling)?;
         // Multi-EHR scoping (`ehr_ids: List<UUID>`): a malformed id is a
         // client precondition (`400`); a well-formed but absent id raises
         // `ehr_id_does_not_exist` (`i_query_service.adoc`).
@@ -405,6 +395,34 @@ fn compose_paging(
         }
     };
     Ok((limit, offset))
+}
+
+/// Apply the configured result-row ceiling to the composed page `limit`.
+///
+/// A query nothing else bounds takes the ceiling as its `LIMIT`: without it
+/// the SQL would carry no `LIMIT` and materialise every matching row before
+/// the `RESULT_SET` is built, one request an unbounded caller-chosen
+/// allocation. A page asked for explicitly, by AQL `LIMIT` or the `fetch`
+/// parameter, is served as written up to the ceiling and REFUSED above it:
+/// a silent clamp would hand a client paging with its own `fetch` as the
+/// stride a shorter page, and the rows between the clamped page and the next
+/// `offset` would vanish with nothing in the `RESULT_SET` to say so. ITS-REST
+/// leaves both the `fetch` default and its maximum to the implementation
+/// (query `Request.md` §Common Headers and Query Parameters), and a refused
+/// page is the released `400` branch ("invalid input … at least one of the
+/// parameters has an invalid syntax", `400_Query`).
+fn apply_result_ceiling(limit: Option<i64>, ceiling: Option<i64>) -> Result<Option<i64>, Failure> {
+    match (limit, ceiling) {
+        (None, Some(ceiling)) => Ok(Some(ceiling)),
+        (Some(asked), Some(ceiling)) if asked > ceiling => {
+            Err(Failure::analysis(SmError::precondition(format!(
+                "the requested page of {asked} rows exceeds the largest page this server \
+                 serves ({ceiling} rows, `query.max_result_rows`); page with `offset` and \
+                 a `fetch` at or below it"
+            ))))
+        }
+        (bounded, _) => Ok(bounded),
+    }
 }
 
 /// The `aql_queries_total{outcome}` label for an [`AqlError`] (spec-silent
