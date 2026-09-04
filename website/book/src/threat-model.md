@@ -248,10 +248,10 @@ to operator-configured endpoints.
 single-tenant. When on, the tenant is resolved from a configured JWT claim and
 applied as a PostgreSQL session setting that drives **`FORCE ROW LEVEL
 SECURITY`** policies on every tenant-scoped table, including the cold-archive
-mirrors. Isolation is fail-safe: an absent or unresolvable tenant runs against a
-reserved default rather than guessing, and a cross-tenant access is an empty
-result set rather than a `403` that would leak the existence of another tenant's
-data.
+mirrors. A tenant key that names no registered tenant is refused with a `403`,
+because the reserved default tenant it would otherwise fall through to owns
+every row written while tenancy was off. A request carrying no tenant key at
+all still runs against that default rather than guessing.
 
 A tenant *registry* that cannot be reached is a separate case and is not read as
 "no tenant": it answers `503`, like any other dependency failure, rather than
@@ -263,9 +263,12 @@ falling through to the default.
   when set it **wins over the JWT claim**. It is a development affordance and
   there is no way to make it safe in production. If it is set, tenancy is not a
   boundary. Leave it unset.
-- **A missing or unknown claim degrades quietly to the default tenant.** That is
-  the fail-safe choice, and its cost is that a misconfigured claim path looks
-  like "tenancy is doing nothing" rather than failing loudly.
+- **A missing claim still degrades quietly to the default tenant**, and so does
+  an unknown one when `FERROEHR__TENANCY__UNKNOWN_TENANT=default_tenant` is set
+  to trade the `403` for existence-hiding. On a deployment that enabled tenancy
+  after going live, that default tenant is the whole pre-tenancy store. The
+  server counts its stored versions at boot and warns when it holds any; moving
+  that content into a named tenant is a manual step today.
 - **Row-level security binds a connection, not a request.** The scoping is
   applied per connection from a shared pool; a defect in that plumbing is a
   cross-tenant read, which is why it is enforced by the database rather than by

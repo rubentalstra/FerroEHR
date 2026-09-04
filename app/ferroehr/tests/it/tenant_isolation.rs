@@ -410,3 +410,40 @@ async fn scoped_pool_stamps_connections_opened_during_acquire() {
     })
     .await;
 }
+
+/// The boot check reads what the reserved default tenant holds, which is what
+/// a request the tenancy middleware cannot scope goes on to read (#3111).
+///
+/// A freshly migrated database owns nothing there; an EHR created with no
+/// tenant scope — the pre-tenancy write shape — lands in it and the count
+/// says so.
+#[tokio::test]
+async fn the_default_tenant_count_sees_content_written_without_a_tenant_scope() {
+    use ferroehr::service::FerroEhrService;
+
+    let testdb = testkit::db().await.expect("testkit database");
+    let pool = testdb.pool();
+
+    assert_eq!(
+        db::default_tenant_versions(&pool)
+            .await
+            .expect("count on a fresh database"),
+        0,
+        "a freshly migrated store leaves the reserved default tenant empty"
+    );
+
+    let service = FerroEhrService::new(pool.clone());
+    service
+        .create_ehr(None)
+        .await
+        .expect("an unscoped EHR create");
+
+    assert!(
+        db::default_tenant_versions(&pool)
+            .await
+            .expect("count after an unscoped write")
+            > 0,
+        "an unscoped write lands in the reserved default tenant, which is the \
+         content the boot warning exists to name"
+    );
+}

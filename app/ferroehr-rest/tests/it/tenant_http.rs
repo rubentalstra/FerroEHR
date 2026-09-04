@@ -112,7 +112,9 @@ fn config_with_header(enabled: bool) -> AppConfig {
 async fn current_reports_the_default_when_unscoped() {
     // GET /admin/tenant/current with no tenant key: the request runs unscoped
     // on the reserved default tenant, and the read says so rather than
-    // fabricating a record.
+    // fabricating a record. `tenancy.unknown_tenant` governs a key that does
+    // not resolve, never the absence of one, so the refusing default (#3111)
+    // leaves this path alone.
     let (_pg, app) = app(true).await;
     let (status, body) = send(app, req("GET", &format!("{GROUP}/current"), None)).await;
     assert_eq!(status, StatusCode::OK);
@@ -145,8 +147,30 @@ async fn current_reports_the_resolved_tenant_when_scoped() {
     assert_eq!(body["tenant"]["name"], "acme-current");
     assert_eq!(body["tenant"]["id"], created["id"]);
 
-    // An UNKNOWN key runs unscoped -> the default answer (the documented
-    // unknown-key policy: engine-level default scope, never a 403).
+    // An UNKNOWN key is refused: falling through would hand the caller the
+    // reserved default tenant, which owns every row written while tenancy was
+    // off (#3111).
+    let unknown = Request::builder()
+        .method("GET")
+        .uri(format!("{GROUP}/current"))
+        .header("X-Tenant", "no-such-tenant")
+        .body(Body::empty())
+        .unwrap();
+    let (status, _body) = send(app, unknown).await;
+    assert_eq!(status, StatusCode::FORBIDDEN);
+}
+
+/// The opt-in twin of the refusal above: `unknown_tenant = "default_tenant"`
+/// restores the fall-through for a deployment that prefers a cross-tenant
+/// access to look like an empty result set rather than a `403` confirming
+/// another tenant exists (#3111).
+#[tokio::test]
+async fn an_unknown_key_falls_through_to_the_default_tenant_when_the_deployment_asks() {
+    let (_pg, service) = common::test_service().await;
+    let mut cfg = config_with_header(true);
+    cfg.tenancy.unknown_tenant = ferroehr::config::server::UnknownTenant::DefaultTenant;
+    let app = ferroehr_rest::build_with(cfg, service).expect("router builds");
+
     let unknown = Request::builder()
         .method("GET")
         .uri(format!("{GROUP}/current"))

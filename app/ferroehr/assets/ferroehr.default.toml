@@ -265,6 +265,13 @@ enabled = false
 claim = "tenant"
 #? header = "X-FerroEHR-Tenant"   # dev-only override; never in production
 insecure_header_override = false   # accept `header` with auth.enabled = true (development only)
+# What a tenant key that names no registered tenant gets: "refuse" (403) or
+# "default_tenant" (run unscoped against the reserved default tenant, so a
+# cross-tenant read is an empty set rather than a 403 confirming another
+# tenant exists). "default_tenant" is safe only while that tenant is empty —
+# it owns every row written before tenancy was enabled, and boot warns when
+# it holds any.
+unknown_tenant = "refuse"
 
 # ── [smart] — SMART App Launch ────────────────────────────────────────────────
 [smart]
