@@ -319,6 +319,36 @@ without noticing. Page with `offset` and a `fetch` at or below the ceiling. A
 result that stops at the ceiling without either bound set is the default page:
 page explicitly to read past it.
 
+### Always order a query you intend to page
+
+`OFFSET` skips rows of a result, and without `ORDER BY` a result has no defined
+row order. Two requests for consecutive pages can then repeat a row or miss one
+entirely, and nothing in the response says so. Give any query you page an
+`ORDER BY` on something unique, such as `c/uid/value`.
+
+Ordering also changes what paging costs, in the direction that helps you.
+Measured against 131 000 stored compositions on one machine:
+
+| Query | Offset 0 | Offset 10 000 | Offset 100 000 |
+|---|---|---|---|
+| with `ORDER BY` | 110 ms | 222 ms | 275 ms |
+| without | 2 ms | 14 ms | 84 ms |
+
+An ordered query sorts the whole matched set to answer any page, so the first
+page already pays most of the cost and a deep page costs little more.
+An unordered one skips rows one at a time, so its cost grows with the offset,
+from nothing on page one. Either way, the number that dominates is how much your
+`FROM`/`CONTAINS` matched, not how deep you paged: narrow the query and both
+columns shrink.
+
+One more reason to order a paged query, if the deployment runs attribute-based
+authorization: the authorization decision is made over every EHR and template
+the query would touch, not over the page it served, so that set is collected
+whatever the page size. An ordered query pays nothing extra for it, because it
+was producing the whole matched set anyway. An unordered `LIMIT 10` that would
+have answered in 2 ms took 136 ms on the same 131 000-composition store. Narrow
+the query, and order it.
+
 > [!TIP]
 > The more specific your `FROM`/`CONTAINS` (name the archetype, scope by
 > `ehr_id`), the faster the query: those constraints map to indexed columns,
