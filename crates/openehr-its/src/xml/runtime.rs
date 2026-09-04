@@ -681,6 +681,25 @@ struct Frame {
     children_seen: std::collections::BTreeMap<String, u32>,
 }
 
+/// The element the reader closed most recently, kept as the facts a
+/// [`Location`] is derived from rather than as the `Location` itself.
+///
+/// The line, column and root path are computed in [`XmlReader::located`],
+/// because a refusal aborts the parse: at most one location is ever read, and
+/// resolving a byte offset to a line number costs a scan from the start of the
+/// document. Doing that on every close made a large document quadratic — a
+/// 1.9 MB operational template took 10 s to parse.
+struct ClosedElement {
+    element: String,
+    xsi_type: Option<String>,
+    offset: usize,
+    ordinal: u32,
+    /// How many frames were still open when this element closed, so
+    /// [`XmlReader::located`] reads its ancestors and not any element opened
+    /// afterwards.
+    ancestors: usize,
+}
+
 /// Reads canonical openEHR XML, yielding owned [`XmlEvent`]s. Empty elements are
 /// expanded to Start+End so callers only handle those four cases.
 ///
@@ -692,7 +711,7 @@ pub struct XmlReader<'a> {
     r: Reader<&'a [u8]>,
     src: &'a str,
     frames: Vec<Frame>,
-    last_closed: Option<Location>,
+    last_closed: Option<ClosedElement>,
     /// Current element nesting depth, so a document cannot recurse the reader's
     /// consumers off the stack. See [`MAX_DEPTH`].
     depth: u32,
@@ -766,8 +785,35 @@ impl<'a> XmlReader<'a> {
     /// Pop the frame of the element just closed, remembering it as the element
     /// a following construction failure describes.
     fn close(&mut self) {
+        if let Some(frame) = self.frames.pop() {
+            self.last_closed = Some(ClosedElement {
+                element: frame.element,
+                xsi_type: frame.xsi_type,
+                offset: frame.offset,
+                ordinal: frame.ordinal,
+                ancestors: self.frames.len(),
+            });
+        }
+    }
+
+    /// The element a construction failure describes: the one closed most
+    /// recently, because a `FromXml` impl builds its value right after it has
+    /// consumed its own end tag. Before any element closed, the document.
+    ///
+    /// This is where the closed element's line, column and root path are
+    /// resolved, on the one path that reads them.
+    fn located(&self) -> Location {
+        let Some(closed) = &self.last_closed else {
+            return Location {
+                element: "document".to_owned(),
+                xsi_type: None,
+                line: 1,
+                column: 1,
+                path: "/".to_owned(),
+            };
+        };
         let mut path = String::new();
-        for (i, frame) in self.frames.iter().enumerate() {
+        for (i, frame) in self.frames.iter().take(closed.ancestors).enumerate() {
             path.push('/');
             path.push_str(&frame.element);
             if i > 0 {
@@ -776,29 +822,21 @@ impl<'a> XmlReader<'a> {
                 path.push(']');
             }
         }
-        if let Some(frame) = self.frames.pop() {
-            let (line, column) = line_col(self.src, frame.offset);
-            self.last_closed = Some(Location {
-                element: frame.element,
-                xsi_type: frame.xsi_type,
-                line,
-                column,
-                path,
-            });
+        path.push('/');
+        path.push_str(&closed.element);
+        if closed.ancestors > 0 {
+            path.push('[');
+            path.push_str(&closed.ordinal.to_string());
+            path.push(']');
         }
-    }
-
-    /// The element a construction failure describes: the one closed most
-    /// recently, because a `FromXml` impl builds its value right after it has
-    /// consumed its own end tag. Before any element closed, the document.
-    fn located(&self) -> Location {
-        self.last_closed.clone().unwrap_or_else(|| Location {
-            element: "document".to_owned(),
-            xsi_type: None,
-            line: 1,
-            column: 1,
-            path: "/".to_owned(),
-        })
+        let (line, column) = line_col(self.src, closed.offset);
+        Location {
+            element: closed.element.clone(),
+            xsi_type: closed.xsi_type.clone(),
+            line,
+            column,
+            path,
+        }
     }
 
     /// The refusal for a mandatory `child` element absent from the element just

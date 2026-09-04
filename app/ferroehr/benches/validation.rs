@@ -1,8 +1,9 @@
 // SPDX-FileCopyrightText: Ruben Talstra
 // SPDX-License-Identifier: BUSL-1.1
 
-//! Criterion benches over the inline commit-validation passes, with per-bench
-//! CPU flamegraphs.
+//! Criterion benches over the CPU a write path spends inline on its worker,
+//! with per-bench flamegraphs: the commit-validation passes, and the operational
+//! template ingestion a template upload runs before either of them can.
 //!
 //! `FerroEhrService::validate_composition_for_commit` runs two CPU-bound passes
 //! on the tokio worker before a composition reaches storage: the RM +
@@ -112,6 +113,30 @@ fn commit_validation(c: &mut Criterion) {
     }
 }
 
+/// Operational template ingestion: the XML parse and the WebTemplate build a
+/// template upload runs, and the composition path runs on a cache miss.
+fn template_ingestion(c: &mut Criterion) {
+    let dir = corpus_dir();
+    for stem in [
+        "medicines-list",
+        "international-patient-summary",
+        "congenital-syphilis-case-investigation",
+    ] {
+        let xml = std::fs::read_to_string(dir.join(format!("{stem}.opt")))
+            .expect("the corpus operational template must be readable");
+        c.bench_function(&format!("opt_parse/{stem}"), |b| {
+            b.iter(|| openehr_its::opt14::from_xml(black_box(&xml)).expect("the OPT must parse"));
+        });
+        let opt = openehr_its::opt14::from_xml(&xml).expect("the OPT must parse");
+        c.bench_function(&format!("web_template_build/{stem}"), |b| {
+            b.iter(|| {
+                openehr_its::flat::webtemplate::builder::build_web_template(black_box(&opt))
+                    .expect("the OPT must build into a WebTemplate")
+            });
+        });
+    }
+}
+
 /// Criterion `Profiler` glue over the `pprof` sampler: start a guard when
 /// criterion enters profile mode, render `flamegraph.svg` into the bench's
 /// profile directory when it leaves.
@@ -181,6 +206,6 @@ impl Profiler for FlamegraphProfiler {
 criterion_group! {
     name = benches;
     config = Criterion::default().with_profiler(FlamegraphProfiler::new(999));
-    targets = commit_validation
+    targets = commit_validation, template_ingestion
 }
 criterion_main!(benches);
