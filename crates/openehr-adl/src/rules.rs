@@ -361,6 +361,13 @@ fn bel_to_syntax(err: &BelError, offset: usize, src: &str) -> SyntaxError {
             (code, *at, format!("illegal rule expression: {message}"))
         }
         BelError::Unsupported { at, message } => (SyntaxErrorCode::Sinvs, *at, message.clone()),
+        // The engine's nesting bound is an implementation limit no `S*` code
+        // describes; `SUNK` is the catalogue's own unclassified bucket.
+        BelError::NestingTooDeep { at, limit } => (
+            SyntaxErrorCode::Sunk,
+            *at,
+            format!("rule expression nesting exceeds the limit of {limit} levels"),
+        ),
     };
     SyntaxError::at(code, message, (at + offset)..(at + offset), src)
 }

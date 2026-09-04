@@ -29,6 +29,7 @@ use axum::body::Body;
 use http::{Request, StatusCode, header};
 use http_body_util::BodyExt;
 use serde_json::Value;
+use std::fmt::Write;
 use tower::ServiceExt;
 
 use ferroehr::config::auth::AuthConfig;
@@ -687,5 +688,53 @@ async fn upload_with_absent_parent_is_422_with_vasid() {
     assert!(
         body.contains("VASID") && body.contains("openEHR-EHR-CLUSTER.orphan.v1.0.0"),
         "the 422 names VASID and the missing parent: {body}"
+    );
+}
+
+/// An upload nested past the engine's bound (`openehr_lang::nesting`) is a
+/// syntactic `400` naming the bound: the parser refuses at the bound instead
+/// of recursing until the thread's stack ends, which no layer could catch
+/// (#3062). The ITS-REST `400` branch covers "syntactically invalid …
+/// content" (`docs/specs/openehr/ITS-REST/specifications/responses/400.yaml`).
+#[tokio::test]
+async fn upload_nested_past_the_engine_bound_is_a_400_naming_the_bound() {
+    let (_pg, app) = app().await;
+    let levels = openehr_lang::nesting::MAX_NESTING_DEPTH + 2;
+    let mut open = String::new();
+    for k in 0..levels {
+        write!(open, "CLUSTER[id{}] matches {{ items matches {{ ", k + 1).expect("a String write");
+    }
+    let close = " } }".repeat(levels);
+    let definition = format!("{open}ELEMENT[id99999] matches {{*}}{close}");
+    let hrid = "openEHR-EHR-CLUSTER.too_deep.v1.0.0";
+    let body = format!(
+        "archetype (adl_version=2.0.6; rm_release=1.1.0)\n    {hrid}\n\n\
+         language\n    original_language = <[ISO_639-1::en]>\n\n\
+         description\n    lifecycle_state = <\"published\">\n    details = <\n        \
+         [\"en\"] = <\n            language = <[ISO_639-1::en]>\n        >\n    >\n\n\
+         definition\n    {definition}\n\n\
+         terminology\n    term_definitions = <\n        [\"en\"] = <\n            \
+         [\"id1\"] = <text = <\"Root\"> description = <\"Root.\">>\n        >\n    >\n"
+    );
+    let req = Request::builder()
+        .method("POST")
+        .uri(format!("{BASE}/definition/template/adl2"))
+        .header(header::CONTENT_TYPE, "text/plain")
+        .body(Body::from(body))
+        .unwrap();
+    let (status, _, text) = send(&app, req).await;
+    assert_eq!(status, StatusCode::BAD_REQUEST, "body: {text}");
+    let json: Value = serde_json::from_str(&text).expect("an error document");
+    let message = json["message"].as_str().expect("message");
+    assert!(
+        message.contains("SUNK"),
+        "the S-code bucket is named: {message}"
+    );
+    assert!(
+        message.contains(&format!(
+            "exceeds the limit of {} levels",
+            openehr_lang::nesting::MAX_NESTING_DEPTH
+        )),
+        "the bound is named: {message}"
     );
 }

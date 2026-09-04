@@ -26,6 +26,16 @@ line, the prelude) and `v1_0` (the released LANG 1.0.0).
   path heads. Never "sync" the two generations — a 1.0.0 behaviour changes
   only on a re-derivation against the release text.
 
+- **`src/nesting.rs` is the ONE nesting bound for the whole language stack**
+  (`MAX_NESTING_DEPTH` = 512, the `Nesting` counter, `check_bracket_nesting`):
+  the ODIN readers of BOTH generations pre-scan their token stream against it
+  (a combinator parser has no per-level seam), the BEL parser threads it
+  through its self-recursive productions, and `openehr-adl` imports the same
+  constant for its cADL parser, flattener and OPT transform. Crossing it is a
+  typed refusal (`OdinErrorKind::NestingTooDeep`, `BelError::NestingTooDeep`),
+  never an abort. A walk reaches the bound before refusing, so a caller
+  provides a stack sized for it (the CDR: a 256 MiB engine thread); tests
+  that walk to the bound spawn such a thread. No openEHR spec bounds nesting.
 - **This crate is upstream of everything generated.** A change to the BMM
   loader can silently change what `openehr-codegen` emits across five
   crates — after ANY loader/model change, run `/regen-codegen` and inspect

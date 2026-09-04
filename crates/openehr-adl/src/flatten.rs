@@ -45,11 +45,13 @@ use openehr_am::v2_4::aom2::constraint_model::c_object::CObject;
 use openehr_am::v2_4::aom2::constraint_model::sibling_order::SiblingOrder;
 use openehr_am::v2_4::aom2::terminology::archetype_terminology::ArchetypeTerminology;
 use openehr_base::prelude::MultiplicityInterval;
+use openehr_lang::nesting::MAX_NESTING_DEPTH;
 
 use crate::aom::access::{
     child_occurrences, complex_attributes, complex_node_id, object_node_id, sibling_order,
     strip_sibling_order,
 };
+use crate::aom::nesting::check_definition_nesting;
 use crate::artefact::{ArchetypeRepository, view};
 use crate::paths::{PathSegment, parse_path};
 use crate::validate::conformance::tuple_member_names;
@@ -68,6 +70,23 @@ pub enum FlattenError {
     /// A differential path in the child does not resolve in the flat parent.
     #[error("differential path {0:?} does not resolve in the flat parent")]
     UnresolvedDifferentialPath(String),
+    /// The specialisation lineage is longer than the engine bound
+    /// ([`openehr_lang::nesting::MAX_NESTING_DEPTH`] parents) — an
+    /// implementation limit, not a spec rule.
+    #[error("specialisation lineage exceeds the limit of {limit} levels")]
+    LineageTooDeep {
+        /// The bound that was crossed.
+        limit: usize,
+    },
+    /// The flat form composes objects deeper than the engine bound
+    /// ([`openehr_lang::nesting::MAX_NESTING_DEPTH`]): each artefact parses
+    /// within it, but the differential paths place nodes below the parent's
+    /// own depth — an implementation limit, not a spec rule.
+    #[error("the flat form nests deeper than the limit of {limit} levels")]
+    NestingTooDeep {
+        /// The bound that was crossed.
+        limit: usize,
+    },
 }
 
 /// Flatten `child` (a differential specialised archetype) against its already-
@@ -79,7 +98,9 @@ pub enum FlattenError {
 ///
 /// # Errors
 /// [`FlattenError::UnresolvedDifferentialPath`] if a child differential path
-/// cannot be located in the flat parent structure.
+/// cannot be located in the flat parent structure;
+/// [`FlattenError::NestingTooDeep`] if the composed flat definition nests
+/// past the engine bound.
 pub fn flatten(
     child: &Archetype,
     flat_parent: &Archetype,
@@ -94,6 +115,8 @@ pub fn flatten(
     let mut flat_def = pv.definition.clone();
     set_complex_node_id(&mut flat_def, complex_node_id(cv.definition).to_owned());
     overlay_root(&mut flat_def, cv.definition, child_level)?;
+    check_definition_nesting(&flat_def)
+        .map_err(|e| FlattenError::NestingTooDeep { limit: e.limit })?;
 
     // Terminology (master09.09 term_definitions accumulate / value_sets replace;
     // master09.10 bindings override).
@@ -112,8 +135,9 @@ pub fn flatten(
 ///
 /// # Errors
 /// [`FlattenError::ParentNotFound`] if a lineage parent is absent from `repo`,
-/// [`FlattenError::CyclicLineage`] on a lineage cycle, or a differential-path
-/// error from [`flatten`].
+/// [`FlattenError::CyclicLineage`] on a lineage cycle,
+/// [`FlattenError::LineageTooDeep`] past the engine bound on lineage length,
+/// or a differential-path or nesting error from [`flatten`].
 pub fn flat_form(
     archetype: &Archetype,
     repo: &ArchetypeRepository,
@@ -137,6 +161,11 @@ fn flat_form_memo(
     let key = parent_id.to_owned();
     if stack.contains(&key) {
         return Err(FlattenError::CyclicLineage(key));
+    }
+    if stack.len() >= MAX_NESTING_DEPTH {
+        return Err(FlattenError::LineageTooDeep {
+            limit: MAX_NESTING_DEPTH,
+        });
     }
     if let Some(cached) = memo.get(&key) {
         let cached = cached.clone();

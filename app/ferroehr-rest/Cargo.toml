@@ -106,6 +106,7 @@ utoipa-axum = { workspace = true }
 utoipa-swagger-ui = { workspace = true }
 
 [dev-dependencies]
+openehr-lang = { path = "../../crates/openehr-lang" }
 testkit = { path = "../../tools/testkit" }
 sqlx.workspace = true
 testcontainers.workspace = true

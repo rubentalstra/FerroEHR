@@ -39,6 +39,7 @@ mod corpus_validity_rm;
 mod default_value_intervals;
 mod flattener_spec;
 mod legacy14_corpus;
+mod nesting_bounds;
 mod opt_spec;
 mod rules_parse;
 mod templates_corpus;
