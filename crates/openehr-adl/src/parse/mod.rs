@@ -44,6 +44,7 @@ use openehr_am::v2_4::aom2::constraint_model::primitive::c_string::CString;
 use crate::aom::build::{cobject_to_primitive, cstring_regex};
 use crate::error::{SyntaxError, SyntaxErrorCode};
 use crate::odin::regex_inner;
+use openehr_lang::nesting::Nesting;
 use openehr_lang::v1_1::lexer::{Spanned, Token};
 
 /// Internal parse result: `Err(())` signals a bail-out; the concrete
@@ -111,6 +112,7 @@ pub fn parse_definition_body(
         pos: 0,
         errors: Vec::new(),
         dialect,
+        nesting: Nesting::ROOT,
     };
     let root = parser.parse_root();
     match root {
@@ -148,6 +150,7 @@ pub(crate) struct Parser<'a> {
     pub(crate) pos: usize,
     pub(crate) errors: Vec<SyntaxError>,
     pub(crate) dialect: Dialect,
+    pub(crate) nesting: Nesting,
 }
 
 // ── cursor + error helpers ────────────────────────────────────────────────
@@ -192,6 +195,30 @@ impl Parser<'_> {
         let span = self.cur_span();
         self.push(code, msg, span);
         Err(())
+    }
+
+    /// Run `production` one object-nesting level deeper, refusing past the
+    /// engine bound.
+    ///
+    /// Every nested object enters through here, so the recursive descent is
+    /// bounded by [`Nesting`]. The refusal is raised as `SUNK` — the
+    /// catalogue's "Syntax error (unknown cause)" bucket (`ADL2/master04.6`
+    /// §Syntax Validity Rules), because the bound is an implementation limit
+    /// no `S*` code describes — with the limit named in the message.
+    pub(crate) fn nested<T>(
+        &mut self,
+        production: impl FnOnce(&mut Self) -> PResult<T>,
+    ) -> PResult<T> {
+        let outer = self.nesting;
+        match outer.descend() {
+            Ok(inner) => self.nesting = inner,
+            Err(exceeded) => {
+                return self.err(SyntaxErrorCode::Sunk, format!("constraint {exceeded}"));
+            }
+        }
+        let result = production(self);
+        self.nesting = outer;
+        result
     }
 
     /// Take a decoded string/character literal, or report its escape defect at
@@ -338,6 +365,7 @@ pub(crate) fn parse_inline_primitive_text(raw: &str) -> Result<CPrimitiveObject,
         pos: 0,
         errors: Vec::new(),
         dialect: Dialect::Adl2,
+        nesting: Nesting::ROOT,
     };
     let parsed: PResult<CObject> = (|| {
         parser.expect(

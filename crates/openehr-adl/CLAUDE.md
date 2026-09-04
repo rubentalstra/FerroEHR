@@ -21,6 +21,7 @@ else; each helper has exactly ONE home.
 | `aom/access` | the 13-arm `C_OBJECT` field accessors + `AomType` |
 | `aom/build` | the AOM2 constructors |
 | `aom/interval` | `Bounds` / multiplicity + `INTERVAL<T>` maths |
+| `aom/nesting` | the engine nesting bound over a constraint tree (`check_definition_nesting`, over `openehr_lang::nesting`) — every producer of a COMPOSED tree (flattener, OPT transform) re-checks its result |
 | `artefact` | `ArchetypeView`/`view` + `ArchetypeRepository`/`FlatParent` |
 
 **Front end — source text → AOM2.**
