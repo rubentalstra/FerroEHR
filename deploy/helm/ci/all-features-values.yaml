@@ -81,6 +81,9 @@ config:
     enabled: true
     claim: realm_access.tenant
     header: X-FerroEHR-Tenant
+    # The all-features fixture turns authentication on too; the server refuses
+    # that pair at boot without this explicit acceptance.
+    insecure_header_override: true
   smart:
     enabled: true
     # Required whenever SMART is on: the launch context's service URLs are

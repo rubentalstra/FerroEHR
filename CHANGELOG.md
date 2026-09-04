@@ -15,6 +15,17 @@ workflow refuses a tag that has no matching section here.
 
 ## [Unreleased]
 
+### Added
+
+- **`tenancy.header` is refused at boot when authentication is enabled**
+  (#3093). The header override lets a request name its own tenant and wins
+  over the JWT claim, so on a deployment with real users any authenticated
+  caller could read and write any tenant. The server now refuses to start on
+  that pair, naming the key and the remedy, unless the new
+  `tenancy.insecure_header_override = true` accepts it explicitly for a
+  development deployment. With authentication off, or tenancy off, nothing
+  changes.
+
 ## [4.0.18] - 2026-09-03
 
 ### Changed
