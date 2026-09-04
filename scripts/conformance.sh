@@ -243,6 +243,16 @@ echo "==> Resolving the pinned instrument (veredictum $VEREDICTUM_VERSION)"
 VEREDICTUM="$(veredictum_bin)"
 ROOT="$(veredictum_artifacts)"
 
+# Every optional per-instance parameter the PINNED schema defines is declared
+# on every instance, or its absence is adjudicated beside the ixit — an
+# undeclared one guards its cases out of the run silently (#3041). The byo
+# rewrite above touches base URLs only, so the committed party set is what is
+# judged.
+echo "==> Checking the ixit declares every instance parameter the pinned schema defines"
+bash "$REPO_ROOT/scripts/checks/ixit-declarations.sh" \
+  --schema "$(veredictum_root)/schemas/ixit.schema.json" \
+  "$(dirname "${CONF_IXIT:-$PARTY/ixit.json}")"
+
 mkdir -p "$OUT"
 
 echo "==> Executing the catalogue (sut=$SUT_NAME filter='${FILTER}')"
