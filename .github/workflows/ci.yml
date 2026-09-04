@@ -2219,6 +2219,7 @@ jobs:
       - server-image-from-source
       - ui-screenshot-guard
       - contribution-licence
+      - ixit-declarations
       - changelog
       - citation
       - compose-version-guard
