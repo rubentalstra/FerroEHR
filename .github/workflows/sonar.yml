@@ -28,6 +28,13 @@ on:
 
 permissions: {}
 
+env:
+  # The ONE place this lane's shard count lives. Raising it is this line: the
+  # matrix and the `--partition` divisor are both derived from it below, so they
+  # cannot drift apart. When it needs raising, the pipeline-budget watcher says
+  # so rather than someone noticing a slow pull request (#3131).
+  COVERAGE_SHARDS: "3"
+
 jobs:
   # ── Change detection (pull requests only) ───────────────────────────────────
   # The scan below carries a 90-minute instrumented test suite against a real
@@ -45,11 +52,22 @@ jobs:
       contents: read
     outputs:
       code: ${{ steps.filter.outputs.code }}
+      shards: ${{ steps.shards.outputs.list }}
+      shard_count: ${{ steps.shards.outputs.count }}
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           persist-credentials: false
           fetch-depth: 0
+      # The shard list and its divisor, both from COVERAGE_SHARDS, so the matrix
+      # and the `--partition n/N` can never disagree.
+      - id: shards
+        env:
+          COUNT: ${{ env.COVERAGE_SHARDS }}
+        run: |
+          set -euo pipefail
+          echo "count=$COUNT" >> "$GITHUB_OUTPUT"
+          echo "list=[$(seq 1 "$COUNT" | paste -sd, -)]" >> "$GITHUB_OUTPUT"
       - id: filter
         shell: bash
         # Context reaches the shell through env, never `${{ }}`-inline.
@@ -101,7 +119,7 @@ jobs:
   # are "consumed sequentially without a defined strategy for handling
   # conflicts", and the README badge is this number.
   coverage:
-    name: coverage ${{ matrix.shard }}/3
+    name: coverage ${{ matrix.shard }}/${{ needs.changes.outputs.shard_count }}
     needs: changes
     if: github.event_name == 'push' || (github.actor != 'dependabot[bot]' && github.event.pull_request.head.repo.full_name == github.repository && needs.changes.outputs.code == 'true')
     runs-on: ubuntu-26.04
@@ -111,7 +129,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        shard: [1, 2, 3]
+        shard: ${{ fromJSON(needs.changes.outputs.shards) }}
     services:
       postgres:
         image: postgres:18.6@sha256:4ef4dbc939d61acea57712655ddb4b4ab27419c913f94cca0cd57cb3ea3c2280
@@ -145,9 +163,10 @@ jobs:
           tool: cargo-llvm-cov,cargo-nextest
       # The shard index reaches the command through `env:`, never interpolated
       # into the script (the workflow-security rule in reliability.md).
-      - run: cargo llvm-cov --no-report nextest --locked --workspace --exclude ferroehr-viewer --all-features --no-tests=pass --profile ci --partition "hash:${SHARD}/3"
+      - run: cargo llvm-cov --no-report nextest --locked --workspace --exclude ferroehr-viewer --all-features --no-tests=pass --profile ci --partition "hash:${SHARD}/${SHARD_COUNT}"
         env:
           SHARD: ${{ matrix.shard }}
+          SHARD_COUNT: ${{ needs.changes.outputs.shard_count }}
       - run: cargo llvm-cov report --lcov --output-path "lcov-shard-${SHARD}.info"
         env:
           SHARD: ${{ matrix.shard }}
@@ -238,10 +257,13 @@ jobs:
       # published number (#3131). The merge is asserted, not assumed — a missing
       # shard file must fail the scan rather than quietly shrink coverage.
       - name: Merge the shard coverage reports into one lcov
+        env:
+          SHARD_COUNT: ${{ needs.changes.outputs.shard_count }}
         run: |
           set -euo pipefail
           sudo apt-get update && sudo apt-get install -y lcov
-          shards=(coverage/lcov-shard-1.info coverage/lcov-shard-2.info coverage/lcov-shard-3.info coverage/lcov-viewer.info)
+          shards=(coverage/lcov-viewer.info)
+          for i in $(seq 1 "$SHARD_COUNT"); do shards+=("coverage/lcov-shard-$i.info"); done
           for f in "${shards[@]}"; do
             [ -s "$f" ] || { echo "::error::missing or empty coverage report $f" >&2; exit 1; }
           done
