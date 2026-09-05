@@ -41,14 +41,17 @@
 
 use axum::extract::State;
 use axum::response::{IntoResponse, Response};
-use http::StatusCode;
+use bytes::Bytes;
+use http::{HeaderValue, StatusCode, header};
 use serde_json::{Value, json};
 use utoipa_axum::router::OpenApiRouter;
 use utoipa_axum::routes;
 
 use openehr_its::rest::runtime::ApiError;
 
-use ferroehr::service::admin::integrity::{StorageParityReport, StorageParityScope};
+use ferroehr::service::admin::integrity::{
+    StorageParityEvent, StorageParityReport, StorageParityScope,
+};
 
 use crate::api::{BoxResponse, RequestParts, guarded_dispatch};
 use crate::overview::error::RestError;
@@ -81,6 +84,15 @@ pub(crate) fn integrity_routes() -> OpenApiRouter<AppState> {
          description = "Cover only versions whose validity begins at or after \
                         this RFC 3339 instant, for verifying what changed since \
                         an incident."),
+        ("Accept" = Option<String>, Header,
+         description = "`application/x-ndjson` streams the sweep as it runs, \
+                        which is how a whole large repository is verified in \
+                        one pass: the aggregated form computes its report \
+                        before the response exists and is bounded by the \
+                        server's 30 s request timeout. The stream must be \
+                        asked for by name — a wildcard, or no `Accept` at all, \
+                        keeps the aggregated document. Our own extension; no \
+                        openEHR spec governs this media type."),
     ),
     responses(
         (status = 200, description = "The sweep ran. The body is the report: \
@@ -94,22 +106,43 @@ pub(crate) fn integrity_routes() -> OpenApiRouter<AppState> {
                                       `warn` whatever the cap does). A finding \
                                       is NOT a request failure — the sweep \
                                       succeeded and is reporting what it saw, \
-                                      so the status stays `200`.",
-         body = serde_json::Value,
-         example = json!({
-             "versions_checked": 128,
-             "versions_with_body": 126,
-             "versions_without_body": 2,
-             "mismatch_count": 1,
-             "mismatches": [{
-                 "vo_id": "8849182c-82ad-4088-a07f-48ead4180515",
-                 "sys_version": 2,
-                 "kind": "COMPOSITION",
-                 "defect": "content_differs"
-             }],
-             "truncated": false,
-             "elapsed_ms": 431
-         })),
+                                      so the status stays `200`. Under \
+                                      `Accept: application/x-ndjson` the same \
+                                      sweep is streamed instead: one JSON \
+                                      object per line, each carrying a `type` \
+                                      — a `mismatch` as it is found, a \
+                                      `progress` tick per enumerated page, and \
+                                      one closing `summary` with the same \
+                                      counts. A sweep that fails after the \
+                                      response began cannot change the status \
+                                      code, so it ends with an `error` line \
+                                      instead of a `summary`: read to the end \
+                                      to tell a finished sweep from an aborted \
+                                      one.",
+         content(
+             (serde_json::Value = "application/json", example = json!({
+                 "versions_checked": 128,
+                 "versions_with_body": 126,
+                 "versions_without_body": 2,
+                 "mismatch_count": 1,
+                 "mismatches": [{
+                     "vo_id": "8849182c-82ad-4088-a07f-48ead4180515",
+                     "sys_version": 2,
+                     "kind": "COMPOSITION",
+                     "defect": "content_differs"
+                 }],
+                 "truncated": false,
+                 "elapsed_ms": 431
+             })),
+             (String = "application/x-ndjson", example = json!(
+                 "{\"type\":\"mismatch\",\"vo_id\":\"8849182c-82ad-4088-a07f-48ead4180515\",\
+                   \"sys_version\":2,\"kind\":\"COMPOSITION\",\"defect\":\"content_differs\"}\n\
+                  {\"type\":\"progress\",\"versions_checked\":500,\"versions_with_body\":498,\
+                   \"versions_without_body\":2,\"mismatch_count\":1}\n\
+                  {\"type\":\"summary\",\"versions_checked\":128,\"versions_with_body\":126,\
+                   \"versions_without_body\":2,\"mismatch_count\":1,\"elapsed_ms\":431}\n"
+             )),
+         )),
         (status = 401, description = "Unauthenticated (auth enabled, no valid \
                                       principal). Our own authorization design \
                                       — the released admin operations carry \
@@ -159,6 +192,9 @@ async fn run(
     match op {
         "admin_verify_storage_parity" => {
             let scope = parity_scope(parts.query.as_deref())?;
+            if negotiate::accepts_ndjson(&parts.headers) {
+                return Ok(stream_parity(&state, scope));
+            }
             let report = state.backend().verify_storage_parity(scope).await?;
             Ok(negotiate::respond(
                 &parts.headers,
@@ -201,6 +237,116 @@ fn parity_scope(query: Option<&str>) -> Result<StorageParityScope, RestError> {
         ehr_id,
         committed_since,
     })
+}
+
+/// How many rendered lines the streamed sweep may run ahead of the client.
+///
+/// The channel IS the flow control: a client that reads slowly stops the sweep
+/// at its next batch, and a client that disconnects drops the receiver, which
+/// ends the sweep at its next send rather than letting it read the repository
+/// for nobody.
+const STREAM_BUFFER: usize = 64;
+
+/// Answer the sweep as a line-delimited JSON stream.
+///
+/// The aggregated form computes the whole report before the response exists, so
+/// it is bounded by the router's `REQUEST_TIMEOUT` and a large enough
+/// repository outruns it. `tower_http`'s `TimeoutLayer` races only the inner
+/// service's response FUTURE (its `ResponseFuture` polls the inner future
+/// against one `Sleep`); once the head is produced the layer is out of the way,
+/// and the separate body deadlines — `ResponseBodyTimeoutLayer` /
+/// `ResponseBodyDeadlineLayer`, `tower_http::timeout` §"Body timeouts" — are
+/// not applied by `crate::router`. So a response whose head returns at once and
+/// whose body is written as the sweep proceeds has no such ceiling.
+///
+/// The cost is that the status code is committed before the work is: a fault
+/// after the head can only be reported as the final line.
+///
+/// NOTE: no openEHR spec governs storage mechanics or this media type — our own
+/// design/extension.
+fn stream_parity(state: &AppState, scope: StorageParityScope) -> Response {
+    let service = state.backend_handle();
+    let (tx, mut rx) = tokio::sync::mpsc::channel::<Bytes>(STREAM_BUFFER);
+    drop(tokio::spawn(async move {
+        let mut sweep = service.storage_parity_sweep(scope);
+        loop {
+            let batch = match sweep.next_batch().await {
+                Ok(Some(batch)) => batch,
+                Ok(None) => return,
+                Err(e) => {
+                    tracing::error!(
+                        error = %e,
+                        "storage parity stream: the sweep failed after the response began"
+                    );
+                    // The diagnostic stays in the log: the wire line says the
+                    // sweep did not finish, which is what a client can act on.
+                    drop(
+                        tx.send(parity_line(&json!({
+                            "type": "error",
+                            "message": "the sweep failed before it completed; see the server log",
+                        })))
+                        .await,
+                    );
+                    return;
+                }
+            };
+            for event in batch {
+                if tx.send(parity_line(&parity_event(&event))).await.is_err() {
+                    return;
+                }
+            }
+        }
+    }));
+    let stream = futures::stream::poll_fn(move |cx| {
+        rx.poll_recv(cx)
+            .map(|line| line.map(Ok::<Bytes, std::convert::Infallible>))
+    });
+    let mut response = axum::body::Body::from_stream(stream).into_response();
+    *response.status_mut() = StatusCode::OK;
+    response.headers_mut().insert(
+        header::CONTENT_TYPE,
+        HeaderValue::from_static(negotiate::APPLICATION_NDJSON),
+    );
+    response
+}
+
+/// One line of the stream: the rendered object plus its terminator.
+fn parity_line(value: &Value) -> Bytes {
+    let mut line = value.to_string();
+    line.push('\n');
+    Bytes::from(line)
+}
+
+/// Render one sweep event as its wire object.
+///
+/// Written out explicitly, like [`parity_report`]: the wire contract is this
+/// function, not a serde attribute on a service type. Every object carries a
+/// `type` so a reader dispatches on one key.
+fn parity_event(event: &StorageParityEvent) -> Value {
+    match event {
+        StorageParityEvent::Mismatch(mismatch) => json!({
+            "type": "mismatch",
+            "vo_id": mismatch.vo_id.to_string(),
+            "sys_version": mismatch.sys_version,
+            "kind": mismatch.kind,
+            "defect": mismatch.defect.as_str(),
+        }),
+        StorageParityEvent::Progress { counts } => json!({
+            "type": "progress",
+            "versions_checked": counts.versions_checked,
+            "versions_with_body": counts.versions_with_body,
+            "versions_without_body": counts.versions_without_body,
+            "mismatch_count": counts.mismatch_count,
+        }),
+        StorageParityEvent::Summary { counts, elapsed_ms } => json!({
+            "type": "summary",
+            "versions_checked": counts.versions_checked,
+            "versions_with_body": counts.versions_with_body,
+            "versions_without_body": counts.versions_without_body,
+            "mismatch_count": counts.mismatch_count,
+            "elapsed_ms": elapsed_ms,
+        }),
+    }
 }
 
 /// Render the storage-parity report as the response body.
