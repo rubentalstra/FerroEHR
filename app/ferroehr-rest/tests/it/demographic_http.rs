@@ -659,15 +659,9 @@ async fn versioned_party_reads_emit_versioning_headers() {
 /// process's system zone and the assertion is independent of what that zone is.
 #[tokio::test]
 async fn version_at_time_without_offset_resolves_in_the_local_timezone() {
-    let (_pg, app) = app().await;
+    let (pg, app) = app().await;
     let v1 = create(&app, "person", &person_body()).await;
     let vo = vo_of(&v1).to_owned();
-
-    // An instant strictly inside v1's validity window (the 150 ms margins keep
-    // it between the two commits — same clock, same host).
-    tokio::time::sleep(std::time::Duration::from_millis(150)).await;
-    let between = jiff::Timestamp::now();
-    tokio::time::sleep(std::time::Duration::from_millis(150)).await;
 
     let req = Request::builder()
         .method("PUT")
@@ -678,6 +672,21 @@ async fn version_at_time_without_offset_resolves_in_the_local_timezone() {
         .unwrap();
     let (status, _h, body) = send(&app, req).await;
     assert_eq!(status, StatusCode::NO_CONTENT, "second version: {body}");
+
+    // The probe instant is v1's OWN start, read back from the database rather
+    // than sampled from a clock (#3119). `sys_period` is stamped by PostgreSQL,
+    // whose container clock need not agree with this process's, and the margins
+    // this test used to sleep around were eaten under full-suite load. The
+    // range's lower bound is INCLUSIVE, so the version extant at exactly that
+    // instant is v1 by construction, with no margin to lose.
+    let between: jiff_sqlx::Timestamp = sqlx::query_scalar(
+        "SELECT lower(sys_period) FROM vo_version WHERE vo_id = $1 AND sys_version = 1",
+    )
+    .bind(vo.parse::<uuid::Uuid>().expect("the versioned object id"))
+    .fetch_one(&pg.pool())
+    .await
+    .expect("v1's stored validity start");
+    let between = between.to_jiff();
 
     // The same instant written WITHOUT an offset: its civil rendering in the
     // server's local timezone (`YYYY-MM-DDThh:mm:ss.sss`, no `Z`, no `±hh:mm`).
