@@ -93,7 +93,7 @@
 
 services:
   ferroehr-postgres:
-    image: ${FERROEHR_POSTGRES_IMAGE:-ghcr.io/rubentalstra/ferroehr-postgres:4.0.18}
+    image: ${FERROEHR_POSTGRES_IMAGE:-ghcr.io/rubentalstra/ferroehr-postgres:4.1.0}
     # Docker's default 64MB /dev/shm starves PostgreSQL's dynamic shared
     # memory under load (parallel workers error `could not resize shared
     # memory segment … No space left on device`); measured runs share this
@@ -177,7 +177,7 @@ services:
       start_period: 10s
 
   ferroehr:
-    image: ${FERROEHR_IMAGE:-ghcr.io/rubentalstra/ferroehr:4.0.18}
+    image: ${FERROEHR_IMAGE:-ghcr.io/rubentalstra/ferroehr:4.1.0}
     depends_on:
       ferroehr-postgres:
         condition: service_healthy
@@ -288,7 +288,7 @@ services:
   # FERROEHR_VIEWER__AUTH__OIDC__* variables at your identity provider.
   ferroehr-viewer:
     profiles: [viewer]
-    image: ${FERROEHR_VIEWER_IMAGE:-ghcr.io/rubentalstra/ferroehr-viewer:4.0.18}
+    image: ${FERROEHR_VIEWER_IMAGE:-ghcr.io/rubentalstra/ferroehr-viewer:4.1.0}
     depends_on:
       ferroehr:
         condition: service_healthy
