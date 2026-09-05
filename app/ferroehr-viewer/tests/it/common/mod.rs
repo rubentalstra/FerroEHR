@@ -497,6 +497,40 @@ pub(crate) async fn is_visible(h: &Harness, css: &str) -> bool {
     }
 }
 
+/// thaw's modal surface — the panel itself.
+const DIALOG_SURFACE: &str = ".thaw-dialog-surface";
+
+/// thaw's modal backdrop: a full-viewport element rendered under every open
+/// dialog and kept displayed while the dialog fades out.
+const DIALOG_BACKDROP: &str = ".thaw-dialog-surface__backdrop";
+
+/// Establish the precondition every page-level click has: nothing is covering
+/// the page.
+///
+/// The backdrop spans the viewport, so a click issued while one is up lands on
+/// it instead of the control and `WebDriver` reports `ElementClickIntercepted`.
+/// Two situations produce one: a dialog that is still fading out, and a dialog
+/// that is deliberately still open because the CDR refused what it sent (the
+/// upload dialog keeps its diagnostic beside the input that caused it). Waiting
+/// alone answers only the first, so an open surface is dismissed through the
+/// dialog's own Escape path — the same exit a person takes — and the wait then
+/// covers the fade.
+///
+/// # Panics
+/// When a backdrop is still up after 15 s.
+pub(crate) async fn clear_dialog_overlay(h: &Harness) {
+    if is_visible(h, DIALOG_SURFACE).await {
+        drop(
+            h.driver
+                .action_chain()
+                .send_keys(Key::Escape)
+                .perform()
+                .await,
+        );
+    }
+    wait_hidden(h, DIALOG_BACKDROP).await;
+}
+
 /// Upload `path` through the Template Manager's one upload dialog: open it
 /// from the page-header trigger, choose the file, and send it.
 ///
@@ -505,9 +539,15 @@ pub(crate) async fn is_visible(h: &Harness, css: &str) -> bool {
 /// file has been read into the dialog's source editor, which makes
 /// [`wait_enabled`] the exact "the file arrived" condition — never a sleep.
 ///
+/// Both seed helpers call this in a retry loop, and a refused upload keeps the
+/// dialog open on purpose, so re-entry with a modal already up is a normal
+/// state rather than an anomaly — [`clear_dialog_overlay`] is what makes the
+/// trigger clickable again (#3134).
+///
 /// # Panics
 /// On any interaction failure.
 pub(crate) async fn upload_via_dialog(h: &Harness, path: &str) {
+    clear_dialog_overlay(h).await;
     h.wait_css("#template-upload-open")
         .await
         .click()
@@ -789,6 +829,8 @@ pub(crate) async fn wait_attr_change(
 pub(crate) async fn confirm_in_dialog(h: &Harness, trigger_css: &str, confirm_id: &str) {
     // A visible toast overlays the bottom-right corner and intercepts clicks.
     h.wait_toasts_cleared().await;
+    // A modal backdrop overlays the whole viewport and does the same (#3134).
+    clear_dialog_overlay(h).await;
     let trigger = h.wait_css(trigger_css).await;
     let confirm_css = format!("#{confirm_id}");
     let mut opened = false;
@@ -824,8 +866,11 @@ pub(crate) async fn confirm_in_dialog(h: &Harness, trigger_css: &str, confirm_id
         .click()
         .await
         .expect("confirm in the dialog");
-    // The dialog hides on confirm — that it hid proves the click landed.
+    // The dialog hides on confirm — that it hid proves the click landed. The
+    // backdrop outlives the button by the length of the fade, so the journey's
+    // next click needs it gone too (#3134).
     wait_hidden(h, &confirm_css).await;
+    wait_hidden(h, DIALOG_BACKDROP).await;
 }
 
 /// Log in through the Basic form (journeys that need a session).
