@@ -75,6 +75,19 @@ archetype source uploads enforce the same family; there, an empty
 refused, because the empty string is how real-world 1.4 authoring spells
 absence.
 
+**A refusal lists everything it found, not the first thing.** `validationErrors`
+carries one entry per violation, so a template with an empty `use` and an empty
+`misuse` reports both, and a code list with several duplicated codes names each
+one. Fix the list, upload once. Two things are worth knowing about the shape of
+that list:
+
+- A constrained type the reference model does not have, or an attribute its
+  parent type does not declare, makes every rule below it meaningless. Those
+  violations say that the tree under them went unchecked, so a short list is
+  never a claim that nothing else is wrong. Fix them and upload again.
+- A template with more than 200 violations reports the first 200 and a final
+  `TRUNCATED` entry saying so.
+
 ## Uploading ADL 2 artefacts
 
 ADL 2 artefacts (archetypes, templates and operational templates) are accepted

@@ -25,23 +25,32 @@ use super::RuleViolation;
 
 /// Validates the RM resource-package invariants of the OPT's meta-data
 /// header, reporting the first violation found (the module's contract).
-pub(super) fn check_resource_meta(opt: &OperationalTemplate) -> Result<(), RuleViolation> {
+pub(super) fn check_resource_meta(opt: &OperationalTemplate) -> Vec<RuleViolation> {
     let terminology = openehr();
-    check_language(
+    let mut violations = Vec::new();
+    if let Err(v) = check_language(
         terminology,
         &opt.language.code_string,
         "AUTHORED_RESOURCE.Original_language_valid",
         "the operational template's language",
-    )?;
-    check_revision_history_flag(
+    ) {
+        violations.push(v);
+    }
+    if let Err(v) = check_revision_history_flag(
         opt.is_controlled,
         opt.revision_history.is_some(),
         "the operational template",
-    )?;
-    if let Some(description) = opt.description.as_ref() {
-        check_description(terminology, description, "the operational template")?;
+    ) {
+        violations.push(v);
     }
-    Ok(())
+    if let Some(description) = opt.description.as_ref() {
+        violations.extend(check_description(
+            terminology,
+            description,
+            "the operational template",
+        ));
+    }
+    violations
 }
 
 /// One embedded `ARCHETYPE` (an `AUTHORED_RESOURCE` subtype): the full
@@ -64,11 +73,16 @@ fn check_archetype(
     )?;
     check_translations(terminology, &archetype.translations, original)?;
     if let Some(description) = archetype.description.as_ref() {
-        check_description(
+        if let Some(v) = check_description(
             terminology,
             description,
             &format!("embedded archetype '{}'", archetype.archetype_id.value),
-        )?;
+        )
+        .into_iter()
+        .next()
+        {
+            return Err(v);
+        }
         // Description_valid: `translations /= Void implies (description.details
         // .for_all (d | translations.has_key (d.language.code_string)))`.
         // NOTE: authored_resource.adoc §Invariants Description_valid — the
@@ -145,36 +159,45 @@ fn check_description(
     terminology: &OpenehrTerminology,
     description: &ResourceDescription,
     owner: &str,
-) -> Result<(), RuleViolation> {
+) -> Vec<RuleViolation> {
+    // The three header rules below decide whether there IS a description to
+    // examine, so each one returns alone: with no author, no lifecycle state or
+    // no details at all, the per-detail rules have nothing to say.
     if description.original_author.is_empty() {
-        return Err(RuleViolation::new(
+        return vec![RuleViolation::new(
             "RESOURCE_DESCRIPTION.Original_author_valid",
             format!("the description of {owner} has an empty original_author"),
-        ));
+        )];
     }
     if description.lifecycle_state.is_empty() {
-        return Err(RuleViolation::new(
+        return vec![RuleViolation::new(
             "RESOURCE_DESCRIPTION.Lifecycle_state_valid",
             format!("the description of {owner} has an empty lifecycle_state"),
-        ));
+        )];
     }
     if description.details.is_empty() {
-        return Err(RuleViolation::new(
+        return vec![RuleViolation::new(
             "RESOURCE_DESCRIPTION.Details_valid",
             format!("the description of {owner} has no details"),
-        ));
+        )];
     }
+    // Every detail's own rules are independent properties of that detail, so
+    // they accumulate: a hand-written template with an empty `use` AND an empty
+    // `misuse` reports both at once rather than one per upload (#3129).
+    let mut violations = Vec::new();
     let mut seen: Vec<&str> = Vec::with_capacity(description.details.len());
     for item in &description.details {
         let language = item.language.code_string.as_str();
-        check_language(
+        if let Err(v) = check_language(
             terminology,
             language,
             "RESOURCE_DESCRIPTION_ITEM.Language_valid",
             "a description detail",
-        )?;
+        ) {
+            violations.push(v);
+        }
         if seen.contains(&language) {
-            return Err(RuleViolation::new(
+            violations.push(RuleViolation::new(
                 "RESOURCE_DESCRIPTION.Details_valid",
                 format!(
                     "two description details carry the same language '{language}' — details \
@@ -184,38 +207,40 @@ fn check_description(
         }
         seen.push(language);
         if item.purpose.is_empty() {
-            return Err(RuleViolation::new(
+            violations.push(RuleViolation::new(
                 "RESOURCE_DESCRIPTION_ITEM.Purpose_valid",
                 format!("the '{language}' description detail of {owner} has an empty purpose"),
             ));
         }
-        check_present_non_empty(
-            item.use_.as_deref(),
-            "RESOURCE_DESCRIPTION_ITEM.Use_valid",
-            language,
-            "use",
-            owner,
-        )?;
-        check_present_non_empty(
-            item.misuse.as_deref(),
-            "RESOURCE_DESCRIPTION_ITEM.misuse_valid",
-            language,
-            "misuse",
-            owner,
-        )?;
-        check_present_non_empty(
-            item.copyright.as_deref(),
-            "RESOURCE_DESCRIPTION_ITEM.copyright_valid",
-            language,
-            "copyright",
-            owner,
-        )?;
+        for (value, code, field) in [
+            (
+                item.use_.as_deref(),
+                "RESOURCE_DESCRIPTION_ITEM.Use_valid",
+                "use",
+            ),
+            (
+                item.misuse.as_deref(),
+                "RESOURCE_DESCRIPTION_ITEM.misuse_valid",
+                "misuse",
+            ),
+            (
+                item.copyright.as_deref(),
+                "RESOURCE_DESCRIPTION_ITEM.copyright_valid",
+                "copyright",
+            ),
+        ] {
+            if let Err(v) = check_present_non_empty(value, code, language, field, owner) {
+                violations.push(v);
+            }
+        }
     }
     if let Some(parent) = description.parent_resource.as_deref() {
         let AuthoredResource::Archetype(archetype) = parent;
-        check_archetype(terminology, archetype)?;
+        if let Err(v) = check_archetype(terminology, archetype) {
+            violations.push(v);
+        }
     }
-    Ok(())
+    violations
 }
 
 /// The `x /= Void implies not x.is_empty` rows of a description item.
@@ -326,10 +351,71 @@ mod tests {
         }
     }
 
+    /// The reported case (#3129): a hand-written OPT that left `use` and
+    /// `misuse` empty took two uploads of a 1.7 MB file to find both, because
+    /// the check returned at the first. Both come back together now.
+    #[test]
+    fn an_empty_use_and_an_empty_misuse_are_reported_together() {
+        let mut detail = item("en", "testing");
+        detail.use_ = Some(String::new());
+        detail.misuse = Some(String::new());
+
+        let codes: Vec<&str> = check_description(openehr(), &description(vec![detail]), "t")
+            .iter()
+            .map(|v| v.code)
+            .collect();
+
+        assert!(
+            codes.contains(&"RESOURCE_DESCRIPTION_ITEM.Use_valid")
+                && codes.contains(&"RESOURCE_DESCRIPTION_ITEM.misuse_valid"),
+            "both empty fields must be reported in one response, got: {codes:?}"
+        );
+    }
+
+    /// Every defect of a detail comes back at once, not just the first: an
+    /// upload cycle per rule is what #3129 removed.
+    #[test]
+    fn every_defect_of_one_description_detail_is_reported_at_once() {
+        let mut detail = item("en", "");
+        detail.use_ = Some(String::new());
+        detail.misuse = Some(String::new());
+        detail.copyright = Some(String::new());
+
+        let codes: Vec<&str> = check_description(openehr(), &description(vec![detail]), "t")
+            .iter()
+            .map(|v| v.code)
+            .collect();
+
+        for expected in [
+            "RESOURCE_DESCRIPTION_ITEM.Purpose_valid",
+            "RESOURCE_DESCRIPTION_ITEM.Use_valid",
+            "RESOURCE_DESCRIPTION_ITEM.misuse_valid",
+            "RESOURCE_DESCRIPTION_ITEM.copyright_valid",
+        ] {
+            assert!(codes.contains(&expected), "missing {expected} in {codes:?}");
+        }
+    }
+
+    /// The one violation a single-defect fixture is expected to produce.
+    ///
+    /// `check_description` reports every violation it finds (#3129), so these
+    /// tests assert the code of a fixture built to carry exactly one; a fixture
+    /// that grew a second defect fails here rather than passing quietly on the
+    /// first.
+    fn only(violations: Vec<RuleViolation>) -> RuleViolation {
+        assert_eq!(
+            violations.len(),
+            1,
+            "fixture must carry exactly one defect, got: {:?}",
+            violations.iter().map(|v| v.code).collect::<Vec<_>>()
+        );
+        violations.into_iter().next().expect("one violation")
+    }
+
     #[test]
     fn a_valid_description_passes() {
         assert!(
-            check_description(openehr(), &description(vec![item("en", "testing")]), "t").is_ok()
+            check_description(openehr(), &description(vec![item("en", "testing")]), "t").is_empty()
         );
     }
 
@@ -337,7 +423,7 @@ mod tests {
     fn empty_original_author_is_refused() {
         let mut d = description(vec![item("en", "testing")]);
         d.original_author.clear();
-        let v = check_description(openehr(), &d, "t").unwrap_err();
+        let v = only(check_description(openehr(), &d, "t"));
         assert_eq!(v.code, "RESOURCE_DESCRIPTION.Original_author_valid");
     }
 
@@ -345,39 +431,43 @@ mod tests {
     fn empty_lifecycle_state_is_refused() {
         let mut d = description(vec![item("en", "testing")]);
         d.lifecycle_state.clear();
-        let v = check_description(openehr(), &d, "t").unwrap_err();
+        let v = only(check_description(openehr(), &d, "t"));
         assert_eq!(v.code, "RESOURCE_DESCRIPTION.Lifecycle_state_valid");
     }
 
     #[test]
     fn detail_less_description_is_refused() {
-        let v = check_description(openehr(), &description(Vec::new()), "t").unwrap_err();
+        let v = only(check_description(openehr(), &description(Vec::new()), "t"));
         assert_eq!(v.code, "RESOURCE_DESCRIPTION.Details_valid");
     }
 
     #[test]
     fn duplicate_detail_language_is_refused() {
         let d = description(vec![item("en", "testing"), item("en", "again")]);
-        let v = check_description(openehr(), &d, "t").unwrap_err();
+        let v = only(check_description(openehr(), &d, "t"));
         assert_eq!(v.code, "RESOURCE_DESCRIPTION.Details_valid");
     }
 
     #[test]
     fn empty_purpose_and_empty_optionals_are_refused() {
         let d = description(vec![item("en", "")]);
-        let v = check_description(openehr(), &d, "t").unwrap_err();
+        let v = only(check_description(openehr(), &d, "t"));
         assert_eq!(v.code, "RESOURCE_DESCRIPTION_ITEM.Purpose_valid");
 
         let mut with_use = item("en", "testing");
         with_use.use_ = Some(String::new());
-        let v = check_description(openehr(), &description(vec![with_use]), "t").unwrap_err();
+        let v = only(check_description(
+            openehr(),
+            &description(vec![with_use]),
+            "t",
+        ));
         assert_eq!(v.code, "RESOURCE_DESCRIPTION_ITEM.Use_valid");
     }
 
     #[test]
     fn a_detail_language_outside_the_code_set_is_refused() {
         let d = description(vec![item("xx-not-a-language", "testing")]);
-        let v = check_description(openehr(), &d, "t").unwrap_err();
+        let v = only(check_description(openehr(), &d, "t"));
         assert_eq!(v.code, "RESOURCE_DESCRIPTION_ITEM.Language_valid");
     }
 
