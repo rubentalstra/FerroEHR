@@ -202,8 +202,8 @@ Two optional query parameters narrow the scan, and they compose:
 
 Use them. Verifying one record after a support incident, or everything written
 since a known point, costs a fraction of a full repository scan, and the whole
-sweep still has to answer inside the server's 30-second request timeout: a
-measured run over 98 000 stored versions took 11 seconds.
+sweep still has to answer inside the server's 30-second request timeout. On a
+large repository, scope it.
 
 ```json
 {
