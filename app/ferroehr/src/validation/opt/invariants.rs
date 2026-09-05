@@ -306,8 +306,10 @@ pub(super) fn check_constraint_ref(r: &ConstraintRef, ctx: &Ctx) -> Result<(), R
 /// Duplicate codes in a terminology-code code list are invalid (ADL2
 /// master04.6 STCDC — "constraint code list contains duplicate codes"; the
 /// same defect in an OPT 1.4 `C_CODE_PHRASE` list).
-pub(super) fn check_code_list(code_list: &[String], node_id: &str) -> Result<(), RuleViolation> {
+pub(super) fn check_code_list(code_list: &[String], node_id: &str) -> Vec<RuleViolation> {
     let mut seen = HashSet::new();
+    let mut reported = HashSet::new();
+    let mut violations = Vec::new();
     for code in code_list {
         // Empty entries are tooling noise, not codes (Ocean exports emit
         // repeated empty <code_list/> elements — the vendored UK AoMRC corpus
@@ -315,12 +317,62 @@ pub(super) fn check_code_list(code_list: &[String], node_id: &str) -> Result<(),
         if code.is_empty() {
             continue;
         }
-        if !seen.insert(code) {
-            return Err(RuleViolation::new(
+        // Every duplicated code is reported, once each however many times it
+        // repeats: a list with seventeen of them used to cost seventeen uploads
+        // to find (#3129), and a code repeated three times is still one defect.
+        if !seen.insert(code) && reported.insert(code) {
+            violations.push(RuleViolation::new(
                 "STCDC",
                 format!("node '{node_id}': code '{code}' is duplicated in the code list"),
             ));
         }
     }
-    Ok(())
+    violations
+}
+
+#[cfg(test)]
+mod tests {
+    use super::check_code_list;
+
+    /// The reported case (#3129): one template held seventeen duplicated codes
+    /// and the refusal named the first, so finding them all took seventeen
+    /// uploads. Every duplicate is reported now.
+    #[test]
+    fn every_duplicated_code_is_reported_not_just_the_first() {
+        let list: Vec<String> = ["a", "b", "a", "c", "b", "d", "e", "e"]
+            .iter()
+            .map(|s| (*s).to_owned())
+            .collect();
+
+        let details: Vec<String> = check_code_list(&list, "at0001")
+            .iter()
+            .map(|v| v.detail.clone())
+            .collect();
+
+        assert_eq!(details.len(), 3, "three codes repeat: {details:?}");
+        for code in ["'a'", "'b'", "'e'"] {
+            assert!(
+                details.iter().any(|d| d.contains(code)),
+                "missing {code} in {details:?}"
+            );
+        }
+    }
+
+    /// A code repeated three times is one defect, not two.
+    #[test]
+    fn a_code_repeated_several_times_is_reported_once() {
+        let list: Vec<String> = ["x", "x", "x", "x"]
+            .iter()
+            .map(|s| (*s).to_owned())
+            .collect();
+        assert_eq!(check_code_list(&list, "at0002").len(), 1);
+    }
+
+    /// Empty entries are tooling noise, not codes, so repeating them is not a
+    /// duplicate (Ocean exports emit repeated empty `code_list` elements).
+    #[test]
+    fn repeated_empty_entries_are_not_duplicates() {
+        let list: Vec<String> = ["", "", "a", ""].iter().map(|s| (*s).to_owned()).collect();
+        assert!(check_code_list(&list, "at0003").is_empty());
+    }
 }

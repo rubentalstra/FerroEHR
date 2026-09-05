@@ -15,6 +15,19 @@ workflow refuses a tag that has no matching section here.
 
 ## [Unreleased]
 
+### Changed
+
+- **A refused operational template lists every violation, not the first one**
+  (#3129). Repairing a template meant one upload per defect: a reporter with a
+  1.7 MB template uploaded it to learn `use` was empty, fixed it, uploaded again
+  to learn `misuse` was too, and a code list with seventeen duplicated codes
+  named one of them at a time. `validationErrors` now carries an entry per
+  violation, the way a refused composition already did. A violation that makes
+  the tree below it meaningless, a constrained type the reference model does not
+  have or an attribute its parent does not declare, says that its subtree went
+  unchecked, so a short list is never mistaken for a clean one; past 200
+  violations the response says it stopped counting.
+
 ## [4.1.0] - 2026-09-05
 
 ### Added
