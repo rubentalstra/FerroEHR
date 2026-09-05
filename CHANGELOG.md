@@ -15,6 +15,8 @@ workflow refuses a tag that has no matching section here.
 
 ## [Unreleased]
 
+## [4.1.1] - 2026-09-05
+
 ### Added
 
 - **A whole large repository can now be checked for storage damage in one pass**
@@ -8351,7 +8353,8 @@ but has not yet run in production.
   seccomp, default-deny NetworkPolicy) and golden-render validation.
 
 
-[unreleased]: https://github.com/rubentalstra/FerroEHR/compare/v4.1.0...HEAD
+[unreleased]: https://github.com/rubentalstra/FerroEHR/compare/v4.1.1...HEAD
+[4.1.1]: https://github.com/rubentalstra/FerroEHR/compare/v4.1.0...v4.1.1
 [4.1.0]: https://github.com/rubentalstra/FerroEHR/compare/v4.0.18...v4.1.0
 [4.0.18]: https://github.com/rubentalstra/FerroEHR/compare/v4.0.17...v4.0.18
 [4.0.17]: https://github.com/rubentalstra/FerroEHR/compare/v4.0.16...v4.0.17
