@@ -201,9 +201,39 @@ Two optional query parameters narrow the scan, and they compose:
 | `committed_since` | cover only versions whose validity begins at or after that RFC 3339 instant |
 
 Use them. Verifying one record after a support incident, or everything written
-since a known point, costs a fraction of a full repository scan, and the whole
-sweep still has to answer inside the server's 30-second request timeout. On a
-large repository, scope it.
+since a known point, costs a fraction of a full repository scan.
+
+### Verifying a whole large repository
+
+By default the route computes the whole report before it answers, so it has to
+finish inside the server's 30-second request timeout. Send
+`Accept: application/x-ndjson` and it streams the same sweep instead, writing
+each finding as it is made. Nothing bounds that response, so this is how you
+verify a repository too large to scope:
+
+```bash
+curl -sN -X POST \
+  -H 'Accept: application/x-ndjson' \
+  "$BASE/admin/integrity/verify"
+```
+
+The body is one JSON object per line, each carrying a `type`:
+
+| `type` | When | Carries |
+|---|---|---|
+| `mismatch` | as each disagreement is found | the same four fields the report's `mismatches` entries carry |
+| `progress` | once per page of versions read | the counts so far |
+| `summary` | once, at the end | the final counts and `elapsed_ms` |
+| `error` | instead of `summary`, if the sweep failed part-way | a short message; the detail is in the server log |
+
+Two consequences are worth planning around. The status code is sent before the
+work is done, so a sweep that fails half-way still answered `200`: read to the
+end and check that the last line is a `summary`, not an `error`. And the stream
+carries no reporting cap, so every mismatch reaches you rather than the first
+thousand.
+
+The stream has to be asked for by name. A request sending `*/*`, or no `Accept`
+at all, gets the aggregated document below, unchanged.
 
 ```json
 {

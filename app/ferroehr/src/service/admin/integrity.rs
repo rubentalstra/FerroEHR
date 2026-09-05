@@ -107,6 +107,47 @@ pub struct StorageParityMismatch {
     pub defect: StorageParityDefect,
 }
 
+/// What a sweep has read so far, or in total.
+///
+/// NOTE: no openEHR spec governs storage mechanics — our own design/extension.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Default)]
+pub struct StorageParityCounts {
+    /// How many stored versions were read, across both storage tiers.
+    pub versions_checked: u64,
+    /// How many of them carry a materialized body (a content version).
+    pub versions_with_body: u64,
+    /// How many of them carry no body (a logical delete).
+    pub versions_without_body: u64,
+    /// How many mismatches were found.
+    pub mismatch_count: u64,
+}
+
+/// One event of a running storage-parity sweep.
+///
+/// A sweep reads every byte of what it covers, so a whole-repository pass can
+/// run far longer than any one request may take to answer. Reporting it as a
+/// sequence of events is what lets a caller consume the findings while the
+/// sweep is still running.
+///
+/// NOTE: no openEHR spec governs storage mechanics — our own design/extension.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub enum StorageParityEvent {
+    /// One stored version whose two content copies disagree.
+    Mismatch(StorageParityMismatch),
+    /// The counts so far, emitted once per enumerated page.
+    Progress {
+        /// What has been read up to this point.
+        counts: StorageParityCounts,
+    },
+    /// The final counts, emitted once, after the last page.
+    Summary {
+        /// What the whole sweep read.
+        counts: StorageParityCounts,
+        /// Wall-clock duration of the sweep, in milliseconds.
+        elapsed_ms: u64,
+    },
+}
+
 /// The outcome of one storage-parity sweep.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct StorageParityReport {
@@ -182,15 +223,39 @@ impl FerroEhrService {
         &self,
         scope: StorageParityScope,
     ) -> Result<StorageParityReport, SmError> {
-        Ok(self.sweep_storage_parity(scope).await?)
+        Ok(self.collect_storage_parity(scope).await?)
     }
 
-    /// The sweep itself, over the storage error domain.
-    async fn sweep_storage_parity(
+    /// Starts a sweep the caller advances itself, one batch of events at a
+    /// time.
+    ///
+    /// This is the sweep; [`Self::verify_storage_parity`] is one way of
+    /// consuming it. A caller that must report findings while the sweep is
+    /// still running — a response written as a stream of lines — drives this
+    /// instead, and gets exactly the same reads, counts and log lines.
+    ///
+    /// NOTE: no openEHR spec governs storage mechanics — our own
+    /// design/extension.
+    #[must_use]
+    pub fn storage_parity_sweep(&self, scope: StorageParityScope) -> StorageParitySweep<'_> {
+        StorageParitySweep {
+            service: self,
+            scope,
+            cursor: None,
+            page: Vec::new().into_iter(),
+            counts: StorageParityCounts::default(),
+            started: Instant::now(),
+            page_finished: false,
+            done: false,
+        }
+    }
+
+    /// Drain a sweep into the aggregated report.
+    async fn collect_storage_parity(
         &self,
         scope: StorageParityScope,
     ) -> Result<StorageParityReport, ServiceError> {
-        let started = Instant::now();
+        let mut sweep = self.storage_parity_sweep(scope);
         let mut report = StorageParityReport {
             versions_checked: 0,
             versions_with_body: 0,
@@ -200,29 +265,29 @@ impl FerroEhrService {
             truncated: false,
             elapsed_ms: 0,
         };
-        let mut cursor: Option<(Uuid, i32)> = None;
-
-        loop {
-            let page = self.parity_page(cursor, scope).await?;
-            let Some(last) = page.last() else { break };
-            cursor = Some((last.vo_id, last.sys_version));
-
-            for chunk in page.chunks(CONTENT_CHUNK) {
-                for (key, defect) in self.chunk_parity_defects(chunk).await? {
-                    report.versions_checked += 1;
-                    if key.has_body {
-                        report.versions_with_body += 1;
-                    } else {
-                        report.versions_without_body += 1;
+        while let Some(events) = sweep.next_batch().await? {
+            for event in events {
+                match event {
+                    StorageParityEvent::Mismatch(mismatch) => {
+                        if report.mismatches.len() < MAX_REPORTED_MISMATCHES {
+                            report.mismatches.push(mismatch);
+                        } else {
+                            report.truncated = true;
+                        }
                     }
-                    if let Some(defect) = defect {
-                        record(&mut report, key, defect);
+                    // The aggregated form answers once, at the end, so a
+                    // running count has nobody to tell.
+                    StorageParityEvent::Progress { .. } => {}
+                    StorageParityEvent::Summary { counts, elapsed_ms } => {
+                        report.versions_checked = counts.versions_checked;
+                        report.versions_with_body = counts.versions_with_body;
+                        report.versions_without_body = counts.versions_without_body;
+                        report.mismatch_count = counts.mismatch_count;
+                        report.elapsed_ms = elapsed_ms;
                     }
                 }
             }
         }
-
-        report.elapsed_ms = u64::try_from(started.elapsed().as_millis()).unwrap_or(u64::MAX);
         Ok(report)
     }
 
@@ -339,29 +404,118 @@ impl FerroEhrService {
     }
 }
 
-/// Count a mismatch, log it by identifier, and record it while the report has
-/// room.
+/// A storage-parity sweep in progress, advanced one batch of events at a time.
 ///
-/// The log line carries identifiers and the defect token only: a body fragment
-/// would put clinical content into an operational log.
-fn record(report: &mut StorageParityReport, key: &VersionKey, defect: StorageParityDefect) {
-    report.mismatch_count += 1;
-    tracing::warn!(
-        vo_id = %key.vo_id,
-        sys_version = key.sys_version,
-        kind = %key.kind,
-        defect = defect.as_str(),
-        "storage parity sweep: the node rows and the materialized body of a stored version disagree"
-    );
-    if report.mismatches.len() < MAX_REPORTED_MISMATCHES {
-        report.mismatches.push(StorageParityMismatch {
-            vo_id: key.vo_id,
-            sys_version: key.sys_version,
-            kind: key.kind.clone(),
-            defect,
-        });
-    } else {
-        report.truncated = true;
+/// The sweep is a cursor rather than one call so both response shapes share ONE
+/// implementation: the aggregated report drains it, and a streamed response
+/// writes each event as a line as it arrives. Advancing only when the caller
+/// asks is also what gives a stream its backpressure and its cancellation —
+/// dropping the sweep stops the reads at the next batch boundary.
+///
+/// NOTE: no openEHR spec governs storage mechanics — our own design/extension.
+pub struct StorageParitySweep<'a> {
+    service: &'a FerroEhrService,
+    scope: StorageParityScope,
+    cursor: Option<(Uuid, i32)>,
+    page: std::vec::IntoIter<VersionKey>,
+    counts: StorageParityCounts,
+    started: Instant,
+    page_finished: bool,
+    done: bool,
+}
+
+impl std::fmt::Debug for StorageParitySweep<'_> {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.debug_struct("StorageParitySweep")
+            .field("scope", &self.scope)
+            .field("cursor", &self.cursor)
+            .field("counts", &self.counts)
+            .field("done", &self.done)
+            .finish_non_exhaustive()
+    }
+}
+
+impl StorageParitySweep<'_> {
+    /// Advances the sweep, returning the next batch of events, or `None` once
+    /// the summary has been handed over.
+    ///
+    /// A batch is what one chunk of versions produced, so it is empty whenever
+    /// those versions agreed — which is the common case. The last batch before
+    /// `None` carries the [`StorageParityEvent::Summary`].
+    ///
+    /// # Errors
+    /// - `exception` — a database fault while enumerating or reading versions.
+    ///   A version whose node rows are unreadable is a REPORTED mismatch, not
+    ///   an error: one damaged record must not abort the sweep that found it.
+    pub async fn next_batch(&mut self) -> Result<Option<Vec<StorageParityEvent>>, ServiceError> {
+        loop {
+            let chunk: Vec<VersionKey> = self.page.by_ref().take(CONTENT_CHUNK).collect();
+            if !chunk.is_empty() {
+                return Ok(Some(self.check_chunk(&chunk).await?));
+            }
+            if self.done {
+                return Ok(None);
+            }
+            // A whole page has been read. The tick both tells a consumer the
+            // sweep is advancing and keeps a streamed response writing bytes,
+            // which is what stops an intermediary closing a long clean sweep.
+            if self.page_finished {
+                self.page_finished = false;
+                return Ok(Some(vec![StorageParityEvent::Progress {
+                    counts: self.counts,
+                }]));
+            }
+            let page = self.service.parity_page(self.cursor, self.scope).await?;
+            let Some(last) = page.last() else {
+                self.done = true;
+                let elapsed_ms =
+                    u64::try_from(self.started.elapsed().as_millis()).unwrap_or(u64::MAX);
+                return Ok(Some(vec![StorageParityEvent::Summary {
+                    counts: self.counts,
+                    elapsed_ms,
+                }]));
+            };
+            self.cursor = Some((last.vo_id, last.sys_version));
+            self.page = page.into_iter();
+            self.page_finished = true;
+        }
+    }
+
+    /// Compare one chunk, count what it read, and turn its defects into events.
+    async fn check_chunk(
+        &mut self,
+        chunk: &[VersionKey],
+    ) -> Result<Vec<StorageParityEvent>, ServiceError> {
+        let mut events = Vec::new();
+        for (key, defect) in self.service.chunk_parity_defects(chunk).await? {
+            self.counts.versions_checked += 1;
+            if key.has_body {
+                self.counts.versions_with_body += 1;
+            } else {
+                self.counts.versions_without_body += 1;
+            }
+            if let Some(defect) = defect {
+                self.counts.mismatch_count += 1;
+                // The log line carries identifiers and the defect token only: a
+                // body fragment would put clinical content into an operational
+                // log. It is emitted here, in the one sweep, so a finding is
+                // logged whichever response shape asked for it.
+                tracing::warn!(
+                    vo_id = %key.vo_id,
+                    sys_version = key.sys_version,
+                    kind = %key.kind,
+                    defect = defect.as_str(),
+                    "storage parity sweep: the node rows and the materialized body of a stored version disagree"
+                );
+                events.push(StorageParityEvent::Mismatch(StorageParityMismatch {
+                    vo_id: key.vo_id,
+                    sys_version: key.sys_version,
+                    kind: key.kind.clone(),
+                    defect,
+                }));
+            }
+        }
+        Ok(events)
     }
 }
 

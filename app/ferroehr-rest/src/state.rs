@@ -93,6 +93,16 @@ impl AppState {
         &self.inner.backend
     }
 
+    /// An owned handle on the service, for work that outlives the handler.
+    ///
+    /// A handler that answers with a STREAM returns its response head while
+    /// the work behind the body is still running, so that work cannot borrow
+    /// the state it was called with. Every other dispatcher takes
+    /// [`Self::backend`] instead.
+    pub(crate) fn backend_handle(&self) -> Arc<FerroEhrService> {
+        Arc::clone(&self.inner.backend)
+    }
+
     /// The authorization handle (RBAC gate), if access control is wired.
     pub(crate) fn authz(&self) -> Option<Arc<AuthzHandle>> {
         self.inner.authz.clone()

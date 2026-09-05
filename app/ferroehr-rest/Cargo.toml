@@ -49,6 +49,10 @@ uuid = { workspace = true }
 
 # Async runtime.
 tokio = { workspace = true }
+# The streamed storage-parity sweep turns its channel receiver into the
+# response body (`stream::poll_fn` over `Receiver::poll_recv`); the
+# overload-shedding tests park a handler on `stream::pending`.
+futures = { workspace = true }
 
 # Serialization & data structures.
 serde = { workspace = true }
@@ -118,9 +122,6 @@ testcontainers-modules.workspace = true
 tokio = { workspace = true }
 tower = { workspace = true }
 axum = { workspace = true }
-# Overload-shedding tests hold an API permit by parking a handler on a
-# never-ending request body (`futures::stream::pending`).
-futures = { workspace = true }
 http = { workspace = true }
 http-body-util = { workspace = true }
 serde_json = { workspace = true }

@@ -15,6 +15,21 @@ workflow refuses a tag that has no matching section here.
 
 ## [Unreleased]
 
+### Added
+
+- **A whole large repository can now be checked for storage damage in one pass**
+  (#3122). `POST /admin/integrity/verify` computed its whole report before
+  answering, so it had to finish inside the server's 30-second request timeout
+  and a large enough repository lost the report to a `408`. Sending
+  `Accept: application/x-ndjson` streams the same sweep instead: one JSON object
+  per line, a `mismatch` as each is found, a `progress` tick per page read, and
+  a closing `summary` with the counts. Nothing bounds that response, and the
+  stream carries every mismatch rather than the first thousand. The status code
+  is committed before the work is, so a sweep that fails part-way ends with an
+  `error` line instead of a `summary` — read to the end to tell the two apart.
+  A request that does not name the media type, `*/*` included, keeps the
+  aggregated document exactly as before.
+
 ### Changed
 
 - **A refused operational template lists every violation, not the first one**
