@@ -15,6 +15,8 @@ workflow refuses a tag that has no matching section here.
 
 ## [Unreleased]
 
+## [4.1.0] - 2026-09-05
+
 ### Added
 
 - **A terminology server that answers with the wrong FHIR resource is refused
@@ -8321,7 +8323,8 @@ but has not yet run in production.
   seccomp, default-deny NetworkPolicy) and golden-render validation.
 
 
-[unreleased]: https://github.com/rubentalstra/FerroEHR/compare/v4.0.18...HEAD
+[unreleased]: https://github.com/rubentalstra/FerroEHR/compare/v4.1.0...HEAD
+[4.1.0]: https://github.com/rubentalstra/FerroEHR/compare/v4.0.18...v4.1.0
 [4.0.18]: https://github.com/rubentalstra/FerroEHR/compare/v4.0.17...v4.0.18
 [4.0.17]: https://github.com/rubentalstra/FerroEHR/compare/v4.0.16...v4.0.17
 [4.0.16]: https://github.com/rubentalstra/FerroEHR/compare/v4.0.15...v4.0.16
