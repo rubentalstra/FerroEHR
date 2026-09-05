@@ -119,6 +119,16 @@ workflow refuses a tag that has no matching section here.
 
 ### Fixed
 
+- **Signing in again no longer lands back on the login card** (#3066). After the
+  viewer signed a user out, an answer to a request issued under the old session
+  could still arrive while they were signing back in. The transport reads every
+  such answer, and the shell treated one as proof the session was over, so a
+  freshly signed-in user was sent straight back to the login screen and only a
+  full page reload got them past it. The shell now re-reads the session instead
+  of trusting the detection, because a detection names no session, so a late
+  answer to a dead one is ignored and a real expiry still signs out. The visible
+  behaviour on a genuine expiry is unchanged.
+
 - **A large operational template uploads in milliseconds again** (#3114). The
   XML reader resolved every closing element's line and column by scanning the
   document from byte zero, which made a parse quadratic in document size: the

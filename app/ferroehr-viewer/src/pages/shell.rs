@@ -216,18 +216,19 @@ pub fn AppShell() -> impl IntoView {
         }
     });
 
-    // Browser-only: the transport backstop. Every server fn runs through
-    // `SessionAwareClient`, which bumps the session-ended counter when one of
-    // them answers `Unauthenticated` or `CdrUnauthorized` — including a CDR
-    // revocation the viewer's own cookie knows nothing about. The baseline is
-    // read here, at setup, so a shell mounted after a fresh sign-in never acts
-    // on an older detection and no reset write is needed.
-    let navigate = leptos_router::hooks::use_navigate();
+    // Browser-only: the transport backstop. `SessionAwareClient` bumps the
+    // session-ended counter when a server fn answers `Unauthenticated` or
+    // `CdrUnauthorized`, including a CDR revocation this viewer's own cookie
+    // knows nothing about. It RE-READS the session rather than signing out on
+    // that alone (#3066): a detection names no session, so an answer to a
+    // request issued under the previous cookie can land after a new sign-in.
+    // The session is the only authority on whether it is over, and the gate
+    // below already acts on its answer.
     let session_ended = session_ended_signal();
     let session_ended_baseline = session_ended_epoch();
     Effect::new(move |_| {
         if session_ended.get() != session_ended_baseline {
-            navigate(&signed_out(), leptos_router::NavigateOptions::default());
+            session.refetch();
         }
     });
 
