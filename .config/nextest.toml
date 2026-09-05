@@ -24,8 +24,18 @@
 [test-groups.containers]
 max-threads = 1
 
+#
+# Two tests in those modules start NO container and are excluded by name
+# (#3120): `disabled_by_default_stores_inline_verbatim` asserts the posture with
+# the store switched off, and
+# `unreachable_store_refuses_expansion_instead_of_answering_silently` asserts the
+# refusal when there is no store to reach. Both take only a testkit database, so
+# serializing them against the broker suites bought nothing and the retry they
+# inherited was meaningless. The filter stays an EXCLUSION rather than a list of
+# the container tests, so a new test in these modules is serialized by default:
+# the safe direction is a container test that waits, never one that does not.
 [[profile.default.overrides]]
-filter = 'package(ferroehr) & binary(it) & test(/^(events_amqp|fhir_outbound_amqp|multimedia_s3)::/)'
+filter = 'package(ferroehr) & binary(it) & test(/^(events_amqp|fhir_outbound_amqp|multimedia_s3)::/) - test(/^multimedia_s3::(disabled_by_default_stores_inline_verbatim|unreachable_store_refuses_expansion_instead_of_answering_silently)$/)'
 test-group = 'containers'
 retries = 1
 
