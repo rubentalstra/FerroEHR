@@ -2759,6 +2759,7 @@ dependencies = [
  "indexmap 2.14.0",
  "inferno",
  "jiff",
+ "jiff-sqlx",
  "jsonwebtoken",
  "moka",
  "openehr-base",

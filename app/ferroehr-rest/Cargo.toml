@@ -109,6 +109,10 @@ utoipa-swagger-ui = { workspace = true }
 openehr-lang = { path = "../../crates/openehr-lang" }
 testkit = { path = "../../tools/testkit" }
 sqlx.workspace = true
+# The at-time version tests take their probe instant from the database rather
+# than a wall clock (#3119); sqlx has no jiff feature, so the timestamptz comes
+# back through the official wrapper.
+jiff-sqlx.workspace = true
 testcontainers.workspace = true
 testcontainers-modules.workspace = true
 tokio = { workspace = true }

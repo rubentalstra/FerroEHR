@@ -111,6 +111,36 @@ async fn pending_count(pool: &PgPool) -> i64 {
         .expect("pending count")
 }
 
+/// Wait for the outbox to drain, bounded by PROGRESS rather than by total
+/// elapsed time (#3119).
+///
+/// A loaded runner makes the whole drain slower without making it stuck, so a
+/// fixed budget fails on the machine rather than on the code — this suite's
+/// wildcard test did exactly that at 63 s against a 60 s deadline, and passed
+/// in 10 s alone minutes later. A stall budget cannot: it fires only when the
+/// pending count has not moved at all, which is what "stuck" actually means,
+/// and it fires just as fast on a real hang.
+async fn drain_outbox(pool: &PgPool) {
+    const STALL: Duration = Duration::from_secs(30);
+    let mut pending = pending_count(pool).await;
+    let mut last_progress = tokio::time::Instant::now();
+    loop {
+        let now = pending_count(pool).await;
+        if now == 0 {
+            return;
+        }
+        if now != pending {
+            pending = now;
+            last_progress = tokio::time::Instant::now();
+        }
+        assert!(
+            last_progress.elapsed() < STALL,
+            "the outbox stopped draining with {pending} row(s) pending and no progress for {STALL:?}"
+        );
+        tokio::time::sleep(Duration::from_millis(100)).await;
+    }
+}
+
 /// The total number of version entries across all outbox rows — the number of
 /// per-version messages the publisher emits.
 async fn version_count(pool: &PgPool) -> i64 {
@@ -351,17 +381,7 @@ async fn broker_down_then_up_delivers_without_loss() {
 
     // Broker up: a correctly-configured publisher drains every row (no loss).
     let up = start(events_config(url), pool.clone());
-    let deadline = tokio::time::Instant::now() + Duration::from_mins(1);
-    loop {
-        if pending_count(&pool).await == 0 {
-            break;
-        }
-        assert!(
-            tokio::time::Instant::now() < deadline,
-            "did not drain in time"
-        );
-        tokio::time::sleep(Duration::from_millis(100)).await;
-    }
+    drain_outbox(&pool).await;
 
     // Every per-version message arrives on the catch-all queue (no loss).
     for _ in 0..expected_messages {
@@ -407,17 +427,7 @@ async fn subscriptions_route_by_predicate_and_wildcard_receives_all() {
     // Start the publisher: each cycle re-syncs (declares/binds) the subscription
     // queues *before* it publishes, so the durable queues capture the messages.
     let handle = start(events_config(url.clone()), pool.clone());
-    let deadline = tokio::time::Instant::now() + Duration::from_mins(1);
-    loop {
-        if pending_count(&pool).await == 0 {
-            break;
-        }
-        assert!(
-            tokio::time::Instant::now() < deadline,
-            "did not drain in time"
-        );
-        tokio::time::sleep(Duration::from_millis(100)).await;
-    }
+    drain_outbox(&pool).await;
 
     // The wildcard queue received every per-version message (per-version fan-out).
     let (_c_all, mut all) =

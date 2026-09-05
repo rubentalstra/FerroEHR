@@ -788,17 +788,27 @@ async fn get_version_at_time_variants() {
 /// is independent of what that zone happens to be.
 #[tokio::test]
 async fn version_at_time_without_offset_resolves_in_the_local_timezone() {
-    let (_pg, app) = common::test_router().await;
+    let (pg, app) = common::test_router().await;
     let ehr = create_ehr(&app).await;
 
     let (_s, h, _b) = create_directory(&app, &ehr, &folder_json("dir-v1", vec![]), None).await;
     let v1 = etag_uid(&h);
 
-    // An instant strictly inside v1's validity window (the 150 ms margins keep
-    // it between the two commits — same clock, same host).
-    tokio::time::sleep(Duration::from_millis(150)).await;
-    let between = jiff::Timestamp::now();
-    tokio::time::sleep(Duration::from_millis(150)).await;
+    // The probe instant is v1's OWN start, read back from the database rather
+    // than sampled from a clock (#3119). `sys_period` is stamped by PostgreSQL,
+    // whose container clock need not agree with this process's, and the margins
+    // this test used to sleep around were eaten under full-suite load. The
+    // range's lower bound is INCLUSIVE, so the version extant at exactly that
+    // instant is v1 by construction, with no margin to lose.
+    let between: jiff_sqlx::Timestamp = sqlx::query_scalar(
+        "SELECT lower(sys_period) FROM vo_version \
+         WHERE kind = 'FOLDER' AND sys_version = 1 AND ehr_id = $1",
+    )
+    .bind(ehr.parse::<Uuid>().expect("the EHR id"))
+    .fetch_one(&pg.pool())
+    .await
+    .expect("v1's stored validity start");
+    let between = between.to_jiff();
 
     let (_s, _h, _b) = update_directory(
         &app,
