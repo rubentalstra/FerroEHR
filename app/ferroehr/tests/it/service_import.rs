@@ -60,6 +60,25 @@ use crate::typed_body::typed;
 use ferroehr::versioning::signature::config::{Mode, SigningConfig, VerifyOnRead};
 use ferroehr::versioning::signature::signer::Signer;
 
+/// The database's own current instant, for a probe an assertion compares
+/// against a stored one.
+///
+/// Committal instants are stamped by PostgreSQL, not by this process:
+/// `audit.time_committed` defaults to `now()`, because RM common
+/// `master06-change_control_package.adoc` §Committal and Audits requires the
+/// committal instant to be computed on the server. Taking the probe from
+/// `jiff::Timestamp::now()` would therefore compare a host clock against a
+/// container clock, and the two are free to disagree (#3138). Every database
+/// here comes from the one testkit server, so a probe read from any pool shares
+/// its clock with every instant under test.
+async fn db_now(pool: &sqlx::PgPool) -> jiff::Timestamp {
+    let now: jiff_sqlx::Timestamp = sqlx::query_scalar("SELECT now()")
+        .fetch_one(pool)
+        .await
+        .expect("the database's current instant");
+    now.to_jiff()
+}
+
 /// Seed an EHR with an `EHR_STATUS` (create → update = two versions), a directory
 /// `FOLDER`, and the auto-created `EHR_ACCESS` — the same shape the export tests
 /// seed. Returns the EHR id.
@@ -682,7 +701,7 @@ async fn an_imported_container_reports_the_local_chronology() {
         .parse::<jiff::Timestamp>()
         .expect("ISO 8601 instant");
 
-    let before_import = jiff::Timestamp::now();
+    let before_import = db_now(&target_db.pool()).await;
     target
         .import_ehr(None, export_one(&source, ehr).await)
         .await
@@ -947,7 +966,7 @@ async fn an_as_of_read_before_the_import_does_not_see_the_imported_version() {
         .to_owned();
 
     // Everything the source did is now in the past; the import has not run.
-    let before_import = jiff::Timestamp::now().to_string();
+    let before_import = db_now(&target_db.pool()).await.to_string();
 
     target
         .import_ehr(None, export_one(&source, ehr).await)
