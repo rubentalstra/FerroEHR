@@ -104,6 +104,10 @@ const APPLICATION_WT_FLAT_JSON: &str = "application/openehr.wt.flat+json";
 /// Simplified STRUCTURED (structSDT) media type.
 const APPLICATION_WT_STRUCTURED_JSON: &str = "application/openehr.wt.structured+json";
 
+/// Line-delimited JSON, the media type our own long-running operational routes
+/// stream their findings as. Not a [`WireFormat`] — see [`accepts_ndjson`].
+pub(crate) const APPLICATION_NDJSON: &str = "application/x-ndjson";
+
 /// The canonical-only allowed set (`Accept_LOCATABLE` minus the simplified
 /// types) — the negotiation set for every canonical RM object endpoint.
 pub(crate) const CANONICAL: &[WireFormat] = &[WireFormat::CanonicalJson, WireFormat::CanonicalXml];
@@ -376,6 +380,26 @@ pub(crate) fn accept_xml_namespace(headers: &HeaderMap) -> Option<Namespace> {
         XmlLineage::Selected(ns) => Some(ns),
         XmlLineage::Unrecognized => None,
     }
+}
+
+/// Whether the request explicitly asks for a line-delimited JSON stream.
+///
+/// Line-delimited JSON is not a [`WireFormat`]: no openEHR spec defines it, no
+/// RM resource is served that way, and no ITS-REST operation offers it. It is
+/// the response SHAPE two of our own operational routes can take when the work
+/// behind them runs longer than one response may take to produce. It is
+/// therefore asked for BY NAME and never matched by a wildcard — a client
+/// sending `*/*`, or no `Accept` at all, keeps the aggregated document, which
+/// is what stops the shape changing under an existing caller.
+///
+/// NOTE: no openEHR spec governs this media type — our own design/extension.
+pub(crate) fn accepts_ndjson(headers: &HeaderMap) -> bool {
+    let Some(accept) = header_str(headers, header::ACCEPT) else {
+        return false;
+    };
+    accept.split(',').any(|range| {
+        media_token(range).eq_ignore_ascii_case(APPLICATION_NDJSON) && quality_of(range) > 0.0
+    })
 }
 
 /// Refuse a request whose `Content-Type` declares canonical XML in a lineage

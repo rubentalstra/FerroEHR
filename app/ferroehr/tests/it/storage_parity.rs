@@ -27,7 +27,9 @@ use uuid::Uuid;
 
 use ferroehr::ids::EhrId;
 use ferroehr::service::FerroEhrService;
-use ferroehr::service::admin::integrity::{StorageParityDefect, StorageParityScope};
+use ferroehr::service::admin::integrity::{
+    StorageParityDefect, StorageParityEvent, StorageParityScope,
+};
 
 use crate::fixtures::{composition, folder, uv};
 
@@ -381,4 +383,83 @@ async fn a_committed_since_bound_excludes_earlier_versions() {
         later.versions_checked < whole.versions_checked,
         "the bound still excludes the versions written before it: {later:?} vs {whole:?}"
     );
+}
+
+#[tokio::test]
+async fn the_streamed_sweep_reports_the_same_findings_as_the_aggregated_one() {
+    let db = testkit::db().await.expect("testkit database");
+    let pool = db.pool();
+    let svc = FerroEhrService::new(pool.clone());
+    let ehr_id = seed_ehr_with_composition(&svc).await;
+    let (vo_id, sys_version) = one_version(&pool, ehr_id, "COMPOSITION").await;
+    tamper(
+        &pool,
+        "UPDATE node SET data = jsonb_set(data, '{archetype_node_id}', '\"tampered\"') \
+         WHERE vo_id = $1 AND sys_version = $2 AND num = 0",
+        vo_id,
+        sys_version,
+    )
+    .await;
+
+    let mut sweep = svc.storage_parity_sweep(StorageParityScope::default());
+    let mut mismatches = Vec::new();
+    let mut summary = None;
+    let mut progress_ticks = 0_u32;
+    while let Some(batch) = sweep.next_batch().await.expect("advance the sweep") {
+        for event in batch {
+            match event {
+                StorageParityEvent::Mismatch(found) => mismatches.push(found),
+                StorageParityEvent::Progress { .. } => progress_ticks += 1,
+                StorageParityEvent::Summary { counts, .. } => {
+                    assert!(summary.is_none(), "the summary is emitted exactly once");
+                    summary = Some(counts);
+                }
+            }
+        }
+    }
+
+    let counts = summary.expect("the sweep ends with a summary");
+    assert!(
+        progress_ticks > 0,
+        "a sweep that read a page reports that it is advancing"
+    );
+    assert_eq!(mismatches.len(), 1, "{mismatches:?}");
+    assert_eq!(mismatches[0].vo_id, vo_id);
+    assert_eq!(mismatches[0].sys_version, sys_version);
+    assert_eq!(mismatches[0].defect, StorageParityDefect::ContentDiffers);
+
+    // The two shapes are one sweep, so their numbers cannot drift apart.
+    let report = svc
+        .verify_storage_parity(StorageParityScope::default())
+        .await
+        .expect("aggregated sweep");
+    assert_eq!(counts.versions_checked, report.versions_checked);
+    assert_eq!(counts.versions_with_body, report.versions_with_body);
+    assert_eq!(counts.versions_without_body, report.versions_without_body);
+    assert_eq!(counts.mismatch_count, report.mismatch_count);
+    assert_eq!(mismatches, report.mismatches);
+}
+
+#[tokio::test]
+async fn a_dropped_stream_stops_the_sweep_where_it_stood() {
+    let db = testkit::db().await.expect("testkit database");
+    let svc = FerroEhrService::new(db.pool());
+    seed_ehr_with_composition(&svc).await;
+
+    // One batch, then drop. Nothing may panic and nothing may run on: the
+    // sweep holds no transaction and no lock, so abandoning it is the whole
+    // cancellation story a disconnected client gets.
+    let mut sweep = svc.storage_parity_sweep(StorageParityScope::default());
+    let first = sweep.next_batch().await.expect("the first batch");
+    assert!(
+        first.is_some(),
+        "a seeded repository yields at least one batch"
+    );
+    drop(sweep);
+
+    let report = svc
+        .verify_storage_parity(StorageParityScope::default())
+        .await
+        .expect("a later sweep is unaffected");
+    assert!(report.versions_checked >= 3, "{report:?}");
 }
