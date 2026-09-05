@@ -1,0 +1,109 @@
+# SPDX-FileCopyrightText: Ruben Talstra
+# SPDX-License-Identifier: BUSL-1.1
+#
+# The pipeline's wall clock, watched (#3131).
+#
+# Sharding a lane fixes it for the suite it was measured against and no longer.
+# The CI test job was split at three shards when the suite was 4600 tests; the
+# coverage lane the same. Tests only ever grow, so a fixed shard count is a
+# cliff someone walks off later — and the way that is noticed today is a person
+# waiting on a pull request and saying so, which is not a mechanism.
+#
+# This is the mechanism. It reads the recent SUCCESSFUL main runs of the lanes
+# that carry a shard count, takes the median wall clock of each, and when one
+# crosses its budget it files or updates ONE tracking issue naming the lane, the
+# figure and the constant to raise. The run stays GREEN: a lane that got slower
+# is actionable, not broken. It goes RED only when the PROBE fails — the API
+# unreachable, or an answer jq cannot read.
+#
+# The budgets are deliberately loose. They are not a target to optimise toward;
+# they are the line past which someone should look. Measured on main when this
+# was written: CI a 688 s median, Sonar 1120 s before #3131 sharded its coverage
+# and roughly half that after. A 900 s line leaves both real headroom and still
+# catches a lane that has doubled.
+name: CI budget watcher
+
+on:
+  schedule:
+    # Mondays 09:47 UTC — a slot of its own; read the estate's with
+    # `grep -rE '^ +- cron:' .github/workflows/`.
+    - cron: "47 9 * * 1"
+  workflow_dispatch:
+
+permissions: {}
+
+concurrency:
+  group: ci-budget-watcher
+  cancel-in-progress: false
+
+jobs:
+  watch:
+    name: watch
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      contents: read
+      issues: write # file/update the one tracking issue below
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Measure the recent main runs of each sharded lane
+        id: check
+        env:
+          GH_TOKEN: ${{ github.token }}
+          REPO: ${{ github.repository }}
+          # Lane, workflow file, budget in seconds, and the constant to raise.
+          LANES: |
+            CI ci.yml 900 TEST_SHARDS/UI_E2E_SHARDS in .github/workflows/ci.yml
+            SonarQube Cloud sonar.yml 900 COVERAGE_SHARDS in .github/workflows/sonar.yml
+        run: |
+          set -euo pipefail
+          : > details.md
+          over=0
+          while read -r lane file budget constant; do
+            [ -n "$lane" ] || continue
+            # The five most recent successful main runs, oldest ignored: the
+            # median is the figure, so one cold-cache outlier cannot raise an
+            # alarm and one warm run cannot silence it.
+            runs=$(gh api "repos/$REPO/actions/workflows/$file/runs?branch=main&status=success&per_page=5" \
+                     --jq '[.workflow_runs[] | ((.updated_at|fromdate) - (.run_started_at|fromdate))] | sort | .[length/2|floor]' 2>/dev/null || echo "")
+            if [ -z "$runs" ] || [ "$runs" = "null" ]; then
+              echo "::error::could not read recent $lane runs from $file" >&2
+              exit 1
+            fi
+            echo "$lane: median ${runs}s (budget ${budget}s)"
+            if [ "$runs" -gt "$budget" ]; then
+              over=1
+              printf -- '- **%s** — median of the last successful main runs: **%ss**, budget %ss. Raise %s.\n' \
+                "$lane" "$runs" "$budget" "$constant" >> details.md
+            fi
+          done <<< "$LANES"
+          echo "over=$over" >> "$GITHUB_OUTPUT"
+
+      - name: Compose the issue body
+        if: steps.check.outputs.over == '1'
+        run: |
+          set -euo pipefail
+          {
+            echo 'The weekly budget watcher found a sharded lane past its budget on main.'
+            echo
+            cat details.md
+            echo
+            echo 'Each lane above carries its shard count as ONE constant, so raising it is a'
+            echo 'single line: the matrix, the job name and the partition divisor all follow it.'
+            echo
+            echo 'Raising the count is not automatically the answer. Check what actually grew: a'
+            echo 'lane can cross its budget because the suite grew, because one test got slow'
+            echo 'enough to dominate its shard, or because a cache stopped hitting. The first'
+            echo 'wants more shards; the other two want fixing.'
+          } > body.md
+
+      - name: File or update the tracking issue
+        if: steps.check.outputs.over == '1'
+        uses: ./.github/actions/file-watcher-issue
+        with:
+          title: "ci: a sharded lane is past its wall-clock budget on main"
+          body-file: body.md
+          labels: ci,P2

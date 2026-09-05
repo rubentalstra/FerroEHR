@@ -66,6 +66,12 @@ concurrency:
 permissions: {}
 
 env:
+  # The ONE place each sharded lane's count lives. Raising one is that line: the
+  # matrix, the job name and the `--partition` divisor are all derived from it,
+  # so they cannot drift apart. When one needs raising, the pipeline-budget
+  # watcher says so rather than someone noticing a slow pull request (#3131).
+  TEST_SHARDS: "3"
+  UI_E2E_SHARDS: "3"
   CARGO_TERM_COLOR: always
   RUST_BACKTRACE: 1
   # CI builds are closer to from-scratch builds; incremental compilation only
@@ -147,11 +153,29 @@ jobs:
       workflows: ${{ steps.filter.outputs.workflows }}
       vex: ${{ steps.filter.outputs.vex }}
       msrv: ${{ steps.filter.outputs.msrv }}
+      test_shards: ${{ steps.shards.outputs.test_list }}
+      test_shard_count: ${{ steps.shards.outputs.test_count }}
+      ui_e2e_shards: ${{ steps.shards.outputs.ui_list }}
+      ui_e2e_shard_count: ${{ steps.shards.outputs.ui_count }}
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           persist-credentials: false
           fetch-depth: 0
+      # Each lane's shard list and its divisor, both from the one constant, so a
+      # matrix and its `--partition n/N` can never disagree.
+      - id: shards
+        env:
+          TEST_COUNT: ${{ env.TEST_SHARDS }}
+          UI_COUNT: ${{ env.UI_E2E_SHARDS }}
+        run: |
+          set -euo pipefail
+          {
+            echo "test_count=$TEST_COUNT"
+            echo "test_list=[$(seq 1 "$TEST_COUNT" | paste -sd, -)]"
+            echo "ui_count=$UI_COUNT"
+            echo "ui_list=[$(seq 1 "$UI_COUNT" | paste -sd, -)]"
+          } >> "$GITHUB_OUTPUT"
       - id: filter
         shell: bash
         env:
@@ -1099,7 +1123,7 @@ jobs:
   # beside each other instead of end to end; sharding the 427 s divides the one
   # cost that no cache can remove.
   test:
-    name: build & test (pg18) ${{ matrix.shard }}/3
+    name: build & test (pg18) ${{ matrix.shard }}/${{ needs.changes.outputs.test_shard_count }}
     needs: changes
     strategy:
       fail-fast: false
@@ -1109,7 +1133,7 @@ jobs:
         # Each shard gets its own PostgreSQL service, which is what makes the
         # split safe: the testkit harness clones a template database per test,
         # so two shards never share one.
-        shard: [1, 2, 3]
+        shard: ${{ fromJSON(needs.changes.outputs.test_shards) }}
     # The service container, its pinned image and the env the suite runs
     # against are all this file's recipe (#2373).
     if: needs.changes.outputs.code == 'true' || needs.changes.outputs.workflows == 'true'
@@ -1161,9 +1185,10 @@ jobs:
       # --no-tests=pass: empty crates are expected until P17 (nextest exits 4 otherwise)
       # The shard index reaches the command through `env:`, never interpolated
       # into the script (the workflow-security rule in reliability.md).
-      - run: cargo nextest run --locked --workspace --exclude ferroehr-viewer --all-features --no-tests=pass --profile ci --partition "hash:${SHARD}/3"
+      - run: cargo nextest run --locked --workspace --exclude ferroehr-viewer --all-features --no-tests=pass --profile ci --partition "hash:${SHARD}/${SHARD_COUNT}"
         env:
           SHARD: ${{ matrix.shard }}
+          SHARD_COUNT: ${{ needs.changes.outputs.test_shard_count }}
       # Doc tests moved to the rustdoc job: `cargo test --doc` is a third
       # feature configuration (default features) and compiled the whole
       # workspace again at the tail of THE critical-path job.
@@ -1680,7 +1705,7 @@ jobs:
   # question of which journeys are order-dependent rather than answering it —
   # the answer is worth having, and it is not this file's to give.
   ui-e2e:
-    name: ui-e2e ${{ matrix.shard }}/3
+    name: ui-e2e ${{ matrix.shard }}/${{ needs.changes.outputs.ui_e2e_shard_count }}
     needs: [changes, ui-e2e-binary, ui-e2e-viewer]
     if: needs.changes.outputs.viewer == 'true'
     runs-on: ubuntu-latest
@@ -1688,7 +1713,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        shard: [1, 2, 3]
+        shard: ${{ fromJSON(needs.changes.outputs.ui_e2e_shards) }}
     # `contents: read` (now also the workflow-level default) is all it needs:
     # nothing here writes to a registry any more (the GHCR buildx layer cache
     # was removed, and the image is now packaged locally from a job artifact).
@@ -1768,7 +1793,7 @@ jobs:
           UI_E2E_NEXTEST_ARCHIVE: ${{ github.workspace }}/ui-e2e-console-stage/ui-e2e-tests.tar.zst
           FERROEHR_IMAGE: ferroehr:ui-e2e
           FERROEHR_POSTGRES_IMAGE: ferroehr-postgres:ui-e2e
-          UI_E2E_PARTITION: hash:${{ matrix.shard }}/3
+          UI_E2E_PARTITION: hash:${{ matrix.shard }}/${{ needs.changes.outputs.ui_e2e_shard_count }}
         run: bash scripts/ui-e2e.sh
       - name: Upload journey screenshots
         if: always()
