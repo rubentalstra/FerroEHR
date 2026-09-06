@@ -7,6 +7,40 @@ summary for evaluators and deployers, not legal advice.
 
 <!-- toc -->
 
+## Do you need a commercial licence?
+
+FerroEHR is source-available under the Business Source License 1.1, which is
+not an OSI-approved open-source licence.
+[`LICENSE`](https://github.com/rubentalstra/FerroEHR/blob/main/LICENSE) is the
+authority and names the Licensor, the Licensed Work, the Additional Use Grant
+and the Change Date; this table is the same boundary in the order people ask
+about it, and the sections below give the full text of each rule.
+
+| What you are doing | What you need | Why |
+|---|---|---|
+| Reading, building, modifying or redistributing the source | Free | The licence grants it without a fee and without asking anyone. |
+| Development, testing, evaluation, prototyping | Free | All non-production use is granted. |
+| Production use for Non-Commercial Purposes | Free | Personal use, academic or scientific research, teaching, and use by a non-profit organisation or public body that is not in the course of a business, does not deliver a service for payment, and is not for commercial advantage. |
+| A hospital, clinic or care provider running it for its patients | Commercial licence | Delivering health care, or any other service for payment, is production use outside the grant. |
+| A vendor or integrator, or any company running it in production | Commercial licence | Production use in the course of a business is outside the grant. |
+| Offering it, or a work derived from it, to third parties as a hosted, managed or embedded service | Commercial licence | Excluded from the grant in every case, whoever you are. |
+| Selling, sublicensing or otherwise distributing it for a fee | Commercial licence | Excluded from the grant in every case, whoever you are. |
+
+The last two rows hold whatever else you are: they need a commercial licence
+even for an organisation the rows above would otherwise leave free.
+
+Each version becomes Apache License 2.0 four years after that version is
+published. A commercial licence starts with a short conversation with the
+maintainer named in
+[`MAINTAINERS.md`](https://github.com/rubentalstra/FerroEHR/blob/main/MAINTAINERS.md).
+
+The eight `openehr-*` crates on crates.io are a separate question. The five
+generated model crates are Apache-2.0, so any Rust project can use them without
+a licence conversation; the three hand-written engines carry the same Business
+Source License as the application. Full detail is under
+[FerroEHR's own code](#ferroehrs-own-code-the-business-source-license-11)
+below.
+
 ## FerroEHR's own code: the Business Source License 1.1
 
 Everything written for this project (the server and application crates, the

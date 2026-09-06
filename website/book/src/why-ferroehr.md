@@ -67,27 +67,25 @@ and published*.
 
 ## Running FerroEHR commercially
 
-FerroEHR is source-available under the Business Source License 1.1:
+FerroEHR is source-available under the Business Source License 1.1, which is
+not an OSI-approved open-source licence. One licence covers the whole
+repository, and no feature is held back for a paid tier.
 
-- Read it, build it, modify it and redistribute it without a fee. One licence
-  covers the whole repository, and no feature is held back for a paid tier.
-- All non-production use is free: development, testing, evaluation and
-  prototyping.
-- Production use is free for Non-Commercial Purposes, which the licence
-  defines as personal use, academic or scientific research, teaching, and use
-  by a non-profit organisation or public body that is not in the course of a
-  business, does not deliver a service for payment, and is not for commercial
-  advantage.
-- Any other production use needs a commercial licence from the Licensor,
-  including the delivery of health care or any other service for payment. A
-  hospital, clinic or care provider running FerroEHR for its patients needs
-  one, and so does a vendor, integrator or any company running it in
-  production. Hosting FerroEHR, or a work derived from it, for third parties
-  as a hosted, managed or embedded service, and selling, sublicensing or
-  otherwise distributing it for a fee on its own or inside another product,
-  need one in every case.
-- Each version becomes Apache 2.0 four years after it is published, so what
-  ships today opens up on a published schedule.
+| What you are doing | What you need | Why |
+|---|---|---|
+| Reading, building, modifying or redistributing the source | Free | The licence grants it without a fee and without asking anyone. |
+| Development, testing, evaluation, prototyping | Free | All non-production use is granted. |
+| Production use for Non-Commercial Purposes | Free | Personal use, academic or scientific research, teaching, and use by a non-profit organisation or public body that is not in the course of a business, does not deliver a service for payment, and is not for commercial advantage. |
+| A hospital, clinic or care provider running it for its patients | Commercial licence | Delivering health care, or any other service for payment, is production use outside the grant. |
+| A vendor or integrator, or any company running it in production | Commercial licence | Production use in the course of a business is outside the grant. |
+| Offering it, or a work derived from it, to third parties as a hosted, managed or embedded service | Commercial licence | Excluded from the grant in every case, whoever you are. |
+| Selling, sublicensing or otherwise distributing it for a fee | Commercial licence | Excluded from the grant in every case, whoever you are. |
+
+The last two rows hold whatever else you are: they need a commercial licence
+even for an organisation the rows above would otherwise leave free. Each
+version becomes Apache 2.0 four years after it is published, so what ships
+today opens up on a published schedule. [Licensing & legal](licensing.md)
+carries the full picture, including every vendored third-party tree.
 
 Building products on FerroEHR is welcome, and it is how standards reach
 patients. Companies and care providers running FerroEHR are wanted here, and
