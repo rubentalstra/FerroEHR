@@ -29,6 +29,8 @@
               (#1694)"
 )]
 
+use std::borrow::Cow;
+
 use serde_json::Value;
 
 use crate::flat::ctx;
@@ -145,12 +147,30 @@ fn walk(node: &WebTemplateNode, rm: &Value, out: &mut SimNode) {
     // tables: `_uid`, `_link:i`, `_feeder_audit`, `_work_flow_id`, …).
     map::emit_rm_attrs(rm, base_type(&node.rm_type), out);
 
+    let names = name_fallback(node);
     for child in &node.children {
         if !covered_by_ctx(node, child) {
-            walk_child(node, child, rm, out);
+            walk_child(node, child, rm, out, &names);
         }
     }
     emit_direct_rm_paths(node, rm, out);
+}
+
+/// The per-step id-only name-fallback table for `node`'s children
+/// ([`rmpath::NameFallback`]).
+///
+/// Reuses the table the web-template builder cached on the node's walk plan so
+/// the projection and the archetype-conformance walk decide a renamed instance
+/// node by ONE rule; a hand-built node carrying no plan gets an equivalent
+/// table computed here.
+fn name_fallback(node: &WebTemplateNode) -> Cow<'_, rmpath::NameFallback> {
+    match &node.walk {
+        Some(plan) => Cow::Borrowed(&plan.name_fallback),
+        None => Cow::Owned(rmpath::name_fallback_from_paths(
+            &node.aql_path,
+            node.children.iter().map(|c| c.aql_path.as_str()),
+        )),
+    }
 }
 
 /// Emits every occurrence of one template child under its simplified slot.
@@ -160,14 +180,20 @@ fn walk(node: &WebTemplateNode, rm: &Value, out: &mut SimNode) {
 /// `_type`. That filter must apply to EVERY member of a choice group — the
 /// first alternative carries no `alt_json_id`, so sharing an `aqlPath` with a
 /// sibling is the group marker.
-fn walk_child(node: &WebTemplateNode, child: &WebTemplateNode, rm: &Value, out: &mut SimNode) {
+fn walk_child(
+    node: &WebTemplateNode,
+    child: &WebTemplateNode,
+    rm: &Value,
+    out: &mut SimNode,
+    names: &rmpath::NameFallback,
+) {
     let rel = rmpath::relative(&node.aql_path, &child.aql_path);
     let in_choice = child.alt_json_id.is_some()
         || node
             .children
             .iter()
             .any(|c| c.id != child.id && c.aql_path == child.aql_path);
-    let occurrences = occurrences_of(child, rm, &rel, in_choice);
+    let occurrences = occurrences_of(child, rm, &rel, in_choice, names);
     if occurrences.is_empty() {
         return;
     }
@@ -222,9 +248,10 @@ fn occurrences_of<'a>(
     rm: &'a Value,
     rel: &[openehr_rm::v1_2::paths::PathSegment],
     in_choice: bool,
+    names: &rmpath::NameFallback,
 ) -> Vec<Occurrence<'a>> {
-    let Some(wrappers) = value_step_owners(child, rm, rel) else {
-        return rmpath::resolve(rm, rel)
+    let Some(wrappers) = value_step_owners(child, rm, rel, names) else {
+        return rmpath::resolve_matched(rm, rel, names)
             .into_iter()
             .filter(|value| !in_choice || type_matches(value, &child.rm_type))
             .map(|value| Occurrence {
@@ -271,12 +298,13 @@ fn value_step_owners<'a>(
     child: &WebTemplateNode,
     rm: &'a Value,
     rel: &[openehr_rm::v1_2::paths::PathSegment],
+    names: &rmpath::NameFallback,
 ) -> Option<Vec<&'a Value>> {
     if !child.has_input() {
         return None;
     }
     let (last, parents) = rel.split_last()?;
-    (last.attribute == "value").then(|| rmpath::resolve(rm, parents))
+    (last.attribute == "value").then(|| rmpath::resolve_matched(rm, parents, names))
 }
 
 /// Whether the template-child walk already emitted a child that realizes RM

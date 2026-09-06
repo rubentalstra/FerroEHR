@@ -425,6 +425,10 @@ pub(crate) struct NodeWalk {
     pub(crate) slot_groups: Vec<SlotGroup>,
     /// Name-based sibling routing index over the slot groups.
     pub(crate) slot_names: SiblingNameIndex,
+    /// Per-step id-only name fallback over every template path under this node
+    /// ([`rmpath::NameFallback`]), so a step whose name conjunct a renamed
+    /// instance does not match still reaches it when the name is redundant.
+    pub(crate) name_fallback: rmpath::NameFallback,
 }
 
 /// A sibling group of `WebTemplate` children sharing one `aqlPath` (a single
@@ -500,6 +504,12 @@ impl NodeWalk {
         }
         let slot_names =
             sibling_index_from_segments(slot_groups.iter().map(|g| g.segments.as_slice()));
+        let name_fallback = rmpath::name_fallback_from_segments(
+            child_groups
+                .iter()
+                .map(|g| g.segments.as_slice())
+                .chain(slot_groups.iter().map(|g| g.segments.as_slice())),
+        );
 
         let rel = |p: &str| p.strip_prefix(aql).map(rmpath::parse);
 
@@ -515,6 +525,7 @@ impl NodeWalk {
                 .collect(),
             slot_groups,
             slot_names,
+            name_fallback,
         }
     }
 }
@@ -768,7 +779,7 @@ impl Validator {
             &built
         };
         for group in &plan.child_groups {
-            self.check_group(instance, wt, group, &plan.child_names);
+            self.check_group(instance, wt, group, &plan.child_names, &plan.name_fallback);
         }
 
         self.check_cardinalities(instance, wt, plan);
@@ -800,7 +811,9 @@ impl Validator {
             let Some((last, intermediate)) = segments.split_last() else {
                 continue;
             };
-            for container in &rmpath::navigate(&[instance], intermediate) {
+            for container in
+                &rmpath::navigate_matched(&[instance], intermediate, &plan.name_fallback)
+            {
                 let slot_counts = self.match_closed_children(container, ca, &last.attribute);
                 self.check_slot_occurrences(ca, &last.attribute, &slot_counts);
             }
@@ -908,7 +921,8 @@ impl Validator {
             let Some((last, intermediate)) = sg.segments.split_last() else {
                 continue;
             };
-            let containers = rmpath::navigate(&[instance], intermediate);
+            let containers =
+                rmpath::navigate_matched(&[instance], intermediate, &plan.name_fallback);
             for container in &containers {
                 for node in select_group_children(container, last, &plan.slot_names) {
                     let Some(it) = node.get("_type").and_then(Value::as_str) else {
@@ -963,7 +977,8 @@ impl Validator {
                 continue;
             }
             // Navigate the intermediate segments to the container node(s).
-            let containers = rmpath::navigate(&[instance], intermediate);
+            let containers =
+                rmpath::navigate_matched(&[instance], intermediate, &plan.name_fallback);
             for container in &containers {
                 if attr_absent(container, &last.attribute) {
                     self.push(
@@ -993,6 +1008,7 @@ impl Validator {
         wt_parent: &WebTemplateNode,
         group: &ChildGroup,
         names: &SiblingNameIndex,
+        name_fallback: &rmpath::NameFallback,
     ) {
         // Segments were parsed once at build time; an empty slice means the child
         // path is not a strict extension of the parent's (or equals it) — the
@@ -1019,7 +1035,8 @@ impl Validator {
         let id_seg: &PathSegment = structural_id_seg.as_ref().unwrap_or(raw_id_seg);
 
         // Navigate the intermediate segments to the container node(s).
-        let containers = rmpath::navigate(&[parent], &segments[..identity_idx]);
+        let containers =
+            rmpath::navigate_matched(&[parent], &segments[..identity_idx], name_fallback);
 
         // Occurrences are an *archetype-node* constraint: only checked when the
         // matched node is identified by an archetype-node predicate (at-code /
@@ -1039,7 +1056,7 @@ impl Validator {
                 self.emit_occurrences(&first.aql_path, group_min, group_max, matched.len());
             }
             for node in matched {
-                self.walk_group_targets(node, trailing, &members);
+                self.walk_group_targets(node, trailing, &members, name_fallback);
             }
         }
     }
@@ -1053,8 +1070,9 @@ impl Validator {
         node: &Value,
         trailing: &[PathSegment],
         members: &[&WebTemplateNode],
+        name_fallback: &rmpath::NameFallback,
     ) {
-        for target in rmpath::navigate(&[node], trailing) {
+        for target in rmpath::navigate_matched(&[node], trailing, name_fallback) {
             match members {
                 [only] => self.walk(target, only),
                 _ => self.visit_choice(target, members),
@@ -1148,7 +1166,8 @@ impl Validator {
             // (the vendored Multi_list template pairs `content` cardinality 1..*
             // with existence 0..1), so an absent or null attribute is no cardinality
             // violation — and the RM list invariants forbid a present-empty `[]`.
-            let containers = rmpath::navigate(&[instance], intermediate);
+            let containers =
+                rmpath::navigate_matched(&[instance], intermediate, &plan.name_fallback);
             for container in &containers {
                 if matches!(container.get(&last.attribute), None | Some(Value::Null)) {
                     continue;

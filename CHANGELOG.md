@@ -15,6 +15,26 @@ workflow refuses a tag that has no matching section here.
 
 ## [Unreleased]
 
+### Fixed
+
+- **A FLAT or STRUCTURED read no longer drops the content of a template-named
+  event** (#3142). An operational template can fix the name of a node the
+  simplified formats collapse away, such as the single event of a `HISTORY`.
+  The constrained name then survives only inside the leaf's `aqlPath`, and a
+  composition written through the FLAT surface came back short: the reporter's
+  body weight and comment were present in the canonical JSON and absent from
+  `application/openehr.wt.flat+json`, with no error to say so. Two halves are
+  fixed. Building a composition named that collapsed node after its archetype
+  node id rather than the name its own template path constrains, so the node
+  did not satisfy the path it had just been created for, and every datum
+  beneath it became unaddressable. Reading now tolerates it either way: a node
+  whose runtime name differs from the template's is still reached by archetype
+  node id, exactly as the archetype-conformance validator already did. That
+  applies only where the name identifies nothing the node id does not. A
+  template that distinguishes same-node-id siblings by name keeps matching
+  strictly, so one sibling can never claim another's content. Compositions
+  already stored with the wrong name read correctly without being rewritten.
+
 ## [4.1.1] - 2026-09-05
 
 ### Added

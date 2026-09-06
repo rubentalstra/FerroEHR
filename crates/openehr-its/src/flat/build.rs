@@ -1180,7 +1180,21 @@ fn new_struct(
     // `UML/classes/org.openehr.rm.composition.ism_transition.adoc` §Inherit).
     // The generated RM model is the oracle rather than a hardcoded class list.
     if is_locatable(rm_type) {
-        let display = name.or(node_id).unwrap_or(rm_type);
+        // A `[atNNNN,'Name']` conjunct on the path spells the name the ARCHETYPE
+        // constrains for this node, so it outranks both the web-template child's
+        // display name and the node-id placeholder: a synthesised wrapper named
+        // anything else does not satisfy its own template path, and every datum
+        // under it becomes unaddressable (RM common
+        // `master03-archetyped_package.adoc` §"The `LOCATABLE` class"; BASE
+        // `architecture_overview/master11-paths.adoc` §"Using a Name-based
+        // Predicate").
+        let display = seg
+            .predicate
+            .name_value
+            .as_deref()
+            .or(name)
+            .or(node_id)
+            .unwrap_or(rm_type);
         o.insert("name".into(), name_value(display, coded_name));
         if let Some(nid) = node_id {
             o.insert("archetype_node_id".into(), json!(nid));

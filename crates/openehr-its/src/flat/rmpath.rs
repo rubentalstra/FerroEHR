@@ -122,10 +122,110 @@ pub(crate) fn select_children_excluding_names<'a>(
         .collect()
 }
 
+/// Per-parent decision table for the id-only name fallback of
+/// [`select_children_matched`], built from the template paths that share one
+/// parent node.
+///
+/// A template-derived `[atNNNN,'Name']` conjunct spells the name the ARCHETYPE
+/// constrains, while a stored instance may carry a different `LOCATABLE.name`
+/// (RM common `master03-archetyped_package.adoc` §"The `LOCATABLE` class": the
+/// runtime name distinguishes sibling nodes sharing an `archetype_node_id`).
+/// Dropping the conjunct is sound exactly when the name is REDUNDANT for
+/// identification — when every template path under the same parent spells the
+/// same name for that `(attribute, archetype_node_id)`. If two sibling paths
+/// spell different names, or one spells none, the name is a discriminator and
+/// the fallback would let one sibling claim another's instances.
+///
+/// The value is `Some(name)` for an identity every path spells identically and
+/// `None` for a discriminating identity. An identity absent from the map was
+/// never seen and takes no fallback.
+pub(crate) type NameFallback = std::collections::HashMap<(String, String), Option<String>>;
+
+/// Build the [`NameFallback`] table from every predicate-bearing segment of a
+/// parent's template paths (each already parsed relative to that parent).
+pub(crate) fn name_fallback_from_segments<'a>(
+    paths: impl Iterator<Item = &'a [PathSegment]>,
+) -> NameFallback {
+    let mut out: NameFallback = std::collections::HashMap::new();
+    for segs in paths {
+        for seg in segs {
+            let Some(id) = &seg.predicate.archetype_node_id else {
+                continue;
+            };
+            let key = (seg.attribute.clone(), id.clone());
+            let name = seg.predicate.name_value.clone();
+            match out.entry(key) {
+                std::collections::hash_map::Entry::Vacant(v) => {
+                    v.insert(name);
+                }
+                std::collections::hash_map::Entry::Occupied(mut o) => {
+                    if *o.get() != name {
+                        o.insert(None);
+                    }
+                }
+            }
+        }
+    }
+    out
+}
+
+/// Build the [`NameFallback`] table from a parent's absolute template paths,
+/// parsing each relative to `parent_aql` first.
+pub(crate) fn name_fallback_from_paths<'a>(
+    parent_aql: &str,
+    paths: impl Iterator<Item = &'a str>,
+) -> NameFallback {
+    let parsed: Vec<Vec<PathSegment>> = paths.map(|p| relative(parent_aql, p)).collect();
+    name_fallback_from_segments(parsed.iter().map(Vec::as_slice))
+}
+
+/// Whether `seg`'s name conjunct is redundant under `table` — the condition
+/// [`NameFallback`] documents.
+fn fallback_allowed(table: &NameFallback, seg: &PathSegment) -> bool {
+    let Some(id) = &seg.predicate.archetype_node_id else {
+        return false;
+    };
+    table
+        .get(&(seg.attribute.clone(), id.clone()))
+        .is_some_and(|uniform| uniform.as_ref() == seg.predicate.name_value.as_ref())
+}
+
+/// [`navigate`] with the id-only name fallback of [`select_children_matched`]
+/// enabled per step, as `table` permits.
+///
+/// This is what keeps a renamed instance node addressable: without it a step
+/// whose template name conjunct the instance does not match locates nothing,
+/// and every constraint and every datum below that step silently disappears —
+/// from the validation walk as much as from the simplified projection.
+pub(crate) fn navigate_matched<'a>(
+    roots: &[&'a Value],
+    segs: &[PathSegment],
+    table: &NameFallback,
+) -> Vec<&'a Value> {
+    let mut current: Vec<&Value> = roots.to_vec();
+    for seg in segs {
+        let allow = fallback_allowed(table, seg);
+        current = current
+            .iter()
+            .flat_map(|n| select_children_matched(n, seg, allow))
+            .collect();
+    }
+    current
+}
+
 /// Resolve the RM value(s) a full relative path reaches from `rm` (an empty
 /// segment list resolves to `rm` itself).
 pub(crate) fn resolve<'a>(rm: &'a Value, segs: &[PathSegment]) -> Vec<&'a Value> {
     navigate(&[rm], segs)
+}
+
+/// [`resolve`] with the per-step name fallback of [`navigate_matched`].
+pub(crate) fn resolve_matched<'a>(
+    rm: &'a Value,
+    segs: &[PathSegment],
+    table: &NameFallback,
+) -> Vec<&'a Value> {
+    navigate_matched(&[rm], segs, table)
 }
 
 #[cfg(test)]
@@ -202,6 +302,83 @@ mod tests {
         let found = select_children_matched(&rm, &segs[0], true);
         assert_eq!(found.len(), 1);
         assert_eq!(found[0]["tag"], 2);
+    }
+
+    #[test]
+    fn a_redundant_name_conjunct_permits_the_id_only_fallback() {
+        // One sibling path spells `events[at0002,'Point in time']` and nothing
+        // else claims `events[at0002]`, so the name identifies nothing the id
+        // does not — an instance that renamed the node is still reached.
+        let table = name_fallback_from_paths(
+            "/content[openEHR-EHR-OBSERVATION.x.v1]",
+            [
+                "/content[openEHR-EHR-OBSERVATION.x.v1]/data[at0001]/events[at0002,'Point in time']/data[at0003]/items[at0004]/value",
+                "/content[openEHR-EHR-OBSERVATION.x.v1]/language",
+            ]
+            .into_iter(),
+        );
+        let rm = serde_json::json!({
+            "data": {"archetype_node_id": "at0001", "events": [{
+                "archetype_node_id": "at0002",
+                "name": {"value": "at0002"},
+                "data": {"archetype_node_id": "at0003", "items": [{
+                    "archetype_node_id": "at0004",
+                    "value": {"_type": "DV_TEXT", "value": "hit"}
+                }]}
+            }]}
+        });
+        let segs =
+            parse("/data[at0001]/events[at0002,'Point in time']/data[at0003]/items[at0004]/value");
+        assert!(
+            resolve(&rm, &segs).is_empty(),
+            "the strict match locates nothing"
+        );
+        let found = resolve_matched(&rm, &segs, &table);
+        assert_eq!(found.len(), 1);
+        assert_eq!(found[0]["value"], "hit");
+    }
+
+    #[test]
+    fn a_discriminating_name_conjunct_refuses_the_id_only_fallback() {
+        // Two sibling paths spell the same identity under different names, so
+        // dropping the name would let one sibling claim the other's instances.
+        let table = name_fallback_from_paths(
+            "",
+            [
+                "/content[openEHR-EHR-SECTION.adhoc.v1,'Reporting']/items[at0001]/value",
+                "/content[openEHR-EHR-SECTION.adhoc.v1,'Outcome']/items[at0001]/value",
+            ]
+            .into_iter(),
+        );
+        let rm = serde_json::json!({
+            "content": [{
+                "archetype_node_id": "openEHR-EHR-SECTION.adhoc.v1",
+                "name": {"value": "Neither"},
+                "items": [{"archetype_node_id": "at0001", "value": {"_type": "DV_TEXT", "value": "x"}}]
+            }]
+        });
+        let segs = parse("/content[openEHR-EHR-SECTION.adhoc.v1,'Reporting']/items[at0001]/value");
+        assert!(
+            resolve_matched(&rm, &segs, &table).is_empty(),
+            "a name-differentiated sibling never widens to the bare node id"
+        );
+    }
+
+    #[test]
+    fn an_unqualified_sibling_sharing_the_identity_refuses_the_fallback() {
+        // One path names the identity and another leaves it unconstrained; the
+        // unqualified sibling is the residual arm, so the named one must not
+        // reach past its own name.
+        let table = name_fallback_from_paths(
+            "",
+            ["/items[at0001,'Named']/value", "/items[at0001]/value"].into_iter(),
+        );
+        let segs = parse("/items[at0001,'Named']/value");
+        let rm = serde_json::json!({
+            "items": [{"archetype_node_id": "at0001", "name": {"value": "Other"},
+                       "value": {"_type": "DV_TEXT", "value": "x"}}]
+        });
+        assert!(resolve_matched(&rm, &segs, &table).is_empty());
     }
 
     #[test]
