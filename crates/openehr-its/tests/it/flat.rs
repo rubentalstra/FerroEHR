@@ -35,6 +35,7 @@
 use std::collections::BTreeMap;
 
 use openehr_its::flat::convert::{composition_from_flat, composition_to_flat};
+use openehr_its::flat::example::{DetailLevel, example_composition};
 use openehr_its::flat::webtemplate::builder::build_web_template;
 use openehr_its::flat::webtemplate::model::WebTemplate;
 use openehr_its::opt14;
@@ -1061,5 +1062,198 @@ fn careflow_stepped_ism_transition_flattens_to_the_generic_master05_spelling() {
         rm.pointer("/content/0/ism_transition"),
         rm2.pointer("/content/0/ism_transition"),
         "the careflow-stepped ism_transition is round-trip stable"
+    );
+}
+
+// ── a name-constrained wrapper the level removal collapses (#3142) ───────────
+//
+// An OPT may constrain `LOCATABLE.name` on a node the web template compacts
+// away: the single `EVENT` of `master04 §Conditionally Collapsed Wrapper
+// Types`. Its constrained name then survives only inside the leaf's `aqlPath`
+// (`events[at0002,'Point in time']`), so it is the one identity the RM ⇄ FLAT
+// walks cannot see in the tree and must still honour. Carrier: the
+// repo-authored `named_event.en.v1` fixture.
+
+fn named_event_wt() -> WebTemplate {
+    let opt_xml = std::fs::read_to_string(concat!(
+        env!("CARGO_MANIFEST_DIR"),
+        "/tests/fixtures/named_event/named_event.opt"
+    ))
+    .unwrap_or_else(|e| panic!("read named_event OPT: {e}"));
+    let opt = opt14::from_xml(&opt_xml).unwrap_or_else(|e| panic!("parse OPT: {e}"));
+    build_web_template(&opt).unwrap_or_else(|e| panic!("build WT: {e}"))
+}
+
+/// The fixture is only a regression carrier while its event stays COLLAPSED and
+/// NAME-CONSTRAINED: a template change that retained the event, or dropped the
+/// `C_STRING`, would leave the two tests below passing vacuously.
+#[test]
+fn the_named_event_fixture_collapses_a_name_constrained_event() {
+    let wt = named_event_wt();
+    let observation = wt
+        .tree
+        .children
+        .iter()
+        .find(|c| c.rm_type == "OBSERVATION")
+        .unwrap_or_else(|| panic!("fixture has an OBSERVATION content node"));
+    assert!(
+        observation
+            .children
+            .iter()
+            .all(|c| c.rm_type != "POINT_EVENT"),
+        "the single 1..1 event is collapsed (master04 §Conditionally Collapsed Wrapper Types)"
+    );
+    let reading = observation
+        .children
+        .iter()
+        .find(|c| c.id == "reading")
+        .unwrap_or_else(|| panic!("fixture has a `reading` leaf"));
+    assert!(
+        reading
+            .aql_path
+            .contains("/events[at0002,'Point in time']/"),
+        "the collapsed event's constrained name survives in the leaf path: {}",
+        reading.aql_path
+    );
+}
+
+/// A composition whose collapsed `POINT_EVENT` carries a name OTHER than the one
+/// its template constrains still projects its content into FLAT.
+///
+/// The `[at0002,'Point in time']` conjunct is redundant for identification here —
+/// no sibling constraint claims `events[at0002]` under another name — so the step
+/// falls back to the `archetype_node_id` alone rather than locating nothing
+/// (RM common `master03-archetyped_package.adoc` §"The `LOCATABLE` class": a
+/// runtime `name` distinguishes siblings sharing an `archetype_node_id`; BASE
+/// `architecture_overview/master11-paths.adoc` §"Using a Name-based Predicate").
+/// Without the fallback the whole event subtree — every datum under it — is
+/// silently absent from the response, which is the defect reported in #3142.
+#[test]
+fn a_renamed_collapsed_event_still_yields_its_content() {
+    let wt = named_event_wt();
+    let mut flat = serde_json::Map::new();
+    flat.insert("ctx/language".to_owned(), Value::String("en".into()));
+    flat.insert("ctx/territory".to_owned(), Value::String("US".into()));
+    flat.insert(
+        "ctx/composer_name".to_owned(),
+        Value::String("Dr. Marcus Johnson".into()),
+    );
+    flat.insert(
+        "named_event/named_event_observation:0/reading".to_owned(),
+        Value::String("120 over 80".into()),
+    );
+    let mut rm = composition_from_flat(&flat, &wt, NOW).expect("from_flat");
+
+    let event_name = rm
+        .pointer_mut("/content/0/data/events/0/name/value")
+        .unwrap_or_else(|| panic!("the built composition carries the collapsed event"));
+    *event_name = Value::String("at0002".into());
+
+    let flat_again = composition_to_flat(&rm, &wt).expect("to_flat");
+    assert_eq!(
+        flat_again
+            .get("named_event/named_event_observation:0/reading")
+            .and_then(Value::as_str),
+        Some("120 over 80"),
+        "the renamed event's content is still projected: {:?}",
+        flat_again.keys().collect::<Vec<_>>()
+    );
+}
+
+/// Building a collapsed wrapper stamps the name its own template path
+/// constrains, not the `archetype_node_id` placeholder.
+///
+/// A wrapper named anything else does not satisfy the path it was created for,
+/// so every datum beneath it becomes unaddressable — the composition is written
+/// once and then reads back short, which is how #3142 was produced in the first
+/// place.
+#[test]
+fn a_built_collapsed_event_takes_the_name_its_template_constrains() {
+    let wt = named_event_wt();
+    let mut flat = serde_json::Map::new();
+    flat.insert("ctx/language".to_owned(), Value::String("en".into()));
+    flat.insert("ctx/territory".to_owned(), Value::String("US".into()));
+    flat.insert(
+        "ctx/composer_name".to_owned(),
+        Value::String("Dr. Marcus Johnson".into()),
+    );
+    flat.insert(
+        "named_event/named_event_observation:0/reading".to_owned(),
+        Value::String("120 over 80".into()),
+    );
+    let rm = composition_from_flat(&flat, &wt, NOW).expect("from_flat");
+    assert_eq!(
+        rm.pointer("/content/0/data/events/0/name/value")
+            .and_then(Value::as_str),
+        Some("Point in time"),
+        "the synthesized POINT_EVENT takes its constrained name"
+    );
+    assert_eq!(
+        rm.pointer("/content/0/data/events/0/archetype_node_id")
+            .and_then(Value::as_str),
+        Some("at0002"),
+        "and keeps its archetype node id"
+    );
+}
+
+/// The id-only fallback must NOT fire where the name is the DISCRIMINATOR.
+///
+/// The vendored COVID-19 report template fills `content` with four
+/// `openEHR-EHR-SECTION.adhoc.v1` siblings distinguished only by their
+/// constrained names ('Reporting', 'Clinical status', 'Exposure', 'Outcome').
+/// Dropping the name there would let the sibling whose section was renamed claim
+/// every section, so one section's slot would report all four sections' content
+/// — the opposite failure to #3142 and the reason the fallback is conditional
+/// rather than unconditional.
+#[test]
+fn a_name_discriminated_sibling_set_takes_no_id_only_fallback() {
+    let opt_xml =
+        std::fs::read_to_string("../../corpus/templates/ckm/covid19-infection-report.opt")
+            .unwrap_or_else(|e| panic!("read covid19 OPT: {e}"));
+    let opt = opt14::from_xml(&opt_xml).unwrap_or_else(|e| panic!("parse OPT: {e}"));
+    let wt = build_web_template(&opt).unwrap_or_else(|e| panic!("build WT: {e}"));
+    let sections: Vec<String> = wt
+        .tree
+        .children
+        .iter()
+        .filter(|c| {
+            c.aql_path
+                .starts_with("/content[openEHR-EHR-SECTION.adhoc.v1,'")
+        })
+        .map(|c| c.id.clone())
+        .collect();
+    assert!(
+        sections.len() > 1,
+        "the carrier really has name-differentiated adhoc sections: {sections:?}"
+    );
+
+    let mut composition = example_composition(&wt, DetailLevel::Medium);
+    let before = composition_to_flat(&composition, &wt).expect("to_flat");
+    assert!(
+        before.keys().any(|k| k.contains("/reporting:0/first_test")),
+        "the example really populates the Reporting section"
+    );
+
+    let renamed = composition
+        .pointer_mut("/content")
+        .and_then(Value::as_array_mut)
+        .unwrap_or_else(|| panic!("the example carries content"))
+        .iter_mut()
+        .find(|c| c.pointer("/name/value").and_then(Value::as_str) == Some("Reporting"))
+        .unwrap_or_else(|| panic!("the example carries the Reporting section"));
+    renamed["name"]["value"] = Value::String("A name no sibling constrains".into());
+
+    let after = composition_to_flat(&composition, &wt).expect("to_flat");
+    let leaked: Vec<&String> = after
+        .keys()
+        .filter(|k| k.contains("/reporting:") && !k.contains("/first_test"))
+        .collect();
+    assert!(
+        leaked.is_empty(),
+        "no sibling section's content is claimed by the renamed one: {leaked:?}"
+    );
+    assert!(
+        !after.keys().any(|k| k.contains("/reporting:")),
+        "and the renamed section is claimed by no name-differentiated sibling at all"
     );
 }
