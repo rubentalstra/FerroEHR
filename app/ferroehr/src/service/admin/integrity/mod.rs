@@ -27,6 +27,8 @@
               round-trip drops forward-compatible keys (the openEHR release strategy: minors are compatible supersets)"
 )]
 
+pub mod rebuild;
+
 use std::collections::HashMap;
 use std::time::Instant;
 
@@ -178,9 +180,9 @@ impl StorageParityReport {
 /// Which stored versions a sweep covers.
 ///
 /// A sweep reads every byte of the versions it covers, so an operator
-/// verifying one record, or everything committed since an incident, should not
-/// have to read the whole repository to do it. Both bounds are optional and
-/// compose; the default covers everything.
+/// verifying one record, one object, or everything committed since an
+/// incident, should not have to read the whole repository to do it. Every
+/// bound is optional and they compose; the default covers everything.
 ///
 /// No openEHR spec governs storage mechanics — our own design/extension.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Default)]
@@ -189,6 +191,12 @@ pub struct StorageParityScope {
     pub ehr_id: Option<Uuid>,
     /// Cover only versions whose validity begins at or after this instant.
     pub committed_since: Option<jiff::Timestamp>,
+    /// Cover only versions of this versioned object.
+    pub vo_id: Option<Uuid>,
+    /// Cover only this version of it. Ignored without [`Self::vo_id`], which
+    /// is what makes a `sys_version` alone meaningless: the ordinal is
+    /// per-object, so on its own it names one version of every object.
+    pub sys_version: Option<i32>,
 }
 
 /// One page row of the sweep cursor: the identifiers of a stored version plus
@@ -382,6 +390,8 @@ impl FerroEhrService {
              WHERE ($1::uuid IS NULL OR (vo_id, sys_version) > ($1::uuid, $2::int)) \
                AND ($4::uuid IS NULL OR ehr_id = $4::uuid) \
                AND ($5::timestamptz IS NULL OR lower(sys_period) >= $5::timestamptz) \
+               AND ($6::uuid IS NULL OR vo_id = $6::uuid) \
+               AND ($6::uuid IS NULL OR $7::int IS NULL OR sys_version = $7::int) \
              ORDER BY vo_id, sys_version \
              LIMIT $3",
         )
@@ -390,6 +400,8 @@ impl FerroEhrService {
         .bind(PAGE_SIZE)
         .bind(scope.ehr_id)
         .bind(scope.committed_since.map(jiff_sqlx::Timestamp::from))
+        .bind(scope.vo_id)
+        .bind(scope.sys_version)
         .fetch_all(&self.pool)
         .await?;
         Ok(rows

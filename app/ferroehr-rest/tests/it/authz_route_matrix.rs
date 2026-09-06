@@ -360,6 +360,10 @@ const ADMIN_WRITE: &[(&str, &str)] = &[
     ("POST", "/admin/archive/parties/restore"),
     ("POST", "/admin/dump"),
     ("POST", "/admin/load"),
+    // The repair the parity sweep is the diagnosis for. Unlike the sweep it
+    // REPLACES stored rows, so it stays out of EXTENSION_READ_ROUTES and a
+    // read-only server refuses it (#3143).
+    ("POST", "/admin/integrity/rebuild-nodes"),
     ("POST", "/admin/tenant"),
     ("PUT", "/admin/tenant/{tenant_id}"),
     ("DELETE", "/admin/tenant/{tenant_id}"),

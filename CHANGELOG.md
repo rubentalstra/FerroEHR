@@ -15,6 +15,37 @@ workflow refuses a tag that has no matching section here.
 
 ## [Unreleased]
 
+### Added
+
+- **The storage-parity sweep has a repair to go with it** (#3143).
+  `POST /admin/integrity/verify` reported that a version's decomposed rows and
+  its stored document disagree, and then there was nothing to run: dump and
+  load was the only re-decomposition path, and its dump side reads each version
+  through the node rows themselves, so it reproduced the damage it was asked to
+  fix. `POST /admin/integrity/rebuild-nodes` re-derives the rows of every
+  damaged version from that version's stored document, one transaction per
+  version. It runs the same sweep first and writes only what the sweep reports
+  damaged, so a run over healthy data writes nothing. Repair goes in one
+  direction only: the stored document is the canonical serialized form a point
+  read serves and a digest was taken over, the rows are an index derived from
+  it, so a version whose document is the damaged copy is refused rather than
+  having the damage copied into the index. Each version is read under a row
+  lock, decomposed, its rows replaced, and the version re-derived from the new
+  rows and compared with the document before the commit; anything that fails
+  rolls that version back untouched and the run continues. An archived object
+  is thawed and re-archived in the same transaction, marker included. A
+  logically deleted version rebuilds to no rows.
+
+### Changed
+
+- **Both storage-integrity routes can be pointed at a single version**
+  (#3143). `vo_id` and `sys_version` join `ehr_id` and `committed_since` as
+  scope parameters on `POST /admin/integrity/verify` and the new rebuild, so
+  checking or repairing one record after a support incident no longer means
+  reading the repository. The ordinal is per-object, so `sys_version` without
+  `vo_id` is a `400` rather than a filter that would match one version of every
+  object.
+
 ### Fixed
 
 - **A FLAT or STRUCTURED read no longer drops the content of a template-named
