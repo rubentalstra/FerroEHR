@@ -279,12 +279,21 @@ const READ_ROWS_ALL_SQL: &str = "SELECT num, num_cap, parent_num, path, data \
 /// Fetch the lean read rows of one stored version, ordered by `num` —
 /// primary tier only, or both tiers through the `node_all` union view (no
 /// openEHR spec governs storage tiering — our own design).
-async fn read_rows(
-    pool: &PgPool,
+///
+/// Generic over the executor so a caller inside a transaction reads its OWN
+/// uncommitted rows through the same statement: the node rebuild
+/// (`crate::service::admin::integrity::rebuild`) re-verifies what it just
+/// wrote before it commits, and a pool-typed read would see the pre-rebuild
+/// rows from another connection.
+async fn read_rows<'e, E>(
+    executor: E,
     vo_id: VoId,
     sys_version: i32,
     both_tiers: bool,
-) -> Result<Vec<ReadRow>, StorageError> {
+) -> Result<Vec<ReadRow>, StorageError>
+where
+    E: sqlx::Executor<'e, Database = sqlx::Postgres>,
+{
     let sql = if both_tiers {
         READ_ROWS_ALL_SQL
     } else {
@@ -293,7 +302,7 @@ async fn read_rows(
     let rows = sqlx::query(sql)
         .bind(vo_id)
         .bind(sys_version)
-        .fetch_all(pool)
+        .fetch_all(executor)
         .await?;
     let mut read = Vec::with_capacity(rows.len());
     for row in rows {
@@ -349,6 +358,52 @@ pub async fn read_version_canonical_all(
         return Ok(Value::Null);
     }
     reassemble(&rows)
+}
+
+/// [`read_version_canonical`] inside a transaction, over the primary tier.
+///
+/// The rebuild writes a version's node rows and then re-derives the version
+/// from them BEFORE committing, so it must read its own uncommitted rows; a
+/// pool-typed read runs on another connection and would see the rows the
+/// rebuild is replacing.
+///
+/// # Errors
+///
+/// Returns [`StorageError`] on a DB error or if a non-empty row set does not
+/// form one tree rooted at `num = 0`.
+pub async fn read_version_canonical_tx(
+    tx: &mut PgConnection,
+    vo_id: VoId,
+    sys_version: i32,
+) -> Result<Value, StorageError> {
+    let rows = read_rows(&mut *tx, vo_id, sys_version, false).await?;
+    if rows.is_empty() {
+        return Ok(Value::Null);
+    }
+    reassemble(&rows)
+}
+
+/// Deletes every primary-tier `node` row of one stored version, returning how
+/// many were removed.
+///
+/// The rebuild's first write: the row set is replaced wholesale rather than
+/// reconciled, because a nested-set numbering is only meaningful as a whole
+/// (`crate::storage::codec`).
+///
+/// # Errors
+///
+/// Returns [`StorageError::Database`] on any driver/statement failure.
+pub async fn delete_version_nodes(
+    tx: &mut PgConnection,
+    vo_id: VoId,
+    sys_version: i32,
+) -> Result<u64, StorageError> {
+    let result = sqlx::query("DELETE FROM node WHERE vo_id = $1 AND sys_version = $2")
+        .bind(vo_id)
+        .bind(sys_version)
+        .execute(&mut *tx)
+        .await?;
+    Ok(result.rows_affected())
 }
 
 /// Fetch the read rows of whole stored versions in **one** statement, keyed by

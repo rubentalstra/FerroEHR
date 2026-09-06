@@ -142,3 +142,71 @@ async fn a_wildcard_accept_keeps_the_aggregated_document() {
         "a wildcard must not switch an existing caller onto the stream: {body}"
     );
 }
+
+// ── the rebuild (`POST /admin/integrity/rebuild-nodes`) ─────────────────────
+
+/// The repair route, with an optional query string.
+fn rebuild(query: &str) -> Request<Body> {
+    Request::builder()
+        .method("POST")
+        .uri(format!("{BASE}/admin/integrity/rebuild-nodes{query}"))
+        .body(Body::empty())
+        .expect("request")
+}
+
+#[tokio::test]
+async fn the_rebuild_answers_a_report_over_an_undamaged_repository() {
+    let (_pg, service) = common::test_service().await;
+    service.create_ehr(None).await.expect("seed an EHR");
+    let app = common::router_with(common::api_config(true), service);
+
+    let (status, body) = common::send_body(&app, rebuild("")).await;
+
+    assert_eq!(status, StatusCode::OK);
+    let report: Value = serde_json::from_str(&body).expect("one JSON document");
+    assert!(
+        report["versions_checked"].as_u64().unwrap_or(0) >= 2,
+        "the sweep behind the repair still read the repository: {body}"
+    );
+    assert_eq!(report["versions_damaged"], 0, "{body}");
+    assert_eq!(report["versions_rebuilt"], 0, "{body}");
+    assert_eq!(report["versions_refused"], 0, "{body}");
+    assert_eq!(
+        report["records"].as_array().map(Vec::len),
+        Some(0),
+        "an undamaged repository produces no records: {body}"
+    );
+}
+
+#[tokio::test]
+async fn a_sys_version_without_a_vo_id_is_refused() {
+    let (_pg, service) = common::test_service().await;
+    let app = common::router_with(common::api_config(true), service);
+
+    let (status, body) = common::send_body(&app, rebuild("?sys_version=2")).await;
+
+    assert_eq!(
+        status,
+        StatusCode::BAD_REQUEST,
+        "the ordinal is per-object, so alone it names one version of every \
+         object — never what an operator naming a version means: {body}"
+    );
+    assert!(
+        body.contains("vo_id"),
+        "the refusal names the parameter it needs: {body}"
+    );
+}
+
+#[tokio::test]
+async fn the_rebuild_is_gated_with_the_rest_of_the_admin_group() {
+    let (_pg, service) = common::test_service().await;
+    let app = common::router_with(common::api_config(false), service);
+
+    let (status, _) = common::send_body(&app, rebuild("")).await;
+
+    assert_eq!(
+        status,
+        StatusCode::METHOD_NOT_ALLOWED,
+        "the whole ADMIN group is opt-in and answers 405 with an empty Allow"
+    );
+}

@@ -22,11 +22,13 @@
               Rust Book ch11)"
 )]
 
+use serde_json::Value;
 use sqlx::PgPool;
 use uuid::Uuid;
 
 use ferroehr::ids::EhrId;
 use ferroehr::service::FerroEhrService;
+use ferroehr::service::admin::integrity::rebuild::NodeRebuildOutcome;
 use ferroehr::service::admin::integrity::{
     StorageParityDefect, StorageParityEvent, StorageParityScope,
 };
@@ -298,7 +300,7 @@ async fn a_scoped_sweep_covers_only_its_own_ehr() {
     let clean = svc
         .verify_storage_parity(StorageParityScope {
             ehr_id: Some(intact.0),
-            committed_since: None,
+            ..StorageParityScope::default()
         })
         .await
         .expect("scoped sweep");
@@ -311,7 +313,7 @@ async fn a_scoped_sweep_covers_only_its_own_ehr() {
     let scoped = svc
         .verify_storage_parity(StorageParityScope {
             ehr_id: Some(damaged.0),
-            committed_since: None,
+            ..StorageParityScope::default()
         })
         .await
         .expect("scoped sweep");
@@ -357,8 +359,8 @@ async fn a_committed_since_bound_excludes_earlier_versions() {
     // silently falling back to the whole store.
     let after = svc
         .verify_storage_parity(StorageParityScope {
-            ehr_id: None,
             committed_since: Some(cutoff),
+            ..StorageParityScope::default()
         })
         .await
         .expect("bounded sweep");
@@ -368,8 +370,8 @@ async fn a_committed_since_bound_excludes_earlier_versions() {
     seed_ehr_with_composition(&svc).await;
     let later = svc
         .verify_storage_parity(StorageParityScope {
-            ehr_id: None,
             committed_since: Some(cutoff),
+            ..StorageParityScope::default()
         })
         .await
         .expect("bounded sweep");
@@ -462,4 +464,414 @@ async fn a_dropped_stream_stops_the_sweep_where_it_stood() {
         .await
         .expect("a later sweep is unaffected");
     assert!(report.versions_checked >= 3, "{report:?}");
+}
+
+// ── the rebuild: the repair the sweep is the diagnosis for (#3143) ───────────
+//
+// Every case here damages the derived copy the same way the sweep cases do,
+// with raw SQL past the service, then repairs it through the admin operation
+// and proves the repair by two independent readers: the sweep itself, and an
+// AQL query, which reads the `node` rows and nothing else.
+
+/// The `name/value` strings an AQL query over every COMPOSITION returns — a
+/// reader that touches the `node` rows and never the materialized body, so it
+/// sees the rebuild's actual output.
+async fn aql_composition_names(svc: &FerroEhrService) -> Vec<String> {
+    let result = svc
+        .execute_ad_hoc_query(
+            "SELECT c/name/value FROM COMPOSITION c".to_owned(),
+            ferroehr::service::query::request::AqlQueryRequest::default(),
+        )
+        .await
+        .expect("ad-hoc AQL")
+        .result_set;
+    result
+        .get("rows")
+        .and_then(Value::as_array)
+        .expect("rows array")
+        .iter()
+        .filter_map(|row| row.as_array()?.first()?.as_str().map(str::to_owned))
+        .collect()
+}
+
+#[tokio::test]
+async fn a_rebuild_over_an_undamaged_repository_writes_nothing() {
+    let db = testkit::db().await.expect("testkit database");
+    let pool = db.pool();
+    let svc = FerroEhrService::new(pool.clone());
+    let ehr_id = seed_ehr_with_composition(&svc).await;
+
+    let before: i64 = sqlx::query_scalar("SELECT count(*) FROM node WHERE ehr_id = $1")
+        .bind(ehr_id.0)
+        .fetch_one(&pool)
+        .await
+        .expect("node count");
+
+    let report = svc
+        .rebuild_version_nodes(StorageParityScope {
+            ehr_id: Some(ehr_id.0),
+            ..StorageParityScope::default()
+        })
+        .await
+        .expect("rebuild");
+
+    assert!(report.is_complete(), "nothing to refuse: {report:?}");
+    assert_eq!(report.versions_damaged, 0, "nothing was damaged");
+    assert_eq!(report.versions_rebuilt, 0, "so nothing was written");
+    assert!(report.records.is_empty());
+    assert!(
+        report.versions_checked >= 3,
+        "the sweep behind it still read the scope: {report:?}"
+    );
+
+    let after: i64 = sqlx::query_scalar("SELECT count(*) FROM node WHERE ehr_id = $1")
+        .bind(ehr_id.0)
+        .fetch_one(&pool)
+        .await
+        .expect("node count");
+    assert_eq!(before, after, "a clean scope is left byte for byte alone");
+}
+
+#[tokio::test]
+async fn a_tampered_node_row_is_rebuilt_and_the_sweep_goes_clean() {
+    let db = testkit::db().await.expect("testkit database");
+    let pool = db.pool();
+    let svc = FerroEhrService::new(pool.clone());
+    let ehr_id = seed_ehr_with_composition(&svc).await;
+    let (vo_id, sys_version) = one_version(&pool, ehr_id, "COMPOSITION").await;
+
+    // The AQL index copy: the composition's name, which an AQL projection of
+    // `c/name/value` reads straight out of the damaged row.
+    tamper(
+        &pool,
+        "UPDATE node SET data = jsonb_set(data, '{name,value}', '\"tampered\"') \
+         WHERE vo_id = $1 AND sys_version = $2 AND num = 0",
+        vo_id,
+        sys_version,
+    )
+    .await;
+    assert!(
+        aql_composition_names(&svc)
+            .await
+            .contains(&"tampered".to_owned()),
+        "the fixture really did corrupt what AQL reads"
+    );
+
+    let report = svc
+        .rebuild_version_nodes(StorageParityScope::default())
+        .await
+        .expect("rebuild");
+
+    assert_eq!(
+        report.versions_damaged, 1,
+        "exactly one damaged: {report:?}"
+    );
+    assert_eq!(report.versions_rebuilt, 1);
+    assert_eq!(report.versions_refused, 0);
+    let record = &report.records[0];
+    assert_eq!(record.vo_id, vo_id);
+    assert_eq!(record.sys_version, sys_version);
+    assert_eq!(record.kind, "COMPOSITION");
+    assert_eq!(record.defect, StorageParityDefect::ContentDiffers);
+    let NodeRebuildOutcome::Rebuilt { node_rows } = &record.outcome else {
+        panic!("expected a rebuild, got {:?}", record.outcome);
+    };
+    let stored: i64 =
+        sqlx::query_scalar("SELECT count(*) FROM node WHERE vo_id = $1 AND sys_version = $2")
+            .bind(vo_id)
+            .bind(sys_version)
+            .fetch_one(&pool)
+            .await
+            .expect("node count");
+    assert_eq!(
+        i64::from(*node_rows),
+        stored,
+        "the reported row count is what the version actually has"
+    );
+    assert!(stored > 0, "and the version has rows again");
+
+    let after = svc
+        .verify_storage_parity(StorageParityScope::default())
+        .await
+        .expect("sweep");
+    assert!(after.is_clean(), "the sweep is clean afterwards: {after:?}");
+
+    let names = aql_composition_names(&svc).await;
+    assert!(
+        !names.contains(&"tampered".to_owned()),
+        "AQL no longer reads the corrupted value: {names:?}"
+    );
+    assert!(
+        names.contains(&"Encounter".to_owned()),
+        "AQL reads the restored value: {names:?}"
+    );
+}
+
+#[tokio::test]
+async fn a_version_whose_node_rows_are_gone_is_rebuilt_from_its_body() {
+    let db = testkit::db().await.expect("testkit database");
+    let pool = db.pool();
+    let svc = FerroEhrService::new(pool.clone());
+    let ehr_id = seed_ehr_with_composition(&svc).await;
+    let (vo_id, sys_version) = one_version(&pool, ehr_id, "COMPOSITION").await;
+
+    tamper(
+        &pool,
+        "DELETE FROM node WHERE vo_id = $1 AND sys_version = $2",
+        vo_id,
+        sys_version,
+    )
+    .await;
+
+    let report = svc
+        .rebuild_version_nodes(StorageParityScope {
+            vo_id: Some(vo_id),
+            sys_version: Some(sys_version),
+            ..StorageParityScope::default()
+        })
+        .await
+        .expect("rebuild");
+
+    assert_eq!(
+        report.versions_checked, 1,
+        "the version-scoped rebuild read exactly that version: {report:?}"
+    );
+    assert_eq!(report.versions_rebuilt, 1);
+    assert_eq!(
+        report.records[0].defect,
+        StorageParityDefect::NodesMissing,
+        "the sweep verdict that selected it is carried through"
+    );
+
+    let after = svc
+        .verify_storage_parity(StorageParityScope::default())
+        .await
+        .expect("sweep");
+    assert!(
+        after.is_clean(),
+        "the whole store is clean again: {after:?}"
+    );
+    assert!(
+        aql_composition_names(&svc)
+            .await
+            .contains(&"Encounter".to_owned()),
+        "and AQL reaches the composition again"
+    );
+}
+
+#[tokio::test]
+async fn node_rows_under_a_bodiless_version_rebuild_to_none() {
+    let db = testkit::db().await.expect("testkit database");
+    let pool = db.pool();
+    let svc = FerroEhrService::new(pool.clone());
+    let ehr_id = seed_ehr_with_composition(&svc).await;
+    let (vo_id, sys_version) = one_version(&pool, ehr_id, "COMPOSITION").await;
+
+    // A logical delete (RM common master06 §Logical Deletion) stores no body,
+    // so its node rows are unexpected — and rebuild to zero of them.
+    tamper(
+        &pool,
+        "UPDATE vo_version SET body = NULL WHERE vo_id = $1 AND sys_version = $2",
+        vo_id,
+        sys_version,
+    )
+    .await;
+
+    let report = svc
+        .rebuild_version_nodes(StorageParityScope::default())
+        .await
+        .expect("rebuild");
+
+    assert_eq!(report.versions_rebuilt, 1, "{report:?}");
+    assert_eq!(
+        report.records[0].defect,
+        StorageParityDefect::UnexpectedNodes
+    );
+    assert_eq!(
+        report.records[0].outcome,
+        NodeRebuildOutcome::Rebuilt { node_rows: 0 },
+        "a bodiless version rebuilds to no node rows"
+    );
+
+    let remaining: i64 =
+        sqlx::query_scalar("SELECT count(*) FROM node WHERE vo_id = $1 AND sys_version = $2")
+            .bind(vo_id)
+            .bind(sys_version)
+            .fetch_one(&pool)
+            .await
+            .expect("node count");
+    assert_eq!(remaining, 0, "the rows are gone");
+
+    let after = svc
+        .verify_storage_parity(StorageParityScope::default())
+        .await
+        .expect("sweep");
+    assert!(after.is_clean(), "the sweep is clean afterwards: {after:?}");
+}
+
+#[tokio::test]
+async fn a_body_that_does_not_decompose_is_refused_and_its_rows_are_untouched() {
+    let db = testkit::db().await.expect("testkit database");
+    let pool = db.pool();
+    let svc = FerroEhrService::new(pool.clone());
+    let ehr_id = seed_ehr_with_composition(&svc).await;
+    let (vo_id, sys_version) = one_version(&pool, ehr_id, "COMPOSITION").await;
+
+    // The body is the damaged copy here: `NOT_A_ROOT` is no versioned-object
+    // root type, so `decompose` refuses it (`StorageError::NotAStructureRoot`).
+    tamper(
+        &pool,
+        "UPDATE vo_version SET body = '{\"_type\":\"NOT_A_ROOT\"}' \
+         WHERE vo_id = $1 AND sys_version = $2",
+        vo_id,
+        sys_version,
+    )
+    .await;
+    let before: Vec<(i32, String)> = sqlx::query_as(
+        "SELECT num, path FROM node WHERE vo_id = $1 AND sys_version = $2 ORDER BY num",
+    )
+    .bind(vo_id)
+    .bind(sys_version)
+    .fetch_all(&pool)
+    .await
+    .expect("node rows");
+    assert!(!before.is_empty(), "the version has rows to preserve");
+
+    let report = svc
+        .rebuild_version_nodes(StorageParityScope::default())
+        .await
+        .expect("rebuild");
+
+    assert_eq!(report.versions_refused, 1, "{report:?}");
+    assert_eq!(report.versions_rebuilt, 0);
+    assert!(
+        !report.is_complete(),
+        "a refusal makes the run incomplete: {report:?}"
+    );
+    let NodeRebuildOutcome::Refused { reason } = &report.records[0].outcome else {
+        panic!("expected a refusal, got {:?}", report.records[0].outcome);
+    };
+    assert!(
+        reason.contains("does not decompose"),
+        "the refusal names what is wrong with the body: {reason}"
+    );
+
+    let after: Vec<(i32, String)> = sqlx::query_as(
+        "SELECT num, path FROM node WHERE vo_id = $1 AND sys_version = $2 ORDER BY num",
+    )
+    .bind(vo_id)
+    .bind(sys_version)
+    .fetch_all(&pool)
+    .await
+    .expect("node rows");
+    assert_eq!(
+        before, after,
+        "a refused version's rows are left exactly as they were, never half-written"
+    );
+}
+
+#[tokio::test]
+async fn an_archived_version_is_rebuilt_and_stays_archived() {
+    let db = testkit::db().await.expect("testkit database");
+    let pool = db.pool();
+    let svc = FerroEhrService::new(pool.clone());
+    let ehr_id = seed_ehr_with_composition(&svc).await;
+    let (vo_id, sys_version) = one_version(&pool, ehr_id, "COMPOSITION").await;
+
+    tamper(
+        &pool,
+        "UPDATE node SET data = jsonb_set(data, '{name,value}', '\"tampered\"') \
+         WHERE vo_id = $1 AND sys_version = $2 AND num = 0",
+        vo_id,
+        sys_version,
+    )
+    .await;
+    svc.archive_ehrs(vec![ehr_id.0.to_string()])
+        .await
+        .expect("archive");
+    let cold_before: i64 =
+        sqlx::query_scalar("SELECT count(*) FROM cold.node WHERE vo_id = $1 AND sys_version = $2")
+            .bind(vo_id)
+            .bind(sys_version)
+            .fetch_one(&pool)
+            .await
+            .expect("cold node count");
+    assert!(cold_before > 0, "the object really moved to the cold tier");
+
+    let report = svc
+        .rebuild_version_nodes(StorageParityScope::default())
+        .await
+        .expect("rebuild");
+    assert_eq!(report.versions_rebuilt, 1, "{report:?}");
+
+    // The tier's rule is that a write thaws first, so the repair happens in
+    // the primary tier — and the object must come back exactly as archived as
+    // it went in.
+    let still_marked: bool =
+        sqlx::query_scalar("SELECT EXISTS(SELECT 1 FROM vo_archive WHERE vo_id = $1)")
+            .bind(vo_id)
+            .fetch_one(&pool)
+            .await
+            .expect("archive marker");
+    assert!(still_marked, "the archive marker survives the repair");
+    let primary: i64 =
+        sqlx::query_scalar("SELECT count(*) FROM node WHERE vo_id = $1 AND sys_version = $2")
+            .bind(vo_id)
+            .bind(sys_version)
+            .fetch_one(&pool)
+            .await
+            .expect("primary node count");
+    assert_eq!(primary, 0, "nothing was left behind in the primary tier");
+
+    let after = svc
+        .verify_storage_parity(StorageParityScope::default())
+        .await
+        .expect("sweep");
+    assert!(
+        after.is_clean(),
+        "the sweep, which reads both tiers, is clean: {after:?}"
+    );
+}
+
+#[tokio::test]
+async fn a_scoped_rebuild_repairs_only_its_own_ehr() {
+    let db = testkit::db().await.expect("testkit database");
+    let pool = db.pool();
+    let svc = FerroEhrService::new(pool.clone());
+    let repaired = seed_ehr_with_composition(&svc).await;
+    let left_alone = seed_ehr_with_composition(&svc).await;
+
+    for ehr_id in [repaired, left_alone] {
+        let (vo_id, sys_version) = one_version(&pool, ehr_id, "COMPOSITION").await;
+        tamper(
+            &pool,
+            "UPDATE node SET data = jsonb_set(data, '{name,value}', '\"tampered\"') \
+             WHERE vo_id = $1 AND sys_version = $2 AND num = 0",
+            vo_id,
+            sys_version,
+        )
+        .await;
+    }
+
+    let report = svc
+        .rebuild_version_nodes(StorageParityScope {
+            ehr_id: Some(repaired.0),
+            ..StorageParityScope::default()
+        })
+        .await
+        .expect("rebuild");
+    assert_eq!(report.versions_rebuilt, 1, "one EHR's damage: {report:?}");
+
+    let remaining = svc
+        .verify_storage_parity(StorageParityScope::default())
+        .await
+        .expect("sweep");
+    assert_eq!(
+        remaining.mismatch_count, 1,
+        "the other EHR's damage is untouched: {remaining:?}"
+    );
+    assert_eq!(
+        remaining.mismatches[0].vo_id,
+        one_version(&pool, left_alone, "COMPOSITION").await.0
+    );
 }

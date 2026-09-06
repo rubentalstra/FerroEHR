@@ -49,6 +49,7 @@ use utoipa_axum::routes;
 
 use openehr_its::rest::runtime::ApiError;
 
+use ferroehr::service::admin::integrity::rebuild::{NodeRebuildOutcome, NodeRebuildReport};
 use ferroehr::service::admin::integrity::{
     StorageParityEvent, StorageParityReport, StorageParityScope,
 };
@@ -63,7 +64,9 @@ use crate::{negotiate, params};
 /// under `base_path`); the operation runs through [`guarded_dispatch`] with
 /// [`dispatch`].
 pub(crate) fn integrity_routes() -> OpenApiRouter<AppState> {
-    OpenApiRouter::new().routes(routes!(admin_verify_storage_parity))
+    OpenApiRouter::new()
+        .routes(routes!(admin_verify_storage_parity))
+        .routes(routes!(admin_rebuild_version_nodes))
 }
 
 /// Sweep the stored versions for content-copy disagreement
@@ -169,6 +172,98 @@ pub(crate) async fn admin_verify_storage_parity(
     guarded_dispatch(state, "admin_verify_storage_parity", parts, dispatch).await
 }
 
+/// Re-derive the node rows of every damaged version from its stored body
+/// (`POST /admin/integrity/rebuild-nodes`).
+///
+/// **Our own extension — no ITS-REST operation governs this, and it realizes
+/// no SM operation either** (module docs). It is the repair the storage-parity
+/// sweep had no counterpart for: the sweep reports where a version's two
+/// content copies disagree, and this replaces the derived copy from the
+/// authoritative one.
+#[utoipa::path(
+    post, path = "/admin/integrity/rebuild-nodes", tag = "admin-integrity",
+    params(
+        ("ehr_id" = Option<String>, Query,
+         description = "Cover only versions belonging to this EHR."),
+        ("vo_id" = Option<String>, Query,
+         description = "Cover only versions of this versioned object."),
+        ("sys_version" = Option<i32>, Query,
+         description = "Cover only this version of that object. The ordinal is \
+                        per-object, so it needs `vo_id`; alone it is a `400`."),
+        ("committed_since" = Option<String>, Query,
+         description = "Cover only versions whose validity begins at or after \
+                        this RFC 3339 instant, for repairing what an incident \
+                        touched."),
+    ),
+    responses(
+        (status = 200, description = "The rebuild ran. The body reports how \
+                                      many versions the underlying sweep read, \
+                                      how many it found damaged, how many were \
+                                      rebuilt, and how many were refused, plus \
+                                      one record per damaged version naming \
+                                      the defect that selected it and what \
+                                      happened to it. A refusal is NOT a \
+                                      request failure: the version's own \
+                                      stored body is the damaged copy, so \
+                                      re-deriving the index from it would \
+                                      spread the damage; the version's rows \
+                                      are left exactly as they were and the \
+                                      run continues. `records` is capped and \
+                                      `truncated` says whether the cap was \
+                                      reached; every record is also logged. A \
+                                      run over an undamaged scope writes \
+                                      nothing.",
+         content(
+             (serde_json::Value = "application/json", example = json!({
+                 "versions_checked": 128,
+                 "versions_damaged": 2,
+                 "versions_rebuilt": 1,
+                 "versions_refused": 1,
+                 "records": [{
+                     "vo_id": "8849182c-82ad-4088-a07f-48ead4180515",
+                     "sys_version": 2,
+                     "kind": "COMPOSITION",
+                     "defect": "content_differs",
+                     "outcome": "rebuilt",
+                     "node_rows": 41
+                 }, {
+                     "vo_id": "1f0b7d64-6b2a-4a1f-9f0e-6b1d2a3c4d5e",
+                     "sys_version": 1,
+                     "kind": "COMPOSITION",
+                     "defect": "content_differs",
+                     "outcome": "refused",
+                     "reason": "the stored body does not decompose: …"
+                 }],
+                 "truncated": false,
+                 "elapsed_ms": 812
+             })),
+         )),
+        (status = 400, description = "`sys_version` without `vo_id`, or a \
+                                      malformed identifier or instant.",
+         body = serde_json::Value),
+        (status = 401, description = "Unauthenticated (auth enabled, no valid \
+                                      principal). Our own authorization design.",
+         body = serde_json::Value),
+        (status = 403, description = "Authenticated but not in the Admin class \
+                                      (`OperationClass::Admin`, keyed off the \
+                                      `/admin/` path). Our own authorization \
+                                      design.",
+         body = serde_json::Value),
+        (status = 405, description = "The admin API is disabled on this server \
+                                      (`AppConfig::admin.enabled`, default \
+                                      false), answered with an empty `Allow` \
+                                      per RFC 9110 §10.2.1.",
+         body = serde_json::Value)
+    )
+)]
+pub(crate) async fn admin_rebuild_version_nodes(
+    State(state): State<AppState>,
+    request: axum::extract::Request,
+) -> Response {
+    let parts = crate::api::into_parts(request).await;
+    guarded_dispatch(state, "admin_rebuild_version_nodes", parts, dispatch).await
+}
+
 // ── dispatch ─────────────────────────────────────────────────────────────────
 
 pub(crate) fn dispatch(state: AppState, op: &'static str, parts: RequestParts) -> BoxResponse {
@@ -202,19 +297,30 @@ async fn run(
                 &parity_report(&report),
             ))
         }
+        "admin_rebuild_version_nodes" => {
+            let scope = parity_scope(parts.query.as_deref())?;
+            let report = state.backend().rebuild_version_nodes(scope).await?;
+            Ok(negotiate::respond(
+                &parts.headers,
+                StatusCode::OK,
+                &rebuild_report(&report),
+            ))
+        }
         other => Err(RestError(ApiError::Internal(format!(
             "unrouted admin integrity operation: {other}"
         )))),
     }
 }
 
-/// The optional bounds narrowing which stored versions the sweep covers.
+/// The optional bounds narrowing which stored versions a sweep, or the rebuild
+/// driven by one, covers.
 ///
 /// A sweep reads every byte of what it covers, so an operator verifying one
-/// record, or everything committed since an incident, should not have to read
-/// the whole repository. Both parameters are optional and compose.
+/// record, one object, one version, or everything committed since an incident,
+/// should not have to read the whole repository. Every parameter is optional
+/// and they compose; the default covers everything.
 ///
-/// Our own extension — no ITS-REST operation governs this route at all.
+/// Our own extension — no ITS-REST operation governs these routes at all.
 fn parity_scope(query: Option<&str>) -> Result<StorageParityScope, RestError> {
     let ehr_id = match params::query_param(query, "ehr_id") {
         Some(raw) => Some(raw.parse::<uuid::Uuid>().map_err(|e| {
@@ -233,9 +339,36 @@ fn parity_scope(query: Option<&str>) -> Result<StorageParityScope, RestError> {
         })?),
         None => None,
     };
+    let vo_id = match params::query_param(query, "vo_id") {
+        Some(raw) => Some(raw.parse::<uuid::Uuid>().map_err(|e| {
+            RestError(ApiError::BadRequest(format!(
+                "query parameter `vo_id` must be a UUID, got {raw:?}: {e}"
+            )))
+        })?),
+        None => None,
+    };
+    let sys_version = match params::query_param(query, "sys_version") {
+        Some(raw) => Some(raw.parse::<i32>().map_err(|e| {
+            RestError(ApiError::BadRequest(format!(
+                "query parameter `sys_version` must be an integer, got {raw:?}: {e}"
+            )))
+        })?),
+        None => None,
+    };
+    // The ordinal is per-object, so on its own it would name one version of
+    // every object in the scope — which is never what an operator naming a
+    // version means.
+    if sys_version.is_some() && vo_id.is_none() {
+        return Err(RestError(ApiError::BadRequest(
+            "query parameter `sys_version` names a version of one object and needs `vo_id`"
+                .to_owned(),
+        )));
+    }
     Ok(StorageParityScope {
         ehr_id,
         committed_since,
+        vo_id,
+        sys_version,
     })
 }
 
@@ -369,6 +502,47 @@ fn parity_report(report: &StorageParityReport) -> Value {
                 "kind": m.kind,
                 "defect": m.defect.as_str(),
             }))
+            .collect::<Vec<Value>>(),
+        "truncated": report.truncated,
+        "elapsed_ms": report.elapsed_ms,
+    })
+}
+
+/// Render the node-rebuild report as the response body.
+///
+/// Written out explicitly, like [`parity_report`]: the wire contract is this
+/// function, not a serde attribute on a service type. A record carries the
+/// key its outcome earns — `node_rows` for a rebuild, `reason` for a
+/// refusal — so a reader never has to interpret a placeholder.
+fn rebuild_report(report: &NodeRebuildReport) -> Value {
+    json!({
+        "versions_checked": report.versions_checked,
+        "versions_damaged": report.versions_damaged,
+        "versions_rebuilt": report.versions_rebuilt,
+        "versions_refused": report.versions_refused,
+        "records": report
+            .records
+            .iter()
+            .map(|record| {
+                let mut object = json!({
+                    "vo_id": record.vo_id.to_string(),
+                    "sys_version": record.sys_version,
+                    "kind": record.kind,
+                    "defect": record.defect.as_str(),
+                    "outcome": record.outcome.as_str(),
+                });
+                if let Some(map) = object.as_object_mut() {
+                    match &record.outcome {
+                        NodeRebuildOutcome::Rebuilt { node_rows } => {
+                            map.insert("node_rows".to_owned(), json!(node_rows));
+                        }
+                        NodeRebuildOutcome::Refused { reason } => {
+                            map.insert("reason".to_owned(), json!(reason));
+                        }
+                    }
+                }
+                object
+            })
             .collect::<Vec<Value>>(),
         "truncated": report.truncated,
         "elapsed_ms": report.elapsed_ms,

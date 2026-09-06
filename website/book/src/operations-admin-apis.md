@@ -186,6 +186,7 @@ breaks that agreement.
 | Route | **200** body |
 |---|---|
 | `POST {base}/admin/integrity/verify` | the sweep report |
+| `POST {base}/admin/integrity/rebuild-nodes` | the rebuild report |
 
 The sweep re-derives every stored version from its decomposed rows and compares
 the result with the stored document. It reads the archived tier as well, takes
@@ -193,11 +194,14 @@ no lock, and runs outside the request path of any clinical call, so it is safe
 to run on a live server. It is also a full scan of what it covers, so schedule
 it rather than calling it per request.
 
-Two optional query parameters narrow the scan, and they compose:
+Four optional query parameters narrow the scan, and they compose. Both routes
+take the same set:
 
 | Parameter | Effect |
 |---|---|
 | `ehr_id` | cover only versions belonging to that EHR |
+| `vo_id` | cover only versions of that versioned object |
+| `sys_version` | cover only that version of it; the ordinal is per-object, so it needs `vo_id` and is a **400** on its own |
 | `committed_since` | cover only versions whose validity begins at or after that RFC 3339 instant |
 
 Use them. Verifying one record after a support incident, or everything written
@@ -277,6 +281,87 @@ it saw, so the status stays **200** and the report is the body. Check
 > digest covers the document a point read serves; it says nothing about the
 > decomposed rows, which no read-path check recomputes. Together the two cover
 > both copies.
+
+### Repairing what the sweep found
+
+The sweep is the diagnosis. `POST {base}/admin/integrity/rebuild-nodes` is the
+repair: it re-derives the decomposed rows of every damaged version from that
+version's stored document, one transaction per version.
+
+```bash
+curl -s -X POST "$BASE/admin/integrity/rebuild-nodes?ehr_id=$EHR_ID"
+```
+
+It runs the same sweep first and writes only the versions that sweep reports
+damaged, so a run over healthy data writes nothing at all. The scope
+parameters are the same four, so a repair can be as narrow as one version:
+
+```bash
+curl -s -X POST \
+  "$BASE/admin/integrity/rebuild-nodes?vo_id=$VO_ID&sys_version=2"
+```
+
+Which copy wins is not a choice the route makes. The stored document is the
+version's canonical serialized form, the bytes a point read serves and the
+bytes a digest was taken over; the decomposed rows are an index derived from
+it. So the repair only ever runs in that direction, and a version whose
+**document** is the damaged copy is refused rather than having the damage
+copied into the index.
+
+Each version is repaired inside one transaction: the document is read under a
+row lock, decomposed, the old rows deleted, the new set inserted, and the
+version re-derived from what was just written and compared with the document
+before the commit. Anything that fails rolls that transaction back, so the
+version's rows are left exactly as they were. One refusal never stops the run
+that found it.
+
+An archived object is thawed for the repair and re-archived in the same
+transaction, marker and all, because a write to a versioned object always
+happens in the primary tier.
+
+A logically deleted version stores no document, so it rebuilds to no rows,
+which is the repair for `unexpected_nodes`.
+
+```json
+{
+  "versions_checked": 128,
+  "versions_damaged": 2,
+  "versions_rebuilt": 1,
+  "versions_refused": 1,
+  "records": [
+    {
+      "vo_id": "8849182c-82ad-4088-a07f-48ead4180515",
+      "sys_version": 2,
+      "kind": "COMPOSITION",
+      "defect": "content_differs",
+      "outcome": "rebuilt",
+      "node_rows": 41
+    },
+    {
+      "vo_id": "1f0b7d64-6b2a-4a1f-9f0e-6b1d2a3c4d5e",
+      "sys_version": 1,
+      "kind": "COMPOSITION",
+      "defect": "content_differs",
+      "outcome": "refused",
+      "reason": "the stored body does not decompose: ..."
+    }
+  ],
+  "truncated": false,
+  "elapsed_ms": 812
+}
+```
+
+`defect` is the sweep verdict that selected the version, from the four values
+above. `outcome` is `rebuilt`, carrying the `node_rows` the version now has, or
+`refused`, carrying the `reason`. `records` is capped at 1000 entries with
+`truncated` saying whether the cap was reached; every record is logged at
+`info` level with its identifiers whatever the cap does.
+
+A refusal is **not** a request failure, so the status stays **200**. Check
+`versions_refused`: anything above zero means a stored document is itself
+damaged, and that is a restore-from-backup question rather than a rebuild one.
+
+Unlike the sweep, this route writes, so a server in read-only mode refuses it.
 
 ## Dump and load
 
