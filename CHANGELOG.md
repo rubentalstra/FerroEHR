@@ -17,6 +17,19 @@ workflow refuses a tag that has no matching section here.
 
 ### Added
 
+- **The documentation site carries a compliance control matrix, generated from
+  the tracker** (#3164). A hand-kept compliance table is wrong the first time a
+  control ships, so this one is not kept by hand: an issue declares the control
+  it delivers as a `Control: <legal source> <article or clause>` line in its
+  body, and `scripts/render/control-matrix.sh` renders
+  `website/book/src/compliance/control-matrix.md` from the tracker. Each row
+  shows the legal source as a link to its official publisher, the article or
+  clause, the issue, whether the control is shipped, in progress or planned,
+  and the pull request that closed it. Short names resolve through a registry
+  inside the generator, so a citation on the page can never be free text: an
+  undeclared source stops the render and names the issue. A CI job re-renders
+  and diffs, so a control that shipped since the last render fails the build
+  instead of sitting on the public site as "planned".
 - **The storage-parity sweep has a repair to go with it** (#3143).
   `POST /admin/integrity/verify` reported that a version's decomposed rows and
   its stored document disagree, and then there was nothing to run: dump and
@@ -35,8 +48,31 @@ workflow refuses a tag that has no matching section here.
   rolls that version back untouched and the run continues. An archived object
   is thawed and re-archived in the same transaction, marker included. A
   logically deleted version rebuilds to no rows.
+- **Contributor rules for personal data, and a guard that holds them** (#3167).
+  `CONTRIBUTING.md` and the contributing page of the book gained a "Personal
+  data" section: synthetic data only in tests and fixtures, no identifiers in
+  logs, traces or `Debug` output, no database grant spanning the clinical and
+  demographic domains, and a review step for any change at the privacy
+  boundary. The pull request template carries the matching "Privacy boundary"
+  checklist, and the new `privacy-boundary-guard` CI job fails a pull request
+  that touches the boundary paths without a ticked checklist. The same job
+  reads the added lines of every diff and refuses a nine-digit value passing
+  the BSN eleven-test or a Dutch postcode followed by a house number, proving
+  both detectors against passing and failing fixtures before it judges
+  anything. `.claude/rules/personal-data.md` carries the rules for agents.
 
 ### Changed
+
+- **Database migrations are append-only, so an existing installation upgrades
+  in place.** A released migration is never edited again. sqlx records a
+  checksum of every applied migration and refuses a database whose recorded
+  checksum no longer matches the file, so editing one would not revise history:
+  it would stop every server that had already run it from starting, reporting a
+  checksum rather than the change that caused it. A correction now arrives as a
+  new migration that carries the schema forward, and a CI guard fails any pull
+  request that modifies, renames or deletes a migration its base branch already
+  carries. This replaces the earlier greenfield policy, under which baselines
+  were edited in place and deployments were expected to recreate their volume.
 
 - **Both storage-integrity routes can be pointed at a single version**
   (#3143). `vo_id` and `sys_version` join `ehr_id` and `committed_since` as

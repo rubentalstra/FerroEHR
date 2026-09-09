@@ -74,6 +74,39 @@ render/boot lanes; nothing is advisory.
 - Application crates (`ferroehr-*`) consume the generated `openehr-*` types
   directly — never re-model the RM or re-serialize.
 
+## Personal data
+
+FerroEHR keeps clinical content and the identities it belongs to in separate
+schemas, and a change can move that boundary without meaning to. Four rules
+hold everywhere in this repository:
+
+- **Synthetic data only:** tests, fixtures, seeds, examples and screenshots use
+  invented values. Never put a real name, national identifier, address, phone
+  number, email or date of birth into the repository, an issue, or a pull
+  request body.
+- **No identifiers in telemetry:** logs, traces, metric labels and `Debug`
+  output carry record identifiers (an EHR id, a version uid, a template id) and
+  shapes. They never carry the content of a subject's data, so a `Debug` impl on
+  a type holding personal data prints field names rather than field values.
+- **No grant across the domains:** a database role reaches the clinical schemas
+  or the demographic ones, never both. A migration that grants across the two
+  rejoins the identities to the records the split exists to separate.
+- **A review step at the boundary:** a change touching the demographic or
+  linkage migrations, `service::demographic`, `service::linkage`, the identifier
+  scanner, the access-event model or an outbox payload builder describes its
+  data flow, names the roles involved, and ticks the "Privacy boundary"
+  checklist in the pull request template.
+
+The `privacy-boundary-guard` CI job enforces the last rule and refuses a pull
+request whose checklist is missing or unticked. It also reads the added lines of
+every diff and fails on a value shaped like a real Dutch identifier, so a
+deliberately synthetic value that still has that shape carries
+`privacy-allow: <reason>` on the same line. These are design-time rules
+because GDPR Art. 25 places data protection by design in the design phase
+([Regulation (EU) 2016/679](https://eur-lex.europa.eu/eli/reg/2016/679/oj)).
+The same rules bind the agents that work in this repository
+(`.claude/rules/personal-data.md`).
+
 ## Pull requests
 
 - Branch from `main`; PRs target `main`.
