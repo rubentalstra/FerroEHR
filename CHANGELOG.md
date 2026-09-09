@@ -127,6 +127,16 @@ workflow refuses a tag that has no matching section here.
 
 ### Fixed
 
+- **The storage-integrity sweep and its repair cover both pseudonymisation
+  domains** (#3178). Moving the parties into their own schema left the sweep
+  reading only the clinical one, so damage to the copy no read-path check
+  recomputes went undetected on the domain that holds the identifying data.
+  A sweep with no scope now walks both in one pass, and every mismatch,
+  every streamed line and every rebuild record names the `domain` it came
+  from, so a report cannot describe half the store while looking like it
+  described all of it. The repair reaches the damaged version through that
+  same domain.
+
 - **A FLAT or STRUCTURED read no longer drops the content of a template-named
   event** (#3142). An operational template can fix the name of a node the
   simplified formats collapse away, such as the single event of a `HISTORY`.

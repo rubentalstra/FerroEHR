@@ -28,6 +28,7 @@ use uuid::Uuid;
 
 use ferroehr::ids::EhrId;
 use ferroehr::service::FerroEhrService;
+use ferroehr::service::admin::integrity::StorageDomain;
 use ferroehr::service::admin::integrity::rebuild::NodeRebuildOutcome;
 use ferroehr::service::admin::integrity::{
     StorageParityDefect, StorageParityEvent, StorageParityScope,
@@ -874,4 +875,140 @@ async fn a_scoped_rebuild_repairs_only_its_own_ehr() {
         remaining.mismatches[0].vo_id,
         one_version(&pool, left_alone, "COMPOSITION").await.0
     );
+}
+
+// ── both pseudonymisation domains (#3178) ────────────────────────────────────
+//
+// Parties left the clinical schema in #3153, and the sweep kept reading only
+// the schema it always had. Damage to the copy nobody recomputes went
+// undetected on the domain holding the identifying data, which is the one
+// place a silent integrity gap is least acceptable. These cases pin the
+// coverage so a future change cannot narrow it back without failing.
+
+/// A committed party, and the `(vo_id, sys_version)` of the version holding it.
+async fn seed_party(svc: &FerroEhrService, pool: &PgPool) -> (Uuid, i32) {
+    svc.party_create(
+        ferroehr::service::demographic::types::PartyKind::Person,
+        crate::typed_body::typed(&crate::pseudonymisation_boundary::a_person()),
+        None,
+    )
+    .await
+    .expect("create a person through the service seam");
+    sqlx::query_as(
+        "SELECT vo_id, sys_version FROM demographic.vo_version \
+         ORDER BY sys_version DESC LIMIT 1",
+    )
+    .fetch_one(pool)
+    .await
+    .expect("the stored party version")
+}
+
+#[tokio::test]
+async fn a_damaged_party_is_reported_by_a_sweep_with_no_scope() {
+    let db = testkit::db().await.expect("testkit database");
+    let pool = db.pool();
+    let svc = FerroEhrService::new(pool.clone());
+    let (vo_id, sys_version) = seed_party(&svc, &pool).await;
+
+    tamper(
+        &pool,
+        "UPDATE demographic.node SET data = jsonb_set(data, '{name,value}', '\"tampered\"') \
+         WHERE vo_id = $1 AND sys_version = $2 AND num = 0",
+        vo_id,
+        sys_version,
+    )
+    .await;
+
+    let report = svc
+        .verify_storage_parity(StorageParityScope::default())
+        .await
+        .expect("sweep");
+
+    assert_eq!(
+        report.mismatch_count, 1,
+        "an unscoped sweep reads the demographic domain too: {report:?}"
+    );
+    let found = &report.mismatches[0];
+    assert_eq!(found.vo_id, vo_id);
+    assert_eq!(
+        found.domain,
+        StorageDomain::Demographic,
+        "and says which domain the damage is in"
+    );
+    assert_eq!(found.defect, StorageParityDefect::ContentDiffers);
+}
+
+#[tokio::test]
+async fn a_sweep_with_no_scope_counts_versions_from_both_domains() {
+    let db = testkit::db().await.expect("testkit database");
+    let pool = db.pool();
+    let svc = FerroEhrService::new(pool.clone());
+    seed_ehr_with_composition(&svc).await;
+
+    let clinical_only = svc
+        .verify_storage_parity(StorageParityScope::default())
+        .await
+        .expect("sweep")
+        .versions_checked;
+
+    seed_party(&svc, &pool).await;
+    let both = svc
+        .verify_storage_parity(StorageParityScope::default())
+        .await
+        .expect("sweep")
+        .versions_checked;
+
+    assert!(
+        both > clinical_only,
+        "committing a party raises the unscoped count, so the demographic \
+         domain is actually read rather than skipped: {clinical_only} then {both}"
+    );
+}
+
+#[tokio::test]
+async fn a_damaged_party_is_rebuilt_and_reads_correctly_afterwards() {
+    let db = testkit::db().await.expect("testkit database");
+    let pool = db.pool();
+    let svc = FerroEhrService::new(pool.clone());
+    let (vo_id, sys_version) = seed_party(&svc, &pool).await;
+
+    tamper(
+        &pool,
+        "UPDATE demographic.node SET data = jsonb_set(data, '{name,value}', '\"tampered\"') \
+         WHERE vo_id = $1 AND sys_version = $2 AND num = 0",
+        vo_id,
+        sys_version,
+    )
+    .await;
+
+    let report = svc
+        .rebuild_version_nodes(StorageParityScope::default())
+        .await
+        .expect("rebuild");
+
+    assert_eq!(report.versions_rebuilt, 1, "{report:?}");
+    assert_eq!(
+        report.records[0].domain,
+        StorageDomain::Demographic,
+        "the record names the domain it repaired"
+    );
+
+    let after = svc
+        .verify_storage_parity(StorageParityScope::default())
+        .await
+        .expect("sweep");
+    assert!(after.is_clean(), "the sweep is clean afterwards: {after:?}");
+
+    // The node rows are what a decomposed read serves, so this is the reader
+    // that would still have seen the damage.
+    let name: String = sqlx::query_scalar(
+        "SELECT data #>> '{name,value}' FROM demographic.node \
+         WHERE vo_id = $1 AND sys_version = $2 AND num = 0",
+    )
+    .bind(vo_id)
+    .bind(sys_version)
+    .fetch_one(&pool)
+    .await
+    .expect("read the rebuilt name");
+    assert_ne!(name, "tampered", "the corrupted value is gone");
 }
