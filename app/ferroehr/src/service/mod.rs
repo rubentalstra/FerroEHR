@@ -232,6 +232,14 @@ pub struct FerroEhrService {
     /// construction (an EHR's identity at creation is immutable). No openEHR
     /// spec governs it — our own performance design.
     pub(in crate::service) created_ehr_repr: moka::future::Cache<EhrId, Value>,
+    /// The clinical-side data-minimisation policy
+    /// ([`crate::privacy`]) every clinical commit body is checked against.
+    ///
+    /// [`Self::new`] leaves it unenforced, as it leaves every other configured
+    /// collaborator unwired; the binary installs the compiled
+    /// `[privacy]` section via [`Self::with_privacy`], and that section's own
+    /// default refuses identified parties and scans in `strict`.
+    pub(in crate::service) privacy: Arc<crate::privacy::PrivacyPolicy>,
 }
 
 impl FerroEhrService {
@@ -270,10 +278,23 @@ impl FerroEhrService {
                 .max_capacity(4096)
                 .time_to_live(Duration::from_secs(30))
                 .build(),
+            privacy: Arc::new(crate::privacy::PrivacyPolicy::default()),
         }
     }
 
     // ── Builders (the binary wires each configured subsystem) ────────────────
+
+    /// Install the compiled clinical-side data-minimisation policy
+    /// ([`crate::privacy::PrivacyPolicy`]).
+    ///
+    /// Without it the service enforces none of the three rules, which is the
+    /// bare-service posture; the binary always calls this with the resolved
+    /// `[privacy]` section.
+    #[must_use]
+    pub fn with_privacy(mut self, policy: Arc<crate::privacy::PrivacyPolicy>) -> Self {
+        self.privacy = policy;
+        self
+    }
 
     /// Install the pool serving the demographic pseudonymisation domain.
     ///

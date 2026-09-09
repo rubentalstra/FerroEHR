@@ -269,6 +269,74 @@ impl FerroEhrService {
         Err(ServiceError::ValidationFailed(errors))
     }
 
+    /// The clinical-side data-minimisation pass ([`crate::privacy`]).
+    ///
+    /// Refusals — the subject-reference rule and the identified-party rule —
+    /// are unconditional whenever their rule is in force. Identifier-shape
+    /// findings follow the configured scan mode: `strict` joins them to the
+    /// refusal, `warn` records each one and lets the write through.
+    ///
+    /// **No openEHR spec governs this — our own design/extension.** The wire
+    /// status is `422`: the request is well-formed and the refusal is
+    /// semantic, which is what ITS-REST `overview/Requests_and_responses.md`
+    /// §HTTP status codes assigns to `422` ("The request was well-formed but
+    /// was unable to be followed due to semantic errors"), against `400`'s
+    /// "malformed request syntax, syntactically invalid content". The EHR API
+    /// operations enumerate no `422` of their own
+    /// (`operations/ehr_create.yaml`, `operations/ehr_status_update.yaml`),
+    /// and the same section permits it: "Additional status codes MAY be used
+    /// as long as they do not conflict with the predefined codes" — which is
+    /// also how every existing `EHR_STATUS` content refusal here answers.
+    ///
+    /// A finding never carries the offending value, so nothing identifying
+    /// reaches the response body, the access log or the trace.
+    ///
+    /// # Errors
+    /// [`ServiceError::ValidationFailed`] carrying one entry per refused
+    /// finding, each keyed by its own RM path (→ 422).
+    fn check_privacy(&self, kind: Kind, data: &Value) -> Result<(), ServiceError> {
+        let findings = self.privacy.findings(kind.as_str(), data);
+        if findings.is_empty() {
+            return Ok(());
+        }
+        let warn_only = self.privacy.scan_mode() == Some(crate::privacy::config::ScanMode::Warn);
+        let (warned, refused): (Vec<_>, Vec<_>) = findings.into_iter().partition(|finding| {
+            warn_only && finding.class == crate::privacy::FindingClass::IdentifierShape
+        });
+        for finding in &warned {
+            tracing::warn!(
+                rm_type = kind.as_str(),
+                path = %finding.path,
+                detail = %finding.message,
+                "privacy.identifier_scan is in `warn` mode: a clinical write carried an \
+                 identifier-shaped value and was accepted"
+            );
+        }
+        if !warned.is_empty() {
+            crate::telemetry::metrics::metrics()
+                .validation_failures
+                .add(
+                    u64::try_from(warned.len()).unwrap_or(u64::MAX),
+                    &[opentelemetry::KeyValue::new("pass", "privacy_warn")],
+                );
+        }
+        if refused.is_empty() {
+            return Ok(());
+        }
+        crate::telemetry::metrics::metrics()
+            .validation_failures
+            .add(
+                u64::try_from(refused.len()).unwrap_or(u64::MAX),
+                &[opentelemetry::KeyValue::new("pass", "privacy")],
+            );
+        Err(ServiceError::ValidationFailed(
+            refused
+                .into_iter()
+                .map(|finding| InvariantViolation::at(finding.path, finding.message))
+                .collect(),
+        ))
+    }
+
     /// Validate a versioned object about to be committed (direct or via a
     /// CONTRIBUTION) — the [`crate::versioning::CommitEnv`]
     /// `validate_for_commit` hook. COMPOSITIONs get full RM + terminology +
@@ -280,10 +348,16 @@ impl FerroEhrService {
     /// The demographic arms (party roots + `PARTY_RELATIONSHIP`) dispatch to
     /// the demographic register (`service/demographic/`).
     ///
+    /// The clinical arms additionally run the data-minimisation pass
+    /// ([`crate::privacy`]) — the subject-reference rule, the identified-party
+    /// rule and the identifier scanner — which the demographic arms must not:
+    /// a party's name is the point of the demographic domain.
+    ///
     /// # Errors
     /// [`ServiceError::ValidationFailed`] / [`ServiceError::Unprocessable`]
-    /// when the content is invalid for its kind (→ 422); [`ServiceError`]
-    /// from a failing template resolution on the COMPOSITION arm.
+    /// when the content is invalid for its kind, or when the privacy policy
+    /// refuses it (→ 422); [`ServiceError`] from a failing template resolution
+    /// on the COMPOSITION arm.
     #[expect(
         clippy::same_name_method,
         reason = "the `CommitEnv` seam (service/commit_env.rs) deliberately \
@@ -298,10 +372,22 @@ impl FerroEhrService {
         incomplete: bool,
     ) -> Result<(), ServiceError> {
         match kind {
-            Kind::Composition => self.validate_composition_for_commit(data, incomplete).await,
-            Kind::EhrStatus => validate_ehr_status(data, incomplete),
-            Kind::EhrAccess => validate_ehr_access(data, incomplete),
-            Kind::Folder => validate_folder(data, incomplete),
+            Kind::Composition => {
+                self.check_privacy(kind, data)?;
+                self.validate_composition_for_commit(data, incomplete).await
+            }
+            Kind::EhrStatus => {
+                self.check_privacy(kind, data)?;
+                validate_ehr_status(data, incomplete)
+            }
+            Kind::EhrAccess => {
+                self.check_privacy(kind, data)?;
+                validate_ehr_access(data, incomplete)
+            }
+            Kind::Folder => {
+                self.check_privacy(kind, data)?;
+                validate_folder(data, incomplete)
+            }
             // The demographic kinds reach here from the raw-body CONTRIBUTION
             // lane only, so they take the full check including the decode; the
             // direct routes enter at `party_invariants`, already decoded.

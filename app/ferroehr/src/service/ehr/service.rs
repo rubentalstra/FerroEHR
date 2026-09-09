@@ -71,7 +71,8 @@ impl FerroEhrService {
         // before the EHR is created (CNF master06 §Test Data Sets INVALID
         // class 2). The EHR-create wire carries no lifecycle channel, so the
         // first status version is complete — full strictness.
-        super::validation::validate_ehr_status(&status, false)?;
+        self.validate_for_commit(Kind::EhrStatus, &status, false)
+            .await?;
 
         // The creation commit's AUDIT_DETAILS, built BEFORE the transaction so
         // an illegal client `change_type` refuses without a storage round trip.

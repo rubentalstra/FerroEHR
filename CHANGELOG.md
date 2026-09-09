@@ -17,6 +17,31 @@ workflow refuses a tag that has no matching section here.
 
 ### Added
 
+- **The clinical side refuses identifying data, and the subject reference is
+  bound to a pseudonym.** A new `[privacy]` configuration section carries three
+  write-path rules, all reported as `422` with one entry per finding naming the
+  RM path and never the offending value. `privacy.subject_namespaces` names the
+  pseudonymisation domains this deployment issues subject pseudonyms in; once
+  one is declared, `EHR_STATUS.subject.external_ref` must name a listed
+  namespace and carry a UUID. `privacy.allow_identified_parties_in_ehr`
+  (`false` by default, announced at boot when on) decides whether a
+  `PARTY_IDENTIFIED` or `PARTY_RELATED` in clinical content may carry `name` or
+  `identifiers` — with it off they carry `external_ref` only, which still
+  satisfies the RM's own validity rule. `[privacy.identifier_scan]` checks every
+  string leaf of every clinical write against a jurisdiction-keyed ruleset,
+  refusing in `strict` (the default) and recording in `warn`. The shipped rules
+  are `fi-hetu`, `gb-nhs-number`, `nl-bsn`, `no-fodselsnummer` and
+  `se-personnummer`, each transcribing the checksum its own issuing register
+  publishes, and all are active by default; a deployment narrows the list to its
+  own jurisdictions and adds `patterns` for local medical-record numbers and
+  address forms. Every rule publishes how often it claims a value that is not
+  one of its identifiers, and those figures are measured rather than estimated:
+  one in 11 for `nl-bsn` and `gb-nhs-number`, one in 31 for `fi-hetu`, one in
+  120 for `no-fodselsnummer`, one in 139 for `se-personnummer`, and zero
+  findings across the 258 clinical documents in this repository's vendored
+  corpora. See
+  [Privacy & data minimisation](https://ferroehr.eu/book/installation/config-privacy.html).
+
 - **Demographic parties live in their own schema, behind their own database
   role** (#3153). Parties (PERSON, ORGANISATION, GROUP, AGENT, ROLE,
   PARTY_RELATIONSHIP) and their change control leave the clinical `ehr` schema

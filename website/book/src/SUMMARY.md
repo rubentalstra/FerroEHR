@@ -20,6 +20,7 @@
     - [Authentication & access](installation/config-auth.md)
     - [Integrations](installation/config-integrations.md)
     - [Audit & subject proxy](installation/config-audit.md)
+    - [Privacy & data minimisation](installation/config-privacy.md)
     - [CLI & production checklist](installation/config-cli.md)
 - [Concepts](concepts/index.md)
   - [openEHR primer](concepts/openehr-primer.md)

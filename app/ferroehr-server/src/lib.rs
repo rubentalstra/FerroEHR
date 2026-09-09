@@ -333,12 +333,18 @@ fn assemble_service(
 ) -> anyhow::Result<FerroEhrService> {
     let pool = &pools.clinical;
     let audit_enabled = audit_sender.is_some();
+    // The MRN patterns compiled here; `FerroEhrConfig::validate` already
+    // refused an uncompilable one at boot, so this cannot be the first place a
+    // bad pattern is noticed.
+    let privacy = ferroehr::privacy::PrivacyPolicy::compile(&config.privacy)
+        .context("compiling the [privacy] policy")?;
     let mut service = FerroEhrService::new(pool.clone())
         .with_demographic_pool(pools.demographic.clone())
         .with_spec_profile(config.spec_profile)
         .with_system_id(config.server.system_id.clone())
         .with_signer(signer)
         .with_outbox_enabled(outbox_enabled)
+        .with_privacy(Arc::new(privacy))
         .with_query_config(&config.query);
     if let Some(sender) = audit_sender {
         service = service.with_audit(sender);
@@ -454,6 +460,52 @@ fn warn_boot_postures(config: &ferroehr::config::FerroEhrConfig) {
             "[server].cors_permissive is ON: any origin may read API responses. This is a \
              DEVELOPMENT setting — configure explicit origins for any deployment reachable by \
              a browser."
+        );
+    }
+    if config.privacy.allow_identified_parties_in_ehr {
+        tracing::warn!(
+            "[privacy].allow_identified_parties_in_ehr is ON: clinical content may carry a \
+             PARTY_IDENTIFIED or PARTY_RELATED name and formal identifiers (composer, \
+             participations, health_care_facility, feeder audit). The clinical side then \
+             holds identifying data of its own — GDPR Art. 25(2) data minimisation is on \
+             this deployment to justify."
+        );
+    }
+    if config.privacy.identifier_scan.mode == ferroehr::privacy::config::ScanMode::Warn {
+        tracing::warn!(
+            "[privacy.identifier_scan].mode is `warn`: a clinical write carrying a value one \
+             of the active rules claims is ACCEPTED and recorded, not refused. Set it to \
+             `strict` once the recorded findings are down to none."
+        );
+    }
+    // Which jurisdictions are actually covered is the one fact an operator
+    // cannot infer, and believing a jurisdiction is scanned when it is not is
+    // the failure this line exists to prevent.
+    if config.privacy.identifier_scan.rules.is_empty() {
+        tracing::warn!(
+            "[privacy.identifier_scan].rules is empty: NO national identifier rule is active, \
+             so the scanner checks only the configured patterns. Name the rules this \
+             deployment's content could carry."
+        );
+    } else {
+        tracing::info!(
+            rules = %config.privacy.identifier_scan.rules.join(", "),
+            patterns = config.privacy.identifier_scan.patterns.len(),
+            mode = config.privacy.identifier_scan.mode.as_str(),
+            "clinical writes are scanned for national identifiers"
+        );
+    }
+    if config.privacy.subject_namespaces.is_empty() {
+        tracing::info!(
+            "[privacy].subject_namespaces is empty: an EHR_STATUS subject reference is \
+             accepted in any namespace with any identifier. Declare this deployment's \
+             pseudonym namespaces to bind the subject to an opaque UUID."
+        );
+    } else {
+        tracing::info!(
+            namespaces = %config.privacy.subject_namespaces.join(", "),
+            "EHR_STATUS subject references are bound to a UUID in a configured pseudonym \
+             namespace"
         );
     }
     if config.auth.enabled && !config.server.tls.enabled && !binds_loopback(&config.server.bind) {

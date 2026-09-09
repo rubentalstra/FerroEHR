@@ -1,6 +1,6 @@
 # Shared responsibility
 
-Almost every obligation in EU and Dutch health-data law rests on the
+Almost every obligation in EU and national health-data law rests on the
 controller, and where FerroEHR is operated on that controller's behalf, on the
 processor. A repository supplies technical measures. It cannot hold a legal
 basis, sign a processing agreement, notify a supervisory authority or run a
@@ -64,7 +64,15 @@ provisions carry. No row below claims conformity with any of them.
 | [Chapter III](https://eur-lex.europa.eu/eli/reg/2025/327/oj), EHR systems: the European interoperability and logging software components, and published technical documentation | Readiness work is planned in [#3168](https://github.com/rubentalstra/FerroEHR/issues/3168), [#3169](https://github.com/rubentalstra/FerroEHR/issues/3169), [#3170](https://github.com/rubentalstra/FerroEHR/issues/3170) and [#3171](https://github.com/rubentalstra/FerroEHR/issues/3171) | Decide whether you are the manufacturer of the EHR system you put into service, and carry the manufacturer's duties if so |
 | [Chapter IV](https://eur-lex.europa.eu/eli/reg/2025/327/oj), secondary use | [AQL](../querying-aql.md) over the stored record and a [change-event outbox](../beyond-core/amqp.md); a separate pseudonymisation domain for secondary use is planned in [#3160](https://github.com/rubentalstra/FerroEHR/issues/3160) | Deal with the health data access body and carry the data holder's duties |
 
-## Dutch law
+## National law
+
+The sections above apply to every EU deployment. This one is a single
+country's law on top of them, and it is the first of what should be several:
+the division a deployment reads is "the EU layer, plus my own jurisdiction".
+The compliance overview says what adding another takes
+([National law](index.md#national-law)).
+
+### The Netherlands
 
 | Obligation | What FerroEHR provides | What the deploying organisation does |
 |---|---|---|
@@ -75,7 +83,7 @@ provisions carry. No row below claims conformity with any of them.
 | [Wabvpz Art. 15e](https://wetten.overheid.nl/BWBR0023864), a record of who made data available and who consulted it | An [ATNA trail](../audit.md) recording the agent, the patient, the action, the outcome and the time, retrievable per patient | Render it for the patient, set retention, and review it |
 | [BW Book 7, Art. 454](https://wetten.overheid.nl/BWBR0005290), the medical treatment contract's record-keeping duty | Append-only version history, so a correction never destroys the prior version | Set the retention schedule the article requires, and reconcile it with erasure requests |
 
-## NEN
+### The Netherlands: NEN
 
 The [NEN 7510 family](https://www.nen.nl/zorg-welzijn/ict-in-de-zorg/informatiebeveiliging-in-de-zorg)
 is where the split is sharpest. A management-system standard cannot be met by
