@@ -883,3 +883,104 @@ async fn only_the_demographic_writer_reaches_the_sealed_value() {
         .await
         .expect("the reader sees the non-sensitive columns");
 }
+
+/// A party committed with protection ON stores a reference, never the value —
+/// and the version's own body, its decomposed nodes and the served read all
+/// carry the same form.
+///
+/// The end-to-end property #3155 exists for. The sealing runs before the body
+/// is decomposed and signed, so stored, signed and served are one form; a test
+/// that only checked `vo_version.body` would miss the node rows, which are a
+/// second copy of the same content.
+#[tokio::test]
+async fn a_protected_identifier_never_reaches_the_versioned_body() {
+    use ferroehr::service::demographic::identifier::engine::IdentifierProtection;
+
+    let db = testkit::db().await.expect("testkit database");
+    let pool = db.pool();
+    let engine = IdentifierProtection::from_config(
+        &ferroehr::service::demographic::identifier::config::IdentifierProtectionConfig {
+            enabled: true,
+            schemes: vec!["nl-bsn".to_owned()],
+            key: Some(ferroehr::config::secret::Secret::new(TEST_ROOT_KEY)),
+            key_file: None,
+        },
+        Some(&ferroehr::config::secret::Secret::new(TEST_ROOT_KEY)),
+        ferroehr::db::demographic_pool_from(&pool),
+    )
+    .expect("the engine builds")
+    .expect("protection is enabled");
+    let service =
+        FerroEhrService::new(pool.clone()).with_identifier_protection(std::sync::Arc::new(engine));
+
+    let mut person = a_person();
+    person["identities"][0]["details"]["items"]
+        .as_array_mut()
+        .expect("the identity items")
+        .push(serde_json::json!({
+            "_type": "ELEMENT",
+            "archetype_node_id": "at0004",
+            "name": { "_type": "DV_TEXT", "value": "bsn" },
+            "value": { "_type": "DV_IDENTIFIER", "type": "nl-bsn",
+                       "id": SYNTHETIC_BSN, "issuer": "RvIG", "assigner": "RvIG" }
+        }));
+
+    let created = service
+        .party_create(PartyKind::Person, typed(&person), None)
+        .await
+        .expect("commit a person carrying a protected identifier");
+    let vo_id: Uuid = created.body["uid"]["value"]
+        .as_str()
+        .expect("uid.value")
+        .split("::")
+        .next()
+        .expect("the versioned-object uuid")
+        .parse()
+        .expect("a uuid");
+
+    // Neither copy of the content carries the value: the version body…
+    let body: String = sqlx::query_scalar(
+        "SELECT body::text FROM demographic.vo_version WHERE vo_id = $1 AND upper_inf(sys_period)",
+    )
+    .bind(vo_id)
+    .fetch_one(&pool)
+    .await
+    .expect("the stored body");
+    assert!(
+        !body.contains(SYNTHETIC_BSN),
+        "the versioned body must carry a reference, not the identifier"
+    );
+    assert!(
+        body.contains("urn:ferroehr:protected-identifier:"),
+        "…and the reference must be there in its place: {body}"
+    );
+
+    // …nor the decomposed node rows, which are the same content a second time.
+    let nodes: i64 = sqlx::query_scalar(
+        "SELECT count(*) FROM demographic.node WHERE vo_id = $1 AND data::text LIKE $2",
+    )
+    .bind(vo_id)
+    .bind(format!("%{SYNTHETIC_BSN}%"))
+    .fetch_one(&pool)
+    .await
+    .expect("scan the node rows");
+    assert_eq!(nodes, 0, "no decomposed node may carry the identifier");
+
+    // The sealed row exists, and resolution finds this party by the value.
+    let store = ferroehr::service::demographic::identifier::store::IdentifierStore::new(
+        ferroehr::db::demographic_pool_from(&pool),
+    );
+    assert_eq!(
+        store
+            .resolve(
+                &test_keys(Uuid::nil()),
+                Uuid::nil(),
+                "nl-bsn",
+                SYNTHETIC_BSN
+            )
+            .await
+            .expect("resolve"),
+        Some(vo_id),
+        "the identifier resolves to the party that holds it"
+    );
+}

@@ -61,7 +61,7 @@ impl IdentifierProtection {
     /// failure this refuses to ship.
     pub fn from_config(
         config: &IdentifierProtectionConfig,
-        key_material: Option<&secrecy::SecretString>,
+        key_material: Option<&crate::config::secret::Secret>,
         pool: sqlx::PgPool,
     ) -> Result<Option<Self>, EngineError> {
         if !config.enabled {
@@ -71,9 +71,13 @@ impl IdentifierProtection {
             return Err(EngineError::NoSchemes);
         }
         let material = key_material.ok_or(EngineError::MissingKey)?;
+        // The configured secret is re-wrapped rather than read as a plain
+        // string: `RootKey` takes a secret so the hex never lands in an
+        // ordinary `String` a `Debug` or a panic message could carry.
+        let material = secrecy::SecretString::from(material.expose().to_owned());
         Ok(Some(Self {
             schemes: config.schemes.clone(),
-            root: RootKey::from_hex(material)?,
+            root: RootKey::from_hex(&material)?,
             store: IdentifierStore::new(pool),
         }))
     }
@@ -241,8 +245,8 @@ mod tests {
             schemes: Vec::new(),
             ..IdentifierProtectionConfig::default()
         };
-        let key = secrecy::SecretString::from(
-            "000102030405060708090a0b0c0d0e0f101112131415161718191a1b1c1d1e1f".to_owned(),
+        let key = crate::config::secret::Secret::new(
+            "000102030405060708090a0b0c0d0e0f101112131415161718191a1b1c1d1e1f",
         );
         assert!(
             matches!(

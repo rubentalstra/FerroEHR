@@ -232,6 +232,15 @@ pub struct FerroEhrService {
     /// construction (an EHR's identity at creation is immutable). No openEHR
     /// spec governs it — our own performance design.
     pub(in crate::service) created_ehr_repr: moka::future::Cache<EhrId, Value>,
+    /// The national-identifier protection engine
+    /// ([`crate::service::demographic::identifier::engine`]), when the
+    /// deployment configured one.
+    ///
+    /// `None` leaves identifiers stored exactly as written, which is the
+    /// default posture; the binary installs the compiled
+    /// `[demographic.identifier_protection]` section.
+    pub(in crate::service) identifiers:
+        Option<Arc<crate::service::demographic::identifier::engine::IdentifierProtection>>,
     /// The clinical-side data-minimisation policy
     /// ([`crate::privacy`]) every clinical commit body is checked against.
     ///
@@ -278,11 +287,40 @@ impl FerroEhrService {
                 .max_capacity(4096)
                 .time_to_live(Duration::from_secs(30))
                 .build(),
+            identifiers: None,
             privacy: Arc::new(crate::privacy::PrivacyPolicy::default()),
         }
     }
 
     // ── Builders (the binary wires each configured subsystem) ────────────────
+
+    /// Install the national-identifier protection engine.
+    ///
+    /// Without it the demographic write path stores identifiers exactly as
+    /// written, which is the default posture; the binary installs the compiled
+    /// `[demographic.identifier_protection]` section when it is enabled.
+    #[must_use]
+    pub fn with_identifier_protection(
+        mut self,
+        engine: Arc<crate::service::demographic::identifier::engine::IdentifierProtection>,
+    ) -> Self {
+        self.identifiers = Some(engine);
+        self
+    }
+
+    /// Install the protection engine when the deployment built one.
+    ///
+    /// The optional twin of [`Self::with_identifier_protection`], so the
+    /// binary's builder chain stays one expression whether or not the section
+    /// is enabled.
+    #[must_use]
+    pub fn with_identifier_protection_opt(
+        mut self,
+        engine: Option<Arc<crate::service::demographic::identifier::engine::IdentifierProtection>>,
+    ) -> Self {
+        self.identifiers = engine;
+        self
+    }
 
     /// Install the compiled clinical-side data-minimisation policy
     /// ([`crate::privacy::PrivacyPolicy`]).
@@ -503,6 +541,7 @@ impl FerroEhrService {
             spec_profile: self.spec_profile,
             #[cfg(feature = "multimedia")]
             multimedia: self.multimedia.as_deref(),
+            identifiers: self.identifiers.as_deref(),
             outbox_enabled: self.outbox_enabled,
         }
     }

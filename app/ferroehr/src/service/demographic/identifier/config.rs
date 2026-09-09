@@ -41,7 +41,7 @@ pub struct IdentifierProtectionConfig {
     pub key: Option<crate::config::secret::Secret>,
     /// A file holding the root key, read at boot
     /// (`FERROEHR__DEMOGRAPHIC__IDENTIFIER_PROTECTION__KEY_FILE`).
-    pub key_file: Option<String>,
+    pub key_file: Option<std::path::PathBuf>,
 }
 
 impl Default for IdentifierProtectionConfig {
