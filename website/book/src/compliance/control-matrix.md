@@ -50,12 +50,20 @@ fills itself as the compliance program lands: the first issue to carry a
 The short names above resolve to these publishers. The linked text is the
 authority; nothing on this page restates it.
 
-| Short name | Source |
-|---|---|
-| GDPR | [https://eur-lex.europa.eu/eli/reg/2016/679/oj](https://eur-lex.europa.eu/eli/reg/2016/679/oj) |
-| EHDS | [https://eur-lex.europa.eu/eli/reg/2025/327/oj](https://eur-lex.europa.eu/eli/reg/2025/327/oj) |
-| UAVG | [https://wetten.overheid.nl/BWBR0040940](https://wetten.overheid.nl/BWBR0040940) |
-| Wabvpz | [https://wetten.overheid.nl/BWBR0023864](https://wetten.overheid.nl/BWBR0023864) |
-| NEN 7510 | [https://www.nen.nl/zorg-en-welzijn/informatiebeveiliging-in-de-zorg/nen-7510](https://www.nen.nl/zorg-en-welzijn/informatiebeveiliging-in-de-zorg/nen-7510) |
-| NEN 7513 | [https://www.nen.nl](https://www.nen.nl) |
-| IHE ATNA | [https://profiles.ihe.net/ITI/TF/Volume1/ch-9.html](https://profiles.ihe.net/ITI/TF/Volume1/ch-9.html) |
+| Short name | Applies to | Source |
+|---|---|---|
+| GDPR | EU | [https://eur-lex.europa.eu/eli/reg/2016/679/oj](https://eur-lex.europa.eu/eli/reg/2016/679/oj) |
+| EHDS | EU | [https://eur-lex.europa.eu/eli/reg/2025/327/oj](https://eur-lex.europa.eu/eli/reg/2025/327/oj) |
+| EDPB 01/2025 | EU | [https://www.edpb.europa.eu/our-work-tools/documents/public-consultations/2025/guidelines-012025-pseudonymisation_en](https://www.edpb.europa.eu/our-work-tools/documents/public-consultations/2025/guidelines-012025-pseudonymisation_en) |
+| UAVG | NL | [https://wetten.overheid.nl/BWBR0040940](https://wetten.overheid.nl/BWBR0040940) |
+| Wabvpz | NL | [https://wetten.overheid.nl/BWBR0023864](https://wetten.overheid.nl/BWBR0023864) |
+| NEN 7510 | NL | [https://www.nen.nl/nen-7510-1-2024-nl-331311](https://www.nen.nl/nen-7510-1-2024-nl-331311) |
+| NEN 7512 | NL | [https://www.nen.nl/nen-7512-2022-nl-297137](https://www.nen.nl/nen-7512-2022-nl-297137) |
+| NEN 7513 | NL | [https://www.nen.nl/nen-7513-2018-nl-245399](https://www.nen.nl/nen-7513-2018-nl-245399) |
+| IHE ATNA | INT | [https://profiles.ihe.net/ITI/TF/Volume1/ch-9.html](https://profiles.ihe.net/ITI/TF/Volume1/ch-9.html) |
+
+`EU` and `INT` apply to every deployment. A two-letter country code is
+national law or a national standard, and applies to a deployment in that
+country: FerroEHR is an openEHR CDR, openEHR is not a Dutch standard, and a
+deployment elsewhere answers to its own equivalents rather than to these.
+Adding a jurisdiction is a registry entry plus the controls that cite it.

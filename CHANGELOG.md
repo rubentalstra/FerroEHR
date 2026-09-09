@@ -137,6 +137,19 @@ workflow refuses a tag that has no matching section here.
   described all of it. The repair reaches the damaged version through that
   same domain.
 
+- **The compliance control matrix says which jurisdiction each legal source
+  belongs to, and its links work** (#3177). The NEN 7510 entry pointed at a
+  page that returns 404, and NEN 7513 pointed at the publisher's homepage
+  rather than the standard. Both are corrected, NEN 7512 and the EDPB
+  pseudonymisation guidelines are added, and every URL in the registry was
+  checked by hand on the day it landed, which is the only way it can be
+  checked: the site's link gate runs offline on purpose, so an external URL
+  that rots is invisible to it. The table now carries an "Applies to" column.
+  `EU` and `INT` apply to every deployment; a two-letter code is national law
+  and applies to a deployment in that country. openEHR is not a Dutch
+  standard, and a page listing Dutch law beside EU law without saying which
+  is which reads as though every deployment answers to both.
+
 - **A FLAT or STRUCTURED read no longer drops the content of a template-named
   event** (#3142). An operational template can fix the name of a node the
   simplified formats collapse away, such as the single event of a `HISTORY`.
