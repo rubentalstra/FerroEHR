@@ -67,3 +67,4 @@
 - [Rust crates](crates.md)
 - [Contributing](contributing.md)
 - [Licensing & legal](licensing.md)
+  - [Control matrix](compliance/control-matrix.md)

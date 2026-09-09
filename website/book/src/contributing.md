@@ -114,6 +114,41 @@ A few more conventions worth knowing before you open a pull request:
   updates the matching page of this documentation, both in the same pull
   request. CI guards enforce both.
 
+## Personal data
+
+The server keeps clinical content and the identities it belongs to in separate
+schemas, reachable by separate database roles. A change can move that boundary
+without meaning to, so four rules hold everywhere in the repository.
+
+- **Synthetic data only:** tests, fixtures, seeds, examples and screenshots use
+  invented values. A real name, national identifier, address, phone number,
+  email or date of birth never goes into the repository, an issue, or a pull
+  request body.
+- **No identifiers in telemetry:** logs, traces, metric labels and `Debug`
+  output carry record identifiers (an EHR id, a version uid, a template id) and
+  shapes, never the content of a subject's data. A `Debug` impl on a type
+  holding personal data prints field names rather than field values.
+- **No grant across the domains:** a database role reaches the clinical schemas
+  or the demographic ones, never both. A migration granting across the two
+  rejoins the identities to the records the split exists to separate.
+- **A review step at the boundary:** a change touching the demographic or
+  linkage migrations, the demographic or linkage services, the identifier
+  scanner, the access-event model or an outbox payload builder describes its
+  data flow, names the roles involved, and ticks the "Privacy boundary"
+  checklist in the pull request template.
+
+The `privacy-boundary-guard` job in CI enforces the last rule: a pull request
+touching those paths without a ticked checklist fails. The same job reads the
+added lines of every diff and fails on a value shaped like a real Dutch
+identifier, a nine-digit number passing the BSN eleven-test or a postcode
+followed by a house number. A synthetic value that still has that shape carries
+`privacy-allow: <reason>` on the same line, and the job proves its own detectors
+on every run before it judges a diff.
+
+These are design-time rules because
+[GDPR Art. 25](https://eur-lex.europa.eu/eli/reg/2016/679/oj) places data
+protection by design in the design phase, before a line of it is deployed.
+
 ## Review
 
 Two things review a pull request. The maintainers, who decide; and SonarQube

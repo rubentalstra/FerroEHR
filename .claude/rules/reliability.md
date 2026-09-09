@@ -270,6 +270,21 @@ chapters, the Clippy book, and the Cargo/rustdoc books.)
   CodeQL's `actions` language on every pull request. An accepted finding is an
   inline `# zizmor: ignore[rule]` carrying its reason, never a silent
   suppression.
+- **A migration that has shipped is never edited** (owner ruling 2026-09-09,
+  declaring the stabilization the greenfield ruling reserved; the policy is
+  `sqlx-conventions.md` §Migrations). People run FerroEHR now, and sqlx
+  refuses a database whose recorded checksum no longer matches the migration
+  file, so editing one does not revise history: it locks every existing
+  installation out of its own database at boot, reporting a checksum rather
+  than the edit. A schema change is a NEW file; a migration that was wrong is
+  superseded, never rewritten. Enforcement (tier 4):
+  `scripts/checks/migration-immutability.sh`, run per-PR by the
+  `migration-immutability` CI job against the pull request's merge base, and
+  refusing any modification, rename or deletion under
+  `app/ferroehr/migrations/`. Its detector is mutation-proven by its own
+  `--self-test`, which the CI job runs first. There is deliberately no
+  escape-hatch label: the checksum makes the rule absolute, so an exception
+  could only ever be a broken deployment.
 - **The shell programs are analysed like code too** (issue #2785). The two
   tooling languages here are bash and Rust, and only the Rust half was ever
   lint-gated. actionlint shellchecks the `run:` blocks EMBEDDED in workflows;
@@ -288,6 +303,33 @@ chapters, the Clippy book, and the Cargo/rustdoc books.)
   against the pinned upstream release binary (`shellcheck@0.11.0` — never the
   runner's distro package, whose version would drift under the adjudicated
   directives at every runner-image refresh).
+- **A published compliance claim is generated from its source, never typed**
+  (issue #3164). The control matrix on the documentation site states which
+  legal control each issue delivers and whether it is shipped; typed by hand it
+  is wrong the first time a control lands, and a stale "planned" beside a
+  shipped control is exactly the misstatement the page exists to prevent.
+  `scripts/render/control-matrix.sh` renders it from the tracker, resolves
+  every legal source through a registry inside the generator (an undeclared
+  short name stops the render rather than becoming a free-text cell), and is a
+  pure function of tracker state: no clock, no build commit, nothing that
+  differs between two runs of an unchanged tracker. Enforcement (tier 4): the
+  `control-matrix` CI job runs the generator with `--check` and fails on any
+  difference from the committed page.
+- **No real personal data enters the tree, and the pseudonymisation boundary is
+  reviewed when it moves** (issue #3167; the rules are `personal-data.md`,
+  restated for contributors in `CONTRIBUTING.md` § Personal data). Tests and
+  fixtures use synthetic values; logs, traces and `Debug` output carry record
+  identifiers and shapes rather than a subject's data; no database grant spans
+  the clinical and demographic domains. Enforcement (tier 4):
+  `scripts/checks/privacy-boundary.sh`, run per-PR by the
+  `privacy-boundary-guard` CI job — it refuses a diff touching the boundary
+  paths whose pull request body carries no ticked "Privacy boundary" checklist,
+  and it reads the added lines for a nine-digit value passing the BSN
+  eleven-test or a Dutch postcode followed by a house number. The two data
+  detectors run under `--self-test` before every judgement, so the arithmetic is
+  exercised rather than trusted. Honest about its own limits: no check can tell
+  an invented name from a real one or read intent out of a `tracing` field, so
+  the synthetic-data and telemetry rules stay review-enforced at the boundary.
 
 ## Recorded deviations from the API Guidelines (deliberate, owner-adjudicated)
 

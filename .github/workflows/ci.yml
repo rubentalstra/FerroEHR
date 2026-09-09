@@ -839,6 +839,36 @@ jobs:
       - name: Image metadata is declared once and agrees
         run: bash scripts/checks/image-labels.sh
 
+  # The published compliance control matrix is GENERATED from the tracker
+  # (scripts/render/control-matrix.sh), the same way the conformance pages
+  # regenerate from the committed artifacts: a control's status lives on its
+  # issue, never in the page. This job re-renders and diffs, so a control that
+  # shipped since the last render fails the build instead of sitting on the
+  # public site as "planned".
+  #
+  # The roadmap board is the only source of "in progress" and needs a Projects
+  # (v2) read, which a repository token does not carry. The generator queries
+  # it only for OPEN issues that declare a control, so the job is green on a
+  # tracker with none; the first one that lands needs GH_TOKEN set to a token
+  # that can read the board, and the generator's failure message says so.
+  control-matrix:
+    name: control-matrix
+    if: github.event_name == 'pull_request' || github.event_name == 'merge_group'
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      contents: read
+      issues: read
+      pull-requests: read
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: The published control matrix matches the tracker
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: bash scripts/render/control-matrix.sh --check
+
   # String-built-SQL guard: the AQL engine composes SQL from attacker-supplied
   # query text, so a `format!`/`push_str`-assembled clause in `app/ferroehr/src/
   # aql/` or `app/ferroehr/src/storage/` is refused — the OWASP SQL Injection
@@ -2156,6 +2186,62 @@ jobs:
           PR_BODY: ${{ github.event.pull_request.body }}
         run: bash scripts/checks/contribution-licence.sh
 
+  migration-immutability:
+    name: migration-immutability
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+          fetch-depth: 0
+      # The detector runs against a scratch repository of its own first, so the
+      # data this job acts on is produced by a filter that was just proven to
+      # catch a modified and a deleted migration and to let an added one pass.
+      - name: The guard's own detector
+        run: bash scripts/checks/migration-immutability.sh --self-test
+      # Context reaches the shell through env, never `${{ }}`-inline.
+      - name: No migration that already exists on the base branch was changed
+        env:
+          PR_BASE: ${{ github.event.pull_request.base.sha }}
+          PR_HEAD: ${{ github.event.pull_request.head.sha }}
+        run: bash scripts/checks/migration-immutability.sh --diff "$PR_BASE" "$PR_HEAD"
+
+  # A change that moves the pseudonymisation boundary is reviewed as one: the
+  # template's 'Privacy boundary' checklist has to be ticked, and no added line
+  # may carry a value shaped like a real Dutch identifier (CONTRIBUTING.md
+  # § Personal data). `edited` is in the pull_request trigger, so ticking a box
+  # re-runs this. Bot authors are skipped for the reason the licence gate skips
+  # them: a bot cannot make the claims the checklist records, and its bumps
+  # touch none of the boundary paths.
+  privacy-boundary:
+    name: privacy-boundary-guard
+    if: github.event_name == 'pull_request' && github.event.pull_request.user.type != 'Bot'
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+          fetch-depth: 0
+      # The BSN and postcode detectors are the whole value of this job, so they
+      # are proven against passing and failing fixtures before they judge a
+      # diff. A data check nobody exercises is a check nobody can trust.
+      - name: The guard's own detectors
+        run: bash scripts/checks/privacy-boundary.sh --self-test
+      # Context reaches the shell through env, never `${{ }}`-inline.
+      - name: The privacy boundary is reviewed and the diff carries no personal data
+        env:
+          PR_BODY: ${{ github.event.pull_request.body }}
+          PR_BASE: ${{ github.event.pull_request.base.sha }}
+          PR_HEAD: ${{ github.event.pull_request.head.sha }}
+        run: bash scripts/checks/privacy-boundary.sh --diff "$PR_BASE" "$PR_HEAD"
+
   changelog:
     name: changelog-guard
     if: github.event_name == 'pull_request'
@@ -2309,6 +2395,7 @@ jobs:
       - comment-style
       - default-style
       - docs-claims
+      - control-matrix
       - sql-string-building
       - error-hygiene
       - error-source-chain
@@ -2338,6 +2425,8 @@ jobs:
       - server-image-from-source
       - ui-screenshot-guard
       - contribution-licence
+      - privacy-boundary
+      - migration-immutability
       - ixit-declarations
       - changelog
       - citation
