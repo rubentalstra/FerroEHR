@@ -518,3 +518,36 @@ max_retries = 3
 #? base_url = "https://fhir.example.org/r4"
 #? connect_timeout_ms = 2000
 #? request_timeout_ms = 10000
+
+# ── [privacy] — the clinical-side data-minimisation policy ────────────────────
+# GDPR Art. 4(5) + Art. 25(2); the openEHR RM leaves the subject reference open
+# and only advises against identifying party proxies, so these are FerroEHR
+# rules over spec-conformant content.
+[privacy]
+# The pseudonymisation domains this deployment issues subject pseudonyms in.
+# EMPTY (the default) leaves the subject-reference rule out of force: a
+# namespace name is a deployment fact, not something a server can invent.
+# Declaring one turns the rule on — from then on EHR_STATUS.subject.external_ref
+# must name a listed namespace and carry a UUID as its id.value.
+subject_namespaces = []
+# Accept PARTY_IDENTIFIED / PARTY_RELATED carrying `name` or `identifiers` in
+# clinical content (composer, participations, health_care_facility, feeder
+# audit). Off by default, and announced at boot when on.
+allow_identified_parties_in_ehr = false
+
+# The identifier scanner, run over every string leaf of every clinical write.
+# CODE_PHRASE.code_string is skipped — its value space is a terminology code.
+[privacy.identifier_scan]
+mode = "strict"              # strict (refuse) | warn (accept + record)
+# The national personal-identifier rules to scan for, by key. Every rule the
+# build ships is active by default: clinical data crosses borders, and a false
+# positive is a loud 422 an operator answers by narrowing this list, while a
+# false negative is a national identifier stored indefinitely. Each rule
+# transcribes the checksum its own issuing register publishes.
+rules = ["fi-hetu", "gb-nhs-number", "nl-bsn", "no-fodselsnummer", "se-personnummer"]
+# Extra patterns (Rust regular expressions) for the kinds no build can ship a
+# rule for: local medical-record numbers, payer references, national
+# postcode-plus-house-number forms. For example, a Dutch deployment adds
+#   patterns = ["(^|[^0-9A-Za-z])[1-9][0-9]{3} ?[A-Z]{2}[^0-9A-Za-z]{1,3}[0-9]{1,4}([^0-9A-Za-z]|$)"]
+# to refuse a postcode paired with a house number.
+patterns = []

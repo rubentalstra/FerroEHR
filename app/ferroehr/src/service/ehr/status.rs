@@ -139,7 +139,8 @@ impl FerroEhrService {
             "EHR_STATUS update",
             &self.effective_system_id(),
         )?;
-        super::validation::validate_ehr_status(&body, incomplete)?;
+        self.validate_for_commit(Kind::EhrStatus, &body, incomplete)
+            .await?;
         let expected = expected_from_if_match(if_match)?;
 
         let mut tx = self.pool.begin().await?;

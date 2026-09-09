@@ -87,7 +87,7 @@ impl FerroEhrService {
         // round trip: a COMPOSITION is EHR content (RM ehr master04 §EHR
         // Creation / §EHR Active Status).
         let commit_now = self.ensure_ehr_content_writable(&mut *conn, ehr_id).await?;
-        self.validate_composition_for_commit(&composition, incomplete)
+        self.validate_for_commit(Kind::Composition, &composition, incomplete)
             .await?;
         self.reject_duplicate_persistent(&mut *conn, ehr_id, &composition)
             .await?;
@@ -433,7 +433,7 @@ impl FerroEhrService {
         );
         let validated = match &resolved {
             Ok(parts) => Some(
-                self.validate_composition_for_commit(&parts.canonical, parts.incomplete)
+                self.validate_for_commit(Kind::Composition, &parts.canonical, parts.incomplete)
                     .await,
             ),
             Err(_) => None,

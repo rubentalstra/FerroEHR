@@ -231,9 +231,10 @@ pub enum ServiceError {
         #[source]
         violation: Violation,
     },
-    /// A well-formed payload that fails semantic (template/RM/terminology)
-    /// validation — carries the per-path violations as the RM validation data
-    /// type ([`InvariantViolation`]), which the protocol bridges below render
+    /// A well-formed payload that fails semantic validation — template, RM,
+    /// terminology, or the clinical-side data-minimisation policy
+    /// ([`crate::privacy`]) — carrying the per-path violations as the RM
+    /// validation data type ([`InvariantViolation`]), which the bridges render
     /// into the ITS-REST 422 body. The service layer never names a protocol
     /// type: the wire shape is chosen at the edge, not at the throw site.
     #[error("{} validation error(s)", .0.len())]

@@ -45,7 +45,7 @@ use crate::versioning::object_version_id::{TreeId, components};
 use crate::versioning::read::{read_version, version_at};
 use crate::versioning::wire::versioned_object;
 
-use super::validation::{check_folder_item_refs, validate_folder};
+use super::validation::check_folder_item_refs;
 use super::{ensure_if_match, resolve_envelope};
 use crate::service::datetime::parse_at_time;
 
@@ -77,7 +77,8 @@ impl FerroEhrService {
             &self.effective_system_id(),
         )?;
         self.ensure_ehr_exists(ehr_id).await?;
-        validate_folder(&folder, incomplete)?;
+        self.validate_for_commit(Kind::Folder, &folder, incomplete)
+            .await?;
         check_folder_item_refs(&self.pool, ehr_id, &self.effective_system_id(), &folder).await?;
         // is_modifiable = False forbids content writes; the directory is EHR
         // content (RM ehr master04 §EHR Active Status).
@@ -297,7 +298,8 @@ impl FerroEhrService {
             "FOLDER directory update",
             &self.effective_system_id(),
         )?;
-        validate_folder(&folder, incomplete)?;
+        self.validate_for_commit(Kind::Folder, &folder, incomplete)
+            .await?;
         check_folder_item_refs(&self.pool, ehr_id, &self.effective_system_id(), &folder).await?;
         // is_modifiable = False forbids content writes to the directory (RM ehr
         // master04 §EHR Active Status), after validate_folder's 422.

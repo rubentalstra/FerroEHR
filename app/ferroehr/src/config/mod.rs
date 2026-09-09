@@ -91,6 +91,8 @@ pub struct FerroEhrConfig {
     pub audit: crate::system_log::config::AuditConfig,
     /// `[subject_proxy]` — Subject Proxy FHIR systems.
     pub subject_proxy: crate::service::subject_proxy::config::SubjectProxyConfig,
+    /// `[privacy]` — the clinical-side data-minimisation policy.
+    pub privacy: crate::privacy::config::PrivacyConfig,
 }
 
 /// The annotated default template `ferroehr config default` prints — a
@@ -111,6 +113,7 @@ impl FerroEhrConfig {
         self.validate_tenancy(&mut errors);
         self.validate_signing(&mut errors);
         self.validate_key_sources(&mut errors);
+        self.validate_privacy(&mut errors);
         errors.extend(multimedia_endpoint_errors(&self.multimedia));
         // management.port must differ from the server.bind port.
         if let Some(port) = self.management.port
@@ -126,6 +129,30 @@ impl FerroEhrConfig {
             Ok(())
         } else {
             Err(ConfigErrors(errors))
+        }
+    }
+
+    /// The clinical-side privacy policy has to be BUILDABLE, not merely
+    /// well-typed: an unknown rule key or an uncompilable pattern would
+    /// otherwise leave the scanner silently short a rule while reporting that
+    /// the jurisdiction was covered, and a blank pseudonym namespace would
+    /// accept an empty `external_ref.namespace` as if it were declared. No
+    /// openEHR spec governs configuration — our own design.
+    fn validate_privacy(&self, errors: &mut Vec<ConfigError>) {
+        if let Err(error) = crate::privacy::PrivacyPolicy::compile(&self.privacy) {
+            errors.push(ConfigError::semantic(error.to_string()));
+        }
+        if self
+            .privacy
+            .subject_namespaces
+            .iter()
+            .any(|namespace| namespace.trim().is_empty())
+        {
+            errors.push(ConfigError::semantic(
+                "privacy.subject_namespaces carries a blank entry; every pseudonym namespace is \
+                 a name an EHR_STATUS subject reference may claim"
+                    .to_owned(),
+            ));
         }
     }
 
@@ -1302,6 +1329,126 @@ mod tests {
         assert_eq!(value["auth"]["basic"]["users"][0]["roles"][0], "ADMIN");
         assert_eq!(value["auth"]["oidc"]["issuer"], "https://idp.example");
         assert_eq!(value["multimedia"]["access_key_id"], "AKIA_PUBLIC_ID");
+    }
+
+    /// The `[privacy]` section is reachable from the environment, both scalars
+    /// and both lists, and its semantic validation runs.
+    #[test]
+    fn the_privacy_section_maps_from_the_environment() {
+        let c = assemble_ok(
+            None,
+            &env(&[
+                (
+                    "FERROEHR__PRIVACY__SUBJECT_NAMESPACES",
+                    "urn:ferroehr:pseudonym,mpi.example",
+                ),
+                ("FERROEHR__PRIVACY__ALLOW_IDENTIFIED_PARTIES_IN_EHR", "true"),
+                ("FERROEHR__PRIVACY__IDENTIFIER_SCAN__MODE", "warn"),
+                (
+                    "FERROEHR__PRIVACY__IDENTIFIER_SCAN__RULES",
+                    "nl-bsn,gb-nhs-number",
+                ),
+                (
+                    "FERROEHR__PRIVACY__IDENTIFIER_SCAN__PATTERNS",
+                    r"MRN-[0-9]{6},PAT[0-9]{8}",
+                ),
+            ]),
+            &[],
+        );
+        assert_eq!(
+            c.privacy.subject_namespaces,
+            vec![
+                "urn:ferroehr:pseudonym".to_owned(),
+                "mpi.example".to_owned()
+            ]
+        );
+        assert!(c.privacy.allow_identified_parties_in_ehr);
+        assert_eq!(
+            c.privacy.identifier_scan.mode,
+            crate::privacy::config::ScanMode::Warn
+        );
+        assert_eq!(
+            c.privacy.identifier_scan.rules,
+            vec!["nl-bsn".to_owned(), "gb-nhs-number".to_owned()]
+        );
+        assert_eq!(
+            c.privacy.identifier_scan.patterns,
+            vec!["MRN-[0-9]{6}".to_owned(), "PAT[0-9]{8}".to_owned()]
+        );
+        c.validate()
+            .expect("a well-formed privacy section validates");
+    }
+
+    /// A pattern that does not compile is a BOOT error naming the pattern, not
+    /// a scanner that silently runs one rule short.
+    #[test]
+    fn an_uncompilable_scan_pattern_is_a_boot_error() {
+        let c = assemble_ok(
+            None,
+            &env(&[("FERROEHR__PRIVACY__IDENTIFIER_SCAN__PATTERNS", "[unclosed")]),
+            &[],
+        );
+        let errors = c
+            .validate()
+            .expect_err("an invalid pattern must refuse boot");
+        assert!(
+            errors.to_string().contains("[unclosed"),
+            "the refusal must name the pattern: {errors}"
+        );
+    }
+
+    /// An identifier rule this build does not ship is a BOOT error listing the
+    /// rules it does — never a jurisdiction the operator believes is covered
+    /// and is not.
+    #[test]
+    fn an_unknown_identifier_rule_is_a_boot_error_listing_the_shipped_rules() {
+        let c = assemble_ok(
+            None,
+            &env(&[(
+                "FERROEHR__PRIVACY__IDENTIFIER_SCAN__RULES",
+                "nl-bsn,zz-invented",
+            )]),
+            &[],
+        );
+        let errors = c
+            .validate()
+            .expect_err("an unknown rule key must refuse boot");
+        let rendered = errors.to_string();
+        assert!(rendered.contains("zz-invented"), "{rendered}");
+        assert!(rendered.contains("gb-nhs-number"), "{rendered}");
+    }
+
+    /// The shipped default activates every rule the build carries, derived from
+    /// the registry rather than restated — a rule added without reaching the
+    /// default would protect nobody.
+    #[test]
+    fn the_default_rule_set_is_every_shipped_rule() {
+        let default: Vec<String> = crate::privacy::detect::built_in_rules()
+            .iter()
+            .map(|rule| rule.key.to_owned())
+            .collect();
+        assert_eq!(
+            FerroEhrConfig::default().privacy.identifier_scan.rules,
+            default
+        );
+    }
+
+    /// A blank pseudonym namespace would accept an empty
+    /// `external_ref.namespace` as if a deployment had declared it.
+    #[test]
+    fn a_blank_pseudonym_namespace_is_a_boot_error() {
+        let c = assemble_ok(
+            None,
+            &env(&[("FERROEHR__PRIVACY__SUBJECT_NAMESPACES", "  ")]),
+            &[],
+        );
+        let errors = c
+            .validate()
+            .expect_err("a blank namespace must refuse boot");
+        assert!(
+            errors.to_string().contains("privacy.subject_namespaces"),
+            "the refusal must name the key: {errors}"
+        );
     }
 
     // ── 6. Template sync ──────────────────────────────────────────────────────

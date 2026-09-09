@@ -68,6 +68,7 @@ pub(super) const SECTIONS: &[&str] = &[
     "multimedia",
     "audit",
     "subject_proxy",
+    "privacy",
 ];
 
 /// The two PERMANENT conventional aliases — 12-factor ecosystem names every
@@ -105,6 +106,9 @@ pub(super) const LIST_KEYS: &[&str] = &[
     "smart.endpoints.scopes_supported",
     "smart.endpoints.capabilities",
     "signing.retired_key_paths",
+    "privacy.subject_namespaces",
+    "privacy.identifier_scan.rules",
+    "privacy.identifier_scan.patterns",
     // `authz.abac.policy` is a MAP, so the env grammar reaches into it the way
     // it reaches `subject_proxy.systems.<name>`. The resource kinds are the
     // closed set the enforcement point consults (`ResourceKind`), so each is

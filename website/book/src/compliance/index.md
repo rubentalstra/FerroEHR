@@ -11,6 +11,14 @@ sources and the split of duties. A hospital CISO wants the controls and their
 status. A developer wants to know where the boundary between clinical and
 identifying data runs. Each of those three readings takes about ten minutes.
 
+It is also written in two layers, because openEHR is not a national standard
+and FerroEHR is published for every country that runs it. The GDPR, the EDPB
+guidelines and the EHDS apply to every EU deployment and come first. After
+them come the national sections, one per jurisdiction, each on top of that
+same EU layer. The Netherlands is filled in first because that is where the
+project's own deployments are, not because it is the default; the
+[national law](#national-law) section says how to add another.
+
 <!-- toc -->
 
 ## What FerroEHR claims, and what it does not
@@ -187,7 +195,32 @@ the regulation's own final provisions rather than today.
 | **Chapter III**, EHR systems: a European interoperability software component and a European logging software component, with published technical documentation | A [conformance record](../conformance.md) and an [audit model](../audit.md) to map onto those components | readiness planned, [#3168](https://github.com/rubentalstra/FerroEHR/issues/3168), [#3169](https://github.com/rubentalstra/FerroEHR/issues/3169), [#3170](https://github.com/rubentalstra/FerroEHR/issues/3170), [#3171](https://github.com/rubentalstra/FerroEHR/issues/3171) | Decide whether you are the manufacturer of the EHR system you put into service |
 | **Chapter IV**, secondary use | [AQL](../querying-aql.md) over the stored record, and a [change-event outbox](../beyond-core/amqp.md) | a separate pseudonymisation domain for secondary use is planned, [#3160](https://github.com/rubentalstra/FerroEHR/issues/3160) | Deal with the health data access body; a CDR is not a data-holder process |
 
-## Dutch law: UAVG and Wabvpz
+## National law
+
+Everything above this line applies to every EU deployment. Everything below it
+is one country's law on top of it, and a deployment reads only its own
+section plus the EU layer.
+
+One jurisdiction is filled in today. The product side of the split is already
+plural: the write-path
+[identifier scanner](../installation/config-privacy.md) ships a named rule per
+national identifier — Finland, the United Kingdom, the Netherlands, Norway and
+Sweden — each transcribing the checksum its own issuing register publishes,
+and a deployment selects the ones its content can carry. Denmark and Belgium
+are named there too, with the reason each is deliberately absent.
+
+**Adding a jurisdiction** takes three things, and none of them is a change to
+how the scanner works: the national acts that sit on top of the GDPR, as a
+section in the shape of the Dutch one below (provision, what the product
+ships, tracker status, what the organisation must do); the national security
+and logging standards, in the shape of the NEN section; and, where the country
+issues a personal identifier with a published algorithm, a rule in
+`app/ferroehr/src/privacy/detect.rs` citing the register that defines it. Open
+an issue with the sources and the project will carry it — a checksum
+transcribed from a secondary source is refused, because a rule that guesses
+tells an operator their data was scanned when it was not.
+
+### The Netherlands: UAVG and Wabvpz
 
 Two Dutch acts sit on top of the GDPR for a care provider. The
 [UAVG](https://wetten.overheid.nl/BWBR0040940) is the national implementation
@@ -203,7 +236,7 @@ record.
 | **Wabvpz Art. 15d**, electronic access and copy for the patient | The full record over the openEHR REST API, and [EHR Extract export](../beyond-core/messaging.md) for a whole record | shipped | Build the patient-facing route and authenticate the patient |
 | **Wabvpz Art. 15e**, a record of who made data available and who consulted it | The ATNA trail records reads, writes and refusals with the agent, the patient, the action and the outcome, and answers a per-patient search | shipped | Turn the trail into something a patient can read, and set retention |
 
-## NEN 7510, NEN 7512 and NEN 7513
+### The Netherlands: NEN 7510, NEN 7512 and NEN 7513
 
 The [NEN 7510 family](https://www.nen.nl/zorg-welzijn/ict-in-de-zorg/informatiebeveiliging-in-de-zorg)
 governs information security in Dutch healthcare. NEN 7510 is a
