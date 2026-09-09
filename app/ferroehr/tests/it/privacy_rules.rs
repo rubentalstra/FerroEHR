@@ -110,9 +110,7 @@ fn an_unconfigured_namespace_is_refused() {
 fn a_non_uuid_subject_id_is_refused_and_the_value_never_travels() {
     let findings = enforcing().findings(
         "EHR_STATUS",
-        // privacy-allow: a synthetic nine-digit value, chosen to make the point that
-        // the refusal must not echo it
-        &status_with_subject(PSEUDONYM_NS, "111222333"),
+        &status_with_subject(PSEUDONYM_NS, "111222333"), // privacy-allow: synthetic, and the refusal must not echo it
     );
     // Two rules see it at once: the subject rule (not a UUID) and the scanner
     // (a value shaped like a BSN). Both report the same path, neither the value.
@@ -124,8 +122,7 @@ fn a_non_uuid_subject_id_is_refused_and_the_value_never_travels() {
     assert_eq!(refusals[0].path, "EHR_STATUS/subject/external_ref/id/value");
     for finding in &findings {
         assert!(
-            // privacy-allow: asserting the value is ABSENT from every message
-            !finding.message.contains("111222333"),
+            !finding.message.contains("111222333"), // privacy-allow: synthetic, asserted ABSENT
             "a refusal must name the shape, never the value: {}",
             finding.message
         );
@@ -253,8 +250,7 @@ fn a_bsn_in_free_text_is_a_finding() {
         "_type": "COMPOSITION",
         "content": [{ "_type": "EVALUATION", "data": { "_type": "ITEM_TREE", "items": [
             { "_type": "ELEMENT", "value": { "_type": "DV_TEXT",
-              // privacy-allow: a synthetic nine-digit value passing the eleven-test
-              "value": "referral for 111222333" } }
+              "value": "referral for 111222333" } } // privacy-allow: synthetic, passes the eleven-test
         ] } }]
     });
     let findings = policy(&PrivacyConfig::default()).findings("COMPOSITION", &composition);
@@ -279,8 +275,7 @@ fn a_terminology_code_that_satisfies_a_checksum_by_chance_is_not_a_finding() {
         "category": { "_type": "DV_CODED_TEXT", "value": "event", "defining_code": {
             "_type": "CODE_PHRASE",
             "terminology_id": { "_type": "TERMINOLOGY_ID", "value": "SNOMED-CT" },
-            // privacy-allow: a terminology code from the vendored fixtures
-            "code_string": "288526004" } }
+            "code_string": "288526004" } } // privacy-allow: a terminology code from the vendored fixtures
     });
     assert!(
         policy(&PrivacyConfig::default())
@@ -291,8 +286,7 @@ fn a_terminology_code_that_satisfies_a_checksum_by_chance_is_not_a_finding() {
     // the slot, so it cannot blind the scanner anywhere else.
     let narrative = json!({
         "_type": "COMPOSITION",
-        // privacy-allow: the same digits, deliberately outside the coded slot
-        "name": { "_type": "DV_TEXT", "value": "note 288526004" }
+        "name": { "_type": "DV_TEXT", "value": "note 288526004" } // privacy-allow: a SNOMED CT identifier, deliberately outside the coded slot
     });
     assert_eq!(
         paths(&policy(&PrivacyConfig::default()).findings("COMPOSITION", &narrative)),
@@ -369,8 +363,7 @@ fn every_shipped_jurisdiction_is_scanned_by_the_default_policy() {
     // caught, not only the one the build was written in.
     let default = policy(&PrivacyConfig::default());
     for (key, value) in [
-        // privacy-allow: synthetic, constructed from the published algorithms
-        ("nl-bsn", "111222333"),
+        ("nl-bsn", "111222333"), // privacy-allow: synthetic, from the published algorithm
         ("no-fodselsnummer", "15038545660"),
         ("se-personnummer", "9001011239"),
         ("gb-nhs-number", "9434767016"),
@@ -420,8 +413,7 @@ fn the_unenforced_default_policy_finds_nothing() {
     let composition = json!({
         "_type": "COMPOSITION",
         "composer": { "_type": "PARTY_IDENTIFIED", "name": "Dr Author" },
-        // privacy-allow: a synthetic nine-digit value passing the eleven-test
-        "name": { "_type": "DV_TEXT", "value": "111222333" }
+        "name": { "_type": "DV_TEXT", "value": "111222333" } // privacy-allow: synthetic, passes the eleven-test
     });
     assert!(
         PrivacyPolicy::default()
@@ -442,8 +434,7 @@ fn warn_mode_still_reports_the_finding_and_keeps_its_class() {
     });
     let composition = json!({
         "_type": "COMPOSITION",
-        // privacy-allow: a synthetic nine-digit value passing the eleven-test
-        "name": { "_type": "DV_TEXT", "value": "111222333" }
+        "name": { "_type": "DV_TEXT", "value": "111222333" } // privacy-allow: synthetic, passes the eleven-test
     });
     let findings = warning.findings("COMPOSITION", &composition);
     assert_eq!(findings.len(), 1);

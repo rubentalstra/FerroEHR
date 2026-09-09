@@ -99,7 +99,7 @@ identifier rules.
 
 | Key | Type | Default | Description |
 |---|---|---|---|
-| `mode` | `strict` \| `warn` | `strict` | `strict` refuses the write; `warn` accepts it and records a warning naming the RM path and the rule. |
+| `mode` | `strict` or `warn` | `strict` | `strict` refuses the write; `warn` accepts it and records a warning naming the RM path and the rule. |
 | `rules` | list of rule keys | every rule the build ships | The national personal-identifier rules to scan for. An unknown key is a boot error listing the shipped keys. |
 | `patterns` | list of regular expressions | `[]` | Extra patterns for the kinds no build can ship a rule for. |
 

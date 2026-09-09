@@ -61,9 +61,9 @@ use crate::privacy::detect::{CustomPattern, IdentifierRule};
 /// The JSON key whose value is a terminology code by construction, and which
 /// the identifier scanner therefore skips.
 ///
-/// `code_string` is the only string attribute of `CODE_PHRASE` (RM support
-/// `UML/classes/org.openehr.rm.support.identification.adoc`; `terminology_id`
-/// is an object), and no other RM class declares an attribute of that name, so
+/// `code_string` is the only string attribute of `CODE_PHRASE` (BASE `base_types`
+/// `master06-terminology_package.adoc` §Class Definitions; `terminology_id` is
+/// an object), and no other RM class declares an attribute of that name, so
 /// the key alone identifies the slot. Every checksum rule accepts some fraction
 /// of random digit runs, and a terminology code system's identifiers are digit
 /// runs by construction, so this one slot is where the collision is systematic

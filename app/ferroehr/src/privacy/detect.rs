@@ -19,7 +19,7 @@
 //! and clinical content is full of numbers, so a rule narrows itself with
 //! whatever structure it actually has (two control digits, an embedded date, a
 //! non-numeric token shape) and the caller skips the RM slots whose value space
-//! is machine codes ([`super::TERMINOLOGY_CODE_KEY`]).
+//! is machine codes (the `CODE_PHRASE.code_string` slot).
 
 use std::sync::LazyLock;
 
@@ -466,7 +466,7 @@ mod tests {
     #[test]
     fn nl_bsn_runs_the_elfproef() {
         // privacy-allow: synthetic, constructed to satisfy the published arithmetic
-        accepts_and_refuses("nl-bsn", "111222333", "111222334");
+        accepts_and_refuses("nl-bsn", "111222333", "111222334"); // privacy-allow: synthetic
         let rule = detector("nl-bsn");
         // privacy-allow: the same digits, undelimited and over-length
         for miss in ["1112223334", "a111222333b", "field_111222333", "11122233"] {
@@ -564,10 +564,10 @@ mod tests {
     fn multibyte_text_never_panics_and_still_delimits() {
         for rule in built_in_rules() {
             // privacy-allow: synthetic values inside multibyte text
-            let _ = rule.matches("patiënt 111222333 café — 15038545660 · 9001011239");
+            let _ = rule.matches("patiënt 111222333 café — 15038545660 · 9001011239"); // privacy-allow: synthetic
         }
         // privacy-allow: synthetic, and the multibyte characters are delimiters
-        assert!(detector("nl-bsn").matches("ø111222333ø"));
+        assert!(detector("nl-bsn").matches("ø111222333ø")); // privacy-allow: synthetic
     }
 
     #[test]
