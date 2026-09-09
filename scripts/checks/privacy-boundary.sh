@@ -160,9 +160,9 @@ expect_path() { # <expected hit|miss> <path>
 }
 
 self_test() {
-  # The eleven-test itself. 111222333 sums to 66 and passes; the same number
-  # with its last digit changed sums to 65 and fails, which is the mutation
-  # that proves the arithmetic runs rather than a length check.
+  # The eleven-test itself. The number below sums to 66 and passes; the same
+  # number with its last digit changed sums to 65 and fails, which is the
+  # mutation that proves the arithmetic runs rather than a length check.
   expect_detector scan_bsn hit 'a nine-digit number passing the eleven-test' \
     'bsn 111222333 in a fixture' # privacy-allow: self-test fixture, not a real number
   expect_detector scan_bsn miss 'the same number with one digit changed' \
