@@ -68,8 +68,9 @@ workflow refuses a tag that has no matching section here.
   source-available openEHR CDR with a published, tracker-backed EU compliance
   posture and an EHDS conformity self-assessment on its roadmap, and it claims
   no certification, no conformity and no compliant deployment. The
-  pseudonymisation boundary is written as planned throughout, with its issue
-  numbers, because the schema split and the linkage service are not merged.
+  schema and role split is described as shipped; the resolve map, the
+  identifier constraints and the per-domain logging are described as planned,
+  with their issue numbers.
   Every legal source is linked to its official publisher, and every openEHR
   statement to the published specification section it comes from.
 - **The storage-parity sweep has a repair to go with it** (#3143).

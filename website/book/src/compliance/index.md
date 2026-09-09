@@ -71,30 +71,47 @@ path live is FerroEHR's own design, and no openEHR spec governs it.
 
 ### What ships today
 
-Clinical content and demographic parties share one PostgreSQL schema, `ehr`,
-and one runtime database role, `ferroehr_app`. A demographic contribution is
-distinguished by carrying no owning EHR rather than by living anywhere else.
-The controls that do apply across both are the same ones: role- and
+Clinical content and demographic parties live in separate PostgreSQL schemas,
+`ehr` and `demographic`, each with its own archival tier and its own runtime
+database roles. `ferroehr_ehr` and `ferroehr_demographic`, and a read-only twin
+of each, are `NOINHERIT`, hold explicit grants on one domain only, and carry an
+explicit revoke on the other. The server refuses to start if that does not
+hold: a self-check enumerates every table, view, sequence and function in each
+domain and names the role and the object it can reach. The database refuses the
+mix as well, in both directions, so a code path that missed the split fails as
+a write error rather than leaking quietly.
+
+The separation of schemas is unconditional. Pointing the demographic pool at
+its own DSN (`[db] demographic_url`) makes it a separation of credentials too,
+which is what stops one leaked connection string from reaching both.
+
+The controls that apply across both domains are the same: role- and
 attribute-based authorization, per-EHR access settings, tenant row-level
-security, and the audit trail. Both sides also carry openEHR's own provenance,
+security, and the audit trail. Both sides carry openEHR's own provenance,
 because every write commits a contribution and its audit in the same
 transaction, which is the versioning discipline the
 [Change Control Package](https://specifications.openehr.org/releases/RM/Release-1.1.0/common.html#_change_control_package)
 defines.
 
+What is **not** yet separated is the resolve map that rejoins the two. Today the
+subject reference on the clinical side is whatever a client supplied; there is
+no third domain holding the mapping under its own role and its own audit, and
+no constraint keeping a national identifier off the clinical side.
+
 ```mermaid
 flowchart LR
     client["API client"] --> server["FerroEHR server"]
-    server -->|ferroehr_app| ehr[("ehr schema:<br/>clinical versions, nodes,<br/>demographic parties")]
-    server -->|ferroehr_app| audit[("audit schema:<br/>ATNA record repository")]
+    server -->|ferroehr_ehr| ehr[("ehr schema:<br/>clinical versions and nodes")]
+    server -->|ferroehr_demographic| demo[("demographic schema:<br/>parties and identifiers")]
+    server -->|audit writer| audit[("audit schema:<br/>ATNA record repository")]
 ```
 
 ### What is planned
 
-The boundary splits the store into separate schemas with non-overlapping
-database roles, so no single runtime credential reaches both the clinical
-content and the identifying data, and the resolve map that rejoins them is a
-third domain with its own role and its own audit. The whole programme is
+The schema and role split is done. What remains is the rest of the domain: a
+resolve map with its own role and its own audit, a clinical side that refuses
+identifying data outright, encrypted national identifiers, per-domain access
+logging, and per-domain keys and backups. The whole programme is
 [#3152](https://github.com/rubentalstra/FerroEHR/issues/3152).
 
 ```mermaid
@@ -105,11 +122,10 @@ flowchart LR
     server2 -->|linkage role| link[("linkage schema:<br/>party to EHR resolve map")]
 ```
 
-None of the following is shipped. Each row is an open issue.
+Each row below is an open issue.
 
 | Planned control | Issue |
 |---|---|
-| Demographic parties move to a `demographic` schema with their own runtime role | [#3153](https://github.com/rubentalstra/FerroEHR/issues/3153) |
 | The clinical side refuses identifying data, and the subject reference is constrained to a pseudonym namespace | [#3154](https://github.com/rubentalstra/FerroEHR/issues/3154) |
 | National identifiers stored encrypted, looked up by key, resolved under audit | [#3155](https://github.com/rubentalstra/FerroEHR/issues/3155) |
 | Per-domain access logging for reads and queries | [#3156](https://github.com/rubentalstra/FerroEHR/issues/3156) |
@@ -118,9 +134,11 @@ None of the following is shipped. Each row is an open issue.
 | Cross-domain cohort queries with a demographic predicate and a clinical selection | [#3159](https://github.com/rubentalstra/FerroEHR/issues/3159) |
 | A secondary-use read model as a separate pseudonymisation domain | [#3160](https://github.com/rubentalstra/FerroEHR/issues/3160) |
 
-Until those land, treat a FerroEHR database as holding directly identifying
-data alongside clinical data, and size your access control, backup handling
-and risk assessment accordingly. The
+Until those land, a FerroEHR database still holds the information that rejoins
+a record to a person: the two domains are separated, and nothing yet stops a
+client putting a directly identifying value on the clinical side, nor holds the
+resolve map apart from either. Size your access control, backup handling and
+risk assessment on that, not on the schema split alone. The
 [threat model](../threat-model.md) states the residual risk at each boundary
 the product does defend.
 
@@ -133,7 +151,7 @@ repository actually touches.
 
 | What the article asks for | What FerroEHR ships | Tracker | What the deploying organisation must do |
 |---|---|---|---|
-| **Art. 4(5)** pseudonymisation: identifying data kept separately, under technical measures | Nothing yet: clinical and demographic data share one schema and one runtime role | planned, [#3152](https://github.com/rubentalstra/FerroEHR/issues/3152) | Treat the store as directly identifying; keep the separation at your own layer if you need it now |
+| **Art. 4(5)** pseudonymisation: identifying data kept separately, under technical measures | Separate schemas with non-overlapping `NOINHERIT` roles, enforced by grants, by a boot-time self-check and by a database constraint in both directions; optionally separate credentials | partly shipped, [#3153](https://github.com/rubentalstra/FerroEHR/issues/3153); the resolve map and the identifier constraints are [#3158](https://github.com/rubentalstra/FerroEHR/issues/3158) and [#3154](https://github.com/rubentalstra/FerroEHR/issues/3154) | Point the demographic pool at its own DSN, and keep the additional information out of the clinical side until those land |
 | **Art. 5(1)(f)** integrity and confidentiality | TLS 1.3 with optional mutual authentication, [authentication and authorization](../security.md), per-version digest [signing](../signing/index.md), a tamper-evident audit chain | shipped | Terminate TLS correctly, run the identity provider, hold the keys |
 | **Art. 5(2)** accountability: being able to demonstrate compliance | An audit trail of every access, [retrievable over ITI-81](../audit.md#retrieving-audit-records-iti-81), plus openEHR's own contribution and audit chain on every write | shipped | Keep the records, define retention, be able to produce them |
 | **Art. 9** special categories of data | Object-level [`EHR_ACCESS`](../security.md#per-ehr-access-control-ehr_access) settings, RBAC, ABAC, tenant row-level security | shipped | Establish the Art. 9(2) condition and the national derogation that permits the processing |
@@ -151,7 +169,7 @@ where that attacker cannot reach it.
 
 | What the guidelines ask for | What FerroEHR ships | Tracker | What the deploying organisation must do |
 |---|---|---|---|
-| A pseudonymisation domain stated explicitly | Nothing yet; the domain is being defined as the schema and role split | planned, [#3152](https://github.com/rubentalstra/FerroEHR/issues/3152) | State the domain for your deployment, including the parts outside FerroEHR |
+| A pseudonymisation domain stated explicitly | The clinical and demographic domains are separate schemas with their own roles, and the server refuses to boot if a role reaches across | shipped, [#3153](https://github.com/rubentalstra/FerroEHR/issues/3153) | State the domain for your deployment, including the parts outside FerroEHR |
 | The additional information held separately from the pseudonymised data | Nothing yet; the resolve map is planned as its own schema and role | planned, [#3158](https://github.com/rubentalstra/FerroEHR/issues/3158) | Hold your own identity mapping outside the CDR if you need the separation today |
 | A written attacker model, including the insider holding a credential | The [threat model](../threat-model.md) names actors, boundaries and the risk surviving each control | shipped | Extend it with the actors your environment adds: operators, backups, the network |
 | Resolution of a pseudonym recorded and controlled | Every access is audited today; the audited resolve path is planned with the linkage service | partly shipped, [#3155](https://github.com/rubentalstra/FerroEHR/issues/3155) | Restrict who may resolve, and review the trail |
@@ -180,7 +198,7 @@ record.
 | Provision | What FerroEHR ships | Tracker | What the deploying organisation must do |
 |---|---|---|---|
 | **UAVG Art. 30**, exceptions for health data | Access control at the record and the attribute level, and an audit trail of who used it | shipped | Establish that your processing falls inside the exception, per role and per purpose |
-| **UAVG Art. 46**, processing a national identification number | Nothing specific yet; a party identifier is stored like any other in the shared schema | planned, [#3155](https://github.com/rubentalstra/FerroEHR/issues/3155) | Hold the legal authorisation before a BSN enters the store, and keep it out until then |
+| **UAVG Art. 46**, processing a national identification number | A party identifier is stored in the demographic domain, reachable only by that domain's role; it is not yet encrypted, key-looked-up or resolved under its own audit | partly shipped, [#3155](https://github.com/rubentalstra/FerroEHR/issues/3155) | Hold the legal authorisation before a BSN enters the store, and keep it out until #3155 lands |
 | **Wabvpz Art. 4 to 9**, use and verification of the BSN by care providers | Nothing specific: FerroEHR performs no BSN verification and consults no index | not planned | Verify identity and the BSN in your own systems before data reaches the CDR |
 | **Wabvpz Art. 15d**, electronic access and copy for the patient | The full record over the openEHR REST API, and [EHR Extract export](../beyond-core/messaging.md) for a whole record | shipped | Build the patient-facing route and authenticate the patient |
 | **Wabvpz Art. 15e**, a record of who made data available and who consulted it | The ATNA trail records reads, writes and refusals with the agent, the patient, the action and the outcome, and answers a per-patient search | shipped | Turn the trail into something a patient can read, and set retention |
