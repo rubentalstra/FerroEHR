@@ -1,7 +1,7 @@
 {
   "sut": {
     "name": "ferroehr",
-    "version": "4.0.16"
+    "version": "4.1.1"
   },
   "runner": {
     "name": "veredictum",
@@ -20,7 +20,7 @@
     "source": "declared"
   },
   "ixit_digest": "60ab312f3d083668",
-  "statement_digest": "61b6c37faa191436",
+  "statement_digest": "8a5db4ea19e71990",
   "selection_basis": "statement",
   "restapi_specs_version": "1.1.0",
   "outcomes": [
