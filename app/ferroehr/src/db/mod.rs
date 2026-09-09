@@ -166,16 +166,19 @@ pub enum DbError {
     )]
     SchemaNotReady(#[source] SchemaMismatch),
 
-    /// The cold archival tier outlived the primary tier it mirrors.
+    /// A cold archival tier outlived the primary tier it mirrors, in either
+    /// the clinical or the demographic domain.
     #[error(
-        "the cold archival tier (schema `cold`) is present but the primary tier \
-         (`ehr.vo_version`) is not: the two are one repository and have been wiped \
-         apart. The cold tables still hold clinical content, and their column shape \
-         was copied from the primary tables as they stood before the wipe — so this \
+        "a cold archival tier is present but the primary tier it mirrors is not: \
+         `cold` without `ehr.vo_version`, or `cold_demographic` without \
+         `demographic.vo_version`. Each pair is one repository and has been wiped \
+         apart. The cold tables still hold content, and their column shape was \
+         copied from the primary tables as they stood before the wipe — so this \
          server will not adopt them: a re-adopted mirror can differ in shape from the \
          tier it mirrors, and the rows belong to a repository that no longer exists. \
-         Restore the whole database from backup (both schemas together), or, if the \
-         wipe was intended, `DROP SCHEMA cold CASCADE` and start again"
+         Restore the whole database from backup (every schema together), or, if the \
+         wipe was intended, drop the surviving cold schema (`DROP SCHEMA cold \
+         CASCADE` / `DROP SCHEMA cold_demographic CASCADE`) and start again"
     )]
     OrphanedArchiveTier,
 }
@@ -395,25 +398,35 @@ static EXT_MIGRATOR: Migrator = sqlx::migrate!("migrations/ext");
 /// supporting tables.
 static EHR_MIGRATOR: Migrator = sqlx::migrate!("migrations/ehr");
 
+/// The `demographic` schema — the demographic pseudonymisation domain: PARTY
+/// versioned objects and their change control, physically separated from the
+/// clinical schema so no runtime role reads both (GDPR Art. 4(5) and
+/// Art. 32(1)(a); no openEHR spec governs storage layout — our own design).
+/// Runs after `ehr`: its relations are mirrored from the clinical ones and it
+/// moves the parties out of them.
+static DEMOGRAPHIC_MIGRATOR: Migrator = sqlx::migrate!("migrations/demographic");
+
 /// The `audit` schema — the local IHE ATNA Audit Record Repository (the
 /// `audit_event` table). Strictly outside the EHR content (BASE
 /// `architecture_overview/master07-security.adoc` §Access logging: in-system
 /// access logs, never part of the EHR proper); runs after `ehr`.
 static AUDIT_MIGRATOR: Migrator = sqlx::migrate!("migrations/audit");
 
-/// The three migration sets in application order, each paired with the schema
+/// The four migration sets in application order, each paired with the schema
 /// that carries its `_sqlx_migrations` bookkeeping table.
 const MIGRATION_SETS: &[(&str, &Migrator)] = &[
     ("ext", &EXT_MIGRATOR),
     ("ehr", &EHR_MIGRATOR),
+    ("demographic", &DEMOGRAPHIC_MIGRATOR),
     ("audit", &AUDIT_MIGRATOR),
 ];
 
-/// Bootstrap done outside the migrations: the three schemas and `btree_gist`
+/// Bootstrap done outside the migrations: the four schemas and `btree_gist`
 /// (required by the temporal `WITHOUT OVERLAPS` primary key).
 const BOOTSTRAP: &[&str] = &[
     "CREATE SCHEMA IF NOT EXISTS ext",
     "CREATE SCHEMA IF NOT EXISTS ehr",
+    "CREATE SCHEMA IF NOT EXISTS demographic",
     "CREATE SCHEMA IF NOT EXISTS audit",
     "CREATE EXTENSION IF NOT EXISTS btree_gist WITH SCHEMA ext",
 ];
@@ -618,7 +631,7 @@ async fn verify_set(pool: &PgPool, schema: &str, migrator: &Migrator) -> Result<
     Ok(())
 }
 
-/// The bootstrap + two-migrator sequence on one dedicated connection.
+/// The bootstrap + four-migrator sequence on one dedicated connection.
 async fn apply_migrations(conn: &mut PgConnection) -> Result<(), DbError> {
     for &statement in BOOTSTRAP {
         sqlx::query(statement).execute(&mut *conn).await?;
@@ -636,6 +649,11 @@ async fn apply_migrations(conn: &mut PgConnection) -> Result<(), DbError> {
         .await?;
     EHR_MIGRATOR.run(&mut *conn).await?;
 
+    sqlx::query("SET search_path TO demographic, ext")
+        .execute(&mut *conn)
+        .await?;
+    DEMOGRAPHIC_MIGRATOR.run(&mut *conn).await?;
+
     sqlx::query("SET search_path TO audit, ext")
         .execute(&mut *conn)
         .await?;
@@ -644,14 +662,16 @@ async fn apply_migrations(conn: &mut PgConnection) -> Result<(), DbError> {
 }
 
 /// Refuse to migrate a database whose cold archival tier outlived its primary
-/// tier.
+/// tier, in either domain.
 ///
-/// `0007_cold_archive_tier` is the only migration in the `ehr` set whose objects
-/// live outside the `ehr` schema, so a `DROP SCHEMA ehr CASCADE` — a restore gone
-/// wrong, a recreated volume, a wiped test database — leaves the `cold` tables
-/// standing while the bookkeeping that records them goes away. Re-applying then
-/// hits `relation "vo_version" already exists`, which is a permanent boot loop
-/// with no error naming the cause.
+/// Two migrations create objects outside the schema whose set records them:
+/// `ehr/0007_cold_archive_tier` builds `cold` beside `ehr`, and
+/// `demographic/0001_baseline` builds `cold_demographic` beside `demographic`.
+/// So a `DROP SCHEMA … CASCADE` — a restore gone wrong, a recreated volume, a
+/// wiped test database — leaves the mirror tables standing while the
+/// bookkeeping that records them goes away. Re-applying then hits
+/// `relation "vo_version" already exists`, which is a permanent boot loop with
+/// no error naming the cause.
 ///
 /// Making the migration re-runnable would be the wrong repair: those mirrors
 /// were built with `CREATE TABLE … (LIKE …)` against the primary tables as they
@@ -665,8 +685,10 @@ async fn apply_migrations(conn: &mut PgConnection) -> Result<(), DbError> {
 /// covers both a fresh database and a healthy one.
 async fn guard_orphaned_archive_tier(conn: &mut PgConnection) -> Result<(), DbError> {
     let orphaned: bool = sqlx::query_scalar(
-        "SELECT to_regclass('cold.vo_version') IS NOT NULL
-            AND to_regclass('ehr.vo_version') IS NULL",
+        "SELECT (to_regclass('cold.vo_version') IS NOT NULL
+                 AND to_regclass('ehr.vo_version') IS NULL)
+             OR (to_regclass('cold_demographic.vo_version') IS NOT NULL
+                 AND to_regclass('demographic.vo_version') IS NULL)",
     )
     .fetch_one(&mut *conn)
     .await?;
