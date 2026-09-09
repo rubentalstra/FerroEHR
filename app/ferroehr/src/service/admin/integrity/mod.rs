@@ -83,9 +83,6 @@ pub enum StorageDomain {
 }
 
 impl StorageDomain {
-    /// Every domain a sweep covers when the caller names none.
-    pub const ALL: [Self; 2] = [Self::Clinical, Self::Demographic];
-
     /// Returns the stable wire token for this domain.
     #[must_use]
     pub fn as_str(self) -> &'static str {
@@ -495,6 +492,8 @@ pub struct StorageParitySweep<'a> {
 impl std::fmt::Debug for StorageParitySweep<'_> {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         f.debug_struct("StorageParitySweep")
+            .field("domain", &self.domain)
+            .field("remaining", &self.remaining)
             .field("scope", &self.scope)
             .field("cursor", &self.cursor)
             .field("counts", &self.counts)
@@ -605,6 +604,12 @@ impl StorageParitySweep<'_> {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn domain_tokens_are_the_documented_wire_values() {
+        assert_eq!(StorageDomain::Clinical.as_str(), "clinical");
+        assert_eq!(StorageDomain::Demographic.as_str(), "demographic");
+    }
 
     #[test]
     fn defect_tokens_are_the_documented_wire_values() {
