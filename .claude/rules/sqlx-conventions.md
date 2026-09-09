@@ -15,14 +15,27 @@ use it). **Not sea-orm.** Target PostgreSQL 18.6+.
   enterprise-grade): the unified `node` table, the temporal
   `vo_version` table, supporting tables, and our `ext` helper functions. It
   is live and CNF-pipeline-verified.
-- **Greenfield migration policy (owner ruling 2026-08-20, issue #2452):**
-  while the product is greenfield — no installation upgrades a database in
-  place — the squashed baselines and existing migration files ARE edited in
-  place; deployments recreate. Do NOT add checksum-reconciliation machinery,
-  immutability guards, or upgrade-path repair for edited migrations, and do
-  not re-file the in-place edits as a defect. sqlx's applied-migration
-  immutability discipline arms only when the owner declares stabilization
-  (a future explicit ruling), at which point migrations become append-only.
+- **Migrations are APPEND-ONLY (owner ruling 2026-09-09, declaring the
+  stabilization the 2026-08-20 greenfield ruling reserved).** People run
+  FerroEHR now, so wiping a volume is no longer an option and an installation
+  upgrades its database in place. **Never edit, rename or delete a migration
+  file that exists on `main`** — including the squashed baselines, including a
+  comment or a typo. sqlx records a checksum of each applied migration and
+  refuses a database whose recorded checksum no longer matches the file
+  (https://docs.rs/sqlx/latest/sqlx/migrate/struct.Migrator.html), so an edit
+  does not change history, it locks every existing installation out of its own
+  database at boot.
+- **A schema change is a NEW file, always.** Altering an existing table,
+  adding a constraint, backfilling a column, correcting a defect in an earlier
+  migration: each is a new `sqlx migrate add` file that carries the change
+  forward. A migration that was wrong is superseded, never rewritten.
+- Enforcement (tier 4): `scripts/checks/migration-immutability.sh`, run by the
+  `migration-immutability` CI job over the pull request's diff against its
+  merge base. It fails on any modification, rename or deletion under
+  `app/ferroehr/migrations/`; an added file passes, and so does further work
+  on a file this branch itself added, because the comparison is against the
+  base. **There is deliberately no escape-hatch label:** the checksum makes
+  the rule absolute, so an exception would only ever be a broken deployment.
 - Create migrations with the official CLI only:
   `sqlx migrate add --source app/ferroehr/migrations/<schema> --sequential <desc>`,
   written as modern PG 18 SQL (`uuidv7()`, temporal `WITHOUT OVERLAPS`,

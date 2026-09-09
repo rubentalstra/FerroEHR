@@ -62,6 +62,14 @@ of both `ferroehr_migrator` and `ferroehr_app`.
   `ferroehr_app` only, which is the least-privilege production posture: an
   application-level SQL flaw can then reach rows, never the schema.
 
+Migrations are **append-only**, so upgrading an existing database in place is
+the supported path and always has been the one your data takes. A released
+migration is never edited: sqlx records a checksum of each applied file and
+refuses a database whose recorded checksum no longer matches, so a corrected
+schema arrives as a new migration rather than as a change to an old one. A CI
+guard fails any pull request that modifies, renames or deletes a migration the
+base branch already carries.
+
 With `verify`, something else has to run the migrations first. Use the binary's
 own subcommand under the migrator DSN: a CI/CD stage, a one-shot job, or the
 Helm chart's `migrations.job.enabled` pre-install/pre-upgrade hook Job, which

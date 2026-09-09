@@ -32,7 +32,7 @@
 - [K8s testing uses a compose postgres](k8s-testing-uses-compose-postgres.md) — database runs in docker compose on the host and the chart points at it; never deploy postgres into the test cluster
 - [This is a rewrite, not inherited code](rewrite-not-inherited-code.md) — existing code is never assumed correct; read the ancestor spec + existing code before implementing; breaking changes preferred over preserving bad code; distrust instruments too
 - [One Closes keyword per issue; current milestone always](pr-closes-one-keyword-per-issue.md) — "Closes #1, #2, #3" closes only #1, verify after merge; every en-route issue goes in the CURRENT milestone, never the next
-- [Greenfield migrations editable](greenfield-migrations-editable.md) — migration files are edited in place while greenfield (deployments recreate); never add checksum/immutability machinery or re-file it as a defect
+- [Migrations are append-only](migrations-are-append-only.md) — owner declared stabilization 2026-09-09: never edit/rename/delete a migration on main (sqlx checksums lock existing installations out); a schema change is a NEW file, guarded by migration-immutability.sh
 - [Rewrite fn docs on update](rewrite-fn-docs-on-update.md) — always fully rewrite a touched function's doc comment; include the /// block in old_string so docs never orphan
 - [UNLOGGED node rejected](unlogged-node-rejected.md) — owner ruling 2026-08-25: node stays LOGGED; never re-propose reduced-durability storage tiers (measured record on #2698)
 - [Public comments: one and short](public-comments-one-and-short.md) — external-facing threads get exactly ONE short plain comment; edit it rather than adding another
