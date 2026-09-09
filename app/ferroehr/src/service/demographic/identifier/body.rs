@@ -151,8 +151,7 @@ mod tests {
                 "details": { "_type": "ITEM_LIST", "items": [
                     { "_type": "ELEMENT", "value": {
                         "_type": "DV_IDENTIFIER", "type": "nl-bsn",
-                        // privacy-allow: synthetic, passes the eleven-test
-                        "id": "111222333", "issuer": "RvIG", "assigner": "RvIG" } },
+                                                "id": "111222333", "issuer": "RvIG", "assigner": "RvIG" } }, // privacy-allow: synthetic
                     { "_type": "ELEMENT", "value": {
                         "_type": "DV_IDENTIFIER", "type": "local-mrn",
                         "id": "MRN-004221", "issuer": "the hospital", "assigner": "the hospital" } }
@@ -168,8 +167,7 @@ mod tests {
             found,
             vec![FoundIdentifier {
                 scheme: "nl-bsn".to_owned(),
-                // privacy-allow: synthetic, passes the eleven-test
-                value: "111222333".to_owned(),
+                value: "111222333".to_owned(), // privacy-allow: synthetic
                 pointer: "/identities/0/details/items/0/value".to_owned(),
             }],
             "only the configured scheme is protected; the local MRN is left alone"
@@ -189,9 +187,8 @@ mod tests {
             .expect("the identifier slot survives");
         assert_eq!(stored, format!("{REFERENCE_PREFIX}{row}"));
         assert_eq!(referenced_row(stored), Some(row));
-        // privacy-allow: synthetic, and the assertion is that it is GONE
         assert!(
-            !body.to_string().contains("111222333"),
+            !body.to_string().contains("111222333"), // privacy-allow: synthetic, asserted GONE
             "the value must not survive anywhere in the stored body"
         );
         // The sibling identifier and the surrounding structure are untouched.
@@ -252,8 +249,7 @@ mod tests {
             "contacts": [{ "addresses": [{ "details": { "items": [
                 { "_type": "ELEMENT", "value": {
                     "_type": "DV_IDENTIFIER", "type": "nl-bsn",
-                    // privacy-allow: synthetic, passes the eleven-test
-                    "id": "111222333" } }
+                                        "id": "111222333" } } // privacy-allow: synthetic
             ]}}]}]
         });
         let found = find(&body, &schemes());
@@ -270,8 +266,7 @@ mod tests {
         // shift which node the pointer names.
         let body = json!({
             "a/b": { "c~d": {
-                // privacy-allow: synthetic, passes the eleven-test
-                "_type": "DV_IDENTIFIER", "type": "nl-bsn", "id": "111222333"
+                                "_type": "DV_IDENTIFIER", "type": "nl-bsn", "id": "111222333" // privacy-allow: synthetic
             }}
         });
         let found = find(&body, &schemes());
