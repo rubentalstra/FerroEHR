@@ -130,6 +130,17 @@ pub const SYSTEM_COMMITTER_NAME: &str = "FerroEHR";
 #[derive(Debug, Clone)]
 pub struct FerroEhrService {
     pub(crate) pool: PgPool,
+    /// The pool serving the **demographic** pseudonymisation domain — the same
+    /// database (or, when a deployment separates the runtime roles, a second
+    /// DSN), with `search_path` pointing at the `demographic` schema.
+    ///
+    /// Every storage function the demographic chapter calls is the clinical
+    /// one, unchanged: the SQL names its relations unqualified, so the pool's
+    /// search path alone decides which domain it reads and writes. Parties are
+    /// physically separated from clinical content (GDPR Art. 4(5) and
+    /// Art. 32(1)(a)); no openEHR spec governs storage layout — our own
+    /// design/extension.
+    pub(crate) demographic_pool: PgPool,
     system_id: String,
     /// The ACTIVE openEHR specification generation set (`spec_profile`).
     /// Boot-fixed; the AQL planner's profile gate and the ingress acceptance
@@ -226,9 +237,17 @@ pub struct FerroEhrService {
 impl FerroEhrService {
     /// Construct the service over a connection pool with the default system id
     /// and the default (server-side `digest`) version signer.
+    ///
+    /// The demographic pool is derived from `pool`'s own connect options
+    /// ([`crate::db::demographic_pool_from`]), so the demographic chapter reads
+    /// and writes the `demographic` schema without any further wiring — the
+    /// SCHEMA separation is always on. A deployment that separates the runtime
+    /// ROLES, tunes the pool, or enables tenancy supplies its own pool with
+    /// [`Self::with_demographic_pool`].
     #[must_use]
     pub fn new(pool: PgPool) -> Self {
         Self {
+            demographic_pool: crate::db::demographic_pool_from(&pool),
             pool,
             system_id: DEFAULT_SYSTEM_ID.to_owned(),
             spec_profile: crate::config::profile::SpecProfile::default(),
@@ -255,6 +274,19 @@ impl FerroEhrService {
     }
 
     // ── Builders (the binary wires each configured subsystem) ────────────────
+
+    /// Install the pool serving the demographic pseudonymisation domain.
+    ///
+    /// This is what makes the ROLE separation a deployment choice: the pool may
+    /// authenticate as `ferroehr_demographic` on its own DSN
+    /// (`[db].demographic_url`), so neither runtime credential can read the
+    /// other domain's relations. Without it, [`Self::new`]'s derived pool runs
+    /// the same schema separation over the clinical credential.
+    #[must_use]
+    pub fn with_demographic_pool(mut self, pool: PgPool) -> Self {
+        self.demographic_pool = pool;
+        self
+    }
 
     /// Selects the openEHR specification generation set this service runs
     /// (`spec_profile`; default `development`).

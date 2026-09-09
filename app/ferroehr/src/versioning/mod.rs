@@ -221,8 +221,14 @@ pub(crate) struct SigningCtx<'a> {
 /// the CONTRIBUTION path runs them too, in the same commit transaction.
 #[async_trait::async_trait]
 pub(crate) trait CommitEnv {
-    /// The connection pool for the commit transaction.
+    /// The connection pool for the commit transaction — the clinical domain.
     fn pool(&self) -> &PgPool;
+    /// The connection pool serving the demographic pseudonymisation domain.
+    ///
+    /// A CONTRIBUTION is committed entirely in one domain: an EHR-scoped set
+    /// through [`Self::pool`], a party-only set through this one. No openEHR
+    /// spec governs storage layout — our own design/extension.
+    fn demographic_pool(&self) -> &PgPool;
     /// The effective openEHR `system_id` for this request.
     fn effective_system_id(&self) -> String;
     /// The default committer `PARTY_PROXY` (the authenticated principal).

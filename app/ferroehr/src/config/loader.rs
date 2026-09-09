@@ -465,6 +465,12 @@ fn resolve_secret_files(config: &mut FerroEhrConfig, errors: &mut Vec<ConfigErro
         config.db.url_file.take(),
         errors,
     );
+    resolve_optional_secret_url(
+        "db.demographic_url",
+        &mut config.db.demographic_url,
+        config.db.demographic_url_file.take(),
+        errors,
+    );
     let default_broker = EventsConfig::default().url;
     resolve_secret_url(
         "events.url",
@@ -546,6 +552,30 @@ fn resolve_secret_url(
     }
     match read_trim(&path) {
         Ok(url) => *target = SecretUrl::new(url),
+        Err(e) => errors.push(e),
+    }
+}
+
+/// Read `path`'s contents into `target` as a [`SecretUrl`], unless `target` is
+/// already set (both-set is an error).
+///
+/// The [`Option`] twin of [`resolve_secret_url`], for a URL with no built-in
+/// default: "the operator set it" is simply "it is `Some`".
+fn resolve_optional_secret_url(
+    key: &str,
+    target: &mut Option<SecretUrl>,
+    file: Option<PathBuf>,
+    errors: &mut Vec<ConfigError>,
+) {
+    let Some(path) = file else { return };
+    if target.is_some() {
+        errors.push(ConfigError::new(format!(
+            "set only one of {key} / {key}_file"
+        )));
+        return;
+    }
+    match read_trim(&path) {
+        Ok(url) => *target = Some(SecretUrl::new(url)),
         Err(e) => errors.push(e),
     }
 }

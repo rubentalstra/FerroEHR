@@ -38,7 +38,8 @@ impl FerroEhrService {
         value: Option<&str>,
         target_path: Option<&str>,
     ) -> Result<Vec<ItemTag>, ServiceError> {
-        let rows = tag_repo::list_tags(&self.pool, None, None, key, value, target_path).await?;
+        let rows = tag_repo::list_tags(&self.demographic_pool, None, None, key, value, target_path)
+            .await?;
         let sid = self.effective_system_id();
         rows.iter()
             .map(|r| party_item_tag(&sid, r))
@@ -57,7 +58,7 @@ impl FerroEhrService {
         target_version: Option<&str>,
     ) -> Result<Vec<ItemTag>, ServiceError> {
         let rows = tag_repo::list_tags(
-            &self.pool,
+            &self.demographic_pool,
             None,
             Some((vo_id, target_version)),
             None,
@@ -84,7 +85,7 @@ impl FerroEhrService {
         vo_id: VoId,
         target_version: Option<&ObjectVersionId>,
     ) -> Result<(), ServiceError> {
-        let stored = crate::versioning::read::object_kind(&self.pool, vo_id).await?;
+        let stored = crate::versioning::read::object_kind(&self.demographic_pool, vo_id).await?;
         if stored != Some(crate::service::demographic::support::kind_of(kind)) {
             return Err(ServiceError::sm(
                 CallStatusType::VersionedObjectDoesNotExist,
@@ -95,7 +96,7 @@ impl FerroEhrService {
             let (_, tree) = crate::versioning::object_version_id::components(version)?;
             let (trunk, branch_number, branch_version) = tree.columns();
             if !crate::storage::version_repo::meta::version_exists(
-                &self.pool,
+                &self.demographic_pool,
                 vo_id,
                 trunk,
                 branch_number,
@@ -171,7 +172,7 @@ impl FerroEhrService {
                 target_path: target_path.as_deref(),
             })
             .collect();
-        let mut tx = self.pool.begin().await?;
+        let mut tx = self.demographic_pool.begin().await?;
         // The replace RETURNS the stored collection (list order), so the
         // response never re-reads the rows the transaction just wrote.
         let stored = tag_repo::replace_tags(
@@ -206,7 +207,7 @@ impl FerroEhrService {
         self.ensure_party_tag_target(kind, vo_id, target_version)
             .await?;
         if !tag_repo::delete_tag(
-            &self.pool,
+            &self.demographic_pool,
             None,
             vo_id,
             tag_target_tail(target_version),

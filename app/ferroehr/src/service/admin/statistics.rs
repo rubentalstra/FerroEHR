@@ -78,7 +78,7 @@ impl FerroEhrService {
         let ids: Vec<String> = sqlx::query_scalar(sql)
             .bind(lo)
             .bind(hi)
-            .fetch_all(&self.pool)
+            .fetch_all(self.contribution_pool(ehr_scoped))
             .await
             .map_err(ServiceError::from)?;
         Ok(ids)
@@ -113,7 +113,7 @@ impl FerroEhrService {
                 "SELECT count(*) FROM contribution WHERE ehr_id IS NULL"
             };
             sqlx::query_scalar(sql)
-                .fetch_one(&self.pool)
+                .fetch_one(self.contribution_pool(ehr_scoped))
                 .await
                 .map_err(ServiceError::from)?
         } else {
@@ -131,11 +131,26 @@ impl FerroEhrService {
             sqlx::query_scalar(sql)
                 .bind(lo)
                 .bind(hi)
-                .fetch_one(&self.pool)
+                .fetch_one(self.contribution_pool(ehr_scoped))
                 .await
                 .map_err(ServiceError::from)?
         };
         Ok(count)
+    }
+
+    /// The pool holding the CONTRIBUTIONs of a service: the clinical one for an
+    /// EHR-scoped service, the demographic one otherwise.
+    ///
+    /// The two pseudonymisation domains keep their own `contribution` and
+    /// `audit` relations, so a statistic over demographic change control is
+    /// answered where that change control lives. No openEHR spec governs
+    /// storage layout — our own design/extension.
+    fn contribution_pool(&self, ehr_scoped: bool) -> &sqlx::PgPool {
+        if ehr_scoped {
+            &self.pool
+        } else {
+            &self.demographic_pool
+        }
     }
 
     /// SM `versioned_composition_count`: the count of distinct COMPOSITION

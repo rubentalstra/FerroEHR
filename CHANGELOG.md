@@ -17,6 +17,30 @@ workflow refuses a tag that has no matching section here.
 
 ### Added
 
+- **Demographic parties live in their own schema, behind their own database
+  role** (#3153). Parties (PERSON, ORGANISATION, GROUP, AGENT, ROLE,
+  PARTY_RELATIONSHIP) and their change control leave the clinical `ehr` schema
+  for a new `demographic` schema with its own `cold_demographic` archival tier,
+  and the database refuses the mix in both directions: a version with no owning
+  EHR cannot enter `ehr`, and one that has an owner cannot enter `demographic`.
+  Four runtime roles replace the single `ferroehr_app` pair:
+  `ferroehr_ehr`, `ferroehr_demographic`, and a read-only twin of each. Each
+  holds explicit grants on its own domain and carries an explicit revoke on the
+  other, all four are `NOINHERIT`, and none is a member of another. The schema
+  separation is unconditional. The new `[db] demographic_url` (or
+  `demographic_url_file`) turns it into a credential separation as well, by
+  pointing the demographic pool at its own DSN. **The server now refuses to
+  boot when the grants are wrong**: a self-check enumerates every table, view,
+  sequence and function in each domain and fails, naming the role and the
+  object it can reach. `ferroehr db verify` runs the same check, and it passes
+  when the roles do not exist, which is the development, compose and
+  test-harness case. The ITS-REST Demographic API, the RM change-control
+  semantics and every version identifier are unchanged. GDPR Art. 4(5) and
+  Art. 32(1)(a), EDPB Guidelines 01/2025; no openEHR spec governs storage
+  layout or database roles. Existing installations migrate in place: the
+  upgrade moves the parties by kind, and refuses before moving anything if it
+  finds an EHR-less row of a kind it does not classify.
+
 - **The documentation site carries a compliance control matrix, generated from
   the tracker** (#3164). A hand-kept compliance table is wrong the first time a
   control ships, so this one is not kept by hand: an issue declares the control
@@ -44,8 +68,9 @@ workflow refuses a tag that has no matching section here.
   source-available openEHR CDR with a published, tracker-backed EU compliance
   posture and an EHDS conformity self-assessment on its roadmap, and it claims
   no certification, no conformity and no compliant deployment. The
-  pseudonymisation boundary is written as planned throughout, with its issue
-  numbers, because the schema split and the linkage service are not merged.
+  schema and role split is described as shipped; the resolve map, the
+  identifier constraints and the per-domain logging are described as planned,
+  with their issue numbers.
   Every legal source is linked to its official publisher, and every openEHR
   statement to the published specification section it comes from.
 - **The storage-parity sweep has a repair to go with it** (#3143).

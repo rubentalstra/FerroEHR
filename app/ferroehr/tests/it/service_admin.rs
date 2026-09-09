@@ -414,8 +414,11 @@ async fn make_person(svc: &FerroEhrService, name: &str) -> String {
 }
 
 /// The number of `vo_version` rows for one versioned object (0 = physically gone).
+/// Version rows of a DEMOGRAPHIC versioned object (a party or a party
+/// relationship), named in the schema the pseudonymisation domain keeps them
+/// in — the pool's own search path serves the clinical schema.
 async fn vo_version_rows(pool: &PgPool, vo: &str) -> i64 {
-    sqlx::query_scalar("SELECT count(*) FROM vo_version WHERE vo_id = $1::uuid")
+    sqlx::query_scalar("SELECT count(*) FROM demographic.vo_version WHERE vo_id = $1::uuid")
         .bind(vo)
         .fetch_one(pool)
         .await
@@ -605,9 +608,9 @@ async fn physical_party_delete_cascades_relationships_and_spares_partner() {
     // No orphaned audits before the delete: every audit row is referenced by a
     // vo_version or contribution.
     let orphan_audits_before: i64 = sqlx::query_scalar(
-        "SELECT count(*) FROM audit a \
-         WHERE NOT EXISTS (SELECT 1 FROM vo_version v WHERE v.audit_id = a.id) \
-           AND NOT EXISTS (SELECT 1 FROM contribution c WHERE c.audit_id = a.id)",
+        "SELECT count(*) FROM demographic.audit a \
+         WHERE NOT EXISTS (SELECT 1 FROM demographic.vo_version v WHERE v.audit_id = a.id) \
+           AND NOT EXISTS (SELECT 1 FROM demographic.contribution c WHERE c.audit_id = a.id)",
     )
     .fetch_one(pool)
     .await
@@ -648,9 +651,9 @@ async fn physical_party_delete_cascades_relationships_and_spares_partner() {
 
     // No orphaned audit rows were left behind (audits swept in the cascade).
     let orphan_audits_after: i64 = sqlx::query_scalar(
-        "SELECT count(*) FROM audit a \
-         WHERE NOT EXISTS (SELECT 1 FROM vo_version v WHERE v.audit_id = a.id) \
-           AND NOT EXISTS (SELECT 1 FROM contribution c WHERE c.audit_id = a.id)",
+        "SELECT count(*) FROM demographic.audit a \
+         WHERE NOT EXISTS (SELECT 1 FROM demographic.vo_version v WHERE v.audit_id = a.id) \
+           AND NOT EXISTS (SELECT 1 FROM demographic.contribution c WHERE c.audit_id = a.id)",
     )
     .fetch_one(pool)
     .await
@@ -730,7 +733,7 @@ async fn archive_marks_vos_idempotently_and_reads_stay_unchanged() {
         .await
         .expect("archive party");
     let party_marked: i64 =
-        sqlx::query_scalar("SELECT count(*) FROM vo_archive WHERE vo_id = $1::uuid")
+        sqlx::query_scalar("SELECT count(*) FROM demographic.vo_archive WHERE vo_id = $1::uuid")
             .bind(&person)
             .fetch_one(pool)
             .await

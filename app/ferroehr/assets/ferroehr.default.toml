@@ -124,6 +124,13 @@ http2_keep_alive_timeout_secs = 10   # PING response deadline before the connect
 [db]
 url = "postgres://ferroehr:ferroehr@localhost:5432/ferroehr"  # PROD: real DSN via env/secret
 #? url_file = "/run/secrets/db-dsn"   # or point at a mounted file instead of passing the DSN as env
+# The demographic pseudonymisation domain always lives in its own `demographic`
+# schema. Set a DSN here to give it its own database ROLE as well
+# (`ferroehr_demographic`), so neither runtime credential can read the other
+# domain's relations; unset, it shares the DSN above. The server refuses to boot
+# when either role can reach across the boundary.
+#? demographic_url = "postgres://ferroehr_demographic:...@localhost:5432/ferroehr"
+#? demographic_url_file = "/run/secrets/db-demographic-dsn"
 # Whether the server issues DDL at boot. "apply" runs the embedded migrations
 # then verifies, which is what makes an empty configuration boot against an
 # empty database; "verify" never issues DDL and refuses to serve unless the

@@ -463,9 +463,9 @@ impl FerroEhrService {
         Ok(out)
     }
 
-    /// The stored-version counts of a set of versioned objects, in ONE
-    /// statement — the demographics chapter's `total_version_count` source
-    /// (never a count round trip per party).
+    /// The stored-version counts of a set of parties, in ONE statement — the
+    /// demographics chapter's `total_version_count` source (never a count round
+    /// trip per party). Reads the demographic domain, where parties live.
     async fn vo_version_counts(
         &self,
         vo_ids: &[VoId],
@@ -478,7 +478,7 @@ impl FerroEhrService {
             "SELECT vo_id, count(*) AS n FROM vo_version_all WHERE vo_id = ANY($1) GROUP BY vo_id",
         )
         .bind(&ids)
-        .fetch_all(&self.pool)
+        .fetch_all(&self.demographic_pool)
         .await?;
         let mut out = std::collections::HashMap::with_capacity(rows.len());
         for r in rows {
@@ -600,7 +600,8 @@ impl FerroEhrService {
         }
         // One statement resolves every referenced party, one more counts their
         // stored versions — never a round-trip pair per party.
-        let mut currents = read_currents(&self.pool, self.spec_profile, &party_ids).await?;
+        let mut currents =
+            read_currents(&self.demographic_pool, self.spec_profile, &party_ids).await?;
         let totals = self.vo_version_counts(&party_ids).await?;
         let mut out = Vec::new();
         for vo_id in party_ids {

@@ -1,0 +1,726 @@
+// SPDX-FileCopyrightText: Ruben Talstra
+// SPDX-License-Identifier: BUSL-1.1
+
+//! The pseudonymisation boundary, exercised the way production runs it: the
+//! cutover, the runtime roles, the service's routing, and the boot gate.
+//!
+//! NOTE: no openEHR spec governs storage layout or database roles — our own
+//! design/extension (GDPR Art. 4(5) and Art. 32(1)(a); the migrations carry
+//! the derivation).
+//!
+//! The cutover tests come first. The testkit clones a template that is already
+//! fully migrated, so every other DB test meets the demographic schema empty
+//! and the data move runs against nothing. That is precisely the half
+//! production does not have: an installation upgrading into this release
+//! carries parties in `ehr`, and the move is the only thing that carries them
+//! across. Those tests therefore reconstruct the pre-move state with raw SQL
+//! inside the migrated clone and re-run the cutover statements against it, so
+//! the move is proven on data rather than on an empty schema.
+//!
+//! The rest prove the boundary holds afterwards: that neither runtime role can
+//! read a single relation in the other domain (connecting as each one, over
+//! relations enumerated from `information_schema` rather than a hand-written
+//! list), that a party committed through the service seam lands in
+//! `demographic` and nowhere else, and that the boot self-check refuses a
+//! database whose grants cross the boundary and passes once they do not.
+
+#![expect(
+    clippy::expect_used,
+    reason = "clippy's in-test lint scoping (clippy.toml `allow-*-in-tests`) only \
+              reaches `#[test]`-annotated functions, so it misses this module's \
+              fixture helpers; a failing fixture must panic at the fixture (the \
+              Rust Book ch11)"
+)]
+
+use sqlx::{Connection, PgConnection, PgPool, Row};
+use uuid::Uuid;
+
+use crate::typed_body::typed;
+use ferroehr::service::FerroEhrService;
+use ferroehr::service::demographic::types::PartyKind;
+
+/// The cutover statements of `demographic/0002_move_parties`, read from the
+/// migration itself rather than restated here.
+///
+/// A copy would drift from the migration the moment either changed, and a test
+/// asserting a copy proves nothing about what an installation actually runs.
+fn cutover_sql() -> String {
+    std::fs::read_to_string(concat!(
+        env!("CARGO_MANIFEST_DIR"),
+        "/migrations/demographic/0002_move_parties.sql"
+    ))
+    .expect("read the cutover migration")
+}
+
+/// Apply the cutover the way the migrator does: the whole file as raw SQL
+/// inside ONE transaction.
+///
+/// Both properties are load-bearing. The file is multi-statement, which a
+/// prepared statement refuses; and its `ON COMMIT DROP` temporary tables carry
+/// the move's working set between statements, so running the statements under
+/// autocommit would drop them after the first one.
+async fn run_cutover(pool: &PgPool) -> Result<(), sqlx::Error> {
+    let mut tx = pool.begin().await?;
+    sqlx::raw_sql(sqlx::AssertSqlSafe(cutover_sql()))
+        .execute(&mut *tx)
+        .await?;
+    tx.commit().await
+}
+
+/// Write the audit and contribution rows every version row needs, leaving the
+/// boundary constraints exactly as the migrated clone carries them.
+///
+/// Returns `(contribution_id, audit_id)`.
+async fn change_control(pool: &PgPool, schema: &str, ehr_id: Option<Uuid>) -> (Uuid, Uuid) {
+    let (audit_id, contribution_id) = (Uuid::now_v7(), Uuid::now_v7());
+    sqlx::query(sqlx::AssertSqlSafe(format!(
+        "INSERT INTO {schema}.audit (id, system_id, change_type, committer) \
+         VALUES ($1, 'test.system', '249', \
+                 '{{\"_type\":\"PARTY_IDENTIFIED\",\"name\":\"tester\"}}'::jsonb)"
+    )))
+    .bind(audit_id)
+    .execute(pool)
+    .await
+    .expect("seed audit");
+    sqlx::query(sqlx::AssertSqlSafe(format!(
+        "INSERT INTO {schema}.contribution (id, ehr_id, audit_id) VALUES ($1, $2, $3)"
+    )))
+    .bind(contribution_id)
+    .bind(ehr_id)
+    .bind(audit_id)
+    .execute(pool)
+    .await
+    .expect("seed contribution");
+    (contribution_id, audit_id)
+}
+
+/// Put one versioned object back where the pre-move release stored it: `ehr`,
+/// with a NULL `ehr_id`.
+///
+/// The clone the testkit hands us has already run the cutover, so its four
+/// boundary constraints come off first: re-running the migration must find the
+/// schema as the previous release left it.
+async fn seed_party_in_the_clinical_schema(pool: &PgPool, kind: &str) -> Uuid {
+    for statement in [
+        "ALTER TABLE ehr.vo_version DROP CONSTRAINT IF EXISTS ck_vo_version_ehr_scoped",
+        "ALTER TABLE ehr.contribution DROP CONSTRAINT IF EXISTS ck_contribution_ehr_scoped",
+        "ALTER TABLE demographic.vo_version DROP CONSTRAINT IF EXISTS ck_dem_vo_version_unscoped",
+        "ALTER TABLE demographic.contribution DROP CONSTRAINT IF EXISTS ck_dem_contribution_unscoped",
+    ] {
+        sqlx::query(statement)
+            .execute(pool)
+            .await
+            .expect("drop the boundary constraint");
+    }
+    let (contribution_id, audit_id) = change_control(pool, "ehr", None).await;
+    let vo_id = Uuid::now_v7();
+    sqlx::query(
+        "INSERT INTO ehr.vo_version \
+           (vo_id, kind, ehr_id, sys_version, trunk_version, sys_period, \
+            creating_system_id, contribution_id, audit_id, body) \
+         VALUES ($1, $2, NULL, 1, 1, tstzrange(now(), NULL), 'test.system', $3, $4, $5)",
+    )
+    .bind(vo_id)
+    .bind(kind)
+    .bind(contribution_id)
+    .bind(audit_id)
+    .bind(format!("{{\"_type\":\"{kind}\"}}"))
+    .execute(pool)
+    .await
+    .expect("seed party version");
+    vo_id
+}
+
+async fn count(pool: &PgPool, sql: &'static str, vo_id: Uuid) -> i64 {
+    sqlx::query(sql)
+        .bind(vo_id)
+        .fetch_one(pool)
+        .await
+        .expect("count")
+        .try_get::<i64, _>(0)
+        .expect("count column")
+}
+
+#[tokio::test]
+async fn the_cutover_carries_a_party_out_of_the_clinical_schema() {
+    let db = testkit::db().await.expect("testkit database");
+    let pool = db.pool();
+    let vo_id = seed_party_in_the_clinical_schema(&pool, "PERSON").await;
+
+    assert_eq!(
+        count(
+            &pool,
+            "SELECT count(*) FROM ehr.vo_version WHERE vo_id = $1",
+            vo_id
+        )
+        .await,
+        1,
+        "the fixture really put the party where the pre-move release stored it"
+    );
+
+    run_cutover(&pool)
+        .await
+        .expect("the cutover migration runs against real data");
+
+    assert_eq!(
+        count(
+            &pool,
+            "SELECT count(*) FROM ehr.vo_version WHERE vo_id = $1",
+            vo_id
+        )
+        .await,
+        0,
+        "the party has left the clinical schema"
+    );
+    assert_eq!(
+        count(
+            &pool,
+            "SELECT count(*) FROM demographic.vo_version WHERE vo_id = $1",
+            vo_id
+        )
+        .await,
+        1,
+        "and arrived in the demographic one"
+    );
+    assert_eq!(
+        count(
+            &pool,
+            "SELECT count(*) FROM demographic.contribution c \
+             JOIN demographic.vo_version v ON v.contribution_id = c.id WHERE v.vo_id = $1",
+            vo_id
+        )
+        .await,
+        1,
+        "with its contribution, so the change-control chain is intact on the far side"
+    );
+    assert_eq!(
+        count(
+            &pool,
+            "SELECT count(*) FROM demographic.audit a \
+             JOIN demographic.vo_version v ON v.audit_id = a.id WHERE v.vo_id = $1",
+            vo_id
+        )
+        .await,
+        1,
+        "and its audit"
+    );
+}
+
+#[tokio::test]
+async fn the_boundary_refuses_a_party_written_back_to_the_clinical_schema() {
+    let db = testkit::db().await.expect("testkit database");
+    let pool = db.pool();
+
+    // Change control first, then the write a code path that missed the split
+    // would attempt. The boundary constraint is left in place: this asserts the
+    // clone the testkit hands every other test already carries it.
+    // The contribution needs a real EHR: its own half of the boundary already
+    // refuses an EHR-less one, which is the constraint the sibling test covers.
+    let ehr_id = Uuid::now_v7();
+    sqlx::query("INSERT INTO ehr.ehr (id, system_id) VALUES ($1, 'test.system')")
+        .bind(ehr_id)
+        .execute(&pool)
+        .await
+        .expect("seed an EHR");
+    let (contribution_id, audit_id) = change_control(&pool, "ehr", Some(ehr_id)).await;
+    let refused = sqlx::query(
+        "INSERT INTO ehr.vo_version \
+           (vo_id, kind, ehr_id, sys_version, trunk_version, sys_period, \
+            creating_system_id, contribution_id, audit_id, body) \
+         VALUES ($1, 'PERSON', NULL, 1, 1, tstzrange(now(), NULL), 'test.system', $2, $3, '{}')",
+    )
+    .bind(Uuid::now_v7())
+    .bind(contribution_id)
+    .bind(audit_id)
+    .execute(&pool)
+    .await;
+
+    let error = refused.expect_err("an EHR-less row must not enter the clinical schema");
+    assert!(
+        error.to_string().contains("ck_vo_version_ehr_scoped"),
+        "the refusal names the boundary constraint rather than failing obscurely: {error}"
+    );
+}
+
+#[tokio::test]
+async fn the_boundary_refuses_an_ehr_scoped_object_in_the_demographic_schema() {
+    let db = testkit::db().await.expect("testkit database");
+    let pool = db.pool();
+
+    let (contribution_id, audit_id) = change_control(&pool, "demographic", None).await;
+    let refused = sqlx::query(
+        "INSERT INTO demographic.vo_version \
+           (vo_id, kind, ehr_id, sys_version, trunk_version, sys_period, \
+            creating_system_id, contribution_id, audit_id, body) \
+         VALUES ($1, 'COMPOSITION', $2, 1, 1, tstzrange(now(), NULL), 'test.system', \
+                 $3, $4, '{}')",
+    )
+    .bind(Uuid::now_v7())
+    .bind(Uuid::now_v7())
+    .bind(contribution_id)
+    .bind(audit_id)
+    .execute(&pool)
+    .await;
+
+    let error = refused.expect_err("a clinical object must not enter the demographic schema");
+    assert!(
+        error.to_string().contains("ck_dem_vo_version_unscoped"),
+        "the refusal names the boundary constraint: {error}"
+    );
+}
+
+#[tokio::test]
+async fn the_cutover_refuses_an_ehr_less_row_it_does_not_classify() {
+    let db = testkit::db().await.expect("testkit database");
+    let pool = db.pool();
+    // A kind the move does not know about. The migration must stop rather than
+    // guess which domain it belongs to, and rather than sweep it across on a
+    // `ehr_id IS NULL` predicate.
+    let vo_id = seed_party_in_the_clinical_schema(&pool, "COMPOSITION").await;
+
+    let refused = run_cutover(&pool).await;
+
+    let error = refused.expect_err("an unclassified EHR-less row must refuse the upgrade");
+    let text = error.to_string();
+    assert!(
+        text.contains("does not") && text.contains("COMPOSITION"),
+        "the refusal names the kind it found, so an operator can decide: {text}"
+    );
+    assert_eq!(
+        count(
+            &pool,
+            "SELECT count(*) FROM demographic.vo_version WHERE vo_id = $1",
+            vo_id
+        )
+        .await,
+        0,
+        "and nothing was moved"
+    );
+}
+
+// ── the runtime roles ────────────────────────────────────────────────────────
+
+/// Each runtime role, with a short per-test login suffix and the schemas the
+/// pseudonymisation boundary bars it from.
+///
+/// The clinical roles are barred from the demographic domain and its cold tier;
+/// the demographic roles from the clinical ones. No openEHR spec governs
+/// database roles — our own design/extension.
+const BARRIERS: &[(&str, &str, &[&str])] = &[
+    ("ew", "ferroehr_ehr", &["demographic", "cold_demographic"]),
+    (
+        "er",
+        "ferroehr_ehr_reader",
+        &["demographic", "cold_demographic"],
+    ),
+    ("dw", "ferroehr_demographic", &["ehr", "cold"]),
+    ("dr", "ferroehr_demographic_reader", &["ehr", "cold"]),
+];
+
+/// `SQLSTATE` 42501 `insufficient_privilege` — what `PostgreSQL` reports for a
+/// refused read, whether the missing grant is on the relation or on its schema
+/// (`PostgreSQL` docs § Appendix A "`PostgreSQL` Error Codes", class 42).
+const SQLSTATE_INSUFFICIENT_PRIVILEGE: &str = "42501";
+
+/// A password for a throwaway login role, fresh per call.
+///
+/// The value is never a secret: the role lives as long as one test against an
+/// ephemeral clone. It is generated rather than written down because a literal
+/// here is indistinguishable, to a scanner and to a reader, from a credential
+/// that does matter, and the repository's own rule is that a finding is fixed
+/// rather than suppressed.
+fn throwaway_password() -> String {
+    format!("pw{}", Uuid::now_v7().simple())
+}
+
+/// Rewrite the userinfo of a testkit clone DSN so a test can connect to the
+/// same database as a different login role (scheme/host/port/database
+/// preserved).
+fn with_role(base_url: &str, user: &str, password: &str) -> String {
+    let (scheme, rest) = base_url.split_once("://").expect("dsn scheme");
+    let host_and_path = rest.split_once('@').map_or(rest, |(_, tail)| tail);
+    format!("{scheme}://{user}:{password}@{host_and_path}")
+}
+
+/// A connection as a fresh non-superuser login role that is a member of
+/// `domain_role`, which is how a production deployment runs (never as
+/// superuser — a superuser bypasses both RLS and, being a superuser, every
+/// privilege check this test is about).
+///
+/// Roles are cluster-global on the shared testkit server, so the login role is
+/// named off the clone's database name and the testkit sweep reaps it.
+async fn role_conn(db: &testkit::TestDb, suffix: &str, domain_role: &str) -> PgConnection {
+    let login = format!("{}_{suffix}", db.name());
+    let password = throwaway_password();
+    sqlx::query(sqlx::AssertSqlSafe(format!(
+        "CREATE ROLE {login} LOGIN PASSWORD '{password}' IN ROLE {domain_role}"
+    )))
+    .execute(&db.pool())
+    .await
+    .expect("create the login role");
+    PgConnection::connect(&with_role(db.url(), &login, &password))
+        .await
+        .expect("connect as the runtime role")
+}
+
+/// Every table, view and sequence in `schemas`, read from `information_schema`
+/// rather than listed by hand — so a relation added to either domain later is
+/// covered by these tests without anybody remembering to extend a list.
+///
+/// Returns `(qualified name, probe statement)` pairs.
+async fn readable_objects(pool: &PgPool, schemas: &[&str]) -> Vec<(String, String)> {
+    let names: Vec<String> = schemas.iter().map(|s| (*s).to_owned()).collect();
+    let tables: Vec<(String, String)> = sqlx::query_as(
+        "SELECT table_schema, table_name FROM information_schema.tables \
+         WHERE table_schema = ANY($1) ORDER BY table_schema, table_name",
+    )
+    .bind(&names)
+    .fetch_all(pool)
+    .await
+    .expect("enumerate tables and views");
+    let sequences: Vec<(String, String)> = sqlx::query_as(
+        "SELECT sequence_schema, sequence_name FROM information_schema.sequences \
+         WHERE sequence_schema = ANY($1) ORDER BY sequence_schema, sequence_name",
+    )
+    .bind(&names)
+    .fetch_all(pool)
+    .await
+    .expect("enumerate sequences");
+    let mut probes: Vec<(String, String)> = tables
+        .into_iter()
+        .map(|(schema, name)| {
+            (
+                format!("{schema}.{name}"),
+                format!("SELECT 1 FROM {schema}.{name} LIMIT 1"),
+            )
+        })
+        .collect();
+    probes.extend(sequences.into_iter().map(|(schema, name)| {
+        (
+            format!("{schema}.{name}"),
+            format!("SELECT last_value FROM {schema}.{name}"),
+        )
+    }));
+    probes
+}
+
+#[tokio::test]
+async fn each_runtime_role_is_refused_every_relation_in_the_other_domain() {
+    let db = testkit::db().await.expect("testkit database");
+    let pool = db.pool();
+
+    for (suffix, domain_role, forbidden) in BARRIERS {
+        let objects = readable_objects(&pool, forbidden).await;
+        assert!(
+            objects.len() > 5,
+            "the enumeration must actually find the other domain's relations, \
+             else this test passes vacuously: {domain_role} saw {objects:?}"
+        );
+        let mut conn = role_conn(&db, suffix, domain_role).await;
+        for (name, probe) in &objects {
+            let refused = sqlx::query(sqlx::AssertSqlSafe(probe.clone()))
+                .execute(&mut conn)
+                .await;
+            let error =
+                refused.expect_err(&format!("{domain_role} must not be able to read {name}"));
+            let code = error
+                .as_database_error()
+                .and_then(sqlx::error::DatabaseError::code)
+                .map(std::borrow::Cow::into_owned);
+            assert_eq!(
+                code.as_deref(),
+                Some(SQLSTATE_INSUFFICIENT_PRIVILEGE),
+                "{domain_role} reading {name} must be refused for want of privilege, \
+                 not fail some other way: {error}"
+            );
+        }
+        drop(conn.close().await);
+    }
+}
+
+#[tokio::test]
+async fn a_party_committed_through_the_service_lands_only_in_the_demographic_domain() {
+    let db = testkit::db().await.expect("testkit database");
+    let pool = db.pool();
+    let service = FerroEhrService::new(pool.clone());
+
+    let created = service
+        .party_create(PartyKind::Person, typed(&a_person()), None)
+        .await
+        .expect("create a person through the service seam");
+    let vo_id: Uuid = created.body["uid"]["value"]
+        .as_str()
+        .expect("uid.value")
+        .split("::")
+        .next()
+        .expect("the versioned-object uuid")
+        .parse()
+        .expect("a uuid");
+
+    // The version, its decomposed content, its change control and the event it
+    // announced are all in the demographic domain.
+    for (what, sql) in [
+        (
+            "the version",
+            "SELECT count(*) FROM demographic.vo_version WHERE vo_id = $1",
+        ),
+        (
+            "its contribution",
+            "SELECT count(*) FROM demographic.contribution c \
+             JOIN demographic.vo_version v ON v.contribution_id = c.id WHERE v.vo_id = $1",
+        ),
+        (
+            "its audit",
+            "SELECT count(*) FROM demographic.audit a \
+             JOIN demographic.vo_version v ON v.audit_id = a.id WHERE v.vo_id = $1",
+        ),
+        (
+            "its outbox event",
+            "SELECT count(*) FROM demographic.event_outbox o \
+             JOIN demographic.vo_version v ON v.contribution_id = o.contribution_id \
+             WHERE v.vo_id = $1",
+        ),
+    ] {
+        assert_eq!(
+            count(&pool, sql, vo_id).await,
+            1,
+            "{what} is in `demographic`"
+        );
+    }
+    assert!(
+        count(
+            &pool,
+            "SELECT count(*) FROM demographic.node WHERE vo_id = $1",
+            vo_id
+        )
+        .await
+            > 0,
+        "and so are its content nodes"
+    );
+
+    // Nothing of it reached the clinical schema. `ehr.vo_version` now refuses an
+    // EHR-less row outright, so a routing miss would have failed the create —
+    // this asserts the whole domain, not only the row the CHECK covers.
+    for (what, sql) in [
+        (
+            "the version",
+            "SELECT count(*) FROM ehr.vo_version WHERE vo_id = $1",
+        ),
+        ("a node", "SELECT count(*) FROM ehr.node WHERE vo_id = $1"),
+        (
+            "an archive row",
+            "SELECT count(*) FROM ehr.vo_archive WHERE vo_id = $1",
+        ),
+    ] {
+        assert_eq!(
+            count(&pool, sql, vo_id).await,
+            0,
+            "the clinical schema must not hold {what} of the party"
+        );
+    }
+    let clinical_events: i64 =
+        sqlx::query_scalar("SELECT count(*) FROM ehr.event_outbox WHERE ehr_id IS NULL")
+            .fetch_one(&pool)
+            .await
+            .expect("count the clinical outbox");
+    assert_eq!(
+        clinical_events, 0,
+        "and the event it announced went to the demographic outbox, not the clinical one"
+    );
+}
+
+#[tokio::test]
+async fn the_boot_self_check_refuses_a_cross_domain_grant() {
+    let db = testkit::db().await.expect("testkit database");
+    let pool = db.pool();
+
+    ferroehr::db::verify_domain_isolation(&pool)
+        .await
+        .expect("a correctly migrated database passes the boot gate");
+
+    // One object of each kind the gate claims to cover, granted and revoked in
+    // turn: the gate must fail while the grant stands and pass once it is gone,
+    // so neither verdict can be the one it always returns.
+    let sequence: String =
+        sqlx::query_scalar("SELECT pg_get_serial_sequence('demographic.event_outbox', 'seq')")
+            .fetch_one(&pool)
+            .await
+            .expect("the demographic outbox identity sequence");
+    for (object, grant, revoke) in [
+        (
+            "demographic.vo_version",
+            "GRANT SELECT ON",
+            "REVOKE SELECT ON",
+        ),
+        (
+            "demographic.vo_version_all",
+            "GRANT SELECT ON",
+            "REVOKE SELECT ON",
+        ),
+        (
+            sequence.as_str(),
+            "GRANT SELECT ON SEQUENCE",
+            "REVOKE SELECT ON SEQUENCE",
+        ),
+    ] {
+        sqlx::query(sqlx::AssertSqlSafe(format!(
+            "{grant} {object} TO ferroehr_ehr"
+        )))
+        .execute(&pool)
+        .await
+        .expect("grant across the boundary");
+
+        let refused = ferroehr::db::verify_domain_isolation(&pool).await;
+        let error = refused.expect_err("a role reaching the other domain must refuse the boot");
+        let text = error.to_string();
+        assert!(
+            text.contains("ferroehr_ehr") && text.contains(object),
+            "the refusal names the role and the object it can reach: {text}"
+        );
+
+        sqlx::query(sqlx::AssertSqlSafe(format!(
+            "{revoke} {object} FROM ferroehr_ehr"
+        )))
+        .execute(&pool)
+        .await
+        .expect("revoke across the boundary");
+        ferroehr::db::verify_domain_isolation(&pool)
+            .await
+            .unwrap_or_else(|e| panic!("the gate passes again once {object} is revoked: {e}"));
+    }
+}
+
+/// A minimal valid PERSON body, authored as canonical JSON exactly as a client
+/// would post it (`.claude/rules/testing.md` §Test-fixture construction,
+/// class 2).
+fn a_person() -> serde_json::Value {
+    serde_json::json!({
+        "_type": "PERSON",
+        "archetype_node_id": "openEHR-DEMOGRAPHIC-PERSON.person.v1",
+        "archetype_details": {
+            "_type": "ARCHETYPED",
+            "archetype_id": { "_type": "ARCHETYPE_ID", "value": "openEHR-DEMOGRAPHIC-PERSON.person.v1" },
+            "rm_version": "1.1.0"
+        },
+        "name": { "_type": "DV_TEXT", "value": "Ada Lovelace" },
+        "identities": [{
+            "_type": "PARTY_IDENTITY",
+            "archetype_node_id": "at0001",
+            "name": { "_type": "DV_TEXT", "value": "legal name" },
+            "details": {
+                "_type": "ITEM_TREE",
+                "archetype_node_id": "at0002",
+                "name": { "_type": "DV_TEXT", "value": "structure" },
+                "items": [{
+                    "_type": "ELEMENT",
+                    "archetype_node_id": "at0003",
+                    "name": { "_type": "DV_TEXT", "value": "family" },
+                    "value": { "_type": "DV_TEXT", "value": "Lovelace" }
+                }]
+            }
+        }]
+    })
+}
+
+/// A party belonging to a real tenant survives the cutover, run by a
+/// non-superuser owner.
+///
+/// The role matters more than the tenant here. `FORCE ROW LEVEL SECURITY`
+/// applies to a table's OWNER but never to a superuser, and the testkit
+/// connects as one, so a cutover run on the default connection bypasses every
+/// policy and proves nothing about the upgrade an installation actually
+/// performs. This test hands ownership of both schemas to an ordinary role and
+/// runs the migration as that role, which is the production shape: the
+/// migrator owns what it migrates.
+///
+/// Without the migration taking the policies off for the duration, the
+/// `INSERT ... SELECT` of a row belonging to a real tenant is judged by
+/// `WITH CHECK (tenant_id = ext.current_tenant_id())` against the migrating
+/// session's tenant, which is none, and the upgrade fails.
+#[tokio::test]
+async fn the_cutover_runs_as_a_non_superuser_owner_for_a_tenant_owned_party() {
+    let db = testkit::db().await.expect("testkit database");
+    let pool = db.pool();
+    let tenant = Uuid::now_v7();
+    sqlx::query("INSERT INTO tenant (id, name, system_id) VALUES ($1, 'tenant-a', 'sys-a')")
+        .bind(tenant)
+        .execute(&pool)
+        .await
+        .expect("seed a tenant");
+
+    let vo_id = seed_party_in_the_clinical_schema(&pool, "PERSON").await;
+    sqlx::query("UPDATE ehr.vo_version SET tenant_id = $1 WHERE vo_id = $2")
+        .bind(tenant)
+        .bind(vo_id)
+        .execute(&pool)
+        .await
+        .expect("give the party a real tenant");
+
+    // A per-clone login role: roles are cluster-global on the shared testkit
+    // server, so the name is keyed off the clone the sweep will reap.
+    let migrator = format!("{}_migrator", db.name());
+    let password = throwaway_password();
+    sqlx::query(sqlx::AssertSqlSafe(format!(
+        "CREATE ROLE {migrator} LOGIN PASSWORD '{password}'"
+    )))
+    .execute(&pool)
+    .await
+    .expect("create the migrator role");
+    for statement in [
+        format!("GRANT USAGE, CREATE ON SCHEMA ehr, demographic, ext TO {migrator}"),
+        format!(
+            "DO $$DECLARE r record; BEGIN                FOR r IN SELECT schemaname, tablename FROM pg_tables                         WHERE schemaname IN ('ehr','demographic','cold','cold_demographic') LOOP                  EXECUTE format('ALTER TABLE %I.%I OWNER TO {migrator}', r.schemaname, r.tablename);                END LOOP; END$$"
+        ),
+    ] {
+        sqlx::query(sqlx::AssertSqlSafe(statement))
+            .execute(&pool)
+            .await
+            .expect("hand the schemas to the migrator role");
+    }
+
+    let as_migrator = sqlx::postgres::PgPoolOptions::new()
+        .max_connections(1)
+        .connect(&with_role(db.url(), &migrator, &password))
+        .await
+        .expect("connect as the migrator role");
+
+    let mut tx = as_migrator.begin().await.expect("begin as the migrator");
+    sqlx::raw_sql(sqlx::AssertSqlSafe(cutover_sql()))
+        .execute(&mut *tx)
+        .await
+        .expect("a tenant-owned party must not fail the upgrade");
+    tx.commit().await.expect("commit the cutover");
+
+    assert_eq!(
+        count(
+            &pool,
+            "SELECT count(*) FROM demographic.vo_version WHERE vo_id = $1",
+            vo_id
+        )
+        .await,
+        1,
+        "the tenant's party arrived"
+    );
+    let moved_tenant: Uuid =
+        sqlx::query_scalar("SELECT tenant_id FROM demographic.vo_version WHERE vo_id = $1")
+            .bind(vo_id)
+            .fetch_one(&pool)
+            .await
+            .expect("read the moved tenant");
+    assert_eq!(
+        moved_tenant, tenant,
+        "carrying its tenant with it, not re-stamped with the migrating session's"
+    );
+
+    let forced: bool = sqlx::query_scalar(
+        "SELECT relrowsecurity AND relforcerowsecurity FROM pg_class \
+         WHERE oid = 'demographic.vo_version'::regclass",
+    )
+    .fetch_one(&pool)
+    .await
+    .expect("read the RLS flags");
+    assert!(
+        forced,
+        "and row-level security is back on, in the same transaction that took it off"
+    );
+}

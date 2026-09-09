@@ -19,26 +19,73 @@ operator-run cluster, never a chart-side sidecar, because a database holding
 PHI must be independently backed up and recoverable. The server carries only a
 connection string, ideally sourced from a secret.
 
-The database uses a four-role model, never a superuser at runtime:
+The database never runs as a superuser at runtime. Two roles cover
+provisioning and migration:
 
 | Role | Purpose | Used by |
 |---|---|---|
 | owner | owns the database | provisioning only |
 | `ferroehr_migrator` | runs the schema migrations; owns the helper functions | the migration step |
-| `ferroehr_app` | reads and writes clinical data | the running server |
-| `ferroehr_reader` | read-only | replicas and reporting |
+
+and four cover serving, split by **pseudonymisation domain** — the clinical
+record on one side, the identity of its subject on the other:
+
+| Role | Reads and writes | Barred from |
+|---|---|---|
+| `ferroehr_ehr` | `ehr` + its `cold` archival tier | `demographic`, `cold_demographic` |
+| `ferroehr_demographic` | `demographic` + its `cold_demographic` tier | `ehr`, `cold` |
+| `ferroehr_ehr_reader` | read-only over `ehr` + `cold` | `demographic`, `cold_demographic` |
+| `ferroehr_demographic_reader` | read-only over `demographic` + `cold_demographic` | `ehr`, `cold` |
 
 The migrations create these roles idempotently, apply the per-schema grants,
-and revoke the ability to create objects in the public schema. **The running
-server connects as `ferroehr_app`**; its DSN should authenticate as that role,
-not the migrator or the owner.
+**and revoke the other domain explicitly in both directions**, and revoke the
+ability to create objects in the public schema. The four are `NOINHERIT` and
+none is a member of another, so the boundary cannot be crossed by picking up a
+membership. GDPR Art. 4(5) defines pseudonymisation as processing where
+attribution to a person needs additional information "kept separately and
+subject to technical and organisational measures", and Art. 32(1)(a) names it a
+security measure for health data
+(<https://eur-lex.europa.eu/eli/reg/2016/679/oj>); EDPB Guidelines 01/2025
+require that separation to hold against internal actors, operators with
+database access included.
 
-`ferroehr_app` holds `SELECT`/`INSERT`/`UPDATE`/`DELETE` on the clinical tables
-and `EXECUTE` on the `ext` helper functions, and nothing else: it is not a
-superuser, does not bypass row-level security, and cannot create, alter or drop
-a table, index, schema or role. On the audit trail it is narrower still: it may
-record an event and stamp it forwarded, and it holds no privilege that can
-rewrite or remove one (see [Audit](audit.md)).
+Each serving role holds `SELECT`/`INSERT`/`UPDATE`/`DELETE` on its own domain's
+tables and `EXECUTE` on the `ext` helper functions, and nothing else: it is not
+a superuser, does not bypass row-level security, and cannot create, alter or
+drop a table, index, schema or role. On the audit trail it is narrower still:
+it may record an event and stamp it forwarded, and it holds no privilege that
+can rewrite or remove one (see [Audit](audit.md)).
+
+### Turning the schema split into a role split
+
+The **schema** separation is unconditional: the server always reads and writes
+parties in `demographic`, whatever it authenticates as. The **role** separation
+is a deployment choice, and it is one configuration key:
+
+```toml
+[db]
+url = "postgres://ferroehr_ehr:***@pg:5432/ferroehr"
+demographic_url = "postgres://ferroehr_demographic:***@pg:5432/ferroehr"
+```
+
+(or `demographic_url_file`, for a mounted secret). With it set the server opens
+two pools on two credentials, and a flaw that reaches one of them reaches one
+domain. Left unset, both pools share the DSN above and the separation is
+schema-only.
+
+Either way the server **refuses to boot** when the grants themselves are wrong:
+a self-check enumerates every table, view, sequence and function in each
+domain and fails, naming the role and the object, if either runtime role can
+read across the boundary. `ferroehr db verify` runs the same check. When the
+four roles do not exist at all — the development, compose and test-harness
+case, where the migrator holds no `CREATEROLE` — the check passes rather than
+inventing a failure.
+
+> [!NOTE]
+> `ferroehr_app` and `ferroehr_reader` are the previous single-domain pair. They
+> still exist and still hold their clinical grants, but a deployment should move
+> its runtime DSNs to the domain roles above; they are retired after a
+> deprecation release.
 
 Which posture you actually get depends on `db.migrate`, because the server's
 embedded migrations are DDL: a self-migrating deployment necessarily runs as a

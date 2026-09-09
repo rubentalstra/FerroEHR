@@ -387,7 +387,12 @@ async fn drainer_holds_pending_while_broker_down_then_drains_without_loss() {
     // Bound separately so the Arc<TogglePublisher> → Arc<dyn EventPublisher>
     // unsizing happens on assignment, not inside a `.clone()`.
     let dyn_publisher: Arc<dyn EventPublisher> = Arc::<TogglePublisher>::clone(&publisher);
-    let handle = start_with_publisher(config, pool.clone(), dyn_publisher);
+    let handle = start_with_publisher(
+        config,
+        pool.clone(),
+        ferroehr::db::demographic_pool_from(&pool),
+        dyn_publisher,
+    );
 
     // Broker down: rows stay pending, nothing published.
     tokio::time::sleep(Duration::from_millis(300)).await;

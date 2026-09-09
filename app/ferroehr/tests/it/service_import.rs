@@ -52,6 +52,7 @@ use openehr_rm::v1_2::ehr_extract::common::extract::Extract;
 use openehr_rm::v1_2::ehr_extract::common::extract_spec::ExtractSpec;
 
 use ferroehr::service::FerroEhrService;
+use ferroehr::service::demographic::types::PartyKind;
 use ferroehr::service::ehr_index::types::SubjectRef;
 use ferroehr::service::status::CallStatusType;
 
@@ -1358,4 +1359,132 @@ async fn import_advances_an_open_branch_lineage_and_rejects_a_stale_branch_versi
         "the refusal names the stored tip, got: {}",
         err.message
     );
+}
+
+/// A locally-held PARTY referenced from exported content rides the extract's
+/// demographics chapter and lands in the receiver's demographic domain.
+///
+/// RM EHR Extract `master09-semantics.adoc` §Creation Semantics: "Create a
+/// demographics `EXTRACT_CHAPTER` and write the `PARTYs` in", and on receipt
+/// the parties are committed like any other received container. The two
+/// pseudonymisation domains are separate schemas reached by separate pools, so
+/// this is also what proves the extract path did not lose the parties when they
+/// left `ehr`: the party has to be READ out of the source's demographic domain
+/// and WRITTEN into the target's, and a routing miss fails loudly at the
+/// boundary CHECK rather than quietly.
+#[tokio::test]
+async fn an_extract_carries_its_parties_into_the_receivers_demographic_domain() {
+    let source_db = testkit::db().await.expect("testkit database");
+    let source = FerroEhrService::new(source_db.pool());
+    let target_db = testkit::db().await.expect("testkit database");
+    let target = FerroEhrService::new(target_db.pool());
+
+    let created = source
+        .party_create(PartyKind::Person, typed(&extract_person()), None)
+        .await
+        .expect("create the referenced person");
+    let party: uuid::Uuid = created.body["uid"]["value"]
+        .as_str()
+        .expect("uid.value")
+        .split("::")
+        .next()
+        .expect("the versioned-object uuid")
+        .parse()
+        .expect("a uuid");
+
+    // An EHR whose EHR_STATUS names that party as its subject, in the
+    // `demographic` namespace the extract builder follows.
+    let ehr = source.create_ehr(None).await.expect("ehr");
+    let mut status = source
+        .get_ehr_status_at_time(ehr, None)
+        .await
+        .expect("status get");
+    let status_ovid = status["uid"]["value"].as_str().expect("uid").to_owned();
+    status.as_object_mut().expect("status obj").remove("uid");
+    status["subject"] = json!({
+        "_type": "PARTY_SELF",
+        "external_ref": {
+            "_type": "PARTY_REF",
+            "namespace": "demographic",
+            "type": "PERSON",
+            "id": { "_type": "HIER_OBJECT_ID", "value": party.to_string() }
+        }
+    });
+    source
+        .replace_ehr_status(ehr, uv(&status, "251", Some(&status_ovid)))
+        .await
+        .expect("status update");
+
+    let exported = source.extract_ehrs(ehr).await.expect("export_ehrs");
+    assert_eq!(exported.len(), 1, "one EHR id → one EXTRACT");
+    let carried = exported[0]["chapters"]
+        .as_array()
+        .expect("chapters")
+        .iter()
+        .filter_map(|c| c["items"].as_array())
+        .flatten()
+        .filter(|it| it["item"]["_type"] == json!("X_VERSIONED_PARTY"))
+        .count();
+    assert_eq!(
+        carried, 1,
+        "the demographics chapter carries the referenced party: {}",
+        exported[0]
+    );
+
+    let extract: Extract = openehr_its::json::from_canonical_value(&exported[0])
+        .expect("EXTRACT deserializes into the typed RM model");
+    target.import_ehr(None, extract).await.expect("import_ehr");
+
+    let in_demographic: i64 = sqlx::query_scalar(
+        "SELECT count(*) FROM demographic.vo_version WHERE vo_id = $1 AND kind = 'PERSON'",
+    )
+    .bind(party)
+    .fetch_one(&target_db.pool())
+    .await
+    .expect("count the received party");
+    assert_eq!(
+        in_demographic, 1,
+        "the received party is in the target's demographic domain"
+    );
+    assert_eq!(
+        target
+            .party_get(PartyKind::Person, party.to_string(), None)
+            .await
+            .expect("the received party reads back")
+            .body["_type"],
+        json!("PERSON"),
+        "and it serves through the demographic surface"
+    );
+}
+
+/// The PERSON the extract test references, authored as canonical JSON exactly
+/// as a client would post it (`.claude/rules/testing.md` §Test-fixture
+/// construction, class 2).
+fn extract_person() -> Value {
+    json!({
+        "_type": "PERSON",
+        "archetype_node_id": "openEHR-DEMOGRAPHIC-PERSON.person.v1",
+        "archetype_details": {
+            "_type": "ARCHETYPED",
+            "archetype_id": { "_type": "ARCHETYPE_ID", "value": "openEHR-DEMOGRAPHIC-PERSON.person.v1" },
+            "rm_version": "1.1.0"
+        },
+        "name": { "_type": "DV_TEXT", "value": "Grace Hopper" },
+        "identities": [{
+            "_type": "PARTY_IDENTITY",
+            "archetype_node_id": "at0001",
+            "name": { "_type": "DV_TEXT", "value": "legal name" },
+            "details": {
+                "_type": "ITEM_TREE",
+                "archetype_node_id": "at0002",
+                "name": { "_type": "DV_TEXT", "value": "structure" },
+                "items": [{
+                    "_type": "ELEMENT",
+                    "archetype_node_id": "at0003",
+                    "name": { "_type": "DV_TEXT", "value": "family" },
+                    "value": { "_type": "DV_TEXT", "value": "Hopper" }
+                }]
+            }
+        }]
+    })
 }

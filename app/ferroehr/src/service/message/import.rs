@@ -128,6 +128,10 @@ impl FerroEhrService {
             None => source_ehr_id(&an_extract)?,
         };
 
+        let audit = self.audit(change_type::CREATION, "EHR Extract import");
+        let signing = self.signing_ctx();
+        self.import_parties(&signing, &audit, parties).await?;
+
         let mut tx = self.pool.begin().await.map_err(ServiceError::from)?;
         // Into an *empty* target: a duplicate EHR id is
         // `ehr_create_fail_duplicate_id`. The EHR is created locally, so its
@@ -149,11 +153,8 @@ impl FerroEhrService {
                 format!("EHR {ehr_id} already exists; import_ehr requires an empty target"),
             ));
         }
-        let audit = self.audit(change_type::CREATION, "EHR Extract import");
-        let signing = self.signing_ctx();
         let touches_ehr_access = containers.iter().any(|c| c.kind == Kind::EhrAccess);
         commit_import(&mut tx, &signing, ehr_id, &audit, containers).await?;
-        commit_demographic_import(&mut tx, &signing, &audit, parties).await?;
         // An EHR is created as "a root EHR object, an EHR Status object, and an
         // EHR Access object" (RM ehr master04 §EHR Creation) and `EHR.ehr_access`
         // is 1..1 (`ehr.adoc` invariant `Ehr_access_valid`). An extract that
@@ -229,12 +230,13 @@ impl FerroEhrService {
             }
         }
 
-        let mut tx = self.pool.begin().await.map_err(ServiceError::from)?;
         let audit = self.audit(change_type::CREATION, "EHR Extract import");
         let signing = self.signing_ctx();
+        self.import_parties(&signing, &audit, parties).await?;
+
+        let mut tx = self.pool.begin().await.map_err(ServiceError::from)?;
         let touches_ehr_access = containers.iter().any(|c| c.kind == Kind::EhrAccess);
         commit_import(&mut tx, &signing, an_ehr_id, &audit, containers).await?;
-        commit_demographic_import(&mut tx, &signing, &audit, parties).await?;
         // An imported EHR_STATUS version can change the current status, subject
         // included (Copying Case 3 append), so the promoted `ehr` columns are
         // re-derived from it (RM ehr master04 §EHR Status / §EHR Active Status).
@@ -247,6 +249,38 @@ impl FerroEhrService {
             self.invalidate_ehr_access(an_ehr_id).await;
         }
         self.emit_extract_audit(an_ehr_id, EventActionCode::Create);
+        Ok(())
+    }
+
+    /// Replay the extract's demographics chapter into the demographic domain,
+    /// in a transaction of its own.
+    ///
+    /// It cannot ride the clinical transaction: the two domains are separate
+    /// schemas reached by separate pools, which is what keeps the clinical
+    /// record and the identity of its subject apart, and one transaction spans
+    /// one connection. Parties therefore go FIRST and commit on their own. That
+    /// ordering is the recoverable one: `commit_demographic_import` skips a
+    /// container already held locally (parties are shared continuants), so a
+    /// clinical failure afterwards leaves parties nothing references and a
+    /// retry of the whole import completes cleanly, where the reverse order
+    /// would leave an imported EHR whose parties are missing and whose retry is
+    /// refused as a duplicate.
+    ///
+    /// # Errors
+    /// Whatever [`commit_demographic_import`] rejects, plus a database fault
+    /// opening or committing the demographic transaction.
+    async fn import_parties(
+        &self,
+        signing: &crate::versioning::SigningCtx<'_>,
+        audit: &crate::versioning::audit::AuditInput,
+        parties: Vec<ImportContainer>,
+    ) -> Result<(), ServiceError> {
+        if parties.is_empty() {
+            return Ok(());
+        }
+        let mut tx = self.demographic_pool.begin().await?;
+        commit_demographic_import(&mut tx, signing, audit, parties).await?;
+        tx.commit().await?;
         Ok(())
     }
 

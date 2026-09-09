@@ -44,14 +44,44 @@ flowchart LR
     node -. "AQL: interval joins + promoted columns" .-> rest
 ```
 
-The database is PostgreSQL 18, split into four schemas:
+The database is PostgreSQL 18, split into six schemas:
 
 | Schema | Holds |
 |---|---|
-| `ehr` | the CDR proper: versions, nodes, EHRs, contributions, templates, queries, tags |
+| `ehr` | the clinical CDR: versions, nodes, EHRs, contributions, templates, queries, tags |
+| `demographic` | the demographic pseudonymisation domain: party versions, nodes, contributions, audits, tags |
 | `ext` | FerroEHR's own `IMMUTABLE` helper functions (`openehr_magnitude`, `openehr_timestamp`) and the tenant context |
 | `audit` | the IHE ATNA Audit Record Repository (`audit_event`) |
-| `cold` | the archival tier: FK-free mirrors of `vo_version` / `node` / `vo_attestation` |
+| `cold` | the clinical archival tier: FK-free mirrors of `vo_version` / `node` / `vo_attestation` |
+| `cold_demographic` | the same archival tier for the demographic domain |
+
+### The two pseudonymisation domains
+
+Parties (PERSON, ORGANISATION, GROUP, AGENT, ROLE, PARTY_RELATIONSHIP) live in
+`demographic`, never in `ehr`, and the split is enforced by the database in both
+directions: `ehr.vo_version` refuses a row with no owning EHR, and
+`demographic.vo_version` refuses one that has one. The clinical record and the
+identity of its subject are therefore never in the same schema, the same
+archival tier, or the reach of the same runtime role — GDPR Art. 4(5) and
+Art. 32(1)(a), <https://eur-lex.europa.eu/eli/reg/2016/679/oj>. Which role reads
+which domain, and how a deployment turns the schema split into a credential
+split, is [Operations → Database roles](../operations.md#database-roles-and-least-privilege).
+
+The mechanism inside the server is deliberately small: the `demographic`
+relations carry the same names and the same column shape as the clinical ones
+(they are built from them with `CREATE TABLE ... LIKE`), and the pool serving
+each domain sets its own `search_path`. One set of storage code — the nested-set
+node codec, the versioning engine, the AQL path machinery — therefore serves
+both domains unchanged, and no SQL in the server names a domain schema. The one
+exception is the archival tier, whose mirrors live in a schema of their own: each
+primary schema carries an alias view (`cold_vo_version`, `cold_node`,
+`cold_vo_attestation`) over its own tier, so those statements travel by
+`search_path` too.
+
+The wire is unaffected. The ITS-REST Demographic API, the RM change-control
+semantics and every version identifier are exactly what they were; only where
+the rows physically sit has changed. No openEHR spec governs storage layout —
+this is FerroEHR's own design.
 
 ## Core tables and how they relate
 
@@ -257,10 +287,11 @@ timestamptz` containment test on the same one table.
 
 ## The cold archival tier
 
-Admin-archived objects move physically out of the primary tables into the
-`cold` schema (FK-free mirror relations of `vo_version`, `node`,
-`vo_attestation`), transactionally and reversibly. The consequences are
-deliberate and visible:
+Admin-archived objects move physically out of the primary tables into their
+domain's cold schema — `cold` for clinical content, `cold_demographic` for
+parties (FK-free mirror relations of `vo_version`, `node`, `vo_attestation` in
+both cases) — transactionally and reversibly. Archiving never merges the two
+domains. The consequences are deliberate and visible:
 
 - point reads retry cold only on a primary miss;
 - whole-repository readers (exports, dumps) use the union views;

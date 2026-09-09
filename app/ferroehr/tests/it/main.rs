@@ -41,6 +41,7 @@ mod item_tag_fixture;
 mod multimedia_s3;
 mod opt_resource_meta;
 mod persistence;
+mod pseudonymisation_boundary;
 mod service_admin;
 mod service_aql;
 mod service_aql_terminology;

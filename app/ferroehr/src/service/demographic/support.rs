@@ -274,7 +274,7 @@ impl FerroEhrService {
         type_name: &str,
         label: &str,
     ) -> Result<Value, ServiceError> {
-        let time_created = version_repo::meta::time_created(&self.pool, vo_id)
+        let time_created = version_repo::meta::time_created(&self.demographic_pool, vo_id)
             .await?
             .ok_or_else(|| {
                 ServiceError::sm(
@@ -320,7 +320,7 @@ impl FerroEhrService {
         &self,
         vo_id: VoId,
     ) -> Result<Value, ServiceError> {
-        let metas = version_repo::meta::all_version_meta(&self.pool, vo_id).await?;
+        let metas = version_repo::meta::all_version_meta(&self.demographic_pool, vo_id).await?;
         let items = metas
             .iter()
             .map(|meta| revision_history_item(vo_id, meta))
@@ -355,14 +355,20 @@ impl FerroEhrService {
         version: TreeId,
         label: &str,
     ) -> Result<Value, ServiceError> {
-        let read = load_ehrless(&self.pool, self.spec_profile, vo_id, Some(version), None)
-            .await?
-            .ok_or_else(|| {
-                ServiceError::sm(
-                    CallStatusType::ObjectVersionDoesNotExist,
-                    format!("{label} {vo_id} v{version}"),
-                )
-            })?;
+        let read = load_ehrless(
+            &self.demographic_pool,
+            self.spec_profile,
+            vo_id,
+            Some(version),
+            None,
+        )
+        .await?
+        .ok_or_else(|| {
+            ServiceError::sm(
+                CallStatusType::ObjectVersionDoesNotExist,
+                format!("{label} {vo_id} v{version}"),
+            )
+        })?;
         let signer = CommitEnv::signing_ctx(self).signer;
         version_envelope(&read, signer)
     }
@@ -382,7 +388,7 @@ impl FerroEhrService {
         at: Option<jiff::Timestamp>,
         label: &str,
     ) -> Result<ServiceResponse, ServiceError> {
-        let read = load_ehrless(&self.pool, self.spec_profile, vo_id, None, at)
+        let read = load_ehrless(&self.demographic_pool, self.spec_profile, vo_id, None, at)
             .await?
             .ok_or_else(|| {
                 ServiceError::sm(

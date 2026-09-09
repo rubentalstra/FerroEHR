@@ -103,12 +103,18 @@ impl FerroEhrService {
                 format!("PARTY_RELATIONSHIP {vo_id}"),
             )
         };
-        if object_kind(&self.pool, vo_id).await? != Some(Kind::PartyRelationship) {
+        if object_kind(&self.demographic_pool, vo_id).await? != Some(Kind::PartyRelationship) {
             return Err(miss());
         }
-        support::load_ehrless(&self.pool, self.spec_profile, vo_id, version, at)
-            .await?
-            .ok_or_else(miss)
+        support::load_ehrless(
+            &self.demographic_pool,
+            self.spec_profile,
+            vo_id,
+            version,
+            at,
+        )
+        .await?
+        .ok_or_else(miss)
     }
 
     /// Confirm `vo_id` is a relationship (any version) — the check for the
@@ -122,7 +128,7 @@ impl FerroEhrService {
         vo_id: VoId,
         miss: CallStatusType,
     ) -> Result<(), ServiceError> {
-        match object_kind(&self.pool, vo_id).await? {
+        match object_kind(&self.demographic_pool, vo_id).await? {
             Some(Kind::PartyRelationship) => Ok(()),
             _ => Err(ServiceError::sm(
                 miss,
@@ -139,7 +145,7 @@ impl FerroEhrService {
         &self,
         vo_id: VoId,
     ) -> Result<Option<CurrentRelationship>, ServiceError> {
-        let Some(current) = demographic_current(&self.pool, vo_id).await? else {
+        let Some(current) = demographic_current(&self.demographic_pool, vo_id).await? else {
             return Ok(None);
         };
         if current.kind != Kind::PartyRelationship {
@@ -193,7 +199,7 @@ impl FerroEhrService {
         )?;
         let ctx = CommitEnv::signing_ctx(self);
         let canonical = body.clone();
-        let mut tx = self.pool.begin().await?;
+        let mut tx = self.demographic_pool.begin().await?;
         let committed = create(
             &mut tx,
             None,
@@ -281,7 +287,7 @@ impl FerroEhrService {
         )?;
         let ctx = CommitEnv::signing_ctx(self);
         let canonical = body.clone();
-        let mut tx = self.pool.begin().await?;
+        let mut tx = self.demographic_pool.begin().await?;
         let committed = update(
             &mut tx,
             None,
@@ -344,7 +350,7 @@ impl FerroEhrService {
             "PARTY_RELATIONSHIP delete",
         )?;
         let ctx = CommitEnv::signing_ctx(self);
-        let mut tx = self.pool.begin().await?;
+        let mut tx = self.demographic_pool.begin().await?;
         let committed = delete(
             &mut tx,
             None,

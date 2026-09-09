@@ -168,9 +168,12 @@ async fn run_db(
         DbCmd::Migrate => db::run_migrations(&pool)
             .await
             .context("applying migrations"),
-        DbCmd::Verify => db::verify_migrations(&pool)
-            .await
-            .context("verifying the schema"),
+        DbCmd::Verify => match db::verify_migrations(&pool).await {
+            Ok(()) => db::verify_domain_isolation(&pool)
+                .await
+                .context("verifying the pseudonymisation domain isolation"),
+            Err(error) => Err(anyhow::Error::new(error).context("verifying the schema")),
+        },
     };
     pool.close().await;
     telemetry.shutdown().await;
@@ -323,13 +326,15 @@ fn mounted_management_endpoints(levels: EndpointLevels) -> String {
 /// build missing its cargo feature, or an unusable external dependency.
 fn assemble_service(
     config: &ferroehr::config::FerroEhrConfig,
-    pool: &PgPool,
+    pools: &Pools,
     audit_sender: Option<AuditSender>,
     outbox_enabled: bool,
     signer: Arc<Signer>,
 ) -> anyhow::Result<FerroEhrService> {
+    let pool = &pools.clinical;
     let audit_enabled = audit_sender.is_some();
     let mut service = FerroEhrService::new(pool.clone())
+        .with_demographic_pool(pools.demographic.clone())
         .with_spec_profile(config.spec_profile)
         .with_system_id(config.server.system_id.clone())
         .with_signer(signer)
@@ -462,33 +467,77 @@ fn warn_boot_postures(config: &ferroehr::config::FerroEhrConfig) {
     }
 }
 
-/// Connects the pool the deployment's tenancy mode calls for and prepares the
-/// schema.
+/// The two domain pools the server runs on: the clinical one and the
+/// demographic (pseudonymisation-domain) one.
 ///
-/// Multi-tenant mode swaps in the tenant-scoped pool, stamping every checked-out
-/// connection with the request's `ferroehr.tenant_id` session GUC that the RLS
-/// `tenant_isolation` policy reads; single-tenant deployments keep the plain
-/// pool. No openEHR spec governs multi-tenancy — our own deployment extension.
+/// They differ in `search_path` always, and in credential when the deployment
+/// sets `[db].demographic_url`. No openEHR spec governs storage layout or
+/// database roles — our own design/extension.
+#[derive(Debug)]
+struct Pools {
+    /// Serves the `ehr` schema: EHRs, compositions, folders, templates,
+    /// eventing and every supporting relation.
+    clinical: PgPool,
+    /// Serves the `demographic` schema: parties and their change control.
+    demographic: PgPool,
+}
+
+/// Connects both domain pools the deployment's tenancy mode calls for and
+/// prepares the schema.
+///
+/// Multi-tenant mode swaps in the tenant-scoped pools, stamping every
+/// checked-out connection with the request's `ferroehr.tenant_id` session GUC
+/// that the RLS `tenant_isolation` policy reads; single-tenant deployments keep
+/// the plain ones. The demographic pool carries the `demographic` search path
+/// and, when `[db].demographic_url` is set, its own credential — which is what
+/// makes the pseudonymisation boundary a role boundary rather than only a
+/// schema one. Neither multi-tenancy nor the domain split is governed by an
+/// openEHR spec; both are our own deployment extensions.
+///
+/// Schema preparation runs on the clinical pool alone: it applies every
+/// embedded migration set, and it ends in
+/// [`ferroehr::db::verify_domain_isolation`], which refuses to boot a database
+/// whose grants let one runtime role read both domains.
 ///
 /// # Errors
-/// A connection or migration failure, contextualized for the operator.
-async fn connect_pool(config: &ferroehr::config::FerroEhrConfig) -> anyhow::Result<PgPool> {
-    let pool = if config.tenancy.enabled {
-        db::connect_tenant_scoped(&config.db)
-            .await
-            .context("connecting to PostgreSQL (tenant-scoped)")?
+/// A connection, migration or domain-isolation failure, contextualized for the
+/// operator.
+async fn connect_pool(config: &ferroehr::config::FerroEhrConfig) -> anyhow::Result<Pools> {
+    let (clinical, demographic) = if config.tenancy.enabled {
+        (
+            db::connect_tenant_scoped(&config.db)
+                .await
+                .context("connecting to PostgreSQL (tenant-scoped)")?,
+            db::connect_tenant_scoped_demographic(&config.db)
+                .await
+                .context("connecting to PostgreSQL (demographic, tenant-scoped)")?,
+        )
     } else {
-        db::connect(&config.db)
-            .await
-            .context("connecting to PostgreSQL")?
+        (
+            db::connect(&config.db)
+                .await
+                .context("connecting to PostgreSQL")?,
+            db::connect_demographic(&config.db)
+                .await
+                .context("connecting to PostgreSQL (demographic)")?,
+        )
     };
-    db::prepare(&config.db, &pool)
+    db::prepare(&config.db, &clinical)
         .await
         .context("preparing the database schema")?;
-    if config.tenancy.enabled {
-        warn_on_occupied_default_tenant(&pool).await?;
+    if config.db.roles_are_separated() {
+        tracing::info!(
+            "the demographic domain connects on its own DSN: the clinical and demographic \
+             credentials are separate database roles"
+        );
     }
-    Ok(pool)
+    if config.tenancy.enabled {
+        warn_on_occupied_default_tenant(&clinical).await?;
+    }
+    Ok(Pools {
+        clinical,
+        demographic,
+    })
 }
 
 /// Says at boot how much content the reserved default tenant holds, because a
@@ -657,7 +706,8 @@ async fn serve(config_path: Option<&Path>, overrides: &[(String, String)]) -> an
         telemetry::init(&telemetry_config, &build_info).context("initialising telemetry")?;
 
     warn_boot_postures(&config);
-    let pool = connect_pool(&config).await?;
+    let pools = connect_pool(&config).await?;
+    let pool = pools.clinical.clone();
 
     // Fail-open at boot, except in a slim build, which cannot render the FHIR
     // `AuditEvent` the store and the ATX:FHIR Feed carry.
@@ -674,6 +724,7 @@ async fn serve(config_path: Option<&Path>, overrides: &[(String, String)]) -> an
         Some(ferroehr::extensions::events::publisher::start(
             config.events.clone(),
             pool.clone(),
+            pools.demographic.clone(),
         ))
     } else {
         None
@@ -718,7 +769,7 @@ async fn serve(config_path: Option<&Path>, overrides: &[(String, String)]) -> an
     let audit_enabled = audit_sender.is_some();
     let service = Arc::new(assemble_service(
         &config,
-        &pool,
+        &pools,
         audit_sender,
         outbox_enabled,
         signer,
