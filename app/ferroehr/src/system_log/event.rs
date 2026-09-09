@@ -139,8 +139,79 @@ pub struct AuditEvent {
     /// request carried one. Informational on the stored record (the node's
     /// audit trail is an operator surface, not tenant-scoped).
     pub tenant_id: Option<uuid::Uuid>,
+    /// Which pseudonymisation domain the operation read or wrote.
+    ///
+    /// Derived from [`Self::object`] by [`AccessDomain::of`], so a new resource
+    /// class cannot reach the trail without an answer.
+    pub domain: AccessDomain,
+    /// The purpose-of-use code the caller declared, when the deployment
+    /// collects one.
+    pub purpose: Option<String>,
+    /// The legal-basis code the deployment attributes to this access.
+    pub legal_basis: Option<String>,
+    /// How many records the operation served: AQL result rows, search entries.
+    /// `None` for an operation that serves no countable set.
+    pub result_count: Option<u64>,
+    /// The request correlation id, matching the response's `x-request-id`.
+    pub request_id: Option<String>,
     /// The event time.
     pub timestamp: Timestamp,
+}
+
+/// The pseudonymisation domain an audited operation touched.
+///
+/// The clinical and demographic domains are separate schemas under separate
+/// database roles, so an access record that does not say which one it read
+/// cannot answer "who saw this person's identifying data" separately from "who
+/// read this record". NEN 7513 and EHDS Art. 9 both ask the question per
+/// record; the domain is what makes the answer separable.
+///
+/// **No openEHR spec governs this — our own design/extension.**
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum AccessDomain {
+    /// The clinical `ehr` schema: EHRs, compositions, folders, contributions,
+    /// extracts and the queries that read them.
+    Ehr,
+    /// The `demographic` schema: parties and their change control.
+    Demographic,
+    /// The `linkage` schema: the party-to-EHR resolve map.
+    Linkage,
+    /// An operation that touches no pseudonymisation domain: authentication,
+    /// template provisioning, node management.
+    System,
+}
+
+impl AccessDomain {
+    /// The domain an operation on this resource class reads or writes.
+    ///
+    /// Exhaustive over [`ObjectClass`] on purpose: adding a resource class is
+    /// then a compile error here, which is where the question belongs.
+    #[must_use]
+    pub fn of(object: ObjectClass) -> Self {
+        match object {
+            ObjectClass::Ehr
+            | ObjectClass::Composition
+            | ObjectClass::Contribution
+            | ObjectClass::Directory
+            | ObjectClass::Query
+            | ObjectClass::Extract => AccessDomain::Ehr,
+            ObjectClass::Demographic => AccessDomain::Demographic,
+            ObjectClass::Template
+            | ObjectClass::ApplicationActivity
+            | ObjectClass::Authentication => AccessDomain::System,
+        }
+    }
+
+    /// The stored spelling, matching the `ck_audit_event_domain` constraint.
+    #[must_use]
+    pub fn as_str(self) -> &'static str {
+        match self {
+            AccessDomain::Ehr => "ehr",
+            AccessDomain::Demographic => "demographic",
+            AccessDomain::Linkage => "linkage",
+            AccessDomain::System => "system",
+        }
+    }
 }
 
 impl AuditEvent {
@@ -160,6 +231,11 @@ impl AuditEvent {
             object_id: None,
             token_id: None,
             tenant_id: None,
+            domain: AccessDomain::of(object),
+            purpose: None,
+            legal_basis: None,
+            result_count: None,
+            request_id: None,
             timestamp: Timestamp::now(),
         }
     }

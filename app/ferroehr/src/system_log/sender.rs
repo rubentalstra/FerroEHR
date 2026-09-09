@@ -105,6 +105,12 @@ struct SenderInner {
     enabled: bool,
     suppress_login_events: bool,
     fail_mode: FailMode,
+    /// The access-logging declaration surface: the header a caller declares a
+    /// purpose of use in, the codes this deployment accepts (empty accepts
+    /// any), and the legal basis it processes under.
+    purpose_header: String,
+    purpose_codes: Vec<String>,
+    legal_basis: Option<String>,
     /// Whether the local store is currently accepting writes (`true` when the
     /// store is disabled — health then rides on the queue alone). Written by
     /// the drain, read by [`AuditSender::emit`] under `fail_mode = closed`.
@@ -154,6 +160,30 @@ impl AuditSender {
     #[must_use]
     pub fn suppress_login_events(&self) -> bool {
         self.inner.suppress_login_events
+    }
+
+    /// The request header a caller declares its purpose of use in, lowercased.
+    #[must_use]
+    pub fn purpose_header(&self) -> &str {
+        &self.inner.purpose_header
+    }
+
+    /// Whether `code` is one this deployment records.
+    ///
+    /// An empty allow-list accepts any non-empty code, which is the default:
+    /// a deployment that has agreed no vocabulary still benefits from
+    /// recording what the caller said.
+    #[must_use]
+    pub fn accepts_purpose(&self, code: &str) -> bool {
+        !code.is_empty()
+            && (self.inner.purpose_codes.is_empty()
+                || self.inner.purpose_codes.iter().any(|known| known == code))
+    }
+
+    /// The legal basis this deployment records on every access event.
+    #[must_use]
+    pub fn legal_basis(&self) -> Option<&str> {
+        self.inner.legal_basis.as_deref()
     }
 
     /// Enqueue an event (non-blocking). Never awaits, never blocks the request.
@@ -393,6 +423,9 @@ pub async fn start(
             tx,
             enabled: config.enabled,
             suppress_login_events: config.suppress_login_events,
+            purpose_header: config.purpose_header.to_ascii_lowercase(),
+            purpose_codes: config.purpose_codes.clone(),
+            legal_basis: config.legal_basis.clone(),
             fail_mode: config.fail_mode,
             store_healthy,
             dropped_since_warn: AtomicU64::new(0),
@@ -841,6 +874,9 @@ mod tests {
                 tx,
                 enabled: true,
                 suppress_login_events: true,
+                purpose_header: "x-purpose-of-use".to_owned(),
+                purpose_codes: Vec::new(),
+                legal_basis: None,
                 fail_mode,
                 store_healthy: Arc::new(AtomicBool::new(store_healthy)),
                 dropped_since_warn: AtomicU64::new(0),

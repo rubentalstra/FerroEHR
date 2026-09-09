@@ -233,6 +233,7 @@ pub fn audit_for(op: &str) -> Option<(EventActionCode, ObjectClass)> {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use ferroehr::system_log::event::AccessDomain;
 
     /// Every operation id in every generated ITS-REST `ROUTES` table.
     fn all_route_ops() -> Vec<&'static str> {
@@ -326,9 +327,79 @@ mod tests {
         );
     }
 
+    /// Every generated read of patient data emits an access record, in its own
+    /// pseudonymisation domain.
+    #[test]
+    fn every_read_operation_produces_an_access_record() {
+        // NEN 7513 requires per-access logging of who read which record, EHDS
+        // Art. 9 requires logging of access to health data for primary use, and
+        // the Wabvpz gives the patient the right to know who consulted the
+        // record. A retrieval that emits nothing is unanswerable to all three,
+        // so the property is asserted over the GENERATED route tables of the
+        // three APIs that serve patient data — a newly generated GET reaches
+        // this test before it reaches a deployment.
+        let mut silent = Vec::new();
+        let mut misclassified = Vec::new();
+        for (group, table, expected) in [
+            (
+                "ehr",
+                openehr_its::rest::generated::ehr::ROUTES,
+                AccessDomain::Ehr,
+            ),
+            (
+                "query",
+                openehr_its::rest::generated::query::ROUTES,
+                AccessDomain::Ehr,
+            ),
+            (
+                "demographic",
+                openehr_its::rest::generated::demographic::ROUTES,
+                AccessDomain::Demographic,
+            ),
+        ] {
+            for (method, path, op) in table {
+                if !method.eq_ignore_ascii_case("get") {
+                    continue;
+                }
+                let Some((action, object)) = audit_for(op) else {
+                    silent.push(format!("{group} {method} {path} ({op})"));
+                    continue;
+                };
+                // A GET is a Read; the one sanctioned exception is a query
+                // execution, which the DICOM vocabulary classes as an Execute
+                // on the Query object (PS3.15 §A.5.1).
+                let read_shaped = action == Read || (action == Execute && object == Query);
+                // An operation id the released OAS reuses across bundles cannot
+                // name its own domain: `contribution_get` is the same id in the
+                // EHR and the DEMOGRAPHIC group. Those carry a handler-set
+                // override (`AuditObject::domain`) this static table cannot
+                // see, and the integration suite is where the override is
+                // proven; `adjudicated_shared_ids` keeps the list honest.
+                let domain_is_static = !ADJUDICATED_SHARED.contains(op);
+                if !read_shaped || (domain_is_static && AccessDomain::of(object) != expected) {
+                    misclassified.push(format!(
+                        "{group} {method} {path} ({op}) → {action:?}/{object:?} \
+                         in domain {:?}, expected a read in {expected:?}",
+                        AccessDomain::of(object)
+                    ));
+                }
+            }
+        }
+        assert!(
+            silent.is_empty(),
+            "read operations that emit no access record: {silent:#?}"
+        );
+        assert!(
+            misclassified.is_empty(),
+            "read operations classified outside their own domain: {misclassified:#?}"
+        );
+    }
+
+    #[test]
     /// Coverage is total: every generated route entry is `Audited` and the
     /// explicit `Unaudited` allowlist is empty.
-    #[test]
+    /// Coverage is total: every generated route entry is `Audited` and the
+    /// explicit `Unaudited` allowlist is empty.
     fn generated_coverage_is_total_and_audited() {
         let ops = all_route_ops();
         let mut unaudited = Vec::new();

@@ -135,6 +135,8 @@ fn set_versioning_headers(resp: &mut Response, meta: Option<&ResourceMeta>) {
         .insert(crate::system_log::middleware::AuditObject {
             ehr_id: None,
             uid: Some(meta.uid.clone()),
+            result_count: None,
+            domain: Some(ferroehr::system_log::event::AccessDomain::Demographic),
         });
 }
 

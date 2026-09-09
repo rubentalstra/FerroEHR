@@ -51,6 +51,69 @@ ever names an identity that did not authenticate.
 > identity provider, so neither mints a per-request login record. Rejections
 > are recorded regardless of this switch.
 
+## Reads are logged too, per record
+
+A write leaves its own trail in openEHR's contribution and audit chain. A read
+leaves nothing behind unless the server records it, and reads are what the
+access-logging rules are about: [NEN 7513](https://www.nen.nl) requires per-access
+logging of who consulted which record and on whose authority, the
+[Wabvpz](https://wetten.overheid.nl/BWBR0023864) gives the patient the right to
+know who consulted their record, and
+[EHDS Art. 9](https://eur-lex.europa.eu/eli/reg/2025/327/oj) requires logging of
+access to electronic health data for primary use. No openEHR specification
+governs the read side, so this is FerroEHR's own extension.
+
+Every retrieval in the EHR, Query and Demographic APIs produces a record, and a
+test walks the generated route tables to prove it: a newly generated `GET` that
+emits nothing fails the build.
+
+Each record additionally carries:
+
+| Field | What it holds |
+|---|---|
+| `domain` | The pseudonymisation domain read: `ehr`, `demographic`, `linkage`, or `system` for an operation that touches no domain. |
+| `purpose` | The purpose of use the caller declared in the `x-purpose-of-use` header, when the deployment accepts it. |
+| `legal_basis` | The basis the deployment processes under, from `[audit] legal_basis`. |
+| `result_count` | How many records the operation served. |
+| `request_id` | The `x-request-id` correlation id the response carried. |
+
+A query is the case a single record cannot describe. One AQL statement is one
+operation but potentially many disclosures, so it produces its own execute
+record **plus one access record per EHR it served**, each carrying that EHR's
+served-row count. The served set is read off the rows the caller actually
+received rather than the rows the statement matched: a legal record of access
+must not name an EHR whose content was never disclosed. Two query shapes carry
+no per-EHR breakdown, because the shape makes it underivable —
+`SELECT DISTINCT`, where an extra column changes which rows are distinct, and
+an aggregate projection, where a per-row EHR is not valid SQL. Those record the
+statement and its row count.
+
+### NEN 7513 content, field by field
+
+NEN 7513 §5 lists what a logged event has to contain. This is where each item
+lives in the record:
+
+| NEN 7513 asks for | FerroEHR records it as |
+|---|---|
+| The identity of the person who accessed the record | `principal` — the authenticated Basic username or OAuth `sub`; an unattributable denial is recorded as unattributed, never under a fabricated identity |
+| The identity of the patient whose record was accessed | `patient_id` — the resolved EHR subject, which under the pseudonymisation boundary is an opaque pseudonym |
+| Which record, or which part of it | `resource_class` + `resource_id`: the version uid, party uid or EHR id the operation touched |
+| The date and time | `recorded_at`, the event time; `stored_at` is when the row was persisted |
+| The kind of action | `action` (DICOM `C`/`R`/`U`/`D`/`E`) plus `operation`, the ITS-REST operation id |
+| Whether it succeeded | `outcome`, the DICOM outcome indicator (0 success, 4 minor, 8 serious, 12 major) |
+| On whose authority, and why | `purpose` and `legal_basis` |
+| Which system, and from where | `AuditSourceID` and the source participant's network address (`client_ip`) |
+
+Two of these are the deployment's to supply. `purpose` is only as meaningful as
+the vocabulary you agree with your callers: set `[audit] purpose_codes` to that
+vocabulary and a code outside it is recorded as absent rather than as free text
+that reads at review time like an established purpose. `legal_basis` is a
+deployment-level fact and is recorded on every access once you set it.
+
+Mapping the recorded fields onto your own retention schedule and review process
+stays yours: the software records the events and serves them back, and no
+supplier document discharges the obligation to review them.
+
 ## Sinks
 
 Records fan out to independently configured sinks (`[audit]` in

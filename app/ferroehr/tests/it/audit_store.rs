@@ -16,7 +16,7 @@ use sqlx::Row;
 use uuid::Uuid;
 
 use ferroehr::system_log::event::{
-    AuditEvent, EventActionCode, EventOutcome, EventType, ObjectClass,
+    AccessDomain, AuditEvent, EventActionCode, EventOutcome, EventType, ObjectClass,
 };
 use ferroehr::system_log::fhir;
 use ferroehr::system_log::message::AuditContext;
@@ -209,4 +209,147 @@ async fn reap_deletes_only_rows_past_the_horizon() {
         .await
         .expect("count");
     assert_eq!(remaining, 1);
+}
+
+/// The access-logging fields (#3156) survive the round trip on both write
+/// paths, and the domain is derived from the resource class rather than set by
+/// each call site.
+///
+/// NEN 7513 asks who read which record on whose authority, and EHDS Art. 9
+/// requires access to health data to be logged; a column that is written but
+/// not read back proves neither.
+#[tokio::test]
+async fn access_fields_round_trip_on_both_write_paths() {
+    let db = testkit::db().await.expect("testkit database");
+    let pool = db.pool();
+    let store = AuditStore::new(pool.clone());
+
+    let mut single = read_event("2026-07-10T08:30:00Z".parse().unwrap());
+    single.purpose = Some("TREATMENT".to_owned());
+    single.legal_basis = Some("gdpr-art-9-2-h".to_owned());
+    single.result_count = Some(17);
+    single.request_id = Some("req-single".to_owned());
+    let rendered = fhir::to_fhir(&single, &ctx(), Some("patient-42")).expect("render");
+    store
+        .insert(&single, Some("patient-42"), &rendered)
+        .await
+        .expect("insert");
+
+    let mut batched = read_event("2026-07-10T08:31:00Z".parse().unwrap());
+    batched.object = ObjectClass::Demographic;
+    batched.domain = AccessDomain::of(ObjectClass::Demographic);
+    batched.purpose = Some("TREATMENT".to_owned());
+    batched.result_count = Some(1);
+    batched.request_id = Some("req-batch".to_owned());
+    let batched_fhir = fhir::to_fhir(&batched, &ctx(), None).expect("render");
+    store
+        .insert_batch(&[(batched, None, Some(batched_fhir))])
+        .await
+        .expect("insert batch");
+
+    let rows = sqlx::query(
+        "SELECT domain, purpose, legal_basis, result_count, request_id \
+         FROM audit.audit_event ORDER BY recorded_at",
+    )
+    .fetch_all(&pool)
+    .await
+    .expect("both rows");
+    assert_eq!(rows.len(), 2, "one row per write path");
+
+    assert_eq!(
+        rows[0].get::<Option<String>, _>("domain").as_deref(),
+        Some("ehr")
+    );
+    assert_eq!(
+        rows[0].get::<Option<String>, _>("purpose").as_deref(),
+        Some("TREATMENT")
+    );
+    assert_eq!(
+        rows[0].get::<Option<String>, _>("legal_basis").as_deref(),
+        Some("gdpr-art-9-2-h")
+    );
+    assert_eq!(rows[0].get::<Option<i64>, _>("result_count"), Some(17));
+    assert_eq!(
+        rows[0].get::<Option<String>, _>("request_id").as_deref(),
+        Some("req-single")
+    );
+
+    // The batched path carries the same fields, and a demographic read is
+    // recorded in the demographic domain — the separation the whole
+    // pseudonymisation boundary exists to make answerable.
+    assert_eq!(
+        rows[1].get::<Option<String>, _>("domain").as_deref(),
+        Some("demographic")
+    );
+    assert_eq!(rows[1].get::<Option<i64>, _>("result_count"), Some(1));
+    assert_eq!(
+        rows[1].get::<Option<String>, _>("request_id").as_deref(),
+        Some("req-batch")
+    );
+}
+
+/// The trail is append-only for the runtime role: the access-logging columns
+/// cannot be rewritten, a record cannot be deleted outside the reaper, and the
+/// table cannot be truncated.
+///
+/// A log that can be edited by the component it logs is not evidence. The
+/// mechanism is the `audit_event_reject_*` trigger set, and this is the test
+/// that it actually refuses — including the columns #3156 added, which the
+/// whole-row comparison covers only because it subtracts the two delivery
+/// stamps rather than listing what it protects.
+#[tokio::test]
+async fn the_access_trail_refuses_rewriting_deletion_and_truncation() {
+    let db = testkit::db().await.expect("testkit database");
+    let pool = db.pool();
+    let store = AuditStore::new(pool.clone());
+
+    let event = read_event("2026-07-10T08:30:00Z".parse().unwrap());
+    let rendered = fhir::to_fhir(&event, &ctx(), Some("patient-42")).expect("render");
+    let id = store
+        .insert(&event, Some("patient-42"), &rendered)
+        .await
+        .expect("insert");
+
+    for (what, sql) in [
+        (
+            "the recorded purpose",
+            "UPDATE audit.audit_event SET purpose = 'RESEARCH' WHERE id = $1",
+        ),
+        (
+            "the recorded domain",
+            "UPDATE audit.audit_event SET domain = 'system' WHERE id = $1",
+        ),
+        (
+            "the recorded principal",
+            "UPDATE audit.audit_event SET principal = 'someone-else' WHERE id = $1",
+        ),
+        (
+            "the record itself",
+            "DELETE FROM audit.audit_event WHERE id = $1",
+        ),
+    ] {
+        let refused = sqlx::query(sql).bind(id).execute(&pool).await;
+        assert!(
+            refused.is_err(),
+            "{what} was changed: the access trail must be append-only"
+        );
+    }
+
+    let truncated = sqlx::query("TRUNCATE audit.audit_event")
+        .execute(&pool)
+        .await;
+    assert!(
+        truncated.is_err(),
+        "the access trail was truncated: TRUNCATE bypasses row triggers and needs its own refusal"
+    );
+
+    // The one sanctioned mutation still works, so the refusals above are
+    // specific rather than a blanket lock.
+    store.mark_syslog_delivered(id).await;
+
+    let survives: i64 = sqlx::query_scalar("SELECT count(*) FROM audit.audit_event")
+        .fetch_one(&pool)
+        .await
+        .expect("count");
+    assert_eq!(survives, 1, "the record survived every attempt");
 }

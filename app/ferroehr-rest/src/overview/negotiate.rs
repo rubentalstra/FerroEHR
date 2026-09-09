@@ -1085,6 +1085,8 @@ pub(crate) fn set_versioning_headers(resp: &mut Response, meta: &ResourceMeta) {
         .insert(crate::system_log::middleware::AuditObject {
             ehr_id: Some(meta.ehr_id.clone()),
             uid: Some(meta.uid.clone()),
+            result_count: None,
+            domain: None,
         });
 }
 

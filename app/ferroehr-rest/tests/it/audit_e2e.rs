@@ -694,3 +694,53 @@ async fn drive_until_503(app: &Router) -> StatusCode {
     }
     panic!("fail-closed queue never saturated to 503");
 }
+
+/// A query that serves a record emits an access record naming the EHR it
+/// served, beside the statement's own execute record (#3156).
+///
+/// The statement record answers "who ran what". NEN 7513 and EHDS Art. 9 ask a
+/// different question — whose record was read — and one execute record over a
+/// population query cannot answer it. The served EHR is read off the rows that
+/// were actually returned, so the trail names a disclosure that happened.
+#[tokio::test]
+async fn aql_execute_emits_one_access_record_per_served_ehr() {
+    let (socket, sender) = audit_capture(true).await;
+    let (_pg, app, _uid) = audit_app_with_composition(sender).await;
+
+    let resp = app
+        .oneshot(req(
+            "GET",
+            "/query/aql?q=SELECT%20c/uid/value%20FROM%20EHR%20e%20CONTAINS%20COMPOSITION%20c",
+            true,
+        ))
+        .await
+        .expect("resp");
+    assert_eq!(resp.status(), StatusCode::OK);
+
+    let records = drain(&socket).await;
+    assert!(
+        records
+            .iter()
+            .any(|xml| xml.contains(r#"csd-code="110112""#)
+                && xml.contains(r#"EventActionCode="E""#)),
+        "the statement's own Query execute record is missing: {records:#?}"
+    );
+    // The access record: a Patient-Record read (DICOM EventID 110110) carrying
+    // the query as its EventTypeCode, which is what distinguishes it from a
+    // direct retrieval. Its participant is the EHR's subject, absent on this
+    // fixture; the EHR the record names is on the stored row, which
+    // `audit_store::access_fields_round_trip_on_both_write_paths` pins.
+    let served: Vec<&String> = records
+        .iter()
+        .filter(|xml| {
+            xml.contains(r#"csd-code="110110""#)
+                && xml.contains(r#"EventActionCode="R""#)
+                && xml.contains("query_execute_adhoc_query")
+        })
+        .collect();
+    assert_eq!(
+        served.len(),
+        1,
+        "one access record per served EHR, and this query served one: {records:#?}"
+    );
+}
