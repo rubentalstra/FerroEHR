@@ -17,6 +17,27 @@ workflow refuses a tag that has no matching section here.
 
 ### Added
 
+- **National identifiers in the demographic domain can be held sealed**
+  (#3155). With the new `[demographic.identifier_protection]` section on, an
+  identifier of a configured scheme never sits in the versioned body: the value
+  moves to `demographic.national_identifier`, sealed with AES-256-GCM under a
+  key derived per tenant from one configured root key, and the body keeps a
+  reference in its place. Beside the ciphertext sits an HMAC-SHA-256 digest, so
+  "which party holds this identifier" is answerable without decrypting
+  anything — and, being keyed, it cannot be reversed by enumerating a
+  nine-digit space the way an unkeyed hash could. Sealing runs before the body
+  is decomposed and signed, so the stored, signed and served body stay one
+  form. Only the demographic writer reaches the sealed value; the read-only
+  twin is refused the ciphertext and the digest by column-level grant and the
+  clinical roles are refused the table outright. Resolution goes through a
+  `SECURITY DEFINER` function that takes the digest rather than the value, and
+  every call is recorded as a `linkage`-domain access naming the scheme and
+  whether it matched, never the value. Off by default, and enabling it without
+  a key — or with a scheme list that would protect nothing — is a boot error.
+  See [Privacy & data minimisation](https://ferroehr.eu/book/installation/config-privacy.html#protecting-national-identifiers-in-the-demographic-domain)
+  and the key-rotation runbook in
+  [Operations](https://ferroehr.eu/book/operations.html#rotating-the-national-identifier-key).
+
 - **Reads are logged per record, not just per operation** (#3156). Every
   retrieval in the EHR, Query and Demographic APIs already produced an audit
   record; each one now also says which pseudonymisation domain it read (`ehr`,

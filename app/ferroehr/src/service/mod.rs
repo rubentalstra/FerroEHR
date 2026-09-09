@@ -308,6 +308,14 @@ impl FerroEhrService {
         self
     }
 
+    /// The national-identifier protection engine, when one is configured.
+    #[must_use]
+    pub fn identifier_protection(
+        &self,
+    ) -> Option<&crate::service::demographic::identifier::engine::IdentifierProtection> {
+        self.identifiers.as_deref()
+    }
+
     /// Install the protection engine when the deployment built one.
     ///
     /// The optional twin of [`Self::with_identifier_protection`], so the
