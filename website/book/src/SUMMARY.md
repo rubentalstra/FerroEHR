@@ -67,4 +67,6 @@
 - [Rust crates](crates.md)
 - [Contributing](contributing.md)
 - [Licensing & legal](licensing.md)
+  - [Compliance overview](compliance/index.md)
+  - [Shared responsibility](compliance/shared-responsibility.md)
   - [Control matrix](compliance/control-matrix.md)

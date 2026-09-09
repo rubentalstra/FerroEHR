@@ -30,6 +30,24 @@ workflow refuses a tag that has no matching section here.
   undeclared source stops the render and names the issue. A CI job re-renders
   and diffs, so a control that shipped since the last render fails the build
   instead of sitting on the public site as "planned".
+
+- **The documentation site has a compliance section** (#3163, #3165). Two
+  pages join the generated control matrix. The compliance overview states the
+  pseudonymisation boundary, then walks GDPR, the EDPB Guidelines 01/2025 on
+  pseudonymisation, the EHDS, the Dutch UAVG and Wabvpz, and NEN 7510, 7512 and
+  7513, saying per requirement what the product ships, what is planned and
+  under which issue, and what the deploying organisation still has to do. The
+  shared-responsibility page draws the same line obligation by obligation,
+  because most duties in these texts rest on the controller and the processor
+  and cannot be met by software. Both pages carry the wording policy of the
+  compliance programme: FerroEHR aims to be the first openly developed,
+  source-available openEHR CDR with a published, tracker-backed EU compliance
+  posture and an EHDS conformity self-assessment on its roadmap, and it claims
+  no certification, no conformity and no compliant deployment. The
+  pseudonymisation boundary is written as planned throughout, with its issue
+  numbers, because the schema split and the linkage service are not merged.
+  Every legal source is linked to its official publisher, and every openEHR
+  statement to the published specification section it comes from.
 - **The storage-parity sweep has a repair to go with it** (#3143).
   `POST /admin/integrity/verify` reported that a version's decomposed rows and
   its stored document disagree, and then there was nothing to run: dump and

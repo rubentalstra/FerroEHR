@@ -37,6 +37,17 @@ rejects any attempt to hand-type it. To reproduce either side yourself, see
 [Conformance](conformance.md#running-the-suite-yourself) and
 [Benchmarks](benchmarks.md).
 
+One difference between the two projects is not something a runner can score,
+so this page states it rather than tabling it. FerroEHR aims to be the first
+openly developed, source-available openEHR CDR with a published,
+tracker-backed EU compliance posture, and an EHDS conformity self-assessment
+is on its roadmap: the [compliance overview](compliance/index.md) names the
+legal sources, the [control matrix](compliance/control-matrix.md) is generated
+from the tracker, and the [shared-responsibility page](compliance/shared-responsibility.md)
+says which obligations the software cannot carry. None of that is a
+certification claim, and none of it is a statement about EHRbase, which
+publishes its own documentation on its own terms.
+
 <!-- toc -->
 
 ## Conformance
