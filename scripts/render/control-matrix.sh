@@ -39,18 +39,34 @@ BOARD_TITLE="${FERROEHR_PROJECT_TITLE:-FerroEHR Roadmap}"
 # outgrows this number into a loud failure rather than a short page.
 FETCH_LIMIT=10000
 
-# The legal-source registry: short name, then the official publisher URL. A
-# control naming a short name that is not declared here is a hard failure, so
-# no page cell can ever carry free text where a citation belongs. Order here is
-# the order the table groups by.
+# The legal-source registry: short name, jurisdiction, then the official
+# publisher URL. A control naming a short name that is not declared here is a
+# hard failure, so no page cell can ever carry free text where a citation
+# belongs. Order here is the order the table groups by.
+#
+# The jurisdiction column is not decoration. openEHR is not a Dutch standard,
+# and FerroEHR is deployed outside the Netherlands, so a page that lists Dutch
+# law beside EU law without saying which is which reads as though every
+# deployment answers to both (#3185). EU and INT apply everywhere; a
+# two-letter code is national and applies to deployments in that country.
+#
+# Every URL here is checked BY HAND when it is added or changed, and the date
+# recorded below. Nothing in CI can do it: the link checker runs with
+# --offline deliberately, because a rate-limited publisher says nothing about
+# the change under review (#2287). That is exactly how the NEN 7510 entry sat
+# here returning 404 (#3177).
+#
+# Last checked, all 200: 2026-09-09.
 LEGAL_SOURCES=(
-  "GDPR|https://eur-lex.europa.eu/eli/reg/2016/679/oj"
-  "EHDS|https://eur-lex.europa.eu/eli/reg/2025/327/oj"
-  "UAVG|https://wetten.overheid.nl/BWBR0040940"
-  "Wabvpz|https://wetten.overheid.nl/BWBR0023864"
-  "NEN 7510|https://www.nen.nl/zorg-en-welzijn/informatiebeveiliging-in-de-zorg/nen-7510"
-  "NEN 7513|https://www.nen.nl"
-  "IHE ATNA|https://profiles.ihe.net/ITI/TF/Volume1/ch-9.html"
+  "GDPR|EU|https://eur-lex.europa.eu/eli/reg/2016/679/oj"
+  "EHDS|EU|https://eur-lex.europa.eu/eli/reg/2025/327/oj"
+  "EDPB 01/2025|EU|https://www.edpb.europa.eu/our-work-tools/documents/public-consultations/2025/guidelines-012025-pseudonymisation_en"
+  "UAVG|NL|https://wetten.overheid.nl/BWBR0040940"
+  "Wabvpz|NL|https://wetten.overheid.nl/BWBR0023864"
+  "NEN 7510|NL|https://www.nen.nl/nen-7510-1-2024-nl-331311"
+  "NEN 7512|NL|https://www.nen.nl/nen-7512-2022-nl-297137"
+  "NEN 7513|NL|https://www.nen.nl/nen-7513-2018-nl-245399"
+  "IHE ATNA|INT|https://profiles.ihe.net/ITI/TF/Volume1/ch-9.html"
 )
 
 die() {
@@ -77,7 +93,8 @@ trap 'rm -rf "$WORK"' EXIT
 
 # ── the registry, as JSON ────────────────────────────────────────────────────
 printf '%s\n' "${LEGAL_SOURCES[@]}" |
-  jq -R -s 'split("\n") | map(select(length > 0) | split("|") | {name: .[0], url: .[1]})
+  jq -R -s 'split("\n") | map(select(length > 0) | split("|")
+              | {name: .[0], jurisdiction: .[1], url: .[2]})
             | to_entries | map(.value + {rank: .key})' > "$WORK/sources.json"
 
 # ── the tracker ──────────────────────────────────────────────────────────────
@@ -117,6 +134,7 @@ jq --slurpfile sources "$WORK/sources.json" '
               rank: $src.rank,
               source: $src.name,
               source_url: $src.url,
+              jurisdiction: $src.jurisdiction,
               clause: $clause,
               title: $issue.title,
               number: $issue.number,
@@ -230,13 +248,13 @@ rows="$(jq -r --slurpfile board "$WORK/board.json" '
   def prs:
     if (.pr | length) == 0 then "—"
     else [ .pr[] | "[#\(.number)](\(.url))" ] | join(", ") end;
-  .[] | "| [\(.source)](\(.source_url)) | \(.clause | esc) | \(.title | esc) | [#\(.number)](\(.url)) | \(status) | \(prs) |"
+  .[] | "| [\(.source)](\(.source_url)) | \(.jurisdiction) | \(.clause | esc) | \(.title | esc) | [#\(.number)](\(.url)) | \(status) | \(prs) |"
 ' "$WORK/controls.json")"
 
 if [[ -n "$rows" ]]; then
   cat >> "$OUT" <<'TABLE'
-| Legal source | Article or clause | Control | Issue | Status | Closing PR |
-|---|---|---|---|---|---|
+| Legal source | Applies to | Article or clause | Control | Issue | Status | Closing PR |
+|---|---|---|---|---|---|---|
 TABLE
   printf '%s\n' "$rows" >> "$OUT"
 else
@@ -247,18 +265,29 @@ fills itself as the compliance program lands: the first issue to carry a
 EMPTY
 fi
 
-cat >> "$OUT" <<'FOOTER'
+{
+  cat <<'FOOTER'
 
 ## Legal sources
 
 The short names above resolve to these publishers. The linked text is the
 authority; nothing on this page restates it.
 
-| Short name | Source |
-|---|---|
+| Short name | Applies to | Source |
+|---|---|---|
 FOOTER
 
-jq -r '.[] | "| \(.name) | [\(.url)](\(.url)) |"' "$WORK/sources.json" >> "$OUT"
+  jq -r '.[] | "| \(.name) | \(.jurisdiction) | [\(.url)](\(.url)) |"' "$WORK/sources.json"
+
+  cat <<'SCOPE'
+
+`EU` and `INT` apply to every deployment. A two-letter country code is
+national law or a national standard, and applies to a deployment in that
+country: FerroEHR is an openEHR CDR, openEHR is not a Dutch standard, and a
+deployment elsewhere answers to its own equivalents rather than to these.
+Adding a jurisdiction is a registry entry plus the controls that cite it.
+SCOPE
+} >> "$OUT"
 
 if [[ "$CHECK" -eq 1 ]]; then
   [[ -f "$PAGE" ]] || die "$PAGE does not exist — run $SCRIPT"
