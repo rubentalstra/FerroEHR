@@ -191,7 +191,15 @@ impl FerroEhrService {
         // `_executed_aql` carries the parameter-SUBSTITUTED text; `q` keeps
         // the original query as submitted.
         let executed = substitute_params(aql, &params);
+        let served_rows = u64::try_from(result.rows.len()).unwrap_or(u64::MAX);
+        let served_ehrs = result
+            .served_ehrs
+            .iter()
+            .map(|(ehr, count)| (ehr.to_string(), *count))
+            .collect();
         let mut outcome = QueryOutcome::plain(result_set_json(aql, &executed, name, result));
+        outcome.served_ehrs = served_ehrs;
+        outcome.served_rows = served_rows;
         if let Some(scope) = scope {
             outcome.ehr_ids = scope.ehr_ids;
             outcome.template_ids = scope.template_ids;

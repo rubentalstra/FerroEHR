@@ -17,6 +17,30 @@ workflow refuses a tag that has no matching section here.
 
 ### Added
 
+- **Reads are logged per record, not just per operation** (#3156). Every
+  retrieval in the EHR, Query and Demographic APIs already produced an audit
+  record; each one now also says which pseudonymisation domain it read (`ehr`,
+  `demographic`, `linkage`, or `system` for an operation that touches no
+  domain), the purpose of use the caller declared, the legal basis the
+  deployment processes under, how many records were served, and the
+  `x-request-id` of the request it belonged to. An AQL statement additionally
+  produces **one access record per EHR it served**, each with that EHR's
+  served-row count, because one execute record over a population query cannot
+  answer whose record was read. The served set is read off the rows the caller
+  actually received rather than the rows the statement matched: a legal record
+  of access must not name an EHR whose content was never disclosed.
+  `SELECT DISTINCT` and aggregate projections carry no per-EHR breakdown — the
+  shape makes it underivable — and record the statement and its row count.
+  Two new keys configure the declaration surface: `[audit] purpose_header`
+  (default `x-purpose-of-use`) and `purpose_codes`, an allow-list that keeps
+  unagreed free text out of the trail, plus `[audit] legal_basis`. A test walks
+  the generated route tables so a newly generated `GET` that emits nothing
+  fails the build, and the trail's append-only property — no rewrite, no
+  delete outside the retention reaper, no truncation — is now asserted rather
+  than assumed. See
+  [Audit trail](https://ferroehr.eu/book/audit.html#reads-are-logged-too-per-record),
+  which maps the NEN 7513 event content onto the recorded fields.
+
 - **The clinical side refuses identifying data, and the subject reference is
   bound to a pseudonym.** A new `[privacy]` configuration section carries three
   write-path rules, all reported as `422` with one entry per finding naming the

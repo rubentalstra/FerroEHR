@@ -72,8 +72,22 @@ async fn run(
         return Ok(deny);
     }
 
-    Ok(response::respond_result_set(
-        &parts.headers,
-        &outcome.result_set,
-    ))
+    let mut resp = response::respond_result_set(&parts.headers, &outcome.result_set);
+    // The access log records one access per EHR the statement served, plus the
+    // statement's own operation record. Both ride the response extensions the
+    // ATNA middleware reads, so the caller identity stays in one place.
+    resp.extensions_mut()
+        .insert(crate::system_log::middleware::AuditObject {
+            ehr_id: None,
+            uid: None,
+            result_count: Some(outcome.served_rows),
+            domain: None,
+        });
+    if !outcome.served_ehrs.is_empty() {
+        resp.extensions_mut()
+            .insert(crate::system_log::middleware::AuditServedEhrs(
+                outcome.served_ehrs,
+            ));
+    }
+    Ok(resp)
 }

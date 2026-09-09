@@ -120,7 +120,30 @@ pub struct PreparedQuery {
     pub values: SqlxValues,
     /// The `RESULT_SET` column read-back plan, in SELECT order.
     pub columns: Vec<ColumnSpec>,
+    /// The SQL aliases of the hidden access-logging columns, one per bound VO
+    /// root, appended after the projection.
+    ///
+    /// Empty when the plan cannot carry them (see [`ACCESS_EHR_PREFIX`]); the
+    /// executor then reports no per-EHR breakdown rather than a wrong one.
+    pub access_ehr_cols: Vec<String>,
 }
+
+/// The alias prefix of the hidden per-root EHR column the access log reads.
+///
+/// An AQL statement is one access to every EHR it actually served, and NEN 7513
+/// and EHDS Art. 9 ask which records were accessed rather than how many. The
+/// executed statement therefore carries each bound VO root's `ehr_id` beside
+/// the projection, so the served set is read off the rows that were served —
+/// not off a second, unpaged scan, which would name EHRs the query matched and
+/// never disclosed.
+///
+/// Two plan shapes cannot carry it and get none: `SELECT DISTINCT`, where an
+/// extra column changes which rows are distinct, and an aggregate projection,
+/// where an ungrouped column is not even valid SQL. Both are recorded as a
+/// statement-level access with a row count and no per-EHR breakdown.
+///
+/// **No openEHR spec governs this — our own design/extension.**
+pub const ACCESS_EHR_PREFIX: &str = "access_ehr_";
 
 // `SqlxValues` is not `Debug`; project the bound-value count instead so the
 // struct still satisfies the workspace `missing_debug_implementations` lint.
@@ -130,6 +153,7 @@ impl std::fmt::Debug for PreparedQuery {
             .field("sql", &self.sql)
             .field("value_count", &self.values.0.0.len())
             .field("columns", &self.columns)
+            .field("access_ehr_cols", &self.access_ehr_cols)
             .finish()
     }
 }
@@ -309,6 +333,7 @@ pub fn build(ir: &QueryIr, params: &Params, ctx: &SqlCtx) -> Result<PreparedQuer
     b.apply_ehr_scope();
     b.apply_population_gate();
     let columns = b.build_select()?;
+    let access_ehr_cols = b.build_access_ehr_columns(ir);
     b.build_where()?;
     b.build_order_by()?;
     b.build_paging();
@@ -320,6 +345,7 @@ pub fn build(ir: &QueryIr, params: &Params, ctx: &SqlCtx) -> Result<PreparedQuer
         sql,
         values,
         columns,
+        access_ehr_cols,
     })
 }
 

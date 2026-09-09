@@ -83,6 +83,22 @@ pub struct QueryOutcome {
     pub ehr_ids: Vec<String>,
     /// The distinct template ids the query touched (empty unless collected).
     pub template_ids: Vec<String>,
+    /// The EHRs this execution actually SERVED, each with its served-row count.
+    ///
+    /// Distinct from [`Self::ehr_ids`], and the difference is the point.
+    /// `ehr_ids` is what the query MATCHED, collected before paging so the
+    /// authorization decision covers everything the statement could reach.
+    /// This is what the caller was actually shown, after `LIMIT`, and it is
+    /// what the access log records: a legal record of access must not name an
+    /// EHR whose content was never disclosed.
+    ///
+    /// Empty when the plan carries no per-EHR breakdown
+    /// (`crate::aql::sql::ACCESS_EHR_PREFIX` names those shapes).
+    pub served_ehrs: Vec<(String, u64)>,
+    /// How many rows this execution served — the access log's record of how
+    /// much was disclosed, counted where the rows are rather than re-read from
+    /// the assembled document.
+    pub served_rows: u64,
 }
 
 impl QueryOutcome {
@@ -93,6 +109,8 @@ impl QueryOutcome {
             result_set,
             ehr_ids: Vec::new(),
             template_ids: Vec::new(),
+            served_ehrs: Vec::new(),
+            served_rows: 0,
         }
     }
 }

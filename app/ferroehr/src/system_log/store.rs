@@ -64,8 +64,10 @@ impl AuditStore {
         sqlx::query(
             "INSERT INTO audit.audit_event (recorded_at, action, outcome, event_code, \
              operation, principal, patient_id, resource_class, resource_id, client_ip, \
-             token_id, tenant_id, fhir) \
-             VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13) \
+             token_id, tenant_id, domain, purpose, legal_basis, result_count, \
+             request_id, fhir) \
+             VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, \
+             $15, $16, $17, $18) \
              RETURNING id",
         )
         .bind(Timestamp::from(event.timestamp))
@@ -80,6 +82,11 @@ impl AuditStore {
         .bind(event.client_ip.as_deref())
         .bind(event.token_id.as_deref())
         .bind(event.tenant_id)
+        .bind(event.domain.as_str())
+        .bind(event.purpose.as_deref())
+        .bind(event.legal_basis.as_deref())
+        .bind(result_count(event))
+        .bind(event.request_id.as_deref())
         .bind(fhir.clone())
         .fetch_one(&self.pool)
         .await?
@@ -119,6 +126,11 @@ impl AuditStore {
         let mut client_ips: Vec<Option<&str>> = Vec::with_capacity(records.len());
         let mut token_ids: Vec<Option<&str>> = Vec::with_capacity(records.len());
         let mut tenant_ids: Vec<Option<Uuid>> = Vec::with_capacity(records.len());
+        let mut domains: Vec<&str> = Vec::with_capacity(records.len());
+        let mut purposes: Vec<Option<&str>> = Vec::with_capacity(records.len());
+        let mut legal_bases: Vec<Option<&str>> = Vec::with_capacity(records.len());
+        let mut result_counts: Vec<Option<i64>> = Vec::with_capacity(records.len());
+        let mut request_ids: Vec<Option<&str>> = Vec::with_capacity(records.len());
         let mut fhir_docs: Vec<serde_json::Value> = Vec::with_capacity(records.len());
         for (event, subject, fhir) in records {
             let Some(fhir) = fhir else {
@@ -136,6 +148,11 @@ impl AuditStore {
             client_ips.push(event.client_ip.as_deref());
             token_ids.push(event.token_id.as_deref());
             tenant_ids.push(event.tenant_id);
+            domains.push(event.domain.as_str());
+            purposes.push(event.purpose.as_deref());
+            legal_bases.push(event.legal_basis.as_deref());
+            result_counts.push(result_count(event));
+            request_ids.push(event.request_id.as_deref());
             fhir_docs.push(fhir.clone());
         }
         if fhir_docs.is_empty() {
@@ -144,10 +161,12 @@ impl AuditStore {
         sqlx::query(
             "INSERT INTO audit.audit_event (recorded_at, action, outcome, event_code, \
              operation, principal, patient_id, resource_class, resource_id, client_ip, \
-             token_id, tenant_id, fhir) \
+             token_id, tenant_id, domain, purpose, legal_basis, result_count, \
+             request_id, fhir) \
              SELECT * FROM UNNEST($1::timestamptz[], $2::text[], $3::smallint[], $4::text[], \
              $5::text[], $6::text[], $7::text[], $8::text[], $9::text[], $10::text[], \
-             $11::text[], $12::uuid[], $13::jsonb[])",
+             $11::text[], $12::uuid[], $13::text[], $14::text[], $15::text[], \
+             $16::bigint[], $17::text[], $18::jsonb[])",
         )
         .bind(recorded_at)
         .bind(actions)
@@ -161,6 +180,11 @@ impl AuditStore {
         .bind(client_ips)
         .bind(token_ids)
         .bind(tenant_ids)
+        .bind(domains)
+        .bind(purposes)
+        .bind(legal_bases)
+        .bind(result_counts)
+        .bind(request_ids)
         .bind(fhir_docs)
         .execute(&self.pool)
         .await?;
@@ -481,6 +505,17 @@ const fn resource_class(object: ObjectClass) -> &'static str {
 
 fn nonempty_opt(value: &str) -> Option<&str> {
     (!value.is_empty()).then_some(value)
+}
+
+/// The `result_count` column: how many records the operation served.
+///
+/// A count beyond `i64::MAX` is not representable in the column's `bigint`, and
+/// no result set reaches it, so such a value is recorded as absent rather than
+/// as a wrong number.
+fn result_count(event: &AuditEvent) -> Option<i64> {
+    event
+        .result_count
+        .and_then(|count| i64::try_from(count).ok())
 }
 
 #[cfg(test)]

@@ -181,6 +181,31 @@ pub struct AuditConfig {
     /// network-access-point (`FERROEHR__AUDIT__SERVER_HOST`); the
     /// `value_if_missing` fill when unset.
     pub server_host: Option<String>,
+    /// The request header carrying the caller's declared purpose of use
+    /// (`FERROEHR__AUDIT__PURPOSE_HEADER`), recorded on every access record.
+    ///
+    /// NEN 7513 asks on whose authority a record was accessed, and EHDS Art. 9
+    /// asks why; neither is derivable from the request, so the caller declares
+    /// it and the trail records what was declared. No openEHR spec governs
+    /// this and IHE carries the equivalent in a SAML attribute rather than a
+    /// header, so the header is our own design.
+    pub purpose_header: String,
+    /// The purpose codes this deployment accepts
+    /// (`FERROEHR__AUDIT__PURPOSE_CODES`).
+    ///
+    /// Empty (the default) records whatever the caller declares. A non-empty
+    /// list records a declared code only when it is on the list, so a
+    /// deployment that has agreed a vocabulary does not accumulate a trail of
+    /// free text that means nothing at review time.
+    pub purpose_codes: Vec<String>,
+    /// The legal basis this deployment processes under
+    /// (`FERROEHR__AUDIT__LEGAL_BASIS`), recorded on every access record.
+    ///
+    /// A deployment-level fact, not a per-request one: the controller
+    /// establishes the GDPR Art. 6/9 condition once
+    /// (<https://eur-lex.europa.eu/eli/reg/2016/679/oj>) and every access under
+    /// this deployment carries it. Unset records nothing rather than a guess.
+    pub legal_basis: Option<String>,
     /// `[audit.store]` — the local Audit Record Repository.
     pub store: StoreConfig,
     /// `[audit.syslog]` — the classic DICOM-over-syslog feed.
@@ -201,6 +226,9 @@ impl Default for AuditConfig {
             resolve_subject: true,
             queue_capacity: 8192,
             server_host: None,
+            purpose_header: "x-purpose-of-use".to_owned(),
+            purpose_codes: Vec::new(),
+            legal_basis: None,
             store: StoreConfig::default(),
             syslog: SyslogConfig::default(),
             fhir_feed: FhirFeedConfig::default(),

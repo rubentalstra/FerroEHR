@@ -49,6 +49,14 @@ pub struct QueryResult {
     pub columns: Vec<ColumnMeta>,
     /// The rows; each is one cell per column.
     pub rows: Vec<Vec<Value>>,
+    /// The EHRs this statement actually served, each with the number of served
+    /// rows that came from it, ordered by first appearance.
+    ///
+    /// Empty when the plan carries no per-EHR breakdown
+    /// ([`crate::aql::sql::ACCESS_EHR_PREFIX`] states which shapes those are)
+    /// and when the result is empty. The access log reads it to record one
+    /// access per record accessed, rather than one per statement.
+    pub served_ehrs: Vec<(Uuid, u64)>,
 }
 
 /// Plan, execute, and assemble an AQL query.
@@ -115,7 +123,38 @@ pub async fn execute(
     Ok(QueryResult {
         columns,
         rows: out_rows,
+        served_ehrs: served_ehrs(&rows, &prepared.access_ehr_cols)?,
     })
+}
+
+/// The EHRs the served rows came from, each with its served-row count, ordered
+/// by first appearance.
+///
+/// One row can name several EHRs (one per bound VO root in a cross-EHR join),
+/// and each counts as one served row for each EHR it names — the row disclosed
+/// content from all of them. A NULL column is an outer-joined absent root and
+/// names no EHR.
+///
+/// # Errors
+/// [`ExecError`] when a column the builder declared cannot be read back.
+fn served_ehrs(rows: &[PgRow], access_cols: &[String]) -> Result<Vec<(Uuid, u64)>, AqlError> {
+    if access_cols.is_empty() {
+        return Ok(Vec::new());
+    }
+    // Insertion-ordered so the record set is deterministic; the count is small
+    // (the EHRs one page served), so a linear probe beats a hash map.
+    let mut served: Vec<(Uuid, u64)> = Vec::new();
+    for row in rows {
+        for name in access_cols {
+            let ehr: Option<Uuid> = row.try_get(name.as_str()).map_err(ExecError::from)?;
+            let Some(ehr) = ehr else { continue };
+            match served.iter_mut().find(|(known, _)| *known == ehr) {
+                Some((_, count)) => *count = count.saturating_add(1),
+                None => served.push((ehr, 1)),
+            }
+        }
+    }
+    Ok(served)
 }
 
 /// The result of scanning the SQL rows: the assembled cells, the subtree

@@ -74,6 +74,110 @@ pub struct AuditObject {
     pub ehr_id: Option<String>,
     /// The resource identifier (version uid / contribution uid / object URI).
     pub uid: Option<String>,
+    /// How many records the operation served, for an operation that serves a
+    /// countable set: AQL result rows, search entries. NEN 7513 and EHDS
+    /// Art. 9 ask what was accessed, and for a query the answer is a volume as
+    /// much as a resource.
+    pub result_count: Option<u64>,
+    /// The pseudonymisation domain this response read, when the handler knows
+    /// it better than the resource class does.
+    ///
+    /// The released OAS reuses one CONTRIBUTION `operationId` across the EHR
+    /// and DEMOGRAPHIC bundles, so the operation alone cannot say which domain
+    /// a contribution read touched; the demographic group sets this and the
+    /// class decides for everything else.
+    pub domain: Option<ferroehr::system_log::event::AccessDomain>,
+}
+
+/// The EHRs a query served, each with its served-row count.
+///
+/// A response extension the query dispatch sets and the audit middleware
+/// reads: an AQL statement is one operation but potentially many accesses, and
+/// NEN 7513 and EHDS Art. 9 both ask which records were accessed. Carrying it
+/// here rather than emitting from the service keeps the caller identity in the
+/// one place that has it.
+#[derive(Debug, Clone)]
+pub struct AuditServedEhrs(pub Vec<(String, u64)>);
+
+/// The access-logging facts every record of one request shares: the request
+/// correlation id and the declared purpose of use.
+#[derive(Debug, Clone, Default)]
+struct AccessContext {
+    request_id: Option<String>,
+    purpose: Option<String>,
+}
+
+/// Stamp the shared access-logging fields onto one record.
+///
+/// The legal basis is a deployment fact rather than a request one, so it is
+/// read from configuration here rather than carried per request.
+fn fill_access(event: &mut AuditEvent, access: &AccessContext, state: &AppState) {
+    event.request_id.clone_from(&access.request_id);
+    event.purpose.clone_from(&access.purpose);
+    event.legal_basis = state.backend().audit_legal_basis().map(str::to_owned);
+}
+
+/// Emit one access record per EHR a query served, beside the statement's own
+/// operation record.
+///
+/// The statement record answers "who ran what"; these answer "whose record was
+/// disclosed", which is the question NEN 7513 and EHDS Art. 9 put per record.
+/// Returns whether any record was refused under `fail_mode = closed`.
+#[expect(
+    clippy::too_many_arguments,
+    reason = "every argument is one audited fact the middleware already holds; \
+              bundling them into a struct would move the same fields, not fewer"
+)]
+fn emit_served_ehr_records(
+    state: &AppState,
+    resp: &Response,
+    op: &'static str,
+    principal: Option<&Principal>,
+    client_ip: Option<&str>,
+    timestamp: jiff::Timestamp,
+    tenant: Option<uuid::Uuid>,
+    access: &AccessContext,
+) -> bool {
+    let Some(AuditServedEhrs(served)) = resp.extensions().get::<AuditServedEhrs>() else {
+        return false;
+    };
+    let mut rejected = false;
+    for (ehr_id, rows) in served {
+        let mut event = AuditEvent::new(
+            EventActionCode::Read,
+            ObjectClass::Ehr,
+            EventOutcome::Success,
+        );
+        event.event_type = Some(EventType::RestOperation(op));
+        fill_common(
+            &mut event,
+            principal,
+            client_ip.map(str::to_owned),
+            timestamp,
+        );
+        event.ehr_id = Some(ehr_id.clone());
+        event.object_id = Some(ehr_id.clone());
+        event.tenant_id = tenant;
+        event.result_count = Some(*rows);
+        fill_access(&mut event, access, state);
+        rejected |= state.backend().emit(event) == EmitOutcome::Rejected;
+    }
+    rejected
+}
+
+/// The purpose of use the caller declared, when the deployment records it.
+///
+/// The header name and the accepted vocabulary are deployment configuration
+/// (`[audit] purpose_header` / `purpose_codes`). A declared code outside a
+/// configured vocabulary is recorded as absent rather than verbatim: an
+/// unagreed string in the trail reads at review time as though a purpose was
+/// established when none was.
+fn declared_purpose(req: &Request, backend: &ferroehr::service::FerroEhrService) -> Option<String> {
+    let header = backend.audit_purpose_header()?;
+    let declared = req.headers().get(header)?.to_str().ok()?.trim();
+    backend
+        .audit_accepts_purpose(declared)
+        .then(|| declared.to_owned())
 }
 
 /// The ATNA audit middleware, routing emission through the platform's SM
@@ -88,9 +192,21 @@ pub async fn middleware(State(state): State<AppState>, req: Request, next: Next)
     let client_ip = client_ip(&req);
     let path = req.uri().path().to_owned();
     let timestamp = jiff::Timestamp::now();
+    let purpose = declared_purpose(&req, state.backend());
 
     let resp = next.run(req).await;
     let status = resp.status();
+
+    // The correlation id the response carries, set by the request-id layer
+    // above this one (`SetRequestIdLayer::x_request_id`).
+    let access = AccessContext {
+        request_id: resp
+            .headers()
+            .get("x-request-id")
+            .and_then(|value| value.to_str().ok())
+            .map(str::to_owned),
+        purpose,
+    };
 
     let op = resp.extensions().get::<AuditOpId>().copied();
     let principal = resp.extensions().get::<Principal>().cloned();
@@ -124,7 +240,24 @@ pub async fn middleware(State(state): State<AppState>, req: Request, next: Next)
             .and_then(|o| o.uid.clone())
             .or_else(|| object_id_from_path(op, &path));
         event.tenant_id = tenant;
+        event.result_count = object.as_ref().and_then(|o| o.result_count);
+        // A handler that knows its domain better than the resource class does
+        // says so; the class decides for everything else.
+        if let Some(domain) = object.as_ref().and_then(|o| o.domain) {
+            event.domain = domain;
+        }
+        fill_access(&mut event, &access, &state);
         op_rejected = state.backend().emit(event) == EmitOutcome::Rejected;
+        op_rejected |= emit_served_ehr_records(
+            &state,
+            &resp,
+            op,
+            principal.as_ref(),
+            client_ip.as_deref(),
+            timestamp,
+            tenant,
+            &access,
+        );
     }
 
     // The authentication record: a rejected access attempt is a failed

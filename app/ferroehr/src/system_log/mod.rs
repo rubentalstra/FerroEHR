@@ -178,6 +178,30 @@ impl FerroEhrService {
             .is_some_and(AuditSender::suppress_login_events)
     }
 
+    /// The request header a caller declares its purpose of use in
+    /// ([`config::AuditConfig::purpose_header`]), lowercased; `None` when no
+    /// audit sender is wired.
+    #[must_use]
+    pub fn audit_purpose_header(&self) -> Option<&str> {
+        self.audit.as_ref().map(AuditSender::purpose_header)
+    }
+
+    /// Whether `code` is a purpose code this deployment records
+    /// ([`config::AuditConfig::purpose_codes`]).
+    #[must_use]
+    pub fn audit_accepts_purpose(&self, code: &str) -> bool {
+        self.audit
+            .as_ref()
+            .is_some_and(|sender| sender.accepts_purpose(code))
+    }
+
+    /// The legal basis recorded on every access event
+    /// ([`config::AuditConfig::legal_basis`]).
+    #[must_use]
+    pub fn audit_legal_basis(&self) -> Option<&str> {
+        self.audit.as_ref().and_then(AuditSender::legal_basis)
+    }
+
     /// Whether the local Audit Record Repository is available (the store is
     /// wired), i.e. the ITI-81 retrieval surface can be served.
     #[must_use]

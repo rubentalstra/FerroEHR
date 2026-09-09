@@ -487,6 +487,12 @@ fail_mode = "open"           # open | closed (closed: un-auditable ops answer 50
 resolve_subject = true
 queue_capacity = 8192
 #? server_host = "cdr-01.example"
+# Access logging (NEN 7513, EHDS Art. 9): the header a caller declares its
+# purpose of use in, the codes this deployment accepts (empty = record whatever
+# is declared), and the legal basis recorded on every access.
+purpose_header = "x-purpose-of-use"
+purpose_codes = []
+#? legal_basis = "gdpr-art-9-2-h"
 
 # The local Audit Record Repository (the durability anchor).
 [audit.store]

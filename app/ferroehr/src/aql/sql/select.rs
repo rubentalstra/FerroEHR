@@ -13,7 +13,7 @@
 use sea_query::{Alias, Expr, ExprTrait as _, Func};
 
 use crate::aql::error::AqlError;
-use crate::aql::ir::{AggFunc, Coercion, LeafPath, PathTarget, SelectColumn, SelectValue};
+use crate::aql::ir::{AggFunc, Coercion, LeafPath, PathTarget, QueryIr, SelectColumn, SelectValue};
 use crate::db::iden::Node;
 
 use super::expr::{col, leaf_path_string, literal_value, order_coercion, to_jsonb, type_cond};
@@ -26,6 +26,33 @@ impl Builder<'_> {
             specs.push(self.emit_select_column(i, col)?);
         }
         Ok(specs)
+    }
+
+    /// Append the hidden access-logging columns: one `ehr_id` per bound VO
+    /// root, after the projection.
+    ///
+    /// Returns their SQL aliases, or empty when this plan cannot carry them —
+    /// `SELECT DISTINCT`, where an extra column changes which rows are
+    /// distinct, and an aggregate projection, where an ungrouped column is not
+    /// valid SQL. The contract those two exclusions leave is on
+    /// [`super::ACCESS_EHR_PREFIX`].
+    pub(super) fn build_access_ehr_columns(&mut self, ir: &QueryIr) -> Vec<String> {
+        let aggregates = ir
+            .select
+            .iter()
+            .any(|column| matches!(column.value, SelectValue::Aggregate { .. }));
+        if ir.distinct || aggregates || self.group_roots.is_empty() {
+            return Vec::new();
+        }
+        let roots = self.group_roots.clone();
+        let mut aliases = Vec::with_capacity(roots.len());
+        for (i, root) in roots.iter().enumerate() {
+            let alias = format!("{}{i}", super::ACCESS_EHR_PREFIX);
+            self.q
+                .expr_as(col(root, "ehr_id"), Alias::new(alias.as_str()));
+            aliases.push(alias);
+        }
+        aliases
     }
 
     fn emit_select_column(&mut self, i: usize, col: &SelectColumn) -> Result<ColumnSpec, AqlError> {
