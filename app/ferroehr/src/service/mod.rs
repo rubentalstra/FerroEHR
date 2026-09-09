@@ -240,7 +240,7 @@ pub struct FerroEhrService {
     /// default posture; the binary installs the compiled
     /// `[demographic.identifier_protection]` section.
     pub(in crate::service) identifiers:
-        Option<Arc<crate::service::demographic::identifier::engine::IdentifierProtection>>,
+        Option<Arc<demographic::identifier::engine::IdentifierProtection>>,
     /// The clinical-side data-minimisation policy
     /// ([`crate::privacy`]) every clinical commit body is checked against.
     ///
@@ -302,7 +302,7 @@ impl FerroEhrService {
     #[must_use]
     pub fn with_identifier_protection(
         mut self,
-        engine: Arc<crate::service::demographic::identifier::engine::IdentifierProtection>,
+        engine: Arc<demographic::identifier::engine::IdentifierProtection>,
     ) -> Self {
         self.identifiers = Some(engine);
         self
@@ -312,7 +312,7 @@ impl FerroEhrService {
     #[must_use]
     pub fn identifier_protection(
         &self,
-    ) -> Option<&crate::service::demographic::identifier::engine::IdentifierProtection> {
+    ) -> Option<&demographic::identifier::engine::IdentifierProtection> {
         self.identifiers.as_deref()
     }
 
@@ -324,7 +324,7 @@ impl FerroEhrService {
     #[must_use]
     pub fn with_identifier_protection_opt(
         mut self,
-        engine: Option<Arc<crate::service::demographic::identifier::engine::IdentifierProtection>>,
+        engine: Option<Arc<demographic::identifier::engine::IdentifierProtection>>,
     ) -> Self {
         self.identifiers = engine;
         self

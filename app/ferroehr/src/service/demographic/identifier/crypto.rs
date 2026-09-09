@@ -97,7 +97,9 @@ impl RootKey {
         let mut bytes = [0_u8; 32];
         for (i, slot) in bytes.iter_mut().enumerate() {
             let pair = text.get(i * 2..i * 2 + 2).ok_or(CryptoError::RootKey)?;
-            *slot = u8::from_str_radix(pair, 16).map_err(|_| CryptoError::RootKey)?;
+            // The cause is dropped on purpose: it names the offending characters,
+            // and the key is a secret.
+            *slot = u8::from_str_radix(pair, 16).map_err(|_bad_hex| CryptoError::RootKey)?;
         }
         Ok(Self(secrecy::SecretBox::new(Box::new(bytes))))
     }
@@ -201,7 +203,7 @@ impl TenantKeys {
                     aad: &aad,
                 },
             )
-            .map_err(|_| CryptoError::Seal)?;
+            .map_err(|_aead| CryptoError::Seal)?;
         Ok((nonce_bytes.to_vec(), ciphertext))
     }
 
@@ -224,14 +226,14 @@ impl TenantKeys {
         let aad = associated_data(scheme, tenant);
         let plaintext = cipher
             .decrypt(
-                &Nonce::try_from(nonce).map_err(|_| CryptoError::Open)?,
+                &Nonce::try_from(nonce).map_err(|_len| CryptoError::Open)?,
                 Payload {
                     msg: ciphertext,
                     aad: &aad,
                 },
             )
-            .map_err(|_| CryptoError::Open)?;
-        String::from_utf8(plaintext).map_err(|_| CryptoError::Open)
+            .map_err(|_aead| CryptoError::Open)?;
+        String::from_utf8(plaintext).map_err(|_not_utf8| CryptoError::Open)
     }
 }
 
