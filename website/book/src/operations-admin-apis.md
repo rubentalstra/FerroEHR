@@ -188,8 +188,11 @@ breaks that agreement.
 | `POST {base}/admin/integrity/verify` | the sweep report |
 | `POST {base}/admin/integrity/rebuild-nodes` | the rebuild report |
 
-The sweep re-derives every stored version from its decomposed rows and compares
-the result with the stored document. It reads the archived tier as well, takes
+The sweep covers **both pseudonymisation domains**, clinical and demographic,
+in one pass. Every finding names the domain it came from, so a report can never
+describe half the store while looking like it described all of it. It re-derives
+every stored version from its decomposed rows and compares the result with the
+stored document. It reads the archived tier as well, takes
 no lock, and runs outside the request path of any clinical call, so it is safe
 to run on a live server. It is also a full scan of what it covers, so schedule
 it rather than calling it per request.
@@ -225,7 +228,7 @@ The body is one JSON object per line, each carrying a `type`:
 
 | `type` | When | Carries |
 |---|---|---|
-| `mismatch` | as each disagreement is found | the same four fields the report's `mismatches` entries carry |
+| `mismatch` | as each disagreement is found | the same five fields the report's `mismatches` entries carry, `domain` included |
 | `progress` | once per page of versions read | the counts so far |
 | `summary` | once, at the end | the final counts and `elapsed_ms` |
 | `error` | instead of `summary`, if the sweep failed part-way | a short message; the detail is in the server log |
@@ -247,6 +250,7 @@ at all, gets the aggregated document below, unchanged.
   "mismatch_count": 1,
   "mismatches": [
     {
+      "domain": "clinical",
       "vo_id": "8849182c-82ad-4088-a07f-48ead4180515",
       "sys_version": 2,
       "kind": "COMPOSITION",
@@ -257,6 +261,9 @@ at all, gets the aggregated document below, unchanged.
   "elapsed_ms": 431
 }
 ```
+
+`domain` is `clinical` or `demographic`, naming the schema the damaged version
+lives in. It is also what the repair below uses to reach it.
 
 `defect` is one of four values:
 
@@ -330,6 +337,7 @@ which is the repair for `unexpected_nodes`.
   "versions_refused": 1,
   "records": [
     {
+      "domain": "clinical",
       "vo_id": "8849182c-82ad-4088-a07f-48ead4180515",
       "sys_version": 2,
       "kind": "COMPOSITION",
@@ -338,9 +346,10 @@ which is the repair for `unexpected_nodes`.
       "node_rows": 41
     },
     {
+      "domain": "demographic",
       "vo_id": "1f0b7d64-6b2a-4a1f-9f0e-6b1d2a3c4d5e",
       "sys_version": 1,
-      "kind": "COMPOSITION",
+      "kind": "PERSON",
       "defect": "content_differs",
       "outcome": "refused",
       "reason": "the stored body does not decompose: ..."

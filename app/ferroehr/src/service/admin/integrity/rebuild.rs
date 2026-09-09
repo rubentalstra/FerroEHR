@@ -38,7 +38,7 @@ use uuid::Uuid;
 use crate::ids::{EhrId, VoId};
 use crate::service::FerroEhrService;
 use crate::service::admin::integrity::{
-    StorageParityDefect, StorageParityEvent, StorageParityScope,
+    StorageDomain, StorageParityDefect, StorageParityEvent, StorageParityScope,
 };
 use crate::service::error::ServiceError;
 use crate::service::status::SmError;
@@ -88,6 +88,8 @@ impl NodeRebuildOutcome {
 /// One damaged version the rebuild reached, and what happened to it.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct NodeRebuildRecord {
+    /// Which domain's storage the version lives in.
+    pub domain: StorageDomain,
     /// The versioned object the version belongs to.
     pub vo_id: Uuid,
     /// The per-object storage commit ordinal of the version.
@@ -199,7 +201,11 @@ impl FerroEhrService {
                 match event {
                     StorageParityEvent::Mismatch(mismatch) => {
                         let outcome = self
-                            .rebuild_one_version(VoId(mismatch.vo_id), mismatch.sys_version)
+                            .rebuild_one_version(
+                                mismatch.domain,
+                                VoId(mismatch.vo_id),
+                                mismatch.sys_version,
+                            )
                             .await?;
                         report.versions_damaged += 1;
                         match outcome {
@@ -210,6 +216,7 @@ impl FerroEhrService {
                         // body fragment would put clinical content into an
                         // operational log.
                         tracing::info!(
+                            domain = mismatch.domain.as_str(),
                             vo_id = %mismatch.vo_id,
                             sys_version = mismatch.sys_version,
                             kind = %mismatch.kind,
@@ -219,6 +226,7 @@ impl FerroEhrService {
                         );
                         if report.records.len() < MAX_REPORTED_RECORDS {
                             report.records.push(NodeRebuildRecord {
+                                domain: mismatch.domain,
                                 vo_id: mismatch.vo_id,
                                 sys_version: mismatch.sys_version,
                                 kind: mismatch.kind,
@@ -243,10 +251,18 @@ impl FerroEhrService {
     /// Repair one version in one transaction, or leave it untouched.
     async fn rebuild_one_version(
         &self,
+        domain: StorageDomain,
         vo_id: VoId,
         sys_version: i32,
     ) -> Result<NodeRebuildOutcome, ServiceError> {
-        let mut tx = self.pool.begin().await?;
+        // The repair runs in the domain that holds the damage: both schemas
+        // carry relations of the same names, and the pool's search path is
+        // what decides which one this transaction reaches.
+        let pool = match domain {
+            StorageDomain::Clinical => &self.pool,
+            StorageDomain::Demographic => &self.demographic_pool,
+        };
+        let mut tx = pool.begin().await?;
 
         // The tier's own rule: a write always thaws first, so a versioned
         // object is never split across tiers. The marker is captured before

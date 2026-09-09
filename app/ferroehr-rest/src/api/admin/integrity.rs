@@ -459,6 +459,7 @@ fn parity_event(event: &StorageParityEvent) -> Value {
     match event {
         StorageParityEvent::Mismatch(mismatch) => json!({
             "type": "mismatch",
+            "domain": mismatch.domain.as_str(),
             "vo_id": mismatch.vo_id.to_string(),
             "sys_version": mismatch.sys_version,
             "kind": mismatch.kind,
@@ -497,6 +498,7 @@ fn parity_report(report: &StorageParityReport) -> Value {
             .mismatches
             .iter()
             .map(|m| json!({
+                "domain": m.domain.as_str(),
                 "vo_id": m.vo_id.to_string(),
                 "sys_version": m.sys_version,
                 "kind": m.kind,
@@ -525,6 +527,7 @@ fn rebuild_report(report: &NodeRebuildReport) -> Value {
             .iter()
             .map(|record| {
                 let mut object = json!({
+                    "domain": record.domain.as_str(),
                     "vo_id": record.vo_id.to_string(),
                     "sys_version": record.sys_version,
                     "kind": record.kind,

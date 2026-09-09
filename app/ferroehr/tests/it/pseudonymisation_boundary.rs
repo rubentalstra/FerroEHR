@@ -593,7 +593,7 @@ async fn the_boot_self_check_refuses_a_cross_domain_grant() {
 /// A minimal valid PERSON body, authored as canonical JSON exactly as a client
 /// would post it (`.claude/rules/testing.md` §Test-fixture construction,
 /// class 2).
-fn a_person() -> serde_json::Value {
+pub(crate) fn a_person() -> serde_json::Value {
     serde_json::json!({
         "_type": "PERSON",
         "archetype_node_id": "openEHR-DEMOGRAPHIC-PERSON.person.v1",

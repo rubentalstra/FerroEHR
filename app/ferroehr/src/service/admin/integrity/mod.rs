@@ -64,6 +64,35 @@ const CONTENT_CHUNK: usize = 32;
 /// all and says it was truncated.
 const MAX_REPORTED_MISMATCHES: usize = 1000;
 
+/// Which pseudonymisation domain a sweep is reading.
+///
+/// The storage was one schema until the demographic domain split out (#3153),
+/// and the sweep quietly kept reading only the clinical one. A domain is
+/// therefore carried on every finding and every count rather than assumed:
+/// an operator asking whether their storage is intact means the whole store,
+/// and a report that covered half of it must never be able to look like a
+/// report that covered all of it.
+///
+/// NOTE: no openEHR spec governs storage layout — our own design/extension.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
+pub enum StorageDomain {
+    /// The clinical schema: compositions, `EHR_STATUS`, folders.
+    Clinical,
+    /// The demographic schema: PARTY versioned objects.
+    Demographic,
+}
+
+impl StorageDomain {
+    /// Returns the stable wire token for this domain.
+    #[must_use]
+    pub fn as_str(self) -> &'static str {
+        match self {
+            Self::Clinical => "clinical",
+            Self::Demographic => "demographic",
+        }
+    }
+}
+
 /// The way one stored version's two content copies disagree.
 ///
 /// NOTE: no openEHR spec governs storage mechanics — our own design/extension.
@@ -98,6 +127,8 @@ impl StorageParityDefect {
 /// One stored version whose two content copies disagree.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct StorageParityMismatch {
+    /// Which domain's storage the version lives in.
+    pub domain: StorageDomain,
     /// The versioned object the version belongs to.
     pub vo_id: Uuid,
     /// The per-object storage commit ordinal of the version.
@@ -248,6 +279,8 @@ impl FerroEhrService {
     pub fn storage_parity_sweep(&self, scope: StorageParityScope) -> StorageParitySweep<'_> {
         StorageParitySweep {
             service: self,
+            remaining: vec![StorageDomain::Demographic],
+            domain: StorageDomain::Clinical,
             scope,
             cursor: None,
             page: Vec::new().into_iter(),
@@ -299,6 +332,18 @@ impl FerroEhrService {
         Ok(report)
     }
 
+    /// The pool that reaches one domain's storage.
+    ///
+    /// Both domains carry relations of the same names, distinguished only by
+    /// the pool's `search_path`, which is exactly what lets one sweep read
+    /// both with one set of statements.
+    fn domain_pool(&self, domain: StorageDomain) -> &sqlx::PgPool {
+        match domain {
+            StorageDomain::Clinical => &self.pool,
+            StorageDomain::Demographic => &self.demographic_pool,
+        }
+    }
+
     /// Compare one chunk of versions in two round trips: the reassembled node
     /// content of all of them, then their stored bodies.
     ///
@@ -306,14 +351,15 @@ impl FerroEhrService {
     /// counters follow the enumeration rather than the map's iteration.
     async fn chunk_parity_defects<'k>(
         &self,
+        domain: StorageDomain,
         chunk: &'k [VersionKey],
     ) -> Result<Vec<(&'k VersionKey, Option<StorageParityDefect>)>, ServiceError> {
         let keys: Vec<(VoId, i32)> = chunk
             .iter()
             .map(|key| (VoId(key.vo_id), key.sys_version))
             .collect();
-        let rows = read_version_rows_all(&self.pool, &keys).await?;
-        let bodies = self.chunk_bodies(&keys).await?;
+        let rows = read_version_rows_all(self.domain_pool(domain), &keys).await?;
+        let bodies = self.chunk_bodies(domain, &keys).await?;
 
         Ok(chunk
             .iter()
@@ -348,6 +394,7 @@ impl FerroEhrService {
     /// the page read and this one, is absent from the map.
     async fn chunk_bodies(
         &self,
+        domain: StorageDomain,
         keys: &[(VoId, i32)],
     ) -> Result<HashMap<(VoId, i32), Value>, ServiceError> {
         let vo_ids: Vec<Uuid> = keys.iter().map(|(vo_id, _)| vo_id.0).collect();
@@ -361,7 +408,7 @@ impl FerroEhrService {
         )
         .bind(&vo_ids)
         .bind(&sys_versions)
-        .fetch_all(&self.pool)
+        .fetch_all(self.domain_pool(domain))
         .await?;
         let mut out = HashMap::with_capacity(rows.len());
         for (vo_id, sys_version, text) in rows {
@@ -377,6 +424,7 @@ impl FerroEhrService {
     /// pays a growing `OFFSET`.
     async fn parity_page(
         &self,
+        domain: StorageDomain,
         cursor: Option<(Uuid, i32)>,
         scope: StorageParityScope,
     ) -> Result<Vec<VersionKey>, ServiceError> {
@@ -402,7 +450,7 @@ impl FerroEhrService {
         .bind(scope.committed_since.map(jiff_sqlx::Timestamp::from))
         .bind(scope.vo_id)
         .bind(scope.sys_version)
-        .fetch_all(&self.pool)
+        .fetch_all(self.domain_pool(domain))
         .await?;
         Ok(rows
             .into_iter()
@@ -427,6 +475,11 @@ impl FerroEhrService {
 /// NOTE: no openEHR spec governs storage mechanics — our own design/extension.
 pub struct StorageParitySweep<'a> {
     service: &'a FerroEhrService,
+    /// The domains still to read, most recent first; the cursor pops one when
+    /// its pages run out, so a single sweep walks the whole store.
+    remaining: Vec<StorageDomain>,
+    /// The domain currently being read.
+    domain: StorageDomain,
     scope: StorageParityScope,
     cursor: Option<(Uuid, i32)>,
     page: std::vec::IntoIter<VersionKey>,
@@ -439,6 +492,8 @@ pub struct StorageParitySweep<'a> {
 impl std::fmt::Debug for StorageParitySweep<'_> {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         f.debug_struct("StorageParitySweep")
+            .field("domain", &self.domain)
+            .field("remaining", &self.remaining)
             .field("scope", &self.scope)
             .field("cursor", &self.cursor)
             .field("counts", &self.counts)
@@ -463,7 +518,8 @@ impl StorageParitySweep<'_> {
         loop {
             let chunk: Vec<VersionKey> = self.page.by_ref().take(CONTENT_CHUNK).collect();
             if !chunk.is_empty() {
-                return Ok(Some(self.check_chunk(&chunk).await?));
+                let domain = self.domain;
+                return Ok(Some(self.check_chunk(domain, &chunk).await?));
             }
             if self.done {
                 return Ok(None);
@@ -477,8 +533,19 @@ impl StorageParitySweep<'_> {
                     counts: self.counts,
                 }]));
             }
-            let page = self.service.parity_page(self.cursor, self.scope).await?;
+            let page = self
+                .service
+                .parity_page(self.domain, self.cursor, self.scope)
+                .await?;
             let Some(last) = page.last() else {
+                // This domain is read. Move to the next before finishing: a
+                // sweep that stopped at the first exhausted domain would
+                // report a clean whole-store result having read half of it.
+                if let Some(next) = self.remaining.pop() {
+                    self.domain = next;
+                    self.cursor = None;
+                    continue;
+                }
                 self.done = true;
                 let elapsed_ms =
                     u64::try_from(self.started.elapsed().as_millis()).unwrap_or(u64::MAX);
@@ -496,10 +563,11 @@ impl StorageParitySweep<'_> {
     /// Compare one chunk, count what it read, and turn its defects into events.
     async fn check_chunk(
         &mut self,
+        domain: StorageDomain,
         chunk: &[VersionKey],
     ) -> Result<Vec<StorageParityEvent>, ServiceError> {
         let mut events = Vec::new();
-        for (key, defect) in self.service.chunk_parity_defects(chunk).await? {
+        for (key, defect) in self.service.chunk_parity_defects(domain, chunk).await? {
             self.counts.versions_checked += 1;
             if key.has_body {
                 self.counts.versions_with_body += 1;
@@ -513,6 +581,7 @@ impl StorageParitySweep<'_> {
                 // log. It is emitted here, in the one sweep, so a finding is
                 // logged whichever response shape asked for it.
                 tracing::warn!(
+                    domain = domain.as_str(),
                     vo_id = %key.vo_id,
                     sys_version = key.sys_version,
                     kind = %key.kind,
@@ -520,6 +589,7 @@ impl StorageParitySweep<'_> {
                     "storage parity sweep: the node rows and the materialized body of a stored version disagree"
                 );
                 events.push(StorageParityEvent::Mismatch(StorageParityMismatch {
+                    domain,
                     vo_id: key.vo_id,
                     sys_version: key.sys_version,
                     kind: key.kind.clone(),
@@ -534,6 +604,12 @@ impl StorageParitySweep<'_> {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn domain_tokens_are_the_documented_wire_values() {
+        assert_eq!(StorageDomain::Clinical.as_str(), "clinical");
+        assert_eq!(StorageDomain::Demographic.as_str(), "demographic");
+    }
 
     #[test]
     fn defect_tokens_are_the_documented_wire_values() {

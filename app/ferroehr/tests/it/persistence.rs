@@ -480,7 +480,15 @@ async fn an_as_of_read_resolves_along_the_trunk() {
     insert_version_verbatim(&mut conn, &branch_row(VoId(vo), 2))
         .await
         .expect("branch beside the trunk");
-    let at = jiff::Timestamp::now();
+    // The server clock, not the test process's: `sys_period` is stamped by the
+    // database, and a client/DB skew under parallel load races the at-time read
+    // against the validity interval it is probing. Same reasoning as
+    // `service_demographic::db_now`.
+    let at: jiff::Timestamp = sqlx::query_scalar::<_, jiff_sqlx::Timestamp>("SELECT now()")
+        .fetch_one(&pool)
+        .await
+        .expect("db now()")
+        .to_jiff();
     let read = version_at(&pool, VoId(vo), at)
         .await
         .expect("as-of read")
