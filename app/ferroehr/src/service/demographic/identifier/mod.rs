@@ -59,8 +59,11 @@ impl FerroEhrService {
             ));
         };
         let resolved = engine.resolve(scheme, value).await.map_err(|error| {
-            // The error text carries the scheme, never the value.
-            SmError::exception(format!("resolving a `{scheme}` identifier failed: {error}"))
+            // The client is told the scheme and nothing else; the cause rides
+            // as a source so an operator can walk the chain without a database
+            // error text reaching a caller.
+            SmError::exception(format!("resolving a `{scheme}` identifier failed"))
+                .with_source(error)
         })?;
         self.emit_identifier_resolution(scheme, resolved.is_some());
         Ok(resolved.map(VoId))
