@@ -44,6 +44,29 @@ pub struct TipRow {
     pub open: bool,
 }
 
+/// Decode the tip columns of a placement row, or `None` when the object has no
+/// version yet.
+///
+/// One decoder for both placement queries: a `TipRow` field added in only one
+/// of two hand-written decodes is a field the other silently drops, and the
+/// two queries select the same columns precisely so they can share this.
+fn tip_from_row(row: &sqlx::postgres::PgRow) -> Result<Option<TipRow>, StorageError> {
+    let Some(kind) = row.try_get::<Option<String>, _>("kind")? else {
+        return Ok(None);
+    };
+    Ok(Some(TipRow {
+        ehr_id: row.try_get("ehr_id")?,
+        kind,
+        sys_version: row.try_get("sys_version")?,
+        trunk_version: row.try_get("trunk_version")?,
+        branch_number: row.try_get("branch_number")?,
+        branch_version: row.try_get("branch_version")?,
+        creating_system_id: row.try_get("creating_system_id")?,
+        lifecycle_state: row.try_get("lifecycle_state")?,
+        open: row.try_get("open")?,
+    }))
+}
+
 /// The merged placement read ([`next_placement`]).
 #[derive(Debug)]
 pub struct Placement {
@@ -136,21 +159,7 @@ pub async fn next_placement(
             .await?
         }
     };
-    let kind: Option<String> = row.try_get("kind")?;
-    let tip = match kind {
-        None => None,
-        Some(kind) => Some(TipRow {
-            ehr_id: row.try_get("ehr_id")?,
-            kind,
-            sys_version: row.try_get("sys_version")?,
-            trunk_version: row.try_get("trunk_version")?,
-            branch_number: row.try_get("branch_number")?,
-            branch_version: row.try_get("branch_version")?,
-            creating_system_id: row.try_get("creating_system_id")?,
-            lifecycle_state: row.try_get("lifecycle_state")?,
-            open: row.try_get("open")?,
-        }),
-    };
+    let tip = tip_from_row(&row)?;
     Ok(Placement {
         tip,
         next_ordinal: row.try_get("next_ordinal")?,
@@ -261,21 +270,7 @@ pub async fn update_placement(
         ") fv ON true"
     );
     let row = sqlx::query(SQL).bind(vo_id).fetch_one(&mut *tx).await?;
-    let kind: Option<String> = row.try_get("kind")?;
-    let tip = match kind {
-        None => None,
-        Some(kind) => Some(TipRow {
-            ehr_id: row.try_get("ehr_id")?,
-            kind,
-            sys_version: row.try_get("sys_version")?,
-            trunk_version: row.try_get("trunk_version")?,
-            branch_number: row.try_get("branch_number")?,
-            branch_version: row.try_get("branch_version")?,
-            creating_system_id: row.try_get("creating_system_id")?,
-            lifecycle_state: row.try_get("lifecycle_state")?,
-            open: row.try_get("open")?,
-        }),
-    };
+    let tip = tip_from_row(&row)?;
     let first_root = match row.try_get::<Option<bool>, _>("first_found")? {
         Some(true) => Some((row.try_get("first_ani")?, row.try_get("first_category")?)),
         _ => None,

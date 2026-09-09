@@ -111,18 +111,7 @@ impl FerroEhrService {
     /// EHR is existence-checked before anything is written.
     async fn archive_ehr_vos(&self, ehr_ids: &[EhrId]) -> Result<(), ServiceError> {
         let mut tx = self.pool.begin().await?;
-        for &ehr_id in ehr_ids {
-            let exists: bool = sqlx::query_scalar("SELECT EXISTS(SELECT 1 FROM ehr WHERE id = $1)")
-                .bind(ehr_id)
-                .fetch_one(&mut *tx)
-                .await?;
-            if !exists {
-                return Err(ServiceError::sm(
-                    CallStatusType::EhrIdDoesNotExist,
-                    format!("EHR {ehr_id}"),
-                ));
-            }
-        }
+        require_ehrs_exist(&mut tx, ehr_ids).await?;
         for &ehr_id in ehr_ids {
             // The still-live objects of this EHR: what the marker set and the
             // move both address. Already-archived objects have no primary rows
@@ -179,18 +168,7 @@ impl FerroEhrService {
     /// Restore every archived versioned object of each EHR, all-or-nothing.
     async fn restore_ehr_vos(&self, ehr_ids: &[EhrId]) -> Result<(), ServiceError> {
         let mut tx = self.pool.begin().await?;
-        for &ehr_id in ehr_ids {
-            let exists: bool = sqlx::query_scalar("SELECT EXISTS(SELECT 1 FROM ehr WHERE id = $1)")
-                .bind(ehr_id)
-                .fetch_one(&mut *tx)
-                .await?;
-            if !exists {
-                return Err(ServiceError::sm(
-                    CallStatusType::EhrIdDoesNotExist,
-                    format!("EHR {ehr_id}"),
-                ));
-            }
-        }
+        require_ehrs_exist(&mut tx, ehr_ids).await?;
         for &ehr_id in ehr_ids {
             let vo_ids: Vec<VoId> =
                 sqlx::query_scalar("SELECT DISTINCT vo_id FROM cold_vo_version WHERE ehr_id = $1")
@@ -236,4 +214,28 @@ async fn party_kind_any_tier(
     .bind(party_id)
     .fetch_optional(&mut *tx)
     .await?)
+}
+
+/// Refuse the whole operation unless every named EHR exists.
+///
+/// Archive and restore are both all-or-nothing over a list, so the check runs
+/// before either writes anything. One implementation for both: a divergence
+/// here would let one of the two half-apply on an id the other rejects.
+async fn require_ehrs_exist(
+    tx: &mut sqlx::PgConnection,
+    ehr_ids: &[EhrId],
+) -> Result<(), ServiceError> {
+    for &ehr_id in ehr_ids {
+        let exists: bool = sqlx::query_scalar("SELECT EXISTS(SELECT 1 FROM ehr WHERE id = $1)")
+            .bind(ehr_id)
+            .fetch_one(&mut *tx)
+            .await?;
+        if !exists {
+            return Err(ServiceError::sm(
+                CallStatusType::EhrIdDoesNotExist,
+                format!("EHR {ehr_id}"),
+            ));
+        }
+    }
+    Ok(())
 }

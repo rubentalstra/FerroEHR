@@ -322,6 +322,17 @@ const BARRIERS: &[(&str, &str, &[&str])] = &[
 /// (`PostgreSQL` docs § Appendix A "`PostgreSQL` Error Codes", class 42).
 const SQLSTATE_INSUFFICIENT_PRIVILEGE: &str = "42501";
 
+/// A password for a throwaway login role, fresh per call.
+///
+/// The value is never a secret: the role lives as long as one test against an
+/// ephemeral clone. It is generated rather than written down because a literal
+/// here is indistinguishable, to a scanner and to a reader, from a credential
+/// that does matter, and the repository's own rule is that a finding is fixed
+/// rather than suppressed.
+fn throwaway_password() -> String {
+    format!("pw{}", Uuid::now_v7().simple())
+}
+
 /// Rewrite the userinfo of a testkit clone DSN so a test can connect to the
 /// same database as a different login role (scheme/host/port/database
 /// preserved).
@@ -340,13 +351,14 @@ fn with_role(base_url: &str, user: &str, password: &str) -> String {
 /// named off the clone's database name and the testkit sweep reaps it.
 async fn role_conn(db: &testkit::TestDb, suffix: &str, domain_role: &str) -> PgConnection {
     let login = format!("{}_{suffix}", db.name());
+    let password = throwaway_password();
     sqlx::query(sqlx::AssertSqlSafe(format!(
-        "CREATE ROLE {login} LOGIN PASSWORD 'testpw' IN ROLE {domain_role}"
+        "CREATE ROLE {login} LOGIN PASSWORD '{password}' IN ROLE {domain_role}"
     )))
     .execute(&db.pool())
     .await
     .expect("create the login role");
-    PgConnection::connect(&with_role(db.url(), &login, "testpw"))
+    PgConnection::connect(&with_role(db.url(), &login, &password))
         .await
         .expect("connect as the runtime role")
 }
@@ -647,8 +659,9 @@ async fn the_cutover_runs_as_a_non_superuser_owner_for_a_tenant_owned_party() {
     // A per-clone login role: roles are cluster-global on the shared testkit
     // server, so the name is keyed off the clone the sweep will reap.
     let migrator = format!("{}_migrator", db.name());
+    let password = throwaway_password();
     sqlx::query(sqlx::AssertSqlSafe(format!(
-        "CREATE ROLE {migrator} LOGIN PASSWORD 'testpw'"
+        "CREATE ROLE {migrator} LOGIN PASSWORD '{password}'"
     )))
     .execute(&pool)
     .await
@@ -667,7 +680,7 @@ async fn the_cutover_runs_as_a_non_superuser_owner_for_a_tenant_owned_party() {
 
     let as_migrator = sqlx::postgres::PgPoolOptions::new()
         .max_connections(1)
-        .connect(&with_role(db.url(), &migrator, "testpw"))
+        .connect(&with_role(db.url(), &migrator, &password))
         .await
         .expect("connect as the migrator role");
 
