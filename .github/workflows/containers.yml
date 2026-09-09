@@ -374,7 +374,7 @@ jobs:
         if: matrix.platform == 'amd64'
         run: apt-get update && apt-get install -y --no-install-recommends curl ca-certificates
 
-      - uses: taiki-e/install-action@e67fa11c4b9316fa714ddf0abed07a0c3143b95b # v2.87.4
+      - uses: taiki-e/install-action@84f5ac3124727fb3d284d4d22ee9ab3654fd09a6 # v2.87.7
         if: matrix.platform == 'amd64'
         with:
           tool: cargo-leptos@0.3.7,wasm-bindgen@0.2.126
