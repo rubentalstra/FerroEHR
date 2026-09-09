@@ -557,3 +557,21 @@ rules = ["fi-hetu", "gb-nhs-number", "nl-bsn", "no-fodselsnummer", "se-personnum
 #   patterns = ["(^|[^0-9A-Za-z])[1-9][0-9]{3} ?[A-Z]{2}[^0-9A-Za-z]{1,3}[0-9]{1,4}([^0-9A-Za-z]|$)"]
 # to refuse a postcode paired with a house number.
 patterns = []
+
+# ── [demographic] — the demographic domain ────────────────────────────────────
+# National-identifier protection: the value leaves the versioned body for
+# `demographic.national_identifier`, sealed under a per-tenant AES-256-GCM key
+# with an HMAC-SHA-256 digest beside it for equality lookup. GDPR Art. 32(1)(a)
+# names encryption as an appropriate measure; UAVG Art. 46 and the Wabvpz bound
+# what a BSN may be used for at all.
+[demographic.identifier_protection]
+# OFF by default: turning it on makes the key load-bearing for reading these
+# identifiers back, which is a deployment decision with a runbook attached.
+enabled = false
+# The DV_IDENTIFIER `type` values to protect. Each must be registered in
+# `demographic.identifier_scheme`; an unregistered code is a boot error rather
+# than an identifier that silently stays in the clear.
+schemes = ["nl-bsn"]
+# The root key: 64 hex characters (32 bytes). Prefer `key_file`.
+#? key = "…64 hex characters…"
+#? key_file = "/run/secrets/ferroehr-identifier-key"

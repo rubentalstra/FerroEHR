@@ -63,6 +63,7 @@
 //! - `docs/specs/openehr/SM/docs/UML/classes/i_party.adoc` /
 //!   `i_demographic_service.adoc` / `i_party_relationship.adoc`.
 
+pub mod identifier;
 pub mod types;
 
 mod api;
