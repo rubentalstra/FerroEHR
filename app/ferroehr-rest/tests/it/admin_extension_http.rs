@@ -497,23 +497,31 @@ async fn restoring_an_archived_party_moves_its_rows_back_to_the_primary_tier() {
     )
     .await;
     let body = format!(r#"{{"party_ids":["{party}"]}}"#);
-    let hot = vo_rows(&pool, "vo_version", &party).await;
+    let hot = vo_rows(&pool, "demographic.vo_version", &party).await;
     assert!(hot > 0, "the party has stored versions");
 
     let (status, reply) = send(&app, post_json("/admin/archive/parties", &body)).await;
     assert_eq!(status, StatusCode::NO_CONTENT, "archive: {reply}");
-    assert_eq!(vo_rows(&pool, "vo_version", &party).await, 0);
-    assert_eq!(vo_rows(&pool, "cold.vo_version", &party).await, hot);
+    assert_eq!(vo_rows(&pool, "demographic.vo_version", &party).await, 0);
+    assert_eq!(
+        vo_rows(&pool, "cold_demographic.vo_version", &party).await,
+        hot
+    );
 
     let (status, reply) = send(&app, post_json("/admin/archive/parties/restore", &body)).await;
     assert_eq!(status, StatusCode::NO_CONTENT, "restore: {reply}");
-    assert_eq!(vo_rows(&pool, "vo_version", &party).await, hot);
-    assert_eq!(vo_rows(&pool, "cold.vo_version", &party).await, 0);
-    let markers = sqlx::query_scalar::<_, i64>("SELECT count(*) FROM vo_archive WHERE vo_id = $1")
-        .bind(uuid::Uuid::parse_str(&party).expect("party uuid"))
-        .fetch_one(&pool)
-        .await
-        .expect("marker count");
+    assert_eq!(vo_rows(&pool, "demographic.vo_version", &party).await, hot);
+    assert_eq!(
+        vo_rows(&pool, "cold_demographic.vo_version", &party).await,
+        0
+    );
+    let markers = sqlx::query_scalar::<_, i64>(
+        "SELECT count(*) FROM demographic.vo_archive WHERE vo_id = $1",
+    )
+    .bind(uuid::Uuid::parse_str(&party).expect("party uuid"))
+    .fetch_one(&pool)
+    .await
+    .expect("marker count");
     assert_eq!(markers, 0, "restore drops the archive marker");
 }
 
@@ -531,7 +539,7 @@ async fn restoring_an_unarchived_record_succeeds_and_changes_nothing() {
         &party_body("PERSON", "openEHR-DEMOGRAPHIC-PERSON.person.v1", "John Doe"),
     )
     .await;
-    let hot = vo_rows(&pool, "vo_version", &party).await;
+    let hot = vo_rows(&pool, "demographic.vo_version", &party).await;
 
     for (path, body) in [
         (
@@ -548,11 +556,14 @@ async fn restoring_an_unarchived_record_succeeds_and_changes_nothing() {
     }
 
     assert_eq!(
-        vo_rows(&pool, "vo_version", &party).await,
+        vo_rows(&pool, "demographic.vo_version", &party).await,
         hot,
         "an unarchived party is left exactly as it was"
     );
-    assert_eq!(vo_rows(&pool, "cold.vo_version", &party).await, 0);
+    assert_eq!(
+        vo_rows(&pool, "cold_demographic.vo_version", &party).await,
+        0
+    );
     let (status, _) = send(&app, get(&format!("/ehr/{ehr_id}"))).await;
     assert_eq!(status, StatusCode::OK);
 }

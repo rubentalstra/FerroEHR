@@ -515,11 +515,12 @@ impl FerroEhrService {
         // from `VERSION.commit_audit.time_committed.value`, and the container
         // body exposes no commit audit, so the instant comes from the version
         // spine rather than the body.
-        let newest = crate::storage::version_repo::meta::all_version_meta(&self.pool, vo_id)
-            .await
-            .map_err(ServiceError::from)?
-            .last()
-            .map(|m| m.time_committed);
+        let newest =
+            crate::storage::version_repo::meta::all_version_meta(&self.demographic_pool, vo_id)
+                .await
+                .map_err(ServiceError::from)?
+                .last()
+                .map(|m| m.time_committed);
         let meta = ResourceMeta::new(String::new(), vo_id.to_string());
         let meta = match newest {
             Some(at) => meta.with_last_modified(at),

@@ -206,6 +206,41 @@ CREATE INDEX idx_dem_item_tag_target ON demographic.item_tag (target_vo_id);
 COMMENT ON TABLE demographic.vo_version IS 'Version rows of demographic PARTY objects (RM common master06 §Change Control Package), in their own pseudonymisation domain. Deliberately free of any reference into the clinical schema.';
 COMMENT ON TABLE demographic.node IS 'Decomposed content rows of demographic PARTY versions — the same nested-set codec as the clinical node table, in the demographic domain.';
 
+-- ── event outbox ─────────────────────────────────────────────────────────────
+-- The demographic domain's own transactional outbox. `ehr.event_outbox` cannot
+-- serve it: its foreign key points at `ehr.contribution`, and a demographic
+-- contribution no longer lives there — so a party commit would either violate
+-- that key or leave the domain, which is what this migration removes. Written
+-- in the same transaction as the commit it announces, exactly as the clinical
+-- one is; the envelope is PHI-free by construction (contribution id, a NULL
+-- ehr_id, per-version kind/change_type), so pseudonymisation is not weakened by
+-- announcing that a party changed.
+--
+-- Declared explicitly rather than with LIKE: `INCLUDING DEFAULTS` would copy
+-- the clinical identity column's DEFAULT, binding this table to a sequence in
+-- `ehr` that the demographic role must never be granted.
+CREATE TABLE demographic.event_outbox (
+    seq             bigint GENERATED ALWAYS AS IDENTITY,
+    contribution_id uuid NOT NULL,
+    -- Always NULL here (a party has no owning EHR); kept so the envelope and
+    -- the drainer read the same column set in both domains.
+    ehr_id          uuid,
+    envelope        jsonb NOT NULL,
+    committed_at    timestamptz NOT NULL,
+    published_at    timestamptz,
+    tenant_id       uuid NOT NULL DEFAULT ext.current_tenant_id(),
+    CONSTRAINT pk_dem_event_outbox PRIMARY KEY (seq),
+    CONSTRAINT fk_dem_event_outbox_contribution FOREIGN KEY (contribution_id)
+        REFERENCES demographic.contribution (id) ON DELETE CASCADE
+);
+
+CREATE INDEX idx_dem_event_outbox_pending ON demographic.event_outbox (seq)
+    WHERE published_at IS NULL;
+CREATE INDEX idx_dem_event_outbox_published ON demographic.event_outbox (published_at)
+    WHERE published_at IS NOT NULL;
+
+COMMENT ON TABLE demographic.event_outbox IS 'Contribution-outbox eventing for the demographic domain: one PHI-free event row per demographic CONTRIBUTION commit, written in the same transaction and drained by the same publisher as the clinical outbox. Separate from ehr.event_outbox because its foreign key must stay inside this domain.';
+
 -- ── cold archival tier ───────────────────────────────────────────────────────
 -- The demographic domain archives like the clinical one (SM I_ADMIN_ARCHIVE),
 -- into its own mirror schema. A shared `cold` would put the two domains back in
@@ -272,23 +307,58 @@ CREATE VIEW demographic.vo_attestation_all WITH (security_invoker = true) AS
 
 COMMENT ON VIEW demographic.vo_version_all IS 'Both storage tiers of the demographic vo_version (primary UNION ALL cold_demographic) — the object-addressed serving reads.';
 
+-- ── the cold-tier alias views ────────────────────────────────────────────────
+-- The archival tier is the one place a schema name could not travel by
+-- search_path: the mirrors live in `cold` and `cold_demographic`, so SQL naming
+-- them qualified would bind each statement to one domain. Each primary schema
+-- therefore carries an unqualified alias for its own tier, and the storage layer
+-- names them `cold_vo_version` / `cold_node` / `cold_vo_attestation` with no
+-- schema — exactly as it names `vo_version` and `node` — so one set of
+-- statements freezes, thaws and purges in whichever domain the connection is
+-- serving.
+--
+-- A view over a single table with no aggregation is automatically updatable, so
+-- INSERT/DELETE (and their RETURNING) reach the mirror table unchanged
+-- (PostgreSQL 18, CREATE VIEW, "Updatable Views"
+-- https://www.postgresql.org/docs/18/sql-createview.html). security_invoker is
+-- required, not decorative: a view runs with its OWNER's rights by default,
+-- which would let a caller read past the tenant RLS policy on the mirror table.
+CREATE VIEW ehr.cold_vo_version WITH (security_invoker = true) AS
+    SELECT * FROM cold.vo_version;
+CREATE VIEW ehr.cold_node WITH (security_invoker = true) AS
+    SELECT * FROM cold.node;
+CREATE VIEW ehr.cold_vo_attestation WITH (security_invoker = true) AS
+    SELECT * FROM cold.vo_attestation;
+
+CREATE VIEW demographic.cold_vo_version WITH (security_invoker = true) AS
+    SELECT * FROM cold_demographic.vo_version;
+CREATE VIEW demographic.cold_node WITH (security_invoker = true) AS
+    SELECT * FROM cold_demographic.node;
+CREATE VIEW demographic.cold_vo_attestation WITH (security_invoker = true) AS
+    SELECT * FROM cold_demographic.vo_attestation;
+
+COMMENT ON VIEW ehr.cold_vo_version IS 'The clinical cold tier under the name the storage layer uses unqualified, so one statement serves either pseudonymisation domain by search_path alone.';
+COMMENT ON VIEW demographic.cold_vo_version IS 'The demographic cold tier under the name the storage layer uses unqualified, so one statement serves either pseudonymisation domain by search_path alone.';
+
 -- ── tenant isolation ─────────────────────────────────────────────────────────
--- The same tenant context as the clinical schema (`ferroehr.tenant_id`), so a
--- demographic read is tenant-scoped exactly as a clinical one is. FORCE, so the
--- policy applies to the table owner too. The tenant_id column, its DEFAULT and
--- its NOT NULL came across with LIKE; the FK to `ehr.tenant` did not, and is
--- deliberately not re-added.
+-- The same tenant context as the clinical schema, through the same predicate
+-- (`ext.current_tenant_id()`, which resolves an unset `ferroehr.tenant_id` GUC
+-- to the reserved default tenant), so a demographic read is tenant-scoped
+-- exactly as a clinical one is and a single-tenant deployment — where the GUC
+-- is never set — keeps working. FORCE, so the policy applies to the table owner
+-- too. The tenant_id column, its DEFAULT and its NOT NULL came across with
+-- LIKE; the FK to `ehr.tenant` did not, and is deliberately not re-added.
 DO $$
 DECLARE
     rel text;
 BEGIN
-    FOREACH rel IN ARRAY ARRAY['vo_version', 'node', 'item_tag'] LOOP
+    FOREACH rel IN ARRAY ARRAY['vo_version', 'node', 'item_tag', 'event_outbox'] LOOP
         EXECUTE format('ALTER TABLE demographic.%I ENABLE ROW LEVEL SECURITY', rel);
         EXECUTE format('ALTER TABLE demographic.%I FORCE ROW LEVEL SECURITY', rel);
         EXECUTE format(
             'CREATE POLICY tenant_isolation ON demographic.%I '
-            'USING (tenant_id = current_setting(''ferroehr.tenant_id'', true)::uuid) '
-            'WITH CHECK (tenant_id = current_setting(''ferroehr.tenant_id'', true)::uuid)',
+            'USING (tenant_id = ext.current_tenant_id()) '
+            'WITH CHECK (tenant_id = ext.current_tenant_id())',
             rel);
     END LOOP;
     FOREACH rel IN ARRAY ARRAY['vo_version', 'node'] LOOP
@@ -296,8 +366,8 @@ BEGIN
         EXECUTE format('ALTER TABLE cold_demographic.%I FORCE ROW LEVEL SECURITY', rel);
         EXECUTE format(
             'CREATE POLICY tenant_isolation ON cold_demographic.%I '
-            'USING (tenant_id = current_setting(''ferroehr.tenant_id'', true)::uuid) '
-            'WITH CHECK (tenant_id = current_setting(''ferroehr.tenant_id'', true)::uuid)',
+            'USING (tenant_id = ext.current_tenant_id()) '
+            'WITH CHECK (tenant_id = ext.current_tenant_id())',
             rel);
     END LOOP;
 END $$;

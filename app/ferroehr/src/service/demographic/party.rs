@@ -91,13 +91,19 @@ impl FerroEhrService {
             )
         };
         // The stored kind (constant per versioned object) must match the route.
-        let stored = object_kind(&self.pool, vo_id).await?;
+        let stored = object_kind(&self.demographic_pool, vo_id).await?;
         if stored != Some(support::kind_of(kind)) {
             return Err(miss());
         }
-        support::load_ehrless(&self.pool, self.spec_profile, vo_id, version, at)
-            .await?
-            .ok_or_else(miss)
+        support::load_ehrless(
+            &self.demographic_pool,
+            self.spec_profile,
+            vo_id,
+            version,
+            at,
+        )
+        .await?
+        .ok_or_else(miss)
     }
 
     /// The stored [`PartyKind`] of a versioned object, for the kind-agnostic SM
@@ -105,7 +111,7 @@ impl FerroEhrService {
     /// non-party id (COMPOSITION, `PARTY_RELATIONSHIP`, …) or unknown id is `404`
     /// (`versioned_object_does_not_exist`).
     pub(super) async fn party_kind_at(&self, vo_id: VoId) -> Result<PartyKind, ServiceError> {
-        object_kind(&self.pool, vo_id)
+        object_kind(&self.demographic_pool, vo_id)
             .await?
             .and_then(support::party_kind_of)
             .ok_or_else(|| {
@@ -127,7 +133,7 @@ impl FerroEhrService {
         vo_id: VoId,
         miss: CallStatusType,
     ) -> Result<(), ServiceError> {
-        match object_kind(&self.pool, vo_id).await? {
+        match object_kind(&self.demographic_pool, vo_id).await? {
             Some(k) if k.is_party() => Ok(()),
             _ => Err(ServiceError::sm(miss, format!("versioned party {vo_id}"))),
         }
@@ -177,7 +183,7 @@ impl FerroEhrService {
             .then(|| body.clone());
         #[cfg(not(feature = "multimedia"))]
         let repr_body = Some(body.clone());
-        let mut tx = self.pool.begin().await?;
+        let mut tx = self.demographic_pool.begin().await?;
         let committed = create(
             &mut tx,
             None,
@@ -234,7 +240,7 @@ impl FerroEhrService {
         kind: PartyKind,
         vo_id: VoId,
     ) -> Result<Option<CurrentParty>, ServiceError> {
-        let Some(current) = demographic_current(&self.pool, vo_id).await? else {
+        let Some(current) = demographic_current(&self.demographic_pool, vo_id).await? else {
             return Ok(None);
         };
         if current.kind != support::kind_of(kind) {
@@ -309,7 +315,7 @@ impl FerroEhrService {
             .then(|| body.clone());
         #[cfg(not(feature = "multimedia"))]
         let repr_body = Some(body.clone());
-        let mut tx = self.pool.begin().await?;
+        let mut tx = self.demographic_pool.begin().await?;
         let committed = update(
             &mut tx,
             None,
@@ -396,7 +402,7 @@ impl FerroEhrService {
 
         let audit = self.demographic_audit(update_audit, change_type::DELETED, "PARTY delete")?;
         let ctx = CommitEnv::signing_ctx(self);
-        let mut tx = self.pool.begin().await?;
+        let mut tx = self.demographic_pool.begin().await?;
         let committed = delete(
             &mut tx,
             None,

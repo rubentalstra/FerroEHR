@@ -85,9 +85,9 @@ pub async fn next_placement(
     macro_rules! placement_select {
         ($tip_where:literal) => {
             concat!(
-                "WITH cv AS (DELETE FROM cold.vo_version WHERE vo_id = $1 RETURNING *), ",
-                "cn AS (DELETE FROM cold.node WHERE vo_id = $1 RETURNING *), ",
-                "ct AS (DELETE FROM cold.vo_attestation WHERE vo_id = $1 RETURNING *), ",
+                "WITH cv AS (DELETE FROM cold_vo_version WHERE vo_id = $1 RETURNING *), ",
+                "cn AS (DELETE FROM cold_node WHERE vo_id = $1 RETURNING *), ",
+                "ct AS (DELETE FROM cold_vo_attestation WHERE vo_id = $1 RETURNING *), ",
                 "cm AS (DELETE FROM vo_archive WHERE vo_id = $1), ",
                 "iv AS (INSERT INTO vo_version SELECT * FROM cv), ",
                 "inn AS (INSERT INTO node SELECT * FROM cn), ",
@@ -206,9 +206,9 @@ pub async fn update_placement(
     // targeted laterals instead — each touches exactly one row's body (the
     // tip's, and the earliest content version's).
     const SQL: &str = concat!(
-        "WITH cv AS (DELETE FROM cold.vo_version WHERE vo_id = $1 RETURNING *), ",
-        "cn AS (DELETE FROM cold.node WHERE vo_id = $1 RETURNING *), ",
-        "ct AS (DELETE FROM cold.vo_attestation WHERE vo_id = $1 RETURNING *), ",
+        "WITH cv AS (DELETE FROM cold_vo_version WHERE vo_id = $1 RETURNING *), ",
+        "cn AS (DELETE FROM cold_node WHERE vo_id = $1 RETURNING *), ",
+        "ct AS (DELETE FROM cold_vo_attestation WHERE vo_id = $1 RETURNING *), ",
         "cm AS (DELETE FROM vo_archive WHERE vo_id = $1), ",
         "iv AS (INSERT INTO vo_version SELECT * FROM cv), ",
         "inn AS (INSERT INTO node SELECT * FROM cn), ",

@@ -413,20 +413,27 @@ impl FerroEhrService {
             .iter()
             .map(|hex| engine.store().uri_for(hex))
             .collect();
-        let still_referenced: Vec<String> = match sqlx::query_scalar(
-            "SELECT DISTINCT k.uri FROM node_all n \
-             JOIN unnest($1::text[]) AS k(uri) ON position(k.uri in n.data::text) > 0",
-        )
-        .bind(&uris)
-        .fetch_all(&self.pool)
-        .await
-        {
-            Ok(rows) => rows,
-            Err(e) => {
-                tracing::warn!(error = %e, "multimedia blob GC reference scan failed; keeping all candidates");
-                return;
+        // BOTH pseudonymisation domains are scanned: a blob is shared content,
+        // and a party may be the only thing still referencing one. Scanning the
+        // clinical nodes alone would delete a blob a demographic node still
+        // points at.
+        let mut still_referenced: Vec<String> = Vec::new();
+        for domain in [&self.pool, &self.demographic_pool] {
+            match sqlx::query_scalar(
+                "SELECT DISTINCT k.uri FROM node_all n \
+                 JOIN unnest($1::text[]) AS k(uri) ON position(k.uri in n.data::text) > 0",
+            )
+            .bind(&uris)
+            .fetch_all(domain)
+            .await
+            {
+                Ok(rows) => still_referenced.extend(rows),
+                Err(e) => {
+                    tracing::warn!(error = %e, "multimedia blob GC reference scan failed; keeping all candidates");
+                    return;
+                }
             }
-        };
+        }
         for (hex, uri) in candidates.iter().zip(&uris) {
             if still_referenced.contains(uri) {
                 continue;
@@ -461,7 +468,7 @@ impl FerroEhrService {
     /// markers. `audit` has no FK from `vo_version` (NO ACTION), so those rows
     /// are swept explicitly, as in the EHR delete.
     async fn physical_delete_party(&self, party_id: VoId) -> Result<(), ServiceError> {
-        let mut tx = self.pool.begin().await?;
+        let mut tx = self.demographic_pool.begin().await?;
 
         // The target must be a demographic PARTY (ehr-less; any version exists),
         // in either storage tier — an archived party is still deletable.

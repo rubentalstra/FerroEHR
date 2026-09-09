@@ -680,7 +680,8 @@ async fn version_at_time_without_offset_resolves_in_the_local_timezone() {
     // range's lower bound is INCLUSIVE, so the version extant at exactly that
     // instant is v1 by construction, with no margin to lose.
     let between: jiff_sqlx::Timestamp = sqlx::query_scalar(
-        "SELECT lower(sys_period) FROM vo_version WHERE vo_id = $1 AND sys_version = 1",
+        "SELECT lower(sys_period) FROM demographic.vo_version \
+         WHERE vo_id = $1 AND sys_version = 1",
     )
     .bind(vo.parse::<uuid::Uuid>().expect("the versioned object id"))
     .fetch_one(&pg.pool())

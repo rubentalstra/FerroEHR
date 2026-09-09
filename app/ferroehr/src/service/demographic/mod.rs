@@ -9,6 +9,16 @@
 //! (PERSON / ORGANISATION / GROUP / AGENT / ROLE) and `PARTY_RELATIONSHIP`s are
 //! versioned objects in the demographics repository.
 //!
+//! Every storage call on this path goes through
+//! `FerroEhrService::demographic_pool`, never `pool`: the two pools differ only
+//! in `search_path`, so the same storage functions read and write the
+//! `demographic` schema here and the clinical one everywhere else. Parties are
+//! physically separated from clinical content and, when the deployment
+//! configures `[db].demographic_url`, reachable only by their own database role
+//! (GDPR Art. 4(5) and Art. 32(1)(a)). No openEHR spec governs storage layout
+//! or database roles — our own design/extension; the wire contract and the
+//! change-control semantics are unchanged.
+//!
 //! One file per concern, the domain files mirroring the SM interface boundaries
 //! (SM `master06`):
 //! - `types` — the public [`types::PartyKind`] resource-family key,

@@ -6,9 +6,13 @@
 //! **No openEHR spec governs this — our own design/extension.** Active only
 //! when the eventing extension is enabled.
 //!
-//! A **single** tokio task polls the outbox, publishes pending rows in `seq`
+//! A **single** tokio task polls the outboxes, publishes pending rows in `seq`
 //! order (a global order that trivially preserves per-EHR order), and marks
-//! each published only after the broker confirms. On a publish failure it stops
+//! each published only after the broker confirms. There are two outboxes, one
+//! per pseudonymisation domain (`ehr.event_outbox` and
+//! `demographic.event_outbox` — a demographic contribution's foreign key must
+//! stay inside its own schema), drained by this one task; per-EHR ordering is
+//! unaffected, because a demographic event has no EHR. On a publish failure it stops
 //! the batch — never skipping ahead — so an EHR's events keep their order, and
 //! backs off before retrying (the outbox buffers while the broker is down). A
 //! periodic pass prunes published rows older than the retention window.
@@ -84,12 +88,12 @@ impl EventsHandle {
 /// — a broker that is down at start is tolerated (rows stay pending until it
 /// returns).
 #[must_use]
-pub fn start(config: EventsConfig, pool: PgPool) -> EventsHandle {
+pub fn start(config: EventsConfig, pool: PgPool, demographic_pool: PgPool) -> EventsHandle {
     let publisher = Arc::new(AmqpPublisher::new(
         config.effective_url(),
         config.exchange.clone(),
     ));
-    start_with_publisher(config, pool, publisher)
+    start_with_publisher(config, pool, demographic_pool, publisher)
 }
 
 /// Start the publisher over an arbitrary [`EventPublisher`] (the seam the tests
@@ -98,6 +102,7 @@ pub fn start(config: EventsConfig, pool: PgPool) -> EventsHandle {
 pub fn start_with_publisher(
     config: EventsConfig,
     pool: PgPool,
+    demographic_pool: PgPool,
     publisher: Arc<dyn EventPublisher>,
 ) -> EventsHandle {
     let (shutdown_tx, shutdown_rx) = watch::channel(false);
@@ -105,6 +110,7 @@ pub fn start_with_publisher(
     let join = tokio::spawn(run(
         config,
         pool,
+        demographic_pool,
         publisher,
         shutdown_rx,
         Arc::clone(&healthy),
@@ -161,10 +167,15 @@ type DeclaredTopology = Option<(u64, Vec<(String, String)>)>;
 async fn run(
     config: EventsConfig,
     pool: PgPool,
+    demographic_pool: PgPool,
     publisher: Arc<dyn EventPublisher>,
     mut shutdown: watch::Receiver<bool>,
     healthy: Arc<AtomicBool>,
 ) {
+    // Both outboxes are drained; only the clinical pool reads the subscription
+    // registry, because subscriptions are deployment configuration rather than
+    // domain content and `event_subscription` lives only in `ehr`.
+    let pools = [&pool, &demographic_pool];
     let poll_interval = Duration::from_millis(config.poll_interval_ms.max(1));
     let prune_every = Duration::from_secs(config.prune_interval_secs.max(1));
     let mut last_prune = tokio::time::Instant::now();
@@ -189,12 +200,16 @@ async fn run(
         {
             tracing::debug!("event subscription sync deferred: {e}");
         }
-        drain_until_caught_up(&pool, publisher.as_ref(), &config, &shutdown, &healthy).await;
+        for domain in pools {
+            drain_until_caught_up(domain, publisher.as_ref(), &config, &shutdown, &healthy).await;
+        }
 
         // Retention prune (best-effort), on its own cadence.
         if last_prune.elapsed() >= prune_every {
-            if let Err(e) = prune(&pool, config.retention_days).await {
-                tracing::warn!("event outbox retention prune failed: {e}");
+            for domain in pools {
+                if let Err(e) = prune(domain, config.retention_days).await {
+                    tracing::warn!("event outbox retention prune failed: {e}");
+                }
             }
             last_prune = tokio::time::Instant::now();
         }
@@ -207,10 +222,12 @@ async fn run(
 
     // Best-effort final drain so a clean shutdown flushes what the broker will
     // still take; anything left stays pending for next start (at-least-once).
-    if let Ok(n) = drain_batch(&pool, publisher.as_ref(), &config).await
-        && n > 0
-    {
-        tracing::debug!("event publisher flushed {n} events on shutdown");
+    for domain in pools {
+        if let Ok(n) = drain_batch(domain, publisher.as_ref(), &config).await
+            && n > 0
+        {
+            tracing::debug!("event publisher flushed {n} events on shutdown");
+        }
     }
     tracing::debug!("event publisher loop exited");
 }
@@ -425,8 +442,8 @@ async fn publish_with_retry(
         .await
 }
 
-/// Delete published rows older than the retention window. Returns
-/// the number pruned.
+/// Delete published rows older than the retention window, in the domain
+/// `pool`'s own outbox. Returns the number pruned.
 async fn prune(pool: &PgPool, retention_days: i64) -> Result<u64, sqlx::Error> {
     let cutoff = format!("{retention_days} days");
     let result = sqlx::query(

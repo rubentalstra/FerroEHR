@@ -27,6 +27,15 @@ module.**
   emits contribution + audit in the same transaction. Change-control semantics
   are implemented against RM common master06 (`RM/docs/common/master06-change_control_package.adoc`)
   — do not regress them casually.
+- **Two pseudonymisation domains, one set of storage code:** the `demographic`
+  schema mirrors `ehr` relation for relation, and the ONLY thing that selects a
+  domain is the pool's `search_path` (`db::connect_demographic`,
+  `FerroEhrService::demographic_pool`). Never schema-qualify a domain relation
+  in SQL; `service::demographic/**` and the party-scoped `service::admin` paths
+  take `demographic_pool`, everything else takes `pool`. The cold tier is the
+  one exception, reached through the per-schema alias views `cold_vo_version` /
+  `cold_node` / `cold_vo_attestation`. `db::verify_domain_isolation` is the boot
+  gate over the four runtime roles.
 - **AQL engine** (`src/aql/`): typed IR over the BMM-generated RM model, lowered
   via `sea-query`; every unsupported construct is a typed reject, never a silent
   wrong answer. Rules: `.claude/rules/aql-engine.md`.

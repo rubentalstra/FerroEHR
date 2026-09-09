@@ -32,6 +32,10 @@ impl CommitEnv for FerroEhrService {
         &self.pool
     }
 
+    fn demographic_pool(&self) -> &PgPool {
+        &self.demographic_pool
+    }
+
     fn effective_system_id(&self) -> String {
         FerroEhrService::effective_system_id(self)
     }

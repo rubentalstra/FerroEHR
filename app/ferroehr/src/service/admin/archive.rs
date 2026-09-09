@@ -151,7 +151,7 @@ impl FerroEhrService {
     /// unknown or non-party id (e.g. a `PARTY_RELATIONSHIP`) is
     /// `party_id_does_not_exist`.
     async fn archive_party_vos(&self, party_ids: &[Uuid]) -> Result<(), ServiceError> {
-        let mut tx = self.pool.begin().await?;
+        let mut tx = self.demographic_pool.begin().await?;
         let mut live: Vec<VoId> = Vec::new();
         for &party_id in party_ids {
             let kind = party_kind_any_tier(&mut tx, party_id).await?;
@@ -193,7 +193,7 @@ impl FerroEhrService {
         }
         for &ehr_id in ehr_ids {
             let vo_ids: Vec<VoId> =
-                sqlx::query_scalar("SELECT DISTINCT vo_id FROM cold.vo_version WHERE ehr_id = $1")
+                sqlx::query_scalar("SELECT DISTINCT vo_id FROM cold_vo_version WHERE ehr_id = $1")
                     .bind(ehr_id)
                     .fetch_all(&mut *tx)
                     .await?;
@@ -205,7 +205,7 @@ impl FerroEhrService {
 
     /// Restore each archived party's versioned object, all-or-nothing.
     async fn restore_party_vos(&self, party_ids: &[Uuid]) -> Result<(), ServiceError> {
-        let mut tx = self.pool.begin().await?;
+        let mut tx = self.demographic_pool.begin().await?;
         let mut ids: Vec<VoId> = Vec::new();
         for &party_id in party_ids {
             let kind = party_kind_any_tier(&mut tx, party_id).await?;

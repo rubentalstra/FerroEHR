@@ -95,9 +95,9 @@ pub async fn attestation_target(
     // (<https://www.postgresql.org/docs/18/queries-with.html>).
     let (t, b, v) = tree;
     let row = sqlx::query(
-        "WITH cv AS (DELETE FROM cold.vo_version WHERE vo_id = $1 RETURNING *), \
-         cn AS (DELETE FROM cold.node WHERE vo_id = $1 RETURNING *), \
-         ct AS (DELETE FROM cold.vo_attestation WHERE vo_id = $1 RETURNING *), \
+        "WITH cv AS (DELETE FROM cold_vo_version WHERE vo_id = $1 RETURNING *), \
+         cn AS (DELETE FROM cold_node WHERE vo_id = $1 RETURNING *), \
+         ct AS (DELETE FROM cold_vo_attestation WHERE vo_id = $1 RETURNING *), \
          cm AS (DELETE FROM vo_archive WHERE vo_id = $1), \
          iv AS (INSERT INTO vo_version SELECT * FROM cv), \
          inn AS (INSERT INTO node SELECT * FROM cn), \

@@ -7,9 +7,15 @@
 //! No openEHR spec governs storage tiering — our own design/extension. The SM
 //! operation it realizes is `I_ADMIN_ARCHIVE`
 //! (`docs/specs/openehr/SM/docs/UML/classes/i_admin_archive.adoc`: "Move
-//! selected EHRs to archival storage"); the `cold` schema mirrors of
-//! `vo_version` / `node` / `vo_attestation` are where "archival storage"
-//! physically is.
+//! selected EHRs to archival storage"); the mirrors of `vo_version` / `node` /
+//! `vo_attestation` in the `cold` and `cold_demographic` schemas are where
+//! "archival storage" physically is.
+//!
+//! Every statement here names its tier unqualified, as `cold_vo_version` /
+//! `cold_node` / `cold_vo_attestation`: each pseudonymisation domain's primary
+//! schema carries those as alias views over its own mirror, so the connection's
+//! `search_path` decides which tier a freeze or purge lands in and this module
+//! serves both domains unchanged.
 //!
 //! Two rules keep the tier invisible on the wire:
 //!
@@ -43,9 +49,9 @@ pub async fn freeze(tx: &mut PgConnection, vo_ids: &[VoId]) -> Result<(), Storag
         return Ok(());
     }
     for sql in [
-        "INSERT INTO cold.vo_version SELECT * FROM vo_version WHERE vo_id = ANY($1)",
-        "INSERT INTO cold.node SELECT * FROM node WHERE vo_id = ANY($1)",
-        "INSERT INTO cold.vo_attestation SELECT * FROM vo_attestation WHERE vo_id = ANY($1)",
+        "INSERT INTO cold_vo_version SELECT * FROM vo_version WHERE vo_id = ANY($1)",
+        "INSERT INTO cold_node SELECT * FROM node WHERE vo_id = ANY($1)",
+        "INSERT INTO cold_vo_attestation SELECT * FROM vo_attestation WHERE vo_id = ANY($1)",
         // Cascades the primary `node` + `vo_attestation` rows away.
         "DELETE FROM vo_version WHERE vo_id = ANY($1)",
     ] {
@@ -67,12 +73,12 @@ pub async fn thaw(tx: &mut PgConnection, vo_ids: &[VoId]) -> Result<(), StorageE
         return Ok(());
     }
     for sql in [
-        "INSERT INTO vo_version SELECT * FROM cold.vo_version WHERE vo_id = ANY($1)",
-        "INSERT INTO node SELECT * FROM cold.node WHERE vo_id = ANY($1)",
-        "INSERT INTO vo_attestation SELECT * FROM cold.vo_attestation WHERE vo_id = ANY($1)",
-        "DELETE FROM cold.node WHERE vo_id = ANY($1)",
-        "DELETE FROM cold.vo_attestation WHERE vo_id = ANY($1)",
-        "DELETE FROM cold.vo_version WHERE vo_id = ANY($1)",
+        "INSERT INTO vo_version SELECT * FROM cold_vo_version WHERE vo_id = ANY($1)",
+        "INSERT INTO node SELECT * FROM cold_node WHERE vo_id = ANY($1)",
+        "INSERT INTO vo_attestation SELECT * FROM cold_vo_attestation WHERE vo_id = ANY($1)",
+        "DELETE FROM cold_node WHERE vo_id = ANY($1)",
+        "DELETE FROM cold_vo_attestation WHERE vo_id = ANY($1)",
+        "DELETE FROM cold_vo_version WHERE vo_id = ANY($1)",
         "DELETE FROM vo_archive WHERE vo_id = ANY($1)",
     ] {
         sqlx::query(sql).bind(vo_ids).execute(&mut *tx).await?;
@@ -94,11 +100,11 @@ pub async fn purge_ehrs(tx: &mut PgConnection, ehr_ids: &[EhrId]) -> Result<(), 
     }
     for sql in [
         "DELETE FROM vo_archive WHERE vo_id IN \
-         (SELECT vo_id FROM cold.vo_version WHERE ehr_id = ANY($1))",
-        "DELETE FROM cold.vo_attestation WHERE vo_id IN \
-         (SELECT vo_id FROM cold.vo_version WHERE ehr_id = ANY($1))",
-        "DELETE FROM cold.node WHERE ehr_id = ANY($1)",
-        "DELETE FROM cold.vo_version WHERE ehr_id = ANY($1)",
+         (SELECT vo_id FROM cold_vo_version WHERE ehr_id = ANY($1))",
+        "DELETE FROM cold_vo_attestation WHERE vo_id IN \
+         (SELECT vo_id FROM cold_vo_version WHERE ehr_id = ANY($1))",
+        "DELETE FROM cold_node WHERE ehr_id = ANY($1)",
+        "DELETE FROM cold_vo_version WHERE ehr_id = ANY($1)",
     ] {
         sqlx::query(sql).bind(ehr_ids).execute(&mut *tx).await?;
     }
@@ -115,9 +121,9 @@ pub async fn purge_vos(tx: &mut PgConnection, vo_ids: &[VoId]) -> Result<(), Sto
         return Ok(());
     }
     for sql in [
-        "DELETE FROM cold.vo_attestation WHERE vo_id = ANY($1)",
-        "DELETE FROM cold.node WHERE vo_id = ANY($1)",
-        "DELETE FROM cold.vo_version WHERE vo_id = ANY($1)",
+        "DELETE FROM cold_vo_attestation WHERE vo_id = ANY($1)",
+        "DELETE FROM cold_node WHERE vo_id = ANY($1)",
+        "DELETE FROM cold_vo_version WHERE vo_id = ANY($1)",
         "DELETE FROM vo_archive WHERE vo_id = ANY($1)",
     ] {
         sqlx::query(sql).bind(vo_ids).execute(&mut *tx).await?;

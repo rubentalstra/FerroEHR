@@ -60,23 +60,28 @@ impl FerroEhrService {
         &self,
         contribution_id: Uuid,
     ) -> Result<Value, ServiceError> {
-        let audit =
-            version_repo::contribution::contribution_audit(&self.pool, contribution_id, None)
-                .await?
-                .ok_or_else(|| {
-                    ServiceError::sm(
-                        CallStatusType::ContributionDoesNotExist,
-                        format!("demographic CONTRIBUTION {contribution_id}"),
-                    )
-                })?;
+        let audit = version_repo::contribution::contribution_audit(
+            &self.demographic_pool,
+            contribution_id,
+            None,
+        )
+        .await?
+        .ok_or_else(|| {
+            ServiceError::sm(
+                CallStatusType::ContributionDoesNotExist,
+                format!("demographic CONTRIBUTION {contribution_id}"),
+            )
+        })?;
 
         // The refs helper also unions the versions this contribution's
         // `666|attestation|` items attested (RM common master06 §Contributions —
         // an attestation affects an existing version), i.e. the full change-set
         // the CONTRIBUTION covers, not just the committed rows.
-        let version_refs =
-            version_repo::contribution::contribution_version_refs(&self.pool, contribution_id)
-                .await?;
+        let version_refs = version_repo::contribution::contribution_version_refs(
+            &self.demographic_pool,
+            contribution_id,
+        )
+        .await?;
         let mut versions: Vec<Value> = Vec::with_capacity(version_refs.len());
         for (vo_id, columns, creating_system_id, kind) in version_refs {
             let tree = TreeId::from_columns(columns.0, columns.1, columns.2);

@@ -385,6 +385,22 @@ fn reject_foreign_version_identity(version: &Value, index: usize) -> Result<(), 
     }
 }
 
+/// The pool the pseudonymisation domain this CONTRIBUTION belongs to is served
+/// by: the demographic one for a party-only set, the clinical one otherwise.
+///
+/// A CONTRIBUTION never spans the two domains — `party_only` is the scope check
+/// the engine already enforces per member — so one pool serves the whole
+/// transaction and the atomicity RM common master06 §Contributions requires is
+/// preserved. No openEHR spec governs storage layout — our own
+/// design/extension.
+fn domain_pool(cx: &impl CommitEnv, party_only: bool) -> &sqlx::PgPool {
+    if party_only {
+        cx.demographic_pool()
+    } else {
+        cx.pool()
+    }
+}
+
 /// Commit a CONTRIBUTION's version set atomically under one contribution +
 /// audit, returning its id together with the commit instant its audit recorded.
 /// Shared by the EHR-scoped contribution path (`ehr_id = Some`, `party_only =
@@ -442,7 +458,7 @@ pub(crate) async fn commit_version_set(
         )?);
     }
 
-    let target_kinds = read_target_kinds(cx, &plan).await?;
+    let target_kinds = read_target_kinds(cx, &plan, party_only).await?;
 
     let mut changes: Vec<(AuditInput, Change)> = Vec::with_capacity(plan.len());
     // 666 attestations of existing versions (committing no new version).
@@ -507,6 +523,7 @@ pub(crate) async fn commit_version_set(
     let outcome = write_contribution(
         cx,
         ehr_id,
+        party_only,
         ContributionWrite {
             supplied_uid,
             audit: &contribution_audit,
@@ -569,9 +586,10 @@ struct ContributionWrite<'a> {
 async fn write_contribution(
     cx: &impl CommitEnv,
     ehr_id: Option<EhrId>,
+    party_only: bool,
     write: ContributionWrite<'_>,
 ) -> Result<CommittedContribution, ServiceError> {
-    let mut tx = cx.pool().begin().await?;
+    let mut tx = domain_pool(cx, party_only).begin().await?;
     // The content-write gate, under a row lock (RM ehr master04 §EHR Active
     // Status; the in-transaction evaluation is our own recorded semantics —
     // see `change::ensure_content_writable_tx`). A set that itself writes an
@@ -845,6 +863,7 @@ fn plan_version(
 async fn read_target_kinds(
     cx: &impl CommitEnv,
     plan: &[PlannedVersion],
+    party_only: bool,
 ) -> Result<std::collections::HashMap<VoId, Kind>, ServiceError> {
     let mut target_ids: Vec<VoId> = plan
         .iter()
@@ -853,7 +872,7 @@ async fn read_target_kinds(
     target_ids.sort_unstable();
     target_ids.dedup();
     Ok(
-        crate::storage::version_repo::meta::object_kinds(cx.pool(), &target_ids)
+        crate::storage::version_repo::meta::object_kinds(domain_pool(cx, party_only), &target_ids)
             .await
             .map_err(ServiceError::from)?
             .into_iter()

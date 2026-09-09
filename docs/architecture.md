@@ -102,6 +102,17 @@ fresh** (the diagrammed deep-dive is the book's Storage architecture page,
 - **`ehr`, `contribution`, `audit`, `template_store`, `stored_query`,
   `item_tag`** — supporting tables; every write emits contribution + audit in
   the same transaction (openEHR requirement).
+- **`demographic`** — the pseudonymisation domain: a relation-for-relation
+  mirror of the clinical schema (built with `CREATE TABLE … LIKE`) holding the
+  PARTY versioned objects and their change control, with its own
+  `cold_demographic` archival tier. Nothing selects a domain but the pool's
+  `search_path`, so one set of storage code serves both; a CHECK on each side
+  refuses the other's rows. Four `NOINHERIT` runtime roles
+  (`ferroehr_ehr`, `ferroehr_demographic` and a read-only twin of each) hold
+  their own domain and are revoked from the other, and the server refuses to
+  boot when either can read across (`db::verify_domain_isolation`). GDPR
+  Art. 4(5) and Art. 32(1)(a); no openEHR spec governs storage layout or
+  database roles.
 - **`ext`** — our own `IMMUTABLE` helper functions (e.g.
   `openehr_magnitude(jsonb)` for DV_ORDERED ordering semantics), usable in
   btree **expression indexes** for measured hot paths.

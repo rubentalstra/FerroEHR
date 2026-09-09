@@ -92,8 +92,10 @@ async fn migrations_apply_cleanly_and_idempotently() {
         ]
     );
 
-    // The cold archival tier (0007): one mirror per moved relation, plus the
-    // both-tier union views the whole-repository readers use. No openEHR spec
+    // The cold archival tier (0007): one mirror per moved relation, the
+    // both-tier union views the whole-repository readers use, and the
+    // `cold_*` alias views that let one set of storage statements address
+    // whichever pseudonymisation domain the connection serves. No openEHR spec
     // governs storage tiering — our own design/extension.
     let views: Vec<String> = sqlx::query_scalar(
         "SELECT table_name FROM information_schema.tables \
@@ -102,7 +104,17 @@ async fn migrations_apply_cleanly_and_idempotently() {
     .fetch_all(&pool)
     .await
     .expect("views");
-    assert_eq!(views, ["node_all", "vo_attestation_all", "vo_version_all"]);
+    assert_eq!(
+        views,
+        [
+            "cold_node",
+            "cold_vo_attestation",
+            "cold_vo_version",
+            "node_all",
+            "vo_attestation_all",
+            "vo_version_all"
+        ]
+    );
 
     let cold: Vec<String> = sqlx::query_scalar(
         "SELECT table_name FROM information_schema.tables \

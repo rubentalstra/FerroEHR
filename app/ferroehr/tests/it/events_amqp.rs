@@ -319,7 +319,11 @@ async fn end_to_end_publish_and_consume() {
         .expect("create_composition");
 
     // Start the real publisher; it drains + publishes to the broker.
-    let handle = start(events_config(url), pool.clone());
+    let handle = start(
+        events_config(url),
+        pool.clone(),
+        ferroehr::db::demographic_pool_from(&pool),
+    );
 
     // The bound queue receives exactly the composition event.
     let (routing_key, body) = next_delivery(&mut consumer).await;
@@ -370,7 +374,11 @@ async fn broker_down_then_up_delivers_without_loss() {
     // Broker "down": a publisher pointed at a dead port cannot deliver; rows
     // stay pending (the outbox buffers).
     let bad_url = "amqp://guest:guest@127.0.0.1:1/%2f".to_owned();
-    let down = start(events_config(bad_url), pool.clone());
+    let down = start(
+        events_config(bad_url),
+        pool.clone(),
+        ferroehr::db::demographic_pool_from(&pool),
+    );
     tokio::time::sleep(Duration::from_millis(600)).await;
     assert_eq!(
         pending_count(&pool).await,
@@ -380,7 +388,11 @@ async fn broker_down_then_up_delivers_without_loss() {
     down.shutdown(Duration::from_secs(3)).await;
 
     // Broker up: a correctly-configured publisher drains every row (no loss).
-    let up = start(events_config(url), pool.clone());
+    let up = start(
+        events_config(url),
+        pool.clone(),
+        ferroehr::db::demographic_pool_from(&pool),
+    );
     drain_outbox(&pool).await;
 
     // Every per-version message arrives on the catch-all queue (no loss).
@@ -426,7 +438,11 @@ async fn subscriptions_route_by_predicate_and_wildcard_receives_all() {
 
     // Start the publisher: each cycle re-syncs (declares/binds) the subscription
     // queues *before* it publishes, so the durable queues capture the messages.
-    let handle = start(events_config(url.clone()), pool.clone());
+    let handle = start(
+        events_config(url.clone()),
+        pool.clone(),
+        ferroehr::db::demographic_pool_from(&pool),
+    );
     drain_outbox(&pool).await;
 
     // The wildcard queue received every per-version message (per-version fan-out).

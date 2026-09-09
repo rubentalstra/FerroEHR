@@ -7,11 +7,15 @@
 //! No openEHR spec governs the persistence mechanism; the storage substrate is
 //! our own PG18-native design. This module is the single place the rest of the
 //! crate obtains a database handle: [`DbConfig`] (the `[db]` config section)
-//! feeds [`connect`] and [`connect_tenant_scoped`], and [`run_migrations`]
-//! bootstraps the `ext` and `ehr` schemas and applies both embedded migration
-//! sets. The `sea-query` identifier vocabulary for the live schema lives in
-//! [`iden`]. This is the defining module for the whole bootstrap surface, with
-//! no re-exports.
+//! feeds [`connect`] and [`connect_tenant_scoped`] for the clinical domain and
+//! [`connect_demographic`] / [`connect_tenant_scoped_demographic`] for the
+//! demographic one, and [`run_migrations`] bootstraps the four schemas and
+//! applies every embedded migration set. The two domains differ only in the
+//! `search_path` their connections carry, so one set of storage functions
+//! serves both; [`verify_domain_isolation`] is the boot gate that refuses to
+//! serve when the runtime roles can read across that boundary. The `sea-query`
+//! identifier vocabulary for the live schema lives in [`iden`]. This is the
+//! defining module for the whole bootstrap surface, with no re-exports.
 
 pub mod iden;
 
@@ -20,7 +24,7 @@ use std::time::Duration;
 
 use serde::{Deserialize, Serialize};
 use sqlx::migrate::Migrator;
-use sqlx::postgres::PgPoolOptions;
+use sqlx::postgres::{PgConnectOptions, PgPoolOptions};
 use sqlx::{Connection, PgConnection, PgPool};
 
 use crate::config::secret::SecretUrl;
@@ -74,6 +78,23 @@ pub struct DbConfig {
     /// `/proc/<pid>/environ` and inherited by every child process. Setting both
     /// this and a non-default `url` is a boot error.
     pub url_file: Option<PathBuf>,
+    /// DSN for the **demographic** pseudonymisation domain, when a deployment
+    /// separates the two runtime roles; unset (the default) reuses
+    /// [`Self::url`].
+    ///
+    /// The schema separation is unconditional — the demographic chapter always
+    /// reads and writes the `demographic` schema. This key is what turns it
+    /// into a ROLE separation as well: point it at a DSN authenticating as
+    /// `ferroehr_demographic`, leave [`Self::url`] on `ferroehr_ehr`, and
+    /// neither connection can reach the other domain's relations even if a
+    /// query tries (GDPR Art. 4(5) and Art. 32(1)(a); EDPB Guidelines 01/2025
+    /// require the separation to hold against internal actors). No openEHR
+    /// spec governs database roles — our own design/extension.
+    pub demographic_url: Option<SecretUrl>,
+    /// Path to a file holding [`Self::demographic_url`], read at boot in place
+    /// of it — the mounted-secret route, as [`Self::url_file`] is for the
+    /// clinical DSN. Setting both is a boot error.
+    pub demographic_url_file: Option<PathBuf>,
     /// Upper bound of the connection pool.
     pub max_connections: u32,
     /// Connections the pool keeps open when idle (avoids cold reopen +
@@ -112,6 +133,8 @@ impl Default for DbConfig {
         Self {
             url: SecretUrl::new(DEFAULT_URL),
             url_file: None,
+            demographic_url: None,
+            demographic_url_file: None,
             // Deliberate defaults: 20 max (10 hard-capped realistic write
             // concurrency ×2), 2 min (no cold reopen churn at idle).
             max_connections: 20,
@@ -141,6 +164,22 @@ impl DbConfig {
     #[must_use]
     pub fn is_dev_default(&self) -> bool {
         self.url.expose() == DEFAULT_URL
+    }
+
+    /// The DSN the demographic pool connects with: [`Self::demographic_url`]
+    /// when the deployment separates the runtime roles, else [`Self::url`].
+    #[must_use]
+    pub fn demographic_dsn(&self) -> &str {
+        self.demographic_url
+            .as_ref()
+            .map_or_else(|| self.url.expose(), SecretUrl::expose)
+    }
+
+    /// Whether the demographic domain authenticates as its own database role
+    /// (a distinct DSN), rather than sharing the clinical one.
+    #[must_use]
+    pub fn roles_are_separated(&self) -> bool {
+        self.demographic_url.is_some()
     }
 }
 
@@ -181,6 +220,26 @@ pub enum DbError {
          CASCADE` / `DROP SCHEMA cold_demographic CASCADE`) and start again"
     )]
     OrphanedArchiveTier,
+
+    /// A runtime role can read a relation belonging to the pseudonymisation
+    /// domain it does not own.
+    #[error(
+        "the pseudonymisation boundary is not enforced by the database: role `{role}` can reach \
+         the {kind} `{relation}`, which belongs to the other domain. The clinical record and the \
+         identity of its subject must not be reachable by one credential (GDPR Art. 4(5) and \
+         Art. 32(1)(a); no openEHR spec governs database roles — our own design). Remedy: \
+         `REVOKE ALL ON {relation} FROM {role}` — and, for a function, `REVOKE EXECUTE ON \
+         FUNCTION {relation} FROM PUBLIC`, since PUBLIC holds EXECUTE by default \
+         (https://www.postgresql.org/docs/18/sql-grant.html)"
+    )]
+    DomainIsolationBreached {
+        /// The runtime role holding the privilege it must not hold.
+        role: String,
+        /// What kind of object it reaches (`table`, `view`, `sequence`, …).
+        kind: String,
+        /// The schema-qualified object it reaches.
+        relation: String,
+    },
 }
 
 /// How a database's recorded migration state differs from the one this binary
@@ -242,24 +301,81 @@ pub enum SchemaMismatch {
 
 // ── Pool ─────────────────────────────────────────────────────────────────────
 
-/// Search path applied to every pooled connection: the application tables live
-/// in `ehr`, the AQL support functions and the `"C"`/`en_US` collations in
-/// `ext`. Set once per physical connection (`after_connect`) so queries may
-/// use unqualified table names.
-const SET_SEARCH_PATH_SQL: &str = "SET search_path TO ehr, ext, public";
+/// Search path applied to every pooled connection serving the **clinical**
+/// domain: the EHR tables live in `ehr`, the AQL support functions and the
+/// `"C"`/`en_US` collations in `ext`. Set once per physical connection
+/// (`after_connect`) so queries may use unqualified table names.
+const CLINICAL_SEARCH_PATH: &str = "SET search_path TO ehr, ext, public";
 
-/// The pool options common to the plain and the tenant-scoped pool: sizing +
-/// acquire timeout from settings, the standard search path on every physical
-/// connection, and no per-checkout liveness ping. Connection retirement stays
-/// on the `sqlx` defaults (idle reap + bounded lifetime — infinite-lived
-/// connections are discouraged by the driver, so we do not disable them).
-fn pool_options(settings: &DbConfig) -> PgPoolOptions {
+/// Search path applied to every pooled connection serving the **demographic**
+/// domain (`demographic/0001_baseline`), whose relations carry the same names
+/// and column shape as the clinical ones.
+///
+/// This one constant is the whole routing mechanism: a pool opened with it
+/// reuses every storage function unchanged, because the SQL those functions
+/// emit names its relations unqualified and `search_path` decides which schema
+/// they resolve in. `ehr` is deliberately absent — a query this pool issues
+/// against a clinical relation must fail to resolve rather than quietly cross
+/// the pseudonymisation boundary.
+///
+/// No openEHR spec governs storage layout or database roles — our own
+/// design/extension (GDPR Art. 4(5) and Art. 32(1)(a);
+/// <https://eur-lex.europa.eu/eli/reg/2016/679/oj>).
+const DEMOGRAPHIC_SEARCH_PATH: &str = "SET search_path TO demographic, ext, public";
+
+/// Whether a pool stamps the per-request tenant on its connections.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+enum Tenancy {
+    /// Single-tenant: no GUC statement on any hook (zero checkout overhead).
+    Off,
+    /// Multi-tenant: the `ferroehr.tenant_id` session GUC is stamped on every
+    /// new connection and re-stamped on every checkout.
+    Scoped,
+}
+
+/// Everything a freshly-opened physical connection needs before it serves a
+/// query: the domain's search path, the statement-timeout backstop, and — when
+/// tenancy is on — the request's tenant GUC.
+///
+/// One implementation for every pool, so a domain or tenancy variant cannot
+/// drop a setting. Dropping the timeout in particular silently disarms the
+/// DB-side runaway-query guard, and a broken control must never look like a
+/// policy outcome.
+async fn open_session(
+    conn: &mut PgConnection,
+    search_path: &'static str,
+    statement_timeout: Option<&str>,
+    tenancy: Tenancy,
+) -> Result<(), sqlx::Error> {
+    sqlx::query(search_path).execute(&mut *conn).await?;
+    if let Some(statement_timeout) = statement_timeout {
+        // A session-level SET on the physical connection, surviving every
+        // checkout, where `SET LOCAL` would last one transaction.
+        // `AssertSqlSafe` is audited: PostgreSQL's `SET` takes no bind
+        // placeholder and the value is a `u64` from our own configuration,
+        // never client input.
+        sqlx::query(sqlx::AssertSqlSafe(statement_timeout.to_owned()))
+            .execute(&mut *conn)
+            .await?;
+    }
+    if tenancy == Tenancy::Scoped {
+        stamp_tenant_guc(conn).await?;
+    }
+    Ok(())
+}
+
+/// The pool options for one domain: sizing + acquire timeout from settings,
+/// the domain's session setup on every physical connection, and no per-checkout
+/// liveness ping. Connection retirement stays on the `sqlx` defaults (an idle
+/// reap plus a bounded lifetime — infinite-lived connections are discouraged by
+/// the driver, so we do not disable them).
+fn pool_options(settings: &DbConfig, search_path: &'static str, tenancy: Tenancy) -> PgPoolOptions {
     // Rendered once here rather than per connection. The value is an integer
     // from our own configuration, never client input, and it is bound as a
     // literal because PostgreSQL's `SET` takes no parameter placeholder.
     let statement_timeout = (settings.statement_timeout_ms > 0)
         .then(|| format!("SET statement_timeout = {}", settings.statement_timeout_ms));
-    PgPoolOptions::new()
+    let options = PgPoolOptions::new()
         .max_connections(settings.max_connections)
         .min_connections(settings.min_connections)
         .acquire_timeout(Duration::from_secs(settings.acquire_timeout_secs))
@@ -272,25 +388,28 @@ fn pool_options(settings: &DbConfig) -> PgPoolOptions {
             // value cannot be moved out of it.
             let statement_timeout = statement_timeout.clone();
             Box::pin(async move {
-                sqlx::query(SET_SEARCH_PATH_SQL).execute(&mut *conn).await?;
-                if let Some(statement_timeout) = statement_timeout {
-                    // A session-level SET on the physical connection, surviving
-                    // every checkout, where `SET LOCAL` would last one
-                    // transaction. `AssertSqlSafe` is audited: PostgreSQL's
-                    // `SET` takes no bind placeholder and the value is a `u64`
-                    // from our own configuration, never client input.
-                    sqlx::query(sqlx::AssertSqlSafe(statement_timeout))
-                        .execute(&mut *conn)
-                        .await?;
-                }
-                Ok(())
+                open_session(conn, search_path, statement_timeout.as_deref(), tenancy).await
             })
-        })
+        });
+    match tenancy {
+        Tenancy::Off => options,
+        // `after_connect` covers a connection freshly opened by `acquire`
+        // itself under pool growth; `before_acquire` re-stamps a previously
+        // idle connection on every checkout (docs.rs,
+        // `sqlx::pool::PoolOptions::before_acquire`: "This is _not_ invoked
+        // for new connections. Use `after_connect` for those.").
+        Tenancy::Scoped => options.before_acquire(|conn, _meta| {
+            Box::pin(async move {
+                stamp_tenant_guc(conn).await?;
+                Ok(true)
+            })
+        }),
+    }
 }
 
-/// Create the application connection pool (single-tenant / tenancy-off).
+/// Create the clinical application connection pool (single-tenant / tenancy-off).
 ///
-/// Every physical connection is initialized with the standard search path
+/// Every physical connection is initialized with the clinical search path
 /// (`ehr, ext, public`) so queries can use unqualified table names, as the
 /// schema expects. There is no per-acquire hook: zero checkout overhead when
 /// tenancy is off.
@@ -302,8 +421,26 @@ fn pool_options(settings: &DbConfig) -> PgPoolOptions {
 /// authentication, unknown database), or the search-path initialization
 /// statement fails on that first connection.
 pub async fn connect(settings: &DbConfig) -> Result<PgPool, DbError> {
-    let pool = pool_options(settings)
+    let pool = pool_options(settings, CLINICAL_SEARCH_PATH, Tenancy::Off)
         .connect(settings.url.expose())
+        .await?;
+    Ok(pool)
+}
+
+/// Create the **demographic** connection pool (single-tenant / tenancy-off).
+///
+/// The twin of [`connect`] for the pseudonymisation domain: the same pool
+/// settings, the demographic search path, and [`DbConfig::demographic_dsn`] —
+/// which is `[db].demographic_url` when a deployment separates the two runtime
+/// roles, and `[db].url` otherwise. The schema separation is therefore always
+/// on; the role separation is the deployment's choice.
+///
+/// # Errors
+///
+/// The same failures as [`connect`], against the demographic DSN.
+pub async fn connect_demographic(settings: &DbConfig) -> Result<PgPool, DbError> {
+    let pool = pool_options(settings, DEMOGRAPHIC_SEARCH_PATH, Tenancy::Off)
+        .connect(settings.demographic_dsn())
         .await?;
     Ok(pool)
 }
@@ -322,7 +459,7 @@ async fn stamp_tenant_guc(conn: &mut PgConnection) -> Result<(), sqlx::Error> {
     Ok(())
 }
 
-/// Creates the **tenant-scoped** application pool.
+/// Creates the **tenant-scoped** clinical pool.
 ///
 /// Wraps [`connect`] with hooks that stamp the `ferroehr.tenant_id` session GUC
 /// on every checked-out connection from the current request's tenant context
@@ -338,14 +475,6 @@ async fn stamp_tenant_guc(conn: &mut PgConnection) -> Result<(), sqlx::Error> {
 /// no tenant is in scope — so a reused connection never leaks the previous
 /// request's tenant.
 ///
-/// The GUC is stamped in both pool hooks, and both are required (docs.rs,
-/// `sqlx::pool::PoolOptions::before_acquire`: "This is _not_ invoked for new
-/// connections. Use `after_connect` for those."): `after_connect` covers a
-/// connection freshly opened by `acquire` itself under pool growth, which would
-/// otherwise run as the reserved default tenant, and `before_acquire` re-stamps
-/// a previously idle connection on every checkout. Wire it only when tenancy is
-/// on; the extra per-acquire statement is the multi-tenant cost.
-///
 /// # Errors
 ///
 /// Returns [`DbError::Sqlx`] when the DSN does not parse as a `PostgreSQL`
@@ -353,37 +482,51 @@ async fn stamp_tenant_guc(conn: &mut PgConnection) -> Result<(), sqlx::Error> {
 /// authentication, unknown database), or the search-path initialization
 /// statement fails on that first connection.
 pub async fn connect_tenant_scoped(settings: &DbConfig) -> Result<PgPool, DbError> {
-    let statement_timeout = (settings.statement_timeout_ms > 0)
-        .then(|| format!("SET statement_timeout = {}", settings.statement_timeout_ms));
-    let pool = pool_options(settings)
-        // Replaces the base `after_connect` (the setter overwrites), so EVERY
-        // base session setting is re-applied here — the search path AND the
-        // statement timeout (dropping the timeout silently disarms the
-        // DB-side runaway-query guard; reliability.md — a broken control must
-        // never look like a policy outcome).
-        .after_connect(move |conn, _meta| {
-            let statement_timeout = statement_timeout.clone();
-            Box::pin(async move {
-                sqlx::query(SET_SEARCH_PATH_SQL).execute(&mut *conn).await?;
-                if let Some(statement_timeout) = statement_timeout {
-                    // Session-level SET; the value is our own u64 rendered
-                    // with `{}` (see `pool_options`), never client input.
-                    sqlx::query(sqlx::AssertSqlSafe(statement_timeout))
-                        .execute(&mut *conn)
-                        .await?;
-                }
-                stamp_tenant_guc(conn).await
-            })
-        })
-        .before_acquire(|conn, _meta| {
-            Box::pin(async move {
-                stamp_tenant_guc(conn).await?;
-                Ok(true)
-            })
-        })
+    let pool = pool_options(settings, CLINICAL_SEARCH_PATH, Tenancy::Scoped)
         .connect(settings.url.expose())
         .await?;
     Ok(pool)
+}
+
+/// Creates the **tenant-scoped demographic** pool — [`connect_demographic`]
+/// with the tenant hooks of [`connect_tenant_scoped`].
+///
+/// The demographic relations carry the same `tenant_id` column, DEFAULT and
+/// `tenant_isolation` RLS policy as the clinical ones, so a demographic read is
+/// tenant-scoped exactly as a clinical one is.
+///
+/// # Errors
+///
+/// The same failures as [`connect_tenant_scoped`], against the demographic DSN.
+pub async fn connect_tenant_scoped_demographic(settings: &DbConfig) -> Result<PgPool, DbError> {
+    let pool = pool_options(settings, DEMOGRAPHIC_SEARCH_PATH, Tenancy::Scoped)
+        .connect(settings.demographic_dsn())
+        .await?;
+    Ok(pool)
+}
+
+/// A demographic pool over the DSN an existing clinical pool already holds, for
+/// a caller that has a [`PgPool`] and no [`DbConfig`].
+///
+/// This is what lets [`crate::service::FerroEhrService::new`] stay synchronous
+/// and infallible while still routing the demographic chapter at the
+/// demographic schema: `PgPool::connect_options` hands back the connect options
+/// the pool was built from, and `PgPoolOptions::connect_lazy_with` builds a pool
+/// from them with no I/O at all.
+///
+/// It carries the pool defaults rather than the deployment's `[db]` tuning,
+/// which it cannot see, and it opens no connection until one is asked for
+/// (`min_connections(0)`, so constructing a service costs nothing). A
+/// deployment that tunes the pool, separates the runtime roles, or enables
+/// tenancy supplies its own pool through
+/// [`crate::service::FerroEhrService::with_demographic_pool`] instead.
+#[must_use]
+pub fn demographic_pool_from(pool: &PgPool) -> PgPool {
+    let defaults = DbConfig::default();
+    let options = pool.connect_options();
+    pool_options(&defaults, DEMOGRAPHIC_SEARCH_PATH, Tenancy::Off)
+        .min_connections(0)
+        .connect_lazy_with(PgConnectOptions::clone(&options))
 }
 
 // ── Migrations ───────────────────────────────────────────────────────────────
@@ -506,22 +649,29 @@ pub async fn run_migrations(pool: &PgPool) -> Result<(), DbError> {
 /// instead of [`run_migrations`] anywhere the operator's configuration should
 /// decide.
 ///
+/// Either way it ends with [`verify_domain_isolation`]: a schema that is
+/// current but whose grants let one runtime role read both pseudonymisation
+/// domains is not a database this server will serve from.
+///
 /// # Errors
 ///
 /// In `apply` mode, whatever [`run_migrations`] returns. In `verify` mode,
 /// [`DbError::SchemaNotReady`] when the database does not carry exactly this
 /// build's migrations, or [`DbError::Sqlx`] when the check itself cannot run.
+/// In both modes, [`DbError::DomainIsolationBreached`] when a runtime role can
+/// reach the other domain.
 pub async fn prepare(settings: &DbConfig, pool: &PgPool) -> Result<(), DbError> {
     match settings.migrate {
-        MigrationMode::Apply => run_migrations(pool).await,
+        MigrationMode::Apply => run_migrations(pool).await?,
         MigrationMode::Verify => {
             tracing::info!(
                 "[db].migrate is `verify`: this server issues no DDL and requires an \
                  already-migrated database"
             );
-            verify_migrations(pool).await
+            verify_migrations(pool).await?;
         }
     }
+    verify_domain_isolation(pool).await
 }
 
 /// Verifies, without issuing any DDL, that the database carries exactly the
@@ -540,6 +690,109 @@ pub async fn prepare(settings: &DbConfig, pool: &PgPool) -> Result<(), DbError> 
 pub async fn verify_migrations(pool: &PgPool) -> Result<(), DbError> {
     for (schema, migrator) in MIGRATION_SETS {
         verify_set(pool, schema, migrator).await?;
+    }
+    Ok(())
+}
+
+/// The four runtime roles paired with the schemas each one must not be able to
+/// read.
+///
+/// `ferroehr_ehr`/`ferroehr_ehr_reader` serve the clinical domain and are
+/// barred from the demographic schemas; `ferroehr_demographic`/
+/// `ferroehr_demographic_reader` serve the demographic domain and are barred
+/// from the clinical ones. No openEHR spec governs database roles — our own
+/// design/extension.
+const DOMAIN_ROLE_BARRIERS: &[(&str, &[&str])] = &[
+    ("ferroehr_ehr", &["demographic", "cold_demographic"]),
+    ("ferroehr_ehr_reader", &["demographic", "cold_demographic"]),
+    ("ferroehr_demographic", &["ehr", "cold"]),
+    ("ferroehr_demographic_reader", &["ehr", "cold"]),
+];
+
+/// Refuses to serve when a runtime role can read anything in the
+/// pseudonymisation domain it does not own.
+///
+/// The separation of the clinical record from the identity of its subject is a
+/// property of the DATABASE's grants, not of the application's routing: code
+/// that reaches for the wrong schema is a bug this server can fix, while a role
+/// that can read both domains defeats the separation no matter how correct the
+/// code is (GDPR Art. 4(5) and Art. 32(1)(a),
+/// <https://eur-lex.europa.eu/eli/reg/2016/679/oj>; EDPB Guidelines 01/2025
+/// require the separation to hold against internal actors). So the grants are
+/// checked at boot, and a breach is a refusal rather than a warning.
+///
+/// Every object kind a read could go through is covered: tables, partitioned
+/// tables, foreign tables, views and materialized views (`SELECT`), sequences
+/// (`SELECT`/`USAGE`) and functions (`EXECUTE` — which PUBLIC holds by default,
+/// PostgreSQL 18 `GRANT` §Notes,
+/// <https://www.postgresql.org/docs/18/sql-grant.html>).
+///
+/// A role that does not exist is skipped rather than failed: role provisioning
+/// is a deployment step, and the migrations themselves create the roles only
+/// when the migrator holds `CREATEROLE` (dev, compose and the test harness run
+/// without them). The check therefore proves what it can see and never invents
+/// a failure out of an absent role.
+///
+/// # Errors
+///
+/// [`DbError::DomainIsolationBreached`] naming the role, the object kind and
+/// the schema-qualified object it can reach, or [`DbError::Sqlx`] when the
+/// catalog read itself fails.
+pub async fn verify_domain_isolation(pool: &PgPool) -> Result<(), DbError> {
+    for (role, forbidden) in DOMAIN_ROLE_BARRIERS {
+        // The existence probe runs first and separately: `has_table_privilege`
+        // raises `undefined_object` for a role that does not exist
+        // (<https://www.postgresql.org/docs/18/functions-info.html>), so it can
+        // never be evaluated for one, not even under a WHERE that would discard
+        // the row.
+        let present: bool =
+            sqlx::query_scalar("SELECT EXISTS(SELECT 1 FROM pg_roles WHERE rolname = $1)")
+                .bind(role)
+                .fetch_one(pool)
+                .await?;
+        if !present {
+            continue;
+        }
+        let forbidden: Vec<String> = forbidden.iter().map(|s| (*s).to_owned()).collect();
+        let breach: Option<(String, String)> = sqlx::query_as(
+            "SELECT kind, relation FROM (
+                 SELECT CASE c.relkind
+                            WHEN 'S' THEN 'sequence'
+                            WHEN 'v' THEN 'view'
+                            WHEN 'm' THEN 'materialized view'
+                            WHEN 'f' THEN 'foreign table'
+                            ELSE 'table'
+                        END AS kind,
+                        n.nspname || '.' || c.relname AS relation
+                 FROM pg_namespace n
+                 JOIN pg_class c ON c.relnamespace = n.oid
+                 WHERE n.nspname = ANY($2)
+                   AND c.relkind IN ('r', 'p', 'v', 'm', 'f', 'S')
+                   AND CASE WHEN c.relkind = 'S'
+                            THEN has_sequence_privilege($1, c.oid, 'SELECT,USAGE')
+                            ELSE has_table_privilege($1, c.oid, 'SELECT')
+                       END
+                 UNION ALL
+                 SELECT 'function', n.nspname || '.' || p.proname
+                 FROM pg_namespace n
+                 JOIN pg_proc p ON p.pronamespace = n.oid
+                 WHERE n.nspname = ANY($2)
+                   AND has_function_privilege($1, p.oid, 'EXECUTE')
+             ) reachable
+             ORDER BY relation
+             LIMIT 1",
+        )
+        .bind(role)
+        .bind(&forbidden)
+        .fetch_optional(pool)
+        .await?;
+        if let Some((kind, relation)) = breach {
+            return Err(DbError::DomainIsolationBreached {
+                role: (*role).to_owned(),
+                kind,
+                relation,
+            });
+        }
     }
     Ok(())
 }

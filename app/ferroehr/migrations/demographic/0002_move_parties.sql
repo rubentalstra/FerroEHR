@@ -40,6 +40,34 @@ BEGIN
     END IF;
 END $$;
 
+-- ── row-level security during the move ───────────────────────────────────────
+-- Both schemas carry FORCE ROW LEVEL SECURITY, which applies to the table
+-- OWNER too, and the migrator owns what it migrates. Every statement of the
+-- move is therefore judged against whatever tenant the migrating session is
+-- in, which is none. On a multi-tenant installation the `INSERT ... SELECT`
+-- of a row belonging to a real tenant fails its `WITH CHECK`, and the matching
+-- `DELETE` on the clinical side silently matches nothing — which is worse,
+-- because the version row then survives and the contribution delete after it
+-- fails on a foreign key that points at a row the move believed it had
+-- removed.
+--
+-- The policies come off for the duration and go back on in the same
+-- transaction, so no window exists in which the tables are readable
+-- unscoped by anything else. PostgreSQL 18 ALTER TABLE, "ENABLE / DISABLE ROW
+-- LEVEL SECURITY" (https://www.postgresql.org/docs/18/sql-altertable.html).
+DO $$
+DECLARE
+    rel text;
+BEGIN
+    FOREACH rel IN ARRAY ARRAY['vo_version', 'node', 'item_tag', 'audit',
+                               'contribution'] LOOP
+        EXECUTE format('ALTER TABLE ehr.%I DISABLE ROW LEVEL SECURITY', rel);
+    END LOOP;
+    FOREACH rel IN ARRAY ARRAY['vo_version', 'node', 'item_tag'] LOOP
+        EXECUTE format('ALTER TABLE demographic.%I DISABLE ROW LEVEL SECURITY', rel);
+    END LOOP;
+END $$;
+
 -- ── data move ────────────────────────────────────────────────────────────────
 -- Selected by KIND, never by `ehr_id IS NULL`.
 --
@@ -122,6 +150,23 @@ DELETE FROM ehr.vo_version v
                   WHERE m.vo_id = v.vo_id AND m.sys_version = v.sys_version);
 DELETE FROM ehr.contribution c WHERE c.id IN (SELECT id FROM moved_contribution);
 DELETE FROM ehr.audit a WHERE a.id IN (SELECT id FROM moved_audit);
+
+
+-- The policies go back on, in the same transaction that took them off.
+DO $$
+DECLARE
+    rel text;
+BEGIN
+    FOREACH rel IN ARRAY ARRAY['vo_version', 'node', 'item_tag', 'audit',
+                               'contribution'] LOOP
+        EXECUTE format('ALTER TABLE ehr.%I ENABLE ROW LEVEL SECURITY', rel);
+        EXECUTE format('ALTER TABLE ehr.%I FORCE ROW LEVEL SECURITY', rel);
+    END LOOP;
+    FOREACH rel IN ARRAY ARRAY['vo_version', 'node', 'item_tag'] LOOP
+        EXECUTE format('ALTER TABLE demographic.%I ENABLE ROW LEVEL SECURITY', rel);
+        EXECUTE format('ALTER TABLE demographic.%I FORCE ROW LEVEL SECURITY', rel);
+    END LOOP;
+END $$;
 
 -- ── the structural boundary ──────────────────────────────────────────────────
 -- Declared only once the domains hold only their own kind, and only once that
