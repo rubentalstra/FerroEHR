@@ -216,6 +216,24 @@ workflow refuses a tag that has no matching section here.
 
 ### Fixed
 
+- **The ADL 2 corpus provenance claimed a licence the files do not state**
+  (#3150). `corpus/archetypes/adl2/PROVENANCE.md` said the archetypes were
+  "predominantly CC-BY-SA 3.0 where stated" and pointed at the root CC-BY-SA
+  3.0 reference copy. Measured over the vendored tree: of 652 archetypes
+  exactly one states a licence, and it states CC-BY 4.0. The other 651 carry
+  an openEHR Foundation copyright and no grant, and upstream carries no
+  `LICENSE` file at the pinned commit either. The record now says that, the
+  subtree is declared `LicenseRef-openEHR-unstated` in `REUSE.toml` with its
+  own text in `LICENSES/`, and the licensing chapter carries the same
+  statement. The vendor script that generates the provenance file was
+  repeating the claim and is corrected too, so re-running it cannot restore
+  the old wording. The `openehr-adl` regression library from the same
+  upstream measured differently and is declared separately: 111 of 302 state
+  a licence, predominantly CC-BY-SA 3.0, with CC-BY 4.0 and CC-BY 3.0 present
+  and CC-BY-SA 4.0 absent — which the previous glob had asserted over it.
+  Whether material whose terms are unstated may stay committed is a decision,
+  tracked separately.
+
 - **The storage-integrity sweep and its repair cover both pseudonymisation
   domains** (#3178). Moving the parties into their own schema left the sweep
   reading only the clinical one, so damage to the copy no read-path check

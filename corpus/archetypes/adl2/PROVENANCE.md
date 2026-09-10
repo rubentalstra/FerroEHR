@@ -21,11 +21,39 @@ would then be validated against its own output.
 
 ## Licensing
 
-The upstream repository carries no top-level LICENSE file; individual
-archetypes carry their own `licence` metadata (predominantly CC-BY-SA
-3.0 where stated — see the individual file). openEHR Foundation
-test/reference material, vendored verbatim with metadata retained;
-root reference copy: `LICENSE-CC-BY-SA-3.0`.
+**These files state no licence.** Measured over this vendored tree on
+2026-09-10, searching every `*.adls` and `*.adl` for `licence` and
+`license` in any case and any position:
+
+| dialect | files | state a licence |
+|---|---|---|
+| `*.adls` (ADL 2) | 322 | 1 |
+| `*.adl` (ADL 1.4 twins) | 330 | 0 |
+
+The single exception is
+`ckm-2013-12-09/composition/openEHR-EHR-COMPOSITION.t_encounter_opt_test.v1.0.0.adls`,
+and what it states is `Creative Commons CC-BY 4.0 unported` — not
+CC-BY-SA 3.0. The other 651 carry `copyright = <"© openEHR Foundation">`
+in their description block and no `licence` key at all.
+
+Upstream states nothing either: at the pinned commit the repository has no
+`LICENSE`, `LICENSE.md`, `LICENSE.txt` or `COPYING`, and its `README.md` is
+four lines describing the contents ("ADL test, reference and example
+archetypes") with no licensing statement.
+
+So the position for this tree is: **openEHR Foundation copyright, terms
+unstated.** An unstated licence is not a permissive one, and this record says
+so rather than inferring a grant from the material being published for
+testing. `REUSE.toml` declares the subtree `NOASSERTION` for the same reason.
+
+This record previously claimed the archetypes were "predominantly CC-BY-SA
+3.0 where stated" and pointed at the root `LICENSE-CC-BY-SA-3.0`. That was
+wrong on both counts and is corrected here (#3150). The wording appears to
+have been inherited from the CKM template pack, where a mixed CC-BY-SA
+population genuinely is what the files say.
+
+Whether a tree whose terms are unstated may stay committed is a separate
+decision, tracked on issue 3194; nothing here asserts that it may.
 
 ## Contents
 

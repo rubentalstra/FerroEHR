@@ -182,11 +182,11 @@ SPDX-FileCopyrightText = "the respective model authors"
 SPDX-License-Identifier = "MPL-1.1"
 
 # ── Clinical models (archetypes, templates) ─────────────────────────────────
-# The ADL2 archetype library and the CKM-derived clinical models. These carry
-# their licence INSIDE themselves — every archetype's own `description` block
-# has a `licence` field — so for this material licensing already survives
-# copying, and these declarations exist to make the same fact machine-readable
-# at the tree level.
+# The CKM-derived clinical models. Most of this material carries its licence
+# INSIDE itself — the archetype's own `description` block has a `licence`
+# field — so for those files licensing already survives copying, and these
+# declarations exist to make the same fact machine-readable at the tree level.
+# The ADL2 library is the exception and is declared separately below.
 #
 # The corpora are MIXED at file level and the SPDX expression says so rather
 # than picking a winner: a first-hand count over the CKM corpus finds both
@@ -202,6 +202,41 @@ path = [
 precedence = "override"
 SPDX-FileCopyrightText = ["openEHR Foundation", "the respective archetype authors"]
 SPDX-License-Identifier = "CC-BY-SA-3.0 AND CC-BY-SA-4.0"
+
+# The ADL2 archetype library states NO licence, and this declaration says so
+# rather than inheriting the CC-BY-SA expression above (#3150). Measured over
+# the vendored tree: of 652 archetypes, ONE carries a `licence` field and it
+# reads CC-BY 4.0 unported; the other 651 carry `copyright = <"© openEHR
+# Foundation">` and nothing else. Upstream states nothing either — no LICENSE
+# file at the pinned commit, and a four-line README.
+#
+# `LicenseRef-openEHR-unstated` is the REUSE-sanctioned way to say this — a
+# LicenseRef with its own text in LICENSES/, which spells out what was
+# measured. It is NOT a licence. Declaring CC-BY-SA over a tree whose files
+# never mention it would manufacture a grant out of a glob; the copyright
+# holder is named because that IS what the files say. The subtree's own
+# PROVENANCE.md carries the same measurement and its date.
+[[annotations]]
+path = "corpus/archetypes/adl2/**"
+precedence = "override"
+SPDX-FileCopyrightText = "openEHR Foundation"
+SPDX-License-Identifier = "LicenseRef-openEHR-unstated"
+
+# The ADL2 regression library inside the openehr-adl corpus is the same
+# upstream repository as the tree above but a different subtree, and it was
+# measured separately (#3150): of 302 archetypes, 111 state a licence and 191
+# state none. Where one IS stated it is predominantly CC-BY-SA 3.0 (100 of the
+# 111 — 93 by URL, 5 in prose, 2 spelled `CC-SA-BY`), with 10 CC-BY 4.0 and 1
+# CC-BY 3.0. No file in it states CC-BY-SA 4.0, which the broad clinical-model
+# glob above would otherwise have asserted over the whole tree.
+#
+# The expression names every obligation a redistributor of this subtree takes
+# on, and `LicenseRef-openEHR-unstated` names the majority that grant nothing.
+[[annotations]]
+path = "crates/openehr-adl/tests/corpus/adl2-reference/**"
+precedence = "override"
+SPDX-FileCopyrightText = ["openEHR Foundation", "the respective archetype authors"]
+SPDX-License-Identifier = "LicenseRef-openEHR-unstated AND CC-BY-SA-3.0 AND CC-BY-4.0 AND CC-BY-3.0"
 
 # The BMM reference-model subtree inside the ADL2 corpus is code-adjacent
 # material under different terms, so the two tables above are re-applied after
