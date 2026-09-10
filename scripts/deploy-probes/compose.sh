@@ -616,8 +616,20 @@ reported: ${dump_log:0:300}"
          --dbname=$restored --no-owner /dumps/clinical/$(basename "$clinical_dump") 2>&1;
        pg_restore --host=ferroehr-postgres --username=${PG_INIT_USER:-ferroehr} \
          --dbname=$restored --no-owner /dumps/demographic/$(basename "$demographic_dump") 2>&1" 2>&1)"
+  # The DSN is taken from the SERVER CONTAINER's own environment and its
+  # database name swapped, rather than rebuilt from the compose defaults: this
+  # probe then authenticates with the credential the stack actually runs, and
+  # no credential literal lives in this harness.
   local restored_dsn verify_out
-  restored_dsn="postgres://${PG_INIT_USER:-ferroehr}:${PG_INIT_PASSWORD:-ferroehr}@ferroehr-postgres:5432/$restored"
+  restored_dsn="$(docker inspect --format '{{range .Config.Env}}{{println .}}{{end}}' \
+    "$(dc ps -q ferroehr)" 2>/dev/null | sed -n 's/^FERROEHR__DB__URL=//p')"
+  if [ -z "$restored_dsn" ]; then
+    probe_fail "the server container's FERROEHR__DB__URL" "(empty)" \
+      "without it this probe would build a DSN of its own and measure that instead"
+    probe_done
+    return
+  fi
+  restored_dsn="${restored_dsn%/*}/$restored"
   if verify_out="$(dc exec -T -e FERROEHR__DB__URL="$restored_dsn" -e FERROEHR__DB__MIGRATE=verify \
       ferroehr /usr/local/bin/ferroehr db verify 2>&1)"; then
     :
