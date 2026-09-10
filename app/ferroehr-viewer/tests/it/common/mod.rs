@@ -30,6 +30,7 @@
 
 use std::time::Duration;
 
+use thirtyfour::error::WebDriverErrorInner;
 use thirtyfour::prelude::*;
 
 /// The budget every ordinary element wait allows.
@@ -94,7 +95,11 @@ impl Harness {
             .expect("caps");
         caps.set_logging_prefs("browser", thirtyfour::LoggingPrefsLogLevel::All)
             .expect("logging prefs");
-        let driver = WebDriver::new(&webdriver_url, caps)
+        // TODO(#3218): bound a stalled steady-state command. thirtyfour's
+        // request_timeout also covers NewSession, which exceeds a short budget
+        // under nextest parallelism, and the config carries no post-build
+        // setter, so the bound belongs on our own command awaits.
+        let driver = WebDriver::builder(&webdriver_url, caps)
             .await
             .expect("webdriver session (is chromedriver up?)");
         Some(Self {
@@ -244,7 +249,11 @@ impl Harness {
             serde_json::json!({"profile.managed_default_content_settings.javascript": 2}),
         )
         .expect("prefs");
-        let driver = WebDriver::new(&webdriver_url, caps)
+        // TODO(#3218): bound a stalled steady-state command. thirtyfour's
+        // request_timeout also covers NewSession, which exceeds a short budget
+        // under nextest parallelism, and the config carries no post-build
+        // setter, so the bound belongs on our own command awaits.
+        let driver = WebDriver::builder(&webdriver_url, caps)
             .await
             .expect("webdriver session (is chromedriver up?)");
         Some(Self {
@@ -485,16 +494,87 @@ impl Harness {
     }
 }
 
+/// Whether a `WebDriver` error means the element is simply NOT THERE — the
+/// only answer a polling probe may read as "not yet".
+///
+/// `no such element` is genuine absence, and a stale handle is a re-rendering
+/// subtree detaching the element between the find and the read. Everything
+/// else — a request that never came back, a dead session, a rejected
+/// selector — is the driver failing to ANSWER the question, and a probe that
+/// swallows it spends its whole budget reporting an empty page.
+fn is_absence(error: &WebDriverError) -> bool {
+    matches!(
+        error.as_inner(),
+        WebDriverErrorInner::NoSuchElement(_) | WebDriverErrorInner::StaleElementReference(_)
+    )
+}
+
+/// Whether `by` currently matches an element.
+///
+/// # Panics
+/// When the `WebDriver` answers with anything but an absence
+/// ([`is_absence`]): a failure to observe is never an observation of nothing.
+pub(crate) async fn is_present_by(h: &Harness, by: By) -> bool {
+    match h.driver.find(by.clone()).await {
+        Ok(_) => true,
+        Err(error) if is_absence(&error) => false,
+        Err(error) => panic!("the WebDriver could not answer `find({by:?})`: {error}"),
+    }
+}
+
+/// [`is_present_by`] for a CSS selector — the ordinary "is this on the page"
+/// probe.
+///
+/// # Panics
+/// When the `WebDriver` answers with anything but an absence ([`is_absence`]).
+pub(crate) async fn is_present(h: &Harness, css: &str) -> bool {
+    is_present_by(h, By::Css(css)).await
+}
+
 /// Whether `css` matches a currently VISIBLE element.
 ///
 /// thaw's dialog is never removed from the DOM: `leptos_transition_group`'s
 /// `CSSTransition` hides it with `display: none`, so a closed dialog is still
 /// findable. Openness is therefore visibility, never mere presence.
+///
+/// # Panics
+/// When the `WebDriver` answers with anything but an absence ([`is_absence`]).
 pub(crate) async fn is_visible(h: &Harness, css: &str) -> bool {
     match h.driver.find(By::Css(css)).await {
-        Ok(element) => element.is_displayed().await.unwrap_or(false),
-        Err(_) => false,
+        Ok(element) => match element.is_displayed().await {
+            Ok(displayed) => displayed,
+            Err(error) if is_absence(&error) => false,
+            Err(error) => {
+                panic!("the WebDriver could not answer `is_displayed({css})`: {error}")
+            }
+        },
+        Err(error) if is_absence(&error) => false,
+        Err(error) => panic!("the WebDriver could not answer `find({css})`: {error}"),
     }
+}
+
+/// Whether ANY element matching `css` is displayed.
+///
+/// [`is_visible`] answers for the FIRST match, which is the wrong question
+/// about a dialog: a page mounts one surface per dialog and thaw's `Teleport`
+/// never unmounts one after its first open, so a journey that has opened two
+/// leaves a closed surface ahead of the open one in document order. "Is a
+/// modal up" has to look at all of them or it answers about the wrong one.
+pub(crate) async fn is_any_visible(h: &Harness, css: &str) -> bool {
+    let found = match h.driver.find_all(By::Css(css)).await {
+        Ok(found) => found,
+        Err(error) if is_absence(&error) => return false,
+        Err(error) => panic!("the WebDriver could not answer `find_all({css})`: {error}"),
+    };
+    for element in found {
+        match element.is_displayed().await {
+            Ok(true) => return true,
+            Ok(false) => {}
+            Err(error) if is_absence(&error) => {}
+            Err(error) => panic!("the WebDriver could not answer `is_displayed({css})`: {error}"),
+        }
+    }
+    false
 }
 
 /// thaw's modal surface — the panel itself.
@@ -503,6 +583,12 @@ const DIALOG_SURFACE: &str = ".thaw-dialog-surface";
 /// thaw's modal backdrop: a full-viewport element rendered under every open
 /// dialog and kept displayed while the dialog fades out.
 const DIALOG_BACKDROP: &str = ".thaw-dialog-surface__backdrop";
+
+/// thaw's modal surface MID-OPEN: `leptos_transition_group`'s `CSSTransition`
+/// adds `{name}-enter-active` when the surface starts appearing and removes it
+/// when the transition ends, and thaw's `DialogSurface` names its transition
+/// `fade-in-scale-up-transition` (a 250 ms opacity + scale).
+const DIALOG_ENTERING: &str = ".thaw-dialog-surface.fade-in-scale-up-transition-enter-active";
 
 /// Establish the precondition every page-level click has: nothing is covering
 /// the page.
@@ -519,7 +605,7 @@ const DIALOG_BACKDROP: &str = ".thaw-dialog-surface__backdrop";
 /// # Panics
 /// When a backdrop is still up after 15 s.
 pub(crate) async fn clear_dialog_overlay(h: &Harness) {
-    if is_visible(h, DIALOG_SURFACE).await {
+    if is_any_visible(h, DIALOG_SURFACE).await {
         drop(
             h.driver
                 .action_chain()
@@ -531,21 +617,142 @@ pub(crate) async fn clear_dialog_overlay(h: &Harness) {
     wait_hidden(h, DIALOG_BACKDROP).await;
 }
 
+/// Wait until the dialog holding `control_css` is open AND STILL: that control
+/// visible, with no dialog anywhere mid-enter.
+///
+/// Takes a control INSIDE the target dialog rather than matching the surface
+/// class, because a page mounts one surface per dialog and thaw's `Teleport`
+/// mounts each subtree on its first open and never unmounts it. A journey that
+/// uploads and then deletes leaves two surfaces in the DOM, and a bare
+/// `.thaw-dialog-surface` match answers for whichever comes first — which is
+/// the CLOSED one, so the wait could never be satisfied.
+///
+/// Visibility alone is not readiness either: a control clicked while the
+/// surface is still scaling up is clicked at coordinates it has already left,
+/// which `WebDriver` reports as a perfectly successful click on nothing.
+/// [`DIALOG_ENTERING`] is the transition's own in-flight marker and is checked
+/// across the page, so "this control is visible and nothing is entering" is
+/// observable rather than timed.
+///
+/// # Panics
+/// When the dialog is not open and settled within 15 s.
+pub(crate) async fn wait_dialog_settled(h: &Harness, control_css: &str) {
+    for _ in 0..75 {
+        if is_visible(h, control_css).await && !is_present(h, DIALOG_ENTERING).await {
+            return;
+        }
+        tokio::time::sleep(Duration::from_millis(200)).await;
+    }
+    let url = h.driver.current_url().await.expect("current url");
+    panic!("the dialog holding `{control_css}` never became open and settled (at {url})");
+}
+
+/// The submit button of the Template Manager's one upload dialog.
+const UPLOAD_SUBMIT: &str = "#template-upload-submit";
+
+/// The refusal diagnostic, scoped to the MODAL: the template listings render
+/// their own `MessageBar` for an empty result, which is not this one.
+const UPLOAD_DIAGNOSTIC: &str = ".thaw-dialog-surface .thaw-message-bar";
+
+/// The in-flight line the upload dialog renders while its action is pending
+/// (`src/components/upload_dialog.rs`). It sits inside a `Show`, so its
+/// presence IS the pending state; matched by its rendered text because the
+/// line carries no id of its own.
+const UPLOAD_PENDING_LINE: &str =
+    "//div[contains(@class, 'thaw-dialog-surface')]//span[normalize-space(text())='Uploading…']";
+
+/// Every toast card currently on screen; each upload outcome raises one.
+const TOAST_CARD: &str = ".thaw-toast-body";
+
+/// What the upload dialog says about a dispatch, read at one instant.
+///
+/// The submit click's post-condition is a COMPARISON of two of these, because
+/// only some of the observables are unconditionally absent beforehand: a
+/// refusal diagnostic and a toast can both survive from an earlier attempt.
+#[derive(Debug)]
+struct UploadDialogState {
+    /// Whether the modal surface is on screen — an accepted upload closes it.
+    open: bool,
+    /// Whether the submit button is live, or `None` when it is not in the DOM.
+    submit_enabled: Option<bool>,
+    /// Whether the "Uploading…" line is rendered.
+    pending: bool,
+    /// The refusal diagnostic rendered inside the dialog, if any.
+    diagnostic: Option<String>,
+    /// How many toast cards are up.
+    toasts: usize,
+}
+
+impl UploadDialogState {
+    /// Read every observable once.
+    ///
+    /// # Panics
+    /// When the `WebDriver` fails to answer any of them ([`is_absence`]).
+    async fn read(h: &Harness) -> Self {
+        Self {
+            open: is_visible(h, DIALOG_SURFACE).await,
+            submit_enabled: read_enabled(h, UPLOAD_SUBMIT).await,
+            pending: is_present_by(h, By::XPath(UPLOAD_PENDING_LINE)).await,
+            diagnostic: read_text(h, UPLOAD_DIAGNOSTIC).await,
+            toasts: count_matching(h, TOAST_CARD).await,
+        }
+    }
+
+    /// Whether this state carries a consequence of the submit dispatch that
+    /// `before` did not already carry.
+    ///
+    /// Each disjunct is something only a dispatch produces: the dialog closing
+    /// is the accepted-upload continuation, the pending line and the button
+    /// going inert are the action's own in-flight state, a moved diagnostic is
+    /// a fresh refusal, and a new toast is either outcome's feedback.
+    fn dispatched_since(&self, before: &Self) -> bool {
+        (before.open && !self.open)
+            || self.pending
+            || (before.submit_enabled == Some(true) && self.submit_enabled == Some(false))
+            || self.diagnostic != before.diagnostic
+            || self.toasts > before.toasts
+    }
+}
+
+/// The submit click's post-condition: poll until the dialog shows that the
+/// dispatch happened.
+///
+/// # Panics
+/// When nothing moves within 15 s — the click was answered, the handler never
+/// ran, and the panic says so HERE rather than leaving a downstream read to
+/// blame the CDR for a row nothing ever sent it.
+async fn wait_upload_dispatched(h: &Harness, before: &UploadDialogState) {
+    for _ in 0..75 {
+        if UploadDialogState::read(h).await.dispatched_since(before) {
+            return;
+        }
+        tokio::time::sleep(Duration::from_millis(200)).await;
+    }
+    let evidence = h.evidence_dump("upload-click-not-dispatched").await;
+    panic!(
+        "the click on `{UPLOAD_SUBMIT}` did not dispatch the upload: 15 s on, the dialog \
+         is still open with its source loaded and its submit button live, nothing is \
+         pending, no new diagnostic and no toast — the click was answered but the \
+         handler never ran, so nothing was sent to the CDR ({evidence})"
+    );
+}
+
 /// Upload `path` through the Template Manager's one upload dialog: open it
 /// from the page-header trigger, choose the file, and send it.
 ///
-/// Both template families share this control (#2955), so both families' seed
-/// helpers drive the same routine. The submit button is inert until the chosen
-/// file has been read into the dialog's source editor, which makes
-/// [`wait_enabled`] the exact "the file arrived" condition — never a sleep.
+/// Both template families share this control (#2955), so every family's seed
+/// helper drives this one routine.
 ///
-/// Both seed helpers call this in a retry loop, and a refused upload keeps the
-/// dialog open on purpose, so re-entry with a modal already up is a normal
-/// state rather than an anomaly — [`clear_dialog_overlay`] is what makes the
-/// trigger clickable again (#3134).
+/// Four conditions, no sleeps, each the exact fact the next step needs:
+/// nothing covers the page ([`clear_dialog_overlay`] — a refused upload keeps
+/// its dialog open on purpose, so re-entry with a modal up is normal, #3134);
+/// the modal is open and settled ([`wait_dialog_settled`]); the submit button
+/// is live ([`wait_enabled`]), which is inert until the chosen file has been
+/// read into the dialog's source editor and so means exactly "the file
+/// arrived"; and the send actually DISPATCHED ([`wait_upload_dispatched`]).
 ///
 /// # Panics
-/// On any interaction failure.
+/// On any interaction failure, and when the submit click dispatches nothing.
 pub(crate) async fn upload_via_dialog(h: &Harness, path: &str) {
     clear_dialog_overlay(h).await;
     h.wait_css("#template-upload-open")
@@ -553,17 +760,65 @@ pub(crate) async fn upload_via_dialog(h: &Harness, path: &str) {
         .click()
         .await
         .expect("open the template upload dialog");
+    wait_dialog_settled(h, UPLOAD_SUBMIT).await;
     h.wait_css("#template-upload-picker input[type=file]")
         .await
         .send_keys(path)
         .await
         .expect("choose the fixture through the dialog's hidden file input");
-    wait_enabled(h, "#template-upload-submit").await;
-    h.wait_css("#template-upload-submit")
+    wait_enabled(h, UPLOAD_SUBMIT).await;
+    let before = UploadDialogState::read(h).await;
+    h.wait_css(UPLOAD_SUBMIT)
         .await
         .click()
         .await
         .expect("send the chosen template source");
+    wait_upload_dispatched(h, &before).await;
+}
+
+/// Whether the control at `css` is enabled, or `None` when nothing matches.
+///
+/// # Panics
+/// When the `WebDriver` answers with anything but an absence ([`is_absence`]).
+async fn read_enabled(h: &Harness, css: &str) -> Option<bool> {
+    match h.driver.find(By::Css(css)).await {
+        Ok(element) => match element.is_enabled().await {
+            Ok(enabled) => Some(enabled),
+            Err(error) if is_absence(&error) => None,
+            Err(error) => panic!("the WebDriver could not answer `is_enabled({css})`: {error}"),
+        },
+        Err(error) if is_absence(&error) => None,
+        Err(error) => panic!("the WebDriver could not answer `find({css})`: {error}"),
+    }
+}
+
+/// The text of the first element matching `css`, or `None` when nothing
+/// matches.
+///
+/// # Panics
+/// When the `WebDriver` answers with anything but an absence ([`is_absence`]).
+async fn read_text(h: &Harness, css: &str) -> Option<String> {
+    match h.driver.find(By::Css(css)).await {
+        Ok(element) => match element.text().await {
+            Ok(text) => Some(text),
+            Err(error) if is_absence(&error) => None,
+            Err(error) => panic!("the WebDriver could not answer `text({css})`: {error}"),
+        },
+        Err(error) if is_absence(&error) => None,
+        Err(error) => panic!("the WebDriver could not answer `find({css})`: {error}"),
+    }
+}
+
+/// How many elements match `css`.
+///
+/// # Panics
+/// When the `WebDriver` answers with anything but an absence ([`is_absence`]).
+async fn count_matching(h: &Harness, css: &str) -> usize {
+    match h.driver.find_all(By::Css(css)).await {
+        Ok(found) => found.len(),
+        Err(error) if is_absence(&error) => 0,
+        Err(error) => panic!("the WebDriver could not answer `find_all({css})`: {error}"),
+    }
 }
 
 /// Poll until the control at `css` is present and ENABLED.
@@ -574,12 +829,11 @@ pub(crate) async fn upload_via_dialog(h: &Harness, path: &str) {
 /// commit the pre-seed draft.
 ///
 /// # Panics
-/// When it never becomes enabled within 15 s.
+/// When it never becomes enabled within 15 s, or when the `WebDriver` stops
+/// answering — a stalled driver used to look exactly like an unseeded form.
 pub(crate) async fn wait_enabled(h: &Harness, css: &str) {
     for _ in 0..75 {
-        if let Ok(element) = h.driver.find(By::Css(css)).await
-            && element.is_enabled().await.unwrap_or(false)
-        {
+        if read_enabled(h, css).await == Some(true) {
             return;
         }
         tokio::time::sleep(Duration::from_millis(200)).await;
@@ -693,7 +947,7 @@ pub(crate) async fn click_until_css(h: &Harness, css: &str, target_css: &str) ->
 /// When it is still visible after 15 s.
 pub(crate) async fn wait_hidden(h: &Harness, css: &str) {
     for _ in 0..75 {
-        if !is_visible(h, css).await {
+        if !is_any_visible(h, css).await {
             return;
         }
         tokio::time::sleep(Duration::from_millis(200)).await;
@@ -840,7 +1094,7 @@ pub(crate) async fn confirm_in_dialog(h: &Harness, trigger_css: &str, confirm_id
         // swallowed by the modal and surface as `ElementClickIntercepted` — a
         // confusing report for what is really "the dialog opened, but not with
         // the confirm id this call expects". Stop and let the assertion say so.
-        if attempt > 0 && is_visible(h, ".thaw-dialog-surface").await {
+        if attempt > 0 && is_any_visible(h, DIALOG_SURFACE).await {
             break;
         }
         trigger.click().await.expect("open the confirmation dialog");
@@ -861,6 +1115,10 @@ pub(crate) async fn confirm_in_dialog(h: &Harness, trigger_css: &str, confirm_id
          never landed (pre-hydration) or a dialog opened whose confirm id is not \
          `{confirm_id}`"
     );
+    // The confirm button is visible from the first frame of the 250 ms enter
+    // transition, and a click landing mid-scale can miss the moving target
+    // without the driver reporting anything (#3200).
+    wait_dialog_settled(h, &confirm_css).await;
     h.wait_css(&confirm_css)
         .await
         .click()
