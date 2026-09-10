@@ -184,13 +184,18 @@ fn element_e_the_origin_of_the_data_is_not_recorded_yet() {
     assert_eq!(event.client_ip.as_deref(), Some("10.0.0.9"));
 }
 
-/// The purpose of use is recorded but reaches neither rendering — a gap of a
-/// different kind, and one a reader of the exported trail would not see.
+/// The purpose of use is recorded but reaches neither rendering, and only one
+/// of the two could carry it.
 ///
-/// DICOM PS3.15 §A.5 gives `EventIdentification` a `PurposeOfUse`, and the
-/// FHIR `AuditEvent` gives `agent.purposeOfUse`; the record has the value and
-/// neither rendering carries it, so a purpose collected at the door is
-/// invisible to anything consuming the feed.
+/// FHIR R4 `AuditEvent` defines `agent.purposeOfUse`
+/// (<https://hl7.org/fhir/R4/auditevent.html>) and this rendering does not
+/// populate it — a real gap. The DICOM Audit Message schema of PS3.15 §A.5
+/// defines no purpose element at all: its `AuditMessage` carries
+/// `EventIdentification`, `ActiveParticipant`, `AuditSourceIdentification`
+/// and `ParticipantObjectIdentification`, and none of them has one
+/// (<https://dicom.nema.org/medical/dicom/current/output/chtml/part15/sect_A.5.html>).
+/// So the DICOM side is a limit of the format rather than of this code, and
+/// the assertion below pins both halves for what each of them is.
 #[test]
 fn the_declared_purpose_is_stored_but_reaches_neither_rendering() {
     let event = access_event();
