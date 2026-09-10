@@ -63,15 +63,6 @@ services:
       # knob (the pull-only quickstart carries no such env: its pinned released
       # images may predate the key, whose strict sweep would refuse it at boot).
       FERROEHR__SPEC_PROFILE: ${FERROEHR__SPEC_PROFILE:-development}
-      # The dev stack keeps named party proxies in clinical content, which the
-      # shipped default refuses (`[privacy] allow_identified_parties_in_ehr`).
-      # A COMPOSITION's composer is the case: RM common master06 §Composer
-      # admits a PARTY_IDENTIFIED with a name, the FLAT `ctx/composer_name`
-      # produces exactly that, and the viewer displays it — so this stack is
-      # the opted-in posture the flag exists for, not an accident. A deployment
-      # that wants the minimising default leaves this unset and carries
-      # composers as `external_ref` alone.
-      FERROEHR__PRIVACY__ALLOW_IDENTIFIED_PARTIES_IN_EHR: "true"
 
   ferroehr-viewer:
     image: ${FERROEHR_VIEWER_IMAGE:-ghcr.io/rubentalstra/ferroehr-viewer:local}

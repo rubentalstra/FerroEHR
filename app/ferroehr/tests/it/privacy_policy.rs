@@ -233,21 +233,49 @@ async fn the_subject_rule_also_binds_the_ehr_status_update_path() {
 
 // ── identified parties ────────────────────────────────────────────────────────
 
+/// The write path takes a named composer under the shipped default — the
+/// accepted cell of the matrix, proven through the service rather than the
+/// rule.
+///
+/// `composition()` composes as a `PARTY_IDENTIFIED` carrying a name, which is
+/// what `ctx/composer_name` and this server's own example generator produce.
+/// The class is the proxy for a party "other than the subject of the record",
+/// "Typically for health care providers" (RM common
+/// `UML/classes/org.openehr.rm.common.party_identified.adoc` §Description).
 #[tokio::test]
-async fn a_named_composer_is_refused_by_default_and_accepted_under_the_opt_in() {
+async fn a_named_composer_is_accepted_by_default() {
     let db = testkit::db().await.expect("testkit database");
     let strict = service(&db, &PrivacyConfig::default());
     let ehr_id = strict.create_ehr(None).await.expect("create_ehr");
 
-    // `composition()` composes as a PARTY_IDENTIFIED carrying a name — the
-    // shape the RM itself advises against on the clinical side (RM common
-    // `UML/classes/org.openehr.rm.common.party_identified.adoc` §Description).
     let named = composition("privacy composition");
-    let error = strict
+    strict
         .create_composition(ehr_id, uv(&named, "249", None))
         .await
-        .expect_err("a named party in clinical content is refused by default");
-    assert_refused_service(&error, "COMPOSITION/composer/name");
+        .expect("a provider name on the composer is not the boundary's business");
+}
+
+/// The write path refuses a composer's formal identifiers under the shipped
+/// default, and takes them under the opt-in — the refused cell of the
+/// `PARTY_IDENTIFIED` row.
+///
+/// `identifiers` is "One or more formal identifiers (possibly computable)"
+/// (same file, §Attributes): the national-identifier slot, whoever the party
+/// is.
+#[tokio::test]
+async fn composer_identifiers_are_refused_by_default_and_accepted_under_the_opt_in() {
+    let db = testkit::db().await.expect("testkit database");
+    let strict = service(&db, &PrivacyConfig::default());
+    let ehr_id = strict.create_ehr(None).await.expect("create_ehr");
+
+    let mut identified = composition("privacy composition");
+    identified["composer"]["identifiers"] =
+        json!([{ "_type": "DV_IDENTIFIER", "id": "GMC-1234567" }]);
+    let error = strict
+        .create_composition(ehr_id, uv(&identified, "249", None))
+        .await
+        .expect_err("a formal identifier in clinical content is refused by default");
+    assert_refused_service(&error, "COMPOSITION/composer/identifiers");
 
     let permissive = service(
         &db,
@@ -257,7 +285,7 @@ async fn a_named_composer_is_refused_by_default_and_accepted_under_the_opt_in() 
         },
     );
     permissive
-        .create_composition(ehr_id, uv(&named, "249", None))
+        .create_composition(ehr_id, uv(&identified, "249", None))
         .await
         .expect("the documented tenant opt-in accepts it");
 }
