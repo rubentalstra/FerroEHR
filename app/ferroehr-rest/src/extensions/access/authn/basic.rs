@@ -49,12 +49,13 @@ static ENUMERATION_DEFENCE_PHC: std::sync::LazyLock<Option<String>> =
     std::sync::LazyLock::new(|| {
         let params = argon2::Params::new(19_456, 2, 1, None).ok()?;
         let argon2 = Argon2::new(argon2::Algorithm::Argon2id, argon2::Version::V0x13, params);
-        let salt =
-            argon2::password_hash::SaltString::from_b64("ZmVycm9lanItZW51bS1kZWZlbmNl").ok()?;
-        argon2::password_hash::PasswordHasher::hash_password(
+        // A fixed salt, because this PHC is a timing decoy rather than a
+        // credential: nothing verifies against it, so a per-boot random salt
+        // would only make the constant unreproducible.
+        argon2::password_hash::PasswordHasher::hash_password_with_salt(
             &argon2,
             b"no-such-user-placeholder",
-            &salt,
+            b"ferroehr-enum-defence",
         )
         .ok()
         .map(|hash| hash.to_string())
@@ -125,14 +126,13 @@ pub(super) fn verify(header: &HeaderValue, cfg: &BasicConfig) -> Result<Principa
 #[cfg(test)]
 mod tests {
     use super::*;
-    use argon2::password_hash::{PasswordHasher, SaltString};
+    use argon2::password_hash::PasswordHasher;
     use ferroehr::config::auth::BasicUser;
 
     fn hash(pw: &str) -> String {
         // Fixed salt keeps the test hermetic without the argon2 `rand` feature.
-        let salt = SaltString::from_b64("MTIzNDU2Nzg5MDEyMzQ1Ng").expect("salt");
         Argon2::default()
-            .hash_password(pw.as_bytes(), &salt)
+            .hash_password_with_salt(pw.as_bytes(), b"1234567890123456")
             .expect("hash")
             .to_string()
     }

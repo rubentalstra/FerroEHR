@@ -1138,16 +1138,21 @@ impl FerroEhrService {
         Ok(body)
     }
 
-    /// The slim twin: externalization is compiled out, so the stored canonical
-    /// form is always served unchanged.
+    /// Serves the stored canonical form unchanged: externalization is compiled
+    /// out of this build, so nothing was ever moved out of a body.
     ///
     /// # Errors
     /// Infallible in this configuration; the `Result` mirrors the multimedia
     /// twin so callers are configuration-independent.
+    ///
+    /// The `async` is the twin's signature, not this body's need: the one
+    /// caller lives in `ferroehr-rest` and awaits this method however the
+    /// binary was built.
     #[cfg(not(feature = "multimedia"))]
     #[expect(
         clippy::unused_async,
-        reason = "the multimedia twin awaits; callers await unconditionally"
+        clippy::unused_async_trait_impl,
+        reason = "signature parity with the multimedia twin, which awaits"
     )]
     pub async fn expand_multimedia(&self, body: Value) -> Result<Value, SmError> {
         Ok(body)

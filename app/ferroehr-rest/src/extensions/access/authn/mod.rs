@@ -863,27 +863,36 @@ pub struct AuthenticatedUser(pub Principal);
 impl<S: Sync> FromRequestParts<S> for AuthenticatedUser {
     type Rejection = RestError;
 
-    async fn from_request_parts(parts: &mut Parts, _state: &S) -> Result<Self, Self::Rejection> {
-        parts
-            .extensions
-            .get::<Principal>()
-            .cloned()
-            .map(AuthenticatedUser)
-            .ok_or_else(|| RestError(ApiError::Unauthorized("authentication required".to_owned())))
+    // The trait declares an `async fn`; an impl may satisfy it with a plain fn
+    // returning a future, which is what this reads-one-extension body is
+    // (https://doc.rust-lang.org/reference/items/traits.html).
+    fn from_request_parts(
+        parts: &mut Parts,
+        _state: &S,
+    ) -> impl Future<Output = Result<Self, Self::Rejection>> {
+        std::future::ready(
+            parts
+                .extensions
+                .get::<Principal>()
+                .cloned()
+                .map(AuthenticatedUser)
+                .ok_or_else(|| {
+                    RestError(ApiError::Unauthorized("authentication required".to_owned()))
+                }),
+        )
     }
 }
 
 #[cfg(test)]
 mod tests {
     use super::*;
-    use argon2::password_hash::{PasswordHasher, SaltString};
-    use argon2::{Argon2, password_hash::PasswordHash};
+    use argon2::password_hash::PasswordHasher;
+    use argon2::{Argon2, PasswordHash};
     use ferroehr::config::auth::{BasicConfig, BasicUser, OidcConfig};
 
     fn hash(pw: &str) -> String {
-        let salt = SaltString::from_b64("MTIzNDU2Nzg5MDEyMzQ1Ng").unwrap();
         Argon2::default()
-            .hash_password(pw.as_bytes(), &salt)
+            .hash_password_with_salt(pw.as_bytes(), b"1234567890123456")
             .unwrap()
             .to_string()
     }

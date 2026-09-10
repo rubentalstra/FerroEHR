@@ -25,7 +25,7 @@
 )]
 
 use argon2::Argon2;
-use argon2::password_hash::{PasswordHasher, SaltString};
+use argon2::password_hash::PasswordHasher;
 use axum::Router;
 use axum::body::Body;
 use base64::Engine;
@@ -180,9 +180,8 @@ async fn disabled_group_answers_404_when_authenticated() {
 
 /// Argon2 hash of a test password (the Basic-auth user store stores hashes).
 fn argon2_hash(pw: &str) -> String {
-    let salt = SaltString::from_b64("MTIzNDU2Nzg5MDEyMzQ1Ng").unwrap();
     Argon2::default()
-        .hash_password(pw.as_bytes(), &salt)
+        .hash_password_with_salt(pw.as_bytes(), b"1234567890123456")
         .unwrap()
         .to_string()
 }

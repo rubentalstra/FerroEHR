@@ -133,40 +133,9 @@
       "vulnerability": {
         "name": "RUSTSEC-2026-0173"
       }
-    },
-    {
-      "ferroehr:reachability": {
-        "direct_dependents": [],
-        "package": "rkyv@0.7.46",
-        "workspace_roots": []
-      },
-      "impact_statement": "Insufficient archive validation causing out-of-bounds reads in archives containing `Rc`/`Arc` (patched in rkyv 0.8.17). `rkyv` is NOT COMPILED into any FerroEHR artifact. `rust_decimal` declares both `rkyv ^0.8.13` and `rkyv ^0.7.46` as OPTIONAL dependencies; this project enables neither feature, and `cargo tree --workspace --all-features` resolves zero `rkyv` nodes. `Cargo.lock` nonetheless pins 0.7.46, because a lock file records the union of every dependency any feature combination could pull and `^0.7.46` cannot resolve above the vulnerable range — so the entry can only leave the lock file when `rust_decimal` drops that requirement upstream. A scanner that reads the lock file therefore reports it; `cargo deny`, which resolves features, does not. Where the two disagree in that direction, the feature-resolving tool is the more precise instrument.",
-      "justification": "component_not_present",
-      "products": [
-        {
-          "@id": "pkg:cargo/ferroehr-server",
-          "subcomponents": [
-            {
-              "@id": "pkg:cargo/rkyv"
-            }
-          ]
-        },
-        {
-          "@id": "pkg:oci/ferroehr",
-          "subcomponents": [
-            {
-              "@id": "pkg:cargo/rkyv"
-            }
-          ]
-        }
-      ],
-      "status": "not_affected",
-      "vulnerability": {
-        "name": "RUSTSEC-2026-0235"
-      }
     }
   ],
-  "timestamp": "2026-08-14T00:00:00Z",
+  "timestamp": "2026-09-10T00:00:00Z",
   "tooling": "scripts/security/vex-generate.sh from security/vex/rust-advisories.toml + deny.toml",
-  "version": 3
+  "version": 4
 }

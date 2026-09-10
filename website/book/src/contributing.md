@@ -34,8 +34,8 @@ The three governing documents are kept in the repository root:
 ## Setting up
 
 The Rust toolchain is pinned by the repository's `rust-toolchain.toml` (stable
-1.97.1), so `rustup` installs the right version automatically on your first
-build. The declared minimum supported version is lower (Rust 1.96) and CI
+1.98.1), so `rustup` installs the right version automatically on your first
+build. The declared minimum supported version is lower (Rust 1.97) and CI
 verifies it independently with `cargo hack`, so do not reach for a language
 feature newer than that. The edition is 2024.
 

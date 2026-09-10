@@ -251,7 +251,7 @@ pub enum AuthConfigError {
 }
 
 /// The minimum Argon2id memory cost, in KiB, the OWASP Password Storage Cheat
-/// Sheet §Argon2id prescribes (19 MiB) — also `argon2` 0.5.3's
+/// Sheet §Argon2id prescribes (19 MiB) — also `argon2` 0.6.0's
 /// `Params::DEFAULT_M_COST`.
 pub const MIN_ARGON2_M_COST: u32 = 19 * 1024;
 
@@ -275,7 +275,7 @@ impl BasicConfig {
     /// Validate every stored password hash against the OWASP Argon2id floor.
     ///
     /// The verifier takes its cost parameters from the stored PHC string
-    /// (`argon2` 0.5.3 `impl TryFrom<&PasswordHash> for Params`), so a
+    /// (`argon2` 0.6.0 `impl TryFrom<&PasswordHash> for Params`), so a
     /// deliberately cheap hash would verify happily; the floor is therefore
     /// judged here, through the same parse the verifier uses.
     fn validate(&self) -> Result<(), AuthConfigError> {
@@ -289,7 +289,10 @@ impl BasicConfig {
                     reason: e.to_string(),
                 }
             })?;
-            if !matches!(Algorithm::try_from(hash.algorithm), Ok(Algorithm::Argon2id)) {
+            if !matches!(
+                Algorithm::try_from(hash.algorithm.as_str()),
+                Ok(Algorithm::Argon2id)
+            ) {
                 return Err(AuthConfigError::PasswordHashNotArgon2id {
                     username: user.username.clone(),
                     algorithm: hash.algorithm.as_str().to_owned(),

@@ -554,16 +554,16 @@ pub(crate) async fn access_middleware(
 ) -> Response {
     match guard.check(req.headers()).await {
         Ok(()) => next.run(req).await,
-        Err(resp) => resp,
+        Err(resp) => *resp,
     }
 }
 
 impl AccessGuard {
     /// Enforce the access level against the request headers.
-    async fn check(&self, headers: &HeaderMap) -> Result<(), Response> {
+    async fn check(&self, headers: &HeaderMap) -> Result<(), Box<Response>> {
         match self.level {
             // Defensive: an `Off` endpoint is never mounted; if reached, 404.
-            AccessLevel::Off => Err(StatusCode::NOT_FOUND.into_response()),
+            AccessLevel::Off => Err(Box::new(StatusCode::NOT_FOUND.into_response())),
             AccessLevel::Public => Ok(()),
             AccessLevel::Private | AccessLevel::AdminOnly => {
                 // Auth disabled (dev): the surface is unauthenticated by design.
@@ -580,7 +580,7 @@ impl AccessGuard {
                     .authenticator
                     .authenticate(headers)
                     .await
-                    .map_err(|_| unauthorized(&self.authenticator))?;
+                    .map_err(|_| Box::new(unauthorized(&self.authenticator)))?;
                 if self.level == AccessLevel::AdminOnly
                     && let RbacDecision::Deny(reason) =
                         crate::extensions::access::authz::roles::authorize(
@@ -589,7 +589,7 @@ impl AccessGuard {
                             &self.rbac,
                         )
                 {
-                    return Err(forbidden(&reason));
+                    return Err(Box::new(forbidden(&reason)));
                 }
                 Ok(())
             }

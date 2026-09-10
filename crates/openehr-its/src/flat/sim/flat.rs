@@ -116,9 +116,7 @@ fn emit_node(node: &SimNode, prefix: &str, out: &mut Map<String, Value>) {
 /// empty datum still drops.
 fn is_empty_unit_datum(key: &str, value: &Value) -> bool {
     matches!(value, Value::String(s) if s.is_empty())
-        && FlatKey::parse(key)
-            .ok()
-            .is_some_and(|k| k.suffixes.last().is_some_and(|s| s.name == "unit"))
+        && FlatKey::parse(key).is_ok_and(|k| k.suffixes.last().is_some_and(|s| s.name == "unit"))
 }
 
 /// The printed suffix chain of a parsed key (`""` when the key has none):

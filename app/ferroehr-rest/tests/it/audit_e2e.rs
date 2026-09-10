@@ -41,7 +41,7 @@ use std::sync::Arc;
 use std::time::Duration;
 
 use argon2::Argon2;
-use argon2::password_hash::{PasswordHasher, SaltString};
+use argon2::password_hash::PasswordHasher;
 use axum::Router;
 use axum::body::Body;
 use ferroehr::config::auth::{AuthConfig, BasicConfig, BasicUser};
@@ -103,9 +103,8 @@ fn composition() -> Value {
 // ── auth config ────────────────────────────────────────────────────────────────
 
 fn hash_pw(pw: &str) -> String {
-    let salt = SaltString::from_b64("MTIzNDU2Nzg5MDEyMzQ1Ng").expect("salt");
     Argon2::default()
-        .hash_password(pw.as_bytes(), &salt)
+        .hash_password_with_salt(pw.as_bytes(), b"1234567890123456")
         .expect("hash")
         .to_string()
 }

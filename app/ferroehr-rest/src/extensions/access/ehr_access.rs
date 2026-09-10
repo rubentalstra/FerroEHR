@@ -212,7 +212,7 @@ pub(crate) async fn enforce(
     state: &AppState,
     op: &'static str,
     parts: &RequestParts,
-) -> Result<(), Response> {
+) -> Result<(), Box<Response>> {
     let Some(ehr_id_raw) = parts.path.get("ehr_id") else {
         return Ok(());
     };
@@ -232,10 +232,10 @@ pub(crate) async fn enforce(
     {
         Ok(s) => s,
         Err(e) => {
-            return Err(server_error(
+            return Err(Box::new(server_error(
                 principal.as_ref(),
                 &format!("EHR_ACCESS settings unavailable: {e}"),
-            ));
+            )));
         }
     };
     let settings = (*settings).as_ref();
@@ -252,20 +252,20 @@ pub(crate) async fn enforce(
         rbac.map_or(EhrAccessDefault::Open, |r| r.ehr_access_default),
         rbac.map_or("ADMIN", |r| r.admin_role.as_str()),
     )
-    .map_err(|reason| forbidden(principal.as_ref(), &reason))?;
+    .map_err(|reason| Box::new(forbidden(principal.as_ref(), &reason)))?;
 
     // 2. The Composition privacy ceiling (Composition read routes).
     if is_composition_read(op)
         && let Some(target) = composition_target(parts)
     {
         EhrAccessGate::privacy_gate(settings, subject, roles, target)
-            .map_err(|reason| forbidden(principal.as_ref(), &reason))?;
+            .map_err(|reason| Box::new(forbidden(principal.as_ref(), &reason)))?;
     }
 
     // 3. The gate-keeper preflight (CONTRIBUTION commits touching EHR_ACCESS).
     if op == "contribution_create" && contribution_targets_ehr_access(parts) {
         EhrAccessGate::gate_keeper_gate(settings, subject, roles)
-            .map_err(|reason| forbidden(principal.as_ref(), &reason))?;
+            .map_err(|reason| Box::new(forbidden(principal.as_ref(), &reason)))?;
     }
 
     Ok(())
