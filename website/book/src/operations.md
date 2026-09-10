@@ -286,10 +286,13 @@ docker compose --profile backup run --rm ferroehr-backup-demographic
 
 Set `FERROEHR_BACKUP_CLINICAL_DIR` and `FERROEHR_BACKUP_DEMOGRAPHIC_DIR` to the
 two targets; they default to `./backups/clinical` and `./backups/demographic`.
-The dump runs as root inside the container so it can write a directory you
-created — the container holds no capabilities, cannot gain privileges and has a
-read-only root filesystem, but the file lands owned by root. For a file owned
-by you, run with `FERROEHR_BACKUP_USER="$(id -u):$(id -g)"`.
+Run it as yourself — `FERROEHR_BACKUP_USER="$(id -u):$(id -g)"` — and the dump
+lands owned by you. Left unset, the job runs as root inside the container and
+keeps one capability, `DAC_OVERRIDE`, because that is what writing a directory
+it does not own actually requires: the container drops every other capability,
+and without this one uid 0 is just another user against your directory's
+permission bits. Everything else stays off — no privilege escalation, read-only
+root filesystem.
 Under Kubernetes the chart renders one `CronJob` per domain — see the chart's
 `backup` values.
 

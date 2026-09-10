@@ -208,14 +208,20 @@ services:
         condition: service_healthy
     environment:
       PGPASSWORD: ${PG_INIT_PASSWORD:-ferroehr}
-    # The target is a directory on the HOST, so the dump has to run as a user
-    # that can write it. The image's own `postgres` user (uid 999) cannot write
-    # a directory the operator created, which is a "Permission denied" on Linux
-    # — root inside the container can write any target, and the container still
-    # holds no capabilities, cannot gain privileges and has a read-only root.
-    # For a file owned by you instead of by root, run the command with
-    # FERROEHR_BACKUP_USER="$(id -u):$(id -g)".
+    # The target is a directory on the HOST, owned by whoever created it, so
+    # the dump has to run as somebody who can write it. Two ways, and the
+    # default has to work without the operator arranging anything:
+    #
+    #   * `FERROEHR_BACKUP_USER="$(id -u):$(id -g)"` — the better posture. The
+    #     job runs as you, the file lands owned by you, and DAC_OVERRIDE below
+    #     is never used.
+    #   * unset — the job runs as root, which needs CAP_DAC_OVERRIDE to write a
+    #     directory it does not own. `cap_drop: [ALL]` takes that capability
+    #     away, and without it uid 0 is simply "other" against a mode-755
+    #     directory (capabilities(7)); root alone does NOT make the write
+    #     succeed. So the capability is added back, and only that one.
     user: "${FERROEHR_BACKUP_USER:-0:0}"
+    cap_add: [DAC_OVERRIDE]
     entrypoint: ["/bin/sh", "-c"]
     command:
       - >-
@@ -246,6 +252,7 @@ services:
       PGPASSWORD: ${PG_INIT_PASSWORD:-ferroehr}
     # Same reason as its clinical twin above.
     user: "${FERROEHR_BACKUP_USER:-0:0}"
+    cap_add: [DAC_OVERRIDE]
     entrypoint: ["/bin/sh", "-c"]
     command:
       - >-
