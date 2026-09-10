@@ -126,7 +126,19 @@ openehr-adl = { path = "../../crates/openehr-adl" }
 openehr-query = { path = "../../crates/openehr-query" }
 
 [dev-dependencies]
-ferroehr-ext = { path = "../ferroehr-ext", features = ["multimedia", "events"] }
+# Every feature the integration modules USE, named here rather than left to
+# unification. Three of them reach `ferroehr_ext::fhir`
+# (`fhir_ingest_translate`, `fhir_outbound_amqp`, `fhir_priority_categories`),
+# which that feature gates; without it here the test binary compiled only
+# because cargo unified the feature in from the library's own default set
+# (#3207).
+#
+# There is deliberately NO lane building these targets with the library's
+# `fhir` feature off, because they cannot compile that way and should not:
+# four modules import `ferroehr::system_log::fhir`, a LIBRARY module the same
+# feature gates, so the integration binary genuinely requires it. The
+# declaration below is therefore honest rather than load-bearing.
+ferroehr-ext = { path = "../ferroehr-ext", features = ["multimedia", "events", "fhir"] }
 testkit = { path = "../../tools/testkit" }
 serde_norway.workspace = true
 # Temp config files for the pure-loader (`config` module) tests.
