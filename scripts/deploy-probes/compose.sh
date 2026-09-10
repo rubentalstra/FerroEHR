@@ -551,15 +551,32 @@ probes_backup_restore() {
   # Compose's own progress and orphan-container chatter is dropped: it is
   # longer than the diagnostic underneath it, and a truncated note that shows
   # the chatter instead of the error is worse than no note.
-  local dump_log=""
-  local job
+  local dump_log="" dump_status=0
+  local job status
   for job in clinical demographic; do
-    dump_log="$dump_log$(FERROEHR_BACKUP_CLINICAL_DIR="$dumps/clinical" \
+    # The job's EXIT STATUS is the assertion, not the presence of a file:
+    # `pg_dump --file` creates its output before it connects, so a dump that
+    # dies part-way leaves an artefact behind. Checking only for a file lets a
+    # truncated archive through and throws the reason away — which is exactly
+    # what happened here (#3157), and cost several runs.
+    # The status is taken from the RUN, before any filtering: a pipeline
+    # reports its last stage, which would be the noise filter's.
+    local raw
+    raw="$(FERROEHR_BACKUP_CLINICAL_DIR="$dumps/clinical" \
       FERROEHR_BACKUP_DEMOGRAPHIC_DIR="$dumps/demographic" \
       dc -f docker-compose.yml --profile backup run --rm --quiet-pull \
-        "ferroehr-backup-$job" 2>&1 \
+        "ferroehr-backup-$job" 2>&1)"
+    status=$?
+    [ "$status" -eq 0 ] || dump_status=$status
+    dump_log="${dump_log}[$job exit=$status] $(printf '%s' "$raw" \
       | grep -vE '^time="|^ *Container |orphan containers' | tr '\n' ' ')"
   done
+  if [ "$dump_status" -ne 0 ]; then
+    probe_fail "both dump jobs exit 0" "exit $dump_status" \
+      "the recipe reported: $(printf '%s' "$dump_log" | tail -c 400)"
+    probe_done
+    return
+  fi
   local clinical_dump demographic_dump
   clinical_dump="$(find "$dumps/clinical" -name 'clinical-*.dump' -print -quit 2>/dev/null)"
   demographic_dump="$(find "$dumps/demographic" -name 'demographic-*.dump' -print -quit 2>/dev/null)"
