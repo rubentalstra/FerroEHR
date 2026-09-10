@@ -200,6 +200,16 @@ services:
   # choose what to restore and in what order; `pg_restore` reads it.
   # Point-in-time recovery is a different instrument and stays instance-wide:
   # see the operations page in the documentation.
+  #
+  # THE DUMP CONNECTS AS THE BOOTSTRAP SUPERUSER, and that is not laziness.
+  # Every tenant-scoped table carries FORCE ROW LEVEL SECURITY, so the policy
+  # applies to the table owner too, and pg_dump refuses a table it would have
+  # to read through a policy: "query would be affected by row-level security
+  # policy" (PostgreSQL 18, pg_dump §Notes). The application role therefore
+  # CANNOT take a backup — by design, because the alternative is worse: with
+  # --enable-row-security the dump succeeds and silently contains one tenant's
+  # rows. A backup credential needs BYPASSRLS or superuser; the operations page
+  # says so for deployments that do not share this stack's single credential.
   ferroehr-backup-clinical:
     profiles: [backup]
     image: ${FERROEHR_POSTGRES_IMAGE:-ghcr.io/rubentalstra/ferroehr-postgres:4.1.1}
@@ -207,7 +217,7 @@ services:
       ferroehr-postgres:
         condition: service_healthy
     environment:
-      PGPASSWORD: ${PG_INIT_PASSWORD:-ferroehr}
+      PGPASSWORD: ${POSTGRES_PASSWORD:-postgres}
     # The target is a directory on the HOST, owned by whoever created it, so
     # the dump has to run as somebody who can write it. Two ways, and the
     # default has to work without the operator arranging anything:
@@ -225,7 +235,7 @@ services:
     entrypoint: ["/bin/sh", "-c"]
     command:
       - >-
-        pg_dump --host=ferroehr-postgres --username=${PG_INIT_USER:-ferroehr}
+        pg_dump --host=ferroehr-postgres --username=postgres
         --dbname=${PG_INIT_DB:-ferroehr} --format=custom --no-owner
         --schema=ehr --schema=cold --schema=ext --schema=audit
         --file=/backup/clinical-$$(date -u +%Y%m%dT%H%M%SZ).dump
@@ -245,18 +255,18 @@ services:
       ferroehr-postgres:
         condition: service_healthy
     # This stack runs one login credential for both domains (the init script
-    # says why). A deployment that gives the demographic domain its own DSN
-    # points this job at that one instead, and then the job that can read the
-    # identities cannot read the clinical record.
+    # says why). A deployment that gives the demographic domain its own
+    # BYPASSRLS backup role points this job at that one instead, and then the
+    # job that can read the identities cannot read the clinical record.
     environment:
-      PGPASSWORD: ${PG_INIT_PASSWORD:-ferroehr}
+      PGPASSWORD: ${POSTGRES_PASSWORD:-postgres}
     # Same reason as its clinical twin above.
     user: "${FERROEHR_BACKUP_USER:-0:0}"
     cap_add: [DAC_OVERRIDE]
     entrypoint: ["/bin/sh", "-c"]
     command:
       - >-
-        pg_dump --host=ferroehr-postgres --username=${PG_INIT_USER:-ferroehr}
+        pg_dump --host=ferroehr-postgres --username=postgres
         --dbname=${PG_INIT_DB:-ferroehr} --format=custom --no-owner
         --schema=demographic --schema=cold_demographic
         --file=/backup/demographic-$$(date -u +%Y%m%dT%H%M%SZ).dump

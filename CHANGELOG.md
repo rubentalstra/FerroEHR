@@ -27,8 +27,13 @@ workflow refuses a tag that has no matching section here.
   `pg_dump --schema` recipe, the restore procedure, and the two properties no
   configuration can enforce for you: different access control on the two
   targets, and a credential per job that reaches one domain. Point-in-time
-  recovery stays instance-wide and the page says so. `ferroehr db verify` is
-  the restore gate — it issues no DDL and refuses a database whose grants let
+  recovery stays instance-wide and the page says so. A backup credential needs
+  `BYPASSRLS`: every tenant-scoped table carries `FORCE ROW LEVEL SECURITY`, so
+  `pg_dump` refuses a table it would read through a policy and the application
+  role cannot take a backup at all — and `--enable-row-security`, which makes
+  the dump succeed, quietly writes a single tenant's rows. The chart therefore
+  requires a backup Secret per domain and refuses to render without one.
+  `ferroehr db verify` is the restore gate — it issues no DDL and refuses a database whose grants let
   a runtime role read across the boundary, which is the same check the server
   runs at boot.
 

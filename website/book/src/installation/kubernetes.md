@@ -672,11 +672,14 @@ missing claim is an error naming the value, and naming the **same** claim for
 both domains is an error too, because one volume holding the clinical record
 and the identities together is the state per-domain backups exist to prevent.
 
-The credential follows the same split the pools use. The demographic job reads
-`database.demographicExistingSecret` when you set it, and falls back to the
-clinical DSN when you do not — so until you run two credentials, you have
-separated the artefacts but not the authority to produce them. Both jobs read
-their DSN from a mounted file, never an environment variable.
+Each job needs **its own backup credential**, named by
+`backup.clinical.existingSecret` and `backup.demographic.existingSecret`, and
+the render is refused without them. It cannot be the pool's credential: every
+tenant-scoped table carries `FORCE ROW LEVEL SECURITY`, so `pg_dump` refuses a
+table it would read through a policy, and a CronJob wired to the runtime role
+would fail every night. Give each domain a role with `BYPASSRLS`, read-only on
+that domain's schemas. Both jobs read their DSN from a mounted file, never an
+environment variable.
 
 The chart provisions no storage. Create the two claims yourself, and give them
 different access control; that part no chart can do for you. The restore

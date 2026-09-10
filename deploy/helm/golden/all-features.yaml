@@ -1051,7 +1051,7 @@ spec:
             # credential differs.
             - name: dsn
               secret:
-                secretName: ferroehr-db
+                secretName: ferroehr-backup-clinical-dsn
                 defaultMode: 0440
                 items:
                   - key: FERROEHR__DB__URL
@@ -1154,7 +1154,7 @@ spec:
             # credential differs.
             - name: dsn
               secret:
-                secretName: ferroehr-db-demographic
+                secretName: ferroehr-backup-demographic-dsn
                 defaultMode: 0440
                 items:
                   - key: FERROEHR__DB__DEMOGRAPHIC_URL

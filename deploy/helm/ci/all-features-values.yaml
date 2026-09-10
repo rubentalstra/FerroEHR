@@ -276,5 +276,9 @@ backup:
   timeZone: Europe/Amsterdam
   clinical:
     persistentVolumeClaim: ferroehr-backup-clinical
+    # A BYPASSRLS role, read-only on the clinical schemas — not the pool's
+    # credential, which FORCE ROW LEVEL SECURITY makes pg_dump refuse.
+    existingSecret: ferroehr-backup-clinical-dsn
   demographic:
     persistentVolumeClaim: ferroehr-backup-demographic
+    existingSecret: ferroehr-backup-demographic-dsn

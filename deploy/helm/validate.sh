@@ -418,7 +418,8 @@ refusal_registry_gate() {
     "backup-cronjob.yaml|backup.clinical.persistentVolumeClaim is empty|${base}|--set backup.enabled=true --set backup.demographic.persistentVolumeClaim=demographic-dumps|backup.clinical.persistentVolumeClaim"
     "backup-cronjob.yaml|backup.demographic.persistentVolumeClaim is empty|${base}|--set backup.enabled=true --set backup.clinical.persistentVolumeClaim=clinical-dumps|backup.demographic.persistentVolumeClaim"
     "backup-cronjob.yaml|name the same claim|${base}|--set backup.enabled=true --set backup.clinical.persistentVolumeClaim=one-claim --set backup.demographic.persistentVolumeClaim=one-claim|backup.clinical.persistentVolumeClaim;backup.demographic.persistentVolumeClaim"
-    "backup-cronjob.yaml|no clinical DSN is configured|${base}|--set backup.enabled=true --set backup.clinical.persistentVolumeClaim=clinical-dumps --set backup.demographic.persistentVolumeClaim=demographic-dumps --set database.existingSecret=null|database.existingSecret;database.url"
+    "backup-cronjob.yaml|backup.clinical.existingSecret is empty|${base}|--set backup.enabled=true --set backup.clinical.persistentVolumeClaim=clinical-dumps --set backup.demographic.persistentVolumeClaim=demographic-dumps|backup.clinical.existingSecret;BYPASSRLS"
+    "backup-cronjob.yaml|backup.demographic.existingSecret is empty|${base}|--set backup.enabled=true --set backup.clinical.persistentVolumeClaim=clinical-dumps --set backup.demographic.persistentVolumeClaim=demographic-dumps --set backup.clinical.existingSecret=clinical-backup-dsn|backup.demographic.existingSecret;BYPASSRLS"
   )
 
   local record values probe wants want out refused=0

@@ -22,8 +22,11 @@ KEP-3140), both below this chart's kubeVersion floor, so neither is gated.
 {{- if eq .Values.backup.clinical.persistentVolumeClaim .Values.backup.demographic.persistentVolumeClaim }}
 {{- fail "backup.clinical.persistentVolumeClaim and backup.demographic.persistentVolumeClaim name the same claim: one volume carrying both the clinical record and the identifying data is the state per-domain backups exist to prevent (GDPR Art. 4(5)). Give each domain its own claim, and the demographic one the narrower audience." }}
 {{- end }}
-{{- if not (or .Values.database.existingSecret .Values.database.url) }}
-{{- fail "backup.enabled is true but no clinical DSN is configured: set database.existingSecret (preferred) or database.url. The dump jobs read the same credential the server's pools read, so with neither set there is nothing for pg_dump to connect as." }}
+{{- if not .Values.backup.clinical.existingSecret }}
+{{- fail "backup.enabled is true but backup.clinical.existingSecret is empty: name a Secret holding a BACKUP DSN for the clinical domain — a role with BYPASSRLS, read-only on ehr, cold, ext and audit. It cannot be the pool's credential: every tenant-scoped table carries FORCE ROW LEVEL SECURITY, and pg_dump refuses a table it would read through a policy, so a CronJob wired to the runtime role fails every night." }}
+{{- end }}
+{{- if not .Values.backup.demographic.existingSecret }}
+{{- fail "backup.enabled is true but backup.demographic.existingSecret is empty: name a Secret holding a BACKUP DSN for the demographic domain — a role with BYPASSRLS, read-only on demographic and cold_demographic. Give it its own role, not the clinical backup one: a single credential that dumps both domains re-joins in one identity what the split exists to separate (GDPR Art. 4(5))." }}
 {{- end }}
 {{- $root := . }}
 {{- $mount := include "ferroehr.backupMountPath" . }}

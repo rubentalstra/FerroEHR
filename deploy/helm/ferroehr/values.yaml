@@ -214,11 +214,15 @@ migrations:
 # ehr, cold, ext and audit, the demographic job dumps demographic and
 # cold_demographic. No openEHR spec governs backups — our own design/extension.
 #
-# Credentials follow the pools. The clinical job reads the DSN
-# `database.existingSecret`/`database.url` carries; the demographic job reads
-# `database.demographicExistingSecret` when that domain has its own, and falls
-# back to the clinical DSN when it has not. Either way the DSN arrives as a
-# mounted file, never as an environment variable.
+# EACH JOB NEEDS ITS OWN BACKUP CREDENTIAL, and it is not the pool's. Every
+# tenant-scoped table carries FORCE ROW LEVEL SECURITY, so the policy applies to
+# the table's owner too and pg_dump refuses a table it would read through one
+# ("query would be affected by row-level security policy" — PostgreSQL 18,
+# pg_dump §Notes). The runtime role therefore cannot take a backup at all, and
+# `--enable-row-security` is not the answer: it makes the dump succeed with one
+# tenant's rows in it. Give each job a role with BYPASSRLS, read-only on its own
+# domain, through `backup.<domain>.existingSecret`. The DSN arrives as a mounted
+# file, never as an environment variable.
 #
 # The chart keeps the two dumps apart; ACCESS CONTROL over them is yours. Back
 # the two claims with different volumes and give the demographic one the
@@ -271,6 +275,12 @@ backup:
   clinical:
     # -- Cron schedule for the clinical dump (schemas ehr, cold, ext, audit).
     schedule: "15 1 * * *"
+    # -- REQUIRED when enabled: Secret holding the clinical BACKUP DSN — a role
+    # with BYPASSRLS, read-only on the clinical schemas. Not the pool's
+    # credential: FORCE ROW LEVEL SECURITY makes pg_dump refuse for that one.
+    existingSecret: ""
+    # -- Key within `existingSecret` carrying that DSN.
+    existingSecretKey: FERROEHR__DB__URL
     # -- REQUIRED when enabled: the name of an EXISTING PersistentVolumeClaim the
     # clinical dumps are written to, mounted at /backup. The chart creates no
     # claim — its storage class, size, retention and who may read it are yours.
@@ -280,6 +290,13 @@ backup:
     # cold_demographic). Offset from the clinical one by default so the two dumps
     # do not read the database in the same minute.
     schedule: "45 1 * * *"
+    # -- REQUIRED when enabled: Secret holding the demographic BACKUP DSN — a
+    # role with BYPASSRLS, read-only on the demographic schemas, and a DIFFERENT
+    # role from the clinical one. This credential can read every tenant's
+    # identities; treat it accordingly.
+    existingSecret: ""
+    # -- Key within `existingSecret` carrying that DSN.
+    existingSecretKey: FERROEHR__DB__DEMOGRAPHIC_URL
     # -- REQUIRED when enabled: an EXISTING PersistentVolumeClaim for the
     # demographic dumps, and a DIFFERENT one from the clinical claim (the same
     # claim for both is refused at render). This is the volume that carries

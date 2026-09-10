@@ -1162,6 +1162,15 @@
         "persistentVolumeClaim": {
           "description": "The name of an EXISTING PersistentVolumeClaim. Required when backup.enabled, and a different claim per domain.",
           "type": "string"
+        },
+        "existingSecret": {
+          "type": "string",
+          "description": "Secret holding this domain's BACKUP DSN (a BYPASSRLS role, read-only on that domain's schemas)."
+        },
+        "existingSecretKey": {
+          "type": "string",
+          "minLength": 1,
+          "description": "Key within existingSecret carrying the backup DSN."
         }
       }
     },

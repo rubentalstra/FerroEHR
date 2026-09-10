@@ -503,28 +503,27 @@ and only that PATH is passed to the container.
 
 Call with (dict "root" $ "domain" "clinical").
 */}}
+{{- /*
+The backup DSN is the domain's OWN backup Secret, never the pool's credential.
+Every tenant-scoped table carries FORCE ROW LEVEL SECURITY, so pg_dump refuses
+a table it would read through a policy — "query would be affected by row-level
+security policy" (PostgreSQL 18, pg_dump §Notes) — and the runtime role cannot
+take a backup at all. The dump needs a role with BYPASSRLS, read-only on its
+own domain, which is a different credential from the one the server serves
+with. Reusing the pool's DSN here would render CronJobs that fail every night.
+*/ -}}
 {{- define "ferroehr.backupDsnSecret" -}}
-{{- $database := .root.Values.database -}}
-{{- if and (eq .domain "demographic") $database.demographicExistingSecret -}}
-{{ $database.demographicExistingSecret }}
-{{- else if and (eq .domain "demographic") $database.demographicUrl -}}
-{{ include "ferroehr.secretName" .root }}
-{{- else if $database.existingSecret -}}
-{{ $database.existingSecret }}
+{{- if eq .domain "demographic" -}}
+{{ .root.Values.backup.demographic.existingSecret }}
 {{- else -}}
-{{ include "ferroehr.secretName" .root }}
+{{ .root.Values.backup.clinical.existingSecret }}
 {{- end -}}
 {{- end }}
 
 {{- define "ferroehr.backupDsnSecretKey" -}}
-{{- $database := .root.Values.database -}}
-{{- if and (eq .domain "demographic") $database.demographicExistingSecret -}}
-{{ $database.demographicExistingSecretKey }}
-{{- else if and (eq .domain "demographic") $database.demographicUrl -}}
-db.demographic_url
-{{- else if $database.existingSecret -}}
-{{ $database.existingSecretKey }}
+{{- if eq .domain "demographic" -}}
+{{ .root.Values.backup.demographic.existingSecretKey }}
 {{- else -}}
-db.url
+{{ .root.Values.backup.clinical.existingSecretKey }}
 {{- end -}}
 {{- end }}

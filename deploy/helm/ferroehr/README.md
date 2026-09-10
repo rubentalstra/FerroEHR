@@ -165,8 +165,12 @@ Kubernetes: `>=1.36.0-0`
 | autoscaling.targetMemoryUtilizationPercentage | int | `0` | Target average memory. 0 removes the metric. A CDR is usually CPU-bound, so this is off by default. |
 | backup.activeDeadlineSeconds | int | `7200` | Hard ceiling on one dump, so a dump blocked on the database ends rather than overlapping the next schedule. |
 | backup.backoffLimit | int | `2` | Retries before a dump is declared failed. |
+| backup.clinical.existingSecret | string | `""` | REQUIRED when enabled: Secret holding the clinical BACKUP DSN — a role with BYPASSRLS, read-only on the clinical schemas. Not the pool's credential: FORCE ROW LEVEL SECURITY makes pg_dump refuse for that one. |
+| backup.clinical.existingSecretKey | string | `"FERROEHR__DB__URL"` | Key within `existingSecret` carrying that DSN. |
 | backup.clinical.persistentVolumeClaim | string | `""` | REQUIRED when enabled: the name of an EXISTING PersistentVolumeClaim the clinical dumps are written to, mounted at /backup. The chart creates no claim — its storage class, size, retention and who may read it are yours. |
 | backup.clinical.schedule | string | `"15 1 * * *"` | Cron schedule for the clinical dump (schemas ehr, cold, ext, audit). |
+| backup.demographic.existingSecret | string | `""` | REQUIRED when enabled: Secret holding the demographic BACKUP DSN — a role with BYPASSRLS, read-only on the demographic schemas, and a DIFFERENT role from the clinical one. This credential can read every tenant's identities; treat it accordingly. |
+| backup.demographic.existingSecretKey | string | `"FERROEHR__DB__DEMOGRAPHIC_URL"` | Key within `existingSecret` carrying that DSN. |
 | backup.demographic.persistentVolumeClaim | string | `""` | REQUIRED when enabled: an EXISTING PersistentVolumeClaim for the demographic dumps, and a DIFFERENT one from the clinical claim (the same claim for both is refused at render). This is the volume that carries identifying data; give it the narrower audience. |
 | backup.demographic.schedule | string | `"45 1 * * *"` | Cron schedule for the demographic dump (schemas demographic, cold_demographic). Offset from the clinical one by default so the two dumps do not read the database in the same minute. |
 | backup.enabled | bool | `false` | Render the two per-domain backup CronJobs. Each domain then needs its own `persistentVolumeClaim` below, or the render is refused. |

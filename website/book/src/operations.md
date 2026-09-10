@@ -296,9 +296,19 @@ root filesystem.
 Under Kubernetes the chart renders one `CronJob` per domain — see the chart's
 `backup` values.
 
-Two properties are yours to arrange, because no configuration file can enforce
-them: the two targets carry **different** access control, and the credential
-each job uses reaches **one** domain. Give the demographic job the demographic
+> [!WARNING]
+> **A backup credential needs `BYPASSRLS`, and the application role does not
+> have it.** Every tenant-scoped table carries `FORCE ROW LEVEL SECURITY`, so
+> the policy applies to the table's owner too, and `pg_dump` refuses a table it
+> would have to read through one: *"query would be affected by row-level
+> security policy"*. That refusal is the safe outcome. The unsafe one is
+> `--enable-row-security`, which makes the dump succeed and quietly contain a
+> single tenant's rows — never use it for a backup. Give the backup job a role
+> with `BYPASSRLS` (or a superuser), read-only on its own domain.
+
+Two further properties are yours to arrange, because no configuration file can
+enforce them: the two targets carry **different** access control, and the
+credential each job uses reaches **one** domain. Give the demographic job the demographic
 DSN once you run two ([Deploying](installation/kubernetes.md)); with a single
 credential you have separated the artefacts but not the authority to produce
 them.
