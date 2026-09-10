@@ -2,7 +2,7 @@
 
 Pure-Rust, openEHR-conformant clinical data repository (ITS-REST 1.1.0 + AQL 1.1). A single static binary deployed with a hardened-by-default security posture: runs as a non-root, read-only-rootfs workload whose NetworkPolicy admits its serving port only, and that connects to an EXTERNAL PostgreSQL 18 as an unprivileged app role (migrations are run out of band by a separate migrator role).
 
-![Version: 7.0.9](https://img.shields.io/badge/Version-7.0.9-informational?style=flat-square) ![Type: application](https://img.shields.io/badge/Type-application-informational?style=flat-square) ![AppVersion: 4.1.1](https://img.shields.io/badge/AppVersion-4.1.1-informational?style=flat-square)
+![Version: 7.1.0](https://img.shields.io/badge/Version-7.1.0-informational?style=flat-square) ![Type: application](https://img.shields.io/badge/Type-application-informational?style=flat-square) ![AppVersion: 4.1.1](https://img.shields.io/badge/AppVersion-4.1.1-informational?style=flat-square)
 
 FerroEHR is a pure-Rust openEHR Clinical Data Repository: ITS-REST 1.1.0 at the
 API, AQL 1.1 as the query language, PostgreSQL 18-native storage, shipped as a
@@ -33,7 +33,7 @@ to add; `helm repo add` does not apply to this chart:
 
 ```console
 helm install ferroehr oci://ghcr.io/rubentalstra/charts/ferroehr \
-  --version 7.0.9 \
+  --version 7.1.0 \
   --namespace ferroehr --create-namespace \
   --set database.existingSecret=ferroehr-db \
   --set image.tag=4.1.1
@@ -47,7 +47,7 @@ They are independent SemVer lines and they move independently:
 
 | What | Set with | This release |
 |---|---|---|
-| the **chart** (templates, defaults, this document) | `--version` | `7.0.9` |
+| the **chart** (templates, defaults, this document) | `--version` | `7.1.0` |
 | the **server image** | `image.tag` | `4.1.1` |
 
 `appVersion` is the image the chart defaults to; pinning `image.tag` explicitly
@@ -59,7 +59,7 @@ The chart carries two keyless Sigstore artifacts, and they answer different
 questions. A **cosign signature:** who signed this:
 
 ```console
-cosign verify ghcr.io/rubentalstra/charts/ferroehr:7.0.9 \
+cosign verify ghcr.io/rubentalstra/charts/ferroehr:7.1.0 \
   --certificate-identity-regexp '^https://github\.com/rubentalstra/FerroEHR/\.github/workflows/publish-chart\.yml@' \
   --certificate-oidc-issuer https://token.actions.githubusercontent.com
 ```
@@ -67,7 +67,7 @@ cosign verify ghcr.io/rubentalstra/charts/ferroehr:7.0.9 \
 A **SLSA build provenance attestation:** what source it was built from, and how:
 
 ```console
-gh attestation verify oci://ghcr.io/rubentalstra/charts/ferroehr:7.0.9 \
+gh attestation verify oci://ghcr.io/rubentalstra/charts/ferroehr:7.1.0 \
   -R rubentalstra/FerroEHR
 gh attestation verify oci://ghcr.io/rubentalstra/ferroehr:4.1.1 \
   -R rubentalstra/FerroEHR
@@ -222,6 +222,9 @@ Kubernetes: `>=1.36.0-0`
 | config.terminology.api_enabled | bool | `false` |  |
 | config.terminology.external.enabled | bool | `false` |  |
 | config.terminology.external.fail_on_error | bool | `false` |  |
+| database.demographicExistingSecret | string | `""` | Reference an existing Secret holding the DEMOGRAPHIC-role DSN. Its value is a full `postgres://ferroehr_demographic:...@host:5432/ferroehr`, a different credential from `database.existingSecret` above. |
+| database.demographicExistingSecretKey | string | `"FERROEHR__DB__DEMOGRAPHIC_URL"` | Key WITHIN demographicExistingSecret holding the demographic DSN. Mounted as a file; only its PATH reaches the pod's environment. |
+| database.demographicUrl | string | `""` | Inline demographic DSN (DEV/TEST ONLY — lands in a chart-managed Secret). Ignored when demographicExistingSecret is set. |
 | database.existingSecret | string | `""` | Reference an existing Secret holding the app-role DSN (STRONGLY preferred for production — keeps the credential out of chart values and git). The secret's value must be a full `postgres://ferroehr_app:...@host:5432/ferroehr` (optionally `?sslmode=verify-full`). |
 | database.existingSecretKey | string | `"FERROEHR__DB__URL"` | Key WITHIN existingSecret that holds the DSN. This is a Secret key name, not an environment variable name: the chart mounts that key as a file and passes only its PATH as `FERROEHR__DB__URL_FILE`, so the DSN never enters the pod's environment. The default spelling is kept for compatibility with existing Secrets created for the older env-borne arrangement. |
 | database.url | string | `""` | Inline DSN (DEV/TEST ONLY — lands in a chart-managed Secret). Leave empty and use existingSecret in production. Ignored when existingSecret is set. |

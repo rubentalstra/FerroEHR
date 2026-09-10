@@ -91,6 +91,19 @@ export FERROEHR__MULTIMEDIA__ENDPOINT=http://seaweedfs:8333
 export FERROEHR__MULTIMEDIA__BUCKET=openehr-multimedia
 export FERROEHR__MULTIMEDIA__ALLOW_HTTP=true
 
+# The database image is built from THIS tree unless the caller names one, for
+# the same reason the server image is: the compose default is the last
+# published tag, and probing it measures the previous release rather than the
+# change in hand. It matters here specifically because the image carries the
+# `initdb` script that provisions the domain roles, and `initdb` runs once, on
+# an empty data directory — so a pulled image can never show a role the tree
+# added.
+if [[ -z "${FERROEHR_POSTGRES_IMAGE:-}" ]]; then
+  bold "building the database image from docker/postgres"
+  docker build -q -t ferroehr-postgres:probe docker/postgres >/dev/null
+  export FERROEHR_POSTGRES_IMAGE=ferroehr-postgres:probe
+fi
+
 compose_down
 bold "bringing the stack up (postgres + CDR + seaweedfs + init)"
 compose_up ferroehr seaweedfs seaweedfs-init
@@ -115,6 +128,7 @@ run_family multimedia_broken && probes_multimedia_broken
 run_family health_broken && probes_health_broken
 run_family oidc && probes_oidc
 run_family oidc_roles && probes_oidc_roles
+run_family domain_roles && probes_domain_roles
 run_family observability && probes_observability
 run_family tenancy && probes_tenancy
 run_family events && probes_events
