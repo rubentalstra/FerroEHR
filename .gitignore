@@ -89,7 +89,8 @@ doc_SnomedCT*.pdf
 
 # The default targets of the opt-in `backup` compose profile
 # (`docker compose --profile backup run --rm ferroehr-backup-clinical`).
-# A dump of a real deployment carries clinical data and, from the second
-# directory, the identities of its subjects — neither belongs in a git
-# history, and the two are separate directories for exactly that reason.
+# A dump of a real deployment carries clinical data, from the second directory
+# the identities of its subjects, and from the third the map between them —
+# none belongs in a git history, and the three are separate directories for
+# exactly that reason.
 /backups/

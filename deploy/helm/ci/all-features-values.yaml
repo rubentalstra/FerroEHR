@@ -268,9 +268,10 @@ serviceAccount:
   annotations:
     eks.amazonaws.com/role-arn: arn:aws:iam::123456789012:role/ferroehr-s3
 
-# Per-domain logical backups, so the two CronJobs reach a golden render and the
-# restricted-profile gate — the claims are render fixtures, nothing provisions
-# them here. Two DIFFERENT claim names: one claim for both domains is refused.
+# Per-domain logical backups, so the three CronJobs reach a golden render and
+# the restricted-profile gate — the claims are render fixtures, nothing
+# provisions them here. Three DIFFERENT claim names: any two domains sharing a
+# claim is refused.
 # The pre-install/pre-upgrade migration hook. Rendered here because a workload
 # no value set renders is a workload no golden shows and no gate judges — the
 # selector gate could not see this Job's pod at all until it did (#3197).
@@ -290,3 +291,8 @@ backup:
   demographic:
     persistentVolumeClaim: ferroehr-backup-demographic
     existingSecret: ferroehr-backup-demographic-dsn
+  linkage:
+    # The narrowest of the three: this dump is the map that re-identifies a
+    # pseudonymised record, so it gets its own claim and its own role.
+    persistentVolumeClaim: ferroehr-backup-linkage
+    existingSecret: ferroehr-backup-linkage-dsn

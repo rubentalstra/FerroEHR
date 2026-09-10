@@ -35,6 +35,26 @@ workflow refuses a tag that has no matching section here.
   the resolution service is still to come. Upgrading installations get an
   empty schema and no data movement.
 
+- **A third backup: the `linkage` domain is dumped on its own, and the
+  deployment probes cover its boundary** (#3220). The Compose `backup` profile
+  gains `ferroehr-backup-linkage` (`FERROEHR_BACKUP_LINKAGE_DIR`, defaulting to
+  `./backups/linkage`) and the chart gains a third CronJob under
+  `backup.linkage`, with its own schedule, claim and BYPASSRLS credential. It is
+  deliberately a separate artefact rather than a place in the demographic dump:
+  `linkage.party_ehr` is the map that re-identifies a pseudonymised record, so a
+  file carrying it beside either side of that map rebuilds the join the split
+  exists to withhold (GDPR Art. 4(5)). The chart's render guards are now
+  pairwise — any two domains naming the same claim is refused, not just the
+  original pair — and the operations page documents three dumps and a restore
+  that supplies all three. The linkage dump carries `--extension=btree_gist`,
+  because a `--schema` dump carries no extension and `linkage.party_ehr`'s
+  temporal primary key is a GiST index over that extension's operator classes:
+  without it the table restores with its rows and without the key, and
+  `pg_restore` reports that as an ignored error. Enabling `backup` therefore
+  now requires a claim and a Secret for the linkage domain too; a values file
+  that sets only the first two is refused at render, naming what is missing —
+  a values contract change, so the chart goes to 8.0.0.
+
 - **The audit trail records the accessing organisation, and the declared
   purpose reaches the FHIR export** (#3204). An access record now carries an
   `organisation` column: the organisation the caller acted for, read from the
