@@ -24,6 +24,15 @@
     clippy::same_name_method,
     reason = "emitted only by leptos's TypedBuilder derive inside #[component]; no hand-written method in this crate shadows a trait method"
 )]
+// The wasm half of every `#[server]` fn is a network call, so the `ServerFn`
+// impl the macro writes for the client target awaits nothing. The span is the
+// `#[server]` attribute in all 126 cases and there is no hand-written async fn
+// behind any of them
+// (https://docs.rs/server_fn/0.8/server_fn/attr.server.html).
+#![allow(
+    clippy::unused_async_trait_impl,
+    reason = "emitted only by the server_fn #[server] macro on the wasm target; this crate writes no such impl"
+)]
 // `hydrate` (wasm client) and `ssr` (server) are mutually exclusive build
 // modes — cargo-leptos always builds them separately. Guarded per the Cargo
 // book's prescription for genuinely exclusive features

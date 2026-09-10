@@ -15,15 +15,17 @@
 # two disagree in that direction cargo-deny is the more precise instrument and
 # this file needs no entry.
 #
-# The live example, so the next over-report is diagnosed in a minute:
-# RUSTSEC-2026-0235 (`rkyv` 0.7, out-of-bounds read). `rust_decimal 1.42.1`
-# declares BOTH `rkyv ^0.8.13` and `rkyv ^0.7.46` as optional dependencies; our
-# features enable neither, and `cargo tree --workspace --all-features` finds zero
-# rkyv nodes. The lock file still pins 0.7.46 because `^0.7.46` cannot resolve
-# above the vulnerable range — so this can only leave the lock file when
-# rust_decimal drops that requirement upstream. It is deliberately NOT ignored
-# below: an ignore for an advisory this tool never raises records nothing and
-# would silently start applying if the tool ever became lock-file-based.
+# The worked example, kept because the next over-report is then diagnosed in a
+# minute: RUSTSEC-2026-0235 (`rkyv` 0.7, out-of-bounds read) was reported by
+# lock-file scanners for months. `rust_decimal` 1.42.1 declared BOTH
+# `rkyv ^0.8.13` and `rkyv ^0.7.46` as optional dependencies; our features
+# enabled neither, `cargo tree --workspace --all-features` found zero rkyv
+# nodes, and the lock file still pinned 0.7.46 because `^0.7.46` cannot resolve
+# above the vulnerable range. It was deliberately NOT ignored below — an ignore
+# for an advisory this tool never raises records nothing and would silently
+# start applying if the tool ever became lock-file-based. `rust_decimal` 1.43.0
+# dropped the requirement, so rkyv left the lock file and the VEX statement was
+# deleted rather than renewed.
 #
 # In the OTHER direction — an advisory that DOES fire here and is ignored with
 # an adjudication — the OSV-based scanners stay red anyway: they consume
@@ -50,7 +52,7 @@ yanked = "deny"
 # quick-xml 0.26) is off and the SVG renders through a direct inferno 0.12.
 ignore = [
   # 2026-08-13: Marvin attack timing sidechannel in `rsa`; no fixed release
-  # exists upstream (0.9.10 is the latest, re-verified 2026-08-15). The
+  # exists upstream (0.9.10 is the latest, re-verified 2026-09-10). The
   # dependency-path argument lives in ONE place — the RUSTSEC-2023-0071
   # statement in security/vex/rust-advisories.toml, whose carrier/root claims
   # scripts/checks/vex-reachability.sh compares against the resolved graph —
@@ -60,13 +62,13 @@ ignore = [
   { id = "RUSTSEC-2023-0071", reason = "no fix upstream; RSA verification only in the OIDC path, and the pgp signing path is off by default (digest mode) and key-algorithm-agnostic" },
   # 2026-07-18: unmaintained-crate advisory only (no vulnerability); a
   # build-time proc-macro dependency of leptos_macro (0.8.20 is the latest
-  # leptos, re-verified 2026-08-15). DELETING EVENT: a leptos release that
+  # leptos, re-verified 2026-09-10). DELETING EVENT: a leptos release that
   # drops proc-macro-error2 — cargo's future-incompat report flags the crate
   # too, so upstream has two reasons to move.
   # https://rustsec.org/advisories/RUSTSEC-2026-0173
   { id = "RUSTSEC-2026-0173", reason = "unmaintained advisory; compile-time proc-macro via leptos_macro (viewer), no runtime exposure" },
   # 2026-07-15: `paste` (proc-macro) is archived/unmaintained — pulled in by
-  # utoipa-axum 0.2.0 (still the LATEST release, re-verified 2026-08-15; no
+  # utoipa-axum 0.2.0 (still the LATEST release, re-verified 2026-09-10; no
   # paste-free release exists). Compile-time-only token pasting, no runtime
   # code, no attack surface. DELETING EVENT: the first paste-free utoipa-axum
   # release. https://rustsec.org/advisories/RUSTSEC-2024-0436

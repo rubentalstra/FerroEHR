@@ -228,7 +228,7 @@ pub(crate) async fn guarded_dispatch(
             }
             Err(deny) => deny,
         },
-        Err(deny) => deny,
+        Err(deny) => *deny,
     };
     resp.extensions_mut()
         .insert(crate::system_log::middleware::AuditOpId(op));

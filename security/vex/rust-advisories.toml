@@ -60,8 +60,8 @@
 id = "https://ferroehr.eu/vex/rust-dependency-advisories"
 author = "FerroEHR project"
 role = "vendor"
-timestamp = "2026-08-14T00:00:00Z"
-version = 3
+timestamp = "2026-09-10T00:00:00Z"
+version = 4
 
 # What the statements are about: the released server binary and the container
 # image built from it. Both carry the same Cargo dependency graph, which is the
@@ -183,29 +183,10 @@ is absent from the artifacts this document describes. Re-evaluate on the next \
 # This section is the whole reason a consumer needs this document: it is
 # precisely the class of finding that reaches a downstream scanner and has no
 # explanation attached anywhere in the repository.
-
-[[lockfile_only]]
-id = "RUSTSEC-2026-0235"
-crate = "rkyv"
-version = "0.7.46"
-# Empty on purpose, and machine-checked: `cargo tree -i rkyv@0.7.46` over every
-# feature, target and dependency kind resolves no node at all, which is the
-# `component_not_present` justification below stated as data.
-carriers = []
-workspace_roots = []
-status = "not_affected"
-justification = "component_not_present"
-impact = """
-Insufficient archive validation causing out-of-bounds reads in archives \
-containing `Rc`/`Arc` (patched in rkyv 0.8.17). `rkyv` is NOT COMPILED into \
-any FerroEHR artifact. `rust_decimal` declares both `rkyv ^0.8.13` and \
-`rkyv ^0.7.46` as OPTIONAL dependencies; this project enables neither feature, \
-and `cargo tree --workspace --all-features` resolves zero `rkyv` nodes. \
-`Cargo.lock` nonetheless pins 0.7.46, because a lock file records the union of \
-every dependency any feature combination could pull and `^0.7.46` cannot \
-resolve above the vulnerable range — so the entry can only leave the lock file \
-when `rust_decimal` drops that requirement upstream. A scanner that reads the \
-lock file therefore reports it; `cargo deny`, which resolves features, does \
-not. Where the two disagree in that direction, the feature-resolving tool is \
-the more precise instrument.\
-"""
+#
+# The section is EMPTY today. Its one entry, RUSTSEC-2026-0235 (`rkyv` 0.7
+# out-of-bounds read), was carried while `rust_decimal` declared an optional
+# `rkyv ^0.7.46` that no feature of ours enabled but the lock file still
+# pinned; `rust_decimal` 1.43.0 dropped that requirement, `rkyv` left the
+# resolved graph and the lock file together, and the statement went with it
+# rather than being renewed.

@@ -200,19 +200,17 @@ impl Builder<'_> {
             return Ok(None);
         }
         let src = self.source_node(leaf.source.0)?;
-        let mut sub;
-        let base;
-        if leaf.anchor.is_empty() {
+        let (mut sub, base) = if leaf.anchor.is_empty() {
             // `multi` holds here, so the fragment jsonpath exists.
             let Some((jp, vars)) = fragment else {
                 return Ok(None);
             };
-            sub = Query::select();
-            base = fragment_items(&mut sub, col(&src, "data"), &jp, vars, self.next_ctr());
+            let mut sub = Query::select();
+            let base = fragment_items(&mut sub, col(&src, "data"), &jp, vars, self.next_ctr());
+            (sub, base)
         } else {
-            let (walk, last) = self.anchored_walk(leaf, &src)?;
-            sub = walk;
-            base = match (fragment, multi) {
+            let (mut sub, last) = self.anchored_walk(leaf, &src)?;
+            let base = match (fragment, multi) {
                 (Some((jp, vars)), true) => {
                     fragment_items(&mut sub, col(&last, "data"), &jp, vars, self.next_ctr())
                 }
@@ -221,7 +219,8 @@ impl Builder<'_> {
                     extract_base(col(&last, "data"), jp.as_deref(), vars.flatten())
                 }
             };
-        }
+            (sub, base)
+        };
         // The root predicate correlates against the source node: the value
         // only exists where the source satisfies it.
         if let Some(pred) = &leaf.root_predicate {

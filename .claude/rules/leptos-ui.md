@@ -107,7 +107,7 @@ in the root `[workspace.dependencies]`: Leptos 0.8 SSR/full-stack,
   unambiguous; `use_context` is a runtime lookup — `expect_context` only
   where provision is structurally guaranteed.
 
-- Toolchain trap (pinned 1.97, bisected 2026-08-23): calling
+- Toolchain trap (bisected 2026-08-23 on 1.97, still live on 1.98.1): calling
   `use_query_map().with_untracked(…)` directly in a `#[component]` fn body
   makes `clippy::must_use_candidate` stop firing on that fn — so the
   crate-idiom `#[expect(clippy::must_use_candidate)]` on the component turns

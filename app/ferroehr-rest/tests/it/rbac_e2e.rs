@@ -28,7 +28,7 @@ use std::sync::Arc;
 use std::time::Duration;
 
 use argon2::Argon2;
-use argon2::password_hash::{PasswordHasher, SaltString};
+use argon2::password_hash::PasswordHasher;
 use axum::Router;
 use axum::body::Body;
 use ferroehr::config::auth::{AuthConfig, BasicConfig, BasicUser, OidcConfig};
@@ -60,9 +60,8 @@ const EHR_ID: &str = "3fa85f64-5717-4562-b3fc-2c963f66afa6";
 // ── config + app assembly ─────────────────────────────────────────────────────
 
 fn hash_pw(pw: &str) -> String {
-    let salt = SaltString::from_b64("MTIzNDU2Nzg5MDEyMzQ1Ng").expect("salt");
     Argon2::default()
-        .hash_password(pw.as_bytes(), &salt)
+        .hash_password_with_salt(pw.as_bytes(), b"1234567890123456")
         .expect("hash")
         .to_string()
 }

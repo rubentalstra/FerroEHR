@@ -195,6 +195,25 @@ workflow refuses a tag that has no matching section here.
 
 ### Changed
 
+- **The Rust toolchain moves to 1.98.1 and the MSRV to 1.97.** 1.98.1 is a
+  point release for a vtable-generation miscompilation, which is reason enough
+  on its own; the toolchain step also brings the 1.98 lint set, and the
+  declared minimum supported version moves with it, one minor behind as
+  before. Container builds follow: the builder base is the digest-pinned
+  `rust:1.98.1-slim-trixie`, resolved fresh rather than copied. Nothing here
+  uses a 1.98 language feature, and the `msrv` job verifies the declared
+  minimum independently.
+
+- **Dependencies bumped, and one advisory left the tree with them.** argon2
+  0.6, jsonschema 0.53, tower-http 0.7.1, rust_decimal 1.43, futures 0.3.34,
+  toml 1.1.5, indexmap 2.14.2, leptos-use 0.19.2, wasm-bindgen 0.2.128.
+  `rust_decimal` 1.43 dropped its optional `rkyv ^0.7` requirement, so
+  RUSTSEC-2026-0235 — an out-of-bounds read no feature of ours ever compiled,
+  but which lock-file scanners reported — is gone from `Cargo.lock` and its
+  VEX statement is deleted rather than renewed. The three remaining advisory
+  exceptions were re-checked against their upstreams on 2026-09-10 and all
+  three still have no fixed release.
+
 - **Database migrations are append-only, so an existing installation upgrades
   in place.** A released migration is never edited again. sqlx records a
   checksum of every applied migration and refuses a database whose recorded

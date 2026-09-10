@@ -14,7 +14,7 @@ members = ["crates/*", "app/*", "tools/*"]
 [workspace.package]
 version = "4.1.1"
 edition = "2024"
-rust-version = "1.96"
+rust-version = "1.97"
 license = "BUSL-1.1"
 repository = "https://github.com/rubentalstra/FerroEHR"
 # No `authors`, deliberately. The cargo manifest reference opens that section
@@ -61,7 +61,7 @@ missing_assert_message = "deny"     # production asserts carry a message (lint i
 dbg_macro = "deny"
 print_stdout = "deny"               # libraries speak tracing; binaries/tools relax per-crate
 print_stderr = "deny"
-incompatible_msrv = "deny"          # MSRV 1.96 is a hard pin
+incompatible_msrv = "deny"          # MSRV 1.97 is a hard pin
 unchecked_time_subtraction = "deny" # std::time::Duration::sub panics on negative durations; jiff is the safe alternative
 as_conversions = "deny"             # `as` silently truncates; use TryFrom/TryInto or explicit casts
 
@@ -218,7 +218,7 @@ async-trait = "0.1"                 # still handy for dyn traits; native async-f
 jsonwebtoken = { version = "11.0.0", features = ["aws_lc_rs"] }   # JWT encode/decode/validate; aws-lc-rs crypto provider (matches the rustls stack)
 oauth2 = { version = "5", default-features = false } # OAuth2 client (HTTP-client agnostic: we supply the pinned reqwest)
 openidconnect = "4"                 # OIDC / Keycloak          (verify latest 4.x)
-argon2 = "0.5"                      # password hashing (Argon2id); its `password-hash` feature re-exports the PHC string traits
+argon2 = "0.6"                      # password hashing (Argon2id); its `password-hash` feature re-exports the PHC string traits
 cookie = { version = "0.18", features = ["private"] } # sealed session cookies: AES-256-GCM private jar (the viewer's multi-instance session, #2949)
 secrecy = "0.10"                   # wrap secrets, avoid logging
 # RBAC/ABAC policy engine for the Stage 2 access-control restoration (pick one at S2):
@@ -382,7 +382,7 @@ indexmap = { version = "2", features = ["serde"] }
 
 # ── HTTP client & external integration ───────────────────────────────────────
 reqwest = { version = "0.13.4", default-features = false, features = ["rustls", "json", "gzip", "brotli"] }
-jsonschema = "0.52.0"               # validate against openEHR ITS-JSON schemas (verify latest)
+jsonschema = "0.53.0"               # validate against openEHR ITS-JSON schemas (verify latest)
 
 # ── Dev / test (dev-dependencies at the crate level) ─────────────────────────
 insta = { version = "1", features = ["json", "redactions", "filters"] }
@@ -400,8 +400,8 @@ criterion = { version = "0.8.2", features = ["html_reports"] }
 #   cargo-nextest, cargo-audit, cargo-deny, cargo-machete, cargo-hakari,
 #   cargo-llvm-cov, sccache ; linker: mold (Linux).
 #
-# Toolchain: Rust stable 1.97.1, edition 2024. The MSRV stays 1.96 — nothing
-# here uses a 1.97 feature, and the eight published crates are the only
+# Toolchain: Rust stable 1.98.1, edition 2024; the MSRV steps to 1.97 with it.
+# Nothing here uses a 1.98 feature, and the eight published crates are the only
 # artifacts whose consumers would feel a bump (docs/VERSIONS.md §MSRV policy).
 # Database: PostgreSQL 18 (target 18.6+; 18.x is the current stable line; PG 19 in beta — do not target).
 
