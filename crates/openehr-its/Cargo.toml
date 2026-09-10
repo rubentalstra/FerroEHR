@@ -1,6 +1,6 @@
 [package]
 name = "openehr-its"
-version = "0.0.63"
+version = "0.0.64"
 description = "openEHR ITS (Implementation Technology Specifications): canonical JSON + canonical XML serialization of the RM, the generated ITS-REST 1.1.0 API contract, OPT 1.4 and AOM2 archetype XML codecs, and the Simplified Formats (FLAT / STRUCTURED / Web Template)"
 edition.workspace = true
 rust-version.workspace = true
@@ -12,10 +12,11 @@ keywords = ["openehr", "serialization", "rest", "healthcare", "json"]
 categories = ["encoding", "web-programming"]
 include = ["src/**", "schemas/json/openehr_rm_1.1.0_all.json", "README.md", "LICENSE", "LICENSE-APACHE-2.0"]
 
-# EVERY dependency rides the default `full` feature (see [features] below), so
-# `default-features = false` yields the dependency-free `rest::smart_scopes`
-# island alone — the std-only SMART scope grammar, which a REST client compiled
-# to `wasm32-unknown-unknown` (the viewer) can then parse with.
+# EVERY dependency is optional and belongs to exactly one layer of the [features]
+# graph below, so `default-features = false` still yields the dependency-free
+# `rest::smart_scopes` island alone — the std-only SMART scope grammar, which a
+# REST client compiled to `wasm32-unknown-unknown` (the viewer) can then parse
+# with — and a browser consumer adds only the layers it reads.
 [dependencies]
 serde = { workspace = true, optional = true }
 serde_json = { workspace = true, optional = true }
@@ -41,48 +42,79 @@ regex = { workspace = true, optional = true }
 fancy-regex = { workspace = true, optional = true }
 # The generated XML (de)serializers impl the crate's ToXml/FromXml traits for the
 # RM/BASE spec types, so these are real (non-dev) deps.
-openehr-base = { path = "../openehr-base", version = "0.0.63", optional = true }
-openehr-rm = { path = "../openehr-rm", version = "0.0.63", optional = true }
+openehr-base = { path = "../openehr-base", version = "0.0.64", optional = true }
+openehr-rm = { path = "../openehr-rm", version = "0.0.64", optional = true }
 # The native canonical-JSON codec (`json_codec/generated`, emit-json) implements
 # `ToJson` for EVERY generated spec type the `OpenEhrType` derive covers, so it
 # spans all five spec crates (not just the RM/BASE the XML codec needs).
-openehr-lang = { path = "../openehr-lang", version = "0.0.63", optional = true }
-openehr-am = { path = "../openehr-am", version = "0.0.63", optional = true }
-openehr-term = { path = "../openehr-term", version = "0.0.63", optional = true }
+openehr-lang = { path = "../openehr-lang", version = "0.0.64", optional = true }
+openehr-am = { path = "../openehr-am", version = "0.0.64", optional = true }
+openehr-term = { path = "../openehr-term", version = "0.0.64", optional = true }
 
-# `full` — every ITS surface (canonical JSON/XML, the generated ITS-REST
-# contract, `opt14`, Simplified Formats). ON BY DEFAULT, so every consumer sees
-# the crate exactly as before.
+# The graph is layered so a consumer takes only the surfaces it reads, and so
+# the openEHR content layers stay free of anything that needs a native platform.
 #
-# Taking the crate with `default-features = false` leaves only
-# `rest::smart_scopes`, the hand-written SMART on openEHR scope grammar
-# (`docs/specs/openehr/ITS-REST/docs/smart_app_launch/master08-scopes.adoc`),
-# which needs no dependency at all. That is what lets ONE grammar serve both the
-# CDR's scope gate and a browser-side scope previewer; the alternative would be a
-# second parser in the client — exactly the drift this module exists to prevent.
+# `default = ["full"]` — every surface, exactly as before.
+#
+# A `wasm32-unknown-unknown` consumer takes `default-features = false` plus
+# `flat`, which pulls `opt14` → `xml` → `json`: canonical JSON, canonical XML,
+# OPT 1.4 and the Simplified Formats. `rest::smart_scopes` needs no feature and
+# no dependency at all, which is what lets ONE grammar serve both the CDR's
+# scope gate and a browser-side scope previewer
+# (`docs/specs/openehr/ITS-REST/docs/smart_app_launch/master08-scopes.adoc`); the
+# alternative would be a second parser in the client — exactly the drift that
+# module exists to prevent. The wasm selection is checked, not claimed: CI
+# clippies the crate for that target on every code change.
+#
+# Three layers stay OUT of that selection, each for its dependency:
+# `cache` adds `moka`, an in-process cache the browser side does not keep;
+# `schema-validation` adds `jsonschema` and compiles in the 631 KiB vendored
+# ITS-JSON RM schema; `rest-server` adds `axum` + `http` — the SERVER half of
+# the ITS-REST contract, which a REST client never implements.
 [features]
 default = ["full"]
 full = [
+    "flat",
+    "cache",
+    "opt14",
+    "xml",
+    "json",
+    "schema-validation",
+    "rest-server",
+]
+
+# Canonical JSON (`json`, `json_codec`, `wire_validate`, `rm_instance`'s RM
+# passes) over the five generated spec crates — the base every other layer
+# builds on.
+json = [
     "dep:serde",
     "dep:serde_json",
     "dep:serde_path_to_error",
-    "dep:quick-xml",
     "dep:thiserror",
-    "dep:jsonschema",
     "dep:uuid",
     "dep:indexmap",
-    "dep:async-trait",
-    "dep:axum",
-    "dep:http",
-    "dep:moka",
-    "dep:regex",
-    "dep:fancy-regex",
     "dep:openehr-base",
     "dep:openehr-rm",
     "dep:openehr-lang",
     "dep:openehr-am",
     "dep:openehr-term",
 ]
+# Canonical XML plus the AOM2 archetype XML codecs (`xml`, `aom2`, `aom2_model`).
+xml = ["json", "dep:quick-xml"]
+# The OPT 1.4 operational-template reader (`opt14`), an XML codec consumer.
+opt14 = ["xml"]
+# Simplified Formats (`flat`) and the RM-instance validation composed over them
+# (`rm_instance`), WITHOUT the WebTemplate cache.
+flat = ["opt14", "dep:regex", "dep:fancy-regex"]
+
+# The async WebTemplate cache (`flat::cache`) — the crate's only `moka` user.
+cache = ["flat", "dep:moka"]
+# Validation against the compiled-in vendored ITS-JSON RM schema
+# (`json::validate_canonical`) — the crate's only `jsonschema` user.
+schema-validation = ["json", "dep:jsonschema"]
+# The generated ITS-REST contract (`rest::generated`) and its response runtime
+# (`rest::runtime`): server traits, DTOs and route tables.
+rest-server = ["json", "dep:axum", "dep:http", "dep:async-trait"]
 
 [dev-dependencies]
 serde_json.workspace = true

@@ -14,11 +14,11 @@
 //! with the openEHR specs as the authority.
 //! Regenerate with `cargo run -p openehr-codegen -- emit-rest`.
 
-// The generated contract and its runtime need the crate's dependency set (axum,
-// serde, the spec crates), so they ride the default `full` feature; the
+// The generated contract and its response runtime are the SERVER half of the
+// contract (axum, serde, the spec crates), so they ride `rest-server`; the
 // std-only `smart_scopes` grammar is always compiled — see the crate docs.
-#[cfg(feature = "full")]
+#[cfg(feature = "rest-server")]
 pub mod generated;
-#[cfg(feature = "full")]
+#[cfg(feature = "rest-server")]
 pub mod runtime;
 pub mod smart_scopes;

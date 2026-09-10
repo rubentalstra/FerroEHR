@@ -29,6 +29,7 @@ use serde::de::DeserializeOwned;
 /// The vendored ITS-JSON RM all-schema (draft-07), used to validate output in
 /// the fidelity-gate tests, vendored at a pinned upstream commit (see the
 /// bundled schema's provenance record).
+#[cfg(feature = "schema-validation")]
 pub const RM_SCHEMA_JSON: &str = include_str!("../schemas/json/openehr_rm_1.1.0_all.json");
 
 /// A canonical-JSON deserialization failure: the message, the JSON path to the
@@ -263,6 +264,7 @@ pub fn from_canonical_value<T: DeserializeOwned>(
 /// NOTE: the two causes stay flattened into the stored `String` rather than
 /// carried as a source (RFC 0201) — the schema is a compiled-in constant, so a
 /// failure here is a packaging fault with no caller that could branch on it.
+#[cfg(feature = "schema-validation")]
 static RM_VALIDATOR: std::sync::LazyLock<Result<jsonschema::Validator, String>> =
     std::sync::LazyLock::new(|| {
         let schema: serde_json::Value =
@@ -334,6 +336,7 @@ pub fn reject_undeclared_keys(value: &serde_json::Value) -> Result<(), JsonParse
 /// # Errors
 /// Returns every schema violation (path + message), or a single-element error if
 /// the schema itself failed to compile.
+#[cfg(feature = "schema-validation")]
 pub fn validate_canonical(value: &serde_json::Value) -> Result<(), Vec<String>> {
     match &*RM_VALIDATOR {
         Ok(validator) => {

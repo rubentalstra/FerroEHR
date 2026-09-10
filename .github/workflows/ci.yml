@@ -1056,6 +1056,47 @@ jobs:
       - run: cargo clippy --locked -p ferroehr-server --no-default-features --features events --all-targets -- -D warnings
       - run: cargo clippy --locked -p ferroehr-server --no-default-features --features fhir --all-targets -- -D warnings
 
+  # ── openehr-its on wasm32: the browser-consumer feature selection ──────────
+  # `openehr-its` publishes a feature graph whose openEHR content layers
+  # (`json` → `xml` → `opt14` → `flat`) are meant to compile for a browser
+  # client, while `cache` (moka), `schema-validation` (jsonschema) and
+  # `rest-server` (axum) deliberately do not. Nothing else in CI compiles that
+  # selection: the clippy job runs --all-features, and the viewer's wasm lane
+  # takes the crate with default-features = false, which reaches only the
+  # dependency-free `rest::smart_scopes` island. So the property was claimed by
+  # the manifest and checked by no lane at all.
+  #
+  # Library target only, no --all-targets: the crate's dev-dependencies
+  # (testkit -> sqlx, tokio -> mio) are native by construction and cannot build
+  # for wasm32-unknown-unknown. The features are spelled out rather than left to
+  # `flat`'s implication chain, so a change to that chain cannot silently narrow
+  # what this lane covers.
+  its-wasm:
+    name: clippy (openehr-its on wasm32)
+    needs: changes
+    # The feature selection IS the test, and it is declared here (#2373).
+    if: needs.changes.outputs.code == 'true' || needs.changes.outputs.workflows == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      # rust-cache, for the reason the clippy job states: sccache cannot cache
+      # clippy-driver invocations (mozilla/sccache#539). Its own cache entry:
+      # this target dir holds a wasm32 build of a different feature graph.
+      - uses: actions-rust-lang/setup-rust-toolchain@166cdcfd11aee3cb47222f9ddb555ce30ddb9659 # v1.17.0
+        with:
+          components: clippy
+          target: wasm32-unknown-unknown
+          cache-save-if: ${{ github.ref == 'refs/heads/main' }}
+      - run: cargo clippy --locked -p openehr-its --target wasm32-unknown-unknown --no-default-features --features flat,opt14,xml,json -- -D warnings
+      # The island the manifest promises a scope-parsing client: no feature, no
+      # dependency, and it must still compile for the browser on its own.
+      - run: cargo clippy --locked -p openehr-its --target wasm32-unknown-unknown --no-default-features -- -D warnings
+
   # ── Rustdoc: intra-doc links + doc lints are inert unless rustdoc runs ──────
   # [workspace.lints.rustdoc] levels apply to every `cargo doc`; the -D
   # warnings env additionally promotes the warn-tier doc lints in CI
@@ -2410,6 +2451,7 @@ jobs:
       - vex
       - clippy
       - feature-combos
+      - its-wasm
       - doc
       - msrv
       - codegen-drift

@@ -47,36 +47,47 @@
 //! `FromJson` codec and the canonical-XML codec are generated over hand-written
 //! runtimes, so the spec crates carry no serde derive.
 //!
-//! # Feature `full` (default)
+//! # Features
 //!
-//! Every surface above rides the default `full` feature. Taken with
-//! `default-features = false` the crate compiles to `rest::smart_scopes` alone —
-//! the std-only SMART scope grammar, with no dependency of any kind — so a REST
-//! client that must parse scope strings on `wasm32-unknown-unknown` (the
-//! viewer's scope previewer) shares the very grammar the CDR enforces instead
-//! of carrying a second parser.
+//! The default `full` feature is every surface above. The graph underneath it
+//! is layered so a consumer takes only what it reads: `json` is the canonical
+//! JSON base, `xml` adds the XML codecs, `opt14` the operational-template
+//! reader, and `flat` the Simplified Formats. A `wasm32-unknown-unknown`
+//! consumer takes `default-features = false, features = ["flat"]`, which pulls
+//! that whole chain; `cache` (`moka`), `schema-validation` (`jsonschema` plus
+//! the compiled-in ITS-JSON RM schema) and `rest-server` (the generated server
+//! contract, `axum`) stay outside it.
+//!
+//! Taken with `default-features = false` and nothing else the crate compiles to
+//! [`rest::smart_scopes`] alone — the std-only SMART scope grammar, with no
+//! dependency of any kind — so a REST client that must parse scope strings in
+//! the browser (the viewer's scope previewer) shares the very grammar the CDR
+//! enforces instead of carrying a second parser.
 
 // Doctests are copy-paste templates: they must use `?`, never unwrap
 // (C-QUESTION-MARK, https://rust-lang.github.io/api-guidelines/documentation.html#c-question-mark).
 #![doc(test(attr(deny(warnings))))]
-#[cfg(feature = "full")]
+#[cfg(feature = "xml")]
 pub mod aom2;
-#[cfg(feature = "full")]
+#[cfg(feature = "xml")]
 pub mod aom2_model;
-#[cfg(feature = "full")]
+#[cfg(feature = "flat")]
 pub mod flat;
-#[cfg(feature = "full")]
+#[cfg(feature = "json")]
 pub mod json;
-#[cfg(feature = "full")]
+#[cfg(feature = "json")]
 pub mod json_codec;
-#[cfg(feature = "full")]
+#[cfg(feature = "opt14")]
 pub mod opt14;
 pub mod rest;
-#[cfg(feature = "full")]
+// `rm_instance` composes the template pass of `flat::validation` over the RM
+// pass, and `flat::validation` reads its report shape back from here, so the
+// two are one layer rather than two.
+#[cfg(feature = "flat")]
 pub mod rm_instance;
-#[cfg(feature = "full")]
+#[cfg(feature = "json")]
 pub mod wire_validate;
-#[cfg(feature = "full")]
+#[cfg(feature = "xml")]
 pub mod xml;
 
 /// The openEHR specification version this crate implements.

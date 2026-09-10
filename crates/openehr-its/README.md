@@ -24,9 +24,38 @@ Simplified Data Formats (FLAT / STRUCTURED / Web Template).
 - **Simplified Data Formats** — the hand-written `flat` module: Web Template
   building, FLAT and STRUCTURED composition reading/writing.
 - **OPT 1.4** (`opt14`) and both AOM2 archetype XML codecs.
-- `default-features = false` leaves a dependency-free island:
-  `rest::smart_scopes`, the SMART on openEHR scope grammar — parseable from
-  `wasm32-unknown-unknown` clients.
+- `rest::smart_scopes`, the SMART on openEHR scope grammar — always compiled,
+  with no dependency at all.
+
+## Features
+
+`default = ["full"]` is every surface above. Underneath it the graph is
+layered, so a consumer takes only what it reads:
+
+| Feature | Adds | Pulls in |
+|---|---|---|
+| `json` | `json`, `json_codec`, `wire_validate` | serde, the five spec crates |
+| `xml` | `xml`, `aom2`, `aom2_model` | `json` + `quick-xml` |
+| `opt14` | `opt14` | `xml` |
+| `flat` | `flat`, `rm_instance` | `opt14` + `regex`, `fancy-regex` |
+| `cache` | `flat::cache` | `flat` + `moka` |
+| `schema-validation` | `json::validate_canonical` | `json` + `jsonschema`, the embedded RM schema |
+| `rest-server` | `rest::generated`, `rest::runtime` | `json` + `axum`, `http`, `async-trait` |
+
+### On `wasm32-unknown-unknown`
+
+```console
+$ cargo add openehr-its --no-default-features --features flat
+```
+
+That selection carries the openEHR content layers: canonical JSON, canonical
+XML, OPT 1.4 and the Simplified Formats. `flat` pulls `opt14`, `xml` and `json`
+in with it. `cache`, `schema-validation` and `rest-server` stay out; the last of
+those is the server half of the contract, which a client never implements.
+`rest::smart_scopes` needs no feature at all, so a browser client parses SMART
+scope strings with the same grammar a server enforces. FerroEHR's CI builds the
+crate for that target on every code change, so the selection is checked rather
+than claimed.
 
 ## Generated code — do not edit
 
@@ -69,8 +98,9 @@ Exactly one third-party file travels inside this package:
   Apache-2.0 ([`LICENSE-APACHE-2.0`](LICENSE-APACHE-2.0),
   <https://github.com/openEHR/specifications-ITS-JSON/blob/master/LICENSE>)
 - **Role here:** the consolidated ITS-JSON RM 1.1.0 JSON Schema, embedded as
-  `openehr_its::json::RM_SCHEMA_JSON` and used as the validation oracle for
-  canonical-JSON output — it is not a code source.
+  `openehr_its::json::RM_SCHEMA_JSON` under the `schema-validation` feature and
+  used as the validation oracle for canonical-JSON output — it is not a code
+  source.
 
 If you redistribute this crate, that file and this attribution travel with it.
 The rest of the vendored ITS-JSON tree, and the ITS-XML XSDs and ITS-REST
