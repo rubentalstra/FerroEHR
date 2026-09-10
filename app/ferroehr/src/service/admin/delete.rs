@@ -378,6 +378,38 @@ impl FerroEhrService {
         Ok(keys)
     }
 
+    /// Collect the distinct externalized-blob keys the given demographic
+    /// versioned objects reference (empty when externalization is disabled).
+    ///
+    /// Reads inside the caller's transaction, because the rows are about to be
+    /// deleted by it: a read on the pool could miss a row the transaction has
+    /// already removed, and a blob whose last reference vanished unseen is a
+    /// blob nothing will ever collect.
+    ///
+    /// Our own extension — no openEHR spec governs multimedia offload.
+    #[cfg(feature = "multimedia")]
+    async fn collect_party_blob_keys(
+        &self,
+        tx: &mut sqlx::Transaction<'_, sqlx::Postgres>,
+        vo_ids: &[VoId],
+    ) -> Result<Vec<String>, ServiceError> {
+        let Some(engine) = &self.multimedia else {
+            return Ok(Vec::new());
+        };
+        let datas: Vec<serde_json::Value> =
+            sqlx::query_scalar("SELECT data FROM node_all WHERE vo_id = ANY($1)")
+                .bind(vo_ids)
+                .fetch_all(&mut **tx)
+                .await?;
+        let mut keys: Vec<String> = datas
+            .iter()
+            .flat_map(|d| engine.referenced_keys(d))
+            .collect();
+        keys.sort_unstable();
+        keys.dedup();
+        Ok(keys)
+    }
+
     /// Delete each candidate blob no longer referenced by any surviving `node`.
     /// Our own extension — no openEHR spec governs multimedia offload. A
     /// conservative scan-based GC (a `blob_ref` count table is a scale
@@ -511,6 +543,18 @@ impl FerroEhrService {
         .fetch_all(&mut *tx)
         .await?;
 
+        // The blob keys these rows reference, before the delete removes the
+        // rows that name them (#3180). `delete_ehr` has always done this; a
+        // party physically deleted without it left its blobs in the object
+        // store forever, which is both a leak and a delete that did not
+        // delete — a blob is content.
+        #[cfg(feature = "multimedia")]
+        let candidate_blobs = self.collect_party_blob_keys(&mut tx, &vo_ids).await?;
+        // Externalization is compiled out of this build, so no stored node
+        // references a blob and there is nothing to collect.
+        #[cfg(not(feature = "multimedia"))]
+        let candidate_blobs: Vec<String> = Vec::new();
+
         // Delete the versioned objects — cascades node + vo_attestation. The
         // cold archival tier is foreign-key-free by design, so its rows and the
         // archive markers go explicitly (`crate::storage::version_repo::tier`).
@@ -548,6 +592,11 @@ impl FerroEhrService {
             .await?;
 
         tx.commit().await?;
+
+        // After the commit, so a blob is only collected once nothing can
+        // reference it again. The scan covers both domains, so a blob this
+        // party shared with a clinical record survives.
+        self.gc_unreferenced_blobs(candidate_blobs).await;
         Ok(())
     }
 }
