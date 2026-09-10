@@ -11,11 +11,12 @@
 //! documentation site; this module is what stops that page from becoming a
 //! claim nobody checks.
 //!
-//! Two of the five are recorded and rendered, one is partial, and two are
-//! gaps. **The gaps are asserted as gaps**: a test that expects the absence
+//! Three of the five are recorded and rendered, one is partial, and one is a
+//! gap. **The gap is asserted as a gap**: a test that expects the absence
 //! fails the day the field arrives, which is the point — the page and the
 //! code then have to move together, and a gap cannot quietly close while the
-//! documentation still calls it open.
+//! documentation still calls it open. Where a rendering cannot carry an
+//! element its FORMAT does not define, that absence is pinned too.
 //!
 //! No openEHR spec governs the read-side access log — our own
 //! design/extension. openEHR specifies the write-side `AUDIT_DETAILS` only
@@ -54,6 +55,7 @@ fn access_event() -> AuditEvent {
         EventOutcome::Success,
     );
     "dr.jansen".clone_into(&mut e.user_id);
+    e.organisation = Some("zh-noordwest".to_owned());
     e.client_ip = Some("10.0.0.9".to_owned());
     e.object_id = Some("8fa1::ferroehr::1".to_owned());
     e.event_type = Some(EventType::RestOperation("composition_get"));
@@ -76,6 +78,17 @@ fn renderings(event: &AuditEvent) -> (String, String) {
     )
     .expect("the FHIR resource serializes");
     (xml, json)
+}
+
+/// The FHIR rendering's `agent` list, parsed.
+fn fhir_agents(event: &AuditEvent) -> Vec<serde_json::Value> {
+    let rendered =
+        fhir::to_fhir(event, &ctx(), Some("patient-42")).expect("the FHIR rendering builds");
+    rendered
+        .get("agent")
+        .and_then(serde_json::Value::as_array)
+        .expect("the rendering carries agents")
+        .clone()
 }
 
 /// (b) "identification of the specific natural person or persons having
@@ -144,22 +157,43 @@ fn element_c_the_resource_class_and_domain_stand_in_for_the_category() {
 }
 
 /// (a) "identification of the healthcare provider or other individuals having
-/// accessed" — a GAP, asserted as one.
+/// accessed" — the organisation, recorded and rendered in FHIR only.
 ///
-/// Read beside (b), this element asks for the ORGANISATION or other entity on
-/// whose behalf the access happened, distinct from the natural person (b)
-/// names. The model records the authenticated principal and nothing about the
-/// organisation, so nothing can render it.
+/// Read beside (b), this element asks for the ORGANISATION on whose behalf the
+/// access happened, distinct from the natural person (b) names. FHIR R4 takes
+/// it as a second `agent` whose `who` references an `Organization` and which
+/// declares no `type` — `agent.type` is 0..1, so no participation code has to
+/// be invented (<https://hl7.org/fhir/R4/auditevent.html>).
+///
+/// The DICOM rendering carries nothing, and that half is pinned as the format
+/// limit it is: PS3.15 §A.5 gives `ActiveParticipant` no organisation
+/// attribute, and `AuditEnterpriseSiteID` names the reporting source's site
+/// rather than the caller's organisation
+/// (<https://dicom.nema.org/medical/dicom/current/output/chtml/part15/sect_A.5.html>).
 #[test]
-fn element_a_the_accessing_organisation_is_not_recorded_yet() {
+fn element_a_the_accessing_organisation_is_recorded_and_rendered_in_fhir() {
     let event = access_event();
-    let fields = format!("{event:?}");
+    assert_eq!(event.organisation.as_deref(), Some("zh-noordwest"));
+
+    let agents = fhir_agents(&event);
+    let organisation = agents
+        .iter()
+        .find(|agent| agent["who"]["reference"] == "Organization/zh-noordwest")
+        .expect("the organisation reaches the FHIR rendering as an Organization agent");
     assert!(
-        !fields.to_lowercase().contains("organisation")
-            && !fields.to_lowercase().contains("organization"),
-        "an organisation field has appeared on the access event — Annex II 3.2(a) \
-         is no longer a gap, so update the mapping table on the audit page and \
-         this test together: {fields}"
+        organisation.get("type").is_none(),
+        "the organisation agent must claim no participation code: {organisation}"
+    );
+    assert_eq!(
+        organisation["requestor"], false,
+        "the natural person initiated the request, not the organisation"
+    );
+
+    let (xml, _) = renderings(&event);
+    assert!(
+        !xml.contains("zh-noordwest"),
+        "the DICOM schema defines no organisation attribute — a value appearing \
+         here means one was invented: {xml}"
     );
 }
 
@@ -184,32 +218,48 @@ fn element_e_the_origin_of_the_data_is_not_recorded_yet() {
     assert_eq!(event.client_ip.as_deref(), Some("10.0.0.9"));
 }
 
-/// The purpose of use is recorded but reaches neither rendering, and only one
-/// of the two could carry it.
+/// The declared purpose of use reaches the FHIR rendering, and only that one
+/// could carry it.
 ///
-/// FHIR R4 `AuditEvent` defines `agent.purposeOfUse`
-/// (<https://hl7.org/fhir/R4/auditevent.html>) and this rendering does not
-/// populate it — a real gap. The DICOM Audit Message schema of PS3.15 §A.5
-/// defines no purpose element at all: its `AuditMessage` carries
-/// `EventIdentification`, `ActiveParticipant`, `AuditSourceIdentification`
+/// FHIR R4 `AuditEvent` defines `agent.purposeOfUse` as a 0..* `CodeableConcept`
+/// on the agent (<https://hl7.org/fhir/R4/auditevent.html>), so it lands on the
+/// requesting person's agent. The code is from the vocabulary the deployment
+/// agrees with its callers, which has no published code system, so the coding
+/// carries the code alone — `Coding.system` is optional
+/// (<https://hl7.org/fhir/R4/datatypes.html>).
+///
+/// The DICOM Audit Message schema of PS3.15 §A.5 defines no purpose element at
+/// all: `EventIdentification`, `ActiveParticipant`, `AuditSourceIdentification`
 /// and `ParticipantObjectIdentification`, and none of them has one
 /// (<https://dicom.nema.org/medical/dicom/current/output/chtml/part15/sect_A.5.html>).
-/// So the DICOM side is a limit of the format rather than of this code, and
-/// the assertion below pins both halves for what each of them is.
+/// That half is a limit of the format rather than of this code, and stays
+/// pinned as one.
 #[test]
-fn the_declared_purpose_is_stored_but_reaches_neither_rendering() {
+fn the_declared_purpose_reaches_the_fhir_rendering_only() {
     let event = access_event();
     assert_eq!(event.purpose.as_deref(), Some("TREAT"));
-    let (xml, json) = renderings(&event);
-    assert!(
-        !xml.contains("TREAT") && !xml.contains("PurposeOfUse"),
-        "the DICOM rendering has grown a purpose — update the mapping table and \
-         this test together: {xml}"
+
+    let agents = fhir_agents(&event);
+    let person = agents
+        .iter()
+        .find(|agent| agent["who"]["identifier"]["value"] == "dr.jansen")
+        .expect("the accessing person's agent");
+    let coding = &person["purposeOfUse"][0]["coding"][0];
+    assert_eq!(
+        coding["code"], "TREAT",
+        "the declared purpose must reach agent.purposeOfUse: {person}"
     );
     assert!(
-        !json.contains("TREAT") && !json.contains("purposeOfUse"),
-        "the FHIR rendering has grown a purposeOfUse — update the mapping table \
-         and this test together: {json}"
+        coding.get("system").is_none(),
+        "a deployment-agreed code must not be attributed to a code system it \
+         does not come from: {coding}"
+    );
+
+    let (xml, _) = renderings(&event);
+    assert!(
+        !xml.contains("TREAT") && !xml.contains("PurposeOfUse"),
+        "the DICOM schema defines no purpose element — a value appearing here \
+         means one was invented: {xml}"
     );
 }
 

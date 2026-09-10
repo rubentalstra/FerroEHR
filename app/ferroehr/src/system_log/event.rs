@@ -125,6 +125,14 @@ pub struct AuditEvent {
     pub user_id: String,
     /// Whether the source participant is the requestor (always true here).
     pub user_is_requestor: bool,
+    /// The organisation the requesting user acted for, when the deployment
+    /// resolves one from the caller's identity token.
+    ///
+    /// The ACCESSING organisation, not the reporting site: the audit source's
+    /// enterprise site id ([`super::message::AuditContext`]) names the node
+    /// that emitted the record and answers a different question. `None` when
+    /// no organisation was resolved — never a guess.
+    pub organisation: Option<String>,
     /// The client network address (`X-Forwarded-For` first hop / peer), if known.
     pub client_ip: Option<String>,
     /// The owning EHR id, for optional background subject enrichment.
@@ -226,6 +234,7 @@ impl AuditEvent {
             outcome,
             user_id: String::new(),
             user_is_requestor: true,
+            organisation: None,
             client_ip: None,
             ehr_id: None,
             object_id: None,

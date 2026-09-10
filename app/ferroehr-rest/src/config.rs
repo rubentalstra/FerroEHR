@@ -35,6 +35,11 @@ pub struct AppConfig {
     pub terminology_api_enabled: bool,
     /// `[events].admin_api` — mount the `/admin/event_subscription` CRUD.
     pub events_admin_api: bool,
+    /// `[authz.abac] organization_claim` — the access-token claim naming the
+    /// organisation a caller acts for, lifted here because the access log
+    /// records it whether or not the ABAC gate that shares the setting is
+    /// switched on. `None` when the deployment configures no claim.
+    pub audit_organization_claim: Option<String>,
     /// `spec_profile` — the openEHR specification generation set the server
     /// runs; the demographic ingress boundary reads it (the stable
     /// generation's released surface differs from the typed core's).

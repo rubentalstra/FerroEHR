@@ -97,6 +97,12 @@ impl AuditMessage {
             event.user_id.clone()
         };
 
+        // The accessing organisation and the declared purpose of use stay out
+        // of this rendering: PS3.15 §A.5 gives `ActiveParticipant` no
+        // organisation attribute and defines no purpose element anywhere, and
+        // `AuditEnterpriseSiteID` names the REPORTING source's site rather
+        // than the caller's organisation
+        // (https://dicom.nema.org/medical/dicom/current/output/chtml/part15/sect_A.5.html).
         let participants = vec![
             // Source (the requesting client).
             ActiveParticipant {

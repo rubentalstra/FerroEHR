@@ -124,6 +124,13 @@ fn rest_config() -> AppConfig {
             ..Default::default()
         },
         auth: common::hs256_auth_config(ISSUER, AUDIENCE, HMAC_SECRET),
+        // Lifted the way the binary lifts it, from the one setting, so this
+        // follows a change to the default claim name instead of pinning a
+        // second copy of it.
+        audit_organization_claim: AuthzConfig::default()
+            .abac
+            .organization_claim()
+            .map(str::to_owned),
         ..Default::default()
     }
 }
@@ -302,7 +309,7 @@ async fn drain_audit(socket: &UdpSocket) -> Vec<String> {
 /// The role travels in the `roles` claim — an RFC 9068 §2.2.3.1 carrier — not in
 /// `scope`: an OAuth2 scope grants a client delegated authority (RFC 6749 §3.3)
 /// and never becomes a role.
-fn bearer(patient: Option<&str>) -> String {
+fn claims(patient: Option<&str>) -> Value {
     let exp = u64::try_from(jiff::Timestamp::now().as_second()).unwrap() + 3600;
     let mut claims = json!({
         "sub": "svc",
@@ -314,6 +321,19 @@ fn bearer(patient: Option<&str>) -> String {
     if let Some(p) = patient {
         claims["patient_id"] = json!(p);
     }
+    claims
+}
+
+fn bearer(patient: Option<&str>) -> String {
+    common::hs256_bearer(HMAC_SECRET, &claims(patient))
+}
+
+/// The same token plus the `organization_id` claim — the claim
+/// `[authz.abac] organization_claim` names by default, which is also the one
+/// the audit trail records the accessing organisation from.
+fn bearer_with_organisation(patient: Option<&str>, organisation: &str) -> String {
+    let mut claims = claims(patient);
+    claims["organization_id"] = json!(organisation);
     common::hs256_bearer(HMAC_SECRET, &claims)
 }
 
@@ -497,6 +517,136 @@ async fn abac_deny_is_audited() {
             .any(|xml| xml.contains(r#"EventOutcomeIndicator="4""#)
                 && xml.contains(r#"UserID="svc""#)),
         "expected a minor-failure audit for `svc`, got {records:?}"
+    );
+}
+
+/// The accessing organisation reaches the stored access record, and only from
+/// the claim the deployment configured.
+///
+/// EHDS Annex II 3.2(a) asks which healthcare provider an access happened on
+/// behalf of (<https://eur-lex.europa.eu/eli/reg/2025/327/oj>). The middleware
+/// resolves it from `[authz.abac] organization_claim` — the same claim the
+/// policy layer decides on — so a caller whose token carries none leaves the
+/// column NULL rather than being attributed to anyone.
+#[tokio::test]
+async fn the_accessing_organisation_reaches_the_stored_record() {
+    let (_pg, pool) = common::migrated_pool().await;
+    let cfg = AuditConfig {
+        enabled: true,
+        store: StoreConfig {
+            enabled: true,
+            retention_days: 0,
+        },
+        suppress_login_events: true,
+        fail_mode: FailMode::Open,
+        queue_capacity: 64,
+        ..AuditConfig::default()
+    };
+    let (sender, _handle) = start(cfg, None, Some(pool.clone()))
+        .await
+        .expect("audit start");
+    let svc = Arc::new(FerroEhrService::new(pool.clone()).with_audit(sender));
+    let seed = build_with(seed_config(), Arc::clone(&svc)).expect("seed app");
+    seed_ehr(&seed, EHR_OWN).await;
+    let app = abac_app(Arc::clone(&svc), true);
+
+    for token in [
+        bearer_with_organisation(Some(PATIENT_OWN), "zh-noordwest"),
+        bearer(Some(PATIENT_OWN)),
+    ] {
+        let req = Request::builder()
+            .method("GET")
+            .uri(format!("{BASE}/ehr/{EHR_OWN}"))
+            .header("authorization", token)
+            .body(Body::empty())
+            .expect("request");
+        assert_eq!(status(&app, req).await, StatusCode::OK);
+    }
+
+    // The drain writes off the request path, so the assertion waits for the
+    // two records rather than assuming they have landed.
+    let mut recorded: Vec<Option<String>> = Vec::new();
+    for _ in 0..60 {
+        recorded = sqlx::query_scalar::<_, Option<String>>(
+            "SELECT organisation FROM audit.audit_event WHERE principal = 'svc' \
+             ORDER BY recorded_at, stored_at",
+        )
+        .fetch_all(&pool)
+        .await
+        .expect("audit rows");
+        if recorded.len() >= 2 {
+            break;
+        }
+        tokio::time::sleep(Duration::from_millis(50)).await;
+    }
+
+    assert_eq!(
+        recorded,
+        vec![Some("zh-noordwest".to_owned()), None],
+        "the organisation is recorded from the configured claim, and absent \
+         when the token carries none"
+    );
+}
+
+/// The same claim, with the ABAC gate switched off.
+///
+/// The claim name is an ABAC setting, but the organisation is a fact about the
+/// caller rather than a decision about them: a deployment that runs no policy
+/// layer still has to answer EHDS Annex II 3.2(a). Reading the claim off the
+/// live gate made the whole column go blank whenever ABAC was off, silently,
+/// which is what this pins.
+#[tokio::test]
+async fn the_accessing_organisation_is_recorded_with_the_abac_gate_off() {
+    let (_pg, pool) = common::migrated_pool().await;
+    let cfg = AuditConfig {
+        enabled: true,
+        store: StoreConfig {
+            enabled: true,
+            retention_days: 0,
+        },
+        suppress_login_events: true,
+        fail_mode: FailMode::Open,
+        queue_capacity: 64,
+        ..AuditConfig::default()
+    };
+    let (sender, _handle) = start(cfg, None, Some(pool.clone()))
+        .await
+        .expect("audit start");
+    let svc = Arc::new(FerroEhrService::new(pool.clone()).with_audit(sender));
+    let seed = build_with(seed_config(), Arc::clone(&svc)).expect("seed app");
+    seed_ehr(&seed, EHR_OWN).await;
+    let app = abac_app(Arc::clone(&svc), false);
+
+    let req = Request::builder()
+        .method("GET")
+        .uri(format!("{BASE}/ehr/{EHR_OWN}"))
+        .header(
+            "authorization",
+            bearer_with_organisation(Some(PATIENT_OWN), "zh-noordwest"),
+        )
+        .body(Body::empty())
+        .expect("request");
+    assert_eq!(status(&app, req).await, StatusCode::OK);
+
+    let mut recorded: Vec<Option<String>> = Vec::new();
+    for _ in 0..60 {
+        recorded = sqlx::query_scalar::<_, Option<String>>(
+            "SELECT organisation FROM audit.audit_event WHERE principal = 'svc' \
+             ORDER BY recorded_at, stored_at",
+        )
+        .fetch_all(&pool)
+        .await
+        .expect("audit rows");
+        if !recorded.is_empty() {
+            break;
+        }
+        tokio::time::sleep(Duration::from_millis(50)).await;
+    }
+
+    assert_eq!(
+        recorded,
+        vec![Some("zh-noordwest".to_owned())],
+        "the organisation must be recorded whether or not the ABAC gate is on"
     );
 }
 

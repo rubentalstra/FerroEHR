@@ -41,8 +41,10 @@ pub enum AuditRenderError {
 /// A FHIR `Coding`: a code in a code system, with optional display text.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct AuditCoding {
-    /// The code system URI.
-    pub system: String,
+    /// The code system URI. `None` for a code from a vocabulary the deployment
+    /// agrees with its callers, which has no published system URI; FHIR R4
+    /// makes `Coding.system` 0..1 (<https://hl7.org/fhir/R4/datatypes.html>).
+    pub system: Option<String>,
     /// The code.
     pub code: String,
     /// The display text.
@@ -77,19 +79,40 @@ pub enum AuditOutcome {
     MajorFailure,
 }
 
+/// How a participant's identity travels in `agent.who`.
+///
+/// FHIR R4 lets a `Reference` carry a literal reference, a logical identifier,
+/// or both (<https://hl7.org/fhir/R4/references.html>); an audit record uses
+/// exactly one, so the two are alternatives rather than two fields that could
+/// disagree.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub enum AuditWho {
+    /// A logical identifier (`Reference.identifier.value`) — the audit trail's
+    /// usual form, since it records identities rather than server-local ids.
+    Identifier(String),
+    /// A literal relative reference (`Reference.reference`), such as
+    /// `Organization/<id>`, where the participant is a FHIR resource type.
+    Reference(String),
+}
+
 /// One participant of an audited event.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct AuditAgent {
-    /// The participation type (one coding).
-    pub role: AuditCoding,
-    /// Who the agent is, as a logical identifier.
-    pub who: Option<String>,
+    /// The participation type (one coding). `None` leaves `agent.type` out,
+    /// which FHIR R4 allows (0..1) and which is the honest rendering for a
+    /// participant no code system classifies.
+    pub role: Option<AuditCoding>,
+    /// Who the agent is.
+    pub who: Option<AuditWho>,
     /// Whether this agent initiated the event.
     pub requestor: bool,
     /// Applicable policies (the BALP OAuth pattern records the token `jti`).
     pub policy: Vec<String>,
     /// The agent's network access point (an IP address).
     pub network_address: Option<String>,
+    /// Why the agent participated (`agent.purposeOfUse`, 0..*), one
+    /// `CodeableConcept` per coding.
+    pub purpose_of_use: Vec<AuditCoding>,
 }
 
 /// The reporting source of an audited event.
@@ -188,7 +211,7 @@ fn coding(source: &AuditCoding) -> Coding {
     CodingInner {
         id: None,
         extension: Vec::new(),
-        system: Some(source.system.clone()),
+        system: source.system.clone(),
         system_ext: None,
         version: None,
         version_ext: None,
@@ -221,6 +244,27 @@ fn meta(profiles: &[String]) -> Meta {
         tag_ext: Vec::new(),
     }
     .into()
+}
+
+/// The `Reference` for one participant identity: a literal relative reference,
+/// or a logical identifier.
+fn who_reference(who: &AuditWho) -> Reference {
+    match who {
+        AuditWho::Identifier(value) => identifier_reference(value),
+        AuditWho::Reference(value) => ReferenceInner {
+            id: None,
+            extension: Vec::new(),
+            reference: Some(value.clone()),
+            reference_ext: None,
+            r#type: None,
+            r#type_ext: None,
+            identifier: None,
+            identifier_ext: None,
+            display: None,
+            display_ext: None,
+        }
+        .into(),
+    }
 }
 
 /// A `Reference` carrying only a logical identifier (the audit trail records
@@ -276,11 +320,11 @@ fn agent(source: &AuditAgent) -> AuditEventAgent {
         id: None,
         extension: Vec::new(),
         modifier_extension: Vec::new(),
-        r#type: Some(single_concept(&source.role)),
+        r#type: source.role.as_ref().map(single_concept),
         r#type_ext: None,
         role: Vec::new(),
         role_ext: Vec::new(),
-        who: source.who.as_deref().map(identifier_reference),
+        who: source.who.as_ref().map(who_reference),
         who_ext: None,
         alt_id: None,
         alt_id_ext: None,
@@ -309,7 +353,11 @@ fn agent(source: &AuditAgent) -> AuditEventAgent {
             }
         }),
         network_ext: None,
-        purpose_of_use: Vec::new(),
+        purpose_of_use: source
+            .purpose_of_use
+            .iter()
+            .map(|c| Some(single_concept(c)))
+            .collect(),
         purpose_of_use_ext: Vec::new(),
     }
 }
@@ -388,12 +436,12 @@ mod tests {
         AuditRecord {
             profiles: vec!["https://example.test/Profile".to_owned()],
             event_type: AuditCoding {
-                system: "http://terminology.hl7.org/CodeSystem/audit-event-type".to_owned(),
+                system: Some("http://terminology.hl7.org/CodeSystem/audit-event-type".to_owned()),
                 code: "rest".to_owned(),
                 display: Some("RESTful Operation".to_owned()),
             },
             subtypes: vec![AuditCoding {
-                system: "http://hl7.org/fhir/restful-interaction".to_owned(),
+                system: Some("http://hl7.org/fhir/restful-interaction".to_owned()),
                 code: "read".to_owned(),
                 display: Some("read".to_owned()),
             }],
@@ -404,21 +452,24 @@ mod tests {
             outcome: AuditOutcome::Success,
             outcome_desc: None,
             agents: vec![AuditAgent {
-                role: AuditCoding {
-                    system: "http://dicom.nema.org/resources/ontology/DCM".to_owned(),
+                role: Some(AuditCoding {
+                    system: Some("http://dicom.nema.org/resources/ontology/DCM".to_owned()),
                     code: "110152".to_owned(),
                     display: Some("Destination Role ID".to_owned()),
-                },
-                who: Some("john doe".to_owned()),
+                }),
+                who: Some(AuditWho::Identifier("john doe".to_owned())),
                 requestor: true,
                 policy: vec!["jti-1".to_owned()],
                 network_address: Some("10.216.24.150".to_owned()),
+                purpose_of_use: Vec::new(),
             }],
             source: AuditSourceRef {
                 site: Some("site-1".to_owned()),
                 observer: "ferroehr".to_owned(),
                 types: vec![AuditCoding {
-                    system: "http://terminology.hl7.org/CodeSystem/security-source-type".to_owned(),
+                    system: Some(
+                        "http://terminology.hl7.org/CodeSystem/security-source-type".to_owned(),
+                    ),
                     code: "4".to_owned(),
                     display: Some("Application Server".to_owned()),
                 }],
@@ -446,6 +497,39 @@ mod tests {
     fn the_query_entity_is_base64_encoded_by_the_model() {
         let rendered = render(&record()).expect("render");
         assert_eq!(rendered["entity"][0]["query"], "ZXUuZmVycm9laHI6OnEx");
+    }
+
+    /// An agent with no participation type renders without `type`, a literal
+    /// `who` renders as `Reference.reference`, and a system-less purpose code
+    /// renders as a coding with a code and nothing else — the three shapes
+    /// FHIR R4 allows and an organisation participant needs
+    /// (<https://hl7.org/fhir/R4/auditevent.html>).
+    #[test]
+    fn an_untyped_agent_renders_a_literal_reference_and_a_system_less_purpose() {
+        let mut record = record();
+        record.agents.push(AuditAgent {
+            role: None,
+            who: Some(AuditWho::Reference("Organization/zh-noordwest".to_owned())),
+            requestor: false,
+            policy: Vec::new(),
+            network_address: None,
+            purpose_of_use: vec![AuditCoding {
+                system: None,
+                code: "TREAT".to_owned(),
+                display: None,
+            }],
+        });
+        let rendered = render(&record).expect("render");
+        let agent = &rendered["agent"][1];
+        assert!(agent.get("type").is_none(), "no type is claimed: {agent}");
+        assert_eq!(agent["who"]["reference"], "Organization/zh-noordwest");
+        assert!(
+            agent["who"].get("identifier").is_none(),
+            "a literal reference is not also an identifier: {agent}"
+        );
+        let coding = &agent["purposeOfUse"][0]["coding"][0];
+        assert_eq!(coding["code"], "TREAT");
+        assert!(coding.get("system").is_none(), "no system: {coding}");
     }
 
     #[test]

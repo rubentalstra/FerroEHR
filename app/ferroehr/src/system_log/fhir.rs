@@ -36,7 +36,8 @@
 //! resolved patient entity).
 
 use ferroehr_ext::fhir::audit::{
-    AuditAction, AuditAgent, AuditCoding, AuditEntityRef, AuditOutcome, AuditRecord, AuditSourceRef,
+    AuditAction, AuditAgent, AuditCoding, AuditEntityRef, AuditOutcome, AuditRecord,
+    AuditSourceRef, AuditWho,
 };
 
 use crate::system_log::AuditError;
@@ -74,7 +75,7 @@ pub const BALP_PROFILE_BASE: &str = "https://profiles.ihe.net/ITI/BALP/Structure
 /// A BALP coding with display text.
 fn coding(system: &str, code: &str, display: &str) -> AuditCoding {
     AuditCoding {
-        system: system.to_owned(),
+        system: Some(system.to_owned()),
         code: code.to_owned(),
         display: Some(display.to_owned()),
     }
@@ -198,41 +199,84 @@ fn build_agents(event: &AuditEvent, ctx: &AuditContext, missing: &str) -> Vec<Au
 
     let mut agents = vec![
         // The requesting client, carrying the authenticated user identity
-        // (the FHIR twin of the DICOM source ActiveParticipant).
+        // (the FHIR twin of the DICOM source ActiveParticipant) and the
+        // purpose it declared: FHIR R4 puts `purposeOfUse` on the agent
+        // (<https://hl7.org/fhir/R4/auditevent.html>), and the requestor is
+        // the agent whose purpose it is.
         AuditAgent {
-            role: client_role,
-            who: Some(user),
+            role: Some(client_role),
+            who: Some(AuditWho::Identifier(user)),
             requestor: true,
             policy: Vec::new(),
             network_address: Some(client_ip),
+            purpose_of_use: purpose_codings(event),
         },
         // This server.
         AuditAgent {
-            role: server_role,
-            who: Some(nonempty(&ctx.source_id, missing)),
+            role: Some(server_role),
+            who: Some(AuditWho::Identifier(nonempty(&ctx.source_id, missing))),
             requestor: false,
             policy: Vec::new(),
             network_address: Some(nonempty(&ctx.server_ip, missing)),
+            purpose_of_use: Vec::new(),
         },
     ];
+
+    if let Some(organisation) = event.organisation.as_deref().filter(|s| !s.is_empty()) {
+        // The organisation the caller acted for, as a second participant:
+        // FHIR R4 `agent.who` may reference an `Organization` and
+        // `agent.type` is 0..1, so the organisation needs no participation
+        // code and none is invented for it
+        // (<https://hl7.org/fhir/R4/auditevent.html>). It did not initiate the
+        // request — the natural person did — so it is not the requestor.
+        agents.push(AuditAgent {
+            role: None,
+            who: Some(AuditWho::Reference(format!("Organization/{organisation}"))),
+            requestor: false,
+            policy: Vec::new(),
+            network_address: None,
+            purpose_of_use: Vec::new(),
+        });
+    }
 
     if let Some(jti) = event.token_id.as_deref().filter(|s| !s.is_empty()) {
         // IHE.BasicAudit.OAUTHaccessTokenUse.Minimal: the token identity is
         // ONLY the jti, carried in agent.policy — never the token contents.
         agents.push(AuditAgent {
-            role: coding(
+            role: Some(coding(
                 SYS_BALP_USER_AGENT_TYPES,
                 "UserOauthAgent",
                 "User OAuth Agent participant",
-            ),
+            )),
             who: None,
             requestor: true,
             policy: vec![jti.to_owned()],
             network_address: None,
+            purpose_of_use: Vec::new(),
         });
     }
 
     agents
+}
+
+/// The declared purpose of use as `agent.purposeOfUse` codings.
+///
+/// The code comes from the vocabulary the deployment agrees with its callers
+/// (`[audit] purpose_codes`), which has no published code system, so the
+/// coding carries the code alone: FHIR R4 makes `Coding.system` optional
+/// (<https://hl7.org/fhir/R4/datatypes.html>) and naming a system the code
+/// does not come from would misdescribe it.
+fn purpose_codings(event: &AuditEvent) -> Vec<AuditCoding> {
+    event
+        .purpose
+        .iter()
+        .filter(|code| !code.is_empty())
+        .map(|code| AuditCoding {
+            system: None,
+            code: code.clone(),
+            display: None,
+        })
+        .collect()
 }
 
 /// The entity list: the patient (when resolved), the touched data object,

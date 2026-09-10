@@ -100,11 +100,13 @@ pub struct AuditObject {
 pub struct AuditServedEhrs(pub Vec<(String, u64)>);
 
 /// The access-logging facts every record of one request shares: the request
-/// correlation id and the declared purpose of use.
+/// correlation id, the declared purpose of use, and the organisation the
+/// caller acted for.
 #[derive(Debug, Clone, Default)]
 struct AccessContext {
     request_id: Option<String>,
     purpose: Option<String>,
+    organisation: Option<String>,
 }
 
 /// Stamp the shared access-logging fields onto one record.
@@ -114,6 +116,7 @@ struct AccessContext {
 fn fill_access(event: &mut AuditEvent, access: &AccessContext, state: &AppState) {
     event.request_id.clone_from(&access.request_id);
     event.purpose.clone_from(&access.purpose);
+    event.organisation.clone_from(&access.organisation);
     event.legal_basis = state.backend().audit_legal_basis().map(str::to_owned);
 }
 
@@ -180,6 +183,26 @@ fn declared_purpose(req: &Request, backend: &ferroehr::service::FerroEhrService)
         .then(|| declared.to_owned())
 }
 
+/// The organisation the caller acted for, from the identity token.
+///
+/// The claim is `[authz.abac] organization_claim`, resolved the same way the
+/// policy-enforcement point resolves it ([`crate::extensions::access::pep`]).
+/// One setting serves both: a second one could name a different claim than
+/// authorization decides on, and the trail would then record an organisation
+/// the deployment never granted anything to.
+///
+/// The setting is shared; the switch is not. It is read from the adapter's
+/// configuration rather than off the live ABAC gate, so the trail records the
+/// organisation whether or not that gate is enabled — an access log that went
+/// blank because a policy layer was disabled would answer a different question
+/// than the one it is kept for. A Basic-authenticated caller carries no claims,
+/// so it resolves to `None`, as does an unconfigured claim — never a guess.
+fn caller_organisation(state: &AppState, principal: Option<&Principal>) -> Option<String> {
+    let principal = principal?;
+    let claim = state.config().audit_organization_claim.as_deref()?;
+    crate::extensions::access::authz::roles::claim_string(&principal.claims, claim)
+}
+
 /// The ATNA audit middleware, routing emission through the platform's SM
 /// `SystemLog` component.
 pub async fn middleware(State(state): State<AppState>, req: Request, next: Next) -> Response {
@@ -197,6 +220,10 @@ pub async fn middleware(State(state): State<AppState>, req: Request, next: Next)
     let resp = next.run(req).await;
     let status = resp.status();
 
+    let op = resp.extensions().get::<AuditOpId>().copied();
+    let principal = resp.extensions().get::<Principal>().cloned();
+    let object = resp.extensions().get::<AuditObject>().cloned();
+
     // The correlation id the response carries, set by the request-id layer
     // above this one (`SetRequestIdLayer::x_request_id`).
     let access = AccessContext {
@@ -206,11 +233,9 @@ pub async fn middleware(State(state): State<AppState>, req: Request, next: Next)
             .and_then(|value| value.to_str().ok())
             .map(str::to_owned),
         purpose,
+        organisation: caller_organisation(&state, principal.as_ref()),
     };
 
-    let op = resp.extensions().get::<AuditOpId>().copied();
-    let principal = resp.extensions().get::<Principal>().cloned();
-    let object = resp.extensions().get::<AuditObject>().cloned();
     // Republished by the tenant-resolution middleware, whose task-local scope
     // has exited by the time this outermost layer runs.
     let tenant = resp
