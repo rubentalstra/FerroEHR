@@ -624,23 +624,10 @@ reported: ${dump_log:0:300}"
     -d "${PG_INIT_DB:-ferroehr}" \
     -c "DROP DATABASE IF EXISTS $restored" \
     -c "CREATE DATABASE $restored OWNER ${PG_INIT_USER:-ferroehr}" 2>&1)"
-  # The restore runs the way an operator's would: a client container on the
-  # stack's network with the two dump directories mounted. Copying the files
-  # INTO the database container instead would restore from a path no runbook
-  # uses, and its /tmp is a tmpfs the copy does not reach.
-  local restore_log
-  restore_log="$(FERROEHR_BACKUP_CLINICAL_DIR="$dumps/clinical" \
-    FERROEHR_BACKUP_DEMOGRAPHIC_DIR="$dumps/demographic" \
-    dc -f docker-compose.yml --profile backup run --rm --quiet-pull \
-      --entrypoint /bin/sh -v "$dumps:/dumps:ro" ferroehr-backup-clinical -c \
-      "pg_restore --host=ferroehr-postgres --username=${PG_INIT_USER:-ferroehr} \
-         --dbname=$restored --no-owner /dumps/clinical/$(basename "$clinical_dump") 2>&1;
-       pg_restore --host=ferroehr-postgres --username=${PG_INIT_USER:-ferroehr} \
-         --dbname=$restored --no-owner /dumps/demographic/$(basename "$demographic_dump") 2>&1" 2>&1)"
   # The DSN is taken from the SERVER CONTAINER's own environment and its
-  # database name swapped, rather than rebuilt from the compose defaults: this
-  # probe then authenticates with the credential the stack actually runs, and
-  # no credential literal lives in this harness.
+  # database name swapped, rather than rebuilt from the compose defaults: the
+  # restore and the verify then use the credential the stack actually runs,
+  # and no credential literal lives in this harness.
   local restored_dsn verify_out
   restored_dsn="$(docker inspect --format '{{range .Config.Env}}{{println .}}{{end}}' \
     "$(dc ps -q ferroehr)" 2>/dev/null | sed -n 's/^FERROEHR__DB__URL=//p')"
@@ -651,14 +638,28 @@ reported: ${dump_log:0:300}"
     return
   fi
   restored_dsn="${restored_dsn%/*}/$restored"
+  # The restore runs the way an operator's would: a client container on the
+  # stack's network with the dump directory mounted, addressed by DSN. It is
+  # the same `docker run` shape the table-of-contents read above uses, because
+  # that one demonstrably reaches these files.
+  local restore_log network
+  network="$(docker inspect \
+    --format '{{range $net, $_ := .NetworkSettings.Networks}}{{$net}}{{end}}' \
+    "$(dc ps -q ferroehr-postgres)" 2>/dev/null)"
+  restore_log="$(docker run --rm --network "$network" -v "$dumps:/dumps:ro" \
+    "${FERROEHR_POSTGRES_IMAGE:-ghcr.io/rubentalstra/ferroehr-postgres:4.1.1}" \
+    sh -c "pg_restore --dbname='$restored_dsn' --no-owner \
+             '/dumps/clinical/$(basename "$clinical_dump")';
+           pg_restore --dbname='$restored_dsn' --no-owner \
+             '/dumps/demographic/$(basename "$demographic_dump")'" 2>&1)"
   if verify_out="$(dc exec -T -e FERROEHR__DB__URL="$restored_dsn" -e FERROEHR__DB__MIGRATE=verify \
       ferroehr /usr/local/bin/ferroehr db verify 2>&1)"; then
     :
   else
     probe_fail "the restored database passes \`ferroehr db verify\`" \
       "${verify_out:0:400}" \
-      "create: ${create_log:0:150} || restore: $(printf '%s' "$restore_log" \
-        | grep -vE '^time="|^ *Container |orphan containers' | tr '\n' ' ' | tail -c 250)"
+      "create: ${create_log:0:150} || network: '${network}' || restore: $(printf '%s' \
+        "$restore_log" | tr '\n' ' ' | tail -c 250)"
   fi
   probe_done
 
