@@ -553,6 +553,30 @@ pub(crate) async fn is_visible(h: &Harness, css: &str) -> bool {
     }
 }
 
+/// Whether ANY element matching `css` is displayed.
+///
+/// [`is_visible`] answers for the FIRST match, which is the wrong question
+/// about a dialog: a page mounts one surface per dialog and thaw's `Teleport`
+/// never unmounts one after its first open, so a journey that has opened two
+/// leaves a closed surface ahead of the open one in document order. "Is a
+/// modal up" has to look at all of them or it answers about the wrong one.
+pub(crate) async fn is_any_visible(h: &Harness, css: &str) -> bool {
+    let found = match h.driver.find_all(By::Css(css)).await {
+        Ok(found) => found,
+        Err(error) if is_absence(&error) => return false,
+        Err(error) => panic!("the WebDriver could not answer `find_all({css})`: {error}"),
+    };
+    for element in found {
+        match element.is_displayed().await {
+            Ok(true) => return true,
+            Ok(false) => {}
+            Err(error) if is_absence(&error) => {}
+            Err(error) => panic!("the WebDriver could not answer `is_displayed({css})`: {error}"),
+        }
+    }
+    false
+}
+
 /// thaw's modal surface — the panel itself.
 const DIALOG_SURFACE: &str = ".thaw-dialog-surface";
 
@@ -581,7 +605,7 @@ const DIALOG_ENTERING: &str = ".thaw-dialog-surface.fade-in-scale-up-transition-
 /// # Panics
 /// When a backdrop is still up after 15 s.
 pub(crate) async fn clear_dialog_overlay(h: &Harness) {
-    if is_visible(h, DIALOG_SURFACE).await {
+    if is_any_visible(h, DIALOG_SURFACE).await {
         drop(
             h.driver
                 .action_chain()
@@ -593,29 +617,34 @@ pub(crate) async fn clear_dialog_overlay(h: &Harness) {
     wait_hidden(h, DIALOG_BACKDROP).await;
 }
 
-/// Wait until the modal is open AND STILL: visible, with its enter transition
-/// finished.
+/// Wait until the dialog holding `control_css` is open AND STILL: that control
+/// visible, with no dialog anywhere mid-enter.
 ///
-/// Presence is not openness — thaw's `Teleport` mounts the dialog subtree on
-/// the first open and never unmounts it, so a later open finds the surface
-/// already in the DOM ([`is_visible`]). Visibility alone is not readiness
-/// either: a control clicked while the surface is still scaling up is clicked
-/// at coordinates it has already left, which `WebDriver` reports as a
-/// perfectly successful click on nothing. [`DIALOG_ENTERING`] is the
-/// transition's own in-flight marker, so "visible and not entering" is
+/// Takes a control INSIDE the target dialog rather than matching the surface
+/// class, because a page mounts one surface per dialog and thaw's `Teleport`
+/// mounts each subtree on its first open and never unmounts it. A journey that
+/// uploads and then deletes leaves two surfaces in the DOM, and a bare
+/// `.thaw-dialog-surface` match answers for whichever comes first — which is
+/// the CLOSED one, so the wait could never be satisfied.
+///
+/// Visibility alone is not readiness either: a control clicked while the
+/// surface is still scaling up is clicked at coordinates it has already left,
+/// which `WebDriver` reports as a perfectly successful click on nothing.
+/// [`DIALOG_ENTERING`] is the transition's own in-flight marker and is checked
+/// across the page, so "this control is visible and nothing is entering" is
 /// observable rather than timed.
 ///
 /// # Panics
 /// When the dialog is not open and settled within 15 s.
-pub(crate) async fn wait_dialog_settled(h: &Harness) {
+pub(crate) async fn wait_dialog_settled(h: &Harness, control_css: &str) {
     for _ in 0..75 {
-        if is_visible(h, DIALOG_SURFACE).await && !is_present(h, DIALOG_ENTERING).await {
+        if is_visible(h, control_css).await && !is_present(h, DIALOG_ENTERING).await {
             return;
         }
         tokio::time::sleep(Duration::from_millis(200)).await;
     }
     let url = h.driver.current_url().await.expect("current url");
-    panic!("the dialog never became open and settled (at {url})");
+    panic!("the dialog holding `{control_css}` never became open and settled (at {url})");
 }
 
 /// The submit button of the Template Manager's one upload dialog.
@@ -731,7 +760,7 @@ pub(crate) async fn upload_via_dialog(h: &Harness, path: &str) {
         .click()
         .await
         .expect("open the template upload dialog");
-    wait_dialog_settled(h).await;
+    wait_dialog_settled(h, UPLOAD_SUBMIT).await;
     h.wait_css("#template-upload-picker input[type=file]")
         .await
         .send_keys(path)
@@ -918,7 +947,7 @@ pub(crate) async fn click_until_css(h: &Harness, css: &str, target_css: &str) ->
 /// When it is still visible after 15 s.
 pub(crate) async fn wait_hidden(h: &Harness, css: &str) {
     for _ in 0..75 {
-        if !is_visible(h, css).await {
+        if !is_any_visible(h, css).await {
             return;
         }
         tokio::time::sleep(Duration::from_millis(200)).await;
@@ -1065,7 +1094,7 @@ pub(crate) async fn confirm_in_dialog(h: &Harness, trigger_css: &str, confirm_id
         // swallowed by the modal and surface as `ElementClickIntercepted` — a
         // confusing report for what is really "the dialog opened, but not with
         // the confirm id this call expects". Stop and let the assertion say so.
-        if attempt > 0 && is_visible(h, ".thaw-dialog-surface").await {
+        if attempt > 0 && is_any_visible(h, DIALOG_SURFACE).await {
             break;
         }
         trigger.click().await.expect("open the confirmation dialog");
@@ -1089,7 +1118,7 @@ pub(crate) async fn confirm_in_dialog(h: &Harness, trigger_css: &str, confirm_id
     // The confirm button is visible from the first frame of the 250 ms enter
     // transition, and a click landing mid-scale can miss the moving target
     // without the driver reporting anything (#3200).
-    wait_dialog_settled(h).await;
+    wait_dialog_settled(h, &confirm_css).await;
     h.wait_css(&confirm_css)
         .await
         .click()
