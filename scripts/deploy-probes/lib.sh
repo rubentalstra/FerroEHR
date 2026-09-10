@@ -61,7 +61,7 @@ probe_done() {
   PROBE_ROWS+=("$(printf '{"id":"%s","state":"%s","outcome":"%s","layer":"%s","issue":"%s","title":"%s"}' \
     "$PROBE_ID" "$PROBE_STATE" "$outcome" \
     "$([[ "$outcome" = fail ]] && printf '%s' "$PROBE_LAYER" || printf '')" \
-    "$PROBE_ISSUE" "$PROBE_TITLE")")
+    "$PROBE_ISSUE" "$(json_string "$PROBE_TITLE")")")
 }
 
 # The failure path: name the layer, quote what was actually seen.
@@ -101,9 +101,27 @@ assert_not_contains() {
   esac
 }
 
+# One JSON string value: the control characters and quoting a record must
+# escape to stay parseable.
+#
+# Every reason in this harness is written as a wrapped shell string, so it
+# carries literal newlines — interpolated raw, they made the emitted record
+# invalid JSON, which is what a record is FOR (found 2026-09-10 while adding
+# the backup family: `jq` refused both the artifact and the committed
+# docs/conformance/deployment/compose.json). Newlines and the runs of
+# indentation after them collapse to one space; quotes, backslashes and tabs
+# are escaped (RFC 8259 §7).
+json_string() {
+  printf '%s' "$1" | tr -d '\r' | awk '
+    { gsub(/\\/, "\\\\"); gsub(/"/, "\\\""); gsub(/\t/, " ");
+      sub(/^[[:space:]]+/, ""); printf "%s%s", (NR > 1 ? " " : ""), $0 }
+  '
+}
+
 # uncovered <what> <why> — the honest half of the report.
 uncovered() {
-  PROBE_UNCOVERED+=("$(printf '{"what":"%s","why":"%s"}' "$1" "$2")")
+  PROBE_UNCOVERED+=("$(printf '{"what":"%s","why":"%s"}' \
+    "$(json_string "$1")" "$(json_string "$2")")")
   PROBE_SKIP=$((PROBE_SKIP + 1))
 }
 

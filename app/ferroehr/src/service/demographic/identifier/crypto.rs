@@ -29,12 +29,22 @@
 //!   unkeyed hash of a nine-digit number would not (the whole space is
 //!   enumerable in seconds).
 //!
-//! Keys are per tenant, derived from one configured root key by
+//! Keys are per DOMAIN and per tenant, derived from one configured root key by
 //! HMAC-SHA-256 over a labelled context — the NIST SP 800-108 KDF-in-counter
 //! construction with a single block, which is all a 256-bit subkey needs. One
 //! key in configuration therefore yields a distinct cipher key and a distinct
 //! lookup key per tenant, and a tenant's ciphertexts stay unreadable with
 //! another tenant's subkey.
+//!
+//! The domain is bound in for the same reason the tenant is. The clinical and
+//! demographic sides are separate pseudonymisation domains (GDPR Art. 4(5);
+//! EDPB Guidelines 01/2025 §2), and a separation that holds in the schema and
+//! in the database roles but shares one cipher key is one key disclosure away
+//! from collapsing. With [`KeyDomain`] in the derivation context, a subkey
+//! derived for the clinical domain cannot open a demographic record even when
+//! both are derived from the same configured root — which is what makes a
+//! per-schema backup a genuinely separate artefact rather than two files under
+//! one key.
 
 use aes_gcm::aead::{Aead, Payload};
 use aes_gcm::{Aes256Gcm, Key, KeyInit, Nonce};
@@ -55,6 +65,43 @@ const CIPHER_KEY_LABEL: &str = "ferroehr:national-identifier:cipher:v1";
 /// digest is not the key that decrypts: a component that only needs to look an
 /// identifier up never has to hold the one that opens the ciphertext.
 const LOOKUP_KEY_LABEL: &str = "ferroehr:national-identifier:lookup:v1";
+
+/// The pseudonymisation domain a subkey belongs to.
+///
+/// The three domains are the ones the storage layer separates: the clinical
+/// record, the identities of its subjects, and the map between them. Binding
+/// the domain into the derivation makes a subkey usable in exactly one of them,
+/// so a key that escapes with one domain's backup opens nothing in another.
+///
+/// **No openEHR spec governs this — our own design/extension.** The obligation
+/// is GDPR Art. 4(5) and Art. 32(1)(a)
+/// (<https://eur-lex.europa.eu/eli/reg/2016/679/oj>) as the EDPB reads them in
+/// Guidelines 01/2025 §2: a pseudonymisation domain is defined by who can
+/// re-identify within it.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum KeyDomain {
+    /// The clinical record (`ehr`, `cold`).
+    Ehr,
+    /// The identities of record subjects (`demographic`, `cold_demographic`).
+    Demographic,
+    /// The party-to-EHR resolve map.
+    Linkage,
+}
+
+impl KeyDomain {
+    /// The domain's stable name in a derivation context.
+    ///
+    /// These strings are key material inputs, so they never change: renaming
+    /// one silently re-derives every subkey in that domain.
+    #[must_use]
+    pub const fn as_str(self) -> &'static str {
+        match self {
+            KeyDomain::Ehr => "ehr",
+            KeyDomain::Demographic => "demographic",
+            KeyDomain::Linkage => "linkage",
+        }
+    }
+}
 
 /// What went wrong protecting or resolving an identifier.
 ///
@@ -104,13 +151,13 @@ impl RootKey {
         Ok(Self(secrecy::SecretBox::new(Box::new(bytes))))
     }
 
-    /// Derive the per-tenant subkey for one labelled purpose.
+    /// Derive the per-domain, per-tenant subkey for one labelled purpose.
     ///
     /// SP 800-108 KDF in counter mode with HMAC-SHA-256 as the PRF, one block:
-    /// `PRF(root, 0x00000001 || label || 0x00 || tenant || L)`. One block is
-    /// the whole output because the derived key is 256 bits, exactly the PRF's
-    /// width.
-    fn subkey(&self, label: &str, tenant: Uuid) -> [u8; 32] {
+    /// `PRF(root, 0x00000001 || label || 0x00 || domain || 0x00 || tenant || L)`.
+    /// One block is the whole output because the derived key is 256 bits,
+    /// exactly the PRF's width.
+    fn subkey(&self, label: &str, domain: KeyDomain, tenant: Uuid) -> [u8; 32] {
         // The PRF is keyed with a fixed-size root key, so the construction
         // cannot fail on key length.
         #[expect(
@@ -123,6 +170,8 @@ impl RootKey {
                 .expect("HMAC should accept a 32-byte key");
         mac.update(&1_u32.to_be_bytes());
         mac.update(label.as_bytes());
+        mac.update(&[0x00]);
+        mac.update(domain.as_str().as_bytes());
         mac.update(&[0x00]);
         mac.update(tenant.as_bytes());
         mac.update(&256_u32.to_be_bytes());
@@ -142,12 +191,16 @@ pub struct TenantKeys {
 }
 
 impl TenantKeys {
-    /// Derive both subkeys for `tenant` from `root`.
+    /// Derive both subkeys for one domain and tenant from `root`.
+    ///
+    /// The domain is part of the derivation, so the same root key yields
+    /// unrelated subkeys in the clinical and demographic domains and neither
+    /// can read the other's records.
     #[must_use]
-    pub fn derive(root: &RootKey, tenant: Uuid) -> Self {
+    pub fn derive(root: &RootKey, domain: KeyDomain, tenant: Uuid) -> Self {
         Self {
-            cipher: root.subkey(CIPHER_KEY_LABEL, tenant),
-            lookup: root.subkey(LOOKUP_KEY_LABEL, tenant),
+            cipher: root.subkey(CIPHER_KEY_LABEL, domain, tenant),
+            lookup: root.subkey(LOOKUP_KEY_LABEL, domain, tenant),
         }
     }
 
@@ -252,7 +305,7 @@ mod tests {
     //! running the elfproef forward over a chosen prefix; no register issues
     //! them.
 
-    use super::{CryptoError, RootKey, TenantKeys};
+    use super::{CryptoError, KeyDomain, RootKey, TenantKeys};
     use uuid::Uuid;
 
     const ROOT: &str = "000102030405060708090a0b0c0d0e0f101112131415161718191a1b1c1d1e1f";
@@ -269,7 +322,7 @@ mod tests {
 
     #[test]
     fn a_sealed_identifier_opens_to_the_same_value() {
-        let keys = TenantKeys::derive(&root(ROOT), tenant());
+        let keys = TenantKeys::derive(&root(ROOT), KeyDomain::Demographic, tenant());
         let (nonce, ciphertext) = keys.seal("nl-bsn", tenant(), VALUE).expect("seal");
         assert_ne!(
             ciphertext.as_slice(),
@@ -286,7 +339,7 @@ mod tests {
     fn every_seal_of_one_value_differs() {
         // A deterministic ciphertext would leak equality of identifiers across
         // records, which is exactly what the separate lookup digest is for.
-        let keys = TenantKeys::derive(&root(ROOT), tenant());
+        let keys = TenantKeys::derive(&root(ROOT), KeyDomain::Demographic, tenant());
         let (first_nonce, first) = keys.seal("nl-bsn", tenant(), VALUE).expect("seal");
         let (second_nonce, second) = keys.seal("nl-bsn", tenant(), VALUE).expect("seal");
         assert_ne!(first, second, "two seals of one value must differ");
@@ -295,10 +348,11 @@ mod tests {
 
     #[test]
     fn a_record_does_not_open_under_another_key_tenant_or_scheme() {
-        let keys = TenantKeys::derive(&root(ROOT), tenant());
+        let keys = TenantKeys::derive(&root(ROOT), KeyDomain::Demographic, tenant());
         let (nonce, ciphertext) = keys.seal("nl-bsn", tenant(), VALUE).expect("seal");
 
-        let other_deployment = TenantKeys::derive(&root(OTHER_ROOT), tenant());
+        let other_deployment =
+            TenantKeys::derive(&root(OTHER_ROOT), KeyDomain::Demographic, tenant());
         assert!(
             matches!(
                 other_deployment.open("nl-bsn", tenant(), &nonce, &ciphertext),
@@ -308,7 +362,7 @@ mod tests {
         );
 
         let other_tenant_id = Uuid::from_u128(7);
-        let other_tenant = TenantKeys::derive(&root(ROOT), other_tenant_id);
+        let other_tenant = TenantKeys::derive(&root(ROOT), KeyDomain::Demographic, other_tenant_id);
         assert!(
             matches!(
                 other_tenant.open("nl-bsn", other_tenant_id, &nonce, &ciphertext),
@@ -336,8 +390,56 @@ mod tests {
     }
 
     #[test]
+    fn the_clinical_domain_key_cannot_read_a_demographic_record() {
+        // The property #3157 asks for: even where an operator configures ONE
+        // root key, the clinical domain's key material opens nothing in the
+        // demographic domain, so a clinical backup and a demographic backup
+        // are separate artefacts under separate keys rather than two files.
+        let demographic = TenantKeys::derive(&root(ROOT), KeyDomain::Demographic, tenant());
+        let clinical = TenantKeys::derive(&root(ROOT), KeyDomain::Ehr, tenant());
+        let linkage = TenantKeys::derive(&root(ROOT), KeyDomain::Linkage, tenant());
+        let (nonce, ciphertext) = demographic.seal("nl-bsn", tenant(), VALUE).expect("seal");
+
+        for (other, domain) in [(&clinical, "clinical"), (&linkage, "linkage")] {
+            assert!(
+                matches!(
+                    other.open("nl-bsn", tenant(), &nonce, &ciphertext),
+                    Err(CryptoError::Open)
+                ),
+                "the {domain} domain's key must not open a demographic record"
+            );
+            assert_ne!(
+                other.lookup_digest("nl-bsn", VALUE),
+                demographic.lookup_digest("nl-bsn", VALUE),
+                "the {domain} domain must not be able to reproduce the lookup digest either, \
+                 which is what would let it ask whether a known identifier is present"
+            );
+        }
+
+        // And the same-root/same-domain derivation is stable, so the refusals
+        // above are the domain doing the work rather than a derivation that
+        // never reproduces anything.
+        let again = TenantKeys::derive(&root(ROOT), KeyDomain::Demographic, tenant());
+        assert_eq!(
+            again
+                .open("nl-bsn", tenant(), &nonce, &ciphertext)
+                .expect("the demographic domain's own key opens it"),
+            VALUE
+        );
+    }
+
+    #[test]
+    fn each_domain_name_is_its_own_derivation_context() {
+        // A rename would silently re-derive every subkey in that domain, so the
+        // strings are pinned here as the key-material inputs they are.
+        assert_eq!(KeyDomain::Ehr.as_str(), "ehr");
+        assert_eq!(KeyDomain::Demographic.as_str(), "demographic");
+        assert_eq!(KeyDomain::Linkage.as_str(), "linkage");
+    }
+
+    #[test]
     fn a_tampered_ciphertext_is_refused() {
-        let keys = TenantKeys::derive(&root(ROOT), tenant());
+        let keys = TenantKeys::derive(&root(ROOT), KeyDomain::Demographic, tenant());
         let (nonce, mut ciphertext) = keys.seal("nl-bsn", tenant(), VALUE).expect("seal");
         ciphertext[0] ^= 0x01;
         assert!(
@@ -351,7 +453,7 @@ mod tests {
 
     #[test]
     fn the_lookup_digest_is_deterministic_keyed_and_scheme_bound() {
-        let keys = TenantKeys::derive(&root(ROOT), tenant());
+        let keys = TenantKeys::derive(&root(ROOT), KeyDomain::Demographic, tenant());
         let digest = keys.lookup_digest("nl-bsn", VALUE);
         assert_eq!(
             digest,
@@ -366,12 +468,14 @@ mod tests {
         );
         assert_ne!(
             digest,
-            TenantKeys::derive(&root(OTHER_ROOT), tenant()).lookup_digest("nl-bsn", VALUE),
+            TenantKeys::derive(&root(OTHER_ROOT), KeyDomain::Demographic, tenant())
+                .lookup_digest("nl-bsn", VALUE),
             "the digest is keyed: another deployment cannot reproduce it"
         );
         assert_ne!(
             digest,
-            TenantKeys::derive(&root(ROOT), Uuid::from_u128(7)).lookup_digest("nl-bsn", VALUE),
+            TenantKeys::derive(&root(ROOT), KeyDomain::Demographic, Uuid::from_u128(7))
+                .lookup_digest("nl-bsn", VALUE),
             "another tenant cannot reproduce it either"
         );
         assert!(
@@ -384,7 +488,7 @@ mod tests {
     fn the_cipher_and_lookup_subkeys_are_different_keys() {
         // The lookup key is handed to components that must search without being
         // able to decrypt, so the two derivations must not coincide.
-        let keys = TenantKeys::derive(&root(ROOT), tenant());
+        let keys = TenantKeys::derive(&root(ROOT), KeyDomain::Demographic, tenant());
         assert_ne!(
             keys.cipher, keys.lookup,
             "one label per purpose, so a searcher never holds the opener"

@@ -17,7 +17,9 @@ use uuid::Uuid;
 
 use crate::service::demographic::identifier::body;
 use crate::service::demographic::identifier::config::IdentifierProtectionConfig;
-use crate::service::demographic::identifier::crypto::{CryptoError, RootKey, TenantKeys};
+use crate::service::demographic::identifier::crypto::{
+    CryptoError, KeyDomain, RootKey, TenantKeys,
+};
 use crate::service::demographic::identifier::store::{IdentifierStore, StoreError};
 
 /// The national-identifier protection engine.
@@ -104,7 +106,7 @@ impl IdentifierProtection {
         if found.is_empty() {
             return Ok(0);
         }
-        let keys = TenantKeys::derive(&self.root, tenant);
+        let keys = TenantKeys::derive(&self.root, KeyDomain::Demographic, tenant);
         let mut references = Vec::with_capacity(found.len());
         for identifier in &found {
             let row = self
@@ -129,7 +131,7 @@ impl IdentifierProtection {
     /// held and is no longer.
     pub async fn expand(&self, body: &mut Value) -> Result<usize, StoreError> {
         let tenant = current_tenant();
-        let keys = TenantKeys::derive(&self.root, tenant);
+        let keys = TenantKeys::derive(&self.root, KeyDomain::Demographic, tenant);
         let references = referenced(body);
         let mut values = Vec::with_capacity(references.len());
         for (pointer, row) in references {
@@ -147,7 +149,7 @@ impl IdentifierProtection {
     /// [`StoreError`] when the resolution query fails.
     pub async fn resolve(&self, scheme: &str, value: &str) -> Result<Option<Uuid>, StoreError> {
         let tenant = current_tenant();
-        let keys = TenantKeys::derive(&self.root, tenant);
+        let keys = TenantKeys::derive(&self.root, KeyDomain::Demographic, tenant);
         self.store.resolve(&keys, tenant, scheme, value).await
     }
 }

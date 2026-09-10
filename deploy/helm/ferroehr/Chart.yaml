@@ -19,7 +19,7 @@ type: application
 # A published OCI version is immutable by refusal rather than by the registry —
 # `helm push` over an existing tag replaces it silently — so a correction always
 # ships as a NEW version and the published one stands as it was.
-version: 7.1.0
+version: 7.2.0
 # The DEFAULT container image tag (overridable via image.tag). Equals the
 # workspace version in Cargo.toml, bumped in the release PR beside the
 # docker-compose.yml image tags — one version sweep, the compose treatment
@@ -146,10 +146,11 @@ annotations:
   # ONLY images this chart actually deploys. Artifact Hub scans every entry here
   # and attributes the findings to this package, so listing an image the chart
   # never installs reports us for software no user runs. `ferroehr-postgres` was
-  # listed and removed: the chart takes an EXTERNAL DSN and provisions no
-  # database, so an upstream postgres image's CVEs were being attributed to a
-  # chart that never installs one. The `whitelisted` flag would silence such a
-  # scan while leaving the false claim in place, so it is deliberately not used.
+  # once listed for a database this chart has never provisioned, and removed for
+  # exactly that reason; it is listed again because the backup CronJobs run
+  # pg_dump FROM it when `backup.enabled` is set, which makes it an image the
+  # chart installs. The `whitelisted` flag would silence such a scan while
+  # leaving a false claim in place, so it is deliberately not used.
   artifacthub.io/images: |
     - name: ferroehr
       image: ghcr.io/rubentalstra/ferroehr:4.1.1
@@ -163,6 +164,14 @@ annotations:
     # install carries, and it is listed so that surface is scanned.
     - name: ferroehr-viewer
       image: ghcr.io/rubentalstra/ferroehr-viewer:4.1.1
+      platforms:
+        - linux/amd64
+        - linux/arm64
+    # The per-domain backup CronJobs' image, deployed only when
+    # `backup.enabled` is set: it carries pg_dump. The chart still provisions no
+    # database — this image runs as a client, on a schedule, and exits.
+    - name: ferroehr-postgres
+      image: ghcr.io/rubentalstra/ferroehr-postgres:4.1.1
       platforms:
         - linux/amd64
         - linux/arm64

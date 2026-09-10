@@ -17,6 +17,26 @@ workflow refuses a tag that has no matching section here.
 
 ### Added
 
+- **Backups are taken per pseudonymisation domain** (#3157). A single
+  `pg_dump` of the whole database produces one file holding both the
+  pseudonymised clinical record and the identities of its subjects, and
+  whoever can read that file can re-identify every record in it. The Compose
+  stack gained an opt-in `backup` profile with one job per domain, writing to
+  two separate directories (`FERROEHR_BACKUP_CLINICAL_DIR`,
+  `FERROEHR_BACKUP_DEMOGRAPHIC_DIR`), and the operations page carries the
+  `pg_dump --schema` recipe, the restore procedure, and the two properties no
+  configuration can enforce for you: different access control on the two
+  targets, and a credential per job that reaches one domain. Point-in-time
+  recovery stays instance-wide and the page says so. A backup credential needs
+  `BYPASSRLS`: every tenant-scoped table carries `FORCE ROW LEVEL SECURITY`, so
+  `pg_dump` refuses a table it would read through a policy and the application
+  role cannot take a backup at all — and `--enable-row-security`, which makes
+  the dump succeed, quietly writes a single tenant's rows. The chart therefore
+  requires a backup Secret per domain and refuses to render without one.
+  `ferroehr db verify` is the restore gate — it issues no DDL and refuses a database whose grants let
+  a runtime role read across the boundary, which is the same check the server
+  runs at boot.
+
 - **The deployment artifacts can reach the demographic role split** (#3179).
   The chart gained `database.demographicExistingSecret` (and its
   `demographicExistingSecretKey` / inline `demographicUrl` siblings), mounted
@@ -194,6 +214,16 @@ workflow refuses a tag that has no matching section here.
   anything. `.claude/rules/personal-data.md` carries the rules for agents.
 
 ### Changed
+
+- **A key derived for one pseudonymisation domain opens nothing in another**
+  (#3157). The per-tenant subkeys protecting national identifiers now take the
+  domain as part of their derivation context, so the clinical domain's key
+  material cannot decrypt a demographic record or reproduce its lookup digest
+  even when both derive from the same configured root key. That is what makes
+  a per-schema backup a separate artefact under a separate key rather than two
+  files under one. `[demographic.identifier_protection]` has not shipped in a
+  release yet, so no stored data is affected; a deployment that enabled it on
+  an unreleased build re-seals its identifiers.
 
 - **The Rust toolchain moves to 1.98.1 and the MSRV to 1.97.** 1.98.1 is a
   point release for a vtable-generation miscompilation, which is reason enough

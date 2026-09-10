@@ -256,6 +256,93 @@ Enable WAL archiving and point-in-time recovery from day one (pgBackRest or a
 managed PITR), because a CDR's data is not reconstructible. Clinical and audit
 tables are never `UNLOGGED`. Test your restore, not just your backup.
 
+### Dump each domain separately
+
+A logical backup is where the two pseudonymisation domains are easiest to
+re-join by accident. One `pg_dump` of the whole database produces a single file
+holding both the pseudonymised clinical record and the identities of its
+subjects, and whoever can read that file can re-identify every record in it —
+which is the separation the schema split and the database roles exist to
+maintain. Dump per schema instead, into targets with different access control:
+
+```bash
+# The clinical domain
+pg_dump --dbname="$CLINICAL_DSN" --format=custom --no-owner \
+  --schema=ehr --schema=cold --schema=ext --schema=audit \
+  --file=/backups/clinical/clinical-$(date -u +%Y%m%dT%H%M%SZ).dump
+
+# The identities, into a different directory, owned by a different group
+pg_dump --dbname="$DEMOGRAPHIC_DSN" --format=custom --no-owner \
+  --schema=demographic --schema=cold_demographic \
+  --file=/backups/demographic/demographic-$(date -u +%Y%m%dT%H%M%SZ).dump
+```
+
+Both examples ship. In Compose they are the opt-in `backup` profile:
+
+```bash
+docker compose --profile backup run --rm ferroehr-backup-clinical
+docker compose --profile backup run --rm ferroehr-backup-demographic
+```
+
+Set `FERROEHR_BACKUP_CLINICAL_DIR` and `FERROEHR_BACKUP_DEMOGRAPHIC_DIR` to the
+two targets; they default to `./backups/clinical` and `./backups/demographic`.
+Run it as yourself — `FERROEHR_BACKUP_USER="$(id -u):$(id -g)"` — and the dump
+lands owned by you. Left unset, the job runs as root inside the container and
+keeps one capability, `DAC_OVERRIDE`, because that is what writing a directory
+it does not own actually requires: the container drops every other capability,
+and without this one uid 0 is just another user against your directory's
+permission bits. Everything else stays off — no privilege escalation, read-only
+root filesystem.
+Under Kubernetes the chart renders one `CronJob` per domain — see the chart's
+`backup` values.
+
+> [!WARNING]
+> **A backup credential needs `BYPASSRLS`, and the application role does not
+> have it.** Every tenant-scoped table carries `FORCE ROW LEVEL SECURITY`, so
+> the policy applies to the table's owner too, and `pg_dump` refuses a table it
+> would have to read through one: *"query would be affected by row-level
+> security policy"*. That refusal is the safe outcome. The unsafe one is
+> `--enable-row-security`, which makes the dump succeed and quietly contain a
+> single tenant's rows — never use it for a backup. Give the backup job a role
+> with `BYPASSRLS` (or a superuser), read-only on its own domain.
+
+Two further properties are yours to arrange, because no configuration file can
+enforce them: the two targets carry **different** access control, and the
+credential each job uses reaches **one** domain. Give the demographic job the demographic
+DSN once you run two ([Deploying](installation/kubernetes.md)); with a single
+credential you have separated the artefacts but not the authority to produce
+them.
+
+> [!NOTE]
+> Point-in-time recovery stays instance-wide. Both domains live in one cluster,
+> so a WAL archive covers them together and a recovery target restores them
+> together. The separation this section is about is the logical dump.
+
+### Restoring
+
+A restore is not finished when `pg_restore` exits. The grants are the
+boundary — a database whose roles came back wrong is a database where the
+clinical role can read the identities — so re-apply the role grants before the
+server starts, then let the server check them:
+
+```bash
+createdb ferroehr_restored
+pg_restore --dbname=ferroehr_restored --no-owner clinical-….dump
+pg_restore --dbname=ferroehr_restored --no-owner demographic-….dump
+# then, before anything serves traffic:
+ferroehr db verify
+```
+
+`ferroehr db verify` issues no DDL. It checks that the database carries exactly
+this build's migrations and that no runtime role can read across the domain
+boundary, exiting non-zero when either is untrue — the same check the server
+runs at boot, which is why a server pointed at a badly restored database
+refuses to start rather than serving from it.
+
+Restoring only one domain is a supported outcome, not a mistake: a demographic
+dump restored on its own gives a database with identities and no clinical
+record, which is what a rehearsal of the identity domain's recovery looks like.
+
 ## Rotating the national-identifier key
 
 Only relevant when `[demographic.identifier_protection]` is on. With it on, a
@@ -297,7 +384,10 @@ The procedure:
 
 A per-tenant key is derived from the root key rather than stored, so adding a
 tenant needs no key management, and rotating the root rotates every tenant's
-subkeys together.
+subkeys together. The pseudonymisation domain is part of that derivation too:
+a subkey derived for the clinical domain opens nothing in the demographic one,
+so the per-schema backups above are separate artefacts under separate keys even
+where one root key is configured.
 
 ## The container image and pod hardening
 

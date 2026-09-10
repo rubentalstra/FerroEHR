@@ -6,8 +6,9 @@
 #   1. helm lint      — default + all-features value sets (must be clean)
 #   2. helm template  — render both; assert the output is valid multi-doc YAML
 #   3. security gate   — assert the Kubernetes Pod Security Standards
-#                        "Restricted" fields are pinned in the rendered
-#                        Deployment (runAsNonRoot, seccompProfile
+#                        "Restricted" fields are pinned on EVERY container of
+#                        EVERY rendered workload — Deployment, Job and CronJob
+#                        alike (runAsNonRoot, seccompProfile
 #                        RuntimeDefault, drop ALL caps,
 #                        allowPrivilegeEscalation:false), plus our
 #                        readOnlyRootFilesystem hardening
@@ -414,6 +415,11 @@ refusal_registry_gate() {
     "networkpolicy.yaml|networkPolicy.ingressAllowAll=false with an empty|${base}|--set networkPolicy.ingressAllowAll=false|networkPolicy.ingressFrom;hardening-network-policy.md"
     "networkpolicy.yaml|with no destination for the database|${base}|--set networkPolicy.egress.enabled=true|networkPolicy.egress.database.to;hardening-network-policy.md"
     "viewer.yaml|viewer.networkPolicy.ingressAllowAll=false with an empty|${viewer}|--set viewer.networkPolicy.ingressAllowAll=false|viewer.networkPolicy.ingressFrom;hardening-network-policy.md"
+    "backup-cronjob.yaml|backup.clinical.persistentVolumeClaim is empty|${base}|--set backup.enabled=true --set backup.demographic.persistentVolumeClaim=demographic-dumps|backup.clinical.persistentVolumeClaim"
+    "backup-cronjob.yaml|backup.demographic.persistentVolumeClaim is empty|${base}|--set backup.enabled=true --set backup.clinical.persistentVolumeClaim=clinical-dumps|backup.demographic.persistentVolumeClaim"
+    "backup-cronjob.yaml|name the same claim|${base}|--set backup.enabled=true --set backup.clinical.persistentVolumeClaim=one-claim --set backup.demographic.persistentVolumeClaim=one-claim|backup.clinical.persistentVolumeClaim;backup.demographic.persistentVolumeClaim"
+    "backup-cronjob.yaml|backup.clinical.existingSecret is empty|${base}|--set backup.enabled=true --set backup.clinical.persistentVolumeClaim=clinical-dumps --set backup.demographic.persistentVolumeClaim=demographic-dumps|backup.clinical.existingSecret;BYPASSRLS"
+    "backup-cronjob.yaml|backup.demographic.existingSecret is empty|${base}|--set backup.enabled=true --set backup.clinical.persistentVolumeClaim=clinical-dumps --set backup.demographic.persistentVolumeClaim=demographic-dumps --set backup.clinical.existingSecret=clinical-backup-dsn|backup.demographic.existingSecret;BYPASSRLS"
   )
 
   local record values probe wants want out refused=0
@@ -533,6 +539,11 @@ schema_gate() {
     "metrics.serviceMonitor.interval=30|/metrics/serviceMonitor/interval"
     "networkPolicy.ingressAllowAll=maybe|/networkPolicy/ingressAllowAll"
     "viewer.networkPolicy.ingressAllowAll=maybe|/viewer/networkPolicy/ingressAllowAll"
+    "backup.clinicl.schedule=@daily|additional properties 'clinicl' not allowed"
+    "backup.enabled=maybe|/backup/enabled"
+    "backup.clinical.schedule=17|/backup/clinical/schedule"
+    "backup.demographic.schedule=daily|/backup/demographic/schedule"
+    "backup.backoffLimit=-1|/backup/backoffLimit"
   )
   local refused=0 probe want out
   for case in "${refusals[@]}"; do

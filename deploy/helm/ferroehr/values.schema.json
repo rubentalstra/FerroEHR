@@ -203,6 +203,90 @@
         }
       }
     },
+    "backup": {
+      "description": "Per-domain logical backups: one CronJob per pseudonymisation domain. Off by default, and enabling it requires a DISTINCT existing PersistentVolumeClaim per domain \u2014 the render is refused otherwise.",
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "enabled": {
+          "type": "boolean"
+        },
+        "image": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "repository": {
+              "type": "string",
+              "minLength": 1
+            },
+            "pullPolicy": {
+              "type": "string",
+              "enum": [
+                "Always",
+                "IfNotPresent",
+                "Never"
+              ]
+            },
+            "tag": {
+              "description": "Empty falls back to .Chart.appVersion.",
+              "type": "string"
+            },
+            "digest": {
+              "description": "Wins over `tag` entirely when set.",
+              "type": "string",
+              "pattern": "^(sha256:[0-9a-f]{64})?$"
+            }
+          }
+        },
+        "timeZone": {
+          "description": "An IANA time zone name; empty leaves the kube-controller-manager's own zone.",
+          "type": "string"
+        },
+        "startingDeadlineSeconds": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "backoffLimit": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "activeDeadlineSeconds": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "ttlSecondsAfterFinished": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "resources": {
+          "$ref": "#/definitions/resourceRequirements"
+        },
+        "podAnnotations": {
+          "type": "object",
+          "additionalProperties": {
+            "type": "string"
+          }
+        },
+        "nodeSelector": {
+          "type": "object",
+          "additionalProperties": {
+            "type": "string"
+          }
+        },
+        "tolerations": {
+          "type": "array",
+          "items": {
+            "type": "object"
+          }
+        },
+        "clinical": {
+          "$ref": "#/definitions/backupDomain"
+        },
+        "demographic": {
+          "$ref": "#/definitions/backupDomain"
+        }
+      }
+    },
     "secrets": {
       "type": "object",
       "additionalProperties": false,
@@ -1059,6 +1143,34 @@
           "items": {
             "type": "object"
           }
+        }
+      }
+    },
+    "cronSchedule": {
+      "description": "A five-field cron expression, or one of the @macros the CronJob API accepts.",
+      "type": "string",
+      "pattern": "^(@(annually|yearly|monthly|weekly|daily|midnight|hourly)|@every +[0-9a-z]+|[^@ ]+( +[^ ]+){4})$"
+    },
+    "backupDomain": {
+      "description": "One pseudonymisation domain's backup: its own schedule and its own destination claim.",
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "schedule": {
+          "$ref": "#/definitions/cronSchedule"
+        },
+        "persistentVolumeClaim": {
+          "description": "The name of an EXISTING PersistentVolumeClaim. Required when backup.enabled, and a different claim per domain.",
+          "type": "string"
+        },
+        "existingSecret": {
+          "type": "string",
+          "description": "Secret holding this domain's BACKUP DSN (a BYPASSRLS role, read-only on that domain's schemas)."
+        },
+        "existingSecretKey": {
+          "type": "string",
+          "minLength": 1,
+          "description": "Key within existingSecret carrying the backup DSN."
         }
       }
     },

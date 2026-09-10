@@ -239,6 +239,12 @@ boot_one() {
     [[ -e "${secdir}/${base}" ]] && continue
     case "$base" in
       db.url) printf 'postgres://ferroehr_app:pw@postgres:5432/ferroehr' > "${secdir}/${base}" ;;
+      # The demographic pool's own DSN (#3179). Without a stand-in here, no ci
+      # overlay could set database.demographicExistingSecret without failing
+      # this check, so the branch that gives the two pseudonymisation domains
+      # separate credentials would stay unexercised by construction.
+      db.demographic_url)
+        printf 'postgres://ferroehr_demographic:pw@postgres:5432/ferroehr' > "${secdir}/${base}" ;;
       *)
         red "  ${p} is referenced but no rendered Secret key supplies it"
         return 1

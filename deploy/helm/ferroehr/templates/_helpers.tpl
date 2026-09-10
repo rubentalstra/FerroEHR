@@ -431,3 +431,99 @@ The viewer image reference — digest wins over tag, as for the server.
 {{- printf "%s:%s" .Values.viewer.image.repository (.Values.viewer.image.tag | default .Chart.AppVersion) }}
 {{- end }}
 {{- end }}
+
+{{/*
+A backup CronJob's resource name: the release fullname, `-backup-`, and the
+domain it dumps.
+
+Truncated to 52, not 63: the CronJob controller appends 11 characters to build
+each Job's name and a Job name may not exceed 63
+(https://kubernetes.io/docs/concepts/workloads/controllers/cron-jobs/).
+
+Call with (dict "root" $ "domain" "clinical").
+*/}}
+{{- define "ferroehr.backupFullname" -}}
+{{- printf "%s-backup-%s" (include "ferroehr.fullname" .root) .domain | trunc 52 | trimSuffix "-" }}
+{{- end }}
+
+{{/*
+Labels for a backup CronJob and its pods.
+
+Each domain carries its OWN `app.kubernetes.io/name` rather than the server's
+name plus a component, for the reason the viewer's labels carry: a Service or
+PodDisruptionBudget selector is a SUBSET match, so a dump pod labelled with the
+server's name would be selected by the server's Service while it runs
+(https://kubernetes.io/docs/concepts/overview/working-with-objects/common-labels/).
+*/}}
+{{- define "ferroehr.backupLabels" -}}
+helm.sh/chart: {{ include "ferroehr.chart" .root }}
+{{ include "ferroehr.backupSelectorLabels" . }}
+{{- if .root.Chart.AppVersion }}
+app.kubernetes.io/version: {{ .root.Chart.AppVersion | quote }}
+{{- end }}
+app.kubernetes.io/managed-by: {{ .root.Release.Service }}
+app.kubernetes.io/part-of: ferroehr
+app.kubernetes.io/component: backup
+{{- end }}
+
+{{- define "ferroehr.backupSelectorLabels" -}}
+app.kubernetes.io/name: {{ printf "%s-backup-%s" (include "ferroehr.name" .root) .domain }}
+app.kubernetes.io/instance: {{ .root.Release.Name }}
+{{- end }}
+
+{{/*
+The backup image reference — digest wins over tag, as for the server.
+*/}}
+{{- define "ferroehr.backupImage" -}}
+{{- if .Values.backup.image.digest }}
+{{- $digest := .Values.backup.image.digest }}
+{{- if not (hasPrefix "sha256:" $digest) }}{{- $digest = printf "sha256:%s" $digest }}{{- end }}
+{{- printf "%s@%s" .Values.backup.image.repository $digest }}
+{{- else }}
+{{- printf "%s:%s" .Values.backup.image.repository (.Values.backup.image.tag | default .Chart.AppVersion) }}
+{{- end }}
+{{- end }}
+
+{{/*
+The fixed path a dump is written to. A path, not a value: the claim behind it is
+the operator's choice, the location inside the container is not.
+*/}}
+{{- define "ferroehr.backupMountPath" -}}
+/backup
+{{- end }}
+
+{{/*
+The Secret a backup domain's DSN comes from, and the key inside it.
+
+Resolved exactly as the Deployment resolves the two pools: the demographic
+domain uses its own credential when one is configured, and falls back to the
+clinical DSN when it is not, so a dump never reaches a domain the running server
+could not reach either. Whichever Secret it is, the key is mounted as `db.url`
+and only that PATH is passed to the container.
+
+Call with (dict "root" $ "domain" "clinical").
+*/}}
+{{- /*
+The backup DSN is the domain's OWN backup Secret, never the pool's credential.
+Every tenant-scoped table carries FORCE ROW LEVEL SECURITY, so pg_dump refuses
+a table it would read through a policy — "query would be affected by row-level
+security policy" (PostgreSQL 18, pg_dump §Notes) — and the runtime role cannot
+take a backup at all. The dump needs a role with BYPASSRLS, read-only on its
+own domain, which is a different credential from the one the server serves
+with. Reusing the pool's DSN here would render CronJobs that fail every night.
+*/ -}}
+{{- define "ferroehr.backupDsnSecret" -}}
+{{- if eq .domain "demographic" -}}
+{{ .root.Values.backup.demographic.existingSecret }}
+{{- else -}}
+{{ .root.Values.backup.clinical.existingSecret }}
+{{- end -}}
+{{- end }}
+
+{{- define "ferroehr.backupDsnSecretKey" -}}
+{{- if eq .domain "demographic" -}}
+{{ .root.Values.backup.demographic.existingSecretKey }}
+{{- else -}}
+{{ .root.Values.backup.clinical.existingSecretKey }}
+{{- end -}}
+{{- end }}
