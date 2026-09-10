@@ -208,6 +208,14 @@ services:
         condition: service_healthy
     environment:
       PGPASSWORD: ${PG_INIT_PASSWORD:-ferroehr}
+    # The target is a directory on the HOST, so the dump has to run as a user
+    # that can write it. The image's own `postgres` user (uid 999) cannot write
+    # a directory the operator created, which is a "Permission denied" on Linux
+    # — root inside the container can write any target, and the container still
+    # holds no capabilities, cannot gain privileges and has a read-only root.
+    # For a file owned by you instead of by root, run the command with
+    # FERROEHR_BACKUP_USER="$(id -u):$(id -g)".
+    user: "${FERROEHR_BACKUP_USER:-0:0}"
     entrypoint: ["/bin/sh", "-c"]
     command:
       - >-
@@ -236,6 +244,8 @@ services:
     # identities cannot read the clinical record.
     environment:
       PGPASSWORD: ${PG_INIT_PASSWORD:-ferroehr}
+    # Same reason as its clinical twin above.
+    user: "${FERROEHR_BACKUP_USER:-0:0}"
     entrypoint: ["/bin/sh", "-c"]
     command:
       - >-

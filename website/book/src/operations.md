@@ -286,6 +286,10 @@ docker compose --profile backup run --rm ferroehr-backup-demographic
 
 Set `FERROEHR_BACKUP_CLINICAL_DIR` and `FERROEHR_BACKUP_DEMOGRAPHIC_DIR` to the
 two targets; they default to `./backups/clinical` and `./backups/demographic`.
+The dump runs as root inside the container so it can write a directory you
+created — the container holds no capabilities, cannot gain privileges and has a
+read-only root filesystem, but the file lands owned by root. For a file owned
+by you, run with `FERROEHR_BACKUP_USER="$(id -u):$(id -g)"`.
 Under Kubernetes the chart renders one `CronJob` per domain — see the chart's
 `backup` values.
 
