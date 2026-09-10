@@ -207,7 +207,12 @@ impl FerroEhrService {
         // DV_MULTIMEDIA externalization is on, collect the blob keys this EHR's
         // nodes reference *before* deletion, so we can GC the ones no other node
         // still references once the delete commits.
+        #[cfg(feature = "multimedia")]
         let candidate_blobs = self.collect_ehr_blob_keys(ehr_id).await?;
+        // Externalization is compiled out of this build, so no stored node
+        // references a blob and there is nothing to collect.
+        #[cfg(not(feature = "multimedia"))]
+        let candidate_blobs: Vec<String> = Vec::new();
 
         let mut tx = self.pool.begin().await?;
 
@@ -287,7 +292,10 @@ impl FerroEhrService {
         // EHRs actually removed.
         let mut deleted = 0u64;
         for chunk in targets.chunks(CHUNK) {
+            #[cfg(feature = "multimedia")]
             let candidate_blobs = self.collect_blob_keys_for(chunk).await?;
+            #[cfg(not(feature = "multimedia"))]
+            let candidate_blobs: Vec<String> = Vec::new();
             let mut tx = self.pool.begin().await?;
             let audit_ids: Vec<Uuid> = sqlx::query_scalar(
                 "SELECT audit_id FROM vo_version_all WHERE ehr_id = ANY($1) \
@@ -348,17 +356,6 @@ impl FerroEhrService {
         Ok(keys)
     }
 
-    /// The slim twin: externalization is compiled out, so no stored node
-    /// references a blob and the key set is empty by construction.
-    #[cfg(not(feature = "multimedia"))]
-    #[expect(
-        clippy::unused_async,
-        reason = "the multimedia twin awaits; callers await unconditionally"
-    )]
-    async fn collect_blob_keys_for(&self, _ehr_ids: &[EhrId]) -> Result<Vec<String>, ServiceError> {
-        Ok(Vec::new())
-    }
-
     /// Collect the distinct externalized-blob keys referenced by an EHR's stored
     /// nodes (empty when externalization is disabled). Read-only, on the pool.
     /// Our own extension — no openEHR spec governs multimedia offload.
@@ -379,17 +376,6 @@ impl FerroEhrService {
         keys.sort_unstable();
         keys.dedup();
         Ok(keys)
-    }
-
-    /// The slim twin: externalization is compiled out, so the key set is empty
-    /// by construction.
-    #[cfg(not(feature = "multimedia"))]
-    #[expect(
-        clippy::unused_async,
-        reason = "the multimedia twin awaits; callers await unconditionally"
-    )]
-    async fn collect_ehr_blob_keys(&self, _ehr_id: EhrId) -> Result<Vec<String>, ServiceError> {
-        Ok(Vec::new())
     }
 
     /// Delete each candidate blob no longer referenced by any surviving `node`.

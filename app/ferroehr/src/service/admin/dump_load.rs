@@ -1207,9 +1207,14 @@ impl FerroEhrService {
         // as `blobs/<hex>` entries, so a load into an empty target re-populates
         // the object store. This runs BEFORE the XML externalization below,
         // which moves the payloads the blob scan reads out of the records.
+        #[cfg(feature = "multimedia")]
         let blob_keys = self
             .export_referenced_blobs(&mut archive, &records, &demographic_records)
             .await?;
+        // Externalization is compiled out of this build, so no record
+        // references a blob and the archive carries none.
+        #[cfg(not(feature = "multimedia"))]
+        let blob_keys: Vec<String> = Vec::new();
         let archive_version = if blob_keys.is_empty() { 1 } else { 2 };
 
         if format == ExportFormat::OpenehrCanonicalXml {
@@ -1335,7 +1340,17 @@ impl FerroEhrService {
 
         // Our own extension: re-populate the object store from the archive's
         // `blobs/` entries before loading versions that reference them.
+        #[cfg(feature = "multimedia")]
         self.import_blobs(&mut archive, &manifest.blobs).await?;
+        // A blob-carrying archive cannot be loaded into a binary built without
+        // the feature: refuse loudly rather than drop the content silently.
+        #[cfg(not(feature = "multimedia"))]
+        if !manifest.blobs.is_empty() {
+            return Err(SmError::precondition(
+                "archive carries externalized multimedia blobs but this binary \
+                 was built without the `multimedia` cargo feature",
+            ));
+        }
 
         let mut reports = Vec::new();
         for segment in &manifest.segments {
@@ -1495,22 +1510,6 @@ impl FerroEhrService {
         Ok(keys)
     }
 
-    /// The slim twin: externalization is compiled out, so no stored record
-    /// references a blob and nothing is exported.
-    #[cfg(not(feature = "multimedia"))]
-    #[expect(
-        clippy::unused_async,
-        reason = "the multimedia twin awaits; callers await unconditionally"
-    )]
-    async fn export_referenced_blobs(
-        &self,
-        _archive: &mut ArchiveWriter,
-        _records: &[EhrRecord],
-        _demographic: &[DemographicRecord],
-    ) -> Result<Vec<String>, SmError> {
-        Ok(Vec::new())
-    }
-
     /// Re-put each archived blob (`blobs/<hex>`) into the object store on load
     /// (idempotent, content-addressed). A no-op when the archive carries no
     /// blobs. Our own extension.
@@ -1541,28 +1540,6 @@ impl FerroEhrService {
                 })?;
         }
         Ok(())
-    }
-
-    /// The slim twin: a blob-carrying archive cannot be loaded into a binary
-    /// built without the `multimedia` feature — refuse loudly rather than
-    /// silently dropping content.
-    #[cfg(not(feature = "multimedia"))]
-    #[expect(
-        clippy::unused_async,
-        reason = "the multimedia twin awaits; callers await unconditionally"
-    )]
-    async fn import_blobs(
-        &self,
-        _archive: &mut ArchiveReader,
-        blobs: &[String],
-    ) -> Result<(), SmError> {
-        if blobs.is_empty() {
-            return Ok(());
-        }
-        Err(SmError::precondition(
-            "archive carries externalized multimedia blobs but this binary \
-             was built without the `multimedia` cargo feature",
-        ))
     }
 
     /// Whether an EHR with `ehr_id` already exists in the target repository.
