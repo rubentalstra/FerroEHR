@@ -204,22 +204,28 @@ requirements:
           - text: Basic and OAuth2/OIDC authentication
             href: ../security.md
       - id: "3.2"
+        # Both (a) and (b) are about the ACCESSING side: (a) the provider or
+        # other entity, (b) the specific natural person. Neither is the data
+        # subject, which the element does not name at all.
         summary: >-
           The European logging software component records, for every access
-          event or group of events, at least the accessing provider or
-          individual, the natural person accessed, the categories of data, the
-          time and date, and the origin of the data.
+          event or group of events, at least the healthcare provider or other
+          individuals who accessed the data, the specific natural person or
+          persons who accessed it, the categories of data, the time and date,
+          and the origin of the data.
         status: partial
         issues: [3170]
         evidence:
-          - text: The access trail, per record rather than per operation
-            href: ../audit.md
+          - text: The five elements mapped onto fields, gaps included
+            href: ../audit.md#the-ehds-logging-elements-mapped
         gap: >-
-          The trail records the agent, the subject, the object and its
-          pseudonymisation domain, the purpose, the outcome and the time.
-          Point (e), the origin of the data, has no dedicated field, and
-          whether point (c) is satisfied by the object's domain and type is
-          the mapping question #3170 answers.
+          Points (b) and (d) are recorded and reach both renderings. Point (c)
+          is partial, because the record names an openEHR resource class and a
+          pseudonymisation domain rather than an Annex I priority category.
+          Points (a), the accessing organisation, and (e), the origin of the
+          data, have no field at all, and the declared purpose of use reaches
+          neither export. Each gap is asserted by a test that fails when it
+          closes.
       - id: "3.3"
         summary: >-
           The components include tools or mechanisms to review and analyse the

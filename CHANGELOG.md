@@ -17,6 +17,21 @@ workflow refuses a tag that has no matching section here.
 
 ### Added
 
+- **The EHDS logging elements are mapped onto the audit trail, gaps included**
+  (#3170). Annex II 3.2 of Regulation (EU) 2025/327 lists five things the
+  European logging software component must record on every access event. The
+  audit page now maps each of them onto an access-event field and onto both
+  renderings the trail leaves the server in, and says plainly where there is
+  nothing: the accessing organisation (a) and the origin of the data (e) have
+  no field, the category (c) is an openEHR resource class rather than an
+  Annex I priority category, and the declared purpose of use is stored but
+  reaches neither export. Every row is asserted by a test — **including the
+  gaps**, which fail the day the field arrives, so the table and the code
+  cannot drift apart in either direction. The retention default and the two
+  export routes are documented beside it, with the reason `retention_days = 0`
+  keeps records forever rather than choosing a horizon for an operator.
+  Closing the gaps is #3204.
+
 - **Two EHDS readiness pages, generated from one source** (#3169). Chapter III
   of Regulation (EU) 2025/327 requires an EHR system to include two harmonised
   software components, meet the essential requirements of Annex II, and carry

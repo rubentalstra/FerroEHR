@@ -114,6 +114,90 @@ Mapping the recorded fields onto your own retention schedule and review process
 stays yours: the software records the events and serves them back, and no
 supplier document discharges the obligation to review them.
 
+## The EHDS logging elements, mapped
+
+Annex II 3.2 of [Regulation (EU) 2025/327](https://eur-lex.europa.eu/eli/reg/2025/327/oj)
+lists five things the European logging software component must record "on every
+access event or group of events". This is where each one lands, or does not.
+The elements were read from the published text on 2026-09-10; the regulation is
+the authority and the wording below is a paraphrase.
+
+| Annex II 3.2 | Access-event field | DICOM PS3.15 | FHIR `AuditEvent` | State |
+|---|---|---|---|---|
+| (a) the healthcare provider or other individuals having accessed | — | — | — | **Gap** |
+| (b) the specific natural person or persons having accessed | `principal` (+ `token_id`, `client_ip`) | `ActiveParticipant/@UserID` | `agent.who` | Recorded |
+| (c) the categories of data accessed | `resource_class` + `domain` (+ `result_count`) | `ParticipantObjectIdentification` type and role codes | `entity.type` / `entity.role` | Partial |
+| (d) the time and date of access | `recorded_at` | `EventIdentification/@EventDateTime` | `recorded` | Recorded |
+| (e) the origin or origins of data | — | — | — | **Gap** |
+
+Read (a) beside (b): they are both about the accessing side, and the pair
+distinguishes the **organisation** on whose behalf the access happened from the
+**natural person** who made it. FerroEHR records the authenticated principal,
+which answers (b). It records nothing about the organisation, so (a) has no
+field and nothing to render — an organisation is available to the authorization
+layer as a subject attribute, but it is not carried onto the record.
+
+Element (c) is partial for a vocabulary reason rather than a plumbing one. The
+record says what kind of object was read and which pseudonymisation domain it
+came from, so "was this clinical content or an identity" is answerable per
+event. What it does not say is which **Annex I priority category** the data
+falls in; openEHR resource classes are a different vocabulary, and the mapping
+between them is not one this project should invent.
+
+Element (e) asks where the DATA came from, which is not where the request came
+from. The record knows the client address it was asked from and nothing about
+the provenance of the content it served. openEHR models that provenance as
+`FEEDER_AUDIT` on the content itself, and the access log does not read it.
+
+One further gap, adjacent to the five: **the declared purpose of use reaches
+neither export.** It is stored on the record and served by ITI-81, but the
+DICOM rendering has no `PurposeOfUse` and the FHIR rendering no
+`agent.purposeOfUse`, so a consumer of the feed cannot see it.
+
+> [!NOTE]
+> Every row of this table is asserted by a test
+> (`app/ferroehr/tests/it/audit_ehds_mapping.rs`), **including the gaps**: the
+> tests that record an absence fail the day the field arrives, so the table and
+> the code cannot drift apart in either direction.
+
+The common specifications the regulation's Article 36 provides for have not
+been adopted. When they are, this mapping is re-verified against them rather
+than assumed to still hold; see the
+[EHDS readiness page](compliance/ehds-readiness.md).
+
+### Retention, and who chooses it
+
+`[audit.store] retention_days` decides how long the repository keeps a record:
+`0`, the default, keeps them forever, and any other value reaps hourly
+everything older. **The default is deliberate.** An access log is the evidence
+a data subject's right of access is served from, and a repository that silently
+forgets is worse than one that grows — so the software keeps everything until
+an operator says otherwise, rather than choosing a horizon on their behalf.
+
+Choosing that horizon is the deployment's, and it is a legal question rather
+than a technical one: EHDS sets no retention period for the access log, while
+national law does — NEN 7513 is the Dutch reference for this log and the
+Wabvpz for how long it must survive. The setting is per node, not per tenant:
+a multi-tenant deployment whose tenants need different horizons needs
+different nodes, and that limitation is stated here rather than discovered.
+
+### Getting the log out
+
+Two routes, and they answer different questions.
+
+- **ITI-81 retrieval** — the [audit search](#retrieving-audit-records-iti-81)
+  serves the records back as FHIR `AuditEvent` resources, filtered by patient,
+  agent, date and outcome. This is the operator's route and the one a patient
+  portal would build on: everything Annex II 3.2 records is reachable through
+  it, including the purpose, which the feed renderings do not carry.
+- **The BALP feed** — records fan out to syslog and to a FHIR feed as they are
+  written, for a SIEM or a central Audit Record Repository.
+
+There is no patient-facing route in the product: a portal that shows a person
+who accessed their record builds on ITI-81 and authenticates the person itself.
+That is a deployment's build, and the
+[shared-responsibility page](compliance/shared-responsibility.md) says so.
+
 ## Sinks
 
 Records fan out to independently configured sinks (`[audit]` in
