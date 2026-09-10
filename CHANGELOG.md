@@ -288,6 +288,19 @@ workflow refuses a tag that has no matching section here.
 
 ### Fixed
 
+- **The migration hook's pod is no longer selected by the server's Service and
+  PodDisruptionBudget** (#3197). A selector is a subset match, and the hook pod
+  carried the server's selector pair plus a `component` label, so for as long
+  as it existed it satisfied both — during exactly the install and upgrade when
+  a rollout or a drain reads them. It exposed no port named `http`, so the
+  Service had no endpoint to route to it, but the PodDisruptionBudget match was
+  real and the port was a property of that pod rather than a promise about the
+  next one. The hook now carries its own `app.kubernetes.io/name`, as the
+  viewer and the backup jobs already do. The chart's selector gate was looking
+  only at Deployments and could not have seen this; it now judges every
+  workload that carries a pod template, and the migration Job renders in a
+  committed value set so the gate has something to judge.
+
 - **A physically deleted party takes its multimedia with it** (#3180).
   `physical_delete_party` removed the party's rows without collecting the
   externalized blob keys they referenced, so a blob held only by that party

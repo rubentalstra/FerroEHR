@@ -271,6 +271,14 @@ serviceAccount:
 # Per-domain logical backups, so the two CronJobs reach a golden render and the
 # restricted-profile gate — the claims are render fixtures, nothing provisions
 # them here. Two DIFFERENT claim names: one claim for both domains is refused.
+# The pre-install/pre-upgrade migration hook. Rendered here because a workload
+# no value set renders is a workload no golden shows and no gate judges — the
+# selector gate could not see this Job's pod at all until it did (#3197).
+migrations:
+  job:
+    enabled: true
+    existingSecret: ferroehr-migrator-dsn
+
 backup:
   enabled: true
   timeZone: Europe/Amsterdam

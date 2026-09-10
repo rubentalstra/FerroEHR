@@ -19,8 +19,7 @@ kind: Job
 metadata:
   name: {{ include "ferroehr.fullname" . }}-migrate
   labels:
-    {{- include "ferroehr.labels" . | nindent 4 }}
-    app.kubernetes.io/component: migration
+    {{- include "ferroehr.migrationLabels" . | nindent 4 }}
   annotations:
     kubernetes.io/description: >-
       Applies the schema migrations as ferroehr_migrator — a DIFFERENT credential from the runtime DSN — before the server rolls. A Helm pre-install/pre-upgrade hook, so a failed migration fails the release.
@@ -56,8 +55,7 @@ spec:
   template:
     metadata:
       labels:
-        {{- include "ferroehr.selectorLabels" . | nindent 8 }}
-        app.kubernetes.io/component: migration
+        {{- include "ferroehr.migrationLabels" . | nindent 8 }}
       {{- with .Values.migrations.job.podAnnotations }}
       annotations:
         {{- toYaml . | nindent 8 }}
