@@ -648,7 +648,8 @@ reported: ${dump_log:0:300}"
     "$(dc ps -q ferroehr-postgres)" 2>/dev/null)"
   restore_log="$(docker run --rm --network "$network" -v "$dumps:/dumps:ro" \
     "${FERROEHR_POSTGRES_IMAGE:-ghcr.io/rubentalstra/ferroehr-postgres:4.1.1}" \
-    sh -c "pg_restore --dbname='$restored_dsn' --no-owner \
+    sh -c "id; ls -ln /dumps/clinical /dumps/demographic;
+           pg_restore --dbname='$restored_dsn' --no-owner \
              '/dumps/clinical/$(basename "$clinical_dump")';
            pg_restore --dbname='$restored_dsn' --no-owner \
              '/dumps/demographic/$(basename "$demographic_dump")'" 2>&1)"
@@ -659,7 +660,7 @@ reported: ${dump_log:0:300}"
     probe_fail "the restored database passes \`ferroehr db verify\`" \
       "${verify_out:0:400}" \
       "create: ${create_log:0:150} || network: '${network}' || restore: $(printf '%s' \
-        "$restore_log" | tr '\n' ' ' | tail -c 250)"
+        "$restore_log" | tr '\n' ' ' | tail -c 600)"
   fi
   probe_done
 
