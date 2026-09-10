@@ -72,6 +72,7 @@ Each record additionally carries:
 | Field | What it holds |
 |---|---|
 | `domain` | The pseudonymisation domain read: `ehr`, `demographic`, `linkage`, or `system` for an operation that touches no domain. |
+| `organisation` | The organisation the caller acted for, read from the access token's `[authz.abac] organization_claim` — the same claim the ABAC layer decides on, so no second setting can name a different one. The recording does not depend on that layer being switched on. A Basic-authenticated caller and an unconfigured claim both leave it empty. |
 | `purpose` | The purpose of use the caller declared in the `x-purpose-of-use` header, when the deployment accepts it. |
 | `legal_basis` | The basis the deployment processes under, from `[audit] legal_basis`. |
 | `result_count` | How many records the operation served. |
@@ -124,7 +125,7 @@ the authority and the wording below is a paraphrase.
 
 | Annex II 3.2 | Access-event field | DICOM PS3.15 | FHIR `AuditEvent` | State |
 |---|---|---|---|---|
-| (a) the healthcare provider or other individuals having accessed | — | — | — | **Gap** |
+| (a) the healthcare provider or other individuals having accessed | `organisation` | — (no such attribute) | a second `agent` with `who` referencing `Organization/…` | Recorded |
 | (b) the specific natural person or persons having accessed | `principal` (+ `token_id`, `client_ip`) | `ActiveParticipant/@UserID` | `agent.who` | Recorded |
 | (c) the categories of data accessed | `resource_class` + `domain` (+ `result_count`) | `ParticipantObjectIdentification` type and role codes | `entity.type` / `entity.role` | Partial |
 | (d) the time and date of access | `recorded_at` | `EventIdentification/@EventDateTime` | `recorded` | Recorded |
@@ -132,10 +133,20 @@ the authority and the wording below is a paraphrase.
 
 Read (a) beside (b): they are both about the accessing side, and the pair
 distinguishes the **organisation** on whose behalf the access happened from the
-**natural person** who made it. FerroEHR records the authenticated principal,
-which answers (b). It records nothing about the organisation, so (a) has no
-field and nothing to render — an organisation is available to the authorization
-layer as a subject attribute, but it is not carried onto the record.
+**natural person** who made it. The principal answers (b); the `organisation`
+column answers (a), resolved from the same access-token claim the ABAC layer
+reads (`[authz.abac] organization_claim`) rather than from a second setting
+that could name a different claim. Sharing the setting is not sharing the
+switch: the organisation is recorded whether or not the ABAC gate is enabled,
+because the trail describes a caller rather than deciding anything about them.
+The FHIR rendering carries it as a second `agent` referencing an
+`Organization`, with no participation code, because `AuditEvent.agent.type` is
+optional and inventing a code would be worse than omitting one. The DICOM
+rendering carries nothing: PS3.15 §A.5 defines no organisation attribute on
+`ActiveParticipant`, and `AuditEnterpriseSiteID` is the reporting node's own
+site rather than the caller's organisation. Where no claim is configured or the
+caller authenticated with Basic, the field stays empty rather than being
+guessed.
 
 Element (c) is partial for a vocabulary reason rather than a plumbing one. The
 record says what kind of object was read and which pseudonymisation domain it
@@ -149,11 +160,15 @@ from. The record knows the client address it was asked from and nothing about
 the provenance of the content it served. openEHR models that provenance as
 `FEEDER_AUDIT` on the content itself, and the access log does not read it.
 
-One further gap, adjacent to the five: **the declared purpose of use reaches
-neither export**, though only one of them could carry it. It is stored on the
-record and served by ITI-81. FHIR R4 `AuditEvent` defines
-[`agent.purposeOfUse`](https://hl7.org/fhir/R4/auditevent.html) and this
-rendering does not populate it, which is a gap worth closing. The
+One further element, adjacent to the five: **the declared purpose of use
+reaches one export of the two**, and only one of them could carry it. It is
+stored on the record, served by ITI-81, and rendered as
+[`agent.purposeOfUse`](https://hl7.org/fhir/R4/auditevent.html) on the
+requesting person's agent in the FHIR export. The coding carries the code
+alone, with no system: the vocabulary is the one you agree with your callers
+in `[audit] purpose_codes`, which has no published code system URI, and
+attributing the code to a system it does not come from would misdescribe it.
+The
 [DICOM Audit Message schema](https://dicom.nema.org/medical/dicom/current/output/chtml/part15/sect_A.5.html)
 of PS3.15 §A.5 defines no purpose element at all — `EventIdentification`,
 `ActiveParticipant`, `AuditSourceIdentification` and
@@ -195,7 +210,8 @@ Two routes, and they answer different questions.
   serves the records back as FHIR `AuditEvent` resources, filtered by patient,
   agent, date and outcome. This is the operator's route and the one a patient
   portal would build on: everything Annex II 3.2 records is reachable through
-  it, including the purpose, which the feed renderings do not carry.
+  it, including the purpose and the organisation, which the syslog feed's
+  DICOM form cannot carry.
 - **The BALP feed** — records fan out to syslog and to a FHIR feed as they are
   written, for a SIEM or a central Audit Record Repository.
 

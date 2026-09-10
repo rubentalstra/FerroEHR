@@ -63,11 +63,11 @@ impl AuditStore {
         let outcome = outcome_smallint(event);
         sqlx::query(
             "INSERT INTO audit.audit_event (recorded_at, action, outcome, event_code, \
-             operation, principal, patient_id, resource_class, resource_id, client_ip, \
-             token_id, tenant_id, domain, purpose, legal_basis, result_count, \
+             operation, principal, organisation, patient_id, resource_class, resource_id, \
+             client_ip, token_id, tenant_id, domain, purpose, legal_basis, result_count, \
              request_id, fhir) \
              VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, \
-             $15, $16, $17, $18) \
+             $15, $16, $17, $18, $19) \
              RETURNING id",
         )
         .bind(Timestamp::from(event.timestamp))
@@ -76,6 +76,7 @@ impl AuditStore {
         .bind(event_code(event))
         .bind(operation(event))
         .bind(nonempty_opt(&event.user_id))
+        .bind(event.organisation.as_deref())
         .bind(subject)
         .bind(resource_class(event.object))
         .bind(event.object_id.as_deref())
@@ -120,6 +121,7 @@ impl AuditStore {
         let mut event_codes: Vec<&str> = Vec::with_capacity(records.len());
         let mut operations: Vec<Option<&str>> = Vec::with_capacity(records.len());
         let mut principals: Vec<Option<&str>> = Vec::with_capacity(records.len());
+        let mut organisations: Vec<Option<&str>> = Vec::with_capacity(records.len());
         let mut patient_ids: Vec<Option<&str>> = Vec::with_capacity(records.len());
         let mut resource_classes: Vec<&str> = Vec::with_capacity(records.len());
         let mut resource_ids: Vec<Option<&str>> = Vec::with_capacity(records.len());
@@ -142,6 +144,7 @@ impl AuditStore {
             event_codes.push(event_code(event));
             operations.push(operation(event));
             principals.push(nonempty_opt(&event.user_id));
+            organisations.push(event.organisation.as_deref());
             patient_ids.push(subject.as_deref());
             resource_classes.push(resource_class(event.object));
             resource_ids.push(event.object_id.as_deref());
@@ -160,13 +163,13 @@ impl AuditStore {
         }
         sqlx::query(
             "INSERT INTO audit.audit_event (recorded_at, action, outcome, event_code, \
-             operation, principal, patient_id, resource_class, resource_id, client_ip, \
-             token_id, tenant_id, domain, purpose, legal_basis, result_count, \
+             operation, principal, organisation, patient_id, resource_class, resource_id, \
+             client_ip, token_id, tenant_id, domain, purpose, legal_basis, result_count, \
              request_id, fhir) \
              SELECT * FROM UNNEST($1::timestamptz[], $2::text[], $3::smallint[], $4::text[], \
              $5::text[], $6::text[], $7::text[], $8::text[], $9::text[], $10::text[], \
-             $11::text[], $12::uuid[], $13::text[], $14::text[], $15::text[], \
-             $16::bigint[], $17::text[], $18::jsonb[])",
+             $11::text[], $12::text[], $13::uuid[], $14::text[], $15::text[], $16::text[], \
+             $17::bigint[], $18::text[], $19::jsonb[])",
         )
         .bind(recorded_at)
         .bind(actions)
@@ -174,6 +177,7 @@ impl AuditStore {
         .bind(event_codes)
         .bind(operations)
         .bind(principals)
+        .bind(organisations)
         .bind(patient_ids)
         .bind(resource_classes)
         .bind(resource_ids)

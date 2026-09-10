@@ -892,6 +892,7 @@ async fn serve(config_path: Option<&Path>, overrides: &[(String, String)]) -> an
         fhir_api_enabled: config.fhir.api_enabled,
         terminology_api_enabled: config.terminology.api_enabled,
         events_admin_api: config.events.admin_api,
+        audit_organization_claim: config.authz.abac.organization_claim().map(str::to_owned),
         spec_profile: config.spec_profile,
     };
 

@@ -17,6 +17,22 @@ workflow refuses a tag that has no matching section here.
 
 ### Added
 
+- **The audit trail records the accessing organisation, and the declared
+  purpose reaches the FHIR export** (#3204). An access record now carries an
+  `organisation` column: the organisation the caller acted for, read from the
+  access token's `[authz.abac] organization_claim` — the same claim the ABAC
+  layer decides on, so no second setting can name a different one, and
+  recorded whether or not that layer is switched on. It answers EHDS Annex II
+  3.2(a) beside the natural person of 3.2(b), and where no claim is configured
+  or the caller used Basic authentication it stays empty rather than being
+  guessed. The FHIR `AuditEvent` export renders it as a second `agent`
+  referencing an `Organization`, and the purpose of use as
+  `agent.purposeOfUse` on the requesting person's agent, coded with the
+  deployment's own vocabulary and no code system. The DICOM syslog form
+  carries neither: PS3.15 §A.5 defines no organisation attribute and no
+  purpose element. Existing records keep a NULL organisation — the column is
+  added by a migration and nothing is backfilled.
+
 - **Which EHDS priority categories the FHIR façade carries, measured rather
   than asserted** (#3171). The FHIR chapter now carries a generated matrix of
   the six Annex I priority categories: which has a committed CKM template,

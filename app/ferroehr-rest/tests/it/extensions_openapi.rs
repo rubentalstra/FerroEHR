@@ -545,6 +545,7 @@ fn app_config() -> AppConfig {
         fhir_api_enabled: true,
         terminology_api_enabled: true,
         events_admin_api: true,
+        audit_organization_claim: None,
         spec_profile: ferroehr::config::profile::SpecProfile::default(),
     }
 }

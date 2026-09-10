@@ -288,6 +288,82 @@ async fn access_fields_round_trip_on_both_write_paths() {
     );
 }
 
+/// The accessing organisation survives the round trip on both write paths.
+///
+/// EHDS Annex II 3.2(a) asks which healthcare provider the access happened on
+/// behalf of, beside the natural person of 3.2(b)
+/// (<https://eur-lex.europa.eu/eli/reg/2025/327/oj>). The two write paths bind
+/// their columns independently, so a field added to one and forgotten in the
+/// other is lost exactly on the batched path a loaded server uses.
+#[tokio::test]
+async fn the_accessing_organisation_round_trips_on_both_write_paths() {
+    let db = testkit::db().await.expect("testkit database");
+    let pool = db.pool();
+    let store = AuditStore::new(pool.clone());
+
+    let mut single = read_event("2026-07-10T08:30:00Z".parse().unwrap());
+    single.organisation = Some("zh-noordwest".to_owned());
+    let rendered = fhir::to_fhir(&single, &ctx(), Some("patient-42")).expect("render");
+    store
+        .insert(&single, Some("patient-42"), &rendered)
+        .await
+        .expect("insert");
+
+    let mut batched = read_event("2026-07-10T08:31:00Z".parse().unwrap());
+    batched.organisation = Some("huisartsenpost-zuid".to_owned());
+    let batched_fhir = fhir::to_fhir(&batched, &ctx(), None).expect("render");
+    // A record with no organisation resolved: the column stays NULL rather
+    // than carrying the previous row's value or a placeholder.
+    let anonymous = read_event("2026-07-10T08:32:00Z".parse().unwrap());
+    let anonymous_fhir = fhir::to_fhir(&anonymous, &ctx(), None).expect("render");
+    store
+        .insert_batch(&[
+            (batched, None, Some(batched_fhir)),
+            (anonymous, None, Some(anonymous_fhir)),
+        ])
+        .await
+        .expect("insert batch");
+
+    let rows = sqlx::query(
+        "SELECT organisation, principal, fhir FROM audit.audit_event ORDER BY recorded_at",
+    )
+    .fetch_all(&pool)
+    .await
+    .expect("three rows");
+    assert_eq!(rows.len(), 3, "one row per written record");
+    assert_eq!(
+        rows[0].get::<Option<String>, _>("organisation").as_deref(),
+        Some("zh-noordwest"),
+        "the per-event path records the organisation"
+    );
+    assert_eq!(
+        rows[1].get::<Option<String>, _>("organisation").as_deref(),
+        Some("huisartsenpost-zuid"),
+        "the batched path records the organisation"
+    );
+    assert_eq!(
+        rows[1].get::<Option<String>, _>("principal").as_deref(),
+        Some("alice"),
+        "the batched row's other columns stay aligned with their own record"
+    );
+    assert_eq!(
+        rows[2].get::<Option<String>, _>("organisation"),
+        None,
+        "an unresolved organisation is recorded as absent, never guessed"
+    );
+
+    // The stored FHIR document carries the same fact as the column: the
+    // organisation as a second agent referencing an Organization.
+    let stored: serde_json::Value = rows[0].get("fhir");
+    let agents = stored["agent"].as_array().expect("the agent list");
+    assert!(
+        agents
+            .iter()
+            .any(|agent| agent["who"]["reference"] == "Organization/zh-noordwest"),
+        "the stored document must carry the organisation agent: {stored}"
+    );
+}
+
 /// The trail is append-only for the runtime role: the access-logging columns
 /// cannot be rewritten, a record cannot be deleted outside the reaper, and the
 /// table cannot be truncated.

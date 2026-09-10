@@ -69,13 +69,14 @@ components:
   - id: logging
     name: European logging software component for EHR systems
     status: partial
-    issues: [3170]
+    issues: [3204]
     note: >-
       Annex II 3.2 lists five things every access event must record. The
-      access-event model records the agent, the subject, the object and its
-      domain, the outcome, the purpose and the time, and the audit trail is
-      retrievable. Whether each of the five maps onto a field without a gap is
-      the mapping #3170 exists to establish.
+      access-event model records the accessing organisation and person, the
+      subject, the object and its domain, the outcome, the purpose and the
+      time, and the audit trail is retrievable. Two of the five are still
+      short: the category is an openEHR resource class rather than an Annex I
+      priority category, and the origin of the data has no field.
 
 # Annex II, "Essential requirements for the harmonised software components of
 # EHR systems and for products for which interoperability with EHR systems has
@@ -217,17 +218,19 @@ requirements:
           persons who accessed it, the categories of data, the time and date,
           and the origin of the data.
         status: partial
-        issues: [3170]
+        issues: [3204]
         evidence:
           - text: The five elements mapped onto fields, gaps included
             href: ../audit.md#the-ehds-logging-elements-mapped
         gap: >-
-          Points (b) and (d) are recorded and reach both renderings. Point (c)
-          is partial, because the record names an openEHR resource class and a
+          Points (a), (b) and (d) are recorded: the accessing organisation
+          beside the natural person, and the time. Point (c) is partial,
+          because the record names an openEHR resource class and a
           pseudonymisation domain rather than an Annex I priority category.
-          Points (a), the accessing organisation, and (e), the origin of the
-          data, have no field at all, and the declared purpose of use reaches
-          neither export. Each gap is asserted by a test that fails when it
+          Point (e), the origin of the data, has no field at all. The DICOM
+          rendering carries neither the organisation nor the declared purpose,
+          because PS3.15 A.5 defines no element for either; the FHIR rendering
+          carries both. Each gap is asserted by a test that fails when it
           closes.
       - id: "3.3"
         summary: >-
