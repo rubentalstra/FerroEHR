@@ -614,10 +614,16 @@ reported: ${dump_log:0:300}"
   probe "P-BACKUP-RESTORE" "working" "database" "#3157" \
     "a database restored from the two dumps passes the boot self-check"
   local restored=ferroehr_restored
-  dc exec -T ferroehr-postgres psql -qtAX -U "${PG_INIT_USER:-ferroehr}" \
-    -d "${PG_INIT_DB:-ferroehr}" -c "DROP DATABASE IF EXISTS $restored" >/dev/null 2>&1
-  dc exec -T ferroehr-postgres psql -qtAX -U "${PG_INIT_USER:-ferroehr}" \
-    -d "${PG_INIT_DB:-ferroehr}" -c "CREATE DATABASE $restored" >/dev/null 2>&1
+  # The database is created by the BOOTSTRAP superuser and owned by the
+  # application role, which is what a restore runbook does: the application
+  # role holds no CREATEDB, and a database owned by `postgres` would refuse
+  # the restore its schemas. Errors are kept — a suppressed CREATE DATABASE
+  # turns into a confusing "database does not exist" three steps later.
+  local create_log
+  create_log="$(dc exec -T ferroehr-postgres psql -qtAX -U postgres \
+    -d "${PG_INIT_DB:-ferroehr}" \
+    -c "DROP DATABASE IF EXISTS $restored" \
+    -c "CREATE DATABASE $restored OWNER ${PG_INIT_USER:-ferroehr}" 2>&1)"
   # The restore runs the way an operator's would: a client container on the
   # stack's network with the two dump directories mounted. Copying the files
   # INTO the database container instead would restore from a path no runbook
@@ -651,7 +657,8 @@ reported: ${dump_log:0:300}"
   else
     probe_fail "the restored database passes \`ferroehr db verify\`" \
       "${verify_out:0:400}" \
-      "restore output: ${restore_log:0:200}"
+      "create: ${create_log:0:150} || restore: $(printf '%s' "$restore_log" \
+        | grep -vE '^time="|^ *Container |orphan containers' | tr '\n' ' ' | tail -c 250)"
   fi
   probe_done
 
@@ -663,11 +670,20 @@ reported: ${dump_log:0:300}"
   dc exec -T ferroehr-postgres psql -qtAX -U "${PG_INIT_USER:-ferroehr}" -d "$restored" -c \
     "GRANT USAGE ON SCHEMA demographic TO ferroehr_ehr_reader;
      GRANT SELECT ON ALL TABLES IN SCHEMA demographic TO ferroehr_ehr_reader" >/dev/null 2>&1
-  if dc exec -T -e FERROEHR__DB__URL="$restored_dsn" -e FERROEHR__DB__MIGRATE=verify \
-      ferroehr /usr/local/bin/ferroehr db verify >/dev/null 2>&1; then
+  local breach_out
+  if breach_out="$(dc exec -T -e FERROEHR__DB__URL="$restored_dsn" \
+      -e FERROEHR__DB__MIGRATE=verify \
+      ferroehr /usr/local/bin/ferroehr db verify 2>&1)"; then
     probe_fail "\`ferroehr db verify\` refusing a cross-domain grant" \
       "it accepted a database where ferroehr_ehr_reader can read demographic tables" \
       "the boot gate is then decorative, and a careless restore ships a collapsed boundary"
+  else
+    # A refusal for ANY other reason would make this probe pass without
+    # measuring the gate at all — the vacuity this harness exists to avoid.
+    assert_contains "$breach_out" "ferroehr_ehr_reader" \
+      "the refusal must name the role that reached across, not merely be a refusal"
+    assert_contains "$breach_out" "demographic" \
+      "the refusal must name the domain it reached into"
   fi
   probe_done
 
