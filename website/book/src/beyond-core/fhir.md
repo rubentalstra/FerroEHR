@@ -97,6 +97,67 @@ is a targeted façade, not a general FHIR search engine: there is no free-text
 search, no chained parameter, and no `_include`. An optional `_count` caps the
 entries returned per mapping.
 
+## The EHDS priority categories, and what round-trips
+
+<!-- BEGIN generated: ehds-priority-categories -->
+
+The six priority categories of personal electronic health data are Annex I of
+the EHDS regulation, and Annex II 2.1 to 2.3 require an EHR system to provide
+and receive them in the European electronic health record exchange format.
+That format is set by implementing acts under Article 36 which have not been
+adopted, so this table is not a conformance claim against it. What it says is
+narrower and checkable: which category has a committed template whose example
+composition round-trips through this façade today.
+
+| Annex I | Category | Committed template | A profile mapping would target | Transform proven |
+|---|---|---|---|---|
+| 1 | Patient summaries | `corpus/templates/ckm/international-patient-summary.opt` | Bundle (IPS-shaped) over Patient, Condition, AllergyIntolerance, MedicationStatement | Yes |
+| 2 | Electronic prescriptions | `corpus/templates/ckm/eprescription-fhir.opt` | MedicationRequest | Yes |
+| 3 | Electronic dispensations | — | MedicationDispense | **No committed template** |
+| 4 | Medical imaging studies and related imaging reports | `corpus/templates/ckm/ccta-report.opt` | DiagnosticReport (+ ImagingStudy for the study itself) | Yes |
+| 5 | Medical test results, including laboratory and other diagnostic results | `corpus/templates/ckm/generic-lab-test-result.opt` | DiagnosticReport + Observation | Yes |
+| 6 | Discharge reports | — | Composition (discharge summary) + Encounter | **No committed template** |
+
+"Transform proven" means exactly what the test asserts, and no more
+(`app/ferroehr/tests/it/fhir_priority_categories.rs`): the category's
+committed operational template builds a Web Template, its committed example
+composition flattens against that template to a non-empty map, and a mapping
+entry over a leaf taken from that map drives the reverse transform to a FHIR
+resource carrying the composition's own value. The leaf is derived from the
+map rather than written into the test, so a corpus refresh moves it and the
+case still holds.
+
+Three things it deliberately does **not** establish, each of which a reader
+could otherwise assume:
+
+- **No profile mapping ships.** The rightmost column says what a mapping for
+  that category *would* target, not what exists. The test maps its leaf onto
+  `Observation.note.text`, a free-text element: it proves the machinery
+  carries real clinical content, not that an IPS-shaped `Bundle` or a
+  `MedicationRequest` has been authored and reviewed. Mappings are data a
+  deployment registers, as the section above describes.
+- **It exercises the transform, not the endpoint.** The test calls the
+  reverse transform directly, so routing, authorization and the stored-mapping
+  lookup are covered by other tests rather than by this table.
+- **It is not conformance to the exchange format**, which does not exist yet.
+
+The connector this table measures is planned to leave: FerroBRIDGE
+(<https://github.com/rubentalstra/FerroBRIDGE>) is the FHIRconnect and OMOP
+bridge, and [#3080](https://github.com/rubentalstra/FerroEHR/issues/3080)
+retires the in-tree connector once it ships. The EHDS readiness question does
+NOT leave with it — it is asked of the EHR system — so this table moves to the
+compliance chapter at that point rather than being deleted with the page it
+currently sits on.
+
+Two of the example compositions this rests on — the patient summary and the
+imaging report — were patched by hand rather than regenerated against a
+running server, which their pack's provenance records and
+[#1724](https://github.com/rubentalstra/FerroEHR/issues/1724) tracks. They are
+real CKM templates either way; the caveat belongs beside a claim that leans on
+them.
+
+<!-- END generated: ehds-priority-categories -->
+
 ## Outbound emission
 
 Outbound emission publishes the mapped FHIR resource for every relevant commit,

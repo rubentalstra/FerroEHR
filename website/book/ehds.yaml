@@ -144,7 +144,10 @@ requirements:
           electronic health record exchange format, through the European
           interoperability software component.
         status: planned
-        issues: [3171]
+        issues: [3171, 3206]
+        evidence:
+          - text: Which priority categories round-trip through the FHIR façade
+            href: ../beyond-core/fhir.md#the-ehds-priority-categories-and-what-round-trips
       - id: "2.2"
         summary: >-
           Such a system can receive personal electronic health data in that
@@ -352,6 +355,57 @@ technical_documentation:
         note: >-
           No declaration exists, and none can be made before the common
           specifications are adopted and the manufacturer is identified.
+
+# Annex I, the priority categories of personal electronic health data for
+# primary use. The headings are the Annex's own; `characteristics` is the
+# count of sub-points the Annex lists under a category, not a paraphrase of
+# them.
+#
+# `template` names a template committed to this repository's curated CKM pack
+# that carries that category's data. A category with none is not a category
+# FerroEHR cannot store — the CDR stores whatever an operational template
+# defines — it is a category with no COMMITTED example, so nothing here can
+# demonstrate the export end to end.
+#
+# `fhir` names the resource type a mapping for that category would target.
+# The façade is mapping-driven and resource-agnostic: no mapping set ships,
+# and a deployment registers its own. That is the honest state, and the
+# matrix says it rather than implying a catalogue exists.
+priority_categories:
+  - id: "1"
+    name: Patient summaries
+    template: international-patient-summary
+    fhir: Bundle (IPS-shaped) over Patient, Condition, AllergyIntolerance, MedicationStatement
+    state: template
+  - id: "2"
+    name: Electronic prescriptions
+    template: eprescription-fhir
+    fhir: MedicationRequest
+    state: template
+  - id: "3"
+    name: Electronic dispensations
+    template: ""
+    fhir: MedicationDispense
+    state: no-template
+  - id: "4"
+    name: Medical imaging studies and related imaging reports
+    template: ccta-report
+    fhir: DiagnosticReport (+ ImagingStudy for the study itself)
+    state: template
+    note: >-
+      The committed template is a report. The imaging STUDY — the pixel data
+      and its DICOM metadata — is not openEHR content and is not stored here;
+      a deployment federates it from a PACS.
+  - id: "5"
+    name: Medical test results, including laboratory and other diagnostic results
+    template: generic-lab-test-result
+    fhir: DiagnosticReport + Observation
+    state: template
+  - id: "6"
+    name: Discharge reports
+    template: ""
+    fhir: Composition (discharge summary) + Encounter
+    state: no-template
 
 # The questions that decide whether any of this applies to a given deployment,
 # and who has to answer them. Each is a question, not a position.
