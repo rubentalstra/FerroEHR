@@ -17,6 +17,21 @@ workflow refuses a tag that has no matching section here.
 
 ### Added
 
+- **Which EHDS priority categories the FHIR façade carries, measured rather
+  than asserted** (#3171). The FHIR chapter now carries a generated matrix of
+  the six Annex I priority categories: which has a committed CKM template,
+  which FHIR resource a profile mapping would target, and whether the
+  transform is proven end to end. Four of the six — patient summaries,
+  electronic prescriptions, imaging reports and laboratory results — have a
+  real committed template whose example composition flattens and reverse-maps
+  into a FHIR resource carrying its own values, asserted per category with the
+  mapped leaf derived from the flat map rather than written into the test.
+  Electronic dispensations and discharge reports have no committed template,
+  and the table says so. It also says the three things it does not establish:
+  no profile mapping ships for any category, the test exercises the transform
+  rather than the endpoint, and none of it is conformance to an exchange
+  format that has not been adopted. Those gaps are #3206.
+
 - **The EHDS logging elements are mapped onto the audit trail, gaps included**
   (#3170). Annex II 3.2 of Regulation (EU) 2025/327 lists five things the
   European logging software component must record on every access event. The
