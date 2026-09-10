@@ -869,6 +869,27 @@ jobs:
           GH_TOKEN: ${{ github.token }}
         run: bash scripts/render/control-matrix.sh --check
 
+  # The two EHDS pages are GENERATED from website/book/ehds.yaml
+  # (scripts/render/ehds-pages.sh), for the reason the control matrix is: a
+  # readiness table typed by hand is wrong the first time a requirement's
+  # status changes, and a stale "shipped" beside a requirement nothing
+  # implements is a false compliance claim on a public site. This job
+  # re-renders and diffs. It needs no token: the source is a committed file,
+  # not the tracker.
+  ehds-pages:
+    name: ehds-pages
+    if: github.event_name == 'pull_request' || github.event_name == 'merge_group'
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: The published EHDS pages match their source
+        run: bash scripts/render/ehds-pages.sh --check
+
   # String-built-SQL guard: the AQL engine composes SQL from attacker-supplied
   # query text, so a `format!`/`push_str`-assembled clause in `app/ferroehr/src/
   # aql/` or `app/ferroehr/src/storage/` is refused — the OWASP SQL Injection
@@ -2437,6 +2458,7 @@ jobs:
       - default-style
       - docs-claims
       - control-matrix
+      - ehds-pages
       - sql-string-building
       - error-hygiene
       - error-source-chain
