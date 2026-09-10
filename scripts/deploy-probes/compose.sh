@@ -548,13 +548,17 @@ probes_backup_restore() {
     "the backup profile writes one dump per pseudonymisation domain"
   # The recipe's own output is KEPT: a dump job that fails is the finding, and
   # discarding its stderr would report the missing file without the reason.
+  # Compose's own progress and orphan-container chatter is dropped: it is
+  # longer than the diagnostic underneath it, and a truncated note that shows
+  # the chatter instead of the error is worse than no note.
   local dump_log=""
   local job
   for job in clinical demographic; do
     dump_log="$dump_log$(FERROEHR_BACKUP_CLINICAL_DIR="$dumps/clinical" \
       FERROEHR_BACKUP_DEMOGRAPHIC_DIR="$dumps/demographic" \
       dc -f docker-compose.yml --profile backup run --rm --quiet-pull \
-        "ferroehr-backup-$job" 2>&1)"
+        "ferroehr-backup-$job" 2>&1 \
+      | grep -vE '^time="|^ *Container |orphan containers' | tr '\n' ' ')"
   done
   local clinical_dump demographic_dump
   clinical_dump="$(find "$dumps/clinical" -name 'clinical-*.dump' -print -quit 2>/dev/null)"
@@ -568,7 +572,8 @@ probes_backup_restore() {
       FERROEHR_BACKUP_DEMOGRAPHIC_DIR="$dumps/demographic" \
       dc -f docker-compose.yml --profile backup run --rm --quiet-pull \
         --entrypoint /bin/sh ferroehr-backup-clinical -c \
-        'id; ls -ldn /backup; grep " /backup " /proc/mounts; touch /backup/.probe-write 2>&1' 2>&1)"
+        'id; ls -ldn /backup; grep " /backup " /proc/mounts; touch /backup/.probe-write 2>&1' 2>&1 \
+      | grep -vE '^time="|^ *Container |orphan containers' | tr '\n' ' ')"
     probe_fail "one dump file in each of the two target directories" \
       "clinical='$clinical_dump' demographic='$demographic_dump'" \
       "recipe: ${dump_log:0:300} || target from inside the job: ${target_state:0:400} \
