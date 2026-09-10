@@ -431,6 +431,12 @@ fn resolve_secret_files(config: &mut FerroEhrConfig, errors: &mut Vec<ConfigErro
         }
     }
     resolve_secret(
+        "demographic.identifier_protection.key",
+        &mut config.demographic.identifier_protection.key,
+        config.demographic.identifier_protection.key_file.take(),
+        errors,
+    );
+    resolve_secret(
         "multimedia.secret_access_key",
         &mut config.multimedia.secret_access_key,
         config.multimedia.secret_access_key_file.take(),

@@ -724,3 +724,355 @@ async fn the_cutover_runs_as_a_non_superuser_owner_for_a_tenant_owned_party() {
         "and row-level security is back on, in the same transaction that took it off"
     );
 }
+
+// ── protected national identifiers (#3155) ───────────────────────────────────
+
+/// A synthetic BSN: constructed by running the elfproef forward, issued to
+/// nobody.
+const SYNTHETIC_BSN: &str = "111222333"; // privacy-allow: synthetic
+
+/// A test root key. Sixty-four hex characters, and a literal here is not a
+/// credential: it protects one ephemeral clone for the length of one test.
+const TEST_ROOT_KEY: &str = "000102030405060708090a0b0c0d0e0f101112131415161718191a1b1c1d1e1f";
+
+fn test_keys(tenant: Uuid) -> ferroehr::service::demographic::identifier::crypto::TenantKeys {
+    use ferroehr::service::demographic::identifier::crypto::{RootKey, TenantKeys};
+    let root = RootKey::from_hex(&secrecy::SecretString::from(TEST_ROOT_KEY.to_owned()))
+        .expect("a 32-byte root key");
+    TenantKeys::derive(&root, tenant)
+}
+
+/// A sealed identifier round-trips, and resolution finds its party without
+/// decrypting anything.
+///
+/// The two halves are the point of the design: the ciphertext answers "what is
+/// this party's identifier" only to a holder of the key, and the keyed digest
+/// answers "which party holds this identifier" to a caller that already knows
+/// the value. Neither answers the other's question.
+#[tokio::test]
+async fn a_sealed_identifier_round_trips_and_resolves_to_its_party() {
+    use ferroehr::service::demographic::identifier::store::IdentifierStore;
+
+    let db = testkit::db().await.expect("testkit database");
+    let store = IdentifierStore::new(ferroehr::db::demographic_pool_from(&db.pool()));
+    let tenant = Uuid::nil();
+    let keys = test_keys(tenant);
+    let party = Uuid::now_v7();
+
+    let row = store
+        .seal(&keys, tenant, party, "nl-bsn", SYNTHETIC_BSN)
+        .await
+        .expect("seal the identifier");
+
+    assert_eq!(
+        store.open(&keys, tenant, row).await.expect("open"),
+        Some(SYNTHETIC_BSN.to_owned()),
+        "the key holder reads the value back"
+    );
+    assert_eq!(
+        store
+            .resolve(&keys, tenant, "nl-bsn", SYNTHETIC_BSN)
+            .await
+            .expect("resolve"),
+        Some(party),
+        "the digest resolves to the party without decryption"
+    );
+    assert_eq!(
+        store
+            .resolve(&keys, tenant, "nl-bsn", "987654321")
+            .await
+            .expect("resolve a value nobody holds"),
+        None,
+        "an identifier nobody holds resolves to nothing, not to an arbitrary party"
+    );
+
+    // The stored bytes are not the value, in either column.
+    let stored: (Vec<u8>, Vec<u8>) = sqlx::query_as(
+        "SELECT ciphertext, lookup_digest FROM demographic.national_identifier WHERE id = $1",
+    )
+    .bind(row)
+    .fetch_one(&db.pool())
+    .await
+    .expect("the stored row");
+    for column in [stored.0, stored.1] {
+        assert!(
+            !column
+                .windows(SYNTHETIC_BSN.len())
+                .any(|w| w == SYNTHETIC_BSN.as_bytes()),
+            "no stored column may carry the value"
+        );
+    }
+}
+
+/// An unregistered scheme is refused rather than stored unprotected.
+#[tokio::test]
+async fn an_unregistered_scheme_is_refused() {
+    use ferroehr::service::demographic::identifier::store::{IdentifierStore, StoreError};
+
+    let db = testkit::db().await.expect("testkit database");
+    let store = IdentifierStore::new(ferroehr::db::demographic_pool_from(&db.pool()));
+    let tenant = Uuid::nil();
+    let refused = store
+        .seal(
+            &test_keys(tenant),
+            tenant,
+            Uuid::now_v7(),
+            "zz-invented",
+            SYNTHETIC_BSN,
+        )
+        .await;
+    assert!(
+        matches!(refused, Err(StoreError::UnknownScheme { ref scheme }) if scheme == "zz-invented"),
+        "an identifier kind nobody registered is refused, naming the scheme: {refused:?}"
+    );
+}
+
+/// The clinical roles cannot read the protected identifiers at all, and the
+/// demographic READER cannot read the two sensitive columns.
+///
+/// The column-level grant is the part a relation-level test would miss: the
+/// reporting role legitimately sees that a party holds a protected identifier,
+/// and must never see the sealed value or the digest that matches it.
+#[tokio::test]
+async fn only_the_demographic_writer_reaches_the_sealed_value() {
+    let db = testkit::db().await.expect("testkit database");
+
+    for (suffix, role) in [("nie", "ferroehr_ehr"), ("nir", "ferroehr_ehr_reader")] {
+        let mut conn = role_conn(&db, suffix, role).await;
+        let refused = sqlx::query("SELECT ciphertext FROM demographic.national_identifier")
+            .fetch_all(&mut conn)
+            .await;
+        let code = refused
+            .err()
+            .and_then(|e| {
+                e.as_database_error()
+                    .and_then(sqlx::error::DatabaseError::code)
+                    .map(|c| c.to_string())
+            })
+            .unwrap_or_default();
+        assert_eq!(
+            code, SQLSTATE_INSUFFICIENT_PRIVILEGE,
+            "{role} must not reach the protected identifiers at all"
+        );
+    }
+
+    let mut reader = role_conn(&db, "nidr", "ferroehr_demographic_reader").await;
+    for column in ["ciphertext", "lookup_digest"] {
+        let refused = sqlx::query(sqlx::AssertSqlSafe(format!(
+            "SELECT {column} FROM demographic.national_identifier"
+        )))
+        .fetch_all(&mut reader)
+        .await;
+        let code = refused
+            .err()
+            .and_then(|e| {
+                e.as_database_error()
+                    .and_then(sqlx::error::DatabaseError::code)
+                    .map(|c| c.to_string())
+            })
+            .unwrap_or_default();
+        assert_eq!(
+            code, SQLSTATE_INSUFFICIENT_PRIVILEGE,
+            "the demographic reader must not read {column}"
+        );
+    }
+    // …but it does see that the identifier exists and whose it is, which its
+    // reporting role needs.
+    sqlx::query("SELECT id, party_id, scheme FROM demographic.national_identifier")
+        .fetch_all(&mut reader)
+        .await
+        .expect("the reader sees the non-sensitive columns");
+}
+
+/// A party committed with protection ON stores a reference, never the value —
+/// and the version's own body, its decomposed nodes and the served read all
+/// carry the same form.
+///
+/// The end-to-end property #3155 exists for. The sealing runs before the body
+/// is decomposed and signed, so stored, signed and served are one form; a test
+/// that only checked `vo_version.body` would miss the node rows, which are a
+/// second copy of the same content.
+#[tokio::test]
+async fn a_protected_identifier_never_reaches_the_versioned_body() {
+    use ferroehr::service::demographic::identifier::engine::IdentifierProtection;
+
+    let db = testkit::db().await.expect("testkit database");
+    let pool = db.pool();
+    let engine = IdentifierProtection::from_config(
+        &ferroehr::service::demographic::identifier::config::IdentifierProtectionConfig {
+            enabled: true,
+            schemes: vec!["nl-bsn".to_owned()],
+            key: Some(ferroehr::config::secret::Secret::new(TEST_ROOT_KEY)),
+            key_file: None,
+        },
+        Some(&ferroehr::config::secret::Secret::new(TEST_ROOT_KEY)),
+        ferroehr::db::demographic_pool_from(&pool),
+    )
+    .expect("the engine builds")
+    .expect("protection is enabled");
+    let service =
+        FerroEhrService::new(pool.clone()).with_identifier_protection(std::sync::Arc::new(engine));
+
+    let mut person = a_person();
+    person["identities"][0]["details"]["items"]
+        .as_array_mut()
+        .expect("the identity items")
+        .push(serde_json::json!({
+            "_type": "ELEMENT",
+            "archetype_node_id": "at0004",
+            "name": { "_type": "DV_TEXT", "value": "bsn" },
+            "value": { "_type": "DV_IDENTIFIER", "type": "nl-bsn",
+                       "id": SYNTHETIC_BSN, "issuer": "RvIG", "assigner": "RvIG" }
+        }));
+
+    let created = service
+        .party_create(PartyKind::Person, typed(&person), None)
+        .await
+        .expect("commit a person carrying a protected identifier");
+    let vo_id: Uuid = created.body["uid"]["value"]
+        .as_str()
+        .expect("uid.value")
+        .split("::")
+        .next()
+        .expect("the versioned-object uuid")
+        .parse()
+        .expect("a uuid");
+
+    // Neither copy of the content carries the value: the version body…
+    let body: String = sqlx::query_scalar(
+        "SELECT body::text FROM demographic.vo_version WHERE vo_id = $1 AND upper_inf(sys_period)",
+    )
+    .bind(vo_id)
+    .fetch_one(&pool)
+    .await
+    .expect("the stored body");
+    assert!(
+        !body.contains(SYNTHETIC_BSN),
+        "the versioned body must carry a reference, not the identifier"
+    );
+    assert!(
+        body.contains("urn:ferroehr:protected-identifier:"),
+        "…and the reference must be there in its place: {body}"
+    );
+
+    // …nor the decomposed node rows, which are the same content a second time.
+    let nodes: i64 = sqlx::query_scalar(
+        "SELECT count(*) FROM demographic.node WHERE vo_id = $1 AND data::text LIKE $2",
+    )
+    .bind(vo_id)
+    .bind(format!("%{SYNTHETIC_BSN}%"))
+    .fetch_one(&pool)
+    .await
+    .expect("scan the node rows");
+    assert_eq!(nodes, 0, "no decomposed node may carry the identifier");
+
+    // The sealed row exists, and resolution finds this party by the value.
+    let store = ferroehr::service::demographic::identifier::store::IdentifierStore::new(
+        ferroehr::db::demographic_pool_from(&pool),
+    );
+    assert_eq!(
+        store
+            .resolve(
+                &test_keys(Uuid::nil()),
+                Uuid::nil(),
+                "nl-bsn",
+                SYNTHETIC_BSN
+            )
+            .await
+            .expect("resolve"),
+        Some(vo_id),
+        "the identifier resolves to the party that holds it"
+    );
+}
+
+/// Resolving an identifier to its party is recorded as a linkage-domain access,
+/// naming the scheme and never the value.
+///
+/// The resolution is the one operation that walks from an identity to a record,
+/// so a resolution nobody can reconstruct afterwards is exactly the boundary
+/// crossing the access log exists to make answerable. A MISS is recorded for
+/// the same reason a hit is: it says someone asked whether this deployment
+/// holds that identifier.
+#[tokio::test]
+async fn resolving_an_identifier_is_recorded_as_an_access() {
+    use ferroehr::service::demographic::identifier::engine::IdentifierProtection;
+    use ferroehr::system_log::config::{AuditConfig, StoreConfig};
+    use ferroehr::system_log::sender::{AuditHandle, start};
+
+    let db = testkit::db().await.expect("testkit database");
+    let pool = db.pool();
+    let engine = IdentifierProtection::from_config(
+        &ferroehr::service::demographic::identifier::config::IdentifierProtectionConfig {
+            enabled: true,
+            schemes: vec!["nl-bsn".to_owned()],
+            key: Some(ferroehr::config::secret::Secret::new(TEST_ROOT_KEY)),
+            key_file: None,
+        },
+        Some(&ferroehr::config::secret::Secret::new(TEST_ROOT_KEY)),
+        ferroehr::db::demographic_pool_from(&pool),
+    )
+    .expect("the engine builds")
+    .expect("protection is enabled");
+    let audit_config = AuditConfig {
+        enabled: true,
+        store: StoreConfig {
+            enabled: true,
+            retention_days: 0,
+        },
+        ..AuditConfig::default()
+    };
+    let (sender, _handle): (_, AuditHandle) = start(audit_config, None, Some(pool.clone()))
+        .await
+        .expect("the audit sender");
+    let service = FerroEhrService::new(pool.clone())
+        .with_identifier_protection(std::sync::Arc::new(engine))
+        .with_audit(sender);
+
+    // An identifier nobody holds: the resolution misses, and is still recorded.
+    let resolved = service
+        .resolve_party_by_identifier("nl-bsn", SYNTHETIC_BSN)
+        .await
+        .expect("the resolution runs");
+    assert!(resolved.is_none(), "nobody holds it yet");
+
+    let deadline = std::time::Instant::now() + std::time::Duration::from_secs(5);
+    let record = loop {
+        let found: Option<(String, Option<String>, Option<i64>)> = sqlx::query_as(
+            "SELECT domain, resource_id, result_count FROM audit.audit_event \
+             WHERE domain = 'linkage' ORDER BY recorded_at DESC LIMIT 1",
+        )
+        .fetch_optional(&pool)
+        .await
+        .expect("read the access log");
+        if let Some(row) = found {
+            break row;
+        }
+        assert!(
+            std::time::Instant::now() < deadline,
+            "the resolution was not recorded within the drain window"
+        );
+        tokio::time::sleep(std::time::Duration::from_millis(50)).await;
+    };
+
+    assert_eq!(
+        record.0, "linkage",
+        "a resolution is a linkage-domain access"
+    );
+    assert_eq!(
+        record.1.as_deref(),
+        Some("national-identifier:nl-bsn"),
+        "the record names the scheme"
+    );
+    assert_eq!(record.2, Some(0), "a miss is recorded as nothing resolved");
+
+    let events: Vec<String> = sqlx::query_scalar("SELECT fhir::text FROM audit.audit_event")
+        .fetch_all(&pool)
+        .await
+        .expect("every recorded event");
+    for event in events {
+        assert!(
+            !event.contains(SYNTHETIC_BSN),
+            "no audit record may carry the identifier value: {event}"
+        );
+    }
+}

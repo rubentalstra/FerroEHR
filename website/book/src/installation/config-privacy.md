@@ -205,3 +205,54 @@ the audit trail and its forwarding sinks free of the identity. The contribution
 outbox carries no subject at all. Both are covered by a CI test that fails when
 any subject identifier other than the opaque UUID appears in an outbox payload,
 an ATNA message or a trace record.
+
+## Protecting national identifiers in the demographic domain
+
+The rules above keep national identifiers off the **clinical** side. The
+demographic side is where a party's identifiers legitimately live, and
+`[demographic.identifier_protection]` decides how they are held there.
+
+With it on, an identifier of a configured scheme never sits in the versioned
+body. The value moves to `demographic.national_identifier`, sealed with
+AES-256-GCM under a key derived per tenant, and the body keeps a reference in
+its place. Beside the ciphertext sits an HMAC-SHA-256 digest of the value, which
+is what makes "which party holds this identifier" answerable without decrypting
+anything — and, because it is keyed, what stops the database, a backup or a read
+replica from reversing a nine-digit space.
+
+```toml
+[demographic.identifier_protection]
+enabled = false
+schemes = ["nl-bsn"]
+#? key_file = "/run/secrets/ferroehr-identifier-key"
+```
+
+| Key | Type | Default | Description |
+|---|---|---|---|
+| `enabled` | bool | `false` | Whether protection is in force. Off leaves identifiers stored as written. |
+| `schemes` | list of string | `["nl-bsn"]` | The `DV_IDENTIFIER.type` values to protect. Each must exist in the `demographic.identifier_scheme` registry; an unregistered code is refused at the write rather than stored in the clear. |
+| `key` | secret | unset | The root key, 64 hex characters. Prefer `key_file`. |
+| `key_file` | path | unset | A file holding the root key, read at boot. |
+
+Turning it on with no key, or with an empty `schemes` list, is a **boot error**.
+A server that believes it seals national identifiers and does not is worse than
+one that never claimed to.
+
+Three properties worth knowing before you enable it:
+
+- **The stored, signed and served body are the same form.** Sealing runs before
+  the body is decomposed and signed, exactly like the multimedia offload, so a
+  signature still verifies against the bytes the server holds. What a reader
+  receives carries the reference; the value is available through the resolution
+  path below.
+- **Resolution is audited.** Going from an identifier to a party is recorded as
+  a `linkage`-domain access naming the scheme and whether it matched — never the
+  value. A miss is recorded too: it says someone asked whether this deployment
+  holds that identifier.
+- **The key is load-bearing and rotation is a re-encryption.** The runbook is in
+  [Operations](../operations.md#rotating-the-national-identifier-key).
+
+Only the demographic writer role reaches the sealed value. The read-only twin
+sees that a party holds a protected identifier and which party it is, and is
+refused the ciphertext and the digest by column-level grant; the clinical roles
+are refused the table outright.

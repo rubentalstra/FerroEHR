@@ -93,6 +93,9 @@ pub struct FerroEhrConfig {
     pub subject_proxy: crate::service::subject_proxy::config::SubjectProxyConfig,
     /// `[privacy]` — the clinical-side data-minimisation policy.
     pub privacy: crate::privacy::config::PrivacyConfig,
+    /// `[demographic]` — the demographic domain, including national-identifier
+    /// protection.
+    pub demographic: crate::service::demographic::identifier::config::DemographicConfig,
 }
 
 /// The annotated default template `ferroehr config default` prints — a
@@ -1377,6 +1380,44 @@ mod tests {
         );
         c.validate()
             .expect("a well-formed privacy section validates");
+    }
+
+    /// The national-identifier protection section maps from the environment,
+    /// and the key never renders.
+    #[test]
+    fn the_demographic_section_maps_from_the_environment() {
+        let c = assemble_ok(
+            None,
+            &env(&[
+                (
+                    "FERROEHR__DEMOGRAPHIC__IDENTIFIER_PROTECTION__ENABLED",
+                    "true",
+                ),
+                (
+                    "FERROEHR__DEMOGRAPHIC__IDENTIFIER_PROTECTION__SCHEMES",
+                    "nl-bsn,se-personnummer",
+                ),
+                (
+                    "FERROEHR__DEMOGRAPHIC__IDENTIFIER_PROTECTION__KEY",
+                    "000102030405060708090a0b0c0d0e0f101112131415161718191a1b1c1d1e1f",
+                ),
+            ]),
+            &[],
+        );
+        let protection = &c.demographic.identifier_protection;
+        assert!(protection.enabled);
+        assert_eq!(
+            protection.schemes,
+            vec!["nl-bsn".to_owned(), "se-personnummer".to_owned()]
+        );
+        assert!(protection.key.is_some(), "the root key binds from the env");
+        // The key is a secret: rendering the effective configuration must not
+        // print it, which is the property the admin config endpoint relies on.
+        let rendered = serde_json::to_string(&c).expect("the config renders");
+        assert!(
+            !rendered.contains("000102030405"),
+            "the root key must never render into the effective configuration"
+        );
     }
 
     /// A pattern that does not compile is a BOOT error naming the pattern, not

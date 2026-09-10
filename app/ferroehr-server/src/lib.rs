@@ -338,6 +338,18 @@ fn assemble_service(
     // bad pattern is noticed.
     let privacy = ferroehr::privacy::PrivacyPolicy::compile(&config.privacy)
         .context("compiling the [privacy] policy")?;
+    // The identifier-protection engine, when the deployment configured one. A
+    // key that cannot be parsed is a boot error: a server that believes it
+    // seals national identifiers and does not is the failure this refuses to
+    // start into.
+    let identifiers =
+        ferroehr::service::demographic::identifier::engine::IdentifierProtection::from_config(
+            &config.demographic.identifier_protection,
+            config.demographic.identifier_protection.key.as_ref(),
+            pools.demographic.clone(),
+        )
+        .context("building the [demographic.identifier_protection] engine")?;
+
     let mut service = FerroEhrService::new(pool.clone())
         .with_demographic_pool(pools.demographic.clone())
         .with_spec_profile(config.spec_profile)
@@ -345,6 +357,7 @@ fn assemble_service(
         .with_signer(signer)
         .with_outbox_enabled(outbox_enabled)
         .with_privacy(Arc::new(privacy))
+        .with_identifier_protection_opt(identifiers.map(Arc::new))
         .with_query_config(&config.query);
     if let Some(sender) = audit_sender {
         service = service.with_audit(sender);
