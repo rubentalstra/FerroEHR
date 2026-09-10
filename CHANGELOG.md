@@ -17,6 +17,21 @@ workflow refuses a tag that has no matching section here.
 
 ### Added
 
+- **Two EHDS readiness pages, generated from one source** (#3169). Chapter III
+  of Regulation (EU) 2025/327 requires an EHR system to include two harmonised
+  software components, meet the essential requirements of Annex II, and carry
+  technical documentation and an EU declaration of conformity. The
+  documentation site now states, requirement by requirement, what FerroEHR
+  provides today: an EHDS readiness page with a status and evidence for each
+  of the 14 Annex II requirements, and a technical-documentation page
+  mapping each Annex III element to material that exists. Both are rendered
+  from a committed YAML by `scripts/render/ehds-pages.sh`, and a CI job
+  re-renders and diffs, so a status typed into a page fails the build. Both
+  pages say plainly that no conformity assessment has been carried out, no
+  technical documentation has been drawn up and no declaration of conformity
+  exists — a "shipped" row is a statement about the software, never a claim of
+  conformity.
+
 - **`openehr-its` compiles to `wasm32-unknown-unknown` with the flat and OPT
   code in it** (#3149). The crate's one `full` feature dragged axum, moka and
   jsonschema in with the parsers, so a browser consumer that wanted

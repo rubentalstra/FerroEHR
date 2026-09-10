@@ -1,0 +1,376 @@
+# SPDX-FileCopyrightText: Ruben Talstra
+# SPDX-License-Identifier: BUSL-1.1
+#
+# The source of the two EHDS pages under website/book/src/compliance/.
+# `scripts/render/ehds-pages.sh` renders them; the `ehds-pages` CI job
+# re-renders and diffs, so a status typed into a page instead of here fails
+# the build.
+#
+# THE REGULATION IS THE AUTHORITY. Every requirement id, heading and date
+# below was read from the published text at
+# https://eur-lex.europa.eu/eli/reg/2025/327/oj (OJ L series, 2025/327,
+# 5.3.2025) on 2026-09-10. The `summary` fields are OUR paraphrase for
+# navigation — they are not the requirement, and the page says so beside
+# them. Nothing here restates the legal text as if it were binding.
+#
+# STATUS VOCABULARY. A status is about the SOFTWARE, never about conformity:
+# no conformity assessment has been carried out, no technical documentation
+# has been drawn up, and no EU declaration of conformity exists.
+#
+#   shipped  — the capability exists in a released version and something
+#              committed demonstrates it (`evidence` names what).
+#   partial  — part of the capability exists; `gap` says what is missing.
+#   planned  — tracked work, not built; `issues` names the tracker items.
+#   open     — an open question, legal or technical, that has to be answered
+#              before a status can be given at all. `question` states it.
+#
+# Adding a requirement means reading it from the regulation, not from here.
+
+regulation:
+  title: >-
+    Regulation (EU) 2025/327 of the European Parliament and of the Council of
+    11 February 2025 on the European Health Data Space and amending Directive
+    2011/24/EU and Regulation (EU) 2024/2847
+  url: https://eur-lex.europa.eu/eli/reg/2025/327/oj
+  journal: OJ L series, 2025/327, 5.3.2025
+  # Read first-hand from Article 105 on this date. The verification note on
+  # each page names it, so a reader knows how old the reading is.
+  read_on: "2026-09-10"
+
+# Article 105, verbatim in substance, paraphrased in wording.
+dates:
+  - when: "26 March 2027"
+    what: The Regulation applies from this date.
+  - when: "26 March 2029"
+    what: >-
+      Articles 25, 26, 27, 47, 48 and 49 apply to the priority categories of
+      personal electronic health data in Article 14(1)(a), (b) and (c), and to
+      EHR systems the manufacturer intends to process them.
+  - when: "26 March 2031"
+    what: >-
+      The same articles apply to the categories in Article 14(1)(d), (e) and
+      (f), and Chapter III applies to EHR systems put into service in the
+      Union as described in Article 26(2).
+
+# Article 25(1). The two components Chapter III requires an EHR system to
+# include.
+components:
+  - id: interoperability
+    name: European interoperability software component for EHR systems
+    status: planned
+    issues: [3171]
+    note: >-
+      The requirements this component carries are Annex II 2.1 to 2.3: an
+      interface that provides and receives personal electronic health data in
+      the European electronic health record exchange format. FerroEHR serves
+      the openEHR ITS-REST surface and an optional FHIR façade; neither is
+      that format, and the format's own content is set by implementing acts
+      under Article 36.
+  - id: logging
+    name: European logging software component for EHR systems
+    status: partial
+    issues: [3170]
+    note: >-
+      Annex II 3.2 lists five things every access event must record. The
+      access-event model records the agent, the subject, the object and its
+      domain, the outcome, the purpose and the time, and the audit trail is
+      retrievable. Whether each of the five maps onto a field without a gap is
+      the mapping #3170 exists to establish.
+
+# Annex II, "Essential requirements for the harmonised software components of
+# EHR systems and for products for which interoperability with EHR systems has
+# been claimed". Ids and group headings are the Annex's own.
+requirements:
+  - group: "1"
+    heading: General requirements
+    items:
+      - id: "1.1"
+        summary: >-
+          The components achieve the performance the manufacturer intended and
+          are suitable for their intended purpose in normal use, without
+          putting patient safety at risk.
+        status: open
+        question: >-
+          The requirement is a claim by a manufacturer about an intended
+          purpose. FerroEHR is source-available software rather than a placed
+          product, so who the manufacturer is depends on who puts a deployment
+          into service — the question #3168 has to answer before this can be
+          a status rather than a question.
+        issues: [3168]
+      - id: "1.2"
+        summary: >-
+          The components can be supplied and installed following the
+          manufacturer's instructions without adversely affecting their
+          characteristics and performance.
+        status: partial
+        evidence:
+          - text: Deployment artifacts and their documented installation
+            href: ../installation/index.md
+        gap: >-
+          The artifacts and their instructions exist and a deployment probe
+          reads the running stack back. What does not exist is the
+          manufacturer's declared intended purpose those characteristics would
+          be measured against.
+      - id: "1.3"
+        summary: >-
+          Interoperability, safety and security features uphold the rights of
+          natural persons in line with the intended purpose, as set out in
+          Chapter II.
+        status: partial
+        evidence:
+          - text: The rights the software can serve, and who must serve the rest
+            href: shared-responsibility.md
+        gap: >-
+          Chapter II rights are largely a deployment's duty rather than a
+          product's. The shared-responsibility page states which side each one
+          falls on; the patient-facing access route is not built.
+      - id: "1.4"
+        summary: >-
+          Components intended to operate with other products, including
+          medical devices, are designed so interoperability and compatibility
+          are reliable and secure and data can be shared with the device.
+        status: open
+        question: >-
+          FerroEHR claims no interoperability with a medical device. If a
+          deployment claims it, Article 27 puts that claim's requirements on
+          the party making it.
+  - group: "2"
+    heading: Requirements for interoperability
+    items:
+      - id: "2.1"
+        summary: >-
+          A system that stores or intermediates personal electronic health
+          data provides an interface giving access to it in the European
+          electronic health record exchange format, through the European
+          interoperability software component.
+        status: planned
+        issues: [3171]
+      - id: "2.2"
+        summary: >-
+          Such a system can receive personal electronic health data in that
+          format, through the same component.
+        status: planned
+        issues: [3171]
+      - id: "2.3"
+        summary: >-
+          A system designed to provide access to personal electronic health
+          data can receive it in that format, through the same component.
+        status: planned
+        issues: [3171]
+      - id: "2.4"
+        summary: >-
+          A system that lets a user enter structured personal electronic
+          health data allows entry with enough granularity to provide it in
+          the exchange format.
+        status: partial
+        evidence:
+          - text: Templates and the archetype-constrained entry model
+            href: ../templates-validation.md
+        gap: >-
+          openEHR templates constrain entry to the archetype's granularity,
+          which is finer than any exchange format is likely to require. That
+          the granularity SUFFICES for the European format cannot be shown
+          until the format is set by implementing act.
+      - id: "2.5"
+        summary: >-
+          The components include no feature that prohibits, restricts or
+          unduly burdens authorised access, sharing or permitted use.
+        status: shipped
+        evidence:
+          - text: The query surface over the whole stored record
+            href: ../querying-aql.md
+          - text: Authorisation refuses or permits; it adds no commercial gate
+            href: ../security.md
+      - id: "2.6"
+        summary: >-
+          The components include no feature that prohibits, restricts or
+          unduly burdens exporting the data in order to replace the system
+          with another product.
+        status: shipped
+        evidence:
+          - text: Whole-repository dump and load
+            href: ../operations-admin-apis.md
+          - text: EHR-Extract export
+            href: ../beyond-core/messaging.md
+  - group: "3"
+    heading: Requirements for security and logging
+    items:
+      - id: "3.1"
+        summary: >-
+          A system used by health professionals provides reliable
+          identification and authentication of them.
+        status: shipped
+        evidence:
+          - text: Basic and OAuth2/OIDC authentication
+            href: ../security.md
+      - id: "3.2"
+        summary: >-
+          The European logging software component records, for every access
+          event or group of events, at least the accessing provider or
+          individual, the natural person accessed, the categories of data, the
+          time and date, and the origin of the data.
+        status: partial
+        issues: [3170]
+        evidence:
+          - text: The access trail, per record rather than per operation
+            href: ../audit.md
+        gap: >-
+          The trail records the agent, the subject, the object and its
+          pseudonymisation domain, the purpose, the outcome and the time.
+          Point (e), the origin of the data, has no dedicated field, and
+          whether point (c) is satisfied by the object's domain and type is
+          the mapping question #3170 answers.
+      - id: "3.3"
+        summary: >-
+          The components include tools or mechanisms to review and analyse the
+          log data, or support connecting external software that does.
+        status: shipped
+        evidence:
+          - text: Audit retrieval (IHE ATNA ITI-81) and the syslog and FHIR feeds
+            href: ../audit.md
+      - id: "3.4"
+        summary: >-
+          Components that store personal electronic health data support
+          different retention periods and access rights that take the origin
+          and category of the data into account.
+        status: partial
+        evidence:
+          - text: Per-EHR access control and the audit retention setting
+            href: ../security.md
+        gap: >-
+          Access rights are per EHR, per role and per attribute, and audit
+          retention is configurable. Retention that varies by the ORIGIN or
+          CATEGORY of clinical data is not implemented; the archival tier
+          moves records without expiring them.
+
+# Annex III, "Technical documentation". The elements Article 37(2) requires,
+# with what FerroEHR can supply for each today. This is a readiness map, not
+# the documentation itself: no technical documentation has been drawn up.
+technical_documentation:
+  - id: "1"
+    heading: A detailed description of the EHR system
+    points:
+      - id: "1(a)"
+        summary: Intended purpose, date and version.
+        source: open
+        note: >-
+          The version and release date are published per release; the intended
+          purpose is a manufacturer's statement that does not exist.
+      - id: "1(b)"
+        summary: The categories of personal electronic health data it processes.
+        source: partial
+        href: ../concepts/storage.md
+        note: >-
+          The storage model is documented and the pseudonymisation domains are
+          separated, but a mapping onto the Annex I priority categories is not
+          written.
+      - id: "1(c)"
+        summary: How it interacts with hardware or software that is not part of it.
+        source: shipped
+        href: ../beyond-core/index.md
+      - id: "1(d)"
+        summary: Versions of relevant software or firmware, and update requirements.
+        source: shipped
+        href: ../installation/kubernetes.md
+      - id: "1(e)"
+        summary: Every form in which it is placed on the market or put into service.
+        source: shipped
+        href: ../installation/index.md
+      - id: "1(f)"
+        summary: The hardware it is intended to run on.
+        source: partial
+        href: ../operations.md
+        note: >-
+          The measured deployment classes state an environment envelope; a
+          minimum hardware specification as such is not published.
+      - id: "1(g)"
+        summary: The system architecture, and how the components integrate.
+        source: shipped
+        href: ../concepts/architecture.md
+      - id: "1(h)"
+        summary: Technical specifications, variants, configurations.
+        source: shipped
+        href: ../installation/configuration.md
+      - id: "1(i)"
+        summary: A description of every change through the lifecycle.
+        source: shipped
+        href: ../introduction.md
+      - id: "1(j)"
+        summary: Instructions for use and, where applicable, for installation.
+        source: shipped
+        href: ../installation/index.md
+  - id: "2"
+    heading: The system in place to evaluate the EHR system's performance
+    points:
+      - id: "2"
+        summary: Where applicable, how performance is evaluated.
+        source: shipped
+        href: ../performance.md
+        note: >-
+          Performance is measured by an independent instrument in open-loop,
+          coordinated-omission-free runs, and the records are committed.
+  - id: "3"
+    heading: References to the common specifications used
+    points:
+      - id: "3"
+        summary: Common specifications under Article 36 against which conformity is declared.
+        source: open
+        note: >-
+          The implementing acts that set the common specifications have not
+          been adopted. Nothing can reference them yet.
+  - id: "4"
+    heading: Verification and validation results
+    points:
+      - id: "4"
+        summary: Results and critical analyses of the tests demonstrating conformity.
+        source: partial
+        href: ../conformance.md
+        note: >-
+          The openEHR conformance record is complete and committed. It
+          demonstrates conformity to the openEHR specifications, which is a
+          different claim from conformity to Annex II; the European digital
+          testing environment of Article 40 does not exist yet.
+  - id: "5"
+    heading: A copy of the information sheet
+    points:
+      - id: "5"
+        summary: The information sheet required by Article 38.
+        source: open
+        note: No information sheet has been drawn up.
+  - id: "6"
+    heading: A copy of the EU declaration of conformity
+    points:
+      - id: "6"
+        summary: The declaration required by Article 39.
+        source: open
+        note: >-
+          No declaration exists, and none can be made before the common
+          specifications are adopted and the manufacturer is identified.
+
+# The questions that decide whether any of this applies to a given deployment,
+# and who has to answer them. Each is a question, not a position.
+open_questions:
+  - id: manufacturer
+    question: >-
+      Who is the manufacturer of a FerroEHR deployment? FerroEHR is
+      source-available software, not a product placed on the market. Article
+      26(2) treats an EHR system manufactured and used within a health
+      institution, and one offered as a service, as put into service — which
+      puts the manufacturer's duties on the party doing that rather than on
+      the project.
+    issues: [3168]
+  - id: general-purpose
+    question: >-
+      Article 25(2) excludes general purpose software used in a healthcare
+      environment from Chapter III. A clinical data repository is not general
+      purpose software, so the exclusion is unlikely to apply, but the line
+      has not been drawn by guidance yet.
+    issues: [3168]
+  - id: exchange-format
+    question: >-
+      The European electronic health record exchange format is set by
+      implementing acts under Article 36 that have not been adopted. Until
+      they are, requirements 2.1 to 2.3 name a format with no content, and
+      what the interoperability component must emit cannot be built to a
+      specification.
+    issues: [3171]
