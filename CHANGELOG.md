@@ -17,6 +17,25 @@ workflow refuses a tag that has no matching section here.
 
 ### Added
 
+- **The deployment artifacts can reach the demographic role split** (#3179).
+  The chart gained `database.demographicExistingSecret` (and its
+  `demographicExistingSecretKey` / inline `demographicUrl` siblings), mounted
+  as a file exactly like the clinical DSN so neither credential enters the
+  pod's environment. Set it and the schema separation becomes a credential
+  separation: one leaked connection string then reaches one domain rather than
+  both. Leave it unset and both pools share the clinical DSN, which is the
+  schema-only posture the boot self-check still verifies. The compose stacks
+  now provision all four `NOINHERIT` domain roles — previously the migrations
+  skipped them with a `NOTICE`, because the compose migrator holds no
+  `CREATEROLE`, so those stacks ran with no domain grants at all — while
+  deliberately keeping one login credential, which the init script says in
+  place. `scripts/deploy-probe.sh` gained a family that reads the posture out
+  of the database catalogue rather than the compose file: the roles exist, each
+  is `NOINHERIT`, no clinical role can read a demographic relation, and the
+  stack is single-credential on purpose. What it cannot show — a two-DSN
+  deployment, and role provisioning on a managed database — it declares as not
+  exercised.
+
 - **National identifiers in the demographic domain can be held sealed**
   (#3155). With the new `[demographic.identifier_protection]` section on, an
   identifier of a configured scheme never sits in the versioned body: the value

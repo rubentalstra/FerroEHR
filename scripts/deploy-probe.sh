@@ -115,6 +115,7 @@ run_family multimedia_broken && probes_multimedia_broken
 run_family health_broken && probes_health_broken
 run_family oidc && probes_oidc
 run_family oidc_roles && probes_oidc_roles
+run_family domain_roles && probes_domain_roles
 run_family observability && probes_observability
 run_family tenancy && probes_tenancy
 run_family events && probes_events

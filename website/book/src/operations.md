@@ -81,6 +81,38 @@ four roles do not exist at all — the development, compose and test-harness
 case, where the migrator holds no `CREATEROLE` — the check passes rather than
 inventing a failure.
 
+On Kubernetes the same choice is two chart values, mounted as files the same
+way the clinical DSN is, so neither credential enters the pod's environment:
+
+```yaml
+database:
+  existingSecret: ferroehr-db          # postgres://ferroehr_ehr:…
+  demographicExistingSecret: ferroehr-db-demographic   # postgres://ferroehr_demographic:…
+```
+
+Leave `demographicExistingSecret` unset and both pools share the clinical DSN,
+which is the schema-only posture.
+
+Provisioning the four roles is yours in both cases. The migrations create them
+only when the migrator holds `CREATEROLE` and skip them with a `NOTICE`
+otherwise, so on a managed database — where the migrator usually does not —
+create them before the first deploy:
+
+```sql
+CREATE ROLE ferroehr_ehr NOLOGIN NOINHERIT;
+CREATE ROLE ferroehr_demographic NOLOGIN NOINHERIT;
+CREATE ROLE ferroehr_ehr_reader NOLOGIN NOINHERIT;
+CREATE ROLE ferroehr_demographic_reader NOLOGIN NOINHERIT;
+```
+
+then give each login role membership of exactly one of them. `ferroehr db
+verify` tells you whether the boundary holds afterwards.
+
+The compose stacks create all four and grant both domains to the single dev
+login role. That demonstrates the schema separation and exercises the boot
+self-check; it is deliberately **not** the credential separation, because one
+container with one DSN cannot show that half honestly.
+
 > [!NOTE]
 > `ferroehr_app` and `ferroehr_reader` are the previous single-domain pair. They
 > still exist and still hold their clinical grants, but a deployment should move

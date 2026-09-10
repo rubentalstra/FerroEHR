@@ -222,6 +222,9 @@ Kubernetes: `>=1.36.0-0`
 | config.terminology.api_enabled | bool | `false` |  |
 | config.terminology.external.enabled | bool | `false` |  |
 | config.terminology.external.fail_on_error | bool | `false` |  |
+| database.demographicExistingSecret | string | `""` | Reference an existing Secret holding the DEMOGRAPHIC-role DSN. Its value is a full `postgres://ferroehr_demographic:...@host:5432/ferroehr`, a different credential from `database.existingSecret` above. |
+| database.demographicExistingSecretKey | string | `"FERROEHR__DB__DEMOGRAPHIC_URL"` | Key WITHIN demographicExistingSecret holding the demographic DSN. Mounted as a file; only its PATH reaches the pod's environment. |
+| database.demographicUrl | string | `""` | Inline demographic DSN (DEV/TEST ONLY — lands in a chart-managed Secret). Ignored when demographicExistingSecret is set. |
 | database.existingSecret | string | `""` | Reference an existing Secret holding the app-role DSN (STRONGLY preferred for production — keeps the credential out of chart values and git). The secret's value must be a full `postgres://ferroehr_app:...@host:5432/ferroehr` (optionally `?sslmode=verify-full`). |
 | database.existingSecretKey | string | `"FERROEHR__DB__URL"` | Key WITHIN existingSecret that holds the DSN. This is a Secret key name, not an environment variable name: the chart mounts that key as a file and passes only its PATH as `FERROEHR__DB__URL_FILE`, so the DSN never enters the pod's environment. The default spelling is kept for compatibility with existing Secrets created for the older env-borne arrangement. |
 | database.url | string | `""` | Inline DSN (DEV/TEST ONLY — lands in a chart-managed Secret). Leave empty and use existingSecret in production. Ignored when existingSecret is set. |

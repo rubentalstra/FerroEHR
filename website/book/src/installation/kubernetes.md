@@ -283,6 +283,22 @@ config:
     migrate: verify
 ```
 
+The demographic domain takes a third credential the same way, and it is the
+one that turns the schema separation into a credential separation:
+
+```yaml
+database:
+  existingSecret: ferroehr-db                        # postgres://ferroehr_ehr:…
+  demographicExistingSecret: ferroehr-db-demographic # postgres://ferroehr_demographic:…
+```
+
+Both are mounted as files, so neither DSN enters the pod's environment. Unset
+the second and both pools share the first, which is the schema-only posture —
+still separated, still verified at boot. Creating the four domain roles is a
+database step the chart cannot do for you;
+[Operations](../operations.md#turning-the-schema-split-into-a-role-split) has
+the statements and what `ferroehr db verify` reports.
+
 Give the migrator DSN a short `lock_timeout`
 (`?options=-c%20lock_timeout%3D5s`) so DDL blocked behind live traffic fails
 fast instead of queueing; `migrations.job.activeDeadlineSeconds` is the hard

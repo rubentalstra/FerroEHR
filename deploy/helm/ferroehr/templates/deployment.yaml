@@ -119,6 +119,16 @@ spec:
             - name: FERROEHR__DB__URL_FILE
               value: {{ printf "%s/db.url" (include "ferroehr.secretMountPath" .) | quote }}
             {{- end }}
+            {{- if or .Values.database.demographicExistingSecret .Values.database.demographicUrl }}
+            {{- /* The demographic domain's own credential, mounted the same way
+                   and for the same reason. Set, it makes the schema separation a
+                   credential separation too: one leaked DSN then reaches one
+                   domain rather than both. Unset, both pools share the clinical
+                   DSN and the separation is schema-only, which the boot
+                   self-check still enforces. */}}
+            - name: FERROEHR__DB__DEMOGRAPHIC_URL_FILE
+              value: {{ printf "%s/db.demographic_url" (include "ferroehr.secretMountPath" .) | quote }}
+            {{- end }}
             {{- if .Values.secrets.authOidcHmacSecret }}
             - name: FERROEHR__AUTH__OIDC__HMAC_SECRET_FILE
               value: {{ printf "%s/auth.oidc.hmac_secret" (include "ferroehr.secretMountPath" .) | quote }}
@@ -285,6 +295,15 @@ spec:
                     - key: {{ .Values.database.existingSecretKey }}
                       path: db.url
               {{- end }}
+              {{- if .Values.database.demographicExistingSecret }}
+              # The demographic domain's own Secret, a different credential from
+              # the clinical one above and projected as its own file.
+              - secret:
+                  name: {{ .Values.database.demographicExistingSecret }}
+                  items:
+                    - key: {{ .Values.database.demographicExistingSecretKey }}
+                      path: db.demographic_url
+              {{- end }}
               {{- if eq (include "ferroehr.hasChartFileSecrets" .) "true" }}
               - secret:
                   name: {{ include "ferroehr.secretName" . }}
@@ -292,6 +311,10 @@ spec:
               {{- if and (not .Values.database.existingSecret) .Values.database.url }}
                     - key: db.url
                       path: db.url
+              {{- end }}
+              {{- if and (not .Values.database.demographicExistingSecret) .Values.database.demographicUrl }}
+                    - key: db.demographic_url
+                      path: db.demographic_url
               {{- end }}
               {{- if .Values.secrets.eventsUrl }}
                     - key: events.url

@@ -130,6 +130,18 @@
         "url": {
           "description": "Inline DSN (dev/test only). Ignored when existingSecret is set.",
           "type": "string"
+        },
+        "demographicExistingSecret": {
+          "description": "Secret holding the demographic-domain DSN, a different credential from existingSecret. Unset, both pools share the clinical DSN and the separation stays schema-only.",
+          "type": "string"
+        },
+        "demographicExistingSecretKey": {
+          "description": "A key name INSIDE demographicExistingSecret; the chart mounts that key as a file and passes only its path.",
+          "type": "string"
+        },
+        "demographicUrl": {
+          "description": "Inline demographic DSN (dev/test only). Ignored when demographicExistingSecret is set.",
+          "type": "string"
         }
       }
     },

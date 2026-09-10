@@ -122,6 +122,34 @@ database:
   # and use existingSecret in production. Ignored when existingSecret is set.
   url: ""
 
+  # ── the demographic pseudonymisation domain ────────────────────────────────
+  # The clinical and demographic schemas are separated unconditionally, and the
+  # server refuses to boot if either runtime role can read across. What the
+  # keys below add is the CREDENTIAL separation: point the demographic pool at
+  # its own DSN and one leaked connection string no longer reaches both
+  # domains. GDPR Art. 4(5) treats the identifying data as what must be kept
+  # apart; no openEHR spec governs database roles — our own design.
+  #
+  # Leave both empty and the demographic pool uses the same DSN as the clinical
+  # one, which is the schema-only posture: still separated, still boot-checked,
+  # one credential.
+  #
+  # The four runtime roles (ferroehr_ehr, ferroehr_demographic and a read-only
+  # twin of each) are created by the migrations ONLY when the migrator holds
+  # CREATEROLE; otherwise they are skipped with a NOTICE and provisioning them
+  # is yours. `ferroehr db verify` reports whether the boundary holds.
+
+  # -- Reference an existing Secret holding the DEMOGRAPHIC-role DSN. Its value
+  # is a full `postgres://ferroehr_demographic:...@host:5432/ferroehr`, a
+  # different credential from `database.existingSecret` above.
+  demographicExistingSecret: ""
+  # -- Key WITHIN demographicExistingSecret holding the demographic DSN.
+  # Mounted as a file; only its PATH reaches the pod's environment.
+  demographicExistingSecretKey: FERROEHR__DB__DEMOGRAPHIC_URL
+  # -- Inline demographic DSN (DEV/TEST ONLY — lands in a chart-managed
+  # Secret). Ignored when demographicExistingSecret is set.
+  demographicUrl: ""
+
 # ─────────────────────────────────────────────────────────────────────────────
 # Migrations: who runs the schema.
 #

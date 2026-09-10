@@ -52,9 +52,38 @@ BEGIN
   IF NOT EXISTS (SELECT FROM pg_roles WHERE rolname = 'ferroehr_reader') THEN
     CREATE ROLE ferroehr_reader NOLOGIN;
   END IF;
+  -- The four pseudonymisation-domain roles, for the same reason as the three
+  -- above: the demographic baseline grants to them only if they already exist,
+  -- and without them compose runs with no domain grants at all and a "roles
+  -- absent" NOTICE nobody reads. NOINHERIT and no membership in one another —
+  -- a role that could inherit the other domain's grants would make the
+  -- boundary a naming convention (PostgreSQL 18, CREATE ROLE
+  -- https://www.postgresql.org/docs/18/sql-createrole.html).
+  IF NOT EXISTS (SELECT FROM pg_roles WHERE rolname = 'ferroehr_ehr') THEN
+    CREATE ROLE ferroehr_ehr NOLOGIN NOINHERIT;
+  END IF;
+  IF NOT EXISTS (SELECT FROM pg_roles WHERE rolname = 'ferroehr_demographic') THEN
+    CREATE ROLE ferroehr_demographic NOLOGIN NOINHERIT;
+  END IF;
+  IF NOT EXISTS (SELECT FROM pg_roles WHERE rolname = 'ferroehr_ehr_reader') THEN
+    CREATE ROLE ferroehr_ehr_reader NOLOGIN NOINHERIT;
+  END IF;
+  IF NOT EXISTS (SELECT FROM pg_roles WHERE rolname = 'ferroehr_demographic_reader') THEN
+    CREATE ROLE ferroehr_demographic_reader NOLOGIN NOINHERIT;
+  END IF;
   -- In dev the single app user plays both migrator and writer.
   GRANT ferroehr_migrator TO "${APP_USER}";
   GRANT ferroehr_app TO "${APP_USER}";
+  -- ONE login credential, deliberately. This stack demonstrates the SCHEMA
+  -- separation — which is unconditional, and which the server's boot
+  -- self-check verifies — not the CREDENTIAL separation. A deployment reaches
+  -- that by giving the demographic pool its own DSN (the db.demographic_url
+  -- config key, or the chart value database.demographicExistingSecret) under a
+  -- login role that is a member of ferroehr_demographic and nothing else. A
+  -- demo stack that looked split while running one credential would be worse
+  -- than one that says which half it shows.
+  GRANT ferroehr_ehr TO "${APP_USER}";
+  GRANT ferroehr_demographic TO "${APP_USER}";
 END
 \$do\$;
 SQL

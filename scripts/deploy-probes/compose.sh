@@ -418,3 +418,84 @@ YAML
   dc -f docker-compose.yml up -d ferroehr >/dev/null 2>&1
   wait_http "$CDR/health/readiness" 120 || true
 }
+
+probes_domain_roles() {
+  bold "pseudonymisation domain roles"
+
+  # #3179: the book documents four NOINHERIT runtime roles and a boot-time
+  # self-check over their grants. Nothing observed that a stack the project
+  # ships actually reaches that posture — the migrations create the roles only
+  # when the migrator holds CREATEROLE, and skip them with a NOTICE otherwise,
+  # which is silent. Far end: the DATABASE's own catalogue, not the compose
+  # file that was supposed to arrange it.
+  probe "P-ROLE-EXIST" "working" "compose" "#3179" \
+    "the four domain roles exist in the database the stack booted against"
+  local roles
+  roles="$(dc exec -T ferroehr-postgres psql -qtAX -U ferroehr -d ferroehr -c \
+    "SELECT rolname FROM pg_roles WHERE rolname LIKE 'ferroehr_%' ORDER BY rolname" 2>/dev/null)"
+  for role in ferroehr_demographic ferroehr_demographic_reader ferroehr_ehr ferroehr_ehr_reader; do
+    assert_contains "$roles" "$role" "the compose init provisions $role"
+  done
+  probe_done
+
+  # A role that could inherit the other domain's grants would make the boundary
+  # a naming convention (PostgreSQL 18, CREATE ROLE).
+  probe "P-ROLE-NOINHERIT" "working" "compose" "#3179" \
+    "each domain role is NOINHERIT"
+  local inheriting
+  inheriting="$(dc exec -T ferroehr-postgres psql -qtAX -U ferroehr -d ferroehr -c \
+    "SELECT rolname FROM pg_roles WHERE rolname IN
+       ('ferroehr_ehr','ferroehr_demographic','ferroehr_ehr_reader','ferroehr_demographic_reader')
+       AND rolinherit" 2>/dev/null)"
+  if [ -n "$inheriting" ]; then
+    probe_fail "every domain role NOINHERIT" "$inheriting" \
+      "an inheriting domain role can pick up the other domain's grants through membership"
+  fi
+  probe_done
+
+  # The property the server refuses to boot without. Asking the database
+  # directly is the far end: the boot check passing proves the server's opinion,
+  # this proves the catalogue's.
+  probe "P-ROLE-BOUNDARY" "working" "database" "#3179" \
+    "neither clinical role can read a demographic relation"
+  local breach
+  breach="$(dc exec -T ferroehr-postgres psql -qtAX -U ferroehr -d ferroehr -c \
+    "SELECT r.rolname || ' -> ' || n.nspname || '.' || c.relname
+       FROM pg_class c
+       JOIN pg_namespace n ON n.oid = c.relnamespace
+       CROSS JOIN (VALUES ('ferroehr_ehr'),('ferroehr_ehr_reader')) AS r(rolname)
+      WHERE n.nspname IN ('demographic','cold_demographic')
+        AND c.relkind IN ('r','p','v','m','f')
+        AND has_table_privilege(r.rolname, c.oid, 'SELECT')
+      LIMIT 5" 2>/dev/null)"
+  if [ -n "$breach" ]; then
+    probe_fail "no clinical role reaching the demographic domain" "$breach" \
+      "the boundary is the whole point of the split; a readable relation defeats it"
+  fi
+  probe_done
+
+  # And the honest half: this stack runs ONE login credential, so the schema
+  # separation is demonstrated and the credential separation is not. Recorded
+  # as a measurement rather than left to the reader to assume either way.
+  probe "P-ROLE-ONE-CREDENTIAL" "working" "compose" "#3179" \
+    "the compose stack is single-credential by design, and says so"
+  local demographic_dsn
+  demographic_dsn="$(curl -s -u "$BASIC" "$CDR/management/env" | grep -o '"demographic_url":"[^"]*"' || true)"
+  case "$demographic_dsn" in
+    ''|*'"demographic_url":""'*|*'"demographic_url":null'*) : ;;
+    *) probe_fail "no separate demographic DSN in the demo stack" "$demographic_dsn" \
+         "if the stack grew one, this probe's premise is stale and the note in the init script is wrong" ;;
+  esac
+  probe_done
+
+  uncovered "the CREDENTIAL separation" \
+    "this stack runs one login role that is a member of both domains, so what is
+     measured above is the SCHEMA separation and the grant boundary. Whether a
+     deployment with two DSNs keeps working — the posture the book recommends and
+     the chart's database.demographicExistingSecret configures — is not exercised
+     by any probe here."
+  uncovered "role provisioning on a managed database" \
+    "the compose init creates the four roles as the bootstrap superuser. A managed
+     PostgreSQL where the migrator holds no CREATEROLE takes the documented manual
+     step instead, and nothing here runs that path."
+}

@@ -116,7 +116,8 @@ when there is at least one secret value to carry).
 */}}
 {{- define "ferroehr.hasChartSecret" -}}
 {{- $inlineDb := and (not .Values.database.existingSecret) .Values.database.url }}
-{{- if or $inlineDb .Values.secrets.basicUserPasswordHashes .Values.secrets.authOidcHmacSecret .Values.secrets.signingKeyPassphrase .Values.secrets.eventsUrl .Values.secrets.fhirOutboundUrl .Values.secrets.auditFhirFeedUrl .Values.secrets.multimediaAccessKeyId .Values.secrets.multimediaSecretAccessKey .Values.secrets.terminologyOauth2ClientSecrets -}}
+{{- $inlineDemographic := and (not .Values.database.demographicExistingSecret) .Values.database.demographicUrl }}
+{{- if or $inlineDb $inlineDemographic .Values.secrets.basicUserPasswordHashes .Values.secrets.authOidcHmacSecret .Values.secrets.signingKeyPassphrase .Values.secrets.eventsUrl .Values.secrets.fhirOutboundUrl .Values.secrets.auditFhirFeedUrl .Values.secrets.multimediaAccessKeyId .Values.secrets.multimediaSecretAccessKey .Values.secrets.terminologyOauth2ClientSecrets -}}
 true
 {{- end -}}
 {{- end }}
@@ -128,7 +129,7 @@ OWASP Kubernetes Security Cheat Sheet prefers over an environment variable
 (https://cheatsheetseries.owasp.org/cheatsheets/Kubernetes_Security_Cheat_Sheet.html).
 */}}
 {{- define "ferroehr.hasFileSecrets" -}}
-{{- if or (eq (include "ferroehr.hasChartFileSecrets" .) "true") .Values.database.existingSecret -}}
+{{- if or (eq (include "ferroehr.hasChartFileSecrets" .) "true") .Values.database.existingSecret .Values.database.demographicExistingSecret -}}
 true
 {{- end -}}
 {{- end }}
@@ -141,7 +142,8 @@ names a Secret nothing created makes the pod fail to mount.
 */}}
 {{- define "ferroehr.hasChartFileSecrets" -}}
 {{- $inlineDb := and (not .Values.database.existingSecret) .Values.database.url -}}
-{{- if or $inlineDb .Values.secrets.authOidcHmacSecret .Values.secrets.signingKeyPassphrase .Values.secrets.multimediaSecretAccessKey .Values.secrets.terminologyOauth2ClientSecrets .Values.secrets.basicUserPasswordHashes .Values.secrets.eventsUrl .Values.secrets.fhirOutboundUrl -}}
+{{- $inlineDemographic := and (not .Values.database.demographicExistingSecret) .Values.database.demographicUrl -}}
+{{- if or $inlineDb $inlineDemographic .Values.secrets.authOidcHmacSecret .Values.secrets.signingKeyPassphrase .Values.secrets.multimediaSecretAccessKey .Values.secrets.terminologyOauth2ClientSecrets .Values.secrets.basicUserPasswordHashes .Values.secrets.eventsUrl .Values.secrets.fhirOutboundUrl -}}
 true
 {{- end -}}
 {{- end }}
