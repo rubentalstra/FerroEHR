@@ -42,15 +42,6 @@ const WAIT: Duration = Duration::from_secs(15);
 /// only observes a rendered page (module docs).
 const HYDRATION_WAIT: Duration = Duration::from_mins(1);
 
-/// The budget ONE `WebDriver` HTTP command gets, replacing thirtyfour's 120 s
-/// default (`WebDriverConfig::request_timeout`).
-///
-/// Every wait in this harness is a poll loop of short commands, so a single
-/// command must answer well inside one loop's [`WAIT`]. At the default, a
-/// stalled driver outlasts the whole loop and reports itself only as an
-/// inflated run time — the failure mode that hid a lost click for two CI runs.
-const REQUEST_TIMEOUT: Duration = Duration::from_secs(10);
-
 /// Everything a journey needs.
 pub(crate) struct Harness {
     /// The `WebDriver` session.
@@ -104,8 +95,11 @@ impl Harness {
             .expect("caps");
         caps.set_logging_prefs("browser", thirtyfour::LoggingPrefsLogLevel::All)
             .expect("logging prefs");
+        // TODO(#3218): bound a stalled steady-state command. thirtyfour's
+        // request_timeout also covers NewSession, which exceeds a short budget
+        // under nextest parallelism, and the config carries no post-build
+        // setter, so the bound belongs on our own command awaits.
         let driver = WebDriver::builder(&webdriver_url, caps)
-            .request_timeout(REQUEST_TIMEOUT)
             .await
             .expect("webdriver session (is chromedriver up?)");
         Some(Self {
@@ -255,8 +249,11 @@ impl Harness {
             serde_json::json!({"profile.managed_default_content_settings.javascript": 2}),
         )
         .expect("prefs");
+        // TODO(#3218): bound a stalled steady-state command. thirtyfour's
+        // request_timeout also covers NewSession, which exceeds a short budget
+        // under nextest parallelism, and the config carries no post-build
+        // setter, so the bound belongs on our own command awaits.
         let driver = WebDriver::builder(&webdriver_url, caps)
-            .request_timeout(REQUEST_TIMEOUT)
             .await
             .expect("webdriver session (is chromedriver up?)");
         Some(Self {
