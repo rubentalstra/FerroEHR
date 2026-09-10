@@ -560,9 +560,19 @@ probes_backup_restore() {
   clinical_dump="$(find "$dumps/clinical" -name 'clinical-*.dump' -print -quit 2>/dev/null)"
   demographic_dump="$(find "$dumps/demographic" -name 'demographic-*.dump' -print -quit 2>/dev/null)"
   if [ -z "$clinical_dump" ] || [ -z "$demographic_dump" ]; then
+    # A dump that produced no file says nothing about WHY on its own, and the
+    # answer is usually about the target rather than about postgres: who the
+    # job runs as, and what the mount looks like from inside it.
+    local target_state
+    target_state="$(FERROEHR_BACKUP_CLINICAL_DIR="$dumps/clinical" \
+      FERROEHR_BACKUP_DEMOGRAPHIC_DIR="$dumps/demographic" \
+      dc -f docker-compose.yml --profile backup run --rm --quiet-pull \
+        --entrypoint /bin/sh ferroehr-backup-clinical -c \
+        'id; ls -ldn /backup; grep " /backup " /proc/mounts; touch /backup/.probe-write 2>&1' 2>&1)"
     probe_fail "one dump file in each of the two target directories" \
       "clinical='$clinical_dump' demographic='$demographic_dump'" \
-      "the documented recipe reported: ${dump_log:0:400}"
+      "recipe: ${dump_log:0:300} || target from inside the job: ${target_state:0:400} \
+|| on the host: $(ls -ldn "$dumps/clinical" 2>&1)"
     probe_done
     return
   fi
