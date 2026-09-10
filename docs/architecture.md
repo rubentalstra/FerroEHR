@@ -95,10 +95,13 @@ fresh** (the diagrammed deep-dive is the book's Storage architecture page,
   `archetype`, `name`, `path COLLATE "C"`, `ehr_id`) and a **canonical
   openEHR JSON fragment** in `data jsonb` (verbatim `openehr-its` encoding:
   zero translation between storage and API, no synthetic fields).
-- **`vo_version`** — one temporal version table (PG18
-  `PRIMARY KEY … WITHOUT OVERLAPS`, `sys_period tstzrange`, `uuidv7()` keys)
-  instead of current+`_history` pairs; current = `upper_inf(sys_period)`
-  partial index. `LATEST_VERSION` and **`ALL_VERSIONS`** both supported.
+- **`vo_version`** — one temporal version table (`sys_period tstzrange`,
+  `uuidv7()` keys) instead of current+`_history` pairs; current =
+  `upper_inf(sys_period)` partial index. The non-overlap invariant is held by
+  partial unique btrees, not by a temporal key: the GiST `EXCLUDE` constraints
+  were removed after measurement, because GiST exclusion inserts serialize
+  under concurrency and the version table is the hot write path.
+  `LATEST_VERSION` and **`ALL_VERSIONS`** both supported.
 - **`ehr`, `contribution`, `audit`, `template_store`, `stored_query`,
   `item_tag`** — supporting tables; every write emits contribution + audit in
   the same transaction (openEHR requirement).
@@ -113,6 +116,13 @@ fresh** (the diagrammed deep-dive is the book's Storage architecture page,
   boot when either can read across (`db::verify_domain_isolation`). GDPR
   Art. 4(5) and Art. 32(1)(a); no openEHR spec governs storage layout or
   database roles.
+- **`linkage`** — the third pseudonymisation domain: `party_ehr`, the map from
+  a demographic party to the EHR whose subject it is, temporal under a PG18
+  `PRIMARY KEY … WITHOUT OVERLAPS` so a merge or split closes a row rather
+  than deleting it. Identifiers only, no attributes; a fifth `NOINHERIT` role
+  (`ferroehr_linkage`) holds it and is revoked from both domains it joins,
+  which are in turn revoked from it — the same boot gate covers all five. No
+  pool reaches it yet.
 - **`ext`** — our own `IMMUTABLE` helper functions (e.g.
   `openehr_magnitude(jsonb)` for DV_ORDERED ordering semantics), usable in
   btree **expression indexes** for measured hot paths.

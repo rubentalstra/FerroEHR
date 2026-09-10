@@ -415,11 +415,14 @@ refusal_registry_gate() {
     "networkpolicy.yaml|networkPolicy.ingressAllowAll=false with an empty|${base}|--set networkPolicy.ingressAllowAll=false|networkPolicy.ingressFrom;hardening-network-policy.md"
     "networkpolicy.yaml|with no destination for the database|${base}|--set networkPolicy.egress.enabled=true|networkPolicy.egress.database.to;hardening-network-policy.md"
     "viewer.yaml|viewer.networkPolicy.ingressAllowAll=false with an empty|${viewer}|--set viewer.networkPolicy.ingressAllowAll=false|viewer.networkPolicy.ingressFrom;hardening-network-policy.md"
-    "backup-cronjob.yaml|backup.clinical.persistentVolumeClaim is empty|${base}|--set backup.enabled=true --set backup.demographic.persistentVolumeClaim=demographic-dumps|backup.clinical.persistentVolumeClaim"
-    "backup-cronjob.yaml|backup.demographic.persistentVolumeClaim is empty|${base}|--set backup.enabled=true --set backup.clinical.persistentVolumeClaim=clinical-dumps|backup.demographic.persistentVolumeClaim"
-    "backup-cronjob.yaml|name the same claim|${base}|--set backup.enabled=true --set backup.clinical.persistentVolumeClaim=one-claim --set backup.demographic.persistentVolumeClaim=one-claim|backup.clinical.persistentVolumeClaim;backup.demographic.persistentVolumeClaim"
-    "backup-cronjob.yaml|backup.clinical.existingSecret is empty|${base}|--set backup.enabled=true --set backup.clinical.persistentVolumeClaim=clinical-dumps --set backup.demographic.persistentVolumeClaim=demographic-dumps|backup.clinical.existingSecret;BYPASSRLS"
-    "backup-cronjob.yaml|backup.demographic.existingSecret is empty|${base}|--set backup.enabled=true --set backup.clinical.persistentVolumeClaim=clinical-dumps --set backup.demographic.persistentVolumeClaim=demographic-dumps --set backup.clinical.existingSecret=clinical-backup-dsn|backup.demographic.existingSecret;BYPASSRLS"
+    "backup-cronjob.yaml|persistentVolumeClaim is empty|${base}|--set backup.enabled=true --set backup.demographic.persistentVolumeClaim=demographic-dumps --set backup.linkage.persistentVolumeClaim=linkage-dumps|backup.clinical.persistentVolumeClaim"
+    "backup-cronjob.yaml|persistentVolumeClaim is empty|${base}|--set backup.enabled=true --set backup.clinical.persistentVolumeClaim=clinical-dumps --set backup.linkage.persistentVolumeClaim=linkage-dumps|backup.demographic.persistentVolumeClaim"
+    "backup-cronjob.yaml|persistentVolumeClaim is empty|${base}|--set backup.enabled=true --set backup.clinical.persistentVolumeClaim=clinical-dumps --set backup.demographic.persistentVolumeClaim=demographic-dumps|backup.linkage.persistentVolumeClaim"
+    "backup-cronjob.yaml|name the same claim|${base}|--set backup.enabled=true --set backup.clinical.persistentVolumeClaim=one-claim --set backup.demographic.persistentVolumeClaim=one-claim --set backup.linkage.persistentVolumeClaim=linkage-dumps|backup.clinical.persistentVolumeClaim;backup.demographic.persistentVolumeClaim"
+    "backup-cronjob.yaml|name the same claim|${base}|--set backup.enabled=true --set backup.clinical.persistentVolumeClaim=clinical-dumps --set backup.demographic.persistentVolumeClaim=one-claim --set backup.linkage.persistentVolumeClaim=one-claim|backup.demographic.persistentVolumeClaim;backup.linkage.persistentVolumeClaim"
+    "backup-cronjob.yaml|existingSecret is empty|${base}|--set backup.enabled=true --set backup.clinical.persistentVolumeClaim=clinical-dumps --set backup.demographic.persistentVolumeClaim=demographic-dumps --set backup.linkage.persistentVolumeClaim=linkage-dumps|backup.clinical.existingSecret;BYPASSRLS"
+    "backup-cronjob.yaml|existingSecret is empty|${base}|--set backup.enabled=true --set backup.clinical.persistentVolumeClaim=clinical-dumps --set backup.demographic.persistentVolumeClaim=demographic-dumps --set backup.linkage.persistentVolumeClaim=linkage-dumps --set backup.clinical.existingSecret=clinical-backup-dsn|backup.demographic.existingSecret;BYPASSRLS"
+    "backup-cronjob.yaml|existingSecret is empty|${base}|--set backup.enabled=true --set backup.clinical.persistentVolumeClaim=clinical-dumps --set backup.demographic.persistentVolumeClaim=demographic-dumps --set backup.linkage.persistentVolumeClaim=linkage-dumps --set backup.clinical.existingSecret=clinical-backup-dsn --set backup.demographic.existingSecret=demographic-backup-dsn|backup.linkage.existingSecret;BYPASSRLS"
   )
 
   local record values probe wants want out refused=0
@@ -543,6 +546,7 @@ schema_gate() {
     "backup.enabled=maybe|/backup/enabled"
     "backup.clinical.schedule=17|/backup/clinical/schedule"
     "backup.demographic.schedule=daily|/backup/demographic/schedule"
+    "backup.linkage.schedule=weekly|/backup/linkage/schedule"
     "backup.backoffLimit=-1|/backup/backoffLimit"
   )
   local refused=0 probe want out

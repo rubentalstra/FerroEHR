@@ -17,6 +17,44 @@ workflow refuses a tag that has no matching section here.
 
 ### Added
 
+- **A third pseudonymisation domain: the `linkage` schema holds the
+  party-to-EHR map** (#3158). A migration adds the `linkage` schema, the
+  `linkage.party_ehr` table and the `ferroehr_linkage` role. The table records
+  which demographic party is the subject of which EHR, temporally: a
+  PostgreSQL 18 `WITHOUT OVERLAPS` primary key admits one open mapping per
+  party per tenant at any instant, so a merge or a split closes a row and
+  opens another instead of deleting history. It carries identifiers only — no
+  name, no address, no plaintext identifier — because a row is already the
+  additional information that re-joins a pseudonymised record to a person
+  (GDPR Art. 4(5)). The grants run in both directions: the clinical and
+  demographic roles are revoked from `linkage`, and `ferroehr_linkage` is
+  revoked from `ehr`, `cold`, `demographic` and `cold_demographic`, so no one
+  credential holds the map and either side of it. The boot gate
+  (`verify_domain_isolation`) now covers all five runtime roles and refuses to
+  serve when any of them can read across. Nothing reads the new schema yet;
+  the resolution service is still to come. Upgrading installations get an
+  empty schema and no data movement.
+
+- **A third backup: the `linkage` domain is dumped on its own, and the
+  deployment probes cover its boundary** (#3220). The Compose `backup` profile
+  gains `ferroehr-backup-linkage` (`FERROEHR_BACKUP_LINKAGE_DIR`, defaulting to
+  `./backups/linkage`) and the chart gains a third CronJob under
+  `backup.linkage`, with its own schedule, claim and BYPASSRLS credential. It is
+  deliberately a separate artefact rather than a place in the demographic dump:
+  `linkage.party_ehr` is the map that re-identifies a pseudonymised record, so a
+  file carrying it beside either side of that map rebuilds the join the split
+  exists to withhold (GDPR Art. 4(5)). The chart's render guards are now
+  pairwise — any two domains naming the same claim is refused, not just the
+  original pair — and the operations page documents three dumps and a restore
+  that supplies all three. The linkage dump carries `--extension=btree_gist`,
+  because a `--schema` dump carries no extension and `linkage.party_ehr`'s
+  temporal primary key is a GiST index over that extension's operator classes:
+  without it the table restores with its rows and without the key, and
+  `pg_restore` reports that as an ignored error. Enabling `backup` therefore
+  now requires a claim and a Secret for the linkage domain too; a values file
+  that sets only the first two is refused at render, naming what is missing —
+  a values contract change, so the chart goes to 8.0.0.
+
 - **The audit trail records the accessing organisation, and the declared
   purpose reaches the FHIR export** (#3204). An access record now carries an
   `organisation` column: the organisation the caller acted for, read from the

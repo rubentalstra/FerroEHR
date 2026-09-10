@@ -27,20 +27,21 @@ provisioning and migration:
 | owner | owns the database | provisioning only |
 | `ferroehr_migrator` | runs the schema migrations; owns the helper functions | the migration step |
 
-and four cover serving, split by **pseudonymisation domain** — the clinical
-record on one side, the identity of its subject on the other:
+and five cover serving, split by **pseudonymisation domain** — the clinical
+record, the identity of its subject, and the map between the two:
 
 | Role | Reads and writes | Barred from |
 |---|---|---|
-| `ferroehr_ehr` | `ehr` + its `cold` archival tier | `demographic`, `cold_demographic` |
-| `ferroehr_demographic` | `demographic` + its `cold_demographic` tier | `ehr`, `cold` |
-| `ferroehr_ehr_reader` | read-only over `ehr` + `cold` | `demographic`, `cold_demographic` |
-| `ferroehr_demographic_reader` | read-only over `demographic` + `cold_demographic` | `ehr`, `cold` |
+| `ferroehr_ehr` | `ehr` + its `cold` archival tier | `demographic`, `cold_demographic`, `linkage` |
+| `ferroehr_demographic` | `demographic` + its `cold_demographic` tier | `ehr`, `cold`, `linkage` |
+| `ferroehr_ehr_reader` | read-only over `ehr` + `cold` | `demographic`, `cold_demographic`, `linkage` |
+| `ferroehr_demographic_reader` | read-only over `demographic` + `cold_demographic` | `ehr`, `cold`, `linkage` |
+| `ferroehr_linkage` | `linkage` (the party-to-EHR map) | `ehr`, `cold`, `demographic`, `cold_demographic` |
 
 The migrations create these roles idempotently, apply the per-schema grants,
-**and revoke the other domain explicitly in both directions**, and revoke the
-ability to create objects in the public schema. The four are `NOINHERIT` and
-none is a member of another, so the boundary cannot be crossed by picking up a
+**and revoke every other domain explicitly in both directions**, and revoke the
+ability to create objects in the public schema. All five are `NOINHERIT` and
+none is a member of another, so a boundary cannot be crossed by picking up a
 membership. GDPR Art. 4(5) defines pseudonymisation as processing where
 attribution to a person needs additional information "kept separately and
 subject to technical and organisational measures", and Art. 32(1)(a) names it a
@@ -258,12 +259,13 @@ tables are never `UNLOGGED`. Test your restore, not just your backup.
 
 ### Dump each domain separately
 
-A logical backup is where the two pseudonymisation domains are easiest to
+A logical backup is where the three pseudonymisation domains are easiest to
 re-join by accident. One `pg_dump` of the whole database produces a single file
-holding both the pseudonymised clinical record and the identities of its
-subjects, and whoever can read that file can re-identify every record in it —
-which is the separation the schema split and the database roles exist to
-maintain. Dump per schema instead, into targets with different access control:
+holding the pseudonymised clinical record, the identities of its subjects and
+the map between them, and whoever can read that file can re-identify every
+record in it — which is the separation the schema split and the database roles
+exist to maintain. **Three domains, three dumps**, into targets with different
+access control:
 
 ```bash
 # The clinical domain
@@ -275,17 +277,42 @@ pg_dump --dbname="$CLINICAL_DSN" --format=custom --no-owner \
 pg_dump --dbname="$DEMOGRAPHIC_DSN" --format=custom --no-owner \
   --schema=demographic --schema=cold_demographic \
   --file=/backups/demographic/demographic-$(date -u +%Y%m%dT%H%M%SZ).dump
+
+# The party-to-EHR map, into a third directory with the narrowest audience
+pg_dump --dbname="$LINKAGE_DSN" --format=custom --no-owner \
+  --schema=linkage --extension=btree_gist \
+  --file=/backups/linkage/linkage-$(date -u +%Y%m%dT%H%M%SZ).dump
 ```
 
-Both examples ship. In Compose they are the opt-in `backup` profile:
+> [!IMPORTANT]
+> `--extension=btree_gist` on the linkage dump is load-bearing. A `--schema`
+> dump carries no extension — *"pg_dump makes no attempt to dump any other
+> database objects that the selected schema(s) might depend upon"* — and
+> `linkage.party_ehr`'s temporal `PRIMARY KEY … WITHOUT OVERLAPS` is a GiST
+> index over that extension's operator classes. Without the flag the restore
+> reports *"data type uuid has no default operator class for access method
+> gist"*, `pg_restore` ignores the error by default, and the table comes back
+> with its rows and without the key that admits one open mapping per party.
+
+The third dump is a separate artefact for the same reason the first two are,
+and it is the one that matters most. `linkage.party_ehr` says which party is
+the subject of which EHR: it is the additional information that turns a
+pseudonymised record back into a person (GDPR Art. 4(5)), so a file carrying it
+beside either side of that map rebuilds the join the split exists to withhold.
+Folding it into the demographic dump would put the identities and the map in
+one holder's hands — the artefact this whole section is written to prevent.
+
+All three examples ship. In Compose they are the opt-in `backup` profile:
 
 ```bash
 docker compose --profile backup run --rm ferroehr-backup-clinical
 docker compose --profile backup run --rm ferroehr-backup-demographic
+docker compose --profile backup run --rm ferroehr-backup-linkage
 ```
 
-Set `FERROEHR_BACKUP_CLINICAL_DIR` and `FERROEHR_BACKUP_DEMOGRAPHIC_DIR` to the
-two targets; they default to `./backups/clinical` and `./backups/demographic`.
+Set `FERROEHR_BACKUP_CLINICAL_DIR`, `FERROEHR_BACKUP_DEMOGRAPHIC_DIR` and
+`FERROEHR_BACKUP_LINKAGE_DIR` to the three targets; they default to
+`./backups/clinical`, `./backups/demographic` and `./backups/linkage`.
 Run it as yourself — `FERROEHR_BACKUP_USER="$(id -u):$(id -g)"` — and the dump
 lands owned by you. Left unset, the job runs as root inside the container and
 keeps one capability, `DAC_OVERRIDE`, because that is what writing a directory
@@ -304,19 +331,21 @@ Under Kubernetes the chart renders one `CronJob` per domain — see the chart's
 > security policy"*. That refusal is the safe outcome. The unsafe one is
 > `--enable-row-security`, which makes the dump succeed and quietly contain a
 > single tenant's rows — never use it for a backup. Give the backup job a role
-> with `BYPASSRLS` (or a superuser), read-only on its own domain.
+> with `BYPASSRLS` (or a superuser), read-only on its own domain. This applies
+> to the linkage dump as much as the other two: `linkage.party_ehr` carries the
+> same `FORCE ROW LEVEL SECURITY`.
 
 Two further properties are yours to arrange, because no configuration file can
-enforce them: the two targets carry **different** access control, and the
+enforce them: the three targets carry **different** access control, and the
 credential each job uses reaches **one** domain. Give the demographic job the demographic
 DSN once you run two ([Deploying](installation/kubernetes.md)); with a single
 credential you have separated the artefacts but not the authority to produce
 them.
 
 > [!NOTE]
-> Point-in-time recovery stays instance-wide. Both domains live in one cluster,
-> so a WAL archive covers them together and a recovery target restores them
-> together. The separation this section is about is the logical dump.
+> Point-in-time recovery stays instance-wide. All three domains live in one
+> cluster, so a WAL archive covers them together and a recovery target restores
+> them together. The separation this section is about is the logical dump.
 
 ### Restoring
 
@@ -329,19 +358,40 @@ server starts, then let the server check them:
 createdb ferroehr_restored
 pg_restore --dbname=ferroehr_restored --no-owner clinical-….dump
 pg_restore --dbname=ferroehr_restored --no-owner demographic-….dump
+pg_restore --dbname=ferroehr_restored --no-owner linkage-….dump
 # then, before anything serves traffic:
 ferroehr db verify
 ```
 
+Restore the clinical dump first. It is the one carrying the `ext` schema, and
+the other two domains' tables default and their row policies call
+`ext.current_tenant_id()`.
+
 `ferroehr db verify` issues no DDL. It checks that the database carries exactly
-this build's migrations and that no runtime role can read across the domain
-boundary, exiting non-zero when either is untrue — the same check the server
-runs at boot, which is why a server pointed at a badly restored database
+this build's migrations — **all three domains**, so a restore that skipped one
+is refused by name — and that no runtime role can read across the domain
+boundary, exiting non-zero when either is untrue. It is the same check the
+server runs at boot, which is why a server pointed at a badly restored database
 refuses to start rather than serving from it.
+
+What it does **not** read is a constraint. `pg_restore` ignores a failed
+statement unless you pass `--exit-on-error`, so a table can come back with its
+rows and without a key while every check above stays green. Read the restore's
+own output, and confirm the map kept its temporal key:
+
+```bash
+psql -d ferroehr_restored -c \
+  "SELECT conname, pg_get_constraintdef(oid) FROM pg_constraint
+     WHERE conrelid = 'linkage.party_ehr'::regclass AND contype = 'p'"
+# expect: pk_party_ehr | PRIMARY KEY (tenant_id, party_id, sys_period WITHOUT OVERLAPS)
+```
 
 Restoring only one domain is a supported outcome, not a mistake: a demographic
 dump restored on its own gives a database with identities and no clinical
 record, which is what a rehearsal of the identity domain's recovery looks like.
+Such a database is not one the server will serve from — `ferroehr db verify`
+refuses it for the domains that are missing, which is the correct answer for a
+rehearsal target.
 
 ## Rotating the national-identifier key
 

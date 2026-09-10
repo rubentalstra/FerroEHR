@@ -419,52 +419,115 @@ YAML
   wait_http "$CDR/health/readiness" 120 || true
 }
 
-# Whether the stack's database actually carries the demographic domain.
+# The pseudonymisation domains, and the ONE place every probe below takes its
+# role names, schema names and dump identity from.
+#
+# Four enumerations were spelled out by hand here before the third domain
+# arrived (#3220): the role roll-call, the NOINHERIT set, the roles the
+# boundary reads with, and the schemas it reads into. A probe that enumerates a
+# role set which no longer matches the database reports green about a boundary
+# it is not testing — which is exactly what happened when `linkage` landed. So
+# the enumeration exists once and every probe derives from it, and a fourth
+# domain is one line here rather than an escape.
+#
+# One record per domain, `|`-separated:
+#
+#   1  name     — also the compose backup job's suffix and its dump filename
+#                 prefix, and the FERROEHR_BACKUP_<NAME>_DIR the job reads
+#   2  roles    — the runtime roles serving it (space-separated)
+#   3  schemas  — the schemas the boundary covers: what a role belonging to
+#                 ANOTHER domain must not be able to read (space-separated)
+#   4  markers  — relations naming this domain in a dump's table of contents
+#                 (`;`-separated). The first must be PRESENT in this domain's
+#                 own dump; every one must be ABSENT from every other's.
+#
+# `ext` and `audit` appear in neither list 3 nor list 4 on purpose: they are
+# shared infrastructure the clinical dump carries along, not a domain any role
+# is barred from.
+PROBE_DOMAINS=(
+  "clinical|ferroehr_ehr ferroehr_ehr_reader|ehr cold|ehr vo_version"
+  "demographic|ferroehr_demographic ferroehr_demographic_reader|demographic cold_demographic|demographic vo_version;demographic national_identifier"
+  "linkage|ferroehr_linkage|linkage|linkage party_ehr"
+)
+
+# Field <n> of a domain record.
+domain_field() { printf '%s' "$1" | cut -d'|' -f"$2"; }
+
+# Every runtime role in the table, one per line.
+domain_all_roles() {
+  local record role
+  local -a roles
+  for record in "${PROBE_DOMAINS[@]}"; do
+    read -ra roles <<< "$(domain_field "$record" 2)"
+    for role in "${roles[@]}"; do printf '%s\n' "$role"; done
+  done
+}
+
+# A space-separated list as a SQL IN-list of quoted literals. Every value it
+# ever sees is a literal from the table above, so there is nothing here a
+# deployment could inject through.
+sql_in_list() {
+  local -a items
+  local item out=""
+  read -ra items <<< "$1"
+  for item in "${items[@]}"; do out="${out:+$out,}'$item'"; done
+  printf '%s' "$out"
+}
+
+# The domains whose schemas this stack's database does not actually carry,
+# space-separated and empty when all of them are present.
 #
 # A local run defaults to the PUBLISHED server image, and a release that
-# predates the domain split migrates no `demographic` schema — so every probe
-# about the boundary would answer about a database that has no second domain to
-# separate, passing vacuously. CI builds the image from source
+# predates a domain migrates none of its schemas — so every probe about the
+# boundary would answer about a database with nothing to separate, passing
+# vacuously. CI builds the image from source
 # (`FERROEHR_IMAGE: ferroehr:deploy-probe`); a run that does not is told what it
 # is measuring instead of being allowed to look green.
-demographic_domain_present() {
-  local tables
-  tables="$(dc exec -T ferroehr-postgres psql -qtAX -U "${PG_INIT_USER:-ferroehr}" \
-    -d "${PG_INIT_DB:-ferroehr}" -c \
-    "SELECT count(*) FROM pg_class c JOIN pg_namespace n ON n.oid = c.relnamespace
-      WHERE n.nspname = 'demographic' AND c.relkind = 'r'" 2>/dev/null)"
-  [ "${tables:-0}" -gt 0 ] 2>/dev/null
+missing_domains() {
+  local record name tables
+  for record in "${PROBE_DOMAINS[@]}"; do
+    name="$(domain_field "$record" 1)"
+    tables="$(dc exec -T ferroehr-postgres psql -qtAX -U "${PG_INIT_USER:-ferroehr}" \
+      -d "${PG_INIT_DB:-ferroehr}" -c \
+      "SELECT count(*) FROM pg_class c JOIN pg_namespace n ON n.oid = c.relnamespace
+        WHERE n.nspname IN ($(sql_in_list "$(domain_field "$record" 3)"))
+          AND c.relkind = 'r'" 2>/dev/null)"
+    [ "${tables:-0}" -gt 0 ] 2>/dev/null || printf '%s, ' "$name"
+  done
 }
 
 # The one sentence every domain probe prints when it declines to measure.
-demographic_domain_absent_reason() {
-  printf '%s' "the stack's database carries no demographic schema, so this measures
-     nothing about the boundary. A local run defaults to the published server image
-     (\`FERROEHR_IMAGE\`), which predates the domain split; CI builds it from source."
+domains_absent_reason() {
+  printf '%s' "the stack's database carries no relations in the ${1%, } domain(s), so this
+     measures nothing about the boundary. A local run defaults to the published
+     server image (\`FERROEHR_IMAGE\`), which predates the domain split; CI builds
+     it from source."
 }
 
 probes_domain_roles() {
   bold "pseudonymisation domain roles"
 
-  if ! demographic_domain_present; then
-    uncovered "the pseudonymisation domain roles" "$(demographic_domain_absent_reason)"
+  local absent
+  absent="$(missing_domains)"
+  if [ -n "$absent" ]; then
+    uncovered "the pseudonymisation domain roles" "$(domains_absent_reason "$absent")"
     return
   fi
 
-  # #3179: the book documents four NOINHERIT runtime roles and a boot-time
+  # #3179: the book documents the NOINHERIT runtime roles and a boot-time
   # self-check over their grants. Nothing observed that a stack the project
   # ships actually reaches that posture — the migrations create the roles only
   # when the migrator holds CREATEROLE, and skip them with a NOTICE otherwise,
   # which is silent. Far end: the DATABASE's own catalogue, not the compose
   # file that was supposed to arrange it.
   probe "P-ROLE-EXIST" "working" "compose" "#3179" \
-    "the four domain roles exist in the database the stack booted against"
-  local roles
+    "every domain role exists in the database the stack booted against"
+  local roles role
   roles="$(dc exec -T ferroehr-postgres psql -qtAX -U ferroehr -d ferroehr -c \
     "SELECT rolname FROM pg_roles WHERE rolname LIKE 'ferroehr_%' ORDER BY rolname" 2>/dev/null)"
-  for role in ferroehr_demographic ferroehr_demographic_reader ferroehr_ehr ferroehr_ehr_reader; do
+  while read -r role; do
     assert_contains "$roles" "$role" "the compose init provisions $role"
-  done
+  done <<< "$(domain_all_roles)"
   probe_done
 
   # A role that could inherit the other domain's grants would make the boundary
@@ -473,34 +536,48 @@ probes_domain_roles() {
     "each domain role is NOINHERIT"
   local inheriting
   inheriting="$(dc exec -T ferroehr-postgres psql -qtAX -U ferroehr -d ferroehr -c \
-    "SELECT rolname FROM pg_roles WHERE rolname IN
-       ('ferroehr_ehr','ferroehr_demographic','ferroehr_ehr_reader','ferroehr_demographic_reader')
-       AND rolinherit" 2>/dev/null)"
+    "SELECT rolname FROM pg_roles
+      WHERE rolname IN ($(sql_in_list "$(domain_all_roles | tr '\n' ' ')"))
+        AND rolinherit" 2>/dev/null)"
   if [ -n "$inheriting" ]; then
     probe_fail "every domain role NOINHERIT" "$inheriting" \
-      "an inheriting domain role can pick up the other domain's grants through membership"
+      "an inheriting domain role can pick up another domain's grants through membership"
   fi
   probe_done
 
   # The property the server refuses to boot without. Asking the database
   # directly is the far end: the boot check passing proves the server's opinion,
   # this proves the catalogue's.
+  #
+  # One query per domain: that domain's roles against every OTHER domain's
+  # schemas, which is the same barrier table the server enforces at boot. The
+  # roles are taken through `pg_roles` so an absent role is skipped rather than
+  # raising — P-ROLE-EXIST above is what keeps that from turning into silence.
   probe "P-ROLE-BOUNDARY" "working" "database" "#3179" \
-    "neither clinical role can read a demographic relation"
-  local breach
-  breach="$(dc exec -T ferroehr-postgres psql -qtAX -U ferroehr -d ferroehr -c \
-    "SELECT r.rolname || ' -> ' || n.nspname || '.' || c.relname
-       FROM pg_class c
-       JOIN pg_namespace n ON n.oid = c.relnamespace
-       CROSS JOIN (VALUES ('ferroehr_ehr'),('ferroehr_ehr_reader')) AS r(rolname)
-      WHERE n.nspname IN ('demographic','cold_demographic')
-        AND c.relkind IN ('r','p','v','m','f')
-        AND has_table_privilege(r.rolname, c.oid, 'SELECT')
-      LIMIT 5" 2>/dev/null)"
-  if [ -n "$breach" ]; then
-    probe_fail "no clinical role reaching the demographic domain" "$breach" \
-      "the boundary is the whole point of the split; a readable relation defeats it"
-  fi
+    "no domain's roles can read another domain's relations"
+  local record name others other_record breach
+  for record in "${PROBE_DOMAINS[@]}"; do
+    name="$(domain_field "$record" 1)"
+    others=""
+    for other_record in "${PROBE_DOMAINS[@]}"; do
+      if [ "$(domain_field "$other_record" 1)" = "$name" ]; then continue; fi
+      others="${others:+$others }$(domain_field "$other_record" 3)"
+    done
+    breach="$(dc exec -T ferroehr-postgres psql -qtAX -U ferroehr -d ferroehr -c \
+      "SELECT r.rolname || ' -> ' || n.nspname || '.' || c.relname
+         FROM pg_class c
+         JOIN pg_namespace n ON n.oid = c.relnamespace
+         CROSS JOIN (SELECT rolname FROM pg_roles
+                      WHERE rolname IN ($(sql_in_list "$(domain_field "$record" 2)"))) AS r
+        WHERE n.nspname IN ($(sql_in_list "$others"))
+          AND c.relkind IN ('r','p','v','m','f')
+          AND has_table_privilege(r.rolname, c.oid, 'SELECT')
+        LIMIT 5" 2>/dev/null)"
+    if [ -n "$breach" ]; then
+      probe_fail "no $name role reaching another domain" "$breach" \
+        "the boundary is the whole point of the split; a readable relation defeats it"
+    fi
+  done
   probe_done
 
   # And the honest half: this stack runs ONE login credential, so the schema
@@ -518,22 +595,37 @@ probes_domain_roles() {
   probe_done
 
   uncovered "the CREDENTIAL separation" \
-    "this stack runs one login role that is a member of both domains, so what is
+    "this stack runs one login role that is a member of every domain, so what is
      measured above is the SCHEMA separation and the grant boundary. Whether a
-     deployment with two DSNs keeps working — the posture the book recommends and
+     deployment with a DSN per domain keeps working — the posture the book recommends and
      the chart's database.demographicExistingSecret configures — is not exercised
      by any probe here."
   uncovered "role provisioning on a managed database" \
-    "the compose init creates the four roles as the bootstrap superuser. A managed
+    "the compose init creates the domain roles as the bootstrap superuser. A managed
      PostgreSQL where the migrator holds no CREATEROLE takes the documented manual
      step instead, and nothing here runs that path."
+}
+
+# Create a subdirectory of <dir> per domain and point every backup job at it,
+# under the FERROEHR_BACKUP_<NAME>_DIR names the compose file reads, so one
+# `run` per domain writes where this harness can find it and no directory name
+# is spelled twice.
+export_backup_dirs() {
+  local record name
+  for record in "${PROBE_DOMAINS[@]}"; do
+    name="$(domain_field "$record" 1)"
+    mkdir -p "$1/$name"
+    export "FERROEHR_BACKUP_$(printf '%s' "$name" | tr '[:lower:]' '[:upper:]')_DIR=$1/$name"
+  done
 }
 
 probes_backup_restore() {
   bold "per-domain logical backups and the restore self-check"
 
-  if ! demographic_domain_present; then
-    uncovered "per-domain logical backups" "$(demographic_domain_absent_reason)"
+  local absent
+  absent="$(missing_domains)"
+  if [ -n "$absent" ]; then
+    uncovered "per-domain logical backups" "$(domains_absent_reason "$absent")"
     return
   fi
 
@@ -542,7 +634,7 @@ probes_backup_restore() {
   # compose profile actually writes, and the server's own verdict on a database
   # restored from them — not the compose file that was supposed to arrange it.
   local dumps="$PROBE_TMP/backup"
-  mkdir -p "$dumps/clinical" "$dumps/demographic"
+  export_backup_dirs "$dumps"
 
   probe "P-BACKUP-SPLIT" "working" "compose" "#3157" \
     "the backup profile writes one dump per pseudonymisation domain"
@@ -552,8 +644,9 @@ probes_backup_restore() {
   # longer than the diagnostic underneath it, and a truncated note that shows
   # the chatter instead of the error is worse than no note.
   local dump_log="" dump_status=0
-  local job status
-  for job in clinical demographic; do
+  local record name status raw
+  for record in "${PROBE_DOMAINS[@]}"; do
+    name="$(domain_field "$record" 1)"
     # The job's EXIT STATUS is the assertion, not the presence of a file:
     # `pg_dump --file` creates its output before it connects, so a dump that
     # dies part-way leaves an artefact behind. Checking only for a file lets a
@@ -561,75 +654,82 @@ probes_backup_restore() {
     # what happened here (#3157), and cost several runs.
     # The status is taken from the RUN, before any filtering: a pipeline
     # reports its last stage, which would be the noise filter's.
-    local raw
-    raw="$(FERROEHR_BACKUP_CLINICAL_DIR="$dumps/clinical" \
-      FERROEHR_BACKUP_DEMOGRAPHIC_DIR="$dumps/demographic" \
-      dc -f docker-compose.yml --profile backup run --rm --quiet-pull \
-        "ferroehr-backup-$job" 2>&1)"
+    raw="$(dc -f docker-compose.yml --profile backup run --rm --quiet-pull \
+        "ferroehr-backup-$name" 2>&1)"
     status=$?
     [ "$status" -eq 0 ] || dump_status=$status
-    dump_log="${dump_log}[$job exit=$status] $(printf '%s' "$raw" \
+    dump_log="${dump_log}[$name exit=$status] $(printf '%s' "$raw" \
       | grep -vE '^time="|^ *Container |orphan containers' | tr '\n' ' ')"
   done
   if [ "$dump_status" -ne 0 ]; then
-    probe_fail "both dump jobs exit 0" "exit $dump_status" \
+    probe_fail "every dump job exits 0" "exit $dump_status" \
       "the recipe reported: $(printf '%s' "$dump_log" | tail -c 400)"
     probe_done
     return
   fi
-  local clinical_dump demographic_dump
-  clinical_dump="$(find "$dumps/clinical" -name 'clinical-*.dump' -print -quit 2>/dev/null)"
-  demographic_dump="$(find "$dumps/demographic" -name 'demographic-*.dump' -print -quit 2>/dev/null)"
-  if [ -z "$clinical_dump" ] || [ -z "$demographic_dump" ]; then
+  # Parallel to PROBE_DOMAINS by index: the dump each domain's job wrote.
+  local -a dump_files=()
+  local found missing=""
+  for record in "${PROBE_DOMAINS[@]}"; do
+    name="$(domain_field "$record" 1)"
+    found="$(find "$dumps/$name" -name "$name-*.dump" -print -quit 2>/dev/null)"
+    dump_files+=("$found")
+    [ -n "$found" ] || missing="${missing:+$missing }$name"
+  done
+  if [ -n "$missing" ]; then
     # A dump that produced no file says nothing about WHY on its own, and the
     # answer is usually about the target rather than about postgres: who the
     # job runs as, and what the mount looks like from inside it.
     local target_state
-    target_state="$(FERROEHR_BACKUP_CLINICAL_DIR="$dumps/clinical" \
-      FERROEHR_BACKUP_DEMOGRAPHIC_DIR="$dumps/demographic" \
-      dc -f docker-compose.yml --profile backup run --rm --quiet-pull \
-        --entrypoint /bin/sh ferroehr-backup-clinical -c \
+    target_state="$(dc -f docker-compose.yml --profile backup run --rm --quiet-pull \
+        --entrypoint /bin/sh "ferroehr-backup-${missing%% *}" -c \
         'id; ls -ldn /backup; grep " /backup " /proc/mounts; touch /backup/.probe-write 2>&1' 2>&1 \
       | grep -vE '^time="|^ *Container |orphan containers' | tr '\n' ' ')"
-    probe_fail "one dump file in each of the two target directories" \
-      "clinical='$clinical_dump' demographic='$demographic_dump'" \
+    probe_fail "one dump file in each domain's target directory" \
+      "no file for: $missing" \
       "recipe: ${dump_log:0:300} || target from inside the job: ${target_state:0:400} \
-|| on the host: $(ls -ldn "$dumps/clinical" 2>&1)"
+|| on the host: $(ls -ldn "$dumps/${missing%% *}" 2>&1)"
     probe_done
     return
   fi
   probe_done
 
-  # The property the split exists for: neither artefact carries the other
-  # domain. A dump that named both would re-join what the schema separation
-  # keeps apart (GDPR Art. 4(5)), and it would do so silently.
+  # The property the split exists for: no artefact carries another domain. A
+  # dump that named two of them would re-join what the schema separation keeps
+  # apart (GDPR Art. 4(5)), and it would do so silently. Checked PAIRWISE, so
+  # the third domain is covered against both of the others rather than only
+  # against the one it was added beside.
   probe "P-BACKUP-DISJOINT" "working" "compose" "#3157" \
-    "neither dump carries the other domain's relations"
-  local clinical_toc demographic_toc
-  clinical_toc="$(docker run --rm -v "$dumps/clinical:/backup:ro" \
-    "${FERROEHR_POSTGRES_IMAGE:-ghcr.io/rubentalstra/ferroehr-postgres:4.1.1}" \
-    pg_restore --list "/backup/$(basename "$clinical_dump")" 2>/dev/null)"
-  demographic_toc="$(docker run --rm -v "$dumps/demographic:/backup:ro" \
-    "${FERROEHR_POSTGRES_IMAGE:-ghcr.io/rubentalstra/ferroehr-postgres:4.1.1}" \
-    pg_restore --list "/backup/$(basename "$demographic_dump")" 2>/dev/null)"
-  assert_contains "$clinical_toc" "ehr vo_version" \
-    "the clinical dump must carry the clinical version table"
-  assert_not_contains "$clinical_toc" "demographic national_identifier" \
-    "a clinical backup carrying the identifier table defeats the split"
-  assert_not_contains "$clinical_toc" "demographic vo_version" \
-    "a clinical backup carrying the demographic versions defeats the split"
-  assert_contains "$demographic_toc" "demographic vo_version" \
-    "the demographic dump must carry the demographic version table; the dump job \
-reported: ${dump_log:0:300}"
-  assert_not_contains "$demographic_toc" "ehr vo_version" \
-    "a demographic backup carrying the clinical record defeats the split"
+    "no dump carries another domain's relations"
+  local -a tocs=()
+  local i j marker
+  local -a markers
+  for i in "${!PROBE_DOMAINS[@]}"; do
+    name="$(domain_field "${PROBE_DOMAINS[$i]}" 1)"
+    tocs+=("$(docker run --rm -v "$dumps/$name:/backup:ro" \
+      "${FERROEHR_POSTGRES_IMAGE:-ghcr.io/rubentalstra/ferroehr-postgres:4.1.1}" \
+      pg_restore --list "/backup/$(basename "${dump_files[$i]}")" 2>/dev/null)")
+  done
+  for i in "${!PROBE_DOMAINS[@]}"; do
+    name="$(domain_field "${PROBE_DOMAINS[$i]}" 1)"
+    IFS=';' read -ra markers <<< "$(domain_field "${PROBE_DOMAINS[$i]}" 4)"
+    assert_contains "${tocs[$i]}" "${markers[0]}" \
+      "the $name dump must carry ${markers[0]}; the dump job reported: ${dump_log:0:300}"
+    for j in "${!PROBE_DOMAINS[@]}"; do
+      if [ "$i" -eq "$j" ]; then continue; fi
+      for marker in "${markers[@]}"; do
+        assert_not_contains "${tocs[$j]}" "$marker" \
+          "a $(domain_field "${PROBE_DOMAINS[$j]}" 1) backup carrying $marker defeats the split"
+      done
+    done
+  done
   probe_done
 
   # The restore, judged by the server rather than by the restore's own exit
   # code: `ferroehr db verify` is the boot self-check (the migrations this
-  # build carries, then the domain-isolation gate over the four runtime roles).
+  # build carries, then the domain-isolation gate over the runtime roles).
   probe "P-BACKUP-RESTORE" "working" "database" "#3157" \
-    "a database restored from the two dumps passes the boot self-check"
+    "a database restored from every domain's dump passes the boot self-check"
   local restored=ferroehr_restored
   # The database is created by the BOOTSTRAP superuser and owned by the
   # application role, which is what a restore runbook does: the application
@@ -659,17 +759,26 @@ reported: ${dump_log:0:300}"
   # stack's network with the dump directory mounted, addressed by DSN. It is
   # the same `docker run` shape the table-of-contents read above uses, because
   # that one demonstrably reaches these files.
-  local restore_log network
+  #
+  # The dumps go in TABLE ORDER, which is why `clinical` is first: the other
+  # domains' tables default and their policies read `ext.current_tenant_id()`,
+  # and that schema travels with the clinical dump.
+  local restore_script="id; ls -ln" restore_log network
+  for record in "${PROBE_DOMAINS[@]}"; do
+    restore_script="$restore_script /dumps/$(domain_field "$record" 1)"
+  done
+  restore_script="$restore_script;"
+  for i in "${!PROBE_DOMAINS[@]}"; do
+    name="$(domain_field "${PROBE_DOMAINS[$i]}" 1)"
+    restore_script="$restore_script
+      pg_restore --dbname='$restored_dsn' --no-owner '/dumps/$name/$(basename "${dump_files[$i]}")';"
+  done
   network="$(docker inspect \
     --format '{{range $net, $_ := .NetworkSettings.Networks}}{{$net}}{{end}}' \
     "$(dc ps -q ferroehr-postgres)" 2>/dev/null)"
   restore_log="$(docker run --rm --network "$network" -v "$dumps:/dumps:ro" \
     "${FERROEHR_POSTGRES_IMAGE:-ghcr.io/rubentalstra/ferroehr-postgres:4.1.1}" \
-    sh -c "id; ls -ln /dumps/clinical /dumps/demographic;
-           pg_restore --dbname='$restored_dsn' --no-owner \
-             '/dumps/clinical/$(basename "$clinical_dump")';
-           pg_restore --dbname='$restored_dsn' --no-owner \
-             '/dumps/demographic/$(basename "$demographic_dump")'" 2>&1)"
+    sh -c "$restore_script" 2>&1)"
   if verify_out="$(dc exec -T -e FERROEHR__DB__URL="$restored_dsn" -e FERROEHR__DB__MIGRATE=verify \
       ferroehr /usr/local/bin/ferroehr db verify 2>&1)"; then
     :
@@ -679,6 +788,32 @@ reported: ${dump_log:0:300}"
       "create: ${create_log:0:150} || network: '${network}' || restore: $(printf '%s' \
         "$restore_log" | tr '\n' ' ' | tail -c 600)"
   fi
+  probe_done
+
+  # `ferroehr db verify` reads migration bookkeeping and grants; it never looks
+  # at a constraint. So a restore can satisfy it while the map came back
+  # STRUCTURALLY wrong, and the linkage domain is where that actually happens:
+  # a `--schema` dump carries no extension (PostgreSQL 18, pg_dump §Notes),
+  # party_ehr's temporal PRIMARY KEY … WITHOUT OVERLAPS is a GiST index over
+  # btree_gist operator classes, and pg_restore IGNORES a failed statement by
+  # default. Measured 2026-09-11 on 18.6: without `--extension=btree_gist` the
+  # table comes back with its rows and without the key that admits one open
+  # mapping per party. Far end: the restored catalogue itself.
+  probe "P-BACKUP-MAP-RESTORED" "working" "database" "#3220" \
+    "the restored linkage map carries its temporal key and its forced row policy"
+  local map_shape
+  map_shape="$(dc exec -T ferroehr-postgres psql -qtAX -U postgres -d "$restored" -c \
+    "SELECT coalesce((SELECT pg_get_constraintdef(oid) FROM pg_constraint
+                       WHERE conrelid = 'linkage.party_ehr'::regclass
+                         AND contype = 'p'), 'no primary key')
+         || ' | force_rls=' || (SELECT relforcerowsecurity
+                                  FROM pg_class WHERE oid = 'linkage.party_ehr'::regclass)" 2>&1)"
+  assert_contains "$map_shape" "WITHOUT OVERLAPS" \
+    "a party_ehr restored without its temporal key admits two open mappings for one \
+party, and nothing downstream would notice"
+  assert_contains "$map_shape" "force_rls=t" \
+    "FORCE ROW LEVEL SECURITY is what makes the tenant policy apply to the table's \
+owner too; a restore that dropped it serves one tenant another's map"
   probe_done
 
   # And the half that makes the probe above mean something: the self-check has
@@ -710,12 +845,12 @@ reported: ${dump_log:0:300}"
     -d "${PG_INIT_DB:-ferroehr}" -c "DROP DATABASE IF EXISTS $restored" >/dev/null 2>&1
 
   uncovered "point-in-time recovery" \
-    "PITR stays instance-wide by design (the two domains share one cluster), so
+    "PITR stays instance-wide by design (the domains share one cluster), so
      nothing here exercises a WAL archive or a recovery target. What is measured
      is the LOGICAL per-domain dump and the restore's grant posture."
   uncovered "an off-host backup target" \
-    "both dumps land in a directory on the machine running the stack. Whether a
-     deployment's two targets are genuinely separately access-controlled — different
+    "every dump lands in a directory on the machine running the stack. Whether a
+     deployment's targets are genuinely separately access-controlled — different
      owners, different buckets, different credentials — is an operator property this
      harness cannot observe."
 }

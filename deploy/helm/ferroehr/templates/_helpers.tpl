@@ -524,15 +524,14 @@ the operator's choice, the location inside the container is not.
 {{/*
 The Secret a backup domain's DSN comes from, and the key inside it.
 
-Resolved exactly as the Deployment resolves the two pools: the demographic
-domain uses its own credential when one is configured, and falls back to the
-clinical DSN when it is not, so a dump never reaches a domain the running server
-could not reach either. Whichever Secret it is, the key is mounted as `db.url`
-and only that PATH is passed to the container.
+Looked up by domain name under `backup`, so a new domain is a values block and
+a table entry in backup-cronjob.yaml rather than another branch here. Whichever
+Secret it is, the key is mounted as `db.url` and only that PATH reaches the
+container, so the command is identical for every domain and only the credential
+differs.
 
 Call with (dict "root" $ "domain" "clinical").
-*/}}
-{{- /*
+
 The backup DSN is the domain's OWN backup Secret, never the pool's credential.
 Every tenant-scoped table carries FORCE ROW LEVEL SECURITY, so pg_dump refuses
 a table it would read through a policy — "query would be affected by row-level
@@ -542,17 +541,9 @@ own domain, which is a different credential from the one the server serves
 with. Reusing the pool's DSN here would render CronJobs that fail every night.
 */ -}}
 {{- define "ferroehr.backupDsnSecret" -}}
-{{- if eq .domain "demographic" -}}
-{{ .root.Values.backup.demographic.existingSecret }}
-{{- else -}}
-{{ .root.Values.backup.clinical.existingSecret }}
-{{- end -}}
+{{ (index .root.Values.backup .domain).existingSecret }}
 {{- end }}
 
 {{- define "ferroehr.backupDsnSecretKey" -}}
-{{- if eq .domain "demographic" -}}
-{{ .root.Values.backup.demographic.existingSecretKey }}
-{{- else -}}
-{{ .root.Values.backup.clinical.existingSecretKey }}
-{{- end -}}
+{{ (index .root.Values.backup .domain).existingSecretKey }}
 {{- end }}

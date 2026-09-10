@@ -3,8 +3,8 @@
 Per-domain logical backups: one CronJob per pseudonymisation domain, each
 dumping only its own schemas, to its own claim, under its own credential.
 
-Keeping the clinical record and the identifying data in separate artefacts is
-the separation pseudonymisation rests on (GDPR Art. 4(5),
+Keeping the clinical record, the identifying data and the map between them in
+separate artefacts is the separation pseudonymisation rests on (GDPR Art. 4(5),
 https://eur-lex.europa.eu/eli/reg/2016/679/oj); the dumps themselves are the
 restore capability of Art. 32(1)(c). `pg_dump --schema` is the mechanism
 (https://www.postgresql.org/docs/18/app-pgdump.html). No openEHR spec governs
@@ -12,22 +12,11 @@ backups — our own design/extension.
 
 batch/v1 CronJob is stable since v1.21 and `timeZone` since v1.27 (KEP-19 and
 KEP-3140), both below this chart's kubeVersion floor, so neither is gated.
+
+The DOMAIN TABLE below is the one enumeration: the render guards, the dump
+arguments and the CronJobs all read it, so a fourth domain is one entry rather
+than a set of parallel edits that can silently disagree.
 */}}
-{{- if not .Values.backup.clinical.persistentVolumeClaim }}
-{{- fail "backup.enabled is true but backup.clinical.persistentVolumeClaim is empty: name an EXISTING PersistentVolumeClaim for the clinical dump (schemas ehr, cold, ext, audit). The chart provisions no storage — a dump with nowhere to write is a backup that silently does not exist." }}
-{{- end }}
-{{- if not .Values.backup.demographic.persistentVolumeClaim }}
-{{- fail "backup.enabled is true but backup.demographic.persistentVolumeClaim is empty: name an EXISTING PersistentVolumeClaim for the demographic dump (schemas demographic, cold_demographic). It must be a different volume from the clinical one — that separation is what this feature is for (GDPR Art. 4(5))." }}
-{{- end }}
-{{- if eq .Values.backup.clinical.persistentVolumeClaim .Values.backup.demographic.persistentVolumeClaim }}
-{{- fail "backup.clinical.persistentVolumeClaim and backup.demographic.persistentVolumeClaim name the same claim: one volume carrying both the clinical record and the identifying data is the state per-domain backups exist to prevent (GDPR Art. 4(5)). Give each domain its own claim, and the demographic one the narrower audience." }}
-{{- end }}
-{{- if not .Values.backup.clinical.existingSecret }}
-{{- fail "backup.enabled is true but backup.clinical.existingSecret is empty: name a Secret holding a BACKUP DSN for the clinical domain — a role with BYPASSRLS, read-only on ehr, cold, ext and audit. It cannot be the pool's credential: every tenant-scoped table carries FORCE ROW LEVEL SECURITY, and pg_dump refuses a table it would read through a policy, so a CronJob wired to the runtime role fails every night." }}
-{{- end }}
-{{- if not .Values.backup.demographic.existingSecret }}
-{{- fail "backup.enabled is true but backup.demographic.existingSecret is empty: name a Secret holding a BACKUP DSN for the demographic domain — a role with BYPASSRLS, read-only on demographic and cold_demographic. Give it its own role, not the clinical backup one: a single credential that dumps both domains re-joins in one identity what the split exists to separate (GDPR Art. 4(5))." }}
-{{- end }}
 {{- $root := . }}
 {{- $mount := include "ferroehr.backupMountPath" . }}
 {{- $secrets := include "ferroehr.secretMountPath" . }}
@@ -35,14 +24,62 @@ KEP-3140), both below this chart's kubeVersion floor, so neither is gated.
       (dict "name" "clinical"
             "schedule" .Values.backup.clinical.schedule
             "claim" .Values.backup.clinical.persistentVolumeClaim
-            "schemas" (list "ehr" "cold" "ext" "audit"))
+            "secret" .Values.backup.clinical.existingSecret
+            "schemas" (list "ehr" "cold" "ext" "audit")
+            "extensions" (list)
+            "claimWhy" "name an EXISTING PersistentVolumeClaim for the clinical dump (schemas ehr, cold, ext, audit). The chart provisions no storage — a dump with nowhere to write is a backup that silently does not exist."
+            "secretWhy" "name a Secret holding a BACKUP DSN for the clinical domain — a role with BYPASSRLS, read-only on ehr, cold, ext and audit. It cannot be the pool's credential: every tenant-scoped table carries FORCE ROW LEVEL SECURITY, and pg_dump refuses a table it would read through a policy, so a CronJob wired to the runtime role fails every night.")
       (dict "name" "demographic"
             "schedule" .Values.backup.demographic.schedule
             "claim" .Values.backup.demographic.persistentVolumeClaim
-            "schemas" (list "demographic" "cold_demographic")) }}
+            "secret" .Values.backup.demographic.existingSecret
+            "schemas" (list "demographic" "cold_demographic")
+            "extensions" (list)
+            "claimWhy" "name an EXISTING PersistentVolumeClaim for the demographic dump (schemas demographic, cold_demographic). It must be a different volume from every other domain's — that separation is what this feature is for (GDPR Art. 4(5))."
+            "secretWhy" "name a Secret holding a BACKUP DSN for the demographic domain — a role with BYPASSRLS, read-only on demographic and cold_demographic. Give it its own role, not the clinical backup one: a single credential that dumps two domains re-joins in one identity what the split exists to separate (GDPR Art. 4(5)).")
+      (dict "name" "linkage"
+            "schedule" .Values.backup.linkage.schedule
+            "claim" .Values.backup.linkage.persistentVolumeClaim
+            "secret" .Values.backup.linkage.existingSecret
+            "schemas" (list "linkage")
+            "extensions" (list "btree_gist")
+            "claimWhy" "name an EXISTING PersistentVolumeClaim for the linkage dump (schema linkage). It must be a different volume from the other two: linkage.party_ehr is the map from a party to its EHR, so a volume holding it beside either side of that map hands one holder the join the split withholds (GDPR Art. 4(5))."
+            "secretWhy" "name a Secret holding a BACKUP DSN for the linkage domain — a role with BYPASSRLS, read-only on linkage, and a different role from the other two. It cannot be the pool's credential either: linkage.party_ehr carries FORCE ROW LEVEL SECURITY, and pg_dump refuses a table it would read through a policy.") }}
+{{- /* Every domain needs a destination of its own, and no two may share one.
+       The collision is checked PAIRWISE rather than against the clinical claim
+       only: with three domains, "demographic and linkage on one volume" is the
+       same re-identification artefact as any other pair. Destinations are
+       checked before credentials so an operator enabling the feature is told
+       about every missing claim before being sent to look for roles. */}}
+{{- range $domain := $domains }}
+{{- if not $domain.claim }}
+{{- fail (printf "backup.enabled is true but backup.%s.persistentVolumeClaim is empty: %s" $domain.name $domain.claimWhy) }}
+{{- end }}
+{{- end }}
+{{- range $i, $domain := $domains }}
+{{- range $j, $other := $domains }}
+{{- if and (lt $i $j) (eq $domain.claim $other.claim) }}
+{{- fail (printf "backup.%s.persistentVolumeClaim and backup.%s.persistentVolumeClaim name the same claim: one volume carrying two pseudonymisation domains is the state per-domain backups exist to prevent (GDPR Art. 4(5)). Give each domain its own claim, and the demographic and linkage ones the narrower audience." $domain.name $other.name) }}
+{{- end }}
+{{- end }}
+{{- end }}
+{{- range $domain := $domains }}
+{{- if not $domain.secret }}
+{{- fail (printf "backup.enabled is true but backup.%s.existingSecret is empty: %s" $domain.name $domain.secretWhy) }}
+{{- end }}
+{{- end }}
 {{- range $domain := $domains }}
 {{- $args := "" }}
 {{- range $schema := $domain.schemas }}{{ $args = printf "%s --schema=%s" $args $schema }}{{ end }}
+{{- /* A `--schema` dump carries no extension ("pg_dump makes no attempt to dump
+       any other database objects that the selected schema(s) might depend
+       upon" — PostgreSQL 18, pg_dump §Notes), so a domain whose DDL needs one
+       names it here. linkage.party_ehr's temporal PRIMARY KEY … WITHOUT
+       OVERLAPS is a GiST index over btree_gist operator classes: measured
+       2026-09-11 on 18.6, a restore without the extension fails that one
+       statement, pg_restore ignores the error by default, and the table comes
+       back without the key. */}}
+{{- range $extension := $domain.extensions }}{{ $args = printf "%s --extension=%s" $args $extension }}{{ end }}
 {{- /* The DSN is read from its mounted file at call time: only the PATH is in
        the pod spec, so the credential is never an environment variable an
        operator can read back off the object or a child process inherits
@@ -57,7 +94,7 @@ metadata:
   name: {{ include "ferroehr.backupFullname" (dict "root" $root "domain" $domain.name) }}
   annotations:
     kubernetes.io/description: >-
-      Logical backup of the {{ $domain.name }} pseudonymisation domain: pg_dump of {{ join ", " $domain.schemas }} into the {{ $domain.claim }} claim, under the DSN that domain's pool uses. Separate claim, separate credential, separate schedule from the other domain, so no one artefact carries both the clinical record and the identifying data.
+      Logical backup of the {{ $domain.name }} pseudonymisation domain: pg_dump of {{ join ", " $domain.schemas }} into the {{ $domain.claim }} claim, under that domain's own backup DSN. Separate claim, separate credential, separate schedule from every other domain, so no one artefact carries two of the clinical record, the identifying data and the map between them.
   labels:
     {{- include "ferroehr.backupLabels" (dict "root" $root "domain" $domain.name) | nindent 4 }}
 spec:
@@ -138,7 +175,7 @@ spec:
             - name: tmp
               emptyDir: {}
             # This domain's DSN, mounted as db.url whichever Secret it came from,
-            # so the command is the same for both domains and only the
+            # so the command is the same for every domain and only the
             # credential differs.
             - name: dsn
               secret:

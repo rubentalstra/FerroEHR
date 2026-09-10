@@ -71,6 +71,9 @@ BEGIN
   IF NOT EXISTS (SELECT FROM pg_roles WHERE rolname = 'ferroehr_demographic_reader') THEN
     CREATE ROLE ferroehr_demographic_reader NOLOGIN NOINHERIT;
   END IF;
+  IF NOT EXISTS (SELECT FROM pg_roles WHERE rolname = 'ferroehr_linkage') THEN
+    CREATE ROLE ferroehr_linkage NOLOGIN NOINHERIT;
+  END IF;
   -- In dev the single app user plays both migrator and writer.
   GRANT ferroehr_migrator TO "${APP_USER}";
   GRANT ferroehr_app TO "${APP_USER}";

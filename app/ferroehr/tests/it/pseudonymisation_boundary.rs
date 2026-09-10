@@ -17,12 +17,13 @@
 //! inside the migrated clone and re-run the cutover statements against it, so
 //! the move is proven on data rather than on an empty schema.
 //!
-//! The rest prove the boundary holds afterwards: that neither runtime role can
-//! read a single relation in the other domain (connecting as each one, over
-//! relations enumerated from `information_schema` rather than a hand-written
-//! list), that a party committed through the service seam lands in
-//! `demographic` and nowhere else, and that the boot self-check refuses a
-//! database whose grants cross the boundary and passes once they do not.
+//! The rest prove the boundary holds afterwards: that no runtime role can
+//! read a single relation in a domain it does not own (connecting as each one,
+//! over relations enumerated from `information_schema` rather than a
+//! hand-written list), that a party committed through the service seam lands in
+//! `demographic` and nowhere else, that the boot self-check refuses a
+//! database whose grants cross the boundary and passes once they do not, and
+//! that the linkage map holds one open mapping per party at a time.
 
 #![expect(
     clippy::expect_used,
@@ -303,18 +304,33 @@ async fn the_cutover_refuses_an_ehr_less_row_it_does_not_classify() {
 /// Each runtime role, with a short per-test login suffix and the schemas the
 /// pseudonymisation boundary bars it from.
 ///
-/// The clinical roles are barred from the demographic domain and its cold tier;
-/// the demographic roles from the clinical ones. No openEHR spec governs
-/// database roles — our own design/extension.
+/// Three domains, mutually barred: the clinical roles are barred from the
+/// demographic domain and its cold tier and from the linkage map; the
+/// demographic roles from the clinical ones and from the map; the linkage role
+/// from both of the domains its rows join. No openEHR spec governs database
+/// roles — our own design/extension.
 const BARRIERS: &[(&str, &str, &[&str])] = &[
-    ("ew", "ferroehr_ehr", &["demographic", "cold_demographic"]),
+    (
+        "ew",
+        "ferroehr_ehr",
+        &["demographic", "cold_demographic", "linkage"],
+    ),
     (
         "er",
         "ferroehr_ehr_reader",
-        &["demographic", "cold_demographic"],
+        &["demographic", "cold_demographic", "linkage"],
     ),
-    ("dw", "ferroehr_demographic", &["ehr", "cold"]),
-    ("dr", "ferroehr_demographic_reader", &["ehr", "cold"]),
+    ("dw", "ferroehr_demographic", &["ehr", "cold", "linkage"]),
+    (
+        "dr",
+        "ferroehr_demographic_reader",
+        &["ehr", "cold", "linkage"],
+    ),
+    (
+        "lk",
+        "ferroehr_linkage",
+        &["ehr", "cold", "demographic", "cold_demographic"],
+    ),
 ];
 
 /// `SQLSTATE` 42501 `insufficient_privilege` — what `PostgreSQL` reports for a
@@ -546,40 +562,68 @@ async fn the_boot_self_check_refuses_a_cross_domain_grant() {
             .fetch_one(&pool)
             .await
             .expect("the demographic outbox identity sequence");
-    for (object, grant, revoke) in [
+    for (role, object, grant, revoke) in [
         (
+            "ferroehr_ehr",
             "demographic.vo_version",
             "GRANT SELECT ON",
             "REVOKE SELECT ON",
         ),
         (
+            "ferroehr_ehr",
             "demographic.vo_version_all",
             "GRANT SELECT ON",
             "REVOKE SELECT ON",
         ),
         (
+            "ferroehr_ehr",
             sequence.as_str(),
             "GRANT SELECT ON SEQUENCE",
             "REVOKE SELECT ON SEQUENCE",
         ),
+        // The linkage map, in both directions: a clinical role that can read
+        // it holds the join, and so does the linkage role that can read a
+        // clinical relation.
+        (
+            "ferroehr_ehr",
+            "linkage.party_ehr",
+            "GRANT SELECT ON",
+            "REVOKE SELECT ON",
+        ),
+        (
+            "ferroehr_demographic",
+            "linkage.party_ehr",
+            "GRANT SELECT ON",
+            "REVOKE SELECT ON",
+        ),
+        (
+            "ferroehr_linkage",
+            "demographic.vo_version",
+            "GRANT SELECT ON",
+            "REVOKE SELECT ON",
+        ),
+        (
+            "ferroehr_linkage",
+            "ehr.vo_version",
+            "GRANT SELECT ON",
+            "REVOKE SELECT ON",
+        ),
     ] {
-        sqlx::query(sqlx::AssertSqlSafe(format!(
-            "{grant} {object} TO ferroehr_ehr"
-        )))
-        .execute(&pool)
-        .await
-        .expect("grant across the boundary");
+        sqlx::query(sqlx::AssertSqlSafe(format!("{grant} {object} TO {role}")))
+            .execute(&pool)
+            .await
+            .expect("grant across the boundary");
 
         let refused = ferroehr::db::verify_domain_isolation(&pool).await;
-        let error = refused.expect_err("a role reaching the other domain must refuse the boot");
+        let error = refused.expect_err("a role reaching another domain must refuse the boot");
         let text = error.to_string();
         assert!(
-            text.contains("ferroehr_ehr") && text.contains(object),
+            text.contains(role) && text.contains(object),
             "the refusal names the role and the object it can reach: {text}"
         );
 
         sqlx::query(sqlx::AssertSqlSafe(format!(
-            "{revoke} {object} FROM ferroehr_ehr"
+            "{revoke} {object} FROM {role}"
         )))
         .execute(&pool)
         .await
@@ -1075,4 +1119,77 @@ async fn resolving_an_identifier_is_recorded_as_an_access() {
             "no audit record may carry the identifier value: {event}"
         );
     }
+}
+
+/// `SQLSTATE` 23P01 `exclusion_violation` — what `PostgreSQL` reports when a
+/// key carrying `WITHOUT OVERLAPS` is violated, because such a key is enforced
+/// by a `GiST` exclusion index (`PostgreSQL` docs § Appendix A "`PostgreSQL`
+/// Error Codes", class 23; `CREATE TABLE`, "`PRIMARY KEY`").
+const SQLSTATE_EXCLUSION_VIOLATION: &str = "23P01";
+
+/// One party holds at most one mapping to an EHR at any one instant, enforced
+/// by the temporal primary key rather than by whichever code path writes.
+///
+/// The second half of the test is what makes the first half mean something: a
+/// plain `UNIQUE (tenant_id, party_id)` would also refuse the overlapping row,
+/// and would then wrongly refuse the mapping a merge opens after closing the
+/// previous one. Both must hold, or the constraint is the wrong one.
+#[tokio::test]
+async fn one_party_holds_one_open_mapping_at_a_time() {
+    let db = testkit::db().await.expect("testkit database");
+    let pool = db.pool();
+    let party = Uuid::now_v7();
+
+    sqlx::query("INSERT INTO linkage.party_ehr (party_id, ehr_id) VALUES ($1, $2)")
+        .bind(party)
+        .bind(Uuid::now_v7())
+        .execute(&pool)
+        .await
+        .expect("the first mapping is accepted");
+
+    let refused = sqlx::query("INSERT INTO linkage.party_ehr (party_id, ehr_id) VALUES ($1, $2)")
+        .bind(party)
+        .bind(Uuid::now_v7())
+        .execute(&pool)
+        .await;
+    let error = refused.expect_err("a second mapping open at the same instant must be refused");
+    let code = error
+        .as_database_error()
+        .and_then(sqlx::error::DatabaseError::code)
+        .map(std::borrow::Cow::into_owned);
+    assert_eq!(
+        code.as_deref(),
+        Some(SQLSTATE_EXCLUSION_VIOLATION),
+        "the overlap must be refused by the temporal key, not fail some other way: {error}"
+    );
+
+    // Close the first mapping, the way a merge or a split does, and the next
+    // one is accepted: the periods meet at an instant and do not overlap.
+    sqlx::query(
+        "UPDATE linkage.party_ehr SET sys_period = tstzrange(lower(sys_period), now(), '[)') \
+         WHERE party_id = $1",
+    )
+    .bind(party)
+    .execute(&pool)
+    .await
+    .expect("close the mapping");
+
+    sqlx::query("INSERT INTO linkage.party_ehr (party_id, ehr_id) VALUES ($1, $2)")
+        .bind(party)
+        .bind(Uuid::now_v7())
+        .execute(&pool)
+        .await
+        .expect("a successor mapping is accepted once the previous one is closed");
+
+    let history: i64 =
+        sqlx::query_scalar("SELECT count(*) FROM linkage.party_ehr WHERE party_id = $1")
+            .bind(party)
+            .fetch_one(&pool)
+            .await
+            .expect("count the party's mappings");
+    assert_eq!(
+        history, 2,
+        "the closed mapping is kept, so which party was the subject when a \
+         composition was written stays answerable"
+    );
 }

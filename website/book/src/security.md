@@ -543,6 +543,63 @@ the published VEX justifications for scanner findings are all in
 admission time inside a Kubernetes cluster is covered separately, in
 [Images: build, provenance, scanning](installation/hardening-supply-chain.md).
 
+## The pseudonymisation boundary
+
+Multi-tenancy separates one customer's data from another's. The
+pseudonymisation boundary separates *a record from the person it is about*,
+inside one tenant, and it is enforced by PostgreSQL grants rather than by the
+server's own routing: code that reaches for the wrong schema is a bug that can
+be fixed, while a database role able to read two domains defeats the
+separation however correct the code is.
+
+GDPR [Art. 4(5)](https://eur-lex.europa.eu/eli/reg/2016/679/oj) defines
+pseudonymisation as processing where attributing data to a person requires
+additional information "kept separately and subject to technical and
+organisational measures", and Art. 32(1)(a) names it a security measure for
+health data. EDPB Guidelines 01/2025 require that separation to hold against
+internal actors, operators with database access included.
+
+Three domains hold the three parts, each behind its own role:
+
+```mermaid
+flowchart LR
+    server["FerroEHR server"]
+    server -->|ferroehr_ehr| ehr[("ehr + cold<br/>clinical versions and nodes,<br/>keyed by an opaque subject pseudonym")]
+    server -->|ferroehr_demographic| demo[("demographic + cold_demographic<br/>parties, and national identifiers<br/>sealed under a per-tenant key")]
+    server -->|ferroehr_linkage| link[("linkage<br/>which party is the subject<br/>of which EHR")]
+    server -->|audit writer| audit[("audit<br/>ATNA record repository")]
+    ehr -. barred .- demo
+    ehr -. barred .- link
+    demo -. barred .- link
+```
+
+Read one domain and you hold a clinical record whose subject is an opaque
+identifier, or a set of people with no records attached, or a table of two
+identifier columns naming neither. Only the three together re-identify
+anything, and no credential the server uses holds more than one of them. The
+migrations create the roles, grant each its own schema, and **revoke every
+other domain explicitly, in both directions**; each role is `NOINHERIT` and a
+member of no other, so a grant cannot arrive through a membership.
+
+The boundary is checked at startup, not assumed: the server reads the
+catalogue for every table, view, sequence and function each role can reach in
+a domain it does not own, and **refuses to serve** if it finds one, naming the
+role and the object. A misconfigured grant is a failed boot, not a silent
+weakening.
+
+Two limits are worth stating plainly. The clinical schema holds a *pseudonym*
+only when `[privacy] subject_namespaces` declares the namespaces a subject
+reference may draw from — left unset, whatever a client sends is what gets
+stored, and no schema split saves you from a national identifier written into
+the clinical side; see
+[Privacy and identifiers](installation/config-privacy.md). And the split is a
+schema split by default: giving the demographic domain its own
+`[db] demographic_url` is what turns it into a credential split, which is the
+deployment step described in
+[Operations](operations.md#database-roles-and-least-privilege).
+Nothing reads the `linkage` schema yet — it is created empty, and the service
+that will resolve through it, under audit, is still to come.
+
 ## Multi-tenancy
 
 Multi-tenancy lets one deployment host several isolated logical openEHR

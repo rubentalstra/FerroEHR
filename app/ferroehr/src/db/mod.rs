@@ -2,18 +2,19 @@
 // SPDX-License-Identifier: BUSL-1.1
 
 //! `PostgreSQL` bootstrap: connection settings, pool construction, and the
-//! two-schema migration sequence.
+//! per-schema migration sequence.
 //!
 //! No openEHR spec governs the persistence mechanism; the storage substrate is
 //! our own PG18-native design. This module is the single place the rest of the
 //! crate obtains a database handle: [`DbConfig`] (the `[db]` config section)
 //! feeds [`connect`] and [`connect_tenant_scoped`] for the clinical domain and
 //! [`connect_demographic`] / [`connect_tenant_scoped_demographic`] for the
-//! demographic one, and [`run_migrations`] bootstraps the four schemas and
-//! applies every embedded migration set. The two domains differ only in the
-//! `search_path` their connections carry, so one set of storage functions
-//! serves both; [`verify_domain_isolation`] is the boot gate that refuses to
-//! serve when the runtime roles can read across that boundary. The `sea-query`
+//! demographic one, and [`run_migrations`] bootstraps every schema and
+//! applies every embedded migration set. The two served domains differ only in
+//! the `search_path` their connections carry, so one set of storage functions
+//! serves both; the `linkage` schema is migrated beside them and has no pool
+//! of its own. [`verify_domain_isolation`] is the boot gate that refuses to
+//! serve when the runtime roles can read across those boundaries. The `sea-query`
 //! identifier vocabulary for the live schema lives in [`iden`]. This is the
 //! defining module for the whole bootstrap surface, with no re-exports.
 
@@ -221,12 +222,13 @@ pub enum DbError {
     )]
     OrphanedArchiveTier,
 
-    /// A runtime role can read a relation belonging to the pseudonymisation
+    /// A runtime role can read a relation belonging to a pseudonymisation
     /// domain it does not own.
     #[error(
         "the pseudonymisation boundary is not enforced by the database: role `{role}` can reach \
-         the {kind} `{relation}`, which belongs to the other domain. The clinical record and the \
-         identity of its subject must not be reachable by one credential (GDPR Art. 4(5) and \
+         the {kind} `{relation}`, which belongs to another domain. The clinical record, the \
+         identity of its subject, and the map between them must not be reachable by one \
+         credential (GDPR Art. 4(5) and \
          Art. 32(1)(a); no openEHR spec governs database roles — our own design). Remedy: \
          `REVOKE ALL ON {relation} FROM {role}` — and, for a function, `REVOKE EXECUTE ON \
          FUNCTION {relation} FROM PUBLIC`, since PUBLIC holds EXECUTE by default \
@@ -549,27 +551,38 @@ static EHR_MIGRATOR: Migrator = sqlx::migrate!("migrations/ehr");
 /// moves the parties out of them.
 static DEMOGRAPHIC_MIGRATOR: Migrator = sqlx::migrate!("migrations/demographic");
 
+/// The `linkage` schema — the linkage pseudonymisation domain: the map from a
+/// demographic party to the EHR whose subject it is, the additional
+/// information that re-joins a pseudonymised record to a person (GDPR
+/// Art. 4(5) and Art. 32(1)(a); no openEHR spec governs storage layout — our
+/// own design). Runs after `demographic`: its grants revoke the clinical and
+/// demographic roles from this schema and this schema's role from theirs, so
+/// both sets of relations must already exist.
+static LINKAGE_MIGRATOR: Migrator = sqlx::migrate!("migrations/linkage");
+
 /// The `audit` schema — the local IHE ATNA Audit Record Repository (the
 /// `audit_event` table). Strictly outside the EHR content (BASE
 /// `architecture_overview/master07-security.adoc` §Access logging: in-system
 /// access logs, never part of the EHR proper); runs after `ehr`.
 static AUDIT_MIGRATOR: Migrator = sqlx::migrate!("migrations/audit");
 
-/// The four migration sets in application order, each paired with the schema
+/// The migration sets in application order, each paired with the schema
 /// that carries its `_sqlx_migrations` bookkeeping table.
 const MIGRATION_SETS: &[(&str, &Migrator)] = &[
     ("ext", &EXT_MIGRATOR),
     ("ehr", &EHR_MIGRATOR),
     ("demographic", &DEMOGRAPHIC_MIGRATOR),
+    ("linkage", &LINKAGE_MIGRATOR),
     ("audit", &AUDIT_MIGRATOR),
 ];
 
-/// Bootstrap done outside the migrations: the four schemas and `btree_gist`
+/// Bootstrap done outside the migrations: the five schemas and `btree_gist`
 /// (required by the temporal `WITHOUT OVERLAPS` primary key).
 const BOOTSTRAP: &[&str] = &[
     "CREATE SCHEMA IF NOT EXISTS ext",
     "CREATE SCHEMA IF NOT EXISTS ehr",
     "CREATE SCHEMA IF NOT EXISTS demographic",
+    "CREATE SCHEMA IF NOT EXISTS linkage",
     "CREATE SCHEMA IF NOT EXISTS audit",
     "CREATE EXTENSION IF NOT EXISTS btree_gist WITH SCHEMA ext",
 ];
@@ -694,29 +707,41 @@ pub async fn verify_migrations(pool: &PgPool) -> Result<(), DbError> {
     Ok(())
 }
 
-/// The four runtime roles paired with the schemas each one must not be able to
-/// read.
+/// Every runtime role paired with the schemas it must not be able to read.
 ///
-/// `ferroehr_ehr`/`ferroehr_ehr_reader` serve the clinical domain and are
-/// barred from the demographic schemas; `ferroehr_demographic`/
-/// `ferroehr_demographic_reader` serve the demographic domain and are barred
-/// from the clinical ones. No openEHR spec governs database roles — our own
-/// design/extension.
+/// Three pseudonymisation domains, mutually barred. `ferroehr_ehr`/
+/// `ferroehr_ehr_reader` serve the clinical record; `ferroehr_demographic`/
+/// `ferroehr_demographic_reader` serve the identities; `ferroehr_linkage`
+/// serves the map that says which identity belongs to which record, and is
+/// barred from both — a role holding the map and either side of it would hold
+/// the join the split exists to withhold. No openEHR spec governs database
+/// roles — our own design/extension.
 const DOMAIN_ROLE_BARRIERS: &[(&str, &[&str])] = &[
-    ("ferroehr_ehr", &["demographic", "cold_demographic"]),
-    ("ferroehr_ehr_reader", &["demographic", "cold_demographic"]),
-    ("ferroehr_demographic", &["ehr", "cold"]),
-    ("ferroehr_demographic_reader", &["ehr", "cold"]),
+    (
+        "ferroehr_ehr",
+        &["demographic", "cold_demographic", "linkage"],
+    ),
+    (
+        "ferroehr_ehr_reader",
+        &["demographic", "cold_demographic", "linkage"],
+    ),
+    ("ferroehr_demographic", &["ehr", "cold", "linkage"]),
+    ("ferroehr_demographic_reader", &["ehr", "cold", "linkage"]),
+    (
+        "ferroehr_linkage",
+        &["ehr", "cold", "demographic", "cold_demographic"],
+    ),
 ];
 
-/// Refuses to serve when a runtime role can read anything in the
+/// Refuses to serve when a runtime role can read anything in a
 /// pseudonymisation domain it does not own.
 ///
-/// The separation of the clinical record from the identity of its subject is a
-/// property of the DATABASE's grants, not of the application's routing: code
-/// that reaches for the wrong schema is a bug this server can fix, while a role
-/// that can read both domains defeats the separation no matter how correct the
-/// code is (GDPR Art. 4(5) and Art. 32(1)(a),
+/// The separation of the clinical record, the identity of its subject, and the
+/// map between them is a property of the DATABASE's grants, not of the
+/// application's routing: code that reaches for the wrong schema is a bug this
+/// server can fix, while a role that can read two of the three domains defeats
+/// the separation no matter how correct the code is (GDPR Art. 4(5) and
+/// Art. 32(1)(a),
 /// <https://eur-lex.europa.eu/eli/reg/2016/679/oj>; EDPB Guidelines 01/2025
 /// require the separation to hold against internal actors). So the grants are
 /// checked at boot, and a breach is a refusal rather than a warning.
@@ -826,7 +851,7 @@ pub async fn default_tenant_versions(pool: &PgPool) -> Result<i64, DbError> {
 
 /// Compare one migration set's bookkeeping table against its embedded source.
 async fn verify_set(pool: &PgPool, schema: &str, migrator: &Migrator) -> Result<(), DbError> {
-    // The schema name is one of the three literals in `MIGRATION_SETS`, never
+    // The schema name is one of the literals in `MIGRATION_SETS`, never
     // input: `to_regclass` answers NULL for a missing relation rather than
     // failing (PostgreSQL 18 docs, "System Information Functions").
     let bookkeeping = format!("{schema}._sqlx_migrations");
@@ -906,6 +931,11 @@ async fn apply_migrations(conn: &mut PgConnection) -> Result<(), DbError> {
         .execute(&mut *conn)
         .await?;
     DEMOGRAPHIC_MIGRATOR.run(&mut *conn).await?;
+
+    sqlx::query("SET search_path TO linkage, ext")
+        .execute(&mut *conn)
+        .await?;
+    LINKAGE_MIGRATOR.run(&mut *conn).await?;
 
     sqlx::query("SET search_path TO audit, ext")
         .execute(&mut *conn)

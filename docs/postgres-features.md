@@ -33,7 +33,7 @@ feature sets below; we run the latest patch (18.6) for the fixes.
 | Feature | What it enables for FerroEHR |
 |---|---|
 | **`uuidv7()` (native)** | Timestamp-ordered UUIDs for `OBJECT_VERSION_ID`/row keys — index-friendly, no `uuid` crate round-trip for DB-generated ids. |
-| **Temporal `PRIMARY KEY`/`UNIQUE`/`FOREIGN KEY` `WITHOUT OVERLAPS`** | Enforce non-overlapping validity on the one temporal `vo_version` table (the greenfield storage design — `sys_period tstzrange`, no current/`_history` pairs; see `docs/architecture.md` §Storage) at the DB — a natural fit for openEHR versioning. |
+| **Temporal `PRIMARY KEY`/`UNIQUE`/`FOREIGN KEY` `WITHOUT OVERLAPS`** | Enforce non-overlapping validity at the DB. Used by `linkage.party_ehr`, where a party holds one mapping at a time and a merge closes a row rather than deleting it. NOT used by `vo_version`: its GiST `EXCLUDE` constraints were removed after measurement (exclusion inserts serialize, and that is the hot write path), and partial unique btrees hold the invariant there. |
 | **`RETURNING OLD/NEW`** in INSERT/UPDATE/DELETE/MERGE | One-statement audit capture (write + return prior value) for the `audit`/`contribution` rows on every version write. |
 | **Virtual generated columns** | Cheap read-time derived columns (e.g. a JSONB leaf) without storage — candidate indexes/filters for AQL hot paths. |
 | **B-tree skip scan** | Multicolumn indexes usable when a leading column is unconstrained — fewer indexes for the row-per-locatable + AQL access patterns. |
