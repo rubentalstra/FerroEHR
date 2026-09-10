@@ -28,6 +28,7 @@ mod adl2_vetdf;
 mod admin_fixture;
 mod aql_planner;
 mod audit_chain;
+mod audit_ehds_mapping;
 mod audit_feed;
 mod audit_store;
 mod canonical_json_literals;
