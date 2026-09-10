@@ -288,6 +288,16 @@ workflow refuses a tag that has no matching section here.
 
 ### Fixed
 
+- **A physically deleted party takes its multimedia with it** (#3180).
+  `physical_delete_party` removed the party's rows without collecting the
+  externalized blob keys they referenced, so a blob held only by that party
+  stayed in the object store forever — a storage leak, and on a party also a
+  deletion that did not delete, since a blob is content and an operator who
+  ran a physical delete has reason to believe it is gone. It now collects the
+  keys inside the same transaction and hands them to the same garbage
+  collection `delete_ehr` uses, which scans both pseudonymisation domains, so
+  a blob a clinical record still references survives.
+
 - **The ADL 2 corpus provenance claimed a licence the files do not state**
   (#3150). `corpus/archetypes/adl2/PROVENANCE.md` said the archetypes were
   "predominantly CC-BY-SA 3.0 where stated" and pointed at the root CC-BY-SA

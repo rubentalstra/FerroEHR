@@ -39,6 +39,7 @@ use uuid::Uuid;
 use ferroehr::extensions::multimedia::config::MultimediaConfig;
 use ferroehr::service::FerroEhrService;
 use ferroehr::service::admin::types::ExportSpec;
+use ferroehr::service::demographic::types::PartyKind;
 use ferroehr_ext::multimedia::MultimediaEngine;
 use ferroehr_ext::multimedia::store::BlobStore;
 
@@ -170,6 +171,70 @@ fn multimedia(n: usize) -> Value {
         "size": n,
         "data": base64::engine::general_purpose::STANDARD.encode(&payload),
     })
+}
+
+/// A demographic `PERSON` carrying `media` as the value of an identity ELEMENT.
+///
+/// The party path externalizes exactly as the clinical one does — the
+/// versioning layer is shared — so this is how a blob comes to be referenced
+/// only by a party.
+fn person_with_media(name: &str, media: &Value) -> Value {
+    json!({
+        "_type": "PERSON",
+        "archetype_node_id": "openEHR-DEMOGRAPHIC-PERSON.person.v1",
+        "archetype_details": { "_type": "ARCHETYPED",
+            "archetype_id": { "_type": "ARCHETYPE_ID",
+                              "value": "openEHR-DEMOGRAPHIC-PERSON.person.v1" },
+            "rm_version": "1.1.0" },
+        "name": { "_type": "DV_TEXT", "value": name },
+        "identities": [{
+            "_type": "PARTY_IDENTITY",
+            "archetype_node_id": "at0001",
+            "name": { "_type": "DV_TEXT", "value": "legal name" },
+            "details": {
+                "_type": "ITEM_TREE",
+                "archetype_node_id": "at0002",
+                "name": { "_type": "DV_TEXT", "value": "structure" },
+                "items": [{
+                    "_type": "ELEMENT",
+                    "archetype_node_id": "at0003",
+                    "name": { "_type": "DV_TEXT", "value": "portrait" },
+                    "value": media.clone()
+                }]
+            }
+        }]
+    })
+}
+
+/// Create a PERSON and return its bare versioned-object id.
+async fn make_person_with_media(svc: &FerroEhrService, name: &str, media: &Value) -> String {
+    let created = svc
+        .party_create(
+            PartyKind::Person,
+            openehr_its::json::from_canonical_value(&person_with_media(name, media))
+                .expect("the PERSON decodes"),
+            None,
+        )
+        .await
+        .expect("create person");
+    created
+        .body
+        .pointer("/uid/value")
+        .and_then(Value::as_str)
+        .expect("uid")
+        .split("::")
+        .next()
+        .expect("vo uuid")
+        .to_owned()
+}
+
+/// The blob key referenced by a stored PERSON's identity ELEMENT.
+fn party_blob_key(person: &Value) -> String {
+    let uri = person
+        .pointer("/identities/0/details/items/0/value/uri/value")
+        .and_then(Value::as_str)
+        .expect("the externalized media carries a uri");
+    uri.rsplit('/').next().expect("hex").to_owned()
 }
 
 /// A valid `EHR_STATUS` carrying `media` inside `other_details` (an ELEMENT value).
@@ -425,6 +490,68 @@ async fn gc_removes_unreferenced_but_keeps_shared_blobs() {
     assert!(
         !sw.engine().store().exists(&key).await.unwrap(),
         "an unreferenced blob must be GC'd on physical delete"
+    );
+}
+
+/// #3180: a physically deleted party takes its blobs with it, and leaves a
+/// blob anything else still references alone.
+#[tokio::test]
+async fn physical_party_delete_collects_its_blobs_but_keeps_shared_ones() {
+    let db = testkit::db().await.expect("testkit database");
+    let sw = Seaweed::start().await;
+    let svc = FerroEhrService::new(db.pool()).with_multimedia(sw.engine());
+
+    // One party holds a blob nothing else references; a second holds one it
+    // shares with a clinical record (identical bytes dedup to one blob).
+    let solo_media = multimedia(1100);
+    let shared_media = multimedia(1200);
+    let solo = make_person_with_media(&svc, "Solo", &solo_media).await;
+    let sharer = make_person_with_media(&svc, "Sharer", &shared_media).await;
+    let ehr = svc
+        .create_ehr(Some(status_with_media(shared_media.clone())))
+        .await
+        .expect("ehr sharing the blob");
+
+    let solo_key = party_blob_key(
+        &svc.party_get(PartyKind::Person, solo.clone(), None)
+            .await
+            .expect("read solo")
+            .body,
+    );
+    let shared_key = party_blob_key(
+        &svc.party_get(PartyKind::Person, sharer.clone(), None)
+            .await
+            .expect("read sharer")
+            .body,
+    );
+    assert_eq!(
+        shared_key,
+        blob_key(
+            &svc.get_ehr_status_at_time(ehr, None)
+                .await
+                .expect("read the sharing EHR")
+        ),
+        "identical media must dedup to one blob for the cross-domain case to mean anything"
+    );
+    assert_ne!(solo_key, shared_key);
+    assert!(sw.engine().store().exists(&solo_key).await.unwrap());
+    assert!(sw.engine().store().exists(&shared_key).await.unwrap());
+
+    svc.physical_party_delete(solo.clone())
+        .await
+        .expect("delete the solo party");
+    assert!(
+        !sw.engine().store().exists(&solo_key).await.unwrap(),
+        "a blob only the deleted party referenced must be collected — a blob is \
+         content, and the operator asked for a physical delete"
+    );
+
+    svc.physical_party_delete(sharer.clone())
+        .await
+        .expect("delete the sharing party");
+    assert!(
+        sw.engine().store().exists(&shared_key).await.unwrap(),
+        "a blob a clinical record still references must survive the party delete"
     );
 }
 
