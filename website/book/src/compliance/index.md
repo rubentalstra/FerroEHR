@@ -116,8 +116,9 @@ flowchart LR
 
 ### What is planned
 
-The schema and role split is done. What remains is the rest of the domain: a
-resolve map with its own role and its own audit, a clinical side that refuses
+The schema and role split is done, the `linkage` map included. What remains is
+the rest of the domain: a service that resolves through that map under its own
+audit, a clinical side that refuses
 identifying data outright, encrypted national identifiers, per-domain access
 logging, and per-domain keys and backups. The whole programme is
 [#3152](https://github.com/rubentalstra/FerroEHR/issues/3152).

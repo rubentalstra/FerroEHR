@@ -17,6 +17,24 @@ workflow refuses a tag that has no matching section here.
 
 ### Added
 
+- **A third pseudonymisation domain: the `linkage` schema holds the
+  party-to-EHR map** (#3158). A migration adds the `linkage` schema, the
+  `linkage.party_ehr` table and the `ferroehr_linkage` role. The table records
+  which demographic party is the subject of which EHR, temporally: a
+  PostgreSQL 18 `WITHOUT OVERLAPS` primary key admits one open mapping per
+  party per tenant at any instant, so a merge or a split closes a row and
+  opens another instead of deleting history. It carries identifiers only — no
+  name, no address, no plaintext identifier — because a row is already the
+  additional information that re-joins a pseudonymised record to a person
+  (GDPR Art. 4(5)). The grants run in both directions: the clinical and
+  demographic roles are revoked from `linkage`, and `ferroehr_linkage` is
+  revoked from `ehr`, `cold`, `demographic` and `cold_demographic`, so no one
+  credential holds the map and either side of it. The boot gate
+  (`verify_domain_isolation`) now covers all five runtime roles and refuses to
+  serve when any of them can read across. Nothing reads the new schema yet;
+  the resolution service is still to come. Upgrading installations get an
+  empty schema and no data movement.
+
 - **The audit trail records the accessing organisation, and the declared
   purpose reaches the FHIR export** (#3204). An access record now carries an
   `organisation` column: the organisation the caller acted for, read from the

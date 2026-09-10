@@ -27,20 +27,21 @@ provisioning and migration:
 | owner | owns the database | provisioning only |
 | `ferroehr_migrator` | runs the schema migrations; owns the helper functions | the migration step |
 
-and four cover serving, split by **pseudonymisation domain** — the clinical
-record on one side, the identity of its subject on the other:
+and five cover serving, split by **pseudonymisation domain** — the clinical
+record, the identity of its subject, and the map between the two:
 
 | Role | Reads and writes | Barred from |
 |---|---|---|
-| `ferroehr_ehr` | `ehr` + its `cold` archival tier | `demographic`, `cold_demographic` |
-| `ferroehr_demographic` | `demographic` + its `cold_demographic` tier | `ehr`, `cold` |
-| `ferroehr_ehr_reader` | read-only over `ehr` + `cold` | `demographic`, `cold_demographic` |
-| `ferroehr_demographic_reader` | read-only over `demographic` + `cold_demographic` | `ehr`, `cold` |
+| `ferroehr_ehr` | `ehr` + its `cold` archival tier | `demographic`, `cold_demographic`, `linkage` |
+| `ferroehr_demographic` | `demographic` + its `cold_demographic` tier | `ehr`, `cold`, `linkage` |
+| `ferroehr_ehr_reader` | read-only over `ehr` + `cold` | `demographic`, `cold_demographic`, `linkage` |
+| `ferroehr_demographic_reader` | read-only over `demographic` + `cold_demographic` | `ehr`, `cold`, `linkage` |
+| `ferroehr_linkage` | `linkage` (the party-to-EHR map) | `ehr`, `cold`, `demographic`, `cold_demographic` |
 
 The migrations create these roles idempotently, apply the per-schema grants,
-**and revoke the other domain explicitly in both directions**, and revoke the
-ability to create objects in the public schema. The four are `NOINHERIT` and
-none is a member of another, so the boundary cannot be crossed by picking up a
+**and revoke every other domain explicitly in both directions**, and revoke the
+ability to create objects in the public schema. All five are `NOINHERIT` and
+none is a member of another, so a boundary cannot be crossed by picking up a
 membership. GDPR Art. 4(5) defines pseudonymisation as processing where
 attribution to a person needs additional information "kept separately and
 subject to technical and organisational measures", and Art. 32(1)(a) names it a
