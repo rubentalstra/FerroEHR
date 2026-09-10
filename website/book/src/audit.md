@@ -150,9 +150,15 @@ the provenance of the content it served. openEHR models that provenance as
 `FEEDER_AUDIT` on the content itself, and the access log does not read it.
 
 One further gap, adjacent to the five: **the declared purpose of use reaches
-neither export.** It is stored on the record and served by ITI-81, but the
-DICOM rendering has no `PurposeOfUse` and the FHIR rendering no
-`agent.purposeOfUse`, so a consumer of the feed cannot see it.
+neither export**, though only one of them could carry it. It is stored on the
+record and served by ITI-81. FHIR R4 `AuditEvent` defines
+[`agent.purposeOfUse`](https://hl7.org/fhir/R4/auditevent.html) and this
+rendering does not populate it, which is a gap worth closing. The
+[DICOM Audit Message schema](https://dicom.nema.org/medical/dicom/current/output/chtml/part15/sect_A.5.html)
+of PS3.15 §A.5 defines no purpose element at all — `EventIdentification`,
+`ActiveParticipant`, `AuditSourceIdentification` and
+`ParticipantObjectIdentification`, and none of them carries one — so on that
+side it is a limit of the format, not something this code withholds.
 
 > [!NOTE]
 > Every row of this table is asserted by a test
