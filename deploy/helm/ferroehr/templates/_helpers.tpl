@@ -420,6 +420,35 @@ app.kubernetes.io/instance: {{ .Release.Name }}
 {{- end }}
 
 {{/*
+The migration hook pod's labels, and its own `app.kubernetes.io/name`.
+
+Same reason the viewer carries one (see above): a Service selector is a SUBSET
+match, so a pod labelled with the server's selector pair is selected by the
+server's Service and PodDisruptionBudget for as long as it exists — and this
+pod exists during every install and upgrade, which is exactly when a drain or
+a rollout is reading those objects. The migration pod exposes no port named
+`http`, so the Service has no endpoint to route to it today; the PDB match is
+real, and the port is a property of this pod rather than a guarantee about the
+next one. Giving the hook its own name takes both out of scope rather than
+relying on that.
+*/}}
+{{- define "ferroehr.migrationLabels" -}}
+helm.sh/chart: {{ include "ferroehr.chart" . }}
+{{ include "ferroehr.migrationSelectorLabels" . }}
+{{- if .Chart.AppVersion }}
+app.kubernetes.io/version: {{ .Chart.AppVersion | quote }}
+{{- end }}
+app.kubernetes.io/managed-by: {{ .Release.Service }}
+app.kubernetes.io/part-of: ferroehr
+app.kubernetes.io/component: migration
+{{- end }}
+
+{{- define "ferroehr.migrationSelectorLabels" -}}
+app.kubernetes.io/name: {{ printf "%s-migration" (include "ferroehr.name" .) }}
+app.kubernetes.io/instance: {{ .Release.Name }}
+{{- end }}
+
+{{/*
 The viewer image reference — digest wins over tag, as for the server.
 */}}
 {{- define "ferroehr.viewerImage" -}}
