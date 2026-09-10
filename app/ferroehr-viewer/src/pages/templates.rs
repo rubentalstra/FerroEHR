@@ -414,7 +414,18 @@ pub fn TemplatesPage() -> impl IntoView {
     // the same position, opening the same dialog, with only the copy and the
     // accepted input differing. The family comes from the URL, so both branches
     // render identically on the server pass and at hydration.
-    let action_slot = upload_trigger(upload_open, family);
+    // Opening the dialog clears BOTH halves of the previous attempt: the
+    // source, and the action value the diagnostic MessageBar renders. Leaving
+    // either behind shows the last attempt inside a dialog the reader just
+    // opened fresh.
+    let reset_upload = Callback::new(move |()| {
+        upload_source.set(String::new());
+        match family.get_untracked() {
+            TemplateFamily::Adl14 => upload.value().set(None),
+            TemplateFamily::Adl2 => adl2_upload.value().set(None),
+        }
+    });
+    let action_slot = upload_trigger(upload_open, reset_upload, family);
     let upload_dialog = upload_dialog_view(upload_open, upload_source, family, upload, adl2_upload);
     let switch = family_switch(family);
     let table_section = templates_table(filter, paging, list, gate, delete, pending_delete);
@@ -651,14 +662,27 @@ fn delete_prompt(target: &DeleteTarget) -> String {
 
 /// The upload trigger for the page-header action slot: the SAME button in the
 /// same place for both families, opening the screen's one upload dialog
-/// ([`upload_dialog_view`]). Only its label follows the family.
-fn upload_trigger(open: RwSignal<bool>, family: Memo<TemplateFamily>) -> AnyView {
+/// ([`upload_dialog_view`]) on an EMPTY source. Only its label follows the
+/// family.
+///
+/// Opening clears the source because an open is a new attempt: the previous
+/// one is cleared on success only, so without this a lost or refused upload
+/// leaves its source in the editor and the reader is offered a dialog that
+/// already looks ready to send something they did not just choose.
+fn upload_trigger(
+    open: RwSignal<bool>,
+    on_open: Callback<()>,
+    family: Memo<TemplateFamily>,
+) -> AnyView {
     view! {
         <button
             id="template-upload-open"
             type="button"
             class=BTN_PRIMARY
-            on:click=move |_| open.set(true)
+            on:click=move |_| {
+                on_open.run(());
+                open.set(true);
+            }
         >
             <leptos_icons::Icon icon=icondata_lu::LuUpload width="14" height="14" />
             {move || family.get().upload_label()}

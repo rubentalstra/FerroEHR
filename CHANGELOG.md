@@ -365,6 +365,14 @@ workflow refuses a tag that has no matching section here.
 
 ### Fixed
 
+- **The template upload dialog opens empty** (#3200). It cleared the source
+  it was holding only when the CDR accepted it, so after an upload that was
+  refused — or one whose click never reached the handler — re-opening the
+  dialog showed the previous attempt's source with the send button already
+  live, offering to send something the reader had not just chosen. Opening
+  the dialog is now a fresh attempt: the editor starts empty, and the button
+  stays inert until a file has actually been read into it.
+
 - **The migration hook's pod is no longer selected by the server's Service and
   PodDisruptionBudget** (#3197). A selector is a subset match, and the hook pod
   carried the server's selector pair plus a `component` label, so for as long

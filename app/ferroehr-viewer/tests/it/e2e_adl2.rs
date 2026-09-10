@@ -44,11 +44,10 @@ use crate::common;
 use std::time::Duration;
 
 use common::{
-    Harness, confirm_in_dialog, env, login_basic_as, retype, wait_css_absent, wait_enabled,
+    Harness, confirm_in_dialog, env, is_present, login_basic_as, retype, wait_css_absent,
     wait_text, wait_text_contains,
 };
 use reqwest::StatusCode;
-use thirtyfour::prelude::*;
 
 /// The versioned fixture pair: one HRID family, two release versions, so the
 /// versioned get has a genuine highest match to resolve a prefix to.
@@ -127,47 +126,20 @@ fn row_link(hrid: &str) -> String {
     format!("a[href='/templates/adl2/{hrid}']")
 }
 
-/// Open the upload dialog, load `relative` into its source editor, and send it.
-///
-/// The trigger is the page-header button both families share (#2955); the file
-/// picker and the paste area inside the dialog feed ONE source signal, and the
-/// submit button is inert until that signal holds something — so
-/// `wait_enabled` on the button is exactly the "the file has been read into the
-/// editor" condition, never a sleep.
-///
-/// # Panics
-/// On any interaction failure.
-async fn upload_source_file(h: &Harness, relative: &str) {
-    let path = fixture_adl2_path(relative);
-    h.wait_css("#template-upload-open")
-        .await
-        .click()
-        .await
-        .expect("open the upload dialog");
-    // The change event that fills the editor is a HYDRATED listener, and a file
-    // set before it exists is unrecoverable by retrying — a re-send of the same
-    // path fires no change event (#2285). `goto` already waited for the shell's
-    // hydration marker, so the first send lands on a live listener.
-    h.wait_css("#template-upload-picker input[type=file]")
-        .await
-        .send_keys(&path)
-        .await
-        .expect("choose the ADL2 fixture through the hidden file input");
-    wait_enabled(h, "#template-upload-submit").await;
-    h.wait_css("#template-upload-submit")
-        .await
-        .click()
-        .await
-        .expect("send the ADL2 source");
-}
-
 /// Guarantee `hrid` is in the CDR's ADL2 store: land on the listing and upload
 /// `relative` only when its row is absent.
+///
+/// The upload goes through the screen's one dialog
+/// ([`common::upload_via_dialog`]), the same control the ADL 1.4 family drives
+/// — including its post-condition on the send, so a click that dispatches
+/// nothing fails at the click rather than here (#3200).
 ///
 /// Returns `true` when this call performed the upload.
 ///
 /// # Panics
-/// When the row never appears after the upload.
+/// When the row never appears after a dispatched upload — which, the send now
+/// being post-conditioned, means the CDR accepted nothing or the listing never
+/// refetched.
 async fn ensure_adl2_template_present(h: &Harness, relative: &str, hrid: &str) -> bool {
     h.goto(LIST_URL).await;
     // Let the listing Transition resolve — to a row link, the rendered table,
@@ -176,12 +148,12 @@ async fn ensure_adl2_template_present(h: &Harness, relative: &str, hrid: &str) -
     h.wait_css("a[href^='/templates/adl2/'], table, .border-dashed, [role='alert']")
         .await;
     let link = row_link(hrid);
-    if h.driver.find(By::Css(&link)).await.is_ok() {
+    if is_present(h, &link).await {
         return false;
     }
-    upload_source_file(h, relative).await;
+    common::upload_via_dialog(h, &fixture_adl2_path(relative)).await;
     for _ in 0..75 {
-        if h.driver.find(By::Css(&link)).await.is_ok() {
+        if is_present(h, &link).await {
             return true;
         }
         tokio::time::sleep(Duration::from_millis(200)).await;
@@ -255,7 +227,7 @@ async fn adl2_upload_lists_and_serves_source_and_json() {
     h.wait_css("#adl2-catalog-pane ul.text-sm li button").await;
     wait_text_contains(&h, "#adl2-catalog-pane", "Node inspector").await;
     assert!(
-        h.driver.find(By::Css("#adl2-no-catalog")).await.is_err(),
+        !is_present(&h, "#adl2-no-catalog").await,
         "the ADL2 screen no longer claims it has no path catalog"
     );
     h.shot(5, "adl2-catalog-pane").await;
@@ -379,7 +351,7 @@ async fn an_unparseable_adl2_source_surfaces_the_engine_diagnostic() {
     h.goto(LIST_URL).await;
     h.wait_css("#template-upload-open").await;
 
-    upload_source_file(&h, "invalid/unparseable.adls").await;
+    common::upload_via_dialog(&h, &fixture_adl2_path("invalid/unparseable.adls")).await;
 
     // The engine reports AOM2 rule codes with their positions; both the code
     // and its message must survive the trip to the screen unedited.
@@ -401,12 +373,11 @@ async fn an_unparseable_adl2_source_surfaces_the_engine_diagnostic() {
 
     // Nothing was stored: the refused artefact has no row.
     assert!(
-        h.driver
-            .find(By::Css(row_link(
-                "openEHR-EHR-COMPOSITION.cnf_unparseable.v1.0.0"
-            )))
-            .await
-            .is_err(),
+        !is_present(
+            &h,
+            &row_link("openEHR-EHR-COMPOSITION.cnf_unparseable.v1.0.0")
+        )
+        .await,
         "a refused ADL2 source must not appear in the listing"
     );
 

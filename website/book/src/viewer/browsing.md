@@ -24,7 +24,9 @@ inputs feed one editor, so a chosen file can be read over, corrected, and
 sent from there. **Upload template** stays disabled until there is something
 to send, a refusal keeps the dialog open with the server's diagnostic beside
 the source it rejected, and a successful upload closes the dialog and
-refreshes the list.
+refreshes the list. Each time you open the dialog it starts empty, so a
+refused source is yours to correct while the dialog is up, and closing it
+discards the attempt.
 
 ![Templates](img/templates/templates.png)
 
