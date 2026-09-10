@@ -318,6 +318,14 @@ could otherwise assume:
   lookup are covered by other tests rather than by this table.
 - **It is not conformance to the exchange format**, which does not exist yet.
 
+The connector this table measures is planned to leave: FerroBRIDGE
+(<https://github.com/rubentalstra/FerroBRIDGE>) is the FHIRconnect and OMOP
+bridge, and [#3080](https://github.com/rubentalstra/FerroEHR/issues/3080)
+retires the in-tree connector once it ships. The EHDS readiness question does
+NOT leave with it — it is asked of the EHR system — so this table moves to the
+compliance chapter at that point rather than being deleted with the page it
+currently sits on.
+
 Two of the example compositions this rests on — the patient summary and the
 imaging report — were patched by hand rather than regenerated against a
 running server, which their pack's provenance records and
