@@ -135,7 +135,9 @@ used as test corpora. Each family keeps its upstream license:
 | The normative ADL, cADL, ODIN, BEL and Expression-Language ANTLR grammars | `openEHR/adl-antlr`, `openEHR/openEHR-antlr4` | [Apache-2.0](https://github.com/rubentalstra/FerroEHR/blob/main/LICENSES/Apache-2.0.txt) |
 | openEHR specification text (the conformance reference) | the openEHR `specifications-*` repositories | [CC-BY-SA 3.0](https://github.com/rubentalstra/FerroEHR/blob/main/LICENSES/CC-BY-SA-3.0.txt) |
 | The AQL grammar and the computable terminology assets (the terminology XML the server embeds, and its schemas) | `specifications-QUERY`, `specifications-TERM` | [CC-BY-SA 3.0](https://github.com/rubentalstra/FerroEHR/blob/main/LICENSES/CC-BY-SA-3.0.txt) |
-| Clinical models (archetypes and templates) from the openEHR Clinical Knowledge Manager and the openEHR ADL archetype library | ckm.openehr.org, `openEHR/adl-archetypes` | per-file `licence` metadata — a **mix** of [CC-BY-SA 4.0](https://github.com/rubentalstra/FerroEHR/blob/main/LICENSES/CC-BY-SA-4.0.txt) and [CC-BY-SA 3.0](https://github.com/rubentalstra/FerroEHR/blob/main/LICENSES/CC-BY-SA-3.0.txt) |
+| Clinical models (archetypes and templates) from the openEHR Clinical Knowledge Manager | ckm.openehr.org | per-file `licence` metadata — a **mix** of [CC-BY-SA 4.0](https://github.com/rubentalstra/FerroEHR/blob/main/LICENSES/CC-BY-SA-4.0.txt) and [CC-BY-SA 3.0](https://github.com/rubentalstra/FerroEHR/blob/main/LICENSES/CC-BY-SA-3.0.txt) |
+| The ADL 2 archetype library, with its ADL 1.4 twins (the shared corpus) | `openEHR/adl-archetypes` | **no stated licence** — see below |
+| The ADL 2 validator-regression library (the `openehr-adl` corpus) | `openEHR/adl-archetypes`, a different subtree | mixed: mostly **unstated**, else [CC-BY-SA 3.0](https://github.com/rubentalstra/FerroEHR/blob/main/LICENSES/CC-BY-SA-3.0.txt), [CC-BY 4.0](https://github.com/rubentalstra/FerroEHR/blob/main/LICENSES/CC-BY-4.0.txt) or [CC-BY 3.0](https://github.com/rubentalstra/FerroEHR/blob/main/LICENSES/CC-BY-3.0.txt) |
 | Test corpora (archie fixtures and reference models, Better `web-template-tests`, EHRbase SDK canonical-JSON data) | Nedap, Better Ltd, vitasystems | Apache-2.0 |
 | Three ISO 13606 / rejected-extract BMM reference models inside the archie corpus | offered by their authors under MPL 1.1 / GPL 2.0 / LGPL 2.1 | taken under [MPL 1.1](https://github.com/rubentalstra/FerroEHR/blob/main/LICENSES/MPL-1.1.txt) — see the election below |
 | One terminology schema file, `PropertyUnitData.xsd` | ADL Designer / ADL2-tools, via the openEHR TERM assets | [AGPL-3.0-only](https://github.com/rubentalstra/FerroEHR/blob/main/LICENSES/AGPL-3.0-only.txt) — see the contradiction below |
@@ -150,13 +152,37 @@ all of them. The fuzzing seed corpus is a copy of several of those trees, so it
 is declared under the union of their licenses rather than guessing each seed's
 origin from its filename.
 
-**The clinical-model corpora are mixed, and the table says so on purpose.** A
+**The CKM clinical-model corpus is mixed, and the table says so on purpose.** A
 first-hand count over the vendored CKM material finds both CC-BY-SA 4.0 (the
 majority) and CC-BY-SA 3.0 (several hundred files), so no single version is a
-true statement about the tree. Each archetype carries its own `licence` field
-inside its `description` block, and that per-file metadata is the authority for
-any individual file, which also means licensing for this material already
-survives being copied out of the repository.
+true statement about the tree. Each of those archetypes carries its own
+`licence` field inside its `description` block, and that per-file metadata is
+the authority for any individual file, which also means licensing for this
+material already survives being copied out of the repository.
+
+**The ADL 2 archetype library states no licence at all**, and this is the one
+tree here that carries no grant. Measured on 2026-09-10 over the vendored copy
+(`openEHR/adl-archetypes` at the pinned commit): of 652 archetypes, exactly one
+states a licence — and it states CC-BY 4.0, not CC-BY-SA — while the other 651
+carry `copyright = <"© openEHR Foundation">` and nothing more. Upstream states
+nothing either: no `LICENSE` file at that commit, and a four-line `README.md`.
+
+The validator-regression library from the same upstream repository is a
+different subtree and measures differently: of its 302 archetypes, 111 state a
+licence and 191 state none, and where one is stated it is predominantly
+CC-BY-SA 3.0 (100 of the 111), with 10 CC-BY 4.0 and 1 CC-BY 3.0. **No file in
+it states CC-BY-SA 4.0**, which is why its declaration names what is actually
+there rather than inheriting the CKM expression.
+
+An unstated licence is not a permissive one, so this material is declared
+`LicenseRef-openEHR-unstated`, whose text in `LICENSES/` records the
+measurement and says plainly that it is not a licence. If you lift a file out
+of that tree, you are doing so without a stated permission from the copyright
+holder, and that is your call to make rather than one this repository has made
+for you. The tree is here because it is the only independent source of paired
+ADL 1.4 and ADL 2 forms of the same archetype: generating the pairs with this
+project's own converter would validate that converter against its own output.
+Whether it stays committed is tracked on the issue this correction came from.
 
 **Two positions worth stating explicitly**, because both are the kind of thing a
 compliance review finds and a summary table hides:
@@ -192,7 +218,9 @@ So licensing is **also** published in the machine-readable form the
 - **[`LICENSES/`](https://github.com/rubentalstra/FerroEHR/tree/main/LICENSES)**
   holds the full text of every license any file in the tree is offered under,
   named by SPDX identifier: `BUSL-1.1`, `MIT`, `Apache-2.0`, `CC-BY-SA-3.0`,
-  `CC-BY-SA-4.0`, `CC-BY-4.0`, `MPL-1.1`, `AGPL-3.0-only`.
+  `CC-BY-SA-4.0`, `CC-BY-4.0`, `CC-BY-3.0`, `MPL-1.1`, `AGPL-3.0-only` — plus
+  `LicenseRef-openEHR-unstated`, which is not a licence but the record that
+  one tree carries none.
 - **[`REUSE.toml`](https://github.com/rubentalstra/FerroEHR/blob/main/REUSE.toml)**
   declares, by glob, which files are offered under which, including the two
   positions above, represented rather than flattened.

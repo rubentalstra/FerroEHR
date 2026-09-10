@@ -16,11 +16,17 @@
   `FAIL_`/`W…` prefix; this is the validator-conformance oracle keyed by
   rule code.
 - Licensing: the repository carries no top-level LICENSE file (verified
-  2026-08-04); the content is openEHR Foundation test/reference material,
-  and individual archetype descriptions carry their own `licence` field
-  (predominantly CC-BY-SA 3.0 where stated; root reference copy
-  `LICENSE-CC-BY-SA-3.0`). Recorded as-is — test-fixture use with
-  provenance retained.
+  2026-08-04, re-verified 2026-09-10, when the counts below were measured
+  over this tree). **Most of these files state no licence.** Of 302
+  archetypes, 111 carry a `licence` field and 191 carry none; where one is
+  stated it is predominantly CC-BY-SA 3.0 (100 of the 111 — 93 by URL, 5 in
+  prose, 2 spelled `CC-SA-BY`), with 10 CC-BY 4.0 and 1 CC-BY 3.0. The rest
+  carry an openEHR Foundation copyright and no grant, so `REUSE.toml`
+  declares those obligations as a disjunction and the unstated majority as
+  `LicenseRef-openEHR-unstated`. Root reference copies:
+  `LICENSE-CC-BY-SA-3.0`, `LICENSE-CC-BY-4.0`. Recorded as-is —
+  test-fixture use with provenance retained; whether unstated material may
+  stay committed is tracked on issue 3194.
 
 ## `flattener/`
 

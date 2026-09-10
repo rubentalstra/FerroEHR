@@ -1,0 +1,41 @@
+openEHR Foundation material with no stated licence
+==================================================
+
+This identifier covers vendored third-party material that carries an openEHR
+Foundation copyright notice and NO licence statement of any kind. It is not a
+licence. It is a machine-readable way of saying that the terms are unknown, so
+that a glob elsewhere in REUSE.toml cannot quietly assert a grant the files
+never made.
+
+What the files say
+------------------
+
+The material this covers is `corpus/archetypes/adl2/`, vendored from
+`https://github.com/openEHR/adl-archetypes` (`Reference/CKM_2013_12_09/`) at
+commit `093c77ea003742b9540e3dd377d615e2b26f2996`.
+
+Measured over that tree on 2026-09-10, searching every `*.adls` and `*.adl`
+for `licence` and `license` in any case and any position:
+
+  * 652 archetypes in total (322 ADL 2, 330 ADL 1.4 twins);
+  * ONE states a licence, and it states `Creative Commons CC-BY 4.0 unported`;
+  * the other 651 carry `copyright = <"© openEHR Foundation">` in their
+    description block and no licence key at all.
+
+Upstream states nothing either. At the pinned commit the repository has no
+`LICENSE`, `LICENSE.md`, `LICENSE.txt` or `COPYING`, and its `README.md` is
+four lines describing the contents with no licensing statement.
+
+What that means for a redistributor
+-----------------------------------
+
+An unstated licence is not a permissive one. Copyright is asserted by the
+files; no grant accompanies it. Anyone redistributing this tree, or lifting a
+file out of it, is doing so without a stated permission from the copyright
+holder and should reach their own conclusion about that rather than relying on
+this repository having vendored it.
+
+The subtree's own `PROVENANCE.md` carries the same measurement, the pin, and
+the reason the material is here (an independent ADL 1.4 / ADL 2 reference pair
+for the conversion path, which cannot be produced by running this project's
+own converter without validating it against its own output).

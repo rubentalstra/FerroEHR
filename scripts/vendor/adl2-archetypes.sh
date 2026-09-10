@@ -35,10 +35,11 @@
 #     grounds the ADL 2 wire cases of the DEFINITION API and gives the 1.4->2
 #     conversion an INDEPENDENT reference (upstream's conversion, not ours).
 #
-# Licensing: the repository carries no top-level LICENSE file (verified
-# 2026-08-04); the content is openEHR Foundation test/reference material, and
-# individual archetypes carry their own `licence` field (predominantly
-# CC-BY-SA 3.0 where stated). Recorded as-is, provenance retained.
+# Licensing: NOTHING here states one. The repository carries no top-level
+# LICENSE file (verified 2026-08-04, re-verified 2026-09-10), and of the 652
+# archetypes exactly ONE carries a `licence` field — reading CC-BY 4.0, not
+# CC-BY-SA. The rest carry an openEHR Foundation copyright and no grant.
+# Recorded as-is, provenance retained; see LICENSES/LicenseRef-openEHR-unstated.txt.
 #
 # Usage:
 #   scripts/vendor/adl2-archetypes.sh            # vendor at the pin below
@@ -133,11 +134,21 @@ would then be validated against its own output.
 
 ## Licensing
 
-The upstream repository carries no top-level LICENSE file; individual
-archetypes carry their own `licence` metadata (predominantly CC-BY-SA
-3.0 where stated — see the individual file). openEHR Foundation
-test/reference material, vendored verbatim with metadata retained;
-root reference copy: `LICENSE-CC-BY-SA-3.0`.
+**These files state no licence.** Of the archetypes vendored here, ONE
+carries a `licence` field and it reads `Creative Commons CC-BY 4.0
+unported`; every other one carries `copyright = <"© openEHR Foundation">`
+in its description block and no licence key at all. Upstream states
+nothing either: no `LICENSE`, `LICENSE.md`, `LICENSE.txt` or `COPYING` at
+the pinned commit, and a four-line `README.md`.
+
+So the position is: openEHR Foundation copyright, terms unstated. An
+unstated licence is not a permissive one, and this record says so rather
+than inferring a grant. `REUSE.toml` declares the subtree
+`LicenseRef-openEHR-unstated`, whose text in `LICENSES/` carries the
+measurement.
+
+Whether a tree whose terms are unstated may stay committed is a separate
+decision, tracked on issue 3194; nothing here asserts that it may.
 
 ## Contents
 
