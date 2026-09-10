@@ -176,6 +176,82 @@ services:
       retries: 20
       start_period: 10s
 
+  # ── Per-domain logical backups (opt-in: `--profile backup`) ────────────────
+  # Two one-shot dump jobs, one per pseudonymisation domain, writing to two
+  # SEPARATE host directories. Splitting the dump is the point: an artefact
+  # carrying the pseudonymised clinical record and the identities of its
+  # subjects together re-joins what the schema separation exists to keep apart
+  # (GDPR Art. 4(5), https://eur-lex.europa.eu/eli/reg/2016/679/oj; the EDPB
+  # reads the separation as defining the pseudonymisation domain in Guidelines
+  # 01/2025). Art. 32(1)(c) is why they exist at all. No openEHR spec governs
+  # backups — our own design/extension.
+  #
+  # Run one, or both:
+  #   docker compose --profile backup run --rm ferroehr-backup-clinical
+  #   docker compose --profile backup run --rm ferroehr-backup-demographic
+  #
+  # The two targets are ordinary directories, so they take ordinary
+  # permissions: give them different owners, ship them to different buckets,
+  # hand the demographic one to a smaller group. That is the "separately
+  # access-controlled" half, and this file cannot enforce it for you — it can
+  # only stop the two from landing in one file.
+  #
+  # `--format=custom` (PostgreSQL 18, pg_dump §Options) so the restore side can
+  # choose what to restore and in what order; `pg_restore` reads it.
+  # Point-in-time recovery is a different instrument and stays instance-wide:
+  # see the operations page in the documentation.
+  ferroehr-backup-clinical:
+    profiles: [backup]
+    image: ${FERROEHR_POSTGRES_IMAGE:-ghcr.io/rubentalstra/ferroehr-postgres:4.1.1}
+    depends_on:
+      ferroehr-postgres:
+        condition: service_healthy
+    environment:
+      PGPASSWORD: ${PG_INIT_PASSWORD:-ferroehr}
+    entrypoint: ["/bin/sh", "-c"]
+    command:
+      - >-
+        pg_dump --host=ferroehr-postgres --username=${PG_INIT_USER:-ferroehr}
+        --dbname=${PG_INIT_DB:-ferroehr} --format=custom --no-owner
+        --schema=ehr --schema=cold --schema=ext --schema=audit
+        --file=/backup/clinical-$$(date -u +%Y%m%dT%H%M%SZ).dump
+    volumes:
+      - ${FERROEHR_BACKUP_CLINICAL_DIR:-./backups/clinical}:/backup
+    cap_drop: [ALL]
+    security_opt:
+      - no-new-privileges:true
+    read_only: true
+    tmpfs:
+      - /tmp
+
+  ferroehr-backup-demographic:
+    profiles: [backup]
+    image: ${FERROEHR_POSTGRES_IMAGE:-ghcr.io/rubentalstra/ferroehr-postgres:4.1.1}
+    depends_on:
+      ferroehr-postgres:
+        condition: service_healthy
+    # This stack runs one login credential for both domains (the init script
+    # says why). A deployment that gives the demographic domain its own DSN
+    # points this job at that one instead, and then the job that can read the
+    # identities cannot read the clinical record.
+    environment:
+      PGPASSWORD: ${PG_INIT_PASSWORD:-ferroehr}
+    entrypoint: ["/bin/sh", "-c"]
+    command:
+      - >-
+        pg_dump --host=ferroehr-postgres --username=${PG_INIT_USER:-ferroehr}
+        --dbname=${PG_INIT_DB:-ferroehr} --format=custom --no-owner
+        --schema=demographic --schema=cold_demographic
+        --file=/backup/demographic-$$(date -u +%Y%m%dT%H%M%SZ).dump
+    volumes:
+      - ${FERROEHR_BACKUP_DEMOGRAPHIC_DIR:-./backups/demographic}:/backup
+    cap_drop: [ALL]
+    security_opt:
+      - no-new-privileges:true
+    read_only: true
+    tmpfs:
+      - /tmp
+
   ferroehr:
     image: ${FERROEHR_IMAGE:-ghcr.io/rubentalstra/ferroehr:4.1.1}
     depends_on:

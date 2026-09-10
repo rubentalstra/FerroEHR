@@ -1,0 +1,159 @@
+{{- if .Values.backup.enabled }}
+{{- /*
+Per-domain logical backups: one CronJob per pseudonymisation domain, each
+dumping only its own schemas, to its own claim, under its own credential.
+
+Keeping the clinical record and the identifying data in separate artefacts is
+the separation pseudonymisation rests on (GDPR Art. 4(5),
+https://eur-lex.europa.eu/eli/reg/2016/679/oj); the dumps themselves are the
+restore capability of Art. 32(1)(c). `pg_dump --schema` is the mechanism
+(https://www.postgresql.org/docs/18/app-pgdump.html). No openEHR spec governs
+backups — our own design/extension.
+
+batch/v1 CronJob is stable since v1.21 and `timeZone` since v1.27 (KEP-19 and
+KEP-3140), both below this chart's kubeVersion floor, so neither is gated.
+*/}}
+{{- if not .Values.backup.clinical.persistentVolumeClaim }}
+{{- fail "backup.enabled is true but backup.clinical.persistentVolumeClaim is empty: name an EXISTING PersistentVolumeClaim for the clinical dump (schemas ehr, cold, ext, audit). The chart provisions no storage — a dump with nowhere to write is a backup that silently does not exist." }}
+{{- end }}
+{{- if not .Values.backup.demographic.persistentVolumeClaim }}
+{{- fail "backup.enabled is true but backup.demographic.persistentVolumeClaim is empty: name an EXISTING PersistentVolumeClaim for the demographic dump (schemas demographic, cold_demographic). It must be a different volume from the clinical one — that separation is what this feature is for (GDPR Art. 4(5))." }}
+{{- end }}
+{{- if eq .Values.backup.clinical.persistentVolumeClaim .Values.backup.demographic.persistentVolumeClaim }}
+{{- fail "backup.clinical.persistentVolumeClaim and backup.demographic.persistentVolumeClaim name the same claim: one volume carrying both the clinical record and the identifying data is the state per-domain backups exist to prevent (GDPR Art. 4(5)). Give each domain its own claim, and the demographic one the narrower audience." }}
+{{- end }}
+{{- if not (or .Values.database.existingSecret .Values.database.url) }}
+{{- fail "backup.enabled is true but no clinical DSN is configured: set database.existingSecret (preferred) or database.url. The dump jobs read the same credential the server's pools read, so with neither set there is nothing for pg_dump to connect as." }}
+{{- end }}
+{{- $root := . }}
+{{- $mount := include "ferroehr.backupMountPath" . }}
+{{- $secrets := include "ferroehr.secretMountPath" . }}
+{{- $domains := list
+      (dict "name" "clinical"
+            "schedule" .Values.backup.clinical.schedule
+            "claim" .Values.backup.clinical.persistentVolumeClaim
+            "schemas" (list "ehr" "cold" "ext" "audit"))
+      (dict "name" "demographic"
+            "schedule" .Values.backup.demographic.schedule
+            "claim" .Values.backup.demographic.persistentVolumeClaim
+            "schemas" (list "demographic" "cold_demographic")) }}
+{{- range $domain := $domains }}
+{{- $args := "" }}
+{{- range $schema := $domain.schemas }}{{ $args = printf "%s --schema=%s" $args $schema }}{{ end }}
+{{- /* The DSN is read from its mounted file at call time: only the PATH is in
+       the pod spec, so the credential is never an environment variable an
+       operator can read back off the object or a child process inherits
+       (https://cheatsheetseries.owasp.org/cheatsheets/Kubernetes_Security_Cheat_Sheet.html).
+       `--format=custom` so pg_restore can choose what to restore and in what
+       order (https://www.postgresql.org/docs/18/app-pgdump.html). */}}
+{{- $command := printf "pg_dump --dbname=\"$(cat %s/db.url)\" --format=custom --no-owner%s --file=%s/%s-$(date -u +%%Y%%m%%dT%%H%%M%%SZ).dump" $secrets $args $mount $domain.name }}
+---
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: {{ include "ferroehr.backupFullname" (dict "root" $root "domain" $domain.name) }}
+  annotations:
+    kubernetes.io/description: >-
+      Logical backup of the {{ $domain.name }} pseudonymisation domain: pg_dump of {{ join ", " $domain.schemas }} into the {{ $domain.claim }} claim, under the DSN that domain's pool uses. Separate claim, separate credential, separate schedule from the other domain, so no one artefact carries both the clinical record and the identifying data.
+  labels:
+    {{- include "ferroehr.backupLabels" (dict "root" $root "domain" $domain.name) | nindent 4 }}
+spec:
+  schedule: {{ $domain.schedule | quote }}
+  {{- with $root.Values.backup.timeZone }}
+  timeZone: {{ . | quote }}
+  {{- end }}
+  {{- /* A second dump of one domain starting while the first still runs adds
+         database load and a half-written second artefact, and buys nothing:
+         the next schedule takes a complete dump anyway. */}}
+  concurrencyPolicy: Forbid
+  {{- with $root.Values.backup.startingDeadlineSeconds }}
+  startingDeadlineSeconds: {{ . }}
+  {{- end }}
+  jobTemplate:
+    spec:
+      backoffLimit: {{ $root.Values.backup.backoffLimit }}
+      activeDeadlineSeconds: {{ $root.Values.backup.activeDeadlineSeconds }}
+      ttlSecondsAfterFinished: {{ $root.Values.backup.ttlSecondsAfterFinished }}
+      {{- /* A pod killed by a drain or a preemption never took the dump, so it
+             must not spend one of `backoffLimit` — the same rule, for the same
+             reason, as the migration Job
+             (https://kubernetes.io/docs/tasks/job/pod-failure-policy/). */}}
+      podFailurePolicy:
+        rules:
+          - action: Ignore
+            onPodConditions:
+              - type: DisruptionTarget
+      template:
+        metadata:
+          labels:
+            {{- include "ferroehr.backupSelectorLabels" (dict "root" $root "domain" $domain.name) | nindent 12 }}
+            app.kubernetes.io/component: backup
+          {{- with $root.Values.backup.podAnnotations }}
+          annotations:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
+        spec:
+          restartPolicy: Never
+          {{- with $root.Values.imagePullSecrets }}
+          imagePullSecrets:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
+          serviceAccountName: {{ include "ferroehr.serviceAccountName" $root }}
+          automountServiceAccountToken: {{ $root.Values.serviceAccount.automountServiceAccountToken }}
+          # pg_dump reads no Service link variable, and the release's other pods
+          # disable them, so the posture stays one posture
+          # (https://kubernetes.io/docs/concepts/services-networking/service/#environment-variables).
+          enableServiceLinks: false
+          {{- if not $root.Values.hostUsers }}
+          {{- include "ferroehr.hostUsers" $root | nindent 10 }}
+          {{- end }}
+          securityContext:
+            {{- toYaml $root.Values.podSecurityContext | nindent 12 }}
+          containers:
+            - name: pg-dump
+              image: "{{ include "ferroehr.backupImage" $root }}"
+              imagePullPolicy: {{ $root.Values.backup.image.pullPolicy }}
+              securityContext:
+                {{- toYaml $root.Values.securityContext | nindent 16 }}
+              command:
+                - /bin/sh
+                - -ec
+              args:
+                - {{ $command | quote }}
+              volumeMounts:
+                # readOnlyRootFilesystem=true → give the process a writable scratch dir.
+                - name: tmp
+                  mountPath: /tmp
+                - name: dsn
+                  mountPath: {{ $secrets }}
+                  readOnly: true
+                - name: backup
+                  mountPath: {{ $mount }}
+              resources:
+                {{- toYaml $root.Values.backup.resources | nindent 16 }}
+          volumes:
+            - name: tmp
+              emptyDir: {}
+            # This domain's DSN, mounted as db.url whichever Secret it came from,
+            # so the command is the same for both domains and only the
+            # credential differs.
+            - name: dsn
+              secret:
+                secretName: {{ include "ferroehr.backupDsnSecret" (dict "root" $root "domain" $domain.name) }}
+                defaultMode: 0440
+                items:
+                  - key: {{ include "ferroehr.backupDsnSecretKey" (dict "root" $root "domain" $domain.name) }}
+                    path: db.url
+            - name: backup
+              persistentVolumeClaim:
+                claimName: {{ $domain.claim }}
+          {{- with $root.Values.backup.nodeSelector }}
+          nodeSelector:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
+          {{- with $root.Values.backup.tolerations }}
+          tolerations:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
+{{- end }}
+{{- end }}

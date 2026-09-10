@@ -202,6 +202,91 @@ migrations:
     tolerations: []
 
 # ─────────────────────────────────────────────────────────────────────────────
+# Per-domain logical backups (off by default).
+#
+# Two CronJobs, one per pseudonymisation domain, each dumping ONLY its own
+# schemas into its OWN PersistentVolumeClaim under its OWN credential. A single
+# artefact carrying the clinical record and the identifying data together undoes
+# the separation pseudonymisation rests on (GDPR Art. 4(5),
+# https://eur-lex.europa.eu/eli/reg/2016/679/oj), and the restore capability is
+# Art. 32(1)(c). The mechanism is `pg_dump --schema`
+# (https://www.postgresql.org/docs/18/app-pgdump.html): the clinical job dumps
+# ehr, cold, ext and audit, the demographic job dumps demographic and
+# cold_demographic. No openEHR spec governs backups — our own design/extension.
+#
+# Credentials follow the pools. The clinical job reads the DSN
+# `database.existingSecret`/`database.url` carries; the demographic job reads
+# `database.demographicExistingSecret` when that domain has its own, and falls
+# back to the clinical DSN when it has not. Either way the DSN arrives as a
+# mounted file, never as an environment variable.
+#
+# The chart keeps the two dumps apart; ACCESS CONTROL over them is yours. Back
+# the two claims with different volumes and give the demographic one the
+# narrower audience — one claim for both domains is refused at render, because
+# that is the state this whole section exists to prevent.
+#
+# Off by default: the destination is a claim you provision. Two further things
+# this chart does not do, said here rather than assumed: nothing prunes old
+# dumps, and no NetworkPolicy of ours selects these pods. And a logical dump is
+# not point-in-time recovery — PITR is instance-wide and stays database-side.
+# ─────────────────────────────────────────────────────────────────────────────
+backup:
+  # -- Render the two per-domain backup CronJobs. Each domain then needs its own
+  # `persistentVolumeClaim` below, or the render is refused.
+  enabled: false
+  image:
+    # -- Image carrying `pg_dump`. The project's own PostgreSQL 18 image, so the
+    # dump is taken by the same major version the server runs against.
+    repository: ghcr.io/rubentalstra/ferroehr-postgres
+    # -- Pull policy.
+    pullPolicy: IfNotPresent
+    # -- Image tag. Empty falls back to .Chart.appVersion, as the server's does.
+    tag: ""
+    # -- Image digest (`sha256:…`); wins over `tag` entirely when set.
+    digest: ""
+  # -- IANA time zone the schedules below are read in ("Europe/Amsterdam"). Empty
+  # leaves the kube-controller-manager's own zone, which is where an unqualified
+  # schedule drifts between clusters (KEP-3140, stable v1.27 —
+  # https://kubernetes.io/docs/concepts/workloads/controllers/cron-jobs/).
+  timeZone: ""
+  # -- Seconds a dump that missed its scheduled time may still start in; past it
+  # the run is skipped and the next schedule stands
+  # (https://kubernetes.io/docs/concepts/workloads/controllers/cron-jobs/).
+  startingDeadlineSeconds: 3600
+  # -- Retries before a dump is declared failed.
+  backoffLimit: 2
+  # -- Hard ceiling on one dump, so a dump blocked on the database ends rather
+  # than overlapping the next schedule.
+  activeDeadlineSeconds: 7200
+  # -- How long a finished dump's pod is kept for its logs.
+  ttlSecondsAfterFinished: 86400
+  # -- Resource requests/limits for the dump pods.
+  resources: {}
+  # -- Extra annotations on the dump pods.
+  podAnnotations: {}
+  # -- Node selector for the dump pods.
+  nodeSelector: {}
+  # -- Tolerations for the dump pods.
+  tolerations: []
+  clinical:
+    # -- Cron schedule for the clinical dump (schemas ehr, cold, ext, audit).
+    schedule: "15 1 * * *"
+    # -- REQUIRED when enabled: the name of an EXISTING PersistentVolumeClaim the
+    # clinical dumps are written to, mounted at /backup. The chart creates no
+    # claim — its storage class, size, retention and who may read it are yours.
+    persistentVolumeClaim: ""
+  demographic:
+    # -- Cron schedule for the demographic dump (schemas demographic,
+    # cold_demographic). Offset from the clinical one by default so the two dumps
+    # do not read the database in the same minute.
+    schedule: "45 1 * * *"
+    # -- REQUIRED when enabled: an EXISTING PersistentVolumeClaim for the
+    # demographic dumps, and a DIFFERENT one from the clinical claim (the same
+    # claim for both is refused at render). This is the volume that carries
+    # identifying data; give it the narrower audience.
+    persistentVolumeClaim: ""
+
+# ─────────────────────────────────────────────────────────────────────────────
 # Secret values carried by a chart-managed Secret. Anything set here is rendered
 # from values (keep it out of committed values — prefer an external secret store
 # / IRSA, or set these via `helm --set`/a values overlay from your secret

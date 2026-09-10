@@ -7,13 +7,22 @@
 [ "configMap", "csi", "downwardAPI", "emptyDir", "ephemeral",
   "persistentVolumeClaim", "projected", "secret" ] as $allowed_volumes
 | . as $docs
+# A CronJob's pod sits one level deeper, under jobTemplate. Reading only
+# .spec.template would skip it silently — and a workload this gate cannot see
+# is a workload nothing checks, which is the failure §3 of the Helm rules
+# describes.
 | [ $docs[]
     | select(.kind == "Deployment" or .kind == "StatefulSet"
-             or .kind == "DaemonSet" or .kind == "Job")
-    | select(.spec.template != null)
+             or .kind == "DaemonSet" or .kind == "Job" or .kind == "CronJob")
     | { kind: .kind, name: .metadata.name,
         replicas: .spec.replicas,
-        pod: (.spec.template.spec // {}) } ] as $workloads
+        template: (if .kind == "CronJob"
+                   then .spec.jobTemplate.spec.template
+                   else .spec.template end) }
+    | select(.template != null)
+    | { kind: .kind, name: .name,
+        replicas: .replicas,
+        pod: (.template.spec // {}) } ] as $workloads
 | ( [ $workloads[]
       | . as $w
       | ($w.pod.securityContext // {}) as $sc

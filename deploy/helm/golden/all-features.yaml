@@ -23,7 +23,7 @@ metadata:
     kubernetes.io/description: >-
       Ingress for the CDR: only the API port (and the management port when enabled), and only from the networkPolicy.ingressFrom peers.
   labels:
-    helm.sh/chart: ferroehr-7.1.0
+    helm.sh/chart: ferroehr-7.2.0
     app.kubernetes.io/name: ferroehr
     app.kubernetes.io/instance: ferroehr
     app.kubernetes.io/version: "4.1.1"
@@ -97,7 +97,7 @@ metadata:
     kubernetes.io/description: >-
       Keeps the CDR available during voluntary disruption (node drains, cluster upgrades). AlwaysAllow lets a drain evict already-unhealthy pods rather than waiting for them to recover.
   labels:
-    helm.sh/chart: ferroehr-7.1.0
+    helm.sh/chart: ferroehr-7.2.0
     app.kubernetes.io/name: ferroehr
     app.kubernetes.io/instance: ferroehr
     app.kubernetes.io/version: "4.1.1"
@@ -118,7 +118,7 @@ kind: ServiceAccount
 metadata:
   name: ferroehr
   labels:
-    helm.sh/chart: ferroehr-7.1.0
+    helm.sh/chart: ferroehr-7.2.0
     app.kubernetes.io/name: ferroehr
     app.kubernetes.io/instance: ferroehr
     app.kubernetes.io/version: "4.1.1"
@@ -150,7 +150,7 @@ kind: Secret
 metadata:
   name: ferroehr-env
   labels:
-    helm.sh/chart: ferroehr-7.1.0
+    helm.sh/chart: ferroehr-7.2.0
     app.kubernetes.io/name: ferroehr
     app.kubernetes.io/instance: ferroehr
     app.kubernetes.io/version: "4.1.1"
@@ -176,7 +176,7 @@ kind: Secret
 metadata:
   name: ferroehr-config
   labels:
-    helm.sh/chart: ferroehr-7.1.0
+    helm.sh/chart: ferroehr-7.2.0
     app.kubernetes.io/name: ferroehr
     app.kubernetes.io/instance: ferroehr
     app.kubernetes.io/version: "4.1.1"
@@ -197,7 +197,7 @@ kind: ConfigMap
 metadata:
   name: ferroehr
   labels:
-    helm.sh/chart: ferroehr-7.1.0
+    helm.sh/chart: ferroehr-7.2.0
     app.kubernetes.io/name: ferroehr
     app.kubernetes.io/instance: ferroehr
     app.kubernetes.io/version: "4.1.1"
@@ -402,7 +402,7 @@ kind: ConfigMap
 metadata:
   name: ferroehr-grafana-dashboard
   labels:
-    helm.sh/chart: ferroehr-7.1.0
+    helm.sh/chart: ferroehr-7.2.0
     app.kubernetes.io/name: ferroehr
     app.kubernetes.io/instance: ferroehr
     app.kubernetes.io/version: "4.1.1"
@@ -653,7 +653,7 @@ kind: Service
 metadata:
   name: ferroehr
   labels:
-    helm.sh/chart: ferroehr-7.1.0
+    helm.sh/chart: ferroehr-7.2.0
     app.kubernetes.io/name: ferroehr
     app.kubernetes.io/instance: ferroehr
     app.kubernetes.io/version: "4.1.1"
@@ -687,7 +687,7 @@ metadata:
     kubernetes.io/description: >-
       The FerroEHR CDR itself: a stateless openEHR ITS-REST API server against an EXTERNAL PostgreSQL 18. It stores nothing locally, so a pod is disposable; readiness reports the database and its schema, liveness does not.
   labels:
-    helm.sh/chart: ferroehr-7.1.0
+    helm.sh/chart: ferroehr-7.2.0
     app.kubernetes.io/name: ferroehr
     app.kubernetes.io/instance: ferroehr
     app.kubernetes.io/version: "4.1.1"
@@ -770,6 +770,8 @@ spec:
           env:
             - name: FERROEHR__DB__URL_FILE
               value: "/etc/ferroehr-secrets/db.url"
+            - name: FERROEHR__DB__DEMOGRAPHIC_URL_FILE
+              value: "/etc/ferroehr-secrets/db.demographic_url"
             - name: FERROEHR__AUTH__OIDC__HMAC_SECRET_FILE
               value: "/etc/ferroehr-secrets/auth.oidc.hmac_secret"
             - name: FERROEHR__SIGNING__KEY_PASSPHRASE_FILE
@@ -887,6 +889,13 @@ spec:
                   items:
                     - key: FERROEHR__DB__URL
                       path: db.url
+              # The demographic domain's own Secret, a different credential from
+              # the clinical one above and projected as its own file.
+              - secret:
+                  name: ferroehr-db-demographic
+                  items:
+                    - key: FERROEHR__DB__DEMOGRAPHIC_URL
+                      path: db.demographic_url
               - secret:
                   name: ferroehr-env
                   items:
@@ -920,7 +929,7 @@ kind: HorizontalPodAutoscaler
 metadata:
   name: ferroehr
   labels:
-    helm.sh/chart: ferroehr-7.1.0
+    helm.sh/chart: ferroehr-7.2.0
     app.kubernetes.io/name: ferroehr
     app.kubernetes.io/instance: ferroehr
     app.kubernetes.io/version: "4.1.1"
@@ -948,13 +957,220 @@ spec:
           averageUtilization: 80
 
 ---
+# Source: ferroehr/templates/backup-cronjob.yaml
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: ferroehr-backup-clinical
+  annotations:
+    kubernetes.io/description: >-
+      Logical backup of the clinical pseudonymisation domain: pg_dump of ehr, cold, ext, audit into the ferroehr-backup-clinical claim, under the DSN that domain's pool uses. Separate claim, separate credential, separate schedule from the other domain, so no one artefact carries both the clinical record and the identifying data.
+  labels:
+    helm.sh/chart: ferroehr-7.2.0
+    app.kubernetes.io/name: ferroehr-backup-clinical
+    app.kubernetes.io/instance: ferroehr
+    app.kubernetes.io/version: "4.1.1"
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/part-of: ferroehr
+    app.kubernetes.io/component: backup
+spec:
+  schedule: "15 1 * * *"
+  timeZone: "Europe/Amsterdam"
+  concurrencyPolicy: Forbid
+  startingDeadlineSeconds: 3600
+  jobTemplate:
+    spec:
+      backoffLimit: 2
+      activeDeadlineSeconds: 7200
+      ttlSecondsAfterFinished: 86400
+      podFailurePolicy:
+        rules:
+          - action: Ignore
+            onPodConditions:
+              - type: DisruptionTarget
+      template:
+        metadata:
+          labels:
+            app.kubernetes.io/name: ferroehr-backup-clinical
+            app.kubernetes.io/instance: ferroehr
+            app.kubernetes.io/component: backup
+        spec:
+          restartPolicy: Never
+          serviceAccountName: ferroehr
+          automountServiceAccountToken: false
+          # pg_dump reads no Service link variable, and the release's other pods
+          # disable them, so the posture stays one posture
+          # (https://kubernetes.io/docs/concepts/services-networking/service/#environment-variables).
+          enableServiceLinks: false
+          hostUsers: false
+          securityContext:
+            fsGroup: 65532
+            fsGroupChangePolicy: OnRootMismatch
+            runAsGroup: 65532
+            runAsNonRoot: true
+            runAsUser: 65532
+            seccompProfile:
+              type: RuntimeDefault
+            supplementalGroupsPolicy: Strict
+          containers:
+            - name: pg-dump
+              image: "ghcr.io/rubentalstra/ferroehr-postgres:4.1.1"
+              imagePullPolicy: IfNotPresent
+              securityContext:
+                allowPrivilegeEscalation: false
+                capabilities:
+                  drop:
+                  - ALL
+                privileged: false
+                readOnlyRootFilesystem: true
+                runAsNonRoot: true
+                runAsUser: 65532
+                seccompProfile:
+                  type: RuntimeDefault
+              command:
+                - /bin/sh
+                - -ec
+              args:
+                - "pg_dump --dbname=\"$(cat /etc/ferroehr-secrets/db.url)\" --format=custom --no-owner --schema=ehr --schema=cold --schema=ext --schema=audit --file=/backup/clinical-$(date -u +%Y%m%dT%H%M%SZ).dump"
+              volumeMounts:
+                # readOnlyRootFilesystem=true → give the process a writable scratch dir.
+                - name: tmp
+                  mountPath: /tmp
+                - name: dsn
+                  mountPath: /etc/ferroehr-secrets
+                  readOnly: true
+                - name: backup
+                  mountPath: /backup
+              resources:
+                {}
+          volumes:
+            - name: tmp
+              emptyDir: {}
+            # This domain's DSN, mounted as db.url whichever Secret it came from,
+            # so the command is the same for both domains and only the
+            # credential differs.
+            - name: dsn
+              secret:
+                secretName: ferroehr-db
+                defaultMode: 0440
+                items:
+                  - key: FERROEHR__DB__URL
+                    path: db.url
+            - name: backup
+              persistentVolumeClaim:
+                claimName: ferroehr-backup-clinical
+---
+# Source: ferroehr/templates/backup-cronjob.yaml
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: ferroehr-backup-demographic
+  annotations:
+    kubernetes.io/description: >-
+      Logical backup of the demographic pseudonymisation domain: pg_dump of demographic, cold_demographic into the ferroehr-backup-demographic claim, under the DSN that domain's pool uses. Separate claim, separate credential, separate schedule from the other domain, so no one artefact carries both the clinical record and the identifying data.
+  labels:
+    helm.sh/chart: ferroehr-7.2.0
+    app.kubernetes.io/name: ferroehr-backup-demographic
+    app.kubernetes.io/instance: ferroehr
+    app.kubernetes.io/version: "4.1.1"
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/part-of: ferroehr
+    app.kubernetes.io/component: backup
+spec:
+  schedule: "45 1 * * *"
+  timeZone: "Europe/Amsterdam"
+  concurrencyPolicy: Forbid
+  startingDeadlineSeconds: 3600
+  jobTemplate:
+    spec:
+      backoffLimit: 2
+      activeDeadlineSeconds: 7200
+      ttlSecondsAfterFinished: 86400
+      podFailurePolicy:
+        rules:
+          - action: Ignore
+            onPodConditions:
+              - type: DisruptionTarget
+      template:
+        metadata:
+          labels:
+            app.kubernetes.io/name: ferroehr-backup-demographic
+            app.kubernetes.io/instance: ferroehr
+            app.kubernetes.io/component: backup
+        spec:
+          restartPolicy: Never
+          serviceAccountName: ferroehr
+          automountServiceAccountToken: false
+          # pg_dump reads no Service link variable, and the release's other pods
+          # disable them, so the posture stays one posture
+          # (https://kubernetes.io/docs/concepts/services-networking/service/#environment-variables).
+          enableServiceLinks: false
+          hostUsers: false
+          securityContext:
+            fsGroup: 65532
+            fsGroupChangePolicy: OnRootMismatch
+            runAsGroup: 65532
+            runAsNonRoot: true
+            runAsUser: 65532
+            seccompProfile:
+              type: RuntimeDefault
+            supplementalGroupsPolicy: Strict
+          containers:
+            - name: pg-dump
+              image: "ghcr.io/rubentalstra/ferroehr-postgres:4.1.1"
+              imagePullPolicy: IfNotPresent
+              securityContext:
+                allowPrivilegeEscalation: false
+                capabilities:
+                  drop:
+                  - ALL
+                privileged: false
+                readOnlyRootFilesystem: true
+                runAsNonRoot: true
+                runAsUser: 65532
+                seccompProfile:
+                  type: RuntimeDefault
+              command:
+                - /bin/sh
+                - -ec
+              args:
+                - "pg_dump --dbname=\"$(cat /etc/ferroehr-secrets/db.url)\" --format=custom --no-owner --schema=demographic --schema=cold_demographic --file=/backup/demographic-$(date -u +%Y%m%dT%H%M%SZ).dump"
+              volumeMounts:
+                # readOnlyRootFilesystem=true → give the process a writable scratch dir.
+                - name: tmp
+                  mountPath: /tmp
+                - name: dsn
+                  mountPath: /etc/ferroehr-secrets
+                  readOnly: true
+                - name: backup
+                  mountPath: /backup
+              resources:
+                {}
+          volumes:
+            - name: tmp
+              emptyDir: {}
+            # This domain's DSN, mounted as db.url whichever Secret it came from,
+            # so the command is the same for both domains and only the
+            # credential differs.
+            - name: dsn
+              secret:
+                secretName: ferroehr-db-demographic
+                defaultMode: 0440
+                items:
+                  - key: FERROEHR__DB__DEMOGRAPHIC_URL
+                    path: db.url
+            - name: backup
+              persistentVolumeClaim:
+                claimName: ferroehr-backup-demographic
+
+---
 # Source: ferroehr/templates/ingress.yaml
 apiVersion: networking.k8s.io/v1
 kind: Ingress
 metadata:
   name: ferroehr
   labels:
-    helm.sh/chart: ferroehr-7.1.0
+    helm.sh/chart: ferroehr-7.2.0
     app.kubernetes.io/name: ferroehr
     app.kubernetes.io/instance: ferroehr
     app.kubernetes.io/version: "4.1.1"
@@ -992,7 +1208,7 @@ kind: ServiceMonitor
 metadata:
   name: ferroehr
   labels:
-    helm.sh/chart: ferroehr-7.1.0
+    helm.sh/chart: ferroehr-7.2.0
     app.kubernetes.io/name: ferroehr
     app.kubernetes.io/instance: ferroehr
     app.kubernetes.io/version: "4.1.1"

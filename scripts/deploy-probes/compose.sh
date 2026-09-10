@@ -419,8 +419,37 @@ YAML
   wait_http "$CDR/health/readiness" 120 || true
 }
 
+# Whether the stack's database actually carries the demographic domain.
+#
+# A local run defaults to the PUBLISHED server image, and a release that
+# predates the domain split migrates no `demographic` schema — so every probe
+# about the boundary would answer about a database that has no second domain to
+# separate, passing vacuously. CI builds the image from source
+# (`FERROEHR_IMAGE: ferroehr:deploy-probe`); a run that does not is told what it
+# is measuring instead of being allowed to look green.
+demographic_domain_present() {
+  local tables
+  tables="$(dc exec -T ferroehr-postgres psql -qtAX -U "${PG_INIT_USER:-ferroehr}" \
+    -d "${PG_INIT_DB:-ferroehr}" -c \
+    "SELECT count(*) FROM pg_class c JOIN pg_namespace n ON n.oid = c.relnamespace
+      WHERE n.nspname = 'demographic' AND c.relkind = 'r'" 2>/dev/null)"
+  [ "${tables:-0}" -gt 0 ] 2>/dev/null
+}
+
+# The one sentence every domain probe prints when it declines to measure.
+demographic_domain_absent_reason() {
+  printf '%s' "the stack's database carries no demographic schema, so this measures
+     nothing about the boundary. A local run defaults to the published server image
+     (\`FERROEHR_IMAGE\`), which predates the domain split; CI builds it from source."
+}
+
 probes_domain_roles() {
   bold "pseudonymisation domain roles"
+
+  if ! demographic_domain_present; then
+    uncovered "the pseudonymisation domain roles" "$(demographic_domain_absent_reason)"
+    return
+  fi
 
   # #3179: the book documents four NOINHERIT runtime roles and a boot-time
   # self-check over their grants. Nothing observed that a stack the project
@@ -498,4 +527,133 @@ probes_domain_roles() {
     "the compose init creates the four roles as the bootstrap superuser. A managed
      PostgreSQL where the migrator holds no CREATEROLE takes the documented manual
      step instead, and nothing here runs that path."
+}
+
+probes_backup_restore() {
+  bold "per-domain logical backups and the restore self-check"
+
+  if ! demographic_domain_present; then
+    uncovered "per-domain logical backups" "$(demographic_domain_absent_reason)"
+    return
+  fi
+
+  # #3157: the book documents per-schema dumps into separate targets and a
+  # restore that the boot self-check gates. Far end: the DUMP FILES the shipped
+  # compose profile actually writes, and the server's own verdict on a database
+  # restored from them — not the compose file that was supposed to arrange it.
+  local dumps="$PROBE_TMP/backup"
+  mkdir -p "$dumps/clinical" "$dumps/demographic"
+
+  probe "P-BACKUP-SPLIT" "working" "compose" "#3157" \
+    "the backup profile writes one dump per pseudonymisation domain"
+  # The recipe's own output is KEPT: a dump job that fails is the finding, and
+  # discarding its stderr would report the missing file without the reason.
+  local dump_log=""
+  local job
+  for job in clinical demographic; do
+    dump_log="$dump_log$(FERROEHR_BACKUP_CLINICAL_DIR="$dumps/clinical" \
+      FERROEHR_BACKUP_DEMOGRAPHIC_DIR="$dumps/demographic" \
+      dc -f docker-compose.yml --profile backup run --rm --quiet-pull \
+        "ferroehr-backup-$job" 2>&1)"
+  done
+  local clinical_dump demographic_dump
+  clinical_dump="$(find "$dumps/clinical" -name 'clinical-*.dump' -print -quit 2>/dev/null)"
+  demographic_dump="$(find "$dumps/demographic" -name 'demographic-*.dump' -print -quit 2>/dev/null)"
+  if [ -z "$clinical_dump" ] || [ -z "$demographic_dump" ]; then
+    probe_fail "one dump file in each of the two target directories" \
+      "clinical='$clinical_dump' demographic='$demographic_dump'" \
+      "the documented recipe reported: ${dump_log:0:400}"
+    probe_done
+    return
+  fi
+  probe_done
+
+  # The property the split exists for: neither artefact carries the other
+  # domain. A dump that named both would re-join what the schema separation
+  # keeps apart (GDPR Art. 4(5)), and it would do so silently.
+  probe "P-BACKUP-DISJOINT" "working" "compose" "#3157" \
+    "neither dump carries the other domain's relations"
+  local clinical_toc demographic_toc
+  clinical_toc="$(docker run --rm -v "$dumps/clinical:/backup:ro" \
+    "${FERROEHR_POSTGRES_IMAGE:-ghcr.io/rubentalstra/ferroehr-postgres:4.1.1}" \
+    pg_restore --list "/backup/$(basename "$clinical_dump")" 2>/dev/null)"
+  demographic_toc="$(docker run --rm -v "$dumps/demographic:/backup:ro" \
+    "${FERROEHR_POSTGRES_IMAGE:-ghcr.io/rubentalstra/ferroehr-postgres:4.1.1}" \
+    pg_restore --list "/backup/$(basename "$demographic_dump")" 2>/dev/null)"
+  assert_contains "$clinical_toc" "ehr vo_version" \
+    "the clinical dump must carry the clinical version table"
+  assert_not_contains "$clinical_toc" "demographic national_identifier" \
+    "a clinical backup carrying the identifier table defeats the split"
+  assert_not_contains "$clinical_toc" "demographic vo_version" \
+    "a clinical backup carrying the demographic versions defeats the split"
+  assert_contains "$demographic_toc" "demographic vo_version" \
+    "the demographic dump must carry the demographic version table; the dump job \
+reported: ${dump_log:0:300}"
+  assert_not_contains "$demographic_toc" "ehr vo_version" \
+    "a demographic backup carrying the clinical record defeats the split"
+  probe_done
+
+  # The restore, judged by the server rather than by the restore's own exit
+  # code: `ferroehr db verify` is the boot self-check (the migrations this
+  # build carries, then the domain-isolation gate over the four runtime roles).
+  probe "P-BACKUP-RESTORE" "working" "database" "#3157" \
+    "a database restored from the two dumps passes the boot self-check"
+  local restored=ferroehr_restored
+  dc exec -T ferroehr-postgres psql -qtAX -U "${PG_INIT_USER:-ferroehr}" \
+    -d "${PG_INIT_DB:-ferroehr}" -c "DROP DATABASE IF EXISTS $restored" >/dev/null 2>&1
+  dc exec -T ferroehr-postgres psql -qtAX -U "${PG_INIT_USER:-ferroehr}" \
+    -d "${PG_INIT_DB:-ferroehr}" -c "CREATE DATABASE $restored" >/dev/null 2>&1
+  # The restore runs the way an operator's would: a client container on the
+  # stack's network with the two dump directories mounted. Copying the files
+  # INTO the database container instead would restore from a path no runbook
+  # uses, and its /tmp is a tmpfs the copy does not reach.
+  local restore_log
+  restore_log="$(FERROEHR_BACKUP_CLINICAL_DIR="$dumps/clinical" \
+    FERROEHR_BACKUP_DEMOGRAPHIC_DIR="$dumps/demographic" \
+    dc -f docker-compose.yml --profile backup run --rm --quiet-pull \
+      --entrypoint /bin/sh -v "$dumps:/dumps:ro" ferroehr-backup-clinical -c \
+      "pg_restore --host=ferroehr-postgres --username=${PG_INIT_USER:-ferroehr} \
+         --dbname=$restored --no-owner /dumps/clinical/$(basename "$clinical_dump") 2>&1;
+       pg_restore --host=ferroehr-postgres --username=${PG_INIT_USER:-ferroehr} \
+         --dbname=$restored --no-owner /dumps/demographic/$(basename "$demographic_dump") 2>&1" 2>&1)"
+  local restored_dsn verify_out
+  restored_dsn="postgres://${PG_INIT_USER:-ferroehr}:${PG_INIT_PASSWORD:-ferroehr}@ferroehr-postgres:5432/$restored"
+  if verify_out="$(dc exec -T -e FERROEHR__DB__URL="$restored_dsn" -e FERROEHR__DB__MIGRATE=verify \
+      ferroehr /usr/local/bin/ferroehr db verify 2>&1)"; then
+    :
+  else
+    probe_fail "the restored database passes \`ferroehr db verify\`" \
+      "${verify_out:0:400}" \
+      "restore output: ${restore_log:0:200}"
+  fi
+  probe_done
+
+  # And the half that makes the probe above mean something: the self-check has
+  # to REFUSE a restore whose grants came back wrong. A runbook that re-applies
+  # access with a blanket GRANT is the realistic way that happens.
+  probe "P-BACKUP-GRANTS-REFUSED" "broken" "database" "#3157" \
+    "the self-check refuses a restore whose grants cross the domain boundary"
+  dc exec -T ferroehr-postgres psql -qtAX -U "${PG_INIT_USER:-ferroehr}" -d "$restored" -c \
+    "GRANT USAGE ON SCHEMA demographic TO ferroehr_ehr_reader;
+     GRANT SELECT ON ALL TABLES IN SCHEMA demographic TO ferroehr_ehr_reader" >/dev/null 2>&1
+  if dc exec -T -e FERROEHR__DB__URL="$restored_dsn" -e FERROEHR__DB__MIGRATE=verify \
+      ferroehr /usr/local/bin/ferroehr db verify >/dev/null 2>&1; then
+    probe_fail "\`ferroehr db verify\` refusing a cross-domain grant" \
+      "it accepted a database where ferroehr_ehr_reader can read demographic tables" \
+      "the boot gate is then decorative, and a careless restore ships a collapsed boundary"
+  fi
+  probe_done
+
+  dc exec -T ferroehr-postgres psql -qtAX -U "${PG_INIT_USER:-ferroehr}" \
+    -d "${PG_INIT_DB:-ferroehr}" -c "DROP DATABASE IF EXISTS $restored" >/dev/null 2>&1
+
+  uncovered "point-in-time recovery" \
+    "PITR stays instance-wide by design (the two domains share one cluster), so
+     nothing here exercises a WAL archive or a recovery target. What is measured
+     is the LOGICAL per-domain dump and the restore's grant posture."
+  uncovered "an off-host backup target" \
+    "both dumps land in a directory on the machine running the stack. Whether a
+     deployment's two targets are genuinely separately access-controlled — different
+     owners, different buckets, different credentials — is an operator property this
+     harness cannot observe."
 }

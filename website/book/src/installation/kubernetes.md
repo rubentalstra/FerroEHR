@@ -38,7 +38,7 @@ kubectl -n ferroehr create secret generic ferroehr-db \
   --from-literal=FERROEHR__DB__URL='postgres://ferroehr_app:***@pg-host:5432/ferroehr?sslmode=verify-full'
 
 helm install ferroehr oci://ghcr.io/rubentalstra/charts/ferroehr \
-  --version 7.1.0 -n ferroehr \
+  --version 7.2.0 -n ferroehr \
   --set database.existingSecret=ferroehr-db \
   --set image.tag=4.1.1
 ```
@@ -55,7 +55,7 @@ helm install ferroehr oci://ghcr.io/rubentalstra/charts/ferroehr \
 reference. To read the chart's metadata without installing it:
 
 ```shell
-helm show chart oci://ghcr.io/rubentalstra/charts/ferroehr --version 7.1.0
+helm show chart oci://ghcr.io/rubentalstra/charts/ferroehr --version 7.2.0
 ```
 
 ### Pin two versions, not one
@@ -68,7 +68,7 @@ against.
 
 | | Selects | Pin with | Line |
 |---|---|---|---|
-| Chart version | templates, values schema, defaults | `--version 7.1.0` | SemVer over the chart's own contract |
+| Chart version | templates, values schema, defaults | `--version 7.2.0` | SemVer over the chart's own contract |
 | Image tag | the server binary | `--set image.tag=4.1.1` (or `image.digest`) | the application's SemVer line |
 
 Always pin the image to an immutable version or, better, a `@sha256` digest,
@@ -167,7 +167,7 @@ metadata lists: the server, and the optional viewer.
 > the image itself as the authority:
 >
 > ```shell
-> helm template ferroehr oci://ghcr.io/rubentalstra/charts/ferroehr --version 7.1.0 \
+> helm template ferroehr oci://ghcr.io/rubentalstra/charts/ferroehr --version 7.2.0 \
 >   -s templates/configmap.yaml --set database.existingSecret=ferroehr-db \
 >   | sed -n '/ferroehr.toml/,$p' | sed '1d;s/^    //' > /tmp/ferroehr.toml
 > docker run --rm -v /tmp/ferroehr.toml:/etc/ferroehr/ferroehr.toml:ro \
@@ -572,7 +572,7 @@ config:
 
 ```shell
 helm upgrade ferroehr oci://ghcr.io/rubentalstra/charts/ferroehr \
-  --version 7.1.0 -n ferroehr --reuse-values \
+  --version 7.2.0 -n ferroehr --reuse-values \
   --set config.query.plan_cache_capacity=512
 ```
 
@@ -659,6 +659,30 @@ own record: the viewer's OIDC path, the screens behind a session, and whether a
 CNI enforces the viewer's NetworkPolicy. Its screens are documented in the
 [viewer](../viewer/index.md) chapter.
 
+### Per-domain backups (two CronJobs, off by default)
+
+`backup.enabled` renders one CronJob per pseudonymisation domain:
+`backup.clinical.schedule` dumps the clinical schemas, `backup.demographic.schedule`
+dumps the identities, and each writes to its own existing claim
+(`backup.clinical.persistentVolumeClaim`, `backup.demographic.persistentVolumeClaim`).
+The image is `backup.image.repository`, which carries `pg_dump`.
+
+The chart refuses to render rather than let the separation collapse quietly: a
+missing claim is an error naming the value, and naming the **same** claim for
+both domains is an error too, because one volume holding the clinical record
+and the identities together is the state per-domain backups exist to prevent.
+
+The credential follows the same split the pools use. The demographic job reads
+`database.demographicExistingSecret` when you set it, and falls back to the
+clinical DSN when you do not — so until you run two credentials, you have
+separated the artefacts but not the authority to produce them. Both jobs read
+their DSN from a mounted file, never an environment variable.
+
+The chart provisions no storage. Create the two claims yourself, and give them
+different access control; that part no chart can do for you. The restore
+procedure, and the `ferroehr db verify` gate that judges it, are on the
+[Operating](../operations.md) page.
+
 ## Staying available while things move
 
 Four defaults keep the API serving through the events that routinely interrupt
@@ -725,7 +749,7 @@ Preview an upgrade against what you have installed with
 `helm diff`, or render the new chart version and read it:
 
 ```shell
-helm template ferroehr oci://ghcr.io/rubentalstra/charts/ferroehr --version 7.1.0 \
+helm template ferroehr oci://ghcr.io/rubentalstra/charts/ferroehr --version 7.2.0 \
   -n ferroehr -f my-values.yaml | less
 ```
 

@@ -4,6 +4,12 @@
 database:
   existingSecret: ferroehr-db
   existingSecretKey: FERROEHR__DB__URL
+  # The two-credential posture (#3179): the demographic pool, and the
+  # demographic backup CronJob, read a secret the clinical side never mounts.
+  # Exercised here because a branch no overlay renders is a branch no golden
+  # and no boot check ever sees.
+  demographicExistingSecret: ferroehr-db-demographic
+  demographicExistingSecretKey: FERROEHR__DB__DEMOGRAPHIC_URL
 
 secrets:
   # 40 bytes of obvious filler. RFC 8725 §3.5 puts a 32-byte floor under a
@@ -261,3 +267,14 @@ serviceAccount:
   create: true
   annotations:
     eks.amazonaws.com/role-arn: arn:aws:iam::123456789012:role/ferroehr-s3
+
+# Per-domain logical backups, so the two CronJobs reach a golden render and the
+# restricted-profile gate — the claims are render fixtures, nothing provisions
+# them here. Two DIFFERENT claim names: one claim for both domains is refused.
+backup:
+  enabled: true
+  timeZone: Europe/Amsterdam
+  clinical:
+    persistentVolumeClaim: ferroehr-backup-clinical
+  demographic:
+    persistentVolumeClaim: ferroehr-backup-demographic

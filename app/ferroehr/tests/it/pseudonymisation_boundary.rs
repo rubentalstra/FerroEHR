@@ -736,10 +736,10 @@ const SYNTHETIC_BSN: &str = "111222333"; // privacy-allow: synthetic
 const TEST_ROOT_KEY: &str = "000102030405060708090a0b0c0d0e0f101112131415161718191a1b1c1d1e1f";
 
 fn test_keys(tenant: Uuid) -> ferroehr::service::demographic::identifier::crypto::TenantKeys {
-    use ferroehr::service::demographic::identifier::crypto::{RootKey, TenantKeys};
+    use ferroehr::service::demographic::identifier::crypto::{KeyDomain, RootKey, TenantKeys};
     let root = RootKey::from_hex(&secrecy::SecretString::from(TEST_ROOT_KEY.to_owned()))
         .expect("a 32-byte root key");
-    TenantKeys::derive(&root, tenant)
+    TenantKeys::derive(&root, KeyDomain::Demographic, tenant)
 }
 
 /// A sealed identifier round-trips, and resolution finds its party without
