@@ -20,14 +20,17 @@ surface is API nobody can use.
 | `src/flat/` — Simplified Formats (FLAT / STRUCTURED / Web Template / TDD) | hand-written (BMM has no simplified-format model) | edit normally, with spec citations |
 | `src/rest/smart_scopes.rs` — the SMART on openEHR scope grammar (master08 resource scopes + master07/09 launch contexts) | hand-written (an ITS-REST sub-spec with no machine-readable model) | edit normally, with spec citations — the ONE grammar the CDR's scope gate AND scope-previewing REST clients (the viewer) parse with |
 
-**Feature `full` (default = everything).** Every dependency and every surface in
-the table above rides `full`, which is on by default — consumers are unaffected.
-`default-features = false` compiles `rest::smart_scopes` ALONE, with zero
-dependencies, so a REST client that must parse SMART scope strings on
-`wasm32-unknown-unknown` (the viewer's scope previewer) uses the same
-grammar the CDR's gate enforces instead of a second parser. Keep that island
-dependency-free: nothing under `rest::smart_scopes` may reach for serde, axum, a
-spec crate, or any other dep.
+**Features (`default = ["full"]` = everything, so consumers are unaffected).**
+The graph underneath is layered: `json` → `xml` → `opt14` → `flat` are the
+openEHR content surfaces and are all wasm-safe; `cache` (`moka`),
+`schema-validation` (`jsonschema` + the embedded RM schema) and `rest-server`
+(the generated contract + `axum`) sit outside that chain. A browser consumer
+takes `default-features = false, features = ["flat"]`, and CI clippies exactly
+that on `wasm32-unknown-unknown`. Two rules when adding surface: put a new
+dependency in the layer that uses it (never in `json`, which every layer
+inherits), and keep the `rest::smart_scopes` island dependency-free —
+`default-features = false` alone must still compile it, so nothing under it may
+reach for serde, axum, a spec crate, or any other dep.
 
 **Canonical JSON is EMITTED `serde` impls on the spec types themselves, and
 they do NOT live in this crate.** `serde::Serialize`/`Deserialize` and the spec

@@ -27,6 +27,9 @@
 )]
 
 pub mod build;
+// The WebTemplate cache is the crate's only `moka` user, and a browser-side
+// consumer of the Simplified Formats keeps no such cache.
+#[cfg(feature = "cache")]
 pub mod cache;
 pub mod convert;
 pub(crate) mod ctx;

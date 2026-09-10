@@ -17,6 +17,19 @@ workflow refuses a tag that has no matching section here.
 
 ### Added
 
+- **`openehr-its` compiles to `wasm32-unknown-unknown` with the flat and OPT
+  code in it** (#3149). The crate's one `full` feature dragged axum, moka and
+  jsonschema in with the parsers, so a browser consumer that wanted
+  `flat::build_web_template` or the OPT 1.4 reader had to take an HTTP server
+  and a cache too — and `default-features = false` left only the SMART scope
+  grammar. The features are layered now: `json` → `xml` → `opt14` → `flat` is
+  the parsing spine, and `cache` (moka), `schema-validation` (jsonschema) and
+  `rest-server` (axum, http, async-trait) are the layers a browser declines.
+  `full` is still the default and still means all of them, so no existing
+  consumer sees a change. A CI lane builds the wasm selection, and a second one
+  builds the dependency-free `rest::smart_scopes` island, so both are checked
+  rather than claimed.
+
 - **Backups are taken per pseudonymisation domain** (#3157). A single
   `pg_dump` of the whole database produces one file holding both the
   pseudonymised clinical record and the identities of its subjects, and
@@ -214,6 +227,16 @@ workflow refuses a tag that has no matching section here.
   anything. `.claude/rules/personal-data.md` carries the rules for agents.
 
 ### Changed
+
+- **The published model crates no longer carry a random-number generator.**
+  The workspace pinned `uuid` with `v4`/`v7`/`fast-rng` for everyone, but only
+  the server and the test harness ever mint an identifier; `openehr-base`,
+  `openehr-rm` and their siblings parse and serialize them. The unused
+  generator is what made those crates refuse to compile for
+  `wasm32-unknown-unknown`, which has no randomness source unless one is
+  configured — so a browser consumer had to supply a backend for a capability
+  none of the crates uses. The generator features now sit on the two crates
+  that generate.
 
 - **A key derived for one pseudonymisation domain opens nothing in another**
   (#3157). The per-tenant subkeys protecting national identifiers now take the

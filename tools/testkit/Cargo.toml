@@ -34,7 +34,7 @@ tokio = { workspace = true }
 # macros). No subscriber is installed by the harness — a test binary that wants
 # the sweep's log installs one.
 tracing = { workspace = true }
-uuid = { workspace = true }
+uuid = { workspace = true, features = ["v4"] }   # random scratch-database names
 # `reusable-containers` (experimental upstream) keeps ONE named PG container
 # alive across nextest's process-per-test model and across whole runs.
 testcontainers = { workspace = true, features = ["reusable-containers"] }
