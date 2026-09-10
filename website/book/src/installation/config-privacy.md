@@ -10,9 +10,9 @@ environment-name grammar, and file discovery are on the
 
 FerroEHR keeps clinical content and demographic parties in separate database
 schemas reached by separate roles. That separation is only worth something if
-the clinical side does not carry the identity anyway — in the subject
-reference, in a party proxy's name, or in free text. This section is the three
-rules that keep it out.
+the clinical side does not carry the subject's identity anyway — in the
+subject reference, in a party proxy, or in free text. This section is the
+three rules that keep it out.
 
 No openEHR specification governs any of them. The Reference Model leaves
 `EHR_STATUS.subject.external_ref` open and only advises against identifying
@@ -43,7 +43,7 @@ patterns = []
 | Key | Type | Default | Description |
 |---|---|---|---|
 | `subject_namespaces` | list of strings | `[]` | The pseudonymisation domains this deployment issues subject pseudonyms in. |
-| `allow_identified_parties_in_ehr` | bool | `false` | Accept `PARTY_IDENTIFIED` / `PARTY_RELATED` carrying `name` or `identifiers` in clinical content. |
+| `allow_identified_parties_in_ehr` | bool | `false` | Accept `PARTY_IDENTIFIED` / `PARTY_RELATED` carrying `name` or `identifiers` in clinical content. Off still accepts a `PARTY_IDENTIFIED` name; see the matrix below. |
 
 ### The subject reference
 
@@ -73,17 +73,44 @@ spellings of one pseudonym would be four subjects.
 
 ### Identified parties
 
-A `PARTY_IDENTIFIED` or `PARTY_RELATED` inside clinical content may carry
-`external_ref` but not `name` and not `identifiers`. This covers the
-composer, participations, the health care facility and feeder-audit party
-slots. `PARTY_IDENTIFIED`'s own validity rule is satisfied by `external_ref`
-alone, so every party proxy stays expressible — it points into the demographic
-domain instead of restating the identity.
+A party proxy inside clinical content — the composer, participations, the
+health care facility and the feeder-audit party slots — is governed by which
+class it is:
+
+| | `name` | `identifiers` |
+|---|---|---|
+| `PARTY_IDENTIFIED` | accepted | refused |
+| `PARTY_RELATED` | refused | refused |
+
+The two classes mean different things, so one rule for both was the wrong
+shape. `PARTY_IDENTIFIED` is the Reference Model's own provider proxy: "Proxy
+data for an identified party **other than the subject of the record**",
+"Typically for health care providers, e.g. name and provider number of an
+institution". A composer name or a performing clinician's name is that, not
+patient identity, and refusing it invented a prohibition the specification
+does not contain. `ctx/composer_name` in the simplified formats produces
+exactly this shape, and so does the example composition this server generates
+for a template.
+
+`identifiers` stays refused on both classes. It is "One or more formal
+identifiers (possibly computable)" — the NHS-number and BSN slot — and a
+national identifier on the clinical side is what the separation between the
+two database schemas exists to prevent.
+
+`PARTY_RELATED` carries neither. It is the "Proxy type for identifying a party
+**and its relationship to the subject** of the record", and that relationship
+is coded `self` where the party *is* the patient, so a name there is patient
+identity or patient-adjacent — a named next of kin re-identifies the subject.
+
+A refused proxy stays expressible: `PARTY_IDENTIFIED`'s own validity rule is
+satisfied by `external_ref` alone, so it points into the demographic domain
+instead of restating the identity.
 
 The commit's own `AUDIT_DETAILS.committer` is not clinical content and is never
 touched by this rule.
 
-A deployment that needs the names on the clinical side sets:
+A deployment that needs formal identifiers, or names on parties related to the
+subject, sets:
 
 ```toml
 [privacy]

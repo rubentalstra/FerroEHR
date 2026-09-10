@@ -113,11 +113,17 @@ pub struct PrivacyConfig {
     /// `identifiers` in clinical content
     /// (`FERROEHR__PRIVACY__ALLOW_IDENTIFIED_PARTIES_IN_EHR`).
     ///
-    /// Off by default, and announced at boot when on. The RM itself advises
-    /// against it (RM common `UML/classes/org.openehr.rm.common.party_identified.adoc`
-    /// §Description), and `PARTY_IDENTIFIED.Basic_validity` is satisfied by
-    /// `external_ref` alone, so refusing the other two leaves every party
-    /// proxy expressible.
+    /// Off by default, and announced at boot when on. Off refuses two of the
+    /// four combinations: `identifiers` on either class — "One or more formal
+    /// identifiers (possibly computable)" (RM common
+    /// `UML/classes/org.openehr.rm.common.party_identified.adoc` §Attributes),
+    /// the national-identifier slot — and `name` on `PARTY_RELATED`, which is
+    /// defined by its relationship to the subject and may be the subject
+    /// itself (RM common `UML/classes/org.openehr.rm.common.party_related.adoc`
+    /// §Attributes). A `PARTY_IDENTIFIED.name` is accepted either way: that
+    /// class is the proxy for a party "other than the subject of the record",
+    /// "Typically for health care providers". `Basic_validity` is satisfied by
+    /// `external_ref` alone, so the refused shapes stay expressible.
     pub allow_identified_parties_in_ehr: bool,
     /// `[privacy.identifier_scan]` — the identifier scanner.
     pub identifier_scan: IdentifierScanConfig,

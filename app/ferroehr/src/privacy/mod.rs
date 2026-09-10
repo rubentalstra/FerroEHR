@@ -11,7 +11,9 @@
 //! `UML/classes/org.openehr.rm.ehr.ehr_status.adoc` §Attributes; RM common
 //! `UML/classes/org.openehr.rm.common.party_self.adoc`), and
 //! `PARTY_IDENTIFIED` says of itself "Should not be used to include patient
-//! identifying information" (RM common
+//! identifying information", a sentence the same paragraph scopes: the class
+//! covers a party "other than the subject of the record", with health care
+//! providers as its typical case (RM common
 //! `UML/classes/org.openehr.rm.common.party_identified.adoc` §Description).
 //! Neither is a machine-checkable rule, so this module is where FerroEHR makes
 //! them ones. The legal ground is GDPR Art. 4(5) and Art. 25(2)
@@ -27,9 +29,11 @@
 //!    configured pseudonym namespace and carry a UUID. In force only once the
 //!    deployment declares its namespaces
 //!    ([`config::PrivacyConfig::subject_namespaces`]).
-//! 2. **Identified parties.** A `PARTY_IDENTIFIED` or `PARTY_RELATED` in
-//!    clinical content may carry `external_ref` but not `name` or
-//!    `identifiers`, unless the deployment opts in. `Basic_validity` is
+//! 2. **Identified parties.** In clinical content a `PARTY_IDENTIFIED` may
+//!    carry `name` — the class is explicitly the provider proxy, "other than
+//!    the subject of the record" — but not `identifiers`, and a
+//!    `PARTY_RELATED` carries neither, being defined by its relationship to
+//!    the subject. The deployment can opt in to both. `Basic_validity` is
 //!    satisfied by `external_ref` alone, so every party proxy stays
 //!    expressible.
 //! 3. **The identifier scanner.** No string leaf may carry a value one of the
@@ -335,30 +339,59 @@ impl PrivacyPolicy {
     }
 }
 
-/// Refuse `name` / `identifiers` on a party proxy in clinical content.
+/// Refuse the party-proxy attributes that identify the record's subject.
+///
+/// `PARTY_IDENTIFIED.name` is permitted: the class is "Proxy data for an
+/// identified party **other than the subject of the record**", "Typically for
+/// health care providers, e.g. name and provider number of an institution"
+/// (RM common `UML/classes/org.openehr.rm.common.party_identified.adoc`
+/// §Description), so a name there is clinician or institution identity — the
+/// class's own paradigm case, not patient identity.
+///
+/// Two attributes stay refused. `identifiers` is "One or more formal
+/// identifiers (possibly computable)" (same file, §Attributes) — the
+/// national-identifier slot the pseudonymisation boundary exists to keep off
+/// the clinical side — and `PARTY_RELATED.name` with it, because that class is
+/// "Proxy type for identifying a party **and its relationship to the subject**
+/// of the record" and may BE the subject ("If it is the patient, coded as
+/// self"; RM common `UML/classes/org.openehr.rm.common.party_related.adoc`).
+/// `Basic_validity` is satisfied by `external_ref` alone, so every refused
+/// proxy stays expressible.
 ///
 /// A free function rather than a method: the caller has already decided the
 /// rule is in force, so this reads no policy state.
 fn check_party(at: &str, map: &serde_json::Map<String, Value>, findings: &mut Vec<Finding>) {
-    if !matches!(
-        map.get("_type").and_then(Value::as_str),
-        Some("PARTY_IDENTIFIED" | "PARTY_RELATED")
-    ) {
-        return;
+    let related = match map.get("_type").and_then(Value::as_str) {
+        Some("PARTY_RELATED") => true,
+        Some("PARTY_IDENTIFIED") => false,
+        _ => return,
+    };
+    let present = |attribute: &str| map.get(attribute).is_some_and(|v| !v.is_null());
+    if related && present("name") {
+        findings.push(Finding {
+            path: format!("{at}/name"),
+            message: "names a party in relation to the record's subject: PARTY_RELATED \
+                      identifies a party AND its relationship to the subject, coded `self` \
+                      where that party IS the patient (PARTY_RELATED §Description, \
+                      §Attributes), so a name here identifies or re-identifies the subject. \
+                      external_ref alone satisfies Basic_validity. Set \
+                      privacy.allow_identified_parties_in_ehr to accept it."
+                .to_owned(),
+            class: FindingClass::Refusal,
+        });
     }
-    for attribute in ["name", "identifiers"] {
-        if map.get(attribute).is_some_and(|v| !v.is_null()) {
-            findings.push(Finding {
-                path: format!("{at}/{attribute}"),
-                message: "identifies a party on the clinical side: a PARTY_IDENTIFIED or \
-                         PARTY_RELATED here may carry external_ref only (PARTY_IDENTIFIED \
-                         §Description: \"Should not be used to include patient identifying \
-                         information\"; Basic_validity is satisfied by external_ref alone). \
-                         Set privacy.allow_identified_parties_in_ehr to accept it."
-                    .to_owned(),
-                class: FindingClass::Refusal,
-            });
-        }
+    if present("identifiers") {
+        findings.push(Finding {
+            path: format!("{at}/identifiers"),
+            message: "carries a formal identifier on the clinical side: identifiers is \"One \
+                      or more formal identifiers (possibly computable)\" (PARTY_IDENTIFIED \
+                      §Attributes) — a national identifier or provider number, which the \
+                      clinical side does not hold. external_ref alone satisfies \
+                      Basic_validity. Set privacy.allow_identified_parties_in_ehr to accept \
+                      it."
+            .to_owned(),
+            class: FindingClass::Refusal,
+        });
     }
 }
 

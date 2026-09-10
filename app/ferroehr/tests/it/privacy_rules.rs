@@ -60,8 +60,11 @@ fn paths(findings: &[Finding]) -> Vec<&str> {
 
 // ── the shipped default ───────────────────────────────────────────────────────
 
+/// The shipped default is the minimising posture: the identified-party opt-in
+/// off (which half of that rule bites is the matrix below), the scanner
+/// strict, and the subject rule waiting for a deployment fact.
 #[test]
-fn the_configuration_default_refuses_identified_parties_and_scans_strictly() {
+fn the_configuration_default_is_the_minimising_posture_and_scans_strictly() {
     let default = PrivacyConfig::default();
     assert!(!default.allow_identified_parties_in_ehr);
     assert_eq!(default.identifier_scan.mode, ScanMode::Strict);
@@ -171,14 +174,72 @@ fn the_subject_rule_binds_ehr_status_only() {
 
 // ── rule 2: identified parties ────────────────────────────────────────────────
 
+/// The permitted half of the matrix: `PARTY_IDENTIFIED.name` under the
+/// shipped default.
+///
+/// The class is "Proxy data for an identified party other than the subject of
+/// the record", "Typically for health care providers" (RM common
+/// `UML/classes/org.openehr.rm.common.party_identified.adoc` §Description), so
+/// a composer name is provider identity and the boundary does not reach it.
 #[test]
-fn a_named_party_in_clinical_content_is_refused_by_default() {
+fn a_named_party_identified_in_clinical_content_is_accepted_by_default() {
     let composition = json!({
         "_type": "COMPOSITION",
         "composer": { "_type": "PARTY_IDENTIFIED", "name": "Dr Author" }
     });
     let findings = policy(&PrivacyConfig::default()).findings("COMPOSITION", &composition);
-    assert_eq!(paths(&findings), ["COMPOSITION/composer/name"]);
+    assert!(findings.is_empty(), "{findings:?}");
+}
+
+/// The refused half of the matrix on the same class: `identifiers`.
+///
+/// "One or more formal identifiers (possibly computable)" (same file,
+/// §Attributes) is the national-identifier slot, which the clinical side does
+/// not hold whatever the party is.
+#[test]
+fn formal_identifiers_on_a_party_identified_are_refused_by_default() {
+    let composition = json!({
+        "_type": "COMPOSITION",
+        "composer": {
+            "_type": "PARTY_IDENTIFIED",
+            "name": "Dr Author",
+            "identifiers": [{ "_type": "DV_IDENTIFIER", "id": "GMC-1234567" }]
+        }
+    });
+    let findings = policy(&PrivacyConfig::default()).findings("COMPOSITION", &composition);
+    assert_eq!(paths(&findings), ["COMPOSITION/composer/identifiers"]);
+    assert_eq!(findings[0].class, FindingClass::Refusal);
+}
+
+/// The refused half of the matrix on `PARTY_RELATED`: a bare name.
+///
+/// That class is "Proxy type for identifying a party and its relationship to
+/// the subject of the record" and may BE the subject ("If it is the patient,
+/// coded as self"; RM common
+/// `UML/classes/org.openehr.rm.common.party_related.adoc`), so a name there is
+/// patient-identifying where the same name on a `PARTY_IDENTIFIED` is not.
+#[test]
+fn a_named_party_related_in_clinical_content_is_refused_by_default() {
+    let composition = json!({
+        "_type": "COMPOSITION",
+        "content": [{
+            "_type": "OBSERVATION",
+            "other_participations": [{
+                "_type": "PARTICIPATION",
+                "performer": {
+                    "_type": "PARTY_RELATED",
+                    "name": "A Relative",
+                    "relationship": { "_type": "DV_CODED_TEXT", "value": "mother" }
+                }
+            }]
+        }]
+    });
+    let findings = policy(&PrivacyConfig::default()).findings("COMPOSITION", &composition);
+    assert_eq!(
+        paths(&findings),
+        ["COMPOSITION/content[0]/other_participations[0]/performer/name"]
+    );
+    assert_eq!(findings[0].class, FindingClass::Refusal);
 }
 
 #[test]
@@ -198,6 +259,8 @@ fn an_identified_party_reduced_to_its_external_ref_passes() {
     );
 }
 
+/// Both refused cells of the `PARTY_RELATED` row at once, and the opt-in over
+/// the same body.
 #[test]
 fn identifiers_on_a_party_related_are_refused_too_and_the_opt_in_accepts_both() {
     let composition = json!({
@@ -227,6 +290,37 @@ fn identifiers_on_a_party_related_are_refused_too_and_the_opt_in_accepts_both() 
         ..PrivacyConfig::default()
     });
     assert!(permitted.findings("COMPOSITION", &composition).is_empty());
+}
+
+/// The opt-in accepts every cell of the matrix, both classes and both
+/// attributes, so the key still means what it always meant when set.
+#[test]
+fn the_opt_in_accepts_every_cell_of_the_matrix() {
+    let composition = json!({
+        "_type": "COMPOSITION",
+        "composer": {
+            "_type": "PARTY_IDENTIFIED",
+            "name": "Dr Author",
+            "identifiers": [{ "_type": "DV_IDENTIFIER", "id": "GMC-1234567" }]
+        },
+        "content": [{
+            "_type": "OBSERVATION",
+            "other_participations": [{
+                "_type": "PARTICIPATION",
+                "performer": {
+                    "_type": "PARTY_RELATED",
+                    "name": "A Relative",
+                    "identifiers": [{ "_type": "DV_IDENTIFIER", "id": "REL-7" }]
+                }
+            }]
+        }]
+    });
+    let permitted = policy(&PrivacyConfig {
+        allow_identified_parties_in_ehr: true,
+        ..PrivacyConfig::default()
+    });
+    let findings = permitted.findings("COMPOSITION", &composition);
+    assert!(findings.is_empty(), "{findings:?}");
 }
 
 #[test]

@@ -2,7 +2,8 @@
 // SPDX-License-Identifier: BUSL-1.1
 
 //! The binary's command-line seam: `--set` override parsing, the subcommand
-//! shapes, and the one dispatch branch of `run` that touches nothing external.
+//! shapes, the one dispatch branch of `run` that touches nothing external, and
+//! the `[privacy]` policy the run path compiles out of the shipped defaults.
 //!
 //! `Cli`'s fields are private by design (visibility is deliberate — the type is
 //! a `clap` parse target, not a record), so a parse result is observed through
@@ -13,6 +14,12 @@
     reason = "the blessed test shape (the Rust Book ch11-01): `?` propagates \
               plumbing failures — here the clap parse — while the assertion \
               carries the behaviour under test and is meant to panic"
+)]
+#![expect(
+    clippy::expect_used,
+    reason = "clippy's in-test lint scoping (clippy.toml `allow-*-in-tests`) only reaches \
+              `#[test]`-annotated functions, so it misses this module's fixture helpers; a \
+              failing fixture must panic at the fixture (the Rust Book ch11)"
 )]
 
 use clap::Parser as _;
@@ -178,4 +185,78 @@ fn unknown_subcommand_is_rejected() {
 async fn run_config_default_is_a_pure_stdout_path() -> anyhow::Result<()> {
     let cli = Cli::try_parse_from(["ferroehr", "config", "default"])?;
     run(cli).await
+}
+
+// ── the boot-installed [privacy] policy ───────────────────────────────────────
+
+/// The SHIPPED DEFAULT configuration, assembled through the loader the binary
+/// runs, with no file, environment or override of this test's own.
+///
+/// [`ferroehr::config::assemble`] is the pure seam
+/// [`load`](ferroehr::config::load) is a process-environment shim over, so the
+/// shipped template travels through the real loader while a test runner's own
+/// `FERROEHR_*` variables stay out of the subject.
+fn shipped_default_config() -> ferroehr::config::FerroEhrConfig {
+    let file = assert_fs::NamedTempFile::new("ferroehr.toml").expect("a temp config path");
+    assert_fs::prelude::FileWriteStr::write_str(&file, ferroehr::config::DEFAULT_TEMPLATE)
+        .expect("write the shipped template");
+    ferroehr::config::assemble(Some(file.path()), &std::collections::HashMap::new(), &[])
+        .expect("the shipped template assembles")
+}
+
+/// The [`WebTemplate`](openehr_its::flat::webtemplate::model::WebTemplate) of
+/// the operational template the browser journey battery seeds.
+///
+/// The real generator is driven off this rather than a literal body: a
+/// hand-written composition would drift away from what
+/// `GET /definition/template/adl1.4/{id}/example` actually hands out, which is
+/// the loop that has to hold.
+fn seed_web_template() -> openehr_its::flat::webtemplate::model::WebTemplate {
+    let opt = std::path::PathBuf::from(env!("CARGO_MANIFEST_DIR"))
+        .join("../ferroehr-viewer/tests/fixtures/minimal_evaluation.opt");
+    let xml = std::fs::read_to_string(&opt).expect("the seed operational template reads");
+    let parsed = openehr_its::opt14::from_xml(&xml).expect("the seed OPT parses");
+    openehr_its::flat::webtemplate::builder::build_web_template(&parsed)
+        .expect("the seed OPT builds a WebTemplate")
+}
+
+/// A server booted on the shipped defaults accepts the composition its own
+/// example endpoint generates, at every detail level that endpoint offers.
+///
+/// The regression this pins is a wiring one, which is why it lives here: the
+/// platform suites build the service with `FerroEhrService::new()`, which
+/// carries the unenforced [`ferroehr::privacy::PrivacyPolicy`] default, and
+/// only the binary compiles `[privacy]` and installs it
+/// ([`ferroehr::privacy::PrivacyPolicy::compile`] + `with_privacy`). A default
+/// posture that refuses `ctx/composer_name` therefore looks green everywhere
+/// except in a real deployment.
+#[test]
+fn the_shipped_privacy_default_accepts_this_servers_own_example_composition() {
+    let config = shipped_default_config();
+    assert!(
+        !config.privacy.allow_identified_parties_in_ehr,
+        "the shipped default must stay the minimising posture"
+    );
+    let policy = ferroehr::privacy::PrivacyPolicy::compile(&config.privacy)
+        .expect("the shipped [privacy] section compiles");
+    let wt = seed_web_template();
+    for (label, level) in [
+        (
+            "required",
+            openehr_its::flat::example::DetailLevel::Required,
+        ),
+        ("medium", openehr_its::flat::example::DetailLevel::Medium),
+        (
+            "complete",
+            openehr_its::flat::example::DetailLevel::Complete,
+        ),
+    ] {
+        let example = openehr_its::flat::example::example_composition(&wt, level);
+        let findings = policy.findings("COMPOSITION", &example);
+        assert!(
+            findings.is_empty(),
+            "the shipped default refuses the example this server generates at \
+             detail_level={label}: {findings:?}"
+        );
+    }
 }

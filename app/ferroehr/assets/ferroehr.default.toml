@@ -538,7 +538,12 @@ max_retries = 3
 subject_namespaces = []
 # Accept PARTY_IDENTIFIED / PARTY_RELATED carrying `name` or `identifiers` in
 # clinical content (composer, participations, health_care_facility, feeder
-# audit). Off by default, and announced at boot when on.
+# audit). Off by default, and announced at boot when on. OFF still accepts a
+# PARTY_IDENTIFIED `name` — the RM class is the proxy for a party "other than
+# the subject of the record", "Typically for health care providers", so a
+# composer or performer name is provider identity. OFF refuses `identifiers`
+# on either class (the national-identifier slot) and `name` on PARTY_RELATED,
+# which is defined by its relationship to the subject and may be the subject.
 allow_identified_parties_in_ehr = false
 
 # The identifier scanner, run over every string leaf of every clinical write.

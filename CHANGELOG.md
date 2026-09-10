@@ -289,6 +289,22 @@ workflow refuses a tag that has no matching section here.
 
 ### Changed
 
+- **A default deployment accepts a named composer again** (#3190). With
+  `[privacy] allow_identified_parties_in_ehr` off, the clinical side refused
+  both `name` and `identifiers` on both party proxy classes, so a server
+  running the shipped configuration rejected the very composition its own
+  `/definition/template/adl1.4/{id}/example` endpoint hands out — anything
+  built from `ctx/composer_name` included. The default now follows what the
+  two Reference Model classes actually mean. A `PARTY_IDENTIFIED` name is
+  accepted: that class is the proxy for a party "other than the subject of
+  the record", "Typically for health care providers", so a composer or
+  performer name is provider identity. Still refused: `identifiers` on either
+  class, which is the national-identifier slot, and `name` on a
+  `PARTY_RELATED`, which is defined by its relationship to the subject and
+  may be the subject itself. The configuration key is unchanged and means
+  what it always did when set to `true`, so a deployment that opted in keeps
+  working, and nothing that committed before this change is refused now.
+
 - **The published model crates no longer carry a random-number generator.**
   The workspace pinned `uuid` with `v4`/`v7`/`fast-rng` for everyone, but only
   the server and the test harness ever mint an identifier; `openehr-base`,

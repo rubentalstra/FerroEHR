@@ -477,11 +477,13 @@ fn warn_boot_postures(config: &ferroehr::config::FerroEhrConfig) {
     }
     if config.privacy.allow_identified_parties_in_ehr {
         tracing::warn!(
-            "[privacy].allow_identified_parties_in_ehr is ON: clinical content may carry a \
-             PARTY_IDENTIFIED or PARTY_RELATED name and formal identifiers (composer, \
-             participations, health_care_facility, feeder audit). The clinical side then \
-             holds identifying data of its own — GDPR Art. 25(2) data minimisation is on \
-             this deployment to justify."
+            "[privacy].allow_identified_parties_in_ehr is ON: beyond the provider names a \
+             PARTY_IDENTIFIED may carry by default, clinical content may now also carry \
+             formal identifiers on either party class and a PARTY_RELATED name (composer, \
+             participations, health_care_facility, feeder audit). Formal identifiers are \
+             the national-identifier slot, and a party named in relation to the subject \
+             re-identifies the subject — GDPR Art. 25(2) data minimisation is on this \
+             deployment to justify."
         );
     }
     if config.privacy.identifier_scan.mode == ferroehr::privacy::config::ScanMode::Warn {

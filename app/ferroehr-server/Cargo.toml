@@ -40,11 +40,16 @@ uuid.workspace = true
 workspace = true
 
 [dev-dependencies]
-# The wiring-seam tests (`tests/it/`) drive `Cli` parsing and the pure-stdout
-# `config default` dispatch: the CLI derive, the async `run` entry point, and
-# its `anyhow` result. Everything past that seam is tested in the crate that
-# owns it (`app/ferroehr/tests/it/`, `app/ferroehr-rest/tests/it/`), so no
-# database, HTTP, or container harness is needed here.
+# The wiring-seam tests (`tests/it/`) drive `Cli` parsing, the pure-stdout
+# `config default` dispatch and the `[privacy]` policy the run path compiles
+# out of the shipped defaults: the CLI derive, the async `run` entry point,
+# its `anyhow` result, a temp file for the shipped template, and `openehr-its`
+# for the example COMPOSITION that policy has to accept. Everything past that
+# seam is tested in the crate that owns it (`app/ferroehr/tests/it/`,
+# `app/ferroehr-rest/tests/it/`), so no database, HTTP, or container harness
+# is needed here.
 anyhow.workspace = true
+assert_fs.workspace = true
 clap.workspace = true
+openehr-its = { path = "../../crates/openehr-its" }
 tokio.workspace = true
