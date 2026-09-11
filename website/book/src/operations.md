@@ -787,6 +787,11 @@ its own probes.
 | `GET /ferroehr/rest/status` | product status document: `status`, `server_version`, `openehr_rest_api_version`, `timestamp`, and `licence` (the grant in force: `state`, `use`, `licensee`, `not_after`, `configured_token`) | version/identity checks; the URL the container's `ferroehr healthcheck` subcommand probes |
 | `GET /management/*` | ops introspection; see below | operators, off by default, enable deliberately |
 
+Every management request is itself recorded in the audit trail as a
+system-domain access under its own operation id (`management_info`,
+`management_env`, `management_loggers_set`, …), so a runtime filter change or a
+configuration read is never an unrecorded administrative act.
+
 There is exactly one health surface: the `/health` family above. `/health` and
 `/health/liveness` are two conventional names for the same constant answer (a
 load balancer wants the bare path, an orchestrator wants the `liveness`/

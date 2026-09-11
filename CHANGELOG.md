@@ -17,6 +17,22 @@ workflow refuses a tag that has no matching section here.
 
 ### Added
 
+- **The server mints the subject pseudonym** (#3232). Where FerroEHR itself
+  makes a party the subject of an EHR, `service::linkage::link_as_subject`
+  derives the pseudonym (a keyed, tenant-bound derivation over the party under
+  the linkage key, an RFC 9562 custom UUID), writes it as the EHR's
+  `EHR_STATUS.subject.external_ref` in the first declared namespace, and opens
+  the mapping; no caller-supplied value enters that path. Minting refuses,
+  typed, when no namespace is declared or no identifier-protection key is
+  configured.
+
+- **The access log has a retention floor per jurisdiction** (#3242). A
+  non-zero `audit.store.retention_days` below the floor a jurisdiction the
+  active identifier rules name publishes is a boot error naming both numbers.
+  Registered: NL, five years (`1830` days) under the Besluit vaststelling
+  bewaartermijn logging. `0` keeps forever and always passes; the effective
+  retention is on the boot line and on `/management/info`.
+
 - **A subject-scoped read of the access log** (#3240). `GET /fhir/r4/AuditEvent`
   was admin-only, so a portal serving a person's right to know who accessed
   their record (GDPR Art. 15, EHDS Art. 9) had to hold an admin credential
@@ -523,6 +539,13 @@ workflow refuses a tag that has no matching section here.
   audit rows rather than isolate them.
 
 ### Fixed
+
+- **The management surface is inside the audit trail** (#3244). `/management/*`
+  was mounted outside the audit layer, so a runtime filter change through
+  `/management/loggers` left no record. Every management request is now
+  recorded as a system-domain access under its own operation id
+  (`management_info`, `management_env`, `management_loggers_set`,
+  `management_loggers_reset`, …).
 
 - **Formal identifiers on a provider proxy are accepted** (#3254). The
   identified-party rule refused `identifiers` on every party proxy, which

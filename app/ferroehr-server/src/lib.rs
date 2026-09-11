@@ -463,6 +463,7 @@ fn log_resolved_posture(
             queue_capacity = audit.queue_capacity,
             fail_mode = ?audit.fail_mode,
             resolve_subject = audit.resolve_subject,
+            retention_days = audit.store.retention_days,
             "IHE ATNA audit enabled"
         );
     }

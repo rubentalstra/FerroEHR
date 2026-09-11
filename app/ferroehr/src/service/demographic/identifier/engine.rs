@@ -143,6 +143,13 @@ impl IdentifierProtection {
         Ok(values.len())
     }
 
+    /// The opaque subject pseudonym `party` is known by on the clinical side,
+    /// for the current tenant ([`RootKey::subject_pseudonym`]).
+    #[must_use]
+    pub fn subject_pseudonym(&self, party: Uuid) -> Uuid {
+        self.root.subject_pseudonym(current_tenant(), party)
+    }
+
     /// The party holding `value` in `scheme`, resolved through the keyed digest.
     ///
     /// # Errors

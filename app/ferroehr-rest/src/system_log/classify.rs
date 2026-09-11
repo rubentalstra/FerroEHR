@@ -58,6 +58,31 @@ pub const DEFAULT: Classification =
 use EventActionCode::{Create, Delete, Execute, Read, Update};
 use ObjectClass::{Composition, Contribution, Demographic, Directory, Ehr, Query, Template};
 
+/// The management surface's operation ids (#3244): reads of the node's own
+/// state are application-activity Executes; a runtime filter change is an
+/// Update and its reset a Delete, so the trail says which act it recorded.
+fn management_lookup(op: &str) -> Option<Classification> {
+    let c = match op {
+        "management"
+        | "management_info"
+        | "management_prometheus"
+        | "management_metrics"
+        | "management_env"
+        | "management_flamegraph"
+        | "management_loggers_get" => {
+            Classification::audited(Execute, ObjectClass::ApplicationActivity)
+        }
+        "management_loggers_set" => {
+            Classification::audited(Update, ObjectClass::ApplicationActivity)
+        }
+        "management_loggers_reset" => {
+            Classification::audited(Delete, ObjectClass::ApplicationActivity)
+        }
+        _ => return None,
+    };
+    Some(c)
+}
+
 /// Look up the **explicit** classification for an operation id, or `None`
 /// when the id is not in the table.
 ///
@@ -202,7 +227,8 @@ pub fn lookup(op: &str) -> Option<Classification> {
         | "person_tags_delete"
         | "role_tags_delete" => Classification::audited(Delete, Demographic),
 
-        _ => return None,
+        // The management surface's ids live in their own table (#3244).
+        _ => return management_lookup(op),
     };
     Some(c)
 }

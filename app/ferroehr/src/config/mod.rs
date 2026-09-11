@@ -120,6 +120,7 @@ impl FerroEhrConfig {
         self.validate_signing(&mut errors);
         self.validate_key_sources(&mut errors);
         self.validate_privacy(&mut errors);
+        self.validate_audit(&mut errors);
         errors.extend(multimedia_endpoint_errors(&self.multimedia));
         // management.port must differ from the server.bind port.
         if let Some(port) = self.management.port
@@ -144,6 +145,39 @@ impl FerroEhrConfig {
     /// the jurisdiction was covered, and a blank pseudonym namespace would
     /// accept an empty `external_ref.namespace` as if it were declared. No
     /// openEHR spec governs configuration — our own design.
+    /// A retention shorter than a jurisdiction's floor erases the access log
+    /// while the chain still verifies (#3242). The jurisdictions in force are
+    /// the ones the active identifier rules name; `0` keeps forever and is
+    /// always above every floor.
+    fn validate_audit(&self, errors: &mut Vec<ConfigError>) {
+        let store = &self.audit.store;
+        if !(self.audit.enabled && store.enabled) || store.retention_days == 0 {
+            return;
+        }
+        let jurisdictions: std::collections::BTreeSet<&str> = self
+            .privacy
+            .identifier_scan
+            .rules
+            .iter()
+            .filter_map(|key| crate::privacy::detect::rule(key))
+            .map(|rule| rule.jurisdiction)
+            .collect();
+        for jurisdiction in jurisdictions {
+            let Some(floor) = crate::system_log::config::retention_floor_days(jurisdiction) else {
+                continue;
+            };
+            if store.retention_days < floor {
+                errors.push(ConfigError::semantic(format!(
+                    "audit.store.retention_days = {} is below the {jurisdiction} access-log \
+                     retention floor of {floor} days (five years, Besluit vaststelling \
+                     bewaartermijn logging, https://wetten.overheid.nl/BWBR0042391); keep \
+                     records at least that long, or set 0 to keep them forever",
+                    store.retention_days
+                )));
+            }
+        }
+    }
+
     fn validate_privacy(&self, errors: &mut Vec<ConfigError>) {
         if let Err(error) = crate::privacy::PrivacyPolicy::compile(&self.privacy) {
             errors.push(ConfigError::semantic(error.to_string()));
@@ -662,6 +696,35 @@ fn multimedia_endpoint_errors(
 
 #[cfg(test)]
 mod tests {
+    /// A retention below a jurisdiction's floor is a boot error naming both
+    /// numbers (#3242); `0` keeps forever and passes; a jurisdiction with no
+    /// registered floor imposes none.
+    #[test]
+    fn a_retention_below_the_jurisdiction_floor_is_refused() {
+        let mut config = FerroEhrConfig::default();
+        config.audit.store.retention_days = 30;
+        config.privacy.identifier_scan.rules = vec!["nl-bsn".to_owned()];
+        let errors = config
+            .validate()
+            .expect_err("30 days is below the NL floor");
+        let text = errors.to_string();
+        assert!(
+            text.contains("retention_days = 30") && text.contains("1830"),
+            "{text}"
+        );
+
+        config.audit.store.retention_days = 1830;
+        config.validate().expect("the floor itself passes");
+        config.audit.store.retention_days = 0;
+        config.validate().expect("keep forever passes");
+
+        config.audit.store.retention_days = 30;
+        config.privacy.identifier_scan.rules = vec!["no-fodselsnummer".to_owned()];
+        config
+            .validate()
+            .expect("a jurisdiction with no registered floor imposes none");
+    }
+
     use assert_fs::prelude::*;
 
     use super::*;
