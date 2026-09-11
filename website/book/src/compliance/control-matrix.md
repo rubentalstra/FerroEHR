@@ -28,9 +28,10 @@ keeps a shipped control from sitting here as "planned".
 
 - **Shipped:** the issue is closed as completed. The closing pull request is
   linked in the last column.
-- **In progress:** the issue is open and its card on the public roadmap board
-  is in the In Progress column.
-- **Planned:** the issue is open and work has not started.
+- **Planned:** the issue is open. Whether work has started is the issue's
+  column on the [public roadmap board](https://github.com/users/rubentalstra/projects/4),
+  which this page does not copy: a status that lives in two places disagrees
+  the day one of them moves.
 - **Not planned:** the issue was closed without the control being built. The
   row stays visible so the record does not quietly lose it.
 
@@ -63,7 +64,7 @@ last regenerated, and from which commit, is the file's own git history.
 | [GDPR](https://eur-lex.europa.eu/eli/reg/2016/679/oj) | EU | Art. 4(5) | Split demographic parties into a `demographic` schema with a non-overlapping runtime role | [#3153](https://github.com/rubentalstra/FerroEHR/issues/3153) | Shipped | [#3182](https://github.com/rubentalstra/FerroEHR/pull/3182) |
 | [GDPR](https://eur-lex.europa.eu/eli/reg/2016/679/oj) | EU | Art. 4(5) | Refuse identifying data on the clinical side and constrain the subject reference to a pseudonym namespace | [#3154](https://github.com/rubentalstra/FerroEHR/issues/3154) | Shipped | [#3187](https://github.com/rubentalstra/FerroEHR/pull/3187) |
 | [GDPR](https://eur-lex.europa.eu/eli/reg/2016/679/oj) | EU | Art. 4(5) | Separate encryption keys and per-schema backup handling for the clinical and demographic domains | [#3157](https://github.com/rubentalstra/FerroEHR/issues/3157) | Shipped | [#3198](https://github.com/rubentalstra/FerroEHR/pull/3198) |
-| [GDPR](https://eur-lex.europa.eu/eli/reg/2016/679/oj) | EU | Art. 4(5) | Linkage service: the party to EHR resolve map as its own schema and role | [#3158](https://github.com/rubentalstra/FerroEHR/issues/3158) | In progress | — |
+| [GDPR](https://eur-lex.europa.eu/eli/reg/2016/679/oj) | EU | Art. 4(5) | Linkage service: the party to EHR resolve map as its own schema and role | [#3158](https://github.com/rubentalstra/FerroEHR/issues/3158) | Planned | — |
 | [GDPR](https://eur-lex.europa.eu/eli/reg/2016/679/oj) | EU | Art. 4(5) | The subject pseudonym is opt-in: nothing mints it, and an empty subject_namespaces is silent | [#3232](https://github.com/rubentalstra/FerroEHR/issues/3232) | Planned | — |
 | [GDPR](https://eur-lex.europa.eu/eli/reg/2016/679/oj) | EU | Art. 5(1)(b) | Cross-domain cohort queries with a demographic predicate and a clinical selection | [#3159](https://github.com/rubentalstra/FerroEHR/issues/3159) | Planned | — |
 | [GDPR](https://eur-lex.europa.eu/eli/reg/2016/679/oj) | EU | Art. 5(1)(e) | Audit retention has no jurisdictional floor: retention_days=1 erases the access log daily while the chain still verifies | [#3242](https://github.com/rubentalstra/FerroEHR/issues/3242) | Planned | — |
@@ -74,14 +75,14 @@ last regenerated, and from which commit, is the file's own git history.
 | [EHDS](https://eur-lex.europa.eu/eli/reg/2025/327/oj) | EU | Art. 9 | A natural person cannot obtain their own access log: the only retrieval is admin-gated over the whole repository | [#3240](https://github.com/rubentalstra/FerroEHR/issues/3240) | Planned | — |
 | [EHDS](https://eur-lex.europa.eu/eli/reg/2025/327/oj) | EU | Chapter IV | Secondary-use read model as a separate pseudonymisation domain fed from the outbox | [#3160](https://github.com/rubentalstra/FerroEHR/issues/3160) | Planned | — |
 | [EDPB 01/2025](https://www.edpb.europa.eu/our-work-tools/documents/public-consultations/2025/guidelines-012025-pseudonymisation_en) | EU | pseudonymisation domain | Split demographic parties into a `demographic` schema with a non-overlapping runtime role | [#3153](https://github.com/rubentalstra/FerroEHR/issues/3153) | Shipped | [#3182](https://github.com/rubentalstra/FerroEHR/pull/3182) |
-| [EDPB 01/2025](https://www.edpb.europa.eu/our-work-tools/documents/public-consultations/2025/guidelines-012025-pseudonymisation_en) | EU | pseudonymisation domain | Linkage service: the party to EHR resolve map as its own schema and role | [#3158](https://github.com/rubentalstra/FerroEHR/issues/3158) | In progress | — |
+| [EDPB 01/2025](https://www.edpb.europa.eu/our-work-tools/documents/public-consultations/2025/guidelines-012025-pseudonymisation_en) | EU | pseudonymisation domain | Linkage service: the party to EHR resolve map as its own schema and role | [#3158](https://github.com/rubentalstra/FerroEHR/issues/3158) | Planned | — |
 | [EDPB 01/2025](https://www.edpb.europa.eu/our-work-tools/documents/public-consultations/2025/guidelines-012025-pseudonymisation_en) | EU | pseudonymisation domain | Cross-domain cohort queries with a demographic predicate and a clinical selection | [#3159](https://github.com/rubentalstra/FerroEHR/issues/3159) | Planned | — |
 | [UAVG](https://wetten.overheid.nl/BWBR0040940) | NL | Art. 46 | Refuse identifying data on the clinical side and constrain the subject reference to a pseudonym namespace | [#3154](https://github.com/rubentalstra/FerroEHR/issues/3154) | Shipped | [#3187](https://github.com/rubentalstra/FerroEHR/pull/3187) |
 | [UAVG](https://wetten.overheid.nl/BWBR0040940) | NL | Art. 46 | National identifiers in the demographic schema: encrypted storage, keyed lookup, audited resolution | [#3155](https://github.com/rubentalstra/FerroEHR/issues/3155) | Shipped | [#3189](https://github.com/rubentalstra/FerroEHR/pull/3189) |
 | [Wabvpz](https://wetten.overheid.nl/BWBR0023864) | NL | Art. 15e | A natural person cannot obtain their own access log: the only retrieval is admin-gated over the whole repository | [#3240](https://github.com/rubentalstra/FerroEHR/issues/3240) | Planned | — |
 | [NEN 7513](https://www.nen.nl/nen-7513-2018-nl-245399) | NL | actor role | The access record carries no actor role or authorisation basis, which NEN 7513 requires and the RBAC layer already holds | [#3239](https://github.com/rubentalstra/FerroEHR/issues/3239) | Planned | — |
 | [NEN 7513](https://www.nen.nl/nen-7513-2018-nl-245399) | NL | event content | Per-domain access logging for reads and queries aligned with NEN 7513 and EHDS Art. 9 | [#3156](https://github.com/rubentalstra/FerroEHR/issues/3156) | Shipped | [#3188](https://github.com/rubentalstra/FerroEHR/pull/3188) |
-| [NEN 7513](https://www.nen.nl/nen-7513-2018-nl-245399) | NL | event content | Domain-level access events discard their EmitOutcome, so fail_mode=closed does not cover them | [#3235](https://github.com/rubentalstra/FerroEHR/issues/3235) | In progress | [#3246](https://github.com/rubentalstra/FerroEHR/pull/3246) |
+| [NEN 7513](https://www.nen.nl/nen-7513-2018-nl-245399) | NL | event content | Domain-level access events discard their EmitOutcome, so fail_mode=closed does not cover them | [#3235](https://github.com/rubentalstra/FerroEHR/issues/3235) | Shipped | [#3246](https://github.com/rubentalstra/FerroEHR/pull/3246) |
 | [NEN 7513](https://www.nen.nl/nen-7513-2018-nl-245399) | NL | retention | Audit retention has no jurisdictional floor: retention_days=1 erases the access log daily while the chain still verifies | [#3242](https://github.com/rubentalstra/FerroEHR/issues/3242) | Planned | — |
 
 ## Legal sources

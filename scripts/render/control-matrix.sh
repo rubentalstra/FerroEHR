@@ -30,10 +30,6 @@ cd "$(dirname "$0")/../.."
 PAGE="website/book/src/compliance/control-matrix.md"
 SCRIPT="scripts/render/control-matrix.sh"
 
-# The roadmap board is the only source of "in progress"
-# (.claude/rules/project-board.md); the title matches scripts/gh/project.sh.
-BOARD_TITLE="${FERROEHR_PROJECT_TITLE:-FerroEHR Roadmap}"
-
 # Fetch ceiling. The tracker holds ~2100 issues, so a low limit silently drops
 # the older half of the matrix; the truncation guard below turns a tracker that
 # outgrows this number into a loud failure rather than a short page.
@@ -167,36 +163,12 @@ if [[ "$(jq 'length' "$WORK/controls.json")" -eq 0 ]] &&
   die "no issue declares a Control: line while the compliance pages link to the matrix — declare the shipped controls on their issues (#3236)"
 fi
 
-# ── the roadmap board ────────────────────────────────────────────────────────
-# "In progress" comes from the public board and nowhere else
-# (.claude/rules/project-board.md). A Projects (v2) read needs the `project`
-# token scope, which a plain repository token does not carry, so the query runs
-# only for the OPEN issues that declare a control: a tracker with no open
-# control never touches the board at all, and a refusal names what to grant.
-echo '{}' > "$WORK/board.json"
-open_controls="$(jq -r '[ .[] | select(.state == "OPEN") | .number ] | unique | .[]' "$WORK/controls.json")"
-if [[ -n "$open_controls" ]]; then
-  repo="$(gh repo view --json nameWithOwner --jq .nameWithOwner)" ||
-    die "could not resolve the current repository (run inside a gh-authenticated clone)"
-  : > "$WORK/board.jsonl"
-  for issue in $open_controls; do
-    # shellcheck disable=SC2016 # $owner/$name/$number are GraphQL variables, bound by the -f flags
-    if ! gh api graphql -f owner="${repo%%/*}" -f name="${repo##*/}" -F number="$issue" \
-      -f query='query($owner:String!,$name:String!,$number:Int!){
-        repository(owner:$owner,name:$name){issue(number:$number){
-          projectItems(first:20){nodes{project{title}
-            fieldValueByName(name:"Status"){
-              ... on ProjectV2ItemFieldSingleSelectValue{name}}}}}}}' > "$WORK/item.json"; then
-      die "could not read the roadmap board status of issue #$issue. A Projects (v2) read needs the 'project' token scope (gh auth refresh -s project); in CI a repository token cannot read Projects v2, so the control-matrix job needs GH_TOKEN set to a token that can."
-    fi
-    jq -c --arg t "$BOARD_TITLE" --arg n "$issue" \
-      '{key: $n, value: ([ .data.repository.issue.projectItems.nodes[]?
-                           | select(.project.title == $t)
-                           | .fieldValueByName.name // "" ] | first // "")}' \
-      "$WORK/item.json" >> "$WORK/board.jsonl"
-  done
-  jq -s 'from_entries' "$WORK/board.jsonl" > "$WORK/board.json"
-fi
+# No board read. The roadmap board is the only source of "in progress"
+# (.claude/rules/project-board.md), and reading it needs a Projects (v2) scope
+# a repository token does not carry, so a page that rendered it could only be
+# verified in CI by a standing personal access token. The page therefore says
+# Planned for every open control and links the board for the live column
+# (#3236); a repository token is enough to render and to check it.
 
 # ── render ───────────────────────────────────────────────────────────────────
 OUT="$WORK/control-matrix.md"
@@ -232,9 +204,10 @@ keeps a shipped control from sitting here as "planned".
 
 - **Shipped:** the issue is closed as completed. The closing pull request is
   linked in the last column.
-- **In progress:** the issue is open and its card on the public roadmap board
-  is in the In Progress column.
-- **Planned:** the issue is open and work has not started.
+- **Planned:** the issue is open. Whether work has started is the issue's
+  column on the [public roadmap board](https://github.com/users/rubentalstra/projects/4),
+  which this page does not copy: a status that lives in two places disagrees
+  the day one of them moves.
 - **Not planned:** the issue was closed without the control being built. The
   row stays visible so the record does not quietly lose it.
 
@@ -247,13 +220,11 @@ last regenerated, and from which commit, is the file's own git history.
 
 HEADER
 
-rows="$(jq -r --slurpfile board "$WORK/board.json" '
-  ($board[0]) as $status_of
-  | def esc: gsub("\\|"; "\\|");
+rows="$(jq -r '
+  def esc: gsub("\\|"; "\\|");
   def status:
     if .state == "CLOSED" and .state_reason == "NOT_PLANNED" then "Not planned"
     elif .state == "CLOSED" then "Shipped"
-    elif $status_of[.number | tostring] == "In Progress" then "In progress"
     else "Planned" end;
   def prs:
     if (.pr | length) == 0 then "—"
