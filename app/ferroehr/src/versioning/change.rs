@@ -1304,13 +1304,13 @@ pub(crate) async fn commit_contribution(
     // The CONTRIBUTION's own audit + contribution rows in one round trip (the
     // per-version `commit_audit`s are inserted per change below). A uid the
     // client did not supply is minted here, stamped, never by the database.
-    let contribution_uid = supplied_uid.unwrap_or_else(|| ctx.stamp.mint());
+    let uid = supplied_uid.unwrap_or_else(|| ctx.stamp.mint());
     let (contribution_id, _contribution_audit_id, contribution_time) =
         crate::storage::version_repo::commit::write_contribution(
             tx,
             ehr_id,
             &contribution_audit.row(),
-            Some(contribution_uid),
+            Some(uid),
         )
         .await?;
     let committer_fallback = &contribution_audit.committer;
