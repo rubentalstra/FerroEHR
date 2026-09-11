@@ -38,22 +38,73 @@ use pgp::packet::PublicKey;
 /// build time. Only their primary key packets are trust anchors; signing
 /// subkeys arrive with each token.
 ///
-/// Empty until the licensor's key ceremony has produced a certificate, in
-/// which case every token is refused as `UntrustedPrimary` and the server
-/// runs with no licence.
-pub const ANCHOR_CERTIFICATES: &[&str] = &[];
+/// Primary `5834C101A3F48578FD3CD1796C65DDBC5F712E51` (certify-only, no
+/// expiry). A rotation of the primary appends the new certificate here and
+/// keeps the old one for one release so existing tokens keep verifying.
+pub const ANCHOR_CERTIFICATES: &[&str] = &[r"-----BEGIN PGP PUBLIC KEY BLOCK-----
+
+mDMEaqQCCBYJKwYBBAHaRw8BAQdACGyBINh2SN3BQoB2FcKYnkpTw05o7uieeRgD
+4AmdldG0KkZlcnJvRUhSIExpY2Vuc2luZyA8bGljZW5zaW5nQGZlcnJvZWhyLmV1
+PoivBBMWCgBXFiEEWDTBAaP0hXj9PNF5bGXdvF9xLlEFAmqkAggbFIAAAAAABAAO
+bWFudTIsMi41KzEuMTIsMCwzAhsBBQsJCAcCAiICBhUKCQgLAgQWAgMBAh4HAheA
+AAoJEGxl3bxfcS5RnOABAMpA6e8fTgzV5Wzxy9kejqkejpvrSiyneQiH4E/iTwJ/
+AQCokShD2yZbOJhzuEykQ43Qb8/xXmOC+fMvzY0wvtutDbgzBGqkAg4WCSsGAQQB
+2kcPAQEHQEmYgjq48nNIaU0qpxg40dluLnejqQegSibTJhGZkbnIiQERBBgWCgBC
+FiEEWDTBAaP0hXj9PNF5bGXdvF9xLlEFAmqkAg4bFIAAAAAABAAObWFudTIsMi41
+KzEuMTIsMCwzAhsCBQkDwmcAAIEJEGxl3bxfcS5RdiAEGRYKAB0WIQRcZw0ojRZl
+LZpxk6nybicDBUbrXwUCaqQCDgAKCRDybicDBUbrX1BnAP4pO+NQiBH7EhD2PDOf
+8b34kvR1NFTtwN40yS0NKP1tuwEA87l2eDYZ/wRerPOjf6LEqVAHayIo1VtgVRjO
+Eyil1QfI3AEAl5ANcHcjtUcbbCJHffy5ca2zSmmb0GgHRu1bx3Zaj70A/joWZTkq
+cnH8F49CyICuGOx8b6GIx4aHSI0GzqWa7b0O
+=TSvN
+-----END PGP PUBLIC KEY BLOCK-----
+"];
 
 /// The licence token every build carries: the licensor's `non-commercial` grant.
 ///
 /// A deployment without its own token runs under this explicit, signed
-/// licence and stamps identifiers with its key; a configured `[licence] file`
-/// takes precedence.
-///
-/// Empty until the licensor has minted it; a build then runs with the
-/// fail-safe stamp and no licence. Once present, a unit test proves it verifies
-/// against [`ANCHOR_CERTIFICATES`], so a release can never ship a token its
-/// own verifier refuses.
-pub const EMBEDDED_TOKEN: &str = "";
+/// licence (id `01a090a8-59e4-76da-92f5-3f7e4ea9d7c0`, valid to 2099-12-31)
+/// and stamps identifiers with its key; a configured `[licence] file` takes
+/// precedence. A unit test proves it verifies against
+/// [`ANCHOR_CERTIFICATES`], so a release can never ship a token its own
+/// verifier refuses.
+pub const EMBEDDED_TOKEN: &str = r#"-----BEGIN PGP SIGNED MESSAGE-----
+Hash: SHA512
+
+{
+  "licence_id": "01a090a8-59e4-76da-92f5-3f7e4ea9d7c0",
+  "licensee": "Everyone, under the Business Source License 1.1",
+  "issued": "2026-09-11",
+  "not_before": "2026-09-11",
+  "not_after": "2099-12-31",
+  "use": "non-commercial"
+}
+-----BEGIN PGP SIGNATURE-----
+
+iJEEARYKADkWIQRcZw0ojRZlLZpxk6nybicDBUbrXwUCaqQCIxsUgAAAAAAEAA5t
+YW51MiwyLjUrMS4xMiwwLDMACgkQ8m4nAwVG619P+QEAgvra2wbffXTbaqdnyZje
+xRk4esh7OIYbQAtJ0RNxO2gBAIwGXPvsJ8Zb0M+dQ3DRy5rDka2rH4vELrrrLbM1
+H/sB
+=ogu+
+-----END PGP SIGNATURE-----
+-----BEGIN PGP PUBLIC KEY BLOCK-----
+
+mDMEaqQCCBYJKwYBBAHaRw8BAQdACGyBINh2SN3BQoB2FcKYnkpTw05o7uieeRgD
+4AmdldG0KkZlcnJvRUhSIExpY2Vuc2luZyA8bGljZW5zaW5nQGZlcnJvZWhyLmV1
+PoivBBMWCgBXFiEEWDTBAaP0hXj9PNF5bGXdvF9xLlEFAmqkAggbFIAAAAAABAAO
+bWFudTIsMi41KzEuMTIsMCwzAhsBBQsJCAcCAiICBhUKCQgLAgQWAgMBAh4HAheA
+AAoJEGxl3bxfcS5RnOABAMpA6e8fTgzV5Wzxy9kejqkejpvrSiyneQiH4E/iTwJ/
+AQCokShD2yZbOJhzuEykQ43Qb8/xXmOC+fMvzY0wvtutDbgzBGqkAg4WCSsGAQQB
+2kcPAQEHQEmYgjq48nNIaU0qpxg40dluLnejqQegSibTJhGZkbnIiQERBBgWCgBC
+FiEEWDTBAaP0hXj9PNF5bGXdvF9xLlEFAmqkAg4bFIAAAAAABAAObWFudTIsMi41
+KzEuMTIsMCwzAhsCBQkDwmcAAIEJEGxl3bxfcS5RdiAEGRYKAB0WIQRcZw0ojRZl
+LZpxk6nybicDBUbrXwUCaqQCDgAKCRDybicDBUbrX1BnAP4pO+NQiBH7EhD2PDOf
+8b34kvR1NFTtwN40yS0NKP1tuwEA87l2eDYZ/wRerPOjf6LEqVAHayIo1VtgVRjO
+Eyil1QfI3AEAl5ANcHcjtUcbbCJHffy5ca2zSmmb0GgHRu1bx3Zaj70A/joWZTkq
+cnH8F49CyICuGOx8b6GIx4aHSI0GzqWa7b0O
+=TSvN
+-----END PGP PUBLIC KEY BLOCK-----
+"#;
 
 /// An embedded anchor certificate did not parse.
 #[derive(Debug, thiserror::Error)]
@@ -96,11 +147,9 @@ mod tests {
     /// A build never ships an embedded token its own verifier refuses, and the
     /// embedded grant is the non-commercial one.
     #[test]
-    fn the_embedded_token_verifies_as_non_commercial_when_present() {
-        if EMBEDDED_TOKEN.is_empty() {
-            return;
-        }
+    fn the_embedded_token_verifies_as_non_commercial() {
         let anchors = anchors().expect("embedded anchors parse");
+        assert!(!anchors.is_empty(), "a release embeds at least one anchor");
         let token = token::Token::parse(EMBEDDED_TOKEN).expect("embedded token parses");
         let today = jiff::Timestamp::now()
             .to_zoned(jiff::tz::TimeZone::UTC)
