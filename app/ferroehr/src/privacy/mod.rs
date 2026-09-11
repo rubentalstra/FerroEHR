@@ -120,7 +120,7 @@ impl Default for PrivacyPolicy {
     /// to: identified `self` parties refused, every shipped identifier rule in
     /// `strict` mode, no namespaces declared (#3243).
     ///
-    /// A `FerroEhrService` built without [`FerroEhrService::with_privacy`]
+    /// A `FerroEhrService` built without [`crate::service::FerroEhrService::with_privacy`]
     /// therefore runs the posture the shipped binary runs, never a more
     /// permissive one: a test or an embedding host that means to accept more
     /// installs the policy that says so.
