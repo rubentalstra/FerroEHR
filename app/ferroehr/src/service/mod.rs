@@ -13,6 +13,9 @@
 //! in [`crate::storage`] (no openEHR spec governs the SQL — our own design);
 //! this layer orchestrates.
 //!
+//! One module has no SM chapter: [`linkage`] is our own extension, the map
+//! from a demographic party to the EHR whose subject it is (GDPR Art. 4(5)).
+//!
 //! The root modules beside the chapters carry the cross-chapter service
 //! vocabulary: the SM call-status model ([`status`]), the service error and
 //! its status-mapping tables ([`error`]), the version-commit envelope
@@ -39,6 +42,7 @@ pub mod definition;
 pub mod demographic;
 pub mod ehr;
 pub mod ehr_index;
+pub mod linkage;
 pub mod message;
 pub mod query;
 pub mod subject_proxy;
@@ -141,6 +145,17 @@ pub struct FerroEhrService {
     /// Art. 32(1)(a)); no openEHR spec governs storage layout — our own
     /// design/extension.
     pub(crate) demographic_pool: PgPool,
+    /// The pool serving the **linkage** pseudonymisation domain — the same
+    /// database (or, when a deployment separates the runtime roles, a third
+    /// DSN), with `search_path` pointing at the `linkage` schema.
+    ///
+    /// Only [`crate::service::linkage`] reads or writes through it. It holds
+    /// which party is the subject of which EHR — the additional information
+    /// that re-attributes a pseudonymised record to a person (GDPR Art. 4(5)
+    /// and Art. 32(1)(a)) — so it is kept apart from BOTH domains it joins,
+    /// and no statement issued on it can reach either. No openEHR spec governs
+    /// storage layout — our own design/extension.
+    pub(crate) linkage_pool: PgPool,
     system_id: String,
     /// The ACTIVE openEHR specification generation set (`spec_profile`).
     /// Boot-fixed; the AQL planner's profile gate and the ingress acceptance
@@ -158,6 +173,13 @@ pub struct FerroEhrService {
     /// Signature). Defaults to server-side `digest` signing; the binary wires
     /// the configured [`Signer`].
     signer: Arc<Signer>,
+    /// The boot outcome of the `[licence]` section
+    /// ([`crate::licence::state::LicenceState`]); no licence by default. Read
+    /// by `/rest/status`; it changes nothing else.
+    licence: crate::licence::state::LicenceState,
+    /// The stamp key every server-minted identifier carries
+    /// ([`crate::licence::stamp`]), derived from `licence` once at boot.
+    stamp: crate::licence::stamp::StampKey,
     /// The optional IHE ATNA audit sender realizing the SM `I_SYSTEM_LOG`
     /// component (`crate::system_log`). `None` = auditing off; the binary
     /// wires the configured [`AuditSender`] via [`Self::with_audit`].
@@ -265,11 +287,16 @@ impl FerroEhrService {
     pub fn new(pool: PgPool) -> Self {
         Self {
             demographic_pool: crate::db::demographic_pool_from(&pool),
+            linkage_pool: crate::db::linkage_pool_from(&pool),
             pool,
             system_id: DEFAULT_SYSTEM_ID.to_owned(),
             spec_profile: crate::config::profile::SpecProfile::default(),
             web_templates: WebTemplateCache::default(),
             signer: Arc::new(Signer::digest_default()),
+            licence: crate::licence::state::LicenceState::NoLicence(
+                crate::licence::state::Reason::NoneEmbedded,
+            ),
+            stamp: crate::licence::stamp::StampKey::fail_safe(),
             audit: None,
             audit_store: None,
             terminology: None,
@@ -355,6 +382,19 @@ impl FerroEhrService {
         self
     }
 
+    /// Install the pool serving the linkage pseudonymisation domain.
+    ///
+    /// The third credential, and the one that completes the split: with
+    /// `[db].linkage_url` set, the pool authenticates as `ferroehr_linkage`,
+    /// which holds neither the clinical nor the demographic grants and which
+    /// neither of them holds. Without it, [`Self::new`]'s derived pool runs the
+    /// same schema separation over the clinical credential.
+    #[must_use]
+    pub fn with_linkage_pool(mut self, pool: PgPool) -> Self {
+        self.linkage_pool = pool;
+        self
+    }
+
     /// Selects the openEHR specification generation set this service runs
     /// (`spec_profile`; default `development`).
     #[must_use]
@@ -370,6 +410,28 @@ impl FerroEhrService {
     pub fn with_system_id(mut self, system_id: impl Into<String>) -> Self {
         self.system_id = system_id.into();
         self
+    }
+
+    /// Install the boot outcome of the `[licence]` section. The stamp key
+    /// every server-minted identifier carries follows from it; nothing else
+    /// does.
+    #[must_use]
+    pub fn with_licence(mut self, licence: crate::licence::state::LicenceState) -> Self {
+        self.stamp = licence.stamp_key();
+        self.licence = licence;
+        self
+    }
+
+    /// The boot outcome of the `[licence]` section.
+    #[must_use]
+    pub fn licence(&self) -> &crate::licence::state::LicenceState {
+        &self.licence
+    }
+
+    /// The stamp key server-minted identifiers carry.
+    #[must_use]
+    pub fn stamp(&self) -> &crate::licence::stamp::StampKey {
+        &self.stamp
     }
 
     /// Install the configured version [`Signer`] (RM common master06 §Digital
@@ -546,6 +608,7 @@ impl FerroEhrService {
         SigningCtx {
             system_id: self.effective_system_id(),
             signer: &self.signer,
+            stamp: &self.stamp,
             spec_profile: self.spec_profile,
             #[cfg(feature = "multimedia")]
             multimedia: self.multimedia.as_deref(),

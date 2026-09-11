@@ -636,7 +636,10 @@ even for an organisation the rows above would otherwise leave free.
 published.** Companies and care providers building on FerroEHR are wanted
 here, and the commercial licence is the normal path for them. It starts with
 a short conversation with the maintainer named in
-[MAINTAINERS.md](MAINTAINERS.md).
+[MAINTAINERS.md](MAINTAINERS.md). The licence you receive is a signed token
+file: point `[licence] file` (or `FERROEHR__LICENCE__FILE`) at it and
+`GET /ferroehr/rest/status` reports the grant in force. Without one the server
+runs identically under the embedded non-commercial grant, and says so there.
 
 The eight `openehr-*` crates on crates.io are a separate question. The five
 generated model crates (`openehr-base`, `openehr-rm`, `openehr-am`,

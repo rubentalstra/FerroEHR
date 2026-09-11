@@ -7,15 +7,15 @@
 //! No openEHR spec governs the persistence mechanism; the storage substrate is
 //! our own PG18-native design. This module is the single place the rest of the
 //! crate obtains a database handle: [`DbConfig`] (the `[db]` config section)
-//! feeds [`connect`] and [`connect_tenant_scoped`] for the clinical domain and
+//! feeds [`connect`] and [`connect_tenant_scoped`] for the clinical domain,
 //! [`connect_demographic`] / [`connect_tenant_scoped_demographic`] for the
-//! demographic one, and [`prepare`] brings the schema to the state this build
-//! requires — on the migration DSN ([`DbConfig::migrate_dsn`]), a third
+//! demographic one and [`connect_linkage`] / [`connect_tenant_scoped_linkage`]
+//! for the linkage one, and [`prepare`] brings the schema to the state this
+//! build requires — on the migration DSN ([`DbConfig::migrate_dsn`]), a fourth
 //! credential a deployment may name because preparation spans every schema
-//! while each runtime credential holds one domain. The two served domains
+//! while each runtime credential holds one domain. The three served domains
 //! differ only in the `search_path` their connections carry, so one set of
-//! storage functions serves both; the `linkage` schema is migrated beside
-//! them and has no pool of its own. [`verify_domain_isolation`] is the boot gate that refuses to
+//! storage functions serves them all. [`verify_domain_isolation`] is the boot gate that refuses to
 //! serve when the runtime roles can read across those boundaries. The `sea-query`
 //! identifier vocabulary for the live schema lives in [`iden`]. This is the
 //! defining module for the whole bootstrap surface, with no re-exports.
@@ -98,6 +98,22 @@ pub struct DbConfig {
     /// of it — the mounted-secret route, as [`Self::url_file`] is for the
     /// clinical DSN. Setting both is a boot error.
     pub demographic_url_file: Option<PathBuf>,
+    /// DSN for the **linkage** pseudonymisation domain, when a deployment
+    /// separates the runtime roles; unset (the default) reuses [`Self::url`].
+    ///
+    /// The third domain, and the one the other two exist to be kept apart
+    /// from: `linkage` holds which demographic party is the subject of which
+    /// EHR, which is the "additional information" that re-attributes a
+    /// pseudonymised record to a person. Point this at a DSN authenticating as
+    /// `ferroehr_linkage` and no runtime credential holds both the map and
+    /// either side of it (GDPR Art. 4(5) and Art. 32(1)(a); EDPB Guidelines
+    /// 01/2025 require the separation to hold against internal actors). No
+    /// openEHR spec governs database roles — our own design/extension.
+    pub linkage_url: Option<SecretUrl>,
+    /// Path to a file holding [`Self::linkage_url`], read at boot in place of
+    /// it — the mounted-secret route, as [`Self::url_file`] is for the
+    /// clinical DSN. Setting both is a boot error.
+    pub linkage_url_file: Option<PathBuf>,
     /// DSN that schema preparation ([`prepare`]) authenticates as; unset (the
     /// default) reuses [`Self::url`].
     ///
@@ -155,6 +171,8 @@ impl Default for DbConfig {
             url_file: None,
             demographic_url: None,
             demographic_url_file: None,
+            linkage_url: None,
+            linkage_url_file: None,
             migrate_url: None,
             migrate_url_file: None,
             // Deliberate defaults: 20 max (10 hard-capped realistic write
@@ -197,6 +215,15 @@ impl DbConfig {
             .map_or_else(|| self.url.expose(), SecretUrl::expose)
     }
 
+    /// The DSN the linkage pool connects with: [`Self::linkage_url`] when the
+    /// deployment separates the runtime roles, else [`Self::url`].
+    #[must_use]
+    pub fn linkage_dsn(&self) -> &str {
+        self.linkage_url
+            .as_ref()
+            .map_or_else(|| self.url.expose(), SecretUrl::expose)
+    }
+
     /// The DSN schema preparation connects with: [`Self::migrate_url`] when
     /// the deployment names a credential for it, else [`Self::url`].
     #[must_use]
@@ -211,6 +238,13 @@ impl DbConfig {
     #[must_use]
     pub fn roles_are_separated(&self) -> bool {
         self.demographic_url.is_some()
+    }
+
+    /// Whether the linkage domain authenticates as its own database role
+    /// (a distinct DSN), rather than sharing the clinical one.
+    #[must_use]
+    pub fn linkage_role_is_separated(&self) -> bool {
+        self.linkage_url.is_some()
     }
 
     /// Whether schema preparation authenticates as its own database role
@@ -383,6 +417,21 @@ const CLINICAL_SEARCH_PATH: &str = "SET search_path TO ehr, ext, public";
 /// <https://eur-lex.europa.eu/eli/reg/2016/679/oj>).
 const DEMOGRAPHIC_SEARCH_PATH: &str = "SET search_path TO demographic, ext, public";
 
+/// Search path applied to every pooled connection serving the **linkage**
+/// domain (`linkage/0001_baseline`), which holds the one relation joining the
+/// other two: which demographic party is the subject of which EHR.
+///
+/// Neither `ehr` nor `demographic` is on it, for the reason the schema exists:
+/// a query issued on this pool against either domain's relations must fail to
+/// resolve rather than quietly re-join what the split holds apart. The
+/// crossing happens one layer up, in the service, over two pools — never
+/// inside one statement.
+///
+/// No openEHR spec governs storage layout or database roles — our own
+/// design/extension (GDPR Art. 4(5) and Art. 32(1)(a);
+/// <https://eur-lex.europa.eu/eli/reg/2016/679/oj>).
+const LINKAGE_SEARCH_PATH: &str = "SET search_path TO linkage, ext, public";
+
 /// Whether a pool stamps the per-request tenant on its connections.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 enum Tenancy {
@@ -505,6 +554,24 @@ pub async fn connect_demographic(settings: &DbConfig) -> Result<PgPool, DbError>
     Ok(pool)
 }
 
+/// Create the **linkage** connection pool (single-tenant / tenancy-off).
+///
+/// The twin of [`connect_demographic`] for the third pseudonymisation domain:
+/// the same pool settings, the linkage search path, and [`DbConfig::linkage_dsn`]
+/// — which is `[db].linkage_url` when a deployment separates the runtime roles,
+/// and `[db].url` otherwise. The schema separation is therefore always on; the
+/// role separation is the deployment's choice.
+///
+/// # Errors
+///
+/// The same failures as [`connect`], against the linkage DSN.
+pub async fn connect_linkage(settings: &DbConfig) -> Result<PgPool, DbError> {
+    let pool = pool_options(settings, LINKAGE_SEARCH_PATH, Tenancy::Off)
+        .connect(settings.linkage_dsn())
+        .await?;
+    Ok(pool)
+}
+
 /// Stamp the `ferroehr.tenant_id` session GUC on a connection from the
 /// current task's tenant context ([`crate::extensions::tenant_context::current`])
 /// — `''` (⇒ the reserved default tenant) when no tenant is in scope (a
@@ -565,6 +632,25 @@ pub async fn connect_tenant_scoped_demographic(settings: &DbConfig) -> Result<Pg
     Ok(pool)
 }
 
+/// Creates the **tenant-scoped linkage** pool — [`connect_linkage`] with the
+/// tenant hooks of [`connect_tenant_scoped`].
+///
+/// `linkage.party_ehr` carries the same `tenant_id` column, DEFAULT and
+/// `tenant_isolation` RLS policy as the clinical and demographic relations, and
+/// the tenant is a part of its temporal primary key — so a mapping written
+/// without the GUC stamped would land on the reserved default tenant whatever
+/// the request said, and resolve from there again.
+///
+/// # Errors
+///
+/// The same failures as [`connect_tenant_scoped`], against the linkage DSN.
+pub async fn connect_tenant_scoped_linkage(settings: &DbConfig) -> Result<PgPool, DbError> {
+    let pool = pool_options(settings, LINKAGE_SEARCH_PATH, Tenancy::Scoped)
+        .connect(settings.linkage_dsn())
+        .await?;
+    Ok(pool)
+}
+
 /// A demographic pool over the DSN an existing clinical pool already holds, for
 /// a caller that has a [`PgPool`] and no [`DbConfig`].
 ///
@@ -585,6 +671,25 @@ pub fn demographic_pool_from(pool: &PgPool) -> PgPool {
     let defaults = DbConfig::default();
     let options = pool.connect_options();
     pool_options(&defaults, DEMOGRAPHIC_SEARCH_PATH, Tenancy::Off)
+        .min_connections(0)
+        .connect_lazy_with(PgConnectOptions::clone(&options))
+}
+
+/// A linkage pool over the DSN an existing clinical pool already holds, the
+/// twin of [`demographic_pool_from`] for the third domain.
+///
+/// It exists for the same reason: [`crate::service::FerroEhrService::new`]
+/// stays synchronous and infallible while still routing the linkage chapter at
+/// the `linkage` schema. It carries the pool defaults rather than the
+/// deployment's `[db]` tuning, and opens no connection until one is asked for.
+/// A deployment that tunes the pool, separates the runtime roles, or enables
+/// tenancy supplies its own pool through
+/// [`crate::service::FerroEhrService::with_linkage_pool`] instead.
+#[must_use]
+pub fn linkage_pool_from(pool: &PgPool) -> PgPool {
+    let defaults = DbConfig::default();
+    let options = pool.connect_options();
+    pool_options(&defaults, LINKAGE_SEARCH_PATH, Tenancy::Off)
         .min_connections(0)
         .connect_lazy_with(PgConnectOptions::clone(&options))
 }

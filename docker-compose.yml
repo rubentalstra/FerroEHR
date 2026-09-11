@@ -356,6 +356,11 @@ services:
       # Version-signing toggle pass-through (measured comparison runs disable it
       # for throughput parity — upstream has no signing.)
       FERROEHR__SIGNING__ENABLED: ${FERROEHR__SIGNING__ENABLED:-true}
+      # A commercial licence token (BUSL-1.1 production use in the course of a
+      # business). Mount the signed token file read-only and name its path;
+      # unset, the server runs under the embedded non-commercial grant and
+      # reports which on GET /ferroehr/rest/status.
+      #   FERROEHR__LICENCE__FILE: /etc/ferroehr/licence.asc
       # Quickstart: human-readable colored logs in `docker compose logs`.
       # Production/collector deployments override to `json` (or unset — the
       # `auto` default picks json when stdout is not a TTY).

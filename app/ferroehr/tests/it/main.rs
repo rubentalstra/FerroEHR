@@ -40,6 +40,7 @@ mod fhir_outbound_amqp;
 mod fhir_priority_categories;
 mod fixtures;
 mod item_tag_fixture;
+mod licence_stamp;
 mod multimedia_s3;
 mod opt_resource_meta;
 mod persistence;

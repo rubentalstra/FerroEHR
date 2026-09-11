@@ -129,6 +129,17 @@ spec:
             - name: FERROEHR__DB__DEMOGRAPHIC_URL_FILE
               value: {{ printf "%s/db.demographic_url" (include "ferroehr.secretMountPath" .) | quote }}
             {{- end }}
+            {{- if or .Values.database.linkageExistingSecret .Values.database.linkageUrl }}
+            {{- /* The linkage domain's own credential, mounted the same way and
+                   for the same reason. It holds which party is the subject of
+                   which EHR, so it is barred from both domains it joins and
+                   they from it: with all three set, no credential the server
+                   uses can perform that join in SQL. Unset, this pool shares
+                   the clinical DSN and the separation is schema-only, which
+                   the boot self-check still enforces. */}}
+            - name: FERROEHR__DB__LINKAGE_URL_FILE
+              value: {{ printf "%s/db.linkage_url" (include "ferroehr.secretMountPath" .) | quote }}
+            {{- end }}
             {{- if or .Values.database.migrateExistingSecret .Values.database.migrateUrl }}
             {{- /* The credential schema preparation runs as, mounted the same
                    way and for the same reason. Preparation spans every schema —
@@ -314,6 +325,15 @@ spec:
                     - key: {{ .Values.database.demographicExistingSecretKey }}
                       path: db.demographic_url
               {{- end }}
+              {{- if .Values.database.linkageExistingSecret }}
+              # The linkage domain's own Secret, a third credential distinct
+              # from both of the above and projected as its own file.
+              - secret:
+                  name: {{ .Values.database.linkageExistingSecret }}
+                  items:
+                    - key: {{ .Values.database.linkageExistingSecretKey }}
+                      path: db.linkage_url
+              {{- end }}
               {{- if .Values.database.migrateExistingSecret }}
               # The schema-preparation Secret — usually the same credential the
               # migration Job carries, which is why it is a third source rather
@@ -335,6 +355,10 @@ spec:
               {{- if and (not .Values.database.demographicExistingSecret) .Values.database.demographicUrl }}
                     - key: db.demographic_url
                       path: db.demographic_url
+              {{- end }}
+              {{- if and (not .Values.database.linkageExistingSecret) .Values.database.linkageUrl }}
+                    - key: db.linkage_url
+                      path: db.linkage_url
               {{- end }}
               {{- if and (not .Values.database.migrateExistingSecret) .Values.database.migrateUrl }}
                     - key: db.migrate_url

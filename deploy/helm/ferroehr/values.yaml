@@ -150,6 +150,31 @@ database:
   # Secret). Ignored when demographicExistingSecret is set.
   demographicUrl: ""
 
+  # ── the linkage pseudonymisation domain ────────────────────────────────────
+  # The third domain, and the one the other two exist to be kept apart from:
+  # `linkage` holds which party is the subject of which EHR, the map that
+  # re-attributes a pseudonymised record to a person (GDPR Art. 4(5)). Same
+  # arrangement as above — the schema separation is unconditional, and these
+  # keys add the CREDENTIAL separation.
+  #
+  # Set all three DSNs and no credential the server uses can join an identity
+  # to a record in SQL: `ferroehr_linkage` is revoked from the clinical and
+  # demographic schemas and both are revoked from `linkage`, in both
+  # directions, and the boot self-check refuses a database where that is not
+  # true. The crossing then happens in the application, over two connections,
+  # and every resolution is recorded as a linkage-domain access event.
+
+  # -- Reference an existing Secret holding the LINKAGE-role DSN. Its value is
+  # a full `postgres://ferroehr_linkage:...@host:5432/ferroehr`, a third
+  # credential distinct from the two above.
+  linkageExistingSecret: ""
+  # -- Key WITHIN linkageExistingSecret holding the linkage DSN. Mounted as a
+  # file; only its PATH reaches the pod's environment.
+  linkageExistingSecretKey: FERROEHR__DB__LINKAGE_URL
+  # -- Inline linkage DSN (DEV/TEST ONLY — lands in a chart-managed Secret).
+  # Ignored when linkageExistingSecret is set.
+  linkageUrl: ""
+
   # ── the credential that prepares the schema ────────────────────────────────
   # Neither DSN above can do it. Preparing spans every schema at once — the DDL
   # of all five migration sets under config.db.migrate=apply, all five
@@ -598,6 +623,15 @@ config:
     # signatures are always stored verbatim and never re-verified.
     verify_on_read: "strict"
 
+  # [licence] — the commercial licence token. FerroEHR is BUSL-1.1: every build
+  # embeds the licensor's non-commercial grant, and production use in the
+  # course of a business needs a commercial token. The token is a signed text
+  # file, so it travels as a `config.files` entry and `licence.file` names the
+  # mounted path; the server runs identically either way and reports the grant
+  # in force on GET /rest/status (`licence.use`, `licence.licensee`).
+  # licence:
+  #   file: /etc/ferroehr/licence.asc
+
   # [audit] — the IHE ATNA audit trail. ON by default with only the local
   # store active (records stay in PostgreSQL, queryable via the ITI-81 FHIR
   # AuditEvent search); forwarding to an external ARR is opt-in per sink
@@ -650,10 +684,14 @@ config:
   # `*_file` key points at: the PGP key (signing.key_path), Cedar policies
   # (authz.abac.cedar.policy_dir), ATNA PEMs, terminology-server mutual-TLS PEMs
   # (terminology.external.providers.<name>.client_cert_path / client_key_path /
-  # ca_bundle_path), a JWKS blob (auth.oidc.jwks_json_file).
+  # ca_bundle_path), a JWKS blob (auth.oidc.jwks_json_file), the commercial
+  # licence token (licence.file).
   files: {}
   # signing.asc: |
   #   -----BEGIN PGP PRIVATE KEY BLOCK-----
+  #   ...
+  # licence.asc: |
+  #   -----BEGIN PGP SIGNED MESSAGE-----
   #   ...
 
 # -- Extra raw env vars (list of {name,value} or {name,valueFrom}). Escape hatch

@@ -143,6 +143,18 @@
           "description": "Inline demographic DSN (dev/test only). Ignored when demographicExistingSecret is set.",
           "type": "string"
         },
+        "linkageExistingSecret": {
+          "description": "Secret holding the linkage-domain DSN, a third credential distinct from the clinical and demographic ones. Unset, that pool shares the clinical DSN and the separation stays schema-only.",
+          "type": "string"
+        },
+        "linkageExistingSecretKey": {
+          "description": "A key name INSIDE linkageExistingSecret; the chart mounts that key as a file and passes only its path.",
+          "type": "string"
+        },
+        "linkageUrl": {
+          "description": "Inline linkage DSN (dev/test only). Ignored when linkageExistingSecret is set.",
+          "type": "string"
+        },
         "migrateExistingSecret": {
           "description": "Secret holding the DSN that prepares the schema, which spans every schema and is therefore neither runtime credential. Unset, preparation falls back to the clinical DSN.",
           "type": "string"

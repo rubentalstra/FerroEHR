@@ -172,7 +172,7 @@ mod tests {
     /// `versioned_object_does_not_exist`.
     #[test]
     fn index_errors_map_to_dedicated_statuses() {
-        let ehr = EhrId::new();
+        let ehr = EhrId::minted(&crate::licence::stamp::StampKey::fail_safe());
         let ehr_sm: SmError = IndexError::EhrDoesNotExist(ehr).into();
         assert_eq!(ehr_sm.status, CallStatusType::EhrIdDoesNotExist);
 

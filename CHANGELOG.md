@@ -17,6 +17,53 @@ workflow refuses a tag that has no matching section here.
 
 ### Added
 
+- **The licence in force is explicit, verified and reported.** Every build
+  embeds the licensor's `non-commercial` grant (what BUSL-1.1 gives everyone);
+  a `commercial` licence is installed with the new `[licence] file` key
+  (`FERROEHR__LICENCE__FILE`), an OpenPGP-signed token verified at boot against
+  the licensor's embedded public certificate. The server behaves identically
+  under either grant: the outcome is logged once at boot and served on
+  `GET /rest/status` as `licence: {state, use, licensee, not_after,
+  configured_token}`. Every identifier the server mints (EHR ids, versioned
+  object ids, contribution ids) carries sixteen keyed bits derived from the
+  licence id in the trailing bytes of its UUIDv7, so a record says which grant
+  it was written under; the bits replace random bits only, never the timestamp
+  or counter, and carry no patient data. A configured token that does not
+  verify leaves the embedded grant in force and is reported as `refused`.
+
+- **The linkage resolution service: one path from a person to a record, over
+  two credentials, under audit** (#3158). `ferroehr::service::linkage` opens,
+  resolves, merges and splits the party-to-EHR mappings the previous increment
+  created the schema for. `resolve_ehr_for_identity` is the only path that
+  crosses from an external identity to an EHR, and it crosses in the
+  APPLICATION: the sealed identifier map answers with a party on the
+  demographic pool, the linkage map answers with an EHR on the linkage pool,
+  and no statement on either could perform the join, because no credential
+  holds both schemas. Merge and split are period-closing writes in one
+  transaction — the mapping in force gets an end date and its successor opens
+  at the same instant — so no mapping is ever deleted and which party was the
+  subject of an EHR when a composition was written stays answerable. Every
+  operation records a `linkage`-domain access event naming the actor, the
+  purpose of use the caller declared and whether anything matched; the
+  resolved EHR is deliberately counted and not named, because the audit trail
+  lives outside this domain's role and a party/EHR pair there would be a
+  second copy of the map. `GET /ehr?subject_id&subject_namespace` is
+  unchanged on the wire and still resolves through the clinical columns — it
+  matches an opaque pseudonym, not an identity — but now records a
+  linkage-domain access event of its own, because who resolved a subject to a
+  record is worth knowing wherever it happened.
+
+- **`[db] linkage_url`, the third runtime credential** (#3158). Alongside
+  `url` and `demographic_url` (and `migrate_url` for schema preparation), a
+  deployment can now point the linkage pool at its own DSN, with the
+  `linkage_url_file` mounted-secret sibling every other credential has;
+  setting both is a boot error, and leaving it unset shares the clinical DSN
+  exactly as before. The Helm chart carries it as
+  `database.linkageExistingSecret` / `linkageExistingSecretKey` /
+  `linkageUrl`, mounted as a file so only its path reaches the pod's
+  environment (chart 8.2.0). With all three set, no credential the server uses
+  can re-identify a record in SQL.
+
 - **A third pseudonymisation domain: the `linkage` schema holds the
   party-to-EHR map** (#3158). A migration adds the `linkage` schema, the
   `linkage.party_ehr` table and the `ferroehr_linkage` role. The table records

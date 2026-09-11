@@ -308,7 +308,7 @@ The service layer realizes the openEHR **SM Platform Service Model**
 | `openehr-adl` | ADL 2.4 engine: ADL2/cADL/ODIN parser, AOM2 validation, flattener, OPT2, ADL 1.4→2 conversion | hand-written |
 | `openehr-codegen` | BMM/XSD/OAS → Rust generator (+ `emit-rm-model`) | tooling |
 | `ferroehr-rest` | ITS-REST protocol adapter (axum) + auth + ATNA audit middleware; `access` module = RBAC/ABAC authz; calls the concrete `FerroEhrService` | application |
-| `ferroehr` | The platform library: storage, service layer (one module per SM chapter), AQL engine, versioning, the full config tree, telemetry, `signing` + `system_log` | application |
+| `ferroehr` | The platform library: storage, service layer (one module per SM chapter), AQL engine, versioning, the full config tree, telemetry, `signing` + `system_log`, `licence` (the boot-verified grant in force and the identifier stamp it keys) | application |
 | `ferroehr-server` | The wiring-only binary (config → pool → migrations → service → serve); bin name `ferroehr` | application |
 | `ferroehr-ext` | Optional integrations behind additive features (`fhir`, `events`, `multimedia`): FHIR mapping/reverse/feeder-audit cores, the AMQP events transport, the content-addressed multimedia store | application |
 | `testkit` | Shared test-database harness: one PG18 server + template-database cloning (`tools/*`) | tooling |

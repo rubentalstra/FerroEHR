@@ -646,7 +646,7 @@ async fn apply_change(
             reject_deleted_with_data(&lifecycle)?;
             // a first version can only be `complete`/`incomplete`.
             validate_transition(None, &lifecycle)?;
-            let vo_id = VoId::new();
+            let vo_id = VoId::minted(ctx.stamp);
             seal_protected_identifiers(ctx, kind, vo_id, &mut canonical).await?;
             stamp_version_uid(
                 &mut canonical,
@@ -807,7 +807,7 @@ async fn commit_resolved(
     // The enclosing CONTRIBUTION id: pre-existing for a multi-change commit,
     // generated here for a standalone write — known before the signature.
     let contribution_id = match contribution {
-        ContributionCtx::New => Uuid::now_v7(),
+        ContributionCtx::New => ctx.stamp.mint(),
         ContributionCtx::Existing(cid) => cid,
     };
 
@@ -1302,13 +1302,15 @@ pub(crate) async fn commit_contribution(
     ctx: &SigningCtx<'_>,
 ) -> Result<CommittedContribution, ServiceError> {
     // The CONTRIBUTION's own audit + contribution rows in one round trip (the
-    // per-version `commit_audit`s are inserted per change below).
+    // per-version `commit_audit`s are inserted per change below). A uid the
+    // client did not supply is minted here, stamped, never by the database.
+    let uid = supplied_uid.unwrap_or_else(|| ctx.stamp.mint());
     let (contribution_id, _contribution_audit_id, contribution_time) =
         crate::storage::version_repo::commit::write_contribution(
             tx,
             ehr_id,
             &contribution_audit.row(),
-            supplied_uid,
+            Some(uid),
         )
         .await?;
     let committer_fallback = &contribution_audit.committer;

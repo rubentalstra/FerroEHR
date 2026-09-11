@@ -528,7 +528,7 @@ async fn creating_an_ehr_with_an_existing_id_conflicts() {
     let db = testkit::db().await.expect("testkit database");
     let svc = FerroEhrService::new(db.pool());
 
-    let id = ferroehr::ids::EhrId::new();
+    let id = ferroehr::ids::EhrId(uuid::Uuid::now_v7());
     svc.create_ehr_with_id(id, None)
         .await
         .expect("first create");
@@ -655,7 +655,7 @@ async fn ehr_creation_rejects_a_change_type_that_is_not_a_creation() {
 async fn unknown_ehr_is_not_found() {
     let db = testkit::db().await.expect("testkit database");
     let svc = FerroEhrService::new(db.pool());
-    let missing = ferroehr::ids::EhrId::new();
+    let missing = ferroehr::ids::EhrId(uuid::Uuid::now_v7());
     assert!(svc.ehr_object(missing).await.is_err());
 }
 

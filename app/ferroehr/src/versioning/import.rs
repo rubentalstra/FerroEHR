@@ -656,6 +656,7 @@ async fn commit_import_scoped(
     let local_commit_audit = import_audit.canonical(&import_time);
     let contribution_id = crate::storage::version_repo::commit::insert_contribution(
         tx,
+        ctx.stamp.mint(),
         ehr_id,
         contribution_audit_id,
     )

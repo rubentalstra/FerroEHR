@@ -76,6 +76,9 @@ pub struct FerroEhrConfig {
     pub management: management::ManagementConfig,
     /// `[signing]` — VERSION signing.
     pub signing: crate::versioning::signature::config::SigningConfig,
+    /// `[licence]` — the commercial licence token (optional; the server runs
+    /// identically without one).
+    pub licence: crate::licence::config::LicenceConfig,
     /// `[query]` — AQL execution knobs.
     pub query: crate::service::query::config::QueryConfig,
     /// `[events]` — contribution-outbox eventing (+ its admin API).
@@ -1188,7 +1191,7 @@ mod tests {
     }
 
     /// Setting a credential both inline and as a file is refused for each of the
-    /// six, rather than one silently winning.
+    /// seven, rather than one silently winning.
     ///
     /// Each of these fields has a non-empty dev default, so "the operator set it"
     /// means "it differs from that default" — the default itself must NOT count
@@ -1201,6 +1204,8 @@ mod tests {
              migrate_url_file = \"/dev/null\"\n",
             "[db]\ndemographic_url = \"postgres://u:p@h:5432/d\"\n\
              demographic_url_file = \"/dev/null\"\n",
+            "[db]\nlinkage_url = \"postgres://u:p@h:5432/d\"\n\
+             linkage_url_file = \"/dev/null\"\n",
             "[events]\nurl = \"amqp://u:p@h:5672/%2f\"\nurl_file = \"/dev/null\"\n",
             "[fhir.outbound]\nurl = \"amqp://u:p@h:5672/%2f\"\nurl_file = \"/dev/null\"\n",
             "[[auth.basic.users]]\nusername = \"a\"\npassword_hash = \"x\"\n\

@@ -131,6 +131,13 @@ url = "postgres://ferroehr:ferroehr@localhost:5432/ferroehr"  # PROD: real DSN v
 # when either role can reach across the boundary.
 #? demographic_url = "postgres://ferroehr_demographic:...@localhost:5432/ferroehr"
 #? demographic_url_file = "/run/secrets/db-demographic-dsn"
+# The linkage pseudonymisation domain — which party is the subject of which
+# EHR, the one map that re-joins the other two. Same arrangement: its own
+# `linkage` schema always, its own database ROLE (`ferroehr_linkage`) when a
+# DSN is set here, and a boot refusal if that role can reach either of the
+# domains it joins.
+#? linkage_url = "postgres://ferroehr_linkage:...@localhost:5432/ferroehr"
+#? linkage_url_file = "/run/secrets/db-linkage-dsn"
 # The credential that PREPARES the schema, used for that one boot step and
 # then closed. Preparing spans every schema — the DDL of all five migration
 # sets under migrate = "apply", all five bookkeeping tables under "verify" —
@@ -373,6 +380,13 @@ retired_key_paths = []       # e.g. ["/etc/ferroehr/signing-2025.pub.asc"]
 # `warn` (log + meter, still serve) or `off` (never check). Client-supplied
 # signatures are always stored verbatim and never re-verified.
 #? verify_on_read = "strict" # off | warn | strict (unset ⇒ strict when enabled)
+
+# ── [licence] — the commercial licence token ──────────────────────────────────
+# FerroEHR is BUSL-1.1: production use in the course of a business needs a
+# commercial licence. The server runs identically with or without the token;
+# its state is logged once at boot and reported on GET /rest/status.
+[licence]
+#? file = "/etc/ferroehr/licence.asc"
 
 # ── [query] — AQL execution knobs ─────────────────────────────────────────────
 [query]

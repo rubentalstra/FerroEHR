@@ -183,6 +183,10 @@ pub(crate) struct SigningCtx<'a> {
     /// own id when tenancy is on, else the service default.
     pub(crate) system_id: String,
     pub(crate) signer: &'a Signer,
+    /// The licence stamp key every server-minted identifier on this write is
+    /// stamped with ([`crate::licence::stamp`]). No openEHR spec governs
+    /// identifier entropy — our own design.
+    pub(crate) stamp: &'a crate::licence::stamp::StampKey,
     /// The ACTIVE openEHR specification generation set. The commit path asks
     /// the RELEASED generation's reader whether it could express the accepted
     /// body and stores the answer (`vo_version.stable_compatible`), so a
