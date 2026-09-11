@@ -10,6 +10,11 @@ database:
   # and no boot check ever sees.
   demographicExistingSecret: ferroehr-db-demographic
   demographicExistingSecretKey: FERROEHR__DB__DEMOGRAPHIC_URL
+  # The third credential (#3224): schema preparation spans every schema, so a
+  # pod whose runtime DSNs are domain-scoped roles cannot perform it on either
+  # of them. Same reason as above — an unrendered branch is an unchecked one.
+  migrateExistingSecret: ferroehr-db-migrate
+  migrateExistingSecretKey: FERROEHR__DB__MIGRATE_URL
 
 secrets:
   # 40 bytes of obvious filler. RFC 8725 §3.5 puts a 32-byte floor under a

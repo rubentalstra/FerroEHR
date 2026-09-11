@@ -131,6 +131,14 @@ url = "postgres://ferroehr:ferroehr@localhost:5432/ferroehr"  # PROD: real DSN v
 # when either role can reach across the boundary.
 #? demographic_url = "postgres://ferroehr_demographic:...@localhost:5432/ferroehr"
 #? demographic_url_file = "/run/secrets/db-demographic-dsn"
+# The credential that PREPARES the schema, used for that one boot step and
+# then closed. Preparing spans every schema — the DDL of all five migration
+# sets under migrate = "apply", all five bookkeeping tables under "verify" —
+# so a deployment whose runtime DSNs each hold one pseudonymisation domain
+# names the credential that can reach them all here. Unset, it falls back to
+# the url above, which is what every single-credential deployment runs.
+#? migrate_url = "postgres://ferroehr_migrator:...@localhost:5432/ferroehr"
+#? migrate_url_file = "/run/secrets/db-migrate-dsn"
 # Whether the server issues DDL at boot. "apply" runs the embedded migrations
 # then verifies, which is what makes an empty configuration boot against an
 # empty database; "verify" never issues DDL and refuses to serve unless the

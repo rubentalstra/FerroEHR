@@ -160,23 +160,44 @@ async fn run_db(
     let telemetry =
         telemetry::init(&telemetry_config, &build_info).context("initialising telemetry")?;
 
-    // The plain pool: the migrator identity is a database role, never a tenant.
-    let pool = db::connect(&config.db)
-        .await
-        .context("connecting to PostgreSQL")?;
+    // Both subcommands read the schema on the migration DSN
+    // (`[db].migrate_url`, falling back to `[db].url`), which is the
+    // credential that can reach every schema when the runtime ones each hold
+    // one pseudonymisation domain.
     let outcome = match cmd {
-        DbCmd::Migrate => db::run_migrations(&pool)
+        DbCmd::Migrate => db::apply_schema(&config.db)
             .await
             .context("applying migrations"),
-        DbCmd::Verify => match db::verify_migrations(&pool).await {
-            Ok(()) => db::verify_domain_isolation(&pool)
-                .await
-                .context("verifying the pseudonymisation domain isolation"),
-            Err(error) => Err(anyhow::Error::new(error).context("verifying the schema")),
-        },
+        DbCmd::Verify => verify_schema_and_isolation(&config.db).await,
     };
-    pool.close().await;
     telemetry.shutdown().await;
+    outcome
+}
+
+/// `ferroehr db verify`: the recorded schema state, then the pseudonymisation
+/// boundary.
+///
+/// The two checks deliberately authenticate as different credentials, exactly
+/// as [`ferroehr::db::prepare`] does at boot. The schema state is read on the
+/// migration DSN, which spans all five migration sets; the isolation check
+/// runs on the RUNTIME pool, because what it measures is what the serving
+/// credential can reach — asked of the migration credential it would report
+/// on a role that holds every domain by design.
+///
+/// # Errors
+/// A schema divergence, an unreadable migration set, a breached domain
+/// boundary, or a connection failure.
+async fn verify_schema_and_isolation(settings: &db::DbConfig) -> anyhow::Result<()> {
+    db::verify_schema(settings)
+        .await
+        .map_err(|error| anyhow::Error::new(error).context("verifying the schema"))?;
+    let pool = db::connect(settings)
+        .await
+        .context("connecting to PostgreSQL")?;
+    let outcome = db::verify_domain_isolation(&pool)
+        .await
+        .context("verifying the pseudonymisation domain isolation");
+    pool.close().await;
     outcome
 }
 
@@ -561,10 +582,11 @@ struct Pools {
 /// schema one. Neither multi-tenancy nor the domain split is governed by an
 /// openEHR spec; both are our own deployment extensions.
 ///
-/// Schema preparation runs on the clinical pool alone: it applies every
-/// embedded migration set, and it ends in
-/// [`ferroehr::db::verify_domain_isolation`], which refuses to boot a database
-/// whose grants let one runtime role read both domains.
+/// Schema preparation is [`ferroehr::db::prepare`], which spans every schema
+/// on the migration DSN (`[db].migrate_url`, falling back to `[db].url`) and
+/// then measures the CLINICAL pool's own reach with
+/// [`ferroehr::db::verify_domain_isolation`], refusing to boot a database
+/// whose grants let one runtime role read another domain.
 ///
 /// # Errors
 /// A connection, migration or domain-isolation failure, contextualized for the

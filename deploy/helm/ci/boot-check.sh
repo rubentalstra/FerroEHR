@@ -245,6 +245,12 @@ boot_one() {
       # separate credentials would stay unexercised by construction.
       db.demographic_url)
         printf 'postgres://ferroehr_demographic:pw@postgres:5432/ferroehr' > "${secdir}/${base}" ;;
+      # The credential that prepares the schema (#3224), for the same reason:
+      # an overlay setting database.migrateExistingSecret would otherwise fail
+      # this check, leaving the branch that separates preparation from the
+      # runtime credentials unexercised.
+      db.migrate_url)
+        printf 'postgres://ferroehr_migrator:pw@postgres:5432/ferroehr' > "${secdir}/${base}" ;;
       *)
         red "  ${p} is referenced but no rendered Secret key supplies it"
         return 1

@@ -129,6 +129,16 @@ spec:
             - name: FERROEHR__DB__DEMOGRAPHIC_URL_FILE
               value: {{ printf "%s/db.demographic_url" (include "ferroehr.secretMountPath" .) | quote }}
             {{- end }}
+            {{- if or .Values.database.migrateExistingSecret .Values.database.migrateUrl }}
+            {{- /* The credential schema preparation runs as, mounted the same
+                   way and for the same reason. Preparation spans every schema —
+                   all five migration sets' DDL under migrate=apply, all five
+                   bookkeeping tables under verify — so a pod whose runtime DSNs
+                   are domain-scoped roles cannot do it on either of them. Unset,
+                   preparation falls back to the clinical DSN. */}}
+            - name: FERROEHR__DB__MIGRATE_URL_FILE
+              value: {{ printf "%s/db.migrate_url" (include "ferroehr.secretMountPath" .) | quote }}
+            {{- end }}
             {{- if .Values.secrets.authOidcHmacSecret }}
             - name: FERROEHR__AUTH__OIDC__HMAC_SECRET_FILE
               value: {{ printf "%s/auth.oidc.hmac_secret" (include "ferroehr.secretMountPath" .) | quote }}
@@ -304,6 +314,16 @@ spec:
                     - key: {{ .Values.database.demographicExistingSecretKey }}
                       path: db.demographic_url
               {{- end }}
+              {{- if .Values.database.migrateExistingSecret }}
+              # The schema-preparation Secret — usually the same credential the
+              # migration Job carries, which is why it is a third source rather
+              # than a key of either runtime one.
+              - secret:
+                  name: {{ .Values.database.migrateExistingSecret }}
+                  items:
+                    - key: {{ .Values.database.migrateExistingSecretKey }}
+                      path: db.migrate_url
+              {{- end }}
               {{- if eq (include "ferroehr.hasChartFileSecrets" .) "true" }}
               - secret:
                   name: {{ include "ferroehr.secretName" . }}
@@ -315,6 +335,10 @@ spec:
               {{- if and (not .Values.database.demographicExistingSecret) .Values.database.demographicUrl }}
                     - key: db.demographic_url
                       path: db.demographic_url
+              {{- end }}
+              {{- if and (not .Values.database.migrateExistingSecret) .Values.database.migrateUrl }}
+                    - key: db.migrate_url
+                      path: db.migrate_url
               {{- end }}
               {{- if .Values.secrets.eventsUrl }}
                     - key: events.url
