@@ -21,9 +21,19 @@
 # day. When the page was generated, and from which commit, is git history of
 # the file itself.
 #
+# THE CLOSING PULL REQUEST. A control's row shows Shipped with its closing
+# pull request once that PR has MERGED; an open PR that says `Closes #N`
+# changes nothing, so opening one never stales the page. The one exception is
+# deliberate: run with `--closing <pr>` and the issues that pull request closes
+# render as Shipped with that PR already, so the PR that closes a control
+# regenerates the page itself and the page is right the moment it merges. The
+# CI job passes the pull request under check (#3253).
+#
 # Usage:
-#   scripts/render/control-matrix.sh            write the page
-#   scripts/render/control-matrix.sh --check    fail when the committed page is stale
+#   scripts/render/control-matrix.sh                     write the page
+#   scripts/render/control-matrix.sh --closing <pr>      write it as it will read once <pr> merges
+#   scripts/render/control-matrix.sh --check [--closing <pr>]
+#                                                        fail when the committed page is stale
 set -euo pipefail
 cd "$(dirname "$0")/../.."
 
@@ -74,15 +84,24 @@ command -v gh >/dev/null 2>&1 || die "the GitHub CLI (gh) is not installed"
 command -v jq >/dev/null 2>&1 || die "jq is required (brew install jq / preinstalled on CI runners)"
 
 CHECK=0
-case "${1:-}" in
-  '') ;;
-  --check) CHECK=1 ;;
-  -h | --help)
-    sed -n '/^# Usage:/,/--check    fail/p' "$0" | sed 's/^# \{0,1\}//'
-    exit 0
-    ;;
-  *) die "unknown argument '$1' (expected --check)" ;;
-esac
+CLOSING=""
+while [[ $# -gt 0 ]]; do
+  case "$1" in
+    --check) CHECK=1 ;;
+    --closing)
+      [[ -n "${2:-}" ]] || die "--closing needs a pull request number"
+      CLOSING="$2"
+      shift
+      ;;
+    -h | --help)
+      sed -n '/^# Usage:/,/fail when the committed page is stale/p' "$0" | sed 's/^# \{0,1\}//'
+      exit 0
+      ;;
+    *) die "unknown argument '$1' (expected --check or --closing <pr>)" ;;
+  esac
+  shift
+done
+[[ -z "$CLOSING" || "$CLOSING" =~ ^[0-9]+$ ]] || die "--closing takes a pull request number, got '$CLOSING'"
 
 WORK="$(mktemp -d)"
 trap 'rm -rf "$WORK"' EXIT
@@ -96,7 +115,7 @@ printf '%s\n' "${LEGAL_SOURCES[@]}" |
 # ── the tracker ──────────────────────────────────────────────────────────────
 # One call, and everything the page needs, readable with a repository token.
 gh issue list --state all --limit "$FETCH_LIMIT" \
-  --json number,title,body,state,stateReason,url,closedByPullRequestsReferences \
+  --json number,title,body,state,stateReason,url \
   > "$WORK/issues.json" || die "could not read the tracker (is gh authenticated?)"
 
 fetched="$(jq 'length' "$WORK/issues.json")"
@@ -134,8 +153,7 @@ jq --slurpfile sources "$WORK/sources.json" '
               number: $issue.number,
               url: $issue.url,
               state: $issue.state,
-              state_reason: ($issue.stateReason // ""),
-              pr: ([ $issue.closedByPullRequestsReferences[]? | {number, url} ])
+              state_reason: ($issue.stateReason // "")
             }
         end
     ]
@@ -167,6 +185,43 @@ fi
 # verified in CI by a standing personal access token. The page therefore says
 # Planned for every open control and links the board for the live column
 # (#3236); a repository token is enough to render and to check it.
+
+# ── the closing pull requests ────────────────────────────────────────────────
+# `gh issue list` reports the pull requests that reference an issue with a
+# closing keyword but not whether they merged, and an OPEN one must not move a
+# row (#3253). One GraphQL read per control-bearing issue fetches the state;
+# ~30 issues, one call each, well inside the rate budget.
+repo="$(gh repo view --json nameWithOwner --jq .nameWithOwner)" ||
+  die "could not resolve the current repository (run inside a gh-authenticated clone)"
+: > "$WORK/prs.jsonl"
+for issue in $(jq -r '[ .[] | .number ] | unique | .[]' "$WORK/controls.json"); do
+  # shellcheck disable=SC2016 # $owner/$name/$number are GraphQL variables, bound by the -f flags
+  gh api graphql -f owner="${repo%%/*}" -f name="${repo##*/}" -F number="$issue" \
+    -f query='query($owner:String!,$name:String!,$number:Int!){
+      repository(owner:$owner,name:$name){issue(number:$number){
+        closedByPullRequestsReferences(first:20){nodes{number url merged}}}}}' \
+    > "$WORK/item.json" || die "could not read the closing pull requests of issue #$issue"
+  jq -c --arg n "$issue" \
+    '{key: $n, value: [ .data.repository.issue.closedByPullRequestsReferences.nodes[]?
+                        | select(.merged) | {number, url} ]}' \
+    "$WORK/item.json" >> "$WORK/prs.jsonl"
+done
+jq -s 'from_entries' "$WORK/prs.jsonl" > "$WORK/prs.json"
+
+# The pull request under check, when the caller names one: the issues it will
+# close render as Shipped with it, so the page committed on that PR is the page
+# main carries after the merge.
+echo '{"issues": [], "pr": null}' > "$WORK/closing.json"
+if [[ -n "$CLOSING" ]]; then
+  # shellcheck disable=SC2016 # GraphQL variables, bound by the -f flags
+  gh api graphql -f owner="${repo%%/*}" -f name="${repo##*/}" -F number="$CLOSING" \
+    -f query='query($owner:String!,$name:String!,$number:Int!){
+      repository(owner:$owner,name:$name){pullRequest(number:$number){
+        number url closingIssuesReferences(first:50){nodes{number}}}}}' \
+    > "$WORK/item.json" || die "could not read pull request #$CLOSING"
+  jq '{issues: [ .data.repository.pullRequest.closingIssuesReferences.nodes[]?.number ],
+       pr: (.data.repository.pullRequest | {number, url})}' "$WORK/item.json" > "$WORK/closing.json"
+fi
 
 # ── render ───────────────────────────────────────────────────────────────────
 OUT="$WORK/control-matrix.md"
@@ -200,8 +255,10 @@ writes this file. A CI job re-runs the generator with `--check` and fails the
 build when the committed page no longer matches the tracker, which is what
 keeps a shipped control from sitting here as "planned".
 
-- **Shipped:** the issue is closed as completed. The closing pull request is
-  linked in the last column.
+- **Shipped:** the issue is closed as completed. The merged pull request that
+  closed it is linked in the last column. The one pull request that closes a
+  control regenerates this page as it will read after the merge, so the page
+  never lags a shipped control.
 - **Planned:** the issue is open. Whether work has started is the issue's
   column on the [public roadmap board](https://github.com/users/rubentalstra/projects/4),
   which this page does not copy: a status that lives in two places disagrees
@@ -218,15 +275,19 @@ last regenerated, and from which commit, is the file's own git history.
 
 HEADER
 
-rows="$(jq -r '
-  def esc: gsub("\\|"; "\\|");
+rows="$(jq -r --slurpfile prs "$WORK/prs.json" --slurpfile closing "$WORK/closing.json" '
+  ($prs[0]) as $merged | ($closing[0]) as $closing
+  | def esc: gsub("\\|"; "\\|");
+  def closing_here: ($closing.pr != null) and ([.number] | inside($closing.issues));
   def status:
     if .state == "CLOSED" and .state_reason == "NOT_PLANNED" then "Not planned"
-    elif .state == "CLOSED" then "Shipped"
+    elif .state == "CLOSED" or closing_here then "Shipped"
     else "Planned" end;
   def prs:
-    if (.pr | length) == 0 then "—"
-    else [ .pr[] | "[#\(.number)](\(.url))" ] | join(", ") end;
+    (($merged[.number | tostring] // []) + (if closing_here then [$closing.pr] else [] end)
+     | unique_by(.number)) as $list
+    | if ($list | length) == 0 then "—"
+      else [ $list[] | "[#\(.number)](\(.url))" ] | join(", ") end;
   .[] | "| [\(.source)](\(.source_url)) | \(.jurisdiction) | \(.clause | esc) | \(.title | esc) | [#\(.number)](\(.url)) | \(status) | \(prs) |"
 ' "$WORK/controls.json")"
 
