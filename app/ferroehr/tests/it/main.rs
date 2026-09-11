@@ -22,6 +22,7 @@
               (.claude/rules/testing.md §Test-fixture construction)"
 )]
 
+mod access_event_fail_closed;
 mod adl14_knowledge_archetypes;
 mod adl2_fixture;
 mod adl2_vetdf;

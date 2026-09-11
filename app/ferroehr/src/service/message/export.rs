@@ -139,7 +139,7 @@ impl FerroEhrService {
             )));
         }
         let extract = self.export_whole_ehr(an_ehr_id, 1).await?;
-        self.emit_extract_audit(an_ehr_id, EventActionCode::Read);
+        self.emit_extract_audit(an_ehr_id, EventActionCode::Read)?;
         Ok(vec![extract])
     }
 
@@ -203,7 +203,7 @@ impl FerroEhrService {
         exported_ehrs.sort_unstable();
         exported_ehrs.dedup();
         for ehr_id in exported_ehrs {
-            self.emit_extract_audit(ehr_id, EventActionCode::Read);
+            self.emit_extract_audit(ehr_id, EventActionCode::Read)?;
         }
         Ok(out)
     }

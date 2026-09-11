@@ -178,7 +178,7 @@ impl FerroEhrService {
         } else {
             self.prewarm_ehr_access_open(ehr_id).await;
         }
-        self.emit_extract_audit(ehr_id, EventActionCode::Create);
+        self.emit_extract_audit(ehr_id, EventActionCode::Create)?;
         Ok(ehr_id)
     }
 
@@ -248,7 +248,7 @@ impl FerroEhrService {
         if touches_ehr_access {
             self.invalidate_ehr_access(an_ehr_id).await;
         }
-        self.emit_extract_audit(an_ehr_id, EventActionCode::Create);
+        self.emit_extract_audit(an_ehr_id, EventActionCode::Create)?;
         Ok(())
     }
 

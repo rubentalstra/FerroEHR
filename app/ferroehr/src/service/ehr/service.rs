@@ -251,7 +251,7 @@ impl FerroEhrService {
     ) -> Result<ServiceResponse, ServiceError> {
         let found =
             crate::storage::ehr_repo::ehr_id_by_subject(&self.pool, subject_id, namespace).await?;
-        self.emit_subject_resolution(namespace, found);
+        self.emit_subject_resolution(namespace, found)?;
         let ehr_id = found.ok_or_else(|| {
             ServiceError::sm(
                 CallStatusType::EhrIdDoesNotExist,
@@ -269,9 +269,13 @@ impl FerroEhrService {
     /// and an access log is the last place that should be the copy that
     /// outlives it. A miss is recorded like a hit — it says someone asked
     /// whether this deployment holds a record for that subject.
-    fn emit_subject_resolution(&self, namespace: &str, resolved: Option<EhrId>) {
+    fn emit_subject_resolution(
+        &self,
+        namespace: &str,
+        resolved: Option<EhrId>,
+    ) -> Result<(), ServiceError> {
         if !self.audit_enabled() {
-            return;
+            return Ok(());
         }
         let mut event = AuditEvent::new(
             EventActionCode::Read,
@@ -287,7 +291,7 @@ impl FerroEhrService {
             event.user_id = committer.subject;
         }
         event.legal_basis = self.audit_legal_basis().map(str::to_owned);
-        let _ = self.emit(event);
+        self.record_access(event).map_err(ServiceError::Unrecorded)
     }
 
     /// Build the canonical RM `EHR` object for an existing EHR, with its

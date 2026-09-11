@@ -65,7 +65,7 @@ impl FerroEhrService {
             SmError::exception(format!("resolving a `{scheme}` identifier failed"))
                 .with_source(error)
         })?;
-        self.emit_identifier_resolution(scheme, resolved.is_some());
+        self.emit_identifier_resolution(scheme, resolved.is_some())?;
         Ok(resolved.map(VoId))
     }
 
@@ -74,9 +74,13 @@ impl FerroEhrService {
     /// The record names the scheme and whether it matched, never the value:
     /// an audit trail that carried the identifier would hold the very data the
     /// sealing exists to keep out of readable storage.
-    fn emit_identifier_resolution(&self, scheme: &str, matched: bool) {
+    ///
+    /// # Errors
+    /// The `service_overloaded` [`SmError`] when the sender rejected the record
+    /// under `fail_mode = "closed"`; the resolution is then withheld.
+    fn emit_identifier_resolution(&self, scheme: &str, matched: bool) -> Result<(), SmError> {
         if !self.audit_enabled() {
-            return;
+            return Ok(());
         }
         let mut event = AuditEvent::new(
             EventActionCode::Execute,
@@ -86,6 +90,6 @@ impl FerroEhrService {
         event.domain = AccessDomain::Linkage;
         event.object_id = Some(format!("national-identifier:{scheme}"));
         event.result_count = Some(u64::from(matched));
-        let _ = self.emit(event);
+        self.record_access(event)
     }
 }

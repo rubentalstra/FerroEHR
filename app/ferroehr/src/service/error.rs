@@ -296,6 +296,16 @@ pub enum ServiceError {
     /// with [`ServiceError::internal`] to carry the failure that caused it.
     #[error("internal: {0}")]
     Internal(#[source] SmError),
+    /// The access record for a completed read or write could not be taken
+    /// and the deployment fails closed (`[audit] fail_mode = "closed"`), so
+    /// the result is withheld — the wire's `503`, `Retry-After` set, the same
+    /// answer the REST layer gives when its own request record is rejected.
+    ///
+    /// Carries the `service_overloaded` [`SmError`] that
+    /// [`FerroEhrService::record_access`](crate::service::FerroEhrService::record_access)
+    /// produced, so the SM route reports the same status.
+    #[error("access unrecorded: {0}")]
+    Unrecorded(#[source] SmError),
 }
 
 /// The client-visible message of a server-side fault (`500`). Deliberately
@@ -625,6 +635,7 @@ impl From<ServiceError> for SmError {
     /// | `JsonRead`                | `PreconditionViolation`      | 400  |
     /// | `JsonWrite`/`Signing`     | `Exception`                  | 500  |
     /// | `Internal`                | `Exception` (curated)        | 500  |
+    /// | `Unrecorded`              | its carried `ServiceOverloaded` | 503 |
     ///
     /// Every status-carrying row restores the [`SmError`] it was constructed
     /// with ([`ServiceError::sm`]), so the round trip is lossless. Only the
@@ -677,6 +688,8 @@ impl From<ServiceError> for SmError {
             // The curated row: the detail and the whole cause chain go to the
             // trace record, the client gets `exception` + `INTERNAL_MESSAGE`.
             ServiceError::Internal(sm) => internal_fault_caused("complete the request", &sm),
+            // Fail-closed: the status the record helper chose travels as is.
+            ServiceError::Unrecorded(sm) => sm,
         }
     }
 }
@@ -732,6 +745,11 @@ impl From<ServiceError> for ApiError {
             ServiceError::Internal(sm) => {
                 ApiError::Internal(internal_fault_caused("complete the request", &sm).message)
             }
+            // Fail-closed: the result is withheld because its access record
+            // was not taken. Our own contract (no openEHR spec governs the
+            // audit trail's availability); RFC 9110 §15.6.4 is the HTTP
+            // authority for the 503.
+            ServiceError::Unrecorded(sm) => ApiError::ServiceUnavailable(sm.message),
         }
     }
 }
