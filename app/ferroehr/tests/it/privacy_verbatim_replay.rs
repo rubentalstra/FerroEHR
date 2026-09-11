@@ -37,8 +37,8 @@ use crate::admin_fixture::archive_dir;
 use crate::fixtures::uv;
 
 /// A synthetic BSN that passes the eleven-test, so the shipped `nl-bsn` rule
-/// matches it. privacy-allow: synthetic
-const SYNTHETIC_BSN: &str = "111222333";
+/// matches it.
+const SYNTHETIC_BSN: &str = "111222333"; // privacy-allow: synthetic
 
 /// A repository under the configuration default: every rule, `strict`.
 fn strict(pool: PgPool) -> FerroEhrService {
