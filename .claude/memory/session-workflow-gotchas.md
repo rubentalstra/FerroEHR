@@ -282,3 +282,5 @@ commit-message wording. Late labels: since #2777 applying a label raises a fresh
    is `MERGEABLE` and that `gh pr checks` shows pending rows; when main
    moved, rebase, re-run any tracker-derived generator (the control matrix
    follows closed issues), and `--force-with-lease`.
+
+10. **The from-source image build and a cargo gate battery do not fit in memory together** (2026-09-11): running `docker compose build ferroehr` (a `--release` build inside the 8 GB Docker VM) while the host ran the viewer clippy/nextest/cargo-leptos battery got BOTH killed by the harness for low memory, and the docs-screenshot pass chained behind the build died with it. Sequence them: gates first, then the image build alone with `--build-arg CARGO_BUILD_JOBS=1`, then `UI_E2E_SHOTS_ONLY=1 UI_E2E_DOCS_SHOTS=1 UI_E2E_NO_BUILD=1 CHROMEDRIVER=/opt/homebrew/bin/chromedriver bash scripts/ui-e2e.sh` (the compose file set is `docker-compose.yml` + `docker-compose.dev.yml` + `docker/viewer/e2e-env.yml`, project `ferroehr-e2e`; the base compose file alone has no build section, so it reports "No services to build").
