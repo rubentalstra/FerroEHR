@@ -38,6 +38,7 @@ mod authz_route_matrix;
 mod base_path_http;
 mod composition_validation_http;
 mod connection_bounds;
+mod credential_separation;
 mod definition_adl2_http;
 mod definition_archetype_http;
 mod demographic_http;

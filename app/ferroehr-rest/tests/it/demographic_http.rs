@@ -43,7 +43,10 @@ use crate::common;
 const BASE: &str = "/ferroehr/rest/openehr/v1";
 
 /// A spec-valid PERSON body (the shape `service_demographic.rs` commits).
-fn person_body() -> Value {
+///
+/// Shared with the credential-separation suite, which commits a party to prove
+/// the demographic domain serves on its own credential.
+pub(crate) fn person_body() -> Value {
     json!({
         "_type": "PERSON",
         "archetype_node_id": "openEHR-DEMOGRAPHIC-PERSON.person.v1",

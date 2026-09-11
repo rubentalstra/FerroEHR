@@ -327,6 +327,20 @@ workflow refuses a tag that has no matching section here.
 
 ### Changed
 
+- **The two-DSN posture is exercised, and the deployment probe says exactly
+  what still is not** (#3222). Pointing `[db] demographic_url` at a role of
+  its own turns the schema separation between the clinical and demographic
+  pseudonymisation domains into a credential separation, and nothing ran it:
+  every test drove both domains through one login role. A new integration
+  suite assembles the server the way the binary does — two DSNs, two pools —
+  on one login role per domain against a real PostgreSQL, serves an EHR and a
+  party through the wire, and asserts that each of the running server's own
+  pools is refused the other domain's relations for want of privilege. The
+  single-DSN fallback is covered beside it, so the split stays a deployment
+  choice. The Compose deployment probe keeps its honest "not exercised" entry
+  for credential separation, now narrowed to what genuinely remains: a real
+  deployment booting on two mounted DSNs. No behaviour changes.
+
 - **A default deployment accepts a named composer again** (#3190). With
   `[privacy] allow_identified_parties_in_ehr` off, the clinical side refused
   both `name` and `identifiers` on both party proxy classes, so a server
