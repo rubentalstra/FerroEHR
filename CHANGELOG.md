@@ -490,6 +490,16 @@ workflow refuses a tag that has no matching section here.
 
 ### Fixed
 
+- **`fail_mode = "closed"` now covers the domain-level access records too**
+  (#3235). The linkage resolutions and merges, the subject-to-EHR lookup
+  behind `GET /ehr?subject_id`, the national-identifier resolution and the
+  EHR-Extract export and import each record their own access event, and each
+  used to discard the sender's answer, so a record the audit trail could not
+  take under `fail_mode = "closed"` left the operation completing unrecorded.
+  A rejected record now withholds the result with the same `503` and
+  `Retry-After` the request-level record already produces. Under
+  `fail_mode = "open"` nothing changes.
+
 - **The documented two-DSN posture boots: schema preparation has its own
   credential** (#3224). The server prepared the schema on the CLINICAL runtime
   pool, and preparation spans every schema — the DDL of all five migration

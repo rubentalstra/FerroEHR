@@ -79,6 +79,7 @@ use event::{AuditEvent, EmitOutcome};
 // `ferroehr::system_log::{AuditConfig, AuditHandle, AuditSender, SubjectResolver}`).
 
 use crate::service::FerroEhrService;
+use crate::service::status::{CallStatusType, SmError};
 
 /// Errors raised while rendering or shipping an audit record.
 ///
@@ -168,6 +169,27 @@ impl FerroEhrService {
             .map_or(EmitOutcome::Dropped, |s| s.emit(event))
     }
 
+    /// Record an access event and honour the configured fail mode.
+    ///
+    /// The service-layer twin of the REST middleware's rejection: under
+    /// `[audit] fail_mode = "closed"` a record the sender cannot take
+    /// ([`EmitOutcome::Rejected`]) becomes an error the caller returns in
+    /// place of its result, so no read or write completes unrecorded.
+    /// `Enqueued`, and `Dropped` under `fail_mode = "open"`, complete.
+    ///
+    /// # Errors
+    /// [`SmError`] with the `service_overloaded` status (the wire's `503`)
+    /// when the sender rejected the record.
+    pub fn record_access(&self, event: AuditEvent) -> Result<(), SmError> {
+        match self.emit(event) {
+            EmitOutcome::Enqueued | EmitOutcome::Dropped => Ok(()),
+            EmitOutcome::Rejected => Err(SmError::new(
+                CallStatusType::ServiceOverloaded,
+                "audit trail unavailable (fail-closed)",
+            )),
+        }
+    }
+
     /// Whether ATNA auditing is on (a sender is wired and its master switch set).
     pub fn audit_enabled(&self) -> bool {
         self.audit.as_ref().is_some_and(AuditSender::enabled)
@@ -220,14 +242,14 @@ impl FerroEhrService {
     /// supplement's ITI-81 FHIR search on `AuditEvent`).
     ///
     /// # Errors
-    /// [`crate::service::status::SmError`] `precondition_violation` when no local store is wired, or
+    /// [`SmError`] `precondition_violation` when no local store is wired, or
     /// `exception` when the store query fails.
     pub async fn audit_event_search(
         &self,
         filter: &store::AuditSearchFilter,
-    ) -> Result<(i64, Vec<serde_json::Value>), crate::service::status::SmError> {
+    ) -> Result<(i64, Vec<serde_json::Value>), SmError> {
         let Some(audit_store) = &self.audit_store else {
-            return Err(crate::service::status::SmError::precondition(
+            return Err(SmError::precondition(
                 "the local audit record repository is not enabled ([audit.store])",
             ));
         };

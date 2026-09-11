@@ -104,6 +104,15 @@ pub enum LinkageError {
     /// The linkage store refused or failed.
     #[error("the linkage store is unavailable")]
     Database(#[source] sqlx::Error),
+    /// The operation ran but its access record could not be taken, and the
+    /// deployment fails closed, so the result is withheld.
+    ///
+    /// A crossing of the pseudonymisation boundary that nobody can reconstruct
+    /// afterwards is what the access log exists to prevent; under
+    /// `[audit] fail_mode = "closed"` an unrecorded crossing is refused rather
+    /// than served.
+    #[error("the access record could not be taken and the deployment fails closed")]
+    Unrecorded(#[source] SmError),
 }
 
 impl FerroEhrService {
@@ -128,7 +137,7 @@ impl FerroEhrService {
             format!("party-ehr:{party_id}"),
             outcome.is_ok().then_some(ehr_id),
             outcome.is_ok(),
-        );
+        )?;
         outcome
     }
 
@@ -152,7 +161,7 @@ impl FerroEhrService {
             format!("party-ehr:{party_id}"),
             resolved,
             true,
-        );
+        )?;
         Ok(resolved)
     }
 
@@ -210,7 +219,7 @@ impl FerroEhrService {
             format!("party-ehr:{from_party}->{into_party}"),
             outcome.as_ref().ok().copied(),
             outcome.is_ok(),
-        );
+        )?;
         outcome.map(|_| ())
     }
 
@@ -233,7 +242,7 @@ impl FerroEhrService {
             format!("party-ehr:{party_id}"),
             outcome.as_ref().ok().copied(),
             outcome.is_ok(),
-        );
+        )?;
         outcome.map(|_| ())
     }
 
@@ -274,15 +283,19 @@ impl FerroEhrService {
     /// purpose is the code the deployment's own vocabulary accepted
     /// ([`crate::system_log::access_context`]); outside a request scope both
     /// are absent, which the record states rather than guesses.
+    ///
+    /// # Errors
+    /// [`LinkageError::Unrecorded`] when the sender rejected the record under
+    /// `fail_mode = "closed"`; the caller withholds its result.
     fn emit_linkage_access(
         &self,
         action: EventActionCode,
         object_id: String,
         ehr_id: Option<EhrId>,
         succeeded: bool,
-    ) {
+    ) -> Result<(), LinkageError> {
         if !self.audit_enabled() {
-            return;
+            return Ok(());
         }
         let outcome = if succeeded {
             EventOutcome::Success
@@ -296,7 +309,7 @@ impl FerroEhrService {
         event.result_count = Some(u64::from(ehr_id.is_some()));
         stamp_requester(&mut event);
         event.legal_basis = self.audit_legal_basis().map(str::to_owned);
-        let _ = self.emit(event);
+        self.record_access(event).map_err(LinkageError::Unrecorded)
     }
 }
 

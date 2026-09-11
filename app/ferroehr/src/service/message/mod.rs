@@ -46,12 +46,14 @@ mod tdd;
 
 use crate::ids::EhrId;
 use crate::service::FerroEhrService;
+use crate::service::status::SmError;
 use crate::system_log::event::{AuditEvent, EventActionCode, EventOutcome, ObjectClass};
 
 impl FerroEhrService {
     /// Emit one IHE-ATNA EHR-Extract audit event for a completed export or
-    /// import of `ehr_id` (fire-and-forget, like every other emission — an
-    /// audit-delivery failure never fails the operation).
+    /// import of `ehr_id`, honouring the configured fail mode: under
+    /// `[audit] fail_mode = "closed"` a record the sender rejects withholds the
+    /// operation's result ([`FerroEhrService::record_access`]).
     ///
     /// EHR-Extract communication carries patient-identifiable clinical data
     /// across systems and is audited for **non-repudiation** — the security
@@ -65,14 +67,22 @@ impl FerroEhrService {
     /// by the [`EventActionCode`] (`Read` out / `Create` in). The native
     /// service layer has no HTTP principal, so `user_id` stays empty and the
     /// ATNA renderer supplies `UNKNOWN`.
-    pub(super) fn emit_extract_audit(&self, ehr_id: EhrId, action: EventActionCode) {
+    ///
+    /// # Errors
+    /// The `service_overloaded` [`SmError`] when the sender rejected the record
+    /// under `fail_mode = "closed"`.
+    pub(super) fn emit_extract_audit(
+        &self,
+        ehr_id: EhrId,
+        action: EventActionCode,
+    ) -> Result<(), SmError> {
         if !self.audit_enabled() {
-            return;
+            return Ok(());
         }
         let mut event = AuditEvent::new(action, ObjectClass::Extract, EventOutcome::Success);
         let id = ehr_id.to_string();
         event.ehr_id = Some(id.clone());
         event.object_id = Some(id);
-        let _ = self.emit(event);
+        self.record_access(event)
     }
 }
