@@ -460,6 +460,8 @@ pub(crate) async fn commit_version_set(
 
     let target_kinds = read_target_kinds(cx, &plan, party_only).await?;
 
+    refuse_content_into_inactive_ehr(cx, ehr_id, &plan).await?;
+
     let mut changes: Vec<(AuditInput, Change)> = Vec::with_capacity(plan.len());
     // 666 attestations of existing versions (committing no new version).
     let mut attests: Vec<PendingAttest> = Vec::new();
@@ -1103,6 +1105,63 @@ fn delete_change(
         expected: Some(expected),
         signature: v.signature.clone(),
     })
+}
+
+/// The EHR-state gate before any member's content is validated (#3257).
+///
+/// A set that writes content into a deactivated EHR is refused as the state
+/// conflict it is (RM ehr master04 §EHR Active Status); a body error on a
+/// record that cannot be written would send the caller fixing the wrong
+/// thing. Advisory here: the locked, authoritative check still runs inside
+/// the commit transaction.
+///
+/// # Errors
+/// [`ServiceError::Conflict`] when the EHR exists and is not modifiable; the
+/// storage error of the writability read.
+async fn refuse_content_into_inactive_ehr(
+    cx: &impl CommitEnv,
+    ehr_id: Option<EhrId>,
+    plan: &[PlannedVersion],
+) -> Result<(), ServiceError> {
+    let Some(ehr_id) = ehr_id else {
+        return Ok(());
+    };
+    if !plan_writes_content_without_reactivating(plan) {
+        return Ok(());
+    }
+    let (exists, modifiable, _) =
+        crate::storage::ehr_repo::ehr_writability(cx.pool(), ehr_id).await?;
+    if exists && modifiable == Some(false) {
+        return Err(change::not_modifiable_error(ehr_id));
+    }
+    Ok(())
+}
+
+/// The planned set's answer to [`needs_content_write_permission`] before any
+/// member is decoded: a member whose data names a non-`EHR_STATUS` root (or a
+/// deletion, which targets content) is content, and an `EHR_STATUS` member
+/// with `is_modifiable = true` reactivates. A member whose type is not a
+/// versioned root is left for content validation to name.
+fn plan_writes_content_without_reactivating(plan: &[PlannedVersion]) -> bool {
+    let mut carries_content = false;
+    let mut reactivates = false;
+    for v in plan {
+        if v.action == Action::Attest {
+            continue;
+        }
+        match v.data.as_ref() {
+            None => carries_content = true,
+            Some(data) => match data_kind(data) {
+                Ok(Kind::EhrStatus) => {
+                    reactivates |=
+                        data.pointer("/is_modifiable").and_then(Value::as_bool) == Some(true);
+                }
+                Ok(_) => carries_content = true,
+                Err(_) => {}
+            },
+        }
+    }
+    carries_content && !reactivates
 }
 
 /// Whether this change set needs the EHR to be content-writable.

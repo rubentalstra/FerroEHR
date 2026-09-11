@@ -651,6 +651,8 @@ async fn audit_search(state: &AppState, parts: &RequestParts) -> Response {
                     uid: filter.patient.as_ref().map(|p| format!("audit-log:{p}")),
                     result_count: u64::try_from(total).ok(),
                     domain: Some(ferroehr::system_log::event::AccessDomain::System),
+                    origins: Vec::new(),
+                    origin_count: None,
                 });
             resp
         }

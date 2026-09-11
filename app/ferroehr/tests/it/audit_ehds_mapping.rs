@@ -57,6 +57,8 @@ fn access_event() -> AuditEvent {
     "dr.jansen".clone_into(&mut e.user_id);
     e.organisation = Some("zh-noordwest".to_owned());
     e.roles = vec!["USER".to_owned(), "clinician".to_owned()];
+    e.origins = vec!["lab.example".to_owned(), "pacs.example".to_owned()];
+    e.origin_count = Some(2);
     e.client_ip = Some("10.0.0.9".to_owned());
     e.object_id = Some("8fa1::ferroehr::1".to_owned());
     e.event_type = Some(EventType::RestOperation("composition_get"));
@@ -198,22 +200,39 @@ fn element_a_the_accessing_organisation_is_recorded_and_rendered_in_fhir() {
     );
 }
 
-/// (e) "the origin or origins of data" — a GAP, asserted as one.
+/// (e) "the origin or origins of data" — recorded (#3212).
 ///
 /// The origin of the DATA is not the origin of the request: the record knows
-/// the client address it was asked from, and nothing about where the content
-/// it served came from. openEHR models that provenance as `FEEDER_AUDIT` on
-/// the content itself (RM common `master04` §Feeder Audit), which the access
-/// log does not read.
+/// the client address it was asked from, and it now also carries where the
+/// content it served came from, read from the `FEEDER_AUDIT` provenance
+/// openEHR stamps on content (RM common `master04` §Feeder Audit) as the
+/// commit path derived it onto `vo_version.origins`, with the true distinct
+/// count beside the capped set. The FHIR rendering carries one named entity
+/// per origin; the DICOM Audit Message of PS3.15 §A.5 defines no element for
+/// it, and a value appearing there would be invented.
 #[test]
-fn element_e_the_origin_of_the_data_is_not_recorded_yet() {
+fn element_e_the_origin_of_the_data_is_recorded_and_rendered_in_fhir() {
     let event = access_event();
-    let fields = format!("{event:?}");
+    assert_eq!(event.origins, ["lab.example", "pacs.example"]);
+    assert_eq!(event.origin_count, Some(2));
+    let rendered =
+        fhir::to_fhir(&event, &ctx(), Some("patient-42")).expect("the FHIR rendering builds");
+    let entities = rendered["entity"].as_array().expect("entities");
+    let origins: Vec<&str> = entities
+        .iter()
+        .filter(|e| {
+            e["name"]
+                .as_str()
+                .is_some_and(|n| n.contains("origin of the served data"))
+        })
+        .filter_map(|e| e["what"]["identifier"]["value"].as_str())
+        .collect();
+    assert_eq!(origins, ["lab.example", "pacs.example"], "{rendered}");
+    let (xml, _) = renderings(&event);
     assert!(
-        !fields.to_lowercase().contains("origin"),
-        "an origin field has appeared on the access event — Annex II 3.2(e) is \
-         no longer a gap, so update the mapping table on the audit page and this \
-         test together: {fields}"
+        !xml.contains("lab.example"),
+        "the DICOM schema defines no origin element — a value appearing here means one was \
+         invented: {xml}"
     );
     // The client address is present and is deliberately NOT the answer.
     assert_eq!(event.client_ip.as_deref(), Some("10.0.0.9"));

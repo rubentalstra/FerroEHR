@@ -743,3 +743,108 @@ async fn aql_execute_emits_one_access_record_per_served_ehr() {
         "one access record per served EHR, and this query served one: {records:#?}"
     );
 }
+
+/// The access record of a composition read carries the origins of the data
+/// it served (EHDS Annex II 3.2(e), #3212): the `FEEDER_AUDIT` originating
+/// systems of the version body, with the true distinct count beside them, on
+/// the stored row and as named entities of the FHIR rendering.
+#[tokio::test]
+async fn composition_get_records_the_origins_of_the_served_data() {
+    use ferroehr::system_log::sender::AuditHandle;
+
+    let (_pg, pool) = common::migrated_pool().await;
+    let audit = AuditConfig {
+        enabled: true,
+        store: StoreConfig {
+            enabled: true,
+            retention_days: 0,
+        },
+        ..AuditConfig::default()
+    };
+    let (sender, _handle): (_, AuditHandle) = start(audit, None, Some(pool.clone()))
+        .await
+        .expect("the audit sender");
+    let svc = Arc::new(FerroEhrService::new(pool.clone()).with_audit(sender));
+    let app = ferroehr_rest::build_with(auth_off_config(), svc).expect("build app");
+
+    let put = Request::builder()
+        .method("PUT")
+        .uri(format!("{BASE}/ehr/{EHR}"))
+        .body(Body::empty())
+        .unwrap();
+    assert_eq!(
+        app.clone().oneshot(put).await.unwrap().status(),
+        StatusCode::CREATED
+    );
+    let mut imported = composition();
+    imported["feeder_audit"] = json!({
+        "_type": "FEEDER_AUDIT",
+        "originating_system_audit": { "_type": "FEEDER_AUDIT_DETAILS", "system_id": "lab.example" }
+    });
+    let post = Request::builder()
+        .method("POST")
+        .uri(format!("{BASE}/ehr/{EHR}/composition"))
+        .header("content-type", "application/json")
+        .body(Body::from(imported.to_string()))
+        .unwrap();
+    let resp = app.clone().oneshot(post).await.unwrap();
+    assert_eq!(resp.status(), StatusCode::CREATED);
+    let uid = resp
+        .headers()
+        .get(http::header::ETAG)
+        .and_then(|v| v.to_str().ok())
+        .expect("ETag")
+        .trim_start_matches("W/")
+        .trim_matches('"')
+        .to_owned();
+    let vo = uid.split("::").next().unwrap().to_owned();
+    let get = Request::builder()
+        .method("GET")
+        .uri(format!("{BASE}/ehr/{EHR}/composition/{vo}"))
+        .body(Body::empty())
+        .unwrap();
+    assert_eq!(app.oneshot(get).await.unwrap().status(), StatusCode::OK);
+
+    let deadline = std::time::Instant::now() + Duration::from_secs(5);
+    let row = loop {
+        let found: Option<(Option<Value>, Option<i64>, Value)> = sqlx::query_as(
+            "SELECT origins, origin_count, fhir FROM audit.audit_event \
+             WHERE operation = 'composition_get' ORDER BY recorded_at DESC LIMIT 1",
+        )
+        .fetch_optional(&pool)
+        .await
+        .expect("read the trail");
+        if let Some(row) = found {
+            break row;
+        }
+        assert!(
+            std::time::Instant::now() < deadline,
+            "no composition_get record landed"
+        );
+        tokio::time::sleep(Duration::from_millis(50)).await;
+    };
+    assert_eq!(
+        row.0,
+        Some(json!(["lab.example"])),
+        "the served origin is recorded"
+    );
+    assert_eq!(row.1, Some(1));
+    let entities = row.2["entity"].as_array().expect("entities");
+    assert!(
+        entities
+            .iter()
+            .any(|e| e["what"]["identifier"]["value"] == "lab.example"),
+        "the FHIR rendering names the origin: {}",
+        row.2
+    );
+    let create: Option<Value> = sqlx::query_scalar(
+        "SELECT origins FROM audit.audit_event WHERE operation = 'composition_create'",
+    )
+    .fetch_one(&pool)
+    .await
+    .expect("the create record");
+    assert_eq!(
+        create, None,
+        "a commit serves no version body, so it records no origin"
+    );
+}

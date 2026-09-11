@@ -12,7 +12,14 @@
 # becomes a row, joined to its legal source URL from the registry declared
 # below and to its current status (shipped with the closing pull request,
 # planned, or not planned). An issue may declare several controls, one per
-# line.
+# line. The Control column carries the issue title, unless the body also
+# carries one line
+#
+#     Control-text: <the control, stated as what the product does>
+#
+# which the generator prefers: an issue titled as the defect it fixes would
+# otherwise render its defect beside Shipped as if the defect were the
+# control (#3249).
 #
 # DETERMINISM. The rendered page is a pure function of tracker state: no
 # clock, no HEAD commit, no run counter. The docs CI job re-runs this script
@@ -131,6 +138,12 @@ jq --slurpfile sources "$WORK/sources.json" '
       [ $reg[] | select(.name as $n | $text == $n or ($text | startswith($n + " "))) ]
       | sort_by(-(.name | length)) | first;
     [ .[] as $issue
+      | ( ($issue.body // "") | split("\n")
+          | map(select(test("^[[:space:]]*(-[[:space:]]+|\\*[[:space:]]+)?Control-text:")))
+          | first // ""
+          | sub("^[[:space:]]*(-[[:space:]]+|\\*[[:space:]]+)?Control-text:[[:space:]]*"; "")
+          | sub("[[:space:]]+$"; "")
+        ) as $control_text
       | ($issue.body // "")
       | split("\n")[]
       | select(test("^[[:space:]]*(-[[:space:]]+|\\*[[:space:]]+)?Control:"))
@@ -149,7 +162,7 @@ jq --slurpfile sources "$WORK/sources.json" '
               source_url: $src.url,
               jurisdiction: $src.jurisdiction,
               clause: $clause,
-              title: $issue.title,
+              title: (if ($control_text | length) > 0 then $control_text else $issue.title end),
               number: $issue.number,
               url: $issue.url,
               state: $issue.state,
@@ -245,7 +258,14 @@ Control: <legal source> <article or clause>
 
 The short name resolves to an official publisher URL from a registry inside
 the generator, so a legal citation on this page is never free text. An issue
-may declare several controls, one per line.
+may declare several controls, one per line. The Control column carries the
+issue title, unless the body also states the control on its own line, which
+the generator prefers so that an issue titled as the defect it fixed does not
+read its defect as the control:
+
+```text
+Control-text: <the control, stated as what the product does>
+```
 
 ## How this page is built
 

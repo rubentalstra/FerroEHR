@@ -307,6 +307,7 @@ fn build_entities(event: &AuditEvent, subject: Option<&str>, missing: &str) -> V
             what: None,
             entity_type: Some(coding(SYS_AUDIT_ENTITY_TYPE, "2", "System Object")),
             role: Some(coding(SYS_OBJECT_ROLE, "24", "Query")),
+            name: None,
             query: Some(expression),
         });
         return entities;
@@ -319,6 +320,7 @@ fn build_entities(event: &AuditEvent, subject: Option<&str>, missing: &str) -> V
             what: Some(subject.to_owned()),
             entity_type: Some(coding(SYS_AUDIT_ENTITY_TYPE, "1", "Person")),
             role: Some(coding(SYS_OBJECT_ROLE, "1", "Patient")),
+            name: None,
             query: None,
         });
     }
@@ -328,6 +330,30 @@ fn build_entities(event: &AuditEvent, subject: Option<&str>, missing: &str) -> V
             what: Some(id.to_owned()),
             entity_type: Some(coding(SYS_AUDIT_ENTITY_TYPE, "2", "System Object")),
             role: None,
+            name: None,
+            query: None,
+        });
+    }
+
+    // The origins of the served data (EHDS Annex II 3.2(e), #3212): one entity
+    // per originating system, named so a reader can tell it from the object
+    // entity, with the true distinct count when the set was capped.
+    let capped = event
+        .origin_count
+        .filter(|count| *count > u64::try_from(event.origins.len()).unwrap_or(u64::MAX));
+    for (index, origin) in event.origins.iter().enumerate() {
+        let name = match (index, capped) {
+            (0, Some(total)) => format!(
+                "origin of the served data ({total} distinct, first {} recorded)",
+                event.origins.len()
+            ),
+            _ => "origin of the served data".to_owned(),
+        };
+        entities.push(AuditEntityRef {
+            what: Some(origin.clone()),
+            entity_type: Some(coding(SYS_AUDIT_ENTITY_TYPE, "2", "System Object")),
+            role: None,
+            name: Some(name),
             query: None,
         });
     }

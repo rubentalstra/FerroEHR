@@ -116,6 +116,10 @@ pub(crate) struct VersionRead {
     /// `Some` iff this version is an `IMPORTED_VERSION`: the wrapped
     /// `ORIGINAL_VERSION`'s own provenance (master06 §Committal and Audits).
     pub(crate) wrapped: Option<WrappedOriginal>,
+    /// The commit-time origin stamp (`vo_version.origins`), or `None` for a
+    /// row nothing stamped; read through
+    /// [`crate::versioning::origins::of_stored`].
+    pub(crate) origins: Option<Value>,
     /// The reassembled canonical JSON, or `Value::Null` for a deleted version
     /// (a logical delete stores no node rows — master06 §Logical Deletion).
     pub(crate) canonical: Value,
@@ -238,6 +242,7 @@ fn version_read(
         time_committed: stored.time_committed,
         signature: stored.signature,
         signature_client_supplied: stored.signature_client_supplied,
+        origins: stored.origins,
         wrapped,
         canonical: stored.canonical,
         attestations_at_committal: stored.attestations_at_committal,
@@ -282,9 +287,10 @@ pub(crate) struct RawVersionRead {
 }
 
 /// Compose a [`RawVersionRead`]: parse the raw text back into a typed value
-/// wherever one is still needed — an imported version (the uid re-stamp path)
-/// or a `stable`-profile read the commit-time stamp cannot decide — else keep
-/// the text verbatim for the passthrough.
+/// wherever one is still needed — an imported version (the uid re-stamp path),
+/// a `stable`-profile read the commit-time stamp cannot decide, or a row with
+/// no origin stamp whose origins the access record assesses from the body
+/// (#3212) — else keep the text verbatim for the passthrough.
 ///
 /// # Errors
 /// The [`version_read`] rejections; [`ServiceError::Internal`] when the
@@ -295,6 +301,7 @@ fn raw_version_read(
     mut stored: crate::storage::version_repo::read::StoredVersion,
 ) -> Result<RawVersionRead, ServiceError> {
     let needs_value = stored.wrapped_original.is_some()
+        || stored.origins.is_none()
         || (profile == crate::config::profile::SpecProfile::Stable
             && stored.stable_compatible != Some(true));
     let mut raw_json = stored.canonical_text.take();

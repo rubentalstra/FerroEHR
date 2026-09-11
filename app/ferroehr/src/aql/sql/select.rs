@@ -55,6 +55,31 @@ impl Builder<'_> {
         aliases
     }
 
+    /// Append the hidden version-locator columns: one `(vo_id, sys_version)`
+    /// pair per bound VO root, under the same two exclusions as the access-EHR
+    /// columns, so the origins of the served data aggregate over exactly the
+    /// version rows that were served (#3212).
+    pub(super) fn build_access_version_columns(&mut self, ir: &QueryIr) -> Vec<(String, String)> {
+        let aggregates = ir
+            .select
+            .iter()
+            .any(|column| matches!(column.value, SelectValue::Aggregate { .. }));
+        if ir.distinct || aggregates || self.group_roots.is_empty() {
+            return Vec::new();
+        }
+        let roots = self.group_roots.clone();
+        let mut aliases = Vec::with_capacity(roots.len());
+        for (i, root) in roots.iter().enumerate() {
+            let vo = format!("{}{i}", super::ACCESS_VO_PREFIX);
+            let sv = format!("{}{i}", super::ACCESS_SV_PREFIX);
+            self.q.expr_as(col(root, "vo_id"), Alias::new(vo.as_str()));
+            self.q
+                .expr_as(col(root, "sys_version"), Alias::new(sv.as_str()));
+            aliases.push((vo, sv));
+        }
+        aliases
+    }
+
     fn emit_select_column(&mut self, i: usize, col: &SelectColumn) -> Result<ColumnSpec, AqlError> {
         let name = col.alias.clone().unwrap_or_else(|| format!("#{i}"));
         match &col.value {

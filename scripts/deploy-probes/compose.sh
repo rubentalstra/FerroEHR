@@ -604,8 +604,10 @@ probes_domain_roles() {
      any probe is a real DEPLOYMENT on two DSNs: a container booting with
      FERROEHR__DB__DEMOGRAPHIC_URL_FILE mounted, schema preparation by a role that is
      neither runtime credential, and the chart's database.demographicExistingSecret
-     wiring that pair. The linkage domain is outside both: it has no pool of its own
-     yet, so there is no third credential to separate."
+     and database.linkageExistingSecret wiring the three. The server opens three
+     pools (db::connect, connect_demographic, connect_linkage — [db] url,
+     demographic_url, linkage_url) and the boundary suite exercises all three
+     credentials in-process; no probe here boots a container on three DSNs."
   uncovered "role provisioning on a managed database" \
     "the compose init creates the domain roles as the bootstrap superuser. A managed
      PostgreSQL where the migrator holds no CREATEROLE takes the documented manual
