@@ -10,9 +10,9 @@
 #     Control: <legal source> <article or clause>
 #
 # becomes a row, joined to its legal source URL from the registry declared
-# below and to its current status (shipped with the closing pull request, in
-# progress from the roadmap board, or planned). An issue may declare several
-# controls, one per line.
+# below and to its current status (shipped with the closing pull request,
+# planned, or not planned). An issue may declare several controls, one per
+# line.
 #
 # DETERMINISM. The rendered page is a pure function of tracker state: no
 # clock, no HEAD commit, no run counter. The docs CI job re-runs this script
@@ -94,9 +94,7 @@ printf '%s\n' "${LEGAL_SOURCES[@]}" |
             | to_entries | map(.value + {rank: .key})' > "$WORK/sources.json"
 
 # ── the tracker ──────────────────────────────────────────────────────────────
-# One call for everything a repository token can read. The roadmap board is a
-# Projects (v2) board, which needs a different scope, so it is queried
-# separately below and only for the issues that actually declare a control.
+# One call, and everything the page needs, readable with a repository token.
 gh issue list --state all --limit "$FETCH_LIMIT" \
   --json number,title,body,state,stateReason,url,closedByPullRequestsReferences \
   > "$WORK/issues.json" || die "could not read the tracker (is gh authenticated?)"
