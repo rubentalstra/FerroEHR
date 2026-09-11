@@ -137,6 +137,22 @@ The idle window slides on any authenticated request, and the shell's own
 status poll is one, so a tab you leave open stays signed in while it is open.
 Closing the browser ends the session.
 
+## The deployment profile
+
+The header's status chip names the profile the connected CDR declares
+(`deployment_profile` in its configuration, reported on `GET /rest/status`):
+`CDR UP · v4.2.0 · production`, or `· sandbox`. A production deployment says
+so quietly and nothing else changes. A sandbox deployment raises a persistent
+notice under the header on every authenticated screen: this deployment has
+not made the production separations and must not hold real patient data,
+followed by the separations the server reported as open (a shared database
+credential, a shared cluster, no subject pseudonym namespace, no durable audit
+trail, schema preparation on the runtime credential). The quickstart and the
+composed stacks run as `sandbox`, so the notice is what you see there; a CDR
+older than the profile reports none and the viewer claims nothing. See the
+[deployment profile](../installation/configuration.md#deployment_profile) in
+the server configuration.
+
 ## Configuration
 
 One TOML file (`ferroehr-viewer.toml`, searched in the working directory

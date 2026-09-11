@@ -4,7 +4,8 @@
 //! The application shell.
 //!
 //! The session guard plus the persistent chrome (static sidebar nav with
-//! icons, topbar with the wordmark + CDR status chip, user menu + access
+//! icons, topbar with the wordmark + CDR status chip (carrying the declared
+//! deployment profile) and the sandbox notice under it, user menu + access
 //! drawer, dark-mode toggle, footer) around the routed `<Outlet/>`.
 //!
 //! The access drawer ("View scopes") is the viewer's effective-identity
@@ -24,12 +25,6 @@
 //! at hydration, so layout-critical chrome built on it collapses into unstyled
 //! text on the pre-hydration paint. thaw stays for genuinely interactive widgets
 //! (the user-menu popover, the scopes drawer, toasts).
-
-#![expect(
-    clippy::disallowed_types,
-    reason = "the viewer consumes the CDR JSON wire over ITS-REST — not the CDR internal seams \
-              (#1694)"
-)]
 
 use leptos::prelude::*;
 use leptos_icons::Icon;
@@ -496,20 +491,23 @@ fn authed_shell(
                     };
                     match status.await {
                         Ok(body) => {
-                            let doc = serde_json::from_str::<serde_json::Value>(&body).ok();
+                            let doc = crate::deployment::StatusDocument::parse(&body);
                             let version = doc
                                 .as_ref()
-                                .and_then(|v| v.get("server_version"))
-                                .and_then(serde_json::Value::as_str)
-                                .map(str::to_owned)
+                                .and_then(|d| d.server_version.clone())
                                 .unwrap_or_default();
-                            match doc
+                            let profile = doc
                                 .as_ref()
-                                .and_then(|v| v.get("status"))
-                                .and_then(serde_json::Value::as_str)
-                            {
+                                .and_then(crate::deployment::StatusDocument::profile)
+                                .map(|p| format!(" · {p}"))
+                                .unwrap_or_default();
+                            match doc.as_ref().and_then(|d| d.status.as_deref()) {
                                 Some("UP") => {
-                                    chip("bg-ok", "text-ink", format!("CDR UP · v{version}"))
+                                    chip(
+                                        "bg-ok",
+                                        "text-ink",
+                                        format!("CDR UP · v{version}{profile}"),
+                                    )
                                 }
                                 _ => chip("bg-warn", "text-ink", "CDR DEGRADED".to_owned()),
                             }
@@ -520,6 +518,43 @@ fn authed_shell(
                         ) => chip("bg-warn", "text-ink", "Session ended".to_owned()),
                         Err(_) => chip("bg-danger", "text-danger", "CDR DOWN".to_owned()),
                     }
+                })
+            }}
+        </Transition>
+    }
+    .into_any();
+
+    // The sandbox notice (#3264): persistent, under the topbar, on every
+    // authenticated screen, so the tab says which deployment it is. Nothing
+    // renders for production or for a server that declares no profile.
+    let deployment_banner = view! {
+        <Transition fallback=|| ()>
+            {move || {
+                Suspend::new(async move {
+                    let notice = match status.await {
+                        Ok(body) => {
+                            crate::deployment::StatusDocument::parse(&body)
+                                .and_then(|doc| doc.sandbox_notice())
+                        }
+                        Err(_) => None,
+                    };
+                    notice
+                        .map(|notice| {
+                            let gaps = notice.gaps_sentence();
+                            view! {
+                                <div
+                                    role="status"
+                                    id="deployment-notice"
+                                    class="border-b border-warn/40 bg-warn-subtle px-4 py-2 text-sm text-warn"
+                                >
+                                    <span class="font-medium">
+                                        {crate::deployment::SandboxNotice::RULE}
+                                    </span>
+                                    " "
+                                    {gaps}
+                                </div>
+                            }
+                        })
                 })
             }}
         </Transition>
@@ -796,7 +831,7 @@ fn authed_shell(
 
     view! {
         <div class="flex min-h-screen flex-col bg-surface text-ink">
-            {topbar}
+            {topbar} {deployment_banner}
             <div class="flex min-h-0 flex-1">
                 {nav} <main class="min-w-0 flex-1 overflow-auto">
                     <Outlet />
