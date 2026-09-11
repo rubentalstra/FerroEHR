@@ -377,19 +377,22 @@ of no other, so a privilege cannot arrive through a membership.
 
 | Credential | Reaches | Cannot reach |
 |---|---|---|
-| `ferroehr_ehr` | `ehr` and `cold` with `SELECT`, `INSERT`, `UPDATE` and `DELETE`; the `ehr.posture` stamp; `USAGE` on `ext` | `demographic`, `cold_demographic` and `linkage`, revoked explicitly and in both directions |
-| `ferroehr_ehr_reader` | `SELECT` on `ehr` and `cold`; `USAGE` on `ext` | the same three schemas |
+| `ferroehr_ehr` | `ehr` and `cold` with `SELECT`, `INSERT`, `UPDATE` and `DELETE`; the `ehr.posture` stamp; `USAGE` on `ext`; in `audit`, record an event, stamp it forwarded, run the retention reaper and verify the chain | `demographic`, `cold_demographic` and `linkage`, revoked explicitly and in both directions |
+| `ferroehr_ehr_reader` | `SELECT` on `ehr` and `cold`; `USAGE` on `ext`; read the `audit` repository and verify the chain | the same three schemas |
 | `ferroehr_demographic` | `demographic` and `cold_demographic` with `SELECT`, `INSERT`, `UPDATE` and `DELETE`, the sealed `national_identifier` rows included; `EXECUTE` on `demographic.resolve_national_identifier` | `ehr`, `cold` and `linkage`, revoked explicitly and in both directions |
 | `ferroehr_demographic_reader` | `SELECT` on `demographic` and `cold_demographic`. On `national_identifier` the table-level grant is revoked and re-granted column by column, so it reads `id`, `party_id`, `scheme`, `tenant_id` and `created_at` and never `nonce`, `ciphertext` or `lookup_digest` | `ehr`, `cold` and `linkage` |
 | `ferroehr_linkage` | `linkage.party_ehr` with `SELECT`, `INSERT` and `UPDATE`; `USAGE` on `ext` | `ehr`, `cold`, `demographic`, `cold_demographic`, and `demographic.resolve_national_identifier` by its own revoke. It holds no `DELETE` anywhere, so it cannot remove a mapping either |
 | The schema-preparation credential (`[db] migrate_url`, normally a member of `ferroehr_migrator`) | every schema: it issues the DDL of all five migration sets and reads all five `_sqlx_migrations` tables, and it owns the objects it created | nothing. The server opens it for that one boot step and closes it again, so no pool is held on it and no request is served through it |
 | `ferroehr_app`, `ferroehr_reader` | the earlier single-domain pair, still carrying `ehr`, `cold`, `ext` and the `audit` repository | `demographic`, `cold_demographic` and `linkage`, where they hold no grant. That is an absence of privilege rather than a revoke, and the boot self-check does not cover these two roles |
 
-The `audit` schema is granted to `ferroehr_app` (record an event, stamp it
-forwarded, run the retention reaper) and to `ferroehr_reader` (read it). None
-of the five domain roles holds a privilege there, and the local Audit Record
-Repository is written on the clinical pool, so the login role that pool
-authenticates as needs membership of `ferroehr_app` as well.
+The `audit` schema is granted to the clinical pair (`ferroehr_ehr` records an
+event, stamps it forwarded, runs the retention reaper and verifies the chain;
+`ferroehr_ehr_reader` reads it) exactly as it is to the single-domain pair.
+The local Audit Record Repository is written on the clinical pool, so a login
+role that is a member of `ferroehr_ehr` alone writes its own access log. The
+audit trail is not a pseudonymisation domain: the demographic and linkage
+roles hold no privilege there, and the trail carries record identifiers, never
+a subject's data.
 
 The five domain roles are checked at every boot. The server reads the
 catalogue for every table, partitioned table, view, materialized view, foreign

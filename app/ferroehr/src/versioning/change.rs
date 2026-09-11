@@ -442,6 +442,9 @@ struct ResolvedWrite {
     /// commit-time `vo_version.stable_compatible` stamp
     /// ([`crate::versioning::profile::stable_compatible`]).
     stable_compatible: bool,
+    /// The distinct origins of the body, derived at commit
+    /// ([`crate::versioning::origins`]); empty on a logical delete.
+    origins: Vec<String>,
     /// `UPDATE_VERSION.attestations` committed with this version.
     attestations: Vec<attestation::AttestationInput>,
     /// A newly created FOLDER hierarchy that joins `EHR.folders` (create only).
@@ -656,6 +659,7 @@ async fn apply_change(
             // node rows reassemble to these bytes, and the released-generation
             // reader's answer is what a later `stable` deployment reads back.
             let stable_compatible = profile::stable_compatible(ctx.spec_profile, kind, &canonical);
+            let origins = crate::versioning::origins::origins(&ctx.system_id, &canonical);
             let canonical_text = Some(canonical_body_text(&canonical)?);
             let rows = decompose(canonical)?;
             let time_committed = match known_now {
@@ -676,6 +680,7 @@ async fn apply_change(
                 rows,
                 canonical_text,
                 stable_compatible,
+                origins,
                 attestations,
                 is_first_folder: kind == Kind::Folder && ehr_id.is_some(),
                 time_committed,
@@ -714,6 +719,7 @@ async fn apply_change(
                 &object_version_id(vo_id, &ctx.system_id, next.tree),
             )?;
             let stable_compatible = profile::stable_compatible(ctx.spec_profile, kind, &canonical);
+            let origins = crate::versioning::origins::origins(&ctx.system_id, &canonical);
             let canonical_text = Some(canonical_body_text(&canonical)?);
             let rows = decompose(canonical)?;
             ResolvedWrite {
@@ -730,6 +736,7 @@ async fn apply_change(
                 rows,
                 canonical_text,
                 stable_compatible,
+                origins,
                 attestations,
                 is_first_folder: false,
                 time_committed: known_now.unwrap_or(next.now),
@@ -764,6 +771,7 @@ async fn apply_change(
                 // Deletion): there is no body a generation could fail to
                 // express.
                 stable_compatible: true,
+                origins: Vec::new(),
                 attestations: Vec::new(),
                 is_first_folder: false,
                 time_committed: known_now.unwrap_or(next.now),
@@ -843,6 +851,7 @@ async fn commit_resolved(
         signature: signature.as_deref(),
         signature_client_supplied,
         stable_compatible: r.stable_compatible,
+        origins: &r.origins,
         body: r.canonical_text.as_deref(),
         time_committed: r.time_committed,
         rows: &r.rows,

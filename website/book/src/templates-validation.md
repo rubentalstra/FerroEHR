@@ -128,6 +128,14 @@ curl -u ferroehr:ferroehr -H 'Accept: text/plain' \
   http://localhost:8080/ferroehr/rest/openehr/v1/definition/template/adl2/openEHR-EHR-COMPOSITION.t_vitals/1.0
 ```
 
+> [!NOTE]
+> The Basic-authenticated examples on this page run against the quickstart,
+> where SMART is off. Under `[smart] require_smart_scopes = true`, the posture
+> the conformance stack runs, the template family is scope-governed and a
+> Basic caller answers `403`: only a Bearer token carrying a `user/template-*`
+> (or broader) SMART resource scope reaches these endpoints. See
+> [`[smart]`](installation/config-auth.md#smart).
+
 ## Listing templates
 
 ```shell

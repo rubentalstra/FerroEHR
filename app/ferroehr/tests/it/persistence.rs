@@ -50,8 +50,8 @@ async fn migrations_apply_cleanly_and_idempotently() {
     // tables) + 0002_event_outbox + 0003_event_subscription +
     // 0004_multitenancy + 0005_fhir_mapping + 0006_fhir_outbound_cursor +
     // 0007_cold_archive_tier + 0008_spec_profile_stable_compatible_stamp +
-    // 0009_subject_pseudonym_guard.
-    assert_eq!((applied_ext, applied_ehr), (2, 9));
+    // 0009_subject_pseudonym_guard + 0010_version_origins.
+    assert_eq!((applied_ext, applied_ehr), (2, 10));
 
     let tables: Vec<String> = sqlx::query_scalar(
         "SELECT table_name FROM information_schema.tables \

@@ -37,6 +37,16 @@ workflow refuses a tag that has no matching section here.
   reopens the question is stated, and the two priority categories with no
   committed template are recorded as an adjudicated corpus boundary.
 
+- **The access log records the origin of the data it served** (#3212, EHDS
+  Annex II 3.2(e)). Every committed version now carries the distinct set of
+  `FEEDER_AUDIT.originating_system_audit.system_id` values found in its body,
+  or this server's own system id when it carries none (`vo_version.origins`,
+  derived at commit; an unstamped row is assessed at read). A composition,
+  status or folder read records the origins of the version it served, an AQL
+  execution the union over the version rows its result page came from, each
+  with the true distinct count beside a set capped at 32; the FHIR
+  `AuditEvent` carries one named entity per origin and ITI-81 serves it.
+
 - **The server mints the subject pseudonym** (#3232). Where FerroEHR itself
   makes a party the subject of an EHR, `service::linkage::link_as_subject`
   derives the pseudonym (a keyed, tenant-bound derivation over the party under
@@ -592,6 +602,27 @@ workflow refuses a tag that has no matching section here.
   can do, `ferroehr_app` included; the Compose, Kubernetes, CLI, server
   configuration and installation pages now name `[db] migrate_url`, and the
   operations page says which postures a test exercises and which none does.
+
+- **The split clinical role can write the audit trail** (#3267). The local
+  Audit Record Repository was granted to `ferroehr_app` and `ferroehr_reader`
+  only, so a deployment whose clinical credential is a member of
+  `ferroehr_ehr` alone wrote no access record at all (dropped under
+  `fail_mode = "open"`, every auditable operation refused under `"closed"`);
+  `ferroehr_ehr` and `ferroehr_ehr_reader` now hold in `audit` what the
+  single-domain pair holds.
+
+- **A CONTRIBUTION into a deactivated EHR reports the state conflict first**
+  (#3257). The privacy and content validation ran before the
+  `EHR_STATUS.is_modifiable` gate, so a body defect on a record that cannot be
+  written was reported as `422` where the `409` was the answer; the state is
+  now checked before any member's content, and the locked in-transaction gate
+  stays authoritative.
+
+- **Documented: under `[smart] require_smart_scopes = true` a Basic caller
+  cannot reach the template family** (#3255). The conformance stack runs that
+  posture, which is why its Basic dev users answer `403` on template upload;
+  the configuration reference and the templates page say so, and a test pins
+  that fail-closed refuses a Basic principal while advisory defers.
 
 - **The management surface is inside the audit trail** (#3244). `/management/*`
   was mounted outside the audit layer, so a runtime filter change through

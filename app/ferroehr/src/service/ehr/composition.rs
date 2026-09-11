@@ -215,13 +215,19 @@ impl FerroEhrService {
             });
         }
         let read = raw.read;
-        let meta = self.version_meta(
-            ehr_id,
-            vo_id,
-            &read.creating_system_id,
-            read.tree,
-            read.time_committed,
-        );
+        let meta = self
+            .version_meta(
+                ehr_id,
+                vo_id,
+                &read.creating_system_id,
+                read.tree,
+                read.time_committed,
+            )
+            .with_origins(crate::versioning::origins::of_stored(
+                read.origins.as_ref(),
+                &read.canonical,
+                &read.creating_system_id,
+            ));
         let Some(text) = raw.raw_json else {
             let stamped =
                 self.with_uid(read.canonical, vo_id, &read.creating_system_id, read.tree)?;
@@ -378,13 +384,19 @@ impl FerroEhrService {
                 format!("COMPOSITION {vo_id} version at time"),
             )
         })?;
-        let meta = self.version_meta(
-            ehr_id,
-            vo_id,
-            &read.creating_system_id,
-            read.tree,
-            read.time_committed,
-        );
+        let meta = self
+            .version_meta(
+                ehr_id,
+                vo_id,
+                &read.creating_system_id,
+                read.tree,
+                read.time_committed,
+            )
+            .with_origins(crate::versioning::origins::of_stored(
+                read.origins.as_ref(),
+                &read.canonical,
+                &read.creating_system_id,
+            ));
         let ov = version_envelope(&read, self.signer())?;
         Ok(ServiceResponse::new(ov, meta))
     }

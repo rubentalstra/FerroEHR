@@ -99,6 +99,12 @@ pub struct QueryOutcome {
     /// much was disclosed, counted where the rows are rather than re-read from
     /// the assembled document.
     pub served_rows: u64,
+    /// The distinct origins of the data the served rows came from (EHDS
+    /// Annex II 3.2(e), #3212), capped; empty when no version row could be
+    /// attributed (see `crate::aql::sql::ACCESS_EHR_PREFIX` for the shapes).
+    pub served_origins: Vec<String>,
+    /// The true number of distinct origins behind [`Self::served_origins`].
+    pub origin_count: u64,
 }
 
 impl QueryOutcome {
@@ -111,6 +117,8 @@ impl QueryOutcome {
             template_ids: Vec::new(),
             served_ehrs: Vec::new(),
             served_rows: 0,
+            served_origins: Vec::new(),
+            origin_count: 0,
         }
     }
 }

@@ -218,20 +218,21 @@ requirements:
           persons who accessed it, the categories of data, the time and date,
           and the origin of the data.
         status: partial
-        issues: [3204]
+        issues: [3204, 3212]
         evidence:
           - text: The five elements mapped onto fields, gaps included
             href: ../audit.md#the-ehds-logging-elements-mapped
         gap: >-
-          Points (a), (b) and (d) are recorded: the accessing organisation
-          beside the natural person, and the time. Point (c) is partial,
-          because the record names an openEHR resource class and a
+          Points (a), (b), (d) and (e) are recorded: the accessing organisation
+          beside the natural person, the time, and the origins of the served
+          data read from the FEEDER_AUDIT provenance openEHR stamps on content,
+          with the true distinct count beside the capped set. Point (c) is
+          partial, because the record names an openEHR resource class and a
           pseudonymisation domain rather than an Annex I priority category.
-          Point (e), the origin of the data, has no field at all. The DICOM
-          rendering carries neither the organisation nor the declared purpose,
-          because PS3.15 A.5 defines no element for either; the FHIR rendering
-          carries both. Each gap is asserted by a test that fails when it
-          closes.
+          The DICOM rendering carries neither the organisation, the declared
+          purpose nor the origins, because PS3.15 A.5 defines no element for
+          them; the FHIR rendering carries all three. The remaining gap is
+          asserted by a test that fails when it closes.
       - id: "3.3"
         summary: >-
           The components include tools or mechanisms to review and analyse the

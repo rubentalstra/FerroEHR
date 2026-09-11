@@ -99,10 +99,10 @@ pub async fn insert_imported_vo_version(
          (vo_id, kind, ehr_id, sys_version, trunk_version, branch_number, branch_version, \
           sys_period, lifecycle_state, creating_system_id, preceding_version_uid, \
           other_input_version_uids, contribution_id, audit_id, template_id, signature, \
-          signature_client_supplied, wrapped_original, body) \
+          signature_client_supplied, wrapped_original, body, origins) \
          VALUES ($1, $2, $3, $4, $5, $6, $7, \
                  tstzrange($8::timestamptz, $9::timestamptz, '[)'), \
-                 $10, $11, $12, $13, $14, $15, NULL, $16, false, $17, $18)",
+                 $10, $11, $12, $13, $14, $15, NULL, $16, false, $17, $18, $19)",
     )
     .bind(row.vo_id)
     .bind(row.kind)
@@ -126,6 +126,13 @@ pub async fn insert_imported_vo_version(
             .map(serde_json::to_string)
             .transpose()
             .map_err(StorageError::BodyDecode)?,
+    )
+    // The imported body's own provenance; a body carrying no FEEDER_AUDIT was
+    // created on the system that created the version (#3212).
+    .bind(
+        row.body
+            .map(|body| crate::versioning::origins::origins(row.creating_system_id, body))
+            .map(|set| serde_json::json!(set)),
     )
     .execute(&mut *tx)
     .await?;
