@@ -7,6 +7,18 @@ openEHR itself points at (the platform Service Model names the System Log
 component "IHE ATNA-compliant system log"). It is **on by default**: every
 deployment records a queryable audit trail with zero external dependencies.
 
+> [!WARNING]
+> Two postures are legitimate to run and wrong to run silently, so the server
+> says them at `warn` on boot (structured field `posture = "audit"`), in the
+> `audit_sender` readiness indicator and on `/management/info`: **auditing
+> off** (`[audit] enabled = false`) writes no access log and leaves the EHDS
+> logging component off, and the shipped default **`fail_mode = "open"`**
+> drops a record the audit queue cannot take while the request succeeds, so
+> an access under load can go unrecorded. A deployment that must never serve
+> an unrecorded access sets `fail_mode = "closed"`, which answers `503` and
+> `Retry-After` instead. The production deployment profile (#3226) refuses to
+> start with auditing off.
+
 <!-- toc -->
 
 The trail is orthogonal to openEHR's own `CONTRIBUTION`/`AUDIT_DETAILS`
@@ -239,10 +251,13 @@ Emission never blocks the request path: a record is handed to a bounded queue
 The local store is the durability anchor. Under `fail_mode = "closed"`, an
 operation whose audit record cannot be recorded answers
 `503 Service Unavailable`: the deployment demanded an audit trail it cannot
-currently deliver, so no un-audited PHI access happens. (`open`, the default,
-drops-and-meters instead, and every loss path is metered: see the
-`atna_audit_*` counters in [Operations](operations.md).) Login and rejection records never
-gate a response in either mode.
+currently deliver, so no un-audited PHI access happens, and the same holds for
+the domain-level records the linkage, subject and identifier resolutions and
+the EHR-Extract transfers write. `open`, the default, drops-and-meters instead,
+and every loss path is metered (the `atna_audit_*` counters in
+[Operations](operations.md)); the server announces that default at boot and on
+the readiness indicator as a stated caution, because a metered loss is still a
+loss. Login and rejection records never gate a response in either mode.
 
 ## Tamper evidence
 

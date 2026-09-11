@@ -14,8 +14,9 @@
 use std::sync::Arc;
 use std::sync::atomic::{AtomicBool, Ordering};
 
+use crate::system_log::config::AuditPosture;
 use crate::system_log::sender::AuditSender;
-use crate::telemetry::health::{Health, HealthIndicator};
+use crate::telemetry::health::{Health, HealthIndicator, HealthStatus};
 use async_trait::async_trait;
 use sqlx::PgPool;
 
@@ -92,19 +93,37 @@ impl HealthIndicator for MigrationsHealth {
     }
 }
 
-/// `audit_sender` — reports the ATNA sender master switch. Degraded-tolerable
-/// (fail-open auditing must not block readiness), so a down never flips
-/// readiness — only the aggregate to `DEGRADED`.
+/// `audit_sender` — reports the audit posture.
+///
+/// The sender master switch, the fail mode and the local store. Registered
+/// whether or not auditing is on (#3238): a deployment that writes no access
+/// log reads `DEGRADED` with the consequence spelled out, so monitoring can
+/// see the silence instead of a missing row. Degraded-tolerable (a missing or
+/// fail-open trail must not take the instance out of rotation), so it never
+/// flips readiness — only the aggregate to `DEGRADED`.
 #[derive(Debug)]
 pub struct AuditHealth {
-    sender: AuditSender,
+    sender: Option<AuditSender>,
+    posture: AuditPosture,
 }
 
 impl AuditHealth {
-    /// Construct over the audit sender handle.
+    /// Construct over the live audit sender and the configured posture.
     #[must_use]
-    pub fn new(sender: AuditSender) -> Self {
-        Self { sender }
+    pub fn new(sender: AuditSender, posture: AuditPosture) -> Self {
+        Self {
+            sender: Some(sender),
+            posture,
+        }
+    }
+
+    /// The indicator for a deployment that wired no sender: auditing is off.
+    #[must_use]
+    pub fn disabled(posture: AuditPosture) -> Self {
+        Self {
+            sender: None,
+            posture,
+        }
     }
 }
 
@@ -115,10 +134,22 @@ impl HealthIndicator for AuditHealth {
     }
 
     async fn check(&self) -> Health {
-        if self.sender.enabled() {
-            Health::up()
-        } else {
-            Health::degraded("audit sender disabled")
+        let live = self.sender.as_ref().is_some_and(AuditSender::enabled);
+        let cautions = self.posture.cautions();
+        if !live || !self.posture.enabled {
+            return Health::degraded(cautions.first().copied().unwrap_or(
+                "auditing is disabled: no access log is written and the EHDS logging \
+                 component is off (set [audit] enabled = true)",
+            ));
+        }
+        let mut detail = self.posture.summary();
+        for caution in cautions {
+            detail.push_str("; ");
+            detail.push_str(caution);
+        }
+        Health {
+            status: HealthStatus::Up,
+            detail: Some(detail),
         }
     }
 
@@ -210,10 +241,67 @@ impl HealthIndicator for FhirOutboundHealth {
 
 #[cfg(test)]
 mod tests {
-    use super::{DbHealth, EventsHealth, FhirOutboundHealth, MigrationsHealth};
+    use super::{AuditHealth, DbHealth, EventsHealth, FhirOutboundHealth, MigrationsHealth};
+    use crate::system_log::config::{AuditConfig, AuditPosture, FailMode};
     use crate::telemetry::health::{HealthIndicator, HealthStatus};
     use std::sync::Arc;
     use std::sync::atomic::{AtomicBool, Ordering};
+
+    /// A deployment with auditing off still carries the indicator, and it
+    /// reads DEGRADED with the consequence stated, never a missing row (#3238).
+    #[tokio::test]
+    async fn a_disabled_audit_trail_reads_degraded_with_its_consequence() {
+        let posture = AuditPosture::of(&AuditConfig {
+            enabled: false,
+            ..AuditConfig::default()
+        });
+        let indicator = AuditHealth::disabled(posture);
+        assert_eq!(indicator.name(), "audit_sender");
+        assert!(
+            !indicator.required(),
+            "a silent trail must not take the instance out of rotation"
+        );
+        let health = indicator.check().await;
+        assert_eq!(health.status, HealthStatus::Degraded);
+        let detail = health.detail.unwrap_or_default();
+        assert!(
+            detail.contains("disabled") && detail.contains("EHDS"),
+            "{detail}"
+        );
+    }
+
+    /// The fail-open default is a caution, not a health failure: the trail is
+    /// UP, and the detail says what a full queue does to a record.
+    #[test]
+    fn the_fail_open_default_is_a_stated_caution_and_fail_closed_is_not() {
+        let open = AuditPosture::of(&AuditConfig::default());
+        assert_eq!(open.fail_mode, FailMode::Open, "the shipped default");
+        let cautions = open.cautions();
+        assert_eq!(cautions.len(), 1);
+        assert!(cautions[0].contains("fail_mode is open"), "{}", cautions[0]);
+
+        let closed = AuditPosture::of(&AuditConfig {
+            fail_mode: FailMode::Closed,
+            ..AuditConfig::default()
+        });
+        assert!(closed.cautions().is_empty());
+        assert!(
+            closed.summary().starts_with("fail_mode=closed"),
+            "{}",
+            closed.summary()
+        );
+
+        let off = AuditPosture::of(&AuditConfig {
+            enabled: false,
+            fail_mode: FailMode::Closed,
+            ..AuditConfig::default()
+        });
+        assert_eq!(
+            off.cautions().len(),
+            1,
+            "a disabled trail makes the fail mode moot"
+        );
+    }
 
     /// The outbound emitter's shared flag IS the indicator's answer: healthy
     /// reads UP, a broker failure reads DEGRADED with a detail, and the

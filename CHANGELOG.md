@@ -26,6 +26,15 @@ workflow refuses a tag that has no matching section here.
   them as FHIR `agent.role` on the requestor and as a `RoleIDCode` per role on
   the DICOM source participant, and serves them through ITI-81.
 
+- **Auditing off and `fail_mode = "open"` are said where an operator looks**
+  (#3238). Auditing disabled used to be one info-level line; the fail-open
+  default was silent. Both are now a `warn` at boot with a structured
+  `posture = "audit"` field, the `audit_sender` readiness indicator is
+  registered whether or not auditing is on (`DEGRADED` with the consequence
+  stated when it is off, `UP` with `fail_mode`, the local store and retention
+  otherwise), and `GET /management/info` carries the `audit` posture. The
+  audit page states at its top what each posture means.
+
 - **The licence in force is explicit, verified and reported.** Every build
   embeds the licensor's `non-commercial` grant (what BUSL-1.1 gives everyone);
   a `commercial` licence is installed with the new `[licence] file` key
@@ -505,6 +514,24 @@ workflow refuses a tag that has no matching section here.
   audit rows rather than isolate them.
 
 ### Fixed
+
+- **Formal identifiers on a provider proxy are accepted** (#3254). The
+  identified-party rule refused `identifiers` on every party proxy, which
+  turned away a clinician's registration number on the composer and the
+  simplified-format `ctx/participation_identifiers` forms, the Reference
+  Model's own paradigm case for `PARTY_IDENTIFIED`. The slot is now refused
+  only on a `PARTY_RELATED` whose relationship is `self`; a national-identifier
+  value is still refused by the identifier scanner wherever it sits.
+
+- **A named `PARTY_RELATED` is accepted unless it is the subject** (#3252).
+  The identified-party rule refused every `PARTY_RELATED` carrying a `name` in
+  clinical content, which turned away a composition whose consenting mother or
+  guardian is named, content the Reference Model models on purpose and the
+  openEHR REST API obliges a server to accept; the conformance suite went from
+  1104/1104 to 917/1104 on it. The rule now refuses the name only where the
+  relationship codes `self`, the party being the patient; `identifiers` stay
+  refused on both classes, and `allow_identified_parties_in_ehr` still opens
+  everything.
 
 - **The identifier scan covers the verbatim-replay writes** (#3237). EHR-Extract
   import and the admin archive load stored clinical content exactly as

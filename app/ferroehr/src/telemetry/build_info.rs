@@ -39,6 +39,10 @@ pub struct BuildInfo {
     pub spec: SpecVersions,
     /// The `PostgreSQL` version target.
     pub postgres_target: &'static str,
+    /// The audit posture the server runs under (#3238): absent only where no
+    /// configuration was resolved (the compile-time default).
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub audit: Option<crate::system_log::config::AuditPosture>,
 }
 
 /// The pinned openEHR specification versions surfaced by `/management/info`.
@@ -88,7 +92,17 @@ impl BuildInfo {
                 term: provenance::TERM,
             },
             postgres_target: provenance::PG_TARGET,
+            audit: None,
         }
+    }
+
+    /// The same build info carrying the resolved audit posture, so
+    /// `/management/info` states whether an access log is written and how a
+    /// record the queue cannot take is treated (#3238).
+    #[must_use]
+    pub fn with_audit(mut self, posture: crate::system_log::config::AuditPosture) -> Self {
+        self.audit = Some(posture);
+        self
     }
 }
 

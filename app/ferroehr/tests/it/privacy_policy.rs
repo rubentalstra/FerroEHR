@@ -255,26 +255,45 @@ async fn a_named_composer_is_accepted_by_default() {
         .expect("a provider name on the composer is not the boundary's business");
 }
 
-/// The write path refuses a composer's formal identifiers under the shipped
-/// default, and takes them under the opt-in — the refused cell of the
-/// `PARTY_IDENTIFIED` row.
-///
-/// `identifiers` is "One or more formal identifiers (possibly computable)"
-/// (same file, §Attributes): the national-identifier slot, whoever the party
-/// is.
+/// The write path takes a composer's formal identifiers under the shipped
+/// default: `PARTY_IDENTIFIED` is "Used to describe parties where only
+/// identifiers may be known … e.g. name and provider number of an
+/// institution" (RM common `UML/classes/org.openehr.rm.common.party_identified.adoc`
+/// §Description), so a registration number on the composer is the class's
+/// paradigm case (#3254). The refused cell is the party that IS the subject:
+/// a `PARTY_RELATED` whose relationship is `self`, taken only under the opt-in.
 #[tokio::test]
-async fn composer_identifiers_are_refused_by_default_and_accepted_under_the_opt_in() {
+async fn composer_identifiers_are_accepted_and_a_self_party_needs_the_opt_in() {
     let db = testkit::db().await.expect("testkit database");
     let strict = service(&db, &PrivacyConfig::default());
     let ehr_id = strict.create_ehr(None).await.expect("create_ehr");
 
     let mut identified = composition("privacy composition");
     identified["composer"]["identifiers"] =
-        json!([{ "_type": "DV_IDENTIFIER", "id": "GMC-1234567" }]);
-    let error = strict
+        json!([{ "_type": "DV_IDENTIFIER", "id": "GMC-1234567", "issuer": "GMC" }]);
+    strict
         .create_composition(ehr_id, uv(&identified, "249", None))
         .await
-        .expect_err("a formal identifier in clinical content is refused by default");
+        .expect("a provider's formal identifier on the composer is the class's paradigm case");
+
+    let mut subject = composition("privacy composition self");
+    subject["composer"] = json!({
+        "_type": "PARTY_RELATED",
+        "identifiers": [{ "_type": "DV_IDENTIFIER", "id": "MRN-0001", "issuer": "hospital" }],
+        "relationship": {
+            "_type": "DV_CODED_TEXT",
+            "value": "self",
+            "defining_code": {
+                "_type": "CODE_PHRASE",
+                "terminology_id": { "_type": "TERMINOLOGY_ID", "value": "openehr" },
+                "code_string": "0"
+            }
+        }
+    });
+    let error = strict
+        .create_composition(ehr_id, uv(&subject, "249", None))
+        .await
+        .expect_err("the subject's own formal identifiers are refused by default");
     assert_refused_service(&error, "COMPOSITION/composer/identifiers");
 
     let permissive = service(
@@ -285,7 +304,7 @@ async fn composer_identifiers_are_refused_by_default_and_accepted_under_the_opt_
         },
     );
     permissive
-        .create_composition(ehr_id, uv(&identified, "249", None))
+        .create_composition(ehr_id, uv(&subject, "249", None))
         .await
         .expect("the documented tenant opt-in accepts it");
 }
