@@ -251,6 +251,12 @@ boot_one() {
       # runtime credentials unexercised.
       db.migrate_url)
         printf 'postgres://ferroehr_migrator:pw@postgres:5432/ferroehr' > "${secdir}/${base}" ;;
+      # The linkage pool's own DSN (#3158), for the same reason: an overlay
+      # setting database.linkageExistingSecret would otherwise fail this check,
+      # leaving the branch that gives the third pseudonymisation domain its own
+      # credential unexercised.
+      db.linkage_url)
+        printf 'postgres://ferroehr_linkage:pw@postgres:5432/ferroehr' > "${secdir}/${base}" ;;
       *)
         red "  ${p} is referenced but no rendered Secret key supplies it"
         return 1

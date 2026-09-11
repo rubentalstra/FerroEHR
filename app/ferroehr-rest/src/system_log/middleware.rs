@@ -217,7 +217,13 @@ pub async fn middleware(State(state): State<AppState>, req: Request, next: Next)
     let timestamp = jiff::Timestamp::now();
     let purpose = declared_purpose(&req, state.backend());
 
-    let resp = next.run(req).await;
+    // Published for the handler's task scope so a record the SERVICE layer
+    // emits by itself — a pseudonymisation boundary crossing, which no
+    // operation id describes — carries the same declared purpose this
+    // middleware stamps on its own records
+    // (`ferroehr::system_log::access_context`).
+    let resp =
+        ferroehr::system_log::access_context::with_purpose(purpose.clone(), next.run(req)).await;
     let status = resp.status();
 
     let op = resp.extensions().get::<AuditOpId>().copied();

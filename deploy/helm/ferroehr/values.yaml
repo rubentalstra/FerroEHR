@@ -150,6 +150,31 @@ database:
   # Secret). Ignored when demographicExistingSecret is set.
   demographicUrl: ""
 
+  # ── the linkage pseudonymisation domain ────────────────────────────────────
+  # The third domain, and the one the other two exist to be kept apart from:
+  # `linkage` holds which party is the subject of which EHR, the map that
+  # re-attributes a pseudonymised record to a person (GDPR Art. 4(5)). Same
+  # arrangement as above — the schema separation is unconditional, and these
+  # keys add the CREDENTIAL separation.
+  #
+  # Set all three DSNs and no credential the server uses can join an identity
+  # to a record in SQL: `ferroehr_linkage` is revoked from the clinical and
+  # demographic schemas and both are revoked from `linkage`, in both
+  # directions, and the boot self-check refuses a database where that is not
+  # true. The crossing then happens in the application, over two connections,
+  # and every resolution is recorded as a linkage-domain access event.
+
+  # -- Reference an existing Secret holding the LINKAGE-role DSN. Its value is
+  # a full `postgres://ferroehr_linkage:...@host:5432/ferroehr`, a third
+  # credential distinct from the two above.
+  linkageExistingSecret: ""
+  # -- Key WITHIN linkageExistingSecret holding the linkage DSN. Mounted as a
+  # file; only its PATH reaches the pod's environment.
+  linkageExistingSecretKey: FERROEHR__DB__LINKAGE_URL
+  # -- Inline linkage DSN (DEV/TEST ONLY — lands in a chart-managed Secret).
+  # Ignored when linkageExistingSecret is set.
+  linkageUrl: ""
+
   # ── the credential that prepares the schema ────────────────────────────────
   # Neither DSN above can do it. Preparing spans every schema at once — the DDL
   # of all five migration sets under config.db.migrate=apply, all five

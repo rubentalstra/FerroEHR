@@ -596,9 +596,52 @@ the clinical side; see
 schema split by default: giving the demographic domain its own
 `[db] demographic_url` is what turns it into a credential split, which is the
 deployment step described in
-[Operations](operations.md#database-roles-and-least-privilege).
-Nothing reads the `linkage` schema yet — it is created empty, and the service
-that will resolve through it, under audit, is still to come.
+[Operations](operations.md#database-roles-and-least-privilege). The linkage
+domain takes its own credential from `[db] linkage_url` the same way.
+
+### Resolving across the boundary
+
+One question needs all three domains at once: *which record belongs to this
+person?* The server answers it in exactly one place — the linkage service —
+and answers it in the application, over two connections, never in the
+database.
+
+An external identity (a national identifier, say) is matched against the
+sealed `demographic.national_identifier` map by keyed digest, which returns a
+party without decrypting anything. That party is then looked up in
+`linkage.party_ehr` on a second connection, with a second search path and,
+when `[db] linkage_url` is set, a second database role. **No statement
+performs the join, because no credential could**: the linkage role holds no
+grant in `demographic` and the demographic role holds none in `linkage`, both
+revocations are explicit and in both directions, and the boot check refuses to
+serve a database where either has been given one. The crossing exists as an
+application step that can be audited, rather than as a query anyone holding
+one password could write.
+
+Every resolution — and every write that opens, merges or splits a mapping —
+records an access event in the `linkage` domain, naming who asked, the purpose
+of use they declared, and whether anything matched. A miss is recorded like a
+hit: it says someone asked whether this deployment holds a record for that
+person. The event deliberately does **not** name the EHR that came back. The
+audit trail lives in its own schema, outside the linkage role, so a record
+pairing a party with its EHR would be a second copy of the map the split
+exists to hold apart.
+
+Merges and splits are period-closing writes. A mapping that stops being true
+gets an end date; it is never deleted, and the linkage role holds no `DELETE`
+privilege to delete it with. "Which party was the subject of this EHR when
+that composition was written" therefore still has an answer after two person
+records have been merged. The database enforces one mapping in force per party
+with a temporal primary key, so the rule holds against any code path, not only
+the intended one.
+
+Looking an EHR up by subject (`GET /ehr?subject_id=…&subject_namespace=…`)
+does **not** go through any of this. That operation matches the EHR's own
+`EHR_STATUS.subject.external_ref`, which is the opaque pseudonym the privacy
+layer already constrains, so it resolves a pseudonym rather than an identity
+and consults no map. It records a linkage-domain access event all the same,
+because who resolved a subject to a record is worth knowing wherever it
+happened.
 
 ## Multi-tenancy
 

@@ -15,6 +15,11 @@ database:
   # of them. Same reason as above — an unrendered branch is an unchecked one.
   migrateExistingSecret: ferroehr-db-migrate
   migrateExistingSecretKey: FERROEHR__DB__MIGRATE_URL
+  # The fourth credential (#3158): the linkage domain holds which party is the
+  # subject of which EHR, barred from both domains it joins. Same reason as
+  # above — an unrendered branch is an unchecked one.
+  linkageExistingSecret: ferroehr-db-linkage
+  linkageExistingSecretKey: FERROEHR__DB__LINKAGE_URL
 
 secrets:
   # 40 bytes of obvious filler. RFC 8725 §3.5 puts a 32-byte floor under a

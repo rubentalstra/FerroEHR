@@ -74,6 +74,21 @@ two pools on two credentials, and a flaw that reaches one of them reaches one
 domain. Left unset, both pools share the DSN above and the separation is
 schema-only.
 
+The third domain takes its credential the same way:
+
+```toml
+[db]
+linkage_url = "postgres://ferroehr_linkage:***@pg:5432/ferroehr"
+```
+
+(or `linkage_url_file`). `linkage` holds which party is the subject of which
+EHR — the one map that re-joins the other two — so `ferroehr_linkage` is
+barred from both of them and both of them from it. Set all three and no
+credential the server uses can perform that join in SQL; the crossing happens
+in the application, over two connections, and is recorded as an access event
+(see [Security → Resolving across the
+boundary](security.md#resolving-across-the-boundary)).
+
 ### Which credential prepares the schema
 
 **Neither of the two above.** Preparing the schema spans every schema at once:
@@ -92,6 +107,7 @@ uses it for that one boot step:
 [db]
 url = "postgres://ferroehr_ehr:***@pg:5432/ferroehr"
 demographic_url = "postgres://ferroehr_demographic:***@pg:5432/ferroehr"
+linkage_url = "postgres://ferroehr_linkage:***@pg:5432/ferroehr"
 migrate_url = "postgres://ferroehr_migrator:***@pg:5432/ferroehr"
 ```
 

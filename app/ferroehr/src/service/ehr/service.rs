@@ -22,6 +22,9 @@ use crate::service::ehr::handle::EhrSummary;
 use crate::service::ehr_index::types::SubjectRef;
 use crate::service::response::{ResourceMeta, ServiceResponse};
 use crate::service::status::{CallStatusType, SmError};
+use crate::system_log::event::{
+    AccessDomain, AuditEvent, EventActionCode, EventOutcome, ObjectClass,
+};
 use openehr_base::prelude::{ArchetypeId, HierObjectId, ObjectId, ObjectRef, ObjectRefData};
 use openehr_rm::prelude::{Archetyped, DvText, DvTextData, Ehr, EhrStatus, PartySelf};
 use serde_json::Value;
@@ -223,8 +226,15 @@ impl FerroEhrService {
     }
 
     /// Find an EHR by the subject its current `EHR_STATUS` names (external ref
-    /// `id.value` + `namespace`). Served from the promoted `ehr.subject_*`
-    /// columns (unique per subject — `ehr_subject_uq`).
+    /// `id.value` + `namespace`), recording the resolution as an access.
+    ///
+    /// Served from the promoted `ehr.subject_*` columns (unique per subject —
+    /// `ehr_subject_uq`), on the CLINICAL pool: the value matched is the
+    /// opaque subject pseudonym [`crate::privacy::PrivacyPolicy::check_subject`]
+    /// admits, so this resolves a pseudonym and consults no linkage map. The
+    /// access event is emitted all the same, and in the `linkage` domain,
+    /// because "who resolved a subject to an EHR" is the question that domain
+    /// exists to answer and it is worth an answer wherever it is asked.
     ///
     /// NOTE: the DB constraint narrows the SM `List<EHR_SUMMARY>` of
     /// `i_ehr_service.adoc` §`get_ehrs_for_subject` to at most one, per the
@@ -239,15 +249,45 @@ impl FerroEhrService {
         subject_id: &str,
         namespace: &str,
     ) -> Result<ServiceResponse, ServiceError> {
-        let ehr_id = crate::storage::ehr_repo::ehr_id_by_subject(&self.pool, subject_id, namespace)
-            .await?
-            .ok_or_else(|| {
-                ServiceError::sm(
-                    CallStatusType::EhrIdDoesNotExist,
-                    format!("EHR for subject {subject_id}@{namespace}"),
-                )
-            })?;
+        let found =
+            crate::storage::ehr_repo::ehr_id_by_subject(&self.pool, subject_id, namespace).await?;
+        self.emit_subject_resolution(namespace, found);
+        let ehr_id = found.ok_or_else(|| {
+            ServiceError::sm(
+                CallStatusType::EhrIdDoesNotExist,
+                format!("EHR for subject {subject_id}@{namespace}"),
+            )
+        })?;
         self.ehr_summary(ehr_id).await
+    }
+
+    /// Record one subject-to-EHR resolution on the access log.
+    ///
+    /// The record names the subject NAMESPACE and never the subject id: the id
+    /// is a pseudonym by policy, but a deployment that declares no
+    /// `[privacy] subject_namespaces` can still carry a real identifier there,
+    /// and an access log is the last place that should be the copy that
+    /// outlives it. A miss is recorded like a hit — it says someone asked
+    /// whether this deployment holds a record for that subject.
+    fn emit_subject_resolution(&self, namespace: &str, resolved: Option<EhrId>) {
+        if !self.audit_enabled() {
+            return;
+        }
+        let mut event = AuditEvent::new(
+            EventActionCode::Read,
+            ObjectClass::Ehr,
+            EventOutcome::Success,
+        );
+        event.domain = AccessDomain::Linkage;
+        event.object_id = Some(format!("subject-namespace:{namespace}"));
+        event.ehr_id = resolved.map(|id| id.to_string());
+        event.result_count = Some(u64::from(resolved.is_some()));
+        event.purpose = crate::system_log::access_context::current_purpose();
+        if let Some(committer) = crate::service::committer::current_committer() {
+            event.user_id = committer.subject;
+        }
+        event.legal_basis = self.audit_legal_basis().map(str::to_owned);
+        let _ = self.emit(event);
     }
 
     /// Build the canonical RM `EHR` object for an existing EHR, with its

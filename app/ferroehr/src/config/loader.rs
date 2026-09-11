@@ -478,6 +478,12 @@ fn resolve_secret_files(config: &mut FerroEhrConfig, errors: &mut Vec<ConfigErro
         errors,
     );
     resolve_optional_secret_url(
+        "db.linkage_url",
+        &mut config.db.linkage_url,
+        config.db.linkage_url_file.take(),
+        errors,
+    );
+    resolve_optional_secret_url(
         "db.migrate_url",
         &mut config.db.migrate_url,
         config.db.migrate_url_file.take(),

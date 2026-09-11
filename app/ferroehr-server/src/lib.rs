@@ -373,6 +373,7 @@ fn assemble_service(
 
     let mut service = FerroEhrService::new(pool.clone())
         .with_demographic_pool(pools.demographic.clone())
+        .with_linkage_pool(pools.linkage.clone())
         .with_spec_profile(config.spec_profile)
         .with_system_id(config.server.system_id.clone())
         .with_signer(signer)
@@ -568,6 +569,8 @@ struct Pools {
     clinical: PgPool,
     /// Serves the `demographic` schema: parties and their change control.
     demographic: PgPool,
+    /// Serves the `linkage` schema: which party is the subject of which EHR.
+    linkage: PgPool,
 }
 
 /// Connects both domain pools the deployment's tenancy mode calls for and
@@ -592,7 +595,7 @@ struct Pools {
 /// A connection, migration or domain-isolation failure, contextualized for the
 /// operator.
 async fn connect_pool(config: &ferroehr::config::FerroEhrConfig) -> anyhow::Result<Pools> {
-    let (clinical, demographic) = if config.tenancy.enabled {
+    let (clinical, demographic, linkage) = if config.tenancy.enabled {
         (
             db::connect_tenant_scoped(&config.db)
                 .await
@@ -600,6 +603,9 @@ async fn connect_pool(config: &ferroehr::config::FerroEhrConfig) -> anyhow::Resu
             db::connect_tenant_scoped_demographic(&config.db)
                 .await
                 .context("connecting to PostgreSQL (demographic, tenant-scoped)")?,
+            db::connect_tenant_scoped_linkage(&config.db)
+                .await
+                .context("connecting to PostgreSQL (linkage, tenant-scoped)")?,
         )
     } else {
         (
@@ -609,6 +615,9 @@ async fn connect_pool(config: &ferroehr::config::FerroEhrConfig) -> anyhow::Resu
             db::connect_demographic(&config.db)
                 .await
                 .context("connecting to PostgreSQL (demographic)")?,
+            db::connect_linkage(&config.db)
+                .await
+                .context("connecting to PostgreSQL (linkage)")?,
         )
     };
     db::prepare(&config.db, &clinical)
@@ -620,12 +629,19 @@ async fn connect_pool(config: &ferroehr::config::FerroEhrConfig) -> anyhow::Resu
              credentials are separate database roles"
         );
     }
+    if config.db.linkage_role_is_separated() {
+        tracing::info!(
+            "the linkage domain connects on its own DSN: the map from a party to its EHR is \
+             held on a credential that has neither the clinical nor the demographic grants"
+        );
+    }
     if config.tenancy.enabled {
         warn_on_occupied_default_tenant(&clinical).await?;
     }
     Ok(Pools {
         clinical,
         demographic,
+        linkage,
     })
 }
 

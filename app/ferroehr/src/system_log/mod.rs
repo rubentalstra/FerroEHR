@@ -41,6 +41,8 @@
 //!
 //! ## Module map
 //! - [`event`] — the transport-agnostic audit event model.
+//! - [`access_context`] — the request-scoped purpose of use, for records the
+//!   service layer emits by itself.
 //! - [`codes`] — DCM / RFC-3881 code constants and the ATNA rendering of the
 //!   event enums.
 //! - [`message`] — the DICOM `AuditMessage` model and `quick-xml` serializer.
@@ -58,6 +60,7 @@
               already-rendered FHIR document stays a JSON value"
 )]
 
+pub mod access_context;
 pub mod codes;
 pub mod config;
 pub mod event;
