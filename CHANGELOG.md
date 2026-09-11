@@ -490,6 +490,14 @@ workflow refuses a tag that has no matching section here.
 
 ### Fixed
 
+- **The identifier scan covers the verbatim-replay writes** (#3237). EHR-Extract
+  import and the admin archive load stored clinical content exactly as
+  received and skipped the data-minimisation pass every other clinical write
+  takes, while the configuration reference said every clinical write was
+  scanned. Both paths now refuse a record whose body carries a national
+  identifier, a non-pseudonym subject reference or an identified party, with
+  the same `422` and RM path the commit path reports; nothing is rewritten.
+
 - **`fail_mode = "closed"` now covers the domain-level access records too**
   (#3235). The linkage resolutions and merges, the subject-to-EHR lookup
   behind `GET /ehr?subject_id`, the national-identifier resolution and the

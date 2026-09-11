@@ -154,7 +154,7 @@ impl FerroEhrService {
             ));
         }
         let touches_ehr_access = containers.iter().any(|c| c.kind == Kind::EhrAccess);
-        commit_import(&mut tx, &signing, ehr_id, &audit, containers).await?;
+        commit_import(&mut tx, &signing, &self.privacy, ehr_id, &audit, containers).await?;
         // An EHR is created as "a root EHR object, an EHR Status object, and an
         // EHR Access object" (RM ehr master04 §EHR Creation) and `EHR.ehr_access`
         // is 1..1 (`ehr.adoc` invariant `Ehr_access_valid`). An extract that
@@ -236,7 +236,15 @@ impl FerroEhrService {
 
         let mut tx = self.pool.begin().await.map_err(ServiceError::from)?;
         let touches_ehr_access = containers.iter().any(|c| c.kind == Kind::EhrAccess);
-        commit_import(&mut tx, &signing, an_ehr_id, &audit, containers).await?;
+        commit_import(
+            &mut tx,
+            &signing,
+            &self.privacy,
+            an_ehr_id,
+            &audit,
+            containers,
+        )
+        .await?;
         // An imported EHR_STATUS version can change the current status, subject
         // included (Copying Case 3 append), so the promoted `ehr` columns are
         // re-derived from it (RM ehr master04 §EHR Status / §EHR Active Status).
@@ -279,7 +287,7 @@ impl FerroEhrService {
             return Ok(());
         }
         let mut tx = self.demographic_pool.begin().await?;
-        commit_demographic_import(&mut tx, signing, audit, parties).await?;
+        commit_demographic_import(&mut tx, signing, &self.privacy, audit, parties).await?;
         tx.commit().await?;
         Ok(())
     }
