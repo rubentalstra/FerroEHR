@@ -32,6 +32,7 @@ mod strict;
 
 pub mod auth;
 pub mod authz;
+pub mod deployment;
 pub mod management;
 pub mod profile;
 pub mod secret;
@@ -54,6 +55,14 @@ pub struct FerroEhrConfig {
     /// `spec_profile` — the openEHR specification generation set the server
     /// runs (`development` | `stable`; default `development`).
     pub spec_profile: profile::SpecProfile,
+    /// `deployment_profile` — the declared posture (`sandbox` | `production`;
+    /// default `sandbox`). `production` refuses to start while a separation it
+    /// asserts is missing and not accepted by name (#3226).
+    pub deployment_profile: deployment::DeploymentProfile,
+    /// `deployment_accepts` — the [`deployment::DeploymentGap`]s a `production`
+    /// deployment runs without, each stated on every boot and on
+    /// `/rest/status`. Ignored under `sandbox`, which accepts everything.
+    pub deployment_accepts: Vec<deployment::DeploymentGap>,
     /// `[server]` — HTTP listener + REST surface + System-Options identity.
     pub server: server::ServerConfig,
     /// `[db]` — `PostgreSQL` connection.
@@ -120,6 +129,7 @@ impl FerroEhrConfig {
         self.validate_signing(&mut errors);
         self.validate_key_sources(&mut errors);
         self.validate_privacy(&mut errors);
+        self.validate_deployment(&mut errors);
         errors.extend(multimedia_endpoint_errors(&self.multimedia));
         // management.port must differ from the server.bind port.
         if let Some(port) = self.management.port
@@ -144,6 +154,31 @@ impl FerroEhrConfig {
     /// the jurisdiction was covered, and a blank pseudonym namespace would
     /// accept an empty `external_ref.namespace` as if it were declared. No
     /// openEHR spec governs configuration — our own design.
+    /// `deployment_accepts` names each gap once, and only means something
+    /// under `production`: a sandbox that lists accepted gaps is describing a
+    /// posture it does not enforce, which is the confusion the key exists to
+    /// remove.
+    fn validate_deployment(&self, errors: &mut Vec<ConfigError>) {
+        let mut seen = std::collections::BTreeSet::new();
+        for gap in &self.deployment_accepts {
+            if !seen.insert(gap.as_str()) {
+                errors.push(ConfigError::semantic(format!(
+                    "deployment_accepts names `{gap}` twice"
+                )));
+            }
+        }
+        if self.deployment_profile == deployment::DeploymentProfile::Sandbox
+            && !self.deployment_accepts.is_empty()
+        {
+            errors.push(ConfigError::semantic(
+                "deployment_accepts is set under deployment_profile = \"sandbox\", which accepts \
+                 every gap already; the key belongs to a production deployment that runs \
+                 without a named separation"
+                    .to_owned(),
+            ));
+        }
+    }
+
     fn validate_privacy(&self, errors: &mut Vec<ConfigError>) {
         if let Err(error) = crate::privacy::PrivacyPolicy::compile(&self.privacy) {
             errors.push(ConfigError::semantic(error.to_string()));

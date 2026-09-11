@@ -116,20 +116,20 @@ pub struct PrivacyPolicy {
 }
 
 impl Default for PrivacyPolicy {
-    /// The unenforced policy — no rule in force.
+    /// The refusing posture, the same one [`PrivacyConfig::default`] compiles
+    /// to: identified `self` parties refused, every shipped identifier rule in
+    /// `strict` mode, no namespaces declared (#3243).
     ///
-    /// This is what a bare [`crate::service::FerroEhrService`] carries, in the
-    /// same way it carries no audit sender and no terminology router: every
-    /// configured collaborator is wired by the binary. The binary always
-    /// installs [`PrivacyPolicy::compile`] of the resolved
-    /// [`PrivacyConfig`], whose own default refuses identified parties and
-    /// scans in [`ScanMode::Strict`].
+    /// A `FerroEhrService` built without [`FerroEhrService::with_privacy`]
+    /// therefore runs the posture the shipped binary runs, never a more
+    /// permissive one: a test or an embedding host that means to accept more
+    /// installs the policy that says so.
     fn default() -> Self {
         Self {
             subject_namespaces: Vec::new(),
-            allow_identified_parties: true,
-            scan_mode: None,
-            rules: Vec::new(),
+            allow_identified_parties: false,
+            scan_mode: Some(ScanMode::Strict),
+            rules: detect::built_in_rules().iter().collect(),
             patterns: Vec::new(),
         }
     }

@@ -571,19 +571,24 @@ fn narrowing_the_rule_list_narrows_what_is_caught() {
     );
 }
 
+/// The library default is the refusing posture the shipped configuration
+/// compiles to (#3243): a service built without an explicit policy scans with
+/// every rule in `strict` mode, never a more permissive shape than the binary.
 #[test]
-fn the_unenforced_default_policy_finds_nothing() {
+fn the_default_policy_is_the_refusing_posture() {
     let composition = json!({
         "_type": "COMPOSITION",
         "composer": { "_type": "PARTY_IDENTIFIED", "name": "Dr Author" },
         "name": { "_type": "DV_TEXT", "value": "111222333" } // privacy-allow: synthetic, passes the eleven-test
     });
-    assert!(
-        PrivacyPolicy::default()
-            .findings("COMPOSITION", &composition)
-            .is_empty()
+    let findings = PrivacyPolicy::default().findings("COMPOSITION", &composition);
+    assert_eq!(paths(&findings), ["COMPOSITION/name/value"]);
+    assert_eq!(PrivacyPolicy::default().scan_mode(), Some(ScanMode::Strict));
+    assert_eq!(
+        PrivacyPolicy::default().active_rules().len(),
+        policy(&PrivacyConfig::default()).active_rules().len(),
+        "the default carries every shipped rule, as the default configuration does"
     );
-    assert_eq!(PrivacyPolicy::default().scan_mode(), None);
 }
 
 #[test]

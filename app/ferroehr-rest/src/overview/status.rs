@@ -35,6 +35,10 @@ struct ServerStatus {
     openehr_rest_api_version: &'static str,
     timestamp: String,
     licence: LicenceStatus,
+    /// The declared deployment posture (#3226): the profile, the separations
+    /// it has not made and the ones it accepted by name, so a `sandbox` cannot
+    /// be mistaken for a `production` from its own API.
+    deployment: ferroehr::config::deployment::DeploymentPosture,
 }
 
 /// Server status (`GET /ferroehr/rest/status`).
@@ -51,7 +55,8 @@ struct ServerStatus {
         (status = 200, description = "Server up; a JSON `{status, server_version, \
                                       openehr_rest_api_version, timestamp, \
                                       licence: {state, use?, licensee?, not_after?, \
-                                      configured_token}}` \
+                                      configured_token}, deployment: {profile, gaps, \
+                                      accepted}}` \
                                       object.",
          body = serde_json::Value)
     )
@@ -63,6 +68,7 @@ async fn status(State(state): State<AppState>) -> Json<ServerStatus> {
         openehr_rest_api_version: provenance::ITS_REST,
         timestamp: jiff::Timestamp::now().to_string(),
         licence: state.backend().licence().status(),
+        deployment: state.backend().deployment().clone(),
     })
 }
 
