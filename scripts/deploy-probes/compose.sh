@@ -594,12 +594,18 @@ probes_domain_roles() {
   esac
   probe_done
 
-  uncovered "the CREDENTIAL separation" \
-    "this stack runs one login role that is a member of every domain, so what is
-     measured above is the SCHEMA separation and the grant boundary. Whether a
-     deployment with a DSN per domain keeps working — the posture the book recommends and
-     the chart's database.demographicExistingSecret configures — is not exercised
-     by any probe here."
+  uncovered "the CREDENTIAL separation AT DEPLOYMENT LEVEL" \
+    "this stack still runs one login role that is a member of every domain, so what is
+     measured above is the SCHEMA separation and the grant boundary. The in-process half
+     is covered elsewhere as of #3222: app/ferroehr-rest/tests/it/credential_separation.rs
+     assembles the server on one login role per domain against a real PostgreSQL, serves
+     both domains through the wire, and asserts that each of the server's own pools is
+     refused the other domain's relations with SQLSTATE 42501. What remains uncovered by
+     any probe is a real DEPLOYMENT on two DSNs: a container booting with
+     FERROEHR__DB__DEMOGRAPHIC_URL_FILE mounted, schema preparation by a role that is
+     neither runtime credential, and the chart's database.demographicExistingSecret
+     wiring that pair. The linkage domain is outside both: it has no pool of its own
+     yet, so there is no third credential to separate."
   uncovered "role provisioning on a managed database" \
     "the compose init creates the domain roles as the bootstrap superuser. A managed
      PostgreSQL where the migrator holds no CREATEROLE takes the documented manual
