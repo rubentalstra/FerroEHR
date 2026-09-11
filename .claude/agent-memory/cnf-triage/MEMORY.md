@@ -47,3 +47,4 @@
 - [ehr_id scope is SM-grounded](ehr-id-scope-semantics-is-sm-grounded.md) — SM `_ehr_ids_` defines the effect (AMB-101 overstates the silence); EHRbase 2.34.0 discards both carriers
 - [`equivalent` refused on text-document grounds](equivalent-refused-on-text-document-grounds.md) — RUNNER bin: 0.1.4 keys the refusal on the served media type, not the ground; OPT-XML/ADL2-text compares are judgeable
 - [IXIT `administrative` posture](ixit-administrative-posture.md) — AMB-228: 6 role-boundary rows guard out until OUR ixit declares the split; fixed in this repo, not Veredictum
+- [PARTY_RELATED name != subject identification](party-related-name-is-not-subject-identification.md) — APP overreach class; SM `content_valid` == RM validity is the oracle for "may we refuse this"; `self` is openehr::0
