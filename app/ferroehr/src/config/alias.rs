@@ -61,6 +61,7 @@ pub(super) const SECTIONS: &[&str] = &[
     "smart",
     "management",
     "signing",
+    "licence",
     "query",
     "events",
     "fhir",

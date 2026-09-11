@@ -371,12 +371,24 @@ fn assemble_service(
         )
         .context("building the [demographic.identifier_protection] engine")?;
 
+    // The licence in force: the configured token, else the one the build
+    // embeds. Never a boot failure; the outcome is logged once, served on
+    // GET /rest/status, and selects the identifier stamp key.
+    let anchors = ferroehr::licence::anchors().context("parsing the embedded licence anchors")?;
+    let licence = ferroehr::licence::state::LicenceState::load_now(
+        &config.licence,
+        ferroehr::licence::EMBEDDED_TOKEN,
+        &anchors,
+    );
+    tracing::info!(licence = %licence, "licence");
+
     let mut service = FerroEhrService::new(pool.clone())
         .with_demographic_pool(pools.demographic.clone())
         .with_linkage_pool(pools.linkage.clone())
         .with_spec_profile(config.spec_profile)
         .with_system_id(config.server.system_id.clone())
         .with_signer(signer)
+        .with_licence(licence)
         .with_outbox_enabled(outbox_enabled)
         .with_privacy(Arc::new(privacy))
         .with_identifier_protection_opt(identifiers.map(Arc::new))

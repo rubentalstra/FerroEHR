@@ -247,7 +247,7 @@ async fn party_sm_calls_round_trip() {
     );
 
     // A never-seen id: has_party false, get_party 404.
-    let never = ferroehr::ids::VoId::new();
+    let never = ferroehr::ids::VoId(uuid::Uuid::now_v7());
     assert!(!svc.has_party(never).await.expect("has_party unknown"));
     assert!(svc.get_party(never).await.is_err(), "unknown party → error");
 }

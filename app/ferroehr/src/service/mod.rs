@@ -173,6 +173,13 @@ pub struct FerroEhrService {
     /// Signature). Defaults to server-side `digest` signing; the binary wires
     /// the configured [`Signer`].
     signer: Arc<Signer>,
+    /// The boot outcome of the `[licence]` section
+    /// ([`crate::licence::state::LicenceState`]); no licence by default. Read
+    /// by `/rest/status`; it changes nothing else.
+    licence: crate::licence::state::LicenceState,
+    /// The stamp key every server-minted identifier carries
+    /// ([`crate::licence::stamp`]), derived from `licence` once at boot.
+    stamp: crate::licence::stamp::StampKey,
     /// The optional IHE ATNA audit sender realizing the SM `I_SYSTEM_LOG`
     /// component (`crate::system_log`). `None` = auditing off; the binary
     /// wires the configured [`AuditSender`] via [`Self::with_audit`].
@@ -286,6 +293,10 @@ impl FerroEhrService {
             spec_profile: crate::config::profile::SpecProfile::default(),
             web_templates: WebTemplateCache::default(),
             signer: Arc::new(Signer::digest_default()),
+            licence: crate::licence::state::LicenceState::NoLicence(
+                crate::licence::state::Reason::NoneEmbedded,
+            ),
+            stamp: crate::licence::stamp::StampKey::fail_safe(),
             audit: None,
             audit_store: None,
             terminology: None,
@@ -399,6 +410,28 @@ impl FerroEhrService {
     pub fn with_system_id(mut self, system_id: impl Into<String>) -> Self {
         self.system_id = system_id.into();
         self
+    }
+
+    /// Install the boot outcome of the `[licence]` section. The stamp key
+    /// every server-minted identifier carries follows from it; nothing else
+    /// does.
+    #[must_use]
+    pub fn with_licence(mut self, licence: crate::licence::state::LicenceState) -> Self {
+        self.stamp = licence.stamp_key();
+        self.licence = licence;
+        self
+    }
+
+    /// The boot outcome of the `[licence]` section.
+    #[must_use]
+    pub fn licence(&self) -> &crate::licence::state::LicenceState {
+        &self.licence
+    }
+
+    /// The stamp key server-minted identifiers carry.
+    #[must_use]
+    pub fn stamp(&self) -> &crate::licence::stamp::StampKey {
+        &self.stamp
     }
 
     /// Install the configured version [`Signer`] (RM common master06 §Digital
@@ -575,6 +608,7 @@ impl FerroEhrService {
         SigningCtx {
             system_id: self.effective_system_id(),
             signer: &self.signer,
+            stamp: &self.stamp,
             spec_profile: self.spec_profile,
             #[cfg(feature = "multimedia")]
             multimedia: self.multimedia.as_deref(),

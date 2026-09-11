@@ -103,27 +103,28 @@ pub async fn insert_audit(
     Ok((id, time_committed))
 }
 
-/// Insert a `contribution` row referencing its audit, returning its
-/// server-generated (`uuidv7()`) id. `ehr_id` is `None` for a demographic
-/// CONTRIBUTION (no EHR scope).
+/// Insert a `contribution` row referencing its audit under the server-minted
+/// `id` ([`crate::licence::stamp`]), returning it. `ehr_id` is `None` for a
+/// demographic CONTRIBUTION (no EHR scope).
 ///
 /// # Errors
 /// Returns [`StorageError::Database`] on a driver/insert failure.
 /// ([`StorageError::ContributionUidInUse`] is structurally unreachable here —
-/// the id is freshly generated — but kept as the absent-`RETURNING` mapping so
+/// the id is freshly minted — but kept as the absent-`RETURNING` mapping so
 /// the statement stays identical to the supplied-uid path in
 /// [`write_contribution`].)
 pub async fn insert_contribution(
     tx: &mut PgConnection,
+    id: Uuid,
     ehr_id: Option<EhrId>,
     audit_id: Uuid,
 ) -> Result<Uuid, StorageError> {
     let inserted: Option<Uuid> = sqlx::query_scalar(
         "INSERT INTO contribution (id, ehr_id, audit_id) \
-         VALUES (COALESCE($1, uuidv7()), $2, $3) \
+         VALUES ($1, $2, $3) \
          ON CONFLICT (id) DO NOTHING RETURNING id",
     )
-    .bind(None::<Uuid>)
+    .bind(id)
     .bind(ehr_id)
     .bind(audit_id)
     .fetch_optional(&mut *tx)

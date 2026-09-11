@@ -381,6 +381,13 @@ retired_key_paths = []       # e.g. ["/etc/ferroehr/signing-2025.pub.asc"]
 # signatures are always stored verbatim and never re-verified.
 #? verify_on_read = "strict" # off | warn | strict (unset ⇒ strict when enabled)
 
+# ── [licence] — the commercial licence token ──────────────────────────────────
+# FerroEHR is BUSL-1.1: production use in the course of a business needs a
+# commercial licence. The server runs identically with or without the token;
+# its state is logged once at boot and reported on GET /rest/status.
+[licence]
+#? file = "/etc/ferroehr/licence.asc"
+
 # ── [query] — AQL execution knobs ─────────────────────────────────────────────
 [query]
 plan_cache_capacity = 256    # 0 disables the plan cache

@@ -266,7 +266,7 @@ async fn export_ehrs_unknown_ehr_is_ehr_id_does_not_exist() {
     let db = testkit::db().await.expect("testkit database");
     let svc = FerroEhrService::new(db.pool());
     let err = svc
-        .extract_ehrs(ferroehr::ids::EhrId::new())
+        .extract_ehrs(ferroehr::ids::EhrId(uuid::Uuid::now_v7()))
         .await
         .expect_err("unknown EHR must fail");
     assert_eq!(
@@ -375,7 +375,7 @@ async fn extract_spec_flags_are_honoured() {
     extract["chapters"][0]["items"][0]["is_masked"] = json!(true);
     let err = svc
         .import_ehr(
-            Some(ferroehr::ids::EhrId::new()),
+            Some(ferroehr::ids::EhrId(uuid::Uuid::now_v7())),
             openehr_its::json::from_canonical_value(&extract).expect("extract"),
         )
         .await

@@ -156,7 +156,7 @@ async fn import_foreign(
     extract: Value,
     vo: &str,
 ) -> (ferroehr::ids::EhrId, ferroehr::ids::VoId) {
-    let target = ferroehr::ids::EhrId::new();
+    let target = ferroehr::ids::EhrId(Uuid::now_v7());
     svc.import_ehr(
         Some(target),
         openehr_its::json::from_canonical_value(&extract).expect("EXTRACT deserializes"),
@@ -465,7 +465,7 @@ async fn a_version_tree_with_branches_reexports_and_reimports_whole() {
     );
     let third_db = testkit::db().await.expect("testkit database");
     let third_svc = FerroEhrService::new(third_db.pool());
-    let third = ferroehr::ids::EhrId::new();
+    let third = ferroehr::ids::EhrId(Uuid::now_v7());
     third_svc
         .import_ehr(
             Some(third),

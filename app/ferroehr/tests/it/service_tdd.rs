@@ -96,7 +96,7 @@ async fn tdd_import_rejects_unknown_ehr() {
 
     let err = svc
         .import_tdd(
-            ferroehr::ids::EhrId::new(),
+            ferroehr::ids::EhrId(uuid::Uuid::now_v7()),
             tdd("persistent_minimal.en.v1__full.xml"),
         )
         .await

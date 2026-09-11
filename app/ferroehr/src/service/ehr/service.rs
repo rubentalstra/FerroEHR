@@ -590,7 +590,7 @@ impl FerroEhrService {
         a_subject_id: SubjectRef,
         an_ehr_status: Option<Value>,
     ) -> Result<EhrId, SmError> {
-        let ehr_id = EhrId::new();
+        let ehr_id = EhrId::minted(self.stamp());
         let status = status_for_subject(
             an_ehr_status.unwrap_or_else(initial_ehr_status),
             &a_subject_id,
@@ -733,7 +733,7 @@ impl FerroEhrService {
         an_ehr_status: Option<EhrStatus>,
         committal: Option<&crate::service::version_update::Committal>,
     ) -> Result<(EhrId, ResourceMeta), SmError> {
-        let ehr_id = EhrId::new();
+        let ehr_id = EhrId::minted(self.stamp());
         let meta = self
             .create_ehr_with_id_meta(ehr_id, an_ehr_status, committal)
             .await?;

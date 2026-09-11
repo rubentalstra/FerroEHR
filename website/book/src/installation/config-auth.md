@@ -327,6 +327,19 @@ on and at which level.
 > strict, so a file or environment variable still setting either one fails at
 > boot with an unknown-key error: delete the key; the probes are always on.
 
+## `[licence]`
+
+The commercial licence token. Every build embeds the licensor's
+`non-commercial` grant; a deployment that holds a `commercial` licence installs
+its token here. The server behaves identically under either grant and reports
+the one in force on `GET /rest/status` (`licence.use`, `licence.licensee`,
+`licence.not_after`, `licence.configured_token`). See
+[Licensing & legal](../licensing.md).
+
+| Key | Type | Default | Description |
+|---|---|---|---|
+| `file` | path | unset | The licence token the licensor issued. A token that cannot be read or does not verify is reported as `refused` on `/rest/status`; the embedded grant stays in force. |
+
 ## `[signing]`
 
 VERSION signing. On by default in `digest` mode, with read-time verification of

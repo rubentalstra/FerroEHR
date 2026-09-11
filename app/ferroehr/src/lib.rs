@@ -42,6 +42,7 @@ pub mod config;
 pub mod db;
 pub mod extensions;
 pub mod ids;
+pub mod licence;
 pub mod privacy;
 pub mod service;
 pub mod storage;

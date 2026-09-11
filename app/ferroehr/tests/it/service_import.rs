@@ -448,7 +448,7 @@ async fn import_ehr_into_fixed_fresh_id() {
 
     // A caller-provided fixed id (the SM's "same patient in other EHR services"
     // case): the clone lands under `fixed`, not the source id.
-    let fixed = ferroehr::ids::EhrId::new();
+    let fixed = ferroehr::ids::EhrId(uuid::Uuid::now_v7());
     let extract = export_one(&source, ehr).await;
     target
         .import_ehr(Some(fixed), extract)

@@ -32,6 +32,8 @@
 use serde::{Deserialize, Serialize};
 use uuid::Uuid;
 
+use crate::licence::stamp::StampKey;
+
 /// The identity of one EHR (RM ehr §EHR `ehr_id`).
 #[derive(
     Debug, Clone, Copy, PartialEq, Eq, Hash, PartialOrd, Ord, Serialize, Deserialize, sqlx::Type,
@@ -51,30 +53,20 @@ pub struct EhrId(pub Uuid);
 pub struct VoId(pub Uuid);
 
 impl EhrId {
-    /// A fresh time-ordered id for a new EHR.
+    /// A fresh time-ordered id for a new EHR, stamped with the server's
+    /// licence key ([`crate::licence::stamp`]).
     #[must_use]
-    pub fn new() -> Self {
-        Self(Uuid::now_v7())
-    }
-}
-
-impl Default for EhrId {
-    fn default() -> Self {
-        Self::new()
+    pub fn minted(stamp: &StampKey) -> Self {
+        Self(stamp.mint())
     }
 }
 
 impl VoId {
-    /// A fresh time-ordered id for a new versioned object.
+    /// A fresh time-ordered id for a new versioned object, stamped with the
+    /// server's licence key ([`crate::licence::stamp`]).
     #[must_use]
-    pub fn new() -> Self {
-        Self(Uuid::now_v7())
-    }
-}
-
-impl Default for VoId {
-    fn default() -> Self {
-        Self::new()
+    pub fn minted(stamp: &StampKey) -> Self {
+        Self(stamp.mint())
     }
 }
 

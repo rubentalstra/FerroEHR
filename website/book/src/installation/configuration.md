@@ -241,6 +241,7 @@ read stays a read.
 | `[admin]`, `[tenancy]`, `[management]` | The ADMIN API group, multi-tenancy, the ops-introspection surface | [Authentication & access](config-auth.md) |
 | `[smart]` | SMART App Launch discovery and scope enforcement | [Authentication & access](config-auth.md) |
 | `[signing]` | VERSION signing and read-time verification | [Authentication & access](config-auth.md) |
+| `[licence]` | The commercial licence token | [Authentication & access](config-auth.md) |
 | `[query]` | AQL execution budgets and result ceilings | [Integrations](config-integrations.md) |
 | `[events]`, `[fhir]` | Change eventing and the FHIR connector | [Integrations](config-integrations.md) |
 | `[terminology]`, `[multimedia]` | External terminology servers, multimedia externalization | [Integrations](config-integrations.md) |

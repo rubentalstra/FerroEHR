@@ -29,6 +29,17 @@ about it, and the sections below give the full text of each rule.
 The last two rows hold whatever else you are: they need a commercial licence
 even for an organisation the rows above would otherwise leave free.
 
+### Installing a commercial licence
+
+A commercial licence is a signed token file the licensor issues to you. Place
+it where the server can read it and point `[licence] file` (or
+`FERROEHR__LICENCE__FILE`) at it; `GET /ferroehr/rest/status` then reports
+`licence.use = "commercial"` with your organisation as `licensee`. Without a
+token the same field reports the `non-commercial` grant every build embeds.
+The server behaves identically under either; identifiers it mints carry a
+few bits derived from the licence id in place of random bits, so a record
+states which grant it was written under, and nothing else.
+
 Each version becomes Apache License 2.0 four years after that version is
 published. A commercial licence starts with a short conversation with the
 maintainer named in

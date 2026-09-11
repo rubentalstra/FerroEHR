@@ -10,8 +10,10 @@
 //! `/health/liveness`, `/health/readiness` — [`crate::extensions::health`]);
 //! this module serves only the status document.
 
+use axum::extract::State;
 use axum::routing::get;
 use axum::{Json, Router};
+use ferroehr::licence::state::LicenceStatus;
 use serde::Serialize;
 use utoipa_axum::router::OpenApiRouter;
 use utoipa_axum::routes;
@@ -19,40 +21,47 @@ use utoipa_axum::routes;
 use crate::state::AppState;
 use ferroehr::telemetry::provenance;
 
-/// `/rest/status` body — server and conformance-target versions. The
-/// `openehr_rest_api_version` is the single shared provenance identity
-/// ([`provenance::ITS_REST`]) — the released ITS-REST contract version that
-/// management `/info` and the System Options manifest also report.
+/// `/rest/status` body — server and conformance-target versions, plus the
+/// licence in force. The `openehr_rest_api_version` is the single shared
+/// provenance identity ([`provenance::ITS_REST`]) — the released ITS-REST
+/// contract version that management `/info` and the System Options manifest
+/// also report. `licence` is the public summary of the `[licence]` boot
+/// outcome ([`LicenceStatus`]): its state, use class, licensee and last valid
+/// day, never a refusal reason.
 #[derive(Debug, Serialize)]
 struct ServerStatus {
     status: &'static str,
     server_version: &'static str,
     openehr_rest_api_version: &'static str,
     timestamp: String,
+    licence: LicenceStatus,
 }
 
 /// Server status (`GET /ferroehr/rest/status`).
 ///
 /// OUR OWN SURFACE — no openEHR spec governs an operational status endpoint.
-/// Reports the server version and the tested ITS-REST contract identity.
-/// Unauthenticated (mounted outside the auth layer). The path above is the
-/// DEFAULT deployment spelling: a non-default `server.base_path` moves the live
-/// mount ([`router`]) and the served document follows it ([`openapi`]).
+/// Reports the server version, the tested ITS-REST contract identity and the
+/// licence in force. Unauthenticated (mounted outside the auth layer). The
+/// path above is the DEFAULT deployment spelling: a non-default
+/// `server.base_path` moves the live mount ([`router`]) and the served
+/// document follows it ([`openapi`]).
 #[utoipa::path(
     get, path = "/ferroehr/rest/status", tag = "status",
     responses(
         (status = 200, description = "Server up; a JSON `{status, server_version, \
-                                      openehr_rest_api_version, timestamp}` \
+                                      openehr_rest_api_version, timestamp, \
+                                      licence: {state, use?, licensee?, not_after?}}` \
                                       object.",
          body = serde_json::Value)
     )
 )]
-async fn status() -> Json<ServerStatus> {
+async fn status(State(state): State<AppState>) -> Json<ServerStatus> {
     Json(ServerStatus {
         status: "UP",
         server_version: env!("CARGO_PKG_VERSION"),
         openehr_rest_api_version: provenance::ITS_REST,
         timestamp: jiff::Timestamp::now().to_string(),
+        licence: state.backend().licence().status(),
     })
 }
 

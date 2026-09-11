@@ -76,6 +76,9 @@ pub struct FerroEhrConfig {
     pub management: management::ManagementConfig,
     /// `[signing]` — VERSION signing.
     pub signing: crate::versioning::signature::config::SigningConfig,
+    /// `[licence]` — the commercial licence token (optional; the server runs
+    /// identically without one).
+    pub licence: crate::licence::config::LicenceConfig,
     /// `[query]` — AQL execution knobs.
     pub query: crate::service::query::config::QueryConfig,
     /// `[events]` — contribution-outbox eventing (+ its admin API).

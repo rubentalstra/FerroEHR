@@ -646,7 +646,7 @@ async fn template_id_is_read_back_from_vo_version() {
     // Unknown object → None (not an error).
     assert_eq!(
         service
-            .template_of_version(ferroehr::ids::VoId::new(), None)
+            .template_of_version(ferroehr::ids::VoId(Uuid::now_v7()), None)
             .await
             .expect("unknown ok"),
         None

@@ -17,6 +17,20 @@ workflow refuses a tag that has no matching section here.
 
 ### Added
 
+- **The licence in force is explicit, verified and reported.** Every build
+  embeds the licensor's `non-commercial` grant (what BUSL-1.1 gives everyone);
+  a `commercial` licence is installed with the new `[licence] file` key
+  (`FERROEHR__LICENCE__FILE`), an OpenPGP-signed token verified at boot against
+  the licensor's embedded public certificate. The server behaves identically
+  under either grant: the outcome is logged once at boot and served on
+  `GET /rest/status` as `licence: {state, use, licensee, not_after,
+  configured_token}`. Every identifier the server mints (EHR ids, versioned
+  object ids, contribution ids) carries sixteen keyed bits derived from the
+  licence id in the trailing bytes of its UUIDv7, so a record says which grant
+  it was written under; the bits replace random bits only, never the timestamp
+  or counter, and carry no patient data. A configured token that does not
+  verify leaves the embedded grant in force and is reported as `refused`.
+
 - **The linkage resolution service: one path from a person to a record, over
   two credentials, under audit** (#3158). `ferroehr::service::linkage` opens,
   resolves, merges and splits the party-to-EHR mappings the previous increment
