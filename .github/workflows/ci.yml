@@ -853,11 +853,10 @@ jobs:
   # shipped since the last render fails the build instead of sitting on the
   # public site as "planned".
   #
-  # The roadmap board is the only source of "in progress" and needs a Projects
-  # (v2) read, which a repository token does not carry. The generator queries
-  # it only for OPEN issues that declare a control, so the job is green on a
-  # tracker with none; the first one that lands needs GH_TOKEN set to a token
-  # that can read the board, and the generator's failure message says so.
+  # The page reads nothing but the tracker: open controls render as Planned
+  # and the roadmap board is linked for the live column, so the repository
+  # token is enough to render and to check it (#3236). A board read would need
+  # a Projects (v2) scope, which only a standing personal access token carries.
   control-matrix:
     name: control-matrix
     if: github.event_name == 'pull_request' || github.event_name == 'merge_group'

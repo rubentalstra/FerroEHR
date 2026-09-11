@@ -133,7 +133,11 @@ which is announced at boot with a warning naming what it permits.
 ## `[privacy.identifier_scan]`
 
 Every string leaf of every clinical write is checked against the active
-identifier rules.
+identifier rules: the EHR, `EHR_STATUS`, COMPOSITION and directory writes,
+the CONTRIBUTION path, EHR-Extract import and the admin archive load. The two
+replay paths store a record verbatim, so for them a finding refuses the whole
+import or load rather than rewriting the content; demographic parties are the
+domain that holds identity and are not scanned.
 
 | Key | Type | Default | Description |
 |---|---|---|---|

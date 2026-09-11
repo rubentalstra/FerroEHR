@@ -180,11 +180,21 @@ pub(crate) struct ImportContainer {
 pub(crate) async fn commit_import(
     tx: &mut PgConnection,
     ctx: &SigningCtx<'_>,
+    privacy: &crate::privacy::PrivacyPolicy,
     ehr_id: EhrId,
     import_audit: &AuditInput,
     containers: Vec<ImportContainer>,
 ) -> Result<Uuid, ServiceError> {
-    commit_import_scoped(tx, ctx, Some(ehr_id), import_audit, containers, false).await
+    commit_import_scoped(
+        tx,
+        ctx,
+        privacy,
+        Some(ehr_id),
+        import_audit,
+        containers,
+        false,
+    )
+    .await
 }
 
 /// Land demographics-chapter parties into the demographic repository under their
@@ -198,6 +208,7 @@ pub(crate) async fn commit_import(
 pub(crate) async fn commit_demographic_import(
     tx: &mut PgConnection,
     ctx: &SigningCtx<'_>,
+    privacy: &crate::privacy::PrivacyPolicy,
     import_audit: &AuditInput,
     containers: Vec<ImportContainer>,
 ) -> Result<(), ServiceError> {
@@ -214,7 +225,7 @@ pub(crate) async fn commit_demographic_import(
     if fresh.is_empty() {
         return Ok(());
     }
-    commit_import_scoped(tx, ctx, None, import_audit, fresh, true).await?;
+    commit_import_scoped(tx, ctx, privacy, None, import_audit, fresh, true).await?;
     Ok(())
 }
 
@@ -310,6 +321,9 @@ async fn enforce_copy_closure(
 /// chain (master06 §Committal and Audits).
 struct ImportAct<'a> {
     ctx: &'a SigningCtx<'a>,
+    /// The clinical-side data-minimisation policy every replayed clinical body
+    /// is checked against before it is stored verbatim (#3237).
+    privacy: &'a crate::privacy::PrivacyPolicy,
     ehr_id: Option<EhrId>,
     contribution_id: Uuid,
     contribution_audit_id: Uuid,
@@ -512,6 +526,18 @@ async fn import_one_version(
     // carries. master06 §Copying: "the `ORIGINAL_VERSION` instance is never
     // modified — it remains a faithful copy of its original".
     let wrapped_original = wrapped_fragment(version);
+    // The same data-minimisation pass every clinical commit takes, over the
+    // received body. A replayed record is stored verbatim, never rewritten
+    // (master06 §Copying), so a refusal is the only way an identifier stays
+    // out of the clinical side; the demographic kinds are the domain that
+    // holds identity and take no scan (#3237).
+    if !cursor.kind.is_demographic() && !version.data.is_null() {
+        crate::service::ehr::validation::enforce_privacy(
+            act.privacy,
+            cursor.kind.as_str(),
+            &version.data,
+        )?;
+    }
     // The content, decomposed once: the node rows to write AND — through
     // `reassemble` — the exact bytes a later read will serve.
     let rows = if version.data.is_null() {
@@ -640,6 +666,7 @@ fn local_period(
 async fn commit_import_scoped(
     tx: &mut PgConnection,
     ctx: &SigningCtx<'_>,
+    privacy: &crate::privacy::PrivacyPolicy,
     ehr_id: Option<EhrId>,
     import_audit: &AuditInput,
     containers: Vec<ImportContainer>,
@@ -663,6 +690,7 @@ async fn commit_import_scoped(
     .await?;
     let act = ImportAct {
         ctx,
+        privacy,
         ehr_id,
         contribution_id,
         contribution_audit_id,
