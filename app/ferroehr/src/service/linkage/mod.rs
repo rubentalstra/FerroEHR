@@ -303,15 +303,24 @@ impl FerroEhrService {
                         .with_source(error),
                 )
             })?;
-        let subject = serde_json::json!({
-            "_type": "PARTY_SELF",
-            "external_ref": {
-                "_type": "PARTY_REF",
-                "namespace": minted.namespace,
-                "type": "PERSON",
-                "id": { "_type": "HIER_OBJECT_ID", "value": minted.id.to_string() }
-            }
-        });
+        // Built from the generated types, never a literal: the canonical shape
+        // (attribute order, mandatory attributes) is correct by construction.
+        let id =
+            openehr_base::prelude::HierObjectId::new(minted.id.to_string()).map_err(|error| {
+                LinkageError::Status(
+                    SmError::exception("the minted pseudonym is not a valid HIER_OBJECT_ID")
+                        .with_source(error),
+                )
+            })?;
+        let subject = openehr_its::json::to_canonical_value(
+            &openehr_rm::prelude::PartyProxy::PartySelf(openehr_rm::prelude::PartySelf {
+                external_ref: Some(openehr_base::prelude::PartyRef {
+                    namespace: minted.namespace.clone(),
+                    r#type: "PERSON".to_owned(),
+                    id: openehr_base::prelude::ObjectId::HierObjectId(id),
+                }),
+            }),
+        );
         if let Some(object) = status.as_object_mut() {
             object.remove("uid");
             object.insert("subject".to_owned(), subject);

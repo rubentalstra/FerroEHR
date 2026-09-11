@@ -229,7 +229,7 @@ data:
         enabled = true
       [audit.store]
         enabled = true
-        retention_days = 90.0
+        retention_days = 1830.0
       [audit.syslog]
         enabled = true
         host = "arr.example.com"
@@ -711,7 +711,7 @@ spec:
         # secret values. Hashing the ConfigMap template alone missed the last two,
         # so a rotated passphrase or an edited Cedar policy propagated into the
         # volume while every pod kept running on the value it read at startup.
-        checksum/config: 5c705d3dba9f0ba88c7bed60c774c3eaf73bd249afbb7cedc944d32fcef1e420
+        checksum/config: eb7101971fedc7bc4a71b18c462329b42a515dd20b15fa1c5b6899e818d426c4
         prometheus.io/scrape: "true"
         prometheus.io/port: "9100"
         prometheus.io/path: "/management/prometheus"
