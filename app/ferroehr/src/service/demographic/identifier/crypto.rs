@@ -66,6 +66,13 @@ const CIPHER_KEY_LABEL: &str = "ferroehr:national-identifier:cipher:v1";
 /// identifier up never has to hold the one that opens the ciphertext.
 const LOOKUP_KEY_LABEL: &str = "ferroehr:national-identifier:lookup:v1";
 
+/// The derivation label of the subject pseudonym a party is known by on the
+/// clinical side (#3232). Its own label under the LINKAGE domain: a holder of
+/// the demographic lookup digests must not be able to confirm a pseudonym
+/// against them, and the map from party to pseudonym is exactly the
+/// re-attribution the linkage domain exists to hold apart.
+const SUBJECT_PSEUDONYM_LABEL: &str = "ferroehr:subject-pseudonym:v1";
+
 /// The pseudonymisation domain a subkey belongs to.
 ///
 /// The three domains are the ones the storage layer separates: the clinical
@@ -151,6 +158,23 @@ impl RootKey {
         Ok(Self(secrecy::SecretBox::new(Box::new(bytes))))
     }
 
+    /// The opaque subject pseudonym `party` is known by on the clinical side,
+    /// in `tenant` (#3232).
+    ///
+    /// `HMAC-SHA-256(subkey, party)` truncated to sixteen bytes and stamped as
+    /// an RFC 9562 version-8 UUID, so it has the shape the subject rule admits
+    /// and the same party always yields the same pseudonym within a tenant. The
+    /// subkey is derived under [`KeyDomain::Linkage`] with its own label, so
+    /// neither the demographic digests nor any other purpose shares it.
+    #[must_use]
+    pub fn subject_pseudonym(&self, tenant: Uuid, party: Uuid) -> Uuid {
+        let key = self.subkey(SUBJECT_PSEUDONYM_LABEL, KeyDomain::Linkage, tenant);
+        let tag = keyed_tag(&key, party.as_bytes());
+        let mut bytes = [0_u8; 16];
+        bytes.copy_from_slice(tag.get(..16).unwrap_or(&[0_u8; 16]));
+        uuid::Builder::from_custom_bytes(bytes).into_uuid()
+    }
+
     /// Derive the per-domain, per-tenant subkey for one labelled purpose.
     ///
     /// SP 800-108 KDF in counter mode with HMAC-SHA-256 as the PRF, one block:
@@ -177,6 +201,19 @@ impl RootKey {
         mac.update(&256_u32.to_be_bytes());
         mac.finalize().into_bytes().into()
     }
+}
+
+/// `HMAC-SHA-256(key, message)`, the PRF every derivation here rests on.
+fn keyed_tag(key: &[u8; 32], message: &[u8]) -> [u8; 32] {
+    #[expect(
+        clippy::expect_used,
+        reason = "HMAC accepts a key of any length and the key is a fixed 32 bytes, so this \
+                  constructor has no reachable failure"
+    )]
+    let mut mac = <Hmac<Sha256> as HmacKeyInit>::new_from_slice(key)
+        .expect("HMAC should accept a 32-byte key");
+    mac.update(message);
+    mac.finalize().into_bytes().into()
 }
 
 /// The per-tenant keys one deployment protects identifiers with.

@@ -66,6 +66,16 @@ use crate::system_log::event::{
     AccessDomain, AuditEvent, EventActionCode, EventOutcome, ObjectClass,
 };
 
+/// The subject reference a party is known by on the clinical side: an opaque
+/// pseudonym in a declared namespace, minted by the server (#3232).
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct SubjectPseudonym {
+    /// The declared pseudonym namespace the value belongs to.
+    pub namespace: String,
+    /// The opaque, tenant-bound pseudonym.
+    pub id: uuid::Uuid,
+}
+
 /// What went wrong resolving or rewriting the party-to-EHR map.
 ///
 /// Typed rather than stringly: a caller distinguishing "this party is already
@@ -104,6 +114,32 @@ pub enum LinkageError {
     /// The linkage store refused or failed.
     #[error("the linkage store is unavailable")]
     Database(#[source] sqlx::Error),
+    /// No pseudonym namespace is declared, so there is nothing to mint a
+    /// subject reference in.
+    ///
+    /// The namespace is a deployment fact (`[privacy] subject_namespaces`),
+    /// never something the server invents: a minted pseudonym must be one the
+    /// subject rule admits, and that rule is defined by the declaration.
+    #[error(
+        "no pseudonym namespace is declared ([privacy] subject_namespaces), so no subject \
+         reference can be minted"
+    )]
+    NoPseudonymNamespace,
+    /// No identifier-protection key is configured, so a pseudonym cannot be
+    /// derived.
+    ///
+    /// The pseudonym is a keyed derivation over the same root key that seals
+    /// national identifiers (`[demographic.identifier_protection]`), one
+    /// scheme rather than two.
+    #[error(
+        "no identifier-protection key is configured ([demographic.identifier_protection]), so \
+         no subject pseudonym can be derived"
+    )]
+    NoMintingKey,
+    /// Writing the minted subject reference onto the EHR's `EHR_STATUS`
+    /// failed.
+    #[error("writing the EHR_STATUS subject reference failed")]
+    Status(#[source] SmError),
     /// The operation ran but its access record could not be taken, and the
     /// deployment fails closed, so the result is withheld.
     ///
@@ -195,6 +231,121 @@ impl FerroEhrService {
             return Ok(None);
         };
         self.resolve_ehr_for_party(party_id).await
+    }
+
+    /// The opaque subject pseudonym `party` is known by on the clinical side,
+    /// minted by the server (#3232).
+    ///
+    /// A keyed, tenant-bound derivation over the party id under the linkage
+    /// domain ([`crate::service::demographic::identifier::crypto::RootKey::subject_pseudonym`]),
+    /// in the first declared pseudonym namespace. The same party always yields
+    /// the same pseudonym within a tenant, and no caller-supplied value enters
+    /// it, so a national identifier cannot become a subject reference on this
+    /// path by construction. The subject rule
+    /// ([`crate::privacy::PrivacyPolicy::subject_rule_in_force`]) still governs every
+    /// value that arrives from elsewhere: a client writing `EHR_STATUS`
+    /// directly, an EHR-Extract, an archive load.
+    ///
+    /// # Errors
+    /// [`LinkageError::NoPseudonymNamespace`] when the deployment declares no
+    /// namespace, [`LinkageError::NoMintingKey`] when it configures no
+    /// identifier-protection key.
+    pub fn mint_subject_pseudonym(&self, party: VoId) -> Result<SubjectPseudonym, LinkageError> {
+        let namespace = self
+            .privacy
+            .subject_namespaces()
+            .first()
+            .cloned()
+            .ok_or(LinkageError::NoPseudonymNamespace)?;
+        let engine = self
+            .identifier_protection()
+            .ok_or(LinkageError::NoMintingKey)?;
+        Ok(SubjectPseudonym {
+            namespace,
+            id: engine.subject_pseudonym(party.0),
+        })
+    }
+
+    /// Make `party` the subject of `ehr`: mint its pseudonym, write it as the
+    /// EHR's `EHR_STATUS.subject.external_ref`, and open the mapping.
+    ///
+    /// The one path on which FerroEHR itself resolves a party into a subject
+    /// reference, and the value written is the server's, never a caller's
+    /// (#3232). The status write is an ordinary versioned `EHR_STATUS` commit
+    /// (RM ehr master04 §EHR Status; the `PARTY_SELF.external_ref` slot of
+    /// §`PARTY_SELF`), so the subject rule, the one-EHR-per-subject index and the
+    /// database guard all see it; the mapping opens after it, so a party that
+    /// is already linked leaves the EHR carrying the pseudonym it would carry
+    /// anyway.
+    ///
+    /// # Errors
+    /// The minting refusals above; [`LinkageError::Status`] when the EHR has no
+    /// `EHR_STATUS`, the pseudonym already names another EHR, or the commit
+    /// fails; and every [`Self::link`] error.
+    pub async fn link_as_subject(
+        &self,
+        party: VoId,
+        ehr: EhrId,
+    ) -> Result<SubjectPseudonym, LinkageError> {
+        let minted = self.mint_subject_pseudonym(party)?;
+        let mut status = self
+            .get_ehr_status_at_time(ehr, None)
+            .await
+            .map_err(LinkageError::Status)?;
+        let preceding = status
+            .pointer("/uid/value")
+            .and_then(serde_json::Value::as_str)
+            .map(str::parse::<openehr_base::prelude::ObjectVersionId>)
+            .transpose()
+            .map_err(|error| {
+                LinkageError::Status(
+                    SmError::exception("the current EHR_STATUS carries no readable version uid")
+                        .with_source(error),
+                )
+            })?;
+        // Built from the generated types, never a literal: the canonical shape
+        // (attribute order, mandatory attributes) is correct by construction.
+        let id =
+            openehr_base::prelude::HierObjectId::new(minted.id.to_string()).map_err(|error| {
+                LinkageError::Status(
+                    SmError::exception("the minted pseudonym is not a valid HIER_OBJECT_ID")
+                        .with_source(error),
+                )
+            })?;
+        let subject = openehr_its::json::to_canonical_value(
+            &openehr_rm::prelude::PartyProxy::PartySelf(openehr_rm::prelude::PartySelf {
+                external_ref: Some(openehr_base::prelude::PartyRef {
+                    namespace: minted.namespace.clone(),
+                    r#type: "PERSON".to_owned(),
+                    id: openehr_base::prelude::ObjectId::HierObjectId(id),
+                }),
+            }),
+        );
+        if let Some(object) = status.as_object_mut() {
+            object.remove("uid");
+            object.insert("subject".to_owned(), subject);
+        }
+        let data: openehr_rm::prelude::EhrStatus = openehr_its::json::from_canonical_value(&status)
+            .map_err(|error| {
+                LinkageError::Status(
+                    SmError::exception("the current EHR_STATUS does not decode as EHR_STATUS")
+                        .with_source(error),
+                )
+            })?;
+        let mut envelope = crate::service::version_update::direct_envelope(data);
+        envelope.preceding_version_uid = preceding;
+        if let openehr_its::rest::generated::common::UpdateAudit::UpdateAudit(audit) =
+            &mut envelope.commit_audit
+        {
+            audit.change_type = crate::service::version_update::change_type_coded(
+                crate::versioning::audit::change_type::MODIFICATION,
+            );
+        }
+        self.replace_ehr_status(ehr, envelope)
+            .await
+            .map_err(LinkageError::Status)?;
+        self.link(party, ehr).await?;
+        Ok(minted)
     }
 
     /// Merge `from_party` into `into_party`: the EHR the first was the subject

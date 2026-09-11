@@ -583,3 +583,69 @@ async fn flamegraph_over_cap_is_400() {
         "frequency beyond management.profiling.max_frequency must refuse"
     );
 }
+
+/// The management surface sits inside the audit trail (#3244): a request to
+/// `/management/info` leaves a system-domain access record under its own
+/// operation id, so a runtime filter change or an env read is never an
+/// unrecorded administrative act.
+#[tokio::test]
+async fn a_management_request_is_recorded_in_the_audit_trail() {
+    use ferroehr::system_log::config::{AuditConfig, StoreConfig};
+    use ferroehr::system_log::sender::{AuditHandle, start};
+
+    let (pg, pool) = common::migrated_pool().await;
+    let audit = AuditConfig {
+        enabled: true,
+        store: StoreConfig {
+            enabled: true,
+            retention_days: 0,
+        },
+        ..AuditConfig::default()
+    };
+    let (sender, _handle): (_, AuditHandle) = start(audit, None, Some(pool.clone()))
+        .await
+        .expect("the audit sender");
+    let service =
+        Arc::new(ferroehr::service::FerroEhrService::new(pool.clone()).with_audit(sender));
+    let config = base_config(auth_config(&["ADMIN"]));
+    let authz = authz_for(&config, true);
+    let observability = one_endpoint(EndpointLevels {
+        info: AccessLevel::AdminOnly,
+        ..EndpointLevels::default()
+    });
+    let app = ferroehr_rest::build_full(config, service, authz, observability).expect("build");
+    assert_eq!(
+        status_of(app, get_auth("/management/info")).await,
+        StatusCode::OK
+    );
+
+    let deadline = std::time::Instant::now() + std::time::Duration::from_secs(5);
+    let row = loop {
+        let found: Option<(String, Option<String>, String)> = sqlx::query_as(
+            "SELECT operation, principal, domain FROM audit.audit_event \
+             WHERE operation = 'management_info' ORDER BY recorded_at DESC LIMIT 1",
+        )
+        .fetch_optional(&pool)
+        .await
+        .expect("read the trail");
+        if let Some(row) = found {
+            break row;
+        }
+        if std::time::Instant::now() >= deadline {
+            let landed: Vec<Option<String>> =
+                sqlx::query_scalar("SELECT operation FROM audit.audit_event ORDER BY recorded_at")
+                    .fetch_all(&pool)
+                    .await
+                    .expect("read the trail");
+            panic!("no management_info record landed; the trail holds {landed:?}");
+        }
+        tokio::time::sleep(std::time::Duration::from_millis(100)).await;
+    };
+    assert_eq!(row.0, "management_info");
+    assert!(row.1.is_some(), "the admin who read it is named");
+    assert_eq!(
+        row.2, "system",
+        "a management read touches no pseudonymisation domain"
+    );
+    drop(pg);
+}

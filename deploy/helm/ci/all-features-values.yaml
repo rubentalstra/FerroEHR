@@ -149,7 +149,10 @@ config:
     enterprise_site_id: site-1
     store:
       enabled: true
-      retention_days: 90
+      # Five years in days: the default identifier rules name NL, whose
+      # access-log floor is five years (Besluit vaststelling bewaartermijn
+      # logging), and the server refuses a shorter retention at boot.
+      retention_days: 1830
     syslog:
       enabled: true
       host: arr.example.com

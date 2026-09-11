@@ -1761,3 +1761,99 @@ async fn an_identity_resolves_to_an_ehr_across_three_separated_credentials() {
         "the linkage credential must not be able to read the identifier map"
     );
 }
+
+/// The server mints the subject pseudonym (#3232): `link_as_subject` derives
+/// it from the party under the linkage key, writes it as the EHR's
+/// `EHR_STATUS.subject.external_ref` in the declared namespace, and opens the
+/// mapping. No caller value enters the path, so a national identifier cannot
+/// become a subject reference through it; the same party mints the same
+/// pseudonym, a different party a different one.
+#[tokio::test]
+async fn the_server_mints_the_subject_pseudonym_and_no_caller_value_enters_it() {
+    use ferroehr::service::demographic::identifier::engine::IdentifierProtection;
+    use ferroehr::service::linkage::LinkageError;
+
+    let db = testkit::db().await.expect("testkit database");
+    let pool = db.pool();
+    let engine = IdentifierProtection::from_config(
+        &ferroehr::service::demographic::identifier::config::IdentifierProtectionConfig {
+            enabled: true,
+            schemes: vec!["nl-bsn".to_owned()],
+            key: Some(ferroehr::config::secret::Secret::new(TEST_ROOT_KEY)),
+            key_file: None,
+        },
+        Some(&ferroehr::config::secret::Secret::new(TEST_ROOT_KEY)),
+        ferroehr::db::demographic_pool_from(&pool),
+    )
+    .expect("the engine builds")
+    .expect("protection is enabled");
+    let namespace = "urn:test:pseudonym";
+    let policy =
+        ferroehr::privacy::PrivacyPolicy::compile(&ferroehr::privacy::config::PrivacyConfig {
+            subject_namespaces: vec![namespace.to_owned()],
+            ..ferroehr::privacy::config::PrivacyConfig::default()
+        })
+        .expect("the policy compiles");
+    let service = FerroEhrService::new(pool.clone())
+        .with_identifier_protection(std::sync::Arc::new(engine))
+        .with_privacy(std::sync::Arc::new(policy));
+
+    let party = ferroehr::ids::VoId(Uuid::now_v7());
+    let ehr = service.create_ehr(None).await.expect("an EHR");
+
+    let minted = service
+        .link_as_subject(party, ehr)
+        .await
+        .expect("the party becomes the subject");
+    assert_eq!(minted.namespace, namespace);
+    assert_ne!(minted.id, party.0, "the pseudonym is not the party id");
+    assert_eq!(minted.id.get_version_num(), 8, "an RFC 9562 custom UUID");
+
+    let (subject_id, subject_namespace): (Option<String>, Option<String>) =
+        sqlx::query_as("SELECT subject_id, subject_namespace FROM ehr WHERE id = $1")
+            .bind(Uuid::from(ehr))
+            .fetch_one(&pool)
+            .await
+            .expect("the promoted subject columns");
+    assert_eq!(subject_id.as_deref(), Some(minted.id.to_string().as_str()));
+    assert_eq!(subject_namespace.as_deref(), Some(namespace));
+    assert_eq!(
+        service.resolve_ehr_for_party(party).await.expect("resolve"),
+        Some(ehr),
+        "the mapping opened"
+    );
+
+    assert_eq!(
+        service.mint_subject_pseudonym(party).expect("mint again"),
+        minted,
+        "the same party mints the same pseudonym"
+    );
+    let other = ferroehr::ids::VoId(Uuid::now_v7());
+    assert_ne!(
+        service
+            .mint_subject_pseudonym(other)
+            .expect("mint another")
+            .id,
+        minted.id,
+        "a different party mints a different pseudonym"
+    );
+
+    // Without a declared namespace there is nothing to mint into; without the
+    // key there is nothing to derive from. Both refuse, typed.
+    let unnamed = FerroEhrService::new(pool.clone()).with_identifier_protection_opt(None);
+    assert!(matches!(
+        unnamed.mint_subject_pseudonym(party),
+        Err(LinkageError::NoPseudonymNamespace)
+    ));
+    let keyless = FerroEhrService::new(pool.clone()).with_privacy(std::sync::Arc::new(
+        ferroehr::privacy::PrivacyPolicy::compile(&ferroehr::privacy::config::PrivacyConfig {
+            subject_namespaces: vec![namespace.to_owned()],
+            ..ferroehr::privacy::config::PrivacyConfig::default()
+        })
+        .expect("compiles"),
+    ));
+    assert!(matches!(
+        keyless.mint_subject_pseudonym(party),
+        Err(LinkageError::NoMintingKey)
+    ));
+}

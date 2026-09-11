@@ -203,6 +203,13 @@ impl PrivacyPolicy {
         &self.rules
     }
 
+    /// The pseudonym namespaces this deployment declared, in configuration
+    /// order; the first is the one the server mints into (#3232).
+    #[must_use]
+    pub fn subject_namespaces(&self) -> &[String] {
+        &self.subject_namespaces
+    }
+
     /// Whether the subject-reference rule is in force (the deployment declared
     /// at least one pseudonym namespace).
     #[must_use]

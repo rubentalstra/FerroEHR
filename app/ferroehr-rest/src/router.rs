@@ -153,6 +153,10 @@ pub fn router(state: AppState, authenticator: Arc<Authenticator>) -> Router {
         None => inner,
     };
 
+    // The management surface sits outside the API tree but inside the audit
+    // trail (#3244): every management request is recorded as a system-domain
+    // access, `/management/loggers` writes included.
+    let audit_state = state.clone();
     let inner: Router = with_shared_stack(inner, cfg.server.limits.ceiling(), cors, state);
 
     // The manifest advertises the live mounted-group set, so it never names a
@@ -190,6 +194,10 @@ pub fn router(state: AppState, authenticator: Arc<Authenticator>) -> Router {
             observability,
             authenticator,
             mgmt_rbac,
+        ))
+        .layer(from_fn_with_state(
+            audit_state,
+            crate::system_log::middleware::middleware,
         ));
         app.merge(mgmt)
     } else {

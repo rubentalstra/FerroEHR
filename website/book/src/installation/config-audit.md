@@ -60,7 +60,7 @@ purpose_codes = []
 | Key | Type | Default | Description |
 |---|---|---|---|
 | `enabled` | bool | `true` | Persist every record in the `audit` schema, served through the ITI-81 `GET /fhir/r4/AuditEvent` search. |
-| `retention_days` | int | `0` | Days to keep records; `0` keeps them forever. Applied hourly by the retention reaper. |
+| `retention_days` | int | `0` | Days to keep records; `0` keeps them forever. Applied hourly by the retention reaper. A non-zero value below the retention floor of a jurisdiction the active `[privacy.identifier_scan]` rules name is a boot error naming both numbers; see [Audit trail](../audit.md#retention-and-who-chooses-it). |
 
 The local store is the durability anchor of the whole subsystem: with it on, the
 FHIR feed drains from it, so a down repository loses nothing.

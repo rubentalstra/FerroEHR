@@ -215,6 +215,21 @@ Wabvpz for how long it must survive. The setting is per node, not per tenant:
 a multi-tenant deployment whose tenants need different horizons needs
 different nodes, and that limitation is stated here rather than discovered.
 
+**A floor is enforced where a jurisdiction sets one.** The jurisdictions a
+deployment answers to are the ones its `[privacy.identifier_scan]` rules name,
+and where one publishes a minimum retention for the access log the server
+refuses to boot with a shorter `retention_days`, naming the configured value
+and the floor. `0` always passes. The floors registered:
+
+| Jurisdiction | Floor | Source |
+|---|---|---|
+| NL | five years from the moment the entry is written (`1830` days, the most five calendar years can span) | [Besluit vaststelling bewaartermijn logging](https://wetten.overheid.nl/BWBR0042391) (Stcrt. 2019, 38007), under Art. 5 of the [Besluit elektronische gegevensverwerking door zorgaanbieders](https://wetten.overheid.nl/BWBR0040238), which binds the period to NEN 7513 |
+
+The other shipped jurisdictions (FI, GB, NO, SE) have no floor registered: an
+unknown requirement is never guessed at, and a deployment there sets its own.
+The effective retention is on the boot line beside the audit-enabled facts and
+on `GET /management/info` under `audit`.
+
 ### Getting the log out
 
 Two routes, and they answer different questions.

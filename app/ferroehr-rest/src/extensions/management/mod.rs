@@ -251,7 +251,43 @@ pub fn router(state: ManagementState) -> Router {
         );
     }
 
-    router.with_state(state)
+    router
+        .layer(axum::middleware::from_fn(stamp_audit_op))
+        .with_state(state)
+}
+
+/// Stamp the audit operation id on every management response (#3244), so the
+/// audit middleware records the request under a `management_*` operation the
+/// classification table names, rather than the anonymous default.
+async fn stamp_audit_op(req: axum::extract::Request, next: Next) -> Response {
+    let op = audit_op_for(req.method(), req.uri().path());
+    let mut resp = next.run(req).await;
+    resp.extensions_mut()
+        .insert(crate::system_log::middleware::AuditOpId(op));
+    resp
+}
+
+/// The audit operation id of a management request: the endpoint, and for the
+/// loggers the verb, because a filter change is a different act from a read.
+fn audit_op_for(method: &http::Method, path: &str) -> &'static str {
+    let endpoint = path
+        .trim_end_matches('/')
+        .rsplit('/')
+        .next()
+        .unwrap_or_default();
+    match (method, endpoint) {
+        (_, "info") => "management_info",
+        (_, "prometheus") => "management_prometheus",
+        (_, "metrics") => "management_metrics",
+        (_, "env") => "management_env",
+        (_, "flamegraph") => "management_flamegraph",
+        (m, "loggers") if m == http::Method::POST => "management_loggers_set",
+        (m, "loggers") if m == http::Method::DELETE => "management_loggers_reset",
+        (_, "loggers") => "management_loggers_get",
+        // `/metrics/{name}`: the endpoint is the segment before the name.
+        _ if path.contains("/metrics/") => "management_metrics",
+        _ => "management",
+    }
 }
 
 // ── OpenAPI document (the full management surface, documented unconditionally) ─
@@ -553,22 +589,35 @@ pub(crate) async fn access_middleware(
     next: Next,
 ) -> Response {
     match guard.check(req.headers()).await {
-        Ok(()) => next.run(req).await,
+        Ok(principal) => {
+            let mut resp = next.run(req).await;
+            // Republished for the audit layer outside this router, which
+            // names the person behind a management request from the response
+            // extensions the way the API's authentication layer does (#3244).
+            if let Some(principal) = principal {
+                resp.extensions_mut().insert(principal);
+            }
+            resp
+        }
         Err(resp) => *resp,
     }
 }
 
 impl AccessGuard {
-    /// Enforce the access level against the request headers.
-    async fn check(&self, headers: &HeaderMap) -> Result<(), Box<Response>> {
+    /// Enforce the access level against the request headers, handing back the
+    /// authenticated principal where one was established.
+    async fn check(
+        &self,
+        headers: &HeaderMap,
+    ) -> Result<Option<crate::extensions::access::authn::Principal>, Box<Response>> {
         match self.level {
             // Defensive: an `Off` endpoint is never mounted; if reached, 404.
             AccessLevel::Off => Err(Box::new(StatusCode::NOT_FOUND.into_response())),
-            AccessLevel::Public => Ok(()),
+            AccessLevel::Public => Ok(None),
             AccessLevel::Private | AccessLevel::AdminOnly => {
                 // Auth disabled (dev): the surface is unauthenticated by design.
                 if !self.authenticator.enabled() {
-                    return Ok(());
+                    return Ok(None);
                 }
                 #[expect(
                     clippy::map_err_ignore,
@@ -591,7 +640,7 @@ impl AccessGuard {
                 {
                     return Err(Box::new(forbidden(&reason)));
                 }
-                Ok(())
+                Ok(Some(authenticated.principal))
             }
         }
     }

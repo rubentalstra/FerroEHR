@@ -60,6 +60,24 @@ subject_namespaces = ["urn:ferroehr:pseudonym"]
 FERROEHR__PRIVACY__SUBJECT_NAMESPACES=urn:ferroehr:pseudonym,mpi.example
 ```
 
+What a deployment gets by default, and what declaring a namespace adds:
+
+| | `subject_namespaces` empty (default) | declared |
+|---|---|---|
+| `EHR_STATUS.subject.external_ref` written by a client | accepted with any namespace and any identifier, as the openEHR REST API admits | must name a declared namespace and carry a UUID; anything else is a `422` |
+| The database | no shape held | a trigger on `ehr` refuses a non-UUID subject reference whichever session writes it |
+| Minting | refused: there is no namespace to mint into | `link_as_subject` derives the pseudonym itself, in the first declared namespace |
+
+Where FerroEHR itself makes a party the subject of an EHR
+(`service::linkage::link_as_subject`), the pseudonym is minted by the server: a
+keyed, tenant-bound derivation over the party id under the linkage key, so no
+caller-supplied value enters the subject reference on that path and a national
+identifier cannot become one. The rule above still governs every value that
+arrives from elsewhere, a client writing `EHR_STATUS` directly, an EHR-Extract,
+an archive load, which is why declaring the namespace remains the deployment's
+act: minting needs a namespace to mint into, and the rule is what makes a value
+from outside meet the same bar.
+
 **Empty is the default, and it leaves the rule out of force.** A pseudonym
 namespace is a deployment fact — which service mints the tokens — and there is
 no name a server could invent for an operator. Declaring one is the same act as

@@ -309,6 +309,28 @@ impl AuditPosture {
     }
 }
 
+/// The minimum number of days a jurisdiction requires an access-log record to
+/// be kept, where one is registered (#3242).
+///
+/// Keyed by ISO 3166-1 alpha-2, the same key the identifier rules carry, so a
+/// deployment's jurisdictions are the ones its `[privacy.identifier_scan]`
+/// rules name. A jurisdiction with no registered floor returns `None`: an
+/// unknown requirement is never guessed at.
+///
+/// `NL`: five years from the moment the entry is written, Besluit vaststelling
+/// bewaartermijn logging (<https://wetten.overheid.nl/BWBR0042391>, Stcrt.
+/// 2019, 38007) under Art. 5 of the Besluit elektronische gegevensverwerking
+/// door zorgaanbieders (<https://wetten.overheid.nl/BWBR0040238>), which binds
+/// the retention to NEN 7513. Five calendar years never exceed 1830 days, so
+/// that is the floor in days.
+#[must_use]
+pub fn retention_floor_days(jurisdiction: &str) -> Option<u32> {
+    match jurisdiction {
+        "NL" => Some(1830),
+        _ => None,
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
