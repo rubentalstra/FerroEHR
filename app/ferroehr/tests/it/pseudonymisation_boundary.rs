@@ -1548,6 +1548,10 @@ async fn a_merge_and_a_split_keep_their_history_and_leave_one_open_mapping() {
     assert_eq!(doubly_open, 0, "no party holds two mappings in force");
 }
 
+/// One linkage access record: domain, principal, purpose, result count and
+/// the FHIR rendering as text.
+type LinkageAccessRow = (String, Option<String>, Option<String>, Option<i64>, String);
+
 /// Resolving a party to its EHR is recorded as a linkage-domain access,
 /// naming the actor, the declared purpose and what it resolved.
 ///
@@ -1600,17 +1604,16 @@ async fn resolving_a_party_to_its_ehr_is_recorded_as_an_access() {
     let object_id = format!("party-ehr:{party}");
     let deadline = std::time::Instant::now() + std::time::Duration::from_secs(5);
     let record = loop {
-        let found: Option<(String, Option<String>, Option<String>, Option<i64>, String)> =
-            sqlx::query_as(
-                "SELECT domain, principal, purpose, result_count, fhir::text \
-                 FROM audit.audit_event \
-                 WHERE domain = 'linkage' AND action = 'R' AND resource_id = $1 \
-                 ORDER BY recorded_at DESC LIMIT 1",
-            )
-            .bind(&object_id)
-            .fetch_optional(&pool)
-            .await
-            .expect("read the access log");
+        let found: Option<LinkageAccessRow> = sqlx::query_as(
+            "SELECT domain, principal, purpose, result_count, fhir::text \
+             FROM audit.audit_event \
+             WHERE domain = 'linkage' AND action = 'R' AND resource_id = $1 \
+             ORDER BY recorded_at DESC LIMIT 1",
+        )
+        .bind(&object_id)
+        .fetch_optional(&pool)
+        .await
+        .expect("read the access log");
         if let Some(row) = found {
             break row;
         }

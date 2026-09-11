@@ -50,7 +50,8 @@ struct ServerStatus {
     responses(
         (status = 200, description = "Server up; a JSON `{status, server_version, \
                                       openehr_rest_api_version, timestamp, \
-                                      licence: {state, use?, licensee?, not_after?}}` \
+                                      licence: {state, use?, licensee?, not_after?, \
+                                      configured_token}}` \
                                       object.",
          body = serde_json::Value)
     )

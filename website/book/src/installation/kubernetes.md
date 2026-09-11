@@ -38,7 +38,7 @@ kubectl -n ferroehr create secret generic ferroehr-db \
   --from-literal=FERROEHR__DB__URL='postgres://ferroehr_app:***@pg-host:5432/ferroehr?sslmode=verify-full'
 
 helm install ferroehr oci://ghcr.io/rubentalstra/charts/ferroehr \
-  --version 8.1.0 -n ferroehr \
+  --version 8.2.0 -n ferroehr \
   --set database.existingSecret=ferroehr-db \
   --set image.tag=4.1.1
 ```
@@ -55,7 +55,7 @@ helm install ferroehr oci://ghcr.io/rubentalstra/charts/ferroehr \
 reference. To read the chart's metadata without installing it:
 
 ```shell
-helm show chart oci://ghcr.io/rubentalstra/charts/ferroehr --version 8.1.0
+helm show chart oci://ghcr.io/rubentalstra/charts/ferroehr --version 8.2.0
 ```
 
 ### Pin two versions, not one
@@ -68,7 +68,7 @@ against.
 
 | | Selects | Pin with | Line |
 |---|---|---|---|
-| Chart version | templates, values schema, defaults | `--version 8.1.0` | SemVer over the chart's own contract |
+| Chart version | templates, values schema, defaults | `--version 8.2.0` | SemVer over the chart's own contract |
 | Image tag | the server binary | `--set image.tag=4.1.1` (or `image.digest`) | the application's SemVer line |
 
 Always pin the image to an immutable version or, better, a `@sha256` digest,
@@ -167,7 +167,7 @@ metadata lists: the server, and the optional viewer.
 > the image itself as the authority:
 >
 > ```shell
-> helm template ferroehr oci://ghcr.io/rubentalstra/charts/ferroehr --version 8.1.0 \
+> helm template ferroehr oci://ghcr.io/rubentalstra/charts/ferroehr --version 8.2.0 \
 >   -s templates/configmap.yaml --set database.existingSecret=ferroehr-db \
 >   | sed -n '/ferroehr.toml/,$p' | sed '1d;s/^    //' > /tmp/ferroehr.toml
 > docker run --rm -v /tmp/ferroehr.toml:/etc/ferroehr/ferroehr.toml:ro \
@@ -328,11 +328,16 @@ and issues no DDL doing it.
 ## Secrets and mounted config
 
 Some material is file-shaped rather than a value: ABAC policy files, ATNA TLS
-certificates, terminology-server client certificates, a JWKS blob, and the PGP
-signing key. Supply these under `config.files`, whose entries the chart mounts
-read-only from a Secret at `/etc/ferroehr/<key>` (and which is deliberately
-*not* part of the rendered TOML); point the matching in-TOML `*_file` /
-`*_path` key at the mounted path. Secret-bearing scalar values go under
+certificates, terminology-server client certificates, a JWKS blob, the PGP
+signing key, and a commercial licence token. Supply these under `config.files`,
+whose entries the chart mounts read-only from a Secret at `/etc/ferroehr/<key>`
+(and which is deliberately *not* part of the rendered TOML); point the matching
+in-TOML `*_file` / `*_path` key at the mounted path. A commercial licence goes
+the same way: put the token the licensor issued under `config.files` as
+`licence.asc` and set `config.licence.file` to `/etc/ferroehr/licence.asc`;
+`GET /ferroehr/rest/status` then reports `licence.use = "commercial"`. Without
+it the pod runs under the `non-commercial` grant every build embeds (see
+[Licensing & legal](../licensing.md#installing-a-commercial-licence)). Secret-bearing scalar values go under
 `secrets:`: `authOidcHmacSecret`, `signingKeyPassphrase`, `eventsUrl`,
 `fhirOutboundUrl`, `auditFhirFeedUrl`, `basicUserPasswordHashes`,
 `multimediaAccessKeyId`, `multimediaSecretAccessKey`,
@@ -586,7 +591,7 @@ config:
 
 ```shell
 helm upgrade ferroehr oci://ghcr.io/rubentalstra/charts/ferroehr \
-  --version 8.1.0 -n ferroehr --reuse-values \
+  --version 8.2.0 -n ferroehr --reuse-values \
   --set config.query.plan_cache_capacity=512
 ```
 
@@ -770,7 +775,7 @@ Preview an upgrade against what you have installed with
 `helm diff`, or render the new chart version and read it:
 
 ```shell
-helm template ferroehr oci://ghcr.io/rubentalstra/charts/ferroehr --version 8.1.0 \
+helm template ferroehr oci://ghcr.io/rubentalstra/charts/ferroehr --version 8.2.0 \
   -n ferroehr -f my-values.yaml | less
 ```
 

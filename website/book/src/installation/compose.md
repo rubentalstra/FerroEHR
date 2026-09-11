@@ -384,6 +384,12 @@ Set these in your shell (or an `.env` file) to retune without editing anything:
 | `FERROEHR__SERVER__MAX_IN_FLIGHT` | `256` | In-flight request admission cap (`503` past it; `0` disables). |
 | `FERROEHR__SIGNING__ENABLED` | `true` | Version signing. |
 
+A commercial licence token is not a passthrough variable: mount the signed
+token file into the server container read-only and name its path with
+`FERROEHR__LICENCE__FILE` (the compose file carries a commented example beside
+`FERROEHR__SIGNING__ENABLED`). Unset, the server runs under the embedded
+non-commercial grant and reports which on `GET /ferroehr/rest/status`.
+
 The Keycloak overlay adds `KEYCLOAK_PORT` (default `8081`),
 `KEYCLOAK_HOSTNAME`, `KEYCLOAK_ADMIN_USER` and `KEYCLOAK_ADMIN_PASSWORD` (both
 `admin`); the observability overlay adds `GRAFANA_PORT` (default `3000`). The

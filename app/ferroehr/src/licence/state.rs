@@ -14,6 +14,7 @@
 
 use std::fmt;
 use std::path::Path;
+use std::sync::Arc;
 
 use jiff::civil::Date;
 use pgp::packet::PublicKey;
@@ -21,18 +22,23 @@ use serde::Serialize;
 
 use crate::licence::config::LicenceConfig;
 use crate::licence::stamp::StampKey;
-use crate::licence::token::Token;
-use crate::licence::verify::{Verified, verify};
+use crate::licence::token::{Token, TokenError};
+use crate::licence::verify::{Verified, VerifyError, verify};
 
 /// Why a token was not accepted.
-#[derive(Debug, Clone, PartialEq, Eq)]
+///
+/// Each variant keeps its cause: the boot log renders the whole chain, and a
+/// caller can walk [`std::error::Error::source`] to the `io`, token or
+/// verification error underneath. The causes sit behind `Arc` because a
+/// [`LicenceState`] is cloned into every service that stamps identifiers.
+#[derive(Debug, Clone)]
 pub enum Reason {
     /// The configured file could not be read.
-    Unreadable(String),
+    Unreadable(Arc<std::io::Error>),
     /// The text is not a token file.
-    Malformed(String),
+    Malformed(Arc<TokenError>),
     /// The token parsed but failed verification.
-    Refused(String),
+    Refused(Arc<VerifyError>),
     /// The build embeds no token at all.
     NoneEmbedded,
 }
@@ -40,12 +46,34 @@ pub enum Reason {
 impl fmt::Display for Reason {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
-            Self::Unreadable(why) => write!(f, "file unreadable: {why}"),
-            Self::Malformed(why) => write!(f, "not a licence token: {why}"),
-            Self::Refused(why) => write!(f, "refused: {why}"),
+            Self::Unreadable(_) => f.write_str("file unreadable"),
+            Self::Malformed(_) => f.write_str("not a licence token"),
+            Self::Refused(_) => f.write_str("refused"),
             Self::NoneEmbedded => f.write_str("the build embeds no token"),
         }
     }
+}
+
+impl std::error::Error for Reason {
+    fn source(&self) -> Option<&(dyn std::error::Error + 'static)> {
+        match self {
+            Self::Unreadable(cause) => Some(cause.as_ref()),
+            Self::Malformed(cause) => Some(cause.as_ref()),
+            Self::Refused(cause) => Some(cause.as_ref()),
+            Self::NoneEmbedded => None,
+        }
+    }
+}
+
+/// Write `err` and every cause under it, colon-separated, on one line.
+fn write_chain(f: &mut fmt::Formatter<'_>, err: &dyn std::error::Error) -> fmt::Result {
+    write!(f, "{err}")?;
+    let mut cause = err.source();
+    while let Some(err) = cause {
+        write!(f, ": {err}")?;
+        cause = err.source();
+    }
+    Ok(())
 }
 
 /// Where the licence in force came from.
@@ -157,13 +185,13 @@ impl LicenceState {
     }
 
     fn from_file(path: &Path, anchors: &[PublicKey], today: Date) -> Result<Verified, Reason> {
-        let text = std::fs::read_to_string(path).map_err(|e| Reason::Unreadable(e.to_string()))?;
+        let text = std::fs::read_to_string(path).map_err(|e| Reason::Unreadable(Arc::new(e)))?;
         Self::from_text(&text, anchors, today)
     }
 
     fn from_text(text: &str, anchors: &[PublicKey], today: Date) -> Result<Verified, Reason> {
-        let token = Token::parse(text).map_err(|e| Reason::Malformed(e.to_string()))?;
-        verify(&token, anchors, today).map_err(|e| Reason::Refused(e.to_string()))
+        let token = Token::parse(text).map_err(|e| Reason::Malformed(Arc::new(e)))?;
+        verify(&token, anchors, today).map_err(|e| Reason::Refused(Arc::new(e)))
     }
 
     /// The stamp key this state mints identifiers with.
@@ -235,11 +263,16 @@ impl fmt::Display for LicenceState {
                     verified.licence.not_after
                 )?;
                 if let Some(reason) = configured_failure {
-                    write!(f, "; configured token not in force: {reason}")?;
+                    f.write_str("; configured token not in force: ")?;
+                    write_chain(f, reason)?;
                 }
                 Ok(())
             }
-            Self::NoLicence(reason) => write!(f, "none ({reason})"),
+            Self::NoLicence(reason) => {
+                f.write_str("none (")?;
+                write_chain(f, reason)?;
+                f.write_str(")")
+            }
         }
     }
 }
@@ -427,6 +460,52 @@ mod tests {
         assert_eq!(
             status_json(&state),
             r#"{"state":"none","configured_token":"refused"}"#
+        );
+    }
+
+    #[test]
+    fn a_refusal_reason_keeps_its_typed_cause() {
+        let issuer = Issuer::generate();
+        let stranger = Issuer::generate();
+        let embedded = stranger.token_text(&licence("Everyone", Use::NonCommercial));
+        let state = LicenceState::load(
+            &LicenceConfig::default(),
+            &embedded,
+            &[issuer.primary()],
+            date(2026, 12, 1),
+        );
+        let LicenceState::NoLicence(reason) = state else {
+            panic!("a stranger's token yields no licence, got {state}");
+        };
+        let cause = std::error::Error::source(&reason).expect("a refusal carries its cause");
+        assert!(
+            matches!(
+                cause.downcast_ref::<VerifyError>(),
+                Some(VerifyError::UntrustedPrimary(_))
+            ),
+            "the cause is the verification error itself, not a wrapper: {cause}"
+        );
+
+        let malformed = LicenceState::load(
+            &LicenceConfig {
+                file: Some(temp_file("junk-typed", "hello\n")),
+            },
+            &embedded,
+            &[stranger.primary()],
+            date(2026, 12, 1),
+        );
+        let LicenceState::Licensed {
+            configured_failure: Some(reason),
+            ..
+        } = malformed
+        else {
+            panic!("the embedded grant stays in force, got {malformed}");
+        };
+        let cause =
+            std::error::Error::source(&reason).expect("a malformed token carries its cause");
+        assert!(
+            cause.downcast_ref::<TokenError>().is_some(),
+            "the cause is the token error itself: {cause}"
         );
     }
 }

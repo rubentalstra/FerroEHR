@@ -784,7 +784,7 @@ its own probes.
 | `GET /health` | constant `200 OK` (plain text `OK`), touches nothing | load balancers, `docker` `HEALTHCHECK`, anything that must never be auth-gated |
 | `GET /health/liveness` | identical to `/health`, the same constant answer under the orchestrator-conventional path | Kubernetes `livenessProbe` and `startupProbe` |
 | `GET /health/readiness` | `200` when the aggregate is up or degraded, `503` when a **required** component is down; JSON body with every indicator, each bounded to one second | Kubernetes `readinessProbe`, ops dashboards |
-| `GET /ferroehr/rest/status` | product status document: `status`, `server_version`, `openehr_rest_api_version`, `timestamp` | version/identity checks; the URL the container's `ferroehr healthcheck` subcommand probes |
+| `GET /ferroehr/rest/status` | product status document: `status`, `server_version`, `openehr_rest_api_version`, `timestamp`, and `licence` (the grant in force: `state`, `use`, `licensee`, `not_after`, `configured_token`) | version/identity checks; the URL the container's `ferroehr healthcheck` subcommand probes |
 | `GET /management/*` | ops introspection; see below | operators, off by default, enable deliberately |
 
 There is exactly one health surface: the `/health` family above. `/health` and
