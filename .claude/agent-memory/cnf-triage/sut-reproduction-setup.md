@@ -21,3 +21,13 @@ with `Accept: application/openehr.wt.flat+json` etc. Capture the version_uid
 from the `ETag` response header (weak-quoted `W/"…::system::1"`).
 Note: `GET /definition/template/adl1.4` (list) 401'd as plain `ferroehr` in one
 test — use the admin user for definition-API reads if that recurs.
+
+Correction 2026-09-11 (measured against the `ferroehr-cnf` compose project):
+the definition API refuses BOTH Basic dev users — `POST` and `GET`
+`/definition/template/adl1.4` returned `403` as `ferroehr` AND as
+`ferroehr-admin`, while `POST /ehr` and `POST /ehr/{id}/composition` worked as
+plain `ferroehr`. The run's own principals are minted bearers carrying
+`user/template-*.cruds` (`docs/conformance/party/ferroehr/ixit.json`
+`instances.*.auth.mode: bearer_mint`), so the Basic upload step of the recipe
+above no longer reproduces; commit-path repros that need a template must mint a
+bearer or reuse an EHR the run already provisioned. Cause not settled.

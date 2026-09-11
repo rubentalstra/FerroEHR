@@ -31,3 +31,15 @@ is `report_only`, so EVERY `I_ITS_REST_VERSIONED_PARTY` case is non-gating even
 though the binding's own comment records AMB-136 as re-adjudicated under the
 AMB-161 pseudo-interface mechanism — re-check the disposition before assuming a
 red demographic-container row moves any verdict.
+
+**4. Header-variant bindings declare ONLY `created`.** Re-confirmed 2026-09-11
+at pin v0.1.5: `create_composition-{prefer_absent,prefer_minimal,
+return_identifier,version_bare_deprecated,version_lifecycle,
+item_tag_wrapper_headers}` and `commit_contribution-{last_modified_minimal,
+prefer_minimal,return_identifier}` redeclare `outcomes:` from scratch with the
+success branch only, while the BASE binding
+(`I_EHR_COMPOSITION.create_composition.yaml`) maps 400/404/422 — which the
+released OAS `operations/composition_create.yaml` declares for the operation
+regardless of `Prefer`. So a genuine app 422 lands as
+"status 422 maps to no outcome of the operation's binding (inconclusive)" —
+9 wire-visible app-defect rows downgraded to no-evidence in one run.
