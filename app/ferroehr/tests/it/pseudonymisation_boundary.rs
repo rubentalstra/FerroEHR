@@ -775,6 +775,148 @@ async fn the_cutover_runs_as_a_non_superuser_owner_for_a_tenant_owned_party() {
 /// nobody.
 const SYNTHETIC_BSN: &str = "111222333"; // privacy-allow: synthetic
 
+/// Every tenant-scoped table forces row-level security.
+///
+/// `national_identifier` carried a `tenant_id` for two releases with no
+/// policy, because the baseline's RLS loop names its relations by hand and a
+/// table added by a later migration joins nothing. The omission is invisible
+/// in the table's own definition, so this asks the catalog instead of a
+/// reviewer: any relation carrying a `tenant_id` is one whose rows belong to a
+/// tenant, and it has to be isolated as one.
+///
+/// FORCE as well as ENABLE, because the owner is the identity a
+/// `SECURITY DEFINER` function runs as, and plain ENABLE exempts it.
+///
+/// `audit.audit_event` is the one adjudicated exception, named rather than
+/// skipped by schema so the rest of `audit` stays covered. Its drain batches
+/// many tenants' records in one insert from a task that runs outside any
+/// request's tenant session (`system_log::store`), so a `WITH CHECK` against
+/// the session tenant would reject audit rows rather than isolate them — and
+/// silently losing an access record is worse than the unscoped read.
+#[tokio::test]
+async fn every_tenant_scoped_table_forces_row_level_security() {
+    let db = testkit::db().await.expect("testkit database");
+    let unguarded: Vec<(String, String, bool, bool)> = sqlx::query_as(
+        "SELECT n.nspname::text, c.relname::text, c.relrowsecurity, c.relforcerowsecurity
+         FROM pg_class c
+         JOIN pg_namespace n ON n.oid = c.relnamespace
+         WHERE c.relkind = 'r'
+           AND n.nspname = ANY($1)
+           AND EXISTS (
+               SELECT 1 FROM pg_attribute a
+               WHERE a.attrelid = c.oid AND a.attname = 'tenant_id' AND NOT a.attisdropped)
+           AND NOT (c.relrowsecurity AND c.relforcerowsecurity)
+           AND (n.nspname, c.relname) <> ('audit', 'audit_event')
+         ORDER BY 1, 2",
+    )
+    .bind(vec![
+        "ehr".to_owned(),
+        "cold".to_owned(),
+        "demographic".to_owned(),
+        "cold_demographic".to_owned(),
+        "linkage".to_owned(),
+        "audit".to_owned(),
+    ])
+    .fetch_all(&db.pool())
+    .await
+    .expect("read the catalog");
+
+    assert!(
+        unguarded.is_empty(),
+        "every table carrying a tenant_id must ENABLE and FORCE row-level \
+         security; these do not: {unguarded:?}"
+    );
+
+    // The sweep must actually see tables, or an empty result proves nothing.
+    let scoped: i64 = sqlx::query_scalar(
+        "SELECT count(*) FROM pg_class c
+         JOIN pg_namespace n ON n.oid = c.relnamespace
+         WHERE c.relkind = 'r'
+           AND n.nspname = ANY($1)
+           AND EXISTS (
+               SELECT 1 FROM pg_attribute a
+               WHERE a.attrelid = c.oid AND a.attname = 'tenant_id' AND NOT a.attisdropped)",
+    )
+    .bind(vec![
+        "ehr".to_owned(),
+        "cold".to_owned(),
+        "demographic".to_owned(),
+        "cold_demographic".to_owned(),
+        "linkage".to_owned(),
+        "audit".to_owned(),
+    ])
+    .fetch_one(&db.pool())
+    .await
+    .expect("count the tenant-scoped tables");
+    assert!(
+        scoped > 5,
+        "the sweep found only {scoped} tenant-scoped tables, so it is not \
+         looking at the schemas it thinks it is"
+    );
+}
+
+/// The sealed identifiers are tenant-isolated by policy, not only by the
+/// uniqueness of their lookup key.
+///
+/// `0001_baseline.sql` gives every relation it creates a `tenant_isolation`
+/// policy; `national_identifier` arrived in a later migration and missed the
+/// loop. The equality lookup was always tenant-scoped, so no resolve could
+/// cross — what was exposed is the unscoped read, on the one table holding
+/// sealed national identifiers and the digests that resolve them.
+#[tokio::test]
+async fn sealed_identifiers_of_another_tenant_are_invisible() {
+    let db = testkit::db().await.expect("testkit database");
+    let alpha = Uuid::now_v7();
+    let beta = Uuid::now_v7();
+
+    // Seeded through the owner pool, each row under its own tenant GUC so the
+    // policy's WITH CHECK admits it — the same path a tenant-scoped write
+    // takes at runtime.
+    let mut seed = db.pool().acquire().await.expect("a seeding connection");
+    for (tenant, digest_byte) in [(alpha, 0xAA_u8), (beta, 0xBB_u8)] {
+        sqlx::query("SELECT set_config('ferroehr.tenant_id', $1, false)")
+            .bind(tenant.to_string())
+            .execute(&mut *seed)
+            .await
+            .expect("stamp the tenant GUC");
+        sqlx::query(
+            "INSERT INTO demographic.national_identifier
+                 (party_id, scheme, tenant_id, nonce, ciphertext, lookup_digest)
+             VALUES ($1, 'nl-bsn', $2, $3, $4, $5)",
+        )
+        .bind(Uuid::now_v7())
+        .bind(tenant)
+        .bind(vec![0_u8; 12])
+        .bind(vec![1_u8; 16])
+        .bind(vec![digest_byte; 32])
+        .execute(&mut *seed)
+        .await
+        .expect("seed a sealed identifier");
+    }
+    drop(seed);
+
+    let mut conn = role_conn(&db, "nidrls", "ferroehr_demographic").await;
+    sqlx::query("SELECT set_config('ferroehr.tenant_id', $1, false)")
+        .bind(alpha.to_string())
+        .execute(&mut conn)
+        .await
+        .expect("stamp the tenant GUC");
+    let visible: Vec<Uuid> =
+        sqlx::query_scalar("SELECT tenant_id FROM demographic.national_identifier")
+            .fetch_all(&mut conn)
+            .await
+            .expect("an unscoped read of the sealed identifiers");
+    drop(conn.close().await);
+
+    assert_eq!(
+        visible,
+        vec![alpha],
+        "an unscoped SELECT must return only the reading tenant's rows; \
+         both tenants were seeded, so a result carrying {beta} means the \
+         tenant_isolation policy is missing or not FORCEd"
+    );
+}
+
 /// A test root key. Sixty-four hex characters, and a literal here is not a
 /// credential: it protects one ephemeral clone for the length of one test.
 const TEST_ROOT_KEY: &str = "000102030405060708090a0b0c0d0e0f101112131415161718191a1b1c1d1e1f";

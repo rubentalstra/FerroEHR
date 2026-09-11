@@ -401,6 +401,32 @@ workflow refuses a tag that has no matching section here.
   `vo_id` is a `400` rather than a filter that would match one version of every
   object.
 
+### Security
+
+- **Three tenant-scoped tables enforce tenant isolation that they carried a
+  column for but no policy** (#3219). `demographic.national_identifier` holds
+  sealed national identifiers and the keyed digests that resolve them;
+  `demographic.contribution` and `demographic.audit` hold the change-control
+  trail over the demographic domain. All three carried a `tenant_id`, and the
+  equality lookups on them were tenant-scoped, so no resolve could ever cross
+  a tenant. What was exposed is the unscoped read: a plain `SELECT` by the
+  demographic role returned every tenant's rows. Each now enables and forces
+  row-level security with the same `tenant_isolation` policy its sibling
+  relations have carried since the baseline. Deployments that run a single
+  tenant are unaffected, because an unset session resolves to the reserved
+  default tenant exactly as before.
+
+  The cause is worth stating, because it will recur otherwise: a baseline
+  migration applies row-level security by looping over a list of relation
+  names, and a table added by a later migration joins nothing. The omission is
+  invisible in the table's own definition. A test now asks the catalog instead
+  of a reviewer — any relation carrying a `tenant_id` must enable and force
+  row-level security — so the next table added after a baseline is caught by
+  the build rather than by an audit. `audit.audit_event` is the one named
+  exception: its drain batches many tenants' records in a single insert from a
+  task outside any request's tenant session, so a policy there would reject
+  audit rows rather than isolate them.
+
 ### Fixed
 
 - **The template upload dialog opens empty** (#3200). It cleared the source
