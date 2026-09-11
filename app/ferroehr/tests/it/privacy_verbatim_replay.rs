@@ -7,10 +7,11 @@
 //! identifier can only be REFUSED, never rewritten; these tests prove the
 //! refusal, and that nothing of the refused record lands.
 //!
-//! The source repository runs the library default policy, which scans
-//! nothing, so it will hold a FOLDER whose name is a synthetic national
-//! identifier; the target runs the configuration default, every shipped rule
-//! in `strict` mode.
+//! The source repository runs an explicitly permissive policy (no rules, the
+//! identified-party opt-in), so it will hold a FOLDER whose name is a synthetic
+//! national identifier; the target runs the configuration default, every
+//! shipped rule in `strict` mode. The library default is the refusing posture
+//! (#3243), so the permissive side has to say so.
 
 #![expect(
     clippy::expect_used,
@@ -27,7 +28,7 @@ use sqlx::PgPool;
 
 use ferroehr::ids::EhrId;
 use ferroehr::privacy::PrivacyPolicy;
-use ferroehr::privacy::config::PrivacyConfig;
+use ferroehr::privacy::config::{IdentifierScanConfig, PrivacyConfig, ScanMode};
 use ferroehr::service::FerroEhrService;
 use ferroehr::service::admin::types::ExportSpec;
 use ferroehr::service::status::CallStatusType;
@@ -39,6 +40,22 @@ use crate::fixtures::uv;
 /// A synthetic BSN that passes the eleven-test, so the shipped `nl-bsn` rule
 /// matches it.
 const SYNTHETIC_BSN: &str = "111222333"; // privacy-allow: synthetic
+
+/// A repository that accepts anything: the source side, which has to hold the
+/// identifier the target refuses.
+fn permissive(pool: PgPool) -> FerroEhrService {
+    let policy = PrivacyPolicy::compile(&PrivacyConfig {
+        allow_identified_parties_in_ehr: true,
+        identifier_scan: IdentifierScanConfig {
+            mode: ScanMode::Warn,
+            rules: Vec::new(),
+            patterns: Vec::new(),
+        },
+        ..PrivacyConfig::default()
+    })
+    .expect("the permissive policy compiles");
+    FerroEhrService::new(pool).with_privacy(Arc::new(policy))
+}
 
 /// A repository under the configuration default: every rule, `strict`.
 fn strict(pool: PgPool) -> FerroEhrService {
@@ -83,7 +100,7 @@ async fn version_rows(pool: &PgPool, ehr: EhrId) -> i64 {
 #[tokio::test]
 async fn an_extract_carrying_an_identifier_is_refused_on_import() {
     let source_db = testkit::db().await.expect("testkit database");
-    let source = FerroEhrService::new(source_db.pool());
+    let source = permissive(source_db.pool());
     let target_db = testkit::db().await.expect("testkit database");
     let target = strict(target_db.pool());
 
@@ -117,7 +134,7 @@ async fn an_extract_carrying_an_identifier_is_refused_on_import() {
 #[tokio::test]
 async fn an_archive_carrying_an_identifier_is_refused_on_load() {
     let source_db = testkit::db().await.expect("testkit database");
-    let source = FerroEhrService::new(source_db.pool());
+    let source = permissive(source_db.pool());
     let target_db = testkit::db().await.expect("testkit database");
     let target = strict(target_db.pool());
 

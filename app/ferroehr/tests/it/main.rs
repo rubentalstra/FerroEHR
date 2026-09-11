@@ -79,6 +79,7 @@ mod signing_pgp;
 mod sql_injection;
 mod storage_parity;
 mod storage_spike;
+mod subject_pseudonym_guard;
 mod system_log_tls_roundtrip;
 mod telemetry;
 mod telemetry_metrics;

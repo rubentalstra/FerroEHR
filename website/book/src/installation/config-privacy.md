@@ -89,6 +89,14 @@ Both spellings of a UUID's case are accepted; the braced, URN and unhyphenated
 forms are not, because the promoted subject column is compared as text and four
 spellings of one pseudonym would be four subjects.
 
+The rule has a second line of defence in the database. On every boot the
+server stamps whether namespaces are declared, and a trigger on the `ehr`
+table then refuses a subject reference that is not a UUID whichever code path
+or session writes it (`ehr_subject_pseudonym_guard`). Declaring namespaces
+over an existing store does not rewrite stored rows: the boot log names how
+many EHRs carry a subject reference that is not a pseudonym, and those need
+re-pseudonymising.
+
 ### Identified parties
 
 A party proxy inside clinical content — the composer, participations, the

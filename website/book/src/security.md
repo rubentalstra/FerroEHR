@@ -643,6 +643,21 @@ and consults no map. It records a linkage-domain access event all the same,
 because who resolved a subject to a record is worth knowing wherever it
 happened.
 
+### Declaring the posture
+
+The separations above are each a configuration key, and a deployment that has
+made none of them is indistinguishable from one that has made all of them
+until something goes wrong. The top-level `deployment_profile` key
+([configuration](installation/configuration.md#deployment_profile)) makes the
+posture explicit: `production` refuses to start while a separation is missing
+and not accepted by name, and reads the cluster each pool reached from
+`pg_control_system()` rather than trusting the DSN text; `sandbox`, the
+default, names every missing separation on the banner, in the boot log and on
+`GET /rest/status`, and must not hold real patient data. The database keeps
+its own line of defence for the subject pseudonym too: once
+`privacy.subject_namespaces` is declared, a trigger on `ehr` refuses a subject
+reference that is not a UUID, whichever code path or session writes it.
+
 ## Multi-tenancy
 
 Multi-tenancy lets one deployment host several isolated logical openEHR

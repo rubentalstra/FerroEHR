@@ -33,3 +33,12 @@ red CI/release lanes hours later; the misses are structural, not carelessness.
 command for every gate; when tightening any `scripts/checks/*` behaviour,
 enumerate its workflow callers in the same change and mutation-prove per
 LANE where feasible, not just per script. Link: [[session-workflow-gotchas]].
+
+Addendum 2026-09-11 (#3265): the local pre-push gate set for an
+`app/*` change is fmt + clippy (all-features AND the three slim
+`--no-default-features` server combos) + nextest + comment-style +
+docs-claims + **rustdoc** (`RUSTDOCFLAGS="-D warnings" cargo doc -p <crate>
+--all-features --no-deps --document-private-items`). An intra-doc link to a
+type in another module must name its defining module path
+(`crate::service::FerroEhrService::…`), not the bare name; rustdoc is the
+only gate that catches it and it runs one CI cycle later.

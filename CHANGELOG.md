@@ -33,6 +33,25 @@ workflow refuses a tag that has no matching section here.
   bewaartermijn logging. `0` keeps forever and always passes; the effective
   retention is on the boot line and on `/management/info`.
 
+- **A declared deployment profile** (#3226). The new top-level
+  `deployment_profile` key (`sandbox`, the default, or `production`) says what
+  a deployment may hold. `production` refuses to start while a separation it
+  asserts is missing and not accepted by name in `deployment_accepts`:
+  separated database credentials, separated clusters (read from
+  `pg_control_system().system_identifier` on each pool, never from the DSN
+  text), a declared subject pseudonym namespace, an audit trail with a durable
+  sink, schema preparation on its own credential. `sandbox` names every missing
+  separation on the banner, at `warn` with a structured `posture =
+  "deployment"` field, and on `GET /rest/status` under `deployment`. Our own
+  posture, not a legal requirement; the documentation says so and why.
+
+- **The database guards the subject pseudonym** (#3241). Once
+  `privacy.subject_namespaces` is declared, a trigger on `ehr` refuses a
+  subject reference that is not a UUID whichever code path or session writes
+  it; the server stamps the posture on every boot and reports how many stored
+  EHRs a newly declared namespace finds already carrying a non-pseudonym
+  subject.
+
 - **A subject-scoped read of the access log** (#3240). `GET /fhir/r4/AuditEvent`
   was admin-only, so a portal serving a person's right to know who accessed
   their record (GDPR Art. 15, EHDS Art. 9) had to hold an admin credential
@@ -416,6 +435,13 @@ workflow refuses a tag that has no matching section here.
   anything. `.claude/rules/personal-data.md` carries the rules for agents.
 
 ### Changed
+
+- **The library's default privacy policy is the shipped one** (#3243).
+  `PrivacyPolicy::default()` used to permit identified parties and scan
+  nothing, so a service built without an explicit policy ran a more permissive
+  posture than the binary; it now compiles to the same refusing posture the
+  default configuration does. Embedding hosts and tests that mean to accept
+  more install the policy that says so.
 
 - **The control matrix lists a control's closing pull request only once it
   has merged** (#3253). An open pull request that says `Closes #N` no longer

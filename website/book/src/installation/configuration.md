@@ -230,6 +230,52 @@ read stays a read.
 > compatibility direction it relies on: minor releases within a major line are
 > additive supersets.
 
+## `deployment_profile`
+
+```toml
+# The declared posture: what this deployment may hold.
+deployment_profile = "sandbox"   # or "production"
+deployment_accepts = []          # production only: gaps run without, by name
+```
+
+Every separation FerroEHR can make is a configuration key an operator can leave
+unset, and a deployment that has made none of them looks, from its own logs and
+its own API, like one that has made all of them. This key gives the server a
+declared posture and makes the two impossible to confuse.
+
+| Value | Asserts | On boot |
+|---|---|---|
+| `sandbox` *(default)* | Nothing; the deployment must not hold real personal data | Says which separations are missing: a red notice on the banner, one `warn` line per gap with the structured field `posture = "deployment"`, and the same list on `GET /ferroehr/rest/status` under `deployment` |
+| `production` | Every separation below holds, or is accepted by name in `deployment_accepts` | Refuses to start otherwise, naming each open gap, what it found and what to change |
+
+The separations, each a real property the server checks rather than a box
+ticked by being present:
+
+| Gap token | What `production` requires |
+|---|---|
+| `shared_credential` | `[db] demographic_url` and `linkage_url` set, so the three domains connect on their own database roles |
+| `shared_cluster` | The three pools reach three different PostgreSQL clusters, read from `pg_control_system().system_identifier` on each pool, never from the DSN text |
+| `open_subject_namespace` | `[privacy] subject_namespaces` declared, so an `EHR_STATUS` subject is an opaque pseudonym |
+| `audit_off` | `[audit]` enabled with a durable sink (the local store, syslog or the FHIR feed) |
+| `migrate_on_runtime_credential` | `[db] migrate_url` set, or `migrate = "verify"`, so the credential that serves requests cannot alter the schema |
+
+An accepted gap is stated on every boot and on `/rest/status`; it can be run,
+not hidden. Environment form: `FERROEHR__DEPLOYMENT_PROFILE=production`,
+`FERROEHR__DEPLOYMENT_ACCEPTS=shared_cluster`. There is no `research` value:
+the key controls rigour, not purpose, and a secondary-use platform under an
+EHDS data permit runs on real patient data at production rigour whatever it is
+for.
+
+**This is FerroEHR's own posture, not a legal requirement.** GDPR Art. 4(5)
+asks that the additional information needed to re-identify a person be "kept
+separately and … subject to technical and organisational measures", not that it
+sit on a separate server; one cluster with separated schemas and roles is a
+defensible reading. Two clusters are materially stronger, because a superuser,
+an instance-wide point-in-time recovery and a single compromise are bridges no
+grant can close, and that is a choice a deployment should make deliberately
+rather than inherit from a quickstart. See
+[Compliance](../compliance/index.md#the-pseudonymisation-boundary).
+
 ## Where each section is documented
 
 | Section | What it covers | Page |

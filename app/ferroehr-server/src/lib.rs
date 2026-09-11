@@ -23,6 +23,7 @@ use std::time::Duration;
 
 use anyhow::Context as _;
 use clap::{Parser, Subcommand};
+use ferroehr::config::deployment::{ClusterIdentities, DeploymentPosture, DeploymentProfile};
 use ferroehr::config::management::EndpointLevels;
 use ferroehr::config::management::ManagementConfig;
 use ferroehr::system_log::config::AuditConfig;
@@ -352,6 +353,7 @@ fn assemble_service(
     audit_sender: Option<AuditSender>,
     outbox_enabled: bool,
     signer: Arc<Signer>,
+    deployment: DeploymentPosture,
 ) -> anyhow::Result<FerroEhrService> {
     let pool = &pools.clinical;
     let audit_enabled = audit_sender.is_some();
@@ -390,6 +392,7 @@ fn assemble_service(
         .with_system_id(config.server.system_id.clone())
         .with_signer(signer)
         .with_licence(licence)
+        .with_deployment(deployment)
         .with_outbox_enabled(outbox_enabled)
         .with_privacy(Arc::new(privacy))
         .with_identifier_protection_opt(identifiers.map(Arc::new))
@@ -497,6 +500,98 @@ fn log_resolved_posture(
         tls = app_config.server.tls.enabled,
         "starting ferroehr"
     );
+}
+
+/// Evaluate the declared deployment posture over the clusters the pools
+/// reached, refuse to start under `production` while a separation is open and
+/// not accepted, and say every open gap at `warn` otherwise (#3226).
+///
+/// # Errors
+/// The refusal, listing each open gap with its finding and remedy; or a
+/// failure reading a pool's cluster identity.
+async fn evaluate_deployment(
+    config: &ferroehr::config::FerroEhrConfig,
+    pools: &Pools,
+) -> anyhow::Result<DeploymentPosture> {
+    let clusters = ClusterIdentities {
+        clinical: Some(
+            db::cluster_identity(&pools.clinical)
+                .await
+                .context("reading the clinical pool's cluster identity")?,
+        ),
+        demographic: Some(
+            db::cluster_identity(&pools.demographic)
+                .await
+                .context("reading the demographic pool's cluster identity")?,
+        ),
+        linkage: Some(
+            db::cluster_identity(&pools.linkage)
+                .await
+                .context("reading the linkage pool's cluster identity")?,
+        ),
+    };
+    let posture = DeploymentPosture::evaluate(config, &clusters);
+    if !posture.permits_boot() {
+        anyhow::bail!("{}", posture.refusal_message());
+    }
+    for gap in &posture.gaps {
+        let accepted = posture.accepted.contains(gap);
+        tracing::warn!(
+            posture = "deployment",
+            profile = %posture.profile,
+            gap = %gap,
+            accepted,
+            "{}",
+            gap.describe()
+        );
+    }
+    if posture.profile == DeploymentProfile::Sandbox {
+        tracing::warn!(
+            posture = "deployment",
+            profile = "sandbox",
+            open_gaps = posture.gaps.len(),
+            "deployment_profile is sandbox: this deployment has not made the production \
+             separations and must not hold real patient data"
+        );
+    } else {
+        tracing::info!(
+            posture = "deployment",
+            profile = "production",
+            accepted_gaps = posture.accepted.len(),
+            "deployment_profile is production: every separation holds or is accepted by name"
+        );
+    }
+    Ok(posture)
+}
+
+/// Stamp the subject-shape posture the database guard reads (#3241) and report
+/// the rows a newly declared namespace finds already stored.
+///
+/// # Errors
+/// A failure writing the stamp or counting the rows.
+async fn stamp_subject_posture(
+    config: &ferroehr::config::FerroEhrConfig,
+    pool: &PgPool,
+) -> anyhow::Result<()> {
+    let required = !config.privacy.subject_namespaces.is_empty();
+    db::stamp_subject_posture(pool, required)
+        .await
+        .context("stamping the subject pseudonym posture")?;
+    if required {
+        let stored = db::non_pseudonym_subjects(pool)
+            .await
+            .context("counting stored subject references that are not pseudonyms")?;
+        if stored > 0 {
+            tracing::warn!(
+                posture = "subject_pseudonyms",
+                ehrs = stored,
+                "privacy.subject_namespaces is declared, but {stored} stored EHR(s) carry a \
+                 subject reference that is not a UUID; the database now refuses new ones, and \
+                 these need re-pseudonymising"
+            );
+        }
+    }
+    Ok(())
 }
 
 fn warn_boot_postures(config: &ferroehr::config::FerroEhrConfig) {
@@ -822,7 +917,10 @@ async fn serve(config_path: Option<&Path>, overrides: &[(String, String)]) -> an
     // ASCII banner before telemetry/log init, on the same resolved rendering the
     // log layer installs (so JSON output stays pure from the first byte).
     if prints_banner(telemetry_config.log.format, std::io::stdout().is_terminal()) {
-        ferroehr::banner::print(config.spec_profile);
+        // The posture the configuration alone shows; the cluster check needs
+        // the pools and follows in the boot log.
+        let declared = DeploymentPosture::evaluate(&config, &ClusterIdentities::default());
+        ferroehr::banner::print(config.spec_profile, &declared, true);
     }
 
     let build_info =
@@ -833,6 +931,14 @@ async fn serve(config_path: Option<&Path>, overrides: &[(String, String)]) -> an
     warn_boot_postures(&config);
     let pools = connect_pool(&config).await?;
     let pool = pools.clinical.clone();
+
+    // The declared deployment posture, over the clusters the pools actually
+    // reached (#3226): `production` refuses here, `sandbox` says what is open.
+    let deployment = evaluate_deployment(&config, &pools).await?;
+
+    // The database's own subject-shape guard follows the declared namespaces
+    // (#3241): stamped by the runtime role on every boot, read by the trigger.
+    stamp_subject_posture(&config, &pool).await?;
 
     // Fail-open at boot, except in a slim build, which cannot render the FHIR
     // `AuditEvent` the store and the ATX:FHIR Feed carry.
@@ -902,6 +1008,7 @@ async fn serve(config_path: Option<&Path>, overrides: &[(String, String)]) -> an
         audit_sender,
         outbox_enabled,
         signer,
+        deployment,
     )?);
 
     // Off by default (it carries PHI) and gated on the `fhir` feature, which

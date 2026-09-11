@@ -1303,6 +1303,63 @@ async fn guard_orphaned_archive_tier(conn: &mut PgConnection) -> Result<(), DbEr
     Ok(())
 }
 
+// ── Deployment posture ───────────────────────────────────────────────────────
+
+/// The cluster a pool reaches, as `pg_control_system().system_identifier`.
+///
+/// Read from the control file rather than compared as DSN text: two DSNs can
+/// reach one cluster through different host names, a proxy or a pooler, and a
+/// string comparison would pass a deployment that is not separated (#3226).
+///
+/// # Errors
+/// [`DbError::Sqlx`] when the read fails; a credential the deployment barred
+/// from the function is reported, never read as a distinct cluster.
+pub async fn cluster_identity(pool: &PgPool) -> Result<String, DbError> {
+    let id: String = sqlx::query_scalar("SELECT system_identifier::text FROM pg_control_system()")
+        .fetch_one(pool)
+        .await?;
+    Ok(id)
+}
+
+/// Stamp whether the database guards hold every stored subject reference to
+/// an opaque UUID (#3241).
+///
+/// `required` once the deployment declares its pseudonym namespaces, `open`
+/// otherwise. Written by the clinical runtime role on every boot, read by the
+/// `ehr_subject_pseudonym_guard` trigger.
+///
+/// # Errors
+/// [`DbError::Sqlx`] when the write fails.
+pub async fn stamp_subject_posture(pool: &PgPool, required: bool) -> Result<(), DbError> {
+    let value = if required { "required" } else { "open" };
+    sqlx::query(
+        "INSERT INTO posture (key, value) VALUES ('subject_pseudonyms', $1) \
+         ON CONFLICT (key) DO UPDATE SET value = EXCLUDED.value, stamped_at = now()",
+    )
+    .bind(value)
+    .execute(pool)
+    .await?;
+    Ok(())
+}
+
+/// How many EHRs hold a subject reference that is not a UUID.
+///
+/// The rows a newly declared pseudonym namespace finds already stored, which
+/// the guard cannot refuse after the fact and boot reports instead of
+/// skipping (#3241).
+///
+/// # Errors
+/// [`DbError::Sqlx`] when the count fails.
+pub async fn non_pseudonym_subjects(pool: &PgPool) -> Result<i64, DbError> {
+    let count: i64 = sqlx::query_scalar(
+        "SELECT count(*) FROM ehr WHERE subject_id IS NOT NULL \
+         AND subject_id !~* '^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$'",
+    )
+    .fetch_one(pool)
+    .await?;
+    Ok(count)
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
