@@ -42,8 +42,10 @@ default` writes an annotated template with every key at its default, and
 an empty database self-provisions. Setting `db.migrate = "verify"` makes the
 server issue no DDL at all (it checks the schema and refuses to start if it is
 not this build's) which lets the runtime role hold no DDL rights. Something
-else then runs `ferroehr db migrate` under a migrator role first. Both postures
-are laid out in [Operations → Applying migrations](../operations.md#applying-migrations).
+else then runs `ferroehr db migrate` under a migrator role first. That check
+still reads every schema's migration state, so a least-privilege deployment
+also sets `db.migrate_url` to the credential that can. Both postures are laid
+out in [Operations → Applying migrations](../operations.md#applying-migrations).
 
 ## Choosing a specification generation
 

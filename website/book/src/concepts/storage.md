@@ -44,18 +44,23 @@ flowchart LR
     node -. "AQL: interval joins + promoted columns" .-> rest
 ```
 
-The database is PostgreSQL 18, split into six schemas:
+The database is PostgreSQL 18, split into seven schemas:
 
 | Schema | Holds |
 |---|---|
 | `ehr` | the clinical CDR: versions, nodes, EHRs, contributions, templates, queries, tags |
-| `demographic` | the demographic pseudonymisation domain: party versions, nodes, contributions, audits, tags |
+| `demographic` | the demographic pseudonymisation domain: party versions, nodes, contributions, audits, tags, and the sealed `national_identifier` values |
+| `linkage` | the linkage pseudonymisation domain: `party_ehr`, which party is the subject of which EHR |
 | `ext` | FerroEHR's own `IMMUTABLE` helper functions (`openehr_magnitude`, `openehr_timestamp`) and the tenant context |
 | `audit` | the IHE ATNA Audit Record Repository (`audit_event`) |
 | `cold` | the clinical archival tier: FK-free mirrors of `vo_version` / `node` / `vo_attestation` |
 | `cold_demographic` | the same archival tier for the demographic domain |
 
-### The two pseudonymisation domains
+Five carry migrations of their own, each with its own `_sqlx_migrations`
+bookkeeping table: `ext`, `ehr`, `demographic`, `linkage` and `audit`. The two
+cold tiers are created by the sets that own them.
+
+### The three pseudonymisation domains
 
 Parties (PERSON, ORGANISATION, GROUP, AGENT, ROLE, PARTY_RELATIONSHIP) live in
 `demographic`, never in `ehr`, and the split is enforced by the database in both
@@ -77,6 +82,18 @@ exception is the archival tier, whose mirrors live in a schema of their own: eac
 primary schema carries an alias view (`cold_vo_version`, `cold_node`,
 `cold_vo_attestation`) over its own tier, so those statements travel by
 `search_path` too.
+
+The third domain is one table. `linkage.party_ehr` records which party is the
+subject of which EHR, temporally: a merge or a split closes the mapping in
+force and opens its successor, and the temporal primary key
+(`PRIMARY KEY (tenant_id, party_id, sys_period WITHOUT OVERLAPS)`) admits one
+open mapping per party. It carries identifiers and a validity period and
+nothing else, because a row here is already the additional information that
+re-attributes a record to a person. It holds no foreign key into either
+schema it joins, since PostgreSQL enforces a foreign key by reading the
+referenced row and no credential here may. `ferroehr_linkage` holds
+`SELECT`, `INSERT` and `UPDATE` on it and no `DELETE`, so a mapping is closed
+rather than removed.
 
 The wire is unaffected. The ITS-REST Demographic API, the RM change-control
 semantics and every version identifier are exactly what they were; only where

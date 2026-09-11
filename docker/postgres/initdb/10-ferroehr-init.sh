@@ -8,8 +8,9 @@
 # expects to already exist or be a no-op when it connects as the NON-superuser
 # app role:
 #   * a LOGIN role (non-superuser) and a database it owns;
-#   * schemas `ehr` and `ext` owned by that role (the app's
-#     `CREATE SCHEMA IF NOT EXISTS` then no-ops);
+#   * schemas `ehr`, `ext` and `audit` owned by that role (the app's
+#     `CREATE SCHEMA IF NOT EXISTS` then no-ops; it also bootstraps
+#     `demographic` and `linkage`, which it owns and this script leaves to it);
 #   * the extensions the stack needs, installed here by the superuser
 #     (`CREATE EXTENSION` on non-trusted extensions requires superuser — the
 #     whole reason this image exists). The app's bootstrap
@@ -30,8 +31,9 @@ psql_app() { psql -v ON_ERROR_STOP=1 --username "$POSTGRES_USER" --dbname "$APP_
 
 echo "ferroehr init: creating role '${APP_USER}' and database '${APP_DB}'"
 
-# 1) Login role (idempotent) — non-superuser by design — plus the three
-#    NOLOGIN group roles of the layered role architecture. The app
+# 1) Login role (idempotent) — non-superuser by design — plus the eight
+#    NOLOGIN group roles of the layered role architecture: the three legacy
+#    single-domain ones and the five pseudonymisation-domain ones. The app
 #    role has no CREATEROLE, so the baseline migration can only grant to these
 #    roles if they already exist; creating them here gives dev/compose the
 #    same grant topology as a hardened deployment (no "roles absent" NOTICEs).
@@ -52,8 +54,9 @@ BEGIN
   IF NOT EXISTS (SELECT FROM pg_roles WHERE rolname = 'ferroehr_reader') THEN
     CREATE ROLE ferroehr_reader NOLOGIN;
   END IF;
-  -- The four pseudonymisation-domain roles, for the same reason as the three
-  -- above: the demographic baseline grants to them only if they already exist,
+  -- The five pseudonymisation-domain roles, for the same reason as the three
+  -- above: the demographic and linkage baselines grant to them only if they
+  -- already exist,
   -- and without them compose runs with no domain grants at all and a "roles
   -- absent" NOTICE nobody reads. NOINHERIT and no membership in one another —
   -- a role that could inherit the other domain's grants would make the
@@ -82,9 +85,12 @@ BEGIN
   -- self-check verifies — not the CREDENTIAL separation. A deployment reaches
   -- that by giving the demographic pool its own DSN (the db.demographic_url
   -- config key, or the chart value database.demographicExistingSecret) under a
-  -- login role that is a member of ferroehr_demographic and nothing else. A
-  -- demo stack that looked split while running one credential would be worse
-  -- than one that says which half it shows.
+  -- login role that is a member of ferroehr_demographic and nothing else, and
+  -- the linkage pool the same through db.linkage_url. Such a deployment also
+  -- names db.migrate_url: preparing the schema reads all five migration sets,
+  -- which no domain-scoped credential can do. A demo stack that looked split
+  -- while running one credential would be worse than one that says which half
+  -- it shows.
   GRANT ferroehr_ehr TO "${APP_USER}";
   GRANT ferroehr_demographic TO "${APP_USER}";
 END

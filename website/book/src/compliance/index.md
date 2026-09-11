@@ -83,15 +83,16 @@ Clinical content and demographic parties live in separate PostgreSQL schemas,
 `ehr` and `demographic`, each with its own archival tier and its own runtime
 database roles. `ferroehr_ehr` and `ferroehr_demographic`, and a read-only twin
 of each, are `NOINHERIT`, hold explicit grants on one domain only, and carry an
-explicit revoke on the other. The server refuses to start if that does not
+explicit revoke on the other and on `linkage`. The server refuses to start if that does not
 hold: a self-check enumerates every table, view, sequence and function in each
 domain and names the role and the object it can reach. The database refuses the
 mix as well, in both directions, so a code path that missed the split fails as
 a write error rather than leaking quietly.
 
-The separation of schemas is unconditional. Pointing the demographic pool at
-its own DSN (`[db] demographic_url`) makes it a separation of credentials too,
-which is what stops one leaked connection string from reaching both.
+The separation of schemas is unconditional. Pointing the demographic and
+linkage pools at their own DSNs (`[db] demographic_url` and
+`[db] linkage_url`) makes it a separation of credentials too, which is what
+stops one leaked connection string from reaching more than one domain.
 
 The controls that apply across both domains are the same: role- and
 attribute-based authorization, per-EHR access settings, tenant row-level
@@ -101,55 +102,42 @@ transaction, which is the versioning discipline the
 [Change Control Package](https://specifications.openehr.org/releases/RM/Release-1.1.0/common.html#_change_control_package)
 defines.
 
-What is **not** yet separated is the resolve map that rejoins the two. Today the
-subject reference on the clinical side is whatever a client supplied; there is
-no third domain holding the mapping under its own role and its own audit, and
-no constraint keeping a national identifier off the clinical side.
+The map that rejoins the two is separated as well. `linkage` is a third schema
+under a fifth role, barred from both domains it joins and both of them from it,
+holding identifiers and a validity period and no attribute. The one crossing
+runs in the application over two pools and writes an access record. On the
+clinical side the subject reference is an opaque pseudonym once
+`[privacy] subject_namespaces` is declared, enforced by the write path and by a
+database trigger, and the identifier scanner refuses a national identifier
+anywhere in a clinical body.
 
 ```mermaid
 flowchart LR
     client["API client"] --> server["FerroEHR server"]
     server -->|ferroehr_ehr| ehr[("ehr schema:<br/>clinical versions and nodes")]
-    server -->|ferroehr_demographic| demo[("demographic schema:<br/>parties and identifiers")]
+    server -->|ferroehr_demographic| demo[("demographic schema:<br/>parties and sealed identifiers")]
+    server -->|ferroehr_linkage| link[("linkage schema:<br/>party to EHR resolve map")]
     server -->|audit writer| audit[("audit schema:<br/>ATNA record repository")]
 ```
 
 ### What is planned
 
-The schema and role split is done, the `linkage` map included. What remains is
-the rest of the domain: a service that resolves through that map under its own
-audit, a clinical side that refuses
-identifying data outright, encrypted national identifiers, per-domain access
-logging, and per-domain keys and backups. The whole programme is
-[#3152](https://github.com/rubentalstra/FerroEHR/issues/3152).
-
-```mermaid
-flowchart LR
-    client2["API client"] --> server2["FerroEHR server"]
-    server2 -->|clinical role| ehr2[("ehr schema:<br/>clinical versions and nodes")]
-    server2 -->|demographic role| demo[("demographic schema:<br/>parties and identifiers")]
-    server2 -->|linkage role| link[("linkage schema:<br/>party to EHR resolve map")]
-```
-
-Each row below is an open issue.
+Two pieces of the programme
+([#3152](https://github.com/rubentalstra/FerroEHR/issues/3152)) are open, and
+both are about reading across the boundary rather than holding it.
 
 | Planned control | Issue |
 |---|---|
-| The clinical side refuses identifying data, and the subject reference is constrained to a pseudonym namespace | [#3154](https://github.com/rubentalstra/FerroEHR/issues/3154) |
-| National identifiers stored encrypted, looked up by key, resolved under audit | [#3155](https://github.com/rubentalstra/FerroEHR/issues/3155) |
-| Per-domain access logging for reads and queries | [#3156](https://github.com/rubentalstra/FerroEHR/issues/3156) |
-| Separate encryption keys and per-schema backup handling | [#3157](https://github.com/rubentalstra/FerroEHR/issues/3157) |
-| The linkage service: the party-to-EHR resolve map as its own schema and role | [#3158](https://github.com/rubentalstra/FerroEHR/issues/3158) |
-| Cross-domain cohort queries with a demographic predicate and a clinical selection | [#3159](https://github.com/rubentalstra/FerroEHR/issues/3159) |
-| A secondary-use read model as a separate pseudonymisation domain | [#3160](https://github.com/rubentalstra/FerroEHR/issues/3160) |
+| Cross-domain cohort queries with a demographic predicate and a clinical selection, with small-cell suppression | [#3159](https://github.com/rubentalstra/FerroEHR/issues/3159) |
+| A secondary-use read model as a separate pseudonymisation domain, fed from the outbox | [#3160](https://github.com/rubentalstra/FerroEHR/issues/3160) |
 
-Until those land, a FerroEHR database still holds the information that rejoins
-a record to a person: the two domains are separated, and nothing yet stops a
-client putting a directly identifying value on the clinical side, nor holds the
-resolve map apart from either. Size your access control, backup handling and
-risk assessment on that, not on the schema split alone. The
-[threat model](../threat-model.md) states the residual risk at each boundary
-the product does defend.
+Until they land, a cohort question that spans both domains has no supported
+answer, and no threshold is applied to any result set: a query returning one
+row about one rare condition is served like any other. Size your access
+control, purpose limitation and risk assessment on that. The
+[threat model](../threat-model.md) states the residual risk at each boundary,
+and the [DPIA page](../security/dpia.md) carries the risk register and the
+shipped controls by issue number.
 
 ### The deployment profile
 
@@ -278,5 +266,9 @@ one that states requirements a piece of software meets directly.
 - **[Threat model](../threat-model.md):** what survives each control.
 - **[Audit trail](../audit.md):** what is recorded, in which formats, and how
   to read it back.
-- **DPIA guidance, records of processing and a go-live checklist:** planned,
-  [#3161](https://github.com/rubentalstra/FerroEHR/issues/3161).
+- **[Data protection impact assessment](../security/dpia.md):** the technical
+  description, the risk register, and the shipped controls by issue number.
+- **[Records of processing](../security/records-of-processing.md):** an
+  Art. 30 template pre-filled with what the software does.
+- **[Go-live checklist](../security/go-live-checklist.md):** what to verify
+  before a deployment holds real patient data.

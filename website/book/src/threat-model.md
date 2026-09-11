@@ -40,7 +40,9 @@ What an attacker wants, in the order the loss hurts:
 
 | Asset | Where it lives | Why it matters |
 |---|---|---|
-| **Clinical payload:** compositions, EHR status, folders, demographics | the `node` and `vo_version` tables, and the cold-archive mirrors | this is PHI; disclosure is the primary harm and it is not undoable |
+| **Clinical payload:** compositions, EHR status, folders | the `ehr` schema's `node` and `vo_version` tables, and the `cold` archive mirrors | this is PHI; disclosure is the primary harm and it is not undoable |
+| **Demographic parties and their identifiers** | the `demographic` schema and its `cold_demographic` tier, with protected national identifiers sealed in `national_identifier` | who the people are, held apart from what is recorded about them |
+| **The party-to-EHR map** | `linkage.party_ehr` | the additional information that re-attributes a pseudonymised record to a person; on its own it names neither |
 | **The audit trail** | the `audit` schema, plus any configured forwarding sink | it is the evidence that everything else happened; an attacker who can edit it can make an access disappear |
 | **Version history and its integrity** | `vo_version`, `contribution`, attestations | an openEHR record's value is that it is *append-only and attributable*; a silently rewritten prior version is worse than a deleted one |
 | **Signing keys** | the configured signing key material for commit attestation | forging an attestation forges provenance of clinical content |
@@ -279,8 +281,10 @@ falling through to the default.
 
 ### B6 — The database
 
-**Control.** The application connects with a least-privilege role; migrations
-are applied by a separate, more privileged one. `FORCE ROW LEVEL SECURITY`
+**Control.** The application connects with least-privilege roles, one per
+pseudonymisation domain, and the schema is prepared by a separate credential
+that is not any of them
+([what each credential reaches](#what-each-database-credential-can-reach)). `FORCE ROW LEVEL SECURITY`
 means even a table owner is subject to the policies. Version history is
 temporal (`PRIMARY KEY … WITHOUT OVERLAPS`) rather than overwritten, so a prior
 version is a row that exists, not one that was replaced. Every write emits a
@@ -300,7 +304,9 @@ contribution and an audit record in the same transaction.
   overwrite structurally hard; it does not defend against someone with `UPDATE`
   on the tables. The audit chain (B7) is the detection layer.
 - **Backups carry PHI with none of these controls.** A restored dump is a
-  complete copy of everything.
+  complete copy of the schemas it covers. Which schemas that is, and what two
+  dumps are worth together, is
+  [Backup artefacts](#backup-artefacts) below.
 
 ### B7 — The audit trail
 
@@ -358,6 +364,213 @@ tags are signed and the tags are protected by a ruleset.
   [GOVERNANCE.md](https://github.com/rubentalstra/FerroEHR/blob/main/GOVERNANCE.md).
 - **Only the newest release receives fixes.** There is no maintenance branch to
   backport to; see [SECURITY.md](https://github.com/rubentalstra/FerroEHR/blob/main/SECURITY.md).
+
+## What each database credential can reach
+
+Every control from B1 to B5 is enforced at the API, so a database credential
+is past all of them. What one credential holds is therefore the boundary that
+survives a leaked connection string, and it is a property of the grants rather
+than of the server's routing. The migrations under
+`app/ferroehr/migrations/` apply those grants, revoke each domain from the
+roles that do not own it, and make every domain role `NOINHERIT` and a member
+of no other, so a privilege cannot arrive through a membership.
+
+| Credential | Reaches | Cannot reach |
+|---|---|---|
+| `ferroehr_ehr` | `ehr` and `cold` with `SELECT`, `INSERT`, `UPDATE` and `DELETE`; the `ehr.posture` stamp; `USAGE` on `ext` | `demographic`, `cold_demographic` and `linkage`, revoked explicitly and in both directions |
+| `ferroehr_ehr_reader` | `SELECT` on `ehr` and `cold`; `USAGE` on `ext` | the same three schemas |
+| `ferroehr_demographic` | `demographic` and `cold_demographic` with `SELECT`, `INSERT`, `UPDATE` and `DELETE`, the sealed `national_identifier` rows included; `EXECUTE` on `demographic.resolve_national_identifier` | `ehr`, `cold` and `linkage`, revoked explicitly and in both directions |
+| `ferroehr_demographic_reader` | `SELECT` on `demographic` and `cold_demographic`. On `national_identifier` the table-level grant is revoked and re-granted column by column, so it reads `id`, `party_id`, `scheme`, `tenant_id` and `created_at` and never `nonce`, `ciphertext` or `lookup_digest` | `ehr`, `cold` and `linkage` |
+| `ferroehr_linkage` | `linkage.party_ehr` with `SELECT`, `INSERT` and `UPDATE`; `USAGE` on `ext` | `ehr`, `cold`, `demographic`, `cold_demographic`, and `demographic.resolve_national_identifier` by its own revoke. It holds no `DELETE` anywhere, so it cannot remove a mapping either |
+| The schema-preparation credential (`[db] migrate_url`, normally a member of `ferroehr_migrator`) | every schema: it issues the DDL of all five migration sets and reads all five `_sqlx_migrations` tables, and it owns the objects it created | nothing. The server opens it for that one boot step and closes it again, so no pool is held on it and no request is served through it |
+| `ferroehr_app`, `ferroehr_reader` | the earlier single-domain pair, still carrying `ehr`, `cold`, `ext` and the `audit` repository | `demographic`, `cold_demographic` and `linkage`, where they hold no grant. That is an absence of privilege rather than a revoke, and the boot self-check does not cover these two roles |
+
+The `audit` schema is granted to `ferroehr_app` (record an event, stamp it
+forwarded, run the retention reaper) and to `ferroehr_reader` (read it). None
+of the five domain roles holds a privilege there, and the local Audit Record
+Repository is written on the clinical pool, so the login role that pool
+authenticates as needs membership of `ferroehr_app` as well.
+
+The five domain roles are checked at every boot. The server reads the
+catalogue for every table, partitioned table, view, materialized view, foreign
+table, sequence and function each of them can reach in a domain it does not
+own, and refuses to serve when it finds one, naming the role, the object kind
+and the object. A role that does not exist is skipped rather than failed,
+because role provisioning is a deployment step and the migrations create the
+roles only where the migrator holds `CREATEROLE`. `ferroehr db verify` runs
+the same check from outside the deployment.
+
+**Residual risk.**
+
+- **The grants are only a boundary once the credentials are separated.** With
+  `[db] demographic_url` and `[db] linkage_url` unset, all three pools
+  authenticate as `[db] url` and the split is a schema split. The
+  `shared_credential` gap of `deployment_profile` is what names that.
+- **A login role can be a member of several domain roles.** The compose stacks
+  do exactly that, deliberately, and say so. The boot self-check measures the
+  group roles, so it reports a boundary that a membership then crosses.
+- **A superuser holds everything**, and so does the role that owns the
+  objects. Neither is a runtime credential, and neither is constrained by any
+  of the above.
+
+### Backup artefacts
+
+A dump leaves the database with none of the grants attached, so the chart
+takes one per domain rather than one per cluster: `ehr` with `cold`, `ext` and
+`audit`; `demographic` with `cold_demographic`; `linkage` on its own. Each job
+authenticates as its own read-only role with `BYPASSRLS`, because every
+tenant-scoped table carries `FORCE ROW LEVEL SECURITY` and `pg_dump` refuses a
+table it would read through a policy. Each writes to its own claim, and the
+chart refuses to render when two domains name the same one.
+
+**Residual risk.**
+
+- **Each dump is plaintext of its own domain.** The clinical one holds every
+  composition. The demographic one holds every party and the sealed identifier
+  columns with them, which stay sealed only while
+  `[demographic.identifier_protection] key` lives somewhere the dump does not.
+- **Two dumps together are worth more than twice one.** `demographic` beside
+  `linkage` says which person holds which record id; add the clinical dump and
+  the record is re-identified. Who may read each claim is the control, and it
+  is yours.
+- **A cluster-wide artefact spans all three.** A physical base backup and an
+  instance-wide point-in-time recovery are bridges no grant closes. That is
+  the `shared_cluster` gap, and running the three domains on one cluster
+  accepts it by name.
+- **Nothing prunes old dumps, and no network policy of ours selects the dump
+  pods.**
+
+## Re-identification
+
+Pseudonymisation is worth what the paths back are worth. These are the ones
+this system has.
+
+### An identifier written into clinical content
+
+**Control.** A data-minimisation pass reads the canonical JSON of every
+clinical commit body before it is stored. `EHR_STATUS.subject.external_ref`
+must name a declared pseudonym namespace and carry a UUID once
+`[privacy] subject_namespaces` is set. A `PARTY_IDENTIFIED` or `PARTY_RELATED`
+carrying `identifiers`, and a `PARTY_RELATED` carrying a `name`, are refused
+unless the deployment opts in. An identifier scanner reads every string leaf
+against the active rules: five ship, one per issuing register that publishes a
+checksum (`fi-hetu`, `gb-nhs-number`, `nl-bsn`, `no-fodselsnummer`,
+`se-personnummer`), all active by default in `strict` mode, and a deployment
+adds regular expressions for the kinds no build can ship a rule for. The two
+write paths that replay content verbatim, EHR-Extract import and the admin
+archive load, are scanned too: they store what they receive, so a body
+carrying an identifier can only be refused. The database keeps its own line.
+Once the namespaces are declared the server stamps `ehr.posture`, and a
+trigger on `ehr` refuses a `subject_id` that is not a UUID, whichever session
+writes it.
+
+**Residual risk.**
+
+- **A checksum rule matches a number, not a person.** A name, a street
+  address, a date of birth and a local record number with no check digit pass
+  every shipped rule.
+- **`subject_namespaces` is empty by default**, and with it empty the subject
+  rule and the database trigger are both out of force. The
+  `open_subject_namespace` gap of `deployment_profile` is what names that.
+- **A finding names the RM path and the rule, never the value.** That is
+  deliberate, and it means a refusal tells an operator where to look rather
+  than what was there.
+
+### Content that identifies without carrying an identifier
+
+**Control.** None in the query engine. Clinical content is keyed by an opaque
+subject pseudonym, and AQL returns the rows it was asked for.
+
+**Residual risk.** A rare diagnosis with an admission date and a place of
+treatment identifies a person with no identifier field involved. No threshold
+is applied to a result set, and nothing counts how small a cohort a query
+returned. Small-cell suppression is designed alongside the cross-domain cohort
+query and is not built:
+[#3159](https://github.com/rubentalstra/FerroEHR/issues/3159). Until it lands,
+who may run AQL, for what purpose, and over which EHRs are the controls, and
+they are configuration rather than arithmetic.
+
+### The map that rejoins the two domains
+
+**Control.** `linkage.party_ehr` holds a party id, an EHR id, a tenant and a
+validity period. No name, no address and no plaintext identifier, because a
+row here is already the additional information that re-attributes a record.
+Its role is barred from both domains it joins and both of them from it. The
+one crossing, `resolve_ehr_for_identity`, runs in the application over two
+pools, so no single statement performs the join and no credential could issue
+one. Each resolve, link, merge and split writes a `linkage`-domain access
+event naming the actor, the declared purpose of use and whether anything
+matched, and that event deliberately does not name the EHR that came back.
+`link_as_subject` derives the subject pseudonym server-side and writes it onto
+`EHR_STATUS` itself, so no caller-supplied value becomes a subject reference
+on that path. A merge or a split closes a period rather than deleting a row,
+and the temporal primary key admits one mapping in force per party.
+
+**Residual risk.**
+
+- **The crossing exists, and an actor entitled to call it re-identifies a
+  record.** That is its purpose. The access log records who did it; recording
+  is not prevention.
+- **Nothing populates the map.** What it holds is what a consumer wrote, so a
+  deployment that never calls `link` has no map and no crossing, and one that
+  writes it from a batch job has whatever that job decided.
+- **A miss is as informative as a hit.** Asking whether this deployment holds
+  a record for a person is itself a disclosure, which is why the miss is
+  recorded too.
+
+### The sealed identifier and its lookup digest
+
+**Control.** A protected national identifier leaves the versioned body and
+lives in `demographic.national_identifier` under AES-256-GCM with a fresh
+96-bit nonce per record, with the scheme code and the tenant bound in as
+associated data so a ciphertext moved between either fails to open. Beside it
+is an HMAC-SHA-256 digest under a separate subkey, which is what lets equality
+lookup work without the plaintext ever reaching the database. Both subkeys are
+derived per domain and per tenant from one configured root key. The resolve
+function is `SECURITY DEFINER`, `PUBLIC` is revoked from it, and only
+`ferroehr_demographic` may execute it. Every resolution records an access
+event naming the scheme and whether it matched, never the value. The scheme
+registry is a closed set: an identifier whose scheme nobody registered cannot
+be stored as a protected one at all.
+
+**Residual risk.**
+
+- **The root key is the whole control.** Held beside a dump, the ciphertext
+  opens and the digest can be recomputed over a nine-digit space in seconds.
+  It belongs in a secret store, not next to the backup.
+- **Protection is off by default**, and an identifier whose type the
+  deployment did not list is left in the versioned body exactly as written.
+- **Rotating the key is a re-encryption**, not an edit, because every record
+  is sealed under a subkey derived from it.
+
+### The subject pseudonym
+
+**Control.** `mint_subject_pseudonym` derives the value from the party id
+under the linkage key domain and the tenant, in the first declared pseudonym
+namespace. No caller input enters it, so the same party yields the same
+pseudonym within a tenant and a national identifier cannot become a subject
+reference through that path.
+
+**Residual risk.** A stable per-subject identifier across the whole clinical
+store is what makes it an EHR, and it is also a linkage key. Anyone holding
+the clinical domain can gather every record of one subject, without knowing
+who the subject is. Across tenants the derivation differs, so the same person
+in two tenants is two pseudonyms.
+
+### The audit trail as a re-identification surface
+
+**Control.** Access records live in `audit`, outside all three domains, and
+retrieval is the admin-gated ITI-81 route. A `linkage` event names the party
+and the purpose, not the EHR that was returned, so the trail is not a second
+copy of the map.
+
+**Residual risk.** The records name subjects, actors, organisations, roles and
+what they read, which is sensitive in its own right and is a disclosure
+surface like any other. Retention makes it durable on purpose: where one of
+the deployment's active identifier rules names a jurisdiction with a
+registered retention floor, a shorter `audit.store.retention_days` is a boot
+error rather than a silent trim. The Netherlands is the one registered floor
+today, at 1830 days.
 
 ## What is explicitly NOT defended against
 

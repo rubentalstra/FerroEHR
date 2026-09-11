@@ -97,6 +97,57 @@ native API. Practically, this means the HTTP behaviour you observe maps onto the
 standard's own service definitions, and the same core can be driven by adapters
 other than REST.
 
+## Three pools, three roles, one request path
+
+The server holds three connection pools, one per pseudonymisation domain, and
+which pool a service module uses is fixed by what that module stores. The
+clinical pool serves the openEHR record, the demographic pool serves parties
+and their identifiers, and the linkage pool serves the map that says which
+party is the subject of which EHR.
+
+```mermaid
+flowchart LR
+    rest["REST adapter"]
+    subgraph clin ["clinical modules"]
+        ehrsvc["service::ehr · query · admin<br/>definition · message · validity"]
+    end
+    subgraph dem ["identity module"]
+        demsvc["service::demographic<br/>(parties, sealed identifiers)"]
+    end
+    subgraph lnk ["linkage module"]
+        lnksvc["service::linkage"]
+    end
+    audit["system_log store"]
+    pc[("clinical pool<br/>ferroehr_ehr → ehr, cold")]
+    pd[("demographic pool<br/>ferroehr_demographic → demographic, cold_demographic")]
+    pl[("linkage pool<br/>ferroehr_linkage → linkage")]
+
+    rest --> ehrsvc
+    rest --> demsvc
+    rest --> lnksvc
+    ehrsvc --> pc
+    audit --> pc
+    demsvc --> pd
+    lnksvc --> pl
+    lnksvc -. "resolve_ehr_for_identity, hop 1" .-> demsvc
+```
+
+`resolve_ehr_for_identity` is the one call that needs two domains. It asks the
+demographic pool for the party holding a sealed identifier, by keyed digest
+and without decrypting anything, then asks the linkage pool for that party's
+EHR. The two hops are two connections in the application. No statement
+performs the join, and under separated credentials no role could issue one.
+
+Each pool takes its own DSN from `[db] url`, `[db] demographic_url` and
+`[db] linkage_url`. Leave the second and third unset and all three pools
+authenticate as the first, which keeps the schema separation and drops the
+credential separation. Preparing the schema spans every schema at once, so it
+runs on `[db] migrate_url` rather than on any of them. The local Audit Record
+Repository is written on the clinical pool, into its own `audit` schema. See
+[Operations](../operations.md#database-roles-and-least-privilege) for the
+roles and [the threat model](../threat-model.md#what-each-database-credential-can-reach)
+for what each credential can reach.
+
 ## Storage: the node model on PostgreSQL 18
 
 A clinical composition is a deep tree. Storing each as one large JSON blob makes

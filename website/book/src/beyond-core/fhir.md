@@ -158,6 +158,52 @@ them.
 
 <!-- END generated: ehds-priority-categories -->
 
+### The decision on profile mappings: wait for the implementing acts
+
+No profile mapping ships for any priority category, and none will be authored
+here. That is a recorded decision
+([#3206](https://github.com/rubentalstra/FerroEHR/issues/3206)), not an
+omission, and it rests on two things being unfixed at once.
+
+The target format is unfixed. Annex II 2.1 to 2.3 require the categories in
+the European electronic health record exchange format, and that format's
+content is set by implementing acts under
+[Article 36](https://eur-lex.europa.eu/eli/reg/2025/327/oj) which have not
+been adopted. An IPS-shaped `Bundle`, a `MedicationRequest` or a
+`DiagnosticReport` authored today would be authored against a guess at what
+those acts require.
+
+The place is unfixed too, and settled the other way. Mappings belong to
+[FerroBRIDGE](https://github.com/rubentalstra/FerroBRIDGE), which is the
+FHIRconnect and OMOP bridge, and
+[#3080](https://github.com/rubentalstra/FerroEHR/issues/3080) retires the
+in-tree connector once it ships its first round trip. A mapping written here
+would be written against `ehr.fhir_mapping` rows and the FHIRPath-lite dialect
+this façade reads, both of which leave with the connector.
+
+**What reopens the question.** The Article 36 implementing acts being adopted
+reopens it, because the target stops being a guess. FerroBRIDGE shipping its
+first round trip settles where the work lands. Either event is a reason to
+revisit #3206; neither has happened.
+
+What stays in FerroEHR regardless is the readiness statement: which categories
+are carried, by what, and where the gaps are. That is the table above and the
+[EHDS readiness](../compliance/ehds-readiness.md) page.
+
+### The two categories with no committed template
+
+Electronic dispensations (Annex I 3) and discharge reports (Annex I 6) have no
+template in the curated CKM pack, so nothing demonstrates them end to end.
+That is an adjudicated boundary rather than a backlog item. A CDR stores
+whatever an operational template defines, so this is a corpus gap and not a
+storage one. The pack is vendored verbatim from the openEHR
+[CKM](https://ckm.openehr.org/ckm/), every file being CKM's own export with
+its provenance recorded, so filling the two rows would mean authoring a
+template here and putting it in a pack whose value is that nothing in it was
+authored here. A deployment holding dispensations or discharge summaries
+uploads its own operational template, and the façade maps it like any other.
+
+
 ## Outbound emission
 
 Outbound emission publishes the mapped FHIR resource for every relevant commit,

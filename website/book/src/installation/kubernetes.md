@@ -241,8 +241,8 @@ anything neither `config:` nor `secrets:` surfaces.
 
 ## Database roles — who runs migrations
 
-The chart expects a **four-role** PostgreSQL model, so the runtime pod is never
-a superuser:
+The chart expects a PostgreSQL role model in which the runtime pod is never a
+superuser. Four roles cover the single-domain posture:
 
 | Role | Purpose |
 |---|---|
@@ -259,10 +259,12 @@ and `config.db.migrate` is where you choose:
   then be a member of `ferroehr_migrator`, so the serving process holds DDL
   rights on the clinical schema for its whole life.
 - **(b) A separate migration step** (`config.db.migrate: verify`) under a
-  migrator DSN, with the pods on a DSN that is `ferroehr_app` **only**. The
-  server issues no DDL at all and refuses to boot against a database that has
-  not been migrated to its build, so the two versions cannot race the schema.
-  Recommended for production.
+  migrator DSN, with the pods on a narrow runtime DSN. The server issues no DDL
+  at all and refuses to boot against a database that has not been migrated to
+  its build, so the two versions cannot race the schema. Recommended for
+  production. It needs `database.migrateExistingSecret` as well, for the reason
+  the paragraph further down gives: `verify` reads all five bookkeeping tables,
+  which a narrow runtime role cannot do.
 
 Set `migrations.job.enabled` and the chart runs (b) for you as a
 `pre-install,pre-upgrade` hook `Job` that runs `ferroehr db migrate`. Helm creates
@@ -273,41 +275,47 @@ authenticates from its **own** Secret (deliberately a different credential from
 
 ```yaml
 database:
-  existingSecret: ferroehr-db            # postgres://ferroehr_app:…
+  existingSecret: ferroehr-db                 # postgres://ferroehr_app:…
+  migrateExistingSecret: ferroehr-db-migrator # postgres://ferroehr_migrator:…
 migrations:
   job:
     enabled: true
-    existingSecret: ferroehr-db-migrator # postgres://ferroehr_migrator:…
+    existingSecret: ferroehr-db-migrator      # the same credential, its own Secret mount
 config:
   db:
     migrate: verify
 ```
 
-The demographic domain takes a third credential the same way, and it is the
-one that turns the schema separation into a credential separation. A **fourth**
-goes with it, because neither runtime credential can prepare the schema:
+The demographic and linkage domains take their own credentials the same way,
+and that is what turns the schema separation into a credential separation. One
+more goes with them, because no runtime credential can prepare the schema:
 
 ```yaml
 database:
   existingSecret: ferroehr-db                        # postgres://ferroehr_ehr:…
   demographicExistingSecret: ferroehr-db-demographic # postgres://ferroehr_demographic:…
+  linkageExistingSecret: ferroehr-db-linkage         # postgres://ferroehr_linkage:…
   migrateExistingSecret: ferroehr-db-migrator        # postgres://ferroehr_migrator:…
 ```
 
-All three are mounted as files, so no DSN enters the pod's environment. Unset
-the demographic one and both pools share the first, which is the schema-only
-posture — still separated, still verified at boot. Creating the four domain
+All four are mounted as files, so no DSN enters the pod's environment. Unset
+the demographic and linkage ones and those two pools share the first, which is
+the schema-only posture, still separated and still verified at boot. Creating
+the five domain
 roles is a database step the chart cannot do for you;
 [Operations](../operations.md#turning-the-schema-split-into-a-role-split) has
 the statements and what `ferroehr db verify` reports.
 
 `database.migrateExistingSecret` is what the pod prepares the schema with, and
-it is required as soon as `database.existingSecret` is a domain-scoped role.
-Preparation spans every schema at once — the DDL of all five migration sets
-under `config.db.migrate: apply`, all five `_sqlx_migrations` bookkeeping
-tables under `verify` — while `ferroehr_ehr` holds one domain, so **`verify`
-is not the exception**: without this value the pod is refused on the first
-set and does not start. It is normally the same credential
+it is required as soon as `database.existingSecret` is anything narrower than a
+credential reaching every schema. Preparation spans them all at once: the DDL
+of all five migration sets under `config.db.migrate: apply`, all five
+`_sqlx_migrations` bookkeeping tables under `verify`. So **`verify` is not the
+exception**, and this is not only about the domain roles. `ferroehr_ehr` holds
+one pseudonymisation domain, `ferroehr_app` holds the clinical schemas, and
+neither can read the `demographic` or `linkage` bookkeeping at all; without
+this value the pod is refused on the first set it cannot read and does not
+start. It is normally the same credential
 `migrations.job.existingSecret` carries; the Job needs its own copy because it
 runs before the Deployment exists. Unset, preparation falls back to
 `database.existingSecret`, which is what a single-credential install has
