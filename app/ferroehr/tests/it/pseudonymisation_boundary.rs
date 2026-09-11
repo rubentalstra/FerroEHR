@@ -1335,3 +1335,90 @@ async fn one_party_holds_one_open_mapping_at_a_time() {
          composition was written stays answerable"
     );
 }
+
+/// A login DSN for a throwaway role holding `domain_role` and nothing else.
+///
+/// The pool equivalent of [`role_conn`]: the same clone-named role so the
+/// testkit sweep reaps it, the same generated password, but handed back as a
+/// DSN so a real `DbConfig` can be built from it.
+async fn dsn_as(db: &testkit::TestDb, suffix: &str, domain_role: &str) -> String {
+    let login = format!("{}_{suffix}", db.name());
+    let password = throwaway_password();
+    sqlx::query(sqlx::AssertSqlSafe(format!(
+        "CREATE ROLE {login} LOGIN PASSWORD '{password}' IN ROLE {domain_role}"
+    )))
+    .execute(&db.pool())
+    .await
+    .expect("create the login role");
+    with_role(db.url(), &login, &password)
+}
+
+/// A sealed identifier seals and resolves on the SEPARATED demographic
+/// credential.
+///
+/// Three things meet on this path, and each was proven only on its own: the
+/// demographic pool authenticating as its own login role, a `SECURITY DEFINER`
+/// resolve function owned by the migrator, and `FORCE ROW LEVEL SECURITY` on
+/// `demographic.national_identifier`. FORCE applies the tenant policy to the
+/// function's owner, and the separated role is not that owner, so whether a
+/// resolve still returns its party is a question about the three together.
+///
+/// The digest half is the one that would fail silently: a policy excluding the
+/// row returns `None`, which reads exactly like an identifier nobody holds.
+#[tokio::test]
+async fn a_sealed_identifier_resolves_on_the_separated_demographic_credential() {
+    use ferroehr::db::DbConfig;
+    use ferroehr::service::demographic::identifier::store::IdentifierStore;
+
+    let db = testkit::db().await.expect("testkit database");
+    let settings = DbConfig {
+        url: ferroehr::config::secret::SecretUrl::new(
+            dsn_as(&db, "sealclin", "ferroehr_ehr").await,
+        ),
+        demographic_url: Some(ferroehr::config::secret::SecretUrl::new(
+            dsn_as(&db, "sealdemo", "ferroehr_demographic").await,
+        )),
+        ..DbConfig::default()
+    };
+    assert!(
+        settings.roles_are_separated(),
+        "the fixture must actually separate the credentials, or this measures \
+         the shared-credential path again"
+    );
+
+    let demographic = ferroehr::db::connect_demographic(&settings)
+        .await
+        .expect("the demographic pool connects on its own credential");
+    let store = IdentifierStore::new(demographic);
+    let tenant = Uuid::nil();
+    let keys = test_keys(tenant);
+    let party = Uuid::now_v7();
+
+    let row = store
+        .seal(&keys, tenant, party, "nl-bsn", SYNTHETIC_BSN)
+        .await
+        .expect("the separated credential seals an identifier");
+    assert_eq!(
+        store.open(&keys, tenant, row).await.expect("open"),
+        Some(SYNTHETIC_BSN.to_owned()),
+        "the key holder reads the value back through the separated credential"
+    );
+    assert_eq!(
+        store
+            .resolve(&keys, tenant, "nl-bsn", SYNTHETIC_BSN)
+            .await
+            .expect("resolve"),
+        Some(party),
+        "the SECURITY DEFINER resolve returns the party under FORCE row-level \
+         security, on a credential that does not own the function"
+    );
+    assert_eq!(
+        store
+            .resolve(&keys, tenant, "nl-bsn", "987654321")
+            .await
+            .expect("resolve a value nobody holds"),
+        None,
+        "and an identifier nobody holds still resolves to nothing, so the \
+         assertion above cannot be met by a resolve that answers everything"
+    );
+}
