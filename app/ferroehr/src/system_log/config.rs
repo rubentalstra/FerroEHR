@@ -236,6 +236,79 @@ impl Default for AuditConfig {
     }
 }
 
+/// The audit posture a deployment runs under, as boot, `/health/readiness` and
+/// `/management/info` report it.
+///
+/// Two of its states are legitimate to run and wrong to run silently (#3238):
+/// auditing off leaves no access log and no EHDS logging component, and
+/// `fail_mode = "open"` drops a record the queue cannot take while the request
+/// succeeds. Each is stated once as a [caution](Self::cautions), the same
+/// sentence on every surface, so a collector can alert on it without parsing.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize)]
+pub struct AuditPosture {
+    /// The `[audit] enabled` master switch.
+    pub enabled: bool,
+    /// The behaviour when a record cannot be taken.
+    pub fail_mode: FailMode,
+    /// Whether the local Audit Record Repository is on.
+    pub local_store: bool,
+    /// Days the local store keeps records; `0` = forever.
+    pub retention_days: u32,
+}
+
+impl AuditPosture {
+    /// The posture a configuration describes.
+    #[must_use]
+    pub fn of(config: &AuditConfig) -> Self {
+        Self {
+            enabled: config.enabled,
+            fail_mode: config.fail_mode,
+            local_store: config.store.enabled,
+            retention_days: config.store.retention_days,
+        }
+    }
+
+    /// The postures worth a warning, as the one sentence every surface shows.
+    ///
+    /// Empty when auditing is on and fails closed. Order is severity: a
+    /// disabled trail makes the fail mode moot, so it is the only caution then.
+    #[must_use]
+    pub fn cautions(self) -> Vec<&'static str> {
+        if !self.enabled {
+            return vec![
+                "auditing is disabled: no access log is written and the EHDS logging \
+                 component is off (set [audit] enabled = true)",
+            ];
+        }
+        match self.fail_mode {
+            FailMode::Open => vec![
+                "fail_mode is open: a record the audit queue cannot take is dropped and \
+                 metered while the request succeeds (set [audit] fail_mode = \"closed\" to \
+                 refuse an unrecorded access with 503)",
+            ],
+            FailMode::Closed => Vec::new(),
+        }
+    }
+
+    /// The one-line summary the readiness indicator carries when the trail is on.
+    #[must_use]
+    pub fn summary(self) -> String {
+        let store = if self.local_store {
+            match self.retention_days {
+                0 => "local store on, kept forever".to_owned(),
+                days => format!("local store on, {days}-day retention"),
+            }
+        } else {
+            "local store off".to_owned()
+        };
+        let mode = match self.fail_mode {
+            FailMode::Open => "open",
+            FailMode::Closed => "closed",
+        };
+        format!("fail_mode={mode}; {store}")
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;

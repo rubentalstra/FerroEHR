@@ -26,6 +26,7 @@ use clap::{Parser, Subcommand};
 use ferroehr::config::management::EndpointLevels;
 use ferroehr::config::management::ManagementConfig;
 use ferroehr::system_log::config::AuditConfig;
+use ferroehr::system_log::config::AuditPosture;
 use ferroehr::system_log::sender::{AuditHandle, AuditSender, SubjectResolver};
 use ferroehr::telemetry::build_info::BuildInfo;
 use ferroehr::telemetry::health::{HealthIndicator, HealthRegistry};
@@ -464,8 +465,13 @@ fn log_resolved_posture(
             resolve_subject = audit.resolve_subject,
             "IHE ATNA audit enabled"
         );
-    } else {
-        tracing::info!("IHE ATNA audit disabled");
+    }
+    // A legitimate posture that is wrong to run silently is said at `warn`
+    // with a structured field, the same sentence the readiness indicator and
+    // `/management/info` carry, so a collector alerts on it without parsing
+    // (#3238).
+    for caution in AuditPosture::of(audit).cautions() {
+        tracing::warn!(posture = "audit", caution, "audit posture");
     }
     if management.enabled {
         tracing::info!(
@@ -818,7 +824,8 @@ async fn serve(config_path: Option<&Path>, overrides: &[(String, String)]) -> an
         ferroehr::banner::print(config.spec_profile);
     }
 
-    let build_info = BuildInfo::for_profile(config.spec_profile);
+    let build_info =
+        BuildInfo::for_profile(config.spec_profile).with_audit(AuditPosture::of(&config.audit));
     let mut telemetry =
         telemetry::init(&telemetry_config, &build_info).context("initialising telemetry")?;
 
@@ -855,9 +862,13 @@ async fn serve(config_path: Option<&Path>, overrides: &[(String, String)]) -> an
         Arc::new(indicators::DbHealth::new(pool.clone())),
         Arc::new(indicators::MigrationsHealth::new(pool.clone())),
     ];
-    if let Some(sender) = &audit_sender {
-        indicators.push(Arc::new(indicators::AuditHealth::new(sender.clone())));
-    }
+    // Always registered: a deployment that writes no access log reads DEGRADED
+    // with the consequence stated rather than showing no row (#3238).
+    let audit_posture = AuditPosture::of(&config.audit);
+    indicators.push(Arc::new(match &audit_sender {
+        Some(sender) => indicators::AuditHealth::new(sender.clone(), audit_posture),
+        None => indicators::AuditHealth::disabled(audit_posture),
+    }));
     #[cfg(feature = "events")]
     if let Some(handle) = &events_handle {
         indicators.push(Arc::new(indicators::EventsHealth::new(handle.healthy())));
