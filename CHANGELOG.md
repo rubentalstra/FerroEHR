@@ -466,6 +466,13 @@ workflow refuses a tag that has no matching section here.
 
 ### Changed
 
+- **The control matrix states the control, not the defect** (#3249). An issue
+  titled as the defect it fixed may carry a `Control-text:` line beside its
+  `Control:` declaration, and the generator renders that text in the Control
+  column; seven shipped rows that read as defects beside "Shipped" now read
+  as controls. The Helm chart's linkage backup comment and the deployment
+  probe's coverage note describe the three server pools as shipped (#3268).
+
 - **The library's default privacy policy is the shipped one** (#3243).
   `PrivacyPolicy::default()` used to permit identified parties and scan
   nothing, so a service built without an explicit policy ran a more permissive

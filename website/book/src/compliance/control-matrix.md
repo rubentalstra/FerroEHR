@@ -16,7 +16,14 @@ Control: <legal source> <article or clause>
 
 The short name resolves to an official publisher URL from a registry inside
 the generator, so a legal citation on this page is never free text. An issue
-may declare several controls, one per line.
+may declare several controls, one per line. The Control column carries the
+issue title, unless the body also states the control on its own line, which
+the generator prefers so that an issue titled as the defect it fixed does not
+read its defect as the control:
+
+```text
+Control-text: <the control, stated as what the product does>
+```
 
 ## How this page is built
 
@@ -47,22 +54,22 @@ last regenerated, and from which commit, is the file's own git history.
 | Legal source | Applies to | Article or clause | Control | Issue | Status | Closing PR |
 |---|---|---|---|---|---|---|
 | [GDPR](https://eur-lex.europa.eu/eli/reg/2016/679/oj) | EU | Art. 15(1) | A natural person cannot obtain their own access log: the only retrieval is admin-gated over the whole repository | [#3240](https://github.com/rubentalstra/FerroEHR/issues/3240) | Shipped | [#3263](https://github.com/rubentalstra/FerroEHR/pull/3263) |
-| [GDPR](https://eur-lex.europa.eu/eli/reg/2016/679/oj) | EU | Art. 17(1) | physical_delete_party leaks externalized multimedia blobs | [#3180](https://github.com/rubentalstra/FerroEHR/issues/3180) | Shipped | [#3201](https://github.com/rubentalstra/FerroEHR/pull/3201) |
+| [GDPR](https://eur-lex.europa.eu/eli/reg/2016/679/oj) | EU | Art. 17(1) | Physical deletion of a party removes its externalised multimedia blobs | [#3180](https://github.com/rubentalstra/FerroEHR/issues/3180) | Shipped | [#3201](https://github.com/rubentalstra/FerroEHR/pull/3201) |
 | [GDPR](https://eur-lex.europa.eu/eli/reg/2016/679/oj) | EU | Art. 25(1) | Contributor rules for personal data handling and a PR guard for privacy-boundary changes | [#3167](https://github.com/rubentalstra/FerroEHR/issues/3167) | Shipped | [#3172](https://github.com/rubentalstra/FerroEHR/pull/3172) |
 | [GDPR](https://eur-lex.europa.eu/eli/reg/2016/679/oj) | EU | Art. 25(2) | Refuse identifying data on the clinical side and constrain the subject reference to a pseudonym namespace | [#3154](https://github.com/rubentalstra/FerroEHR/issues/3154) | Shipped | [#3187](https://github.com/rubentalstra/FerroEHR/pull/3187) |
 | [GDPR](https://eur-lex.europa.eu/eli/reg/2016/679/oj) | EU | Art. 25(2) | The compliance layer assumes the Netherlands; it must be jurisdiction-pluggable | [#3185](https://github.com/rubentalstra/FerroEHR/issues/3185) | Shipped | [#3187](https://github.com/rubentalstra/FerroEHR/pull/3187) |
 | [GDPR](https://eur-lex.europa.eu/eli/reg/2016/679/oj) | EU | Art. 25(2) | The identifier scanner does not run on verbatim-replay writes (EHR-Extract import, admin load), and the book says every clinical write is scanned | [#3237](https://github.com/rubentalstra/FerroEHR/issues/3237) | Shipped | [#3251](https://github.com/rubentalstra/FerroEHR/pull/3251) |
 | [GDPR](https://eur-lex.europa.eu/eli/reg/2016/679/oj) | EU | Art. 25(2) | No database constraint holds the subject-reference shape: the CHECK #3154 promised was never built | [#3241](https://github.com/rubentalstra/FerroEHR/issues/3241) | Shipped | [#3265](https://github.com/rubentalstra/FerroEHR/pull/3265) |
-| [GDPR](https://eur-lex.europa.eu/eli/reg/2016/679/oj) | EU | Art. 32(1) | Deploy artifacts do not provision the demographic role split | [#3179](https://github.com/rubentalstra/FerroEHR/issues/3179) | Shipped | [#3193](https://github.com/rubentalstra/FerroEHR/pull/3193) |
-| [GDPR](https://eur-lex.europa.eu/eli/reg/2016/679/oj) | EU | Art. 32(1) | demographic.national_identifier has no row-level security policy | [#3219](https://github.com/rubentalstra/FerroEHR/issues/3219) | Shipped | [#3223](https://github.com/rubentalstra/FerroEHR/pull/3223) |
-| [GDPR](https://eur-lex.europa.eu/eli/reg/2016/679/oj) | EU | Art. 32(1) | The documented two-DSN posture cannot boot: schema preparation runs as the clinical runtime credential | [#3224](https://github.com/rubentalstra/FerroEHR/issues/3224) | Shipped | [#3229](https://github.com/rubentalstra/FerroEHR/pull/3229) |
+| [GDPR](https://eur-lex.europa.eu/eli/reg/2016/679/oj) | EU | Art. 32(1) | Deploy artifacts provision the demographic role split | [#3179](https://github.com/rubentalstra/FerroEHR/issues/3179) | Shipped | [#3193](https://github.com/rubentalstra/FerroEHR/pull/3193) |
+| [GDPR](https://eur-lex.europa.eu/eli/reg/2016/679/oj) | EU | Art. 32(1) | Row-level security on demographic.national_identifier | [#3219](https://github.com/rubentalstra/FerroEHR/issues/3219) | Shipped | [#3223](https://github.com/rubentalstra/FerroEHR/pull/3223) |
+| [GDPR](https://eur-lex.europa.eu/eli/reg/2016/679/oj) | EU | Art. 32(1) | Schema preparation runs on its own credential, never the clinical runtime role | [#3224](https://github.com/rubentalstra/FerroEHR/issues/3224) | Shipped | [#3229](https://github.com/rubentalstra/FerroEHR/pull/3229) |
 | [GDPR](https://eur-lex.europa.eu/eli/reg/2016/679/oj) | EU | Art. 32(1) | A declared deployment profile: production refuses the postures it cannot prove, research says so in red | [#3226](https://github.com/rubentalstra/FerroEHR/issues/3226) | Shipped | [#3265](https://github.com/rubentalstra/FerroEHR/pull/3265) |
 | [GDPR](https://eur-lex.europa.eu/eli/reg/2016/679/oj) | EU | Art. 32(1)(a) | Split demographic parties into a `demographic` schema with a non-overlapping runtime role | [#3153](https://github.com/rubentalstra/FerroEHR/issues/3153) | Shipped | [#3182](https://github.com/rubentalstra/FerroEHR/pull/3182) |
 | [GDPR](https://eur-lex.europa.eu/eli/reg/2016/679/oj) | EU | Art. 32(1)(a) | National identifiers in the demographic schema: encrypted storage, keyed lookup, audited resolution | [#3155](https://github.com/rubentalstra/FerroEHR/issues/3155) | Shipped | [#3189](https://github.com/rubentalstra/FerroEHR/pull/3189) |
 | [GDPR](https://eur-lex.europa.eu/eli/reg/2016/679/oj) | EU | Art. 32(1)(c) | Separate encryption keys and per-schema backup handling for the clinical and demographic domains | [#3157](https://github.com/rubentalstra/FerroEHR/issues/3157) | Shipped | [#3198](https://github.com/rubentalstra/FerroEHR/pull/3198) |
-| [GDPR](https://eur-lex.europa.eu/eli/reg/2016/679/oj) | EU | Art. 32(1)(c) | Nothing backs up the linkage schema, and no probe covers its boundary | [#3220](https://github.com/rubentalstra/FerroEHR/issues/3220) | Shipped | — |
-| [GDPR](https://eur-lex.europa.eu/eli/reg/2016/679/oj) | EU | Art. 32(1)(d) | The storage-parity sweep and node rebuild do not cover the demographic domain | [#3178](https://github.com/rubentalstra/FerroEHR/issues/3178) | Shipped | [#3184](https://github.com/rubentalstra/FerroEHR/pull/3184) |
-| [GDPR](https://eur-lex.europa.eu/eli/reg/2016/679/oj) | EU | Art. 32(1)(d) | Nothing tests the two-DSN posture: credential separation is documented, configured and unexercised | [#3222](https://github.com/rubentalstra/FerroEHR/issues/3222) | Shipped | [#3231](https://github.com/rubentalstra/FerroEHR/pull/3231) |
+| [GDPR](https://eur-lex.europa.eu/eli/reg/2016/679/oj) | EU | Art. 32(1)(c) | The linkage schema is backed up and its boundary is probed | [#3220](https://github.com/rubentalstra/FerroEHR/issues/3220) | Shipped | — |
+| [GDPR](https://eur-lex.europa.eu/eli/reg/2016/679/oj) | EU | Art. 32(1)(d) | The storage-parity sweep and node rebuild cover the demographic domain | [#3178](https://github.com/rubentalstra/FerroEHR/issues/3178) | Shipped | [#3184](https://github.com/rubentalstra/FerroEHR/pull/3184) |
+| [GDPR](https://eur-lex.europa.eu/eli/reg/2016/679/oj) | EU | Art. 32(1)(d) | The two-DSN credential separation is exercised by test | [#3222](https://github.com/rubentalstra/FerroEHR/issues/3222) | Shipped | [#3231](https://github.com/rubentalstra/FerroEHR/pull/3231) |
 | [GDPR](https://eur-lex.europa.eu/eli/reg/2016/679/oj) | EU | Art. 4(5) | Split demographic parties into a `demographic` schema with a non-overlapping runtime role | [#3153](https://github.com/rubentalstra/FerroEHR/issues/3153) | Shipped | [#3182](https://github.com/rubentalstra/FerroEHR/pull/3182) |
 | [GDPR](https://eur-lex.europa.eu/eli/reg/2016/679/oj) | EU | Art. 4(5) | Refuse identifying data on the clinical side and constrain the subject reference to a pseudonym namespace | [#3154](https://github.com/rubentalstra/FerroEHR/issues/3154) | Shipped | [#3187](https://github.com/rubentalstra/FerroEHR/pull/3187) |
 | [GDPR](https://eur-lex.europa.eu/eli/reg/2016/679/oj) | EU | Art. 4(5) | Separate encryption keys and per-schema backup handling for the clinical and demographic domains | [#3157](https://github.com/rubentalstra/FerroEHR/issues/3157) | Shipped | [#3198](https://github.com/rubentalstra/FerroEHR/pull/3198) |

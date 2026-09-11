@@ -1,15 +1,21 @@
 ---
 name: tick-pr-licensing-box
-description: "Standing instruction to tick the contribution-licensing checkbox in every PR body I open, rather than leaving it for the owner"
-metadata: 
-  node_type: memory
+description: Every PR body must carry the template's EXACT ticked licensing line; a paraphrase fails contribution-licence-guard
+metadata:
   type: feedback
-  originSessionId: 41ab4b7d-4974-4bc0-9a89-c1d7691c6eb6
-  modified: 2026-09-06T18:42:19.565Z
 ---
 
-Tick the PR template's `- [ ] I accept the terms in [CONTRIBUTING.md § Licensing of contributions]` box on every PR I open (owner ruling 2026-09-06). Do not leave it unticked "for the owner to sign".
+Every PR body I open carries the contribution-licensing line, ticked, in the
+template's EXACT wording (`.github/pull_request_template.md` § Licensing of
+contributions):
 
-**Why:** the `contribution-licence-guard` CI job fails on an unticked or missing line, so leaving it turns every PR red on a formality. The owner is the sole copyright holder AND the Licensor named in `LICENSE`, so the attestation is true by construction; a body edit unticks it if they ever disagree.
+`- [x] I accept the terms in [CONTRIBUTING.md § Licensing of contributions](../CONTRIBUTING.md#licensing-of-contributions): I have the right to submit this work, I license it under the project licence of the version it lands in, and I grant the Licensor the relicensing right stated there.`
 
-**How to apply:** include the full `## Licensing of contributions` section with `- [x]` in the PR body at creation time. The guard reads the PR event payload, so a body edit re-runs it. See [[merge-on-local-gates]] and [[autonomous-phase-flow]].
+**Why:** `scripts/checks/contribution-licence.sh` greps for that literal
+prefix. A paraphrase ("I license this contribution under the terms in
+CONTRIBUTING.md") turned #3270 red on 2026-09-11 on a formality, as did
+leaving the box unticked earlier.
+
+**How to apply:** copy the line from the template (or from the previous PR
+body), never retype it; fix a red guard with `gh pr edit --body-file`, which
+raises a fresh run by itself. See [[session-workflow-gotchas]].
