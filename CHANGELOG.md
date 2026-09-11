@@ -490,6 +490,16 @@ workflow refuses a tag that has no matching section here.
 
 ### Fixed
 
+- **A named `PARTY_RELATED` is accepted unless it is the subject** (#3252).
+  The identified-party rule refused every `PARTY_RELATED` carrying a `name` in
+  clinical content, which turned away a composition whose consenting mother or
+  guardian is named, content the Reference Model models on purpose and the
+  openEHR REST API obliges a server to accept; the conformance suite went from
+  1104/1104 to 917/1104 on it. The rule now refuses the name only where the
+  relationship codes `self`, the party being the patient; `identifiers` stay
+  refused on both classes, and `allow_identified_parties_in_ehr` still opens
+  everything.
+
 - **`fail_mode = "closed"` now covers the domain-level access records too**
   (#3235). The linkage resolutions and merges, the subject-to-EHR lookup
   behind `GET /ehr?subject_id`, the national-identifier resolution and the

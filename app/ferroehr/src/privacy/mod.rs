@@ -31,11 +31,11 @@
 //!    ([`config::PrivacyConfig::subject_namespaces`]).
 //! 2. **Identified parties.** In clinical content a `PARTY_IDENTIFIED` may
 //!    carry `name` — the class is explicitly the provider proxy, "other than
-//!    the subject of the record" — but not `identifiers`, and a
-//!    `PARTY_RELATED` carries neither, being defined by its relationship to
-//!    the subject. The deployment can opt in to both. `Basic_validity` is
-//!    satisfied by `external_ref` alone, so every party proxy stays
-//!    expressible.
+//!    the subject of the record" — but not `identifiers`; a `PARTY_RELATED`
+//!    may carry `name` unless its relationship codes `self`, where the party
+//!    IS the subject, and never `identifiers`. The deployment can opt in to
+//!    all of it. `Basic_validity` is satisfied by `external_ref` alone, so
+//!    every party proxy stays expressible.
 //! 3. **The identifier scanner.** No string leaf may carry a value one of the
 //!    active identifier rules claims. The rules are keyed by jurisdiction and
 //!    each transcribes the checksum its own issuing register publishes; a
@@ -348,15 +348,24 @@ impl PrivacyPolicy {
 /// §Description), so a name there is clinician or institution identity — the
 /// class's own paradigm case, not patient identity.
 ///
-/// Two attributes stay refused. `identifiers` is "One or more formal
-/// identifiers (possibly computable)" (same file, §Attributes) — the
+/// `identifiers` stays refused on both classes: "One or more formal
+/// identifiers (possibly computable)" (same file, §Attributes) is the
 /// national-identifier slot the pseudonymisation boundary exists to keep off
-/// the clinical side — and `PARTY_RELATED.name` with it, because that class is
-/// "Proxy type for identifying a party **and its relationship to the subject**
-/// of the record" and may BE the subject ("If it is the patient, coded as
-/// self"; RM common `UML/classes/org.openehr.rm.common.party_related.adoc`).
-/// `Basic_validity` is satisfied by `external_ref` alone, so every refused
-/// proxy stays expressible.
+/// the clinical side.
+///
+/// `PARTY_RELATED.name` is refused only where the party IS the subject. The
+/// class is "Proxy type for identifying a party **and its relationship to the
+/// subject** of the record", and its `relationship` is "coded as self" when
+/// "it is the patient" (RM common
+/// `UML/classes/org.openehr.rm.common.party_related.adoc` §Attributes; `self`
+/// is code `0` of the openEHR `subject relationship` group, TERM
+/// `SupportTerminology/codesets/openehr_terminology-vocabularies.adoc`). A
+/// named mother, guardian or donor is a third party the RM models on purpose,
+/// not the subject's identity, and the released spec obliges a server to
+/// accept it (#3252). A relationship that cannot be read is treated as `self`:
+/// the rule refuses what it cannot prove harmless, and the RM validator names
+/// the missing 1..1 attribute on its own. `Basic_validity` is satisfied by
+/// `external_ref` alone, so every refused proxy stays expressible.
 ///
 /// A free function rather than a method: the caller has already decided the
 /// rule is in force, so this reads no policy state.
@@ -367,14 +376,13 @@ fn check_party(at: &str, map: &serde_json::Map<String, Value>, findings: &mut Ve
         _ => return,
     };
     let present = |attribute: &str| map.get(attribute).is_some_and(|v| !v.is_null());
-    if related && present("name") {
+    if related && present("name") && relationship_is_self(map.get("relationship")) {
         findings.push(Finding {
             path: format!("{at}/name"),
-            message: "names a party in relation to the record's subject: PARTY_RELATED \
-                      identifies a party AND its relationship to the subject, coded `self` \
-                      where that party IS the patient (PARTY_RELATED §Description, \
-                      §Attributes), so a name here identifies or re-identifies the subject. \
-                      external_ref alone satisfies Basic_validity. Set \
+            message: "names the record's subject: a PARTY_RELATED whose relationship is \
+                      `self` IS the patient (PARTY_RELATED §Attributes: \"If it is the \
+                      patient, coded as self\"), so a name here identifies or re-identifies \
+                      the subject. external_ref alone satisfies Basic_validity. Set \
                       privacy.allow_identified_parties_in_ehr to accept it."
                 .to_owned(),
             class: FindingClass::Refusal,
@@ -392,6 +400,34 @@ fn check_party(at: &str, map: &serde_json::Map<String, Value>, findings: &mut Ve
             .to_owned(),
             class: FindingClass::Refusal,
         });
+    }
+}
+
+/// Whether a `PARTY_RELATED.relationship` says the party IS the subject.
+///
+/// `self` is code `0` of the openEHR `subject relationship` group, so a
+/// `DV_CODED_TEXT` coded `openehr::0` is `self`, and so is one whose text
+/// reads `self` when it carries no `defining_code` a terminology could
+/// settle. An absent or unreadable relationship counts as `self`: the rule
+/// refuses what it cannot prove harmless, and the RM validator reports the
+/// missing 1..1 attribute on its own.
+fn relationship_is_self(relationship: Option<&Value>) -> bool {
+    let Some(relationship) = relationship else {
+        return true;
+    };
+    let code = relationship
+        .pointer("/defining_code/code_string")
+        .and_then(Value::as_str);
+    let terminology = relationship
+        .pointer("/defining_code/terminology_id/value")
+        .and_then(Value::as_str);
+    match (code, terminology) {
+        (Some(code), Some(terminology)) => terminology == "openehr" && code == "0",
+        (Some(code), None) => code == "0",
+        (None, _) => relationship
+            .get("value")
+            .and_then(Value::as_str)
+            .is_none_or(|text| text.trim().eq_ignore_ascii_case("self")),
     }
 }
 

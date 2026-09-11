@@ -211,15 +211,15 @@ fn formal_identifiers_on_a_party_identified_are_refused_by_default() {
     assert_eq!(findings[0].class, FindingClass::Refusal);
 }
 
-/// The refused half of the matrix on `PARTY_RELATED`: a bare name.
+/// A `PARTY_RELATED` whose relationship names a third party keeps its name.
 ///
-/// That class is "Proxy type for identifying a party and its relationship to
-/// the subject of the record" and may BE the subject ("If it is the patient,
-/// coded as self"; RM common
-/// `UML/classes/org.openehr.rm.common.party_related.adoc`), so a name there is
-/// patient-identifying where the same name on a `PARTY_IDENTIFIED` is not.
+/// The class is "Proxy type for identifying a party and its relationship to
+/// the subject of the record" (RM common
+/// `UML/classes/org.openehr.rm.common.party_related.adoc`); a mother (openEHR
+/// `subject relationship` code `10`) is not the subject, and the released
+/// spec obliges a server to accept the content the RM models (#3252).
 #[test]
-fn a_named_party_related_in_clinical_content_is_refused_by_default() {
+fn a_named_party_related_to_a_third_party_is_accepted_by_default() {
     let composition = json!({
         "_type": "COMPOSITION",
         "content": [{
@@ -229,17 +229,62 @@ fn a_named_party_related_in_clinical_content_is_refused_by_default() {
                 "performer": {
                     "_type": "PARTY_RELATED",
                     "name": "A Relative",
-                    "relationship": { "_type": "DV_CODED_TEXT", "value": "mother" }
+                    "relationship": {
+                        "_type": "DV_CODED_TEXT",
+                        "value": "mother",
+                        "defining_code": {
+                            "_type": "CODE_PHRASE",
+                            "terminology_id": { "_type": "TERMINOLOGY_ID", "value": "openehr" },
+                            "code_string": "10"
+                        }
+                    }
                 }
             }]
         }]
     });
     let findings = policy(&PrivacyConfig::default()).findings("COMPOSITION", &composition);
-    assert_eq!(
-        paths(&findings),
-        ["COMPOSITION/content[0]/other_participations[0]/performer/name"]
-    );
-    assert_eq!(findings[0].class, FindingClass::Refusal);
+    assert!(findings.is_empty(), "{findings:?}");
+}
+
+/// The refused cell of the `PARTY_RELATED` row: a name on the party that IS
+/// the subject, "If it is the patient, coded as self" (RM common
+/// `UML/classes/org.openehr.rm.common.party_related.adoc` §Attributes), coded
+/// `openehr::0` or spelled out where no code settles it.
+#[test]
+fn a_named_party_related_coded_self_is_refused_by_default() {
+    for relationship in [
+        json!({
+            "_type": "DV_CODED_TEXT",
+            "value": "self",
+            "defining_code": {
+                "_type": "CODE_PHRASE",
+                "terminology_id": { "_type": "TERMINOLOGY_ID", "value": "openehr" },
+                "code_string": "0"
+            }
+        }),
+        json!({ "_type": "DV_CODED_TEXT", "value": "Self" }),
+    ] {
+        let composition = json!({
+            "_type": "COMPOSITION",
+            "content": [{
+                "_type": "OBSERVATION",
+                "other_participations": [{
+                    "_type": "PARTICIPATION",
+                    "performer": {
+                        "_type": "PARTY_RELATED",
+                        "name": "The Patient",
+                        "relationship": relationship
+                    }
+                }]
+            }]
+        });
+        let findings = policy(&PrivacyConfig::default()).findings("COMPOSITION", &composition);
+        assert_eq!(
+            paths(&findings),
+            ["COMPOSITION/content[0]/other_participations[0]/performer/name"]
+        );
+        assert_eq!(findings[0].class, FindingClass::Refusal);
+    }
 }
 
 #[test]
@@ -259,8 +304,8 @@ fn an_identified_party_reduced_to_its_external_ref_passes() {
     );
 }
 
-/// Both refused cells of the `PARTY_RELATED` row at once, and the opt-in over
-/// the same body.
+/// Both refused cells of the `PARTY_RELATED` row at once — a name on a `self`
+/// party and formal identifiers — and the opt-in over the same body.
 #[test]
 fn identifiers_on_a_party_related_are_refused_too_and_the_opt_in_accepts_both() {
     let composition = json!({
@@ -271,7 +316,8 @@ fn identifiers_on_a_party_related_are_refused_too_and_the_opt_in_accepts_both() 
                 "_type": "PARTICIPATION",
                 "performer": {
                     "_type": "PARTY_RELATED",
-                    "name": "A Relative",
+                    "name": "The Patient",
+                    "relationship": { "_type": "DV_CODED_TEXT", "value": "self" },
                     "identifiers": [{ "_type": "DV_IDENTIFIER", "id": "REL-7" }]
                 }
             }]
@@ -309,7 +355,8 @@ fn the_opt_in_accepts_every_cell_of_the_matrix() {
                 "_type": "PARTICIPATION",
                 "performer": {
                     "_type": "PARTY_RELATED",
-                    "name": "A Relative",
+                    "name": "The Patient",
+                    "relationship": { "_type": "DV_CODED_TEXT", "value": "self" },
                     "identifiers": [{ "_type": "DV_IDENTIFIER", "id": "REL-7" }]
                 }
             }]
