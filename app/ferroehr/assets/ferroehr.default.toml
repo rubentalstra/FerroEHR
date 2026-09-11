@@ -28,6 +28,15 @@
 # still returns rows.
 spec_profile = "development"
 
+# The declared deployment posture. `sandbox` (the default) must not hold real
+# patient data and says which separations are missing on the banner, in the
+# log and on GET /rest/status; `production` refuses to start while one is
+# missing and not named in deployment_accepts (shared_credential,
+# shared_cluster, open_subject_namespace, audit_off,
+# migrate_on_runtime_credential). Our own posture, not a legal requirement.
+deployment_profile = "sandbox"   # sandbox | production
+#? deployment_accepts = ["shared_cluster"]
+
 # ── [server] — HTTP listener + REST surface ──────────────────────────────────
 [server]
 bind = "0.0.0.0:8080"

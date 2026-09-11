@@ -177,6 +177,11 @@ pub struct FerroEhrService {
     /// ([`crate::licence::state::LicenceState`]); no licence by default. Read
     /// by `/rest/status`; it changes nothing else.
     licence: crate::licence::state::LicenceState,
+    /// The declared deployment posture and the separations it found open
+    /// ([`crate::config::deployment::DeploymentPosture`]), served on
+    /// `/rest/status`; the sandbox default with nothing evaluated until the
+    /// binary installs the boot evaluation.
+    deployment: crate::config::deployment::DeploymentPosture,
     /// The stamp key every server-minted identifier carries
     /// ([`crate::licence::stamp`]), derived from `licence` once at boot.
     stamp: crate::licence::stamp::StampKey,
@@ -296,6 +301,11 @@ impl FerroEhrService {
             licence: crate::licence::state::LicenceState::NoLicence(
                 crate::licence::state::Reason::NoneEmbedded,
             ),
+            deployment: crate::config::deployment::DeploymentPosture {
+                profile: crate::config::deployment::DeploymentProfile::Sandbox,
+                gaps: Vec::new(),
+                accepted: Vec::new(),
+            },
             stamp: crate::licence::stamp::StampKey::fail_safe(),
             audit: None,
             audit_store: None,
@@ -420,6 +430,22 @@ impl FerroEhrService {
         self.stamp = licence.stamp_key();
         self.licence = licence;
         self
+    }
+
+    /// Install the boot evaluation of the deployment posture (#3226).
+    #[must_use]
+    pub fn with_deployment(
+        mut self,
+        deployment: crate::config::deployment::DeploymentPosture,
+    ) -> Self {
+        self.deployment = deployment;
+        self
+    }
+
+    /// The declared deployment posture and its open separations.
+    #[must_use]
+    pub fn deployment(&self) -> &crate::config::deployment::DeploymentPosture {
+        &self.deployment
     }
 
     /// The boot outcome of the `[licence]` section.

@@ -151,6 +151,22 @@ risk assessment on that, not on the schema split alone. The
 [threat model](../threat-model.md) states the residual risk at each boundary
 the product does defend.
 
+### The deployment profile
+
+A deployment declares what it may hold with the top-level `deployment_profile`
+key ([configuration](../installation/configuration.md#deployment_profile)).
+`production` refuses to start while a separation is missing and not accepted
+by name: separated credentials, separated clusters, a declared pseudonym
+namespace, an audit trail with a durable sink, schema preparation on its own
+credential. `sandbox`, the default, must not hold real personal data and says
+so on the banner, in the log and on `GET /rest/status`. The profile is
+FerroEHR's own posture. GDPR Art. 4(5) asks that the additional information be
+"kept separately and … subject to technical and organisational measures", not
+that it sit on a separate server, so one cluster with separated schemas and
+roles is a defensible reading; two clusters close the bridges no grant can,
+the superuser, an instance-wide point-in-time recovery, a single compromise,
+and the profile exists so that choice is made deliberately.
+
 ## GDPR
 
 [Regulation (EU) 2016/679](https://eur-lex.europa.eu/eli/reg/2016/679/oj)
