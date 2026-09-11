@@ -639,10 +639,20 @@ pub(crate) async fn middleware(
             req.extensions_mut().insert(principal.clone());
             let for_audit = principal.clone();
             let committer = committer_identity(&for_audit);
+            // The roles ride beside the committer identity for the request
+            // scope, so a record the service layer emits by itself carries
+            // them too (#3239).
+            let roles = for_audit.roles.clone();
             let mut resp = REQUEST_PRINCIPAL
                 .scope(
                     Some(principal),
-                    ferroehr::service::committer::with_committer(Some(committer), next.run(req)),
+                    ferroehr::system_log::access_context::with_roles(
+                        roles,
+                        ferroehr::service::committer::with_committer(
+                            Some(committer),
+                            next.run(req),
+                        ),
+                    ),
                 )
                 .await;
             // The outer ATNA audit layer cannot observe request-extension

@@ -133,6 +133,13 @@ pub struct AuditEvent {
     /// that emitted the record and answers a different question. `None` when
     /// no organisation was resolved — never a guess.
     pub organisation: Option<String>,
+    /// The roles the requesting user held when the access happened (#3239):
+    /// the RFC 9068 §2.2.3.1 claim carriers for a bearer, the user definition
+    /// for Basic. NEN 7513 asks for the role or authority under which the
+    /// person accessed the record. Empty when no principal was authenticated;
+    /// the store records that as NULL, and an authenticated caller with no
+    /// roles as the empty array.
+    pub roles: Vec<String>,
     /// The client network address (`X-Forwarded-For` first hop / peer), if known.
     pub client_ip: Option<String>,
     /// The owning EHR id, for optional background subject enrichment.
@@ -235,6 +242,7 @@ impl AuditEvent {
             user_id: String::new(),
             user_is_requestor: true,
             organisation: None,
+            roles: Vec::new(),
             client_ip: None,
             ehr_id: None,
             object_id: None,

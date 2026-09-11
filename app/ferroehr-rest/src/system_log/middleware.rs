@@ -362,6 +362,9 @@ fn fill_common(
     timestamp: jiff::Timestamp,
 ) {
     event.user_id = principal.map(|p| p.subject.clone()).unwrap_or_default();
+    // The roles the person held (NEN 7513's role element, #3239): the RFC 9068
+    // §2.2.3.1 claim carriers for a bearer, the user definition for Basic.
+    event.roles = principal.map(|p| p.roles.clone()).unwrap_or_default();
     event.user_is_requestor = true;
     // The bearer token's `jti` (RFC 7519 §4.1.7) is the minimal token identity
     // IHE BALP `OAUTHaccessTokenUse.Minimal` records; token contents are never

@@ -102,6 +102,10 @@ pub struct AuditAgent {
     /// which FHIR R4 allows (0..1) and which is the honest rendering for a
     /// participant no code system classifies.
     pub role: Option<AuditCoding>,
+    /// The security roles the agent acted under (`agent.role`, 0..*), one
+    /// text-only `CodeableConcept` each: the deployment's own role vocabulary
+    /// has no published code system.
+    pub roles: Vec<String>,
     /// Who the agent is.
     pub who: Option<AuditWho>,
     /// Whether this agent initiated the event.
@@ -314,6 +318,20 @@ fn single_concept(source: &AuditCoding) -> CodeableConcept {
     .into()
 }
 
+/// A `CodeableConcept` carrying only text: a value from a vocabulary with no
+/// published code system.
+fn text_concept(text: &str) -> CodeableConcept {
+    CodeableConceptInner {
+        id: None,
+        extension: Vec::new(),
+        coding: Vec::new(),
+        coding_ext: Vec::new(),
+        text: Some(text.to_owned()),
+        text_ext: None,
+    }
+    .into()
+}
+
 /// The FHIR `AuditEvent.agent` for one participant.
 fn agent(source: &AuditAgent) -> AuditEventAgent {
     AuditEventAgent {
@@ -322,7 +340,7 @@ fn agent(source: &AuditAgent) -> AuditEventAgent {
         modifier_extension: Vec::new(),
         r#type: source.role.as_ref().map(single_concept),
         r#type_ext: None,
-        role: Vec::new(),
+        role: source.roles.iter().map(|r| Some(text_concept(r))).collect(),
         role_ext: Vec::new(),
         who: source.who.as_ref().map(who_reference),
         who_ext: None,
@@ -452,6 +470,7 @@ mod tests {
             outcome: AuditOutcome::Success,
             outcome_desc: None,
             agents: vec![AuditAgent {
+                roles: vec!["clinician".to_owned()],
                 role: Some(AuditCoding {
                     system: Some("http://dicom.nema.org/resources/ontology/DCM".to_owned()),
                     code: "110152".to_owned(),
@@ -508,6 +527,7 @@ mod tests {
     fn an_untyped_agent_renders_a_literal_reference_and_a_system_less_purpose() {
         let mut record = record();
         record.agents.push(AuditAgent {
+            roles: Vec::new(),
             role: None,
             who: Some(AuditWho::Reference("Organization/zh-noordwest".to_owned())),
             requestor: false,

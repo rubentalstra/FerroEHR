@@ -26,6 +26,15 @@ workflow refuses a tag that has no matching section here.
   log is itself recorded as an access naming that subject. Unset, nothing
   changes.
 
+- **The access record carries the caller's roles** (#3239). NEN 7513 asks
+  under which role or authority a person accessed a record; the RBAC layer
+  held the caller's roles and the record dropped them. Every access event,
+  the request-level ones and the domain-level linkage, subject, identifier
+  and EHR-Extract records alike, now stores the roles as a JSON array
+  (`audit.audit_event.roles`, `NULL` for an unauthenticated refusal), renders
+  them as FHIR `agent.role` on the requestor and as a `RoleIDCode` per role on
+  the DICOM source participant, and serves them through ITI-81.
+
 - **Auditing off and `fail_mode = "open"` are said where an operator looks**
   (#3238). Auditing disabled used to be one info-level line; the fail-open
   default was silent. Both are now a `warn` at boot with a structured

@@ -44,6 +44,10 @@ struct ActiveParticipant {
     user_is_requestor: bool,
     network_access_point_id: String,
     role: Code,
+    /// The security roles the person acted under, each a further `RoleIDCode`
+    /// (PS3.15 §A.5.1 makes the element 0..*), coded in the deployment's own
+    /// role vocabulary (#3239).
+    roles: Vec<String>,
 }
 
 /// A DICOM `ParticipantObjectIdentification` (a data object the event touched).
@@ -110,6 +114,7 @@ impl AuditMessage {
                 user_is_requestor: event.user_is_requestor,
                 network_access_point_id: client_ip,
                 role: codes::ROLE_SOURCE,
+                roles: event.roles.clone(),
             },
             // Destination (this server).
             ActiveParticipant {
@@ -117,6 +122,7 @@ impl AuditMessage {
                 user_is_requestor: false,
                 network_access_point_id: nonempty(&ctx.server_ip, missing),
                 role: codes::ROLE_DESTINATION,
+                roles: Vec::new(),
             },
         ];
 
@@ -170,6 +176,13 @@ impl AuditMessage {
             ap.push_attribute(("NetworkAccessPointTypeCode", NETWORK_ACCESS_POINT_IP));
             w.write_event(Event::Start(ap))?;
             write_code(&mut w, "RoleIDCode", &p.role)?;
+            for role in &p.roles {
+                let mut c = BytesStart::new("RoleIDCode");
+                c.push_attribute(("csd-code", role.as_str()));
+                c.push_attribute(("codeSystemName", ROLE_VOCABULARY));
+                c.push_attribute(("originalText", role.as_str()));
+                w.write_event(Event::Empty(c))?;
+            }
             w.write_event(Event::End(BytesEnd::new("ActiveParticipant")))?;
         }
 
@@ -274,6 +287,11 @@ fn write_code<W: std::io::Write>(
     w.write_event(Event::Empty(c))?;
     Ok(())
 }
+
+/// The `codeSystemName` of the deployment's own role vocabulary on a
+/// `RoleIDCode`: the RBAC roles a caller held, which no published code system
+/// names.
+const ROLE_VOCABULARY: &str = "urn:ferroehr:role";
 
 const fn bool_str(b: bool) -> &'static str {
     if b { "true" } else { "false" }

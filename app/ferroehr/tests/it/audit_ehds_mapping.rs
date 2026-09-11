@@ -56,6 +56,7 @@ fn access_event() -> AuditEvent {
     );
     "dr.jansen".clone_into(&mut e.user_id);
     e.organisation = Some("zh-noordwest".to_owned());
+    e.roles = vec!["USER".to_owned(), "clinician".to_owned()];
     e.client_ip = Some("10.0.0.9".to_owned());
     e.object_id = Some("8fa1::ferroehr::1".to_owned());
     e.event_type = Some(EventType::RestOperation("composition_get"));
@@ -285,4 +286,47 @@ fn every_resource_class_answers_which_domain_it_touched() {
             "{class:?} must answer which pseudonymisation domain it touched"
         );
     }
+}
+
+// ── NEN 7513: the role under which the person accessed ───────────────────────
+
+/// NEN 7513 lists the role or authority under which the person accessed the
+/// record among what a logged event has to contain. The record carries the
+/// caller's roles and both renderings show them: FHIR `agent.role` on the
+/// requestor ("the security role that the user was acting under") and a
+/// `RoleIDCode` per role on the DICOM source participant (PS3.15 §A.5.1 makes
+/// the element 0..*).
+#[test]
+fn nen_7513_the_actor_roles_are_recorded_and_rendered_in_both_formats() {
+    let event = access_event();
+    assert_eq!(event.roles, ["USER", "clinician"]);
+    let agents = fhir_agents(&event);
+    let requestor = agents
+        .iter()
+        .find(|a| a["requestor"] == true && a["who"]["identifier"]["value"] == "dr.jansen")
+        .expect("the requesting person is an agent");
+    let roles: Vec<&str> = requestor["role"]
+        .as_array()
+        .expect("agent.role is a list")
+        .iter()
+        .filter_map(|r| r["text"].as_str())
+        .collect();
+    assert_eq!(roles, ["USER", "clinician"], "{requestor}");
+
+    let (xml, _json) = renderings(&event);
+    assert!(
+        xml.contains(r#"csd-code="clinician" codeSystemName="urn:ferroehr:role""#),
+        "the role must reach the DICOM source participant as a RoleIDCode: {xml}"
+    );
+
+    // No principal, no roles: the requestor carries no role element rather
+    // than an empty one.
+    let mut anonymous = access_event();
+    anonymous.roles.clear();
+    let agents = fhir_agents(&anonymous);
+    assert!(
+        agents[0]["role"].as_array().is_none_or(Vec::is_empty),
+        "an unknown role set renders as absent: {}",
+        agents[0]
+    );
 }
