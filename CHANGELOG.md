@@ -17,6 +17,15 @@ workflow refuses a tag that has no matching section here.
 
 ### Added
 
+- **Auditing off and `fail_mode = "open"` are said where an operator looks**
+  (#3238). Auditing disabled used to be one info-level line; the fail-open
+  default was silent. Both are now a `warn` at boot with a structured
+  `posture = "audit"` field, the `audit_sender` readiness indicator is
+  registered whether or not auditing is on (`DEGRADED` with the consequence
+  stated when it is off, `UP` with `fail_mode`, the local store and retention
+  otherwise), and `GET /management/info` carries the `audit` posture. The
+  audit page states at its top what each posture means.
+
 - **The licence in force is explicit, verified and reported.** Every build
   embeds the licensor's `non-commercial` grant (what BUSL-1.1 gives everyone);
   a `commercial` licence is installed with the new `[licence] file` key

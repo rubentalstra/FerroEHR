@@ -799,7 +799,7 @@ Not every indicator blocks readiness, and the distinction is deliberate:
 |---|---|---|
 | `db` | a pooled connection answers | yes |
 | `migrations` | this build's schema is present, re-tested on every probe | yes |
-| `audit_sender` | whether ATNA forwarding is enabled | no: reports `DEGRADED`, never `503` |
+| `audit_sender` | the audit posture: `DEGRADED` with the consequence stated when auditing is off (no access log, no EHDS logging component); `UP` with `fail_mode`, the local store and its retention in the detail, and a stated caution under `fail_mode = "open"` | no: reports `DEGRADED`, never `503` |
 | `events` | the event publisher's broker delivery (present only when eventing is enabled) | no: reports `DEGRADED`, never `503`, since the outbox buffers while the broker is down |
 | `fhir_outbound` | the FHIR outbound emitter's broker delivery (present only when the emitter is enabled) | no: reports `DEGRADED`, never `503`, since unemitted rows are retained and re-emitted |
 
@@ -846,7 +846,7 @@ not a default you already have.
 
 | Endpoint | Endpoint name to set | Purpose | Level to give it |
 |---|---|---|---|
-| `GET /management/info` | `info` | product name and version, build SHA, build date, `rustc`, the active `spec_profile`, the openEHR specification versions that profile selects, and the PostgreSQL target | `admin_only` |
+| `GET /management/info` | `info` | product name and version, build SHA, build date, `rustc`, the active `spec_profile`, the openEHR specification versions that profile selects, the PostgreSQL target, and the `audit` posture (`enabled`, `fail_mode`, `local_store`, `retention_days`) | `admin_only` |
 | `GET /management/prometheus` | `prometheus` | Prometheus text exposition | `admin_only`, or `public` only when the port is not reachable outside the cluster; a `public` endpoint is served OUTSIDE authentication |
 | `GET /management/metrics` | `metrics` | JSON list of the registered metric names | `admin_only` |
 | `GET /management/metrics/{name}` | `metrics` | the current value(s) of one metric; `404` for a name that is not registered | `admin_only` |
