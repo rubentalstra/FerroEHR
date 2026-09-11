@@ -364,6 +364,70 @@ async fn the_accessing_organisation_round_trips_on_both_write_paths() {
     );
 }
 
+/// The caller's roles round-trip on both write paths as a JSON array, and an
+/// unauthenticated record (no principal) records them as NULL rather than as
+/// an empty list, which is the authenticated-but-roleless fact (#3239).
+#[tokio::test]
+async fn the_actor_roles_round_trip_on_both_write_paths() {
+    let db = testkit::db().await.expect("testkit database");
+    let pool = db.pool();
+    let store = AuditStore::new(pool.clone());
+
+    let mut single = read_event("2026-07-10T08:30:00Z".parse().unwrap());
+    single.roles = vec!["USER".to_owned(), "clinician".to_owned()];
+    let rendered = fhir::to_fhir(&single, &ctx(), Some("patient-42")).expect("render");
+    store
+        .insert(&single, Some("patient-42"), &rendered)
+        .await
+        .expect("insert");
+
+    let mut batched = read_event("2026-07-10T08:31:00Z".parse().unwrap());
+    batched.roles = vec!["ADMIN".to_owned()];
+    let batched_fhir = fhir::to_fhir(&batched, &ctx(), None).expect("render");
+    let mut roleless = read_event("2026-07-10T08:32:00Z".parse().unwrap());
+    roleless.roles.clear();
+    let roleless_fhir = fhir::to_fhir(&roleless, &ctx(), None).expect("render");
+    let mut anonymous = read_event("2026-07-10T08:33:00Z".parse().unwrap());
+    anonymous.user_id.clear();
+    anonymous.roles.clear();
+    let anonymous_fhir = fhir::to_fhir(&anonymous, &ctx(), None).expect("render");
+    store
+        .insert_batch(&[
+            (batched, None, Some(batched_fhir)),
+            (roleless, None, Some(roleless_fhir)),
+            (anonymous, None, Some(anonymous_fhir)),
+        ])
+        .await
+        .expect("insert batch");
+
+    let rows = sqlx::query("SELECT roles, fhir FROM audit.audit_event ORDER BY recorded_at")
+        .fetch_all(&pool)
+        .await
+        .expect("four rows");
+    assert_eq!(rows.len(), 4);
+    let roles = |i: usize| rows[i].get::<Option<serde_json::Value>, _>("roles");
+    assert_eq!(
+        roles(0),
+        Some(serde_json::json!(["USER", "clinician"])),
+        "the per-event path"
+    );
+    assert_eq!(
+        roles(1),
+        Some(serde_json::json!(["ADMIN"])),
+        "the batched path"
+    );
+    assert_eq!(
+        roles(2),
+        Some(serde_json::json!([])),
+        "authenticated without roles is the empty list"
+    );
+    assert_eq!(roles(3), None, "no principal means no roles to record");
+
+    let stored: serde_json::Value = rows[0].get("fhir");
+    let requestor = &stored["agent"][0];
+    assert_eq!(requestor["role"][1]["text"], "clinician", "{stored}");
+}
+
 /// The trail is append-only for the runtime role: the access-logging columns
 /// cannot be rewritten, a record cannot be deleted outside the reaper, and the
 /// table cannot be truncated.

@@ -24,6 +24,25 @@ use tokio::task_local;
 
 task_local! {
     static DECLARED_PURPOSE: Option<String>;
+    static REQUEST_ROLES: Vec<String>;
+}
+
+/// The roles the authenticated caller holds for the current request (#3239).
+///
+/// Published by the authentication layer beside the committer identity; empty
+/// outside a request scope or for an unauthenticated caller, and the record
+/// says so rather than guessing.
+#[must_use]
+pub fn current_roles() -> Vec<String> {
+    REQUEST_ROLES.try_with(Clone::clone).unwrap_or_default()
+}
+
+/// Run `fut` with `roles` published as the request's caller roles.
+pub async fn with_roles<F>(roles: Vec<String>, fut: F) -> F::Output
+where
+    F: Future,
+{
+    REQUEST_ROLES.scope(roles, fut).await
 }
 
 /// The purpose of use declared for the current request, if any.

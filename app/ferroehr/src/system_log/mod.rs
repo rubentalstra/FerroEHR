@@ -180,7 +180,13 @@ impl FerroEhrService {
     /// # Errors
     /// [`SmError`] with the `service_overloaded` status (the wire's `503`)
     /// when the sender rejected the record.
-    pub fn record_access(&self, event: AuditEvent) -> Result<(), SmError> {
+    pub fn record_access(&self, mut event: AuditEvent) -> Result<(), SmError> {
+        // A service-layer record is built where the request's principal is
+        // gone; the roles the authentication layer published for the scope
+        // are stamped here so every emitter carries them (#3239).
+        if event.roles.is_empty() {
+            event.roles = access_context::current_roles();
+        }
         match self.emit(event) {
             EmitOutcome::Enqueued | EmitOutcome::Dropped => Ok(()),
             EmitOutcome::Rejected => Err(SmError::new(

@@ -205,6 +205,12 @@ fn build_agents(event: &AuditEvent, ctx: &AuditContext, missing: &str) -> Vec<Au
         // the agent whose purpose it is.
         AuditAgent {
             role: Some(client_role),
+            // The roles the person held, as `agent.role` (0..*): "the
+            // security role that the user was acting under"
+            // (<https://hl7.org/fhir/R4/auditevent-definitions.html#AuditEvent.agent.role>),
+            // the NEN 7513 role element. The deployment's own vocabulary, so
+            // text without a code system.
+            roles: event.roles.clone(),
             who: Some(AuditWho::Identifier(user)),
             requestor: true,
             policy: Vec::new(),
@@ -214,6 +220,7 @@ fn build_agents(event: &AuditEvent, ctx: &AuditContext, missing: &str) -> Vec<Au
         // This server.
         AuditAgent {
             role: Some(server_role),
+            roles: Vec::new(),
             who: Some(AuditWho::Identifier(nonempty(&ctx.source_id, missing))),
             requestor: false,
             policy: Vec::new(),
@@ -231,6 +238,7 @@ fn build_agents(event: &AuditEvent, ctx: &AuditContext, missing: &str) -> Vec<Au
         // request — the natural person did — so it is not the requestor.
         agents.push(AuditAgent {
             role: None,
+            roles: Vec::new(),
             who: Some(AuditWho::Reference(format!("Organization/{organisation}"))),
             requestor: false,
             policy: Vec::new(),
@@ -248,6 +256,7 @@ fn build_agents(event: &AuditEvent, ctx: &AuditContext, missing: &str) -> Vec<Au
                 "UserOauthAgent",
                 "User OAuth Agent participant",
             )),
+            roles: Vec::new(),
             who: None,
             requestor: true,
             policy: vec![jti.to_owned()],
