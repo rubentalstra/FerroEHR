@@ -17,6 +17,15 @@ workflow refuses a tag that has no matching section here.
 
 ### Added
 
+- **The access record carries the caller's roles** (#3239). NEN 7513 asks
+  under which role or authority a person accessed a record; the RBAC layer
+  held the caller's roles and the record dropped them. Every access event,
+  the request-level ones and the domain-level linkage, subject, identifier
+  and EHR-Extract records alike, now stores the roles as a JSON array
+  (`audit.audit_event.roles`, `NULL` for an unauthenticated refusal), renders
+  them as FHIR `agent.role` on the requestor and as a `RoleIDCode` per role on
+  the DICOM source participant, and serves them through ITI-81.
+
 - **The licence in force is explicit, verified and reported.** Every build
   embeds the licensor's `non-commercial` grant (what BUSL-1.1 gives everyone);
   a `commercial` licence is installed with the new `[licence] file` key

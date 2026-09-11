@@ -65,9 +65,9 @@ impl AuditStore {
             "INSERT INTO audit.audit_event (recorded_at, action, outcome, event_code, \
              operation, principal, organisation, patient_id, resource_class, resource_id, \
              client_ip, token_id, tenant_id, domain, purpose, legal_basis, result_count, \
-             request_id, fhir) \
+             request_id, fhir, roles) \
              VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, \
-             $15, $16, $17, $18, $19) \
+             $15, $16, $17, $18, $19, $20) \
              RETURNING id",
         )
         .bind(Timestamp::from(event.timestamp))
@@ -89,6 +89,7 @@ impl AuditStore {
         .bind(result_count(event))
         .bind(event.request_id.as_deref())
         .bind(fhir.clone())
+        .bind(roles_json(event))
         .fetch_one(&self.pool)
         .await?
         .try_get::<Uuid, _>("id")
@@ -134,6 +135,7 @@ impl AuditStore {
         let mut result_counts: Vec<Option<i64>> = Vec::with_capacity(records.len());
         let mut request_ids: Vec<Option<&str>> = Vec::with_capacity(records.len());
         let mut fhir_docs: Vec<serde_json::Value> = Vec::with_capacity(records.len());
+        let mut roles: Vec<Option<serde_json::Value>> = Vec::with_capacity(records.len());
         for (event, subject, fhir) in records {
             let Some(fhir) = fhir else {
                 continue;
@@ -157,6 +159,7 @@ impl AuditStore {
             result_counts.push(result_count(event));
             request_ids.push(event.request_id.as_deref());
             fhir_docs.push(fhir.clone());
+            roles.push(roles_json(event));
         }
         if fhir_docs.is_empty() {
             return Ok(());
@@ -165,11 +168,11 @@ impl AuditStore {
             "INSERT INTO audit.audit_event (recorded_at, action, outcome, event_code, \
              operation, principal, organisation, patient_id, resource_class, resource_id, \
              client_ip, token_id, tenant_id, domain, purpose, legal_basis, result_count, \
-             request_id, fhir) \
+             request_id, fhir, roles) \
              SELECT * FROM UNNEST($1::timestamptz[], $2::text[], $3::smallint[], $4::text[], \
              $5::text[], $6::text[], $7::text[], $8::text[], $9::text[], $10::text[], \
              $11::text[], $12::text[], $13::uuid[], $14::text[], $15::text[], $16::text[], \
-             $17::bigint[], $18::text[], $19::jsonb[])",
+             $17::bigint[], $18::text[], $19::jsonb[], $20::jsonb[])",
         )
         .bind(recorded_at)
         .bind(actions)
@@ -190,6 +193,7 @@ impl AuditStore {
         .bind(result_counts)
         .bind(request_ids)
         .bind(fhir_docs)
+        .bind(roles)
         .execute(&self.pool)
         .await?;
         Ok(())
@@ -520,6 +524,22 @@ fn result_count(event: &AuditEvent) -> Option<i64> {
     event
         .result_count
         .and_then(|count| i64::try_from(count).ok())
+}
+
+/// The `roles` column value: the role names as a JSON array, or `NULL` when
+/// no principal was authenticated (an empty list on an authenticated caller
+/// is a different fact and is written as `[]` by the callers that know it).
+fn roles_json(event: &AuditEvent) -> Option<serde_json::Value> {
+    if event.roles.is_empty() && event.user_id.is_empty() {
+        return None;
+    }
+    Some(serde_json::Value::Array(
+        event
+            .roles
+            .iter()
+            .map(|role| serde_json::Value::String(role.clone()))
+            .collect(),
+    ))
 }
 
 #[cfg(test)]

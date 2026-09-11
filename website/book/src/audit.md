@@ -102,6 +102,7 @@ lives in the record:
 | The date and time | `recorded_at`, the event time; `stored_at` is when the row was persisted |
 | The kind of action | `action` (DICOM `C`/`R`/`U`/`D`/`E`) plus `operation`, the ITS-REST operation id |
 | Whether it succeeded | `outcome`, the DICOM outcome indicator (0 success, 4 minor, 8 serious, 12 major) |
+| Under which role or authority | `roles` — the roles the caller held at access time (the RFC 9068 §2.2.3.1 claim carriers for a bearer, the user definition for Basic), rendered as FHIR `agent.role` on the requestor and as a `RoleIDCode` per role on the DICOM source participant |
 | On whose authority, and why | `purpose` and `legal_basis` |
 | Which system, and from where | `AuditSourceID` and the source participant's network address (`client_ip`) |
 
