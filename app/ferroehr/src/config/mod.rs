@@ -149,12 +149,6 @@ impl FerroEhrConfig {
         }
     }
 
-    /// The clinical-side privacy policy has to be BUILDABLE, not merely
-    /// well-typed: an unknown rule key or an uncompilable pattern would
-    /// otherwise leave the scanner silently short a rule while reporting that
-    /// the jurisdiction was covered, and a blank pseudonym namespace would
-    /// accept an empty `external_ref.namespace` as if it were declared. No
-    /// openEHR spec governs configuration — our own design.
     /// A retention shorter than a jurisdiction's floor erases the access log
     /// while the chain still verifies (#3242). The jurisdictions in force are
     /// the ones the active identifier rules name; `0` keeps forever and is
@@ -186,6 +180,8 @@ impl FerroEhrConfig {
                 )));
             }
         }
+    }
+
     /// `deployment_accepts` names each gap once, and only means something
     /// under `production`: a sandbox that lists accepted gaps is describing a
     /// posture it does not enforce, which is the confusion the key exists to
@@ -211,6 +207,12 @@ impl FerroEhrConfig {
         }
     }
 
+    /// The clinical-side privacy policy has to be BUILDABLE, not merely
+    /// well-typed: an unknown rule key or an uncompilable pattern would
+    /// otherwise leave the scanner silently short a rule while reporting that
+    /// the jurisdiction was covered, and a blank pseudonym namespace would
+    /// accept an empty `external_ref.namespace` as if it were declared. No
+    /// openEHR spec governs configuration — our own design.
     fn validate_privacy(&self, errors: &mut Vec<ConfigError>) {
         if let Err(error) = crate::privacy::PrivacyPolicy::compile(&self.privacy) {
             errors.push(ConfigError::semantic(error.to_string()));
