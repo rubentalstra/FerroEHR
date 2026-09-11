@@ -873,7 +873,16 @@ jobs:
       - name: The published control matrix matches the tracker
         env:
           GH_TOKEN: ${{ github.token }}
-        run: bash scripts/render/control-matrix.sh --check
+          # The pull request under check: the issues it closes render as
+          # Shipped with it, so the PR that closes a control commits the page
+          # main will carry after the merge (#3253). Empty in a merge group.
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+        run: |
+          if [ -n "$PR_NUMBER" ]; then
+            bash scripts/render/control-matrix.sh --check --closing "$PR_NUMBER"
+          else
+            bash scripts/render/control-matrix.sh --check
+          fi
 
   # The two EHDS pages are GENERATED from website/book/ehds.yaml
   # (scripts/render/ehds-pages.sh), for the reason the control matrix is: a

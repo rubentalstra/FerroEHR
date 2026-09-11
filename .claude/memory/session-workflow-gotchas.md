@@ -275,3 +275,10 @@ commit-message wording. Late labels: since #2777 applying a label raises a fresh
     line. Every PR body must carry, verbatim and ticked:
     `- [x] I accept the terms in [CONTRIBUTING.md § Licensing of contributions](../CONTRIBUTING.md#licensing-of-contributions): …`
     (PR #3090 merged red on exactly this).
+
+9. **A PR with a merge conflict runs NO CI, and auto-merge never fires**
+   (hit 2026-09-11, #3248: main moved under it and the changelog conflicted).
+   After every `gh pr create` / push, check `gh pr view --json mergeable`
+   is `MERGEABLE` and that `gh pr checks` shows pending rows; when main
+   moved, rebase, re-run any tracker-derived generator (the control matrix
+   follows closed issues), and `--force-with-lease`.
