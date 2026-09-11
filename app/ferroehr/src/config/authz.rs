@@ -62,6 +62,18 @@ pub struct RbacConfig {
     /// granting roles (a restriction overrides a grant). Supports the CNF
     /// SEC-BASIC authorization-separation profile.
     pub readonly_role: String,
+    /// The role that may read the access log for ONE subject at a time
+    /// (`FERROEHR__AUTHZ__RBAC__SUBJECT_AUDIT_ROLE`, default unset).
+    ///
+    /// A portal that shows a person who accessed their record (GDPR Art. 15
+    /// with Recital 63, EHDS Art. 9, for Dutch deployments Wabvpz Art. 15e)
+    /// needs the ITI-81 retrieval for that person and nobody else. A caller
+    /// holding this role may call `GET /fhir/r4/AuditEvent` only with the
+    /// `patient` parameter, the subject's opaque pseudonym; without it the call
+    /// is refused, and the unscoped retrieval stays with `admin_role`. Unset,
+    /// the log is admin-only, as before (#3240). No openEHR spec governs the
+    /// access log — our own design/extension.
+    pub subject_audit_role: Option<String>,
     /// JWT claim paths mined for roles, in resolution order.
     ///
     /// Defaults to the carriers RFC 9068 §2.2.3.1 names for conveying
@@ -95,6 +107,7 @@ impl Default for RbacConfig {
             admin_role: "ADMIN".to_owned(),
             user_role: "USER".to_owned(),
             readonly_role: "READONLY".to_owned(),
+            subject_audit_role: None,
             role_claims: vec![
                 "roles".to_owned(),
                 "groups".to_owned(),

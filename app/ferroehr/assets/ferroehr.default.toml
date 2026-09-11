@@ -245,6 +245,11 @@ enabled = true
 admin_role = "ADMIN"
 user_role = "USER"
 readonly_role = "READONLY"   # carriers are refused on every write operation
+# The role that reads the access log for ONE subject at a time (GET
+# /fhir/r4/AuditEvent with `patient` required): what a patient portal holds to
+# show a person who accessed their record, instead of an admin credential over
+# every patient's log. Unset, the log is admin-only.
+#? subject_audit_role = "PORTAL"
 role_claims = ["roles", "groups", "entitlements", "realm_access.roles"]
 # What an EHR carrying no ACCESS_CONTROL_SETTINGS admits. A new EHR carries
 # none, so this governs most records. "restricted" is object-level default-deny:

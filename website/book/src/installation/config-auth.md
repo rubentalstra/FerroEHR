@@ -144,6 +144,7 @@ order and design rationale are in [Security](../security.md).
 | `admin_role` | string | `ADMIN` | Role required for admin-class operations. A blank value is a boot error. |
 | `user_role` | string | `USER` | Baseline clinical role. |
 | `readonly_role` | string | `READONLY` | Role marking a principal read-only: refused on every write operation (create/update/delete/upload), even alongside granting roles. Reads and AQL queries are still allowed. |
+| `subject_audit_role` | string | unset | Role that may read the access log for one subject at a time: `GET /fhir/r4/AuditEvent` with the `patient` parameter required, refused without it. The grant a patient portal holds to serve a person's right to know who accessed their record (GDPR Art. 15, EHDS Art. 9), instead of an admin credential over every patient's log. Unset, the log stays admin-only. See [Audit trail](../audit.md#retrieving-audit-records-iti-81). |
 | `role_claims` | list of string | `["roles","groups","entitlements","realm_access.roles"]` | JWT claim paths mined for roles, in order. Dotted paths walk nested claims. Must be non-empty and contain no blank path. **`scope` is not a role source**; see [Security](../security.md#rbac-role-based-coarse). |
 | `ehr_access_default` | enum{open,restricted} | `open` | What an EHR carrying no `ACCESS_CONTROL_SETTINGS` admits. `restricted` is object-level default-deny: only `admin_role` reaches a setting-less EHR, so an operator can still author the settings that open it. See [Security](../security.md#per-ehr-access-control-ehr_access). |
 

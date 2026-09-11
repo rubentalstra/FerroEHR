@@ -209,7 +209,7 @@ pub(crate) async fn fhir_search(
     get, path = "/fhir/r4/AuditEvent", tag = "audit",
     params(
         ("date" = Option<Vec<String>>, Query, description = "Event-time bound(s), `ge`/`le`-prefixed RFC 3339 instants (e.g. `date=ge2026-07-01T00:00:00Z&date=le2026-07-18T00:00:00Z`)."),
-        ("patient" = Option<String>, Query, description = "The recorded patient (EHR subject) id."),
+        ("patient" = Option<String>, Query, description = "The recorded patient (EHR subject) id. Required for a caller holding `authz.rbac.subject_audit_role`, which reads the log for one subject at a time."),
         ("agent" = Option<String>, Query, description = "The authenticated principal."),
         ("entity" = Option<String>, Query, description = "The touched resource id."),
         ("outcome" = Option<String>, Query, description = "The outcome indicator: 0, 4, 8 or 12."),
@@ -220,7 +220,7 @@ pub(crate) async fn fhir_search(
     responses(
         (status = 200, description = "A FHIR searchset Bundle of AuditEvent resources.", content_type = "application/fhir+json"),
         (status = 400, description = "Malformed search parameter (OperationOutcome).", content_type = "application/fhir+json"),
-        (status = 403, description = "Caller lacks the admin role (OperationOutcome).", content_type = "application/fhir+json"),
+        (status = 403, description = "Caller lacks the admin role, or holds only the subject-scoped audit role and named no `patient` (OperationOutcome).", content_type = "application/fhir+json"),
         (status = 404, description = "The local audit record repository is disabled (OperationOutcome). With authentication enabled, an unauthenticated request to a disabled group is answered `401` first (the group gate sits behind authentication).", content_type = "application/fhir+json")
     )
 )]
@@ -582,9 +582,15 @@ async fn audit_search(state: &AppState, parts: &RequestParts) -> Response {
     // Gate 1, and it must stay FIRST: authorization precedes availability, or the
     // resource's state becomes a side channel for a caller who may not read this
     // surface at all (#2070). The audit trail is the node's
-    // security-surveillance record (IHE ITI TF-1 §9), so it is admin-only; the
-    // coarse gate would class this FHIR-base path Clinical, hence the check here.
-    // No openEHR spec governs it — our own design.
+    // security-surveillance record (IHE ITI TF-1 §9), so the unscoped
+    // retrieval is admin-only; the coarse gate would class this FHIR-base path
+    // Clinical, hence the check here. One narrower grant exists (#3240): the
+    // configured `subject_audit_role` reads the log for ONE subject, the
+    // `patient` parameter, so a portal serving a person's right to know who
+    // accessed their record (GDPR Art. 15, EHDS Art. 9) holds that grant alone
+    // and never an admin credential over every patient's log. No openEHR spec
+    // governs it — our own design.
+    let mut subject_scoped = false;
     if let Some(authz) = state.authz()
         && let Some(rbac) = authz.rbac()
     {
@@ -595,7 +601,11 @@ async fn audit_search(state: &AppState, parts: &RequestParts) -> Response {
             crate::extensions::access::authz::classify::OperationClass::Admin,
             &roles,
         ) {
-            return operation_outcome(StatusCode::FORBIDDEN, "forbidden", &reason);
+            if rbac.holds_subject_audit_role(&roles) {
+                subject_scoped = true;
+            } else {
+                return operation_outcome(StatusCode::FORBIDDEN, "forbidden", &reason);
+            }
         }
     }
     // Gate 2: the local store must be on.
@@ -613,6 +623,16 @@ async fn audit_search(state: &AppState, parts: &RequestParts) -> Response {
             return operation_outcome(StatusCode::BAD_REQUEST, "invalid", &message);
         }
     };
+    // The subject-scoped grant is exactly that: a retrieval that names no
+    // subject would be the unscoped one, which this role does not hold.
+    if subject_scoped && filter.patient.is_none() {
+        return operation_outcome(
+            StatusCode::FORBIDDEN,
+            "forbidden",
+            "the subject-scoped audit role reads the access log for one subject at a time: \
+             the `patient` parameter is required (the unscoped retrieval needs the admin role)",
+        );
+    }
     match state.backend().audit_event_search(&filter).await {
         Ok((total, documents)) => {
             let entries: Vec<Value> = documents
@@ -625,7 +645,18 @@ async fn audit_search(state: &AppState, parts: &RequestParts) -> Response {
                 "total": total,
                 "entry": entries,
             });
-            fhir_json(StatusCode::OK, &bundle)
+            let mut resp = fhir_json(StatusCode::OK, &bundle);
+            // Reading a person's access log is itself an access about that
+            // person: the record of this call names whose log was read and how
+            // many records it served.
+            resp.extensions_mut()
+                .insert(crate::system_log::middleware::AuditObject {
+                    ehr_id: None,
+                    uid: filter.patient.as_ref().map(|p| format!("audit-log:{p}")),
+                    result_count: u64::try_from(total).ok(),
+                    domain: Some(ferroehr::system_log::event::AccessDomain::System),
+                });
+            resp
         }
         Err(e) => sm_error_outcome(e),
     }

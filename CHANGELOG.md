@@ -17,6 +17,15 @@ workflow refuses a tag that has no matching section here.
 
 ### Added
 
+- **A subject-scoped read of the access log** (#3240). `GET /fhir/r4/AuditEvent`
+  was admin-only, so a portal serving a person's right to know who accessed
+  their record (GDPR Art. 15, EHDS Art. 9) had to hold an admin credential
+  over every patient's log. A new `authz.rbac.subject_audit_role` reads the
+  log for one subject at a time, `patient` required and refused with a `403`
+  without it; the admin keeps the unscoped retrieval, and reading a subject's
+  log is itself recorded as an access naming that subject. Unset, nothing
+  changes.
+
 - **Auditing off and `fail_mode = "open"` are said where an operator looks**
   (#3238). Auditing disabled used to be one info-level line; the fail-open
   default was silent. Both are now a `warn` at boot with a structured
