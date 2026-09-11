@@ -37,6 +37,11 @@ pub struct ResourceMeta {
     /// as the `Last-Modified` response header — SHOULD-present on
     /// `VERSION`/`VERSIONED_OBJECT` responses.
     pub last_modified: Option<Timestamp>,
+    /// The distinct origins of the data this response serves (#3212): the
+    /// version's `FEEDER_AUDIT` originating systems, or the server that
+    /// created it. Empty when the operation serves no version body. The access
+    /// log records it (EHDS Annex II 3.2(e)); no header renders it.
+    pub origins: Vec<String>,
     /// The `ITEM_TAGs` (RM `common.item_tag`) currently associated with this
     /// resource, or `None` when the operation carries no tags. The ITS-REST
     /// adapter renders this into the `openehr-item-tag` /
@@ -64,9 +69,17 @@ impl ResourceMeta {
             ehr_id: ehr_id.into(),
             uid: uid.into(),
             last_modified: None,
+            origins: Vec::new(),
             item_tags: None,
             version_item_tags: None,
         }
+    }
+
+    /// Attach the origins of the data this response serves.
+    #[must_use]
+    pub fn with_origins(mut self, origins: Vec<String>) -> Self {
+        self.origins = origins;
+        self
     }
 
     /// Attach the version's commit time.

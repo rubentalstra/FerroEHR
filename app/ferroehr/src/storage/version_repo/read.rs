@@ -99,6 +99,10 @@ pub struct StoredVersion {
     /// `spec_profile` gate assesses on the fly. No openEHR spec governs runtime
     /// generation selection — our own design/extension.
     pub stable_compatible: Option<bool>,
+    /// The commit-time origin stamp (`vo_version.origins`), a JSON array of
+    /// system ids; `None` for a row nothing stamped, which
+    /// the read path (`versioning::origins::of_stored`) assesses from the body.
+    pub origins: Option<Value>,
     /// The materialized canonical body (`vo_version.body` — written from the
     /// same value the node rows decompose from), or [`Value::Null`] for a
     /// logically deleted version (master06 §Logical Deletion). [`Value::Null`]
@@ -150,7 +154,7 @@ macro_rules! version_select {
             "SELECT v.vo_id, v.kind, v.ehr_id, v.sys_version, v.trunk_version, v.branch_number, ",
             "v.branch_version, v.lifecycle_state, v.creating_system_id, v.preceding_version_uid, ",
             "v.other_input_version_uids, v.contribution_id, v.template_id, v.signature, ",
-            "v.signature_client_supplied, v.wrapped_original, v.stable_compatible, v.body, ",
+            "v.signature_client_supplied, v.wrapped_original, v.stable_compatible, v.origins, v.body, ",
             "a.system_id, a.change_type, a.description, a.committer, a.attestation, ",
             "a.time_committed, ",
             "att.attestations_at_committal, att.attestations_after_committal ",
@@ -179,7 +183,7 @@ macro_rules! version_select_raw {
             "v.branch_version, v.lifecycle_state, v.creating_system_id, v.preceding_version_uid, ",
             "v.other_input_version_uids, v.contribution_id, v.template_id, v.signature, ",
             "v.signature_client_supplied, v.wrapped_original, v.stable_compatible, ",
-            "v.body, ",
+            "v.origins, v.body, ",
             "a.system_id, a.change_type, a.description, a.committer, a.attestation, ",
             "a.time_committed, ",
             "att.attestations_at_committal, att.attestations_after_committal ",
@@ -283,6 +287,7 @@ fn stored_version_fields(
         signature_client_supplied: row.try_get("signature_client_supplied")?,
         wrapped_original: row.try_get("wrapped_original")?,
         stable_compatible: row.try_get("stable_compatible")?,
+        origins: row.try_get("origins")?,
         canonical,
         canonical_text,
         attestations_at_committal,
@@ -718,4 +723,54 @@ pub async fn stored_body_all(
         Some(text) => serde_json::from_str(&text).map_err(StorageError::BodyDecode),
         None => Ok(Value::Null),
     }
+}
+
+/// The distinct origins of a set of versions, for the access record (#3212).
+///
+/// The commit-time stamps are unioned in SQL, an unstamped row contributing
+/// its creating system; the set is capped at `cap` with the true distinct
+/// count beside it.
+///
+/// # Errors
+/// [`StorageError::Database`] when the aggregate fails.
+pub async fn read_origins(
+    pool: &PgPool,
+    versions: &[(VoId, i32)],
+    cap: usize,
+) -> Result<(Vec<String>, u64), StorageError> {
+    if versions.is_empty() {
+        return Ok((Vec::new(), 0));
+    }
+    let vo_ids: Vec<Uuid> = versions.iter().map(|(vo_id, _)| vo_id.0).collect();
+    let sys_versions: Vec<i32> = versions.iter().map(|(_, sv)| *sv).collect();
+    let row = sqlx::query(
+        "WITH o AS ( \
+             SELECT DISTINCT e.origin \
+             FROM unnest($1::uuid[], $2::int[]) AS a(vo_id, sys_version) \
+             JOIN vo_version_all v ON v.vo_id = a.vo_id AND v.sys_version = a.sys_version \
+             CROSS JOIN LATERAL jsonb_array_elements_text( \
+                 coalesce(v.origins, jsonb_build_array(v.creating_system_id))) AS e(origin) \
+         ) \
+         SELECT (SELECT count(*) FROM o) AS total, \
+                (SELECT coalesce(jsonb_agg(c.origin ORDER BY c.origin), '[]'::jsonb) \
+                 FROM (SELECT origin FROM o ORDER BY origin LIMIT $3) c) AS origins",
+    )
+    .bind(&vo_ids)
+    .bind(&sys_versions)
+    .bind(i64::try_from(cap).unwrap_or(i64::MAX))
+    .fetch_one(pool)
+    .await?;
+    let total: i64 = row.try_get("total")?;
+    let set: Value = row.try_get("origins")?;
+    let set = set
+        .as_array()
+        .map(|items| {
+            items
+                .iter()
+                .filter_map(Value::as_str)
+                .map(str::to_owned)
+                .collect()
+        })
+        .unwrap_or_default();
+    Ok((set, u64::try_from(total).unwrap_or(0)))
 }

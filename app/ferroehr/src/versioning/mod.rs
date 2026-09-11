@@ -75,6 +75,7 @@ pub(crate) mod import;
 pub(crate) mod integrity;
 pub(crate) mod lifecycle;
 pub mod object_version_id;
+pub(crate) mod origins;
 pub(crate) mod profile;
 pub(crate) mod read;
 pub mod signature;

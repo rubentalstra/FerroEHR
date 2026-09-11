@@ -1857,3 +1857,70 @@ async fn the_server_mints_the_subject_pseudonym_and_no_caller_value_enters_it() 
         Err(LinkageError::NoMintingKey)
     ));
 }
+
+/// The split clinical role writes and reads the audit trail (#3267).
+///
+/// The store writes through the clinical pool. Before the grant migration the
+/// Audit Record Repository was held by the single-domain pair only, so a
+/// deployment whose clinical credential is a member of `ferroehr_ehr` alone
+/// wrote no access record at all: dropped and metered under
+/// `fail_mode = "open"`, every auditable operation refused under `"closed"`.
+/// Runs as a fresh login role IN ROLE `ferroehr_ehr`, never as the superuser
+/// the testkit pool is.
+#[tokio::test]
+async fn the_split_clinical_role_writes_and_reads_the_audit_trail() {
+    use ferroehr::db::DbConfig;
+    use ferroehr::system_log::event::{AuditEvent, EventActionCode, EventOutcome, ObjectClass};
+    use ferroehr::system_log::store::AuditStore;
+
+    let db = testkit::db().await.expect("testkit database");
+    let clinical = ferroehr::db::connect(&DbConfig {
+        url: ferroehr::config::secret::SecretUrl::new(dsn_as(&db, "audclin", "ferroehr_ehr").await),
+        ..DbConfig::default()
+    })
+    .await
+    .expect("the clinical pool connects on its own credential");
+
+    let store = AuditStore::new(clinical.clone());
+    let mut event = AuditEvent::new(
+        EventActionCode::Read,
+        ObjectClass::Composition,
+        EventOutcome::Success,
+    );
+    "alice".clone_into(&mut event.user_id);
+    let id = store
+        .insert(
+            &event,
+            None,
+            &serde_json::json!({"resourceType": "AuditEvent"}),
+        )
+        .await
+        .expect("the clinical role inserts an access record");
+    store.mark_syslog_delivered(id).await;
+    store
+        .verify_chain()
+        .await
+        .expect("the clinical role verifies the chain");
+
+    let reader = ferroehr::db::connect(&DbConfig {
+        url: ferroehr::config::secret::SecretUrl::new(
+            dsn_as(&db, "audread", "ferroehr_ehr_reader").await,
+        ),
+        ..DbConfig::default()
+    })
+    .await
+    .expect("the clinical reader connects");
+    let count: i64 = sqlx::query_scalar("SELECT count(*) FROM audit.audit_event")
+        .fetch_one(&reader)
+        .await
+        .expect("the clinical reader reads the trail");
+    assert_eq!(count, 1);
+    let rewrite = sqlx::query("UPDATE audit.audit_event SET principal = 'bob' WHERE id = $1")
+        .bind(id)
+        .execute(&clinical)
+        .await;
+    assert!(
+        rewrite.is_err(),
+        "the clinical role holds no grant to rewrite a record: {rewrite:?}"
+    );
+}

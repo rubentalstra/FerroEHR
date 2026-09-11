@@ -167,6 +167,16 @@ pub struct AuditEvent {
     /// How many records the operation served: AQL result rows, search entries.
     /// `None` for an operation that serves no countable set.
     pub result_count: Option<u64>,
+    /// The distinct origins of the data the operation served (EHDS Annex II
+    /// 3.2(e), #3212): the `FEEDER_AUDIT` originating systems of the version
+    /// bodies it touched, or the server that created them; capped at the
+    /// record cap (`versioning::origins::RECORD_CAP`), with
+    /// [`Self::origin_count`] carrying the true distinct number. Empty when
+    /// nothing was served.
+    pub origins: Vec<String>,
+    /// How many distinct origins the served data had; exceeds `origins.len()`
+    /// when the set was capped. `None` when nothing was served.
+    pub origin_count: Option<u64>,
     /// The request correlation id, matching the response's `x-request-id`.
     pub request_id: Option<String>,
     /// The event time.
@@ -230,6 +240,18 @@ impl AccessDomain {
 }
 
 impl AuditEvent {
+    /// Record the origins of the served data, capped for the record with the
+    /// true distinct count beside the set (`total` when the caller already
+    /// aggregated a wider set, else the set's own distinct size).
+    pub fn record_origins(&mut self, origins: Vec<String>, total: Option<u64>) {
+        if origins.is_empty() {
+            return;
+        }
+        let (set, distinct) = crate::versioning::origins::recorded(origins);
+        self.origin_count = Some(total.map_or(distinct, |t| t.max(distinct)));
+        self.origins = set;
+    }
+
     /// Construct an event with the given class + outcome, defaulting the runtime
     /// fields (the caller fills user/ip/ids). `timestamp` is set to now.
     #[must_use]
@@ -252,6 +274,8 @@ impl AuditEvent {
             purpose: None,
             legal_basis: None,
             result_count: None,
+            origins: Vec::new(),
+            origin_count: None,
             request_id: None,
             timestamp: Timestamp::now(),
         }

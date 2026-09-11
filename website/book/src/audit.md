@@ -142,7 +142,7 @@ the authority and the wording below is a paraphrase.
 | (b) the specific natural person or persons having accessed | `principal` (+ `token_id`, `client_ip`) | `ActiveParticipant/@UserID` | `agent.who` | Recorded |
 | (c) the categories of data accessed | `resource_class` + `domain` (+ `result_count`) | `ParticipantObjectIdentification` type and role codes | `entity.type` / `entity.role` | Partial |
 | (d) the time and date of access | `recorded_at` | `EventIdentification/@EventDateTime` | `recorded` | Recorded |
-| (e) the origin or origins of data | — | — | — | **Gap** |
+| (e) the origin or origins of data | `origins` + `origin_count` (the `FEEDER_AUDIT` originating systems of the served version bodies, or the server that created them, derived at commit onto `vo_version.origins`) | — (no such element) | one `entity` per origin, named "origin of the served data" | Recorded |
 
 Read (a) beside (b): they are both about the accessing side, and the pair
 distinguishes the **organisation** on whose behalf the access happened from the

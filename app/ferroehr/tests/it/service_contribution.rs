@@ -2258,3 +2258,72 @@ async fn create_body_uid_is_replaced_by_the_minted_identity() {
         "the served body uid IS the identifier the create returned"
     );
 }
+
+/// The EHR-state gate answers before content validation (#3257): a
+/// CONTRIBUTION carrying a DEFECTIVE composition into a deactivated EHR is
+/// refused as the `409` state conflict, not as the `422` its body would earn,
+/// so the caller is told the record cannot be written rather than sent to
+/// repair a body that would be refused anyway. RM ehr master04 §EHR Active
+/// Status; the gate mechanics are spec-silent, adjudicated on #2673.
+#[tokio::test]
+async fn a_deactivated_ehr_reports_the_state_conflict_before_a_content_defect() {
+    let db = testkit::db().await.expect("testkit database");
+    let svc = FerroEhrService::new(db.pool());
+    let ehr_id = create_ehr(&svc).await;
+    let ehr_uuid: ferroehr::ids::EhrId = ehr_id.parse().expect("ehr uuid");
+    let status_uid = current_status_uid(&svc, ehr_uuid).await;
+    svc.replace_ehr_status(
+        ehr_uuid,
+        uv(&ehr_status_modifiable(false), "251", Some(&status_uid)),
+    )
+    .await
+    .expect("EHR_STATUS deactivation");
+
+    // A composition missing its mandatory `language`: a 422 on a writable EHR.
+    let mut defective = composition("broken");
+    defective
+        .as_object_mut()
+        .expect("object")
+        .remove("language");
+    let set = json!({
+        "versions": [ member(defective, ("249", "creation"), None) ],
+        "audit": { "change_type": change_type("249", "creation"), "committer": committer("author") }
+    });
+    let refused = svc
+        .create_ehr_contribution(ehr_uuid, set)
+        .await
+        .expect_err("content into a deactivated EHR is refused");
+    assert_eq!(
+        refused.status,
+        CallStatusType::Conflict,
+        "the state conflict comes first, got {refused:?}"
+    );
+    assert!(
+        refused.message.contains("not modifiable"),
+        "the refusal names the EHR state: {refused:?}"
+    );
+
+    // The same defect on a REACTIVATING set reaches content validation.
+    let status_uid = current_status_uid(&svc, ehr_uuid).await;
+    let mut defective = composition("broken");
+    defective
+        .as_object_mut()
+        .expect("object")
+        .remove("language");
+    let reactivating = json!({
+        "versions": [
+            member(defective, ("249", "creation"), None),
+            member(ehr_status_modifiable(true), ("251", "modification"), Some(&status_uid)),
+        ],
+        "audit": { "change_type": change_type("251", "modification"), "committer": committer("author") }
+    });
+    let refused = svc
+        .create_ehr_contribution(ehr_uuid, reactivating)
+        .await
+        .expect_err("the defective body is refused");
+    assert_ne!(
+        refused.status,
+        CallStatusType::Conflict,
+        "a reactivating set is judged on its content, got {refused:?}"
+    );
+}

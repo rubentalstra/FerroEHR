@@ -34,9 +34,11 @@
 //!   `aql::sql::select`).
 //! * **Output-column aliases** — `col{i}` / `col{i}_{vo,sv,num,cap}` from the
 //!   SELECT index (`aql::sql::select`), `scope_ehr_{i}` / `scope_template_{i}`
-//!   from the VO-root index (`aql::sql::build_scope`), `access_ehr_{i}` from
-//!   the same index (`aql::sql::select::build_access_ehr_columns`, the hidden
-//!   column the access log reads the served EHRs from), and the literal `hit`
+//!   from the VO-root index (`aql::sql::build_scope`), `access_ehr_{i}` /
+//!   `access_vo_{i}` / `access_sv_{i}` from the same index
+//!   (`aql::sql::select::build_access_ehr_columns` and
+//!   `build_access_version_columns`, the hidden columns the access log reads
+//!   the served EHRs and the served version rows from), and the literal `hit`
 //!   for the streaming `EXISTS` probe (`aql::sql::value`). An AQL `AS <label>`
 //!   is carried on `ColumnSpec::name` for the `RESULT_SET` only and is never a
 //!   SQL identifier — see [`the_select_as_label_never_becomes_a_sql_identifier`].
@@ -606,7 +608,7 @@ const ALIAS_PATTERNS: &[&str] = &[
     r"^a_v[0-9]+$",
     r"^col[0-9]+(_(vo|sv|num|cap))?$",
     r"^scope_(ehr|template)_[0-9]+$",
-    r"^access_ehr_[0-9]+$",
+    r"^access_(ehr|vo|sv)_[0-9]+$",
     r"^hit$",
 ];
 
