@@ -490,6 +490,13 @@ workflow refuses a tag that has no matching section here.
 
 ### Fixed
 
+- **The identifier scan covers the verbatim-replay writes** (#3237). EHR-Extract
+  import and the admin archive load stored clinical content exactly as
+  received and skipped the data-minimisation pass every other clinical write
+  takes, while the configuration reference said every clinical write was
+  scanned. Both paths now refuse a record whose body carries a national
+  identifier, a non-pseudonym subject reference or an identified party, with
+  the same `422` and RM path the commit path reports; nothing is rewritten.
 - **The control matrix is populated** (#3236). The generated compliance page
   rendered an empty table because no issue declared a `Control:` line, and the
   staleness check passed on the empty set. Every shipped and planned control

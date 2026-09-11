@@ -1436,6 +1436,16 @@ impl FerroEhrService {
         match self.load_one_ehr(record).await {
             Ok(()) => Ok(None),
             Err(ServiceError::Conflict(e)) => report(e.message),
+            // The data-minimisation pass refused a body (#3237): that one
+            // record is reported and rolled back, the rest of the archive
+            // loads, the same per-entity shape a duplicate id takes.
+            Err(ServiceError::ValidationFailed(violations)) => report(
+                violations
+                    .iter()
+                    .map(|v| format!("{}: {}", v.path, v.message))
+                    .collect::<Vec<_>>()
+                    .join("; "),
+            ),
             Err(e) => Err(e.into()),
         }
     }
@@ -1596,7 +1606,7 @@ impl FerroEhrService {
     async fn load_one_demographic(&self, record: DemographicRecord) -> Result<(), ServiceError> {
         let mut tx = self.demographic_pool.begin().await?;
         insert_audit_rows(&mut tx, &record.audits, true).await?;
-        load_versions(&mut tx, None, record.versions).await?;
+        load_versions(&mut tx, &self.privacy, None, record.versions).await?;
         load_attestations(&mut tx, &record.attestations).await?;
         insert_item_tag_rows(&mut tx, None, &record.item_tags).await?;
         insert_archive_rows(&mut tx, &record.archives).await?;
@@ -1976,7 +1986,7 @@ impl FerroEhrService {
             .await?;
         }
 
-        load_versions(&mut tx, Some(ehr_id), record.versions).await?;
+        load_versions(&mut tx, &self.privacy, Some(ehr_id), record.versions).await?;
 
         load_attestations(&mut tx, &record.attestations).await?;
 
@@ -2146,11 +2156,25 @@ async fn load_attestations(
 /// ([`crate::storage::node_repo::write_nodes_batch`]), never a round trip per
 /// version. Consumes the records so each body is decomposed by move, without
 /// a per-version clone. A deleted version (null body) stores no node rows.
+///
+/// Every clinical body takes the data-minimisation pass first
+/// ([`crate::service::ehr::validation::enforce_privacy`]): a loaded record is
+/// re-persisted verbatim, so refusing the load is the only way an identifier
+/// in an archive stays out of the clinical side (#3237). The refusal covers the
+/// whole record, which the caller reports and rolls back.
 async fn load_versions(
     tx: &mut PgConnection,
+    privacy: &crate::privacy::PrivacyPolicy,
     ehr_id: Option<EhrId>,
     versions: Vec<VersionRecord>,
 ) -> Result<(), ServiceError> {
+    for v in &versions {
+        let clinical =
+            crate::versioning::Kind::from_type(&v.kind).is_some_and(|kind| !kind.is_demographic());
+        if clinical && !v.body.is_null() {
+            crate::service::ehr::validation::enforce_privacy(privacy, &v.kind, &v.body)?;
+        }
+    }
     let rows: Vec<version_repo::import::VerbatimVersionRow<'_>> = versions
         .iter()
         .map(|v| version_repo::import::VerbatimVersionRow {

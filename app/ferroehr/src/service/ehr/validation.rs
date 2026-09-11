@@ -295,46 +295,7 @@ impl FerroEhrService {
     /// [`ServiceError::ValidationFailed`] carrying one entry per refused
     /// finding, each keyed by its own RM path (→ 422).
     fn check_privacy(&self, kind: Kind, data: &Value) -> Result<(), ServiceError> {
-        let findings = self.privacy.findings(kind.as_str(), data);
-        if findings.is_empty() {
-            return Ok(());
-        }
-        let warn_only = self.privacy.scan_mode() == Some(crate::privacy::config::ScanMode::Warn);
-        let (warned, refused): (Vec<_>, Vec<_>) = findings.into_iter().partition(|finding| {
-            warn_only && finding.class == crate::privacy::FindingClass::IdentifierShape
-        });
-        for finding in &warned {
-            tracing::warn!(
-                rm_type = kind.as_str(),
-                path = %finding.path,
-                detail = %finding.message,
-                "privacy.identifier_scan is in `warn` mode: a clinical write carried an \
-                 identifier-shaped value and was accepted"
-            );
-        }
-        if !warned.is_empty() {
-            crate::telemetry::metrics::metrics()
-                .validation_failures
-                .add(
-                    u64::try_from(warned.len()).unwrap_or(u64::MAX),
-                    &[opentelemetry::KeyValue::new("pass", "privacy_warn")],
-                );
-        }
-        if refused.is_empty() {
-            return Ok(());
-        }
-        crate::telemetry::metrics::metrics()
-            .validation_failures
-            .add(
-                u64::try_from(refused.len()).unwrap_or(u64::MAX),
-                &[opentelemetry::KeyValue::new("pass", "privacy")],
-            );
-        Err(ServiceError::ValidationFailed(
-            refused
-                .into_iter()
-                .map(|finding| InvariantViolation::at(finding.path, finding.message))
-                .collect(),
-        ))
+        enforce_privacy(&self.privacy, kind.as_str(), data)
     }
 
     /// Validate a versioned object about to be committed (direct or via a
@@ -848,6 +809,68 @@ pub(in crate::service) async fn check_folder_item_refs<'e>(
         return Ok(());
     }
     Err(ServiceError::ValidationFailed(violations))
+}
+
+/// The clinical-side data-minimisation pass over one decoded body: the
+/// subject-reference rule, the identified-party rule and the identifier
+/// scanner ([`crate::privacy`]), rendered the one way every write path
+/// answers it.
+///
+/// Shared by the commit path ([`FerroEhrService::validate_for_commit`]) and
+/// the verbatim-replay paths (EHR-Extract import, admin load), which store a
+/// body exactly as received and can therefore only REFUSE it: a record that
+/// carries an identifier into the clinical side is refused whichever door it
+/// arrives through, never rewritten (#3237).
+///
+/// # Errors
+/// [`ServiceError::ValidationFailed`] carrying one entry per refused finding,
+/// each keyed by its own RM path (→ 422). Under `identifier_scan.mode =
+/// "warn"` an identifier-shaped finding is logged and metered instead.
+pub(crate) fn enforce_privacy(
+    policy: &crate::privacy::PrivacyPolicy,
+    rm_type: &str,
+    data: &Value,
+) -> Result<(), ServiceError> {
+    let findings = policy.findings(rm_type, data);
+    if findings.is_empty() {
+        return Ok(());
+    }
+    let warn_only = policy.scan_mode() == Some(crate::privacy::config::ScanMode::Warn);
+    let (warned, refused): (Vec<_>, Vec<_>) = findings.into_iter().partition(|finding| {
+        warn_only && finding.class == crate::privacy::FindingClass::IdentifierShape
+    });
+    for finding in &warned {
+        tracing::warn!(
+            rm_type = rm_type,
+            path = %finding.path,
+            detail = %finding.message,
+            "privacy.identifier_scan is in `warn` mode: a clinical write carried an \
+             identifier-shaped value and was accepted"
+        );
+    }
+    if !warned.is_empty() {
+        crate::telemetry::metrics::metrics()
+            .validation_failures
+            .add(
+                u64::try_from(warned.len()).unwrap_or(u64::MAX),
+                &[opentelemetry::KeyValue::new("pass", "privacy_warn")],
+            );
+    }
+    if refused.is_empty() {
+        return Ok(());
+    }
+    crate::telemetry::metrics::metrics()
+        .validation_failures
+        .add(
+            u64::try_from(refused.len()).unwrap_or(u64::MAX),
+            &[opentelemetry::KeyValue::new("pass", "privacy")],
+        );
+    Err(ServiceError::ValidationFailed(
+        refused
+            .into_iter()
+            .map(|finding| InvariantViolation::at(finding.path, finding.message))
+            .collect(),
+    ))
 }
 
 #[cfg(test)]
