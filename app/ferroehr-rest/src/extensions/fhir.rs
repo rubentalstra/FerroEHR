@@ -581,15 +581,11 @@ async fn search(state: &AppState, parts: &RequestParts) -> Response {
 async fn audit_search(state: &AppState, parts: &RequestParts) -> Response {
     // Gate 1, and it must stay FIRST: authorization precedes availability, or the
     // resource's state becomes a side channel for a caller who may not read this
-    // surface at all (#2070). The audit trail is the node's
-    // security-surveillance record (IHE ITI TF-1 §9), so the unscoped
-    // retrieval is admin-only; the coarse gate would class this FHIR-base path
-    // Clinical, hence the check here. One narrower grant exists (#3240): the
-    // configured `subject_audit_role` reads the log for ONE subject, the
-    // `patient` parameter, so a portal serving a person's right to know who
-    // accessed their record (GDPR Art. 15, EHDS Art. 9) holds that grant alone
-    // and never an admin credential over every patient's log. No openEHR spec
-    // governs it — our own design.
+    // surface at all (#2070). The trail is the node's security-surveillance
+    // record (IHE ITI TF-1 §9): the unscoped retrieval is admin-only, and the
+    // one narrower grant, `subject_audit_role`, reads it for ONE subject (the
+    // `patient` parameter) so a portal serving GDPR Art. 15 / EHDS Art. 9 never
+    // holds an admin credential (#3240). No openEHR spec governs it.
     let mut subject_scoped = false;
     if let Some(authz) = state.authz()
         && let Some(rbac) = authz.rbac()
