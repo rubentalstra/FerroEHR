@@ -55,3 +55,16 @@ declares this tree as `CC-BY-SA-3.0 AND CC-BY-SA-4.0`.
 | 1013.26.988 | poisoning-case-investigation | Accidental poisoning case investigation form | INITIAL | 2024-12-30T03:35:42+01:00 | case_investigation |
 | 1013.26.980 | diphtheria-case-investigation | Diphtheria case investigation form | INITIAL | 2024-12-30T01:55:25+01:00 | case_investigation |
 | 1013.26.977 | congenital-syphilis-case-investigation | Congenital syphilis case investigation form | INITIAL | 2024-12-30T01:49:57+01:00 | case_investigation (largest published form — the large-payload scale probe) |
+
+## Adjudicated boundaries
+
+Two EHDS Annex I priority categories have no template in this pack, and the
+gap is a boundary rather than an omission (#3206): CKM publishes no operational
+template for **electronic dispensations** (Annex I 3) or **discharge reports**
+(Annex I 6) as such at the pinned revision, and this pack vendors CKM content
+verbatim, never a template authored here to fill a category. The
+international-patient-summary template covers admission and discharge
+summaries as a COMPOSITION shape, not the discharge-report category the
+Regulation names. The question reopens when a CKM template for either category
+is published, or when the Article 36 implementing acts fix the exchange format
+those categories must be provided in.

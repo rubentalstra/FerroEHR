@@ -134,19 +134,21 @@ four roles do not exist at all — the development, compose and test-harness
 case, where the migrator holds no `CREATEROLE` — the check passes rather than
 inventing a failure.
 
-On Kubernetes the same choice is two chart values, mounted as files the same
-way the clinical DSN is, so neither credential enters the pod's environment:
+On Kubernetes the same choice is chart values, mounted as files the same way
+the clinical DSN is, so no credential enters the pod's environment:
 
 ```yaml
 database:
-  existingSecret: ferroehr-db          # postgres://ferroehr_ehr:…
+  existingSecret: ferroehr-db                          # postgres://ferroehr_ehr:…
   demographicExistingSecret: ferroehr-db-demographic   # postgres://ferroehr_demographic:…
+  linkageExistingSecret: ferroehr-db-linkage           # postgres://ferroehr_linkage:…
+  migrateExistingSecret: ferroehr-db-migrator          # postgres://ferroehr_migrator:…
 ```
 
-Leave `demographicExistingSecret` unset and both pools share the clinical DSN,
-which is the schema-only posture.
+Leave `demographicExistingSecret` and `linkageExistingSecret` unset and those
+pools share the clinical DSN, which is the schema-only posture.
 
-Provisioning the four roles is yours in both cases. The migrations create them
+Provisioning the five roles is yours in both cases. The migrations create them
 only when the migrator holds `CREATEROLE` and skip them with a `NOTICE`
 otherwise, so on a managed database — where the migrator usually does not —
 create them before the first deploy:
@@ -156,15 +158,57 @@ CREATE ROLE ferroehr_ehr NOLOGIN NOINHERIT;
 CREATE ROLE ferroehr_demographic NOLOGIN NOINHERIT;
 CREATE ROLE ferroehr_ehr_reader NOLOGIN NOINHERIT;
 CREATE ROLE ferroehr_demographic_reader NOLOGIN NOINHERIT;
+CREATE ROLE ferroehr_linkage NOLOGIN NOINHERIT;
 ```
 
 then give each login role membership of exactly one of them. `ferroehr db
 verify` tells you whether the boundary holds afterwards.
 
-The compose stacks create all four and grant both domains to the single dev
+The local Audit Record Repository needs one more grant than the domain roles
+carry. The `audit` schema is granted to `ferroehr_app` and `ferroehr_reader`,
+and the repository is written on the clinical pool, so the login role that
+pool uses needs membership of `ferroehr_app` as well as `ferroehr_ehr`. That
+adds no reach into the other two domains: `ferroehr_app` holds no grant in
+`demographic`, `cold_demographic` or `linkage`.
+
+The compose stacks create all five and grant both domains to the single dev
 login role. That demonstrates the schema separation and exercises the boot
 self-check; it is deliberately **not** the credential separation, because one
 container with one DSN cannot show that half honestly.
+
+### Which of these postures is exercised, and which is not
+
+A recommendation nothing runs is a guess. This is what the suites cover.
+
+Exercised against a real PostgreSQL 18:
+
+- Two runtime credentials serving both domains through the assembled router,
+  each of the server's own pools refused every relation of the other domain
+  (`app/ferroehr-rest/tests/it/credential_separation.rs`), and the single-DSN
+  fallback still serving both.
+- Three runtime credentials across the whole identity-to-party-to-EHR
+  crossing, with the linkage credential refused the identifier map
+  (`app/ferroehr/tests/it/pseudonymisation_boundary.rs`).
+- All five domain roles refused every relation in the domains they do not own,
+  enumerated from `information_schema` rather than from a written list (same
+  file).
+- The boot sequence on separated credentials with `[db] migrate_url`, under
+  both `verify` and `apply`, and the single-DSN fallback under both
+  (`app/ferroehr/tests/it/schema_preparation_credential.rs`).
+- The compose stack's grant boundary read back from the running database by
+  `scripts/deploy-probe.sh`, which also records that the stack is
+  single-credential by design.
+
+Not exercised by anything, and stated rather than left to inference:
+
+- **A separated `migrate_url` alongside the linkage credential in one boot.**
+  The preparation tests configure the clinical and demographic DSNs.
+- **A real deployment on separated DSNs**: a container booting with the DSN
+  files mounted, and the chart wiring them through
+  `database.demographicExistingSecret`, `database.linkageExistingSecret` and
+  `database.migrateExistingSecret`. What is covered is the in-process half.
+- **Role provisioning on a managed database** where the migrator holds no
+  `CREATEROLE` and the roles are created by the manual step above.
 
 > [!NOTE]
 > `ferroehr_app` and `ferroehr_reader` are the previous single-domain pair. They

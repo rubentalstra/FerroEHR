@@ -31,7 +31,7 @@ FerroEHR publishes three container images to GHCR:
 | Image | Contents |
 |---|---|
 | `ghcr.io/rubentalstra/ferroehr` | The `ferroehr` server binary on a distroless, non-root, shell-less multi-arch base (amd64 + arm64). Configured by a mounted TOML file and/or `FERROEHR__*` environment variables. |
-| `ghcr.io/rubentalstra/ferroehr-postgres` | `postgres:18.6` (with Debian security updates applied at image build) plus init scripts that pre-create the application login role, the three group roles (`ferroehr_migrator`, `ferroehr_app`, `ferroehr_reader`), the database, the schemas (`ehr`, `ext`, `audit`) and the extensions (`uuid-ossp`, `pgcrypto`, `pg_trgm`, `btree_gist`), so the app role never needs superuser. |
+| `ghcr.io/rubentalstra/ferroehr-postgres` | `postgres:18.6` (with Debian security updates applied at image build) plus init scripts that pre-create the application login role, the eight `NOLOGIN` group roles (`ferroehr_migrator`, `ferroehr_app`, `ferroehr_reader`, and the five domain roles `ferroehr_ehr`, `ferroehr_demographic`, `ferroehr_ehr_reader`, `ferroehr_demographic_reader`, `ferroehr_linkage`), the database, the schemas (`ehr`, `ext`, `audit`) and the extensions (`uuid-ossp`, `pgcrypto`, `pg_trgm`, `btree_gist`), so the app role never needs superuser. |
 | `ghcr.io/rubentalstra/ferroehr-viewer` | The [viewer](../viewer/index.md), a standalone web application that talks to the CDR strictly over ITS-REST. Optional; see the `viewer` profile below. |
 
 Each image is published under several tags:
@@ -52,10 +52,18 @@ variables in [the table below](#variables-the-compose-files-read).
 
 The role the server connects as in the quickstart owns the database and belongs
 to **both** `ferroehr_migrator` and `ferroehr_app`, which is what lets it apply
-migrations at boot. A least-privilege deployment instead sets
-`db.migrate = "verify"`, connects as `ferroehr_app` alone, and runs
-`ferroehr db migrate` out of band under the migrator DSN; see
-[Operations → Applying migrations](../operations.md#applying-migrations).
+migrations at boot.
+
+A least-privilege deployment sets `db.migrate = "verify"`, runs
+`ferroehr db migrate` out of band under the migrator DSN, and serves on a
+narrow runtime credential. It also has to name the credential that prepares
+the schema, in `[db] migrate_url`: preparation reads all five
+`_sqlx_migrations` bookkeeping tables even under `verify`, which no
+least-privilege role can do, `ferroehr_app` included. Unset, `migrate_url`
+falls back to `[db] url`, which is what the quickstart runs. See
+[Operations → Which credential prepares the
+schema](../operations.md#which-credential-prepares-the-schema) and
+[Applying migrations](../operations.md#applying-migrations).
 
 The PostgreSQL image is **init-scripts only**: it creates roles, schemas and
 extensions, and bakes in no migration state. The server owns the schema content
@@ -67,8 +75,10 @@ self-provisions and a restart is a no-op.
 > see startup notices like `skipping role creation (no CREATEROLE privilege)`
 > or `roles absent`, your volume predates the image's role setup (or you are
 > running a plain `postgres` image): either recreate the volume
-> (`docker compose down -v`, which **destroys data**) or create the three group
-> roles once by hand as a superuser. The server runs fine either way: the
+> (`docker compose down -v`, which **destroys data**) or create the group roles
+> once by hand as a superuser
+> ([Operations](../operations.md#turning-the-schema-split-into-a-role-split)
+> has the statements). The server runs fine either way: the
 > grants are a defense-in-depth layer, not a functional requirement.
 
 ## Bringing up the stack

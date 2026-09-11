@@ -48,7 +48,10 @@ These exist so a least-privilege deployment can separate the two database
 identities: run `db migrate` once under a DSN that holds DDL rights (a
 Kubernetes Job, an init container, a CI/CD stage), then boot the server with
 [`db.migrate = "verify"`](config-server.md#db) under a DSN with no DDL rights at
-all. See [Operations](../operations.md#applying-migrations).
+all. `verify` still reads all five `_sqlx_migrations` bookkeeping tables, which
+no least-privilege role can do, so point `[db] migrate_url` at the credential
+that prepares the schema. See
+[Operations](../operations.md#which-credential-prepares-the-schema).
 
 ### `ferroehr healthcheck`
 
@@ -85,7 +88,13 @@ For production, set at least:
   `url_file`-mounted value, never inline in a world-readable file. Leaving the
   development default in place is warned about loudly at every boot.
 - **`db.migrate = "verify"`** with the schema applied out of band, so the
-  serving role needs no DDL rights.
+  serving role needs no DDL rights, plus **`db.migrate_url`** naming the
+  credential that reads every schema's migration state at boot. The serving
+  credential cannot.
+- **`deployment_profile = "production"`** once the deployment holds real
+  personal data. The server then refuses to start while a separation is open
+  and not accepted by name, instead of running as a sandbox that looks
+  identical.
 - **an authentication mechanism:** a Basic user store and/or `[auth.oidc]`.
 - **`log.format = "json"`** for cluster log collectors.
 - **`server.cors_permissive`** stays `false`; **`server.swagger_ui`** per
@@ -101,6 +110,11 @@ For production, set at least:
   TLS-terminating ingress), `audit.syslog.transport = "tls"`, `events.tls`,
   `fhir.outbound.tls`, HTTPS for the object store.
 - **real secrets via the environment or a `*_file` sibling**, never inline.
+
+Before a deployment holding real patient data goes live, work through the
+[go-live checklist](../security/go-live-checklist.md): it turns each item above
+into something you run and read back, and adds the privacy and audit checks a
+controller is asked for.
 
 ## What belongs in a mounted file (versus the environment)
 

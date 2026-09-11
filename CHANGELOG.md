@@ -17,6 +17,26 @@ workflow refuses a tag that has no matching section here.
 
 ### Added
 
+- **Deployer-facing privacy documentation** (#3161). Three pages under
+  Security: a data protection impact assessment (processing description, data
+  categories per schema, roles, retention including the Dutch five-year
+  access-log floor, a risk register, and the shipped controls mapped to GDPR,
+  EHDS, EDPB 01/2025 and NEN by closed issue), an Article 30 records-of-processing
+  template pre-filled with the activities FerroEHR performs by design, and a
+  go-live checklist linked from the production checklist.
+
+- **The threat model, architecture and storage pages describe the
+  pseudonymisation boundary as shipped** (#3166): what each database credential
+  and each backup artefact can reach, the re-identification paths and the
+  control against each, which service module runs on which pool and role, and
+  all seven schemas including `linkage`.
+
+- **The FHIR page records the priority-category mapping decision** (#3206):
+  profile mappings are not authored here and belong to FerroBRIDGE once the
+  EHDS Article 36 implementing acts fix the exchange format; the trigger that
+  reopens the question is stated, and the two priority categories with no
+  committed template are recorded as an adjudicated corpus boundary.
+
 - **The server mints the subject pseudonym** (#3232). Where FerroEHR itself
   makes a party the subject of an EHR, `service::linkage::link_as_subject`
   derives the pseudonym (a keyed, tenant-bound derivation over the party under
@@ -565,6 +585,13 @@ workflow refuses a tag that has no matching section here.
   audit rows rather than isolate them.
 
 ### Fixed
+
+- **Every documented least-privilege posture names a credential that can do
+  what the page asks** (#3228). `db.migrate = "verify"` reads all five
+  `_sqlx_migrations` bookkeeping tables, which no least-privilege runtime role
+  can do, `ferroehr_app` included; the Compose, Kubernetes, CLI, server
+  configuration and installation pages now name `[db] migrate_url`, and the
+  operations page says which postures a test exercises and which none does.
 
 - **The management surface is inside the audit trail** (#3244). `/management/*`
   was mounted outside the audit layer, so a runtime filter change through

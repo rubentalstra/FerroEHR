@@ -42,3 +42,15 @@ docs-claims + **rustdoc** (`RUSTDOCFLAGS="-D warnings" cargo doc -p <crate>
 type in another module must name its defining module path
 (`crate::service::FerroEhrService::…`), not the bare name; rustdoc is the
 only gate that catches it and it runs one CI cycle later.
+
+Addendum 2026-09-11 (#3266): two guards the targeted-suite habit misses.
+(1) `canonical_json_literals::canonical_shapes_are_built_from_the_generated_types`
+refuses ANY new `json!` literal carrying `"_type"` under `app/ferroehr/src`
+(build the generated type and `to_canonical_value` it, as
+`service/ehr/mod.rs::status_for_subject` does) — it only runs in the full
+`cargo nextest run -p ferroehr`, so run the full crate suite before pushing
+a change that adds a literal. (2) `chart-boot` runs `ferroehr config check`
+over every `deploy/helm/ci/*-values.yaml`: a new boot-time config refusal
+(a floor, a required key) can make a committed overlay refuse; grep the
+overlays for the keys the refusal reads and regenerate goldens with
+`deploy/helm/validate.sh --update`.
