@@ -383,6 +383,13 @@ workflow refuses a tag that has no matching section here.
 
 ### Changed
 
+- **The control matrix lists a control's closing pull request only once it
+  has merged** (#3253). An open pull request that says `Closes #N` no longer
+  moves a row, and the pull request that closes a control regenerates the page
+  as it will read after the merge (`--closing <pr>`), so the published matrix
+  never lags a shipped control and unrelated pull requests stop failing its
+  check.
+
 - **The two-DSN posture is exercised, and the deployment probe says exactly
   what still is not** (#3222). Pointing `[db] demographic_url` at a role of
   its own turns the schema separation between the clinical and demographic
