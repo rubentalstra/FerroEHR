@@ -52,6 +52,7 @@ pub mod builder;
 pub mod chart_model;
 pub mod clinical;
 pub mod components;
+pub mod deployment;
 pub mod error;
 pub mod example_options;
 pub mod feedback;

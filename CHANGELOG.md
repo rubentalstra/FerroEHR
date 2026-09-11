@@ -17,6 +17,14 @@ workflow refuses a tag that has no matching section here.
 
 ### Added
 
+- **The viewer shows the connected CDR's deployment profile** (#3264). The
+  header's status chip carries the declared profile (`· production` or
+  `· sandbox`), and a sandbox deployment raises a persistent notice under the
+  header on every authenticated screen stating that it has not made the
+  production separations and must not hold real patient data, naming the open
+  separations the server reported. Production renders quietly; a server that
+  declares no profile changes nothing.
+
 - **Deployer-facing privacy documentation** (#3161). Three pages under
   Security: a data protection impact assessment (processing description, data
   categories per schema, roles, retention including the Dutch five-year
