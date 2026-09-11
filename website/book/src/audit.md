@@ -230,7 +230,11 @@ Two routes, and they answer different questions.
 
 There is no patient-facing route in the product: a portal that shows a person
 who accessed their record builds on ITI-81 and authenticates the person itself.
-That is a deployment's build, and the
+What the product gives that portal is a grant of its own size:
+`authz.rbac.subject_audit_role` reads the log for one subject at a time, with
+the `patient` parameter required, so the portal never holds an admin credential
+over every patient's log (GDPR Art. 15 with Recital 63, EHDS Art. 9, for Dutch
+deployments Wabvpz Art. 15e). The portal's build is the deployment's, and the
 [shared-responsibility page](compliance/shared-responsibility.md) says so.
 
 ## Sinks
@@ -330,8 +334,13 @@ newest first, with the full match `total`. Supported search parameters:
 | `_count` / `_offset` | paging; page size defaults to 50, capped at 1000 |
 
 Other FHIR search parameters are ignored (lenient search); a malformed value on
-a supported one is a `400` carrying a FHIR `OperationOutcome`. The surface is
-**admin-only** under RBAC and answers `404` when the local store is disabled.
+a supported one is a `400` carrying a FHIR `OperationOutcome`. Under RBAC the
+unscoped retrieval is **admin-only**; a caller holding the configured
+`authz.rbac.subject_audit_role` reads it **scoped to one subject**, `patient`
+required, and is refused with a `403` that names the parameter when it omits
+it. Reading a subject's log is itself recorded as an access naming that
+subject and the record count served. The surface answers `404` when the local
+store is disabled.
 
 ```bash
 # Who accessed patient-42's data this month?

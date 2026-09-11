@@ -63,7 +63,11 @@ fn rest_config() -> AppConfig {
         auth: AuthConfig {
             enabled: true,
             basic: Some(BasicConfig {
-                users: vec![user("root", &["ADMIN"]), user("user", &["USER"])],
+                users: vec![
+                    user("root", &["ADMIN"]),
+                    user("user", &["USER"]),
+                    user("portal", &["PORTAL"]),
+                ],
             }),
             ..AuthConfig::default()
         },
@@ -74,6 +78,7 @@ fn rest_config() -> AppConfig {
 fn authz(enabled: bool) -> Option<Arc<AuthzHandle>> {
     let mut cfg = AuthzConfig::default();
     cfg.rbac.enabled = enabled;
+    cfg.rbac.subject_audit_role = Some("PORTAL".to_owned());
     // RBAC-only: no engine, inert resolvers (nothing here consults ABAC).
     let resolvers = AuthzResolvers {
         subject: Arc::new(|_| Box::pin(async { Ok::<_, ResolveError>(None) })),
@@ -289,4 +294,78 @@ async fn rbac_gates_the_audit_surface_to_admins() {
     assert_eq!(resp.status(), StatusCode::OK);
     let bundle = body_json(resp).await;
     assert_eq!(bundle["total"], 1);
+}
+
+/// The subject-scoped grant (#3240): a caller holding `subject_audit_role`
+/// reads the access log for the one subject it names and nothing else — the
+/// grant a patient portal holds instead of an admin credential over every
+/// patient's log (GDPR Art. 15 with Recital 63, EHDS Art. 9).
+#[tokio::test]
+async fn the_subject_audit_role_reads_one_subjects_log_and_nothing_else() {
+    let (_pg, app, store) = app(true, true).await;
+    seed(
+        &store,
+        "2026-07-10T08:00:00Z",
+        EventActionCode::Read,
+        "alice",
+        Some("patient-1"),
+    )
+    .await;
+    seed(
+        &store,
+        "2026-07-10T08:01:00Z",
+        EventActionCode::Read,
+        "bob",
+        Some("patient-2"),
+    )
+    .await;
+
+    // Scoped to one subject: the portal reads that subject's records only.
+    let resp = app
+        .clone()
+        .oneshot(get(
+            "/fhir/r4/AuditEvent?patient=patient-1",
+            &basic("portal"),
+        ))
+        .await
+        .expect("resp");
+    assert_eq!(resp.status(), StatusCode::OK);
+    let bundle = body_json(resp).await;
+    assert_eq!(bundle["total"], 1, "{bundle}");
+    assert_eq!(
+        bundle["entry"][0]["resource"]["agent"][0]["who"]["identifier"]["value"],
+        "alice"
+    );
+
+    // Unscoped: the same role is refused, with the reason naming the parameter.
+    let resp = app
+        .clone()
+        .oneshot(get("/fhir/r4/AuditEvent", &basic("portal")))
+        .await
+        .expect("resp");
+    assert_eq!(resp.status(), StatusCode::FORBIDDEN);
+    let outcome = body_json(resp).await;
+    assert!(
+        outcome["issue"][0]["diagnostics"]
+            .as_str()
+            .is_some_and(|d| d.contains("`patient` parameter is required")),
+        "{outcome}"
+    );
+
+    // A role that is neither admin nor the subject role is still refused, even
+    // when it names a patient.
+    let resp = app
+        .clone()
+        .oneshot(get("/fhir/r4/AuditEvent?patient=patient-1", &basic("user")))
+        .await
+        .expect("resp");
+    assert_eq!(resp.status(), StatusCode::FORBIDDEN);
+
+    // The admin keeps the unscoped retrieval.
+    let resp = app
+        .oneshot(get("/fhir/r4/AuditEvent", &basic("root")))
+        .await
+        .expect("resp");
+    assert_eq!(resp.status(), StatusCode::OK);
+    assert_eq!(body_json(resp).await["total"], 2);
 }
