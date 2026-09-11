@@ -374,8 +374,10 @@ backup:
     # re-identifies a pseudonymised record — so it is the narrowest of the three.
     existingSecret: ""
     # -- Key within `existingSecret` carrying that DSN. The name follows its two
-    # siblings; there is no matching config key, because the server opens no
-    # linkage pool — this key is read only by the backup job.
+    # siblings and matches the server's own `database.linkageExistingSecretKey`
+    # for the linkage POOL, but this must be a different Secret holding the
+    # backup role's DSN: the pool's credential cannot dump the table. The probe
+    # restores this dump and checks the map's temporal key and forced row policy.
     existingSecretKey: FERROEHR__DB__LINKAGE_URL
     # -- REQUIRED when enabled: an EXISTING PersistentVolumeClaim for the linkage
     # dumps, and a DIFFERENT one from the other two claims (two domains sharing a
