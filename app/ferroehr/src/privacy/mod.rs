@@ -30,12 +30,14 @@
 //!    deployment declares its namespaces
 //!    ([`config::PrivacyConfig::subject_namespaces`]).
 //! 2. **Identified parties.** In clinical content a `PARTY_IDENTIFIED` may
-//!    carry `name` — the class is explicitly the provider proxy, "other than
-//!    the subject of the record" — but not `identifiers`; a `PARTY_RELATED`
-//!    may carry `name` unless its relationship codes `self`, where the party
-//!    IS the subject, and never `identifiers`. The deployment can opt in to
-//!    all of it. `Basic_validity` is satisfied by `external_ref` alone, so
-//!    every party proxy stays expressible.
+//!    carry `name` and `identifiers` — the class is explicitly the provider
+//!    proxy, "other than the subject of the record", whose paradigm case is
+//!    "name and provider number of an institution" — and so may a
+//!    `PARTY_RELATED`, unless its relationship codes `self`, where the party
+//!    IS the subject and both are refused. The deployment can opt in to the
+//!    `self` case. `Basic_validity` is satisfied by `external_ref` alone, so
+//!    the refused proxy stays expressible; a subject's identifier VALUE is
+//!    the scanner's job (rule 3) wherever it sits.
 //! 3. **The identifier scanner.** No string leaf may carry a value one of the
 //!    active identifier rules claims. The rules are keyed by jurisdiction and
 //!    each transcribes the checksum its own issuing register publishes; a
@@ -348,12 +350,16 @@ impl PrivacyPolicy {
 /// §Description), so a name there is clinician or institution identity — the
 /// class's own paradigm case, not patient identity.
 ///
-/// `identifiers` stays refused on both classes: "One or more formal
-/// identifiers (possibly computable)" (same file, §Attributes) is the
-/// national-identifier slot the pseudonymisation boundary exists to keep off
-/// the clinical side.
+/// `PARTY_IDENTIFIED.identifiers` is permitted for the same reason: the class
+/// is "Used to describe parties where only identifiers may be known … e.g.
+/// name and provider number of an institution" (same file, §Description), so
+/// a clinician's registration number is its paradigm case, and the Simplified
+/// Formats build exactly that from `ctx/participation_identifiers`
+/// (ITS-REST `simplified_formats` master06 §Participation). The SUBJECT's
+/// identifier is what the boundary keeps off the clinical side, and a national
+/// identifier VALUE is the scanner's job (rule 3) wherever it sits (#3254).
 ///
-/// `PARTY_RELATED.name` is refused only where the party IS the subject. The
+/// Both `name` and `identifiers` are refused only where the party IS the subject. The
 /// class is "Proxy type for identifying a party **and its relationship to the
 /// subject** of the record", and its `relationship` is "coded as self" when
 /// "it is the patient" (RM common
@@ -388,16 +394,17 @@ fn check_party(at: &str, map: &serde_json::Map<String, Value>, findings: &mut Ve
             class: FindingClass::Refusal,
         });
     }
-    if present("identifiers") {
+    if related && present("identifiers") && relationship_is_self(map.get("relationship")) {
         findings.push(Finding {
             path: format!("{at}/identifiers"),
-            message: "carries a formal identifier on the clinical side: identifiers is \"One \
-                      or more formal identifiers (possibly computable)\" (PARTY_IDENTIFIED \
-                      §Attributes) — a national identifier or provider number, which the \
-                      clinical side does not hold. external_ref alone satisfies \
-                      Basic_validity. Set privacy.allow_identified_parties_in_ehr to accept \
-                      it."
-            .to_owned(),
+            message: "carries the record's subject's formal identifiers: a PARTY_RELATED \
+                      whose relationship is `self` IS the patient (PARTY_RELATED \
+                      §Attributes), and identifiers is \"One or more formal identifiers \
+                      (possibly computable)\" (PARTY_IDENTIFIED §Attributes) — the \
+                      national-identifier slot the clinical side does not hold for its \
+                      subject. external_ref alone satisfies Basic_validity. Set \
+                      privacy.allow_identified_parties_in_ehr to accept it."
+                .to_owned(),
             class: FindingClass::Refusal,
         });
     }

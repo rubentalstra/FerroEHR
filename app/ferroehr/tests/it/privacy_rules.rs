@@ -197,18 +197,40 @@ fn a_named_party_identified_in_clinical_content_is_accepted_by_default() {
 /// §Attributes) is the national-identifier slot, which the clinical side does
 /// not hold whatever the party is.
 #[test]
-fn formal_identifiers_on_a_party_identified_are_refused_by_default() {
+fn formal_identifiers_on_a_party_identified_are_accepted_by_default() {
+    // "Used to describe parties where only identifiers may be known … e.g.
+    // name and provider number of an institution" (RM common
+    // `UML/classes/org.openehr.rm.common.party_identified.adoc` §Description):
+    // a registration number on the composer is the class's paradigm case, and
+    // `ctx/participation_identifiers` builds exactly this (#3254).
     let composition = json!({
         "_type": "COMPOSITION",
         "composer": {
             "_type": "PARTY_IDENTIFIED",
             "name": "Dr Author",
-            "identifiers": [{ "_type": "DV_IDENTIFIER", "id": "GMC-1234567" }]
+            "identifiers": [{ "_type": "DV_IDENTIFIER", "id": "GMC-1234567", "issuer": "GMC" }]
         }
     });
     let findings = policy(&PrivacyConfig::default()).findings("COMPOSITION", &composition);
-    assert_eq!(paths(&findings), ["COMPOSITION/composer/identifiers"]);
-    assert_eq!(findings[0].class, FindingClass::Refusal);
+    assert!(findings.is_empty(), "{findings:?}");
+}
+
+/// A national identifier as a `DV_IDENTIFIER` value is still refused, by the
+/// identifier scanner, whichever party proxy carries it: the class rule
+/// admits the slot, never the subject's number.
+#[test]
+fn a_national_identifier_value_in_identifiers_is_refused_by_the_scanner() {
+    let composition = json!({
+        "_type": "COMPOSITION",
+        "composer": {
+            "_type": "PARTY_IDENTIFIED",
+            "name": "Dr Author",
+            "identifiers": [{ "_type": "DV_IDENTIFIER", "id": "111222333", "issuer": "RvIG" }] // privacy-allow: synthetic
+        }
+    });
+    let findings = policy(&PrivacyConfig::default()).findings("COMPOSITION", &composition);
+    assert_eq!(paths(&findings), ["COMPOSITION/composer/identifiers[0]/id"]);
+    assert_eq!(findings[0].class, FindingClass::IdentifierShape);
 }
 
 /// A `PARTY_RELATED` whose relationship names a third party keeps its name.

@@ -490,6 +490,14 @@ workflow refuses a tag that has no matching section here.
 
 ### Fixed
 
+- **Formal identifiers on a provider proxy are accepted** (#3254). The
+  identified-party rule refused `identifiers` on every party proxy, which
+  turned away a clinician's registration number on the composer and the
+  simplified-format `ctx/participation_identifiers` forms, the Reference
+  Model's own paradigm case for `PARTY_IDENTIFIED`. The slot is now refused
+  only on a `PARTY_RELATED` whose relationship is `self`; a national-identifier
+  value is still refused by the identifier scanner wherever it sits.
+
 - **A named `PARTY_RELATED` is accepted unless it is the subject** (#3252).
   The identified-party rule refused every `PARTY_RELATED` carrying a `name` in
   clinical content, which turned away a composition whose consenting mother or

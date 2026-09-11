@@ -43,7 +43,7 @@ patterns = []
 | Key | Type | Default | Description |
 |---|---|---|---|
 | `subject_namespaces` | list of strings | `[]` | The pseudonymisation domains this deployment issues subject pseudonyms in. |
-| `allow_identified_parties_in_ehr` | bool | `false` | Accept `PARTY_IDENTIFIED` / `PARTY_RELATED` carrying `name` or `identifiers` in clinical content. Off still accepts a `PARTY_IDENTIFIED` name and a `PARTY_RELATED` name on a third party; see the matrix below. |
+| `allow_identified_parties_in_ehr` | bool | `false` | Accept a `PARTY_RELATED` whose relationship is `self` carrying `name` or `identifiers` in clinical content. Off already accepts every other party proxy; see the matrix below. |
 
 ### The subject reference
 
@@ -79,8 +79,8 @@ class it is:
 
 | | `name` | `identifiers` |
 |---|---|---|
-| `PARTY_IDENTIFIED` | accepted | refused |
-| `PARTY_RELATED`, relationship a third party (mother, guardian, donor, …) | accepted | refused |
+| `PARTY_IDENTIFIED` | accepted | accepted |
+| `PARTY_RELATED`, relationship a third party (mother, guardian, donor, …) | accepted | accepted |
 | `PARTY_RELATED`, relationship `self` | refused | refused |
 
 The two classes mean different things, so one rule for both was the wrong
@@ -93,10 +93,16 @@ does not contain. `ctx/composer_name` in the simplified formats produces
 exactly this shape, and so does the example composition this server generates
 for a template.
 
-`identifiers` stays refused on both classes. It is "One or more formal
-identifiers (possibly computable)" — the NHS-number and BSN slot — and a
-national identifier on the clinical side is what the separation between the
-two database schemas exists to prevent.
+`identifiers` follows the same line. The class is "Used to describe parties
+where only identifiers may be known … e.g. name and provider number of an
+institution", so a clinician's registration number on the composer is the
+class's own paradigm case, and the simplified formats build exactly that from
+`ctx/participation_identifiers`. What the separation between the two database
+schemas exists to prevent is the *subject's* national identifier on the
+clinical side, and that is caught in two places: a `self` party's
+`identifiers` slot is refused by this rule, and a national-identifier *value*
+is refused by the identifier scanner below wherever it sits, `DV_IDENTIFIER.id`
+included.
 
 `PARTY_RELATED` is the "Proxy type for identifying a party **and its
 relationship to the subject** of the record", and that relationship "is coded
@@ -115,7 +121,7 @@ instead of restating the identity.
 The commit's own `AUDIT_DETAILS.committer` is not clinical content and is never
 touched by this rule.
 
-A deployment that needs formal identifiers, or a name on a `self` party, sets:
+A deployment that needs a name or formal identifiers on a `self` party sets:
 
 ```toml
 [privacy]
