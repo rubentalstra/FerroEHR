@@ -225,7 +225,7 @@ and the scope gate is inert. See [SMART App Launch](../smart-app-launch.md).
 | `public_base_url` | string | **required when enabled** | The server's externally reachable origin (e.g. `https://cdr.example.com`), from which the discovery document's absolute `services.*.baseUrl` values are built. |
 | `ehr_id_claim` | string | `ehrId` | Token claim carrying the launch context's openEHR EHR id. |
 | `patient_claim` | string | `patient` | Fallback launch-context claim when `ehr_id_claim` is absent. |
-| `require_smart_scopes` | bool | `false` | When `true`, the resource-scope gate is fail-closed across the composition, template and AQL families, and the `openehr-permission-v1` capability is advertised. When `false` the gate is advisory (it enforces only when a token actually carries SMART resource scopes) and the capability is not claimed. |
+| `require_smart_scopes` | bool | `false` | When `true`, the resource-scope gate is fail-closed across the composition, template and AQL families, and the `openehr-permission-v1` capability is advertised: every caller on those families needs a Bearer token carrying a matching SMART resource scope, so a Basic-authenticated caller, which carries no scopes at all, is refused with `403` there (the EHR family is not scope-governed). When `false` the gate is advisory (it enforces only when a token actually carries SMART resource scopes) and the capability is not claimed. |
 | `launch_base64_json` | bool | `false` | Advertise the `launch-base64-json` capability. Experimental, and advisory: the base64-JSON launch object is consumed by the application, not the CDR. |
 
 `[smart.episode]`: `enabled` (bool, `false`) advertises episode context and

@@ -246,6 +246,10 @@ pub struct FoldedVersion<'a> {
     /// `spec_profile` gate consults. No openEHR spec governs runtime
     /// generation selection — our own design/extension.
     pub stable_compatible: bool,
+    /// The distinct origins of the body (`vo_version.origins`, a JSON array
+    /// of `FEEDER_AUDIT` originating system ids, or this server's own), the
+    /// access log's answer to EHDS Annex II 3.2(e) (#3212).
+    pub origins: &'a [String],
     /// The canonical body bytes (`vo_version.body`, text): the accepted,
     /// uid-stamped value serialized before node decomposition, so a point read
     /// serves the codec's field order verbatim. `None` on a logical delete (no
@@ -319,15 +323,15 @@ pub async fn commit_new_version(
                    (vo_id, kind, ehr_id, sys_version, trunk_version, branch_number, branch_version, \
                     sys_period, lifecycle_state, creating_system_id, preceding_version_uid, \
                     contribution_id, audit_id, template_id, signature, \
-                    signature_client_supplied, stable_compatible, body) \
+                    signature_client_supplied, stable_compatible, body, origins) \
                  SELECT $8, $9, $7, $10, $11, $12, $13, tstzrange($22::timestamptz, NULL, '[)'), \
-                        $14, $15, $16, c.id, a.id, $17, $18, $19, $20, $21 \
+                        $14, $15, $16, c.id, a.id, $17, $18, $19, $20, $21, $24 \
                  FROM a, c, (SELECT count(*) FROM cl) AS cl_done \
                  RETURNING 1 \
              ), n AS ( {} ) \
              SELECT a.id AS audit_id, a.time_committed, c.id AS contribution_id \
              FROM a LEFT JOIN c ON true",
-            crate::storage::node_repo::node_insert_cte("$8", "$10", "$7", 24)
+            crate::storage::node_repo::node_insert_cte("$8", "$10", "$7", 25)
         )
     });
     let row = sqlx::query(sqlx::AssertSqlSafe(SQL.as_str()))
@@ -353,7 +357,8 @@ pub async fn commit_new_version(
         .bind(v.stable_compatible)
         .bind(v.body)
         .bind(v.time_committed.to_string())
-        .bind(v.close_ordinal);
+        .bind(v.close_ordinal)
+        .bind(serde_json::json!(v.origins));
     let node_refs: Vec<&crate::storage::row::NodeRow> = v.rows.iter().collect();
     let row = crate::storage::node_repo::bind_node_arrays(row, &node_refs)
         .fetch_one(&mut *tx)
@@ -405,14 +410,14 @@ pub async fn commit_version_into(
                    (vo_id, kind, ehr_id, sys_version, trunk_version, branch_number, branch_version, \
                     sys_period, lifecycle_state, creating_system_id, preceding_version_uid, \
                     contribution_id, audit_id, template_id, signature, \
-                    signature_client_supplied, stable_compatible, body) \
+                    signature_client_supplied, stable_compatible, body, origins) \
                  SELECT $6, $7, $8, $9, $10, $11, $12, tstzrange($22::timestamptz, NULL, '[)'), \
-                        $13, $14, $15, $16, a.id, $17, $18, $19, $20, $21 \
+                        $13, $14, $15, $16, a.id, $17, $18, $19, $20, $21, $24 \
                  FROM a, (SELECT count(*) FROM cl) AS cl_done \
                  RETURNING 1 \
              ), n AS ( {} ) \
              SELECT a.id AS audit_id, a.time_committed FROM a",
-            crate::storage::node_repo::node_insert_cte("$6", "$9", "$8", 24)
+            crate::storage::node_repo::node_insert_cte("$6", "$9", "$8", 25)
         )
     });
     let row = sqlx::query(sqlx::AssertSqlSafe(SQL.as_str()))
@@ -438,7 +443,8 @@ pub async fn commit_version_into(
         .bind(v.stable_compatible)
         .bind(v.body)
         .bind(v.time_committed.to_string())
-        .bind(v.close_ordinal);
+        .bind(v.close_ordinal)
+        .bind(serde_json::json!(v.origins));
     let node_refs: Vec<&crate::storage::row::NodeRow> = v.rows.iter().collect();
     let row = crate::storage::node_repo::bind_node_arrays(row, &node_refs)
         .fetch_one(&mut *tx)

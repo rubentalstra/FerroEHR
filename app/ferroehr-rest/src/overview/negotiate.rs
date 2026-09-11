@@ -1087,6 +1087,9 @@ pub(crate) fn set_versioning_headers(resp: &mut Response, meta: &ResourceMeta) {
             uid: Some(meta.uid.clone()),
             result_count: None,
             domain: None,
+            origins: meta.origins.clone(),
+            origin_count: (!meta.origins.is_empty())
+                .then(|| u64::try_from(meta.origins.len()).unwrap_or(u64::MAX)),
         });
 }
 

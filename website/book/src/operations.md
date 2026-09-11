@@ -164,12 +164,14 @@ CREATE ROLE ferroehr_linkage NOLOGIN NOINHERIT;
 then give each login role membership of exactly one of them. `ferroehr db
 verify` tells you whether the boundary holds afterwards.
 
-The local Audit Record Repository needs one more grant than the domain roles
-carry. The `audit` schema is granted to `ferroehr_app` and `ferroehr_reader`,
-and the repository is written on the clinical pool, so the login role that
-pool uses needs membership of `ferroehr_app` as well as `ferroehr_ehr`. That
-adds no reach into the other two domains: `ferroehr_app` holds no grant in
-`demographic`, `cold_demographic` or `linkage`.
+The local Audit Record Repository is written on the clinical pool, and the
+`audit` schema is granted to `ferroehr_ehr` (record an event, stamp it
+forwarded, run the retention reaper, verify the chain) and to
+`ferroehr_ehr_reader` (read it and verify the chain), the same privileges the
+single-domain pair holds there. A clinical login role that is a member of
+`ferroehr_ehr` alone writes its own access log; no extra membership is needed.
+The audit trail is not a pseudonymisation domain, so this grant adds no reach
+into `demographic`, `cold_demographic` or `linkage`.
 
 The compose stacks create all five and grant both domains to the single dev
 login role. That demonstrates the schema separation and exercises the boot

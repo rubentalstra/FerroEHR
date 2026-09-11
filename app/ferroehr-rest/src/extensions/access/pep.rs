@@ -985,6 +985,34 @@ mod tests {
         );
     }
 
+    /// A Basic-authenticated caller holds no SMART scopes at all: fail-closed
+    /// refuses it on a scope-governed family and advisory defers to RBAC/ABAC
+    /// (#3255). The conformance stack runs fail-closed, which is why its Basic
+    /// dev users cannot upload a template there.
+    #[test]
+    fn smart_fail_closed_refuses_a_basic_caller_and_advisory_defers() {
+        let mut basic = principal_with_scopes("", &serde_json::json!({}));
+        basic.method = AuthMethod::Basic;
+        assert!(
+            smart_decide(
+                &smart(true),
+                &basic,
+                "definition_template_adl1.4_upload",
+                None
+            )
+            .is_err()
+        );
+        assert_eq!(
+            smart_decide(
+                &smart(false),
+                &basic,
+                "definition_template_adl1.4_upload",
+                None
+            ),
+            Ok(None)
+        );
+    }
+
     #[test]
     fn smart_fail_closed_denies_without_family_scope() {
         let p = principal_with_scopes("openid profile", &serde_json::json!({}));

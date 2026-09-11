@@ -139,6 +139,9 @@ pub struct AuditEntityRef {
     pub entity_type: Option<AuditCoding>,
     /// The entity role coding.
     pub role: Option<AuditCoding>,
+    /// A descriptor (`entity.name`, 0..1), when the entity needs telling
+    /// apart from its neighbours.
+    pub name: Option<String>,
     /// The search expression, carried verbatim (FHIR base64-encodes it).
     pub query: Option<String>,
 }
@@ -411,7 +414,7 @@ fn entity(source: &AuditEntityRef) -> AuditEventEntity {
         lifecycle_ext: None,
         security_label: Vec::new(),
         security_label_ext: Vec::new(),
-        name: None,
+        name: source.name.clone(),
         name_ext: None,
         description: None,
         description_ext: None,
@@ -494,6 +497,7 @@ mod tests {
                 }],
             },
             entities: vec![AuditEntityRef {
+                name: None,
                 what: None,
                 entity_type: None,
                 role: None,

@@ -82,6 +82,8 @@ async fn run(
             uid: None,
             result_count: Some(outcome.served_rows),
             domain: None,
+            origins: outcome.served_origins.clone(),
+            origin_count: (!outcome.served_origins.is_empty()).then_some(outcome.origin_count),
         });
     if !outcome.served_ehrs.is_empty() {
         resp.extensions_mut()

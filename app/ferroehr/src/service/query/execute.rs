@@ -197,9 +197,13 @@ impl FerroEhrService {
             .iter()
             .map(|(ehr, count)| (ehr.to_string(), *count))
             .collect();
+        let served_origins = result.served_origins.clone();
+        let origin_count = result.origin_count;
         let mut outcome = QueryOutcome::plain(result_set_json(aql, &executed, name, result));
         outcome.served_ehrs = served_ehrs;
         outcome.served_rows = served_rows;
+        outcome.served_origins = served_origins;
+        outcome.origin_count = origin_count;
         if let Some(scope) = scope {
             outcome.ehr_ids = scope.ehr_ids;
             outcome.template_ids = scope.template_ids;

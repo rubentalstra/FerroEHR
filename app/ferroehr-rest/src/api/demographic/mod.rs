@@ -137,6 +137,8 @@ fn set_versioning_headers(resp: &mut Response, meta: Option<&ResourceMeta>) {
             uid: Some(meta.uid.clone()),
             result_count: None,
             domain: Some(ferroehr::system_log::event::AccessDomain::Demographic),
+            origins: Vec::new(),
+            origin_count: None,
         });
 }
 

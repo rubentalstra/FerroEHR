@@ -57,6 +57,13 @@ pub struct QueryResult {
     /// and when the result is empty. The access log reads it to record one
     /// access per record accessed, rather than one per statement.
     pub served_ehrs: Vec<(Uuid, u64)>,
+    /// The distinct origins of the version bodies the served rows came from
+    /// (EHDS Annex II 3.2(e), #3212), capped at the record cap
+    /// (`versioning::origins::RECORD_CAP`); empty when no row could be
+    /// attributed to a version.
+    pub served_origins: Vec<String>,
+    /// The true number of distinct origins behind [`Self::served_origins`].
+    pub origin_count: u64,
 }
 
 /// Plan, execute, and assemble an AQL query.
@@ -120,11 +127,50 @@ pub async fn execute(
         fill_whole_object_cells(&mut out_rows, pending, subtrees);
     }
 
+    // The versions the served rows came from: every bound root's locator
+    // columns, plus the whole-object anchors for a plan that carries no root
+    // columns. One aggregate over their commit-time stamps, never a body walk.
+    let mut versions = served_versions(&rows, &prepared.access_version_cols)?;
+    versions.extend(anchors.iter().map(|a| (a.vo_id, a.sys_version)));
+    versions.sort_unstable_by(|a, b| a.0.0.cmp(&b.0.0).then(a.1.cmp(&b.1)));
+    versions.dedup();
+    let (served_origins, origin_count) = crate::storage::version_repo::read::read_origins(
+        pool,
+        &versions,
+        crate::versioning::origins::RECORD_CAP,
+    )
+    .await
+    .map_err(ExecError::from)?;
+
     Ok(QueryResult {
         columns,
         rows: out_rows,
         served_ehrs: served_ehrs(&rows, &prepared.access_ehr_cols)?,
+        served_origins,
+        origin_count,
     })
+}
+
+/// The `(vo_id, sys_version)` pairs the served rows came from, read off the
+/// hidden version-locator columns the builder appended beside the access-EHR
+/// columns; a NULL locator is an outer-joined absent root.
+///
+/// # Errors
+/// [`ExecError`] when a column the builder declared cannot be read back.
+fn served_versions(
+    rows: &[PgRow],
+    version_cols: &[(String, String)],
+) -> Result<Vec<(VoId, i32)>, AqlError> {
+    let mut out = Vec::new();
+    for row in rows {
+        for (vo_col, sv_col) in version_cols {
+            let vo_id: Option<VoId> = row.try_get(vo_col.as_str()).map_err(ExecError::from)?;
+            let Some(vo_id) = vo_id else { continue };
+            let sys_version: i32 = row.try_get(sv_col.as_str()).map_err(ExecError::from)?;
+            out.push((vo_id, sys_version));
+        }
+    }
+    Ok(out)
 }
 
 /// The EHRs the served rows came from, each with its served-row count, ordered

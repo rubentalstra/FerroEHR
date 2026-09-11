@@ -126,6 +126,11 @@ pub struct PreparedQuery {
     /// Empty when the plan cannot carry them (see [`ACCESS_EHR_PREFIX`]); the
     /// executor then reports no per-EHR breakdown rather than a wrong one.
     pub access_ehr_cols: Vec<String>,
+    /// The SQL aliases of the hidden version-locator columns, one
+    /// `(vo_id, sys_version)` pair per bound VO root, appended beside the
+    /// access-EHR columns so the origins of the served data can be aggregated
+    /// over the version rows (#3212). Empty in the same shapes.
+    pub access_version_cols: Vec<(String, String)>,
 }
 
 /// The alias prefix of the hidden per-root EHR column the access log reads.
@@ -145,6 +150,15 @@ pub struct PreparedQuery {
 /// **No openEHR spec governs this — our own design/extension.**
 pub const ACCESS_EHR_PREFIX: &str = "access_ehr_";
 
+/// The alias prefix of the hidden per-root `vo_id` locator column.
+///
+/// Appended beside the access-EHR columns with [`ACCESS_SV_PREFIX`], so the
+/// access log can aggregate the origins of the served data over the version
+/// rows it came from (EHDS Annex II 3.2(e), #3212). Same two excluded shapes.
+pub const ACCESS_VO_PREFIX: &str = "access_vo_";
+/// See [`ACCESS_VO_PREFIX`].
+pub const ACCESS_SV_PREFIX: &str = "access_sv_";
+
 // `SqlxValues` is not `Debug`; project the bound-value count instead so the
 // struct still satisfies the workspace `missing_debug_implementations` lint.
 impl std::fmt::Debug for PreparedQuery {
@@ -154,6 +168,7 @@ impl std::fmt::Debug for PreparedQuery {
             .field("value_count", &self.values.0.0.len())
             .field("columns", &self.columns)
             .field("access_ehr_cols", &self.access_ehr_cols)
+            .field("access_version_cols", &self.access_version_cols)
             .finish()
     }
 }
@@ -334,6 +349,7 @@ pub fn build(ir: &QueryIr, params: &Params, ctx: &SqlCtx) -> Result<PreparedQuer
     b.apply_population_gate();
     let columns = b.build_select()?;
     let access_ehr_cols = b.build_access_ehr_columns(ir);
+    let access_version_cols = b.build_access_version_columns(ir);
     b.build_where()?;
     b.build_order_by()?;
     b.build_paging();
@@ -346,6 +362,7 @@ pub fn build(ir: &QueryIr, params: &Params, ctx: &SqlCtx) -> Result<PreparedQuer
         values,
         columns,
         access_ehr_cols,
+        access_version_cols,
     })
 }
 

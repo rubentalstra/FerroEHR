@@ -87,6 +87,12 @@ pub struct AuditObject {
     /// a contribution read touched; the demographic group sets this and the
     /// class decides for everything else.
     pub domain: Option<ferroehr::system_log::event::AccessDomain>,
+    /// The distinct origins of the data this response served and their true
+    /// count (EHDS Annex II 3.2(e), #3212), read from the version metadata the
+    /// handler holds; empty when the operation serves no version body.
+    pub origins: Vec<String>,
+    /// The true number of distinct origins, when the set above was capped.
+    pub origin_count: Option<u64>,
 }
 
 /// The EHRs a query served, each with its served-row count.
@@ -272,6 +278,9 @@ pub async fn middleware(State(state): State<AppState>, req: Request, next: Next)
             .or_else(|| object_id_from_path(op, &path));
         event.tenant_id = tenant;
         event.result_count = object.as_ref().and_then(|o| o.result_count);
+        if let Some(object) = object.as_ref() {
+            event.record_origins(object.origins.clone(), object.origin_count);
+        }
         // A handler that knows its domain better than the resource class does
         // says so; the class decides for everything else.
         if let Some(domain) = object.as_ref().and_then(|o| o.domain) {
