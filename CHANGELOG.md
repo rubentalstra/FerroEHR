@@ -490,6 +490,13 @@ workflow refuses a tag that has no matching section here.
 
 ### Fixed
 
+- **The control matrix is populated** (#3236). The generated compliance page
+  rendered an empty table because no issue declared a `Control:` line, and the
+  staleness check passed on the empty set. Every shipped and planned control
+  in the pseudonymisation and EHDS programme now declares the article or
+  clause it supports, the page lists all of them with their status, and the
+  generator refuses an empty matrix while the compliance pages link to it.
+
 - **`fail_mode = "closed"` now covers the domain-level access records too**
   (#3235). The linkage resolutions and merges, the subject-to-EHR lookup
   behind `GET /ehr?subject_id`, the national-identifier resolution and the
