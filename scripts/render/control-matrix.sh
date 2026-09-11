@@ -157,6 +157,16 @@ if [[ "$(jq '[.[] | select(.error)] | length' "$WORK/controls.json")" -gt 0 ]]; 
   die "add the source to LEGAL_SOURCES in $SCRIPT, or fix the issue body"
 fi
 
+# An empty matrix is a defect, not a valid state, once the compliance pages
+# send readers here as the evidence surface (#3236): the page would render
+# truthfully empty, the diff guard would stay green, and the accountability
+# trail (GDPR Art. 5(2), Art. 24(1)) would land on a page saying the product
+# ships no controls.
+if [[ "$(jq 'length' "$WORK/controls.json")" -eq 0 ]] &&
+   grep -rlq 'control-matrix.md' website/book/src/compliance/ --include='*.md' --exclude='control-matrix.md'; then
+  die "no issue declares a Control: line while the compliance pages link to the matrix — declare the shipped controls on their issues (#3236)"
+fi
+
 # ── the roadmap board ────────────────────────────────────────────────────────
 # "In progress" comes from the public board and nowhere else
 # (.claude/rules/project-board.md). A Projects (v2) read needs the `project`
