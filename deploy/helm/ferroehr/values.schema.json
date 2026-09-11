@@ -142,6 +142,18 @@
         "demographicUrl": {
           "description": "Inline demographic DSN (dev/test only). Ignored when demographicExistingSecret is set.",
           "type": "string"
+        },
+        "migrateExistingSecret": {
+          "description": "Secret holding the DSN that prepares the schema, which spans every schema and is therefore neither runtime credential. Unset, preparation falls back to the clinical DSN.",
+          "type": "string"
+        },
+        "migrateExistingSecretKey": {
+          "description": "A key name INSIDE migrateExistingSecret; the chart mounts that key as a file and passes only its path.",
+          "type": "string"
+        },
+        "migrateUrl": {
+          "description": "Inline schema-preparation DSN (dev/test only). Ignored when migrateExistingSecret is set.",
+          "type": "string"
         }
       }
     },

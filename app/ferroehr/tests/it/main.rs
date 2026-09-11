@@ -47,6 +47,7 @@ mod privacy_leak;
 mod privacy_policy;
 mod privacy_rules;
 mod pseudonymisation_boundary;
+mod schema_preparation_credential;
 mod service_admin;
 mod service_aql;
 mod service_aql_terminology;

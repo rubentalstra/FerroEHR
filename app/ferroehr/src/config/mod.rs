@@ -1188,7 +1188,7 @@ mod tests {
     }
 
     /// Setting a credential both inline and as a file is refused for each of the
-    /// four, rather than one silently winning.
+    /// six, rather than one silently winning.
     ///
     /// Each of these fields has a non-empty dev default, so "the operator set it"
     /// means "it differs from that default" — the default itself must NOT count
@@ -1197,6 +1197,10 @@ mod tests {
     fn a_credential_set_both_inline_and_as_a_file_is_refused() {
         let cases = [
             "[db]\nurl = \"postgres://u:p@h:5432/d\"\nurl_file = \"/dev/null\"\n",
+            "[db]\nmigrate_url = \"postgres://u:p@h:5432/d\"\n\
+             migrate_url_file = \"/dev/null\"\n",
+            "[db]\ndemographic_url = \"postgres://u:p@h:5432/d\"\n\
+             demographic_url_file = \"/dev/null\"\n",
             "[events]\nurl = \"amqp://u:p@h:5672/%2f\"\nurl_file = \"/dev/null\"\n",
             "[fhir.outbound]\nurl = \"amqp://u:p@h:5672/%2f\"\nurl_file = \"/dev/null\"\n",
             "[[auth.basic.users]]\nusername = \"a\"\npassword_hash = \"x\"\n\
@@ -1212,7 +1216,7 @@ mod tests {
         }
     }
 
-    /// The three URL file routes are reachable through the environment grammar
+    /// The four URL file routes are reachable through the environment grammar
     /// too, which is how a container passes a mount path without a config file.
     ///
     /// Without this the documented env form could ship dead — the whole reason
@@ -1223,11 +1227,21 @@ mod tests {
         dsn.write_str("postgres://u:p@h:5432/d\n").expect("write");
         let broker = assert_fs::NamedTempFile::new("broker").expect("temp");
         broker.write_str("amqps://u:p@b:5671/%2f\n").expect("write");
+        // A DIFFERENT DSN, so the assertion below cannot pass by falling back
+        // to `db.url` — which is what an unwired `migrate_url_file` would do.
+        let migrate = assert_fs::NamedTempFile::new("migrate-dsn").expect("temp");
+        migrate
+            .write_str("postgres://m:p@h:5432/d\n")
+            .expect("write");
 
         let c = assemble_ok(
             None,
             &env(&[
                 ("FERROEHR__DB__URL_FILE", &dsn.path().display().to_string()),
+                (
+                    "FERROEHR__DB__MIGRATE_URL_FILE",
+                    &migrate.path().display().to_string(),
+                ),
                 (
                     "FERROEHR__EVENTS__URL_FILE",
                     &broker.path().display().to_string(),
@@ -1240,6 +1254,7 @@ mod tests {
             &[],
         );
         assert_eq!(c.db.url.expose(), "postgres://u:p@h:5432/d");
+        assert_eq!(c.db.migrate_dsn(), "postgres://m:p@h:5432/d");
         assert_eq!(c.events.url.expose(), "amqps://u:p@b:5671/%2f");
         assert_eq!(c.fhir.outbound.url.expose(), "amqps://u:p@b:5671/%2f");
     }

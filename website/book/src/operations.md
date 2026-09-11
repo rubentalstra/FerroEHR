@@ -74,6 +74,42 @@ two pools on two credentials, and a flaw that reaches one of them reaches one
 domain. Left unset, both pools share the DSN above and the separation is
 schema-only.
 
+### Which credential prepares the schema
+
+**Neither of the two above.** Preparing the schema spans every schema at once:
+the DDL of all five migration sets under `db.migrate = "apply"`, and all five
+`_sqlx_migrations` bookkeeping tables under `"verify"` — a read, but a read
+across the whole database. Each runtime role holds exactly one pseudonymisation
+domain, so neither can do it, and `verify` is not the exception: a role that is
+a member of `ferroehr_ehr` and nothing else is refused on the very first set.
+That applies to the older single-domain roles too — `ferroehr_app` cannot read
+the `ext`, `demographic`, `linkage` or `audit` bookkeeping either.
+
+So the credential that prepares the schema is named separately, and the server
+uses it for that one boot step:
+
+```toml
+[db]
+url = "postgres://ferroehr_ehr:***@pg:5432/ferroehr"
+demographic_url = "postgres://ferroehr_demographic:***@pg:5432/ferroehr"
+migrate_url = "postgres://ferroehr_migrator:***@pg:5432/ferroehr"
+```
+
+(or `migrate_url_file`, for a mounted secret). The connection is opened for
+preparation and closed again: no pool is held on it, and no request is ever
+served through it. Left unset it falls back to `url`, which is exactly what a
+single-credential deployment has always run — its behaviour is unchanged by
+this key existing.
+
+A credential that cannot read a set is told which schema and which role, so
+the fix is visible from the message:
+
+```text
+database role `app_ehr` cannot read the migration state of schema
+`ext`: … point `[db] migrate_url` (or `migrate_url_file`) at the credential
+that prepares the schema — unset, it falls back to `[db] url`
+```
+
 Either way the server **refuses to boot** when the grants themselves are wrong:
 a self-check enumerates every table, view, sequence and function in each
 domain and fails, naming the role and the object, if either runtime role can
@@ -138,9 +174,13 @@ of both `ferroehr_migrator` and `ferroehr_app`.
   life. Least isolation.
 - **`verify`:** the server issues **no DDL at all**. At boot it checks that the
   database carries exactly this build's migrations and refuses to start
-  otherwise, naming the schema and what is wrong with it. The DSN can then be
-  `ferroehr_app` only, which is the least-privilege production posture: an
-  application-level SQL flaw can then reach rows, never the schema.
+  otherwise, naming the schema and what is wrong with it. The pools can then
+  hold no schema rights at all, which is the least-privilege production
+  posture: an application-level SQL flaw can reach rows, never the schema. The
+  check itself still reads every schema's bookkeeping, so it runs on
+  `db.migrate_url` — see [which credential prepares the
+  schema](#which-credential-prepares-the-schema), and set that key whenever
+  `db.url` is a role that holds one domain.
 
 Migrations are **append-only**, so upgrading an existing database in place is
 the supported path and always has been the one your data takes. A released
@@ -160,9 +200,16 @@ different credential from the runtime one, and rendering fails without it):
 ```shell
 FERROEHR__DB__URL='postgres://ferroehr_migrator:***@pg:5432/ferroehr' \
   ferroehr db migrate     # applies; exits when done
-FERROEHR__DB__URL='postgres://ferroehr_app:***@pg:5432/ferroehr' \
+FERROEHR__DB__URL='postgres://ferroehr_ehr:***@pg:5432/ferroehr' \
+FERROEHR__DB__MIGRATE_URL='postgres://ferroehr_migrator:***@pg:5432/ferroehr' \
   ferroehr db verify      # read-only check; exit 0 iff the schema is current
 ```
+
+`db verify` splits the same way the boot sequence does, and for the same
+reason: the schema state is read on `migrate_url`, while the pseudonymisation
+boundary is measured on the runtime DSN — asking the migrator credential
+whether it can reach every domain would answer yes by design and tell you
+nothing about the roles that serve requests.
 
 Gate the rollout on the migration step so two server versions never race the
 schema. Note the difference in failure shape: a `verify` server refuses to boot

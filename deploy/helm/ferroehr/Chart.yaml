@@ -5,8 +5,8 @@ description: >-
   1.1). A single static binary deployed with a hardened-by-default security posture:
   runs as a non-root, read-only-rootfs workload whose NetworkPolicy admits its
   serving port only, and that
-  connects to an EXTERNAL PostgreSQL 18 as an unprivileged app role (migrations
-  are run out of band by a separate migrator role).
+  connects to an EXTERNAL PostgreSQL 18 as an unprivileged app role, with schema
+  preparation on its own credential.
 type: application
 
 # Chart versioning is independent of the application version, and is SemVer 2
@@ -19,7 +19,7 @@ type: application
 # A published OCI version is immutable by refusal rather than by the registry —
 # `helm push` over an existing tag replaces it silently — so a correction always
 # ships as a NEW version and the published one stands as it was.
-version: 8.0.0
+version: 8.1.0
 # The DEFAULT container image tag (overridable via image.tag). Equals the
 # workspace version in Cargo.toml, bumped in the release PR beside the
 # docker-compose.yml image tags — one version sweep, the compose treatment

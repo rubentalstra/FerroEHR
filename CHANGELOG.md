@@ -443,6 +443,28 @@ workflow refuses a tag that has no matching section here.
 
 ### Fixed
 
+- **The documented two-DSN posture boots: schema preparation has its own
+  credential** (#3224). The server prepared the schema on the CLINICAL runtime
+  pool, and preparation spans every schema — the DDL of all five migration
+  sets under `db.migrate = "apply"`, all five `_sqlx_migrations` bookkeeping
+  tables under `"verify"`. A role that is a member of `ferroehr_ehr` and
+  nothing else — what the book recommends and the chart configures — holds
+  neither, so it was refused on the first set and the deployment could not
+  start; `ferroehr_app` could not run `verify` either. The new `[db]
+  migrate_url` (or `migrate_url_file`, and `database.migrateExistingSecret`
+  on the chart) names the credential that prepares the schema, used for that
+  one boot step on a connection that is opened and closed again — no pool is
+  held on it and no request is served through it. Unset, it falls back to
+  `[db] url`, so a single-credential deployment is unchanged. The
+  pseudonymisation boot gate deliberately stays on the RUNTIME pool: it
+  measures what the serving credential can reach, and asking the migration
+  credential — which holds every domain by design — would stop measuring
+  anything. A credential that cannot read a set is now refused with the
+  schema and the role it authenticates as, and the remedy, instead of a bare
+  `42501` about a table no operator has heard of. `ferroehr db verify` splits
+  the same way. Chart values contract grows three optional keys, so the chart
+  goes to 8.1.0.
+
 - **The template upload dialog opens empty** (#3200). It cleared the source
   it was holding only when the CDR accepted it, so after an upload that was
   refused — or one whose click never reached the handler — re-opening the

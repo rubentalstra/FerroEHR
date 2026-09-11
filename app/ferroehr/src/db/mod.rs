@@ -9,11 +9,13 @@
 //! crate obtains a database handle: [`DbConfig`] (the `[db]` config section)
 //! feeds [`connect`] and [`connect_tenant_scoped`] for the clinical domain and
 //! [`connect_demographic`] / [`connect_tenant_scoped_demographic`] for the
-//! demographic one, and [`run_migrations`] bootstraps every schema and
-//! applies every embedded migration set. The two served domains differ only in
-//! the `search_path` their connections carry, so one set of storage functions
-//! serves both; the `linkage` schema is migrated beside them and has no pool
-//! of its own. [`verify_domain_isolation`] is the boot gate that refuses to
+//! demographic one, and [`prepare`] brings the schema to the state this build
+//! requires — on the migration DSN ([`DbConfig::migrate_dsn`]), a third
+//! credential a deployment may name because preparation spans every schema
+//! while each runtime credential holds one domain. The two served domains
+//! differ only in the `search_path` their connections carry, so one set of
+//! storage functions serves both; the `linkage` schema is migrated beside
+//! them and has no pool of its own. [`verify_domain_isolation`] is the boot gate that refuses to
 //! serve when the runtime roles can read across those boundaries. The `sea-query`
 //! identifier vocabulary for the live schema lives in [`iden`]. This is the
 //! defining module for the whole bootstrap surface, with no re-exports.
@@ -96,6 +98,23 @@ pub struct DbConfig {
     /// of it — the mounted-secret route, as [`Self::url_file`] is for the
     /// clinical DSN. Setting both is a boot error.
     pub demographic_url_file: Option<PathBuf>,
+    /// DSN that schema preparation ([`prepare`]) authenticates as; unset (the
+    /// default) reuses [`Self::url`].
+    ///
+    /// Preparing the schema spans EVERY schema, whatever [`Self::migrate`]
+    /// says: `apply` issues the DDL of all five migration sets, and `verify`
+    /// reads all five `_sqlx_migrations` bookkeeping tables. A runtime
+    /// credential that holds one pseudonymisation domain can do neither, so
+    /// under the separated-role posture this key is what names the credential
+    /// that can, while the pools stay narrow. It is used for that one boot
+    /// step on a connection that is closed again — no pool is ever held on it,
+    /// and no request is ever served through it. No openEHR spec governs
+    /// migration mechanics or database roles — our own design/extension.
+    pub migrate_url: Option<SecretUrl>,
+    /// Path to a file holding [`Self::migrate_url`], read at boot in place of
+    /// it — the mounted-secret route, as [`Self::url_file`] is for the
+    /// clinical DSN. Setting both is a boot error.
+    pub migrate_url_file: Option<PathBuf>,
     /// Upper bound of the connection pool.
     pub max_connections: u32,
     /// Connections the pool keeps open when idle (avoids cold reopen +
@@ -136,6 +155,8 @@ impl Default for DbConfig {
             url_file: None,
             demographic_url: None,
             demographic_url_file: None,
+            migrate_url: None,
+            migrate_url_file: None,
             // Deliberate defaults: 20 max (10 hard-capped realistic write
             // concurrency ×2), 2 min (no cold reopen churn at idle).
             max_connections: 20,
@@ -176,11 +197,27 @@ impl DbConfig {
             .map_or_else(|| self.url.expose(), SecretUrl::expose)
     }
 
+    /// The DSN schema preparation connects with: [`Self::migrate_url`] when
+    /// the deployment names a credential for it, else [`Self::url`].
+    #[must_use]
+    pub fn migrate_dsn(&self) -> &str {
+        self.migrate_url
+            .as_ref()
+            .map_or_else(|| self.url.expose(), SecretUrl::expose)
+    }
+
     /// Whether the demographic domain authenticates as its own database role
     /// (a distinct DSN), rather than sharing the clinical one.
     #[must_use]
     pub fn roles_are_separated(&self) -> bool {
         self.demographic_url.is_some()
+    }
+
+    /// Whether schema preparation authenticates as its own database role
+    /// (a distinct DSN), rather than as the clinical runtime one.
+    #[must_use]
+    pub fn migrator_is_separated(&self) -> bool {
+        self.migrate_url.is_some()
     }
 }
 
@@ -205,6 +242,27 @@ pub enum DbError {
          migrations out of band with the migrator role, then start it again"
     )]
     SchemaNotReady(#[source] SchemaMismatch),
+
+    /// The credential preparing the schema cannot read a migration set's
+    /// bookkeeping at all, so the migration state is unknown rather than
+    /// wrong.
+    #[error(
+        "database role `{role}` cannot read the migration state of schema `{schema}`: \
+         preparing the schema reads every schema's `_sqlx_migrations` bookkeeping table, and \
+         this credential holds no privilege on `{schema}`. Under the separated-domain posture \
+         no runtime credential ever can, because each holds one domain: point `[db] \
+         migrate_url` (or `migrate_url_file`) at the credential that prepares the schema — \
+         unset, it falls back to `[db] url`"
+    )]
+    SchemaUnreadable {
+        /// The schema whose migration bookkeeping could not be read.
+        schema: String,
+        /// The database role the refused connection authenticates as.
+        role: String,
+        /// `PostgreSQL`'s own refusal (`SQLSTATE` 42501).
+        #[source]
+        source: sqlx::Error,
+    },
 
     /// A cold archival tier outlived the primary tier it mirrors, in either
     /// the clinical or the demographic domain.
@@ -647,44 +705,125 @@ pub fn migration_fingerprint() -> String {
 pub async fn run_migrations(pool: &PgPool) -> Result<(), DbError> {
     let mut conn = pool.acquire().await?.detach();
     let outcome = apply_migrations(&mut conn).await;
+    close_quietly(conn).await;
+    outcome
+}
+
+/// Open the one-shot connection schema preparation runs on: the migration DSN
+/// ([`DbConfig::migrate_dsn`]), which is `[db].migrate_url` when a deployment
+/// names a credential for this step and `[db].url` otherwise.
+///
+/// Preparation is a boot step rather than a serving path, so it takes a single
+/// connection that is closed again instead of a third pool held for the
+/// process lifetime, and it carries none of the pools' session setup: no
+/// domain `search_path` (the sequence sets its own per set, and the
+/// bookkeeping reads are schema-qualified) and no `statement_timeout`, which
+/// is the backstop for request-serving statements and would cancel a long
+/// migration partway
+/// (<https://www.postgresql.org/docs/18/runtime-config-client.html>).
+async fn migration_connection(settings: &DbConfig) -> Result<PgConnection, DbError> {
+    let conn = PgConnection::connect(settings.migrate_dsn()).await?;
+    Ok(conn)
+}
+
+/// Close a detached connection, reporting a failure to close as a trace event
+/// rather than as the operation's outcome: the work is already done, and a
+/// failed close must not mask its result.
+async fn close_quietly(conn: PgConnection) {
     if let Err(error) = conn.close().await {
         tracing::debug!(%error, "closing the migration connection failed");
     }
+}
+
+/// Applies the embedded migrations on the migration DSN
+/// ([`DbConfig::migrate_dsn`]) — the credential half of
+/// [`MigrationMode::Apply`].
+///
+/// [`run_migrations`] over a connection of its own rather than one from a
+/// runtime pool, so a deployment whose runtime credentials each hold a single
+/// pseudonymisation domain can still prepare a schema that spans all five.
+///
+/// # Errors
+///
+/// [`DbError::Sqlx`] when the migration DSN does not parse, the connection
+/// fails, or a bootstrap statement is refused (a credential without `CREATE`
+/// on the database or on a schema), and [`DbError::Migrate`] when a migration
+/// fails to apply or an already-applied one fails checksum validation.
+pub async fn apply_schema(settings: &DbConfig) -> Result<(), DbError> {
+    let mut conn = migration_connection(settings).await?;
+    let outcome = apply_migrations(&mut conn).await;
+    close_quietly(conn).await;
+    outcome
+}
+
+/// Verifies the recorded migration state on the migration DSN
+/// ([`DbConfig::migrate_dsn`]) — the credential half of
+/// [`MigrationMode::Verify`].
+///
+/// [`verify_migrations`] over a connection of its own, for the same reason
+/// [`apply_schema`] takes one: the check reads all five schemas'
+/// `_sqlx_migrations` tables, which no single-domain runtime credential can
+/// do. Issues no DDL, so the credential it names needs read access and
+/// nothing more.
+///
+/// # Errors
+///
+/// [`DbError::SchemaNotReady`] naming the first divergence found,
+/// [`DbError::SchemaUnreadable`] when the credential cannot read a set's
+/// bookkeeping at all, or [`DbError::Sqlx`] when the connection or the read
+/// fails for any other reason.
+pub async fn verify_schema(settings: &DbConfig) -> Result<(), DbError> {
+    let mut conn = migration_connection(settings).await?;
+    let outcome = verify_recorded_state(&mut conn).await;
+    close_quietly(conn).await;
     outcome
 }
 
 /// Brings the database to the state this build requires, as
-/// [`DbConfig::migrate`] directs.
+/// [`DbConfig::migrate`] directs, and then proves the pseudonymisation
+/// boundary holds.
 ///
-/// [`MigrationMode::Apply`] runs [`run_migrations`]; [`MigrationMode::Verify`]
-/// issues no DDL and only checks, so the DSN may authenticate as a role that
-/// holds no DDL rights at all. This is the boot-path entry point — call it
-/// instead of [`run_migrations`] anywhere the operator's configuration should
-/// decide.
+/// The boot-path entry point — call it rather than the halves it composes
+/// wherever the operator's configuration should decide. [`MigrationMode::Apply`]
+/// applies the embedded migrations ([`apply_schema`]);
+/// [`MigrationMode::Verify`] issues no DDL and only checks
+/// ([`verify_schema`]).
 ///
-/// Either way it ends with [`verify_domain_isolation`]: a schema that is
-/// current but whose grants let one runtime role read both pseudonymisation
-/// domains is not a database this server will serve from.
+/// **The two halves deliberately authenticate as different credentials, and
+/// that is the whole point of the split.** Schema preparation spans every
+/// schema — the DDL of all five migration sets under `apply`, all five
+/// `_sqlx_migrations` bookkeeping tables under `verify` — so it runs on the
+/// migration DSN ([`DbConfig::migrate_dsn`]), which a deployment separating
+/// its runtime roles points at a credential that can reach them all.
+/// [`verify_domain_isolation`] runs on `runtime_pool` instead, because it
+/// exists to measure what THAT credential can reach: it reads `pg_catalog`
+/// and the `has_*_privilege` functions, which any role may call
+/// (<https://www.postgresql.org/docs/18/functions-info.html>), so running it
+/// on the migration credential would not fail — it would silently measure a
+/// role that holds every domain by design, and the boot gate would stop
+/// saying anything about the roles that serve requests.
 ///
 /// # Errors
 ///
-/// In `apply` mode, whatever [`run_migrations`] returns. In `verify` mode,
+/// In `apply` mode, whatever [`apply_schema`] returns. In `verify` mode,
 /// [`DbError::SchemaNotReady`] when the database does not carry exactly this
-/// build's migrations, or [`DbError::Sqlx`] when the check itself cannot run.
-/// In both modes, [`DbError::DomainIsolationBreached`] when a runtime role can
-/// reach the other domain.
-pub async fn prepare(settings: &DbConfig, pool: &PgPool) -> Result<(), DbError> {
+/// build's migrations, [`DbError::SchemaUnreadable`] when the migration
+/// credential cannot read a set's bookkeeping at all, or [`DbError::Sqlx`]
+/// when the check itself cannot run. In both modes,
+/// [`DbError::DomainIsolationBreached`] when a runtime role can reach another
+/// pseudonymisation domain.
+pub async fn prepare(settings: &DbConfig, runtime_pool: &PgPool) -> Result<(), DbError> {
     match settings.migrate {
-        MigrationMode::Apply => run_migrations(pool).await?,
+        MigrationMode::Apply => apply_schema(settings).await?,
         MigrationMode::Verify => {
             tracing::info!(
                 "[db].migrate is `verify`: this server issues no DDL and requires an \
                  already-migrated database"
             );
-            verify_migrations(pool).await?;
+            verify_schema(settings).await?;
         }
     }
-    verify_domain_isolation(pool).await
+    verify_domain_isolation(runtime_pool).await
 }
 
 /// Verifies, without issuing any DDL, that the database carries exactly the
@@ -698,11 +837,24 @@ pub async fn prepare(settings: &DbConfig, pool: &PgPool) -> Result<(), DbError> 
 ///
 /// # Errors
 ///
-/// [`DbError::SchemaNotReady`] naming the first divergence found, or
-/// [`DbError::Sqlx`] when a connection or the bookkeeping read fails.
+/// [`DbError::SchemaNotReady`] naming the first divergence found,
+/// [`DbError::SchemaUnreadable`] when this pool's credential cannot read a
+/// set's bookkeeping at all, or [`DbError::Sqlx`] when a connection or the
+/// bookkeeping read fails for any other reason.
 pub async fn verify_migrations(pool: &PgPool) -> Result<(), DbError> {
+    let mut conn = pool.acquire().await?;
+    verify_recorded_state(&mut conn).await
+}
+
+/// Compare every migration set's bookkeeping against its embedded source, on
+/// one connection.
+///
+/// The shared body of [`verify_migrations`] (a pooled connection) and
+/// [`verify_schema`] (the one-shot migration connection), so the boot gate and
+/// the operator check cannot drift apart.
+async fn verify_recorded_state(conn: &mut PgConnection) -> Result<(), DbError> {
     for (schema, migrator) in MIGRATION_SETS {
-        verify_set(pool, schema, migrator).await?;
+        verify_set(&mut *conn, schema, migrator).await?;
     }
     Ok(())
 }
@@ -849,16 +1001,77 @@ pub async fn default_tenant_versions(pool: &PgPool) -> Result<i64, DbError> {
     Ok(count)
 }
 
+/// `SQLSTATE` 42501 `insufficient_privilege` — what `PostgreSQL` reports for a
+/// refused read, whether the missing grant is on the relation or on its schema
+/// (`PostgreSQL` docs § Appendix A "`PostgreSQL` Error Codes", class 42,
+/// <https://www.postgresql.org/docs/18/errcodes-appendix.html>).
+const SQLSTATE_INSUFFICIENT_PRIVILEGE: &str = "42501";
+
+/// Whether `PostgreSQL` refused this statement for lack of privilege, rather
+/// than failing for any other reason.
+fn is_insufficient_privilege(error: &sqlx::Error) -> bool {
+    matches!(
+        error,
+        sqlx::Error::Database(refusal)
+            if refusal.code().as_deref() == Some(SQLSTATE_INSUFFICIENT_PRIVILEGE)
+    )
+}
+
+/// The database role this session authenticates as, for an error that must
+/// name the credential and not only the schema.
+///
+/// A failure to read it renders as `unknown`: this runs only while another
+/// error is already being reported, and replacing that error with this one
+/// would hide the boot failure the operator has to act on.
+async fn current_role(conn: &mut PgConnection) -> String {
+    sqlx::query_scalar("SELECT current_user::text")
+        .fetch_one(&mut *conn)
+        .await
+        .unwrap_or_else(|_| "unknown".to_owned())
+}
+
+/// Classify a failed bookkeeping read: a privilege refusal becomes
+/// [`DbError::SchemaUnreadable`], naming the schema and the credential;
+/// anything else stays the driver error it was.
+///
+/// A bare 42501 about `_sqlx_migrations` is unactionable — it names a table an
+/// operator has never heard of and no credential at all — and the separated
+/// posture reaches it on the very first set.
+async fn unreadable_bookkeeping(
+    conn: &mut PgConnection,
+    schema: &str,
+    error: sqlx::Error,
+) -> DbError {
+    if !is_insufficient_privilege(&error) {
+        return DbError::Sqlx(error);
+    }
+    DbError::SchemaUnreadable {
+        schema: schema.to_owned(),
+        role: current_role(&mut *conn).await,
+        source: error,
+    }
+}
+
 /// Compare one migration set's bookkeeping table against its embedded source.
-async fn verify_set(pool: &PgPool, schema: &str, migrator: &Migrator) -> Result<(), DbError> {
+async fn verify_set(
+    conn: &mut PgConnection,
+    schema: &str,
+    migrator: &Migrator,
+) -> Result<(), DbError> {
     // The schema name is one of the literals in `MIGRATION_SETS`, never
     // input: `to_regclass` answers NULL for a missing relation rather than
-    // failing (PostgreSQL 18 docs, "System Information Functions").
+    // failing (PostgreSQL 18 docs, "System Information Functions") — but it
+    // still raises 42501 for a schema this credential may not enter, which is
+    // why both statements here classify their failure.
     let bookkeeping = format!("{schema}._sqlx_migrations");
-    let present: bool = sqlx::query_scalar("SELECT to_regclass($1) IS NOT NULL")
+    let present: bool = match sqlx::query_scalar("SELECT to_regclass($1) IS NOT NULL")
         .bind(&bookkeeping)
-        .fetch_one(pool)
-        .await?;
+        .fetch_one(&mut *conn)
+        .await
+    {
+        Ok(present) => present,
+        Err(error) => return Err(unreadable_bookkeeping(&mut *conn, schema, error).await),
+    };
     if !present {
         return Err(DbError::SchemaNotReady(SchemaMismatch::NeverMigrated {
             schema: schema.to_owned(),
@@ -866,9 +1079,13 @@ async fn verify_set(pool: &PgPool, schema: &str, migrator: &Migrator) -> Result<
     }
 
     let query = format!("SELECT version, success, checksum FROM {bookkeeping} ORDER BY version");
-    let applied: Vec<(i64, bool, Vec<u8>)> = sqlx::query_as(sqlx::AssertSqlSafe(query))
-        .fetch_all(pool)
-        .await?;
+    let applied: Vec<(i64, bool, Vec<u8>)> = match sqlx::query_as(sqlx::AssertSqlSafe(query))
+        .fetch_all(&mut *conn)
+        .await
+    {
+        Ok(applied) => applied,
+        Err(error) => return Err(unreadable_bookkeeping(&mut *conn, schema, error).await),
+    };
 
     let mut unknown: Vec<i64> = applied.iter().map(|(version, _, _)| *version).collect();
     let mut missing: Vec<i64> = Vec::new();

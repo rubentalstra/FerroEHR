@@ -150,6 +150,34 @@ database:
   # Secret). Ignored when demographicExistingSecret is set.
   demographicUrl: ""
 
+  # ── the credential that prepares the schema ────────────────────────────────
+  # Neither DSN above can do it. Preparing spans every schema at once — the DDL
+  # of all five migration sets under config.db.migrate=apply, all five
+  # _sqlx_migrations bookkeeping tables under verify — while each runtime role
+  # holds one pseudonymisation domain, so a pod on ferroehr_ehr cannot even
+  # VERIFY, and is refused on the first set.
+  #
+  # Set this whenever the pod's DSN is a domain-scoped role. The server opens
+  # it for that one boot step and closes it again: no pool is held on it and no
+  # request is served through it. Unset, it falls back to the DSN above, which
+  # is what a single-credential deployment runs.
+  #
+  # It is the same credential migrations.job.existingSecret carries. Pointing
+  # both at one Secret is the ordinary arrangement; the Job needs its own copy
+  # because it runs before the Deployment exists.
+
+  # -- Reference an existing Secret holding the DSN that PREPARES the schema
+  # (`postgres://ferroehr_migrator:...@host:5432/ferroehr`). Required when the
+  # runtime DSNs are domain-scoped roles, including under
+  # `config.db.migrate=verify`.
+  migrateExistingSecret: ""
+  # -- Key WITHIN migrateExistingSecret holding that DSN. Mounted as a file;
+  # only its PATH reaches the pod's environment.
+  migrateExistingSecretKey: FERROEHR__DB__MIGRATE_URL
+  # -- Inline schema-preparation DSN (DEV/TEST ONLY — lands in a chart-managed
+  # Secret). Ignored when migrateExistingSecret is set.
+  migrateUrl: ""
+
 # ─────────────────────────────────────────────────────────────────────────────
 # Migrations: who runs the schema.
 #
