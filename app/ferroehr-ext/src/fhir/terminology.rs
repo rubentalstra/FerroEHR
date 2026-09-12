@@ -175,3 +175,93 @@ fn member(contains: &ValueSetExpansionContains) -> ExpansionMember {
         children: contains.contains.iter().flatten().map(member).collect(),
     }
 }
+
+/// The `tx-issue-type` code system the terminology-service specifications use
+/// to say WHY an operation failed
+/// (<https://build.fhir.org/ig/HL7/fhir-tools-ig/CodeSystem-tx-issue-type.html>).
+pub const TX_ISSUE_TYPE_SYSTEM: &str = "http://hl7.org/fhir/tools/CodeSystem/tx-issue-type";
+
+/// Decodes a FHIR `OperationOutcome` into the `tx-issue-type` codes its issues
+/// carry (`not-found`, `invalid-code`, …), in document order.
+///
+/// Only `issue.details.coding` entries whose `system` is
+/// [`TX_ISSUE_TYPE_SYSTEM`] count; `issue.code` (the generic `IssueType`) is not
+/// read, because servers use it inconsistently for the same cause.
+///
+/// # Errors
+///
+/// [`TerminologyDecodeError::WrongResource`] when the body declares another
+/// `resourceType`; [`TerminologyDecodeError::Malformed`] when it is not a
+/// valid R4B `OperationOutcome` resource.
+pub fn decode_outcome_issue_types(body: &[u8]) -> Result<Vec<String>, TerminologyDecodeError> {
+    expect_resource(body, "OperationOutcome")?;
+    let outcome: fhir_model::r4b::resources::OperationOutcome = serde_json::from_slice(body)?;
+    Ok(outcome
+        .0
+        .issue
+        .iter()
+        .flatten()
+        .filter_map(|issue| issue.details.as_ref())
+        .flat_map(|details| details.0.coding.iter().flatten())
+        .filter(|coding| coding.0.system.as_deref() == Some(TX_ISSUE_TYPE_SYSTEM))
+        .filter_map(|coding| coding.0.code.clone())
+        .collect())
+}
+
+/// Decodes a search `Bundle` into its `total` (the answer to a
+/// `_summary=count` search; `None` when the server reports no total).
+///
+/// # Errors
+///
+/// [`TerminologyDecodeError::WrongResource`] when the body declares another
+/// `resourceType`; [`TerminologyDecodeError::Malformed`] when it is not a
+/// valid R4B `Bundle` resource.
+pub fn decode_bundle_total(body: &[u8]) -> Result<Option<u32>, TerminologyDecodeError> {
+    expect_resource(body, "Bundle")?;
+    let bundle: fhir_model::r4b::resources::Bundle = serde_json::from_slice(body)?;
+    Ok(bundle.0.total)
+}
+
+#[cfg(test)]
+mod outcome_tests {
+    use super::{TX_ISSUE_TYPE_SYSTEM, decode_bundle_total, decode_outcome_issue_types};
+
+    #[test]
+    fn tx_issue_types_are_read_from_details_codings_only() {
+        let body = format!(
+            r#"{{"resourceType":"OperationOutcome","issue":[
+                {{"severity":"error","code":"not-found","details":{{"coding":[{{"system":"{TX_ISSUE_TYPE_SYSTEM}","code":"not-found"}}],"text":"code system `SNOMED-CT` is not served"}}}},
+                {{"severity":"error","code":"code-invalid","details":{{"coding":[{{"system":"http://example.org/other","code":"invalid-code"}}]}}}}
+            ]}}"#
+        );
+        assert_eq!(
+            decode_outcome_issue_types(body.as_bytes()).unwrap(),
+            vec!["not-found"]
+        );
+    }
+
+    #[test]
+    fn an_outcome_without_details_classifies_nothing() {
+        let body = br#"{"resourceType":"OperationOutcome","issue":[{"severity":"error","code":"not-found","diagnostics":"Unknown code"}]}"#;
+        assert!(decode_outcome_issue_types(body).unwrap().is_empty());
+    }
+
+    #[test]
+    fn another_resource_is_refused() {
+        let body = br#"{"resourceType":"Parameters","parameter":[]}"#;
+        assert!(decode_outcome_issue_types(body).is_err());
+    }
+
+    #[test]
+    fn a_count_bundle_yields_its_total() {
+        assert_eq!(
+            decode_bundle_total(br#"{"resourceType":"Bundle","type":"searchset","total":1}"#)
+                .unwrap(),
+            Some(1)
+        );
+        assert_eq!(
+            decode_bundle_total(br#"{"resourceType":"Bundle","type":"searchset"}"#).unwrap(),
+            None
+        );
+    }
+}

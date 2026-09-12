@@ -19,8 +19,9 @@
 # predicate matches that whole string, and `/…/` is a regex matcher
 # (https://nexte.st/docs/filtersets/reference/). Scoping with
 # `package(ferroehr) & binary(it)` keeps a same-named module in another crate's
-# `it` binary out of the group. Group membership is therefore unchanged: exactly
-# the tests of those three suites, serialized, with one retry.
+# `it` binary out of the group. Group membership is therefore exactly the tests
+# of those three suites plus `adl2_vetdf_ferroterm` (a FerroTERM container per
+# test, #3311), serialized, with one retry.
 [test-groups.containers]
 max-threads = 1
 
@@ -35,7 +36,7 @@ max-threads = 1
 # the container tests, so a new test in these modules is serialized by default:
 # the safe direction is a container test that waits, never one that does not.
 [[profile.default.overrides]]
-filter = 'package(ferroehr) & binary(it) & test(/^(events_amqp|fhir_outbound_amqp|multimedia_s3)::/) - test(/^multimedia_s3::(disabled_by_default_stores_inline_verbatim|unreachable_store_refuses_expansion_instead_of_answering_silently)$/)'
+filter = 'package(ferroehr) & binary(it) & test(/^(events_amqp|fhir_outbound_amqp|multimedia_s3|adl2_vetdf_ferroterm)::/) - test(/^multimedia_s3::(disabled_by_default_stores_inline_verbatim|unreachable_store_refuses_expansion_instead_of_answering_silently)$/)'
 test-group = 'containers'
 retries = 1
 
@@ -51,6 +52,6 @@ fail-fast = false
 slow-timeout = { period = "60s" }
 
 [[profile.ci.overrides]]
-filter = 'package(ferroehr) & binary(it) & test(/^(events_amqp|fhir_outbound_amqp|multimedia_s3)::/)'
+filter = 'package(ferroehr) & binary(it) & test(/^(events_amqp|fhir_outbound_amqp|multimedia_s3|adl2_vetdf_ferroterm)::/)'
 test-group = 'containers'
 retries = 1

@@ -81,10 +81,10 @@ pub struct FhirTerminologyProvider {
     /// The configured provider name (for error/log context).
     name: String,
     /// TTL-bounded response cache keyed by the full operation URL (`None`
-    /// when disabled). Caches the DECODED response — including the 404
-    /// "unknown resource" outcome — so a validation burst over the same codes
-    /// costs one remote round trip per TTL window.
-    cache: Option<moka::future::Cache<String, Option<DecodedResponse>>>,
+    /// when disabled). Caches the DECODED response — including a classified
+    /// "not found" outcome — so a validation burst over the same codes costs
+    /// one remote round trip per TTL window.
+    cache: Option<moka::future::Cache<String, Fetched>>,
     /// The `OAuth2` client-credentials token source whose bearer credential
     /// authenticates every request, when the provider configures one. `None` =
     /// unauthenticated requests.
@@ -156,16 +156,24 @@ impl FhirTerminologyProvider {
         &self.name
     }
 
-    /// GET a FHIR operation with query params, returning the decoded response.
+    /// GET a FHIR operation with query params, returning the decoded response
+    /// or a classified absence.
     ///
-    /// `404`/`410` → `Ok(None)` (the resource is unknown → a precondition the
-    /// caller maps to `VersionedObjectDoesNotExist`).
+    /// A non-2xx answer is read through the `OperationOutcome` it carries: a
+    /// `tx-issue-type` `not-found` issue is [`Absence::UnknownSystem`], an
+    /// `invalid-code` issue is [`Absence::UnknownCode`], and a bare `404`/`410`
+    /// with no classifying issue is [`Absence::Unclassified`] (the resource is
+    /// unknown, which of system or code is not stated). Any other failure is a
+    /// provider fault. The coding is the HL7 terminology-service vocabulary
+    /// (<https://build.fhir.org/ig/HL7/fhir-tools-ig/CodeSystem-tx-issue-type.html>);
+    /// the status alone cannot be read, because servers differ on it (`FerroTERM`
+    /// answers an unknown code with `400`, an unknown system with `404`).
     async fn fetch(
         &self,
         op_path: &str,
         query: &[(&str, &str)],
         kind: ResponseKind,
-    ) -> Result<Option<DecodedResponse>, SmError> {
+    ) -> Result<Fetched, SmError> {
         let mut url = reqwest::Url::parse(&format!("{}{op_path}", self.base))
             .map_err(|e| self.provider_fault(op_path, &format_args!("invalid url: {e}")))?;
         {
@@ -195,42 +203,100 @@ impl FhirTerminologyProvider {
             .await
             .map_err(|e| self.transport_error(op_path, &e))?;
         let status = response.status();
-        if status == reqwest::StatusCode::NOT_FOUND || status == reqwest::StatusCode::GONE {
-            if let Some(cache) = &self.cache {
-                cache.insert(cache_key, None).await;
-            }
-            return Ok(None);
-        }
-        if !status.is_success() {
-            return Err(self.provider_fault(
-                op_path,
-                &format_args!("upstream returned HTTP {}", status.as_u16()),
-            ));
-        }
         let body = response
             .bytes()
             .await
             .map_err(|e| self.transport_error(op_path, &e))?;
-        let decoded = decode(kind, &body).map_err(|e| {
-            self.provider_fault(op_path, &format_args!("malformed FHIR response: {e}"))
-        })?;
+        let fetched = if status.is_success() {
+            Fetched::Found(decode(kind, &body).map_err(|e| {
+                self.provider_fault(op_path, &format_args!("malformed FHIR response: {e}"))
+            })?)
+        } else {
+            let issues = outcome_issue_types(&body);
+            let gone =
+                status == reqwest::StatusCode::NOT_FOUND || status == reqwest::StatusCode::GONE;
+            if issues.iter().any(|c| c == TX_ISSUE_NOT_FOUND) {
+                Fetched::Absent(Absence::UnknownSystem)
+            } else if issues.iter().any(|c| c == TX_ISSUE_INVALID_CODE) {
+                Fetched::Absent(Absence::UnknownCode)
+            } else if gone {
+                Fetched::Absent(Absence::Unclassified)
+            } else {
+                return Err(self.provider_fault(
+                    op_path,
+                    &format_args!("upstream returned HTTP {}", status.as_u16()),
+                ));
+            }
+        };
         if let Some(cache) = &self.cache {
-            cache.insert(cache_key, Some(decoded.clone())).await;
+            cache.insert(cache_key, fetched.clone()).await;
         }
-        Ok(Some(decoded))
+        Ok(fetched)
     }
 
-    /// The named scalar values of a `Parameters` response.
+    /// The named scalar values of a `Parameters` response, or `None` for any
+    /// classified absence (the callers that read this map it to a
+    /// `VersionedObjectDoesNotExist` precondition).
     async fn parameters(
         &self,
         op_path: &str,
         query: &[(&str, &str)],
     ) -> Result<Option<ParameterValues>, SmError> {
         match self.fetch(op_path, query, ResponseKind::Parameters).await? {
-            None => Ok(None),
-            Some(DecodedResponse::Parameters(values)) => Ok(Some(values)),
-            Some(DecodedResponse::Expansion(_)) => {
+            Fetched::Absent(_) => Ok(None),
+            Fetched::Found(DecodedResponse::Parameters(values)) => Ok(Some(values)),
+            Fetched::Found(DecodedResponse::Expansion(_) | DecodedResponse::Count(_)) => {
                 Err(self.provider_fault(op_path, &format_args!("expected a Parameters response")))
+            }
+        }
+    }
+
+    /// Whether `code` exists in the code system `system`, as three answers
+    /// rather than two: exists, is absent from a system the server serves, or
+    /// could not be verified because the server does not serve the system (or
+    /// could not say). The ADL2 VETDF check needs the third answer, because an
+    /// inaccessible terminology is a warning there and not a refusal (AM ADL2
+    /// `master03-archetype_package.adoc` §Validity Rules, VETDF).
+    ///
+    /// Reads `CodeSystem/$lookup`. A bare `404` that names neither cause is
+    /// resolved with one more question, `CodeSystem?url=<system>&_summary=count`:
+    /// a served system makes the code absent, an unserved one makes the
+    /// binding unverifiable, and a server that cannot answer the question
+    /// leaves it unverifiable too.
+    ///
+    /// # Errors
+    ///
+    /// Exception on a transport fault, a non-2xx status carrying no
+    /// classifying `OperationOutcome` and not `404`/`410`, or a malformed body.
+    pub async fn term_existence(&self, system: &str, code: &str) -> Result<TermExistence, SmError> {
+        let query = [("system", system), ("code", code)];
+        match self
+            .fetch("/CodeSystem/$lookup", &query, ResponseKind::Parameters)
+            .await?
+        {
+            Fetched::Found(_) => Ok(TermExistence::Exists),
+            Fetched::Absent(Absence::UnknownCode) => Ok(TermExistence::Absent),
+            Fetched::Absent(Absence::UnknownSystem) => Ok(TermExistence::Unverifiable(
+                "the terminology server does not serve the code system",
+            )),
+            Fetched::Absent(Absence::Unclassified) => {
+                let probe = [("url", system), ("_summary", "count")];
+                match self
+                    .fetch("/CodeSystem", &probe, ResponseKind::BundleCount)
+                    .await
+                {
+                    Ok(Fetched::Found(DecodedResponse::Count(Some(n)))) if n > 0 => {
+                        Ok(TermExistence::Absent)
+                    }
+                    Ok(Fetched::Found(DecodedResponse::Count(_))) => {
+                        Ok(TermExistence::Unverifiable(
+                            "the terminology server does not serve the code system",
+                        ))
+                    }
+                    Ok(_) | Err(_) => Ok(TermExistence::Unverifiable(
+                        "the terminology server could not say whether it serves the code system",
+                    )),
+                }
             }
         }
     }
@@ -299,12 +365,13 @@ impl FhirTerminologyProvider {
             .fetch("/ValueSet/$expand", &query, ResponseKind::ValueSet)
             .await?
         {
-            None => Ok(None),
-            Some(DecodedResponse::Expansion(expansion)) => Ok(Some(expansion)),
-            Some(DecodedResponse::Parameters(_)) => Err(self.provider_fault(
-                "/ValueSet/$expand",
-                &format_args!("expected a ValueSet response"),
-            )),
+            Fetched::Absent(_) => Ok(None),
+            Fetched::Found(DecodedResponse::Expansion(expansion)) => Ok(Some(expansion)),
+            Fetched::Found(DecodedResponse::Parameters(_) | DecodedResponse::Count(_)) => Err(self
+                .provider_fault(
+                    "/ValueSet/$expand",
+                    &format_args!("expected a ValueSet response"),
+                )),
         }
     }
 
@@ -601,6 +668,50 @@ enum ResponseKind {
     Parameters,
     /// `$expand`.
     ValueSet,
+    /// A `_summary=count` search: the `Bundle.total` alone.
+    BundleCount,
+}
+
+/// The `tx-issue-type` code for "the code system is not known to the server"
+/// (<https://build.fhir.org/ig/HL7/fhir-tools-ig/CodeSystem-tx-issue-type.html>).
+const TX_ISSUE_NOT_FOUND: &str = "not-found";
+
+/// The `tx-issue-type` code for "the code is not in the code system".
+const TX_ISSUE_INVALID_CODE: &str = "invalid-code";
+
+/// Why an operation answered "not found", read from its `OperationOutcome`.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+enum Absence {
+    /// The server does not serve the code system asked about (`not-found`).
+    UnknownSystem,
+    /// The code system is served and the code is not in it (`invalid-code`).
+    UnknownCode,
+    /// A `404`/`410` with no classifying issue: the resource is unknown, and
+    /// whether that is the system or the code is not stated.
+    Unclassified,
+}
+
+/// What one fetch produced: a decoded resource, or a classified absence. The
+/// cache holds this, so a repeated question costs one round trip per TTL.
+#[derive(Debug, Clone)]
+enum Fetched {
+    /// A 2xx answer, decoded.
+    Found(DecodedResponse),
+    /// A "not found" answer, classified.
+    Absent(Absence),
+}
+
+/// The three answers to "does this code exist in this code system": the
+/// distinction VETDF turns on (a terminology the server does not serve is a
+/// warning, not a refusal).
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum TermExistence {
+    /// The server serves the code system and knows the code.
+    Exists,
+    /// The server serves the code system and the code is not in it.
+    Absent,
+    /// No verification was possible; the reason, for the operator's log.
+    Unverifiable(&'static str),
 }
 
 /// A decoded FHIR terminology response, reduced to what the SM calls read.
@@ -619,6 +730,9 @@ enum DecodedResponse {
     Parameters(ParameterValues),
     /// The membership + hierarchy of a `ValueSet` expansion.
     Expansion(Expansion),
+    /// The `total` of a `_summary=count` search `Bundle` (absent when the
+    /// server does not report one).
+    Count(Option<u32>),
 }
 
 /// The named scalar values a `Parameters` response carries.
@@ -740,7 +854,23 @@ fn decode(kind: ResponseKind, body: &[u8]) -> Result<DecodedResponse, DecodeErro
             }
             Ok(DecodedResponse::Expansion(expansion))
         }
+        ResponseKind::BundleCount => Ok(DecodedResponse::Count(
+            ferroehr_ext::fhir::terminology::decode_bundle_total(body)?,
+        )),
     }
+}
+
+/// The `tx-issue-type` codes a failing response's `OperationOutcome` carries;
+/// empty when the body is not one (a bare status, an HTML error page).
+#[cfg(feature = "fhir")]
+fn outcome_issue_types(body: &[u8]) -> Vec<String> {
+    ferroehr_ext::fhir::terminology::decode_outcome_issue_types(body).unwrap_or_default()
+}
+
+/// A slim build reads no `OperationOutcome`; every failure stays unclassified.
+#[cfg(not(feature = "fhir"))]
+fn outcome_issue_types(_body: &[u8]) -> Vec<String> {
+    Vec::new()
 }
 
 /// Collect one expansion member (and its descendants) into the flat `terms`
@@ -795,14 +925,18 @@ mod tests {
     fn parameters(json: &str) -> ParameterValues {
         match decode(ResponseKind::Parameters, json.as_bytes()).expect("decode Parameters") {
             DecodedResponse::Parameters(values) => values,
-            DecodedResponse::Expansion(_) => panic!("expected Parameters"),
+            DecodedResponse::Expansion(_) | DecodedResponse::Count(_) => {
+                panic!("expected Parameters")
+            }
         }
     }
 
     fn expansion(json: &str) -> Expansion {
         match decode(ResponseKind::ValueSet, json.as_bytes()).expect("decode ValueSet") {
             DecodedResponse::Expansion(expansion) => expansion,
-            DecodedResponse::Parameters(_) => panic!("expected ValueSet"),
+            DecodedResponse::Parameters(_) | DecodedResponse::Count(_) => {
+                panic!("expected ValueSet")
+            }
         }
     }
 

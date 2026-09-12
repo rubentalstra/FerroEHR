@@ -15,6 +15,21 @@ workflow refuses a tag that has no matching section here.
 
 ## [Unreleased]
 
+### Fixed
+
+- **ADL 2 archetypes with SNOMED CT or LOINC term bindings upload against a
+  terminology server that does not serve those code systems** (#3311). The
+  VETDF check asked the server about `system=SNOMED-CT&code=<the binding URI>`
+  and read every miss as "the term does not exist", so with FerroTERM beside
+  the CDR six archetypes of the sandbox dataset were refused and the seed
+  failed. A binding target in the IHTSDO URI model (`http://snomed.info/id/…`,
+  `http://loinc.org/id/…`) is now taken apart into the FHIR system and code the
+  server is asked about, and the server's `OperationOutcome` decides the
+  outcome: a code system it does not serve leaves the binding unverified and
+  the archetype accepted with a warning, as AOM2's VETDF prescribes; a code
+  absent from a served system is still refused with `422`. Verified against a
+  real FerroTERM in the test suite.
+
 ## [4.2.3] - 2026-09-12
 
 ### Added
