@@ -1,3 +1,12 @@
+  # The provider caches a positive answer for cache_ttl_secs, so a commit that
+  # still says 201 could be the cache and not the posture. Recreating the CDR
+  # empties the in-process cache; --no-deps keeps Compose from starting the
+  # stopped ferroterm again as the CDR's dependency (which is exactly what
+  # turned this probe green for the wrong reason on its first CI run).
+  dc -f docker-compose.yml -f "$TERM_FT_OVERLAY" --profile s3 up -d --no-deps --force-recreate --wait ferroehr >/dev/null 2>&1
+  wait_http "$CDR/health/readiness" 90 >/dev/null || true
+  assert_not_contains "$(dc -f docker-compose.yml -f "$TERM_FT_OVERLAY" ps -a --format '{{.Service}} {{.State}}')" "ferroterm running" \
+    "the terminology server must be down for this state to mean anything"
 #!/usr/bin/env bash
 # SPDX-FileCopyrightText: Ruben Talstra
 # SPDX-License-Identifier: BUSL-1.1
@@ -280,8 +289,11 @@ probes_terminology_ferroterm() {
   # exported variable reliably reaches the compose interpolation it runs. The
   # env change recreates the CDR, so the cache is cold here too.
   export FERROEHR__TERMINOLOGY__EXTERNAL__FAIL_ON_ERROR=true
-  dc -f docker-compose.yml -f "$TERM_FT_OVERLAY" --profile s3 up -d --wait ferroehr >/dev/null 2>&1
+  dc -f docker-compose.yml -f "$TERM_FT_OVERLAY" --profile s3 up -d --no-deps --wait ferroehr >/dev/null 2>&1
   unset FERROEHR__TERMINOLOGY__EXTERNAL__FAIL_ON_ERROR
+  wait_http "$CDR/health/readiness" 90 >/dev/null || true
+  assert_not_contains "$(dc -f docker-compose.yml -f "$TERM_FT_OVERLAY" ps -a --format '{{.Service}} {{.State}}')" "ferroterm running" \
+    "the terminology server must still be down under fail-closed"
   wait_http "$CDR/health/readiness" 90 >/dev/null || true
   assert_eq "$(term_ft_commit_code "$TERM_FT_MEMBER")" "422" \
     "fail-closed turns an unreachable terminology server into a refusal"
