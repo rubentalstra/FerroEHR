@@ -54,12 +54,7 @@ async fn login_basic_authenticates_and_rejects_bad_credentials() {
     h.wait_css(".thaw-message-bar").await;
     h.shot(2, "login-error").await;
     assert!(
-        h.driver
-            .current_url()
-            .await
-            .expect("url")
-            .as_str()
-            .contains("/login"),
+        h.current_url().await.contains("/login"),
         "wrong credentials must stay on /login"
     );
 
@@ -117,9 +112,9 @@ async fn login_oidc_round_trips_through_keycloak() {
     // Back on the viewer, authenticated.
     h.wait_css("footer").await;
     h.shot(2, "viewer-after-oidc").await;
-    let url = h.driver.current_url().await.expect("url");
+    let url = h.current_url().await;
     assert!(
-        !url.as_str().contains("/login"),
+        !url.contains("/login"),
         "OIDC flow must land on the viewer, not back at /login (got {url})"
     );
     h.assert_console_clean(&["401", "Failed to load resource"])

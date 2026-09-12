@@ -1,0 +1,111 @@
+# SPDX-FileCopyrightText: Ruben Talstra
+# SPDX-License-Identifier: BUSL-1.1
+
+name: Regulation or jurisdiction
+description: Ask FerroEHR to be measured against a regulation, a standard or a country's health-data law it does not cover yet
+title: "law(<jurisdiction>): <act or standard>"
+labels: ["regulation", "enhancement"]
+body:
+  - type: markdown
+    attributes:
+      value: >
+        FerroEHR vendors the official text of every regulation it is measured against
+        (`docs/law/`), reads it through the compliance researcher, and records what the
+        software ships against each article and what the deploying organisation must do
+        ([compliance overview](https://ferroehr.eu/docs/latest/compliance/)). Use this form
+        to add a jurisdiction, an act or a standard to that set. Software supports
+        obligations; it is never "compliant" on anyone's behalf, so please describe what
+        the text asks of a clinical data repository, not what a certificate would say.
+  - type: dropdown
+    id: jurisdiction
+    attributes:
+      label: Jurisdiction
+      options:
+        - European Union
+        - Netherlands
+        - Germany
+        - Switzerland
+        - Austria
+        - Belgium
+        - France
+        - Nordic country
+        - United Kingdom
+        - Other (name it below)
+    validations:
+      required: true
+  - type: input
+    id: act
+    attributes:
+      label: Act, regulation or standard
+      description: The official title, in the original language and in English if it differs.
+      placeholder: "Regulation (EU) 2016/679 (GDPR) / Uitvoeringswet AVG / Bundesdatenschutzgesetz"
+    validations:
+      required: true
+  - type: input
+    id: identifier
+    attributes:
+      label: Official identifier
+      description: CELEX or ELI for EU law, BWB for the Netherlands, the gesetze-im-internet slug for Germany, the SR number for Switzerland, the standard number and edition otherwise.
+      placeholder: "CELEX 32016R0679 · BWBR0040940 · bdsg_2018 · SR 235.1 · NEN 7513:2018"
+    validations:
+      required: true
+  - type: input
+    id: source
+    attributes:
+      label: Official publisher URL of the text
+      description: The publisher's own page for the consolidated text, in a text format if one is offered (HTML or XML, not a scan). A standard sold under copyright cannot be vendored; say so and give the shop page.
+    validations:
+      required: true
+  - type: dropdown
+    id: reuse
+    attributes:
+      label: May the text be redistributed?
+      description: EU acts, Dutch, German and Swiss federal law are free to reuse or free of copyright; most standards are not.
+      options:
+        - Yes, it is public law free of copyright or under a reuse notice (name the notice below)
+        - No, it is sold under copyright (only the clause list will be recorded)
+        - I do not know
+    validations:
+      required: true
+  - type: textarea
+    id: provisions
+    attributes:
+      label: The provisions that reach a clinical data repository
+      description: Article or clause numbers, each with one sentence on what it asks the software to do or to make possible. Skip provisions that fall on the organisation alone (legal basis, contracts, training).
+      placeholder: |
+        Art. 32(1)(a): pseudonymisation and encryption of personal data.
+        Art. 30: records of processing — the software must be able to describe what it does.
+        § 630f BGB: the record must be kept for ten years after treatment.
+    validations:
+      required: true
+  - type: input
+    id: dates
+    attributes:
+      label: In force from, and any application dates
+      placeholder: "In force 25 May 2018; Chapter III applies from 26 March 2029"
+  - type: textarea
+    id: relation
+    attributes:
+      label: Relationship to what FerroEHR already covers
+      description: Does it sit on top of the GDPR like the UAVG, replace a national act, or add a standard beside NEN 7513? Name the compliance page row it would extend.
+  - type: dropdown
+    id: role
+    attributes:
+      label: Your relationship to the regulation
+      options:
+        - Deploying organisation (controller or processor)
+        - Data protection officer or legal counsel
+        - Regulator, supervisory authority or standards body
+        - Integrator or vendor
+        - Researcher or interested reader
+    validations:
+      required: true
+  - type: checkboxes
+    id: terms
+    attributes:
+      label: Terms
+      options:
+        - label: The text or the quotes I paste are from the official publisher, and I have named the source
+          required: true
+        - label: I understand the result is a documented status per provision, not a compliance certificate
+          required: true

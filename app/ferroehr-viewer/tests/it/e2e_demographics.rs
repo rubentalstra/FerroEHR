@@ -46,9 +46,9 @@ use crate::common;
 use std::time::Duration;
 
 use common::{
-    Harness, click_until_css, login_basic, retype, wait_enabled, wait_text, wait_text_suffix,
+    Harness, click_until_css, login_basic, read_prop, read_text, retype, wait_enabled, wait_text,
+    wait_text_suffix,
 };
-use thirtyfour::prelude::*;
 
 /// The CDR base URL the harness exports for REST-side test setup; `None` skips
 /// with a reason.
@@ -243,15 +243,11 @@ async fn add_inline_relationship(
 async fn wait_kind_screen(h: &Harness, plural: &str, rm_type: &str) -> bool {
     let needle = format!("\"_type\": \"{rm_type}\"");
     for _ in 0..75 {
-        let heading = match h.driver.find(By::Css("h1")).await {
-            Ok(element) => element.text().await.unwrap_or_default(),
-            Err(_) => String::new(),
-        };
+        let heading = read_text(h, "h1").await.unwrap_or_default();
         if heading.trim() == plural {
-            let seeded = match h.driver.find(By::Css("#party-create-body")).await {
-                Ok(field) => field.prop("value").await.ok().flatten().unwrap_or_default(),
-                Err(_) => String::new(),
-            };
+            let seeded = read_prop(h, "#party-create-body", "value")
+                .await
+                .unwrap_or_default();
             if seeded.contains(&needle) {
                 return true;
             }
@@ -669,8 +665,10 @@ fn jitter() -> String {
 /// # Panics
 /// When the current URL is not a party detail route.
 async fn current_party_uid(h: &Harness) -> String {
-    let url = h.driver.current_url().await.expect("current url");
-    url.path()
+    let url = h.current_url().await;
+    url.split(['?', '#'])
+        .next()
+        .unwrap_or(&url)
         .rsplit('/')
         .next()
         .filter(|segment| !segment.is_empty())

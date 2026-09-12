@@ -38,7 +38,10 @@ use crate::common;
 
 use std::time::Duration;
 
-use common::{Harness, confirm_in_dialog, env, login_basic, login_basic_as, wait_text_contains};
+use common::{
+    Harness, confirm_in_dialog, count_matching, env, is_present, login_basic, login_basic_as,
+    wait_text_contains,
+};
 use thirtyfour::prelude::*;
 
 /// The log filter the journey applies — deliberately narrow (one crate at
@@ -162,11 +165,7 @@ async fn metric_browser_inspects_a_metric_from_the_registry() {
         "the detail must name the submitted metric `{first}`: {detail}"
     );
     assert!(
-        !h.driver
-            .find_all(By::Css("#ops-metric-detail table tbody tr"))
-            .await
-            .unwrap_or_default()
-            .is_empty(),
+        count_matching(&h, "#ops-metric-detail table tbody tr").await > 0,
         "the detail must render at least one sample row for `{first}`"
     );
     h.shot(1, "metric-detail-submitted").await;
@@ -175,11 +174,7 @@ async fn metric_browser_inspects_a_metric_from_the_registry() {
     //    feeds is reported per connection state, and a `?metric=` URL is
     //    shareable — it renders that metric with the picker pre-selected.
     let preferred = "db_pool_connections";
-    if h.driver
-        .find(By::Css(format!("#ops-metric option[value='{preferred}']")))
-        .await
-        .is_ok()
-    {
+    if is_present(&h, &format!("#ops-metric option[value='{preferred}']")).await {
         h.goto(&format!("/operations?metric={preferred}")).await;
         let detail = text_of(&h, "#ops-metric-detail").await;
         assert!(

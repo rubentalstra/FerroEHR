@@ -69,10 +69,11 @@ The identity fields Art. 30(1)(a) asks for are yours in every case:
 | Security measures | Queries run on the clinical credential only, so no query can reach the demographic or linkage domain; the planning gate refuses constructs the active specification generation does not define; result caps and statement timeouts bound one query's reach |
 
 > [!NOTE]
-> No threshold is applied to a result set. A query returning one row about one
-> rare condition is served like any other. Small-cell suppression is designed
-> alongside the cross-domain cohort query and is not built:
-> [#3159](https://github.com/rubentalstra/FerroEHR/issues/3159).
+> Small-cell suppression applies to the cohort query only. A cohort result
+> serving fewer distinct EHRs than `cohort.small_cell_threshold` has its rows
+> withheld and is marked suppressed; an ordinary `POST /query/aql` takes no
+> threshold, so a query returning one row about one rare condition is served
+> like any other.
 
 ## 4. Identity and linkage
 

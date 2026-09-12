@@ -24,7 +24,7 @@
 
 use crate::common;
 
-use common::{Harness, env, login_basic};
+use common::{Harness, appears_within, env, is_present, login_basic, wait_text_contains};
 use thirtyfour::prelude::*;
 
 /// The seeded ids, exported by the harness; `None` skips with a reason.
@@ -181,16 +181,7 @@ async fn composition_viewer_highlights_and_renders_the_document() {
             .click()
             .await
             .expect("switch to the rendered clinical view");
-        if h.driver
-            .query(By::Css("[data-doc-row]"))
-            .wait(
-                std::time::Duration::from_secs(2),
-                std::time::Duration::from_millis(200),
-            )
-            .exists()
-            .await
-            .unwrap_or(false)
-        {
+        if appears_within(&h, "[data-doc-row]", std::time::Duration::from_secs(2)).await {
             rendered = true;
             break;
         }
@@ -212,10 +203,7 @@ async fn composition_viewer_highlights_and_renders_the_document() {
         .expect("switch to the raw view");
     wait_pre_contains(&h, "\"_type\"").await;
     assert!(
-        h.driver
-            .find(By::Css("pre span.text-syntax-key"))
-            .await
-            .is_err(),
+        !is_present(&h, "pre span.text-syntax-key").await,
         "the raw view must not tokenize the document"
     );
     h.shot(3, "raw").await;
@@ -310,7 +298,7 @@ async fn login_works_with_javascript_disabled() {
     // rendered the authenticated shell into the response at all — an
     // unauthenticated request is bounced back to /login instead.
     for _ in 0..75 {
-        let source = h.driver.source().await.expect("page source");
+        let source = h.page_source().await;
         if source.contains("<footer") {
             h.shot(1, "dashboard-no-js").await;
             h.finish().await;
@@ -390,34 +378,15 @@ async fn ehr_finder_by_id_works_with_javascript_disabled() {
 /// # Panics
 /// When it never does, reporting what the row said instead.
 async fn wait_fact_contains(h: &Harness, hook: &str, needle: &str) {
-    let css = format!("[data-versioned-fact='{hook}']");
-    let mut last = String::new();
-    for _ in 0..75 {
-        if let Ok(row) = h.driver.find(By::Css(&css)).await
-            && let Ok(text) = row.text().await
-        {
-            if text.contains(needle) {
-                return;
-            }
-            last = text;
-        }
-        tokio::time::sleep(std::time::Duration::from_millis(200)).await;
-    }
-    panic!("the `{hook}` fact never contained `{needle}` (last text: {last})");
+    wait_text_contains(h, &format!("[data-versioned-fact='{hook}']"), needle).await;
 }
 
 /// Poll the first `<pre>` until it contains `needle`.
+///
+/// # Panics
+/// When it never does, reporting what the pane said instead.
 async fn wait_pre_contains(h: &Harness, needle: &str) {
-    for _ in 0..75 {
-        if let Ok(pre) = h.driver.find(By::Css("pre")).await
-            && let Ok(text) = pre.text().await
-            && text.contains(needle)
-        {
-            return;
-        }
-        tokio::time::sleep(std::time::Duration::from_millis(200)).await;
-    }
-    panic!("document pane never contained `{needle}`");
+    wait_text_contains(h, "pre", needle).await;
 }
 
 /// Click a format-selector button by its label.

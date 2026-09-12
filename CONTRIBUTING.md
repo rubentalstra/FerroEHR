@@ -76,9 +76,9 @@ render/boot lanes; nothing is advisory.
 
 ## Personal data
 
-FerroEHR keeps clinical content and the identities it belongs to in separate
-schemas, and a change can move that boundary without meaning to. Four rules
-hold everywhere in this repository:
+FerroEHR keeps clinical content, the identities it belongs to and the map
+between them in three separate schemas, and a change can move that boundary
+without meaning to. Four rules hold everywhere in this repository:
 
 - **Synthetic data only:** tests, fixtures, seeds, examples and screenshots use
   invented values. Never put a real name, national identifier, address, phone
@@ -88,8 +88,8 @@ hold everywhere in this repository:
   output carry record identifiers (an EHR id, a version uid, a template id) and
   shapes. They never carry the content of a subject's data, so a `Debug` impl on
   a type holding personal data prints field names rather than field values.
-- **No grant across the domains:** a database role reaches the clinical schemas
-  or the demographic ones, never both. A migration that grants across the two
+- **No grant across the domains:** a database role reaches one of the three
+  pseudonymisation domains, never a second. A migration that grants across them
   rejoins the identities to the records the split exists to separate.
 - **A review step at the boundary:** a change touching the demographic or
   linkage migrations, `service::demographic`, `service::linkage`, the identifier

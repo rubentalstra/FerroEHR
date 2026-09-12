@@ -371,8 +371,10 @@ disabling one a reversible way to take a resource type out of service.
 `GET /fhir/r4/AuditEvent` sits under the same path prefix but is **not** part of
 the FHIR connector: it is the audit trail's own retrieval surface, returning
 stored audit records as FHIR `AuditEvent` resources. It is gated by the local
-audit record repository rather than by the connector switch, and it is admin-only.
-See [Audit trail (IHE ATNA)](../audit.md).
+audit record repository rather than by the connector switch. The unscoped
+retrieval is admin-only; a caller holding the configured
+`authz.rbac.subject_audit_role` reads it scoped to one subject, with the
+`patient` parameter required. See [Audit trail (IHE ATNA)](../audit.md).
 
 ## Enabling the connectors
 

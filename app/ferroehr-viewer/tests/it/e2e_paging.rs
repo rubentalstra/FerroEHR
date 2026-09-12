@@ -53,7 +53,9 @@ use std::time::Duration;
 
 use reqwest::StatusCode;
 
-use common::{Harness, env, login_basic, wait_attr, wait_attr_change};
+use common::{
+    Harness, count_matching, env, is_present_by, login_basic, wait_attr, wait_attr_change,
+};
 use thirtyfour::prelude::*;
 
 /// The two stored queries this journey owns, qualified `namespace::name` (the
@@ -125,11 +127,7 @@ async fn seed_fixtures(cdr: &str, user: &str, pass: &str) {
 
 /// How many stored-query rows the table currently renders.
 async fn row_count(h: &Harness) -> usize {
-    h.driver
-        .find_all(By::Css("[data-stored-query]"))
-        .await
-        .unwrap_or_default()
-        .len()
+    count_matching(h, "[data-stored-query]").await
 }
 
 /// The `name@version` key of the first rendered row — the window's identity.
@@ -159,7 +157,7 @@ async fn wait_row_change(h: &Harness, previous: &str) -> String {
         }
         tokio::time::sleep(Duration::from_millis(200)).await;
     }
-    let url = h.driver.current_url().await.expect("current url");
+    let url = h.current_url().await;
     panic!("the row window never moved off `{previous}` (at {url})");
 }
 
@@ -228,9 +226,9 @@ async fn stored_queries_page_through_the_shared_footer() {
     let second = wait_row_change(&h, &first).await;
     assert_eq!(row_count(&h).await, 1, "the second page renders one row");
     wait_range_prefix(&h, "2–2 of ").await;
-    let url = h.driver.current_url().await.expect("current url");
+    let url = h.current_url().await;
     assert!(
-        url.as_str().contains("size=1"),
+        url.contains("size=1"),
         "a page link must preserve the screen's other parameters (at {url})"
     );
     h.shot(2, "second-page").await;
@@ -427,11 +425,7 @@ async fn ehr_count(http: &reqwest::Client, v1: &str, user: &str, pass: &str) -> 
 
 /// How many rows matching `css` are currently rendered.
 async fn link_count(h: &Harness, css: &str) -> usize {
-    h.driver
-        .find_all(By::Css(css))
-        .await
-        .unwrap_or_default()
-        .len()
+    count_matching(h, css).await
 }
 
 /// Poll until exactly `expected` rows matching `css` are rendered.
@@ -456,10 +450,10 @@ async fn wait_link_count(h: &Harness, css: &str, expected: usize) {
 /// # Panics
 /// When one is missing, naming the URL that lost it.
 async fn assert_url_keeps(h: &Harness, fragments: &[&str]) {
-    let url = h.driver.current_url().await.expect("current url");
+    let url = h.current_url().await;
     for fragment in fragments {
         assert!(
-            url.as_str().contains(fragment),
+            url.contains(fragment),
             "a paging step must preserve `{fragment}` (at {url})"
         );
     }
@@ -524,10 +518,11 @@ async fn the_compositions_tab_pages_by_offset_and_keeps_its_tab_and_filter() {
     // though it would sort first without it.
     wait_link_count(&h, rows, PAGE_SIZE).await;
     assert!(
-        h.driver
-            .find(By::XPath(format!("//tr[contains(., '{OTHER_COMPOSER}')]")))
-            .await
-            .is_err(),
+        !is_present_by(
+            &h,
+            By::XPath(format!("//tr[contains(., '{OTHER_COMPOSER}')]"))
+        )
+        .await,
         "the composer filter must exclude the other composer's composition"
     );
     let first = wait_attr(&h, rows, "href").await;
@@ -555,10 +550,11 @@ async fn the_compositions_tab_pages_by_offset_and_keeps_its_tab_and_filter() {
     // The filter is not merely in the URL, it is still APPLIED: the second page
     // holds the 26th Alpha composition, never the newer Beta one.
     assert!(
-        h.driver
-            .find(By::XPath(format!("//tr[contains(., '{OTHER_COMPOSER}')]")))
-            .await
-            .is_err(),
+        !is_present_by(
+            &h,
+            By::XPath(format!("//tr[contains(., '{OTHER_COMPOSER}')]"))
+        )
+        .await,
         "the composer filter must still narrow the second page"
     );
     h.shot(2, "compositions-second-page").await;

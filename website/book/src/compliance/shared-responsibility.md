@@ -49,7 +49,7 @@ only the technical measure FerroEHR supplies toward one of them.
 | [Art. 15 and 20](https://eur-lex.europa.eu/eli/reg/2016/679/oj) access and portability | The full record over the openEHR REST API in canonical JSON or XML, and [EHR Extract export](../beyond-core/messaging.md) for a whole record | Authenticate the data subject and build the patient-facing route |
 | [Art. 16 and 17](https://eur-lex.europa.eu/eli/reg/2016/679/oj) rectification and erasure | Versioned correction with the prior version retained, and [physical, irreversible deletion](../operations-admin-apis.md#physical-deletion) of an EHR for a legal erasure request | Decide how an erasure request interacts with the medical record-keeping duty, and record the decision |
 | [Art. 18 and 21](https://eur-lex.europa.eu/eli/reg/2016/679/oj) restriction and objection | `EHR_STATUS.is_queryable` and `is_modifiable`, both enforced by the server: a restricted record leaves population queries and refuses content writes | Decide when to set them, and record why |
-| [Art. 35](https://eur-lex.europa.eu/eli/reg/2016/679/oj) data protection impact assessment | Control and boundary documentation to assess against; DPIA guidance is planned in [#3161](https://github.com/rubentalstra/FerroEHR/issues/3161) | Run the DPIA and keep it current. It is the controller's, and no supplier document replaces it |
+| [Art. 35](https://eur-lex.europa.eu/eli/reg/2016/679/oj) data protection impact assessment | A [DPIA page](../security/dpia.md) to assess against (processing description, data categories per schema, roles, retention, risk register, shipped controls by issue), [records of processing](../security/records-of-processing.md) pre-filled with what the software does, and a [go-live checklist](../security/go-live-checklist.md) | Run the DPIA and keep it current. It is the controller's, and no supplier document replaces it |
 | [Art. 4(5)](https://eur-lex.europa.eu/eli/reg/2016/679/oj) pseudonymisation | Clinical data, demographic data and the party-to-EHR map live in three separate schemas with non-overlapping `NOINHERIT` roles, and the server refuses to boot if a role reaches across ([the boundary](../security.md#the-pseudonymisation-boundary)). The `linkage` schema is created empty: the service that resolves through it, under audit, is still to come ([#3158](https://github.com/rubentalstra/FerroEHR/issues/3158)) | Give the demographic pool its own DSN, and keep the additional information outside the CDR until the linkage service lands |
 
 ## EHDS
@@ -61,7 +61,7 @@ provisions carry. No row below claims conformity with any of them.
 | Obligation | What FerroEHR provides | What the deploying organisation does |
 |---|---|---|
 | [Chapter II](https://eur-lex.europa.eu/eli/reg/2025/327/oj), primary use and the patient's sight of who accessed their data | An access trail of every read, write and refusal, [searchable by patient and by agent](../audit.md#retrieving-audit-records-iti-81), and a [subject-scoped read grant](../installation/config-auth.md#authzrbac) sized for a patient portal | Build the patient-facing access route on that grant and authenticate the person; the product serves one subject's log to it, never every patient's |
-| [Chapter III](https://eur-lex.europa.eu/eli/reg/2025/327/oj), EHR systems: the European interoperability and logging software components, and published technical documentation | Readiness work is planned in [#3168](https://github.com/rubentalstra/FerroEHR/issues/3168), [#3169](https://github.com/rubentalstra/FerroEHR/issues/3169), [#3170](https://github.com/rubentalstra/FerroEHR/issues/3170) and [#3171](https://github.com/rubentalstra/FerroEHR/issues/3171) | Decide whether you are the manufacturer of the EHR system you put into service, and carry the manufacturer's duties if so |
+| [Chapter III](https://eur-lex.europa.eu/eli/reg/2025/327/oj), EHR systems: the European interoperability and logging software components, and published technical documentation | The [EHDS readiness page](ehds-readiness.md) with a status and evidence per Annex II requirement, the [technical documentation](technical-documentation.md) page per Annex II item, and an access trail carrying the logging component's elements; the exchange format is an open question until the Article 36 implementing acts fix it | Follow the implementing acts and, when a deployment is placed as an EHR system, carry the manufacturer's conformity assessment and declaration |
 | [Chapter IV](https://eur-lex.europa.eu/eli/reg/2025/327/oj), secondary use | [AQL](../querying-aql.md) over the stored record and a [change-event outbox](../beyond-core/amqp.md); a separate pseudonymisation domain for secondary use is planned in [#3160](https://github.com/rubentalstra/FerroEHR/issues/3160) | Deal with the health data access body and carry the data holder's duties |
 
 ## National law
@@ -77,7 +77,7 @@ The compliance overview says what adding another takes
 | Obligation | What FerroEHR provides | What the deploying organisation does |
 |---|---|---|
 | [UAVG Art. 30](https://wetten.overheid.nl/BWBR0040940), the exception for health data | Access control at the record and attribute level, with every use audited | Establish that your processing falls inside the exception, per role and per purpose |
-| [UAVG Art. 46](https://wetten.overheid.nl/BWBR0040940), processing a national identification number | Nothing specific yet; encrypted storage and audited resolution of national identifiers is planned in [#3155](https://github.com/rubentalstra/FerroEHR/issues/3155) | Hold the statutory authorisation before a BSN enters the store |
+| [UAVG Art. 46](https://wetten.overheid.nl/BWBR0040940), processing a national identification number | National identifiers sealed at rest under a per-tenant key in the demographic domain, resolved only through the demographic role, every resolution recorded as a linkage access without the value | Hold the statutory authorisation before a BSN enters the store, and restrict who may resolve |
 | [Wabvpz Art. 4 to 9](https://wetten.overheid.nl/BWBR0023864), use and verification of the BSN | Nothing. FerroEHR performs no BSN verification and consults no index | Verify identity and the BSN in your own systems before data reaches the CDR |
 | [Wabvpz Art. 15d](https://wetten.overheid.nl/BWBR0023864), electronic access and copy for the patient | The full record over the REST API, and [EHR Extract export](../beyond-core/messaging.md) | Authenticate the patient and build the route; the CDR has no patient-facing interface |
 | [Wabvpz Art. 15e](https://wetten.overheid.nl/BWBR0023864), a record of who made data available and who consulted it | An [ATNA trail](../audit.md) recording the agent, the patient, the action, the outcome and the time, retrievable per patient | Render it for the patient, set retention, and review it |
@@ -103,9 +103,10 @@ It does not tell you whether your deployment satisfies any of these
 obligations. That answer depends on your legal basis, your organisation, your
 infrastructure and your operating practice, none of which a supplier can see.
 
-The companion guidance is planned rather than written:
-[DPIA guidance, records of processing and a go-live checklist](https://github.com/rubentalstra/FerroEHR/issues/3161).
-Until it lands, the [compliance overview](index.md) carries the legal sources,
-the [control matrix](control-matrix.md) carries the live status of every
-declared control, and the [threat model](../threat-model.md) carries the risk
-that survives each one.
+The companion guidance is written: the [DPIA page](../security/dpia.md),
+the [records of processing](../security/records-of-processing.md) and the
+[go-live checklist](../security/go-live-checklist.md). Beside them, the
+[compliance overview](index.md) carries the legal sources, the
+[control matrix](control-matrix.md) carries the live status of every declared
+control, and the [threat model](../threat-model.md) carries the risk that
+survives each one.

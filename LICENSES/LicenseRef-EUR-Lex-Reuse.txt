@@ -1,0 +1,70 @@
+EUR-Lex reuse terms (Commission Decision 2011/833/EU)
+=====================================================
+
+This identifier covers the EU legal acts vendored under `docs/law/eu/`, fetched
+from the EU Publications Office by `scripts/vendor/law-eu.sh` (the EUR-Lex
+corpus, over the CELEX content-negotiation URI). It is not an SPDX-listed licence.
+It is the reuse policy the publisher states for those documents, recorded in
+machine-readable form so that a glob elsewhere in REUSE.toml cannot assert the
+wrong terms over them.
+
+What the publisher states
+-------------------------
+
+Quoted verbatim from the EUR-Lex legal notice, section "Copyright notice",
+https://eur-lex.europa.eu/content/legal-notice/legal-notice.html, read
+2026-09-12:
+
+  © European Union, 1998-2026
+
+  The Commission's document reuse policy is based on Decision 2011/833/EU.
+  Unless otherwise specified, you can re-use the legal documents published in
+  EUR-Lex for commercial or non-commercial purposes.
+
+  Some documents, like the International Accounting Standards, may be subject
+  to special conditions of use; these are mentioned in the respective Official
+  Journal/document. You can also consult the rules on on reproducing euro
+  coin/note images.
+
+  The copyright for the editorial content of this website, the summaries of EU
+  legislation and the consolidated texts, which is owned by the EU, is licensed
+  under the Creative Commons Attribution 4.0 International licence. This means
+  that you can re-use the content provided you acknowledge the source and
+  indicate any changes you have made.
+
+  You may be required to clear additional rights if certain content depicts
+  identifiable private individuals or includes third-party works. To use or
+  reproduce content not owned by the EU, you may need to seek permission
+  directly from the rights holders. Software or documents covered by industrial
+  property rights, such as patents, trademarks, registered designs, logos and
+  names, are excluded from the Commission's reuse policy and are not licensed
+  to you.
+
+  To use the EUR-Lex logo, you first need the prior consent of the Publications
+  Office.
+
+  EUR-Lex metadata is dedicated to the public domain in accordance with the
+  Creative Commons CC0 1.0 Universal Public Domain Dedication deed.
+
+  For all other copyright issues, please contact:
+  op-copyright@publications.europa.eu
+
+Decision 2011/833/EU itself is at
+https://eur-lex.europa.eu/legal-content/EN/TXT/?uri=CELEX:32011D0833.
+
+How it applies to this repository
+---------------------------------
+
+The vendored files are legal documents published in EUR-Lex, reused unmodified.
+The source is acknowledged in each act's `PROVENANCE.md` and in the index at
+`docs/law/README.md`, and no change has been made to any of them: they are the
+publisher's own bytes, with a SHA-256 recorded so that stays checkable.
+
+Two of the vendored acts are CONSOLIDATED texts (the GDPR and the MDR).
+Consolidation is the EU's own editorial work, which the notice above licenses
+under CC BY 4.0, so those two directories are declared in REUSE.toml as this
+identifier AND `CC-BY-4.0`, naming both sets of obligations rather than picking
+one. The full CC BY 4.0 text is at `LICENSES/CC-BY-4.0.txt`.
+
+Nothing in this repository claims any right in these documents. No EU logo is
+reproduced, and the EUR-Lex metadata that would be CC0 is not vendored.

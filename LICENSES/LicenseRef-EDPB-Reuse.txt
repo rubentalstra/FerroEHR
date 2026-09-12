@@ -1,0 +1,75 @@
+EDPB reuse terms
+================
+
+This identifier covers the European Data Protection Board document vendored at
+`docs/law/eu/edpb-guidelines-01-2025-pseudonymisation/`, fetched by
+`scripts/vendor/law-eu.sh`. It is not an SPDX-listed licence. It is the reuse
+policy the EDPB states for its own material, recorded in machine-readable form
+so that a glob elsewhere in REUSE.toml cannot assert the wrong terms over it.
+
+What the publisher states
+-------------------------
+
+Quoted verbatim from the EDPB copyright page,
+https://www.edpb.europa.eu/copyright_en, read 2026-09-12:
+
+  The content of this website includes text data and multimedia items such as
+  texts, drawings, graphics, logos, icons, images, audio and video material,
+  photographs, programs and the technology described, which are protected by
+  the provisions of national and international law applying to intellectual
+  property.
+
+  These textual data and multimedia items are the exclusive property either of
+  the European Data Protection Board (EDPB) and/or of their authors and
+  beneficiaries. The intellectual property right holders waive their right to
+  have their name or any other indication appear on the items which they supply
+  for this website.
+
+  In accordance with the relevant legislation, the user has to respect the
+  intellectual property rights held by the EDPB and third parties without
+  prejudice to the rights and exceptions provided for by any binding
+  provisions.
+
+  The reuse of any information of this website is authorized for commercial and
+  non-commercial purposes, under the following conditions:
+
+    The re-user is obliged to acknowledge the source of the document;
+    The original meaning or the message of the documents should not be
+    distorted;
+    The European Data Protection Board cannot be held liable for any
+    consequence stemming from the reuse.
+
+  Reuse is understood as: "reproduction of textual data and multimedia items
+  which are the property of the EDPB or of third parties and for which the EDPB
+  holds the rights of use".
+
+  The user undertakes not to delete or change the indications of the author or
+  the source and not to seek to circumvent the technical measures put in place
+  to protect documents and multimedia items, such as print or download
+  restrictions and visible or invisible tagging. Any infringement may lead to
+  civil and criminal proceedings.
+
+  In cases of doubt as to the identity of the right holders or as to the
+  conditions of use of a particular item, a request for information may be sent
+  to the webmaster.
+
+  Despite extensive research, it may be that the EDPB has not been able to
+  identify certain authors or right holders of documents appearing on the site.
+  If you are such a right holder, or if you have identified such a right
+  holder, or if there is a mistake on our part, we should be grateful if you
+  would kindly contact the webmaster.
+
+How it applies to this repository
+---------------------------------
+
+The vendored file is the published PDF, reproduced byte for byte. The three
+conditions are met and stay met by construction:
+
+  * the source is acknowledged in that directory's `PROVENANCE.md` and in the
+    index at `docs/law/README.md`;
+  * the meaning is not distorted, because the document is not converted,
+    extracted from or paraphrased anywhere in this repository, and its SHA-256
+    is recorded so that stays checkable;
+  * no liability is imputed to the EDPB by anything here.
+
+The record also states what the document is: guidelines, which bind nobody.

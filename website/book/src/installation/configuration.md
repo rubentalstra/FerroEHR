@@ -295,4 +295,5 @@ rather than inherit from a quickstart. See
 | `[subject_proxy]` | The FHIR systems subject-proxy frames may read | [Audit & subject proxy](config-audit.md) |
 | `[privacy]`, `[privacy.identifier_scan]` | What the clinical side refuses to hold: the subject reference, identified parties, the identifier scanner | [Privacy & data minimisation](config-privacy.md) |
 | `[cohort]`, `[cohort.predicates]` | Cross-domain cohort queries: the demographic predicate allow-list, the small-cell floor, the cohort ceiling | [Privacy & data minimisation](config-privacy.md) |
+| `[demographic.identifier_protection]` | Sealing national identifiers in the demographic domain, and the key that opens them | [Privacy & data minimisation](config-privacy.md) |
 | — | The CLI, the production checklist, file-versus-environment guidance | [CLI & production checklist](config-cli.md) |

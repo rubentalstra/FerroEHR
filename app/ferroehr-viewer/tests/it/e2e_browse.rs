@@ -26,8 +26,9 @@ use crate::common;
 
 use std::time::Duration;
 
-use common::{Harness, login_basic, wait_text_contains};
-use thirtyfour::prelude::*;
+use common::{
+    Harness, appears_within, count_matching, find_all, is_present, login_basic, wait_text_contains,
+};
 
 /// The operational template uploaded (or reused) by these journeys, and its
 /// detail-route id. The fixture is a small, real SDK OPT (a minimal
@@ -72,7 +73,7 @@ pub(crate) async fn ensure_template_present(h: &Harness) -> bool {
     // message bar before deciding whether an upload is needed.
     h.wait_css("a[href^='/templates/'], .thaw-message-bar")
         .await;
-    if h.driver.find(By::Css(TEMPLATE_LINK)).await.is_ok() {
+    if is_present(h, TEMPLATE_LINK).await {
         return false;
     }
     let path = fixture_opt_path();
@@ -85,7 +86,7 @@ pub(crate) async fn ensure_template_present(h: &Harness) -> bool {
     for _ in 0..4 {
         common::upload_via_dialog(h, &path).await;
         for _ in 0..40 {
-            if h.driver.find(By::Css(TEMPLATE_LINK)).await.is_ok() {
+            if is_present(h, TEMPLATE_LINK).await {
                 return true;
             }
             tokio::time::sleep(Duration::from_millis(200)).await;
@@ -103,13 +104,13 @@ pub(crate) async fn ensure_template_present(h: &Harness) -> bool {
 /// ones, and newly-revealed toggles are clicked on the next pass.
 async fn expand_catalog_tree(h: &Harness) {
     for _ in 0..15 {
-        let collapsed = h
-            .driver
-            .find_all(By::Css("button[aria-expanded='false']"))
-            .await
-            .unwrap_or_default();
+        let collapsed = find_all(h, "button[aria-expanded='false']").await;
         let mut clicked = false;
         for toggle in collapsed {
+            // Each click re-renders the tree, so a handle taken in this pass
+            // can be detached by an earlier click in the same pass: a stale
+            // toggle is expanded work already done, and the next pass sees
+            // whatever it revealed. Swallowed on purpose, per element.
             if toggle.is_displayed().await.unwrap_or(false) && toggle.click().await.is_ok() {
                 clicked = true;
             }
@@ -138,18 +139,13 @@ async fn template_upload_lists_and_inspects_path_catalog() {
     // Title formatter (the unit tests pin the pure fn; only WebDriver sees
     // what the tab actually says).
     assert_eq!(
-        h.driver.title().await.expect("tab title"),
+        h.title().await,
         "Templates · FerroEHR Viewer",
         "the shell's Title formatter suffixes every page title"
     );
     h.wait_css("a[href^='/templates/'], .thaw-message-bar")
         .await;
-    let before = h
-        .driver
-        .find_all(By::Css("table tbody tr"))
-        .await
-        .unwrap_or_default()
-        .len();
+    let before = count_matching(&h, "table tbody tr").await;
     println!("template rows before upload: {before}");
     h.shot(1, "templates-before-upload").await;
 
@@ -211,13 +207,7 @@ async fn query_builder_generates_and_runs_aql() {
             .click()
             .await
             .expect("select the uploaded template");
-        if h.driver
-            .query(By::Css("ul.text-sm li"))
-            .wait(Duration::from_secs(3), Duration::from_millis(200))
-            .first()
-            .await
-            .is_ok()
-        {
+        if appears_within(&h, "ul.text-sm li", Duration::from_secs(3)).await {
             selected = true;
             break;
         }
@@ -232,12 +222,8 @@ async fn query_builder_generates_and_runs_aql() {
 
     // Reveal the deep data-value leaves, then add the first as a condition.
     expand_catalog_tree(&h).await;
-    h.driver
-        .query(By::XPath("//button[contains(., '+ condition')]"))
-        .wait(Duration::from_secs(15), Duration::from_millis(200))
-        .first()
+    h.wait_xpath("//button[contains(., '+ condition')]")
         .await
-        .expect("a selectable leaf's + condition button")
         .click()
         .await
         .expect("add a condition");
@@ -257,12 +243,8 @@ async fn query_builder_generates_and_runs_aql() {
     h.shot(3, "builder-aql-preview").await;
 
     // Run it: the results card resolves to a table or the zero-rows state.
-    h.driver
-        .query(By::XPath("//button[contains(., 'Run')]"))
-        .wait(Duration::from_secs(15), Duration::from_millis(200))
-        .first()
+    h.wait_xpath("//button[contains(., 'Run')]")
         .await
-        .expect("the Run button")
         .click()
         .await
         .expect("run the query");
@@ -296,12 +278,8 @@ async fn ehr_finder_navigates_and_unknown_ehr_shows_error() {
         .await
         .expect("type an EHR id");
     h.shot(1, "ehr-finder-typed").await;
-    h.driver
-        .query(By::XPath("//button[contains(., 'Find')]"))
-        .wait(Duration::from_secs(15), Duration::from_millis(200))
-        .first()
+    h.wait_xpath("//button[contains(., 'Find')]")
         .await
-        .expect("the Find button")
         .click()
         .await
         .expect("navigate to the EHR detail");

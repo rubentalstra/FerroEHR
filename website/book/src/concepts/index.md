@@ -19,7 +19,7 @@ chapters; the first two read in either order, the last two go deeper:
   `RESULT_SET`, what each stage refuses, and the design reasons queries are
   fast.
 
-Neither chapter is a prerequisite for [Getting started](../getting-started.md);
+None of them is a prerequisite for [Getting started](../getting-started.md);
 you can commit a composition and run a query without them. Come back when you
 want to know *why* the API behaves as it does, or before you make one of the
 decisions you then live with: a specification generation, a template design, a

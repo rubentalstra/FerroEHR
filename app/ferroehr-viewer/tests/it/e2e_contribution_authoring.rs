@@ -37,8 +37,9 @@
 
 use crate::common;
 
-use common::{Harness, env, login_basic, retype, wait_enabled, wait_text, wait_text_contains};
-use thirtyfour::prelude::*;
+use common::{
+    Harness, count_matching, env, login_basic, retype, wait_enabled, wait_text, wait_text_contains,
+};
 
 /// The template the E2E harness seeds; its CDR-generated example composition is
 /// the create member's document (spec-valid by construction).
@@ -155,11 +156,7 @@ async fn pick(h: &Harness, css: &str, value: &str) {
 
 /// How many rows the staging list currently holds.
 async fn staged_rows(h: &Harness) -> usize {
-    h.driver
-        .find_all(By::Css("[data-staged]"))
-        .await
-        .unwrap_or_default()
-        .len()
+    count_matching(h, "[data-staged]").await
 }
 
 /// Poll until the staging list holds exactly `expected` rows — an explicit

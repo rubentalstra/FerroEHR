@@ -80,6 +80,14 @@ Together these are the mechanism behind cross-system migration: export from the
 source, import into the destination, and the destination's history faithfully
 reflects where each version came from.
 
+**An import takes the data-minimisation pass too.** Extract import stores what
+it receives, so it cannot rewrite a body; instead it refuses one whose content
+carries a national identifier, a subject reference that is not a declared
+pseudonym, or an identified party the deployment does not permit, with the same
+`422` and the same RM path the ordinary commit path reports. The rules are on
+[Privacy & data minimisation](../installation/config-privacy.md), and they
+apply to the admin archive load for the same reason.
+
 When ATNA auditing is enabled (it is on by default, see
 [Security & multi-tenancy](../security.md#atna-audit-trail)) each completed
 export and import emits a security-audit event under the ATNA `Extract` object

@@ -15,6 +15,22 @@ workflow refuses a tag that has no matching section here.
 
 ## [Unreleased]
 
+### Fixed
+
+- **A wiped clinical schema comes back with its cold-tier alias views**
+  (#3298). The three `ehr.cold_*` views the storage layer reads through were
+  created by the demographic migration set, so a database whose `ehr` schema
+  was dropped and rebuilt (the hosted sandbox after every nightly reset since
+  4.2.0) came back without them, and every composition or `EHR_STATUS` update
+  answered `500` while creates and reads worked. A new clinical migration
+  recreates the views whenever the demographic set has run, and widens a view
+  created before `vo_version.origins` existed. The sandbox reset now drops all
+  seven schemas, so a reset is a fresh start rather than a partial one.
+- **The compose quickstart role can reach the linkage domain.** The database
+  init script granted the application login the clinical and demographic
+  domain roles but not `ferroehr_linkage`; it worked only because that login
+  owns the database.
+
 ## [4.2.1] - 2026-09-12
 
 ### Fixed

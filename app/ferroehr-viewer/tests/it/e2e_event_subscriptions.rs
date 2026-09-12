@@ -44,10 +44,9 @@ use crate::common;
 use reqwest::StatusCode;
 
 use common::{
-    Harness, clear_field, confirm_in_dialog, env, login_basic_as, retype, wait_css_absent,
-    wait_enabled, wait_text, wait_text_contains,
+    Harness, clear_field, confirm_in_dialog, env, is_present, login_basic_as, read_enabled, retype,
+    wait_css_absent, wait_enabled, wait_text, wait_text_contains,
 };
-use thirtyfour::prelude::*;
 
 /// The subscription the CRUD round trip owns.
 const ROUND_TRIP_SUBSCRIPTION: &str = "e2e-viewer-subscription";
@@ -171,10 +170,7 @@ async fn open_subscriptions(h: &Harness) {
     h.goto("/subscriptions").await;
     h.wait_css("#subscriptions-screen").await;
     assert!(
-        h.driver
-            .find(By::Css("#subscriptions-disabled"))
-            .await
-            .is_err(),
+        !is_present(h, "#subscriptions-disabled").await,
         "the CDR under test runs with the event-subscription admin API disabled — set \
          FERROEHR__EVENTS__ADMIN_API=true on the composed `ferroehr` service"
     );
@@ -191,9 +187,7 @@ async fn open_subscriptions(h: &Harness) {
 /// When it never becomes disabled within 15 s.
 async fn wait_disabled(h: &Harness, css: &str) {
     for _ in 0..75 {
-        if let Ok(element) = h.driver.find(By::Css(css)).await
-            && !element.is_enabled().await.unwrap_or(true)
-        {
+        if read_enabled(h, css).await == Some(false) {
             return;
         }
         tokio::time::sleep(std::time::Duration::from_millis(200)).await;

@@ -46,8 +46,9 @@ use crate::common;
 
 use std::time::Duration;
 
-use common::{Harness, confirm_in_dialog, env, login_basic, login_basic_as, wait_css_absent};
-use thirtyfour::prelude::*;
+use common::{
+    Harness, confirm_in_dialog, env, is_present, login_basic, login_basic_as, wait_css_absent,
+};
 
 /// A fixture OPT no other journey touches, and its template id — deleted from
 /// the LIST row. The id carries spaces on purpose: it proves the delete path
@@ -121,7 +122,7 @@ async fn ensure_template(h: &Harness, fixture: &str, template_id: &str) {
     h.wait_css("a[href^='/templates/'], .thaw-message-bar")
         .await;
     let row_delete = format!("[data-template-delete=\"{template_id}\"]");
-    if h.driver.find(By::Css(row_delete.clone())).await.is_ok() {
+    if is_present(h, &row_delete).await {
         return;
     }
     // The file input's `on:change` is a hydrated listener, and a file set
@@ -135,7 +136,7 @@ async fn ensure_template(h: &Harness, fixture: &str, template_id: &str) {
     for _ in 0..4 {
         common::upload_via_dialog(h, &fixture_opt_path(fixture)).await;
         for _ in 0..40 {
-            if h.driver.find(By::Css(row_delete.clone())).await.is_ok() {
+            if is_present(h, &row_delete).await {
                 return;
             }
             tokio::time::sleep(Duration::from_millis(200)).await;
@@ -455,9 +456,8 @@ async fn admin_deletes_an_ehr() {
         .await
         .expect("create an EHR");
     h.wait_url_contains("/ehrs/").await;
-    let url = h.driver.current_url().await.expect("current url");
+    let url = h.current_url().await;
     let ehr_id = url
-        .as_str()
         .rsplit('/')
         .next()
         .map(|segment| segment.split('?').next().unwrap_or(segment).to_owned())
@@ -512,7 +512,7 @@ async fn plain_user_is_refused_the_admin_delete() {
     .await;
     h.shot(2, "delete-refused").await;
     assert!(
-        h.driver.find(By::Css(&selector)).await.is_ok(),
+        is_present(&h, &selector).await,
         "the refused delete must leave `{SHARED_TEMPLATE_ID}` in the list"
     );
 

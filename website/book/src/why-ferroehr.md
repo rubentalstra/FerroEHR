@@ -58,9 +58,11 @@ and published*.
   upstream.
 - **The specification layer as reusable libraries.** The generated openEHR
   model, the canonical codecs, the REST contract, the ADL engine and the AQL
-  parser are published on crates.io as [standalone crates](crates.md) under the
-  Apache License 2.0, so the next Rust project does not have to re-model
-  openEHR to get started, and needs no licence conversation to use them.
+  parser are published on crates.io as eight
+  [standalone crates](crates.md), so the next Rust project does not have to
+  re-model openEHR to get started. The five generated model crates are under
+  the Apache License 2.0, the licence of the openEHR artifacts they are
+  generated from, and need no licence conversation at all.
 - **Maintenance in the open.** Public roadmap, public issue tracker,
   changelog-driven releases, signed artifacts, and a security policy with a
   private reporting channel.

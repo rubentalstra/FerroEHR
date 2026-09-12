@@ -430,6 +430,14 @@ where the template earns its keep. The server checks:
   binds, using the bundled openEHR terminology or a configured external FHIR
   terminology server (see [Terminology servers](beyond-core/terminology.md)).
 
+A second pass runs beside it and refuses the same way: the clinical side's
+data-minimisation rules read the subject reference, the party proxies and every
+string leaf of the body, and a finding is a `422` naming the RM path and the
+rule that matched, never the offending value. That pass is configured
+independently of the template, and the shipped default already refuses a
+national identifier anywhere in clinical content. See
+[Privacy & data minimisation](installation/config-privacy.md).
+
 If a composition is well-formed but breaks its template, the commit fails with
 **422 Unprocessable Entity** and a `validationErrors` list (one entry per
 offending node, as `"<path>: <message>"`) so a client can show the user exactly

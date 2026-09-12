@@ -1,8 +1,9 @@
 # Contributing
 
 FerroEHR is source-available (the Business Source License 1.1 for the
-application, Apache 2.0 for the `openehr-*` spec crates, and vendored
-third-party material under its upstream terms; see [Licensing & legal](licensing.md)) and welcomes contributions. This
+application, Apache 2.0 for the five generated `openehr-*` model crates, and
+vendored third-party material under its upstream terms; see
+[Licensing & legal](licensing.md)) and welcomes contributions. This
 chapter is a short orientation for anyone who wants to file an issue, report a
 vulnerability, or open a pull request; the authoritative documents live in the
 repository and are linked below. You keep your copyright, and there is no
@@ -116,9 +117,10 @@ A few more conventions worth knowing before you open a pull request:
 
 ## Personal data
 
-The server keeps clinical content and the identities it belongs to in separate
-schemas, reachable by separate database roles. A change can move that boundary
-without meaning to, so four rules hold everywhere in the repository.
+The server keeps clinical content, the identities it belongs to and the map
+between them in three separate schemas, reachable by separate database roles. A
+change can move that boundary without meaning to, so four rules hold everywhere
+in the repository.
 
 - **Synthetic data only:** tests, fixtures, seeds, examples and screenshots use
   invented values. A real name, national identifier, address, phone number,
@@ -128,8 +130,8 @@ without meaning to, so four rules hold everywhere in the repository.
   output carry record identifiers (an EHR id, a version uid, a template id) and
   shapes, never the content of a subject's data. A `Debug` impl on a type
   holding personal data prints field names rather than field values.
-- **No grant across the domains:** a database role reaches the clinical schemas
-  or the demographic ones, never both. A migration granting across the two
+- **No grant across the domains:** a database role reaches one of the three
+  pseudonymisation domains, never a second. A migration granting across them
   rejoins the identities to the records the split exists to separate.
 - **A review step at the boundary:** a change touching the demographic or
   linkage migrations, the demographic or linkage services, the identifier

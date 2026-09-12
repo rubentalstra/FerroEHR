@@ -646,6 +646,24 @@ jobs:
       - name: Shell, SQL and YAML state their licensing
         run: bash scripts/checks/spdx-headers-text.sh
 
+  # The vendored legal texts are only worth carrying while their recorded
+  # digests are true: docs/law/ exists so a compliance claim resolves to a
+  # fixed referent instead of to whatever a publisher's page says today, and a
+  # hand edit or a partial re-fetch is otherwise invisible.
+  law-corpus:
+    name: law-corpus
+    if: github.event_name == 'pull_request' || github.event_name == 'merge_group'
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Vendored legal texts match their recorded digests
+        run: bash scripts/checks/law-corpus.sh
+
   copyright-holder:
     name: copyright-holder
     if: github.event_name == 'pull_request' || github.event_name == 'merge_group'
@@ -883,6 +901,30 @@ jobs:
           else
             bash scripts/render/control-matrix.sh --check
           fi
+
+  # The prose AROUND the generated pages can go stale where the pages cannot:
+  # after the v4.2.0 cut the compliance overview still said "guidance planned,
+  # #3161" about pages that release had published (#3289). This job reads every
+  # issue reference on the book's pages and in the EHDS status source, fetches
+  # the states in one call, and fails when a status word beside a reference
+  # contradicts the tracker. Same token footprint as control-matrix.
+  tracker-status:
+    name: tracker-status
+    if: github.event_name == 'pull_request' || github.event_name == 'merge_group'
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      contents: read
+      issues: read
+      pull-requests: read
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: No book page says planned about a closed issue, or shipped about an open one
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: bash scripts/checks/tracker-status.sh
 
   # The two EHDS pages are GENERATED from website/book/ehds.yaml
   # (scripts/render/ehds-pages.sh), for the reason the control matrix is: a
@@ -2473,6 +2515,7 @@ jobs:
       - default-style
       - docs-claims
       - control-matrix
+      - tracker-status
       - ehds-pages
       - sql-string-building
       - error-hygiene
@@ -2481,6 +2524,7 @@ jobs:
       - license-text
       - copyright-holder
       - spdx-headers-text
+      - law-corpus
       - licensing
       - spec-citations
       - compose-hardening

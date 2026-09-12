@@ -16,8 +16,9 @@ deployment records a queryable audit trail with zero external dependencies.
 > drops a record the audit queue cannot take while the request succeeds, so
 > an access under load can go unrecorded. A deployment that must never serve
 > an unrecorded access sets `fail_mode = "closed"`, which answers `503` and
-> `Retry-After` instead. The production deployment profile (#3226) refuses to
-> start with auditing off.
+> `Retry-After` instead. A deployment declaring
+> [`deployment_profile = "production"`](installation/configuration.md#deployment_profile)
+> refuses to start with auditing off.
 
 <!-- toc -->
 
@@ -169,9 +170,15 @@ falls in; openEHR resource classes are a different vocabulary, and the mapping
 between them is not one this project should invent.
 
 Element (e) asks where the DATA came from, which is not where the request came
-from. The record knows the client address it was asked from and nothing about
-the provenance of the content it served. openEHR models that provenance as
-`FEEDER_AUDIT` on the content itself, and the access log does not read it.
+from. openEHR models that provenance as `FEEDER_AUDIT` on the content itself,
+so every committed version records the distinct set of
+`FEEDER_AUDIT.originating_system_audit.system_id` values found in its body, or
+this server's own system id when it carries none. A composition, status or
+folder read then records the origins of the version it served, and an AQL
+execution the union over the version rows its result page came from. The record
+carries the true distinct count beside a set capped at 32, so a page drawing on
+more origins than that says how many rather than looking complete. A version
+committed before the column existed is assessed when it is read.
 
 One further element, adjacent to the five: **the declared purpose of use
 reaches one export of the two**, and only one of them could carry it. It is

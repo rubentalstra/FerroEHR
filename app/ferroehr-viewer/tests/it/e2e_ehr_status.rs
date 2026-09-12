@@ -44,7 +44,9 @@ use crate::common;
 
 use std::time::Duration;
 
-use common::{Harness, click_until_css, env, login_basic, wait_enabled, wait_text_suffix};
+use common::{
+    Harness, click_until_css, env, is_present_by, login_basic, wait_enabled, wait_text_suffix,
+};
 use thirtyfour::prelude::*;
 
 /// The CDR base URL the harness exports for REST-side test setup; `None` skips
@@ -217,12 +219,11 @@ async fn save_queryable(h: &Harness, desired: bool) -> bool {
             .await
             .expect("save the EHR status");
         for _ in 0..50 {
-            if h.driver
-                .find(By::XPath(
-                    "//*[contains(normalize-space(.), 'EHR status updated')]",
-                ))
-                .await
-                .is_ok()
+            if is_present_by(
+                h,
+                By::XPath("//*[contains(normalize-space(.), 'EHR status updated')]"),
+            )
+            .await
             {
                 return true;
             }

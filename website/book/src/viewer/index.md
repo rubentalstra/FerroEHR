@@ -141,7 +141,7 @@ Closing the browser ends the session.
 
 The header's status chip names the profile the connected CDR declares
 (`deployment_profile` in its configuration, reported on `GET /rest/status`):
-`CDR UP · v4.2.0 · production`, or `· sandbox`. A production deployment says
+`CDR UP · v<server version> · production`, or `· sandbox`. A production deployment says
 so quietly and nothing else changes. A sandbox deployment raises a persistent
 notice under the header on every authenticated screen: this deployment has
 not made the production separations and must not hold real patient data,

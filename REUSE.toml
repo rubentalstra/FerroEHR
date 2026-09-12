@@ -316,3 +316,67 @@ path = [
 precedence = "override"
 SPDX-FileCopyrightText = "Ruben Talstra"
 SPDX-License-Identifier = "BUSL-1.1"
+
+# ── The vendored regulation corpus ──────────────────────────────────────────
+# docs/law/ carries the legal texts the compliance documentation cites, fetched
+# verbatim by scripts/vendor/law-eu.sh and scripts/vendor/law-nl.sh. Each act
+# directory's PROVENANCE.md names the identifier, the consolidation date, the
+# source and the licence; the terms themselves are quoted in LICENSES/. These
+# are the publisher's bytes, so `override`: no in-file marking could correct
+# them and hand-editing a vendored act is forbidden.
+#
+# The EU legal documents come under the Commission's reuse policy, Decision
+# 2011/833/EU, which the EUR-Lex legal notice states for them.
+[[annotations]]
+path = "docs/law/eu/**"
+precedence = "override"
+SPDX-FileCopyrightText = "European Union"
+SPDX-License-Identifier = "LicenseRef-EUR-Lex-Reuse"
+
+# Two of those acts are CONSOLIDATED texts, and consolidation is the EU's own
+# editorial work: the same legal notice licenses "the editorial content of this
+# website, the summaries of EU legislation and the consolidated texts" under
+# CC BY 4.0. Both sets of obligations are named rather than one being picked.
+[[annotations]]
+path = [
+  "docs/law/eu/gdpr/**",
+  "docs/law/eu/mdr/**",
+]
+precedence = "override"
+SPDX-FileCopyrightText = "European Union"
+SPDX-License-Identifier = "LicenseRef-EUR-Lex-Reuse AND CC-BY-4.0"
+
+# The EDPB is not the Commission and states its own reuse terms on its own
+# copyright page: reuse for any purpose, on condition that the source is
+# acknowledged and the meaning is not distorted.
+[[annotations]]
+path = "docs/law/eu/edpb-guidelines-01-2025-pseudonymisation/**"
+precedence = "override"
+SPDX-FileCopyrightText = "European Data Protection Board"
+SPDX-License-Identifier = "LicenseRef-EDPB-Reuse"
+
+# Dutch acts and decrees are outside copyright by statute — Auteurswet Art. 11
+# — so this declares a legal fact rather than a grant. The copyright field
+# names the issuing authority because REUSE requires one, and the LicenseRef
+# text says in full that no copyright subsists. The NEN standards cited by the
+# same pages are NOT here: they are sold under copyright, and their directories
+# hold a record and no text (covered by the first-party block below).
+[[annotations]]
+path = "docs/law/nl/**"
+precedence = "override"
+SPDX-FileCopyrightText = "the State of the Netherlands (no copyright subsists, Auteurswet Art. 11)"
+SPDX-License-Identifier = "LicenseRef-Auteurswet-Art11-Public-Domain"
+
+# The corpus index, the provenance records and the digest files are FIRST-PARTY
+# prose and first-party output about the vendored material, not the material.
+# The tree globs above would otherwise attribute them to the publishers.
+# Placed LAST: a later matching annotation wins.
+[[annotations]]
+path = [
+  "docs/law/README.md",
+  "docs/law/**/PROVENANCE.md",
+  "docs/law/**/SHA256SUMS",
+]
+precedence = "override"
+SPDX-FileCopyrightText = "Ruben Talstra"
+SPDX-License-Identifier = "BUSL-1.1"

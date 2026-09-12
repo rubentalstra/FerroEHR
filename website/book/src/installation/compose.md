@@ -50,9 +50,12 @@ build whenever those pinned tags disagree with the version being released, so
 they cannot be forgotten at a cut. To run something else, set the image
 variables in [the table below](#variables-the-compose-files-read).
 
-The role the server connects as in the quickstart owns the database and belongs
-to **both** `ferroehr_migrator` and `ferroehr_app`, which is what lets it apply
-migrations at boot.
+The role the server connects as in the quickstart owns the database and is a
+member of `ferroehr_migrator` and `ferroehr_app`, which is what lets it apply
+migrations at boot, and of `ferroehr_ehr` and `ferroehr_demographic`, so the
+schema separation is exercised on one credential. That single credential is
+deliberate: one container with one DSN cannot demonstrate the credential
+separation honestly.
 
 A least-privilege deployment sets `db.migrate = "verify"`, runs
 `ferroehr db migrate` out of band under the migrator DSN, and serves on a
@@ -197,6 +200,12 @@ evaluation, not for production:
   `prometheus` at `public`, and `env` and `loggers` at `admin_only`.
 - **Permissive CORS:** any origin may call the API from a browser.
 - **No TLS:** plain HTTP on port 8080.
+- **The default `sandbox` deployment profile:** the server names every
+  separation it has not made on the boot banner, in the log and on
+  `GET /ferroehr/rest/status`, and the viewer raises a notice saying the
+  deployment must not hold real patient data. That is the quickstart telling
+  the truth about itself, not a fault. See
+  [`deployment_profile`](configuration.md#deployment_profile).
 
 > [!WARNING]
 > These are development credentials and development defaults. Before exposing
@@ -306,6 +315,33 @@ you ask for them:
   production, point the multimedia settings at a real, credentialed, HTTPS S3
   endpoint instead; see [S3 multimedia](../beyond-core/s3-multimedia.md).
 
+- **`ferroehr-backup-clinical`, `ferroehr-backup-demographic` and
+  `ferroehr-backup-linkage`** (`--profile backup`): one `pg_dump` job per
+  pseudonymisation domain, run on demand rather than started with the stack:
+
+  ```shell
+  docker compose --profile backup run --rm ferroehr-backup-clinical
+  docker compose --profile backup run --rm ferroehr-backup-demographic
+  docker compose --profile backup run --rm ferroehr-backup-linkage
+  ```
+
+  Each writes a timestamped custom-format dump into its own host directory
+  (`FERROEHR_BACKUP_CLINICAL_DIR`, `FERROEHR_BACKUP_DEMOGRAPHIC_DIR`,
+  `FERROEHR_BACKUP_LINKAGE_DIR`, defaulting to `./backups/clinical`,
+  `./backups/demographic` and `./backups/linkage`). Set
+  `FERROEHR_BACKUP_USER="$(id -u):$(id -g)"` and the files land owned by you;
+  unset, the job runs as root inside the container with one capability,
+  `DAC_OVERRIDE`, which is what writing a directory it does not own actually
+  requires.
+
+  Three dumps rather than one is the point: a single whole-database dump holds
+  the clinical record, the identities of its subjects and the map between them,
+  and whoever reads that file re-identifies every record in it. This stack runs
+  one login credential, so it separates the artefacts and not the authority to
+  produce them; [Operations → Dump each domain
+  separately](../operations.md#dump-each-domain-separately) is the production
+  procedure, including why a backup credential needs `BYPASSRLS`.
+
 Two things that used to be profiles of this file are not any more. Both have to
 *change* the server's configuration to be useful, which a profile cannot do, so
 each is a separate file instead:
@@ -384,6 +420,10 @@ Set these in your shell (or an `.env` file) to retune without editing anything:
 | `FERROEHR_VIEWER_PORT` | `3000` | Host port mapped to the viewer. |
 | `FERROEHR_DB_PORT` | not published | Host port for PostgreSQL, read only by the `db-publish` overlay (default `5432` there). |
 | `FERROEHR_S3_PORT` | `8333` | Host port mapped to the S3 gateway (the `s3` profile). |
+| `FERROEHR_BACKUP_CLINICAL_DIR` | `./backups/clinical` | Host directory the clinical dump job writes to (the `backup` profile). |
+| `FERROEHR_BACKUP_DEMOGRAPHIC_DIR` | `./backups/demographic` | Host directory the demographic dump job writes to. |
+| `FERROEHR_BACKUP_LINKAGE_DIR` | `./backups/linkage` | Host directory the linkage dump job writes to. |
+| `FERROEHR_BACKUP_USER` | `0:0` (root in the container) | `uid:gid` the dump jobs run as. Set it to `$(id -u):$(id -g)` and the files land owned by you. |
 | `FERROEHR_CPUS` / `FERROEHR_MEM` | `4` / `4G` | Server container resource ceiling. |
 | `FERROEHR_DB_CPUS` / `FERROEHR_DB_MEM` | `4` / `4G` | Database container resource ceiling. |
 | `PG_INIT_USER` / `PG_INIT_PASSWORD` / `PG_INIT_DB` | `ferroehr` | App role, password, and database created by the DB image's init script. |
