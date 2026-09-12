@@ -1,12 +1,3 @@
-  # The provider caches a positive answer for cache_ttl_secs, so a commit that
-  # still says 201 could be the cache and not the posture. Recreating the CDR
-  # empties the in-process cache; --no-deps keeps Compose from starting the
-  # stopped ferroterm again as the CDR's dependency (which is exactly what
-  # turned this probe green for the wrong reason on its first CI run).
-  dc -f docker-compose.yml -f "$TERM_FT_OVERLAY" --profile s3 up -d --no-deps --force-recreate --wait ferroehr >/dev/null 2>&1
-  wait_http "$CDR/health/readiness" 90 >/dev/null || true
-  assert_not_contains "$(dc -f docker-compose.yml -f "$TERM_FT_OVERLAY" ps -a --format '{{.Service}} {{.State}}')" "ferroterm running" \
-    "the terminology server must be down for this state to mean anything"
 #!/usr/bin/env bash
 # SPDX-FileCopyrightText: Ruben Talstra
 # SPDX-License-Identifier: BUSL-1.1
@@ -241,9 +232,9 @@ probes_terminology_ferroterm() {
     probe_done
     return 0
   fi
-  assert_eq "$(term_ft_commit_code "$TERM_FT_MEMBER")" "201" \
+  assert_eq "201" "$(term_ft_commit_code "$TERM_FT_MEMBER")" \
     "with external terminology off the member composition commits"
-  assert_eq "$(term_ft_commit_code "$TERM_FT_NON_MEMBER")" "201" \
+  assert_eq "201" "$(term_ft_commit_code "$TERM_FT_NON_MEMBER")" \
     "with external terminology off nothing checks membership, so the non-member commits too"
   probe_done
 
@@ -264,9 +255,9 @@ probes_terminology_ferroterm() {
     "with the overlay on, a value-set member commits and a non-member is refused"
   wait_http "$CDR/health/readiness" 90 >/dev/null || true
   term_ft_template || true
-  assert_eq "$(term_ft_commit_code "$TERM_FT_MEMBER")" "201" \
+  assert_eq "201" "$(term_ft_commit_code "$TERM_FT_MEMBER")" \
     "1000002 is in sct-shaped-disorders, so the commit is accepted"
-  assert_eq "$(term_ft_commit_code "$TERM_FT_NON_MEMBER")" "422" \
+  assert_eq "422" "$(term_ft_commit_code "$TERM_FT_NON_MEMBER")" \
     "1000003 is in the code system but not in the value set, so the binding refuses it"
   probe_done
 
@@ -275,11 +266,14 @@ probes_terminology_ferroterm() {
   dc -f docker-compose.yml -f "$TERM_FT_OVERLAY" stop ferroterm >/dev/null 2>&1
   # The provider caches a positive answer for cache_ttl_secs, so a commit that
   # still says 201 could be the cache and not the posture. Recreating the CDR
-  # empties the in-process cache; the 201 below is then fail-open and nothing
-  # else.
-  dc -f docker-compose.yml -f "$TERM_FT_OVERLAY" --profile s3 up -d --force-recreate --wait ferroehr >/dev/null 2>&1
+  # empties the in-process cache, and --no-deps keeps Compose from starting the
+  # stopped ferroterm again as the CDR's dependency (which is what answered
+  # this state's commits from a live server on the first CI run).
+  dc -f docker-compose.yml -f "$TERM_FT_OVERLAY" --profile s3 up -d --no-deps --force-recreate --wait ferroehr >/dev/null 2>&1
   wait_http "$CDR/health/readiness" 90 >/dev/null || true
-  assert_eq "$(term_ft_commit_code "$TERM_FT_MEMBER")" "201" \
+  assert_not_contains "$(dc -f docker-compose.yml -f "$TERM_FT_OVERLAY" ps -a --format '{{.Service}} {{.State}}')" "ferroterm running" \
+    "the terminology server must be down for this state to mean anything"
+  assert_eq "201" "$(term_ft_commit_code "$TERM_FT_MEMBER")" \
     "fail-open accepts a binding the server cannot resolve (register AMB-172)"
   probe_done
 
@@ -294,8 +288,7 @@ probes_terminology_ferroterm() {
   wait_http "$CDR/health/readiness" 90 >/dev/null || true
   assert_not_contains "$(dc -f docker-compose.yml -f "$TERM_FT_OVERLAY" ps -a --format '{{.Service}} {{.State}}')" "ferroterm running" \
     "the terminology server must still be down under fail-closed"
-  wait_http "$CDR/health/readiness" 90 >/dev/null || true
-  assert_eq "$(term_ft_commit_code "$TERM_FT_MEMBER")" "422" \
+  assert_eq "422" "$(term_ft_commit_code "$TERM_FT_MEMBER")" \
     "fail-closed turns an unreachable terminology server into a refusal"
   probe_done
 
