@@ -352,6 +352,21 @@ predicate name, a malformed age band (the form is `<min>-<max>` whole years,
 both inclusive) or a request with no predicate at all is a `400`. An empty
 cohort runs no AQL and answers an empty result set.
 
+**Measured.** The committed record `docs/conformance/ferroehr/cohort-bench.json`
+in the repository (produced by the ignored `cohort_bench` test, not by the
+conformance instrument) measures the whole call, predicate to result set, over
+a corpus of 100 000 parties, each the subject of one EHR holding one
+composition, seeded through the service API, with the database in a local
+container. Selecting one composition path per EHR:
+
+{{#include ../generated/cohort-bench.md}}
+
+The difference between the statement times and the wall clock is result
+assembly and the access records. Both statements run on indexes (`idx_dem_node_archetype` on the demographic side, the current-version
+and EHR indexes on the clinical side); no sequential scan appears in any of the
+recorded plans. The record names the commit it was measured at; a re-run
+replaces it rather than appending.
+
 ## Version scope: LATEST_VERSION and ALL_VERSIONS
 
 By default a query sees the **latest** version of each object. FerroEHR also

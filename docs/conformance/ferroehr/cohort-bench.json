@@ -4,7 +4,7 @@
     "ehrs": 100000,
     "compositions": 100000
   },
-  "measured_at_commit": "eed2ba227645cc5860c3130bcf0fed3341255883",
+  "measured_at_commit": "54495c274ebfa16b317c596d895b1beed3fe0947",
   "environment": {
     "exclusive_server": true,
     "hardware_class": "consumer-laptop",
@@ -16,11 +16,11 @@
   "cohorts": [
     {
       "size": 100,
-      "p50_ms": 62.012125000000005,
-      "p95_ms": 82.3815,
+      "p50_ms": 70.655833,
+      "p95_ms": 116.219792,
       "predicate_plan": {
         "node_type": "Unique",
-        "actual_total_ms": 60.601,
+        "actual_total_ms": 54.078,
         "rows": 100.0,
         "index_names": [
           "idx_dem_node_archetype",
@@ -30,7 +30,7 @@
       },
       "clinical_plan": {
         "node_type": "Nested Loop",
-        "actual_total_ms": 0.678,
+        "actual_total_ms": 0.635,
         "rows": 100.0,
         "index_names": [
           "idx_vo_version_current_ehr",
@@ -41,11 +41,11 @@
     },
     {
       "size": 1000,
-      "p50_ms": 94.11125,
-      "p95_ms": 118.61658299999999,
+      "p50_ms": 102.472416,
+      "p95_ms": 144.588042,
       "predicate_plan": {
         "node_type": "Unique",
-        "actual_total_ms": 63.217,
+        "actual_total_ms": 50.629,
         "rows": 1000.0,
         "index_names": [
           "idx_dem_node_archetype",
@@ -55,7 +55,7 @@
       },
       "clinical_plan": {
         "node_type": "Gather",
-        "actual_total_ms": 9.775,
+        "actual_total_ms": 11.201,
         "rows": 1000.0,
         "index_names": [
           "idx_node_context_start",
@@ -65,11 +65,11 @@
     },
     {
       "size": 10000,
-      "p50_ms": 1059.080584,
-      "p95_ms": 1229.837667,
+      "p50_ms": 542.586917,
+      "p95_ms": 820.46975,
       "predicate_plan": {
         "node_type": "Unique",
-        "actual_total_ms": 89.084,
+        "actual_total_ms": 63.817,
         "rows": 10000.0,
         "index_names": [
           "idx_dem_node_archetype",
@@ -79,7 +79,7 @@
       },
       "clinical_plan": {
         "node_type": "Hash Join",
-        "actual_total_ms": 239.4,
+        "actual_total_ms": 325.122,
         "rows": 10000.0,
         "index_names": [
           "idx_node_context_start",
@@ -90,11 +90,11 @@
     },
     {
       "size": 100000,
-      "p50_ms": 50362.182792,
-      "p95_ms": 51240.0055,
+      "p50_ms": 2619.094,
+      "p95_ms": 2905.7931670000003,
       "predicate_plan": {
         "node_type": "Unique",
-        "actual_total_ms": 343.015,
+        "actual_total_ms": 259.501,
         "rows": 100000.0,
         "index_names": [
           "idx_dem_node_archetype",
@@ -104,7 +104,7 @@
       },
       "clinical_plan": {
         "node_type": "Gather",
-        "actual_total_ms": 550.6,
+        "actual_total_ms": 701.867,
         "rows": 100000.0,
         "index_names": [
           "idx_node_rm_type",
