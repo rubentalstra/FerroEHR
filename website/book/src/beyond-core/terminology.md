@@ -235,8 +235,11 @@ A raw FHIR terminology endpoint open to anonymous callers would let anyone walk
 a code system or expand large value sets; per-code operations through the CDR,
 behind its rate limit, do not.
 
-When the sandbox operator loads a SNOMED CT edition into FerroTERM under their
-Affiliate Licence, this page states the edition and its release date, and every
+The edition the sandbox loads is the SNOMED CT International Edition: it needs
+the Affiliate Licence alone (a Member's national release also needs an agreement
+with that Member), its English displays fit an international audience, and it
+is the lighter of the two. When the operator has built its index off-box and the
+server opens it, this page states the release date beside the edition, and every
 surface showing that content carries the notice the licence prescribes:
 
 > This material includes SNOMED Clinical Terms® (SNOMED CT®) which is used by

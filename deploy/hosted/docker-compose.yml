@@ -74,9 +74,10 @@ services:
   # image (the posture directory /opt/sandbox-posture/terminology). A real
   # edition is the operator's: build its index off-box with ferroterm-build,
   # place the directory at ./ferroterm-index, and set FERROTERM_INDEX=/data/index
-  # in .env (env.example). The 1536m cap fits the SNOMED CT Netherlands edition
-  # (889 MB resident); the CDR's cap moved from 4096m to 3072m to make room on
-  # the 8 GB box.
+  # in .env (env.example). The sandbox loads the SNOMED CT International Edition
+  # (owner decision on #3304: one licence step through MLDS, English displays,
+  # 702 MB resident); the 1536m cap also fits the Netherlands edition (889 MB).
+  # The CDR's cap moved from 4096m to 3072m to make room on the 8 GB box.
   ferroterm:
     image: ${FERROTERM_IMAGE:-ghcr.io/rubentalstra/ferroterm:0.1.2@sha256:9cc75a1321fad3dd419776ee3781eaa309a8eaecf22aa4be9a2ac2b68fc31b4b}
     container_name: ferroehr-sandbox-ferroterm
