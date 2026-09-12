@@ -15,7 +15,7 @@
 //! disjunctive / anti-join correlated `EXISTS` filters (QUERY master03
 //! §Containment — boolean `AND`/`OR`, `NOT`).
 
-use sea_query::extension::postgres::PgExpr as _;
+use sea_query::extension::postgres::{PgExpr as _, PgFunc};
 use sea_query::{Alias, Asterisk, Expr, ExprTrait as _, JoinType, Query, SelectStatement};
 use uuid::Uuid;
 
@@ -882,20 +882,28 @@ impl Builder<'_> {
 
     pub(super) fn apply_ehr_scope(&mut self) {
         // Multi-EHR scoping (`ehr_ids: List<UUID>`): restrict every VO root to
-        // the id set with `ehr_id IN (…)` (equivalently `= ANY($ids)`). The
-        // single-`ehr_id` REST case is just the one-element set. Empty = no
+        // the id set with `ehr_id = ANY($ids)` — ONE array bind rather than one
+        // bind per id, so a cohort of any size stays inside the 65535-parameter
+        // wire limit (`PostgreSQL` 18 §Frontend/Backend Protocol, Bind, whose
+        // parameter count is an `int16`,
+        // <https://www.postgresql.org/docs/18/protocol-message-formats.html>).
+        // The single-`ehr_id` REST case is the one-element set; empty = no
         // explicit scope (the population gate takes over).
         if !self.ctx.ehr_ids.is_empty() {
             let ids: Vec<Uuid> = self.ctx.ehr_ids.iter().map(|id| id.0).collect();
             for root in self.group_roots.clone() {
-                self.q.and_where(col(&root, "ehr_id").is_in(ids.clone()));
+                self.q.and_where(
+                    col(&root, "ehr_id").eq(Expr::from(PgFunc::any(Expr::val(ids.clone())))),
+                );
             }
             // A bare `FROM EHR e` (no CONTAINS) has no VO root — the scope
             // must bind the EHR source itself, or a scoped query would run
             // over the whole population (ITS-REST query Request.md: `ehr_id`
             // "used to execute the query within a single EHR context").
             for alias in self.ehr_alias.values().cloned().collect::<Vec<_>>() {
-                self.q.and_where(col(&alias, "id").is_in(ids.clone()));
+                self.q.and_where(
+                    col(&alias, "id").eq(Expr::from(PgFunc::any(Expr::val(ids.clone())))),
+                );
             }
         }
         // NOTE: the ABAC patient scope restricts every VO root to the caller's

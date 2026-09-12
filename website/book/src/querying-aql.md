@@ -254,6 +254,104 @@ the ad-hoc `/query/aql` route) and is rejected with a
 Deleting a stored query is an admin operation; see
 [Admin & messaging APIs](operations-admin-apis.md).
 
+## Cohort queries across the pseudonymisation boundary
+
+Some questions are about a population rather than a patient: the blood pressures
+of everyone in a city, the medication history of an age band, the readmissions
+of the people one organisation cares for. Answering them normally means someone
+producing a list of patient identifiers first, which is exactly the disclosure
+the split between clinical and demographic storage exists to avoid.
+
+`POST /query/cohort` answers them without producing that list. It is a FerroEHR
+extension — no openEHR spec governs it: AQL is defined over the clinical domain
+and has no demographic source, and ITS-REST publishes an ad-hoc and a stored
+query and nothing else.
+
+**How it runs.** Three steps, each on its own database credential:
+
+1. A predicate from the deployment's allow-list selects **parties** in the
+   demographic domain. It reads one archetype leaf and returns identifiers,
+   nothing else — no name, address or national identifier leaves that domain.
+2. The linkage domain resolves those parties to the **EHRs** they are the
+   subject of. Identifiers in, identifiers out.
+3. Your AQL runs on the clinical pool, scoped to exactly those EHRs.
+
+The three statements never meet. With `db.demographic_url` and `db.linkage_url`
+set, each pool authenticates as a role revoked from the other two, and the
+server refuses to boot if one can read across. You never receive a party
+identifier: the response carries what your AQL projected, plus counts.
+
+**The allow-list.** A cohort predicate can only name something the deployment
+declared, under `[cohort.predicates]` — the surface is off until at least one is
+bound, and the route answers `404` until then. Five keys are bindable:
+`city`, `postcode_area`, `sex`, `age_band` and `organisation`. Each binding
+names the archetype of the leaf's nearest archetyped ancestor, the leaf's
+at-code, and how a value is matched. See
+[Privacy & data minimisation](installation/config-privacy.md#cohort) for the
+keys and their defaults.
+
+**Running one.**
+
+```shell
+curl -u ferroehr:ferroehr -X POST \
+  -H 'Content-Type: application/json' \
+  -d '{
+        "q": "SELECT c/uid/value FROM EHR e CONTAINS COMPOSITION c",
+        "cohort": [{ "name": "city", "value": "Groningen" }],
+        "purpose": "secondary-use",
+        "fetch": 100
+      }' \
+  http://localhost:8080/ferroehr/rest/openehr/v1/query/cohort
+```
+
+`q`, `offset`, `fetch` and `query_parameters` mean what they mean on the ad-hoc
+body. There is no `ehr_id`: the cohort **is** the scope, and supplying one is a
+`400`. Several `cohort` entries **intersect** — city *and* sex, not city *or*
+sex.
+
+The response is an ordinary `RESULT_SET` with one extra block:
+
+```json
+{
+  "meta": {
+    "_type": "RESULTSET",
+    "cohort": {
+      "size": 412,
+      "served_ehrs": 388,
+      "suppressed": false,
+      "definition": "9f2c…"
+    }
+  },
+  "rows": [["8849fd1e-…::local::1"]]
+}
+```
+
+`size` is how many EHRs the cohort resolved to, `served_ehrs` how many the rows
+actually came from, and `definition` a SHA-256 digest of the predicate list —
+the cohort's identity, carrying none of its values.
+
+**Small-cell suppression.** A result set narrow enough to name one person
+re-identifies that person out of content you hold no individual entitlement to.
+When fewer EHRs are served than `cohort.small_cell_threshold` (default `5`), the
+rows are withheld and `suppressed` is `true`. The response says so rather than
+looking like an empty cohort: a caller who cannot tell the two apart will keep
+widening the predicate until the boundary leaks. Set the threshold to `0` to
+disable suppression.
+
+**The access record.** Every execution — suppressed and failed ones included —
+records one `linkage`-domain access event naming the cohort by its digest, the
+purpose you declared, and how many EHRs were served. A crossing of this boundary
+that nobody can reconstruct afterwards is what the access log exists to prevent.
+The predicate values are never recorded: they *are* the cohort, and a trail
+carrying them would be a second copy of it.
+
+**Limits.** A predicate matching more than `cohort.max_cohort_size` parties
+(default `100000`) is refused `422` rather than truncated — a silently shortened
+cohort is a wrong denominator with nothing on the wire to say so. An unbound
+predicate name, a malformed age band (the form is `<min>-<max>` whole years,
+both inclusive) or a request with no predicate at all is a `400`. An empty
+cohort runs no AQL and answers an empty result set.
+
 ## Version scope: LATEST_VERSION and ALL_VERSIONS
 
 By default a query sees the **latest** version of each object. FerroEHR also

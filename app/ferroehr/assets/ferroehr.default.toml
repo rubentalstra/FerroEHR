@@ -599,6 +599,38 @@ rules = ["fi-hetu", "gb-nhs-number", "nl-bsn", "no-fodselsnummer", "se-personnum
 # to refuse a postcode paired with a house number.
 patterns = []
 
+# ── [cohort] — cross-domain cohort queries ────────────────────────────────────
+# Select a population in the demographic domain, resolve it to EHRs through the
+# linkage domain, and run AQL over exactly those EHRs. No openEHR spec governs
+# this — our own extension. OFF until a predicate is bound below: which
+# demographic leaf may be selected on is a deployment fact about the archetypes
+# in use, never something the server can infer.
+[cohort]
+# The distinct-EHR floor a result set must reach to be served; below it the rows
+# are withheld and the response says so. 0 disables suppression.
+small_cell_threshold = 5
+# The largest cohort a predicate may select. A wider one is refused (422) rather
+# than truncated: a silently shortened cohort is a wrong denominator.
+max_cohort_size = 100000
+
+# The allow-list. Only these five keys are bindable; each names the archetype of
+# the ELEMENT's nearest archetyped ancestor, the ELEMENT's at-code, and how the
+# caller's value is matched (text | text_prefix | coded | birth_date).
+# `age_band` is the birth_date predicate and the only one.
+#
+# The archetype must be one the node model actually decomposes into a row: the
+# party root, and any archetyped ITEM_TREE or CLUSTER under the party's
+# `details`. Content under `identities` and `contacts` is stored inline on the
+# party root and carries no row of its own, so it cannot be bound today. The
+# bindings below are EXAMPLES of the shape — a deployment names the archetypes
+# and at-codes its own templates produce.
+[cohort.predicates]
+#? city          = { archetype = "openEHR-DEMOGRAPHIC-CLUSTER.address.v1", node = "at0012", kind = "text" }
+#? postcode_area = { archetype = "openEHR-DEMOGRAPHIC-CLUSTER.address.v1", node = "at0014", kind = "text_prefix" }
+#? sex           = { archetype = "openEHR-DEMOGRAPHIC-PERSON.person.v1", node = "at0017", kind = "coded" }
+#? age_band      = { archetype = "openEHR-DEMOGRAPHIC-PERSON.person.v1", node = "at0010", kind = "birth_date" }
+#? organisation  = { archetype = "openEHR-DEMOGRAPHIC-ORGANISATION.organisation.v1", node = "at0003", kind = "text" }
+
 # ── [demographic] — the demographic domain ────────────────────────────────────
 # National-identifier protection: the value leaves the versioned body for
 # `demographic.national_identifier`, sealed under a per-tenant AES-256-GCM key

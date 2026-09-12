@@ -104,7 +104,8 @@ pub fn class_of(op: &str) -> Option<OperationClass> {
         | "query_execute_stored_query"
         | "query_execute_stored_query_body"
         | "query_execute_stored_query_version"
-        | "query_execute_stored_query_version_body" => Clinical,
+        | "query_execute_stored_query_version_body"
+        | "query_execute_cohort" => Clinical,
 
         // ── DEFINITION: templates + stored queries (v1: any authenticated) ───
         "definition_template_adl1.4_list"
@@ -342,6 +343,8 @@ mod tests {
             kind_of("query_execute_adhoc_query"),
             Some(ResourceKind::Query)
         );
+        // The cohort extension takes the prefix rule, so ABAC covers it too.
+        assert_eq!(kind_of("query_execute_cohort"), Some(ResourceKind::Query));
         assert_eq!(kind_of("directory_create"), Some(ResourceKind::Directory));
         // RBAC-only families have no ABAC resource kind.
         assert_eq!(kind_of("definition_template_adl1.4_upload"), None);
@@ -442,6 +445,8 @@ mod tests {
         assert!(!is_write("query_execute_adhoc_query"));
         assert!(!is_write("query_execute_adhoc_query_body"));
         assert!(!is_write("query_execute_stored_query_version_body"));
+        // The cohort extension selects; it never commits.
+        assert!(!is_write("query_execute_cohort"));
         assert!(!is_write("person_get"));
         assert!(!is_write("versioned_party_revision_history"));
         // Fail-safe: an unrecognized op is treated as a write.

@@ -338,26 +338,6 @@ const BARRIERS: &[(&str, &str, &[&str])] = &[
 /// (`PostgreSQL` docs § Appendix A "`PostgreSQL` Error Codes", class 42).
 const SQLSTATE_INSUFFICIENT_PRIVILEGE: &str = "42501";
 
-/// A password for a throwaway login role, fresh per call.
-///
-/// The value is never a secret: the role lives as long as one test against an
-/// ephemeral clone. It is generated rather than written down because a literal
-/// here is indistinguishable, to a scanner and to a reader, from a credential
-/// that does matter, and the repository's own rule is that a finding is fixed
-/// rather than suppressed.
-fn throwaway_password() -> String {
-    format!("pw{}", Uuid::now_v7().simple())
-}
-
-/// Rewrite the userinfo of a testkit clone DSN so a test can connect to the
-/// same database as a different login role (scheme/host/port/database
-/// preserved).
-fn with_role(base_url: &str, user: &str, password: &str) -> String {
-    let (scheme, rest) = base_url.split_once("://").expect("dsn scheme");
-    let host_and_path = rest.split_once('@').map_or(rest, |(_, tail)| tail);
-    format!("{scheme}://{user}:{password}@{host_and_path}")
-}
-
 /// A connection as a fresh non-superuser login role that is a member of
 /// `domain_role`, which is how a production deployment runs (never as
 /// superuser — a superuser bypasses both RLS and, being a superuser, every
@@ -367,14 +347,14 @@ fn with_role(base_url: &str, user: &str, password: &str) -> String {
 /// named off the clone's database name and the testkit sweep reaps it.
 async fn role_conn(db: &testkit::TestDb, suffix: &str, domain_role: &str) -> PgConnection {
     let login = format!("{}_{suffix}", db.name());
-    let password = throwaway_password();
+    let password = crate::fixtures::throwaway_password();
     sqlx::query(sqlx::AssertSqlSafe(format!(
         "CREATE ROLE {login} LOGIN PASSWORD '{password}' IN ROLE {domain_role}"
     )))
     .execute(&db.pool())
     .await
     .expect("create the login role");
-    PgConnection::connect(&with_role(db.url(), &login, &password))
+    PgConnection::connect(&crate::fixtures::with_role(db.url(), &login, &password))
         .await
         .expect("connect as the runtime role")
 }
@@ -703,7 +683,7 @@ async fn the_cutover_runs_as_a_non_superuser_owner_for_a_tenant_owned_party() {
     // A per-clone login role: roles are cluster-global on the shared testkit
     // server, so the name is keyed off the clone the sweep will reap.
     let migrator = format!("{}_migrator", db.name());
-    let password = throwaway_password();
+    let password = crate::fixtures::throwaway_password();
     sqlx::query(sqlx::AssertSqlSafe(format!(
         "CREATE ROLE {migrator} LOGIN PASSWORD '{password}'"
     )))
@@ -724,7 +704,7 @@ async fn the_cutover_runs_as_a_non_superuser_owner_for_a_tenant_owned_party() {
 
     let as_migrator = sqlx::postgres::PgPoolOptions::new()
         .max_connections(1)
-        .connect(&with_role(db.url(), &migrator, &password))
+        .connect(&crate::fixtures::with_role(db.url(), &migrator, &password))
         .await
         .expect("connect as the migrator role");
 
@@ -1336,23 +1316,6 @@ async fn one_party_holds_one_open_mapping_at_a_time() {
     );
 }
 
-/// A login DSN for a throwaway role holding `domain_role` and nothing else.
-///
-/// The pool equivalent of [`role_conn`]: the same clone-named role so the
-/// testkit sweep reaps it, the same generated password, but handed back as a
-/// DSN so a real `DbConfig` can be built from it.
-async fn dsn_as(db: &testkit::TestDb, suffix: &str, domain_role: &str) -> String {
-    let login = format!("{}_{suffix}", db.name());
-    let password = throwaway_password();
-    sqlx::query(sqlx::AssertSqlSafe(format!(
-        "CREATE ROLE {login} LOGIN PASSWORD '{password}' IN ROLE {domain_role}"
-    )))
-    .execute(&db.pool())
-    .await
-    .expect("create the login role");
-    with_role(db.url(), &login, &password)
-}
-
 /// A sealed identifier seals and resolves on the SEPARATED demographic
 /// credential.
 ///
@@ -1373,10 +1336,10 @@ async fn a_sealed_identifier_resolves_on_the_separated_demographic_credential() 
     let db = testkit::db().await.expect("testkit database");
     let settings = DbConfig {
         url: ferroehr::config::secret::SecretUrl::new(
-            dsn_as(&db, "sealclin", "ferroehr_ehr").await,
+            crate::fixtures::dsn_as(&db, "sealclin", "ferroehr_ehr").await,
         ),
         demographic_url: Some(ferroehr::config::secret::SecretUrl::new(
-            dsn_as(&db, "sealdemo", "ferroehr_demographic").await,
+            crate::fixtures::dsn_as(&db, "sealdemo", "ferroehr_demographic").await,
         )),
         ..DbConfig::default()
     };
@@ -1676,12 +1639,12 @@ async fn an_identity_resolves_to_an_ehr_across_three_separated_credentials() {
 
     let db = testkit::db().await.expect("testkit database");
     let settings = DbConfig {
-        url: SecretUrl::new(dsn_as(&db, "linkclin", "ferroehr_ehr").await),
+        url: SecretUrl::new(crate::fixtures::dsn_as(&db, "linkclin", "ferroehr_ehr").await),
         demographic_url: Some(SecretUrl::new(
-            dsn_as(&db, "linkdemo", "ferroehr_demographic").await,
+            crate::fixtures::dsn_as(&db, "linkdemo", "ferroehr_demographic").await,
         )),
         linkage_url: Some(SecretUrl::new(
-            dsn_as(&db, "linklink", "ferroehr_linkage").await,
+            crate::fixtures::dsn_as(&db, "linklink", "ferroehr_linkage").await,
         )),
         ..DbConfig::default()
     };
@@ -1875,7 +1838,9 @@ async fn the_split_clinical_role_writes_and_reads_the_audit_trail() {
 
     let db = testkit::db().await.expect("testkit database");
     let clinical = ferroehr::db::connect(&DbConfig {
-        url: ferroehr::config::secret::SecretUrl::new(dsn_as(&db, "audclin", "ferroehr_ehr").await),
+        url: ferroehr::config::secret::SecretUrl::new(
+            crate::fixtures::dsn_as(&db, "audclin", "ferroehr_ehr").await,
+        ),
         ..DbConfig::default()
     })
     .await
@@ -1904,7 +1869,7 @@ async fn the_split_clinical_role_writes_and_reads_the_audit_trail() {
 
     let reader = ferroehr::db::connect(&DbConfig {
         url: ferroehr::config::secret::SecretUrl::new(
-            dsn_as(&db, "audread", "ferroehr_ehr_reader").await,
+            crate::fixtures::dsn_as(&db, "audread", "ferroehr_ehr_reader").await,
         ),
         ..DbConfig::default()
     })

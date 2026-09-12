@@ -395,6 +395,7 @@ fn assemble_service(
         .with_deployment(deployment)
         .with_outbox_enabled(outbox_enabled)
         .with_privacy(Arc::new(privacy))
+        .with_cohort(config.cohort.clone())
         .with_identifier_protection_opt(identifiers.map(Arc::new))
         .with_query_config(&config.query);
     if let Some(sender) = audit_sender {

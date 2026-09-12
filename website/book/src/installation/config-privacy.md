@@ -265,6 +265,56 @@ The second refuses a Dutch postcode paired with a house number — the pair is
 what identifies a household; a postcode alone does not. A pattern that does not
 compile is a boot error naming it.
 
+## `[cohort]`
+
+Cross-domain **cohort queries**: select a population in the demographic domain,
+resolve it to EHRs through the linkage domain, and run AQL over exactly those
+EHRs. A FerroEHR extension — no openEHR spec governs it. The wire contract and a
+worked example are in [Querying with AQL](../querying-aql.md#cohort-queries-across-the-pseudonymisation-boundary).
+
+**Off until a predicate is bound.** Which demographic leaf may be selected on is
+a deployment fact about the archetypes in use, never something the server can
+infer, so `[cohort.predicates]` is empty by default and `POST /query/cohort`
+answers `404` until it is not.
+
+```toml
+[cohort]
+small_cell_threshold = 5
+max_cohort_size = 100000
+
+[cohort.predicates]
+city = { archetype = "openEHR-DEMOGRAPHIC-CLUSTER.address.v1", node = "at0012", kind = "text" }
+```
+
+| Key | Type | Default | Description |
+|---|---|---|---|
+| `small_cell_threshold` | int | `5` | The distinct-EHR floor a result set must reach to be served. Below it the rows are withheld and the response is marked `suppressed`; `0` disables suppression. |
+| `max_cohort_size` | int | `100000` | The largest cohort a predicate may select. A wider one is refused `422` rather than truncated: a silently shortened cohort is a wrong denominator. |
+| `predicates` | table | empty | The allow-list, keyed by the name a caller uses. Empty leaves the surface off. |
+
+### The allow-list
+
+Exactly five keys are bindable — `city`, `postcode_area`, `sex`, `age_band` and
+`organisation` — and an unknown key is a **boot error**. Each binding carries
+three fields:
+
+| Field | Description |
+|---|---|
+| `archetype` | The archetype HRID of the leaf ELEMENT's nearest archetyped ancestor, e.g. `openEHR-DEMOGRAPHIC-PERSON.person.v1`. Must be a demographic HRID; anything else is a boot error. |
+| `node` | The ELEMENT's `archetype_node_id` at-code, e.g. `at0012`. |
+| `kind` | How a caller's value is matched: `text` (exact, against `value/value`), `text_prefix` (prefix, `LIKE`-escaped), `coded` (exact, against `value/defining_code/code_string`), or `birth_date` (an inclusive age band in whole years, `40-49`). |
+
+`age_band` must be bound `birth_date`, and no other key may be — both halves are
+boot errors, because a mismatch would bind a predicate that matches nothing
+while reporting an empty cohort.
+
+**The archetype must be one the node model reaches.** A party is decomposed into
+its own rows for the party root and every archetyped `ITEM_TREE` or `CLUSTER`
+under its `details`. Content under `identities` and `contacts` — including an
+`ADDRESS` under a `CONTACT` — is stored inline on the party root and carries no
+row of its own, so it cannot be bound today.
+
+
 ## Interaction with the audit trail
 
 The ATNA Patient-Number participant is filled from the promoted subject column,

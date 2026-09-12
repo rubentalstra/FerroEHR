@@ -35,6 +35,8 @@ mod audit_feed;
 mod audit_store;
 mod canonical_json_literals;
 mod codec_corpus;
+mod cohort_bench;
+mod cohort_query;
 mod directory_item_refs;
 mod events_amqp;
 mod fhir_ingest_translate;

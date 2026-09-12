@@ -323,6 +323,11 @@ mod tests {
             family_of_op("query_execute_adhoc_query"),
             Some(ResourceFamily::Aql)
         );
+        // The cohort extension takes the `query_execute_` prefix rule.
+        assert_eq!(
+            family_of_op("query_execute_cohort"),
+            Some(ResourceFamily::Aql)
+        );
         // AQL definitions are aql-family too (master08 maximal table).
         assert_eq!(
             family_of_op("definition_query_store.yaml"),
@@ -353,6 +358,7 @@ mod tests {
             permission_of_op("query_execute_stored_query"),
             Permission::Search
         );
+        assert_eq!(permission_of_op("query_execute_cohort"), Permission::Search);
         assert_eq!(
             permission_of_op("definition_template_adl1.4_upload"),
             Permission::Create

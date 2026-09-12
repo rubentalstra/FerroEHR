@@ -77,6 +77,7 @@ pub(crate) fn routes() -> OpenApiRouter<AppState> {
             query_execute_stored_query_version,
             query_execute_stored_query_version_body
         ))
+        .routes(routes!(query_execute_cohort))
 }
 
 /// Execute an ad-hoc AQL query from the query string (`GET /query/aql`).
@@ -1923,6 +1924,113 @@ pub(crate) async fn query_execute_stored_query_version_body(
     guarded_dispatch(
         state,
         "query_execute_stored_query_version_body",
+        parts,
+        super::dispatch::dispatch,
+    )
+    .await
+}
+
+/// Execute an AQL query over a cohort selected in the demographic domain
+/// (`POST /query/cohort`).
+///
+/// OUR OWN EXTENSION — no openEHR spec governs this operation. ITS-REST 1.1.0
+/// publishes an ad-hoc and a stored query and nothing else, and AQL is defined
+/// over the clinical domain alone (QUERY `master03-syntax.adoc`), with no
+/// demographic source. The operation runs in three steps, each on its own
+/// database credential: a predicate from the deployment's `[cohort.predicates]`
+/// allow-list selects parties in the demographic domain, the linkage domain
+/// resolves those parties to the EHRs they are the subject of, and the AQL runs
+/// over exactly those EHRs. Only identifiers cross between the steps — no name,
+/// address or national identifier leaves the demographic domain, and the caller
+/// never receives a party id.
+///
+/// The result set carries a `meta.cohort` object with the cohort size, the
+/// number of EHRs served, whether small-cell suppression withheld the rows, and
+/// a SHA-256 digest of the predicate list, which is also how the one access
+/// event this execution records names the cohort.
+///
+/// The route answers `404` until the deployment binds at least one predicate.
+#[utoipa::path(
+    post, path = "/query/cohort", tag = "Query",
+    request_body(
+        content((serde_json::Value = "application/json", example = json!({
+            "q": "SELECT c/uid/value FROM EHR e CONTAINS COMPOSITION c",
+            "cohort": [{ "name": "city", "value": "Groningen" }],
+            "purpose": "secondary-use",
+            "offset": 0,
+            "fetch": 100
+        }))),
+        description = "`q` REQUIRED (the AQL), `cohort` REQUIRED (the \
+                       predicates, intersected), plus the OPTIONAL `purpose`, \
+                       `query_parameters`, `offset` and `fetch`. The last four \
+                       are spelled as on the released `AdhocQueryExecute` body, \
+                       so a client that already speaks the query API needs no \
+                       second vocabulary. There is no `ehr_id`: the cohort IS \
+                       the scope. Each `cohort` entry names a key the \
+                       deployment bound in `[cohort.predicates]`; several \
+                       entries INTERSECT. An undeclared member is refused \
+                       `400`."
+    ),
+    responses(
+        (status = 200, description = "The `RESULT_SET`, with a `meta.cohort` \
+                                      object carrying `size` (the EHRs the \
+                                      cohort resolved to), `served_ehrs` (how \
+                                      many the rows came from, `0` when \
+                                      suppressed), `suppressed`, and \
+                                      `definition` (the predicate digest). \
+                                      Suppression empties `rows` and says so \
+                                      rather than pretending the cohort was \
+                                      empty: a caller who cannot tell the two \
+                                      apart widens the predicate until the \
+                                      boundary leaks.",
+         body = serde_json::Value,
+         content_type = "application/json"),
+        (status = 400, description = "The request names no predicate, names one \
+                                      the deployment did not bind, carries a \
+                                      value the binding's kind cannot read (an \
+                                      age band that is not `<min>-<max>`), \
+                                      pre-scopes the query with `ehr_ids`, or \
+                                      carries AQL that does not parse or \
+                                      type-check.",
+         body = serde_json::Value),
+        (status = 404, description = "The deployment binds no cohort predicate \
+                                      (`[cohort.predicates]` is empty), so the \
+                                      surface serves nothing. With \
+                                      authentication enabled, an \
+                                      unauthenticated request is answered `401` \
+                                      first — the gate sits behind \
+                                      authentication.",
+         body = serde_json::Value),
+        (status = 406, description = "The `RESULT_SET` has no canonical-XML \
+                                      shape, so an exclusively-XML `Accept` \
+                                      negotiates to `406` (`Resources.md` \
+                                      §\"JSON Format\").",
+         body = serde_json::Value),
+        (status = 408, description = "The inner AQL execution overran the \
+                                      configured per-query execution budget \
+                                      (`FERROEHR__QUERY__TIMEOUT_MS`).",
+         body = serde_json::Value),
+        (status = 415, description = "The body is JSON only; any other request \
+                                      `Content-Type` is refused \
+                                      (`Resources.md` §\"JSON Format\").",
+         body = serde_json::Value),
+        (status = 422, description = "The predicate matched more parties than \
+                                      `FERROEHR__COHORT__MAX_COHORT_SIZE` \
+                                      allows. Refused rather than truncated: a \
+                                      silently shortened cohort is a wrong \
+                                      denominator with nothing on the wire to \
+                                      say so.",
+         body = serde_json::Value)
+    )
+)]
+pub(crate) async fn query_execute_cohort(
+    State(state): State<AppState>,
+    request: axum::extract::Request,
+) -> Response {
+    let parts = crate::api::into_parts(request).await;
+    guarded_dispatch(
+        state,
+        "query_execute_cohort",
         parts,
         super::dispatch::dispatch,
     )

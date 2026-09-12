@@ -25,6 +25,6 @@
 pub mod config;
 mod execute;
 pub mod plan_cache;
-mod result_set;
+pub(crate) mod result_set;
 
 pub mod request;
