@@ -3,12 +3,12 @@
 #
 # The issue chooser: every issue comes through a form (a blank issue stays
 # available to maintainers only), and the things that are not issues at all
-# are routed where they belong before a public issue is opened.
+# are routed where they belong before a public issue is opened. A security
+# report is not listed here on purpose: GitHub adds its own "Report a security
+# vulnerability" row to the chooser while private vulnerability reporting is
+# enabled and SECURITY.md exists, and a second entry would show it twice.
 blank_issues_enabled: false
 contact_links:
-  - name: Security vulnerability
-    url: https://github.com/rubentalstra/FerroEHR/security/advisories/new
-    about: Never a public issue. Report it privately here; SECURITY.md describes the process and the response times.
   - name: Question or usage help
     url: https://github.com/rubentalstra/FerroEHR/discussions
     about: How do I …, is this expected, which configuration key … . Discussions, so the answer stays findable.
