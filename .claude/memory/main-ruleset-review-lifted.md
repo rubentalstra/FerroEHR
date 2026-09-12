@@ -1,6 +1,6 @@
 ---
-name: main-ruleset-review-lifted-v420
-description: "The main ruleset's one-approving-review + code-owner-review requirement was set to zero on 2026-09-11 for the v4.2.0 work so auto-merge fires on green CI; restore is tracked as #3245"
+name: main-ruleset-review-lifted
+description: The one-reviewer requirement on main is lifted PERMANENTLY (owner ruling 2026-09-12) because Claude reviews every PR in-session; ruleset 18942581 stays at approvals 0, use gh pr merge --auto, never --admin
 metadata: 
   node_type: memory
   type: project
@@ -23,3 +23,10 @@ habit.
 `conclusion` check passes. Do not use `--admin`. At the v4.2.0 cut, put the
 review requirement back via a `PUT` of the full ruleset (the owner's call per
 #3245). Related: [[merge-on-local-gates]], [[autonomous-phase-flow]].
+
+**Update 2026-09-12 (owner ruling, v4.2.0 cut):** the requirement is not
+restored at the cut and #3245 is closed as superseded. "Without the reviewer
+setting on GitHub because you review it for me": every PR gets its in-session
+review (gates, spec reading, diff read) before auto-merge is armed, and each
+milestone from v4.3.0 on is worked the same way as v4.2.0 (batches of
+related issues per PR, auto-merge on the final head).
