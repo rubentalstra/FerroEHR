@@ -15,6 +15,8 @@ workflow refuses a tag that has no matching section here.
 
 ## [Unreleased]
 
+## [4.2.3] - 2026-09-12
+
 ### Added
 
 - **FerroTERM ships with the quickstart and runs beside the sandbox CDR**
@@ -9240,7 +9242,8 @@ but has not yet run in production.
   seccomp, default-deny NetworkPolicy) and golden-render validation.
 
 
-[unreleased]: https://github.com/rubentalstra/FerroEHR/compare/v4.2.2...HEAD
+[unreleased]: https://github.com/rubentalstra/FerroEHR/compare/v4.2.3...HEAD
+[4.2.3]: https://github.com/rubentalstra/FerroEHR/compare/v4.2.2...v4.2.3
 [4.2.2]: https://github.com/rubentalstra/FerroEHR/compare/v4.2.1...v4.2.2
 [4.2.1]: https://github.com/rubentalstra/FerroEHR/compare/v4.2.0...v4.2.1
 [4.2.0]: https://github.com/rubentalstra/FerroEHR/compare/v4.1.1...v4.2.0
