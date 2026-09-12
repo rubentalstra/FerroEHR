@@ -170,6 +170,134 @@ terminology_verify() {
   return 0
 }
 
+# ── FerroTERM (docker-compose.terminology.yml), the shaped seed ──────────────
+#
+# The terminology overlay every deployment can switch on (#3304): FerroTERM
+# beside the CDR, serving the licence-free shaped seed mounted out of the
+# ferroehr image. Runs in every default pass, because it needs no licensed
+# content: the seed's two code systems are what the conformance lane binds to.
+# The family drives the value-set binding from the OUTSIDE, through commits,
+# in the three states a deployment can be in: overlay off (nothing resolves),
+# overlay on (a member commits, a non-member is refused), and the server down
+# under each fail posture.
+TERM_FT_PORT="${PROBE_FERROTERM_PORT:-18090}"
+# Exported, like the CDR and database ports in compose.sh: the overlay publishes
+# FerroTERM at ${FERROEHR_TERMINOLOGY_PORT:-8090}, and the probes below poll
+# TERM_FT_PORT, so the two must be the same number.
+export FERROEHR_TERMINOLOGY_PORT="$TERM_FT_PORT"
+TERM_FT_OVERLAY="docker-compose.terminology.yml"
+TERM_FT_TEMPLATE="corpus/templates/dt_coded_text_binding_sct.opt"
+TERM_FT_MEMBER="corpus/fixtures/composition/terminology_binding_sct_member.json"
+TERM_FT_NON_MEMBER="corpus/fixtures/composition/terminology_binding_sct_non_member.json"
+
+# The overlay stack: base file + overlay, the s3 profile the other families
+# assume, and ferroterm explicitly (it has no healthcheck, so --wait treats
+# running as ready).
+term_ft_up() {
+  dc -f docker-compose.yml -f "$TERM_FT_OVERLAY" --profile s3 up -d --wait ferroehr ferroterm >/dev/null 2>&1
+}
+
+term_ft_new_ehr() {
+  local hdr="$PROBE_TMP/ft-ehr.txt"
+  curl -s -u "$BASIC" -X POST -D "$hdr" -o /dev/null "$API/ehr" || return 0
+  grep -i '^location' "$hdr" 2>/dev/null | tr -d '\r' | awk -F/ '{print $NF}'
+}
+
+# The status code a commit of the given fixture into a fresh EHR answers.
+term_ft_commit_code() {
+  local ehr; ehr="$(term_ft_new_ehr)"
+  [[ -n "$ehr" ]] || { printf '000'; return 0; }
+  curl -s -u "$BASIC" -o /dev/null -w '%{http_code}' -X POST \
+    -H 'Content-Type: application/json' -H 'Prefer: return=minimal' \
+    --data-binary "@$1" "$API/ehr/$ehr/composition"
+}
+
+term_ft_template() {
+  local code
+  code="$(curl -s -u "$BASIC" -o /dev/null -w '%{http_code}' -X POST \
+    -H 'Content-Type: application/xml' --data-binary "@$TERM_FT_TEMPLATE" \
+    "$API/definition/template/adl1.4")"
+  case "$code" in 201|204|409) return 0 ;; *) return 1 ;; esac
+}
+
+probes_terminology_ferroterm() {
+  bold "terminology — FerroTERM beside the CDR over the shaped seed (the overlay)"
+
+  probe "P-FT-OFF" "off" "server" "#3304" \
+    "without the overlay a bound value set is not resolved: member and non-member both commit"
+  compose_up ferroehr
+  if ! wait_http "$CDR/health/readiness" 90 || ! term_ft_template; then
+    probe_fail "a serving CDR holding the binding template" "readiness or the template upload failed" \
+      "the binding template is the fixture every state below commits against"
+    probe_done
+    return 0
+  fi
+  assert_eq "201" "$(term_ft_commit_code "$TERM_FT_MEMBER")" \
+    "with external terminology off the member composition commits"
+  assert_eq "201" "$(term_ft_commit_code "$TERM_FT_NON_MEMBER")" \
+    "with external terminology off nothing checks membership, so the non-member commits too"
+  probe_done
+
+  probe "P-FT-UP" "working" "compose" "#3304" \
+    "the overlay starts FerroTERM and it answers its capability statement"
+  if ! term_ft_up || ! wait_http "http://localhost:${TERM_FT_PORT}/health" 60; then
+    probe_fail "a serving FerroTERM" "$(dc -f docker-compose.yml -f "$TERM_FT_OVERLAY" logs --tail 5 ferroterm 2>&1 | tail -3)" \
+      "the overlay must bring the terminology server up from the shaped seed alone"
+    probe_done
+    return 0
+  fi
+  local meta; meta="$(curl -s "http://localhost:${TERM_FT_PORT}/r4b/metadata?mode=terminology")"
+  assert_contains "$meta" 'http://cnf.example.test/fhir/CodeSystem/sct-shaped' \
+    "the shaped seed mounted out of the ferroehr image is what the server serves"
+  probe_done
+
+  probe "P-FT-RESOLVE" "working" "server" "#3304" \
+    "with the overlay on, a value-set member commits and a non-member is refused"
+  wait_http "$CDR/health/readiness" 90 >/dev/null || true
+  term_ft_template || true
+  assert_eq "201" "$(term_ft_commit_code "$TERM_FT_MEMBER")" \
+    "1000002 is in sct-shaped-disorders, so the commit is accepted"
+  assert_eq "422" "$(term_ft_commit_code "$TERM_FT_NON_MEMBER")" \
+    "1000003 is in the code system but not in the value set, so the binding refuses it"
+  probe_done
+
+  probe "P-FT-DOWN-OPEN" "broken" "server" "#3304" \
+    "FerroTERM stopped, fail-open (the shipped default): the member commit is still accepted"
+  dc -f docker-compose.yml -f "$TERM_FT_OVERLAY" stop ferroterm >/dev/null 2>&1
+  # The provider caches a positive answer for cache_ttl_secs, so a commit that
+  # still says 201 could be the cache and not the posture. Recreating the CDR
+  # empties the in-process cache, and --no-deps keeps Compose from starting the
+  # stopped ferroterm again as the CDR's dependency (which is what answered
+  # this state's commits from a live server on the first CI run).
+  dc -f docker-compose.yml -f "$TERM_FT_OVERLAY" --profile s3 up -d --no-deps --force-recreate --wait ferroehr >/dev/null 2>&1
+  wait_http "$CDR/health/readiness" 90 >/dev/null || true
+  assert_not_contains "$(dc -f docker-compose.yml -f "$TERM_FT_OVERLAY" ps -a --format '{{.Service}} {{.State}}')" "ferroterm running" \
+    "the terminology server must be down for this state to mean anything"
+  assert_eq "201" "$(term_ft_commit_code "$TERM_FT_MEMBER")" \
+    "fail-open accepts a binding the server cannot resolve (register AMB-172)"
+  probe_done
+
+  probe "P-FT-DOWN-CLOSED" "broken" "server" "#3304" \
+    "FerroTERM stopped, fail-closed: the same commit is refused"
+  # Exported, not a prefix assignment: `dc` is a shell function, and only an
+  # exported variable reliably reaches the compose interpolation it runs. The
+  # env change recreates the CDR, so the cache is cold here too.
+  export FERROEHR__TERMINOLOGY__EXTERNAL__FAIL_ON_ERROR=true
+  dc -f docker-compose.yml -f "$TERM_FT_OVERLAY" --profile s3 up -d --no-deps --wait ferroehr >/dev/null 2>&1
+  unset FERROEHR__TERMINOLOGY__EXTERNAL__FAIL_ON_ERROR
+  wait_http "$CDR/health/readiness" 90 >/dev/null || true
+  assert_not_contains "$(dc -f docker-compose.yml -f "$TERM_FT_OVERLAY" ps -a --format '{{.Service}} {{.State}}')" "ferroterm running" \
+    "the terminology server must still be down under fail-closed"
+  assert_eq "422" "$(term_ft_commit_code "$TERM_FT_MEMBER")" \
+    "fail-closed turns an unreachable terminology server into a refusal"
+  probe_done
+
+  # Leave the stack as the other families expect it: the base file alone, and
+  # no terminology container standing.
+  dc -f docker-compose.yml -f "$TERM_FT_OVERLAY" rm -sf ferroterm >/dev/null 2>&1 || true
+  compose_up ferroehr
+}
+
 probes_terminology() {
   bold "terminology — a real FHIR terminology server with real content"
 

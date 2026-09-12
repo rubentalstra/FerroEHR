@@ -39,7 +39,7 @@ services:
     deploy:
       resources:
         limits:
-          memory: 4096m
+          memory: 3072m
     environment:
       FERROEHR_CONFIG: /etc/ferroehr/ferroehr.toml
       # The DB box's private-network string, interpolated from `.env` (Compose
@@ -55,6 +55,58 @@ services:
       DATABASE_URL: ${DATABASE_URL:?DATABASE_URL must be set in /opt/ferroehr-sandbox/.env}
     volumes:
       - ./ferroehr.sandbox.toml:/etc/ferroehr/ferroehr.toml:ro
+    expose:
+      - "8080"
+    depends_on:
+      ferroterm:
+        condition: service_started
+
+  # FerroTERM, the terminology server, beside the CDR on the same box (#3304):
+  # no ports, no Caddy route, viewer off. It is reachable as ferroterm:8080 on
+  # the compose network alone, so the only caller is the CDR and a visitor
+  # exercises it through binding resolution, AQL TERMINOLOGY() and the CDR's
+  # /terminology/* routes. That is the SNOMED CT Affiliate Licence posture
+  # (clause 2.2.4: a public system may serve SNOMED-encoded data provided users
+  # cannot extract a substantial portion and no fee is charged; clause 2.7:
+  # measures so the release cannot be downloaded except by authorised users).
+  #
+  # Content: the licence-free shaped seed, mounted straight out of the ferroehr
+  # image (the posture directory /opt/sandbox-posture/terminology). A real
+  # edition is the operator's: build its index off-box with ferroterm-build,
+  # place the directory at ./ferroterm-index, and set FERROTERM_INDEX=/data/index
+  # in .env (env.example). The sandbox loads the SNOMED CT International Edition
+  # (owner decision on #3304: one licence step through MLDS, English displays,
+  # 702 MB resident); the 1536m cap also fits the Netherlands edition (889 MB).
+  # The CDR's cap moved from 4096m to 3072m to make room on the 8 GB box.
+  ferroterm:
+    image: ${FERROTERM_IMAGE:-ghcr.io/rubentalstra/ferroterm:0.1.2@sha256:9cc75a1321fad3dd419776ee3781eaa309a8eaecf22aa4be9a2ac2b68fc31b4b}
+    container_name: ferroehr-sandbox-ferroterm
+    restart: unless-stopped
+    deploy:
+      resources:
+        limits:
+          memory: 1536m
+    environment:
+      FERROTERM_CODESYSTEMS: /image/opt/sandbox-posture/terminology
+      FERROTERM_INDEX:
+      FERROTERM_UI: "off"
+      FERROTERM_LOG_FORMAT: json
+      RUST_LOG: info
+    volumes:
+      # The whole ferroehr image, read-only, for the seed directory it carries
+      # (a subpath mount needs a newer engine than a box may run).
+      - type: image
+        source: ${FERROEHR_IMAGE:-ghcr.io/rubentalstra/ferroehr:latest}
+        target: /image
+        read_only: true
+      - type: bind
+        source: ${FERROTERM_INDEX_DIR:-./ferroterm-index}
+        target: /data/index
+        read_only: true
+    read_only: true
+    cap_drop: [ALL]
+    security_opt:
+      - no-new-privileges:true
     expose:
       - "8080"
 

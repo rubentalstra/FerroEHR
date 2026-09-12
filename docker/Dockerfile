@@ -151,6 +151,12 @@ LABEL org.opencontainers.image.title="FerroEHR" \
 COPY deploy/hosted/docker-compose.yml deploy/hosted/Caddyfile \
      deploy/hosted/ferroehr.sandbox.toml deploy/hosted/ferroehr-viewer.sandbox.toml \
      /opt/sandbox-posture/
+# The licence-free shaped terminology seed (docker/terminology/seed/) travels the
+# same way: the sandbox and the terminology overlay mount this directory into
+# FerroTERM straight from this image (a Compose `type: image` volume of the
+# whole image, FERROTERM_CODESYSTEMS naming this directory in it), so a box that
+# holds no checkout still serves the code systems the seed binds to.
+COPY docker/terminology/seed/ /opt/sandbox-posture/terminology/
 
 # ── runtime-from-source: compose/local (COPY the in-image build) ───────────────
 FROM runtime-base AS runtime-from-source

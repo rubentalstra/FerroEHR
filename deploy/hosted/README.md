@@ -1,3 +1,4 @@
+| `docker/terminology/seed/` (in the repository) | The licence-free shaped code systems FerroTERM serves on the box | baked into the ferroehr image at `/opt/sandbox-posture/terminology/`; the compose file mounts it into FerroTERM straight from the image, so `deploy.sh` never handles it |
 # The hosted sandbox (sandbox.ferroehr.eu)
 
 sandbox.ferroehr.eu is the public demo: the viewer as the landing
@@ -27,7 +28,9 @@ in Nuremberg (`eu-central`), joined by a private network
 physical hosts, so one host failure never takes both):
 
 - **The app box** (`ferroehr`, 167.233.172.220 / 2a01:4f8:1c16:5d4::/64,
-  private 10.0.0.3): the CDR, the viewer and Caddy — provisioned once from
+  private 10.0.0.3): the CDR, the viewer and Caddy, and FerroTERM (the
+  terminology server, on the compose network only: no port, no Caddy route,
+  the CDR its only caller, #3304) — provisioned once from
   `cloud-init.yaml`, resized in place from the original CPX22 on 2026-09-01.
   The compose memory limits are sized for this box; on a resize they move
   with it, and neither is a code change.

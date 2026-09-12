@@ -139,8 +139,12 @@ esac
 # ── 2. ADL 1.4 operational templates ─────────────────────────────────────────
 
 adl14_count=0
-while read -r slug; do
-  opt="$TPL_DIR/$slug.opt"
+while read -r entry; do
+  slug=$(printf '%s' "$entry" | jq -r '.slug')
+  # An entry names its own OPT (a repository path) when it is not a CKM
+  # template; the CKM pack is the default.
+  opt=$(printf '%s' "$entry" | jq -r --arg d "$TPL_DIR/$slug.opt" '.file // $d')
+  [[ "$opt" = /* ]] || opt="$ROOT_DIR/$opt"
   [[ -f "$opt" ]] || {
     echo "::error::missing operational template $opt" >&2
     exit 1
@@ -149,7 +153,7 @@ while read -r slug; do
     -H 'Content-Type: application/xml' --data-binary @"$opt")
   expect "template $slug" "$code" 201 204 409
   adl14_count=$((adl14_count + 1))
-done < <(mf '.adl14_templates[].slug')
+done < <(jq -c '.adl14_templates[]' "$MANIFEST")
 echo "==> $adl14_count ADL 1.4 operational templates"
 
 # ── 3. the ADL 2 archetype library ───────────────────────────────────────────
@@ -304,7 +308,8 @@ while read -r entry; do
   slug=$(printf '%s' "$entry" | jq -r '.slug')
   copies=$(printf '%s' "$entry" | jq -r '.compositions_per_ehr')
   versions=$(printf '%s' "$entry" | jq -r '.extra_versions')
-  example="$TPL_DIR/$slug.example.json"
+  example=$(printf '%s' "$entry" | jq -r --arg d "$TPL_DIR/$slug.example.json" '.example // $d')
+  [[ "$example" = /* ]] || example="$ROOT_DIR/$example"
   [[ -f "$example" ]] || {
     echo "::error::missing example composition $example" >&2
     exit 1

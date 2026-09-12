@@ -24,6 +24,8 @@
 #   docker compose up
 # With a ready-made Keycloak identity provider (download the overlay too):
 #   docker compose -f docker-compose.yml -f docker-compose.keycloak.yml up
+# With FerroTERM, the terminology server, beside the CDR (download the overlay too):
+#   docker compose -f docker-compose.yml -f docker-compose.terminology.yml up
 # The observability stack is a third standalone overlay
 # (docker-compose.observability.yml): Grafana/OTel beside the server. Overlays
 # rather than profiles because they must MUTATE the ferroehr service's env —
@@ -644,6 +646,18 @@ configs:
       prometheus = "public"
       env = "admin_only"
       loggers = "admin_only"
+
+      # The external terminology server FerroTERM, declared here and switched
+      # on by docker-compose.terminology.yml (the overlay only flips the
+      # switch, so the two files never disagree about where the server is).
+      # Off, the CDR resolves nothing externally and this block is inert.
+      [terminology.external]
+      enabled = false
+      fail_on_error = false
+
+      [terminology.external.providers.default]
+      type = "fhir"
+      url = "http://ferroterm:8080/r4b"
 
 volumes:
   ferroehr-pgdata:

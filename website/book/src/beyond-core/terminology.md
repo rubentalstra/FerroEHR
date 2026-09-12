@@ -194,6 +194,65 @@ Pick deliberately. Fail-closed means commits stop while your terminology server
 is down; fail-open means they are accepted unvalidated. There is no third option
 that gives you both.
 
+## FerroTERM beside the CDR
+
+[FerroTERM](https://github.com/rubentalstra/FerroTERM) is the terminology server
+FerroEHR ships with: the `docker-compose.terminology.yml` overlay of the
+quickstart starts it beside the CDR and points `[terminology.external]` at
+`http://ferroterm:8080/r4b`, the [compose page](../installation/compose.md#the-terminology-overlay-ferroterm)
+has the commands. The hosted sandbox at <https://sandbox.ferroehr.eu> runs the
+same pair on one machine, so the coded-text binding you see resolving there is a
+real round trip to a real terminology server.
+
+What the sandbox shows, and how it is arranged:
+
+- **The server is not on the public surface.** FerroTERM answers on the
+  sandbox's private compose network alone; there is no route to it at
+  `sandbox.ferroehr.eu`, its own browser UI is off, and the CDR is its only
+  caller. You exercise it through the CDR: commit a composition against the
+  `cnf.tpl.dv_coded_text_binding_sct` template with a code inside its bound
+  value set and it is accepted, with a code outside it and the answer is `422`;
+  the `/terminology/*` routes look codes up; AQL `TERMINOLOGY()` expands a value
+  set into a `MATCHES` operand.
+- **Fail-open**, the shipped default: a binding the server cannot resolve is
+  accepted. The sandbox declares this posture and the register entry that
+  records why neither posture is spec-mandated (AMB-172).
+- **The content is the shaped seed**: two code systems and two value sets under
+  the reserved `example.test` domain, with no licensed terminology in them.
+
+### SNOMED CT on a public sandbox
+
+Serving SNOMED CT to the public is a licensed activity, and the arrangement
+above is what the SNOMED CT Affiliate Licence Agreement (April 2023,
+[snomed.org/get-snomed](https://www.snomed.org/get-snomed)) asks for. Clause 2.2.4
+permits systems "made available to the general public for accessing and/or
+retrieving any part of the International Release and/or data encoded using the
+foregoing", provided users "are not able to extract any substantial portion of
+SNOMED CT" and no fee is charged for access. Clause 2.7 requires "reasonable
+measures to ensure that the International Release (and any part of it) cannot be
+accessed or downloaded from the Licensee's systems except by authorised users".
+A raw FHIR terminology endpoint open to anonymous callers would let anyone walk
+a code system or expand large value sets; per-code operations through the CDR,
+behind its rate limit, do not.
+
+The edition the sandbox loads is the SNOMED CT International Edition: it needs
+the Affiliate Licence alone (a Member's national release also needs an agreement
+with that Member), its English displays fit an international audience, and it
+is the lighter of the two. When the operator has built its index off-box and the
+server opens it, this page states the release date beside the edition, and every
+surface showing that content carries the notice the licence prescribes:
+
+> This material includes SNOMED Clinical Terms® (SNOMED CT®) which is used by
+> permission of the International Health Terminology Standards Development
+> Organisation (IHTSDO). All rights reserved. SNOMED CT®, was originally created
+> by The College of American Pathologists. "SNOMED" and "SNOMED CT" are
+> registered trademarks of the IHTSDO.
+
+No SNOMED CT content is in this repository, in any image, or in CI; the index
+exists only on the sandbox machine. This is a description of the arrangement,
+not legal advice: the licence text is the authority and the Member's conditions
+apply in each territory.
+
 ## Running one locally (development and CI)
 
 From a checkout of the repository, the conformance stack can start a real HAPI

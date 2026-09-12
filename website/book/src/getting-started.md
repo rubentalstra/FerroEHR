@@ -77,11 +77,13 @@ with something to look at:
   finds one). Two of them carry a second `EHR_STATUS` version: patient 07 is
   not queryable and so never appears in AQL results, patient 08 is not
   modifiable and refuses writes with a `409`.
-- **182 compositions** across **16 ADL 1.4 templates** from the openEHR CKM —
-  vital signs, problem and medicines lists, lab results, referrals, an
-  International Patient Summary, and several statutory case-report forms. Six
-  compositions have more than one version, so `LATEST_VERSION` and
-  `ALL_VERSIONS` differ on real data.
+- **183 compositions** across **17 ADL 1.4 templates**: sixteen from the
+  openEHR CKM (vital signs, problem and medicines lists, lab results,
+  referrals, an International Patient Summary, several statutory case-report
+  forms) and one terminology-binding template whose coded text resolves
+  against the terminology server running beside the CDR. Six compositions
+  have more than one version, so `LATEST_VERSION` and `ALL_VERSIONS` differ on
+  real data.
 - **235 ADL 2 archetypes and 5 ADL 2 templates**, browsable under
   `definition/archetype/adl2` and `definition/template/adl2`. Two of the
   templates are ADL 2 source templates whose slots the server flattens against
