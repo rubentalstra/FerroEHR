@@ -129,8 +129,10 @@ You keep your copyright. Point 3 is what lets the Licensed Work stay one work wi
 
 ## Reporting issues
 
-Use the GitHub issue tracker. For suspected security vulnerabilities, **do not
-open a public issue**; see [SECURITY.md](SECURITY.md).
+Use the GitHub issue tracker; the chooser offers a form per kind (bug, enhancement,
+documentation defect, regulation or jurisdiction, task), and each form asks for what
+triage needs first. A question is a Discussion, not an issue. For suspected security
+vulnerabilities, **do not open a public issue**; see [SECURITY.md](SECURITY.md).
 
 ## Code of conduct
 

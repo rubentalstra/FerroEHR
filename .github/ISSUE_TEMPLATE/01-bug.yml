@@ -1,0 +1,119 @@
+# SPDX-FileCopyrightText: Ruben Talstra
+# SPDX-License-Identifier: BUSL-1.1
+
+name: Bug report
+description: Wrong wire behaviour, a crash, a conformance divergence, a broken deployment artifact
+labels: ["bug"]
+body:
+  - type: checkboxes
+    id: preflight
+    attributes:
+      label: Before reporting
+      options:
+        - label: I have searched the open and closed issues
+          required: true
+        - label: I have reproduced it on the latest release, or on the hosted sandbox
+          required: true
+        - label: This is not a security vulnerability (those go to the private advisory form, see SECURITY.md)
+          required: true
+  - type: dropdown
+    id: component
+    attributes:
+      label: Component
+      description: Where the defect shows. Pick the closest; triage may move it.
+      options:
+        - CDR server (REST API, AQL, validation, storage)
+        - Viewer (the browser UI)
+        - Helm chart
+        - Docker compose / container images
+        - Hosted sandbox (sandbox.ferroehr.eu)
+        - Documentation site (ferroehr.eu)
+        - Published openehr-* crates
+        - Not sure
+    validations:
+      required: true
+  - type: textarea
+    id: server-status
+    attributes:
+      label: Server status
+      description: >
+        Paste the answer of `GET <server>/ferroehr/rest/status` (unauthenticated; a default
+        deployment answers at `http://localhost:8080/ferroehr/rest/status`, the sandbox at
+        `https://sandbox.ferroehr.eu/ferroehr/rest/status`). It carries the server and
+        openEHR REST API versions, the licence in force and the deployment profile. For a
+        documentation or crate defect, paste the page URL or the crate version instead.
+      render: json
+      placeholder: |
+        {
+          "status": "UP",
+          "server_version": "4.2.2",
+          "openehr_rest_api_version": "1.1.0",
+          "timestamp": "2026-09-12T08:54:44.869989099Z",
+          "licence": {
+            "state": "licensed",
+            "use": "non-commercial",
+            "licensee": "Everyone, under the Business Source License 1.1",
+            "not_after": "2099-12-31",
+            "configured_token": "absent"
+          },
+          "deployment": {
+            "profile": "sandbox",
+            "gaps": [
+              "shared_credential",
+              "shared_cluster",
+              "open_subject_namespace",
+              "migrate_on_runtime_credential"
+            ],
+            "accepted": []
+          }
+        }
+    validations:
+      required: true
+  - type: textarea
+    id: environment
+    attributes:
+      label: Environment
+      description: What the status document does not report.
+      value: |
+        - PostgreSQL version:
+        - Deployment (compose / Helm / binary / from source):
+        - Operating system and architecture:
+        - Viewer version (if the viewer is involved):
+    validations:
+      required: true
+  - type: textarea
+    id: steps
+    attributes:
+      label: Steps to reproduce
+      description: The requests in order, with payloads and templates attached or pasted. A `curl` line per step reproduces fastest.
+      placeholder: |
+        1. POST /ferroehr/rest/openehr/v1/ehr …
+        2. POST /ferroehr/rest/openehr/v1/ehr/{ehr_id}/composition with the attached body …
+        3. …
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: Expected behaviour
+      description: For spec-governed behaviour, cite the openEHR specification section that defines it (component, document, heading), or the article of the law or standard for a compliance claim.
+    validations:
+      required: true
+  - type: textarea
+    id: actual
+    attributes:
+      label: Actual result
+      description: The status code, the relevant headers and the body, or what the viewer or chart did instead.
+    validations:
+      required: true
+  - type: textarea
+    id: logs
+    attributes:
+      label: Relevant log output
+      description: Server log lines around the failure. Rendered as a code block, no backticks needed. Remove personal data before pasting.
+      render: shell
+  - type: textarea
+    id: further-information
+    attributes:
+      label: Further information
+      description: Anything else that helps, including a workaround if you found one.

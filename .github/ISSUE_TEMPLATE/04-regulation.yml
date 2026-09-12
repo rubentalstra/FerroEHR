@@ -30,9 +30,15 @@ body:
         - France
         - Nordic country
         - United Kingdom
-        - Other (name it below)
+        - Other (fill in the next field)
     validations:
       required: true
+  - type: input
+    id: jurisdiction_other
+    attributes:
+      label: Jurisdiction, if Other
+      description: The country or region, when the list above does not carry it. Leave empty otherwise.
+      placeholder: "Norway / Canada (Ontario) / Australia"
   - type: input
     id: act
     attributes:
@@ -62,11 +68,17 @@ body:
       label: May the text be redistributed?
       description: EU acts, Dutch, German and Swiss federal law are free to reuse or free of copyright; most standards are not.
       options:
-        - Yes, it is public law free of copyright or under a reuse notice (name the notice below)
+        - Yes, it is public law free of copyright or under a reuse notice (fill in the next field)
         - No, it is sold under copyright (only the clause list will be recorded)
         - I do not know
     validations:
       required: true
+  - type: input
+    id: reuse_notice
+    attributes:
+      label: Reuse notice or licence, if any
+      description: The publisher's reuse notice or the article that puts official texts out of copyright, when you answered Yes. Leave empty otherwise.
+      placeholder: "Commission Decision 2011/833/EU · Auteurswet Art. 11 · § 5 UrhG · Art. 5 URG"
   - type: textarea
     id: provisions
     attributes:

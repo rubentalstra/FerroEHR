@@ -1,0 +1,43 @@
+# SPDX-FileCopyrightText: Ruben Talstra
+# SPDX-License-Identifier: BUSL-1.1
+
+name: Enhancement request
+description: New or extended functionality in the CDR, the viewer, the chart or the tooling
+labels: ["enhancement"]
+body:
+  - type: textarea
+    id: summary
+    attributes:
+      label: What and why
+      description: What should exist, who needs it and what it makes possible. For spec-facing behaviour name the governing openEHR specification section; for an extension the spec does not govern, say so, since that decides how it is designed.
+    validations:
+      required: true
+  - type: textarea
+    id: acceptance-criteria
+    attributes:
+      label: Acceptance criteria
+      description: The checklist that defines done, as observable outcomes (a request that answers, a page that states, a gate that refuses).
+      value: |
+        - [ ] …
+        - [ ] …
+    validations:
+      required: true
+  - type: dropdown
+    id: component
+    attributes:
+      label: Component
+      options:
+        - CDR server (REST API, AQL, validation, storage)
+        - Viewer (the browser UI)
+        - Helm chart / Docker compose
+        - Documentation site
+        - Published openehr-* crates
+        - Tooling and CI
+        - Not sure
+    validations:
+      required: true
+  - type: textarea
+    id: further-information
+    attributes:
+      label: Further information
+      description: Prior art (EHRbase or another CDR), discussion links, related issues.

@@ -231,7 +231,7 @@ ships, tracker status, what the organisation must do); the national security
 and logging standards, in the shape of the NEN section; and, where the country
 issues a personal identifier with a published algorithm, a rule in
 `app/ferroehr/src/privacy/detect.rs` citing the register that defines it. Open
-a [regulation request](https://github.com/rubentalstra/FerroEHR/issues/new?template=regulation.yml)
+a [regulation request](https://github.com/rubentalstra/FerroEHR/issues/new?template=04-regulation.yml)
 with the official source and the provisions that reach a repository, and the
 project vendors the text and records a status per provision, the way the acts
 below are handled. A checksum transcribed from a secondary source is refused,
