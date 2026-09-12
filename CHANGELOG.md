@@ -15,6 +15,15 @@ workflow refuses a tag that has no matching section here.
 
 ## [Unreleased]
 
+### Fixed
+
+- **Identifiers carry the licence stamp the design specifies** (#3282). The
+  stamp keyed its HMAC with a hash of the key material and used a fail-safe
+  constant of its own, so no identifier a 4.2.0 server minted could be
+  attributed to its licence by the attestation tooling; the key is now the raw
+  material and the unlicensed constant is the design's. Identifiers minted by
+  4.2.0 stay valid and simply carry no recognisable stamp.
+
 ## [4.2.0] - 2026-09-12
 
 ### Added
