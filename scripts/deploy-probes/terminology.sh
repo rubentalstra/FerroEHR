@@ -191,8 +191,9 @@ TERM_FT_MEMBER="corpus/fixtures/composition/terminology_binding_sct_member.json"
 TERM_FT_NON_MEMBER="corpus/fixtures/composition/terminology_binding_sct_non_member.json"
 
 # The overlay stack: base file + overlay, the s3 profile the other families
-# assume, and ferroterm explicitly (it has no healthcheck, so --wait treats
-# running as ready).
+# assume, and ferroterm explicitly. `--wait` returns once FerroTERM's own
+# HEALTHCHECK (`ferroterm healthcheck`, 0.1.3) reports healthy and the CDR,
+# which depends on that, is healthy too; no host-side polling is needed.
 term_ft_up() {
   dc -f docker-compose.yml -f "$TERM_FT_OVERLAY" --profile s3 up -d --wait ferroehr ferroterm >/dev/null 2>&1
 }
@@ -239,13 +240,15 @@ probes_terminology_ferroterm() {
   probe_done
 
   probe "P-FT-UP" "working" "compose" "#3304" \
-    "the overlay starts FerroTERM and it answers its capability statement"
-  if ! term_ft_up || ! wait_http "http://localhost:${TERM_FT_PORT}/health" 60; then
-    probe_fail "a serving FerroTERM" "$(dc -f docker-compose.yml -f "$TERM_FT_OVERLAY" logs --tail 5 ferroterm 2>&1 | tail -3)" \
-      "the overlay must bring the terminology server up from the shaped seed alone"
+    "the overlay starts FerroTERM, waits on its own healthcheck, and it answers its capability statement"
+  if ! term_ft_up; then
+    probe_fail "a healthy FerroTERM and CDR from \`up --wait\`" "$(dc -f docker-compose.yml -f "$TERM_FT_OVERLAY" logs --tail 5 ferroterm 2>&1 | tail -3)" \
+      "the overlay must bring the terminology server up from the shaped seed alone, and its HEALTHCHECK must report it"
     probe_done
     return 0
   fi
+  assert_eq "200" "$(http_code "http://localhost:${TERM_FT_PORT}/health")" \
+    "the health route the image's own probe reads answers from the host too"
   local meta; meta="$(curl -s "http://localhost:${TERM_FT_PORT}/r4b/metadata?mode=terminology")"
   assert_contains "$meta" 'http://cnf.example.test/fhir/CodeSystem/sct-shaped' \
     "the shaped seed mounted out of the ferroehr image is what the server serves"

@@ -29,7 +29,9 @@ workflow refuses a tag that has no matching section here.
   which is the posture the SNOMED CT Affiliate Licence asks of a public system,
   and its dataset gains a composition whose coded text resolves through it. The
   deployment probe observes the overlay off, on and resolving, and the server
-  down under both fail postures.
+  down under both fail postures. FerroTERM is pinned at 0.1.3, whose image
+  carries its own `HEALTHCHECK` (`ferroterm healthcheck`), so both compose files
+  start the CDR only once the terminology server reports healthy (#3307).
 
 ## [4.2.2] - 2026-09-12
 

@@ -284,7 +284,10 @@ curl 'http://localhost:8090/r4b/metadata?mode=terminology'
 
 It is an overlay rather than a profile for the same reason as the Keycloak and
 observability ones: enabling it has to change the CDR's environment, which a
-profile cannot do.
+profile cannot do. FerroTERM's image carries its own health probe (the binary's
+`healthcheck` subcommand, since the distroless image has no shell), and the CDR
+is declared to start only once that probe reports healthy, so `docker compose up
+--wait` returns with both serving.
 
 Out of the box FerroTERM serves the licence-free shaped seed this repository
 ships (two code systems and two value sets under the reserved `example.test`

@@ -53,8 +53,8 @@
 
 services:
   ferroterm:
-    # Digest-pinned FerroTERM 0.1.2 (resolved 2026-09-12); no `:latest`.
-    image: ghcr.io/rubentalstra/ferroterm:0.1.2@sha256:9cc75a1321fad3dd419776ee3781eaa309a8eaecf22aa4be9a2ac2b68fc31b4b
+    # Digest-pinned FerroTERM 0.1.3 (resolved 2026-09-12); no `:latest`.
+    image: ghcr.io/rubentalstra/ferroterm:0.1.3@sha256:b1ef80382e03c2474bfec2ec57a698d83314e1290dd0cb5a2612ea208bde020c
     environment:
       # The shaped seed, read straight out of the ferroehr image: the whole
       # image is mounted read-only at /image (a Compose `type: image` volume,
@@ -82,9 +82,19 @@ services:
         read_only: true
     ports:
       - "${FERROEHR_BIND_HOST:-127.0.0.1}:${FERROEHR_TERMINOLOGY_PORT:-8090}:8080"
+    # The image is its own health probe (`ferroterm healthcheck`, FerroTERM
+    # 0.1.3): the distroless base carries no shell and no HTTP client, so the
+    # binary sends the one GET /health itself and exits 0 on 200. The values
+    # restate the image's HEALTHCHECK, and the 60 s start period is for a large
+    # edition's load; `healthy` means the code systems are served.
+    healthcheck:
+      test: ["CMD", "/usr/local/bin/ferroterm", "healthcheck"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+      start_period: 60s
     # Distroless, uid 65532, writes nothing while serving: read-only root, every
-    # capability dropped. No HEALTHCHECK: the image has no shell or HTTP client;
-    # probe GET /health from outside.
+    # capability dropped.
     read_only: true
     cap_drop: [ALL]
     security_opt:
@@ -102,7 +112,7 @@ services:
   # never starts it. Same image; the release archive you hold a licence for is
   # mounted read-only and the index lands in the volume the server reads.
   ferroterm-build:
-    image: ghcr.io/rubentalstra/ferroterm:0.1.2@sha256:9cc75a1321fad3dd419776ee3781eaa309a8eaecf22aa4be9a2ac2b68fc31b4b
+    image: ghcr.io/rubentalstra/ferroterm:0.1.3@sha256:b1ef80382e03c2474bfec2ec57a698d83314e1290dd0cb5a2612ea208bde020c
     profiles: [terminology-build]
     entrypoint: ["/usr/local/bin/ferroterm-build"]
     command: ["--rf2", "/rf2/release.zip", "--out", "/data/index"]
@@ -130,10 +140,11 @@ services:
       FERROEHR__TERMINOLOGY__EXTERNAL__ENABLED: "true"
       FERROEHR__TERMINOLOGY__EXTERNAL__FAIL_ON_ERROR: ${FERROEHR__TERMINOLOGY__EXTERNAL__FAIL_ON_ERROR:-false}
     depends_on:
-      # No healthcheck to wait on (see above); the CDR's provider client has its
-      # own timeouts and the fail posture decides what an early request gets.
+      # The CDR starts once FerroTERM reports healthy, so the first binding a
+      # composition carries finds a serving terminology server; the fail posture
+      # above still decides what happens if it goes away later.
       ferroterm:
-        condition: service_started
+        condition: service_healthy
 
 volumes:
   ferroehr-ferroterm-index:
