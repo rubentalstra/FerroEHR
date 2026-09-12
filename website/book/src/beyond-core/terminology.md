@@ -235,12 +235,13 @@ A raw FHIR terminology endpoint open to anonymous callers would let anyone walk
 a code system or expand large value sets; per-code operations through the CDR,
 behind its rate limit, do not.
 
-The edition the sandbox loads is the SNOMED CT International Edition: it needs
-the Affiliate Licence alone (a Member's national release also needs an agreement
-with that Member), its English displays fit an international audience, and it
-is the lighter of the two. When the operator has built its index off-box and the
-server opens it, this page states the release date beside the edition, and every
-surface showing that content carries the notice the licence prescribes:
+The sandbox serves the **SNOMED CT International Edition, release 20260901**
+(`http://snomed.info/sct/900000000000207008/version/20260901`), loaded by the
+operator under their Affiliate Licence from an index built off the machine. The
+International Edition rather than a national one: it needs the Affiliate Licence
+alone (a Member's national release also needs an agreement with that Member), its
+English displays fit an international audience, and it is the lighter of the two.
+Every surface showing that content carries the notice the licence prescribes:
 
 > This material includes SNOMED Clinical Terms® (SNOMED CT®) which is used by
 > permission of the International Health Terminology Standards Development
@@ -252,6 +253,28 @@ No SNOMED CT content is in this repository, in any image, or in CI; the index
 exists only on the sandbox machine. This is a description of the arrangement,
 not legal advice: the licence text is the authority and the Member's conditions
 apply in each territory.
+
+### LOINC on the sandbox
+
+The sandbox also serves **LOINC version 2.83** (`http://loinc.org`), from an
+index built the same way. The LOINC licence
+([loinc.org/license](https://loinc.org/license)) grants use and distribution
+"for any commercial or non-commercial purpose" without fees and names "online
+terminology services" among the permitted products, on three conditions this
+deployment meets: the notice below is available where the service's terms are
+stated, every LOINC code is shown with one of its LOINC display names (the FHIR
+operations return the long common name), and the version is stated. Where a
+LOINC record carries a third-party copyright notice of its own, that notice
+travels with the record.
+
+> This material contains content from LOINC (http://loinc.org). LOINC is
+> copyright © Regenstrief Institute, Inc. and the Logical Observation
+> Identifiers Names and Codes (LOINC) Committee and is available at no cost
+> under the license at http://loinc.org/license. LOINC® is a registered United
+> States trademark of Regenstrief Institute, Inc.
+
+Neither index is in the repository, an image or CI; both exist only on the
+sandbox machine, beside the licence-free shaped seed the compose profile ships.
 
 ## Running one locally (development and CI)
 
