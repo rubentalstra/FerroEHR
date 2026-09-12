@@ -1,0 +1,20 @@
+# SPDX-FileCopyrightText: Ruben Talstra
+# SPDX-License-Identifier: BUSL-1.1
+#
+# The issue chooser: every issue comes through a form (a blank issue stays
+# available to maintainers only), and the things that are not issues at all
+# are routed where they belong before a public issue is opened.
+blank_issues_enabled: false
+contact_links:
+  - name: Security vulnerability
+    url: https://github.com/rubentalstra/FerroEHR/security/advisories/new
+    about: Never a public issue. Report it privately here; SECURITY.md describes the process and the response times.
+  - name: Question or usage help
+    url: https://github.com/rubentalstra/FerroEHR/discussions
+    about: How do I …, is this expected, which configuration key … . Discussions, so the answer stays findable.
+  - name: Documentation site
+    url: https://ferroehr.eu/docs/latest/
+    about: Installation, configuration, the API, operations, security and compliance, per release.
+  - name: API reference (live sandbox)
+    url: https://sandbox.ferroehr.eu/ferroehr/rest/swagger-ui
+    about: The OpenAPI document the current release serves, on the hosted sandbox (credentials ferroehr / ferroehr).

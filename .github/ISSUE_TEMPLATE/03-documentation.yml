@@ -1,0 +1,41 @@
+# SPDX-FileCopyrightText: Ruben Talstra
+# SPDX-License-Identifier: BUSL-1.1
+
+name: Documentation defect
+description: A page on ferroehr.eu, the README or a chart README says something wrong, stale or missing
+labels: ["documentation"]
+body:
+  - type: input
+    id: page
+    attributes:
+      label: Page
+      description: The URL of the page, or the path of the file in the repository.
+      placeholder: "https://ferroehr.eu/docs/latest/operations.html#upgrades"
+    validations:
+      required: true
+  - type: textarea
+    id: problem
+    attributes:
+      label: What is wrong
+      description: Quote the sentence or table row as it stands.
+    validations:
+      required: true
+  - type: textarea
+    id: correction
+    attributes:
+      label: What it should say
+      description: If you know. A pointer to the source of truth (a configuration key, a spec section, a law article, a command's real output) is as good as a sentence.
+  - type: dropdown
+    id: checked-against
+    attributes:
+      label: Checked against
+      description: What you compared the page with.
+      options:
+        - A running server (state the version)
+        - The source code
+        - The openEHR specification text
+        - A law or standard text
+        - Another page of the documentation that disagrees
+        - Not checked, it read wrong
+    validations:
+      required: true
