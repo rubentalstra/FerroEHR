@@ -130,8 +130,8 @@ Either way the server **refuses to boot** when the grants themselves are wrong:
 a self-check enumerates every table, view, sequence and function in each
 domain and fails, naming the role and the object, if either runtime role can
 read across the boundary. `ferroehr db verify` runs the same check. When the
-four roles do not exist at all — the development, compose and test-harness
-case, where the migrator holds no `CREATEROLE` — the check passes rather than
+five roles do not exist at all (the development, compose and test-harness
+case, where the migrator holds no `CREATEROLE`) the check passes rather than
 inventing a failure.
 
 On Kubernetes the same choice is chart values, mounted as files the same way
@@ -173,10 +173,11 @@ single-domain pair holds there. A clinical login role that is a member of
 The audit trail is not a pseudonymisation domain, so this grant adds no reach
 into `demographic`, `cold_demographic` or `linkage`.
 
-The compose stacks create all five and grant both domains to the single dev
-login role. That demonstrates the schema separation and exercises the boot
-self-check; it is deliberately **not** the credential separation, because one
-container with one DSN cannot show that half honestly.
+The compose stacks create all five and grant the clinical and demographic
+domains to the single dev login role, which owns the database. That
+demonstrates the schema separation and exercises the boot self-check; it is
+deliberately **not** the credential separation, because one container with one
+DSN cannot show that half honestly.
 
 ### Which of these postures is exercised, and which is not
 
@@ -222,7 +223,8 @@ Which posture you actually get depends on `db.migrate`, because the server's
 embedded migrations are DDL: a self-migrating deployment necessarily runs as a
 role that can execute DDL. The single-container quickstart takes that path: its
 DSN authenticates as a non-superuser role that owns the database and is a member
-of both `ferroehr_migrator` and `ferroehr_app`.
+of `ferroehr_migrator`, `ferroehr_app`, `ferroehr_ehr` and
+`ferroehr_demographic`.
 
 ## Applying migrations
 
@@ -309,7 +311,9 @@ below.
 A wipe that removes *some* of the server's schemas is not a fresh start, and the
 server refuses to migrate over one rather than doing something plausible with it.
 
-Almost every object lives in `ehr`, but the cold archival tier lives in its own
+The server owns seven schemas: `ext`, `ehr`, `cold`, `demographic`,
+`cold_demographic`, `linkage` and `audit`. A fresh start drops all seven. The
+clinical content lives in `ehr`, but its cold archival tier lives in its own
 `cold` schema, so `DROP SCHEMA ehr CASCADE` (a restore gone wrong, a recreated
 volume, a wiped test database) takes the primary tier and the migration
 bookkeeping and **leaves the archived clinical rows standing**. On the next boot
@@ -336,6 +340,13 @@ Two remedies, and which one applies is your call, not the server's:
 
 The reverse partial wipe (dropping `cold` while `ehr` survives) is not caught at
 boot, because the migration bookkeeping still records the archival tier as applied.
+
+Dropping the four clinical schemas (`ehr`, `cold`, `ext`, `audit`) while
+`demographic` and `linkage` survive is a supported reset: the clinical migration
+set rebuilds its schema, including the three `ehr.cold_*` alias views the
+demographic baseline created, so updates work again after the boot. Releases
+before 4.2.2 came back from that wipe without the views and answered `500` on
+every composition or `EHR_STATUS` update; upgrading applies the repair.
 It surfaces the first time an archive, restore or whole-repository export runs.
 Restore from backup; there is no forward path that invents the archived rows back.
 
@@ -477,8 +488,8 @@ the other two domains' tables default and their row policies call
 `ext.current_tenant_id()`.
 
 `ferroehr db verify` issues no DDL. It checks that the database carries exactly
-this build's migrations — **all three domains**, so a restore that skipped one
-is refused by name — and that no runtime role can read across the domain
+this build's migrations, **all five sets**, so a restore that skipped a domain
+is refused by name, and that no runtime role can read across the domain
 boundary, exiting non-zero when either is untrue. It is the same check the
 server runs at boot, which is why a server pointed at a badly restored database
 refuses to start rather than serving from it.
@@ -629,19 +640,32 @@ why they are written as your checklist rather than as our claim.
 
 ## Upgrades
 
-- **The schema is still greenfield: a release may change the migration
-  files, and a database created by an earlier release is then recreated, not
-  upgraded in place.** The server records the checksum of every applied
-  migration and refuses to start against a database whose recorded checksums
-  differ from the files it carries (`migration 1 was previously applied but
-  has been modified`). Until the project declares the schema stable, treat a
-  version change as "recreate the database and reload the data": drop the
-  `ehr`, `ext`, `audit` and `cold` schemas (or the database) and let the new
-  version boot. The 4.0.18 release changed every migration file this way (a
-  licence header was added to each). Once stability is declared, migrations
-  become append-only and a rolling upgrade must stay compatible with the
-  _previous_ schema for the window where both versions run: additive changes
-  first, destructive changes a release later.
+- **Upgrade in place; the migrations are append-only.** A released migration
+  is never edited again, so a database created by an earlier release takes the
+  new release's migrations on top of the ones it already carries. The server
+  records the checksum of every applied migration and refuses to start against
+  a database whose recorded checksums differ from the files it carries
+  (`migration 1 was previously applied but has been modified`), which is why
+  editing one would lock every existing installation out of its own database
+  rather than revise its history. A correction ships as a new migration, and a
+  CI guard fails any pull request that modifies, renames or deletes one the
+  base branch already has. A rolling upgrade must still stay compatible with
+  the _previous_ schema for the window in which both versions run: additive
+  changes first, destructive changes a release later.
+
+  Releases up to and including 4.0.18 predate this policy and did edit
+  migration files in place. A database created by one of those and never
+  upgraded since is recreated rather than migrated.
+- **Sweep for stale decomposition after a release that changes how content is
+  decomposed.** The version body is unaffected and every read serves it
+  correctly; what is stale is the decomposed index over it, which a
+  row-level query predicate depends on. `POST {base}/admin/integrity/verify`
+  reports each such version as `stale_decomposition` and
+  `POST {base}/admin/integrity/rebuild-nodes`, run once unscoped, rewrites the
+  rows from the stored document. The changelog names the affected object type
+  at each release that needs it; 4.2.0 is one, for demographic parties. Both
+  routes are on
+  [Admin & messaging APIs](operations-admin-apis.md#storage-integrity).
 - **Bound the DDL yourself.** Every pooled connection carries the
   `db.statement_timeout_ms` value (60 seconds by default), and the migration
   step runs on that pool, so a runaway statement is cut off, but there is **no
@@ -812,8 +836,6 @@ The full reference is [Admin & messaging APIs](operations-admin-apis.md).
 > repository. Keep it off unless a workflow needs it, turn RBAC on, and gate
 > the admin role tightly.
 
-
-
 ## Health probes
 
 The health endpoints are **always served, on the main API port, without
@@ -830,7 +852,7 @@ its own probes.
 | `GET /health` | constant `200 OK` (plain text `OK`), touches nothing | load balancers, `docker` `HEALTHCHECK`, anything that must never be auth-gated |
 | `GET /health/liveness` | identical to `/health`, the same constant answer under the orchestrator-conventional path | Kubernetes `livenessProbe` and `startupProbe` |
 | `GET /health/readiness` | `200` when the aggregate is up or degraded, `503` when a **required** component is down; JSON body with every indicator, each bounded to one second | Kubernetes `readinessProbe`, ops dashboards |
-| `GET /ferroehr/rest/status` | product status document: `status`, `server_version`, `openehr_rest_api_version`, `timestamp`, and `licence` (the grant in force: `state`, `use`, `licensee`, `not_after`, `configured_token`) | version/identity checks; the URL the container's `ferroehr healthcheck` subcommand probes |
+| `GET /ferroehr/rest/status` | product status document: `status`, `server_version`, `openehr_rest_api_version`, `timestamp`, `licence` (the grant in force: `state`, `use`, `licensee`, `not_after`, `configured_token`) and `deployment` (the declared profile, the separations still open and the ones accepted by name) | version/identity checks; the URL the container's `ferroehr healthcheck` subcommand probes |
 | `GET /management/*` | ops introspection; see below | operators, off by default, enable deliberately |
 
 Every management request is itself recorded in the audit trail as a

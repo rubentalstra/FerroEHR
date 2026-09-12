@@ -1,3 +1,6 @@
+| EU legal acts vendored for the compliance citations (GDPR, EHDS, NIS2, CRA, MDR), under `docs/law/eu/` | the EU Publications Office (EUR-Lex) | [`LicenseRef-EUR-Lex-Reuse`](https://github.com/rubentalstra/FerroEHR/blob/main/LICENSES/LicenseRef-EUR-Lex-Reuse.txt) (Commission Decision 2011/833/EU); the consolidated texts additionally [CC-BY 4.0](https://github.com/rubentalstra/FerroEHR/blob/main/LICENSES/CC-BY-4.0.txt) |
+| EDPB Guidelines 01/2025 on pseudonymisation | European Data Protection Board | [`LicenseRef-EDPB-Reuse`](https://github.com/rubentalstra/FerroEHR/blob/main/LICENSES/LicenseRef-EDPB-Reuse.txt) |
+| Dutch acts and decrees (UAVG, Wabvpz, BW Boek 7, the logging-retention decree, Begz), under `docs/law/nl/` | wetten.overheid.nl | [`LicenseRef-Auteurswet-Art11-Public-Domain`](https://github.com/rubentalstra/FerroEHR/blob/main/LICENSES/LicenseRef-Auteurswet-Art11-Public-Domain.txt): no copyright subsists in Dutch legislation |
 # Licensing & legal
 
 This page is the complete licensing picture for FerroEHR: what the project's own
@@ -154,6 +157,10 @@ used as test corpora. Each family keeps its upstream license:
 | One terminology schema file, `PropertyUnitData.xsd` | ADL Designer / ADL2-tools, via the openEHR TERM assets | [AGPL-3.0-only](https://github.com/rubentalstra/FerroEHR/blob/main/LICENSES/AGPL-3.0-only.txt) — see the contradiction below |
 | The self-hosted KaTeX stylesheet and fonts this documentation site renders maths with | KaTeX contributors | MIT |
 | The Citation File Format 1.2.0 JSON Schema (validates `CITATION.cff` in CI) | `citation-file-format/citation-file-format` | [CC-BY 4.0](https://github.com/rubentalstra/FerroEHR/blob/main/LICENSES/CC-BY-4.0.txt) |
+
+The NEN 7510, 7512 and 7513 standards the compliance pages cite are sold under
+copyright and are not in the tree; `docs/law/nl/nen-75xx/` holds a record of the
+clauses cited and why the text is absent.
 
 Every vendored tree in the repository carries a provenance note naming its exact
 upstream source and pinned revision, with the upstream `LICENSE` file vendored

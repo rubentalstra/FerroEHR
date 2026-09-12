@@ -8,11 +8,11 @@ environment-name grammar, and file discovery are on the
 
 ## What this section is for
 
-FerroEHR keeps clinical content and demographic parties in separate database
-schemas reached by separate roles. That separation is only worth something if
-the clinical side does not carry the subject's identity anyway — in the
-subject reference, in a party proxy, or in free text. This section is the
-three rules that keep it out.
+FerroEHR keeps clinical content, demographic parties and the map between them
+in three separate database schemas reached by separate roles. That separation
+is only worth something if the clinical side does not carry the subject's
+identity anyway, in the subject reference, in a party proxy, or in free text.
+This section is the three rules that keep it out.
 
 No openEHR specification governs any of them. The Reference Model leaves
 `EHR_STATUS.subject.external_ref` open and only advises against identifying
@@ -313,7 +313,6 @@ its own rows for the party root, for each `PARTY_IDENTITY`, `CONTACT`, `ADDRESS`
 and `CAPABILITY` nested in it, and for every archetyped `ITEM_TREE` or `CLUSTER`
 under any of their `details`. An `ADDRESS` under a `CONTACT` is therefore
 bindable like anything else.
-
 
 ## Interaction with the audit trail
 

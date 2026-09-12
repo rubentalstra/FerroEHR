@@ -84,8 +84,8 @@ every step. Three callers:
    The `sandbox-reseed` leg then wipes, restarts and reseeds.
 2. **A manual `workflow_dispatch`** of `.github/workflows/hosted-deploy.yml`.
 3. **The reseed** (`sandbox-reseed.yml`, nightly + after every release
-   deploy) — verbs `wipe` (drop the schemas on the private database box,
-   with the DSN this box already holds) and `restart` (recreate the CDR so
+   deploy) — verbs `wipe` (drop all seven of the CDR's schemas on the private
+   database box, with the DSN this box already holds) and `restart` (recreate the CDR so
    a fresh boot re-runs the migrations against the wiped database).
 
 The deploy key is restricted on the box to `deploy.sh` (`command=` in

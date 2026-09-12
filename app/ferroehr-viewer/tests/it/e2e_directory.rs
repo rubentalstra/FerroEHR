@@ -41,7 +41,9 @@
 
 use crate::common;
 
-use common::{Harness, env, login_basic, wait_css_absent, wait_text};
+use common::{
+    Harness, count_matching, env, is_present_by, login_basic, wait_css_absent, wait_text,
+};
 use thirtyfour::prelude::*;
 
 /// Create an anonymous EHR through the viewer and land on its detail page,
@@ -61,12 +63,7 @@ async fn create_ehr(h: &Harness) -> String {
     h.wait_css("#ehr-detail, [id^='tab-'], main").await;
     let mut url = String::new();
     for _ in 0..50u8 {
-        url = h
-            .driver
-            .current_url()
-            .await
-            .expect("current url")
-            .to_string();
+        url = h.current_url().await;
         if let Some(tail) = url.split("/ehrs/").nth(1)
             && tail.len() >= 36
         {
@@ -348,13 +345,8 @@ async fn directory_item_picker_add_remove_journey() {
     // The survivor is the OTHER one, by identity — never by count.
     wait_css_absent(&h, &format!("[data-item-id='{removed}']")).await;
     h.wait_css(&format!("[data-item-id='{kept}']")).await;
-    let on_screen = h
-        .driver
-        .find_all(By::Css("[data-item-id]"))
-        .await
-        .expect("the remaining item rows");
     assert_eq!(
-        on_screen.len(),
+        count_matching(&h, "[data-item-id]").await,
         1,
         "exactly one reference is left on screen after removing a sibling"
     );
@@ -535,13 +527,8 @@ async fn directory_history_load_older_journey() {
     // The newest version heads the list; the whole first window renders from
     // one resolution, so v1's absence beside it is a settled fact, not a race.
     h.wait_xpath(&history_row_xpath(deepest)).await;
-    let oldest_rows = h
-        .driver
-        .find_all(By::XPath(history_row_xpath(1)))
-        .await
-        .expect("query the oldest history row");
     assert!(
-        oldest_rows.is_empty(),
+        !is_present_by(&h, By::XPath(history_row_xpath(1))).await,
         "the initial history load must stop at the newest window, but v1 of {deepest} was listed"
     );
     h.shot(1, "history-first-window").await;

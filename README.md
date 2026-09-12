@@ -7,7 +7,7 @@
 *Pronounced "FER-ro-E-H-R" — from **ferrum**, iron. Rust is just iron oxide, so we went straight to the element.\
 (Saying "ferro-air" is unsupported, but we can't stop you.)*
 
-ITS-REST 1.1.0 &nbsp;·&nbsp; AQL 1.1 &nbsp;·&nbsp; RM 1.2.0 **+ 1.1.0** &nbsp;·&nbsp; ADL 1.4 + 2.4 &nbsp;·&nbsp; PostgreSQL 18 &nbsp;·&nbsp; Rust 1.96
+ITS-REST 1.1.0 &nbsp;·&nbsp; AQL 1.1 &nbsp;·&nbsp; RM 1.2.0 **+ 1.1.0** &nbsp;·&nbsp; ADL 1.4 + 2.4 &nbsp;·&nbsp; PostgreSQL 18 &nbsp;·&nbsp; Rust 1.98
 
 **Try it live: [sandbox.ferroehr.eu](https://sandbox.ferroehr.eu)** (`ferroehr` / `ferroehr`, demo data, reset nightly)
 
@@ -128,13 +128,13 @@ on the documentation site.
   their own 1.4 rules and can be migrated to ADL 2 in-CDR. Every
   template, either dialect, generates spec-valid example compositions
   that pass the server's own validation.
-- **One static Rust binary.** Predictable memory, fast cold starts, a
+- **One self-contained Rust binary.** Predictable memory, fast cold starts, a
   minimal distroless container image, no garbage-collection pauses in the
   write path.
-- **PostgreSQL 18-native clinical storage.** Temporal versioning with
-  database-enforced non-overlap, time-ordered UUIDv7 keys, and canonical
-  openEHR JSON stored verbatim. What you store is exactly what the API
-  serves.
+- **PostgreSQL 18-native clinical storage.** One temporal version table whose
+  non-overlap is held by partial unique indexes, time-ordered UUIDv7 keys, and
+  canonical openEHR JSON stored verbatim. What you store is exactly what the
+  API serves.
 
 ## Features
 
@@ -146,7 +146,9 @@ on the documentation site.
 - **AQL 1.1 engine:** typed path analysis over a spec-generated Reference
   Model, compiled to efficient SQL; including `ALL_VERSIONS`,
   terminology-backed `TERMINOLOGY()` expansion inside `matches`, and stored
-  parameterised queries
+  parameterised queries; plus cohort queries that select a population in the
+  demographic domain and run AQL over exactly those EHRs, with small-cell
+  suppression and no party identifier on the wire
 - **Full versioning semantics:** contribution-atomic commits, indelible
   version history, logical delete, attestations, per-version digital
   signatures, point-in-time reads
@@ -183,6 +185,17 @@ on the documentation site.
 
 ### Security & operations
 
+- **A pseudonymisation boundary in the database:** the clinical record, the
+  identities of its subjects and the map between them live in three separate
+  schemas behind five non-overlapping `NOINHERIT` roles, each pool takes its
+  own DSN, and the server refuses to boot when a role can read across. National
+  identifiers in the demographic domain can be sealed under a per-tenant key
+  with a keyed digest for lookup; the clinical write path refuses a national
+  identifier, a non-pseudonym subject reference or an identified party
+- **A declared deployment posture:** `deployment_profile = "production"`
+  refuses to start while a separation is open and not accepted by name;
+  `sandbox`, the default, names every open one on the banner, in the log and on
+  `GET /rest/status`
 - **Authentication:** Basic and OAuth2/OIDC (Keycloak, Active Directory,
   any standards-compliant identity provider)
 - **Authorization:** role-based access control plus attribute-based
@@ -539,7 +552,7 @@ deploys, and listed on
 
 ```shell
 helm install ferroehr oci://ghcr.io/rubentalstra/charts/ferroehr \
-  --version 6.0.13 --set database.existingSecret=my-db-secret
+  --version 8.2.3 --set database.existingSecret=my-db-secret
 ```
 
 There is no HTTP chart repository, so `helm repo add` does not apply — OCI is the

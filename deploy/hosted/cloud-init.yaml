@@ -122,9 +122,12 @@ write_files:
           ghcr.io/rubentalstra/ferroehr-postgres:latest "$dsn" \
           -v ON_ERROR_STOP=1 \
           -c 'DROP SCHEMA IF EXISTS ehr CASCADE' \
+          -c 'DROP SCHEMA IF EXISTS demographic CASCADE' \
+          -c 'DROP SCHEMA IF EXISTS linkage CASCADE' \
           -c 'DROP SCHEMA IF EXISTS audit CASCADE' \
           -c 'DROP SCHEMA IF EXISTS ext CASCADE' \
-          -c 'DROP SCHEMA IF EXISTS cold CASCADE'
+          -c 'DROP SCHEMA IF EXISTS cold CASCADE' \
+          -c 'DROP SCHEMA IF EXISTS cold_demographic CASCADE'
         exit 0
       fi
 

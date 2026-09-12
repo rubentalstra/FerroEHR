@@ -10,9 +10,9 @@ frames, keeps a sample history per variable, and serves fresh values out of that
 history without re-querying the source.
 
 > [!IMPORTANT]
-> In this release the Subject Proxy is a **service-layer capability, not a REST
-> API**: no HTTP endpoints expose it. What you can configure today is the set of
-> external FHIR systems its frames are allowed to reach ([below](#connecting-fhir-systems)),
+> The Subject Proxy is a **service-layer capability, not a REST API**: no HTTP
+> endpoints expose it. What you can configure today is the set of external FHIR
+> systems its frames are allowed to reach ([below](#connecting-fhir-systems)),
 > and the server builds that executor at startup when you name at least one
 > system. The openEHR service model defines the operations; the wire exposure is
 > future work.

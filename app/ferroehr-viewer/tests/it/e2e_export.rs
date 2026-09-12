@@ -49,7 +49,7 @@ use crate::common;
 
 use reqwest::StatusCode;
 
-use common::{Harness, env, login_basic};
+use common::{Harness, env, find_all, login_basic};
 use thirtyfour::prelude::*;
 
 /// The query the journey exports: two scalar columns over the compositions
@@ -104,11 +104,7 @@ async fn field_value(form: &WebElement, name: &str) -> String {
 /// # Panics
 /// When no export form carries that format.
 async fn posted_form(h: &Harness, format: &str) -> PostedForm {
-    let forms = h
-        .driver
-        .find_all(By::Css("form[action='/export/aql']"))
-        .await
-        .expect("the export forms");
+    let forms = find_all(h, "form[action='/export/aql']").await;
     for form in forms {
         let held = field_value(&form, "format").await;
         if held == format {
@@ -130,11 +126,7 @@ async fn posted_form(h: &Harness, format: &str) -> PostedForm {
 /// # Panics
 /// When the signed-in browser holds no cookie at all.
 async fn session_cookie_header(h: &Harness) -> String {
-    let cookies = h
-        .driver
-        .get_all_cookies()
-        .await
-        .expect("the browser's cookies for the viewer origin");
+    let cookies = h.cookies().await;
     assert!(
         !cookies.is_empty(),
         "a signed-in viewer browser must hold a session cookie"
@@ -192,21 +184,11 @@ fn header(response: &reqwest::Response, name: reqwest::header::HeaderName) -> St
 async fn table_on_screen(h: &Harness) -> (Vec<String>, Vec<Vec<String>>) {
     h.wait_css("table tbody tr").await;
     let mut headers = Vec::new();
-    for cell in h
-        .driver
-        .find_all(By::Css("table thead th"))
-        .await
-        .expect("the table's header cells")
-    {
+    for cell in find_all(h, "table thead th").await {
         headers.push(cell.text().await.expect("a header cell's text"));
     }
     let mut rows = Vec::new();
-    for row in h
-        .driver
-        .find_all(By::Css("table tbody tr"))
-        .await
-        .expect("the table's body rows")
-    {
+    for row in find_all(h, "table tbody tr").await {
         let mut cells = Vec::new();
         for cell in row.find_all(By::Tag("td")).await.expect("a row's cells") {
             cells.push(cell.text().await.expect("a cell's text"));

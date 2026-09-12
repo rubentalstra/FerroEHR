@@ -48,7 +48,10 @@ its [terminology surface](terminology.md) the field is simply a plain text box.
 
 Choose what comes back: whole compositions, projected data points (with
 column aliases), a bare match count, or the distinct EHR ids matching the
-criteria tree (**EHRs (cohort)**). Run pages through the result set; save the
+criteria tree (**EHRs (cohort)**). That shape is a plain AQL projection over
+the clinical record and is unrelated to the server's
+[cross-domain cohort query](../querying-aql.md#cohort-queries-across-the-pseudonymisation-boundary),
+which the viewer does not drive. Run pages through the result set; save the
 query to the CDR's stored-query registry under a namespace and a name (see
 [Grouping is the namespace](#grouping-is-the-namespace)).
 

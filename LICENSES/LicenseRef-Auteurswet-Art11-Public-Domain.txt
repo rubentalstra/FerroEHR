@@ -1,0 +1,48 @@
+Dutch legislation: no copyright subsists (Auteurswet Art. 11)
+=============================================================
+
+This identifier covers the Dutch acts and decrees vendored under
+`docs/law/nl/`, fetched from wetten.overheid.nl by `scripts/vendor/law-nl.sh`.
+It is not a licence and it is not a grant. It records that Dutch statute puts
+this material outside copyright altogether, so no permission is needed and none
+is claimed.
+
+What the statute says
+---------------------
+
+Auteurswet (Copyright Act 1912, BWBR0001886), Article 11, quoted verbatim from
+https://wetten.overheid.nl/BWBR0001886/2026-01-01, read 2026-09-12:
+
+  Er bestaat geen auteursrecht op wetten, besluiten en verordeningen, door de
+  openbare macht uitgevaardigd, noch op rechterlijke uitspraken en
+  administratieve beslissingen.
+
+An unofficial English rendering, for a reader who needs one: no copyright
+subsists in laws, decrees and ordinances issued by the public authority, nor in
+judicial rulings and administrative decisions. The Dutch text above is the
+authoritative one; this sentence is a convenience and carries no legal weight.
+
+How it applies to this repository
+---------------------------------
+
+Every file this identifier covers is one of the things Article 11 names: an act
+of parliament, a decree, or a ministerial order, issued by the Dutch public
+authority and published in the official consolidated database at
+wetten.overheid.nl. No copyright subsists in them, so redistributing them
+verbatim needs no permission and grants none.
+
+What is vendored is the publisher's own HTML for a named consolidation date,
+byte for byte, with a SHA-256 recorded beside it. Each act's `PROVENANCE.md`
+names the BWB identifier, the consolidation and the fetch, so a reader can
+re-derive the same document from the source rather than trusting this copy.
+
+The presentation layer of wetten.overheid.nl (its styling and site chrome, which
+the served HTML carries along with the act) is the publisher's; nothing here
+reuses it as a design, and none of it is served or rendered by this project.
+
+The NEN standards cited by the same compliance pages are NOT covered by this
+identifier and are NOT in the tree: NEN 7510-1:2024, NEN 7510-2:2024,
+NEN 7512:2022 and NEN 7513:2018 are sold under copyright by NEN. Article 11
+does not reach them, because a NEN standard is not an act of the public
+authority even where legislation refers to it. Their directories under
+`docs/law/nl/` carry a record and no text.

@@ -1,3 +1,5 @@
+| EU legal acts + the EDPB pseudonymisation guidelines (the compliance citations' referents) | `scripts/vendor/law-eu.sh` | `docs/law/eu/` |
+| Dutch acts and decrees (+ the NEN 75xx records, text absent by copyright) | `scripts/vendor/law-nl.sh` | `docs/law/nl/` |
 ---
 paths: ["scripts/vendor/*.sh", "corpus/**", "crates/openehr-adl/tests/corpus/**"]
 ---
@@ -111,3 +113,26 @@ Vendoring is half a change. The standing owner rule (`.claude/rules/testing.md`
 - Size honesty: these packs are large (the full CKM template pack is ~100 MB
   of XML; the archetype packs ~25 MB). That is acceptable for text that git
   compresses well, but a pack is only worth its weight if a gate reads it.
+- **The law corpus (`docs/law/`) is exercised by digest, not by a parser**
+  (#3291/#3292): no reader consumes a legal text, so its gate is
+  `scripts/checks/law-corpus.sh`, which reads every vendored byte against the
+  recorded `SHA256SUMS`, refuses a file the record does not name (and a record
+  naming a missing file), and requires every act directory to be indexed by
+  `docs/law/README.md`, whose page-to-act table is the coverage record.
+
+## EU and Dutch legal texts — fetch facts, verified 2026-09-12
+
+- **The EUR-Lex `legal-content/…/TXT/HTML` page is not vendorable byte for
+  byte**: it injects a bot-detection script with a per-request `agentId` and
+  `rpid`, so two fetches of an unchanged act differ. Fetch the Publications
+  Office CELEX URI instead, `https://publications.europa.eu/resource/celex/<celex>`
+  with `Accept: application/xhtml+xml`, which serves the same bytes every time.
+- **That URI answers `303` with an `http://` Location.** Resolve the header and
+  re-issue over https (`resolve_celex()` in `law-eu.sh`); never widen
+  `--proto-redir` to permit the plaintext hop.
+- **wetten.overheid.nl stamps `Geraadpleegd op <date>` into the served markup**,
+  so an NL re-run always changes the digests even when no act changed a word; a
+  re-pin diff there is not evidence of an upstream change by itself.
+- Only the OJ text has legal effect; a consolidation is vendored when EUR-Lex
+  publishes one that folds in an amendment (GDPR, MDR), and the OJ text
+  otherwise (EHDS, NIS2, CRA). Each `PROVENANCE.md` records which and why.

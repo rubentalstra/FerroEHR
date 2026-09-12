@@ -423,7 +423,11 @@ machine-readable `error` reason phrase:
   ```
 
   Each entry is `"<path>: <message>"`, so a client can point the user at the
-  exact offending node.
+  exact offending node. A refusal from the
+  [data-minimisation rules](../installation/config-privacy.md) uses the same
+  list and the same shape, with one entry per finding, and deliberately never
+  echoes the value that matched: repeating it would carry the identifier into
+  the response body, the access log and the traces.
 
 - **All other errors** carry the same shape with an empty list:
 

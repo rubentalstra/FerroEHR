@@ -48,10 +48,9 @@ use crate::common;
 use reqwest::StatusCode;
 
 use common::{
-    Harness, confirm_in_dialog, env, login_basic, login_basic_as, retype, wait_css_absent,
-    wait_enabled, wait_text, wait_text_contains,
+    Harness, confirm_in_dialog, count_matching, env, is_present, login_basic, login_basic_as,
+    retype, wait_css_absent, wait_enabled, wait_text, wait_text_contains,
 };
-use thirtyfour::prelude::*;
 
 /// The tenant the CRUD round trip owns.
 const ROUND_TRIP_TENANT: &str = "e2e-viewer-tenant";
@@ -167,7 +166,7 @@ async fn open_registry(h: &Harness) {
     h.goto("/tenants").await;
     h.wait_css("#tenants-screen").await;
     assert!(
-        h.driver.find(By::Css("#tenants-disabled")).await.is_err(),
+        !is_present(h, "#tenants-disabled").await,
         "the CDR under test runs with the tenancy extension disabled — set \
          FERROEHR__TENANCY__ENABLED=true on the composed `ferroehr` service"
     );
@@ -214,13 +213,9 @@ async fn the_context_card_reports_the_credentials_own_tenant() {
 
     // The read-only stance is structural, not copy: no control on the screen
     // selects a tenant.
-    let selectors = h
-        .driver
-        .find_all(By::Css("#tenant-context select, #tenant-context input"))
-        .await
-        .unwrap_or_default();
-    assert!(
-        selectors.is_empty(),
+    let selectors = count_matching(&h, "#tenant-context select, #tenant-context input").await;
+    assert_eq!(
+        selectors, 0,
         "the tenant context is display-only — a selector would be a tenant switcher"
     );
 
@@ -420,11 +415,7 @@ async fn a_session_without_the_admin_role_reads_the_refusal_on_the_screen() {
 
     // A refused READ never toasts (the viewer's one feedback rule).
     assert!(
-        h.driver
-            .find_all(By::Css(".thaw-toast-body"))
-            .await
-            .unwrap_or_default()
-            .is_empty(),
+        count_matching(&h, ".thaw-toast-body").await == 0,
         "a refused read reports inline only — a toast would be the mutation rule leaking"
     );
 

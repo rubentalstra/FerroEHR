@@ -30,7 +30,7 @@ use crate::common;
 
 use std::time::Duration;
 
-use common::{Harness, env, is_visible, login_basic};
+use common::{Harness, env, find_all, is_visible, login_basic};
 use thirtyfour::prelude::*;
 
 /// A two-numeric-column query over the harness-seeded compositions
@@ -63,11 +63,7 @@ fn seeded() -> bool {
 /// chartistry renders as missing data), so this is the DOM-visible count of
 /// series actually on screen.
 async fn drawn_lines(h: &Harness) -> usize {
-    let paths = h
-        .driver
-        .find_all(By::Css("g._chartistry_line path"))
-        .await
-        .unwrap_or_default();
+    let paths = find_all(h, "g._chartistry_line path").await;
     let mut drawn = 0;
     for path in paths {
         if let Ok(Some(geometry)) = path.attr("d").await
@@ -167,11 +163,7 @@ async fn results_chart_groups_series_and_toggles_them() {
 
     // The legend names both series.
     h.wait_css("[data-chart-legend]").await;
-    let chips = h
-        .driver
-        .find_all(By::Css("[data-chart-series]"))
-        .await
-        .expect("legend chips");
+    let chips = find_all(&h, "[data-chart-series]").await;
     assert_eq!(chips.len(), 2, "one legend entry per series");
     let mut names = Vec::new();
     for chip in &chips {

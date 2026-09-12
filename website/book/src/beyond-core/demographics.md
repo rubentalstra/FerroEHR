@@ -37,6 +37,27 @@ Deletion is **logical**, as it is for clinical content: a delete commits a new
 version in the deleted state rather than erasing history. A deleted party then
 reads as absent, and deleting one twice is refused.
 
+## Where a party is stored
+
+Parties do not live in the clinical schema. They live in a `demographic`
+schema of their own, with its own `cold_demographic` archival tier and its own
+database roles, and the database refuses the mix in both directions: a version
+with no owning EHR cannot enter the clinical schema, and one that has an owner
+cannot enter `demographic`. Point `[db] demographic_url` at a role of its own
+and the schema separation becomes a credential separation as well. See
+[Operations → Database roles and least
+privilege](../operations.md#database-roles-and-least-privilege) for the roles
+and [the pseudonymisation boundary](../security.md#the-pseudonymisation-boundary)
+for what the split is for.
+
+The demographic side is where a person's national identifier legitimately
+lives, and `[demographic.identifier_protection]` decides how it is held there:
+with it on, the value leaves the versioned body for an encrypted column and
+the body keeps a reference, while a keyed digest beside the ciphertext still
+answers "which party holds this identifier". The wire shape of every route
+below is unchanged either way. See
+[Privacy & data minimisation](../installation/config-privacy.md#protecting-national-identifiers-in-the-demographic-domain).
+
 ## Party endpoints
 
 All paths are relative to the API base path (`/ferroehr/rest/openehr/v1`), and

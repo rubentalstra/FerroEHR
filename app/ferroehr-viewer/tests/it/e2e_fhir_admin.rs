@@ -52,10 +52,9 @@ use crate::common;
 use reqwest::StatusCode;
 
 use common::{
-    Harness, confirm_in_dialog, env, login_basic, login_basic_as, retype, wait_css_absent,
-    wait_enabled, wait_text, wait_text_contains,
+    Harness, confirm_in_dialog, count_matching, env, is_present, login_basic, login_basic_as,
+    retype, wait_css_absent, wait_enabled, wait_text, wait_text_contains,
 };
-use thirtyfour::prelude::*;
 
 /// The template every fixture mapping builds under. `scripts/ui-e2e.sh` already
 /// uploads it while seeding the stack; [`seed_template`] re-sends it so a
@@ -348,7 +347,7 @@ async fn open_connector(h: &Harness) {
     h.goto("/fhir").await;
     h.wait_css("#fhir-screen").await;
     assert!(
-        h.driver.find(By::Css("#fhir-disabled")).await.is_err(),
+        !is_present(h, "#fhir-disabled").await,
         "the CDR under test runs with the FHIR connector disabled — set \
          FERROEHR__FHIR__API_ENABLED=true on the composed `ferroehr` service"
     );
@@ -686,11 +685,7 @@ async fn the_read_path_viewer_answers_for_a_patient() {
     )
     .await;
     assert!(
-        h.driver
-            .find_all(By::Css(".thaw-toast-body"))
-            .await
-            .unwrap_or_default()
-            .is_empty(),
+        count_matching(&h, ".thaw-toast-body").await == 0,
         "a failed read reports inline only — a toast would be the mutation rule leaking"
     );
     h.shot(3, "fhir-read-outcome").await;
@@ -724,11 +719,7 @@ async fn a_session_without_the_admin_role_reads_the_refusal_on_the_screen() {
 
     // A refused READ never toasts (the viewer's one feedback rule).
     assert!(
-        h.driver
-            .find_all(By::Css(".thaw-toast-body"))
-            .await
-            .unwrap_or_default()
-            .is_empty(),
+        count_matching(&h, ".thaw-toast-body").await == 0,
         "a refused read reports inline only — a toast would be the mutation rule leaking"
     );
 

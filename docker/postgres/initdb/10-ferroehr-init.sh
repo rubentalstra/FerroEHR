@@ -93,6 +93,7 @@ BEGIN
   -- it shows.
   GRANT ferroehr_ehr TO "${APP_USER}";
   GRANT ferroehr_demographic TO "${APP_USER}";
+  GRANT ferroehr_linkage TO "${APP_USER}";
 END
 \$do\$;
 SQL

@@ -38,8 +38,7 @@ use crate::common;
 
 use std::time::Duration;
 
-use common::{Harness, login_basic};
-use thirtyfour::prelude::*;
+use common::{Harness, count_matching, find_all, login_basic};
 
 /// The previewer's input field.
 const PREVIEW_INPUT: &str = "#scope-previewer-input";
@@ -76,11 +75,7 @@ async fn open_access_drawer(h: &Harness) {
 
 /// How many grant cards the previewer currently renders.
 async fn card_count(h: &Harness) -> usize {
-    h.driver
-        .find_all(By::Css(PREVIEW_CARDS))
-        .await
-        .unwrap_or_default()
-        .len()
+    count_matching(h, PREVIEW_CARDS).await
 }
 
 /// Explicit wait (never a sleep) on the SETTLED preview: the rendered grants
@@ -106,11 +101,7 @@ async fn wait_cards_contain(h: &Harness, needle: &str) {
 
 /// The concatenated text of every rendered grant card.
 async fn cards_text(h: &Harness) -> String {
-    let cards = h
-        .driver
-        .find_all(By::Css(PREVIEW_CARDS))
-        .await
-        .unwrap_or_default();
+    let cards = find_all(h, PREVIEW_CARDS).await;
     let mut text = String::new();
     for card in cards {
         text.push_str(&card.text().await.unwrap_or_default());

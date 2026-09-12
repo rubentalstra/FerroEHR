@@ -57,8 +57,8 @@ dates:
 components:
   - id: interoperability
     name: European interoperability software component for EHR systems
-    status: planned
-    issues: [3171]
+    status: open
+    issues: [3171, 3206]
     note: >-
       The requirements this component carries are Annex II 2.1 to 2.3: an
       interface that provides and receives personal electronic health data in
@@ -74,9 +74,9 @@ components:
       Annex II 3.2 lists five things every access event must record. The
       access-event model records the accessing organisation and person, the
       subject, the object and its domain, the outcome, the purpose and the
-      time, and the audit trail is retrievable. Two of the five are still
-      short: the category is an openEHR resource class rather than an Annex I
-      priority category, and the origin of the data has no field.
+      time, the origins of the served data, and the audit trail is
+      retrievable. One of the five is still short: the category is an openEHR
+      resource class rather than an Annex I priority category.
 
 # Annex II, "Essential requirements for the harmonised software components of
 # EHR systems and for products for which interoperability with EHR systems has
@@ -144,7 +144,12 @@ requirements:
           data provides an interface giving access to it in the European
           electronic health record exchange format, through the European
           interoperability software component.
-        status: planned
+        status: open
+        question: >-
+          The exchange format waits on the Article 36 implementing acts; the
+          FHIR façade's round trips per priority category are recorded, and
+          the profile mappings that would carry the format belong to
+          FerroBRIDGE.
         issues: [3171, 3206]
         evidence:
           - text: Which priority categories round-trip through the FHIR façade
@@ -153,13 +158,18 @@ requirements:
         summary: >-
           Such a system can receive personal electronic health data in that
           format, through the same component.
-        status: planned
+        status: open
+        question: >-
+          Receiving the exchange format waits on the same Article 36 acts as
+          providing it.
         issues: [3171]
       - id: "2.3"
         summary: >-
           A system designed to provide access to personal electronic health
           data can receive it in that format, through the same component.
-        status: planned
+        status: open
+        question: >-
+          The same open question as 2.2: the format is not yet fixed.
         issues: [3171]
       - id: "2.4"
         summary: >-

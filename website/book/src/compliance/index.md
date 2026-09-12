@@ -122,22 +122,24 @@ flowchart LR
 
 ### What is planned
 
-Two pieces of the programme
-([#3152](https://github.com/rubentalstra/FerroEHR/issues/3152)) are open, and
-both are about reading across the boundary rather than holding it.
+One piece of the programme ([#3152](https://github.com/rubentalstra/FerroEHR/issues/3152) closed with v4.2.0) is still open,
+and it is about reading across the boundary for secondary use rather than
+holding the boundary.
 
 | Planned control | Issue |
 |---|---|
-| Cross-domain cohort queries with a demographic predicate and a clinical selection, with small-cell suppression | [#3159](https://github.com/rubentalstra/FerroEHR/issues/3159) |
-| A secondary-use read model as a separate pseudonymisation domain, fed from the outbox | [#3160](https://github.com/rubentalstra/FerroEHR/issues/3160) |
+| A secondary-use read model as a separate pseudonymisation domain, fed from the outbox, under project-level pseudonyms | [#3160](https://github.com/rubentalstra/FerroEHR/issues/3160) |
 
-Until they land, a cohort question that spans both domains has no supported
-answer, and no threshold is applied to any result set: a query returning one
-row about one rare condition is served like any other. Size your access
-control, purpose limitation and risk assessment on that. The
-[threat model](../threat-model.md) states the residual risk at each boundary,
-and the [DPIA page](../security/dpia.md) carries the risk register and the
-shipped controls by issue number.
+Cross-domain cohort queries shipped with v4.2.0 ([#3159](https://github.com/rubentalstra/FerroEHR/issues/3159)): a cohort
+question that spans both domains is answered through
+[`POST /query/cohort`](../querying-aql.md#cohort-queries-across-the-pseudonymisation-boundary),
+each step on its own credential with identifiers only crossing between them,
+and a result set serving fewer distinct EHRs than the configured threshold is
+withheld and marked suppressed. Until the read model lands, secondary use runs
+on the primary store under those controls; size your access control, purpose
+limitation and risk assessment on that. The [threat model](../threat-model.md)
+states the residual risk at each boundary, and the [DPIA page](../security/dpia.md)
+carries the risk register and the shipped controls by issue number.
 
 ### The deployment profile
 
@@ -164,14 +166,14 @@ repository actually touches.
 
 | What the article asks for | What FerroEHR ships | Tracker | What the deploying organisation must do |
 |---|---|---|---|
-| **Art. 4(5)** pseudonymisation: identifying data kept separately, under technical measures | Separate schemas with non-overlapping `NOINHERIT` roles, enforced by grants, by a boot-time self-check and by a database constraint in both directions; optionally separate credentials | partly shipped, [#3153](https://github.com/rubentalstra/FerroEHR/issues/3153); the resolve map and the identifier constraints are [#3158](https://github.com/rubentalstra/FerroEHR/issues/3158) and [#3154](https://github.com/rubentalstra/FerroEHR/issues/3154) | Point the demographic pool at its own DSN, and keep the additional information out of the clinical side until those land |
+| **Art. 4(5)** pseudonymisation: identifying data kept separately, under technical measures | Clinical, demographic and linkage data in three schemas under non-overlapping `NOINHERIT` roles, enforced by grants, by a boot-time self-check in both directions and by a check on every table; separated credentials and clusters are asserted by the `production` [deployment profile](../installation/configuration.md#deployment_profile) | shipped, [#3153](https://github.com/rubentalstra/FerroEHR/issues/3153), [#3158](https://github.com/rubentalstra/FerroEHR/issues/3158), [#3226](https://github.com/rubentalstra/FerroEHR/issues/3226) | Run the production profile with the separations it asserts, and hold any additional information the CDR never sees to the same standard |
 | **Art. 5(1)(f)** integrity and confidentiality | TLS 1.3 with optional mutual authentication, [authentication and authorization](../security.md), per-version digest [signing](../signing/index.md), a tamper-evident audit chain | shipped | Terminate TLS correctly, run the identity provider, hold the keys |
 | **Art. 5(2)** accountability: being able to demonstrate compliance | An audit trail of every access, [retrievable over ITI-81](../audit.md#retrieving-audit-records-iti-81), plus openEHR's own contribution and audit chain on every write | shipped | Keep the records, define retention, be able to produce them |
 | **Art. 9** special categories of data | Object-level [`EHR_ACCESS`](../security.md#per-ehr-access-control-ehr_access) settings, RBAC, ABAC, tenant row-level security | shipped | Establish the Art. 9(2) condition and the national derogation that permits the processing |
 | **Art. 25** data protection by design and by default | Deny-by-default authorization, an `EHR_ACCESS` default that can be set to restricted, tenancy that fails closed, audit on by default | shipped | Choose the restrictive settings. Two defaults favour compatibility instead: the per-EHR access default is `open`, and the audit fail mode is `open` |
 | **Art. 30** records of processing activities | The effective configuration as a redacted JSON tree at `GET {base}/admin/config`, and this book as a description of what the software does | shipped | Write and maintain the record itself; the software cannot know your purposes or recipients |
 | **Art. 32** security of processing | The controls listed in [Security & multi-tenancy](../security.md) and the residual risk in the [threat model](../threat-model.md) | shipped | Assess whether they are appropriate to your risk, and supply everything below the application |
-| **Art. 35** data protection impact assessment | Published control and boundary documentation to assess against | guidance planned, [#3161](https://github.com/rubentalstra/FerroEHR/issues/3161) | Run the DPIA; it is the controller's, and no supplier document replaces it |
+| **Art. 35** data protection impact assessment | A [DPIA page](../security/dpia.md) with the processing description, the data categories per schema, the roles, the retention including the Dutch access-log floor, a risk register and the shipped controls by issue, beside [records of processing](../security/records-of-processing.md) pre-filled with what the software does and a [go-live checklist](../security/go-live-checklist.md) | shipped, [#3161](https://github.com/rubentalstra/FerroEHR/issues/3161) | Run the DPIA; it is the controller's, and no supplier document replaces it |
 
 ## EDPB Guidelines 01/2025 on pseudonymisation
 
@@ -183,9 +185,9 @@ where that attacker cannot reach it.
 | What the guidelines ask for | What FerroEHR ships | Tracker | What the deploying organisation must do |
 |---|---|---|---|
 | A pseudonymisation domain stated explicitly | The clinical and demographic domains are separate schemas with their own roles, and the server refuses to boot if a role reaches across | shipped, [#3153](https://github.com/rubentalstra/FerroEHR/issues/3153) | State the domain for your deployment, including the parts outside FerroEHR |
-| The additional information held separately from the pseudonymised data | Nothing yet; the resolve map is planned as its own schema and role | planned, [#3158](https://github.com/rubentalstra/FerroEHR/issues/3158) | Hold your own identity mapping outside the CDR if you need the separation today |
+| The additional information held separately from the pseudonymised data | The party-to-EHR map lives in its own `linkage` schema under its own `NOINHERIT` role, revoked from both domains it joins and reached by no other pool; it is temporal, so a merge or split closes a row rather than deleting it, and it is backed up under its own key and its own job | shipped, [#3158](https://github.com/rubentalstra/FerroEHR/issues/3158), [#3157](https://github.com/rubentalstra/FerroEHR/issues/3157) | Hold any mapping outside the CDR to the same standard, and give the linkage backup the narrowest audience |
 | A written attacker model, including the insider holding a credential | The [threat model](../threat-model.md) names actors, boundaries and the risk surviving each control | shipped | Extend it with the actors your environment adds: operators, backups, the network |
-| Resolution of a pseudonym recorded and controlled | Every access is audited today; the audited resolve path is planned with the linkage service | partly shipped, [#3155](https://github.com/rubentalstra/FerroEHR/issues/3155) | Restrict who may resolve, and review the trail |
+| Resolution of a pseudonym recorded and controlled | Every resolution, merge and split is a linkage-domain access record, refused when it cannot be recorded under `fail_mode = "closed"`; a cohort query names its cohort by a digest of its predicates and never by their values | shipped, [#3155](https://github.com/rubentalstra/FerroEHR/issues/3155), [#3235](https://github.com/rubentalstra/FerroEHR/issues/3235), [#3159](https://github.com/rubentalstra/FerroEHR/issues/3159) | Restrict who may resolve, and review the trail |
 
 ## EHDS
 
@@ -197,8 +199,8 @@ the regulation's own final provisions rather than today.
 | Chapter | What FerroEHR ships | Tracker | What the deploying organisation must do |
 |---|---|---|---|
 | **Chapter II**, primary use, including the patient's access to their data and to a record of who accessed it | An [access trail](../audit.md) of every read, write and refusal, searchable by patient and by agent | shipped | Build the patient-facing access route; the CDR exposes the trail to an admin caller, not to the patient |
-| **Chapter III**, EHR systems: a European interoperability software component and a European logging software component, with published technical documentation | A [conformance record](../conformance.md) and an [audit model](../audit.md) to map onto those components | readiness planned, [#3168](https://github.com/rubentalstra/FerroEHR/issues/3168), [#3169](https://github.com/rubentalstra/FerroEHR/issues/3169), [#3170](https://github.com/rubentalstra/FerroEHR/issues/3170), [#3171](https://github.com/rubentalstra/FerroEHR/issues/3171) | Decide whether you are the manufacturer of the EHR system you put into service |
-| **Chapter IV**, secondary use | [AQL](../querying-aql.md) over the stored record, and a [change-event outbox](../beyond-core/amqp.md) | a separate pseudonymisation domain for secondary use is planned, [#3160](https://github.com/rubentalstra/FerroEHR/issues/3160) | Deal with the health data access body; a CDR is not a data-holder process |
+| **Chapter III**, EHR systems: a European interoperability software component and a European logging software component, with published technical documentation | The [EHDS readiness page](ehds-readiness.md) maps every Annex II requirement to a status with its evidence, the [technical documentation](technical-documentation.md) page maps the Annex II documentation items, and the access trail records the logging component's elements ([audit](../audit.md#the-ehds-logging-elements-mapped)) | readiness shipped, [#3168](https://github.com/rubentalstra/FerroEHR/issues/3168), [#3169](https://github.com/rubentalstra/FerroEHR/issues/3169), [#3170](https://github.com/rubentalstra/FerroEHR/issues/3170), [#3171](https://github.com/rubentalstra/FerroEHR/issues/3171); the exchange format itself is an open question until the Article 36 implementing acts fix it | Follow the implementing acts; the conformity assessment and the EU declaration are the manufacturer's, and who that is for a source-available CDR is stated on the readiness page |
+| **Chapter IV**, secondary use | [AQL](../querying-aql.md) over the stored record, a [change-event outbox](../beyond-core/amqp.md), and [cohort queries across the pseudonymisation boundary](../querying-aql.md#cohort-queries-across-the-pseudonymisation-boundary) with small-cell suppression | shipped, [#3159](https://github.com/rubentalstra/FerroEHR/issues/3159); a separate pseudonymisation domain for secondary use is planned, [#3160](https://github.com/rubentalstra/FerroEHR/issues/3160) | Deal with the health data access body; a CDR is not a data-holder's permit process |
 
 ## National law
 
@@ -221,9 +223,12 @@ ships, tracker status, what the organisation must do); the national security
 and logging standards, in the shape of the NEN section; and, where the country
 issues a personal identifier with a published algorithm, a rule in
 `app/ferroehr/src/privacy/detect.rs` citing the register that defines it. Open
-an issue with the sources and the project will carry it — a checksum
-transcribed from a secondary source is refused, because a rule that guesses
-tells an operator their data was scanned when it was not.
+a [regulation request](https://github.com/rubentalstra/FerroEHR/issues/new?template=regulation.yml)
+with the official source and the provisions that reach a repository, and the
+project vendors the text and records a status per provision, the way the acts
+below are handled. A checksum transcribed from a secondary source is refused,
+because a rule that guesses tells an operator their data was scanned when it
+was not.
 
 ### The Netherlands: UAVG and Wabvpz
 
@@ -236,7 +241,7 @@ record.
 | Provision | What FerroEHR ships | Tracker | What the deploying organisation must do |
 |---|---|---|---|
 | **UAVG Art. 30**, exceptions for health data | Access control at the record and the attribute level, and an audit trail of who used it | shipped | Establish that your processing falls inside the exception, per role and per purpose |
-| **UAVG Art. 46**, processing a national identification number | A party identifier is stored in the demographic domain, reachable only by that domain's role; it is not yet encrypted, key-looked-up or resolved under its own audit | partly shipped, [#3155](https://github.com/rubentalstra/FerroEHR/issues/3155) | Hold the legal authorisation before a BSN enters the store, and keep it out until #3155 lands |
+| **UAVG Art. 46**, processing a national identification number | A national identifier is sealed at rest in the demographic domain under authenticated encryption with a per-tenant key, looked up through a keyed digest, resolved only through a `SECURITY DEFINER` function on the demographic role, and every resolution, hit or miss, is a recorded linkage access that never carries the value | shipped, [#3155](https://github.com/rubentalstra/FerroEHR/issues/3155) | Hold the statutory authorisation before a BSN enters the store, and restrict who may resolve |
 | **Wabvpz Art. 4 to 9**, use and verification of the BSN by care providers | Nothing specific: FerroEHR performs no BSN verification and consults no index | not planned | Verify identity and the BSN in your own systems before data reaches the CDR |
 | **Wabvpz Art. 15d**, electronic access and copy for the patient | The full record over the openEHR REST API, and [EHR Extract export](../beyond-core/messaging.md) for a whole record | shipped | Build the patient-facing route and authenticate the patient |
 | **Wabvpz Art. 15e**, a record of who made data available and who consulted it | The ATNA trail records reads, writes and refusals with the agent, the patient, the action and the outcome, and answers a per-patient search | shipped | Turn the trail into something a patient can read, and set retention |

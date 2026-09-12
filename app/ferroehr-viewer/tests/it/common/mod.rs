@@ -53,8 +53,10 @@ const HYDRATION_WAIT: Duration = Duration::from_mins(1);
 
 /// Everything a journey needs.
 pub(crate) struct Harness {
-    /// The `WebDriver` session.
-    pub(crate) driver: WebDriver,
+    /// The `WebDriver` session, private so every journey command goes
+    /// through a helper that bounds it ([`bounded`]) and reads a failure to
+    /// answer as a failure ([`is_absence`]).
+    driver: WebDriver,
     /// The viewer origin (`http://…`).
     pub(crate) base: String,
     shots_dir: String,
@@ -525,6 +527,70 @@ impl Harness {
         );
     }
 
+    /// The browser's current URL.
+    ///
+    /// # Panics
+    /// When the `WebDriver` does not answer.
+    pub(crate) async fn current_url(&self) -> String {
+        bounded("current_url()", self.driver.current_url())
+            .await
+            .expect("current url")
+            .to_string()
+    }
+
+    /// The current page's tab title, as the browser renders it.
+    ///
+    /// # Panics
+    /// When the `WebDriver` does not answer.
+    pub(crate) async fn title(&self) -> String {
+        bounded("title()", self.driver.title())
+            .await
+            .expect("tab title")
+    }
+
+    /// The current page's serialized DOM source.
+    ///
+    /// # Panics
+    /// When the `WebDriver` does not answer.
+    pub(crate) async fn page_source(&self) -> String {
+        bounded("source()", self.driver.source())
+            .await
+            .expect("page source")
+    }
+
+    /// Write a full-window PNG of the current page to `path`.
+    ///
+    /// # Panics
+    /// When the capture or the write fails.
+    pub(crate) async fn screenshot_to(&self, path: &std::path::Path) {
+        bounded("screenshot()", self.driver.screenshot(path))
+            .await
+            .expect("write the screenshot");
+    }
+
+    /// Every cookie the browser holds for the viewer origin.
+    ///
+    /// # Panics
+    /// When the `WebDriver` does not answer.
+    pub(crate) async fn cookies(&self) -> Vec<Cookie> {
+        bounded("get_all_cookies()", self.driver.get_all_cookies())
+            .await
+            .expect("the browser's cookies for the viewer origin")
+    }
+
+    /// Delete the cookie named `name` from the browser.
+    ///
+    /// # Panics
+    /// When the `WebDriver` does not answer.
+    pub(crate) async fn delete_cookie(&self, name: &str) {
+        bounded(
+            &format!("delete_cookie({name})"),
+            self.driver.delete_cookie(name.to_owned()),
+        )
+        .await
+        .expect("delete the cookie");
+    }
+
     /// End the session (screenshots + console gate are per-journey calls).
     pub(crate) async fn finish(self) {
         bounded("quit()", self.driver.quit()).await.expect("quit");
@@ -644,12 +710,7 @@ pub(crate) async fn is_visible(h: &Harness, css: &str) -> bool {
 /// leaves a closed surface ahead of the open one in document order. "Is a
 /// modal up" has to look at all of them or it answers about the wrong one.
 pub(crate) async fn is_any_visible(h: &Harness, css: &str) -> bool {
-    let found = match bounded(&format!("find_all({css})"), h.driver.find_all(By::Css(css))).await {
-        Ok(found) => found,
-        Err(error) if is_absence(&error) => return false,
-        Err(error) => panic!("the WebDriver could not answer `find_all({css})`: {error}"),
-    };
-    for element in found {
+    for element in find_all(h, css).await {
         match bounded(&format!("is_displayed({css})"), element.is_displayed()).await {
             Ok(true) => return true,
             Ok(false) => {}
@@ -862,7 +923,7 @@ pub(crate) async fn upload_via_dialog(h: &Harness, path: &str) {
 ///
 /// # Panics
 /// When the `WebDriver` answers with anything but an absence ([`is_absence`]).
-async fn read_enabled(h: &Harness, css: &str) -> Option<bool> {
+pub(crate) async fn read_enabled(h: &Harness, css: &str) -> Option<bool> {
     match bounded(&format!("find({css})"), h.driver.find(By::Css(css))).await {
         Ok(element) => match bounded(&format!("is_enabled({css})"), element.is_enabled()).await {
             Ok(enabled) => Some(enabled),
@@ -879,7 +940,7 @@ async fn read_enabled(h: &Harness, css: &str) -> Option<bool> {
 ///
 /// # Panics
 /// When the `WebDriver` answers with anything but an absence ([`is_absence`]).
-async fn read_text(h: &Harness, css: &str) -> Option<String> {
+pub(crate) async fn read_text(h: &Harness, css: &str) -> Option<String> {
     match bounded(&format!("find({css})"), h.driver.find(By::Css(css))).await {
         Ok(element) => match bounded(&format!("text({css})"), element.text()).await {
             Ok(text) => Some(text),
@@ -891,15 +952,81 @@ async fn read_text(h: &Harness, css: &str) -> Option<String> {
     }
 }
 
+/// Every element matching `by`, empty when nothing matches.
+///
+/// # Panics
+/// When the `WebDriver` answers with anything but an absence ([`is_absence`]):
+/// a query that was never answered is not an empty page.
+pub(crate) async fn find_all_by(h: &Harness, by: By) -> Vec<WebElement> {
+    match bounded(&format!("find_all({by:?})"), h.driver.find_all(by.clone())).await {
+        Ok(found) => found,
+        Err(error) if is_absence(&error) => Vec::new(),
+        Err(error) => panic!("the WebDriver could not answer `find_all({by:?})`: {error}"),
+    }
+}
+
+/// [`find_all_by`] for a CSS selector — the ordinary "every match on the page"
+/// read.
+///
+/// # Panics
+/// When the `WebDriver` answers with anything but an absence ([`is_absence`]).
+pub(crate) async fn find_all(h: &Harness, css: &str) -> Vec<WebElement> {
+    find_all_by(h, By::Css(css)).await
+}
+
+/// The DOM property `property` of the first element matching `css`, or `None`
+/// when nothing matches.
+///
+/// A control's LIVE value is a property; [`read_attr`] answers about the
+/// attribute the server rendered, which a typed-in value never moves.
+///
+/// # Panics
+/// When the `WebDriver` answers with anything but an absence ([`is_absence`]).
+pub(crate) async fn read_prop(h: &Harness, css: &str, property: &str) -> Option<String> {
+    match bounded(&format!("find({css})"), h.driver.find(By::Css(css))).await {
+        Ok(element) => {
+            match bounded(&format!("prop({css}.{property})"), element.prop(property)).await {
+                Ok(value) => value,
+                Err(error) if is_absence(&error) => None,
+                Err(error) => {
+                    panic!("the WebDriver could not answer `prop({css}.{property})`: {error}")
+                }
+            }
+        }
+        Err(error) if is_absence(&error) => None,
+        Err(error) => panic!("the WebDriver could not answer `find({css})`: {error}"),
+    }
+}
+
 /// How many elements match `css`.
 ///
 /// # Panics
 /// When the `WebDriver` answers with anything but an absence ([`is_absence`]).
-async fn count_matching(h: &Harness, css: &str) -> usize {
-    match bounded(&format!("find_all({css})"), h.driver.find_all(By::Css(css))).await {
-        Ok(found) => found.len(),
-        Err(error) if is_absence(&error) => 0,
-        Err(error) => panic!("the WebDriver could not answer `find_all({css})`: {error}"),
+pub(crate) async fn count_matching(h: &Harness, css: &str) -> usize {
+    find_all(h, css).await.len()
+}
+
+/// Whether an element matching `css` shows up within `budget`.
+///
+/// The short-budget probe for a branch a journey takes either way (a capture
+/// that is skipped when a screen is not served, a click retried until its
+/// target renders); a condition the journey REQUIRES is waited for by
+/// [`Harness::wait_css`] instead, which fails with evidence.
+///
+/// # Panics
+/// When the `WebDriver` answers with anything but an absence ([`is_absence`]).
+pub(crate) async fn appears_within(h: &Harness, css: &str, budget: Duration) -> bool {
+    let step = Duration::from_millis(200);
+    let mut waited = Duration::ZERO;
+    loop {
+        if is_present(h, css).await {
+            return true;
+        }
+        if waited >= budget {
+            return false;
+        }
+        tokio::time::sleep(step).await;
+        waited += step;
     }
 }
 

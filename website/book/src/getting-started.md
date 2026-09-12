@@ -53,7 +53,8 @@ curl http://localhost:8080/ferroehr/rest/status
 ```
 
 It answers a small JSON document: `status`, `server_version`,
-`openehr_rest_api_version` and a `timestamp`. All clinical API routes live under
+`openehr_rest_api_version`, a `timestamp`, the `licence` in force and the
+declared `deployment` profile. All clinical API routes live under
 the base path `/ferroehr/rest/openehr/v1`. Interactive OpenAPI documentation is
 served at <http://localhost:8080/ferroehr/rest/swagger-ui>; sign in with the
 API credential when the browser asks (the UI is served to authenticated users by

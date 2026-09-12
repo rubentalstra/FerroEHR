@@ -34,8 +34,7 @@ use reqwest::StatusCode;
 
 use std::path::{Path, PathBuf};
 
-use common::{Harness, env, login_basic, login_basic_as, wait_enabled, wait_visible};
-use thirtyfour::prelude::*;
+use common::{Harness, env, is_present, login_basic, login_basic_as, wait_enabled, wait_visible};
 
 /// The detail-route id of the fixture template the browse journeys upload; its
 /// detail screen is captured when the template is present on the stack.
@@ -199,10 +198,7 @@ async fn capture(h: &Harness, dir: &Path, path: &str, slug: &str, content: Optio
     if let Some(parent) = out.parent() {
         std::fs::create_dir_all(parent).expect("create the section dir");
     }
-    h.driver
-        .screenshot(&out)
-        .await
-        .expect("write the documentation screenshot");
+    h.screenshot_to(&out).await;
     println!("captured {slug} -> {}", out.display());
 }
 
@@ -283,7 +279,7 @@ async fn capture_dark_gated(
     h.goto(path).await;
     h.wait_css(screen_css).await;
     h.wait_css("html.dark").await;
-    if h.driver.find(By::Css(disabled_css)).await.is_ok() {
+    if is_present(h, disabled_css).await {
         println!("SKIP docs-shots: {slug} not captured — the CDR under test does not serve it");
         return;
     }
@@ -297,7 +293,7 @@ async fn shot_to(h: &Harness, dir: &Path, slug: &str) {
     if let Some(parent) = out.parent() {
         std::fs::create_dir_all(parent).expect("create the section dir");
     }
-    h.driver.screenshot(&out).await.expect("shot");
+    h.screenshot_to(&out).await;
     println!("captured {slug} -> {}", out.display());
 }
 
@@ -408,10 +404,7 @@ async fn capture_documentation_screenshots() {
     h.wait_css("#login-username").await;
     let login_out = dir.join("login").join("login.png");
     std::fs::create_dir_all(login_out.parent().expect("parent")).expect("dir");
-    h.driver
-        .screenshot(&login_out)
-        .await
-        .expect("write the login screenshot");
+    h.screenshot_to(&login_out).await;
     println!("captured login -> {}", login_out.display());
 
     // The same card as the shell's signed-out transition delivers it: the
@@ -421,10 +414,7 @@ async fn capture_documentation_screenshots() {
     h.goto("/login?expired=1").await;
     h.wait_css("#session-expired").await;
     let expired_out = dir.join("login").join("login-expired.png");
-    h.driver
-        .screenshot(&expired_out)
-        .await
-        .expect("write the expired-login screenshot");
+    h.screenshot_to(&expired_out).await;
     println!("captured login-expired -> {}", expired_out.display());
 
     login_basic(&h).await;
@@ -471,13 +461,7 @@ async fn capture_documentation_screenshots() {
         Some("#template-upload-open"),
     )
     .await;
-    if h.driver
-        .find(By::Css(format!(
-            "a[href='/templates/adl2/{ADL2_TEMPLATE_ID}']"
-        )))
-        .await
-        .is_ok()
-    {
+    if is_present(&h, &format!("a[href='/templates/adl2/{ADL2_TEMPLATE_ID}']")).await {
         capture(
             &h,
             &dir,
@@ -542,11 +526,7 @@ async fn capture_documentation_screenshots() {
     // capture is skipped with a reason rather than publishing the wrong screen.
     h.goto("/terminology?terminology=openehr").await;
     h.wait_css("footer").await;
-    if h.driver
-        .find(By::Css("#terminology-descriptor"))
-        .await
-        .is_ok()
-    {
+    if is_present(&h, "#terminology-descriptor").await {
         shot_to(&h, &dir, "terminology/terminology").await;
     } else {
         println!(
@@ -903,11 +883,7 @@ async fn dark_ordinary_screens(h: &Harness, dir: &Path) {
     h.goto("/terminology?terminology=openehr").await;
     h.wait_css("footer").await;
     h.wait_css("html.dark").await;
-    if h.driver
-        .find(By::Css("#terminology-descriptor"))
-        .await
-        .is_ok()
-    {
+    if is_present(h, "#terminology-descriptor").await {
         tokio::time::sleep(THEME_SETTLE).await;
         shot_to(h, dir, "terminology/terminology-dark").await;
     } else {
@@ -1027,7 +1003,7 @@ async fn capture_admin_screens(dir: &Path) {
     // renders its disabled card, which is not what the book documents.
     h.goto("/tenants").await;
     h.wait_css("#tenants-screen").await;
-    if h.driver.find(By::Css("#tenants-disabled")).await.is_ok() {
+    if is_present(&h, "#tenants-disabled").await {
         println!(
             "SKIP docs-shots: tenants not captured — the CDR under test runs with \
              [tenancy] enabled = false"
@@ -1045,11 +1021,7 @@ async fn capture_admin_screens(dir: &Path) {
     }
     h.goto("/subscriptions").await;
     h.wait_css("#subscriptions-screen").await;
-    if h.driver
-        .find(By::Css("#subscriptions-disabled"))
-        .await
-        .is_ok()
-    {
+    if is_present(&h, "#subscriptions-disabled").await {
         println!(
             "SKIP docs-shots: subscriptions not captured — the CDR under test runs with \
              [events] admin_api = false"
@@ -1067,7 +1039,7 @@ async fn capture_admin_screens(dir: &Path) {
     }
     h.goto("/fhir").await;
     h.wait_css("#fhir-screen").await;
-    if h.driver.find(By::Css("#fhir-disabled")).await.is_ok() {
+    if is_present(&h, "#fhir-disabled").await {
         println!(
             "SKIP docs-shots: fhir not captured — the CDR under test runs with \
              [fhir] api_enabled = false"
@@ -1099,7 +1071,7 @@ async fn capture_admin_screens(dir: &Path) {
     // pass above seeds two over the Definition API).
     h.goto("/queries").await;
     h.wait_css("footer").await;
-    if h.driver.find(By::Css("[data-query-delete]")).await.is_ok() {
+    if is_present(&h, "[data-query-delete]").await {
         shot_to(&h, dir, "queries/queries-admin-delete").await;
     } else {
         println!("SKIP docs-shots: no stored query on the stack to show the CDR delete on");

@@ -56,10 +56,7 @@ const EXPECTED_CONSOLE: [&str; 1] = ["Failed to load resource"];
 
 /// Delete the sealed session cookie: a revocation the browser cannot predict.
 async fn revoke_session(h: &Harness) {
-    h.driver
-        .delete_cookie(SESSION_COOKIE)
-        .await
-        .expect("delete the session cookie");
+    h.delete_cookie(SESSION_COOKIE).await;
 }
 
 /// Assert the signed-out landing: the expiry notice is on screen and none of
@@ -235,12 +232,7 @@ async fn signing_in_from_the_unattended_expired_card_renders_the_dashboard_again
     sign_in_on_this_page(&h).await;
     assert_signed_in_again(&h).await;
     assert!(
-        !h.driver
-            .current_url()
-            .await
-            .expect("url")
-            .as_str()
-            .contains("/login"),
+        !h.current_url().await.contains("/login"),
         "the address bar left /login"
     );
     h.shot(2, "signed-in-again").await;

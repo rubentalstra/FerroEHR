@@ -37,8 +37,7 @@ use crate::common;
 
 use std::time::Duration;
 
-use common::{Harness, confirm_in_dialog, env, login_basic_as, wait_css_absent};
-use thirtyfour::prelude::*;
+use common::{Harness, confirm_in_dialog, count_matching, env, login_basic_as, wait_css_absent};
 
 /// The namespace half of every stored-query name these journeys save.
 const QUERY_NAMESPACE: &str = "org.example";
@@ -198,11 +197,7 @@ async fn stored_query_lifts_back_into_the_builder() {
         "the lifted builder state must re-lower to the stored query verbatim"
     );
     assert!(
-        h.driver
-            .find_all(By::Css("[data-lift-refused]"))
-            .await
-            .unwrap_or_default()
-            .is_empty(),
+        count_matching(&h, "[data-lift-refused]").await == 0,
         "a query inside the builder's envelope must not report a refusal"
     );
     // The lift also seeded the save fields: the loaded version is immutable, so
@@ -405,11 +400,7 @@ async fn run_and_expect_results(h: &Harness, mode: &str) {
         .expect("run the stored query");
     h.wait_css("[data-stored-results]").await;
     assert!(
-        h.driver
-            .find_all(By::Css("[role=\"alert\"]"))
-            .await
-            .unwrap_or_default()
-            .is_empty(),
+        count_matching(h, "[role=\"alert\"]").await == 0,
         "the `{mode}` run must return a result set, not an error"
     );
 }

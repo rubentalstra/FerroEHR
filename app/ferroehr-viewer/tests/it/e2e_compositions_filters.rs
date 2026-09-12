@@ -41,7 +41,7 @@ use crate::common;
 
 use std::time::Duration;
 
-use common::{Harness, env, login_basic, retype};
+use common::{Harness, env, find_all, login_basic, retype};
 use thirtyfour::prelude::*;
 
 /// The two templates the journeys distinguish between; both are uploaded here
@@ -256,12 +256,7 @@ async fn seed(http: &reqwest::Client, v1: &str) -> (String, String) {
 /// being a table row that carries a link into the composition viewer.
 async fn row_texts(h: &Harness) -> Vec<String> {
     let mut rows = Vec::new();
-    for link in h
-        .driver
-        .find_all(By::Css("tr a[href*='/compositions/']"))
-        .await
-        .unwrap_or_default()
-    {
+    for link in find_all(h, "tr a[href*='/compositions/']").await {
         // The row is the link's grandparent (<a> inside <td> inside <tr>).
         if let Ok(row) = link.find(By::XPath("./ancestor::tr[1]")).await
             && let Ok(text) = row.text().await

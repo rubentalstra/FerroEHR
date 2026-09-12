@@ -68,7 +68,7 @@ topbar, which polls the product status document (`GET /ferroehr/rest/status`):
 
 | Reader | Question it answers |
 |---|---|
-| topbar pill | is the API answering at all, and at which version? |
+| topbar pill | is the API answering at all, at which version, and under which [deployment profile](index.md#the-deployment-profile)? |
 | health card | are the CDR's dependencies healthy enough to serve? |
 
 The card states that split on screen, and nothing else in the viewer re-reads
@@ -78,9 +78,11 @@ either claim.
 
 Straight from `GET /management/info`: the CDR's version, the git commit the
 binary was built from, its build timestamp and `rustc` version, the PostgreSQL
-target, and under their own heading the deployment's active
-[`spec_profile`](../installation/configuration.md#spec_profile) and the openEHR
-specification versions that profile selects. This is the card to screenshot into
+target, the audit posture the deployment runs (whether auditing is on, its
+`fail_mode`, the local store and the effective retention), and under their own
+heading the deployment's active
+[`spec_profile`](../installation/configuration.md#spec_profile) with the openEHR
+specification versions it selects. This is the card to screenshot into
 an incident report: it says exactly what is running.
 
 ## Metrics

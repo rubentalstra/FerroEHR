@@ -20,11 +20,11 @@ vendored specification text.
 
 ```toml
 [dependencies]
-openehr-rm = "0.0.29"
-openehr-its = "0.0.29"
+openehr-rm = "0.0.64"
+openehr-its = "0.0.64"
 ```
 
-All eight are **edition 2024** with an MSRV of **Rust 1.96**, and all eight
+All eight are **edition 2024** with an MSRV of **Rust 1.97**, and all eight
 inherit the workspace lint table, including `unsafe_code = "forbid"`, which no
 attribute anywhere in the crate can relax. There is no `unsafe` block in the
 published specification layer.
@@ -94,29 +94,46 @@ generation. Exactly three crates implement one specification each and do expose
 one: `openehr_its::SPEC_VERSION`, `openehr_query::SPEC_VERSION`,
 `openehr_adl::SPEC_VERSION`.
 
-## Building `openehr-its` without its dependencies
+## Taking only the part of `openehr-its` you need
 
-`openehr-its` puts every codec behind one default feature, `full`. Taken with
-`default-features = false` it compiles to the SMART App Launch scope grammar
-alone (std-only, with no dependency of any kind) so a REST client targeting
-`wasm32-unknown-unknown` can parse scope strings with the very grammar the CDR
-enforces instead of carrying a second one:
+`openehr-its` layers its features so a browser or embedded consumer does not
+have to compile an HTTP server to read a template. The parsing spine is
+`json` → `xml` → `opt14` → `flat`, each pulling in the one below it. Three
+layers sit beside the spine and are declined independently: `cache` (the
+async WebTemplate cache, the crate's only `moka` user), `schema-validation`
+(validation against the compiled-in ITS-JSON RM schema, its only `jsonschema`
+user) and `rest-server` (the generated ITS-REST contract and its response
+runtime, which is what brings in `axum`). The default feature `full` is all
+seven, so an existing dependency line keeps the crate it had.
+
+`flat` and `opt14` build for `wasm32-unknown-unknown`, so a browser consumer
+can call `flat::build_web_template` or read an OPT 1.4 template:
 
 ```toml
 [dependencies]
-openehr-its = { version = "0.0.29", default-features = false }
+openehr-its = { version = "0.0.64", default-features = false, features = ["flat"] }
 ```
+
+With `default-features = false` and no feature at all, the crate compiles to
+the SMART App Launch scope grammar alone: std-only, with no dependency of any
+kind, so a REST client can parse scope strings with the grammar the CDR
+enforces instead of carrying a second one.
 
 ## Releases
 
-The eight crates are published through a manual release lane that authenticates
-with **crates.io Trusted Publishing** (OIDC, a protected environment, no
-long-lived token anywhere) and publishes them **one at a time in dependency
-order**, treating "already exists on the index" as done, so a run interrupted
-halfway can simply be re-run to finish the set. The lane then reads the
+The eight crates publish as the last leg of the release pipeline, gated on a
+human: the leg runs in a protected environment with a required reviewer, so
+the run pauses there and nothing reaches crates.io without an explicit
+approval. A separate dispatch lane covers a publish between releases and the
+recovery path when the release leg fails.
+
+Both lanes authenticate with **crates.io Trusted Publishing** (OIDC, no
+long-lived token anywhere) and publish the crates **one at a time in
+dependency order**, treating "already exists on the index" as done, so a run
+interrupted halfway can be re-run to finish the set. The lane then reads the
 registry back and refuses to report success unless all eight resolve at the
-same version, because while the line is `0.0.x` a straggler makes its siblings'
-internal requirements unresolvable for every consumer.
+same version, because while the line is `0.0.x` a straggler makes its
+siblings' internal requirements unresolvable for every consumer.
 
 ## Licensing
 

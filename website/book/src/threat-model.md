@@ -485,13 +485,14 @@ writes it.
 subject pseudonym, and AQL returns the rows it was asked for.
 
 **Residual risk.** A rare diagnosis with an admission date and a place of
-treatment identifies a person with no identifier field involved. No threshold
-is applied to a result set, and nothing counts how small a cohort a query
-returned. Small-cell suppression is designed alongside the cross-domain cohort
-query and is not built:
-[#3159](https://github.com/rubentalstra/FerroEHR/issues/3159). Until it lands,
-who may run AQL, for what purpose, and over which EHRs are the controls, and
-they are configuration rather than arithmetic.
+treatment identifies a person with no identifier field involved. Small-cell
+suppression applies to the [cohort query](querying-aql.md#cohort-queries-across-the-pseudonymisation-boundary)
+only: a cohort result serving fewer distinct EHRs than
+`cohort.small_cell_threshold` has its rows withheld and is marked suppressed.
+An ordinary AQL execution takes no threshold at all, so nothing counts how
+small a population a plain `POST /query/aql` returned. For that surface, who
+may run AQL, for what purpose, and over which EHRs are the controls, and they
+are configuration rather than arithmetic.
 
 ### The map that rejoins the two domains
 

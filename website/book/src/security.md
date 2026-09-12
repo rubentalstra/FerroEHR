@@ -229,9 +229,9 @@ server default**, in both directions:
 
 The scheme is a FerroEHR extension: openEHR mandates the `EHR_ACCESS`
 object and its change control but publishes no concrete access-control
-scheme. Query (AQL) results are not filtered by privacy level in this
-release (query execution carries no per-row principal context) but the
-per-EHR gate still applies to every query route that binds an `ehr_id`.
+scheme. Query (AQL) results are not filtered by privacy level, because query
+execution carries no per-row principal context; the per-EHR gate still applies
+to every query route that binds an `ehr_id`.
 
 ### RBAC (role-based, coarse)
 
@@ -246,6 +246,7 @@ case-insensitive strings; the defaults are `USER` and `ADMIN`.
 | `FERROEHR__AUTHZ__RBAC__USER_ROLE` | `USER` | names the baseline clinical role |
 | `FERROEHR__AUTHZ__RBAC__READONLY_ROLE` | `READONLY` | role marking a principal read-only: refused on every write |
 | `FERROEHR__AUTHZ__RBAC__ROLE_CLAIMS` | `["roles","groups","entitlements","realm_access.roles"]` | JWT claim paths mined for roles |
+| `FERROEHR__AUTHZ__RBAC__SUBJECT_AUDIT_ROLE` | unset | role that reads the access log for ONE subject at a time (`GET /fhir/r4/AuditEvent` with `patient` required). Unset, that log stays admin-only. See [Audit trail](audit.md#getting-the-log-out) |
 
 Roles come from the JWT claims listed in `ROLE_CLAIMS`, or from a Basic user's
 configured roles. The defaults are the carriers
@@ -477,7 +478,7 @@ error naming the pair:
 
 | Secret | File sibling |
 |---|---|
-| the database DSN | `db.url_file` |
+| the database DSN, per pseudonymisation domain, and the credential that prepares the schema | `db.url_file`, `db.demographic_url_file`, `db.linkage_url_file`, `db.migrate_url_file` |
 | a Basic user's Argon2 hash | `auth.basic.users[].password_hash_file` |
 | the OIDC symmetric key | `auth.oidc.hmac_secret_file` |
 | a static JWKS document | `auth.oidc.jwks_json_file` |
@@ -485,6 +486,7 @@ error naming the pair:
 | a terminology OAuth2 client secret | `terminology.external.oauth2_clients.<name>.client_secret_file` |
 | the object-store secret key | `multimedia.secret_access_key_file` |
 | the AMQP URLs (events and FHIR outbound) | `events.url_file`, `fhir.outbound.url_file` |
+| the national-identifier root key | `demographic.identifier_protection.key_file` |
 
 (The TLS `cert_file` / `key_file` / `client_ca_file` settings are paths by
 nature and have no inline form at all, which is the same property arrived at

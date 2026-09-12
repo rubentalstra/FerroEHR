@@ -45,7 +45,8 @@ use crate::common;
 use std::time::Duration;
 
 use common::{
-    Harness, confirm_in_dialog, env, login_basic, retype, wait_css_absent, wait_text_contains,
+    Harness, confirm_in_dialog, env, is_present_by, login_basic, retype, wait_css_absent,
+    wait_text_contains,
 };
 use thirtyfour::prelude::*;
 
@@ -96,13 +97,7 @@ async fn create_ehr_until_navigated(h: &Harness, ehr_id: &str) -> bool {
             .await
             .expect("create the EHR");
         for _ in 0..50 {
-            if h.driver
-                .current_url()
-                .await
-                .expect("current url")
-                .as_str()
-                .contains(ehr_id)
-            {
+            if h.current_url().await.contains(ehr_id) {
                 return true;
             }
             tokio::time::sleep(Duration::from_millis(200)).await;
@@ -124,7 +119,7 @@ async fn click_until_xpath(h: &Harness, css: &str, xpath: &str) -> bool {
     for _ in 0..5 {
         h.wait_css(css).await.click().await.expect("click");
         for _ in 0..25 {
-            if h.driver.find(By::XPath(xpath)).await.is_ok() {
+            if is_present_by(h, By::XPath(xpath)).await {
                 return true;
             }
             tokio::time::sleep(Duration::from_millis(200)).await;
@@ -220,14 +215,7 @@ async fn create_ehr_until_left_finder(h: &Harness) -> bool {
             .await
             .expect("create the EHR");
         for _ in 0..50 {
-            if !h
-                .driver
-                .current_url()
-                .await
-                .expect("current url")
-                .as_str()
-                .ends_with("/ehrs")
-            {
+            if !h.current_url().await.ends_with("/ehrs") {
                 return true;
             }
             tokio::time::sleep(Duration::from_millis(200)).await;

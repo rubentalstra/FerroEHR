@@ -43,15 +43,14 @@ async fn migrations_apply_cleanly_and_idempotently() {
         .fetch_one(&pool)
         .await
         .expect("ehr bookkeeping");
-    // Single squashed baseline per schema, plus one file per own-extension
-    // table set (pre-production rule: schema changes edit the baseline
-    // directly). ext: 0001_openehr_functions (functions incl. openehr_timestamp
-    // + roles + grants) + 0002_tenant_context. ehr: 0001_baseline (all core
-    // tables) + 0002_event_outbox + 0003_event_subscription +
-    // 0004_multitenancy + 0005_fhir_mapping + 0006_fhir_outbound_cursor +
-    // 0007_cold_archive_tier + 0008_spec_profile_stable_compatible_stamp +
-    // 0009_subject_pseudonym_guard + 0010_version_origins.
-    assert_eq!((applied_ext, applied_ehr), (2, 10));
+    // One squashed baseline per set, then one append-only file per change (a
+    // shipped migration is never edited). ext: 0001_openehr_functions +
+    // 0002_tenant_context. ehr: 0001_baseline + 0002_event_outbox +
+    // 0003_event_subscription + 0004_multitenancy + 0005_fhir_mapping +
+    // 0006_fhir_outbound_cursor + 0007_cold_archive_tier +
+    // 0008_spec_profile_stable_compatible_stamp + 0009_subject_pseudonym_guard
+    // + 0010_version_origins + 0011_cold_alias_views.
+    assert_eq!((applied_ext, applied_ehr), (2, 11));
 
     let tables: Vec<String> = sqlx::query_scalar(
         "SELECT table_name FROM information_schema.tables \
@@ -977,4 +976,52 @@ async fn tenant_scoped_pool_applies_statement_timeout() {
         timeout, "12345ms",
         "the tenant-scoped connection must carry the configured statement_timeout"
     );
+}
+
+/// A partially wiped database comes back whole (#3298): the sandbox reset
+/// drops `ehr`, `audit`, `ext` and `cold` and leaves the demographic and
+/// linkage sets applied, so the clinical cold-tier alias views, which only the
+/// demographic baseline created, must come back with the clinical set itself
+/// or every update fails on the placement read with 42P01.
+#[tokio::test]
+async fn a_wiped_clinical_schema_is_rebuilt_with_its_cold_alias_views() {
+    let db = testkit::db().await.expect("testkit database");
+    let pool = db.pool();
+    for schema in ["ehr", "audit", "ext", "cold"] {
+        sqlx::query(sqlx::AssertSqlSafe(format!(
+            "DROP SCHEMA IF EXISTS {schema} CASCADE"
+        )))
+        .execute(&pool)
+        .await
+        .expect("drop the schema the sandbox wipe drops");
+    }
+    db::run_migrations(&pool)
+        .await
+        .expect("the ehr set rebuilds its schema on a database whose demographic set is complete");
+    let views: Vec<String> = sqlx::query_scalar(
+        "SELECT viewname FROM pg_views WHERE schemaname = 'ehr' AND viewname LIKE 'cold_%' ORDER BY 1",
+    )
+    .fetch_all(&pool)
+    .await
+    .expect("list the alias views");
+    assert_eq!(
+        views,
+        ["cold_node", "cold_vo_attestation", "cold_vo_version"]
+    );
+
+    let svc = ferroehr::service::FerroEhrService::new(pool.clone());
+    let ehr_id = svc.create_ehr(None).await.expect("create_ehr");
+    let body = crate::fixtures::composition("after the wipe");
+    let created = svc
+        .create_composition(ehr_id, crate::fixtures::uv(&body, "249", None))
+        .await
+        .expect("a create works on the rebuilt schema");
+    let first = created.version_uid();
+    svc.update_composition(
+        ehr_id,
+        created.vo_id,
+        crate::fixtures::uv(&body, "251", Some(&first)),
+    )
+    .await
+    .expect("an update works too: the placement read reaches the cold alias view");
 }

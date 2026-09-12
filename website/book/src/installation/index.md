@@ -47,6 +47,15 @@ still reads every schema's migration state, so a least-privilege deployment
 also sets `db.migrate_url` to the credential that can. Both postures are laid
 out in [Operations → Applying migrations](../operations.md#applying-migrations).
 
+**A deployment declares what it may hold.** The top-level
+`deployment_profile` key is `sandbox` by default: the server starts whatever
+separations are missing and names every one of them on the banner, in the log
+and on `GET /ferroehr/rest/status`. Set it to `production` and the server
+refuses to start while a separation is open and not accepted by name in
+`deployment_accepts`. Read
+[`deployment_profile`](configuration.md#deployment_profile) before you point a
+deployment at real patient data.
+
 ## Choosing a specification generation
 
 One top-level key, **`spec_profile`**, selects which openEHR specification

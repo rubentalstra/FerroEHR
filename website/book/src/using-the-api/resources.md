@@ -54,6 +54,12 @@ the server mint the default.
 To create with a specific id, use `PUT /ehr/{ehr_id}` (also 201; 409 if that id
 is already used).
 
+Once the deployment declares `[privacy] subject_namespaces`, a supplied
+`EHR_STATUS.subject.external_ref` must name one of those namespaces and carry a
+UUID; anything else is a **422** naming the RM path and never echoing the value.
+Left undeclared, that rule is out of force and whatever you send is stored. See
+[Privacy & data minimisation](../installation/config-privacy.md).
+
 ### Retrieve an EHR
 
 ```shell
@@ -415,10 +421,12 @@ along with a content write instead of taking a second round trip; see
 | 404 | Unknown EHR, object, version, or no version at the requested time. |
 | 405 | Method not allowed on this resource (always with an `Allow` header), or the resource is switched off by configuration. |
 | 406 | The `Accept` header names no representation this resource has. |
-| 409 | Conflict — duplicate subject/id, a version that is not the latest, or a content write to a deactivated (`is_modifiable = false`) EHR. |
+| 409 | Conflict: a duplicate subject or id, a version that is not the latest, or a content write to a deactivated (`is_modifiable = false`) EHR. The deactivation check runs before any content is validated, so a defective body on a deactivated record reports the state conflict rather than a `422`. |
 | 412 | `If-Match` did not match the latest version (current id returned in `ETag`). |
 | 415 | The request `Content-Type` names a format this resource cannot process. |
-| 422 | Well-formed but unfollowable — failed template/semantic validation, an illegal version-lifecycle transition, or a change set the server cannot apply. |
+| 422 | Well-formed but unfollowable: failed template or semantic validation, a body the [data-minimisation rules](../installation/config-privacy.md) refuse, an illegal version-lifecycle transition, or a change set the server cannot apply. |
+| 429 | Too many requests, with `Retry-After` and the `x-ratelimit-*` headers the limiter computed. |
+| 503 | The server cannot decide or cannot serve right now, with `Retry-After`: the admission cap is full, the token issuer is unreachable, or (under `[audit] fail_mode = "closed"`) the access record could not be taken. Retry; none of these is a statement about your request. |
 
 The [Content negotiation & errors](content-negotiation.md) chapter covers the
 error body shape and the headers referenced above in full.

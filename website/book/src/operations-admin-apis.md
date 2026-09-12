@@ -176,8 +176,8 @@ Two consequences to plan for:
 
 ## Storage integrity
 
-One route that checks the stored data against itself, behind the same switch
-and role. FerroEHR stores every version's content twice: once as the
+Two routes that check the stored data against itself and repair what they
+find, behind the same switch and role. FerroEHR stores every version's content twice: once as the
 materialized document a point read serves, and once as the decomposed rows the
 AQL engine queries. A commit writes both in the same transaction, so they
 always agree; anything that changes one of them behind the server's back
@@ -380,7 +380,7 @@ The changelog names the affected object type at each such release.
 }
 ```
 
-`defect` is the sweep verdict that selected the version, from the four values
+`defect` is the sweep verdict that selected the version, from the five values
 above. `outcome` is `rebuilt`, carrying the `node_rows` the version now has, or
 `refused`, carrying the `reason`. `records` is capped at 1000 entries with
 `truncated` saying whether the cap was reached; every record is logged at
