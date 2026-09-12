@@ -1436,6 +1436,14 @@ const NON_SPEC_FAMILIES: &[NonSpecFamily] = &[
         operations: 8,
     },
     NonSpecFamily {
+        // ITS-REST publishes an ad-hoc and a stored query and nothing else;
+        // AQL has no demographic source at all.
+        label: "the cohort-query extension",
+        prefixes: &["/ferroehr/rest/openehr/v1/query/cohort"],
+        flag: "no openehr spec governs this",
+        operations: 1,
+    },
+    NonSpecFamily {
         label: "the ADMIN group's own-design routes",
         prefixes: &[
             "/ferroehr/rest/openehr/v1/admin/config",

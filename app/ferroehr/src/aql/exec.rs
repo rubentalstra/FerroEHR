@@ -187,20 +187,19 @@ fn served_ehrs(rows: &[PgRow], access_cols: &[String]) -> Result<Vec<(Uuid, u64)
     if access_cols.is_empty() {
         return Ok(Vec::new());
     }
-    // Insertion-ordered so the record set is deterministic; the count is small
-    // (the EHRs one page served), so a linear probe beats a hash map.
-    let mut served: Vec<(Uuid, u64)> = Vec::new();
+    // Insertion-ordered so the record set is deterministic, and keyed so a
+    // population page of a hundred thousand rows from as many EHRs stays linear
+    // (a probe per row made the 100 000-EHR cohort of #3159 take fifty seconds).
+    let mut served: indexmap::IndexMap<Uuid, u64> = indexmap::IndexMap::new();
     for row in rows {
         for name in access_cols {
             let ehr: Option<Uuid> = row.try_get(name.as_str()).map_err(ExecError::from)?;
             let Some(ehr) = ehr else { continue };
-            match served.iter_mut().find(|(known, _)| *known == ehr) {
-                Some((_, count)) => *count = count.saturating_add(1),
-                None => served.push((ehr, 1)),
-            }
+            let count = served.entry(ehr).or_insert(0);
+            *count = count.saturating_add(1);
         }
     }
-    Ok(served)
+    Ok(served.into_iter().collect())
 }
 
 /// The result of scanning the SQL rows: the assembled cells, the subtree

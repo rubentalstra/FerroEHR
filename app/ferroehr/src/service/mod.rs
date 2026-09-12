@@ -276,6 +276,13 @@ pub struct FerroEhrService {
     /// `[privacy]` section via [`Self::with_privacy`], and that section's own
     /// default refuses identified parties and scans in `strict`.
     pub(in crate::service) privacy: Arc<crate::privacy::PrivacyPolicy>,
+    /// The `[cohort]` allow-list and limits
+    /// ([`crate::service::linkage::cohort::config::CohortConfig`]).
+    ///
+    /// Empty by default, which leaves the cross-domain cohort surface off: a
+    /// deployment that has not stated which demographic leaves may be selected
+    /// on has not decided. No openEHR spec governs it — our own extension.
+    pub(in crate::service) cohort: Arc<linkage::cohort::config::CohortConfig>,
 }
 
 impl FerroEhrService {
@@ -326,6 +333,7 @@ impl FerroEhrService {
                 .build(),
             identifiers: None,
             privacy: Arc::new(crate::privacy::PrivacyPolicy::default()),
+            cohort: Arc::new(linkage::cohort::config::CohortConfig::default()),
         }
     }
 
@@ -376,6 +384,18 @@ impl FerroEhrService {
     #[must_use]
     pub fn with_privacy(mut self, policy: Arc<crate::privacy::PrivacyPolicy>) -> Self {
         self.privacy = policy;
+        self
+    }
+
+    /// Install the `[cohort]` allow-list and limits.
+    ///
+    /// Without it the service binds no predicate, so
+    /// [`Self::cohort_enabled`] is false and every cohort execution is refused
+    /// [`NotConfigured`](crate::service::linkage::cohort::CohortError::NotConfigured);
+    /// the binary always calls this with the resolved section.
+    #[must_use]
+    pub fn with_cohort(mut self, config: linkage::cohort::config::CohortConfig) -> Self {
+        self.cohort = Arc::new(config);
         self
     }
 

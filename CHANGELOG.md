@@ -17,6 +17,31 @@ workflow refuses a tag that has no matching section here.
 
 ### Added
 
+- **Cohort queries across the pseudonymisation boundary** (#3159). A new
+  `POST /query/cohort` runs an AQL query over a population selected in the
+  demographic domain: a predicate from a deployment-declared allow-list
+  (`[cohort.predicates]` — `city`, `postcode_area`, `sex`, `age_band`,
+  `organisation`, each naming an archetype, an at-code and how a value is
+  matched) selects parties, the linkage domain resolves those parties to the
+  EHRs they are the subject of, and the caller's AQL runs scoped to exactly
+  those EHRs. The three steps run on three separated database credentials and
+  carry identifiers only — no name, address or party id reaches the caller. A
+  result set serving fewer distinct EHRs than `cohort.small_cell_threshold`
+  (default `5`) has its rows withheld and is marked suppressed rather than
+  looking empty; a predicate matching more than `cohort.max_cohort_size`
+  parties (default `100000`) is refused `422` rather than truncated. Every
+  execution, suppressed and failed ones included, records one `linkage`-domain
+  access event naming the cohort by a digest of its predicate list and never by
+  its values. The surface is off until a predicate is bound, and the route
+  answers `404` until then.
+
+- **AQL EHR scoping binds one array instead of one parameter per id.** A query
+  scoped to a set of EHRs now emits `ehr_id = ANY($n)` with a single uuid-array
+  bind, lifting the PostgreSQL 65535-parameter wire ceiling that previously
+  bounded how many EHRs one query could name. Behaviour is otherwise identical. The per-EHR served-row count behind the access records is now keyed
+  rather than probed, so a population page of a hundred thousand rows from as
+  many EHRs is counted in linear time.
+
 - **The viewer shows the connected CDR's deployment profile** (#3264). The
   header's status chip carries the declared profile (`· production` or
   `· sandbox`), and a sandbox deployment raises a persistent notice under the

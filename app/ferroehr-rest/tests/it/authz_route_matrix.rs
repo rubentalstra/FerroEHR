@@ -171,6 +171,10 @@ const CLINICAL_READ: &[(&str, &str)] = &[
     ("POST", "/query/{qualified_query_name}"),
     ("GET", "/query/{qualified_query_name}/{version}"),
     ("POST", "/query/{qualified_query_name}/{version}"),
+    // The cohort extension: AQL over a demographically-selected population.
+    // A read like every other query execution, and its own authorization
+    // beyond the class is the deployment's `[cohort.predicates]` allow-list.
+    ("POST", "/query/cohort"),
     ("GET", "/definition/query"),
     ("GET", "/definition/query/{qualified_query_name}"),
     ("GET", "/definition/query/{qualified_query_name}/{version}"),

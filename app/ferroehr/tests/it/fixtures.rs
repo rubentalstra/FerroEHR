@@ -155,3 +155,42 @@ pub(crate) fn folder(name: &str) -> Value {
         "name": { "_type": "DV_TEXT", "value": name }
     })
 }
+
+// ── separated-credential fixtures ────────────────────────────────────────────
+
+/// A password for a throwaway login role, fresh per call.
+///
+/// The value is never a secret: the role lives as long as one test against an
+/// ephemeral clone. It is generated rather than written down because a literal
+/// here is indistinguishable, to a scanner and to a reader, from a credential
+/// that does matter, and the repository's own rule is that a finding is fixed
+/// rather than suppressed.
+pub(crate) fn throwaway_password() -> String {
+    format!("pw{}", uuid::Uuid::now_v7().simple())
+}
+
+/// Rewrite the userinfo of a testkit clone DSN so a test can connect to the
+/// same database as a different login role (scheme/host/port/database
+/// preserved).
+pub(crate) fn with_role(base_url: &str, user: &str, password: &str) -> String {
+    let (scheme, rest) = base_url.split_once("://").expect("dsn scheme");
+    let host_and_path = rest.split_once('@').map_or(rest, |(_, tail)| tail);
+    format!("{scheme}://{user}:{password}@{host_and_path}")
+}
+
+/// A login DSN for a throwaway role holding `domain_role` and nothing else.
+///
+/// Roles are cluster-global on the shared testkit server, so the login role is
+/// named off the clone's database name and the testkit sweep reaps it. The DSN
+/// form is what lets a test build a real `DbConfig` on a separated credential.
+pub(crate) async fn dsn_as(db: &testkit::TestDb, suffix: &str, domain_role: &str) -> String {
+    let login = format!("{}_{suffix}", db.name());
+    let password = throwaway_password();
+    sqlx::query(sqlx::AssertSqlSafe(format!(
+        "CREATE ROLE {login} LOGIN PASSWORD '{password}' IN ROLE {domain_role}"
+    )))
+    .execute(&db.pool())
+    .await
+    .expect("create the login role");
+    with_role(db.url(), &login, &password)
+}

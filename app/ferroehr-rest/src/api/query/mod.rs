@@ -10,8 +10,13 @@
 //! spec's query-type axis — `adhoc` (`/query/aql`) and `stored`
 //! (`/query/{qualified_query_name}[/{version}]`) — over shared request-decoding
 //! and `RESULT_SET` rendering in `response`.
+//!
+//! The group carries one extension route beside the released six: `cohort`
+//! (`POST /query/cohort`), which runs an AQL query over a population selected in
+//! the demographic domain. No openEHR spec governs it — our own extension.
 
 mod adhoc;
+mod cohort;
 pub(crate) mod dispatch;
 pub(crate) mod openapi_routes;
 mod response;

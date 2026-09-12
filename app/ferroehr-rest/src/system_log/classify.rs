@@ -167,7 +167,10 @@ pub fn lookup(op: &str) -> Option<Classification> {
         | "query_execute_stored_query"
         | "query_execute_stored_query_body"
         | "query_execute_stored_query_version"
-        | "query_execute_stored_query_version_body" => Classification::audited(Execute, Query),
+        | "query_execute_stored_query_version_body"
+        // The cohort extension executes AQL like the six released operations;
+        // the service layer records the boundary crossing separately.
+        | "query_execute_cohort" => Classification::audited(Execute, Query),
 
         // ── DEFINITION: operational templates (OPT provisioning) ─────────────
         "definition_template_adl1.4_upload" | "definition_template_adl2_upload" => {

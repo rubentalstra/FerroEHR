@@ -71,6 +71,7 @@ pub(super) const SECTIONS: &[&str] = &[
     "subject_proxy",
     "privacy",
     "demographic",
+    "cohort",
 ];
 
 /// The two PERMANENT conventional aliases — 12-factor ecosystem names every

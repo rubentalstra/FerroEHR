@@ -3,7 +3,7 @@
 
 //! Reading and writing `linkage.party_ehr`.
 //!
-//! **No openEHR spec governs this — our own design/extension.** Four
+//! **No openEHR spec governs this — our own design/extension.** Five
 //! statements, all of them scoped to the mapping IN FORCE (`upper_inf`) except
 //! the close, which is what turns an in-force mapping into a historical one.
 //! Nothing here deletes: a merge or a split closes a period and opens the
@@ -95,4 +95,30 @@ pub(super) async fn close(
     .fetch_optional(conn)
     .await?;
     Ok(closed.map(EhrId))
+}
+
+/// Every EHR the `parties` are the subject of right now, distinct.
+///
+/// The batch form of [`open_mapping`], and the crossing step of a cohort query:
+/// identifiers in, identifiers out, in one round trip. An empty input makes no
+/// round trip at all — an `= ANY('{}')` would be a statement whose answer is
+/// already known.
+///
+/// # Errors
+/// The driver error, when the read fails.
+pub(super) async fn open_mappings(
+    pool: &PgPool,
+    parties: &[VoId],
+) -> Result<Vec<EhrId>, sqlx::Error> {
+    if parties.is_empty() {
+        return Ok(Vec::new());
+    }
+    let ids: Vec<Uuid> = parties.iter().map(|party| party.0).collect();
+    let found: Vec<Uuid> = sqlx::query_scalar(
+        "SELECT DISTINCT ehr_id FROM party_ehr WHERE party_id = ANY($1) AND upper_inf(sys_period)",
+    )
+    .bind(&ids)
+    .fetch_all(pool)
+    .await?;
+    Ok(found.into_iter().map(EhrId).collect())
 }

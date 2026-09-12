@@ -1,0 +1,116 @@
+{
+  "corpus": {
+    "parties": 100000,
+    "ehrs": 100000,
+    "compositions": 100000
+  },
+  "measured_at_commit": "eed2ba227645cc5860c3130bcf0fed3341255883",
+  "environment": {
+    "exclusive_server": true,
+    "hardware_class": "consumer-laptop",
+    "cores": 8,
+    "memory_gb": 16,
+    "storage_class": "nvme",
+    "topology": "single-node docker compose (8-CPU/8GB Docker VM) on Apple M2, the self-contained SUT stack docker/sut-ferroehr.yml in the SMART resource-server posture (docker/sut-smart.yml overlays it) with the external-terminology profile composed beside it (a seeded HAPI FHIR R4 server, docker compose --profile terminology + docker/sut-terminology.yml, fail-open); alongside it a second deployment of the same image in the openPGP version-signing posture (project ferroehr-cnf-pgp, docker/sut-signing-pgp.yml + docker/sut-terminology-failclosed.yml + docker/sut-pgp-parallel.yml, host port 8081) declared as the sut_pgp instance, which carries the fail-closed terminology posture; and a third server of the same image over the PRIMARY's database in the stable openEHR generation set (docker/sut-spec-stable.yml, same project, host port 8082) declared as the sut_stable instance — the measured-performance stage drives the primary deployment alone (the pgp project is torn down and the stable server stopped before the window opens)"
+  },
+  "cohorts": [
+    {
+      "size": 100,
+      "p50_ms": 62.012125000000005,
+      "p95_ms": 82.3815,
+      "predicate_plan": {
+        "node_type": "Unique",
+        "actual_total_ms": 60.601,
+        "rows": 100.0,
+        "index_names": [
+          "idx_dem_node_archetype",
+          "idx_dem_vo_version_current",
+          "pk_dem_node"
+        ]
+      },
+      "clinical_plan": {
+        "node_type": "Nested Loop",
+        "actual_total_ms": 0.678,
+        "rows": 100.0,
+        "index_names": [
+          "idx_vo_version_current_ehr",
+          "pk_ehr",
+          "pk_node"
+        ]
+      }
+    },
+    {
+      "size": 1000,
+      "p50_ms": 94.11125,
+      "p95_ms": 118.61658299999999,
+      "predicate_plan": {
+        "node_type": "Unique",
+        "actual_total_ms": 63.217,
+        "rows": 1000.0,
+        "index_names": [
+          "idx_dem_node_archetype",
+          "idx_dem_vo_version_current",
+          "pk_dem_node"
+        ]
+      },
+      "clinical_plan": {
+        "node_type": "Gather",
+        "actual_total_ms": 9.775,
+        "rows": 1000.0,
+        "index_names": [
+          "idx_node_context_start",
+          "idx_vo_version_current_ehr"
+        ]
+      }
+    },
+    {
+      "size": 10000,
+      "p50_ms": 1059.080584,
+      "p95_ms": 1229.837667,
+      "predicate_plan": {
+        "node_type": "Unique",
+        "actual_total_ms": 89.084,
+        "rows": 10000.0,
+        "index_names": [
+          "idx_dem_node_archetype",
+          "idx_dem_vo_version_current",
+          "pk_dem_node"
+        ]
+      },
+      "clinical_plan": {
+        "node_type": "Hash Join",
+        "actual_total_ms": 239.4,
+        "rows": 10000.0,
+        "index_names": [
+          "idx_node_context_start",
+          "pk_ehr",
+          "uq_vo_version_current"
+        ]
+      }
+    },
+    {
+      "size": 100000,
+      "p50_ms": 50362.182792,
+      "p95_ms": 51240.0055,
+      "predicate_plan": {
+        "node_type": "Unique",
+        "actual_total_ms": 343.015,
+        "rows": 100000.0,
+        "index_names": [
+          "idx_dem_node_archetype",
+          "idx_dem_vo_version_current",
+          "pk_dem_node"
+        ]
+      },
+      "clinical_plan": {
+        "node_type": "Gather",
+        "actual_total_ms": 550.6,
+        "rows": 100000.0,
+        "index_names": [
+          "idx_node_rm_type",
+          "uq_vo_version_current"
+        ]
+      }
+    }
+  ]
+}

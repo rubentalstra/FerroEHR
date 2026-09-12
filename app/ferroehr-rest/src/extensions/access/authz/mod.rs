@@ -298,11 +298,16 @@ pub(crate) struct RbacGate {
 ///   nothing and answers identifiers + defect classes only, strictly less
 ///   than the admin read routes already expose. A read-only integrity
 ///   auditor is exactly who runs it (adjudicated on #2692).
+/// - `POST /query/cohort` — the cohort query: AQL execution over a population
+///   selected in the demographic domain. It selects and never commits, exactly
+///   as the released `POST /query/aql` does, and travels as a body because its
+///   selector is a structure (the predicate list) rather than a path segment.
 ///
 /// No openEHR spec governs role semantics — our own design/extension.
 const EXTENSION_READ_ROUTES: &[(&str, &str)] = &[
     ("POST", "/message/export"),
     ("POST", "/admin/integrity/verify"),
+    ("POST", "/query/cohort"),
 ];
 
 /// Extension routes that are [`OperationClass::Admin`] despite not sitting under

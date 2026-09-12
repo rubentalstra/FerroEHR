@@ -853,8 +853,10 @@ mod tests {
         assert_eq!(mode_of("ehr_status_update"), Mode::Pre);
         assert_eq!(mode_of("versioned_ehr_status_get"), Mode::Pre);
         assert_eq!(mode_of("directory_create"), Mode::Pre);
-        // Query is handled in the query path, not the generic PEP.
+        // Query is handled in the query path, not the generic PEP — the
+        // cohort extension included.
         assert_eq!(mode_of("query_execute_adhoc_query"), Mode::Skip);
+        assert_eq!(mode_of("query_execute_cohort"), Mode::Skip);
         assert_eq!(mode_of("ehr_tags_get"), Mode::Skip);
         assert_eq!(mode_of("definition_template_adl1.4_upload"), Mode::Skip);
     }

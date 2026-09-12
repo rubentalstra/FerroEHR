@@ -57,6 +57,7 @@
 //! exists to prevent, and a MISS is recorded for the same reason a hit is: it
 //! says someone asked.
 
+pub mod cohort;
 mod store;
 
 use crate::ids::{EhrId, VoId};

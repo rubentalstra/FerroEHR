@@ -62,4 +62,8 @@ Statement-level profiling evidence is not produced here. `veredictum aql-probe`
 seeds a class-scale corpus, fires the measurement machinery's AQL set against
 the composed stack, and attributes the database-side cost per statement through
 `pg_stat_statements`; its report is exploration evidence and never a
-conformance record.
+conformance record. `conformance/ferroehr/cohort-bench.json` is the
+cohort-query benchmark record — how the demographic predicate and the clinical
+statement behave as the cohort grows — produced by the ignored `cohort_bench`
+test (`COHORT_BENCH_N=100000 cargo nextest run -p ferroehr -E 'test(cohort_bench)'
+--run-ignored all`); it is a measurement, never a conformance record.

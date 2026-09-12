@@ -559,9 +559,14 @@ mod tests {
             object_id_from_path("definition_query_store.yaml", "/x/definition/query/org::q2"),
             Some("org::q2".to_owned())
         );
-        // Ad-hoc queries stay UNKNOWN (no extraction).
+        // Ad-hoc queries stay UNKNOWN (no extraction), and so does the cohort
+        // extension: `cohort` is a route segment, not a stored-query name.
         assert_eq!(
             object_id_from_path("query_execute_adhoc_query", "/x/query/aql"),
+            None
+        );
+        assert_eq!(
+            object_id_from_path("query_execute_cohort", "/x/query/cohort"),
             None
         );
     }

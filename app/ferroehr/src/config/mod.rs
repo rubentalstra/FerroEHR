@@ -108,6 +108,8 @@ pub struct FerroEhrConfig {
     /// `[demographic]` — the demographic domain, including national-identifier
     /// protection.
     pub demographic: crate::service::demographic::identifier::config::DemographicConfig,
+    /// `[cohort]` — the cross-domain cohort-query allow-list and limits.
+    pub cohort: crate::service::linkage::cohort::config::CohortConfig,
 }
 
 /// The annotated default template `ferroehr config default` prints — a
@@ -130,6 +132,7 @@ impl FerroEhrConfig {
         self.validate_key_sources(&mut errors);
         self.validate_privacy(&mut errors);
         self.validate_audit(&mut errors);
+        self.validate_cohort(&mut errors);
         self.validate_deployment(&mut errors);
         errors.extend(multimedia_endpoint_errors(&self.multimedia));
         // management.port must differ from the server.bind port.
@@ -177,6 +180,49 @@ impl FerroEhrConfig {
                      bewaartermijn logging, https://wetten.overheid.nl/BWBR0042391); keep \
                      records at least that long, or set 0 to keep them forever",
                     store.retention_days
+                )));
+            }
+        }
+    }
+
+    /// A cohort predicate is only a selection criterion if the deployment can
+    /// actually reach the leaf it names: an unknown key, an archetype that is
+    /// not a demographic HRID, or a node that is not an at-code binds a
+    /// predicate that would match nothing and report an empty cohort rather
+    /// than a misconfiguration. No openEHR spec governs configuration — our
+    /// own design; the identifier grammars are BASE `base_types`
+    /// `master05-identification_package.adoc` §Archetype Identifiers.
+    fn validate_cohort(&self, errors: &mut Vec<ConfigError>) {
+        use crate::service::linkage::cohort::config as cohort;
+        for (key, binding) in &self.cohort.predicates {
+            if !cohort::PREDICATE_KEYS.contains(&key.as_str()) {
+                errors.push(ConfigError::semantic(format!(
+                    "cohort.predicates names `{key}`, which is not a cohort predicate; the \
+                     bindable keys are {}",
+                    cohort::PREDICATE_KEYS.join(", ")
+                )));
+                continue;
+            }
+            let is_birth_date = binding.kind == cohort::PredicateKind::BirthDate;
+            if (key == cohort::BIRTH_DATE_KEY) != is_birth_date {
+                errors.push(ConfigError::semantic(format!(
+                    "cohort.predicates.{key}.kind = \"{}\" — `{}` is the age-band predicate \
+                     and takes kind \"birth_date\"; no other key does",
+                    binding.kind.as_str(),
+                    cohort::BIRTH_DATE_KEY
+                )));
+            }
+            if !cohort::is_demographic_archetype_hrid(&binding.archetype) {
+                errors.push(ConfigError::semantic(format!(
+                    "cohort.predicates.{key}.archetype = {:?} is not a demographic archetype \
+                     HRID (openEHR-DEMOGRAPHIC-<CLASS>.<concept>.v<n>)",
+                    binding.archetype
+                )));
+            }
+            if !cohort::is_at_code(&binding.node) {
+                errors.push(ConfigError::semantic(format!(
+                    "cohort.predicates.{key}.node = {:?} is not an at-code (at0012)",
+                    binding.node
                 )));
             }
         }
@@ -1608,6 +1654,87 @@ mod tests {
             errors.to_string().contains("privacy.subject_namespaces"),
             "the refusal must name the key: {errors}"
         );
+    }
+
+    /// A cohort predicate the deployment cannot reach is a boot error, not an
+    /// empty cohort: an unbindable key, a clinical archetype, a node that is
+    /// not an at-code, and a kind that does not match its key would each match
+    /// nothing while reporting a population of zero.
+    #[test]
+    fn an_unreachable_cohort_predicate_is_a_boot_error() {
+        use crate::service::linkage::cohort::config::{PredicateBinding, PredicateKind};
+
+        let with = |key: &str, binding: PredicateBinding| {
+            let mut c = FerroEhrConfig::default();
+            c.cohort.predicates.insert(key.to_owned(), binding);
+            c
+        };
+        let good = || PredicateBinding {
+            archetype: "openEHR-DEMOGRAPHIC-ADDRESS.address.v1".to_owned(),
+            node: "at0012".to_owned(),
+            kind: PredicateKind::Text,
+        };
+
+        // The five bindable keys, correctly bound, boot.
+        assert!(with("city", good()).validate().is_ok());
+        assert!(
+            with(
+                "age_band",
+                PredicateBinding {
+                    archetype: "openEHR-DEMOGRAPHIC-PERSON.person.v1".to_owned(),
+                    node: "at0010".to_owned(),
+                    kind: PredicateKind::BirthDate,
+                }
+            )
+            .validate()
+            .is_ok()
+        );
+
+        for (key, binding, expected) in [
+            ("national_identifier", good(), "national_identifier"),
+            (
+                "city",
+                PredicateBinding {
+                    kind: PredicateKind::BirthDate,
+                    ..good()
+                },
+                "birth_date",
+            ),
+            (
+                "age_band",
+                PredicateBinding {
+                    node: "at0010".to_owned(),
+                    archetype: "openEHR-DEMOGRAPHIC-PERSON.person.v1".to_owned(),
+                    kind: PredicateKind::Text,
+                },
+                "birth_date",
+            ),
+            (
+                "city",
+                PredicateBinding {
+                    archetype: "openEHR-EHR-OBSERVATION.blood_pressure.v2".to_owned(),
+                    ..good()
+                },
+                "archetype",
+            ),
+            (
+                "city",
+                PredicateBinding {
+                    node: "value/value".to_owned(),
+                    ..good()
+                },
+                "node",
+            ),
+        ] {
+            let errors = with(key, binding)
+                .validate()
+                .expect_err("an unreachable predicate must refuse boot");
+            let rendered = errors.to_string();
+            assert!(
+                rendered.contains("cohort.predicates") && rendered.contains(expected),
+                "the refusal must name the key and the defect: {rendered}"
+            );
+        }
     }
 
     // ── 6. Template sync ──────────────────────────────────────────────────────
