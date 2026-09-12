@@ -29,11 +29,11 @@
 use std::fmt;
 
 use hmac::{Hmac, KeyInit as _, Mac as _};
-use sha2::{Digest as _, Sha256};
+use sha2::Sha256;
 use uuid::Uuid;
 
 /// Key material of the fail-safe stamp: a build that embeds no usable token.
-pub const FAIL_SAFE_KEY: &[u8] = b"ferroehr/no-licence/v1";
+pub const FAIL_SAFE_KEY: &[u8] = b"ferroehr/unlicensed/v1";
 /// Domain separator prefixed to a licence id to form its stamp material.
 pub const LICENCE_KEY_PREFIX: &[u8] = b"ferroehr/licence/v1/";
 /// Width of the stamp, in bits.
@@ -67,9 +67,14 @@ impl StampKey {
     /// that keys HMAC-SHA256 with the 32-byte digest computes the same stamp.
     #[must_use]
     pub fn new(material: &[u8]) -> Self {
-        let digest = Sha256::digest(material);
+        // The HMAC is keyed with the RAW material, as the licensing design and
+        // the attestation tooling that reads the register compute it (#3282).
+        // Copying the material into a zero-filled block-size key is exactly
+        // HMAC's own treatment of a key shorter than the block (RFC 2104 §2),
+        // so this equals `Hmac::new_from_slice(material)` for every material
+        // this module builds, without a fallible constructor.
         let mut key = hmac::digest::Key::<Hmac<Sha256>>::default();
-        for (slot, byte) in key.iter_mut().zip(digest.iter()) {
+        for (slot, byte) in key.iter_mut().zip(material.iter()) {
             *slot = *byte;
         }
         Self {
@@ -188,13 +193,44 @@ mod tests {
         assert_eq!(key.stamp16(1_000), key.stamp16(1_000));
     }
 
+    /// The key is the raw material, so this equals `Hmac::new_from_slice`
+    /// (the register tooling's constructor) for both materials this module
+    /// builds; #3282 pinned the opposite and no minted id attested.
     #[test]
-    fn the_key_is_hmac_over_the_sha256_of_the_material() {
-        // The definition an independent implementation must match.
-        let mut reference = Hmac::<Sha256>::new_from_slice(&Sha256::digest(FAIL_SAFE_KEY)).unwrap();
-        reference.update(&1_000u64.to_be_bytes());
-        let tag: [u8; 32] = reference.finalize().into_bytes().into();
-        assert_eq!(StampKey::fail_safe().stamp16(1_000), [tag[0], tag[1]]);
+    fn the_key_is_the_raw_material_as_new_from_slice_would_take_it() {
+        for (key, material) in [
+            (StampKey::fail_safe(), FAIL_SAFE_KEY.to_vec()),
+            (
+                StampKey::for_licence(Uuid::from_u128(0x0192_a7e1_2345_7000_8000_0000_0000_0000)),
+                [
+                    LICENCE_KEY_PREFIX,
+                    Uuid::from_u128(0x0192_a7e1_2345_7000_8000_0000_0000_0000).as_bytes(),
+                ]
+                .concat(),
+            ),
+        ] {
+            let mut reference = Hmac::<Sha256>::new_from_slice(&material).unwrap();
+            reference.update(&1_000u64.to_be_bytes());
+            let tag: [u8; 32] = reference.finalize().into_bytes().into();
+            assert_eq!(key.stamp16(1_000), [tag[0], tag[1]]);
+        }
+    }
+
+    /// Known answers computed independently of this crate (an HMAC-SHA256
+    /// over the eight big-endian timestamp bytes, keyed with the raw
+    /// material), so a drift from the licensing design fails here rather than
+    /// in the field. The unlicensed constant is the design's public key.
+    #[test]
+    fn known_answers_match_the_licensing_design() {
+        assert_eq!(FAIL_SAFE_KEY, b"ferroehr/unlicensed/v1");
+        assert_eq!(StampKey::fail_safe().stamp16(1_000), [0x12, 0x1e]);
+        let embedded = Uuid::from_u128(0x01a0_90a8_59e4_76da_92f5_3f7e_4ea9_d7c0);
+        assert_eq!(StampKey::for_licence(embedded).stamp16(1_000), [0x49, 0x51]);
+        let fixed = Uuid::from_u128(0x0192_a7e1_2345_7000_8000_0000_0000_0000);
+        assert_eq!(
+            StampKey::for_licence(fixed).stamp16(0x0192_a7e1_2345),
+            [0x9e, 0x8a]
+        );
     }
 
     #[test]
