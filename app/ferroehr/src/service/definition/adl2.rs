@@ -67,11 +67,13 @@ const ADL2_CACHE_NS: &str = "adl2\u{1f}";
 /// synchronous [`TerminologyResolver`] seam, while a terminology lookup is
 /// asynchronous. The service therefore pre-resolves every external term binding
 /// of the uploaded archetype against its terminology service
-/// ([`FerroEhrService::has_term`]) and hands the validator this memoised map.
+/// ([`FerroEhrService::term_existence`], on the system and code the binding
+/// URI names) and hands the validator this memoised map.
 ///
 /// `code_exists` returns `Some(true)`/`Some(false)` for a binding the service
 /// could answer, and `None` for one it could not (no external provider
-/// configured, an unknown terminology, or a transport fault) — matching the
+/// configured, a code system the server does not serve, or a transport
+/// fault) — matching the
 /// VETDF "subject to tool accessibility; … no verification was possible"
 /// carve-out (AM ADL2 `master03-archetype_package.adoc` §Validity Rules).
 #[derive(Debug, Default)]
