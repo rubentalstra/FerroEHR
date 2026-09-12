@@ -15,6 +15,8 @@ workflow refuses a tag that has no matching section here.
 
 ## [Unreleased]
 
+## [4.2.2] - 2026-09-12
+
 ### Fixed
 
 - **A wiped clinical schema comes back with its cold-tier alias views**
@@ -9224,7 +9226,8 @@ but has not yet run in production.
   seccomp, default-deny NetworkPolicy) and golden-render validation.
 
 
-[unreleased]: https://github.com/rubentalstra/FerroEHR/compare/v4.2.1...HEAD
+[unreleased]: https://github.com/rubentalstra/FerroEHR/compare/v4.2.2...HEAD
+[4.2.2]: https://github.com/rubentalstra/FerroEHR/compare/v4.2.1...v4.2.2
 [4.2.1]: https://github.com/rubentalstra/FerroEHR/compare/v4.2.0...v4.2.1
 [4.2.0]: https://github.com/rubentalstra/FerroEHR/compare/v4.1.1...v4.2.0
 [4.1.1]: https://github.com/rubentalstra/FerroEHR/compare/v4.1.0...v4.1.1
