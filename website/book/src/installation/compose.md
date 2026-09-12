@@ -414,10 +414,10 @@ each is a separate file instead:
 - **OIDC / Keycloak** is the `docker-compose.keycloak.yml` overlay above (and,
   in a repository checkout, a `keycloak` profile of the development override
   described below).
-- **A real FHIR terminology server** now lives in the repository's
-  self-contained conformance stack; see
-  [Terminology servers](../beyond-core/terminology.md) for the invocation and
-  what is seeded.
+- **A terminology server** is the `docker-compose.terminology.yml` overlay
+  [above](#the-terminology-overlay-ferroterm), FerroTERM beside the CDR; the
+  repository's conformance stack additionally runs its own seeded server for
+  the acceptance lane, see [Terminology servers](../beyond-core/terminology.md).
 
 ## Port already in use?
 

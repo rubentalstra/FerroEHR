@@ -45,10 +45,11 @@ is a `400`.
 
 > [!NOTE]
 > **The CDR is only ever a client of the terminology server.** FerroEHR does not
-> implement one: you run an off-the-shelf FHIR terminology server and point the
-> CDR at it by URL. HAPI FHIR is a good open, single-container default for
-> development and CI; Snowstorm is the choice for genuine SNOMED CT subsumption
-> (heavier: it needs Elasticsearch and a SNOMED CT licence).
+> implement one: you run a FHIR terminology server and point the CDR at it by
+> URL. The one that ships with the product is
+> [FerroTERM](#ferroterm-beside-the-cdr), started by the quickstart's
+> terminology overlay; any other server speaking the FHIR terminology
+> operations (Ontoserver, Snowstorm, HAPI FHIR) works the same way.
 
 External terminology is off by default, and while it is off nothing is
 requested: validation uses the in-process bundle alone. The keys live under
@@ -278,9 +279,13 @@ sandbox machine, beside the licence-free shaped seed the compose profile ships.
 
 ## Running one locally (development and CI)
 
-From a checkout of the repository, the conformance stack can start a real HAPI
-FHIR JPA server beside the CDR, seeded with a small set of synthetic test code
-systems and value sets:
+The quickest local terminology server is the quickstart's
+[terminology overlay](../installation/compose.md#the-terminology-overlay-ferroterm):
+FerroTERM beside the CDR, the shaped seed served, the CDR wired, one command
+and no checkout. The conformance lane still runs its own server: from a
+checkout of the repository, the conformance stack can start a HAPI FHIR JPA
+server beside the CDR, seeded with the same synthetic code systems and value
+sets over its FHIR API (the lane moves to FerroTERM under #3085):
 
 ```bash
 docker compose -p ferroehr-cnf --project-directory . --profile terminology \
@@ -295,8 +300,9 @@ inside a later run. The overlay file is what points the CDR at it, by switching
 on the `[terminology.external]` providers the development configuration already
 carries in the disabled state.
 
-None of this touches the downloadable quickstart Compose file, which has no
-terminology server and uses the in-process openEHR terminology only.
+None of this touches the downloadable quickstart Compose file on its own, which
+uses the in-process openEHR terminology only; the terminology overlay is the
+opt-in that adds FerroTERM to it.
 
 > [!WARNING]
 > The seeded content is synthetic and lives under the reserved `example.test`

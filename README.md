@@ -169,7 +169,8 @@ on the documentation site.
 - **Demographics:** a versioned party store (person, organisation, group,
   agent, role) with relationships
 - **Terminology:** the bundled openEHR terminology plus pluggable external
-  FHIR terminology servers (validate, expand, subsume)
+  FHIR terminology servers (validate, expand, subsume); FerroTERM, the Ferro
+  family's terminology server, ships with the quickstart as a compose overlay
 
 ### Integration
 
