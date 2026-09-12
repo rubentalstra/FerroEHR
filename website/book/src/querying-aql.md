@@ -356,19 +356,13 @@ cohort runs no AQL and answers an empty result set.
 in the repository (produced by the ignored `cohort_bench` test, not by the
 conformance instrument) measures the whole call, predicate to result set, over
 a corpus of 100 000 parties, each the subject of one EHR holding one
-composition, seeded through the service API on a consumer laptop with the
-database in a local container. Selecting one composition path per EHR:
+composition, seeded through the service API, with the database in a local
+container. Selecting one composition path per EHR:
 
-| Cohort | p50 | p95 | Demographic statement | Clinical statement |
-|---|---|---|---|---|
-| 100 EHRs | 71 ms | 116 ms | 54 ms | 1 ms |
-| 1 000 EHRs | 103 ms | 145 ms | 51 ms | 11 ms |
-| 10 000 EHRs | 543 ms | 821 ms | 64 ms | 325 ms |
-| 100 000 EHRs | 2.6 s | 2.9 s | 260 ms | 702 ms |
+{{#include ../generated/cohort-bench.md}}
 
-The two statement columns are `EXPLAIN (ANALYZE)` times; the difference to the
-wall clock is result assembly and the access records. Both statements run on
-indexes (`idx_dem_node_archetype` on the demographic side, the current-version
+The difference between the statement times and the wall clock is result
+assembly and the access records. Both statements run on indexes (`idx_dem_node_archetype` on the demographic side, the current-version
 and EHR indexes on the clinical side); no sequential scan appears in any of the
 recorded plans. The record names the commit it was measured at; a re-run
 replaces it rather than appending.
