@@ -21,7 +21,8 @@
 //!   lean read row shapes.
 //! - [`structure::is_structure_type`] / [`structure::is_versioned_root_type`] /
 //!   [`structure::archetype_parts`] — the decomposition granularity, delegated
-//!   to the BMM-generated RM model.
+//!   to the BMM-generated RM model plus the demographic delta (the party roots
+//!   and the containers nested in them).
 //! - [`error::StorageError`] plus the crate-internal `error::classify_sqlx` —
 //!   the error surface and the SQLSTATE to SM-status bridge.
 //! - [`promoted::PROMOTED_LEAVES`] — the `(rm_type, path)` to node-column

@@ -28,11 +28,17 @@
 //! The builder references the `node`/`vo_version`/`ehr`/`audit` column
 //! vocabulary directly and encodes the nested-set, `sys_period` and
 //! `branch_number` semantics of the greenfield store;
-//! `analyze::is_structure_root` must stay in lockstep with
-//! `storage::codec::STRUCTURE_TYPES`, which the `emit-rm-model` generator
-//! enforces. The `column_vocab` unit test pins every column name the builder
-//! emits against `migrations/ehr/0001_baseline.sql`, so a schema rename surfaces
-//! as a failing test rather than a runtime SQL error.
+//! the planner's own structure-root notion is the RM model's
+//! ([`openehr_rm::v1_2::model::is_structure_root`], kept in lockstep with the
+//! vendored BMM by the `emit-rm-model` generator), which covers the clinical
+//! content every AQL scope reaches today.
+//! [`crate::storage::structure::is_structure_type`] is that set plus the
+//! demographic party roots and the containers nested in them, which no FROM
+//! class resolves to (`from::is_vo_root_type`).
+//!
+//! The `column_vocab` unit test pins every column name the builder emits
+//! against `migrations/ehr/0001_baseline.sql`, so a schema rename surfaces as a
+//! failing test rather than a runtime SQL error.
 
 mod expr;
 mod from;

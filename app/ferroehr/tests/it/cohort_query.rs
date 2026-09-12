@@ -34,11 +34,16 @@ use ferroehr::service::linkage::cohort::{CohortError, CohortPredicate, CohortQue
 
 use crate::fixtures::{composition, uv};
 
-/// The address CLUSTER archetype the city and postcode predicates bind to: a
-/// CLUSTER under the party's `details`, which the node codec decomposes into
-/// its own row, so its ELEMENT children's nearest archetyped ancestor is the
-/// CLUSTER rather than the party root.
-const ADDRESS_ARCHETYPE: &str = "openEHR-DEMOGRAPHIC-CLUSTER.address.v1";
+/// The archetype of the `ADDRESS` under the party's `contacts`, which the
+/// `city` predicate binds to. A demographic container is decomposed into its
+/// own row like composition content (`ferroehr::storage::structure`), so an
+/// archetyped ADDRESS is the nearest archetyped ancestor of the ELEMENTs in its
+/// `details`.
+const CONTACT_ADDRESS_ARCHETYPE: &str = "openEHR-DEMOGRAPHIC-ADDRESS.address.v1";
+/// The address CLUSTER archetype the postcode predicate binds to: a CLUSTER
+/// under the party's `details`, so its ELEMENT children's nearest archetyped
+/// ancestor is the CLUSTER rather than the party root.
+const ADDRESS_CLUSTER_ARCHETYPE: &str = "openEHR-DEMOGRAPHIC-CLUSTER.address.v1";
 /// The person archetype the sex and age-band predicates bind to: those leaves
 /// sit under a plain at-coded `details` `ITEM_TREE`, so their nearest archetyped
 /// ancestor is the PERSON root itself. Exercising both shapes is the point —
@@ -58,11 +63,15 @@ fn cohort_config(small_cell_threshold: u32) -> CohortConfig {
         predicates: BTreeMap::from([
             (
                 "city".to_owned(),
-                text(ADDRESS_ARCHETYPE, "at0012", PredicateKind::Text),
+                text(CONTACT_ADDRESS_ARCHETYPE, "at0012", PredicateKind::Text),
             ),
             (
                 "postcode_area".to_owned(),
-                text(ADDRESS_ARCHETYPE, "at0014", PredicateKind::TextPrefix),
+                text(
+                    ADDRESS_CLUSTER_ARCHETYPE,
+                    "at0014",
+                    PredicateKind::TextPrefix,
+                ),
             ),
             (
                 "sex".to_owned(),
@@ -78,15 +87,19 @@ fn cohort_config(small_cell_threshold: u32) -> CohortConfig {
 
 /// A PERSON carrying the four selectable leaves.
 ///
-/// Two ancestor shapes on purpose. The party's `details` `ITEM_TREE` carries a
-/// plain at-code, so the `sex` and birth-date ELEMENTs' nearest archetyped
-/// ancestor row is the PERSON root; the address leaves sit under a CLUSTER that
-/// carries a full archetype HRID, so theirs is that CLUSTER. Both are what the
-/// predicate statement joins on (`node.citem_num` — the nearest ancestor row
-/// carrying an archetype id, `ferroehr::storage::codec`).
+/// Three ancestor shapes on purpose. The party's `details` `ITEM_TREE` carries
+/// a plain at-code, so the `sex` and birth-date ELEMENTs' nearest archetyped
+/// ancestor row is the PERSON root; the postcode sits under a CLUSTER carrying
+/// a full archetype HRID, so its ancestor is that CLUSTER; the city sits in the
+/// `details` of an archetyped `ADDRESS` under `contacts`, so its ancestor is
+/// the ADDRESS row. All three are what the predicate statement joins on
+/// (`node.citem_num` — the nearest ancestor row carrying an archetype id,
+/// `ferroehr::storage::codec`), and the third only exists because the
+/// demographic containers are decomposed into rows of their own.
 ///
-/// RM shapes: `PERSON` (`identities` 1..*, `details`), `ITEM_TREE`
-/// (`items`), `CLUSTER` (`items`), `ELEMENT` (`value`) — `openehr_rm::v1_2`.
+/// RM shapes: `PERSON` (`identities` 1..*, `contacts`, `details`), `CONTACT`
+/// (`addresses` 1..*), `ADDRESS` (`details`), `ITEM_TREE` (`items`), `CLUSTER`
+/// (`items`), `ELEMENT` (`value`) — `openehr_rm::v1_2`.
 fn person(name: &str, city: &str, postcode: &str, sex: &str, born: &str) -> Value {
     json!({
         "_type": "PERSON",
@@ -110,6 +123,30 @@ fn person(name: &str, city: &str, postcode: &str, sex: &str, born: &str) -> Valu
                     "value": { "_type": "DV_TEXT", "value": name }
                 }]
             }
+        }],
+        "contacts": [{
+            "_type": "CONTACT",
+            "archetype_node_id": "at0005",
+            "name": { "_type": "DV_TEXT", "value": "home" },
+            "addresses": [{
+                "_type": "ADDRESS",
+                "archetype_node_id": CONTACT_ADDRESS_ARCHETYPE,
+                "archetype_details": { "_type": "ARCHETYPED",
+                    "archetype_id": { "_type": "ARCHETYPE_ID", "value": CONTACT_ADDRESS_ARCHETYPE },
+                    "rm_version": "1.1.0" },
+                "name": { "_type": "DV_TEXT", "value": "postal" },
+                "details": {
+                    "_type": "ITEM_TREE",
+                    "archetype_node_id": "at0006",
+                    "name": { "_type": "DV_TEXT", "value": "address" },
+                    "items": [{
+                        "_type": "ELEMENT",
+                        "archetype_node_id": "at0012",
+                        "name": { "_type": "DV_TEXT", "value": "city" },
+                        "value": { "_type": "DV_TEXT", "value": city }
+                    }]
+                }
+            }]
         }],
         "details": {
             "_type": "ITEM_TREE",
@@ -137,18 +174,13 @@ fn person(name: &str, city: &str, postcode: &str, sex: &str, born: &str) -> Valu
                 },
                 {
                     "_type": "CLUSTER",
-                    "archetype_node_id": ADDRESS_ARCHETYPE,
+                    "archetype_node_id": ADDRESS_CLUSTER_ARCHETYPE,
                     "archetype_details": { "_type": "ARCHETYPED",
-                        "archetype_id": { "_type": "ARCHETYPE_ID", "value": ADDRESS_ARCHETYPE },
+                        "archetype_id": { "_type": "ARCHETYPE_ID",
+                            "value": ADDRESS_CLUSTER_ARCHETYPE },
                         "rm_version": "1.1.0" },
                     "name": { "_type": "DV_TEXT", "value": "address" },
                     "items": [
-                        {
-                            "_type": "ELEMENT",
-                            "archetype_node_id": "at0012",
-                            "name": { "_type": "DV_TEXT", "value": "city" },
-                            "value": { "_type": "DV_TEXT", "value": city }
-                        },
                         {
                             "_type": "ELEMENT",
                             "archetype_node_id": "at0014",

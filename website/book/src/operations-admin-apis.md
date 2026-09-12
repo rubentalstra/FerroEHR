@@ -192,7 +192,9 @@ The sweep covers **both pseudonymisation domains**, clinical and demographic,
 in one pass. Every finding names the domain it came from, so a report can never
 describe half the store while looking like it described all of it. It re-derives
 every stored version from its decomposed rows and compares the result with the
-stored document. It reads the archived tier as well, takes
+stored document, then decomposes that document again and compares the rows it
+would write, which is what catches rows an older release left in a shape this
+one no longer produces. It reads the archived tier as well, takes
 no lock, and runs outside the request path of any clinical call, so it is safe
 to run on a live server. It is also a full scan of what it covers, so schedule
 it rather than calling it per request.
@@ -265,13 +267,18 @@ at all, gets the aggregated document below, unchanged.
 `domain` is `clinical` or `demographic`, naming the schema the damaged version
 lives in. It is also what the repair below uses to reach it.
 
-`defect` is one of four values:
+`defect` is one of five values:
 
 - `content_differs`: both copies exist and hold different content.
 - `nodes_missing`: the version has a stored document but no decomposed rows.
 - `nodes_unreadable`: the decomposed rows exist but no longer form one tree.
 - `unexpected_nodes`: the version is a logical delete, which stores no
   document, yet decomposed rows exist for it.
+- `stale_decomposition`: the rows hold exactly the stored document, but not in
+  the shape this version of the server decomposes it into. An older release
+  wrote them. The content is intact and every read serves it correctly; what is
+  stale is the index over it, so a query that depends on the current shape does
+  not reach this version until the repair below rewrites its rows.
 
 `mismatch_count` is the full count. `mismatches` is capped at 1000 entries and
 `truncated` says whether the cap was reached; every mismatch is logged at
@@ -328,6 +335,19 @@ happens in the primary tier.
 
 A logically deleted version stores no document, so it rebuilds to no rows,
 which is the repair for `unexpected_nodes`.
+
+The same route is the upgrade step after a release that changes how content is
+decomposed. Rows written by the older release hold the right content, so
+nothing is damaged, but they are the wrong shape for the new one and the sweep
+reports them `stale_decomposition`. Rebuilding writes them again from the
+stored document, which is all the upgrade is. Run it unscoped once and the next
+sweep is clean:
+
+```bash
+curl -s -X POST "$BASE/admin/integrity/rebuild-nodes"
+```
+
+The changelog names the affected object type at each such release.
 
 ```json
 {

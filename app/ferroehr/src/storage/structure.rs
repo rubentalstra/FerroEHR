@@ -9,10 +9,9 @@
 //! structure set is NOT hand-maintained here: it is delegated to the single
 //! BMM-generated oracle [`openehr_rm::v1_2::model::is_structure_root`], which the
 //! codegen keeps in lockstep with this codec — never a local duplicate
-//! constant. The only local addition is the five demographic **party roots**,
-//! which are versioned objects of their own but are deliberately outside the
-//! composition-content set (the RM model excludes the demographic LOCATABLE
-//! hierarchy, since a party is never composition content).
+//! constant. The local additions are the demographic types the RM model
+//! deliberately excludes (a party is never composition content): the five
+//! **party roots** and the four archetypable **containers** nested inside them.
 
 use openehr_base::prelude::ArchetypeId;
 
@@ -20,38 +19,56 @@ use openehr_base::prelude::ArchetypeId;
 /// standalone versioned object that reuses the `node`/`vo_version` machinery
 /// (with a NULL `ehr_id`), so it must be accepted as a decomposition root — yet
 /// it is intentionally NOT part of the composition-content structure set the RM
-/// model tracks. The demographic *container* classes nested inside a party
-/// (`PARTY_IDENTITY`, `CONTACT`, `ADDRESS`, `CAPABILITY`, `PARTY_RELATIONSHIP`)
-/// are NOT structure types: they are reached only through non-structure array
-/// attributes (`identities`, `contacts`, `relationships`, `capabilities`) and
-/// stay inline verbatim in the party's fragment (see the codec's
-/// `prune_children`), which is lossless and needs no per-container row.
+/// model tracks.
 /// (The delta is pinned against [`crate::versioning::Kind`] by
 /// `tests::demographic_party_roots_mirror_the_versioning_kinds` — the
 /// versioned-object domain is the owner of "which RM types are party roots";
 /// this list only records which of them the node codec also splits into rows.)
 const DEMOGRAPHIC_PARTY_ROOTS: [&str; 5] = ["PERSON", "ORGANISATION", "GROUP", "AGENT", "ROLE"];
 
+/// The four archetypable demographic **containers** nested inside a party,
+/// reached through its `identities`, `contacts`, `contacts.addresses` and
+/// `capabilities` attributes.
+///
+/// Each carries a `details`/`credentials` `ITEM_STRUCTURE` and is therefore "a
+/// completely archetypable structure" in its own right (RM demographic
+/// `master02-demographic_package.adoc` §Archetyping), so its content is
+/// decomposed exactly like composition content: the container gets a row, its
+/// `ITEM_TREE` and `ELEMENT` descendants get theirs, and a full archetype HRID
+/// on the container becomes the `citem_num` ancestor its at-coded leaves are
+/// scoped by. Leaving them inline on the party root put that content out of
+/// reach of every row-level predicate.
+///
+/// `PARTY_RELATIONSHIP` is deliberately absent: it is a versioned object of its
+/// own, and a relationship nested in a party's `relationships` list stays
+/// inline verbatim (see [`is_versioned_root_type`]).
+const DEMOGRAPHIC_CONTAINERS: [&str; 4] = ["CONTACT", "ADDRESS", "PARTY_IDENTITY", "CAPABILITY"];
+
 /// Whether an RM `_type` gets its own `node` row: the BMM-generated
-/// composition-content structure set, plus the demographic party roots.
+/// composition-content structure set, plus the demographic party roots and the
+/// demographic containers nested inside them.
 #[must_use]
 pub fn is_structure_type(rm_type: &str) -> bool {
     openehr_rm::v1_2::model::is_structure_root(rm_type)
         || DEMOGRAPHIC_PARTY_ROOTS.contains(&rm_type)
+        || DEMOGRAPHIC_CONTAINERS.contains(&rm_type)
 }
 
 /// Whether an RM `_type` may be the **root** of a versioned object handed to
 /// [`crate::storage::codec::decompose`].
 ///
-/// This is [`is_structure_type`] plus `PARTY_RELATIONSHIP`: a relationship is
-/// a standalone versioned object with its own `node`/`vo_version` rows, yet
-/// it is deliberately **not** a structure type for child-pruning purposes — a
-/// `PARTY_RELATIONSHIP` nested inside a party's `relationships` attribute
-/// must stay inline. Splitting the two predicates gives both behaviours from
-/// one codec.
+/// This is [`is_structure_type`] minus the demographic containers, plus
+/// `PARTY_RELATIONSHIP`. A container is decomposed into rows but is never a
+/// versioned object: only `PARTY` and its descendants are versioned in a
+/// demographic system (RM demographic `master02-demographic_package.adoc`
+/// §Versioning Semantics), alongside `PARTY_RELATIONSHIP` — which in turn is
+/// deliberately **not** a structure type, so a relationship nested inside a
+/// party's `relationships` attribute stays inline. Splitting the two predicates
+/// gives all three behaviours from one codec.
 #[must_use]
 pub fn is_versioned_root_type(rm_type: &str) -> bool {
-    is_structure_type(rm_type) || rm_type == crate::versioning::Kind::PartyRelationship.as_str()
+    (is_structure_type(rm_type) && !DEMOGRAPHIC_CONTAINERS.contains(&rm_type))
+        || rm_type == crate::versioning::Kind::PartyRelationship.as_str()
 }
 
 /// Parses a full archetype HRID `archetype_node_id` into its identifying parts.
@@ -119,31 +136,44 @@ mod tests {
         }
     }
 
+    /// The storage set = the RM-model structure set ⊎ the party roots ⊎ the
+    /// demographic containers, and the two additions are disjoint from the
+    /// model's own set (which excludes the demographic hierarchy).
+    ///
+    /// The containers earn a row because each carries an archetypable
+    /// `ITEM_STRUCTURE` (RM demographic `master02-demographic_package.adoc`
+    /// §Archetyping); they are still never versioned objects, because only
+    /// `PARTY` and its descendants are (§Versioning Semantics), so
+    /// [`is_versioned_root_type`] excludes them again.
     #[test]
-    fn party_roots_are_the_only_delta_from_the_rm_model() {
-        // The storage set = the RM-model structure set ⊎ the party roots, and
-        // nothing else diverges: a party root is NOT in the RM model's set (the
-        // model excludes the demographic hierarchy), confirming the split.
-        for t in DEMOGRAPHIC_PARTY_ROOTS {
+    fn party_roots_and_containers_are_the_storage_delta_from_the_rm_model() {
+        for t in DEMOGRAPHIC_PARTY_ROOTS
+            .iter()
+            .chain(&DEMOGRAPHIC_CONTAINERS)
+        {
             assert!(
                 !openehr_rm::v1_2::model::is_structure_root(t),
                 "{t} unexpectedly in the RM-model structure set"
+            );
+            assert!(is_structure_type(t), "{t} must get its own node row");
+        }
+        for t in DEMOGRAPHIC_PARTY_ROOTS {
+            assert!(is_versioned_root_type(t), "{t} is a versioned object");
+        }
+        for t in DEMOGRAPHIC_CONTAINERS {
+            assert!(
+                !is_versioned_root_type(t),
+                "{t} is decomposed but never a versioned object"
             );
         }
     }
 
     #[test]
-    fn demographic_containers_are_not_structure_types() {
-        for t in [
-            "PARTY_IDENTITY",
-            "CONTACT",
-            "ADDRESS",
-            "CAPABILITY",
-            "PARTY_RELATIONSHIP",
-        ] {
-            assert!(!is_structure_type(t), "{t} must stay inline");
-        }
-        // …though a PARTY_RELATIONSHIP is still a valid versioned-object root.
+    fn a_nested_relationship_stays_inline_and_is_still_a_versioned_root() {
+        assert!(
+            !is_structure_type("PARTY_RELATIONSHIP"),
+            "a relationship nested in a party's `relationships` stays inline"
+        );
         assert!(is_versioned_root_type("PARTY_RELATIONSHIP"));
     }
 

@@ -7,7 +7,14 @@
 //! NOTE: no openEHR spec governs storage mechanics — our own design/extension;
 //! the storage keeps a version's content twice, as `vo_version.body` and as the
 //! decomposed `node` rows, and the sweep ([`super`]) reports where the two
-//! disagree.
+//! disagree — in content, or in the shape the rows were decomposed into.
+//!
+//! Every defect the sweep reports is repaired the same way, because there is
+//! only one repair: the rows are written again from the body. That covers a
+//! [`StorageParityDefect::StaleDecomposition`] exactly as it covers damage,
+//! since writing the rows again is what re-decomposing an old shape into the
+//! current one takes. A release that changes the decomposition is therefore an
+//! upgrade an operator performs and verifies.
 //!
 //! Which copy is authoritative is not a choice this module makes, it is a
 //! property of the storage: `body` is the version's canonical serialized form,
@@ -53,7 +60,7 @@ use crate::storage::version_repo::tier;
 /// damaged store passes it.
 const MAX_REPORTED_RECORDS: usize = 1000;
 
-/// What happened to one damaged version the rebuild reached.
+/// What happened to one version the rebuild reached.
 ///
 /// NOTE: no openEHR spec governs storage mechanics — our own design/extension.
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -97,7 +104,7 @@ pub struct NodeRebuildRecord {
     /// The `vo_version.kind` discriminator (`COMPOSITION` / `EHR_STATUS` /
     /// `FOLDER` / a demographic PARTY class / …).
     pub kind: String,
-    /// The disagreement the sweep found, which is what selected this version.
+    /// What the sweep found, which is what selected this version.
     pub defect: StorageParityDefect,
     /// What the rebuild did about it.
     pub outcome: NodeRebuildOutcome,
@@ -149,9 +156,12 @@ impl FerroEhrService {
     /// The scope is the sweep's own ([`StorageParityScope`]): the whole
     /// repository, one EHR, one versioned object, one version of it, or
     /// everything committed since an instant. Whatever the scope covers, only
-    /// the versions the sweep reports damaged are written — a clean version is
-    /// read and left alone, so running this over a healthy repository writes
-    /// nothing.
+    /// the versions the sweep reports are written — a clean version is read and
+    /// left alone, so running this over a healthy repository writes nothing.
+    /// That includes a version reported
+    /// [`StorageParityDefect::StaleDecomposition`], whose rows are intact but
+    /// in the shape an older decomposition wrote: writing them again from the
+    /// body is what brings it to the current one.
     ///
     /// Each version is repaired in its own transaction: the body is read under
     /// a row lock, decomposed, the old rows deleted, the new set inserted, and

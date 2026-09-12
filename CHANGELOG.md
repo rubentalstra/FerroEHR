@@ -17,6 +17,17 @@ workflow refuses a tag that has no matching section here.
 
 ### Added
 
+- **The storage-parity sweep reports rows an older release decomposed**
+  (#3273). A fifth `defect` value, `stale_decomposition`, on
+  `POST {base}/admin/integrity/verify` and its NDJSON stream: the rows
+  reassemble into exactly the stored document, so nothing is damaged, but they
+  are not the rows this version writes for it. The sweep now decomposes each
+  version's document a second time and compares, which is the only way that
+  case is visible; `POST {base}/admin/integrity/rebuild-nodes` repairs it like
+  any other finding. A release that changes how content is decomposed is
+  therefore an upgrade step an operator runs and verifies, instead of a shape
+  that waits for each object's next commit.
+
 - **Cohort queries across the pseudonymisation boundary** (#3159). A new
   `POST /query/cohort` runs an AQL query over a population selected in the
   demographic domain: a predicate from a deployment-declared allow-list
@@ -638,6 +649,24 @@ workflow refuses a tag that has no matching section here.
   audit rows rather than isolate them.
 
 ### Fixed
+
+- **A party's contacts, addresses, identities and capabilities are decomposed
+  into node rows** (#3273). `CONTACT`, `ADDRESS`, `PARTY_IDENTITY` and
+  `CAPABILITY` were stored inline on the party root, so nothing under them
+  carried a row and no row-level predicate could reach it — a cohort predicate
+  could only be bound to an archetype under the party's own `details`, never to
+  the address a party actually lives at. Each container now gets its own row,
+  along with the `ITEM_STRUCTURE` and `ELEMENT`s beneath it, and an archetyped
+  container scopes its own leaves. `openEHR-DEMOGRAPHIC-ADDRESS.address.v1` is
+  bindable in `[cohort.predicates]`; the served body is unchanged.
+
+  **Upgrade step.** After deploying this version, run the storage-parity sweep
+  (`POST {base}/admin/integrity/verify`). Every party version stored before it
+  reports the new `stale_decomposition` defect: the rows hold the right
+  content, in the shape the previous release wrote. Run the node rebuild once,
+  unscoped (`POST {base}/admin/integrity/rebuild-nodes`), and the next sweep is
+  clean. Until then a predicate bound to a container archetype matches a party
+  only from its next commit onward.
 
 - **Every documented least-privilege posture names a credential that can do
   what the page asks** (#3228). `db.migrate = "verify"` reads all five

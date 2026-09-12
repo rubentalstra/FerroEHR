@@ -121,7 +121,7 @@ re-derives every stored version from its decomposed rows and reports any
 that no longer match the stored document. It is an admin route, it runs
 outside the request path, and it reports by identifier rather than by
 content. The [admin API reference](../operations-admin-apis.md#storage-integrity)
-documents the report and its four defect values.
+documents the report and its five defect values.
 
 ## Verification at read
 
