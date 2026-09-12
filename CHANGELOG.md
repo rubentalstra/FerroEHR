@@ -15,6 +15,8 @@ workflow refuses a tag that has no matching section here.
 
 ## [Unreleased]
 
+## [4.2.4] - 2026-09-12
+
 ### Fixed
 
 - **ADL 2 archetypes with SNOMED CT or LOINC term bindings upload against a
@@ -9259,7 +9261,8 @@ but has not yet run in production.
   seccomp, default-deny NetworkPolicy) and golden-render validation.
 
 
-[unreleased]: https://github.com/rubentalstra/FerroEHR/compare/v4.2.3...HEAD
+[unreleased]: https://github.com/rubentalstra/FerroEHR/compare/v4.2.4...HEAD
+[4.2.4]: https://github.com/rubentalstra/FerroEHR/compare/v4.2.3...v4.2.4
 [4.2.3]: https://github.com/rubentalstra/FerroEHR/compare/v4.2.2...v4.2.3
 [4.2.2]: https://github.com/rubentalstra/FerroEHR/compare/v4.2.1...v4.2.2
 [4.2.1]: https://github.com/rubentalstra/FerroEHR/compare/v4.2.0...v4.2.1
