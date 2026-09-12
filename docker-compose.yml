@@ -93,7 +93,7 @@
 
 services:
   ferroehr-postgres:
-    image: ${FERROEHR_POSTGRES_IMAGE:-ghcr.io/rubentalstra/ferroehr-postgres:4.1.1}
+    image: ${FERROEHR_POSTGRES_IMAGE:-ghcr.io/rubentalstra/ferroehr-postgres:4.2.0}
     # Docker's default 64MB /dev/shm starves PostgreSQL's dynamic shared
     # memory under load (parallel workers error `could not resize shared
     # memory segment … No space left on device`); measured runs share this
@@ -214,7 +214,7 @@ services:
   # says so for deployments that do not share this stack's single credential.
   ferroehr-backup-clinical:
     profiles: [backup]
-    image: ${FERROEHR_POSTGRES_IMAGE:-ghcr.io/rubentalstra/ferroehr-postgres:4.1.1}
+    image: ${FERROEHR_POSTGRES_IMAGE:-ghcr.io/rubentalstra/ferroehr-postgres:4.2.0}
     depends_on:
       ferroehr-postgres:
         condition: service_healthy
@@ -252,7 +252,7 @@ services:
 
   ferroehr-backup-demographic:
     profiles: [backup]
-    image: ${FERROEHR_POSTGRES_IMAGE:-ghcr.io/rubentalstra/ferroehr-postgres:4.1.1}
+    image: ${FERROEHR_POSTGRES_IMAGE:-ghcr.io/rubentalstra/ferroehr-postgres:4.2.0}
     depends_on:
       ferroehr-postgres:
         condition: service_healthy
@@ -284,7 +284,7 @@ services:
 
   ferroehr-backup-linkage:
     profiles: [backup]
-    image: ${FERROEHR_POSTGRES_IMAGE:-ghcr.io/rubentalstra/ferroehr-postgres:4.1.1}
+    image: ${FERROEHR_POSTGRES_IMAGE:-ghcr.io/rubentalstra/ferroehr-postgres:4.2.0}
     depends_on:
       ferroehr-postgres:
         condition: service_healthy
@@ -327,7 +327,7 @@ services:
       - /tmp
 
   ferroehr:
-    image: ${FERROEHR_IMAGE:-ghcr.io/rubentalstra/ferroehr:4.1.1}
+    image: ${FERROEHR_IMAGE:-ghcr.io/rubentalstra/ferroehr:4.2.0}
     depends_on:
       ferroehr-postgres:
         condition: service_healthy
@@ -443,7 +443,7 @@ services:
   # FERROEHR_VIEWER__AUTH__OIDC__* variables at your identity provider.
   ferroehr-viewer:
     profiles: [viewer]
-    image: ${FERROEHR_VIEWER_IMAGE:-ghcr.io/rubentalstra/ferroehr-viewer:4.1.1}
+    image: ${FERROEHR_VIEWER_IMAGE:-ghcr.io/rubentalstra/ferroehr-viewer:4.2.0}
     depends_on:
       ferroehr:
         condition: service_healthy
