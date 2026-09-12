@@ -50,6 +50,14 @@ so a control cannot sit on this site as "planned" after it has shipped, or as
 > [NEN](https://www.nen.nl/zorg-welzijn/ict-in-de-zorg/informatiebeveiliging-in-de-zorg)
 > for the 7510 family. This page is a summary for evaluators and deployers,
 > not legal advice.
+>
+> The exact texts these pages were written against are vendored in the
+> repository under
+> [`docs/law/`](https://github.com/rubentalstra/FerroEHR/tree/main/docs/law), each
+> at a named consolidation with its digest and licence, and that directory's
+> README maps every act to the pages citing it. A statement here resolves to
+> those bytes, and a publisher's later amendment is a re-pin there, not a
+> silent change of meaning.
 
 ## The pseudonymisation boundary
 
