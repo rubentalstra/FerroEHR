@@ -286,13 +286,21 @@ impl FerroEhrService {
             })?;
             ids.push(EhrId(uuid));
         }
-        // Verify existence in one round-trip; report the first absent id.
-        let present: Vec<EhrId> = sqlx::query_scalar("SELECT id FROM ehr WHERE id = ANY($1)")
-            .bind(&ids)
-            .fetch_all(&self.pool)
-            .await
-            .map_err(|e| Failure::analysis(internal_fault("resolve the requested ehr_ids", &e)))?;
-        if let Some(missing) = ids.iter().find(|id| !present.contains(id)) {
+        // Verify existence in one round-trip; report the first absent id. A
+        // set, not a list probe: a cohort scope names a hundred thousand EHRs
+        // (#3159), and a probe per id made that check quadratic.
+        let present: std::collections::HashSet<Uuid> =
+            sqlx::query_scalar::<_, EhrId>("SELECT id FROM ehr WHERE id = ANY($1)")
+                .bind(&ids)
+                .fetch_all(&self.pool)
+                .await
+                .map_err(|e| {
+                    Failure::analysis(internal_fault("resolve the requested ehr_ids", &e))
+                })?
+                .into_iter()
+                .map(|id| id.0)
+                .collect();
+        if let Some(missing) = ids.iter().find(|id| !present.contains(&id.0)) {
             return Err(Failure::analysis(SmError::ehr_not_found(format!(
                 "no EHR with id {missing}"
             ))));

@@ -142,6 +142,7 @@ jobs:
           bash scripts/render/conformance-stats.sh includes
           bash scripts/render/comparison.sh
           bash scripts/render/perf-assets.sh
+          bash scripts/render/cohort-bench.sh
           bash scripts/render/conformance-assets.sh
           CONF_SUT=ehrbase bash scripts/render/conformance-assets.sh
       - name: Regenerate the derived party documents (verdicts + renders + badges)
