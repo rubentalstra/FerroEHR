@@ -15,6 +15,16 @@ workflow refuses a tag that has no matching section here.
 
 ## [Unreleased]
 
+### Changed
+
+- **The sandbox dataset pins 231 accepted / 91 refused ADL 2 archetypes**
+  (#3315). Beside a terminology server that serves LOINC, two archetypes of the
+  2013 CKM corpus are refused by the VETDF check for LOINC answer codes that do
+  not exist: `apgar` binds fifteen codes without their check digit
+  (`LA6713` … `LA6727`) and `braden_scale` binds the mistyped `LA9605-4`. The
+  sources stay verbatim, the manifest records the adjudication, and the
+  getting-started page counts 233 archetypes.
+
 ## [4.2.4] - 2026-09-12
 
 ### Fixed
