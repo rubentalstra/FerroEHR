@@ -474,7 +474,8 @@ mod tests {
     /// A realistic PERSON with `identities` (each carrying a nested
     /// `details: ITEM_TREE` inside its `PARTY_IDENTITY`), `contacts` (with an
     /// `ADDRESS.details: ITEM_TREE`), a top-level `details: ITEM_TREE`,
-    /// `languages`, and `roles` refs.
+    /// `languages`, and `roles` refs. Every container carries an at-code, so
+    /// the archetyped-container case is a separate fixture.
     fn person() -> Value {
         json!({
             "_type": "PERSON",
@@ -582,28 +583,45 @@ mod tests {
         })
     }
 
+    /// A party's `identities`, `contacts`, `contacts.addresses` and the
+    /// `details` `ITEM_TREE` under each become rows of their own, exactly as
+    /// composition content does — the containers are archetypable structures
+    /// (RM demographic `master02-demographic_package.adoc` §Archetyping), so
+    /// leaving them inline would put their content out of reach of every
+    /// row-level predicate.
     #[test]
     fn person_round_trips_losslessly() {
         let original = person();
         let rows = decompose(original.clone()).unwrap();
-        // Only the top-level `details: ITEM_TREE` is a direct structure child,
-        // so it and its ELEMENT children are split out; the identities/contacts
-        // arrays (with their own nested ITEM_TREEs) stay inline in the PERSON
-        // fragment.
         assert_eq!(rows[0].rm_type, "PERSON");
-        assert!(
-            rows[0].data.get("identities").is_some(),
-            "identities inline"
+        for attribute in ["identities", "contacts", "details"] {
+            assert!(
+                rows[0].data.get(attribute).is_none(),
+                "{attribute} is pruned off the party root"
+            );
+        }
+        let paths: Vec<(&str, &str)> = rows
+            .iter()
+            .map(|r| (r.rm_type.as_str(), r.path.as_str()))
+            .collect();
+        assert_eq!(
+            paths,
+            vec![
+                ("PERSON", ""),
+                ("PARTY_IDENTITY", "identities0."),
+                ("ITEM_TREE", "identities0.details."),
+                ("ELEMENT", "identities0.details.items0."),
+                ("CONTACT", "contacts0."),
+                ("ADDRESS", "contacts0.addresses0."),
+                ("ITEM_TREE", "contacts0.addresses0.details."),
+                ("ELEMENT", "contacts0.addresses0.details.items0."),
+                ("ITEM_TREE", "details."),
+                ("ELEMENT", "details.items0."),
+            ]
         );
-        assert!(rows[0].data.get("contacts").is_some(), "contacts inline");
-        assert!(
-            rows[0].data.get("details").is_none(),
-            "top-level details pruned"
-        );
-        assert!(
-            rows.iter().any(|r| r.path == "details."),
-            "top-level ITEM_TREE promoted to its own node"
-        );
+        // Every container is at-coded here, so the whole tree is scoped by the
+        // PERSON root's own archetype id.
+        assert!(rows.iter().skip(1).all(|r| r.citem_num == Some(0)));
         assert_eq!(round_trip(&rows), original);
     }
 
@@ -611,12 +629,60 @@ mod tests {
     fn role_round_trips_losslessly() {
         let original = role();
         let rows = decompose(original.clone()).unwrap();
-        assert_eq!(rows[0].rm_type, "ROLE");
-        // performer + capabilities (with nested credentials ITEM_TREE) stay
-        // inline; ROLE has no direct structure child, so a single row.
-        assert_eq!(rows.len(), 1, "ROLE has no direct structure child");
-        assert!(rows[0].data.get("capabilities").is_some());
+        let paths: Vec<(&str, &str)> = rows
+            .iter()
+            .map(|r| (r.rm_type.as_str(), r.path.as_str()))
+            .collect();
+        assert_eq!(
+            paths,
+            vec![
+                ("ROLE", ""),
+                ("PARTY_IDENTITY", "identities0."),
+                ("ITEM_TREE", "identities0.details."),
+                ("CAPABILITY", "capabilities0."),
+                ("ITEM_TREE", "capabilities0.credentials."),
+                ("ELEMENT", "capabilities0.credentials.items0."),
+            ]
+        );
+        // `performer` is a PARTY_REF, not a structure: it stays on the root.
         assert!(rows[0].data.get("performer").is_some());
+        assert!(rows[0].data.get("capabilities").is_none());
+        assert_eq!(round_trip(&rows), original);
+    }
+
+    /// An archetyped container is the `citem` ancestor of its own subtree, so
+    /// an at-coded leaf under an `ADDRESS` is scoped by the ADDRESS archetype
+    /// rather than by the party root's.
+    #[test]
+    fn an_archetyped_address_scopes_its_own_leaves() {
+        let mut original = person();
+        original["contacts"][0]["addresses"][0]["archetype_node_id"] =
+            json!("openEHR-DEMOGRAPHIC-ADDRESS.address.v1");
+        let rows = decompose(original.clone()).unwrap();
+        let row = |path: &str| {
+            rows.iter()
+                .find(|r| r.path == path)
+                .unwrap_or_else(|| panic!("no row at {path}"))
+        };
+        let address = row("contacts0.addresses0.");
+        assert_eq!(
+            address.arch_concept.as_deref(),
+            Some("address"),
+            "the ADDRESS row carries the promoted subsumption columns"
+        );
+        assert_eq!(address.citem_num, Some(0), "scoped by the PERSON root");
+        for path in [
+            "contacts0.addresses0.details.",
+            "contacts0.addresses0.details.items0.",
+        ] {
+            assert_eq!(
+                row(path).citem_num,
+                Some(address.num),
+                "{path} is scoped by the ADDRESS"
+            );
+        }
+        // An at-coded sibling container keeps inheriting the party root.
+        assert_eq!(row("identities0.details.items0.").citem_num, Some(0));
         assert_eq!(round_trip(&rows), original);
     }
 

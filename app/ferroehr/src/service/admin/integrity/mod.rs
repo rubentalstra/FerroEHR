@@ -17,6 +17,12 @@
 //! and compares the result to the stored body, so a tampered or corrupt row in
 //! either copy becomes visible.
 //!
+//! Reassembly is only half of it. Rows written by an OLDER decomposition still
+//! reassemble into exactly their body: the same content, in a different shape.
+//! A version whose rows agree is therefore decomposed a second time from its
+//! body and the two row sets compared, which is what makes a release that
+//! changes the decomposition an upgrade step an operator can run and verify.
+//!
 //! It runs off the request path on an administrator's call and reads every
 //! stored version in both storage tiers. It never logs content; a mismatch is
 //! reported by identifier alone.
@@ -39,8 +45,9 @@ use crate::ids::VoId;
 use crate::service::FerroEhrService;
 use crate::service::error::ServiceError;
 use crate::service::status::SmError;
-use crate::storage::codec::reassemble;
+use crate::storage::codec::{decompose, reassemble};
 use crate::storage::node_repo::read_version_rows_all;
+use crate::storage::row::ReadRow;
 
 /// How many version rows one page of the sweep's cursor query returns.
 ///
@@ -93,7 +100,7 @@ impl StorageDomain {
     }
 }
 
-/// The way one stored version's two content copies disagree.
+/// What the sweep found wrong with one stored version's two content copies.
 ///
 /// NOTE: no openEHR spec governs storage mechanics — our own design/extension.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -109,6 +116,13 @@ pub enum StorageParityDefect {
     /// `master06-change_control_package.adoc` §Logical Deletion) and therefore
     /// stores no body, yet node rows exist for it.
     UnexpectedNodes,
+    /// The rows reassemble into exactly the stored body, but they are not the
+    /// rows the current decomposition writes for it: an older decomposition
+    /// produced them. The content is intact and every point read serves it
+    /// correctly; what is stale is the index over it, so a row-level predicate
+    /// bound to a part that now earns its own row does not reach this version
+    /// until its rows are rebuilt.
+    StaleDecomposition,
 }
 
 impl StorageParityDefect {
@@ -120,11 +134,12 @@ impl StorageParityDefect {
             Self::NodesMissing => "nodes_missing",
             Self::NodesUnreadable => "nodes_unreadable",
             Self::UnexpectedNodes => "unexpected_nodes",
+            Self::StaleDecomposition => "stale_decomposition",
         }
     }
 }
 
-/// One stored version whose two content copies disagree.
+/// One stored version whose two content copies did not pass the sweep.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct StorageParityMismatch {
     /// Which domain's storage the version lives in.
@@ -136,7 +151,7 @@ pub struct StorageParityMismatch {
     /// The `vo_version.kind` discriminator (`COMPOSITION` / `EHR_STATUS` /
     /// `FOLDER` / a demographic PARTY class / …).
     pub kind: String,
-    /// How the two copies disagree.
+    /// What the sweep found wrong with the two copies.
     pub defect: StorageParityDefect,
 }
 
@@ -239,10 +254,46 @@ struct VersionKey {
     has_body: bool,
 }
 
+/// Whether one version's stored rows are the rows the current decomposition
+/// writes for its body.
+///
+/// Only asked of a version whose rows already reassemble into exactly that
+/// body, which is what makes the comparison well founded: decomposition and
+/// reassembly are inverses, so rows in the current shape are byte for byte
+/// what `decompose` returns, and any difference is a shape the codec no longer
+/// produces. Compared over every field the read row carries — the nested-set
+/// index, the materialized path, the fragment; the promoted query columns are
+/// derived from the fragment and the archetype chain, so rows agreeing on
+/// these agree on those.
+///
+/// A body that does not decompose at all is not current either: the codec
+/// would write no rows for it. The rebuild answers that case with a refusal
+/// naming the body, which is the honest outcome for a version whose two copies
+/// agree on content the codec can no longer index.
+fn rows_are_current(stored: &[ReadRow], body: &Value) -> bool {
+    let Ok(fresh) = decompose(body.clone()) else {
+        return false;
+    };
+    stored.len() == fresh.len()
+        && stored.iter().zip(&fresh).all(|(stored, fresh)| {
+            stored.num == fresh.num
+                && stored.num_cap == fresh.num_cap
+                && stored.parent_num == fresh.parent_num
+                && stored.path == fresh.path
+                && stored.data == fresh.data
+        })
+}
+
 impl FerroEhrService {
     /// Re-derives every stored version's content from its `node` rows and
     /// compares it to the materialized `vo_version.body`, reporting every
     /// disagreement.
+    ///
+    /// A version whose two copies agree is then decomposed once more from its
+    /// body, so rows carrying the right content in a shape an older
+    /// decomposition wrote are reported as
+    /// [`StorageParityDefect::StaleDecomposition`] rather than passed as
+    /// healthy.
     ///
     /// The sweep reads BOTH storage tiers (the `vo_version_all` / `node_all`
     /// union views), so archived content is checked like everything else. It
@@ -379,9 +430,16 @@ impl FerroEhrService {
                     (false, _, None) | (true, None, _) => None,
                     (true, Some(_), None) => Some(StorageParityDefect::NodesMissing),
                     (true, Some(_), Some(Err(_))) => Some(StorageParityDefect::NodesUnreadable),
-                    (true, Some(body), Some(Ok(value))) => {
-                        (&value != body).then_some(StorageParityDefect::ContentDiffers)
+                    (true, Some(body), Some(Ok(value))) if &value != body => {
+                        Some(StorageParityDefect::ContentDiffers)
                     }
+                    // The rows say what the body says. Whether they say it in
+                    // the shape this build writes is the second question, and
+                    // the only one that catches an older decomposition.
+                    (true, Some(body), Some(Ok(_))) => rows
+                        .get(&id)
+                        .is_some_and(|stored| !rows_are_current(stored, body))
+                        .then_some(StorageParityDefect::StaleDecomposition),
                 };
                 (key, defect)
             })
@@ -625,6 +683,10 @@ mod tests {
         assert_eq!(
             StorageParityDefect::UnexpectedNodes.as_str(),
             "unexpected_nodes"
+        );
+        assert_eq!(
+            StorageParityDefect::StaleDecomposition.as_str(),
+            "stale_decomposition"
         );
     }
 

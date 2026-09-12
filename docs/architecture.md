@@ -108,7 +108,10 @@ fresh** (the diagrammed deep-dive is the book's Storage architecture page,
 - **`demographic`** — the pseudonymisation domain: a relation-for-relation
   mirror of the clinical schema (built with `CREATE TABLE … LIKE`) holding the
   PARTY versioned objects and their change control, with its own
-  `cold_demographic` archival tier. Nothing selects a domain but the pool's
+  `cold_demographic` archival tier. A party body decomposes like clinical
+  content: the party root, each `PARTY_IDENTITY`, `CONTACT`, `ADDRESS` and
+  `CAPABILITY` nested in it, and the `ITEM_STRUCTURE` under each get their own
+  `node` row. Nothing selects a domain but the pool's
   `search_path`, so one set of storage code serves both; a CHECK on each side
   refuses the other's rows. Four `NOINHERIT` runtime roles
   (`ferroehr_ehr`, `ferroehr_demographic` and a read-only twin of each) hold

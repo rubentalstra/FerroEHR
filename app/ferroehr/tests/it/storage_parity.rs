@@ -26,17 +26,18 @@ use serde_json::Value;
 use sqlx::PgPool;
 use uuid::Uuid;
 
-use ferroehr::ids::EhrId;
+use ferroehr::ids::{EhrId, VoId};
 use ferroehr::service::FerroEhrService;
 use ferroehr::service::admin::integrity::StorageDomain;
 use ferroehr::service::admin::integrity::rebuild::NodeRebuildOutcome;
 use ferroehr::service::admin::integrity::{
     StorageParityDefect, StorageParityEvent, StorageParityScope,
 };
+use ferroehr::storage::codec::reassemble;
+use ferroehr::storage::row::ReadRow;
 
 use crate::fixtures::{composition, folder, uv};
 
-/// A minimal *valid* root FOLDER (a folder-hierarchy root).
 /// An EHR carrying one committed COMPOSITION — three content versions in all
 /// (`EHR_STATUS`, `EHR_ACCESS`, the COMPOSITION), every one of which the sweep
 /// reads.
@@ -1011,4 +1012,284 @@ async fn a_damaged_party_is_rebuilt_and_reads_correctly_afterwards() {
     .await
     .expect("read the rebuilt name");
     assert_ne!(name, "tampered", "the corrupted value is gone");
+}
+
+// ── an older decomposition (#3273) ───────────────────────────────────────────
+//
+// Rows an older decomposition wrote are not damaged: they reassemble into
+// exactly their body. Only the second comparison — against the rows this build
+// would write — tells them apart from healthy ones, and the rebuild is the
+// upgrade step that brings them over.
+
+/// A PERSON whose contact address carries the leaf a row-level predicate binds
+/// to, plus a top-level `details` `ITEM_TREE` that was a row under the older
+/// decomposition too.
+///
+/// The contact subtree is what distinguishes the two shapes: `CONTACT`,
+/// `ADDRESS` and `PARTY_IDENTITY` earn their own rows now
+/// (`ferroehr::storage::structure`) and were inline on the party root before.
+///
+/// RM shapes: `PERSON` (`identities` 1..*, `contacts`, `details`), `CONTACT`
+/// (`addresses` 1..*), `ADDRESS` (`details`), `ITEM_TREE` (`items`), `ELEMENT`
+/// (`value`) — `openehr_rm::v1_2`.
+fn a_person_with_a_contact_address() -> Value {
+    serde_json::json!({
+        "_type": "PERSON",
+        "archetype_node_id": "openEHR-DEMOGRAPHIC-PERSON.person.v1",
+        "archetype_details": {
+            "_type": "ARCHETYPED",
+            "archetype_id": { "_type": "ARCHETYPE_ID", "value": "openEHR-DEMOGRAPHIC-PERSON.person.v1" },
+            "rm_version": "1.1.0"
+        },
+        "name": { "_type": "DV_TEXT", "value": "Ada Lovelace" },
+        "identities": [{
+            "_type": "PARTY_IDENTITY",
+            "archetype_node_id": "at0001",
+            "name": { "_type": "DV_TEXT", "value": "legal name" },
+            "details": {
+                "_type": "ITEM_TREE",
+                "archetype_node_id": "at0002",
+                "name": { "_type": "DV_TEXT", "value": "structure" },
+                "items": [{
+                    "_type": "ELEMENT",
+                    "archetype_node_id": "at0003",
+                    "name": { "_type": "DV_TEXT", "value": "family" },
+                    "value": { "_type": "DV_TEXT", "value": "Lovelace" }
+                }]
+            }
+        }],
+        "contacts": [{
+            "_type": "CONTACT",
+            "archetype_node_id": "at0005",
+            "name": { "_type": "DV_TEXT", "value": "home" },
+            "addresses": [{
+                "_type": "ADDRESS",
+                "archetype_node_id": "openEHR-DEMOGRAPHIC-ADDRESS.address.v1",
+                "archetype_details": {
+                    "_type": "ARCHETYPED",
+                    "archetype_id": { "_type": "ARCHETYPE_ID", "value": "openEHR-DEMOGRAPHIC-ADDRESS.address.v1" },
+                    "rm_version": "1.1.0"
+                },
+                "name": { "_type": "DV_TEXT", "value": "postal" },
+                "details": {
+                    "_type": "ITEM_TREE",
+                    "archetype_node_id": "at0006",
+                    "name": { "_type": "DV_TEXT", "value": "address" },
+                    "items": [{
+                        "_type": "ELEMENT",
+                        "archetype_node_id": "at0012",
+                        "name": { "_type": "DV_TEXT", "value": "city" },
+                        "value": { "_type": "DV_TEXT", "value": "Groningen" }
+                    }]
+                }
+            }]
+        }],
+        "details": {
+            "_type": "ITEM_TREE",
+            "archetype_node_id": "at0010",
+            "name": { "_type": "DV_TEXT", "value": "structure" },
+            "items": [{
+                "_type": "ELEMENT",
+                "archetype_node_id": "at0011",
+                "name": { "_type": "DV_TEXT", "value": "sex" },
+                "value": { "_type": "DV_TEXT", "value": "F" }
+            }]
+        }
+    })
+}
+
+/// Commit [`a_person_with_a_contact_address`] through the service seam, and
+/// return the versioned object plus the storage ordinal of its one version.
+async fn seed_contactable_party(svc: &FerroEhrService, pool: &PgPool) -> (VoId, i32) {
+    let vo_id = Box::pin(svc.create_party(uv(&a_person_with_a_contact_address(), "249", None)))
+        .await
+        .expect("create a person through the service seam");
+    let sys_version: i32 = sqlx::query_scalar(
+        "SELECT sys_version FROM demographic.vo_version WHERE vo_id = $1 \
+         ORDER BY sys_version DESC LIMIT 1",
+    )
+    .bind(vo_id.0)
+    .fetch_one(pool)
+    .await
+    .expect("the stored party version");
+    (vo_id, sys_version)
+}
+
+/// The stored `vo_version.body` of one demographic version, parsed.
+async fn stored_demographic_body(pool: &PgPool, vo_id: VoId, sys_version: i32) -> Value {
+    let text: String = sqlx::query_scalar(
+        "SELECT body FROM demographic.vo_version WHERE vo_id = $1 AND sys_version = $2",
+    )
+    .bind(vo_id.0)
+    .bind(sys_version)
+    .fetch_one(pool)
+    .await
+    .expect("the stored body");
+    serde_json::from_str(&text).expect("the stored body parses")
+}
+
+/// The stored node rows of one demographic version, in the read shape the
+/// codec reassembles from.
+async fn stored_demographic_rows(pool: &PgPool, vo_id: VoId, sys_version: i32) -> Vec<ReadRow> {
+    let rows: Vec<(i32, i32, i32, String, Value)> = sqlx::query_as(
+        "SELECT num, num_cap, parent_num, path, data FROM demographic.node \
+         WHERE vo_id = $1 AND sys_version = $2 ORDER BY num",
+    )
+    .bind(vo_id.0)
+    .bind(sys_version)
+    .fetch_all(pool)
+    .await
+    .expect("the stored node rows");
+    rows.into_iter()
+        .map(|(num, num_cap, parent_num, path, data)| ReadRow {
+            num,
+            num_cap,
+            parent_num,
+            path,
+            data,
+        })
+        .collect()
+}
+
+/// Rewrite one party version's rows into the shape the decomposition wrote
+/// before the demographic containers earned rows of their own: the
+/// `identities` and `contacts` subtrees inline on the party root, and only the
+/// top-level `details` `ITEM_STRUCTURE` split out.
+///
+/// The rewrite reaches past the service into the stored rows on purpose — an
+/// installation that upgrades has exactly these rows and no way to have
+/// written them through this build's commit path.
+async fn write_the_old_party_shape(pool: &PgPool, vo_id: VoId, sys_version: i32) {
+    let removed = sqlx::query(
+        "DELETE FROM demographic.node WHERE vo_id = $1 AND sys_version = $2 \
+         AND (path LIKE 'identities%' OR path LIKE 'contacts%')",
+    )
+    .bind(vo_id.0)
+    .bind(sys_version)
+    .execute(pool)
+    .await
+    .expect("drop the container rows")
+    .rows_affected();
+    assert!(
+        removed > 0,
+        "the fixture must actually remove the container rows, or it models nothing"
+    );
+
+    // The old root fragment is the body with its one structure child pruned,
+    // which is exactly what the pre-#3273 codec kept inline.
+    let inlined = sqlx::query(
+        "UPDATE demographic.node n SET data = (\
+           SELECT v.body::jsonb - 'details' FROM demographic.vo_version v \
+           WHERE v.vo_id = n.vo_id AND v.sys_version = n.sys_version) \
+         WHERE n.vo_id = $1 AND n.sys_version = $2 AND n.num = 0",
+    )
+    .bind(vo_id.0)
+    .bind(sys_version)
+    .execute(pool)
+    .await
+    .expect("inline the containers on the party root")
+    .rows_affected();
+    assert_eq!(inlined, 1, "the fixture must rewrite exactly the root row");
+}
+
+#[tokio::test]
+async fn a_stale_decomposition_is_reported_and_rebuilt() {
+    let db = testkit::db().await.expect("testkit database");
+    let pool = db.pool();
+    let svc = FerroEhrService::new(pool.clone());
+    let (vo_id, sys_version) = seed_contactable_party(&svc, &pool).await;
+    let served = svc.get_party(vo_id).await.expect("read the fresh party");
+
+    write_the_old_party_shape(&pool, vo_id, sys_version).await;
+
+    // The tampering really does model the older shape rather than damage: the
+    // rows still reassemble into exactly the body they were written from, so
+    // the only thing left to disagree about is their shape.
+    let body = stored_demographic_body(&pool, vo_id, sys_version).await;
+    let old_rows = stored_demographic_rows(&pool, vo_id, sys_version).await;
+    assert_eq!(
+        reassemble(&old_rows).expect("the old rows form one tree"),
+        body,
+        "an older decomposition carries the same content, which is why the \
+         reassembly comparison alone passes it as healthy"
+    );
+    assert!(
+        !old_rows.iter().any(|row| row.path.starts_with("contacts")),
+        "and it carries the contact subtree inline, out of reach of a row-level predicate"
+    );
+
+    let report = svc
+        .verify_storage_parity(StorageParityScope::default())
+        .await
+        .expect("sweep");
+    assert_eq!(
+        report.mismatch_count, 1,
+        "exactly the re-shaped version is reported: {report:?}"
+    );
+    let found = &report.mismatches[0];
+    assert_eq!(found.vo_id, vo_id.0);
+    assert_eq!(found.sys_version, sys_version);
+    assert_eq!(found.domain, StorageDomain::Demographic);
+    assert_eq!(found.defect, StorageParityDefect::StaleDecomposition);
+
+    let rebuild = svc
+        .rebuild_version_nodes(StorageParityScope::default())
+        .await
+        .expect("rebuild");
+    assert_eq!(rebuild.versions_rebuilt, 1, "{rebuild:?}");
+    assert_eq!(rebuild.versions_refused, 0);
+    assert_eq!(
+        rebuild.records[0].defect,
+        StorageParityDefect::StaleDecomposition,
+        "the sweep verdict that selected it is carried through"
+    );
+
+    let after = svc
+        .verify_storage_parity(StorageParityScope::default())
+        .await
+        .expect("sweep");
+    assert!(
+        after.is_clean(),
+        "one rebuild is the whole upgrade step: {after:?}"
+    );
+    let current_rows = stored_demographic_rows(&pool, vo_id, sys_version).await;
+    assert!(
+        current_rows
+            .iter()
+            .any(|row| row.path == "contacts0.addresses0."),
+        "the contact address is a row of its own now, so a predicate bound to \
+         its archetype reaches this version: {:?}",
+        current_rows.iter().map(|row| &row.path).collect::<Vec<_>>()
+    );
+
+    assert_eq!(
+        svc.get_party(vo_id).await.expect("read the repaired party"),
+        served,
+        "and the served body never moved: only the index over it did"
+    );
+}
+
+#[tokio::test]
+async fn a_freshly_committed_repository_reports_no_stale_decomposition() {
+    let db = testkit::db().await.expect("testkit database");
+    let pool = db.pool();
+    let svc = FerroEhrService::new(pool.clone());
+    seed_ehr_with_composition(&svc).await;
+    seed_contactable_party(&svc, &pool).await;
+
+    let report = svc
+        .verify_storage_parity(StorageParityScope::default())
+        .await
+        .expect("sweep");
+
+    assert!(
+        report.is_clean(),
+        "a clinical composition and a party written by this build are both \
+         already in the current shape, so the second comparison must find \
+         nothing: {report:?}"
+    );
+    assert!(
+        report.versions_checked >= 4,
+        "and both domains were actually read: {report:?}"
+    );
 }

@@ -283,7 +283,7 @@ small_cell_threshold = 5
 max_cohort_size = 100000
 
 [cohort.predicates]
-city = { archetype = "openEHR-DEMOGRAPHIC-CLUSTER.address.v1", node = "at0012", kind = "text" }
+city = { archetype = "openEHR-DEMOGRAPHIC-ADDRESS.address.v1", node = "at0012", kind = "text" }
 ```
 
 | Key | Type | Default | Description |
@@ -309,10 +309,10 @@ boot errors, because a mismatch would bind a predicate that matches nothing
 while reporting an empty cohort.
 
 **The archetype must be one the node model reaches.** A party is decomposed into
-its own rows for the party root and every archetyped `ITEM_TREE` or `CLUSTER`
-under its `details`. Content under `identities` and `contacts` — including an
-`ADDRESS` under a `CONTACT` — is stored inline on the party root and carries no
-row of its own, so it cannot be bound today.
+its own rows for the party root, for each `PARTY_IDENTITY`, `CONTACT`, `ADDRESS`
+and `CAPABILITY` nested in it, and for every archetyped `ITEM_TREE` or `CLUSTER`
+under any of their `details`. An `ADDRESS` under a `CONTACT` is therefore
+bindable like anything else.
 
 
 ## Interaction with the audit trail

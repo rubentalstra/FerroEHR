@@ -212,6 +212,11 @@ verbatim** (the ITS-JSON encoding) with its structure children pruned out: no
 alias compaction, no synthetic fields, so what sits in `node.data` is
 byte-identical in shape to what the API serves. Storage equals wire.
 
+A party body decomposes the same way. The party root, each `PARTY_IDENTITY`,
+`CONTACT`, `ADDRESS` and `CAPABILITY` nested in it, and the `ITEM_STRUCTURE`
+under each get their own row, so a predicate over a contact address reaches it
+by the same interval join a clinical predicate uses.
+
 The tree shape is captured as a **nested-set interval**: nodes are numbered
 in pre-order (`num`, root = 0), and each row records the maximum number in
 its subtree (`num_cap`). "B is contained in A" is then the integer test
