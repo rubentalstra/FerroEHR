@@ -38,7 +38,9 @@ workflow refuses a tag that has no matching section here.
 - **AQL EHR scoping binds one array instead of one parameter per id.** A query
   scoped to a set of EHRs now emits `ehr_id = ANY($n)` with a single uuid-array
   bind, lifting the PostgreSQL 65535-parameter wire ceiling that previously
-  bounded how many EHRs one query could name. Behaviour is otherwise identical.
+  bounded how many EHRs one query could name. Behaviour is otherwise identical. The per-EHR served-row count behind the access records is now keyed
+  rather than probed, so a population page of a hundred thousand rows from as
+  many EHRs is counted in linear time.
 
 - **The viewer shows the connected CDR's deployment profile** (#3264). The
   header's status chip carries the declared profile (`· production` or
