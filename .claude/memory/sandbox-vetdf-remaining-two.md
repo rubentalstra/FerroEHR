@@ -1,12 +1,12 @@
 ---
 name: sandbox-vetdf-remaining-two
-description: Where the FerroTERM/VETDF sandbox work stopped on 2026-09-12 (paused by the owner): v4.2.4 tagged, seed at 231/91, two archetypes still refused, issue #3315
+description: Resolved 2026-09-12 — the sandbox seed passes at 231/91 beside FerroTERM (v4.2.5); the two remaining VETDF refusals are 2013 CKM source defects, pinned, never code
 metadata:
   type: project
 ---
 
-State when the owner paused the session on 2026-09-12: v4.2.2, v4.2.3 and v4.2.4 are tagged and published; the sandbox runs 4.2.4 with FerroTERM 0.1.3 beside the CDR (`.env` has `FERROTERM_INDEX=/data/index/int:/data/index/loinc`, indexes under `/opt/ferroehr-sandbox/ferroterm-index/{int,loinc}`, SNOMED CT International 20260901 + LOINC 2.83, both SHA-256 verified). The v4.2.4 reseed leg failed: the ADL 2 library loaded 231 / 91 against the pinned 233 / 89, so the sandbox is half-seeded (no EHRs/compositions/parties/queries). Issue #3315 (P0, milestone v4.2.5) carries the two remaining refusals.
+Resolved state as of 2026-09-12 (v4.2.5 tagged and published, release run 34711567715 fully green): the sandbox runs 4.2.5 with FerroTERM 0.1.3 beside the CDR serving SNOMED CT International 20260901 + LOINC 2.83, and the reseed leg seeds the whole demo dataset (8 EHRs, 183 compositions, 8 directories, 11 parties, 5 stored queries). The ADL 2 archetype-library pin is 231 accepted / 91 refused for this terminology posture: 89 AOM2 refusals plus two VETDF refusals against the served LOINC (`apgar` binds `LA6713`…`LA6727` without check digits, `braden_scale` binds the mistyped `LA9605-4`). Both are defects of the vendored 2013 CKM sources, kept verbatim; a CDR with no LOINC-serving server accepts them (233 / 89). Issues #3311 and #3315 are closed with every criterion ticked.
 
-**Why:** the owner asked to pause mid-diagnosis; the next step is the library replay against the sandbox (`POST …/definition/template/adl2` per `.adls`, collect the 422 bodies, diff with the earlier 95-list in the scratchpad) to name the two archetypes and their exact VETDF terms.
+**Why:** the pin depends on which terminologies the deployment serves, so a seed count that moves after a terminology change is expected, not a regression, until the refusals are read.
 
-**How to apply:** resume at #3315: replay, adjudicate each term (retired SNOMED concept vs LOINC answer-list code the index lacks vs a real archetype defect), fix or re-pin with the adjudication recorded, then `gh run rerun --failed` on the release run (`sandbox reseed` + `announce`) or dispatch `sandbox-reseed.yml`, and verify the seed passes. Related: [[compliance-corpus-direction]], the v4.3.0 items stay untouched until the owner says so ([[next-milestone-in-fresh-session]]).
+**How to apply:** if the sandbox seed count moves again, read the 422 bodies first (replay `POST …/definition/template/adl2` per `.adls`) and adjudicate each VETDF term before touching the manifest pin; a served-edition change (SNOMED or LOINC release) re-opens exactly this question. The v4.3.0 items stay untouched until the owner starts them in a fresh session ([[next-milestone-in-fresh-session]]).
