@@ -8,7 +8,13 @@
 # a clean checkout must regenerate byte-identically. This guards against someone
 # hand-editing a `// @generated` file, or changing the emitter without
 # regenerating. Run in CI and locally before committing generator changes.
+#
+# Usage: scripts/checks/codegen-drift.sh   (no arguments)
 set -euo pipefail
+
+# shellcheck source=scripts/lib/guard-args.sh
+. "$(dirname "$0")/../lib/guard-args.sh"
+guard_no_args "$@"
 cd "$(dirname "$0")/../.."
 
 # Paths the emit targets own (and only those).

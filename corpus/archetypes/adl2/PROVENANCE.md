@@ -52,8 +52,13 @@ wrong on both counts and is corrected here (#3150). The wording appears to
 have been inherited from the CKM template pack, where a mixed CC-BY-SA
 population genuinely is what the files say.
 
-Whether a tree whose terms are unstated may stay committed is a separate
-decision, tracked on issue 3194; nothing here asserts that it may.
+Whether a tree whose terms are unstated may stay committed was decided by the
+Licensor on 2026-09-12 (issue 3194): the tree stays committed with this
+position stated. The material is the openEHR Foundation's own published test
+corpus, the use here is validating an ADL 1.4 to ADL 2 converter against it,
+and the records above claim no grant. No request for a licence statement was
+filed upstream; a downstream reader takes these files under the same unstated
+terms this record describes, not under any grant this repository makes.
 
 ## Contents
 

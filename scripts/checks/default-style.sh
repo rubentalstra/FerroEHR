@@ -36,6 +36,10 @@
 #   no args  → the files changed against origin/main
 #   --all    → every .rs file, tracked or untracked (unignored)
 set -euo pipefail
+
+# shellcheck source=scripts/lib/guard-args.sh
+. "$(dirname "$0")/../lib/guard-args.sh"
+guard_known_flags "[--all | <file>...]" "--all" "$@"
 cd "$(dirname "$0")/../.."
 
 # `Option::default` and `Vec::default` are std paths, not project helpers: they

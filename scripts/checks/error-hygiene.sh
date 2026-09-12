@@ -33,8 +33,12 @@
 # e.to_string();`), interpolated more than two lines below the constructor, or
 # formatted inside a helper the constructor merely calls, passes it.
 #
-# Usage: scripts/checks/error-hygiene.sh
+# Usage: scripts/checks/error-hygiene.sh   (no arguments)
 set -euo pipefail
+
+# shellcheck source=scripts/lib/guard-args.sh
+. "$(dirname "$0")/../lib/guard-args.sh"
+guard_no_args "$@"
 cd "$(dirname "$0")/../.."
 
 # The guarded constructors — every spelling that renders a free-form string into

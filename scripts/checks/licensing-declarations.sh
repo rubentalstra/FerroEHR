@@ -27,7 +27,13 @@
 # What it deliberately does NOT check: whether the chapter's PROSE about a
 # licence is correct. No tool can judge that, and a check that pretended to
 # would be the kind of unenforced rule `.claude/rules/reliability.md` refuses.
+#
+# Usage: scripts/checks/licensing-declarations.sh   (no arguments)
 set -euo pipefail
+
+# shellcheck source=scripts/lib/guard-args.sh
+. "$(dirname "$0")/../lib/guard-args.sh"
+guard_no_args "$@"
 cd "$(dirname "$0")/../.."
 
 readonly REUSE_TOML='REUSE.toml'

@@ -146,7 +146,9 @@ bash scripts/ui-e2e.sh        # the browser journey battery against the composed
 bash scripts/deploy-probe.sh  # the DEPLOYMENT-conformance harness: brings a real stack up and probes observable
                               # behaviour at the FAR END (a blob in the bucket, the server's own effective config),
                               # each integration off / working / dependency-broken. Its report ends with what it did
-                              # NOT exercise — silence is never read as coverage. Record: docs/conformance/deployment/
+                              # NOT exercise — silence is never read as coverage. Record: the JSON the harness
+                              # writes under docs/conformance/deployment/ (gitignored: one SUT per record, see its
+                              # README) — read the CI artifact of a named run, or your own run, never a stale file.
 ```
 
 ### Target-dir & warm-build discipline (owner rules 2026-07-12, tightened 2026-07-16)

@@ -23,7 +23,13 @@
 # upgrade resolves the advisory, at which point both are stale and both still
 # pass here. `scripts/checks/advisory-exceptions.sh` is that half, and it runs in
 # the cargo-deny job, which is where the graph is resolvable.
+#
+# Usage: scripts/checks/vex-advisories.sh   (no arguments)
 set -euo pipefail
+
+# shellcheck source=scripts/lib/guard-args.sh
+. "$(dirname "$0")/../lib/guard-args.sh"
+guard_no_args "$@"
 cd "$(dirname "$0")/../.."
 
 readonly OUT='security/vex/rust-advisories.openvex.json'

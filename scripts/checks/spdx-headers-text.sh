@@ -29,6 +29,10 @@
 #   scripts/checks/spdx-headers-text.sh --fix    # insert missing headers
 set -euo pipefail
 
+# shellcheck source=scripts/lib/guard-args.sh
+. "$(dirname "$0")/../lib/guard-args.sh"
+guard_known_flags "[--fix]" "--fix" "$@"
+
 cd "$(dirname "$0")/../.."
 
 mode="${1:-}"

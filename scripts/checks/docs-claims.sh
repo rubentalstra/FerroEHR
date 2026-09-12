@@ -56,6 +56,10 @@
 #   --diff   → only the book files changed against [base] (default
 #              origin/main); the explicit opt-in for a scoped run
 set -euo pipefail
+
+# shellcheck source=scripts/lib/guard-args.sh
+. "$(dirname "$0")/../lib/guard-args.sh"
+guard_known_flags "[--all | --diff [base] | <file>...]" "--all --diff" "$@"
 cd "$(dirname "$0")/../.."
 
 BOOK=website/book/src

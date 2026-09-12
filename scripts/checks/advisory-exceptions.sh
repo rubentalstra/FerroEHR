@@ -20,7 +20,13 @@
 #
 # Mutation-proven in both directions: a bogus ignore fails the gate naming its
 # id, and removing it turns the gate green again.
+#
+# Usage: scripts/checks/advisory-exceptions.sh   (no arguments)
 set -euo pipefail
+
+# shellcheck source=scripts/lib/guard-args.sh
+. "$(dirname "$0")/../lib/guard-args.sh"
+guard_no_args "$@"
 cd "$(dirname "$0")/../.."
 
 for tool in cargo jq; do

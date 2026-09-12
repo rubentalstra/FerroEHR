@@ -29,8 +29,12 @@
 #      0.0.0.0 is DNAT'd ahead of the host firewall's chains, so `ufw deny` does
 #      not stop it (docs.docker.com/engine/network/packet-filtering-firewalls).
 #
-# Usage: scripts/checks/compose-hardening.sh
+# Usage: scripts/checks/compose-hardening.sh   (no arguments)
 set -euo pipefail
+
+# shellcheck source=scripts/lib/guard-args.sh
+. "$(dirname "$0")/../lib/guard-args.sh"
+guard_no_args "$@"
 cd "$(dirname "$0")/../.."
 
 # Every committed compose artifact: the root files plus the `services:`-bearing

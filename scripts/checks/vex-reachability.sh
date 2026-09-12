@@ -48,7 +48,13 @@
 #
 # Mutation-proven in both directions: adding a carrier no graph edge supports
 # fails naming it, and removing a real one fails naming the unlisted path.
+#
+# Usage: scripts/checks/vex-reachability.sh   (no arguments)
 set -euo pipefail
+
+# shellcheck source=scripts/lib/guard-args.sh
+. "$(dirname "$0")/../lib/guard-args.sh"
+guard_no_args "$@"
 cd "$(dirname "$0")/../.."
 
 readonly DOC='security/vex/rust-advisories.openvex.json'

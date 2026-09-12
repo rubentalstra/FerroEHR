@@ -15,8 +15,12 @@
 # yq + jq under #2220, every assertion re-proven against the same mutations it
 # caught before.
 #
-# Usage: scripts/checks/no-python.sh
+# Usage: scripts/checks/no-python.sh   (no arguments)
 set -euo pipefail
+
+# shellcheck source=scripts/lib/guard-args.sh
+. "$(dirname "$0")/../lib/guard-args.sh"
+guard_no_args "$@"
 cd "$(dirname "$0")/../.." || exit 1
 
 # No file is exempt. If one ever has to be, it goes here WITH its tracking
