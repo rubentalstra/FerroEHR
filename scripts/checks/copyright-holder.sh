@@ -16,7 +16,13 @@
 # NOT compared: `CITATION.cff` authors and `.zenodo.json` creators. Those record
 # AUTHORSHIP for citation, which is a different datum from the copyright holder
 # and is correctly a named person.
+#
+# Usage: scripts/checks/copyright-holder.sh   (no arguments)
 set -euo pipefail
+
+# shellcheck source=scripts/lib/guard-args.sh
+. "$(dirname "$0")/../lib/guard-args.sh"
+guard_no_args "$@"
 
 cd "$(dirname "$0")/../.."
 

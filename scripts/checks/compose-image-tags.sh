@@ -11,7 +11,13 @@
 # release). The hosted sandbox's compose file (deploy/hosted/docker-compose.yml)
 # deliberately tracks the `:latest` release pointer instead (#2974), so its
 # defaults are held to that pointer. Dependency-free: grep + sed only.
+#
+# Usage: scripts/checks/compose-image-tags.sh   (no arguments)
 set -Eeuo pipefail
+
+# shellcheck source=scripts/lib/guard-args.sh
+. "$(dirname "$0")/../lib/guard-args.sh"
+guard_no_args "$@"
 
 ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
 COMPOSE_FILE="$ROOT_DIR/docker-compose.yml"

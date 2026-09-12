@@ -26,7 +26,17 @@ That acceptance is now an INSTRUMENT rather than a habit:
 reads each answer from the layer that actually decides it — the container
 runtime's own spec for the security posture, the API server for admission, the
 EndpointSlice for readiness. Run it for any chart change with behavioural
-reach and quote the record (`docs/conformance/deployment/kubernetes.json`).
+reach and quote its record. The record is NOT in the tree: the harness writes
+`kubernetes.json` under `docs/conformance/deployment/`, which is gitignored
+there on purpose (a record measures ONE system under test, and a committed
+file would invite comparing runs that measured different images, overlays and
+profiles; the reasoning lives in `docs/conformance/deployment/README.md`). So a
+quoted record comes from exactly one of two places, and the quote says which:
+the artifact the CI job uploaded for a named run, or the local run you
+performed for this change. Either way, quote the SUT identification the
+harness prints beside it (the image reference and the overlays/profiles it
+drove); a record without its SUT is the failure the ignore exists to prevent,
+and a file left on disk by an earlier local run describes a different system.
 The `/k8s-test` skill stays the manual procedure for what the harness does not
 cover, and the harness declares those gaps in its own output.
 

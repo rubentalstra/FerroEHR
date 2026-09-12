@@ -14,8 +14,12 @@
 # of their own (dependency and pin bumps); the workflow skips them by author
 # type before this script runs.
 #
-# Usage: PR_BODY="$body" scripts/checks/contribution-licence.sh
+# Usage: PR_BODY="$body" scripts/checks/contribution-licence.sh   (no arguments)
 set -euo pipefail
+
+# shellcheck source=scripts/lib/guard-args.sh
+. "$(dirname "$0")/../lib/guard-args.sh"
+guard_no_args "$@"
 
 readonly ACCEPTED='^[[:space:]]*[-*] \[[xX]\] I accept the terms in \[CONTRIBUTING\.md § Licensing of contributions\]'
 readonly UNTICKED='^[[:space:]]*[-*] \[ \] I accept the terms in \[CONTRIBUTING\.md § Licensing of contributions\]'

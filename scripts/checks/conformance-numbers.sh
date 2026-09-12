@@ -8,7 +8,13 @@
 # scripts/render/conformance-stats.sh and scripts/render/perf-assets.sh) —
 # sources must carry only the data-cnf markers / {{#include}} directives / the
 # generated SVG assets, never literal numbers.
+#
+# Usage: scripts/checks/conformance-numbers.sh   (no arguments)
 set -euo pipefail
+
+# shellcheck source=scripts/lib/guard-args.sh
+. "$(dirname "$0")/../lib/guard-args.sh"
+guard_no_args "$@"
 cd "$(dirname "$0")/../.."
 
 # Three claim shapes are forbidden in website/landing + website/book/src +

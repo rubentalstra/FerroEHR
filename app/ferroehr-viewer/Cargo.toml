@@ -175,7 +175,7 @@ tower.workspace = true
 # E2E journeys (tests/e2e_*.rs): Rust-native WebDriver + the async runtime;
 # the browser-console gate reads the browser log via thirtyfour's legacy-log API.
 thirtyfour.workspace = true
-tokio = { workspace = true, features = ["macros", "rt-multi-thread", "time"] }
+tokio = { workspace = true, features = ["macros", "rt-multi-thread", "time", "test-util"] }
 # The docs-shots journey seeds stored queries over the Definition API
 # directly (bypassing the UI) — a plain HTTP client for test setup. `form`
 # (test-only): the export journey re-posts the viewer's own

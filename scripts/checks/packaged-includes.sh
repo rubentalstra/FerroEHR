@@ -16,7 +16,13 @@
 # list by eye. Every literal is resolved against the including file and must
 # land inside that list; a non-literal include is reported rather than assumed
 # safe, because this gate cannot evaluate it.
+#
+# Usage: scripts/checks/packaged-includes.sh   (no arguments)
 set -euo pipefail
+
+# shellcheck source=scripts/lib/guard-args.sh
+. "$(dirname "$0")/../lib/guard-args.sh"
+guard_no_args "$@"
 
 cd "$(dirname "$0")/../.."
 ROOT="$(pwd -P)"

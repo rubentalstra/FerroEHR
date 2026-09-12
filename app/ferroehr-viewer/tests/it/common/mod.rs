@@ -28,6 +28,7 @@
               (.claude/rules/testing.md §Test-fixture construction)"
 )]
 
+use std::future::Future;
 use std::time::Duration;
 
 use thirtyfour::error::WebDriverErrorInner;
@@ -35,6 +36,14 @@ use thirtyfour::prelude::*;
 
 /// The budget every ordinary element wait allows.
 const WAIT: Duration = Duration::from_secs(15);
+
+/// The budget one steady-state `WebDriver` command gets ([`bounded`]).
+///
+/// Two thirds of [`WAIT`], so a command that never answers fails INSIDE the
+/// poll loop that issued it and still leaves that loop a third of its budget
+/// to report the failure — instead of running out thirtyfour's 120 s
+/// per-request default and inflating the whole journey.
+const COMMAND_BUDGET: Duration = Duration::from_secs(10);
 
 /// The budget [`Harness::wait_hydrated`] allows, four times [`WAIT`]: the host
 /// lane's debug WASM is ~91 MB and the browser has to fetch, compile and run it
@@ -95,10 +104,9 @@ impl Harness {
             .expect("caps");
         caps.set_logging_prefs("browser", thirtyfour::LoggingPrefsLogLevel::All)
             .expect("logging prefs");
-        // TODO(#3218): bound a stalled steady-state command. thirtyfour's
-        // request_timeout also covers NewSession, which exceeds a short budget
-        // under nextest parallelism, and the config carries no post-build
-        // setter, so the bound belongs on our own command awaits.
+        // NOTE: session creation keeps thirtyfour's own 120 s request timeout —
+        // a budget short enough for a steady-state command is exceeded here
+        // under nextest parallelism; those commands are bounded by `bounded`.
         let driver = WebDriver::builder(&webdriver_url, caps)
             .await
             .expect("webdriver session (is chromedriver up?)");
@@ -120,15 +128,11 @@ impl Harness {
         // is attributed to the page that produced it, not discovered by the
         // end-of-journey sweep with no locality (`get_log` drains, so the
         // final sweep still covers everything after the last navigation).
-        let leaving = self
-            .driver
-            .current_url()
+        let leaving = bounded("current_url()", self.driver.current_url())
             .await
             .map(|u| u.to_string())
             .unwrap_or_default();
-        let entries = self
-            .driver
-            .get_log("browser")
+        let entries = bounded("get_log(browser)", self.driver.get_log("browser"))
             .await
             .expect("browser log (chromedriver legacy endpoint)");
         let severe: Vec<String> = entries
@@ -142,8 +146,7 @@ impl Harness {
             "browser console has SEVERE entries on {leaving} (before navigating to {path}):\n{}",
             severe.join("\n")
         );
-        self.driver
-            .goto(format!("{}{path}", self.base))
+        bounded("goto()", self.driver.goto(format!("{}{path}", self.base)))
             .await
             .expect("navigate");
         // Every full navigation restarts hydration, and any first click or
@@ -170,12 +173,15 @@ impl Harness {
     /// # Panics
     /// When the element never appears — with the selector in the message.
     async fn wait_css_for(&self, css: &str, budget: Duration) -> WebElement {
-        match self
-            .driver
-            .query(By::Css(css))
-            .wait(budget, Duration::from_millis(200))
-            .first()
-            .await
+        match bounded_for(
+            &format!("query(css={css}).wait()"),
+            budget + COMMAND_BUDGET,
+            self.driver
+                .query(By::Css(css))
+                .wait(budget, Duration::from_millis(200))
+                .first(),
+        )
+        .await
         {
             Ok(element) => element,
             Err(e) => {
@@ -186,23 +192,26 @@ impl Harness {
                 // WASM module, after which no client-side navigation completes
                 // and the page only moves on a full reload. Without it a
                 // timeout reports a missing selector and hides its cause.
-                let url = self
-                    .driver
-                    .current_url()
+                let url = bounded("current_url()", self.driver.current_url())
                     .await
                     .map(|u| u.to_string())
                     .unwrap_or_default();
                 let path = format!("{}/{}-fail.png", self.shots_dir, self.journey);
-                drop(self.driver.screenshot(std::path::Path::new(&path)).await);
-                let console: Vec<String> = self
-                    .driver
-                    .get_log("browser")
-                    .await
-                    .unwrap_or_default()
-                    .into_iter()
-                    .filter(|entry| entry.level == "SEVERE")
-                    .map(|entry| entry.message)
-                    .collect();
+                drop(
+                    bounded(
+                        "screenshot()",
+                        self.driver.screenshot(std::path::Path::new(&path)),
+                    )
+                    .await,
+                );
+                let console: Vec<String> =
+                    bounded("get_log(browser)", self.driver.get_log("browser"))
+                        .await
+                        .unwrap_or_default()
+                        .into_iter()
+                        .filter(|entry| entry.level == "SEVERE")
+                        .map(|entry| entry.message)
+                        .collect();
                 let console = if console.is_empty() {
                     "  (no SEVERE console entries)".to_owned()
                 } else {
@@ -249,10 +258,9 @@ impl Harness {
             serde_json::json!({"profile.managed_default_content_settings.javascript": 2}),
         )
         .expect("prefs");
-        // TODO(#3218): bound a stalled steady-state command. thirtyfour's
-        // request_timeout also covers NewSession, which exceeds a short budget
-        // under nextest parallelism, and the config carries no post-build
-        // setter, so the bound belongs on our own command awaits.
+        // NOTE: session creation keeps thirtyfour's own 120 s request timeout —
+        // a budget short enough for a steady-state command is exceeded here
+        // under nextest parallelism; those commands are bounded by `bounded`.
         let driver = WebDriver::builder(&webdriver_url, caps)
             .await
             .expect("webdriver session (is chromedriver up?)");
@@ -271,13 +279,17 @@ impl Harness {
     /// When the URL still matches after 15 s.
     pub(crate) async fn wait_url_not_contains(&self, fragment: &str) {
         for _ in 0..75 {
-            let url = self.driver.current_url().await.expect("current url");
+            let url = bounded("current_url()", self.driver.current_url())
+                .await
+                .expect("current url");
             if !url.as_str().contains(fragment) {
                 return;
             }
             tokio::time::sleep(Duration::from_millis(200)).await;
         }
-        let url = self.driver.current_url().await.expect("current url");
+        let url = bounded("current_url()", self.driver.current_url())
+            .await
+            .expect("current url");
         panic!("URL still contains `{fragment}` (last: {url})");
     }
 
@@ -287,23 +299,30 @@ impl Harness {
     /// # Panics
     /// When the element never appears.
     pub(crate) async fn wait_xpath(&self, xpath: &str) -> WebElement {
-        match self
-            .driver
-            .query(By::XPath(xpath))
-            .wait(WAIT, Duration::from_millis(200))
-            .first()
-            .await
+        match bounded_for(
+            &format!("query(xpath={xpath}).wait()"),
+            WAIT + COMMAND_BUDGET,
+            self.driver
+                .query(By::XPath(xpath))
+                .wait(WAIT, Duration::from_millis(200))
+                .first(),
+        )
+        .await
         {
             Ok(element) => element,
             Err(e) => {
-                let url = self
-                    .driver
-                    .current_url()
+                let url = bounded("current_url()", self.driver.current_url())
                     .await
                     .map(|u| u.to_string())
                     .unwrap_or_default();
                 let path = format!("{}/{}-fail.png", self.shots_dir, self.journey);
-                drop(self.driver.screenshot(std::path::Path::new(&path)).await);
+                drop(
+                    bounded(
+                        "screenshot()",
+                        self.driver.screenshot(std::path::Path::new(&path)),
+                    )
+                    .await,
+                );
                 panic!("waiting for xpath `{xpath}` at {url}: {e}");
             }
         }
@@ -322,24 +341,31 @@ impl Harness {
     /// # Panics
     /// When the element never becomes clickable.
     pub(crate) async fn wait_clickable_xpath(&self, xpath: &str) -> WebElement {
-        match self
-            .driver
-            .query(By::XPath(xpath))
-            .and_clickable()
-            .wait(WAIT, Duration::from_millis(200))
-            .first()
-            .await
+        match bounded_for(
+            &format!("query(xpath={xpath}).and_clickable().wait()"),
+            WAIT + COMMAND_BUDGET,
+            self.driver
+                .query(By::XPath(xpath))
+                .and_clickable()
+                .wait(WAIT, Duration::from_millis(200))
+                .first(),
+        )
+        .await
         {
             Ok(element) => element,
             Err(e) => {
-                let url = self
-                    .driver
-                    .current_url()
+                let url = bounded("current_url()", self.driver.current_url())
                     .await
                     .map(|u| u.to_string())
                     .unwrap_or_default();
                 let path = format!("{}/{}-fail.png", self.shots_dir, self.journey);
-                drop(self.driver.screenshot(std::path::Path::new(&path)).await);
+                drop(
+                    bounded(
+                        "screenshot()",
+                        self.driver.screenshot(std::path::Path::new(&path)),
+                    )
+                    .await,
+                );
                 panic!("waiting for xpath `{xpath}` to become clickable at {url}: {e}");
             }
         }
@@ -363,7 +389,9 @@ impl Harness {
         let step = Duration::from_millis(200);
         let mut waited = Duration::ZERO;
         loop {
-            let url = self.driver.current_url().await.expect("current url");
+            let url = bounded("current_url()", self.driver.current_url())
+                .await
+                .expect("current url");
             if url.as_str().contains(fragment) {
                 return;
             }
@@ -381,15 +409,11 @@ impl Harness {
     /// an explicit condition, not a sleep). Toasts auto-dismiss; bounded wait.
     ///
     /// # Panics
-    /// When a toast is still visible after 15 s.
+    /// When a toast is still visible after 15 s, or when the `WebDriver` stops
+    /// answering — a stalled driver used to look exactly like a cleared screen.
     pub(crate) async fn wait_toasts_cleared(&self) {
         for _ in 0..75 {
-            let toasts = self
-                .driver
-                .find_all(By::Css(".thaw-toast-body"))
-                .await
-                .unwrap_or_default();
-            if toasts.is_empty() {
+            if count_matching(self, TOAST_CARD).await == 0 {
                 return;
             }
             tokio::time::sleep(Duration::from_millis(200)).await;
@@ -418,15 +442,21 @@ impl Harness {
     /// panics land there), and any visible message-bar text — returned as one
     /// line for the panic message.
     pub(crate) async fn evidence_dump(&self, slug: &str) -> String {
-        let url = self
-            .driver
-            .current_url()
+        let url = bounded("current_url()", self.driver.current_url())
             .await
             .map(|u| u.to_string())
             .unwrap_or_default();
         let path = format!("{}/{}-{slug}.png", self.shots_dir, self.journey);
-        drop(self.driver.screenshot(std::path::Path::new(&path)).await);
-        let entries = self.driver.get_log("browser").await.unwrap_or_default();
+        drop(
+            bounded(
+                "screenshot()",
+                self.driver.screenshot(std::path::Path::new(&path)),
+            )
+            .await,
+        );
+        let entries = bounded("get_log(browser)", self.driver.get_log("browser"))
+            .await
+            .unwrap_or_default();
         let mut severe = 0usize;
         for entry in &entries {
             if entry.level == "SEVERE" {
@@ -434,8 +464,17 @@ impl Harness {
             }
             println!("console[{}]: {}", entry.level, entry.message);
         }
-        let bar = match self.driver.find(By::Css(".thaw-message-bar")).await {
-            Ok(el) => el.text().await.unwrap_or_default(),
+        // Evidence gathering, so this one read stays best-effort: panicking
+        // here would destroy the report the caller is about to print.
+        let bar = match bounded(
+            "find(.thaw-message-bar)",
+            self.driver.find(By::Css(".thaw-message-bar")),
+        )
+        .await
+        {
+            Ok(el) => bounded("text(.thaw-message-bar)", el.text())
+                .await
+                .unwrap_or_default(),
             Err(_) => String::new(),
         };
         format!(
@@ -450,10 +489,12 @@ impl Harness {
     /// On capture/IO failure.
     pub(crate) async fn shot(&self, step: u8, slug: &str) {
         let path = format!("{}/{}-{step:02}-{slug}.png", self.shots_dir, self.journey);
-        self.driver
-            .screenshot(std::path::Path::new(&path))
-            .await
-            .expect("screenshot");
+        bounded(
+            "screenshot()",
+            self.driver.screenshot(std::path::Path::new(&path)),
+        )
+        .await
+        .expect("screenshot");
     }
 
     /// The standing browser-console gate: read the browser log (thirtyfour's
@@ -464,9 +505,7 @@ impl Harness {
     /// # Panics
     /// When the log contains a SEVERE entry not covered by `allowed`.
     pub(crate) async fn assert_console_clean(&self, allowed: &[&str]) {
-        let entries = self
-            .driver
-            .get_log("browser")
+        let entries = bounded("get_log(browser)", self.driver.get_log("browser"))
             .await
             .expect("browser log (chromedriver legacy endpoint)");
         let severe: Vec<String> = entries
@@ -475,9 +514,7 @@ impl Harness {
             .map(|e| format!("[ts={}] {}", e.timestamp, e.message))
             .filter(|m| !allowed.iter().any(|a| m.contains(a)))
             .collect();
-        let at = self
-            .driver
-            .current_url()
+        let at = bounded("current_url()", self.driver.current_url())
             .await
             .map(|u| u.to_string())
             .unwrap_or_default();
@@ -490,7 +527,52 @@ impl Harness {
 
     /// End the session (screenshots + console gate are per-journey calls).
     pub(crate) async fn finish(self) {
-        self.driver.quit().await.expect("quit");
+        bounded("quit()", self.driver.quit()).await.expect("quit");
+    }
+}
+
+/// Run one steady-state `WebDriver` command under [`COMMAND_BUDGET`].
+///
+/// thirtyfour bounds a request only by its 120 s per-request default, which
+/// outlasts every poll loop here: a driver that never answers reads as a page
+/// that never changed, and the journey reports an inflated run time instead of
+/// the stall. Bounding the await is ours to do — the transport cannot be
+/// bounded instead, because thirtyfour's `request_timeout` covers the
+/// `NewSession` request too, has no post-build setter, and a budget short
+/// enough for a steady-state command is exceeded by session creation under
+/// nextest parallelism (that is why [`Harness::start`] keeps the default).
+///
+/// A stall is reported as an ordinary command failure — a
+/// `WebDriverErrorInner::Timeout` naming the command and the budget — so every
+/// caller keeps the error path it already had: [`is_absence`] refuses it (a
+/// stall is never an absence) and the panic names the command, while an
+/// `expect`-based call site prints it verbatim.
+///
+/// A free function rather than a method: it needs nothing from the harness,
+/// and a plain unit test can then prove the bound without a browser session.
+async fn bounded<T>(
+    what: &str,
+    command: impl Future<Output = WebDriverResult<T>>,
+) -> WebDriverResult<T> {
+    bounded_for(what, COMMAND_BUDGET, command).await
+}
+
+/// [`bounded`] with an explicit budget, for thirtyfour's OWN polling queries.
+///
+/// `ElementQuery::wait` is a poll loop, not one command, so it is given its own
+/// budget plus [`COMMAND_BUDGET`]: the loop is designed to finish within its
+/// budget, and the grace is the one command it may be inside when the driver
+/// stops answering.
+async fn bounded_for<T>(
+    what: &str,
+    budget: Duration,
+    command: impl Future<Output = WebDriverResult<T>>,
+) -> WebDriverResult<T> {
+    match tokio::time::timeout(budget, command).await {
+        Ok(answer) => answer,
+        Err(_) => Err(WebDriverError::Timeout(format!(
+            "`{what}` did not answer within {budget:?} (the harness command budget)"
+        ))),
     }
 }
 
@@ -515,7 +597,7 @@ fn is_absence(error: &WebDriverError) -> bool {
 /// When the `WebDriver` answers with anything but an absence
 /// ([`is_absence`]): a failure to observe is never an observation of nothing.
 pub(crate) async fn is_present_by(h: &Harness, by: By) -> bool {
-    match h.driver.find(by.clone()).await {
+    match bounded(&format!("find({by:?})"), h.driver.find(by.clone())).await {
         Ok(_) => true,
         Err(error) if is_absence(&error) => false,
         Err(error) => panic!("the WebDriver could not answer `find({by:?})`: {error}"),
@@ -540,8 +622,9 @@ pub(crate) async fn is_present(h: &Harness, css: &str) -> bool {
 /// # Panics
 /// When the `WebDriver` answers with anything but an absence ([`is_absence`]).
 pub(crate) async fn is_visible(h: &Harness, css: &str) -> bool {
-    match h.driver.find(By::Css(css)).await {
-        Ok(element) => match element.is_displayed().await {
+    match bounded(&format!("find({css})"), h.driver.find(By::Css(css))).await {
+        Ok(element) => match bounded(&format!("is_displayed({css})"), element.is_displayed()).await
+        {
             Ok(displayed) => displayed,
             Err(error) if is_absence(&error) => false,
             Err(error) => {
@@ -561,13 +644,13 @@ pub(crate) async fn is_visible(h: &Harness, css: &str) -> bool {
 /// leaves a closed surface ahead of the open one in document order. "Is a
 /// modal up" has to look at all of them or it answers about the wrong one.
 pub(crate) async fn is_any_visible(h: &Harness, css: &str) -> bool {
-    let found = match h.driver.find_all(By::Css(css)).await {
+    let found = match bounded(&format!("find_all({css})"), h.driver.find_all(By::Css(css))).await {
         Ok(found) => found,
         Err(error) if is_absence(&error) => return false,
         Err(error) => panic!("the WebDriver could not answer `find_all({css})`: {error}"),
     };
     for element in found {
-        match element.is_displayed().await {
+        match bounded(&format!("is_displayed({css})"), element.is_displayed()).await {
             Ok(true) => return true,
             Ok(false) => {}
             Err(error) if is_absence(&error) => {}
@@ -607,11 +690,11 @@ const DIALOG_ENTERING: &str = ".thaw-dialog-surface.fade-in-scale-up-transition-
 pub(crate) async fn clear_dialog_overlay(h: &Harness) {
     if is_any_visible(h, DIALOG_SURFACE).await {
         drop(
-            h.driver
-                .action_chain()
-                .send_keys(Key::Escape)
-                .perform()
-                .await,
+            bounded(
+                "action_chain(Escape).perform()",
+                h.driver.action_chain().send_keys(Key::Escape).perform(),
+            )
+            .await,
         );
     }
     wait_hidden(h, DIALOG_BACKDROP).await;
@@ -643,7 +726,9 @@ pub(crate) async fn wait_dialog_settled(h: &Harness, control_css: &str) {
         }
         tokio::time::sleep(Duration::from_millis(200)).await;
     }
-    let url = h.driver.current_url().await.expect("current url");
+    let url = bounded("current_url()", h.driver.current_url())
+        .await
+        .expect("current url");
     panic!("the dialog holding `{control_css}` never became open and settled (at {url})");
 }
 
@@ -755,22 +840,19 @@ async fn wait_upload_dispatched(h: &Harness, before: &UploadDialogState) {
 /// On any interaction failure, and when the submit click dispatches nothing.
 pub(crate) async fn upload_via_dialog(h: &Harness, path: &str) {
     clear_dialog_overlay(h).await;
-    h.wait_css("#template-upload-open")
-        .await
-        .click()
+    let open = h.wait_css("#template-upload-open").await;
+    bounded("click(#template-upload-open)", open.click())
         .await
         .expect("open the template upload dialog");
     wait_dialog_settled(h, UPLOAD_SUBMIT).await;
-    h.wait_css("#template-upload-picker input[type=file]")
-        .await
-        .send_keys(path)
+    let picker = h.wait_css("#template-upload-picker input[type=file]").await;
+    bounded("send_keys(#template-upload-picker)", picker.send_keys(path))
         .await
         .expect("choose the fixture through the dialog's hidden file input");
     wait_enabled(h, UPLOAD_SUBMIT).await;
     let before = UploadDialogState::read(h).await;
-    h.wait_css(UPLOAD_SUBMIT)
-        .await
-        .click()
+    let submit = h.wait_css(UPLOAD_SUBMIT).await;
+    bounded(&format!("click({UPLOAD_SUBMIT})"), submit.click())
         .await
         .expect("send the chosen template source");
     wait_upload_dispatched(h, &before).await;
@@ -781,8 +863,8 @@ pub(crate) async fn upload_via_dialog(h: &Harness, path: &str) {
 /// # Panics
 /// When the `WebDriver` answers with anything but an absence ([`is_absence`]).
 async fn read_enabled(h: &Harness, css: &str) -> Option<bool> {
-    match h.driver.find(By::Css(css)).await {
-        Ok(element) => match element.is_enabled().await {
+    match bounded(&format!("find({css})"), h.driver.find(By::Css(css))).await {
+        Ok(element) => match bounded(&format!("is_enabled({css})"), element.is_enabled()).await {
             Ok(enabled) => Some(enabled),
             Err(error) if is_absence(&error) => None,
             Err(error) => panic!("the WebDriver could not answer `is_enabled({css})`: {error}"),
@@ -798,8 +880,8 @@ async fn read_enabled(h: &Harness, css: &str) -> Option<bool> {
 /// # Panics
 /// When the `WebDriver` answers with anything but an absence ([`is_absence`]).
 async fn read_text(h: &Harness, css: &str) -> Option<String> {
-    match h.driver.find(By::Css(css)).await {
-        Ok(element) => match element.text().await {
+    match bounded(&format!("find({css})"), h.driver.find(By::Css(css))).await {
+        Ok(element) => match bounded(&format!("text({css})"), element.text()).await {
             Ok(text) => Some(text),
             Err(error) if is_absence(&error) => None,
             Err(error) => panic!("the WebDriver could not answer `text({css})`: {error}"),
@@ -814,7 +896,7 @@ async fn read_text(h: &Harness, css: &str) -> Option<String> {
 /// # Panics
 /// When the `WebDriver` answers with anything but an absence ([`is_absence`]).
 async fn count_matching(h: &Harness, css: &str) -> usize {
-    match h.driver.find_all(By::Css(css)).await {
+    match bounded(&format!("find_all({css})"), h.driver.find_all(By::Css(css))).await {
         Ok(found) => found.len(),
         Err(error) if is_absence(&error) => 0,
         Err(error) => panic!("the WebDriver could not answer `find_all({css})`: {error}"),
@@ -844,29 +926,32 @@ pub(crate) async fn wait_enabled(h: &Harness, css: &str) {
 /// Poll until no element matches `css` — the assert-gone half of a delete.
 ///
 /// # Panics
-/// When something still matches after [`WAIT`], with the page it was on.
+/// When something still matches after [`WAIT`], with the page it was on, or
+/// when the `WebDriver` answers with anything but an absence ([`is_absence`]).
 pub(crate) async fn wait_css_absent(h: &Harness, css: &str) {
     for _ in 0..75 {
-        if h.driver
-            .find_all(By::Css(css))
-            .await
-            .unwrap_or_default()
-            .is_empty()
-        {
+        if count_matching(h, css).await == 0 {
             return;
         }
         tokio::time::sleep(Duration::from_millis(200)).await;
     }
-    let url = h.driver.current_url().await.expect("current url");
+    let url = bounded("current_url()", h.driver.current_url())
+        .await
+        .expect("current url");
     panic!("`{css}` never disappeared (at {url})");
 }
 
 /// Wait until some element's text contains `needle` (a toast title, a status
 /// line), returning whether it appeared.
+///
+/// # Panics
+/// When the `WebDriver` answers with anything but an absence ([`is_absence`]):
+/// "the page never said it" is a claim about the page, so it may only be made
+/// on an answer.
 pub(crate) async fn wait_text(h: &Harness, needle: &str) -> bool {
     let xpath = format!("//*[contains(normalize-space(.), '{needle}')]");
     for _ in 0..75 {
-        if h.driver.find(By::XPath(&xpath)).await.is_ok() {
+        if is_present_by(h, By::XPath(&xpath)).await {
             return true;
         }
         tokio::time::sleep(Duration::from_millis(200)).await;
@@ -879,13 +964,12 @@ pub(crate) async fn wait_text(h: &Harness, needle: &str) -> bool {
 /// sleep.
 ///
 /// # Panics
-/// When it never does within [`WAIT`], reporting what it said instead.
+/// When it never does within [`WAIT`], reporting what it said instead, or when
+/// the `WebDriver` answers with anything but an absence ([`is_absence`]).
 pub(crate) async fn wait_text_contains(h: &Harness, css: &str, fragment: &str) {
     let mut last = String::new();
     for _ in 0..75 {
-        if let Ok(element) = h.driver.find(By::Css(css)).await
-            && let Ok(text) = element.text().await
-        {
+        if let Some(text) = read_text(h, css).await {
             if text.contains(fragment) {
                 return;
             }
@@ -900,12 +984,13 @@ pub(crate) async fn wait_text_contains(h: &Harness, css: &str, fragment: &str) {
 /// number the screen must have caught up to).
 ///
 /// # Panics
-/// When it never does within [`WAIT`], reporting the last text seen.
+/// When it never does within [`WAIT`], reporting the last text seen, or when
+/// the `WebDriver` answers with anything but an absence ([`is_absence`]).
 pub(crate) async fn wait_text_suffix(h: &Harness, css: &str, suffix: &str) {
     let mut last = String::new();
     for _ in 0..75 {
-        if let Ok(element) = h.driver.find(By::Css(css)).await {
-            last = element.text().await.unwrap_or_default();
+        if let Some(text) = read_text(h, css).await {
+            last = text;
             if last.trim_end().ends_with(suffix) {
                 return;
             }
@@ -921,18 +1006,30 @@ pub(crate) async fn wait_text_suffix(h: &Harness, css: &str, suffix: &str) {
 /// On any interaction failure.
 pub(crate) async fn retype(h: &Harness, css: &str, text: &str) {
     let field = h.wait_css(css).await;
-    field.clear().await.expect("clear the field");
-    field.send_keys(text).await.expect("type into the field");
+    bounded(&format!("clear({css})"), field.clear())
+        .await
+        .expect("clear the field");
+    bounded(&format!("send_keys({css})"), field.send_keys(text))
+        .await
+        .expect("type into the field");
 }
 
 /// Click `css` until `target_css` shows up, returning whether it did (the
 /// pre-hydration-click precedent; re-clicking an "open this version" button is
 /// idempotent).
+///
+/// # Panics
+/// On a click failure, and when the `WebDriver` answers the probe with
+/// anything but an absence ([`is_absence`]) — five rounds of a dead driver
+/// would otherwise report "the target never appeared".
 pub(crate) async fn click_until_css(h: &Harness, css: &str, target_css: &str) -> bool {
     for _ in 0..5 {
-        h.wait_css(css).await.click().await.expect("click");
+        let button = h.wait_css(css).await;
+        bounded(&format!("click({css})"), button.click())
+            .await
+            .expect("click");
         for _ in 0..25 {
-            if h.driver.find(By::Css(target_css)).await.is_ok() {
+            if is_present(h, target_css).await {
                 return true;
             }
             tokio::time::sleep(Duration::from_millis(200)).await;
@@ -952,7 +1049,9 @@ pub(crate) async fn wait_hidden(h: &Harness, css: &str) {
         }
         tokio::time::sleep(Duration::from_millis(200)).await;
     }
-    let url = h.driver.current_url().await.expect("current url");
+    let url = bounded("current_url()", h.driver.current_url())
+        .await
+        .expect("current url");
     panic!("`{css}` never hid (at {url})");
 }
 
@@ -970,7 +1069,9 @@ pub(crate) async fn wait_visible(h: &Harness, css: &str) {
         }
         tokio::time::sleep(Duration::from_millis(200)).await;
     }
-    let url = h.driver.current_url().await.expect("current url");
+    let url = bounded("current_url()", h.driver.current_url())
+        .await
+        .expect("current url");
     panic!("`{css}` never became visible (at {url})");
 }
 
@@ -988,8 +1089,7 @@ pub(crate) async fn wait_visible(h: &Harness, css: &str) {
 /// On any interaction failure, or when the field is not empty afterwards.
 pub(crate) async fn clear_field(h: &Harness, css: &str) {
     let field = h.wait_css(css).await;
-    let held = field
-        .prop("value")
+    let held = bounded(&format!("prop({css}.value)"), field.prop("value"))
         .await
         .expect("read the field's value")
         .unwrap_or_default();
@@ -998,9 +1098,10 @@ pub(crate) async fn clear_field(h: &Harness, css: &str) {
         Key::Backspace.value(),
         held.chars().count(),
     ));
-    field.send_keys(keys).await.expect("erase the field");
-    let left = field
-        .prop("value")
+    bounded(&format!("send_keys({css})"), field.send_keys(keys))
+        .await
+        .expect("erase the field");
+    let left = bounded(&format!("prop({css}.value)"), field.prop("value"))
         .await
         .expect("read the field's value")
         .unwrap_or_default();
@@ -1017,14 +1118,16 @@ pub(crate) async fn clear_field(h: &Harness, css: &str) {
 /// re-rendering table detaches the handle between the find and the read, and
 /// `attr` then answers `stale element reference` — a retry, never a failure.
 pub(crate) async fn read_attr(h: &Harness, css: &str, attribute: &str) -> Option<String> {
-    h.driver
-        .find(By::Css(css))
+    let element = bounded(&format!("find({css})"), h.driver.find(By::Css(css)))
         .await
-        .ok()?
-        .attr(attribute)
-        .await
-        .ok()
-        .flatten()
+        .ok()?;
+    bounded(
+        &format!("attr({css}[{attribute}])"),
+        element.attr(attribute),
+    )
+    .await
+    .ok()
+    .flatten()
 }
 
 /// `attribute` of the first element matching `css`, waited for — the rendered
@@ -1039,7 +1142,9 @@ pub(crate) async fn wait_attr(h: &Harness, css: &str, attribute: &str) -> String
         }
         tokio::time::sleep(Duration::from_millis(200)).await;
     }
-    let url = h.driver.current_url().await.expect("current url");
+    let url = bounded("current_url()", h.driver.current_url())
+        .await
+        .expect("current url");
     panic!("no element matched `{css}` with a readable `{attribute}` (at {url})");
 }
 
@@ -1066,7 +1171,9 @@ pub(crate) async fn wait_attr_change(
         }
         tokio::time::sleep(Duration::from_millis(200)).await;
     }
-    let url = h.driver.current_url().await.expect("current url");
+    let url = bounded("current_url()", h.driver.current_url())
+        .await
+        .expect("current url");
     panic!("`{css}`'s `{attribute}` never moved off `{previous}` (at {url})");
 }
 
@@ -1097,7 +1204,9 @@ pub(crate) async fn confirm_in_dialog(h: &Harness, trigger_css: &str, confirm_id
         if attempt > 0 && is_any_visible(h, DIALOG_SURFACE).await {
             break;
         }
-        trigger.click().await.expect("open the confirmation dialog");
+        bounded(&format!("click({trigger_css})"), trigger.click())
+            .await
+            .expect("open the confirmation dialog");
         for _ in 0..10 {
             if is_visible(h, &confirm_css).await {
                 opened = true;
@@ -1119,9 +1228,8 @@ pub(crate) async fn confirm_in_dialog(h: &Harness, trigger_css: &str, confirm_id
     // transition, and a click landing mid-scale can miss the moving target
     // without the driver reporting anything (#3200).
     wait_dialog_settled(h, &confirm_css).await;
-    h.wait_css(&confirm_css)
-        .await
-        .click()
+    let confirm = h.wait_css(&confirm_css).await;
+    bounded(&format!("click({confirm_css})"), confirm.click())
         .await
         .expect("confirm in the dialog");
     // The dialog hides on confirm — that it hid proves the click landed. The
@@ -1152,14 +1260,12 @@ pub(crate) async fn login_basic_as(h: &Harness, user: &str, pass: &str) {
     let user = user.to_owned();
     let pass = pass.to_owned();
     h.goto("/login").await;
-    h.wait_css("#login-username")
-        .await
-        .send_keys(&user)
+    let username = h.wait_css("#login-username").await;
+    bounded("send_keys(#login-username)", username.send_keys(&user))
         .await
         .expect("type user");
-    h.wait_css("#login-password")
-        .await
-        .send_keys(&pass)
+    let password = h.wait_css("#login-password").await;
+    bounded("send_keys(#login-password)", password.send_keys(&pass))
         .await
         .expect("type pass");
     // Submit with a bounded retry: a click landing exactly while hydration
@@ -1168,15 +1274,12 @@ pub(crate) async fn login_basic_as(h: &Harness, user: &str, pass: &str) {
     // gets a short bounded wait; leaving /login ends the loop.
     let mut attempts = 0;
     loop {
-        h.wait_css("button[type=submit]")
-            .await
-            .click()
+        let submit = h.wait_css("button[type=submit]").await;
+        bounded("click(button[type=submit])", submit.click())
             .await
             .expect("submit");
         for _ in 0..15 {
-            if !h
-                .driver
-                .current_url()
+            if !bounded("current_url()", h.driver.current_url())
                 .await
                 .expect("current url")
                 .as_str()
@@ -1186,9 +1289,7 @@ pub(crate) async fn login_basic_as(h: &Harness, user: &str, pass: &str) {
             }
             tokio::time::sleep(Duration::from_millis(200)).await;
         }
-        let off_login = !h
-            .driver
-            .current_url()
+        let off_login = !bounded("current_url()", h.driver.current_url())
             .await
             .expect("current url")
             .as_str()
@@ -1199,8 +1300,16 @@ pub(crate) async fn login_basic_as(h: &Harness, user: &str, pass: &str) {
         attempts += 1;
         if attempts >= 3 {
             let path = format!("{}/{}-login-stuck.png", h.shots_dir, h.journey);
-            drop(h.driver.screenshot(std::path::Path::new(&path)).await);
-            let log = h.driver.get_log("browser").await.unwrap_or_default();
+            drop(
+                bounded(
+                    "screenshot()",
+                    h.driver.screenshot(std::path::Path::new(&path)),
+                )
+                .await,
+            );
+            let log = bounded("get_log(browser)", h.driver.get_log("browser"))
+                .await
+                .unwrap_or_default();
             for entry in &log {
                 println!("console[{}]: {}", entry.level, entry.message);
             }
@@ -1209,4 +1318,71 @@ pub(crate) async fn login_basic_as(h: &Harness, user: &str, pass: &str) {
     }
     // The shell footer is the authenticated-chrome marker.
     h.wait_css("footer").await;
+}
+
+#[cfg(test)]
+mod tests {
+    use std::time::Duration;
+
+    use thirtyfour::error::WebDriverErrorInner;
+
+    use super::{COMMAND_BUDGET, WAIT, bounded, is_absence};
+
+    /// The bound is proven, not asserted: a command that never answers fails
+    /// within its budget, names itself, and is not read as an absence.
+    ///
+    /// Time is paused, so the runtime auto-advances the clock while the future
+    /// is idle — the measured elapsed is the virtual budget and the test
+    /// itself takes no wall time
+    /// (<https://docs.rs/tokio/latest/tokio/time/fn.pause.html>).
+    #[tokio::test(start_paused = true)]
+    async fn a_command_that_never_answers_fails_inside_the_poll_budget() {
+        let started = tokio::time::Instant::now();
+        let answer: Result<(), _> = bounded(
+            "find(.never-answers)",
+            std::future::pending::<Result<(), thirtyfour::error::WebDriverError>>(),
+        )
+        .await;
+
+        let error = answer.expect_err("a future that never resolves must not report success");
+        let elapsed = started.elapsed();
+        assert!(
+            matches!(error.as_inner(), WebDriverErrorInner::Timeout(_)),
+            "a stall is reported as a timeout, not as {error}"
+        );
+        assert!(
+            error.to_string().contains("find(.never-answers)"),
+            "the failure names the command it bounded: {error}"
+        );
+        assert!(
+            !is_absence(&error),
+            "a stall is never an absence — a probe must not read it as `not yet`"
+        );
+        assert_eq!(elapsed, COMMAND_BUDGET, "the bound is the command budget");
+        assert!(
+            elapsed < WAIT,
+            "the bound fires inside the poll budget that issued the command"
+        );
+    }
+
+    /// A command that answers is handed back untouched — the bound adds no
+    /// behaviour of its own to the ordinary path.
+    #[tokio::test(start_paused = true)]
+    async fn a_command_that_answers_passes_through_unchanged() {
+        let started = tokio::time::Instant::now();
+        let answer = bounded("current_url()", async {
+            tokio::time::sleep(Duration::from_secs(1)).await;
+            Ok::<_, thirtyfour::error::WebDriverError>("http://127.0.0.1:3000/login")
+        })
+        .await;
+
+        assert_eq!(
+            answer.expect("the command answered"),
+            "http://127.0.0.1:3000/login"
+        );
+        assert!(
+            started.elapsed() < COMMAND_BUDGET,
+            "an answered command returns as soon as it answers"
+        );
+    }
 }
