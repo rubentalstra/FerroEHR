@@ -53,7 +53,7 @@ use ferroehr::service::FerroEhrService;
 use crate::admin_fixture::{
     archive_dir, count_for_ehr, repository, seed_full_ehr, truncate_to_half,
 };
-use crate::fixtures::{change_type, committer, composition, uid, uv};
+use crate::fixtures::{change_type, committer, composition, source_chain, uid, uv};
 use crate::typed_body::typed;
 use ferroehr::service::admin::types::{
     CompressionFormat, DumpLoadFailReport, ExportFormat, ExportSpec,
@@ -891,7 +891,12 @@ async fn load_from_a_truncated_container_is_file_not_writable() {
         Some(ExportFormat::OpenehrCanonicalJson),
         Some(CompressionFormat::Zip),
     );
-    let reports = source.export_ehrs(dir.clone(), spec).await.expect("export");
+    // The export step has failed once under parallel suite load with the
+    // curated internal-database message (#3250); the chain names the cause.
+    let reports = source
+        .export_ehrs(dir.clone(), spec)
+        .await
+        .unwrap_or_else(|e| panic!("export: {}", source_chain(&e)));
     assert!(reports.is_empty());
 
     // Drop the ZIP central directory (the trailing bytes): the file still
