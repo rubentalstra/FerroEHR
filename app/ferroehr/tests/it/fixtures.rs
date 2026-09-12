@@ -194,3 +194,20 @@ pub(crate) async fn dsn_as(db: &testkit::TestDb, suffix: &str, domain_role: &str
     .expect("create the login role");
     with_role(db.url(), &login, &password)
 }
+
+/// Every link of an error's cause chain, outermost first, joined by ` <- `.
+///
+/// A curated service message says nothing about the driver fault behind it;
+/// the chain does. A test that fails on a database step panics with this so
+/// the cause is in the report rather than only on a trace nobody captured
+/// (#3250).
+pub(crate) fn source_chain(error: &dyn std::error::Error) -> String {
+    let mut out = error.to_string();
+    let mut next = error.source();
+    while let Some(cause) = next {
+        out.push_str(" <- ");
+        out.push_str(&cause.to_string());
+        next = cause.source();
+    }
+    out
+}

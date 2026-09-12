@@ -93,7 +93,7 @@ impl From<StorageError> for crate::service::status::SmError {
         match e {
             // A raw driver/pool/query error carries SQLSTATE + constraint detail
             // — classify it instead of collapsing to a blanket 500.
-            StorageError::Database(db) => classify_sqlx(&db),
+            StorageError::Database(db) => classify_sqlx(&db).with_source(db),
             // Two conflicts with content this repository already holds →
             // `409`: a client-supplied CONTRIBUTION uid already in use
             // (normally intercepted at the versioning call site; this is the
@@ -340,6 +340,26 @@ mod tests {
         // contract), never a blanket 500.
         let sm = classify_sqlx(&sqlx::Error::PoolTimedOut);
         assert_eq!(sm.status, CallStatusType::ServiceOverloaded);
+    }
+
+    /// The bridge keeps the driver error as the call status's source: the
+    /// message stays curated for the wire, and a log or a test walking the
+    /// chain reaches the SQLSTATE and the driver text (#3250). Asserted by
+    /// downcast, because `source().is_some()` cannot tell the error from the
+    /// smart pointer around it.
+    #[test]
+    fn the_curated_status_keeps_the_driver_error_as_its_source() {
+        use std::error::Error as _;
+        let sm: SmError = StorageError::Database(sqlx::Error::PoolTimedOut).into();
+        let source = sm.source().expect("the driver error travels as the source");
+        assert!(
+            source.downcast_ref::<sqlx::Error>().is_some(),
+            "the source is the sqlx error itself, not a wrapper: {source}"
+        );
+        assert_eq!(
+            sm.message,
+            "the server is temporarily overloaded; retry shortly"
+        );
     }
 
     #[test]
