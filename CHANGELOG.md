@@ -15,6 +15,8 @@ workflow refuses a tag that has no matching section here.
 
 ## [Unreleased]
 
+## [4.2.5] - 2026-09-12
+
 ### Changed
 
 - **The sandbox dataset pins 231 accepted / 91 refused ADL 2 archetypes**
@@ -9271,7 +9273,8 @@ but has not yet run in production.
   seccomp, default-deny NetworkPolicy) and golden-render validation.
 
 
-[unreleased]: https://github.com/rubentalstra/FerroEHR/compare/v4.2.4...HEAD
+[unreleased]: https://github.com/rubentalstra/FerroEHR/compare/v4.2.5...HEAD
+[4.2.5]: https://github.com/rubentalstra/FerroEHR/compare/v4.2.4...v4.2.5
 [4.2.4]: https://github.com/rubentalstra/FerroEHR/compare/v4.2.3...v4.2.4
 [4.2.3]: https://github.com/rubentalstra/FerroEHR/compare/v4.2.2...v4.2.3
 [4.2.2]: https://github.com/rubentalstra/FerroEHR/compare/v4.2.1...v4.2.2
