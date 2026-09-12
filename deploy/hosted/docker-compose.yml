@@ -59,7 +59,7 @@ services:
       - "8080"
     depends_on:
       ferroterm:
-        condition: service_started
+        condition: service_healthy
 
   # FerroTERM, the terminology server, beside the CDR on the same box (#3304):
   # no ports, no Caddy route, viewer off. It is reachable as ferroterm:8080 on
@@ -79,9 +79,18 @@ services:
   # 702 MB resident); the 1536m cap also fits the Netherlands edition (889 MB).
   # The CDR's cap moved from 4096m to 3072m to make room on the 8 GB box.
   ferroterm:
-    image: ${FERROTERM_IMAGE:-ghcr.io/rubentalstra/ferroterm:0.1.2@sha256:9cc75a1321fad3dd419776ee3781eaa309a8eaecf22aa4be9a2ac2b68fc31b4b}
+    image: ${FERROTERM_IMAGE:-ghcr.io/rubentalstra/ferroterm:0.1.3@sha256:b1ef80382e03c2474bfec2ec57a698d83314e1290dd0cb5a2612ea208bde020c}
     container_name: ferroehr-sandbox-ferroterm
     restart: unless-stopped
+    # The image is its own health probe (`ferroterm healthcheck`, 0.1.3): no
+    # shell, no curl in the distroless base. Same cadence as the CDR's above;
+    # the start period covers loading a SNOMED CT edition.
+    healthcheck:
+      test: ["CMD", "/usr/local/bin/ferroterm", "healthcheck"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 60s
     deploy:
       resources:
         limits:
