@@ -10,8 +10,12 @@
 # failing check that keeps them together. The ehrbase party statement is
 # deliberately NOT checked — it declares another vendor's product.
 #
-# Usage: scripts/checks/statement-version.sh
+# Usage: scripts/checks/statement-version.sh   (no arguments)
 set -euo pipefail
+
+# shellcheck source=scripts/lib/guard-args.sh
+. "$(dirname "$0")/../lib/guard-args.sh"
+guard_no_args "$@"
 cd "$(dirname "$0")/../.."
 
 workspace=$(grep -m1 '^version = "' Cargo.toml | sed 's/version = "\(.*\)"/\1/')

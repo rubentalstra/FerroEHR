@@ -20,7 +20,13 @@
 # under terms recorded in each tree's PROVENANCE.md. Its licences are facts
 # about somebody else's work, and flagging them here would say this project
 # adopted them.
+#
+# Usage: scripts/checks/first-party-license-text.sh   (no arguments)
 set -euo pipefail
+
+# shellcheck source=scripts/lib/guard-args.sh
+. "$(dirname "$0")/../lib/guard-args.sh"
+guard_no_args "$@"
 
 cd "$(dirname "$0")/../.."
 

@@ -36,6 +36,10 @@
 #   no args  → the changed files that fall inside the scanned directories
 #   --all    → every tracked .rs file in those directories
 set -euo pipefail
+
+# shellcheck source=scripts/lib/guard-args.sh
+. "$(dirname "$0")/../lib/guard-args.sh"
+guard_known_flags "[--all | <file>...]" "--all" "$@"
 cd "$(dirname "$0")/../.."
 
 # The directories whose SQL is built at runtime. Everything else in the tree

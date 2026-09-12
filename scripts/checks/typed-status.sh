@@ -42,6 +42,10 @@
 #   no args  → the files changed against origin/main
 #   --all    → every tracked .rs file
 set -euo pipefail
+
+# shellcheck source=scripts/lib/guard-args.sh
+. "$(dirname "$0")/../lib/guard-args.sh"
+guard_known_flags "[--all | --all-really | <file>...]" "--all --all-really" "$@"
 cd "$(dirname "$0")/../.."
 
 # `--all` covers the WHOLE tree. Both parked sweeps have landed: the runner

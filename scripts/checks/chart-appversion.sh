@@ -38,13 +38,17 @@
 #      the package front page — restates the same appVersion. It is generated
 #      FROM Chart.yaml, so a disagreement means it was never regenerated.
 #
-# Usage: scripts/checks/chart-appversion.sh
+# Usage: scripts/checks/chart-appversion.sh   (no arguments)
 # Callers: the `chart-appversion` job in ci.yml, and the `plan` job of
 # release.yml (which re-runs the whole guard tier at the tagged commit; plan
 # separately asserts the tag equals the workspace version, so property 1 there
 # transitively pins appVersion == ${TAG#v}).
 
 set -euo pipefail
+
+# shellcheck source=scripts/lib/guard-args.sh
+. "$(dirname "$0")/../lib/guard-args.sh"
+guard_no_args "$@"
 cd "$(dirname "$0")/../.."
 
 CHART=deploy/helm/ferroehr/Chart.yaml

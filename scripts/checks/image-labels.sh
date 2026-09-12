@@ -38,8 +38,12 @@
 #     since a Dockerfile cannot know them
 #   ref.name — deliberately unset; see the waiver below
 #
-# Usage: scripts/checks/image-labels.sh
+# Usage: scripts/checks/image-labels.sh   (no arguments)
 set -euo pipefail
+
+# shellcheck source=scripts/lib/guard-args.sh
+. "$(dirname "$0")/../lib/guard-args.sh"
+guard_no_args "$@"
 cd "$(dirname "$0")/../.."
 
 WORKFLOWS=".github/workflows/containers.yml

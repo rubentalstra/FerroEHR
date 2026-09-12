@@ -6,7 +6,13 @@
 # (downloadable with no repo checkout), so it inlines the same JSON with `$`
 # escaped as `$$` against compose interpolation. This guard holds the two
 # byte-identical (modulo that escaping); issue #2641.
+#
+# Usage: scripts/checks/dashboard-drift.sh   (no arguments)
 set -euo pipefail
+
+# shellcheck source=scripts/lib/guard-args.sh
+. "$(dirname "$0")/../lib/guard-args.sh"
+guard_no_args "$@"
 cd "$(dirname "$0")/../.."
 
 CANONICAL=deploy/helm/ferroehr/files/dashboards/ferroehr-overview.json

@@ -20,6 +20,10 @@
 # Usage: spec-citations.sh [--all | <file>...]
 set -euo pipefail
 
+# shellcheck source=scripts/lib/guard-args.sh
+. "$(dirname "$0")/../lib/guard-args.sh"
+guard_known_flags "[--all | <file>...]" "--all" "$@"
+
 repo_root=$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)
 cd "$repo_root"
 

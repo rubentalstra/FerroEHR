@@ -29,6 +29,10 @@
 #   scripts/checks/hosted-deploy-script.sh --self-test
 set -euo pipefail
 
+# shellcheck source=scripts/lib/guard-args.sh
+. "$(dirname "$0")/../lib/guard-args.sh"
+guard_known_flags "[--self-test]" "--self-test" "$@"
+
 cd "$(dirname "$0")/../.."
 
 readonly CLOUD_INIT=deploy/hosted/cloud-init.yaml

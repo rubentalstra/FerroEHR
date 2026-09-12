@@ -17,7 +17,13 @@
 #      in the packaged attribution file;
 #   2. that attribution file is itself in the crate's `include` list, so it
 #      actually reaches a consumer.
+#
+# Usage: scripts/checks/packaged-attribution.sh   (no arguments)
 set -euo pipefail
+
+# shellcheck source=scripts/lib/guard-args.sh
+. "$(dirname "$0")/../lib/guard-args.sh"
+guard_no_args "$@"
 
 cd "$(dirname "$0")/../.."
 

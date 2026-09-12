@@ -25,8 +25,15 @@
 #
 # An entry added without one of those reasons makes this gate decoration.
 #
-# Usage: scripts/checks/error-source-chain.sh [--all]
+# Usage: scripts/checks/error-source-chain.sh   (no arguments)
+#
+# The whole tree is always counted — there is no narrower scope to ask for, so
+# there is no flag to pass.
 set -euo pipefail
+
+# shellcheck source=scripts/lib/guard-args.sh
+. "$(dirname "$0")/../lib/guard-args.sh"
+guard_no_args "$@"
 cd "$(dirname "$0")/../.." || exit 1
 
 # The sweep (#2034) is CLOSED: every remaining site below was judged and carries

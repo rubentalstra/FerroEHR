@@ -20,6 +20,10 @@
 #   No args: the built-in table below. Args: explicit workflow/sink pairs.
 set -euo pipefail
 
+# shellcheck source=scripts/lib/guard-args.sh
+. "$(dirname "$0")/../lib/guard-args.sh"
+guard_known_flags "[<workflow> <sink>]..." "" "$@"
+
 cd "$(dirname "$0")/../.."
 
 check_graph() {

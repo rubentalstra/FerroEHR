@@ -22,10 +22,20 @@
 # what covers `.githooks/commit-msg` — the one such program today — and covers
 # the next hook the day it lands rather than the day someone remembers.
 #
-# Usage: scripts/checks/shellcheck-lane.sh [<file>...]
+# Usage: scripts/checks/shellcheck-lane.sh [--all | <file>...]
 #   no args  → every tracked shell program outside the vendored trees
+#   --all    → the same scope, said explicitly
 #   <file>…  → just those files, at the same severity
+#
+# An unrecognised flag is a usage error (exit 2), refused by name before any
+# checking runs: forwarding it to shellcheck reported a wrong command line as a
+# lint finding, with this lane's own findings epilogue under it.
 set -euo pipefail
+
+# shellcheck source=scripts/lib/guard-args.sh
+. "$(dirname "$0")/../lib/guard-args.sh"
+guard_known_flags "[--all | <file>...]" "--all" "$@"
+
 cd "$(dirname "$0")/../.."
 
 # Vendored trees are upstream material, vendored verbatim by a
@@ -65,7 +75,13 @@ command -v shellcheck >/dev/null 2>&1 || {
 }
 
 count=$(printf '%s\n' "$files" | wc -l | tr -d ' ')
-if ! printf '%s\n' "$files" | xargs shellcheck --severity=style --format=gcc; then
+# `--external-sources` lets a `# shellcheck source=…` directive be FOLLOWED
+# rather than reported as SC1091: the guards source scripts/lib/*.sh, and a
+# sourced file that is merely announced teaches the checker nothing about the
+# functions it defines. Paths in those directives are repo-root-relative, which
+# is where this lane runs shellcheck from.
+if ! printf '%s\n' "$files" \
+  | xargs shellcheck --external-sources --severity=style --format=gcc; then
   echo >&2
   echo "shellcheck-lane: findings above. Fix each one, or — where the flagged" >&2
   echo "form is deliberate — add a '# shellcheck disable=SCnnnn' directive on" >&2

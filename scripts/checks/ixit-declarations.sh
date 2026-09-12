@@ -35,6 +35,10 @@
 #   party-dir  a directory holding ixit.json (and optionally ixit-undeclared.json)
 
 set -euo pipefail
+
+# shellcheck source=scripts/lib/guard-args.sh
+. "$(dirname "$0")/../lib/guard-args.sh"
+guard_known_flags "[--schema PATH] <party-dir>..." "--schema" "$@"
 cd "$(dirname "$0")/../.."
 
 command -v jq >/dev/null || { echo "error: jq is required" >&2; exit 1; }

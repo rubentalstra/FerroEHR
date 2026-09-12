@@ -16,6 +16,10 @@
 # structural validity of the file).
 set -euo pipefail
 
+# shellcheck source=scripts/lib/guard-args.sh
+. "$(dirname "$0")/../lib/guard-args.sh"
+guard_known_flags "[<file>]" "" "$@"
+
 file="${1:-CHANGELOG.md}"
 
 # awk, not python: this repository ships no Python, and the check is a line scan
