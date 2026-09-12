@@ -78,7 +78,8 @@ for the exact list of settings a slim binary rejects.
   that mirrors the EHR APIs.
 - **[Terminology servers](terminology.md):** the bundled openEHR terminology
   for local codes, plus any number of external FHIR terminology servers for
-  validating coded values against external value sets.
+  validating coded values against external value sets; FerroTERM ships with the
+  quickstart as the terminology overlay and runs beside the sandbox CDR.
 - **[Subject Proxy](subject-proxy.md):** read facts about a subject
   ("date of birth", "latest blood pressure") through named variables backed by
   data frames: AQL against this CDR, reads from configured external FHIR

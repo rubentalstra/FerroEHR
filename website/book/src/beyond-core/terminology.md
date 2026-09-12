@@ -45,10 +45,11 @@ is a `400`.
 
 > [!NOTE]
 > **The CDR is only ever a client of the terminology server.** FerroEHR does not
-> implement one: you run an off-the-shelf FHIR terminology server and point the
-> CDR at it by URL. HAPI FHIR is a good open, single-container default for
-> development and CI; Snowstorm is the choice for genuine SNOMED CT subsumption
-> (heavier: it needs Elasticsearch and a SNOMED CT licence).
+> implement one: you run a FHIR terminology server and point the CDR at it by
+> URL. The one that ships with the product is
+> [FerroTERM](#ferroterm-beside-the-cdr), started by the quickstart's
+> terminology overlay; any other server speaking the FHIR terminology
+> operations (Ontoserver, Snowstorm, HAPI FHIR) works the same way.
 
 External terminology is off by default, and while it is off nothing is
 requested: validation uses the in-process bundle alone. The keys live under
@@ -235,12 +236,13 @@ A raw FHIR terminology endpoint open to anonymous callers would let anyone walk
 a code system or expand large value sets; per-code operations through the CDR,
 behind its rate limit, do not.
 
-The edition the sandbox loads is the SNOMED CT International Edition: it needs
-the Affiliate Licence alone (a Member's national release also needs an agreement
-with that Member), its English displays fit an international audience, and it
-is the lighter of the two. When the operator has built its index off-box and the
-server opens it, this page states the release date beside the edition, and every
-surface showing that content carries the notice the licence prescribes:
+The sandbox serves the **SNOMED CT International Edition, release 20260901**
+(`http://snomed.info/sct/900000000000207008/version/20260901`), loaded by the
+operator under their Affiliate Licence from an index built off the machine. The
+International Edition rather than a national one: it needs the Affiliate Licence
+alone (a Member's national release also needs an agreement with that Member), its
+English displays fit an international audience, and it is the lighter of the two.
+Every surface showing that content carries the notice the licence prescribes:
 
 > This material includes SNOMED Clinical Terms® (SNOMED CT®) which is used by
 > permission of the International Health Terminology Standards Development
@@ -253,11 +255,37 @@ exists only on the sandbox machine. This is a description of the arrangement,
 not legal advice: the licence text is the authority and the Member's conditions
 apply in each territory.
 
+### LOINC on the sandbox
+
+The sandbox also serves **LOINC version 2.83** (`http://loinc.org`), from an
+index built the same way. The LOINC licence
+([loinc.org/license](https://loinc.org/license)) grants use and distribution
+"for any commercial or non-commercial purpose" without fees and names "online
+terminology services" among the permitted products, on three conditions this
+deployment meets: the notice below is available where the service's terms are
+stated, every LOINC code is shown with one of its LOINC display names (the FHIR
+operations return the long common name), and the version is stated. Where a
+LOINC record carries a third-party copyright notice of its own, that notice
+travels with the record.
+
+> This material contains content from LOINC (http://loinc.org). LOINC is
+> copyright © Regenstrief Institute, Inc. and the Logical Observation
+> Identifiers Names and Codes (LOINC) Committee and is available at no cost
+> under the license at http://loinc.org/license. LOINC® is a registered United
+> States trademark of Regenstrief Institute, Inc.
+
+Neither index is in the repository, an image or CI; both exist only on the
+sandbox machine, beside the licence-free shaped seed the compose profile ships.
+
 ## Running one locally (development and CI)
 
-From a checkout of the repository, the conformance stack can start a real HAPI
-FHIR JPA server beside the CDR, seeded with a small set of synthetic test code
-systems and value sets:
+The quickest local terminology server is the quickstart's
+[terminology overlay](../installation/compose.md#the-terminology-overlay-ferroterm):
+FerroTERM beside the CDR, the shaped seed served, the CDR wired, one command
+and no checkout. The conformance lane still runs its own server: from a
+checkout of the repository, the conformance stack can start a HAPI FHIR JPA
+server beside the CDR, seeded with the same synthetic code systems and value
+sets over its FHIR API (the lane moves to FerroTERM under #3085):
 
 ```bash
 docker compose -p ferroehr-cnf --project-directory . --profile terminology \
@@ -272,8 +300,9 @@ inside a later run. The overlay file is what points the CDR at it, by switching
 on the `[terminology.external]` providers the development configuration already
 carries in the disabled state.
 
-None of this touches the downloadable quickstart Compose file, which has no
-terminology server and uses the in-process openEHR terminology only.
+None of this touches the downloadable quickstart Compose file on its own, which
+uses the in-process openEHR terminology only; the terminology overlay is the
+opt-in that adds FerroTERM to it.
 
 > [!WARNING]
 > The seeded content is synthetic and lives under the reserved `example.test`
