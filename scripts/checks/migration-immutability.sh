@@ -64,7 +64,10 @@ self_test() {
   trap "rm -rf '$tmp'" RETURN
   (
     cd "$tmp" || exit 1
-    git init -q .
+    # The base branch is NAMED, so the diff below does not guess at the
+    # machine's init.defaultBranch (#3285: a main/master fallback chained with
+    # `||` always ran the master diff and died on a checkout defaulting to main).
+    git init -q --initial-branch=base .
     git config user.email t@example.invalid
     git config user.name t
     mkdir -p "$MIGRATIONS/ehr"
@@ -79,8 +82,7 @@ self_test() {
     git add -A && git commit -qm work
   )
   local found
-  found="$(cd "$tmp" && git diff --name-status --diff-filter=MDRCT main work -- "$MIGRATIONS" 2>/dev/null \
-    || cd "$tmp" && git diff --name-status --diff-filter=MDRCT master work -- "$MIGRATIONS")"
+  found="$(cd "$tmp" && git diff --name-status --diff-filter=MDRCT base work -- "$MIGRATIONS")"
   local failures=0
   grep -q '0001_baseline.sql' <<<"$found" || { echo "self-test: a MODIFIED migration was not caught" >&2; failures=1; }
   grep -q '0002_second.sql' <<<"$found" || { echo "self-test: a DELETED migration was not caught" >&2; failures=1; }
