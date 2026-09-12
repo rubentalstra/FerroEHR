@@ -181,6 +181,10 @@ terminology_verify() {
 # overlay on (a member commits, a non-member is refused), and the server down
 # under each fail posture.
 TERM_FT_PORT="${PROBE_FERROTERM_PORT:-18090}"
+# Exported, like the CDR and database ports in compose.sh: the overlay publishes
+# FerroTERM at ${FERROEHR_TERMINOLOGY_PORT:-8090}, and the probes below poll
+# TERM_FT_PORT, so the two must be the same number.
+export FERROEHR_TERMINOLOGY_PORT="$TERM_FT_PORT"
 TERM_FT_OVERLAY="docker-compose.terminology.yml"
 TERM_FT_TEMPLATE="corpus/templates/dt_coded_text_binding_sct.opt"
 TERM_FT_MEMBER="corpus/fixtures/composition/terminology_binding_sct_member.json"
