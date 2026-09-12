@@ -26,33 +26,14 @@
               the fixture (the Rust Book ch11)"
 )]
 
+use crate::fixtures::{throwaway_password, with_role};
 use ferroehr::config::secret::SecretUrl;
 use ferroehr::db::{DbConfig, DbError, MigrationMode};
-use uuid::Uuid;
 
 /// `SQLSTATE` 42501 `insufficient_privilege` — what `PostgreSQL` reports for a
 /// refused read, whether the missing grant is on the relation or on its schema
 /// (`PostgreSQL` docs § Appendix A "`PostgreSQL` Error Codes", class 42).
 const SQLSTATE_INSUFFICIENT_PRIVILEGE: &str = "42501";
-
-/// A password for a throwaway login role, fresh per call.
-///
-/// The value is never a secret: the role lives as long as one test against an
-/// ephemeral clone. It is generated rather than written down because a literal
-/// here is indistinguishable, to a scanner and to a reader, from a credential
-/// that does matter.
-fn throwaway_password() -> String {
-    format!("pw{}", Uuid::now_v7().simple())
-}
-
-/// Rewrite the userinfo of a testkit clone DSN so a connection reaches the
-/// same database as a different login role (scheme/host/port/database
-/// preserved).
-fn with_role(base_url: &str, user: &str, password: &str) -> String {
-    let (scheme, rest) = base_url.split_once("://").expect("dsn scheme");
-    let host_and_path = rest.split_once('@').map_or(rest, |(_, tail)| tail);
-    format!("{scheme}://{user}:{password}@{host_and_path}")
-}
 
 /// A fresh non-superuser login role that is a member of `roles` (a
 /// comma-separated `IN ROLE` list), returned as `(role name, DSN)`.

@@ -38,6 +38,8 @@ use ferroehr::db::{self, DbConfig};
 use sqlx::{AssertSqlSafe, Connection, PgConnection, Row};
 use uuid::Uuid;
 
+use crate::fixtures::with_role;
+
 /// Every table the tenancy extension puts under tenant scope + RLS FORCE.
 const SCOPED_TABLES: &[&str] = &[
     "ehr",
@@ -59,16 +61,6 @@ const SCOPED_TABLES: &[&str] = &[
     "event_subscription",
     "fhir_mapping",
 ];
-
-/// Rewrite the userinfo of a testkit clone DSN so a test can connect to the
-/// same database as a different login role (scheme/host/port/database
-/// preserved) — the RLS tests must connect as a non-superuser role rather than
-/// the harness's owner role.
-fn with_role(base_url: &str, user: &str, password: &str) -> String {
-    let (scheme, rest) = base_url.split_once("://").expect("dsn scheme");
-    let host_and_path = rest.split_once('@').map_or(rest, |(_, tail)| tail);
-    format!("{scheme}://{user}:{password}@{host_and_path}")
-}
 
 /// A fresh connection as a non-superuser login role (created by the test),
 /// with the application search path — so RLS is in force. Roles are
