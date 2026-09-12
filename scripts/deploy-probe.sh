@@ -134,6 +134,7 @@ run_family observability && probes_observability
 run_family tenancy && probes_tenancy
 run_family events && probes_events
 run_family fhir && probes_fhir
+run_family terminology_ferroterm && probes_terminology_ferroterm
 run_family terminology && probes_terminology
 
 # ── The honest half ───────────────────────────────────────────────────────────

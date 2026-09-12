@@ -15,6 +15,20 @@ workflow refuses a tag that has no matching section here.
 
 ## [Unreleased]
 
+### Added
+
+- **FerroTERM ships with the quickstart and runs beside the sandbox CDR**
+  (#3304). `docker-compose.terminology.yml` starts the Ferro family's FHIR
+  terminology server next to the CDR and switches `[terminology.external]` on,
+  serving the licence-free shaped seed out of the `ferroehr` image by default and
+  any edition you build into its index volume (`ferroterm-build`, the
+  `terminology-build` profile). The hosted sandbox runs the same pair on one
+  machine with the terminology server reachable only from inside the stack,
+  which is the posture the SNOMED CT Affiliate Licence asks of a public system,
+  and its dataset gains a composition whose coded text resolves through it. The
+  deployment probe observes the overlay off, on and resolving, and the server
+  down under both fail postures.
+
 ## [4.2.2] - 2026-09-12
 
 ### Fixed

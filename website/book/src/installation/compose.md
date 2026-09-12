@@ -267,6 +267,68 @@ curl -H "Authorization: Bearer $TOKEN" -X POST -i \
 > deployment, drop this overlay and point `[auth.oidc]` (or
 > `FERROEHR__AUTH__OIDC__*`) at your own issuer over HTTPS.
 
+## The terminology overlay (FerroTERM)
+
+[FerroTERM](https://github.com/rubentalstra/FerroTERM) is the Ferro family's
+FHIR terminology server: R4, R4B and R5 endpoints over a precomputed index, no
+JVM, no database, one distroless image. The overlay
+`docker-compose.terminology.yml` starts it beside the CDR and switches the CDR's
+external terminology on, so archetype value-set bindings resolve at commit, AQL
+`TERMINOLOGY()` expands through it, and the `/terminology/*` routes answer from
+it:
+
+```shell
+docker compose -f docker-compose.yml -f docker-compose.terminology.yml up
+curl 'http://localhost:8090/r4b/metadata?mode=terminology'
+```
+
+It is an overlay rather than a profile for the same reason as the Keycloak and
+observability ones: enabling it has to change the CDR's environment, which a
+profile cannot do.
+
+Out of the box FerroTERM serves the licence-free shaped seed this repository
+ships (two code systems and two value sets under the reserved `example.test`
+domain, the content the conformance lane binds to), mounted read-only straight
+out of the `ferroehr` image. No licensed terminology is distributed with
+FerroEHR or FerroTERM. To serve a release you hold a licence for, build its
+index once into the named volume and tell the server to open it:
+
+```shell
+FERROTERM_RF2=/path/to/SnomedCT_Release.zip \
+  docker compose -f docker-compose.yml -f docker-compose.terminology.yml \
+  --profile terminology-build run --rm ferroterm-build
+FERROTERM_INDEX=/data/index \
+  docker compose -f docker-compose.yml -f docker-compose.terminology.yml up
+```
+
+The archive is mounted read-only and unpacked to a tmpfs that dies with the
+build container. FerroTERM's [loading page](https://ferroterm.eu/docs/operate/loading-snomed.html)
+covers the other code systems and their build flags.
+
+Three things the operator owns:
+
+- **The code-system licence.** SNOMED CT needs an Affiliate Licence (free in
+  Member countries, see [snomed.org/get-snomed](https://www.snomed.org/get-snomed));
+  LOINC, ICD and RxNorm have their own terms. Every surface that shows SNOMED CT
+  content carries the notice its licence prescribes (clause 8.3.1) and the
+  release version and date.
+- **Who can reach the server.** The overlay publishes FerroTERM on the loopback
+  interface at port 8090 (`FERROEHR_TERMINOLOGY_PORT`) so you can query it while
+  developing. FerroTERM has no authentication and no rate limit of its own; a
+  deployment that serves other machines puts a reverse proxy with both in front,
+  or removes the `ports:` block and lets the CDR be the only caller, which is
+  what the [hosted sandbox](https://sandbox.ferroehr.eu) does.
+- **FerroTERM's licence.** BUSL-1.1 from the same Licensor as FerroEHR:
+  non-commercial production use is free, any other production use needs a
+  commercial licence. Its README says which is which.
+
+The CDR keeps its shipped fail-open posture: a binding the server cannot resolve
+is accepted. `FERROEHR__TERMINOLOGY__EXTERNAL__FAIL_ON_ERROR=true` turns an
+unreachable server into a `422` refusal instead; the
+[terminology page](../beyond-core/terminology.md#when-the-terminology-server-cannot-answer)
+explains both. A code the server resolves as outside its value set is refused
+with `422` under either posture.
+
 ## Optional services (Compose profiles)
 
 The core services are profile-less and start on every `up`. Further services
