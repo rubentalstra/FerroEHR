@@ -87,18 +87,18 @@ services:
         limits:
           memory: 1536m
     environment:
-      FERROTERM_CODESYSTEMS: /data/codesystems
+      FERROTERM_CODESYSTEMS: /image/opt/sandbox-posture/terminology
       FERROTERM_INDEX:
       FERROTERM_UI: "off"
       FERROTERM_LOG_FORMAT: json
       RUST_LOG: info
     volumes:
+      # The whole ferroehr image, read-only, for the seed directory it carries
+      # (a subpath mount needs a newer engine than a box may run).
       - type: image
         source: ${FERROEHR_IMAGE:-ghcr.io/rubentalstra/ferroehr:latest}
-        target: /data/codesystems
+        target: /image
         read_only: true
-        image:
-          subpath: opt/sandbox-posture/terminology
       - type: bind
         source: ${FERROTERM_INDEX_DIR:-./ferroterm-index}
         target: /data/index

@@ -56,7 +56,12 @@ services:
     # Digest-pinned FerroTERM 0.1.2 (resolved 2026-09-12); no `:latest`.
     image: ghcr.io/rubentalstra/ferroterm:0.1.2@sha256:9cc75a1321fad3dd419776ee3781eaa309a8eaecf22aa4be9a2ac2b68fc31b4b
     environment:
-      FERROTERM_CODESYSTEMS: /data/codesystems
+      # The shaped seed, read straight out of the ferroehr image: the whole
+      # image is mounted read-only at /image (a Compose `type: image` volume,
+      # Compose 2.35+, Docker Engine 28+) and this names the directory in it.
+      # Whole-image rather than a subpath mount because subpath support is
+      # newer than the engines a runner or a box may carry.
+      FERROTERM_CODESYSTEMS: /image/opt/sandbox-posture/terminology
       # Passed through from YOUR shell, declared with no value on purpose: unset
       # it is removed from the container environment and the server serves the
       # shaped seed alone; set to /data/index after a ferroterm-build run.
@@ -66,14 +71,11 @@ services:
       FERROTERM_DEFAULT_LANGUAGE: ${FERROTERM_DEFAULT_LANGUAGE:-en}
       RUST_LOG: ${RUST_LOG:-info}
     volumes:
-      # The shaped seed, straight out of the ferroehr image (Compose >= 2.35:
-      # docs.docker.com/reference/compose-file/services/#volumes, type image).
+      # docs.docker.com/reference/compose-file/services/#volumes, type image.
       - type: image
         source: ${FERROEHR_IMAGE:-ghcr.io/rubentalstra/ferroehr:4.2.2}
-        target: /data/codesystems
+        target: /image
         read_only: true
-        image:
-          subpath: opt/sandbox-posture/terminology
       - type: volume
         source: ferroehr-ferroterm-index
         target: /data/index
