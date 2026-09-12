@@ -46,3 +46,4 @@
 - [Slim feature lanes: gate helpers](slim-feature-lanes-gate-helpers.md) — a helper used only from a feature-gated rest module needs the same cfg; run the three --no-default-features clippy combos before pushing rest/server changes
 - [Never soft-reset onto a moved base](never-soft-reset-onto-moved-base.md) — squash only after merging main (a soft reset onto a moved base reverts what main gained); check `git diff --stat HEAD origin/main` before pushing; zsh path lists as arrays
 - [expect_used in tests/it helpers](expect-used-in-integration-test-helpers.md) — a new tests/it file needs the file-level `#![expect(clippy::expect_used)]`; clippy.toml's allow-*-in-tests covers only #[test] fns
+- [Book numbers are generated includes](book-numbers-are-generated-includes.md) — a measured number on the site comes from a scripts/render generator over a committed record into website/book/generated + {{#include}}; the stale-numbers gate refuses hand-typed ms/s figures
