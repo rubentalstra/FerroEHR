@@ -106,6 +106,34 @@ impl FerroEhrService {
         }
     }
 
+    /// Whether `code` exists in the external code system `system`, as the three
+    /// answers ADL2 VETDF distinguishes ([`super::fhir::TermExistence`]): the
+    /// binding's outer key `terminology_id` only helps pick the provider (its
+    /// own route, then the system's route, then the default); with no external
+    /// provider configured nothing is asked and the binding is unverifiable
+    /// (AM ADL2 `master03-archetype_package.adoc` §Validity Rules, VETDF).
+    ///
+    /// # Errors
+    ///
+    /// The FHIR provider's: a transport fault, an unclassified non-2xx status,
+    /// or a malformed body.
+    pub async fn term_existence(
+        &self,
+        terminology_id: &str,
+        system: &str,
+        code: &str,
+    ) -> Result<super::fhir::TermExistence, SmError> {
+        let provider = self
+            .terminology_route(system)
+            .or_else(|| self.terminology_provider(terminology_id));
+        match provider {
+            Some(p) => p.term_existence(system, code).await,
+            None => Ok(super::fhir::TermExistence::Unverifiable(
+                "no external terminology provider is configured",
+            )),
+        }
+    }
+
     /// `get_term` — a single-term `Terminology_extract`. Routed to the bundle
     /// when it knows the terminology (no meta-model `attributes` exist for
     /// the openEHR bundle; `at_date` is a no-op on the pinned version), else to the configured FHIR provider (`CodeSystem/$lookup`).

@@ -102,6 +102,30 @@ local terminologies are still answered in-process.
 > disagree on that spelling, align them in the terminology-server configuration.
 > The CDR does not rewrite the value.
 
+### What it changes when an ADL 2 archetype is uploaded
+
+An ADL 2 archetype's `term_bindings` are checked too (AOM2 validity rule
+VETDF). A binding target is a URI in the IHTSDO model, `…/id/<code>`, and the
+CDR takes it apart before asking: `http://snomed.info/id/50121007` (or the
+`snomedct.info` host the ADL 2 specification's own examples use) is asked as
+`system=http://snomed.info/sct`, `code=50121007`, per the SNOMED CT URI Standard;
+`http://loinc.org/id/LA6742-6` as `system=http://loinc.org`; any other `…/id/…`
+URI as the URI before `/id/`. The outer binding key (`SNOMED-CT`, `Snomed`,
+`LOINC`, however the author spelled it) only picks the provider. The server's
+answer then decides:
+
+- the code **exists** → accepted;
+- the code system is served and the code is **not in it** → `422`, naming the
+  rule, the binding and the code;
+- the code system is **not served** by the terminology server (or the server
+  cannot say) → accepted with a warning in the log. AOM2 puts it this way:
+  codes for inaccessible terminologies "should be flagged with a warning
+  indicating that no verification was possible", so a CDR wired at a server
+  that carries only LOINC still stores archetypes with SNOMED CT bindings.
+
+The same rule holds with no external terminology server configured at all:
+nothing is asked and nothing is refused.
+
 ### Which FHIR operation is used
 
 Membership is tested with `ValueSet/$validate-code` by default: one direct

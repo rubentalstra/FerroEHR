@@ -27,6 +27,7 @@ mod access_origins;
 mod adl14_knowledge_archetypes;
 mod adl2_fixture;
 mod adl2_vetdf;
+mod adl2_vetdf_ferroterm;
 mod admin_fixture;
 mod aql_planner;
 mod audit_chain;
