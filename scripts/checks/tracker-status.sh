@@ -32,7 +32,7 @@ command -v gh >/dev/null || { echo "error: gh is required" >&2; exit 1; }
 
 BOOK=website/book/src
 EHDS=website/book/ehds.yaml
-PLANNED='planned|not yet|upcoming|in progress|partly shipped|partial|remains open|is tracked|tracked (on|in)|to be done|pending|not planned|not (yet )?built'
+PLANNED='planned|not yet|upcoming|in progress|partly shipped|partial|remains open|is tracked|tracked (on|in)|to be done|pending|not planned|not (yet )?built|still to come|(until|once|when) .* lands|yet to land'
 SHIPPED='shipped|landed|closed in|closed by|delivered'
 
 # Every issue number referenced on a page (excluding generated pages) or in
