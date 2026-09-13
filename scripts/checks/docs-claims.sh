@@ -327,6 +327,22 @@ for f in $files; do
   done < <(grep -ohE '(ferroehr(-viewer)?:|image\.tag=)[0-9]+\.[0-9]+\.[0-9]+(-[0-9A-Za-z.]+)?' "$f" \
     | sed -E 's/^.*[:=]//' | sort -u)
 done
+# The root README is not a book page, so the loop above never reads it, and its
+# `helm install … --version` pin sat two chart versions stale until #3305
+# corrected it by hand (#3327). The same two literal checks, over that one file.
+f=README.md
+if [[ -f "$f" ]]; then
+  while read -r v; do
+    [[ -n "$v" ]] || continue
+    [[ "$v" = "$chart_version" ]] \
+      || report "$f" "pins chart \`--version $v\`; Chart.yaml says $chart_version"
+  done < <(grep -ohE '\-\-version +[0-9]+\.[0-9]+\.[0-9]+' "$f" | awk '{print $2}' | sort -u)
+  while read -r v; do
+    [[ -n "$v" ]] || continue
+    [[ "$v" = "$app_version" ]] \
+      || report "$f" "pins image tag \`$v\`; the workspace version is $app_version"
+  done < <(grep -ohE 'image\.tag=[0-9]+\.[0-9]+\.[0-9]+(-[0-9A-Za-z.]+)?' "$f" | sed -E 's/^.*=//' | sort -u)
+fi
 # Every page (and the landing): a fully-spelled ghcr image reference must carry
 # the current appVersion, and never a `v` prefix — the publish lane tags
 # `{{version}}` without one, so `ghcr.io/…:v3.17.5` does not resolve at all.
