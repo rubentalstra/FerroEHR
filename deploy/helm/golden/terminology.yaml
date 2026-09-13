@@ -85,6 +85,13 @@ spec:
               app.kubernetes.io/name: ferroehr
               app.kubernetes.io/instance: ferroehr
       ports:
+        # 8080 is the CONTAINER port, not terminology.service.port: `port`
+        # "represents the port on the given protocol. This can either be a
+        # numerical or named port on a pod"
+        # (https://kubernetes.io/docs/reference/kubernetes-api/policy-resources/network-policy-v1/,
+        # NetworkPolicyPort) — the pod's, after the Service's translation. The
+        # CDR's matching egress rule carries the same number for the same
+        # reason.
         - protocol: TCP
           port: 8080
   egress:
@@ -726,6 +733,8 @@ metadata:
     app.kubernetes.io/component: terminology
 spec:
   replicas: 1
+  strategy:
+    type: Recreate
   selector:
     matchLabels:
       app.kubernetes.io/name: ferroehr-terminology
@@ -856,3 +865,13 @@ spec:
           persistentVolumeClaim:
             claimName: ferroehr-terminology-index
             readOnly: true
+      topologySpreadConstraints:
+        - maxSkew: 1
+          topologyKey: kubernetes.io/hostname
+          whenUnsatisfiable: ScheduleAnyway
+          matchLabelKeys:
+            - pod-template-hash
+          labelSelector:
+            matchLabels:
+              app.kubernetes.io/name: ferroehr-terminology
+              app.kubernetes.io/instance: ferroehr

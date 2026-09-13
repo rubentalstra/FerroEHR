@@ -191,5 +191,8 @@ Optional integrations currently ON:
   {{- /* The INJECTED state, not the values one: terminology.enabled writes
          config.terminology.external.enabled for the operator, so reading the
          values tree here would report "false" for a release that resolves
-         every binding against the FerroTERM beside it. */}}
-  ext terminology:  {{ if and .Values.terminology.enabled .Values.terminology.wireCdr }}true (in-cluster FerroTERM){{ else }}{{ .Values.config.terminology.external.enabled }}{{ end }}
+         every binding against the FerroTERM beside it. Read through `dig`
+         because the chart defaults that key away — a defaulted one could not
+         be told apart from one the operator typed, which is what the wiring
+         refusals turn on. */}}
+  ext terminology:  {{ if and .Values.terminology.enabled .Values.terminology.wireCdr }}true (in-cluster FerroTERM){{ else }}{{ dig "terminology" "external" "enabled" false .Values.config }}{{ end }}

@@ -1151,8 +1151,16 @@
           "type": "integer",
           "minimum": 0
         },
+        "topologySpreadConstraints": {
+          "description": "Replaces the chart's default spread (one replica per node, ScheduleAnyway) wholesale rather than merging with it.",
+          "type": "array"
+        },
+        "strategy": {
+          "description": "Deployment update strategy. Empty leaves the API default, except with index.persistentVolumeClaim set, where the chart renders type: Recreate because a ReadWriteOnce volume cannot attach to a surge pod on another node.",
+          "type": "object"
+        },
         "image": {
-          "description": "FerroTERM image. Its tag falls back to the FerroTERM release this chart pins, never to .Chart.appVersion.",
+          "description": "FerroTERM image. Its tag falls back to the FerroTERM release this chart pins, never to .Chart.appVersion. A tag other than that pin is refused while digest is non-empty: the digest wins, so the tag would be inert.",
           "type": "object",
           "additionalProperties": false,
           "properties": {
@@ -1254,8 +1262,41 @@
               "type": "boolean"
             },
             "extraIngressFrom": {
-              "description": "Further peers admitted beside the CDR's pods. There is deliberately no admit-everything key here.",
-              "type": "array"
+              "description": "Further peers admitted beside the CDR's pods. There is deliberately no admit-everything BOOLEAN here, and each peer is admitted exactly as written — so the peer itself is constrained: an empty peer, or an empty podSelector/namespaceSelector inside one, selects every pod in the namespace or in every namespace and is refused.",
+              "type": "array",
+              "items": {
+                "$ref": "#/definitions/narrowingNetworkPolicyPeer"
+              }
+            }
+          }
+        },
+        "podDisruptionBudget": {
+          "description": "FerroTERM's own budget, over its own pods. Off by default: the shipped replicaCount is 1 and a budget over one pod blocks the drain it exists to survive. Set one of minAvailable / maxUnavailable, never both.",
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "enabled": {
+              "type": "boolean"
+            },
+            "minAvailable": {
+              "type": [
+                "integer",
+                "string"
+              ]
+            },
+            "maxUnavailable": {
+              "type": [
+                "integer",
+                "string"
+              ]
+            },
+            "unhealthyPodEvictionPolicy": {
+              "description": "Whether a node drain may evict already-unhealthy pods. AlwaysAllow is the documented recommendation; IfHealthyBudget is the API default and can hang a drain.",
+              "type": "string",
+              "enum": [
+                "AlwaysAllow",
+                "IfHealthyBudget"
+              ]
             }
           }
         },
@@ -1292,6 +1333,61 @@
     }
   },
   "definitions": {
+    "narrowingLabelSelector": {
+      "description": "A label selector that actually selects something: 'if present but empty, it selects all pods' / 'all namespaces' (Kubernetes networking/v1 NetworkPolicyPeer), so an empty one here would silently widen the rule it was added to narrow.",
+      "type": "object",
+      "minProperties": 1,
+      "anyOf": [
+        {
+          "required": [
+            "matchLabels"
+          ]
+        },
+        {
+          "required": [
+            "matchExpressions"
+          ]
+        }
+      ],
+      "properties": {
+        "matchLabels": {
+          "type": "object",
+          "minProperties": 1
+        },
+        "matchExpressions": {
+          "type": "array",
+          "minItems": 1
+        }
+      }
+    },
+    "narrowingNetworkPolicyPeer": {
+      "description": "A NetworkPolicyPeer that names a source. Constrained rather than left raw because this policy has no admit-everything key by design, and an empty peer or an empty selector inside one reaches that state anyway.",
+      "type": "object",
+      "minProperties": 1,
+      "properties": {
+        "podSelector": {
+          "$ref": "#/definitions/narrowingLabelSelector"
+        },
+        "namespaceSelector": {
+          "$ref": "#/definitions/narrowingLabelSelector"
+        },
+        "ipBlock": {
+          "type": "object",
+          "required": [
+            "cidr"
+          ],
+          "properties": {
+            "cidr": {
+              "type": "string",
+              "minLength": 1
+            },
+            "except": {
+              "type": "array"
+            }
+          }
+        }
+      }
+    },
     "port": {
       "type": "integer",
       "minimum": 1,

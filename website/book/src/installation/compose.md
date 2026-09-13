@@ -273,9 +273,10 @@ curl -H "Authorization: Bearer $TOKEN" -X POST -i \
 FHIR terminology server: R4, R4B and R5 endpoints over a precomputed index, no
 JVM, no database, one distroless image. The overlay
 `docker-compose.terminology.yml` starts it beside the CDR and switches the CDR's
-external terminology on, so archetype value-set bindings resolve at commit, AQL
-`TERMINOLOGY()` expands through it, and the `/terminology/*` routes answer from
-it:
+external terminology on, so archetype value-set bindings resolve at commit and
+AQL `TERMINOLOGY()` expands through it (the `/terminology/*` extension routes
+answer from it too once `[terminology] api_enabled = true`, which is off by
+default):
 
 ```shell
 docker compose -f docker-compose.yml -f docker-compose.terminology.yml up

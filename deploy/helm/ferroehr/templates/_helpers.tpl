@@ -306,7 +306,16 @@ secret VALUE refused outright.
        above are: by injection, so the Service address and the workload that
        answers it are one decision. An operator who declared the `default`
        provider by hand meant a different server, and silently replacing it
-       would point binding resolution somewhere they did not choose. */ -}}
+       would point binding resolution somewhere they did not choose.
+
+       Every key this block WRITES is refused when the operator wrote it too.
+       An injection that overwrites is indistinguishable from one that agrees:
+       the render succeeds either way and the value an operator reads back in
+       their own values file is not the value the server runs on. The chart's
+       own `config.terminology.external` defaults therefore declare neither
+       `enabled` nor `fail_on_error` — a defaulted key cannot be told apart
+       from a typed one, and the server's own defaults for both are the same
+       `false`, so nothing is lost by leaving them to it. */ -}}
 {{- if not (hasKey $rendered "terminology") -}}{{- $_ := set $rendered "terminology" (dict) -}}{{- end -}}
 {{- $terminology := get $rendered "terminology" -}}
 {{- if not (hasKey $terminology "external") -}}{{- $_ := set $terminology "external" (dict) -}}{{- end -}}
@@ -314,6 +323,23 @@ secret VALUE refused outright.
 {{- $providers := dig "providers" (dict) $external -}}
 {{- if hasKey $providers "default" -}}
 {{- fail "terminology.enabled=true already declares config.terminology.external.providers.default at the in-cluster FerroTERM Service, so declaring it in values too is two answers to one question: drop config.terminology.external.providers.default, or set terminology.wireCdr=false to keep your own provider and run FerroTERM unwired. A second, differently-named provider under config.terminology.external.providers is unaffected." -}}
+{{- end -}}
+{{- if and (hasKey $external "enabled") (not (get $external "enabled")) -}}
+{{- fail "config.terminology.external.enabled=false is set while terminology.enabled=true and terminology.wireCdr=true, which inject enabled=true — the rendered ferroehr.toml would say the opposite of your values file, and the CDR would resolve bindings against FerroTERM anyway. Drop config.terminology.external.enabled, or set terminology.wireCdr=false to keep your own [terminology.external] and run FerroTERM unwired." -}}
+{{- end -}}
+{{- if and (hasKey $external "fail_on_error") (ne (get $external "fail_on_error") $.Values.terminology.failOnError) -}}
+{{- fail (printf "config.terminology.external.fail_on_error=%v contradicts terminology.failOnError=%v, and the wiring injects the second — the rendered ferroehr.toml would carry a fail posture your values file denies. Set terminology.failOnError=%v and drop config.terminology.external.fail_on_error, or set terminology.wireCdr=false to keep your own [terminology.external]." (get $external "fail_on_error") $.Values.terminology.failOnError (get $external "fail_on_error")) -}}
+{{- end -}}
+{{- /* A provider nothing routes to is a provider the router never reaches:
+       an unmatched terminology falls back to the provider named `default`,
+       which the injection above has just claimed for the in-cluster
+       FerroTERM. So an operator's own provider declared beside the injection
+       without a `routes` entry naming it is dead configuration that renders,
+       boots and resolves nothing — the silent-demotion shape, refused rather
+       than shipped. */ -}}
+{{- $extraProviders := keys (omit $providers "default") -}}
+{{- if and $extraProviders (not (dig "routes" (dict) $external)) -}}
+{{- fail (printf "config.terminology.external.providers declares %v while config.terminology.external.routes is empty, and terminology.wireCdr=true has taken the `default` provider for the in-cluster FerroTERM: an unrouted terminology falls back to `default`, so nothing would ever reach %v. Add a config.terminology.external.routes entry (terminology id or system URI -> provider name) for each, or set terminology.wireCdr=false to keep `default` for yourself." (join ", " $extraProviders) (join ", " $extraProviders)) -}}
 {{- end -}}
 {{- $_ := set $providers "default" (dict "type" "fhir" "url" (printf "http://%s:%v/r4b" (include "ferroehr.terminologyFullname" $) $.Values.terminology.service.port)) -}}
 {{- $_ := set $external "providers" $providers -}}
@@ -438,7 +464,7 @@ app.kubernetes.io/component: viewer
 {{- end }}
 
 {{- define "ferroehr.viewerSelectorLabels" -}}
-app.kubernetes.io/name: {{ printf "%s-viewer" (include "ferroehr.name" .) }}
+app.kubernetes.io/name: {{ printf "%s-viewer" (include "ferroehr.name" .) | trunc 63 | trimSuffix "-" }}
 app.kubernetes.io/instance: {{ .Release.Name }}
 {{- end }}
 
@@ -467,7 +493,7 @@ app.kubernetes.io/component: migration
 {{- end }}
 
 {{- define "ferroehr.migrationSelectorLabels" -}}
-app.kubernetes.io/name: {{ printf "%s-migration" (include "ferroehr.name" .) }}
+app.kubernetes.io/name: {{ printf "%s-migration" (include "ferroehr.name" .) | trunc 63 | trimSuffix "-" }}
 app.kubernetes.io/instance: {{ .Release.Name }}
 {{- end }}
 
@@ -519,7 +545,7 @@ app.kubernetes.io/component: backup
 {{- end }}
 
 {{- define "ferroehr.backupSelectorLabels" -}}
-app.kubernetes.io/name: {{ printf "%s-backup-%s" (include "ferroehr.name" .root) .domain }}
+app.kubernetes.io/name: {{ printf "%s-backup-%s" (include "ferroehr.name" .root) .domain | trunc 63 | trimSuffix "-" }}
 app.kubernetes.io/instance: {{ .root.Release.Name }}
 {{- end }}
 
@@ -602,33 +628,72 @@ app.kubernetes.io/component: terminology
 {{- end }}
 
 {{- define "ferroehr.terminologySelectorLabels" -}}
-app.kubernetes.io/name: {{ printf "%s-terminology" (include "ferroehr.name" .) }}
+app.kubernetes.io/name: {{ printf "%s-terminology" (include "ferroehr.name" .) | trunc 63 | trimSuffix "-" }}
 app.kubernetes.io/instance: {{ .Release.Name }}
 {{- end }}
 
 {{/*
-The FerroTERM release this chart is pinned to.
+The FerroTERM release this chart is pinned to, and the ONE place that version
+is written.
 
 A separate product on its own release line, so it does NOT fall back to
 `.Chart.AppVersion` the way the viewer and the backup image do: those are built
-from this repository at the same version, and FerroTERM is not. Bumping it is a
-deliberate edit here plus the matching `artifacthub.io/images` tag in
-Chart.yaml.
+from this repository at the same version, and FerroTERM is not. Three sites
+read this one string — the `terminology.image.tag` default below, the
+tag-versus-digest refusal beside it, and scripts/checks/chart-appversion.sh,
+which holds the `artifacthub.io/images` entry in Chart.yaml to it. Bumping
+FerroTERM is this line plus `terminology.image.digest` in values.yaml; the
+annotation is then checked against both rather than maintained a third time.
 */}}
-{{- define "ferroehr.terminologyVersion" -}}
+{{- define "ferroehr.terminologyPinnedVersion" -}}
 0.1.3
 {{- end }}
 
 {{/*
 The terminology image reference — digest wins over tag, as for the server.
+
+Unlike the server's, this chart ships a DEFAULT digest, so the tag is inert out
+of the box: a `--set terminology.image.tag=…` alone changes the values file and
+not the deployed image. That is refused rather than rendered, because the two
+keys then disagree about which FerroTERM is running and only the digest is
+telling the truth.
 */}}
 {{- define "ferroehr.terminologyImage" -}}
+{{- $pinned := include "ferroehr.terminologyPinnedVersion" . }}
+{{- if and .Values.terminology.image.digest .Values.terminology.image.tag (ne .Values.terminology.image.tag $pinned) }}
+{{- fail (printf "terminology.image.tag=%s is set while terminology.image.digest is non-empty, and a digest wins over a tag here: the render would deploy the digest and ignore the tag entirely. Set terminology.image.digest=\"\" to deploy tag %s, or set terminology.image.digest to that tag's own digest. The chart pins FerroTERM %s by digest by default, which is the pairing this chart was validated against." .Values.terminology.image.tag .Values.terminology.image.tag $pinned) }}
+{{- end }}
 {{- if .Values.terminology.image.digest }}
 {{- $digest := .Values.terminology.image.digest }}
 {{- if not (hasPrefix "sha256:" $digest) }}{{- $digest = printf "sha256:%s" $digest }}{{- end }}
 {{- printf "%s@%s" .Values.terminology.image.repository $digest }}
 {{- else }}
-{{- printf "%s:%s" .Values.terminology.image.repository (.Values.terminology.image.tag | default (include "ferroehr.terminologyVersion" .)) }}
+{{- printf "%s:%s" .Values.terminology.image.repository (.Values.terminology.image.tag | default $pinned) }}
+{{- end }}
+{{- end }}
+
+{{/*
+FerroTERM's topology spread: the CDR's default, over FerroTERM's own pods.
+
+Identical reasoning to `ferroehr.topologySpreadConstraints` above, including the
+`ScheduleAnyway` preference and the `matchLabelKeys: [pod-template-hash]` scope
+— what differs is the `labelSelector`, which must name THIS workload's pods.
+Rendered unconditionally, like the CDR's: a replica count is an operator's
+runtime decision, and a spread policy that appears only above some threshold is
+a policy nobody can state.
+*/}}
+{{- define "ferroehr.terminologyTopologySpreadConstraints" -}}
+{{- if .Values.terminology.topologySpreadConstraints -}}
+{{- toYaml .Values.terminology.topologySpreadConstraints -}}
+{{- else -}}
+- maxSkew: 1
+  topologyKey: kubernetes.io/hostname
+  whenUnsatisfiable: ScheduleAnyway
+  matchLabelKeys:
+    - pod-template-hash
+  labelSelector:
+    matchLabels:
+      {{- include "ferroehr.terminologySelectorLabels" . | nindent 6 }}
 {{- end }}
 {{- end }}
 

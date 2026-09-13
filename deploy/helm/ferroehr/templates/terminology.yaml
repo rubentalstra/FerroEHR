@@ -6,8 +6,10 @@ docker-compose.terminology.yml (#3305).
 Everything here is gated on `terminology.enabled`, so the default render is
 byte-identical to a chart without this file. FerroTERM is the Ferro family's
 FHIR terminology server (R4 /r4, R4B /r4b, R5 /r5; no JVM, no database): the
-CDR resolves archetype value-set bindings against it at commit, expands AQL
-TERMINOLOGY() through it, and answers its own /terminology/* routes from it.
+CDR resolves archetype value-set bindings against it at commit and expands AQL
+TERMINOLOGY() through it. The CDR's own /terminology/* extension routes are a
+separate switch — they answer only with config.terminology.api_enabled=true,
+which is off by default — so enabling this workload does not mount them.
 
 The pod-security posture is NOT inherited from the server's values: a second
 workload is exactly where a hardened posture is quietly lost, so this one
@@ -91,6 +93,35 @@ metadata:
     {{- include "ferroehr.terminologyLabels" . | nindent 4 }}
 spec:
   replicas: {{ .Values.terminology.replicaCount }}
+  {{- /* A rolling update creates the new pod BEFORE the old one goes away:
+         `maxSurge` "specifies the maximum number of Pods that can be created
+         over the desired number of Pods … The default value is 25%", and "the
+         absolute number is calculated from the percentage by rounding up", so
+         even a one-replica rollout surges to two
+         (https://kubernetes.io/docs/concepts/workloads/controllers/deployment/
+         §Max Surge; §Max Unavailable is its counterpart and defaults to 25%
+         too). A `ReadWriteOnce` claim "can be mounted as read-write by a
+         single node"
+         (https://kubernetes.io/docs/concepts/storage/persistent-volumes/
+         §Access Modes), so unless the surge pod is scheduled onto the node
+         already holding the volume it stays Pending on the attachment and the
+         rollout never completes — while `kubectl get deploy` reports a
+         progressing update rather than a stuck one. Recreate kills the old
+         pods first ("All existing Pods are killed before new ones are created
+         when `.spec.strategy.type==Recreate`"), which trades a short
+         terminology outage for a rollout that finishes.
+
+         So: a named index claim defaults this workload to Recreate, and an
+         operator whose volume is `ReadOnlyMany` overrides it with
+         `terminology.strategy`. With no claim there is nothing to attach and
+         the field is omitted, leaving the API default. */}}
+  {{- if .Values.terminology.strategy }}
+  strategy:
+    {{- toYaml .Values.terminology.strategy | nindent 4 }}
+  {{- else if .Values.terminology.index.persistentVolumeClaim }}
+  strategy:
+    type: Recreate
+  {{- end }}
   selector:
     matchLabels:
       {{- include "ferroehr.terminologySelectorLabels" . | nindent 6 }}
@@ -244,6 +275,43 @@ spec:
       affinity:
         {{- toYaml . | nindent 8 }}
       {{- end }}
+      topologySpreadConstraints:
+        {{- include "ferroehr.terminologyTopologySpreadConstraints" . | nindent 8 }}
+{{- if .Values.terminology.podDisruptionBudget.enabled }}
+---
+# FerroTERM's own budget, over its own pods. The CDR's PDB selects the CDR's
+# label pair and nothing else, so without this a drain may evict every
+# terminology replica at once while reporting the release as protected.
+#
+# Off by default, unlike the CDR's: one replica is the shipped count, and a
+# budget over a single pod blocks the drain it is meant to survive. Turn it on
+# with `terminology.replicaCount` above 1.
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: {{ include "ferroehr.terminologyFullname" . }}
+  annotations:
+    kubernetes.io/description: >-
+      Keeps FerroTERM available during voluntary disruption (node drains, cluster upgrades). AlwaysAllow lets a drain evict already-unhealthy pods rather than waiting for them to recover.
+  labels:
+    {{- include "ferroehr.terminologyLabels" . | nindent 4 }}
+spec:
+  {{- /* The documented recommendation, for the reason spelled out on the CDR's
+         budget: with an unhealthy-pod policy of IfHealthyBudget a drain waits
+         for pods that are unhealthy BECAUSE of the drain
+         (https://kubernetes.io/docs/concepts/workloads/pods/disruptions/).
+         Rendered unconditionally: KEP-3017 is stable in v1.31, below this
+         chart's kubeVersion floor. */}}
+  unhealthyPodEvictionPolicy: {{ .Values.terminology.podDisruptionBudget.unhealthyPodEvictionPolicy }}
+  {{- if .Values.terminology.podDisruptionBudget.maxUnavailable }}
+  maxUnavailable: {{ .Values.terminology.podDisruptionBudget.maxUnavailable }}
+  {{- else }}
+  minAvailable: {{ .Values.terminology.podDisruptionBudget.minAvailable }}
+  {{- end }}
+  selector:
+    matchLabels:
+      {{- include "ferroehr.terminologySelectorLabels" . | nindent 6 }}
+{{- end }}
 {{- if .Values.terminology.networkPolicy.enabled }}
 ---
 # FerroTERM's policy is the one place in this chart where ingress is narrowed by
@@ -279,10 +347,25 @@ spec:
         - podSelector:
             matchLabels:
               {{- include "ferroehr.selectorLabels" . | nindent 14 }}
+        {{- /* Raw peers, admitted exactly as written. The schema refuses an
+               empty one and an empty `podSelector`/`namespaceSelector` inside
+               one, because "namespaceSelector selects namespaces using
+               cluster-scoped labels … if present but empty, it selects all
+               namespaces"
+               (https://kubernetes.io/docs/reference/kubernetes-api/policy-resources/network-policy-v1/,
+               NetworkPolicyPeer) — a peer that opens this port to the whole
+               cluster, reached without any key saying so. */}}
         {{- with .Values.terminology.networkPolicy.extraIngressFrom }}
         {{- toYaml . | nindent 8 }}
         {{- end }}
       ports:
+        # 8080 is the CONTAINER port, not terminology.service.port: `port`
+        # "represents the port on the given protocol. This can either be a
+        # numerical or named port on a pod"
+        # (https://kubernetes.io/docs/reference/kubernetes-api/policy-resources/network-policy-v1/,
+        # NetworkPolicyPort) — the pod's, after the Service's translation. The
+        # CDR's matching egress rule carries the same number for the same
+        # reason.
         - protocol: TCP
           port: 8080
   egress:

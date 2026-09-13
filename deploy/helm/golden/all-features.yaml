@@ -72,10 +72,12 @@ spec:
     # the server cannot resolve is ACCEPTED under the shipped fail-open
     # posture, so nothing refuses and nothing logs an error.
     #
-    # 8080 is the CONTAINER port, not terminology.service.port: an egress rule
-    # is matched after the Service's translation, against the port the
-    # destination pod listens on
-    # (https://kubernetes.io/docs/concepts/services-networking/network-policies/).
+    # 8080 is the CONTAINER port, not terminology.service.port: `port`
+    # "represents the port on the given protocol. This can either be a
+    # numerical or named port on a pod"
+    # (https://kubernetes.io/docs/reference/kubernetes-api/policy-resources/network-policy-v1/,
+    # NetworkPolicyPort) — the destination pod's, after the Service's
+    # translation.
     - to:
         - podSelector:
             matchLabels:
@@ -151,6 +153,13 @@ spec:
               app.kubernetes.io/name: ferroehr
               app.kubernetes.io/instance: ferroehr
       ports:
+        # 8080 is the CONTAINER port, not terminology.service.port: `port`
+        # "represents the port on the given protocol. This can either be a
+        # numerical or named port on a pod"
+        # (https://kubernetes.io/docs/reference/kubernetes-api/policy-resources/network-policy-v1/,
+        # NetworkPolicyPort) — the pod's, after the Service's translation. The
+        # CDR's matching egress rule carries the same number for the same
+        # reason.
         - protocol: TCP
           port: 8080
   egress:
@@ -189,6 +198,37 @@ spec:
       app.kubernetes.io/name: ferroehr
       app.kubernetes.io/instance: ferroehr
 
+---
+# Source: ferroehr/templates/terminology.yaml
+# FerroTERM's own budget, over its own pods. The CDR's PDB selects the CDR's
+# label pair and nothing else, so without this a drain may evict every
+# terminology replica at once while reporting the release as protected.
+#
+# Off by default, unlike the CDR's: one replica is the shipped count, and a
+# budget over a single pod blocks the drain it is meant to survive. Turn it on
+# with `terminology.replicaCount` above 1.
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: ferroehr-terminology
+  annotations:
+    kubernetes.io/description: >-
+      Keeps FerroTERM available during voluntary disruption (node drains, cluster upgrades). AlwaysAllow lets a drain evict already-unhealthy pods rather than waiting for them to recover.
+  labels:
+    helm.sh/chart: ferroehr-8.3.0
+    app.kubernetes.io/name: ferroehr-terminology
+    app.kubernetes.io/instance: ferroehr
+    app.kubernetes.io/version: "4.2.5"
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/part-of: ferroehr
+    app.kubernetes.io/component: terminology
+spec:
+  unhealthyPodEvictionPolicy: AlwaysAllow
+  minAvailable: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: ferroehr-terminology
+      app.kubernetes.io/instance: ferroehr
 ---
 # Source: ferroehr/templates/serviceaccount.yaml
 apiVersion: v1
@@ -476,6 +516,8 @@ data:
             operation = "validate_code"
             type = "fhir"
             url = "https://tx.example.com/fhir"
+        [terminology.external.routes]
+          "http://loinc.org" = "tx"
     
 
 ---
@@ -974,7 +1016,7 @@ spec:
         # secret values. Hashing the ConfigMap template alone missed the last two,
         # so a rotated passphrase or an edited Cedar policy propagated into the
         # volume while every pod kept running on the value it read at startup.
-        checksum/config: e99ddb42c2468f00db38fb5348ce7460d4aeee04f9b279c4e1cd51946e940749
+        checksum/config: 9b1d7056aaf81e87182dfabffe2cde765b3632be11fe8a0dffda66e4cf46ea59
         prometheus.io/scrape: "true"
         prometheus.io/port: "9100"
         prometheus.io/path: "/management/prometheus"
@@ -1222,7 +1264,7 @@ metadata:
     app.kubernetes.io/part-of: ferroehr
     app.kubernetes.io/component: terminology
 spec:
-  replicas: 1
+  replicas: 2
   selector:
     matchLabels:
       app.kubernetes.io/name: ferroehr-terminology
@@ -1334,6 +1376,16 @@ spec:
         - name: codesystems
           configMap:
             name: ferroehr-terminology-codesystems
+      topologySpreadConstraints:
+        - maxSkew: 1
+          topologyKey: kubernetes.io/hostname
+          whenUnsatisfiable: ScheduleAnyway
+          matchLabelKeys:
+            - pod-template-hash
+          labelSelector:
+            matchLabels:
+              app.kubernetes.io/name: ferroehr-terminology
+              app.kubernetes.io/instance: ferroehr
 ---
 # Source: ferroehr/templates/hpa.yaml
 apiVersion: autoscaling/v2

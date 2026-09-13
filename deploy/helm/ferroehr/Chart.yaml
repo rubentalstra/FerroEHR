@@ -136,12 +136,21 @@ annotations:
   artifacthub.io/maintainers: |
     - name: Ruben Talstra
       email: me@rubentalstra.nl
-  # Every tag here must equal `appVersion` (scripts/checks/chart-appversion.sh
-  # checks it), and the publish lane REWRITES them to the released version at
-  # package time — deploy/helm/release-facts.sh, because
-  # `helm package --app-version` sets the appVersion field and does not touch
-  # annotations (#2779). So these committed tags are the between-releases
-  # default, like appVersion itself, and never what a published listing shows.
+  # Every FIRST-PARTY tag here must equal `appVersion`
+  # (scripts/checks/chart-appversion.sh checks it), and the publish lane
+  # REWRITES those to the released version at package time —
+  # deploy/helm/release-facts.sh, because `helm package --app-version` sets the
+  # appVersion field and does not touch annotations (#2779). So these committed
+  # tags are the between-releases default, like appVersion itself, and never
+  # what a published listing shows.
+  #
+  # WHICH images are first party is DECLARED, not spelled: every entry carries a
+  # trailing `# party: first` or `# party: third` marker, and both scripts read
+  # that marker rather than matching a repository name. An unmarked entry fails
+  # the guard. A name pattern would have classified `ghcr.io/rubentalstra/
+  # ferroehr-anything` as ours by accident and a first-party image published
+  # under another name as somebody else's, and neither mistake is visible in a
+  # render — the tag is simply rewritten, or silently left behind, at the cut.
   #
   # ONLY images this chart actually deploys. Artifact Hub scans every entry here
   # and attributes the findings to this package, so listing an image the chart
@@ -153,7 +162,7 @@ annotations:
   # leaving a false claim in place, so it is deliberately not used.
   artifacthub.io/images: |
     - name: ferroehr
-      image: ghcr.io/rubentalstra/ferroehr:4.2.5
+      image: ghcr.io/rubentalstra/ferroehr:4.2.5  # party: first
       platforms:
         - linux/amd64
         - linux/arm64
@@ -163,7 +172,7 @@ annotations:
     # the entry describes a surface an operator opts into rather than one every
     # install carries, and it is listed so that surface is scanned.
     - name: ferroehr-viewer
-      image: ghcr.io/rubentalstra/ferroehr-viewer:4.2.5
+      image: ghcr.io/rubentalstra/ferroehr-viewer:4.2.5  # party: first
       platforms:
         - linux/amd64
         - linux/arm64
@@ -171,7 +180,7 @@ annotations:
     # `backup.enabled` is set: it carries pg_dump. The chart still provisions no
     # database — this image runs as a client, on a schedule, and exits.
     - name: ferroehr-postgres
-      image: ghcr.io/rubentalstra/ferroehr-postgres:4.2.5
+      image: ghcr.io/rubentalstra/ferroehr-postgres:4.2.5  # party: first
       platforms:
         - linux/amd64
         - linux/arm64
@@ -179,11 +188,18 @@ annotations:
     # (templates/terminology.yaml). Listed because the chart installs it and
     # Artifact Hub must scan it. Its tag is NOT the appVersion and is not
     # rewritten at package time: FerroTERM is a separate product on its own
-    # release line, pinned by `ferroehr.terminologyVersion` in _helpers.tpl and
-    # by `terminology.image.digest` in values.yaml. Bumping it is an edit in all
-    # three places.
+    # release line.
+    #
+    # The reference carries the TAG AND THE DIGEST, which is what the chart
+    # actually deploys — `terminology.image.digest` is pinned in values.yaml, so
+    # a bare tag here would name a mutable pointer while every install runs the
+    # digest, and Artifact Hub would scan whatever the tag had moved to.
+    # scripts/checks/chart-appversion.sh holds both halves to their single
+    # sources: the tag to `ferroehr.terminologyPinnedVersion` in _helpers.tpl,
+    # the digest to `terminology.image.digest` in values.yaml. Bumping FerroTERM
+    # is those two edits; this line is then checked, not maintained.
     - name: ferroterm
-      image: ghcr.io/rubentalstra/ferroterm:0.1.3
+      image: ghcr.io/rubentalstra/ferroterm:0.1.3@sha256:b1ef80382e03c2474bfec2ec57a698d83314e1290dd0cb5a2612ea208bde020c  # party: third
       platforms:
         - linux/amd64
         - linux/arm64

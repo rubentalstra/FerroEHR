@@ -410,9 +410,11 @@ network_policy_gate() {
       fi
     fi
   fi
-  # The absent open-everything key, asserted rather than assumed: the schema
+  # The absent open-everything BOOLEAN, asserted rather than assumed: the schema
   # refuses one, so no values file can reach the state the two policies above
-  # ship.
+  # ship through a flag. (A PEER that opens the port is a different route to the
+  # same place and is closed in the schema instead — an empty peer and an empty
+  # selector inside one are refused; schema_gate probes both.)
   if out="$(helm template "$RELEASE_NAME" "$CHART_DIR" -n "$NAMESPACE" -f "$terminology" \
             --set terminology.networkPolicy.ingressAllowAll=true 2>&1)"; then
     red "  terminology: terminology.networkPolicy.ingressAllowAll was ACCEPTED — an admit-everything key is exactly what this policy must not have"
@@ -433,7 +435,7 @@ network_policy_gate() {
     narrowed=1
   fi
   if [[ "$narrowed" -eq 0 ]]; then
-    echo "  terminology: ingress narrowed to the CDR's pods by default, no key can open it, egress is DNS alone, extraIngressFrom reaches the rule"
+    echo "  terminology: ingress narrowed to the CDR's pods by default, no boolean opens it, egress is DNS alone, an extraIngressFrom peer is admitted as written (and an empty one is refused by the schema)"
   else
     FAIL=1
   fi
@@ -476,6 +478,10 @@ refusal_registry_gate() {
     "_helpers.tpl|has no matching entry at config.auth.basic.users[]|${basic}|--set-string secrets.basicUserPasswordHashes.ghost=SENTINEL_PROBE|secrets.basicUserPasswordHashes.ghost"
     "_helpers.tpl|has no client declared at config.terminology.external.oauth2_clients|${base}|--set-string secrets.terminologyOauth2ClientSecrets.ghost=SENTINEL_PROBE|config.terminology.external.oauth2_clients.ghost"
     "_helpers.tpl|already declares config.terminology.external.providers.default|${base}|--set terminology.enabled=true --set config.terminology.external.providers.default.type=fhir --set config.terminology.external.providers.default.url=https://tx.example.com/fhir|config.terminology.external.providers.default;terminology.wireCdr"
+    "_helpers.tpl|which inject enabled=true|${base}|--set terminology.enabled=true --set config.terminology.external.enabled=false|config.terminology.external.enabled;terminology.wireCdr"
+    "_helpers.tpl|contradicts terminology.failOnError|${base}|--set terminology.enabled=true --set config.terminology.external.fail_on_error=true|config.terminology.external.fail_on_error;terminology.failOnError"
+    "_helpers.tpl|while config.terminology.external.routes is empty|${base}|--set terminology.enabled=true --set config.terminology.external.providers.tx.type=fhir --set config.terminology.external.providers.tx.url=https://tx.example.com/fhir|config.terminology.external.routes;terminology.wireCdr"
+    "_helpers.tpl|while terminology.image.digest is non-empty|${base}|--set terminology.enabled=true --set terminology.image.tag=0.1.4|terminology.image.tag;terminology.image.digest"
     "networkpolicy.yaml|networkPolicy.ingressAllowAll=false with an empty|${base}|--set networkPolicy.ingressAllowAll=false|networkPolicy.ingressFrom;hardening-network-policy.md"
     "networkpolicy.yaml|with no destination for the database|${base}|--set networkPolicy.egress.enabled=true|networkPolicy.egress.database.to;hardening-network-policy.md"
     "viewer.yaml|viewer.networkPolicy.ingressAllowAll=false with an empty|${viewer}|--set viewer.networkPolicy.ingressAllowAll=false|viewer.networkPolicy.ingressFrom;hardening-network-policy.md"
@@ -636,6 +642,51 @@ schema_gate() {
   done
   if [[ "$refused" -eq 0 ]]; then
     echo "  all ${#refusals[@]} malformed-values probes refused, each naming the offending path"
+  else
+    FAIL=1
+  fi
+
+  # The peer-shaped refusals, which `--set` cannot express: an empty map and an
+  # empty selector are the values under test, and `--set x={}` sets a string.
+  # They matter more than their spelling suggests — FerroTERM's policy has no
+  # admit-everything key ON PURPOSE, and `namespaceSelector: {}` reaches that
+  # state anyway ("if present but empty, it selects all namespaces",
+  # https://kubernetes.io/docs/reference/kubernetes-api/policy-resources/network-policy-v1/,
+  # NetworkPolicyPeer), so the schema is the only thing standing between an
+  # operator adding a peer and a terminology endpoint open to the cluster.
+  #
+  # <helm --set-json argument>|<the refusal must name this>
+  local -a json_refusals=(
+    'terminology.networkPolicy.extraIngressFrom=[{"namespaceSelector":{}}]|/terminology/networkPolicy/extraIngressFrom/0/namespaceSelector'
+    'terminology.networkPolicy.extraIngressFrom=[{"podSelector":{}}]|/terminology/networkPolicy/extraIngressFrom/0/podSelector'
+    'terminology.networkPolicy.extraIngressFrom=[{"namespaceSelector":{"matchLabels":{}}}]|/terminology/networkPolicy/extraIngressFrom/0/namespaceSelector'
+    'terminology.networkPolicy.extraIngressFrom=[{}]|/terminology/networkPolicy/extraIngressFrom/0'
+  )
+  local json_refused=0
+  for case in "${json_refusals[@]}"; do
+    probe="${case%%|*}"
+    want="${case##*|}"
+    if out="$(helm template "$RELEASE_NAME" "$CHART_DIR" -n "$NAMESPACE" \
+              -f "${CI_DIR}/terminology-values.yaml" --set-json "$probe" 2>&1)"; then
+      red "  NOT REFUSED: --set-json ${probe} rendered a peer that admits every source"
+      json_refused=1
+    elif ! grep -qF -- "$want" <<<"$out"; then
+      red "  --set-json ${probe} was refused, but the message does not mention '${want}':"
+      printf '%s\n' "$out" | head -4
+      json_refused=1
+    fi
+  done
+  # And the narrowing peer the book documents still renders, so the constraint
+  # above is a narrowing of the wrong shapes rather than of the feature.
+  if ! out="$(helm template "$RELEASE_NAME" "$CHART_DIR" -n "$NAMESPACE" \
+              -f "${CI_DIR}/terminology-values.yaml" \
+              --set-json 'terminology.networkPolicy.extraIngressFrom=[{"namespaceSelector":{"matchLabels":{"kubernetes.io/metadata.name":"ferrockm"}}}]' 2>&1)"; then
+    red "  WRONGLY REFUSED: a peer naming a namespace must still render:"
+    printf '%s\n' "$out" | head -4
+    json_refused=1
+  fi
+  if [[ "$json_refused" -eq 0 ]]; then
+    echo "  all ${#json_refusals[@]} admit-everything peer shapes refused, and a peer that names a source still renders"
   else
     FAIL=1
   fi

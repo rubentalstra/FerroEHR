@@ -96,10 +96,12 @@ spec:
     # the server cannot resolve is ACCEPTED under the shipped fail-open
     # posture, so nothing refuses and nothing logs an error.
     #
-    # 8080 is the CONTAINER port, not terminology.service.port: an egress rule
-    # is matched after the Service's translation, against the port the
-    # destination pod listens on
-    # (https://kubernetes.io/docs/concepts/services-networking/network-policies/).
+    # 8080 is the CONTAINER port, not terminology.service.port: `port`
+    # "represents the port on the given protocol. This can either be a
+    # numerical or named port on a pod"
+    # (https://kubernetes.io/docs/reference/kubernetes-api/policy-resources/network-policy-v1/,
+    # NetworkPolicyPort) — the destination pod's, after the Service's
+    # translation.
     - to:
         - podSelector:
             matchLabels:
