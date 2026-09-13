@@ -77,20 +77,11 @@ async fn system_panel_selects_a_per_family_openapi_document() {
     // Pick the Query family and submit the GET form: the URL carries the choice
     // and the rendered document drops the EHR paths.
     let option = h.wait_css("#openapi-family option[value='query']").await;
-    option.click().await.expect("choose the Query family");
-    h.wait_css("#openapi-family-show")
-        .await
-        .click()
-        .await
-        .expect("show the family document");
+    option.click().await;
+    h.wait_css("#openapi-family-show").await.click().await;
     h.wait_url_contains("openapi=query").await;
     wait_text_contains(&h, "#openapi-family-card", "/query/aql").await;
-    let text = h
-        .wait_css("#openapi-family-card")
-        .await
-        .text()
-        .await
-        .expect("the family document text");
+    let text = h.wait_css("#openapi-family-card").await.text().await;
     assert!(
         !text.contains("/ehr/{ehr_id}/composition"),
         "the Query family document must not carry the EHR paths (got `{text}`)"
@@ -100,15 +91,9 @@ async fn system_panel_selects_a_per_family_openapi_document() {
     // The selection is URL state: a fresh load of the same URL shows the same
     // document with the selector still on Query.
     h.goto("/system?openapi=query").await;
-    let selected = h
-        .wait_css("#openapi-family")
-        .await
-        .prop("value")
-        .await
-        .expect("the selector's value");
+    let selected = h.wait_css("#openapi-family").await.prop("value").await;
     assert_eq!(
-        selected.as_deref(),
-        Some("query"),
+        selected, "query",
         "a shared /system?openapi=query URL must reopen on that family"
     );
     h.shot(3, "openapi-query-family-reloaded").await;

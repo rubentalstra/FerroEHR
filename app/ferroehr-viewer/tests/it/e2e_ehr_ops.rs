@@ -45,8 +45,8 @@ use crate::common;
 use std::time::Duration;
 
 use common::{
-    Harness, confirm_in_dialog, env, is_present_by, login_basic, retype, wait_css_absent,
-    wait_text_contains,
+    Harness, confirm_in_dialog, env, is_present_by, login_basic, poll_until_for, retype,
+    wait_css_absent, wait_text_contains,
 };
 use thirtyfour::prelude::*;
 
@@ -91,16 +91,13 @@ fn generated_uuid() -> String {
 /// clicked twice.
 async fn create_ehr_until_navigated(h: &Harness, ehr_id: &str) -> bool {
     for _ in 0..3 {
-        h.wait_css("#ehr-create-submit")
-            .await
-            .click()
-            .await
-            .expect("create the EHR");
-        for _ in 0..50 {
-            if h.current_url().await.contains(ehr_id) {
-                return true;
-            }
-            tokio::time::sleep(Duration::from_millis(200)).await;
+        h.wait_css("#ehr-create-submit").await.click().await;
+        if poll_until_for(Duration::from_secs(10), async || {
+            h.current_url().await.contains(ehr_id)
+        })
+        .await
+        {
+            return true;
         }
     }
     false
@@ -117,12 +114,13 @@ async fn create_ehr_until_navigated(h: &Harness, ehr_id: &str) -> bool {
 /// On any interaction failure.
 async fn click_until_xpath(h: &Harness, css: &str, xpath: &str) -> bool {
     for _ in 0..5 {
-        h.wait_css(css).await.click().await.expect("click");
-        for _ in 0..25 {
-            if is_present_by(h, By::XPath(xpath)).await {
-                return true;
-            }
-            tokio::time::sleep(Duration::from_millis(200)).await;
+        h.wait_css(css).await.click().await;
+        if poll_until_for(Duration::from_secs(5), async || {
+            is_present_by(h, By::XPath(xpath)).await
+        })
+        .await
+        {
+            return true;
         }
     }
     false
@@ -163,7 +161,7 @@ async fn client_supplied_ehr_id_creates_that_ehr_and_then_conflicts() {
     // The summary header is the EHR resource read (`GET /ehr/{ehr_id}`): it
     // names the very id that was supplied.
     let summary = h.wait_css("#ehr-summary").await;
-    let text = summary.text().await.expect("summary text");
+    let text = summary.text().await;
     assert!(
         text.contains(&ehr_id),
         "the EHR summary must name the created id (got `{text}`)"
@@ -209,16 +207,13 @@ const SUBJECT_NAMESPACE: &str = "e2e-viewer-subjects";
 /// [`create_ehr_until_navigated`]: a click landing before hydration is lost.
 async fn create_ehr_until_left_finder(h: &Harness) -> bool {
     for _ in 0..3 {
-        h.wait_css("#ehr-create-submit")
-            .await
-            .click()
-            .await
-            .expect("create the EHR");
-        for _ in 0..50 {
-            if !h.current_url().await.ends_with("/ehrs") {
-                return true;
-            }
-            tokio::time::sleep(Duration::from_millis(200)).await;
+        h.wait_css("#ehr-create-submit").await.click().await;
+        if poll_until_for(Duration::from_secs(10), async || {
+            !h.current_url().await.ends_with("/ehrs")
+        })
+        .await
+        {
+            return true;
         }
     }
     false
@@ -254,7 +249,7 @@ async fn a_subject_bound_ehr_created_in_the_viewer_carries_its_subject() {
 
     // The header's identity strip names the subject id AND its namespace.
     let identity = h.wait_css("#ehr-identity").await;
-    let text = identity.text().await.expect("the identity line's text");
+    let text = identity.text().await;
     assert!(
         text.contains(&subject_id) && text.contains(SUBJECT_NAMESPACE),
         "the header must name the subject the form bound (got `{text}`)"
@@ -265,11 +260,7 @@ async fn a_subject_bound_ehr_created_in_the_viewer_carries_its_subject() {
     // identically — one read, two renderings. It is also the tab the detail
     // screen opens on, so the assertion below runs on the landing page; opening
     // it explicitly first puts the tab in the URL.
-    h.wait_css("a[href$='tab=status']")
-        .await
-        .click()
-        .await
-        .expect("open the Status tab");
+    h.wait_css("a[href$='tab=status']").await.click().await;
     h.wait_url_contains("tab=status").await;
     wait_text_contains(&h, "[data-status-fact='subject']", &subject_id).await;
     wait_text_contains(&h, "[data-status-fact='subject']", SUBJECT_NAMESPACE).await;

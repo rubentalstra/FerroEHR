@@ -373,11 +373,7 @@ async fn store_mapping(h: &Harness, name: &str, territory: &str) {
     )
     .await;
     wait_enabled(h, "#fhir-create-submit").await;
-    h.wait_css("#fhir-create-submit")
-        .await
-        .click()
-        .await
-        .expect("store the mapping");
+    h.wait_css("#fhir-create-submit").await.click().await;
 }
 
 /// Run the dry-run panel over one resource body and wait for its verdict.
@@ -388,11 +384,7 @@ async fn dry_run(h: &Harness, resource: &str) {
     retype(h, "#fhir-dry-run-type", "Observation").await;
     retype(h, "#fhir-dry-run-resource", resource).await;
     wait_enabled(h, "#fhir-dry-run-submit").await;
-    h.wait_css("#fhir-dry-run-submit")
-        .await
-        .click()
-        .await
-        .expect("run the dry run");
+    h.wait_css("#fhir-dry-run-submit").await.click().await;
 }
 
 /// The mapping-store round trip: store a mapping through the JSON document
@@ -438,8 +430,7 @@ async fn the_mapping_store_creates_edits_and_deletes_a_mapping() {
     h.wait_css(&format!("[data-fhir-edit='{ROUND_TRIP_MAPPING}']"))
         .await
         .click()
-        .await
-        .expect("open the mapping editor");
+        .await;
     h.wait_css("#fhir-edit").await;
     let mut edited = definition(ROUND_TRIP_MAPPING, "US");
     edited["template_id"] = serde_json::Value::from(TEMPLATE_ID);
@@ -447,11 +438,7 @@ async fn the_mapping_store_creates_edits_and_deletes_a_mapping() {
         serde_json::Value::from("http://example.org/StructureDefinition/edited");
     retype(&h, "#fhir-edit-definition", &edited.to_string()).await;
     wait_enabled(&h, "#fhir-edit-save").await;
-    h.wait_css("#fhir-edit-save")
-        .await
-        .click()
-        .await
-        .expect("save the mapping");
+    h.wait_css("#fhir-edit-save").await.click().await;
     wait_text_contains(
         &h,
         &row_cell(ROUND_TRIP_MAPPING, "profile"),
@@ -503,11 +490,7 @@ async fn a_rejected_mapping_document_surfaces_the_diagnostic_verbatim() {
     )
     .await;
     wait_enabled(&h, "#fhir-create-submit").await;
-    h.wait_css("#fhir-create-submit")
-        .await
-        .click()
-        .await
-        .expect("send the rejected document");
+    h.wait_css("#fhir-create-submit").await.click().await;
 
     // The CDR's own words, unedited — the viewer never paraphrases a
     // diagnostic it did not author.
@@ -648,11 +631,7 @@ async fn the_read_path_viewer_answers_for_a_patient() {
     // answer rather than an error.
     retype(&h, "#fhir-read-type", "Observation").await;
     retype(&h, "#fhir-read-patient", "e2e-viewer-fhir-nobody").await;
-    h.wait_css("#fhir-read-submit")
-        .await
-        .click()
-        .await
-        .expect("read the facade");
+    h.wait_css("#fhir-read-submit").await.click().await;
     // The scope lands in the URL, so the read is shareable and refresh-safe.
     h.wait_url_contains("resource_type=Observation").await;
     wait_text_contains(&h, "#fhir-read-result", "\"total\": 0").await;
@@ -661,11 +640,7 @@ async fn the_read_path_viewer_answers_for_a_patient() {
     // The seeded patient: the committed COMPOSITION comes back reverse-mapped
     // through the stored mapping.
     retype(&h, "#fhir-read-patient", patient).await;
-    h.wait_css("#fhir-read-submit")
-        .await
-        .click()
-        .await
-        .expect("read the seeded patient");
+    h.wait_css("#fhir-read-submit").await.click().await;
     wait_text_contains(&h, "#fhir-read-result", &format!("Patient/{patient}")).await;
     wait_text_contains(&h, "#fhir-read-result", "valueQuantity").await;
     h.shot(2, "fhir-read-bundle").await;
@@ -673,11 +648,7 @@ async fn the_read_path_viewer_answers_for_a_patient() {
     // A refused read: the connector carries no mapping machinery for this type,
     // and its OperationOutcome is rendered verbatim, inline, never as a toast.
     retype(&h, "#fhir-read-type", "MedicationRequest").await;
-    h.wait_css("#fhir-read-submit")
-        .await
-        .click()
-        .await
-        .expect("read an unsupported type");
+    h.wait_css("#fhir-read-submit").await.click().await;
     wait_text_contains(
         &h,
         "#fhir-read-outcome",

@@ -34,7 +34,10 @@ use reqwest::StatusCode;
 
 use std::path::{Path, PathBuf};
 
-use common::{Harness, env, is_present, login_basic, login_basic_as, wait_enabled, wait_visible};
+use common::{
+    Harness, env, is_present, login_basic, login_basic_as, wait_css_colour, wait_css_value_still,
+    wait_enabled, wait_visible,
+};
 
 /// The detail-route id of the fixture template the browse journeys upload; its
 /// detail screen is captured when the template is present on the stack.
@@ -207,13 +210,7 @@ async fn capture(h: &Harness, dir: &Path, path: &str, slug: &str, content: Optio
 /// # Panics
 /// When the control is not a select or the option is absent.
 async fn pick_option(h: &Harness, css: &str, value: &str) {
-    let element = h.wait_css(css).await;
-    thirtyfour::components::SelectElement::new(&element)
-        .await
-        .expect("the control is a select")
-        .select_by_value(value)
-        .await
-        .expect("pick the option");
+    h.wait_css(css).await.select_by_value(value).await;
 }
 
 /// Pick the first real composition in the Commit tab's amend picker (index 0 is
@@ -222,19 +219,39 @@ async fn pick_option(h: &Harness, css: &str, value: &str) {
 /// # Panics
 /// When the picker holds no composition — the seeded EHR always has one.
 async fn pick_composition(h: &Harness) {
-    let element = h.wait_css("#stage-composition").await;
-    thirtyfour::components::SelectElement::new(&element)
+    h.wait_css("#stage-composition")
         .await
-        .expect("the composition picker is a select")
         .select_by_index(1)
-        .await
-        .expect("pick the seeded composition");
+        .await;
 }
 
-/// The settle a themed capture needs: the viewer's surfaces animate
-/// `transition-colors`, and a screenshot racing the token switch freezes a
-/// half-themed frame. An animation wait, not a condition wait.
-const THEME_SETTLE: std::time::Duration = std::time::Duration::from_millis(700);
+/// The dark page background the token layer paints: `--surface` under `.dark`
+/// is `#0f172a` (`style/tailwind.css` §palette), applied to `<html>` by
+/// `@layer base { html { background-color: var(--surface) } }`. Observing the
+/// computed colour is how "the theme is applied" stops being a guess; which
+/// CSSOM spelling the browser hands back is not part of the claim, which is
+/// why `wait_css_colour` compares channels.
+const DARK_SURFACE: &str = "rgb(15, 23, 42)";
+
+/// The one class the viewer animates colours with, and so the only surface a
+/// themed capture can catch mid-transition.
+const THEMED_TRANSITION: &str = ".transition-colors";
+
+/// Wait until the dark theme is fully applied AND STILL — the precondition of
+/// every dark capture.
+///
+/// Three conditions, no sleeps. The `dark` class on `<html>` is the viewer's
+/// own switch, applied from a browser-only effect that re-reads the stored
+/// preference after hydration (rules §8), so the server pass never carries it.
+/// The resolved page background is the token layer actually having swapped,
+/// which the class alone does not prove. And a surface carrying
+/// `transition-colors` is still between its two colours at that instant, so a
+/// capture taken then freezes a half-themed frame.
+async fn wait_dark_applied(h: &Harness) {
+    h.wait_css("html.dark").await;
+    wait_css_colour(h, "html", "background-color", DARK_SURFACE).await;
+    wait_css_value_still(h, THEMED_TRANSITION, "background-color").await;
+}
 
 /// Turn dark mode ON for this browser session and wait until it is applied.
 ///
@@ -244,10 +261,8 @@ async fn enable_dark_mode(h: &Harness) {
     h.wait_css("button[aria-label='Toggle dark mode']")
         .await
         .click()
-        .await
-        .expect("turn dark mode on");
-    h.wait_css("html.dark").await;
-    tokio::time::sleep(THEME_SETTLE).await;
+        .await;
+    wait_dark_applied(h).await;
 }
 
 /// Navigate to `path` and write its DARK variant.
@@ -258,11 +273,12 @@ async fn enable_dark_mode(h: &Harness) {
 async fn capture_dark(h: &Harness, dir: &Path, path: &str, slug: &str, content: Option<&str>) {
     h.goto(path).await;
     h.wait_css("footer").await;
-    h.wait_css("html.dark").await;
     if let Some(selector) = content {
         h.wait_css(selector).await;
     }
-    tokio::time::sleep(THEME_SETTLE).await;
+    // After the content wait, so the settle covers the screen's OWN surfaces
+    // rather than only the chrome that was already on the page.
+    wait_dark_applied(h).await;
     shot_to(h, dir, slug).await;
 }
 
@@ -283,7 +299,7 @@ async fn capture_dark_gated(
         println!("SKIP docs-shots: {slug} not captured — the CDR under test does not serve it");
         return;
     }
-    tokio::time::sleep(THEME_SETTLE).await;
+    wait_dark_applied(h).await;
     shot_to(h, dir, slug).await;
 }
 
@@ -552,10 +568,7 @@ async fn capture_documentation_screenshots() {
     // The metrics card sits below the fold on the capture window, and a
     // screenshot is the VIEWPORT: scroll the samples table into view or the
     // published shot shows the top of the page twice.
-    detail
-        .scroll_into_view()
-        .await
-        .expect("scroll to the metric samples");
+    detail.scroll_into_view().await;
     shot_to(&h, &dir, "operations/operations-metric").await;
 
     // The ehr-detail and composition-viewer screens render the EHR + the
@@ -572,8 +585,7 @@ async fn capture_documentation_screenshots() {
         h.wait_xpath("//a[contains(., 'Compositions')]")
             .await
             .click()
-            .await
-            .expect("open the compositions tab");
+            .await;
         h.wait_css("#compositions-filter").await;
         h.wait_css(&format!("a[href*='{vo_id}']")).await;
         shot_to(&h, &dir, "ehrs/compositions/list").await;
@@ -638,28 +650,15 @@ async fn capture_documentation_screenshots() {
         pick_option(&h, "#stage-kind", "amend").await;
         pick_composition(&h).await;
         wait_enabled(&h, "#stage-body").await;
-        h.wait_css("#stage-add-change")
-            .await
-            .click()
-            .await
-            .expect("stage the composition amendment");
+        h.wait_css("#stage-add-change").await.click().await;
         pick_option(&h, "#stage-kind", "status").await;
         wait_enabled(&h, "#stage-body").await;
-        h.wait_css("#stage-add-change")
-            .await
-            .click()
-            .await
-            .expect("stage the status modification");
+        h.wait_css("#stage-add-change").await.click().await;
         h.wait_css("#stage-description")
             .await
             .send_keys("Encounter amended; EHR status refreshed")
-            .await
-            .expect("describe the change set");
-        h.wait_css("#stage-list")
-            .await
-            .scroll_into_view()
-            .await
-            .expect("scroll to the staging list");
+            .await;
+        h.wait_css("#stage-list").await.scroll_into_view().await;
         shot_to(&h, &dir, "ehrs/contributions/commit").await;
         // EHR detail: the directory tab (the create-empty state — the seeded
         // EHR has no directory).
@@ -676,22 +675,13 @@ async fn capture_documentation_screenshots() {
         // and commit it, so the published shot shows a real tree rather than a
         // bare root (owner directive: every possible view, including directory
         // both before and after it exists).
-        h.wait_css("#directory-create")
-            .await
-            .click()
-            .await
-            .expect("create the empty directory");
+        h.wait_css("#directory-create").await.click().await;
         h.wait_css("#directory-edit").await;
         h.wait_css("[aria-label='Add subfolder']")
             .await
             .click()
-            .await
-            .expect("add a subfolder at the root");
-        h.wait_css("#directory-save")
-            .await
-            .click()
-            .await
-            .expect("commit the subfolder");
+            .await;
+        h.wait_css("#directory-save").await.click().await;
         // The toast overlays the bottom-right corner; let it clear before the
         // shot and before the history panel click below.
         h.wait_toasts_cleared().await;
@@ -700,51 +690,28 @@ async fn capture_documentation_screenshots() {
         h.wait_xpath("//button[contains(normalize-space(.), 'Version history')]")
             .await
             .click()
-            .await
-            .expect("open the version history panel");
+            .await;
         h.wait_xpath("//button[contains(normalize-space(.), 'v1')]")
             .await;
         shot_to(&h, &dir, "ehrs/directory/history").await;
         // EHR detail: the commit-composition form (scrolled into view).
         h.goto(&format!("/ehrs/{ehr_id}?tab=compositions")).await;
         let commit_body = h.wait_css("#commit-body").await;
-        commit_body
-            .scroll_into_view()
-            .await
-            .expect("scroll to the commit form");
+        commit_body.scroll_into_view().await;
         shot_to(&h, &dir, "ehrs/compositions/commit").await;
         // Composition viewer: the edit-as-new-version editor open.
         h.goto(&format!("/ehrs/{ehr_id}/compositions/{vo_id}"))
             .await;
-        h.wait_css("#edit-new-version")
-            .await
-            .click()
-            .await
-            .expect("open the version editor");
+        h.wait_css("#edit-new-version").await.click().await;
         let edit_body = h.wait_css("#edit-body").await;
-        edit_body
-            .scroll_into_view()
-            .await
-            .expect("scroll to the editor");
+        edit_body.scroll_into_view().await;
         shot_to(&h, &dir, "ehrs/compositions/editor").await;
         // EHR detail: the tag browser, with one real tag on it — set through
         // the composition viewer's own panel, so the published shot shows a
         // populated group rather than the empty state.
-        h.wait_css("#tag-key")
-            .await
-            .send_keys("reviewed")
-            .await
-            .expect("type the tag key");
-        h.wait_css("#tag-value")
-            .await
-            .send_keys("true")
-            .await
-            .expect("type the tag value");
-        h.wait_css("#tag-save")
-            .await
-            .click()
-            .await
-            .expect("save the tag");
+        h.wait_css("#tag-key").await.send_keys("reviewed").await;
+        h.wait_css("#tag-value").await.send_keys("true").await;
+        h.wait_css("#tag-save").await.click().await;
         h.wait_css("[data-tag-key='reviewed']").await;
         h.wait_toasts_cleared().await;
         capture(
@@ -767,58 +734,46 @@ async fn capture_documentation_screenshots() {
         .send_keys(
             "SELECT c/context/start_time/value AS time,              c/content[openEHR-EHR-EVALUATION.minimal.v1]/data[at0001]/items[at0002]/value/magnitude AS magnitude              FROM EHR e CONTAINS COMPOSITION c              WHERE c/archetype_details/template_id/value = 'minimal_evaluation.en.v1'",
         )
-        .await
-        .expect("type the AQL");
+        .await;
     // Run is disabled until the typed AQL reaches the signal; a click before
     // then is intercepted by the toolbar, so the wait carries the condition.
     h.wait_clickable_xpath("//button[normalize-space(.)='Run']")
         .await
         .click()
-        .await
-        .expect("run");
+        .await;
     let export_button = h.wait_xpath("//button[contains(., 'Export CSV')]").await;
     // The results section renders below the editor/params cards — scroll it
     // into view so the capture actually shows rows, not just the header.
-    export_button
-        .scroll_into_view()
-        .await
-        .expect("scroll to the results");
+    export_button.scroll_into_view().await;
     h.wait_css("table tbody tr").await;
     shot_to(&h, &dir, "queries/query-aql-results").await;
     h.wait_xpath("//button[normalize-space(.)='Chart']")
         .await
         .click()
-        .await
-        .expect("chart toggle");
+        .await;
     let chart = h
         .wait_css("svg.chartistry_chart, div.overflow-x-auto svg")
         .await;
-    chart.scroll_into_view().await.expect("scroll to the chart");
+    chart.scroll_into_view().await;
     shot_to(&h, &dir, "queries/query-results-chart").await;
 
     // The user menu + the access drawer (identity, policy source, session
     // grants, scope previewer).
     h.goto("/").await;
-    h.wait_css("#user-menu-trigger button")
-        .await
-        .click()
-        .await
-        .expect("open the user menu");
+    h.wait_css("#user-menu-trigger button").await.click().await;
     h.wait_css(".thaw-popover-surface").await;
     shot_to(&h, &dir, "dashboard/user-menu").await;
     h.wait_xpath("//button[contains(., 'View scopes')]")
         .await
         .click()
-        .await
-        .expect("open the scopes drawer");
+        .await;
     h.wait_css("#access-drawer").await;
     // Fill the previewer so the published capture shows what it is FOR: two
     // parsed master08 grants, not an empty field.
     h.wait_css("#scope-previewer-input")
         .await
         .send_keys("patient/composition-*.rs user/template-MyHospital::Template.v0.crud")
-        .await
-        .expect("preview two scopes");
+        .await;
     h.wait_css("#scope-preview-results [data-scope-grant='resource']")
         .await;
     shot_to(&h, &dir, "dashboard/scopes-drawer").await;
@@ -884,7 +839,7 @@ async fn dark_ordinary_screens(h: &Harness, dir: &Path) {
     h.wait_css("footer").await;
     h.wait_css("html.dark").await;
     if is_present(h, "#terminology-descriptor").await {
-        tokio::time::sleep(THEME_SETTLE).await;
+        wait_dark_applied(h).await;
         shot_to(h, dir, "terminology/terminology-dark").await;
     } else {
         println!(
@@ -958,10 +913,6 @@ async fn dark_admin_screens(h: &Harness, dir: &Path) {
 /// no viewer cookie, so the admin sign-in cannot land on top of the ordinary
 /// one. The main pass has already finished by the time this runs, so nothing
 /// later depends on the ordinary session.
-#[expect(
-    clippy::too_many_lines,
-    reason = "one linear capture script over the admin-gated views — sectioning it would obscure the walkthrough order"
-)]
 async fn capture_admin_screens(dir: &Path) {
     let Some(h) = Harness::start("docs-shots-admin").await else {
         return;
@@ -979,11 +930,7 @@ async fn capture_admin_screens(dir: &Path) {
 
     // The raw-record view: open the first row's disclosure and capture the
     // full stored FHIR AuditEvent as the reader will see it.
-    h.wait_css("tbody tr details summary")
-        .await
-        .click()
-        .await
-        .expect("open the raw record");
+    h.wait_css("tbody tr details summary").await.click().await;
     h.wait_css("tbody tr details pre").await;
     shot_to(&h, dir, "audit/audit-record").await;
 
@@ -1050,10 +997,7 @@ async fn capture_admin_screens(dir: &Path) {
         // The two verification panels sit below the fold on the capture window,
         // and a screenshot is the VIEWPORT: scroll them into view for their own
         // shot, or the book documents them with a picture of the store.
-        dry_run
-            .scroll_into_view()
-            .await
-            .expect("scroll to the verification panels");
+        dry_run.scroll_into_view().await;
         shot_to(&h, dir, "fhir/fhir-verify").await;
     }
 
@@ -1081,11 +1025,7 @@ async fn capture_admin_screens(dir: &Path) {
         // never the dialog's confirm): the dialog is the informative state, it
         // spells out the EHR id and what the physical delete destroys.
         h.goto(&format!("/ehrs/{ehr_id}")).await;
-        h.wait_css("#ehr-delete")
-            .await
-            .click()
-            .await
-            .expect("open the EHR delete dialog");
+        h.wait_css("#ehr-delete").await.click().await;
         // thaw's dialog is never removed from the DOM (CSSTransition hides it
         // with `display: none`), so wait for VISIBILITY — presence would let the
         // capture race the open.
@@ -1103,16 +1043,11 @@ async fn capture_admin_screens(dir: &Path) {
     h.wait_css("#ops-log-filter")
         .await
         .send_keys("ferroehr=debug,sqlx=warn")
-        .await
-        .expect("type the filter directives");
+        .await;
     // One click, no retry: `Harness::goto` waits for the shell's hydration
     // marker, so the listener is attached before anything here runs — a dialog
     // that does not open is a defect to fail on, never a shot to skip.
-    h.wait_css("#ops-log-apply")
-        .await
-        .click()
-        .await
-        .expect("open the log-filter dialog");
+    h.wait_css("#ops-log-apply").await.click().await;
     wait_visible(&h, "#ops-log-apply-confirm").await;
     shot_to(&h, dir, "operations/operations-log-filter").await;
 

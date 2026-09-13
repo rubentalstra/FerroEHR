@@ -148,11 +148,7 @@ async fn set_tag(h: &Harness, key: &str, value: &str) {
     h.wait_toasts_cleared().await;
     retype(h, "#tag-key", key).await;
     retype(h, "#tag-value", value).await;
-    h.wait_css("#tag-save")
-        .await
-        .click()
-        .await
-        .expect("save the tag");
+    h.wait_css("#tag-save").await.click().await;
     assert!(
         wait_text(h, "Tag saved").await,
         "saving tag `{key}` never reported the replaced collection: {}",
@@ -220,11 +216,7 @@ async fn composition_tags_are_set_browsed_and_deleted() {
 
     // Opening the group resolves the tagged id back to its owner — a tag names
     // its target without naming that target's kind, so this is a CDR question.
-    h.wait_css(&group)
-        .await
-        .click()
-        .await
-        .expect("open the tagged object");
+    h.wait_css(&group).await.click().await;
     h.wait_url_contains(&format!("/ehrs/{ehr_id}/compositions/{composition}"))
         .await;
     h.wait_css("#composition-tag-set").await;
@@ -236,8 +228,7 @@ async fn composition_tags_are_set_browsed_and_deleted() {
     h.wait_css(&format!("[data-tag-delete='{removed}']"))
         .await
         .click()
-        .await
-        .expect("delete the tag");
+        .await;
     assert!(
         wait_text(&h, "Tag deleted").await,
         "deleting the tag never reported: {}",
@@ -287,11 +278,7 @@ async fn ehr_status_tags_are_their_own_collection() {
 
     // Opening the group lands back on the Status tab, which is the screen that
     // owns the EHR_STATUS.
-    h.wait_css("[data-tag-target]")
-        .await
-        .click()
-        .await
-        .expect("open the tagged object");
+    h.wait_css("[data-tag-target]").await.click().await;
     h.wait_url_contains("tab=status").await;
     h.wait_css("#ehr-status-tag-set").await;
     h.wait_css(&format!("[data-tag-key='{key}']")).await;

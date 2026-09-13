@@ -66,9 +66,9 @@ async fn admin_browses_audit_records_and_the_empty_state() {
 
     // The raw-record disclosure carries the stored FHIR AuditEvent.
     let summary = h.wait_css("tbody tr details summary").await;
-    summary.click().await.expect("open the raw record");
+    summary.click().await;
     let raw = h.wait_css("tbody tr details pre").await;
-    let text = raw.text().await.expect("raw text");
+    let text = raw.text().await;
     assert!(
         text.contains("\"resourceType\": \"AuditEvent\""),
         "the raw view shows the stored FHIR AuditEvent, got: {text:.200}"

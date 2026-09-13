@@ -38,7 +38,8 @@
 use crate::common;
 
 use common::{
-    Harness, count_matching, env, login_basic, retype, wait_enabled, wait_text, wait_text_contains,
+    Harness, count_matching, env, login_basic, poll_until, retype, wait_enabled, wait_text,
+    wait_text_contains,
 };
 
 /// The template the E2E harness seeds; its CDR-generated example composition is
@@ -145,13 +146,7 @@ async fn contribution_total(http: &reqwest::Client, v1: &str, ehr_id: &str) -> u
 /// # Panics
 /// When the control is not a select or the option is absent.
 async fn pick(h: &Harness, css: &str, value: &str) {
-    let element = h.wait_css(css).await;
-    thirtyfour::components::SelectElement::new(&element)
-        .await
-        .expect("the control is a select")
-        .select_by_value(value)
-        .await
-        .expect("pick the option");
+    h.wait_css(css).await.select_by_value(value).await;
 }
 
 /// How many rows the staging list currently holds.
@@ -167,14 +162,13 @@ async fn staged_rows(h: &Harness) -> usize {
 /// When it never does, reporting what the list held instead.
 async fn wait_staged_rows(h: &Harness, expected: usize, what: &str) {
     let mut last = usize::MAX;
-    for _ in 0..75 {
+    let settled = poll_until(async || {
         last = staged_rows(h).await;
-        if last == expected {
-            return;
-        }
-        tokio::time::sleep(std::time::Duration::from_millis(200)).await;
-    }
-    panic!(
+        last == expected
+    })
+    .await;
+    assert!(
+        settled,
         "{what}: the staging list never held {expected} row(s) (last saw {last}): {}",
         h.evidence_dump("staging").await
     );
@@ -185,11 +179,8 @@ async fn wait_staged_rows(h: &Harness, expected: usize, what: &str) {
 /// silently lost).
 async fn stage_the_draft(h: &Harness, what: &str) {
     wait_enabled(h, "#stage-add-change").await;
-    h.wait_css("#stage-add-change")
-        .await
-        .click()
-        .await
-        .unwrap_or_else(|e| panic!("stage {what}: {e}"));
+    println!("staging {what}");
+    h.wait_css("#stage-add-change").await.click().await;
 }
 
 /// Stage a COMPOSITION creation from the CDR's own example document.
@@ -235,12 +226,7 @@ async fn two_staged_changes_commit_as_one_contribution_with_two_versions() {
     h.shot(2, "two-staged").await;
 
     // The button states the count it is about to commit.
-    let label = h
-        .wait_css("#stage-commit")
-        .await
-        .text()
-        .await
-        .unwrap_or_default();
+    let label = h.wait_css("#stage-commit").await.text().await;
     assert!(
         label.contains("Commit 2 changes as one contribution"),
         "the commit button must state the staged count (read `{label}`)"
@@ -254,15 +240,11 @@ async fn two_staged_changes_commit_as_one_contribution_with_two_versions() {
     .await;
     h.wait_toasts_cleared().await;
     wait_enabled(&h, "#stage-commit").await;
-    h.wait_css("#stage-commit")
-        .await
-        .click()
-        .await
-        .expect("commit the change set");
+    h.wait_css("#stage-commit").await.click().await;
 
     // One CONTRIBUTION, two versions — the result pane names both.
     let result = h.wait_css("#stage-result").await;
-    let reported = result.text().await.unwrap_or_default();
+    let reported = result.text().await;
     assert!(
         reported.contains("committed with 2 versions"),
         "the commit must report ONE contribution carrying TWO versions (read `{reported}`): {}",
@@ -292,8 +274,7 @@ async fn two_staged_changes_commit_as_one_contribution_with_two_versions() {
     h.wait_xpath("//button[normalize-space(.)='Look up']")
         .await
         .click()
-        .await
-        .expect("look the contribution up");
+        .await;
     // The CONTRIBUTION's own `versions` are the OBJECT_REFs of the versions
     // this commit minted — one COMPOSITION and one EHR_STATUS.
     assert!(
@@ -351,16 +332,12 @@ async fn a_refused_member_commits_nothing_and_keeps_the_staging() {
 
     h.wait_toasts_cleared().await;
     wait_enabled(&h, "#stage-commit").await;
-    h.wait_css("#stage-commit")
-        .await
-        .click()
-        .await
-        .expect("commit the change set");
+    h.wait_css("#stage-commit").await.click().await;
 
     // The CDR's diagnostic, verbatim, beside the failure toast: the status it
     // answered plus the reason IN ITS OWN WORDS, naming the template.
     let diagnostic = h.wait_css("#stage-diagnostic").await;
-    let text = diagnostic.text().await.unwrap_or_default();
+    let text = diagnostic.text().await;
     assert!(
         text.contains("422") && text.contains(MISSING_TEMPLATE),
         "the CDR's own diagnostic must render verbatim (read `{text}`): {}",

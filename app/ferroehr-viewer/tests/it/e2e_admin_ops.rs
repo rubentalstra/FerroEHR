@@ -47,7 +47,8 @@ use crate::common;
 use std::time::Duration;
 
 use common::{
-    Harness, confirm_in_dialog, env, is_present, login_basic, login_basic_as, wait_css_absent,
+    Harness, confirm_in_dialog, env, is_present, login_basic, login_basic_as, poll_until,
+    poll_until_for, wait_css_absent,
 };
 
 /// A fixture OPT no other journey touches, and its template id — deleted from
@@ -135,11 +136,12 @@ async fn ensure_template(h: &Harness, fixture: &str, template_id: &str) {
     h.wait_hydrated().await;
     for _ in 0..4 {
         common::upload_via_dialog(h, &fixture_opt_path(fixture)).await;
-        for _ in 0..40 {
-            if is_present(h, &row_delete).await {
-                return;
-            }
-            tokio::time::sleep(Duration::from_millis(200)).await;
+        if poll_until_for(Duration::from_secs(8), async || {
+            is_present(h, &row_delete).await
+        })
+        .await
+        {
+            return;
         }
     }
     let evidence = h.evidence_dump("upload-exhausted").await;
@@ -232,29 +234,22 @@ async fn admin_saves_a_namespaced_stored_query_and_deletes_it() {
         // not-yet-hydrated first pass would otherwise double every field's
         // content and save a mangled query.
         let editor = h.wait_css("#aql-editor").await;
-        editor.clear().await.expect("clear the AQL");
+        editor.clear().await;
         editor
             .send_keys("SELECT c/uid/value FROM EHR e CONTAINS COMPOSITION c")
-            .await
-            .expect("type the AQL");
+            .await;
         let namespace = h.wait_css("#aql-save-namespace").await;
-        namespace.clear().await.expect("clear the namespace");
-        namespace
-            .send_keys(QUERY_NAMESPACE)
-            .await
-            .expect("type the stored-query namespace");
+        namespace.clear().await;
+        namespace.send_keys(QUERY_NAMESPACE).await;
         let name = h.wait_css("#aql-save-name").await;
-        name.clear().await.expect("clear the name");
-        name.send_keys(QUERY_BARE_NAME)
-            .await
-            .expect("type the stored-query name");
+        name.clear().await;
+        name.send_keys(QUERY_BARE_NAME).await;
         let save = h.wait_xpath("//button[normalize-space(.)='Save']").await;
-        if save.is_enabled().await.unwrap_or(false) {
-            save.click().await.expect("save the query");
+        if poll_until_for(Duration::from_secs(1), async || save.enabled().await).await {
+            save.click().await;
             saved = true;
             break;
         }
-        tokio::time::sleep(Duration::from_millis(300)).await;
     }
     assert!(saved, "the Save button never enabled (typing never took)");
     // The dispatch is an in-flight fetch the next navigation would ABORT —
@@ -351,28 +346,18 @@ async fn admin_versions_a_stored_query() {
         .await;
     let version_field = h.wait_css("#aql-save-version").await;
     let mut proposed = String::new();
-    for _ in 0..20 {
-        proposed = version_field
-            .prop("value")
-            .await
-            .expect("read the version field")
-            .unwrap_or_default();
-        if proposed == "1.1.0" {
-            break;
-        }
-        tokio::time::sleep(Duration::from_millis(250)).await;
-    }
+    poll_until(async || {
+        proposed = version_field.prop("value").await;
+        proposed == "1.1.0"
+    })
+    .await;
     assert_eq!(
         proposed, "1.1.0",
         "loading version 1.0.0 must propose 1.1.0 in the version field"
     );
     let name_field = h.wait_css("#aql-save-name").await;
     assert_eq!(
-        name_field
-            .prop("value")
-            .await
-            .expect("read the name field")
-            .unwrap_or_default(),
+        name_field.prop("value").await,
         VERSIONED_BARE_NAME,
         "the loaded name must split back into the bare-name field"
     );
@@ -403,33 +388,22 @@ async fn save_query_version(h: &Harness, version: &str, fresh: bool) -> bool {
         let version_field = h.wait_css("#aql-save-version").await;
         if fresh {
             // Load-bearing on a RETRY: without it a second typing pass appends
-            // to what the first one left, producing a doubled name. The results
-            // are handled rather than dropped (the `let_underscore_drop` rule).
+            // to what the first one left, producing a doubled name.
             for field in [&editor, &namespace, &name, &version_field] {
-                field.clear().await.expect("clear a save field");
+                field.clear().await;
             }
         }
         editor
             .send_keys("SELECT c/uid/value FROM EHR e CONTAINS COMPOSITION c")
-            .await
-            .expect("type the AQL");
-        namespace
-            .send_keys(QUERY_NAMESPACE)
-            .await
-            .expect("type the namespace");
-        name.send_keys(VERSIONED_BARE_NAME)
-            .await
-            .expect("type the query name");
-        version_field
-            .send_keys(version)
-            .await
-            .expect("type the version");
+            .await;
+        namespace.send_keys(QUERY_NAMESPACE).await;
+        name.send_keys(VERSIONED_BARE_NAME).await;
+        version_field.send_keys(version).await;
         let save = h.wait_xpath("//button[normalize-space(.)='Save']").await;
-        if save.is_enabled().await.unwrap_or(false) {
-            save.click().await.expect("save the query");
+        if poll_until_for(Duration::from_secs(1), async || save.enabled().await).await {
+            save.click().await;
             return true;
         }
-        tokio::time::sleep(Duration::from_millis(300)).await;
     }
     false
 }
@@ -450,11 +424,7 @@ async fn admin_deletes_an_ehr() {
     // landing before hydration is silently lost (#2285's class).
     h.goto("/ehrs").await;
     h.wait_hydrated().await;
-    h.wait_css("#ehr-create-submit")
-        .await
-        .click()
-        .await
-        .expect("create an EHR");
+    h.wait_css("#ehr-create-submit").await.click().await;
     h.wait_url_contains("/ehrs/").await;
     let url = h.current_url().await;
     let ehr_id = url

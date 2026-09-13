@@ -41,11 +41,9 @@
 
 use crate::common;
 
-use std::time::Duration;
-
 use common::{
-    Harness, confirm_in_dialog, env, is_present, login_basic_as, retype, wait_css_absent,
-    wait_text, wait_text_contains,
+    Harness, confirm_in_dialog, env, is_present, login_basic_as, poll_until, retype,
+    wait_css_absent, wait_text, wait_text_contains,
 };
 use reqwest::StatusCode;
 
@@ -152,11 +150,8 @@ async fn ensure_adl2_template_present(h: &Harness, relative: &str, hrid: &str) -
         return false;
     }
     common::upload_via_dialog(h, &fixture_adl2_path(relative)).await;
-    for _ in 0..75 {
-        if is_present(h, &link).await {
-            return true;
-        }
-        tokio::time::sleep(Duration::from_millis(200)).await;
+    if poll_until(async || is_present(h, &link).await).await {
+        return true;
     }
     let evidence = h.evidence_dump("adl2-upload-never-listed").await;
     panic!("`{hrid}` never appeared in the ADL2 listing after the upload ({evidence})");
@@ -179,8 +174,7 @@ async fn adl2_upload_lists_and_serves_source_and_json() {
     h.wait_css("a[data-template-family='adl2']")
         .await
         .click()
-        .await
-        .expect("switch to the ADL 2 family");
+        .await;
     h.wait_url_contains("family=adl2").await;
     h.shot(1, "adl2-family-selected").await;
 
@@ -188,11 +182,7 @@ async fn adl2_upload_lists_and_serves_source_and_json() {
     println!("this journey performed the v1.0.0 upload: {uploaded}");
     h.shot(2, "adl2-listed").await;
 
-    h.wait_css(&row_link(VERSIONED_V100))
-        .await
-        .click()
-        .await
-        .expect("open the ADL2 template detail");
+    h.wait_css(&row_link(VERSIONED_V100)).await.click().await;
     h.wait_url_contains("/templates/adl2/").await;
 
     // The Source pane is the default: the stored artefact, verbatim, with its
@@ -204,11 +194,7 @@ async fn adl2_upload_lists_and_serves_source_and_json() {
     // The AOM2 JSON pane serves the OperationalTemplateV2 projection. The
     // pretty-printed spelling (`"key": value`) only exists when the viewer
     // PARSED the body — the wire sends it unformatted.
-    h.wait_css("a[data-adl2-tab='json']")
-        .await
-        .click()
-        .await
-        .expect("open the AOM2 JSON pane");
+    h.wait_css("a[data-adl2-tab='json']").await.click().await;
     h.wait_url_contains("tab=json").await;
     wait_text_contains(&h, "#adl2-json-pane", "OPERATIONAL_TEMPLATE").await;
     wait_text_contains(&h, "#adl2-json-pane", "\"release_version\": \"1.0.0\"").await;
@@ -218,11 +204,7 @@ async fn adl2_upload_lists_and_serves_source_and_json() {
     // renders with the ADL 1.4 screen's own tree + inspector components: a tree
     // node exists only once the AOM2 parse and the WebTemplate build both
     // succeeded. The standing "no path catalog" note is gone with it.
-    h.wait_css("a[data-adl2-tab='catalog']")
-        .await
-        .click()
-        .await
-        .expect("open the path-catalog pane");
+    h.wait_css("a[data-adl2-tab='catalog']").await.click().await;
     h.wait_url_contains("tab=catalog").await;
     h.wait_css("#adl2-catalog-pane ul.text-sm li button").await;
     wait_text_contains(&h, "#adl2-catalog-pane", "Node inspector").await;
@@ -264,8 +246,7 @@ async fn adl2_versioned_get_reaches_both_stored_versions() {
     h.wait_css("a[data-adl2-version='1.1.0']")
         .await
         .click()
-        .await
-        .expect("pin the 1.1.0 release version");
+        .await;
     h.wait_url_contains("version=1.1.0").await;
     wait_text_contains(&h, "#adl2-source-pane", VERSIONED_V110).await;
     h.shot(2, "adl2-version-1-1-0").await;
@@ -274,8 +255,7 @@ async fn adl2_versioned_get_reaches_both_stored_versions() {
     h.wait_css("a[data-adl2-version='stored']")
         .await
         .click()
-        .await
-        .expect("clear the version pin");
+        .await;
     h.wait_url_not_contains("version=").await;
     wait_text_contains(&h, "#adl2-source-pane", VERSIONED_V100).await;
 
@@ -284,20 +264,12 @@ async fn adl2_versioned_get_reaches_both_stored_versions() {
     // The moved pane is the assertion — a `?version=1` substring would also
     // match `?version=1.1.0` and could pass without a navigation.
     retype(&h, "#adl2-version-input", "1").await;
-    h.wait_css("#adl2-version-apply")
-        .await
-        .click()
-        .await
-        .expect("apply the major-version prefix");
+    h.wait_css("#adl2-version-apply").await.click().await;
     wait_text_contains(&h, "#adl2-source-pane", VERSIONED_V110).await;
 
     // A `1.0` minor prefix resolves the other way, back off 1.1.0.
     retype(&h, "#adl2-version-input", "1.0").await;
-    h.wait_css("#adl2-version-apply")
-        .await
-        .click()
-        .await
-        .expect("apply the minor-version prefix");
+    h.wait_css("#adl2-version-apply").await.click().await;
     wait_text_contains(&h, "#adl2-source-pane", VERSIONED_V100).await;
     h.shot(3, "adl2-version-prefix").await;
 
@@ -329,8 +301,7 @@ async fn adl2_example_composition_renders() {
     h.wait_xpath("//button[normalize-space(text())='XML']")
         .await
         .click()
-        .await
-        .expect("switch the example to canonical XML");
+        .await;
     wait_text_contains(&h, "#adl2-example-pane", "<composition").await;
     h.shot(2, "adl2-example-xml").await;
 

@@ -40,7 +40,7 @@ use std::time::Duration;
 
 use common::{
     Harness, confirm_in_dialog, count_matching, env, is_present, login_basic, login_basic_as,
-    wait_text_contains,
+    poll_until_for, wait_text_contains,
 };
 use thirtyfour::prelude::*;
 
@@ -62,7 +62,7 @@ fn admin_credentials() -> (String, String) {
 /// # Panics
 /// When the element never appears or its text cannot be read.
 async fn text_of(h: &Harness, css: &str) -> String {
-    h.wait_css(css).await.text().await.expect("element text")
+    h.wait_css(css).await.text().await
 }
 
 /// The panel renders: the probe-gated nav entry exists, the readiness card lists
@@ -85,7 +85,7 @@ async fn operations_panel_reports_dependency_health_and_provenance() {
     // evaluates. The composed stack always has a database and applied
     // migrations, so those two rows must be there and must read UP.
     let health = h.wait_css("#ops-readiness table tbody").await;
-    let health_text = health.text().await.expect("health table text");
+    let health_text = health.text().await;
     for indicator in ["db", "migrations"] {
         assert!(
             health_text.contains(indicator),
@@ -134,10 +134,7 @@ async fn metric_browser_inspects_a_metric_from_the_registry() {
     // The picker is populated from `GET /management/metrics`; the stack has been
     // serving requests, so the registry is never empty.
     let select = h.wait_css("#ops-metric").await;
-    let options = select
-        .find_all(By::Css("option"))
-        .await
-        .expect("metric options");
+    let options = select.find_all(By::Css("option")).await;
     assert!(
         !options.is_empty(),
         "the CDR's metric registry must offer at least one metric"
@@ -146,18 +143,12 @@ async fn metric_browser_inspects_a_metric_from_the_registry() {
         .first()
         .expect("at least one metric")
         .attr("value")
-        .await
-        .expect("option value")
-        .unwrap_or_default();
+        .await;
     assert!(!first.is_empty(), "an option must carry its metric name");
 
     // ── The form round trip: submitting it lands on the URL carrying the
     //    selected metric, and the detail for that metric renders.
-    h.wait_css("#ops-metric-inspect")
-        .await
-        .click()
-        .await
-        .expect("submit the metric form");
+    h.wait_css("#ops-metric-inspect").await.click().await;
     h.wait_url_contains(&format!("metric={first}")).await;
     let detail = text_of(&h, "#ops-metric-detail").await;
     assert!(
@@ -184,9 +175,8 @@ async fn metric_browser_inspects_a_metric_from_the_registry() {
         let selected = h
             .wait_css(&format!("#ops-metric option[value='{preferred}']"))
             .await
-            .is_selected()
-            .await
-            .expect("option selection state");
+            .selected()
+            .await;
         assert!(
             selected,
             "a `?metric=` URL must pre-select that metric in the picker"
@@ -224,14 +214,12 @@ async fn admin_applies_and_resets_the_live_log_filter() {
         h.wait_css("#ops-log-filter")
             .await
             .send_keys(TEST_FILTER)
-            .await
-            .expect("type the filter directives");
+            .await;
         let apply = h.wait_css("#ops-log-apply").await;
-        if apply.is_enabled().await.unwrap_or(false) {
+        if poll_until_for(Duration::from_secs(1), async || apply.enabled().await).await {
             ready = true;
             break;
         }
-        tokio::time::sleep(Duration::from_millis(300)).await;
     }
     assert!(ready, "the Apply button never enabled (typing never took)");
     h.shot(1, "filter-typed").await;

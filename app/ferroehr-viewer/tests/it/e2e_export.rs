@@ -49,7 +49,7 @@ use crate::common;
 
 use reqwest::StatusCode;
 
-use common::{Harness, env, find_all, login_basic};
+use common::{Element, Harness, env, find_all, login_basic};
 use thirtyfour::prelude::*;
 
 /// The query the journey exports: two scalar columns over the compositions
@@ -85,14 +85,11 @@ struct PostedForm {
 ///
 /// # Panics
 /// When the field is absent or unreadable.
-async fn field_value(form: &WebElement, name: &str) -> String {
+async fn field_value(form: &Element, name: &str) -> String {
     form.find(By::Css(format!("input[name='{name}']")))
         .await
-        .expect("the export form's hidden field")
         .prop("value")
         .await
-        .expect("read the hidden field")
-        .unwrap_or_default()
 }
 
 /// The export form whose `format` field is `format`, read field by field.
@@ -185,13 +182,13 @@ async fn table_on_screen(h: &Harness) -> (Vec<String>, Vec<Vec<String>>) {
     h.wait_css("table tbody tr").await;
     let mut headers = Vec::new();
     for cell in find_all(h, "table thead th").await {
-        headers.push(cell.text().await.expect("a header cell's text"));
+        headers.push(cell.text().await);
     }
     let mut rows = Vec::new();
     for row in find_all(h, "table tbody tr").await {
         let mut cells = Vec::new();
-        for cell in row.find_all(By::Tag("td")).await.expect("a row's cells") {
-            cells.push(cell.text().await.expect("a cell's text"));
+        for cell in row.find_all(By::Tag("td")).await {
+            cells.push(cell.text().await);
         }
         rows.push(cells);
     }
@@ -204,19 +201,14 @@ async fn table_on_screen(h: &Harness) -> (Vec<String>, Vec<Vec<String>>) {
 /// When the query never runs or renders no row.
 async fn run_export_query(h: &Harness) {
     h.goto("/queries/aql").await;
-    h.wait_css("#aql-editor")
-        .await
-        .send_keys(EXPORT_AQL)
-        .await
-        .expect("type the AQL");
+    h.wait_css("#aql-editor").await.send_keys(EXPORT_AQL).await;
     // Run stays DISABLED until the typed AQL reaches the signal, so the wait
     // has to carry that condition — a click on the disabled button is
     // intercepted by the toolbar above it, not merely lost.
     h.wait_clickable_xpath("//button[normalize-space(.)='Run']")
         .await
         .click()
-        .await
-        .expect("run the query");
+        .await;
     h.wait_css("table tbody tr").await;
 }
 

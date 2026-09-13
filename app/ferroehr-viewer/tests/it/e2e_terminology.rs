@@ -61,22 +61,14 @@ async fn terminology_browser_defines_terms_and_expands_value_sets() {
     assert_terminology_enabled(&h).await;
 
     // Selecting a terminology is a plain link, so the choice lands in the URL.
-    h.wait_css(OPENEHR_ROW)
-        .await
-        .click()
-        .await
-        .expect("select the openehr terminology");
+    h.wait_css(OPENEHR_ROW).await.click().await;
     h.wait_url_contains("terminology=openehr").await;
     wait_text_contains(&h, "#terminology-descriptor", "openEHR Foundation").await;
     h.shot(1, "terminology-selected").await;
 
     // Define a term: `249` is `creation` in the openEHR bundle.
     retype(&h, "#terminology-code", "249").await;
-    h.wait_css("#terminology-term-lookup")
-        .await
-        .click()
-        .await
-        .expect("define the term");
+    h.wait_css("#terminology-term-lookup").await.click().await;
     h.wait_css("[data-extract='term'] [data-term-code='249']")
         .await;
     wait_text_contains(&h, "[data-extract='term']", "249 — creation").await;
@@ -87,8 +79,7 @@ async fn terminology_browser_defines_terms_and_expands_value_sets() {
     h.wait_css("#terminology-value-set-expand")
         .await
         .click()
-        .await
-        .expect("expand the value set");
+        .await;
     h.wait_css("[data-extract='value-set-member'] [data-term-code='249']")
         .await;
     h.shot(3, "terminology-value-set").await;
@@ -98,8 +89,7 @@ async fn terminology_browser_defines_terms_and_expands_value_sets() {
     h.wait_css("#terminology-value-set-validate")
         .await
         .click()
-        .await
-        .expect("validate a member");
+        .await;
     wait_text_contains(&h, "#terminology-value-set-verdict", "is a member of").await;
     retype(
         &h,
@@ -110,29 +100,20 @@ async fn terminology_browser_defines_terms_and_expands_value_sets() {
     h.wait_css("#terminology-value-set-validate")
         .await
         .click()
-        .await
-        .expect("validate a non-member");
+        .await;
     wait_text_contains(&h, "#terminology-value-set-verdict", "is not a member of").await;
 
     // Subsumption: the openEHR vocabulary is flat and the test is strict, so
     // the honest verdict for any pair is "does not subsume".
     retype(&h, "#terminology-subsumes-ref", "249").await;
     retype(&h, "#terminology-subsumes-candidate", "250").await;
-    h.wait_css("#terminology-subsumes-run")
-        .await
-        .click()
-        .await
-        .expect("test subsumption");
+    h.wait_css("#terminology-subsumes-run").await.click().await;
     wait_text_contains(&h, "#terminology-subsumes-verdict", "does not subsume").await;
 
     // An unknown code is an inline note on the card that asked, never an error
     // bar and never a toast.
     retype(&h, "#terminology-code", "no-such-code").await;
-    h.wait_css("#terminology-term-lookup")
-        .await
-        .click()
-        .await
-        .expect("define an unknown code");
+    h.wait_css("#terminology-term-lookup").await.click().await;
     h.wait_css("#terminology-term-absent").await;
     h.shot(4, "terminology-unknown-code").await;
 
@@ -184,8 +165,7 @@ async fn query_builder_coded_criterion_picks_codes_from_the_terminology() {
     )
     .await
     .click()
-    .await
-    .expect("add a coded condition");
+    .await;
     h.wait_css("#qb-coded-terminology-0").await;
     h.shot(1, "builder-coded-criterion").await;
 
@@ -193,25 +173,16 @@ async fn query_builder_coded_criterion_picks_codes_from_the_terminology() {
     // lookup: the chip reads `code — text` while the model keeps the bare code.
     retype(&h, "#qb-coded-terminology-0", "openehr").await;
     retype(&h, "#qb-coded-code-0", "249").await;
-    h.wait_css("#qb-coded-lookup-0")
-        .await
-        .click()
-        .await
-        .expect("look the code up");
+    h.wait_css("#qb-coded-lookup-0").await.click().await;
     wait_text_contains(&h, "[data-coded-chip='249']", "249 — creation").await;
 
     // A second code, this time picked out of a value set's members.
     retype(&h, "#qb-coded-value-set-0", "audit_change_type").await;
-    h.wait_css("#qb-coded-expand-0")
-        .await
-        .click()
-        .await
-        .expect("expand the value set");
+    h.wait_css("#qb-coded-expand-0").await.click().await;
     h.wait_css("[data-value-set-code='250']")
         .await
         .click()
-        .await
-        .expect("add a value-set member");
+        .await;
     wait_text_contains(&h, "[data-coded-chip='250']", "250 — amendment").await;
     h.shot(2, "builder-coded-chips").await;
 
@@ -221,8 +192,7 @@ async fn query_builder_coded_criterion_picks_codes_from_the_terminology() {
     h.wait_clickable_xpath("//button[normalize-space(.)='Run']")
         .await
         .click()
-        .await
-        .expect("run the query");
+        .await;
     // contains(., …): leptos interleaves hydration comment markers with text
     // nodes, so text()= comparisons are unreliable.
     h.wait_xpath("//div[contains(., 'Results')] | //p[contains(., 'No rows')]")

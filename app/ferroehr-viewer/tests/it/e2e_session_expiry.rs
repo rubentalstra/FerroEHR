@@ -35,7 +35,7 @@ use crate::common;
 
 use std::time::Duration;
 
-use common::{Harness, env, login_basic, wait_css_absent};
+use common::{Harness, dwell, env, login_basic, wait_css_absent};
 
 /// The sealed session cookie's name (`ferroehr_viewer::session::SESSION_COOKIE`,
 /// which is server-only and so cannot be imported here).
@@ -83,11 +83,7 @@ async fn a_revoked_session_signs_the_ui_out_on_the_next_interaction() {
     // A sidebar navigation — the ordinary click a user makes without knowing
     // anything has changed. The screen it opens reads the CDR, that read is
     // refused, and the refusal is what the transition rides.
-    h.wait_css("a[href='/ehrs']")
-        .await
-        .click()
-        .await
-        .expect("navigate to EHRs");
+    h.wait_css("a[href='/ehrs']").await.click().await;
 
     h.wait_url_contains("expired=1").await;
     assert_signed_out(&h).await;
@@ -125,21 +121,9 @@ async fn a_revoked_session_signs_the_ui_out_with_no_interaction_at_all() {
 async fn sign_in_on_this_page(h: &Harness) {
     let user = env("UI_E2E_BASIC_USER").unwrap_or_else(|| "ferroehr".to_owned());
     let pass = env("UI_E2E_BASIC_PASS").unwrap_or_else(|| "ferroehr".to_owned());
-    h.wait_css("#login-username")
-        .await
-        .send_keys(&user)
-        .await
-        .expect("type user");
-    h.wait_css("#login-password")
-        .await
-        .send_keys(&pass)
-        .await
-        .expect("type pass");
-    h.wait_css("button[type=submit]")
-        .await
-        .click()
-        .await
-        .expect("submit the login card");
+    h.wait_css("#login-username").await.send_keys(&user).await;
+    h.wait_css("#login-password").await.send_keys(&pass).await;
+    h.wait_css("button[type=submit]").await.click().await;
 }
 
 /// Assert the authenticated chrome is back on screen and the login card is
@@ -162,11 +146,7 @@ async fn signing_in_from_the_expired_card_returns_to_the_screen_without_a_reload
     login_basic(&h).await;
     h.goto("/templates").await;
     revoke_session(&h).await;
-    h.wait_css("a[href='/ehrs']")
-        .await
-        .click()
-        .await
-        .expect("navigate to EHRs");
+    h.wait_css("a[href='/ehrs']").await.click().await;
     h.wait_url_contains("expired=1").await;
     assert_signed_out(&h).await;
     h.shot(1, "expired-card").await;
@@ -188,17 +168,12 @@ async fn signing_in_again_after_an_explicit_sign_out_renders_the_chrome() {
     };
     login_basic(&h).await;
     h.goto("/templates").await;
-    h.wait_css("#user-menu-trigger button")
-        .await
-        .click()
-        .await
-        .expect("open the user menu");
+    h.wait_css("#user-menu-trigger button").await.click().await;
     h.wait_css(".thaw-popover-surface").await;
     h.wait_xpath("//button[normalize-space()='Sign out']")
         .await
         .click()
-        .await
-        .expect("sign out");
+        .await;
     h.wait_url_contains("/login").await;
     for chrome in AUTHED_CHROME {
         wait_css_absent(&h, chrome).await;
@@ -227,8 +202,14 @@ async fn signing_in_from_the_unattended_expired_card_renders_the_dashboard_again
     assert_signed_out(&h).await;
     h.shot(1, "expired-card").await;
     // The card sits for a moment first: any timer the first shell left behind
-    // gets its chance to fire before the second sign-in.
-    tokio::time::sleep(Duration::from_secs(8)).await;
+    // gets its chance to fire before the second sign-in. An absence over a
+    // window has no observable to poll for, so this is the harness's one
+    // deliberate timed wait rather than a condition.
+    dwell(
+        Duration::from_secs(8),
+        "let a leftover session timer fire before signing in again",
+    )
+    .await;
     sign_in_on_this_page(&h).await;
     assert_signed_in_again(&h).await;
     assert!(
@@ -257,35 +238,15 @@ async fn returning_through_oidc_from_the_expired_card_renders_the_chrome() {
         return;
     };
     h.goto("/login").await;
-    h.wait_css("a[href='/auth/oidc/login']")
-        .await
-        .click()
-        .await
-        .expect("oidc button");
+    h.wait_css("a[href='/auth/oidc/login']").await.click().await;
     h.wait_url_contains("/auth/realms/ferroehr").await;
-    h.wait_css("#username")
-        .await
-        .send_keys(&user)
-        .await
-        .expect("kc user");
-    h.wait_css("#password")
-        .await
-        .send_keys(&pass)
-        .await
-        .expect("kc pass");
-    h.wait_css("#kc-login")
-        .await
-        .click()
-        .await
-        .expect("kc submit");
+    h.wait_css("#username").await.send_keys(&user).await;
+    h.wait_css("#password").await.send_keys(&pass).await;
+    h.wait_css("#kc-login").await.click().await;
     h.wait_css("footer").await;
     h.goto("/templates").await;
     revoke_session(&h).await;
-    h.wait_css("a[href='/ehrs']")
-        .await
-        .click()
-        .await
-        .expect("navigate to EHRs");
+    h.wait_css("a[href='/ehrs']").await.click().await;
     h.wait_url_contains("expired=1").await;
     assert_signed_out(&h).await;
     h.shot(1, "expired-card").await;
@@ -294,8 +255,7 @@ async fn returning_through_oidc_from_the_expired_card_renders_the_chrome() {
     h.wait_css("a[href^='/auth/oidc/login']")
         .await
         .click()
-        .await
-        .expect("oidc from the expired card");
+        .await;
     h.wait_url_contains("/ehrs").await;
     assert_signed_in_again(&h).await;
     h.shot(2, "signed-in-again").await;

@@ -37,7 +37,10 @@ use crate::common;
 
 use std::time::Duration;
 
-use common::{Harness, confirm_in_dialog, count_matching, env, login_basic_as, wait_css_absent};
+use common::{
+    Harness, confirm_in_dialog, count_matching, env, login_basic_as, poll_until, poll_until_for,
+    wait_css_absent,
+};
 
 /// The namespace half of every stored-query name these journeys save.
 const QUERY_NAMESPACE: &str = "org.example";
@@ -106,27 +109,20 @@ async fn store_query(h: &Harness, bare_name: &str, aql: &str) {
         let name = h.wait_css("#aql-save-name").await;
         let version = h.wait_css("#aql-save-version").await;
         // Load-bearing on a RETRY: without it a second typing pass appends to
-        // what the first left behind. The results are handled rather than
-        // dropped (the `let_underscore_drop` rule).
+        // what the first left behind.
         for field in [&editor, &namespace, &name, &version] {
-            field.clear().await.expect("clear a save field");
+            field.clear().await;
         }
-        editor.send_keys(aql).await.expect("type the AQL");
-        namespace
-            .send_keys(QUERY_NAMESPACE)
-            .await
-            .expect("type the namespace");
-        name.send_keys(bare_name)
-            .await
-            .expect("type the query name");
-        version.send_keys("1.0.0").await.expect("type the version");
+        editor.send_keys(aql).await;
+        namespace.send_keys(QUERY_NAMESPACE).await;
+        name.send_keys(bare_name).await;
+        version.send_keys("1.0.0").await;
         let save = h.wait_xpath("//button[normalize-space(.)='Save']").await;
-        if save.is_enabled().await.unwrap_or(false) {
-            save.click().await.expect("save the query");
+        if poll_until_for(Duration::from_secs(1), async || save.enabled().await).await {
+            save.click().await;
             clicked = true;
             break;
         }
-        tokio::time::sleep(Duration::from_millis(300)).await;
     }
     assert!(
         clicked,
@@ -166,31 +162,24 @@ async fn stored_query_lifts_back_into_the_builder() {
     store_query(&h, LIFTABLE_BARE_NAME, LIFTABLE_AQL).await;
     h.goto("/queries").await;
     let builder_link = format!("[data-open-in-builder=\"{LIFTABLE_QUERY_NAME}@1.0.0\"]");
-    h.wait_css(&builder_link)
-        .await
-        .click()
-        .await
-        .expect("open the stored query in the builder");
+    h.wait_css(&builder_link).await.click().await;
     h.wait_url_contains("/queries/builder").await;
 
     // The builder's live preview re-lowers whatever state the lift produced, so
     // matching the stored text IS the round-trip assertion.
     let mut previewed = String::new();
-    for _ in 0..40 {
+    poll_until(async || {
         previewed = h
             .wait_css("pre")
             .await
             .text()
             .await
-            .expect("read the AQL preview")
             .split_whitespace()
             .collect::<Vec<_>>()
             .join(" ");
-        if previewed == normalized(LIFTABLE_AQL) {
-            break;
-        }
-        tokio::time::sleep(Duration::from_millis(250)).await;
-    }
+        previewed == normalized(LIFTABLE_AQL)
+    })
+    .await;
     assert_eq!(
         previewed,
         normalized(LIFTABLE_AQL),
@@ -202,13 +191,7 @@ async fn stored_query_lifts_back_into_the_builder() {
     );
     // The lift also seeded the save fields: the loaded version is immutable, so
     // the NEXT one is proposed (as on the raw editor).
-    let proposed = h
-        .wait_css("#qb-save-version")
-        .await
-        .prop("value")
-        .await
-        .expect("read the version field")
-        .unwrap_or_default();
+    let proposed = h.wait_css("#qb-save-version").await.prop("value").await;
     assert_eq!(
         proposed, "1.1.0",
         "lifting version 1.0.0 must propose 1.1.0 in the save version field"
@@ -219,11 +202,7 @@ async fn stored_query_lifts_back_into_the_builder() {
     store_query(&h, REFUSED_BARE_NAME, REFUSED_AQL).await;
     h.goto("/queries").await;
     let refused_link = format!("[data-open-in-builder=\"{REFUSED_QUERY_NAME}@1.0.0\"]");
-    h.wait_css(&refused_link)
-        .await
-        .click()
-        .await
-        .expect("open the parameterised query in the builder");
+    h.wait_css(&refused_link).await.click().await;
     h.wait_url_contains("/queries/builder").await;
     // An explicit, actionable notice — never a silently partial builder.
     h.wait_css("[data-lift-refused]").await;
@@ -256,11 +235,7 @@ async fn stored_query_runs_with_parameters_in_every_resolution_form() {
     // Reach the runner the way an operator does: the row's Run action.
     h.goto("/queries").await;
     let run_link = format!("[data-run-stored=\"{RUNNER_QUERY_NAME}@1.0.0\"]");
-    h.wait_css(&run_link)
-        .await
-        .click()
-        .await
-        .expect("open the stored-query runner");
+    h.wait_css(&run_link).await.click().await;
     h.wait_url_contains("/queries/stored").await;
 
     // The link's version seeds the EXACT form, and the query's one placeholder
@@ -269,17 +244,11 @@ async fn stored_query_runs_with_parameters_in_every_resolution_form() {
     // the WASM load on a full-page navigation.
     let version_field = h.wait_css("#stored-run-version").await;
     let mut seeded = String::new();
-    for _ in 0..20 {
-        seeded = version_field
-            .prop("value")
-            .await
-            .expect("read the version field")
-            .unwrap_or_default();
-        if seeded == "1.0.0" {
-            break;
-        }
-        tokio::time::sleep(Duration::from_millis(250)).await;
-    }
+    poll_until(async || {
+        seeded = version_field.prop("value").await;
+        seeded == "1.0.0"
+    })
+    .await;
     assert_eq!(
         seeded, "1.0.0",
         "the runner must open at the version the link named"
@@ -341,27 +310,26 @@ async fn select_mode(h: &Harness, mode: &str, version: Option<&str>, note_fragme
     let option_css = format!("#stored-run-mode option[value='{mode}']");
     let mut selected = false;
     for _ in 0..5 {
-        h.wait_css(&option_css)
-            .await
-            .click()
-            .await
-            .expect("select the resolution form");
+        h.wait_css(&option_css).await.click().await;
         if let Some(version) = version {
             let field = h.wait_css("#stored-run-version").await;
-            field.clear().await.expect("clear the version field");
-            field.send_keys(version).await.expect("type the version");
+            field.clear().await;
+            field.send_keys(version).await;
         }
-        let note = h
-            .wait_css("[data-resolution-note]")
-            .await
-            .text()
-            .await
-            .unwrap_or_default();
-        if note.contains(note_fragment) {
-            selected = true;
+        // NOTE: probe tier — the note re-renders as the resolution form
+        // changes, so a handle detached between the find and the read is
+        // "not yet" for this poll rather than a failure.
+        selected = poll_until_for(Duration::from_secs(2), async || {
+            h.wait_css("[data-resolution-note]")
+                .await
+                .read_text()
+                .await
+                .is_some_and(|note| note.contains(note_fragment))
+        })
+        .await;
+        if selected {
             break;
         }
-        tokio::time::sleep(Duration::from_millis(250)).await;
     }
     assert!(
         selected,
@@ -388,16 +356,9 @@ async fn assert_request(h: &Harness, request: &str) {
 /// On any interaction failure, or when the run reports an error.
 async fn run_and_expect_results(h: &Harness, mode: &str) {
     let parameter = h.wait_css("[data-stored-param=\"template\"]").await;
-    parameter.clear().await.expect("clear the parameter");
-    parameter
-        .send_keys(SEEDED_TEMPLATE_ID)
-        .await
-        .expect("bind the template parameter");
-    h.wait_css("#stored-run")
-        .await
-        .click()
-        .await
-        .expect("run the stored query");
+    parameter.clear().await;
+    parameter.send_keys(SEEDED_TEMPLATE_ID).await;
+    h.wait_css("#stored-run").await.click().await;
     h.wait_css("[data-stored-results]").await;
     assert!(
         count_matching(h, "[role=\"alert\"]").await == 0,

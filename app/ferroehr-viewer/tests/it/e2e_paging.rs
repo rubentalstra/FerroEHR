@@ -49,12 +49,11 @@
 
 use crate::common;
 
-use std::time::Duration;
-
 use reqwest::StatusCode;
 
 use common::{
-    Harness, count_matching, env, is_present_by, login_basic, wait_attr, wait_attr_change,
+    Harness, count_matching, env, is_present_by, login_basic, poll_some, poll_until, wait_attr,
+    wait_attr_change,
 };
 use thirtyfour::prelude::*;
 
@@ -139,8 +138,6 @@ async fn first_row_key(h: &Harness) -> String {
         .await
         .attr("data-stored-query")
         .await
-        .expect("read the row hook")
-        .unwrap_or_default()
 }
 
 /// Poll until the first rendered row is no longer `previous`, and return the
@@ -150,15 +147,16 @@ async fn first_row_key(h: &Harness) -> String {
 /// # Panics
 /// When the window has not moved after 15 s.
 async fn wait_row_change(h: &Harness, previous: &str) -> String {
-    for _ in 0..75 {
+    let moved = poll_some(async || {
         let current = first_row_key(h).await;
-        if current != previous {
-            return current;
-        }
-        tokio::time::sleep(Duration::from_millis(200)).await;
-    }
-    let url = h.current_url().await;
-    panic!("the row window never moved off `{previous}` (at {url})");
+        (current != previous).then_some(current)
+    })
+    .await;
+    let Some(current) = moved else {
+        let url = h.current_url().await;
+        panic!("the row window never moved off `{previous}` (at {url})");
+    };
+    current
 }
 
 /// Poll until the footer's range line starts with `prefix` (`1–1 of `, …).
@@ -167,19 +165,22 @@ async fn wait_row_change(h: &Harness, previous: &str) -> String {
 /// When it never does — reporting the line it actually showed.
 async fn wait_range_prefix(h: &Harness, prefix: &str) {
     let mut seen = String::new();
-    for _ in 0..75 {
+    // NOTE: probe tier — the footer re-renders as the window loads, so a
+    // handle detached between the find and the read is "not yet".
+    let settled = poll_until(async || {
         seen = h
             .wait_css("[data-page=\"range\"]")
             .await
-            .text()
+            .read_text()
             .await
             .unwrap_or_default();
-        if seen.starts_with(prefix) {
-            return;
-        }
-        tokio::time::sleep(Duration::from_millis(200)).await;
-    }
-    panic!("the footer range line never started with `{prefix}` (last: `{seen}`)");
+        seen.starts_with(prefix)
+    })
+    .await;
+    assert!(
+        settled,
+        "the footer range line never started with `{prefix}` (last: `{seen}`)"
+    );
 }
 
 /// Page the stored-queries table forward and back: the URL carries the page,
@@ -217,11 +218,7 @@ async fn stored_queries_page_through_the_shared_footer() {
 
     // Forward: the page lands in the URL, the window moves, and the size
     // parameter rides along.
-    h.wait_css("a[data-page=\"next\"]")
-        .await
-        .click()
-        .await
-        .expect("page forward");
+    h.wait_css("a[data-page=\"next\"]").await.click().await;
     h.wait_url_contains("page=1").await;
     let second = wait_row_change(&h, &first).await;
     assert_eq!(row_count(&h).await, 1, "the second page renders one row");
@@ -235,11 +232,7 @@ async fn stored_queries_page_through_the_shared_footer() {
 
     // Back: the first page is the plain path again (the default page is written
     // as its absence) and the original window returns.
-    h.wait_css("a[data-page=\"prev\"]")
-        .await
-        .click()
-        .await
-        .expect("page back");
+    h.wait_css("a[data-page=\"prev\"]").await.click().await;
     h.wait_url_not_contains("page=1").await;
     let back = wait_row_change(&h, &second).await;
     assert_eq!(back, first, "paging back must restore the first window");
@@ -248,11 +241,7 @@ async fn stored_queries_page_through_the_shared_footer() {
 
     // A page-size choice re-pages from the top at that window; the default size
     // clears the parameter entirely, so both fixtures are on one page.
-    h.wait_css("a[data-page-size=\"25\"]")
-        .await
-        .click()
-        .await
-        .expect("choose 25 rows per page");
+    h.wait_css("a[data-page-size=\"25\"]").await.click().await;
     h.wait_url_not_contains("size=1").await;
     h.wait_css("[data-stored-query]").await;
     assert!(
@@ -434,14 +423,15 @@ async fn link_count(h: &Harness, css: &str) -> usize {
 /// When the count never settles, reporting what was on screen.
 async fn wait_link_count(h: &Harness, css: &str, expected: usize) {
     let mut last = 0;
-    for _ in 0..75 {
+    let settled = poll_until(async || {
         last = link_count(h, css).await;
-        if last == expected {
-            return;
-        }
-        tokio::time::sleep(Duration::from_millis(200)).await;
-    }
-    panic!("`{css}` never settled on {expected} rows (last saw {last})");
+        last == expected
+    })
+    .await;
+    assert!(
+        settled,
+        "`{css}` never settled on {expected} rows (last saw {last})"
+    );
 }
 
 /// Assert every `fragment` is in the current URL — the "my other parameters
@@ -530,11 +520,7 @@ async fn the_compositions_tab_pages_by_offset_and_keeps_its_tab_and_filter() {
 
     // Forward: the offset lands in the URL, the window moves to the last row,
     // and BOTH the tab and the filter ride along.
-    h.wait_css("a[data-page='next']")
-        .await
-        .click()
-        .await
-        .expect("page the compositions forward");
+    h.wait_css("a[data-page='next']").await.click().await;
     h.wait_url_contains("offset=25").await;
     let second = wait_attr_change(&h, rows, "href", &first).await;
     wait_link_count(&h, rows, 1).await;
@@ -561,11 +547,7 @@ async fn the_compositions_tab_pages_by_offset_and_keeps_its_tab_and_filter() {
 
     // Back: the first page writes the offset as its ABSENCE, the original
     // window returns, and the tab + filter survive this direction too.
-    h.wait_css("a[data-page='prev']")
-        .await
-        .click()
-        .await
-        .expect("page the compositions back");
+    h.wait_css("a[data-page='prev']").await.click().await;
     h.wait_url_not_contains("offset=").await;
     let back = wait_attr_change(&h, rows, "href", &second).await;
     assert_eq!(back, first, "paging back must restore the first window");
@@ -618,20 +600,12 @@ async fn the_ehr_finder_pages_by_offset() {
     let first = wait_attr(&h, rows, "href").await;
     h.shot(1, "ehrs-first-page").await;
 
-    h.wait_css("a[data-page='next']")
-        .await
-        .click()
-        .await
-        .expect("page the EHRs forward");
+    h.wait_css("a[data-page='next']").await.click().await;
     h.wait_url_contains("offset=25").await;
     let second = wait_attr_change(&h, rows, "href", &first).await;
     h.shot(2, "ehrs-second-page").await;
 
-    h.wait_css("a[data-page='prev']")
-        .await
-        .click()
-        .await
-        .expect("page the EHRs back");
+    h.wait_css("a[data-page='prev']").await.click().await;
     h.wait_url_not_contains("offset=").await;
     let back = wait_attr_change(&h, rows, "href", &second).await;
     assert_eq!(back, first, "paging back must restore the first window");
