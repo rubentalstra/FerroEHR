@@ -56,7 +56,11 @@ intuition.
   In code comments, SQL schema comments, and doc comments, justify
   behaviour by citing the openEHR spec file + section (`docs/specs/openehr/`)
   or official external documentation (the PostgreSQL docs, the Rust
-  book/reference, the docs.rs/crates.io docs of a pinned crate) — never an
+  book/reference, the docs.rs/crates.io docs of a pinned crate), or — for a
+  compliance-relevant decision — the vendored regulation corpus
+  (`docs/law/<jurisdiction>/<act>/<file> Art. N Abs. M`, the article-level
+  form `.claude/rules/law-corpus.md` fixes; never a publisher's live page or
+  a consolidation the tree does not carry) — never an
   internal doc, because internal docs move or die. **The ADR layer has been
   deleted** (it caused more confusion than value): no file may instruct anyone
   to read, write, or cite an ADR. Internal plan/design markdown is likewise
