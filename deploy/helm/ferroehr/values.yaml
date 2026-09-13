@@ -663,11 +663,17 @@ config:
       tls: false
 
   # [terminology] — terminology extension API + external FHIR-TS validation.
+  #
+  # `external.enabled` and `external.fail_on_error` are deliberately NOT
+  # defaulted here. With `terminology.enabled` + `terminology.wireCdr` the chart
+  # INJECTS both, and a defaulted key is indistinguishable from one an operator
+  # typed — so the render could not tell an agreement from an overwrite, and
+  # would silently ship a ferroehr.toml contradicting the values file. Left out,
+  # a declaration of either is visibly the operator's and is refused. The
+  # server's own defaults for both are `false`, which is what an install without
+  # FerroTERM gets either way.
   terminology:
     api_enabled: false
-    external:
-      enabled: false
-      fail_on_error: false
 
   # [multimedia] — DV_MULTIMEDIA externalization → S3. Our own extension; no
   # openEHR spec governs it. Off by default
@@ -1150,4 +1156,185 @@ viewer:
   # -- Affinity.
   affinity: {}
   # -- Extra environment for the viewer (escape hatch).
+  extraEnv: []
+
+# ─────────────────────────────────────────────────────────────────────────────
+# FerroTERM — the FHIR terminology server, beside the CDR (#3305).
+#
+# The Helm equivalent of docker-compose.terminology.yml: one Deployment, one
+# ClusterIP Service, the licence-free shaped seed as a ConfigMap, and the CDR's
+# [terminology.external] wired at the Service. Off by default — a CDR resolves
+# bindings against its built-in terminology without it.
+#
+# NO INGRESS is rendered, and no value renders one. The CDR is the only caller,
+# which is what the SNOMED CT Affiliate Licence asks of a public deployment:
+# clause 2.2.4 permits a public system to serve SNOMED-encoded data provided
+# users cannot extract a substantial portion of the release, and clause 2.7
+# requires measures so the release cannot be downloaded except by authorised
+# users. A published FHIR terminology endpoint answers $expand and $lookup to
+# anyone who reaches it, and FerroTERM has neither authentication nor a rate
+# limit of its own.
+#
+# No licensed terminology is distributed with FerroEHR or FerroTERM. The seed is
+# synthetic content under the reserved example.test domain; a real release is
+# built into an index OFF-CLUSTER and mounted through `index` below.
+# ─────────────────────────────────────────────────────────────────────────────
+terminology:
+  # -- Deploy FerroTERM alongside the CDR.
+  enabled: false
+  # -- Point the CDR's `config.terminology.external` at the rendered Service.
+  # The chart injects `enabled`, `fail_on_error` and the `default` provider, so
+  # the Service address and the workload answering it are one decision. Set it
+  # to false to run FerroTERM beside a CDR you wire yourself. While it is true
+  # the render refuses every values file that contradicts the injection:
+  # `config.terminology.external.providers.default`, an
+  # `external.enabled: false`, an `external.fail_on_error` disagreeing with
+  # `failOnError` below, and a provider of your own with no
+  # `external.routes` entry naming it (an unrouted terminology falls back to
+  # `default`, which the injection has taken).
+  wireCdr: true
+  # -- What the CDR does when the terminology server cannot answer. `false` (the
+  # server's own shipped default) accepts the binding; `true` turns an
+  # unreachable server into a 422 refusal. No released openEHR text decides
+  # between the two.
+  failOnError: false
+  # -- Replica count. FerroTERM serves a read-only index, so replicas are a
+  # throughput choice; each one loads its own copy, so mind the memory limit.
+  # Above 1, turn `podDisruptionBudget` below on: the pods spread across nodes
+  # by default, and nothing else keeps a drain from taking all of them.
+  replicaCount: 1
+  # -- Topology spread for FerroTERM's pods. Empty uses the chart's default —
+  # one replica per node, `ScheduleAnyway`, scoped to the ReplicaSet being
+  # rolled — which is the CDR's policy over this workload's own pods. Set it to
+  # replace that wholesale; a merge of two spreading policies is not one.
+  topologySpreadConstraints: []
+  # -- Deployment update strategy. Empty leaves the API default
+  # (`RollingUpdate`), EXCEPT when `index.persistentVolumeClaim` names a claim:
+  # a rolling update surges a second pod before the first goes away, and a
+  # ReadWriteOnce volume cannot attach to it on another node, so the chart
+  # renders `type: Recreate` there. Set `{type: RollingUpdate}` if your index
+  # volume is ReadOnlyMany.
+  strategy: {}
+  image:
+    # -- FerroTERM image repository. A separate product on its own release line
+    # (https://github.com/rubentalstra/FerroTERM), BUSL-1.1 from the same
+    # Licensor as FerroEHR.
+    repository: ghcr.io/rubentalstra/ferroterm
+    # -- Pull policy.
+    pullPolicy: IfNotPresent
+    # -- Image tag. Empty falls back to the FerroTERM release this chart is
+    # pinned to (0.1.3) — never `.Chart.appVersion`, which is FerroEHR's line.
+    # A tag other than that pin is REFUSED while `digest` below is non-empty:
+    # the digest wins, so the tag would be inert while the values file claimed
+    # otherwise. Clear `digest` to deploy a tag.
+    tag: ""
+    # -- Image digest (`sha256:…`); wins over `tag`. Pinned by default, so an
+    # install runs the exact image this chart was validated against.
+    digest: sha256:b1ef80382e03c2474bfec2ec57a698d83314e1290dd0cb5a2612ea208bde020c
+  service:
+    # -- Service type. ClusterIP deliberately: the CDR is the only caller.
+    type: ClusterIP
+    # -- Service port. The container always listens on 8080.
+    port: 8080
+  codeSystems:
+    # -- Serve code systems from an existing ConfigMap of FHIR JSON instead of
+    # the chart's shaped seed. Empty means the chart renders its own. The pod's
+    # rollout annotation hashes the NAME you give here, not the ConfigMap's
+    # contents — the chart cannot read an object it does not own — so editing
+    # that ConfigMap propagates into the volume while every running pod keeps
+    # serving what it read at boot. Restart the workload yourself after such an
+    # edit (`kubectl rollout restart deployment/<release>-terminology`).
+    existingConfigMap: ""
+    # -- Directory the code systems are mounted at, read-only; it is what
+    # `FERROTERM_CODESYSTEMS` names.
+    mountPath: /etc/ferroterm/codesystems
+  index:
+    # -- Name of an EXISTING PersistentVolumeClaim holding a built index for a
+    # release you hold a licence for. Empty means the shaped seed is served
+    # alone. The chart provisions no storage and renders no build Job: build the
+    # index off-cluster with `ferroterm-build --rf2 <release.zip> --out <dir>`
+    # and fill the claim from that output.
+    persistentVolumeClaim: ""
+    # -- Directory the index claim is mounted at, read-only. Rendered as
+    # `FERROTERM_INDEX` only when a claim is named.
+    mountPath: /data/index
+  # -- Serve FerroTERM's own browsing UI. Off: the workload has no Ingress and
+  # the CDR does not use it.
+  ui: false
+  # -- Display language FerroTERM prefers when a concept carries several.
+  defaultLanguage: en
+  # -- Log format (`json` or `pretty`).
+  logFormat: json
+  # -- `RUST_LOG` filter for the terminology container.
+  logLevel: info
+  networkPolicy:
+    # -- Install a NetworkPolicy for FerroTERM. Unlike the CDR's and the
+    # viewer's, its ingress is narrowed by DEFAULT and there is no
+    # admit-everything state: the caller is known — the CDR's pods — so no value
+    # offers one. Egress admits DNS only.
+    enabled: true
+    # -- Further peers admitted to the terminology port, beside the CDR's pods.
+    # Raw NetworkPolicyPeer entries, for a caller you deliberately add (a
+    # FerroCKM instance, a migration job); read the licence note above first.
+    # No boolean opens this port the way `networkPolicy.ingressAllowAll` opens
+    # the CDR's — but a peer you add is admitted exactly as written, and an
+    # empty `namespaceSelector: {}` means every namespace. The values schema
+    # refuses an empty peer and an empty selector inside one for that reason.
+    extraIngressFrom: []
+  # -- Protect FerroTERM during voluntary disruption (drains, upgrades). Off by
+  # default: the shipped `replicaCount` is 1, and a budget over a single pod
+  # blocks the drain it exists to survive. Turn it on with more than one
+  # replica. Same shape and same defaults as the CDR's `podDisruptionBudget`.
+  podDisruptionBudget:
+    enabled: false
+    minAvailable: 1
+    # maxUnavailable: ""   # set one of minAvailable / maxUnavailable
+    unhealthyPodEvictionPolicy: AlwaysAllow
+  # -- Pod-level security context. Mirrors the server's; a second workload is
+  # where a hardened posture is most easily lost. The user-namespace setting is
+  # NOT mirrored here — it is the release-wide `hostUsers` key.
+  podSecurityContext:
+    runAsNonRoot: true
+    runAsUser: 65532
+    runAsGroup: 65532
+    fsGroup: 65532
+    fsGroupChangePolicy: OnRootMismatch
+    supplementalGroupsPolicy: Strict
+    seccompProfile:
+      type: RuntimeDefault
+  # -- Container-level security context. Mirrors the server's.
+  securityContext:
+    runAsNonRoot: true
+    runAsUser: 65532
+    allowPrivilegeEscalation: false
+    privileged: false
+    readOnlyRootFilesystem: true
+    capabilities:
+      drop: [ALL]
+    seccompProfile:
+      type: RuntimeDefault
+  # -- Termination grace period. FerroTERM holds no write in flight; there is
+  # nothing to drain but in-flight lookups.
+  terminationGracePeriodSeconds: 20
+  # -- Lame-duck pause before SIGTERM, in seconds (0 disables) — the same
+  # endpoint-propagation race the server's `preStopSleepSeconds` covers.
+  preStopSleepSeconds: 5
+  # -- Resource requests/limits. The 1536Mi limit is the compose overlay's, and
+  # it is sized from FerroTERM's own figures: the SNOMED CT Netherlands edition
+  # is 889 MB resident, the International edition 702 MB, LOINC 170 MB; the
+  # shaped seed is a few megabytes. An index larger than the limit is an OOMKill
+  # during startup, so raise it before mounting a bigger edition.
+  resources:
+    requests:
+      cpu: 100m
+      memory: 256Mi
+    limits:
+      memory: 1536Mi
+  # -- Node selector.
+  nodeSelector: {}
+  # -- Tolerations.
+  tolerations: []
+  # -- Affinity.
+  affinity: {}
+  # -- Extra environment for FerroTERM (escape hatch).
   extraEnv: []

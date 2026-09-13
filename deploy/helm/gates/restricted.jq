@@ -16,12 +16,14 @@
              or .kind == "DaemonSet" or .kind == "Job" or .kind == "CronJob")
     | { kind: .kind, name: .metadata.name,
         replicas: .spec.replicas,
+        strategy: (.spec.strategy // {}),
         template: (if .kind == "CronJob"
                    then .spec.jobTemplate.spec.template
                    else .spec.template end) }
     | select(.template != null)
     | { kind: .kind, name: .name,
         replicas: .replicas,
+        strategy: .strategy,
         pod: (.template.spec // {}) } ] as $workloads
 | ( [ $workloads[]
       | . as $w
@@ -69,6 +71,20 @@
       | select(.replicas == null or .replicas > 1)
       | select((.pod.topologySpreadConstraints // []) == [] and (.pod.affinity // {}) == {})
       | "Deployment/\(.name): multi-replica with neither topologySpreadConstraints nor affinity — every replica may land on one node" ] )
+  +
+  # Rollout feasibility, in the same walk. A rolling update surges a new pod
+  # before the old one goes away (Deployment docs, Max Surge: the default is
+  # 25%, rounded UP), and a ReadWriteOnce PersistentVolume "can be mounted as
+  # read-write by a single node" (PV docs, Access Modes) — so a Deployment
+  # mounting a claim rolls forward only if the surge pod happens to land on the
+  # node holding the volume, and otherwise hangs Pending while reporting a
+  # progressing update. Derived from the render rather than tabulated: any
+  # Deployment that grows a claim is covered the day it does.
+  ( [ $workloads[]
+      | select(.kind == "Deployment")
+      | select([ (.pod.volumes // [])[] | select(has("persistentVolumeClaim")) ] | length > 0)
+      | select((.strategy.type // "RollingUpdate") != "Recreate")
+      | "Deployment/\(.name): mounts a PersistentVolumeClaim under strategy \(.strategy.type // "RollingUpdate") — the surge pod cannot attach a ReadWriteOnce volume held by the outgoing pod on another node, so the rollout hangs; render strategy.type: Recreate (or ReadOnlyMany storage)" ] )
   +
   ( if ($workloads | length) == 0
     then ["no pod-bearing workload found — the gate would pass vacuously"] else [] end )

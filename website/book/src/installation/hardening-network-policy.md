@@ -282,6 +282,7 @@ only the rows you have switched on:
 | OIDC issuer (discovery + JWKS) | `config.auth.oidc.issuer`, **unless** `config.auth.oidc.jwks_json` or `config.auth.oidc.jwks_json_file` is supplied | 443 | off-cluster |
 | External policy decision point | `config.authz.abac.engine: remote` plus `config.authz.abac.remote.server` | the URL's (3001) | in-cluster |
 | FHIR terminology server(s) | `config.terminology.external.enabled` plus a provider `url` | 443 | off-cluster |
+| FerroTERM in the cluster | `terminology.enabled` | 8080 | in-cluster, and the **chart renders this rule itself** — it chose the destination when it wired the CDR at the Service, so you do not add it to `rules`. Omitted, terminology would fail silently: under the shipped fail-open posture an unresolvable binding is accepted, so nothing refuses and nothing logs. |
 | Terminology token endpoint | `config.terminology.external.oauth2_clients.<name>.token_url` | 443 | off-cluster |
 | AMQP broker (events) | `config.events.enabled` plus `secrets.eventsUrl` | 5672, or 5671 with `config.events.tls` | in-cluster |
 | AMQP broker (FHIR outbound) | `config.fhir.outbound.enabled` plus `secrets.fhirOutboundUrl` | 5672 / 5671 | in-cluster |

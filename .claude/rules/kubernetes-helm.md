@@ -110,9 +110,14 @@ and no render check ever reaches:
   label to `ferroehr.labels` (metadata) — **never** to `ferroehr.selectorLabels`.
 - `Service.spec.clusterIP`, StatefulSet identity fields, PVC shrink.
 
-`deploy/helm/validate.sh` `assert_selector_stable` pins the exact expected
-selector key set per workload. **Adding a workload means adding it to that
-gate's table**, or the workload is unguarded.
+`deploy/helm/validate.sh` `assert_selector_stable` pins the expected selector
+key set and checks that no Service or PodDisruptionBudget selector matches two
+workloads. It is DERIVED rather than tabulated — `deploy/helm/gates/selector.jq`
+reads every rendered workload that carries a pod template — so a new workload
+needs no gate edit. What it does need is a RENDER: the gate only judges
+workloads some values file produces, so a workload no `ci/*-values.yaml`
+enables is a workload the gate never sees. Adding a workload therefore means
+adding a values case (§8), not a table row.
 
 ## 3. A gate that greps the file passes vacuously
 
@@ -203,6 +208,7 @@ evidence if it ran in an enforcing namespace — say which.
 | Secrets never env-borne as values | `validate.sh` `secret_leak_gate` |
 | `values.schema.json` accepts/rejects | `validate.sh` `schema_gate`, `fixture_gate` |
 | Golden render drift | CI compare against `deploy/helm/golden/` |
+| The chart's copy of the shaped terminology seed matches the canonical `docker/terminology/seed/` | `terminology-seed-drift` → `scripts/checks/terminology-seed-drift.sh` (both directions, mutation-proven). A chart's `.Files` reaches only what is packaged with it, so the copy exists; the guard is what keeps it from becoming a fork |
 | Chart version bump on packaged-content change | `chart-version-guard` |
 | The committed `appVersion` equals the workspace version, and the image annotations + generated README agree with it | `chart-appversion-guard` → `scripts/checks/chart-appversion.sh` (#2890, mutation-proven). The release PR bumps it in the same sweep as the compose tags; the package-time injection (#2779) stays as belt-and-braces for the release leg and the dispatch recovery lane |
 | Field-vs-`kubeVersion` availability | **review-enforced** — no tool knows which fields a manifest uses; §1 is the procedure |

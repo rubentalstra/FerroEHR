@@ -87,6 +87,29 @@ spec:
         - port: {{ $.Values.networkPolicy.egress.database.port }}
           protocol: TCP
     {{- end }}
+    {{- if .Values.terminology.enabled }}
+    # The in-cluster FerroTERM, by pod selector. Rendered by the chart rather
+    # than left to `rules`, because the operator did not choose this
+    # destination's address — the chart did, when it wired
+    # config.terminology.external at the Service above it. Omitted, a hardened
+    # install loses terminology while every other check stays green: a binding
+    # the server cannot resolve is ACCEPTED under the shipped fail-open
+    # posture, so nothing refuses and nothing logs an error.
+    #
+    # 8080 is the CONTAINER port, not terminology.service.port: `port`
+    # "represents the port on the given protocol. This can either be a
+    # numerical or named port on a pod"
+    # (https://kubernetes.io/docs/reference/kubernetes-api/policy-resources/network-policy-v1/,
+    # NetworkPolicyPort) — the destination pod's, after the Service's
+    # translation.
+    - to:
+        - podSelector:
+            matchLabels:
+              {{- include "ferroehr.terminologySelectorLabels" . | nindent 14 }}
+      ports:
+        - port: 8080
+          protocol: TCP
+    {{- end }}
     {{- with .Values.networkPolicy.egress.rules }}
     {{- toYaml . | nindent 4 }}
     {{- end }}

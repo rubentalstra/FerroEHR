@@ -29,6 +29,30 @@ workflow refuses a tag that has no matching section here.
   overview gains a Germany and a Switzerland section stating, provision by
   provision, what the software ships and what the deploying organisation must
   do.
+- **The Helm chart runs FerroTERM beside the CDR** (#3305, chart 8.3.0).
+  `terminology.enabled` renders the terminology server as its own workload —
+  Deployment, ClusterIP Service, ServiceAccount, NetworkPolicy — under the same
+  Restricted profile as the CDR, and points the CDR's
+  `config.terminology.external` at its Service, so archetype bindings resolve at
+  commit and AQL `TERMINOLOGY()` expands through it (the CDR's own
+  `/terminology/*` extension routes stay a separate switch,
+  `config.terminology.api_enabled`, and are off by default). Every values file
+  that contradicts that injection is refused at render rather than silently
+  overwritten: a `default` provider of your own, an `external.enabled: false`,
+  a `fail_on_error` disagreeing with `terminology.failOnError`, and a provider
+  with no `external.routes` entry naming it. The licence-free shaped seed ships with the chart and
+  is mounted as a ConfigMap, so an install from the registry serves terminology
+  with no checkout; a release you hold a licence for is an index built
+  off-cluster and mounted from an existing claim named in
+  `terminology.index.persistentVolumeClaim` — which also switches the workload
+  to `strategy: Recreate`, because a rolling update's surge pod cannot attach a
+  ReadWriteOnce volume the outgoing pod still holds. No Ingress is rendered for
+  it and no value renders one: the CDR is its only caller, and its NetworkPolicy
+  admits the CDR's pods alone. No boolean opens that port;
+  `terminology.networkPolicy.extraIngressFrom` admits a peer you write, and the
+  values schema refuses an empty one (a bare `namespaceSelector: {}` selects
+  every namespace). Above one replica, the pods spread one per node and
+  `terminology.podDisruptionBudget` guards them through a drain.
 
 ## [4.2.5] - 2026-09-12
 

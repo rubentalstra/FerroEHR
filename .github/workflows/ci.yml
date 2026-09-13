@@ -781,6 +781,23 @@ jobs:
       - name: The overlay's inline dashboard matches the chart's canonical copy
         run: bash scripts/checks/dashboard-drift.sh
 
+  # The shaped terminology seed has one canonical directory and one copy inside
+  # the Helm chart (a chart's `.Files` reaches only what is packaged with it),
+  # so the two are held byte-identical the way the dashboard's two copies are.
+  terminology-seed-drift:
+    name: terminology-seed-drift
+    if: github.event_name == 'pull_request' || github.event_name == 'merge_group'
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: The chart's terminology seed matches the canonical one
+        run: bash scripts/checks/terminology-seed-drift.sh
+
   # RFC 0201: an error carries its cause. No clippy lint covers this, so the
   # gate is a per-tree ratchet — the flattened-site counts may only fall while
   # the #2034 sweep runs.
@@ -2199,6 +2216,8 @@ jobs:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           persist-credentials: false
+      - name: The chart release-facts guard refuses its own mutations
+        run: bash scripts/checks/chart-appversion.sh --self-test
       - name: The committed chart release facts are coherent
         run: bash scripts/checks/chart-appversion.sh
 
@@ -2528,6 +2547,7 @@ jobs:
       - licensing
       - spec-citations
       - compose-hardening
+      - terminology-seed-drift
       - deny
       - vex
       - clippy

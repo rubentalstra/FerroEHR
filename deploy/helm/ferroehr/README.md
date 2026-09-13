@@ -2,7 +2,7 @@
 
 Pure-Rust, openEHR-conformant clinical data repository (ITS-REST 1.1.0 + AQL 1.1). A single static binary deployed with a hardened-by-default security posture: runs as a non-root, read-only-rootfs workload whose NetworkPolicy admits its serving port only, and that connects to an EXTERNAL PostgreSQL 18 as an unprivileged app role, with schema preparation on its own credential.
 
-![Version: 8.2.7](https://img.shields.io/badge/Version-8.2.7-informational?style=flat-square) ![Type: application](https://img.shields.io/badge/Type-application-informational?style=flat-square) ![AppVersion: 4.2.5](https://img.shields.io/badge/AppVersion-4.2.5-informational?style=flat-square)
+![Version: 8.3.0](https://img.shields.io/badge/Version-8.3.0-informational?style=flat-square) ![Type: application](https://img.shields.io/badge/Type-application-informational?style=flat-square) ![AppVersion: 4.2.5](https://img.shields.io/badge/AppVersion-4.2.5-informational?style=flat-square)
 
 FerroEHR is a pure-Rust openEHR Clinical Data Repository: ITS-REST 1.1.0 at the
 API, AQL 1.1 as the query language, PostgreSQL 18-native storage, shipped as a
@@ -33,7 +33,7 @@ to add; `helm repo add` does not apply to this chart:
 
 ```console
 helm install ferroehr oci://ghcr.io/rubentalstra/charts/ferroehr \
-  --version 8.2.7 \
+  --version 8.3.0 \
   --namespace ferroehr --create-namespace \
   --set database.existingSecret=ferroehr-db \
   --set image.tag=4.2.5
@@ -47,7 +47,7 @@ They are independent SemVer lines and they move independently:
 
 | What | Set with | This release |
 |---|---|---|
-| the **chart** (templates, defaults, this document) | `--version` | `8.2.7` |
+| the **chart** (templates, defaults, this document) | `--version` | `8.3.0` |
 | the **server image** | `image.tag` | `4.2.5` |
 
 `appVersion` is the image the chart defaults to; pinning `image.tag` explicitly
@@ -59,7 +59,7 @@ The chart carries two keyless Sigstore artifacts, and they answer different
 questions. A **cosign signature:** who signed this:
 
 ```console
-cosign verify ghcr.io/rubentalstra/charts/ferroehr:8.2.7 \
+cosign verify ghcr.io/rubentalstra/charts/ferroehr:8.3.0 \
   --certificate-identity-regexp '^https://github\.com/rubentalstra/FerroEHR/\.github/workflows/publish-chart\.yml@' \
   --certificate-oidc-issuer https://token.actions.githubusercontent.com
 ```
@@ -67,7 +67,7 @@ cosign verify ghcr.io/rubentalstra/charts/ferroehr:8.2.7 \
 A **SLSA build provenance attestation:** what source it was built from, and how:
 
 ```console
-gh attestation verify oci://ghcr.io/rubentalstra/charts/ferroehr:8.2.7 \
+gh attestation verify oci://ghcr.io/rubentalstra/charts/ferroehr:8.3.0 \
   -R rubentalstra/FerroEHR
 gh attestation verify oci://ghcr.io/rubentalstra/ferroehr:4.2.5 \
   -R rubentalstra/FerroEHR
@@ -246,8 +246,6 @@ Kubernetes: `>=1.36.0-0`
 | config.tenancy.claim | string | `"tenant"` |  |
 | config.tenancy.enabled | bool | `false` |  |
 | config.terminology.api_enabled | bool | `false` |  |
-| config.terminology.external.enabled | bool | `false` |  |
-| config.terminology.external.fail_on_error | bool | `false` |  |
 | database.demographicExistingSecret | string | `""` | Reference an existing Secret holding the DEMOGRAPHIC-role DSN. Its value is a full `postgres://ferroehr_demographic:...@host:5432/ferroehr`, a different credential from `database.existingSecret` above. |
 | database.demographicExistingSecretKey | string | `"FERROEHR__DB__DEMOGRAPHIC_URL"` | Key WITHIN demographicExistingSecret holding the demographic DSN. Mounted as a file; only its PATH reaches the pod's environment. |
 | database.demographicUrl | string | `""` | Inline demographic DSN (DEV/TEST ONLY — lands in a chart-managed Secret). Ignored when demographicExistingSecret is set. |
@@ -361,6 +359,38 @@ Kubernetes: `>=1.36.0-0`
 | strategy.rollingUpdate.maxUnavailable | int | `0` | Pods allowed to be unavailable while rolling. 0 = capacity never drops. |
 | strategy.type | string | `"RollingUpdate"` | Rollout strategy. RollingUpdate with maxUnavailable 0 never drops capacity; Recreate takes the service down. |
 | terminationGracePeriodSeconds | int | `30` | Termination grace period (audit/outbox drain has a 5s window in-binary). |
+| terminology.affinity | object | `{}` | Affinity. |
+| terminology.codeSystems.existingConfigMap | string | `""` | Serve code systems from an existing ConfigMap of FHIR JSON instead of the chart's shaped seed. Empty means the chart renders its own. The pod's rollout annotation hashes the NAME you give here, not the ConfigMap's contents — the chart cannot read an object it does not own — so editing that ConfigMap propagates into the volume while every running pod keeps serving what it read at boot. Restart the workload yourself after such an edit (`kubectl rollout restart deployment/<release>-terminology`). |
+| terminology.codeSystems.mountPath | string | `"/etc/ferroterm/codesystems"` | Directory the code systems are mounted at, read-only; it is what `FERROTERM_CODESYSTEMS` names. |
+| terminology.defaultLanguage | string | `"en"` | Display language FerroTERM prefers when a concept carries several. |
+| terminology.enabled | bool | `false` | Deploy FerroTERM alongside the CDR. |
+| terminology.extraEnv | list | `[]` | Extra environment for FerroTERM (escape hatch). |
+| terminology.failOnError | bool | `false` | What the CDR does when the terminology server cannot answer. `false` (the server's own shipped default) accepts the binding; `true` turns an unreachable server into a 422 refusal. No released openEHR text decides between the two. |
+| terminology.image.digest | string | `"sha256:b1ef80382e03c2474bfec2ec57a698d83314e1290dd0cb5a2612ea208bde020c"` | Image digest (`sha256:…`); wins over `tag`. Pinned by default, so an install runs the exact image this chart was validated against. |
+| terminology.image.pullPolicy | string | `"IfNotPresent"` | Pull policy. |
+| terminology.image.repository | string | `"ghcr.io/rubentalstra/ferroterm"` | FerroTERM image repository. A separate product on its own release line (https://github.com/rubentalstra/FerroTERM), BUSL-1.1 from the same Licensor as FerroEHR. |
+| terminology.image.tag | string | `""` | Image tag. Empty falls back to the FerroTERM release this chart is pinned to (0.1.3) — never `.Chart.appVersion`, which is FerroEHR's line. A tag other than that pin is REFUSED while `digest` below is non-empty: the digest wins, so the tag would be inert while the values file claimed otherwise. Clear `digest` to deploy a tag. |
+| terminology.index.mountPath | string | `"/data/index"` | Directory the index claim is mounted at, read-only. Rendered as `FERROTERM_INDEX` only when a claim is named. |
+| terminology.index.persistentVolumeClaim | string | `""` | Name of an EXISTING PersistentVolumeClaim holding a built index for a release you hold a licence for. Empty means the shaped seed is served alone. The chart provisions no storage and renders no build Job: build the index off-cluster with `ferroterm-build --rf2 <release.zip> --out <dir>` and fill the claim from that output. |
+| terminology.logFormat | string | `"json"` | Log format (`json` or `pretty`). |
+| terminology.logLevel | string | `"info"` | `RUST_LOG` filter for the terminology container. |
+| terminology.networkPolicy.enabled | bool | `true` | Install a NetworkPolicy for FerroTERM. Unlike the CDR's and the viewer's, its ingress is narrowed by DEFAULT and there is no admit-everything state: the caller is known — the CDR's pods — so no value offers one. Egress admits DNS only. |
+| terminology.networkPolicy.extraIngressFrom | list | `[]` | Further peers admitted to the terminology port, beside the CDR's pods. Raw NetworkPolicyPeer entries, for a caller you deliberately add (a FerroCKM instance, a migration job); read the licence note above first. No boolean opens this port the way `networkPolicy.ingressAllowAll` opens the CDR's — but a peer you add is admitted exactly as written, and an empty `namespaceSelector: {}` means every namespace. The values schema refuses an empty peer and an empty selector inside one for that reason. |
+| terminology.nodeSelector | object | `{}` | Node selector. |
+| terminology.podDisruptionBudget | object | `{"enabled":false,"minAvailable":1,"unhealthyPodEvictionPolicy":"AlwaysAllow"}` | Protect FerroTERM during voluntary disruption (drains, upgrades). Off by default: the shipped `replicaCount` is 1, and a budget over a single pod blocks the drain it exists to survive. Turn it on with more than one replica. Same shape and same defaults as the CDR's `podDisruptionBudget`. |
+| terminology.podSecurityContext | object | `{"fsGroup":65532,"fsGroupChangePolicy":"OnRootMismatch","runAsGroup":65532,"runAsNonRoot":true,"runAsUser":65532,"seccompProfile":{"type":"RuntimeDefault"},"supplementalGroupsPolicy":"Strict"}` | Pod-level security context. Mirrors the server's; a second workload is where a hardened posture is most easily lost. The user-namespace setting is NOT mirrored here — it is the release-wide `hostUsers` key. |
+| terminology.preStopSleepSeconds | int | `5` | Lame-duck pause before SIGTERM, in seconds (0 disables) — the same endpoint-propagation race the server's `preStopSleepSeconds` covers. |
+| terminology.replicaCount | int | `1` | Replica count. FerroTERM serves a read-only index, so replicas are a throughput choice; each one loads its own copy, so mind the memory limit. Above 1, turn `podDisruptionBudget` below on: the pods spread across nodes by default, and nothing else keeps a drain from taking all of them. |
+| terminology.resources | object | `{"limits":{"memory":"1536Mi"},"requests":{"cpu":"100m","memory":"256Mi"}}` | Resource requests/limits. The 1536Mi limit is the compose overlay's, and it is sized from FerroTERM's own figures: the SNOMED CT Netherlands edition is 889 MB resident, the International edition 702 MB, LOINC 170 MB; the shaped seed is a few megabytes. An index larger than the limit is an OOMKill during startup, so raise it before mounting a bigger edition. |
+| terminology.securityContext | object | `{"allowPrivilegeEscalation":false,"capabilities":{"drop":["ALL"]},"privileged":false,"readOnlyRootFilesystem":true,"runAsNonRoot":true,"runAsUser":65532,"seccompProfile":{"type":"RuntimeDefault"}}` | Container-level security context. Mirrors the server's. |
+| terminology.service.port | int | `8080` | Service port. The container always listens on 8080. |
+| terminology.service.type | string | `"ClusterIP"` | Service type. ClusterIP deliberately: the CDR is the only caller. |
+| terminology.strategy | object | `{}` | Deployment update strategy. Empty leaves the API default (`RollingUpdate`), EXCEPT when `index.persistentVolumeClaim` names a claim: a rolling update surges a second pod before the first goes away, and a ReadWriteOnce volume cannot attach to it on another node, so the chart renders `type: Recreate` there. Set `{type: RollingUpdate}` if your index volume is ReadOnlyMany. |
+| terminology.terminationGracePeriodSeconds | int | `20` | Termination grace period. FerroTERM holds no write in flight; there is nothing to drain but in-flight lookups. |
+| terminology.tolerations | list | `[]` | Tolerations. |
+| terminology.topologySpreadConstraints | list | `[]` | Topology spread for FerroTERM's pods. Empty uses the chart's default — one replica per node, `ScheduleAnyway`, scoped to the ReplicaSet being rolled — which is the CDR's policy over this workload's own pods. Set it to replace that wholesale; a merge of two spreading policies is not one. |
+| terminology.ui | bool | `false` | Serve FerroTERM's own browsing UI. Off: the workload has no Ingress and the CDR does not use it. |
+| terminology.wireCdr | bool | `true` | Point the CDR's `config.terminology.external` at the rendered Service. The chart injects `enabled`, `fail_on_error` and the `default` provider, so the Service address and the workload answering it are one decision. Set it to false to run FerroTERM beside a CDR you wire yourself. While it is true the render refuses every values file that contradicts the injection: `config.terminology.external.providers.default`, an `external.enabled: false`, an `external.fail_on_error` disagreeing with `failOnError` below, and a provider of your own with no `external.routes` entry naming it (an unrouted terminology falls back to `default`, which the injection has taken). |
 | tolerations | list | `[]` | Tolerations for tainted nodes. Empty = none. |
 | topologySpreadConstraints | list | `[]` | Spread replicas across nodes. Empty does NOT mean "no spreading": it means the chart's own default constraint applies — one soft `maxSkew: 1` over `kubernetes.io/hostname`, so two replicas prefer two nodes and a node failure does not take the whole CDR with it. It is `ScheduleAnyway`, not `DoNotSchedule`, so a single-node or capacity-constrained cluster still schedules rather than leaving a pod Pending forever.  A non-empty list REPLACES that default entirely — give the full constraint, including its own `labelSelector`. Add a `topology.kubernetes.io/zone` constraint here if your cluster spans zones; the chart does not assume one (https://kubernetes.io/docs/concepts/scheduling-eviction/topology-spread-constraints/). |
 | viewer.affinity | object | `{}` | Affinity. |

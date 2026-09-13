@@ -9,8 +9,25 @@
 # nothing else. Two other places in the packaged chart restate that same version,
 # and both would otherwise advertise the previous release:
 #
-#   * `artifacthub.io/images` in Chart.yaml — the image list Artifact Hub scans,
-#     so a stale tag reports vulnerabilities for software nobody is running;
+#   * the FIRST-PARTY entries of `artifacthub.io/images` in Chart.yaml — the
+#     image list Artifact Hub scans, so a stale tag reports vulnerabilities for
+#     software nobody is running. First-party means the images built from this
+#     repository at this version: `ferroehr`, `ferroehr-viewer` and
+#     `ferroehr-postgres` today. A third-party image the chart deploys —
+#     `ghcr.io/rubentalstra/ferroterm` since #3305 — is a separate product on
+#     its own release line, pinned in the chart's values and helpers, so
+#     rewriting its tag to a FerroEHR version would publish an image reference
+#     that does not exist. Its tag is left exactly as committed.
+#
+#     WHICH entry is which is DECLARED: each `image:` line in the annotation
+#     carries a trailing `# party: first` or `# party: third` marker, and this
+#     script rewrites the first kind and only the first kind.
+#     scripts/checks/chart-appversion.sh reads the same marker and refuses an
+#     unmarked line, so the set checked and the set rewritten are one set by
+#     construction. Matching the repository NAME instead would silently
+#     rewrite a future `ghcr.io/rubentalstra/ferroehr-<something>` built by
+#     somebody else, and silently leave a first-party image published under
+#     another name a release behind;
 #   * README.md — a GENERATED file (helm-docs, from Chart.yaml + the `# --`
 #     comments in values.yaml) whose install example, "This release" table,
 #     attestation example and version badge all name the appVersion. Artifact Hub
@@ -59,21 +76,24 @@ done
 OLD=$(sed -nE 's/^appVersion: *"?([^"]+)"?$/\1/p' "$CHART")
 [[ -n "$OLD" ]] || { echo "::error::could not read appVersion from ${CHART}" >&2; exit 1; }
 
-# ── Chart.yaml: the artifacthub.io/images tags ───────────────────────────────
-# `image: ghcr.io/…:<tag>` occurs only inside that annotation — the same anchor
-# scripts/checks/chart-appversion.sh reads.
-img_before=$(grep -cE '^[[:space:]]+image: ghcr\.io/[^:]+:[^[:space:]]+$' "$CHART" || true)
+# ── Chart.yaml: the first-party artifacthub.io/images tags ───────────────────
+# `image: <ref>` occurs only inside that annotation, and the marker says which
+# of those lines is ours. The counts below cover the marked-first half alone, so
+# a third-party entry neither inflates the expectation nor fails the check by
+# keeping its own tag.
+FIRST_PARTY='^[[:space:]]+image: [^[:space:]]+[[:space:]]+# party: first$'
+img_before=$(grep -cE "$FIRST_PARTY" "$CHART" || true)
 if [[ "$img_before" -eq 0 ]]; then
-  echo "::error::${CHART} declares no 'image: ghcr.io/…:<tag>' line, so there is nothing to rewrite — the artifacthub.io/images annotation changed shape." >&2
+  echo "::error::${CHART} declares no 'image: …  # party: first' line, so there is nothing to rewrite — the artifacthub.io/images annotation changed shape, or the party markers were dropped." >&2
   exit 1
 fi
 tmp="$(mktemp)"
 trap 'rm -f "$tmp"' EXIT
-sed -E "s|^([[:space:]]+image: ghcr\\.io/[^:]+):[^[:space:]]+\$|\\1:${VERSION}|" "$CHART" > "$tmp"
+sed -E "s|^([[:space:]]+image: [^[:space:]]+):[^[:space:]:]+([[:space:]]+# party: first)\$|\\1:${VERSION}\\2|" "$CHART" > "$tmp"
 cat "$tmp" > "$CHART"
-img_after=$(grep -cE "^[[:space:]]+image: ghcr\\.io/[^:]+:${VERSION}\$" "$CHART" || true)
+img_after=$(grep -cE "^[[:space:]]+image: [^[:space:]]+:${VERSION}[[:space:]]+# party: first\$" "$CHART" || true)
 if [[ "$img_after" -ne "$img_before" ]]; then
-  echo "::error::rewrote ${img_after} of ${img_before} artifacthub.io/images tags in ${CHART}." >&2
+  echo "::error::rewrote ${img_after} of ${img_before} first-party artifacthub.io/images tags in ${CHART}." >&2
   exit 1
 fi
 
@@ -117,5 +137,5 @@ if [[ "$OLD" != "$VERSION" ]]; then
 fi
 
 echo "release facts set to ${VERSION} (from a committed default of ${OLD}):" >&2
-grep -E '^[[:space:]]+image: ghcr\.io/' "$CHART" >&2
+grep -E "^[[:space:]]+image: " "$CHART" >&2
 grep -nE "AppVersion|image\.tag=|ferroehr:[0-9]" "$README" >&2 || true

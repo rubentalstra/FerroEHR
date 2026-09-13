@@ -1129,9 +1129,265 @@
           "minimum": 0
         }
       }
+    },
+    "terminology": {
+      "description": "FerroTERM, the FHIR terminology server, deployed as its own workload and wired as the CDR's external terminology. Off by default. No Ingress is rendered for it and no key here renders one: the CDR is its only caller, which is what the SNOMED CT Affiliate Licence asks of a public deployment (clause 2.2.4 extraction, clause 2.7 access control).",
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "enabled": {
+          "description": "Deploy FerroTERM alongside the CDR.",
+          "type": "boolean"
+        },
+        "wireCdr": {
+          "description": "Point config.terminology.external at the rendered Service. Declaring config.terminology.external.providers.default yourself while this is true is refused at render.",
+          "type": "boolean"
+        },
+        "failOnError": {
+          "description": "Whether an unresolvable binding is a 422 refusal rather than accepted. false is the server's own shipped default.",
+          "type": "boolean"
+        },
+        "replicaCount": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "topologySpreadConstraints": {
+          "description": "Replaces the chart's default spread (one replica per node, ScheduleAnyway) wholesale rather than merging with it.",
+          "type": "array"
+        },
+        "strategy": {
+          "description": "Deployment update strategy. Empty leaves the API default, except with index.persistentVolumeClaim set, where the chart renders type: Recreate because a ReadWriteOnce volume cannot attach to a surge pod on another node.",
+          "type": "object"
+        },
+        "image": {
+          "description": "FerroTERM image. Its tag falls back to the FerroTERM release this chart pins, never to .Chart.appVersion. A tag other than that pin is refused while digest is non-empty: the digest wins, so the tag would be inert.",
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "repository": {
+              "type": "string",
+              "minLength": 1
+            },
+            "pullPolicy": {
+              "type": "string",
+              "enum": [
+                "Always",
+                "IfNotPresent",
+                "Never"
+              ]
+            },
+            "tag": {
+              "type": "string"
+            },
+            "digest": {
+              "description": "sha256 digest; wins over tag. Bare hex or sha256:-prefixed.",
+              "type": "string",
+              "pattern": "^$|^(sha256:)?[a-fA-F0-9]{64}$"
+            }
+          }
+        },
+        "service": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "type": {
+              "type": "string",
+              "enum": [
+                "ClusterIP",
+                "NodePort",
+                "LoadBalancer",
+                "ExternalName"
+              ]
+            },
+            "port": {
+              "$ref": "#/definitions/port"
+            }
+          }
+        },
+        "codeSystems": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "existingConfigMap": {
+              "description": "A ConfigMap of FHIR JSON to serve instead of the chart's shaped seed.",
+              "type": "string"
+            },
+            "mountPath": {
+              "description": "Absolute path the code systems are mounted at; FERROTERM_CODESYSTEMS names it.",
+              "type": "string",
+              "pattern": "^/.+"
+            }
+          }
+        },
+        "index": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "persistentVolumeClaim": {
+              "description": "The name of an EXISTING claim holding an index built off-cluster. Empty serves the shaped seed alone; the chart provisions no storage and renders no build Job.",
+              "type": "string"
+            },
+            "mountPath": {
+              "description": "Absolute path the index claim is mounted at; FERROTERM_INDEX names it, and is rendered only when a claim is named.",
+              "type": "string",
+              "pattern": "^/.+"
+            }
+          }
+        },
+        "ui": {
+          "description": "Serve FerroTERM's own browsing UI.",
+          "type": "boolean"
+        },
+        "defaultLanguage": {
+          "type": "string",
+          "minLength": 1
+        },
+        "logFormat": {
+          "type": "string",
+          "enum": [
+            "json",
+            "pretty"
+          ]
+        },
+        "logLevel": {
+          "description": "A RUST_LOG filter.",
+          "type": "string",
+          "minLength": 1
+        },
+        "networkPolicy": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "enabled": {
+              "type": "boolean"
+            },
+            "extraIngressFrom": {
+              "description": "Further peers admitted beside the CDR's pods. There is deliberately no admit-everything BOOLEAN here, and each peer is admitted exactly as written — so the peer itself is constrained: an empty peer, or an empty podSelector/namespaceSelector inside one, selects every pod in the namespace or in every namespace and is refused.",
+              "type": "array",
+              "items": {
+                "$ref": "#/definitions/narrowingNetworkPolicyPeer"
+              }
+            }
+          }
+        },
+        "podDisruptionBudget": {
+          "description": "FerroTERM's own budget, over its own pods. Off by default: the shipped replicaCount is 1 and a budget over one pod blocks the drain it exists to survive. Set one of minAvailable / maxUnavailable, never both.",
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "enabled": {
+              "type": "boolean"
+            },
+            "minAvailable": {
+              "type": [
+                "integer",
+                "string"
+              ]
+            },
+            "maxUnavailable": {
+              "type": [
+                "integer",
+                "string"
+              ]
+            },
+            "unhealthyPodEvictionPolicy": {
+              "description": "Whether a node drain may evict already-unhealthy pods. AlwaysAllow is the documented recommendation; IfHealthyBudget is the API default and can hang a drain.",
+              "type": "string",
+              "enum": [
+                "AlwaysAllow",
+                "IfHealthyBudget"
+              ]
+            }
+          }
+        },
+        "podSecurityContext": {
+          "type": "object"
+        },
+        "securityContext": {
+          "type": "object"
+        },
+        "resources": {
+          "type": "object"
+        },
+        "nodeSelector": {
+          "type": "object"
+        },
+        "tolerations": {
+          "type": "array"
+        },
+        "affinity": {
+          "type": "object"
+        },
+        "extraEnv": {
+          "type": "array"
+        },
+        "terminationGracePeriodSeconds": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "preStopSleepSeconds": {
+          "type": "integer",
+          "minimum": 0
+        }
+      }
     }
   },
   "definitions": {
+    "narrowingLabelSelector": {
+      "description": "A label selector that actually selects something: 'if present but empty, it selects all pods' / 'all namespaces' (Kubernetes networking/v1 NetworkPolicyPeer), so an empty one here would silently widen the rule it was added to narrow.",
+      "type": "object",
+      "minProperties": 1,
+      "anyOf": [
+        {
+          "required": [
+            "matchLabels"
+          ]
+        },
+        {
+          "required": [
+            "matchExpressions"
+          ]
+        }
+      ],
+      "properties": {
+        "matchLabels": {
+          "type": "object",
+          "minProperties": 1
+        },
+        "matchExpressions": {
+          "type": "array",
+          "minItems": 1
+        }
+      }
+    },
+    "narrowingNetworkPolicyPeer": {
+      "description": "A NetworkPolicyPeer that names a source. Constrained rather than left raw because this policy has no admit-everything key by design, and an empty peer or an empty selector inside one reaches that state anyway.",
+      "type": "object",
+      "minProperties": 1,
+      "properties": {
+        "podSelector": {
+          "$ref": "#/definitions/narrowingLabelSelector"
+        },
+        "namespaceSelector": {
+          "$ref": "#/definitions/narrowingLabelSelector"
+        },
+        "ipBlock": {
+          "type": "object",
+          "required": [
+            "cidr"
+          ],
+          "properties": {
+            "cidr": {
+              "type": "string",
+              "minLength": 1
+            },
+            "except": {
+              "type": "array"
+            }
+          }
+        }
+      }
+    },
     "port": {
       "type": "integer",
       "minimum": 1,
