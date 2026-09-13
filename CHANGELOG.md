@@ -58,6 +58,15 @@ workflow refuses a tag that has no matching section here.
 
 ### Changed
 
+- **The compliance overview's GDPR section covers the data-subject rights,
+  the processor terms, breach notification and research** (#3326). From the
+  audit recorded on #3322: rows for Art. 12(3), 15, 16, 17, 18, 19, 20, 21,
+  28(3)(e) to (h), 33(3)(a) with 34(3)(a), and 89(1), each naming what the
+  product ships, the tracker status and what the deploying organisation must
+  still do, with the same split mirrored on the shared-responsibility page.
+  Where the text is silent, on encryption at rest and on audit-log retention,
+  the rows say so instead of implying a requirement.
+
 - **The sandbox dataset pins 231 accepted / 91 refused ADL 2 archetypes**
   (#3315). Beside a terminology server that serves LOINC, two archetypes of the
   2013 CKM corpus are refused by the VETDF check for LOINC answer codes that do
