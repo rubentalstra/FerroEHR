@@ -1,0 +1,71 @@
+German federal legislation: no copyright protection (§ 5 UrhG, amtliche Werke)
+================================================================================
+
+This identifier covers the German federal acts vendored under `docs/law/de/`,
+fetched from gesetze-im-internet.de (the consolidated texts, as XML) and from
+recht.bund.de (the Bundesgesetzblatt issue of the Digital-Gesetz, as PDF) by
+`scripts/vendor/law-de.sh`. It is not a licence and it is not a grant. It
+records that German statute puts this material outside copyright protection
+altogether, so no permission is needed and none is claimed.
+
+What the statute says
+---------------------
+
+Urheberrechtsgesetz (Act on Copyright and Related Rights, UrhG), § 5
+"Amtliche Werke", quoted verbatim from the consolidated text published at
+https://www.gesetze-im-internet.de/urhg/__5.html (XML edition
+https://www.gesetze-im-internet.de/urhg/xml.zip), read 2026-09-13:
+
+  (1) Gesetze, Verordnungen, amtliche Erlasse und Bekanntmachungen sowie
+  Entscheidungen und amtlich verfaßte Leitsätze zu Entscheidungen genießen
+  keinen urheberrechtlichen Schutz.
+
+  (2) Das gleiche gilt für andere amtliche Werke, die im amtlichen Interesse
+  zur allgemeinen Kenntnisnahme veröffentlicht worden sind, mit der
+  Einschränkung, daß die Bestimmungen über Änderungsverbot und Quellenangabe
+  in § 62 Abs. 1 bis 3 und § 63 Abs. 1 und 2 entsprechend anzuwenden sind.
+
+  (3) Das Urheberrecht an privaten Normwerken wird durch die Absätze 1 und 2
+  nicht berührt, wenn Gesetze, Verordnungen, Erlasse oder amtliche
+  Bekanntmachungen auf sie verweisen, ohne ihren Wortlaut wiederzugeben. In
+  diesem Fall ist der Urheber verpflichtet, jedem Verleger zu angemessenen
+  Bedingungen ein Recht zur Vervielfältigung und Verbreitung einzuräumen. Ist
+  ein Dritter Inhaber des ausschließlichen Rechts zur Vervielfältigung und
+  Verbreitung, so ist dieser zur Einräumung des Nutzungsrechts nach Satz 2
+  verpflichtet.
+
+An unofficial English rendering of paragraph 1, for a reader who needs one:
+laws, ordinances, official decrees and notices, as well as decisions and
+officially drafted guiding principles to decisions, enjoy no copyright
+protection. The German text above is the authoritative one; this sentence is a
+convenience and carries no legal weight.
+
+How it applies to this repository
+---------------------------------
+
+Every file this identifier covers is one of the things § 5 Abs. 1 names: a
+federal act (Gesetz) as consolidated by the Bundesministerium der Justiz and
+the Bundesamt für Justiz, or as promulgated in the Bundesgesetzblatt. No
+copyright subsists in them, so redistributing them verbatim needs no
+permission and grants none.
+
+What is vendored is the publisher's own file, byte for byte, with a SHA-256
+recorded beside it: the XML document gesetze-im-internet.de packs into an
+act's `xml.zip`, under the publisher's own file name, and the PDF of the
+Bundesgesetzblatt issue recht.bund.de serves. Each act's `PROVENANCE.md` names
+the document number, the publisher's build stamp or the BGBl. citation, and
+the fetch, so a reader can re-derive the same document from the source rather
+than trusting this copy.
+
+The publisher itself states that its consolidated texts are non-official
+("nicht amtliche Texte"); the authentic text is the Bundesgesetzblatt. That
+is a statement about legal effect, not about copyright: § 5 Abs. 1 reaches
+the act whichever edition carries it. The documentary apparatus
+gesetze-im-internet.de adds around the text (the gii-norm DTD, its metadata
+elements, the site's own pages) is the publisher's; nothing here reuses it
+as a design, and none of it is served or rendered by this project.
+
+§ 5 Abs. 3 is the reason the standards a German act refers to are NOT in the
+tree: a DIN or ISO standard referenced by legislation keeps its copyright, so
+where a compliance page cites one, its directory would carry a record and no
+text, the way the NEN standards under `docs/law/nl/` do.

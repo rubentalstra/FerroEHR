@@ -1,0 +1,65 @@
+Swiss federal legislation: not protected by copyright (Art. 5 URG)
+====================================================================
+
+This identifier covers the Swiss federal acts and ordinances vendored under
+`docs/law/ch/`, fetched from the Fedlex filestore of the Federal Chancellery
+by `scripts/vendor/law-ch.sh`, in German and, where Fedlex publishes one at
+the same consolidation, in the non-binding English translation. It is not a
+licence and it is not a grant. It records that Swiss statute puts this
+material outside copyright protection altogether, so no permission is needed
+and none is claimed.
+
+What the statute says
+---------------------
+
+Bundesgesetz über das Urheberrecht und verwandte Schutzrechte (Federal Act on
+Copyright and Related Rights, URG, SR 231.1), Art. 5 "Nicht geschützte
+Werke", quoted verbatim from the consolidation in force from 1 July 2025 at
+https://www.fedlex.admin.ch/eli/cc/1993/1798_1798_1798/20250701/de, read
+2026-09-13:
+
+  1 Durch das Urheberrecht nicht geschützt sind:
+    a. Gesetze, Verordnungen, völkerrechtliche Verträge und andere amtliche
+       Erlasse;
+    b. Zahlungsmittel;
+    c. Entscheidungen, Protokolle und Berichte von Behörden und öffentlichen
+       Verwaltungen;
+    d. Patentschriften und veröffentlichte Patentgesuche.
+
+  2 Ebenfalls nicht geschützt sind amtliche oder gesetzlich geforderte
+    Sammlungen und Übersetzungen der Werke nach Absatz 1.
+
+An unofficial English rendering, for a reader who needs one: copyright does
+not protect acts, ordinances, international treaties and other official
+enactments (paragraph 1 letter a), nor official or statutorily required
+collections and translations of them (paragraph 2). The German text above is
+the authoritative one; this sentence is a convenience and carries no legal
+weight.
+
+How it applies to this repository
+---------------------------------
+
+Every German file this identifier covers is one of the things Art. 5 Abs. 1
+lit. a names: a federal act or an ordinance of the Federal Council or a
+department, published in the Classified Compilation (Systematische
+Sammlung des Bundesrechts) on Fedlex. Every English file is a translation of
+one of them published by the same authority, which Art. 5 Abs. 2 puts in the
+same place. Nothing here is protected by copyright, so redistributing it
+verbatim needs no permission and grants none.
+
+The English translations bind nobody, and Fedlex says so on each of them:
+"English is not an official language of the Swiss Confederation. This
+translation is provided for information purposes only and has no legal
+force." German, French and Italian are the authentic languages; the German
+text is the one vendored as the reference, and each act's `PROVENANCE.md`
+points at the French and Italian consolidations on Fedlex.
+
+What is vendored is the publisher's own HTML for a named consolidation and
+language, byte for byte, with a SHA-256 recorded beside it. Each act's
+`PROVENANCE.md` names the SR number, the ELI, the consolidation date and the
+fetch, so a reader can re-derive the same document from the source rather
+than trusting this copy.
+
+The Fedlex web application (its styling, scripts and site chrome) is the
+Federal Chancellery's and is not vendored: the fetch source is the filestore
+document alone, which carries the act and its own minimal markup.

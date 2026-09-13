@@ -69,7 +69,8 @@ FETCH_LIMIT=10000
 # the change under review (#2287). That is exactly how the NEN 7510 entry sat
 # here returning 404 (#3177).
 #
-# Last checked, all 200: 2026-09-09.
+# Last checked, all 200: 2026-09-13 (the DE and CH entries added that day;
+# the NL, EU and INT ones re-checked 2026-09-09).
 LEGAL_SOURCES=(
   "GDPR|EU|https://eur-lex.europa.eu/eli/reg/2016/679/oj"
   "EHDS|EU|https://eur-lex.europa.eu/eli/reg/2025/327/oj"
@@ -79,6 +80,13 @@ LEGAL_SOURCES=(
   "NEN 7510|NL|https://www.nen.nl/nen-7510-1-2024-nl-331311"
   "NEN 7512|NL|https://www.nen.nl/nen-7512-2022-nl-297137"
   "NEN 7513|NL|https://www.nen.nl/nen-7513-2018-nl-245399"
+  "BDSG|DE|https://www.gesetze-im-internet.de/bdsg_2018/"
+  "SGB V|DE|https://www.gesetze-im-internet.de/sgb_5/"
+  "GDNG|DE|https://www.gesetze-im-internet.de/gdng/"
+  "StGB|DE|https://www.gesetze-im-internet.de/stgb/"
+  "DSG|CH|https://www.fedlex.admin.ch/eli/cc/2022/491/de"
+  "DSV|CH|https://www.fedlex.admin.ch/eli/cc/2022/568/de"
+  "EPDG|CH|https://www.fedlex.admin.ch/eli/cc/2017/203/de"
   "IHE ATNA|INT|https://profiles.ihe.net/ITI/TF/Volume1/ch-9.html"
 )
 

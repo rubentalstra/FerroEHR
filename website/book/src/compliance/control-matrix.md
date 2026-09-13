@@ -110,6 +110,13 @@ authority; nothing on this page restates it.
 | NEN 7510 | NL | [https://www.nen.nl/nen-7510-1-2024-nl-331311](https://www.nen.nl/nen-7510-1-2024-nl-331311) |
 | NEN 7512 | NL | [https://www.nen.nl/nen-7512-2022-nl-297137](https://www.nen.nl/nen-7512-2022-nl-297137) |
 | NEN 7513 | NL | [https://www.nen.nl/nen-7513-2018-nl-245399](https://www.nen.nl/nen-7513-2018-nl-245399) |
+| BDSG | DE | [https://www.gesetze-im-internet.de/bdsg_2018/](https://www.gesetze-im-internet.de/bdsg_2018/) |
+| SGB V | DE | [https://www.gesetze-im-internet.de/sgb_5/](https://www.gesetze-im-internet.de/sgb_5/) |
+| GDNG | DE | [https://www.gesetze-im-internet.de/gdng/](https://www.gesetze-im-internet.de/gdng/) |
+| StGB | DE | [https://www.gesetze-im-internet.de/stgb/](https://www.gesetze-im-internet.de/stgb/) |
+| DSG | CH | [https://www.fedlex.admin.ch/eli/cc/2022/491/de](https://www.fedlex.admin.ch/eli/cc/2022/491/de) |
+| DSV | CH | [https://www.fedlex.admin.ch/eli/cc/2022/568/de](https://www.fedlex.admin.ch/eli/cc/2022/568/de) |
+| EPDG | CH | [https://www.fedlex.admin.ch/eli/cc/2017/203/de](https://www.fedlex.admin.ch/eli/cc/2017/203/de) |
 | IHE ATNA | INT | [https://profiles.ihe.net/ITI/TF/Volume1/ch-9.html](https://profiles.ihe.net/ITI/TF/Volume1/ch-9.html) |
 
 `EU` and `INT` apply to every deployment. A two-letter country code is
