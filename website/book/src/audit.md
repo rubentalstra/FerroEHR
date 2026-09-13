@@ -231,8 +231,9 @@ and the floor. `0` always passes. The floors registered:
 | Jurisdiction | Floor | Source |
 |---|---|---|
 | NL | five years from the moment the entry is written (`1830` days, the most five calendar years can span) | [Besluit vaststelling bewaartermijn logging](https://wetten.overheid.nl/BWBR0042391) (Stcrt. 2019, 38007), under Art. 5 of the [Besluit elektronische gegevensverwerking door zorgaanbieders](https://wetten.overheid.nl/BWBR0040238), which binds the period to NEN 7513 |
+| CH | one year, and kept apart from the processing system (`366` days, the most one calendar year can span) | [Datenschutzverordnung (DSV) Art. 4 Abs. 5](https://www.fedlex.admin.ch/eli/cc/2022/568/de), as amended on 1 December 2025, for the logs of a large-scale automated processing of sensitive personal data; the separate storage is the deployment's, through the [forwarding sinks](#getting-the-log-out) |
 
-The other shipped jurisdictions (FI, GB, NO, SE) have no floor registered: an
+The other shipped jurisdictions (DE, FI, GB, NO, SE) have no floor registered: an
 unknown requirement is never guessed at, and a deployment there sets its own.
 The effective retention is on the boot line beside the audit-enabled facts and
 on `GET /management/info` under `audit`.

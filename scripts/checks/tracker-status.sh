@@ -21,11 +21,24 @@
 # Generated pages (control-matrix, ehds-readiness, technical-documentation) are
 # render output of their own generators and are skipped.
 #
-# Usage: scripts/checks/tracker-status.sh   (no arguments)
+# Usage: scripts/checks/tracker-status.sh [--closing <pr-number>]
+#
+# An issue the pull request under review CLOSES counts as closed: a control that
+# lands in that PR is written "shipped, #N" on the page in the same change, and
+# the merge closes the issue. CI hands the PR body in through PR_BODY (from the
+# event payload, never interpolated into the shell); a local run names the PR
+# with --closing, which reads the body through gh. Only the closing keywords
+# GitHub itself honours count (Closes/Fixes/Resolves, docs.github.com
+# "Linking a pull request to an issue").
 set -euo pipefail
 cd "$(dirname "$0")/../.."
 # shellcheck source=scripts/lib/guard-args.sh
 source scripts/lib/guard-args.sh
+if [[ "${1:-}" == "--closing" ]]; then
+  [[ -n "${2:-}" ]] || { echo "usage: $0 [--closing <pr-number>]" >&2; exit 2; }
+  PR_BODY="$(gh pr view "$2" --json body --jq .body)"
+  shift 2
+fi
 guard_no_args "$@"
 command -v jq >/dev/null || { echo "error: jq is required" >&2; exit 1; }
 command -v gh >/dev/null || { echo "error: gh is required" >&2; exit 1; }
@@ -51,6 +64,12 @@ for n in $numbers; do query+="i$n: issue(number:$n){number state} "; done
 query+="}}"
 states="$(gh api graphql -f owner="${repo%%/*}" -f name="${repo##*/}" -f query="$query" \
   --jq '.data.repository | to_entries | map(select(.value != null)) | map({(.value.number|tostring): .value.state}) | add // {}')"
+# The issues the reviewed PR closes read as CLOSED, so a same-PR "shipped, #N"
+# is not refused while the merge that closes #N is the very thing under review.
+closing="$(grep -oiE '\b(close[sd]?|fix(e[sd])?|resolve[sd]?)[[:space:]]+#[0-9]+' <<<"${PR_BODY:-}" | grep -oE '[0-9]+$' | sort -u || true)"
+for n in $closing; do
+  states="$(jq --arg n "$n" '.[$n] = "CLOSED"' <<<"$states")"
+done
 state_of() { jq -r --arg n "$1" '.[$n] // "UNKNOWN"' <<<"$states"; }
 
 fail=0

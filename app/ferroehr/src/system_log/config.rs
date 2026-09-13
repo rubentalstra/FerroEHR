@@ -323,10 +323,18 @@ impl AuditPosture {
 /// door zorgaanbieders (<https://wetten.overheid.nl/BWBR0040238>), which binds
 /// the retention to NEN 7513. Five calendar years never exceed 1830 days, so
 /// that is the floor in days.
+///
+/// `CH`: at least one year, and kept apart from the processing system, for the
+/// logs of a large-scale automated processing of sensitive personal data —
+/// Datenschutzverordnung (DSV, SR 235.11) Art. 4 Abs. 5 as amended on
+/// 1 December 2025 (`docs/law/ch/dpo/text-de.html`,
+/// <https://www.fedlex.admin.ch/eli/cc/2022/568/de>). One calendar year never
+/// exceeds 366 days, so that is the floor in days.
 #[must_use]
 pub fn retention_floor_days(jurisdiction: &str) -> Option<u32> {
     match jurisdiction {
         "NL" => Some(1830),
+        "CH" => Some(366),
         _ => None,
     }
 }
