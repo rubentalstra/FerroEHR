@@ -38,7 +38,7 @@ kubectl -n ferroehr create secret generic ferroehr-db \
   --from-literal=FERROEHR__DB__URL='postgres://ferroehr_app:***@pg-host:5432/ferroehr?sslmode=verify-full'
 
 helm install ferroehr oci://ghcr.io/rubentalstra/charts/ferroehr \
-  --version 8.2.7 -n ferroehr \
+  --version 8.3.0 -n ferroehr \
   --set database.existingSecret=ferroehr-db \
   --set image.tag=4.2.5
 ```
@@ -55,7 +55,7 @@ helm install ferroehr oci://ghcr.io/rubentalstra/charts/ferroehr \
 reference. To read the chart's metadata without installing it:
 
 ```shell
-helm show chart oci://ghcr.io/rubentalstra/charts/ferroehr --version 8.2.7
+helm show chart oci://ghcr.io/rubentalstra/charts/ferroehr --version 8.3.0
 ```
 
 ### Pin two versions, not one
@@ -68,7 +68,7 @@ against.
 
 | | Selects | Pin with | Line |
 |---|---|---|---|
-| Chart version | templates, values schema, defaults | `--version 8.2.7` | SemVer over the chart's own contract |
+| Chart version | templates, values schema, defaults | `--version 8.3.0` | SemVer over the chart's own contract |
 | Image tag | the server binary | `--set image.tag=4.2.5` (or `image.digest`) | the application's SemVer line |
 
 Always pin the image to an immutable version or, better, a `@sha256` digest,
@@ -167,7 +167,7 @@ metadata lists: the server, and the optional viewer.
 > the image itself as the authority:
 >
 > ```shell
-> helm template ferroehr oci://ghcr.io/rubentalstra/charts/ferroehr --version 8.2.7 \
+> helm template ferroehr oci://ghcr.io/rubentalstra/charts/ferroehr --version 8.3.0 \
 >   -s templates/configmap.yaml --set database.existingSecret=ferroehr-db \
 >   | sed -n '/ferroehr.toml/,$p' | sed '1d;s/^    //' > /tmp/ferroehr.toml
 > docker run --rm -v /tmp/ferroehr.toml:/etc/ferroehr/ferroehr.toml:ro \
@@ -599,7 +599,7 @@ config:
 
 ```shell
 helm upgrade ferroehr oci://ghcr.io/rubentalstra/charts/ferroehr \
-  --version 8.2.7 -n ferroehr --reuse-values \
+  --version 8.3.0 -n ferroehr --reuse-values \
   --set config.query.plan_cache_capacity=512
 ```
 
@@ -641,7 +641,7 @@ is an explicit, auditable decision:
 | FHIR inbound/façade | `config.fhir.api_enabled` | off | Read façade + inbound mapping. |
 | FHIR outbound → AMQP | `config.fhir.outbound.enabled` | off | ⚠ **Carries PHI** (the mapped FHIR resource). Separate exchange; TLS broker only; URL via `secrets.fhirOutboundUrl`. |
 | S3 multimedia | `config.multimedia.enabled` | off | ⚠ Offloaded blobs are PHI. Private, encrypted, HTTPS bucket; keys via `secrets.multimediaAccessKeyId` and `secrets.multimediaSecretAccessKey`. |
-| External terminology | `config.terminology.external.enabled` | off | FHIR terminology server; the provider map is more `config.terminology.external.providers` keys. |
+| External terminology | `config.terminology.external.enabled` | off | FHIR terminology server; the provider map is more `config.terminology.external.providers` keys. To run one in the cluster instead, use `terminology.enabled` ([FerroTERM](#ferroterm-a-terminology-server-beside-the-cdr-off-by-default)), which sets these keys for you. |
 | ATNA audit trail | `config.audit.enabled` | **on** | On with the local store only; forwarding (`config.audit.syslog`, `config.audit.fhir_feed`) is opt-in per sink. |
 | Version signing | `config.signing.enabled` | **on** (`config.signing.mode: digest`) | `pgp` mode needs a `config.files` key plus `secrets.signingKeyPassphrase`, and fails closed at boot without a usable key. |
 | OTLP telemetry | `config.telemetry.otlp_endpoint` | unset | Setting the endpoint is all it takes; unset means the OpenTelemetry layer is not installed at all (zero overhead). With `networkPolicy.egress.enabled`, add a rule for the collector, since a blocked exporter drops spans without an error. |
@@ -685,6 +685,91 @@ vouched for by the first. What that run does **not** establish is stated in its
 own record: the viewer's OIDC path, the screens behind a session, and whether a
 CNI enforces the viewer's NetworkPolicy. Its screens are documented in the
 [viewer](../viewer/index.md) chapter.
+
+### FerroTERM (a terminology server beside the CDR, off by default)
+
+[FerroTERM](https://github.com/rubentalstra/FerroTERM) is the Ferro family's
+FHIR terminology server: R4, R4B and R5 endpoints over a precomputed index, no
+JVM, no database, one distroless image. `terminology.enabled` renders it as a
+third workload beside the CDR and the viewer, and points the CDR at it, so
+archetype value-set bindings resolve at commit, AQL `TERMINOLOGY()` expands
+through it, and the `/terminology/*` routes answer from it. It is the Helm
+equivalent of the [compose terminology overlay](compose.md#the-terminology-overlay-ferroterm).
+
+```shell
+helm upgrade --install ferroehr oci://ghcr.io/rubentalstra/charts/ferroehr \
+  --version 8.3.0 -n ferroehr --reuse-values \
+  --set terminology.enabled=true
+```
+
+That renders a Deployment, a ClusterIP Service, its own ServiceAccount, a
+ConfigMap holding the code systems, and a NetworkPolicy. It also writes three
+things into the CDR's `ferroehr.toml`: `config.terminology.external.enabled`,
+`config.terminology.external.fail_on_error` from `terminology.failOnError`, and
+the `default` provider at the Service address. Declaring
+`config.terminology.external.providers.default` yourself while that injection is
+on is refused at render, because two answers to "which server resolves a
+binding" is how resolution ends up pointed somewhere nobody chose. Set
+`terminology.wireCdr=false` to keep your own provider and run FerroTERM unwired,
+and add a second provider under any other name at any time.
+
+**No Ingress is rendered, and no value renders one.** The CDR is the only
+caller, which is the posture the [hosted sandbox](https://sandbox.ferroehr.eu)
+runs and what the SNOMED CT Affiliate Licence asks of a public deployment:
+clause 2.2.4 permits a public system to serve SNOMED-encoded data provided users
+cannot extract a substantial portion of the release and no fee is charged, and
+clause 2.7 requires measures so the release cannot be downloaded except by
+authorised users. A published FHIR terminology endpoint answers `$expand` and
+`$lookup` to every client that reaches it, and FerroTERM has neither
+authentication nor a rate limit of its own. Its NetworkPolicy is therefore the
+one in this chart that narrows sources by default: ingress admits the CDR's pods
+on the terminology port and nothing else, egress admits DNS.
+`terminology.networkPolicy.extraIngressFrom` adds a peer you decide to admit;
+there is no key that opens it to everything.
+
+**Out of the box it serves the shaped seed**, which is synthetic content under
+the reserved `example.test` domain: two code systems and two value sets, the
+same content the conformance lane binds to. The chart carries those files and
+mounts them as a ConfigMap, so a fresh install from the registry serves
+terminology with no repository checkout.
+`terminology.codeSystems.existingConfigMap` swaps in a ConfigMap of your own FHIR
+JSON. No licensed terminology ships with FerroEHR or FerroTERM.
+
+**A real release is an index you build off-cluster.** Run
+`ferroterm-build --rf2 <release.zip> --out <dir>` on a machine that holds the
+archive, put the output on a PersistentVolume, and name that claim in
+`terminology.index.persistentVolumeClaim`. The chart mounts it read-only at
+`terminology.index.mountPath` and sets `FERROTERM_INDEX`; with no claim named,
+the variable is absent and the seed is served alone. The chart provisions no
+storage and renders no build Job, for the same reason it provisions no database:
+unpacking a licensed archive is a step whose licence terms are yours, not a step
+a chart should start on its own. FerroTERM's
+[loading page](https://ferroterm.eu/docs/operate/loading-snomed.html) covers the
+other code systems and their build flags. Size the memory limit for the edition
+before you mount it: `terminology.resources` ships a 1536Mi limit, and
+FerroTERM's own figures put the SNOMED CT Netherlands edition at 889 MB resident
+and the International edition at 702 MB.
+
+**The fail posture is the CDR's shipped one.** `terminology.failOnError`
+defaults to `false`, so a binding the server cannot resolve is accepted; `true`
+turns an unreachable terminology server into a `422` refusal. The
+[terminology page](../beyond-core/terminology.md#when-the-terminology-server-cannot-answer)
+explains both. A code the server resolves as outside its value set is refused
+with `422` under either posture.
+
+**FerroTERM's licence.** BUSL-1.1 from the same Licensor as FerroEHR:
+non-commercial production use is free, any other production use needs a
+commercial licence. Its README says which is which. The licence for whatever
+code systems you load is separate and yours to hold; SNOMED CT needs an
+Affiliate Licence (free in Member countries, see
+[snomed.org/get-snomed](https://www.snomed.org/get-snomed)), and every surface
+showing its content carries the notice clause 8.3.1 prescribes plus the release
+version and date.
+
+FerroTERM carries the same security context as the CDR and the viewer, and the
+chart's render gate holds all three to the same Restricted profile. Its image is
+pinned by digest in `terminology.image.digest` and moves on FerroTERM's own
+release line, so it does not follow `appVersion` the way the viewer image does.
 
 ### Per-domain backups (three CronJobs, off by default)
 
@@ -783,7 +868,7 @@ Preview an upgrade against what you have installed with
 `helm diff`, or render the new chart version and read it:
 
 ```shell
-helm template ferroehr oci://ghcr.io/rubentalstra/charts/ferroehr --version 8.2.7 \
+helm template ferroehr oci://ghcr.io/rubentalstra/charts/ferroehr --version 8.3.0 \
   -n ferroehr -f my-values.yaml | less
 ```
 

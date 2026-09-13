@@ -1,0 +1,300 @@
+{{- if .Values.terminology.enabled }}
+{{- /*
+FerroTERM — an OPTIONAL companion workload, the Helm equivalent of
+docker-compose.terminology.yml (#3305).
+
+Everything here is gated on `terminology.enabled`, so the default render is
+byte-identical to a chart without this file. FerroTERM is the Ferro family's
+FHIR terminology server (R4 /r4, R4B /r4b, R5 /r5; no JVM, no database): the
+CDR resolves archetype value-set bindings against it at commit, expands AQL
+TERMINOLOGY() through it, and answers its own /terminology/* routes from it.
+
+The pod-security posture is NOT inherited from the server's values: a second
+workload is exactly where a hardened posture is quietly lost, so this one
+carries its own copy and the chart's security gate checks all of them.
+
+No Ingress is rendered, and there is no value that renders one. The CDR is the
+only caller, which is the posture the hosted sandbox runs and the reading the
+SNOMED CT Affiliate Licence requires of a public deployment: clause 2.2.4
+permits a public system to serve SNOMED-encoded data provided users cannot
+extract a substantial portion of the release and no fee is charged, and clause
+2.7 requires measures so the release cannot be downloaded except by authorised
+users. A published FHIR terminology endpoint serves `$expand` and `$lookup` to
+anyone who reaches it, which is the extraction those clauses are about. Publish
+it yourself only behind authentication and a rate limit, which FerroTERM has
+neither of.
+*/}}
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: {{ include "ferroehr.terminologyFullname" . }}
+  labels:
+    {{- include "ferroehr.terminologyLabels" . | nindent 4 }}
+automountServiceAccountToken: false
+{{- if not .Values.terminology.codeSystems.existingConfigMap }}
+---
+# The licence-free shaped seed this repository ships: two code systems and two
+# value sets under the reserved example.test domain (IETF RFC 6761 §6.2), the
+# same content the conformance lane binds to. No licensed terminology is
+# distributed with FerroEHR or FerroTERM.
+#
+# Delivered as a ConfigMap built from the chart's own files, so a fresh
+# `helm install` from the registry serves terminology with no repository
+# checkout and no init container. The canonical copy is
+# docker/terminology/seed/ and scripts/checks/terminology-seed-drift.sh holds
+# the two byte-identical.
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ include "ferroehr.terminologyCodeSystemsConfigMap" . }}
+  annotations:
+    kubernetes.io/description: >-
+      Synthetic, licence-free FHIR code systems and value sets under the reserved example.test domain, mounted read-only as FerroTERM's code-system directory. Replace it with terminology.codeSystems.existingConfigMap to serve your own.
+  labels:
+    {{- include "ferroehr.terminologyLabels" . | nindent 4 }}
+data:
+{{ (.Files.Glob "files/terminology/*.json").AsConfig | indent 2 }}
+{{- end }}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ include "ferroehr.terminologyFullname" . }}
+  annotations:
+    kubernetes.io/description: >-
+      In-cluster address for FerroTERM. Reached by the CDR alone — no Ingress is rendered for it, because a published FHIR terminology endpoint serves $expand and $lookup to every client that can reach it.
+  labels:
+    {{- include "ferroehr.terminologyLabels" . | nindent 4 }}
+spec:
+  {{- /* Rendered only when it differs from the API default, per
+         https://kubernetes.io/docs/concepts/configuration/overview/
+         "Don't specify default values unnecessarily" — as on the CDR Service. */}}
+  {{- if ne .Values.terminology.service.type "ClusterIP" }}
+  type: {{ .Values.terminology.service.type }}
+  {{- end }}
+  ports:
+    - name: http
+      port: {{ .Values.terminology.service.port }}
+      targetPort: http
+      appProtocol: http
+  selector:
+    {{- include "ferroehr.terminologySelectorLabels" . | nindent 4 }}
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "ferroehr.terminologyFullname" . }}
+  annotations:
+    kubernetes.io/description: >-
+      FerroTERM, the FHIR terminology server the CDR resolves bindings against. It serves a read-only index and the shaped code-system directory; it holds no clinical data and reaches nothing outbound.
+  labels:
+    {{- include "ferroehr.terminologyLabels" . | nindent 4 }}
+spec:
+  replicas: {{ .Values.terminology.replicaCount }}
+  selector:
+    matchLabels:
+      {{- include "ferroehr.terminologySelectorLabels" . | nindent 6 }}
+  template:
+    metadata:
+      annotations:
+        # FerroTERM reads its code-system directory at boot, so a changed seed
+        # has to roll the pod: without this, an edited ConfigMap propagates
+        # into the volume while every pod keeps serving what it read at
+        # startup. Same reasoning as the CDR's checksum/config.
+        checksum/codesystems: {{ printf "%s|%s"
+          ((.Files.Glob "files/terminology/*.json").AsConfig)
+          (.Values.terminology.codeSystems.existingConfigMap | toString) | sha256sum }}
+      labels:
+        {{- include "ferroehr.terminologySelectorLabels" . | nindent 8 }}
+    spec:
+      {{- with .Values.imagePullSecrets }}
+      imagePullSecrets:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      serviceAccountName: {{ include "ferroehr.terminologyFullname" . }}
+      automountServiceAccountToken: false
+      # Same reason as the server's: the kubelet's per-Service link variables
+      # land in the reserved `FERROEHR_` namespace for any Service named
+      # `ferroehr*`, and a strict boot-time sweep then refuses to start
+      # (https://kubernetes.io/docs/concepts/services-networking/service/#environment-variables).
+      enableServiceLinks: false
+      terminationGracePeriodSeconds: {{ .Values.terminology.terminationGracePeriodSeconds }}
+      {{- if not .Values.hostUsers }}
+      {{- include "ferroehr.hostUsers" . | nindent 6 }}
+      {{- end }}
+      securityContext:
+        {{- toYaml .Values.terminology.podSecurityContext | nindent 8 }}
+      containers:
+        - name: terminology
+          image: "{{ include "ferroehr.terminologyImage" . }}"
+          imagePullPolicy: {{ .Values.terminology.image.pullPolicy }}
+          securityContext:
+            {{- toYaml .Values.terminology.securityContext | nindent 12 }}
+          ports:
+            - name: http
+              containerPort: 8080
+              protocol: TCP
+          env:
+            # The code-system directory, mounted read-only from the ConfigMap
+            # above (or the operator's).
+            - name: FERROTERM_CODESYSTEMS
+              value: {{ .Values.terminology.codeSystems.mountPath | quote }}
+            {{- if .Values.terminology.index.persistentVolumeClaim }}
+            # A built index for a licensed release. Rendered ONLY when a claim
+            # names one: with the variable unset FerroTERM serves the shaped
+            # seed alone, and pointing it at an empty directory is not the same
+            # thing.
+            - name: FERROTERM_INDEX
+              value: {{ .Values.terminology.index.mountPath | quote }}
+            {{- end }}
+            # FerroTERM's own browsing UI. Off, because the workload has no
+            # Ingress and the CDR does not use it; turning it on only widens
+            # what a caller inside the cluster can do with the release.
+            - name: FERROTERM_UI
+              value: {{ ternary "on" "off" .Values.terminology.ui | quote }}
+            - name: FERROTERM_LOG_FORMAT
+              value: {{ .Values.terminology.logFormat | quote }}
+            - name: FERROTERM_DEFAULT_LANGUAGE
+              value: {{ .Values.terminology.defaultLanguage | quote }}
+            - name: RUST_LOG
+              value: {{ .Values.terminology.logLevel | quote }}
+            {{- with .Values.terminology.extraEnv }}
+            {{- toYaml . | nindent 12 }}
+            {{- end }}
+          {{- /* FerroTERM serves one read-only index from one process and
+                 reaches no dependency, so `GET /health` is both "the process
+                 answers" and "the process can serve": the two probe roles
+                 genuinely coincide here, as they do for the viewer and unlike
+                 the CDR, where readiness owns the database. The third role is
+                 what an edition load needs — a startup probe, so a large index
+                 opening is never read as a wedged process and restarted
+                 mid-boot
+                 (https://kubernetes.io/docs/concepts/workloads/pods/probes/). */}}
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: http
+            initialDelaySeconds: 10
+            periodSeconds: 20
+          readinessProbe:
+            httpGet:
+              path: /health
+              port: http
+            initialDelaySeconds: 5
+            periodSeconds: 10
+          {{- /* 5 × 60 = five minutes. The compose overlay allows 60 s
+                 (`start_period`) for the same load from a local volume; a
+                 cluster index arrives over a PersistentVolume that has to
+                 attach and page in first, so the allowance here is longer
+                 rather than copied. */}}
+          startupProbe:
+            httpGet:
+              path: /health
+              port: http
+            periodSeconds: 5
+            failureThreshold: 60
+          {{- if gt (int .Values.terminology.preStopSleepSeconds) 0 }}
+          lifecycle:
+            preStop:
+              sleep:
+                seconds: {{ int .Values.terminology.preStopSleepSeconds }}
+          {{- end }}
+          resources:
+            {{- toYaml .Values.terminology.resources | nindent 12 }}
+          volumeMounts:
+            # `readOnlyRootFilesystem: true` leaves nowhere to write, so the
+            # writable scratch the runtime needs is an explicit emptyDir.
+            - name: tmp
+              mountPath: /tmp
+            - name: codesystems
+              mountPath: {{ .Values.terminology.codeSystems.mountPath | quote }}
+              readOnly: true
+            {{- if .Values.terminology.index.persistentVolumeClaim }}
+            - name: index
+              mountPath: {{ .Values.terminology.index.mountPath | quote }}
+              readOnly: true
+            {{- end }}
+      volumes:
+        - name: tmp
+          emptyDir: {}
+        - name: codesystems
+          configMap:
+            name: {{ include "ferroehr.terminologyCodeSystemsConfigMap" . }}
+        {{- if .Values.terminology.index.persistentVolumeClaim }}
+        # An EXISTING claim, never one this chart provisions — the same rule the
+        # backup CronJobs follow. The index is built OFF-CLUSTER from a release
+        # you hold a licence for (`ferroterm-build --rf2 <release.zip> --out
+        # <dir>`), and the claim is filled from that output; no build Job is
+        # rendered, because unpacking a licensed archive is not something a
+        # chart should start on its own.
+        - name: index
+          persistentVolumeClaim:
+            claimName: {{ .Values.terminology.index.persistentVolumeClaim }}
+            readOnly: true
+        {{- end }}
+      {{- with .Values.terminology.nodeSelector }}
+      nodeSelector:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.terminology.tolerations }}
+      tolerations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.terminology.affinity }}
+      affinity:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+{{- if .Values.terminology.networkPolicy.enabled }}
+---
+# FerroTERM's policy is the one place in this chart where ingress is narrowed by
+# DEFAULT rather than by an operator's list: its caller is known — the CDR's
+# pods — so there is no state in which admitting every source is the right
+# answer, and none is offered. That is the licence posture above expressed as a
+# policy object rather than as advice.
+#
+# Egress carries DNS and nothing else: FerroTERM opens no outbound connection of
+# its own, and without DNS a policy'd pod cannot resolve the cluster's own names,
+# which fails in a way that reads as the server being wedged.
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: {{ include "ferroehr.terminologyFullname" . }}
+  annotations:
+    kubernetes.io/description: >-
+      Ingress for FerroTERM: only its HTTP port, and only from the CDR's pods{{ if .Values.terminology.networkPolicy.extraIngressFrom }} and the terminology.networkPolicy.extraIngressFrom peers{{ end }}. Egress admits DNS only.
+  labels:
+    {{- include "ferroehr.terminologyLabels" . | nindent 4 }}
+spec:
+  podSelector:
+    matchLabels:
+      {{- include "ferroehr.terminologySelectorLabels" . | nindent 6 }}
+  policyTypes:
+    - Ingress
+    - Egress
+  ingress:
+    - from:
+        # The CDR, by pod selector. The CDR carries its own
+        # `app.kubernetes.io/name`, so this selects the server's pods and
+        # nothing else in the release.
+        - podSelector:
+            matchLabels:
+              {{- include "ferroehr.selectorLabels" . | nindent 14 }}
+        {{- with .Values.terminology.networkPolicy.extraIngressFrom }}
+        {{- toYaml . | nindent 8 }}
+        {{- end }}
+      ports:
+        - protocol: TCP
+          port: 8080
+  egress:
+    - to:
+        - namespaceSelector: {}
+          podSelector:
+            matchLabels:
+              k8s-app: kube-dns
+      ports:
+        - protocol: UDP
+          port: 53
+        - protocol: TCP
+          port: 53
+{{- end }}
+{{- end }}

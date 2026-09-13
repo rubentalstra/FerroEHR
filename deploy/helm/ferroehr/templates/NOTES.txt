@@ -135,6 +135,35 @@ SECURITY POSTURE
      viewer.networkPolicy.ingressAllowAll=false to have the render refuse this.
 {{- end }}
 {{- end }}
+{{- if .Values.terminology.enabled }}
+  terminology:            {{ include "ferroehr.terminologyFullname" . }}:{{ .Values.terminology.service.port }} — reachable from the CDR's pods only.
+     No Ingress is rendered for it, and no value renders one: a published FHIR
+     terminology endpoint answers $expand and $lookup to whoever reaches it,
+     which is the extraction the SNOMED CT Affiliate Licence's clause 2.2.4 and
+     the access control its clause 2.7 are about.
+{{- if .Values.terminology.index.persistentVolumeClaim }}
+  Content: the index in claim "{{ .Values.terminology.index.persistentVolumeClaim }}", mounted read-only at
+     {{ .Values.terminology.index.mountPath }}. Build it OFF-CLUSTER —
+     `ferroterm-build --rf2 <release.zip> --out <dir>` — and fill the claim from
+     that output; this chart provisions no storage and renders no build Job. The
+     licence for whatever release you load is yours to hold.
+{{- else }}
+  Content: the shaped seed alone (synthetic code systems under the reserved
+     example.test domain). No licensed terminology ships with FerroEHR or
+     FerroTERM. Set terminology.index.persistentVolumeClaim to serve a release
+     you hold a licence for.
+{{- end }}
+{{- if .Values.terminology.wireCdr }}
+  CDR wiring: config.terminology.external is pointed at that Service, fail_on_error={{ .Values.terminology.failOnError }}
+     {{ if .Values.terminology.failOnError }}— a binding the server cannot resolve is REFUSED with 422.{{ else }}— a binding the server cannot resolve is ACCEPTED (the shipped posture). Set
+     terminology.failOnError=true to refuse it with 422 instead.{{ end }}
+{{- else }}
+  ⚠  terminology.wireCdr=false — FerroTERM is running, and this CDR resolves
+     nothing against it. Wire config.terminology.external yourself, or set
+     terminology.wireCdr=true.
+{{- end }}
+{{- end }}
+
 {{ if not .Values.config.auth.enabled }}
   ⚠  config.auth.enabled=false — ALL requests pass UNAUTHENTICATED. Dev only.
 {{ end -}}
@@ -159,4 +188,8 @@ Optional integrations currently ON:
   FHIR outbound:    {{ .Values.config.fhir.outbound.enabled }} (PHI)
   S3 multimedia:    {{ .Values.config.multimedia.enabled }}
   ATNA audit:       {{ .Values.config.audit.enabled }}
-  ext terminology:  {{ .Values.config.terminology.external.enabled }}
+  {{- /* The INJECTED state, not the values one: terminology.enabled writes
+         config.terminology.external.enabled for the operator, so reading the
+         values tree here would report "false" for a release that resolves
+         every binding against the FerroTERM beside it. */}}
+  ext terminology:  {{ if and .Values.terminology.enabled .Values.terminology.wireCdr }}true (in-cluster FerroTERM){{ else }}{{ .Values.config.terminology.external.enabled }}{{ end }}

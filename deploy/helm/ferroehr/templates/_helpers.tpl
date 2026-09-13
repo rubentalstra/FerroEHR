@@ -301,6 +301,25 @@ secret VALUE refused outright.
 {{- end -}}
 {{- $_ := set (get $clients $name) "client_secret_file" (printf "%s/terminology.external.oauth2_clients.%s.client_secret" (include "ferroehr.secretMountPath" $) $name) -}}
 {{- end -}}
+{{- if and $.Values.terminology.enabled $.Values.terminology.wireCdr -}}
+{{- /* The in-cluster FerroTERM is wired the same way the mounted secret paths
+       above are: by injection, so the Service address and the workload that
+       answers it are one decision. An operator who declared the `default`
+       provider by hand meant a different server, and silently replacing it
+       would point binding resolution somewhere they did not choose. */ -}}
+{{- if not (hasKey $rendered "terminology") -}}{{- $_ := set $rendered "terminology" (dict) -}}{{- end -}}
+{{- $terminology := get $rendered "terminology" -}}
+{{- if not (hasKey $terminology "external") -}}{{- $_ := set $terminology "external" (dict) -}}{{- end -}}
+{{- $external := get $terminology "external" -}}
+{{- $providers := dig "providers" (dict) $external -}}
+{{- if hasKey $providers "default" -}}
+{{- fail "terminology.enabled=true already declares config.terminology.external.providers.default at the in-cluster FerroTERM Service, so declaring it in values too is two answers to one question: drop config.terminology.external.providers.default, or set terminology.wireCdr=false to keep your own provider and run FerroTERM unwired. A second, differently-named provider under config.terminology.external.providers is unaffected." -}}
+{{- end -}}
+{{- $_ := set $providers "default" (dict "type" "fhir" "url" (printf "http://%s:%v/r4b" (include "ferroehr.terminologyFullname" $) $.Values.terminology.service.port)) -}}
+{{- $_ := set $external "providers" $providers -}}
+{{- $_ := set $external "enabled" true -}}
+{{- $_ := set $external "fail_on_error" $.Values.terminology.failOnError -}}
+{{- end -}}
 {{- toToml $rendered -}}
 {{- end }}
 
@@ -550,4 +569,77 @@ with. Reusing the pool's DSN here would render CronJobs that fail every night.
 
 {{- define "ferroehr.backupDsnSecretKey" -}}
 {{ (index .root.Values.backup .domain).existingSecretKey }}
+{{- end }}
+
+{{/*
+The terminology workload's resource name: the release fullname plus a suffix,
+so FerroTERM's objects never collide with the CDR's.
+*/}}
+{{- define "ferroehr.terminologyFullname" -}}
+{{- printf "%s-terminology" (include "ferroehr.fullname" .) | trunc 63 | trimSuffix "-" }}
+{{- end }}
+
+{{/*
+Terminology labels.
+
+FerroTERM carries its OWN `app.kubernetes.io/name` rather than the CDR's name
+plus a `component`, for the reason the viewer's labels carry (see above): a
+Service or PodDisruptionBudget selector is a SUBSET match, so a pod labelled
+with the server's selector pair is selected by the server's Service — and this
+container also listens on 8080, which is what the CDR's `targetPort: http`
+resolves to
+(https://kubernetes.io/docs/concepts/overview/working-with-objects/common-labels/).
+*/}}
+{{- define "ferroehr.terminologyLabels" -}}
+helm.sh/chart: {{ include "ferroehr.chart" . }}
+{{ include "ferroehr.terminologySelectorLabels" . }}
+{{- if .Chart.AppVersion }}
+app.kubernetes.io/version: {{ .Chart.AppVersion | quote }}
+{{- end }}
+app.kubernetes.io/managed-by: {{ .Release.Service }}
+app.kubernetes.io/part-of: ferroehr
+app.kubernetes.io/component: terminology
+{{- end }}
+
+{{- define "ferroehr.terminologySelectorLabels" -}}
+app.kubernetes.io/name: {{ printf "%s-terminology" (include "ferroehr.name" .) }}
+app.kubernetes.io/instance: {{ .Release.Name }}
+{{- end }}
+
+{{/*
+The FerroTERM release this chart is pinned to.
+
+A separate product on its own release line, so it does NOT fall back to
+`.Chart.AppVersion` the way the viewer and the backup image do: those are built
+from this repository at the same version, and FerroTERM is not. Bumping it is a
+deliberate edit here plus the matching `artifacthub.io/images` tag in
+Chart.yaml.
+*/}}
+{{- define "ferroehr.terminologyVersion" -}}
+0.1.3
+{{- end }}
+
+{{/*
+The terminology image reference — digest wins over tag, as for the server.
+*/}}
+{{- define "ferroehr.terminologyImage" -}}
+{{- if .Values.terminology.image.digest }}
+{{- $digest := .Values.terminology.image.digest }}
+{{- if not (hasPrefix "sha256:" $digest) }}{{- $digest = printf "sha256:%s" $digest }}{{- end }}
+{{- printf "%s@%s" .Values.terminology.image.repository $digest }}
+{{- else }}
+{{- printf "%s:%s" .Values.terminology.image.repository (.Values.terminology.image.tag | default (include "ferroehr.terminologyVersion" .)) }}
+{{- end }}
+{{- end }}
+
+{{/*
+The ConfigMap holding the shaped code systems FerroTERM serves out of the box:
+the chart's own, unless the operator named one of theirs.
+*/}}
+{{- define "ferroehr.terminologyCodeSystemsConfigMap" -}}
+{{- if .Values.terminology.codeSystems.existingConfigMap }}
+{{- .Values.terminology.codeSystems.existingConfigMap }}
+{{- else }}
+{{- printf "%s-codesystems" (include "ferroehr.terminologyFullname" .) }}
+{{- end }}
 {{- end }}

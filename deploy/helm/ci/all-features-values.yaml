@@ -175,10 +175,17 @@ config:
   terminology:
     api_enabled: true
     external:
-      enabled: true
-      fail_on_error: false
+      # `enabled`, `fail_on_error` and the `default` provider are INJECTED by
+      # the chart from the `terminology:` block below, which is why they are not
+      # declared here: declaring the `default` provider beside the in-cluster
+      # one is refused at render, because two answers to "which server resolves
+      # a binding" is exactly the state that silently points resolution
+      # somewhere the operator did not choose.
       providers:
-        default:
+        # A SECOND, operator-declared provider beside the injected default, so
+        # the off-cluster provider shape — its own URL, its `operation`, its
+        # OAuth2 client — still reaches a golden render.
+        tx:
           type: fhir
           url: https://tx.example.com/fhir
           operation: validate_code
@@ -281,10 +288,6 @@ serviceAccount:
   annotations:
     eks.amazonaws.com/role-arn: arn:aws:iam::123456789012:role/ferroehr-s3
 
-# Per-domain logical backups, so the three CronJobs reach a golden render and
-# the restricted-profile gate — the claims are render fixtures, nothing
-# provisions them here. Three DIFFERENT claim names: any two domains sharing a
-# claim is refused.
 # The pre-install/pre-upgrade migration hook. Rendered here because a workload
 # no value set renders is a workload no golden shows and no gate judges — the
 # selector gate could not see this Job's pod at all until it did (#3197).
@@ -293,6 +296,10 @@ migrations:
     enabled: true
     existingSecret: ferroehr-migrator-dsn
 
+# Per-domain logical backups, so the three CronJobs reach a golden render and
+# the restricted-profile gate — the claims are render fixtures, nothing
+# provisions them here. Three DIFFERENT claim names: any two domains sharing a
+# claim is refused.
 backup:
   enabled: true
   timeZone: Europe/Amsterdam
@@ -309,3 +316,12 @@ backup:
     # pseudonymised record, so it gets its own claim and its own role.
     persistentVolumeClaim: ferroehr-backup-linkage
     existingSecret: ferroehr-backup-linkage-dsn
+
+# FerroTERM beside the CDR — this overlay's contract is every optional
+# integration on, and it is where the seed-only branch reaches a golden: no
+# index claim, so the shaped seed is served alone and FERROTERM_INDEX is not
+# rendered (the terminology overlay covers the claim branch). The CDR's egress
+# policy above gains its rule to these pods from the chart rather than from
+# `rules`, since the chart chose the destination.
+terminology:
+  enabled: true

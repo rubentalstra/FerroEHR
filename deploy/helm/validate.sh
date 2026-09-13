@@ -88,6 +88,7 @@ declare -a CASES=(
   "all-features:${CI_DIR}/all-features-values.yaml"
   "basic-auth:${CI_DIR}/basic-auth-values.yaml"
   "viewer:${CI_DIR}/viewer-values.yaml"
+  "terminology:${CI_DIR}/terminology-values.yaml"
 )
 
 # ── Rendered-manifest structure check (awk; there is no Python in this repo) ───
@@ -374,6 +375,68 @@ network_policy_gate() {
   else
     FAIL=1
   fi
+
+  # ── FerroTERM: the one policy that is narrowed by DEFAULT ──────────────────
+  # The two above ship an ingress rule with no `from` and say so. FerroTERM's
+  # must NEVER be in that state: its caller is known (the CDR's pods), and a
+  # published FHIR terminology endpoint answers $expand and $lookup to whoever
+  # reaches it, which is the extraction the SNOMED CT Affiliate Licence's
+  # clauses 2.2.4 and 2.7 are about. So this is asserted from both sides — the
+  # rendered policy carries a `from` naming the CDR, and there is no key that
+  # could remove it.
+  local terminology="${CI_DIR}/terminology-values.yaml" narrowed=0
+  if ! out="$(helm template "$RELEASE_NAME" "$CHART_DIR" -n "$NAMESPACE" -f "$terminology" \
+              -s templates/terminology.yaml 2>&1)"; then
+    red "  terminology: the shipped values no longer render at all:"
+    printf '%s\n' "$out" | head -4
+    narrowed=1
+  else
+    policy="$(printf '%s' "$out" | yq -r 'select(.kind == "NetworkPolicy" and .metadata.name == "ferroehr-terminology")')"
+    if [[ -z "$policy" ]]; then
+      red "  terminology: no NetworkPolicy named ferroehr-terminology in the render — this gate checked nothing"
+      narrowed=1
+    else
+      if [[ "$(printf '%s' "$policy" | yq -r '.spec.ingress[0] | has("from")')" != "true" ]]; then
+        red "  terminology: the ingress rule carries NO \`from\`, so it admits EVERY source to a terminology endpoint"
+        narrowed=1
+      fi
+      if [[ "$(printf '%s' "$policy" | yq -r '.spec.ingress[0].from[0].podSelector.matchLabels["app.kubernetes.io/name"]')" != "ferroehr" ]]; then
+        red "  terminology: the admitted peer is not the CDR's pods"
+        narrowed=1
+      fi
+      if [[ "$(printf '%s' "$policy" | yq -r '.spec.egress | length')" != "1" ]]; then
+        red "  terminology: egress is no longer DNS alone — FerroTERM opens no outbound connection of its own"
+        narrowed=1
+      fi
+    fi
+  fi
+  # The absent open-everything key, asserted rather than assumed: the schema
+  # refuses one, so no values file can reach the state the two policies above
+  # ship.
+  if out="$(helm template "$RELEASE_NAME" "$CHART_DIR" -n "$NAMESPACE" -f "$terminology" \
+            --set terminology.networkPolicy.ingressAllowAll=true 2>&1)"; then
+    red "  terminology: terminology.networkPolicy.ingressAllowAll was ACCEPTED — an admit-everything key is exactly what this policy must not have"
+    narrowed=1
+  fi
+  # And an operator's extra peer still reaches the rule, beside the CDR.
+  if out="$(helm template "$RELEASE_NAME" "$CHART_DIR" -n "$NAMESPACE" -f "$terminology" \
+            --set "terminology.networkPolicy.extraIngressFrom[0].namespaceSelector.matchLabels.kubernetes\\.io/metadata\\.name=ferrockm" \
+            -s templates/terminology.yaml 2>&1)"; then
+    policy="$(printf '%s' "$out" | yq -r 'select(.kind == "NetworkPolicy" and .metadata.name == "ferroehr-terminology")')"
+    if [[ "$(printf '%s' "$policy" | yq -r '.spec.ingress[0].from[1].namespaceSelector.matchLabels["kubernetes.io/metadata.name"]')" != "ferrockm" ]]; then
+      red "  terminology: extraIngressFrom rendered without reaching the policy's \`from\`"
+      narrowed=1
+    fi
+  else
+    red "  terminology: an extraIngressFrom peer must render:"
+    printf '%s\n' "$out" | head -4
+    narrowed=1
+  fi
+  if [[ "$narrowed" -eq 0 ]]; then
+    echo "  terminology: ingress narrowed to the CDR's pods by default, no key can open it, egress is DNS alone, extraIngressFrom reaches the rule"
+  else
+    FAIL=1
+  fi
 }
 network_policy_gate
 
@@ -412,6 +475,7 @@ refusal_registry_gate() {
     "_helpers.tpl|refusing to render a secret into the ConfigMap|${base}|--set-string config.db.url=SENTINEL_PROBE|config.db.url;database.existingSecret"
     "_helpers.tpl|has no matching entry at config.auth.basic.users[]|${basic}|--set-string secrets.basicUserPasswordHashes.ghost=SENTINEL_PROBE|secrets.basicUserPasswordHashes.ghost"
     "_helpers.tpl|has no client declared at config.terminology.external.oauth2_clients|${base}|--set-string secrets.terminologyOauth2ClientSecrets.ghost=SENTINEL_PROBE|config.terminology.external.oauth2_clients.ghost"
+    "_helpers.tpl|already declares config.terminology.external.providers.default|${base}|--set terminology.enabled=true --set config.terminology.external.providers.default.type=fhir --set config.terminology.external.providers.default.url=https://tx.example.com/fhir|config.terminology.external.providers.default;terminology.wireCdr"
     "networkpolicy.yaml|networkPolicy.ingressAllowAll=false with an empty|${base}|--set networkPolicy.ingressAllowAll=false|networkPolicy.ingressFrom;hardening-network-policy.md"
     "networkpolicy.yaml|with no destination for the database|${base}|--set networkPolicy.egress.enabled=true|networkPolicy.egress.database.to;hardening-network-policy.md"
     "viewer.yaml|viewer.networkPolicy.ingressAllowAll=false with an empty|${viewer}|--set viewer.networkPolicy.ingressAllowAll=false|viewer.networkPolicy.ingressFrom;hardening-network-policy.md"
@@ -542,6 +606,13 @@ schema_gate() {
     "metrics.serviceMonitor.interval=30|/metrics/serviceMonitor/interval"
     "networkPolicy.ingressAllowAll=maybe|/networkPolicy/ingressAllowAll"
     "viewer.networkPolicy.ingressAllowAll=maybe|/viewer/networkPolicy/ingressAllowAll"
+    "termnology.enabled=true|additional properties 'termnology' not allowed"
+    "terminology.enabled=maybe|/terminology/enabled"
+    "terminology.service.port=70000|/terminology/service/port"
+    "terminology.image.pullPolicy=Sometimes|/terminology/image/pullPolicy"
+    "terminology.image.digest=sha256:nothex|/terminology/image/digest"
+    "terminology.logFormat=verbose|/terminology/logFormat"
+    "terminology.index.mountPath=data/index|/terminology/index/mountPath"
     "backup.clinicl.schedule=@daily|additional properties 'clinicl' not allowed"
     "backup.enabled=maybe|/backup/enabled"
     "backup.clinical.schedule=17|/backup/clinical/schedule"

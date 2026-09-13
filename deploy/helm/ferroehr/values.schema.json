@@ -1129,6 +1129,166 @@
           "minimum": 0
         }
       }
+    },
+    "terminology": {
+      "description": "FerroTERM, the FHIR terminology server, deployed as its own workload and wired as the CDR's external terminology. Off by default. No Ingress is rendered for it and no key here renders one: the CDR is its only caller, which is what the SNOMED CT Affiliate Licence asks of a public deployment (clause 2.2.4 extraction, clause 2.7 access control).",
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "enabled": {
+          "description": "Deploy FerroTERM alongside the CDR.",
+          "type": "boolean"
+        },
+        "wireCdr": {
+          "description": "Point config.terminology.external at the rendered Service. Declaring config.terminology.external.providers.default yourself while this is true is refused at render.",
+          "type": "boolean"
+        },
+        "failOnError": {
+          "description": "Whether an unresolvable binding is a 422 refusal rather than accepted. false is the server's own shipped default.",
+          "type": "boolean"
+        },
+        "replicaCount": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "image": {
+          "description": "FerroTERM image. Its tag falls back to the FerroTERM release this chart pins, never to .Chart.appVersion.",
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "repository": {
+              "type": "string",
+              "minLength": 1
+            },
+            "pullPolicy": {
+              "type": "string",
+              "enum": [
+                "Always",
+                "IfNotPresent",
+                "Never"
+              ]
+            },
+            "tag": {
+              "type": "string"
+            },
+            "digest": {
+              "description": "sha256 digest; wins over tag. Bare hex or sha256:-prefixed.",
+              "type": "string",
+              "pattern": "^$|^(sha256:)?[a-fA-F0-9]{64}$"
+            }
+          }
+        },
+        "service": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "type": {
+              "type": "string",
+              "enum": [
+                "ClusterIP",
+                "NodePort",
+                "LoadBalancer",
+                "ExternalName"
+              ]
+            },
+            "port": {
+              "$ref": "#/definitions/port"
+            }
+          }
+        },
+        "codeSystems": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "existingConfigMap": {
+              "description": "A ConfigMap of FHIR JSON to serve instead of the chart's shaped seed.",
+              "type": "string"
+            },
+            "mountPath": {
+              "description": "Absolute path the code systems are mounted at; FERROTERM_CODESYSTEMS names it.",
+              "type": "string",
+              "pattern": "^/.+"
+            }
+          }
+        },
+        "index": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "persistentVolumeClaim": {
+              "description": "The name of an EXISTING claim holding an index built off-cluster. Empty serves the shaped seed alone; the chart provisions no storage and renders no build Job.",
+              "type": "string"
+            },
+            "mountPath": {
+              "description": "Absolute path the index claim is mounted at; FERROTERM_INDEX names it, and is rendered only when a claim is named.",
+              "type": "string",
+              "pattern": "^/.+"
+            }
+          }
+        },
+        "ui": {
+          "description": "Serve FerroTERM's own browsing UI.",
+          "type": "boolean"
+        },
+        "defaultLanguage": {
+          "type": "string",
+          "minLength": 1
+        },
+        "logFormat": {
+          "type": "string",
+          "enum": [
+            "json",
+            "pretty"
+          ]
+        },
+        "logLevel": {
+          "description": "A RUST_LOG filter.",
+          "type": "string",
+          "minLength": 1
+        },
+        "networkPolicy": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "enabled": {
+              "type": "boolean"
+            },
+            "extraIngressFrom": {
+              "description": "Further peers admitted beside the CDR's pods. There is deliberately no admit-everything key here.",
+              "type": "array"
+            }
+          }
+        },
+        "podSecurityContext": {
+          "type": "object"
+        },
+        "securityContext": {
+          "type": "object"
+        },
+        "resources": {
+          "type": "object"
+        },
+        "nodeSelector": {
+          "type": "object"
+        },
+        "tolerations": {
+          "type": "array"
+        },
+        "affinity": {
+          "type": "object"
+        },
+        "extraEnv": {
+          "type": "array"
+        },
+        "terminationGracePeriodSeconds": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "preStopSleepSeconds": {
+          "type": "integer",
+          "minimum": 0
+        }
+      }
     }
   },
   "definitions": {

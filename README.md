@@ -553,7 +553,7 @@ deploys, and listed on
 
 ```shell
 helm install ferroehr oci://ghcr.io/rubentalstra/charts/ferroehr \
-  --version 8.2.3 --set database.existingSecret=my-db-secret
+  --version 8.3.0 --set database.existingSecret=my-db-secret
 ```
 
 There is no HTTP chart repository, so `helm repo add` does not apply — OCI is the

@@ -29,6 +29,19 @@ workflow refuses a tag that has no matching section here.
   overview gains a Germany and a Switzerland section stating, provision by
   provision, what the software ships and what the deploying organisation must
   do.
+- **The Helm chart runs FerroTERM beside the CDR** (#3305, chart 8.3.0).
+  `terminology.enabled` renders the terminology server as its own workload —
+  Deployment, ClusterIP Service, ServiceAccount, NetworkPolicy — under the same
+  Restricted profile as the CDR, and points the CDR's
+  `config.terminology.external` at its Service, so archetype bindings resolve at
+  commit, AQL `TERMINOLOGY()` expands through it, and the `/terminology/*`
+  routes answer from it. The licence-free shaped seed ships with the chart and
+  is mounted as a ConfigMap, so an install from the registry serves terminology
+  with no checkout; a release you hold a licence for is an index built
+  off-cluster and mounted from an existing claim named in
+  `terminology.index.persistentVolumeClaim`. No Ingress is rendered for it and
+  no value renders one: the CDR is its only caller, and its NetworkPolicy
+  admits the CDR's pods alone.
 
 ## [4.2.5] - 2026-09-12
 

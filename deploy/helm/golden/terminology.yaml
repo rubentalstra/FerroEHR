@@ -42,6 +42,64 @@ spec:
           protocol: TCP
 
 ---
+# Source: ferroehr/templates/terminology.yaml
+# FerroTERM's policy is the one place in this chart where ingress is narrowed by
+# DEFAULT rather than by an operator's list: its caller is known — the CDR's
+# pods — so there is no state in which admitting every source is the right
+# answer, and none is offered. That is the licence posture above expressed as a
+# policy object rather than as advice.
+#
+# Egress carries DNS and nothing else: FerroTERM opens no outbound connection of
+# its own, and without DNS a policy'd pod cannot resolve the cluster's own names,
+# which fails in a way that reads as the server being wedged.
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: ferroehr-terminology
+  annotations:
+    kubernetes.io/description: >-
+      Ingress for FerroTERM: only its HTTP port, and only from the CDR's pods. Egress admits DNS only.
+  labels:
+    helm.sh/chart: ferroehr-8.3.0
+    app.kubernetes.io/name: ferroehr-terminology
+    app.kubernetes.io/instance: ferroehr
+    app.kubernetes.io/version: "4.2.5"
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/part-of: ferroehr
+    app.kubernetes.io/component: terminology
+spec:
+  podSelector:
+    matchLabels:
+      app.kubernetes.io/name: ferroehr-terminology
+      app.kubernetes.io/instance: ferroehr
+  policyTypes:
+    - Ingress
+    - Egress
+  ingress:
+    - from:
+        # The CDR, by pod selector. The CDR carries its own
+        # `app.kubernetes.io/name`, so this selects the server's pods and
+        # nothing else in the release.
+        - podSelector:
+            matchLabels:
+              app.kubernetes.io/name: ferroehr
+              app.kubernetes.io/instance: ferroehr
+      ports:
+        - protocol: TCP
+          port: 8080
+  egress:
+    - to:
+        - namespaceSelector: {}
+          podSelector:
+            matchLabels:
+              k8s-app: kube-dns
+      ports:
+        - protocol: UDP
+          port: 53
+        - protocol: TCP
+          port: 53
+
+---
 # Source: ferroehr/templates/poddisruptionbudget.yaml
 apiVersion: policy/v1
 kind: PodDisruptionBudget
@@ -80,6 +138,21 @@ metadata:
     app.kubernetes.io/part-of: ferroehr
 automountServiceAccountToken: false
 
+---
+# Source: ferroehr/templates/terminology.yaml
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: ferroehr-terminology
+  labels:
+    helm.sh/chart: ferroehr-8.3.0
+    app.kubernetes.io/name: ferroehr-terminology
+    app.kubernetes.io/instance: ferroehr
+    app.kubernetes.io/version: "4.2.5"
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/part-of: ferroehr
+    app.kubernetes.io/component: terminology
+automountServiceAccountToken: false
 ---
 # Source: ferroehr/templates/secret.yaml
 # Chart-managed Secret. In production prefer database.existingSecret (and an
@@ -154,7 +227,7 @@ data:
     
         [[auth.basic.users]]
           password_hash_file = "/etc/ferroehr-secrets/auth.basic.users.clinician.password_hash"
-          roles = ["USER"]
+          roles = ["ADMIN"]
           username = "clinician"
     
     [authz]
@@ -234,12 +307,157 @@ data:
       enabled = false
     
     [terminology]
-      api_enabled = false
+      api_enabled = true
       [terminology.external]
-        enabled = false
+        enabled = true
         fail_on_error = false
+        [terminology.external.providers]
+          [terminology.external.providers.default]
+            type = "fhir"
+            url = "http://ferroehr-terminology:8080/r4b"
     
 
+---
+# Source: ferroehr/templates/terminology.yaml
+# The licence-free shaped seed this repository ships: two code systems and two
+# value sets under the reserved example.test domain (IETF RFC 6761 §6.2), the
+# same content the conformance lane binds to. No licensed terminology is
+# distributed with FerroEHR or FerroTERM.
+#
+# Delivered as a ConfigMap built from the chart's own files, so a fresh
+# `helm install` from the registry serves terminology with no repository
+# checkout and no init container. The canonical copy is
+# docker/terminology/seed/ and scripts/checks/terminology-seed-drift.sh holds
+# the two byte-identical.
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: ferroehr-terminology-codesystems
+  annotations:
+    kubernetes.io/description: >-
+      Synthetic, licence-free FHIR code systems and value sets under the reserved example.test domain, mounted read-only as FerroTERM's code-system directory. Replace it with terminology.codeSystems.existingConfigMap to serve your own.
+  labels:
+    helm.sh/chart: ferroehr-8.3.0
+    app.kubernetes.io/name: ferroehr-terminology
+    app.kubernetes.io/instance: ferroehr
+    app.kubernetes.io/version: "4.2.5"
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/part-of: ferroehr
+    app.kubernetes.io/component: terminology
+data:
+  codesystem-lab-shaped.json: |
+    {
+      "resourceType": "CodeSystem",
+      "id": "cnf-lab-shaped",
+      "url": "http://cnf.example.test/fhir/CodeSystem/lab-shaped",
+      "version": "1.0.0",
+      "name": "CnfLabShapedTestCodeSystem",
+      "title": "CNF test code system, LOINC-shaped (synthetic)",
+      "status": "active",
+      "experimental": true,
+      "publisher": "ferroehr CNF conformance corpus",
+      "description": "SYNTHETIC test content. A flat code system whose codes are SHAPED like LOINC observation codes (NNNNN-N) so the conformance battery can drive a SECOND terminology namespace, routed to a second configured provider, in one running deployment. It contains no LOINC content and is not derived from any licensed terminology: every code and display is invented for this test corpus and lives under the reserved example.test domain (IETF RFC 6761 §6.2).",
+      "caseSensitive": true,
+      "compositional": false,
+      "versionNeeded": false,
+      "content": "complete",
+      "concept": [
+        {
+          "code": "99991-1",
+          "display": "Test systolic blood pressure (CNF)"
+        },
+        {
+          "code": "99992-9",
+          "display": "Test diastolic blood pressure (CNF)"
+        },
+        {
+          "code": "99993-7",
+          "display": "Test body temperature (CNF)"
+        }
+      ]
+    }
+  codesystem-sct-shaped.json: |
+    {
+      "resourceType": "CodeSystem",
+      "id": "cnf-sct-shaped",
+      "url": "http://cnf.example.test/fhir/CodeSystem/sct-shaped",
+      "version": "1.0.0",
+      "name": "CnfSnomedShapedTestCodeSystem",
+      "title": "CNF test code system, SNOMED-CT-shaped (synthetic)",
+      "status": "active",
+      "experimental": true,
+      "publisher": "ferroehr CNF conformance corpus",
+      "description": "SYNTHETIC test content. A hierarchical, numerically-coded code system SHAPED like SNOMED CT so the conformance battery can exercise is-a subsumption and value-set membership against a real FHIR R4 terminology server. It contains no SNOMED CT content and is not derived from any licensed terminology: every code and display is invented for this test corpus and lives under the reserved example.test domain (IETF RFC 6761 §6.2).",
+      "caseSensitive": true,
+      "hierarchyMeaning": "is-a",
+      "compositional": false,
+      "versionNeeded": false,
+      "content": "complete",
+      "concept": [
+        {
+          "code": "1000001",
+          "display": "Test disorder (CNF)",
+          "concept": [
+            {
+              "code": "1000002",
+              "display": "Test hypertensive disorder (CNF)"
+            }
+          ]
+        },
+        {
+          "code": "1000003",
+          "display": "Test metabolic disorder (CNF)"
+        }
+      ]
+    }
+  valueset-lab-shaped-vitals.json: |
+    {
+      "resourceType": "ValueSet",
+      "id": "cnf-lab-shaped-vitals",
+      "url": "http://cnf.example.test/fhir/ValueSet/lab-shaped-vitals",
+      "version": "1.0.0",
+      "name": "CnfLabShapedVitals",
+      "title": "CNF test value set, LOINC-shaped vitals (synthetic)",
+      "status": "active",
+      "experimental": true,
+      "publisher": "ferroehr CNF conformance corpus",
+      "description": "SYNTHETIC test content. The enumerated value set the LOINC-shaped conformance cases bind to: 99991-1 and 99992-9 are members, 99993-7 is deliberately NOT. This value set exists in a SECOND terminology namespace so a case can prove per-terminology provider selection with two providers configured at the same time.",
+      "compose": {
+        "include": [
+          {
+            "system": "http://cnf.example.test/fhir/CodeSystem/lab-shaped",
+            "concept": [
+              { "code": "99991-1", "display": "Test systolic blood pressure (CNF)" },
+              { "code": "99992-9", "display": "Test diastolic blood pressure (CNF)" }
+            ]
+          }
+        ]
+      }
+    }
+  valueset-sct-shaped-disorders.json: |
+    {
+      "resourceType": "ValueSet",
+      "id": "cnf-sct-shaped-disorders",
+      "url": "http://cnf.example.test/fhir/ValueSet/sct-shaped-disorders",
+      "version": "1.0.0",
+      "name": "CnfSnomedShapedDisorders",
+      "title": "CNF test value set, SNOMED-CT-shaped disorders (synthetic)",
+      "status": "active",
+      "experimental": true,
+      "publisher": "ferroehr CNF conformance corpus",
+      "description": "SYNTHETIC test content. The enumerated value set the SNOMED-CT-shaped conformance cases bind to: 1000001 and 1000002 are members, 1000003 is deliberately NOT, so membership answers differ and a case can prove the value set was really resolved through the terminology server.",
+      "compose": {
+        "include": [
+          {
+            "system": "http://cnf.example.test/fhir/CodeSystem/sct-shaped",
+            "concept": [
+              { "code": "1000001", "display": "Test disorder (CNF)" },
+              { "code": "1000002", "display": "Test hypertensive disorder (CNF)" }
+            ]
+          }
+        ]
+      }
+    }
 ---
 # Source: ferroehr/templates/service.yaml
 apiVersion: v1
@@ -267,6 +485,32 @@ spec:
     app.kubernetes.io/name: ferroehr
     app.kubernetes.io/instance: ferroehr
 
+---
+# Source: ferroehr/templates/terminology.yaml
+apiVersion: v1
+kind: Service
+metadata:
+  name: ferroehr-terminology
+  annotations:
+    kubernetes.io/description: >-
+      In-cluster address for FerroTERM. Reached by the CDR alone — no Ingress is rendered for it, because a published FHIR terminology endpoint serves $expand and $lookup to every client that can reach it.
+  labels:
+    helm.sh/chart: ferroehr-8.3.0
+    app.kubernetes.io/name: ferroehr-terminology
+    app.kubernetes.io/instance: ferroehr
+    app.kubernetes.io/version: "4.2.5"
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/part-of: ferroehr
+    app.kubernetes.io/component: terminology
+spec:
+  ports:
+    - name: http
+      port: 8080
+      targetPort: http
+      appProtocol: http
+  selector:
+    app.kubernetes.io/name: ferroehr-terminology
+    app.kubernetes.io/instance: ferroehr
 ---
 # Source: ferroehr/templates/deployment.yaml
 apiVersion: apps/v1
@@ -302,7 +546,7 @@ spec:
         # secret values. Hashing the ConfigMap template alone missed the last two,
         # so a rotated passphrase or an edited Cedar policy propagated into the
         # volume while every pod kept running on the value it read at startup.
-        checksum/config: 8eac5e0a787f90f460619ced75c95b9757895a17eb5c75d784c5b9bbab5f4113
+        checksum/config: abba32348b9fafe5e7fe451d4c4a37271c651247e0d810ed91f00b450f6622f8
       labels:
         app.kubernetes.io/name: ferroehr
         app.kubernetes.io/instance: ferroehr
@@ -462,3 +706,153 @@ spec:
             matchLabels:
               app.kubernetes.io/name: ferroehr
               app.kubernetes.io/instance: ferroehr
+
+---
+# Source: ferroehr/templates/terminology.yaml
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: ferroehr-terminology
+  annotations:
+    kubernetes.io/description: >-
+      FerroTERM, the FHIR terminology server the CDR resolves bindings against. It serves a read-only index and the shaped code-system directory; it holds no clinical data and reaches nothing outbound.
+  labels:
+    helm.sh/chart: ferroehr-8.3.0
+    app.kubernetes.io/name: ferroehr-terminology
+    app.kubernetes.io/instance: ferroehr
+    app.kubernetes.io/version: "4.2.5"
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/part-of: ferroehr
+    app.kubernetes.io/component: terminology
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: ferroehr-terminology
+      app.kubernetes.io/instance: ferroehr
+  template:
+    metadata:
+      annotations:
+        # FerroTERM reads its code-system directory at boot, so a changed seed
+        # has to roll the pod: without this, an edited ConfigMap propagates
+        # into the volume while every pod keeps serving what it read at
+        # startup. Same reasoning as the CDR's checksum/config.
+        checksum/codesystems: 038c68455d87cf2369f00a4b490e5d9de2c4c39dd7f0341d87b67212029ce0d0
+      labels:
+        app.kubernetes.io/name: ferroehr-terminology
+        app.kubernetes.io/instance: ferroehr
+    spec:
+      serviceAccountName: ferroehr-terminology
+      automountServiceAccountToken: false
+      # Same reason as the server's: the kubelet's per-Service link variables
+      # land in the reserved `FERROEHR_` namespace for any Service named
+      # `ferroehr*`, and a strict boot-time sweep then refuses to start
+      # (https://kubernetes.io/docs/concepts/services-networking/service/#environment-variables).
+      enableServiceLinks: false
+      terminationGracePeriodSeconds: 20
+      hostUsers: false
+      securityContext:
+        fsGroup: 65532
+        fsGroupChangePolicy: OnRootMismatch
+        runAsGroup: 65532
+        runAsNonRoot: true
+        runAsUser: 65532
+        seccompProfile:
+          type: RuntimeDefault
+        supplementalGroupsPolicy: Strict
+      containers:
+        - name: terminology
+          image: "ghcr.io/rubentalstra/ferroterm@sha256:b1ef80382e03c2474bfec2ec57a698d83314e1290dd0cb5a2612ea208bde020c"
+          imagePullPolicy: IfNotPresent
+          securityContext:
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop:
+              - ALL
+            privileged: false
+            readOnlyRootFilesystem: true
+            runAsNonRoot: true
+            runAsUser: 65532
+            seccompProfile:
+              type: RuntimeDefault
+          ports:
+            - name: http
+              containerPort: 8080
+              protocol: TCP
+          env:
+            # The code-system directory, mounted read-only from the ConfigMap
+            # above (or the operator's).
+            - name: FERROTERM_CODESYSTEMS
+              value: "/etc/ferroterm/codesystems"
+            # A built index for a licensed release. Rendered ONLY when a claim
+            # names one: with the variable unset FerroTERM serves the shaped
+            # seed alone, and pointing it at an empty directory is not the same
+            # thing.
+            - name: FERROTERM_INDEX
+              value: "/data/index"
+            # FerroTERM's own browsing UI. Off, because the workload has no
+            # Ingress and the CDR does not use it; turning it on only widens
+            # what a caller inside the cluster can do with the release.
+            - name: FERROTERM_UI
+              value: "off"
+            - name: FERROTERM_LOG_FORMAT
+              value: "json"
+            - name: FERROTERM_DEFAULT_LANGUAGE
+              value: "en"
+            - name: RUST_LOG
+              value: "info"
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: http
+            initialDelaySeconds: 10
+            periodSeconds: 20
+          readinessProbe:
+            httpGet:
+              path: /health
+              port: http
+            initialDelaySeconds: 5
+            periodSeconds: 10
+          startupProbe:
+            httpGet:
+              path: /health
+              port: http
+            periodSeconds: 5
+            failureThreshold: 60
+          lifecycle:
+            preStop:
+              sleep:
+                seconds: 5
+          resources:
+            limits:
+              memory: 1536Mi
+            requests:
+              cpu: 100m
+              memory: 256Mi
+          volumeMounts:
+            # `readOnlyRootFilesystem: true` leaves nowhere to write, so the
+            # writable scratch the runtime needs is an explicit emptyDir.
+            - name: tmp
+              mountPath: /tmp
+            - name: codesystems
+              mountPath: "/etc/ferroterm/codesystems"
+              readOnly: true
+            - name: index
+              mountPath: "/data/index"
+              readOnly: true
+      volumes:
+        - name: tmp
+          emptyDir: {}
+        - name: codesystems
+          configMap:
+            name: ferroehr-terminology-codesystems
+        # An EXISTING claim, never one this chart provisions — the same rule the
+        # backup CronJobs follow. The index is built OFF-CLUSTER from a release
+        # you hold a licence for (`ferroterm-build --rf2 <release.zip> --out
+        # <dir>`), and the claim is filled from that output; no build Job is
+        # rendered, because unpacking a licensed archive is not something a
+        # chart should start on its own.
+        - name: index
+          persistentVolumeClaim:
+            claimName: ferroehr-terminology-index
+            readOnly: true
