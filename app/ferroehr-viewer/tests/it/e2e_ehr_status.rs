@@ -45,7 +45,8 @@ use crate::common;
 use std::time::Duration;
 
 use common::{
-    Harness, click_until_css, env, is_present_by, login_basic, wait_enabled, wait_text_suffix,
+    Element, Harness, click_until_css, env, is_present_by, login_basic, poll_until, poll_until_for,
+    wait_enabled, wait_text_suffix,
 };
 use thirtyfour::prelude::*;
 
@@ -155,8 +156,14 @@ async fn set_checkbox(h: &Harness, css: &str, desired: bool) -> bool {
         if checkbox_state(&field).await == desired {
             return true;
         }
-        field.click().await.expect("toggle the checkbox");
-        tokio::time::sleep(Duration::from_millis(200)).await;
+        field.click().await;
+        if poll_until_for(Duration::from_millis(200), async || {
+            checkbox_state(&h.wait_css(css).await).await == desired
+        })
+        .await
+        {
+            return true;
+        }
     }
     false
 }
@@ -165,13 +172,8 @@ async fn set_checkbox(h: &Harness, css: &str, desired: bool) -> bool {
 ///
 /// # Panics
 /// When the property cannot be read (a dead session, not a state).
-async fn checkbox_state(field: &WebElement) -> bool {
-    field
-        .prop("checked")
-        .await
-        .expect("read the checkbox state")
-        .unwrap_or_default()
-        == "true"
+async fn checkbox_state(field: &Element) -> bool {
+    field.prop("checked").await == "true"
 }
 
 /// Wait until the checkbox at `css` reports `expected`; returns whether it did.
@@ -184,14 +186,7 @@ async fn checkbox_state(field: &WebElement) -> bool {
 /// stayed untouched — and the save would then commit the value the operator
 /// thought they had changed.
 async fn wait_checkbox(h: &Harness, css: &str, expected: bool) -> bool {
-    for _ in 0..75 {
-        let field = h.wait_css(css).await;
-        if checkbox_state(&field).await == expected {
-            return true;
-        }
-        tokio::time::sleep(Duration::from_millis(200)).await;
-    }
-    false
+    poll_until(async || checkbox_state(&h.wait_css(css).await).await == expected).await
 }
 
 /// Set `is_queryable` to `desired` and save, retrying until the viewer reports
@@ -213,21 +208,17 @@ async fn save_queryable(h: &Harness, desired: bool) -> bool {
         if !set_checkbox(h, "#status-queryable", desired).await {
             continue;
         }
-        h.wait_css("#status-save")
-            .await
-            .click()
-            .await
-            .expect("save the EHR status");
-        for _ in 0..50 {
-            if is_present_by(
+        h.wait_css("#status-save").await.click().await;
+        if poll_until_for(Duration::from_secs(10), async || {
+            is_present_by(
                 h,
                 By::XPath("//*[contains(normalize-space(.), 'EHR status updated')]"),
             )
             .await
-            {
-                return true;
-            }
-            tokio::time::sleep(Duration::from_millis(200)).await;
+        })
+        .await
+        {
+            return true;
         }
     }
     false
@@ -354,11 +345,7 @@ async fn a_stale_if_match_is_refused_and_the_old_version_still_reads() {
 
     // Saving again from the stale screen must be REFUSED, not silently applied.
     h.wait_toasts_cleared().await;
-    h.wait_css("#status-save")
-        .await
-        .click()
-        .await
-        .expect("save against the stale version");
+    h.wait_css("#status-save").await.click().await;
     h.wait_xpath("//*[contains(normalize-space(.), 'EHR status changed on the server')]")
         .await;
     // The CDR's own diagnostic stays beside the form as well.

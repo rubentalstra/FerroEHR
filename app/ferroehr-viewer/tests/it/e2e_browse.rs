@@ -27,7 +27,8 @@ use crate::common;
 use std::time::Duration;
 
 use common::{
-    Harness, appears_within, count_matching, find_all, is_present, login_basic, wait_text_contains,
+    Harness, appears_within, count_matching, find_all, is_present, login_basic, poll_until_for,
+    wait_text_contains,
 };
 
 /// The operational template uploaded (or reused) by these journeys, and its
@@ -85,11 +86,12 @@ pub(crate) async fn ensure_template_present(h: &Harness) -> bool {
     h.wait_hydrated().await;
     for _ in 0..4 {
         common::upload_via_dialog(h, &path).await;
-        for _ in 0..40 {
-            if is_present(h, TEMPLATE_LINK).await {
-                return true;
-            }
-            tokio::time::sleep(Duration::from_millis(200)).await;
+        if poll_until_for(Duration::from_secs(8), async || {
+            is_present(h, TEMPLATE_LINK).await
+        })
+        .await
+        {
+            return true;
         }
     }
     let evidence = h.evidence_dump("upload-exhausted").await;
@@ -107,11 +109,13 @@ async fn expand_catalog_tree(h: &Harness) {
         let collapsed = find_all(h, "button[aria-expanded='false']").await;
         let mut clicked = false;
         for toggle in collapsed {
-            // Each click re-renders the tree, so a handle taken in this pass
-            // can be detached by an earlier click in the same pass: a stale
-            // toggle is expanded work already done, and the next pass sees
-            // whatever it revealed. Swallowed on purpose, per element.
-            if toggle.is_displayed().await.unwrap_or(false) && toggle.click().await.is_ok() {
+            // Expanding a node re-renders that node's own row and mounts its
+            // children; it never detaches a sibling, so every handle taken in
+            // this pass stays live and both commands are assertive. A driver
+            // that stops answering is a failure here, never a toggle that
+            // "was not there".
+            if toggle.displayed().await {
+                toggle.click().await;
                 clicked = true;
             }
         }
@@ -154,11 +158,7 @@ async fn template_upload_lists_and_inspects_path_catalog() {
     h.shot(2, "templates-listed").await;
 
     // Open the detail screen and prove the WT path-catalog tree renders.
-    h.wait_css(TEMPLATE_LINK)
-        .await
-        .click()
-        .await
-        .expect("open the template detail");
+    h.wait_css(TEMPLATE_LINK).await.click().await;
     h.wait_url_contains(&format!("/templates/{TEMPLATE_ID}"))
         .await;
     // The tab bar plus a catalog tree node (a selectable label / RM-type span
@@ -172,8 +172,7 @@ async fn template_upload_lists_and_inspects_path_catalog() {
     h.wait_xpath("//nav[@aria-label='Template views']//a[normalize-space(.)='OPT']")
         .await
         .click()
-        .await
-        .expect("open the OPT tab");
+        .await;
     wait_text_contains(&h, "pre", "template_id").await;
     h.shot(4, "template-detail-opt").await;
 
@@ -205,8 +204,7 @@ async fn query_builder_generates_and_runs_aql() {
         h.wait_css(&format!("#qb-template option[value='{TEMPLATE_ID}']"))
             .await
             .click()
-            .await
-            .expect("select the uploaded template");
+            .await;
         if appears_within(&h, "ul.text-sm li", Duration::from_secs(3)).await {
             selected = true;
             break;
@@ -225,8 +223,7 @@ async fn query_builder_generates_and_runs_aql() {
     h.wait_xpath("//button[contains(., '+ condition')]")
         .await
         .click()
-        .await
-        .expect("add a condition");
+        .await;
     h.shot(2, "builder-condition-added").await;
 
     // The empty criterion correctly renders the typed validation error in
@@ -235,8 +232,7 @@ async fn query_builder_generates_and_runs_aql() {
     h.wait_css("input[placeholder='2026-01-01T00:00:00Z']")
         .await
         .send_keys("2020-01-01T00:00:00Z")
-        .await
-        .expect("fill the range's from bound");
+        .await;
 
     // The live preview is a real, runnable AQL over compositions.
     wait_text_contains(&h, "pre", "CONTAINS COMPOSITION").await;
@@ -246,8 +242,7 @@ async fn query_builder_generates_and_runs_aql() {
     h.wait_xpath("//button[contains(., 'Run')]")
         .await
         .click()
-        .await
-        .expect("run the query");
+        .await;
     // contains(., …): leptos interleaves hydration comment markers with text
     // nodes, so text()= comparisons are unreliable.
     h.wait_xpath("//div[contains(., 'Results')] | //p[contains(., 'No rows')]")
@@ -272,17 +267,12 @@ async fn ehr_finder_navigates_and_unknown_ehr_shows_error() {
     h.goto("/ehrs").await;
     // A syntactically-valid but almost-certainly-absent EHR id.
     let unknown = "00000000-0000-4000-8000-0000000000ff";
-    h.wait_css("#ehr-lookup")
-        .await
-        .send_keys(unknown)
-        .await
-        .expect("type an EHR id");
+    h.wait_css("#ehr-lookup").await.send_keys(unknown).await;
     h.shot(1, "ehr-finder-typed").await;
     h.wait_xpath("//button[contains(., 'Find')]")
         .await
         .click()
-        .await
-        .expect("navigate to the EHR detail");
+        .await;
 
     // The detail screen renders; the status tab surfaces the CDR 404 inline
     // (the shared inline_error renders as a [role='alert'] danger box).

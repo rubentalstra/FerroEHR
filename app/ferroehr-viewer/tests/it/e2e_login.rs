@@ -39,18 +39,12 @@ async fn login_basic_authenticates_and_rejects_bad_credentials() {
     h.wait_css("#login-username")
         .await
         .send_keys("ferroehr")
-        .await
-        .expect("user");
+        .await;
     h.wait_css("#login-password")
         .await
         .send_keys("definitely-wrong")
-        .await
-        .expect("pass");
-    h.wait_css("button[type=submit]")
-        .await
-        .click()
-        .await
-        .expect("submit");
+        .await;
+    h.wait_css("button[type=submit]").await.click().await;
     h.wait_css(".thaw-message-bar").await;
     h.shot(2, "login-error").await;
     assert!(
@@ -61,12 +55,7 @@ async fn login_basic_authenticates_and_rejects_bad_credentials() {
     // Right credentials: dashboard + chrome.
     login_basic(&h).await;
     h.shot(3, "dashboard-after-login").await;
-    let footer = h
-        .wait_css("footer")
-        .await
-        .text()
-        .await
-        .expect("footer text");
+    let footer = h.wait_css("footer").await.text().await;
     assert!(!footer.is_empty(), "authenticated footer renders");
     h.assert_console_clean(&["401", "Failed to load resource"])
         .await;
@@ -86,29 +75,13 @@ async fn login_oidc_round_trips_through_keycloak() {
         return;
     };
     h.goto("/login").await;
-    h.wait_css("a[href='/auth/oidc/login']")
-        .await
-        .click()
-        .await
-        .expect("oidc button");
+    h.wait_css("a[href='/auth/oidc/login']").await.click().await;
     // Keycloak's login form.
     h.wait_url_contains("/auth/realms/ferroehr").await;
     h.shot(1, "keycloak-form").await;
-    h.wait_css("#username")
-        .await
-        .send_keys(&user)
-        .await
-        .expect("kc user");
-    h.wait_css("#password")
-        .await
-        .send_keys(&pass)
-        .await
-        .expect("kc pass");
-    h.wait_css("#kc-login")
-        .await
-        .click()
-        .await
-        .expect("kc submit");
+    h.wait_css("#username").await.send_keys(&user).await;
+    h.wait_css("#password").await.send_keys(&pass).await;
+    h.wait_css("#kc-login").await.click().await;
     // Back on the viewer, authenticated.
     h.wait_css("footer").await;
     h.shot(2, "viewer-after-oidc").await;
@@ -133,7 +106,7 @@ async fn hydration_attaches_interactivity() {
     h.shot(1, "shell-before-toggle").await;
     // The user-menu popover opens on click — DOM state only WASM can flip.
     let user_button = h.wait_css("#user-menu-trigger button").await;
-    user_button.click().await.expect("open user menu");
+    user_button.click().await;
     h.wait_css(".thaw-popover-surface").await;
     h.shot(2, "user-menu-open").await;
     h.assert_console_clean(&["401", "Failed to load resource"])

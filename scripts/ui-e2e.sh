@@ -392,7 +392,7 @@ UI_E2E_OIDC_USER="ferroehr-admin" \
 UI_E2E_OIDC_PASS="E2ePass-admin1!" \
 UI_E2E_SEEDED_EHR_ID="$SEEDED_EHR_ID" \
 UI_E2E_SEEDED_VO_ID="$SEEDED_VO_ID" \
-  cargo nextest run "${NEXTEST_TARGET[@]}" -j 1 "${NEXTEST_FILTER[@]}" "${NEXTEST_PARTITION[@]}"
+  cargo nextest run "${NEXTEST_TARGET[@]}" -j 1 "${NEXTEST_FILTER[@]}" ${NEXTEST_PARTITION[@]+"${NEXTEST_PARTITION[@]}"}
 fi
 
 # ── 6. The documentation-screenshot pass (opt-in) ────────────────────────────

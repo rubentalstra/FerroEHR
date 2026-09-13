@@ -42,7 +42,8 @@
 use crate::common;
 
 use common::{
-    Harness, count_matching, env, is_present_by, login_basic, wait_css_absent, wait_text,
+    Harness, count_matching, env, is_present_by, login_basic, poll_some_for, wait_css_absent,
+    wait_text,
 };
 use thirtyfour::prelude::*;
 
@@ -53,25 +54,23 @@ async fn create_ehr(h: &Harness) -> String {
     // The create dispatch + navigation are hydrated behaviour; a click landing
     // before hydration is silently lost (#2285's class).
     h.wait_hydrated().await;
-    h.wait_css("#ehr-create-submit")
-        .await
-        .click()
-        .await
-        .expect("create an anonymous EHR");
+    h.wait_css("#ehr-create-submit").await.click().await;
     // The success Effect navigates to /ehrs/{uuid}; wait for a detail-only
     // element, then read the id from the URL.
     h.wait_css("#ehr-detail, [id^='tab-'], main").await;
     let mut url = String::new();
-    for _ in 0..50u8 {
+    let found = poll_some_for(std::time::Duration::from_secs(5), async || {
         url = h.current_url().await;
-        if let Some(tail) = url.split("/ehrs/").nth(1)
-            && tail.len() >= 36
-        {
-            return tail.chars().take(36).collect::<String>();
-        }
-        tokio::time::sleep(std::time::Duration::from_millis(100)).await;
+        url.split("/ehrs/")
+            .nth(1)
+            .filter(|tail| tail.len() >= 36)
+            .map(|tail| tail.chars().take(36).collect::<String>())
+    })
+    .await;
+    match found {
+        Some(id) => id,
+        None => panic!("EHR creation never navigated to a detail route (last url {url})"),
     }
-    panic!("EHR creation never navigated to a detail route (last url {url})");
 }
 
 /// Create the EHR's directory through the create-empty flow — the ONLY create
@@ -83,11 +82,7 @@ async fn create_empty_directory(h: &Harness, ehr_id: &str) {
     // A full navigation restarts hydration; the create dispatch is hydrated
     // behaviour, and a click landing earlier is silently lost (#2285's class).
     h.wait_hydrated().await;
-    h.wait_css("#directory-create")
-        .await
-        .click()
-        .await
-        .expect("create the empty directory");
+    h.wait_css("#directory-create").await.click().await;
     h.wait_css("#directory-edit").await;
 }
 
@@ -106,17 +101,12 @@ async fn directory_tree_edit_journey() {
     h.wait_css("[aria-label='Add subfolder']")
         .await
         .click()
-        .await
-        .expect("add a subfolder at the root");
+        .await;
     h.wait_xpath("//*[@id='directory-tree']//*[contains(normalize-space(.), 'New folder')]")
         .await;
 
     // Save → PUT with If-Match; the resource refetches and re-seeds.
-    h.wait_css("#directory-save")
-        .await
-        .click()
-        .await
-        .expect("save the edited tree");
+    h.wait_css("#directory-save").await.click().await;
     // The save bar disappears once the refetched tree is clean again, and the
     // committed subfolder is still rendered.
     h.wait_xpath("//*[@id='directory-tree']//*[contains(normalize-space(.), 'New folder')]")
@@ -232,13 +222,11 @@ async fn add_item_through_picker(h: &Harness, object_id: &str) {
     h.wait_css("[aria-label='Add item reference']")
         .await
         .click()
-        .await
-        .expect("open the item picker");
+        .await;
     h.wait_clickable_xpath(&format!("//button[contains(., '{object_id}')]"))
         .await
         .click()
-        .await
-        .expect("pick the composition");
+        .await;
     // The picker closes on pick, and the row it added carries the reference id.
     h.wait_css(&format!("[data-item-id='{object_id}']")).await;
 }
@@ -258,11 +246,7 @@ async fn save_directory(h: &Harness, what: &'static str) {
     // The create's own toast overlays the corner; let it go before clicking, so
     // the "Directory updated" wait below cannot see a stale card either.
     h.wait_toasts_cleared().await;
-    h.wait_css("#directory-save")
-        .await
-        .click()
-        .await
-        .expect(what);
+    h.wait_css("#directory-save").await.click().await;
     assert!(
         wait_text(h, "Directory updated").await,
         "the directory save never confirmed ({what})"
@@ -338,8 +322,7 @@ async fn directory_item_picker_add_remove_journey() {
     ))
     .await
     .click()
-    .await
-    .expect("remove one reference");
+    .await;
     save_directory(&h, "commit the removal").await;
 
     // The survivor is the OTHER one, by identity — never by count.
@@ -378,13 +361,8 @@ async fn directory_history_and_restore_journey() {
     h.wait_css("[aria-label='Add subfolder']")
         .await
         .click()
-        .await
-        .expect("add a subfolder");
-    h.wait_css("#directory-save")
-        .await
-        .click()
-        .await
-        .expect("save v2");
+        .await;
+    h.wait_css("#directory-save").await.click().await;
 
     // The save toast overlays the bottom-right corner and intercepts clicks
     // on anything underneath — wait for it to clear (explicit condition).
@@ -394,14 +372,13 @@ async fn directory_history_and_restore_journey() {
     h.wait_xpath("//button[contains(normalize-space(.), 'Version history')]")
         .await
         .click()
-        .await
-        .expect("open version history");
+        .await;
     h.wait_xpath("//button[contains(normalize-space(.), 'v2')]")
         .await;
     let v1_row = h
         .wait_xpath("//button[contains(normalize-space(.), 'v1')]")
         .await;
-    v1_row.click().await.expect("select v1");
+    v1_row.click().await;
 
     // v1 preview offers a restore (v1 is not the latest); restoring commits
     // v3 = v1's tree. Any lingering toast would intercept the click.
@@ -409,8 +386,7 @@ async fn directory_history_and_restore_journey() {
     h.wait_xpath("//button[contains(normalize-space(.), 'Restore this version')]")
         .await
         .click()
-        .await
-        .expect("restore v1");
+        .await;
     h.wait_xpath("//button[contains(normalize-space(.), 'v3')]")
         .await;
     h.assert_console_clean(&[]).await;
@@ -521,8 +497,7 @@ async fn directory_history_load_older_journey() {
     h.wait_xpath("//button[contains(normalize-space(.), 'Version history')]")
         .await
         .click()
-        .await
-        .expect("open version history");
+        .await;
 
     // The newest version heads the list; the whole first window renders from
     // one resolution, so v1's absence beside it is a settled fact, not a race.
@@ -534,13 +509,9 @@ async fn directory_history_load_older_journey() {
     h.shot(1, "history-first-window").await;
 
     // "Load older" widens the window by another page and reaches v1.
-    h.wait_css("#directory-history-older")
-        .await
-        .click()
-        .await
-        .expect("load older versions");
+    h.wait_css("#directory-history-older").await.click().await;
     let oldest = h.wait_xpath(&history_row_xpath(1)).await;
-    oldest.click().await.expect("select v1");
+    oldest.click().await;
     h.shot(2, "history-older-loaded").await;
 
     // …and restoring it still commits, which is the half a listing test cannot
@@ -549,8 +520,7 @@ async fn directory_history_load_older_journey() {
     h.wait_xpath("//button[contains(normalize-space(.), 'Restore this version')]")
         .await
         .click()
-        .await
-        .expect("restore v1 from the widened window");
+        .await;
     h.wait_xpath(&history_row_xpath(deepest + 1)).await;
     h.assert_console_clean(&[]).await;
     h.finish().await;
@@ -572,13 +542,8 @@ async fn directory_delete_and_recreate_journey() {
     h.wait_xpath("//button[contains(normalize-space(.), 'Delete directory')]")
         .await
         .click()
-        .await
-        .expect("open the delete confirmation");
-    h.wait_css("#directory-delete-confirm")
-        .await
-        .click()
-        .await
-        .expect("confirm the delete");
+        .await;
+    h.wait_css("#directory-delete-confirm").await.click().await;
 
     // The tab falls back to the create state (no live directory)…
     h.wait_css("#directory-create").await;
@@ -587,11 +552,7 @@ async fn directory_delete_and_recreate_journey() {
     // the slot is vacant — proven at the wire by directory_http). The delete
     // toast must clear first (it intercepts clicks underneath).
     h.wait_toasts_cleared().await;
-    h.wait_css("#directory-create")
-        .await
-        .click()
-        .await
-        .expect("re-create after delete");
+    h.wait_css("#directory-create").await.click().await;
     h.wait_css("#directory-edit").await;
     h.assert_console_clean(&[]).await;
     h.finish().await;

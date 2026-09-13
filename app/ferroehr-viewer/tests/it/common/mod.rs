@@ -31,6 +31,7 @@
 use std::future::Future;
 use std::time::Duration;
 
+use thirtyfour::components::SelectElement;
 use thirtyfour::error::WebDriverErrorInner;
 use thirtyfour::prelude::*;
 
@@ -44,6 +45,9 @@ const WAIT: Duration = Duration::from_secs(15);
 /// to report the failure — instead of running out thirtyfour's 120 s
 /// per-request default and inflating the whole journey.
 const COMMAND_BUDGET: Duration = Duration::from_secs(10);
+
+/// The interval every poll loop here re-reads its condition at.
+const POLL_STEP: Duration = Duration::from_millis(200);
 
 /// The budget [`Harness::wait_hydrated`] allows, four times [`WAIT`]: the host
 /// lane's debug WASM is ~91 MB and the browser has to fetch, compile and run it
@@ -165,7 +169,7 @@ impl Harness {
     ///
     /// # Panics
     /// When the element never appears — with the selector in the message.
-    pub(crate) async fn wait_css(&self, css: &str) -> WebElement {
+    pub(crate) async fn wait_css(&self, css: &str) -> Element {
         self.wait_css_for(css, WAIT).await
     }
 
@@ -174,7 +178,7 @@ impl Harness {
     ///
     /// # Panics
     /// When the element never appears — with the selector in the message.
-    async fn wait_css_for(&self, css: &str, budget: Duration) -> WebElement {
+    async fn wait_css_for(&self, css: &str, budget: Duration) -> Element {
         match bounded_for(
             &format!("query(css={css}).wait()"),
             budget + COMMAND_BUDGET,
@@ -185,7 +189,7 @@ impl Harness {
         )
         .await
         {
-            Ok(element) => element,
+            Ok(inner) => Element::new(inner, css),
             Err(e) => {
                 // Failure evidence: where the browser actually was, and what
                 // its console says. The console half is what separates "the
@@ -300,7 +304,7 @@ impl Harness {
     ///
     /// # Panics
     /// When the element never appears.
-    pub(crate) async fn wait_xpath(&self, xpath: &str) -> WebElement {
+    pub(crate) async fn wait_xpath(&self, xpath: &str) -> Element {
         match bounded_for(
             &format!("query(xpath={xpath}).wait()"),
             WAIT + COMMAND_BUDGET,
@@ -311,7 +315,7 @@ impl Harness {
         )
         .await
         {
-            Ok(element) => element,
+            Ok(inner) => Element::new(inner, xpath),
             Err(e) => {
                 let url = bounded("current_url()", self.driver.current_url())
                     .await
@@ -342,7 +346,7 @@ impl Harness {
     ///
     /// # Panics
     /// When the element never becomes clickable.
-    pub(crate) async fn wait_clickable_xpath(&self, xpath: &str) -> WebElement {
+    pub(crate) async fn wait_clickable_xpath(&self, xpath: &str) -> Element {
         match bounded_for(
             &format!("query(xpath={xpath}).and_clickable().wait()"),
             WAIT + COMMAND_BUDGET,
@@ -354,7 +358,7 @@ impl Harness {
         )
         .await
         {
-            Ok(element) => element,
+            Ok(inner) => Element::new(inner, xpath),
             Err(e) => {
                 let url = bounded("current_url()", self.driver.current_url())
                     .await
@@ -474,7 +478,7 @@ impl Harness {
         )
         .await
         {
-            Ok(el) => bounded("text(.thaw-message-bar)", el.text())
+            Ok(inner) => bounded("text(.thaw-message-bar)", inner.text())
                 .await
                 .unwrap_or_default(),
             Err(_) => String::new(),
@@ -597,6 +601,334 @@ impl Harness {
     }
 }
 
+/// One element handle, together with the selector that found it.
+///
+/// A journey never holds a raw `WebElement`: every element command it can
+/// issue goes through this type, which bounds the request ([`bounded`]) and
+/// names the selector in its failure — the type-level form of the private
+/// `driver` field on [`Harness`]. Nothing outside this module can build one,
+/// so the guarantee cannot be routed around.
+///
+/// Two tiers. The assertive methods panic on anything but success, because a
+/// journey that asked for a click either got an answer or it did not, and a
+/// driver that stalled is never "the button was inert". The `read_*` probes
+/// exist for a poll loop or a branch a journey takes either way, and collapse
+/// ONLY an absence ([`is_absence`]) to `None`.
+pub(crate) struct Element {
+    inner: WebElement,
+    /// The selector this handle was found by, which IS the failure message —
+    /// so no call site needs an `expect` string of its own.
+    what: String,
+}
+
+impl Element {
+    /// Wrap a freshly found handle with the selector that found it.
+    fn new(inner: WebElement, what: &str) -> Self {
+        Self {
+            inner,
+            what: what.to_owned(),
+        }
+    }
+
+    /// Click it.
+    ///
+    /// # Panics
+    /// When the `WebDriver` answers with anything but success.
+    pub(crate) async fn click(&self) {
+        element_command(&format!("click({})", self.what), self.inner.click()).await;
+    }
+
+    /// Send `keys` to it.
+    ///
+    /// # Panics
+    /// When the `WebDriver` answers with anything but success.
+    pub(crate) async fn send_keys(&self, keys: impl Into<TypingData>) {
+        element_command(
+            &format!("send_keys({})", self.what),
+            self.inner.send_keys(keys),
+        )
+        .await;
+    }
+
+    /// Clear it with `WebDriver`'s own element-clear command.
+    ///
+    /// [`clear_field`] is the one to reach for on a field whose value the
+    /// viewer binds — this command moves the DOM value without firing the
+    /// events that binding listens for.
+    ///
+    /// # Panics
+    /// When the `WebDriver` answers with anything but success.
+    pub(crate) async fn clear(&self) {
+        element_command(&format!("clear({})", self.what), self.inner.clear()).await;
+    }
+
+    /// Scroll it into the viewport.
+    ///
+    /// # Panics
+    /// When the `WebDriver` answers with anything but success.
+    pub(crate) async fn scroll_into_view(&self) {
+        element_command(
+            &format!("scroll_into_view({})", self.what),
+            self.inner.scroll_into_view(),
+        )
+        .await;
+    }
+
+    /// Its rendered text.
+    ///
+    /// # Panics
+    /// When the `WebDriver` answers with anything but success.
+    pub(crate) async fn text(&self) -> String {
+        element_command(&format!("text({})", self.what), self.inner.text()).await
+    }
+
+    /// The value of its `name` ATTRIBUTE — what the markup carries.
+    ///
+    /// An absent attribute is a defect here, not an empty string: a journey
+    /// asking for `data-visible` is asserting about a hook the viewer is
+    /// supposed to render, and `""` would let a missing hook pass as a value.
+    /// [`Self::read_attr`] is the probe for an attribute that legitimately
+    /// may not be there.
+    ///
+    /// # Panics
+    /// When the `WebDriver` does not answer, or the attribute is absent.
+    pub(crate) async fn attr(&self, name: &str) -> String {
+        let label = format!("attr({}[{name}])", self.what);
+        element_command(&label, self.inner.attr(name.to_owned()))
+            .await
+            .unwrap_or_else(|| panic!("`{}` carries no `{name}` attribute", self.what))
+    }
+
+    /// The value of its `name` PROPERTY — a control's LIVE state, which a
+    /// typed-in value moves and the rendered attribute does not.
+    ///
+    /// # Panics
+    /// When the `WebDriver` does not answer, or the property is absent.
+    pub(crate) async fn prop(&self, name: &str) -> String {
+        let label = format!("prop({}.{name})", self.what);
+        element_command(&label, self.inner.prop(name.to_owned()))
+            .await
+            .unwrap_or_else(|| panic!("`{}` carries no `{name}` property", self.what))
+    }
+
+    /// Whether it is enabled.
+    ///
+    /// # Panics
+    /// When the `WebDriver` answers with anything but success — a stalled
+    /// driver is never "the control is inert".
+    pub(crate) async fn enabled(&self) -> bool {
+        element_command(
+            &format!("is_enabled({})", self.what),
+            self.inner.is_enabled(),
+        )
+        .await
+    }
+
+    /// Whether it is displayed.
+    ///
+    /// # Panics
+    /// When the `WebDriver` answers with anything but success.
+    pub(crate) async fn displayed(&self) -> bool {
+        element_command(
+            &format!("is_displayed({})", self.what),
+            self.inner.is_displayed(),
+        )
+        .await
+    }
+
+    /// Whether it is selected (a checkbox, a radio, an `<option>`).
+    ///
+    /// # Panics
+    /// When the `WebDriver` answers with anything but success.
+    pub(crate) async fn selected(&self) -> bool {
+        element_command(
+            &format!("is_selected({})", self.what),
+            self.inner.is_selected(),
+        )
+        .await
+    }
+
+    /// The RESOLVED value of the CSS `property` — what the browser computed,
+    /// not what the stylesheet declared.
+    ///
+    /// # Panics
+    /// When the `WebDriver` answers with anything but success.
+    pub(crate) async fn css_value(&self, property: &str) -> String {
+        element_command(
+            &format!("css_value({}.{property})", self.what),
+            self.inner.css_value(property.to_owned()),
+        )
+        .await
+    }
+
+    /// The first element matching `by` INSIDE this one.
+    ///
+    /// # Panics
+    /// When the `WebDriver` answers with anything but success, absence
+    /// included — a journey reaching into a subtree is asserting the child is
+    /// there ([`Self::read_find`] is the probe).
+    pub(crate) async fn find(&self, by: By) -> Self {
+        let what = format!("{} {by:?}", self.what);
+        let inner = element_command(&format!("find({what})"), self.inner.find(by)).await;
+        Self::new(inner, &what)
+    }
+
+    /// Every element matching `by` inside this one, empty when none match.
+    ///
+    /// # Panics
+    /// When the `WebDriver` answers with anything but an absence
+    /// ([`is_absence`]): a query that was never answered is not an empty
+    /// subtree.
+    pub(crate) async fn find_all(&self, by: By) -> Vec<Self> {
+        let what = format!("{} {by:?}", self.what);
+        let found = element_probe(&format!("find_all({what})"), self.inner.find_all(by))
+            .await
+            .unwrap_or_default();
+        found
+            .into_iter()
+            .enumerate()
+            .map(|(index, inner)| Self::new(inner, &format!("{what}[{index}]")))
+            .collect()
+    }
+
+    /// Select the `<option>` whose value is `value`.
+    ///
+    /// thirtyfour's `SelectElement` issues its own requests — building one
+    /// reads the tag name, and each selection reads the options and clicks —
+    /// so it is wrapped here rather than handed to a journey: outside this
+    /// type those requests would carry thirtyfour's 120 s default alone.
+    ///
+    /// # Panics
+    /// When the element is not a `<select>`, or the option cannot be chosen.
+    pub(crate) async fn select_by_value(&self, value: &str) {
+        let select = element_command(
+            &format!("SelectElement::new({})", self.what),
+            SelectElement::new(&self.inner),
+        )
+        .await;
+        element_command(
+            &format!("select_by_value({}, {value})", self.what),
+            select.select_by_value(value),
+        )
+        .await;
+    }
+
+    /// Select the `<option>` at `index` ([`Self::select_by_value`] for the
+    /// bounding rationale).
+    ///
+    /// # Panics
+    /// When the element is not a `<select>`, or the option cannot be chosen.
+    pub(crate) async fn select_by_index(&self, index: u32) {
+        let select = element_command(
+            &format!("SelectElement::new({})", self.what),
+            SelectElement::new(&self.inner),
+        )
+        .await;
+        element_command(
+            &format!("select_by_index({}, {index})", self.what),
+            select.select_by_index(index),
+        )
+        .await;
+    }
+
+    /// Its rendered text, or `None` when the handle went stale.
+    ///
+    /// The probe tier's one collapse, reasoned here for all four `read_*`
+    /// methods: the handle was found a moment ago, so the only "not there"
+    /// this read can meet is a subtree that re-rendered between the find and
+    /// the read, which `WebDriver` reports as `stale element reference`
+    /// ([`is_absence`]) and a poll loop must treat as "not yet". Every other
+    /// failure is the driver not ANSWERING, and stays a panic — a probe that
+    /// swallowed it would spend its whole budget reporting an empty page.
+    pub(crate) async fn read_text(&self) -> Option<String> {
+        element_probe(&format!("text({})", self.what), self.inner.text()).await
+    }
+
+    /// Its `name` attribute, or `None` when absent or the handle went stale
+    /// ([`Self::read_text`] reasons the collapse).
+    pub(crate) async fn read_attr(&self, name: &str) -> Option<String> {
+        element_probe(
+            &format!("attr({}[{name}])", self.what),
+            self.inner.attr(name.to_owned()),
+        )
+        .await
+        .flatten()
+    }
+
+    /// Its `name` property, or `None` when absent or the handle went stale
+    /// ([`Self::read_text`] reasons the collapse).
+    pub(crate) async fn read_prop(&self, name: &str) -> Option<String> {
+        element_probe(
+            &format!("prop({}.{name})", self.what),
+            self.inner.prop(name.to_owned()),
+        )
+        .await
+        .flatten()
+    }
+
+    /// The first element matching `by` inside this one, or `None` when
+    /// nothing matches or the handle went stale ([`Self::read_text`] reasons
+    /// the collapse).
+    pub(crate) async fn read_find(&self, by: By) -> Option<Self> {
+        let what = format!("{} {by:?}", self.what);
+        element_probe(&format!("find({what})"), self.inner.find(by))
+            .await
+            .map(|inner| Self::new(inner, &what))
+    }
+
+    /// Whether it is enabled, or `None` when the handle went stale
+    /// ([`Self::read_text`] reasons the collapse).
+    pub(crate) async fn read_enabled(&self) -> Option<bool> {
+        element_probe(
+            &format!("is_enabled({})", self.what),
+            self.inner.is_enabled(),
+        )
+        .await
+    }
+
+    /// Whether it is displayed, or `None` when the handle went stale
+    /// ([`Self::read_text`] reasons the collapse).
+    pub(crate) async fn read_displayed(&self) -> Option<bool> {
+        element_probe(
+            &format!("is_displayed({})", self.what),
+            self.inner.is_displayed(),
+        )
+        .await
+    }
+}
+
+/// The assertive tier's one implementation: run `command` under
+/// [`COMMAND_BUDGET`] and panic on anything but success, naming the selector.
+///
+/// A free function rather than a method, so a plain unit test can prove the
+/// tier's decision without a browser session.
+///
+/// # Panics
+/// On any `WebDriver` failure, an absence included.
+async fn element_command<T>(label: &str, command: impl Future<Output = WebDriverResult<T>>) -> T {
+    match bounded(label, command).await {
+        Ok(value) => value,
+        Err(error) => panic!("the WebDriver could not answer `{label}`: {error}"),
+    }
+}
+
+/// The probe tier's one implementation: `None` on an absence
+/// ([`is_absence`]), panic on anything else ([`Element::read_text`] reasons
+/// the collapse).
+///
+/// # Panics
+/// On any `WebDriver` failure that is not an absence.
+async fn element_probe<T>(
+    label: &str,
+    command: impl Future<Output = WebDriverResult<T>>,
+) -> Option<T> {
+    match bounded(label, command).await {
+        Ok(value) => Some(value),
+        Err(error) if is_absence(&error) => None,
+        Err(error) => panic!("the WebDriver could not answer `{label}`: {error}"),
+    }
+}
+
 /// Run one steady-state `WebDriver` command under [`COMMAND_BUDGET`].
 ///
 /// thirtyfour bounds a request only by its 120 s per-request default, which
@@ -657,17 +989,39 @@ fn is_absence(error: &WebDriverError) -> bool {
     )
 }
 
+/// The first element matching `by`, labelled `what`, or `None` when nothing
+/// matches.
+///
+/// The one find every CSS-keyed helper below goes through, so each command
+/// has a single implementation and every failure names the selector the
+/// caller passed rather than `By`'s `Debug` form.
+///
+/// # Panics
+/// When the `WebDriver` answers with anything but an absence ([`is_absence`]).
+async fn find_first(h: &Harness, by: By, what: &str) -> Option<Element> {
+    match bounded(&format!("find({what})"), h.driver.find(by)).await {
+        Ok(inner) => Some(Element::new(inner, what)),
+        Err(error) if is_absence(&error) => None,
+        Err(error) => panic!("the WebDriver could not answer `find({what})`: {error}"),
+    }
+}
+
+/// [`find_first`] for a CSS selector, which labels itself.
+///
+/// # Panics
+/// When the `WebDriver` answers with anything but an absence ([`is_absence`]).
+async fn find_css(h: &Harness, css: &str) -> Option<Element> {
+    find_first(h, By::Css(css), css).await
+}
+
 /// Whether `by` currently matches an element.
 ///
 /// # Panics
 /// When the `WebDriver` answers with anything but an absence
 /// ([`is_absence`]): a failure to observe is never an observation of nothing.
 pub(crate) async fn is_present_by(h: &Harness, by: By) -> bool {
-    match bounded(&format!("find({by:?})"), h.driver.find(by.clone())).await {
-        Ok(_) => true,
-        Err(error) if is_absence(&error) => false,
-        Err(error) => panic!("the WebDriver could not answer `find({by:?})`: {error}"),
-    }
+    let what = format!("{by:?}");
+    find_first(h, by, &what).await.is_some()
 }
 
 /// [`is_present_by`] for a CSS selector — the ordinary "is this on the page"
@@ -688,17 +1042,9 @@ pub(crate) async fn is_present(h: &Harness, css: &str) -> bool {
 /// # Panics
 /// When the `WebDriver` answers with anything but an absence ([`is_absence`]).
 pub(crate) async fn is_visible(h: &Harness, css: &str) -> bool {
-    match bounded(&format!("find({css})"), h.driver.find(By::Css(css))).await {
-        Ok(element) => match bounded(&format!("is_displayed({css})"), element.is_displayed()).await
-        {
-            Ok(displayed) => displayed,
-            Err(error) if is_absence(&error) => false,
-            Err(error) => {
-                panic!("the WebDriver could not answer `is_displayed({css})`: {error}")
-            }
-        },
-        Err(error) if is_absence(&error) => false,
-        Err(error) => panic!("the WebDriver could not answer `find({css})`: {error}"),
+    match find_css(h, css).await {
+        Some(element) => element.read_displayed().await == Some(true),
+        None => false,
     }
 }
 
@@ -711,11 +1057,8 @@ pub(crate) async fn is_visible(h: &Harness, css: &str) -> bool {
 /// modal up" has to look at all of them or it answers about the wrong one.
 pub(crate) async fn is_any_visible(h: &Harness, css: &str) -> bool {
     for element in find_all(h, css).await {
-        match bounded(&format!("is_displayed({css})"), element.is_displayed()).await {
-            Ok(true) => return true,
-            Ok(false) => {}
-            Err(error) if is_absence(&error) => {}
-            Err(error) => panic!("the WebDriver could not answer `is_displayed({css})`: {error}"),
+        if element.read_displayed().await == Some(true) {
+            return true;
         }
     }
     false
@@ -901,21 +1244,15 @@ async fn wait_upload_dispatched(h: &Harness, before: &UploadDialogState) {
 /// On any interaction failure, and when the submit click dispatches nothing.
 pub(crate) async fn upload_via_dialog(h: &Harness, path: &str) {
     clear_dialog_overlay(h).await;
-    let open = h.wait_css("#template-upload-open").await;
-    bounded("click(#template-upload-open)", open.click())
-        .await
-        .expect("open the template upload dialog");
+    h.wait_css("#template-upload-open").await.click().await;
     wait_dialog_settled(h, UPLOAD_SUBMIT).await;
-    let picker = h.wait_css("#template-upload-picker input[type=file]").await;
-    bounded("send_keys(#template-upload-picker)", picker.send_keys(path))
+    h.wait_css("#template-upload-picker input[type=file]")
         .await
-        .expect("choose the fixture through the dialog's hidden file input");
+        .send_keys(path)
+        .await;
     wait_enabled(h, UPLOAD_SUBMIT).await;
     let before = UploadDialogState::read(h).await;
-    let submit = h.wait_css(UPLOAD_SUBMIT).await;
-    bounded(&format!("click({UPLOAD_SUBMIT})"), submit.click())
-        .await
-        .expect("send the chosen template source");
+    h.wait_css(UPLOAD_SUBMIT).await.click().await;
     wait_upload_dispatched(h, &before).await;
 }
 
@@ -924,15 +1261,7 @@ pub(crate) async fn upload_via_dialog(h: &Harness, path: &str) {
 /// # Panics
 /// When the `WebDriver` answers with anything but an absence ([`is_absence`]).
 pub(crate) async fn read_enabled(h: &Harness, css: &str) -> Option<bool> {
-    match bounded(&format!("find({css})"), h.driver.find(By::Css(css))).await {
-        Ok(element) => match bounded(&format!("is_enabled({css})"), element.is_enabled()).await {
-            Ok(enabled) => Some(enabled),
-            Err(error) if is_absence(&error) => None,
-            Err(error) => panic!("the WebDriver could not answer `is_enabled({css})`: {error}"),
-        },
-        Err(error) if is_absence(&error) => None,
-        Err(error) => panic!("the WebDriver could not answer `find({css})`: {error}"),
-    }
+    find_css(h, css).await?.read_enabled().await
 }
 
 /// The text of the first element matching `css`, or `None` when nothing
@@ -941,37 +1270,36 @@ pub(crate) async fn read_enabled(h: &Harness, css: &str) -> Option<bool> {
 /// # Panics
 /// When the `WebDriver` answers with anything but an absence ([`is_absence`]).
 pub(crate) async fn read_text(h: &Harness, css: &str) -> Option<String> {
-    match bounded(&format!("find({css})"), h.driver.find(By::Css(css))).await {
-        Ok(element) => match bounded(&format!("text({css})"), element.text()).await {
-            Ok(text) => Some(text),
-            Err(error) if is_absence(&error) => None,
-            Err(error) => panic!("the WebDriver could not answer `text({css})`: {error}"),
-        },
-        Err(error) if is_absence(&error) => None,
-        Err(error) => panic!("the WebDriver could not answer `find({css})`: {error}"),
-    }
+    find_css(h, css).await?.read_text().await
 }
 
-/// Every element matching `by`, empty when nothing matches.
-///
-/// # Panics
-/// When the `WebDriver` answers with anything but an absence ([`is_absence`]):
-/// a query that was never answered is not an empty page.
-pub(crate) async fn find_all_by(h: &Harness, by: By) -> Vec<WebElement> {
-    match bounded(&format!("find_all({by:?})"), h.driver.find_all(by.clone())).await {
-        Ok(found) => found,
-        Err(error) if is_absence(&error) => Vec::new(),
-        Err(error) => panic!("the WebDriver could not answer `find_all({by:?})`: {error}"),
-    }
-}
-
-/// [`find_all_by`] for a CSS selector — the ordinary "every match on the page"
-/// read.
+/// [`find_all`] with the label each handle carries into its own failures.
 ///
 /// # Panics
 /// When the `WebDriver` answers with anything but an absence ([`is_absence`]).
-pub(crate) async fn find_all(h: &Harness, css: &str) -> Vec<WebElement> {
-    find_all_by(h, By::Css(css)).await
+async fn find_all_labelled(h: &Harness, by: By, what: &str) -> Vec<Element> {
+    let found = match bounded(&format!("find_all({what})"), h.driver.find_all(by)).await {
+        Ok(found) => found,
+        Err(error) if is_absence(&error) => Vec::new(),
+        Err(error) => panic!("the WebDriver could not answer `find_all({what})`: {error}"),
+    };
+    found
+        .into_iter()
+        .enumerate()
+        .map(|(index, inner)| Element::new(inner, &format!("{what}[{index}]")))
+        .collect()
+}
+
+/// Every element matching `css`, empty when nothing matches — the ordinary
+/// "every match on the page" read.
+///
+/// A query that was never ANSWERED is not an empty page, which is why the
+/// panic below is not an empty vector.
+///
+/// # Panics
+/// When the `WebDriver` answers with anything but an absence ([`is_absence`]).
+pub(crate) async fn find_all(h: &Harness, css: &str) -> Vec<Element> {
+    find_all_labelled(h, By::Css(css), css).await
 }
 
 /// The DOM property `property` of the first element matching `css`, or `None`
@@ -983,19 +1311,7 @@ pub(crate) async fn find_all(h: &Harness, css: &str) -> Vec<WebElement> {
 /// # Panics
 /// When the `WebDriver` answers with anything but an absence ([`is_absence`]).
 pub(crate) async fn read_prop(h: &Harness, css: &str, property: &str) -> Option<String> {
-    match bounded(&format!("find({css})"), h.driver.find(By::Css(css))).await {
-        Ok(element) => {
-            match bounded(&format!("prop({css}.{property})"), element.prop(property)).await {
-                Ok(value) => value,
-                Err(error) if is_absence(&error) => None,
-                Err(error) => {
-                    panic!("the WebDriver could not answer `prop({css}.{property})`: {error}")
-                }
-            }
-        }
-        Err(error) if is_absence(&error) => None,
-        Err(error) => panic!("the WebDriver could not answer `find({css})`: {error}"),
-    }
+    find_css(h, css).await?.read_prop(property).await
 }
 
 /// How many elements match `css`.
@@ -1028,6 +1344,167 @@ pub(crate) async fn appears_within(h: &Harness, css: &str, budget: Duration) -> 
         tokio::time::sleep(step).await;
         waited += step;
     }
+}
+
+/// Poll `condition` every [`POLL_STEP`] until it holds, for at most `budget`;
+/// returns whether it did.
+///
+/// The one poll loop every journey condition is written over, so a journey
+/// file needs no timer of its own — which is what lets
+/// `scripts/checks/e2e-waits.sh` refuse `sleep` there outright.
+pub(crate) async fn poll_until_for(
+    budget: Duration,
+    mut condition: impl AsyncFnMut() -> bool,
+) -> bool {
+    let mut waited = Duration::ZERO;
+    loop {
+        if condition().await {
+            return true;
+        }
+        if waited >= budget {
+            return false;
+        }
+        tokio::time::sleep(POLL_STEP).await;
+        waited += POLL_STEP;
+    }
+}
+
+/// [`poll_until_for`] over [`WAIT`] — the ordinary journey condition.
+pub(crate) async fn poll_until(condition: impl AsyncFnMut() -> bool) -> bool {
+    poll_until_for(WAIT, condition).await
+}
+
+/// Poll `probe` every [`POLL_STEP`] until it answers `Some`, for at most
+/// `budget`, and hand that answer back.
+///
+/// [`poll_until_for`] for a condition that also PRODUCES the value the
+/// journey went looking for (the id in a URL, the settled text of a row).
+pub(crate) async fn poll_some_for<T>(
+    budget: Duration,
+    mut probe: impl AsyncFnMut() -> Option<T>,
+) -> Option<T> {
+    let mut waited = Duration::ZERO;
+    loop {
+        if let Some(value) = probe().await {
+            return Some(value);
+        }
+        if waited >= budget {
+            return None;
+        }
+        tokio::time::sleep(POLL_STEP).await;
+        waited += POLL_STEP;
+    }
+}
+
+/// [`poll_some_for`] over [`WAIT`].
+pub(crate) async fn poll_some<T>(probe: impl AsyncFnMut() -> Option<T>) -> Option<T> {
+    poll_some_for(WAIT, probe).await
+}
+
+/// Let the page sit for `duration` with nothing expected to happen, printing
+/// `why`.
+///
+/// The one wait here that is NOT a condition, and it lives in the harness so
+/// the journey files can stay sleep-free: a journey that asserts a window
+/// passes WITHOUT something happening — a timer the previous shell left
+/// behind failing to fire — has no observable to poll for, and turning the
+/// absence into a condition would only be a sleep wearing a wait's name.
+pub(crate) async fn dwell(duration: Duration, why: &str) {
+    println!("dwell {duration:?}: {why}");
+    tokio::time::sleep(duration).await;
+}
+
+/// The red, green and blue channels of a serialised CSS colour, whatever
+/// spelling it arrived in.
+///
+/// Every CSSOM colour serialization writes the three channels first —
+/// `rgb(15, 23, 42)` for a colour the cascade resolved as opaque,
+/// `rgba(15, 23, 42, 1)` when the winning declaration carried an explicit
+/// alpha channel — so reading the first three numbers reads the PAINT and
+/// ignores the spelling. Alpha is deliberately not compared: it is the one
+/// component the two spellings disagree about, and a wait on a themed surface
+/// is a wait on its colour.
+fn colour_channels(value: &str) -> Option<[u32; 3]> {
+    let mut numbers = value
+        .split(|c: char| !c.is_ascii_digit())
+        .filter(|part| !part.is_empty())
+        .map(str::parse::<u32>);
+    let mut channels = [0u32; 3];
+    for channel in &mut channels {
+        *channel = numbers.next()?.ok()?;
+    }
+    Some(channels)
+}
+
+/// Poll until the RESOLVED colour of the CSS `property` on the first element
+/// matching `css` is `expected`.
+///
+/// Resolved rather than declared: `WebDriver`'s Get Element CSS Value returns
+/// the computed value, which is what makes a token swap observable at all —
+/// the declaration never changes, only what `var(--…)` resolves to.
+///
+/// Colour rather than text: the computed value comes back in the CSSOM
+/// spelling the winning declaration produced, and this viewer's `<html>`
+/// background reaches Chrome 152 as `rgba(15, 23, 42, 1)` where the same paint
+/// declared without an alpha channel would read `rgb(15, 23, 42)`. Comparing
+/// [`colour_channels`] compares what was painted; comparing the strings would
+/// compare the serialization and fail on a browser that chose the other one.
+///
+/// # Panics
+/// When it never does within [`WAIT`], reporting the last value seen, or when
+/// `expected` is not a colour [`colour_channels`] can read.
+pub(crate) async fn wait_css_colour(h: &Harness, css: &str, property: &str, expected: &str) {
+    let want = colour_channels(expected)
+        .unwrap_or_else(|| panic!("`{expected}` is not a CSS colour with three channels"));
+    let mut last = String::new();
+    let settled = poll_until(async || match find_css(h, css).await {
+        Some(element) => {
+            last = element.css_value(property).await;
+            colour_channels(&last) == Some(want)
+        }
+        None => false,
+    })
+    .await;
+    assert!(
+        settled,
+        "`{css}`'s resolved `{property}` never became `{expected}` (last: `{last}`)"
+    );
+}
+
+/// Poll until the CSS `property` of `css` STOPS moving: two samples
+/// [`POLL_STEP`] apart that agree.
+///
+/// The animation half of a theme flip. `wait_css_colour` answers "the token
+/// swapped"; a surface carrying a colour transition is still somewhere
+/// between its two colours at that instant, and a capture taken then freezes
+/// a half-themed frame. Two equal samples is the observable end of the
+/// transition — an explicit condition, where a fixed settle is a guess that
+/// is either too short on a loaded machine or wasted time on a quiet one.
+///
+/// Returns at once when nothing matches `css`: a page carrying no animated
+/// surface has nothing to settle.
+///
+/// # Panics
+/// When the value is still moving after [`WAIT`].
+pub(crate) async fn wait_css_value_still(h: &Harness, css: &str, property: &str) {
+    let mut last = String::new();
+    let settled = poll_until(async || {
+        let Some(before) = find_css(h, css).await else {
+            return true;
+        };
+        let first = before.css_value(property).await;
+        tokio::time::sleep(POLL_STEP).await;
+        let Some(after) = find_css(h, css).await else {
+            return true;
+        };
+        last = after.css_value(property).await;
+        first == last
+    })
+    .await;
+    assert!(
+        settled,
+        "`{css}`'s `{property}` never stopped moving (last: `{last}`)"
+    );
 }
 
 /// Poll until the control at `css` is present and ENABLED.
@@ -1133,12 +1610,8 @@ pub(crate) async fn wait_text_suffix(h: &Harness, css: &str, suffix: &str) {
 /// On any interaction failure.
 pub(crate) async fn retype(h: &Harness, css: &str, text: &str) {
     let field = h.wait_css(css).await;
-    bounded(&format!("clear({css})"), field.clear())
-        .await
-        .expect("clear the field");
-    bounded(&format!("send_keys({css})"), field.send_keys(text))
-        .await
-        .expect("type into the field");
+    field.clear().await;
+    field.send_keys(text).await;
 }
 
 /// Click `css` until `target_css` shows up, returning whether it did (the
@@ -1151,15 +1624,13 @@ pub(crate) async fn retype(h: &Harness, css: &str, text: &str) {
 /// would otherwise report "the target never appeared".
 pub(crate) async fn click_until_css(h: &Harness, css: &str, target_css: &str) -> bool {
     for _ in 0..5 {
-        let button = h.wait_css(css).await;
-        bounded(&format!("click({css})"), button.click())
-            .await
-            .expect("click");
-        for _ in 0..25 {
-            if is_present(h, target_css).await {
-                return true;
-            }
-            tokio::time::sleep(Duration::from_millis(200)).await;
+        h.wait_css(css).await.click().await;
+        if poll_until_for(Duration::from_secs(5), async || {
+            is_present(h, target_css).await
+        })
+        .await
+        {
+            return true;
         }
     }
     false
@@ -1216,22 +1687,14 @@ pub(crate) async fn wait_visible(h: &Harness, css: &str) {
 /// On any interaction failure, or when the field is not empty afterwards.
 pub(crate) async fn clear_field(h: &Harness, css: &str) {
     let field = h.wait_css(css).await;
-    let held = bounded(&format!("prop({css}.value)"), field.prop("value"))
-        .await
-        .expect("read the field's value")
-        .unwrap_or_default();
+    let held = field.prop("value").await;
     let mut keys = String::from(Key::End.value());
     keys.extend(std::iter::repeat_n(
         Key::Backspace.value(),
         held.chars().count(),
     ));
-    bounded(&format!("send_keys({css})"), field.send_keys(keys))
-        .await
-        .expect("erase the field");
-    let left = bounded(&format!("prop({css}.value)"), field.prop("value"))
-        .await
-        .expect("read the field's value")
-        .unwrap_or_default();
+    field.send_keys(keys).await;
+    let left = field.prop("value").await;
     assert!(
         left.is_empty(),
         "`{css}` still reads `{left}` after erasing"
@@ -1245,16 +1708,7 @@ pub(crate) async fn clear_field(h: &Harness, css: &str) {
 /// re-rendering table detaches the handle between the find and the read, and
 /// `attr` then answers `stale element reference` — a retry, never a failure.
 pub(crate) async fn read_attr(h: &Harness, css: &str, attribute: &str) -> Option<String> {
-    let element = bounded(&format!("find({css})"), h.driver.find(By::Css(css)))
-        .await
-        .ok()?;
-    bounded(
-        &format!("attr({css}[{attribute}])"),
-        element.attr(attribute),
-    )
-    .await
-    .ok()
-    .flatten()
+    find_css(h, css).await?.read_attr(attribute).await
 }
 
 /// `attribute` of the first element matching `css`, waited for — the rendered
@@ -1331,16 +1785,11 @@ pub(crate) async fn confirm_in_dialog(h: &Harness, trigger_css: &str, confirm_id
         if attempt > 0 && is_any_visible(h, DIALOG_SURFACE).await {
             break;
         }
-        bounded(&format!("click({trigger_css})"), trigger.click())
-            .await
-            .expect("open the confirmation dialog");
-        for _ in 0..10 {
-            if is_visible(h, &confirm_css).await {
-                opened = true;
-                break;
-            }
-            tokio::time::sleep(Duration::from_millis(200)).await;
-        }
+        trigger.click().await;
+        opened = poll_until_for(Duration::from_secs(2), async || {
+            is_visible(h, &confirm_css).await
+        })
+        .await;
         if opened {
             break;
         }
@@ -1355,10 +1804,7 @@ pub(crate) async fn confirm_in_dialog(h: &Harness, trigger_css: &str, confirm_id
     // transition, and a click landing mid-scale can miss the moving target
     // without the driver reporting anything (#3200).
     wait_dialog_settled(h, &confirm_css).await;
-    let confirm = h.wait_css(&confirm_css).await;
-    bounded(&format!("click({confirm_css})"), confirm.click())
-        .await
-        .expect("confirm in the dialog");
+    h.wait_css(&confirm_css).await.click().await;
     // The dialog hides on confirm — that it hid proves the click landed. The
     // backdrop outlives the button by the length of the fade, so the journey's
     // next click needs it gone too (#3134).
@@ -1387,40 +1833,19 @@ pub(crate) async fn login_basic_as(h: &Harness, user: &str, pass: &str) {
     let user = user.to_owned();
     let pass = pass.to_owned();
     h.goto("/login").await;
-    let username = h.wait_css("#login-username").await;
-    bounded("send_keys(#login-username)", username.send_keys(&user))
-        .await
-        .expect("type user");
-    let password = h.wait_css("#login-password").await;
-    bounded("send_keys(#login-password)", password.send_keys(&pass))
-        .await
-        .expect("type pass");
+    h.wait_css("#login-username").await.send_keys(&user).await;
+    h.wait_css("#login-password").await.send_keys(&pass).await;
     // Submit with a bounded retry: a click landing exactly while hydration
     // swaps the form can be lost (the ActionForm is valid both pre- and
     // post-hydration, but the swap instant is a real race). Each attempt
     // gets a short bounded wait; leaving /login ends the loop.
     let mut attempts = 0;
     loop {
-        let submit = h.wait_css("button[type=submit]").await;
-        bounded("click(button[type=submit])", submit.click())
-            .await
-            .expect("submit");
-        for _ in 0..15 {
-            if !bounded("current_url()", h.driver.current_url())
-                .await
-                .expect("current url")
-                .as_str()
-                .contains("/login")
-            {
-                break;
-            }
-            tokio::time::sleep(Duration::from_millis(200)).await;
-        }
-        let off_login = !bounded("current_url()", h.driver.current_url())
-            .await
-            .expect("current url")
-            .as_str()
-            .contains("/login");
+        h.wait_css("button[type=submit]").await.click().await;
+        let off_login = poll_until_for(Duration::from_secs(3), async || {
+            !h.current_url().await.contains("/login")
+        })
+        .await;
         if off_login {
             break;
         }
@@ -1451,9 +1876,22 @@ pub(crate) async fn login_basic_as(h: &Harness, user: &str, pass: &str) {
 mod tests {
     use std::time::Duration;
 
-    use thirtyfour::error::WebDriverErrorInner;
+    use thirtyfour::error::{WebDriverError, WebDriverErrorInfo, WebDriverErrorInner};
 
-    use super::{COMMAND_BUDGET, WAIT, bounded, is_absence};
+    use super::{
+        COMMAND_BUDGET, WAIT, bounded, colour_channels, element_command, element_probe, is_absence,
+    };
+
+    /// The two failures a probe is allowed to read as "not there yet"
+    /// ([`is_absence`]).
+    fn absences() -> [WebDriverError; 2] {
+        [
+            WebDriverError::NoSuchElement(WebDriverErrorInfo::new("no such element".to_owned())),
+            WebDriverError::StaleElementReference(WebDriverErrorInfo::new(
+                "stale element reference".to_owned(),
+            )),
+        ]
+    }
 
     /// The bound is proven, not asserted: a command that never answers fails
     /// within its budget, names itself, and is not read as an absence.
@@ -1467,7 +1905,7 @@ mod tests {
         let started = tokio::time::Instant::now();
         let answer: Result<(), _> = bounded(
             "find(.never-answers)",
-            std::future::pending::<Result<(), thirtyfour::error::WebDriverError>>(),
+            std::future::pending::<Result<(), WebDriverError>>(),
         )
         .await;
 
@@ -1492,6 +1930,75 @@ mod tests {
         );
     }
 
+    /// The element tier is bounded too: a command issued on an element that
+    /// never answers panics inside the poll budget, naming the selector that
+    /// found the handle rather than an anonymous driver failure.
+    #[tokio::test(start_paused = true)]
+    #[should_panic(expected = "click(#status-save)")]
+    async fn an_element_command_that_never_answers_panics_naming_the_selector() {
+        element_command(
+            "click(#status-save)",
+            std::future::pending::<Result<(), WebDriverError>>(),
+        )
+        .await;
+    }
+
+    /// The probe tier collapses an absence and NOTHING else: both answers
+    /// [`is_absence`] admits become `None`, so a poll loop reads them as "not
+    /// yet".
+    #[tokio::test(start_paused = true)]
+    async fn an_element_probe_reads_an_absence_as_not_yet() {
+        for absence in absences() {
+            assert!(is_absence(&absence), "{absence} must count as an absence");
+            let answer: Option<()> = element_probe("text([data-staged][0])", async move {
+                Err::<(), WebDriverError>(absence)
+            })
+            .await;
+            assert!(
+                answer.is_none(),
+                "an absence is the one failure a probe may read as `not yet`"
+            );
+        }
+    }
+
+    /// A stall is never an absence — the failure this whole harness exists to
+    /// stop reading as an empty page. The probe panics rather than answering
+    /// `None`, so a poll loop cannot spend its budget on a dead driver.
+    #[tokio::test(start_paused = true)]
+    #[should_panic(expected = "is_enabled(#aql-save-submit)")]
+    async fn an_element_probe_never_reads_a_stall_as_not_yet() {
+        let answer: Option<bool> = element_probe(
+            "is_enabled(#aql-save-submit)",
+            std::future::pending::<Result<bool, WebDriverError>>(),
+        )
+        .await;
+        panic!("a stalled driver must not answer `{answer:?}`");
+    }
+
+    /// The two CSSOM spellings of one paint read as one colour, and a
+    /// different paint does not — the comparison a themed capture waits on.
+    #[test]
+    fn one_colour_reads_the_same_in_both_cssom_spellings() {
+        let dark = Some([15, 23, 42]);
+        assert_eq!(colour_channels("rgb(15, 23, 42)"), dark);
+        assert_eq!(
+            colour_channels("rgba(15, 23, 42, 1)"),
+            dark,
+            "an explicit alpha channel is the spelling, not the paint"
+        );
+        assert_eq!(colour_channels("rgb(15 23 42 / 1)"), dark);
+        assert_ne!(
+            colour_channels("rgb(248, 250, 252)"),
+            dark,
+            "the light surface is a different colour, not a different spelling"
+        );
+        assert_eq!(
+            colour_channels("transparent"),
+            None,
+            "a keyword carries no channels to compare"
+        );
+    }
+
     /// A command that answers is handed back untouched — the bound adds no
     /// behaviour of its own to the ordinary path.
     #[tokio::test(start_paused = true)]
@@ -1499,7 +2006,7 @@ mod tests {
         let started = tokio::time::Instant::now();
         let answer = bounded("current_url()", async {
             tokio::time::sleep(Duration::from_secs(1)).await;
-            Ok::<_, thirtyfour::error::WebDriverError>("http://127.0.0.1:3000/login")
+            Ok::<_, WebDriverError>("http://127.0.0.1:3000/login")
         })
         .await;
 

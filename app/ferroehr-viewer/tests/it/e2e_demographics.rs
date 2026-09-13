@@ -43,11 +43,9 @@
 
 use crate::common;
 
-use std::time::Duration;
-
 use common::{
-    Harness, click_until_css, login_basic, read_prop, read_text, retype, wait_enabled, wait_text,
-    wait_text_suffix,
+    Harness, click_until_css, login_basic, poll_until, read_prop, read_text, retype, wait_enabled,
+    wait_text, wait_text_suffix,
 };
 
 /// The CDR base URL the harness exports for REST-side test setup; `None` skips
@@ -242,19 +240,17 @@ async fn add_inline_relationship(
 /// patched-in-place rebuild leaves behind.
 async fn wait_kind_screen(h: &Harness, plural: &str, rm_type: &str) -> bool {
     let needle = format!("\"_type\": \"{rm_type}\"");
-    for _ in 0..75 {
+    poll_until(async || {
+        // NOTE: a heading or body detached by a re-render is "not yet" for this
+        // poll; a driver that fails to answer panics inside read_text/read_prop.
         let heading = read_text(h, "h1").await.unwrap_or_default();
-        if heading.trim() == plural {
-            let seeded = read_prop(h, "#party-create-body", "value")
+        heading.trim() == plural
+            && read_prop(h, "#party-create-body", "value")
                 .await
-                .unwrap_or_default();
-            if seeded.contains(&needle) {
-                return true;
-            }
-        }
-        tokio::time::sleep(Duration::from_millis(200)).await;
-    }
-    false
+                .unwrap_or_default()
+                .contains(&needle)
+    })
+    .await
 }
 
 /// The party lifecycle through the viewer alone: create a PERSON from the
@@ -277,11 +273,7 @@ async fn party_create_read_update_and_history() {
     // has to be driven off the param reactively. Clicking a pill and reading the
     // create skeleton back is what proves it: a screen that read its kind once
     // would still say PERSON here.
-    h.wait_css("[data-kind='organisation']")
-        .await
-        .click()
-        .await
-        .expect("switch to organisations");
+    h.wait_css("[data-kind='organisation']").await.click().await;
     h.wait_url_contains("/demographics/organisation").await;
     assert!(
         wait_kind_screen(&h, "Organisations", "ORGANISATION").await,
@@ -290,11 +282,7 @@ async fn party_create_read_update_and_history() {
     );
     h.shot(2, "kind-switched").await;
     // …and back, so the rest of the journey runs on the person screen.
-    h.wait_css("[data-kind='person']")
-        .await
-        .click()
-        .await
-        .expect("switch back to people");
+    h.wait_css("[data-kind='person']").await.click().await;
     h.wait_url_contains("/demographics/person").await;
     assert!(
         wait_kind_screen(&h, "People", "PERSON").await,
@@ -307,11 +295,7 @@ async fn party_create_read_update_and_history() {
     let body = serde_json::to_string(&party_body("PERSON", "person", &label))
         .expect("serialize the party");
     retype(&h, "#party-create-body", &body).await;
-    h.wait_css("#party-create-submit")
-        .await
-        .click()
-        .await
-        .expect("create the person");
+    h.wait_css("#party-create-submit").await.click().await;
     assert!(
         wait_text(&h, "Party created").await,
         "creating a PERSON never reported a committed version: {}",
@@ -341,11 +325,7 @@ async fn party_create_read_update_and_history() {
         r#"{"_type":"ITEM_TREE","name":{"_type":"DV_TEXT","value":"details"},"archetype_node_id":"at0004","items":[]}"#,
     )
     .await;
-    h.wait_css("#party-save")
-        .await
-        .click()
-        .await
-        .expect("save the party");
+    h.wait_css("#party-save").await.click().await;
     assert!(
         wait_text(&h, "Party updated").await,
         "the edit never reported a committed version: {}",
@@ -386,10 +366,6 @@ async fn party_create_read_update_and_history() {
 /// Relating two parties: an ORGANISATION target, a relationship created from
 /// the PERSON's Relationships tab, and both ends linked from the relationship
 /// resource — then the same link followed party → party from the inline list.
-#[expect(
-    clippy::too_many_lines,
-    reason = "one journey: two parties, the create form, both ends of the resource, and the inline list — splitting it would need the fixtures twice"
-)]
 #[tokio::test]
 async fn relating_two_parties_links_both_ends() {
     let Some(h) = Harness::start("demographics-relationship").await else {
@@ -419,20 +395,10 @@ async fn relating_two_parties_links_both_ends() {
     h.shot(1, "relationships-empty").await;
 
     // "Relate this party" carries the source into the create form as URL state.
-    h.wait_css("#party-relate")
-        .await
-        .click()
-        .await
-        .expect("open the relationship create form");
+    h.wait_css("#party-relate").await.click().await;
     h.wait_url_contains("/demographics/relationship?source=")
         .await;
-    let prefilled = h
-        .wait_css("#relationship-source")
-        .await
-        .prop("value")
-        .await
-        .expect("read the prefilled source")
-        .unwrap_or_default();
+    let prefilled = h.wait_css("#relationship-source").await.prop("value").await;
     assert_eq!(
         prefilled, person,
         "the source party must arrive prefilled from the URL"
@@ -440,18 +406,14 @@ async fn relating_two_parties_links_both_ends() {
 
     retype(&h, "#relationship-type", "employment").await;
     retype(&h, "#relationship-target", &organisation).await;
-    let target_kind = h.wait_css("#relationship-target-kind").await;
-    thirtyfour::components::SelectElement::new(&target_kind)
+    h.wait_css("#relationship-target-kind")
         .await
-        .expect("the target kind is a select")
         .select_by_value("organisation")
-        .await
-        .expect("pick the target kind");
+        .await;
     h.wait_css("#relationship-create-submit")
         .await
         .click()
-        .await
-        .expect("create the relationship");
+        .await;
     assert!(
         wait_text(&h, "Relationship created").await,
         "creating the relationship never reported a committed version: {}",
@@ -465,16 +427,12 @@ async fn relating_two_parties_links_both_ends() {
         .wait_css("[data-relationship-end='source']")
         .await
         .attr("href")
-        .await
-        .expect("the source end's href")
-        .unwrap_or_default();
+        .await;
     let target_link = h
         .wait_css("[data-relationship-end='target']")
         .await
         .attr("href")
-        .await
-        .expect("the target end's href")
-        .unwrap_or_default();
+        .await;
     assert_eq!(source_link, format!("/demographics/person/{person}"));
     assert_eq!(
         target_link,
@@ -487,8 +445,7 @@ async fn relating_two_parties_links_both_ends() {
     h.wait_css("[data-relationship-end='target']")
         .await
         .click()
-        .await
-        .expect("follow the target end");
+        .await;
     h.wait_url_contains(&format!("/demographics/organisation/{organisation}"))
         .await;
     h.wait_css("#party-facts").await;
@@ -511,11 +468,11 @@ async fn relating_two_parties_links_both_ends() {
         .await;
     let inline = h.wait_css("[data-relationship-end='inline-target']").await;
     assert_eq!(
-        inline.attr("href").await.expect("the inline target's href"),
-        Some(format!("/demographics/organisation/{organisation}")),
+        inline.attr("href").await,
+        format!("/demographics/organisation/{organisation}"),
         "the party's own relationships list must link its target"
     );
-    inline.click().await.expect("follow the inline target");
+    inline.click().await;
     h.wait_url_contains(&format!("/demographics/organisation/{organisation}"))
         .await;
     wait_text_suffix(&h, "[data-demographic-fact='type']", "ORGANISATION").await;
@@ -549,11 +506,7 @@ async fn party_tags_are_set_indexed_and_deleted() {
     h.wait_css("#party-tag-set").await;
     retype(&h, "#tag-key", &key).await;
     retype(&h, "#tag-value", "follow-up").await;
-    h.wait_css("#tag-save")
-        .await
-        .click()
-        .await
-        .expect("save the tag");
+    h.wait_css("#tag-save").await.click().await;
     assert!(
         wait_text(&h, "Tag saved").await,
         "saving a tag never reported the replaced collection: {}",
@@ -570,11 +523,7 @@ async fn party_tags_are_set_indexed_and_deleted() {
     let row = format!("[data-tag-target='{person}']");
     h.wait_css(&row).await;
     h.shot(2, "tag-index").await;
-    h.wait_css(&row)
-        .await
-        .click()
-        .await
-        .expect("open the tagged party");
+    h.wait_css(&row).await.click().await;
     h.wait_url_contains(&format!("/demographics/person/{person}"))
         .await;
     h.wait_css("#party-facts").await;
@@ -586,8 +535,7 @@ async fn party_tags_are_set_indexed_and_deleted() {
     h.wait_css(&format!("[data-tag-delete='{key}']"))
         .await
         .click()
-        .await
-        .expect("delete the tag");
+        .await;
     assert!(
         wait_text(&h, "Tag deleted").await,
         "deleting the tag never reported: {}",
@@ -622,16 +570,8 @@ async fn lookup_and_unknown_kind_work_without_javascript() {
 
     login_basic(&h).await;
     h.goto("/demographics/person").await;
-    h.wait_css("#party-lookup")
-        .await
-        .send_keys(&person)
-        .await
-        .expect("type the party id");
-    h.wait_css("#party-find")
-        .await
-        .click()
-        .await
-        .expect("submit the lookup");
+    h.wait_css("#party-lookup").await.send_keys(&person).await;
+    h.wait_css("#party-find").await.click().await;
     // With no JavaScript this is a full GET to `?find=…`, which the screen
     // answers with a server-side redirect to the party's own route.
     h.wait_url_contains(&format!("/demographics/person/{person}"))

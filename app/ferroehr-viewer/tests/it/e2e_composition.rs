@@ -24,7 +24,9 @@
 
 use crate::common;
 
-use common::{Harness, appears_within, env, is_present, login_basic, wait_text_contains};
+use common::{
+    Harness, appears_within, env, is_present, login_basic, poll_until, wait_text_contains,
+};
 use thirtyfour::prelude::*;
 
 /// The seeded ids, exported by the harness; `None` skips with a reason.
@@ -60,11 +62,10 @@ async fn ehr_detail_lists_seeded_composition() {
     h.wait_xpath("//a[contains(., 'Compositions')]")
         .await
         .click()
-        .await
-        .expect("open compositions tab");
+        .await;
     let link = h.wait_css(&format!("a[href*='{vo_id}']")).await;
     h.shot(2, "compositions-tab").await;
-    link.click().await.expect("open the composition viewer");
+    link.click().await;
     h.wait_url_contains(&format!("/compositions/{vo_id}")).await;
     // The row deep-links the pane's mode, so the document arrives as the
     // clinical reading (label/value rows) rather than the raw text pane.
@@ -110,22 +111,14 @@ async fn composition_viewer_switches_formats_and_versions() {
 
     // Version history: two versions; selecting v1 re-renders the pane.
     let select = h.wait_css("select").await;
-    let options = select
-        .find_all(By::Tag("option"))
-        .await
-        .expect("version options");
+    let options = select.find_all(By::Tag("option")).await;
     assert!(
         options.len() >= 2,
         "the seeded composition has two versions (got {})",
         options.len()
     );
     // Choose the oldest (last listed) version.
-    options
-        .last()
-        .expect("a version option")
-        .click()
-        .await
-        .expect("select version 1");
+    options.last().expect("a version option").click().await;
     click_format(&h, "JSON").await;
     // `::1` is version 1's OBJECT_VERSION_ID suffix — absent from both the
     // FLAT pane still on screen and the version-2 document.
@@ -159,7 +152,7 @@ async fn composition_viewer_highlights_and_renders_the_document() {
     // tokenized, and the document text itself is unchanged.
     wait_pre_contains(&h, "\"_type\"").await;
     let key = h.wait_css("pre span.text-syntax-key").await;
-    let key_text = key.text().await.expect("the first key token's text");
+    let key_text = key.text().await;
     assert!(
         key_text.starts_with('"'),
         "a JSON key token carries the quoted member name (got `{key_text}`)"
@@ -179,8 +172,7 @@ async fn composition_viewer_highlights_and_renders_the_document() {
         h.wait_xpath("//button[contains(., 'Rendered')]")
             .await
             .click()
-            .await
-            .expect("switch to the rendered clinical view");
+            .await;
         if appears_within(&h, "[data-doc-row]", std::time::Duration::from_secs(2)).await {
             rendered = true;
             break;
@@ -188,7 +180,7 @@ async fn composition_viewer_highlights_and_renders_the_document() {
     }
     assert!(rendered, "the Rendered tab never took effect");
     let row = h.wait_css("[data-doc-row]").await;
-    let row_text = row.text().await.expect("the first rendered row's text");
+    let row_text = row.text().await;
     assert!(
         !row_text.trim().is_empty(),
         "a rendered row shows a label and a value"
@@ -199,8 +191,7 @@ async fn composition_viewer_highlights_and_renders_the_document() {
     h.wait_xpath("//button[contains(., 'Raw')]")
         .await
         .click()
-        .await
-        .expect("switch to the raw view");
+        .await;
     wait_pre_contains(&h, "\"_type\"").await;
     assert!(
         !is_present(&h, "pre span.text-syntax-key").await,
@@ -245,16 +236,8 @@ async fn composition_viewer_reads_versioned_object_and_version_envelope() {
     // Selecting the oldest version re-reads the VERSION directly: version 1 has
     // no preceding version at all.
     let select = h.wait_css("#version-select").await;
-    let options = select
-        .find_all(By::Tag("option"))
-        .await
-        .expect("version options");
-    options
-        .last()
-        .expect("a version option")
-        .click()
-        .await
-        .expect("select version 1");
+    let options = select.find_all(By::Tag("option")).await;
+    options.last().expect("a version option").click().await;
     wait_fact_contains(&h, "version", "::1").await;
     wait_fact_contains(&h, "preceding", "—").await;
     h.shot(2, "versioned-object-version-1").await;
@@ -275,21 +258,9 @@ async fn login_works_with_javascript_disabled() {
     let user = env("UI_E2E_BASIC_USER").unwrap_or_else(|| "ferroehr".to_owned());
     let pass = env("UI_E2E_BASIC_PASS").unwrap_or_else(|| "ferroehr".to_owned());
     h.goto("/login").await;
-    h.wait_css("#login-username")
-        .await
-        .send_keys(&user)
-        .await
-        .expect("type user");
-    h.wait_css("#login-password")
-        .await
-        .send_keys(&pass)
-        .await
-        .expect("type pass");
-    h.wait_css("button[type=submit]")
-        .await
-        .click()
-        .await
-        .expect("submit (plain form POST)");
+    h.wait_css("#login-username").await.send_keys(&user).await;
+    h.wait_css("#login-password").await.send_keys(&pass).await;
+    h.wait_css("button[type=submit]").await.click().await;
     h.wait_url_not_contains("/login").await;
     // The dashboard streams out-of-order, so without JS the authenticated
     // chrome arrives as inert <template> fragments rather than live DOM
@@ -297,14 +268,10 @@ async fn login_works_with_javascript_disabled() {
     // enabled"). The auth proof is the redirect plus the server having
     // rendered the authenticated shell into the response at all — an
     // unauthenticated request is bounced back to /login instead.
-    for _ in 0..75 {
-        let source = h.page_source().await;
-        if source.contains("<footer") {
-            h.shot(1, "dashboard-no-js").await;
-            h.finish().await;
-            return;
-        }
-        tokio::time::sleep(std::time::Duration::from_millis(200)).await;
+    if poll_until(async || h.page_source().await.contains("<footer")).await {
+        h.shot(1, "dashboard-no-js").await;
+        h.finish().await;
+        return;
     }
     panic!("the authenticated shell never appeared in the no-JS response");
 }
@@ -331,36 +298,16 @@ async fn ehr_finder_by_id_works_with_javascript_disabled() {
     let user = env("UI_E2E_BASIC_USER").unwrap_or_else(|| "ferroehr".to_owned());
     let pass = env("UI_E2E_BASIC_PASS").unwrap_or_else(|| "ferroehr".to_owned());
     h.goto("/login").await;
-    h.wait_css("#login-username")
-        .await
-        .send_keys(&user)
-        .await
-        .expect("type user");
-    h.wait_css("#login-password")
-        .await
-        .send_keys(&pass)
-        .await
-        .expect("type pass");
-    h.wait_css("button[type=submit]")
-        .await
-        .click()
-        .await
-        .expect("submit (plain form POST)");
+    h.wait_css("#login-username").await.send_keys(&user).await;
+    h.wait_css("#login-password").await.send_keys(&pass).await;
+    h.wait_css("button[type=submit]").await.click().await;
     h.wait_url_not_contains("/login").await;
 
     // Fill the SSR'd finder and submit it natively — no JavaScript involved.
     h.goto("/ehrs").await;
-    h.wait_css("#ehr-lookup")
-        .await
-        .send_keys(&ehr_id)
-        .await
-        .expect("type the seeded EHR id");
+    h.wait_css("#ehr-lookup").await.send_keys(&ehr_id).await;
     h.shot(1, "ehr-finder-no-js").await;
-    h.wait_css("#ehr-find")
-        .await
-        .click()
-        .await
-        .expect("submit the finder (plain form GET)");
+    h.wait_css("#ehr-find").await.click().await;
     h.wait_url_contains(&format!("/ehrs/{ehr_id}")).await;
     h.shot(2, "ehr-finder-no-js-redirected").await;
 
@@ -394,6 +341,5 @@ async fn click_format(h: &Harness, label: &str) {
     h.wait_xpath(&format!("//button[contains(., '{label}')]"))
         .await
         .click()
-        .await
-        .expect("switch format");
+        .await;
 }

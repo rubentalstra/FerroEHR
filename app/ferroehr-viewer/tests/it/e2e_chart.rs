@@ -30,7 +30,7 @@ use crate::common;
 
 use std::time::Duration;
 
-use common::{Harness, env, find_all, is_visible, login_basic};
+use common::{Harness, env, find_all, is_visible, login_basic, poll_until, poll_until_for};
 use thirtyfour::prelude::*;
 
 /// A two-numeric-column query over the harness-seeded compositions
@@ -66,7 +66,10 @@ async fn drawn_lines(h: &Harness) -> usize {
     let paths = find_all(h, "g._chartistry_line path").await;
     let mut drawn = 0;
     for path in paths {
-        if let Ok(Some(geometry)) = path.attr("d").await
+        // NOTE: probe tier — chartistry re-renders the whole plot on every
+        // toggle, so a path found a moment ago may already be detached, and a
+        // path with no `d` yet is simply not drawn.
+        if let Some(geometry) = path.read_attr("d").await
             && !geometry.trim().is_empty()
         {
             drawn += 1;
@@ -80,11 +83,8 @@ async fn drawn_lines(h: &Harness) -> usize {
 /// # Panics
 /// When the count never settles on `expected` within the budget.
 async fn wait_drawn_lines(h: &Harness, expected: usize) {
-    for _ in 0..75 {
-        if drawn_lines(h).await == expected {
-            return;
-        }
-        tokio::time::sleep(Duration::from_millis(200)).await;
+    if poll_until(async || drawn_lines(h).await == expected).await {
+        return;
     }
     panic!(
         "the chart never drew exactly {expected} series (last count: {})",
@@ -110,19 +110,14 @@ async fn results_chart_groups_series_and_toggles_them() {
     h.goto("/queries/aql").await;
     // Save/Run dispatch is hydrated behaviour (#2285's class).
     h.wait_hydrated().await;
-    h.wait_css("#aql-editor")
-        .await
-        .send_keys(CHART_AQL)
-        .await
-        .expect("type the AQL");
+    h.wait_css("#aql-editor").await.send_keys(CHART_AQL).await;
     // Run stays DISABLED until the editor's content reaches the signal, so the
     // wait has to include the condition — a click on the disabled button is
     // intercepted by the toolbar above it, not merely lost.
     h.wait_clickable_xpath("//button[normalize-space(.)='Run']")
         .await
         .click()
-        .await
-        .expect("run the query");
+        .await;
     h.wait_css("table tbody tr").await;
     h.shot(1, "results-table").await;
 
@@ -133,15 +128,11 @@ async fn results_chart_groups_series_and_toggles_them() {
         h.wait_xpath("//button[normalize-space(.)='Chart']")
             .await
             .click()
-            .await
-            .expect("chart toggle");
-        for _ in 0..15 {
-            if is_visible(&h, "[data-results-chart]").await {
-                charted = true;
-                break;
-            }
-            tokio::time::sleep(Duration::from_millis(200)).await;
-        }
+            .await;
+        charted = poll_until_for(Duration::from_secs(3), async || {
+            is_visible(&h, "[data-results-chart]").await
+        })
+        .await;
         if charted {
             break;
         }
@@ -154,10 +145,8 @@ async fn results_chart_groups_series_and_toggles_them() {
     // Two numeric columns → two derived series (the hook carries the count).
     let pane = h.wait_css("[data-results-chart]").await;
     assert_eq!(
-        pane.attr("data-results-chart")
-            .await
-            .expect("the chart hook"),
-        Some("2".to_owned()),
+        pane.attr("data-results-chart").await,
+        "2",
         "the two numeric result columns must derive two series"
     );
 
@@ -167,12 +156,7 @@ async fn results_chart_groups_series_and_toggles_them() {
     assert_eq!(chips.len(), 2, "one legend entry per series");
     let mut names = Vec::new();
     for chip in &chips {
-        names.push(
-            chip.attr("data-chart-series")
-                .await
-                .expect("series hook")
-                .unwrap_or_default(),
-        );
+        names.push(chip.attr("data-chart-series").await);
     }
     names.sort();
     assert_eq!(
@@ -183,28 +167,20 @@ async fn results_chart_groups_series_and_toggles_them() {
 
     // The ISO-8601 column is offered as the X axis, and is the default.
     let axis = h.wait_css("select[data-chart-axis]").await;
-    let options = axis
-        .find_all(By::Tag("option"))
-        .await
-        .expect("axis options");
+    let options = axis.find_all(By::Tag("option")).await;
     assert_eq!(
         options.len(),
         2,
         "the timestamp column plus the row-order fallback"
     );
     assert_eq!(
-        axis.prop("value").await.expect("the selected axis"),
-        Some("0".to_owned()),
+        axis.prop("value").await,
+        "0",
         "the temporal axis is the default"
     );
     // contains(): leptos interleaves hydration markers with text nodes, so an
     // exact text comparison is unreliable.
-    let first_axis = options
-        .first()
-        .expect("the first axis option")
-        .text()
-        .await
-        .expect("axis option text");
+    let first_axis = options.first().expect("the first axis option").text().await;
     assert!(
         first_axis.contains("observed"),
         "the temporal axis is named after its column (got `{first_axis}`)"
@@ -216,26 +192,19 @@ async fn results_chart_groups_series_and_toggles_them() {
 
     // Toggling one legend chip hides exactly that series.
     let chip = chips.first().expect("a legend chip");
-    let hidden = chip
-        .attr("data-chart-series")
-        .await
-        .expect("series hook")
-        .unwrap_or_default();
-    chip.click().await.expect("toggle a series off");
-    for _ in 0..75 {
-        if chip.attr("data-visible").await.ok().flatten() == Some("false".to_owned()) {
-            break;
-        }
-        tokio::time::sleep(Duration::from_millis(200)).await;
-    }
+    let hidden = chip.attr("data-chart-series").await;
+    chip.click().await;
+    // NOTE: probe tier — the chip is re-rendered by the toggle it just
+    // dispatched, so a stale handle mid-poll is "not yet", not a failure.
+    poll_until(async || chip.read_attr("data-visible").await.as_deref() == Some("false")).await;
     assert_eq!(
-        chip.attr("data-visible").await.expect("visibility hook"),
-        Some("false".to_owned()),
+        chip.attr("data-visible").await,
+        "false",
         "the clicked legend chip reports `{hidden}` as hidden"
     );
     assert_eq!(
-        chip.attr("aria-pressed").await.expect("aria-pressed"),
-        Some("false".to_owned()),
+        chip.attr("aria-pressed").await,
+        "false",
         "the chip's pressed state follows its series"
     );
     wait_drawn_lines(&h, 1).await;
@@ -244,12 +213,12 @@ async fn results_chart_groups_series_and_toggles_them() {
     // The last visible series cannot be hidden — the chart never empties.
     let survivor = chips.get(1).expect("the second legend chip");
     assert!(
-        !survivor.is_enabled().await.expect("enabled state"),
+        !survivor.enabled().await,
         "the only remaining series is not hideable"
     );
 
     // Showing it again brings the line back.
-    chip.click().await.expect("toggle the series back on");
+    chip.click().await;
     wait_drawn_lines(&h, 2).await;
 
     h.assert_console_clean(&["401", "Failed to load resource"])

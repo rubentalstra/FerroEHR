@@ -44,8 +44,8 @@ use crate::common;
 use reqwest::StatusCode;
 
 use common::{
-    Harness, clear_field, confirm_in_dialog, env, is_present, login_basic_as, read_enabled, retype,
-    wait_css_absent, wait_enabled, wait_text, wait_text_contains,
+    Harness, clear_field, confirm_in_dialog, env, is_present, login_basic_as, poll_until,
+    read_enabled, retype, wait_css_absent, wait_enabled, wait_text, wait_text_contains,
 };
 
 /// The subscription the CRUD round trip owns.
@@ -186,13 +186,10 @@ async fn open_subscriptions(h: &Harness) {
 /// # Panics
 /// When it never becomes disabled within 15 s.
 async fn wait_disabled(h: &Harness, css: &str) {
-    for _ in 0..75 {
-        if read_enabled(h, css).await == Some(false) {
-            return;
-        }
-        tokio::time::sleep(std::time::Duration::from_millis(200)).await;
-    }
-    panic!("`{css}` never went inert");
+    assert!(
+        poll_until(async || read_enabled(h, css).await == Some(false)).await,
+        "`{css}` never went inert"
+    );
 }
 
 /// The CSS selector of one row's predicate cell.
@@ -218,8 +215,7 @@ async fn create_and_assert_row(h: &Harness) {
     h.wait_css("#subscription-create-submit")
         .await
         .click()
-        .await
-        .expect("create the subscription");
+        .await;
 
     // The row is the CDR's answer, not the form's: the listing refetches on the
     // action's version and renders what the CDR now holds.
@@ -270,32 +266,21 @@ async fn edit_and_assert_row(h: &Harness) {
     ))
     .await
     .click()
-    .await
-    .expect("open the subscription editor");
+    .await;
     h.wait_css("#subscription-edit").await;
     // The editor came up holding the row's stored values.
     assert_eq!(
         h.wait_css("#subscription-edit-kind")
             .await
             .prop("value")
-            .await
-            .expect("the kind field's value")
-            .unwrap_or_default(),
+            .await,
         CREATED_KIND,
         "the editor must be seeded from the row it opened on"
     );
     retype(h, "#subscription-edit-kind", EDITED_KIND).await;
     clear_field(h, "#subscription-edit-template").await;
-    h.wait_css("#subscription-edit-enabled")
-        .await
-        .click()
-        .await
-        .expect("disable the subscription");
-    h.wait_css("#subscription-edit-save")
-        .await
-        .click()
-        .await
-        .expect("save the subscription");
+    h.wait_css("#subscription-edit-enabled").await.click().await;
+    h.wait_css("#subscription-edit-save").await.click().await;
 
     wait_text_contains(h, &row_cell(ROUND_TRIP_SUBSCRIPTION, "kind"), EDITED_KIND).await;
     // The cleared template really became the wildcard on the CDR.
@@ -393,8 +378,7 @@ async fn a_refused_subscription_name_never_leaves_or_reaches_the_reader_verbatim
     h.wait_css("#subscription-create-submit")
         .await
         .click()
-        .await
-        .expect("create the duplicate subscription");
+        .await;
 
     wait_text_contains(
         &h,

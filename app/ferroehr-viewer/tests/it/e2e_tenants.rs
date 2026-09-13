@@ -182,11 +182,7 @@ async fn register_tenant(h: &Harness, name: &str, system_id: &str) {
     retype(h, "#tenant-create-name", name).await;
     retype(h, "#tenant-create-system-id", system_id).await;
     wait_enabled(h, "#tenant-create-submit").await;
-    h.wait_css("#tenant-create-submit")
-        .await
-        .click()
-        .await
-        .expect("register the tenant");
+    h.wait_css("#tenant-create-submit").await.click().await;
 }
 
 /// The CSS selector of one registry row's cell.
@@ -262,16 +258,11 @@ async fn the_registry_creates_edits_and_deletes_a_tenant() {
     h.wait_css(&format!("[data-tenant-edit='{ROUND_TRIP_TENANT}']"))
         .await
         .click()
-        .await
-        .expect("open the tenant editor");
+        .await;
     h.wait_css("#tenant-edit").await;
     retype(&h, "#tenant-edit-system-id", EDITED_SYSTEM_ID).await;
     wait_enabled(&h, "#tenant-edit-save").await;
-    h.wait_css("#tenant-edit-save")
-        .await
-        .click()
-        .await
-        .expect("save the tenant");
+    h.wait_css("#tenant-edit-save").await.click().await;
     wait_text_contains(
         &h,
         &row_cell(ROUND_TRIP_TENANT, "system-id"),

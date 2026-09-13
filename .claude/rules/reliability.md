@@ -241,6 +241,25 @@ chapters, the Clippy book, and the Cargo/rustdoc books.)
   recorded outcome) stays legal — only comparison against a literal is refused.
   Enforcement (tier 4): `scripts/checks/typed-status.sh`, per-edit via the
   hook and per-PR via CI at `--all`.
+- **A browser journey never holds a raw WebDriver handle, and never waits on a
+  timer** (issue #3296; the rule is `leptos-ui.md` §10). thirtyfour bounds a
+  request only by its 120 s per-request default, which outlasts every poll loop
+  in the E2E suite — so `button.is_enabled().await.unwrap_or(false)` on a raw
+  `WebElement` reads a stalled driver as an inert control, and the journey
+  skips the save it was written to prove and goes green on the prior state.
+  Four such sites were live when this landed. The fix is a type: journeys hold
+  `common::Element`, which bounds every command and panics on anything but an
+  absence, and `thirtyfour::components::SelectElement` is wrapped there too
+  (its commands issue their own requests). A `sleep` is the same defect in the
+  time domain — it asserts nothing and is either a flake or waste — so
+  conditions are waited for through the harness's `wait_*`/`poll_*` helpers.
+  Enforcement (tier 4): `scripts/checks/e2e-waits.sh`, per-edit via the
+  `rust_fmt_clippy.sh` hook and per-PR via the `e2e-waits` CI job, refusing
+  `WebElement`, `SelectElement` and any `sleep` in
+  `app/ferroehr-viewer/tests/it/e2e_*.rs`; its detector is mutation-proven by
+  its own `--self-test`, which the CI job runs first. The harness
+  (`tests/it/common/mod.rs`) is deliberately out of scope: it is where the raw
+  handle is wrapped and where the poll loops sleep.
 - **A field's default value lives in its struct's `Default` impl, inline**
   (owner directive 2026-08-06; the shape of RFC 3681, whose own syntax is
   nightly-only — feature `default_field_values`,

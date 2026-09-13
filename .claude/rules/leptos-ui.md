@@ -286,7 +286,10 @@ in the root `[workspace.dependencies]`: Leptos 0.8 SSR/full-stack,
   fails on any browser-console hydration error or panic. Explicit waits on
   elements/conditions, never `sleep`; a flaky journey is fixed, never
   `#[ignore]`d or retried-by-default. NOT Playwright/JS (the no-JS mandate
-  covers the test suite).
+  covers the test suite). A journey holds the harness's bounded
+  `common::Element`, never a raw `WebElement`/`SelectElement`, and
+  `scripts/checks/e2e-waits.sh` (the `e2e-waits` CI job + the edit hook)
+  refuses both spellings and every `sleep` in `tests/it/e2e_*.rs`.
 - Gates for every UI change: `cargo clippy -p ferroehr-viewer
   --all-targets` green on native **and**
   `--target wasm32-unknown-unknown` (lib); `cargo nextest run -p

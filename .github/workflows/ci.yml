@@ -850,6 +850,29 @@ jobs:
       - name: Access-layer rationale cites durable sources
         run: bash scripts/checks/access-provenance.sh
 
+  # E2E wait guard (#3296): a browser journey holds the bounded
+  # `common::Element`, never a raw `WebElement`/`SelectElement`, and waits on a
+  # condition rather than on a timer. The guard's scope is fixed (every journey
+  # file, always) — the migration that landed it swept all 26, so the tree is
+  # clean. The detector is mutation-proven by its own `--self-test`, which runs
+  # first, so a pattern that silently matched nothing would fail the job rather
+  # than report OK.
+  e2e-waits:
+    name: e2e-waits
+    if: github.event_name == 'pull_request' || github.event_name == 'merge_group'
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: The detector catches what it claims to catch
+        run: bash scripts/checks/e2e-waits.sh --self-test
+      - name: E2E journeys wait on conditions through the bounded harness
+        run: bash scripts/checks/e2e-waits.sh
+
   # Docs-claim guard (#1984): a documented KEY must exist in the thing it
   # documents. `mdbook-lint` checks style and `lychee` checks links; both pass on
   # a page whose every technical claim is false, which is how a fabricated Helm
@@ -2532,6 +2555,7 @@ jobs:
       - hosted-deploy-script
       - comment-style
       - default-style
+      - e2e-waits
       - docs-claims
       - control-matrix
       - tracker-status

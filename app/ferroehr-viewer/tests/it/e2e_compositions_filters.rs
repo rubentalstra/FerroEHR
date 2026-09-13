@@ -39,9 +39,7 @@
 
 use crate::common;
 
-use std::time::Duration;
-
-use common::{Harness, env, find_all, login_basic, retype};
+use common::{Harness, env, find_all, login_basic, poll_until, retype};
 use thirtyfour::prelude::*;
 
 /// The two templates the journeys distinguish between; both are uploaded here
@@ -258,8 +256,10 @@ async fn row_texts(h: &Harness) -> Vec<String> {
     let mut rows = Vec::new();
     for link in find_all(h, "tr a[href*='/compositions/']").await {
         // The row is the link's grandparent (<a> inside <td> inside <tr>).
-        if let Ok(row) = link.find(By::XPath("./ancestor::tr[1]")).await
-            && let Ok(text) = row.text().await
+        // NOTE: probe tier on both hops — a handle the `<Transition>` detaches
+        // mid-swap is "not yet" for the poll loop around this read.
+        if let Some(row) = link.read_find(By::XPath("./ancestor::tr[1]")).await
+            && let Some(text) = row.read_text().await
         {
             rows.push(text);
         }
@@ -276,19 +276,19 @@ async fn row_texts(h: &Harness) -> Vec<String> {
 /// When the rows never settle on the expected set, reporting what was on screen.
 async fn wait_rows(h: &Harness, expected: &[&str]) {
     let mut last = Vec::new();
-    for _ in 0..75 {
+    let settled = poll_until(async || {
         last = row_texts(h).await;
-        if last.len() == expected.len()
+        last.len() == expected.len()
             && last
                 .iter()
                 .zip(expected.iter())
                 .all(|(row, fragment)| row.contains(fragment))
-        {
-            return;
-        }
-        tokio::time::sleep(Duration::from_millis(200)).await;
-    }
-    panic!("the composition rows never settled on {expected:?} (last saw {last:?})");
+    })
+    .await;
+    assert!(
+        settled,
+        "the composition rows never settled on {expected:?} (last saw {last:?})"
+    );
 }
 
 /// The filter form writes its fields into the URL, the rows narrow to what the
@@ -316,11 +316,7 @@ async fn composition_filters_travel_in_the_url_and_narrow_the_rows() {
 
     // The template filter, typed into the form and submitted.
     retype(&h, "#composition-filter-template", "instruction").await;
-    h.wait_css("#composition-filter-apply")
-        .await
-        .click()
-        .await
-        .expect("apply the template filter");
+    h.wait_css("#composition-filter-apply").await.click().await;
     h.wait_url_contains("template=instruction").await;
     // The submission stays on the tab it came from and drops any page offset.
     h.wait_url_contains("tab=compositions").await;
@@ -334,11 +330,7 @@ async fn composition_filters_travel_in_the_url_and_narrow_the_rows() {
     // …and the form came back filled from the URL, so the view is reproducible.
     let composer_field = h.wait_css("#composition-filter-composer").await;
     assert_eq!(
-        composer_field
-            .prop("value")
-            .await
-            .expect("the composer field's value")
-            .unwrap_or_default(),
+        composer_field.prop("value").await,
         "Ashford",
         "a shared filter URL must refill the form it came from"
     );
@@ -346,11 +338,7 @@ async fn composition_filters_travel_in_the_url_and_narrow_the_rows() {
 
     // Clearing puts every row back AND empties the boxes: the fields follow the
     // address bar, so none of them can keep claiming a filter the URL dropped.
-    h.wait_css("#composition-filter-clear")
-        .await
-        .click()
-        .await
-        .expect("clear the filters");
+    h.wait_css("#composition-filter-clear").await.click().await;
     wait_rows(&h, &[COMPOSER_B, COMPOSER_A]).await;
     for field in [
         "#composition-filter-template",
@@ -358,13 +346,7 @@ async fn composition_filters_travel_in_the_url_and_narrow_the_rows() {
         "#composition-filter-to",
         "#composition-filter-composer",
     ] {
-        let value = h
-            .wait_css(field)
-            .await
-            .prop("value")
-            .await
-            .expect("the field's value")
-            .unwrap_or_default();
+        let value = h.wait_css(field).await.prop("value").await;
         assert!(
             value.is_empty(),
             "`{field}` still reads `{value}` after Clear"
@@ -375,8 +357,7 @@ async fn composition_filters_travel_in_the_url_and_narrow_the_rows() {
     h.wait_css("tr a[href*='/compositions/']")
         .await
         .click()
-        .await
-        .expect("open the newest composition");
+        .await;
     h.wait_url_contains("view=rendered").await;
     h.wait_css("[data-doc-row]").await;
     h.shot(4, "row-opens-rendered").await;
@@ -461,7 +442,7 @@ async fn the_ehr_header_names_the_subject_and_its_status_badges() {
 
     // The identity line carries the external_ref's id AND its namespace.
     let identity = h.wait_css("#ehr-identity").await;
-    let text = identity.text().await.expect("the identity line's text");
+    let text = identity.text().await;
     assert!(
         text.contains(&subject_id) && text.contains("e2e-patients"),
         "the header must name the subject id and its namespace (got `{text}`)"

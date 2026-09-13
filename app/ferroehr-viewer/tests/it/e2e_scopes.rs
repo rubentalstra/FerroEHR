@@ -36,9 +36,7 @@
 
 use crate::common;
 
-use std::time::Duration;
-
-use common::{Harness, count_matching, find_all, login_basic};
+use common::{Harness, count_matching, find_all, login_basic, poll_until};
 
 /// The previewer's input field.
 const PREVIEW_INPUT: &str = "#scope-previewer-input";
@@ -59,17 +57,12 @@ async fn open_access_drawer(h: &Harness) {
     // The popover open is hydrated behaviour; a click landing before
     // hydration is silently lost (#2285's class).
     h.wait_hydrated().await;
-    h.wait_css("#user-menu-trigger button")
-        .await
-        .click()
-        .await
-        .expect("open the user menu");
+    h.wait_css("#user-menu-trigger button").await.click().await;
     h.wait_css(".thaw-popover-surface").await;
     h.wait_xpath("//button[contains(., 'View scopes')]")
         .await
         .click()
-        .await
-        .expect("open the access drawer");
+        .await;
     h.wait_css("#access-drawer").await;
 }
 
@@ -87,11 +80,8 @@ async fn card_count(h: &Harness) -> usize {
 /// # Panics
 /// When the preview never contains `needle` within 15 s.
 async fn wait_cards_contain(h: &Harness, needle: &str) {
-    for _ in 0..75 {
-        if cards_text(h).await.contains(needle) {
-            return;
-        }
-        tokio::time::sleep(Duration::from_millis(200)).await;
+    if poll_until(async || cards_text(h).await.contains(needle)).await {
+        return;
     }
     panic!(
         "preview never rendered `{needle}` (last: {})",
@@ -104,7 +94,10 @@ async fn cards_text(h: &Harness) -> String {
     let cards = find_all(h, PREVIEW_CARDS).await;
     let mut text = String::new();
     for card in cards {
-        text.push_str(&card.text().await.unwrap_or_default());
+        // NOTE: probe tier — this read runs inside the poll loop that waits
+        // for the preview to settle, and each keystroke re-renders the card
+        // list, so a detached handle is "not yet" rather than a failure.
+        text.push_str(&card.read_text().await.unwrap_or_default());
         text.push('\n');
     }
     text
@@ -123,23 +116,13 @@ async fn access_drawer_shows_effective_identity_and_policy_source() {
 
     // Identity + policy source: the Basic session names the account it replays
     // and keeps the existing full-access note (it carries no SMART scopes).
-    let scopes_panel = h
-        .wait_css("#session-scopes")
-        .await
-        .text()
-        .await
-        .expect("session scopes panel text");
+    let scopes_panel = h.wait_css("#session-scopes").await.text().await;
     assert!(
         scopes_panel.contains("Basic authentication"),
         "the Basic session states its full-access note: {scopes_panel}"
     );
 
-    let drawer = h
-        .wait_css("#access-drawer")
-        .await
-        .text()
-        .await
-        .expect("drawer text");
+    let drawer = h.wait_css("#access-drawer").await.text().await;
     assert!(
         drawer.contains("ferroehr"),
         "the drawer names the authenticated principal: {drawer}"
@@ -175,7 +158,7 @@ async fn scope_previewer_renders_grants_and_explains_an_invalid_scope() {
         "an empty previewer renders no grants"
     );
 
-    input.send_keys(TWO_SCOPES).await.expect("type two scopes");
+    input.send_keys(TWO_SCOPES).await;
     // The second scope, verbatim: only the fully typed claim carries it.
     wait_cards_contain(&h, "user/template-MyHospital::Template.v0.crud").await;
     h.shot(1, "previewer-two-scopes").await;
@@ -203,11 +186,8 @@ async fn scope_previewer_renders_grants_and_explains_an_invalid_scope() {
     }
 
     // An invalid permission tail: one card, and it says what master08 expects.
-    input.clear().await.expect("clear the previewer");
-    input
-        .send_keys(BAD_PERMISSION)
-        .await
-        .expect("type an invalid scope");
+    input.clear().await;
+    input.send_keys(BAD_PERMISSION).await;
     // The full malformed scope, verbatim — the settled state.
     wait_cards_contain(&h, BAD_PERMISSION).await;
     h.wait_css("#scope-preview-results [data-scope-grant='unrecognized']")
