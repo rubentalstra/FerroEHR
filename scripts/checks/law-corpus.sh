@@ -122,8 +122,9 @@ fi
 [[ "$fail" -eq 0 ]] || {
   echo >&2
   echo "A vendored legal text is only worth carrying while its recorded digest" >&2
-  echo "is true. Change scripts/vendor/law-eu.sh or scripts/vendor/law-nl.sh and" >&2
-  echo "re-run it; never hand-edit a vendored act or hand-write a digest." >&2
+  echo "is true. Change the vendor script for its jurisdiction (scripts/vendor/" >&2
+  echo "law-eu.sh, law-nl.sh, law-de.sh or law-ch.sh) and re-run it; never" >&2
+  echo "hand-edit a vendored act or hand-write a digest." >&2
   exit 1
 }
 

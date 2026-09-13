@@ -367,6 +367,30 @@ precedence = "override"
 SPDX-FileCopyrightText = "the State of the Netherlands (no copyright subsists, Auteurswet Art. 11)"
 SPDX-License-Identifier = "LicenseRef-Auteurswet-Art11-Public-Domain"
 
+# German federal law is outside copyright protection by statute — § 5 Abs. 1
+# UrhG (amtliche Werke) — so this too declares a legal fact rather than a
+# grant. The copyright field names the issuing authority because REUSE
+# requires one; the LicenseRef text quotes the paragraph in full. Covers the
+# consolidated XML from gesetze-im-internet.de and the Bundesgesetzblatt PDF
+# from recht.bund.de alike: the paragraph reaches the act in every edition.
+[[annotations]]
+path = "docs/law/de/**"
+precedence = "override"
+SPDX-FileCopyrightText = "the Federal Republic of Germany (no copyright protection, § 5 Abs. 1 UrhG)"
+SPDX-License-Identifier = "LicenseRef-UrhG-Para5-Amtliche-Werke"
+
+# Swiss federal law is not protected by copyright — Art. 5 Abs. 1 lit. a URG
+# — and Art. 5 Abs. 2 extends that to the official translations, which is
+# what covers the non-binding English texts Fedlex publishes beside the
+# authentic German ones. Same shape as the two blocks above: a legal fact,
+# an issuing authority in the copyright field, the article quoted in the
+# LicenseRef text.
+[[annotations]]
+path = "docs/law/ch/**"
+precedence = "override"
+SPDX-FileCopyrightText = "the Swiss Confederation (not protected by copyright, Art. 5 URG)"
+SPDX-License-Identifier = "LicenseRef-URG-Art5-Nicht-Geschuetzte-Werke"
+
 # The corpus index, the provenance records and the digest files are FIRST-PARTY
 # prose and first-party output about the vendored material, not the material.
 # The tree globs above would otherwise attribute them to the publishers.

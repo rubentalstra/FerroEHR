@@ -1,4 +1,3 @@
-| `docker/terminology/seed/` (in the repository) | The licence-free shaped code systems FerroTERM serves on the box | baked into the ferroehr image at `/opt/sandbox-posture/terminology/`; the compose file mounts it into FerroTERM straight from the image, so `deploy.sh` never handles it |
 # The hosted sandbox (sandbox.ferroehr.eu)
 
 sandbox.ferroehr.eu is the public demo: the viewer as the landing
@@ -69,6 +68,7 @@ Two operational lessons, learned live at the cutover and load-bearing:
 | `ferroehr-viewer.sandbox.toml` | The viewer's sandbox posture | the same way |
 | `env.example` | A copy-to-`.env` template: the DB box's private-network DSN and the image references | never. `.env` is the operator's file, written by hand on the box |
 | `cloud-init-postgres.yaml` | The DATABASE box, fresh to serving state: the `deploy` user, key-only SSH, both firewalls, Docker, and the `ferroehr-postgres` compose posture bound to the private address | the DB server's user data at creation, once |
+| `docker/terminology/seed/` (in the repository) | The licence-free shaped code systems FerroTERM serves on the box | baked into the ferroehr image at `/opt/sandbox-posture/terminology/`; the compose file mounts it into FerroTERM straight from the image, so `deploy.sh` never handles it |
 
 The box holds **no checkout of this repository** and fetches nothing from it
 over the network: the posture travels inside the published ferroehr image, so

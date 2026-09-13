@@ -15,6 +15,21 @@ workflow refuses a tag that has no matching section here.
 
 ## [Unreleased]
 
+### Added
+
+- **The regulation corpus gains the German and Swiss layers** (#3293,
+  #3294). `docs/law/de/` carries the BDSG, SGB V (the ePA and telematics
+  provisions, §§ 341–355 and 360–363), the GDNG and the StGB (§ 203) as the
+  XML gesetze-im-internet.de publishes, pinned by the publisher's build stamp,
+  plus the Digital-Gesetz as its Bundesgesetzblatt issue; `docs/law/ch/`
+  carries the DSG/FADP and DSV/DPO in German and the non-binding English, and
+  the EPDG, EPDV and EPDV-EDI in German, each at its current Fedlex
+  consolidation. Two vendor scripts, provenance and digests per act, the
+  publishers' no-copyright articles quoted in `LICENSES/`, and the compliance
+  overview gains a Germany and a Switzerland section stating, provision by
+  provision, what the software ships and what the deploying organisation must
+  do.
+
 ## [4.2.5] - 2026-09-12
 
 ### Changed

@@ -67,8 +67,8 @@ provisions carry. No row below claims conformity with any of them.
 ## National law
 
 The sections above apply to every EU deployment. This one is a single
-country's law on top of them, and it is the first of what should be several:
-the division a deployment reads is "the EU layer, plus my own jurisdiction".
+country's law on top of them, three countries so far: the division a
+deployment reads is "the EU layer, plus my own jurisdiction".
 The compliance overview says what adding another takes
 ([National law](index.md#national-law)).
 
@@ -96,6 +96,35 @@ a product at all.
 | [Certification](https://www.nen.nl/certificatie-en-keurmerken-nen-7510) against NEN 7510 | Nothing. A product cannot be certified against a management-system standard, and FerroEHR makes no such claim | Obtain and maintain the certificate for your organisation |
 | [NEN 7512](https://www.nen.nl/nen-7512-2022-nl-297137), the trust basis for data exchange | [Mutually authenticated TLS](../audit.md#node-authentication-iti-19-mutual-tls), OAuth2 and OIDC with an [enterprise identity provider](../identity-providers.md), [SMART App Launch](../smart-app-launch.md) | Agree the trust basis with each counterparty, and operate the certificate estate |
 | [NEN 7513](https://www.nen.nl/nen-7513-2018-nl-245399), logging actions on electronic patient records | An [audit trail](../audit.md) of every operation including refusals, in FHIR `AuditEvent` and DICOM PS3.15 form, hash-chained in the database | Map the recorded fields onto the standard's own list, set retention, and review the trail |
+
+### Germany
+
+| Obligation | What FerroEHR provides | What the deploying organisation does |
+|---|---|---|
+| [BDSG § 22 Abs. 2](https://www.gesetze-im-internet.de/bdsg_2018/__22.html), appropriate and specific measures for health data: traceability, access restriction, pseudonymisation, encryption | Versioned writes with contribution and audit, an [access trail](../audit.md), deny-by-default [authorization](../security.md#authorization), the pseudonymisation boundary, TLS and sealed identifiers | Choose the measures, establish the lit. b ground, and keep the processing under persons bound by professional secrecy |
+| [BDSG § 27 Abs. 3](https://www.gesetze-im-internet.de/bdsg_2018/__27.html), identifying characteristics stored separately for research, rejoined only as the purpose requires | Separate clinical, demographic and linkage schemas, and [cohort queries](../querying-aql.md#cohort-queries-across-the-pseudonymisation-boundary) that cross on identifiers only | Decide when to anonymise, and hold the balancing test |
+| [SGB V §§ 346 to 348](https://www.gesetze-im-internet.de/sgb_5/__347.html), writing treatment data into the ePA once it is held in interoperable form | Template-structured records, the REST API and [EHR Extract export](../beyond-core/messaging.md) | Operate the transport into the ePA, the connector and the information objects |
+| [SGB V § 339 Abs. 3](https://www.gesetze-im-internet.de/sgb_5/__339.html) and [§ 352](https://www.gesetze-im-internet.de/sgb_5/__352.html), credential-bound access with a log of who accessed what, under a closed role matrix | Role- and attribute-based authorization and an [access trail](../audit.md) naming agent, roles, patient, action and outcome | Bind the identity provider to the HBA and SMC-B; the sections bind the ePA, which the CDR is not |
+| [SGB V § 309](https://www.gesetze-im-internet.de/sgb_5/__309.html), the TI access log with attempts, three years' retention and deletion on expiry | A trail that records attempts and refusals, `retention_days` and the [retention reaper](../audit.md#retention-and-who-chooses-it) | Set the retention owed; the section binds TI application controllers, not a CDR outside the TI |
+| [GDNG § 6](https://www.gesetze-im-internet.de/gdng/__6.html), own-data secondary use under pseudonymisation, a rights-and-roles concept, logging and a thirty-year limit | Per-domain roles, cohort queries with small-cell suppression, an access record per query with `purpose` and `legal_basis`; the separate secondary-use domain is planned in [#3160](https://github.com/rubentalstra/FerroEHR/issues/3160) | Write the rights-and-roles concept, publish the purposes, run the clock, answer subjects from the trail |
+| [§ 203 StGB Abs. 3 and 4](https://www.gesetze-im-internet.de/stgb/__203.html), necessity-bounded access for those who keep the systems running, and the duty to bind them to secrecy | Separate operational [surfaces](../security.md#operational-surfaces-what-is-reachable-and-by-whom), audited admin reads, one database role per domain | Bind operators and subcontractors to secrecy in writing, and route support so it needs no standing read of clinical content |
+
+### Switzerland
+
+Switzerland is not an EU member state: the GDPR rows above do not apply to a
+Swiss deployment, and the [DSG](https://www.fedlex.admin.ch/eli/cc/2022/491/de)
+takes their place.
+
+| Obligation | What FerroEHR provides | What the deploying organisation does |
+|---|---|---|
+| [DSG Art. 7](https://www.fedlex.admin.ch/eli/cc/2022/491/de#art_7), data protection by design and by default | Deny-by-default [authorization](../security.md#authorization), a `production` [deployment profile](../installation/configuration.md#deployment_profile) that refuses missing separations | Choose the restrictive settings where the shipped default favours compatibility |
+| [DSG Art. 8](https://www.fedlex.admin.ch/eli/cc/2022/491/de#art_8) with [DSV Art. 3](https://www.fedlex.admin.ch/eli/cc/2022/568/de#art_3), the minimum security measures | Need-to-know authorization, one database role per domain, TLS 1.3, attributed versioned writes, an [access trail](../audit.md) with refusals, [signed releases](../verifying-releases.md) | Backup and restore, patching, breach detection and everything below the application |
+| [DSV Art. 4](https://www.fedlex.admin.ch/eli/cc/2022/568/de#art_4), logging including reads, kept at least a year separately from the processing system | The trail with every operation and its actor, time and outcome, and [forwarding sinks](../audit.md#getting-the-log-out) that put a copy outside the CDR | Forward the trail, set the retention at a year or more, restrict who reads it |
+| [DSG Art. 12](https://www.fedlex.admin.ch/eli/cc/2022/491/de#art_12), the register of processing activities | The effective configuration at `GET {base}/admin/config` and [records of processing](../security/records-of-processing.md) pre-filled with what the software does | Write and maintain the register; DSV Art. 24 leaves no small-organisation exemption for a clinical repository |
+| [DSG Art. 22](https://www.fedlex.admin.ch/eli/cc/2022/491/de#art_22), the impact assessment for large-scale processing of sensitive data | The [DPIA page](../security/dpia.md) with the technical description, the risk register and the controls by issue | Run the assessment; it is the controller's |
+| [DSG Art. 25](https://www.fedlex.admin.ch/eli/cc/2022/491/de#art_25) and [Art. 28](https://www.fedlex.admin.ch/eli/cc/2022/491/de#art_28), the right of access within 30 days and data portability in a common electronic format | The full record over the REST API, the [EHR Extract](../beyond-core/messaging.md), the published openEHR formats, and a [per-patient search of the trail](../audit.md#retrieving-audit-records-iti-81) for the recipients | Identify the requester, render the answer understandably, route it, and meet the deadline |
+| [DSG Art. 31 Abs. 2 lit. e](https://www.fedlex.admin.ch/eli/cc/2022/491/de#art_31), research on anonymised data, with measures against identifiability meanwhile | Separate clinical, demographic and linkage schemas and [cohort queries](../querying-aql.md#cohort-queries-across-the-pseudonymisation-boundary) with small-cell suppression; the separate secondary-use domain is planned in [#3160](https://github.com/rubentalstra/FerroEHR/issues/3160) | Decide when anonymisation is possible and hold the research ground |
+| [EPDG Art. 10](https://www.fedlex.admin.ch/eli/cc/2017/203/de#art_10) and [EPDV Art. 10 and 12](https://www.fedlex.admin.ch/eli/cc/2017/204/de#art_10), the certified community's logging, storage, encryption and residency duties | [IHE ATNA](../audit.md) events over ITI-20 with ITI-19 mutual TLS, ITI-81 retrieval, the record in published formats, a self-hosted deployment | Feed the EPD through a certified community; the duties bind the community, which the CDR is not |
 
 ## What this page does not do
 

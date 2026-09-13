@@ -4,12 +4,15 @@ The legal texts the compliance documentation cites, vendored verbatim at a
 named consolidation so a citation resolves to bytes this repository carries
 rather than to whatever the publisher's page says on the day it is read.
 
-Two scripts produce the whole tree and nothing here is written by hand:
+Four scripts, one per jurisdiction, produce the whole tree and nothing here is
+written by hand:
 
 | script | destination |
 |---|---|
 | `scripts/vendor/law-eu.sh` | `docs/law/eu/` |
 | `scripts/vendor/law-nl.sh` | `docs/law/nl/` |
+| `scripts/vendor/law-de.sh` | `docs/law/de/` |
+| `scripts/vendor/law-ch.sh` | `docs/law/ch/` |
 
 Every act directory carries the publisher's own file, a `PROVENANCE.md` naming
 the identifier, the consolidation, the source URL, the fetch date and the
@@ -61,6 +64,55 @@ The whole of Boek 7 is vendored rather than the cited articles alone: the
 publisher serves the book as one document, and cutting Art. 446-468 out of it
 would be an edit.
 
+## Germany
+
+Federal law only. The sixteen Landeskrankenhausgesetze and the state data
+protection acts a hospital also answers to are out of scope here; a
+deployment reads its own state's law beside this layer.
+
+The consolidated acts come from gesetze-im-internet.de as the XML document
+the publisher packs into each act's `xml.zip`, under the publisher's own file
+name. The site has no dated URL, so the pin is the publisher's `builddate`
+stamp on the document, and the vendor script refuses a fetch whose stamp
+differs from the pin. The publisher describes its consolidations as
+non-official texts; the authentic text is the Bundesgesetzblatt, which is why
+the Digital-Gesetz, an amending act with no consolidation of its own, is
+vendored as its BGBl. issue from recht.bund.de.
+
+| Act | Identifier | Consolidation vendored | Read it at | Licence | Cited by |
+|---|---|---|---|---|---|
+| [Bundesdatenschutzgesetz (BDSG)](de/bdsg/) | `bdsg_2018`, document `BJNR209710017` | builddate 2026-07-13; last amendment folded in: Art. 3 G v. 12.5.2026 I Nr. 139 | [gesetze-im-internet.de](https://www.gesetze-im-internet.de/bdsg_2018/) | `LicenseRef-UrhG-Para5-Amtliche-Werke` | `compliance/index.md`, `compliance/shared-responsibility.md` |
+| [Sozialgesetzbuch Fünftes Buch (SGB V)](de/sgb-v/), §§ 341–355 and 360–363 | `sgb_5`, document `BJNR024820988` | builddate 2026-08-10; last amendment folded in: Art. 1 G v. 26.6.2026 I Nr. 195 | [gesetze-im-internet.de](https://www.gesetze-im-internet.de/sgb_5/) | `LicenseRef-UrhG-Para5-Amtliche-Werke` | `compliance/index.md`, `compliance/shared-responsibility.md` |
+| [Gesundheitsdatennutzungsgesetz (GDNG)](de/gdng/) | `gdng`, document `BJNR0660B0024` | builddate 2024-04-25; unamended since promulgation (BGBl. 2024 I Nr. 102) | [gesetze-im-internet.de](https://www.gesetze-im-internet.de/gdng/) | `LicenseRef-UrhG-Para5-Amtliche-Werke` | `compliance/index.md`, `compliance/shared-responsibility.md` |
+| [Strafgesetzbuch (StGB)](de/stgb/), § 203 | `stgb`, document `BJNR001270871` | builddate 2026-07-02; last amendment folded in: Art. 1 G v. 20.3.2026 I Nr. 95 | [gesetze-im-internet.de](https://www.gesetze-im-internet.de/stgb/) | `LicenseRef-UrhG-Para5-Amtliche-Werke` | `compliance/index.md`, `compliance/shared-responsibility.md` |
+| [Digital-Gesetz (DigiG)](de/digig/) | BGBl. 2024 I Nr. 101, ELI `bgbl-1/2024/101` | none, the promulgated issue (an amending act; its substance is the SGB V text above) | [recht.bund.de](https://www.recht.bund.de/bgbl/1/2024/101/VO.html) | `LicenseRef-UrhG-Para5-Amtliche-Werke` | `compliance/index.md` |
+
+The whole of SGB V and the whole of the StGB are vendored rather than the
+cited sections alone, for the same reason as Boek 7 above: the publisher
+serves each act as one document, and cutting the sections out would be an
+edit.
+
+## Switzerland
+
+Swiss federal law from Fedlex, the Federal Chancellery's Classified
+Compilation. The text is fetched from the Fedlex filestore, which serves one
+HTML document per act, consolidation and language and answers the same bytes
+on every request; the www.fedlex.admin.ch page is a single-page application
+that answers an identical shell for every act, so it is linked for reading but
+is not the fetch source. German, French and Italian are the authentic
+languages; German is vendored as the reference. Fedlex's English translations
+are vendored beside it only where one exists at the same consolidation, each
+carrying the publisher's own "has no legal force" disclaimer, which the
+vendor script asserts is present.
+
+| Act | Identifier | Consolidation vendored | Read it at | Licence | Cited by |
+|---|---|---|---|---|---|
+| [Bundesgesetz über den Datenschutz (DSG / FADP)](ch/fadp/) | SR `235.1`, ELI `cc/2022/491` | 2025-07-07 (German + English) | [Fedlex](https://www.fedlex.admin.ch/eli/cc/2022/491/20250707/de) | `LicenseRef-URG-Art5-Nicht-Geschuetzte-Werke` | `compliance/index.md`, `compliance/shared-responsibility.md` |
+| [Verordnung über den Datenschutz (DSV / DPO)](ch/dpo/) | SR `235.11`, ELI `cc/2022/568` | 2025-12-01 (German + English) | [Fedlex](https://www.fedlex.admin.ch/eli/cc/2022/568/20251201/de) | `LicenseRef-URG-Art5-Nicht-Geschuetzte-Werke` | `compliance/index.md`, `compliance/shared-responsibility.md` |
+| [Bundesgesetz über das elektronische Patientendossier (EPDG)](ch/epdg/) | SR `816.1`, ELI `cc/2017/203` | 2024-10-01 (German; English exists only at 2020-04-15, not vendored) | [Fedlex](https://www.fedlex.admin.ch/eli/cc/2017/203/20241001/de) | `LicenseRef-URG-Art5-Nicht-Geschuetzte-Werke` | `compliance/index.md`, `compliance/shared-responsibility.md` |
+| [Verordnung über das elektronische Patientendossier (EPDV)](ch/epdv/) | SR `816.11`, ELI `cc/2017/204` | 2024-10-01 (German; English exists only at 2019-04-01, not vendored) | [Fedlex](https://www.fedlex.admin.ch/eli/cc/2017/204/20241001/de) | `LicenseRef-URG-Art5-Nicht-Geschuetzte-Werke` | `compliance/index.md`, `compliance/shared-responsibility.md` |
+| [Verordnung des EDI über das elektronische Patientendossier (EPDV-EDI)](ch/epdv-edi/) | SR `816.111`, ELI `cc/2017/205` | 2026-06-01 (German; no English published) | [Fedlex](https://www.fedlex.admin.ch/eli/cc/2017/205/20260601/de) | `LicenseRef-URG-Art5-Nicht-Geschuetzte-Werke` | `compliance/index.md` |
+
 ## The standards that cannot be vendored
 
 NEN sells its standards under copyright, so no text of one is in this tree.
@@ -84,6 +136,8 @@ The declarations live in `REUSE.toml` and the full terms in `LICENSES/`:
 | `CC-BY-4.0` | The consolidated EU texts, which are additionally the EU's own editorial content |
 | `LicenseRef-EDPB-Reuse` | The EDPB guidelines, under the EDPB's own copyright page |
 | `LicenseRef-Auteurswet-Art11-Public-Domain` | The Dutch acts, in which no copyright subsists |
+| `LicenseRef-UrhG-Para5-Amtliche-Werke` | The German federal acts, which enjoy no copyright protection (§ 5 Abs. 1 UrhG) |
+| `LicenseRef-URG-Art5-Nicht-Geschuetzte-Werke` | The Swiss federal acts and their official translations, not protected by copyright (Art. 5 URG) |
 
 The `PROVENANCE.md` and `SHA256SUMS` files, and this index, are the project's
 own writing about the vendored material and stay under the project licence.
