@@ -31,9 +31,10 @@ parse (`openehr-query`, done) → path analysis + typing against the
 **BMM-generated RM attribute model** (+ WebTemplate where template context is
 needed) → **AST → typed query IR** (our own Rust enums) → **IR → SQL** (via
 `sea-query`: nested-set interval joins on the node table for CONTAINS,
-`jsonb_path_query_first` + jsonpath item methods + `openehr_magnitude` for
-typed leaf comparison/ordering, `JSON_TABLE` for array unnesting, GIN
-`jsonb_ops` `$.**` equality anchors as pre-filters) → execute (`sqlx`) →
+`jsonb_path_query_first` for leaf extraction, `jsonb_path_query` as a
+lateral set-returning function for array unnesting, `ext.openehr_magnitude`
+and `ext.openehr_timestamp` for typed comparison/ordering; no jsonpath item
+methods, no `JSON_TABLE`, no GIN operators) → execute (`sqlx`) →
 assemble `RESULT_SET` (schema 1.1.0). Keep the IR a distinct pass — that is
 what keeps the hard cases tractable — and do **not** collapse it away.
 

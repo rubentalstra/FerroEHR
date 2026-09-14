@@ -1,10 +1,12 @@
-# PostgreSQL 17 + 18 features FerroEHR leverages
+# PostgreSQL 17 + 18 features: what FerroEHR uses, and what it does not
 
 **Pin: PostgreSQL 18, target 18.6+** (`docs/VERSIONS.md`; CI runs `postgres:18.6`).
-Upstream EHRbase targets **PG 15/16**; we target **18** to exploit two major
-releases of new capability for a JSONB-heavy openEHR CDR. This file is the
-reference the persistence, AQL-engine, and auth subsystems build against —
-"the best possible system" means using these, not the PG-16 subset.
+Upstream EHRbase targets **PG 15/16**; we target **18**. This file is the
+register of the PG 17 and PG 18 features that matter to a JSONB-heavy openEHR
+CDR, and for each one it says whether the code USES it, where, or why it is
+deliberately NOT used. A feature listed here is not a claim that the code
+uses it; the "status" column is. Every reason cites the PostgreSQL 18
+documentation (`https://www.postgresql.org/docs/18/`).
 
 ## Versioning note (why the feature list is only 17.0 + 18.0)
 
@@ -17,44 +19,46 @@ feature sets below; we run the latest patch (18.6) for the fixes.
 
 ## PG 17.0 — SQL/JSON + query performance
 
-| Feature | What it enables for FerroEHR |
-|---|---|
-| **`JSON_TABLE()`** | Project JSONB clinical documents into relational rows in SQL — a core tool for the AQL→SQL generator, removing app-side JSON walking. |
-| **SQL/JSON query fns** — `JSON_EXISTS`, `JSON_QUERY`, `JSON_VALUE` | Standards-based JSONB path extraction/validation in generated AQL SQL. |
-| **SQL/JSON constructors** — `JSON()`, `JSON_SCALAR()`, `JSON_SERIALIZE()` | Build/normalize JSON in-query where needed. |
-| **`jsonpath` type methods** — `.integer()/.boolean()/.date()/.timestamp()…` | Type-safe coercion inside path queries — precise AQL value extraction. |
-| **`MERGE … RETURNING` + `merge_action()`** | Upsert composition/version/status rows and report INSERT/UPDATE/DELETE — useful for versioned writes. |
-| **`MERGE … WHEN NOT MATCHED BY SOURCE`** | Reconcile/soft-delete rows absent from an incoming set. |
-| **Optimizer: `IN`/`NOT IN`, correlated subqueries, B-tree `IN` batches** | Faster AQL predicate + code/identifier lookups. |
-| **Incremental backup** (`pg_basebackup --incremental`) | Ops concern for large CDRs (not app code). |
+| Feature | Status | Where, or why not |
+|---|---|---|
+| **SQL/JSON path functions** — `jsonb_path_query_first`, `jsonb_path_query` (PG 12+, extended in 17) | **used** | the AQL emitter extracts leaves with `jsonb_path_query_first` and unnests arrays with `jsonb_path_query` as a lateral set-returning function (`app/ferroehr/src/aql/sql/`). |
+| **`JSON_TABLE()`** | not used | the lateral `jsonb_path_query` is the function form of the same operation; the emitter emits no `JSON_TABLE`. A switch would be a measured emitter change, not a documentation fact. |
+| **SQL/JSON query fns** — `JSON_EXISTS`, `JSON_QUERY`, `JSON_VALUE` | not used | `jsonb_path_query_first` and `#>> '{}'` serve extraction; `JSON_VALUE(... RETURNING type)` would give typed extraction with `ON ERROR` control and is a candidate for the emitter, nothing more. |
+| **SQL/JSON constructors** — `JSON()`, `JSON_SCALAR()`, `JSON_SERIALIZE()` | not used | nothing builds JSON in-query; the canonical body is stored verbatim as `text`. |
+| **`jsonpath` item methods** — `.integer()/.boolean()/.date()/.datetime()` | not used, deliberately | the date/time methods depend on the session TimeZone, so they exist only in the `_tz` function variants, which are STABLE and cannot back an index (`functions-json.html`); comparison goes through `ext.openehr_timestamp` (STABLE, floors partial precision) and `ext.openehr_magnitude` (IMMUTABLE). |
+| **`MERGE … RETURNING` + `merge_action()`**, **`MERGE … WHEN NOT MATCHED BY SOURCE`** | not used, deliberately | `INSERT … ON CONFLICT` is the concurrency-safe upsert the commit path uses for `contribution` and `ehr`; the docs call MERGE and `ON CONFLICT` "not interchangeable" under concurrency (`sql-merge.html`). |
+| **Optimizer: `IN`/`NOT IN`, correlated subqueries, B-tree `IN` batches** | planner-side | applies to every generated statement without code. |
+| **Incremental backup** (`pg_basebackup --incremental`) | operator's | not app code. |
 
 ## PG 18.0 — async I/O, temporal, identifiers, generated columns, auth
 
-| Feature | What it enables for FerroEHR |
-|---|---|
-| **`uuidv7()` (native)** | Timestamp-ordered UUIDs for `OBJECT_VERSION_ID`/row keys — index-friendly, no `uuid` crate round-trip for DB-generated ids. |
-| **Temporal `PRIMARY KEY`/`UNIQUE`/`FOREIGN KEY` `WITHOUT OVERLAPS`** | Enforce non-overlapping validity at the DB. Used by `linkage.party_ehr`, where a party holds one mapping at a time and a merge closes a row rather than deleting it. NOT used by `vo_version`: its GiST `EXCLUDE` constraints were removed after measurement (exclusion inserts serialize, and that is the hot write path), and partial unique btrees hold the invariant there. |
-| **`RETURNING OLD/NEW`** in INSERT/UPDATE/DELETE/MERGE | One-statement audit capture (write + return prior value) for the `audit`/`contribution` rows on every version write. |
-| **Virtual generated columns** | Cheap read-time derived columns (e.g. a JSONB leaf) without storage — candidate indexes/filters for AQL hot paths. |
-| **B-tree skip scan** | Multicolumn indexes usable when a leading column is unconstrained — fewer indexes for the row-per-locatable + AQL access patterns. |
-| **Asynchronous I/O (AIO)** (`io_method`, `io_combine_limit`) | Faster seq/bitmap scans + vacuum — throughput for large-corpus AQL tuning. |
-| **OAuth authentication** (`oauth` in `pg_hba.conf`, `oauth_validator_libraries`) | DB-level OAuth option; complements our app-level OAuth2/OIDC for federated identity. |
-| **Self-join elimination** (`enable_self_join_elimination`) | AQL SQL that self-joins the same locatable table can be simplified by the planner. |
-| **`OR` → `= ANY(array)` transformation** | AQL `OR`/`MATCHES` predicate lists become index-friendly array lookups automatically. |
-| **`jsonb` null → SQL scalar `NULL` cast** | Simpler optional-field extraction in generated SQL (no error on JSON null). |
-| **Partition planner improvements** | If time-partitioning `vo_version`/`node` by time is adopted, cheaper planning across partitions. |
+| Feature | Status | Where, or why not |
+|---|---|---|
+| **`uuidv7()` (native)** | **used** for database-minted ids | `audit.id`, `contribution.id` (fallback), `vo_attestation.id`, `item_tag.id`. Versioned-object and EHR ids are minted in Rust as v7 with the licence stamp, so `(vo_id, sys_version)` keys are NOT append-ordered. |
+| **Temporal `PRIMARY KEY`/`UNIQUE` `WITHOUT OVERLAPS`** | **used** on `linkage.party_ehr` | one mapping in force per party; a merge closes a row rather than deleting it. The key is enforced as a GiST exclusion (`sql-createtable.html`), which is why `btree_gist` is installed. NOT used on `vo_version`: partial unique btrees plus the per-object advisory lock hold the current-row invariant; the earlier GiST `EXCLUDE` constraints were removed after a measurement recorded on the tracker, and the documentation makes no statement about exclusion-constraint concurrency (it only says equality exclusion is slower than UNIQUE). |
+| **Temporal `FOREIGN KEY`** | not used | NO ACTION only, and the pseudonymisation boundary refuses cross-domain foreign keys anyway. |
+| **`RETURNING OLD/NEW`** | not used | the commit path is one CTE chain with plain `RETURNING id`; nothing reads `old.`/`new.`. |
+| **Virtual generated columns** | not usable here | a virtual column "must not reference user-defined functions or types" (`ddl-generated-columns.html`), so it cannot call `ext.*`; a STORED one may call IMMUTABLE `openehr_magnitude` but never the STABLE timestamp parser. The promoted `node` columns are populated by the decomposer at write time. |
+| **B-tree skip scan** | planner-side, relied on once | `item_tag` lookups by key within one EHR over the identity index; planner-conditional on few distinct leading values (`indexes-multicolumn.html`), never a guarantee. |
+| **Asynchronous I/O (AIO)** (`io_method`, `io_workers`) | server default | nothing in compose or Helm tunes it; the default `worker` method applies. Helps sequential and bitmap scans and VACUUM, not the index nested loops AQL emits. |
+| **OAuth authentication** (`pg_hba.conf`) | not used | app-level OAuth2/OIDC is the auth layer. |
+| **Self-join elimination** | planner-side | applies to the emitter's `node` self-joins without code. |
+| **`OR` → `= ANY(array)`** | emitter-side | the emitter writes `= ANY($1)` itself for `MATCHES` lists; the planner transformation is not relied on. |
+| **`jsonb` null → SQL `NULL` cast** | not relied on | no emitter site depends on it. |
+| **Partition planner improvements** | not yet | no relation is partitioned today; the storage redesign (#3337) partitions the version and node tables by tier. |
 
-## Feature → subsystem mapping (where to use each)
+## Feature → subsystem mapping (what the code actually does)
 
-- **Persistence / service layer:** `uuidv7()`, temporal `WITHOUT OVERLAPS`
-  constraints, `RETURNING OLD/NEW`, `MERGE … RETURNING` (versioning + audit).
-- **AQL engine:** `JSON_TABLE`, `JSON_QUERY`/`JSON_VALUE`/`JSON_EXISTS`,
-  `jsonpath` type methods, skip scan, `OR`→`ANY`, self-join elimination,
-  virtual generated columns for hot filters. (`sea-query` emits these; see
-  `.claude/rules/aql-engine.md`.)
-- **Auth:** app-level OAuth2/OIDC (crates) is primary; DB `oauth` is available.
-- **Optimization:** AIO tuning, `JSON_TABLE` codegen, generated-column/skip-scan
-  indexes — profile-first, and only while conformance stays green.
+- **Persistence / service layer:** `uuidv7()` for database-minted ids; one
+  CTE chain per Contribution with `INSERT … ON CONFLICT` for the idempotent
+  rows; the temporal key on `linkage.party_ehr`.
+- **AQL engine:** `jsonb_path_query_first`, lateral `jsonb_path_query`,
+  `ext.openehr_magnitude`, `ext.openehr_timestamp`, integer nested-set joins,
+  promoted btree columns, `= ANY` lists (`.claude/rules/aql-engine.md`).
+- **Auth:** app-level OAuth2/OIDC (crates) is primary; DB `oauth` is unused.
+- **Optimization:** a feature that is *only* a performance win is adopted on a
+  committed measurement, never on this list; the candidates and their
+  instruments are in the storage redesign plan (#3337).
 
 **Discipline:** use PG 18 features where they simplify or speed the SQL, but a
 feature that is *only* a perf win (not needed for correctness/conformance) is a
