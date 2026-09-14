@@ -55,3 +55,4 @@
 - [No stress test in v4.3.0](no-stress-test-v430.md) — owner ruling 2026-09-13: no stress/perf measurement this cycle; #3098 (LTO) moved to v4.3.1 rather than landing unmeasured
 - [Research reports go to files](research-reports-go-to-files.md) — every research deliverable is written to a file at once (agent writes it + repo appendix); transcripts are not durable; the PG18/prior-art reports for #3337 were lost once and re-run
 - [Boot refusals vs chart postures](boot-refusals-vs-chart-postures.md) — check a new config-combination refusal against deploy/helm/ci/*-values.yaml first; the chart-boot job crash-loops on a refused shipped posture (the #3360 tenancy+eventing case became a warning)
+- [New issues go to the next patch milestone](new-issues-go-to-next-patch-milestone.md) — owner 2026-09-14: issues filed in a cycle go to the current or next patch milestone (v4.3.1), never v5.x, even for breaking reworks
