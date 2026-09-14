@@ -414,9 +414,10 @@ impl FerroEhrService {
         ehr_id: EhrId,
     ) -> Result<Vec<(VoId, String)>, ServiceError> {
         let rows = sqlx::query(
-            "SELECT vo_id, kind FROM version \
-             WHERE ehr_id = $1 AND version.sys_version = (SELECT h.trunk_head_sys_version FROM vo_head h WHERE h.vo_id = version.vo_id) \
-             ORDER BY vo_id",
+            "SELECT version.vo_id, kind FROM version \
+             JOIN vo_head h ON h.vo_id = version.vo_id AND h.trunk_head_sys_version = version.sys_version \
+             WHERE ehr_id = $1 \
+             ORDER BY version.vo_id",
         )
         .bind(ehr_id)
         .fetch_all(&self.pool)
@@ -437,7 +438,8 @@ impl FerroEhrService {
     ) -> Result<Option<String>, ServiceError> {
         Ok(sqlx::query_scalar(
             "SELECT kind FROM version \
-             WHERE vo_id = $1 AND ehr_id = $2 AND version.sys_version = (SELECT h.trunk_head_sys_version FROM vo_head h WHERE h.vo_id = version.vo_id)",
+             JOIN vo_head h ON h.vo_id = version.vo_id AND h.trunk_head_sys_version = version.sys_version \
+             WHERE version.vo_id = $1 AND ehr_id = $2",
         )
         .bind(vo_id)
         .bind(ehr_id)
@@ -446,10 +448,12 @@ impl FerroEhrService {
     }
 
     /// The `sys_version`s of a version container, in order, each flagged with
-    /// whether it is the current (`upper_inf`, trunk) version.
+    /// whether it is the current trunk version (`vo_head.trunk_head_sys_version`).
     async fn vo_version_numbers(&self, vo_id: VoId) -> Result<Vec<(i32, bool)>, ServiceError> {
         let rows = sqlx::query(
-            "SELECT sys_version, (version.sys_version = (SELECT h.trunk_head_sys_version FROM vo_head h WHERE h.vo_id = version.vo_id)) AS is_current \
+            "SELECT sys_version, EXISTS(SELECT 1 FROM vo_head h \
+                 WHERE h.vo_id = version.vo_id \
+                   AND h.trunk_head_sys_version = version.sys_version) AS is_current \
              FROM version WHERE vo_id = $1 ORDER BY sys_version",
         )
         .bind(vo_id)

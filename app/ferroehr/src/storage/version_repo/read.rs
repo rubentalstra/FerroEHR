@@ -394,7 +394,8 @@ pub async fn read_current(
     vo_id: VoId,
 ) -> Result<Option<StoredVersion>, StorageError> {
     const SQL: &str = version_select!(
-        "WHERE v.vo_id = $1 AND v.sys_version = (SELECT h.trunk_head_sys_version FROM vo_head h WHERE h.vo_id = v.vo_id)"
+        "JOIN vo_head h ON h.vo_id = v.vo_id AND h.trunk_head_sys_version = v.sys_version \
+         WHERE v.vo_id = $1"
     );
     sqlx::query(SQL)
         .bind(vo_id)
@@ -415,7 +416,8 @@ pub async fn read_current_raw(
     vo_id: VoId,
 ) -> Result<Option<StoredVersion>, StorageError> {
     const SQL: &str = version_select_raw!(
-        "WHERE v.vo_id = $1 AND v.sys_version = (SELECT h.trunk_head_sys_version FROM vo_head h WHERE h.vo_id = v.vo_id)"
+        "JOIN vo_head h ON h.vo_id = v.vo_id AND h.trunk_head_sys_version = v.sys_version \
+         WHERE v.vo_id = $1"
     );
     sqlx::query(SQL)
         .bind(vo_id)
@@ -465,7 +467,8 @@ pub async fn read_currents(
     vo_ids: &[VoId],
 ) -> Result<Vec<StoredVersion>, StorageError> {
     const SQL: &str = version_select!(
-        "WHERE v.vo_id = ANY($1) AND v.sys_version = (SELECT h.trunk_head_sys_version FROM vo_head h WHERE h.vo_id = v.vo_id)"
+        "JOIN vo_head h ON h.vo_id = v.vo_id AND h.trunk_head_sys_version = v.sys_version \
+         WHERE v.vo_id = ANY($1)"
     );
     if vo_ids.is_empty() {
         return Ok(Vec::new());
@@ -637,7 +640,8 @@ pub async fn read_current_of_kind(
     kind: &str,
 ) -> Result<Option<StoredVersion>, StorageError> {
     const SQL: &str = version_select!(
-        "WHERE v.ehr_id = $1 AND v.kind = $2 AND v.sys_version = (SELECT h.trunk_head_sys_version FROM vo_head h WHERE h.vo_id = v.vo_id)"
+        "JOIN vo_head h ON h.vo_id = v.vo_id AND h.trunk_head_sys_version = v.sys_version \
+         WHERE v.ehr_id = $1 AND v.kind = $2"
     );
     sqlx::query(SQL)
         .bind(ehr_id)
@@ -695,7 +699,8 @@ pub async fn read_current_directory(
 ) -> Result<Option<StoredVersion>, StorageError> {
     const SQL: &str = version_select!(
         "JOIN ehr_folder f ON f.vo_id = v.vo_id \
-         WHERE f.ehr_id = $1 AND v.sys_version = (SELECT h.trunk_head_sys_version FROM vo_head h WHERE h.vo_id = v.vo_id) \
+         JOIN vo_head h ON h.vo_id = v.vo_id AND h.trunk_head_sys_version = v.sys_version \
+         WHERE f.ehr_id = $1 \
          ORDER BY (v.lifecycle_state = '523'), f.rank LIMIT 1"
     );
     sqlx::query(SQL)

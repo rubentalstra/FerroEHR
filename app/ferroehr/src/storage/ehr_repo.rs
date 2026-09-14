@@ -123,8 +123,8 @@ pub async fn current_status_root(
     Ok(sqlx::query_scalar(
         "SELECT n.data FROM version v \
          JOIN node n ON n.vo_id = v.vo_id AND n.sys_version = v.sys_version AND n.num = 0 \
-         WHERE v.ehr_id = $1 AND v.kind = 'EHR_STATUS' \
-           AND v.sys_version = (SELECT h.trunk_head_sys_version FROM vo_head h WHERE h.vo_id = v.vo_id)",
+         JOIN vo_head h ON h.vo_id = v.vo_id AND h.trunk_head_sys_version = v.sys_version \
+         WHERE v.ehr_id = $1 AND v.kind = 'EHR_STATUS'",
     )
     .bind(ehr_id)
     .fetch_optional(&mut *tx)
@@ -206,18 +206,20 @@ pub async fn ehr_summary_read(
          LEFT JOIN LATERAL ( \
              SELECT vo_id, trunk_version, branch_number, branch_version, \
                     creating_system_id \
-             FROM version WHERE ehr_id = e.id AND kind = 'EHR_STATUS' \
-               AND version.sys_version = (SELECT h.trunk_head_sys_version FROM vo_head h WHERE h.vo_id = version.vo_id) \
+             FROM version \
+             JOIN vo_head h ON h.vo_id = version.vo_id AND h.trunk_head_sys_version = version.sys_version \
+             WHERE ehr_id = e.id AND kind = 'EHR_STATUS' \
          ) s ON true \
          LEFT JOIN LATERAL ( \
-             SELECT vo_id FROM version WHERE ehr_id = e.id AND kind = 'EHR_ACCESS' \
-               AND version.sys_version = (SELECT h.trunk_head_sys_version FROM vo_head h WHERE h.vo_id = version.vo_id) \
+             SELECT version.vo_id FROM version \
+             JOIN vo_head h ON h.vo_id = version.vo_id AND h.trunk_head_sys_version = version.sys_version \
+             WHERE ehr_id = e.id AND kind = 'EHR_ACCESS' \
          ) a ON true \
          LEFT JOIN LATERAL ( \
              SELECT array_agg(f.vo_id ORDER BY f.rank) AS folders \
              FROM ehr_folder f \
              JOIN version v ON v.vo_id = f.vo_id \
-               AND v.sys_version = (SELECT h.trunk_head_sys_version FROM vo_head h WHERE h.vo_id = v.vo_id) \
+             JOIN vo_head h ON h.vo_id = v.vo_id AND h.trunk_head_sys_version = v.sys_version \
              WHERE f.ehr_id = e.id AND v.lifecycle_state <> '523' \
          ) f ON true \
          WHERE e.id = $1",
@@ -297,7 +299,7 @@ pub async fn directory_vo(pool: &PgPool, ehr_id: EhrId) -> Result<Option<VoId>, 
     Ok(sqlx::query_scalar(
         "SELECT f.vo_id FROM ehr_folder f \
          JOIN version v ON v.vo_id = f.vo_id \
-         AND v.sys_version = (SELECT h.trunk_head_sys_version FROM vo_head h WHERE h.vo_id = v.vo_id) \
+         JOIN vo_head h ON h.vo_id = v.vo_id AND h.trunk_head_sys_version = v.sys_version \
          WHERE f.ehr_id = $1 \
          ORDER BY (v.lifecycle_state = '523'), f.rank \
          LIMIT 1",
@@ -335,7 +337,7 @@ pub async fn directory_current_meta(
          v.creating_system_id, a.time_committed, e.is_modifiable \
          FROM ehr_folder f \
          JOIN version v ON v.vo_id = f.vo_id \
-           AND v.sys_version = (SELECT h.trunk_head_sys_version FROM vo_head h WHERE h.vo_id = v.vo_id) \
+         JOIN vo_head h ON h.vo_id = v.vo_id AND h.trunk_head_sys_version = v.sys_version \
          JOIN commit_audit a ON a.id = v.commit_audit_id \
          JOIN ehr e ON e.id = f.ehr_id \
          WHERE f.ehr_id = $1 \
@@ -460,7 +462,7 @@ pub async fn live_directory_exists(pool: &PgPool, ehr_id: EhrId) -> Result<bool,
         "SELECT EXISTS( \
            SELECT 1 FROM ehr_folder f \
            JOIN version v ON v.vo_id = f.vo_id \
-             AND v.sys_version = (SELECT h.trunk_head_sys_version FROM vo_head h WHERE h.vo_id = v.vo_id) \
+           JOIN vo_head h ON h.vo_id = v.vo_id AND h.trunk_head_sys_version = v.sys_version \
            WHERE f.ehr_id = $1 AND v.lifecycle_state <> '523')",
     )
     .bind(ehr_id)
@@ -510,7 +512,7 @@ pub async fn live_folder_root_exists(
         "SELECT EXISTS( \
            SELECT 1 FROM ehr_folder f \
            JOIN version v ON v.vo_id = f.vo_id \
-             AND v.sys_version = (SELECT h.trunk_head_sys_version FROM vo_head h WHERE h.vo_id = v.vo_id) \
+           JOIN vo_head h ON h.vo_id = v.vo_id AND h.trunk_head_sys_version = v.sys_version \
            JOIN node n ON n.vo_id = v.vo_id AND n.sys_version = v.sys_version \
              AND n.num = 0 \
            WHERE f.ehr_id = $1 AND v.lifecycle_state <> '523' \

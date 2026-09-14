@@ -456,6 +456,8 @@ mod column_vocab {
                 "arch_concept",
                 "arch_major",
                 "name",
+                "name_code",
+                "name_terminology",
                 "data",
             ],
         ),

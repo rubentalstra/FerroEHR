@@ -49,9 +49,9 @@ macro_rules! predicate_statement {
                AND e.num BETWEEN a.num AND a.num_cap \
              JOIN version v \
                ON v.tier = e.tier AND v.vo_id = e.vo_id AND v.sys_version = e.sys_version \
+             JOIN vo_head h \
+               ON h.vo_id = v.vo_id AND h.trunk_head_sys_version = v.sys_version \
              WHERE e.tier = 'hot' \
-               AND v.sys_version = (SELECT h.trunk_head_sys_version FROM vo_head h \
-                                    WHERE h.vo_id = v.vo_id) \
                AND e.rm_type = 'ELEMENT' AND e.archetype = $1 AND a.archetype = $2 \
                AND ",
             $value_clause
