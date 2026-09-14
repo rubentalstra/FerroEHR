@@ -92,15 +92,22 @@ fresh** (the diagrammed deep-dive is the book's Storage architecture page,
   **nested-set index** (`num`, `num_cap`, `parent_num`, `citem_num`): AQL
   CONTAINS is an integer interval join, never a JSON walk. Promoted predicate
   columns (`rm_type` — full RM type names, no alias compaction —,
-  `archetype`, `name`, `path COLLATE "C"`, `ehr_id`) and a **canonical
-  openEHR JSON fragment** in `data jsonb` (verbatim `openehr-its` encoding:
-  zero translation between storage and API, no synthetic fields).
+  `archetype`, `name`, `ehr_id`; `path COLLATE "C"` is the reassembly key
+  and never a predicate) and a **canonical openEHR JSON fragment** in
+  `data jsonb` (verbatim `openehr-its` encoding: zero translation between
+  storage and API, no synthetic fields). Point reads do not reassemble the
+  fragments: the whole canonical body is also stored verbatim as
+  `vo_version.body text` and served from there in one statement.
 - **`vo_version`** — one temporal version table (`sys_period tstzrange`,
   `uuidv7()` keys) instead of current+`_history` pairs; current =
   `upper_inf(sys_period)` partial index. The non-overlap invariant is held by
-  partial unique btrees, not by a temporal key: the GiST `EXCLUDE` constraints
-  were removed after measurement, because GiST exclusion inserts serialize
-  under concurrency and the version table is the hot write path.
+  partial unique btrees plus the per-object advisory lock, not by a temporal
+  key: the GiST `EXCLUDE` constraints were removed after a measurement of the
+  hot write path recorded on its tracker issue, not in a committed artifact.
+  The PostgreSQL documentation makes no statement about exclusion-constraint
+  concurrency; what it does say is that an equality-only exclusion is slower
+  than a UNIQUE constraint (`CREATE TABLE`, EXCLUDE). The redesign in #3337
+  replaces this table.
   `LATEST_VERSION` and **`ALL_VERSIONS`** both supported.
 - **`ehr`, `contribution`, `audit`, `template_store`, `stored_query`,
   `item_tag`** — supporting tables; every write emits contribution + audit in
@@ -124,16 +131,21 @@ fresh** (the diagrammed deep-dive is the book's Storage architecture page,
   `PRIMARY KEY … WITHOUT OVERLAPS` so a merge or split closes a row rather
   than deleting it. Identifiers only, no attributes; a fifth `NOINHERIT` role
   (`ferroehr_linkage`) holds it and is revoked from both domains it joins,
-  which are in turn revoked from it — the same boot gate covers all five. No
-  pool reaches it yet.
+  which are in turn revoked from it — the same boot gate covers all five. The
+  service reaches it through its own pool (`db::connect_linkage`), never
+  through the clinical or demographic one.
 - **`ext`** — our own `IMMUTABLE` helper functions (e.g.
-  `openehr_magnitude(jsonb)` for DV_ORDERED ordering semantics), usable in
-  btree **expression indexes** for measured hot paths.
+  `openehr_magnitude(jsonb)` for DV_ORDERED ordering semantics). The
+  `IMMUTABLE` ones are index-legal, so an expression index can carry a
+  measured hot path; none exists today, and `openehr_timestamp` is `STABLE`
+  by necessity (its result depends on the session TimeZone) and can never be
+  indexed.
 - **`cold`** — the physical archival tier: FK-free mirror relations of
   `vo_version`/`node`/`vo_attestation` plus `*_all` union views.
   Admin-archived objects move there transactionally (reversibly restored, or
-  thawed automatically on write); point reads retry cold only on a primary
-  miss, whole-repository readers use the views, and AQL stays primary-only —
+  thawed automatically on write); every full version read and every
+  whole-repository reader goes through the `*_all` union views in one
+  statement (there is no primary-miss retry), and AQL stays primary-only —
   archived content leaves the queryable store until restored.
 - Migrations via `sqlx migrate add` (official CLI); `sqlx` pool + two-schema
   migrator infrastructure.
@@ -144,10 +156,13 @@ Parsed AST (`openehr-query`, done) → **path analysis + typing against a
 BMM-generated RM attribute model** (attribute→types, multiplicity,
 abstract→concrete descendants — generated, not reflected, not hand-written)
 → **our typed query IR** → SQL via `sea-query` (nested-set interval joins for
-CONTAINS chains; `jsonb_path_query_first` + jsonpath item methods +
-`openehr_magnitude` for typed leaf extraction/comparison/ordering;
-`JSON_TABLE` for array unnesting; GIN `jsonb_ops` `$.**` equality anchors as
-document pre-filters) → execute (`sqlx`) → `RESULT_SET` (1.1.0). The feature
+CONTAINS chains; `jsonb_path_query_first` for leaf extraction and
+`jsonb_path_query` as a lateral set-returning function for array unnesting;
+`ext.openehr_magnitude` and `ext.openehr_timestamp` for typed comparison and
+ordering) → execute (`sqlx`) → `RESULT_SET` (1.1.0). The emitter uses no
+jsonpath item methods (their date/time conversions depend on the session
+TimeZone and are not index-legal), no `JSON_TABLE`, and no GIN index (it
+emits no GIN-servable operator; the baseline removed the index). The feature
 envelope is documented per construct; rejections are explicit typed errors.
 
 ## REST surface + auth (`ferroehr-rest`)
@@ -248,10 +263,13 @@ issues for triage.
 
 ## PostgreSQL 18
 
-We target **PG 18** (18.6+): `uuidv7()`, temporal `WITHOUT OVERLAPS`
-constraints, `RETURNING OLD/NEW`, `JSON_TABLE` + SQL/JSON functions and
-jsonpath item methods (PG 17), B-tree skip scan, async I/O, STORED generated
-columns for hot extractions. See `docs/postgres-features.md`.
+We target **PG 18** (18.6+). In use: `uuidv7()` for database-minted ids,
+the temporal `PRIMARY KEY … WITHOUT OVERLAPS` on `linkage.party_ehr`, the
+SQL/JSON path functions (`jsonb_path_query*`, PG 17), and the planner-side
+gains that need no code (skip scan, `OR` to `= ANY`, async I/O). Available
+and deliberately not used, with the reason for each: `RETURNING OLD/NEW`,
+`JSON_TABLE`, jsonpath item methods, `MERGE`, generated columns. The
+used/available table is `docs/postgres-features.md`.
 
 ## Workspace layout
 

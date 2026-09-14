@@ -296,13 +296,17 @@ Details that matter:
 version row and serve `vo_version.body` verbatim: one detoast, no
 re-aggregation, zero translation between storage and wire.
 
-**AQL** never touches the body. The engine plans over `node`: CONTAINS
-chains become nested-set interval joins, class and archetype predicates hit
-the promoted columns and their indexes, and leaf values are extracted from
-the canonical fragments with `jsonb_path_query_first`, jsonpath item
-methods, and `ext.openehr_magnitude` (the `IMMUTABLE` helper realizing
-DV_ORDERED ordering semantics). `JSON_TABLE` serves array unnesting. The
-whole pipeline has [its own page](aql-engine.md).
+**AQL** plans over `node`, with one exception: a whole-object projection
+loads the matching `body` rows in a batch instead of reassembling fragments.
+CONTAINS chains become nested-set interval joins, class and archetype
+predicates hit the promoted columns and their indexes, leaf values are
+extracted from the canonical fragments with `jsonb_path_query_first`, arrays
+are unnested with `jsonb_path_query` as a lateral set-returning function, and
+comparison and ordering go through `ext.openehr_magnitude` (the `IMMUTABLE`
+helper realizing DV_ORDERED ordering semantics) and `ext.openehr_timestamp`
+(`STABLE`, because its result depends on the session time zone). The engine
+uses no jsonpath item methods, no `JSON_TABLE` and no GIN index. The whole
+pipeline has [its own page](aql-engine.md).
 
 **Time travel** (a version at a point in time) is a `sys_period @>
 timestamptz` containment test on the same one table.
@@ -315,8 +319,9 @@ parties (FK-free mirror relations of `vo_version`, `node`, `vo_attestation` in
 both cases) — transactionally and reversibly. Archiving never merges the two
 domains. The consequences are deliberate and visible:
 
-- point reads retry cold only on a primary miss;
-- whole-repository readers (exports, dumps) use the union views;
+- every full version read and every whole-repository reader (exports, dumps)
+  goes through the union views in one statement; there is no primary-miss
+  retry;
 - **AQL stays primary-only**: archived content leaves the queryable store
   until restored;
 - a write to an archived object thaws it back to the primary tier first.
@@ -341,18 +346,28 @@ No openEHR spec governs archival tiers; this is FerroEHR's own design.
 
 ## Why this design
 
-The shape follows measured PostgreSQL physics rather than habit:
+The shape follows documented PostgreSQL behaviour rather than habit:
 
-- JSONB has no partial detoast: a big single-document design pays
+- JSONB has no documented partial detoast: a big single-document design pays
   whole-document decompression for every leaf access. Decomposed fragments
-  average a few hundred bytes, stay under TOAST, and each read touches only
-  the rows it needs.
+  are small enough to stay under the TOAST threshold, so an AQL leaf access
+  touches only the rows it needs. A point read takes the other route on
+  purpose: it serves the whole `body` in one detoast.
 - GIN indexes serve neither ranges nor ordering, so CONTAINS and ORDER BY
   ride integers and promoted btree columns instead.
-- PostgreSQL 18's temporal machinery (`tstzrange`, partial unique indexes,
-  `uuidv7()`, `RETURNING OLD/NEW`) makes the single temporal version table
-  cheaper than current/history pairs, with `ALL_VERSIONS` a plain scan of
-  one relation.
+- One temporal version table (`tstzrange`, partial unique indexes,
+  `uuidv7()`) replaces current/history pairs, with `ALL_VERSIONS` a plain
+  scan of one relation. Whether it is cheaper is a measurement this page does
+  not carry; the version table's close-out update is not a heap-only update,
+  because the range column sits in its index predicates, and the storage
+  redesign (#3337) replaces it with an append-only table for that reason.
+
+Four comments in the baseline migration cite measurements (a POC-window
+p99, the share of node rows carrying at-code archetype text, the average
+fragment size, an index-order profile) whose records live on closed tracker
+issues rather than in a committed artifact. They are historical notes on the
+decisions, not claims this page makes; a number reaches this site only
+through a generated include over a committed record.
 
 The performance this buys is measured, not asserted: see
 [Performance](../performance.md) for the earned deployment classes and the
