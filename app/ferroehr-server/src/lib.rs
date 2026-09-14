@@ -941,6 +941,12 @@ async fn serve(config_path: Option<&Path>, overrides: &[(String, String)]) -> an
     // (#3241): stamped by the runtime role on every boot, read by the trigger.
     stamp_subject_posture(&config, &pool).await?;
 
+    // The tenant reader refuses an undeclared tenant under the multi posture
+    // (#3341); stamped by the runtime role on every boot.
+    db::stamp_tenancy_posture(&pool, config.tenancy.enabled)
+        .await
+        .context("stamping the tenancy posture")?;
+
     // Fail-open at boot, except in a slim build, which cannot render the FHIR
     // `AuditEvent` the store and the ATX:FHIR Feed carry.
     #[cfg(not(feature = "fhir"))]

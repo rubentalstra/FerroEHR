@@ -442,6 +442,9 @@ enum Tenancy {
     Scoped,
 }
 
+/// The session-level declaration of the reserved default tenant.
+const DEFAULT_TENANT_GUC: &str = "SET ferroehr.tenant_id = '00000000-0000-0000-0000-000000000000'";
+
 /// Everything a freshly-opened physical connection needs before it serves a
 /// query: the domain's search path, the statement-timeout backstop, and — when
 /// tenancy is on — the request's tenant GUC.
@@ -457,6 +460,11 @@ async fn open_session(
     tenancy: Tenancy,
 ) -> Result<(), sqlx::Error> {
     sqlx::query(search_path).execute(&mut *conn).await?;
+    // Every connection the server opens declares its tenant: the reserved
+    // default here, the request's tenant per checkout under `Scoped`. An
+    // undeclared tenant is what `ext.current_tenant_id()` refuses under the
+    // multi posture (#3341).
+    sqlx::query(DEFAULT_TENANT_GUC).execute(&mut *conn).await?;
     if let Some(statement_timeout) = statement_timeout {
         // A session-level SET on the physical connection, surviving every
         // checkout, where `SET LOCAL` would last one transaction.
@@ -574,11 +582,13 @@ pub async fn connect_linkage(settings: &DbConfig) -> Result<PgPool, DbError> {
 
 /// Stamp the `ferroehr.tenant_id` session GUC on a connection from the
 /// current task's tenant context ([`crate::extensions::tenant_context::current`])
-/// — `''` (⇒ the reserved default tenant) when no tenant is in scope (a
-/// background worker, or a request that resolved no tenant).
+/// — the reserved default tenant, declared explicitly, when no tenant is in
+/// scope (a background worker, or a request that resolved no tenant).
 async fn stamp_tenant_guc(conn: &mut PgConnection) -> Result<(), sqlx::Error> {
-    let tenant = crate::extensions::tenant_context::current()
-        .map_or_else(String::new, |t| t.tenant_id.to_string());
+    let tenant = crate::extensions::tenant_context::current().map_or_else(
+        || uuid::Uuid::nil().to_string(),
+        |t| t.tenant_id.to_string(),
+    );
     sqlx::query("SELECT set_config('ferroehr.tenant_id', $1, false)")
         .bind(tenant)
         .execute(&mut *conn)
@@ -1236,6 +1246,7 @@ async fn apply_migrations(conn: &mut PgConnection) -> Result<(), DbError> {
     for &statement in BOOTSTRAP {
         sqlx::query(statement).execute(&mut *conn).await?;
     }
+    sqlx::query(DEFAULT_TENANT_GUC).execute(&mut *conn).await?;
 
     sqlx::query("SET search_path TO ext")
         .execute(&mut *conn)
@@ -1334,6 +1345,25 @@ pub async fn stamp_subject_posture(pool: &PgPool, required: bool) -> Result<(), 
     let value = if required { "required" } else { "open" };
     sqlx::query(
         "INSERT INTO posture (key, value) VALUES ('subject_pseudonyms', $1) \
+         ON CONFLICT (key) DO UPDATE SET value = EXCLUDED.value, stamped_at = now()",
+    )
+    .bind(value)
+    .execute(pool)
+    .await?;
+    Ok(())
+}
+
+/// Stamp the tenancy posture `ext.current_tenant_id()` reads (#3341).
+///
+/// `multi` when `tenancy.enabled`: an undeclared tenant on a connection is then
+/// refused instead of resolved to the reserved default. `single` otherwise.
+///
+/// # Errors
+/// [`DbError::Sqlx`] when the write fails.
+pub async fn stamp_tenancy_posture(pool: &PgPool, multi: bool) -> Result<(), DbError> {
+    let value = if multi { "multi" } else { "single" };
+    sqlx::query(
+        "INSERT INTO ext.posture (key, value) VALUES ('tenancy', $1) \
          ON CONFLICT (key) DO UPDATE SET value = EXCLUDED.value, stamped_at = now()",
     )
     .bind(value)

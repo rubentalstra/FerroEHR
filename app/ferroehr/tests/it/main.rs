@@ -90,6 +90,7 @@ mod telemetry;
 mod telemetry_metrics;
 mod telemetry_samplers;
 mod tenant_isolation;
+mod tenant_posture;
 mod terminology_fhir;
 mod terminology_mtls;
 mod terminology_multi_provider;
