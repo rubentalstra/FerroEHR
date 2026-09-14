@@ -474,6 +474,7 @@ refusal_registry_gate() {
     "deployment.yaml|no authentication mechanism is configured|${base}|--set config.auth.oidc.issuer=null|config.auth.basic.users;config.auth.oidc.issuer"
     "migration-job.yaml|requires migrations.job.existingSecret|${base}|--set migrations.job.enabled=true|migrations.job.existingSecret"
     "hpa.yaml|with every target utilisation at 0|${base}|--set autoscaling.enabled=true --set autoscaling.targetCPUUtilizationPercentage=0 --set autoscaling.targetMemoryUtilizationPercentage=0|autoscaling.targetCPUUtilizationPercentage;autoscaling.targetMemoryUtilizationPercentage"
+    "_helpers.tpl|multi-tenancy no longer exists|${base}|--set-string config.tenancy.enabled=true|config.tenancy;separate instances"
     "_helpers.tpl|refusing to render a secret into the ConfigMap|${base}|--set-string config.db.url=SENTINEL_PROBE|config.db.url;database.existingSecret"
     "_helpers.tpl|has no matching entry at config.auth.basic.users[]|${basic}|--set-string secrets.basicUserPasswordHashes.ghost=SENTINEL_PROBE|secrets.basicUserPasswordHashes.ghost"
     "_helpers.tpl|has no client declared at config.terminology.external.oauth2_clients|${base}|--set-string secrets.terminologyOauth2ClientSecrets.ghost=SENTINEL_PROBE|config.terminology.external.oauth2_clients.ghost"

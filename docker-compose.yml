@@ -202,6 +202,11 @@ services:
   #
   # `--format=custom` (PostgreSQL 18, pg_dump §Options) so the restore side can
   # choose what to restore and in what order; `pg_restore` reads it.
+  # `--strict-names` is on every job: without it a `--schema` pattern that
+  # matches nothing is not an error, so a dump naming a schema this database
+  # does not have writes an artefact missing that half and exits 0 (PostgreSQL
+  # 18, pg_dump §Options, --strict-names). That is how a clinical backup ships
+  # with no clinical data and nobody finds out until the restore.
   # Point-in-time recovery is a different instrument and stays instance-wide:
   # see the operations page in the documentation.
   #
@@ -238,7 +243,7 @@ services:
       - >-
         pg_dump --host=ferroehr-postgres --username=postgres
         --dbname=${PG_INIT_DB:-ferroehr} --format=custom --no-owner
-        --schema=ehr --schema=cold --schema=ext --schema=audit
+        --strict-names --schema=clinical --schema=ext --schema=audit
         --file=/backup/clinical-$$(date -u +%Y%m%dT%H%M%SZ).dump
     volumes:
       - ${FERROEHR_BACKUP_CLINICAL_DIR:-./backups/clinical}:/backup
@@ -270,7 +275,7 @@ services:
       - >-
         pg_dump --host=ferroehr-postgres --username=postgres
         --dbname=${PG_INIT_DB:-ferroehr} --format=custom --no-owner
-        --schema=demographic --schema=cold_demographic
+        --strict-names --schema=party
         --file=/backup/demographic-$$(date -u +%Y%m%dT%H%M%SZ).dump
     volumes:
       - ${FERROEHR_BACKUP_DEMOGRAPHIC_DIR:-./backups/demographic}:/backup
@@ -314,7 +319,7 @@ services:
       - >-
         pg_dump --host=ferroehr-postgres --username=postgres
         --dbname=${PG_INIT_DB:-ferroehr} --format=custom --no-owner
-        --schema=linkage --extension=btree_gist
+        --strict-names --schema=linkage --extension=btree_gist
         --file=/backup/linkage-$$(date -u +%Y%m%dT%H%M%SZ).dump
     volumes:
       - ${FERROEHR_BACKUP_LINKAGE_DIR:-./backups/linkage}:/backup

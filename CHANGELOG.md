@@ -46,6 +46,15 @@ workflow refuses a tag that has no matching section here.
   - The archive file format carries a version's `committed_at` instead of a
     validity interval. An archive written by an earlier release does not load.
 
+- **The Helm chart is 9.0.0, a major bump** (#3342, #3344, #3378). The values
+  contract changed in two ways a values file can notice: `config.tenancy` no
+  longer exists and is refused at render with the reason, and the per-domain
+  backup CronJobs dump the generation-2 schemas (`clinical, ext, audit` and
+  `party`) instead of the retired mirror schemas. The docker-compose backup
+  services dump the same sets, and all six jobs now pass `--strict-names`, so a
+  `--schema` pattern matching nothing fails the dump instead of writing an
+  artefact that silently lacks that half (PostgreSQL 18, pg_dump §Options).
+
 ### Removed
 
 - **Multi-tenancy** (#3378). Multi-tenancy is achieved by running separate

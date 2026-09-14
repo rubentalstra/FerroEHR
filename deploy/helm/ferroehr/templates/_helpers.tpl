@@ -269,6 +269,14 @@ secret VALUE refused outright.
 */}}
 {{- define "ferroehr.configToml" -}}
 {{- $config := omit .Values.config "files" -}}
+{{/* Multi-tenancy was withdrawn: the server rejects unknown configuration keys,
+     so a values file still carrying config.tenancy renders a ferroehr.toml the
+     pod refuses at boot and crash-loops on. Refuse it here, where the operator
+     reads the reason (CHANGELOG.md, ### Removed: multi-tenancy is achieved by
+     running separate instances). */}}
+{{- if hasKey $config "tenancy" -}}
+{{- fail "config.tenancy is set, and multi-tenancy no longer exists: it is achieved by running separate instances — one instance, one database, one set of domain roles per organisation (CHANGELOG.md, ### Removed). The server refuses unknown configuration keys, so rendering this key would crash-loop the pod at boot. Drop config.tenancy." -}}
+{{- end -}}
 {{- $findings := include "ferroehr.secretScan" (dict "node" $config "path" "") | trim -}}
 {{- $lines := list -}}
 {{- range $finding := splitList "\n" $findings -}}

@@ -23,7 +23,7 @@ metadata:
     kubernetes.io/description: >-
       Ingress for the CDR: only the API port (and the management port when enabled), and only from the networkPolicy.ingressFrom peers.
   labels:
-    helm.sh/chart: ferroehr-8.3.1
+    helm.sh/chart: ferroehr-9.0.0
     app.kubernetes.io/name: ferroehr
     app.kubernetes.io/instance: ferroehr
     app.kubernetes.io/version: "4.3.0"
@@ -128,7 +128,7 @@ metadata:
     kubernetes.io/description: >-
       Ingress for FerroTERM: only its HTTP port, and only from the CDR's pods. Egress admits DNS only.
   labels:
-    helm.sh/chart: ferroehr-8.3.1
+    helm.sh/chart: ferroehr-9.0.0
     app.kubernetes.io/name: ferroehr-terminology
     app.kubernetes.io/instance: ferroehr
     app.kubernetes.io/version: "4.3.0"
@@ -184,7 +184,7 @@ metadata:
     kubernetes.io/description: >-
       Keeps the CDR available during voluntary disruption (node drains, cluster upgrades). AlwaysAllow lets a drain evict already-unhealthy pods rather than waiting for them to recover.
   labels:
-    helm.sh/chart: ferroehr-8.3.1
+    helm.sh/chart: ferroehr-9.0.0
     app.kubernetes.io/name: ferroehr
     app.kubernetes.io/instance: ferroehr
     app.kubernetes.io/version: "4.3.0"
@@ -215,7 +215,7 @@ metadata:
     kubernetes.io/description: >-
       Keeps FerroTERM available during voluntary disruption (node drains, cluster upgrades). AlwaysAllow lets a drain evict already-unhealthy pods rather than waiting for them to recover.
   labels:
-    helm.sh/chart: ferroehr-8.3.1
+    helm.sh/chart: ferroehr-9.0.0
     app.kubernetes.io/name: ferroehr-terminology
     app.kubernetes.io/instance: ferroehr
     app.kubernetes.io/version: "4.3.0"
@@ -236,7 +236,7 @@ kind: ServiceAccount
 metadata:
   name: ferroehr
   labels:
-    helm.sh/chart: ferroehr-8.3.1
+    helm.sh/chart: ferroehr-9.0.0
     app.kubernetes.io/name: ferroehr
     app.kubernetes.io/instance: ferroehr
     app.kubernetes.io/version: "4.3.0"
@@ -253,7 +253,7 @@ kind: ServiceAccount
 metadata:
   name: ferroehr-terminology
   labels:
-    helm.sh/chart: ferroehr-8.3.1
+    helm.sh/chart: ferroehr-9.0.0
     app.kubernetes.io/name: ferroehr-terminology
     app.kubernetes.io/instance: ferroehr
     app.kubernetes.io/version: "4.3.0"
@@ -283,7 +283,7 @@ kind: Secret
 metadata:
   name: ferroehr-env
   labels:
-    helm.sh/chart: ferroehr-8.3.1
+    helm.sh/chart: ferroehr-9.0.0
     app.kubernetes.io/name: ferroehr
     app.kubernetes.io/instance: ferroehr
     app.kubernetes.io/version: "4.3.0"
@@ -309,7 +309,7 @@ kind: Secret
 metadata:
   name: ferroehr-config
   labels:
-    helm.sh/chart: ferroehr-8.3.1
+    helm.sh/chart: ferroehr-9.0.0
     app.kubernetes.io/name: ferroehr
     app.kubernetes.io/instance: ferroehr
     app.kubernetes.io/version: "4.3.0"
@@ -330,7 +330,7 @@ kind: ConfigMap
 metadata:
   name: ferroehr
   labels:
-    helm.sh/chart: ferroehr-8.3.1
+    helm.sh/chart: ferroehr-9.0.0
     app.kubernetes.io/name: ferroehr
     app.kubernetes.io/instance: ferroehr
     app.kubernetes.io/version: "4.3.0"
@@ -534,7 +534,7 @@ kind: ConfigMap
 metadata:
   name: ferroehr-grafana-dashboard
   labels:
-    helm.sh/chart: ferroehr-8.3.1
+    helm.sh/chart: ferroehr-9.0.0
     app.kubernetes.io/name: ferroehr
     app.kubernetes.io/instance: ferroehr
     app.kubernetes.io/version: "4.3.0"
@@ -798,7 +798,7 @@ metadata:
     kubernetes.io/description: >-
       Synthetic, licence-free FHIR code systems and value sets under the reserved example.test domain, mounted read-only as FerroTERM's code-system directory. Replace it with terminology.codeSystems.existingConfigMap to serve your own.
   labels:
-    helm.sh/chart: ferroehr-8.3.1
+    helm.sh/chart: ferroehr-9.0.0
     app.kubernetes.io/name: ferroehr-terminology
     app.kubernetes.io/instance: ferroehr
     app.kubernetes.io/version: "4.3.0"
@@ -926,7 +926,7 @@ kind: Service
 metadata:
   name: ferroehr
   labels:
-    helm.sh/chart: ferroehr-8.3.1
+    helm.sh/chart: ferroehr-9.0.0
     app.kubernetes.io/name: ferroehr
     app.kubernetes.io/instance: ferroehr
     app.kubernetes.io/version: "4.3.0"
@@ -960,7 +960,7 @@ metadata:
     kubernetes.io/description: >-
       In-cluster address for FerroTERM. Reached by the CDR alone — no Ingress is rendered for it, because a published FHIR terminology endpoint serves $expand and $lookup to every client that can reach it.
   labels:
-    helm.sh/chart: ferroehr-8.3.1
+    helm.sh/chart: ferroehr-9.0.0
     app.kubernetes.io/name: ferroehr-terminology
     app.kubernetes.io/instance: ferroehr
     app.kubernetes.io/version: "4.3.0"
@@ -986,7 +986,7 @@ metadata:
     kubernetes.io/description: >-
       The FerroEHR CDR itself: a stateless openEHR ITS-REST API server against an EXTERNAL PostgreSQL 18. It stores nothing locally, so a pod is disposable; readiness reports the database and its schema, liveness does not.
   labels:
-    helm.sh/chart: ferroehr-8.3.1
+    helm.sh/chart: ferroehr-9.0.0
     app.kubernetes.io/name: ferroehr
     app.kubernetes.io/instance: ferroehr
     app.kubernetes.io/version: "4.3.0"
@@ -1250,7 +1250,7 @@ metadata:
     kubernetes.io/description: >-
       FerroTERM, the FHIR terminology server the CDR resolves bindings against. It serves a read-only index and the shaped code-system directory; it holds no clinical data and reaches nothing outbound.
   labels:
-    helm.sh/chart: ferroehr-8.3.1
+    helm.sh/chart: ferroehr-9.0.0
     app.kubernetes.io/name: ferroehr-terminology
     app.kubernetes.io/instance: ferroehr
     app.kubernetes.io/version: "4.3.0"
@@ -1387,7 +1387,7 @@ kind: HorizontalPodAutoscaler
 metadata:
   name: ferroehr
   labels:
-    helm.sh/chart: ferroehr-8.3.1
+    helm.sh/chart: ferroehr-9.0.0
     app.kubernetes.io/name: ferroehr
     app.kubernetes.io/instance: ferroehr
     app.kubernetes.io/version: "4.3.0"
@@ -1424,7 +1424,7 @@ metadata:
     kubernetes.io/description: >-
       Logical backup of the clinical pseudonymisation domain: pg_dump of clinical, ext, audit into the ferroehr-backup-clinical claim, under that domain's own backup DSN. Separate claim, separate credential, separate schedule from every other domain, so no one artefact carries two of the clinical record, the identifying data and the map between them.
   labels:
-    helm.sh/chart: ferroehr-8.3.1
+    helm.sh/chart: ferroehr-9.0.0
     app.kubernetes.io/name: ferroehr-backup-clinical
     app.kubernetes.io/instance: ferroehr
     app.kubernetes.io/version: "4.3.0"
@@ -1527,7 +1527,7 @@ metadata:
     kubernetes.io/description: >-
       Logical backup of the demographic pseudonymisation domain: pg_dump of party into the ferroehr-backup-demographic claim, under that domain's own backup DSN. Separate claim, separate credential, separate schedule from every other domain, so no one artefact carries two of the clinical record, the identifying data and the map between them.
   labels:
-    helm.sh/chart: ferroehr-8.3.1
+    helm.sh/chart: ferroehr-9.0.0
     app.kubernetes.io/name: ferroehr-backup-demographic
     app.kubernetes.io/instance: ferroehr
     app.kubernetes.io/version: "4.3.0"
@@ -1630,7 +1630,7 @@ metadata:
     kubernetes.io/description: >-
       Logical backup of the linkage pseudonymisation domain: pg_dump of linkage into the ferroehr-backup-linkage claim, under that domain's own backup DSN. Separate claim, separate credential, separate schedule from every other domain, so no one artefact carries two of the clinical record, the identifying data and the map between them.
   labels:
-    helm.sh/chart: ferroehr-8.3.1
+    helm.sh/chart: ferroehr-9.0.0
     app.kubernetes.io/name: ferroehr-backup-linkage
     app.kubernetes.io/instance: ferroehr
     app.kubernetes.io/version: "4.3.0"
@@ -1731,7 +1731,7 @@ kind: Ingress
 metadata:
   name: ferroehr
   labels:
-    helm.sh/chart: ferroehr-8.3.1
+    helm.sh/chart: ferroehr-9.0.0
     app.kubernetes.io/name: ferroehr
     app.kubernetes.io/instance: ferroehr
     app.kubernetes.io/version: "4.3.0"
@@ -1769,7 +1769,7 @@ kind: ServiceMonitor
 metadata:
   name: ferroehr
   labels:
-    helm.sh/chart: ferroehr-8.3.1
+    helm.sh/chart: ferroehr-9.0.0
     app.kubernetes.io/name: ferroehr
     app.kubernetes.io/instance: ferroehr
     app.kubernetes.io/version: "4.3.0"
@@ -1811,7 +1811,7 @@ kind: Job
 metadata:
   name: ferroehr-migrate
   labels:
-    helm.sh/chart: ferroehr-8.3.1
+    helm.sh/chart: ferroehr-9.0.0
     app.kubernetes.io/name: ferroehr-migration
     app.kubernetes.io/instance: ferroehr
     app.kubernetes.io/version: "4.3.0"
@@ -1836,7 +1836,7 @@ spec:
   template:
     metadata:
       labels:
-        helm.sh/chart: ferroehr-8.3.1
+        helm.sh/chart: ferroehr-9.0.0
         app.kubernetes.io/name: ferroehr-migration
         app.kubernetes.io/instance: ferroehr
         app.kubernetes.io/version: "4.3.0"
