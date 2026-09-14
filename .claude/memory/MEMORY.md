@@ -53,3 +53,4 @@
 - [Sandbox VETDF: resolved at 231/91](sandbox-vetdf-remaining-two.md) — v4.2.5 sandbox seeds fully beside FerroTERM; the two LOINC-side refusals are 2013 CKM source defects kept verbatim and pinned; re-adjudicate the pin whenever a served edition changes
 - [Law corpus publisher facts](law-corpus-publisher-facts.md) — GII builddate pin (no dated URL), recht.bund.de BGBl PDF, Fedlex filestore + SPARQL consolidations, English non-binding; scope-before-substance traps
 - [No stress test in v4.3.0](no-stress-test-v430.md) — owner ruling 2026-09-13: no stress/perf measurement this cycle; #3098 (LTO) moved to v4.3.1 rather than landing unmeasured
+- [Research reports go to files](research-reports-go-to-files.md) — every research deliverable is written to a file at once (agent writes it + repo appendix); transcripts are not durable; the PG18/prior-art reports for #3337 were lost once and re-run
