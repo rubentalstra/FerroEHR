@@ -11,10 +11,14 @@ use it). **Not sea-orm.** Target PostgreSQL 18.6+.
 
 ## Migrations
 
-- The schema is **our own PG18-native design** (re-authored
-  enterprise-grade): the unified `node` table, the temporal
-  `vo_version` table, supporting tables, and our `ext` helper functions. It
-  is live and CNF-pipeline-verified.
+- The schema is **our own PG18-native design**: the append-only `version`
+  table with its mutable `vo_head` row, the unified `node` table, the
+  tier partitions that hold the archival tier, supporting tables, and our
+  `ext` helper functions. It is live and CNF-pipeline-verified. The clinical
+  and party domains' change-control and node relations are RENDERED from one
+  DDL template (`app/ferroehr/migrations/templates/`), so a change to either
+  is a change to the template plus a regeneration, never a hand edit of the
+  rendered file.
 - **Migrations are APPEND-ONLY (owner ruling 2026-09-09, declaring the
   stabilization the 2026-08-20 greenfield ruling reserved).** People run
   FerroEHR now, so wiping a volume is no longer an option and an installation
@@ -40,8 +44,10 @@ use it). **Not sea-orm.** Target PostgreSQL 18.6+.
   `sqlx migrate add --source app/ferroehr/migrations/<schema> --sequential <desc>`,
   written as modern PG 18 SQL (`uuidv7()`, temporal `WITHOUT OVERLAPS`,
   `RETURNING OLD/NEW` where the design calls for them).
-- `ferroehr::db::run_migrations` bootstraps schemas + extensions and runs the
-  `ext` migrator before `ehr`; each set keeps its own `_sqlx_migrations` table.
+- `ferroehr::db::prepare` bootstraps schemas + extensions and runs the sets in
+  order (`ext`, `clinical`, `party`, `linkage`, `audit`); each keeps its own
+  `_sqlx_migrations` table, and a database whose `ehr` or `demographic` schema
+  still carries one is refused at boot as predating the storage rewrite.
 - `sea-query` `Iden` table/column definitions (`db/iden.rs`) + hand-written
   row-mapping structs (over the generated `openehr-rm` types) — no ORM/codegen.
 
