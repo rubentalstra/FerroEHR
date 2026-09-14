@@ -649,11 +649,12 @@ Owner ruling 2026-09-14: this is a greenfield rewrite. No organisation runs
 FerroEHR in production, so no database has to survive the change, and the
 target carries no second generation beside the first. Greenfield is the
 cleaner and the faster path: one relation set, one code path, no copy tool,
-no generation stamp, no legacy branch in the readers.
+no generation stamp, no legacy branch in the readers, and a migration set a
+reader can navigate file by file.
 
 ```mermaid
 stateDiagram-v2
-  [*] --> New: the release ships one squashed baseline per domain
+  [*] --> New: the release ships one migration set per domain, one concern per file
   New --> Serving: a fresh database migrates and serves
   Old --> Refused: a database from an earlier release is refused at boot
   Refused --> New: the operator recreates the database
@@ -661,9 +662,10 @@ stateDiagram-v2
 
 ### What the release does
 
-1. **One baseline per domain.** `ext/0001`, `clinical/0001`, `party/0001`
-   (rendered from the same DDL template as clinical), `linkage/0001`,
-   `audit/0001` and `research/0001` are re-authored as squashed baselines.
+1. **One migration set per domain, in natural files.** The `ext`, `clinical`,
+   `party` (rendered from the same DDL template as clinical), `linkage`,
+   `audit` and `research` sets are re-authored as sequences of files, one
+   concern each (§Migration set layout below), never one squashed baseline.
    The `ehr`, `demographic` and the present `linkage` and `audit` sets are
    deleted in the same pull request; the schema names change with the
    domains (`clinical`, `party`).
@@ -681,6 +683,32 @@ stateDiagram-v2
 4. **Everything that seeds a database starts from the new baselines**: the
    testkit template, the compose quickstart, the Helm chart's boot, the
    hosted sandbox's reseed, the conformance pipeline's fresh volumes.
+
+### Migration set layout: natural files, one concern each
+
+Owner direction 2026-09-14: not one squashed baseline per domain. Each domain's
+set is a sequence of files (`sqlx migrate add --sequential`), one concern per
+file, named by the concern, so a reader finds the change-control tables in the
+file called change control and the row policies in the file called row-level
+security. The party set is rendered from the same template as the clinical
+one and carries the same file names where the concern is shared. From the
+merge that lands them, these files are the immutable ones (a later change is
+a new file, as the rule says).
+
+| Domain | Files, in order |
+|---|---|
+| `ext` | `0001_schema_and_roles` (schema, the runtime role pairs guarded by existence, default privileges) · `0002_openehr_functions` (the `IMMUTABLE`/`STABLE` helpers, `LANGUAGE sql`, no exception blocks) · `0003_tenant_context` (`current_tenant_id`, `default_tenant_or_refuse`) · `0004_posture` (`posture`, `stamp_posture`) |
+| `clinical` | `0001_schema_and_grants_baseline` (schema, search-path notes, the barrier revokes) · `0002_tenant` (the tenant registry) · `0003_ehr` (`ehr`, the subject pseudonym guard) · `0004_change_control` (`commit_audit`, `contribution`, `version` partitioned by tier, `vo_head`, `vo_attestation`) · `0005_node` (the nested-set table partitioned by tier, its indexes) · `0006_folders_and_tags` (`ehr_folder`, `item_tag`) · `0007_definitions` (`template_ref`, `template_store`, `archetype_store`, `adl2_artefact`, `stored_query`) · `0008_restriction_and_retention` (`restriction`, `retention_policy`, `retention_anchor`, the `retention_due` view) · `0009_outbox` (`event_outbox`, `event_outbox_reader`, `event_subscription`) · `0010_integrations` (`fhir_mapping`, `blob_ref`) · `0011_row_level_security` (`ENABLE`/`FORCE` and the `tenant_isolation` policy on every tenant table, in one place) · `0012_grants` (per-role grants over the finished relations) |
+| `party` | `0001_schema_and_grants_baseline` · `0002_change_control` · `0003_node` · `0004_identifiers` (`identifier_scheme`, `national_identifier`, the sealed-value resolver) · `0005_relationships` (`party_relationship_target`) · `0006_outbox` · `0007_row_level_security` · `0008_grants` |
+| `linkage` | `0001_schema_and_role` · `0002_subject_ehr` (the temporal map) · `0003_erase_ehr` (the definer function) · `0004_row_level_security_and_grants` |
+| `audit` | `0001_schema_and_roles` · `0002_audit_event` · `0003_tamper_chain` (the hash chain, its triggers and functions) · `0004_access_fields` (domain, purpose, legal basis, organisation, roles, origins) · `0005_retention` (floor and ceiling readers) |
+| `research` | `0001_schema_and_roles` · `0002_permit` · `0003_read_model_cursor` · `0004_leaf_projection` · `0005_row_level_security_and_grants` |
+
+Two rules keep the layout honest: a file carries the tables of one concern
+and the indexes and comments that belong to them, never a grant or a policy
+(those live in the two files named for them, so the catalog sweep and the
+boot gate have one file to read per domain); and the numbering is per domain
+with no gaps, so `_sqlx_migrations` reads as the table of contents.
 
 ### What breaks, and how a deployment is told
 
@@ -770,7 +798,7 @@ reader (D2). Sequencing is expressed as native `blocked-by` edges, set with
 | Key | Issue | Milestone | Blocked by | Acceptance (summary; the issue carries the full list) |
 |---|---|---|---|---|
 | D1 (#3340) | docs(storage): the storage pages and migration comments describe `JSON_TABLE`, GIN pre-filters and a GiST serialisation the code and the PostgreSQL docs do not carry | v4.3.0 | | every claim in research report 1 §17 #1, #4, #5, #6, #7 is corrected or removed in `docs/architecture.md`, `docs/postgres-features.md`, `website/book/src/concepts/storage.md`, `.claude/rules/aql-engine.md`, `CLAUDE.md`; migration comments are left as shipped (immutability) and the corrections name them |
-| S1 (#3342) | feat(storage): the clinical schema rewritten: append-only `version`, `vo_head`, tier-partitioned `version`/`node`/`vo_attestation`, `name_code`/`name_terminology` | v4.3.1 | D1 | `clinical/0001_baseline.sql` from a DDL template, the `ehr` set deleted, an old database refused at boot, the immutability guard re-declared; write path with the HOT head update and no close-out; every read path (point, at-time, by-id, revision history, directory at time, AQL LATEST_VERSION/ALL_VERSIONS, exports, dump) on the new relations; the FK-cascade row-movement and RLS-on-partition proofs as tests; `stable_compatible` gate moved; CNF baseline green on gen-2 |
+| S1 (#3342) | feat(storage): the clinical schema rewritten: append-only `version`, `vo_head`, tier-partitioned `version`/`node`/`vo_attestation`, `name_code`/`name_terminology` | v4.3.1 | D1 | the `clinical` set as natural files from a DDL template (§Migration set layout), the `ehr` set deleted, an old database refused at boot, the immutability guard re-declared; write path with the HOT head update and no close-out; every read path (point, at-time, by-id, revision history, directory at time, AQL LATEST_VERSION/ALL_VERSIONS, exports, dump) on the new relations; the FK-cascade row-movement and RLS-on-partition proofs as tests; `stable_compatible` gate moved; CNF baseline green on gen-2 |
 | S2 (#3343) | feat(config): one pool and DSN per pseudonymisation domain | v4.3.1 | | `[storage.<domain>]` with `url`/`url_file` per domain defaulting to the shared DSN; five pools; `verify_domain_isolation` extended to refuse a shared role across DSNs and to refuse MISSING roles under the production deployment profile (today a missing role is skipped, so dev and compose enforce nothing); Helm `database.<domain>.*`; compose unchanged by default; `config check` reports the layout; book pages |
 | S3 (#3344) | feat(storage): the party domain on the generation-2 template, `party_relationship_target`, cold as a partition | v4.3.1 | S1 | `party/0001_baseline.sql` generated from the same template as clinical (a test proves the two differ only in the CHECK that refuses the other's kinds); `reverse_relationships` served from the index table; `cold_demographic` retired |
 | S4 (#3345) | feat(linkage): `subject_ehr` absorbs `ehr_index` and the subject-proxy subject columns; `erase_ehr` | v4.3.1 | S2 | the SM `I_EHR_INDEX` calls served from linkage through the linkage pool; no subject identifier column remains in `clinical` other than the guarded `ehr.subject_id`; `linkage.erase_ehr` executable by the linkage role without table `DELETE`; the boot gate covers the new function |
