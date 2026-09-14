@@ -181,6 +181,10 @@ harness = false
 name = "validation"
 harness = false
 
+[[bench]]
+name = "storage"
+harness = false
+
 [lints]
 workspace = true
 

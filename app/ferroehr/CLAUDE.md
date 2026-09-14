@@ -55,13 +55,23 @@ module.**
   (`tools/testkit`; template-clone per test). Never start a per-test PG container
   or run migrations in a test. Cluster-global objects a test must create (login
   roles) are named off the clone db name so the testkit sweep reaps them.
-- **Benches** (`benches/aql.rs`, criterion, `harness = false`): every bench
+- **Benches** (`benches/aql.rs`, `benches/validation.rs`, `benches/storage.rs`;
+  criterion, `harness = false`): every bench
   emits a CPU flamegraph under `--profile-time`
   (`cargo bench -p ferroehr --bench aql -- --profile-time 10` →
   `target/criterion/<bench>/profile/flamegraph.svg`). New benches copy that
   file's `criterion::profiler::Profiler`-over-`pprof` impl — never enable
   pprof's own `criterion` feature (pinned to criterion ^0.5, incompatible
   with our 0.8). Profiling how-to: the `/flamegraph` skill.
+  `benches/storage.rs` is the storage harness (#3367): it takes a testkit
+  database, seeds a corpus sized by `STORAGE_BENCH_CLASS` (`poc`/`s`) behind one
+  `seed()` seam, times commit/supersession, point reads, `version_at_time`,
+  revision history, `If-Match`, AQL CONTAINS, archive/restore and one prune, and
+  writes a JSON record with the database-side facts to
+  `docs/benchmarks/storage/<generation>/`. It drives everything through
+  `FerroEhrService` and the public storage API and discovers relations through
+  `pg_stat_user_tables`, never a table name, so it measures a rewritten schema
+  unchanged. A benchmark, never a conformance record.
 - **One integration-test binary:** `tests/it/main.rs` + one `mod` per topic
   file; `tests/resources/` holds the shared fixtures (paths are anchored at
   `CARGO_MANIFEST_DIR`). A new suite is a module registered in `main.rs`, never

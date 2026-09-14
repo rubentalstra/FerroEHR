@@ -1,0 +1,156 @@
+# Storage benchmark records
+
+`app/ferroehr/benches/storage.rs` writes one record per run, at
+`docs/benchmarks/storage/<schema-generation>/record.json`. It exists so a
+storage change is argued from a before/after pair taken with the same
+instrument, rather than from a claim: the harness drives the operations through
+`FerroEhrService` and the public `ferroehr::storage` / `ferroehr::versioning`
+surface and reads its database-side facts for whatever relations the catalogue
+reports, so the same file measures a rewritten schema unchanged.
+
+**A benchmark, not a conformance record.** Conformance is the CNF 2.0 suite
+[Veredictum](https://github.com/rubentalstra/Veredictum) runs, and its artifacts
+live under `docs/conformance/<sut>/` — including the earned performance classes.
+Nothing here earns a class, nothing here belongs beside `results.json`, and this
+directory sits outside `docs/conformance/` on purpose. No openEHR specification
+governs storage layout or benchmarking: this is our own design.
+
+## Running it
+
+```bash
+# the default class: a small corpus, minutes
+STORAGE_BENCH_CLASS=poc cargo bench -p ferroehr --bench storage
+
+# the larger class
+STORAGE_BENCH_CLASS=s cargo bench -p ferroehr --bench storage
+
+# CPU flamegraphs instead of timings (criterion measures nothing in this mode,
+# so no record is written and an existing one is left intact)
+cargo bench -p ferroehr --bench storage -- --profile-time 10
+```
+
+The database comes from the shared testkit harness (`testkit::db()`), so the
+run needs the same PostgreSQL 18 container the test suite uses and nothing else.
+
+## The shape
+
+```json
+{
+  "schema_generation": "generation-1",
+  "postgres_version": "PostgreSQL 18.6 …",
+  "bench_class": "poc",
+  "cpu_count": 10,
+  "memory_bytes": 34359738368,
+  "measured_at_commit": "…",
+  "measured_at": "2026-09-14T…Z",
+  "timings_measured": true,
+  "seed": { "ehrs": 20, "compositions": 300, "template_id": "…",
+            "entry_rm_type": "OBSERVATION", "seconds": 0.0 },
+  "groups": [
+    { "name": "storage_commit",
+      "operations": [
+        { "name": "create_first_version",
+          "iterations": 0, "samples": 10,
+          "mean_ns": 0.0, "median_ns": 0.0,
+          "p50_ns": 0.0, "p95_ns": 0.0, "p99_ns": 0.0,
+          "database": {
+            "tables": [ { "relation": "public.…",
+                          "n_tup_ins_delta": 0, "n_tup_upd_delta": 0,
+                          "n_tup_hot_upd_delta": 0, "n_tup_del_delta": 0,
+                          "n_live_tup": 0, "n_dead_tup": 0,
+                          "total_bytes": 0 } ],
+            "blks_hit_delta": 0, "blks_read_delta": 0,
+            "xact_commit_delta": 0, "wal_bytes": 0 } } ] } ],
+  "commit_probe": { "operation": "create_composition", "commits": 1,
+                    "database": { "…": "as above" } },
+  "explain": { "statement": "SELECT …", "node_type": "…",
+               "actual_total_ms": 0.0, "rows": 0,
+               "shared_hit_blocks": 0, "shared_read_blocks": 0,
+               "wal_bytes": 0, "wal_records": 0, "index_names": [] },
+  "relations": [ { "relation": "public.…", "n_live_tup": 0, "n_dead_tup": 0,
+                   "n_tup_upd": 0, "n_tup_hot_upd": 0, "total_bytes": 0 } ]
+}
+```
+
+### Header
+
+`schema_generation` is `ext.storage_generation()` where the schema declares
+one, `STORAGE_BENCH_GENERATION` where a schema does not, and `generation-1`
+otherwise — it is the directory the record lands in, so two generations of the
+same schema never overwrite each other. `postgres_version` is the server's own
+`version()`, `measured_at_commit` the working tree's HEAD, and `cpu_count` /
+`memory_bytes` the machine. A record is meaningful only with all four: the same
+code measures differently on different hardware, which is the same rule the
+performance classes carry.
+
+`timings_measured` is true only when every operation in the record carries
+samples. A filtered run (`cargo bench … -- storage_read`) measures some of them
+and says so.
+
+### Operations
+
+One entry per benched operation, in four groups: `storage_commit` (a first
+version, a blind supersession, and the `If-Match` supersession that states the
+version it replaces), `storage_read` (by version uid, by versioned-object uid,
+`version_at_time`, the revision history), `storage_query` (the CONTAINS chain
+over one EHR and over the population), and `storage_lifecycle` (archive and
+restore of one EHR, and one retention prune).
+
+`iterations` is how many times the routine ran across every sample;
+`mean_ns` / `median_ns` are criterion's own point estimates; the percentiles are
+nearest-rank over criterion's per-sample nanoseconds-per-iteration, so a
+published figure does not depend on a rounding mode.
+
+### Database facts
+
+`database` is attributed per operation: the counters are read immediately before
+and after that benchmark, and only the relations the operation actually touched
+appear. The instruments are the ones the PostgreSQL documentation names —
+`pg_stat_user_tables` (`n_tup_ins`, `n_tup_upd`, `n_tup_hot_upd`, `n_tup_del`,
+`n_live_tup`, `n_dead_tup`), `pg_total_relation_size`, `pg_stat_database`
+(`blks_hit`, `blks_read`), and the WAL position (`pg_current_wal_lsn`,
+`pg_wal_lsn_diff`). A counter read waits out the statistics flush interval
+first, because a backend's pending counts reach shared memory when its
+transaction ends and at most once a second; a WAL figure an unprivileged role
+may not read is absent rather than zero.
+
+`commit_probe` is one representative commit on its own: the WAL it writes and
+the buffers it touches. It is measured around a real `create_composition` rather
+than by `EXPLAIN (ANALYZE, WAL)`, because the commit runs inside the service's
+own transaction and the public API hands out no statement to explain.
+
+`explain` is `EXPLAIN (ANALYZE, BUFFERS, WAL, FORMAT JSON)` of the population
+CONTAINS statement, run inside a transaction that is rolled back, summarised to
+the top node's shape, timing, buffers and the index names anywhere in its tree —
+a whole plan is hundreds of lines of noise a week later.
+
+`relations` closes the record with every relation the run put rows into: its
+size, its live and dead tuple estimates, and its update-versus-HOT-update
+counts. That is where the version and node relations' `pg_total_relation_size`
+and bloat are read.
+
+## What is committed
+
+Records are gitignored by default (`.gitignore` beside this file), for the same
+reason the deployment records under `docs/conformance/deployment/` are: a record
+measures one machine on one day, and a directory of them invites comparison
+between runs that measured different systems.
+
+The exception is deliberate: the pre-rewrite **baseline** is committed, because
+the whole point of the instrument is a before/after pair. Commit one with
+
+```bash
+git add -f docs/benchmarks/storage/<generation>/record.json
+```
+
+and say in the commit which machine it was taken on. A tracked record stays
+tracked — the ignore rule only keeps the untracked ones out of `git status`.
+
+## Where the numbers are published
+
+Nowhere by hand. `scripts/render/storage-bench.sh` renders the committed records
+into `website/book/generated/storage-bench.md`, which
+`website/book/src/performance.md` includes; the stale-numbers gate
+(`scripts/checks/conformance-numbers.sh`) refuses a hand-typed latency in the
+site sources. With no record committed the generated page says so, rather than
+carrying a number from somewhere else.

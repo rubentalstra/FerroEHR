@@ -67,3 +67,13 @@ cohort-query benchmark record — how the demographic predicate and the clinical
 statement behave as the cohort grows — produced by the ignored `cohort_bench`
 test (`COHORT_BENCH_N=100000 cargo nextest run -p ferroehr -E 'test(cohort_bench)'
 --run-ignored all`); it is a measurement, never a conformance record.
+
+- `benchmarks/` — benchmark records, which are deliberately NOT under
+  `conformance/`: conformance is the CNF 2.0 suite
+  [Veredictum](https://github.com/rubentalstra/Veredictum) runs.
+  `benchmarks/storage/<schema-generation>/record.json` is the storage
+  harness's record (`cargo bench -p ferroehr --bench storage`): per-operation
+  latencies for the write path, the point reads, AQL CONTAINS, archive/restore
+  and prune, with the database-side facts beside them. Records are gitignored
+  except a deliberately committed baseline; the shape is documented in
+  `benchmarks/storage/README.md`.

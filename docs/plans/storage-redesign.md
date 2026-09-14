@@ -775,7 +775,7 @@ comparison exists before the rewrite lands:
 
 | Issue | What it delivers | Sequencing |
 |---|---|---|
-| #3367 | the storage benchmark harness (`benches/storage.rs`, criterion over a testkit database): commit and supersession, point reads, `version_at_time`, revision history, `If-Match`, AQL CONTAINS over one EHR and the population, archive, restore, prune; database-side facts (`n_tup_hot_upd`, `n_dead_tup`, WAL bytes, buffer hits) beside wall-clock; a comparable JSON record under `docs/conformance/storage/<generation>/` | first |
+| #3367 | the storage benchmark harness (`benches/storage.rs`, criterion over a testkit database): commit and supersession, point reads, `version_at_time`, revision history, `If-Match`, AQL CONTAINS over one EHR and the population, archive, restore, prune; database-side facts (`n_tup_hot_upd`, `n_dead_tup`, WAL bytes, buffer hits) beside wall-clock; a comparable JSON record under `docs/benchmarks/storage/<generation>/` (a benchmark, not a conformance artifact) | first |
 | #3368 | the pre-rewrite baseline: the harness and the conformance instrument (class S, `aql-probe`) recorded for the current schema | blocks #3342 |
 | #3369 | plan-shape tests: `EXPLAIN (ANALYZE, BUFFERS)` in a rolled-back transaction pins the node type, index and partition of every hot path, in the ordinary test battery | after #3342 |
 | #3350 | the after-rewrite comparison: H1-H11 against the baseline, no hot path slower beyond the stated tolerance, the partitioning and GIN alternatives decided | after #3342, #3367, #3368 |
