@@ -33,13 +33,26 @@ use it). **Not sea-orm.** Target PostgreSQL 18.6+.
   adding a constraint, backfilling a column, correcting a defect in an earlier
   migration: each is a new `sqlx migrate add` file that carries the change
   forward. A migration that was wrong is superseded, never rewritten.
+- **A SET is retired whole, or not at all.** The one change that is not an
+  edit is withdrawing a whole migration set, and it is only safe in one shape:
+  every file of `app/ferroehr/migrations/<schema>/` goes, so no half-set
+  survives for a database to apply against, and `<schema>` is named in
+  `FIRST_GENERATION_SCHEMAS` (`app/ferroehr/src/db/mod.rs`) in the same change,
+  so a database carrying that schema's migration bookkeeping is refused at boot
+  by name, with the remedy. An installation is then TOLD what happened instead
+  of being locked out by a checksum it cannot interpret. A single-file edit, a
+  rename, a partial deletion, and a whole-set deletion the boot refusal does
+  not name all stay refused.
 - Enforcement (tier 4): `scripts/checks/migration-immutability.sh`, run by the
   `migration-immutability` CI job over the pull request's diff against its
-  merge base. It fails on any modification, rename or deletion under
+  merge base. It fails on any modification, rename or partial deletion under
   `app/ferroehr/migrations/`; an added file passes, and so does further work
   on a file this branch itself added, because the comparison is against the
-  base. **There is deliberately no escape-hatch label:** the checksum makes
-  the rule absolute, so an exception would only ever be a broken deployment.
+  base. The whole-set retirement above is accepted only when the guard can
+  verify BOTH halves itself — the empty directory at head and the schema named
+  in that const — so the acceptance cannot be claimed by a comment. **There is
+  deliberately no escape-hatch label:** the checksum makes the rule absolute,
+  so an exception would only ever be a broken deployment.
 - Create migrations with the official CLI only:
   `sqlx migrate add --source app/ferroehr/migrations/<schema> --sequential <desc>`,
   written as modern PG 18 SQL (`uuidv7()`, temporal `WITHOUT OVERLAPS`,
