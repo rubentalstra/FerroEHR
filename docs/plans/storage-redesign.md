@@ -191,7 +191,7 @@ flowchart LR
   svc -- DSN 2 --> party
   svc -- DSN 3 --> linkage
   svc -- DSN 4 --> audit
-  svc -- outbox · batch export --> bridge
+  svc -- AQL over ITS-REST, in batches --> bridge
   svc -. never joins across .-> linkage
 ```
 
@@ -887,7 +887,7 @@ Existing issues re-pointed rather than duplicated:
   (synthgen) is re-parented under #3337 as the benchmark and seeding corpus.
   **#3160** (their parent) is closed as superseded by #3379. **#3325** (the
   research objection) stays in v4.3.1 as a mark the restriction register
-  carries and the export honours, `blocked-by S1`.
+  carries and AQL honours, `blocked-by S1`.
 - **#3330** (outbox pruning ignores cursor readers) is unchanged and stays in
   v4.3.0; the plan depends on its `min(cursor)` floor.
 - **#3323** (EHR_ACCESS default) is untouched by storage; it stays with #3322.
