@@ -58,10 +58,14 @@ const LIST_FIXTURE: &str = "minimal_action2.opt";
 /// The template id of [`LIST_FIXTURE`].
 const LIST_TEMPLATE_ID: &str = "Minimal action 2";
 
-/// A second unused fixture OPT, deleted from the DETAIL screen.
-const DETAIL_FIXTURE: &str = "minimal_instruction.opt";
+/// A second fixture OPT, deleted from the DETAIL screen. It must be one no other
+/// journey commits compositions under: the CDR refuses to delete a template in
+/// use (a 409), so a shared fixture made the outcome depend on run order on a
+/// reused stack (#3335). `minimal_instruction` is the authoring journeys'
+/// template; this one is nobody else's.
+const DETAIL_FIXTURE: &str = "minimal_action3.opt";
 /// The template id of [`DETAIL_FIXTURE`].
-const DETAIL_TEMPLATE_ID: &str = "minimal_instruction.en.v1";
+const DETAIL_TEMPLATE_ID: &str = "minimal_action_3.en.v1";
 
 /// The namespace half of the qualified stored-query name this battery saves.
 /// It is typed into its OWN field and is what the viewer groups by (a query's
