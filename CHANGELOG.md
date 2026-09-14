@@ -15,6 +15,44 @@ workflow refuses a tag that has no matching section here.
 
 ## [Unreleased]
 
+### Changed
+
+- **BREAKING — the storage schema is rewritten, and a database created by an
+  earlier release must be recreated** (#3342, #3344). The rewrite is greenfield
+  (owner ruling 2026-09-14): the new migration sets replace the old ones
+  outright, nothing is upgraded in place, and the server refuses at boot a
+  database whose migration record predates the rewrite. Take a dump of anything
+  worth keeping before upgrading, recreate the database, and let the server
+  migrate it. What changed, and why:
+  - The `ehr` schema becomes `clinical` and `demographic` becomes `party`, each
+    laid out as a sequence of natural migration files with one concern apiece
+    rather than one squashed baseline.
+  - `version` is append-only: it carries no validity interval, so a
+    supersession writes no close-out statement, and the validity of a version
+    is derived from its `committed_at`. One mutable `vo_head` row per versioned
+    object answers "what is current", and none of the columns a commit updates
+    appears in an index, so that update is heap-only.
+  - `version`, `node` and `vo_attestation` are partitioned by storage tier, so
+    archiving an EHR is row movement inside one relation set — the `cold` and
+    `cold_demographic` mirror schemas and every `*_all` union view are gone,
+    and a foreign key now holds across the tier.
+  - `node` gains the promoted `name_code` and `name_terminology` the AQL node
+    predicate needs, and drops the unread `citem_num`.
+  - The clinical and party change-control and node relations are rendered from
+    one shared DDL template, so the two domains cannot drift.
+  - The party domain gains `party_relationship_target`, the target-side index
+    behind `PARTY.reverse_relationships`.
+
+### Removed
+
+- **Multi-tenancy** (#3378). Multi-tenancy is achieved by running separate
+  instances: one instance, one database, one set of domain roles per
+  organisation. No relation carries a tenant column, no row policy or session
+  GUC scopes a read, and the `[tenancy]` configuration, the tenant middleware,
+  the `/admin/tenant` routes and the Helm and compose tenancy keys are gone.
+  The pseudonymisation domains and their role barriers are unrelated to tenancy
+  and stay.
+
 ## [4.3.0] - 2026-09-14
 
 ### Added

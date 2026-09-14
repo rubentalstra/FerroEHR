@@ -41,6 +41,7 @@
 //! consuming [`version_repo::read::StoredVersion`] on read.
 
 pub mod codec;
+pub mod ddl_template;
 pub mod ehr_repo;
 pub mod error;
 pub mod node_repo;
