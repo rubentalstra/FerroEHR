@@ -56,11 +56,6 @@ served OpenAPI documents](img/system/system-dark.png)
 ![The audit browser in dark mode: the ATNA trail with its event-time, patient
 and outcome filters](img/audit/audit-dark.png)
 
-## Tenants
-
-![The tenant registry in dark mode: the registered tenants and the tenant this
-session resolves to](img/tenants/tenants-dark.png)
-
 ## Subscriptions
 
 ![The event subscriptions screen in dark mode: the subscription table and its

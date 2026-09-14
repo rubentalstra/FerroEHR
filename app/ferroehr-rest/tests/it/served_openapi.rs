@@ -1303,8 +1303,8 @@ async fn admin_extension_operations_are_flagged_as_an_extension() {
     let doc = served_document().await;
 
     // The three routes of the ADMIN group that no released operation governs
-    // (the other `/admin/*` surfaces — event subscriptions, tenants — belong to
-    // their own extension groups and carry their own flags).
+    // (the other `/admin/*` surface — event subscriptions — belongs to its own
+    // extension group and carries its own flag).
     let extensions: [(String, &str); 3] = [
         (format!("{BASE}/template/{{template_id}}"), "delete"),
         (
@@ -1396,13 +1396,6 @@ const NON_SPEC_FAMILIES: &[NonSpecFamily] = &[
         prefixes: &["/ferroehr/rest/openehr/v1/admin/event_subscription"],
         flag: "no openehr spec governs this",
         operations: 5,
-    },
-    NonSpecFamily {
-        label: "the multi-tenancy extension",
-        prefixes: &["/ferroehr/rest/openehr/v1/admin/tenant"],
-        flag: "no openehr spec governs this",
-        // CRUD + the caller's resolved-tenant read (#312).
-        operations: 6,
     },
     NonSpecFamily {
         label: "the FHIR R4 connector + read facade",

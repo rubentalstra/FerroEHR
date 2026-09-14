@@ -192,9 +192,11 @@ mod tests {
                 kind.as_str()
             );
             for forbidden in [
-                "demographic.",
+                "clinical.",
+                "party.",
                 "linkage.",
                 "ehr.",
+                "demographic.",
                 "party_ehr",
                 "openehr-ehr-",
             ] {

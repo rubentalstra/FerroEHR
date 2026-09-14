@@ -14,7 +14,7 @@ gate), `router`, `state`, `formats`
 (content negotiation), `overview`, `overload` (shed), `config`, `system_log`
 (ATNA audit middleware), `smart` (SMART App Launch resource-server role), and
 `extensions` (`access` = the RBAC/ABAC authn+authz PEP, plus health / fhir /
-terminology / management / tenant / event-subscription surfaces). Entry point:
+terminology / management / event-subscription surfaces). Entry point:
 `serve_full`.
 
 - **The health family is always-on and ungated** (`extensions::health`:
@@ -41,7 +41,7 @@ terminology / management / tenant / event-subscription surfaces). Entry point:
   `src/rest/generated/` in `openehr-its`.
 - **Authz/authn** live in `extensions::access` (`authn/` = Basic + JWT;
   `authz/` = the RBAC/ABAC engine, incl. a `cedar` policy path; `pep.rs` = the
-  policy-enforcement point; `ehr_access.rs`, `tenant.rs`). Use the pinned crates
+  policy-enforcement point; `ehr_access.rs`). Use the pinned crates
   (`jsonwebtoken`, `oauth2`, `openidconnect`, `argon2`) — never hand-rolled.
   401 (unauthenticated) vs 403 (unauthorized) per ITS-REST. Rules:
   `.claude/rules/auth.md`.

@@ -28,7 +28,7 @@
 //! from an external identity to an EHR, and it crosses at the APPLICATION
 //! layer over TWO pools, never inside one statement. It asks
 //! [`FerroEhrService::resolve_party_by_identifier`] — the demographic pool,
-//! through `demographic.resolve_national_identifier`, which matches a keyed
+//! through `party.resolve_national_identifier`, which matches a keyed
 //! digest and never decrypts — for the party, and then asks the linkage pool
 //! for that party's EHR. Two connections, two search paths, and under
 //! `[db].demographic_url` + `[db].linkage_url` two database roles, each

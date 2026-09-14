@@ -332,9 +332,6 @@ const ADMIN_READ: &[(&str, &str)] = &[
     ("GET", "/admin/report/contribution/count"),
     ("GET", "/admin/report/composition_version/count"),
     ("GET", "/admin/report/versioned_composition/count"),
-    ("GET", "/admin/tenant"),
-    ("GET", "/admin/tenant/current"),
-    ("GET", "/admin/tenant/{tenant_id}"),
     ("GET", "/admin/event_subscription"),
     ("GET", "/admin/event_subscription/{subscription_id}"),
     ("GET", "/admin/fhir_mapping"),
@@ -368,9 +365,6 @@ const ADMIN_WRITE: &[(&str, &str)] = &[
     // REPLACES stored rows, so it stays out of EXTENSION_READ_ROUTES and a
     // read-only server refuses it (#3143).
     ("POST", "/admin/integrity/rebuild-nodes"),
-    ("POST", "/admin/tenant"),
-    ("PUT", "/admin/tenant/{tenant_id}"),
-    ("DELETE", "/admin/tenant/{tenant_id}"),
     ("POST", "/admin/event_subscription"),
     ("PUT", "/admin/event_subscription/{subscription_id}"),
     ("DELETE", "/admin/event_subscription/{subscription_id}"),

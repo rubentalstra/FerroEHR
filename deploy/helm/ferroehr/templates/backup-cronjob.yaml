@@ -25,17 +25,17 @@ than a set of parallel edits that can silently disagree.
             "schedule" .Values.backup.clinical.schedule
             "claim" .Values.backup.clinical.persistentVolumeClaim
             "secret" .Values.backup.clinical.existingSecret
-            "schemas" (list "ehr" "cold" "ext" "audit")
+            "schemas" (list "clinical" "ext" "audit")
             "extensions" (list)
-            "claimWhy" "name an EXISTING PersistentVolumeClaim for the clinical dump (schemas ehr, cold, ext, audit). The chart provisions no storage — a dump with nowhere to write is a backup that silently does not exist."
+            "claimWhy" "name an EXISTING PersistentVolumeClaim for the clinical dump (schemas clinical, ext, audit). The chart provisions no storage — a dump with nowhere to write is a backup that silently does not exist."
             "secretWhy" "name a Secret holding a BACKUP DSN for the clinical domain — a read-only role on clinical, ext and audit. It cannot be the pool's credential: each domain's runtime role is revoked from the others, so a dump taken through it would be silently partial.")
       (dict "name" "demographic"
             "schedule" .Values.backup.demographic.schedule
             "claim" .Values.backup.demographic.persistentVolumeClaim
             "secret" .Values.backup.demographic.existingSecret
-            "schemas" (list "demographic" "cold_demographic")
+            "schemas" (list "party")
             "extensions" (list)
-            "claimWhy" "name an EXISTING PersistentVolumeClaim for the demographic dump (schemas demographic, cold_demographic). It must be a different volume from every other domain's — that separation is what this feature is for (GDPR Art. 4(5))."
+            "claimWhy" "name an EXISTING PersistentVolumeClaim for the demographic dump (schema party). It must be a different volume from every other domain's — that separation is what this feature is for (GDPR Art. 4(5))."
             "secretWhy" "name a Secret holding a BACKUP DSN for the party domain — a read-only role on party. Give it its own role, not the clinical backup one: a single credential that dumps two domains re-joins in one identity what the split exists to separate (GDPR Art. 4(5)).")
       (dict "name" "linkage"
             "schedule" .Values.backup.linkage.schedule

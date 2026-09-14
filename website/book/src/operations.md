@@ -32,11 +32,11 @@ record, the identity of its subject, and the map between the two:
 
 | Role | Reads and writes | Barred from |
 |---|---|---|
-| `ferroehr_ehr` | `ehr` + its `cold` archival tier | `demographic`, `cold_demographic`, `linkage` |
-| `ferroehr_demographic` | `demographic` + its `cold_demographic` tier | `ehr`, `cold`, `linkage` |
-| `ferroehr_ehr_reader` | read-only over `ehr` + `cold` | `demographic`, `cold_demographic`, `linkage` |
-| `ferroehr_demographic_reader` | read-only over `demographic` + `cold_demographic` | `ehr`, `cold`, `linkage` |
-| `ferroehr_linkage` | `linkage` (the party-to-EHR map) | `ehr`, `cold`, `demographic`, `cold_demographic` |
+| `ferroehr_ehr` | `clinical`, archival tier included | `party`, `linkage` |
+| `ferroehr_demographic` | `party`, archival tier included | `clinical`, `linkage` |
+| `ferroehr_ehr_reader` | read-only over `clinical` | `party`, `linkage` |
+| `ferroehr_demographic_reader` | read-only over `party` | `clinical`, `linkage` |
+| `ferroehr_linkage` | `linkage` (the party-to-EHR map) | `clinical`, `party` |
 
 The migrations create these roles idempotently, apply the per-schema grants,
 **and revoke every other domain explicitly in both directions**, and revoke the
@@ -171,7 +171,7 @@ forwarded, run the retention reaper, verify the chain) and to
 single-domain pair holds there. A clinical login role that is a member of
 `ferroehr_ehr` alone writes its own access log; no extra membership is needed.
 The audit trail is not a pseudonymisation domain, so this grant adds no reach
-into `demographic`, `cold_demographic` or `linkage`.
+into `party` or `linkage`.
 
 The compose stacks create all five and grant the clinical and demographic
 domains to the single dev login role, which owns the database. That
@@ -311,44 +311,26 @@ below.
 A wipe that removes *some* of the server's schemas is not a fresh start, and the
 server refuses to migrate over one rather than doing something plausible with it.
 
-The server owns seven schemas: `ext`, `ehr`, `cold`, `demographic`,
-`cold_demographic`, `linkage` and `audit`. A fresh start drops all seven. The
-clinical content lives in `ehr`, but its cold archival tier lives in its own
-`cold` schema, so `DROP SCHEMA ehr CASCADE` (a restore gone wrong, a recreated
-volume, a wiped test database) takes the primary tier and the migration
-bookkeeping and **leaves the archived clinical rows standing**. On the next boot
-you get:
+The server owns five schemas: `ext`, `clinical`, `party`, `linkage` and `audit`.
+A fresh start drops all five. Each domain's cold archival tier is a **partition**
+of the relation it archives, inside that domain's own schema, so a
+`DROP SCHEMA clinical CASCADE` takes the archived rows with the live ones. There
+is no separate mirror schema left to survive a wipe of the tier it mirrors.
+
+Dropping the clinical schemas (`clinical`, `ext`, `audit`) while `party` and
+`linkage` survive is a supported reset: the clinical migration set rebuilds its
+schema on the next boot.
+
+A database written by a release before the storage rewrite is refused outright:
 
 ```text
-migration: the cold archival tier (schema `cold`) is present but the primary tier
-(`ehr.vo_version`) is not: the two are one repository and have been wiped apart.
+this database predates the storage rewrite: schema `ehr` carries its own
+migration bookkeeping, which only a release before the rewrite wrote.
 ```
 
-The refusal is deliberate. Those mirror tables were created from the primary
-tables as they stood when archiving was set up, so silently adopting a survivor
-could leave the archive tier a different shape from the tier it mirrors, and
-its rows are clinical content belonging to a repository that no longer exists.
-Two remedies, and which one applies is your call, not the server's:
-
-- **The data mattered.** Restore the whole database from backup, both schemas
-  together, since they are one repository. Do not try to graft the surviving
-  `cold` tables onto a fresh schema; their `ehr`, `contribution` and `audit`
-  parents are gone, so they are fragments, not a recoverable archive.
-- **The wipe was intended** (a test database, a recreated volume). Then
-  `DROP SCHEMA cold CASCADE` and start the server again; it migrates from
-  scratch.
-
-The reverse partial wipe (dropping `cold` while `ehr` survives) is not caught at
-boot, because the migration bookkeeping still records the archival tier as applied.
-
-Dropping the four clinical schemas (`ehr`, `cold`, `ext`, `audit`) while
-`demographic` and `linkage` survive is a supported reset: the clinical migration
-set rebuilds its schema, including the three `ehr.cold_*` alias views the
-demographic baseline created, so updates work again after the boot. Releases
-before 4.2.2 came back from that wipe without the views and answered `500` on
-every composition or `EHR_STATUS` update; upgrading applies the repair.
-It surfaces the first time an archive, restore or whole-repository export runs.
-Restore from backup; there is no forward path that invents the archived rows back.
+The new migration sets replace the old ones rather than upgrading them, so there
+is no in-place path. Dump anything worth keeping, recreate the database, and
+start the server against it.
 
 > [!TIP]
 > When you wipe a FerroEHR database deliberately, drop the **database**, not a
@@ -390,12 +372,12 @@ access control:
 ```bash
 # The clinical domain
 pg_dump --dbname="$CLINICAL_DSN" --format=custom --no-owner \
-  --schema=ehr --schema=cold --schema=ext --schema=audit \
+  --schema=clinical --schema=ext --schema=audit \
   --file=/backups/clinical/clinical-$(date -u +%Y%m%dT%H%M%SZ).dump
 
 # The identities, into a different directory, owned by a different group
 pg_dump --dbname="$DEMOGRAPHIC_DSN" --format=custom --no-owner \
-  --schema=demographic --schema=cold_demographic \
+  --schema=party \
   --file=/backups/demographic/demographic-$(date -u +%Y%m%dT%H%M%SZ).dump
 
 # The party-to-EHR map, into a third directory with the narrowest audience

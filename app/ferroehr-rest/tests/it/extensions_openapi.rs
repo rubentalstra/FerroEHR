@@ -104,7 +104,6 @@ fn extensions_doc_is_non_empty() {
         "/ferroehr/rest/openehr/v1/terminology",
         "/ferroehr/rest/openehr/v1/demographic/party_relationship",
         "/ferroehr/rest/openehr/v1/admin/event_subscription",
-        "/ferroehr/rest/openehr/v1/admin/tenant",
         "/ferroehr/rest/openehr/v1/fhir/r4/{resource_type}",
     ] {
         assert!(

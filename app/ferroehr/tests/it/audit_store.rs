@@ -13,7 +13,6 @@
 
 use jiff::Timestamp;
 use sqlx::Row;
-use uuid::Uuid;
 
 use ferroehr::system_log::event::{
     AccessDomain, AuditEvent, EventActionCode, EventOutcome, EventType, ObjectClass,

@@ -1422,7 +1422,7 @@ metadata:
   name: ferroehr-backup-clinical
   annotations:
     kubernetes.io/description: >-
-      Logical backup of the clinical pseudonymisation domain: pg_dump of ehr, cold, ext, audit into the ferroehr-backup-clinical claim, under that domain's own backup DSN. Separate claim, separate credential, separate schedule from every other domain, so no one artefact carries two of the clinical record, the identifying data and the map between them.
+      Logical backup of the clinical pseudonymisation domain: pg_dump of clinical, ext, audit into the ferroehr-backup-clinical claim, under that domain's own backup DSN. Separate claim, separate credential, separate schedule from every other domain, so no one artefact carries two of the clinical record, the identifying data and the map between them.
   labels:
     helm.sh/chart: ferroehr-8.3.1
     app.kubernetes.io/name: ferroehr-backup-clinical
@@ -1489,7 +1489,7 @@ spec:
                 - /bin/sh
                 - -ec
               args:
-                - "pg_dump --dbname=\"$(cat /etc/ferroehr-secrets/db.url)\" --format=custom --no-owner --schema=ehr --schema=cold --schema=ext --schema=audit --file=/backup/clinical-$(date -u +%Y%m%dT%H%M%SZ).dump"
+                - "pg_dump --dbname=\"$(cat /etc/ferroehr-secrets/db.url)\" --format=custom --no-owner --schema=clinical --schema=ext --schema=audit --file=/backup/clinical-$(date -u +%Y%m%dT%H%M%SZ).dump"
               volumeMounts:
                 # readOnlyRootFilesystem=true → give the process a writable scratch dir.
                 - name: tmp
@@ -1525,7 +1525,7 @@ metadata:
   name: ferroehr-backup-demographic
   annotations:
     kubernetes.io/description: >-
-      Logical backup of the demographic pseudonymisation domain: pg_dump of demographic, cold_demographic into the ferroehr-backup-demographic claim, under that domain's own backup DSN. Separate claim, separate credential, separate schedule from every other domain, so no one artefact carries two of the clinical record, the identifying data and the map between them.
+      Logical backup of the demographic pseudonymisation domain: pg_dump of party into the ferroehr-backup-demographic claim, under that domain's own backup DSN. Separate claim, separate credential, separate schedule from every other domain, so no one artefact carries two of the clinical record, the identifying data and the map between them.
   labels:
     helm.sh/chart: ferroehr-8.3.1
     app.kubernetes.io/name: ferroehr-backup-demographic
@@ -1592,7 +1592,7 @@ spec:
                 - /bin/sh
                 - -ec
               args:
-                - "pg_dump --dbname=\"$(cat /etc/ferroehr-secrets/db.url)\" --format=custom --no-owner --schema=demographic --schema=cold_demographic --file=/backup/demographic-$(date -u +%Y%m%dT%H%M%SZ).dump"
+                - "pg_dump --dbname=\"$(cat /etc/ferroehr-secrets/db.url)\" --format=custom --no-owner --schema=party --file=/backup/demographic-$(date -u +%Y%m%dT%H%M%SZ).dump"
               volumeMounts:
                 # readOnlyRootFilesystem=true → give the process a writable scratch dir.
                 - name: tmp

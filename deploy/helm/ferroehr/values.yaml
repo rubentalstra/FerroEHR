@@ -264,9 +264,10 @@ migrations:
 # https://eur-lex.europa.eu/eli/reg/2016/679/oj), and the restore capability is
 # Art. 32(1)(c). The mechanism is `pg_dump --schema`
 # (https://www.postgresql.org/docs/18/app-pgdump.html): the clinical job dumps
-# ehr, cold, ext and audit, the demographic job dumps demographic and
-# cold_demographic, and the linkage job dumps linkage. No openEHR spec governs
-# backups — our own design/extension.
+# clinical, ext and audit, the demographic job dumps party, and the linkage job
+# dumps linkage. Each domain's archival tier is a partition inside its own
+# schema, so it travels with it. No openEHR spec governs backups — our own
+# design/extension.
 #
 # THE LINKAGE DOMAIN IS A THIRD ARTEFACT, not a place in either of the other
 # two. `linkage.party_ehr` is the map from a party to its EHR, so a dump

@@ -9,8 +9,8 @@
 //! A **single** tokio task polls the outboxes, publishes pending rows in `seq`
 //! order (a global order that trivially preserves per-EHR order), and marks
 //! each published only after the broker confirms. There are two outboxes, one
-//! per pseudonymisation domain (`ehr.event_outbox` and
-//! `demographic.event_outbox` — a demographic contribution's foreign key must
+//! per pseudonymisation domain (`clinical.event_outbox` and
+//! `party.event_outbox` — a demographic contribution's foreign key must
 //! stay inside its own schema), drained by this one task; per-EHR ordering is
 //! unaffected, because a demographic event has no EHR. On a publish failure it stops
 //! the batch — never skipping ahead — so an EHR's events keep their order, and

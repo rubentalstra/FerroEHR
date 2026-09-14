@@ -118,14 +118,19 @@ write_files:
           echo "wipe: .env names no DATABASE_URL, so there is nothing to wipe" >&2
           exit 1
         fi
+        # The first-generation schemas are dropped alongside the current ones:
+        # a box seeded before the storage rewrite still carries them, and the
+        # server refuses such a database at boot.
         docker run --rm --entrypoint psql \
           ghcr.io/rubentalstra/ferroehr-postgres:latest "$dsn" \
           -v ON_ERROR_STOP=1 \
-          -c 'DROP SCHEMA IF EXISTS ehr CASCADE' \
-          -c 'DROP SCHEMA IF EXISTS demographic CASCADE' \
+          -c 'DROP SCHEMA IF EXISTS clinical CASCADE' \
+          -c 'DROP SCHEMA IF EXISTS party CASCADE' \
           -c 'DROP SCHEMA IF EXISTS linkage CASCADE' \
           -c 'DROP SCHEMA IF EXISTS audit CASCADE' \
           -c 'DROP SCHEMA IF EXISTS ext CASCADE' \
+          -c 'DROP SCHEMA IF EXISTS ehr CASCADE' \
+          -c 'DROP SCHEMA IF EXISTS demographic CASCADE' \
           -c 'DROP SCHEMA IF EXISTS cold CASCADE' \
           -c 'DROP SCHEMA IF EXISTS cold_demographic CASCADE'
         exit 0

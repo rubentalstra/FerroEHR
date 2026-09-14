@@ -96,8 +96,8 @@ traffic fails fast instead of queueing, and pin the image by digest so a
 rollback cannot outrun the schema.
 {{ if .Values.backup.enabled -}}
 Backups: two CronJobs, one per pseudonymisation domain.
-  clinical     {{ .Values.backup.clinical.schedule }}  → claim "{{ .Values.backup.clinical.persistentVolumeClaim }}"  (ehr, cold, ext, audit)
-  demographic  {{ .Values.backup.demographic.schedule }}  → claim "{{ .Values.backup.demographic.persistentVolumeClaim }}"  (demographic, cold_demographic)
+  clinical     {{ .Values.backup.clinical.schedule }}  → claim "{{ .Values.backup.clinical.persistentVolumeClaim }}"  (clinical, ext, audit)
+  demographic  {{ .Values.backup.demographic.schedule }}  → claim "{{ .Values.backup.demographic.persistentVolumeClaim }}"  (party)
 {{ if not .Values.database.demographicExistingSecret -}}
   ⚠  Both jobs read the CLINICAL DSN: database.demographicExistingSecret is
      unset, so the demographic dump runs under a credential that can also read

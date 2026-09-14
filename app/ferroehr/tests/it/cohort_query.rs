@@ -593,7 +593,15 @@ fn the_two_statements_never_cross_the_boundary() {
         PredicateKind::BirthDate,
     ] {
         let sql = ferroehr::service::linkage::cohort::predicate::predicate_sql(kind);
-        for forbidden in ["openehr-ehr-", "/", "demographic.", "linkage.", "party_ehr"] {
+        for forbidden in [
+            "openehr-ehr-",
+            "/",
+            "clinical.",
+            "party.",
+            "demographic.",
+            "linkage.",
+            "party_ehr",
+        ] {
             assert!(
                 !sql.contains(forbidden),
                 "the {} predicate must not name `{forbidden}`: {sql}",
