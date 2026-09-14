@@ -88,7 +88,7 @@ rather than hidden.
 ```toml
 [privacy.identifier_scan]
 mode  = "strict"
-rules = ["fi-hetu", "gb-nhs-number", "nl-bsn", "no-fodselsnummer", "se-personnummer"]
+rules = ["ch-ahvn13", "ch-epd-pid", "de-kvnr", "fi-hetu", "gb-nhs-number", "nl-bsn", "no-fodselsnummer", "se-personnummer"]
 ```
 
 Both are the defaults, so the check is that nothing turned them off. `strict`

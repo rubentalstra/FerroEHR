@@ -34,7 +34,7 @@ allow_identified_parties_in_ehr = false
 
 [privacy.identifier_scan]
 mode = "strict"
-rules = ["fi-hetu", "gb-nhs-number", "nl-bsn", "no-fodselsnummer", "se-personnummer"]
+rules = ["ch-ahvn13", "ch-epd-pid", "de-kvnr", "fi-hetu", "gb-nhs-number", "nl-bsn", "no-fodselsnummer", "se-personnummer"]
 patterns = []
 ```
 
