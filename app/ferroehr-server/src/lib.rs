@@ -956,6 +956,13 @@ async fn serve(config_path: Option<&Path>, overrides: &[(String, String)]) -> an
 
     // Contribution-outbox eventing + FHIR outbound emitter (both off by default).
     let outbox_enabled = config.events.enabled || config.fhir.outbound.enabled;
+    if config.tenancy.enabled && outbox_enabled {
+        tracing::warn!(
+            "tenancy.enabled with the outbox drainer or the FHIR outbound emitter: both read the \
+             outbox under the default tenant's scope only, so other tenants' events are not \
+             published until #3355 lands"
+        );
+    }
     // A cursor reader that is switched off must not hold the outbox prune
     // floor (#3330): record every reader's configured state before a drainer
     // starts.

@@ -81,8 +81,9 @@ workflow refuses a tag that has no matching section here.
   reserved default tenant: the server stamps the tenancy posture at boot, every
   connection it opens declares its tenant explicitly, and the tenant reader
   refuses a connection that declares none. Single-tenant deployments are
-  unchanged. Boot refuses `tenancy.enabled` together with the outbox drainer or
-  the FHIR outbound emitter, which run with no tenant scope (#3341, #3355).
+  unchanged. Boot warns when `tenancy.enabled` runs together with the outbox
+  drainer or the FHIR outbound emitter, which read the default tenant's rows
+  alone (#3341, #3355).
 - The event-outbox retention prune stops at the lowest cursor of every active
   reader instead of deleting on age alone: the FHIR outbound emitter (and any
   future cursor reader) now owns a row in the new `event_outbox_reader`

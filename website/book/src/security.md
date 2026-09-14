@@ -720,11 +720,11 @@ Isolation is otherwise fail-safe by design, and the three cases are distinct:
   deployments pay nothing.
 
 > [!WARNING]
-> Multi-tenancy cannot yet run together with the AMQP outbox drainer or the
-> FHIR outbound emitter: both read the outbox with no tenant scope and would
-> publish only the default tenant's events, so the server refuses to boot with
-> `FERROEHR__TENANCY__ENABLED=true` and either of them on, naming the tracker
-> issue that lifts the refusal.
+> Multi-tenancy does not yet reach the AMQP outbox drainer or the FHIR
+> outbound emitter: both read the outbox under the default tenant's scope
+> only, so other tenants' events are not published. The server warns at boot
+> with `FERROEHR__TENANCY__ENABLED=true` and either of them on, naming the
+> tracker issue that closes the gap.
 
 **On Kubernetes**, the same keys arrive through the chart's `config`
 passthrough:

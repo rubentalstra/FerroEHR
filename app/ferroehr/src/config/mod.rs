@@ -277,10 +277,6 @@ impl FerroEhrConfig {
         }
     }
 
-    /// Tenancy together with an outbox reader is refused: the AMQP drainer and
-    /// the FHIR outbound emitter run with no tenant scope and would publish the
-    /// default tenant's rows alone (#3355).
-    ///
     /// `tenancy.header` lets a request name its own tenant, and the header wins
     /// over the JWT claim. With an authentication scheme enabled that is every
     /// authenticated caller reading and writing every tenant, so the pair is a
@@ -288,15 +284,6 @@ impl FerroEhrConfig {
     /// The rest of the access layer is boot-validated the same way. No openEHR
     /// spec governs multi-tenancy — our own design.
     fn validate_tenancy(&self, errors: &mut Vec<ConfigError>) {
-        if self.tenancy.enabled && (self.events.enabled || self.fhir.outbound.enabled) {
-            errors.push(ConfigError::semantic(
-                "tenancy.enabled = true together with events.enabled or fhir.outbound.enabled: \
-                 the outbox drainer and the FHIR outbound emitter run with no tenant scope and \
-                 would see only the default tenant's rows (#3355); disable them or tenancy \
-                 until that issue lands"
-                    .to_owned(),
-            ));
-        }
         if self.tenancy.enabled
             && self.auth.enabled
             && !self.tenancy.insecure_header_override
@@ -1996,52 +1983,6 @@ mod tests {
             .validate()
             .expect_err("SMART without [auth.oidc] must refuse");
         assert!(format!("{err:?}").contains("auth.oidc"), "{err:?}");
-    }
-
-    /// The outbox readers run with no tenant scope (#3355), so tenancy together
-    /// with either of them is refused at boot rather than silently serving the
-    /// default tenant alone.
-    #[test]
-    fn tenancy_with_an_outbox_reader_is_refused() {
-        let tree = |tenancy_on: bool, events_on: bool, outbound_on: bool| FerroEhrConfig {
-            tenancy: server::TenancyConfig {
-                enabled: tenancy_on,
-                ..server::TenancyConfig::default()
-            },
-            events: crate::extensions::events::config::EventsConfig {
-                enabled: events_on,
-                ..crate::extensions::events::config::EventsConfig::default()
-            },
-            fhir: crate::extensions::fhir::config::FhirConfig {
-                outbound: crate::extensions::fhir::config::FhirOutboundConfig {
-                    enabled: outbound_on,
-                    ..crate::extensions::fhir::config::FhirOutboundConfig::default()
-                },
-                ..crate::extensions::fhir::config::FhirConfig::default()
-            },
-            ..FerroEhrConfig::default()
-        };
-        let mentions_readers = |tree: FerroEhrConfig| match tree.validate() {
-            Ok(()) => false,
-            Err(err) => format!("{err:?}").contains("#3355"),
-        };
-
-        assert!(
-            mentions_readers(tree(true, true, false)),
-            "tenancy with the drainer is refused"
-        );
-        assert!(
-            mentions_readers(tree(true, false, true)),
-            "tenancy with the emitter is refused"
-        );
-        assert!(
-            !mentions_readers(tree(true, false, false)),
-            "tenancy alone is not"
-        );
-        assert!(
-            !mentions_readers(tree(false, true, true)),
-            "the readers without tenancy are not"
-        );
     }
 
     /// `tenancy.header` with authentication on lets any authenticated caller
