@@ -40,6 +40,7 @@ use sqlx::{PgPool, Row};
 
 use crate::extensions::outbox;
 use crate::extensions::outbox::OutboxReader;
+use crate::extensions::tenant_context;
 use tokio::sync::watch;
 use tokio::task::JoinHandle;
 use uuid::Uuid;
@@ -187,8 +188,19 @@ async fn run(
         if *shutdown.borrow() {
             break;
         }
-        // Drain until the outbox is caught up or the broker/DB stalls.
-        loop {
+        // Every registered tenant in turn, under its scope: the outbox is
+        // tenant-scoped by row policy and the cursor is per tenant (#3355).
+        let tenants = match outbox::tenants(&pool).await {
+            Ok(tenants) => tenants,
+            Err(e) => {
+                tracing::warn!("fhir outbound could not list the tenants, pass skipped: {e}");
+                Vec::new()
+            }
+        };
+        for ctx in &tenants {
+            // Drain until the outbox is caught up or the broker/DB stalls.
+            tenant_context::scope(ctx.clone(), async {
+                loop {
             if *shutdown.borrow() {
                 break;
             }
@@ -216,6 +228,9 @@ async fn run(
                     break;
                 }
             }
+                }
+            })
+            .await;
         }
 
         tokio::select! {

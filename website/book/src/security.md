@@ -719,12 +719,10 @@ Isolation is otherwise fail-safe by design, and the three cases are distinct:
 - **Tenancy off:** no middleware is installed at all, so single-tenant
   deployments pay nothing.
 
-> [!WARNING]
-> Multi-tenancy does not yet reach the AMQP outbox drainer or the FHIR
-> outbound emitter: both read the outbox under the default tenant's scope
-> only, so other tenants' events are not published. The server warns at boot
-> with `FERROEHR__TENANCY__ENABLED=true` and either of them on, naming the
-> tracker issue that closes the gap.
+The background readers follow the same scoping: the AMQP outbox drainer and
+the FHIR outbound emitter drain every registered tenant in turn under that
+tenant's scope, with a delivery cursor per tenant, so no tenant's events wait
+behind another's.
 
 **On Kubernetes**, the same keys arrive through the chart's `config`
 passthrough:

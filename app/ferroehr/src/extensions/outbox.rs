@@ -12,8 +12,18 @@
 //! loses rows (#3330). Which readers are active is reconciled from the
 //! configuration at boot, so a reader that was switched off cannot hold the
 //! outbox forever.
+//!
+//! The outbox is tenant-scoped by row policy, so a reader drains one tenant at
+//! a time under that tenant's scope and its cursor is per tenant (#3355): one
+//! global mark advanced in one tenant's pass would skip the other tenants'
+//! lower sequence numbers. Every function here reads the tenant from the task
+//! scope ([`crate::extensions::tenant_context::current`]) and falls back to the
+//! reserved default tenant, which is the whole store when tenancy is off.
 
-use sqlx::PgPool;
+use sqlx::{PgPool, Row};
+use uuid::Uuid;
+
+use crate::extensions::tenant_context::TenantContext;
 
 /// A registered cursor reader over `event_outbox`.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -30,10 +40,41 @@ impl OutboxReader {
     }
 }
 
-/// Record whether `reader` runs in this deployment, keeping its cursor.
+/// The tenant the current task drains: the scoped one, else the reserved
+/// default.
+fn scope_tenant() -> Uuid {
+    crate::extensions::tenant_context::current().map_or_else(Uuid::nil, |t| t.tenant_id)
+}
+
+/// Every tenant a background reader drains in turn.
 ///
-/// Called at boot for every known reader with its configured state: an
-/// active reader holds the prune floor, an inactive one does not.
+/// Read from the clinical pool's `tenant` registry, which is not tenant-scoped
+/// and always holds the reserved default; with tenancy off it holds nothing
+/// else, so a reader makes one pass.
+///
+/// # Errors
+///
+/// Returns the database error when the registry cannot be read.
+pub async fn tenants(pool: &PgPool) -> Result<Vec<TenantContext>, sqlx::Error> {
+    let rows = sqlx::query("SELECT id, system_id FROM tenant ORDER BY id")
+        .fetch_all(pool)
+        .await?;
+    rows.iter()
+        .map(|row| {
+            Ok(TenantContext {
+                tenant_id: row.try_get("id")?,
+                system_id: row.try_get("system_id")?,
+            })
+        })
+        .collect()
+}
+
+/// Record whether `reader` runs in this deployment, keeping its cursors.
+///
+/// Called at boot for every known reader with its configured state, outside
+/// any tenant scope: the flag is set on every tenant's row of the reader, and
+/// the reserved default tenant's row is created if missing so a reader that
+/// never advanced still holds (or releases) the floor.
 ///
 /// # Errors
 ///
@@ -44,32 +85,40 @@ pub async fn reconcile(
     active: bool,
 ) -> Result<(), sqlx::Error> {
     sqlx::query(
-        "INSERT INTO event_outbox_reader (reader, active) VALUES ($1, $2) \
-         ON CONFLICT (reader) DO UPDATE SET active = EXCLUDED.active, updated_at = now()",
+        "INSERT INTO event_outbox_reader (reader, tenant_id, active) VALUES ($1, $2, $3) \
+         ON CONFLICT (reader, tenant_id) DO NOTHING",
     )
     .bind(reader.name())
+    .bind(Uuid::nil())
     .bind(active)
     .execute(pool)
     .await?;
+    sqlx::query("UPDATE event_outbox_reader SET active = $2, updated_at = now() WHERE reader = $1")
+        .bind(reader.name())
+        .bind(active)
+        .execute(pool)
+        .await?;
     Ok(())
 }
 
-/// The reader's cursor: the highest `seq` it has fully processed, `0` before
-/// its first advance.
+/// The reader's cursor for the scoped tenant: the highest `seq` it has fully
+/// processed there, `0` before its first advance.
 ///
 /// # Errors
 ///
 /// Returns the database error when the registry cannot be read.
 pub async fn cursor(pool: &PgPool, reader: OutboxReader) -> Result<i64, sqlx::Error> {
-    let last: Option<i64> =
-        sqlx::query_scalar("SELECT last_seq FROM event_outbox_reader WHERE reader = $1")
-            .bind(reader.name())
-            .fetch_optional(pool)
-            .await?;
+    let last: Option<i64> = sqlx::query_scalar(
+        "SELECT last_seq FROM event_outbox_reader WHERE reader = $1 AND tenant_id = $2",
+    )
+    .bind(reader.name())
+    .bind(scope_tenant())
+    .fetch_optional(pool)
+    .await?;
     Ok(last.unwrap_or(0))
 }
 
-/// Advance the reader's cursor to `seq`, never backwards.
+/// Advance the reader's cursor for the scoped tenant to `seq`, never backwards.
 ///
 /// A reader that advances is running, so the row is registered active by
 /// this call; a concurrent or delayed pass cannot move the mark back, which
@@ -80,24 +129,28 @@ pub async fn cursor(pool: &PgPool, reader: OutboxReader) -> Result<i64, sqlx::Er
 /// Returns the database error when the registry cannot be written.
 pub async fn advance(pool: &PgPool, reader: OutboxReader, seq: i64) -> Result<(), sqlx::Error> {
     sqlx::query(
-        "INSERT INTO event_outbox_reader (reader, last_seq, active) VALUES ($1, $2, true) \
-         ON CONFLICT (reader) DO UPDATE \
+        "INSERT INTO event_outbox_reader (reader, tenant_id, last_seq, active) \
+         VALUES ($1, $2, $3, true) \
+         ON CONFLICT (reader, tenant_id) DO UPDATE \
             SET last_seq = GREATEST(event_outbox_reader.last_seq, EXCLUDED.last_seq), \
                 active = true, updated_at = now()",
     )
     .bind(reader.name())
+    .bind(scope_tenant())
     .bind(seq)
     .execute(pool)
     .await?;
     Ok(())
 }
 
-/// Delete published rows older than the retention window that every active
-/// reader has passed, in the domain `pool`'s own outbox. Returns the number
-/// pruned.
+/// Delete the scoped tenant's published rows older than the retention window
+/// that every active reader has passed, in the domain `pool`'s own outbox.
+/// Returns the number pruned.
 ///
-/// The floor is the lowest active cursor, read in the same statement; with no
-/// active reader the window alone decides.
+/// The floor is, over every reader active anywhere, its cursor for this tenant
+/// (zero when it has not reached this tenant yet), read in the same statement;
+/// with no active reader the window alone decides. The row policy bounds the
+/// delete to the scoped tenant.
 ///
 /// # Errors
 ///
@@ -109,9 +162,13 @@ pub async fn prune(pool: &PgPool, retention_days: i64) -> Result<u64, sqlx::Erro
          WHERE published_at IS NOT NULL \
            AND published_at < now() - $1::interval \
            AND seq <= COALESCE( \
-                 (SELECT min(last_seq) FROM event_outbox_reader WHERE active), seq)",
+                 (SELECT min(COALESCE(t.last_seq, 0)) \
+                    FROM (SELECT DISTINCT reader FROM event_outbox_reader WHERE active) r \
+                    LEFT JOIN event_outbox_reader t \
+                      ON t.reader = r.reader AND t.tenant_id = $2), seq)",
     )
     .bind(cutoff)
+    .bind(scope_tenant())
     .execute(pool)
     .await?;
     let pruned = result.rows_affected();
