@@ -941,6 +941,12 @@ async fn serve(config_path: Option<&Path>, overrides: &[(String, String)]) -> an
     // (#3241): stamped by the runtime role on every boot, read by the trigger.
     stamp_subject_posture(&config, &pool).await?;
 
+    // The tenant reader refuses an undeclared tenant under the multi posture
+    // (#3341); stamped by the runtime role on every boot.
+    db::stamp_tenancy_posture(&pool, config.tenancy.enabled)
+        .await
+        .context("stamping the tenancy posture")?;
+
     // Fail-open at boot, except in a slim build, which cannot render the FHIR
     // `AuditEvent` the store and the ATX:FHIR Feed carry.
     #[cfg(not(feature = "fhir"))]
@@ -950,6 +956,13 @@ async fn serve(config_path: Option<&Path>, overrides: &[(String, String)]) -> an
 
     // Contribution-outbox eventing + FHIR outbound emitter (both off by default).
     let outbox_enabled = config.events.enabled || config.fhir.outbound.enabled;
+    if config.tenancy.enabled && outbox_enabled {
+        tracing::warn!(
+            "tenancy.enabled with the outbox drainer or the FHIR outbound emitter: both read the \
+             outbox under the default tenant's scope only, so other tenants' events are not \
+             published until #3355 lands"
+        );
+    }
     // A cursor reader that is switched off must not hold the outbox prune
     // floor (#3330): record every reader's configured state before a drainer
     // starts.
