@@ -69,12 +69,15 @@ pub async fn tenants(pool: &PgPool) -> Result<Vec<TenantContext>, sqlx::Error> {
         .collect()
 }
 
-/// Record whether `reader` runs in this deployment, keeping its cursors.
+/// Record whether `reader` runs in this deployment for the scoped tenant,
+/// keeping its cursor.
 ///
-/// Called at boot for every known reader with its configured state, outside
-/// any tenant scope: the flag is set on every tenant's row of the reader, and
-/// the reserved default tenant's row is created if missing so a reader that
-/// never advanced still holds (or releases) the floor.
+/// Called at boot for every known reader and every registered tenant, each in
+/// that tenant's scope (the registry is tenant-scoped like every other table),
+/// and by a running reader at the start of each tenant pass, so a tenant
+/// registered after boot gains its row on the reader's first pass. The row is
+/// created if missing, so a reader that never advanced still holds (or
+/// releases) the floor.
 ///
 /// # Errors
 ///
@@ -86,18 +89,14 @@ pub async fn reconcile(
 ) -> Result<(), sqlx::Error> {
     sqlx::query(
         "INSERT INTO event_outbox_reader (reader, tenant_id, active) VALUES ($1, $2, $3) \
-         ON CONFLICT (reader, tenant_id) DO NOTHING",
+         ON CONFLICT (reader, tenant_id) DO UPDATE \
+            SET active = EXCLUDED.active, updated_at = now()",
     )
     .bind(reader.name())
-    .bind(Uuid::nil())
+    .bind(scope_tenant())
     .bind(active)
     .execute(pool)
     .await?;
-    sqlx::query("UPDATE event_outbox_reader SET active = $2, updated_at = now() WHERE reader = $1")
-        .bind(reader.name())
-        .bind(active)
-        .execute(pool)
-        .await?;
     Ok(())
 }
 
@@ -147,10 +146,9 @@ pub async fn advance(pool: &PgPool, reader: OutboxReader, seq: i64) -> Result<()
 /// that every active reader has passed, in the domain `pool`'s own outbox.
 /// Returns the number pruned.
 ///
-/// The floor is, over every reader active anywhere, its cursor for this tenant
-/// (zero when it has not reached this tenant yet), read in the same statement;
-/// with no active reader the window alone decides. The row policy bounds the
-/// delete to the scoped tenant.
+/// The floor is the lowest cursor among the readers registered active for the
+/// scoped tenant, read in the same statement; with none the window alone
+/// decides. The row policy bounds both the delete and the floor to that tenant.
 ///
 /// # Errors
 ///
@@ -162,10 +160,8 @@ pub async fn prune(pool: &PgPool, retention_days: i64) -> Result<u64, sqlx::Erro
          WHERE published_at IS NOT NULL \
            AND published_at < now() - $1::interval \
            AND seq <= COALESCE( \
-                 (SELECT min(COALESCE(t.last_seq, 0)) \
-                    FROM (SELECT DISTINCT reader FROM event_outbox_reader WHERE active) r \
-                    LEFT JOIN event_outbox_reader t \
-                      ON t.reader = r.reader AND t.tenant_id = $2), seq)",
+                 (SELECT min(last_seq) FROM event_outbox_reader \
+                   WHERE active AND tenant_id = $2), seq)",
     )
     .bind(cutoff)
     .bind(scope_tenant())

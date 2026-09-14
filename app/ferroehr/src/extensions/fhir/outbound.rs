@@ -171,13 +171,6 @@ async fn run(
 ) {
     let poll_interval = Duration::from_millis(config.poll_interval_ms.max(1));
     let mut poison: PoisonBudget = None;
-    // A running reader holds the prune floor (#3330); register before the
-    // first batch so a lagging start never loses rows.
-    if let Err(e) = outbox::reconcile(&pool, OutboxReader::FHIR_OUTBOUND, true).await {
-        tracing::warn!(
-            "fhir outbound reader registration failed, retried by the first advance: {e}"
-        );
-    }
     tracing::info!(
         exchange = %config.exchange,
         batch_size = config.batch_size,
@@ -200,6 +193,13 @@ async fn run(
         for ctx in &tenants {
             // Drain until the outbox is caught up or the broker/DB stalls.
             tenant_context::scope(ctx.clone(), async {
+                // A running reader holds the prune floor (#3330); register in this
+                // tenant before its first batch so a lagging start never loses rows.
+                if let Err(e) = outbox::reconcile(&pool, OutboxReader::FHIR_OUTBOUND, true).await {
+                    tracing::warn!(
+                        "fhir outbound reader registration failed, retried by the first advance: {e}"
+                    );
+                }
                 loop {
             if *shutdown.borrow() {
                 break;

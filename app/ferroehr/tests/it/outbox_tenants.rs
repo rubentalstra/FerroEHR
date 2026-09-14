@@ -227,10 +227,16 @@ async fn the_prune_floor_is_the_cursor_of_the_tenant_it_runs_for() {
         .expect("back-date");
     }
 
-    // The reader is active; in A it has passed the first row, in B nothing.
-    reconcile(&pool, OutboxReader::FHIR_OUTBOUND, true)
+    // The reader is active in both tenants; in A it has passed the first row,
+    // in B nothing.
+    for ctx in [&a, &b] {
+        scope(
+            ctx.clone(),
+            reconcile(&pool, OutboxReader::FHIR_OUTBOUND, true),
+        )
         .await
         .expect("reconcile");
+    }
     scope(
         a.clone(),
         advance(&pool, OutboxReader::FHIR_OUTBOUND, a_seqs[0]),
@@ -254,18 +260,26 @@ async fn the_prune_floor_is_the_cursor_of_the_tenant_it_runs_for() {
     let pruned_b = scope(b.clone(), prune(&pool, 7)).await.expect("prune B");
     assert_eq!(pruned_b, 0);
 
-    // A reader switched off holds no floor anywhere.
-    reconcile(&pool, OutboxReader::FHIR_OUTBOUND, false)
-        .await
-        .expect("reconcile inactive");
+    // A reader switched off in B holds no floor there; A's row is untouched.
+    scope(
+        b.clone(),
+        reconcile(&pool, OutboxReader::FHIR_OUTBOUND, false),
+    )
+    .await
+    .expect("reconcile inactive in B");
     assert_eq!(scope(b.clone(), prune(&pool, 7)).await.expect("prune B"), 2);
     assert!(scoped_seqs(&pool, &b).await.is_empty());
-    // The default tenant's registry row exists and is inactive too.
-    let active: Vec<bool> = sqlx::query_scalar(
-        "SELECT active FROM ehr.event_outbox_reader WHERE reader = 'fhir-outbound'",
+    let a_active: bool = scope(
+        a.clone(),
+        sqlx::query_scalar(
+            "SELECT active FROM ehr.event_outbox_reader WHERE reader = 'fhir-outbound'",
+        )
+        .fetch_one(&pool),
     )
-    .fetch_all(&pool)
     .await
-    .expect("registry rows");
-    assert!(active.len() >= 2 && active.iter().all(|a| !a));
+    .expect("A's registry row");
+    assert!(
+        a_active,
+        "the registry is scoped per tenant: B's switch-off leaves A active"
+    );
 }

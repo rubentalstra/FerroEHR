@@ -959,13 +959,21 @@ async fn serve(config_path: Option<&Path>, overrides: &[(String, String)]) -> an
     // A cursor reader that is switched off must not hold the outbox prune
     // floor (#3330): record every reader's configured state before a drainer
     // starts.
-    ferroehr::extensions::outbox::reconcile(
-        &pool,
-        ferroehr::extensions::outbox::OutboxReader::FHIR_OUTBOUND,
-        config.fhir.outbound.enabled,
-    )
-    .await
-    .context("registering the outbox readers")?;
+    for ctx in ferroehr::extensions::outbox::tenants(&pool)
+        .await
+        .context("listing the tenants for the outbox readers")?
+    {
+        ferroehr::extensions::tenant_context::scope(
+            ctx,
+            ferroehr::extensions::outbox::reconcile(
+                &pool,
+                ferroehr::extensions::outbox::OutboxReader::FHIR_OUTBOUND,
+                config.fhir.outbound.enabled,
+            ),
+        )
+        .await
+        .context("registering the outbox readers")?;
+    }
     #[cfg(feature = "events")]
     let events_handle = if config.events.enabled {
         tracing::info!(exchange = %config.events.exchange, "contribution-outbox eventing enabled");
