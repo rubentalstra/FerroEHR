@@ -537,7 +537,7 @@ sequenceDiagram
   T->>T: pseudonym = HMAC-SHA-256(permit.secret, ehr_id) per active permit
   T->>R: upsert leaf rows keyed by (permit_id, pseudonym, path)
   T->>R: advance read_model_cursor
-  Q->>R: cohort queries; no grant in clinical, party or linkage
+  Q->>R: cohort queries (no grant in clinical, party or linkage)
   Note over R: permit expiry deletes its rows and its secret
 ```
 
