@@ -17,6 +17,16 @@ workflow refuses a tag that has no matching section here.
 
 ### Added
 
+- **The Kubernetes deployment probe observes the FerroTERM workload** (#3328).
+  `scripts/deploy-probe-k8s.sh` gains a terminology stage (`P-K8S-TERM-*`) that
+  reads the chart's `terminology.enabled` claims off a running cluster: the
+  absence of every terminology object while the gate is off, the rollout, the
+  applied runtime posture from the container runtime's own spec, the shaped seed
+  reaching the process through the ConfigMap volume, the NetworkPolicy refusing a
+  pod the CDR's selector does not name in this namespace and in another while the
+  CDR itself is admitted, and a value-set binding resolved through the Service. A
+  mounted index is probed when `K8S_TERM_INDEX_CLAIM` names an existing claim,
+  and is declared not exercised by probe id when it does not.
 - **Identifier-scanner rules for Germany and Switzerland, and the Swiss access-log
   retention floor** (#3318, #3319). `de-kvnr` refuses the unchangeable part of a
   Krankenversichertennummer (a letter, eight digits and the GKV-Spitzenverband's

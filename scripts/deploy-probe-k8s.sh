@@ -32,6 +32,12 @@
 #                     repo:tag of the viewer image. Defaults to the
 #                     chart's own (appVersion), which is what an operator
 #                     enabling viewer.enabled gets.
+#   K8S_TERM_INDEX_CLAIM
+#                     name of an EXISTING PersistentVolumeClaim holding a
+#                     FerroTERM index built off-cluster from a release you hold
+#                     a licence for. Unset, the three P-K8S-TERM-INDEX-* probes
+#                     are declared not exercised by name rather than run against
+#                     an empty directory, which is not an index.
 #   PROBE_K8S_NS      namespace (default ferroehr-probe; created and deleted).
 #   PROBE_OUT         where the machine-readable record lands.
 set -uo pipefail
@@ -56,6 +62,7 @@ cleanup() {
     k8s_teardown
   else
     k8s_pf_stop
+    k8s_term_pf_stop
     dim "── release left installed (--keep-up): kubectl -n $K8S_NS get pods"
   fi
   rm -rf "$PROBE_TMP"
@@ -115,6 +122,7 @@ if probes_k8s_boot; then
   probes_k8s_secrets
   probes_k8s_readiness
   probes_k8s_viewer
+  probes_k8s_terminology
 else
   red "the release never served — the probes that need a running CDR were not run"
   uncovered "every probe after P-K8S-SERVE" \

@@ -60,6 +60,29 @@ K8S_UI_CLIENT_LABEL="ferroehr.probe/client=viewer"
 # probe a locally built viewer instead.
 K8S_UI_IMAGE="${PROBE_K8S_VIEWER_IMAGE:-}"
 
+# The FerroTERM workload the chart renders behind `terminology.enabled` (#3305,
+# #3328) — a third Deployment, Service, ServiceAccount, ConfigMap and
+# NetworkPolicy from a third image, with its own copy of the hardened posture.
+# The name is what the chart's terminologyFullname helper produces, and the
+# label is that workload's OWN app.kubernetes.io/name.
+K8S_TERM="ferroehr-terminology"
+K8S_TERM_LABEL="app.kubernetes.io/name=$K8S_TERM"
+K8S_TERM_PORT="${PROBE_K8S_TERM_PORT:-18092}"
+K8S_TERM_URL="http://127.0.0.1:${K8S_TERM_PORT}"
+K8S_TERM_PF_PID=""
+# The shaped seed the chart ships as a ConfigMap: synthetic content under the
+# reserved example.test domain, the same the conformance lane binds to. 1000001
+# is a member of sct-shaped-disorders, 1000003 deliberately is not.
+K8S_TERM_SYSTEM="http://cnf.example.test/fhir/CodeSystem/sct-shaped"
+K8S_TERM_CODE="1000001"
+K8S_TERM_TEMPLATE="corpus/templates/dt_coded_text_binding_sct.opt"
+K8S_TERM_MEMBER="corpus/fixtures/composition/terminology_binding_sct_member.json"
+K8S_TERM_NON_MEMBER="corpus/fixtures/composition/terminology_binding_sct_non_member.json"
+# An EXISTING PersistentVolumeClaim holding an index built off-cluster from a
+# release the operator holds a licence for. Unset means the index branch is
+# declared not exercised rather than faked: an empty directory is not an index.
+K8S_TERM_INDEX_CLAIM="${K8S_TERM_INDEX_CLAIM:-}"
+
 # The compose database this cluster is pointed at. It binds 0.0.0.0 because a
 # pod reaches the host through the Docker Desktop gateway, which a loopback bind
 # would refuse; the stack is thrown away at the end of the run.
@@ -269,6 +292,7 @@ k8s_pf_stop() {
 
 k8s_teardown() {
   k8s_pf_stop
+  k8s_term_pf_stop
   helm uninstall "$K8S_RELEASE" -n "$K8S_NS" >/dev/null 2>&1 || true
   kubectl delete namespace "$K8S_NS" --wait=false >/dev/null 2>&1 || true
   docker compose -p "$COMPOSE_PROJECT" down -v --remove-orphans >/dev/null 2>&1 || true
@@ -735,5 +759,332 @@ YAML
     "the API server must have stored the from selector; a pruned field would leave the rule admitting everything"
   assert_contains "$(k8s_ui_get /login)" 'name="username"' \
     "a narrowed policy that also stops the peer it names is a broken recipe, not a hardened one"
+  probe_done
+}
+
+# ── FerroTERM, the chart's terminology workload (#3305, #3328) ────────────────
+#
+# The compose twin (scripts/deploy-probes/terminology.sh, P-FT-*) measures
+# whether the CDR resolves a binding against FerroTERM. This family measures the
+# cluster's half of the same claim: a second hardened posture the API server and
+# the runtime each get a say over, a seed that reaches the process through a
+# ConfigMap volume the kubelet builds out of symlinks, and a NetworkPolicy whose
+# whole value is a refusal.
+#
+# It runs LAST for the same reason the viewer family does: it changes the shape
+# of the release the probes above measured.
+
+k8s_term_install() {
+  # The chart's own terminology defaults, plus the CDR's read-only terminology
+  # routes — which is the surface an operator watches a resolution through, and
+  # the only way to see a call leave the CDR pod rather than infer it.
+  k8s_install --set terminology.enabled=true \
+              --set config.terminology.api_enabled=true "$@"
+}
+
+# 300s: the terminology container's own startup probe allows five minutes, and a
+# first run also pulls the image.
+k8s_term_rollout() { kc rollout status "deploy/$K8S_TERM" --timeout="${1:-300s}" >/dev/null 2>&1; }
+
+k8s_term_pf_start() {
+  k8s_term_pf_stop
+  kc port-forward "svc/$K8S_TERM" "${K8S_TERM_PORT}:8080" >/dev/null 2>&1 &
+  K8S_TERM_PF_PID=$!
+  wait_http "$K8S_TERM_URL/health" 30
+}
+
+k8s_term_pf_stop() {
+  if [[ -n "$K8S_TERM_PF_PID" ]]; then
+    disown "$K8S_TERM_PF_PID" 2>/dev/null || true
+    kill "$K8S_TERM_PF_PID" >/dev/null 2>&1 || true
+    wait "$K8S_TERM_PF_PID" 2>/dev/null || true
+  fi
+  K8S_TERM_PF_PID=""
+}
+
+# TCP reachability to the terminology port from a throwaway pod in <namespace>.
+# Echoes the exit status busybox's `nc` reported: 0 admitted, 1 refused.
+#
+# Read from the finished pod's LOGS rather than `run --attach`, the race that
+# cost this file a red row twice: a short-lived container regularly completes
+# before the attach is established, and the output is then lost.
+k8s_term_nc() {
+  local ns="$1" ip="$2" name="probe-term-nc-$$-$RANDOM" out phase _i
+  # shellcheck disable=SC2016 # $? belongs to the busybox shell, not this one
+  kubectl -n "$ns" run "$name" --image=busybox:1.37 --restart=Never \
+    --env="TERM_IP=$ip" --command -- sh -c 'nc -w4 -z "$TERM_IP" 8080; echo exit=$?' \
+    >/dev/null 2>&1
+  for _i in $(seq 1 25); do
+    phase="$(kubectl -n "$ns" get pod "$name" -o jsonpath='{.status.phase}' 2>/dev/null)"
+    case "$phase" in Succeeded | Failed) break ;; *) ;; esac
+    sleep 2
+  done
+  out="$(kubectl -n "$ns" logs "$name" 2>/dev/null)"
+  kubectl -n "$ns" delete pod "$name" --ignore-not-found --wait=false >/dev/null 2>&1
+  printf '%s' "$out" | tr -d '\r' | sed -n 's/.*exit=\([0-9]*\).*/\1/p' | head -1
+}
+
+k8s_term_template() {
+  local code
+  code="$(curl -s -u "$K8S_BASIC" -o /dev/null -w '%{http_code}' -X POST \
+    -H 'Content-Type: application/xml' --data-binary "@$K8S_TERM_TEMPLATE" \
+    "$K8S_API/definition/template/adl1.4")"
+  case "$code" in 201 | 204 | 409) return 0 ;; *) return 1 ;; esac
+}
+
+# The status code a commit of the given fixture into a fresh EHR answers.
+k8s_term_commit_code() {
+  local hdr="$PROBE_TMP/k8s-term-ehr.txt" ehr
+  curl -s -u "$K8S_BASIC" -X POST -D "$hdr" -o /dev/null "$K8S_API/ehr" || { printf '000'; return 0; }
+  ehr="$(grep -i '^location' "$hdr" 2>/dev/null | tr -d '\r' | awk -F/ '{print $NF}')"
+  [[ -n "$ehr" ]] || { printf '000'; return 0; }
+  curl -s -u "$K8S_BASIC" -o /dev/null -w '%{http_code}' -X POST \
+    -H 'Content-Type: application/json' -H 'Prefer: return=minimal' \
+    --data-binary "@$1" "$K8S_API/ehr/$ehr/composition"
+}
+
+probes_k8s_terminology() {
+  bold "the terminology workload (terminology.enabled)"
+
+  # The OFF state, on the release the probes above have been measuring. The
+  # ConfigMap is named separately: a seed left behind by a disabled workload is
+  # a mount nobody is watching.
+  probe "P-K8S-TERM-OFF" "off" "chart" "#3328" \
+    "the shipped default renders no terminology object at all"
+  local off
+  off="$(kc get deploy,svc,configmap,networkpolicy,serviceaccount -l "$K8S_TERM_LABEL" \
+         -o name 2>/dev/null | tr '\n' ' ')"
+  assert_eq "" "${off// /}" \
+    "terminology.enabled defaults to false, so anything found here means the gate leaks"
+  probe_done
+
+  probe "P-K8S-TERM-BOOT" "working" "chart" "#3328" \
+    "terminology.enabled installs the FerroTERM workload and it rolls out"
+  if ! k8s_term_install; then
+    probe_fail "a successful helm upgrade --install with terminology on" \
+      "helm refused the release" \
+      "re-run k8s_term_install without the output redirect to see the render error"
+    probe_done
+    uncovered "every terminology probe after P-K8S-TERM-BOOT" \
+      "the terminology workload never installed, so nothing about it could be observed"
+    return 0
+  fi
+  if ! k8s_term_rollout; then
+    probe_fail "a rolled-out terminology Deployment" \
+      "$(kc logs -l "$K8S_TERM_LABEL" --tail=6 --all-containers 2>&1 | tail -6
+         kc get pod -l "$K8S_TERM_LABEL" -o jsonpath='{.items[0].status.containerStatuses[0].state.waiting.reason} {.items[0].status.containerStatuses[0].state.waiting.message}' 2>/dev/null)" \
+      "an unpullable image and a server that cannot start under the hardened context both land here"
+    probe_done
+    uncovered "every terminology probe after P-K8S-TERM-BOOT" \
+      "the terminology workload never became ready, so nothing about it could be observed"
+    return 0
+  fi
+  # The CDR rolls too: the injected [terminology.external] rewrites its
+  # ConfigMap, whose checksum is a pod annotation. Its Service forward is
+  # therefore rebuilt before anything below asks the CDR a question.
+  k8s_rollout 180s
+  k8s_pf_stop
+  k8s_pf_start || true
+  probe_done
+
+  probes_k8s_term_runtime
+  probes_k8s_term_seed
+  probes_k8s_term_netpol
+  probes_k8s_term_resolve
+  probes_k8s_term_index
+
+  uncovered "a licensed terminology edition served by this workload" \
+    "the SNOMED CT and LOINC releases are licensed content this repository may not ship and no lane may fetch, so every probe here runs against the chart's synthetic shaped seed"
+  uncovered "FerroTERM unreachable, under each of the CDR's fail postures" \
+    "terminology.failOnError decides whether an unresolvable binding commits or is refused, and the compose family (P-FT-DOWN-OPEN, P-FT-DOWN-CLOSED) is where that pair is driven"
+}
+
+# The third copy of the hardened posture, read from the container runtime rather
+# than from the manifest — the reason being the reason it is read for the server
+# and the viewer: `securityContext` is a request a runtime may decline, and a
+# third workload is a third place for it to go unhonoured.
+probes_k8s_term_runtime() {
+  local node cid spec
+  node="$(k8s_node_container)"
+  if [[ -z "$node" ]]; then
+    uncovered "the terminology container's applied runtime posture (uid, capabilities, seccomp, read-only root)" \
+      "this cluster node is not a local container, so its runtime spec is not readable from here"
+    return 0
+  fi
+  probe "P-K8S-TERM-RUNTIME" "working" "chart" "#3328" \
+    "the terminology container runs under the same hardened posture as the server"
+  cid="$(docker exec "$node" crictl ps --name terminology -q 2>/dev/null | head -1)"
+  if [[ -z "$cid" ]]; then
+    probe_fail "a running terminology container on the node" "crictl listed none"
+  else
+    spec="$(docker exec "$node" crictl inspect "$cid" 2>/dev/null | jq -c '.info.runtimeSpec')"
+    k8s_assert_hardened "$spec"
+  fi
+  probe_done
+}
+
+# The seed, at the far end. The chart renders a ConfigMap and mounts it; the
+# kubelet projects it as a directory of symlinks into a `..data` snapshot, which
+# is a shape a naive directory scan skips entirely — so "the ConfigMap exists"
+# and "the process is serving what is in it" are different claims, and only the
+# second is worth a row.
+probes_k8s_term_seed() {
+  probe "P-K8S-TERM-SEED" "working" "server" "#3328" \
+    "the shaped seed reaches the process from the ConfigMap volume and is served"
+  if ! k8s_term_pf_start; then
+    probe_fail "a reachable terminology Service" "port-forward never answered /health"
+    probe_done
+    return 0
+  fi
+  local logs
+  logs="$(kc logs -l "$K8S_TERM_LABEL" --tail=80 --all-containers 2>/dev/null)"
+  # The chart's default terminology.logFormat is `json`, so the boot line is a
+  # JSON field rather than the key=value form a pretty log prints.
+  assert_contains "$logs" '"code_systems":' \
+    "FerroTERM reports the number of code systems it loaded at boot; without the field nothing says the directory was read"
+  assert_not_contains "$logs" '"code_systems":0' \
+    "a boot that read the volume and found nothing in it starts and serves, and looks identical from outside"
+  assert_contains "$logs" "$K8S_TERM_SYSTEM" \
+    "the seed's own code system must be among the ones served, or the volume delivered something else"
+  local lookup
+  lookup="$(curl -s --get \
+    --data-urlencode "system=$K8S_TERM_SYSTEM" \
+    --data-urlencode "code=$K8S_TERM_CODE" \
+    "$K8S_TERM_URL/r4b/CodeSystem/\$lookup")"
+  assert_contains "$lookup" '"resourceType"' \
+    "a \$lookup on a seed code must answer a FHIR resource; a loaded-but-unserved seed answers an error here"
+  probe_done
+}
+
+# The one policy in this chart whose ingress is narrowed by DEFAULT, so the claim
+# it makes is a REFUSAL — and a refusal is the only kind of network claim that
+# cannot pass vacuously on a cluster enforcing nothing: an unenforcing CNI turns
+# both calls below into exit=0 and fails the row.
+probes_k8s_term_netpol() {
+  probe "P-K8S-TERM-NETPOL" "working" "chart" "#3328" \
+    "the terminology port refuses a pod outside the CDR's selector, in this namespace and in another, while the CDR itself is admitted"
+  local ip
+  ip="$(kc get pod -l "$K8S_TERM_LABEL" -o jsonpath='{.items[0].status.podIP}' 2>/dev/null)"
+  if [[ -z "$ip" ]]; then
+    probe_fail "a terminology pod with an address" "none was reported" \
+      "without an address the refusals below would pass for the wrong reason"
+    probe_done
+    return 0
+  fi
+  assert_eq "1" "$(k8s_term_nc "$K8S_NS" "$ip")" \
+    "a pod in the release's own namespace that does not carry the CDR's labels is not a caller the policy names"
+  assert_eq "1" "$(k8s_term_nc default "$ip")" \
+    "the policy's podSelector is namespace-scoped, so another namespace must be refused too"
+  # The admitted half, observed from the CDR's own pod rather than inferred: the
+  # CDR's read-only terminology route resolves the code THROUGH the Service, so
+  # a 200 here is a packet that left the CDR pod and arrived.
+  local enc code
+  enc="$(printf '%s' "$K8S_TERM_SYSTEM" | jq -sRr @uri)"
+  code="$(http_code -u "$K8S_BASIC" "$K8S_API/terminology/$enc/term/$K8S_TERM_CODE")"
+  assert_eq "200" "$code" \
+    "a policy that also refuses the caller it was written for is a broken recipe, not a hardened one"
+  probe_done
+}
+
+# The claim an operator actually buys the workload for, mirroring P-FT-RESOLVE
+# on the compose side: a coded value the seed knows commits, and one the value
+# set excludes is refused — which is only answerable if the binding was resolved
+# through FerroTERM.
+probes_k8s_term_resolve() {
+  probe "P-K8S-TERM-RESOLVE" "working" "server" "#3328" \
+    "the CDR resolves a value-set binding through the terminology Service: a member commits, a non-member is refused"
+  if ! k8s_term_template; then
+    probe_fail "the binding template accepted by the deployed CDR" \
+      "the OPT upload did not answer 201, 204 or 409" \
+      "every commit below is against that template; without it the outcomes mean nothing"
+    probe_done
+    return 0
+  fi
+  assert_eq "201" "$(k8s_term_commit_code "$K8S_TERM_MEMBER")" \
+    "1000002 is in sct-shaped-disorders, so the commit is accepted"
+  assert_eq "422" "$(k8s_term_commit_code "$K8S_TERM_NON_MEMBER")" \
+    "1000003 is in the code system but not in the value set, so the binding refuses it"
+  probe_done
+}
+
+# The index branch: a built index for a licensed release, mounted read-only from
+# an EXISTING claim. Three things about it are unobserved until someone runs it,
+# and two of them have no documented answer at all — so this is written to be
+# run, and declared unexercised by name when there is no claim to run it against.
+probes_k8s_term_index() {
+  if [[ -z "$K8S_TERM_INDEX_CLAIM" ]]; then
+    uncovered "P-K8S-TERM-INDEX-STRATEGY (a named index claim renders strategy: Recreate)" \
+      "no claim was named; set K8S_TERM_INDEX_CLAIM to an existing PersistentVolumeClaim holding an index built off-cluster with ferroterm-build"
+    uncovered "P-K8S-TERM-INDEX-MOUNT (the read-only index mount under fsGroup 65532 and fsGroupChangePolicy OnRootMismatch)" \
+      "no claim was named, and the Kubernetes security-context documentation does not say what fsGroup does to a volume mounted readOnly, so only a run can answer it"
+    uncovered "P-K8S-TERM-INDEX-READY (whether GET /health answers 200 before a mounted index has finished opening)" \
+      "no claim was named; the seed path settles nothing about it, because the seed is a few megabytes read from a local volume and an edition is not"
+    return 0
+  fi
+
+  probe "P-K8S-TERM-INDEX-STRATEGY" "working" "chart" "#3328" \
+    "a named index claim makes the Deployment Recreate, so a ReadWriteOnce volume cannot wedge the rollout"
+  if ! k8s_term_install --set "terminology.index.persistentVolumeClaim=$K8S_TERM_INDEX_CLAIM"; then
+    probe_fail "an install with an index claim named" "helm refused the release"
+    probe_done
+    uncovered "every index probe after P-K8S-TERM-INDEX-STRATEGY" \
+      "the install with the claim was refused, so the mounted index was never observed"
+    return 0
+  fi
+  assert_eq "Recreate" "$(kc get "deploy/$K8S_TERM" -o jsonpath='{.spec.strategy.type}' 2>/dev/null)" \
+    "a rolling update surges a second pod, and a ReadWriteOnce claim cannot attach to it on another node"
+  local rolled=0
+  k8s_term_rollout 420s && rolled=1
+  probe_done
+
+  if [[ "$rolled" -eq 0 ]]; then
+    uncovered "P-K8S-TERM-INDEX-MOUNT and P-K8S-TERM-INDEX-READY" \
+      "the pod carrying the claim never became ready, so neither the mount nor the readiness ordering could be read: $(kc get pod -l "$K8S_TERM_LABEL" -o jsonpath='{.items[0].status.containerStatuses[0].state.waiting.reason}' 2>/dev/null)"
+    return 0
+  fi
+
+  probe "P-K8S-TERM-INDEX-MOUNT" "working" "chart" "#3328" \
+    "the index arrives read-only under the requested fsGroup, and what the kubelet did to its ownership is recorded"
+  local pod fsg fspol
+  pod="$(kc get pod -l "$K8S_TERM_LABEL" -o jsonpath='{.items[0].metadata.name}' 2>/dev/null)"
+  fsg="$(kc get pod "$pod" -o jsonpath='{.spec.securityContext.fsGroup}' 2>/dev/null)"
+  fspol="$(kc get pod "$pod" -o jsonpath='{.spec.securityContext.fsGroupChangePolicy}' 2>/dev/null)"
+  assert_eq "65532" "$fsg" \
+    "without the group the process runs as, a volume whose files are owned by anyone else is unreadable"
+  assert_eq "OnRootMismatch" "$fspol" \
+    "Always recurses the whole volume at every start, which on an edition-sized index is a boot that looks wedged"
+  local node cid spec mount
+  node="$(k8s_node_container)"
+  if [[ -n "$node" ]]; then
+    cid="$(docker exec "$node" crictl ps --name terminology -q 2>/dev/null | head -1)"
+    spec="$(docker exec "$node" crictl inspect "$cid" 2>/dev/null | jq -c '.info.runtimeSpec')"
+    mount="$(printf '%s' "$spec" | jq -r '.mounts[] | select(.destination == "/data/index")')"
+    assert_contains "$mount" '"ro"' \
+      "an index a compromised container can rewrite is a terminology answer an attacker chooses"
+    # Ownership is OBSERVED, not asserted: no Kubernetes documentation states
+    # what fsGroup does to a volume mounted readOnly, which is the open question
+    # this probe exists to answer for whoever reads the record next.
+    dim "    observed: $(docker exec "$node" sh -c "ls -ldn $(printf '%s' "$mount" | jq -r '.source')" 2>&1 | head -1)"
+  fi
+  probe_done
+
+  # The ordering question, answered from the log rather than from a stopwatch:
+  # if the line reporting the listener follows the line reporting the index,
+  # /health cannot have answered before the index was open.
+  probe "P-K8S-TERM-INDEX-READY" "working" "server" "#3328" \
+    "the health route starts answering only after the mounted index has finished opening"
+  local logs idx_line listen_line
+  logs="$(kc logs -l "$K8S_TERM_LABEL" --tail=200 --all-containers 2>/dev/null)"
+  idx_line="$(printf '%s\n' "$logs" | grep -n -i 'index' | head -1 | cut -d: -f1)"
+  listen_line="$(printf '%s\n' "$logs" | grep -n -i 'listening' | head -1 | cut -d: -f1)"
+  if [[ -z "$idx_line" ]] || [[ -z "$listen_line" ]]; then
+    probe_fail "a boot log naming the index and the listener" \
+      "$(printf '%s\n' "$logs" | tail -5)" \
+      "the ordering is what settles whether a startup probe can pass while the index is still opening"
+  elif [[ "$idx_line" -ge "$listen_line" ]]; then
+    probe_fail "the index reported open BEFORE the listener starts" \
+      "index at line $idx_line, listener at line $listen_line" \
+      "the startup probe then passes on a server that cannot yet answer a lookup; the 5s x 60 budget is what stands between that and a restart loop"
+  fi
   probe_done
 }
