@@ -739,6 +739,23 @@ Two alternatives the plan names for measurement rather than adopting:
 
 Both are decided by a class L run on the synthgen corpus, after v4.3.0.
 
+### The measurement program
+
+Owner direction 2026-09-14: the rewrite is shown faster or more optimised,
+never asserted. The program is filed as sub-issues of #3337 and sequenced so a
+comparison exists before the rewrite lands:
+
+| Issue | What it delivers | Sequencing |
+|---|---|---|
+| #3367 | the storage benchmark harness (`benches/storage.rs`, criterion over a testkit database): commit and supersession, point reads, `version_at_time`, revision history, `If-Match`, AQL CONTAINS over one EHR and the population, archive, restore, prune; database-side facts (`n_tup_hot_upd`, `n_dead_tup`, WAL bytes, buffer hits) beside wall-clock; a comparable JSON record under `docs/conformance/storage/<generation>/` | first |
+| #3368 | the pre-rewrite baseline: the harness and the conformance instrument (class S, `aql-probe`) recorded for the current schema | blocks #3342 |
+| #3369 | plan-shape tests: `EXPLAIN (ANALYZE, BUFFERS)` in a rolled-back transaction pins the node type, index and partition of every hot path, in the ordinary test battery | after #3342 |
+| #3350 | the after-rewrite comparison: H1-H11 against the baseline, no hot path slower beyond the stated tolerance, the partitioning and GIN alternatives decided | after #3342, #3367, #3368 |
+| #3370 | a dispatch-only lane that repeats the comparison against the committed record with a stated tolerance; exploration, never a conformance record | after #3367 |
+
+Every number that reaches a page comes through a generated include over a
+committed record; the stale-numbers gate refuses a hand-typed one.
+
 ## Decomposition into implementation issues
 
 Each item below is filed as a sub-issue of #3337 (the Sub-issues panel is
@@ -761,7 +778,7 @@ reader (D2). Sequencing is expressed as native `blocked-by` edges, set with
 | S6 (#3347) | feat(admin): physical erasure reaches linkage, the outbox and the research domain; the blob GC becomes an anti-join over `blob_ref` | v4.3.1 | S1, S4 | `delete_ehr` order as the plan states; tombstone applied by the projector; `blob_ref` maintained at commit, GC no longer scans `node`; test asserts zero rows per relation per domain; the compliance page's Art. 17 row rewritten and the audit-retention exception stated |
 | S10 (#3351) | feat(ext): the helper functions without subtransactions: `LANGUAGE sql`, regex-validated input, no `EXCEPTION` block; the emitter spells every column through `db/iden.rs` | v4.3.1 | | `EXPLAIN (ANALYZE)` shows the functions inlined; a test proves identical results over the parser corpus; no `plpgsql` function remains in `ext`; `citem_num` and the unused `Iden` definitions gone |
 | D2 (#3341) | fix(tenancy): `ext.current_tenant_id()` resolves an unset GUC to the default tenant instead of refusing | v4.3.0 | | under a multi-tenant posture an unset `ferroehr.tenant_id` raises; single-tenant deployments keep the default; a test covers both |
-| S9 (#3350) | perf(storage): measure hypotheses H1-H11 on the synthgen corpus and decide hash partitioning, time-bucketed cold and the GIN pre-filter | v4.3.1 | S1, #3332 | every hypothesis in the performance model has a committed measurement record; each of the three alternatives has a decision with the record cited |
+| S9 (#3350) | perf(storage): the after-rewrite comparison against the pre-rewrite baseline; the alternatives decided (the measurement program: #3367, #3368, #3369, #3370, §The measurement program) | v4.3.1 | S1, #3367, #3368, #3332 | every hypothesis in the performance model has a committed measurement record; each of the three alternatives has a decision with the record cited |
 
 Existing issues re-pointed rather than duplicated:
 
