@@ -300,9 +300,11 @@ CREATE UNIQUE INDEX uq_version_cold_trunk_position
 -- descending probe.
 CREATE INDEX idx_version_hot_trunk_at_time
     ON version_hot (vo_id, committed_at DESC) WHERE branch_number = 0;
--- The current tip of one branch: the greatest branch_version within a branch.
-CREATE INDEX idx_version_hot_branch_tip
-    ON version_hot (vo_id, branch_number, branch_version DESC);
+-- The current tip of one lineage: the greatest commit ordinal within a branch
+-- number, the trunk being branch number 0. This is what "is this version still
+-- the tip" asks, and the placement read asks it on every supersession.
+CREATE INDEX idx_version_hot_lineage_tip
+    ON version_hot (vo_id, branch_number, sys_version DESC);
 CREATE INDEX idx_version_hot_ehr ON version_hot (ehr_id, kind);
 CREATE INDEX idx_version_hot_contribution ON version_hot (contribution_id);
 CREATE INDEX idx_version_hot_commit_audit ON version_hot (commit_audit_id);

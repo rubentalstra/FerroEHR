@@ -147,6 +147,7 @@ impl Builder<'_> {
         for step in &leaf.anchor {
             let alias = format!("s{}", self.next_ctr());
             sub.from_as(Node::Table, Alias::new(alias.as_str()));
+            sub.and_where(super::expr::hot(&alias));
             sub.and_where(col(&alias, "vo_id").eq(col(&prev, "vo_id")));
             sub.and_where(col(&alias, "sys_version").eq(col(&prev, "sys_version")));
             sub.and_where(col(&alias, "num").between(col(&prev, "num"), col(&prev, "num_cap")));

@@ -8,7 +8,7 @@
 //! adapter-side assembly the router consumes.
 
 use ferroehr::config::auth::AuthConfig;
-use ferroehr::config::server::{AdminConfig, ServerConfig, TenancyConfig};
+use ferroehr::config::server::{AdminConfig, ServerConfig};
 use ferroehr::config::smart::SmartConfig;
 
 /// The REST adapter's runtime configuration view, assembled by the binary

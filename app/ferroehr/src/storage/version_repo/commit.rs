@@ -3,9 +3,10 @@
 
 //! The local commit write path.
 //!
-//! Covers the `audit` + `contribution` inserts, the folded one-statement
-//! version commit, the lineage-tip close, and the folder-membership +
-//! event-outbox writes that ride along inside the same commit transaction.
+//! Covers the `commit_audit` + `contribution` inserts, the folded
+//! one-statement version commit with its head upsert, and the
+//! folder-membership + event-outbox writes that ride along inside the same
+//! commit transaction.
 //!
 //! No openEHR spec governs the SQL — our own design. The change-control law realized here is RM common master06
 //! (§Committal and Audits, §The 'Virtual Version Tree'); `AUDIT_DETAILS` is
@@ -24,7 +25,8 @@ use uuid::Uuid;
 use crate::ids::{EhrId, VoId};
 use crate::storage::error::StorageError;
 
-/// The `AUDIT_DETAILS` fields to persist, as the `audit` row's own columns.
+/// The `AUDIT_DETAILS` fields to persist, as the `commit_audit` row's own
+/// columns.
 ///
 /// master04 §Audit Details: `change_type` is the numeric `audit_change_type`
 /// group code, never a rubric (`Change_type_valid`), and the three jsonb
@@ -73,7 +75,8 @@ pub async fn advisory_lock(tx: &mut PgConnection, vo_id: VoId) -> Result<(), Sto
     Ok(())
 }
 
-/// Inserts an `audit` row, returning its id and the server-computed timestamp.
+/// Inserts a `commit_audit` row, returning its id and the server-computed
+/// timestamp.
 ///
 /// The `time_committed` (master06 §Committal m3) is captured via `RETURNING` so
 /// the commit path can build the exact `ORIGINAL_VERSION` it will later serve —
@@ -132,7 +135,7 @@ pub async fn insert_contribution(
     inserted.ok_or(StorageError::ContributionUidInUse(None))
 }
 
-/// Insert an `audit` row and its enclosing `contribution` in ONE round trip
+/// Insert a `commit_audit` row and its enclosing `contribution` in ONE round trip
 /// via a data-modifying CTE, returning `(contribution_id, commit_audit_id,
 /// time_committed)`.
 ///
@@ -197,20 +200,18 @@ pub async fn write_contribution(
 
 /// The `version` columns for a **folded** commit — every content column of
 /// a stored version EXCEPT `contribution_id`/`commit_audit_id`, which come from the
-/// same statement's `contribution`/`audit` CTEs.
+/// same statement's `contribution`/`commit_audit` CTEs.
 ///
 /// `time_committed` is the caller's pre-read commit instant, a database `now()`
 /// fetched earlier on this request and so still server-assigned (master06
-/// §Committal m3). Binding it makes the stored audit time, the `sys_period` open
-/// bound and the instant the `VERSION.signature` was computed over one value by
-/// construction.
+/// §Committal m3). Binding it makes the stored audit time, the version row's
+/// own `committed_at` and the instant the `VERSION.signature` was computed over
+/// one value by construction.
 ///
-/// A superseded lineage tip is closed INSIDE the same statement: when
-/// `close_ordinal` is set, the leading `cl` CTE closes that tip's `sys_period`
-/// at the identical bound instant, and the insert CTE depends on it, so the
-/// one-open-row-per-lineage partial unique indexes (`uq_vo_version_current` /
-/// `uq_vo_version_branch_current`) see the closed tip before the new open row
-/// lands (master06 §The 'Virtual Version Tree').
+/// Nothing is superseded in place: the store is append-only, so a commit
+/// inserts its version row and updates the object's one mutable head row in the
+/// same statement. Which version is current is the head row's answer
+/// (master06 §The 'Virtual Version Tree'), not a validity interval.
 #[derive(Debug)]
 pub struct FoldedVersion<'a> {
     /// The versioned object's id.
@@ -257,20 +258,53 @@ pub struct FoldedVersion<'a> {
     pub body: Option<&'a str>,
     /// The commit instant: the database `now()` the caller read on this
     /// request (the placement read, the writability gate, or the owning
-    /// CONTRIBUTION's committal), stored as the audit `time_committed` and
-    /// the `sys_period` open bound.
+    /// CONTRIBUTION's committal), stored as the audit `time_committed` and as
+    /// the version row's own `committed_at`.
     pub time_committed: jiff::Timestamp,
     /// The decomposed node rows — inserted by the SAME statement through a
     /// node CTE ordered after the version row (empty on a logical delete:
     /// the unnest yields no rows and the CTE writes nothing).
     pub rows: &'a [crate::storage::row::NodeRow],
-    /// The storage ordinal of the lineage tip this version supersedes —
-    /// closed by the SAME statement's leading `cl` CTE at the bound commit
-    /// instant, before the version row inserts (the insert CTE depends on
-    /// `cl`, so the one-open-row-per-lineage partial unique indexes see the
-    /// closed tip). `None` (a create or a fork) matches no row and closes
-    /// nothing.
-    pub close_ordinal: Option<i32>,
+}
+
+/// The head upsert both folded commit statements carry.
+///
+/// One mutable row per versioned object, written in the same statement as the
+/// version row it describes. A TRUNK commit advances every column; a BRANCH
+/// commit advances only what a branch changes — the any-lineage head ordinal
+/// and the commit instant — leaving the trunk's own head, lifecycle state and
+/// template alone, because a branch does not supersede the trunk (RM common
+/// master06 §The 'Virtual Version Tree').
+///
+/// `{branch}`, `{ordinal}`, `{lifecycle}` and `{template}` are the caller's
+/// parameter placeholders; `FROM v` orders this CTE after the version insert.
+fn head_upsert(
+    vo: &str,
+    kind: &str,
+    ehr: &str,
+    ordinal: &str,
+    branch: &str,
+    lifecycle: &str,
+    template: &str,
+    committed_at: &str,
+) -> String {
+    format!(
+        "INSERT INTO vo_head (vo_id, kind, ehr_id, head_sys_version, \
+             trunk_head_sys_version, lifecycle_state, template_id, committed_at) \
+         SELECT {vo}, {kind}, {ehr}, {ordinal}, \
+                CASE WHEN {branch} = 0 THEN {ordinal} ELSE NULL END, \
+                {lifecycle}, {template}, {committed_at}::timestamptz \
+         FROM v \
+         ON CONFLICT (vo_id) DO UPDATE SET \
+             head_sys_version = EXCLUDED.head_sys_version, \
+             committed_at = EXCLUDED.committed_at, \
+             trunk_head_sys_version = CASE WHEN {branch} = 0 \
+                 THEN EXCLUDED.head_sys_version ELSE vo_head.trunk_head_sys_version END, \
+             lifecycle_state = CASE WHEN {branch} = 0 \
+                 THEN EXCLUDED.lifecycle_state ELSE vo_head.lifecycle_state END, \
+             template_id = CASE WHEN {branch} = 0 \
+                 THEN EXCLUDED.template_id ELSE vo_head.template_id END"
+    )
 }
 
 /// A **standalone** folded commit.
@@ -286,11 +320,10 @@ pub struct FoldedVersion<'a> {
 ///
 /// This is the round-trip-collapsed equivalent of [`write_contribution`]
 /// followed by a plain `version` insert, byte-identical in the rows written
-/// and the values returned: the version's `sys_period` and the audit both open
-/// at the caller's bound [`FoldedVersion::time_committed`], and everything runs
-/// inside the caller's transaction. Any lineage-tip close is a separate prior
-/// statement (see [`FoldedVersion`]). No openEHR spec governs statement batching
-/// — our own design.
+/// and the values returned: the version's `committed_at` and the audit's
+/// `time_committed` are both the caller's bound
+/// [`FoldedVersion::time_committed`], and everything runs inside the caller's
+/// transaction. No openEHR spec governs statement batching — our own design.
 ///
 /// # Errors
 /// Returns [`StorageError::ContributionUidInUse`] on a duplicate supplied uid
@@ -304,14 +337,9 @@ pub async fn commit_new_version(
 ) -> Result<(Uuid, Uuid, jiff::Timestamp), StorageError> {
     static SQL: std::sync::LazyLock<String> = std::sync::LazyLock::new(|| {
         format!(
-            "WITH cl AS ( \
-                 UPDATE version \
-                 SET sys_period = tstzrange(lower(sys_period), $22::timestamptz, '[)') \
-                 WHERE vo_id = $8 AND sys_version = $23 AND upper_inf(sys_period) \
-                 RETURNING 1 \
-             ), a AS ( \
-                 INSERT INTO commit_audit (system_id, change_type, description, committer, attestation, \
-                                    time_committed) \
+            "WITH a AS ( \
+                 INSERT INTO commit_audit (system_id, change_type, description, committer, \
+                                           attestation, time_committed) \
                  VALUES ($1, $2, $3, $4, $5, $22::timestamptz) RETURNING id, time_committed \
              ), c AS ( \
                  INSERT INTO contribution (id, ehr_id, commit_audit_id) \
@@ -321,17 +349,20 @@ pub async fn commit_new_version(
              ), v AS ( \
                  INSERT INTO version \
                    (vo_id, kind, ehr_id, sys_version, trunk_version, branch_number, branch_version, \
-                    sys_period, lifecycle_state, creating_system_id, preceding_version_uid, \
+                    lifecycle_state, creating_system_id, preceding_version_uid, \
                     contribution_id, commit_audit_id, template_id, signature, \
-                    signature_client_supplied, stable_compatible, body, origins) \
-                 SELECT $8, $9, $7, $10, $11, $12, $13, tstzrange($22::timestamptz, NULL, '[)'), \
-                        $14, $15, $16, c.id, a.id, $17, $18, $19, $20, $21, $24 \
-                 FROM a, c, (SELECT count(*) FROM cl) AS cl_done \
+                    signature_client_supplied, stable_compatible, body, origins, committed_at) \
+                 SELECT $8, $9, $7, $10, $11, $12, $13, \
+                        $14, $15, $16, c.id, a.id, $17, $18, $19, $20, $21, $23, \
+                        $22::timestamptz \
+                 FROM a, c \
                  RETURNING 1 \
+             ), h AS ( {} \
              ), n AS ( {} ) \
              SELECT a.id AS commit_audit_id, a.time_committed, c.id AS contribution_id \
              FROM a LEFT JOIN c ON true",
-            crate::storage::node_repo::node_insert_cte("$8", "$10", "$7", 25)
+            head_upsert("$8", "$9", "$7", "$10", "$12", "$14", "$17", "$22"),
+            crate::storage::node_repo::node_insert_cte("$8", "$10", "$7", 24)
         )
     });
     let row = sqlx::query(sqlx::AssertSqlSafe(SQL.as_str()))
@@ -357,7 +388,6 @@ pub async fn commit_new_version(
         .bind(v.stable_compatible)
         .bind(v.body)
         .bind(v.time_committed.to_string())
-        .bind(v.close_ordinal)
         .bind(serde_json::json!(v.origins));
     let node_refs: Vec<&crate::storage::row::NodeRow> = v.rows.iter().collect();
     let row = crate::storage::node_repo::bind_node_arrays(row, &node_refs)
@@ -381,10 +411,9 @@ pub async fn commit_new_version(
 /// Returns `(commit_audit_id, time_committed)`. The CONTRIBUTION and its own audit
 /// were written earlier in the same transaction ([`write_contribution`]);
 /// each change carries its own `commit_audit` (master06 §Committal and
-/// Audits), opened at the caller's bound [`FoldedVersion::time_committed`]
-/// exactly as [`commit_new_version`] does. Any lineage-tip close is a
-/// separate prior statement. No openEHR spec governs statement batching —
-/// our own design.
+/// Audits), stamped with the caller's bound [`FoldedVersion::time_committed`]
+/// exactly as [`commit_new_version`] does. No openEHR spec governs statement
+/// batching — our own design.
 ///
 /// # Errors
 /// Returns [`StorageError::Database`] on a driver/insert failure.
@@ -396,28 +425,26 @@ pub async fn commit_version_into(
 ) -> Result<(Uuid, jiff::Timestamp), StorageError> {
     static SQL: std::sync::LazyLock<String> = std::sync::LazyLock::new(|| {
         format!(
-            "WITH cl AS ( \
-                 UPDATE version \
-                 SET sys_period = tstzrange(lower(sys_period), $22::timestamptz, '[)') \
-                 WHERE vo_id = $6 AND sys_version = $23 AND upper_inf(sys_period) \
-                 RETURNING 1 \
-             ), a AS ( \
-                 INSERT INTO commit_audit (system_id, change_type, description, committer, attestation, \
-                                    time_committed) \
+            "WITH a AS ( \
+                 INSERT INTO commit_audit (system_id, change_type, description, committer, \
+                                           attestation, time_committed) \
                  VALUES ($1, $2, $3, $4, $5, $22::timestamptz) RETURNING id, time_committed \
              ), v AS ( \
                  INSERT INTO version \
                    (vo_id, kind, ehr_id, sys_version, trunk_version, branch_number, branch_version, \
-                    sys_period, lifecycle_state, creating_system_id, preceding_version_uid, \
+                    lifecycle_state, creating_system_id, preceding_version_uid, \
                     contribution_id, commit_audit_id, template_id, signature, \
-                    signature_client_supplied, stable_compatible, body, origins) \
-                 SELECT $6, $7, $8, $9, $10, $11, $12, tstzrange($22::timestamptz, NULL, '[)'), \
-                        $13, $14, $15, $16, a.id, $17, $18, $19, $20, $21, $24 \
-                 FROM a, (SELECT count(*) FROM cl) AS cl_done \
+                    signature_client_supplied, stable_compatible, body, origins, committed_at) \
+                 SELECT $6, $7, $8, $9, $10, $11, $12, \
+                        $13, $14, $15, $16, a.id, $17, $18, $19, $20, $21, $23, \
+                        $22::timestamptz \
+                 FROM a \
                  RETURNING 1 \
+             ), h AS ( {} \
              ), n AS ( {} ) \
              SELECT a.id AS commit_audit_id, a.time_committed FROM a",
-            crate::storage::node_repo::node_insert_cte("$6", "$9", "$8", 25)
+            head_upsert("$6", "$7", "$8", "$9", "$11", "$13", "$17", "$22"),
+            crate::storage::node_repo::node_insert_cte("$6", "$9", "$8", 24)
         )
     });
     let row = sqlx::query(sqlx::AssertSqlSafe(SQL.as_str()))
@@ -443,7 +470,6 @@ pub async fn commit_version_into(
         .bind(v.stable_compatible)
         .bind(v.body)
         .bind(v.time_committed.to_string())
-        .bind(v.close_ordinal)
         .bind(serde_json::json!(v.origins));
     let node_refs: Vec<&crate::storage::row::NodeRow> = v.rows.iter().collect();
     let row = crate::storage::node_repo::bind_node_arrays(row, &node_refs)

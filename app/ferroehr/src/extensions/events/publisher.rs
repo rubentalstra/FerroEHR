@@ -229,7 +229,6 @@ async fn run(
             && n > 0
         {
             tracing::debug!("event publisher flushed {n} events on shutdown");
-            }
         }
     }
     tracing::debug!("event publisher loop exited");

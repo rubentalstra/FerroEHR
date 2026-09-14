@@ -2044,12 +2044,13 @@ impl FerroEhrService {
             ));
         }
 
-        // Every loaded row went into the primary tier; the ones the record
-        // marks archived belong in the cold tier, so the invariant "a marker
-        // means the rows are in `cold`" holds for a loaded EHR exactly as it
-        // does for a locally archived one.
-        let archived: Vec<VoId> = record.archives.iter().map(|ar| ar.vo_id).collect();
-        version_repo::tier::freeze(&mut tx, &archived).await?;
+        // Every loaded row went into the hot tier; the ones the record marks
+        // archived belong in the cold one, so a loaded EHR carries the same
+        // tier placement a locally archived one does.
+        for archive in &record.archives {
+            version_repo::tier::freeze(&mut tx, &[archive.vo_id], archive.reason.as_deref())
+                .await?;
+        }
 
         tx.commit().await?;
         Ok(())

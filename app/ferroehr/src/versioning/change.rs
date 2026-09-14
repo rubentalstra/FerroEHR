@@ -221,13 +221,12 @@ pub(crate) struct WriteEnvelope {
 struct PrecedingTip {
     ehr_id: Option<EhrId>,
     kind: Kind,
-    ordinal: i32,
     tree: TreeId,
     creating_system_id: String,
     /// The preceding version's lifecycle state — the "from" state of the
     /// transition.
     lifecycle_state: String,
-    /// Whether the tip is still open (`upper_inf(sys_period)`).
+    /// Whether this version is still the tip of its own lineage.
     open: bool,
 }
 
@@ -241,7 +240,6 @@ fn preceding_tip(
     Ok(PrecedingTip {
         ehr_id: row.ehr_id,
         kind,
-        ordinal: row.sys_version,
         tree: TreeId::from_columns(row.trunk_version, row.branch_number, row.branch_version),
         creating_system_id: row.creating_system_id,
         lifecycle_state: row.lifecycle_state,
@@ -253,9 +251,6 @@ fn preceding_tip(
 struct NextVersion {
     ordinal: i32,
     tree: TreeId,
-    /// The lineage tip to close on insert; `None` when the commit FORKS a new
-    /// branch and the preceding version stays valid.
-    close_ordinal: Option<i32>,
     /// The `preceding_version_uid` to store.
     preceding_uid: String,
     /// The preceding version's lifecycle state (the transition "from" state).
@@ -366,13 +361,13 @@ async fn next_version(
     }
     let preceding_uid = object_version_id(vo_id, &tip.creating_system_id, tip.tree);
 
-    let (tree, close_ordinal) = if composite_ids_equal(&tip.creating_system_id, local_system_id) {
-        // Continue the lineage this system owns; the preceding tip is superseded.
-        let tree = match tip.tree.branch {
+    let tree = if composite_ids_equal(&tip.creating_system_id, local_system_id) {
+        // Continue the lineage this system owns; the preceding tip is
+        // superseded by the head row advancing past it.
+        match tip.tree.branch {
             None => TreeId::trunk(tip.tree.trunk + 1),
             Some((b, v)) => TreeId::branch(tip.tree.trunk, b, v + 1),
-        };
-        (tree, Some(tip.ordinal))
+        }
     } else {
         // Local modification of a version copied from elsewhere: fork a branch
         // at the preceding version's trunk fork point (master06 §Distributed
@@ -387,12 +382,11 @@ async fn next_version(
         let next_branch =
             crate::storage::version_repo::placement::next_branch_number(tx, vo_id, tip.tree.trunk)
                 .await?;
-        (TreeId::branch(tip.tree.trunk, next_branch, 1), None)
+        TreeId::branch(tip.tree.trunk, next_branch, 1)
     };
     Ok(NextVersion {
         ordinal,
         tree,
-        close_ordinal,
         preceding_uid,
         preceding_lifecycle: tip.lifecycle_state,
         now,
@@ -426,9 +420,6 @@ struct ResolvedWrite {
     /// `ORIGINAL_VERSION.preceding_version_uid` (`None` for a first version).
     preceding_uid: Option<String>,
     template_id: Option<String>,
-    /// The lineage tip storage ordinal to supersede at `now()` — `None` for a
-    /// first version or a FORK (master06 §The 'Virtual Version Tree').
-    close_ordinal: Option<i32>,
     /// A client-supplied `UPDATE_VERSION.signature`, stored verbatim (master06
     /// §Digital Signature); `None` on the direct endpoints.
     client_signature: Option<String>,
@@ -675,7 +666,6 @@ async fn apply_change(
                 lifecycle,
                 preceding_uid: None,
                 template_id,
-                close_ordinal: None,
                 client_signature: signature,
                 rows,
                 canonical_text,
@@ -731,7 +721,6 @@ async fn apply_change(
                 lifecycle,
                 preceding_uid: Some(next.preceding_uid),
                 template_id,
-                close_ordinal: next.close_ordinal,
                 client_signature: signature,
                 rows,
                 canonical_text,
@@ -763,7 +752,6 @@ async fn apply_change(
                 lifecycle: lifecycle::state::DELETED.to_owned(),
                 preceding_uid: Some(next.preceding_uid),
                 template_id: None,
-                close_ordinal: next.close_ordinal,
                 client_signature: signature,
                 rows: Vec::new(),
                 canonical_text: None,
@@ -861,7 +849,6 @@ async fn commit_resolved(
         // §The 'Virtual Version Tree'), and the insert CTE depends on `cl`
         // so the one-open-row-per-lineage partial unique indexes see the
         // closed tip first.
-        close_ordinal: r.close_ordinal,
     };
     // The folded statements BIND `r.time_committed` (the instant the signature
     // was computed over) as the audit time and the `sys_period` open bound, so
