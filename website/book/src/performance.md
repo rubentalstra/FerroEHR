@@ -284,6 +284,40 @@ by the runner's `perf-assets` subcommand (wrapped by
 `scripts/render/perf-assets.sh`); the docs CI job re-renders and diffs them, so a
 hand-edited or stale asset fails the build.
 
+## The storage benchmark harness
+
+A fourth instrument measures the storage layer directly, below the wire:
+
+```bash
+STORAGE_BENCH_CLASS=poc cargo bench -p ferroehr --bench storage
+```
+
+It seeds a corpus through the ordinary write path, then times the storage
+layer's hot paths one at a time: a composition commit, a supersession, the
+supersession that states the version it replaces, a point read by version uid
+and one by versioned-object uid, the version at an instant, the revision
+history, an AQL CONTAINS chain over one EHR and over the whole population,
+archive and restore of an EHR, and one retention prune.
+
+Beside each operation's wall-clock it records what the database did for it. The
+per-relation tuple counters (inserted, updated, updated in place, dead, live)
+and the relation sizes come from `pg_stat_user_tables`, the buffer hits and
+misses from `pg_stat_database`, and the write-ahead-log bytes from the WAL
+position either side of the measurement. One representative commit is probed on
+its own, and the population query is explained with
+`EXPLAIN (ANALYZE, BUFFERS, WAL)` inside a transaction that is rolled back, so
+the plan shape and its index choices land in the record too.
+
+Everything runs through the service and the public storage API, and the
+relations are discovered from the catalogue, so no table name appears anywhere
+in the harness and the same file measures a rewritten schema. That is the
+point: a storage change is argued from a before-and-after pair taken with one
+instrument. It earns no class and touches no conformance artifact; the record's
+shape is documented in `docs/benchmarks/storage/README.md`. Records are local by
+default, and the committed baseline is what this page renders.
+
+{{#include ../generated/storage-bench.md}}
+
 ## The latest measured run
 
 The per-operation percentiles below are re-derived at build time from the

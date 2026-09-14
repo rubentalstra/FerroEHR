@@ -37,6 +37,7 @@ bash "$ROOT/scripts/render/conformance-stats.sh" includes
 bash "$ROOT/scripts/render/comparison.sh"
 bash "$ROOT/scripts/render/perf-assets.sh"
 bash "$ROOT/scripts/render/cohort-bench.sh"
+bash "$ROOT/scripts/render/storage-bench.sh"
 
 # 2. Clean + recreate _site.
 rm -rf "$OUT"

@@ -17,6 +17,24 @@ workflow refuses a tag that has no matching section here.
 
 ### Added
 
+- **A storage benchmark harness** (#3367). `cargo bench -p ferroehr --bench
+  storage` seeds a corpus through the ordinary write path, then times the
+  storage layer's hot paths one at a time: a composition commit, a supersession,
+  the `If-Match` supersession, point reads by version uid and by
+  versioned-object uid, the version at an instant, the revision history, an AQL
+  CONTAINS chain over one EHR and over the population, archive and restore of an
+  EHR, and one retention prune. Beside each operation's wall-clock it records
+  what the database did for it: the per-relation tuple counters and relation
+  sizes from `pg_stat_user_tables`, buffer hits and misses from
+  `pg_stat_database`, the write-ahead-log bytes either side of the measurement,
+  one representative commit probed on its own, and
+  `EXPLAIN (ANALYZE, BUFFERS, WAL)` of the population statement inside a
+  rolled-back transaction. Everything runs through the service and the public
+  storage API, and the relations are discovered from the catalogue, so the same
+  harness measures a rewritten schema. The JSON record lands under
+  `docs/benchmarks/storage/<schema-generation>/` and reaches the performance
+  page through `scripts/render/storage-bench.sh`. It is a benchmark, never a
+  conformance record: conformance is the CNF suite Veredictum runs.
 - **The Kubernetes deployment probe observes the FerroTERM workload** (#3328).
   `scripts/deploy-probe-k8s.sh` gains a terminology stage (`P-K8S-TERM-*`) that
   reads the chart's `terminology.enabled` claims off a running cluster: the
