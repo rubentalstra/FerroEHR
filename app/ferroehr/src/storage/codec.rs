@@ -108,7 +108,7 @@ fn walk(
         .map(str::to_owned);
     // The coded half of a DV_CODED_TEXT name, promoted so the AQL node
     // predicate matches a coded name without a JSON probe (QUERY
-    // master03-aql.adoc §Node predicate). Absent on a plain DV_TEXT name.
+    // master03-syntax.adoc §Node predicate). Absent on a plain DV_TEXT name.
     let defining_code = json.get("name").and_then(|n| n.get("defining_code"));
     let name_code = defining_code
         .and_then(|c| c.get("code_string"))

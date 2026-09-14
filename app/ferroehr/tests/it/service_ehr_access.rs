@@ -5,7 +5,7 @@
 //! `PostgreSQL` 18 (shared testkit harness).
 //!
 //! `EHR_ACCESS` is a mandatory, versioned RM object and the access-decision
-//! authority (RM `org.openehr.rm.clinical.ehr_access.adoc` §`EHR_ACCESS` Class); its
+//! authority (RM `org.openehr.rm.ehr.ehr_access.adoc` §`EHR_ACCESS` Class); its
 //! `settings` are change-controlled like all content (RM ehr
 //! `master04-ehr_package.adoc` §EHR Access). This test commits an `EHR_ACCESS`
 //! version carrying the `ferroehr.access_control.v1` scheme settings through a

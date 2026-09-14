@@ -54,7 +54,7 @@ pub struct NodeRow {
     pub name: Option<String>,
     /// `name/defining_code/code_string` when the name is a `DV_CODED_TEXT`;
     /// `None` on a plain `DV_TEXT` name. Promoted for the AQL node predicate
-    /// (QUERY `master03-aql.adoc` §Node predicate).
+    /// (QUERY `master03-syntax.adoc` §Node predicate).
     pub name_code: Option<String>,
     /// `name/defining_code/terminology_id/value` when the name is coded;
     /// `None` otherwise.

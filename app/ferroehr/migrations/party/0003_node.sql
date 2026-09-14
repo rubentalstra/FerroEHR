@@ -20,7 +20,7 @@
 -- promoted predicate columns are our own storage design.
 --
 -- The interval (num, num_cap) is what makes AQL CONTAINS an integer range join
--- rather than a JSON walk (QUERY master03-aql.adoc §Containment). The promoted
+-- rather than a JSON walk (QUERY master03-syntax.adoc §Containment). The promoted
 -- name_code and name_terminology columns are what make the AQL node predicate
 -- `[atNNNN, 'text']` and its coded form answerable without a JSON probe
 -- (master03 §Node predicate).
@@ -64,7 +64,7 @@ CREATE TABLE node (
     -- The node's name.value.
     name        text,
     -- The node's name/defining_code, promoted so the AQL node predicate can
-    -- match a coded name without a JSON probe. QUERY master03-aql.adoc §Node
+    -- match a coded name without a JSON probe. QUERY master03-syntax.adoc §Node
     -- predicate matches on the archetype node id and on the name, and the name
     -- of a coded node is a DV_CODED_TEXT whose defining_code is the stable
     -- half; name_terminology is that code's terminology_id.
@@ -138,13 +138,13 @@ CREATE INDEX idx_node_hot_arch_subsume
 CREATE INDEX idx_node_hot_context_start ON node_hot (ehr_id, context_start)
     WHERE rm_type = 'COMPOSITION';
 
-COMMENT ON TABLE node IS 'Decomposed versioned-object content: one row per RM structure node, per version (our own storage design — openEHR defines no SQL schema). The nested-set interval num..=num_cap makes AQL CONTAINS an integer range join (QUERY master03-aql.adoc §Containment).';
+COMMENT ON TABLE node IS 'Decomposed versioned-object content: one row per RM structure node, per version (our own storage design — openEHR defines no SQL schema). The nested-set interval num..=num_cap makes AQL CONTAINS an integer range join (QUERY master03-syntax.adoc §Containment).';
 COMMENT ON COLUMN node.tier IS 'The storage tier and the partition key, kept in lockstep with the version row by the foreign key''s ON UPDATE CASCADE.';
 COMMENT ON COLUMN node.num IS 'Pre-order number within the versioned object (root = 0).';
 COMMENT ON COLUMN node.num_cap IS 'The highest num in this node''s subtree: the subtree is num..=num_cap (AQL CONTAINS).';
 COMMENT ON COLUMN node.parent_num IS 'The num of the parent structure node (the root points at itself).';
-COMMENT ON COLUMN node.name IS 'The node''s name.value, promoted for the AQL node predicate (QUERY master03-aql.adoc §Node predicate).';
-COMMENT ON COLUMN node.name_code IS 'The code_string of the node''s name/defining_code when its name is coded; NULL otherwise. Promoted for the AQL node predicate (QUERY master03-aql.adoc §Node predicate). Our own storage design.';
+COMMENT ON COLUMN node.name IS 'The node''s name.value, promoted for the AQL node predicate (QUERY master03-syntax.adoc §Node predicate).';
+COMMENT ON COLUMN node.name_code IS 'The code_string of the node''s name/defining_code when its name is coded; NULL otherwise. Promoted for the AQL node predicate (QUERY master03-syntax.adoc §Node predicate). Our own storage design.';
 COMMENT ON COLUMN node.name_terminology IS 'The terminology_id of the node''s name/defining_code when its name is coded; NULL otherwise. Our own storage design.';
 COMMENT ON COLUMN node.arch_entity IS 'qualified_rm_entity of a full archetype HRID, lowercased for comparison (BASE base_types master05 §Archetype Identifiers); NULL on at/id-code nodes.';
 COMMENT ON COLUMN node.arch_concept IS 'The full domain_concept (specialisation segments included) of a full archetype HRID, lowercased, so a parent query matches a child by prefix (BASE architecture_overview master10 §Design-time Relationships).';

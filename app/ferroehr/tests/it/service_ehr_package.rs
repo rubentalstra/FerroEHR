@@ -4,10 +4,10 @@
 //! RM EHR-package cross-version + tag-scoping duties, end-to-end against a
 //! real `PostgreSQL` 18 (shared testkit harness) — A1 rm-ehr chapter.
 //!
-//! Spec: RM ehr `org.openehr.rm.clinical.versioned_composition.adoc`
+//! Spec: RM ehr `org.openehr.rm.ehr.versioned_composition.adoc`
 //! (`Archetype_node_id_valid`, `Persistent_validity` — a versioned composition
 //! cannot switch archetype or persistence category across versions) and
-//! `org.openehr.rm.clinical.ehr.adoc` `EHR.tags` + master04 §Tags ("Tag `_target_`
+//! `org.openehr.rm.ehr.ehr.adoc` `EHR.tags` + master04 §Tags ("Tag `_target_`
 //! values can only be within the same EHR").
 
 #![expect(
