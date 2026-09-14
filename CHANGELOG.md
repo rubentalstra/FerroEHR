@@ -42,6 +42,12 @@ workflow refuses a tag that has no matching section here.
     one shared DDL template, so the two domains cannot drift.
   - The party domain gains `party_relationship_target`, the target-side index
     behind `PARTY.reverse_relationships`.
+  - Archival is a partition move rather than a copy into mirror relations, so
+    the `cold` and `cold_demographic` schemas, every `*_all` union view and the
+    `vo_archive` marker table are gone; the archive marker is two columns of
+    `vo_head`.
+  - The archive file format carries a version's `committed_at` instead of a
+    validity interval. An archive written by an earlier release does not load.
 
 ### Removed
 

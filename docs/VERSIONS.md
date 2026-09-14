@@ -169,7 +169,7 @@ possibly data migration".
   never used development-only constructs — anything else is refused loudly
   at read, never silently down-converted. The mechanism is a **commit-time
   stamp read at serve time**: every accepted commit records in
-  `vo_version.stable_compatible` whether the RELEASED generation's own reader
+  `version.stable_compatible` whether the RELEASED generation's own reader
   can express the body (`true` by construction under `stable`; the extra
   in-memory parse runs only under `development`), and the one seam every
   stored version body leaves storage through
