@@ -48,17 +48,23 @@ fn scope_tenant() -> Uuid {
 
 /// Every tenant a background reader drains in turn.
 ///
-/// Read from the clinical pool's `tenant` registry, which is not tenant-scoped
-/// and always holds the reserved default; with tenancy off it holds nothing
-/// else, so a reader makes one pass.
+/// Under the stamped `multi` posture, every row of the clinical pool's `tenant`
+/// registry (not tenant-scoped, always holding the reserved default); under
+/// `single` the default tenant alone, because the pools stamp no request
+/// tenant then and a pass for another tenant would write under the default
+/// tenant's session and be refused by the row policy.
 ///
 /// # Errors
 ///
 /// Returns the database error when the registry cannot be read.
 pub async fn tenants(pool: &PgPool) -> Result<Vec<TenantContext>, sqlx::Error> {
-    let rows = sqlx::query("SELECT id, system_id FROM tenant ORDER BY id")
-        .fetch_all(pool)
-        .await?;
+    let rows = sqlx::query(
+        "SELECT id, system_id FROM tenant \
+         WHERE ext.tenancy_posture() = 'multi' OR id = $1 ORDER BY id",
+    )
+    .bind(Uuid::nil())
+    .fetch_all(pool)
+    .await?;
     rows.iter()
         .map(|row| {
             Ok(TenantContext {

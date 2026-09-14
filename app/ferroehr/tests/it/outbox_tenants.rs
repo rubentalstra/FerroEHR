@@ -26,11 +26,12 @@ use sqlx::PgPool;
 use ferroehr::db::{self, DbConfig};
 use ferroehr::extensions::events::config::EventsConfig;
 use ferroehr::extensions::events::publisher::start_with_publisher;
-use ferroehr::extensions::outbox::{OutboxReader, advance, prune, reconcile};
+use ferroehr::extensions::outbox::{OutboxReader, advance, prune, reconcile, tenants};
 use ferroehr::extensions::tenancy::TenantDefinition;
 use ferroehr::extensions::tenant_context::{TenantContext, scope};
 use ferroehr::service::FerroEhrService;
 use ferroehr_ext::events::{EventError, EventPublisher};
+use uuid::Uuid;
 
 use crate::fixtures::dsn_as;
 
@@ -137,6 +138,11 @@ async fn the_drainer_publishes_every_tenants_rows() {
     let pool = db::connect_tenant_scoped(&settings)
         .await
         .expect("tenant-scoped pool");
+    // A multi-tenant deployment: the readers list every registered tenant
+    // only under this posture (the server stamps it at boot).
+    db::stamp_tenancy_posture(&pool, true)
+        .await
+        .expect("stamp multi");
     let svc = FerroEhrService::new(pool.clone());
 
     let a = tenant(&svc, "clinic-a").await;
@@ -281,5 +287,45 @@ async fn the_prune_floor_is_the_cursor_of_the_tenant_it_runs_for() {
     assert!(
         a_active,
         "the registry is scoped per tenant: B's switch-off leaves A active"
+    );
+}
+
+#[tokio::test]
+async fn under_the_single_posture_the_readers_list_the_default_tenant_alone() {
+    // The deployment probe's boot failure: tenants registered in the registry
+    // while tenancy is off. The pools stamp no request tenant then, so a pass
+    // for another tenant would write under the default tenant's session and be
+    // refused by the row policy; the list must therefore follow the posture.
+    let testdb = testkit::db().await.expect("testkit database");
+    let settings = DbConfig::new(dsn_as(&testdb, "otb", "ferroehr_app").await);
+    let pool = db::connect_tenant_scoped(&settings)
+        .await
+        .expect("tenant-scoped pool");
+    let svc = FerroEhrService::new(pool.clone());
+    tenant(&svc, "clinic-a").await;
+    tenant(&svc, "clinic-b").await;
+
+    db::stamp_tenancy_posture(&pool, false)
+        .await
+        .expect("stamp single");
+    let listed: Vec<Uuid> = tenants(&pool)
+        .await
+        .expect("list")
+        .into_iter()
+        .map(|t| t.tenant_id)
+        .collect();
+    assert_eq!(
+        listed,
+        vec![Uuid::nil()],
+        "single: the default tenant alone"
+    );
+
+    db::stamp_tenancy_posture(&pool, true)
+        .await
+        .expect("stamp multi");
+    assert_eq!(
+        tenants(&pool).await.expect("list").len(),
+        3,
+        "multi: the default tenant and both registered ones"
     );
 }
