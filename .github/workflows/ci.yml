@@ -964,6 +964,9 @@ jobs:
       - name: No book page says planned about a closed issue, or shipped about an open one
         env:
           GH_TOKEN: ${{ github.token }}
+          # The issues this PR closes count as closed; context reaches the shell
+          # through env, never `${{ }}`-inline (the template-injection rule).
+          PR_BODY: ${{ github.event.pull_request.body }}
         run: bash scripts/checks/tracker-status.sh
 
   # The two EHDS pages are GENERATED from website/book/ehds.yaml

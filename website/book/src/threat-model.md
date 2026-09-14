@@ -456,9 +456,9 @@ must name a declared pseudonym namespace and carry a UUID once
 `[privacy] subject_namespaces` is set. A `PARTY_IDENTIFIED` or `PARTY_RELATED`
 carrying `identifiers`, and a `PARTY_RELATED` carrying a `name`, are refused
 unless the deployment opts in. An identifier scanner reads every string leaf
-against the active rules: five ship, one per issuing register that publishes a
-checksum (`fi-hetu`, `gb-nhs-number`, `nl-bsn`, `no-fodselsnummer`,
-`se-personnummer`), all active by default in `strict` mode, and a deployment
+against the active rules: eight ship, one per issuing register that publishes a
+check digit (`ch-ahvn13`, `ch-epd-pid`, `de-kvnr`, `fi-hetu`, `gb-nhs-number`,
+`nl-bsn`, `no-fodselsnummer`, `se-personnummer`), all active by default in `strict` mode, and a deployment
 adds regular expressions for the kinds no build can ship a rule for. The two
 write paths that replay content verbatim, EHR-Extract import and the admin
 archive load, are scanned too: they store what they receive, so a body

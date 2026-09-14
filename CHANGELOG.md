@@ -17,6 +17,17 @@ workflow refuses a tag that has no matching section here.
 
 ### Added
 
+- **Identifier-scanner rules for Germany and Switzerland, and the Swiss access-log
+  retention floor** (#3318, #3319). `de-kvnr` refuses the unchangeable part of a
+  Krankenversichertennummer (a letter, eight digits and the GKV-Spitzenverband's
+  check digit), `ch-ahvn13` the AHV number in its plain and dotted display forms
+  (AHVV Art. 133; the BSV's Wegleitung check digit) and `ch-epd-pid` the EPD
+  patient identification number (EPDV-EDI Anhang 1, the fixed `76133761` prefix
+  and its check digit), each transcribed from the issuing authority's own
+  publication and tested against its worked examples. With a Swiss rule active,
+  the server refuses to boot with an audit `retention_days` under the one year
+  DSV Art. 4 Abs. 5 requires. The AHVV joins the vendored corpus at
+  `docs/law/ch/ahvv/`.
 - **The regulation corpus gains the German and Swiss layers** (#3293,
   #3294). `docs/law/de/` carries the BDSG, SGB V (the ePA and telematics
   provisions, §§ 341–355 and 360–363), the GDNG and the StGB (§ 203) as the

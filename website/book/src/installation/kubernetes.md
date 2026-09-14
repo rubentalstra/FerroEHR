@@ -797,9 +797,9 @@ every upgrade and finishes. If your index volume is `ReadOnlyMany`, override it
 with `terminology.strategy={type: RollingUpdate}`. FerroTERM's
 [loading page](https://ferroterm.eu/docs/operate/loading-snomed.html) covers the
 other code systems and their build flags. Size the memory limit for the edition
-before you mount it: `terminology.resources` ships a 1536Mi limit, and
-FerroTERM's own figures put the SNOMED CT Netherlands edition at 889 MB resident
-and the International edition at 702 MB.
+before you mount it: `terminology.resources` ships a 1536Mi limit, and the same
+FerroTERM page states the resident size of each edition, which the limit must
+cover.
 
 **The fail posture is the CDR's shipped one.** `terminology.failOnError`
 defaults to `false`, so a binding the server cannot resolve is accepted; `true`

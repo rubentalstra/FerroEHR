@@ -591,7 +591,7 @@ mode = "strict"              # strict (refuse) | warn (accept + record)
 # positive is a loud 422 an operator answers by narrowing this list, while a
 # false negative is a national identifier stored indefinitely. Each rule
 # transcribes the checksum its own issuing register publishes.
-rules = ["fi-hetu", "gb-nhs-number", "nl-bsn", "no-fodselsnummer", "se-personnummer"]
+rules = ["ch-ahvn13", "ch-epd-pid", "de-kvnr", "fi-hetu", "gb-nhs-number", "nl-bsn", "no-fodselsnummer", "se-personnummer"]
 # Extra patterns (Rust regular expressions) for the kinds no build can ship a
 # rule for: local medical-record numbers, payer references, national
 # postcode-plus-house-number forms. For example, a Dutch deployment adds

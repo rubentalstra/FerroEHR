@@ -75,68 +75,118 @@ impl IdentifierRule {
 /// as patterns ([`CustomPattern`]) instead of the build guessing.
 #[must_use]
 pub fn built_in_rules() -> &'static [IdentifierRule] {
-    &[
-        IdentifierRule {
-            key: "fi-hetu",
-            jurisdiction: "FI",
-            label: "henkilötunnus (personal identity code)",
-            source: "Digital and Population Data Services Agency, \
+    &BUILT_IN_RULES
+}
+
+/// The registry behind [`built_in_rules`], key-sorted.
+static BUILT_IN_RULES: [IdentifierRule; 8] = [
+    IdentifierRule {
+        key: "ch-ahvn13",
+        jurisdiction: "CH",
+        label: "AHV-Nummer (AHVN13)",
+        source: "Structure: AHVV Art. 133 (SR 831.101), vendored at \
+                     docs/law/ch/ahvv/; check digit: Bundesamt für Sozialversicherungen, \
+                     Wegleitung über Versicherungsausweis und individuelles Konto (WL VA/IK) \
+                     318.106.02 d, Anhang 7 B, \
+                     https://sozialversicherungen.admin.ch/de/d/6938/download",
+        collision: "The fixed 756 country code and the mod-10 check digit together accept \
+                        one in ten thousand thirteen-digit runs by chance. The official display \
+                        form 756.3047.5009.62 (WL VA/IK Rz 1201) is matched as well as the plain \
+                        run, because that dotted shape is how the number appears on the insurance \
+                        card and in correspondence.",
+        detect: ch_ahvn13,
+    },
+    IdentifierRule {
+        key: "ch-epd-pid",
+        jurisdiction: "CH",
+        label: "Patientenidentifikationsnummer (EPD-PID)",
+        source: "EPDV Art. 5 Abs. 2 (SR 816.11) and EPDV-EDI Art. 1 with Anhang 1 \
+                     (SR 816.111), vendored at docs/law/ch/epdv/ and docs/law/ch/epdv-edi/, \
+                     https://www.fedlex.admin.ch/eli/cc/2017/205/de",
+        collision: "The first eight digits are the ordinance's own literal constant \
+                        76133761 (country code 76, the BAG participant 13376, the application \
+                        area 1) and the mod-10 check digit adds a tenth, so one in a billion \
+                        eighteen-digit runs passes by chance; the prefix alone is the detector, \
+                        the check digit only rejects transcription errors.",
+        detect: ch_epd_pid,
+    },
+    IdentifierRule {
+        key: "de-kvnr",
+        jurisdiction: "DE",
+        label: "Krankenversichertennummer (unveränderbarer Teil)",
+        source: "GKV-Spitzenverband, Richtlinie zum Aufbau und zur Vergabe einer \
+                     Krankenversichertennummer nach § 290 SGB V, Version 3.4.1 (Stand \
+                     21.10.2025) Rz 175-188 with Anlage 1 (Stand 02.01.2023), \
+                     https://www.gkv-datenaustausch.de/kvnr/kvnr.jsp; the letter-to-digit \
+                     convention (A=01 ... Z=26) is stated in prose only in the same Richtlinie's \
+                     Anlage 2 and fixed for A and C by the KVNR's own worked examples",
+        collision: "One in ten tokens of the shape (a capital letter immediately followed \
+                        by nine digits) passes by chance; the register's exclusions (no digit \
+                        more than three times in a row, no 666) narrow that to one in 10.1 and \
+                        are not claimed. The shape itself is the narrowing, as for fi-hetu: a \
+                        letter glued to nine digits occurs in clinical prose almost never.",
+        detect: de_kvnr,
+    },
+    IdentifierRule {
+        key: "fi-hetu",
+        jurisdiction: "FI",
+        label: "henkilötunnus (personal identity code)",
+        source: "Digital and Population Data Services Agency, \
                      https://dvv.fi/en/personal-identity-code",
-            collision: "The token shape itself is the narrowing: six digits, a century sign, \
+        collision: "The token shape itself is the narrowing: six digits, a century sign, \
                         three digits and a control character. Among tokens of exactly that \
                         shape one in 31 matches by chance; free clinical text produces the \
                         shape almost never.",
-            detect: fi_hetu,
-        },
-        IdentifierRule {
-            key: "gb-nhs-number",
-            jurisdiction: "GB",
-            label: "NHS Number",
-            source: "NHS Data Model and Dictionary, \
+        detect: fi_hetu,
+    },
+    IdentifierRule {
+        key: "gb-nhs-number",
+        jurisdiction: "GB",
+        label: "NHS Number",
+        source: "NHS Data Model and Dictionary, \
                      https://www.datadictionary.nhs.uk/attributes/nhs_number.html",
-            collision: "One in eleven delimited ten-digit runs passes by chance, less the \
+        collision: "One in eleven delimited ten-digit runs passes by chance, less the \
                         tenth of candidates the algorithm declares invalid outright. A Unix \
                         epoch second is ten digits, so a raw timestamp written into free text \
                         is this rule's most likely false positive.",
-            detect: gb_nhs_number,
-        },
-        IdentifierRule {
-            key: "nl-bsn",
-            jurisdiction: "NL",
-            label: "burgerservicenummer (BSN)",
-            source: "Rijksdienst voor Identiteitsgegevens, Logisch Ontwerp BSN, \
+        detect: gb_nhs_number,
+    },
+    IdentifierRule {
+        key: "nl-bsn",
+        jurisdiction: "NL",
+        label: "burgerservicenummer (BSN)",
+        source: "Rijksdienst voor Identiteitsgegevens, Logisch Ontwerp BSN, \
                      https://www.rvig.nl/logisch-ontwerp-bsn",
-            collision: "One in eleven delimited nine-digit runs passes by chance. This is the \
+        collision: "One in eleven delimited nine-digit runs passes by chance. This is the \
                         loosest rule shipped, and the reason the caller skips CODE_PHRASE \
                         code strings: SNOMED CT concept identifiers are nine digits often \
                         enough to matter.",
-            detect: nl_bsn,
-        },
-        IdentifierRule {
-            key: "no-fodselsnummer",
-            jurisdiction: "NO",
-            label: "fødselsnummer (national identity number)",
-            source: "Skatteetaten, \
+        detect: nl_bsn,
+    },
+    IdentifierRule {
+        key: "no-fodselsnummer",
+        jurisdiction: "NO",
+        label: "fødselsnummer (national identity number)",
+        source: "Skatteetaten, \
                      https://skatteetaten.github.io/folkeregisteret-api-dokumentasjon/nytt-fodselsnummer-fra-2032/",
-            collision: "Two independent modulus-11 control digits, so about one in 121 \
+        collision: "Two independent modulus-11 control digits, so about one in 121 \
                         delimited eleven-digit runs passes by chance.",
-            detect: no_fodselsnummer,
-        },
-        IdentifierRule {
-            key: "se-personnummer",
-            jurisdiction: "SE",
-            label: "personnummer",
-            source: "Skatteverket, Rättslig vägledning §Uppbyggnad, \
+        detect: no_fodselsnummer,
+    },
+    IdentifierRule {
+        key: "se-personnummer",
+        jurisdiction: "SE",
+        label: "personnummer",
+        source: "Skatteverket, Rättslig vägledning §Uppbyggnad, \
                      https://www4.skatteverket.se/rattsligvagledning/edition/2020.2/330245.html",
-            collision: "The Luhn check alone accepts one in ten ten-digit runs, so the rule \
+        collision: "The Luhn check alone accepts one in ten ten-digit runs, so the rule \
                         also requires the first six digits to read as a date. That narrowing \
                         is ours, not Skatteverket's; it accepts the coordination-number day \
                         offset so no real number is missed, and takes the measured combined \
                         rate to one in 139.",
-            detect: se_personnummer,
-        },
-    ]
-}
+        detect: se_personnummer,
+    },
+];
 
 /// The rule with this configuration key, if this build ships one.
 #[must_use]
@@ -378,6 +428,125 @@ fn fi_hetu(text: &str) -> bool {
                 .next()
                 .is_some_and(|found| found.eq_ignore_ascii_case(&expected))
         })
+    })
+}
+
+/// The GS1 modulo-10 check the Swiss registers use for both the AHVN13 and the
+/// EPD patient identification number: the digits before the last are weighted
+/// from the right alternately 3 and 1, the products are added whole, and the
+/// check digit completes the sum to the next multiple of ten (a multiple of
+/// ten gives 0) — WL VA/IK 318.106.02 d Anhang 7 B and EPDV-EDI Anhang 1 Ziff. 2.
+fn gs1_check_digit_holds(run: &str) -> bool {
+    let bytes = run.as_bytes();
+    let Some((&last, body)) = bytes.split_last() else {
+        return false;
+    };
+    if !bytes.iter().all(u8::is_ascii_digit) {
+        return false;
+    }
+    let sum: u32 = body
+        .iter()
+        .rev()
+        .enumerate()
+        .map(|(i, b)| u32::from(b - b'0') * if i % 2 == 0 { 3 } else { 1 })
+        .sum();
+    let expected = (10 - sum % 10) % 10;
+    u32::from(last - b'0') == expected
+}
+
+/// The official display form of the AHV number, `756.3047.5009.62`
+/// (WL VA/IK Rz 1201): the plain thirteen-digit run split 3.4.4.2.
+static CH_AHVN13_DOTTED: LazyLock<Regex> = LazyLock::new(|| {
+    #[expect(
+        clippy::expect_used,
+        reason = "a fixed literal pattern the module's tests exercise; the alternative to a \
+                  panic at first use is a silently disabled privacy rule"
+    )]
+    Regex::new(r"(^|[^0-9A-Za-z_.])(756\.[0-9]{4}\.[0-9]{4}\.[0-9]{2})([^0-9A-Za-z_.]|$)")
+        .expect("the AHV-number display pattern should compile")
+});
+
+/// CH — the AHVN13: the country code 756, nine digits and a GS1 modulo-10
+/// check digit (AHVV Art. 133; WL VA/IK Anhang 7 B), matched as a plain
+/// thirteen-digit run and in the dotted display form.
+fn ch_ahvn13(text: &str) -> bool {
+    any_delimited_run(text, 13, |run| {
+        run.starts_with("756") && gs1_check_digit_holds(run)
+    }) || CH_AHVN13_DOTTED.captures_iter(text).any(|captured| {
+        captured.get(2).is_some_and(|dotted| {
+            let run: String = dotted
+                .as_str()
+                .chars()
+                .filter(char::is_ascii_digit)
+                .collect();
+            gs1_check_digit_holds(&run)
+        })
+    })
+}
+
+/// The first eight digits of every EPD patient identification number, fixed
+/// by EPDV-EDI Anhang 1 Ziff. 1 (its `Wert` row): the country code 76, the
+/// registered participant «Bundesamt für Gesundheit» 13376, the application
+/// area «Elektronisches Patientendossier» 1.
+const CH_EPD_PID_PREFIX: &str = "76133761";
+
+/// CH — the EPD patient identification number: the fixed prefix, nine
+/// identification digits and a GS1 modulo-10 check digit (EPDV-EDI Anhang 1).
+fn ch_epd_pid(text: &str) -> bool {
+    any_delimited_run(text, 18, |run| {
+        run.starts_with(CH_EPD_PID_PREFIX) && gs1_check_digit_holds(run)
+    })
+}
+
+/// The unchangeable part of a Krankenversichertennummer: a capital letter,
+/// eight digits and a check digit, glued together (Richtlinie 3.4.1 Rz 175-179).
+static DE_KVNR_TOKEN: LazyLock<Regex> = LazyLock::new(|| {
+    #[expect(
+        clippy::expect_used,
+        reason = "a fixed literal pattern the module's tests exercise; the alternative to a \
+                  panic at first use is a silently disabled privacy rule"
+    )]
+    Regex::new(r"(^|[^0-9A-Za-z_])([A-Z])([0-9]{8})([0-9])([^0-9A-Za-z_]|$)")
+        .expect("the Krankenversichertennummer pattern should compile")
+});
+
+/// DE — the check digit of the unchangeable part: the letter becomes its
+/// two-digit alphabet position, the ten digits are weighted from the left
+/// alternately 1 and 2, each product is reduced to its cross-sum, and the check
+/// digit is the units digit of the total (Richtlinie 3.4.1 Rz 185-188, the
+/// worked tables of Anlage 1).
+fn de_kvnr(text: &str) -> bool {
+    DE_KVNR_TOKEN.captures_iter(text).any(|captured| {
+        let Some(((letter, digits), check)) =
+            captured.get(2).zip(captured.get(3)).zip(captured.get(4))
+        else {
+            return false;
+        };
+        let Some(position) = letter
+            .as_str()
+            .bytes()
+            .next()
+            .map(|b| u32::from(b - b'A') + 1)
+        else {
+            return false;
+        };
+        let ten: Vec<u32> = [position.div_euclid(10), position % 10]
+            .into_iter()
+            .chain(digits.as_str().bytes().map(|b| u32::from(b - b'0')))
+            .collect();
+        let total: u32 = ten
+            .iter()
+            .enumerate()
+            .map(|(i, d)| {
+                let product = d * if i % 2 == 0 { 1 } else { 2 };
+                if product >= 10 { product - 9 } else { product }
+            })
+            .sum();
+        check
+            .as_str()
+            .bytes()
+            .next()
+            .is_some_and(|b| u32::from(b - b'0') == total % 10)
     })
 }
 
@@ -688,5 +857,45 @@ mod tests {
             (15.5..=62.0).contains(&measured),
             "fi-hetu matched one in {measured:.1} tokens of its own shape, and publishes one in 31"
         );
+    }
+
+    #[test]
+    fn ch_ahvn13_runs_the_gs1_check_in_both_forms() {
+        // The Wegleitung's own example (Anhang 7 C: Zwischensumme 123 → 7) and
+        // its display example (Rz 1201), then one digit changed in each.
+        accepts_and_refuses("ch-ahvn13", "7561234567897", "7561234567898"); // privacy-allow: the publisher's worked example
+        accepts_and_refuses("ch-ahvn13", "756.3047.5009.62", "756.3047.5009.63"); // privacy-allow: the publisher's display example
+        let rule = detector("ch-ahvn13");
+        // The country code is part of the rule: the same arithmetic over another
+        // prefix is not an AHV number.
+        assert!(!rule.matches("1234567890128"));
+        // A run glued to a word is not a delimited identifier.
+        assert!(!rule.matches("id7561234567897x"));
+    }
+
+    #[test]
+    fn ch_epd_pid_requires_the_ordinance_prefix_and_the_check_digit() {
+        // EPDV-EDI Anhang 1 Ziff. 3, the annex's own illustration
+        // (76133761123456789 → 7), then one digit changed.
+        accepts_and_refuses("ch-epd-pid", "761337611234567897", "761337611234567898"); // privacy-allow: the ordinance's worked example
+        let rule = detector("ch-epd-pid");
+        // Eighteen digits with a valid check but another prefix: not an EPD-PID.
+        assert!(!rule.matches("761337621234567894"));
+    }
+
+    #[test]
+    fn de_kvnr_reads_the_letter_as_its_alphabet_position() {
+        // The Richtlinie's own worked examples (Tabelle 2 and 3), then one digit
+        // changed; the C example is what fixes the letter-to-digit convention.
+        accepts_and_refuses("de-kvnr", "A000500015", "A000500016"); // privacy-allow: the publisher's worked example
+        accepts_and_refuses("de-kvnr", "C000500021", "C000500022"); // privacy-allow: the publisher's worked example
+        let rule = detector("de-kvnr");
+        // Computed forward from the algorithm over chosen prefixes.
+        assert!(rule.matches("K543219876")); // privacy-allow: synthetic
+        assert!(rule.matches("M123456785")); // privacy-allow: synthetic
+        // Nine digits without the letter are not this identifier.
+        assert!(!rule.matches("000500015"));
+        // A lowercase letter is not the register's spelling.
+        assert!(!rule.matches("a000500015"));
     }
 }
