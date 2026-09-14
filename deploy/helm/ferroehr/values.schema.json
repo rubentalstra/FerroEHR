@@ -1434,7 +1434,7 @@
         },
         "existingSecret": {
           "type": "string",
-          "description": "Secret holding this domain's BACKUP DSN (a BYPASSRLS role, read-only on that domain's schemas)."
+          "description": "Secret holding this domain's BACKUP DSN (a read-only role on that domain's schema)."
         },
         "existingSecretKey": {
           "type": "string",

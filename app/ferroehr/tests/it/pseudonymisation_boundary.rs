@@ -92,7 +92,7 @@ async fn the_boundary_refuses_a_party_written_back_to_the_clinical_schema() {
         .execute(&pool)
         .await
         .expect("seed an EHR");
-    let (contribution_id, commit_audit_id) = change_control(&pool, "ehr", Some(ehr_id)).await;
+    let (contribution_id, commit_audit_id) = change_control(&pool, "clinical", Some(ehr_id)).await;
     let refused = sqlx::query(
         "INSERT INTO clinical.version \
            (vo_id, kind, ehr_id, sys_version, trunk_version, committed_at, \
@@ -117,7 +117,7 @@ async fn the_boundary_refuses_an_ehr_scoped_object_in_the_demographic_schema() {
     let db = testkit::db().await.expect("testkit database");
     let pool = db.pool();
 
-    let (contribution_id, commit_audit_id) = change_control(&pool, "demographic", None).await;
+    let (contribution_id, commit_audit_id) = change_control(&pool, "party", None).await;
     let refused = sqlx::query(
         "INSERT INTO party.version \
            (vo_id, kind, ehr_id, sys_version, trunk_version, committed_at, \
@@ -150,27 +150,15 @@ async fn the_boundary_refuses_an_ehr_scoped_object_in_the_demographic_schema() {
 /// from both of the domains its rows join. No openEHR spec governs database
 /// roles — our own design/extension.
 const BARRIERS: &[(&str, &str, &[&str])] = &[
-    (
-        "ew",
-        "ferroehr_ehr",
-        &["demographic", "cold_demographic", "linkage"],
-    ),
-    (
-        "er",
-        "ferroehr_ehr_reader",
-        &["demographic", "cold_demographic", "linkage"],
-    ),
-    ("dw", "ferroehr_demographic", &["ehr", "cold", "linkage"]),
+    ("ew", "ferroehr_ehr", &["party", "linkage"]),
+    ("er", "ferroehr_ehr_reader", &["party", "linkage"]),
+    ("dw", "ferroehr_demographic", &["clinical", "linkage"]),
     (
         "dr",
         "ferroehr_demographic_reader",
-        &["ehr", "cold", "linkage"],
+        &["clinical", "linkage"],
     ),
-    (
-        "lk",
-        "ferroehr_linkage",
-        &["ehr", "cold", "demographic", "cold_demographic"],
-    ),
+    ("lk", "ferroehr_linkage", &["clinical", "party"]),
 ];
 
 /// `SQLSTATE` 42501 `insufficient_privilege` — what `PostgreSQL` reports for a
@@ -358,7 +346,7 @@ async fn a_party_committed_through_the_service_lands_only_in_the_demographic_dom
         );
     }
     let clinical_events: i64 =
-        sqlx::query_scalar("SELECT count(*) FROM ehr.event_outbox WHERE ehr_id IS NULL")
+        sqlx::query_scalar("SELECT count(*) FROM clinical.event_outbox WHERE ehr_id IS NULL")
             .fetch_one(&pool)
             .await
             .expect("count the clinical outbox");
@@ -394,7 +382,7 @@ async fn the_boot_self_check_refuses_a_cross_domain_grant() {
         ),
         (
             "ferroehr_ehr",
-            "demographic.version",
+            "party.version",
             "GRANT SELECT ON",
             "REVOKE SELECT ON",
         ),

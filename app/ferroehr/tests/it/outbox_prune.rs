@@ -21,7 +21,7 @@ use ferroehr::service::FerroEhrService;
 use sqlx::PgPool;
 
 async fn seqs(pool: &PgPool) -> Vec<i64> {
-    sqlx::query_scalar("SELECT seq FROM ehr.event_outbox ORDER BY seq")
+    sqlx::query_scalar("SELECT seq FROM clinical.event_outbox ORDER BY seq")
         .fetch_all(pool)
         .await
         .expect("read outbox seqs")
@@ -34,7 +34,7 @@ async fn seed_published_rows(pool: &PgPool) -> Vec<i64> {
     for _ in 0..5 {
         svc.create_ehr(None).await.expect("create_ehr");
     }
-    sqlx::query("UPDATE ehr.event_outbox SET published_at = now() - interval '30 days'")
+    sqlx::query("UPDATE clinical.event_outbox SET published_at = now() - interval '30 days'")
         .execute(pool)
         .await
         .expect("back-date the published stamps");
@@ -124,7 +124,7 @@ async fn advance_is_monotonic_and_registers_the_reader_active() {
         10
     );
     let active: bool = sqlx::query_scalar(
-        "SELECT active FROM ehr.event_outbox_reader WHERE reader = 'fhir-outbound'",
+        "SELECT active FROM clinical.event_outbox_reader WHERE reader = 'fhir-outbound'",
     )
     .fetch_one(&pool)
     .await

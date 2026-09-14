@@ -221,7 +221,7 @@ async fn commit_emits_reverse_mapped_fhir_resource() {
     let deadline = tokio::time::Instant::now() + Duration::from_secs(30);
     let cursor: i64 = loop {
         let cursor: i64 = sqlx::query_scalar(
-            "SELECT last_seq FROM ehr.event_outbox_reader WHERE reader = 'fhir-outbound'",
+            "SELECT last_seq FROM clinical.event_outbox_reader WHERE reader = 'fhir-outbound'",
         )
         .fetch_one(&pool)
         .await

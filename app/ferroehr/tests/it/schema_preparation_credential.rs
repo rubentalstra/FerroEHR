@@ -263,7 +263,7 @@ async fn a_refused_schema_names_the_schema_and_the_role() {
     else {
         panic!("a privilege refusal must not surface as a bare driver error: {rendered}")
     };
-    assert_eq!(schema, "demographic", "the first set it cannot reach");
+    assert_eq!(schema, "party", "the first set it cannot reach");
     assert_eq!(named, role, "the credential the operator has to change");
     let sqlx::Error::Database(refusal) = &source else {
         panic!("the cause must be PostgreSQL's own refusal: {source}")

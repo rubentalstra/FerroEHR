@@ -627,7 +627,7 @@ fn the_two_statements_never_cross_the_boundary() {
         "the EHR scope binds as an array: {}",
         prepared.sql
     );
-    for forbidden in ["city", "postcode", "demographic", "party_ehr", "ELEMENT"] {
+    for forbidden in ["city", "postcode", "party", "party_ehr", "ELEMENT"] {
         assert!(
             !prepared.sql.contains(forbidden),
             "the clinical statement must not name `{forbidden}`: {}",
@@ -714,7 +714,7 @@ async fn the_crossing_runs_on_three_separated_credentials() {
         "the linkage credential must not be able to read the demographic domain"
     );
     assert!(
-        sqlx::query("SELECT count(*) FROM ehr.node")
+        sqlx::query("SELECT count(*) FROM clinical.node")
             .fetch_one(&linkage)
             .await
             .is_err(),

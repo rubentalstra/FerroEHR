@@ -256,7 +256,7 @@ async fn access_fields_round_trip_on_both_write_paths() {
 
     assert_eq!(
         rows[0].get::<Option<String>, _>("domain").as_deref(),
-        Some("ehr")
+        Some("clinical")
     );
     assert_eq!(
         rows[0].get::<Option<String>, _>("purpose").as_deref(),
@@ -277,7 +277,7 @@ async fn access_fields_round_trip_on_both_write_paths() {
     // pseudonymisation boundary exists to make answerable.
     assert_eq!(
         rows[1].get::<Option<String>, _>("domain").as_deref(),
-        Some("demographic")
+        Some("party")
     );
     assert_eq!(rows[1].get::<Option<i64>, _>("result_count"), Some(1));
     assert_eq!(

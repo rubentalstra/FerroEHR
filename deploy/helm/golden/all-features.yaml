@@ -491,12 +491,6 @@ data:
       service_name = "ferroehr"
       traces_sample_ratio = 0.1
     
-    [tenancy]
-      claim = "realm_access.tenant"
-      enabled = true
-      header = "X-FerroEHR-Tenant"
-      insecure_header_override = true
-    
     [terminology]
       api_enabled = true
       [terminology.external]
@@ -1016,7 +1010,7 @@ spec:
         # secret values. Hashing the ConfigMap template alone missed the last two,
         # so a rotated passphrase or an edited Cedar policy propagated into the
         # volume while every pod kept running on the value it read at startup.
-        checksum/config: 9b1d7056aaf81e87182dfabffe2cde765b3632be11fe8a0dffda66e4cf46ea59
+        checksum/config: 6af60ff7050a516ef0e5f33ff3f9cee144f58f71793e78fb46be67bc223e2db5
         prometheus.io/scrape: "true"
         prometheus.io/port: "9100"
         prometheus.io/path: "/management/prometheus"

@@ -55,8 +55,6 @@ PROBE_OUT="${PROBE_OUT:-docs/conformance/deployment/compose.json}"
 . scripts/deploy-probes/signing.sh
 # shellcheck source=scripts/deploy-probes/observability.sh
 . scripts/deploy-probes/observability.sh
-# shellcheck source=scripts/deploy-probes/tenancy.sh
-. scripts/deploy-probes/tenancy.sh
 # shellcheck source=scripts/deploy-probes/events.sh
 . scripts/deploy-probes/events.sh
 # shellcheck source=scripts/deploy-probes/fhir.sh
@@ -131,7 +129,6 @@ run_family oidc_roles && probes_oidc_roles
 run_family domain_roles && probes_domain_roles
 run_family backup_restore && probes_backup_restore
 run_family observability && probes_observability
-run_family tenancy && probes_tenancy
 run_family events && probes_events
 run_family fhir && probes_fhir
 run_family terminology_ferroterm && probes_terminology_ferroterm

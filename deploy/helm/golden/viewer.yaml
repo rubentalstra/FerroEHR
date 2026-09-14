@@ -311,10 +311,6 @@ data:
       mode = "digest"
       verify_on_read = "strict"
     
-    [tenancy]
-      claim = "tenant"
-      enabled = false
-    
     [terminology]
       api_enabled = false
     
@@ -407,7 +403,7 @@ spec:
         # secret values. Hashing the ConfigMap template alone missed the last two,
         # so a rotated passphrase or an edited Cedar policy propagated into the
         # volume while every pod kept running on the value it read at startup.
-        checksum/config: bb40b3715f8dd8a1ea752d2cf46f5328c69473f3a4302ce7a35f64e0c8f30d62
+        checksum/config: d6c1dc3e6da48320ef64a764394f661eaac537f8c66c1664bf041178a42030e9
       labels:
         app.kubernetes.io/name: ferroehr
         app.kubernetes.io/instance: ferroehr

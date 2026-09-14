@@ -79,7 +79,7 @@ async fn migrations_apply_cleanly_and_idempotently() {
             "blob_ref",
             "commit_audit",
             "contribution",
-            "ehr",
+            "clinical",
             "ehr_folder",
             "ehr_index",
             "event_outbox",
@@ -157,7 +157,7 @@ async fn migrations_apply_cleanly_and_idempotently() {
     // The mirror schemas and the union views they needed are gone with them.
     let leftovers: i64 = sqlx::query_scalar(
         "SELECT count(*) FROM information_schema.schemata \
-         WHERE schema_name IN ('cold', 'cold_demographic', 'ehr', 'demographic')",
+         WHERE schema_name IN ('ehr', 'demographic', 'cold', 'cold_demographic')",
     )
     .fetch_one(&pool)
     .await
@@ -1085,16 +1085,15 @@ async fn a_pooled_connection_applies_the_configured_statement_timeout() {
     );
 }
 
-/// A partially wiped database comes back whole (#3298): the sandbox reset
-/// drops `ehr`, `audit`, `ext` and `cold` and leaves the demographic and
-/// linkage sets applied, so the clinical cold-tier alias views, which only the
-/// demographic baseline created, must come back with the clinical set itself
+/// A partially wiped database comes back whole (#3298): the sandbox reset drops
+/// the clinical, audit and ext schemas and leaves the party and linkage sets
+/// applied, so the clinical set has to rebuild everything the write path needs
 /// or every update fails on the placement read with 42P01.
 #[tokio::test]
-async fn a_wiped_clinical_schema_is_rebuilt_with_its_cold_alias_views() {
+async fn a_wiped_clinical_schema_is_rebuilt_and_serves_writes_again() {
     let db = testkit::db().await.expect("testkit database");
     let pool = db.pool();
-    for schema in ["ehr", "audit", "ext", "cold"] {
+    for schema in ["clinical", "audit", "ext"] {
         sqlx::query(sqlx::AssertSqlSafe(format!(
             "DROP SCHEMA IF EXISTS {schema} CASCADE"
         )))
@@ -1104,14 +1103,7 @@ async fn a_wiped_clinical_schema_is_rebuilt_with_its_cold_alias_views() {
     }
     db::run_migrations(&pool)
         .await
-        .expect("the ehr set rebuilds its schema on a database whose demographic set is complete");
-    let views: Vec<String> = sqlx::query_scalar(
-        "SELECT viewname FROM pg_views WHERE schemaname = 'ehr' AND viewname LIKE 'cold_%' ORDER BY 1",
-    )
-    .fetch_all(&pool)
-    .await
-    .expect("list the alias views");
-    assert_eq!(views, ["cold_node", "cold_vo_attestation", "cold_version"]);
+        .expect("the clinical set rebuilds its schema on a database whose party set is complete");
 
     let svc = ferroehr::service::FerroEhrService::new(pool.clone());
     let ehr_id = svc.create_ehr(None).await.expect("create_ehr");

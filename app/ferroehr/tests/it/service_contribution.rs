@@ -1013,15 +1013,14 @@ async fn create_composition_gate_error_surface_survives_the_writability_fold() {
     assert!(sm.message.contains("not modifiable"), "got {}", sm.message);
 }
 
-/// The temporal non-overlap invariant survives the removal of the `GiST`
-/// EXCLUDE constraints (RM common master06 §The 'Virtual Version Tree': one valid version
-/// per lineage at any instant; the enforcement is now by construction —
-/// close-then-insert at one `now()` per write, one open row per lineage via
-/// the partial unique indexes). A burst of sequential updates must leave
-/// exactly one open trunk row and ZERO overlapping validity pairs — asserted
-/// with the same lineage-pair query the admin archive load audits with.
+/// One valid version per lineage at any instant (RM common master06 §The
+/// 'Virtual Version Tree') holds by construction in an append-only store: each
+/// commit takes the transaction timestamp, so a burst of sequential updates
+/// leaves one head row per object and ZERO pairs of one lineage sharing a
+/// commit instant — asserted with the same lineage-pair query the admin
+/// archive load audits with.
 #[tokio::test]
-async fn version_validity_never_overlaps_without_the_exclusion_constraints() {
+async fn one_version_of_a_lineage_is_in_force_at_any_instant() {
     let db = testkit::db().await.expect("testkit database");
     let pool = db.pool();
     let svc = FerroEhrService::new(pool.clone());
@@ -1051,18 +1050,21 @@ async fn version_validity_never_overlaps_without_the_exclusion_constraints() {
             .version_uid();
     }
 
-    let open_trunk: i64 = sqlx::query_scalar(
-        "SELECT count(*) FROM version \
-         WHERE ehr_id = $1 AND kind = 'COMPOSITION' \
-           AND branch_number = 0 AND upper_inf(sys_period)",
+    let heads: i64 = sqlx::query_scalar(
+        "SELECT count(*) FROM vo_head WHERE ehr_id = $1 AND kind = 'COMPOSITION'",
     )
     .bind(ehr_uuid)
     .fetch_one(&pool)
     .await
-    .expect("open-row count");
-    assert_eq!(open_trunk, 1, "exactly one open trunk row per composition");
+    .expect("head-row count");
+    assert_eq!(heads, 1, "exactly one head row per composition");
 
-    let overlap: bool = sqlx::query_scalar(
+    // Validity is derived from `committed_at`, so what would make "the version
+    // in force at an instant" unanswerable is two versions of one lineage
+    // sharing an instant. The write path takes the transaction timestamp per
+    // commit, so no two can — and this is the audit that says so rather than
+    // assuming it.
+    let ambiguous: bool = sqlx::query_scalar(
         "SELECT EXISTS ( \
              SELECT 1 FROM version a \
              JOIN version b ON a.vo_id = b.vo_id \
@@ -1071,14 +1073,17 @@ async fn version_validity_never_overlaps_without_the_exclusion_constraints() {
                       OR (a.creating_system_id = b.creating_system_id \
                           AND a.trunk_version = b.trunk_version)) \
                  AND a.sys_version < b.sys_version \
-                 AND a.sys_period && b.sys_period \
+                 AND a.committed_at = b.committed_at \
              WHERE a.ehr_id = $1)",
     )
     .bind(ehr_uuid)
     .fetch_one(&pool)
     .await
-    .expect("overlap audit");
-    assert!(!overlap, "no lineage carries overlapping validity periods");
+    .expect("ambiguity audit");
+    assert!(
+        !ambiguous,
+        "no lineage carries two versions committed at one instant"
+    );
 }
 
 /// A contribution delete member targeting the `EHR_STATUS` is refused: the

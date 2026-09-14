@@ -983,42 +983,53 @@ async fn writing_an_archived_object_thaws_it_back_to_the_primary_tier() {
     );
 }
 
-/// The cold mirrors must stay column-for-column identical to their primary
-/// relations: every move is an `INSERT … SELECT *` in either direction, so a
-/// column added to `version` / `node` / `vo_attestation` without a matching
-/// column on the mirror would silently break archiving. This test is that
-/// guard.
+/// The archival tier is a PARTITION of the relation it archives, so a column
+/// added to `version` / `node` / `vo_attestation` reaches the cold rows by
+/// construction — the mirror relations that had to be kept in step by hand are
+/// gone. This test is what pins that: two partitions per relation, one
+/// attached for each tier, and no relation of those names outside the domain
+/// schemas.
 #[tokio::test]
-async fn cold_mirrors_match_the_primary_relations_column_for_column() {
+async fn the_archival_tier_is_a_partition_of_the_relation_it_archives() {
     let (_db, pool, _svc) = repository().await;
 
-    for relation in ["vo_version", "node", "vo_attestation"] {
-        let columns: Vec<(String, String, String)> = sqlx::query_as(
-            "SELECT table_schema, column_name, data_type \
-             FROM information_schema.columns \
-             WHERE (table_schema = 'ehr' OR table_schema = 'cold') AND table_name = $1 \
-             ORDER BY table_schema, ordinal_position",
+    for relation in ["version", "node", "vo_attestation"] {
+        let partitions: Vec<(String, String)> = sqlx::query_as(
+            "SELECT c.relname::text, pg_get_expr(c.relpartbound, c.oid)::text \
+             FROM pg_inherits i \
+             JOIN pg_class p ON p.oid = i.inhparent \
+             JOIN pg_class c ON c.oid = i.inhrelid \
+             JOIN pg_namespace n ON n.oid = p.relnamespace \
+             WHERE n.nspname = 'clinical' AND p.relname = $1 ORDER BY 1",
         )
         .bind(relation)
         .fetch_all(&pool)
         .await
-        .expect("column list");
+        .expect("partition list");
 
-        let cold: Vec<(&str, &str)> = columns
-            .iter()
-            .filter(|(schema, _, _)| schema == "cold")
-            .map(|(_, name, ty)| (name.as_str(), ty.as_str()))
-            .collect();
-        let primary: Vec<(&str, &str)> = columns
-            .iter()
-            .filter(|(schema, _, _)| schema == "ehr")
-            .map(|(_, name, ty)| (name.as_str(), ty.as_str()))
-            .collect();
-
-        assert!(!primary.is_empty(), "{relation} exists in the primary tier");
         assert_eq!(
-            cold, primary,
-            "cold.{relation} must mirror {relation} in column order, name and type"
+            partitions,
+            vec![
+                (
+                    format!("{relation}_cold"),
+                    "FOR VALUES IN ('cold')".to_owned()
+                ),
+                (
+                    format!("{relation}_hot"),
+                    "FOR VALUES IN ('hot')".to_owned()
+                ),
+            ],
+            "{relation} must carry exactly the hot and cold partitions"
         );
     }
+
+    // And no mirror schema survives to be kept in step by hand.
+    let mirrors: i64 = sqlx::query_scalar(
+        "SELECT count(*) FROM information_schema.schemata \
+         WHERE schema_name IN ('cold', 'cold_demographic')",
+    )
+    .fetch_one(&pool)
+    .await
+    .expect("count the mirror schemas");
+    assert_eq!(mirrors, 0, "the mirror schemas are gone");
 }

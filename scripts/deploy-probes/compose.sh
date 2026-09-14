@@ -769,8 +769,8 @@ probes_backup_restore() {
   # that one demonstrably reaches these files.
   #
   # The dumps go in TABLE ORDER, which is why `clinical` is first: the other
-  # domains' tables default and their policies read `ext.current_tenant_id()`,
-  # and that schema travels with the clinical dump.
+  # domains' relations depend on the `ext` helpers, and that schema travels
+  # with the clinical dump.
   local restore_script="id; ls -ln" restore_log network
   for record in "${PROBE_DOMAINS[@]}"; do
     restore_script="$restore_script /dumps/$(domain_field "$record" 1)"
@@ -808,20 +808,15 @@ probes_backup_restore() {
   # table comes back with its rows and without the key that admits one open
   # mapping per party. Far end: the restored catalogue itself.
   probe "P-BACKUP-MAP-RESTORED" "working" "database" "#3220" \
-    "the restored linkage map carries its temporal key and its forced row policy"
+    "the restored linkage map carries its temporal key"
   local map_shape
   map_shape="$(dc exec -T ferroehr-postgres psql -qtAX -U postgres -d "$restored" -c \
     "SELECT coalesce((SELECT pg_get_constraintdef(oid) FROM pg_constraint
                        WHERE conrelid = 'linkage.party_ehr'::regclass
-                         AND contype = 'p'), 'no primary key')
-         || ' | force_rls=' || (SELECT relforcerowsecurity
-                                  FROM pg_class WHERE oid = 'linkage.party_ehr'::regclass)" 2>&1)"
+                         AND contype = 'p'), 'no primary key')" 2>&1)"
   assert_contains "$map_shape" "WITHOUT OVERLAPS" \
     "a party_ehr restored without its temporal key admits two open mappings for one \
 party, and nothing downstream would notice"
-  assert_contains "$map_shape" "force_rls=t" \
-    "FORCE ROW LEVEL SECURITY is what makes the tenant policy apply to the table's \
-owner too; a restore that dropped it serves one tenant another's map"
   probe_done
 
   # And the half that makes the probe above mean something: the self-check has
