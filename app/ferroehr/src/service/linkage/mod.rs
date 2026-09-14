@@ -44,7 +44,7 @@
 //! `DELETE` privilege to do it with. "Which party was the subject of this EHR
 //! when that composition was written" therefore stays answerable after the
 //! two person records have been merged. The temporal primary key
-//! (`PRIMARY KEY (tenant_id, party_id, sys_period WITHOUT OVERLAPS)`) is what
+//! (`PRIMARY KEY (party_id, sys_period WITHOUT OVERLAPS)`) is what
 //! enforces one mapping in force per party — the database, not whichever code
 //! path happens to write.
 //!
@@ -73,7 +73,7 @@ use crate::system_log::event::{
 pub struct SubjectPseudonym {
     /// The declared pseudonym namespace the value belongs to.
     pub namespace: String,
-    /// The opaque, tenant-bound pseudonym.
+    /// The opaque pseudonym.
     pub id: uuid::Uuid,
 }
 
@@ -237,12 +237,12 @@ impl FerroEhrService {
     /// The opaque subject pseudonym `party` is known by on the clinical side,
     /// minted by the server (#3232).
     ///
-    /// A keyed, tenant-bound derivation over the party id under the linkage
-    /// domain ([`crate::service::demographic::identifier::crypto::RootKey::subject_pseudonym`]),
+    /// A keyed derivation over the party id under the linkage domain
+    /// ([`crate::service::demographic::identifier::crypto::RootKey::subject_pseudonym`]),
     /// in the first declared pseudonym namespace. The same party always yields
-    /// the same pseudonym within a tenant, and no caller-supplied value enters
-    /// it, so a national identifier cannot become a subject reference on this
-    /// path by construction. The subject rule
+    /// the same pseudonym, and no caller-supplied value enters it, so a
+    /// national identifier cannot become a subject reference on this path by
+    /// construction. The subject rule
     /// ([`crate::privacy::PrivacyPolicy::subject_rule_in_force`]) still governs every
     /// value that arrives from elsewhere: a client writing `EHR_STATUS`
     /// directly, an EHR-Extract, an archive load.
@@ -476,9 +476,6 @@ fn stamp_requester(event: &mut AuditEvent) {
         event.user_id = committer.subject;
     }
     event.purpose = crate::system_log::access_context::current_purpose();
-    if let Some(tenant) = crate::extensions::tenant_context::current() {
-        event.tenant_id = Some(tenant.tenant_id);
-    }
 }
 
 /// A driver error that carries no domain meaning beyond "the store failed".

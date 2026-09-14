@@ -29,7 +29,6 @@
 //!   the operation semantics are cited from SM and the wire shape is our own.
 //! - [`event_subscription`] + [`fhir`] — eventing and the FHIR R4 connector
 //!   (enterprise features E1/E3); nothing in SM/ITS-REST governs them.
-//! - [`tenant_routes`] — multi-tenancy (enterprise feature E2); zero spec
 //!   mentions.
 //!
 //! The ATNA audit middleware is NOT here — it realizes the SM System Log
@@ -43,7 +42,6 @@ pub mod fhir;
 pub mod health;
 pub mod management;
 pub mod openapi;
-pub mod tenant_routes;
 pub mod terminology;
 
 // The **single spec-version provenance source** every server *identity*

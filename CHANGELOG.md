@@ -47,11 +47,22 @@ workflow refuses a tag that has no matching section here.
 
 - **Multi-tenancy** (#3378). Multi-tenancy is achieved by running separate
   instances: one instance, one database, one set of domain roles per
-  organisation. No relation carries a tenant column, no row policy or session
-  GUC scopes a read, and the `[tenancy]` configuration, the tenant middleware,
-  the `/admin/tenant` routes and the Helm and compose tenancy keys are gone.
-  The pseudonymisation domains and their role barriers are unrelated to tenancy
-  and stay.
+  organisation. That is where openEHR puts it. An openEHR *system* is "a
+  distinct logical repository corresponding to an organisational entity that is
+  legally responsible" for the data, and it is "distinct from any underlying
+  virtualisation infrastructure or cloud computing facility, which may house
+  multiple logical EHR systems in a multi-tenant fashion" (BASE
+  `architecture_overview/master06-design_of_the_ehr.adoc` §The EHR System) — so
+  tenancy belongs to the layer that hosts several systems, not inside one. The
+  same chapter's §System Identity is why housing several organisations in one
+  system was wrong rather than merely unnecessary: `system_id` names that one
+  legally responsible system, it "becomes embedded in the version identifiers of
+  committed -- and possibly signed -- content", and it "cannot easily be changed
+  afterwards". No relation carries a tenant column, no row policy or session GUC
+  scopes a read, and the `[tenancy]` configuration, the tenant middleware, the
+  `/admin/tenant` routes and the Helm and compose tenancy keys are gone. The
+  pseudonymisation domains and their role barriers are unrelated to tenancy and
+  stay.
 
 ## [4.3.0] - 2026-09-14
 

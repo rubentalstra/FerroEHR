@@ -74,7 +74,6 @@ use std::time::Duration;
 use serde_json::Value;
 use sqlx::PgPool;
 
-use crate::extensions::tenant_context::TenantContext;
 use crate::ids::EhrId;
 use crate::system_log::sender::AuditSender;
 use crate::versioning::SigningCtx;
@@ -82,27 +81,6 @@ use crate::versioning::signature::signer::Signer;
 use openehr_its::flat::cache::WebTemplateCache;
 use openehr_its::flat::webtemplate::model::WebTemplate;
 use status::SmError;
-
-/// In-process cache of resolved tenants, keyed by the claim/header value (a
-/// tenant name or uuid string) the middleware resolves per request. Shared
-/// across service clones (single registry view); cleared wholesale on any
-/// tenant CRUD write. Multi-tenancy is spec-silent — our own extension
-/// ([`crate::extensions::tenancy`]).
-///
-/// Bounded + TTL'd, and it caches the NEGATIVE outcome too (`None` = the key
-/// resolves to no tenant), so a request stream carrying a bogus tenant key
-/// costs one registry read per TTL window, not one per request.
-pub(crate) type TenantCache = moka::future::Cache<String, Option<TenantContext>>;
-
-/// Build the tenant resolver cache: capacity-bounded (the registry is small —
-/// the bound is a hostile-key guard) with a TTL that also serves as the
-/// convergence window for renames across instances.
-pub(crate) fn tenant_cache() -> TenantCache {
-    moka::future::Cache::builder()
-        .max_capacity(10_000)
-        .time_to_live(Duration::from_mins(5))
-        .build()
-}
 
 /// The default openEHR system identifier stamped into `EHR.system_id`,
 /// `AUDIT_DETAILS.system_id`, and every `OBJECT_VERSION_ID.creating_system_id`.
@@ -213,9 +191,6 @@ pub struct FerroEhrService {
     /// deployment configures FHIR systems ([`crate::service::subject_proxy::config::SubjectProxyConfig`]). `None`
     /// (default) makes every FHIR frame a typed rejection (fail-closed).
     pub(crate) subject_proxy_fhir: Option<Arc<SubjectProxyFhir>>,
-    /// Multi-tenancy tenant registry cache (extension; empty and unconsulted
-    /// in single-tenant mode).
-    pub(crate) tenant_cache: TenantCache,
     /// Per-EHR cache of the current `EHR_ACCESS` scheme settings ("All access
     /// decisions to data in the EHR must be made in accordance with the
     /// policies and rules in this object" — RM ehr `ehr_access.adoc`).
@@ -320,7 +295,6 @@ impl FerroEhrService {
             #[cfg(feature = "multimedia")]
             multimedia: None,
             subject_proxy_fhir: None,
-            tenant_cache: tenant_cache(),
             ehr_access: EhrAccessCache::default(),
             plan_cache: PlanCache::default(),
             archetype_lineage: archetype_lineage_cache(),
@@ -620,10 +594,13 @@ impl FerroEhrService {
         &self.plan_cache
     }
 
-    /// The openEHR `system_id` in effect for the current request: the resolved
-    /// tenant's own `system_id` when tenancy is on, else the configured
-    /// default (with tenancy off the task-local is never set and this is
-    /// byte-identical to the configured `system_id`).
+    /// The openEHR `system_id` in effect for this write.
+    ///
+    /// One instance is one logical EHR system, so this is the configured
+    /// identifier — BASE `architecture_overview/master06-design_of_the_ehr.adoc`
+    /// §System Identity: the `system_id` names the system "legally responsible"
+    /// for the data, and it "becomes embedded in the version identifiers of
+    /// committed -- and possibly signed -- content".
     #[expect(
         clippy::same_name_method,
         reason = "the `CommitEnv` seam (service/commit_env.rs) deliberately \
@@ -632,8 +609,7 @@ impl FerroEhrService {
                   explicitly with `FerroEhrService::<name>(self, …)`"
     )]
     pub(crate) fn effective_system_id(&self) -> String {
-        crate::extensions::tenant_context::current()
-            .map_or_else(|| self.system_id.clone(), |t| t.system_id)
+        self.system_id.clone()
     }
 
     /// The configured version [`Signer`] (used for read-time verification).

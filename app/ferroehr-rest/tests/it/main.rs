@@ -70,6 +70,5 @@ mod smart_http;
 mod spec_profile_http;
 mod stored_query_definition_http;
 mod template_adl14_http;
-mod tenant_http;
 mod terminology_http;
 mod trace_shape;
