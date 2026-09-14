@@ -36,5 +36,6 @@
 pub mod events;
 pub mod fhir;
 pub mod multimedia;
+pub mod outbox;
 pub mod tenancy;
 pub mod tenant_context;

@@ -220,10 +220,12 @@ async fn commit_emits_reverse_mapped_fhir_resource() {
     // on shared CI runners widened that gap enough to flake a one-shot read).
     let deadline = tokio::time::Instant::now() + Duration::from_secs(30);
     let cursor: i64 = loop {
-        let cursor: i64 = sqlx::query_scalar("SELECT last_seq FROM ehr.fhir_outbound_cursor")
-            .fetch_one(&pool)
-            .await
-            .expect("cursor read");
+        let cursor: i64 = sqlx::query_scalar(
+            "SELECT last_seq FROM ehr.event_outbox_reader WHERE reader = 'fhir-outbound'",
+        )
+        .fetch_one(&pool)
+        .await
+        .expect("cursor read");
         if cursor > 0 || tokio::time::Instant::now() >= deadline {
             break cursor;
         }

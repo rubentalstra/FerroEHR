@@ -15,7 +15,8 @@
 //! unaffected, because a demographic event has no EHR. On a publish failure it stops
 //! the batch — never skipping ahead — so an EHR's events keep their order, and
 //! backs off before retrying (the outbox buffers while the broker is down). A
-//! periodic pass prunes published rows older than the retention window.
+//! periodic pass prunes published rows older than the retention window and
+//! behind every active cursor reader (`crate::extensions::outbox`).
 //!
 //! **Subscription topology is declared on connect/change only:** each cycle
 //! reads the enabled subscriptions (a cheap local query) and touches the broker
@@ -47,6 +48,7 @@ use tokio::sync::watch;
 use tokio::task::JoinHandle;
 
 use super::config::EventsConfig;
+use crate::extensions::outbox;
 use ferroehr_ext::events::amqp::AmqpPublisher;
 use ferroehr_ext::events::{EventError, EventPublisher};
 
@@ -207,7 +209,7 @@ async fn run(
         // Retention prune (best-effort), on its own cadence.
         if last_prune.elapsed() >= prune_every {
             for domain in pools {
-                if let Err(e) = prune(domain, config.retention_days).await {
+                if let Err(e) = outbox::prune(domain, config.retention_days).await {
                     tracing::warn!("event outbox retention prune failed: {e}");
                 }
             }
@@ -440,22 +442,4 @@ async fn publish_with_retry(
         .retry(ExponentialBuilder::default().with_max_times(config.publish_max_retries))
         .notify(|e, d| tracing::warn!("event publish retry in {d:?}: {e}"))
         .await
-}
-
-/// Delete published rows older than the retention window, in the domain
-/// `pool`'s own outbox. Returns the number pruned.
-async fn prune(pool: &PgPool, retention_days: i64) -> Result<u64, sqlx::Error> {
-    let cutoff = format!("{retention_days} days");
-    let result = sqlx::query(
-        "DELETE FROM event_outbox \
-         WHERE published_at IS NOT NULL AND published_at < now() - $1::interval",
-    )
-    .bind(cutoff)
-    .execute(pool)
-    .await?;
-    let pruned = result.rows_affected();
-    if pruned > 0 {
-        tracing::debug!("pruned {pruned} published event rows past retention");
-    }
-    Ok(pruned)
 }
