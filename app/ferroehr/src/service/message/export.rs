@@ -414,9 +414,9 @@ impl FerroEhrService {
         ehr_id: EhrId,
     ) -> Result<Vec<(VoId, String)>, ServiceError> {
         let rows = sqlx::query(
-            "SELECT version.vo_id, kind FROM version \
+            "SELECT version.vo_id, version.kind FROM version \
              JOIN vo_head h ON h.vo_id = version.vo_id AND h.trunk_head_sys_version = version.sys_version \
-             WHERE ehr_id = $1 \
+             WHERE version.ehr_id = $1 \
              ORDER BY version.vo_id",
         )
         .bind(ehr_id)
@@ -437,9 +437,9 @@ impl FerroEhrService {
         vo_id: VoId,
     ) -> Result<Option<String>, ServiceError> {
         Ok(sqlx::query_scalar(
-            "SELECT kind FROM version \
+            "SELECT version.kind FROM version \
              JOIN vo_head h ON h.vo_id = version.vo_id AND h.trunk_head_sys_version = version.sys_version \
-             WHERE version.vo_id = $1 AND ehr_id = $2",
+             WHERE version.vo_id = $1 AND version.ehr_id = $2",
         )
         .bind(vo_id)
         .bind(ehr_id)

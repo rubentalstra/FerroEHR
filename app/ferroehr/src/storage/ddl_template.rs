@@ -18,8 +18,6 @@
 /// One domain's substitutions into the shared DDL templates.
 #[derive(Debug, Clone, Copy)]
 pub struct Domain {
-    /// The `PostgreSQL` schema the domain's relations live in.
-    pub schema: &'static str,
     /// The versioned-object RM types this domain admits; every other kind is
     /// refused by the rendered `CHECK`.
     pub kinds: &'static [&'static str],
@@ -31,14 +29,12 @@ pub struct Domain {
 
 /// The clinical domain: the EHR-owned versioned objects.
 pub const CLINICAL: Domain = Domain {
-    schema: "clinical",
     kinds: &["COMPOSITION", "EHR_STATUS", "EHR_ACCESS", "FOLDER"],
     references_ehr: true,
 };
 
 /// The party domain: the demographic versioned objects.
 pub const PARTY: Domain = Domain {
-    schema: "party",
     kinds: &[
         "AGENT",
         "GROUP",

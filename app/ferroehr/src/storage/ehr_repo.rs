@@ -204,16 +204,16 @@ pub async fn ehr_summary_read(
                 COALESCE(f.folders, ARRAY[]::uuid[]) AS folders \
          FROM ehr e \
          LEFT JOIN LATERAL ( \
-             SELECT vo_id, trunk_version, branch_number, branch_version, \
-                    creating_system_id \
+             SELECT version.vo_id, version.trunk_version, version.branch_number, \
+                    version.branch_version, version.creating_system_id \
              FROM version \
              JOIN vo_head h ON h.vo_id = version.vo_id AND h.trunk_head_sys_version = version.sys_version \
-             WHERE ehr_id = e.id AND kind = 'EHR_STATUS' \
+             WHERE version.ehr_id = e.id AND version.kind = 'EHR_STATUS' \
          ) s ON true \
          LEFT JOIN LATERAL ( \
              SELECT version.vo_id FROM version \
              JOIN vo_head h ON h.vo_id = version.vo_id AND h.trunk_head_sys_version = version.sys_version \
-             WHERE ehr_id = e.id AND kind = 'EHR_ACCESS' \
+             WHERE version.ehr_id = e.id AND version.kind = 'EHR_ACCESS' \
          ) a ON true \
          LEFT JOIN LATERAL ( \
              SELECT array_agg(f.vo_id ORDER BY f.rank) AS folders \

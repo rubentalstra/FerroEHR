@@ -144,8 +144,35 @@ fresh** (the diagrammed deep-dive is the book's Storage architecture page,
   measured hot path; none exists today, and `openehr_timestamp` is `STABLE`
   by necessity (its result depends on the session TimeZone) and can never be
   indexed.
-- Migrations via `sqlx migrate add` (official CLI); `sqlx` pool + two-schema
-  migrator infrastructure.
+- **`party`** — the pseudonymisation domain: the PARTY versioned objects and
+  their change control, rendered from the SAME DDL template as the clinical
+  relations (`app/ferroehr/migrations/templates/*.sql.in`), so the two domains
+  cannot drift. A party body decomposes like clinical content: the party root,
+  each `PARTY_IDENTITY`, `CONTACT`, `ADDRESS` and `CAPABILITY` nested in it, and
+  the `ITEM_STRUCTURE` under each get their own `node` row. Beside them,
+  `national_identifier` holds identifiers sealed under authenticated encryption
+  and `party_relationship_target` is the target-side index behind
+  `PARTY.reverse_relationships`. Nothing selects a domain but the pool's
+  `search_path`, so one set of storage code serves both; a `CHECK` on each side
+  refuses the other's rows. GDPR Art. 4(5) and Art. 32(1)(a); no openEHR spec
+  governs storage layout or database roles.
+- **`linkage`** — the third pseudonymisation domain: `party_ehr`, the map from a
+  demographic party to the EHR whose subject it is, temporal under a PG18
+  `PRIMARY KEY … WITHOUT OVERLAPS` so a merge or split closes a row rather than
+  deleting it. Identifiers only, no attributes. The service reaches it through
+  its own pool (`db::connect_linkage`), never through the clinical or party one.
+- **Five `NOINHERIT` runtime roles** hold the domains: `ferroehr_ehr` and its
+  read-only twin hold `clinical`, `ferroehr_demographic` and its twin hold
+  `party`, and `ferroehr_linkage` holds `linkage` alone. Each is revoked from
+  the domains it does not own, in both directions, and the server refuses to
+  boot when any of them can read across (`db::verify_domain_isolation`). The
+  role names keep their first-generation spelling until #3343 renames them with
+  the per-domain DSNs.
+- Migrations via `sqlx migrate add` (official CLI): five sets, run in order —
+  `ext`, `clinical`, `party`, `linkage`, `audit` — each with its own
+  `_sqlx_migrations` table, each a sequence of natural files with one concern
+  apiece. A database carrying the first generation's `ehr` or `demographic`
+  bookkeeping is refused at boot, by name, with the remedy.
 
 ## AQL engine (ours)
 

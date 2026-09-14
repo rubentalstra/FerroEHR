@@ -418,11 +418,41 @@ pub async fn has_version_tree(
 /// commit ordinal on any lineage, and the trunk's own tip — so recomputing it
 /// is always correct and never depends on the order the rows landed in.
 ///
+/// Each object is taken under the same per-object advisory lock the commit path
+/// uses, so a concurrent commit of one of these containers cannot interleave
+/// between the recomputation and the write.
+///
 /// # Errors
-/// Returns [`StorageError::Database`] on a driver failure.
+/// Returns [`StorageError::Database`] on a driver failure, or
+/// [`StorageError::TrunklessContainer`] when a container holds versions but no TRUNK
+/// version: its head would have no `trunk_head_sys_version` to answer with, and
+/// RM common `master06-change_control_package.adoc` §Copying §Subsequent Local
+/// Modifications rules the state out — branch versions are never copied without
+/// their trunk versions.
 pub async fn sync_heads(tx: &mut PgConnection, vo_ids: &[VoId]) -> Result<(), StorageError> {
     if vo_ids.is_empty() {
         return Ok(());
+    }
+    for &vo_id in vo_ids {
+        crate::storage::version_repo::commit::advisory_lock(&mut *tx, vo_id).await?;
+    }
+    // A container with versions but no trunk row would be dropped silently by
+    // the lateral below (it returns no row, so the INSERT writes none and the
+    // head keeps whatever it held). Name it instead.
+    let trunkless: Vec<Uuid> = sqlx::query_scalar(
+        "SELECT DISTINCT vo_id FROM version v WHERE v.vo_id = ANY($1) \
+         AND NOT EXISTS (SELECT 1 FROM version t \
+                         WHERE t.vo_id = v.vo_id AND t.branch_number = 0) \
+         ORDER BY vo_id",
+    )
+    .bind(vo_ids)
+    .fetch_all(&mut *tx)
+    .await?;
+    if let Some(&vo_id) = trunkless.first() {
+        return Err(StorageError::TrunklessContainer {
+            vo_id,
+            count: trunkless.len(),
+        });
     }
     sqlx::query(
         "INSERT INTO vo_head (vo_id, kind, ehr_id, tier, head_sys_version, \

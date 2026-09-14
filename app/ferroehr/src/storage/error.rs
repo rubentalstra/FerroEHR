@@ -69,6 +69,22 @@ pub enum StorageError {
         held_by: String,
     },
 
+    /// A version container holds branch versions but no TRUNK version, so it
+    /// has no current version to record. RM common
+    /// `master06-change_control_package.adoc` §Copying §Subsequent Local
+    /// Modifications rules the state out: branch versions are never copied
+    /// without their trunk versions.
+    #[error(
+        "versioned object {vo_id} holds branch versions but no trunk version, so it has no \
+         current version to record ({count} such container(s) in this batch)"
+    )]
+    TrunklessContainer {
+        /// The first container found in this state.
+        vo_id: Uuid,
+        /// How many containers of the batch are in it.
+        count: usize,
+    },
+
     /// A driver/pool/query error from `sqlx`.
     #[error("database: {0}")]
     Database(#[from] sqlx::Error),
@@ -114,6 +130,7 @@ impl From<StorageError> for crate::service::status::SmError {
             StorageError::NotAStructureRoot(_)
             | StorageError::MixedArray { .. }
             | StorageError::InvalidRows(_)
+            | StorageError::TrunklessContainer { .. }
             | StorageError::BodyDecode(_) => {
                 tracing::error!(
                     error = %e,

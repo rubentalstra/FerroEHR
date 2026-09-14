@@ -12,10 +12,10 @@
 //! (§Versioned Objects, §Logical Deletion) and master08 §Change Management
 //! (time-travel).
 //!
-//! NOTE (no openEHR spec governs storage tiering — our own design): every
-//! full version read queries the `version`/`vo_attestation` union
-//! views, so ONE statement serves both tiers — an archived object stays
-//! retrievable and a miss never pays a cold-tier retry transaction.
+//! NOTE (no openEHR spec governs storage tiering — our own design): every full
+//! version read names the partitioned parents `version`/`vo_attestation` and
+//! pins no tier, so ONE statement serves both partitions — an archived object
+//! stays retrievable and a miss never pays a cold-tier retry transaction.
 
 #![expect(
     clippy::disallowed_types,
@@ -591,6 +591,10 @@ pub async fn read_versions_by_tree(
 /// Modifications rules out, branch versions never being copied without their
 /// trunk versions, so every branch in a well-formed container has its trunk
 /// ancestry beside it.
+///
+/// NOTE: the tie is unrepresentable rather than resolved — two trunk rows at one
+/// `committed_at` would both satisfy the strict `>`, and the one path that
+/// writes historical instants (the archive load) refuses that record outright.
 ///
 /// # Errors
 /// Returns [`StorageError`] on a driver/reassembly failure.

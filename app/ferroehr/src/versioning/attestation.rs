@@ -65,7 +65,7 @@ pub(crate) struct PendingAttest {
 
 /// Attach an `ATTESTATION` to an **existing** `ORIGINAL_VERSION` (a
 /// `666|attestation|` version item; master06 §Contributions — no new version,
-/// `sys_period` untouched). Realizes `VERSIONED_OBJECT.commit_attestation`
+/// and the object's head row is untouched). Realizes `VERSIONED_OBJECT.commit_attestation`
 /// precondition `has_version_id` (master06 §Versioned Objects). `attestation`
 /// is the already-completed full RM `ATTESTATION`.
 ///

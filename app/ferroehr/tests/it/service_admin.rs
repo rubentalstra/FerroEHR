@@ -889,8 +889,8 @@ async fn archive_physically_moves_rows_to_the_cold_tier_and_back() {
     );
 }
 
-/// A physical EHR delete reaches the cold tier, which no foreign key cascade
-/// can touch (the mirrors are deliberately FK-free).
+/// A physical EHR delete reaches the cold tier: the tier is a partition of the
+/// relation the delete names, so the same cascade carries archived rows away.
 #[tokio::test]
 async fn physical_delete_removes_archived_rows_from_the_cold_tier() {
     let (_db, pool, svc) = repository().await;

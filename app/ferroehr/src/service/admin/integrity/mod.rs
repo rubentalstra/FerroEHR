@@ -295,8 +295,9 @@ impl FerroEhrService {
     /// [`StorageParityDefect::StaleDecomposition`] rather than passed as
     /// healthy.
     ///
-    /// The sweep reads BOTH storage tiers (the `version` / `node`
-    /// union views), so archived content is checked like everything else. It
+    /// The sweep reads BOTH storage tiers: it names the partitioned parents
+    /// `version` and `node` and pins no tier, so archived content is checked
+    /// like everything else. It
     /// takes no lock and holds no transaction: a version committed while the
     /// sweep runs is simply checked or not, and a version read mid-commit
     /// cannot be seen half-written because a commit writes both copies in one

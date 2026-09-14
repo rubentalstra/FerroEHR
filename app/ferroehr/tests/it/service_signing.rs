@@ -191,7 +191,7 @@ async fn ehr_status_versions_are_signed_and_every_version_carries_a_digest() {
     assert!(!rows.is_empty());
     for row in &rows {
         let kind: String = row.try_get("kind").unwrap();
-        let sig: Option<String> = row.try_get("signature").unwrap();
+        let sig: Option<String> = row.try_get("signature").expect("signature");
         let sig = sig.unwrap_or_else(|| panic!("{kind} version is unsigned"));
         assert!(
             sig.starts_with("sha256:"),
@@ -501,6 +501,37 @@ fn signing_disabled(pool: PgPool) -> FerroEhrService {
     FerroEhrService::new(pool).with_signer(Arc::new(signer))
 }
 
+/// The two stored versions of one container after a supersession: exactly one
+/// is the trunk head, and neither is signed. The append-only write advances the
+/// head past its predecessor rather than closing a row (RM common master06 §The
+/// 'Virtual Version Tree').
+async fn assert_two_versions_one_head(pool: &PgPool, vo_uuid: ferroehr::ids::VoId) {
+    let rows = sqlx::query(
+        "SELECT v.sys_version, v.signature, \
+                (h.trunk_head_sys_version = v.sys_version) AS open \
+         FROM version v JOIN vo_head h ON h.vo_id = v.vo_id \
+         WHERE v.vo_id = $1 AND v.kind = 'COMPOSITION' ORDER BY v.sys_version",
+    )
+    .bind(vo_uuid)
+    .fetch_all(pool)
+    .await
+    .expect("select version");
+    assert_eq!(rows.len(), 2, "two composition versions stored");
+    let open: Vec<bool> = rows
+        .iter()
+        .map(|r| r.try_get("open").expect("open flag"))
+        .collect();
+    assert_eq!(
+        open,
+        vec![false, true],
+        "v1 superseded, v2 current (master06 §The 'Virtual Version Tree')"
+    );
+    for row in &rows {
+        let sig: Option<String> = row.try_get("signature").expect("signature");
+        assert!(sig.is_none(), "signing off → version.signature is NULL");
+    }
+}
+
 #[tokio::test]
 async fn signing_disabled_folds_commit_and_preserves_master06_semantics() {
     let db = testkit::db().await.expect("testkit database");
@@ -537,7 +568,7 @@ async fn signing_disabled_folds_commit_and_preserves_master06_semantics() {
         "commit_audit.time_committed is the server-computed instant"
     );
 
-    // UPDATE → the folded path with a prior lineage-tip close (v1 → v2).
+    // UPDATE → the folded path: the version row and the head upsert in one CTE.
     let ovid_v2 = svc
         .update_composition(
             ehr_uuid,
@@ -555,29 +586,7 @@ async fn signing_disabled_folds_commit_and_preserves_master06_semantics() {
         .expect("latest");
     assert_eq!(uid(&latest), ovid_v2, "current version is v2");
 
-    // Exactly one current trunk row (v1 superseded, v2 current) and neither is
-    // signed — the folded write advances the head past its predecessor.
-    let rows = sqlx::query(
-        "SELECT v.sys_version, v.signature, \
-                (h.trunk_head_sys_version = v.sys_version) AS open \
-         FROM version v JOIN vo_head h ON h.vo_id = v.vo_id \
-         WHERE v.vo_id = $1 AND v.kind = 'COMPOSITION' ORDER BY v.sys_version",
-    )
-    .bind(vo_uuid)
-    .fetch_all(&pool)
-    .await
-    .expect("select version");
-    assert_eq!(rows.len(), 2, "two composition versions stored");
-    let open: Vec<bool> = rows.iter().map(|r| r.try_get("open").unwrap()).collect();
-    assert_eq!(
-        open,
-        vec![false, true],
-        "v1 superseded, v2 current (master06 §The 'Virtual Version Tree')"
-    );
-    for row in &rows {
-        let sig: Option<String> = row.try_get("signature").unwrap();
-        assert!(sig.is_none(), "signing off → version.signature is NULL");
-    }
+    assert_two_versions_one_head(&pool, vo_uuid).await;
 
     // DELETE → folded path (523|deleted|, no node rows); the current version
     // then resolves to an empty body (204), never 404.

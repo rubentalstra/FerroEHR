@@ -89,16 +89,3 @@ $$;
 
 COMMENT ON FUNCTION audit.reap_audit_events(integer) IS
     'Retention reaping: removes records past the horizon and tombstones the chain positions they occupied — the only sanctioned deletion path.';
-
-
-DO $grants$
-BEGIN
-    IF EXISTS (SELECT FROM pg_roles WHERE rolname = 'ferroehr_app') THEN
-        REVOKE ALL ON FUNCTION audit.reap_audit_events(integer) FROM PUBLIC;
-        GRANT EXECUTE ON FUNCTION audit.reap_audit_events(integer)
-            TO ferroehr_app, ferroehr_ehr;
-    ELSE
-        RAISE NOTICE 'skipping audit retention grants (roles absent — see the ext role block NOTICE)';
-    END IF;
-END
-$grants$;

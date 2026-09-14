@@ -13,10 +13,10 @@
 //! reads serve is RM common master06 §Version Identification and the commit
 //! instant is §Committal.
 //!
-//! NOTE: no openEHR spec governs storage tiering — our own design; every
-//! object-addressed lookup here reads the `version` union view, one
-//! statement serving both tiers, while the EHR-wide aggregate and enumeration
-//! reads at the bottom of this file stay primary-only.
+//! NOTE: no openEHR spec governs storage tiering — our own design; `version`
+//! is partitioned by tier, so a lookup that names no tier reads both partitions
+//! in one statement and one that pins `tier = 'hot'` prunes the cold partition
+//! at plan time.
 
 #![expect(
     clippy::disallowed_types,
@@ -196,7 +196,7 @@ pub async fn template_id_of(
     const BY_TREE_SQL: &str = "SELECT template_id FROM version WHERE vo_id = $1 \
                                AND trunk_version = $2 AND branch_number = $3 \
                                AND branch_version = $4";
-    const CURRENT_SQL: &str = "SELECT template_id FROM version \
+    const CURRENT_SQL: &str = "SELECT version.template_id FROM version \
                                JOIN vo_head h ON h.vo_id = version.vo_id AND h.trunk_head_sys_version = version.sys_version \
                                WHERE version.vo_id = $1";
     if let Some((trunk, branch, branch_version)) = tree {
@@ -236,7 +236,7 @@ pub async fn ehr_exists(pool: &PgPool, ehr_id: EhrId) -> Result<bool, StorageErr
 /// # Errors
 /// Returns [`StorageError::Database`] on a driver failure.
 pub async fn object_kind(pool: &PgPool, vo_id: VoId) -> Result<Option<String>, StorageError> {
-    const SQL: &str = "SELECT kind FROM version \
+    const SQL: &str = "SELECT version.kind FROM version \
                        JOIN vo_head h ON h.vo_id = version.vo_id AND h.trunk_head_sys_version = version.sys_version \
                        WHERE version.vo_id = $1";
     Ok(sqlx::query_scalar(SQL)
@@ -259,7 +259,7 @@ pub async fn object_kinds(
     pool: &PgPool,
     vo_ids: &[VoId],
 ) -> Result<Vec<(VoId, String)>, StorageError> {
-    const SQL: &str = "SELECT version.vo_id, kind FROM version \
+    const SQL: &str = "SELECT version.vo_id, version.kind FROM version \
                        JOIN vo_head h ON h.vo_id = version.vo_id AND h.trunk_head_sys_version = version.sys_version \
                        WHERE version.vo_id = ANY($1)";
     if vo_ids.is_empty() {
@@ -322,7 +322,8 @@ pub async fn version_exists(
         .await?)
 }
 
-/// The version-addressed existence probe (both tiers via the union view).
+/// The version-addressed existence probe (both tiers: the statement names none,
+/// so neither partition is pruned).
 const EXISTS_SQL: &str = "SELECT EXISTS(SELECT 1 FROM version WHERE vo_id = $1 \
                           AND trunk_version = $2 AND branch_number = $3 \
                           AND branch_version = $4)";
@@ -348,9 +349,10 @@ pub async fn persistent_template_exists<'e>(
     Ok(sqlx::query_scalar(
         "SELECT EXISTS(SELECT 1 FROM version \
          JOIN vo_head h ON h.vo_id = version.vo_id AND h.trunk_head_sys_version = version.sys_version \
-         WHERE ehr_id = $1 AND kind = 'COMPOSITION' AND lifecycle_state <> $2 \
-         AND template_id = $3 \
-         AND (body)::jsonb #>> '{category,defining_code,code_string}' = $4)",
+         WHERE version.ehr_id = $1 AND version.kind = 'COMPOSITION' \
+         AND version.lifecycle_state <> $2 \
+         AND version.template_id = $3 \
+         AND (version.body)::jsonb #>> '{category,defining_code,code_string}' = $4)",
     )
     .bind(ehr_id)
     .bind(deleted_state)
@@ -389,10 +391,11 @@ pub async fn current_vo(
     ehr_id: EhrId,
     kind: &str,
 ) -> Result<Option<CurrentVoRow>, StorageError> {
-    const SQL: &str = "SELECT version.vo_id, trunk_version, branch_number, branch_version \
+    const SQL: &str = "SELECT version.vo_id, version.trunk_version, version.branch_number, \
+                       version.branch_version \
                        FROM version \
                        JOIN vo_head h ON h.vo_id = version.vo_id AND h.trunk_head_sys_version = version.sys_version \
-                       WHERE ehr_id = $1 AND kind = $2";
+                       WHERE version.ehr_id = $1 AND version.kind = $2";
     let found = sqlx::query(SQL)
         .bind(ehr_id)
         .bind(kind)
@@ -716,8 +719,8 @@ pub async fn current_vo_ids(
     Ok(sqlx::query_scalar(
         "SELECT version.vo_id FROM version \
          JOIN vo_head h ON h.vo_id = version.vo_id AND h.trunk_head_sys_version = version.sys_version \
-         WHERE ehr_id = $1 AND kind = $2 \
-         AND ($3::text IS NULL OR lifecycle_state <> $3)",
+         WHERE version.ehr_id = $1 AND version.kind = $2 \
+         AND ($3::text IS NULL OR version.lifecycle_state <> $3)",
     )
     .bind(ehr_id)
     .bind(kind)

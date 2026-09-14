@@ -40,16 +40,19 @@ pub(super) fn col(alias: &str, column: &str) -> Expr {
 /// exactly the hot tier: archived content leaves the queryable store until it
 /// is restored. No openEHR spec governs storage tiering — our own design.
 pub(super) fn hot(alias: &str) -> Expr {
-    col(alias, "tier").eq(Expr::val(HOT_TIER))
+    col(alias, "tier").eq(Expr::cust(HOT_TIER_LITERAL))
 }
 
 /// The hot-tier predicate on an UNALIASED relation inside a subquery.
 pub(super) fn hot_unaliased() -> Expr {
-    Expr::col(Alias::new("tier")).eq(Expr::val(HOT_TIER))
+    Expr::col(Alias::new("tier")).eq(Expr::cust(HOT_TIER_LITERAL))
 }
 
-/// The tier AQL queries, as the schema spells it.
-pub(super) const HOT_TIER: &str = "hot";
+/// The tier AQL queries, as a SQL LITERAL. It is a constant of this module,
+/// never a caller-supplied byte, which is what makes writing it into the
+/// statement rather than binding it safe — and a bound parameter would move
+/// pruning from plan time to execution time.
+const HOT_TIER_LITERAL: &str = "'hot'";
 
 /// A typed custom-function call `name(args...)`.
 pub(super) fn call(name: &str, args: Vec<Expr>) -> Expr {

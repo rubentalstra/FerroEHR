@@ -93,6 +93,16 @@ use crate::versioning::wire::{OriginalVersionParts, build_original_version, cont
 /// `body` is `null`.
 const DELETED_LIFECYCLE: &str = crate::versioning::lifecycle::state::DELETED;
 
+/// The lowest `archive_version` this server can read.
+///
+/// The storage rewrite changed what a version record carries: validity is
+/// derived from the commit instant rather than stored as an interval, so a
+/// first-generation archive (`1`/`2`) has no `committed_at` to load and would
+/// otherwise fail as a NOT NULL violation on a column the operator never heard
+/// of. It is refused by version instead, naming the remedy — the same shape as
+/// the boot refusal of a first-generation database.
+const ARCHIVE_VERSION_FLOOR: u32 = 3;
+
 /// The archive manifest (`manifest.json`) — enough to read the segments back.
 #[derive(Debug, Serialize, Deserialize)]
 struct Manifest {
@@ -102,6 +112,13 @@ struct Manifest {
     /// inline JSON payloads or `versions/*.xml` entry references.
     format: String,
     /// Archive schema version (this module's on-disk contract).
+    ///
+    /// `1`/`2` are first-generation archives, whose version records carry a
+    /// validity interval; `3`/`4` are generation-2 archives, whose version
+    /// records carry the commit instant the append-only store derives validity
+    /// from. The even member of each pair is the blob-carrying variant. A
+    /// first-generation archive is refused by [`ARCHIVE_VERSION_FLOOR`] rather
+    /// than half-loaded.
     archive_version: u32,
     /// The requested segment split size in kb.
     segment_split_size_kb: i32,
@@ -245,6 +262,25 @@ async fn insert_item_tag_rows(
     .execute(&mut *tx)
     .await?;
     Ok(())
+}
+
+/// Restore an archived object's PLACEMENT and its MARKER: the rows move to the
+/// cold tier, then the dumped `archived_at`/`archive_reason` are re-stamped.
+///
+/// The order matters. `tier::freeze` stamps `archived_at = now()`, which is the
+/// instant of the load rather than the instant the object was archived, so the
+/// marker is restored after the move and not before it. Doing only one half
+/// leaves a loaded archive that either reads as live content or carries an
+/// archive marker with its rows still in the hot tier. No openEHR spec governs
+/// archival placement — our own design/extension.
+async fn restore_archive_placement(
+    tx: &mut PgConnection,
+    archives: &[ArchiveRow],
+) -> Result<(), ServiceError> {
+    for archive in archives {
+        version_repo::tier::freeze(&mut *tx, &[archive.vo_id], archive.reason.as_deref()).await?;
+    }
+    insert_archive_rows(tx, archives).await
 }
 
 /// Re-stamp a record's archive markers on the head rows in ONE `unnest`
@@ -1216,7 +1252,11 @@ impl FerroEhrService {
         // references a blob and the archive carries none.
         #[cfg(not(feature = "multimedia"))]
         let blob_keys: Vec<String> = Vec::new();
-        let archive_version = if blob_keys.is_empty() { 1 } else { 2 };
+        let archive_version = if blob_keys.is_empty() {
+            ARCHIVE_VERSION_FLOOR
+        } else {
+            ARCHIVE_VERSION_FLOOR + 1
+        };
 
         if format == ExportFormat::OpenehrCanonicalXml {
             externalize_version_documents(&mut archive, &mut records)?;
@@ -1306,8 +1346,10 @@ impl FerroEhrService {
     ///   (a mangled or truncated archive is the same fact as an unreadable
     ///   one — see `unreadable_archive_entry`), or the manifest declares a
     ///   logical format that names no `EXPORT_FORMAT` member.
-    /// - `precondition_violation` (`400`) — the archive carries externalized
-    ///   multimedia blobs but this server has no multimedia store configured.
+    /// - `precondition_violation` (`400`) — the archive predates the storage
+    ///   rewrite (`archive_version` below [`ARCHIVE_VERSION_FLOOR`]), or it
+    ///   carries externalized multimedia blobs but this server has no
+    ///   multimedia store configured.
     /// - `unprocessable` — an archive record carries overlapping version
     ///   validity periods (a corrupted/hand-crafted archive; the record's
     ///   transaction is rolled back).
@@ -1324,6 +1366,17 @@ impl FerroEhrService {
         let manifest_bytes = archive.read(MANIFEST_ENTRY)?;
         let manifest: Manifest = serde_json::from_slice(&manifest_bytes)
             .map_err(|e| unreadable_archive_entry(dir, MANIFEST_ENTRY, &e))?;
+        if manifest.archive_version < ARCHIVE_VERSION_FLOOR {
+            return Err(SmError::precondition(format!(
+                "archive declares archive_version {}, which predates the storage rewrite (this \
+                 server reads {ARCHIVE_VERSION_FLOOR} and above): its version records carry a \
+                 validity interval where this server expects the commit instant validity is now \
+                 derived from, so there is nothing to load in place. Load the archive into the \
+                 release that wrote it and export it again, or keep it as the record it is.",
+                manifest.archive_version
+            )));
+        }
+
         // The manifest's own EXPORT_FORMAT member is what tells the format-less
         // operation which payload form the segments carry.
         let format: ExportFormat = manifest.format.parse().map_err(|()| {
@@ -1614,7 +1667,7 @@ impl FerroEhrService {
         load_versions(&mut tx, &self.privacy, None, record.versions).await?;
         load_attestations(&mut tx, &record.attestations).await?;
         insert_item_tag_rows(&mut tx, None, &record.item_tags).await?;
-        insert_archive_rows(&mut tx, &record.archives).await?;
+        restore_archive_placement(&mut tx, &record.archives).await?;
         tx.commit().await?;
         Ok(())
     }
@@ -2023,7 +2076,6 @@ impl FerroEhrService {
         }
 
         insert_item_tag_rows(&mut tx, Some(ehr_id), &record.item_tags).await?;
-        insert_archive_rows(&mut tx, &record.archives).await?;
 
         // The archive is the ONLY path writing explicit historical commit
         // instants, so it checks what the regular write path holds by
@@ -2059,11 +2111,8 @@ impl FerroEhrService {
 
         // Every loaded row went into the hot tier; the ones the record marks
         // archived belong in the cold one, so a loaded EHR carries the same
-        // tier placement a locally archived one does.
-        for archive in &record.archives {
-            version_repo::tier::freeze(&mut tx, &[archive.vo_id], archive.reason.as_deref())
-                .await?;
-        }
+        // tier placement AND the same marker a locally archived one does.
+        restore_archive_placement(&mut tx, &record.archives).await?;
 
         tx.commit().await?;
         Ok(())

@@ -447,7 +447,8 @@ pub(crate) async fn read_versions(
 
 /// Read the version of an object that was current at a given instant
 /// (time-travel; RM common master08 §Change Management — any previous state is
-/// reconstructable): the row whose `sys_period` contains `at`.
+/// reconstructable): the trunk row with the greatest `committed_at` at or
+/// before `at`.
 ///
 /// # Errors
 /// The storage read error of `version_repo::read::version_at`, or the

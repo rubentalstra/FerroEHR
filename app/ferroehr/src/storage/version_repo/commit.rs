@@ -280,6 +280,14 @@ pub struct FoldedVersion<'a> {
 ///
 /// `{branch}`, `{ordinal}`, `{lifecycle}` and `{template}` are the caller's
 /// parameter placeholders; `FROM v` orders this CTE after the version insert.
+///
+/// The update is MONOTONIC: it applies only when the committing version's
+/// ordinal is greater than the one the head already records, and a trunk commit
+/// additionally only when it is greater than the recorded trunk head. The
+/// ordinal comes from a placement read under the per-object advisory lock, so
+/// under that lock it always is; the guard is what keeps a replayed or
+/// out-of-order statement from walking the head backwards, which would make an
+/// older version read as current.
 struct HeadUpsert<'a> {
     /// The versioned object's id.
     vo: &'a str,
@@ -327,7 +335,11 @@ impl HeadUpsert<'_> {
              lifecycle_state = CASE WHEN {branch} = 0 \
                  THEN EXCLUDED.lifecycle_state ELSE vo_head.lifecycle_state END, \
              template_id = CASE WHEN {branch} = 0 \
-                 THEN EXCLUDED.template_id ELSE vo_head.template_id END"
+                 THEN EXCLUDED.template_id ELSE vo_head.template_id END \
+         WHERE EXCLUDED.head_sys_version > vo_head.head_sys_version \
+           AND ({branch} <> 0 \
+                OR vo_head.trunk_head_sys_version IS NULL \
+                OR EXCLUDED.head_sys_version > vo_head.trunk_head_sys_version)"
         )
     }
 }

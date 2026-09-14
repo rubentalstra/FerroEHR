@@ -392,39 +392,3 @@ $$;
 
 COMMENT ON FUNCTION audit.verify_audit_chain() IS
     'Tamper check over the whole repository: returns one row per damaged record or boundary, and nothing at all when the trail is intact.';
-
--- ── least-privilege grants ───────────────────────────────────────────────────
-
--- The `audit` schema had no grants at all, so the layered role architecture
--- (created by the ehr/ext baselines) could not reach it: only the owner could
--- write audit records. These grants give the runtime role exactly what the
--- server does — insert a record, stamp it delivered, read it back for ITI-81 —
--- and nothing that can rewrite or remove one.
-DO $grants$
-BEGIN
-    IF EXISTS (SELECT FROM pg_roles WHERE rolname = 'ferroehr_app') THEN
-        GRANT USAGE ON SCHEMA audit TO ferroehr_app, ferroehr_reader;
-
-        -- Revoke first: a table-level REVOKE also removes column-level grants,
-        -- so the column grant below has to come after it (PostgreSQL 18 docs,
-        -- REVOKE: https://www.postgresql.org/docs/18/sql-revoke.html).
-        REVOKE ALL ON audit_event
-            FROM ferroehr_app, ferroehr_reader, ferroehr_ehr, ferroehr_ehr_reader;
-        GRANT SELECT, INSERT ON audit_event TO ferroehr_app, ferroehr_ehr;
-        GRANT UPDATE (delivered_syslog_at, delivered_fhir_feed_at)
-            ON audit_event TO ferroehr_app, ferroehr_ehr;
-        GRANT SELECT ON audit_event TO ferroehr_reader, ferroehr_ehr_reader;
-
-        REVOKE ALL ON audit_chain_state, audit_chain_gap
-            FROM ferroehr_app, ferroehr_reader, ferroehr_ehr, ferroehr_ehr_reader;
-        GRANT SELECT ON audit_chain_state, audit_chain_gap
-            TO ferroehr_app, ferroehr_reader, ferroehr_ehr, ferroehr_ehr_reader;
-
-        GRANT EXECUTE ON FUNCTION audit.verify_audit_chain()
-            TO ferroehr_app, ferroehr_reader, ferroehr_ehr, ferroehr_ehr_reader;
-
-    ELSE
-        RAISE NOTICE 'skipping audit chain grants (roles absent — see the ext role block NOTICE)';
-    END IF;
-END
-$grants$;

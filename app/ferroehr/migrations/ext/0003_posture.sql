@@ -41,15 +41,3 @@ $$;
 
 COMMENT ON FUNCTION ext.stamp_posture(text, text) IS
     'Write one posture key; the server calls it at boot with the state the configuration declares.';
-
-REVOKE ALL ON FUNCTION stamp_posture(text, text) FROM PUBLIC;
-
-DO $$
-BEGIN
-    IF EXISTS (SELECT FROM pg_roles WHERE rolname = 'ferroehr_app') THEN
-        GRANT EXECUTE ON FUNCTION ext.stamp_posture(text, text)
-            TO ferroehr_app, ferroehr_ehr;
-    ELSE
-        RAISE NOTICE 'skipping ext.stamp_posture grant (roles absent — see the role block NOTICE)';
-    END IF;
-END $$;

@@ -769,10 +769,10 @@ async fn apply_change(
     commit_resolved(tx, ctx, audit, contribution, committer_fallback, resolved).await
 }
 
-/// Commit a [`ResolvedWrite`] — close the superseded lineage tip, compute the
-/// `VERSION.signature`, then write the `audit` (+ `contribution` for a
-/// standalone write) and the `version` row in ONE data-modifying CTE, then
-/// the node rows, folder membership and accompanying attestations.
+/// Commit a [`ResolvedWrite`] — compute the `VERSION.signature`, then write the
+/// `commit_audit` (+ `contribution` for a standalone write), the `version` row
+/// and the object's head row in ONE data-modifying CTE, then the node rows,
+/// folder membership and accompanying attestations.
 ///
 /// The signature is computed over the assembled `ORIGINAL_VERSION` (RM common
 /// master06 §Digital Signature), which embeds `time_committed` and
@@ -780,14 +780,14 @@ async fn apply_change(
 /// being the transaction timestamp
 /// ([`tx_now`](crate::storage::version_repo::placement::tx_now)) and a
 /// standalone write generating its `contribution_id` here, so audit,
-/// contribution and `version` collapse into one folded CTE. The lineage-tip
-/// close stays a separate prior statement: the one-open-row-per-lineage partial
-/// unique indexes need the old open row gone before the new one is inserted. No
-/// openEHR spec governs statement batching — our own design.
+/// contribution, `version` and the head upsert collapse into one folded CTE.
+/// Nothing is superseded in place: the store is append-only, so there is no
+/// close-out statement to order before the insert. No openEHR spec governs
+/// statement batching — our own design.
 ///
 /// # Errors
 /// [`ServiceError::Signing`] when the canonical form cannot be produced or the
-/// signer fails; the storage errors of the close / folded-insert / node /
+/// signer fails; the storage errors of the folded insert and the node /
 /// attestation writes; the attestation-completion `Unprocessable` rejections.
 async fn commit_resolved(
     tx: &mut PgConnection,

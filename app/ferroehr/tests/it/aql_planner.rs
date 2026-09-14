@@ -1326,6 +1326,37 @@ fn unlinked_vo_root_keeps_its_own_gate() {
     );
 }
 
+/// Every partitioned relation the emitter names carries `tier = 'hot'` as a
+/// SQL LITERAL, never a bound parameter.
+///
+/// `version`, `node` and `vo_attestation` are partitioned by tier; a literal is
+/// what lets PostgreSQL prune the cold partition at PLAN time rather than at
+/// execution (PostgreSQL 18, "Partition Pruning"). Archived content therefore
+/// leaves the queryable store until it is restored. No openEHR spec governs
+/// storage tiering — our own design/extension.
+#[test]
+fn every_partitioned_relation_is_pinned_to_the_hot_tier_by_a_literal() {
+    for aql in [
+        "SELECT c/uid/value FROM EHR e CONTAINS COMPOSITION c",
+        WARD_QUERY,
+        "SELECT f1/name/value FROM EHR e CONTAINS FOLDER f1 NOT CONTAINS FOLDER f2",
+        "SELECT c/uid/value FROM EHR e CONTAINS VERSION v[ALL_VERSIONS] CONTAINS COMPOSITION c",
+    ] {
+        let sql = build_sql(aql);
+        // One `tier =` comparison per partitioned relation in the statement,
+        // and every one of them written out.
+        let comparisons = sql.matches(r#""tier" = "#).count();
+        // sea-query parenthesises a custom expression, so the emitted form is
+        // `"x"."tier" = ('hot')` — a literal either way.
+        let literals = sql.matches(r#""tier" = ('hot')"#).count();
+        assert!(comparisons > 0, "no tier predicate at all in: {sql}");
+        assert_eq!(
+            literals, comparisons,
+            "every tier predicate must be the literal 'hot', never a bind: {sql}"
+        );
+    }
+}
+
 // ── the LIMIT-streaming FROM shape ───────────────────────────────────────────
 
 /// Lower `q` with an effective LIMIT (the streaming-shape trigger).
@@ -1539,16 +1570,20 @@ fn name_term_code_predicate_decomposes() {
             && dumped.contains("code: \"313267000\""),
         "parts decomposed (version suffix stays with the terminology): {dumped}"
     );
-    // SQL shape: TWO fragment extractions ANDed on the constrained node (the
-    // jsonpath text itself binds as a parameter).
+    // SQL shape: the two PROMOTED columns ANDed on the constrained node, never
+    // a JSON probe — the decomposer writes both at commit (QUERY
+    // master03-syntax §Node predicate).
     let sql = build_sql(
         "SELECT o/name/value FROM COMPOSITION c CONTAINS \
          OBSERVATION o CONTAINS ELEMENT e[at0002, snomed_ct(3.1)::313267000]",
     );
-    let extracts = sql.matches(r#"jsonb_path_query_first("n2"."data""#).count();
     assert!(
-        extracts >= 2,
-        "code_string AND terminology_id both extracted on the node: {sql}"
+        sql.contains(r#"("n2"."name_code" = $"#) && sql.contains(r#""n2"."name_terminology" = $"#),
+        "code_string AND terminology_id both compared as promoted columns: {sql}"
+    );
+    assert!(
+        !sql.contains(r#"jsonb_path_query_first("n2"."data""#),
+        "the coded-name predicate opens no JSON fragment: {sql}"
     );
 }
 

@@ -26,6 +26,42 @@ use serde_json::Value;
 use sqlx::{PgPool, Row};
 use uuid::Uuid;
 
+/// Every domain that carries change control holds its archival tier as a
+/// PARTITION of the relation it archives, not as a mirror in another schema:
+/// three partitioned relations, two partitions each. No openEHR spec governs
+/// storage tiering — our own design/extension.
+async fn assert_tier_partitions(pool: &PgPool) {
+    for schema in ["clinical", "party"] {
+        let partitions: Vec<(String, String)> = sqlx::query_as(
+            "SELECT p.relname, c.relname FROM pg_inherits i \
+             JOIN pg_class p ON p.oid = i.inhparent \
+             JOIN pg_class c ON c.oid = i.inhrelid \
+             JOIN pg_namespace n ON n.oid = p.relnamespace \
+             WHERE n.nspname = $1 AND p.relkind = 'p' AND c.relkind = 'r' \
+             ORDER BY 1, 2",
+        )
+        .bind(schema)
+        .fetch_all(pool)
+        .await
+        .expect("partitions");
+        assert_eq!(
+            partitions,
+            [
+                ("node".to_owned(), "node_cold".to_owned()),
+                ("node".to_owned(), "node_hot".to_owned()),
+                ("version".to_owned(), "version_cold".to_owned()),
+                ("version".to_owned(), "version_hot".to_owned()),
+                (
+                    "vo_attestation".to_owned(),
+                    "vo_attestation_cold".to_owned()
+                ),
+                ("vo_attestation".to_owned(), "vo_attestation_hot".to_owned()),
+            ],
+            "{schema}"
+        );
+    }
+}
+
 #[tokio::test]
 async fn migrations_apply_cleanly_and_idempotently() {
     let db = testkit::db().await.expect("testkit database");
@@ -49,11 +85,11 @@ async fn migrations_apply_cleanly_and_idempotently() {
     };
     // One file per concern, numbered per domain with no gaps, so
     // `_sqlx_migrations` reads as the set's table of contents.
-    assert_eq!(applied("ext").await, 3);
+    assert_eq!(applied("ext").await, 4);
     assert_eq!(applied("clinical").await, 10);
     assert_eq!(applied("party").await, 7);
     assert_eq!(applied("linkage").await, 3);
-    assert_eq!(applied("audit").await, 5);
+    assert_eq!(applied("audit").await, 6);
 
     let tables = |schema: &'static str| {
         let pool = pool.clone();
@@ -123,39 +159,7 @@ async fn migrations_apply_cleanly_and_idempotently() {
         ]
     );
 
-    // The archival tier is a PARTITION of the relation it archives, not a
-    // mirror in another schema: three partitioned relations, two partitions
-    // each, in every domain that carries change control. No openEHR spec
-    // governs storage tiering — our own design/extension.
-    for schema in ["clinical", "party"] {
-        let partitions: Vec<(String, String)> = sqlx::query_as(
-            "SELECT p.relname, c.relname FROM pg_inherits i \
-             JOIN pg_class p ON p.oid = i.inhparent \
-             JOIN pg_class c ON c.oid = i.inhrelid \
-             JOIN pg_namespace n ON n.oid = p.relnamespace \
-             WHERE n.nspname = $1 AND p.relkind = 'p' AND c.relkind = 'r' \
-             ORDER BY 1, 2",
-        )
-        .bind(schema)
-        .fetch_all(&pool)
-        .await
-        .expect("partitions");
-        assert_eq!(
-            partitions,
-            [
-                ("node".to_owned(), "node_cold".to_owned()),
-                ("node".to_owned(), "node_hot".to_owned()),
-                ("version".to_owned(), "version_cold".to_owned()),
-                ("version".to_owned(), "version_hot".to_owned()),
-                (
-                    "vo_attestation".to_owned(),
-                    "vo_attestation_cold".to_owned()
-                ),
-                ("vo_attestation".to_owned(), "vo_attestation_hot".to_owned()),
-            ],
-            "{schema}"
-        );
-    }
+    assert_tier_partitions(&pool).await;
 
     // The mirror schemas and the union views they needed are gone with them.
     let leftovers: i64 = sqlx::query_scalar(
@@ -166,6 +170,49 @@ async fn migrations_apply_cleanly_and_idempotently() {
     .await
     .expect("count the first-generation schemas");
     assert_eq!(leftovers, 0, "no first-generation schema may be created");
+}
+
+/// None of the four columns a commit updates on `vo_head` is indexed, in either
+/// domain.
+///
+/// That is the STRUCTURAL half of the heap-only-update property: PostgreSQL 18
+/// §"Heap-Only Tuples (HOT)" makes an update heap-only when no indexed column
+/// changes, so the property is a fact about the index set rather than about a
+/// counter that happened to move during one run. Adding an index on any of
+/// these four columns would cost every commit an index insert and a new index
+/// entry per version, which is what this test exists to notice. No openEHR spec
+/// governs storage layout — our own design/extension.
+#[tokio::test]
+async fn no_commit_updated_column_of_vo_head_is_indexed() {
+    // The columns `HeadUpsert`'s ON CONFLICT branch writes.
+    const UPDATED: [&str; 4] = [
+        "head_sys_version",
+        "trunk_head_sys_version",
+        "lifecycle_state",
+        "committed_at",
+    ];
+    let db = testkit::db().await.expect("testkit database");
+    let pool = db.pool();
+    for schema in ["clinical", "party"] {
+        let indexed: Vec<String> = sqlx::query_scalar(
+            "SELECT DISTINCT a.attname FROM pg_index i \
+             JOIN pg_class c ON c.oid = i.indrelid \
+             JOIN pg_namespace n ON n.oid = c.relnamespace \
+             JOIN pg_attribute a ON a.attrelid = c.oid AND a.attnum = ANY(i.indkey) \
+             WHERE n.nspname = $1 AND c.relname = 'vo_head' ORDER BY 1",
+        )
+        .bind(schema)
+        .fetch_all(&pool)
+        .await
+        .expect("indexed columns of vo_head");
+        for column in UPDATED {
+            assert!(
+                !indexed.iter().any(|c| c == column),
+                "{schema}.vo_head.{column} is indexed, so a commit's update of it is no \
+                 longer heap-only: {indexed:?}"
+            );
+        }
+    }
 }
 
 /// The instance is single-tenant: no relation in any domain carries a tenant
