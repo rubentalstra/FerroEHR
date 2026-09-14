@@ -779,7 +779,7 @@ async fn the_application_database_role_cannot_run_ddl_or_escalate() {
     let mut conn = PgConnection::connect(&format!("{scheme}://{role}:testpw@{tail}"))
         .await
         .expect("connect as the app role");
-    sqlx::query("SET search_path TO ehr, ext, public")
+    sqlx::query("SET search_path TO clinical, ext, public")
         .execute(&mut conn)
         .await
         .expect("search_path");

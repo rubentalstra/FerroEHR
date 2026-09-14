@@ -58,7 +58,13 @@ KEYWORDS='SELECT|FROM|WHERE|ORDER[[:space:]]+BY|GROUP[[:space:]]+BY|HAVING|JOIN|
 # `storage::promoted::PROMOTED_LEAVES`, whose `column` field is a
 # `&'static str` in our own source — a closed set with no request-time input, and
 # the values themselves are bound through `QueryBuilder::push_bind`.
-EXEMPT='app/ferroehr/src/storage/node_repo.rs:push_str(leaf.column)'
+#
+# `ddl_template.rs` renders MIGRATION FILES, not statements a server executes:
+# its inputs are the two `Domain` constants in the same file and a committed
+# template, and its only consumer is a test that compares the rendering with the
+# committed migrations. Nothing here reaches a connection.
+EXEMPT='app/ferroehr/src/storage/node_repo.rs:push_str(leaf.column)
+app/ferroehr/src/storage/ddl_template.rs:out.push_str(&line.replace(KINDS, &kinds))'
 
 collect() {
   if [[ "${1:-}" = "--all" ]]; then

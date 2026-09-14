@@ -232,14 +232,14 @@ async fn a_refused_bookkeeping_table_names_the_schema_and_the_role() {
 /// domain it does not own.
 ///
 /// The fixture grants the clinical credential the two bookkeeping tables it
-/// would otherwise stop at, so the check reaches `demographic`, which it
-/// cannot enter at all.
+/// would otherwise stop at, so the check reaches `party`, which it cannot enter
+/// at all.
 #[tokio::test]
 async fn a_refused_schema_names_the_schema_and_the_role() {
     let db = testkit::db().await.expect("testkit database");
     let (role, dsn) = login_role(&db, "prepnodem", "ferroehr_ehr").await;
     sqlx::query(sqlx::AssertSqlSafe(format!(
-        "GRANT SELECT ON ext._sqlx_migrations, ehr._sqlx_migrations TO {role}"
+        "GRANT SELECT ON ext._sqlx_migrations, clinical._sqlx_migrations TO {role}"
     )))
     .execute(&db.pool())
     .await
@@ -252,7 +252,7 @@ async fn a_refused_schema_names_the_schema_and_the_role() {
 
     let error = ferroehr::db::verify_schema(&settings)
         .await
-        .expect_err("a clinical credential cannot enter the demographic schema");
+        .expect_err("a clinical credential cannot enter the party schema");
 
     let rendered = error.to_string();
     let DbError::SchemaUnreadable {

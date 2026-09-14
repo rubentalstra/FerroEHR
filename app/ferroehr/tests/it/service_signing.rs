@@ -555,22 +555,24 @@ async fn signing_disabled_folds_commit_and_preserves_master06_semantics() {
         .expect("latest");
     assert_eq!(uid(&latest), ovid_v2, "current version is v2");
 
-    // Exactly one open trunk row (v1 closed, v2 open) and neither is signed —
-    // the folded write honours the one-open-row-per-lineage invariant.
+    // Exactly one current trunk row (v1 superseded, v2 current) and neither is
+    // signed — the folded write advances the head past its predecessor.
     let rows = sqlx::query(
-        "SELECT sys_version, signature, upper_inf(sys_period) AS open \
-         FROM version WHERE vo_id = $1 AND kind = 'COMPOSITION' ORDER BY sys_version",
+        "SELECT v.sys_version, v.signature, \
+                (h.trunk_head_sys_version = v.sys_version) AS open \
+         FROM version v JOIN vo_head h ON h.vo_id = v.vo_id \
+         WHERE v.vo_id = $1 AND v.kind = 'COMPOSITION' ORDER BY v.sys_version",
     )
     .bind(vo_uuid)
     .fetch_all(&pool)
     .await
-    .expect("select vo_version");
+    .expect("select version");
     assert_eq!(rows.len(), 2, "two composition versions stored");
     let open: Vec<bool> = rows.iter().map(|r| r.try_get("open").unwrap()).collect();
     assert_eq!(
         open,
         vec![false, true],
-        "v1 superseded, v2 open (master06 §The 'Virtual Version Tree')"
+        "v1 superseded, v2 current (master06 §The 'Virtual Version Tree')"
     );
     for row in &rows {
         let sig: Option<String> = row.try_get("signature").unwrap();

@@ -47,7 +47,7 @@ use ferroehr::service::demographic::types::PartyKind;
 async fn change_control(pool: &PgPool, schema: &str, ehr_id: Option<Uuid>) -> (Uuid, Uuid) {
     let (commit_audit_id, contribution_id) = (Uuid::now_v7(), Uuid::now_v7());
     sqlx::query(sqlx::AssertSqlSafe(format!(
-        "INSERT INTO {schema}.audit (id, system_id, change_type, committer) \
+        "INSERT INTO {schema}.commit_audit (id, system_id, change_type, committer) \
          VALUES ($1, 'test.system', '249', \
                  '{{\"_type\":\"PARTY_IDENTIFIED\",\"name\":\"tester\"}}'::jsonb)"
     )))

@@ -229,7 +229,7 @@ async fn archive_and_restore_preserve_the_stamp() {
         .await
         .expect("archive the EHR");
     let cold: Option<bool> = sqlx::query_scalar::<_, Option<bool>>(
-        "SELECT stable_compatible FROM cold.vo_version WHERE vo_id = $1",
+        "SELECT stable_compatible FROM version_cold WHERE vo_id = $1",
     )
     .bind(vo_id)
     .fetch_one(&db.pool())

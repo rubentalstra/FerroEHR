@@ -190,10 +190,10 @@ pub struct AuditEvent {
 /// **No openEHR spec governs this — our own design/extension.**
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum AccessDomain {
-    /// The clinical `ehr` schema: EHRs, compositions, folders, contributions,
+    /// The `clinical` schema: EHRs, compositions, folders, contributions,
     /// extracts and the queries that read them.
     Ehr,
-    /// The `demographic` schema: parties and their change control.
+    /// The `party` schema: parties and their change control.
     Demographic,
     /// The `linkage` schema: the party-to-EHR resolve map.
     Linkage,
@@ -227,8 +227,8 @@ impl AccessDomain {
     #[must_use]
     pub fn as_str(self) -> &'static str {
         match self {
-            AccessDomain::Ehr => "ehr",
-            AccessDomain::Demographic => "demographic",
+            AccessDomain::Ehr => "clinical",
+            AccessDomain::Demographic => "party",
             AccessDomain::Linkage => "linkage",
             AccessDomain::System => "system",
         }

@@ -27,9 +27,11 @@ BEGIN
         GRANT SELECT ON ALL TABLES IN SCHEMA party
             TO ferroehr_demographic_reader;
 
-        -- The sealed value is the party writer's alone.
+        -- The sealed value is the party writer's alone, and so is the lookup
+        -- digest: a holder of the lookup subkey could otherwise ask whether a
+        -- known identifier is present without ever decrypting anything.
         REVOKE SELECT ON party.national_identifier FROM ferroehr_demographic_reader;
-        GRANT SELECT (id, party_id, scheme, lookup_digest, created_at)
+        GRANT SELECT (id, party_id, scheme, created_at)
             ON party.national_identifier TO ferroehr_demographic_reader;
         GRANT EXECUTE ON FUNCTION party.resolve_national_identifier(text, bytea)
             TO ferroehr_demographic;

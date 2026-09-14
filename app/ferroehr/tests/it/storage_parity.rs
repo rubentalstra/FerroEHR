@@ -250,9 +250,9 @@ async fn node_rows_under_a_bodiless_version_are_reported_as_unexpected_nodes() {
     // Give the bodiless version the previous version's rows: content in the
     // AQL index that no served version accounts for.
     let inserted = sqlx::query(
-        "INSERT INTO node (vo_id, sys_version, ehr_id, num, num_cap, parent_num, citem_num, \
+        "INSERT INTO node (vo_id, sys_version, ehr_id, num, num_cap, parent_num, \
          rm_type, archetype, arch_entity, arch_concept, arch_major, name, path, data) \
-         SELECT vo_id, $2, ehr_id, num, num_cap, parent_num, citem_num, rm_type, archetype, \
+         SELECT vo_id, $2, ehr_id, num, num_cap, parent_num, rm_type, archetype, \
          arch_entity, arch_concept, arch_major, name, path, data \
          FROM node WHERE vo_id = $1 AND sys_version = $2 - 1",
     )
@@ -347,7 +347,7 @@ async fn a_committed_since_bound_excludes_earlier_versions() {
         .expect("unscoped sweep");
     assert!(before.versions_checked > 0);
 
-    // The cutoff is read from the database, not the process: `sys_period` is
+    // The cutoff is read from the database, not the process: `committed_at` is
     // stamped by PostgreSQL's own clock, and a container's clock need not agree
     // with this process's to the millisecond.
     let cutoff: jiff_sqlx::Timestamp = sqlx::query_scalar("SELECT now()")
@@ -792,7 +792,7 @@ async fn an_archived_version_is_rebuilt_and_stays_archived() {
         .await
         .expect("archive");
     let cold_before: i64 =
-        sqlx::query_scalar("SELECT count(*) FROM cold.node WHERE vo_id = $1 AND sys_version = $2")
+        sqlx::query_scalar("SELECT count(*) FROM node_cold WHERE vo_id = $1 AND sys_version = $2")
             .bind(vo_id)
             .bind(sys_version)
             .fetch_one(&pool)

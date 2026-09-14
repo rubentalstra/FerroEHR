@@ -445,24 +445,12 @@ async fn admin_statistics_per_service_and_time_range() {
     let vo_x = Uuid::now_v7();
     let vo_y = Uuid::now_v7();
     for (vo, ver, period) in [
-        (
-            vo_x,
-            1,
-            "tstzrange(now() - interval '2 seconds', now() - interval '1 second', '[)')",
-        ),
-        (
-            vo_x,
-            2,
-            "tstzrange(now() - interval '1 second', NULL, '[)')",
-        ),
-        (
-            vo_y,
-            1,
-            "tstzrange(now() - interval '1 second', NULL, '[)')",
-        ),
+        (vo_x, 1, "now() - interval '2 seconds'"),
+        (vo_x, 2, "now() - interval '1 second'"),
+        (vo_y, 1, "now() - interval '1 second'"),
     ] {
         sqlx::query(AssertSqlSafe(format!(
-            "INSERT INTO version (vo_id, kind, ehr_id, sys_version, trunk_version, sys_period, contribution_id, commit_audit_id, creating_system_id) \
+            "INSERT INTO version (vo_id, kind, ehr_id, sys_version, trunk_version, committed_at, contribution_id, commit_audit_id, creating_system_id) \
              VALUES ($1, 'COMPOSITION', $2, $3, $3, {period}, $4, $5, 'ferroehr.test')"
         )))
         .bind(vo)
@@ -708,7 +696,7 @@ async fn archive_marks_vos_idempotently_and_reads_stay_unchanged() {
         .await
         .expect("archive ehr");
     let archived: i64 = sqlx::query_scalar(
-        "SELECT count(*) FROM vo_archive va \
+        "SELECT count(*) FROM vo_head va \
          WHERE EXISTS (SELECT 1 FROM version v \
                        WHERE v.vo_id = va.vo_id AND v.ehr_id = $1)",
     )
@@ -722,22 +710,24 @@ async fn archive_marks_vos_idempotently_and_reads_stay_unchanged() {
     svc.archive_ehrs(vec![ehr.to_string()])
         .await
         .expect("re-archive ehr");
-    let archived_again: i64 = sqlx::query_scalar("SELECT count(*) FROM vo_archive")
-        .fetch_one(pool)
-        .await
-        .expect("total archived");
+    let archived_again: i64 =
+        sqlx::query_scalar("SELECT count(*) FROM vo_head WHERE archived_at IS NOT NULL")
+            .fetch_one(pool)
+            .await
+            .expect("total archived");
     assert_eq!(archived_again, ehr_vo_count, "re-archive is idempotent");
 
     // archive_parties marks the party VO.
     svc.archive_parties(vec![person.clone()])
         .await
         .expect("archive party");
-    let party_marked: i64 =
-        sqlx::query_scalar("SELECT count(*) FROM demographic.vo_archive WHERE vo_id = $1::uuid")
-            .bind(&person)
-            .fetch_one(pool)
-            .await
-            .expect("party archived");
+    let party_marked: i64 = sqlx::query_scalar(
+        "SELECT count(*) FROM party.vo_head WHERE vo_id = $1::uuid AND archived_at IS NOT NULL",
+    )
+    .bind(&person)
+    .fetch_one(pool)
+    .await
+    .expect("party archived");
     assert_eq!(party_marked, 1);
 
     // Reads are UNCHANGED after archival (zero wire drift): the EHR_STATUS and
@@ -756,10 +746,11 @@ async fn archive_marks_vos_idempotently_and_reads_stay_unchanged() {
     // All-or-nothing: a batch with one unknown EHR → 404 and nothing new is
     // archived (a fresh EHR paired with a bogus id stays unmarked).
     let fresh = seed_full_ehr(&svc).await;
-    let before: i64 = sqlx::query_scalar("SELECT count(*) FROM vo_archive")
-        .fetch_one(pool)
-        .await
-        .expect("before");
+    let before: i64 =
+        sqlx::query_scalar("SELECT count(*) FROM vo_head WHERE archived_at IS NOT NULL")
+            .fetch_one(pool)
+            .await
+            .expect("before");
     let res = svc
         .archive_ehrs(vec![fresh.to_string(), Uuid::now_v7().to_string()])
         .await;
@@ -773,10 +764,11 @@ async fn archive_marks_vos_idempotently_and_reads_stay_unchanged() {
         ),
         "an unknown EHR aborts the batch, got {res:?}"
     );
-    let after: i64 = sqlx::query_scalar("SELECT count(*) FROM vo_archive")
-        .fetch_one(pool)
-        .await
-        .expect("after");
+    let after: i64 =
+        sqlx::query_scalar("SELECT count(*) FROM vo_head WHERE archived_at IS NOT NULL")
+            .fetch_one(pool)
+            .await
+            .expect("after");
     assert_eq!(before, after, "all-or-nothing: nothing archived on failure");
 
     // Unknown party → 404 (`party_id_does_not_exist`).
@@ -825,10 +817,10 @@ async fn archive_physically_moves_rows_to_the_cold_tier_and_back() {
     let ehr = seed_full_ehr(&svc).await;
     let other = seed_full_ehr(&svc).await;
 
-    let hot_versions = tier_rows(pool, "vo_version", ehr).await;
-    let hot_nodes = tier_rows(pool, "node", ehr).await;
-    let other_versions = tier_rows(pool, "vo_version", other).await;
-    let other_nodes = tier_rows(pool, "node", other).await;
+    let hot_versions = tier_rows(pool, "version_hot", ehr).await;
+    let hot_nodes = tier_rows(pool, "node_hot", ehr).await;
+    let other_versions = tier_rows(pool, "version_hot", other).await;
+    let other_nodes = tier_rows(pool, "node_hot", other).await;
     assert!(hot_versions > 0 && hot_nodes > 0, "the EHR has stored rows");
 
     // The composition/EHR_STATUS content served before archiving, to compare
@@ -844,16 +836,16 @@ async fn archive_physically_moves_rows_to_the_cold_tier_and_back() {
 
     // 1. The primary tier shrank to nothing for this EHR; the cold tier holds
     //    exactly what left.
-    assert_eq!(tier_rows(pool, "vo_version", ehr).await, 0);
-    assert_eq!(tier_rows(pool, "node", ehr).await, 0);
-    assert_eq!(tier_rows(pool, "cold.vo_version", ehr).await, hot_versions);
-    assert_eq!(tier_rows(pool, "cold.node", ehr).await, hot_nodes);
+    assert_eq!(tier_rows(pool, "version_hot", ehr).await, 0);
+    assert_eq!(tier_rows(pool, "node_hot", ehr).await, 0);
+    assert_eq!(tier_rows(pool, "version_cold", ehr).await, hot_versions);
+    assert_eq!(tier_rows(pool, "node_cold", ehr).await, hot_nodes);
 
     // 2. An UNARCHIVED EHR is untouched in both directions.
-    assert_eq!(tier_rows(pool, "vo_version", other).await, other_versions);
-    assert_eq!(tier_rows(pool, "node", other).await, other_nodes);
-    assert_eq!(tier_rows(pool, "cold.vo_version", other).await, 0);
-    assert_eq!(tier_rows(pool, "cold.node", other).await, 0);
+    assert_eq!(tier_rows(pool, "version_hot", other).await, other_versions);
+    assert_eq!(tier_rows(pool, "node_hot", other).await, other_nodes);
+    assert_eq!(tier_rows(pool, "version_cold", other).await, 0);
+    assert_eq!(tier_rows(pool, "node_cold", other).await, 0);
     svc.get_ehr_status_at_time(other, None)
         .await
         .expect("the unarchived EHR still reads");
@@ -882,19 +874,18 @@ async fn archive_physically_moves_rows_to_the_cold_tier_and_back() {
     svc.archive_ehrs(vec![ehr.to_string()])
         .await
         .expect("re-archive");
-    assert_eq!(tier_rows(pool, "cold.vo_version", ehr).await, hot_versions);
+    assert_eq!(tier_rows(pool, "version_cold", ehr).await, hot_versions);
 
     // 5. The move reverses exactly, markers included.
     svc.restore_archived_ehrs(vec![ehr.to_string()])
         .await
         .expect("restore ehr");
-    assert_eq!(tier_rows(pool, "vo_version", ehr).await, hot_versions);
-    assert_eq!(tier_rows(pool, "node", ehr).await, hot_nodes);
-    assert_eq!(tier_rows(pool, "cold.vo_version", ehr).await, 0);
-    assert_eq!(tier_rows(pool, "cold.node", ehr).await, 0);
+    assert_eq!(tier_rows(pool, "version_hot", ehr).await, hot_versions);
+    assert_eq!(tier_rows(pool, "node_hot", ehr).await, hot_nodes);
+    assert_eq!(tier_rows(pool, "version_cold", ehr).await, 0);
+    assert_eq!(tier_rows(pool, "node_cold", ehr).await, 0);
     let markers: i64 = sqlx::query_scalar(
-        "SELECT count(*) FROM vo_archive va \
-         WHERE EXISTS (SELECT 1 FROM version v WHERE v.vo_id = va.vo_id AND v.ehr_id = $1)",
+        "SELECT count(*) FROM vo_head WHERE ehr_id = $1 AND archived_at IS NOT NULL",
     )
     .bind(ehr)
     .fetch_one(pool)
@@ -920,19 +911,21 @@ async fn physical_delete_removes_archived_rows_from_the_cold_tier() {
     svc.archive_ehrs(vec![ehr.to_string()])
         .await
         .expect("archive ehr");
-    assert!(tier_rows(pool, "cold.vo_version", ehr).await > 0);
+    assert!(tier_rows(pool, "version_cold", ehr).await > 0);
 
     svc.admin_ehr_delete(ehr.to_string())
         .await
         .expect("delete archived ehr");
 
-    assert_eq!(tier_rows(pool, "cold.vo_version", ehr).await, 0);
-    assert_eq!(tier_rows(pool, "cold.node", ehr).await, 0);
-    let markers: i64 = sqlx::query_scalar("SELECT count(*) FROM vo_archive WHERE vo_id = $1")
-        .bind(Uuid::from(ehr))
-        .fetch_one(pool)
-        .await
-        .expect("marker count");
+    assert_eq!(tier_rows(pool, "version_cold", ehr).await, 0);
+    assert_eq!(tier_rows(pool, "node_cold", ehr).await, 0);
+    let markers: i64 = sqlx::query_scalar(
+        "SELECT count(*) FROM vo_head WHERE ehr_id = $1 AND archived_at IS NOT NULL",
+    )
+    .bind(Uuid::from(ehr))
+    .fetch_one(pool)
+    .await
+    .expect("marker count");
     assert_eq!(markers, 0);
 }
 
@@ -956,8 +949,8 @@ async fn writing_an_archived_object_thaws_it_back_to_the_primary_tier() {
     svc.archive_ehrs(vec![ehr.to_string()])
         .await
         .expect("archive ehr");
-    assert_eq!(tier_rows(pool, "vo_version", ehr).await, 0);
-    assert_eq!(tier_rows(pool, "cold.vo_version", ehr).await, 2);
+    assert_eq!(tier_rows(pool, "version_hot", ehr).await, 0);
+    assert_eq!(tier_rows(pool, "version_cold", ehr).await, 2);
 
     let mut updated = before.clone();
     updated.as_object_mut().expect("status obj").remove("uid");
@@ -968,10 +961,10 @@ async fn writing_an_archived_object_thaws_it_back_to_the_primary_tier() {
     // ONLY the written object thaws: the EHR_STATUS is whole in the primary
     // tier (its archived version plus the new one), while the untouched
     // EHR_ACCESS stays archived.
-    assert_eq!(vo_rows(pool, "vo_version", &status_vo).await, 2);
-    assert_eq!(vo_rows(pool, "cold.vo_version", &status_vo).await, 0);
-    assert_eq!(tier_rows(pool, "cold.vo_version", ehr).await, 1);
-    assert_eq!(tier_rows(pool, "vo_version", ehr).await, 2);
+    assert_eq!(vo_rows(pool, "version_hot", &status_vo).await, 2);
+    assert_eq!(vo_rows(pool, "version_cold", &status_vo).await, 0);
+    assert_eq!(tier_rows(pool, "version_cold", ehr).await, 1);
+    assert_eq!(tier_rows(pool, "version_hot", ehr).await, 2);
     let revisions = svc
         .ehr_status_revision_history(ehr)
         .await
