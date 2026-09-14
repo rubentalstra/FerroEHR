@@ -87,7 +87,7 @@ async fn seed_ehr_with_identifier_in_folder(source: &FerroEhrService) -> EhrId {
 }
 
 async fn version_rows(pool: &PgPool, ehr: EhrId) -> i64 {
-    sqlx::query_scalar("SELECT count(*) FROM vo_version WHERE ehr_id = $1")
+    sqlx::query_scalar("SELECT count(*) FROM version WHERE ehr_id = $1")
         .bind(uuid::Uuid::from(ehr))
         .fetch_one(pool)
         .await

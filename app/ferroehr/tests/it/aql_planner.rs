@@ -1155,7 +1155,7 @@ fn projection_of_context_start_time_is_not_promoted() {
 }
 
 /// uid synthesis: `c/uid/value` on a COMPOSITION variable synthesizes the `OBJECT_VERSION_ID`
-/// from the joined `vo_version` (RM common master06 §Version Identification) —
+/// from the joined `version` (RM common master06 §Version Identification) —
 /// it is not stored in the fragment.
 #[test]
 fn composition_uid_value_is_synthesized_from_vo_version() {
@@ -1342,7 +1342,7 @@ const WARD_QUERY: &str = "SELECT e/ehr_id/value, c/uid/value \
 /// A LIMIT-bearing, unordered population query lowers to the STREAMING
 /// shape: the version spine is the single FROM item, every node source is a
 /// `LATERAL` subquery behind the `OFFSET 0` pull-up fence, and the root is
-/// pre-filtered by `vo_version.kind` — so the planner walks current versions
+/// pre-filtered by `version.kind` — so the planner walks current versions
 /// lazily and stops at the LIMIT instead of materializing an
 /// archetype-anchor bitmap over the corpus (QUERY master03 §LIMIT: without
 /// ORDER BY, which rows return is explicitly non-deterministic).

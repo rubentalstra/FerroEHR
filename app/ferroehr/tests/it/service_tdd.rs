@@ -161,7 +161,7 @@ async fn tdd_import_commits_composition() {
 
     // Exactly one COMPOSITION committed.
     let comps: i64 = sqlx::query_scalar(
-        "SELECT count(*) FROM vo_version WHERE ehr_id = $1 AND kind = 'COMPOSITION'",
+        "SELECT count(*) FROM version WHERE ehr_id = $1 AND kind = 'COMPOSITION'",
     )
     .bind(ehr)
     .fetch_one(&pool)
@@ -216,7 +216,7 @@ async fn tdd_import_tdds_batch_commits_all() {
     assert_eq!(ids.len(), 1);
 
     let comps: i64 = sqlx::query_scalar(
-        "SELECT count(*) FROM vo_version WHERE ehr_id = $1 AND kind = 'COMPOSITION'",
+        "SELECT count(*) FROM version WHERE ehr_id = $1 AND kind = 'COMPOSITION'",
     )
     .bind(ehr)
     .fetch_one(&pool)

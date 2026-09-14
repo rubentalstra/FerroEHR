@@ -45,7 +45,7 @@ pub(crate) async fn repository() -> (testkit::TestDb, PgPool, FerroEhrService) {
 ///
 /// `EHR_STATUS` (create → update = two versions) plus the `EHR_ACCESS` minted at
 /// creation, an item tag on the `EHR_STATUS`, and a directory `FOLDER` — enough
-/// to populate every `vo_version`/`node`/`contribution`/`audit`/`item_tag`
+/// to populate every `version`/`node`/`contribution`/`audit`/`item_tag`
 /// relation. COMPOSITION is deliberately absent: it would need a template the
 /// shared fixtures do not supply, and adds no relation the kinds above miss.
 ///

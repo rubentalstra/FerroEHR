@@ -1436,7 +1436,7 @@ async fn an_extract_carries_its_parties_into_the_receivers_demographic_domain() 
     target.import_ehr(None, extract).await.expect("import_ehr");
 
     let in_demographic: i64 = sqlx::query_scalar(
-        "SELECT count(*) FROM demographic.vo_version WHERE vo_id = $1 AND kind = 'PERSON'",
+        "SELECT count(*) FROM party.version WHERE vo_id = $1 AND kind = 'PERSON'",
     )
     .bind(party)
     .fetch_one(&target_db.pool())

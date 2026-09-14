@@ -1052,7 +1052,7 @@ async fn version_validity_never_overlaps_without_the_exclusion_constraints() {
     }
 
     let open_trunk: i64 = sqlx::query_scalar(
-        "SELECT count(*) FROM vo_version \
+        "SELECT count(*) FROM version \
          WHERE ehr_id = $1 AND kind = 'COMPOSITION' \
            AND branch_number = 0 AND upper_inf(sys_period)",
     )
@@ -1064,8 +1064,8 @@ async fn version_validity_never_overlaps_without_the_exclusion_constraints() {
 
     let overlap: bool = sqlx::query_scalar(
         "SELECT EXISTS ( \
-             SELECT 1 FROM vo_version a \
-             JOIN vo_version b ON a.vo_id = b.vo_id \
+             SELECT 1 FROM version a \
+             JOIN version b ON a.vo_id = b.vo_id \
                  AND a.branch_number = b.branch_number \
                  AND (a.branch_number = 0 \
                       OR (a.creating_system_id = b.creating_system_id \

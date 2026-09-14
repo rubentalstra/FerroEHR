@@ -533,7 +533,7 @@ async fn storage_spike() {
     let vo = Uuid::now_v7();
     let ehr = Uuid::now_v7();
     sqlx::query(
-        "INSERT INTO vo_version (vo_id, kind, ehr_id, sys_version, sys_period)
+        "INSERT INTO version (vo_id, kind, ehr_id, sys_version, sys_period)
          VALUES ($1, 'COMPOSITION', $2, 1, tstzrange('2026-01-01T00:00:00Z', NULL))",
     )
     .bind(vo)
@@ -543,7 +543,7 @@ async fn storage_spike() {
     .expect("v1 insert");
     // an overlapping period must be rejected by the temporal PK
     let overlap = sqlx::query(
-        "INSERT INTO vo_version (vo_id, kind, ehr_id, sys_version, sys_period)
+        "INSERT INTO version (vo_id, kind, ehr_id, sys_version, sys_period)
          VALUES ($1, 'COMPOSITION', $2, 2, tstzrange('2026-02-01T00:00:00Z', NULL))",
     )
     .bind(vo)
@@ -556,7 +556,7 @@ async fn storage_spike() {
     );
     // close v1, then v2 opens — adjacent ranges are fine
     sqlx::query(
-        "UPDATE vo_version SET sys_period = tstzrange(lower(sys_period), '2026-02-01T00:00:00Z')
+        "UPDATE version SET sys_period = tstzrange(lower(sys_period), '2026-02-01T00:00:00Z')
          WHERE vo_id = $1 AND upper_inf(sys_period)",
     )
     .bind(vo)
@@ -564,7 +564,7 @@ async fn storage_spike() {
     .await
     .expect("close v1");
     sqlx::query(
-        "INSERT INTO vo_version (vo_id, kind, ehr_id, sys_version, sys_period)
+        "INSERT INTO version (vo_id, kind, ehr_id, sys_version, sys_period)
          VALUES ($1, 'COMPOSITION', $2, 2, tstzrange('2026-02-01T00:00:00Z', NULL))",
     )
     .bind(vo)
@@ -572,14 +572,13 @@ async fn storage_spike() {
     .execute(&pool)
     .await
     .expect("v2 insert after closing v1");
-    let current: i32 = sqlx::query(
-        "SELECT sys_version FROM vo_version WHERE vo_id = $1 AND upper_inf(sys_period)",
-    )
-    .bind(vo)
-    .fetch_one(&pool)
-    .await
-    .expect("current lookup")
-    .get(0);
+    let current: i32 =
+        sqlx::query("SELECT sys_version FROM version WHERE vo_id = $1 AND upper_inf(sys_period)")
+            .bind(vo)
+            .fetch_one(&pool)
+            .await
+            .expect("current lookup")
+            .get(0);
     assert_eq!(current, 2);
     writeln!(
         report,

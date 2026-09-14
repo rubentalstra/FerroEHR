@@ -61,7 +61,7 @@ async fn insert_persists_promoted_columns_and_fhir_payload() {
 
     let row = sqlx::query(
         "SELECT action, outcome, event_code, operation, principal, patient_id, \
-         resource_class, resource_id, client_ip, token_id, tenant_id, fhir, \
+         resource_class, resource_id, client_ip, token_id, fhir, \
          delivered_syslog_at, delivered_fhir_feed_at \
          FROM audit.audit_event",
     )
@@ -97,7 +97,6 @@ async fn insert_persists_promoted_columns_and_fhir_payload() {
         row.get::<Option<String>, _>("token_id").as_deref(),
         Some("jti-1")
     );
-    assert_eq!(row.get::<Option<Uuid>, _>("tenant_id"), Some(Uuid::nil()));
     // Both forwarding outbox stamps start pending.
     assert_eq!(
         row.get::<Option<jiff_sqlx::Timestamp>, _>("delivered_syslog_at")

@@ -128,11 +128,11 @@ async fn the_boot_sequence_prepares_the_schema_on_separated_credentials() {
         .expect("`apply` prepares the schema on the migration credential");
 
     // The sequence ends with two usable runtime pools, each on its own domain.
-    let versions: i64 = sqlx::query_scalar("SELECT count(*) FROM ehr.vo_version")
+    let versions: i64 = sqlx::query_scalar("SELECT count(*) FROM clinical.version")
         .fetch_one(&clinical)
         .await
         .expect("the clinical pool reads its own domain");
-    let parties: i64 = sqlx::query_scalar("SELECT count(*) FROM demographic.vo_version")
+    let parties: i64 = sqlx::query_scalar("SELECT count(*) FROM party.version")
         .fetch_one(&demographic)
         .await
         .expect("the demographic pool reads its own domain");

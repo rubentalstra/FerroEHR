@@ -6,7 +6,7 @@
 //!
 //! NOTE: no openEHR spec governs storage mechanics — our own design/extension;
 //! the sweep re-derives every stored version from its `node` rows and compares
-//! the result with the materialized `vo_version.body`.
+//! the result with the materialized `version.body`.
 //!
 //! Every tamper case reaches PAST the service into the stored rows with raw
 //! SQL, which is the point: an attacker or a corrupt page does not go through
@@ -52,7 +52,7 @@ async fn seed_ehr_with_composition(svc: &FerroEhrService) -> EhrId {
 /// The `(vo_id, sys_version)` of the one stored version of `kind` in `ehr_id`.
 async fn one_version(pool: &PgPool, ehr_id: EhrId, kind: &str) -> (Uuid, i32) {
     sqlx::query_as(
-        "SELECT vo_id, sys_version FROM vo_version WHERE ehr_id = $1 AND kind = $2 \
+        "SELECT vo_id, sys_version FROM version WHERE ehr_id = $1 AND kind = $2 \
          ORDER BY sys_version DESC LIMIT 1",
     )
     .bind(ehr_id.0)
@@ -151,7 +151,7 @@ async fn a_tampered_version_body_is_reported_as_content_differs() {
     // The other copy: the materialized projection every point read serves.
     tamper(
         &pool,
-        "UPDATE vo_version SET body = (jsonb_set((body)::jsonb, '{archetype_node_id}', '\"tampered\"'))::text \
+        "UPDATE version SET body = (jsonb_set((body)::jsonb, '{archetype_node_id}', '\"tampered\"'))::text \
          WHERE vo_id = $1 AND sys_version = $2",
         vo_id,
         sys_version,
@@ -215,7 +215,7 @@ async fn a_logically_deleted_version_sweeps_clean() {
     // The delete committed a version with data Void (RM common master06
     // §Logical Deletion): no body, and no node rows to disagree with it.
     let bodiless: i64 = sqlx::query_scalar(
-        "SELECT count(*) FROM vo_version WHERE ehr_id = $1 AND kind = 'FOLDER' AND body IS NULL",
+        "SELECT count(*) FROM version WHERE ehr_id = $1 AND kind = 'FOLDER' AND body IS NULL",
     )
     .bind(ehr_id.0)
     .fetch_one(&pool)
@@ -292,7 +292,7 @@ async fn a_scoped_sweep_covers_only_its_own_ehr() {
     let (vo_id, sys_version) = one_version(&pool, damaged, "COMPOSITION").await;
     tamper(
         &pool,
-        "UPDATE vo_version SET body = '{\"_type\":\"COMPOSITION\"}' \
+        "UPDATE version SET body = '{\"_type\":\"COMPOSITION\"}' \
          WHERE vo_id = $1 AND sys_version = $2",
         vo_id,
         sys_version,
@@ -673,7 +673,7 @@ async fn node_rows_under_a_bodiless_version_rebuild_to_none() {
     // so its node rows are unexpected — and rebuild to zero of them.
     tamper(
         &pool,
-        "UPDATE vo_version SET body = NULL WHERE vo_id = $1 AND sys_version = $2",
+        "UPDATE version SET body = NULL WHERE vo_id = $1 AND sys_version = $2",
         vo_id,
         sys_version,
     )
@@ -723,7 +723,7 @@ async fn a_body_that_does_not_decompose_is_refused_and_its_rows_are_untouched() 
     // root type, so `decompose` refuses it (`StorageError::NotAStructureRoot`).
     tamper(
         &pool,
-        "UPDATE vo_version SET body = '{\"_type\":\"NOT_A_ROOT\"}' \
+        "UPDATE version SET body = '{\"_type\":\"NOT_A_ROOT\"}' \
          WHERE vo_id = $1 AND sys_version = $2",
         vo_id,
         sys_version,
@@ -896,7 +896,7 @@ async fn seed_party(svc: &FerroEhrService, pool: &PgPool) -> (Uuid, i32) {
     .await
     .expect("create a person through the service seam");
     sqlx::query_as(
-        "SELECT vo_id, sys_version FROM demographic.vo_version \
+        "SELECT vo_id, sys_version FROM party.version \
          ORDER BY sys_version DESC LIMIT 1",
     )
     .fetch_one(pool)
@@ -913,7 +913,7 @@ async fn a_damaged_party_is_reported_by_a_sweep_with_no_scope() {
 
     tamper(
         &pool,
-        "UPDATE demographic.node SET data = jsonb_set(data, '{name,value}', '\"tampered\"') \
+        "UPDATE party.node SET data = jsonb_set(data, '{name,value}', '\"tampered\"') \
          WHERE vo_id = $1 AND sys_version = $2 AND num = 0",
         vo_id,
         sys_version,
@@ -975,7 +975,7 @@ async fn a_damaged_party_is_rebuilt_and_reads_correctly_afterwards() {
 
     tamper(
         &pool,
-        "UPDATE demographic.node SET data = jsonb_set(data, '{name,value}', '\"tampered\"') \
+        "UPDATE party.node SET data = jsonb_set(data, '{name,value}', '\"tampered\"') \
          WHERE vo_id = $1 AND sys_version = $2 AND num = 0",
         vo_id,
         sys_version,
@@ -1003,7 +1003,7 @@ async fn a_damaged_party_is_rebuilt_and_reads_correctly_afterwards() {
     // The node rows are what a decomposed read serves, so this is the reader
     // that would still have seen the damage.
     let name: String = sqlx::query_scalar(
-        "SELECT data #>> '{name,value}' FROM demographic.node \
+        "SELECT data #>> '{name,value}' FROM party.node \
          WHERE vo_id = $1 AND sys_version = $2 AND num = 0",
     )
     .bind(vo_id)
@@ -1105,7 +1105,7 @@ async fn seed_contactable_party(svc: &FerroEhrService, pool: &PgPool) -> (VoId, 
         .await
         .expect("create a person through the service seam");
     let sys_version: i32 = sqlx::query_scalar(
-        "SELECT sys_version FROM demographic.vo_version WHERE vo_id = $1 \
+        "SELECT sys_version FROM party.version WHERE vo_id = $1 \
          ORDER BY sys_version DESC LIMIT 1",
     )
     .bind(vo_id.0)
@@ -1115,16 +1115,15 @@ async fn seed_contactable_party(svc: &FerroEhrService, pool: &PgPool) -> (VoId, 
     (vo_id, sys_version)
 }
 
-/// The stored `vo_version.body` of one demographic version, parsed.
+/// The stored `version.body` of one demographic version, parsed.
 async fn stored_demographic_body(pool: &PgPool, vo_id: VoId, sys_version: i32) -> Value {
-    let text: String = sqlx::query_scalar(
-        "SELECT body FROM demographic.vo_version WHERE vo_id = $1 AND sys_version = $2",
-    )
-    .bind(vo_id.0)
-    .bind(sys_version)
-    .fetch_one(pool)
-    .await
-    .expect("the stored body");
+    let text: String =
+        sqlx::query_scalar("SELECT body FROM party.version WHERE vo_id = $1 AND sys_version = $2")
+            .bind(vo_id.0)
+            .bind(sys_version)
+            .fetch_one(pool)
+            .await
+            .expect("the stored body");
     serde_json::from_str(&text).expect("the stored body parses")
 }
 
@@ -1132,7 +1131,7 @@ async fn stored_demographic_body(pool: &PgPool, vo_id: VoId, sys_version: i32) -
 /// codec reassembles from.
 async fn stored_demographic_rows(pool: &PgPool, vo_id: VoId, sys_version: i32) -> Vec<ReadRow> {
     let rows: Vec<(i32, i32, i32, String, Value)> = sqlx::query_as(
-        "SELECT num, num_cap, parent_num, path, data FROM demographic.node \
+        "SELECT num, num_cap, parent_num, path, data FROM party.node \
          WHERE vo_id = $1 AND sys_version = $2 ORDER BY num",
     )
     .bind(vo_id.0)
@@ -1161,7 +1160,7 @@ async fn stored_demographic_rows(pool: &PgPool, vo_id: VoId, sys_version: i32) -
 /// written them through this build's commit path.
 async fn write_the_old_party_shape(pool: &PgPool, vo_id: VoId, sys_version: i32) {
     let removed = sqlx::query(
-        "DELETE FROM demographic.node WHERE vo_id = $1 AND sys_version = $2 \
+        "DELETE FROM party.node WHERE vo_id = $1 AND sys_version = $2 \
          AND (path LIKE 'identities%' OR path LIKE 'contacts%')",
     )
     .bind(vo_id.0)
@@ -1178,8 +1177,8 @@ async fn write_the_old_party_shape(pool: &PgPool, vo_id: VoId, sys_version: i32)
     // The old root fragment is the body with its one structure child pruned,
     // which is exactly what the pre-#3273 codec kept inline.
     let inlined = sqlx::query(
-        "UPDATE demographic.node n SET data = (\
-           SELECT v.body::jsonb - 'details' FROM demographic.vo_version v \
+        "UPDATE party.node n SET data = (\
+           SELECT v.body::jsonb - 'details' FROM party.version v \
            WHERE v.vo_id = n.vo_id AND v.sys_version = n.sys_version) \
          WHERE n.vo_id = $1 AND n.sys_version = $2 AND n.num = 0",
     )

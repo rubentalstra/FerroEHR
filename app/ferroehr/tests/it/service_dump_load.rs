@@ -117,7 +117,7 @@ async fn counts(pool: &PgPool, ehr_id: Uuid) -> (i64, i64, i64, i64) {
     (
         count_for_ehr(
             pool,
-            "SELECT count(*) FROM vo_version WHERE ehr_id = $1",
+            "SELECT count(*) FROM version WHERE ehr_id = $1",
             ehr_id,
         )
         .await,

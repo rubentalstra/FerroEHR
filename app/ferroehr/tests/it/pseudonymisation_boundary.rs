@@ -40,96 +40,31 @@ use crate::typed_body::typed;
 use ferroehr::service::FerroEhrService;
 use ferroehr::service::demographic::types::PartyKind;
 
-/// The cutover statements of `demographic/0002_move_parties`, read from the
-/// migration itself rather than restated here.
-///
-/// A copy would drift from the migration the moment either changed, and a test
-/// asserting a copy proves nothing about what an installation actually runs.
-fn cutover_sql() -> String {
-    std::fs::read_to_string(concat!(
-        env!("CARGO_MANIFEST_DIR"),
-        "/migrations/demographic/0002_move_parties.sql"
-    ))
-    .expect("read the cutover migration")
-}
-
-/// Apply the cutover the way the migrator does: the whole file as raw SQL
-/// inside ONE transaction.
-///
-/// Both properties are load-bearing. The file is multi-statement, which a
-/// prepared statement refuses; and its `ON COMMIT DROP` temporary tables carry
-/// the move's working set between statements, so running the statements under
-/// autocommit would drop them after the first one.
-async fn run_cutover(pool: &PgPool) -> Result<(), sqlx::Error> {
-    let mut tx = pool.begin().await?;
-    sqlx::raw_sql(sqlx::AssertSqlSafe(cutover_sql()))
-        .execute(&mut *tx)
-        .await?;
-    tx.commit().await
-}
-
 /// Write the audit and contribution rows every version row needs, leaving the
 /// boundary constraints exactly as the migrated clone carries them.
 ///
-/// Returns `(contribution_id, audit_id)`.
+/// Returns `(contribution_id, commit_audit_id)`.
 async fn change_control(pool: &PgPool, schema: &str, ehr_id: Option<Uuid>) -> (Uuid, Uuid) {
-    let (audit_id, contribution_id) = (Uuid::now_v7(), Uuid::now_v7());
+    let (commit_audit_id, contribution_id) = (Uuid::now_v7(), Uuid::now_v7());
     sqlx::query(sqlx::AssertSqlSafe(format!(
         "INSERT INTO {schema}.audit (id, system_id, change_type, committer) \
          VALUES ($1, 'test.system', '249', \
                  '{{\"_type\":\"PARTY_IDENTIFIED\",\"name\":\"tester\"}}'::jsonb)"
     )))
-    .bind(audit_id)
+    .bind(commit_audit_id)
     .execute(pool)
     .await
     .expect("seed audit");
     sqlx::query(sqlx::AssertSqlSafe(format!(
-        "INSERT INTO {schema}.contribution (id, ehr_id, audit_id) VALUES ($1, $2, $3)"
+        "INSERT INTO {schema}.contribution (id, ehr_id, commit_audit_id) VALUES ($1, $2, $3)"
     )))
     .bind(contribution_id)
     .bind(ehr_id)
-    .bind(audit_id)
+    .bind(commit_audit_id)
     .execute(pool)
     .await
     .expect("seed contribution");
-    (contribution_id, audit_id)
-}
-
-/// Put one versioned object back where the pre-move release stored it: `ehr`,
-/// with a NULL `ehr_id`.
-///
-/// The clone the testkit hands us has already run the cutover, so its four
-/// boundary constraints come off first: re-running the migration must find the
-/// schema as the previous release left it.
-async fn seed_party_in_the_clinical_schema(pool: &PgPool, kind: &str) -> Uuid {
-    for statement in [
-        "ALTER TABLE ehr.vo_version DROP CONSTRAINT IF EXISTS ck_vo_version_ehr_scoped",
-        "ALTER TABLE ehr.contribution DROP CONSTRAINT IF EXISTS ck_contribution_ehr_scoped",
-        "ALTER TABLE demographic.vo_version DROP CONSTRAINT IF EXISTS ck_dem_vo_version_unscoped",
-        "ALTER TABLE demographic.contribution DROP CONSTRAINT IF EXISTS ck_dem_contribution_unscoped",
-    ] {
-        sqlx::query(statement)
-            .execute(pool)
-            .await
-            .expect("drop the boundary constraint");
-    }
-    let (contribution_id, audit_id) = change_control(pool, "ehr", None).await;
-    let vo_id = Uuid::now_v7();
-    sqlx::query(
-        "INSERT INTO ehr.vo_version \
-           (vo_id, kind, ehr_id, sys_version, trunk_version, sys_period, \
-            creating_system_id, contribution_id, audit_id, body) \
-         VALUES ($1, $2, NULL, 1, 1, tstzrange(now(), NULL), 'test.system', $3, $4, $5)",
-    )
-    .bind(vo_id)
-    .bind(kind)
-    .bind(contribution_id)
-    .bind(audit_id)
-    .bind(format!("{{\"_type\":\"{kind}\"}}"))
-    .execute(pool)
-    .await
-    .expect("seed party version");
-    vo_id
+    (contribution_id, commit_audit_id)
 }
 
 async fn count(pool: &PgPool, sql: &'static str, vo_id: Uuid) -> i64 {
@@ -141,72 +76,6 @@ async fn count(pool: &PgPool, sql: &'static str, vo_id: Uuid) -> i64 {
         .try_get::<i64, _>(0)
         .expect("count column")
 }
-
-#[tokio::test]
-async fn the_cutover_carries_a_party_out_of_the_clinical_schema() {
-    let db = testkit::db().await.expect("testkit database");
-    let pool = db.pool();
-    let vo_id = seed_party_in_the_clinical_schema(&pool, "PERSON").await;
-
-    assert_eq!(
-        count(
-            &pool,
-            "SELECT count(*) FROM ehr.vo_version WHERE vo_id = $1",
-            vo_id
-        )
-        .await,
-        1,
-        "the fixture really put the party where the pre-move release stored it"
-    );
-
-    run_cutover(&pool)
-        .await
-        .expect("the cutover migration runs against real data");
-
-    assert_eq!(
-        count(
-            &pool,
-            "SELECT count(*) FROM ehr.vo_version WHERE vo_id = $1",
-            vo_id
-        )
-        .await,
-        0,
-        "the party has left the clinical schema"
-    );
-    assert_eq!(
-        count(
-            &pool,
-            "SELECT count(*) FROM demographic.vo_version WHERE vo_id = $1",
-            vo_id
-        )
-        .await,
-        1,
-        "and arrived in the demographic one"
-    );
-    assert_eq!(
-        count(
-            &pool,
-            "SELECT count(*) FROM demographic.contribution c \
-             JOIN demographic.vo_version v ON v.contribution_id = c.id WHERE v.vo_id = $1",
-            vo_id
-        )
-        .await,
-        1,
-        "with its contribution, so the change-control chain is intact on the far side"
-    );
-    assert_eq!(
-        count(
-            &pool,
-            "SELECT count(*) FROM demographic.audit a \
-             JOIN demographic.vo_version v ON v.audit_id = a.id WHERE v.vo_id = $1",
-            vo_id
-        )
-        .await,
-        1,
-        "and its audit"
-    );
-}
-
 #[tokio::test]
 async fn the_boundary_refuses_a_party_written_back_to_the_clinical_schema() {
     let db = testkit::db().await.expect("testkit database");
@@ -218,27 +87,27 @@ async fn the_boundary_refuses_a_party_written_back_to_the_clinical_schema() {
     // The contribution needs a real EHR: its own half of the boundary already
     // refuses an EHR-less one, which is the constraint the sibling test covers.
     let ehr_id = Uuid::now_v7();
-    sqlx::query("INSERT INTO ehr.ehr (id, system_id) VALUES ($1, 'test.system')")
+    sqlx::query("INSERT INTO clinical.ehr (id, system_id) VALUES ($1, 'test.system')")
         .bind(ehr_id)
         .execute(&pool)
         .await
         .expect("seed an EHR");
-    let (contribution_id, audit_id) = change_control(&pool, "ehr", Some(ehr_id)).await;
+    let (contribution_id, commit_audit_id) = change_control(&pool, "ehr", Some(ehr_id)).await;
     let refused = sqlx::query(
-        "INSERT INTO ehr.vo_version \
-           (vo_id, kind, ehr_id, sys_version, trunk_version, sys_period, \
-            creating_system_id, contribution_id, audit_id, body) \
-         VALUES ($1, 'PERSON', NULL, 1, 1, tstzrange(now(), NULL), 'test.system', $2, $3, '{}')",
+        "INSERT INTO clinical.version \
+           (vo_id, kind, ehr_id, sys_version, trunk_version, committed_at, \
+            creating_system_id, contribution_id, commit_audit_id, body) \
+         VALUES ($1, 'PERSON', NULL, 1, 1, now(), 'test.system', $2, $3, '{}')",
     )
     .bind(Uuid::now_v7())
     .bind(contribution_id)
-    .bind(audit_id)
+    .bind(commit_audit_id)
     .execute(&pool)
     .await;
 
     let error = refused.expect_err("an EHR-less row must not enter the clinical schema");
     assert!(
-        error.to_string().contains("ck_vo_version_ehr_scoped"),
+        error.to_string().contains("ck_version_kind"),
         "the refusal names the boundary constraint rather than failing obscurely: {error}"
     );
 }
@@ -248,54 +117,25 @@ async fn the_boundary_refuses_an_ehr_scoped_object_in_the_demographic_schema() {
     let db = testkit::db().await.expect("testkit database");
     let pool = db.pool();
 
-    let (contribution_id, audit_id) = change_control(&pool, "demographic", None).await;
+    let (contribution_id, commit_audit_id) = change_control(&pool, "demographic", None).await;
     let refused = sqlx::query(
-        "INSERT INTO demographic.vo_version \
-           (vo_id, kind, ehr_id, sys_version, trunk_version, sys_period, \
-            creating_system_id, contribution_id, audit_id, body) \
-         VALUES ($1, 'COMPOSITION', $2, 1, 1, tstzrange(now(), NULL), 'test.system', \
+        "INSERT INTO party.version \
+           (vo_id, kind, ehr_id, sys_version, trunk_version, committed_at, \
+            creating_system_id, contribution_id, commit_audit_id, body) \
+         VALUES ($1, 'COMPOSITION', $2, 1, 1, now(), 'test.system', \
                  $3, $4, '{}')",
     )
     .bind(Uuid::now_v7())
     .bind(Uuid::now_v7())
     .bind(contribution_id)
-    .bind(audit_id)
+    .bind(commit_audit_id)
     .execute(&pool)
     .await;
 
     let error = refused.expect_err("a clinical object must not enter the demographic schema");
     assert!(
-        error.to_string().contains("ck_dem_vo_version_unscoped"),
+        error.to_string().contains("ck_version_kind"),
         "the refusal names the boundary constraint: {error}"
-    );
-}
-
-#[tokio::test]
-async fn the_cutover_refuses_an_ehr_less_row_it_does_not_classify() {
-    let db = testkit::db().await.expect("testkit database");
-    let pool = db.pool();
-    // A kind the move does not know about. The migration must stop rather than
-    // guess which domain it belongs to, and rather than sweep it across on a
-    // `ehr_id IS NULL` predicate.
-    let vo_id = seed_party_in_the_clinical_schema(&pool, "COMPOSITION").await;
-
-    let refused = run_cutover(&pool).await;
-
-    let error = refused.expect_err("an unclassified EHR-less row must refuse the upgrade");
-    let text = error.to_string();
-    assert!(
-        text.contains("does not") && text.contains("COMPOSITION"),
-        "the refusal names the kind it found, so an operator can decide: {text}"
-    );
-    assert_eq!(
-        count(
-            &pool,
-            "SELECT count(*) FROM demographic.vo_version WHERE vo_id = $1",
-            vo_id
-        )
-        .await,
-        0,
-        "and nothing was moved"
     );
 }
 
@@ -458,22 +298,22 @@ async fn a_party_committed_through_the_service_lands_only_in_the_demographic_dom
     for (what, sql) in [
         (
             "the version",
-            "SELECT count(*) FROM demographic.vo_version WHERE vo_id = $1",
+            "SELECT count(*) FROM party.version WHERE vo_id = $1",
         ),
         (
             "its contribution",
-            "SELECT count(*) FROM demographic.contribution c \
-             JOIN demographic.vo_version v ON v.contribution_id = c.id WHERE v.vo_id = $1",
+            "SELECT count(*) FROM party.contribution c \
+             JOIN party.version v ON v.contribution_id = c.id WHERE v.vo_id = $1",
         ),
         (
             "its audit",
-            "SELECT count(*) FROM demographic.audit a \
-             JOIN demographic.vo_version v ON v.audit_id = a.id WHERE v.vo_id = $1",
+            "SELECT count(*) FROM party.commit_audit a \
+             JOIN party.version v ON v.commit_audit_id = a.id WHERE v.vo_id = $1",
         ),
         (
             "its outbox event",
-            "SELECT count(*) FROM demographic.event_outbox o \
-             JOIN demographic.vo_version v ON v.contribution_id = o.contribution_id \
+            "SELECT count(*) FROM party.event_outbox o \
+             JOIN party.version v ON v.contribution_id = o.contribution_id \
              WHERE v.vo_id = $1",
         ),
     ] {
@@ -486,7 +326,7 @@ async fn a_party_committed_through_the_service_lands_only_in_the_demographic_dom
     assert!(
         count(
             &pool,
-            "SELECT count(*) FROM demographic.node WHERE vo_id = $1",
+            "SELECT count(*) FROM party.node WHERE vo_id = $1",
             vo_id
         )
         .await
@@ -494,18 +334,21 @@ async fn a_party_committed_through_the_service_lands_only_in_the_demographic_dom
         "and so are its content nodes"
     );
 
-    // Nothing of it reached the clinical schema. `ehr.vo_version` now refuses an
+    // Nothing of it reached the clinical schema. `clinical.version` now refuses an
     // EHR-less row outright, so a routing miss would have failed the create —
     // this asserts the whole domain, not only the row the CHECK covers.
     for (what, sql) in [
         (
             "the version",
-            "SELECT count(*) FROM ehr.vo_version WHERE vo_id = $1",
+            "SELECT count(*) FROM clinical.version WHERE vo_id = $1",
         ),
-        ("a node", "SELECT count(*) FROM ehr.node WHERE vo_id = $1"),
+        (
+            "a node",
+            "SELECT count(*) FROM clinical.node WHERE vo_id = $1",
+        ),
         (
             "an archive row",
-            "SELECT count(*) FROM ehr.vo_archive WHERE vo_id = $1",
+            "SELECT count(*) FROM clinical.vo_head WHERE vo_id = $1 AND archived_at IS NOT NULL",
         ),
     ] {
         assert_eq!(
@@ -538,20 +381,20 @@ async fn the_boot_self_check_refuses_a_cross_domain_grant() {
     // turn: the gate must fail while the grant stands and pass once it is gone,
     // so neither verdict can be the one it always returns.
     let sequence: String =
-        sqlx::query_scalar("SELECT pg_get_serial_sequence('demographic.event_outbox', 'seq')")
+        sqlx::query_scalar("SELECT pg_get_serial_sequence('party.event_outbox', 'seq')")
             .fetch_one(&pool)
             .await
             .expect("the demographic outbox identity sequence");
     for (role, object, grant, revoke) in [
         (
             "ferroehr_ehr",
-            "demographic.vo_version",
+            "party.version",
             "GRANT SELECT ON",
             "REVOKE SELECT ON",
         ),
         (
             "ferroehr_ehr",
-            "demographic.vo_version_all",
+            "demographic.version",
             "GRANT SELECT ON",
             "REVOKE SELECT ON",
         ),
@@ -578,13 +421,13 @@ async fn the_boot_self_check_refuses_a_cross_domain_grant() {
         ),
         (
             "ferroehr_linkage",
-            "demographic.vo_version",
+            "party.version",
             "GRANT SELECT ON",
             "REVOKE SELECT ON",
         ),
         (
             "ferroehr_linkage",
-            "ehr.vo_version",
+            "clinical.version",
             "GRANT SELECT ON",
             "REVOKE SELECT ON",
         ),
@@ -646,255 +489,11 @@ pub(crate) fn a_person() -> serde_json::Value {
     })
 }
 
-/// A party belonging to a real tenant survives the cutover, run by a
-/// non-superuser owner.
-///
-/// The role matters more than the tenant here. `FORCE ROW LEVEL SECURITY`
-/// applies to a table's OWNER but never to a superuser, and the testkit
-/// connects as one, so a cutover run on the default connection bypasses every
-/// policy and proves nothing about the upgrade an installation actually
-/// performs. This test hands ownership of both schemas to an ordinary role and
-/// runs the migration as that role, which is the production shape: the
-/// migrator owns what it migrates.
-///
-/// Without the migration taking the policies off for the duration, the
-/// `INSERT ... SELECT` of a row belonging to a real tenant is judged by
-/// `WITH CHECK (tenant_id = ext.current_tenant_id())` against the migrating
-/// session's tenant, which is none, and the upgrade fails.
-#[tokio::test]
-async fn the_cutover_runs_as_a_non_superuser_owner_for_a_tenant_owned_party() {
-    let db = testkit::db().await.expect("testkit database");
-    let pool = db.pool();
-    let tenant = Uuid::now_v7();
-    sqlx::query("INSERT INTO tenant (id, name, system_id) VALUES ($1, 'tenant-a', 'sys-a')")
-        .bind(tenant)
-        .execute(&pool)
-        .await
-        .expect("seed a tenant");
-
-    let vo_id = seed_party_in_the_clinical_schema(&pool, "PERSON").await;
-    sqlx::query("UPDATE ehr.vo_version SET tenant_id = $1 WHERE vo_id = $2")
-        .bind(tenant)
-        .bind(vo_id)
-        .execute(&pool)
-        .await
-        .expect("give the party a real tenant");
-
-    // A per-clone login role: roles are cluster-global on the shared testkit
-    // server, so the name is keyed off the clone the sweep will reap.
-    let migrator = format!("{}_migrator", db.name());
-    let password = crate::fixtures::throwaway_password();
-    sqlx::query(sqlx::AssertSqlSafe(format!(
-        "CREATE ROLE {migrator} LOGIN PASSWORD '{password}'"
-    )))
-    .execute(&pool)
-    .await
-    .expect("create the migrator role");
-    for statement in [
-        format!("GRANT USAGE, CREATE ON SCHEMA ehr, demographic, ext TO {migrator}"),
-        format!(
-            "DO $$DECLARE r record; BEGIN                FOR r IN SELECT schemaname, tablename FROM pg_tables                         WHERE schemaname IN ('ehr','demographic','cold','cold_demographic') LOOP                  EXECUTE format('ALTER TABLE %I.%I OWNER TO {migrator}', r.schemaname, r.tablename);                END LOOP; END$$"
-        ),
-    ] {
-        sqlx::query(sqlx::AssertSqlSafe(statement))
-            .execute(&pool)
-            .await
-            .expect("hand the schemas to the migrator role");
-    }
-
-    let as_migrator = sqlx::postgres::PgPoolOptions::new()
-        .max_connections(1)
-        .connect(&crate::fixtures::with_role(db.url(), &migrator, &password))
-        .await
-        .expect("connect as the migrator role");
-
-    let mut tx = as_migrator.begin().await.expect("begin as the migrator");
-    sqlx::raw_sql(sqlx::AssertSqlSafe(cutover_sql()))
-        .execute(&mut *tx)
-        .await
-        .expect("a tenant-owned party must not fail the upgrade");
-    tx.commit().await.expect("commit the cutover");
-
-    assert_eq!(
-        count(
-            &pool,
-            "SELECT count(*) FROM demographic.vo_version WHERE vo_id = $1",
-            vo_id
-        )
-        .await,
-        1,
-        "the tenant's party arrived"
-    );
-    let moved_tenant: Uuid =
-        sqlx::query_scalar("SELECT tenant_id FROM demographic.vo_version WHERE vo_id = $1")
-            .bind(vo_id)
-            .fetch_one(&pool)
-            .await
-            .expect("read the moved tenant");
-    assert_eq!(
-        moved_tenant, tenant,
-        "carrying its tenant with it, not re-stamped with the migrating session's"
-    );
-
-    let forced: bool = sqlx::query_scalar(
-        "SELECT relrowsecurity AND relforcerowsecurity FROM pg_class \
-         WHERE oid = 'demographic.vo_version'::regclass",
-    )
-    .fetch_one(&pool)
-    .await
-    .expect("read the RLS flags");
-    assert!(
-        forced,
-        "and row-level security is back on, in the same transaction that took it off"
-    );
-}
-
 // ── protected national identifiers (#3155) ───────────────────────────────────
 
 /// A synthetic BSN: constructed by running the elfproef forward, issued to
 /// nobody.
 const SYNTHETIC_BSN: &str = "111222333"; // privacy-allow: synthetic
-
-/// Every tenant-scoped table forces row-level security.
-///
-/// `national_identifier` carried a `tenant_id` for two releases with no
-/// policy, because the baseline's RLS loop names its relations by hand and a
-/// table added by a later migration joins nothing. The omission is invisible
-/// in the table's own definition, so this asks the catalog instead of a
-/// reviewer: any relation carrying a `tenant_id` is one whose rows belong to a
-/// tenant, and it has to be isolated as one.
-///
-/// FORCE as well as ENABLE, because the owner is the identity a
-/// `SECURITY DEFINER` function runs as, and plain ENABLE exempts it.
-///
-/// `audit.audit_event` is the one adjudicated exception, named rather than
-/// skipped by schema so the rest of `audit` stays covered. Its drain batches
-/// many tenants' records in one insert from a task that runs outside any
-/// request's tenant session (`system_log::store`), so a `WITH CHECK` against
-/// the session tenant would reject audit rows rather than isolate them — and
-/// silently losing an access record is worse than the unscoped read.
-#[tokio::test]
-async fn every_tenant_scoped_table_forces_row_level_security() {
-    let db = testkit::db().await.expect("testkit database");
-    let unguarded: Vec<(String, String, bool, bool)> = sqlx::query_as(
-        "SELECT n.nspname::text, c.relname::text, c.relrowsecurity, c.relforcerowsecurity
-         FROM pg_class c
-         JOIN pg_namespace n ON n.oid = c.relnamespace
-         WHERE c.relkind = 'r'
-           AND n.nspname = ANY($1)
-           AND EXISTS (
-               SELECT 1 FROM pg_attribute a
-               WHERE a.attrelid = c.oid AND a.attname = 'tenant_id' AND NOT a.attisdropped)
-           AND NOT (c.relrowsecurity AND c.relforcerowsecurity)
-           AND (n.nspname, c.relname) <> ('audit', 'audit_event')
-         ORDER BY 1, 2",
-    )
-    .bind(vec![
-        "ehr".to_owned(),
-        "cold".to_owned(),
-        "demographic".to_owned(),
-        "cold_demographic".to_owned(),
-        "linkage".to_owned(),
-        "audit".to_owned(),
-    ])
-    .fetch_all(&db.pool())
-    .await
-    .expect("read the catalog");
-
-    assert!(
-        unguarded.is_empty(),
-        "every table carrying a tenant_id must ENABLE and FORCE row-level \
-         security; these do not: {unguarded:?}"
-    );
-
-    // The sweep must actually see tables, or an empty result proves nothing.
-    let scoped: i64 = sqlx::query_scalar(
-        "SELECT count(*) FROM pg_class c
-         JOIN pg_namespace n ON n.oid = c.relnamespace
-         WHERE c.relkind = 'r'
-           AND n.nspname = ANY($1)
-           AND EXISTS (
-               SELECT 1 FROM pg_attribute a
-               WHERE a.attrelid = c.oid AND a.attname = 'tenant_id' AND NOT a.attisdropped)",
-    )
-    .bind(vec![
-        "ehr".to_owned(),
-        "cold".to_owned(),
-        "demographic".to_owned(),
-        "cold_demographic".to_owned(),
-        "linkage".to_owned(),
-        "audit".to_owned(),
-    ])
-    .fetch_one(&db.pool())
-    .await
-    .expect("count the tenant-scoped tables");
-    assert!(
-        scoped > 5,
-        "the sweep found only {scoped} tenant-scoped tables, so it is not \
-         looking at the schemas it thinks it is"
-    );
-}
-
-/// The sealed identifiers are tenant-isolated by policy, not only by the
-/// uniqueness of their lookup key.
-///
-/// `0001_baseline.sql` gives every relation it creates a `tenant_isolation`
-/// policy; `national_identifier` arrived in a later migration and missed the
-/// loop. The equality lookup was always tenant-scoped, so no resolve could
-/// cross — what was exposed is the unscoped read, on the one table holding
-/// sealed national identifiers and the digests that resolve them.
-#[tokio::test]
-async fn sealed_identifiers_of_another_tenant_are_invisible() {
-    let db = testkit::db().await.expect("testkit database");
-    let alpha = Uuid::now_v7();
-    let beta = Uuid::now_v7();
-
-    // Seeded through the owner pool, each row under its own tenant GUC so the
-    // policy's WITH CHECK admits it — the same path a tenant-scoped write
-    // takes at runtime.
-    let mut seed = db.pool().acquire().await.expect("a seeding connection");
-    for (tenant, digest_byte) in [(alpha, 0xAA_u8), (beta, 0xBB_u8)] {
-        sqlx::query("SELECT set_config('ferroehr.tenant_id', $1, false)")
-            .bind(tenant.to_string())
-            .execute(&mut *seed)
-            .await
-            .expect("stamp the tenant GUC");
-        sqlx::query(
-            "INSERT INTO party.national_identifier
-                 (party_id, scheme, tenant_id, nonce, ciphertext, lookup_digest)
-             VALUES ($1, 'nl-bsn', $2, $3, $4, $5)",
-        )
-        .bind(Uuid::now_v7())
-        .bind(tenant)
-        .bind(vec![0_u8; 12])
-        .bind(vec![1_u8; 16])
-        .bind(vec![digest_byte; 32])
-        .execute(&mut *seed)
-        .await
-        .expect("seed a sealed identifier");
-    }
-    drop(seed);
-
-    let mut conn = role_conn(&db, "nidrls", "ferroehr_demographic").await;
-    sqlx::query("SELECT set_config('ferroehr.tenant_id', $1, false)")
-        .bind(alpha.to_string())
-        .execute(&mut conn)
-        .await
-        .expect("stamp the tenant GUC");
-    let visible: Vec<Uuid> = sqlx::query_scalar("SELECT tenant_id FROM party.national_identifier")
-        .fetch_all(&mut conn)
-        .await
-        .expect("an unscoped read of the sealed identifiers");
-    drop(conn.close().await);
-
-    assert_eq!(
-        visible,
-        vec![alpha],
-        "an unscoped SELECT must return only the reading tenant's rows; \
-         both tenants were seeded, so a result carrying {beta} means the \
-         tenant_isolation policy is missing or not FORCEd"
-    );
-}
 
 /// A test root key. Sixty-four hex characters, and a literal here is not a
 /// credential: it protects one ephemeral clone for the length of one test.
@@ -1047,7 +646,7 @@ async fn only_the_demographic_writer_reaches_the_sealed_value() {
 ///
 /// The end-to-end property #3155 exists for. The sealing runs before the body
 /// is decomposed and signed, so stored, signed and served are one form; a test
-/// that only checked `vo_version.body` would miss the node rows, which are a
+/// that only checked `version.body` would miss the node rows, which are a
 /// second copy of the same content.
 #[tokio::test]
 async fn a_protected_identifier_never_reaches_the_versioned_body() {
@@ -1097,7 +696,8 @@ async fn a_protected_identifier_never_reaches_the_versioned_body() {
 
     // Neither copy of the content carries the value: the version body…
     let body: String = sqlx::query_scalar(
-        "SELECT body::text FROM demographic.vo_version WHERE vo_id = $1 AND upper_inf(sys_period)",
+        "SELECT v.body::text FROM party.version v JOIN party.vo_head h ON h.vo_id = v.vo_id \
+         AND h.trunk_head_sys_version = v.sys_version WHERE v.vo_id = $1",
     )
     .bind(vo_id)
     .fetch_one(&pool)
@@ -1114,7 +714,7 @@ async fn a_protected_identifier_never_reaches_the_versioned_body() {
 
     // …nor the decomposed node rows, which are the same content a second time.
     let nodes: i64 = sqlx::query_scalar(
-        "SELECT count(*) FROM demographic.node WHERE vo_id = $1 AND data::text LIKE $2",
+        "SELECT count(*) FROM party.node WHERE vo_id = $1 AND data::text LIKE $2",
     )
     .bind(vo_id)
     .bind(format!("%{SYNTHETIC_BSN}%"))
@@ -1239,7 +839,7 @@ const SQLSTATE_EXCLUSION_VIOLATION: &str = "23P01";
 /// by the temporal primary key rather than by whichever code path writes.
 ///
 /// The second half of the test is what makes the first half mean something: a
-/// plain `UNIQUE (tenant_id, party_id)` would also refuse the overlapping row,
+/// plain `UNIQUE (party_id)` would also refuse the overlapping row,
 /// and would then wrongly refuse the mapping a merge opens after closing the
 /// previous one. Both must hold, or the constraint is the wrong one.
 #[tokio::test]
@@ -1305,15 +905,14 @@ async fn one_party_holds_one_open_mapping_at_a_time() {
 /// A sealed identifier seals and resolves on the SEPARATED demographic
 /// credential.
 ///
-/// Three things meet on this path, and each was proven only on its own: the
-/// demographic pool authenticating as its own login role, a `SECURITY DEFINER`
-/// resolve function owned by the migrator, and `FORCE ROW LEVEL SECURITY` on
-/// `party.national_identifier`. FORCE applies the tenant policy to the
-/// function's owner, and the separated role is not that owner, so whether a
-/// resolve still returns its party is a question about the three together.
+/// Two things meet on this path, and each was proven only on its own: the party
+/// pool authenticating as its own login role, and a `SECURITY DEFINER` resolve
+/// function owned by the migrator. Whether a resolve still returns its party is
+/// a question about the two together.
 ///
-/// The digest half is the one that would fail silently: a policy excluding the
-/// row returns `None`, which reads exactly like an identifier nobody holds.
+/// The digest half is the one that would fail silently: a resolve that finds
+/// nothing returns `None`, which reads exactly like an identifier nobody
+/// holds.
 #[tokio::test]
 async fn a_sealed_identifier_resolves_on_the_separated_demographic_credential() {
     use ferroehr::db::DbConfig;

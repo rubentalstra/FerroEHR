@@ -371,7 +371,7 @@ async fn opt_upload_has_get_list_match_delete() {
 /// delete, so a physical delete never orphans clinical data. The SM operation
 /// itself (`i_definition_adl14.adoc` §`delete_opt`) defines only
 /// `Pre_has_opt`/`invalid_template` and is silent here — the refusal is our
-/// own integrity design. Pointing an existing `vo_version` at the template
+/// own integrity design. Pointing an existing `version` at the template
 /// exercises the FK-reference guard directly (lighter than a full validated
 /// commit, which the guard does not need).
 #[tokio::test]
@@ -387,7 +387,7 @@ async fn opt_delete_refuses_while_referenced() {
 
     // Reference the template from a committed version row.
     let ehr: uuid::Uuid = svc.create_ehr(None).await.expect("ehr").into();
-    let referenced = sqlx::query("UPDATE vo_version SET template_id = $1 WHERE ehr_id = $2")
+    let referenced = sqlx::query("UPDATE version SET template_id = $1 WHERE ehr_id = $2")
         .bind(OPT_TEMPLATE_ID)
         .bind(ehr)
         .execute(&pool)
@@ -420,7 +420,7 @@ async fn opt_delete_refuses_while_referenced() {
     );
 
     // Dereference → the delete succeeds (Post_opt_removed).
-    sqlx::query("UPDATE vo_version SET template_id = NULL WHERE ehr_id = $1")
+    sqlx::query("UPDATE version SET template_id = NULL WHERE ehr_id = $1")
         .bind(ehr)
         .execute(&pool)
         .await

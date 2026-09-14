@@ -312,47 +312,56 @@ async fn ext_magnitude_function_follows_the_spec_formulas() {
     assert!(none.is_none());
 }
 
+/// The store is append-only: a supersession is an insert, the trunk position is
+/// what a second version at the same position collides on, and the head row is
+/// what says which version is current (RM common master06 §The 'Virtual Version
+/// Tree').
 #[tokio::test]
-async fn temporal_versioning_model_behaves() {
+async fn the_append_only_versioning_model_behaves() {
     let db = testkit::db().await.expect("testkit database");
     let pool = db.pool();
     let (vo, ehr_id) = seed_version(&pool).await;
 
-    // an overlapping period is impossible at the database
-    let overlap = sqlx::query(
-        "INSERT INTO version (vo_id, kind, ehr_id, sys_version, trunk_version, sys_period, contribution_id, commit_audit_id, creating_system_id)
-         SELECT $1, 'COMPOSITION', $2, 2, 2, tstzrange(now(), NULL), contribution_id, commit_audit_id, creating_system_id
-         FROM version WHERE vo_id = $1",
+    // A second version at an occupied TRUNK POSITION is impossible at the
+    // database: the trunk line is one global sequence per container.
+    let duplicate = sqlx::query(
+        "INSERT INTO version (vo_id, kind, ehr_id, sys_version, trunk_version, committed_at, contribution_id, commit_audit_id, creating_system_id)
+         SELECT $1, 'COMPOSITION', $2, 2, 1, now(), contribution_id, commit_audit_id, 'other.system'
+         FROM version WHERE vo_id = $1 AND sys_version = 1",
     )
     .bind(vo)
     .bind(ehr_id)
     .execute(&pool)
     .await;
-    assert!(overlap.is_err(), "temporal PK must reject overlaps");
+    assert!(
+        duplicate.is_err(),
+        "a second version at trunk position 1 must be refused"
+    );
 
-    // close v1, open v2 — adjacent periods are fine
+    // The supersession is ONE insert: nothing is updated, and the previous
+    // version keeps every column it was committed with.
     sqlx::query(
-        "UPDATE version SET sys_period = tstzrange(lower(sys_period), now())
-         WHERE vo_id = $1 AND upper_inf(sys_period)",
-    )
-    .bind(vo)
-    .execute(&pool)
-    .await
-    .expect("close v1");
-    sqlx::query(
-        "INSERT INTO version (vo_id, kind, ehr_id, sys_version, trunk_version, sys_period, contribution_id, commit_audit_id, creating_system_id)
-         SELECT $1, 'COMPOSITION', $2, 2, 2, tstzrange(upper(sys_period), NULL), contribution_id, commit_audit_id, creating_system_id
+        "INSERT INTO version (vo_id, kind, ehr_id, sys_version, trunk_version, committed_at, contribution_id, commit_audit_id, creating_system_id)
+         SELECT $1, 'COMPOSITION', $2, 2, 2, now(), contribution_id, commit_audit_id, creating_system_id
          FROM version WHERE vo_id = $1 AND sys_version = 1",
     )
     .bind(vo)
     .bind(ehr_id)
     .execute(&pool)
     .await
-    .expect("open v2");
+    .expect("commit v2");
+    sqlx::query(
+        "UPDATE vo_head SET head_sys_version = 2, trunk_head_sys_version = 2 WHERE vo_id = $1",
+    )
+    .bind(vo)
+    .execute(&pool)
+    .await
+    .expect("advance the head");
 
-    // LATEST_VERSION = the upper_inf partial index; ALL_VERSIONS = unfiltered
+    // LATEST_VERSION = the head row's answer; ALL_VERSIONS = unfiltered.
     let current: i32 = sqlx::query_scalar(
-        "SELECT sys_version FROM version WHERE vo_id = $1 AND upper_inf(sys_period)",
+        "SELECT v.sys_version FROM version v JOIN vo_head h ON h.vo_id = v.vo_id \
+         AND h.trunk_head_sys_version = v.sys_version WHERE v.vo_id = $1",
     )
     .bind(vo)
     .fetch_one(&pool)
@@ -454,10 +463,9 @@ async fn a_trunk_position_is_unique_across_creating_systems_but_a_branch_id_is_n
     // The database is the backstop behind the guard: the same row written past
     // the repository layer still cannot land.
     let raw = sqlx::query(
-        "INSERT INTO version (vo_id, kind, ehr_id, sys_version, trunk_version, sys_period, \
+        "INSERT INTO version (vo_id, kind, ehr_id, sys_version, trunk_version, committed_at, \
          contribution_id, commit_audit_id, creating_system_id) \
-         VALUES ($1, 'COMPOSITION', $2, 2, 1, \
-                 tstzrange('2026-01-01T00:00:00Z'::timestamptz, '2026-01-02T00:00:00Z'::timestamptz), \
+         VALUES ($1, 'COMPOSITION', $2, 2, 1, '2026-01-01T00:00:00Z'::timestamptz, \
                  $3, $4, 'sysB.example.org')",
     )
     .bind(vo)
@@ -468,7 +476,7 @@ async fn a_trunk_position_is_unique_across_creating_systems_but_a_branch_id_is_n
     .await;
     assert!(
         raw.is_err(),
-        "uq_version_trunk_position must reject a second trunk row at one position"
+        "the trunk-position unique index must reject a second trunk row at one position"
     );
 
     // A BRANCH id, however, may repeat across creating systems: `1.1.1` minted
@@ -548,14 +556,14 @@ async fn an_as_of_read_resolves_along_the_trunk() {
     };
     let mut conn = pool.acquire().await.expect("connection");
 
-    // The seeded container's trunk version 1 is open from `now()`; a branch
-    // tip open across the same instant does not displace it.
+    // The seeded container's trunk version 1 was committed at `now()`; a branch
+    // tip live at the same instant does not displace it.
     insert_version_verbatim(&mut conn, &branch_row(VoId(vo), 2))
         .await
         .expect("branch beside the trunk");
-    // The server clock, not the test process's: `sys_period` is stamped by the
-    // database, and a client/DB skew under parallel load races the at-time read
-    // against the validity interval it is probing. Same reasoning as
+    // The server clock, not the test process's: `committed_at` is stamped by
+    // the database, and a client/DB skew under parallel load races the at-time
+    // read against the instants it is comparing. Same reasoning as
     // `service_demographic::db_now`.
     let at: jiff::Timestamp = sqlx::query_scalar::<_, jiff_sqlx::Timestamp>("SELECT now()")
         .fetch_one(&pool)
@@ -857,8 +865,8 @@ async fn seed_version(pool: &PgPool) -> (Uuid, Uuid) {
     .expect("contribution row");
     // creating_system_id is NOT NULL.
     sqlx::query(
-        "INSERT INTO version (vo_id, kind, ehr_id, sys_version, trunk_version, sys_period, contribution_id, commit_audit_id, creating_system_id)
-         VALUES ($1, 'COMPOSITION', $2, 1, 1, tstzrange(now(), NULL), $3, $4, 'ferroehr.test')",
+        "INSERT INTO version (vo_id, kind, ehr_id, sys_version, trunk_version, committed_at, contribution_id, commit_audit_id, creating_system_id)
+         VALUES ($1, 'COMPOSITION', $2, 1, 1, now(), $3, $4, 'ferroehr.test')",
     )
     .bind(vo)
     .bind(ehr_id)
@@ -867,6 +875,7 @@ async fn seed_version(pool: &PgPool) -> (Uuid, Uuid) {
     .execute(pool)
     .await
     .expect("version row");
+    seed_head(pool, vo).await;
     // Every EHR has an EHR_STATUS from creation (RM ehr §"EHR Creation");
     // the AQL population gate keys off its `is_queryable` flag
     // (`i_query_service.adoc`), so a spec-realistic fixture must seed one —
@@ -874,8 +883,8 @@ async fn seed_version(pool: &PgPool) -> (Uuid, Uuid) {
     // produce.
     let status_vo = Uuid::now_v7();
     sqlx::query(
-        "INSERT INTO version (vo_id, kind, ehr_id, sys_version, trunk_version, sys_period, contribution_id, commit_audit_id, creating_system_id)
-         VALUES ($1, 'EHR_STATUS', $2, 1, 1, tstzrange(now(), NULL), $3, $4, 'ferroehr.test')",
+        "INSERT INTO version (vo_id, kind, ehr_id, sys_version, trunk_version, committed_at, contribution_id, commit_audit_id, creating_system_id)
+         VALUES ($1, 'EHR_STATUS', $2, 1, 1, now(), $3, $4, 'ferroehr.test')",
     )
     .bind(status_vo)
     .bind(ehr_id)
@@ -884,6 +893,7 @@ async fn seed_version(pool: &PgPool) -> (Uuid, Uuid) {
     .execute(pool)
     .await
     .expect("ehr_status version row");
+    seed_head(pool, status_vo).await;
     sqlx::query(
         "INSERT INTO node (vo_id, sys_version, num, num_cap, parent_num, rm_type, ehr_id, path, data)
          VALUES ($1, 1, 0, 0, 0, 'EHR_STATUS', $2, '',
@@ -897,12 +907,39 @@ async fn seed_version(pool: &PgPool) -> (Uuid, Uuid) {
     (vo, ehr_id)
 }
 
+/// Write the head row a seeded version needs, from the version rows themselves.
+///
+/// The commit path writes it in the same statement as the version; a fixture
+/// that inserts version rows directly has to write it too, or every read that
+/// asks "what is current" finds no answer.
+async fn seed_head(pool: &PgPool, vo: Uuid) {
+    sqlx::query(
+        "INSERT INTO vo_head (vo_id, kind, ehr_id, head_sys_version, trunk_head_sys_version, \
+             lifecycle_state, committed_at) \
+         SELECT a.vo_id, t.kind, t.ehr_id, a.head, t.sys_version, t.lifecycle_state, \
+                t.committed_at \
+         FROM (SELECT vo_id, max(sys_version) AS head FROM version \
+               WHERE vo_id = $1 GROUP BY vo_id) a \
+         JOIN LATERAL (SELECT kind, ehr_id, sys_version, lifecycle_state, committed_at \
+                       FROM version WHERE vo_id = a.vo_id AND branch_number = 0 \
+                       ORDER BY sys_version DESC LIMIT 1) t ON true \
+         ON CONFLICT (vo_id) DO UPDATE SET \
+             head_sys_version = EXCLUDED.head_sys_version, \
+             trunk_head_sys_version = EXCLUDED.trunk_head_sys_version, \
+             committed_at = EXCLUDED.committed_at",
+    )
+    .bind(vo)
+    .execute(pool)
+    .await
+    .expect("head row");
+}
+
 async fn insert_nodes(pool: &PgPool, vo: Uuid, sys_version: i32, ehr_id: Uuid, rows: &[NodeRow]) {
     for row in rows {
         sqlx::query(
-            "INSERT INTO node (vo_id, sys_version, num, num_cap, parent_num, citem_num,
+            "INSERT INTO node (vo_id, sys_version, num, num_cap, parent_num,
                                ehr_id, rm_type, archetype, name, path, data)
-             VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)",
+             VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)",
         )
         .bind(vo)
         .bind(sys_version)

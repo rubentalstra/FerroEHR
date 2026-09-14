@@ -184,7 +184,7 @@ async fn ehr_status_versions_are_signed_and_every_vo_version_carries_a_digest() 
 
     // Sweep: EHR_STATUS (x2), EHR_ACCESS, FOLDER — every stored version is signed
     // with a digest (signing is on by default).
-    let rows = sqlx::query("SELECT kind, signature FROM vo_version ORDER BY kind, sys_version")
+    let rows = sqlx::query("SELECT kind, signature FROM version ORDER BY kind, sys_version")
         .fetch_all(&pool)
         .await
         .expect("select vo_version");
@@ -311,12 +311,10 @@ async fn strict_verify_on_read_rejects_a_tampered_row() {
         .expect("clean read verifies");
 
     // Tamper the stored signature via SQL.
-    sqlx::query(
-        "UPDATE vo_version SET signature = 'sha256:dGFtcGVyZWQ=' WHERE kind = 'COMPOSITION'",
-    )
-    .execute(&pool)
-    .await
-    .expect("tamper");
+    sqlx::query("UPDATE version SET signature = 'sha256:dGFtcGVyZWQ=' WHERE kind = 'COMPOSITION'")
+        .execute(&pool)
+        .await
+        .expect("tamper");
 
     let tampered = svc
         .composition_version_envelope(ehr_uuid, ovid.parse().expect("ovid"))
@@ -360,12 +358,10 @@ async fn default_verify_on_read_is_strict_and_rejects_a_tampered_row() {
         .expect("clean read verifies under the strict default");
 
     // Tamper the stored (server-generated) signature.
-    sqlx::query(
-        "UPDATE vo_version SET signature = 'sha256:dGFtcGVyZWQ=' WHERE kind = 'COMPOSITION'",
-    )
-    .execute(&pool)
-    .await
-    .expect("tamper");
+    sqlx::query("UPDATE version SET signature = 'sha256:dGFtcGVyZWQ=' WHERE kind = 'COMPOSITION'")
+        .execute(&pool)
+        .await
+        .expect("tamper");
 
     let tampered = svc
         .composition_version_envelope(ehr_uuid, ovid.parse().expect("ovid"))
@@ -417,7 +413,7 @@ async fn warn_and_off_verify_on_read_serve_a_tampered_row() {
             .version_uid();
 
         sqlx::query(
-            "UPDATE vo_version SET signature = 'sha256:dGFtcGVyZWQ=' WHERE kind = 'COMPOSITION'",
+            "UPDATE version SET signature = 'sha256:dGFtcGVyZWQ=' WHERE kind = 'COMPOSITION'",
         )
         .execute(&pool)
         .await
@@ -488,7 +484,7 @@ async fn canonical_xml_carries_the_signature() {
 /// A service with server-side signing DISABLED — the common high-throughput
 /// config. With signing off the `audit → sign → version`
 /// dependency vanishes, so the commit path folds `audit`, `contribution` and
-/// `vo_version` into one statement; this test proves the folded path preserves
+/// `version` into one statement; this test proves the folded path preserves
 /// the RM common master06 versioning semantics byte-for-byte and stores no
 /// signature.
 fn signing_disabled(pool: PgPool) -> FerroEhrService {
@@ -563,7 +559,7 @@ async fn signing_disabled_folds_commit_and_preserves_master06_semantics() {
     // the folded write honours the one-open-row-per-lineage invariant.
     let rows = sqlx::query(
         "SELECT sys_version, signature, upper_inf(sys_period) AS open \
-         FROM vo_version WHERE vo_id = $1 AND kind = 'COMPOSITION' ORDER BY sys_version",
+         FROM version WHERE vo_id = $1 AND kind = 'COMPOSITION' ORDER BY sys_version",
     )
     .bind(vo_uuid)
     .fetch_all(&pool)
@@ -578,7 +574,7 @@ async fn signing_disabled_folds_commit_and_preserves_master06_semantics() {
     );
     for row in &rows {
         let sig: Option<String> = row.try_get("signature").unwrap();
-        assert!(sig.is_none(), "signing off → vo_version.signature is NULL");
+        assert!(sig.is_none(), "signing off → version.signature is NULL");
     }
 
     // DELETE → folded path (523|deleted|, no node rows); the current version

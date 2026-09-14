@@ -36,7 +36,7 @@ fn vo_uuid(v: &Value) -> String {
 
 /// The DB's current instant (`SELECT now()`) as a `jiff::Timestamp`. Time-travel
 /// probes MUST anchor their reference instant on this server clock — the same
-/// clock that stamps `vo_version.sys_period` — never on the test-process wall
+/// clock that stamps `version.sys_period` — never on the test-process wall
 /// clock: a client/DB clock skew under parallel test load would race
 /// the at-time read against the version validity intervals.
 async fn db_now(pool: &PgPool) -> jiff::Timestamp {
@@ -201,7 +201,7 @@ async fn relationship_lifecycle_end_to_end() {
 
     // time-travel: capture a time inside v1 FROM THE DB CLOCK, then update. The
     // reference instant MUST come from the server clock (the clock that stamps
-    // `vo_version.sys_period`), never the test-process wall clock — a client/DB
+    // `version.sys_period`), never the test-process wall clock — a client/DB
     // clock skew under parallel-load testcontainers races the at-time read
     // against the version validity intervals (a real flake this fixes).
     let t_v1 = db_now(&pool).await;

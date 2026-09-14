@@ -573,7 +573,7 @@ const IDENTIFIERS: &[&str] = &[
     "lifecycle_state",
     "creating_system_id",
     "contribution_id",
-    "audit_id",
+    "commit_audit_id",
     "template_id",
     // ehr
     "id",

@@ -393,8 +393,9 @@ pub async fn read_current(
     pool: &PgPool,
     vo_id: VoId,
 ) -> Result<Option<StoredVersion>, StorageError> {
-    const SQL: &str =
-        version_select!("WHERE v.vo_id = $1 AND v.sys_version = (SELECT h.trunk_head_sys_version FROM vo_head h WHERE h.vo_id = v.vo_id)");
+    const SQL: &str = version_select!(
+        "WHERE v.vo_id = $1 AND v.sys_version = (SELECT h.trunk_head_sys_version FROM vo_head h WHERE h.vo_id = v.vo_id)"
+    );
     sqlx::query(SQL)
         .bind(vo_id)
         .fetch_optional(pool)

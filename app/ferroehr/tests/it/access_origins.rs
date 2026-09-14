@@ -76,12 +76,15 @@ async fn served_origins(svc: &FerroEhrService, ehr_id: EhrId, vo: VoId) -> Vec<S
 
 /// The commit-time stamp of the current version of `vo`.
 async fn stamped_origins(db: &testkit::TestDb, vo: VoId) -> Option<Value> {
-    sqlx::query("SELECT origins FROM vo_version WHERE vo_id = $1 AND upper_inf(sys_period)")
-        .bind(vo.0)
-        .fetch_one(&db.pool())
-        .await
-        .expect("the current version row")
-        .get("origins")
+    sqlx::query(
+        "SELECT v.origins FROM version v JOIN vo_head h ON h.vo_id = v.vo_id \
+         AND h.trunk_head_sys_version = v.sys_version WHERE v.vo_id = $1",
+    )
+    .bind(vo.0)
+    .fetch_one(&db.pool())
+    .await
+    .expect("the current version row")
+    .get("origins")
 }
 
 /// A body carrying no `FEEDER_AUDIT` was created through this API: its one
@@ -172,7 +175,7 @@ async fn an_unstamped_row_is_assessed_from_the_body_at_read() {
     imported["feeder_audit"] = feeder_audit("lab.example");
     let (vo, creating_system) = commit(&svc, ehr_id, &imported).await;
 
-    sqlx::query("UPDATE vo_version SET origins = NULL WHERE vo_id = $1")
+    sqlx::query("UPDATE version SET origins = NULL WHERE vo_id = $1")
         .bind(vo.0)
         .execute(&db.pool())
         .await
