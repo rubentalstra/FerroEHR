@@ -169,7 +169,7 @@ Kubernetes: `>=1.36.0-0`
 | backup.clinical.existingSecretKey | string | `"FERROEHR__DB__URL"` | Key within `existingSecret` carrying that DSN. |
 | backup.clinical.persistentVolumeClaim | string | `""` | REQUIRED when enabled: the name of an EXISTING PersistentVolumeClaim the clinical dumps are written to, mounted at /backup. The chart creates no claim — its storage class, size, retention and who may read it are yours. |
 | backup.clinical.schedule | string | `"15 1 * * *"` | Cron schedule for the clinical dump (schemas ehr, cold, ext, audit). |
-| backup.demographic.existingSecret | string | `""` | REQUIRED when enabled: Secret holding the demographic BACKUP DSN — a role with BYPASSRLS, read-only on the demographic schemas, and a DIFFERENT role from the clinical one. This credential can read every tenant's identities; treat it accordingly. |
+| backup.demographic.existingSecret | string | `""` | REQUIRED when enabled: Secret holding the party BACKUP DSN — a read-only role on the party schema, and a DIFFERENT role from the clinical one. This credential reads every identity the instance holds; treat it accordingly. |
 | backup.demographic.existingSecretKey | string | `"FERROEHR__DB__DEMOGRAPHIC_URL"` | Key within `existingSecret` carrying that DSN. |
 | backup.demographic.persistentVolumeClaim | string | `""` | REQUIRED when enabled: an EXISTING PersistentVolumeClaim for the demographic dumps, and a DIFFERENT one from every other domain's claim (two domains sharing a claim is refused at render). This is the volume that carries identifying data; give it the narrower audience. |
 | backup.demographic.schedule | string | `"45 1 * * *"` | Cron schedule for the demographic dump (schemas demographic, cold_demographic). Offset from the clinical one by default so no two dumps read the database in the same minute. |
@@ -243,8 +243,6 @@ Kubernetes: `>=1.36.0-0`
 | config.signing.mode | string | `"digest"` |  |
 | config.signing.verify_on_read | string | `"strict"` |  |
 | config.spec_profile | string | `"development"` |  |
-| config.tenancy.claim | string | `"tenant"` |  |
-| config.tenancy.enabled | bool | `false` |  |
 | config.terminology.api_enabled | bool | `false` |  |
 | database.demographicExistingSecret | string | `""` | Reference an existing Secret holding the DEMOGRAPHIC-role DSN. Its value is a full `postgres://ferroehr_demographic:...@host:5432/ferroehr`, a different credential from `database.existingSecret` above. |
 | database.demographicExistingSecretKey | string | `"FERROEHR__DB__DEMOGRAPHIC_URL"` | Key WITHIN demographicExistingSecret holding the demographic DSN. Mounted as a file; only its PATH reaches the pod's environment. |

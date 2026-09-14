@@ -460,20 +460,6 @@
             }
           }
         },
-        "tenancy": {
-          "type": [
-            "object",
-            "null"
-          ],
-          "properties": {
-            "enabled": {
-              "type": [
-                "boolean",
-                "null"
-              ]
-            }
-          }
-        },
         "management": {
           "type": [
             "object",

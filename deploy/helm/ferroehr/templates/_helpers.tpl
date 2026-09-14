@@ -582,12 +582,9 @@ differs.
 Call with (dict "root" $ "domain" "clinical").
 
 The backup DSN is the domain's OWN backup Secret, never the pool's credential.
-Every tenant-scoped table carries FORCE ROW LEVEL SECURITY, so pg_dump refuses
-a table it would read through a policy — "query would be affected by row-level
-security policy" (PostgreSQL 18, pg_dump §Notes) — and the runtime role cannot
-take a backup at all. The dump needs a role with BYPASSRLS, read-only on its
-own domain, which is a different credential from the one the server serves
-with. Reusing the pool's DSN here would render CronJobs that fail every night.
+Each domain's runtime role is revoked from the other domains, so a dump taken
+through it would be silently partial. The dump needs a read-only role on its own
+domain, which is a different credential from the one the server serves with.
 */ -}}
 {{- define "ferroehr.backupDsnSecret" -}}
 {{ (index .root.Values.backup .domain).existingSecret }}

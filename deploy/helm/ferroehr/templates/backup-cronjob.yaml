@@ -28,7 +28,7 @@ than a set of parallel edits that can silently disagree.
             "schemas" (list "ehr" "cold" "ext" "audit")
             "extensions" (list)
             "claimWhy" "name an EXISTING PersistentVolumeClaim for the clinical dump (schemas ehr, cold, ext, audit). The chart provisions no storage — a dump with nowhere to write is a backup that silently does not exist."
-            "secretWhy" "name a Secret holding a BACKUP DSN for the clinical domain — a role with BYPASSRLS, read-only on ehr, cold, ext and audit. It cannot be the pool's credential: every tenant-scoped table carries FORCE ROW LEVEL SECURITY, and pg_dump refuses a table it would read through a policy, so a CronJob wired to the runtime role fails every night.")
+            "secretWhy" "name a Secret holding a BACKUP DSN for the clinical domain — a read-only role on clinical, ext and audit. It cannot be the pool's credential: each domain's runtime role is revoked from the others, so a dump taken through it would be silently partial.")
       (dict "name" "demographic"
             "schedule" .Values.backup.demographic.schedule
             "claim" .Values.backup.demographic.persistentVolumeClaim

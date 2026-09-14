@@ -504,6 +504,11 @@ mod column_vocab {
 
     /// The `CREATE TABLE {table} ( … )` body from the migration set (the text
     /// between the opening paren and the balanced closing paren).
+    ///
+    /// Comments are stripped before the parens are counted: the DDL documents
+    /// itself in prose, and prose carries brackets that are not SQL — an
+    /// interval written `[a, b)` would otherwise close the table early and
+    /// silently hide every column after it.
     fn create_table_body(table: &str) -> String {
         let head = format!("CREATE TABLE {table} (");
         let body = [CHANGE_CONTROL, NODE, EHR]
@@ -511,14 +516,19 @@ mod column_vocab {
             .find_map(|file| file.split_once(&head))
             .unwrap_or_else(|| panic!("no `{head}` in the clinical migration set"))
             .1;
+        let code: String = body
+            .lines()
+            .map(|line| line.split("--").next().unwrap_or(line))
+            .collect::<Vec<_>>()
+            .join("\n");
         let mut depth = 1usize;
-        for (i, ch) in body.char_indices() {
+        for (i, ch) in code.char_indices() {
             match ch {
                 '(' => depth += 1,
                 ')' => {
                     depth -= 1;
                     if depth == 0 {
-                        return body.get(..i).unwrap_or_default().to_owned();
+                        return code.get(..i).unwrap_or_default().to_owned();
                     }
                 }
                 _ => {}

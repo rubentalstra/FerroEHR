@@ -274,15 +274,13 @@ migrations:
 # holder the join the schema split withholds. Three domains, three dumps, three
 # credentials.
 #
-# EACH JOB NEEDS ITS OWN BACKUP CREDENTIAL, and it is not the pool's. Every
-# tenant-scoped table carries FORCE ROW LEVEL SECURITY, so the policy applies to
-# the table's owner too and pg_dump refuses a table it would read through one
-# ("query would be affected by row-level security policy" — PostgreSQL 18,
-# pg_dump §Notes). The runtime role therefore cannot take a backup at all, and
-# `--enable-row-security` is not the answer: it makes the dump succeed with one
-# tenant's rows in it. Give each job a role with BYPASSRLS, read-only on its own
-# domain, through `backup.<domain>.existingSecret`. The DSN arrives as a mounted
-# file, never as an environment variable.
+# EACH JOB NEEDS ITS OWN BACKUP CREDENTIAL, and it is not the pool's. Each
+# domain's runtime role is revoked from the other domains, so it cannot read a
+# whole database and a dump taken through it would be silently partial — that is
+# the pseudonymisation boundary working, not a misconfiguration. Give each job a
+# role that is read-only on its own domain, through
+# `backup.<domain>.existingSecret`. The DSN arrives as a mounted file, never as
+# an environment variable.
 #
 # The chart keeps the three dumps apart; ACCESS CONTROL over them is yours. Back
 # the three claims with different volumes and give the demographic and linkage
@@ -350,10 +348,10 @@ backup:
     # cold_demographic). Offset from the clinical one by default so no two dumps
     # read the database in the same minute.
     schedule: "45 1 * * *"
-    # -- REQUIRED when enabled: Secret holding the demographic BACKUP DSN — a
-    # role with BYPASSRLS, read-only on the demographic schemas, and a DIFFERENT
-    # role from the clinical one. This credential can read every tenant's
-    # identities; treat it accordingly.
+    # -- REQUIRED when enabled: Secret holding the party BACKUP DSN — a
+    # read-only role on the party schema, and a DIFFERENT role from the clinical
+    # one. This credential reads every identity the instance holds; treat it
+    # accordingly.
     existingSecret: ""
     # -- Key within `existingSecret` carrying that DSN.
     existingSecretKey: FERROEHR__DB__DEMOGRAPHIC_URL
@@ -583,12 +581,6 @@ config:
   # [admin] — ADMIN API group (physical, irreversible delete). Off ⇒ routes 404.
   admin:
     enabled: false
-
-  # [tenancy] — multi-tenancy. Our own extension; no openEHR spec governs it.
-  # Off by default.
-  tenancy:
-    enabled: false
-    claim: tenant
 
   # [management] — ops-introspection surface (info / prometheus / metrics / env /
   # loggers / flamegraph). The master switch is ON here (unlike the bare binary)

@@ -1,4 +1,4 @@
-# Security & multi-tenancy
+# Security
 
 A clinical data repository holds PHI, so its access controls and audit trail
 are part of the product. This chapter covers the four
@@ -660,87 +660,30 @@ its own line of defence for the subject pseudonym too: once
 `privacy.subject_namespaces` is declared, a trigger on `ehr` refuses a subject
 reference that is not a UUID, whichever code path or session writes it.
 
-## Multi-tenancy
+## One instance, one organisation
 
-Multi-tenancy lets one deployment host several isolated logical openEHR
-systems, each with its own `system_id`. It is off by default; when off, the
-server behaves byte-for-byte as a single-tenant system.
+FerroEHR is single-tenant, and that is where openEHR puts the boundary. BASE
+`architecture_overview/master06-design_of_the_ehr.adoc` §The EHR System defines
+a system as "a distinct logical repository corresponding to an organisational
+entity that is _legally responsible_ for the management and governance of the
+healthcare data contained within", and says it is "distinct from any underlying
+virtualisation infrastructure or cloud computing facility, which may house
+multiple logical EHR systems in a multi-tenant fashion". Multi-tenancy belongs
+to the layer that hosts several systems, not inside one of them.
 
-| Environment variable | Default | Meaning |
-|---|---|---|
-| `FERROEHR__TENANCY__ENABLED` | `false` | enable multi-tenancy |
-| `FERROEHR__TENANCY__CLAIM` | `tenant` | the JWT claim (a dotted path) carrying the tenant key |
-| `FERROEHR__TENANCY__HEADER` | unset | a development header override for the tenant |
-| `FERROEHR__TENANCY__UNKNOWN_TENANT` | `refuse` | what a tenant key naming no registered tenant gets: `refuse` (a `403`) or `default_tenant` (run unscoped) |
+So several organisations are served by several instances: one instance, one
+database, one set of domain roles each. That is a stronger boundary than a row
+predicate — a defect in a query cannot cross it, because there is nothing to
+cross — and it is what the §System Identity rule needs, since `system_id`
+"becomes embedded in the version identifiers of committed -- and possibly
+signed -- content" and "cannot easily be changed afterwards". One `system_id`
+shared across organisations mints version identifiers that cannot tell the
+responsible parties apart.
 
-A request's tenant is resolved from the configured JWT claim (a dotted path
-such as `realm_access.tenant` is walked through nested objects). Isolation is
-enforced in the database with **PostgreSQL row-level security**: the resolved
-tenant scopes the connection so a query can only ever see its own tenant's
-rows, and the policies are installed with `FORCE ROW LEVEL SECURITY`, so even a
-table owner is subject to them.
-
-> [!WARNING]
-> Leave `FERROEHR__TENANCY__HEADER` unset in production. When it is set, the
-> header **wins over the JWT claim**, so a client-supplied value selects the
-> tenant, which means tenancy is not a boundary at all. The tenant must come
-> from the authenticated token.
-
-Isolation is otherwise fail-safe by design, and the three cases are distinct:
-
-- **A tenant key naming no registered tenant:** a `403`. The alternative,
-  running the request unscoped, hands the caller the reserved default tenant,
-  and that tenant owns every row written while tenancy was off. On a deployment
-  that enabled tenancy after going live it therefore holds the entire
-  pre-tenancy store, so a misspelled claim, a renamed tenant or a drifted
-  issuer mapping would read and write all of it.
-
-  Set `FERROEHR__TENANCY__UNKNOWN_TENANT=default_tenant` to restore the
-  fall-through. It buys one thing: a cross-tenant access then surfaces as an
-  empty result set rather than a `403` confirming another tenant exists. That
-  is a real property, and it holds only while the default tenant is empty,
-  which is true on a deployment that ran with tenancy on from its first write.
-  The server counts that tenant's stored versions at boot and warns when it
-  holds any.
-
-- **No tenant key at all:** the request runs unscoped against the reserved
-  default tenant. `UNKNOWN_TENANT` governs a key that does not resolve, not the
-  absence of one, so the same boot warning applies: with tenancy on and content
-  in the default tenant, a token carrying no tenant claim reads it.
-
-  The database backs this from its own side: every connection the server
-  opens declares its tenant (the reserved default when a request carries
-  none), and with tenancy on the tenant reader refuses a connection that
-  declares none, so a session on its own credential cannot read the default
-  tenant by omission.
-- **A tenant registry that cannot be reached:** a `503`, like any other
-  dependency failure. A resolution *error* is never quietly read as "no
-  tenant", because that would fall through to the default tenant.
-- **Tenancy off:** no middleware is installed at all, so single-tenant
-  deployments pay nothing.
-
-The background readers follow the same scoping: the AMQP outbox drainer and
-the FHIR outbound emitter drain every registered tenant in turn under that
-tenant's scope, with a delivery cursor per tenant, so no tenant's events wait
-behind another's.
-
-**On Kubernetes**, the same keys arrive through the chart's `config`
-passthrough:
-
-```yaml
-# values.yaml
-config:
-  tenancy:
-    enabled: true
-    claim: realm_access.tenant   # a dotted path is walked through nested claims
-```
-
-**Before you enable it:** your identity provider must actually put that claim
-in the token: with the claim absent, a request runs unscoped against the
-reserved default, so a misconfigured claim path looks like "tenancy is doing
-nothing" rather than failing loudly. Do **not** set `config.tenancy.header` in
-production. **To turn it off**, set `enabled: false`; the server then behaves
-byte-for-byte as a single-tenant system.
+There is therefore no tenant column on any relation, no row policy, no session
+variable to set and no `[tenancy]` configuration. What separates the clinical
+record from the identity of its subject is the pseudonymisation boundary above,
+which is a different question and stays.
 
 ## Version signing
 

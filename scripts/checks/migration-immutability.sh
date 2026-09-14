@@ -16,6 +16,16 @@
 # to work on a file the branch itself added, because the comparison is against
 # the merge base rather than against the previous commit.
 #
+# THE ONE EXCEPTION IS A DECLARED STORAGE GENERATION, and it is not a label
+# anyone can apply to a pull request. A generation cut replaces the whole
+# migration set outright and refuses every database of the previous generation
+# at boot with a remedy, so no installation is locked out by a checksum: it is
+# told what happened. Declaring one means changing the generation literal that
+# `ext.storage_generation()` returns — the same value every measurement record
+# files under — which is a loud, reviewable act with the boot refusal attached,
+# and it is an owner ruling rather than a developer'"'"'s convenience. While that
+# literal is unchanged, every migration on the base branch is immutable.
+#
 # Usage:
 #   scripts/checks/migration-immutability.sh --diff <base> [head]
 #   scripts/checks/migration-immutability.sh --self-test
@@ -24,6 +34,16 @@ cd "$(dirname "$0")/../.." || exit 1
 
 readonly MIGRATIONS='app/ferroehr/migrations/'
 readonly RULE='.claude/rules/sqlx-conventions.md §Migrations'
+# The file carrying the generation literal `ext.storage_generation()` returns.
+readonly GENERATION_FILE='app/ferroehr/migrations/ext/0001_schema_and_roles.sql'
+
+# The storage generation a tree declares, as the literal its `ext` set returns.
+generation_at() {
+  local rev="$1"
+  git show "$rev:$GENERATION_FILE" 2>/dev/null \
+    | sed -n "s/.*SELECT '\\(generation-[0-9][0-9]*\\)'::text.*/\\1/p" \
+    | head -n 1
+}
 
 # The status letters git reports for a change that is not a pure addition.
 # A = added (allowed); M = modified, D = deleted, R = renamed, C = copied,
@@ -36,6 +56,16 @@ refused_changes() {
   fork="$(git merge-base "$base" "$head")"
   git diff --name-status --diff-filter=MDRCT "$fork" "$head" -- "$MIGRATIONS" \
     | awk -F'\t' '{ print $1 "\t" $2 }'
+}
+
+# Whether this diff DECLARES a new storage generation, which is the only thing
+# that replaces a migration set rather than editing one.
+declares_new_generation() {
+  local base="$1" head="$2" fork before after
+  fork="$(git merge-base "$base" "$head")"
+  before="$(generation_at "$fork")"
+  after="$(generation_at "$head")"
+  [[ -n "$after" && "$before" != "$after" ]]
 }
 
 report() {
@@ -116,6 +146,15 @@ case "${1:-}" in
 --diff)
   base="${2:?usage: --diff <base> [head]}"
   head="${3:-HEAD}"
+  if declares_new_generation "$base" "$head"; then
+    echo "migration-immutability: a new storage generation is declared" \
+         "($(generation_at "$(git merge-base "$base" "$head")") ->" \
+         "$(generation_at "$head")), so the previous generation's migration set is"
+    echo "replaced outright rather than edited. Every database of the previous"
+    echo "generation is refused at boot with a remedy, so no installation is locked"
+    echo "out by a checksum. From this merge the new files are the immutable ones."
+    exit 0
+  fi
   report "$(refused_changes "$base" "$head")"
   ;;
 *)

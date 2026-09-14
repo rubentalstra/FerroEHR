@@ -206,14 +206,11 @@ services:
   # see the operations page in the documentation.
   #
   # THE DUMP CONNECTS AS THE BOOTSTRAP SUPERUSER, and that is not laziness.
-  # Every tenant-scoped table carries FORCE ROW LEVEL SECURITY, so the policy
-  # applies to the table owner too, and pg_dump refuses a table it would have
-  # to read through a policy: "query would be affected by row-level security
-  # policy" (PostgreSQL 18, pg_dump §Notes). The application role therefore
-  # CANNOT take a backup — by design, because the alternative is worse: with
-  # --enable-row-security the dump succeeds and silently contains one tenant's
-  # rows. A backup credential needs BYPASSRLS or superuser; the operations page
-  # says so for deployments that do not share this stack's single credential.
+  # Each domain's runtime role is revoked from the other domains, so no runtime
+  # credential can read a whole database: that is the pseudonymisation boundary
+  # working, and a backup taken through one of them would be silently partial.
+  # The operations page says so for deployments that do not share this stack's
+  # single credential.
   ferroehr-backup-clinical:
     profiles: [backup]
     image: ${FERROEHR_POSTGRES_IMAGE:-ghcr.io/rubentalstra/ferroehr-postgres:4.3.0}

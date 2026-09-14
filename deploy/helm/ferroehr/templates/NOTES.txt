@@ -182,7 +182,6 @@ SECURITY POSTURE
 {{ end }}
 Optional integrations currently ON:
   admin API:        {{ .Values.config.admin.enabled }}
-  multi-tenancy:    {{ .Values.config.tenancy.enabled }}
   eventing (AMQP):  {{ .Values.config.events.enabled }}
   FHIR inbound:     {{ .Values.config.fhir.api_enabled }}
   FHIR outbound:    {{ .Values.config.fhir.outbound.enabled }} (PHI)
