@@ -444,16 +444,11 @@ Under Kubernetes the chart renders one `CronJob` per domain — see the chart's
 `backup` values.
 
 > [!WARNING]
-> **A backup credential needs `BYPASSRLS`, and the application role does not
-> have it.** Every tenant-scoped table carries `FORCE ROW LEVEL SECURITY`, so
-> the policy applies to the table's owner too, and `pg_dump` refuses a table it
-> would have to read through one: *"query would be affected by row-level
-> security policy"*. That refusal is the safe outcome. The unsafe one is
-> `--enable-row-security`, which makes the dump succeed and quietly contain a
-> single tenant's rows — never use it for a backup. Give the backup job a role
-> with `BYPASSRLS` (or a superuser), read-only on its own domain. This applies
-> to the linkage dump as much as the other two: `linkage.party_ehr` carries the
-> same `FORCE ROW LEVEL SECURITY`.
+> **A backup credential is not the application role.** Each domain's runtime
+> role is revoked from the other domains, which is the pseudonymisation
+> boundary doing its job — so a dump taken through one of them is silently
+> partial rather than refused. Give each backup job its own role, read-only on
+> its own domain and nothing else.
 
 Two further properties are yours to arrange, because no configuration file can
 enforce them: the three targets carry **different** access control, and the
@@ -483,9 +478,8 @@ pg_restore --dbname=ferroehr_restored --no-owner linkage-….dump
 ferroehr db verify
 ```
 
-Restore the clinical dump first. It is the one carrying the `ext` schema, and
-the other two domains' tables default and their row policies call
-`ext.current_tenant_id()`.
+Restore the clinical dump first. It is the one carrying the `ext` schema, whose
+helper functions the other domains' relations depend on.
 
 `ferroehr db verify` issues no DDL. It checks that the database carries exactly
 this build's migrations, **all five sets**, so a restore that skipped a domain
@@ -503,7 +497,7 @@ own output, and confirm the map kept its temporal key:
 psql -d ferroehr_restored -c \
   "SELECT conname, pg_get_constraintdef(oid) FROM pg_constraint
      WHERE conrelid = 'linkage.party_ehr'::regclass AND contype = 'p'"
-# expect: pk_party_ehr | PRIMARY KEY (tenant_id, party_id, sys_period WITHOUT OVERLAPS)
+# expect: pk_party_ehr | PRIMARY KEY (party_id, sys_period WITHOUT OVERLAPS)
 ```
 
 Restoring only one domain is a supported outcome, not a mistake: a demographic
@@ -517,9 +511,9 @@ rehearsal target.
 
 Only relevant when `[demographic.identifier_protection]` is on. With it on, a
 national identifier of a configured scheme never sits in the versioned body:
-the value lives in `demographic.national_identifier`, sealed with AES-256-GCM
-under a key derived per tenant from your root key, with an HMAC-SHA-256 digest
-beside it so an identifier can be looked up without decrypting anything.
+the value lives in `party.national_identifier`, sealed with AES-256-GCM under a
+key derived per domain from your root key, with an HMAC-SHA-256 digest beside it
+so an identifier can be looked up without decrypting anything.
 
 **The root key is load-bearing.** Lose it and the sealed identifiers cannot be
 read back by anything, including you. Hold it the way you hold the database
@@ -552,12 +546,11 @@ The procedure:
 > available, and this page is the procedure it has to follow. Treat the absence
 > of a command as a reason to rehearse the rotation on a copy first.
 
-A per-tenant key is derived from the root key rather than stored, so adding a
-tenant needs no key management, and rotating the root rotates every tenant's
-subkeys together. The pseudonymisation domain is part of that derivation too:
-a subkey derived for the clinical domain opens nothing in the demographic one,
-so the per-schema backups above are separate artefacts under separate keys even
-where one root key is configured.
+The subkeys are derived from the root key rather than stored, so rotating the
+root rotates all of them together. The pseudonymisation domain is part of that
+derivation: a subkey derived for the clinical domain opens nothing in the party
+one, so the per-schema backups above are separate artefacts under separate keys
+even where one root key is configured.
 
 ## The container image and pod hardening
 

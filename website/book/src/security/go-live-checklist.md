@@ -151,9 +151,9 @@ backup:
     persistentVolumeClaim: ferroehr-backup-linkage
 ```
 
-Each credential is a read-only role with `BYPASSRLS`, and it cannot be the
-pool's: every tenant-scoped table carries `FORCE ROW LEVEL SECURITY`, and
-`pg_dump` refuses a table it would read through a policy. The chart refuses to
+Each credential is a read-only role on its own domain, and it cannot be the
+pool's: each domain's runtime role is revoked from the other domains, so a dump
+taken through one would be silently partial. The chart refuses to
 render when two domains name the same claim, which is the mistake that quietly
 puts the join back together.
 

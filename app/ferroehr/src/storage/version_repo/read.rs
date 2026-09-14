@@ -394,7 +394,7 @@ pub async fn read_current(
     vo_id: VoId,
 ) -> Result<Option<StoredVersion>, StorageError> {
     const SQL: &str =
-        version_select!("WHERE v.vo_id = $1 AND upper_inf(v.sys_period) AND v.branch_number = 0");
+        version_select!("WHERE v.vo_id = $1 AND v.sys_version = (SELECT h.trunk_head_sys_version FROM vo_head h WHERE h.vo_id = v.vo_id)");
     sqlx::query(SQL)
         .bind(vo_id)
         .fetch_optional(pool)
@@ -414,7 +414,7 @@ pub async fn read_current_raw(
     vo_id: VoId,
 ) -> Result<Option<StoredVersion>, StorageError> {
     const SQL: &str = version_select_raw!(
-        "WHERE v.vo_id = $1 AND upper_inf(v.sys_period) AND v.branch_number = 0"
+        "WHERE v.vo_id = $1 AND v.sys_version = (SELECT h.trunk_head_sys_version FROM vo_head h WHERE h.vo_id = v.vo_id)"
     );
     sqlx::query(SQL)
         .bind(vo_id)
@@ -464,7 +464,7 @@ pub async fn read_currents(
     vo_ids: &[VoId],
 ) -> Result<Vec<StoredVersion>, StorageError> {
     const SQL: &str = version_select!(
-        "WHERE v.vo_id = ANY($1) AND upper_inf(v.sys_period) AND v.branch_number = 0"
+        "WHERE v.vo_id = ANY($1) AND v.sys_version = (SELECT h.trunk_head_sys_version FROM vo_head h WHERE h.vo_id = v.vo_id)"
     );
     if vo_ids.is_empty() {
         return Ok(Vec::new());
@@ -569,7 +569,8 @@ pub async fn read_versions_by_tree(
 }
 
 /// Read the version of an object current at a given instant (time-travel):
-/// the TRUNK row whose `sys_period` contains `at` (master08 §Change
+/// the TRUNK row in force at `at` — the greatest `committed_at` at or before
+/// it (master08 §Change
 /// Management — any previous state reconstructable).
 ///
 /// `None` if the object had no trunk version then.
@@ -594,8 +595,12 @@ pub async fn version_at(
     at: jiff::Timestamp,
 ) -> Result<Option<StoredVersion>, StorageError> {
     const SQL: &str = version_select!(
-        "WHERE v.vo_id = $1 AND v.sys_period @> $2::timestamptz \
-         AND v.branch_number = 0"
+        "WHERE v.vo_id = $1 AND v.branch_number = 0 \
+         AND v.committed_at <= $2::timestamptz \
+         AND NOT EXISTS (SELECT 1 FROM version s \
+                         WHERE s.vo_id = v.vo_id AND s.branch_number = 0 \
+                           AND s.committed_at > v.committed_at \
+                           AND s.committed_at <= $2::timestamptz)"
     );
     let at = at.to_string();
     sqlx::query(SQL)
@@ -630,8 +635,7 @@ pub async fn read_current_of_kind(
     kind: &str,
 ) -> Result<Option<StoredVersion>, StorageError> {
     const SQL: &str = version_select!(
-        "WHERE v.ehr_id = $1 AND v.kind = $2 AND upper_inf(v.sys_period) \
-         AND v.branch_number = 0"
+        "WHERE v.ehr_id = $1 AND v.kind = $2 AND v.sys_version = (SELECT h.trunk_head_sys_version FROM vo_head h WHERE h.vo_id = v.vo_id)"
     );
     sqlx::query(SQL)
         .bind(ehr_id)
@@ -644,7 +648,7 @@ pub async fn read_current_of_kind(
 }
 
 /// [`read_current_of_kind`]'s time-travel form: the TRUNK version of the
-/// EHR's one container of `kind` whose `sys_period` contains `at`.
+/// EHR's one container of `kind` in force at `at`.
 ///
 /// # Errors
 /// Returns [`StorageError`] on a driver/decode failure.
@@ -655,8 +659,12 @@ pub async fn version_at_of_kind(
     at: jiff::Timestamp,
 ) -> Result<Option<StoredVersion>, StorageError> {
     const SQL: &str = version_select!(
-        "WHERE v.ehr_id = $1 AND v.kind = $2 AND v.sys_period @> $3::timestamptz \
-         AND v.branch_number = 0"
+        "WHERE v.ehr_id = $1 AND v.kind = $2 AND v.branch_number = 0 \
+         AND v.committed_at <= $3::timestamptz \
+         AND NOT EXISTS (SELECT 1 FROM version s \
+                         WHERE s.vo_id = v.vo_id AND s.branch_number = 0 \
+                           AND s.committed_at > v.committed_at \
+                           AND s.committed_at <= $3::timestamptz)"
     );
     let at = at.to_string();
     sqlx::query(SQL)
@@ -685,7 +693,7 @@ pub async fn read_current_directory(
 ) -> Result<Option<StoredVersion>, StorageError> {
     const SQL: &str = version_select!(
         "JOIN ehr_folder f ON f.vo_id = v.vo_id \
-         WHERE f.ehr_id = $1 AND upper_inf(v.sys_period) AND v.branch_number = 0 \
+         WHERE f.ehr_id = $1 AND v.sys_version = (SELECT h.trunk_head_sys_version FROM vo_head h WHERE h.vo_id = v.vo_id) \
          ORDER BY (v.lifecycle_state = '523'), f.rank LIMIT 1"
     );
     sqlx::query(SQL)

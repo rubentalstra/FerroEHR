@@ -218,9 +218,9 @@ an operator says otherwise, rather than choosing a horizon on their behalf.
 Choosing that horizon is the deployment's, and it is a legal question rather
 than a technical one: EHDS sets no retention period for the access log, while
 national law does — NEN 7513 is the Dutch reference for this log and the
-Wabvpz for how long it must survive. The setting is per node, not per tenant:
-a multi-tenant deployment whose tenants need different horizons needs
-different nodes, and that limitation is stated here rather than discovered.
+Wabvpz for how long it must survive. The setting is per node, and one node
+serves one organisation, so two organisations needing different horizons run
+two instances.
 
 **A floor is enforced where a jurisdiction sets one.** The jurisdictions a
 deployment answers to are the ones its `[privacy.identifier_scan]` rules name,

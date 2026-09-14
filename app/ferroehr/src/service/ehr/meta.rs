@@ -42,8 +42,7 @@ const LOCAL_ISSUER: &str = "ferroehr";
 
 impl FerroEhrService {
     /// The current version `(vo_id, VERSION_TREE_ID)` of an EHR's object of a
-    /// given [`Kind`], if any — the current trunk row (`upper_inf(sys_period)`,
-    /// `branch_number = 0`).
+    /// given [`Kind`], if any — the trunk head the object's head row names.
     ///
     /// The `version` current-row read is a storage seam
     /// ([`crate::storage::version_repo::meta::current_vo`]; no openEHR spec governs

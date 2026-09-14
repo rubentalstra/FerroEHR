@@ -415,7 +415,7 @@ impl FerroEhrService {
     ) -> Result<Vec<(VoId, String)>, ServiceError> {
         let rows = sqlx::query(
             "SELECT vo_id, kind FROM version \
-             WHERE ehr_id = $1 AND upper_inf(sys_period) AND branch_number = 0 \
+             WHERE ehr_id = $1 AND version.sys_version = (SELECT h.trunk_head_sys_version FROM vo_head h WHERE h.vo_id = version.vo_id) \
              ORDER BY vo_id",
         )
         .bind(ehr_id)
@@ -437,8 +437,7 @@ impl FerroEhrService {
     ) -> Result<Option<String>, ServiceError> {
         Ok(sqlx::query_scalar(
             "SELECT kind FROM version \
-             WHERE vo_id = $1 AND ehr_id = $2 AND upper_inf(sys_period) \
-             AND branch_number = 0",
+             WHERE vo_id = $1 AND ehr_id = $2 AND version.sys_version = (SELECT h.trunk_head_sys_version FROM vo_head h WHERE h.vo_id = version.vo_id)",
         )
         .bind(vo_id)
         .bind(ehr_id)
@@ -450,7 +449,7 @@ impl FerroEhrService {
     /// whether it is the current (`upper_inf`, trunk) version.
     async fn vo_version_numbers(&self, vo_id: VoId) -> Result<Vec<(i32, bool)>, ServiceError> {
         let rows = sqlx::query(
-            "SELECT sys_version, (upper_inf(sys_period) AND branch_number = 0) AS is_current \
+            "SELECT sys_version, (version.sys_version = (SELECT h.trunk_head_sys_version FROM vo_head h WHERE h.vo_id = version.vo_id)) AS is_current \
              FROM version WHERE vo_id = $1 ORDER BY sys_version",
         )
         .bind(vo_id)

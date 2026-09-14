@@ -843,16 +843,13 @@ async fn commit_resolved(
         body: r.canonical_text.as_deref(),
         time_committed: r.time_committed,
         rows: &r.rows,
-        // The superseded lineage tip closes inside the SAME statement (its
-        // leading `cl` CTE, at the same bound instant) — the close boundary
-        // and the new `sys_period` open at the identical instant (master06
-        // §The 'Virtual Version Tree'), and the insert CTE depends on `cl`
-        // so the one-open-row-per-lineage partial unique indexes see the
-        // closed tip first.
+        // Nothing is superseded in place: the head row advancing past the
+        // previous version inside the SAME statement is what makes this one
+        // current (master06 §The 'Virtual Version Tree').
     };
     // The folded statements BIND `r.time_committed` (the instant the signature
-    // was computed over) as the audit time and the `sys_period` open bound, so
-    // stored == signed holds by construction.
+    // was computed over) as the audit time and the version row's own
+    // `committed_at`, so stored == signed holds by construction.
     let time_committed = match contribution {
         ContributionCtx::New => {
             let (_cid, _aid, tc) = crate::storage::version_repo::commit::commit_new_version(

@@ -481,7 +481,7 @@ impl FerroEhrService {
     /// `PARTY_REF` references the party (see `service/demographic/`), with their
     /// `version` rows (which cascade `node` + `vo_attestation` via the
     /// `(vo_id, sys_version)` FKs), the CONTRIBUTIONs/audit rows they orphan
-    /// (guarded — a row shared with a survivor is kept), and any `vo_archive`
+    /// (guarded — a row shared with a survivor is kept), the head rows
     /// markers. `audit` has no FK from `version` (NO ACTION), so those rows
     /// are swept explicitly, as in the EHR delete.
     async fn physical_delete_party(&self, party_id: VoId) -> Result<(), ServiceError> {
@@ -584,8 +584,9 @@ impl FerroEhrService {
         .execute(&mut *tx)
         .await?;
 
-        // Any archive markers for the deleted VOs.
-        sqlx::query("DELETE FROM vo_archive WHERE vo_id = ANY($1)")
+        // The head rows of the deleted objects, which carry the archive
+        // marker among the rest of their state.
+        sqlx::query("DELETE FROM vo_head WHERE vo_id = ANY($1)")
             .bind(&vo_ids)
             .execute(&mut *tx)
             .await?;

@@ -11,13 +11,13 @@
 //! `vo_id` — a party identifier — and no other column, so the crossing that
 //! follows carries identifiers only.
 //!
-//! Every relation is named UNQUALIFIED and resolves through the demographic
-//! pool's `search_path`, which carries neither `ehr` nor `linkage`. Under
+//! Every relation is named UNQUALIFIED and resolves through the party pool's
+//! `search_path`, which carries neither `clinical` nor `linkage`. Under
 //! `[db].demographic_url` that pool authenticates as `ferroehr_demographic`,
 //! which holds no grant on either.
 //!
-//! The join is the storage model's own: an ELEMENT row's `citem_num` is the
-//! `num` of its nearest archetyped ancestor (`crate::storage::codec`), so
+//! The join is the storage model's own: a node row's nested-set interval
+//! `[num, num_cap]` contains its whole subtree (`crate::storage::codec`), so
 //! "the `at0012` ELEMENT under an `openEHR-DEMOGRAPHIC-ADDRESS.address.v1`
 //! node" is one integer join, not a JSON walk.
 
@@ -35,18 +35,23 @@ use crate::service::linkage::cohort::config::{PredicateBinding, PredicateKind};
 /// `&'static str`.
 ///
 /// `$1` is the ELEMENT at-code (case-folded), `$2` the archetype HRID of the
-/// nearest archetyped ancestor (case-folded). The version predicate is the
-/// current trunk version — `upper_inf(sys_period) AND branch_number = 0` — the
-/// same currency rule every other read of this store uses.
+/// archetyped ancestor (case-folded), matched through the nested-set interval
+/// that contains the element. The version predicate is the object's current
+/// trunk version — the head row's own answer — the same currency rule every
+/// other read of this store uses.
 macro_rules! predicate_statement {
     ($value_clause:expr) => {
         concat!(
             "SELECT DISTINCT e.vo_id \
              FROM node e \
              JOIN node a \
-               ON a.vo_id = e.vo_id AND a.sys_version = e.sys_version AND a.num = e.citem_num \
-             JOIN version v ON v.vo_id = e.vo_id AND v.sys_version = e.sys_version \
-             WHERE upper_inf(v.sys_period) AND v.branch_number = 0 \
+               ON a.tier = e.tier AND a.vo_id = e.vo_id AND a.sys_version = e.sys_version \
+               AND e.num BETWEEN a.num AND a.num_cap \
+             JOIN version v \
+               ON v.tier = e.tier AND v.vo_id = e.vo_id AND v.sys_version = e.sys_version \
+             WHERE e.tier = 'hot' \
+               AND v.sys_version = (SELECT h.trunk_head_sys_version FROM vo_head h \
+                                    WHERE h.vo_id = v.vo_id) \
                AND e.rm_type = 'ELEMENT' AND e.archetype = $1 AND a.archetype = $2 \
                AND ",
             $value_clause
@@ -181,8 +186,8 @@ mod tests {
             let sql = predicate_sql(kind);
             assert!(
                 sql.starts_with("SELECT DISTINCT e.vo_id FROM node e ")
-                    && sql.contains("a.num = e.citem_num")
-                    && sql.contains("upper_inf(v.sys_period) AND v.branch_number = 0"),
+                    && sql.contains("e.num BETWEEN a.num AND a.num_cap")
+                    && sql.contains("h.trunk_head_sys_version"),
                 "{} must share the skeleton: {sql}",
                 kind.as_str()
             );

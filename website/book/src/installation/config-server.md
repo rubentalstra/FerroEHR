@@ -244,9 +244,6 @@ Practical notes:
   rewritten, and previously issued `OBJECT_VERSION_ID`s stay valid.
 - **Make it unique per system**, so data exchanged between openEHR systems
   keeps unambiguous provenance.
-- **With multi-tenancy on** ([`[tenancy]`](config-auth.md#tenancy)), a tenant's
-  own `system_id` takes precedence over this value for requests resolved to
-  that tenant.
 - **`system_id` is not `[server.identity]`.** `system_id` says *which system
   authored the data*; [`[server.identity]`](#serveridentity) is the *display*
   identity of the `OPTIONS` System-Options manifest. Rebranding changes the

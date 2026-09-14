@@ -35,7 +35,7 @@
 //!
 //! `export_ehrs(an_ehr_id)` is EHR-scoped: `ehr`, `audit`, `contribution`,
 //! `version`, `node`, `ehr_folder` (the `EHR.folders` membership rows — RM
-//! ehr master04 §Folders), `item_tag`, and any `vo_archive` markers. Global
+//! ehr master04 §Folders), `item_tag`, and any archive markers. Global
 //! DEFINITION artefacts (templates via `version.template_id`, `stored_query`)
 //! and demographic parties are not carried; a `COMPOSITION` referencing an
 //! absent template fails its FK on load and is reported per EHR.
@@ -1882,8 +1882,8 @@ impl FerroEhrService {
 
         let version_rows = sqlx::query(
             "SELECT vo_id, kind, sys_version, trunk_version, branch_number, branch_version, \
-             preceding_version_uid, other_input_version_uids, lower(sys_period)::text AS lo, \
-             upper(sys_period)::text AS hi, lifecycle_state, contribution_id, commit_audit_id, \
+             preceding_version_uid, other_input_version_uids, committed_at::text AS ca, \
+             lifecycle_state, contribution_id, commit_audit_id, \
              template_id, signature, signature_client_supplied, creating_system_id, \
              wrapped_original \
              FROM version WHERE ehr_id = $1 ORDER BY vo_id, sys_version",

@@ -70,7 +70,7 @@ What a deployment gets by default, and what declaring a namespace adds:
 
 Where FerroEHR itself makes a party the subject of an EHR
 (`service::linkage::link_as_subject`), the pseudonym is minted by the server: a
-keyed, tenant-bound derivation over the party id under the linkage key, so no
+keyed derivation over the party id under the linkage key, so no
 caller-supplied value enters the subject reference on that path and a national
 identifier cannot become one. The rule above still governs every value that
 arrives from elsewhere, a client writing `EHR_STATUS` directly, an EHR-Extract,
@@ -334,7 +334,7 @@ demographic side is where a party's identifiers legitimately live, and
 
 With it on, an identifier of a configured scheme never sits in the versioned
 body. The value moves to `demographic.national_identifier`, sealed with
-AES-256-GCM under a key derived per tenant, and the body keeps a reference in
+AES-256-GCM under a key derived per domain, and the body keeps a reference in
 its place. Beside the ciphertext sits an HMAC-SHA-256 digest of the value, which
 is what makes "which party holds this identifier" answerable without decrypting
 anything — and, because it is keyed, what stops the database, a backup or a read

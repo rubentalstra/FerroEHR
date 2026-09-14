@@ -197,7 +197,7 @@ pub async fn template_id_of(
                                AND trunk_version = $2 AND branch_number = $3 \
                                AND branch_version = $4";
     const CURRENT_SQL: &str = "SELECT template_id FROM version WHERE vo_id = $1 \
-                               AND upper_inf(sys_period) AND branch_number = 0";
+                               AND version.sys_version = (SELECT h.trunk_head_sys_version FROM vo_head h WHERE h.vo_id = version.vo_id)";
     if let Some((trunk, branch, branch_version)) = tree {
         return Ok(sqlx::query_scalar(BY_TREE_SQL)
             .bind(vo_id)
@@ -235,8 +235,7 @@ pub async fn ehr_exists(pool: &PgPool, ehr_id: EhrId) -> Result<bool, StorageErr
 /// # Errors
 /// Returns [`StorageError::Database`] on a driver failure.
 pub async fn object_kind(pool: &PgPool, vo_id: VoId) -> Result<Option<String>, StorageError> {
-    const SQL: &str = "SELECT kind FROM version WHERE vo_id = $1 AND upper_inf(sys_period) \
-                       AND branch_number = 0";
+    const SQL: &str = "SELECT kind FROM version WHERE vo_id = $1 AND version.sys_version = (SELECT h.trunk_head_sys_version FROM vo_head h WHERE h.vo_id = version.vo_id)";
     Ok(sqlx::query_scalar(SQL)
         .bind(vo_id)
         .fetch_optional(pool)
@@ -258,7 +257,7 @@ pub async fn object_kinds(
     vo_ids: &[VoId],
 ) -> Result<Vec<(VoId, String)>, StorageError> {
     const SQL: &str = "SELECT vo_id, kind FROM version WHERE vo_id = ANY($1) \
-                       AND upper_inf(sys_period) AND branch_number = 0";
+                       AND version.sys_version = (SELECT h.trunk_head_sys_version FROM vo_head h WHERE h.vo_id = version.vo_id)";
     if vo_ids.is_empty() {
         return Ok(Vec::new());
     }
@@ -344,7 +343,7 @@ pub async fn persistent_template_exists<'e>(
 ) -> Result<bool, StorageError> {
     Ok(sqlx::query_scalar(
         "SELECT EXISTS(SELECT 1 FROM version WHERE ehr_id = $1 AND kind = 'COMPOSITION' \
-         AND upper_inf(sys_period) AND branch_number = 0 AND lifecycle_state <> $2 \
+         AND version.sys_version = (SELECT h.trunk_head_sys_version FROM vo_head h WHERE h.vo_id = version.vo_id) AND lifecycle_state <> $2 \
          AND template_id = $3 \
          AND (body)::jsonb #>> '{category,defining_code,code_string}' = $4)",
     )
@@ -360,7 +359,7 @@ pub async fn persistent_template_exists<'e>(
 
 /// The current version of an EHR-owned object of one kind: its `vo_id` and
 /// `VERSION_TREE_ID` column ints, from the current open trunk row
-/// (`upper_inf(sys_period)`, `branch_number = 0`).
+/// (the head row's `trunk_head_sys_version`).
 ///
 /// `None` when the EHR has no such object. Mapping the ints to a `TreeId` is
 /// the caller's.
@@ -386,8 +385,7 @@ pub async fn current_vo(
     kind: &str,
 ) -> Result<Option<CurrentVoRow>, StorageError> {
     const SQL: &str = "SELECT vo_id, trunk_version, branch_number, branch_version FROM version \
-                       WHERE ehr_id = $1 AND kind = $2 AND upper_inf(sys_period) \
-                       AND branch_number = 0";
+                       WHERE ehr_id = $1 AND kind = $2 AND version.sys_version = (SELECT h.trunk_head_sys_version FROM vo_head h WHERE h.vo_id = version.vo_id)";
     let found = sqlx::query(SQL)
         .bind(ehr_id)
         .bind(kind)
@@ -459,8 +457,7 @@ pub async fn current_version_meta_by_kind(
     const SQL: &str = "SELECT v.vo_id, v.trunk_version, v.branch_number, v.branch_version, \
                        v.creating_system_id, a.time_committed \
                        FROM version v JOIN commit_audit a ON a.id = v.commit_audit_id \
-                       WHERE v.ehr_id = $1 AND v.kind = $2 AND upper_inf(v.sys_period) \
-                       AND v.branch_number = 0";
+                       WHERE v.ehr_id = $1 AND v.kind = $2 AND v.sys_version = (SELECT h.trunk_head_sys_version FROM vo_head h WHERE h.vo_id = v.vo_id)";
     let found = sqlx::query(SQL)
         .bind(ehr_id)
         .bind(kind)
@@ -490,8 +487,7 @@ pub async fn current_version_meta_scoped(
     const SQL: &str = "SELECT v.vo_id, v.trunk_version, v.branch_number, v.branch_version, \
                        v.creating_system_id, a.time_committed \
                        FROM version v JOIN commit_audit a ON a.id = v.commit_audit_id \
-                       WHERE v.vo_id = $1 AND v.ehr_id = $2 AND upper_inf(v.sys_period) \
-                       AND v.branch_number = 0";
+                       WHERE v.vo_id = $1 AND v.ehr_id = $2 AND v.sys_version = (SELECT h.trunk_head_sys_version FROM vo_head h WHERE h.vo_id = v.vo_id)";
     let found = sqlx::query(SQL)
         .bind(vo_id)
         .bind(ehr_id)
@@ -546,8 +542,7 @@ pub async fn current_demographic_meta(
     const SQL: &str = "SELECT v.kind, v.lifecycle_state, v.trunk_version, v.branch_number, \
                        v.branch_version, v.creating_system_id, a.time_committed \
                        FROM version v JOIN commit_audit a ON a.id = v.commit_audit_id \
-                       WHERE v.vo_id = $1 AND v.ehr_id IS NULL AND upper_inf(v.sys_period) \
-                       AND v.branch_number = 0";
+                       WHERE v.vo_id = $1 AND v.ehr_id IS NULL AND v.sys_version = (SELECT h.trunk_head_sys_version FROM vo_head h WHERE h.vo_id = v.vo_id)";
     let found = sqlx::query(SQL).bind(vo_id).fetch_optional(pool).await?;
     let Some(row) = found else {
         return Ok(None);
@@ -646,7 +641,7 @@ pub async fn current_composition_meta(
                            WHERE f.vo_id = $1 AND f.body IS NOT NULL \
                            ORDER BY f.sys_version LIMIT 1 \
                        ) fv ON true \
-                       WHERE v.vo_id = $1 AND upper_inf(v.sys_period) AND v.branch_number = 0";
+                       WHERE v.vo_id = $1 AND v.sys_version = (SELECT h.trunk_head_sys_version FROM vo_head h WHERE h.vo_id = v.vo_id)";
     let found = sqlx::query(SQL).bind(vo_id).fetch_optional(pool).await?;
     let Some(row) = found else {
         return Ok(None);
@@ -709,7 +704,7 @@ pub async fn current_vo_ids(
 ) -> Result<Vec<VoId>, StorageError> {
     Ok(sqlx::query_scalar(
         "SELECT vo_id FROM version WHERE ehr_id = $1 AND kind = $2 \
-         AND upper_inf(sys_period) AND branch_number = 0 \
+         AND version.sys_version = (SELECT h.trunk_head_sys_version FROM vo_head h WHERE h.vo_id = version.vo_id) \
          AND ($3::text IS NULL OR lifecycle_state <> $3)",
     )
     .bind(ehr_id)

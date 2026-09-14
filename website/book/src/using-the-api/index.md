@@ -95,8 +95,8 @@ ship:
 
 Authorization is coarse role-based access control by default (a `USER` role for
 clinical operations, an `ADMIN` role for admin operations), with optional
-attribute-based policies on top. The full picture (mechanisms, roles,
-multi-tenancy) is in [Security & multi-tenancy](../security.md).
+attribute-based policies on top. The full picture (mechanisms, roles, the
+pseudonymisation boundary) is in [Security](../security.md).
 
 ### Which status a credential problem gets
 

@@ -634,7 +634,6 @@ is an explicit, auditable decision:
 | ADMIN API | `config.admin.enabled` | off | Physical, irreversible delete. Gate behind admin RBAC. |
 | Terminology extension API | `config.terminology.api_enabled` | off | 404 when off. |
 | Event-subscription API | `config.events.admin_api` | off | Admin CRUD over event filters. |
-| Multi-tenancy | `config.tenancy.enabled` | off | Tenant from a JWT claim (`config.tenancy.claim`); never set `config.tenancy.header` in production. Pairs with PG row-level security. |
 | OAuth2/OIDC auth | `config.auth.oidc.issuer` | unset | Prefer JWKS/discovery over the HS256 `secrets.authOidcHmacSecret`. |
 | RBAC | `config.authz.rbac.enabled` | **on** | The coarse role gate (active while `config.auth.enabled`). |
 | ABAC | `config.authz.abac.enabled` | off | Cedar (policies via a `config.files` mount) or a remote policy decision point. |
@@ -648,7 +647,7 @@ is an explicit, auditable decision:
 | OTLP telemetry | `config.telemetry.otlp_endpoint` | unset | Setting the endpoint is all it takes; unset means the OpenTelemetry layer is not installed at all (zero overhead). With `networkPolicy.egress.enabled`, add a rule for the collector, since a blocked exporter drops spans without an error. |
 
 Full detail on each is in [Beyond the core](../beyond-core/index.md),
-[Security & multi-tenancy](../security.md), and [Operations](../operations.md).
+[Security](../security.md), and [Operations](../operations.md).
 
 ### FerroEHR Viewer (a second workload, off by default)
 
@@ -857,11 +856,10 @@ per-domain backups exist to prevent.
 Each job needs **its own backup credential**, named by
 `backup.clinical.existingSecret`, `backup.demographic.existingSecret` and
 `backup.linkage.existingSecret`, and
-the render is refused without them. It cannot be the pool's credential: every
-tenant-scoped table carries `FORCE ROW LEVEL SECURITY`, so `pg_dump` refuses a
-table it would read through a policy, and a CronJob wired to the runtime role
-would fail every night. Give each domain a role with `BYPASSRLS`, read-only on
-that domain's schemas. Every job reads its DSN from a mounted file, never an
+the render is refused without them. It cannot be the pool's credential: each
+domain's runtime role is revoked from the other domains, so a dump taken through
+one would be silently partial. Give each domain a read-only role on that
+domain's schema alone. Every job reads its DSN from a mounted file, never an
 environment variable.
 
 The chart provisions no storage. Create the three claims yourself, and give them

@@ -146,15 +146,6 @@ broker and connect that instead:
 
 The broker owns the LDAP bind; the CDR sees only signed tokens.
 
-## Multi-tenant deployments
-
-Tenancy is also credential-derived: the tenant is read from a JWT claim per
-request (see [multi-tenancy](security.md#multi-tenancy)), so a multi-tenant
-IdP setup simply issues the tenant claim alongside the roles. No client
-(including the viewer) chooses a tenant; the credential does. There is a
-development header override, and setting it hands tenant selection to the
-client, so leave it unset.
-
 ## Serving SMART apps
 
 If your IdP is also the authorization server for SMART App Launch apps, the same

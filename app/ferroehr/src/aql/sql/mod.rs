@@ -26,7 +26,7 @@
 //! ## Coupling to the storage schema
 //!
 //! The builder references the `node`/`version`/`ehr`/`audit` column
-//! vocabulary directly and encodes the nested-set, `sys_period` and
+//! vocabulary directly and encodes the nested-set, tier and
 //! `branch_number` semantics of the greenfield store;
 //! the planner's own structure-root notion is the RM model's
 //! ([`openehr_rm::v1_2::model::is_structure_root`], kept in lockstep with the

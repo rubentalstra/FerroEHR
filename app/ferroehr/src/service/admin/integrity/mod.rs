@@ -495,7 +495,7 @@ impl FerroEhrService {
              FROM version \
              WHERE ($1::uuid IS NULL OR (vo_id, sys_version) > ($1::uuid, $2::int)) \
                AND ($4::uuid IS NULL OR ehr_id = $4::uuid) \
-               AND ($5::timestamptz IS NULL OR lower(sys_period) >= $5::timestamptz) \
+               AND ($5::timestamptz IS NULL OR committed_at >= $5::timestamptz) \
                AND ($6::uuid IS NULL OR vo_id = $6::uuid) \
                AND ($6::uuid IS NULL OR $7::int IS NULL OR sys_version = $7::int) \
              ORDER BY vo_id, sys_version \

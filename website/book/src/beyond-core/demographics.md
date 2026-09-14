@@ -8,7 +8,7 @@ the EHR APIs.
 
 The demographic endpoints are **always mounted** (there is no feature switch)
 and are subject to the same authentication and authorization as the rest of the
-API. See [Security & multi-tenancy](../security.md).
+API. See [Security](../security.md).
 
 > [!NOTE]
 > The party wire API is defined by the openEHR REST specification's

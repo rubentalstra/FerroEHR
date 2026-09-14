@@ -87,7 +87,7 @@ const SUBJECT_PSEUDONYM_LABEL: &str = "ferroehr:subject-pseudonym:v1";
 pub enum KeyDomain {
     /// The clinical record (`ehr`, `cold`).
     Ehr,
-    /// The identities of record subjects (`demographic`, `cold_demographic`).
+    /// The identities of record subjects (the `party` domain).
     Demographic,
     /// The party-to-EHR resolve map.
     Linkage,

@@ -181,7 +181,7 @@ pub struct VersionSource {
 #[derive(Debug, Clone, PartialEq)]
 pub enum VersionScope {
     /// `LATEST_VERSION` (the default) — the current version
-    /// (`upper_inf(sys_period)` partial index).
+    /// (the head row's `trunk_head_sys_version`).
     Latest,
     /// `ALL_VERSIONS` — every version (the temporal table unfiltered; supported
     /// from day one by design).

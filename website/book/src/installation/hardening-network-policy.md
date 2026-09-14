@@ -1,14 +1,14 @@
 # Namespaces, network & policy
 
-Where the release's boundaries are drawn: namespace scoping, the two ways to
-isolate tenants, the decisions not to adopt a mesh or a second policy engine,
+Where the release's boundaries are drawn: namespace scoping, how organisations
+are separated, the decisions not to adopt a mesh or a second policy engine,
 resource bounds in four nested layers, the ingress policy that narrows ports
 before it narrows sources, and deny-by-default egress: the one control on these
 pages that is not free.
 
 <!-- toc -->
 
-## Namespaces and the two tenant models
+## Namespaces, and one instance per organisation
 
 **Ours, and satisfied by construction.** Every object the chart renders is
 namespace-scoped: Deployment, Service, ConfigMap, Secret, ServiceAccount,
@@ -20,21 +20,25 @@ cluster-scoped object of any kind**, and no template hard-codes a namespace: eve
 reference resolves within the release's own namespace. So two releases in two
 namespaces cannot collide, and neither can reach the other's Secrets.
 
-Two ways to isolate tenants, with genuinely different blast radii; choose
-deliberately:
+**Separating organisations is a release per organisation**, each in its own
+namespace with its own database. FerroEHR carries no in-database tenancy, and
+that is where openEHR puts the boundary: an openEHR system is one organisation's
+repository, and multi-tenancy is something the infrastructure beneath it does
+with several such systems (BASE `architecture_overview`
+`master06-design_of_the_ehr.adoc` §The EHR System).
 
-| | Namespace per tenant | In-process multi-tenancy (`config.tenancy.enabled`) |
-|---|---|---|
-| Isolation boundary | Kubernetes: separate Secrets, NetworkPolicies, quotas, RBAC | one process, one database; tenant from a JWT claim, enforced by PostgreSQL row-level security |
-| Blast radius of an application-level bug | one tenant | potentially all tenants in the release |
-| Blast radius of a compromised database credential | one tenant's database | every tenant in that database |
-| Cost | one Deployment, one connection pool, one image pull per tenant | one deployment for all |
+What that buys, against the in-process alternative it replaces:
 
-The stronger boundary is a namespace and a database per tenant; the cheaper one is
-the tenancy feature. A deployment holding data for organizations that must not be
-able to reach each other under any single failure should prefer the first, and
-should not treat the second as equivalent because the wire behaviour looks the
-same.
+| | One release per organisation |
+|---|---|
+| Isolation boundary | Kubernetes plus PostgreSQL: separate Secrets, NetworkPolicies, quotas, RBAC, and a separate database |
+| Blast radius of an application-level bug | one organisation, because a query has nothing else to reach |
+| Blast radius of a compromised database credential | one organisation's database |
+| Cost | one Deployment, one connection pool and one image pull per organisation |
+
+The cost is real and it is the price of the boundary. A shared process scoped by
+a row predicate is cheaper and is not equivalent, however similar the wire
+behaviour looks.
 
 ## Service mesh: a recorded decision
 

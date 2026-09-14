@@ -22,7 +22,7 @@
 //!   folded one-statement version commit, lineage-tip close, and the
 //!   ride-along folder-membership + event-outbox writes.
 //! - [`import`] — the EHR-Extract / archive-load write path: explicit
-//!   `sys_period` version rows, lineage close-at, container-state read.
+//!   `committed_at` version rows, the head sync, container-state read.
 //! - [`read`] — the full version reads ([`read::StoredVersion`]: metadata + body +
 //!   attestations) by current / ordinal / tree id / instant.
 //! - [`placement`] — the version-tree placement reads (lineage tip, next

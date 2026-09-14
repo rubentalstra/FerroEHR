@@ -194,7 +194,7 @@ evaluation, not for production:
   surface, including the admin API. The `ADMIN` / `USER` / `READONLY`
   separation is switched on by setting `[authz.rbac] enabled = true` and giving
   each user an explicit `roles` list; see
-  [Security & multi-tenancy](../security.md).
+  [Security](../security.md).
 - **Admin API enabled:** so the optional viewer's panels work.
 - **Management introspection enabled**, with `info` and `metrics` at `private`,
   `prometheus` at `public`, and `env` and `loggers` at `admin_only`.
@@ -212,7 +212,7 @@ evaluation, not for production:
 > a server, replace the user store (or point it at an identity provider), turn
 > RBAC on, restrict CORS, close the admin API, and terminate TLS in front of the
 > server. The [configuration reference](configuration.md) and
-> [Security & multi-tenancy](../security.md) cover each of these.
+> [Security](../security.md) cover each of these.
 
 To change any of it without editing the Compose file, add `FERROEHR__*`
 variables to the `ferroehr` service's `environment:` block; the environment

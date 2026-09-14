@@ -35,7 +35,7 @@ const DEMOGRAPHIC_PARTY_ROOTS: [&str; 5] = ["PERSON", "ORGANISATION", "GROUP", "
 /// `master02-demographic_package.adoc` §Archetyping), so its content is
 /// decomposed exactly like composition content: the container gets a row, its
 /// `ITEM_TREE` and `ELEMENT` descendants get theirs, and a full archetype HRID
-/// on the container becomes the `citem_num` ancestor its at-coded leaves are
+/// on the container becomes the archetyped ancestor its at-coded leaves are
 /// scoped by. Leaving them inline on the party root put that content out of
 /// reach of every row-level predicate.
 ///
