@@ -29,8 +29,12 @@ readonly RULE='.claude/rules/sqlx-conventions.md §Migrations'
 # A = added (allowed); M = modified, D = deleted, R = renamed, C = copied,
 # T = type change (all refused).
 refused_changes() {
-  local base="$1" head="$2"
-  git diff --name-status --diff-filter=MDRCT "$base" "$head" -- "$MIGRATIONS" \
+  local base="$1" head="$2" fork
+  # The comparison is against the MERGE BASE, not the base branch's tip: a
+  # branch that fell behind a main which added a migration must not be told
+  # it deleted that file (#3358).
+  fork="$(git merge-base "$base" "$head")"
+  git diff --name-status --diff-filter=MDRCT "$fork" "$head" -- "$MIGRATIONS" \
     | awk -F'\t' '{ print $1 "\t" $2 }'
 }
 
@@ -80,9 +84,14 @@ self_test() {
     printf 'SELECT 1; -- typo fix\n' > "$MIGRATIONS/ehr/0001_baseline.sql"
     rm "$MIGRATIONS/ehr/0002_second.sql"
     git add -A && git commit -qm work
+    # Meanwhile the base branch gained a migration the work branch never saw:
+    # a tip-to-head diff would report it as deleted (#3358).
+    git switch -q base
+    printf 'SELECT 4;\n' > "$MIGRATIONS/ehr/0004_later.sql"
+    git add -A && git commit -qm later
   )
   local found
-  found="$(cd "$tmp" && git diff --name-status --diff-filter=MDRCT base work -- "$MIGRATIONS")"
+  found="$(cd "$tmp" && refused_changes base work)"
   local failures=0
   grep -q '0001_baseline.sql' <<<"$found" || { echo "self-test: a MODIFIED migration was not caught" >&2; failures=1; }
   grep -q '0002_second.sql' <<<"$found" || { echo "self-test: a DELETED migration was not caught" >&2; failures=1; }
@@ -90,10 +99,14 @@ self_test() {
     echo "self-test: an ADDED migration was wrongly caught" >&2
     failures=1
   fi
+  if grep -q '0004_later.sql' <<<"$found"; then
+    echo "self-test: a migration the BASE gained after the branch point was wrongly caught" >&2
+    failures=1
+  fi
   if [[ "$failures" -ne 0 ]]; then
     return 1
   fi
-  echo "migration-immutability: self-test OK (modified and deleted caught, added allowed)."
+  echo "migration-immutability: self-test OK (modified and deleted caught, added and behind-main allowed)."
 }
 
 case "${1:-}" in
