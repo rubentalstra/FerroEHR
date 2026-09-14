@@ -1362,13 +1362,10 @@ pub async fn stamp_subject_posture(pool: &PgPool, required: bool) -> Result<(), 
 /// [`DbError::Sqlx`] when the write fails.
 pub async fn stamp_tenancy_posture(pool: &PgPool, multi: bool) -> Result<(), DbError> {
     let value = if multi { "multi" } else { "single" };
-    sqlx::query(
-        "INSERT INTO ext.posture (key, value) VALUES ('tenancy', $1) \
-         ON CONFLICT (key) DO UPDATE SET value = EXCLUDED.value, stamped_at = now()",
-    )
-    .bind(value)
-    .execute(pool)
-    .await?;
+    sqlx::query("SELECT ext.stamp_posture('tenancy', $1)")
+        .bind(value)
+        .execute(pool)
+        .await?;
     Ok(())
 }
 

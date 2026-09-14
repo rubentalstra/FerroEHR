@@ -16,6 +16,12 @@
 -- GUC only under the multi posture, so the refusal reaches exactly the
 -- connections that bypass the server. No openEHR spec governs tenancy: our
 -- own design/extension.
+--
+-- Both functions are SECURITY DEFINER over the migrator-owned table: the
+-- reader runs inside every row policy for every role, and the split runtime
+-- roles do not exist yet when this set runs on a fresh database (the
+-- demographic set creates them), so the table itself is granted to nobody and
+-- callers hold EXECUTE alone.
 CREATE TABLE ext.posture (
     key        text        NOT NULL,
     value      text        NOT NULL,
@@ -23,12 +29,14 @@ CREATE TABLE ext.posture (
     CONSTRAINT pk_ext_posture PRIMARY KEY (key)
 );
 COMMENT ON TABLE ext.posture IS
-    'Deployment posture the server stamps at boot and the ext functions read: tenancy = multi | single. Not tenant-scoped, no RLS.';
+    'Deployment posture the server stamps at boot and the ext functions read: tenancy = multi | single. Owned by the migrator, read and written through the definer functions only. Not tenant-scoped, no RLS.';
 
 -- Evaluated only when the GUC is unset (COALESCE stops at the first non-null
 -- argument), so a scoped statement never pays the table read.
 CREATE FUNCTION ext.default_tenant_or_refuse() RETURNS uuid
-LANGUAGE plpgsql STABLE AS $$
+LANGUAGE plpgsql STABLE SECURITY DEFINER
+SET search_path = ext, pg_catalog
+AS $$
 DECLARE
     posture text;
 BEGIN
@@ -54,22 +62,24 @@ $$;
 COMMENT ON FUNCTION current_tenant_id() IS
     'The current request''s tenant id from the ferroehr.tenant_id session GUC. Unset: the reserved default tenant (nil uuid) under the single posture, a refusal under the multi posture (ext.posture, key tenancy). Read by the tenant_id column DEFAULTs and the RLS policies.';
 
--- Every runtime role reads the posture (its row policies call the reader);
--- the clinical runtime stamps it. Guarded like every role block in the tree.
+-- The stamp the server writes at boot. Executable by the runtime writers only:
+-- ferroehr_app here, ferroehr_ehr in demographic/0007 once that set has
+-- created it.
+CREATE FUNCTION ext.stamp_posture(a_key text, a_value text) RETURNS void
+LANGUAGE sql SECURITY DEFINER
+SET search_path = ext, pg_catalog
+AS $$
+    INSERT INTO ext.posture (key, value) VALUES (a_key, a_value)
+    ON CONFLICT (key) DO UPDATE SET value = EXCLUDED.value, stamped_at = now()
+$$;
+COMMENT ON FUNCTION ext.stamp_posture(text, text) IS
+    'Write one posture key; the server calls it at boot with the state the configuration declares.';
+REVOKE ALL ON FUNCTION ext.stamp_posture(text, text) FROM PUBLIC;
 DO $$
 BEGIN
     IF EXISTS (SELECT FROM pg_roles WHERE rolname = 'ferroehr_app') THEN
-        GRANT SELECT, INSERT, UPDATE ON ext.posture TO ferroehr_app;
-        GRANT SELECT ON ext.posture TO ferroehr_reader;
+        GRANT EXECUTE ON FUNCTION ext.stamp_posture(text, text) TO ferroehr_app;
     ELSE
-        RAISE NOTICE 'skipping ext.posture grants (roles absent — see the role block NOTICE)';
-    END IF;
-    IF EXISTS (SELECT FROM pg_roles WHERE rolname = 'ferroehr_ehr') THEN
-        GRANT SELECT, INSERT, UPDATE ON ext.posture TO ferroehr_ehr;
-        GRANT SELECT ON ext.posture
-            TO ferroehr_ehr_reader, ferroehr_demographic, ferroehr_demographic_reader;
-    END IF;
-    IF EXISTS (SELECT FROM pg_roles WHERE rolname = 'ferroehr_linkage') THEN
-        GRANT SELECT ON ext.posture TO ferroehr_linkage;
+        RAISE NOTICE 'skipping ext.stamp_posture grant (roles absent — see the role block NOTICE)';
     END IF;
 END $$;
