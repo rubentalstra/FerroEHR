@@ -3,10 +3,11 @@
 A clinical data repository holds PHI, so its access controls and audit trail
 are part of the product. This chapter covers the four
 security surfaces you configure when you deploy FerroEHR: **authentication**
-(who is calling), **authorization** (what they may do), **multi-tenancy**
-(isolating independent logical systems), and the **ATNA audit trail**
-(recording what happened). Each is independently configurable, and each is
-described here in terms of the environment variables you actually set.
+(who is calling), **authorization** (what they may do), the
+**pseudonymisation boundary** (which role reads which domain), and the **ATNA
+audit trail** (recording what happened). Each is independently configurable,
+and each is described here in terms of the environment variables you actually
+set.
 
 This chapter tells you **how to configure each control**. Its companions tell you
 the rest: the [Threat model](threat-model.md) states **what remains true after
@@ -22,8 +23,8 @@ sufficient for your deployment.
 Configuration follows the same pattern throughout: the server reads defaults,
 then the single `ferroehr.toml` file, then environment variables, with `__`
 separating nested keys. The security configuration groups live in
-distinct sections of `ferroehr.toml`: `[auth]` (authentication), `[tenancy]`
-(multi-tenancy), `[authz]` (authorization), and `[audit]`
+distinct sections of `ferroehr.toml`: `[auth]` (authentication), `[authz]`
+(authorization), `[privacy]` (the pseudonymisation boundary), and `[audit]`
 (the ATNA audit trail). Any key can be overridden with the matching
 `FERROEHR_*` environment variable shown below.
 
@@ -547,10 +548,9 @@ admission time inside a Kubernetes cluster is covered separately, in
 
 ## The pseudonymisation boundary
 
-Multi-tenancy separates one customer's data from another's. The
-pseudonymisation boundary separates *a record from the person it is about*,
-inside one tenant, and it is enforced by PostgreSQL grants rather than by the
-server's own routing: code that reaches for the wrong schema is a bug that can
+The pseudonymisation boundary separates *a record from the person it is
+about*, and it is enforced by PostgreSQL grants rather than by the server's own
+routing: code that reaches for the wrong schema is a bug that can
 be fixed, while a database role able to read two domains defeats the
 separation however correct the code is.
 
@@ -566,8 +566,8 @@ Three domains hold the three parts, each behind its own role:
 ```mermaid
 flowchart LR
     server["FerroEHR server"]
-    server -->|ferroehr_ehr| ehr[("ehr + cold<br/>clinical versions and nodes,<br/>keyed by an opaque subject pseudonym")]
-    server -->|ferroehr_demographic| demo[("demographic + cold_demographic<br/>parties, and national identifiers<br/>sealed under a per-tenant key")]
+    server -->|ferroehr_ehr| ehr[("clinical<br/>versions and nodes,<br/>keyed by an opaque subject pseudonym")]
+    server -->|ferroehr_demographic| demo[("party<br/>parties, and national identifiers<br/>sealed under a per-domain key")]
     server -->|ferroehr_linkage| link[("linkage<br/>which party is the subject<br/>of which EHR")]
     server -->|audit writer| audit[("audit<br/>ATNA record repository")]
     ehr -. barred .- demo

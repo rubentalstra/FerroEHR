@@ -24,9 +24,9 @@ Every versioned object (COMPOSITION, EHR_STATUS, EHR_ACCESS, FOLDER, the
 demographic party kinds) is stored twice over, deliberately, in one
 transaction:
 
-1. **`vo_version`** holds the version row: identity, version tree position,
-   validity interval, lifecycle state, and the canonical JSON body bytes
-   served verbatim on point reads.
+1. **`version`** holds the version row: identity, version tree position,
+   commit instant, lifecycle state, and the canonical JSON body bytes served
+   verbatim on point reads. It is written once and never updated.
 2. **`node`** holds the same content decomposed: one row per RM structure
    node, carrying a nested-set index and promoted predicate columns, so AQL
    never walks JSON to answer CONTAINS.
@@ -36,57 +36,61 @@ flowchart LR
     client[REST client] --> rest["ITS-REST adapter"]
     rest --> svc["service layer<br/>(validation, versioning)"]
     svc --> tx{{"one transaction<br/>per commit"}}
-    tx --> audit[(audit)]
+    tx --> audit[(commit_audit)]
     tx --> contrib[(contribution)]
-    tx --> vov[(vo_version)]
+    tx --> vov[(version)]
+    tx --> head[(vo_head)]
     tx --> node[(node)]
     vov -. "point read: body bytes verbatim" .-> rest
     node -. "AQL: interval joins + promoted columns" .-> rest
 ```
 
-The database is PostgreSQL 18, split into seven schemas:
+The database is PostgreSQL 18, split into five schemas:
 
 | Schema | Holds |
 |---|---|
-| `ehr` | the clinical CDR: versions, nodes, EHRs, contributions, templates, queries, tags |
-| `demographic` | the demographic pseudonymisation domain: party versions, nodes, contributions, audits, tags, and the sealed `national_identifier` values |
+| `ext` | FerroEHR's own `IMMUTABLE` helper functions (`openehr_magnitude`, `openehr_timestamp`), the runtime roles and the deployment posture |
+| `clinical` | the clinical CDR: versions, heads, nodes, EHRs, contributions, templates, queries, tags |
+| `party` | the demographic pseudonymisation domain: party versions, heads, nodes, contributions, commit audits, and the sealed `national_identifier` values |
 | `linkage` | the linkage pseudonymisation domain: `party_ehr`, which party is the subject of which EHR |
-| `ext` | FerroEHR's own `IMMUTABLE` helper functions (`openehr_magnitude`, `openehr_timestamp`) and the tenant context |
 | `audit` | the IHE ATNA Audit Record Repository (`audit_event`) |
-| `cold` | the clinical archival tier: FK-free mirrors of `vo_version` / `node` / `vo_attestation` |
-| `cold_demographic` | the same archival tier for the demographic domain |
 
-Five carry migrations of their own, each with its own `_sqlx_migrations`
-bookkeeping table: `ext`, `ehr`, `demographic`, `linkage` and `audit`. The two
-cold tiers are created by the sets that own them.
+Each carries its own migration set and its own `_sqlx_migrations` bookkeeping
+table, applied in that order. The archival tier is not a sixth schema: it is a
+partition of the relations it archives, described below.
+
+The instance is **single-tenant**. No relation carries a tenant column and no
+row policy scopes a read: several organisations are served by several
+instances. openEHR puts multi-tenancy at the layer that hosts several logical
+EHR systems rather than inside one (BASE `architecture_overview`
+`master06-design_of_the_ehr.adoc` §The EHR System).
 
 ### The three pseudonymisation domains
 
 Parties (PERSON, ORGANISATION, GROUP, AGENT, ROLE, PARTY_RELATIONSHIP) live in
-`demographic`, never in `ehr`, and the split is enforced by the database in both
-directions: `ehr.vo_version` refuses a row with no owning EHR, and
-`demographic.vo_version` refuses one that has one. The clinical record and the
+`party`, never in `clinical`, and the split is enforced by the database in both
+directions: each domain's `version` relation carries a `CHECK` admitting only
+its own kinds. The clinical record and the
 identity of its subject are therefore never in the same schema, the same
 archival tier, or the reach of the same runtime role — GDPR Art. 4(5) and
 Art. 32(1)(a), <https://eur-lex.europa.eu/eli/reg/2016/679/oj>. Which role reads
 which domain, and how a deployment turns the schema split into a credential
 split, is [Operations → Database roles](../operations.md#database-roles-and-least-privilege).
 
-The mechanism inside the server is deliberately small: the `demographic`
-relations carry the same names and the same column shape as the clinical ones
-(they are built from them with `CREATE TABLE ... LIKE`), and the pool serving
-each domain sets its own `search_path`. One set of storage code — the nested-set
-node codec, the versioning engine, the AQL path machinery — therefore serves
-both domains unchanged, and no SQL in the server names a domain schema. The one
-exception is the archival tier, whose mirrors live in a schema of their own: each
-primary schema carries an alias view (`cold_vo_version`, `cold_node`,
-`cold_vo_attestation`) over its own tier, so those statements travel by
-`search_path` too.
+The mechanism inside the server is deliberately small: the two domains' change
+control and node relations are **rendered from one DDL template**, so they carry
+the same names, the same column shape, the same indexes and the same foreign
+keys and cannot drift; and the pool serving each domain sets its own
+`search_path`. One set of storage code — the nested-set node codec, the
+versioning engine, the AQL path machinery — therefore serves both domains
+unchanged, and no SQL in the server names a domain schema. A test renders both
+files and refuses any difference beyond the kind `CHECK` and the foreign keys
+into the `ehr` relation, which the party domain has none of.
 
 The third domain is one table. `linkage.party_ehr` records which party is the
 subject of which EHR, temporally: a merge or a split closes the mapping in
 force and opens its successor, and the temporal primary key
-(`PRIMARY KEY (tenant_id, party_id, sys_period WITHOUT OVERLAPS)`) admits one
+(`PRIMARY KEY (party_id, sys_period WITHOUT OVERLAPS)`) admits one
 open mapping per party. It carries identifiers and a validity period and
 nothing else, because a row here is already the additional information that
 re-attributes a record to a person. It holds no foreign key into either
@@ -104,26 +108,28 @@ this is FerroEHR's own design.
 
 ```mermaid
 erDiagram
-    ehr ||--o{ contribution : "owns (NULL for demographics)"
-    contribution ||--|| audit : "its own audit"
-    contribution ||--o{ vo_version : "change set members"
-    audit ||--o{ vo_version : "commit_audit"
-    vo_version ||--o{ node : "decomposed content (per version)"
-    vo_version ||--o{ vo_attestation : "appended attestations"
-    template_ref ||--o{ vo_version : "template identity (FK)"
+    ehr ||--o{ contribution : "owns (NULL for parties)"
+    contribution ||--|| commit_audit : "its own audit"
+    contribution ||--o{ version : "change set members"
+    commit_audit ||--o{ version : "commit_audit"
+    vo_head ||--o{ version : "the object's current heads"
+    version ||--o{ node : "decomposed content (per version)"
+    version ||--o{ vo_attestation : "appended attestations"
+    template_ref ||--o{ version : "template identity (FK)"
     template_store ||--|| template_ref : "registers"
     ehr ||--o{ ehr_folder : "folder hierarchies (rank order)"
     ehr ||--o{ item_tag : "ITEM_TAGs"
 
-    vo_version {
+    version {
+        text tier PK "hot | cold, the partition key"
         uuid vo_id PK
         int sys_version PK "opaque commit ordinal"
         text kind "COMPOSITION | EHR_STATUS | ..."
-        uuid ehr_id FK "NULL for demographics"
+        uuid ehr_id FK "NULL for parties"
         int trunk_version "VERSION_TREE_ID part 1"
         int branch_number "0 = trunk"
         int branch_version "0 = trunk"
-        tstzrange sys_period "[committed, superseded)"
+        timestamptz committed_at "validity is derived from it"
         text lifecycle_state "532/553/523/800/801"
         text creating_system_id "OBJECT_VERSION_ID middle segment"
         text preceding_version_uid
@@ -131,15 +137,26 @@ erDiagram
         jsonb wrapped_original "IMPORTED_VERSION discriminator"
         text body "canonical JSON bytes, lz4"
     }
+    vo_head {
+        uuid vo_id PK
+        int head_sys_version "latest_version, any lineage"
+        int trunk_head_sys_version "LATEST_VERSION"
+        text lifecycle_state "of the trunk head"
+        text tier "hot | cold"
+        timestamptz archived_at
+        timestamptz restricted_at
+        timestamptz retention_hold_at
+    }
     node {
+        text tier PK "hot | cold, the partition key"
         uuid vo_id PK
         int sys_version PK
         int num PK "pre-order number, root = 0"
         int num_cap "subtree = num..=num_cap"
         int parent_num
-        int citem_num "nearest archetyped ancestor"
         text rm_type
         text archetype "case-folded"
+        text name_code "promoted name/defining_code"
         text path "materialized, COLLATE C"
         jsonb data "canonical fragment, children pruned"
         timestamptz context_start "promoted, COMPOSITION root only"
@@ -148,7 +165,7 @@ erDiagram
 
 Supporting tables not drawn above: `stored_query` (stored AQL, qualified name
 plus SemVer), `archetype_store` and `adl2_artefact` (the two DEFINITION
-dialects), `ehr_index`, `vo_archive` (the admin archive marker), and the
+dialects), `ehr_index`, the `restriction` and retention registers, and the
 `sp_*` family (Subject Proxy Service). The `ehr` table itself carries the
 three creation-immutable values the RM names (`system_id`, `id`,
 `time_created`) plus promoted copies of the current EHR_STATUS subject
@@ -156,27 +173,40 @@ reference and `is_queryable` / `is_modifiable` flags, which back the
 one-EHR-per-subject rule, the AQL full-population gate, and the content-write
 guard without probing a JSON root per request.
 
-## Versioning: one temporal table, no history pairs
+## Versioning: an append-only table and one mutable head row
 
 Most CDRs split storage into a "current" table and a "_history" table.
-FerroEHR does not: `vo_version` is one temporal table, and currency is a
-predicate, not a location.
+FerroEHR does not, and it does not carry a validity interval either.
 
-- Every version row carries `sys_period tstzrange`, the half-open validity
-  interval `[committed, superseded)`. The current trunk version of an object
-  is simply the row with `upper_inf(sys_period) AND branch_number = 0`, held
-  unique by a partial index, which is what realizes the RM's
-  `latest_trunk_version`.
-- `ALL_VERSIONS` is the unfiltered table; `LATEST_VERSION` is that partial
-  index. Time travel is a range containment test on `sys_period`.
+- **`version` is written once.** A version row and its node rows are never
+  updated after commit, which is the property BASE `architecture_overview`
+  `master07-security.adoc` §Integrity states. A supersession is therefore one
+  insert: no close-out statement, no dead tuple, no index churn on a column
+  that changed.
+- **Validity is derived from `committed_at`.** The RM already copies the
+  contribution audit into every version (RM `common` change control, §Committal
+  and Audits), so the commit instant is a column of the version row rather than
+  a join, and version *i* is valid over `[committed_at_i, committed_at_i+1)`.
+  Time travel is "the trunk row with the greatest `committed_at` at or before
+  the instant", one descending index probe.
+- **`vo_head` is the one mutable row per object**, and the only row a commit
+  updates. `trunk_head_sys_version` IS `LATEST_VERSION` (the RM's
+  `latest_trunk_version`); `head_sys_version` is its `latest_version` across
+  every lineage. It also carries the lifecycle state, the template, the tier,
+  the archive marker and the legal marks, so "what is current" is one
+  primary-key probe. None of the columns a commit changes appears in an index,
+  which is the condition PostgreSQL 18 §"Heap-Only Tuples (HOT)" states for a
+  heap-only update.
+- `ALL_VERSIONS` is the unfiltered table; `LATEST_VERSION` is the head row's
+  answer.
 - The spec-facing version identity is the three-part `OBJECT_VERSION_ID`
   `{object_id, creating_system_id, version_tree_id}`, stored as `vo_id` +
   `creating_system_id` + the `trunk_version`/`branch_number`/`branch_version`
   triple and held unique together. `sys_version` is deliberately not that
   number: it is an opaque per-object commit ordinal (1..n across trunk and
   branch commits) used as the join key for `node` and `vo_attestation`.
-- Version keys and generated ids use PostgreSQL 18's native `uuidv7()`, so
-  keys are time-ordered and index-friendly.
+- Generated ids use PostgreSQL 18's native `uuidv7()`, so keys are time-ordered
+  and index-friendly.
 - A logical delete writes a content-less version with lifecycle state `523`;
   nothing is physically deleted.
 - An import (EHR-Extract, archive load) stores the wrapped
@@ -185,22 +215,22 @@ predicate, not a location.
   committal. `NULL` there means a locally created `ORIGINAL_VERSION`;
   `NOT NULL` means the row is an `IMPORTED_VERSION`.
 
-Non-overlap per lineage (one valid version per lineage at any instant) is
-enforced by construction rather than by GiST exclusion constraints, which
-were measured to serialize concurrent inserts: at most one open row per
-lineage exists (the partial unique indexes), and every write closes the open
-row and inserts its successor at the same `now()` inside one transaction, so
-half-open ranges meet exactly.
+One valid version per lineage at any instant now holds by construction rather
+than by any constraint: a version is superseded exactly when a later commit
+ordinal exists under the same branch number, and a fork onto a branch carries a
+branch number of its own, so it does not supersede the trunk.
 
 ```mermaid
 flowchart TD
     subgraph one_object ["one versioned object (vo_id)"]
-        v1["sys_version 1<br/>1.0.0 (trunk)<br/>sys_period [t1, t2)"]
-        v2["sys_version 2<br/>2.0.0 (trunk)<br/>sys_period [t2, t3)"]
-        v3["sys_version 4<br/>3.0.0 (trunk, CURRENT)<br/>sys_period [t3, ∞)"]
-        b1["sys_version 3<br/>2.1.1 (branch, open)<br/>sys_period [t2b, ∞)"]
+        v1["sys_version 1<br/>1.0.0 (trunk)<br/>committed_at t1"]
+        v2["sys_version 2<br/>2.0.0 (trunk)<br/>committed_at t2"]
+        v3["sys_version 4<br/>3.0.0 (trunk)<br/>committed_at t3"]
+        b1["sys_version 3<br/>2.1.1 (branch tip)<br/>committed_at t2b"]
+        head["vo_head<br/>trunk_head_sys_version 4<br/>head_sys_version 4"]
         v1 --> v2 --> v3
         v2 -.->|branch 1| b1
+        head -.->|LATEST_VERSION| v3
     end
 ```
 
@@ -270,10 +300,10 @@ sequenceDiagram
     S->>S: validate (RM invariants, WebTemplate, terminology)
     S->>PG: BEGIN
     S->>PG: advisory lock on vo_id (serializes the lineage)
-    S->>PG: INSERT audit (change_type, committer, time_committed = now())
-    S->>PG: INSERT contribution (audit_id, ehr_id)
-    S->>PG: UPDATE vo_version SET sys_period = [.., now()) on the open row
-    S->>PG: INSERT vo_version (new tip, sys_period = [now(), ∞), body bytes)
+    S->>PG: INSERT commit_audit (change_type, committer, time_committed = now())
+    S->>PG: INSERT contribution (commit_audit_id, ehr_id)
+    S->>PG: INSERT version (new tip, committed_at = now(), body bytes)
+    S->>PG: UPSERT vo_head (the object's new heads) — heap-only
     S->>PG: INSERT node rows (decomposed fragments, nested-set numbers)
     S->>PG: COMMIT
     S-->>R: OBJECT_VERSION_ID of the new version
@@ -283,9 +313,13 @@ Details that matter:
 
 - `time_committed` is always server-computed, never client-supplied; the RM
   requires the committal time to reflect the EHR server's own clock.
-- The close-out UPDATE and the successor INSERT use the same `now()`, which
-  is what makes the half-open intervals meet with no gap and no overlap.
-- The body bytes in `vo_version.body` are materialized from the accepted,
+- There is no close-out statement: the head row advancing past the previous
+  version is what supersedes it, and that update is heap-only because none of
+  the columns it changes is indexed.
+- The whole chain above is ONE statement — a data-modifying CTE — so the audit,
+  the contribution, the version row, the head row and every node row commit or
+  roll back together and cost one round trip.
+- The body bytes in `version.body` are materialized from the accepted,
   uid-stamped value **before** decomposition, stored as `text` (not `jsonb`,
   which would re-order keys) so a point read serves the canonical
   `_type`-first field order verbatim.
@@ -293,7 +327,7 @@ Details that matter:
 ## Read paths
 
 **Point reads** (GET composition, EHR_STATUS, a named version) resolve the
-version row and serve `vo_version.body` verbatim: one detoast, no
+version row and serve `version.body` verbatim: one detoast, no
 re-aggregation, zero translation between storage and wire.
 
 **AQL** plans over `node`, with one exception: a whole-object projection
@@ -308,38 +342,52 @@ helper realizing DV_ORDERED ordering semantics) and `ext.openehr_timestamp`
 uses no jsonpath item methods, no `JSON_TABLE` and no GIN index. The whole
 pipeline has [its own page](aql-engine.md).
 
-**Time travel** (a version at a point in time) is a `sys_period @>
-timestamptz` containment test on the same one table.
+**Time travel** (a version at a point in time) is the trunk row with the
+greatest `committed_at` at or before the instant, served by a descending index
+on the same one table.
 
-## The cold archival tier
+## The archival tier is a partition
 
-Admin-archived objects move physically out of the primary tables into their
-domain's cold schema — `cold` for clinical content, `cold_demographic` for
-parties (FK-free mirror relations of `vo_version`, `node`, `vo_attestation` in
-both cases) — transactionally and reversibly. Archiving never merges the two
-domains. The consequences are deliberate and visible:
+`version`, `node` and `vo_attestation` are each `PARTITION BY LIST (tier)` with
+a `hot` and a `cold` partition and no default partition. Archiving an EHR is one
+statement — `UPDATE version SET tier = 'cold' WHERE ehr_id = $1` — and
+PostgreSQL moves the rows between partitions; the `node` and `vo_attestation`
+foreign keys carry their rows across with `ON UPDATE CASCADE`. Restore is the
+reverse statement. Archiving never merges the two pseudonymisation domains: each
+has its own partitions.
 
-- every full version read and every whole-repository reader (exports, dumps)
-  goes through the union views in one statement; there is no primary-miss
-  retry;
-- **AQL stays primary-only**: archived content leaves the queryable store
-  until restored;
-- a write to an archived object thaws it back to the primary tier first.
+The consequences are deliberate and visible:
+
+- **foreign keys hold across the tier**, which a separate mirror table could
+  never do, so an archived version still references its contribution and its
+  commit audit;
+- **every read path reaches cold by naming the parent relation**, so an
+  archived object stays retrievable in one statement with no union view, no
+  primary-miss retry and nothing to rebuild when a column is added;
+- **AQL stays hot-only**: the emitter writes `tier = 'hot'` as a literal, which
+  PostgreSQL prunes at plan time, so archived content leaves the queryable store
+  until it is restored;
+- a write to an archived object thaws it back to the hot tier first, so a
+  versioned object is never split across tiers;
+- the cold partitions carry the primary key alone, because nothing queries
+  them, and can sit on a cheaper tablespace.
 
 ```mermaid
 flowchart LR
-    subgraph primary ["ehr schema (hot)"]
-        pv[(vo_version)]
-        pn[(node)]
+    subgraph version ["version — PARTITION BY LIST (tier)"]
+        vh[(hot)]
+        vc[(cold)]
     end
-    subgraph coldtier ["cold schema (archive)"]
-        cv[(cold.vo_version)]
-        cn[(cold.node)]
+    subgraph node ["node — PARTITION BY LIST (tier)"]
+        nh[(hot)]
+        nc[(cold)]
     end
-    pv -- "admin archive (transactional move)" --> cv
-    cv -- "restore / thaw-on-write" --> pv
-    pv -. "AQL reads primary only" .-> aql[AQL engine]
-    pv & cv -. "union views" .-> dump[whole-repo readers]
+    vh -- "UPDATE version SET tier = 'cold'" --> vc
+    vc -- "the reverse statement" --> vh
+    nh -. "carried across by ON UPDATE CASCADE" .-> nc
+    aql["AQL: tier = 'hot' — pruned at plan time"] --> vh
+    aql --> nh
+    point["point read: the parent relation, either tier"] --> version
 ```
 
 No openEHR spec governs archival tiers; this is FerroEHR's own design.
@@ -355,12 +403,17 @@ The shape follows documented PostgreSQL behaviour rather than habit:
   purpose: it serves the whole `body` in one detoast.
 - GIN indexes serve neither ranges nor ordering, so CONTAINS and ORDER BY
   ride integers and promoted btree columns instead.
-- One temporal version table (`tstzrange`, partial unique indexes,
-  `uuidv7()`) replaces current/history pairs, with `ALL_VERSIONS` a plain
-  scan of one relation. Whether it is cheaper is a measurement this page does
-  not carry; the version table's close-out update is not a heap-only update,
-  because the range column sits in its index predicates, and the storage
-  redesign (#3337) replaces it with an append-only table for that reason.
+- An append-only version table replaces current/history pairs, with
+  `ALL_VERSIONS` a plain scan of one relation. The reason it is append-only is
+  PostgreSQL's own rule for a heap-only update: it applies when "the update does
+  not modify any columns referenced by the table's indexes" (PostgreSQL 18,
+  "Heap-Only Tuples (HOT)"). A validity interval cannot satisfy that, because
+  the currency predicates index it; a separate head row whose updated columns
+  are in no index can, and does.
+- Archival is a partition rather than a mirror table for the same kind of
+  reason: an `UPDATE` that changes a partition key moves the row, so the tier
+  becomes a property of a row in one relation instead of a second relation with
+  no foreign keys and a union view over it.
 
 Four comments in the baseline migration cite measurements (a POC-window
 p99, the share of node rows carrying at-code archetype text, the average
