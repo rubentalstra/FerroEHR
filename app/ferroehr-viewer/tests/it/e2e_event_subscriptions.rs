@@ -30,7 +30,7 @@
 //! entirely, and these journeys say so in their failure message rather than
 //! passing vacuously. The hidden-when-absent half is unit-tested in
 //! `ferroehr_viewer::subscriptions` against a probe that found no surface —
-//! the same split as the admin-group, management and tenancy journeys.
+//! the same split as the admin-group and management journeys.
 //!
 //! The group is mounted under `/admin`, so the CDR's coarse RBAC classes every
 //! call here as admin work: every scene signs in as the ADMIN dev user.

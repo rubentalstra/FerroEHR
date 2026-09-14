@@ -35,7 +35,7 @@ pub struct IdentifierProtectionConfig {
     /// (`FERROEHR__DEMOGRAPHIC__IDENTIFIER_PROTECTION__KEY`), or its
     /// `key_file` sibling.
     ///
-    /// One key per deployment; the per-tenant cipher and lookup subkeys are
+    /// One key per deployment; the per-domain cipher and lookup subkeys are
     /// derived from it, so rotating it is a re-encryption rather than an edit
     /// (the runbook is in the operations page).
     pub key: Option<crate::config::secret::Secret>,

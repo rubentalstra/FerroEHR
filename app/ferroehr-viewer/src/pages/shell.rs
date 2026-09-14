@@ -71,8 +71,6 @@ fn nav_key(path: &str) -> &'static str {
         "/system"
     } else if path.starts_with("/operations") {
         "/operations"
-    } else if path.starts_with("/tenants") {
-        "/tenants"
     } else if path.starts_with("/subscriptions") {
         "/subscriptions"
     } else if path.starts_with("/fhir") {
@@ -131,11 +129,10 @@ fn apply_dark(theme: RwSignal<thaw::Theme>, dark: bool) {
 pub fn AppShell() -> impl IntoView {
     let session = Resource::new(|| (), |()| current_session());
     let status = Resource::new(|| (), |()| fetch_status());
-    // The four surface probes are created HERE, in component setup — never
+    // The three surface probes are created HERE, in component setup — never
     // inside a Suspend closure, which re-runs and would re-create the resource.
-    // They gate the operations, tenants, FHIR and subscriptions nav entries.
+    // They gate the operations, FHIR and subscriptions nav entries.
     let management = crate::management::management_gate();
-    let tenants = crate::tenants::tenant_gate();
     let fhir = crate::fhir::fhir_gate();
     let subscriptions = crate::subscriptions::event_subscription_gate();
     let theme = thaw::ConfigInjection::expect_context().theme;
@@ -262,7 +259,6 @@ pub fn AppShell() -> impl IntoView {
                 session
                 status
                 management
-                tenants
                 fhir
                 subscriptions
                 theme
@@ -287,8 +283,6 @@ fn AuthedChrome(
     management: Resource<
         Result<crate::management::ManagementAvailability, crate::error::ViewerError>,
     >,
-    /// The tenancy-extension probe (gates the tenants nav entry).
-    tenants: Resource<Result<crate::tenants::TenantAvailability, crate::error::ViewerError>>,
     /// The FHIR-connector probe (gates the FHIR nav entry).
     fhir: Resource<Result<crate::fhir::FhirAvailability, crate::error::ViewerError>>,
     /// The event-subscription probe (gates the subscriptions nav entry).
@@ -310,7 +304,6 @@ fn AuthedChrome(
         session,
         status,
         management,
-        tenants,
         fhir,
         subscriptions,
         theme,
@@ -338,8 +331,6 @@ enum NavProbe {
     Fhir,
     /// The event-subscription admin API (see [`crate::subscriptions`]).
     Subscriptions,
-    /// The tenancy extension (see [`crate::tenants`]).
-    Tenants,
     /// The management surface, off by default (see [`crate::management`]).
     Management,
 }
@@ -380,12 +371,6 @@ const NAV_SLOTS: [NavSlot; 13] = [
         "/subscriptions",
         "Subscriptions",
         icondata_lu::LuRadioTower,
-    ),
-    NavSlot::Gated(
-        NavProbe::Tenants,
-        "/tenants",
-        "Tenants",
-        icondata_lu::LuBuilding2,
     ),
     NavSlot::Divider,
     NavSlot::Gated(
@@ -453,7 +438,6 @@ fn authed_shell(
     management: Resource<
         Result<crate::management::ManagementAvailability, crate::error::ViewerError>,
     >,
-    tenants: Resource<Result<crate::tenants::TenantAvailability, crate::error::ViewerError>>,
     fhir: Resource<Result<crate::fhir::FhirAvailability, crate::error::ViewerError>>,
     subscriptions: Resource<
         Result<crate::subscriptions::SubscriptionAvailability, crate::error::ViewerError>,
@@ -762,11 +746,6 @@ fn authed_shell(
                     nav_entry(active, href, label, icon).into_any()
                 })
             }
-            NavSlot::Gated(NavProbe::Tenants, href, label, icon) => {
-                crate::tenants::when_tenant_registry_usable(tenants, move || {
-                    nav_entry(active, href, label, icon).into_any()
-                })
-            }
             NavSlot::Gated(NavProbe::Management, href, label, icon) => {
                 crate::management::when_management_usable(management, move || {
                     nav_entry(active, href, label, icon).into_any()
@@ -855,7 +834,6 @@ mod tests {
                 let probe = match probe {
                     NavProbe::Fhir => "fhir",
                     NavProbe::Subscriptions => "subscriptions",
-                    NavProbe::Tenants => "tenants",
                     NavProbe::Management => "management",
                 };
                 format!("{label} (gated: {probe})")
@@ -881,7 +859,6 @@ mod tests {
                 "Terminology",
                 "FHIR (gated: fhir)",
                 "Subscriptions (gated: subscriptions)",
-                "Tenants (gated: tenants)",
                 "──",
                 "Operations (gated: management)",
                 "Audit log",
@@ -892,7 +869,7 @@ mod tests {
 
     /// The divider is meta-group chrome, and the meta group's anchors are
     /// unconditional — so the leanest possible deployment (no FHIR connector,
-    /// no tenancy extension, no management surface) still shows the rule with
+    /// no event subscriptions, no management surface) still shows the rule with
     /// content on both sides: no stray divider, no doubled gap.
     #[test]
     fn hiding_every_gated_entry_leaves_the_divider_between_two_groups() {
@@ -958,8 +935,6 @@ mod tests {
             nav_key("/operations?metric=aql_queries_total"),
             "/operations"
         );
-        assert_eq!(nav_key("/tenants"), "/tenants");
-        assert_eq!(nav_key("/tenants?page=1"), "/tenants");
         assert_eq!(nav_key("/subscriptions"), "/subscriptions");
         assert_eq!(nav_key("/subscriptions?page=1"), "/subscriptions");
         assert_eq!(nav_key("/fhir"), "/fhir");

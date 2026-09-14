@@ -14,7 +14,7 @@
 use sqlx::{PgPool, Row as _};
 use uuid::Uuid;
 
-use crate::service::demographic::identifier::crypto::{CryptoError, TenantKeys};
+use crate::service::demographic::identifier::crypto::{CryptoError, DomainKeys};
 
 /// What went wrong holding or reading a protected identifier.
 ///
@@ -84,19 +84,18 @@ impl IdentifierStore {
     /// sealed, or the write fails.
     pub async fn seal(
         &self,
-        keys: &TenantKeys,
-        tenant: Uuid,
+        keys: &DomainKeys,
         party: Uuid,
         scheme: &str,
         value: &str,
     ) -> Result<Uuid, StoreError> {
-        let (nonce, ciphertext) = keys.seal(scheme, tenant, value)?;
+        let (nonce, ciphertext) = keys.seal(scheme, value)?;
         let digest = keys.lookup_digest(scheme, value);
         let row = sqlx::query(
             "INSERT INTO national_identifier \
-                 (party_id, scheme, tenant_id, nonce, ciphertext, lookup_digest) \
-             VALUES ($1, $2, $3, $4, $5, $6) \
-             ON CONFLICT (tenant_id, scheme, party_id) DO UPDATE \
+                 (party_id, scheme, nonce, ciphertext, lookup_digest) \
+             VALUES ($1, $2, $3, $4, $5) \
+             ON CONFLICT (scheme, party_id) DO UPDATE \
                  SET nonce = EXCLUDED.nonce, \
                      ciphertext = EXCLUDED.ciphertext, \
                      lookup_digest = EXCLUDED.lookup_digest \
@@ -104,7 +103,6 @@ impl IdentifierStore {
         )
         .bind(party)
         .bind(scheme)
-        .bind(tenant)
         .bind(&nonce)
         .bind(&ciphertext)
         .bind(&digest)
@@ -129,16 +127,13 @@ impl IdentifierStore {
     /// [`StoreError`] when the read fails or the record does not authenticate.
     pub async fn open(
         &self,
-        keys: &TenantKeys,
-        tenant: Uuid,
+        keys: &DomainKeys,
         row_id: Uuid,
     ) -> Result<Option<String>, StoreError> {
         let Some(row) = sqlx::query(
-            "SELECT scheme, nonce, ciphertext FROM national_identifier \
-             WHERE id = $1 AND tenant_id = $2",
+            "SELECT scheme, nonce, ciphertext FROM national_identifier WHERE id = $1",
         )
         .bind(row_id)
-        .bind(tenant)
         .fetch_optional(&self.pool)
         .await?
         else {
@@ -147,12 +142,12 @@ impl IdentifierStore {
         let scheme: String = row.try_get("scheme").map_err(StoreError::Database)?;
         let nonce: Vec<u8> = row.try_get("nonce").map_err(StoreError::Database)?;
         let ciphertext: Vec<u8> = row.try_get("ciphertext").map_err(StoreError::Database)?;
-        Ok(Some(keys.open(&scheme, tenant, &nonce, &ciphertext)?))
+        Ok(Some(keys.open(&scheme, &nonce, &ciphertext)?))
     }
 
     /// The party holding `value` in `scheme`, without decrypting anything.
     ///
-    /// Goes through `demographic.resolve_national_identifier`, which takes the
+    /// Goes through `party.resolve_national_identifier`, which takes the
     /// keyed digest rather than the value: the caller proves it already knows
     /// the identifier, and the plaintext never crosses into the database.
     ///
@@ -160,15 +155,13 @@ impl IdentifierStore {
     /// [`StoreError::Database`] when the function call fails.
     pub async fn resolve(
         &self,
-        keys: &TenantKeys,
-        tenant: Uuid,
+        keys: &DomainKeys,
         scheme: &str,
         value: &str,
     ) -> Result<Option<Uuid>, StoreError> {
         let digest = keys.lookup_digest(scheme, value);
         let party: Option<Uuid> =
-            sqlx::query_scalar("SELECT resolve_national_identifier($1, $2, $3)")
-                .bind(tenant)
+            sqlx::query_scalar("SELECT resolve_national_identifier($1, $2)")
                 .bind(scheme)
                 .bind(&digest)
                 .fetch_optional(&self.pool)

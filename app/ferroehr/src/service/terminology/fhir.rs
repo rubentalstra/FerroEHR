@@ -319,7 +319,7 @@ impl FhirTerminologyProvider {
     ///
     /// The detail here is the deployment's own configuration — the provider's
     /// configured name and the upstream server's error — which is exactly the
-    /// class of fact a tenant's clients must not be able to read out of a
+    /// class of fact a client must not be able to read out of a
     /// response body, while the operator still needs it in full. The server
     /// carries no per-request diagnostic surface (`/management` mounts
     /// info/prometheus/metrics/env/loggers only), so the trace record IS the

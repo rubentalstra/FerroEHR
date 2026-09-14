@@ -42,8 +42,6 @@
 //!   (`docs/specs/openehr/ITS-REST/docs/smart_app_launch/master08-scopes.adoc`
 //!   §Resource Scopes; `master07-*.adoc` §Context Selection), the latter
 //!   AND-composed after RBAC/Cedar.
-//! - [`tenant`] — multi-tenant RLS scoping (no openEHR spec governs it; our own
-//!   extension).
 //!
 //! **Layering direction:** the spec-grounded [`ehr_access`] gate is the base;
 //! RBAC → ABAC → the SMART scope gate compose *on top of* it as additive
@@ -59,7 +57,6 @@ pub mod authn;
 pub mod authz;
 pub mod ehr_access;
 pub mod pep;
-pub mod tenant;
 
 // The authn surface (identity + the request-scoped principal). The middleware
 // + `AuthLayer` are `pub(crate)` and installed by the router via `authn::`

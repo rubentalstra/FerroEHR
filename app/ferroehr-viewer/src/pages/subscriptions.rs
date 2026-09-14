@@ -152,7 +152,8 @@ impl Editor {
 /// The whole screen is probe-and-hide at the NAV level
 /// ([`crate::subscriptions`]); reached directly, it renders the listing when
 /// the CDR serves it and one naming-the-switch card when it does not — the
-/// tenant-registry precedent, never a page of controls that cannot work.
+/// same gated shape as the other extension screens, never a page of controls
+/// that cannot work.
 #[expect(
     clippy::must_use_candidate,
     reason = "#[component] rewrites the fn; view!/mount always consumes the value"

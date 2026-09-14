@@ -93,16 +93,6 @@ pub fn router(state: AppState, authenticator: Arc<Authenticator>) -> Router {
     // `ApiError::NotImplemented`.
     let api =
         crate::api::api_router().method_not_allowed_fallback(error::method_not_allowed_handler);
-    // Inside the auth layer, so it runs after authentication and scopes the
-    // handler in the tenant task-local. A single-tenant server installs none.
-    let api = if cfg.tenancy.enabled {
-        api.layer(from_fn_with_state(
-            state.clone(),
-            crate::extensions::access::tenant::middleware,
-        ))
-    } else {
-        api
-    };
     let api = api.layer(from_fn_with_state(
         authn::AuthLayer {
             authenticator: Arc::clone(&authenticator),

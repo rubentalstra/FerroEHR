@@ -19,24 +19,22 @@
 //! * **AES-256-GCM** over the identifier value, with a fresh 96-bit nonce per
 //!   record. AES-GCM rather than ChaCha20-Poly1305 because NIST specifies it
 //!   (SP 800-38D) and this control answers to reviewers who look for that;
-//!   both are pure-Rust `RustCrypto` AEADs. The scheme code and the tenant are
-//!   bound in as associated data, so a ciphertext moved to another scheme or
-//!   another tenant fails to open rather than decrypting into the wrong
-//!   meaning.
+//!   both are pure-Rust `RustCrypto` AEADs. The scheme code is bound in as
+//!   associated data, so a ciphertext moved to another scheme fails to open
+//!   rather than decrypting into the wrong meaning.
 //! * **HMAC-SHA-256** over the value, as the blind-lookup column. Equality
 //!   search needs a deterministic image of the value; a keyed digest gives one
 //!   without letting the database, a backup or a replica reverse it, which an
 //!   unkeyed hash of a nine-digit number would not (the whole space is
 //!   enumerable in seconds).
 //!
-//! Keys are per DOMAIN and per tenant, derived from one configured root key by
-//! HMAC-SHA-256 over a labelled context — the NIST SP 800-108 KDF-in-counter
-//! construction with a single block, which is all a 256-bit subkey needs. One
-//! key in configuration therefore yields a distinct cipher key and a distinct
-//! lookup key per tenant, and a tenant's ciphertexts stay unreadable with
-//! another tenant's subkey.
+//! Keys are per DOMAIN, derived from one configured root key by HMAC-SHA-256
+//! over a labelled context — the NIST SP 800-108 KDF-in-counter construction
+//! with a single block, which is all a 256-bit subkey needs. One key in
+//! configuration therefore yields a distinct cipher key and a distinct lookup
+//! key per domain.
 //!
-//! The domain is bound in for the same reason the tenant is. The clinical and
+//! The domain is bound in because the clinical and
 //! demographic sides are separate pseudonymisation domains (GDPR Art. 4(5);
 //! EDPB Guidelines 01/2025 §2), and a separation that holds in the schema and
 //! in the database roles but shares one cipher key is one key disclosure away
@@ -53,18 +51,18 @@ use secrecy::ExposeSecret;
 use sha2::Sha256;
 use uuid::Uuid;
 
-/// The labelled context the per-tenant cipher key is derived under.
+/// The labelled context the per-domain cipher key is derived under.
 ///
 /// Versioned so a future construction change is a new label rather than a
 /// silent reinterpretation of the same bytes.
-const CIPHER_KEY_LABEL: &str = "ferroehr:national-identifier:cipher:v1";
+const CIPHER_KEY_LABEL: &str = "ferroehr:national-identifier:cipher:v2";
 
-/// The labelled context the per-tenant lookup key is derived under.
+/// The labelled context the per-domain lookup key is derived under.
 ///
 /// Separate from [`CIPHER_KEY_LABEL`] so the key that produces a searchable
 /// digest is not the key that decrypts: a component that only needs to look an
 /// identifier up never has to hold the one that opens the ciphertext.
-const LOOKUP_KEY_LABEL: &str = "ferroehr:national-identifier:lookup:v1";
+const LOOKUP_KEY_LABEL: &str = "ferroehr:national-identifier:lookup:v2";
 
 /// The derivation label of the subject pseudonym a party is known by on the
 /// clinical side (#3232). Its own label under the LINKAGE domain: a holder of
@@ -122,9 +120,9 @@ pub enum CryptoError {
          generate one with `openssl rand -hex 32` or an equivalent"
     )]
     RootKey,
-    /// The ciphertext did not authenticate under this tenant's key.
+    /// The ciphertext did not authenticate under this domain's key.
     ///
-    /// A wrong key, a wrong tenant, a wrong scheme, or a tampered record — AEAD
+    /// A wrong key, a wrong scheme, or a tampered record — AEAD
     /// cannot distinguish them, and neither should this message.
     #[error("the stored identifier could not be decrypted under this deployment's key")]
     Open,
@@ -158,30 +156,29 @@ impl RootKey {
         Ok(Self(secrecy::SecretBox::new(Box::new(bytes))))
     }
 
-    /// The opaque subject pseudonym `party` is known by on the clinical side,
-    /// in `tenant` (#3232).
+    /// The opaque subject pseudonym `party` is known by on the clinical side.
     ///
     /// `HMAC-SHA-256(subkey, party)` truncated to sixteen bytes and stamped as
     /// an RFC 9562 version-8 UUID, so it has the shape the subject rule admits
-    /// and the same party always yields the same pseudonym within a tenant. The
-    /// subkey is derived under [`KeyDomain::Linkage`] with its own label, so
-    /// neither the demographic digests nor any other purpose shares it.
+    /// and the same party always yields the same pseudonym. The subkey is
+    /// derived under [`KeyDomain::Linkage`] with its own label, so neither the
+    /// demographic digests nor any other purpose shares it.
     #[must_use]
-    pub fn subject_pseudonym(&self, tenant: Uuid, party: Uuid) -> Uuid {
-        let key = self.subkey(SUBJECT_PSEUDONYM_LABEL, KeyDomain::Linkage, tenant);
+    pub fn subject_pseudonym(&self, party: Uuid) -> Uuid {
+        let key = self.subkey(SUBJECT_PSEUDONYM_LABEL, KeyDomain::Linkage);
         let tag = keyed_tag(&key, party.as_bytes());
         let mut bytes = [0_u8; 16];
         bytes.copy_from_slice(tag.get(..16).unwrap_or(&[0_u8; 16]));
         uuid::Builder::from_custom_bytes(bytes).into_uuid()
     }
 
-    /// Derive the per-domain, per-tenant subkey for one labelled purpose.
+    /// Derive the per-domain subkey for one labelled purpose.
     ///
     /// SP 800-108 KDF in counter mode with HMAC-SHA-256 as the PRF, one block:
-    /// `PRF(root, 0x00000001 || label || 0x00 || domain || 0x00 || tenant || L)`.
-    /// One block is the whole output because the derived key is 256 bits,
-    /// exactly the PRF's width.
-    fn subkey(&self, label: &str, domain: KeyDomain, tenant: Uuid) -> [u8; 32] {
+    /// `PRF(root, 0x00000001 || label || 0x00 || domain || L)`. One block is
+    /// the whole output because the derived key is 256 bits, exactly the PRF's
+    /// width.
+    fn subkey(&self, label: &str, domain: KeyDomain) -> [u8; 32] {
         // The PRF is keyed with a fixed-size root key, so the construction
         // cannot fail on key length.
         #[expect(
@@ -196,8 +193,6 @@ impl RootKey {
         mac.update(label.as_bytes());
         mac.update(&[0x00]);
         mac.update(domain.as_str().as_bytes());
-        mac.update(&[0x00]);
-        mac.update(tenant.as_bytes());
         mac.update(&256_u32.to_be_bytes());
         mac.finalize().into_bytes().into()
     }
@@ -216,32 +211,31 @@ fn keyed_tag(key: &[u8; 32], message: &[u8]) -> [u8; 32] {
     mac.finalize().into_bytes().into()
 }
 
-/// The per-tenant keys one deployment protects identifiers with.
+/// The per-domain keys one deployment protects identifiers with.
 ///
 /// Built per write or resolve rather than cached: the derivation is one HMAC
-/// block, and a cache keyed by tenant would be one more place a key material
-/// lives.
+/// block, and a cache would be one more place key material lives.
 #[derive(Debug)]
-pub struct TenantKeys {
+pub struct DomainKeys {
     cipher: [u8; 32],
     lookup: [u8; 32],
 }
 
-impl TenantKeys {
-    /// Derive both subkeys for one domain and tenant from `root`.
+impl DomainKeys {
+    /// Derive both subkeys for one domain from `root`.
     ///
     /// The domain is part of the derivation, so the same root key yields
     /// unrelated subkeys in the clinical and demographic domains and neither
     /// can read the other's records.
     #[must_use]
-    pub fn derive(root: &RootKey, domain: KeyDomain, tenant: Uuid) -> Self {
+    pub fn derive(root: &RootKey, domain: KeyDomain) -> Self {
         Self {
-            cipher: root.subkey(CIPHER_KEY_LABEL, domain, tenant),
-            lookup: root.subkey(LOOKUP_KEY_LABEL, domain, tenant),
+            cipher: root.subkey(CIPHER_KEY_LABEL, domain),
+            lookup: root.subkey(LOOKUP_KEY_LABEL, domain),
         }
     }
 
-    /// The blind-lookup digest of `value` under this tenant's lookup key.
+    /// The blind-lookup digest of `value` under this domain's lookup key.
     ///
     /// Deterministic, so equality search works; keyed, so the digest cannot be
     /// reversed by enumerating a national identifier's small value space. The
@@ -268,23 +262,18 @@ impl TenantKeys {
 
     /// Seal `value`, returning the nonce and the ciphertext.
     ///
-    /// The scheme and the tenant are the associated data, so a record moved
-    /// between schemes or tenants fails authentication instead of opening into
-    /// a value that means something else.
+    /// The scheme is the associated data, so a record moved between schemes
+    /// fails authentication instead of opening into a value that means
+    /// something else.
     ///
     /// # Errors
     /// [`CryptoError::Seal`] if the AEAD refuses, which has no reachable cause
     /// for a value of this size.
-    pub fn seal(
-        &self,
-        scheme: &str,
-        tenant: Uuid,
-        value: &str,
-    ) -> Result<(Vec<u8>, Vec<u8>), CryptoError> {
+    pub fn seal(&self, scheme: &str, value: &str) -> Result<(Vec<u8>, Vec<u8>), CryptoError> {
         let cipher = Aes256Gcm::new(&Key::<Aes256Gcm>::from(self.cipher));
         let nonce_bytes: [u8; 12] = rand::random();
         let nonce = Nonce::from(nonce_bytes);
-        let aad = associated_data(scheme, tenant);
+        let aad = associated_data(scheme);
         let ciphertext = cipher
             .encrypt(
                 &nonce,
@@ -301,19 +290,13 @@ impl TenantKeys {
     ///
     /// # Errors
     /// [`CryptoError::Open`] when the record does not authenticate under this
-    /// tenant's key and this scheme, whatever the reason.
-    pub fn open(
-        &self,
-        scheme: &str,
-        tenant: Uuid,
-        nonce: &[u8],
-        ciphertext: &[u8],
-    ) -> Result<String, CryptoError> {
+    /// domain's key and this scheme, whatever the reason.
+    pub fn open(&self, scheme: &str, nonce: &[u8], ciphertext: &[u8]) -> Result<String, CryptoError> {
         let cipher = Aes256Gcm::new(&Key::<Aes256Gcm>::from(self.cipher));
         if nonce.len() != 12 {
             return Err(CryptoError::Open);
         }
-        let aad = associated_data(scheme, tenant);
+        let aad = associated_data(scheme);
         let plaintext = cipher
             .decrypt(
                 &Nonce::try_from(nonce).map_err(|_len| CryptoError::Open)?,
@@ -327,12 +310,11 @@ impl TenantKeys {
     }
 }
 
-/// The AEAD associated data: the scheme and the tenant this record belongs to.
-fn associated_data(scheme: &str, tenant: Uuid) -> Vec<u8> {
-    let mut aad = Vec::with_capacity(scheme.len() + 17);
+/// The AEAD associated data: the scheme this record belongs to.
+fn associated_data(scheme: &str) -> Vec<u8> {
+    let mut aad = Vec::with_capacity(scheme.len() + 1);
     aad.extend_from_slice(scheme.as_bytes());
     aad.push(0x00);
-    aad.extend_from_slice(tenant.as_bytes());
     aad
 }
 
@@ -342,8 +324,7 @@ mod tests {
     //! running the elfproef forward over a chosen prefix; no register issues
     //! them.
 
-    use super::{CryptoError, KeyDomain, RootKey, TenantKeys};
-    use uuid::Uuid;
+    use super::{CryptoError, DomainKeys, KeyDomain, RootKey};
 
     const ROOT: &str = "000102030405060708090a0b0c0d0e0f101112131415161718191a1b1c1d1e1f";
     const OTHER_ROOT: &str = "0f0e0d0c0b0a09080706050403020100f1e2d3c4b5a697887970615243342516";
@@ -353,21 +334,17 @@ mod tests {
         RootKey::from_hex(&secrecy::SecretString::from(hex.to_owned())).expect("a 32-byte key")
     }
 
-    fn tenant() -> Uuid {
-        Uuid::nil()
-    }
-
     #[test]
     fn a_sealed_identifier_opens_to_the_same_value() {
-        let keys = TenantKeys::derive(&root(ROOT), KeyDomain::Demographic, tenant());
-        let (nonce, ciphertext) = keys.seal("nl-bsn", tenant(), VALUE).expect("seal");
+        let keys = DomainKeys::derive(&root(ROOT), KeyDomain::Demographic);
+        let (nonce, ciphertext) = keys.seal("nl-bsn", VALUE).expect("seal");
         assert_ne!(
             ciphertext.as_slice(),
             VALUE.as_bytes(),
             "the stored bytes must not be the value"
         );
         let opened = keys
-            .open("nl-bsn", tenant(), &nonce, &ciphertext)
+            .open("nl-bsn", &nonce, &ciphertext)
             .expect("open");
         assert_eq!(opened, VALUE);
     }
@@ -376,53 +353,36 @@ mod tests {
     fn every_seal_of_one_value_differs() {
         // A deterministic ciphertext would leak equality of identifiers across
         // records, which is exactly what the separate lookup digest is for.
-        let keys = TenantKeys::derive(&root(ROOT), KeyDomain::Demographic, tenant());
-        let (first_nonce, first) = keys.seal("nl-bsn", tenant(), VALUE).expect("seal");
-        let (second_nonce, second) = keys.seal("nl-bsn", tenant(), VALUE).expect("seal");
+        let keys = DomainKeys::derive(&root(ROOT), KeyDomain::Demographic);
+        let (first_nonce, first) = keys.seal("nl-bsn", VALUE).expect("seal");
+        let (second_nonce, second) = keys.seal("nl-bsn", VALUE).expect("seal");
         assert_ne!(first, second, "two seals of one value must differ");
         assert_ne!(first_nonce, second_nonce, "each record gets a fresh nonce");
     }
 
     #[test]
-    fn a_record_does_not_open_under_another_key_tenant_or_scheme() {
-        let keys = TenantKeys::derive(&root(ROOT), KeyDomain::Demographic, tenant());
-        let (nonce, ciphertext) = keys.seal("nl-bsn", tenant(), VALUE).expect("seal");
+    fn a_record_does_not_open_under_another_key_or_scheme() {
+        let keys = DomainKeys::derive(&root(ROOT), KeyDomain::Demographic);
+        let (nonce, ciphertext) = keys.seal("nl-bsn", VALUE).expect("seal");
 
         let other_deployment =
-            TenantKeys::derive(&root(OTHER_ROOT), KeyDomain::Demographic, tenant());
+            DomainKeys::derive(&root(OTHER_ROOT), KeyDomain::Demographic);
         assert!(
             matches!(
-                other_deployment.open("nl-bsn", tenant(), &nonce, &ciphertext),
+                other_deployment.open("nl-bsn", &nonce, &ciphertext),
                 Err(CryptoError::Open)
             ),
             "another deployment's key must not open it"
         );
 
-        let other_tenant_id = Uuid::from_u128(7);
-        let other_tenant = TenantKeys::derive(&root(ROOT), KeyDomain::Demographic, other_tenant_id);
+        // The scheme is bound in as associated data, so even the right key
+        // refuses when the record is read under the wrong label.
         assert!(
             matches!(
-                other_tenant.open("nl-bsn", other_tenant_id, &nonce, &ciphertext),
-                Err(CryptoError::Open)
-            ),
-            "another tenant's subkey must not open it"
-        );
-
-        // The tenant and the scheme are bound in as associated data, so even
-        // the right key refuses when the record is read under the wrong label.
-        assert!(
-            matches!(
-                keys.open("se-personnummer", tenant(), &nonce, &ciphertext),
+                keys.open("se-personnummer", &nonce, &ciphertext),
                 Err(CryptoError::Open)
             ),
             "a record read under another scheme must not open"
-        );
-        assert!(
-            matches!(
-                keys.open("nl-bsn", Uuid::from_u128(7), &nonce, &ciphertext),
-                Err(CryptoError::Open)
-            ),
-            "a record read under another tenant must not open"
         );
     }
 
@@ -432,15 +392,15 @@ mod tests {
         // root key, the clinical domain's key material opens nothing in the
         // demographic domain, so a clinical backup and a demographic backup
         // are separate artefacts under separate keys rather than two files.
-        let demographic = TenantKeys::derive(&root(ROOT), KeyDomain::Demographic, tenant());
-        let clinical = TenantKeys::derive(&root(ROOT), KeyDomain::Ehr, tenant());
-        let linkage = TenantKeys::derive(&root(ROOT), KeyDomain::Linkage, tenant());
-        let (nonce, ciphertext) = demographic.seal("nl-bsn", tenant(), VALUE).expect("seal");
+        let demographic = DomainKeys::derive(&root(ROOT), KeyDomain::Demographic);
+        let clinical = DomainKeys::derive(&root(ROOT), KeyDomain::Ehr);
+        let linkage = DomainKeys::derive(&root(ROOT), KeyDomain::Linkage);
+        let (nonce, ciphertext) = demographic.seal("nl-bsn", VALUE).expect("seal");
 
         for (other, domain) in [(&clinical, "clinical"), (&linkage, "linkage")] {
             assert!(
                 matches!(
-                    other.open("nl-bsn", tenant(), &nonce, &ciphertext),
+                    other.open("nl-bsn", &nonce, &ciphertext),
                     Err(CryptoError::Open)
                 ),
                 "the {domain} domain's key must not open a demographic record"
@@ -456,10 +416,10 @@ mod tests {
         // And the same-root/same-domain derivation is stable, so the refusals
         // above are the domain doing the work rather than a derivation that
         // never reproduces anything.
-        let again = TenantKeys::derive(&root(ROOT), KeyDomain::Demographic, tenant());
+        let again = DomainKeys::derive(&root(ROOT), KeyDomain::Demographic);
         assert_eq!(
             again
-                .open("nl-bsn", tenant(), &nonce, &ciphertext)
+                .open("nl-bsn", &nonce, &ciphertext)
                 .expect("the demographic domain's own key opens it"),
             VALUE
         );
@@ -476,12 +436,12 @@ mod tests {
 
     #[test]
     fn a_tampered_ciphertext_is_refused() {
-        let keys = TenantKeys::derive(&root(ROOT), KeyDomain::Demographic, tenant());
-        let (nonce, mut ciphertext) = keys.seal("nl-bsn", tenant(), VALUE).expect("seal");
+        let keys = DomainKeys::derive(&root(ROOT), KeyDomain::Demographic);
+        let (nonce, mut ciphertext) = keys.seal("nl-bsn", VALUE).expect("seal");
         ciphertext[0] ^= 0x01;
         assert!(
             matches!(
-                keys.open("nl-bsn", tenant(), &nonce, &ciphertext),
+                keys.open("nl-bsn", &nonce, &ciphertext),
                 Err(CryptoError::Open)
             ),
             "AEAD authentication must refuse a flipped bit"
@@ -490,7 +450,7 @@ mod tests {
 
     #[test]
     fn the_lookup_digest_is_deterministic_keyed_and_scheme_bound() {
-        let keys = TenantKeys::derive(&root(ROOT), KeyDomain::Demographic, tenant());
+        let keys = DomainKeys::derive(&root(ROOT), KeyDomain::Demographic);
         let digest = keys.lookup_digest("nl-bsn", VALUE);
         assert_eq!(
             digest,
@@ -505,15 +465,9 @@ mod tests {
         );
         assert_ne!(
             digest,
-            TenantKeys::derive(&root(OTHER_ROOT), KeyDomain::Demographic, tenant())
+            DomainKeys::derive(&root(OTHER_ROOT), KeyDomain::Demographic)
                 .lookup_digest("nl-bsn", VALUE),
             "the digest is keyed: another deployment cannot reproduce it"
-        );
-        assert_ne!(
-            digest,
-            TenantKeys::derive(&root(ROOT), KeyDomain::Demographic, Uuid::from_u128(7))
-                .lookup_digest("nl-bsn", VALUE),
-            "another tenant cannot reproduce it either"
         );
         assert!(
             !digest.windows(VALUE.len()).any(|w| w == VALUE.as_bytes()),
@@ -525,7 +479,7 @@ mod tests {
     fn the_cipher_and_lookup_subkeys_are_different_keys() {
         // The lookup key is handed to components that must search without being
         // able to decrypt, so the two derivations must not coincide.
-        let keys = TenantKeys::derive(&root(ROOT), KeyDomain::Demographic, tenant());
+        let keys = DomainKeys::derive(&root(ROOT), KeyDomain::Demographic);
         assert_ne!(
             keys.cipher, keys.lookup,
             "one label per purpose, so a searcher never holds the opener"

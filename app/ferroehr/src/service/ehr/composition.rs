@@ -78,10 +78,9 @@ impl FerroEhrService {
             "COMPOSITION creation",
             &self.effective_system_id(),
         )?;
-        // ONE pooled connection carries both gates AND the commit. Every
-        // checkout costs a `set_config` round trip while multi-tenancy is on
-        // (`crate::db::stamp_tenant_guc`), and this path used to take three or
-        // four of them: measured at +0.4 ms per commit on #3097.
+        // ONE pooled connection carries both gates AND the commit, rather
+        // than the three or four checkouts this path used to take: measured at
+        // +0.4 ms per commit on #3097.
         let mut conn = self.pool.acquire().await?;
         // The EHR-existence (404) and content-writability (409) gates in one
         // round trip: a COMPOSITION is EHR content (RM ehr master04 §EHR

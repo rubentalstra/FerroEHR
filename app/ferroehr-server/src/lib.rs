@@ -688,17 +688,13 @@ struct Pools {
     linkage: PgPool,
 }
 
-/// Connects both domain pools the deployment's tenancy mode calls for and
-/// prepares the schema.
+/// Connects the three domain pools and prepares the schema.
 ///
-/// Multi-tenant mode swaps in the tenant-scoped pools, stamping every
-/// checked-out connection with the request's `ferroehr.tenant_id` session GUC
-/// that the RLS `tenant_isolation` policy reads; single-tenant deployments keep
-/// the plain ones. The demographic pool carries the `demographic` search path
-/// and, when `[db].demographic_url` is set, its own credential — which is what
-/// makes the pseudonymisation boundary a role boundary rather than only a
-/// schema one. Neither multi-tenancy nor the domain split is governed by an
-/// openEHR spec; both are our own deployment extensions.
+/// Each pool carries its own domain's `search_path`, and the party and linkage
+/// pools carry their own credential when the deployment names one — which is
+/// what makes the pseudonymisation boundary a role boundary rather than only a
+/// schema one. The domain split is our own deployment extension; no openEHR
+/// spec governs it.
 ///
 /// Schema preparation is [`ferroehr::db::prepare`], which spans every schema
 /// on the migration DSN (`[db].migrate_url`, falling back to `[db].url`) and
@@ -710,85 +706,35 @@ struct Pools {
 /// A connection, migration or domain-isolation failure, contextualized for the
 /// operator.
 async fn connect_pool(config: &ferroehr::config::FerroEhrConfig) -> anyhow::Result<Pools> {
-    let (clinical, demographic, linkage) = if config.tenancy.enabled {
-        (
-            db::connect_tenant_scoped(&config.db)
-                .await
-                .context("connecting to PostgreSQL (tenant-scoped)")?,
-            db::connect_tenant_scoped_demographic(&config.db)
-                .await
-                .context("connecting to PostgreSQL (demographic, tenant-scoped)")?,
-            db::connect_tenant_scoped_linkage(&config.db)
-                .await
-                .context("connecting to PostgreSQL (linkage, tenant-scoped)")?,
-        )
-    } else {
-        (
-            db::connect(&config.db)
-                .await
-                .context("connecting to PostgreSQL")?,
-            db::connect_demographic(&config.db)
-                .await
-                .context("connecting to PostgreSQL (demographic)")?,
-            db::connect_linkage(&config.db)
-                .await
-                .context("connecting to PostgreSQL (linkage)")?,
-        )
-    };
+    let clinical = db::connect(&config.db)
+        .await
+        .context("connecting to PostgreSQL")?;
+    let demographic = db::connect_demographic(&config.db)
+        .await
+        .context("connecting to PostgreSQL (party)")?;
+    let linkage = db::connect_linkage(&config.db)
+        .await
+        .context("connecting to PostgreSQL (linkage)")?;
     db::prepare(&config.db, &clinical)
         .await
         .context("preparing the database schema")?;
     if config.db.roles_are_separated() {
         tracing::info!(
-            "the demographic domain connects on its own DSN: the clinical and demographic \
-             credentials are separate database roles"
+            "the party domain connects on its own DSN: the clinical and party credentials are \
+             separate database roles"
         );
     }
     if config.db.linkage_role_is_separated() {
         tracing::info!(
             "the linkage domain connects on its own DSN: the map from a party to its EHR is \
-             held on a credential that has neither the clinical nor the demographic grants"
+             held on a credential that has neither the clinical nor the party grants"
         );
-    }
-    if config.tenancy.enabled {
-        warn_on_occupied_default_tenant(&clinical).await?;
     }
     Ok(Pools {
         clinical,
         demographic,
         linkage,
     })
-}
-
-/// Says at boot how much content the reserved default tenant holds, because a
-/// request the tenancy middleware cannot scope reads exactly that.
-///
-/// The default tenant owns every row written while tenancy was off, so on a
-/// deployment that enables tenancy over an existing store it IS the legacy
-/// repository. Two request shapes still land there: one carrying no tenant key
-/// at all, and, under `tenancy.unknown_tenant = "default_tenant"`, one whose
-/// key names no registered tenant.
-///
-/// A warning rather than a refusal: an operator enabling tenancy on a live
-/// store has no in-product way to reassign those rows yet, so refusing would
-/// strand the deployment instead of protecting it.
-///
-/// # Errors
-/// A database failure reading the count.
-async fn warn_on_occupied_default_tenant(pool: &PgPool) -> anyhow::Result<()> {
-    let versions = db::default_tenant_versions(pool)
-        .await
-        .context("counting the reserved default tenant's stored versions")?;
-    if versions > 0 {
-        tracing::warn!(
-            default_tenant_versions = versions,
-            "tenancy is enabled and the reserved default tenant owns stored versions: a request \
-             with no tenant key reads them, and so does an unresolvable key unless \
-             tenancy.unknown_tenant is \"refuse\". Move this content into a named tenant, or \
-             treat the deployment as single-tenant."
-        );
-    }
-    Ok(())
 }
 
 /// Wires the opt-in external FHIR terminology servers — ALL configured
@@ -941,12 +887,6 @@ async fn serve(config_path: Option<&Path>, overrides: &[(String, String)]) -> an
     // (#3241): stamped by the runtime role on every boot, read by the trigger.
     stamp_subject_posture(&config, &pool).await?;
 
-    // The tenant reader refuses an undeclared tenant under the multi posture
-    // (#3341); stamped by the runtime role on every boot.
-    db::stamp_tenancy_posture(&pool, config.tenancy.enabled)
-        .await
-        .context("stamping the tenancy posture")?;
-
     // Fail-open at boot, except in a slim build, which cannot render the FHIR
     // `AuditEvent` the store and the ATX:FHIR Feed carry.
     #[cfg(not(feature = "fhir"))]
@@ -959,21 +899,13 @@ async fn serve(config_path: Option<&Path>, overrides: &[(String, String)]) -> an
     // A cursor reader that is switched off must not hold the outbox prune
     // floor (#3330): record every reader's configured state before a drainer
     // starts.
-    for ctx in ferroehr::extensions::outbox::tenants(&pool)
-        .await
-        .context("listing the tenants for the outbox readers")?
-    {
-        ferroehr::extensions::tenant_context::scope(
-            ctx,
-            ferroehr::extensions::outbox::reconcile(
-                &pool,
-                ferroehr::extensions::outbox::OutboxReader::FHIR_OUTBOUND,
-                config.fhir.outbound.enabled,
-            ),
-        )
-        .await
-        .context("registering the outbox readers")?;
-    }
+    ferroehr::extensions::outbox::reconcile(
+        &pool,
+        ferroehr::extensions::outbox::OutboxReader::FHIR_OUTBOUND,
+        config.fhir.outbound.enabled,
+    )
+    .await
+    .context("registering the outbox readers")?;
     #[cfg(feature = "events")]
     let events_handle = if config.events.enabled {
         tracing::info!(exchange = %config.events.exchange, "contribution-outbox eventing enabled");
@@ -1083,7 +1015,6 @@ async fn serve(config_path: Option<&Path>, overrides: &[(String, String)]) -> an
         server: config.server.clone(),
         auth: config.auth.clone(),
         admin: config.admin.clone(),
-        tenancy: config.tenancy.clone(),
         smart: config.smart.clone(),
         fhir_api_enabled: config.fhir.api_enabled,
         terminology_api_enabled: config.terminology.api_enabled,
