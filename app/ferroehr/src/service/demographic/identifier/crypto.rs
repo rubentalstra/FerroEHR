@@ -291,7 +291,12 @@ impl DomainKeys {
     /// # Errors
     /// [`CryptoError::Open`] when the record does not authenticate under this
     /// domain's key and this scheme, whatever the reason.
-    pub fn open(&self, scheme: &str, nonce: &[u8], ciphertext: &[u8]) -> Result<String, CryptoError> {
+    pub fn open(
+        &self,
+        scheme: &str,
+        nonce: &[u8],
+        ciphertext: &[u8],
+    ) -> Result<String, CryptoError> {
         let cipher = Aes256Gcm::new(&Key::<Aes256Gcm>::from(self.cipher));
         if nonce.len() != 12 {
             return Err(CryptoError::Open);
@@ -343,9 +348,7 @@ mod tests {
             VALUE.as_bytes(),
             "the stored bytes must not be the value"
         );
-        let opened = keys
-            .open("nl-bsn", &nonce, &ciphertext)
-            .expect("open");
+        let opened = keys.open("nl-bsn", &nonce, &ciphertext).expect("open");
         assert_eq!(opened, VALUE);
     }
 
@@ -365,8 +368,7 @@ mod tests {
         let keys = DomainKeys::derive(&root(ROOT), KeyDomain::Demographic);
         let (nonce, ciphertext) = keys.seal("nl-bsn", VALUE).expect("seal");
 
-        let other_deployment =
-            DomainKeys::derive(&root(OTHER_ROOT), KeyDomain::Demographic);
+        let other_deployment = DomainKeys::derive(&root(OTHER_ROOT), KeyDomain::Demographic);
         assert!(
             matches!(
                 other_deployment.open("nl-bsn", &nonce, &ciphertext),

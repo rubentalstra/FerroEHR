@@ -358,7 +358,7 @@ enum NavSlot {
 /// full-featured deployment reads in the same order as a minimal one. The
 /// divider belongs to the meta group, whose anchors (`Audit log`, `System`) are
 /// unconditional — so no hidden entry can ever strand it or double a gap.
-const NAV_SLOTS: [NavSlot; 13] = [
+const NAV_SLOTS: [NavSlot; 12] = [
     NavSlot::Item("/", "Dashboard", icondata_lu::LuLayoutDashboard),
     NavSlot::Item("/templates", "Templates", icondata_lu::LuFileCode2),
     NavSlot::Item("/queries", "Queries", icondata_lu::LuSearchCode),

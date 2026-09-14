@@ -37,7 +37,7 @@
 //! class resolves to (`from::is_vo_root_type`).
 //!
 //! The `column_vocab` unit test pins every column name the builder emits
-//! against `migrations/ehr/0001_baseline.sql`, so a schema rename surfaces as a
+//! against the clinical migration set, so a schema rename surfaces as a
 //! failing test rather than a runtime SQL error.
 
 mod expr;
@@ -422,12 +422,20 @@ pub fn build_scope(
 mod column_vocab {
     //! Pin the builder's storage-column vocabulary to the schema. Every column
     //! name the IR→SQL lowering emits (collected here, one group per table)
-    //! must be declared for that table in `migrations/ehr/0001_baseline.sql`,
-    //! so a schema rename fails this test instead of failing at query runtime.
+    //! must be declared for that table in the clinical migration set, so a
+    //! schema rename fails this test instead of failing at query runtime.
 
-    /// The baseline migration — the authoritative schema (no openEHR spec
-    /// governs the SQL — our own design).
-    const BASELINE: &str = include_str!("../../../migrations/ehr/0001_baseline.sql");
+    /// The change-control relations — the authoritative schema for `version`,
+    /// `vo_head` and `commit_audit` (no openEHR spec governs the SQL — our own
+    /// design).
+    const CHANGE_CONTROL: &str =
+        include_str!("../../../migrations/clinical/0003_change_control.sql");
+
+    /// The `node` relation.
+    const NODE: &str = include_str!("../../../migrations/clinical/0004_node.sql");
+
+    /// The `ehr` relation.
+    const EHR: &str = include_str!("../../../migrations/clinical/0002_ehr.sql");
 
     /// The columns the builder references, grouped by the table each `sea-query`
     /// alias resolves to. Keep in sync with the `col(..)` / `Expr::col(..)`
@@ -436,6 +444,7 @@ mod column_vocab {
         (
             "node",
             &[
+                "tier",
                 "vo_id",
                 "sys_version",
                 "num",
@@ -451,8 +460,9 @@ mod column_vocab {
             ],
         ),
         (
-            "vo_version",
+            "version",
             &[
+                "tier",
                 "vo_id",
                 "kind",
                 "ehr_id",
@@ -460,7 +470,7 @@ mod column_vocab {
                 "trunk_version",
                 "branch_number",
                 "branch_version",
-                "sys_period",
+                "committed_at",
                 "lifecycle_state",
                 "creating_system_id",
                 "contribution_id",
@@ -468,6 +478,7 @@ mod column_vocab {
                 "template_id",
             ],
         ),
+        ("vo_head", &["vo_id", "trunk_head_sys_version"]),
         (
             "ehr",
             &[
@@ -479,7 +490,7 @@ mod column_vocab {
             ],
         ),
         (
-            "audit",
+            "commit_audit",
             &[
                 "id",
                 "time_committed",
@@ -491,13 +502,14 @@ mod column_vocab {
         ),
     ];
 
-    /// The `CREATE TABLE {table} ( … )` body from the baseline migration (the
-    /// text between the opening paren and the balanced closing paren).
+    /// The `CREATE TABLE {table} ( … )` body from the migration set (the text
+    /// between the opening paren and the balanced closing paren).
     fn create_table_body(table: &str) -> String {
         let head = format!("CREATE TABLE {table} (");
-        let body = BASELINE
-            .split_once(&head)
-            .unwrap_or_else(|| panic!("no `{head}` in the baseline migration"))
+        let body = [CHANGE_CONTROL, NODE, EHR]
+            .into_iter()
+            .find_map(|file| file.split_once(&head))
+            .unwrap_or_else(|| panic!("no `{head}` in the clinical migration set"))
             .1;
         let mut depth = 1usize;
         for (i, ch) in body.char_indices() {
@@ -512,7 +524,7 @@ mod column_vocab {
                 _ => {}
             }
         }
-        panic!("unterminated CREATE TABLE {table} in the baseline migration");
+        panic!("unterminated CREATE TABLE {table} in the clinical migration set");
     }
 
     /// Whether `body` declares a column named exactly `col` — a line whose
@@ -527,14 +539,15 @@ mod column_vocab {
     }
 
     #[test]
-    fn builder_columns_exist_in_baseline_schema() {
+    fn builder_columns_exist_in_the_schema() {
         for (table, columns) in VOCAB {
             let body = create_table_body(table);
             for col in *columns {
                 assert!(
                     declares_column(&body, col),
                     "AQL SQL builder references column `{table}.{col}`, but it is not \
-                     declared in `CREATE TABLE {table}` in 0001_baseline.sql — schema drift"
+                     declared in `CREATE TABLE {table}` in the clinical migration set — \
+                     schema drift"
                 );
             }
         }

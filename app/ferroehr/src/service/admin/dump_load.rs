@@ -247,8 +247,11 @@ async fn insert_item_tag_rows(
     Ok(())
 }
 
-/// Re-persist a record's archive markers in ONE `unnest` statement,
-/// identity-preserving on an existing `vo_id`.
+/// Re-stamp a record's archive markers on the head rows in ONE `unnest`
+/// statement.
+///
+/// The marker is two columns of `vo_head` rather than a table of its own, so
+/// re-stamping it is an update of the row the head sync has already written.
 async fn insert_archive_rows(
     tx: &mut PgConnection,
     archives: &[ArchiveRow],
@@ -260,10 +263,9 @@ async fn insert_archive_rows(
     let times: Vec<&str> = archives.iter().map(|a| a.archived_at.as_str()).collect();
     let reasons: Vec<Option<&str>> = archives.iter().map(|a| a.reason.as_deref()).collect();
     sqlx::query(
-        "INSERT INTO vo_archive (vo_id, archived_at, reason) \
-         SELECT t.vo_id, t.archived_at::timestamptz, t.reason \
+        "UPDATE vo_head h SET archived_at = t.archived_at::timestamptz, archive_reason = t.reason \
          FROM unnest($1::uuid[], $2::text[], $3::text[]) AS t(vo_id, archived_at, reason) \
-         ON CONFLICT (vo_id) DO NOTHING",
+         WHERE h.vo_id = t.vo_id",
     )
     .bind(vo_ids)
     .bind(times)
@@ -404,10 +406,9 @@ struct VersionRecord {
     /// version) and merge provenance (`None` when not a merge).
     preceding_version_uid: Option<String>,
     other_input_version_uids: Option<Value>,
-    /// Lower/upper bounds of the temporal `sys_period` (`upper = None` ⇒ the
-    /// current, still-open version).
-    sys_period_lower: Option<String>,
-    sys_period_upper: Option<String>,
+    /// The stored commit instant; validity is derived from it, so no upper
+    /// bound is dumped.
+    committed_at: Option<String>,
     lifecycle_state: String,
     contribution_id: Uuid,
     commit_audit_id: Uuid,
@@ -1584,7 +1585,11 @@ impl FerroEhrService {
         insert_audit_rows(&mut tx, &commons.audits, true).await?;
         if !commons.contributions.is_empty() {
             let ids: Vec<Uuid> = commons.contributions.iter().map(|c| c.id).collect();
-            let commit_audit_ids: Vec<Uuid> = commons.contributions.iter().map(|c| c.commit_audit_id).collect();
+            let commit_audit_ids: Vec<Uuid> = commons
+                .contributions
+                .iter()
+                .map(|c| c.commit_audit_id)
+                .collect();
             sqlx::query(
                 "INSERT INTO contribution (id, ehr_id, commit_audit_id) \
                  SELECT t.id, NULL, t.commit_audit_id FROM unnest($1::uuid[], $2::uuid[]) \
@@ -1648,10 +1653,11 @@ impl FerroEhrService {
         for r in audit_rows {
             commons_audits.push(audit_row_of(&r)?);
         }
-        let contribution_rows =
-            sqlx::query("SELECT id, commit_audit_id FROM contribution WHERE ehr_id IS NULL ORDER BY id")
-                .fetch_all(&self.demographic_pool)
-                .await?;
+        let contribution_rows = sqlx::query(
+            "SELECT id, commit_audit_id FROM contribution WHERE ehr_id IS NULL ORDER BY id",
+        )
+        .fetch_all(&self.demographic_pool)
+        .await?;
         let mut contributions = Vec::with_capacity(contribution_rows.len());
         for r in contribution_rows {
             contributions.push(ContributionRow {
@@ -1703,8 +1709,8 @@ impl FerroEhrService {
 
         let version_rows = sqlx::query(
             "SELECT vo_id, kind, sys_version, trunk_version, branch_number, branch_version, \
-             preceding_version_uid, other_input_version_uids, lower(sys_period)::text AS lo, \
-             upper(sys_period)::text AS hi, lifecycle_state, contribution_id, commit_audit_id, \
+             preceding_version_uid, other_input_version_uids, committed_at::text AS ca, \
+             lifecycle_state, contribution_id, commit_audit_id, \
              template_id, signature, signature_client_supplied, creating_system_id, \
              wrapped_original \
              FROM version WHERE vo_id = $1 AND ehr_id IS NULL \
@@ -1745,8 +1751,8 @@ impl FerroEhrService {
         }
 
         let archive_rows = sqlx::query(
-            "SELECT vo_id, archived_at::text AS archived_at, reason FROM vo_archive \
-             WHERE vo_id = $1 ORDER BY vo_id",
+            "SELECT vo_id, archived_at::text AS archived_at, archive_reason AS reason \
+             FROM vo_head WHERE vo_id = $1 AND archived_at IS NOT NULL ORDER BY vo_id",
         )
         .bind(vo_id)
         .fetch_all(&self.demographic_pool)
@@ -1795,8 +1801,7 @@ impl FerroEhrService {
             branch_version: r.try_get("branch_version")?,
             preceding_version_uid: r.try_get("preceding_version_uid")?,
             other_input_version_uids: r.try_get("other_input_version_uids")?,
-            sys_period_lower: r.try_get("lo")?,
-            sys_period_upper: r.try_get("hi")?,
+            committed_at: r.try_get("ca")?,
             lifecycle_state,
             contribution_id: r.try_get("contribution_id")?,
             commit_audit_id: r.try_get("commit_audit_id")?,
@@ -1861,11 +1866,12 @@ impl FerroEhrService {
             });
         }
 
-        let contribution_rows =
-            sqlx::query("SELECT id, commit_audit_id FROM contribution WHERE ehr_id = $1 ORDER BY id")
-                .bind(ehr_id)
-                .fetch_all(&self.pool)
-                .await?;
+        let contribution_rows = sqlx::query(
+            "SELECT id, commit_audit_id FROM contribution WHERE ehr_id = $1 ORDER BY id",
+        )
+        .bind(ehr_id)
+        .fetch_all(&self.pool)
+        .await?;
         let mut contributions = Vec::with_capacity(contribution_rows.len());
         for r in contribution_rows {
             contributions.push(ContributionRow {
@@ -1916,9 +1922,8 @@ impl FerroEhrService {
         }
 
         let archive_rows = sqlx::query(
-            "SELECT vo_id, archived_at::text AS archived_at, reason FROM vo_archive \
-             WHERE vo_id IN (SELECT DISTINCT vo_id FROM version WHERE ehr_id = $1) \
-             ORDER BY vo_id",
+            "SELECT vo_id, archived_at::text AS archived_at, archive_reason AS reason \
+             FROM vo_head WHERE ehr_id = $1 AND archived_at IS NOT NULL ORDER BY vo_id",
         )
         .bind(ehr_id)
         .fetch_all(&self.pool)
@@ -1973,7 +1978,11 @@ impl FerroEhrService {
 
         if !record.contributions.is_empty() {
             let ids: Vec<Uuid> = record.contributions.iter().map(|c| c.id).collect();
-            let commit_audit_ids: Vec<Uuid> = record.contributions.iter().map(|c| c.commit_audit_id).collect();
+            let commit_audit_ids: Vec<Uuid> = record
+                .contributions
+                .iter()
+                .map(|c| c.commit_audit_id)
+                .collect();
             sqlx::query(
                 "INSERT INTO contribution (id, ehr_id, commit_audit_id) \
                  SELECT t.id, $2, t.commit_audit_id FROM unnest($1::uuid[], $3::uuid[]) \
@@ -2016,12 +2025,15 @@ impl FerroEhrService {
         insert_item_tag_rows(&mut tx, Some(ehr_id), &record.item_tags).await?;
         insert_archive_rows(&mut tx, &record.archives).await?;
 
-        // The archive is the ONLY path writing explicit historical `sys_period`
-        // bounds, so it checks the per-lineage temporal non-overlap invariant
-        // the regular write path holds by construction (RM common master06: one
-        // valid version per lineage at any instant) — trunk rows per vo_id,
-        // branch rows per {vo, creating system, fork point, branch number}.
-        let overlap: bool = sqlx::query_scalar(
+        // The archive is the ONLY path writing explicit historical commit
+        // instants, so it checks what the regular write path holds by
+        // construction: one version of a lineage per instant (RM common
+        // master06 — one valid version per lineage at any instant). Validity is
+        // derived from `committed_at`, so two rows of one lineage sharing an
+        // instant make "the version in force then" unanswerable. Trunk rows are
+        // one lineage per vo_id; branch rows per {vo, creating system, fork
+        // point, branch number}.
+        let ambiguous: bool = sqlx::query_scalar(
             "SELECT EXISTS ( \
                  SELECT 1 FROM version a \
                  JOIN version b ON a.vo_id = b.vo_id \
@@ -2030,16 +2042,17 @@ impl FerroEhrService {
                           OR (a.creating_system_id = b.creating_system_id \
                               AND a.trunk_version = b.trunk_version)) \
                      AND a.sys_version < b.sys_version \
-                     AND a.sys_period && b.sys_period \
+                     AND a.committed_at = b.committed_at \
                  WHERE a.ehr_id = $1)",
         )
         .bind(ehr_id)
         .fetch_one(&mut *tx)
         .await?;
-        if overlap {
+        if ambiguous {
             return Err(ServiceError::content_invalid(
                 crate::service::error::Violation::new(format!(
-                    "archive for EHR {ehr_id} carries overlapping version validity periods"
+                    "archive for EHR {ehr_id} carries two versions of one lineage committed at \
+                     the same instant"
                 )),
             ));
         }
@@ -2188,8 +2201,7 @@ async fn load_versions(
             branch_version: v.branch_version,
             preceding_version_uid: v.preceding_version_uid.as_deref(),
             other_input_version_uids: v.other_input_version_uids.as_ref(),
-            sys_period_lower: v.sys_period_lower.as_deref(),
-            sys_period_upper: v.sys_period_upper.as_deref(),
+            committed_at: v.committed_at.as_deref(),
             lifecycle_state: &v.lifecycle_state,
             contribution_id: v.contribution_id,
             commit_audit_id: v.commit_audit_id,
@@ -2203,6 +2215,12 @@ async fn load_versions(
         .collect();
     version_repo::import::insert_versions_verbatim(tx, &rows).await?;
     drop(rows);
+    // The head row is a pure function of the version rows, so a whole-record
+    // load recomputes it once per object rather than maintaining it per insert.
+    let mut heads: Vec<VoId> = versions.iter().map(|v| v.vo_id).collect();
+    heads.sort_unstable();
+    heads.dedup();
+    version_repo::import::sync_heads(tx, &heads).await?;
     let mut node_batches = Vec::with_capacity(versions.len());
     for v in versions {
         if v.body.is_null() {

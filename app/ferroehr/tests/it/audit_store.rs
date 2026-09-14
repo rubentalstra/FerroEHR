@@ -42,7 +42,6 @@ fn read_event(at: Timestamp) -> AuditEvent {
     e.object_id = Some("8fa1::ferroehr::1".to_owned());
     e.event_type = Some(EventType::RestOperation("composition_get"));
     e.token_id = Some("jti-1".to_owned());
-    e.tenant_id = Some(Uuid::nil());
     e.timestamp = at;
     e
 }

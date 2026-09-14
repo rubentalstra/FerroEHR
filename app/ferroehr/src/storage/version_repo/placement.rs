@@ -155,7 +155,9 @@ pub async fn next_placement(
                 "LEFT JOIN LATERAL ( ",
                 "    SELECT t.ehr_id, t.kind, t.sys_version, t.trunk_version, ",
                 "           t.branch_number, t.branch_version, t.creating_system_id, ",
-                "           t.lifecycle_state, ", is_lineage_tip!(), " AS open ",
+                "           t.lifecycle_state, ",
+                is_lineage_tip!(),
+                " AS open ",
                 "    FROM src t WHERE ",
                 $tip_where,
                 ") tip ON true"

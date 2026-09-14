@@ -195,12 +195,12 @@ async fn party_kind_any_tier(
     tx: &mut sqlx::PgConnection,
     party_id: Uuid,
 ) -> Result<Option<String>, ServiceError> {
-    Ok(sqlx::query_scalar(
-        "SELECT kind FROM version WHERE vo_id = $1 AND ehr_id IS NULL LIMIT 1",
+    Ok(
+        sqlx::query_scalar("SELECT kind FROM version WHERE vo_id = $1 AND ehr_id IS NULL LIMIT 1")
+            .bind(party_id)
+            .fetch_optional(&mut *tx)
+            .await?,
     )
-    .bind(party_id)
-    .fetch_optional(&mut *tx)
-    .await?)
 }
 
 /// Refuse the whole operation unless every named EHR exists.

@@ -860,7 +860,7 @@ async fn sealed_identifiers_of_another_tenant_are_invisible() {
             .await
             .expect("stamp the tenant GUC");
         sqlx::query(
-            "INSERT INTO demographic.national_identifier
+            "INSERT INTO party.national_identifier
                  (party_id, scheme, tenant_id, nonce, ciphertext, lookup_digest)
              VALUES ($1, 'nl-bsn', $2, $3, $4, $5)",
         )
@@ -881,11 +881,10 @@ async fn sealed_identifiers_of_another_tenant_are_invisible() {
         .execute(&mut conn)
         .await
         .expect("stamp the tenant GUC");
-    let visible: Vec<Uuid> =
-        sqlx::query_scalar("SELECT tenant_id FROM demographic.national_identifier")
-            .fetch_all(&mut conn)
-            .await
-            .expect("an unscoped read of the sealed identifiers");
+    let visible: Vec<Uuid> = sqlx::query_scalar("SELECT tenant_id FROM party.national_identifier")
+        .fetch_all(&mut conn)
+        .await
+        .expect("an unscoped read of the sealed identifiers");
     drop(conn.close().await);
 
     assert_eq!(
@@ -901,11 +900,11 @@ async fn sealed_identifiers_of_another_tenant_are_invisible() {
 /// credential: it protects one ephemeral clone for the length of one test.
 const TEST_ROOT_KEY: &str = "000102030405060708090a0b0c0d0e0f101112131415161718191a1b1c1d1e1f";
 
-fn test_keys(tenant: Uuid) -> ferroehr::service::demographic::identifier::crypto::TenantKeys {
-    use ferroehr::service::demographic::identifier::crypto::{KeyDomain, RootKey, TenantKeys};
+fn test_keys() -> ferroehr::service::demographic::identifier::crypto::DomainKeys {
+    use ferroehr::service::demographic::identifier::crypto::{DomainKeys, KeyDomain, RootKey};
     let root = RootKey::from_hex(&secrecy::SecretString::from(TEST_ROOT_KEY.to_owned()))
         .expect("a 32-byte root key");
-    TenantKeys::derive(&root, KeyDomain::Demographic, tenant)
+    DomainKeys::derive(&root, KeyDomain::Demographic)
 }
 
 /// A sealed identifier round-trips, and resolution finds its party without
@@ -921,23 +920,22 @@ async fn a_sealed_identifier_round_trips_and_resolves_to_its_party() {
 
     let db = testkit::db().await.expect("testkit database");
     let store = IdentifierStore::new(ferroehr::db::demographic_pool_from(&db.pool()));
-    let tenant = Uuid::nil();
-    let keys = test_keys(tenant);
+    let keys = test_keys();
     let party = Uuid::now_v7();
 
     let row = store
-        .seal(&keys, tenant, party, "nl-bsn", SYNTHETIC_BSN)
+        .seal(&keys, party, "nl-bsn", SYNTHETIC_BSN)
         .await
         .expect("seal the identifier");
 
     assert_eq!(
-        store.open(&keys, tenant, row).await.expect("open"),
+        store.open(&keys, row).await.expect("open"),
         Some(SYNTHETIC_BSN.to_owned()),
         "the key holder reads the value back"
     );
     assert_eq!(
         store
-            .resolve(&keys, tenant, "nl-bsn", SYNTHETIC_BSN)
+            .resolve(&keys, "nl-bsn", SYNTHETIC_BSN)
             .await
             .expect("resolve"),
         Some(party),
@@ -945,7 +943,7 @@ async fn a_sealed_identifier_round_trips_and_resolves_to_its_party() {
     );
     assert_eq!(
         store
-            .resolve(&keys, tenant, "nl-bsn", "987654321")
+            .resolve(&keys, "nl-bsn", "987654321")
             .await
             .expect("resolve a value nobody holds"),
         None,
@@ -954,7 +952,7 @@ async fn a_sealed_identifier_round_trips_and_resolves_to_its_party() {
 
     // The stored bytes are not the value, in either column.
     let stored: (Vec<u8>, Vec<u8>) = sqlx::query_as(
-        "SELECT ciphertext, lookup_digest FROM demographic.national_identifier WHERE id = $1",
+        "SELECT ciphertext, lookup_digest FROM party.national_identifier WHERE id = $1",
     )
     .bind(row)
     .fetch_one(&db.pool())
@@ -977,15 +975,8 @@ async fn an_unregistered_scheme_is_refused() {
 
     let db = testkit::db().await.expect("testkit database");
     let store = IdentifierStore::new(ferroehr::db::demographic_pool_from(&db.pool()));
-    let tenant = Uuid::nil();
     let refused = store
-        .seal(
-            &test_keys(tenant),
-            tenant,
-            Uuid::now_v7(),
-            "zz-invented",
-            SYNTHETIC_BSN,
-        )
+        .seal(&test_keys(), Uuid::now_v7(), "zz-invented", SYNTHETIC_BSN)
         .await;
     assert!(
         matches!(refused, Err(StoreError::UnknownScheme { ref scheme }) if scheme == "zz-invented"),
@@ -1005,7 +996,7 @@ async fn only_the_demographic_writer_reaches_the_sealed_value() {
 
     for (suffix, role) in [("nie", "ferroehr_ehr"), ("nir", "ferroehr_ehr_reader")] {
         let mut conn = role_conn(&db, suffix, role).await;
-        let refused = sqlx::query("SELECT ciphertext FROM demographic.national_identifier")
+        let refused = sqlx::query("SELECT ciphertext FROM party.national_identifier")
             .fetch_all(&mut conn)
             .await;
         let code = refused
@@ -1025,7 +1016,7 @@ async fn only_the_demographic_writer_reaches_the_sealed_value() {
     let mut reader = role_conn(&db, "nidr", "ferroehr_demographic_reader").await;
     for column in ["ciphertext", "lookup_digest"] {
         let refused = sqlx::query(sqlx::AssertSqlSafe(format!(
-            "SELECT {column} FROM demographic.national_identifier"
+            "SELECT {column} FROM party.national_identifier"
         )))
         .fetch_all(&mut reader)
         .await;
@@ -1044,7 +1035,7 @@ async fn only_the_demographic_writer_reaches_the_sealed_value() {
     }
     // …but it does see that the identifier exists and whose it is, which its
     // reporting role needs.
-    sqlx::query("SELECT id, party_id, scheme FROM demographic.national_identifier")
+    sqlx::query("SELECT id, party_id, scheme FROM party.national_identifier")
         .fetch_all(&mut reader)
         .await
         .expect("the reader sees the non-sensitive columns");
@@ -1138,12 +1129,7 @@ async fn a_protected_identifier_never_reaches_the_versioned_body() {
     );
     assert_eq!(
         store
-            .resolve(
-                &test_keys(Uuid::nil()),
-                Uuid::nil(),
-                "nl-bsn",
-                SYNTHETIC_BSN
-            )
+            .resolve(&test_keys(), "nl-bsn", SYNTHETIC_BSN)
             .await
             .expect("resolve"),
         Some(vo_id),
@@ -1322,7 +1308,7 @@ async fn one_party_holds_one_open_mapping_at_a_time() {
 /// Three things meet on this path, and each was proven only on its own: the
 /// demographic pool authenticating as its own login role, a `SECURITY DEFINER`
 /// resolve function owned by the migrator, and `FORCE ROW LEVEL SECURITY` on
-/// `demographic.national_identifier`. FORCE applies the tenant policy to the
+/// `party.national_identifier`. FORCE applies the tenant policy to the
 /// function's owner, and the separated role is not that owner, so whether a
 /// resolve still returns its party is a question about the three together.
 ///
@@ -1353,22 +1339,21 @@ async fn a_sealed_identifier_resolves_on_the_separated_demographic_credential() 
         .await
         .expect("the demographic pool connects on its own credential");
     let store = IdentifierStore::new(demographic);
-    let tenant = Uuid::nil();
-    let keys = test_keys(tenant);
+    let keys = test_keys();
     let party = Uuid::now_v7();
 
     let row = store
-        .seal(&keys, tenant, party, "nl-bsn", SYNTHETIC_BSN)
+        .seal(&keys, party, "nl-bsn", SYNTHETIC_BSN)
         .await
         .expect("the separated credential seals an identifier");
     assert_eq!(
-        store.open(&keys, tenant, row).await.expect("open"),
+        store.open(&keys, row).await.expect("open"),
         Some(SYNTHETIC_BSN.to_owned()),
         "the key holder reads the value back through the separated credential"
     );
     assert_eq!(
         store
-            .resolve(&keys, tenant, "nl-bsn", SYNTHETIC_BSN)
+            .resolve(&keys, "nl-bsn", SYNTHETIC_BSN)
             .await
             .expect("resolve"),
         Some(party),
@@ -1377,7 +1362,7 @@ async fn a_sealed_identifier_resolves_on_the_separated_demographic_credential() 
     );
     assert_eq!(
         store
-            .resolve(&keys, tenant, "nl-bsn", "987654321")
+            .resolve(&keys, "nl-bsn", "987654321")
             .await
             .expect("resolve a value nobody holds"),
         None,
@@ -1666,10 +1651,9 @@ async fn an_identity_resolves_to_an_ehr_across_three_separated_credentials() {
 
     // The identity half: a sealed identifier held on the demographic
     // credential, resolvable by keyed digest without decryption.
-    let tenant = Uuid::nil();
     let party = ferroehr::ids::VoId(Uuid::now_v7());
     IdentifierStore::new(demographic.clone())
-        .seal(&test_keys(tenant), tenant, party.0, "nl-bsn", SYNTHETIC_BSN)
+        .seal(&test_keys(), party.0, "nl-bsn", SYNTHETIC_BSN)
         .await
         .expect("the separated demographic credential seals an identifier");
 
@@ -1716,7 +1700,7 @@ async fn an_identity_resolves_to_an_ehr_across_three_separated_credentials() {
 
     // The credential that performed the second hop cannot perform the first,
     // which is what makes the crossing safe to have at all.
-    let refused = sqlx::query("SELECT count(*) FROM demographic.national_identifier")
+    let refused = sqlx::query("SELECT count(*) FROM party.national_identifier")
         .fetch_one(&linkage)
         .await;
     assert!(

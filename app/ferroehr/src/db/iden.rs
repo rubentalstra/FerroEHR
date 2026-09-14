@@ -563,10 +563,7 @@ mod tests {
         assert_eq!(VoHead::ArchivedAt.to_string(), "archived_at");
         assert_eq!(VoHead::ArchiveReason.to_string(), "archive_reason");
         assert_eq!(CommitAudit::TimeCommitted.to_string(), "time_committed");
-        assert_eq!(
-            Contribution::CommitAuditId.to_string(),
-            "commit_audit_id"
-        );
+        assert_eq!(Contribution::CommitAuditId.to_string(), "commit_audit_id");
         assert_eq!(
             StoredQuery::ReverseDomainName.to_string(),
             "reverse_domain_name"

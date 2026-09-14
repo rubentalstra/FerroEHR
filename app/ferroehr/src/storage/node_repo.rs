@@ -345,7 +345,6 @@ pub async fn read_version_canonical(
     reassemble(&rows)
 }
 
-
 /// [`read_version_canonical`] inside a transaction, over the primary tier.
 ///
 /// The rebuild writes a version's node rows and then re-derives the version

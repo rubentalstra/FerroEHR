@@ -3,9 +3,10 @@
 
 //! The import write path.
 //!
-//! Writes `version` rows with an **explicit** `sys_period` — the EHR Extract
-//! import (master06 §Copying) and the admin archive load — plus the lineage
-//! close and container-state read the import policy needs.
+//! Writes `version` rows with an **explicit** `committed_at` — the EHR Extract
+//! import (master06 §Copying) and the admin archive load — plus the
+//! container-state read the import policy needs, and the head-row sync that
+//! follows every batch.
 //!
 //! No openEHR spec governs the SQL — our own design. The import *policy* (period-chain synthesis, Case 2/3
 //! classification) lives in the versioning layer.
@@ -24,12 +25,12 @@ use crate::ids::{EhrId, VoId};
 use crate::storage::error::StorageError;
 use crate::storage::version_repo::optional_json_array;
 
-/// One `version` row to insert with an **explicit** `sys_period` (`[lower,
-/// upper)`, `upper = None` ⇒ still-open) — the import analogue of the local
-/// commit row, carrying no `template_id`.
+/// One `version` row to insert with an **explicit** `committed_at` — the
+/// import analogue of the local commit row, carrying no `template_id`.
 ///
-/// The import path builds a synthetic strictly-increasing local period chain
-/// per lineage (master06 §Copying).
+/// The import path builds a synthetic strictly-increasing local commit chain
+/// per lineage (master06 §Copying); validity is derived from it, so only the
+/// lower bound is stored.
 ///
 /// The row is an `IMPORTED_VERSION`: `contribution_id` / `commit_audit_id` /
 /// `signature` are the **local** act of committal and
@@ -69,16 +70,14 @@ pub struct ImportedVersionRow<'a> {
     /// The wrapped `ORIGINAL_VERSION`'s own `{contribution, commit_audit,
     /// signature?}` as verbatim canonical openEHR JSON.
     pub wrapped_original: &'a Value,
-    /// Lower bound of the synthetic local `sys_period`.
-    pub lower: jiff::Timestamp,
-    /// Upper bound (`None` = the still-open tip of this lineage).
-    pub upper: Option<jiff::Timestamp>,
+    /// The synthetic local commit instant.
+    pub committed_at: jiff::Timestamp,
     /// The assembled canonical body (`version.body`) — the SAME value the
     /// node rows are decomposed from; `None` on a content-less version.
     pub body: Option<&'a Value>,
 }
 
-/// Insert one imported `version` row with an explicit `sys_period`
+/// Insert one imported `version` row with an explicit `committed_at`
 /// (master06 §Copying). Stores `template_id = NULL`.
 ///
 /// # Errors
@@ -97,12 +96,11 @@ pub async fn insert_imported_vo_version(
     sqlx::query(
         "INSERT INTO version \
          (vo_id, kind, ehr_id, sys_version, trunk_version, branch_number, branch_version, \
-          sys_period, lifecycle_state, creating_system_id, preceding_version_uid, \
+          committed_at, lifecycle_state, creating_system_id, preceding_version_uid, \
           other_input_version_uids, contribution_id, commit_audit_id, template_id, signature, \
           signature_client_supplied, wrapped_original, body, origins) \
-         VALUES ($1, $2, $3, $4, $5, $6, $7, \
-                 tstzrange($8::timestamptz, $9::timestamptz, '[)'), \
-                 $10, $11, $12, $13, $14, $15, NULL, $16, false, $17, $18, $19)",
+         VALUES ($1, $2, $3, $4, $5, $6, $7, $8::timestamptz, \
+                 $9, $10, $11, $12, $13, $14, NULL, $15, false, $16, $17, $18)",
     )
     .bind(row.vo_id)
     .bind(row.kind)
@@ -111,8 +109,7 @@ pub async fn insert_imported_vo_version(
     .bind(row.trunk_version)
     .bind(row.branch_number)
     .bind(row.branch_version)
-    .bind(row.lower.to_string())
-    .bind(row.upper.map(|t| t.to_string()))
+    .bind(row.committed_at.to_string())
     .bind(row.lifecycle_state)
     .bind(row.creating_system_id)
     .bind(row.preceding_version_uid)
@@ -141,11 +138,11 @@ pub async fn insert_imported_vo_version(
 
 /// One `version` row to re-persist **verbatim** during an archive load.
 ///
-/// The stored columns (`sys_period` bounds as ISO strings, `template_id`,
+/// The stored columns (`committed_at` as an ISO string, `template_id`,
 /// `creating_system_id`) are preserved exactly as dumped (SM `I_ADMIN_DUMP_LOAD`
 /// round-trip; no openEHR spec governs the archive). Unlike
 /// [`ImportedVersionRow`] it keeps `template_id`, and unlike a local commit row
-/// the `sys_period` is explicit.
+/// the `committed_at` is explicit.
 #[derive(Debug)]
 pub struct VerbatimVersionRow<'a> {
     /// The versioned object's id.
@@ -167,11 +164,9 @@ pub struct VerbatimVersionRow<'a> {
     pub preceding_version_uid: Option<&'a str>,
     /// The merge provenance (`other_input_version_uids`) as stored JSON.
     pub other_input_version_uids: Option<&'a Value>,
-    /// Lower/upper `sys_period` bounds as ISO-8601 strings (`upper = None` ⇒
-    /// still-open); bound with a `::timestamptz` cast.
-    pub sys_period_lower: Option<&'a str>,
-    /// Upper `sys_period` bound as an ISO-8601 string; `None` = still-open.
-    pub sys_period_upper: Option<&'a str>,
+    /// The stored commit instant as an ISO-8601 string; bound with a
+    /// `::timestamptz` cast.
+    pub committed_at: Option<&'a str>,
     /// The `version_lifecycle_state` numeric code.
     pub lifecycle_state: &'a str,
     /// The CONTRIBUTION this version was committed in.
@@ -198,7 +193,7 @@ pub struct VerbatimVersionRow<'a> {
 }
 
 /// Insert one `version` row verbatim from an archive record (explicit
-/// `sys_period` + preserved `template_id`) — the load side of the admin
+/// `committed_at` + preserved `template_id`) — the load side of the admin
 /// dump/load round-trip.
 ///
 /// The node rows are re-decomposed and written by the caller.
@@ -211,7 +206,7 @@ pub struct VerbatimVersionRow<'a> {
 /// invariant is therefore checked before the insert and reported as
 /// [`StorageError::TrunkPositionInUse`], the trunk line being one global
 /// sequence across creating systems (§Distributed Versioning makes branch ids
-/// system-local). The `uq_vo_version_trunk_position` partial unique index is the
+/// system-local). The per-partition trunk-position unique index is the
 /// backstop; this check names the container, the position and the holder.
 ///
 /// # Errors
@@ -233,9 +228,8 @@ pub async fn insert_version_verbatim(
 /// first.
 ///
 /// The probe checks the batch against PRE-EXISTING rows; a corrupt record
-/// that duplicates a trunk position within itself falls to the
-/// `uq_vo_version_trunk_position` unique-index backstop instead of the named
-/// error.
+/// that duplicates a trunk position within itself falls to the per-partition
+/// trunk-position unique-index backstop instead of the named error.
 ///
 /// # Errors
 /// Returns [`StorageError::TrunkPositionInUse`] when another creating system
@@ -259,8 +253,7 @@ pub async fn insert_versions_verbatim(
     let mut branch_versions: Vec<i32> = Vec::with_capacity(n);
     let mut precedings: Vec<Option<&str>> = Vec::with_capacity(n);
     let mut other_inputs: Vec<Option<&Value>> = Vec::with_capacity(n);
-    let mut lowers: Vec<Option<&str>> = Vec::with_capacity(n);
-    let mut uppers: Vec<Option<&str>> = Vec::with_capacity(n);
+    let mut committed_ats: Vec<Option<&str>> = Vec::with_capacity(n);
     let mut lifecycles: Vec<&str> = Vec::with_capacity(n);
     let mut contribution_ids: Vec<Uuid> = Vec::with_capacity(n);
     let mut commit_audit_ids: Vec<Uuid> = Vec::with_capacity(n);
@@ -280,8 +273,7 @@ pub async fn insert_versions_verbatim(
         branch_versions.push(r.branch_version);
         precedings.push(r.preceding_version_uid);
         other_inputs.push(r.other_input_version_uids);
-        lowers.push(r.sys_period_lower);
-        uppers.push(r.sys_period_upper);
+        committed_ats.push(r.committed_at);
         lifecycles.push(r.lifecycle_state);
         contribution_ids.push(r.contribution_id);
         commit_audit_ids.push(r.commit_audit_id);
@@ -299,20 +291,20 @@ pub async fn insert_versions_verbatim(
     }
     sqlx::query(
         "INSERT INTO version (vo_id, kind, ehr_id, sys_version, trunk_version, branch_number, \
-         branch_version, preceding_version_uid, other_input_version_uids, sys_period, \
+         branch_version, preceding_version_uid, other_input_version_uids, committed_at, \
          lifecycle_state, contribution_id, commit_audit_id, template_id, signature, \
          signature_client_supplied, creating_system_id, wrapped_original, body) \
          SELECT t.vo_id, t.kind, t.ehr_id, t.sys_version, t.trunk_version, t.branch_number, \
          t.branch_version, t.preceding_version_uid, t.other_input, \
-         tstzrange(t.lower::timestamptz, t.upper::timestamptz, '[)'), t.lifecycle_state, \
+         t.committed_at::timestamptz, t.lifecycle_state, \
          t.contribution_id, t.commit_audit_id, t.template_id, t.signature, t.sig_client, \
          t.creating_system_id, t.wrapped_original, t.body \
          FROM unnest($1::uuid[], $2::text[], $3::uuid[], $4::int[], $5::int[], $6::int[], \
-         $7::int[], $8::text[], $9::jsonb[], $10::text[], $11::text[], $12::text[], \
-         $13::uuid[], $14::uuid[], $15::text[], $16::text[], $17::bool[], $18::text[], \
-         $19::jsonb[], $20::text[]) \
+         $7::int[], $8::text[], $9::jsonb[], $10::text[], $11::text[], \
+         $12::uuid[], $13::uuid[], $14::text[], $15::text[], $16::bool[], $17::text[], \
+         $18::jsonb[], $19::text[]) \
          AS t(vo_id, kind, ehr_id, sys_version, trunk_version, branch_number, branch_version, \
-         preceding_version_uid, other_input, lower, upper, lifecycle_state, contribution_id, \
+         preceding_version_uid, other_input, committed_at, lifecycle_state, contribution_id, \
          commit_audit_id, template_id, signature, sig_client, creating_system_id, wrapped_original, \
          body)",
     )
@@ -325,8 +317,7 @@ pub async fn insert_versions_verbatim(
     .bind(branch_versions)
     .bind(precedings)
     .bind(other_inputs)
-    .bind(lowers)
-    .bind(uppers)
+    .bind(committed_ats)
     .bind(lifecycles)
     .bind(contribution_ids)
     .bind(commit_audit_ids)
@@ -417,67 +408,67 @@ pub async fn has_version_tree(
     Ok(exists)
 }
 
-/// Close the open (`upper_inf`) version of one LINEAGE of `vo_id` at an
-/// explicit instant (the import base time).
+/// Bring the head row of every named versioned object back into agreement with
+/// its version rows.
 ///
-/// The trunk lineage is `branch_number = 0`; a branch lineage is one
-/// `(creating_system_id, trunk_version, branch_number)`. Used when importing
-/// further versions into an existing container (master06 §Copying "previous
-/// copies have been made for the item").
-///
-/// # Errors
-/// Returns [`StorageError::Database`] on a driver/update failure.
-pub async fn close_lineage_at(
-    tx: &mut PgConnection,
-    vo_id: VoId,
-    lineage: &(String, i32, i32),
-    at: jiff::Timestamp,
-) -> Result<(), StorageError> {
-    let (csid, trunk, branch) = lineage;
-    if *branch == 0 {
-        sqlx::query(
-            "UPDATE version SET sys_period = tstzrange(lower(sys_period), $2::timestamptz, '[)') \
-             WHERE vo_id = $1 AND upper_inf(sys_period) AND branch_number = 0",
-        )
-        .bind(vo_id)
-        .bind(at.to_string())
-        .execute(&mut *tx)
-        .await?;
-    } else {
-        sqlx::query(
-            "UPDATE version SET sys_period = tstzrange(lower(sys_period), $2::timestamptz, '[)') \
-             WHERE vo_id = $1 AND upper_inf(sys_period) \
-             AND creating_system_id = $3 AND trunk_version = $4 AND branch_number = $5",
-        )
-        .bind(vo_id)
-        .bind(at.to_string())
-        .bind(csid)
-        .bind(trunk)
-        .bind(branch)
-        .execute(&mut *tx)
-        .await?;
-    }
-    Ok(())
-}
-
-/// The stored state of one BRANCH lineage of a container — the highest
-/// `branch_version` held on `(creating_system_id, trunk_version,
-/// branch_number)` and whether that lineage's tip row is still open.
-///
-/// `(0, false)` when the store holds no version of the lineage.
+/// The commit path writes the head row in the same statement as the version it
+/// describes; the import and archive-load paths write many versions of a
+/// container at once, so they recompute the head once per object at the end
+/// instead. The head is a pure function of the stored versions — the greatest
+/// commit ordinal on any lineage, and the trunk's own tip — so recomputing it
+/// is always correct and never depends on the order the rows landed in.
 ///
 /// # Errors
 /// Returns [`StorageError::Database`] on a driver failure.
-pub async fn branch_lineage_state(
+pub async fn sync_heads(tx: &mut PgConnection, vo_ids: &[VoId]) -> Result<(), StorageError> {
+    if vo_ids.is_empty() {
+        return Ok(());
+    }
+    sqlx::query(
+        "INSERT INTO vo_head (vo_id, kind, ehr_id, tier, head_sys_version, \
+             trunk_head_sys_version, lifecycle_state, template_id, committed_at) \
+         SELECT a.vo_id, t.kind, t.ehr_id, t.tier, a.head_sys_version, t.sys_version, \
+                t.lifecycle_state, t.template_id, t.committed_at \
+         FROM (SELECT vo_id, max(sys_version) AS head_sys_version \
+               FROM version WHERE vo_id = ANY($1) GROUP BY vo_id) a \
+         JOIN LATERAL (SELECT kind, ehr_id, tier, sys_version, lifecycle_state, \
+                              template_id, committed_at \
+                       FROM version \
+                       WHERE vo_id = a.vo_id AND branch_number = 0 \
+                       ORDER BY sys_version DESC LIMIT 1) t ON true \
+         ON CONFLICT (vo_id) DO UPDATE SET \
+             kind = EXCLUDED.kind, \
+             ehr_id = EXCLUDED.ehr_id, \
+             tier = EXCLUDED.tier, \
+             head_sys_version = EXCLUDED.head_sys_version, \
+             trunk_head_sys_version = EXCLUDED.trunk_head_sys_version, \
+             lifecycle_state = EXCLUDED.lifecycle_state, \
+             template_id = EXCLUDED.template_id, \
+             committed_at = EXCLUDED.committed_at",
+    )
+    .bind(vo_ids)
+    .execute(&mut *tx)
+    .await?;
+    Ok(())
+}
+
+/// The highest `branch_version` held on one BRANCH lineage of a container,
+/// `(creating_system_id, trunk_version, branch_number)`.
+///
+/// `0` when the store holds no version of the lineage. There is no second
+/// "still open" answer any more: the store is append-only, so the highest
+/// version of a non-empty lineage IS its tip.
+///
+/// # Errors
+/// Returns [`StorageError::Database`] on a driver failure.
+pub async fn branch_lineage_head(
     tx: &mut PgConnection,
     vo_id: VoId,
     lineage: &(String, i32, i32),
-) -> Result<(i32, bool), StorageError> {
+) -> Result<i32, StorageError> {
     let (csid, trunk, branch) = lineage;
-    let row = sqlx::query(
-        "SELECT max(branch_version) AS max_branch, \
-                bool_or(upper_inf(sys_period)) AS open \
-         FROM version WHERE vo_id = $1 AND creating_system_id = $2 \
+    let max_branch: Option<i32> = sqlx::query_scalar(
+        "SELECT max(branch_version) FROM version WHERE vo_id = $1 AND creating_system_id = $2 \
          AND trunk_version = $3 AND branch_number = $4",
     )
     .bind(vo_id)
@@ -486,10 +477,7 @@ pub async fn branch_lineage_state(
     .bind(branch)
     .fetch_one(&mut *tx)
     .await?;
-    Ok((
-        row.try_get::<Option<i32>, _>("max_branch")?.unwrap_or(0),
-        row.try_get::<Option<bool>, _>("open")?.unwrap_or(false),
-    ))
+    Ok(max_branch.unwrap_or(0))
 }
 
 /// The current state of a to-be-imported container in the target store —
@@ -507,8 +495,6 @@ pub struct ContainerStateRow {
     pub max_trunk: i32,
     /// The highest storage ordinal currently held.
     pub max_ordinal: i32,
-    /// Whether a still-open current TRUNK version exists.
-    pub trunk_open: bool,
 }
 
 /// Read the [`ContainerStateRow`] of a to-be-imported container.
@@ -522,7 +508,6 @@ pub async fn imported_container_state(
     let row = sqlx::query(
         "SELECT max(trunk_version) FILTER (WHERE branch_number = 0) AS max_trunk, \
                 max(sys_version) AS max_ordinal, \
-                bool_or(upper_inf(sys_period) AND branch_number = 0) AS trunk_open, \
                 (array_agg(kind))[1] AS kind, \
                 (array_agg(ehr_id))[1] AS owner \
          FROM version WHERE vo_id = $1",
@@ -539,8 +524,5 @@ pub async fn imported_container_state(
         owner: row.try_get("owner")?,
         max_trunk: row.try_get::<Option<i32>, _>("max_trunk")?.unwrap_or(0),
         max_ordinal,
-        trunk_open: row
-            .try_get::<Option<bool>, _>("trunk_open")?
-            .unwrap_or(false),
     })
 }

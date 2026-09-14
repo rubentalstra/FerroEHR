@@ -480,7 +480,9 @@ fn pool_options(settings: &DbConfig, search_path: &'static str) -> PgPoolOptions
             // Cloned per call: `after_connect` takes an `Fn`, so the captured
             // value cannot be moved out of it.
             let statement_timeout = statement_timeout.clone();
-            Box::pin(async move { open_session(conn, search_path, statement_timeout.as_deref()).await })
+            Box::pin(
+                async move { open_session(conn, search_path, statement_timeout.as_deref()).await },
+            )
         })
 }
 

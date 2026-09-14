@@ -130,12 +130,11 @@ impl IdentifierStore {
         keys: &DomainKeys,
         row_id: Uuid,
     ) -> Result<Option<String>, StoreError> {
-        let Some(row) = sqlx::query(
-            "SELECT scheme, nonce, ciphertext FROM national_identifier WHERE id = $1",
-        )
-        .bind(row_id)
-        .fetch_optional(&self.pool)
-        .await?
+        let Some(row) =
+            sqlx::query("SELECT scheme, nonce, ciphertext FROM national_identifier WHERE id = $1")
+                .bind(row_id)
+                .fetch_optional(&self.pool)
+                .await?
         else {
             return Ok(None);
         };
@@ -160,13 +159,12 @@ impl IdentifierStore {
         value: &str,
     ) -> Result<Option<Uuid>, StoreError> {
         let digest = keys.lookup_digest(scheme, value);
-        let party: Option<Uuid> =
-            sqlx::query_scalar("SELECT resolve_national_identifier($1, $2)")
-                .bind(scheme)
-                .bind(&digest)
-                .fetch_optional(&self.pool)
-                .await?
-                .flatten();
+        let party: Option<Uuid> = sqlx::query_scalar("SELECT resolve_national_identifier($1, $2)")
+            .bind(scheme)
+            .bind(&digest)
+            .fetch_optional(&self.pool)
+            .await?
+            .flatten();
         Ok(party)
     }
 }

@@ -130,11 +130,10 @@ impl FerroEhrService {
         // Counted over BOTH storage tiers: the cold archival mirror is
         // foreign-key-free, so an archived composition's reference is invisible
         // to the `template_ref` FK and would be orphaned silently.
-        let refs: i64 =
-            sqlx::query_scalar("SELECT count(*) FROM version WHERE template_id = $1")
-                .bind(&stored)
-                .fetch_one(&mut *tx)
-                .await?;
+        let refs: i64 = sqlx::query_scalar("SELECT count(*) FROM version WHERE template_id = $1")
+            .bind(&stored)
+            .fetch_one(&mut *tx)
+            .await?;
         if refs > 0 {
             return Err(ServiceError::conflict(format!(
                 "template '{stored}' is still referenced by {refs} committed version(s); \

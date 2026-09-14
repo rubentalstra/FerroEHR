@@ -599,11 +599,10 @@ impl FerroEhrService {
         // `template_ref` foreign key, so an archived composition's reference is
         // invisible to the constraint and deleting under it would make that
         // object unrestorable (no openEHR spec governs the in-use refusal).
-        let refs: i64 =
-            sqlx::query_scalar("SELECT count(*) FROM version WHERE template_id = $1")
-                .bind(&template_id)
-                .fetch_one(&mut *tx)
-                .await?;
+        let refs: i64 = sqlx::query_scalar("SELECT count(*) FROM version WHERE template_id = $1")
+            .bind(&template_id)
+            .fetch_one(&mut *tx)
+            .await?;
         if refs > 0 {
             return Err(ServiceError::conflict(format!(
                 "template '{template_id}' is still referenced by {refs} committed version(s); \

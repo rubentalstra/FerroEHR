@@ -1094,7 +1094,8 @@ impl Builder<'_> {
                 cond,
             );
         } else {
-            self.q.from_as(CommitAudit::Table, Alias::new(alias.as_str()));
+            self.q
+                .from_as(CommitAudit::Table, Alias::new(alias.as_str()));
             self.q.and_where(cond);
         }
         self.audit_alias.insert(voa.to_owned(), alias.clone());
