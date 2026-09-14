@@ -569,10 +569,11 @@ pub async fn read_versions_by_tree(
         .collect()
 }
 
-/// Read the version of an object current at a given instant (time-travel):
-/// the TRUNK row in force at `at` — the greatest `committed_at` at or before
-/// it (master08 §Change
-/// Management — any previous state reconstructable).
+/// Read the version of an object current at a given instant (time-travel).
+///
+/// The TRUNK row in force at `at` is the one with the greatest `committed_at`
+/// at or before it (master08 §Change Management — any previous state
+/// reconstructable).
 ///
 /// `None` if the object had no trunk version then.
 ///

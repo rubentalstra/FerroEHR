@@ -232,7 +232,7 @@ impl FerroEhrService {
         // explicitly (`crate::storage::version_repo::tier`).
         crate::storage::version_repo::tier::purge_ehrs(&mut tx, &[ehr_id]).await?;
 
-        // Delete the EHR — cascades vo_version (→ node), contribution, item_tag.
+        // Delete the EHR — cascades version (→ node), contribution, item_tag.
         let deleted = sqlx::query("DELETE FROM ehr WHERE id = $1")
             .bind(ehr_id)
             .execute(&mut *tx)
@@ -246,7 +246,7 @@ impl FerroEhrService {
             ));
         }
 
-        // The referencing vo_version/contribution rows are gone, so the audit
+        // The referencing version/contribution rows are gone, so the audit
         // rows are now unreferenced and can be removed.
         if !commit_audit_ids.is_empty() {
             sqlx::query("DELETE FROM commit_audit WHERE id = ANY($1)")
@@ -523,7 +523,7 @@ impl FerroEhrService {
         vo_ids.push(party_id);
 
         // Capture the CONTRIBUTION + audit ids these VOs reference before the
-        // vo_version delete cascades their node/attestation rows away.
+        // version delete cascades their node/attestation rows away.
         let contribution_ids: Vec<Uuid> = sqlx::query_scalar(
             "SELECT contribution_id FROM version WHERE vo_id = ANY($1) \
              UNION \

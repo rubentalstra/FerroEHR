@@ -100,7 +100,7 @@ pub type ResolverFuture<T> = Pin<Box<dyn Future<Output = Result<T, ResolveError>
 /// REST layer stays `uuid`-free (the binary parses).
 pub type SubjectFn = Arc<dyn Fn(String) -> ResolverFuture<Option<String>> + Send + Sync>;
 
-/// `(vo_id, version) → template_id` (`vo_version.template_id`, read back via
+/// `(vo_id, version) → template_id` (`version.template_id`, read back via
 /// `ferroehr::service` in the binary).
 ///
 /// `version` is the `VERSION_TREE_ID` lexical form (`N` or `N.B.V` — trunk or

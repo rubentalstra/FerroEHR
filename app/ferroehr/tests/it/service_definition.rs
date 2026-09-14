@@ -396,7 +396,7 @@ async fn opt_delete_refuses_while_referenced() {
         .rows_affected();
     assert!(
         referenced >= 1,
-        "a vo_version must now reference the template"
+        "a version row must now reference the template"
     );
 
     // Referenced → refused with the friendly 409 naming the count.

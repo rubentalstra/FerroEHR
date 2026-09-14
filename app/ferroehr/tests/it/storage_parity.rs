@@ -809,15 +809,17 @@ async fn an_archived_version_is_rebuilt_and_stays_archived() {
     // The tier's rule is that a write thaws first, so the repair happens in
     // the primary tier — and the object must come back exactly as archived as
     // it went in.
-    let still_marked: bool =
-        sqlx::query_scalar("SELECT EXISTS(SELECT 1 FROM vo_archive WHERE vo_id = $1)")
-            .bind(vo_id)
-            .fetch_one(&pool)
-            .await
-            .expect("archive marker");
+    let still_marked: bool = sqlx::query_scalar(
+        "SELECT EXISTS(SELECT 1 FROM vo_head \
+         WHERE vo_id = $1 AND tier = 'cold' AND archived_at IS NOT NULL)",
+    )
+    .bind(vo_id)
+    .fetch_one(&pool)
+    .await
+    .expect("archive marker");
     assert!(still_marked, "the archive marker survives the repair");
     let primary: i64 =
-        sqlx::query_scalar("SELECT count(*) FROM node WHERE vo_id = $1 AND sys_version = $2")
+        sqlx::query_scalar("SELECT count(*) FROM node_hot WHERE vo_id = $1 AND sys_version = $2")
             .bind(vo_id)
             .bind(sys_version)
             .fetch_one(&pool)

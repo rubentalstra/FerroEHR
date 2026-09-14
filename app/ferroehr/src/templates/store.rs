@@ -138,7 +138,7 @@ impl FerroEhrService {
                 "an operational template with template_id '{template_id}' already exists"
             ))
         })?;
-        // Register the wire address in `template_ref` (the vo_version.template_id
+        // Register the wire address in `template_ref` (the version.template_id
         // FK target) in the same transaction — the registry is the union of both
         // template dialects' addresses, so `DO NOTHING` absorbs an ADL2 claim of
         // the same id (`0001_baseline.sql` §template_ref).

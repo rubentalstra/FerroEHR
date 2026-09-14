@@ -180,7 +180,7 @@ fn version_read(
     profile: crate::config::profile::SpecProfile,
     stored: crate::storage::version_repo::read::StoredVersion,
 ) -> Result<VersionRead, ServiceError> {
-    // The `ck_vo_version_kind` CHECK constraint admits exactly the `Kind` set,
+    // The `ck_version_kind` CHECK constraint admits exactly the `Kind` set,
     // so a stored discriminator that does not classify is corrupted data, not
     // a client condition — the loud answer is a fault, never a silent skip of
     // the profile gate below.

@@ -785,7 +785,16 @@ fn full_scalar_function_set_plans() {
 /// subquery (a direct `ehr.is_queryable` column filter over a join),
 /// so every remaining `EXISTS` is a containment anchor (OR / NOT CONTAINS).
 fn anchor_exists(sql: &str) -> usize {
-    sql.matches("EXISTS(SELECT").count()
+    sql.matches("EXISTS(SELECT")
+        .count()
+        .saturating_sub(currency_probes(sql))
+}
+
+/// The trunk-head currency probes in `sql`: the `EXISTS` over `vo_head` every
+/// `LATEST_VERSION` version alias carries (`vo_head.trunk_head_sys_version` IS
+/// the trunk head — RM common master06 §The 'Virtual Version Tree').
+fn currency_probes(sql: &str) -> usize {
+    sql.matches(r#"FROM "vo_head" AS "#).count()
 }
 
 /// A predicate whose leaf crosses a MULTI-VALUED FRAGMENT attribute
@@ -1158,11 +1167,11 @@ fn projection_of_context_start_time_is_not_promoted() {
 /// from the joined `version` (RM common master06 §Version Identification) —
 /// it is not stored in the fragment.
 #[test]
-fn composition_uid_value_is_synthesized_from_vo_version() {
+fn composition_uid_value_is_synthesized_from_the_version_row() {
     let sql = build_sql("SELECT c/uid/value FROM EHR e CONTAINS COMPOSITION c");
     assert!(
         sql.contains("creating_system_id"),
-        "uid/value is composed from vo_version columns: {sql}"
+        "uid/value is composed from version columns: {sql}"
     );
 }
 
@@ -1291,7 +1300,7 @@ fn population_gate_is_single_and_column_filtered() {
         "exactly one population gate on the EHR alias: {sql}"
     );
     assert!(
-        !sql.contains("AS \"qgv") && !sql.contains("EXISTS(SELECT"),
+        !sql.contains("AS \"qgv") && anchor_exists(&sql) == 0,
         "the per-EHR_STATUS EXISTS gate is gone: {sql}"
     );
 }
@@ -1312,7 +1321,7 @@ fn unlinked_vo_root_keeps_its_own_gate() {
         "the gate correlates the joined ehr row to the VO root's ehr_id: {sql}"
     );
     assert!(
-        !sql.contains("EXISTS(SELECT"),
+        anchor_exists(&sql) == 0,
         "the gate is a join + column filter, not an EXISTS probe: {sql}"
     );
 }
@@ -1350,7 +1359,7 @@ const WARD_QUERY: &str = "SELECT e/ehr_id/value, c/uid/value \
 fn limit_without_order_by_streams() {
     let sql = build_sql_limited(WARD_QUERY);
     assert!(
-        sql.contains(r#"FROM "vo_version" AS "v"#),
+        sql.contains(r#"FROM "version" AS "v"#),
         "the version spine drives: {sql}"
     );
     // The dead-root elision (the post-streaming ladder's rung 1): this query
@@ -1504,7 +1513,7 @@ fn streaming_shape_keeps_the_population_gate() {
     // still the streaming shape (the spine drives), now with zero laterals.
     let bare = build_sql_limited("SELECT c/uid/value FROM COMPOSITION c");
     assert!(
-        bare.contains(r#"FROM "vo_version""#) && !bare.contains("JOIN LATERAL"),
+        bare.contains(r#"FROM "version""#) && !bare.contains("JOIN LATERAL"),
         "a bare uid-only VO root streams as the spine alone: {bare}"
     );
     assert!(
@@ -1692,7 +1701,7 @@ fn like_and_matches_lower_existentially_on_anchored_leaves() {
          WHERE NOT c/context/other_context[at0001]/items[at0002]/value/value LIKE 'x*'",
     );
     assert!(
-        !negated.contains("EXISTS(SELECT"),
+        anchor_exists(&negated) == 0,
         "negative polarity keeps the scalar lowering: {negated}"
     );
 }
@@ -1828,7 +1837,7 @@ fn not_contains_folder_negates_the_union_edge() {
         "the reference branch is the items lookup: {sql}"
     );
     assert!(
-        sql.contains("upper_inf"),
+        sql.contains(r#""xv1_head"."trunk_head_sys_version" = "xv1"."sys_version""#),
         "the branch folder binds its own version spine at latest scope: {sql}"
     );
 }

@@ -198,9 +198,11 @@ pub async fn write_contribution(
     Ok((contribution_id, commit_audit_id, time_committed))
 }
 
-/// The `version` columns for a **folded** commit — every content column of
-/// a stored version EXCEPT `contribution_id`/`commit_audit_id`, which come from the
-/// same statement's `contribution`/`commit_audit` CTEs.
+/// The `version` columns for a **folded** commit.
+///
+/// Every content column of a stored version EXCEPT
+/// `contribution_id`/`commit_audit_id`, which come from the same statement's
+/// `contribution`/`commit_audit` CTEs.
 ///
 /// `time_committed` is the caller's pre-read commit instant, a database `now()`
 /// fetched earlier on this request and so still server-assigned (master06
@@ -278,18 +280,40 @@ pub struct FoldedVersion<'a> {
 ///
 /// `{branch}`, `{ordinal}`, `{lifecycle}` and `{template}` are the caller's
 /// parameter placeholders; `FROM v` orders this CTE after the version insert.
-fn head_upsert(
-    vo: &str,
-    kind: &str,
-    ehr: &str,
-    ordinal: &str,
-    branch: &str,
-    lifecycle: &str,
-    template: &str,
-    committed_at: &str,
-) -> String {
-    format!(
-        "INSERT INTO vo_head (vo_id, kind, ehr_id, head_sys_version, \
+struct HeadUpsert<'a> {
+    /// The versioned object's id.
+    vo: &'a str,
+    /// The versioned object's RM type.
+    kind: &'a str,
+    /// The owning EHR, `NULL` for a party.
+    ehr: &'a str,
+    /// The new version's `sys_version`.
+    ordinal: &'a str,
+    /// The new version's `branch_number`; `0` is a trunk commit.
+    branch: &'a str,
+    /// The new version's `lifecycle_state`.
+    lifecycle: &'a str,
+    /// The template the new version was validated against.
+    template: &'a str,
+    /// The commit instant.
+    committed_at: &'a str,
+}
+
+impl HeadUpsert<'_> {
+    /// Render the CTE body with this statement's placeholders substituted.
+    fn sql(&self) -> String {
+        let Self {
+            vo,
+            kind,
+            ehr,
+            ordinal,
+            branch,
+            lifecycle,
+            template,
+            committed_at,
+        } = *self;
+        format!(
+            "INSERT INTO vo_head (vo_id, kind, ehr_id, head_sys_version, \
              trunk_head_sys_version, lifecycle_state, template_id, committed_at) \
          SELECT {vo}, {kind}, {ehr}, {ordinal}, \
                 CASE WHEN {branch} = 0 THEN {ordinal} ELSE NULL END, \
@@ -304,7 +328,8 @@ fn head_upsert(
                  THEN EXCLUDED.lifecycle_state ELSE vo_head.lifecycle_state END, \
              template_id = CASE WHEN {branch} = 0 \
                  THEN EXCLUDED.template_id ELSE vo_head.template_id END"
-    )
+        )
+    }
 }
 
 /// A **standalone** folded commit.
@@ -361,7 +386,17 @@ pub async fn commit_new_version(
              ), n AS ( {} ) \
              SELECT a.id AS commit_audit_id, a.time_committed, c.id AS contribution_id \
              FROM a LEFT JOIN c ON true",
-            head_upsert("$8", "$9", "$7", "$10", "$12", "$14", "$17", "$22"),
+            HeadUpsert {
+                vo: "$8",
+                kind: "$9",
+                ehr: "$7",
+                ordinal: "$10",
+                branch: "$12",
+                lifecycle: "$14",
+                template: "$17",
+                committed_at: "$22",
+            }
+            .sql(),
             crate::storage::node_repo::node_insert_cte("$8", "$10", "$7", 24)
         )
     });
@@ -443,7 +478,17 @@ pub async fn commit_version_into(
              ), h AS ( {} \
              ), n AS ( {} ) \
              SELECT a.id AS commit_audit_id, a.time_committed FROM a",
-            head_upsert("$6", "$7", "$8", "$9", "$11", "$13", "$17", "$22"),
+            HeadUpsert {
+                vo: "$6",
+                kind: "$7",
+                ehr: "$8",
+                ordinal: "$9",
+                branch: "$11",
+                lifecycle: "$13",
+                template: "$17",
+                committed_at: "$22",
+            }
+            .sql(),
             crate::storage::node_repo::node_insert_cte("$6", "$9", "$8", 24)
         )
     });

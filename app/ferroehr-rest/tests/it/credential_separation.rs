@@ -51,14 +51,21 @@ const SQLSTATE_INSUFFICIENT_PRIVILEGE: &str = "42501";
 
 /// Relations of the demographic domain no clinical credential may read.
 const DEMOGRAPHIC_RELATIONS: &[&str] = &[
-    "demographic.vo_version",
-    "demographic.node",
-    "demographic.contribution",
-    "cold_demographic.vo_version",
+    "party.version",
+    "party.version_cold",
+    "party.node",
+    "party.vo_head",
+    "party.contribution",
 ];
 
 /// Relations of the clinical domain no demographic credential may read.
-const CLINICAL_RELATIONS: &[&str] = &["ehr.ehr", "ehr.vo_version", "ehr.node", "cold.vo_version"];
+const CLINICAL_RELATIONS: &[&str] = &[
+    "clinical.ehr",
+    "clinical.version",
+    "clinical.version_cold",
+    "clinical.node",
+    "clinical.vo_head",
+];
 
 /// A password for a throwaway login role, fresh per call.
 ///

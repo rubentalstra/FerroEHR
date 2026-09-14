@@ -165,7 +165,7 @@ fn resolvers() -> AuthzResolvers {
 }
 
 /// The same subject map, with the template attribute resolved from the REAL
-/// service — i.e. from the `vo_version.template_id` the commit routes stamp.
+/// service — i.e. from the `version.template_id` the commit routes stamp.
 fn service_resolvers(svc: Arc<FerroEhrService>) -> AuthzResolvers {
     AuthzResolvers {
         template_of_version: Arc::new(move |vo: String, version: Option<String>| {
@@ -656,7 +656,7 @@ async fn the_accessing_organisation_is_recorded_with_the_abac_gate_off() {
 const IPS_TEMPLATE_ID: &str = "International Patient Summary";
 
 /// A PDP that permits ONLY when the request carries the IPS template attribute
-/// — a template-scoped rule. With `vo_version.template_id` unstamped the
+/// — a template-scoped rule. With `version.template_id` unstamped the
 /// attribute resolves to `None` and the rule silently stops binding, which is
 /// exactly the defect this pins.
 #[derive(Debug)]
@@ -717,7 +717,7 @@ async fn template_scoped_rule_binds_on_a_direct_route_composition() {
         s,
         StatusCode::OK,
         "the template-scoped rule must bind: the direct-route commit stamps \
-         vo_version.template_id, so the post-check resolves the attribute"
+         version.template_id, so the post-check resolves the attribute"
     );
 }
 

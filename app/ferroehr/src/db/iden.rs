@@ -109,7 +109,7 @@ pub enum TemplateStore {
 
 /// `version` — one write-once row per version of a versioned object.
 #[derive(Debug, Clone, Copy, sea_query::Iden)]
-pub enum Version {
+pub enum VersionRow {
     /// The `version` table itself.
     #[iden = "version"]
     Table,
@@ -506,7 +506,7 @@ mod tests {
         assert_eq!(CommitAudit::Table.to_string(), "commit_audit");
         assert_eq!(Contribution::Table.to_string(), "contribution");
         assert_eq!(TemplateStore::Table.to_string(), "template_store");
-        assert_eq!(Version::Table.to_string(), "version");
+        assert_eq!(VersionRow::Table.to_string(), "version");
         assert_eq!(VoHead::Table.to_string(), "vo_head");
         assert_eq!(Node::Table.to_string(), "node");
         assert_eq!(VoAttestation::Table.to_string(), "vo_attestation");
@@ -536,23 +536,29 @@ mod tests {
         assert_eq!(Node::ArchEntity.to_string(), "arch_entity");
         assert_eq!(Node::ArchConcept.to_string(), "arch_concept");
         assert_eq!(Node::ArchMajor.to_string(), "arch_major");
-        assert_eq!(Version::Tier.to_string(), "tier");
-        assert_eq!(Version::TrunkVersion.to_string(), "trunk_version");
-        assert_eq!(Version::BranchNumber.to_string(), "branch_number");
-        assert_eq!(Version::BranchVersion.to_string(), "branch_version");
+        assert_eq!(VersionRow::Tier.to_string(), "tier");
+        assert_eq!(VersionRow::TrunkVersion.to_string(), "trunk_version");
+        assert_eq!(VersionRow::BranchNumber.to_string(), "branch_number");
+        assert_eq!(VersionRow::BranchVersion.to_string(), "branch_version");
         assert_eq!(
-            Version::PrecedingVersionUid.to_string(),
+            VersionRow::PrecedingVersionUid.to_string(),
             "preceding_version_uid"
         );
-        assert_eq!(Version::CommittedAt.to_string(), "committed_at");
-        assert_eq!(Version::ContributionId.to_string(), "contribution_id");
-        assert_eq!(Version::CommitAuditId.to_string(), "commit_audit_id");
-        assert_eq!(Version::CreatingSystemId.to_string(), "creating_system_id");
+        assert_eq!(VersionRow::CommittedAt.to_string(), "committed_at");
+        assert_eq!(VersionRow::ContributionId.to_string(), "contribution_id");
+        assert_eq!(VersionRow::CommitAuditId.to_string(), "commit_audit_id");
         assert_eq!(
-            Version::OtherInputVersionUids.to_string(),
+            VersionRow::CreatingSystemId.to_string(),
+            "creating_system_id"
+        );
+        assert_eq!(
+            VersionRow::OtherInputVersionUids.to_string(),
             "other_input_version_uids"
         );
-        assert_eq!(Version::StableCompatible.to_string(), "stable_compatible");
+        assert_eq!(
+            VersionRow::StableCompatible.to_string(),
+            "stable_compatible"
+        );
         assert_eq!(VoHead::HeadSysVersion.to_string(), "head_sys_version");
         assert_eq!(
             VoHead::TrunkHeadSysVersion.to_string(),

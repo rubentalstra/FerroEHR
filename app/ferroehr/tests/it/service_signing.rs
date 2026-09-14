@@ -140,7 +140,7 @@ async fn composition_version_is_signed_and_digest_recomputes_from_served_version
 }
 
 #[tokio::test]
-async fn ehr_status_versions_are_signed_and_every_vo_version_carries_a_digest() {
+async fn ehr_status_versions_are_signed_and_every_version_carries_a_digest() {
     let db = testkit::db().await.expect("testkit database");
     let pool = db.pool();
     let svc = FerroEhrService::new(pool.clone());
@@ -187,7 +187,7 @@ async fn ehr_status_versions_are_signed_and_every_vo_version_carries_a_digest() 
     let rows = sqlx::query("SELECT kind, signature FROM version ORDER BY kind, sys_version")
         .fetch_all(&pool)
         .await
-        .expect("select vo_version");
+        .expect("select version");
     assert!(!rows.is_empty());
     for row in &rows {
         let kind: String = row.try_get("kind").unwrap();
@@ -509,7 +509,7 @@ async fn signing_disabled_folds_commit_and_preserves_master06_semantics() {
     let ehr_id = create_ehr(&svc).await;
     let ehr_uuid = ferroehr::ids::EhrId(ehr_id.parse::<uuid::Uuid>().expect("ehr uuid"));
 
-    // CREATE → the folded path: audit + contribution + vo_version in one CTE.
+    // CREATE → the folded path: audit + contribution + version in one CTE.
     let ovid_v1 = svc
         .create_composition(ehr_uuid, uv(&composition("v1"), "249", None))
         .await

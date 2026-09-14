@@ -1099,7 +1099,7 @@ pub fn build_authz(
 /// Builds `ferroehr_rest::extensions::access::authz::AuthzResolvers`: the EHR
 /// subject external-ref id (the promoted `ehr.subject_id` column — the same
 /// query the audit [`SubjectResolver`] runs) and the committed template of a
-/// COMPOSITION version (`vo_version.template_id` via the service read-back).
+/// COMPOSITION version (`version.template_id` via the service read-back).
 /// Failures are typed [`ResolveError`]s — the PEP fails closed on them, never
 /// silently permits.
 #[must_use]

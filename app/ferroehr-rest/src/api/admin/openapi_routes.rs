@@ -450,7 +450,7 @@ pub(crate) async fn admin_ehr_delete(
 ///
 /// The delete is guarded: it refuses with `409` while any committed version
 /// still references the template, so a physical delete can never orphan
-/// committed clinical data (the `vo_version.template_id` foreign key is the
+/// committed clinical data (the `version.template_id` foreign key is the
 /// underlying integrity guard). No openEHR spec governs that guard — our own
 /// design.
 #[utoipa::path(

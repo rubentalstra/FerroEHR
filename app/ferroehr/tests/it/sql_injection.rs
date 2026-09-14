@@ -42,9 +42,10 @@
 //!   for the streaming `EXISTS` probe (`aql::sql::value`). An AQL `AS <label>`
 //!   is carried on `ColumnSpec::name` for the `RESULT_SET` only and is never a
 //!   SQL identifier — see [`the_select_as_label_never_becomes_a_sql_identifier`].
-//! * **Function names** — the five literals passed to `aql::sql::expr::call`:
-//!   `to_jsonb`, `jsonb_path_query_first`, `upper_inf`, `openehr_magnitude`,
-//!   `jsonb_build_object`; plus the `Expr::cust`/`cust_with_exprs` fragments in
+//! * **Function names** — the six literals passed to `aql::sql::expr::call`:
+//!   `to_jsonb`, `jsonb_path_query_first`, `jsonb_path_query_array`,
+//!   `openehr_magnitude`, `openehr_timestamp`, `jsonb_build_object`; plus the
+//!   `Expr::cust`/`cust_with_exprs` fragments in
 //!   `aql::sql::predicate` and `aql::sql::value`, whose arguments are all
 //!   positional `$n` expressions.
 //! * **Cast types** — the seven literals passed to `aql::sql::expr::cast`:

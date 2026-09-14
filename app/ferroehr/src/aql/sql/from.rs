@@ -24,7 +24,7 @@ use crate::aql::ir::{
     Contained, ContainsTree, EhrField, EhrPredicate, LeafPath, Link, Operand, PathTarget, QueryIr,
     RmSource, SelectValue, Source, VersionField, VersionScope,
 };
-use crate::db::iden::{CommitAudit, Ehr, Node, Version, VoHead};
+use crate::db::iden::{CommitAudit, Ehr, Node, VersionRow, VoHead};
 
 use super::expr::{cast, col, hot, hot_unaliased, type_cond};
 use super::value::version_field_expr;
@@ -143,7 +143,7 @@ fn trunk_at_instant(version_alias: &str, at: Expr) -> Expr {
     let s = format!("{version_alias}_at");
     let mut sub = Query::select();
     sub.expr(Expr::val(1));
-    sub.from_as(Version::Table, Alias::new(s.as_str()));
+    sub.from_as(VersionRow::Table, Alias::new(s.as_str()));
     sub.and_where(hot(&s));
     sub.and_where(col(&s, "vo_id").eq(col(version_alias, "vo_id")));
     sub.and_where(col(&s, "branch_number").eq(Expr::val(0)));
@@ -382,7 +382,7 @@ impl Builder<'_> {
 
         // The version spine: the one FROM item everything joins onto.
         let v = format!("v{}", plan.root);
-        self.q.from_as(Version::Table, Alias::new(v.as_str()));
+        self.q.from_as(VersionRow::Table, Alias::new(v.as_str()));
         self.q.and_where(hot(&v));
         let kinds: Vec<String> = root.rm_type.names().to_vec();
         self.q.and_where(col(&v, "kind").is_in(kinds));
@@ -725,7 +725,7 @@ impl Builder<'_> {
             })
         } else {
             let voa = format!("v{sid}");
-            self.q.from_as(Version::Table, Alias::new(voa.as_str()));
+            self.q.from_as(VersionRow::Table, Alias::new(voa.as_str()));
             self.q.and_where(hot(&voa));
             self.q.and_where(col(&node, "vo_id").eq(col(&voa, "vo_id")));
             self.q
@@ -742,7 +742,7 @@ impl Builder<'_> {
                 // The EHR link binds on the version SPINE only: one owning EHR
                 // per versioned object (RM ehr master04 §EHR) makes the node
                 // rows' `ehr_id` equal by construction, and the spine predicate
-                // drives idx_vo_version_ehr with no per-node-row index.
+                // drives idx_version_hot_ehr with no per-node-row index.
                 self.q.and_where(col(&voa, "ehr_id").eq(col(e, "id")));
                 self.roots_linked_to_ehr.insert(node.clone());
             }
@@ -849,7 +849,7 @@ impl Builder<'_> {
                         // by-value descendant satisfies too by sharing the
                         // parent's spine row.
                         let voa = format!("xv{}", self.next_ctr());
-                        sub.from_as(Version::Table, Alias::new(voa.as_str()));
+                        sub.from_as(VersionRow::Table, Alias::new(voa.as_str()));
                         sub.and_where(hot(&voa));
                         sub.and_where(col(alias, "vo_id").eq(col(&voa, "vo_id")));
                         sub.and_where(col(alias, "sys_version").eq(col(&voa, "sys_version")));
@@ -877,7 +877,7 @@ impl Builder<'_> {
                         // version spine + scope (the Ehr arm's shape), then
                         // the reference edge over the anchor folder's subtree.
                         let voa = format!("xv{}", self.next_ctr());
-                        sub.from_as(Version::Table, Alias::new(voa.as_str()));
+                        sub.from_as(VersionRow::Table, Alias::new(voa.as_str()));
                         sub.and_where(hot(&voa));
                         sub.and_where(col(alias, "vo_id").eq(col(&voa, "vo_id")));
                         sub.and_where(col(alias, "sys_version").eq(col(&voa, "sys_version")));
@@ -902,7 +902,7 @@ impl Builder<'_> {
             }
             ExistsAnchor::Ehr(e) => {
                 let voa = format!("xv{}", self.next_ctr());
-                sub.from_as(Version::Table, Alias::new(voa.as_str()));
+                sub.from_as(VersionRow::Table, Alias::new(voa.as_str()));
                 sub.and_where(hot(&voa));
                 sub.and_where(col(alias, "vo_id").eq(col(&voa, "vo_id")));
                 sub.and_where(col(alias, "sys_version").eq(col(&voa, "sys_version")));
@@ -1048,7 +1048,7 @@ impl Builder<'_> {
         if self.streaming {
             self.q.join_as(
                 JoinType::Join,
-                Version::Table,
+                VersionRow::Table,
                 Alias::new(vo.as_str()),
                 vo_link,
             );
@@ -1059,7 +1059,7 @@ impl Builder<'_> {
                 node_link,
             );
         } else {
-            self.q.from_as(Version::Table, Alias::new(vo.as_str()));
+            self.q.from_as(VersionRow::Table, Alias::new(vo.as_str()));
             self.q.from_as(Node::Table, Alias::new(node.as_str()));
             self.q.and_where(vo_link);
             self.q.and_where(node_link);

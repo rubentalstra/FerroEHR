@@ -49,7 +49,7 @@ use ferroehr::service::status::{CallStatusType, SmError};
 #[derive(Debug, Default, PartialEq, Eq)]
 struct EhrRows {
     ehr: i64,
-    vo_version: i64,
+    version: i64,
     node: i64,
     contribution: i64,
     item_tag: i64,
@@ -78,7 +78,7 @@ async fn ehr_rows(pool: &PgPool, ehr_id: Uuid) -> EhrRows {
         .expect("audit count");
     EhrRows {
         ehr: count_for_ehr(pool, "SELECT count(*) FROM ehr WHERE id = $1", ehr_id).await,
-        vo_version: count_for_ehr(
+        version: count_for_ehr(
             pool,
             "SELECT count(*) FROM version WHERE ehr_id = $1",
             ehr_id,
@@ -117,7 +117,7 @@ async fn admin_delete_cascades_and_leaves_other_ehr_untouched() {
     assert!(!before1.is_empty(), "ehr1 must be populated: {before1:?}");
     // EHR_STATUS v1+v2, EHR_ACCESS v1, FOLDER v1 → ≥4 versions; ≥3 contributions
     // (ehr create, status update, directory create); 1 item tag.
-    assert!(before1.ehr == 1 && before1.vo_version >= 4 && before1.node >= 4);
+    assert!(before1.ehr == 1 && before1.version >= 4 && before1.node >= 4);
     assert!(before1.contribution >= 3 && before1.item_tag == 1 && before1.audit >= 3);
 
     // Physical delete via the ADMIN seam (SM physical_ehr_delete).
@@ -311,7 +311,7 @@ async fn admin_template_delete_happy_unknown_and_referenced() {
     // refused (409; the generic SM `conflict` — a referenced-template conflict
     // is not a COMPOSITION conflict and the SM names nothing more precise,
     // #2151) so a physical delete never
-    // orphans clinical data. Pointing an existing vo_version at the template
+    // orphans clinical data. Pointing an existing version row at the template
     // exercises the `version.template_id` FK-reference guard directly (lighter
     // than a full validated composition commit, which the guard does not need).
     svc.template_adl14_upload(read_fixture(OPT_FIXTURE_REL))
@@ -327,7 +327,7 @@ async fn admin_template_delete_happy_unknown_and_referenced() {
         .rows_affected();
     assert!(
         referenced >= 1,
-        "a vo_version must now reference the template"
+        "a version row must now reference the template"
     );
 
     let res = svc.admin_template_delete(OPT_TEMPLATE_ID.to_owned()).await;
@@ -417,12 +417,12 @@ async fn make_person(svc: &FerroEhrService, name: &str) -> String {
 /// Version rows of a DEMOGRAPHIC versioned object (a party or a party
 /// relationship), named in the schema the pseudonymisation domain keeps them
 /// in — the pool's own search path serves the clinical schema.
-async fn vo_version_rows(pool: &PgPool, vo: &str) -> i64 {
+async fn version_rows(pool: &PgPool, vo: &str) -> i64 {
     sqlx::query_scalar("SELECT count(*) FROM party.version WHERE vo_id = $1::uuid")
         .bind(vo)
         .fetch_one(pool)
         .await
-        .expect("vo_version count")
+        .expect("version count")
 }
 
 #[tokio::test]
@@ -594,7 +594,7 @@ async fn physical_party_delete_cascades_relationships_and_spares_partner() {
         .to_owned();
 
     // No orphaned audits before the delete: every audit row is referenced by a
-    // vo_version or contribution.
+    // version or contribution.
     let orphan_audits_before: i64 = sqlx::query_scalar(
         "SELECT count(*) FROM party.commit_audit a \
          WHERE NOT EXISTS (SELECT 1 FROM party.version v WHERE v.commit_audit_id = a.id) \
@@ -611,24 +611,13 @@ async fn physical_party_delete_cascades_relationships_and_spares_partner() {
         .expect("physical party delete");
 
     // p1 and both relationships referencing it are physically gone.
-    assert_eq!(vo_version_rows(pool, &p1).await, 0, "p1 gone");
-    assert_eq!(
-        vo_version_rows(pool, &r1).await,
-        0,
-        "r1 (p1 as source) gone"
-    );
-    assert_eq!(
-        vo_version_rows(pool, &r2).await,
-        0,
-        "r2 (p1 as target) gone"
-    );
+    assert_eq!(version_rows(pool, &p1).await, 0, "p1 gone");
+    assert_eq!(version_rows(pool, &r1).await, 0, "r1 (p1 as source) gone");
+    assert_eq!(version_rows(pool, &r2).await, 0, "r2 (p1 as target) gone");
 
     // The partner party p2 and the unrelated relationship r3 survive.
-    assert!(vo_version_rows(pool, &p2).await > 0, "partner p2 survives");
-    assert!(
-        vo_version_rows(pool, &r3).await > 0,
-        "unrelated r3 survives"
-    );
+    assert!(version_rows(pool, &p2).await > 0, "partner p2 survives");
+    assert!(version_rows(pool, &r3).await > 0, "unrelated r3 survives");
     assert_eq!(
         svc.party_get(PartyKind::Person, p2.clone(), None)
             .await

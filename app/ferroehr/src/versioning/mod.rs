@@ -181,7 +181,7 @@ impl Kind {
 /// Signature). Borrows the effective system id and the configured [`Signer`].
 pub(crate) struct SigningCtx<'a> {
     /// The effective openEHR `system_id` for this write: the one logical EHR
-    /// system this instance is (BASE architecture_overview master06 §System
+    /// system this instance is (BASE `architecture_overview` master06 §System
     /// Identity).
     pub(crate) system_id: String,
     pub(crate) signer: &'a Signer,

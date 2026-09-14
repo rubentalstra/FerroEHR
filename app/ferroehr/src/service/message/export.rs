@@ -264,8 +264,8 @@ impl FerroEhrService {
     }
 
     /// The `(vo_id, kind)` of every versioned object currently in the EHR (one
-    /// row per version container — its current, `upper_inf`, trunk version),
-    /// ordered by id for a deterministic extract.
+    /// row per version container — its trunk head, `vo_head`), ordered by id
+    /// for a deterministic extract.
     /// The primary set of one manifest entity: an explicit `item_list`; else
     /// the criteria queries (`master04-common_package.adoc` §`EXTRACT_SPEC`:
     /// criteria define "which items are to be retrieved from each entity's

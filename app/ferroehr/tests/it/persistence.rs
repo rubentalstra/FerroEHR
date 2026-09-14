@@ -133,7 +133,8 @@ async fn migrations_apply_cleanly_and_idempotently() {
              JOIN pg_class p ON p.oid = i.inhparent \
              JOIN pg_class c ON c.oid = i.inhrelid \
              JOIN pg_namespace n ON n.oid = p.relnamespace \
-             WHERE n.nspname = $1 ORDER BY 1, 2",
+             WHERE n.nspname = $1 AND p.relkind = 'p' AND c.relkind = 'r' \
+             ORDER BY 1, 2",
         )
         .bind(schema)
         .fetch_all(&pool)

@@ -676,20 +676,21 @@ async fn version_at_time_without_offset_resolves_in_the_local_timezone() {
     let (status, _h, body) = send(&app, req).await;
     assert_eq!(status, StatusCode::NO_CONTENT, "second version: {body}");
 
-    // The probe instant is v1's OWN start, read back from the database rather
-    // than sampled from a clock (#3119). `sys_period` is stamped by PostgreSQL,
-    // whose container clock need not agree with this process's, and the margins
-    // this test used to sleep around were eaten under full-suite load. The
-    // range's lower bound is INCLUSIVE, so the version extant at exactly that
-    // instant is v1 by construction, with no margin to lose.
+    // The probe instant is v1's OWN commit instant, read back from the database
+    // rather than sampled from a clock (#3119). `committed_at` is stamped by
+    // PostgreSQL, whose container clock need not agree with this process's, and
+    // the margins this test used to sleep around were eaten under full-suite
+    // load. A version is in force AT its own commit instant, so the version
+    // extant at exactly that instant is v1 by construction, with no margin to
+    // lose.
     let between: jiff_sqlx::Timestamp = sqlx::query_scalar(
-        "SELECT lower(sys_period) FROM demographic.vo_version \
+        "SELECT committed_at FROM party.version \
          WHERE vo_id = $1 AND sys_version = 1",
     )
     .bind(vo.parse::<uuid::Uuid>().expect("the versioned object id"))
     .fetch_one(&pg.pool())
     .await
-    .expect("v1's stored validity start");
+    .expect("v1's stored commit instant");
     let between = between.to_jiff();
 
     // The same instant written WITHOUT an offset: its civil rendering in the
