@@ -827,7 +827,11 @@ because the shipped replica count is 1 and a budget over a single pod blocks the
 drain it exists to survive.
 
 FerroTERM carries the same security context as the CDR and the viewer, and the
-chart's render gate holds all three to the same Restricted profile. Its image is
+chart's render gate holds all three to the same Restricted profile. The
+deployment probe harness reads this workload back off a running cluster too: its
+applied runtime posture, the shaped seed reaching the process from the ConfigMap
+volume, a refusal on the terminology port from a pod the policy does not name,
+and the CDR resolving a bound code through the Service. Its image is
 pinned by digest in `terminology.image.digest` and moves on FerroTERM's own
 release line, so it does not follow `appVersion` the way the viewer image does.
 Because that digest is set, `terminology.image.tag` alone deploys nothing: the
