@@ -31,23 +31,41 @@ if printf '%s' "$cmd" | grep -qE '(^|[;&|[:space:]])rm[[:space:]]+-[a-zA-Z]*([rR
   fi
 fi
 
-# Force pushes: never to main/master/main; bare force-pushes refused too.
-# The protected names match only as WHOLE REF WORDS (delimiter-bounded, so
-# `refs/heads/main`, `origin main`, `HEAD:main` all hit) — never as raw
-# substrings of the command line, which falsely blocked feature branches
-# whose names merely CONTAIN a protected name (fix/flat-master05-…) and
-# pushed sessions into delete-then-push workarounds that defeat the lease
-# safety this guard exists to encourage (#542).
-if printf '%s' "$cmd" | grep -qE 'git[[:space:]]+push[^;|&]*(--force([^-]|$)|--force-with-lease|[[:space:]]-f([[:space:]]|$)|[[:space:]]\+[[:alnum:]])'; then
-  if printf '%s' "$cmd" | grep -qE '(^|[[:space:]:/+])(main|master)([[:space:]]|$|["'"'"';&|])'; then
+# Force pushes: never to main/master. The judgement reads the `git push`
+# SEGMENT of the command only (up to `;`, `|` or `&`), never the whole line,
+# so an issue body or a commit message that mentions a force push is not one
+# (#3359). The protected names match as WHOLE REF WORDS inside that segment
+# (`refs/heads/main`, `origin main`, `HEAD:main` all hit), never as raw
+# substrings, which falsely blocked branches whose names merely CONTAIN a
+# protected name (fix/flat-master05-…, #542). A push that names no refspec
+# is judged by the branch it would push: the CURRENT one.
+# The segment must START a command (the line, or `;`, `|`, `&`, `(`, a
+# subshell), optionally after variable assignments, so a `git push` quoted
+# inside another command's argument is prose, not a push.
+force_re='(--force([^-]|$)|--force-with-lease|[[:space:]]-f([[:space:]]|$)|[[:space:]]\+[[:alnum:]])'
+while IFS= read -r seg; do
+  [ -n "$seg" ] || continue
+  printf '%s' "$seg" | grep -qE "$force_re" || continue
+  if printf '%s' "$seg" | grep -qE '(^|[[:space:]:/+])(main|master)([[:space:]]|$|["'"'"';&|])'; then
     echo "BLOCKED: force-push touching main/master is forbidden (CLAUDE.md hard rule)." >&2
     exit 2
   fi
-  if ! printf '%s' "$cmd" | grep -qE '(feat|fix|chore|docs|refactor|perf|test|ci|build|release|claude)/'; then
-    echo "BLOCKED: bare force-push refused. Force-push (prefer --force-with-lease) only an explicit conventional-type branch (feat/, fix/, chore/, docs/, refactor/, perf/, test/, ci/, build/, release/)." >&2
-    exit 2
+  if printf '%s' "$seg" | grep -qE '(feat|fix|chore|docs|refactor|perf|test|ci|build|release|claude)/'; then
+    continue
   fi
-fi
+  current="$(git -C "${CLAUDE_PROJECT_DIR:-.}" branch --show-current 2>/dev/null || true)"
+  case "$current" in
+  main | master | "")
+    echo "BLOCKED: a force-push that names no branch would push '${current:-a detached HEAD}'; force-push (prefer --force-with-lease) only an explicit conventional-type branch (feat/, fix/, chore/, docs/, refactor/, perf/, test/, ci/, build/, release/)." >&2
+    exit 2
+    ;;
+  feat/* | fix/* | chore/* | docs/* | refactor/* | perf/* | test/* | ci/* | build/* | release/* | claude/*) ;;
+  *)
+    echo "BLOCKED: a force-push that names no branch would push '$current', which is not a conventional-type branch (feat/, fix/, chore/, docs/, refactor/, perf/, test/, ci/, build/, release/)." >&2
+    exit 2
+    ;;
+  esac
+done < <(printf '%s' "$cmd" | grep -oE '(^|[;|&(`]|\$\()[[:space:]]*([A-Za-z_][A-Za-z0-9_]*=[^[:space:]]*[[:space:]]+)*git[[:space:]]+push[^;|&]*' || true)
 
 # Never delete the tracker pointer or the plans guide (the tracker itself is
 # GitHub Issues; these files are the pointer + lifecycle guide). Completed
