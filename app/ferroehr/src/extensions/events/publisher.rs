@@ -49,6 +49,7 @@ use tokio::task::JoinHandle;
 
 use super::config::EventsConfig;
 use crate::extensions::outbox;
+use crate::extensions::tenant_context;
 use ferroehr_ext::events::amqp::AmqpPublisher;
 use ferroehr_ext::events::{EventError, EventPublisher};
 
@@ -202,15 +203,37 @@ async fn run(
         {
             tracing::debug!("event subscription sync deferred: {e}");
         }
-        for domain in pools {
-            drain_until_caught_up(domain, publisher.as_ref(), &config, &shutdown, &healthy).await;
+        // Every registered tenant in turn, under its scope: the outbox is
+        // tenant-scoped by row policy and the cursors are per tenant (#3355).
+        let tenants = match outbox::tenants(&pool).await {
+            Ok(tenants) => tenants,
+            Err(e) => {
+                tracing::warn!("event publisher could not list the tenants, pass skipped: {e}");
+                Vec::new()
+            }
+        };
+        for ctx in &tenants {
+            for domain in pools {
+                tenant_context::scope(
+                    ctx.clone(),
+                    drain_until_caught_up(domain, publisher.as_ref(), &config, &shutdown, &healthy),
+                )
+                .await;
+            }
         }
 
         // Retention prune (best-effort), on its own cadence.
         if last_prune.elapsed() >= prune_every {
-            for domain in pools {
-                if let Err(e) = outbox::prune(domain, config.retention_days).await {
-                    tracing::warn!("event outbox retention prune failed: {e}");
+            for ctx in &tenants {
+                for domain in pools {
+                    if let Err(e) = tenant_context::scope(
+                        ctx.clone(),
+                        outbox::prune(domain, config.retention_days),
+                    )
+                    .await
+                    {
+                        tracing::warn!("event outbox retention prune failed: {e}");
+                    }
                 }
             }
             last_prune = tokio::time::Instant::now();
@@ -224,11 +247,18 @@ async fn run(
 
     // Best-effort final drain so a clean shutdown flushes what the broker will
     // still take; anything left stays pending for next start (at-least-once).
-    for domain in pools {
-        if let Ok(n) = drain_batch(domain, publisher.as_ref(), &config).await
-            && n > 0
-        {
-            tracing::debug!("event publisher flushed {n} events on shutdown");
+    let tenants = outbox::tenants(&pool).await.unwrap_or_default();
+    for ctx in &tenants {
+        for domain in pools {
+            if let Ok(n) = tenant_context::scope(
+                ctx.clone(),
+                drain_batch(domain, publisher.as_ref(), &config),
+            )
+            .await
+                && n > 0
+            {
+                tracing::debug!("event publisher flushed {n} events on shutdown");
+            }
         }
     }
     tracing::debug!("event publisher loop exited");

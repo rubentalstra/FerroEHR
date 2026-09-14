@@ -49,8 +49,8 @@ async fn migrations_apply_cleanly_and_idempotently() {
     // 0003_event_subscription + 0004_multitenancy + 0005_fhir_mapping +
     // 0006_fhir_outbound_cursor + 0007_cold_archive_tier +
     // 0008_spec_profile_stable_compatible_stamp + 0009_subject_pseudonym_guard
-    // + 0010_version_origins + 0011_cold_alias_views + 0012_event_outbox_reader.
-    assert_eq!((applied_ext, applied_ehr), (3, 12));
+    // + 0010_version_origins + 0011_cold_alias_views + 0012_event_outbox_reader + 0013_outbox_reader_per_tenant.
+    assert_eq!((applied_ext, applied_ehr), (3, 13));
 
     let tables: Vec<String> = sqlx::query_scalar(
         "SELECT table_name FROM information_schema.tables \
