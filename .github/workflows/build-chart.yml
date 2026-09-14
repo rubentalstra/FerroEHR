@@ -387,9 +387,12 @@ jobs:
             echo "::error::${PACKAGE} carries appVersion ${packaged}, expected ${APP} — 'helm package --app-version' did not take."
             exit 1
           fi
-          wrong=$(helm show chart "$PACKAGE" | grep -oE 'image: ghcr\.io/[^:]+:[^ ]+' | grep -v ":${APP}\$" || true)
+          # Only the FIRST-PARTY entries carry appVersion; a sibling image such as
+          # FerroTERM rides its own version line and is marked `# party: third`
+          # in the chart, the same marker scripts/checks/chart-appversion.sh reads.
+          wrong=$(helm show chart "$PACKAGE" | grep -F '# party: first' | grep -oE 'image: ghcr\.io/[^:]+:[^ @]+' | grep -v ":${APP}\$" || true)
           if [ -n "$wrong" ]; then
-            echo "::error::${PACKAGE} advertises artifacthub.io/images tags that are not ${APP}:"
+            echo "::error::${PACKAGE} advertises first-party artifacthub.io/images tags that are not ${APP}:"
             echo "$wrong"
             exit 1
           fi
