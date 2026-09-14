@@ -19,6 +19,13 @@ workflow refuses a tag that has no matching section here.
 
 ### Added
 
+- **The pre-rewrite storage baseline is committed** (#3368). The storage
+  benchmark's class-`s` record for the first-generation schema lives at
+  `docs/benchmarks/storage/generation-1/record.json` and renders on the
+  performance page, so the storage rewrite (#3337) is compared against a
+  committed record rather than a claim. The harness's end-of-run relation table
+  gains `dead_tuple_percent`, the exact heap figure `pgstattuple` reads (null
+  where the extension cannot be created), beside the planner's estimates.
 - **A storage benchmark harness** (#3367). `cargo bench -p ferroehr --bench
   storage` seeds a corpus through the ordinary write path, then times the
   storage layer's hot paths one at a time: a composition commit, a supersession,

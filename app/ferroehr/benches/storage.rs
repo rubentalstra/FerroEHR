@@ -461,10 +461,12 @@ async fn facts(pool: &PgPool, before: &Snapshot) -> Value {
     })
 }
 
-/// Every relation the run put rows into, with its size and its live and dead
-/// tuple estimates at the end of the run.
+/// Every relation the run put rows into, with its size, its live and dead
+/// tuple estimates, and the exact dead-tuple percentage `pgstattuple` reads
+/// off the heap at the end of the run.
 async fn relations(pool: &PgPool) -> Value {
     let now = snapshot(pool).await;
+    let exact = dead_tuple_percent(pool).await;
     let rows: Vec<Value> = now
         .tables
         .iter()
@@ -477,10 +479,46 @@ async fn relations(pool: &PgPool) -> Value {
                 "n_tup_upd": stats.upd,
                 "n_tup_hot_upd": stats.hot_upd,
                 "total_bytes": stats.bytes,
+                "dead_tuple_percent": exact.get(name).cloned().unwrap_or(Value::Null),
             })
         })
         .collect();
     Value::Array(rows)
+}
+
+/// The exact dead-tuple percentage per plain relation from `pgstattuple`
+/// (`PostgreSQL` docs, Additional Supplied Modules §pgstattuple), keyed by
+/// `schema.relation`; empty when the extension cannot be created.
+///
+/// NOTE: `pgstattuple` scans the heap and refuses partitioned parents, so only
+/// `relkind = 'r'` relations are read; the estimates beside it stay for the rest.
+async fn dead_tuple_percent(pool: &PgPool) -> BTreeMap<String, Value> {
+    let mut out = BTreeMap::new();
+    if sqlx::query("CREATE EXTENSION IF NOT EXISTS pgstattuple")
+        .execute(pool)
+        .await
+        .is_err()
+    {
+        return out;
+    }
+    let rows = sqlx::query(
+        "SELECT s.schemaname, s.relname, (pgstattuple(s.relid)).dead_tuple_percent AS pct \
+           FROM pg_stat_user_tables s JOIN pg_class c ON c.oid = s.relid \
+          WHERE s.schemaname = ANY (current_schemas(false)) AND c.relkind = 'r' AND s.n_tup_ins > 0",
+    )
+    .fetch_all(pool)
+    .await
+    .unwrap_or_default();
+    for row in rows {
+        let schema: String = row.try_get("schemaname").unwrap_or_default();
+        let relname: String = row.try_get("relname").unwrap_or_default();
+        let pct: Option<f64> = row.try_get("pct").ok();
+        out.insert(
+            format!("{schema}.{relname}"),
+            pct.map_or(Value::Null, Value::from),
+        );
+    }
+    out
 }
 
 /// The WAL bytes written between two positions, absent when the role could not

@@ -1,0 +1,617 @@
+{
+  "schema_generation": "generation-1",
+  "postgres_version": "PostgreSQL 18.6 (Debian 18.6-1.pgdg13+2) on aarch64-unknown-linux-gnu, compiled by gcc (Debian 14.2.0-19) 14.2.0, 64-bit",
+  "bench_class": "s",
+  "cpu_count": 8,
+  "memory_bytes": 17179869184,
+  "measured_at_commit": "6ebfdb32b304a291daf7a0d9d5a6177dd3dee987",
+  "measured_at": "2026-09-14T10:42:08.460796Z",
+  "timings_measured": true,
+  "seed": {
+    "ehrs": 100,
+    "compositions": 3000,
+    "template_id": "Vital signs",
+    "entry_rm_type": "OBSERVATION",
+    "seconds": 4.678803375
+  },
+  "groups": [
+    {
+      "name": "storage_commit",
+      "operations": [
+        {
+          "name": "create_first_version",
+          "iterations": 1200.0,
+          "samples": 10,
+          "mean_ns": 3877135.0008333335,
+          "median_ns": 3699179.6875,
+          "p50_ns": 3618475.691666667,
+          "p95_ns": 5306526.041666667,
+          "p99_ns": 5306526.041666667,
+          "database": {
+            "tables": [
+              {
+                "relation": "ehr.audit",
+                "n_tup_ins_delta": 1455,
+                "n_tup_upd_delta": 0,
+                "n_tup_hot_upd_delta": 0,
+                "n_tup_del_delta": 0,
+                "n_live_tup": 5366,
+                "n_dead_tup": 0,
+                "total_bytes": 1417216
+              },
+              {
+                "relation": "ehr.contribution",
+                "n_tup_ins_delta": 1455,
+                "n_tup_upd_delta": 0,
+                "n_tup_hot_upd_delta": 0,
+                "n_tup_del_delta": 0,
+                "n_live_tup": 5166,
+                "n_dead_tup": 0,
+                "total_bytes": 917504
+              },
+              {
+                "relation": "ehr.event_outbox",
+                "n_tup_ins_delta": 1455,
+                "n_tup_upd_delta": 0,
+                "n_tup_hot_upd_delta": 0,
+                "n_tup_del_delta": 0,
+                "n_live_tup": 5166,
+                "n_dead_tup": 0,
+                "total_bytes": 2850816
+              },
+              {
+                "relation": "ehr.node",
+                "n_tup_ins_delta": 62565,
+                "n_tup_upd_delta": 0,
+                "n_tup_hot_upd_delta": 0,
+                "n_tup_del_delta": 0,
+                "n_live_tup": 218038,
+                "n_dead_tup": 0,
+                "total_bytes": 106610688
+              },
+              {
+                "relation": "ehr.vo_version",
+                "n_tup_ins_delta": 1455,
+                "n_tup_upd_delta": 0,
+                "n_tup_hot_upd_delta": 0,
+                "n_tup_del_delta": 0,
+                "n_live_tup": 5266,
+                "n_dead_tup": 100,
+                "total_bytes": 11485184
+              }
+            ],
+            "blks_hit_delta": 1008028,
+            "blks_read_delta": 33,
+            "xact_commit_delta": 2918,
+            "wal_bytes": 49243184
+          }
+        },
+        {
+          "name": "supersede",
+          "iterations": 870.0,
+          "samples": 10,
+          "mean_ns": 11665529.021839082,
+          "median_ns": 11425105.83908046,
+          "p50_ns": 11212147.505747126,
+          "p95_ns": 14392714.08045977,
+          "p99_ns": 14392714.08045977,
+          "database": {
+            "tables": [
+              {
+                "relation": "ehr.audit",
+                "n_tup_ins_delta": 1125,
+                "n_tup_upd_delta": 0,
+                "n_tup_hot_upd_delta": 0,
+                "n_tup_del_delta": 0,
+                "n_live_tup": 6081,
+                "n_dead_tup": 0,
+                "total_bytes": 1728512
+              },
+              {
+                "relation": "ehr.contribution",
+                "n_tup_ins_delta": 1125,
+                "n_tup_upd_delta": 0,
+                "n_tup_hot_upd_delta": 0,
+                "n_tup_del_delta": 0,
+                "n_live_tup": 5881,
+                "n_dead_tup": 0,
+                "total_bytes": 1146880
+              },
+              {
+                "relation": "ehr.event_outbox",
+                "n_tup_ins_delta": 1125,
+                "n_tup_upd_delta": 0,
+                "n_tup_hot_upd_delta": 0,
+                "n_tup_del_delta": 0,
+                "n_live_tup": 5817,
+                "n_dead_tup": 0,
+                "total_bytes": 3448832
+              },
+              {
+                "relation": "ehr.node",
+                "n_tup_ins_delta": 48375,
+                "n_tup_upd_delta": 0,
+                "n_tup_hot_upd_delta": 0,
+                "n_tup_del_delta": 0,
+                "n_live_tup": 248783,
+                "n_dead_tup": 0,
+                "total_bytes": 132251648
+              },
+              {
+                "relation": "ehr.vo_version",
+                "n_tup_ins_delta": 1125,
+                "n_tup_upd_delta": 1125,
+                "n_tup_hot_upd_delta": 0,
+                "n_tup_del_delta": 0,
+                "n_live_tup": 5981,
+                "n_dead_tup": 0,
+                "total_bytes": 14942208
+              }
+            ],
+            "blks_hit_delta": 30795283,
+            "blks_read_delta": 6,
+            "xact_commit_delta": 1134,
+            "wal_bytes": 39373344
+          }
+        },
+        {
+          "name": "supersede_if_match",
+          "iterations": 850.0,
+          "samples": 10,
+          "mean_ns": 11403089.414117647,
+          "median_ns": 11469811.029411765,
+          "p50_ns": 11401354.411764706,
+          "p95_ns": 14502288.235294119,
+          "p99_ns": 14502288.235294119,
+          "database": {
+            "tables": [
+              {
+                "relation": "ehr.audit",
+                "n_tup_ins_delta": 1105,
+                "n_tup_upd_delta": 0,
+                "n_tup_hot_upd_delta": 0,
+                "n_tup_del_delta": 0,
+                "n_live_tup": 7187,
+                "n_dead_tup": 0,
+                "total_bytes": 1949696
+              },
+              {
+                "relation": "ehr.contribution",
+                "n_tup_ins_delta": 1105,
+                "n_tup_upd_delta": 0,
+                "n_tup_hot_upd_delta": 0,
+                "n_tup_del_delta": 0,
+                "n_live_tup": 6987,
+                "n_dead_tup": 0,
+                "total_bytes": 1318912
+              },
+              {
+                "relation": "ehr.event_outbox",
+                "n_tup_ins_delta": 1105,
+                "n_tup_upd_delta": 0,
+                "n_tup_hot_upd_delta": 0,
+                "n_tup_del_delta": 0,
+                "n_live_tup": 6987,
+                "n_dead_tup": 0,
+                "total_bytes": 4120576
+              },
+              {
+                "relation": "ehr.node",
+                "n_tup_ins_delta": 47515,
+                "n_tup_upd_delta": 0,
+                "n_tup_hot_upd_delta": 0,
+                "n_tup_del_delta": 0,
+                "n_live_tup": 296341,
+                "n_dead_tup": 0,
+                "total_bytes": 157458432
+              },
+              {
+                "relation": "ehr.vo_version",
+                "n_tup_ins_delta": 1105,
+                "n_tup_upd_delta": 1105,
+                "n_tup_hot_upd_delta": 0,
+                "n_tup_del_delta": 0,
+                "n_live_tup": 7087,
+                "n_dead_tup": 1105,
+                "total_bytes": 18309120
+              }
+            ],
+            "blks_hit_delta": 29699039,
+            "blks_read_delta": 1,
+            "xact_commit_delta": 1110,
+            "wal_bytes": 38268736
+          }
+        }
+      ]
+    },
+    {
+      "name": "storage_read",
+      "operations": [
+        {
+          "name": "by_version_uid",
+          "iterations": 13640.0,
+          "samples": 10,
+          "mean_ns": 307209.1701612903,
+          "median_ns": 299525.01832844573,
+          "p50_ns": 298602.73093841644,
+          "p95_ns": 374582.9362170088,
+          "p99_ns": 374582.9362170088,
+          "database": {
+            "tables": [],
+            "blks_hit_delta": 250604,
+            "blks_read_delta": 5727,
+            "xact_commit_delta": 17765,
+            "wal_bytes": 79136
+          }
+        },
+        {
+          "name": "latest_by_versioned_object_uid",
+          "iterations": 8550.0,
+          "samples": 10,
+          "mean_ns": 572626.5305263158,
+          "median_ns": 547731.0918128656,
+          "p50_ns": 479915.2046783626,
+          "p95_ns": 1034690.6432748538,
+          "p99_ns": 1034690.6432748538,
+          "database": {
+            "tables": [],
+            "blks_hit_delta": 121845,
+            "blks_read_delta": 0,
+            "xact_commit_delta": 10615,
+            "wal_bytes": 456
+          }
+        },
+        {
+          "name": "version_at_time",
+          "iterations": 7260.0,
+          "samples": 10,
+          "mean_ns": 601130.7622589532,
+          "median_ns": 601867.5103305785,
+          "p50_ns": 597297.5771349862,
+          "p95_ns": 640044.1349862259,
+          "p99_ns": 640044.1349862259,
+          "database": {
+            "tables": [],
+            "blks_hit_delta": 122318,
+            "blks_read_delta": 8,
+            "xact_commit_delta": 9325,
+            "wal_bytes": 136
+          }
+        },
+        {
+          "name": "revision_history",
+          "iterations": 25230.0,
+          "samples": 10,
+          "mean_ns": 196499.4995640111,
+          "median_ns": 194307.9336107808,
+          "p50_ns": 193877.1965913595,
+          "p95_ns": 216642.17518826792,
+          "p99_ns": 216642.17518826792,
+          "database": {
+            "tables": [],
+            "blks_hit_delta": 671513,
+            "blks_read_delta": 0,
+            "xact_commit_delta": 33438,
+            "wal_bytes": 88
+          }
+        }
+      ]
+    },
+    {
+      "name": "storage_query",
+      "operations": [
+        {
+          "name": "contains_one_ehr",
+          "iterations": 2850.0,
+          "samples": 10,
+          "mean_ns": 1663982.9968421054,
+          "median_ns": 1667488.8877192982,
+          "p50_ns": 1661943.7122807018,
+          "p95_ns": 1755590.203508772,
+          "p99_ns": 1755590.203508772,
+          "database": {
+            "tables": [],
+            "blks_hit_delta": 766648,
+            "blks_read_delta": 46,
+            "xact_commit_delta": 15520,
+            "wal_bytes": 368
+          }
+        },
+        {
+          "name": "contains_population",
+          "iterations": 3440.0,
+          "samples": 10,
+          "mean_ns": 1064631.3468023255,
+          "median_ns": 1083295.1191860465,
+          "p50_ns": 1057462.0872093022,
+          "p95_ns": 1141070.0087209302,
+          "p99_ns": 1141070.0087209302,
+          "database": {
+            "tables": [],
+            "blks_hit_delta": 1294649,
+            "blks_read_delta": 44,
+            "xact_commit_delta": 13395,
+            "wal_bytes": 0
+          }
+        }
+      ]
+    },
+    {
+      "name": "storage_lifecycle",
+      "operations": [
+        {
+          "name": "archive_ehr",
+          "iterations": 90.0,
+          "samples": 10,
+          "mean_ns": 23282670.41111111,
+          "median_ns": 23701963.166666668,
+          "p50_ns": 23313139.111111112,
+          "p95_ns": 30336120.555555556,
+          "p99_ns": 30336120.555555556,
+          "database": {
+            "tables": [
+              {
+                "relation": "ehr.node",
+                "n_tup_ins_delta": 166738,
+                "n_tup_upd_delta": 0,
+                "n_tup_hot_upd_delta": 0,
+                "n_tup_del_delta": 166738,
+                "n_live_tup": 296341,
+                "n_dead_tup": 166738,
+                "total_bytes": 238829568
+              },
+              {
+                "relation": "ehr.vo_archive",
+                "n_tup_ins_delta": 3993,
+                "n_tup_upd_delta": 0,
+                "n_tup_hot_upd_delta": 0,
+                "n_tup_del_delta": 3993,
+                "n_live_tup": 132,
+                "n_dead_tup": 3993,
+                "total_bytes": 204800
+              },
+              {
+                "relation": "ehr.vo_version",
+                "n_tup_ins_delta": 4114,
+                "n_tup_upd_delta": 0,
+                "n_tup_hot_upd_delta": 0,
+                "n_tup_del_delta": 4114,
+                "n_live_tup": 7087,
+                "n_dead_tup": 5219,
+                "total_bytes": 26574848
+              }
+            ],
+            "blks_hit_delta": 6969118,
+            "blks_read_delta": 425,
+            "xact_commit_delta": 250,
+            "wal_bytes": 264988304
+          }
+        },
+        {
+          "name": "restore_ehr",
+          "iterations": 160.0,
+          "samples": 10,
+          "mean_ns": 34057439.80625,
+          "median_ns": 27769398.28125,
+          "p50_ns": 24878677.0,
+          "p95_ns": 69140218.5625,
+          "p99_ns": 69140218.5625,
+          "database": {
+            "tables": [
+              {
+                "relation": "ehr.node",
+                "n_tup_ins_delta": 263198,
+                "n_tup_upd_delta": 0,
+                "n_tup_hot_upd_delta": 0,
+                "n_tup_del_delta": 263198,
+                "n_live_tup": 296341,
+                "n_dead_tup": 263198,
+                "total_bytes": 284958720
+              },
+              {
+                "relation": "ehr.vo_archive",
+                "n_tup_ins_delta": 6303,
+                "n_tup_upd_delta": 0,
+                "n_tup_hot_upd_delta": 0,
+                "n_tup_del_delta": 6303,
+                "n_live_tup": 231,
+                "n_dead_tup": 6303,
+                "total_bytes": 319488
+              },
+              {
+                "relation": "ehr.vo_version",
+                "n_tup_ins_delta": 6494,
+                "n_tup_upd_delta": 0,
+                "n_tup_hot_upd_delta": 0,
+                "n_tup_del_delta": 6494,
+                "n_live_tup": 7087,
+                "n_dead_tup": 6494,
+                "total_bytes": 31498240
+              }
+            ],
+            "blks_hit_delta": 9276746,
+            "blks_read_delta": 10442,
+            "xact_commit_delta": 388,
+            "wal_bytes": 419956280
+          }
+        },
+        {
+          "name": "retention_prune",
+          "iterations": 25650.0,
+          "samples": 10,
+          "mean_ns": 169358.4746588694,
+          "median_ns": 166978.98791423003,
+          "p50_ns": 166686.4358674464,
+          "p95_ns": 185671.41013645224,
+          "p99_ns": 185671.41013645224,
+          "database": {
+            "tables": [],
+            "blks_hit_delta": 35104,
+            "blks_read_delta": 77,
+            "xact_commit_delta": 33859,
+            "wal_bytes": 104
+          }
+        }
+      ]
+    }
+  ],
+  "commit_probe": {
+    "operation": "create_composition",
+    "commits": 1,
+    "database": {
+      "tables": [
+        {
+          "relation": "ehr.audit",
+          "n_tup_ins_delta": 1,
+          "n_tup_upd_delta": 0,
+          "n_tup_hot_upd_delta": 0,
+          "n_tup_del_delta": 0,
+          "n_live_tup": 7188,
+          "n_dead_tup": 0,
+          "total_bytes": 1949696
+        },
+        {
+          "relation": "ehr.contribution",
+          "n_tup_ins_delta": 1,
+          "n_tup_upd_delta": 0,
+          "n_tup_hot_upd_delta": 0,
+          "n_tup_del_delta": 0,
+          "n_live_tup": 6988,
+          "n_dead_tup": 0,
+          "total_bytes": 1318912
+        },
+        {
+          "relation": "ehr.event_outbox",
+          "n_tup_ins_delta": 1,
+          "n_tup_upd_delta": 0,
+          "n_tup_hot_upd_delta": 0,
+          "n_tup_del_delta": 0,
+          "n_live_tup": 6988,
+          "n_dead_tup": 0,
+          "total_bytes": 4120576
+        },
+        {
+          "relation": "ehr.node",
+          "n_tup_ins_delta": 43,
+          "n_tup_upd_delta": 0,
+          "n_tup_hot_upd_delta": 0,
+          "n_tup_del_delta": 0,
+          "n_live_tup": 296059,
+          "n_dead_tup": 0,
+          "total_bytes": 285032448
+        },
+        {
+          "relation": "ehr.vo_version",
+          "n_tup_ins_delta": 1,
+          "n_tup_upd_delta": 0,
+          "n_tup_hot_upd_delta": 0,
+          "n_tup_del_delta": 0,
+          "n_live_tup": 7088,
+          "n_dead_tup": 0,
+          "total_bytes": 31571968
+        }
+      ],
+      "blks_hit_delta": 88172,
+      "blks_read_delta": 77595,
+      "xact_commit_delta": 23,
+      "wal_bytes": 2733312
+    }
+  },
+  "explain": {
+    "statement": "SELECT c/uid/value FROM EHR e CONTAINS COMPOSITION c CONTAINS OBSERVATION o LIMIT 50",
+    "node_type": "Gather",
+    "actual_total_ms": 207.127,
+    "rows": 36464.0,
+    "shared_hit_blocks": 55817,
+    "shared_read_blocks": 13608,
+    "wal_bytes": 0,
+    "wal_records": 0,
+    "index_names": [
+      "pk_node",
+      "uq_vo_version_current"
+    ]
+  },
+  "relations": [
+    {
+      "relation": "ehr.audit",
+      "n_live_tup": 7188,
+      "n_dead_tup": 0,
+      "n_tup_upd": 0,
+      "n_tup_hot_upd": 0,
+      "total_bytes": 1949696,
+      "dead_tuple_percent": 0.0
+    },
+    {
+      "relation": "ehr.contribution",
+      "n_live_tup": 6988,
+      "n_dead_tup": 0,
+      "n_tup_upd": 0,
+      "n_tup_hot_upd": 0,
+      "total_bytes": 1318912,
+      "dead_tuple_percent": 0.0
+    },
+    {
+      "relation": "ehr.ehr",
+      "n_live_tup": 100,
+      "n_dead_tup": 0,
+      "n_tup_upd": 0,
+      "n_tup_hot_upd": 0,
+      "total_bytes": 114688,
+      "dead_tuple_percent": 0.0
+    },
+    {
+      "relation": "ehr.event_outbox",
+      "n_live_tup": 6988,
+      "n_dead_tup": 0,
+      "n_tup_upd": 0,
+      "n_tup_hot_upd": 0,
+      "total_bytes": 4120576,
+      "dead_tuple_percent": 0.0
+    },
+    {
+      "relation": "ehr.node",
+      "n_live_tup": 296059,
+      "n_dead_tup": 0,
+      "n_tup_upd": 0,
+      "n_tup_hot_upd": 0,
+      "total_bytes": 285032448,
+      "dead_tuple_percent": 0.0
+    },
+    {
+      "relation": "ehr.template_ref",
+      "n_live_tup": 1,
+      "n_dead_tup": 0,
+      "n_tup_upd": 0,
+      "n_tup_hot_upd": 0,
+      "total_bytes": 32768,
+      "dead_tuple_percent": 0.0
+    },
+    {
+      "relation": "ehr.template_store",
+      "n_live_tup": 1,
+      "n_dead_tup": 0,
+      "n_tup_upd": 0,
+      "n_tup_hot_upd": 0,
+      "total_bytes": 139264,
+      "dead_tuple_percent": 0.0
+    },
+    {
+      "relation": "ehr.vo_archive",
+      "n_live_tup": 0,
+      "n_dead_tup": 0,
+      "n_tup_upd": 0,
+      "n_tup_hot_upd": 0,
+      "total_bytes": 40960,
+      "dead_tuple_percent": 0.0
+    },
+    {
+      "relation": "ehr.vo_version",
+      "n_live_tup": 7088,
+      "n_dead_tup": 0,
+      "n_tup_upd": 2330,
+      "n_tup_hot_upd": 0,
+      "total_bytes": 31571968,
+      "dead_tuple_percent": 0.0
+    }
+  ]
+}
