@@ -73,8 +73,9 @@ readonly BOUNDARY_PATTERNS=(
 # and never edited here (the openEHR specs, the clinical-model corpora, the
 # legal texts under docs/law/, whose publishers' structural keys are nine-digit
 # runs that pass the eleven-test by chance), and the machine-written artifacts
-# carry long digit runs with no personal data in them by construction.
-readonly SKIP_PATTERN='^(docs/specs/|docs/law/|corpus/|docs/conformance/)|(^|/)vendor/|(^|/)Cargo\.lock$|\.svg$'
+# (the conformance records and the benchmark records) carry long digit runs
+# with no personal data in them by construction.
+readonly SKIP_PATTERN='^(docs/specs/|docs/law/|corpus/|docs/conformance/|docs/benchmarks/)|(^|/)vendor/|(^|/)Cargo\.lock$|\.svg$'
 
 readonly POSTCODE_RE='(^|[^0-9A-Za-z])[1-9][0-9]{3}[ ]?[A-Z]{2}[^0-9A-Za-z]{1,3}[0-9]{1,4}([^0-9A-Za-z]|$)'
 
