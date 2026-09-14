@@ -33,19 +33,16 @@ workflow refuses a tag that has no matching section here.
     object answers "what is current", and none of the columns a commit updates
     appears in an index, so that update is heap-only.
   - `version`, `node` and `vo_attestation` are partitioned by storage tier, so
-    archiving an EHR is row movement inside one relation set — the `cold` and
-    `cold_demographic` mirror schemas and every `*_all` union view are gone,
-    and a foreign key now holds across the tier.
+    archiving an EHR is row movement inside one relation set rather than a copy
+    into mirror relations: the `cold` and `cold_demographic` schemas, every
+    `*_all` union view and the `vo_archive` marker table are gone, the archive
+    marker is two columns of `vo_head`, and a foreign key holds across the tier.
   - `node` gains the promoted `name_code` and `name_terminology` the AQL node
     predicate needs, and drops the unread `citem_num`.
   - The clinical and party change-control and node relations are rendered from
     one shared DDL template, so the two domains cannot drift.
   - The party domain gains `party_relationship_target`, the target-side index
     behind `PARTY.reverse_relationships`.
-  - Archival is a partition move rather than a copy into mirror relations, so
-    the `cold` and `cold_demographic` schemas, every `*_all` union view and the
-    `vo_archive` marker table are gone; the archive marker is two columns of
-    `vo_head`.
   - The archive file format carries a version's `committed_at` instead of a
     validity interval. An archive written by an earlier release does not load.
 

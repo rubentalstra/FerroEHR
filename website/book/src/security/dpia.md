@@ -83,8 +83,8 @@ only able to narrow the previous one. That layering is
 flowchart LR
     subject(["The person"])
     subgraph dom ["The pseudonymisation domain"]
-        clin[("ehr + cold<br/>clinical record,<br/>keyed by an opaque pseudonym")]
-        demo[("demographic + cold_demographic<br/>the person, and sealed<br/>national identifiers")]
+        clin[("clinical<br/>clinical record,<br/>keyed by an opaque pseudonym")]
+        demo[("party<br/>the person, and sealed<br/>national identifiers")]
         link[("linkage<br/>which party is the subject<br/>of which EHR")]
     end
     aud[("audit<br/>who reached what, when")]

@@ -519,11 +519,11 @@ loop).
 > repository one node eviction away from this state.
 >
 > One recovery path does **not** self-heal, and it is worth knowing before you try
-> it: restoring or dropping *part* of the schema set. The archival tier's tables
-> live in their own `cold` schema, so a `DROP SCHEMA ehr CASCADE` leaves them
-> behind, and re-running the migration set then fails permanently with
-> `relation "vo_version" already exists`: the pod crash-loops, and restarting it
-> retries the same failure. Recreate the whole database rather than one schema.
+> it: restoring or dropping *part* of the schema set. A restore that brings back
+> some of a domain's relations without its migration bookkeeping makes the next
+> migration run fail permanently with `relation "version" already exists`: the
+> pod crash-loops, and restarting it retries the same failure. Recreate the whole
+> database rather than one schema.
 
 The management surface is independent of the probes and stays ops-only
 (`/management/info`, `/prometheus`, `/metrics`, `/env`, `/loggers`,

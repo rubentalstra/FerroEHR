@@ -40,11 +40,11 @@ What an attacker wants, in the order the loss hurts:
 
 | Asset | Where it lives | Why it matters |
 |---|---|---|
-| **Clinical payload:** compositions, EHR status, folders | the `ehr` schema's `node` and `vo_version` tables, and the `cold` archive mirrors | this is PHI; disclosure is the primary harm and it is not undoable |
-| **Demographic parties and their identifiers** | the `demographic` schema and its `cold_demographic` tier, with protected national identifiers sealed in `national_identifier` | who the people are, held apart from what is recorded about them |
+| **Clinical payload:** compositions, EHR status, folders | the `clinical` schema's `node` and `version` tables, archival partitions included | this is PHI; disclosure is the primary harm and it is not undoable |
+| **Demographic parties and their identifiers** | the `party` schema, archival partitions included, with protected national identifiers sealed in `national_identifier` | who the people are, held apart from what is recorded about them |
 | **The party-to-EHR map** | `linkage.party_ehr` | the additional information that re-attributes a pseudonymised record to a person; on its own it names neither |
 | **The audit trail** | the `audit` schema, plus any configured forwarding sink | it is the evidence that everything else happened; an attacker who can edit it can make an access disappear |
-| **Version history and its integrity** | `vo_version`, `contribution`, attestations | an openEHR record's value is that it is *append-only and attributable*; a silently rewritten prior version is worse than a deleted one |
+| **Version history and its integrity** | `version`, `vo_head`, `contribution`, attestations | an openEHR record's value is that it is *append-only and attributable*; a silently rewritten prior version is worse than a deleted one |
 | **Signing keys** | the configured signing key material for commit attestation | forging an attestation forges provenance of clinical content |
 | **Bearer credentials and password hashes** | tokens in flight; Argon2id PHC hashes at rest | a stolen token is an authenticated clinical caller until it expires |
 | **Instance separation** | one instance, one database, one set of domain roles per organisation | two organisations sharing one instance is a breach of both at once |
@@ -369,13 +369,13 @@ of no other, so a privilege cannot arrive through a membership.
 
 | Credential | Reaches | Cannot reach |
 |---|---|---|
-| `ferroehr_ehr` | `ehr` and `cold` with `SELECT`, `INSERT`, `UPDATE` and `DELETE`; the `ehr.posture` stamp; `USAGE` on `ext`; in `audit`, record an event, stamp it forwarded, run the retention reaper and verify the chain | `demographic`, `cold_demographic` and `linkage`, revoked explicitly and in both directions |
-| `ferroehr_ehr_reader` | `SELECT` on `ehr` and `cold`; `USAGE` on `ext`; read the `audit` repository and verify the chain | the same three schemas |
-| `ferroehr_demographic` | `demographic` and `cold_demographic` with `SELECT`, `INSERT`, `UPDATE` and `DELETE`, the sealed `national_identifier` rows included; `EXECUTE` on `demographic.resolve_national_identifier` | `ehr`, `cold` and `linkage`, revoked explicitly and in both directions |
-| `ferroehr_demographic_reader` | `SELECT` on `party`. On `national_identifier` the table-level grant is revoked and re-granted column by column, so it reads `id`, `party_id`, `scheme`, `lookup_digest` and `created_at` and never `nonce` or `ciphertext` | `clinical` and `linkage` |
-| `ferroehr_linkage` | `linkage.party_ehr` with `SELECT`, `INSERT` and `UPDATE`; `USAGE` on `ext` | `ehr`, `cold`, `demographic`, `cold_demographic`, and `demographic.resolve_national_identifier` by its own revoke. It holds no `DELETE` anywhere, so it cannot remove a mapping either |
+| `ferroehr_ehr` | `clinical`, archival partitions included, with `SELECT`, `INSERT`, `UPDATE` and `DELETE`; the `ext.posture` stamp; `USAGE` on `ext`; in `audit`, record an event, stamp it forwarded, run the retention reaper and verify the chain | `party` and `linkage`, revoked explicitly and in both directions |
+| `ferroehr_ehr_reader` | `SELECT` on `clinical`; `USAGE` on `ext`; read the `audit` repository and verify the chain | the same two schemas |
+| `ferroehr_demographic` | `party`, archival partitions included, with `SELECT`, `INSERT`, `UPDATE` and `DELETE`, the sealed `national_identifier` rows included; `EXECUTE` on `party.resolve_national_identifier` | `clinical` and `linkage`, revoked explicitly and in both directions |
+| `ferroehr_demographic_reader` | `SELECT` on `party`. On `national_identifier` the table-level grant is revoked and re-granted column by column, so it reads `id`, `party_id`, `scheme` and `created_at` and never `lookup_digest`, `nonce` or `ciphertext` | `clinical` and `linkage` |
+| `ferroehr_linkage` | `linkage.party_ehr` with `SELECT`, `INSERT` and `UPDATE`; `USAGE` on `ext` | `clinical`, `party`, and `party.resolve_national_identifier` by its own revoke. It holds no `DELETE` anywhere, so it cannot remove a mapping either |
 | The schema-preparation credential (`[db] migrate_url`, normally a member of `ferroehr_migrator`) | every schema: it issues the DDL of all five migration sets and reads all five `_sqlx_migrations` tables, and it owns the objects it created | nothing. The server opens it for that one boot step and closes it again, so no pool is held on it and no request is served through it |
-| `ferroehr_app`, `ferroehr_reader` | the earlier single-domain pair, still carrying `ehr`, `cold`, `ext` and the `audit` repository | `demographic`, `cold_demographic` and `linkage`, where they hold no grant. That is an absence of privilege rather than a revoke, and the boot self-check does not cover these two roles |
+| `ferroehr_app`, `ferroehr_reader` | the earlier single-domain pair, still carrying `clinical`, `ext` and the `audit` repository | `party` and `linkage`, where they hold no grant. That is an absence of privilege rather than a revoke, and the boot self-check does not cover these two roles |
 
 The `audit` schema is granted to the clinical pair (`ferroehr_ehr` records an
 event, stamps it forwarded, runs the retention reaper and verifies the chain;

@@ -86,7 +86,7 @@ flowchart TD
     G --> H{"signing.mode"}
     H -->|digest| I["sha256: + base64(SHA-256(canonical))"]
     H -->|pgp| J["RFC 4880 detached signature,<br/>ASCII-armored"]
-    I --> K[("vo_version row<br/>same transaction")]
+    I --> K[("version row<br/>same transaction")]
     J --> K
     C --> K
     E --> K
