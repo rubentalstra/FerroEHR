@@ -48,6 +48,7 @@ mod item_tag_fixture;
 mod licence_stamp;
 mod multimedia_s3;
 mod opt_resource_meta;
+mod outbox_prune;
 mod persistence;
 mod privacy_leak;
 mod privacy_policy;
