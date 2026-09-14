@@ -39,8 +39,9 @@ Rulings that shaped the present design were re-read with their evidence:
 the UNLOGGED refusal (#2698) stands; the GiST removal stands as a fact but
 loses its stated rationale; schema-per-domain stays the default and gains a
 per-domain connection so cluster-per-domain becomes a configuration; the
-migration-immutability stabilisation of 2026-09-09 is honoured by building
-the target as a second generation in new files. Where a claim would rest on
+migration-immutability stabilisation of 2026-09-09 is set aside for this one
+rework by the owner ruling of 2026-09-14 (a greenfield rewrite, no production
+installations), and holds again over the new baselines from the merge on. Where a claim would rest on
 a number nobody has measured, this plan names the measurement (owner ruling
 2026-09-13: no performance runs in v4.3.0).
 
@@ -65,7 +66,7 @@ vendored law). Verdicts: **keep** (with the reason re-affirmed), **change**
 | `ehr`, `demographic`, `linkage` schemas selected by `search_path` on one DSN | R1 §11.1, §11.3; R3 B.3 §35-41, B.6 EPDV Art. 10 Abs. 1 lit. b, DSV Art. 4 Abs. 5; BASE master07 §Anonymity; R2 §Pseudonymisation domains, A14 | the barrier is a SQL-privilege property inside one database; a superuser, a base backup, WAL and physical replication carry every schema together; the law asks for separation that can be another machine; in dev/compose the roles do not exist, so the boot gate checks nothing (A14) | **change** | a pool and DSN per domain (co-located by default); the gate refuses missing roles under the production deployment profile; `ext` per database |
 | `linkage.party_ehr` temporal map | R1 §3.1; R3 A.9 71, A.4 30; R2 §Pseudonymisation domains, D10 | the temporal PK is correctly GiST (`WITHOUT OVERLAPS`); the table is live (the architecture page's "no pool reaches it yet" is stale); a physical EHR delete leaves its mapping in force | **change** | `linkage.subject_ehr` absorbing `ehr_index`; `linkage.erase_ehr` reached by admin delete |
 | `ehr.ehr_index`, `sp_subject`/`sp_*` subject columns in the clinical schema | R3 A.9 71, C.2 7; R2 D9; SM master02 | subject identifiers sit in the clinical domain outside the pseudonym guard, reachable by the clinical role | **replace** | moved to `linkage`; no subject identifier remains in `clinical` other than the guarded `ehr.subject_id` |
-| The pseudonym guard trigger and `posture` | `ehr/0009`; R2 §Pseudonymisation domains | validates a UUID shape once namespaces are declared; the caller mints the pseudonym; the guard covers `ehr` only | **keep**, widened | the trigger stays; `posture` gains `storage_generation`; the guard is the only place a subject id may sit |
+| The pseudonym guard trigger and `posture` | `ehr/0009`; R2 §Pseudonymisation domains | validates a UUID shape once namespaces are declared; the caller mints the pseudonym; the guard covers `ehr` only | **keep**, widened | the trigger stays; the guard is the only place a subject id may sit |
 | Tenancy: GUC + `FORCE ROW LEVEL SECURITY` per table | R1 §5.2, §10.1-10.3; R2 §Tenancy, D6, D8, D16 | correct mechanism; coverage holes on `vo_attestation` (all four), `ehr_folder`, `ehr_index`, `vo_archive`, `sp_sample`; `ext.current_tenant_id()` resolves an unset GUC to the default tenant (fails open) | **keep**, completed | every gen-2 table carries `tenant_id` and the policy, declared once per partitioned parent; `current_tenant_id()` raises when unset and the posture is multi-tenant |
 | Commit path: one CTE per Contribution, server `time_committed`, advisory lock | R3 A.3 16-20; R2 A9; `commit.rs` | correct and spec-grounded | **keep** | unchanged shape; the close-out statement becomes the `vo_head` UPDATE |
 | `wrapped_original`, `preceding_version_uid`, per-version `creating_system_id`, `stable_compatible`, `origins`, signature | R3 A.1-A.3; `ehr/0001` | each answers a named RM requirement | **keep** | columns on `version` |
@@ -79,10 +80,10 @@ vendored law). Verdicts: **keep** (with the reason re-affirmed), **change**
 | Retention | R3 B.1 Art. 5(1)(e), 30(1)(f); B.6 DSG Art. 25(2)(d), EPDV Art. 10; C.2 3 | no datum anywhere for clinical content | **add** | `retention_policy`, `retention_anchor`, `retention_due`; the audit ceiling |
 | Encryption of clinical payload | R1 §13; R3 B.1 Art. 32(1)(a), B.6 EPDV Art. 10 Abs. 1 lit. c; threat-model page | no TDE in core; pgcrypto is the documented wrong tool for a distrusted DBA; column encryption ends AQL | **keep** (no payload encryption; sealed identifiers stay) | the deployment boundary is stated per provision |
 | The `secondary` domain draft (#3331) | R3 B.3 §116-120, B.1 Art. 89(1); R2 §Draft secondary domain, D14 | the per-permit relationship pseudonym is the EDPB's own shape; the draft lacks tenancy | **keep**, renamed `research`, amended | tenancy added; the trust-role shape re-affirmed; expiry rules from GDNG § 6 |
-| Migration sets and their order (`ext → ehr → demographic → linkage → audit`) | R2 §Schemas; the immutability rule | the order is load-bearing (the `LIKE` copies depend on it, D11) | **replace** | one DDL template rendered into `clinical/0001` and `party/0001`; each domain self-contained; the second generation beside the first |
+| Migration sets and their order (`ext → ehr → demographic → linkage → audit`) | R2 §Schemas; the immutability rule | the order is load-bearing (the `LIKE` copies depend on it, D11) | **replace** | one DDL template rendered into `clinical/0001` and `party/0001`; each domain self-contained; the old sets deleted and an old database refused at boot (greenfield, owner 2026-09-14) |
 | Documentation of the storage layer | R1 §17; R2 §Claims vs code A1-A15, B1-B9, C1-C8, P1-P9 | `JSON_TABLE`, GIN pre-filters, jsonpath item methods, `MERGE`, `RETURNING OLD/NEW`, virtual generated columns, "retry cold on a miss", "no pool reaches linkage" are described and not present; four migration comments cite measurements no committed artifact carries | **replace** the prose | corrected in the first sub-issue (D1); every future number rides a committed record |
 | UNLOGGED tiers | owner ruling 2026-08-25 (#2698) | not re-opened | **keep** | every relation LOGGED |
-| Migration immutability | owner ruling 2026-09-09 | honoured by construction | **keep** | new files only; gen-1 dropped by a guarded new file |
+| Migration immutability | owner rulings 2026-09-09 and 2026-09-14 | declared for installations that exist; set aside for this one greenfield rework | **keep**, set aside once | the PR that lands the new baselines deletes the old sets and re-declares the guard over the new ones |
 | Schema-per-domain over cluster-per-domain | this plan | the earlier choice stays the default; the per-domain DSN makes the other a configuration | **keep**, generalised | §Domain topology |
 
 Prior art, read for what it teaches and not as an oracle (R2 §Prior art):
@@ -566,7 +567,7 @@ registered reader (#3330).
 | Sealed national identifiers in `party` | keep | report 1 §13.2: pgcrypto is the documented wrong tool for a distrusted DBA |
 | LOGGED tables everywhere | keep | owner ruling 2026-08-25 (#2698) |
 | Schema-per-domain in one database as the DEFAULT | keep, generalised | the per-domain DSN makes cluster-per-domain a configuration, not a fork |
-| Migration immutability | keep | the target is new files and a new schema generation; nothing shipped is edited |
+| Migration immutability | set aside once (owner 2026-09-14) | greenfield: the new baselines replace the old sets in one PR that also re-declares the guard; the rule holds again from that merge |
 | `LATEST_VERSION` = trunk head | keep, re-labelled | our adjudication; the prose defines neither token (S15) |
 | Advisory lock per object | keep | still the serialiser for `sys_version` and 412 |
 | Temporal `vo_version` with `sys_period` and partial indexes | replace | report 1 §2.1 |
@@ -642,78 +643,53 @@ that addressee.
 | EPDG Art. 10, EPDV Art. 10 Abs. 1 lit. b-e, Abs. 2 (certified communities) | medical EPD data "von anderen Datenbeständen getrennt gespeichert"; storage encryption; destruction after 20 years; per-datum exemption from destruction; destruction on request | separation: the per-domain DSN and the tenant RLS; destruction after 20 years: the retention register with CH = 20 years anchored on the last entry, listed for the community to act on; exemption: `retention_hold` on the EHR or versioned object; destruction on request: `admin_ehr_delete` / per-object physical delete | volume encryption; running the destruction |
 | EPDV Art. 12 Abs. 5 | data stores in Switzerland under Swiss law | not a storage property; relocatable domains make it satisfiable per domain | region choice |
 
-## Migration and cutover
+## Cutover: a greenfield rewrite
 
-The migration-immutability rule (owner ruling 2026-09-09) means nothing under
-`app/ferroehr/migrations/` that has shipped is edited, renamed or deleted;
-sqlx checksums make an edit a locked-out installation. The target is
-therefore a **second storage generation** built beside the first in new
-schemas, filled by an offline copy step, and switched over by a posture flag
-the server reads at boot. Breaking changes are allowed (owner direction
-2026-09-13); an unattended upgrade is not promised, and every existing
-installation has a stated path.
+Owner ruling 2026-09-14: this is a greenfield rewrite. No organisation runs
+FerroEHR in production, so no database has to survive the change, and the
+target carries no second generation beside the first. Greenfield is the
+cleaner and the faster path: one relation set, one code path, no copy tool,
+no generation stamp, no legacy branch in the readers.
 
 ```mermaid
 stateDiagram-v2
-  [*] --> Gen1: today (ehr, demographic, linkage, audit schemas)
-  Gen1 --> Both: release N migrations create clinical, party, linkage.subject_ehr, research (empty)
-  Both --> Copying: operator runs  ferroehr storage migrate
-  Copying --> Both: a batch fails → rolled back, resumable
-  Copying --> Verified: counts and per-version body digests match
-  Verified --> Gen2: the tool stamps posture.storage_generation = 2
-  Gen2 --> Dropped: release N+1 migration drops ehr, demographic, cold schemas after the stamp
-  Both --> Refused: server boots with gen-1 rows and no stamp → refuses with the command to run
+  [*] --> New: the release ships one squashed baseline per domain
+  New --> Serving: a fresh database migrates and serves
+  Old --> Refused: a database from an earlier release is refused at boot
+  Refused --> New: the operator recreates the database
 ```
 
-### Steps
+### What the release does
 
-1. **Release N ships the new migration sets.** `clinical/0001_baseline.sql`,
-   `party/0001_baseline.sql` (generated from the same template as clinical),
-   `linkage/0002_subject_ehr.sql`, `research/0001_baseline.sql`,
-   `audit/0008_retention_ceiling.sql`, and `ext/0003_generation.sql` (the
-   `ext.storage_generation()` reader). The old sets are untouched. The
-   server's migrator applies every set on every domain DSN; a domain DSN that
-   points at a database without `ext` gets `ext` first.
-2. **Boot reads the generation.** `posture.storage_generation` (in `ext`,
-   per database) is `1` when gen-1 relations hold rows and no stamp exists,
-   `2` after the copy tool stamps it, and `2` on a fresh database (the
-   migrator stamps it when `ehr.vo_version` is absent or empty). At `1` the
-   server refuses to serve with a message naming `ferroehr storage migrate`,
-   the release notes section and the estimated duration formula (rows per
-   second measured by the tool's own dry run). Serving gen-1 relations from a
-   gen-2 binary is not offered: two code paths for one store is the failure
-   class the plan removes.
-3. **`ferroehr storage migrate`** (a subcommand of the existing binary,
-   using the same configuration tree and pools) copies per EHR in batches:
-   `ehr` → `clinical.ehr`; for each versioned object, `vo_version` rows →
-   `version` (`committed_at` from the joined `audit.time_committed`, `tier`
-   from whether the row sat in `cold`), `node` rows → `node` with the two new
-   promoted columns derived from `data`, `vo_attestation`, then `vo_head`
-   computed from the object's rows; `contribution` and the commit `audit` rows
-   → `contribution`/`commit_audit`; `ehr_index` and `sp_*` subject columns
-   → `linkage.subject_ehr` (through the linkage pool); `item_tag`,
-   `ehr_folder`, templates, stored queries, outbox and cursors copied
-   verbatim; the party domain the same way. Each batch is one transaction
-   per domain; a `migrate_progress` table records the last EHR copied so a
-   failed run resumes. The tool refuses to run while the server is up (a
-   lock row in `posture`).
-4. **Verification before the stamp**: row counts per relation per tenant
-   match; for every version the SHA-256 of `body` equals the source's; for
-   every versioned object the computed `vo_head` matches the source's current
-   row; `verify_domain_isolation` passes on the gen-2 roles. Any mismatch
-   stops the tool without stamping; the server stays refused until it
-   passes.
-5. **Release N+1 drops gen-1** with `ehr/0012_drop_generation_1.sql` (and the
-   demographic counterpart), guarded by `IF ext.storage_generation() = 2`,
-   so a database that skipped release N is refused rather than truncated.
+1. **One baseline per domain.** `ext/0001`, `clinical/0001`, `party/0001`
+   (rendered from the same DDL template as clinical), `linkage/0001`,
+   `audit/0001` and `research/0001` are re-authored as squashed baselines.
+   The `ehr`, `demographic` and the present `linkage` and `audit` sets are
+   deleted in the same pull request; the schema names change with the
+   domains (`clinical`, `party`).
+2. **The boot sequence refuses an old database.** A database whose
+   `_sqlx_migrations` record names files the binary no longer carries is
+   refused with a message saying it predates the storage rewrite and must be
+   recreated; nothing is upgraded in place, nothing is copied.
+3. **The immutability rule is set aside once.** The migration-immutability
+   stabilisation (owner ruling 2026-09-09) was declared for installations
+   that exist; the 2026-09-14 ruling sets it aside for this one rework. The
+   pull request that lands the new baselines deletes the old sets and
+   re-declares `scripts/checks/migration-immutability.sh` over the new ones
+   in the same change, so from that merge on the new baselines are the
+   immutable files and the rule holds again with no escape hatch.
+4. **Everything that seeds a database starts from the new baselines**: the
+   testkit template, the compose quickstart, the Helm chart's boot, the
+   hosted sandbox's reseed, the conformance pipeline's fresh volumes.
 
 ### What breaks, and how a deployment is told
 
 | Change | Who sees it | Where it is said |
 |---|---|---|
-| A required offline step between release N-1 and N | every existing installation | `CHANGELOG.md` `### Changed` with a **BREAKING** lead; the release notes; the boot refusal message itself; the book's upgrade page |
-| Five DSNs instead of one (defaulting to the old one) | operators editing `ferroehr.toml` or Helm values | `config-*.md` pages; the Helm chart's `database.*` values gain per-domain overrides; `config check` warns when all five resolve to one database without the co-located roles |
+| A database from an earlier release is refused | anyone who kept one | `CHANGELOG.md` `### Changed` with a **BREAKING** lead; the release notes; the boot refusal message itself; the book's upgrade page ("recreate the database") |
+| Five DSNs instead of one (defaulting to the old one) | operators editing `ferroehr.toml` or Helm values | `config-*.md` pages; the Helm chart's `database.*` values gain per-domain overrides; `config check` reports the layout |
 | Backup procedure per domain | operators | `operations.md` §Backup: five dumps or one, by DSN layout; the k8s probe gains a restore stage |
+| Schema names `clinical` and `party` | anyone reading the database directly | the storage page; the DPIA |
 | `LATEST_VERSION` semantics unchanged; `ALL_VERSIONS` now includes branch rows explicitly | AQL authors | the AQL page; a CNF-style case pins it |
 | Restricted objects answer `403` | API clients | the REST pages; the compliance page's Art. 18 row |
 | `admin_ehr_delete` reaches linkage and research | operators | the admin page; the DPIA |
@@ -722,10 +698,8 @@ stateDiagram-v2
 ### Spec-profile and conformance
 
 The `stable_compatible` stamp and the assembly gate move unchanged onto
-`version`. The CNF baseline is re-run on gen-2 before release N
-(`scripts/conformance.sh`), and the copy tool is exercised by a test that
-seeds gen-1 from a committed fixture, migrates, and replays the conformance
-read cases against gen-2.
+`version`. The CNF baseline is re-run on the new schema before the release
+(`scripts/conformance.sh`), on fresh volumes as always.
 
 ## The performance model
 
@@ -779,14 +753,12 @@ reader (D2). Sequencing is expressed as native `blocked-by` edges, set with
 | Key | Issue | Milestone | Blocked by | Acceptance (summary; the issue carries the full list) |
 |---|---|---|---|---|
 | D1 (#3340) | docs(storage): the storage pages and migration comments describe `JSON_TABLE`, GIN pre-filters and a GiST serialisation the code and the PostgreSQL docs do not carry | v4.3.0 | | every claim in research report 1 §17 #1, #4, #5, #6, #7 is corrected or removed in `docs/architecture.md`, `docs/postgres-features.md`, `website/book/src/concepts/storage.md`, `.claude/rules/aql-engine.md`, `CLAUDE.md`; migration comments are left as shipped (immutability) and the corrections name them |
-| S1 (#3342) | feat(storage): the second-generation clinical schema: append-only `version`, `vo_head`, tier-partitioned `version`/`node`/`vo_attestation`, `name_code`/`name_terminology` | v4.3.1 | D1 | `clinical/0001_baseline.sql` from a DDL template; write path with the HOT head update and no close-out; every read path (point, at-time, by-id, revision history, directory at time, AQL LATEST_VERSION/ALL_VERSIONS, exports, dump) on the new relations; the FK-cascade row-movement and RLS-on-partition proofs as tests; `stable_compatible` gate moved; CNF baseline green on gen-2 |
+| S1 (#3342) | feat(storage): the clinical schema rewritten: append-only `version`, `vo_head`, tier-partitioned `version`/`node`/`vo_attestation`, `name_code`/`name_terminology` | v4.3.1 | D1 | `clinical/0001_baseline.sql` from a DDL template, the `ehr` set deleted, an old database refused at boot, the immutability guard re-declared; write path with the HOT head update and no close-out; every read path (point, at-time, by-id, revision history, directory at time, AQL LATEST_VERSION/ALL_VERSIONS, exports, dump) on the new relations; the FK-cascade row-movement and RLS-on-partition proofs as tests; `stable_compatible` gate moved; CNF baseline green on gen-2 |
 | S2 (#3343) | feat(config): one pool and DSN per pseudonymisation domain | v4.3.1 | | `[storage.<domain>]` with `url`/`url_file` per domain defaulting to the shared DSN; five pools; `verify_domain_isolation` extended to refuse a shared role across DSNs and to refuse MISSING roles under the production deployment profile (today a missing role is skipped, so dev and compose enforce nothing); Helm `database.<domain>.*`; compose unchanged by default; `config check` reports the layout; book pages |
 | S3 (#3344) | feat(storage): the party domain on the generation-2 template, `party_relationship_target`, cold as a partition | v4.3.1 | S1 | `party/0001_baseline.sql` generated from the same template as clinical (a test proves the two differ only in the CHECK that refuses the other's kinds); `reverse_relationships` served from the index table; `cold_demographic` retired |
 | S4 (#3345) | feat(linkage): `subject_ehr` absorbs `ehr_index` and the subject-proxy subject columns; `erase_ehr` | v4.3.1 | S2 | the SM `I_EHR_INDEX` calls served from linkage through the linkage pool; no subject identifier column remains in `clinical` other than the guarded `ehr.subject_id`; `linkage.erase_ehr` executable by the linkage role without table `DELETE`; the boot gate covers the new function |
 | S5 (#3346) | feat(storage): retention register, anchors, holds and the `retention_due` view; the audit retention ceiling | v4.3.1 | S1 | the three relations; the view; `retention_ceiling_days` per jurisdiction refused below the floor; the book's retention page renders the register; DSG Art. 25(2)(d) answer path |
 | S6 (#3347) | feat(admin): physical erasure reaches linkage, the outbox and the research domain; the blob GC becomes an anti-join over `blob_ref` | v4.3.1 | S1, S4 | `delete_ehr` order as the plan states; tombstone applied by the projector; `blob_ref` maintained at commit, GC no longer scans `node`; test asserts zero rows per relation per domain; the compliance page's Art. 17 row rewritten and the audit-retention exception stated |
-| S7 (#3348) | feat(tools): `ferroehr storage migrate`: the generation-1 to generation-2 copy, verification, resume and stamp; the boot refusal | v4.3.1 | S1, S3, S4 | the subcommand; `posture.storage_generation`; per-EHR batches with resume; verification (counts, body digests, head parity, isolation gate); boot refusal text names the command; a test seeds gen-1 from a fixture, migrates, replays the conformance read cases |
-| S8 (#3349) | chore(storage): drop generation 1 | v4.3.1 | S7 | `ehr/0012_drop_generation_1.sql` and the demographic counterpart, guarded by the stamp; the gen-1 code paths removed; `docs/plans/storage-redesign.md` deleted in this PR |
 | S10 (#3351) | feat(ext): the helper functions without subtransactions: `LANGUAGE sql`, regex-validated input, no `EXCEPTION` block; the emitter spells every column through `db/iden.rs` | v4.3.1 | | `EXPLAIN (ANALYZE)` shows the functions inlined; a test proves identical results over the parser corpus; no `plpgsql` function remains in `ext`; `citem_num` and the unused `Iden` definitions gone |
 | D2 (#3341) | fix(tenancy): `ext.current_tenant_id()` resolves an unset GUC to the default tenant instead of refusing | v4.3.0 | | under a multi-tenant posture an unset `ferroehr.tenant_id` raises; single-tenant deployments keep the default; a test covers both |
 | S9 (#3350) | perf(storage): measure hypotheses H1-H11 on the synthgen corpus and decide hash partitioning, time-bucketed cold and the GIN pre-filter | v4.3.1 | S1, #3332 | every hypothesis in the performance model has a committed measurement record; each of the three alternatives has a decision with the record cited |
@@ -802,3 +774,7 @@ Existing issues re-pointed rather than duplicated:
 - **#3330** (outbox pruning ignores cursor readers) is unchanged and stays in
   v4.3.0; the plan depends on its `min(cursor)` floor.
 - **#3323** (EHR_ACCESS default) is untouched by storage; it stays with #3322.
+- **#3348** (the copy tool) and **#3349** (drop generation 1) are closed as not
+  planned: a greenfield rewrite has nothing to copy and nothing left to drop
+  (owner ruling 2026-09-14). The plan file is deleted by the PR that lands
+  the last remaining sub-issue.
