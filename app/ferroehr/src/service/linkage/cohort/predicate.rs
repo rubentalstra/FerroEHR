@@ -45,7 +45,7 @@ macro_rules! predicate_statement {
              FROM node e \
              JOIN node a \
                ON a.vo_id = e.vo_id AND a.sys_version = e.sys_version AND a.num = e.citem_num \
-             JOIN vo_version v ON v.vo_id = e.vo_id AND v.sys_version = e.sys_version \
+             JOIN version v ON v.vo_id = e.vo_id AND v.sys_version = e.sys_version \
              WHERE upper_inf(v.sys_period) AND v.branch_number = 0 \
                AND e.rm_type = 'ELEMENT' AND e.archetype = $1 AND a.archetype = $2 \
                AND ",

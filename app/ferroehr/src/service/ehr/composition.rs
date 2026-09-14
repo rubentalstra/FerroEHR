@@ -91,7 +91,7 @@ impl FerroEhrService {
         self.reject_duplicate_persistent(&mut *conn, ehr_id, &composition)
             .await?;
 
-        // The committed template identity is promoted to `vo_version.template_id`
+        // The committed template identity is promoted to `version.template_id`
         // — the ABAC template attribute resolver (`template_of_version`) and the
         // template-delete guard both read that column, so the direct route
         // stamps it exactly like the CONTRIBUTION route.
@@ -614,7 +614,7 @@ impl FerroEhrService {
     /// attribute for the access pre-checks / any per-version resolver.
     ///
     /// NOTE (settled shape): this resolves through the promoted
-    /// `vo_version.template_id` column — one scalar `SELECT`, no node
+    /// `version.template_id` column — one scalar `SELECT`, no node
     /// reassembly — because it runs per authorization check. No openEHR spec
     /// governs the storage mechanics; the promoted column is our own design.
     ///
@@ -626,7 +626,7 @@ impl FerroEhrService {
         vo_id: VoId,
         version: Option<&str>,
     ) -> Result<Option<String>, ServiceError> {
-        // One scalar read of the promoted `vo_version.template_id` column —
+        // One scalar read of the promoted `version.template_id` column —
         // this resolver runs per authorization check, so it must never pay a
         // node reassembly.
         let tree = version.map(parse_tree_id).transpose()?;

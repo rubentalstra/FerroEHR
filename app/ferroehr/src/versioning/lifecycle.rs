@@ -10,7 +10,7 @@
 //! `553|incomplete|`, `523|deleted|`, `800|inactive|` and `801|abandoned|`"
 //! (master06 §Version Lifecycle). "One basic rule … is that any transition
 //! requires the commit of a _new version_, even if the content is otherwise
-//! unchanged" — realized by the storage layer (a new `vo_version` row per
+//! unchanged" — realized by the storage layer (a new `version` row per
 //! commit). This module owns the **legality** of each transition: reading
 //! the current state from the preceding version and rejecting a transition the
 //! spec does not sanction.

@@ -580,7 +580,7 @@ impl FerroEhrService {
     async fn opt_delete(&self, an_opt_id: &str) -> Result<(), ServiceError> {
         let id = parse_opt_uuid(an_opt_id)?;
         // Resolve, count references and delete in ONE transaction so the 409 is
-        // consistent with the delete; the `vo_version.template_id` →
+        // consistent with the delete; the `version.template_id` →
         // `template_ref` foreign key stays the integrity guard under a
         // concurrent commit.
         let mut tx = self.pool.begin().await?;
@@ -600,7 +600,7 @@ impl FerroEhrService {
         // invisible to the constraint and deleting under it would make that
         // object unrestorable (no openEHR spec governs the in-use refusal).
         let refs: i64 =
-            sqlx::query_scalar("SELECT count(*) FROM vo_version_all WHERE template_id = $1")
+            sqlx::query_scalar("SELECT count(*) FROM version WHERE template_id = $1")
                 .bind(&template_id)
                 .fetch_one(&mut *tx)
                 .await?;

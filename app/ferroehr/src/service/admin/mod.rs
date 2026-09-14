@@ -29,7 +29,7 @@
 //! `dump_load` reassembles and decomposes version bodies through the storage
 //! codec, and `integrity` reassembles every stored version through
 //! `node_repo::read_version_canonical_all` to compare it with the materialized
-//! `vo_version.body`. `archive` marks EHR and party versioned objects archived
+//! `version.body`. `archive` marks EHR and party versioned objects archived
 //! and reversibly moves their rows into the spec-silent cold tier
 //! ([`crate::storage::version_repo::tier`]); `delete` and `dump_load` reach both
 //! tiers, a physical delete and a repository export being whole-repository
@@ -47,7 +47,7 @@ use uuid::Uuid;
 
 use crate::service::status::SmError;
 
-/// Whether a `vo_version.kind` string names a demographic PARTY root (the five
+/// Whether a `version.kind` string names a demographic PARTY root (the five
 /// concrete `ACTOR`/`PARTY` leaves — RM demographic) — as opposed to a
 /// `PARTY_RELATIONSHIP` or a clinical versioned object. Shared by the physical
 /// delete ([`delete`]) and archive ([`archive`]) party guards.

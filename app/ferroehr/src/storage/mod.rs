@@ -5,7 +5,7 @@
 //!
 //! The codec between canonical openEHR JSON and the stored `node` rows, plus the
 //! row I/O for the versioned-object spine
-//! (`vo_version`/`audit`/`contribution`/`vo_attestation`).
+//! (`version`/`audit`/`contribution`/`vo_attestation`).
 //!
 //! No openEHR spec governs the physical storage; this is our own PG18-native
 //! design, grounded on docs-verified `PostgreSQL` physics (no partial jsonb

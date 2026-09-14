@@ -86,7 +86,7 @@ pub async fn insert_audit(
     audit: &AuditRow<'_>,
 ) -> Result<(Uuid, jiff::Timestamp), StorageError> {
     let row = sqlx::query(
-        "INSERT INTO audit (system_id, change_type, description, committer, attestation) \
+        "INSERT INTO commit_audit (system_id, change_type, description, committer, attestation) \
          VALUES ($1, $2, $3, $4, $5) RETURNING id, time_committed",
     )
     .bind(audit.system_id)
@@ -117,23 +117,23 @@ pub async fn insert_contribution(
     tx: &mut PgConnection,
     id: Uuid,
     ehr_id: Option<EhrId>,
-    audit_id: Uuid,
+    commit_audit_id: Uuid,
 ) -> Result<Uuid, StorageError> {
     let inserted: Option<Uuid> = sqlx::query_scalar(
-        "INSERT INTO contribution (id, ehr_id, audit_id) \
+        "INSERT INTO contribution (id, ehr_id, commit_audit_id) \
          VALUES ($1, $2, $3) \
          ON CONFLICT (id) DO NOTHING RETURNING id",
     )
     .bind(id)
     .bind(ehr_id)
-    .bind(audit_id)
+    .bind(commit_audit_id)
     .fetch_optional(&mut *tx)
     .await?;
     inserted.ok_or(StorageError::ContributionUidInUse(None))
 }
 
 /// Insert an `audit` row and its enclosing `contribution` in ONE round trip
-/// via a data-modifying CTE, returning `(contribution_id, audit_id,
+/// via a data-modifying CTE, returning `(contribution_id, commit_audit_id,
 /// time_committed)`.
 ///
 /// The `contribution` references the just-inserted `audit`; `time_committed`
@@ -166,15 +166,15 @@ pub async fn write_contribution(
 ) -> Result<(Uuid, Uuid, jiff::Timestamp), StorageError> {
     let row = sqlx::query(
         "WITH a AS ( \
-             INSERT INTO audit (system_id, change_type, description, committer, attestation) \
+             INSERT INTO commit_audit (system_id, change_type, description, committer, attestation) \
              VALUES ($1, $2, $3, $4, $5) RETURNING id, time_committed \
          ), c AS ( \
-             INSERT INTO contribution (id, ehr_id, audit_id) \
+             INSERT INTO contribution (id, ehr_id, commit_audit_id) \
              SELECT COALESCE($6, uuidv7()), $7, a.id FROM a \
              ON CONFLICT (id) DO NOTHING \
              RETURNING id \
          ) \
-         SELECT a.id AS audit_id, a.time_committed, c.id AS contribution_id \
+         SELECT a.id AS commit_audit_id, a.time_committed, c.id AS contribution_id \
          FROM a LEFT JOIN c ON true",
     )
     .bind(audit.system_id)
@@ -188,15 +188,15 @@ pub async fn write_contribution(
     .await?;
     let contribution_id: Option<Uuid> = row.try_get("contribution_id")?;
     let contribution_id = contribution_id.ok_or(StorageError::ContributionUidInUse(supplied))?;
-    let audit_id: Uuid = row.try_get("audit_id")?;
+    let commit_audit_id: Uuid = row.try_get("commit_audit_id")?;
     let time_committed = row
         .try_get::<jiff_sqlx::Timestamp, _>("time_committed")?
         .to_jiff();
-    Ok((contribution_id, audit_id, time_committed))
+    Ok((contribution_id, commit_audit_id, time_committed))
 }
 
-/// The `vo_version` columns for a **folded** commit — every content column of
-/// a stored version EXCEPT `contribution_id`/`audit_id`, which come from the
+/// The `version` columns for a **folded** commit — every content column of
+/// a stored version EXCEPT `contribution_id`/`commit_audit_id`, which come from the
 /// same statement's `contribution`/`audit` CTEs.
 ///
 /// `time_committed` is the caller's pre-read commit instant, a database `now()`
@@ -215,7 +215,7 @@ pub async fn write_contribution(
 pub struct FoldedVersion<'a> {
     /// The versioned object's id.
     pub vo_id: VoId,
-    /// The `vo_version.kind` discriminator text.
+    /// The `version.kind` discriminator text.
     pub kind: &'a str,
     /// The owning EHR, or `None` for a demographic versioned object.
     pub ehr_id: Option<EhrId>,
@@ -242,15 +242,15 @@ pub struct FoldedVersion<'a> {
     /// server. `false` for a server signature or an unsigned version.
     pub signature_client_supplied: bool,
     /// Whether the RELEASED openEHR generation set can express this version's
-    /// body — the `vo_version.stable_compatible` stamp the read-time
+    /// body — the `version.stable_compatible` stamp the read-time
     /// `spec_profile` gate consults. No openEHR spec governs runtime
     /// generation selection — our own design/extension.
     pub stable_compatible: bool,
-    /// The distinct origins of the body (`vo_version.origins`, a JSON array
+    /// The distinct origins of the body (`version.origins`, a JSON array
     /// of `FEEDER_AUDIT` originating system ids, or this server's own), the
     /// access log's answer to EHDS Annex II 3.2(e) (#3212).
     pub origins: &'a [String],
-    /// The canonical body bytes (`vo_version.body`, text): the accepted,
+    /// The canonical body bytes (`version.body`, text): the accepted,
     /// uid-stamped value serialized before node decomposition, so a point read
     /// serves the codec's field order verbatim. `None` on a logical delete (no
     /// content, RM common master06 §Logical Deletion).
@@ -275,8 +275,8 @@ pub struct FoldedVersion<'a> {
 
 /// A **standalone** folded commit.
 ///
-/// `audit` + `contribution` + `vo_version` + the decomposed `node` rows in
-/// ONE data-modifying CTE chain, returning `(contribution_id, audit_id,
+/// `audit` + `contribution` + `version` + the decomposed `node` rows in
+/// ONE data-modifying CTE chain, returning `(contribution_id, commit_audit_id,
 /// time_committed)`.
 ///
 /// The single audit row serves both the CONTRIBUTION and the version's
@@ -285,7 +285,7 @@ pub struct FoldedVersion<'a> {
 /// commit instant (master06 §Committal m3).
 ///
 /// This is the round-trip-collapsed equivalent of [`write_contribution`]
-/// followed by a plain `vo_version` insert, byte-identical in the rows written
+/// followed by a plain `version` insert, byte-identical in the rows written
 /// and the values returned: the version's `sys_period` and the audit both open
 /// at the caller's bound [`FoldedVersion::time_committed`], and everything runs
 /// inside the caller's transaction. Any lineage-tip close is a separate prior
@@ -305,31 +305,31 @@ pub async fn commit_new_version(
     static SQL: std::sync::LazyLock<String> = std::sync::LazyLock::new(|| {
         format!(
             "WITH cl AS ( \
-                 UPDATE vo_version \
+                 UPDATE version \
                  SET sys_period = tstzrange(lower(sys_period), $22::timestamptz, '[)') \
                  WHERE vo_id = $8 AND sys_version = $23 AND upper_inf(sys_period) \
                  RETURNING 1 \
              ), a AS ( \
-                 INSERT INTO audit (system_id, change_type, description, committer, attestation, \
+                 INSERT INTO commit_audit (system_id, change_type, description, committer, attestation, \
                                     time_committed) \
                  VALUES ($1, $2, $3, $4, $5, $22::timestamptz) RETURNING id, time_committed \
              ), c AS ( \
-                 INSERT INTO contribution (id, ehr_id, audit_id) \
+                 INSERT INTO contribution (id, ehr_id, commit_audit_id) \
                  SELECT COALESCE($6, uuidv7()), $7, a.id FROM a \
                  ON CONFLICT (id) DO NOTHING \
                  RETURNING id \
              ), v AS ( \
-                 INSERT INTO vo_version \
+                 INSERT INTO version \
                    (vo_id, kind, ehr_id, sys_version, trunk_version, branch_number, branch_version, \
                     sys_period, lifecycle_state, creating_system_id, preceding_version_uid, \
-                    contribution_id, audit_id, template_id, signature, \
+                    contribution_id, commit_audit_id, template_id, signature, \
                     signature_client_supplied, stable_compatible, body, origins) \
                  SELECT $8, $9, $7, $10, $11, $12, $13, tstzrange($22::timestamptz, NULL, '[)'), \
                         $14, $15, $16, c.id, a.id, $17, $18, $19, $20, $21, $24 \
                  FROM a, c, (SELECT count(*) FROM cl) AS cl_done \
                  RETURNING 1 \
              ), n AS ( {} ) \
-             SELECT a.id AS audit_id, a.time_committed, c.id AS contribution_id \
+             SELECT a.id AS commit_audit_id, a.time_committed, c.id AS contribution_id \
              FROM a LEFT JOIN c ON true",
             crate::storage::node_repo::node_insert_cte("$8", "$10", "$7", 25)
         )
@@ -365,20 +365,20 @@ pub async fn commit_new_version(
         .await?;
     let contribution_id: Option<Uuid> = row.try_get("contribution_id")?;
     let contribution_id = contribution_id.ok_or(StorageError::ContributionUidInUse(supplied))?;
-    let audit_id: Uuid = row.try_get("audit_id")?;
+    let commit_audit_id: Uuid = row.try_get("commit_audit_id")?;
     let time_committed = row
         .try_get::<jiff_sqlx::Timestamp, _>("time_committed")?
         .to_jiff();
-    Ok((contribution_id, audit_id, time_committed))
+    Ok((contribution_id, commit_audit_id, time_committed))
 }
 
 /// A folded commit WITHIN an already-opened CONTRIBUTION.
 ///
-/// The version's own `commit_audit` + `vo_version` + the decomposed `node`
+/// The version's own `commit_audit` + `version` + the decomposed `node`
 /// rows in ONE data-modifying CTE chain, referencing the pre-existing
 /// `contribution_id`.
 ///
-/// Returns `(audit_id, time_committed)`. The CONTRIBUTION and its own audit
+/// Returns `(commit_audit_id, time_committed)`. The CONTRIBUTION and its own audit
 /// were written earlier in the same transaction ([`write_contribution`]);
 /// each change carries its own `commit_audit` (master06 §Committal and
 /// Audits), opened at the caller's bound [`FoldedVersion::time_committed`]
@@ -397,26 +397,26 @@ pub async fn commit_version_into(
     static SQL: std::sync::LazyLock<String> = std::sync::LazyLock::new(|| {
         format!(
             "WITH cl AS ( \
-                 UPDATE vo_version \
+                 UPDATE version \
                  SET sys_period = tstzrange(lower(sys_period), $22::timestamptz, '[)') \
                  WHERE vo_id = $6 AND sys_version = $23 AND upper_inf(sys_period) \
                  RETURNING 1 \
              ), a AS ( \
-                 INSERT INTO audit (system_id, change_type, description, committer, attestation, \
+                 INSERT INTO commit_audit (system_id, change_type, description, committer, attestation, \
                                     time_committed) \
                  VALUES ($1, $2, $3, $4, $5, $22::timestamptz) RETURNING id, time_committed \
              ), v AS ( \
-                 INSERT INTO vo_version \
+                 INSERT INTO version \
                    (vo_id, kind, ehr_id, sys_version, trunk_version, branch_number, branch_version, \
                     sys_period, lifecycle_state, creating_system_id, preceding_version_uid, \
-                    contribution_id, audit_id, template_id, signature, \
+                    contribution_id, commit_audit_id, template_id, signature, \
                     signature_client_supplied, stable_compatible, body, origins) \
                  SELECT $6, $7, $8, $9, $10, $11, $12, tstzrange($22::timestamptz, NULL, '[)'), \
                         $13, $14, $15, $16, a.id, $17, $18, $19, $20, $21, $24 \
                  FROM a, (SELECT count(*) FROM cl) AS cl_done \
                  RETURNING 1 \
              ), n AS ( {} ) \
-             SELECT a.id AS audit_id, a.time_committed FROM a",
+             SELECT a.id AS commit_audit_id, a.time_committed FROM a",
             crate::storage::node_repo::node_insert_cte("$6", "$9", "$8", 25)
         )
     });
@@ -449,11 +449,11 @@ pub async fn commit_version_into(
     let row = crate::storage::node_repo::bind_node_arrays(row, &node_refs)
         .fetch_one(&mut *tx)
         .await?;
-    let audit_id: Uuid = row.try_get("audit_id")?;
+    let commit_audit_id: Uuid = row.try_get("commit_audit_id")?;
     let time_committed = row
         .try_get::<jiff_sqlx::Timestamp, _>("time_committed")?
         .to_jiff();
-    Ok((audit_id, time_committed))
+    Ok((commit_audit_id, time_committed))
 }
 
 // ── folder membership ─────────────────────────────────────────────────────────

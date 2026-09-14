@@ -73,7 +73,7 @@ pub enum StorageError {
     #[error("database: {0}")]
     Database(#[from] sqlx::Error),
 
-    /// A stored `vo_version.body` text failed to parse as JSON — storage
+    /// A stored `version.body` text failed to parse as JSON — storage
     /// corruption, never a caller error (the column holds the canonical bytes
     /// the commit serialized).
     #[error("stored canonical body does not parse: {0}")]

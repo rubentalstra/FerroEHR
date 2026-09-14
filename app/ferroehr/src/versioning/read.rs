@@ -47,7 +47,7 @@ pub(crate) struct WrappedOriginal {
 }
 
 impl WrappedOriginal {
-    /// Decode the stored `vo_version.wrapped_original` fragment.
+    /// Decode the stored `version.wrapped_original` fragment.
     ///
     /// # Errors
     /// [`ServiceError::Unprocessable`] when the stored fragment does not carry
@@ -116,7 +116,7 @@ pub(crate) struct VersionRead {
     /// `Some` iff this version is an `IMPORTED_VERSION`: the wrapped
     /// `ORIGINAL_VERSION`'s own provenance (master06 §Committal and Audits).
     pub(crate) wrapped: Option<WrappedOriginal>,
-    /// The commit-time origin stamp (`vo_version.origins`), or `None` for a
+    /// The commit-time origin stamp (`version.origins`), or `None` for a
     /// row nothing stamped; read through
     /// [`crate::versioning::origins::of_stored`].
     pub(crate) origins: Option<Value>,
@@ -160,7 +160,7 @@ impl VersionRead {
 /// carrying data reads back with that content.
 ///
 /// This is also the one seam a stored version body passes through on its way out
-/// of `vo_version` and `node`, so it carries the read-time `spec_profile` gate
+/// of `version` and `node`, so it carries the read-time `spec_profile` gate
 /// ([`crate::versioning::profile::gate`]): under the `stable` profile a version
 /// whose body only the development generations can express is a typed refusal.
 /// The gate sits here rather than per handler because every served kind reaches
@@ -186,7 +186,7 @@ fn version_read(
     // the profile gate below.
     let kind = Kind::from_type(&stored.kind).ok_or_else(|| {
         ServiceError::exception(format!(
-            "vo_version.kind {:?} of versioned object {} is not an RM versioned type",
+            "version.kind {:?} of versioned object {} is not an RM versioned type",
             stored.kind, stored.vo_id
         ))
     })?;
@@ -534,7 +534,7 @@ pub(crate) async fn object_kind(
 /// The lean current-version handle for a demographic (ehr-less) versioned
 /// object: its kind-checked identity ([`Kind`] + `VERSION_TREE_ID` +
 /// `creating_system_id`, the `ETag`/`If-Match` parts), commit instant, and
-/// lifecycle-derived `deleted` flag — from ONE `vo_version`⋈`audit` read, with
+/// lifecycle-derived `deleted` flag — from ONE `version`⋈`audit` read, with
 /// no node reassembly or attestation load. The wire seam uses this both for the
 /// `If-Match` `ETag` and the not-deleted write gate without the full
 /// [`read_current`] node read (RM common master06 §Version Identification /

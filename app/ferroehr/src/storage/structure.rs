@@ -16,7 +16,7 @@
 use openehr_base::prelude::ArchetypeId;
 
 /// The five concrete demographic **party roots** (RM demographic). Each is a
-/// standalone versioned object that reuses the `node`/`vo_version` machinery
+/// standalone versioned object that reuses the `node`/`version` machinery
 /// (with a NULL `ehr_id`), so it must be accepted as a decomposition root — yet
 /// it is intentionally NOT part of the composition-content structure set the RM
 /// model tracks.

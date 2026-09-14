@@ -26,7 +26,7 @@ use crate::storage::error::StorageError;
 pub struct TipRow {
     /// The owning EHR, or `None` for a demographic versioned object.
     pub ehr_id: Option<EhrId>,
-    /// The `vo_version.kind` discriminator text.
+    /// The `version.kind` discriminator text.
     pub kind: String,
     /// The per-object storage commit ordinal — NOT the wire version number.
     pub sys_version: i32,
@@ -95,7 +95,7 @@ pub struct Placement {
 /// archived rows back first, as primary-key probes that find nothing in the
 /// common unarchived case. A same-statement `INSERT` is invisible to the sibling
 /// scans (<https://www.postgresql.org/docs/18/queries-with.html>), so the
-/// placement reads run over `vo_version` UNION ALL the thaw's own `RETURNING`
+/// placement reads run over `version` UNION ALL the thaw's own `RETURNING`
 /// rows.
 ///
 /// # Errors
@@ -112,12 +112,12 @@ pub async fn next_placement(
                 "cn AS (DELETE FROM cold_node WHERE vo_id = $1 RETURNING *), ",
                 "ct AS (DELETE FROM cold_vo_attestation WHERE vo_id = $1 RETURNING *), ",
                 "cm AS (DELETE FROM vo_archive WHERE vo_id = $1), ",
-                "iv AS (INSERT INTO vo_version SELECT * FROM cv), ",
+                "iv AS (INSERT INTO version SELECT * FROM cv), ",
                 "inn AS (INSERT INTO node SELECT * FROM cn), ",
                 "it AS (INSERT INTO vo_attestation SELECT * FROM ct), ",
                 "src AS (SELECT vo_id, ehr_id, kind, sys_version, trunk_version, branch_number, ",
                 "               branch_version, creating_system_id, lifecycle_state, sys_period ",
-                "        FROM vo_version WHERE vo_id = $1 ",
+                "        FROM version WHERE vo_id = $1 ",
                 "        UNION ALL ",
                 "        SELECT vo_id, ehr_id, kind, sys_version, trunk_version, branch_number, ",
                 "               branch_version, creating_system_id, lifecycle_state, sys_period ",
@@ -219,17 +219,17 @@ pub async fn update_placement(
         "cn AS (DELETE FROM cold_node WHERE vo_id = $1 RETURNING *), ",
         "ct AS (DELETE FROM cold_vo_attestation WHERE vo_id = $1 RETURNING *), ",
         "cm AS (DELETE FROM vo_archive WHERE vo_id = $1), ",
-        "iv AS (INSERT INTO vo_version SELECT * FROM cv), ",
+        "iv AS (INSERT INTO version SELECT * FROM cv), ",
         "inn AS (INSERT INTO node SELECT * FROM cn), ",
         "it AS (INSERT INTO vo_attestation SELECT * FROM ct), ",
         "src AS (SELECT vo_id, ehr_id, kind, sys_version, trunk_version, branch_number, ",
         "               branch_version, creating_system_id, lifecycle_state, sys_period, ",
-        "               audit_id ",
-        "        FROM vo_version WHERE vo_id = $1 ",
+        "               commit_audit_id ",
+        "        FROM version WHERE vo_id = $1 ",
         "        UNION ALL ",
         "        SELECT vo_id, ehr_id, kind, sys_version, trunk_version, branch_number, ",
         "               branch_version, creating_system_id, lifecycle_state, sys_period, ",
-        "               audit_id ",
+        "               commit_audit_id ",
         "        FROM cv) ",
         "SELECT o.next_ordinal, now() AS ts, tip.ehr_id, tip.kind, tip.sys_version, ",
         "tip.trunk_version, tip.branch_number, tip.branch_version, ",
@@ -241,14 +241,14 @@ pub async fn update_placement(
         "LEFT JOIN LATERAL ( ",
         "    SELECT t.ehr_id, t.kind, t.sys_version, t.trunk_version, ",
         "           t.branch_number, t.branch_version, t.creating_system_id, ",
-        "           t.lifecycle_state, upper_inf(t.sys_period) AS open, t.audit_id ",
+        "           t.lifecycle_state, upper_inf(t.sys_period) AS open, t.commit_audit_id ",
         "    FROM src t WHERE upper_inf(t.sys_period) AND t.branch_number = 0 ",
         ") tip ON true ",
-        "LEFT JOIN audit a ON a.id = tip.audit_id ",
+        "LEFT JOIN commit_audit a ON a.id = tip.commit_audit_id ",
         "LEFT JOIN ehr e ON e.id = tip.ehr_id ",
         "LEFT JOIN LATERAL ( ",
         "    SELECT (b.body)::jsonb #>> '{archetype_details,template_id,value}' AS stored_template ",
-        "    FROM (SELECT body FROM vo_version ",
+        "    FROM (SELECT body FROM version ",
         "          WHERE vo_id = $1 AND sys_version = tip.sys_version ",
         "          UNION ALL ",
         "          SELECT body FROM cv WHERE cv.sys_version = tip.sys_version) b ",
@@ -262,7 +262,7 @@ pub async fn update_placement(
         "           (b.body)::jsonb ->> 'archetype_node_id' AS ani, ",
         "           (b.body)::jsonb #>> '{category,defining_code,code_string}' AS category ",
         "    FROM (SELECT f.sys_version, f.body ",
-        "          FROM (SELECT sys_version, body FROM vo_version ",
+        "          FROM (SELECT sys_version, body FROM version ",
         "                WHERE vo_id = $1 AND body IS NOT NULL ",
         "                UNION ALL ",
         "                SELECT sys_version, body FROM cv WHERE body IS NOT NULL) f ",
@@ -315,7 +315,7 @@ pub async fn next_branch_number(
     trunk_version: i32,
 ) -> Result<i32, StorageError> {
     Ok(sqlx::query_scalar(
-        "SELECT COALESCE(MAX(branch_number), 0) + 1 FROM vo_version \
+        "SELECT COALESCE(MAX(branch_number), 0) + 1 FROM version \
          WHERE vo_id = $1 AND trunk_version = $2",
     )
     .bind(vo_id)

@@ -1,7 +1,7 @@
 // SPDX-FileCopyrightText: Ruben Talstra
 // SPDX-License-Identifier: BUSL-1.1
 
-//! Row I/O for the versioned-object spine: `vo_version`, `audit`,
+//! Row I/O for the versioned-object spine: `version`, `audit`,
 //! `contribution`, `vo_attestation`, plus the folder-membership and
 //! event-outbox writes that ride along inside the same commit transaction.
 //!

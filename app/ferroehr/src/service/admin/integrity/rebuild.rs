@@ -5,7 +5,7 @@
 //! for.
 //!
 //! NOTE: no openEHR spec governs storage mechanics — our own design/extension;
-//! the storage keeps a version's content twice, as `vo_version.body` and as the
+//! the storage keeps a version's content twice, as `version.body` and as the
 //! decomposed `node` rows, and the sweep ([`super`]) reports where the two
 //! disagree — in content, or in the shape the rows were decomposed into.
 //!
@@ -101,7 +101,7 @@ pub struct NodeRebuildRecord {
     pub vo_id: Uuid,
     /// The per-object storage commit ordinal of the version.
     pub sys_version: i32,
-    /// The `vo_version.kind` discriminator (`COMPOSITION` / `EHR_STATUS` /
+    /// The `version.kind` discriminator (`COMPOSITION` / `EHR_STATUS` /
     /// `FOLDER` / a demographic PARTY class / …).
     pub kind: String,
     /// What the sweep found, which is what selected this version.
@@ -151,7 +151,7 @@ struct VersionBody {
 
 impl FerroEhrService {
     /// Re-derives the `node` rows of every damaged version in `scope` from its
-    /// `vo_version.body`, one transaction per version.
+    /// `version.body`, one transaction per version.
     ///
     /// The scope is the sweep's own ([`StorageParityScope`]): the whole
     /// repository, one EHR, one versioned object, one version of it, or
@@ -278,11 +278,12 @@ impl FerroEhrService {
         // object is never split across tiers. The marker is captured before
         // the thaw drops it and re-inserted before the re-freeze, so an
         // archived object comes out of this exactly as archived as it went in.
-        let archive_reason: Option<String> =
-            sqlx::query_scalar("SELECT reason FROM vo_archive WHERE vo_id = $1 FOR UPDATE")
-                .bind(vo_id)
-                .fetch_optional(&mut *tx)
-                .await?;
+        let archive_reason: Option<Option<String>> = sqlx::query_scalar(
+            "SELECT archive_reason FROM vo_head WHERE vo_id = $1 AND tier = 'cold' FOR UPDATE",
+        )
+        .bind(vo_id)
+        .fetch_optional(&mut *tx)
+        .await?;
         if archive_reason.is_some() {
             tier::thaw(&mut tx, &[vo_id]).await?;
         }
@@ -297,15 +298,7 @@ impl FerroEhrService {
         }
 
         if let Some(reason) = archive_reason {
-            sqlx::query(
-                "INSERT INTO vo_archive (vo_id, reason) VALUES ($1, $2) \
-                 ON CONFLICT (vo_id) DO NOTHING",
-            )
-            .bind(vo_id)
-            .bind(reason)
-            .execute(&mut *tx)
-            .await?;
-            tier::freeze(&mut tx, &[vo_id]).await?;
+            tier::freeze(&mut tx, &[vo_id], reason.as_deref()).await?;
         }
         tx.commit().await?;
         Ok(outcome)
@@ -382,7 +375,7 @@ async fn locked_body(
     sys_version: i32,
 ) -> Result<Option<VersionBody>, ServiceError> {
     let row: Option<(Option<Uuid>, Option<String>)> = sqlx::query_as(
-        "SELECT ehr_id, body FROM vo_version \
+        "SELECT ehr_id, body FROM version \
          WHERE vo_id = $1 AND sys_version = $2 FOR UPDATE",
     )
     .bind(vo_id)

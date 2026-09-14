@@ -12,7 +12,7 @@
 //! on any `LOCATABLE`, so a body may carry several; a body carrying none was
 //! created here, through this API, and its origin is this server.
 //!
-//! The set is derived once, at commit, and stored on `vo_version.origins`
+//! The set is derived once, at commit, and stored on `version.origins`
 //! ([`crate::versioning::change`]), so a read aggregates over rows rather
 //! than parsing bodies — the `stable_compatible` stamp's pattern. EHDS
 //! Annex II 3.2(e) is the requirement it serves; the values are the

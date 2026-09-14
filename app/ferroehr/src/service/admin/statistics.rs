@@ -10,7 +10,7 @@
 //! service") and an optional `Interval<Iso8601_date_time>` matched against the
 //! CONTRIBUTION / version audit `time_committed`. The enumeration members are
 //! `platform_service.adoc`. No openEHR spec governs the SQL that answers these —
-//! our own design over the greenfield `contribution` / `vo_version` / `audit`
+//! our own design over the greenfield `contribution` / `version` / `audit`
 //! tables (`0001_baseline.sql`).
 
 use crate::service::FerroEhrService;
@@ -63,13 +63,13 @@ impl FerroEhrService {
         // see admin_contribution_count). The listing always joins `audit`:
         // its ORDER BY is the commit time.
         let sql = if ehr_scoped {
-            "SELECT c.id::text FROM contribution c JOIN audit a ON a.id = c.audit_id \
+            "SELECT c.id::text FROM contribution c JOIN commit_audit a ON a.id = c.commit_audit_id \
              WHERE c.ehr_id IS NOT NULL \
                AND ($1::timestamptz IS NULL OR a.time_committed >= $1::timestamptz) \
                AND ($2::timestamptz IS NULL OR a.time_committed <= $2::timestamptz) \
              ORDER BY a.time_committed, c.id"
         } else {
-            "SELECT c.id::text FROM contribution c JOIN audit a ON a.id = c.audit_id \
+            "SELECT c.id::text FROM contribution c JOIN commit_audit a ON a.id = c.commit_audit_id \
              WHERE c.ehr_id IS NULL \
                AND ($1::timestamptz IS NULL OR a.time_committed >= $1::timestamptz) \
                AND ($2::timestamptz IS NULL OR a.time_committed <= $2::timestamptz) \
@@ -118,12 +118,12 @@ impl FerroEhrService {
                 .map_err(ServiceError::from)?
         } else {
             let sql = if ehr_scoped {
-                "SELECT count(*) FROM contribution c JOIN audit a ON a.id = c.audit_id \
+                "SELECT count(*) FROM contribution c JOIN commit_audit a ON a.id = c.commit_audit_id \
                  WHERE c.ehr_id IS NOT NULL \
                    AND ($1::timestamptz IS NULL OR a.time_committed >= $1::timestamptz) \
                    AND ($2::timestamptz IS NULL OR a.time_committed <= $2::timestamptz)"
             } else {
-                "SELECT count(*) FROM contribution c JOIN audit a ON a.id = c.audit_id \
+                "SELECT count(*) FROM contribution c JOIN commit_audit a ON a.id = c.commit_audit_id \
                  WHERE c.ehr_id IS NULL \
                    AND ($1::timestamptz IS NULL OR a.time_committed >= $1::timestamptz) \
                    AND ($2::timestamptz IS NULL OR a.time_committed <= $2::timestamptz)"
@@ -177,14 +177,14 @@ impl FerroEhrService {
         // Unbounded: no reason to touch `audit` at all.
         let count: i64 = if lo.is_none() && hi.is_none() {
             sqlx::query_scalar(
-                "SELECT count(DISTINCT vo_id) FROM vo_version_all WHERE kind = 'COMPOSITION'",
+                "SELECT count(DISTINCT vo_id) FROM version WHERE kind = 'COMPOSITION'",
             )
             .fetch_one(&self.pool)
             .await
             .map_err(ServiceError::from)?
         } else {
             sqlx::query_scalar(
-                "SELECT count(DISTINCT v.vo_id) FROM vo_version_all v JOIN audit a ON a.id = v.audit_id \
+                "SELECT count(DISTINCT v.vo_id) FROM version v JOIN commit_audit a ON a.id = v.commit_audit_id \
                  WHERE v.kind = 'COMPOSITION' \
                    AND ($1::timestamptz IS NULL OR a.time_committed >= $1::timestamptz) \
                    AND ($2::timestamptz IS NULL OR a.time_committed <= $2::timestamptz)",
@@ -217,13 +217,13 @@ impl FerroEhrService {
             return Ok(0);
         }
         let count: i64 = if lo.is_none() && hi.is_none() {
-            sqlx::query_scalar("SELECT count(*) FROM vo_version_all WHERE kind = 'COMPOSITION'")
+            sqlx::query_scalar("SELECT count(*) FROM version WHERE kind = 'COMPOSITION'")
                 .fetch_one(&self.pool)
                 .await
                 .map_err(ServiceError::from)?
         } else {
             sqlx::query_scalar(
-                "SELECT count(*) FROM vo_version_all v JOIN audit a ON a.id = v.audit_id \
+                "SELECT count(*) FROM version v JOIN commit_audit a ON a.id = v.commit_audit_id \
                  WHERE v.kind = 'COMPOSITION' \
                    AND ($1::timestamptz IS NULL OR a.time_committed >= $1::timestamptz) \
                    AND ($2::timestamptz IS NULL OR a.time_committed <= $2::timestamptz)",

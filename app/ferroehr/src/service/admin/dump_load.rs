@@ -34,9 +34,9 @@
 //! manifest's `format` member tells `load_ehrs` which form the archive holds.
 //!
 //! `export_ehrs(an_ehr_id)` is EHR-scoped: `ehr`, `audit`, `contribution`,
-//! `vo_version`, `node`, `ehr_folder` (the `EHR.folders` membership rows — RM
+//! `version`, `node`, `ehr_folder` (the `EHR.folders` membership rows — RM
 //! ehr master04 §Folders), `item_tag`, and any `vo_archive` markers. Global
-//! DEFINITION artefacts (templates via `vo_version.template_id`, `stored_query`)
+//! DEFINITION artefacts (templates via `version.template_id`, `stored_query`)
 //! and demographic parties are not carried; a `COMPOSITION` referencing an
 //! absent template fails its FK on load and is reported per EHR.
 //!
@@ -165,14 +165,14 @@ async fn insert_audit_rows(
     audits: &[AuditRow],
     identity_preserving: bool,
 ) -> Result<(), ServiceError> {
-    const INSERT: &str = "INSERT INTO audit (id, time_committed, system_id, change_type, \
+    const INSERT: &str = "INSERT INTO commit_audit (id, time_committed, system_id, change_type, \
          description, committer, attestation) \
          SELECT t.id, t.time_committed::timestamptz, t.system_id, t.change_type, \
          t.description, t.committer, t.attestation \
          FROM unnest($1::uuid[], $2::text[], $3::text[], $4::text[], $5::jsonb[], \
          $6::jsonb[], $7::jsonb[]) \
          AS t(id, time_committed, system_id, change_type, description, committer, attestation)";
-    const INSERT_IDENTITY_PRESERVING: &str = "INSERT INTO audit (id, time_committed, system_id, \
+    const INSERT_IDENTITY_PRESERVING: &str = "INSERT INTO commit_audit (id, time_committed, system_id, \
          change_type, description, committer, attestation) \
          SELECT t.id, t.time_committed::timestamptz, t.system_id, t.change_type, \
          t.description, t.committer, t.attestation \
@@ -328,7 +328,7 @@ struct AttestationRow {
 }
 
 impl AttestationRow {
-    /// One exported attestation from its `vo_attestation_all` row — the one
+    /// One exported attestation from its `vo_attestation` row — the one
     /// mapping every export path shares.
     fn from_row(r: &sqlx::postgres::PgRow) -> Result<Self, ServiceError> {
         Ok(Self {
@@ -388,7 +388,7 @@ struct AuditRow {
 #[derive(Debug, Serialize, Deserialize)]
 struct ContributionRow {
     id: Uuid,
-    audit_id: Uuid,
+    commit_audit_id: Uuid,
 }
 
 #[derive(Debug, Serialize, Deserialize)]
@@ -410,7 +410,7 @@ struct VersionRecord {
     sys_period_upper: Option<String>,
     lifecycle_state: String,
     contribution_id: Uuid,
-    audit_id: Uuid,
+    commit_audit_id: Uuid,
     template_id: Option<String>,
     signature: Option<String>,
     /// Whether `signature` was client-supplied (foreign — never re-verified at
@@ -797,7 +797,7 @@ fn version_entry_name(version_uid: &str) -> Result<String, SmError> {
 /// openEHR JSON, through the builder the served version read uses
 /// ([`build_original_version`]).
 ///
-/// `audit` is the `audit` row the version's `audit_id` names (RM common
+/// `audit` is the `audit` row the version's `commit_audit_id` names (RM common
 /// master06 §Version and its Subtypes: `VERSION.commit_audit` 1..1), used only
 /// for a locally created version; an imported one renders the wrapped
 /// original's own foreign provenance (§Committal and Audits). Of the
@@ -938,7 +938,7 @@ fn version_document_of<T: DeserializeOwned + ToXml>(
     .map_err(|e| ServiceError::internal("serializing the ORIGINAL_VERSION to XML", e))
 }
 
-/// [`version_document_of`] dispatched on the stored `vo_version.kind` —
+/// [`version_document_of`] dispatched on the stored `version.kind` —
 /// every versioned-object root the whole-repository archive carries: the
 /// EHR-scoped ones (RM ehr master04 §EHR Class) and the ehr-less demographic
 /// containers of the demographic wave (RM demographic master02 §Versioning
@@ -1039,11 +1039,11 @@ fn externalize_version_documents(
                 .iter()
                 .filter(|a| a.vo_id == v.vo_id && a.sys_version == v.sys_version)
                 .collect();
-            let audit = audits.get(&v.audit_id).ok_or_else(|| {
+            let audit = audits.get(&v.commit_audit_id).ok_or_else(|| {
                 SmError::exception(format!(
                     "version {} of {} names commit audit {}, which the exported record does not \
                      carry",
-                    v.sys_version, v.vo_id, v.audit_id
+                    v.sys_version, v.vo_id, v.commit_audit_id
                 ))
             })?;
             let envelope = original_version_envelope(v, audit, &attestation_rows)?;
@@ -1083,11 +1083,11 @@ fn externalize_demographic_documents(
                 .iter()
                 .filter(|a| a.vo_id == v.vo_id && a.sys_version == v.sys_version)
                 .collect();
-            let audit = audits.get(&v.audit_id).ok_or_else(|| {
+            let audit = audits.get(&v.commit_audit_id).ok_or_else(|| {
                 SmError::exception(format!(
                     "version {} of {} names commit audit {}, which the exported record does not \
                      carry",
-                    v.sys_version, v.vo_id, v.audit_id
+                    v.sys_version, v.vo_id, v.commit_audit_id
                 ))
             })?;
             let envelope = original_version_envelope(v, audit, &attestation_rows)?;
@@ -1565,7 +1565,7 @@ impl FerroEhrService {
     /// Whether an ehr-less demographic container with `vo_id` already exists.
     async fn demographic_container_exists(&self, vo_id: VoId) -> Result<bool, ServiceError> {
         Ok(sqlx::query_scalar(
-            "SELECT EXISTS(SELECT 1 FROM vo_version_all WHERE vo_id = $1 AND ehr_id IS NULL)",
+            "SELECT EXISTS(SELECT 1 FROM version WHERE vo_id = $1 AND ehr_id IS NULL)",
         )
         .bind(vo_id)
         .fetch_one(&self.demographic_pool)
@@ -1584,14 +1584,14 @@ impl FerroEhrService {
         insert_audit_rows(&mut tx, &commons.audits, true).await?;
         if !commons.contributions.is_empty() {
             let ids: Vec<Uuid> = commons.contributions.iter().map(|c| c.id).collect();
-            let audit_ids: Vec<Uuid> = commons.contributions.iter().map(|c| c.audit_id).collect();
+            let commit_audit_ids: Vec<Uuid> = commons.contributions.iter().map(|c| c.commit_audit_id).collect();
             sqlx::query(
-                "INSERT INTO contribution (id, ehr_id, audit_id) \
-                 SELECT t.id, NULL, t.audit_id FROM unnest($1::uuid[], $2::uuid[]) \
-                 AS t(id, audit_id) ON CONFLICT (id) DO NOTHING",
+                "INSERT INTO contribution (id, ehr_id, commit_audit_id) \
+                 SELECT t.id, NULL, t.commit_audit_id FROM unnest($1::uuid[], $2::uuid[]) \
+                 AS t(id, commit_audit_id) ON CONFLICT (id) DO NOTHING",
             )
             .bind(ids)
-            .bind(audit_ids)
+            .bind(commit_audit_ids)
             .execute(&mut *tx)
             .await?;
         }
@@ -1600,7 +1600,7 @@ impl FerroEhrService {
     }
 
     /// Load one ehr-less demographic container: its per-version audits, every
-    /// version (`vo_version` + re-decomposed `node` rows, `ehr_id` NULL),
+    /// version (`version` + re-decomposed `node` rows, `ehr_id` NULL),
     /// attestations, demographic tags and archive rows — one transaction, so
     /// a failed container commits nothing.
     async fn load_one_demographic(&self, record: DemographicRecord) -> Result<(), ServiceError> {
@@ -1638,8 +1638,8 @@ impl FerroEhrService {
     ) -> Result<(DemographicCommons, Vec<DemographicRecord>), ServiceError> {
         let audit_rows = sqlx::query(
             "SELECT id, time_committed, system_id, change_type, \
-             description, committer, attestation FROM audit \
-             WHERE id IN (SELECT audit_id FROM contribution WHERE ehr_id IS NULL) \
+             description, committer, attestation FROM commit_audit \
+             WHERE id IN (SELECT commit_audit_id FROM contribution WHERE ehr_id IS NULL) \
              ORDER BY id",
         )
         .fetch_all(&self.demographic_pool)
@@ -1649,14 +1649,14 @@ impl FerroEhrService {
             commons_audits.push(audit_row_of(&r)?);
         }
         let contribution_rows =
-            sqlx::query("SELECT id, audit_id FROM contribution WHERE ehr_id IS NULL ORDER BY id")
+            sqlx::query("SELECT id, commit_audit_id FROM contribution WHERE ehr_id IS NULL ORDER BY id")
                 .fetch_all(&self.demographic_pool)
                 .await?;
         let mut contributions = Vec::with_capacity(contribution_rows.len());
         for r in contribution_rows {
             contributions.push(ContributionRow {
                 id: r.try_get("id")?,
-                audit_id: r.try_get("audit_id")?,
+                commit_audit_id: r.try_get("commit_audit_id")?,
             });
         }
         let commons = DemographicCommons {
@@ -1665,7 +1665,7 @@ impl FerroEhrService {
         };
 
         let container_rows = sqlx::query(
-            "SELECT DISTINCT vo_id, kind FROM vo_version_all WHERE ehr_id IS NULL \
+            "SELECT DISTINCT vo_id, kind FROM version WHERE ehr_id IS NULL \
              ORDER BY vo_id",
         )
         .fetch_all(&self.demographic_pool)
@@ -1688,8 +1688,8 @@ impl FerroEhrService {
     ) -> Result<DemographicRecord, ServiceError> {
         let audit_rows = sqlx::query(
             "SELECT id, time_committed, system_id, change_type, \
-             description, committer, attestation FROM audit \
-             WHERE id IN (SELECT audit_id FROM vo_version_all \
+             description, committer, attestation FROM commit_audit \
+             WHERE id IN (SELECT commit_audit_id FROM version \
                           WHERE vo_id = $1 AND ehr_id IS NULL) \
              ORDER BY id",
         )
@@ -1704,10 +1704,10 @@ impl FerroEhrService {
         let version_rows = sqlx::query(
             "SELECT vo_id, kind, sys_version, trunk_version, branch_number, branch_version, \
              preceding_version_uid, other_input_version_uids, lower(sys_period)::text AS lo, \
-             upper(sys_period)::text AS hi, lifecycle_state, contribution_id, audit_id, \
+             upper(sys_period)::text AS hi, lifecycle_state, contribution_id, commit_audit_id, \
              template_id, signature, signature_client_supplied, creating_system_id, \
              wrapped_original \
-             FROM vo_version_all WHERE vo_id = $1 AND ehr_id IS NULL \
+             FROM version WHERE vo_id = $1 AND ehr_id IS NULL \
              ORDER BY sys_version",
         )
         .bind(vo_id)
@@ -1720,7 +1720,7 @@ impl FerroEhrService {
 
         let attestation_rows = sqlx::query(
             "SELECT id, vo_id, sys_version, contribution_id, time_committed, at_committal, \
-             data FROM vo_attestation_all WHERE vo_id = $1 \
+             data FROM vo_attestation WHERE vo_id = $1 \
              ORDER BY sys_version, time_committed, id",
         )
         .bind(vo_id)
@@ -1771,7 +1771,7 @@ impl FerroEhrService {
         })
     }
 
-    /// One `vo_version_all` row into a [`VersionRecord`], its body read
+    /// One `version` row into a [`VersionRecord`], its body read
     /// across both storage tiers (deleted versions keep a `null` body).
     async fn version_record_of(
         &self,
@@ -1799,7 +1799,7 @@ impl FerroEhrService {
             sys_period_upper: r.try_get("hi")?,
             lifecycle_state,
             contribution_id: r.try_get("contribution_id")?,
-            audit_id: r.try_get("audit_id")?,
+            commit_audit_id: r.try_get("commit_audit_id")?,
             template_id: r.try_get("template_id")?,
             signature: r.try_get("signature")?,
             signature_client_supplied: r.try_get("signature_client_supplied")?,
@@ -1837,9 +1837,9 @@ impl FerroEhrService {
         // Every audit referenced by this EHR's contributions or versions.
         let audit_rows = sqlx::query(
             "SELECT id, time_committed, system_id, change_type, \
-             description, committer, attestation FROM audit \
-             WHERE id IN (SELECT audit_id FROM contribution WHERE ehr_id = $1 \
-                          UNION SELECT audit_id FROM vo_version_all WHERE ehr_id = $1) \
+             description, committer, attestation FROM commit_audit \
+             WHERE id IN (SELECT commit_audit_id FROM contribution WHERE ehr_id = $1 \
+                          UNION SELECT commit_audit_id FROM version WHERE ehr_id = $1) \
              ORDER BY id",
         )
         .bind(ehr_id)
@@ -1862,7 +1862,7 @@ impl FerroEhrService {
         }
 
         let contribution_rows =
-            sqlx::query("SELECT id, audit_id FROM contribution WHERE ehr_id = $1 ORDER BY id")
+            sqlx::query("SELECT id, commit_audit_id FROM contribution WHERE ehr_id = $1 ORDER BY id")
                 .bind(ehr_id)
                 .fetch_all(&self.pool)
                 .await?;
@@ -1870,17 +1870,17 @@ impl FerroEhrService {
         for r in contribution_rows {
             contributions.push(ContributionRow {
                 id: r.try_get("id")?,
-                audit_id: r.try_get("audit_id")?,
+                commit_audit_id: r.try_get("commit_audit_id")?,
             });
         }
 
         let version_rows = sqlx::query(
             "SELECT vo_id, kind, sys_version, trunk_version, branch_number, branch_version, \
              preceding_version_uid, other_input_version_uids, lower(sys_period)::text AS lo, \
-             upper(sys_period)::text AS hi, lifecycle_state, contribution_id, audit_id, \
+             upper(sys_period)::text AS hi, lifecycle_state, contribution_id, commit_audit_id, \
              template_id, signature, signature_client_supplied, creating_system_id, \
              wrapped_original \
-             FROM vo_version_all WHERE ehr_id = $1 ORDER BY vo_id, sys_version",
+             FROM version WHERE ehr_id = $1 ORDER BY vo_id, sys_version",
         )
         .bind(ehr_id)
         .fetch_all(&self.pool)
@@ -1917,7 +1917,7 @@ impl FerroEhrService {
 
         let archive_rows = sqlx::query(
             "SELECT vo_id, archived_at::text AS archived_at, reason FROM vo_archive \
-             WHERE vo_id IN (SELECT DISTINCT vo_id FROM vo_version_all WHERE ehr_id = $1) \
+             WHERE vo_id IN (SELECT DISTINCT vo_id FROM version WHERE ehr_id = $1) \
              ORDER BY vo_id",
         )
         .bind(ehr_id)
@@ -1934,8 +1934,8 @@ impl FerroEhrService {
 
         let attestation_rows = sqlx::query(
             "SELECT id, vo_id, sys_version, contribution_id, time_committed, at_committal, \
-             data FROM vo_attestation_all \
-             WHERE vo_id IN (SELECT DISTINCT vo_id FROM vo_version_all WHERE ehr_id = $1) \
+             data FROM vo_attestation \
+             WHERE vo_id IN (SELECT DISTINCT vo_id FROM version WHERE ehr_id = $1) \
              ORDER BY vo_id, sys_version, time_committed, id",
         )
         .bind(ehr_id)
@@ -1959,7 +1959,7 @@ impl FerroEhrService {
     }
 
     /// Re-persist one EHR record verbatim in a single transaction: `ehr`, its
-    /// audits/contributions, each version (`vo_version` + re-decomposed `node`
+    /// audits/contributions, each version (`version` + re-decomposed `node`
     /// rows through the storage codec), its item tags, and any archive markers —
     /// preserved ids, provenance and commit times (a lossless migration; RM
     /// common master06 §Copying "the `ORIGINAL_VERSION` is never modified").
@@ -1973,15 +1973,15 @@ impl FerroEhrService {
 
         if !record.contributions.is_empty() {
             let ids: Vec<Uuid> = record.contributions.iter().map(|c| c.id).collect();
-            let audit_ids: Vec<Uuid> = record.contributions.iter().map(|c| c.audit_id).collect();
+            let commit_audit_ids: Vec<Uuid> = record.contributions.iter().map(|c| c.commit_audit_id).collect();
             sqlx::query(
-                "INSERT INTO contribution (id, ehr_id, audit_id) \
-                 SELECT t.id, $2, t.audit_id FROM unnest($1::uuid[], $3::uuid[]) \
-                 AS t(id, audit_id)",
+                "INSERT INTO contribution (id, ehr_id, commit_audit_id) \
+                 SELECT t.id, $2, t.commit_audit_id FROM unnest($1::uuid[], $3::uuid[]) \
+                 AS t(id, commit_audit_id)",
             )
             .bind(ids)
             .bind(ehr_id)
-            .bind(audit_ids)
+            .bind(commit_audit_ids)
             .execute(&mut *tx)
             .await?;
         }
@@ -2023,8 +2023,8 @@ impl FerroEhrService {
         // branch rows per {vo, creating system, fork point, branch number}.
         let overlap: bool = sqlx::query_scalar(
             "SELECT EXISTS ( \
-                 SELECT 1 FROM vo_version a \
-                 JOIN vo_version b ON a.vo_id = b.vo_id \
+                 SELECT 1 FROM version a \
+                 JOIN version b ON a.vo_id = b.vo_id \
                      AND a.branch_number = b.branch_number \
                      AND (a.branch_number = 0 \
                           OR (a.creating_system_id = b.creating_system_id \
@@ -2150,7 +2150,7 @@ async fn load_attestations(
 }
 
 /// Load a record's version rows and their re-decomposed node rows (through
-/// the storage codec) — batched per relation: ONE `vo_version` `unnest`
+/// the storage codec) — batched per relation: ONE `version` `unnest`
 /// insert ([`crate::storage::version_repo::import::insert_versions_verbatim`])
 /// and ONE `node` `unnest` insert
 /// ([`crate::storage::node_repo::write_nodes_batch`]), never a round trip per
@@ -2191,7 +2191,7 @@ async fn load_versions(
             sys_period_upper: v.sys_period_upper.as_deref(),
             lifecycle_state: &v.lifecycle_state,
             contribution_id: v.contribution_id,
-            audit_id: v.audit_id,
+            commit_audit_id: v.commit_audit_id,
             template_id: v.template_id.as_deref(),
             signature: v.signature.as_deref(),
             signature_client_supplied: v.signature_client_supplied,

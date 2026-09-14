@@ -6,7 +6,7 @@
 //!
 //! No openEHR spec governs the physical row layout — this is our own decomposed
 //! node model. The promoted columns and the
-//! nested-set index (`num`/`num_cap`/`parent_num`/`citem_num`) exist to make AQL
+//! nested-set index (`num`/`num_cap`/`parent_num`) exists to make AQL
 //! CONTAINS an integer interval join, never a JSON walk.
 
 #![expect(
@@ -22,8 +22,9 @@ use serde_json::Value;
 /// [`crate::storage::node_repo::write_nodes`]).
 ///
 /// Carries the full set of promoted query columns (`rm_type`, `archetype`,
-/// `arch_*`, `name`) alongside the nested-set index and the pruned JSON
-/// fragment — everything the `node` table stores per row.
+/// `arch_*`, `name`, `name_code`, `name_terminology`) alongside the nested-set
+/// index and the pruned JSON fragment — everything the `node` table stores per
+/// row.
 #[derive(Debug, Clone, PartialEq)]
 pub struct NodeRow {
     /// Pre-order number within the versioned object (root = 0).
@@ -32,8 +33,6 @@ pub struct NodeRow {
     pub num_cap: i32,
     /// `num` of the parent structure node (root points at itself/0).
     pub parent_num: i32,
-    /// `num` of the nearest ancestor carrying an archetype id.
-    pub citem_num: Option<i32>,
     /// The RM `_type`, verbatim (e.g. `OBSERVATION`).
     pub rm_type: String,
     /// `archetype_node_id`, verbatim.
@@ -53,6 +52,13 @@ pub struct NodeRow {
     pub arch_major: Option<i32>,
     /// `name/value`.
     pub name: Option<String>,
+    /// `name/defining_code/code_string` when the name is a `DV_CODED_TEXT`;
+    /// `None` on a plain `DV_TEXT` name. Promoted for the AQL node predicate
+    /// (QUERY `master03-aql.adoc` §Node predicate).
+    pub name_code: Option<String>,
+    /// `name/defining_code/terminology_id/value` when the name is coded;
+    /// `None` otherwise.
+    pub name_terminology: Option<String>,
     /// Materialized path from the root: full attribute names, array index
     /// appended, `.`-terminated steps (`content0.data.events1.`) so byte
     /// order under `COLLATE "C"` equals tree order.

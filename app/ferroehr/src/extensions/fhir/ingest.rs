@@ -374,7 +374,7 @@ impl FerroEhrService {
     /// reverse transform.
     ///
     /// NOTE: the template is read from the COMPOSITION itself, as the read
-    /// facade's AQL also does, rather than from `vo_version.template_id`: the
+    /// facade's AQL also does, rather than from `version.template_id`: the
     /// canonical body is the authoritative carrier
     /// (`archetype_details.template_id`).
     ///

@@ -411,7 +411,7 @@ enum ContributionCtx {
     Existing(Uuid),
 }
 
-/// A [`Change`] resolved to the concrete `vo_version` placement + content — the
+/// A [`Change`] resolved to the concrete `version` placement + content — the
 /// output of the per-arm decision (offload, lifecycle, decompose, version-tree
 /// placement) and the input to the shared write ([`commit_resolved`]).
 struct ResolvedWrite {
@@ -435,11 +435,11 @@ struct ResolvedWrite {
     /// The decomposed node rows (empty for a logical delete — data Void).
     rows: Vec<NodeRow>,
     /// The canonical body BYTES, serialized from the accepted, uid-stamped
-    /// value BEFORE decomposition — the stored `vo_version.body` text a point
+    /// value BEFORE decomposition — the stored `version.body` text a point
     /// read serves verbatim. `None` for a logical delete.
     canonical_text: Option<String>,
     /// Whether the RELEASED generation set can express this body — the
-    /// commit-time `vo_version.stable_compatible` stamp
+    /// commit-time `version.stable_compatible` stamp
     /// ([`crate::versioning::profile::stable_compatible`]).
     stable_compatible: bool,
     /// The distinct origins of the body, derived at commit
@@ -783,7 +783,7 @@ async fn apply_change(
 
 /// Commit a [`ResolvedWrite`] — close the superseded lineage tip, compute the
 /// `VERSION.signature`, then write the `audit` (+ `contribution` for a
-/// standalone write) and the `vo_version` row in ONE data-modifying CTE, then
+/// standalone write) and the `version` row in ONE data-modifying CTE, then
 /// the node rows, folder membership and accompanying attestations.
 ///
 /// The signature is computed over the assembled `ORIGINAL_VERSION` (RM common
@@ -792,7 +792,7 @@ async fn apply_change(
 /// being the transaction timestamp
 /// ([`tx_now`](crate::storage::version_repo::placement::tx_now)) and a
 /// standalone write generating its `contribution_id` here, so audit,
-/// contribution and `vo_version` collapse into one folded CTE. The lineage-tip
+/// contribution and `version` collapse into one folded CTE. The lineage-tip
 /// close stays a separate prior statement: the one-open-row-per-lineage partial
 /// unique indexes need the old open row gone before the new one is inserted. No
 /// openEHR spec governs statement batching — our own design.
@@ -918,7 +918,7 @@ async fn commit_resolved(
 }
 
 /// Serializes the accepted, uid-stamped canonical value to the body bytes a
-/// point read serves verbatim (`vo_version.body`, text taken before node
+/// point read serves verbatim (`version.body`, text taken before node
 /// decomposition, so the served wire keeps the codec's `_type`-first,
 /// BMM-declared field order).
 ///
@@ -933,7 +933,7 @@ fn canonical_body_text(canonical: &Value) -> Result<String, ServiceError> {
 /// Reassemble the version body from the node rows and derive the signature
 /// over it.
 ///
-/// The signature input is the reassembled value; the stored `vo_version.body`
+/// The signature input is the reassembled value; the stored `version.body`
 /// is the pre-decomposition text ([`canonical_body_text`]). The two are the
 /// same VALUE by decompose/reassemble fidelity, and the signature
 /// canonicalization is RFC 8785 (key-order-insensitive), so signing the
@@ -992,7 +992,7 @@ fn version_signature(
         return Ok((None, false));
     }
     // The signed content is the SAME reassembled value the caller stores as
-    // `vo_version.body` — computed once, never re-reassembled here.
+    // `version.body` — computed once, never re-reassembled here.
     let signature = integrity::sign_version(
         ctx,
         audit,
@@ -1314,7 +1314,7 @@ pub(crate) async fn commit_contribution(
     // per-version `commit_audit`s are inserted per change below). A uid the
     // client did not supply is minted here, stamped, never by the database.
     let uid = supplied_uid.unwrap_or_else(|| ctx.stamp.mint());
-    let (contribution_id, _contribution_audit_id, contribution_time) =
+    let (contribution_id, _contribution_commit_audit_id, contribution_time) =
         crate::storage::version_repo::commit::write_contribution(
             tx,
             ehr_id,
@@ -1325,7 +1325,7 @@ pub(crate) async fn commit_contribution(
     let committer_fallback = &contribution_audit.committer;
     let mut committed = Vec::with_capacity(changes.len() + attests.len());
     for (version_audit, change) in changes {
-        // Each change writes its own `commit_audit` + `vo_version` under the
+        // Each change writes its own `commit_audit` + `version` under the
         // shared contribution, always through the folded CTE — the commit
         // instant is the contribution's transaction timestamp (one `now()`
         // for the whole set), so the signature is computable up front.

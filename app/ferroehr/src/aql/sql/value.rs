@@ -76,7 +76,7 @@ impl Builder<'_> {
         mode: ValueMode,
     ) -> Result<Expr, AqlError> {
         // The server-assigned OBJECT_VERSION_ID (`uid[/value]`) is synthesized
-        // from the joined `vo_version`, not stored in the fragment (uid synthesis).
+        // from the joined `version`, not stored in the fragment (uid synthesis).
         if let Some(expr) = self.version_uid_expr(leaf, mode) {
             return Ok(expr);
         }
@@ -256,7 +256,7 @@ impl Builder<'_> {
     /// is **not** persisted in the canonical fragment (the REST read path injects
     /// it — `service::ehr::meta::with_uid`), so an AQL jsonb extraction finds
     /// nothing; QUERY master03 §Identified paths lists `COMPOSITION.uid.value` as
-    /// normative, so it is synthesized here from the already-joined `vo_version`
+    /// normative, so it is synthesized here from the already-joined `version`
     /// via the same law as the wire id (RM common master06 §Version
     /// Identification): `vo_id::creating_system_id::version_tree_id`. `None`
     /// (fall through to the stored fragment) for a contained object's own `uid`,
@@ -609,7 +609,7 @@ fn raw_numeric(base: Expr) -> Expr {
 
 // ── VERSION / EHR fields ────────────────────────────────────────────────────
 
-/// The typed SQL for a VERSION metadata field, off the `vo_version`/`audit`
+/// The typed SQL for a VERSION metadata field, off the `version`/`audit`
 /// aliases. The `uid` is synthesized as
 /// `vo_id::creating_system_id::version_tree_id` from the STORED per-version
 /// identity columns (never the live config `system_id` — the creating system

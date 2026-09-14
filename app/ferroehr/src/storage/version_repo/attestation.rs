@@ -90,7 +90,7 @@ pub async fn attestation_target(
 ) -> Result<Option<AttestTargetRow>, StorageError> {
     // Attesting an archived version appends a row that references it, so the
     // leading CTEs thaw the object back to the primary tier. The lookup reads
-    // `vo_version` UNION ALL the thaw's own `RETURNING` rows, because a
+    // `version` UNION ALL the thaw's own `RETURNING` rows, because a
     // same-statement `INSERT` is invisible to the sibling scans
     // (<https://www.postgresql.org/docs/18/queries-with.html>).
     let (t, b, v) = tree;
@@ -99,12 +99,12 @@ pub async fn attestation_target(
          cn AS (DELETE FROM cold_node WHERE vo_id = $1 RETURNING *), \
          ct AS (DELETE FROM cold_vo_attestation WHERE vo_id = $1 RETURNING *), \
          cm AS (DELETE FROM vo_archive WHERE vo_id = $1), \
-         iv AS (INSERT INTO vo_version SELECT * FROM cv), \
+         iv AS (INSERT INTO version SELECT * FROM cv), \
          inn AS (INSERT INTO node SELECT * FROM cn), \
          it AS (INSERT INTO vo_attestation SELECT * FROM ct), \
          src AS (SELECT ehr_id, sys_version, creating_system_id, wrapped_original, \
                         trunk_version, branch_number, branch_version, kind \
-                 FROM vo_version WHERE vo_id = $1 \
+                 FROM version WHERE vo_id = $1 \
                  UNION ALL \
                  SELECT ehr_id, sys_version, creating_system_id, wrapped_original, \
                         trunk_version, branch_number, branch_version, kind \
@@ -146,7 +146,7 @@ pub async fn read_attestations_all(
     vo_id: VoId,
 ) -> Result<Vec<(i32, Value)>, StorageError> {
     let rows = sqlx::query(
-        "SELECT sys_version, data FROM vo_attestation_all WHERE vo_id = $1 \
+        "SELECT sys_version, data FROM vo_attestation WHERE vo_id = $1 \
          ORDER BY time_committed, id",
     )
     .bind(vo_id)

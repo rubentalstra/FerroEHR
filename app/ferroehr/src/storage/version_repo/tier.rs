@@ -1,70 +1,71 @@
 // SPDX-FileCopyrightText: Ruben Talstra
 // SPDX-License-Identifier: BUSL-1.1
 
-//! The cold archival storage tier: the physical move, its reverse, and the
-//! marker-gated read fallback.
+//! The cold archival storage tier: the move, its reverse, and the purge.
 //!
 //! No openEHR spec governs storage tiering — our own design/extension. The SM
 //! operation it realizes is `I_ADMIN_ARCHIVE`
 //! (`docs/specs/openehr/SM/docs/UML/classes/i_admin_archive.adoc`: "Move
-//! selected EHRs to archival storage"); the mirrors of `vo_version` / `node` /
-//! `vo_attestation` in the `cold` and `cold_demographic` schemas are where
-//! "archival storage" physically is.
+//! selected EHRs to archival storage").
 //!
-//! Every statement here names its tier unqualified, as `cold_vo_version` /
-//! `cold_node` / `cold_vo_attestation`: each pseudonymisation domain's primary
-//! schema carries those as alias views over its own mirror, so the connection's
-//! `search_path` decides which tier a freeze or purge lands in and this module
-//! serves both domains unchanged.
+//! The tier is a PARTITION, not a second set of relations: `version`, `node`
+//! and `vo_attestation` are each `PARTITION BY LIST (tier)` with a `hot` and a
+//! `cold` partition. Archiving is therefore one `UPDATE` of the partition key,
+//! which PostgreSQL performs as a move between partitions (PostgreSQL 18,
+//! "Partitioning", <https://www.postgresql.org/docs/18/ddl-partitioning.html>),
+//! and the `node` and `vo_attestation` foreign keys carry their rows across
+//! with `ON UPDATE CASCADE`. Two consequences the mirror-table design could not
+//! have: every foreign key holds across the tier, and every read reaches an
+//! archived object by naming the parent relation, with no union view and no
+//! second statement.
 //!
-//! Two rules keep the tier invisible on the wire:
-//!
-//! - a **write** always thaws first ([`thaw`] on the admin restore path; the
-//!   commit path's thaw rides the merged placement read,
-//!   `crate::storage::version_repo::placement::next_placement`), so a
-//!   versioned object is never split across tiers;
-//! - a **read** goes through the `*_all` union views (`vo_version_all` /
-//!   `node_all` / `vo_attestation_all`), so ONE statement serves both tiers
-//!   and a miss never pays a retry transaction.
+//! A write still thaws first (the admin restore path calls [`thaw`]; the commit
+//! path's thaw rides the merged placement read,
+//! `crate::storage::version_repo::placement::next_placement`), so a versioned
+//! object is never split across tiers.
 
 use sqlx::PgConnection;
 
 use crate::ids::{EhrId, VoId};
 use crate::storage::error::StorageError;
 
-/// Moves every row of `vo_ids` from the primary tier to the cold archival tier.
+/// Moves every version of `vo_ids` to the cold tier, and records the move on
+/// the head row.
 ///
-/// Runs inside the caller's transaction so the move is atomic with the
-/// `vo_archive` markers that record it. Content and attestations are copied
-/// before the version rows are deleted, because the primary `node` /
-/// `vo_attestation` foreign keys cascade off `vo_version`.
-///
-/// Objects already in the cold tier select nothing and are silently skipped, so
+/// Runs inside the caller's transaction, so the rows and the head marker move
+/// together. Objects already cold match nothing and are silently skipped, so
 /// re-archiving is idempotent.
+///
+/// The node and attestation rows are NOT named: their foreign keys into
+/// `version` carry them across with the version row.
 ///
 /// # Errors
 /// Returns [`StorageError::Database`] on any driver/statement failure.
-pub async fn freeze(tx: &mut PgConnection, vo_ids: &[VoId]) -> Result<(), StorageError> {
+pub async fn freeze(
+    tx: &mut PgConnection,
+    vo_ids: &[VoId],
+    reason: Option<&str>,
+) -> Result<(), StorageError> {
     if vo_ids.is_empty() {
         return Ok(());
     }
-    for sql in [
-        "INSERT INTO cold_vo_version SELECT * FROM vo_version WHERE vo_id = ANY($1)",
-        "INSERT INTO cold_node SELECT * FROM node WHERE vo_id = ANY($1)",
-        "INSERT INTO cold_vo_attestation SELECT * FROM vo_attestation WHERE vo_id = ANY($1)",
-        // Cascades the primary `node` + `vo_attestation` rows away.
-        "DELETE FROM vo_version WHERE vo_id = ANY($1)",
-    ] {
-        sqlx::query(sql).bind(vo_ids).execute(&mut *tx).await?;
-    }
+    sqlx::query("UPDATE version SET tier = 'cold' WHERE vo_id = ANY($1) AND tier = 'hot'")
+        .bind(vo_ids)
+        .execute(&mut *tx)
+        .await?;
+    sqlx::query(
+        "UPDATE vo_head SET tier = 'cold', archived_at = now(), archive_reason = $2 \
+         WHERE vo_id = ANY($1) AND tier = 'hot'",
+    )
+    .bind(vo_ids)
+    .bind(reason)
+    .execute(&mut *tx)
+    .await?;
     Ok(())
 }
 
-/// Moves every row of `vo_ids` back from the cold archival tier to the primary
-/// tier and drops their archive markers — the exact reverse of [`freeze`].
-///
-/// Version rows are restored first: the primary `node` / `vo_attestation`
-/// foreign keys reference them.
+/// Moves every version of `vo_ids` back to the hot tier and clears the archive
+/// marker — the exact reverse of [`freeze`].
 ///
 /// # Errors
 /// Returns [`StorageError::Database`] on any driver/statement failure.
@@ -72,25 +73,44 @@ pub async fn thaw(tx: &mut PgConnection, vo_ids: &[VoId]) -> Result<(), StorageE
     if vo_ids.is_empty() {
         return Ok(());
     }
-    for sql in [
-        "INSERT INTO vo_version SELECT * FROM cold_vo_version WHERE vo_id = ANY($1)",
-        "INSERT INTO node SELECT * FROM cold_node WHERE vo_id = ANY($1)",
-        "INSERT INTO vo_attestation SELECT * FROM cold_vo_attestation WHERE vo_id = ANY($1)",
-        "DELETE FROM cold_node WHERE vo_id = ANY($1)",
-        "DELETE FROM cold_vo_attestation WHERE vo_id = ANY($1)",
-        "DELETE FROM cold_vo_version WHERE vo_id = ANY($1)",
-        "DELETE FROM vo_archive WHERE vo_id = ANY($1)",
-    ] {
-        sqlx::query(sql).bind(vo_ids).execute(&mut *tx).await?;
-    }
+    sqlx::query("UPDATE version SET tier = 'hot' WHERE vo_id = ANY($1) AND tier = 'cold'")
+        .bind(vo_ids)
+        .execute(&mut *tx)
+        .await?;
+    sqlx::query(
+        "UPDATE vo_head SET tier = 'hot', archived_at = NULL, archive_reason = NULL \
+         WHERE vo_id = ANY($1) AND tier = 'cold'",
+    )
+    .bind(vo_ids)
+    .execute(&mut *tx)
+    .await?;
     Ok(())
 }
 
-/// Deletes every cold-tier row of one EHR, plus the archive markers of the
-/// objects removed.
+/// Whether each of `vo_ids` is currently archived, as a parallel answer set.
 ///
-/// The tier's half of a physical EHR delete, which cannot reach it by cascade
-/// (the mirrors are foreign-key-free by design).
+/// One primary-key probe per object on the head row, which is also where the
+/// archive marker lives.
+///
+/// # Errors
+/// Returns [`StorageError::Database`] on a driver failure.
+pub async fn archived(tx: &mut PgConnection, vo_ids: &[VoId]) -> Result<Vec<VoId>, StorageError> {
+    if vo_ids.is_empty() {
+        return Ok(Vec::new());
+    }
+    let rows: Vec<uuid::Uuid> =
+        sqlx::query_scalar("SELECT vo_id FROM vo_head WHERE vo_id = ANY($1) AND tier = 'cold'")
+            .bind(vo_ids)
+            .fetch_all(&mut *tx)
+            .await?;
+    Ok(rows.into_iter().map(VoId).collect())
+}
+
+/// Deletes every cold-tier row of one EHR.
+///
+/// Physical deletion reaches the cold tier by the ordinary `ehr_id` cascade now
+/// that the tier is a partition of the same relation, so this exists for the
+/// paths that delete tier by tier rather than by EHR row.
 ///
 /// # Errors
 /// Returns [`StorageError::Database`] on any driver/statement failure.
@@ -98,21 +118,15 @@ pub async fn purge_ehrs(tx: &mut PgConnection, ehr_ids: &[EhrId]) -> Result<(), 
     if ehr_ids.is_empty() {
         return Ok(());
     }
-    for sql in [
-        "DELETE FROM vo_archive WHERE vo_id IN \
-         (SELECT vo_id FROM cold_vo_version WHERE ehr_id = ANY($1))",
-        "DELETE FROM cold_vo_attestation WHERE vo_id IN \
-         (SELECT vo_id FROM cold_vo_version WHERE ehr_id = ANY($1))",
-        "DELETE FROM cold_node WHERE ehr_id = ANY($1)",
-        "DELETE FROM cold_vo_version WHERE ehr_id = ANY($1)",
-    ] {
-        sqlx::query(sql).bind(ehr_ids).execute(&mut *tx).await?;
-    }
+    sqlx::query("DELETE FROM version WHERE ehr_id = ANY($1) AND tier = 'cold'")
+        .bind(ehr_ids)
+        .execute(&mut *tx)
+        .await?;
     Ok(())
 }
 
-/// Deletes every cold-tier row of the named versioned objects, plus their
-/// archive markers — the tier's half of a physical PARTY delete.
+/// Deletes every cold-tier row of the named versioned objects — the tier's half
+/// of a physical PARTY delete.
 ///
 /// # Errors
 /// Returns [`StorageError::Database`] on any driver/statement failure.
@@ -120,13 +134,9 @@ pub async fn purge_vos(tx: &mut PgConnection, vo_ids: &[VoId]) -> Result<(), Sto
     if vo_ids.is_empty() {
         return Ok(());
     }
-    for sql in [
-        "DELETE FROM cold_vo_attestation WHERE vo_id = ANY($1)",
-        "DELETE FROM cold_node WHERE vo_id = ANY($1)",
-        "DELETE FROM cold_vo_version WHERE vo_id = ANY($1)",
-        "DELETE FROM vo_archive WHERE vo_id = ANY($1)",
-    ] {
-        sqlx::query(sql).bind(vo_ids).execute(&mut *tx).await?;
-    }
+    sqlx::query("DELETE FROM version WHERE vo_id = ANY($1) AND tier = 'cold'")
+        .bind(vo_ids)
+        .execute(&mut *tx)
+        .await?;
     Ok(())
 }

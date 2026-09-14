@@ -4,7 +4,7 @@
 //! IR to SQL lowering.
 //!
 //! Turns a typed [`QueryIr`] into one `SELECT` over the greenfield
-//! `node`/`vo_version`/`ehr`/`audit` store, built entirely with `sea-query`'s
+//! `node`/`version`/`ehr`/`audit` store, built entirely with `sea-query`'s
 //! typed expression API and `sea-query-sqlx`, with no string-concatenated SQL.
 //! Every table and column reference is an [`sea_query::Expr::col`], every
 //! literal binds through `Expr::val`, and the PostgreSQL-specific pieces use the
@@ -25,7 +25,7 @@
 //!
 //! ## Coupling to the storage schema
 //!
-//! The builder references the `node`/`vo_version`/`ehr`/`audit` column
+//! The builder references the `node`/`version`/`ehr`/`audit` column
 //! vocabulary directly and encodes the nested-set, `sys_period` and
 //! `branch_number` semantics of the greenfield store;
 //! the planner's own structure-root notion is the RM model's
@@ -197,7 +197,7 @@ pub struct ScopeQuery {
     pub columns: Vec<(String, String)>,
 }
 
-/// A VO "group": the node alias that roots it and the `vo_version` alias its
+/// A VO "group": the node alias that roots it and the `version` alias its
 /// nodes belong to. Content sources contained within it share the `vo` alias and
 /// interval-join into `node`.
 #[derive(Debug, Clone)]
@@ -234,7 +234,7 @@ struct Builder<'a> {
     /// The `EHR_STATUS` root-node alias joined for an EHR source's `ehr_status`
     /// path (keyed by EHR source id; joined once, lazily, on first use).
     ehr_status_node: HashMap<usize, String>,
-    /// The `vo_version` alias each versioned-object-root RM source opened
+    /// The `version` alias each versioned-object-root RM source opened
     /// (keyed by source id). Used to synthesize the server-assigned
     /// `OBJECT_VERSION_ID` for a `uid[/value]` path on a VO-root variable
     /// (RM common master06 §Version Identification), which is not stored in the
@@ -248,12 +248,12 @@ struct Builder<'a> {
     /// already covers them, so gating the root again would be a duplicate
     /// full-population subquery per query.
     roots_linked_to_ehr: std::collections::HashSet<String>,
-    /// The `vo_version` alias for each entry in `group_roots` (parallel vec) —
+    /// The `version` alias for each entry in `group_roots` (parallel vec) —
     /// the source of the touched `template_id` for the ABAC scope collection.
     group_vos: Vec<String>,
     /// Fresh-alias counter for anchor subqueries / anti-joins.
     sub_ctr: usize,
-    /// Whether the FROM was built in the STREAMING shape (one `vo_version`
+    /// Whether the FROM was built in the STREAMING shape (one `version`
     /// FROM item, everything else a join) — lazily summoned tables
     /// (`ensure_audit`, the population gate, the `EHR_STATUS` root) must
     /// then JOIN instead of adding comma-separated FROM items, or a later
@@ -464,7 +464,7 @@ mod column_vocab {
                 "lifecycle_state",
                 "creating_system_id",
                 "contribution_id",
-                "audit_id",
+                "commit_audit_id",
                 "template_id",
             ],
         ),

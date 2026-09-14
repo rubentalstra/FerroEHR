@@ -1,7 +1,7 @@
 // SPDX-FileCopyrightText: Ruben Talstra
 // SPDX-License-Identifier: BUSL-1.1
 
-//! Lean metadata-only reads over `vo_version`.
+//! Lean metadata-only reads over `version`.
 //!
 //! Joined with `audit` where the commit instant is needed: the
 //! `ETag`/`If-Match` identity reads, revision-history enumeration, and the
@@ -14,7 +14,7 @@
 //! instant is §Committal.
 //!
 //! NOTE: no openEHR spec governs storage tiering — our own design; every
-//! object-addressed lookup here reads the `vo_version_all` union view, one
+//! object-addressed lookup here reads the `version` union view, one
 //! statement serving both tiers, while the EHR-wide aggregate and enumeration
 //! reads at the bottom of this file stay primary-only.
 
@@ -33,7 +33,7 @@ use crate::storage::error::StorageError;
 
 // ── revision-history enumeration ──────────────────────────────────────────────
 
-/// One version's metadata row (`vo_version` ⋈ `audit`).
+/// One version's metadata row (`version` ⋈ `audit`).
 ///
 /// No canonical body and no attestations — the lean list shape for
 /// `REVISION_HISTORY` and version enumeration, where reassembling every body
@@ -42,7 +42,7 @@ use crate::storage::error::StorageError;
 pub struct VersionMeta {
     /// The owning EHR, or `None` for a demographic versioned object.
     pub ehr_id: Option<EhrId>,
-    /// The `vo_version.kind` discriminator text.
+    /// The `version.kind` discriminator text.
     pub kind: String,
     /// The per-object storage commit ordinal — NOT the wire version number.
     pub sys_version: i32,
@@ -88,11 +88,11 @@ pub async fn all_version_meta(
                        v.branch_version, v.creating_system_id, v.lifecycle_state, \
                        a.system_id, a.change_type, a.description, a.committer, a.attestation, \
                        a.time_committed, att.attestations \
-                       FROM vo_version_all v JOIN audit a ON a.id = v.audit_id \
+                       FROM version v JOIN commit_audit a ON a.id = v.commit_audit_id \
                        LEFT JOIN LATERAL ( \
                        SELECT coalesce(jsonb_agg(x.data ORDER BY x.time_committed, x.id), \
                        '[]'::jsonb) AS attestations \
-                       FROM vo_attestation_all x \
+                       FROM vo_attestation x \
                        WHERE x.vo_id = v.vo_id AND x.sys_version = v.sys_version \
                        ) att ON true \
                        WHERE v.vo_id = $1 ORDER BY v.sys_version";
@@ -136,7 +136,7 @@ pub async fn time_created(
     pool: &PgPool,
     vo_id: VoId,
 ) -> Result<Option<jiff::Timestamp>, StorageError> {
-    const SQL: &str = "SELECT a.time_committed FROM vo_version_all v JOIN audit a ON a.id = v.audit_id \
+    const SQL: &str = "SELECT a.time_committed FROM version v JOIN commit_audit a ON a.id = v.commit_audit_id \
          WHERE v.vo_id = $1 ORDER BY v.sys_version LIMIT 1";
     let stamp = sqlx::query_scalar::<_, jiff_sqlx::Timestamp>(SQL)
         .bind(vo_id)
@@ -169,7 +169,7 @@ pub async fn commit_bounds(
     const SQL: &str = "SELECT (array_agg(v.ehr_id))[1] AS ehr_id, \
                        min(a.time_committed) AS created, \
                        max(a.time_committed) AS modified \
-                       FROM vo_version_all v JOIN audit a ON a.id = v.audit_id WHERE v.vo_id = $1";
+                       FROM version v JOIN commit_audit a ON a.id = v.commit_audit_id WHERE v.vo_id = $1";
     let row = sqlx::query(SQL).bind(vo_id).fetch_one(pool).await?;
     let owner: Option<EhrId> = row.try_get("ehr_id")?;
     let created: Option<jiff_sqlx::Timestamp> = row.try_get("created")?;
@@ -182,7 +182,7 @@ pub async fn commit_bounds(
 /// The stored `template_id` of one version of an object — the current open
 /// trunk version when `tree` is `None`, else the addressed `VERSION_TREE_ID`.
 ///
-/// A scalar `vo_version` read: the column is promoted at commit, so resolving
+/// A scalar `version` read: the column is promoted at commit, so resolving
 /// a version's template never needs node reassembly. Outer `None` = no such
 /// version; inner `None` = the version carries no template (non-COMPOSITION).
 ///
@@ -193,10 +193,10 @@ pub async fn template_id_of(
     vo_id: VoId,
     tree: Option<(i32, i32, i32)>,
 ) -> Result<Option<Option<String>>, StorageError> {
-    const BY_TREE_SQL: &str = "SELECT template_id FROM vo_version_all WHERE vo_id = $1 \
+    const BY_TREE_SQL: &str = "SELECT template_id FROM version WHERE vo_id = $1 \
                                AND trunk_version = $2 AND branch_number = $3 \
                                AND branch_version = $4";
-    const CURRENT_SQL: &str = "SELECT template_id FROM vo_version_all WHERE vo_id = $1 \
+    const CURRENT_SQL: &str = "SELECT template_id FROM version WHERE vo_id = $1 \
                                AND upper_inf(sys_period) AND branch_number = 0";
     if let Some((trunk, branch, branch_version)) = tree {
         return Ok(sqlx::query_scalar(BY_TREE_SQL)
@@ -235,7 +235,7 @@ pub async fn ehr_exists(pool: &PgPool, ehr_id: EhrId) -> Result<bool, StorageErr
 /// # Errors
 /// Returns [`StorageError::Database`] on a driver failure.
 pub async fn object_kind(pool: &PgPool, vo_id: VoId) -> Result<Option<String>, StorageError> {
-    const SQL: &str = "SELECT kind FROM vo_version_all WHERE vo_id = $1 AND upper_inf(sys_period) \
+    const SQL: &str = "SELECT kind FROM version WHERE vo_id = $1 AND upper_inf(sys_period) \
                        AND branch_number = 0";
     Ok(sqlx::query_scalar(SQL)
         .bind(vo_id)
@@ -257,7 +257,7 @@ pub async fn object_kinds(
     pool: &PgPool,
     vo_ids: &[VoId],
 ) -> Result<Vec<(VoId, String)>, StorageError> {
-    const SQL: &str = "SELECT vo_id, kind FROM vo_version_all WHERE vo_id = ANY($1) \
+    const SQL: &str = "SELECT vo_id, kind FROM version WHERE vo_id = ANY($1) \
                        AND upper_inf(sys_period) AND branch_number = 0";
     if vo_ids.is_empty() {
         return Ok(Vec::new());
@@ -274,7 +274,7 @@ pub async fn object_kinds(
 /// # Errors
 /// Returns [`StorageError::Database`] on a driver failure.
 pub async fn vo_owner(pool: &PgPool, vo_id: VoId) -> Result<Option<Option<EhrId>>, StorageError> {
-    const SQL: &str = "SELECT ehr_id FROM vo_version_all WHERE vo_id = $1 LIMIT 1";
+    const SQL: &str = "SELECT ehr_id FROM version WHERE vo_id = $1 LIMIT 1";
     Ok(sqlx::query_scalar(SQL)
         .bind(vo_id)
         .fetch_optional(pool)
@@ -294,7 +294,7 @@ pub async fn vo_owner_kind(
     pool: &PgPool,
     vo_id: VoId,
 ) -> Result<Option<(Option<EhrId>, String)>, StorageError> {
-    const SQL: &str = "SELECT ehr_id, kind FROM vo_version_all WHERE vo_id = $1 LIMIT 1";
+    const SQL: &str = "SELECT ehr_id, kind FROM version WHERE vo_id = $1 LIMIT 1";
     Ok(sqlx::query_as(SQL).bind(vo_id).fetch_optional(pool).await?)
 }
 
@@ -320,7 +320,7 @@ pub async fn version_exists(
 }
 
 /// The version-addressed existence probe (both tiers via the union view).
-const EXISTS_SQL: &str = "SELECT EXISTS(SELECT 1 FROM vo_version_all WHERE vo_id = $1 \
+const EXISTS_SQL: &str = "SELECT EXISTS(SELECT 1 FROM version WHERE vo_id = $1 \
                           AND trunk_version = $2 AND branch_number = $3 \
                           AND branch_version = $4)";
 
@@ -343,7 +343,7 @@ pub async fn persistent_template_exists<'e>(
     deleted_state: &str,
 ) -> Result<bool, StorageError> {
     Ok(sqlx::query_scalar(
-        "SELECT EXISTS(SELECT 1 FROM vo_version WHERE ehr_id = $1 AND kind = 'COMPOSITION' \
+        "SELECT EXISTS(SELECT 1 FROM version WHERE ehr_id = $1 AND kind = 'COMPOSITION' \
          AND upper_inf(sys_period) AND branch_number = 0 AND lifecycle_state <> $2 \
          AND template_id = $3 \
          AND (body)::jsonb #>> '{category,defining_code,code_string}' = $4)",
@@ -385,7 +385,7 @@ pub async fn current_vo(
     ehr_id: EhrId,
     kind: &str,
 ) -> Result<Option<CurrentVoRow>, StorageError> {
-    const SQL: &str = "SELECT vo_id, trunk_version, branch_number, branch_version FROM vo_version_all \
+    const SQL: &str = "SELECT vo_id, trunk_version, branch_number, branch_version FROM version \
                        WHERE ehr_id = $1 AND kind = $2 AND upper_inf(sys_period) \
                        AND branch_number = 0";
     let found = sqlx::query(SQL)
@@ -406,7 +406,7 @@ pub async fn current_vo(
 
 /// The current version's metadata only.
 ///
-/// The `vo_version`⋈`audit` columns the `ETag`/`If-Match`
+/// The `version`⋈`audit` columns the `ETag`/`If-Match`
 /// full-`OBJECT_VERSION_ID` compare needs (`VERSION_TREE_ID` column ints + the
 /// stored per-version `creating_system_id` + the audit `time_committed`),
 /// **without** node reassembly or the attestation read the
@@ -444,7 +444,7 @@ fn current_meta_row(row: &PgRow) -> Result<CurrentMeta, StorageError> {
 
 /// The current trunk version's metadata for an EHR's object of `kind`.
 ///
-/// Resolved and read in **one** `vo_version`⋈`audit` statement (no
+/// Resolved and read in **one** `version`⋈`audit` statement (no
 /// node/attestation reads) — the metadata-only replacement for [`current_vo`] +
 /// [`crate::storage::version_repo::read::read_current`] on the `ETag`/`If-Match`
 /// path.
@@ -458,7 +458,7 @@ pub async fn current_version_meta_by_kind(
 ) -> Result<Option<CurrentMeta>, StorageError> {
     const SQL: &str = "SELECT v.vo_id, v.trunk_version, v.branch_number, v.branch_version, \
                        v.creating_system_id, a.time_committed \
-                       FROM vo_version_all v JOIN audit a ON a.id = v.audit_id \
+                       FROM version v JOIN commit_audit a ON a.id = v.commit_audit_id \
                        WHERE v.ehr_id = $1 AND v.kind = $2 AND upper_inf(v.sys_period) \
                        AND v.branch_number = 0";
     let found = sqlx::query(SQL)
@@ -474,7 +474,7 @@ pub async fn current_version_meta_by_kind(
 
 /// The current trunk version's metadata for one EHR's object, by `vo_id`.
 ///
-/// Scoped to that one EHR in a single `vo_version`⋈`audit` statement (no node
+/// Scoped to that one EHR in a single `version`⋈`audit` statement (no node
 /// reassembly), returning `None` when the object is not the EHR's (a foreign or
 /// unknown id). The lean `ETag`/`If-Match` read for an EHR-owned object; the
 /// version identity is RM common master06 §Version Identification, the commit
@@ -489,7 +489,7 @@ pub async fn current_version_meta_scoped(
 ) -> Result<Option<CurrentMeta>, StorageError> {
     const SQL: &str = "SELECT v.vo_id, v.trunk_version, v.branch_number, v.branch_version, \
                        v.creating_system_id, a.time_committed \
-                       FROM vo_version_all v JOIN audit a ON a.id = v.audit_id \
+                       FROM version v JOIN commit_audit a ON a.id = v.commit_audit_id \
                        WHERE v.vo_id = $1 AND v.ehr_id = $2 AND upper_inf(v.sys_period) \
                        AND v.branch_number = 0";
     let found = sqlx::query(SQL)
@@ -506,7 +506,7 @@ pub async fn current_version_meta_scoped(
 /// The current trunk version's metadata for a **demographic** versioned object.
 ///
 /// Read for an ehr-less object addressed by its `vo_id`, in ONE
-/// `vo_version`⋈`audit` statement — `kind` + `lifecycle_state` alongside the
+/// `version`⋈`audit` statement — `kind` + `lifecycle_state` alongside the
 /// `ETag`/`If-Match` identity parts (`VERSION_TREE_ID` ints + the stored
 /// per-version `creating_system_id`) and the commit instant, **without** the
 /// node reassembly the full
@@ -519,7 +519,7 @@ pub async fn current_version_meta_scoped(
 /// is no current trunk demographic version.
 #[derive(Debug, Clone)]
 pub struct CurrentDemographicMeta {
-    /// The `vo_version.kind` discriminator text.
+    /// The `version.kind` discriminator text.
     pub kind: String,
     /// The `version_lifecycle_state` numeric code.
     pub lifecycle_state: String,
@@ -545,7 +545,7 @@ pub async fn current_demographic_meta(
 ) -> Result<Option<CurrentDemographicMeta>, StorageError> {
     const SQL: &str = "SELECT v.kind, v.lifecycle_state, v.trunk_version, v.branch_number, \
                        v.branch_version, v.creating_system_id, a.time_committed \
-                       FROM vo_version_all v JOIN audit a ON a.id = v.audit_id \
+                       FROM version v JOIN commit_audit a ON a.id = v.commit_audit_id \
                        WHERE v.vo_id = $1 AND v.ehr_id IS NULL AND upper_inf(v.sys_period) \
                        AND v.branch_number = 0";
     let found = sqlx::query(SQL).bind(vo_id).fetch_optional(pool).await?;
@@ -568,7 +568,7 @@ pub async fn current_demographic_meta(
 /// The current trunk version of a COMPOSITION, reduced for the write pre-checks.
 ///
 /// Exactly what the modify and delete pre-checks need, in one
-/// `vo_version`⋈`audit`⋈`ehr` (LEFT JOIN `node`) statement serving the
+/// `version`⋈`audit`⋈`ehr` (LEFT JOIN `node`) statement serving the
 /// `If-Match` meta, the modify pre-read and `is_modifiable` together:
 ///
 /// - owning `ehr_id` (the ownership gate) + `lifecycle_state` (the deleted gate,
@@ -580,7 +580,7 @@ pub async fn current_demographic_meta(
 /// - the EHR's promoted `is_modifiable` flag (the content-write guard, RM ehr
 ///   master04 §EHR Active Status) via the `ehr` join;
 /// - the stored `archetype_details.template_id.value` as ONE text scalar off
-///   the materialized `vo_version.body` — the modify path's template-stability
+///   the materialized `version.body` — the modify path's template-stability
 ///   check needs nothing else from the content.
 ///
 /// `stored_template` is `None` for a deleted current (`body` is NULL) or an
@@ -635,14 +635,14 @@ pub async fn current_composition_meta(
                        (v.body)::jsonb #>> '{archetype_details,template_id,value}' AS stored_template, \
                        fv.found AS first_found, fv.ani AS first_ani, \
                        fv.category AS first_category \
-                       FROM vo_version_all v \
-                       JOIN audit a ON a.id = v.audit_id \
+                       FROM version v \
+                       JOIN commit_audit a ON a.id = v.commit_audit_id \
                        JOIN ehr e ON e.id = v.ehr_id \
                        LEFT JOIN LATERAL ( \
                            SELECT true AS found, \
                                   (f.body)::jsonb ->> 'archetype_node_id' AS ani, \
                                   (f.body)::jsonb #>> '{category,defining_code,code_string}' AS category \
-                           FROM vo_version_all f \
+                           FROM version f \
                            WHERE f.vo_id = $1 AND f.body IS NOT NULL \
                            ORDER BY f.sys_version LIMIT 1 \
                        ) fv ON true \
@@ -685,7 +685,7 @@ pub async fn current_composition_meta(
 /// Returns [`StorageError::Database`] on a driver failure.
 pub async fn composition_count(pool: &PgPool, ehr_id: EhrId) -> Result<i64, StorageError> {
     Ok(sqlx::query_scalar(
-        "SELECT count(DISTINCT vo_id) FROM vo_version_all \
+        "SELECT count(DISTINCT vo_id) FROM version \
          WHERE ehr_id = $1 AND kind = 'COMPOSITION'",
     )
     .bind(ehr_id)
@@ -708,7 +708,7 @@ pub async fn current_vo_ids(
     exclude_lifecycle: Option<&str>,
 ) -> Result<Vec<VoId>, StorageError> {
     Ok(sqlx::query_scalar(
-        "SELECT vo_id FROM vo_version_all WHERE ehr_id = $1 AND kind = $2 \
+        "SELECT vo_id FROM version WHERE ehr_id = $1 AND kind = $2 \
          AND upper_inf(sys_period) AND branch_number = 0 \
          AND ($3::text IS NULL OR lifecycle_state <> $3)",
     )

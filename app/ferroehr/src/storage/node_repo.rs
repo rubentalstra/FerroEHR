@@ -50,7 +50,7 @@ fn write_nodes_sql(per_row_context: bool) -> String {
                 let _ = write!(selects, ", ext.openehr_timestamp(t.p{i})");
             }
         }
-        let _ = write!(arrays, ", ${}::text[]", 16 + i);
+        let _ = write!(arrays, ", ${}::text[]", 17 + i);
         let _ = write!(names, ", p{i}");
     }
     let (context_select, context_arrays, context_names) = if per_row_context {
@@ -64,14 +64,17 @@ fn write_nodes_sql(per_row_context: bool) -> String {
     };
     let separator = if per_row_context { ", " } else { "" };
     format!(
-        "INSERT INTO node (vo_id, sys_version, ehr_id, num, num_cap, parent_num, citem_num, \
-         rm_type, archetype, arch_entity, arch_concept, arch_major, name, path, data{columns}) \
-         SELECT {context_select}, t.num, t.num_cap, t.parent_num, t.citem_num, t.rm_type, \
-         t.archetype, t.arch_entity, t.arch_concept, t.arch_major, t.name, t.path, t.data{selects} \
-         FROM unnest({context_arrays}{separator}$4::int[], $5::int[], $6::int[], $7::int[], $8::text[], $9::text[], \
-         $10::text[], $11::text[], $12::int[], $13::text[], $14::text[], $15::jsonb[]{arrays}) \
-         AS t({context_names}num, num_cap, parent_num, citem_num, rm_type, archetype, arch_entity, \
-         arch_concept, arch_major, name, path, data{names})"
+        "INSERT INTO node (vo_id, sys_version, ehr_id, num, num_cap, parent_num, \
+         rm_type, archetype, arch_entity, arch_concept, arch_major, name, name_code, \
+         name_terminology, path, data{columns}) \
+         SELECT {context_select}, t.num, t.num_cap, t.parent_num, t.rm_type, \
+         t.archetype, t.arch_entity, t.arch_concept, t.arch_major, t.name, t.name_code, \
+         t.name_terminology, t.path, t.data{selects} \
+         FROM unnest({context_arrays}{separator}$4::int[], $5::int[], $6::int[], $7::text[], $8::text[], \
+         $9::text[], $10::text[], $11::int[], $12::text[], $13::text[], $14::text[], \
+         $15::text[], $16::jsonb[]{arrays}) \
+         AS t({context_names}num, num_cap, parent_num, rm_type, archetype, arch_entity, \
+         arch_concept, arch_major, name, name_code, name_terminology, path, data{names})"
     )
 }
 
@@ -101,19 +104,23 @@ pub(crate) fn node_insert_cte(vo: &str, sys: &str, ehr: &str, first_array_param:
                 let _ = write!(selects, ", ext.openehr_timestamp(t.p{i})");
             }
         }
-        let _ = write!(arrays, ", ${}::text[]", first_array_param + 12 + i);
+        let _ = write!(arrays, ", ${}::text[]", first_array_param + 13 + i);
         let _ = write!(names, ", p{i}");
     }
     let p = |offset: usize| first_array_param + offset;
     format!(
-        "INSERT INTO node (vo_id, sys_version, ehr_id, num, num_cap, parent_num, citem_num, \
-         rm_type, archetype, arch_entity, arch_concept, arch_major, name, path, data{columns}) \
-         SELECT {vo}, {sys}, {ehr}, t.num, t.num_cap, t.parent_num, t.citem_num, t.rm_type, \
-         t.archetype, t.arch_entity, t.arch_concept, t.arch_major, t.name, t.path, t.data{selects} \
-         FROM unnest(${}::int[], ${}::int[], ${}::int[], ${}::int[], ${}::text[], ${}::text[], \
-         ${}::text[], ${}::text[], ${}::int[], ${}::text[], ${}::text[], ${}::jsonb[]{arrays}) \
-         AS t(num, num_cap, parent_num, citem_num, rm_type, archetype, arch_entity, \
-         arch_concept, arch_major, name, path, data{names}) CROSS JOIN v",
+        "INSERT INTO node (vo_id, sys_version, ehr_id, num, num_cap, parent_num, \
+         rm_type, archetype, arch_entity, arch_concept, arch_major, name, name_code, \
+         name_terminology, path, data{columns}) \
+         SELECT {vo}, {sys}, {ehr}, t.num, t.num_cap, t.parent_num, t.rm_type, \
+         t.archetype, t.arch_entity, t.arch_concept, t.arch_major, t.name, t.name_code, \
+         t.name_terminology, t.path, t.data{selects} \
+         FROM unnest(${}::int[], ${}::int[], ${}::int[], ${}::text[], ${}::text[], \
+         ${}::text[], ${}::text[], ${}::int[], ${}::text[], ${}::text[], ${}::text[], \
+         ${}::text[], ${}::jsonb[]{arrays}) \
+         AS t(num, num_cap, parent_num, rm_type, archetype, arch_entity, \
+         arch_concept, arch_major, name, name_code, name_terminology, path, data{names}) \
+         CROSS JOIN v",
         p(0),
         p(1),
         p(2),
@@ -126,6 +133,7 @@ pub(crate) fn node_insert_cte(vo: &str, sys: &str, ehr: &str, first_array_param:
         p(9),
         p(10),
         p(11),
+        p(12),
     )
 }
 
@@ -209,8 +217,8 @@ pub async fn write_nodes_batch(
     Ok(())
 }
 
-/// Bind the twelve per-node column arrays plus the promoted-leaf arrays onto a
-/// node-insert statement whose storage-context parameters (`$1..$3`) are
+/// Bind the thirteen per-node column arrays plus the promoted-leaf arrays onto
+/// a node-insert statement whose storage-context parameters (`$1..$3`) are
 /// already bound.
 pub(crate) fn bind_node_arrays<'q>(
     mut query: sqlx::query::Query<'q, sqlx::Postgres, sqlx::postgres::PgArguments>,
@@ -220,26 +228,28 @@ pub(crate) fn bind_node_arrays<'q>(
     let mut nums = Vec::with_capacity(n);
     let mut num_caps = Vec::with_capacity(n);
     let mut parent_nums = Vec::with_capacity(n);
-    let mut citem_nums = Vec::with_capacity(n);
     let mut rm_types: Vec<&str> = Vec::with_capacity(n);
     let mut archetypes: Vec<Option<&str>> = Vec::with_capacity(n);
     let mut arch_entities: Vec<Option<&str>> = Vec::with_capacity(n);
     let mut arch_concepts: Vec<Option<&str>> = Vec::with_capacity(n);
     let mut arch_majors: Vec<Option<i32>> = Vec::with_capacity(n);
     let mut names: Vec<Option<&str>> = Vec::with_capacity(n);
+    let mut name_codes: Vec<Option<&str>> = Vec::with_capacity(n);
+    let mut name_terminologies: Vec<Option<&str>> = Vec::with_capacity(n);
     let mut paths: Vec<&str> = Vec::with_capacity(n);
     let mut datas: Vec<&Value> = Vec::with_capacity(n);
     for row in rows {
         nums.push(row.num);
         num_caps.push(row.num_cap);
         parent_nums.push(row.parent_num);
-        citem_nums.push(row.citem_num);
         rm_types.push(&row.rm_type);
         archetypes.push(row.archetype.as_deref());
         arch_entities.push(row.arch_entity.as_deref());
         arch_concepts.push(row.arch_concept.as_deref());
         arch_majors.push(row.arch_major);
         names.push(row.name.as_deref());
+        name_codes.push(row.name_code.as_deref());
+        name_terminologies.push(row.name_terminology.as_deref());
         paths.push(&row.path);
         datas.push(&row.data);
     }
@@ -247,13 +257,14 @@ pub(crate) fn bind_node_arrays<'q>(
         .bind(nums)
         .bind(num_caps)
         .bind(parent_nums)
-        .bind(citem_nums)
         .bind(rm_types)
         .bind(archetypes)
         .bind(arch_entities)
         .bind(arch_concepts)
         .bind(arch_majors)
         .bind(names)
+        .bind(name_codes)
+        .bind(name_terminologies)
         .bind(paths)
         .bind(datas);
     for (i, _leaf) in crate::storage::promoted::PROMOTED_LEAVES.iter().enumerate() {
@@ -272,13 +283,13 @@ pub(crate) fn bind_node_arrays<'q>(
 const READ_ROWS_SQL: &str = "SELECT num, num_cap, parent_num, path, data \
                              FROM node WHERE vo_id = $1 AND sys_version = $2 ORDER BY num";
 
-/// The same statement over the both-tier union view.
-const READ_ROWS_ALL_SQL: &str = "SELECT num, num_cap, parent_num, path, data \
-                                 FROM node_all WHERE vo_id = $1 AND sys_version = $2 ORDER BY num";
-
-/// Fetch the lean read rows of one stored version, ordered by `num` —
-/// primary tier only, or both tiers through the `node_all` union view (no
-/// openEHR spec governs storage tiering — our own design).
+/// Fetch the lean read rows of one stored version, ordered by `num`.
+///
+/// `node` is partitioned by tier, so naming the parent relation reads both
+/// tiers in one statement and an archived version stays retrievable. A caller
+/// that wants the hot tier alone says `tier = 'hot'`, which the planner prunes
+/// at plan time because it is a literal. No openEHR spec governs storage
+/// tiering — our own design.
 ///
 /// Generic over the executor so a caller inside a transaction reads its OWN
 /// uncommitted rows through the same statement: the node rebuild
@@ -289,17 +300,11 @@ async fn read_rows<'e, E>(
     executor: E,
     vo_id: VoId,
     sys_version: i32,
-    both_tiers: bool,
 ) -> Result<Vec<ReadRow>, StorageError>
 where
     E: sqlx::Executor<'e, Database = sqlx::Postgres>,
 {
-    let sql = if both_tiers {
-        READ_ROWS_ALL_SQL
-    } else {
-        READ_ROWS_SQL
-    };
-    let rows = sqlx::query(sql)
+    let rows = sqlx::query(READ_ROWS_SQL)
         .bind(vo_id)
         .bind(sys_version)
         .fetch_all(executor)
@@ -317,8 +322,8 @@ where
     Ok(read)
 }
 
-/// Reassemble one stored version's canonical JSON from its primary-tier
-/// `node` rows — the consolidated node→canonical reload.
+/// Reassemble one stored version's canonical JSON from its `node` rows — the
+/// consolidated node-to-canonical reload.
 ///
 /// A version with no stored nodes (a logical delete — data Void, RM common
 /// master06 §Logical Deletion) reassembles to [`Value::Null`], so callers need
@@ -333,32 +338,13 @@ pub async fn read_version_canonical(
     vo_id: VoId,
     sys_version: i32,
 ) -> Result<Value, StorageError> {
-    let rows = read_rows(pool, vo_id, sys_version, false).await?;
+    let rows = read_rows(pool, vo_id, sys_version).await?;
     if rows.is_empty() {
         return Ok(Value::Null);
     }
     reassemble(&rows)
 }
 
-/// [`read_version_canonical`] over BOTH storage tiers (the `node_all` union
-/// view) — for the whole-repository readers (admin export, physical delete)
-/// that must see archived content by definition.
-///
-/// # Errors
-///
-/// Returns [`StorageError`] on a DB error or if a non-empty row set does not
-/// form one tree rooted at `num = 0`.
-pub async fn read_version_canonical_all(
-    pool: &PgPool,
-    vo_id: VoId,
-    sys_version: i32,
-) -> Result<Value, StorageError> {
-    let rows = read_rows(pool, vo_id, sys_version, true).await?;
-    if rows.is_empty() {
-        return Ok(Value::Null);
-    }
-    reassemble(&rows)
-}
 
 /// [`read_version_canonical`] inside a transaction, over the primary tier.
 ///
@@ -376,7 +362,7 @@ pub async fn read_version_canonical_tx(
     vo_id: VoId,
     sys_version: i32,
 ) -> Result<Value, StorageError> {
-    let rows = read_rows(&mut *tx, vo_id, sys_version, false).await?;
+    let rows = read_rows(&mut *tx, vo_id, sys_version).await?;
     if rows.is_empty() {
         return Ok(Value::Null);
     }
@@ -418,7 +404,7 @@ pub async fn delete_version_nodes(
 /// storage-parity sweep, for which a set of rows that does not form a tree is a
 /// REPORTED defect rather than a failure: reassembling here would turn one
 /// damaged record into an error that aborts the sweep that found it. For the
-/// same reason it never shortcuts to the materialized `vo_version.body` the way
+/// same reason it never shortcuts to the materialized `version.body` the way
 /// [`read_subtrees_canonical`] does for a root anchor — the sweep exists to
 /// compare the node rows against that body.
 ///
@@ -439,7 +425,7 @@ pub async fn read_version_rows_all(
     let db_rows = sqlx::query(
         "SELECT n.vo_id, n.sys_version, n.num, n.num_cap, n.parent_num, n.path, n.data \
          FROM unnest($1::uuid[], $2::int[]) AS k(vo_id, sys_version) \
-         JOIN node_all n ON n.vo_id = k.vo_id AND n.sys_version = k.sys_version",
+         JOIN node n ON n.vo_id = k.vo_id AND n.sys_version = k.sys_version",
     )
     .bind(&vo_ids)
     .bind(&sys_versions)
@@ -502,7 +488,7 @@ pub struct SubtreeAnchor {
 /// the map and the caller treats the miss as [`Value::Null`].
 ///
 /// A root anchor (`num == 0`, the dominant projection shape) is served straight
-/// from the materialized `vo_version.body` with no node rows and no reassembly;
+/// from the materialized `version.body` with no node rows and no reassembly;
 /// only genuine sub-tree anchors take the interval join. The two forms are
 /// byte-identical by the commit-time parity invariant.
 ///
@@ -615,7 +601,7 @@ pub async fn read_subtrees_canonical(
 }
 
 /// The materialized bodies of whole-version (root) anchors, keyed by anchor —
-/// one `unnest` join against `vo_version.body`, no node rows, no reassembly.
+/// one `unnest` join against `version.body`, no node rows, no reassembly.
 ///
 /// An anchor whose version has a `NULL` body (a logical delete) is absent
 /// from the map — the same miss contract the interval join produces.
@@ -635,7 +621,7 @@ async fn read_root_bodies(
     let rows = sqlx::query(
         "SELECT v.vo_id, v.sys_version, v.body \
          FROM unnest($1::uuid[], $2::int[]) AS a(vo_id, sys_version) \
-         JOIN vo_version v \
+         JOIN version v \
            ON v.vo_id = a.vo_id AND v.sys_version = a.sys_version \
          WHERE v.body IS NOT NULL",
     )
@@ -663,7 +649,7 @@ async fn read_root_bodies(
 /// code)` pair — the two scalars the cross-version invariants compare.
 ///
 /// Read as text off the materialized body over BOTH storage tiers
-/// (`vo_version_all`: the read runs before the commit path's thaw, and an
+/// (`version`: the read runs before the commit path's thaw, and an
 /// archived first version still fixes the invariants).
 ///
 /// `None` when no content version exists (e.g. every prior version deleted);
@@ -680,7 +666,7 @@ pub async fn first_version_root(
     Ok(sqlx::query_as(
         "SELECT (body)::jsonb ->> 'archetype_node_id', \
          (body)::jsonb #>> '{category,defining_code,code_string}' \
-         FROM vo_version_all WHERE vo_id = $1 AND body IS NOT NULL \
+         FROM version WHERE vo_id = $1 AND body IS NOT NULL \
          ORDER BY sys_version LIMIT 1",
     )
     .bind(vo_id)

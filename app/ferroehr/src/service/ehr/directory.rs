@@ -401,7 +401,7 @@ impl FerroEhrService {
 
     /// The directory-slot versioned-object id, the EHR's `is_modifiable`
     /// content-write flag, **and** the current version metadata, resolved and
-    /// read in ONE `ehr_folder`⋈`vo_version`⋈`audit`⋈`ehr` statement
+    /// read in ONE `ehr_folder`⋈`version`⋈`audit`⋈`ehr` statement
     /// ([`crate::storage::ehr_repo::directory_current_meta`], with no node
     /// reassembly and no attestation read). Threading the `vo_id` and
     /// `is_modifiable` back to the caller lets the inner write skip re-running
@@ -437,7 +437,7 @@ impl FerroEhrService {
     /// after a logical delete resolves to the deleted version (→ 204) rather
     /// than 404. `None` when the EHR indexes no folder hierarchy.
     ///
-    /// The `ehr_folder` ⋈ `vo_version` resolution is a storage seam
+    /// The `ehr_folder` ⋈ `version` resolution is a storage seam
     /// ([`crate::storage::ehr_repo::directory_vo`]; no openEHR spec governs
     /// the SQL — our own design).
     ///

@@ -15,12 +15,12 @@
 //! Concretely, per imported version row:
 //!
 //! * the LOCAL act — `contribution_id` (the one fresh import CONTRIBUTION),
-//!   `audit_id` (its `AUDIT_DETAILS`: this server's `system_id`, the importing
+//!   `commit_audit_id` (its `AUDIT_DETAILS`: this server's `system_id`, the importing
 //!   committer, the server-computed import instant, `249|creation|` per
 //!   §Contributions "import of item"), and the wrapper's own `signature`;
 //! * the FOREIGN act — the wrapped original's own `contribution` `OBJECT_REF`,
 //!   `commit_audit` (with its source `time_committed`) and `signature`, held
-//!   verbatim in `vo_version.wrapped_original`, beside its unchanged 3-part
+//!   verbatim in `version.wrapped_original`, beside its unchanged 3-part
 //!   identity, `lifecycle_state`, data and `attestations` ("the
 //!   `ORIGINAL_VERSION` instance is never modified", §Copying).
 //!
@@ -128,7 +128,7 @@ pub(crate) struct ImportVersion {
     pub(crate) attestations: Vec<Value>,
 }
 
-/// The `vo_version.wrapped_original` fragment for one received original: its
+/// The `version.wrapped_original` fragment for one received original: its
 /// own `contribution`, `commit_audit` and (optional) `signature`, verbatim —
 /// "the knowledge of the original Contribution and committal are retained
 /// inside the wrapped `ORIGINAL_VERSION` instance" (master06 §Committal and
@@ -326,7 +326,7 @@ struct ImportAct<'a> {
     privacy: &'a crate::privacy::PrivacyPolicy,
     ehr_id: Option<EhrId>,
     contribution_id: Uuid,
-    contribution_audit_id: Uuid,
+    contribution_commit_audit_id: Uuid,
     /// The canonical `AUDIT_DETAILS` fragment of the local act, signed into
     /// every wrapper.
     local_commit_audit: &'a Value,
@@ -593,7 +593,7 @@ async fn import_one_version(
             preceding_version_uid: version.preceding_version_uid.as_deref(),
             other_input_version_uids: &version.other_input_version_uids,
             contribution_id: act.contribution_id,
-            audit_id: act.contribution_audit_id,
+            commit_audit_id: act.contribution_commit_audit_id,
             signature: signature.as_deref(),
             wrapped_original: &wrapped_original,
             lower,
@@ -677,7 +677,7 @@ async fn commit_import_scoped(
     // open lineage before that row's lower bound. This ONE audit row is the
     // local act of committal for the CONTRIBUTION and every IMPORTED_VERSION it
     // carries (master06 §Committal and Audits).
-    let (contribution_audit_id, import_time) =
+    let (contribution_commit_audit_id, import_time) =
         crate::storage::version_repo::commit::insert_audit(tx, &import_audit.row()).await?;
     let base = import_time;
     let local_commit_audit = import_audit.canonical(&import_time);
@@ -685,7 +685,7 @@ async fn commit_import_scoped(
         tx,
         ctx.stamp.mint(),
         ehr_id,
-        contribution_audit_id,
+        contribution_commit_audit_id,
     )
     .await?;
     let act = ImportAct {
@@ -693,7 +693,7 @@ async fn commit_import_scoped(
         privacy,
         ehr_id,
         contribution_id,
-        contribution_audit_id,
+        contribution_commit_audit_id,
         local_commit_audit: &local_commit_audit,
         change_type: &import_audit.change_type,
         base,

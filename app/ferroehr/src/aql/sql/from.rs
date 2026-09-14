@@ -7,11 +7,11 @@
 //! No openEHR spec governs the join mechanics — this is our own design: the FROM containment tree becomes a **cross
 //! join of table aliases + typed WHERE conditions** (the planner folds
 //! cross-join+filter into joins). Each RM source that roots a versioned object
-//! gets a `node` + `vo_version` (+ `audit`) alias; content sources contained
-//! within it share the `vo_version` and interval-join
+//! gets a `node` + `version` (+ `audit`) alias; content sources contained
+//! within it share the `version` and interval-join
 //! (`num BETWEEN a.num AND a.num_cap`, same `(vo_id, sys_version)`). `EHR`
 //! sources join VO roots via `ehr_id`; `VERSION` sources share the contained
-//! VO's `vo_version`. `AND` containment is a join; `OR` and `NOT CONTAINS` are
+//! VO's `version`. `AND` containment is a join; `OR` and `NOT CONTAINS` are
 //! disjunctive / anti-join correlated `EXISTS` filters (QUERY master03
 //! §Containment — boolean `AND`/`OR`, `NOT`).
 
@@ -230,7 +230,7 @@ fn collect_contained(
 /// Whether an identified path must read the streaming ROOT source's node row.
 /// The one root-sourced shape the version spine serves without the node row is
 /// the direct `uid/value` synthesis (`version_uid_expr`: no structure hop, no
-/// predicates — the `OBJECT_VERSION_ID` is composed from `vo_version` columns per
+/// predicates — the `OBJECT_VERSION_ID` is composed from `version` columns per
 /// RM common master06 §Version Identification). Everything else — promoted
 /// columns, fragment reads, whole-object projection (empty fragment), any
 /// predicate along the path — reads `node`. The bare-`uid` object projection is
@@ -255,7 +255,7 @@ fn leaf_needs_root_node(leaf: &LeafPath, root: usize) -> bool {
 fn path_needs_root_node(target: &PathTarget, root: usize) -> bool {
     match target {
         PathTarget::Data(leaf) => leaf_needs_root_node(leaf, root),
-        // Version metadata reads `vo_version`; EHR fields read `ehr`; an
+        // Version metadata reads `version`; EHR fields read `ehr`; an
         // `e/ehr_status/...` path joins its OWN EHR_STATUS root node (its
         // leaf is rooted at the EHR source, never the streaming root).
         PathTarget::Version { .. } | PathTarget::Ehr { .. } | PathTarget::EhrStatus(_) => false,
@@ -316,7 +316,7 @@ impl Builder<'_> {
     }
 
     /// Emit the STREAMING FROM shape for a LIMIT-bearing, unordered query:
-    /// the version spine (`vo_version`) is the single FROM item and every
+    /// the version spine (`version`) is the single FROM item and every
     /// node source hangs off it as a `LATERAL` subquery (`OFFSET 0` as the
     /// planner's documented pull-up fence), so `PostgreSQL` walks current
     /// versions lazily, probes each through the nested-set indexes, and
@@ -978,7 +978,7 @@ impl Builder<'_> {
     ///
     /// `EHR` is not a `node` and `EHR_STATUS` is a *separate* VO (RM 1.2.0
     /// `EHR.ehr_status`), so this is an engine-level join on the store, not a
-    /// node-tree walk: `vo_version.ehr_id = ehr.id`, `kind = 'EHR_STATUS'`,
+    /// node-tree walk: `version.ehr_id = ehr.id`, `kind = 'EHR_STATUS'`,
     /// latest version (`upper_inf(sys_period)`), root node (`num = 0`). Every
     /// EHR has exactly one current `EHR_STATUS`, so the inner join is 1:1. The
     /// population/`ehr_id` gates already constrain the `ehr` row, so the joined
@@ -1035,7 +1035,7 @@ impl Builder<'_> {
             return a.clone();
         }
         let alias = format!("a_{voa}");
-        let cond = col(&alias, "id").eq(col(voa, "audit_id"));
+        let cond = col(&alias, "id").eq(col(voa, "commit_audit_id"));
         if self.streaming {
             self.q.join_as(
                 JoinType::Join,
@@ -1106,7 +1106,7 @@ impl Builder<'_> {
 
 /// The VO-root RM types the store versions independently (RM common master06
 /// versioned objects), decided from the storage domain itself
-/// ([`crate::versioning::Kind`], the `vo_version.kind` discriminants) rather
+/// ([`crate::versioning::Kind`], the `version.kind` discriminants) rather
 /// than a restated list — a kind added there is a VO root here.
 ///
 /// The EHR-scoped subset only: the demographic kinds (the five party roots and

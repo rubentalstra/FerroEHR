@@ -448,7 +448,7 @@ impl FerroEhrService {
         .bind(summary.parent_archetype_id.as_deref())
         .execute(&mut *tx)
         .await?;
-        // Maintain the `template_ref` registry (the vo_version.template_id FK
+        // Maintain the `template_ref` registry (the version.template_id FK
         // target) in the same transaction: a template-kind HRID is a commit
         // addressable wire identity (`0001_baseline.sql` §template_ref). A
         // replace that DEMOTES a template to an archetype deregisters the id
@@ -827,7 +827,7 @@ impl FerroEhrService {
     async fn adl2_delete(&self, an_id: &str) -> Result<(), ServiceError> {
         // Resolve the stored (case-preserved) HRID + kind, count references,
         // and delete in ONE transaction, mirroring `opt_delete`; the
-        // `vo_version.template_id` → `template_ref` foreign key (NO ACTION)
+        // `version.template_id` → `template_ref` foreign key (NO ACTION)
         // remains the race-free backstop under a concurrent commit.
         let mut tx = self.pool.begin().await?;
         let stored: Option<(String, String)> =
@@ -848,7 +848,7 @@ impl FerroEhrService {
             // `template_ref` foreign key, and deleting under it would make that
             // object unrestorable.
             let refs: i64 = sqlx::query_scalar(
-                "SELECT count(*) FROM vo_version_all WHERE lower(template_id) = lower($1)",
+                "SELECT count(*) FROM version WHERE lower(template_id) = lower($1)",
             )
             .bind(&hrid)
             .fetch_one(&mut *tx)
