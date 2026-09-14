@@ -956,23 +956,24 @@ async fn serve(config_path: Option<&Path>, overrides: &[(String, String)]) -> an
 
     // Contribution-outbox eventing + FHIR outbound emitter (both off by default).
     let outbox_enabled = config.events.enabled || config.fhir.outbound.enabled;
-    if config.tenancy.enabled && outbox_enabled {
-        tracing::warn!(
-            "tenancy.enabled with the outbox drainer or the FHIR outbound emitter: both read the \
-             outbox under the default tenant's scope only, so other tenants' events are not \
-             published until #3355 lands"
-        );
-    }
     // A cursor reader that is switched off must not hold the outbox prune
     // floor (#3330): record every reader's configured state before a drainer
     // starts.
-    ferroehr::extensions::outbox::reconcile(
-        &pool,
-        ferroehr::extensions::outbox::OutboxReader::FHIR_OUTBOUND,
-        config.fhir.outbound.enabled,
-    )
-    .await
-    .context("registering the outbox readers")?;
+    for ctx in ferroehr::extensions::outbox::tenants(&pool)
+        .await
+        .context("listing the tenants for the outbox readers")?
+    {
+        ferroehr::extensions::tenant_context::scope(
+            ctx,
+            ferroehr::extensions::outbox::reconcile(
+                &pool,
+                ferroehr::extensions::outbox::OutboxReader::FHIR_OUTBOUND,
+                config.fhir.outbound.enabled,
+            ),
+        )
+        .await
+        .context("registering the outbox readers")?;
+    }
     #[cfg(feature = "events")]
     let events_handle = if config.events.enabled {
         tracing::info!(exchange = %config.events.exchange, "contribution-outbox eventing enabled");
