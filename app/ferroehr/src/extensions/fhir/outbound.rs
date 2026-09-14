@@ -9,7 +9,7 @@
 //!
 //! It is wired like the contribution-outbox publisher but reads committed
 //! `event_outbox` rows through its own persistent cursor
-//! (`fhir_outbound_cursor.last_seq`), never touching the events drainer's
+//! (`event_outbox_reader`, reader `fhir-outbound`), never touching the events drainer's
 //! `published_at` watermark. One tokio task polls the outbox for rows past the
 //! cursor in `seq` order; for each COMPOSITION version whose template matches an
 //! enabled `fhir_mapping` it loads the committed version through the versioned
@@ -37,6 +37,9 @@ use std::time::Duration;
 use backon::{ExponentialBuilder, Retryable};
 use serde_json::Value;
 use sqlx::{PgPool, Row};
+
+use crate::extensions::outbox;
+use crate::extensions::outbox::OutboxReader;
 use tokio::sync::watch;
 use tokio::task::JoinHandle;
 use uuid::Uuid;
@@ -167,6 +170,13 @@ async fn run(
 ) {
     let poll_interval = Duration::from_millis(config.poll_interval_ms.max(1));
     let mut poison: PoisonBudget = None;
+    // A running reader holds the prune floor (#3330); register before the
+    // first batch so a lagging start never loses rows.
+    if let Err(e) = outbox::reconcile(&pool, OutboxReader::FHIR_OUTBOUND, true).await {
+        tracing::warn!(
+            "fhir outbound reader registration failed, retried by the first advance: {e}"
+        );
+    }
     tracing::info!(
         exchange = %config.exchange,
         batch_size = config.batch_size,
@@ -403,13 +413,9 @@ fn clear_poison_for(poison: &mut PoisonBudget, seq: i64) {
 
 /// Read the emitter's delivery cursor (`0` when unset).
 async fn read_cursor(pool: &PgPool) -> Result<i64, sqlx::Error> {
-    let last: Option<i64> = sqlx::query_scalar("SELECT last_seq FROM fhir_outbound_cursor")
-        .fetch_optional(pool)
-        .await?;
-    Ok(last.unwrap_or(0))
+    outbox::cursor(pool, OutboxReader::FHIR_OUTBOUND).await
 }
 
-/// Advance the emitter's delivery cursor to `seq`.
 /// Serialize one mapped FHIR resource for publishing. A serialization failure
 /// is a mapping fault for the row (surfaced, and poison-parked after its retry
 /// budget) — never published as an empty message.
@@ -418,16 +424,10 @@ fn resource_payload(resource_type: &str, resource: &Value) -> Result<Vec<u8>, Pr
         .map_err(|e| ProcessError::Map(format!("serialize {resource_type}: {e}")))
 }
 
+/// Advance the emitter's delivery cursor to `seq`; the registry keeps it
+/// monotonic, so a concurrent or delayed pass never moves it back.
 async fn write_cursor(pool: &PgPool, seq: i64) -> Result<(), sqlx::Error> {
-    // Monotonic guard: a concurrent emitter (or a delayed pass) must never
-    // move the cursor backwards — regression would re-emit every version
-    // after the older seq. At-least-once stays the contract; this bounds the
-    // duplication window instead of leaving it unbounded.
-    sqlx::query("UPDATE fhir_outbound_cursor SET last_seq = $1 WHERE last_seq < $1")
-        .bind(seq)
-        .execute(pool)
-        .await?;
-    Ok(())
+    outbox::advance(pool, OutboxReader::FHIR_OUTBOUND, seq).await
 }
 
 /// The topic routing key for one emitted FHIR resource:

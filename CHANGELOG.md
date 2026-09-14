@@ -65,6 +65,16 @@ workflow refuses a tag that has no matching section here.
   every namespace). Above one replica, the pods spread one per node and
   `terminology.podDisruptionBudget` guards them through a drain.
 
+### Fixed
+
+- The event-outbox retention prune stops at the lowest cursor of every active
+  reader instead of deleting on age alone: the FHIR outbound emitter (and any
+  future cursor reader) now owns a row in the new `event_outbox_reader`
+  registry, reconciled from the configuration at boot, and a published row it
+  has not reached survives the retention window. The singleton
+  `fhir_outbound_cursor` table moves into the registry with its watermark
+  (#3330).
+
 ## [4.2.5] - 2026-09-12
 
 ### Changed

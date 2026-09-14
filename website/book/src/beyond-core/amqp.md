@@ -28,7 +28,9 @@ properties you can design a consumer against:
   authenticated REST API.
 - **Commits never wait on the broker.** If the broker is down, events accumulate
   in the outbox and drain when it returns. Published rows are pruned after a
-  retention window.
+  retention window, and never past the cursor of an active reader (the FHIR
+  outbound emitter, when enabled): the prune's floor is the lowest active
+  reader cursor in `event_outbox_reader`, read in the same statement.
 
 ```mermaid
 flowchart LR
@@ -135,7 +137,10 @@ every default is on
 
 Batch size, poll interval, publish retries, and the retention window for
 published rows are tunable too, and their defaults are sensible for a normal
-deployment.
+deployment. The retention window is a floor, not a schedule: a published row
+that an active cursor reader has not reached survives the window until that
+reader passes it, and a reader the configuration switches off is marked
+inactive at boot so it holds nothing.
 
 > [!WARNING]
 > The broker URL carries credentials, so keep it in a secret (`url_file` reads it
