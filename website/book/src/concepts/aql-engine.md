@@ -90,11 +90,14 @@ flowchart LR
   parsed archetype identifier columns and names are plain indexed columns;
   a predicate naming a parent archetype matches specialised children through
   an indexed prefix scan.
-- **Leaf values come out through SQL/JSON.** Data values are extracted from
-  the canonical node fragments with `jsonb_path_query_first` and jsonpath
-  item methods; `JSON_TABLE` unnests arrays; ordering on clinical magnitudes
-  uses `openehr_magnitude`, an `IMMUTABLE` helper function realizing
-  DV_ORDERED ordering semantics, usable in expression indexes.
+- **Leaf values come out through SQL/JSON path functions.** Data values are
+  extracted from the canonical node fragments with `jsonb_path_query_first`,
+  and arrays are unnested with `jsonb_path_query` as a lateral set-returning
+  function. Ordering and comparison on clinical magnitudes use
+  `openehr_magnitude`, an `IMMUTABLE` helper realizing DV_ORDERED ordering
+  semantics; date/time comparison uses `openehr_timestamp`, which is `STABLE`
+  because its result depends on the session time zone. The engine uses no
+  jsonpath item methods and no `JSON_TABLE`.
 - **Version scope is a predicate, not a join through history tables.**
   `LATEST_VERSION` is a partial-index predicate on the one temporal version
   table; `ALL_VERSIONS` is the same table unfiltered.
