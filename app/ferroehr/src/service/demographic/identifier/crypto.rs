@@ -329,7 +329,7 @@ mod tests {
     //! running the elfproef forward over a chosen prefix; no register issues
     //! them.
 
-    use super::{CryptoError, DomainKeys, KeyDomain, RootKey};
+    use super::{CryptoError, DomainKeys, KeyDomain, RootKey, associated_data};
 
     const ROOT: &str = "000102030405060708090a0b0c0d0e0f101112131415161718191a1b1c1d1e1f";
     const OTHER_ROOT: &str = "0f0e0d0c0b0a09080706050403020100f1e2d3c4b5a697887970615243342516";
@@ -361,6 +361,16 @@ mod tests {
         let (second_nonce, second) = keys.seal("nl-bsn", VALUE).expect("seal");
         assert_ne!(first, second, "two seals of one value must differ");
         assert_ne!(first_nonce, second_nonce, "each record gets a fresh nonce");
+    }
+
+    #[test]
+    fn the_associated_data_is_the_scheme_alone() {
+        // The instance is single-tenant, so the associated data binds a record
+        // to its SCHEME and nothing else. Pinning the bytes makes the format a
+        // decision rather than an accident: changing them makes every stored
+        // record unopenable, so the change has to be deliberate and migrated.
+        assert_eq!(associated_data("nl-bsn"), b"nl-bsn\x00".to_vec());
+        assert_eq!(associated_data(""), vec![0x00]);
     }
 
     #[test]
