@@ -60,26 +60,26 @@ vendored law). Verdicts: **keep** (with the reason re-affirmed), **change**
 | `vo_version` as one temporal table with `sys_period`, four partial indexes on `upper_inf(sys_period)`, `fillfactor 90` | R1 §2.1-2.2, §3.4, §7.7, §15.1; `ehr/0001:323-513`; `commit.rs:307-330` | the close-out UPDATE modifies a column referenced by index predicates, so it is never HOT: eleven index inserts and one dead tuple per supersession; `fillfactor` cannot change that; the partial-index predicates match only because the app spells `upper_inf(sys_period)` literally | **replace** | append-only `version` + one mutable `vo_head` row per object (HOT-eligible); validity derived from `committed_at`; `fillfactor 100` on `version` |
 | The removed GiST `EXCLUDE` constraints and the "inserts serialise" rationale | R1 §3.2-3.4; `ehr/0001:450-467`; `linkage/0001:107-109` | the PostgreSQL docs contain no such statement; the only doc-grounded cost fact is that equality exclusion is slower than UNIQUE; non-overlap today rests on the advisory lock, not the indexes | **replace** the rationale; the constraint stays absent because the target has no interval to protect | the advisory lock stays as the `sys_version`/412 serialiser; the miscited comment leaves with the table |
 | `vo_version.body text` verbatim beside decomposed `node.data` (dual write, R2 §Defects D2) | R1 §1.5, §1.3; R3 A.7 56; R2 §Node data shape | jsonb drops key order and E-notation, and ITS-REST requires date/time literals returned as sent, so a served body cannot come from jsonb; AQL needs typed leaves and integer containment, so it cannot come from `text`. Both stores are spec-forced; the overhead is storage, not correctness | **keep**, stated as spec-forced | `version.body text COMPRESSION lz4`; `node.data jsonb`; the ratio measured (performance model H11) |
-| `node`: nested set, promoted columns, ~360 B fragments, `COMPRESSION lz4` | R1 §1.1-1.2, §1.6, §7.5, §8.1; R2 §Node data shape, D1, D3, A1, A8; QUERY master03 | the decomposition and the interval join are right; `citem_num` is written on every row and read by nothing (D1); `path` is reassembly-only, not a predicate as the architecture page says (A1); lz4 on a sub-2 kB row is inert; the AQL node predicate on `name/defining_code` has no promoted column | **change** | drop `citem_num`; add `name_code`, `name_terminology`; drop the inert compression annotation; `tier` in the key; `tenant_id` on every partition; the emitter spells columns through `db/iden.rs` (D12) |
+| `node`: nested set, promoted columns, ~360 B fragments, `COMPRESSION lz4` | R1 §1.1-1.2, §1.6, §7.5, §8.1; R2 §Node data shape, D1, D3, A1, A8; QUERY master03 | the decomposition and the interval join are right; `citem_num` is written on every row and read by nothing (D1); `path` is reassembly-only, not a predicate as the architecture page says (A1); lz4 on a sub-2 kB row is inert; the AQL node predicate on `name/defining_code` has no promoted column | **change** | drop `citem_num`; add `name_code`, `name_terminology`; drop the inert compression annotation; `tier` in the key; the emitter spells columns through `db/iden.rs` (D12) |
 | `ext` helper functions (`openehr_magnitude`, `openehr_timestamp`, the parsers) | R1 §7.6, §9.2; R2 D3; `ext/0001` | each ends in `EXCEPTION WHEN others THEN RETURN NULL`, which opens a subtransaction on every call, and they are emitted once per candidate row per predicate; `openehr_timestamp` is STABLE (correctly, TimeZone) and so never indexable | **change** | rewrite as `LANGUAGE sql` IMMUTABLE/STABLE with regex-validated input and no exception block (inlinable, no subtransaction); the STABLE/IMMUTABLE split stays |
 | `cold`/`cold_demographic` mirror relations, `*_all` union views, alias views | R1 §5.8, §6, §10.4, §17 #9; R2 §The cold tier, D6, D11, A7, B2 | FK-free by construction; RLS re-declared per mirror and missing on `cold.vo_attestation`; every new `vo_version` column needs a hand-written mirror change and a view rebuild (three so far); a fresh install skips `0011` entirely; the book's "retry cold on a miss" describes a design that no longer exists | **replace** | `PARTITION BY LIST (tier)` on `version`, `node`, `vo_attestation`; archive/restore = row movement; one policy, one FK set, no views |
 | `ehr`, `demographic`, `linkage` schemas selected by `search_path` on one DSN | R1 §11.1, §11.3; R3 B.3 §35-41, B.6 EPDV Art. 10 Abs. 1 lit. b, DSV Art. 4 Abs. 5; BASE master07 §Anonymity; R2 §Pseudonymisation domains, A14 | the barrier is a SQL-privilege property inside one database; a superuser, a base backup, WAL and physical replication carry every schema together; the law asks for separation that can be another machine; in dev/compose the roles do not exist, so the boot gate checks nothing (A14) | **change** | a pool and DSN per domain (co-located by default); the gate refuses missing roles under the production deployment profile; `ext` per database |
 | `linkage.party_ehr` temporal map | R1 §3.1; R3 A.9 71, A.4 30; R2 §Pseudonymisation domains, D10 | the temporal PK is correctly GiST (`WITHOUT OVERLAPS`); the table is live (the architecture page's "no pool reaches it yet" is stale); a physical EHR delete leaves its mapping in force | **change** | `linkage.subject_ehr` absorbing `ehr_index`; `linkage.erase_ehr` reached by admin delete |
 | `ehr.ehr_index`, `sp_subject`/`sp_*` subject columns in the clinical schema | R3 A.9 71, C.2 7; R2 D9; SM master02 | subject identifiers sit in the clinical domain outside the pseudonym guard, reachable by the clinical role | **replace** | moved to `linkage`; no subject identifier remains in `clinical` other than the guarded `ehr.subject_id` |
 | The pseudonym guard trigger and `posture` | `ehr/0009`; R2 §Pseudonymisation domains | validates a UUID shape once namespaces are declared; the caller mints the pseudonym; the guard covers `ehr` only | **keep**, widened | the trigger stays; the guard is the only place a subject id may sit |
-| Tenancy: GUC + `FORCE ROW LEVEL SECURITY` per table | R1 §5.2, §10.1-10.3; R2 §Tenancy, D6, D8, D16 | correct mechanism; coverage holes on `vo_attestation` (all four), `ehr_folder`, `ehr_index`, `vo_archive`, `sp_sample`; `ext.current_tenant_id()` resolves an unset GUC to the default tenant (fails open) | **keep**, completed | every gen-2 table carries `tenant_id` and the policy, declared once per partitioned parent; `current_tenant_id()` raises when unset and the posture is multi-tenant |
+| Tenancy: GUC + `FORCE ROW LEVEL SECURITY` per table | R1 §5.2, §10.1-10.3; R2 §Tenancy, D6, D8, D16; the FerroHEALTH drawing (owner 2026-09-14) | correct mechanism with coverage holes, and no longer wanted: the platform achieves multi-tenancy by running one instance per organisation, so an in-database tenant axis guards nothing and costs a policy qual on every scan plus the fail-open and reader-scope defect classes (#3341, #3355) | **remove** | no `tenant_id`, policy or GUC in any set; the tenancy surface leaves the server, the chart and the book (#3378) |
 | Commit path: one CTE per Contribution, server `time_committed`, advisory lock | R3 A.3 16-20; R2 A9; `commit.rs` | correct and spec-grounded | **keep** | unchanged shape; the close-out statement becomes the `vo_head` UPDATE |
 | `wrapped_original`, `preceding_version_uid`, per-version `creating_system_id`, `stable_compatible`, `origins`, signature | R3 A.1-A.3; `ehr/0001` | each answers a named RM requirement | **keep** | columns on `version` |
 | `contribution`, commit `audit` | R3 A.3; R2 D13 | correct; the commit-audit table's name collides with the `audit` domain and its comments contradict the later CHECKs | **keep**, renamed | `commit_audit`; the CHECKs stated in the DDL |
-| `vo_attestation` | R3 A.3 23; R2 D6, D15 | append table is right; no tenant policy, no compression | **keep**, completed | partitioned by tier with the others; `tenant_id`; policy |
-| `item_tag`, `ehr_folder`, `template_*`, `stored_query`, `archetype_store`, `adl2_artefact`, `event_subscription`, `fhir_mapping`, `tenant` | R2 §Inventory, D16 | fit for purpose; `ehr_folder` lacks `tenant_id` | **keep** | copied into `clinical` with `tenant_id` everywhere |
-| `event_outbox` and its readers (`published_at`, `fhir_outbound_cursor`, the draft `read_model_cursor`) | R1 §12; R2 §The outbox, D7, D14 | the envelope carries identifiers only (no content, no subject); the prune reads `published_at` alone and ignores every cursor reader (#3330 confirmed); the draft `secondary` set has no tenancy | **keep**, fixed | prune floor = `min(cursor)` over registered readers; the `research` domain carries `tenant_id` and RLS like every other |
+| `vo_attestation` | R3 A.3 23; R2 D6, D15 | append table is right; no compression | **keep** | partitioned by tier with the others |
+| `item_tag`, `ehr_folder`, `template_*`, `stored_query`, `archetype_store`, `adl2_artefact`, `event_subscription`, `fhir_mapping` | R2 §Inventory, D16 | fit for purpose | **keep** | copied into `clinical`; `event_subscription` is the FerroSYS seam's question (#3382) and stays until FerroSYS carries it |
+| `event_outbox` and its readers (`published_at`, `fhir_outbound_cursor`) | R1 §12; R2 §The outbox, D7, D14 | the envelope carries identifiers only (no content, no subject); the prune reads `published_at` alone and ignores every cursor reader (#3330 confirmed) | **keep**, fixed | prune floor = `min(cursor)` over registered readers, FerroBRIDGE's among them; one cursor row per reader (no tenant axis) |
 | Multimedia blob GC on delete | R2 §Multimedia, D4 | a full double-domain scan with a substring match, and every node's `data` of the EHR pulled into the process | **replace** | a `blob_ref (uri, vo_id, sys_version, tier)` table maintained at commit; GC is an anti-join |
-| Admin physical delete | R3 A.7 55; R2 §Admin physical delete, D10 | reaches both tiers and the outbox; leaves `linkage`, the `sp_*` family and (correctly) the ATNA trail | **change** | the order in §Erasure reach; linkage and research reached; the trail kept and said so |
+| Admin physical delete | R3 A.7 55; R2 §Admin physical delete, D10 | reaches both tiers and the outbox; leaves `linkage`, the `sp_*` family and (correctly) the ATNA trail | **change** | the order in §Erasure reach; linkage reached, the outbox tombstoned for every consumer; the trail kept and said so |
 | Restriction of processing | R3 B.1 Art. 18 + 4(3), C.2 1, C.3 | nothing at any grain; `is_queryable` limits population queries only | **add** | the `restriction` register and the head marks |
 | Retention | R3 B.1 Art. 5(1)(e), 30(1)(f); B.6 DSG Art. 25(2)(d), EPDV Art. 10; C.2 3 | no datum anywhere for clinical content | **add** | `retention_policy`, `retention_anchor`, `retention_due`; the audit ceiling |
 | Encryption of clinical payload | R1 §13; R3 B.1 Art. 32(1)(a), B.6 EPDV Art. 10 Abs. 1 lit. c; threat-model page | no TDE in core; pgcrypto is the documented wrong tool for a distrusted DBA; column encryption ends AQL | **keep** (no payload encryption; sealed identifiers stay) | the deployment boundary is stated per provision |
-| The `secondary` domain draft (#3331) | R3 B.3 §116-120, B.1 Art. 89(1); R2 §Draft secondary domain, D14 | the per-permit relationship pseudonym is the EDPB's own shape; the draft lacks tenancy | **keep**, renamed `research`, amended | tenancy added; the trust-role shape re-affirmed; expiry rules from GDNG § 6 |
+| The `secondary` domain draft (#3331) | R3 B.3 §116-120, B.1 Art. 89(1); R2 §Draft secondary domain, D14; the FerroHEALTH drawing (owner 2026-09-14) | the per-permit relationship pseudonym is the EDPB's own shape, and the platform already has the component that computes it: FerroBRIDGE loads the OMOP CDM for research in batches over AQL, so a second pseudonymised store inside the CDR would duplicate it | **remove** | no `research` domain; the CDR keeps the restriction, objection and retention marks, serves AQL over `VERSION` by `time_committed` as the batch surface and logs each population query (#3379); #3331 and #3333 closed as superseded |
 | Migration sets and their order (`ext → ehr → demographic → linkage → audit`) | R2 §Schemas; the immutability rule | the order is load-bearing (the `LIKE` copies depend on it, D11) | **replace** | one DDL template rendered into `clinical/0001` and `party/0001`; each domain self-contained; the old sets deleted and an old database refused at boot (greenfield, owner 2026-09-14) |
 | Documentation of the storage layer | R1 §17; R2 §Claims vs code A1-A15, B1-B9, C1-C8, P1-P9 | `JSON_TABLE`, GIN pre-filters, jsonpath item methods, `MERGE`, `RETURNING OLD/NEW`, virtual generated columns, "retry cold on a miss", "no pool reaches linkage" are described and not present; four migration comments cite measurements no committed artifact carries | **replace** the prose | corrected in the first sub-issue (D1); every future number rides a committed record |
 | UNLOGGED tiers | owner ruling 2026-08-25 (#2698) | not re-opened | **keep** | every relation LOGGED |
@@ -156,7 +156,7 @@ current design got right is kept and says why.
    commit (BASE master07 §Integrity: "1 Version = 1 copy" is a write-once
    system). Mutable state lives in one small row per versioned object.
 2. **One relation set per domain, tiers inside it.** Archival is a partition,
-   never a second table. FKs, RLS and every read path see one relation.
+   never a second table. FKs and every read path see one relation.
 3. **A domain is a connection, not a search path.** Each pseudonymisation
    domain has its own schema, role pair, pool and DSN. Co-located by default;
    relocatable to another database or cluster by configuration alone.
@@ -171,7 +171,6 @@ current design got right is kept and says why.
 flowchart LR
   subgraph app[FerroEHR server]
     svc[service layer]
-    trust[trust role: research projector]
   end
   subgraph clinical[clinical  ·  role ferroehr_clinical / _reader]
     C1[ehr · vo_head · version · node · commit_audit · contribution · vo_attestation]
@@ -187,21 +186,18 @@ flowchart LR
   subgraph audit[audit  ·  role ferroehr_audit_writer / _reader]
     A1[audit_event · access_event]
   end
-  subgraph research[research  ·  role ferroehr_research_writer / _reader]
-    R1[permit · projection leaf tables · read_model_cursor]
-  end
+  bridge[FerroBRIDGE · a separate product · OMOP CDM]
   svc -- DSN 1 --> clinical
   svc -- DSN 2 --> party
   svc -- DSN 3 --> linkage
   svc -- DSN 4 --> audit
-  trust -- read --> clinical
-  trust -- write --> research
+  svc -- AQL over ITS-REST, in batches --> bridge
   svc -. never joins across .-> linkage
 ```
 
 Every arrow is a separate pool with its own DSN in the configuration tree
 (`[storage.clinical]`, `[storage.party]`, `[storage.linkage]`,
-`[storage.audit]`, `[storage.research]`), each defaulting to the same
+`[storage.audit]`), each defaulting to the same
 database with the domain's schema, so the compose quickstart is unchanged and
 a regulated deployment moves any domain to its own database or cluster by
 editing one URL. The reciprocal role revokes and the boot gate
@@ -210,7 +206,7 @@ refuses two domains configured on the same DSN with a shared role. No SQL
 statement joins two domains; the service layer already works that way and the
 per-domain pools make it impossible to regress.
 
-`ext` (the IMMUTABLE helper functions, the tenant GUC reader) is applied per
+`ext` (the IMMUTABLE helper functions, the posture table) is applied per
 database by whichever domain migrator runs first there, so a relocated domain
 carries its own copy. No openEHR spec governs schemas, roles or pools; the
 EDPB guidelines' "pseudonymisation domain" (§35-41) is the concept realised.
@@ -229,7 +225,6 @@ erDiagram
   ehr ||--o| retention_anchor : "has"
   ehr {
     uuid id PK
-    uuid tenant_id
     text system_id
     timestamptz time_created
     text subject_id
@@ -394,8 +389,7 @@ that also sets `vo_head.tier`; PostgreSQL moves the rows between partitions
 §5.8), and the node FK `(tier, vo_id, sys_version) REFERENCES version ON UPDATE CASCADE`
 carries the node rows with it. Restore is the reverse statement. What this
 buys over the mirror tables: one relation, so FKs hold across the tier (the
-mirror is FK-free by construction), the tenant RLS policy is declared once on
-the parent, every read path and every future column reaches cold without a
+mirror is FK-free by construction), every read path and every future column reaches cold without a
 view rebuild (the union views were rebuilt three times for exactly this,
 report 1 §10.4), and AQL excludes cold by writing `tier = 'hot'`, which the
 planner prunes at plan time because it is a literal. The `cold` partitions
@@ -411,12 +405,11 @@ time-bucketed partitions that could be detached wholesale do not fit it;
 the plan names that as the measured alternative if archival volume ever
 dominates.
 
-Two facts to prove in the first implementation PR, each a test rather than
-an assumption: that a foreign key from a partitioned `node` to a partitioned
+One fact to prove in the first implementation PR, as a test rather than an
+assumption: that a foreign key from a partitioned `node` to a partitioned
 `version` with `ON UPDATE CASCADE` performs the cross-partition row movement
 on the referencing side (report 1 §5.9: the docs read neither permit nor
-forbid it), and that `FORCE ROW LEVEL SECURITY` on the parent filters the
-cold partition for the archive role. If the cascade proves unsupported, the
+forbid it). If the cascade proves unsupported, the
 archive statement moves `node` rows explicitly first under a deferred FK; the
 design does not change.
 
@@ -426,7 +419,7 @@ The `party` domain carries the same `vo_head`/`version`/`node`/
 `commit_audit`/`contribution`/`vo_attestation` DDL, generated from one
 migration template so the two domains cannot drift, plus
 `national_identifier` (sealed, unchanged) and a new
-`party_relationship_target (target_party_id, source_vo_id, tenant_id)` index
+`party_relationship_target (target_party_id, source_vo_id)` index
 table for `PARTY.reverse_relationships` (RM demographic master02 §Party
 Relationships implies it). `cold_demographic` becomes the `cold` partition of
 the party relations.
@@ -439,8 +432,7 @@ the party relations.
 | `ehr_id uuid` | the EHR; no FK across the boundary |
 | `subject_id text`, `subject_namespace text` | the identifier the clinical side carries in `EHR_STATUS.subject.external_ref` (the opaque pseudonym), so `I_EHR_INDEX` lookups resolve here |
 | `status text`, `location text` | `I_EHR_INDEX.add_ehr_subject(status, loc_desc)` |
-| `tenant_id uuid` | key part |
-| `sys_period tstzrange` | `PRIMARY KEY (party_id, tenant_id, sys_period WITHOUT OVERLAPS)`, kept: a merge closes a row (report 1 §3.1 confirms the GiST key) |
+| `sys_period tstzrange` | `PRIMARY KEY (party_id, sys_period WITHOUT OVERLAPS)`, kept: a merge closes a row (report 1 §3.1 confirms the GiST key) |
 
 This absorbs today's `ehr.ehr_index` and the subject columns of the `sp_*`
 tables: the SM names EHR Index "the EHR id / demographic subject
@@ -451,14 +443,17 @@ cross-reference domain, never in the clinical one. `ehr.subject_id` and
 pseudonym trigger; the linkage role holds the map from that pseudonym to the
 party. `linkage.erase_ehr(ehr_id)` is a `SECURITY DEFINER` function the
 linkage role may execute while holding no table `DELETE`, so physical erasure
-reaches the map without widening the role.
+reaches the map without widening the role. `subject_ehr` is the in-instance
+realisation of the SM `I_EHR_INDEX` provider; the FerroHEALTH drawing places
+identity and record location in FerroPIX (IHE PIX/PIXm/PDQ/PDQm), so the
+service layer reaches the map through an `EhrIndexProvider` seam that #3380
+(v4.3.2) gives a second realisation, with the in-instance map as the default.
 
 ### Restriction and retention
 
 ```sql
 CREATE TABLE clinical.restriction (
     id            uuid PRIMARY KEY DEFAULT uuidv7(),
-    tenant_id     uuid NOT NULL DEFAULT ext.current_tenant_id(),
     ehr_id        uuid NOT NULL REFERENCES ehr (id) ON DELETE CASCADE,
     vo_id         uuid,                       -- NULL = the whole EHR
     ground        text NOT NULL,              -- 'gdpr-18-1-a' … a closed list
@@ -473,25 +468,23 @@ for the whole-EHR case) is the denormalised mark every read path filters on.
 Restricted objects: point reads and versioned reads answer `403` with a typed
 problem naming the restriction (our own extension; no ITS-REST operation
 defines restriction); AQL adds `restricted_at IS NULL` to the head join;
-exports, the outbox emitter and the research projector skip the object; a
-write to a restricted object is refused (Art. 18(2) leaves only storage).
+exports and the outbox emitter skip the object, so nothing restricted
+reaches FerroBRIDGE; a write to a restricted object is refused (Art. 18(2) leaves only storage).
 Lifting writes `lifted_at` and clears the mark. No openEHR spec governs
 restriction of processing; `is_queryable` is not it (RM ehr master04 §EHR
 Status limits it to population queries).
 
 ```sql
 CREATE TABLE clinical.retention_policy (
-    tenant_id     uuid NOT NULL,
     kind          text NOT NULL,              -- COMPOSITION | EHR_STATUS | FOLDER | EHR
     jurisdiction  text NOT NULL,              -- 'NL' | 'CH' | 'DE' | …
     period        interval NOT NULL,
     anchor        text NOT NULL,              -- 'last_commit' | 'death' | 'majority'
     source        text NOT NULL,              -- the legal citation, e.g. 'BW 7:454 lid 3'
-    PRIMARY KEY (tenant_id, kind, jurisdiction)
+    PRIMARY KEY (kind, jurisdiction)
 );
 CREATE TABLE clinical.retention_anchor (
     ehr_id        uuid PRIMARY KEY REFERENCES ehr (id) ON DELETE CASCADE,
-    tenant_id     uuid NOT NULL,
     jurisdiction  text NOT NULL,
     anchored_at   timestamptz,                -- NULL until the anchor event is known
     hold_at       timestamptz,                -- EPDV Art. 10 Abs. 2 lit. b, litigation holds
@@ -514,45 +507,60 @@ refused when below the floor.
 `version` (both partitions), `node`, `vo_attestation`, `contribution`,
 `commit_audit`, `item_tag`, `ehr_folder`, `restriction`, `retention_anchor`
 and pending `event_outbox` rows; (2) `SELECT linkage.erase_ehr($1)`; (3) an
-`erase` tombstone appended to the outbox before step 1 commits, which the
-research projector applies by deleting every projection row derived from
-that `ehr_id` under every permit; (4) multimedia blob GC as today. Audit
+`erase` tombstone appended to the outbox before step 1 commits, which every
+downstream consumer (FerroBRIDGE's OMOP load among them) applies by deleting
+what it derived from that `ehr_id`; (4) multimedia blob GC as today. Audit
 events naming the `ehr_id` stay (report 3 B.1 Art. 17(3)(b): the logging
 periods are a legal obligation), and the page says so. The delete test asserts
 zero rows per relation per domain. `admin_ehr_delete_all` stays behind the
 production refusal (`405`, `admin_ehr_delete_all.yaml`).
 
-### The research domain
+### Secondary use: FerroBRIDGE, not a research domain
 
 ```mermaid
 sequenceDiagram
   participant W as clinical writer
-  participant O as event_outbox (clinical)
-  participant T as trust role (projector)
-  participant R as research
-  participant Q as research reader
-  W->>O: version committed (vo_id, sys_version, ehr_id, kind)
-  T->>O: read after min(cursor) of every reader
-  T->>W: read the version's leaves under ferroehr_clinical_reader
-  T->>T: pseudonym = HMAC-SHA-256(permit.secret, ehr_id) per active permit
-  T->>R: upsert leaf rows keyed by (permit_id, pseudonym, path)
-  T->>R: advance read_model_cursor
-  Q->>R: cohort queries (no grant in clinical, party or linkage)
-  Note over R: permit expiry deletes its rows and its secret
+  participant Q as ITS-REST query API (AQL over VERSION)
+  participant B as FerroBRIDGE (separate product)
+  participant M as OMOP CDM
+  participant S as FerroSYS notifications (proposed)
+  W->>W: version committed (committed_at, ehr_id, kind)
+  B->>Q: AQL: versions with time_committed > last batch, restriction and objection filtered
+  Q->>Q: access event (purpose, permit, rows served)
+  B->>B: pseudonym per permit (EDPB 01/2025 §116-120), mapping driven
+  B->>M: typed CDM rows, batch loaded
+  W-->>S: erase tombstone (outbox)
+  S-->>B: erasure notification, or B reconciles against the CDR
 ```
 
-The `research` domain (today's "secondary", #3331) is kept and re-affirmed
-with the EDPB's own shape: a lookup-free relationship pseudonym per permit
-(§117-118; §88 keyed one-way function), computed by a trust role that reads
-`clinical` and writes `research` and is the only principal holding both
-grants; research readers hold nothing outside `research`; the permit secret's
-identifier is stored beside each pseudonym so an algorithm change re-derives
-from `ehr_id` without touching personal data (§91); a permit carries
-`started_at` and `expires_at` (GDNG § 6: at most 30 years) and expiry deletes
-its rows. Logical replication was considered as the feed and rejected: a row
-filter cannot call a pseudonymising function and column lists are "not a
-security boundary" (report 1 §12.1), so the transformation has to run in the
-application. The outbox prune floor becomes `min(cursor)` across every
+The FerroHEALTH drawing (owner, 2026-09-14) routes research data to the OMOP
+CDM through FerroBRIDGE, a separate product that is live and in active
+development: "mapping driven", "typed CDM rows", "research, batch loaded".
+FerroBRIDGE loads OMOP **in batches over AQL**, and by its own design does not
+consume this repository's change-event outbox (ITS-REST 1.1.0 defines no
+change notification, and the platform rule is that every edge is a published
+specification). The `research` domain this plan carried until 2026-09-14
+(today's "secondary", #3331) would have been a second pseudonymised research
+store beside FerroBRIDGE's, so it is dropped: no `research` schema, role,
+pool, DSN or migration set. What only the CDR can do stays in the CDR and is
+#3379's contract (v4.3.2): the restriction register (Art. 18) and the research
+objection (Art. 21(6), #3325) as marks that AQL, every export and the outbox
+emitter honour; the retention register (Art. 5(1)(e)); AQL over `VERSION`
+with a `commit_audit/time_committed` predicate as the resumable batch surface,
+served from the BRIN on `committed_at` (H7) and pinned by a plan-shape test;
+and an access event per population query naming purpose and permit (EHDS
+Art. 73(1)(e), Wabvpz Art. 15e). Pseudonymisation for research happens in
+FerroBRIDGE, under the EDPB's relationship-pseudonym shape (§117-118) and the
+trust-role separation of its Example 5; the CDR gates what leaves and records
+that it left. Erasure propagation to a batch-loaded store is a platform
+question the drawing leaves open: the CDR publishes the `erase` tombstone on
+its outbox (our own AMQP extension), which reaches FerroBRIDGE either through
+the notification service FerroSYS is proposed to carry (#3382) or through
+FerroBRIDGE reconciling its EHR set against the CDR each batch; #3379 records
+which, and until then the tombstone stays the only mechanism. Logical
+replication stays rejected as the feed for the same reason as before: a row
+filter cannot pseudonymise and column lists are "not a security boundary"
+(report 1 §12.1). The outbox prune floor stays `min(cursor)` across every
 registered reader (#3330).
 
 ### What stays, and why
@@ -563,7 +571,7 @@ registered reader (#3330).
 | `body text` verbatim | keep | report 1 §1.5; ITS-REST Resources.md §Datetime format |
 | `wrapped_original`, `preceding_version_uid`, per-version `creating_system_id` | keep | RM master06 §The Copy Operation, §Moving Version Containers |
 | Server-set `committed_at`, one transaction per Contribution | keep | master06 §Committal and Audits |
-| `FORCE ROW LEVEL SECURITY` tenancy on every table, policy on the parent | keep | report 1 §10.1; declared once per partitioned relation |
+| `FORCE ROW LEVEL SECURITY` tenancy, the GUC, the tenant registry, per-tenant reader cursors | remove | the FerroHEALTH drawing (owner 2026-09-14): multi-tenancy is achieved by running separate instances; #3378 |
 | Sealed national identifiers in `party` | keep | report 1 §13.2: pgcrypto is the documented wrong tool for a distrusted DBA |
 | LOGGED tables everywhere | keep | owner ruling 2026-08-25 (#2698) |
 | Schema-per-domain in one database as the DEFAULT | keep, generalised | the per-domain DSN makes cluster-per-domain a configuration, not a fork |
@@ -592,26 +600,26 @@ that addressee.
 | Provision | What the text asks of storage | Target design | Deployment | Checked by |
 |---|---|---|---|---|
 | Art. 4(5) pseudonymisation | additional information "kept separately and ... subject to technical and organisational measures" | the clinical domain holds only `ehr_id` and an opaque per-EHR subject pseudonym; the party↔EHR map lives in the `linkage` domain under its own role, reachable through its own pool and DSN; the second cross-reference that sits inside the clinical schema today (`ehr.ehr_index`, the `sp_*` subject tables) moves to `linkage` | choosing separate databases or clusters per domain (the design supports it; the default compose is co-located) | `db::verify_domain_isolation` at boot for the co-located case; the per-domain DSN test that boots with `linkage` on a second database |
-| Art. 4(3) + Art. 18 restriction | "marking of stored personal data with the aim of limiting their processing"; after restriction only storage and the named exceptions | a `restriction` register at EHR and versioned-object grain, denormalised into `vo_head.restricted_at`; every read path (point reads, versioned reads, revision history, AQL, exports, the outbox emitter, the research feed) filters on it; writes to a restricted object are refused with a typed error; storage continues untouched; lifting is a second row, so the sequence is auditable (Art. 18(3)) | recording the request and informing the subject | integration tests per read path; a CNF-style wire case per ITS-REST operation for a restricted object (our own extension, no openEHR spec governs restriction) |
-| Art. 5(1)(e) storage limitation, Art. 25(2) "the period of their storage", Art. 30(1)(f) | data kept in identifying form "for no longer than is necessary"; the record of processing names envisaged time limits per category | a `retention_policy` register (tenant × kind × jurisdiction → period and anchor rule) and a per-EHR `retention_anchor`; a `retention_due` view lists EHRs past their period for the controller's decision; the CDR never deletes clinical content on a timer (indelibility, master06 §Logical Deletion, and the national medical-record periods in BW 7:454 / EPDV Art. 10) | setting the periods; acting on the list | the view's tests; the book page that renders the register |
+| Art. 4(3) + Art. 18 restriction | "marking of stored personal data with the aim of limiting their processing"; after restriction only storage and the named exceptions | a `restriction` register at EHR and versioned-object grain, denormalised into `vo_head.restricted_at`; every read path (point reads, versioned reads, revision history, AQL, exports, the outbox emitter) filters on it; writes to a restricted object are refused with a typed error; storage continues untouched; lifting is a second row, so the sequence is auditable (Art. 18(3)) | recording the request and informing the subject | integration tests per read path; a CNF-style wire case per ITS-REST operation for a restricted object (our own extension, no openEHR spec governs restriction) |
+| Art. 5(1)(e) storage limitation, Art. 25(2) "the period of their storage", Art. 30(1)(f) | data kept in identifying form "for no longer than is necessary"; the record of processing names envisaged time limits per category | a `retention_policy` register (kind × jurisdiction → period and anchor rule) and a per-EHR `retention_anchor`; a `retention_due` view lists EHRs past their period for the controller's decision; the CDR never deletes clinical content on a timer (indelibility, master06 §Logical Deletion, and the national medical-record periods in BW 7:454 / EPDV Art. 10) | setting the periods; acting on the list | the view's tests; the book page that renders the register |
 | Art. 5(1)(f), Art. 32(1)(b)-(c) | integrity, availability, "restore the availability and access ... in a timely manner" | a per-domain dump path (each domain has its own DSN, so each has its own `pg_dump`/PITR scope when separated); FK integrity across the archival tier (the tier is a partition of the same table, never an FK-free mirror) | backups, PITR, their encryption and retention | `scripts/deploy-probe.sh` restore stage (to add) |
-| Art. 32(1)(a), Art. 34(3)(a) encryption | "pseudonymisation and encryption of personal data"; breach communication waived where data is "unintelligible ... such as encryption" | national identifiers stay sealed (AES-256-GCM, keyed HMAC lookup, per-tenant subkey) in `demographic`; clinical payload is NOT encrypted inside PostgreSQL: there is no transparent data encryption in PostgreSQL 18 and column encryption of `node.data` would end AQL (the docs-verified reason on the threat-model page). Re-affirmed. | disk or volume encryption, TLS, key custody | the threat-model page names the boundary; the k8s probe reads the storage class encryption flag (to add) |
-| Art. 17 erasure | "erase personal data without undue delay"; ITS-REST `admin_ehr_delete`: physically delete the EHR "and their historical versions ... in compliance with applicable data protection regulations" | physical delete reaches: every tier (one partitioned table, so one DELETE); `linkage` rows for the EHR through `linkage.erase_ehr(ehr_id)`, a `SECURITY DEFINER` function the linkage role may execute while holding no table `DELETE`; pending outbox rows; a tombstone event so the research domain drops that EHR's projections under every permit; multimedia blobs. Audit events naming the `ehr_id` are KEPT: the logging periods (NL 5 years, CH 1 year, DE § 309 3 years) are the Art. 17(3)(b) legal obligation, and the `ehr_id` maps to nothing once the EHR is gone | backup rotation (the erasure completes when the last backup holding the EHR expires; the page states the window) | the `delete_ehr` integration test asserts zero rows per table per domain, including linkage and outbox |
+| Art. 32(1)(a), Art. 34(3)(a) encryption | "pseudonymisation and encryption of personal data"; breach communication waived where data is "unintelligible ... such as encryption" | national identifiers stay sealed (AES-256-GCM, keyed HMAC lookup, one key per instance) in `demographic`; clinical payload is NOT encrypted inside PostgreSQL: there is no transparent data encryption in PostgreSQL 18 and column encryption of `node.data` would end AQL (the docs-verified reason on the threat-model page). Re-affirmed. | disk or volume encryption, TLS, key custody | the threat-model page names the boundary; the k8s probe reads the storage class encryption flag (to add) |
+| Art. 17 erasure | "erase personal data without undue delay"; ITS-REST `admin_ehr_delete`: physically delete the EHR "and their historical versions ... in compliance with applicable data protection regulations" | physical delete reaches: every tier (one partitioned table, so one DELETE); `linkage` rows for the EHR through `linkage.erase_ehr(ehr_id)`, a `SECURITY DEFINER` function the linkage role may execute while holding no table `DELETE`; pending outbox rows; a tombstone event so every downstream consumer (FerroBRIDGE's OMOP load among them) drops what it derived from the EHR; multimedia blobs. Audit events naming the `ehr_id` are KEPT: the logging periods (NL 5 years, CH 1 year, DE § 309 3 years) are the Art. 17(3)(b) legal obligation, and the `ehr_id` maps to nothing once the EHR is gone | backup rotation (the erasure completes when the last backup holding the EHR expires; the page states the window) | the `delete_ehr` integration test asserts zero rows per table per domain, including linkage and outbox |
 | Art. 11 | the controller need not hold identifiers merely to comply | the clinical domain holds none; subject-rights requests resolve through `linkage` | | the domain-isolation boot gate |
 | Art. 25(1)-(2) | pseudonymisation from design time; by default not accessible without the individual's intervention | the domains and the pseudonym guard (the DB trigger that refuses a non-UUID subject id once namespaces are declared); the EHR_ACCESS default is #3323's question, not storage's | declaring `privacy.subject_namespaces` | trigger tests |
-| Art. 89(1) research safeguards | pseudonymisation where the purpose allows; anonymisation where it suffices | the `research` domain (today's "secondary"): a leaf projection under per-permit relationship pseudonyms (EDPB §117-118), written by a trust role that reads the clinical domain and writes research, never readable back into clinical; readers of `research` hold nothing in `ehr`, `demographic` or `linkage`; permit expiry deletes the permit's rows and its secret (§117) | issuing permits; the data access body role | the reciprocal-revoke matrix in `verify_domain_isolation`; per-permit tests |
+| Art. 89(1) research safeguards | pseudonymisation where the purpose allows; anonymisation where it suffices | pseudonymisation for research happens in FerroBRIDGE on its way to the OMOP CDM (EDPB §117-118 relationship pseudonyms per permit, the trust-role separation of Example 5); the CDR gates what leaves: AQL over `VERSION`, the exports and the outbox emitter honour the restriction register and the research objection (#3325), carry no identifier beyond `ehr_id`, and every population query emits an access event naming purpose and permit (#3379) | issuing permits; operating FerroBRIDGE and the data access body role | the AQL integration tests (filtered rows absent, no subject identifier in the result set); the access-event test |
 
 ### EHDS (`docs/law/eu/ehds/`), addressee: health data access bodies, holders, entities acting for them
 
 | Provision | Storage-relevant text | Target design | Deployment |
 |---|---|---|---|
-| Art. 66(3) | reversal information "available only to the health data access body or ... a trusted third party" | the permit secret and the `linkage` map are never in `research`; the trust role is the only principal that can compute a permit pseudonym | who operates the trust role |
-| Art. 73(1)(e) | identifiable access logs "for the period necessary to verify and audit", at least one year | the `audit` domain records reads of `research` under the permit; floors are per jurisdiction (`retention_floor_days`) | forwarding to the SPE's log store |
-| Art. 87 | personal electronic health data stored and processed in the Union for the Art. 67-72 operations | nothing in storage records location; the design keeps every domain relocatable (per-domain DSN) so the research domain can sit inside the Union while the CDR does not have to | region choice; the page states that this falls on the operator |
+| Art. 66(3) | reversal information "available only to the health data access body or ... a trusted third party" | the permit secret lives in FerroBRIDGE and the `linkage` map in the CDR's linkage domain; no principal holds both, and the result set carries no identifier a permit pseudonym could be reversed to | who operates FerroBRIDGE |
+| Art. 73(1)(e) | identifiable access logs "for the period necessary to verify and audit", at least one year | the `audit` domain records every population query under its purpose and permit; floors are per jurisdiction (`retention_floor_days`) | forwarding to the SPE's log store |
+| Art. 87 | personal electronic health data stored and processed in the Union for the Art. 67-72 operations | nothing in storage records location; the design keeps every domain relocatable (per-domain DSN), and the OMOP store is FerroBRIDGE's, placed by its operator | region choice; the page states that this falls on the operator |
 
 ### EDPB Guidelines 01/2025 (`docs/law/eu/edpb-guidelines-01-2025-pseudonymisation/`)
 
-§35-41 (the pseudonymisation domain): each PostgreSQL role plus the pool that holds it IS a domain in the guidelines' sense; the reciprocal revokes keep additional information out of the clinical domain and pseudonymised data out of the research domain's reach into the originals. §88-91: the permit pseudonym is HMAC-SHA-256 over `ehr_id` under a per-permit secret of 32 random bytes, with the secret's identifier stored beside each pseudonym so an algorithm change re-derives from `ehr_id` without reconstituting personal data (§91). §116-120: the clinical domain's `ehr_id` is a record identifier the RM itself mandates (it is not a person pseudonym: one subject may hold several EHRs and the RM keeps `ehr_id` "distinct from any identifier for the subject of care"); the research domain uses relationship pseudonyms per permit and no person pseudonym.
+§35-41 (the pseudonymisation domain): each PostgreSQL role plus the pool that holds it IS a domain in the guidelines' sense; the reciprocal revokes keep additional information out of the clinical domain. §88-91 (the permit pseudonym, a keyed one-way function over `ehr_id` under a per-permit secret) is FerroBRIDGE's to realise; the CDR's contribution is that the query surface hands it nothing but `ehr_id` and clinical content. §116-120: the clinical domain's `ehr_id` is a record identifier the RM itself mandates (it is not a person pseudonym: one subject may hold several EHRs and the RM keeps `ehr_id` "distinct from any identifier for the subject of care"); FerroBRIDGE derives relationship pseudonyms per permit from it and no person pseudonym.
 
 ### Netherlands (`docs/law/nl/`)
 
@@ -626,22 +634,74 @@ that addressee.
 | Provision | Text | Target design |
 |---|---|---|
 | BDSG § 22 Abs. 2 Nr. 2, 5, 6, 7, 8 | traceability of entry/change/removal "ob und von wem"; access restriction within the controller; pseudonymisation; encryption; restore | contribution + audit chain per write (unchanged); roles per domain; the sealed identifiers; per-domain restore |
-| BDSG § 27 Abs. 3 | identifying features "gesondert zu speichern", merged only when the research purpose requires | the research domain never receives the `linkage` map; a permit that needs re-identification goes back through the trust role, logged |
+| BDSG § 27 Abs. 3 | identifying features "gesondert zu speichern", merged only when the research purpose requires | the result set never carries the `linkage` map, so FerroBRIDGE never receives identifying features; re-identification for a permit goes back through the linkage domain, logged |
 | BDSG § 35 | restriction in place of erasure where erasure would harm the subject or a retention period bars it | the restriction register covers it; the compliance page's row is narrowed to Abs. 2 and 3 (Abs. 1 is scoped to non-automated processing; the current page overstates) |
 | SGB V § 309 Abs. 1, 3 (TI applications) | access logs reviewable for three years and deleted "unverzüglich" after | the audit domain gains a per-jurisdiction CEILING beside the floor (`retention_ceiling_days`), refused if below the floor; DE ceiling 3 years applies only when the deployment declares itself a § 307 controller |
-| GDNG § 6 Abs. 1 | own further processing pseudonymised, logged, role-restricted, deleted at latest 30 years after start | research permits carry a `started_at` and a hard `expires_at ≤ started_at + 30 years`; expiry deletes the projection |
+| GDNG § 6 Abs. 1 | own further processing pseudonymised, logged, role-restricted, deleted at latest 30 years after start | a FerroBRIDGE obligation (the permit and the projection live there); the CDR's retention register covers its own copies |
 
 ### Switzerland (`docs/law/ch/`)
 
 | Provision | Text | Target design |
 |---|---|---|
-| DSG Art. 6 Abs. 4 | destroyed or anonymised as soon as no longer required | the retention register + `retention_due` view; research permits expire |
+| DSG Art. 6 Abs. 4 | destroyed or anonymised as soon as no longer required | the retention register + `retention_due` view |
 | DSG Art. 7, 8 | privacy by design and default; security delegated to the DSV | the domains and the pseudonym guard; DSV rows below |
 | DSG Art. 25 Abs. 2 lit. d | the subject learns the retention period or its criteria | the retention register is what the page and the access answer cite |
 | DSV Art. 3 Abs. 1-3 | access control; data-carrier and storage control; restore; input control ("welche Personendaten zu welcher Zeit und von welcher Person") | roles per domain; per-domain dumps; the contribution/audit chain and the audit domain |
 | DSV Art. 4 Abs. 1, 4, 5 | log storing/changing/disclosing/deleting/accessing; actor, type, date, time, recipient; kept at least one year, "getrennt vom System, in welchem die Personendaten bearbeitet werden", readable only by oversight roles | the audit domain gets its own DSN like every other domain, so a Swiss deployment can place it in another database or cluster with its own roles; `retention_floor_days("CH") = 366` (#3339) | the compliance page's DSV Art. 4 status changes from "shipped" to "shipped for the trail; the separation is the deployment's DSN choice" |
-| EPDG Art. 10, EPDV Art. 10 Abs. 1 lit. b-e, Abs. 2 (certified communities) | medical EPD data "von anderen Datenbeständen getrennt gespeichert"; storage encryption; destruction after 20 years; per-datum exemption from destruction; destruction on request | separation: the per-domain DSN and the tenant RLS; destruction after 20 years: the retention register with CH = 20 years anchored on the last entry, listed for the community to act on; exemption: `retention_hold` on the EHR or versioned object; destruction on request: `admin_ehr_delete` / per-object physical delete | volume encryption; running the destruction |
+| EPDG Art. 10, EPDV Art. 10 Abs. 1 lit. b-e, Abs. 2 (certified communities) | medical EPD data "von anderen Datenbeständen getrennt gespeichert"; storage encryption; destruction after 20 years; per-datum exemption from destruction; destruction on request | separation: the per-domain DSN and one instance per community; destruction after 20 years: the retention register with CH = 20 years anchored on the last entry, listed for the community to act on; exemption: `retention_hold` on the EHR or versioned object; destruction on request: `admin_ehr_delete` / per-object physical delete | volume encryption; running the destruction |
 | EPDV Art. 12 Abs. 5 | data stores in Switzerland under Swiss law | not a storage property; relocatable domains make it satisfiable per domain | region choice |
+
+## Platform alignment: the FerroHEALTH drawing
+
+The owner's architecture drawing (2026-09-14) places FerroEHR inside a
+**FerroHEALTH instance** beside sibling products and proposed platform
+services: FerroTERM (terminology), FerroBRIDGE (FHIR R4 facade and the
+OMOP CDM load, live), FerroCHART (template to form), and, proposed, FerroPIX
+(master patient index, IHE PIX/PIXm/PDQ/PDQm), FerroSMART (OAuth 2.0, OIDC,
+SMART authorisation server), FerroSYS (health, telemetry, event log,
+notification subscriptions, install and deploy) and FerroFED (XCPD patient
+discovery, distributed AQL). Veredictum stays the external acceptance
+instrument. Two statements on the drawing bind this plan and are absorbed by
+the rewrite rather than deferred, because both remove structure and removing
+it later would be a second rewrite:
+
+| Drawing statement | Consequence for the rewrite | Where |
+|---|---|---|
+| "Multi-tenancy is achieved by running separate instances" | no in-database tenancy: no `tenant_id`, no row policy for tenancy, no GUC, no tenant registry, no per-tenant reader cursors, no tenancy posture; isolation between organisations is a deployment property (one instance, one database, one set of domain roles), stronger than a row policy and free of the fail-open and reader-scope defect classes tenancy carried (#3341, #3355) | #3378 (v4.3.1); §Migration set layout; the evaluation table |
+| research data reaches the OMOP CDM through FerroBRIDGE, "batch loaded" over AQL | no `research` domain in the CDR; the CDR keeps the outbox, the restriction, objection and retention marks, and makes AQL over `VERSION` by `time_committed` the resumable batch surface; pseudonymisation for research is FerroBRIDGE's | #3379 (v4.3.2); §Secondary use |
+
+The other seams the drawing shows are contracts FerroEHR exposes, filed under
+the v4.3.2 program #3377 and specified by the open standard each realises,
+never by a sibling's internals; every seam keeps a local default so nothing in
+FerroEHR depends on a sibling being present: FerroPIX as an `I_EHR_INDEX`
+provider behind an `EhrIndexProvider` seam (ITI-83, ITI-78; #3380), FerroSMART
+as RFC 7662 introspection beside JWT validation plus SMART launch context as
+ABAC attributes (#3381), the FerroSYS seam over the operator surfaces (#3382),
+and the federation node contract for FerroFED over ITS-REST (#3383). The
+pseudonymisation domains and their role barriers are unrelated to tenancy and
+stay as §Domain topology draws them: they are the defence in depth a
+single-tenant instance keeps. Row-level security is not kept as a second layer
+under the instance boundary (the accompanying note suggests leaving it on): with
+one tenant the policy is a constant-true predicate that costs a qual on every
+scan and keeps the fail-open class of defect (#3341) alive for no isolation
+gained. Two further consequences of the drawing are recorded rather than
+decided here. The FHIR R4 facade is FerroBRIDGE's ("holds no data of its own
+and translates on demand"), so the FHIR conversion core and outbound feed this
+repository ships in `ferroehr-ext` behind the `fhir` feature, with the
+`fhir_mapping` relation and the `fhir_outbound` reader, overlap with a
+sibling; whether they stay is the owner's call (#3386), and the `clinical`
+set's `0009_integrations` file carries `fhir_mapping` until it is made. And a
+record moved between federation nodes must keep its `OBJECT_VERSION_ID` with
+its `creating_system_id` intact (RM common master06 §Moving Version
+Containers), which the EHR_EXTRACT surface this repository already serves
+(`/message`) is the standard for; #3383 carries that constraint, and reads the
+Syntaric "Federation Tier with AQL" proposal (0.9.0, 2026-09-13, CC0) as prior
+art for the node contract: a gateway resolves the patient outside AQL (IHE
+PIXm or a record locator) and dispatches standard `ehr_id`-scoped AQL to each
+node, so no directly identifying identifier survives into the dispatched
+query, consent is enforced at each node before it releases data, and rows
+carry endpoint provenance. No openEHR spec governs the platform split; the
+SM's component map is what the seams are named after.
 
 ## Cutover: a greenfield rewrite
 
@@ -663,8 +723,8 @@ stateDiagram-v2
 ### What the release does
 
 1. **One migration set per domain, in natural files.** The `ext`, `clinical`,
-   `party` (rendered from the same DDL template as clinical), `linkage`,
-   `audit` and `research` sets are re-authored as sequences of files, one
+   `party` (rendered from the same DDL template as clinical), `linkage`
+   and `audit` sets are re-authored as sequences of files, one
    concern each (§Migration set layout below), never one squashed baseline.
    The `ehr`, `demographic` and the present `linkage` and `audit` sets are
    deleted in the same pull request; the schema names change with the
@@ -683,31 +743,37 @@ stateDiagram-v2
 4. **Everything that seeds a database starts from the new baselines**: the
    testkit template, the compose quickstart, the Helm chart's boot, the
    hosted sandbox's reseed, the conformance pipeline's fresh volumes.
+5. **The tenancy surface leaves with the old sets** (#3378). No `tenant_id`
+   column, no `tenant_isolation` policy, no `FORCE ROW LEVEL SECURITY` for
+   tenancy, no `ferroehr.tenant_id` GUC, no `tenant` registry, no per-tenant
+   reader cursors, no tenancy posture; and with them `[tenancy]` in the
+   configuration tree, the tenant middleware, the `/admin/tenant` routes, the
+   Helm and compose tenancy keys, the book's tenancy pages and every tenancy
+   test. A catalog test asserts no relation in any domain carries a
+   `tenant_id` column and no row policy exists.
 
 ### Migration set layout: natural files, one concern each
 
 Owner direction 2026-09-14: not one squashed baseline per domain. Each domain's
 set is a sequence of files (`sqlx migrate add --sequential`), one concern per
 file, named by the concern, so a reader finds the change-control tables in the
-file called change control and the row policies in the file called row-level
-security. The party set is rendered from the same template as the clinical
+file called change control and the grants in the file called grants. The party set is rendered from the same template as the clinical
 one and carries the same file names where the concern is shared. From the
 merge that lands them, these files are the immutable ones (a later change is
 a new file, as the rule says).
 
 | Domain | Files, in order |
 |---|---|
-| `ext` | `0001_schema_and_roles` (schema, the runtime role pairs guarded by existence, default privileges) · `0002_openehr_functions` (the `IMMUTABLE`/`STABLE` helpers, `LANGUAGE sql`, no exception blocks) · `0003_tenant_context` (`current_tenant_id`, `default_tenant_or_refuse`) · `0004_posture` (`posture`, `stamp_posture`) |
-| `clinical` | `0001_schema_and_grants_baseline` (schema, search-path notes, the barrier revokes) · `0002_tenant` (the tenant registry) · `0003_ehr` (`ehr`, the subject pseudonym guard) · `0004_change_control` (`commit_audit`, `contribution`, `version` partitioned by tier, `vo_head`, `vo_attestation`) · `0005_node` (the nested-set table partitioned by tier, its indexes) · `0006_folders_and_tags` (`ehr_folder`, `item_tag`) · `0007_definitions` (`template_ref`, `template_store`, `archetype_store`, `adl2_artefact`, `stored_query`) · `0008_restriction_and_retention` (`restriction`, `retention_policy`, `retention_anchor`, the `retention_due` view) · `0009_outbox` (`event_outbox`, `event_outbox_reader`, `event_subscription`) · `0010_integrations` (`fhir_mapping`, `blob_ref`) · `0011_row_level_security` (`ENABLE`/`FORCE` and the `tenant_isolation` policy on every tenant table, in one place) · `0012_grants` (per-role grants over the finished relations) |
-| `party` | `0001_schema_and_grants_baseline` · `0002_change_control` · `0003_node` · `0004_identifiers` (`identifier_scheme`, `national_identifier`, the sealed-value resolver) · `0005_relationships` (`party_relationship_target`) · `0006_outbox` · `0007_row_level_security` · `0008_grants` |
-| `linkage` | `0001_schema_and_role` · `0002_subject_ehr` (the temporal map) · `0003_erase_ehr` (the definer function) · `0004_row_level_security_and_grants` |
+| `ext` | `0001_schema_and_roles` (schema, the runtime role pairs guarded by existence, default privileges) · `0002_openehr_functions` (the `IMMUTABLE`/`STABLE` helpers, `LANGUAGE sql`, no exception blocks) · `0003_posture` (`posture`, `stamp_posture`) |
+| `clinical` | `0001_schema_and_grants_baseline` (schema, search-path notes, the barrier revokes) · `0002_ehr` (`ehr`, the subject pseudonym guard) · `0003_change_control` (`commit_audit`, `contribution`, `version` partitioned by tier, `vo_head`, `vo_attestation`) · `0004_node` (the nested-set table partitioned by tier, its indexes) · `0005_folders_and_tags` (`ehr_folder`, `item_tag`) · `0006_definitions` (`template_ref`, `template_store`, `archetype_store`, `adl2_artefact`, `stored_query`) · `0007_restriction_and_retention` (`restriction`, `retention_policy`, `retention_anchor`, the `retention_due` view) · `0008_outbox` (`event_outbox`, `event_outbox_reader`, `event_subscription`) · `0009_integrations` (`fhir_mapping`, `blob_ref`) · `0010_grants` (per-role grants over the finished relations) |
+| `party` | `0001_schema_and_grants_baseline` · `0002_change_control` · `0003_node` · `0004_identifiers` (`identifier_scheme`, `national_identifier`, the sealed-value resolver) · `0005_relationships` (`party_relationship_target`) · `0006_outbox` · `0007_grants` |
+| `linkage` | `0001_schema_and_role` · `0002_subject_ehr` (the temporal map) · `0003_erase_ehr` (the definer function) · `0004_grants` |
 | `audit` | `0001_schema_and_roles` · `0002_audit_event` · `0003_tamper_chain` (the hash chain, its triggers and functions) · `0004_access_fields` (domain, purpose, legal basis, organisation, roles, origins) · `0005_retention` (floor and ceiling readers) |
-| `research` | `0001_schema_and_roles` · `0002_permit` · `0003_read_model_cursor` · `0004_leaf_projection` · `0005_row_level_security_and_grants` |
 
 Two rules keep the layout honest: a file carries the tables of one concern
-and the indexes and comments that belong to them, never a grant or a policy
-(those live in the two files named for them, so the catalog sweep and the
-boot gate have one file to read per domain); and the numbering is per domain
+and the indexes and comments that belong to them, never a grant (those live
+in the one file named for them, so the catalog sweep and the boot gate have
+one file to read per domain); and the numbering is per domain
 with no gaps, so `_sqlx_migrations` reads as the table of contents.
 
 ### What breaks, and how a deployment is told
@@ -715,13 +781,14 @@ with no gaps, so `_sqlx_migrations` reads as the table of contents.
 | Change | Who sees it | Where it is said |
 |---|---|---|
 | A database from an earlier release is refused | anyone who kept one | `CHANGELOG.md` `### Changed` with a **BREAKING** lead; the release notes; the boot refusal message itself; the book's upgrade page ("recreate the database") |
-| Five DSNs instead of one (defaulting to the old one) | operators editing `ferroehr.toml` or Helm values | `config-*.md` pages; the Helm chart's `database.*` values gain per-domain overrides; `config check` reports the layout |
-| Backup procedure per domain | operators | `operations.md` §Backup: five dumps or one, by DSN layout; the k8s probe gains a restore stage |
+| Four DSNs instead of one (defaulting to the old one) | operators editing `ferroehr.toml` or Helm values | `config-*.md` pages; the Helm chart's `database.*` values gain per-domain overrides; `config check` reports the layout |
+| Backup procedure per domain | operators | `operations.md` §Backup: four dumps or one, by DSN layout; the k8s probe gains a restore stage |
 | Schema names `clinical` and `party` | anyone reading the database directly | the storage page; the DPIA |
 | `LATEST_VERSION` semantics unchanged; `ALL_VERSIONS` now includes branch rows explicitly | AQL authors | the AQL page; a CNF-style case pins it |
 | Restricted objects answer `403` | API clients | the REST pages; the compliance page's Art. 18 row |
-| `admin_ehr_delete` reaches linkage and research | operators | the admin page; the DPIA |
-| The `secondary` name becomes `research` | nobody yet (unshipped, #3331) | the #3331 contract is re-pointed |
+| `admin_ehr_delete` reaches linkage and tombstones the outbox | operators | the admin page; the DPIA |
+| No in-database multi-tenancy: `[tenancy]`, the tenant routes and the tenant GUC are gone | operators of a multi-tenant deployment (none in production) | `CHANGELOG.md` `### Removed`: multi-tenancy is achieved by running separate instances; the book's deployment page (#3378) |
+| No `research` domain; secondary use leaves through FerroBRIDGE over AQL | nobody yet (unshipped; #3331 closed) | #3379; the compliance page's Art. 89(1) and EHDS rows |
 
 ### Spec-profile and conformance
 
@@ -751,9 +818,9 @@ compose stack), and the conformance instrument's `perf` classes and
 | H6 | Archive and restore are no slower than the mirror copy | both are row copies (report 1 §5.8); the target drops the view layer and FK-free mirror, not the copy | rows per second archived on a class L seed, before vs after | admin archive timing in the deploy probe |
 | H7 | Time-range listings serve from BRIN | `committed_at` is physically correlated on an append-only heap (report 1 §7.4) | `EXPLAIN` shows a Bitmap Heap Scan on the BRIN index for `list_contributions(time_range)` | `aql-probe` |
 | H8 | The node write path is unchanged | rows are inserted through `unnest` arrays as today; two promoted columns are added | `EXPLAIN (ANALYZE, WAL)` per composition commit: WAL bytes within a few percent of today | class S |
-| H9 | RLS costs nothing extra under partitioning | the policy is declared once on the parent and prunes at executor start (report 1 §5.2, §10.2) | `EXPLAIN` of a tenant-scoped AQL query shows the policy qual pushed to the partition scan | `aql-probe` |
+| H9 | The single-tenant schema pays no policy qual on any scan | no `tenant_isolation` policy exists, so no policy qual or InitPlan is attached (report 1 §10.2 describes the cost that is gone) | `EXPLAIN` of every hot path shows no policy qual; the baseline's tenant-scoped plans are the comparison | `aql-probe` |
 | H11 | The dual write (`body` + `node`) costs storage, not latency | both are spec-forced (evaluation table); the ratio is a fact to record, not a claim | `pg_total_relation_size` of `version` vs `node` on a seeded corpus; point-read latency of `body` vs a reassembly from `node` | class S seed; `aql-probe` |
-| H10 | The per-domain pools add no latency in the co-located default | five pools to one database; connection counts are configured per pool | `pg_stat_activity` connection count under class S; p99 unchanged | class S |
+| H10 | The per-domain pools add no latency in the co-located default | four pools to one database; connection counts are configured per pool | `pg_stat_activity` connection count under class S; p99 unchanged | class S |
 
 Two alternatives the plan names for measurement rather than adopting:
 
@@ -775,7 +842,7 @@ comparison exists before the rewrite lands:
 
 | Issue | What it delivers | Sequencing |
 |---|---|---|
-| #3367 | the storage benchmark harness (`benches/storage.rs`, criterion over a testkit database): commit and supersession, point reads, `version_at_time`, revision history, `If-Match`, AQL CONTAINS over one EHR and the population, archive, restore, prune; database-side facts (`n_tup_hot_upd`, `n_dead_tup`, WAL bytes, buffer hits) beside wall-clock; a comparable JSON record under `docs/benchmarks/storage/<generation>/` (a benchmark, not a conformance artifact) | first |
+| #3367 | the storage benchmark harness (`benches/storage.rs`, criterion over a testkit database): commit and supersession, point reads, `version_at_time`, revision history, `If-Match`, AQL CONTAINS over one EHR and the population, archive, restore, prune; database-side facts (`n_tup_hot_upd`, `n_dead_tup`, WAL bytes, buffer hits) beside wall-clock; a comparable JSON record under `docs/conformance/storage/<generation>/` | first |
 | #3368 | the pre-rewrite baseline: the harness and the conformance instrument (class S, `aql-probe`) recorded for the current schema | blocks #3342 |
 | #3369 | plan-shape tests: `EXPLAIN (ANALYZE, BUFFERS)` in a rolled-back transaction pins the node type, index and partition of every hot path, in the ordinary test battery | after #3342 |
 | #3350 | the after-rewrite comparison: H1-H11 against the baseline, no hot path slower beyond the stated tolerance, the partitioning and GIN alternatives decided | after #3342, #3367, #3368 |
@@ -798,14 +865,15 @@ reader (D2). Sequencing is expressed as native `blocked-by` edges, set with
 | Key | Issue | Milestone | Blocked by | Acceptance (summary; the issue carries the full list) |
 |---|---|---|---|---|
 | D1 (#3340) | docs(storage): the storage pages and migration comments describe `JSON_TABLE`, GIN pre-filters and a GiST serialisation the code and the PostgreSQL docs do not carry | v4.3.0 | | every claim in research report 1 §17 #1, #4, #5, #6, #7 is corrected or removed in `docs/architecture.md`, `docs/postgres-features.md`, `website/book/src/concepts/storage.md`, `.claude/rules/aql-engine.md`, `CLAUDE.md`; migration comments are left as shipped (immutability) and the corrections name them |
-| S1 (#3342) | feat(storage): the clinical schema rewritten: append-only `version`, `vo_head`, tier-partitioned `version`/`node`/`vo_attestation`, `name_code`/`name_terminology` | v4.3.1 | D1 | the `clinical` set as natural files from a DDL template (§Migration set layout), the `ehr` set deleted, an old database refused at boot, the immutability guard re-declared; write path with the HOT head update and no close-out; every read path (point, at-time, by-id, revision history, directory at time, AQL LATEST_VERSION/ALL_VERSIONS, exports, dump) on the new relations; the FK-cascade row-movement and RLS-on-partition proofs as tests; `stable_compatible` gate moved; CNF baseline green on gen-2 |
-| S2 (#3343) | feat(config): one pool and DSN per pseudonymisation domain | v4.3.1 | | `[storage.<domain>]` with `url`/`url_file` per domain defaulting to the shared DSN; five pools; `verify_domain_isolation` extended to refuse a shared role across DSNs and to refuse MISSING roles under the production deployment profile (today a missing role is skipped, so dev and compose enforce nothing); Helm `database.<domain>.*`; compose unchanged by default; `config check` reports the layout; book pages |
+| S1 (#3342) | feat(storage): the clinical schema rewritten: append-only `version`, `vo_head`, tier-partitioned `version`/`node`/`vo_attestation`, `name_code`/`name_terminology` | v4.3.1 | D1 | the `clinical` set as natural files from a DDL template (§Migration set layout), the `ehr` set deleted, an old database refused at boot, the immutability guard re-declared; write path with the HOT head update and no close-out; every read path (point, at-time, by-id, revision history, directory at time, AQL LATEST_VERSION/ALL_VERSIONS, exports, dump) on the new relations; the FK-cascade row-movement proof as a test; no tenant column, policy or GUC in any set (#3378); `stable_compatible` gate moved; CNF baseline green on gen-2 |
+| S2 (#3343) | feat(config): one pool and DSN per pseudonymisation domain | v4.3.1 | | `[storage.<domain>]` with `url`/`url_file` per domain defaulting to the shared DSN; four pools; `verify_domain_isolation` extended to refuse a shared role across DSNs and to refuse MISSING roles under the production deployment profile (today a missing role is skipped, so dev and compose enforce nothing); Helm `database.<domain>.*`; compose unchanged by default; `config check` reports the layout; book pages |
 | S3 (#3344) | feat(storage): the party domain on the generation-2 template, `party_relationship_target`, cold as a partition | v4.3.1 | S1 | `party/0001_baseline.sql` generated from the same template as clinical (a test proves the two differ only in the CHECK that refuses the other's kinds); `reverse_relationships` served from the index table; `cold_demographic` retired |
 | S4 (#3345) | feat(linkage): `subject_ehr` absorbs `ehr_index` and the subject-proxy subject columns; `erase_ehr` | v4.3.1 | S2 | the SM `I_EHR_INDEX` calls served from linkage through the linkage pool; no subject identifier column remains in `clinical` other than the guarded `ehr.subject_id`; `linkage.erase_ehr` executable by the linkage role without table `DELETE`; the boot gate covers the new function |
 | S5 (#3346) | feat(storage): retention register, anchors, holds and the `retention_due` view; the audit retention ceiling | v4.3.1 | S1 | the three relations; the view; `retention_ceiling_days` per jurisdiction refused below the floor; the book's retention page renders the register; DSG Art. 25(2)(d) answer path |
-| S6 (#3347) | feat(admin): physical erasure reaches linkage, the outbox and the research domain; the blob GC becomes an anti-join over `blob_ref` | v4.3.1 | S1, S4 | `delete_ehr` order as the plan states; tombstone applied by the projector; `blob_ref` maintained at commit, GC no longer scans `node`; test asserts zero rows per relation per domain; the compliance page's Art. 17 row rewritten and the audit-retention exception stated |
+| S6 (#3347) | feat(admin): physical erasure reaches linkage and tombstones the outbox for every consumer; the blob GC becomes an anti-join over `blob_ref` | v4.3.1 | S1, S4 | `delete_ehr` order as the plan states; the tombstone published on the outbox; `blob_ref` maintained at commit, GC no longer scans `node`; test asserts zero rows per relation per domain; the compliance page's Art. 17 row rewritten and the audit-retention exception stated |
 | S10 (#3351) | feat(ext): the helper functions without subtransactions: `LANGUAGE sql`, regex-validated input, no `EXCEPTION` block; the emitter spells every column through `db/iden.rs` | v4.3.1 | | `EXPLAIN (ANALYZE)` shows the functions inlined; a test proves identical results over the parser corpus; no `plpgsql` function remains in `ext`; `citem_num` and the unused `Iden` definitions gone |
 | D2 (#3341) | fix(tenancy): `ext.current_tenant_id()` resolves an unset GUC to the default tenant instead of refusing | v4.3.0 | | under a multi-tenant posture an unset `ferroehr.tenant_id` raises; single-tenant deployments keep the default; a test covers both |
+| S11 (#3378) | feat(storage): the instance is single-tenant: the rewrite carries no in-database multi-tenancy, and the tenancy surface leaves the server, the chart and the book | v4.3.1 | S1 | a catalog test asserts no `tenant_id` column and no row policy in any domain; `[tenancy]`, the middleware, the routes, the chart and compose keys, the book pages and the tenancy tests are gone; `CHANGELOG.md` `### Removed` says multi-tenancy is achieved by running separate instances |
 | S9 (#3350) | perf(storage): the after-rewrite comparison against the pre-rewrite baseline; the alternatives decided (the measurement program: #3367, #3368, #3369, #3370, §The measurement program) | v4.3.1 | S1, #3367, #3368, #3332 | every hypothesis in the performance model has a committed measurement record; each of the three alternatives has a decision with the record cited |
 
 Existing issues re-pointed rather than duplicated:
@@ -813,9 +881,13 @@ Existing issues re-pointed rather than duplicated:
 - **#3324** (Art. 18 restriction finer than the EHR) stays a child of the GDPR
   audit #3322 and gains `blocked-by S1`; its contract is amended to the
   `restriction` register and the `vo_head.restricted_at` mark of this plan.
-- **#3331** (the secondary-use domain) is renamed to the `research` domain,
-  keeps its per-permit pseudonym design (re-affirmed against EDPB §116-120),
-  and gains `blocked-by S1, S2`; its children #3332/#3333 follow it.
+- **#3331** (the secondary-use domain) and **#3333** (its book page) are
+  closed as superseded: secondary use leaves through FerroBRIDGE to the OMOP
+  CDM (§Secondary use), and the CDR side is #3379 in v4.3.2. **#3332**
+  (synthgen) is re-parented under #3337 as the benchmark and seeding corpus.
+  **#3160** (their parent) is closed as superseded by #3379. **#3325** (the
+  research objection) stays in v4.3.1 as a mark the restriction register
+  carries and AQL honours, `blocked-by S1`.
 - **#3330** (outbox pruning ignores cursor readers) is unchanged and stays in
   v4.3.0; the plan depends on its `min(cursor)` floor.
 - **#3323** (EHR_ACCESS default) is untouched by storage; it stays with #3322.
