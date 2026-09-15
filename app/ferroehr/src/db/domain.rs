@@ -126,6 +126,18 @@ impl Domain {
         }
     }
 
+    /// Whether this domain is a pseudonymisation domain — one of the three the
+    /// separation is about.
+    ///
+    /// The audit trail is not: openEHR rules the access log out of the EHR
+    /// content altogether (BASE `architecture_overview/master07-security.adoc`
+    /// §Access logging) and the clinical runtime role writes it, so it shares
+    /// that credential by design rather than by omission.
+    #[must_use]
+    pub const fn is_pseudonymisation_domain(self) -> bool {
+        !self.barred_from().is_empty()
+    }
+
     /// The domain whose objects this domain's migration set names, and which
     /// must therefore be prepared in the same database.
     ///

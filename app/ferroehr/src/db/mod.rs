@@ -788,8 +788,12 @@ async fn preparation_plan(
     close_quietly(conn).await;
     let migration_database = migration_database?;
 
-    let mut plan: Vec<PreparationGroup> = Vec::new();
+    // Keyed on the DATABASE, not on the DSN: two domains relocated to one
+    // database through two credentials are one preparation, and their sets must
+    // see each other's objects.
+    let mut plan: Vec<(String, String, Vec<Domain>)> = Vec::new();
     for group in groups {
+        let mut database = migration_database.clone();
         let mut dsn = migration_dsn.clone();
         if group
             .domains
@@ -797,24 +801,29 @@ async fn preparation_plan(
             .is_some_and(|domain| layout.placement(*domain).separated)
         {
             let mut conn = migration_connection(group.dsn()).await?;
-            let database = database_identity(&mut conn).await;
+            let reached = database_identity(&mut conn).await;
             close_quietly(conn).await;
-            if database? != migration_database {
+            let reached = reached?;
+            if reached != migration_database {
+                database = reached;
                 dsn = group.dsn().to_owned();
             }
         }
-        if let Some(existing) = plan.iter_mut().find(|entry| entry.dsn == dsn) {
-            existing.domains.extend(group.domains);
+        let key = format!("{}/{}", database.0, database.1);
+        if let Some((_, _, domains)) = plan.iter_mut().find(|(seen, _, _)| *seen == key) {
+            domains.extend(group.domains);
         } else {
-            plan.push(PreparationGroup {
-                dsn,
-                domains: group.domains,
-            });
+            plan.push((key, dsn, group.domains));
         }
     }
-    for entry in &mut plan {
-        entry.domains.sort_unstable();
-    }
+    let mut plan: Vec<PreparationGroup> = plan
+        .into_iter()
+        .map(|(_, dsn, mut domains)| {
+            domains.sort_unstable();
+            PreparationGroup { dsn, domains }
+        })
+        .collect();
+    plan.sort_by(|a, b| a.domains.cmp(&b.domains));
     check_preparation_dependencies(&plan)?;
     Ok(plan)
 }
@@ -870,7 +879,7 @@ pub async fn apply_schema(settings: &DbConfig, storage: &StorageConfig) -> Resul
 
 /// Verifies the recorded migration state on every database the domains reach.
 ///
-/// [`verify_recorded_state`] over a connection per distinct DSN, for the same
+/// The bookkeeping comparison over a connection per distinct DSN, for the same
 /// reason [`apply_schema`] takes one: the check reads each resident set's
 /// `_sqlx_migrations` table, which no single-domain runtime credential can do.
 /// Issues no DDL, so the credentials it names need read access and nothing
@@ -1138,12 +1147,19 @@ async fn verify_role_barriers(pool: &PgPool, profile: DeploymentProfile) -> Resu
 /// DSN may take its user from the environment, a service file or a `.pgpass`
 /// entry, and what matters is the role the session actually holds
 /// (<https://www.postgresql.org/docs/18/functions-info.html>).
+///
+/// Only the three pseudonymisation domains are compared. The audit repository
+/// is written by the clinical credential by design, so a deployment that moves
+/// it to a database of its own and keeps that role there has made no mistake.
 async fn verify_configured_separation(
     pools: &DomainPools,
     layout: &DomainLayout,
 ) -> Result<(), DbError> {
     let mut roles: Vec<(Domain, String)> = Vec::new();
     for domain in Domain::ALL {
+        if !domain.is_pseudonymisation_domain() {
+            continue;
+        }
         let role: String = sqlx::query_scalar("SELECT current_user::text")
             .fetch_one(pools.get(domain))
             .await?;
