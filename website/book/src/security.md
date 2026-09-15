@@ -611,7 +611,7 @@ database.
 An external identity (a national identifier, say) is matched against the
 sealed `demographic.national_identifier` map by keyed digest, which returns a
 party without decrypting anything. That party is then looked up in
-`linkage.party_ehr` on a second connection, with a second search path and,
+`linkage.subject_ehr` on a second connection, with a second search path and,
 when `[storage.linkage] url` is set, a second database role. **No statement
 performs the join, because no credential could**: the linkage role holds no
 grant in `demographic` and the demographic role holds none in `linkage`, both

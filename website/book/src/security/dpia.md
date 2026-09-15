@@ -60,7 +60,7 @@ three parts. Each schema is a separate category of data with its own role.
 |---|---|---|
 | `clinical` | Clinical content: compositions, EHR status, folders, contributions, attestations, item tags. The subject appears as `EHR_STATUS.subject.external_ref`, which is an opaque pseudonym once `[privacy] subject_namespaces` is declared | Art. 9 special-category health data |
 | `party` | Parties: persons, organisations, groups, agents, roles and their relationships, with names, addresses and contacts as the operational template defines them. Protected national identifiers live in `national_identifier`, sealed under a per-domain key with a keyed digest beside them | Art. 4(1) personal data; a national identifier is Art. 87 national identification number |
-| `linkage` | `party_ehr`: a party id, an EHR id and a validity period. No attribute of any kind | The additional information of Art. 4(5): identifying only when joined to one of the other two |
+| `linkage` | `subject_ehr`, the EHR id / subject cross-reference: a party id, an EHR id, the opaque subject identifier the clinical side carries, the Service Model's association metadata and a validity period. No attribute of any kind | The additional information of Art. 4(5): identifying only when joined to one of the other two |
 | `audit` | One record per access: who, from which organisation, under which roles, what they read or wrote, the declared purpose, the outcome and the time | Art. 4(1) personal data about both the subject and the accessing person |
 | `ext` | No personal data. Helper functions, the runtime roles and the deployment posture | — |
 
@@ -85,7 +85,7 @@ flowchart LR
     subgraph dom ["The pseudonymisation domain"]
         clin[("clinical<br/>clinical record,<br/>keyed by an opaque pseudonym")]
         demo[("party<br/>the person, and sealed<br/>national identifiers")]
-        link[("linkage<br/>which party is the subject<br/>of which EHR")]
+        link[("linkage<br/>which party and which subject<br/>identifier name which EHR")]
     end
     aud[("audit<br/>who reached what, when")]
     subject -.-> demo
@@ -116,7 +116,7 @@ the controller's judgement rather than a default.
 |---|---|---|
 | Clinical content and its versions | Kept until an administrator deletes it. Archiving moves a record to the cold tier without expiring it | the admin API |
 | Demographic parties | The same | the admin API |
-| Linkage mappings | Never deleted. A merge or a split closes the period and opens a successor, and the linkage role holds no `DELETE` | — |
+| Linkage mappings | Never deleted while the EHR exists: a merge, a split or an index correction closes the period and opens a successor, and the linkage role holds no `DELETE`. Deleting an EHR removes the rows naming it, through a `SECURITY DEFINER` function the role may execute but whose reach is one EHR id, so no additional information outlives the record it was additional to (Art. 17(1)) | the admin API |
 | Access records | Kept forever by default; reaped hourly when a retention is set | `[audit.store] retention_days` |
 | Change-event envelopes | Published rows pruned after seven days by default | `[events] retention_days` |
 

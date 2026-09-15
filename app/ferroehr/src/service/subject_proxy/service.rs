@@ -106,9 +106,9 @@ impl FerroEhrService {
         data_set_id: &str,
     ) -> Result<Option<Vec<SubjectVariable>>, SmError> {
         let vars: Option<Value> = sqlx::query_scalar(
-            "SELECT variables FROM sp_data_set WHERE subject_id = $1 AND id = $2",
+            "SELECT variables FROM sp_data_set WHERE subject_key = $1 AND id = $2",
         )
-        .bind(subject_id)
+        .bind(store::subject_key(subject_id))
         .bind(data_set_id)
         .fetch_optional(&self.pool)
         .await
@@ -164,8 +164,8 @@ impl FerroEhrService {
             )));
         }
         let category = subject_category.unwrap_or_else(|| "individual".to_owned());
-        sqlx::query("INSERT INTO sp_subject (subject_id, subject_category) VALUES ($1, $2)")
-            .bind(&subject_id)
+        sqlx::query("INSERT INTO sp_subject (subject_key, subject_category) VALUES ($1, $2)")
+            .bind(store::subject_key(&subject_id))
             .bind(&category)
             .execute(&self.pool)
             .await
@@ -252,16 +252,16 @@ impl FerroEhrService {
             .map_err(|e| internal_fault("serialize the data-set variables", &e))?;
 
         sqlx::query(
-            "INSERT INTO sp_data_set (subject_id, id, creating_app_id, using_app_ids, variables) \
+            "INSERT INTO sp_data_set (subject_key, id, creating_app_id, using_app_ids, variables) \
              VALUES ($1, $2, $3, $4, $5) \
-             ON CONFLICT (subject_id, id) DO UPDATE SET \
+             ON CONFLICT (subject_key, id) DO UPDATE SET \
                creating_app_id = EXCLUDED.creating_app_id, \
                variables = EXCLUDED.variables, \
                using_app_ids = ( \
                  SELECT COALESCE(jsonb_agg(DISTINCT e), '[]'::jsonb) \
                  FROM jsonb_array_elements(sp_data_set.using_app_ids || EXCLUDED.using_app_ids) AS e)",
         )
-        .bind(subject_id)
+        .bind(store::subject_key(subject_id))
         .bind(&definition.id)
         .bind(definition.creating_app_id.as_deref())
         .bind(&using_json)
@@ -298,17 +298,17 @@ impl FerroEhrService {
         }
         sqlx::query(
             "UPDATE sp_data_set SET using_app_ids = using_app_ids - $2 \
-             WHERE subject_id = $1 AND using_app_ids ? $2",
+             WHERE subject_key = $1 AND using_app_ids ? $2",
         )
-        .bind(&subject_id)
+        .bind(store::subject_key(&subject_id))
         .bind(&application_id)
         .execute(&self.pool)
         .await
         .map_err(db_err)?;
         sqlx::query(
-            "DELETE FROM sp_data_set WHERE subject_id = $1 AND using_app_ids = '[]'::jsonb",
+            "DELETE FROM sp_data_set WHERE subject_key = $1 AND using_app_ids = '[]'::jsonb",
         )
-        .bind(&subject_id)
+        .bind(store::subject_key(&subject_id))
         .execute(&self.pool)
         .await
         .map_err(db_err)?;
@@ -328,8 +328,8 @@ impl FerroEhrService {
                 "subject {subject_id:?} is not registered"
             )));
         }
-        sqlx::query("DELETE FROM sp_subject WHERE subject_id = $1")
-            .bind(&subject_id)
+        sqlx::query("DELETE FROM sp_subject WHERE subject_key = $1")
+            .bind(store::subject_key(&subject_id))
             .execute(&self.pool)
             .await
             .map_err(db_err)?;
@@ -470,9 +470,9 @@ impl FerroEhrService {
     pub async fn get_variable_defs(&self, subject_id: String) -> Result<Vec<String>, SmError> {
         let rows: Vec<(String, String)> = sqlx::query_as(
             "SELECT canonical_name, type_name FROM sp_variable \
-             WHERE subject_id = $1 ORDER BY canonical_name",
+             WHERE subject_key = $1 ORDER BY canonical_name",
         )
-        .bind(&subject_id)
+        .bind(store::subject_key(&subject_id))
         .fetch_all(&self.pool)
         .await
         .map_err(db_err)?;

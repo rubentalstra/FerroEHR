@@ -8,14 +8,15 @@
 //! subjects recorded for one EHR. The SM defines no detection *operation* —
 //! this read is our own design (advisory, never a hard reject: the N:M states
 //! are legal-but-flagged per `resource_instance_type.adoc` `Duplicate`).
-
-use sqlx::Row;
+//!
+//! Both scans run on the linkage pool, over the associations in force.
 
 use crate::ids::EhrId;
 use crate::service::FerroEhrService;
 use crate::service::ehr_index::types::{EhrIndexEntry, SubjectRef};
+use crate::service::linkage::store;
 
-use super::{IndexError, row_to_entry};
+use super::IndexError;
 
 /// One detected index error state (master07 §Overview) — advisory only.
 ///
@@ -57,21 +58,10 @@ impl FerroEhrService {
         let mut conflicts = Vec::new();
 
         // Subjects associated with more than one EHR.
-        let subject_rows = sqlx::query(
-            "SELECT subject_id, subject_namespace FROM ehr_index \
-             GROUP BY subject_id, subject_namespace HAVING count(DISTINCT ehr_id) > 1 \
-             ORDER BY subject_id, subject_namespace",
-        )
-        .fetch_all(&self.pool)
-        .await?;
-        for row in &subject_rows {
-            let subject_id: String = row.try_get("subject_id")?;
-            let namespace: String = row.try_get("subject_namespace")?;
-            let subject = SubjectRef {
-                id: subject_id,
-                namespace,
-                r#type: "PERSON".to_owned(),
-            };
+        for row in &store::subjects_with_multiple_ehrs(&self.linkage_pool).await? {
+            let subject_id: String = sqlx::Row::try_get(row, "subject_id")?;
+            let namespace: String = sqlx::Row::try_get(row, "subject_namespace")?;
+            let subject = SubjectRef::person(subject_id, namespace);
             let entries = self.index_subject_ehrs(&subject).await?;
             // Preserve the stored subject type (all associations share the key).
             let subject = entries.first().map_or(subject, |e| e.subject.clone());
@@ -79,26 +69,8 @@ impl FerroEhrService {
         }
 
         // EHRs associated with more than one subject.
-        let ehr_rows = sqlx::query(
-            "SELECT ehr_id FROM ehr_index \
-             GROUP BY ehr_id HAVING count(*) > 1 ORDER BY ehr_id",
-        )
-        .fetch_all(&self.pool)
-        .await?;
-        for row in &ehr_rows {
-            let ehr_id: EhrId = row.try_get("ehr_id")?;
-            let rows = sqlx::query(
-                "SELECT ehr_id, subject_id, subject_namespace, subject_type, instance_type, \
-                 start_valid_time, end_valid_time, notes, location FROM ehr_index \
-                 WHERE ehr_id = $1 ORDER BY subject_id, subject_namespace",
-            )
-            .bind(ehr_id)
-            .fetch_all(&self.pool)
-            .await?;
-            let entries = rows
-                .iter()
-                .map(row_to_entry)
-                .collect::<Result<Vec<_>, _>>()?;
+        for ehr_id in store::ehrs_with_multiple_subjects(&self.linkage_pool).await? {
+            let entries = self.index_ehr_subjects(ehr_id).await?;
             conflicts.push(IndexConflict::EhrWithMultipleSubjects { ehr_id, entries });
         }
 

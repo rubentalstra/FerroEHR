@@ -1,7 +1,7 @@
 -- SPDX-FileCopyrightText: Ruben Talstra
 -- SPDX-License-Identifier: BUSL-1.1
 
--- clinical: the EHR root, the subject pseudonym guard, and the EHR index.
+-- clinical: the EHR root and the subject pseudonym guard.
 --
 -- RM ehr master04-ehr_package.adoc §Root EHR Object: "The root EHR object
 -- records three pieces of information that are immutable after creation: the
@@ -96,32 +96,3 @@ CREATE TRIGGER ehr_subject_pseudonym_guard
     FOR EACH ROW EXECUTE FUNCTION subject_pseudonym_guard();
 
 REVOKE ALL ON FUNCTION subject_pseudonym_guard() FROM PUBLIC;
-
--- ── ehr_index ────────────────────────────────────────────────────────────────
--- The EHR id / demographic subject cross-reference (SM openehr_platform
--- master03 §EHR Index, I_EHR_INDEX): the N:M association between a subject and
--- the EHRs that hold their record.
--- TODO(#3345): move this relation into the linkage domain, where a
--- cross-reference belongs, once the per-domain pools land.
-CREATE TABLE ehr_index (
-    ehr_id            uuid NOT NULL,
-    subject_id        text NOT NULL,
-    subject_namespace text NOT NULL,
-    -- The subject's OBJECT_REF.type.
-    subject_type      text NOT NULL DEFAULT 'PERSON',
-    -- Primary (authoritative), Duplicate, or Supplementary.
-    instance_type     text NOT NULL DEFAULT 'Primary',
-    start_valid_time  timestamptz,
-    end_valid_time    timestamptz,
-    notes             text,
-    -- The LOCATION_DESC of the holding system, as canonical JSON.
-    location          jsonb,
-    created_at        timestamptz NOT NULL DEFAULT now(),
-    CONSTRAINT pk_ehr_index PRIMARY KEY (ehr_id, subject_id, subject_namespace),
-    CONSTRAINT ck_ehr_index_instance_type CHECK
-        (instance_type IN ('Primary', 'Duplicate', 'Supplementary')),
-    CONSTRAINT fk_ehr_index_ehr FOREIGN KEY (ehr_id) REFERENCES ehr (id) ON DELETE CASCADE
-);
-CREATE INDEX idx_ehr_index_subject ON ehr_index (subject_id, subject_namespace);
-
-COMMENT ON TABLE ehr_index IS 'SM EHR Index (I_EHR_INDEX, SM openehr_platform master03): the subject-to-EHR cross-reference. Our own storage design.';

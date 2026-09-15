@@ -479,13 +479,13 @@ async fn the_boot_self_check_refuses_a_cross_domain_grant() {
         // clinical relation.
         (
             "ferroehr_clinical",
-            "linkage.party_ehr",
+            "linkage.subject_ehr",
             "GRANT SELECT ON",
             "REVOKE SELECT ON",
         ),
         (
             "ferroehr_party",
-            "linkage.party_ehr",
+            "linkage.subject_ehr",
             "GRANT SELECT ON",
             "REVOKE SELECT ON",
         ),
@@ -936,14 +936,14 @@ async fn one_party_holds_one_open_mapping_at_a_time() {
     let pool = db.pool();
     let party = Uuid::now_v7();
 
-    sqlx::query("INSERT INTO linkage.party_ehr (party_id, ehr_id) VALUES ($1, $2)")
+    sqlx::query("INSERT INTO linkage.subject_ehr (party_id, ehr_id) VALUES ($1, $2)")
         .bind(party)
         .bind(Uuid::now_v7())
         .execute(&pool)
         .await
         .expect("the first mapping is accepted");
 
-    let refused = sqlx::query("INSERT INTO linkage.party_ehr (party_id, ehr_id) VALUES ($1, $2)")
+    let refused = sqlx::query("INSERT INTO linkage.subject_ehr (party_id, ehr_id) VALUES ($1, $2)")
         .bind(party)
         .bind(Uuid::now_v7())
         .execute(&pool)
@@ -962,7 +962,7 @@ async fn one_party_holds_one_open_mapping_at_a_time() {
     // Close the first mapping, the way a merge or a split does, and the next
     // one is accepted: the periods meet at an instant and do not overlap.
     sqlx::query(
-        "UPDATE linkage.party_ehr SET sys_period = tstzrange(lower(sys_period), now(), '[)') \
+        "UPDATE linkage.subject_ehr SET sys_period = tstzrange(lower(sys_period), now(), '[)') \
          WHERE party_id = $1",
     )
     .bind(party)
@@ -970,7 +970,7 @@ async fn one_party_holds_one_open_mapping_at_a_time() {
     .await
     .expect("close the mapping");
 
-    sqlx::query("INSERT INTO linkage.party_ehr (party_id, ehr_id) VALUES ($1, $2)")
+    sqlx::query("INSERT INTO linkage.subject_ehr (party_id, ehr_id) VALUES ($1, $2)")
         .bind(party)
         .bind(Uuid::now_v7())
         .execute(&pool)
@@ -978,7 +978,7 @@ async fn one_party_holds_one_open_mapping_at_a_time() {
         .expect("a successor mapping is accepted once the previous one is closed");
 
     let history: i64 =
-        sqlx::query_scalar("SELECT count(*) FROM linkage.party_ehr WHERE party_id = $1")
+        sqlx::query_scalar("SELECT count(*) FROM linkage.subject_ehr WHERE party_id = $1")
             .bind(party)
             .fetch_one(&pool)
             .await
@@ -1074,7 +1074,7 @@ async fn a_sealed_identifier_resolves_on_the_separated_demographic_credential() 
 async fn mapping_counts(pool: &PgPool, party: Uuid) -> (i64, i64) {
     sqlx::query_as(
         "SELECT count(*) FILTER (WHERE upper_inf(sys_period)), count(*) \
-         FROM linkage.party_ehr WHERE party_id = $1",
+         FROM linkage.subject_ehr WHERE party_id = $1",
     )
     .bind(party)
     .fetch_one(pool)
@@ -1166,7 +1166,7 @@ async fn a_merge_and_a_split_keep_their_history_and_leave_one_open_mapping() {
     // The history itself: every closed row still names its EHR and carries a
     // bounded period, which is what makes "who was the subject then" answerable.
     let closed: Vec<(Uuid, bool)> = sqlx::query_as(
-        "SELECT ehr_id, upper(sys_period) IS NOT NULL FROM linkage.party_ehr \
+        "SELECT ehr_id, upper(sys_period) IS NOT NULL FROM linkage.subject_ehr \
          WHERE party_id = $1 AND NOT upper_inf(sys_period) ORDER BY lower(sys_period)",
     )
     .bind(alice.0)
@@ -1181,8 +1181,9 @@ async fn a_merge_and_a_split_keep_their_history_and_leave_one_open_mapping() {
 
     // Nothing anywhere holds two mappings in force at one instant.
     let doubly_open: i64 = sqlx::query_scalar(
-        "SELECT count(*) FROM (SELECT party_id FROM linkage.party_ehr \
-         WHERE upper_inf(sys_period) GROUP BY party_id HAVING count(*) > 1) offenders",
+        "SELECT count(*) FROM (SELECT party_id FROM linkage.subject_ehr \
+         WHERE party_id IS NOT NULL AND upper_inf(sys_period) \
+         GROUP BY party_id HAVING count(*) > 1) offenders",
     )
     .fetch_one(&pool)
     .await

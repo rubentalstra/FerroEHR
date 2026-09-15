@@ -156,11 +156,14 @@ fresh** (the diagrammed deep-dive is the book's Storage architecture page,
   `search_path`, so one set of storage code serves both; a `CHECK` on each side
   refuses the other's rows. GDPR Art. 4(5) and Art. 32(1)(a); no openEHR spec
   governs storage layout or database roles.
-- **`linkage`** — the third pseudonymisation domain: `party_ehr`, the map from a
-  demographic party to the EHR whose subject it is, temporal under a PG18
-  `PRIMARY KEY … WITHOUT OVERLAPS` so a merge or split closes a row rather than
-  deleting it. Identifiers only, no attributes. The service reaches it through
-  its own pool, never through the clinical or party one.
+- **`linkage`** — the third pseudonymisation domain: `subject_ehr`, the EHR id /
+  demographic subject cross-reference (the SM's EHR Index, `I_EHR_INDEX`) —
+  which party and which subject identifier name which EHR, temporal under a
+  PG18 `UNIQUE … WITHOUT OVERLAPS` so a merge or split closes a row rather than
+  deleting it. Identifiers and the SM's own association metadata, no attributes;
+  `linkage.erase_ehr` is the `SECURITY DEFINER` function the admin delete calls
+  so erasure reaches the map without the role holding `DELETE`. The service
+  reaches it through its own pool, never through the clinical or party one.
 - **One pool and one DSN per storage domain.** `[storage.clinical]`,
   `[storage.party]`, `[storage.linkage]` and `[storage.audit]` each carry a
   `url`/`url_file`, defaulting to the shared `[db].url`, and
@@ -299,7 +302,7 @@ issues for triage.
 ## PostgreSQL 18
 
 We target **PG 18** (18.6+). In use: `uuidv7()` for database-minted ids,
-the temporal `PRIMARY KEY … WITHOUT OVERLAPS` on `linkage.party_ehr`, the
+the temporal `UNIQUE … WITHOUT OVERLAPS` on `linkage.subject_ehr`, the
 SQL/JSON path functions (`jsonb_path_query*`, PG 17), and the planner-side
 gains that need no code (skip scan, `OR` to `= ANY`, async I/O). Available
 and deliberately not used, with the reason for each: `RETURNING OLD/NEW`,
@@ -347,7 +350,7 @@ The service layer realizes the openEHR **SM Platform Service Model**
 | Validity checking | `I_VALIDITY_CHECKER` | `service::validity` | implemented |
 | System Log | `I_SYSTEM_LOG` (stub; "IHE ATNA-compliant") | `ferroehr::system_log` (dual DICOM PS3.15 + FHIR `AuditEvent`/BALP rendering; local Audit Record Repository in the `audit` schema, on by default; syslog + ITI-20 ATX:FHIR Feed forwarding sinks; the ITI-81 retrieval as the read side; ITI-19 mTLS via `[server.tls]`) | implemented |
 | Admin | `I_ADMIN_SERVICE` (+archive/dump-load) | `service::admin` | implemented |
-| EHR Index | `I_EHR_INDEX` | `service::ehr_index` | implemented |
+| EHR Index | `I_EHR_INDEX` | `service::ehr_index` over `linkage.subject_ehr` | implemented |
 | Terminology | `I_TERMINOLOGY_SERVICE` | `service::terminology` (in-process `openehr-term` bundle + N simultaneously-materialised FHIR R4B servers, selected per call by an explicit terminology→provider route map with a `default` fallback; optional OAuth2 client-credentials per server; commit-time ac-code constraint-binding resolution) | implemented |
 | Message | `I_MESSAGE_SERVICE`, `I_EHR_EXTRACT_SERVICE`, `I_TDD_SERVICE` | `service::message` | implemented |
 | Subject Proxy | `I_SUBJECT_PROXY_SERVICE`, `I_DATA_BINDING` | `service::subject_proxy` | implemented |

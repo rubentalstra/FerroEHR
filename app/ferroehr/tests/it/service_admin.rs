@@ -137,6 +137,66 @@ async fn admin_delete_cascades_and_leaves_other_ehr_untouched() {
     assert_eq!(after2, before2, "the other EHR must be untouched");
 }
 
+/// A physical EHR delete reaches the cross-reference: neither the party
+/// mapping nor the `EHR_INDEX` association naming that EHR survives it.
+///
+/// Both halves matter. A surviving row is the additional information of GDPR
+/// Art. 4(5) outliving the data it was additional to
+/// (<https://eur-lex.europa.eu/eli/reg/2016/679/oj>), and it would keep
+/// asserting whose record an erased EHR was, in force, forever — the linkage
+/// domain corrects forward everywhere else and would never close it. The role
+/// still holds no `DELETE`: the removal runs through `linkage.erase_ehr`.
+#[tokio::test]
+async fn admin_delete_reaches_the_cross_reference() {
+    let (_db, pool, svc) = repository().await;
+
+    let erased = seed_full_ehr(&svc).await;
+    let kept = seed_full_ehr(&svc).await;
+    let party = ferroehr::ids::VoId(Uuid::now_v7());
+    let other_party = ferroehr::ids::VoId(Uuid::now_v7());
+    svc.link(party, erased).await.expect("the mapping opens");
+    svc.link(other_party, kept)
+        .await
+        .expect("the other mapping opens");
+    svc.add_ehr_subject(
+        erased.to_string(),
+        ferroehr::service::ehr_index::types::SubjectRef::person("PID-ERASE", "mpi"),
+        None,
+        None,
+    )
+    .await
+    .expect("the index association is recorded");
+
+    let rows = |ehr: ferroehr::ids::EhrId| {
+        let pool = pool.clone();
+        async move {
+            sqlx::query_scalar::<_, i64>(
+                "SELECT count(*) FROM linkage.subject_ehr WHERE ehr_id = $1",
+            )
+            .bind(ehr.0)
+            .fetch_one(&pool)
+            .await
+            .expect("count the cross-reference rows")
+        }
+    };
+    assert_eq!(rows(erased).await, 2, "a mapping and an association");
+
+    svc.admin_ehr_delete(erased.to_string())
+        .await
+        .expect("admin delete");
+
+    assert_eq!(
+        rows(erased).await,
+        0,
+        "no cross-reference row may name an erased EHR, in force or historical"
+    );
+    assert_eq!(
+        rows(kept).await,
+        1,
+        "the other EHR's mapping is untouched: erase_ehr takes one EHR id"
+    );
+}
+
 #[tokio::test]
 async fn admin_delete_unknown_ehr_is_not_found() {
     let (_db, _pool, svc) = repository().await;

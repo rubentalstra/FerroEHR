@@ -23,8 +23,11 @@ history without re-querying the source.
 
 - **Subject:** the person (or other entity) the variables are about, registered
   by an external subject id, with a free-text category (default `individual`).
-  For openEHR-backed variables the subject id is resolved to an EHR: a literal
-  EHR id first, then a subject-id lookup.
+  The id you register is never stored: the server keeps an opaque key derived
+  from it, so the clinical database holds no subject identifier of its own. For
+  openEHR-backed variables the subject id is resolved to an EHR: a literal EHR
+  id first, then a lookup in the EHR id / subject cross-reference, which lives
+  in the linkage domain and is read through its own pool.
 - **Variable:** a named, typed fact about a subject: a `name` (optionally
   qualified by a `namespace`, giving a canonical `namespace::name` identity), a
   type, an optional `currency` (how fresh a served value must be), and either a

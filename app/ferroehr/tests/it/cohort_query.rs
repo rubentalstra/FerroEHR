@@ -600,7 +600,7 @@ fn the_two_statements_never_cross_the_boundary() {
             "party.",
             "demographic.",
             "linkage.",
-            "party_ehr",
+            "subject_ehr",
         ] {
             assert!(
                 !sql.contains(forbidden),
@@ -635,7 +635,7 @@ fn the_two_statements_never_cross_the_boundary() {
         "the EHR scope binds as an array: {}",
         prepared.sql
     );
-    for forbidden in ["city", "postcode", "party", "party_ehr", "ELEMENT"] {
+    for forbidden in ["city", "postcode", "party", "subject_ehr", "ELEMENT"] {
         assert!(
             !prepared.sql.contains(forbidden),
             "the clinical statement must not name `{forbidden}`: {}",

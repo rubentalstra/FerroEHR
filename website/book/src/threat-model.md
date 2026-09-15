@@ -42,7 +42,7 @@ What an attacker wants, in the order the loss hurts:
 |---|---|---|
 | **Clinical payload:** compositions, EHR status, folders | the `clinical` schema's `node` and `version` tables, archival partitions included | this is PHI; disclosure is the primary harm and it is not undoable |
 | **Demographic parties and their identifiers** | the `party` schema, archival partitions included, with protected national identifiers sealed in `national_identifier` | who the people are, held apart from what is recorded about them |
-| **The party-to-EHR map** | `linkage.party_ehr` | the additional information that re-attributes a pseudonymised record to a person; on its own it names neither |
+| **The EHR id / subject cross-reference** | `linkage.subject_ehr` | the additional information that re-attributes a pseudonymised record to a person; on its own it names neither |
 | **The audit trail** | the `audit` schema, plus any configured forwarding sink | it is the evidence that everything else happened; an attacker who can edit it can make an access disappear |
 | **Version history and its integrity** | `version`, `vo_head`, `contribution`, attestations | an openEHR record's value is that it is *append-only and attributable*; a silently rewritten prior version is worse than a deleted one |
 | **Signing keys** | the configured signing key material for commit attestation | forging an attestation forges provenance of clinical content |
@@ -373,7 +373,7 @@ of no other, so a privilege cannot arrive through a membership.
 | `ferroehr_clinical_reader` | `SELECT` on `clinical`; `USAGE` on `ext`; read the `audit` repository and verify the chain | the same two schemas |
 | `ferroehr_party` | `party`, archival partitions included, with `SELECT`, `INSERT`, `UPDATE` and `DELETE`, the sealed `national_identifier` rows included; `EXECUTE` on `party.resolve_national_identifier` | `clinical` and `linkage`, revoked explicitly and in both directions |
 | `ferroehr_party_reader` | `SELECT` on `party`. On `national_identifier` the table-level grant is revoked and re-granted column by column, so it reads `id`, `party_id`, `scheme` and `created_at` and never `lookup_digest`, `nonce` or `ciphertext` | `clinical` and `linkage` |
-| `ferroehr_linkage` | `linkage.party_ehr` with `SELECT`, `INSERT` and `UPDATE`; `USAGE` on `ext` | `clinical`, `party`, and `party.resolve_national_identifier` by its own revoke. It holds no `DELETE` anywhere, so it cannot remove a mapping either |
+| `ferroehr_linkage` | `linkage.subject_ehr` with `SELECT`, `INSERT` and `UPDATE`; `EXECUTE` on `linkage.erase_ehr`; `USAGE` on `ext` | `clinical`, `party`, and `party.resolve_national_identifier` by its own revoke. It holds no `DELETE` anywhere, so the only rows it can remove are the ones the definer function deletes for an erased EHR, one EHR id at a time |
 | The schema-preparation credential (`[db] migrate_url`, normally a member of `ferroehr_migrator`) | every schema: it issues the DDL of all five migration sets and reads all five `_sqlx_migrations` tables, and it owns the objects it created | nothing. The server opens it for that one boot step and closes it again, so no pool is held on it and no request is served through it |
 
 The `audit` schema is granted to the clinical pair (`ferroehr_clinical` records an
@@ -487,8 +487,9 @@ are configuration rather than arithmetic.
 
 ### The map that rejoins the two domains
 
-**Control.** `linkage.party_ehr` holds a party id, an EHR id and a
-validity period. No name, no address and no plaintext identifier, because a
+**Control.** `linkage.subject_ehr` holds a party id, an EHR id, the subject
+identifier the clinical side carries, the SM's own association metadata and a
+validity period. No name, no address and no plaintext attribute, because a
 row here is already the additional information that re-attributes a record.
 Its role is barred from both domains it joins and both of them from it. The
 one crossing, `resolve_ehr_for_identity`, runs in the application over two
@@ -499,7 +500,10 @@ matched, and that event deliberately does not name the EHR that came back.
 `link_as_subject` derives the subject pseudonym server-side and writes it onto
 `EHR_STATUS` itself, so no caller-supplied value becomes a subject reference
 on that path. A merge or a split closes a period rather than deleting a row,
-and the temporal primary key admits one mapping in force per party.
+and the temporal key admits one mapping in force per party. Erasure is the one
+exception, and the role still cannot delete: `linkage.erase_ehr` is a
+`SECURITY DEFINER` function that removes the rows naming one erased EHR, which
+the admin delete calls once the clinical delete has committed.
 
 **Residual risk.**
 

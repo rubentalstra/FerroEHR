@@ -447,7 +447,7 @@ YAML
 PROBE_DOMAINS=(
   "clinical|ferroehr_clinical ferroehr_clinical_reader|clinical|clinical version"
   "party|ferroehr_party ferroehr_party_reader|party|party version;party national_identifier"
-  "linkage|ferroehr_linkage|linkage|linkage party_ehr"
+  "linkage|ferroehr_linkage|linkage|linkage subject_ehr"
 )
 
 # Field <n> of a domain record.
@@ -803,7 +803,7 @@ probes_backup_restore() {
   # at a constraint. So a restore can satisfy it while the map came back
   # STRUCTURALLY wrong, and the linkage domain is where that actually happens:
   # a `--schema` dump carries no extension (PostgreSQL 18, pg_dump §Notes),
-  # party_ehr's temporal PRIMARY KEY … WITHOUT OVERLAPS is a GiST index over
+  # subject_ehr's temporal UNIQUE … WITHOUT OVERLAPS is a GiST index over
   # btree_gist operator classes, and pg_restore IGNORES a failed statement by
   # default. Measured 2026-09-11 on 18.6: without `--extension=btree_gist` the
   # table comes back with its rows and without the key that admits one open
@@ -813,10 +813,10 @@ probes_backup_restore() {
   local map_shape
   map_shape="$(dc exec -T ferroehr-postgres psql -qtAX -U postgres -d "$restored" -c \
     "SELECT coalesce((SELECT pg_get_constraintdef(oid) FROM pg_constraint
-                       WHERE conrelid = 'linkage.party_ehr'::regclass
-                         AND contype = 'p'), 'no primary key')" 2>&1)"
+                       WHERE conrelid = 'linkage.subject_ehr'::regclass
+                         AND contype = 'u'), 'no temporal key')" 2>&1)"
   assert_contains "$map_shape" "WITHOUT OVERLAPS" \
-    "a party_ehr restored without its temporal key admits two open mappings for one \
+    "a subject_ehr restored without its temporal key admits two open mappings for one \
 party, and nothing downstream would notice"
   probe_done
 
