@@ -369,19 +369,19 @@ of no other, so a privilege cannot arrive through a membership.
 
 | Credential | Reaches | Cannot reach |
 |---|---|---|
-| `ferroehr_ehr` | `clinical`, archival partitions included, with `SELECT`, `INSERT`, `UPDATE` and `DELETE`; the `ext.posture` stamp; `USAGE` on `ext`; in `audit`, record an event, stamp it forwarded, run the retention reaper and verify the chain | `party` and `linkage`, revoked explicitly and in both directions |
-| `ferroehr_ehr_reader` | `SELECT` on `clinical`; `USAGE` on `ext`; read the `audit` repository and verify the chain | the same two schemas |
-| `ferroehr_demographic` | `party`, archival partitions included, with `SELECT`, `INSERT`, `UPDATE` and `DELETE`, the sealed `national_identifier` rows included; `EXECUTE` on `party.resolve_national_identifier` | `clinical` and `linkage`, revoked explicitly and in both directions |
-| `ferroehr_demographic_reader` | `SELECT` on `party`. On `national_identifier` the table-level grant is revoked and re-granted column by column, so it reads `id`, `party_id`, `scheme` and `created_at` and never `lookup_digest`, `nonce` or `ciphertext` | `clinical` and `linkage` |
+| `ferroehr_clinical` | `clinical`, archival partitions included, with `SELECT`, `INSERT`, `UPDATE` and `DELETE`; the `ext.posture` stamp; `USAGE` on `ext`; in `audit`, record an event, stamp it forwarded, run the retention reaper and verify the chain | `party` and `linkage`, revoked explicitly and in both directions |
+| `ferroehr_clinical_reader` | `SELECT` on `clinical`; `USAGE` on `ext`; read the `audit` repository and verify the chain | the same two schemas |
+| `ferroehr_party` | `party`, archival partitions included, with `SELECT`, `INSERT`, `UPDATE` and `DELETE`, the sealed `national_identifier` rows included; `EXECUTE` on `party.resolve_national_identifier` | `clinical` and `linkage`, revoked explicitly and in both directions |
+| `ferroehr_party_reader` | `SELECT` on `party`. On `national_identifier` the table-level grant is revoked and re-granted column by column, so it reads `id`, `party_id`, `scheme` and `created_at` and never `lookup_digest`, `nonce` or `ciphertext` | `clinical` and `linkage` |
 | `ferroehr_linkage` | `linkage.party_ehr` with `SELECT`, `INSERT` and `UPDATE`; `USAGE` on `ext` | `clinical`, `party`, and `party.resolve_national_identifier` by its own revoke. It holds no `DELETE` anywhere, so it cannot remove a mapping either |
 | The schema-preparation credential (`[db] migrate_url`, normally a member of `ferroehr_migrator`) | every schema: it issues the DDL of all five migration sets and reads all five `_sqlx_migrations` tables, and it owns the objects it created | nothing. The server opens it for that one boot step and closes it again, so no pool is held on it and no request is served through it |
 | `ferroehr_app`, `ferroehr_reader` | the earlier single-domain pair, still carrying `clinical`, `ext` and the `audit` repository | `party` and `linkage`, where they hold no grant. That is an absence of privilege rather than a revoke, and the boot self-check does not cover these two roles |
 
-The `audit` schema is granted to the clinical pair (`ferroehr_ehr` records an
+The `audit` schema is granted to the clinical pair (`ferroehr_clinical` records an
 event, stamps it forwarded, runs the retention reaper and verifies the chain;
-`ferroehr_ehr_reader` reads it) exactly as it is to the single-domain pair.
+`ferroehr_clinical_reader` reads it) exactly as it is to the generic pair.
 The local Audit Record Repository is written on the clinical pool, so a login
-role that is a member of `ferroehr_ehr` alone writes its own access log. The
+role that is a member of `ferroehr_clinical` alone writes its own access log. The
 audit trail is not a pseudonymisation domain: the demographic and linkage
 roles hold no privilege there, and the trail carries record identifiers, never
 a subject's data.
@@ -398,7 +398,7 @@ the same check from outside the deployment.
 **Residual risk.**
 
 - **The grants are only a boundary once the credentials are separated.** With
-  `[db] demographic_url` and `[db] linkage_url` unset, all three pools
+  every `[storage.<domain>] url` unset, all four pools
   authenticate as `[db] url` and the split is a schema split. The
   `shared_credential` gap of `deployment_profile` is what names that.
 - **A login role can be a member of several domain roles.** The compose stacks
@@ -524,7 +524,7 @@ is an HMAC-SHA-256 digest under a separate subkey, which is what lets equality
 lookup work without the plaintext ever reaching the database. Both subkeys are
 derived per domain from one configured root key. The resolve
 function is `SECURITY DEFINER`, `PUBLIC` is revoked from it, and only
-`ferroehr_demographic` may execute it. Every resolution records an access
+`ferroehr_party` may execute it. Every resolution records an access
 event naming the scheme and whether it matched, never the value. The scheme
 registry is a closed set: an identifier whose scheme nobody registered cannot
 be stored as a protected one at all.

@@ -253,7 +253,7 @@ ticked by being present:
 
 | Gap token | What `production` requires |
 |---|---|
-| `shared_credential` | `[db] demographic_url` and `linkage_url` set, so the three domains connect on their own database roles |
+| `shared_credential` | `[storage.party] url` and `[storage.linkage] url` set, so the domains connect on their own database roles |
 | `shared_cluster` | The three pools reach three different PostgreSQL clusters, read from `pg_control_system().system_identifier` on each pool, never from the DSN text |
 | `open_subject_namespace` | `[privacy] subject_namespaces` declared, so an `EHR_STATUS` subject is an opaque pseudonym |
 | `audit_off` | `[audit]` enabled with a durable sink (the local store, syslog or the FHIR feed) |

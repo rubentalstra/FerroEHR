@@ -313,9 +313,9 @@ backup:
     # credential, which is revoked from the other domains and would dump only
     # part of the database.
     existingSecret: ferroehr-backup-clinical-dsn
-  demographic:
-    persistentVolumeClaim: ferroehr-backup-demographic
-    existingSecret: ferroehr-backup-demographic-dsn
+  party:
+    persistentVolumeClaim: ferroehr-backup-party
+    existingSecret: ferroehr-backup-party-dsn
   linkage:
     # The narrowest of the three: this dump is the map that re-identifies a
     # pseudonymised record, so it gets its own claim and its own role.

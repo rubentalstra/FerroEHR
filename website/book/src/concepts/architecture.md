@@ -118,8 +118,8 @@ flowchart LR
         lnksvc["service::linkage"]
     end
     audit["system_log store"]
-    pc[("clinical pool<br/>ferroehr_ehr → clinical")]
-    pd[("demographic pool<br/>ferroehr_demographic → party")]
+    pc[("clinical pool<br/>ferroehr_clinical → clinical")]
+    pd[("party pool<br/>ferroehr_party → party")]
     pl[("linkage pool<br/>ferroehr_linkage → linkage")]
 
     rest --> ehrsvc
@@ -138,8 +138,8 @@ and without decrypting anything, then asks the linkage pool for that party's
 EHR. The two hops are two connections in the application. No statement
 performs the join, and under separated credentials no role could issue one.
 
-Each pool takes its own DSN from `[db] url`, `[db] demographic_url` and
-`[db] linkage_url`. Leave the second and third unset and all three pools
+Each pool takes its own DSN from `[storage.<domain>] url`, defaulting to
+`[db] url`. Leave every domain unset and all four pools
 authenticate as the first, which keeps the schema separation and drops the
 credential separation. Preparing the schema spans every schema at once, so it
 runs on `[db] migrate_url` rather than on any of them. The local Audit Record

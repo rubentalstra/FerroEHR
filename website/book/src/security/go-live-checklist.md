@@ -19,8 +19,12 @@ and point each pool at its own DSN:
 ```toml
 [db]
 url             = "postgres://app_ehr:***@pg:5432/ferroehr"
-demographic_url = "postgres://app_demographic:***@pg:5432/ferroehr"
-linkage_url     = "postgres://app_linkage:***@pg:5432/ferroehr"
+
+[storage.party]
+url = "postgres://app_party:***@pg:5432/ferroehr"
+
+[storage.linkage]
+url = "postgres://app_linkage:***@pg:5432/ferroehr"
 migrate_url     = "postgres://ferroehr_migrator:***@pg:5432/ferroehr"
 ```
 
@@ -144,8 +148,8 @@ backup:
     existingSecret: ferroehr-backup-clinical
     persistentVolumeClaim: ferroehr-backup-clinical
   demographic:
-    existingSecret: ferroehr-backup-demographic
-    persistentVolumeClaim: ferroehr-backup-demographic
+    existingSecret: ferroehr-backup-party
+    persistentVolumeClaim: ferroehr-backup-party
   linkage:
     existingSecret: ferroehr-backup-linkage
     persistentVolumeClaim: ferroehr-backup-linkage

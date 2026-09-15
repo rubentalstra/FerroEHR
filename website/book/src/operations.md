@@ -248,8 +248,8 @@ Which posture you actually get depends on `db.migrate`, because the server's
 embedded migrations are DDL: a self-migrating deployment necessarily runs as a
 role that can execute DDL. The single-container quickstart takes that path: its
 DSN authenticates as a non-superuser role that owns the database and is a member
-of `ferroehr_migrator`, `ferroehr_app`, `ferroehr_ehr` and
-`ferroehr_demographic`.
+of `ferroehr_migrator`, `ferroehr_app`, `ferroehr_clinical` and
+`ferroehr_party`.
 
 ## Applying migrations
 
@@ -289,14 +289,14 @@ different credential from the runtime one, and rendering fails without it):
 ```shell
 FERROEHR__DB__URL='postgres://ferroehr_migrator:***@pg:5432/ferroehr' \
   ferroehr db migrate     # applies; exits when done
-FERROEHR__DB__URL='postgres://ferroehr_ehr:***@pg:5432/ferroehr' \
+FERROEHR__DB__URL='postgres://ferroehr_clinical:***@pg:5432/ferroehr' \
 FERROEHR__DB__MIGRATE_URL='postgres://ferroehr_migrator:***@pg:5432/ferroehr' \
   ferroehr db verify      # read-only check; exit 0 iff the schema is current
 ```
 
 `db verify` splits the same way the boot sequence does, and for the same
 reason: the schema state is read on `migrate_url`, while the pseudonymisation
-boundary is measured on the runtime DSN — asking the migrator credential
+boundary is measured on the runtime DSNs — asking the migrator credential
 whether it can reach every domain would answer yes by design and tell you
 nothing about the roles that serve requests.
 
@@ -392,7 +392,17 @@ holding the pseudonymised clinical record, the identities of its subjects and
 the map between them, and whoever can read that file can re-identify every
 record in it — which is the separation the schema split and the database roles
 exist to maintain. **Three domains, three dumps**, into targets with different
-access control:
+access control.
+
+**How many dumps, by DSN layout.** The number of dumps follows the domains, not
+the databases: co-located, the four domains share one database and are dumped
+`--schema` by `--schema` as below; relocated, each database is dumped for the
+domains that live in it. What never changes is that the clinical record, the
+identities and the map land in three different artefacts with three different
+audiences. `ferroehr config check` prints the resolved layout, which is the
+list a backup runbook is written from. The audit repository travels with the
+clinical dump while it shares that database (`--schema=audit` below) and needs a
+dump of its own once `[storage.audit]` names another one.
 
 ```bash
 # The clinical domain
@@ -401,9 +411,9 @@ pg_dump --dbname="$CLINICAL_DSN" --format=custom --no-owner \
   --file=/backups/clinical/clinical-$(date -u +%Y%m%dT%H%M%SZ).dump
 
 # The identities, into a different directory, owned by a different group
-pg_dump --dbname="$DEMOGRAPHIC_DSN" --format=custom --no-owner \
+pg_dump --dbname="$PARTY_DSN" --format=custom --no-owner \
   --schema=party \
-  --file=/backups/demographic/demographic-$(date -u +%Y%m%dT%H%M%SZ).dump
+  --file=/backups/party/party-$(date -u +%Y%m%dT%H%M%SZ).dump
 
 # The party-to-EHR map, into a third directory with the narrowest audience
 pg_dump --dbname="$LINKAGE_DSN" --format=custom --no-owner \
@@ -426,20 +436,20 @@ and it is the one that matters most. `linkage.party_ehr` says which party is
 the subject of which EHR: it is the additional information that turns a
 pseudonymised record back into a person (GDPR Art. 4(5)), so a file carrying it
 beside either side of that map rebuilds the join the split exists to withhold.
-Folding it into the demographic dump would put the identities and the map in
-one holder's hands — the artefact this whole section is written to prevent.
+Folding it into the party dump would put the identities and the map in one
+holder's hands — the artefact this whole section is written to prevent.
 
 All three examples ship. In Compose they are the opt-in `backup` profile:
 
 ```bash
 docker compose --profile backup run --rm ferroehr-backup-clinical
-docker compose --profile backup run --rm ferroehr-backup-demographic
+docker compose --profile backup run --rm ferroehr-backup-party
 docker compose --profile backup run --rm ferroehr-backup-linkage
 ```
 
-Set `FERROEHR_BACKUP_CLINICAL_DIR`, `FERROEHR_BACKUP_DEMOGRAPHIC_DIR` and
+Set `FERROEHR_BACKUP_CLINICAL_DIR`, `FERROEHR_BACKUP_PARTY_DIR` and
 `FERROEHR_BACKUP_LINKAGE_DIR` to the three targets; they default to
-`./backups/clinical`, `./backups/demographic` and `./backups/linkage`.
+`./backups/clinical`, `./backups/party` and `./backups/linkage`.
 Run it as yourself — `FERROEHR_BACKUP_USER="$(id -u):$(id -g)"` — and the dump
 lands owned by you. Left unset, the job runs as root inside the container and
 keeps one capability, `DAC_OVERRIDE`, because that is what writing a directory

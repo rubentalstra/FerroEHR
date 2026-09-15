@@ -40,14 +40,21 @@ module.**
   RENDERED FROM ONE DDL TEMPLATE (`migrations/templates/*.sql.in` +
   `storage::ddl_template`, whose tests regenerate the committed files and
   refuse any drift), and the ONLY thing that selects a domain is the pool's
-  `search_path` (`db::connect_demographic`,
+  `search_path` (`db::connect_domain`,
   `FerroEhrService::demographic_pool`). Never schema-qualify a domain relation
   in SQL; `service::demographic/**` and the party-scoped `service::admin` paths
   take `demographic_pool`, everything else takes `pool`. A third domain,
   `linkage`, holds the party-to-EHR map under its own `ferroehr_linkage` role.
-  `db::verify_domain_isolation` is the boot gate over every runtime role. The
-  runtime role NAMES still read `ferroehr_ehr`/`ferroehr_demographic`; #3343
-  renames them with the per-domain DSNs.
+  `db::verify_domain_isolation` is the boot gate over every runtime role
+  (`ferroehr_clinical`/`_reader`, `ferroehr_party`/`_reader`,
+  `ferroehr_linkage`).
+- **One pool and one DSN per domain** (`db/domain.rs`): `[storage.<domain>]`
+  carries `url`/`url_file` for `clinical`, `party`, `linkage` and `audit`, each
+  defaulting to `[db].url`, and `db::connect_domains` opens the four
+  (`db::DomainPools`). Preparation is per DATABASE — the `ext` set by whichever
+  domain reaches it first, then each resident domain's own set. No statement
+  ever names two domains' relations; `tests/it/one_schema_per_statement.rs`
+  refuses one that does.
 - **AQL engine** (`src/aql/`): typed IR over the BMM-generated RM model, lowered
   via `sea-query`; every unsupported construct is a typed reject, never a silent
   wrong answer. Rules: `.claude/rules/aql-engine.md`.

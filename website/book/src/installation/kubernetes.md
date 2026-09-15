@@ -293,9 +293,11 @@ more goes with them, because no runtime credential can prepare the schema:
 
 ```yaml
 database:
-  existingSecret: ferroehr-db                        # postgres://ferroehr_ehr:…
-  demographicExistingSecret: ferroehr-db-demographic # postgres://ferroehr_demographic:…
-  linkageExistingSecret: ferroehr-db-linkage         # postgres://ferroehr_linkage:…
+  existingSecret: ferroehr-db             # postgres://ferroehr_clinical:…
+  party:
+    existingSecret: ferroehr-db-party     # postgres://ferroehr_party:…
+  linkage:
+    existingSecret: ferroehr-db-linkage   # postgres://ferroehr_linkage:…
   migrateExistingSecret: ferroehr-db-migrator        # postgres://ferroehr_migrator:…
 ```
 
@@ -312,7 +314,7 @@ it is required as soon as `database.existingSecret` is anything narrower than a
 credential reaching every schema. Preparation spans them all at once: the DDL
 of all five migration sets under `config.db.migrate: apply`, all five
 `_sqlx_migrations` bookkeeping tables under `verify`. So **`verify` is not the
-exception**, and this is not only about the domain roles. `ferroehr_ehr` holds
+exception**, and this is not only about the domain roles. `ferroehr_clinical` holds
 one pseudonymisation domain, `ferroehr_app` holds the clinical schemas, and
 neither can read the `demographic` or `linkage` bookkeeping at all; without
 this value the pod is refused on the first set it cannot read and does not
@@ -840,10 +842,10 @@ ignored. Clear the digest to deploy by tag.
 ### Per-domain backups (three CronJobs, off by default)
 
 `backup.enabled` renders one CronJob per pseudonymisation domain:
-`backup.clinical.schedule` dumps the clinical schemas, `backup.demographic.schedule`
+`backup.clinical.schedule` dumps the clinical schemas, `backup.party.schedule`
 dumps the identities, `backup.linkage.schedule` dumps the party-to-EHR map, and
 each writes to its own existing claim (`backup.clinical.persistentVolumeClaim`,
-`backup.demographic.persistentVolumeClaim`,
+`backup.party.persistentVolumeClaim`,
 `backup.linkage.persistentVolumeClaim`).
 The image is `backup.image.repository`, which carries `pg_dump`.
 
@@ -854,7 +856,7 @@ clinical record, the identities, or the map that joins them — is the state
 per-domain backups exist to prevent.
 
 Each job needs **its own backup credential**, named by
-`backup.clinical.existingSecret`, `backup.demographic.existingSecret` and
+`backup.clinical.existingSecret`, `backup.party.existingSecret` and
 `backup.linkage.existingSecret`, and
 the render is refused without them. It cannot be the pool's credential: each
 domain's runtime role is revoked from the other domains, so a dump taken through

@@ -92,7 +92,7 @@ path live is FerroEHR's own design, and no openEHR spec governs it.
 
 Clinical content and demographic parties live in separate PostgreSQL schemas,
 `ehr` and `demographic`, each with its own archival tier and its own runtime
-database roles. `ferroehr_ehr` and `ferroehr_demographic`, and a read-only twin
+database roles. `ferroehr_clinical` and `ferroehr_party`, and a read-only twin
 of each, are `NOINHERIT`, hold explicit grants on one domain only, and carry an
 explicit revoke on the other and on `linkage`. The server refuses to start if that does not
 hold: a self-check enumerates every table, view, sequence and function in each
@@ -101,8 +101,8 @@ mix as well, in both directions, so a code path that missed the split fails as
 a write error rather than leaking quietly.
 
 The separation of schemas is unconditional. Pointing the demographic and
-linkage pools at their own DSNs (`[db] demographic_url` and
-`[db] linkage_url`) makes it a separation of credentials too, which is what
+linkage pools at their own DSNs (`[storage.party] url` and
+`[storage.linkage] url`) makes it a separation of credentials too, which is what
 stops one leaked connection string from reaching more than one domain.
 
 The controls that apply across both domains are the same: role- and
@@ -125,8 +125,8 @@ anywhere in a clinical body.
 ```mermaid
 flowchart LR
     client["API client"] --> server["FerroEHR server"]
-    server -->|ferroehr_ehr| ehr[("ehr schema:<br/>clinical versions and nodes")]
-    server -->|ferroehr_demographic| demo[("demographic schema:<br/>parties and sealed identifiers")]
+    server -->|ferroehr_clinical| ehr[("clinical schema:<br/>versions and nodes")]
+    server -->|ferroehr_party| demo[("party schema:<br/>parties and sealed identifiers")]
     server -->|ferroehr_linkage| link[("linkage schema:<br/>party to EHR resolve map")]
     server -->|audit writer| audit[("audit schema:<br/>ATNA record repository")]
 ```
