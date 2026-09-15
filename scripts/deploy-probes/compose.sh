@@ -825,22 +825,22 @@ party, and nothing downstream would notice"
   probe "P-BACKUP-GRANTS-REFUSED" "broken" "database" "#3157" \
     "the self-check refuses a restore whose grants cross the domain boundary"
   dc exec -T ferroehr-postgres psql -qtAX -U "${PG_INIT_USER:-ferroehr}" -d "$restored" -c \
-    "GRANT USAGE ON SCHEMA demographic TO ferroehr_ehr_reader;
-     GRANT SELECT ON ALL TABLES IN SCHEMA demographic TO ferroehr_ehr_reader" >/dev/null 2>&1
+    "GRANT USAGE ON SCHEMA party TO ferroehr_ehr_reader;
+     GRANT SELECT ON ALL TABLES IN SCHEMA party TO ferroehr_ehr_reader" >/dev/null 2>&1
   local breach_out
   if breach_out="$(dc exec -T -e FERROEHR__DB__URL="$restored_dsn" \
       -e FERROEHR__DB__MIGRATE=verify \
       ferroehr /usr/local/bin/ferroehr db verify 2>&1)"; then
     probe_fail "\`ferroehr db verify\` refusing a cross-domain grant" \
-      "it accepted a database where ferroehr_ehr_reader can read demographic tables" \
+      "it accepted a database where ferroehr_ehr_reader can read party tables" \
       "the boot gate is then decorative, and a careless restore ships a collapsed boundary"
   else
     # A refusal for ANY other reason would make this probe pass without
     # measuring the gate at all — the vacuity this harness exists to avoid.
     assert_contains "$breach_out" "ferroehr_ehr_reader" \
       "the refusal must name the role that reached across, not merely be a refusal"
-    assert_contains "$breach_out" "demographic" \
-      "the refusal must name the domain it reached into"
+    assert_contains "$breach_out" "party." \
+      "the refusal must name the schema it reached into"
   fi
   probe_done
 
