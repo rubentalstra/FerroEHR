@@ -1304,6 +1304,70 @@ async fn erasure_removes_the_proxies_of_a_subject_with_no_other_ehr() {
         .expect("count the proxies");
     assert_eq!(proxies, 3, "one proxy per registered identifier");
 
+    // A variable and the value it retrieved, so the whole family has rows to
+    // lose: the samples are the subject's data, not just configuration.
+    svc.register_binding(ferroehr::service::subject_proxy::binding::EnvBinding {
+        env_id: "prod".to_owned(),
+        description: None,
+        data_frames: vec![ferroehr::service::subject_proxy::binding::DataFrame {
+            id: "manual".to_owned(),
+            model_type: "openehr".to_owned(),
+            primary_method: Some(
+                ferroehr::service::subject_proxy::binding::SystemCall::Query(
+                    ferroehr::service::subject_proxy::binding::SystemCallBody {
+                        call_name: Some("aql_query".to_owned()),
+                        query_text: Some(
+                            "SELECT c/name/value AS weight FROM EHR e CONTAINS COMPOSITION c"
+                                .to_owned(),
+                        ),
+                        ..ferroehr::service::subject_proxy::binding::SystemCallBody::default()
+                    },
+                ),
+            ),
+            fallback_method: None,
+        }],
+    })
+    .await
+    .expect("register the binding");
+    svc.add_subject_variable(
+        "PID-SOLE".to_owned(),
+        ferroehr::service::subject_proxy::variable::SubjectVariable {
+            namespace: None,
+            name: "weight".to_owned(),
+            type_name: "String".to_owned(),
+            currency: None,
+            ask_user: None,
+            is_manual: true,
+            frame_id: "manual".to_owned(),
+            frame_path: "weight".to_owned(),
+            history: Vec::new(),
+            last_frame: None,
+        },
+    )
+    .await
+    .expect("add the variable");
+    svc.notify_variable_sample(
+        "PID-SOLE".to_owned(),
+        "weight".to_owned(),
+        ferroehr::service::subject_proxy::sample::VariableSample::available(
+            ferroehr::service::subject_proxy::value::VariableValue::Single {
+                value: Some(json!("72 kg")),
+            },
+        ),
+    )
+    .await
+    .expect("push a sample");
+    for (relation, sql) in [
+        ("sp_variable", "SELECT count(*) FROM sp_variable"),
+        ("sp_sample", "SELECT count(*) FROM sp_sample"),
+    ] {
+        let rows: i64 = sqlx::query_scalar(AssertSqlSafe(sql))
+            .fetch_one(&pool)
+            .await
+            .expect("count the proxy rows");
+        assert!(rows > 0, "{relation} has a row to lose");
+    }
+
     svc.admin_ehr_delete(erased.to_string())
         .await
         .expect("admin delete");
@@ -1314,11 +1378,15 @@ async fn erasure_removes_the_proxies_of_a_subject_with_no_other_ehr() {
             "the proxy keyed on {subject:?} outlived the erased EHR"
         );
     }
-    let remaining: i64 = sqlx::query_scalar("SELECT count(*) FROM sp_subject")
-        .fetch_one(&pool)
-        .await
-        .expect("count the proxies");
-    assert_eq!(remaining, 0, "no proxy of the erased subject survives");
+    for relation in ["sp_subject", "sp_variable", "sp_sample", "sp_data_set"] {
+        // The relation name is one of four literals, never input.
+        let remaining: i64 =
+            sqlx::query_scalar(AssertSqlSafe(format!("SELECT count(*) FROM {relation}")))
+                .fetch_one(&pool)
+                .await
+                .expect("count the proxy rows");
+        assert_eq!(remaining, 0, "{relation} outlived the erased subject");
+    }
 }
 
 /// A subject whose identifier still names another EHR keeps its proxy.
