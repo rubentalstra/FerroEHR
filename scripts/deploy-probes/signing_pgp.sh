@@ -121,10 +121,10 @@ probes_signing_pgp() {
   probe "P-PGP-TAMPER" "broken" "server" "#2163" \
     "a tampered pgp-signed version is REFUSED on read"
   local matched after
-  probe_psql "UPDATE ehr.vo_version
+  probe_psql "UPDATE clinical.version
                  SET body = (jsonb_set((body)::jsonb, '{name,value}', '\"tampered\"'))::text
                WHERE ehr_id = '$ehr'::uuid AND kind = 'EHR_STATUS';" >/dev/null
-  matched="$(probe_psql "SELECT count(*) FROM ehr.vo_version
+  matched="$(probe_psql "SELECT count(*) FROM clinical.version
                           WHERE ehr_id = '$ehr'::uuid
                             AND (body)::jsonb #>> '{name,value}' = 'tampered';")"
   if [[ "${matched:-0}" = "0" ]]; then
@@ -231,10 +231,10 @@ probes_signing_rotation() {
   probe "P-ROT-STILL-STRICT" "broken" "server" "#2122" \
     "a tampered version still fails after rotation — the keyring is not permissive"
   local matched after
-  probe_psql "UPDATE ehr.vo_version
+  probe_psql "UPDATE clinical.version
                  SET body = (jsonb_set((body)::jsonb, '{name,value}', '\"tampered\"'))::text
                WHERE ehr_id = '$ehr_a'::uuid AND kind = 'EHR_STATUS';" >/dev/null
-  matched="$(probe_psql "SELECT count(*) FROM ehr.vo_version
+  matched="$(probe_psql "SELECT count(*) FROM clinical.version
                           WHERE ehr_id = '$ehr_a'::uuid
                             AND (body)::jsonb #>> '{name,value}' = 'tampered';")"
   if [[ "${matched:-0}" = "0" ]]; then

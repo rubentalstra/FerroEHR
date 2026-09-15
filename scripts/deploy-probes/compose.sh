@@ -445,8 +445,8 @@ YAML
 # shared infrastructure the clinical dump carries along, not a domain any role
 # is barred from.
 PROBE_DOMAINS=(
-  "clinical|ferroehr_ehr ferroehr_ehr_reader|ehr cold|ehr vo_version"
-  "demographic|ferroehr_demographic ferroehr_demographic_reader|demographic cold_demographic|demographic vo_version;demographic national_identifier"
+  "clinical|ferroehr_ehr ferroehr_ehr_reader|clinical|clinical version"
+  "demographic|ferroehr_demographic ferroehr_demographic_reader|party|party version;party national_identifier"
   "linkage|ferroehr_linkage|linkage|linkage party_ehr"
 )
 
