@@ -39,9 +39,11 @@ Rulings that shaped the present design were re-read with their evidence:
 the UNLOGGED refusal (#2698) stands; the GiST removal stands as a fact but
 loses its stated rationale; schema-per-domain stays the default and gains a
 per-domain connection so cluster-per-domain becomes a configuration; the
-migration-immutability stabilisation of 2026-09-09 is set aside for this one
-rework by the owner ruling of 2026-09-14 (a greenfield rewrite, no production
-installations), and holds again over the new baselines from the merge on. Where a claim would rest on
+migration-immutability rule binds shipped files only (owner ruling
+2026-09-15: a file is immutable once it is at the latest release tag; every
+generation-2 file on `main` is in no release yet and is fixed in place, with
+no rename migration, placeholder or compatibility path), and re-arms by itself
+at the v4.3.1 cut. Where a claim would rest on
 a number nobody has measured, this plan names the measurement (owner ruling
 2026-09-13: no performance runs in v4.3.0).
 
@@ -83,7 +85,7 @@ vendored law). Verdicts: **keep** (with the reason re-affirmed), **change**
 | Migration sets and their order (`ext → ehr → demographic → linkage → audit`) | R2 §Schemas; the immutability rule | the order is load-bearing (the `LIKE` copies depend on it, D11) | **replace** | one DDL template rendered into `clinical/0001` and `party/0001`; each domain self-contained; the old sets deleted and an old database refused at boot (greenfield, owner 2026-09-14) |
 | Documentation of the storage layer | R1 §17; R2 §Claims vs code A1-A15, B1-B9, C1-C8, P1-P9 | `JSON_TABLE`, GIN pre-filters, jsonpath item methods, `MERGE`, `RETURNING OLD/NEW`, virtual generated columns, "retry cold on a miss", "no pool reaches linkage" are described and not present; four migration comments cite measurements no committed artifact carries | **replace** the prose | corrected in the first sub-issue (D1); every future number rides a committed record |
 | UNLOGGED tiers | owner ruling 2026-08-25 (#2698) | not re-opened | **keep** | every relation LOGGED |
-| Migration immutability | owner rulings 2026-09-09 and 2026-09-14 | declared for installations that exist; set aside for this one greenfield rework | **keep**, set aside once | the PR that lands the new baselines deletes the old sets and re-declares the guard over the new ones |
+| Migration immutability | owner rulings 2026-09-09, 2026-09-14 and 2026-09-15 | declared for installations that exist, which means files a RELEASE carries; the generation-2 files are in no release | **keep**, scoped to shipped files | `scripts/checks/migration-immutability.sh` judges against the latest release tag's tree; unreleased files are fixed in place, never papered over (#3400) |
 | Schema-per-domain over cluster-per-domain | this plan | the earlier choice stays the default; the per-domain DSN makes the other a configuration | **keep**, generalised | §Domain topology |
 
 Prior art, read for what it teaches and not as an oracle (R2 §Prior art):
@@ -158,7 +160,12 @@ current design got right is kept and says why.
 2. **One relation set per domain, tiers inside it.** Archival is a partition,
    never a second table. FKs and every read path see one relation.
 3. **A domain is a connection, not a search path.** Each pseudonymisation
-   domain has its own schema, role pair, pool and DSN. Co-located by default;
+   domain has its own schema, role pair, pool and DSN (#3397). The runtime
+   roles are the domain roles and nothing else (`ferroehr_clinical` and its
+   reader, `ferroehr_party` and its reader, `ferroehr_linkage`, beside the
+   DDL-only `ferroehr_migrator`); the first generation's names and the generic
+   `ferroehr_app`/`ferroehr_reader` pair are gone, not kept as placeholders
+   (owner ruling 2026-09-15, #3400). Co-located by default;
    relocatable to another database or cluster by configuration alone.
 4. **The law's marks are columns.** Restriction, retention and holds are
    rows the read paths join, not documentation.
@@ -580,7 +587,7 @@ registered reader (#3330).
 | Sealed national identifiers in `party` | keep | report 1 §13.2: pgcrypto is the documented wrong tool for a distrusted DBA |
 | LOGGED tables everywhere | keep | owner ruling 2026-08-25 (#2698) |
 | Schema-per-domain in one database as the DEFAULT | keep, generalised | the per-domain DSN makes cluster-per-domain a configuration, not a fork |
-| Migration immutability | set aside once (owner 2026-09-14) | greenfield: the new baselines replace the old sets in one PR that also re-declares the guard; the rule holds again from that merge |
+| Migration immutability | scoped to shipped files (owner 2026-09-15) | immutable = present at the latest release tag; unreleased files are fixed in place; the rule re-arms at the v4.3.1 cut (#3400) |
 | `LATEST_VERSION` = trunk head | keep, re-labelled | our adjudication; the prose defines neither token (S15) |
 | Advisory lock per object | keep | still the serialiser for `sys_version` and 412 |
 | Temporal `vo_version` with `sys_period` and partial indexes | replace | report 1 §2.1 |
@@ -744,13 +751,15 @@ stateDiagram-v2
    `_sqlx_migrations` record names files the binary no longer carries is
    refused with a message saying it predates the storage rewrite and must be
    recreated; nothing is upgraded in place, nothing is copied.
-3. **The immutability rule is set aside once.** The migration-immutability
-   stabilisation (owner ruling 2026-09-09) was declared for installations
-   that exist; the 2026-09-14 ruling sets it aside for this one rework. The
-   pull request that lands the new baselines deletes the old sets and
-   re-declares `scripts/checks/migration-immutability.sh` over the new ones
-   in the same change, so from that merge on the new baselines are the
-   immutable files and the rule holds again with no escape hatch.
+3. **The immutability rule binds shipped files only.** A migration is
+   immutable once it is at the latest release tag (v4.3.0 today); the
+   generation-2 files are in no release, have been applied by no
+   installation, and are fixed in the file that defines them whenever their
+   content is wrong or moves (owner ruling 2026-09-15: the rewrite is
+   breaking changes only; no rename migration, placeholder role or
+   compatibility path). `scripts/checks/migration-immutability.sh` judges a
+   pull request against the release tag's tree and re-arms by itself at the
+   v4.3.1 cut, with no escape hatch (#3400).
 4. **Everything that seeds a database starts from the new baselines**: the
    testkit template, the compose quickstart, the Helm chart's boot, the
    hosted sandbox's reseed, the conformance pipeline's fresh volumes.
@@ -775,11 +784,11 @@ a new file, as the rule says).
 
 | Domain | Files, in order |
 |---|---|
-| `ext` | `0001_schema_and_roles` (schema, the runtime role pairs guarded by existence, default privileges) · `0002_openehr_functions` (the `IMMUTABLE`/`STABLE` helpers, `LANGUAGE sql`, no exception blocks) · `0003_posture` (`posture`, `stamp_posture`) |
+| `ext` | `0001_schema_and_roles` (schema, the six runtime roles guarded by existence: `ferroehr_migrator`, `ferroehr_clinical`, `ferroehr_clinical_reader`, `ferroehr_party`, `ferroehr_party_reader`, `ferroehr_linkage`; default privileges) · `0002_openehr_functions` (the `IMMUTABLE`/`STABLE` helpers, `LANGUAGE sql`, no exception blocks) · `0003_posture` (`posture`, `stamp_posture`) · `0004_grants` |
 | `clinical` | `0001_schema_and_grants_baseline` (schema, search-path notes, the barrier revokes) · `0002_ehr` (`ehr`, the subject pseudonym guard) · `0003_change_control` (`commit_audit`, `contribution`, `version` partitioned by tier, `vo_head`, `vo_attestation`) · `0004_node` (the nested-set table partitioned by tier, its indexes) · `0005_folders_and_tags` (`ehr_folder`, `item_tag`) · `0006_definitions` (`template_ref`, `template_store`, `archetype_store`, `adl2_artefact`, `stored_query`) · `0007_restriction_and_retention` (`restriction`, `retention_policy`, `retention_anchor`, the `retention_due` view) · `0008_outbox` (`event_outbox`, `event_outbox_reader`, `event_subscription`) · `0009_integrations` (`fhir_mapping`, `blob_ref`) · `0010_grants` (per-role grants over the finished relations) |
 | `party` | `0001_schema_and_grants_baseline` · `0002_change_control` · `0003_node` · `0004_identifiers` (`identifier_scheme`, `national_identifier`, the sealed-value resolver) · `0005_relationships` (`party_relationship_target`) · `0006_outbox` · `0007_grants` |
 | `linkage` | `0001_schema_and_role` · `0002_subject_ehr` (the temporal map) · `0003_erase_ehr` (the definer function) · `0004_grants` |
-| `audit` | `0001_schema_and_roles` · `0002_audit_event` · `0003_tamper_chain` (the hash chain, its triggers and functions) · `0004_access_fields` (domain, purpose, legal basis, organisation, roles, origins) · `0005_retention` (floor and ceiling readers) |
+| `audit` | `0001_schema_and_roles` · `0002_audit_event` · `0003_tamper_chain` (the hash chain, its triggers and functions) · `0004_access_fields` (domain, purpose, legal basis, organisation, roles, origins) · `0005_retention` (floor and ceiling readers) · `0006_grants` |
 
 Two rules keep the layout honest: a file carries the tables of one concern
 and the indexes and comments that belong to them, never a grant (those live
