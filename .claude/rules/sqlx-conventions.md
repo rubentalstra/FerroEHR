@@ -35,32 +35,42 @@ use it). **Not sea-orm.** Target PostgreSQL 18.6+.
   forward. A migration that was wrong is superseded, never rewritten.
 - **A SET is retired whole, or not at all.** The one change that is not an
   edit is withdrawing a whole migration set, and it is only safe in one shape:
-  every file of `app/ferroehr/migrations/<schema>/` goes, so no half-set
-  survives for a database to apply against, and `<schema>` is named in
-  `FIRST_GENERATION_SCHEMAS` (`app/ferroehr/src/db/mod.rs`) in the same change,
-  so a database carrying that schema's migration bookkeeping is refused at boot
-  by name, with the remedy. An installation is then TOLD what happened instead
-  of being locked out by a checksum it cannot interpret. A single-file edit, a
-  rename, a partial deletion, and a whole-set deletion the boot refusal does
-  not name all stay refused.
+  every file the base branch had under `app/ferroehr/migrations/<schema>/`
+  goes, so no half-set survives for a database to apply against — a NEW set may
+  take its place in the same directory, because a schema name can outlive the
+  set that used it — and `<schema>` is named in `FIRST_GENERATION_SETS`
+  (`app/ferroehr/src/db/mod.rs`) in the same change, so a database carrying that
+  set's bookkeeping is refused at boot by name, with the remedy. An installation
+  is then TOLD what happened instead of being locked out by a checksum it cannot
+  interpret. A single-file edit, a partial turnover, and a turnover the boot
+  refusal does not name all stay refused; a rename is judged as the deletion of
+  its old path, which is what an installed database sees.
+- **The refusal is a SIGNATURE, not a schema name.** Where this build owns no
+  set of that name (`ehr`, `demographic`), any bookkeeping in the schema is the
+  signature. Where the name survives the rewrite (`ext`, `linkage`, `audit`),
+  bookkeeping exists in both generations, so the signature is the description
+  sqlx recorded for VERSION 1 — the file that set was opened with. Without
+  that half, an old set reaches its own migrator and fails on a checksum
+  mismatch instead of the remedy.
 - Enforcement (tier 4): `scripts/checks/migration-immutability.sh`, run by the
   `migration-immutability` CI job over the pull request's diff against its
   merge base. It fails on any modification, rename or partial deletion under
   `app/ferroehr/migrations/`; an added file passes, and so does further work
   on a file this branch itself added, because the comparison is against the
   base. The whole-set retirement above is accepted only when the guard can
-  verify BOTH halves itself — the empty directory at head and the schema named
-  in that const — so the acceptance cannot be claimed by a comment. **There is
-  deliberately no escape-hatch label:** the checksum makes the rule absolute,
-  so an exception would only ever be a broken deployment.
+  verify BOTH halves itself — every base file of that directory gone at head,
+  and the schema named in that table — so the acceptance cannot be claimed by a
+  comment. **There is deliberately no escape-hatch label:** the checksum makes
+  the rule absolute, so an exception would only ever be a broken deployment.
 - Create migrations with the official CLI only:
   `sqlx migrate add --source app/ferroehr/migrations/<schema> --sequential <desc>`,
   written as modern PG 18 SQL (`uuidv7()`, temporal `WITHOUT OVERLAPS`,
   `RETURNING OLD/NEW` where the design calls for them).
 - `ferroehr::db::prepare` bootstraps schemas + extensions and runs the sets in
   order (`ext`, `clinical`, `party`, `linkage`, `audit`); each keeps its own
-  `_sqlx_migrations` table, and a database whose `ehr` or `demographic` schema
-  still carries one is refused at boot as predating the storage rewrite.
+  `_sqlx_migrations` table, and a database whose bookkeeping matches a
+  `FIRST_GENERATION_SETS` signature is refused at boot as predating the storage
+  rewrite.
 - `sea-query` `Iden` table/column definitions (`db/iden.rs`) + hand-written
   row-mapping structs (over the generated `openehr-rm` types) — no ORM/codegen.
 

@@ -297,16 +297,19 @@ chapters, the Clippy book, and the Cargo/rustdoc books.)
   installation out of its own database at boot, reporting a checksum rather
   than the edit. A schema change is a NEW file; a migration that was wrong is
   superseded, never rewritten. A whole SET may be retired, and only in the
-  shape that keeps an installation told rather than locked out: every file of
-  `app/ferroehr/migrations/<schema>/` goes at once, and `<schema>` is named in
-  `FIRST_GENERATION_SCHEMAS` (`app/ferroehr/src/db/mod.rs`) in the same change,
-  so the boot refusal names that database and states the remedy. Enforcement
+  shape that keeps an installation told rather than locked out: every file the
+  base branch had under `app/ferroehr/migrations/<schema>/` goes at once (a new
+  set may take the directory), and `<schema>` is named in
+  `FIRST_GENERATION_SETS` (`app/ferroehr/src/db/mod.rs`) in the same change, so
+  the boot refusal names that database and states the remedy — by the
+  bookkeeping's existence where this build owns no set of that name, and by the
+  description of its version 1 where the name survives the rewrite. Enforcement
   (tier 4): `scripts/checks/migration-immutability.sh`, run per-PR by the
   `migration-immutability` CI job against the pull request's merge base, and
-  refusing any modification, rename or partial deletion under
+  refusing any modification or partial turnover under
   `app/ferroehr/migrations/`; it accepts a retirement only after verifying both
-  halves itself — the directory empty at head, the schema named in that const —
-  so the acceptance cannot be claimed in prose. Its detector is mutation-proven
+  halves itself — every base file of that directory gone at head, the schema
+  named in that table — so the acceptance cannot be claimed in prose. Its detector is mutation-proven
   by its own `--self-test`, which the CI job runs first. There is deliberately
   no escape-hatch label: the checksum makes the rule absolute, so an exception
   could only ever be a broken deployment.
