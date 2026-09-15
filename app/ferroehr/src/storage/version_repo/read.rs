@@ -406,9 +406,8 @@ pub async fn read_current(
     pool: &PgPool,
     vo_id: VoId,
 ) -> Result<Option<StoredVersion>, StorageError> {
-    const SQL: &str = version_select!(
-        "WHERE v.vo_id = $1 AND h.trunk_head_sys_version = v.sys_version"
-    );
+    const SQL: &str =
+        version_select!("WHERE v.vo_id = $1 AND h.trunk_head_sys_version = v.sys_version");
     sqlx::query(SQL)
         .bind(vo_id)
         .fetch_optional(pool)
@@ -427,9 +426,8 @@ pub async fn read_current_raw(
     pool: &PgPool,
     vo_id: VoId,
 ) -> Result<Option<StoredVersion>, StorageError> {
-    const SQL: &str = version_select_raw!(
-        "WHERE v.vo_id = $1 AND h.trunk_head_sys_version = v.sys_version"
-    );
+    const SQL: &str =
+        version_select_raw!("WHERE v.vo_id = $1 AND h.trunk_head_sys_version = v.sys_version");
     sqlx::query(SQL)
         .bind(vo_id)
         .fetch_optional(pool)
@@ -477,9 +475,8 @@ pub async fn read_currents(
     pool: &PgPool,
     vo_ids: &[VoId],
 ) -> Result<Vec<StoredVersion>, StorageError> {
-    const SQL: &str = version_select!(
-        "WHERE v.vo_id = ANY($1) AND h.trunk_head_sys_version = v.sys_version"
-    );
+    const SQL: &str =
+        version_select!("WHERE v.vo_id = ANY($1) AND h.trunk_head_sys_version = v.sys_version");
     if vo_ids.is_empty() {
         return Ok(Vec::new());
     }

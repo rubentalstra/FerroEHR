@@ -852,7 +852,9 @@ mod tests {
         );
 
         config.audit.store.retention_days = 1096;
-        let errors = config.validate().expect_err("1096 days is above the ceiling");
+        let errors = config
+            .validate()
+            .expect_err("1096 days is above the ceiling");
         assert!(errors.to_string().contains("1095"), "{errors}");
 
         config.audit.store.retention_days = 1095;
@@ -866,8 +868,7 @@ mod tests {
     fn a_ceiling_below_a_floor_is_refused() {
         let mut config = FerroEhrConfig::default();
         config.audit.store.sgb_v_309_controller = true;
-        config.privacy.identifier_scan.rules =
-            vec!["de-kvnr".to_owned(), "nl-bsn".to_owned()];
+        config.privacy.identifier_scan.rules = vec!["de-kvnr".to_owned(), "nl-bsn".to_owned()];
         config.audit.store.retention_days = 1095;
         let errors = config
             .validate()
