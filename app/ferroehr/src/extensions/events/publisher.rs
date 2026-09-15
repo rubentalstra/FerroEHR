@@ -333,9 +333,20 @@ async fn drain_batch(
     config: &EventsConfig,
 ) -> Result<usize, DrainError> {
     let mut tx = pool.begin().await.map_err(DrainError::Db)?;
+    // A mark recorded after the commit withholds the row instead of dropping
+    // it: it stays pending and publishes if the restriction is lifted (GDPR
+    // Art. 18(3) contemplates exactly that) or if the controller records an
+    // Art. 21(6) override, and it leaves with the EHR if the EHR is erased.
+    // `docs/law/eu/gdpr/text.html`; no openEHR spec governs eventing — our own
+    // extension.
     let rows = sqlx::query(
-        "SELECT seq, envelope FROM event_outbox \
-         WHERE published_at IS NULL ORDER BY seq LIMIT $1 FOR UPDATE SKIP LOCKED",
+        "SELECT seq, envelope FROM event_outbox o \
+         WHERE o.published_at IS NULL \
+           AND NOT EXISTS (SELECT 1 FROM ehr e WHERE e.id = o.ehr_id \
+               AND (e.restricted_at IS NOT NULL \
+                    OR (e.research_objected_at IS NOT NULL \
+                        AND e.research_objection_ground IS NULL))) \
+         ORDER BY o.seq LIMIT $1 FOR UPDATE SKIP LOCKED",
     )
     .bind(config.batch_size)
     .fetch_all(&mut *tx)

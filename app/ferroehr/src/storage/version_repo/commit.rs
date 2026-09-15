@@ -577,6 +577,14 @@ pub async fn insert_ehr_folder_rank(
 /// envelope shape the events-extension drainer consumes (`{contribution_id,
 /// ehr_id, committed_at, versions[]}`).
 ///
+/// An EHR carrying a legal mark emits no event. The `INSERT ... SELECT` writes
+/// nothing when the EHR is restricted (GDPR Art. 18(2) leaves only storage) or
+/// carries an unoverridden research objection (Art. 21(6)), so nothing about
+/// that record reaches a downstream consumer; both are read in the same
+/// statement rather than a probe before it, so a mark recorded concurrently
+/// cannot slip between the two. `ehr_id IS NULL` is a demographic commit, which
+/// no EHR mark reaches. `docs/law/eu/gdpr/text.html`.
+///
 /// # Errors
 /// Returns [`StorageError::Database`] on a driver/insert failure.
 pub async fn write_outbox(
@@ -594,7 +602,11 @@ pub async fn write_outbox(
     });
     sqlx::query(
         "INSERT INTO event_outbox (contribution_id, ehr_id, envelope, committed_at) \
-         VALUES ($1, $2, $3, $4::timestamptz)",
+         SELECT $1, $2, $3, $4::timestamptz \
+         WHERE NOT EXISTS (SELECT 1 FROM ehr e WHERE e.id = $2 \
+             AND (e.restricted_at IS NOT NULL \
+                  OR (e.research_objected_at IS NOT NULL \
+                      AND e.research_objection_ground IS NULL)))",
     )
     .bind(contribution_id)
     .bind(ehr_id)

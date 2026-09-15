@@ -528,6 +528,28 @@ impl ServiceError {
         ))
     }
 
+    /// A refusal (`403`) of a research-side disclosure the subject objected to.
+    ///
+    /// GDPR Art. 21(6) gives the subject a right to object to processing "for
+    /// scientific or historical research purposes or statistical purposes
+    /// pursuant to Article 89(1)" (`docs/law/eu/gdpr/text.html`). It shares the
+    /// wire outcome and the status of the Art. 18 refusal because the server is
+    /// doing the same thing in both cases — holding the data and declining to
+    /// process it — and the message is what says which provision applies. A
+    /// read of the same EHR for care is untouched: the objection reaches
+    /// research processing, not the care record. No openEHR spec governs the
+    /// objection — our own design/extension.
+    #[must_use]
+    pub fn research_objected(subject: &str) -> Self {
+        ServiceError::Restricted(SmError::new(
+            CallStatusType::ProcessingRestricted,
+            format!(
+                "the subject of {subject} has objected to research processing, so its content \
+                 is not exported or published for secondary use (GDPR Art. 21(6))"
+            ),
+        ))
+    }
+
     /// A state-conflict refusal (`409`) reporting the generic SM `conflict`
     /// status.
     ///
