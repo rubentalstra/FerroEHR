@@ -17,6 +17,14 @@ workflow refuses a tag that has no matching section here.
 
 ### Changed
 
+- **An OPT 1.4 template whose ordinal symbol has no `<value>` element is
+  refused with the fix in the message** (#3395). The ITS-XML profile schema
+  types `C_DV_ORDINAL.list` as the RM `DV_ORDINAL`, whose `symbol` is a
+  `DV_CODED_TEXT` carrying a mandatory `value`, so such a template is not a
+  document the format admits and the refusal stands. Beside the element and
+  line it already reported, the `422` now says to add `<value/>`, that an empty
+  element is valid, and that the rubric is resolved from `term_definitions`.
+  CKM's exporter writes the element; Archetype Designer's omits it.
 - **The migration-immutability rule binds SHIPPED files only** (owner ruling
   2026-09-15). A migration is immutable once it is in a release (present at
   the latest `vX.Y.Z` tag); a file on `main` that no release carries has been
