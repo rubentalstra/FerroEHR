@@ -176,7 +176,7 @@ impl FerroEhrConfig {
             .filter_map(|key| crate::privacy::detect::rule(key))
             .map(|rule| rule.jurisdiction)
             .collect();
-        let declared = self.audit.sgb_v_309_controller;
+        let declared = self.audit.store.sgb_v_309_controller;
         let mut floors: Vec<(&str, u32)> = Vec::new();
         let mut ceilings: Vec<(&str, u32)> = Vec::new();
         for jurisdiction in jurisdictions {
@@ -221,7 +221,7 @@ impl FerroEhrConfig {
                      access-log retention ceiling of {ceiling} days (the three-year limitation \
                      period of SGB V § 309 Abs. 1, after which Abs. 3 requires deletion \
                      unverzüglich, https://www.gesetze-im-internet.de/sgb_5/__309.html); set a \
-                     horizon at or below it, or clear audit.sgb_v_309_controller if this \
+                     horizon at or below it, or clear audit.store.sgb_v_309_controller if this \
                      deployment is not one of the § 307 controllers"
                 )));
             }
@@ -841,7 +841,7 @@ mod tests {
             .validate()
             .expect("an undeclared deployment carries no ceiling");
 
-        config.audit.sgb_v_309_controller = true;
+        config.audit.store.sgb_v_309_controller = true;
         let errors = config
             .validate()
             .expect_err("keep forever outlasts the three-year period");
@@ -865,7 +865,7 @@ mod tests {
     #[test]
     fn a_ceiling_below_a_floor_is_refused() {
         let mut config = FerroEhrConfig::default();
-        config.audit.sgb_v_309_controller = true;
+        config.audit.store.sgb_v_309_controller = true;
         config.privacy.identifier_scan.rules =
             vec!["de-kvnr".to_owned(), "nl-bsn".to_owned()];
         config.audit.store.retention_days = 1095;

@@ -834,6 +834,7 @@ mod tests {
             store: StoreConfig {
                 enabled: false,
                 retention_days: 0,
+                sgb_v_309_controller: false,
             },
             syslog: SyslogConfig {
                 enabled: true,

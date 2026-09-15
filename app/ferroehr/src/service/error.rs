@@ -745,11 +745,10 @@ impl From<ServiceError> for SmError {
             // The curated row: the detail and the whole cause chain go to the
             // trace record, the client gets `exception` + `INTERNAL_MESSAGE`.
             ServiceError::Internal(sm) => internal_fault_caused("complete the request", &sm),
-            // Fail-closed: the status the record helper chose travels as is.
-            ServiceError::Unrecorded(sm) => sm,
-            // The restriction refusal travels as its own status, so the SM
-            // route reports the same thing the wire does.
-            ServiceError::Restricted(sm) => sm,
+            // Fail-closed: the status the record helper chose travels as is,
+            // and so does the restriction refusal's own status, so the SM route
+            // reports what the wire reports.
+            ServiceError::Unrecorded(sm) | ServiceError::Restricted(sm) => sm,
         }
     }
 }

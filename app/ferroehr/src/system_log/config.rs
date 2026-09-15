@@ -53,6 +53,20 @@ pub struct StoreConfig {
     /// (`FERROEHR__AUDIT__STORE__RETENTION_DAYS`). Applied hourly by the
     /// retention reaper.
     pub retention_days: u32,
+    /// Whether this deployment is one of the controllers SGB V § 307 names for
+    /// a German telematics-infrastructure application
+    /// (`FERROEHR__AUDIT__STORE__SGB_V_309_CONTROLLER`). **Off by default.**
+    ///
+    /// SGB V § 309 Abs. 1 binds "die Verantwortlichen nach § 307" of the
+    /// applications under §§ 327 and 334 Abs. 1, and Abs. 3 then requires the
+    /// log data to be deleted "unverzüglich" once the three-year limitation
+    /// period has run (`docs/law/de/sgb-v/BJNR024820988.xml`). That is a
+    /// CEILING on access-log retention, and it reaches a CDR only when the
+    /// deploying organisation actually is, or acts for, one of those
+    /// controllers — which the software cannot tell from its configuration.
+    /// So the deployment declares it here, beside the horizon it bounds, and the
+    /// DE ceiling applies from then on.
+    pub sgb_v_309_controller: bool,
 }
 
 impl Default for StoreConfig {
@@ -60,6 +74,7 @@ impl Default for StoreConfig {
         Self {
             enabled: true,
             retention_days: 0,
+            sgb_v_309_controller: false,
         }
     }
 }
@@ -206,19 +221,6 @@ pub struct AuditConfig {
     /// (<https://eur-lex.europa.eu/eli/reg/2016/679/oj>) and every access under
     /// this deployment carries it. Unset records nothing rather than a guess.
     pub legal_basis: Option<String>,
-    /// Whether this deployment is one of the controllers SGB V § 307 names for
-    /// a German telematics-infrastructure application
-    /// (`FERROEHR__AUDIT__SGB_V_309_CONTROLLER`). **Off by default.**
-    ///
-    /// SGB V § 309 Abs. 1 binds "die Verantwortlichen nach § 307" of the
-    /// applications under §§ 327 and 334 Abs. 1, and Abs. 3 then requires the
-    /// log data to be deleted "unverzüglich" once the three-year limitation
-    /// period has run (`docs/law/de/sgb-v/BJNR024820988.xml`). That is a
-    /// CEILING on access-log retention, and it reaches a CDR only when the
-    /// deploying organisation actually is, or acts for, one of those
-    /// controllers — which the software cannot tell from its configuration.
-    /// So the deployment declares it, and the DE ceiling applies from then on.
-    pub sgb_v_309_controller: bool,
     /// `[audit.store]` — the local Audit Record Repository.
     pub store: StoreConfig,
     /// `[audit.syslog]` — the classic DICOM-over-syslog feed.
@@ -242,7 +244,6 @@ impl Default for AuditConfig {
             purpose_header: "x-purpose-of-use".to_owned(),
             purpose_codes: Vec::new(),
             legal_basis: None,
-            sgb_v_309_controller: false,
             store: StoreConfig::default(),
             syslog: SyslogConfig::default(),
             fhir_feed: FhirFeedConfig::default(),
@@ -368,7 +369,7 @@ pub fn retention_floor_days(jurisdiction: &str) -> Option<u32> {
 /// are never fewer than 1095 days, so that is the ceiling in days: a horizon at
 /// or below it cannot outlast the period. The provision binds "die
 /// Verantwortlichen nach § 307", so it reaches a deployment only once that
-/// deployment declares itself one (`[audit] sgb_v_309_controller`), which is
+/// deployment declares itself one (`[audit.store] sgb_v_309_controller`), which is
 /// why `declared` gates the row rather than the jurisdiction alone.
 #[must_use]
 pub fn retention_ceiling_days(jurisdiction: &str, sgb_v_309_controller: bool) -> Option<u32> {

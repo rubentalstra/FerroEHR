@@ -40,6 +40,7 @@ fn store_only_config() -> AuditConfig {
         store: StoreConfig {
             enabled: true,
             retention_days: 0,
+            sgb_v_309_controller: false,
         },
         ..AuditConfig::default()
     }

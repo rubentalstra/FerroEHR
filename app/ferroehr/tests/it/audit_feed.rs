@@ -25,6 +25,7 @@ fn config(arr_url: &str) -> AuditConfig {
         store: StoreConfig {
             enabled: true,
             retention_days: 0,
+            sgb_v_309_controller: false,
         },
         fhir_feed: FhirFeedConfig {
             enabled: true,
