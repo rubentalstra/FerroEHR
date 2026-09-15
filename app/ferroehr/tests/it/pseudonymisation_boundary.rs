@@ -352,6 +352,88 @@ async fn a_party_committed_through_the_service_lands_only_in_the_demographic_dom
     );
 }
 
+/// Two domains a deployment placed on DIFFERENT DSNs that authenticate as the
+/// SAME database role are refused: the separation exists in the configuration
+/// and not in the database, which reads as one that holds.
+///
+/// The fixture is the shape an operator actually reaches this state through —
+/// two DSNs that differ in text and name one credential — so the check cannot
+/// pass by comparing strings.
+#[tokio::test]
+async fn the_boot_gate_refuses_two_domains_that_share_one_role() {
+    let db = testkit::db().await.expect("testkit database");
+    let settings = ferroehr::db::DbConfig::new(db.url());
+    let storage = ferroehr::db::domain::StorageConfig {
+        party: ferroehr::db::domain::DomainDsn {
+            url: Some(ferroehr::config::secret::SecretUrl::new(format!(
+                "{}?application_name=party",
+                db.url()
+            ))),
+            url_file: None,
+        },
+        ..ferroehr::db::domain::StorageConfig::default()
+    };
+    let layout = storage.layout(&settings);
+    assert!(
+        !layout
+            .placement(ferroehr::db::domain::Domain::Clinical)
+            .shares_dsn_with(layout.placement(ferroehr::db::domain::Domain::Party)),
+        "the fixture must configure two DIFFERENT DSNs, else it measures nothing"
+    );
+
+    let pools = ferroehr::db::connect_domains(&settings, &storage)
+        .await
+        .expect("both pools connect");
+    let refused = ferroehr::db::verify_domain_isolation(
+        &pools,
+        &layout,
+        ferroehr::config::deployment::DeploymentProfile::Sandbox,
+    )
+    .await
+    .expect_err("two domains on one role must refuse the boot");
+    let rendered = refused.to_string();
+    assert!(
+        matches!(refused, ferroehr::db::DbError::DomainRoleShared { .. }),
+        "the refusal must be the typed one: {rendered}"
+    );
+    assert!(
+        rendered.contains("clinical") && rendered.contains("party"),
+        "and it must name both domains: {rendered}"
+    );
+
+    // And the same database with both domains on ONE configured DSN is the
+    // co-located posture, which boots: one DSN is one credential by
+    // construction, and that is what the deployment profile reports.
+    ferroehr::db::verify_domain_isolation(
+        &crate::fixtures::shared_pools(&db.pool()),
+        &crate::fixtures::shared_layout(),
+        ferroehr::config::deployment::DeploymentProfile::Sandbox,
+    )
+    .await
+    .expect("one DSN for every domain is the co-located posture, not a breach");
+}
+
+/// The refusal for an absent domain role names the role, the domain and the
+/// remedy.
+///
+/// The role-presence branch itself needs a cluster with a domain role missing,
+/// which no test may produce: roles are cluster-global and the harness's
+/// template databases hold their grants, so dropping one would break every
+/// other test in the run. What is pinned here is the message an operator acts
+/// on.
+#[test]
+fn the_missing_role_refusal_names_the_role_and_the_remedy() {
+    let refusal = ferroehr::db::DbError::DomainRoleMissing {
+        role: "ferroehr_party".to_owned(),
+        domain: ferroehr::db::domain::Domain::Party,
+    }
+    .to_string();
+    assert!(refusal.contains("ferroehr_party"), "{refusal}");
+    assert!(refusal.contains("party"), "{refusal}");
+    assert!(refusal.contains("CREATE ROLE"), "{refusal}");
+    assert!(refusal.contains("production"), "{refusal}");
+}
+
 #[tokio::test]
 async fn the_boot_self_check_refuses_a_cross_domain_grant() {
     let db = testkit::db().await.expect("testkit database");

@@ -52,6 +52,7 @@ pub(super) const SECTIONS: &[&str] = &[
     "spec_profile",
     "server",
     "db",
+    "storage",
     "log",
     "telemetry",
     "auth",
