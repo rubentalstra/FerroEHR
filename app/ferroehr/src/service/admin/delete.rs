@@ -220,9 +220,8 @@ impl FerroEhrService {
     /// non-existent resource.
     async fn delete_ehr(&self, ehr_id: EhrId) -> Result<(), ServiceError> {
         // Read before the delete: the reference rows go with the versions that
-        // carry them, and a subject's linkage rows go with `erase_ehr` below.
+        // carry them.
         let candidate_blobs = self.referenced_blob_uris(&[ehr_id]).await?;
-        let sole_subjects = self.sole_subject_ids(ehr_id).await?;
 
         let mut tx = self.pool.begin().await?;
 
@@ -270,6 +269,10 @@ impl FerroEhrService {
                 .await?;
         }
 
+        // The linkage read happens once the EHR is known to exist, so a delete
+        // of an unknown id records no crossing, and before `erase_ehr` below
+        // removes the rows it reads.
+        let sole_subjects = self.sole_subject_ids(ehr_id).await?;
         purge_subject_proxies(&mut tx, &[ehr_id], &subject_ids, &sole_subjects).await?;
         self.write_erase_tombstones(&mut tx, &[ehr_id]).await?;
 
@@ -322,10 +325,6 @@ impl FerroEhrService {
         let mut deleted = 0u64;
         for chunk in targets.chunks(CHUNK) {
             let candidate_blobs = self.referenced_blob_uris(chunk).await?;
-            let mut sole_subjects: Vec<String> = Vec::new();
-            for ehr_id in chunk {
-                sole_subjects.extend(self.sole_subject_ids(*ehr_id).await?);
-            }
             let mut tx = self.pool.begin().await?;
             let commit_audit_ids: Vec<Uuid> = sqlx::query_scalar(
                 "SELECT commit_audit_id FROM version WHERE ehr_id = ANY($1) \
@@ -353,6 +352,12 @@ impl FerroEhrService {
                     .await?;
             }
             let removed_ids: Vec<EhrId> = removed.iter().copied().map(EhrId).collect();
+            // Asked only for the EHRs that were there: an id naming nothing
+            // records no crossing of the linkage boundary.
+            let mut sole_subjects: Vec<String> = Vec::new();
+            for ehr_id in &removed_ids {
+                sole_subjects.extend(self.sole_subject_ids(*ehr_id).await?);
+            }
             purge_subject_proxies(&mut tx, &removed_ids, &subject_ids, &sole_subjects).await?;
             self.write_erase_tombstones(&mut tx, &removed_ids).await?;
             tx.commit().await?;
