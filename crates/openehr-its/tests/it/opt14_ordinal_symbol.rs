@@ -81,7 +81,7 @@ fn a_symbol_with_an_empty_value_is_accepted() {
         round_trip.contains("<symbol><value></value><defining_code>")
             || round_trip.contains("<symbol><value/><defining_code>"),
         "the empty symbol value did not survive the read: {}",
-        &round_trip
+        round_trip
             .split("<symbol>")
             .nth(1)
             .unwrap_or("no symbol in the output")
