@@ -2,7 +2,7 @@
 
 Pure-Rust, openEHR-conformant clinical data repository (ITS-REST 1.1.0 + AQL 1.1). A single static binary deployed with a hardened-by-default security posture: runs as a non-root, read-only-rootfs workload whose NetworkPolicy admits its serving port only, and that connects to an EXTERNAL PostgreSQL 18 as an unprivileged app role, with schema preparation on its own credential.
 
-![Version: 9.0.0](https://img.shields.io/badge/Version-9.0.0-informational?style=flat-square) ![Type: application](https://img.shields.io/badge/Type-application-informational?style=flat-square) ![AppVersion: 4.3.0](https://img.shields.io/badge/AppVersion-4.3.0-informational?style=flat-square)
+![Version: 10.0.0](https://img.shields.io/badge/Version-10.0.0-informational?style=flat-square) ![Type: application](https://img.shields.io/badge/Type-application-informational?style=flat-square) ![AppVersion: 4.3.0](https://img.shields.io/badge/AppVersion-4.3.0-informational?style=flat-square)
 
 FerroEHR is a pure-Rust openEHR Clinical Data Repository: ITS-REST 1.1.0 at the
 API, AQL 1.1 as the query language, PostgreSQL 18-native storage, shipped as a
@@ -33,7 +33,7 @@ to add; `helm repo add` does not apply to this chart:
 
 ```console
 helm install ferroehr oci://ghcr.io/rubentalstra/charts/ferroehr \
-  --version 9.0.0 \
+  --version 10.0.0 \
   --namespace ferroehr --create-namespace \
   --set database.existingSecret=ferroehr-db \
   --set image.tag=4.3.0
@@ -47,7 +47,7 @@ They are independent SemVer lines and they move independently:
 
 | What | Set with | This release |
 |---|---|---|
-| the **chart** (templates, defaults, this document) | `--version` | `9.0.0` |
+| the **chart** (templates, defaults, this document) | `--version` | `10.0.0` |
 | the **server image** | `image.tag` | `4.3.0` |
 
 `appVersion` is the image the chart defaults to; pinning `image.tag` explicitly
@@ -59,7 +59,7 @@ The chart carries two keyless Sigstore artifacts, and they answer different
 questions. A **cosign signature:** who signed this:
 
 ```console
-cosign verify ghcr.io/rubentalstra/charts/ferroehr:9.0.0 \
+cosign verify ghcr.io/rubentalstra/charts/ferroehr:10.0.0 \
   --certificate-identity-regexp '^https://github\.com/rubentalstra/FerroEHR/\.github/workflows/publish-chart\.yml@' \
   --certificate-oidc-issuer https://token.actions.githubusercontent.com
 ```
@@ -67,7 +67,7 @@ cosign verify ghcr.io/rubentalstra/charts/ferroehr:9.0.0 \
 A **SLSA build provenance attestation:** what source it was built from, and how:
 
 ```console
-gh attestation verify oci://ghcr.io/rubentalstra/charts/ferroehr:9.0.0 \
+gh attestation verify oci://ghcr.io/rubentalstra/charts/ferroehr:10.0.0 \
   -R rubentalstra/FerroEHR
 gh attestation verify oci://ghcr.io/rubentalstra/ferroehr:4.3.0 \
   -R rubentalstra/FerroEHR
@@ -169,20 +169,20 @@ Kubernetes: `>=1.36.0-0`
 | backup.clinical.existingSecretKey | string | `"FERROEHR__DB__URL"` | Key within `existingSecret` carrying that DSN. |
 | backup.clinical.persistentVolumeClaim | string | `""` | REQUIRED when enabled: the name of an EXISTING PersistentVolumeClaim the clinical dumps are written to, mounted at /backup. The chart creates no claim — its storage class, size, retention and who may read it are yours. |
 | backup.clinical.schedule | string | `"15 1 * * *"` | Cron schedule for the clinical dump (schemas clinical, ext, audit). |
-| backup.demographic.existingSecret | string | `""` | REQUIRED when enabled: Secret holding the party BACKUP DSN — a read-only role on the party schema, and a DIFFERENT role from the clinical one. This credential reads every identity the instance holds; treat it accordingly. |
-| backup.demographic.existingSecretKey | string | `"FERROEHR__DB__DEMOGRAPHIC_URL"` | Key within `existingSecret` carrying that DSN. |
-| backup.demographic.persistentVolumeClaim | string | `""` | REQUIRED when enabled: an EXISTING PersistentVolumeClaim for the party dumps, and a DIFFERENT one from every other domain's claim (two domains sharing a claim is refused at render). This is the volume that carries identifying data; give it the narrower audience. |
-| backup.demographic.schedule | string | `"45 1 * * *"` | Cron schedule for the party dump (schema party). Offset from the clinical one by default so no two dumps read the database in the same minute. |
 | backup.enabled | bool | `false` | Render the three per-domain backup CronJobs. Each domain then needs its own `persistentVolumeClaim` below, or the render is refused. |
 | backup.image.digest | string | `""` | Image digest (`sha256:…`); wins over `tag` entirely when set. |
 | backup.image.pullPolicy | string | `"IfNotPresent"` | Pull policy. |
 | backup.image.repository | string | `"ghcr.io/rubentalstra/ferroehr-postgres"` | Image carrying `pg_dump`. The project's own PostgreSQL 18 image, so the dump is taken by the same major version the server runs against. |
 | backup.image.tag | string | `""` | Image tag. Empty falls back to .Chart.appVersion, as the server's does. |
 | backup.linkage.existingSecret | string | `""` | REQUIRED when enabled: Secret holding the linkage BACKUP DSN — a role read-only on the linkage schema, and a DIFFERENT role from the other two. This credential reads the map from a party to its EHR, the additional information that re-identifies a pseudonymised record, so it is the narrowest of the three. |
-| backup.linkage.existingSecretKey | string | `"FERROEHR__DB__LINKAGE_URL"` | Key within `existingSecret` carrying that DSN. The name follows its two siblings and matches the server's own `database.linkageExistingSecretKey` for the linkage POOL, but this must be a different Secret holding the backup role's DSN: the pool's credential cannot dump the table. The probe restores this dump and checks the map's temporal key and forced row policy. |
+| backup.linkage.existingSecretKey | string | `"FERROEHR__STORAGE__LINKAGE__URL"` | Key within `existingSecret` carrying that DSN. The name follows its two siblings and matches the server's own `database.linkage.existingSecretKey` for the linkage POOL, but this must be a different Secret holding the backup role's DSN: the pool's credential cannot dump the table. The probe restores this dump and checks the map's temporal key and forced row policy. |
 | backup.linkage.persistentVolumeClaim | string | `""` | REQUIRED when enabled: an EXISTING PersistentVolumeClaim for the linkage dumps, and a DIFFERENT one from the other two claims (two domains sharing a claim is refused at render). A volume holding this dump beside either other domain's rebuilds the join the split exists to withhold. |
 | backup.linkage.schedule | string | `"15 2 * * *"` | Cron schedule for the linkage dump (schema linkage). Offset from the other two by default so no two dumps read the database in the same minute. |
 | backup.nodeSelector | object | `{}` | Node selector for the dump pods. |
+| backup.party.existingSecret | string | `""` | REQUIRED when enabled: Secret holding the party BACKUP DSN — a read-only role on the party schema, and a DIFFERENT role from the clinical one. This credential reads every identity the instance holds; treat it accordingly. |
+| backup.party.existingSecretKey | string | `"FERROEHR__STORAGE__PARTY__URL"` | Key within `existingSecret` carrying that DSN. |
+| backup.party.persistentVolumeClaim | string | `""` | REQUIRED when enabled: an EXISTING PersistentVolumeClaim for the party dumps, and a DIFFERENT one from every other domain's claim (two domains sharing a claim is refused at render). This is the volume that carries identifying data; give it the narrower audience. |
+| backup.party.schedule | string | `"45 1 * * *"` | Cron schedule for the party dump (schema party). Offset from the clinical one by default so no two dumps read the database in the same minute. |
 | backup.podAnnotations | object | `{}` | Extra annotations on the dump pods. |
 | backup.resources | object | `{}` | Resource requests/limits for the dump pods. |
 | backup.startingDeadlineSeconds | int | `3600` | Seconds a dump that missed its scheduled time may still start in; past it the run is skipped and the next schedule stands (https://kubernetes.io/docs/concepts/workloads/controllers/cron-jobs/). |
@@ -244,17 +244,23 @@ Kubernetes: `>=1.36.0-0`
 | config.signing.verify_on_read | string | `"strict"` |  |
 | config.spec_profile | string | `"development"` |  |
 | config.terminology.api_enabled | bool | `false` |  |
-| database.demographicExistingSecret | string | `""` | Reference an existing Secret holding the DEMOGRAPHIC-role DSN. Its value is a full `postgres://ferroehr_demographic:...@host:5432/ferroehr`, a different credential from `database.existingSecret` above. |
-| database.demographicExistingSecretKey | string | `"FERROEHR__DB__DEMOGRAPHIC_URL"` | Key WITHIN demographicExistingSecret holding the demographic DSN. Mounted as a file; only its PATH reaches the pod's environment. |
-| database.demographicUrl | string | `""` | Inline demographic DSN (DEV/TEST ONLY — lands in a chart-managed Secret). Ignored when demographicExistingSecret is set. |
+| database.audit.existingSecret | string | `""` | Reference an existing Secret holding the DSN the audit repository is written through. The audit trail is not a pseudonymisation domain — it is the node's security-surveillance record, strictly outside the EHR content — but it is the one domain a deployment most often wants on its own server, which DSV Art. 4 Abs. 5 asks for. |
+| database.audit.existingSecretKey | string | `"FERROEHR__STORAGE__AUDIT__URL"` | Key WITHIN it holding that DSN. Mounted as a file. |
+| database.audit.url | string | `""` | Inline audit DSN (DEV/TEST ONLY). Ignored when `audit.existingSecret` is set. |
+| database.clinical.existingSecret | string | `""` | Reference an existing Secret holding the CLINICAL-role DSN (`postgres://ferroehr_clinical:...@host:5432/ferroehr`). Empty uses `database.existingSecret` / `database.url`. |
+| database.clinical.existingSecretKey | string | `"FERROEHR__STORAGE__CLINICAL__URL"` | Key WITHIN it holding that DSN. Mounted as a file; only its PATH reaches the pod's environment. |
+| database.clinical.url | string | `""` | Inline clinical DSN (DEV/TEST ONLY — lands in a chart-managed Secret). Ignored when `clinical.existingSecret` is set. |
 | database.existingSecret | string | `""` | Reference an existing Secret holding the app-role DSN (STRONGLY preferred for production — keeps the credential out of chart values and git). The secret's value must be a full `postgres://ferroehr_app:...@host:5432/ferroehr` (optionally `?sslmode=verify-full`). |
 | database.existingSecretKey | string | `"FERROEHR__DB__URL"` | Key WITHIN existingSecret that holds the DSN. This is a Secret key name, not an environment variable name: the chart mounts that key as a file and passes only its PATH as `FERROEHR__DB__URL_FILE`, so the DSN never enters the pod's environment. The default spelling is kept for compatibility with existing Secrets created for the older env-borne arrangement. |
-| database.linkageExistingSecret | string | `""` | Reference an existing Secret holding the LINKAGE-role DSN. Its value is a full `postgres://ferroehr_linkage:...@host:5432/ferroehr`, a third credential distinct from the two above. |
-| database.linkageExistingSecretKey | string | `"FERROEHR__DB__LINKAGE_URL"` | Key WITHIN linkageExistingSecret holding the linkage DSN. Mounted as a file; only its PATH reaches the pod's environment. |
-| database.linkageUrl | string | `""` | Inline linkage DSN (DEV/TEST ONLY — lands in a chart-managed Secret). Ignored when linkageExistingSecret is set. |
+| database.linkage.existingSecret | string | `""` | Reference an existing Secret holding the LINKAGE-role DSN (`postgres://ferroehr_linkage:...@host:5432/ferroehr`), a third credential distinct from the two above. |
+| database.linkage.existingSecretKey | string | `"FERROEHR__STORAGE__LINKAGE__URL"` | Key WITHIN it holding that DSN. Mounted as a file. |
+| database.linkage.url | string | `""` | Inline linkage DSN (DEV/TEST ONLY). Ignored when `linkage.existingSecret` is set. |
 | database.migrateExistingSecret | string | `""` | Reference an existing Secret holding the DSN that PREPARES the schema (`postgres://ferroehr_migrator:...@host:5432/ferroehr`). Required when the runtime DSNs are domain-scoped roles, including under `config.db.migrate=verify`. |
 | database.migrateExistingSecretKey | string | `"FERROEHR__DB__MIGRATE_URL"` | Key WITHIN migrateExistingSecret holding that DSN. Mounted as a file; only its PATH reaches the pod's environment. |
 | database.migrateUrl | string | `""` | Inline schema-preparation DSN (DEV/TEST ONLY — lands in a chart-managed Secret). Ignored when migrateExistingSecret is set. |
+| database.party.existingSecret | string | `""` | Reference an existing Secret holding the PARTY-role DSN (`postgres://ferroehr_party:...@host:5432/ferroehr`), a different credential from `database.existingSecret`. |
+| database.party.existingSecretKey | string | `"FERROEHR__STORAGE__PARTY__URL"` | Key WITHIN it holding that DSN. Mounted as a file. |
+| database.party.url | string | `""` | Inline party DSN (DEV/TEST ONLY). Ignored when `party.existingSecret` is set. |
 | database.url | string | `""` | Inline DSN (DEV/TEST ONLY — lands in a chart-managed Secret). Leave empty and use existingSecret in production. Ignored when existingSecret is set. |
 | extraEnv | list | `[]` | Extra raw env vars (list of {name,value} or {name,valueFrom}). Escape hatch for anything not surfaced above (array-valued keys via comma-separated values, one-off FERROEHR_* overrides). |
 | extraEnvFrom | list | `[]` | Extra envFrom sources (configMapRef/secretRef). |

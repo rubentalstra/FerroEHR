@@ -149,7 +149,7 @@ async fn an_identifier_resolution_is_withheld_when_its_record_is_rejected() {
             key_file: None,
         },
         Some(&ferroehr::config::secret::Secret::new(TEST_ROOT_KEY)),
-        ferroehr::db::demographic_pool_from(&pool),
+        ferroehr::db::domain_pool_from(&pool, ferroehr::db::domain::Domain::Party),
     )
     .expect("the engine builds")
     .expect("protection is enabled");

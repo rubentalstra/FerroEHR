@@ -320,13 +320,9 @@ statement_timeout_ms = 60000
 |---|---|---|---|
 | `url` | secret URL | `postgres://ferroehr:ferroehr@localhost:5432/ferroehr` | Connection DSN. The default suits a local from-source run against a localhost PostgreSQL, and the server logs a prominent warning at boot while it is in use; **production MUST set it**. Credentials are redacted from every rendering. `DATABASE_URL` is a recognized lower-priority alias. |
 | `url_file` | path | unset | Read the DSN from a file instead of the key above, for a mounted secret. Preferred over the environment form in Kubernetes: an environment value is readable through `/proc/<pid>/environ` and inherited by every child process. At most one of the pair, where the built-in development default does not count as "set". |
-| `demographic_url` | secret URL | unset | DSN for the demographic pseudonymisation domain. The `demographic` schema separation is always on; setting this gives it its own database ROLE as well (`ferroehr_demographic`), so neither runtime credential can read the other domain's relations. Unset, both pools share `url`. See [Operations → Database roles](../operations.md#database-roles-and-least-privilege). |
-| `demographic_url_file` | path | unset | Read `demographic_url` from a file instead, for a mounted secret. At most one of the pair. |
-| `linkage_url` | secret URL | unset | DSN for the linkage pseudonymisation domain — which party is the subject of which EHR. The `linkage` schema separation is always on; setting this gives it its own database ROLE as well (`ferroehr_linkage`), barred from both domains it joins and they from it. Unset, the pool shares `url`. See [Operations → Database roles](../operations.md#database-roles-and-least-privilege). |
-| `linkage_url_file` | path | unset | Read `linkage_url` from a file instead, for a mounted secret. At most one of the pair. |
-| `migrate_url` | secret URL | unset | DSN that PREPARES the schema, used for that one boot step and then closed. Preparation spans every schema at once, which no domain-scoped runtime credential can do, so a deployment separating the runtime roles names the credential that can here. Unset, it falls back to `url`. See [Operations → Which credential prepares the schema](../operations.md#which-credential-prepares-the-schema). |
+| `migrate_url` | secret URL | unset | DSN that PREPARES the schema, used for that one boot step and then closed. Preparation spans every schema of a database at once, which no domain-scoped runtime credential can do, so a deployment separating the runtime roles names the credential that can here. It prepares every domain whose DSN reaches the SAME DATABASE — which is the whole of the separated-credential posture, where each domain has a login role of its own on one database; a domain whose DSN reaches a different database is prepared on that DSN. Which it is, is read from the server (`pg_control_system()` plus `current_database()`), never from the DSN text. Unset, it falls back to `url`. See [Operations → Which credential prepares the schema](../operations.md#which-credential-prepares-the-schema). |
 | `migrate_url_file` | path | unset | Read `migrate_url` from a file instead, for a mounted secret. At most one of the pair. |
-| `migrate` | enum{apply,verify} | `apply` | Whether the server applies its embedded migrations at boot. `apply` is what makes an empty configuration boot against an empty database. `verify` issues **no DDL at all**: it checks that the database already carries exactly this build's migrations and refuses to start otherwise, so the serving DSN can authenticate as a role with no DDL rights. That check still READS all five `_sqlx_migrations` tables, which no least-privilege role can do, so pair it with `migrate_url` above and with `ferroehr db migrate` run out of band; see [Operations](../operations.md#which-credential-prepares-the-schema). |
+| `migrate` | enum{apply,verify} | `apply` | Whether the server applies its embedded migrations at boot. `apply` is what makes an empty configuration boot against an empty database. `verify` issues **no DDL at all**: it checks that the database already carries exactly this build's migrations and refuses to start otherwise, so the serving DSN can authenticate as a role with no DDL rights. That check still READS every `_sqlx_migrations` table of each database, which no least-privilege role can do, so pair it with `migrate_url` above and with `ferroehr db migrate` run out of band; see [Operations](../operations.md#which-credential-prepares-the-schema). |
 | `max_connections` | int | `20` | Pool ceiling. Write-heavy deployments benefit from raising it. |
 | `min_connections` | int | `2` | Idle connections kept open, avoiding cold-reopen churn under variable load. |
 | `acquire_timeout_secs` | int | `30` | Seconds to wait for a free connection before failing. |
@@ -339,6 +335,56 @@ can hold every pooled connection while every one of their callers has already
 given up. Keep it **above** [`query.timeout_ms`](config-integrations.md#query)
 so the AQL engine's own typed refusal fires first and this only catches what
 the engine does not govern.
+
+## `[storage]`
+
+One DSN per storage domain. Every domain always lives in its own schema
+(`clinical`, `party`, `linkage`, `audit`) and every pool carries only its own on
+its `search_path`, so no statement can reach another domain's relations without
+naming a schema it is not granted. Setting a `url` here adds the CREDENTIAL
+separation, and — if the DSN names another host — lets the domain live in a
+database or cluster of its own.
+
+```toml
+[storage.party]
+url_file = "/run/secrets/db-party-dsn"
+
+[storage.linkage]
+url_file = "/run/secrets/db-linkage-dsn"
+```
+
+| Key | Type | Default | Description |
+|---|---|---|---|
+| `storage.clinical.url` | secret URL | unset | DSN the clinical domain connects on (role `ferroehr_clinical`). Unset, it uses `db.url`. |
+| `storage.party.url` | secret URL | unset | DSN the party (demographic) domain connects on (role `ferroehr_party`). Unset, it uses `db.url`. |
+| `storage.linkage.url` | secret URL | unset | DSN the linkage domain connects on (role `ferroehr_linkage`) — the map from a party to the EHR whose subject it is, barred from both domains it joins and they from it. Unset, it uses `db.url`. |
+| `storage.audit.url` | secret URL | unset | DSN the audit repository is written through. Unset, it uses `db.url`. |
+| `storage.<domain>.url_file` | path | unset | Read that domain's DSN from a file instead, for a mounted secret. At most one of the pair. |
+
+Why a schema is not always enough: a base backup, WAL archiving and physical
+replication carry every schema of a database together
+([PostgreSQL 18, Backup and Restore](https://www.postgresql.org/docs/18/backup-dump.html)),
+so a separation that must survive those is a separation of databases. The Swiss
+EPDV Art. 10 Abs. 1 lit. b asks for storage "von anderen Datenbeständen getrennt"
+and the DSV Art. 4 Abs. 5 for the log to be kept "getrennt vom System, in welchem
+die Personendaten bearbeitet werden"; openEHR reads the same way for the identity
+cross-reference, which "could be located on different machines" (BASE
+`architecture_overview/master07-security.adoc` §Anonymity). No openEHR spec
+governs pools or database roles — this is our own design.
+
+What the server checks at boot:
+
+- a runtime role that can read another domain's relations is refused, always;
+- two domains configured on **different** DSNs that turn out to authenticate as
+  the **same** database role are refused — a separation that exists only in the
+  configuration is worse than none, because it reads as one that holds;
+- a missing domain role is a warning under `deployment_profile = "sandbox"` and a
+  refusal under `production`, where there are no grants to separate anything
+  with.
+
+One constraint on relocation: the `linkage` migration set revokes a function the
+`party` set creates, so those two domains are prepared in the same database. A
+layout that splits them is refused before anything connects, with the remedy.
 
 ## `[log]`
 

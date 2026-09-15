@@ -111,15 +111,41 @@ The chart-managed config-files Secret name (mounted TOML/PEM at /etc/ferroehr).
 {{- end }}
 
 {{/*
+Whether any storage domain carries an INLINE DSN the chart must put in its own
+Secret. One helper rather than a branch per domain, so a new domain is a values
+block and a name in the list.
+*/}}
+{{- define "ferroehr.hasInlineDomainDsn" -}}
+{{- range $domain := list "clinical" "party" "linkage" "audit" -}}
+{{- $dsn := index $.Values.database $domain -}}
+{{- if and (not $dsn.existingSecret) $dsn.url -}}
+true
+{{- end -}}
+{{- end -}}
+{{- end }}
+
+{{/*
+Whether any storage domain names an operator-supplied Secret, which the chart
+projects as a file without creating a Secret of its own.
+*/}}
+{{- define "ferroehr.hasDomainSecret" -}}
+{{- range $domain := list "clinical" "party" "linkage" "audit" -}}
+{{- $dsn := index $.Values.database $domain -}}
+{{- if $dsn.existingSecret -}}
+true
+{{- end -}}
+{{- end -}}
+{{- end }}
+
+{{/*
 Whether the chart-managed env Secret has any content (so we only create/mount it
 when there is at least one secret value to carry).
 */}}
 {{- define "ferroehr.hasChartSecret" -}}
 {{- $inlineDb := and (not .Values.database.existingSecret) .Values.database.url }}
-{{- $inlineDemographic := and (not .Values.database.demographicExistingSecret) .Values.database.demographicUrl }}
-{{- $inlineLinkage := and (not .Values.database.linkageExistingSecret) .Values.database.linkageUrl }}
+{{- $inlineDomain := include "ferroehr.hasInlineDomainDsn" . }}
 {{- $inlineMigrate := and (not .Values.database.migrateExistingSecret) .Values.database.migrateUrl }}
-{{- if or $inlineDb $inlineDemographic $inlineLinkage $inlineMigrate .Values.secrets.basicUserPasswordHashes .Values.secrets.authOidcHmacSecret .Values.secrets.signingKeyPassphrase .Values.secrets.eventsUrl .Values.secrets.fhirOutboundUrl .Values.secrets.auditFhirFeedUrl .Values.secrets.multimediaAccessKeyId .Values.secrets.multimediaSecretAccessKey .Values.secrets.terminologyOauth2ClientSecrets -}}
+{{- if or $inlineDb (eq $inlineDomain "true") $inlineMigrate .Values.secrets.basicUserPasswordHashes .Values.secrets.authOidcHmacSecret .Values.secrets.signingKeyPassphrase .Values.secrets.eventsUrl .Values.secrets.fhirOutboundUrl .Values.secrets.auditFhirFeedUrl .Values.secrets.multimediaAccessKeyId .Values.secrets.multimediaSecretAccessKey .Values.secrets.terminologyOauth2ClientSecrets -}}
 true
 {{- end -}}
 {{- end }}
@@ -131,7 +157,7 @@ OWASP Kubernetes Security Cheat Sheet prefers over an environment variable
 (https://cheatsheetseries.owasp.org/cheatsheets/Kubernetes_Security_Cheat_Sheet.html).
 */}}
 {{- define "ferroehr.hasFileSecrets" -}}
-{{- if or (eq (include "ferroehr.hasChartFileSecrets" .) "true") .Values.database.existingSecret .Values.database.demographicExistingSecret .Values.database.linkageExistingSecret .Values.database.migrateExistingSecret -}}
+{{- if or (eq (include "ferroehr.hasChartFileSecrets" .) "true") .Values.database.existingSecret (eq (include "ferroehr.hasDomainSecret" .) "true") .Values.database.migrateExistingSecret -}}
 true
 {{- end -}}
 {{- end }}
@@ -144,10 +170,9 @@ names a Secret nothing created makes the pod fail to mount.
 */}}
 {{- define "ferroehr.hasChartFileSecrets" -}}
 {{- $inlineDb := and (not .Values.database.existingSecret) .Values.database.url -}}
-{{- $inlineDemographic := and (not .Values.database.demographicExistingSecret) .Values.database.demographicUrl -}}
-{{- $inlineLinkage := and (not .Values.database.linkageExistingSecret) .Values.database.linkageUrl -}}
+{{- $inlineDomain := include "ferroehr.hasInlineDomainDsn" . -}}
 {{- $inlineMigrate := and (not .Values.database.migrateExistingSecret) .Values.database.migrateUrl -}}
-{{- if or $inlineDb $inlineDemographic $inlineLinkage $inlineMigrate .Values.secrets.authOidcHmacSecret .Values.secrets.signingKeyPassphrase .Values.secrets.multimediaSecretAccessKey .Values.secrets.terminologyOauth2ClientSecrets .Values.secrets.basicUserPasswordHashes .Values.secrets.eventsUrl .Values.secrets.fhirOutboundUrl -}}
+{{- if or $inlineDb (eq $inlineDomain "true") $inlineMigrate .Values.secrets.authOidcHmacSecret .Values.secrets.signingKeyPassphrase .Values.secrets.multimediaSecretAccessKey .Values.secrets.terminologyOauth2ClientSecrets .Values.secrets.basicUserPasswordHashes .Values.secrets.eventsUrl .Values.secrets.fhirOutboundUrl -}}
 true
 {{- end -}}
 {{- end }}
@@ -201,7 +226,7 @@ The four SecretUrl leaves are matched by PATH because their name (`url`) carries
 no shape a classifier can see — a URL's userinfo component is the credential.
 */}}
 {{- define "ferroehr.secretScan" -}}
-{{- $urlPaths := list "db.url" "events.url" "fhir.outbound.url" "audit.fhir_feed.url" -}}
+{{- $urlPaths := list "db.url" "storage.clinical.url" "storage.party.url" "storage.linkage.url" "storage.audit.url" "events.url" "fhir.outbound.url" "audit.fhir_feed.url" -}}
 {{- $node := .node -}}
 {{- $path := .path -}}
 {{- $kind := kindOf $node -}}
@@ -239,7 +264,7 @@ The `secrets:` key that carries a routed secret, keyed on its leaf name.
 */}}
 {{- define "ferroehr.secretRemedy" -}}
 {{- $routes := dict
-  "url" "route it through the matching `secrets:` key — `eventsUrl` or `fhirOutboundUrl` (mounted as files via events.url_file / fhir.outbound.url_file), `auditFhirFeedUrl` (env; that key still has no `*_file` sibling), or `database.existingSecret` for the DSN (mounted via db.url_file)"
+  "url" "route it through the matching `secrets:` key — `eventsUrl` or `fhirOutboundUrl` (mounted as files via events.url_file / fhir.outbound.url_file), `auditFhirFeedUrl` (env; that key still has no `*_file` sibling), or `database.existingSecret` for the shared DSN (mounted via db.url_file) and `database.<domain>.existingSecret` for one storage domain's own (mounted via storage.<domain>.url_file)"
   "hmac_secret" "set `secrets.authOidcHmacSecret` instead"
   "key_passphrase" "set `secrets.signingKeyPassphrase` instead"
   "secret_access_key" "set `secrets.multimediaSecretAccessKey` instead"

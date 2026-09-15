@@ -42,7 +42,7 @@ reads as absent, and deleting one twice is refused.
 Parties do not live in the clinical schema. They live in a `party` schema of
 their own, with its own archival partitions and its own database roles, and the
 database refuses the mix in both directions: a version with no owning EHR cannot
-enter the clinical schema, and one that has an owner cannot enter `party`. Point `[db] demographic_url` at a role of its own
+enter the clinical schema, and one that has an owner cannot enter `party`. Point `[storage.party] url` at a role of its own
 and the schema separation becomes a credential separation as well. See
 [Operations → Database roles and least
 privilege](../operations.md#database-roles-and-least-privilege) for the roles

@@ -191,12 +191,12 @@ services:
   #
   # Run one, or all three:
   #   docker compose --profile backup run --rm ferroehr-backup-clinical
-  #   docker compose --profile backup run --rm ferroehr-backup-demographic
+  #   docker compose --profile backup run --rm ferroehr-backup-party
   #   docker compose --profile backup run --rm ferroehr-backup-linkage
   #
   # The three targets are ordinary directories, so they take ordinary
   # permissions: give them different owners, ship them to different buckets,
-  # hand the demographic and linkage ones to smaller groups. That is the
+  # hand the party and linkage ones to smaller groups. That is the
   # "separately access-controlled" half, and this file cannot enforce it for
   # you — it can only stop them from landing in one file.
   #
@@ -254,15 +254,15 @@ services:
     tmpfs:
       - /tmp
 
-  ferroehr-backup-demographic:
+  ferroehr-backup-party:
     profiles: [backup]
     image: ${FERROEHR_POSTGRES_IMAGE:-ghcr.io/rubentalstra/ferroehr-postgres:4.3.0}
     depends_on:
       ferroehr-postgres:
         condition: service_healthy
     # This stack runs one login credential for every domain (the init script
-    # says why). A deployment that gives the demographic domain its own
-    # BYPASSRLS backup role points this job at that one instead, and then the
+    # says why). A deployment that gives the party domain its own BYPASSRLS
+    # backup role points this job at that one instead, and then the
     # job that can read the identities cannot read the clinical record or the
     # map to it.
     environment:
@@ -276,9 +276,9 @@ services:
         pg_dump --host=ferroehr-postgres --username=postgres
         --dbname=${PG_INIT_DB:-ferroehr} --format=custom --no-owner
         --strict-names --schema=party
-        --file=/backup/demographic-$$(date -u +%Y%m%dT%H%M%SZ).dump
+        --file=/backup/party-$$(date -u +%Y%m%dT%H%M%SZ).dump
     volumes:
-      - ${FERROEHR_BACKUP_DEMOGRAPHIC_DIR:-./backups/demographic}:/backup
+      - ${FERROEHR_BACKUP_PARTY_DIR:-./backups/party}:/backup
     cap_drop: [ALL]
     security_opt:
       - no-new-privileges:true

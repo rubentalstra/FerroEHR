@@ -239,24 +239,19 @@ boot_one() {
     [[ -e "${secdir}/${base}" ]] && continue
     case "$base" in
       db.url) printf 'postgres://ferroehr_app:pw@postgres:5432/ferroehr' > "${secdir}/${base}" ;;
-      # The demographic pool's own DSN (#3179). Without a stand-in here, no ci
-      # overlay could set database.demographicExistingSecret without failing
-      # this check, so the branch that gives the two pseudonymisation domains
-      # separate credentials would stay unexercised by construction.
-      db.demographic_url)
-        printf 'postgres://ferroehr_demographic:pw@postgres:5432/ferroehr' > "${secdir}/${base}" ;;
+      # A storage domain's own DSN (#3343). Without a stand-in here, no ci
+      # overlay could set database.<domain>.existingSecret without failing this
+      # check, so the branch that gives each domain its own credential would
+      # stay unexercised by construction.
+      storage.clinical.url|storage.party.url|storage.linkage.url|storage.audit.url)
+        printf 'postgres://ferroehr_%s:pw@postgres:5432/ferroehr' \
+          "$(printf '%s' "$base" | cut -d. -f2)" > "${secdir}/${base}" ;;
       # The credential that prepares the schema (#3224), for the same reason:
       # an overlay setting database.migrateExistingSecret would otherwise fail
       # this check, leaving the branch that separates preparation from the
       # runtime credentials unexercised.
       db.migrate_url)
         printf 'postgres://ferroehr_migrator:pw@postgres:5432/ferroehr' > "${secdir}/${base}" ;;
-      # The linkage pool's own DSN (#3158), for the same reason: an overlay
-      # setting database.linkageExistingSecret would otherwise fail this check,
-      # leaving the branch that gives the third pseudonymisation domain its own
-      # credential unexercised.
-      db.linkage_url)
-        printf 'postgres://ferroehr_linkage:pw@postgres:5432/ferroehr' > "${secdir}/${base}" ;;
       *)
         red "  ${p} is referenced but no rendered Secret key supplies it"
         return 1

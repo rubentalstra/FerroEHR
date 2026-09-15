@@ -31,7 +31,7 @@ FerroEHR publishes three container images to GHCR:
 | Image | Contents |
 |---|---|
 | `ghcr.io/rubentalstra/ferroehr` | The `ferroehr` server binary on a distroless, non-root, shell-less multi-arch base (amd64 + arm64). Configured by a mounted TOML file and/or `FERROEHR__*` environment variables. |
-| `ghcr.io/rubentalstra/ferroehr-postgres` | `postgres:18.6` (with Debian security updates applied at image build) plus init scripts that pre-create the application login role, the eight `NOLOGIN` group roles (`ferroehr_migrator`, `ferroehr_app`, `ferroehr_reader`, and the five domain roles `ferroehr_ehr`, `ferroehr_demographic`, `ferroehr_ehr_reader`, `ferroehr_demographic_reader`, `ferroehr_linkage`), the database, the schemas (`ehr`, `ext`, `audit`) and the extensions (`uuid-ossp`, `pgcrypto`, `pg_trgm`, `btree_gist`), so the app role never needs superuser. |
+| `ghcr.io/rubentalstra/ferroehr-postgres` | `postgres:18.6` (with Debian security updates applied at image build) plus init scripts that pre-create the application login role, the eight `NOLOGIN` group roles (`ferroehr_migrator`, `ferroehr_app`, `ferroehr_reader`, and the five domain roles `ferroehr_clinical`, `ferroehr_party`, `ferroehr_clinical_reader`, `ferroehr_party_reader`, `ferroehr_linkage`), the database, the schemas (`clinical`, `ext`, `audit`) and the extensions (`uuid-ossp`, `pgcrypto`, `pg_trgm`, `btree_gist`), so the app role never needs superuser. |
 | `ghcr.io/rubentalstra/ferroehr-viewer` | The [viewer](../viewer/index.md), a standalone web application that talks to the CDR strictly over ITS-REST. Optional; see the `viewer` profile below. |
 
 Each image is published under several tags:
@@ -52,7 +52,7 @@ variables in [the table below](#variables-the-compose-files-read).
 
 The role the server connects as in the quickstart owns the database and is a
 member of `ferroehr_migrator` and `ferroehr_app`, which is what lets it apply
-migrations at boot, and of `ferroehr_ehr` and `ferroehr_demographic`, so the
+migrations at boot, and of `ferroehr_clinical` and `ferroehr_party`, so the
 schema separation is exercised on one credential. That single credential is
 deliberate: one container with one DSN cannot demonstrate the credential
 separation honestly.
@@ -381,18 +381,18 @@ you ask for them:
   production, point the multimedia settings at a real, credentialed, HTTPS S3
   endpoint instead; see [S3 multimedia](../beyond-core/s3-multimedia.md).
 
-- **`ferroehr-backup-clinical`, `ferroehr-backup-demographic` and
+- **`ferroehr-backup-clinical`, `ferroehr-backup-party` and
   `ferroehr-backup-linkage`** (`--profile backup`): one `pg_dump` job per
   pseudonymisation domain, run on demand rather than started with the stack:
 
   ```shell
   docker compose --profile backup run --rm ferroehr-backup-clinical
-  docker compose --profile backup run --rm ferroehr-backup-demographic
+  docker compose --profile backup run --rm ferroehr-backup-party
   docker compose --profile backup run --rm ferroehr-backup-linkage
   ```
 
   Each writes a timestamped custom-format dump into its own host directory
-  (`FERROEHR_BACKUP_CLINICAL_DIR`, `FERROEHR_BACKUP_DEMOGRAPHIC_DIR`,
+  (`FERROEHR_BACKUP_CLINICAL_DIR`, `FERROEHR_BACKUP_PARTY_DIR`,
   `FERROEHR_BACKUP_LINKAGE_DIR`, defaulting to `./backups/clinical`,
   `./backups/demographic` and `./backups/linkage`). Set
   `FERROEHR_BACKUP_USER="$(id -u):$(id -g)"` and the files land owned by you;
@@ -487,7 +487,7 @@ Set these in your shell (or an `.env` file) to retune without editing anything:
 | `FERROEHR_DB_PORT` | not published | Host port for PostgreSQL, read only by the `db-publish` overlay (default `5432` there). |
 | `FERROEHR_S3_PORT` | `8333` | Host port mapped to the S3 gateway (the `s3` profile). |
 | `FERROEHR_BACKUP_CLINICAL_DIR` | `./backups/clinical` | Host directory the clinical dump job writes to (the `backup` profile). |
-| `FERROEHR_BACKUP_DEMOGRAPHIC_DIR` | `./backups/demographic` | Host directory the demographic dump job writes to. |
+| `FERROEHR_BACKUP_PARTY_DIR` | `./backups/party` | Host directory the party dump job writes to. |
 | `FERROEHR_BACKUP_LINKAGE_DIR` | `./backups/linkage` | Host directory the linkage dump job writes to. |
 | `FERROEHR_BACKUP_USER` | `0:0` (root in the container) | `uid:gid` the dump jobs run as. Set it to `$(id -u):$(id -g)` and the files land owned by you. |
 | `FERROEHR_CPUS` / `FERROEHR_MEM` | `4` / `4G` | Server container resource ceiling. |

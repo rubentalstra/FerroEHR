@@ -78,7 +78,7 @@ async fn two_pools_on_one_server_report_one_cluster_identity() {
     let a = db::cluster_identity(&db.pool())
         .await
         .expect("identity on pool a");
-    let b = db::cluster_identity(&db::demographic_pool_from(&db.pool()))
+    let b = db::cluster_identity(&db::domain_pool_from(&db.pool(), db::domain::Domain::Party))
         .await
         .expect("identity on pool b");
     assert!(!a.is_empty());

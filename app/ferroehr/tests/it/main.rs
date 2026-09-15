@@ -47,6 +47,7 @@ mod fixtures;
 mod item_tag_fixture;
 mod licence_stamp;
 mod multimedia_s3;
+mod one_schema_per_statement;
 mod opt_resource_meta;
 mod outbox_prune;
 mod persistence;

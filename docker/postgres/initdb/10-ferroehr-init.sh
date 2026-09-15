@@ -8,9 +8,9 @@
 # expects to already exist or be a no-op when it connects as the NON-superuser
 # app role:
 #   * a LOGIN role (non-superuser) and a database it owns;
-#   * schemas `ehr`, `ext` and `audit` owned by that role (the app's
-#     `CREATE SCHEMA IF NOT EXISTS` then no-ops; it also bootstraps
-#     `demographic` and `linkage`, which it owns and this script leaves to it);
+#   * schemas `clinical`, `ext` and `audit` owned by that role (the app's
+#     `CREATE SCHEMA IF NOT EXISTS` then no-ops; it also bootstraps `party` and
+#     `linkage`, which it owns and this script leaves to it);
 #   * the extensions the stack needs, installed here by the superuser
 #     (`CREATE EXTENSION` on non-trusted extensions requires superuser — the
 #     whole reason this image exists). The app's bootstrap
@@ -32,8 +32,8 @@ psql_app() { psql -v ON_ERROR_STOP=1 --username "$POSTGRES_USER" --dbname "$APP_
 echo "ferroehr init: creating role '${APP_USER}' and database '${APP_DB}'"
 
 # 1) Login role (idempotent) — non-superuser by design — plus the eight
-#    NOLOGIN group roles of the layered role architecture: the three legacy
-#    single-domain ones and the five pseudonymisation-domain ones. The app
+#    NOLOGIN group roles of the layered role architecture: the three generic
+#    ones and the five domain-named ones. The app
 #    role has no CREATEROLE, so the baseline migration can only grant to these
 #    roles if they already exist; creating them here gives dev/compose the
 #    same grant topology as a hardened deployment (no "roles absent" NOTICEs).
@@ -54,25 +54,42 @@ BEGIN
   IF NOT EXISTS (SELECT FROM pg_roles WHERE rolname = 'ferroehr_reader') THEN
     CREATE ROLE ferroehr_reader NOLOGIN;
   END IF;
-  -- The five pseudonymisation-domain roles, for the same reason as the three
-  -- above: the demographic and linkage baselines grant to them only if they
-  -- already exist,
+  -- The five domain-named roles, for the same reason as the three above: the
+  -- party and linkage baselines grant to them only if they already exist,
   -- and without them compose runs with no domain grants at all and a "roles
   -- absent" NOTICE nobody reads. NOINHERIT and no membership in one another —
   -- a role that could inherit the other domain's grants would make the
   -- boundary a naming convention (PostgreSQL 18, CREATE ROLE
   -- https://www.postgresql.org/docs/18/sql-createrole.html).
+  -- The first generation's four domain names, created only so the migration
+  -- sets that still grant to them by name can run: the app role holds no
+  -- CREATEROLE, so a set's GRANT to a role that does not exist would fail the
+  -- migration (SQLSTATE 42704). The audit set withdraws their last grant, so
+  -- they end up empty; they are not dropped, because those grant files run
+  -- again whenever a schema is recreated.
   IF NOT EXISTS (SELECT FROM pg_roles WHERE rolname = 'ferroehr_ehr') THEN
     CREATE ROLE ferroehr_ehr NOLOGIN NOINHERIT;
-  END IF;
-  IF NOT EXISTS (SELECT FROM pg_roles WHERE rolname = 'ferroehr_demographic') THEN
-    CREATE ROLE ferroehr_demographic NOLOGIN NOINHERIT;
   END IF;
   IF NOT EXISTS (SELECT FROM pg_roles WHERE rolname = 'ferroehr_ehr_reader') THEN
     CREATE ROLE ferroehr_ehr_reader NOLOGIN NOINHERIT;
   END IF;
+  IF NOT EXISTS (SELECT FROM pg_roles WHERE rolname = 'ferroehr_demographic') THEN
+    CREATE ROLE ferroehr_demographic NOLOGIN NOINHERIT;
+  END IF;
   IF NOT EXISTS (SELECT FROM pg_roles WHERE rolname = 'ferroehr_demographic_reader') THEN
     CREATE ROLE ferroehr_demographic_reader NOLOGIN NOINHERIT;
+  END IF;
+  IF NOT EXISTS (SELECT FROM pg_roles WHERE rolname = 'ferroehr_clinical') THEN
+    CREATE ROLE ferroehr_clinical NOLOGIN NOINHERIT;
+  END IF;
+  IF NOT EXISTS (SELECT FROM pg_roles WHERE rolname = 'ferroehr_party') THEN
+    CREATE ROLE ferroehr_party NOLOGIN NOINHERIT;
+  END IF;
+  IF NOT EXISTS (SELECT FROM pg_roles WHERE rolname = 'ferroehr_clinical_reader') THEN
+    CREATE ROLE ferroehr_clinical_reader NOLOGIN NOINHERIT;
+  END IF;
+  IF NOT EXISTS (SELECT FROM pg_roles WHERE rolname = 'ferroehr_party_reader') THEN
+    CREATE ROLE ferroehr_party_reader NOLOGIN NOINHERIT;
   END IF;
   IF NOT EXISTS (SELECT FROM pg_roles WHERE rolname = 'ferroehr_linkage') THEN
     CREATE ROLE ferroehr_linkage NOLOGIN NOINHERIT;
@@ -83,16 +100,16 @@ BEGIN
   -- ONE login credential, deliberately. This stack demonstrates the SCHEMA
   -- separation — which is unconditional, and which the server's boot
   -- self-check verifies — not the CREDENTIAL separation. A deployment reaches
-  -- that by giving the demographic pool its own DSN (the db.demographic_url
-  -- config key, or the chart value database.demographicExistingSecret) under a
-  -- login role that is a member of ferroehr_demographic and nothing else, and
-  -- the linkage pool the same through db.linkage_url. Such a deployment also
-  -- names db.migrate_url: preparing the schema reads all five migration sets,
-  -- which no domain-scoped credential can do. A demo stack that looked split
+  -- that by giving the party pool its own DSN (the [storage.party] url config
+  -- key, or the chart value database.party.existingSecret) under a
+  -- login role that is a member of ferroehr_party and nothing else, and the
+  -- linkage pool the same through [storage.linkage] url. Such a deployment also
+  -- names db.migrate_url: preparing the schema reads every migration set of a
+  -- database, which no domain-scoped credential can do. A demo stack that looked split
   -- while running one credential would be worse than one that says which half
   -- it shows.
-  GRANT ferroehr_ehr TO "${APP_USER}";
-  GRANT ferroehr_demographic TO "${APP_USER}";
+  GRANT ferroehr_clinical TO "${APP_USER}";
+  GRANT ferroehr_party TO "${APP_USER}";
   GRANT ferroehr_linkage TO "${APP_USER}";
 END
 \$do\$;

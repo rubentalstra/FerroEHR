@@ -26,6 +26,7 @@ use clap::{Parser, Subcommand};
 use ferroehr::config::deployment::{ClusterIdentities, DeploymentPosture, DeploymentProfile};
 use ferroehr::config::management::EndpointLevels;
 use ferroehr::config::management::ManagementConfig;
+use ferroehr::db::domain::{Domain, DomainPools};
 use ferroehr::system_log::config::AuditConfig;
 use ferroehr::system_log::config::AuditPosture;
 use ferroehr::system_log::sender::{AuditHandle, AuditSender, SubjectResolver};
@@ -167,10 +168,10 @@ async fn run_db(
     // credential that can reach every schema when the runtime ones each hold
     // one pseudonymisation domain.
     let outcome = match cmd {
-        DbCmd::Migrate => db::apply_schema(&config.db)
+        DbCmd::Migrate => db::apply_schema(&config.db, &config.storage)
             .await
             .context("applying migrations"),
-        DbCmd::Verify => verify_schema_and_isolation(&config.db).await,
+        DbCmd::Verify => verify_schema_and_isolation(&config).await,
     };
     telemetry.shutdown().await;
     outcome
@@ -181,25 +182,31 @@ async fn run_db(
 ///
 /// The two checks deliberately authenticate as different credentials, exactly
 /// as [`ferroehr::db::prepare`] does at boot. The schema state is read on the
-/// migration DSN, which spans all five migration sets; the isolation check
-/// runs on the RUNTIME pool, because what it measures is what the serving
-/// credential can reach — asked of the migration credential it would report
+/// migration DSN of each database the domains reach; the isolation check runs
+/// on the RUNTIME pools, because what it measures is what the serving
+/// credentials can reach — asked of the migration credential it would report
 /// on a role that holds every domain by design.
 ///
 /// # Errors
 /// A schema divergence, an unreadable migration set, a breached domain
 /// boundary, or a connection failure.
-async fn verify_schema_and_isolation(settings: &db::DbConfig) -> anyhow::Result<()> {
-    db::verify_schema(settings)
+async fn verify_schema_and_isolation(
+    config: &ferroehr::config::FerroEhrConfig,
+) -> anyhow::Result<()> {
+    db::verify_schema(&config.db, &config.storage)
         .await
         .map_err(|error| anyhow::Error::new(error).context("verifying the schema"))?;
-    let pool = db::connect(settings)
+    let pools = db::connect_domains(&config.db, &config.storage)
         .await
         .context("connecting to PostgreSQL")?;
-    let outcome = db::verify_domain_isolation(&pool)
-        .await
-        .context("verifying the pseudonymisation domain isolation");
-    pool.close().await;
+    let outcome = db::verify_domain_isolation(
+        &pools,
+        &config.storage.layout(&config.db),
+        config.deployment_profile,
+    )
+    .await
+    .context("verifying the pseudonymisation domain isolation");
+    pools.close().await;
     outcome
 }
 
@@ -228,6 +235,10 @@ fn run_config(
                 .map_err(|e| anyhow::anyhow!("{e}"))?;
             let rendered = cfg.to_redacted_toml().map_err(|e| anyhow::anyhow!("{e}"))?;
             println!("{rendered}");
+            // The resolved placement of the four storage domains, so an
+            // operator can see whether the deployment they configured is the
+            // one the server would run. It names no DSN.
+            println!("{}", cfg.storage.layout(&cfg.db).describe());
             if cfg.db.is_dev_default() {
                 eprintln!(
                     "note: [db].url is the built-in DEVELOPMENT DEFAULT; set it for any \
@@ -349,7 +360,7 @@ fn mounted_management_endpoints(levels: EndpointLevels) -> String {
 /// build missing its cargo feature, or an unusable external dependency.
 fn assemble_service(
     config: &ferroehr::config::FerroEhrConfig,
-    pools: &Pools,
+    pools: &DomainPools,
     audit_sender: Option<AuditSender>,
     outbox_enabled: bool,
     signer: Arc<Signer>,
@@ -370,7 +381,7 @@ fn assemble_service(
         ferroehr::service::demographic::identifier::engine::IdentifierProtection::from_config(
             &config.demographic.identifier_protection,
             config.demographic.identifier_protection.key.as_ref(),
-            pools.demographic.clone(),
+            pools.party.clone(),
         )
         .context("building the [demographic.identifier_protection] engine")?;
 
@@ -386,7 +397,7 @@ fn assemble_service(
     tracing::info!(licence = %licence, "licence");
 
     let mut service = FerroEhrService::new(pool.clone())
-        .with_demographic_pool(pools.demographic.clone())
+        .with_demographic_pool(pools.party.clone())
         .with_linkage_pool(pools.linkage.clone())
         .with_spec_profile(config.spec_profile)
         .with_system_id(config.server.system_id.clone())
@@ -402,8 +413,9 @@ fn assemble_service(
         service = service.with_audit(sender);
     }
     if audit_enabled && config.audit.store.enabled {
-        service =
-            service.with_audit_store(ferroehr::system_log::store::AuditStore::new(pool.clone()));
+        service = service.with_audit_store(ferroehr::system_log::store::AuditStore::new(
+            pools.audit.clone(),
+        ));
     }
 
     service = attach_terminology(service, config)?;
@@ -512,7 +524,7 @@ fn log_resolved_posture(
 /// failure reading a pool's cluster identity.
 async fn evaluate_deployment(
     config: &ferroehr::config::FerroEhrConfig,
-    pools: &Pools,
+    pools: &DomainPools,
 ) -> anyhow::Result<DeploymentPosture> {
     let clusters = ClusterIdentities {
         clinical: Some(
@@ -520,10 +532,10 @@ async fn evaluate_deployment(
                 .await
                 .context("reading the clinical pool's cluster identity")?,
         ),
-        demographic: Some(
-            db::cluster_identity(&pools.demographic)
+        party: Some(
+            db::cluster_identity(&pools.party)
                 .await
-                .context("reading the demographic pool's cluster identity")?,
+                .context("reading the party pool's cluster identity")?,
         ),
         linkage: Some(
             db::cluster_identity(&pools.linkage)
@@ -671,70 +683,46 @@ fn warn_boot_postures(config: &ferroehr::config::FerroEhrConfig) {
     }
 }
 
-/// The two domain pools the server runs on: the clinical one and the
-/// demographic (pseudonymisation-domain) one.
+/// Connects the four domain pools and prepares every database they reach.
 ///
-/// They differ in `search_path` always, and in credential when the deployment
-/// sets `[db].demographic_url`. No openEHR spec governs storage layout or
-/// database roles — our own design/extension.
-#[derive(Debug)]
-struct Pools {
-    /// Serves the `ehr` schema: EHRs, compositions, folders, templates,
-    /// eventing and every supporting relation.
-    clinical: PgPool,
-    /// Serves the `demographic` schema: parties and their change control.
-    demographic: PgPool,
-    /// Serves the `linkage` schema: which party is the subject of which EHR.
-    linkage: PgPool,
-}
-
-/// Connects the three domain pools and prepares the schema.
-///
-/// Each pool carries its own domain's `search_path`, and the party and linkage
-/// pools carry their own credential when the deployment names one — which is
-/// what makes the pseudonymisation boundary a role boundary rather than only a
+/// Each pool carries its own domain's `search_path`, and a domain a deployment
+/// gave `[storage.<domain>].url` carries its own credential — which is what
+/// makes the pseudonymisation boundary a role boundary rather than only a
 /// schema one. The domain split is our own deployment extension; no openEHR
 /// spec governs it.
 ///
-/// Schema preparation is [`ferroehr::db::prepare`], which spans every schema
-/// on the migration DSN (`[db].migrate_url`, falling back to `[db].url`) and
-/// then measures the CLINICAL pool's own reach with
-/// [`ferroehr::db::verify_domain_isolation`], refusing to boot a database
-/// whose grants let one runtime role read another domain.
+/// Schema preparation is [`ferroehr::db::prepare`], which spans every schema of
+/// each database on that database's migration DSN (`[db].migrate_url` for every
+/// domain reaching the database it reaches, the domain's own DSN otherwise) and
+/// then
+/// measures the runtime pools' own reach with
+/// [`ferroehr::db::verify_domain_isolation`], refusing to boot a database whose
+/// grants let one runtime role read another domain.
 ///
 /// # Errors
 /// A connection, migration or domain-isolation failure, contextualized for the
 /// operator.
-async fn connect_pool(config: &ferroehr::config::FerroEhrConfig) -> anyhow::Result<Pools> {
-    let clinical = db::connect(&config.db)
+async fn connect_pool(config: &ferroehr::config::FerroEhrConfig) -> anyhow::Result<DomainPools> {
+    let pools = db::connect_domains(&config.db, &config.storage)
         .await
         .context("connecting to PostgreSQL")?;
-    let demographic = db::connect_demographic(&config.db)
-        .await
-        .context("connecting to PostgreSQL (party)")?;
-    let linkage = db::connect_linkage(&config.db)
-        .await
-        .context("connecting to PostgreSQL (linkage)")?;
-    db::prepare(&config.db, &clinical)
-        .await
-        .context("preparing the database schema")?;
-    if config.db.roles_are_separated() {
-        tracing::info!(
-            "the party domain connects on its own DSN: the clinical and party credentials are \
-             separate database roles"
-        );
+    db::prepare(
+        &config.db,
+        &config.storage,
+        &pools,
+        config.deployment_profile,
+    )
+    .await
+    .context("preparing the database schema")?;
+    for domain in Domain::ALL {
+        if config.storage.is_separated(domain) {
+            tracing::info!(
+                %domain,
+                "the domain connects on its own DSN: its credential is a database role of its own"
+            );
+        }
     }
-    if config.db.linkage_role_is_separated() {
-        tracing::info!(
-            "the linkage domain connects on its own DSN: the map from a party to its EHR is \
-             held on a credential that has neither the clinical nor the party grants"
-        );
-    }
-    Ok(Pools {
-        clinical,
-        demographic,
-        linkage,
-    })
+    Ok(pools)
 }
 
 /// Wires the opt-in external FHIR terminology servers — ALL configured
@@ -892,7 +880,7 @@ async fn serve(config_path: Option<&Path>, overrides: &[(String, String)]) -> an
     #[cfg(not(feature = "fhir"))]
     ferroehr::system_log::require_fhir_disabled(&config.audit).map_err(|e| anyhow::anyhow!(e))?;
     let audit_config: AuditConfig = config.audit.clone();
-    let (audit_sender, audit_handle) = start_audit(&audit_config, &pool).await;
+    let (audit_sender, audit_handle) = start_audit(&audit_config, &pool, &pools.audit).await;
 
     // Contribution-outbox eventing + FHIR outbound emitter (both off by default).
     let outbox_enabled = config.events.enabled || config.fhir.outbound.enabled;
@@ -912,7 +900,7 @@ async fn serve(config_path: Option<&Path>, overrides: &[(String, String)]) -> an
         Some(ferroehr::extensions::events::publisher::start(
             config.events.clone(),
             pool.clone(),
-            pools.demographic.clone(),
+            pools.party.clone(),
         ))
     } else {
         None
@@ -1056,17 +1044,22 @@ async fn serve(config_path: Option<&Path>, overrides: &[(String, String)]) -> an
 
 /// Start the audit subsystem from config. `(None, None)` when disabled or on a
 /// boot failure (fail-open).
+///
+/// Two pools, deliberately: the record is written to the `audit` domain, while
+/// the optional subject resolution reads the `clinical` one. A single pool
+/// would put one of the two schemas outside the connection's `search_path`.
 async fn start_audit(
     config: &AuditConfig,
-    pool: &PgPool,
+    clinical: &PgPool,
+    audit: &PgPool,
 ) -> (Option<AuditSender>, Option<AuditHandle>) {
     if !config.enabled {
         return (None, None);
     }
     let resolver = config
         .resolve_subject
-        .then(|| subject_resolver(pool.clone()));
-    match ferroehr::system_log::sender::start(config.clone(), resolver, Some(pool.clone())).await {
+        .then(|| subject_resolver(clinical.clone()));
+    match ferroehr::system_log::sender::start(config.clone(), resolver, Some(audit.clone())).await {
         Ok((sender, handle)) => (Some(sender), Some(handle)),
         Err(e) => {
             tracing::error!("ATNA audit failed to start ({e}); continuing without auditing");

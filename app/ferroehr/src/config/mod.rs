@@ -65,8 +65,11 @@ pub struct FerroEhrConfig {
     pub deployment_accepts: Vec<deployment::DeploymentGap>,
     /// `[server]` — HTTP listener + REST surface + System-Options identity.
     pub server: server::ServerConfig,
-    /// `[db]` — `PostgreSQL` connection.
+    /// `[db]` — the shared `PostgreSQL` DSN, pool tuning and migration mode.
     pub db: crate::db::DbConfig,
+    /// `[storage]` — one DSN per storage domain (`clinical`, `party`,
+    /// `linkage`, `audit`), each defaulting to `[db].url`.
+    pub storage: crate::db::domain::StorageConfig,
     /// `[log]` — logging.
     pub log: crate::telemetry::config::LogConfig,
     /// `[telemetry]` — OpenTelemetry export.
@@ -1322,10 +1325,10 @@ mod tests {
             "[db]\nurl = \"postgres://u:p@h:5432/d\"\nurl_file = \"/dev/null\"\n",
             "[db]\nmigrate_url = \"postgres://u:p@h:5432/d\"\n\
              migrate_url_file = \"/dev/null\"\n",
-            "[db]\ndemographic_url = \"postgres://u:p@h:5432/d\"\n\
-             demographic_url_file = \"/dev/null\"\n",
-            "[db]\nlinkage_url = \"postgres://u:p@h:5432/d\"\n\
-             linkage_url_file = \"/dev/null\"\n",
+            "[storage.party]\nurl = \"postgres://u:p@h:5432/d\"\n\
+             url_file = \"/dev/null\"\n",
+            "[storage.linkage]\nurl = \"postgres://u:p@h:5432/d\"\n\
+             url_file = \"/dev/null\"\n",
             "[events]\nurl = \"amqp://u:p@h:5672/%2f\"\nurl_file = \"/dev/null\"\n",
             "[fhir.outbound]\nurl = \"amqp://u:p@h:5672/%2f\"\nurl_file = \"/dev/null\"\n",
             "[[auth.basic.users]]\nusername = \"a\"\npassword_hash = \"x\"\n\
@@ -1341,8 +1344,8 @@ mod tests {
         }
     }
 
-    /// The four URL file routes are reachable through the environment grammar
-    /// too, which is how a container passes a mount path without a config file.
+    /// The URL file routes are reachable through the environment grammar too,
+    /// which is how a container passes a mount path without a config file.
     ///
     /// Without this the documented env form could ship dead — the whole reason
     /// every section carries an env-mapping test.
@@ -1375,11 +1378,21 @@ mod tests {
                     "FERROEHR__FHIR__OUTBOUND__URL_FILE",
                     &broker.path().display().to_string(),
                 ),
+                (
+                    "FERROEHR__STORAGE__PARTY__URL_FILE",
+                    &migrate.path().display().to_string(),
+                ),
             ]),
             &[],
         );
         assert_eq!(c.db.url.expose(), "postgres://u:p@h:5432/d");
         assert_eq!(c.db.migrate_dsn(), "postgres://m:p@h:5432/d");
+        assert_eq!(
+            c.storage.dsn(crate::db::domain::Domain::Party, &c.db),
+            "postgres://m:p@h:5432/d",
+            "the party domain's own DSN arrives through the env grammar, rather than \
+             falling back to db.url as an unwired key would"
+        );
         assert_eq!(c.events.url.expose(), "amqps://u:p@b:5671/%2f");
         assert_eq!(c.fhir.outbound.url.expose(), "amqps://u:p@b:5671/%2f");
     }

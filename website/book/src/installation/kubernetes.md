@@ -38,7 +38,7 @@ kubectl -n ferroehr create secret generic ferroehr-db \
   --from-literal=FERROEHR__DB__URL='postgres://ferroehr_app:***@pg-host:5432/ferroehr?sslmode=verify-full'
 
 helm install ferroehr oci://ghcr.io/rubentalstra/charts/ferroehr \
-  --version 9.0.0 -n ferroehr \
+  --version 10.0.0 -n ferroehr \
   --set database.existingSecret=ferroehr-db \
   --set image.tag=4.3.0
 ```
@@ -55,7 +55,7 @@ helm install ferroehr oci://ghcr.io/rubentalstra/charts/ferroehr \
 reference. To read the chart's metadata without installing it:
 
 ```shell
-helm show chart oci://ghcr.io/rubentalstra/charts/ferroehr --version 9.0.0
+helm show chart oci://ghcr.io/rubentalstra/charts/ferroehr --version 10.0.0
 ```
 
 ### Pin two versions, not one
@@ -68,7 +68,7 @@ against.
 
 | | Selects | Pin with | Line |
 |---|---|---|---|
-| Chart version | templates, values schema, defaults | `--version 9.0.0` | SemVer over the chart's own contract |
+| Chart version | templates, values schema, defaults | `--version 10.0.0` | SemVer over the chart's own contract |
 | Image tag | the server binary | `--set image.tag=4.3.0` (or `image.digest`) | the application's SemVer line |
 
 Always pin the image to an immutable version or, better, a `@sha256` digest,
@@ -168,7 +168,7 @@ image, and FerroTERM.
 > the image itself as the authority:
 >
 > ```shell
-> helm template ferroehr oci://ghcr.io/rubentalstra/charts/ferroehr --version 9.0.0 \
+> helm template ferroehr oci://ghcr.io/rubentalstra/charts/ferroehr --version 10.0.0 \
 >   -s templates/configmap.yaml --set database.existingSecret=ferroehr-db \
 >   | sed -n '/ferroehr.toml/,$p' | sed '1d;s/^    //' > /tmp/ferroehr.toml
 > docker run --rm -v /tmp/ferroehr.toml:/etc/ferroehr/ferroehr.toml:ro \
@@ -293,9 +293,11 @@ more goes with them, because no runtime credential can prepare the schema:
 
 ```yaml
 database:
-  existingSecret: ferroehr-db                        # postgres://ferroehr_ehr:…
-  demographicExistingSecret: ferroehr-db-demographic # postgres://ferroehr_demographic:…
-  linkageExistingSecret: ferroehr-db-linkage         # postgres://ferroehr_linkage:…
+  existingSecret: ferroehr-db             # postgres://ferroehr_clinical:…
+  party:
+    existingSecret: ferroehr-db-party     # postgres://ferroehr_party:…
+  linkage:
+    existingSecret: ferroehr-db-linkage   # postgres://ferroehr_linkage:…
   migrateExistingSecret: ferroehr-db-migrator        # postgres://ferroehr_migrator:…
 ```
 
@@ -312,7 +314,7 @@ it is required as soon as `database.existingSecret` is anything narrower than a
 credential reaching every schema. Preparation spans them all at once: the DDL
 of all five migration sets under `config.db.migrate: apply`, all five
 `_sqlx_migrations` bookkeeping tables under `verify`. So **`verify` is not the
-exception**, and this is not only about the domain roles. `ferroehr_ehr` holds
+exception**, and this is not only about the domain roles. `ferroehr_clinical` holds
 one pseudonymisation domain, `ferroehr_app` holds the clinical schemas, and
 neither can read the `demographic` or `linkage` bookkeeping at all; without
 this value the pod is refused on the first set it cannot read and does not
@@ -600,7 +602,7 @@ config:
 
 ```shell
 helm upgrade ferroehr oci://ghcr.io/rubentalstra/charts/ferroehr \
-  --version 9.0.0 -n ferroehr --reuse-values \
+  --version 10.0.0 -n ferroehr --reuse-values \
   --set config.query.plan_cache_capacity=512
 ```
 
@@ -701,7 +703,7 @@ running. It is the Helm equivalent of the
 
 ```shell
 helm upgrade --install ferroehr oci://ghcr.io/rubentalstra/charts/ferroehr \
-  --version 9.0.0 -n ferroehr --reuse-values \
+  --version 10.0.0 -n ferroehr --reuse-values \
   --set terminology.enabled=true
 ```
 
@@ -840,10 +842,10 @@ ignored. Clear the digest to deploy by tag.
 ### Per-domain backups (three CronJobs, off by default)
 
 `backup.enabled` renders one CronJob per pseudonymisation domain:
-`backup.clinical.schedule` dumps the clinical schemas, `backup.demographic.schedule`
+`backup.clinical.schedule` dumps the clinical schemas, `backup.party.schedule`
 dumps the identities, `backup.linkage.schedule` dumps the party-to-EHR map, and
 each writes to its own existing claim (`backup.clinical.persistentVolumeClaim`,
-`backup.demographic.persistentVolumeClaim`,
+`backup.party.persistentVolumeClaim`,
 `backup.linkage.persistentVolumeClaim`).
 The image is `backup.image.repository`, which carries `pg_dump`.
 
@@ -854,7 +856,7 @@ clinical record, the identities, or the map that joins them — is the state
 per-domain backups exist to prevent.
 
 Each job needs **its own backup credential**, named by
-`backup.clinical.existingSecret`, `backup.demographic.existingSecret` and
+`backup.clinical.existingSecret`, `backup.party.existingSecret` and
 `backup.linkage.existingSecret`, and
 the render is refused without them. It cannot be the pool's credential: each
 domain's runtime role is revoked from the other domains, so a dump taken through
@@ -933,7 +935,7 @@ Preview an upgrade against what you have installed with
 `helm diff`, or render the new chart version and read it:
 
 ```shell
-helm template ferroehr oci://ghcr.io/rubentalstra/charts/ferroehr --version 9.0.0 \
+helm template ferroehr oci://ghcr.io/rubentalstra/charts/ferroehr --version 10.0.0 \
   -n ferroehr -f my-values.yaml | less
 ```
 

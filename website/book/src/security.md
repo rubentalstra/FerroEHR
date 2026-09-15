@@ -479,7 +479,7 @@ error naming the pair:
 
 | Secret | File sibling |
 |---|---|
-| the database DSN, per pseudonymisation domain, and the credential that prepares the schema | `db.url_file`, `db.demographic_url_file`, `db.linkage_url_file`, `db.migrate_url_file` |
+| the database DSN, per storage domain, and the credential that prepares the schema | `db.url_file`, `storage.<domain>.url_file`, `db.migrate_url_file` |
 | a Basic user's Argon2 hash | `auth.basic.users[].password_hash_file` |
 | the OIDC symmetric key | `auth.oidc.hmac_secret_file` |
 | a static JWKS document | `auth.oidc.jwks_json_file` |
@@ -566,8 +566,8 @@ Three domains hold the three parts, each behind its own role:
 ```mermaid
 flowchart LR
     server["FerroEHR server"]
-    server -->|ferroehr_ehr| ehr[("clinical<br/>versions and nodes,<br/>keyed by an opaque subject pseudonym")]
-    server -->|ferroehr_demographic| demo[("party<br/>parties, and national identifiers<br/>sealed under a per-domain key")]
+    server -->|ferroehr_clinical| ehr[("clinical<br/>versions and nodes,<br/>keyed by an opaque subject pseudonym")]
+    server -->|ferroehr_party| demo[("party<br/>parties, and national identifiers<br/>sealed under a per-domain key")]
     server -->|ferroehr_linkage| link[("linkage<br/>which party is the subject<br/>of which EHR")]
     server -->|audit writer| audit[("audit<br/>ATNA record repository")]
     ehr -. barred .- demo
@@ -596,10 +596,10 @@ stored, and no schema split saves you from a national identifier written into
 the clinical side; see
 [Privacy and identifiers](installation/config-privacy.md). And the split is a
 schema split by default: giving the demographic domain its own
-`[db] demographic_url` is what turns it into a credential split, which is the
+`[storage.party] url` is what turns it into a credential split, which is the
 deployment step described in
 [Operations](operations.md#database-roles-and-least-privilege). The linkage
-domain takes its own credential from `[db] linkage_url` the same way.
+domain takes its own credential from `[storage.linkage] url` the same way.
 
 ### Resolving across the boundary
 
@@ -612,7 +612,7 @@ An external identity (a national identifier, say) is matched against the
 sealed `demographic.national_identifier` map by keyed digest, which returns a
 party without decrypting anything. That party is then looked up in
 `linkage.party_ehr` on a second connection, with a second search path and,
-when `[db] linkage_url` is set, a second database role. **No statement
+when `[storage.linkage] url` is set, a second database role. **No statement
 performs the join, because no credential could**: the linkage role holds no
 grant in `demographic` and the demographic role holds none in `linkage`, both
 revocations are explicit and in both directions, and the boot check refuses to

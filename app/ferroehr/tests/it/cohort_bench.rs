@@ -265,7 +265,7 @@ async fn measure(
     let (p50, p95) = percentiles(samples);
 
     let predicate_plan = explain(
-        &ferroehr::db::demographic_pool_from(pool),
+        &ferroehr::db::domain_pool_from(pool, ferroehr::db::domain::Domain::Party),
         ferroehr::service::linkage::cohort::predicate::predicate_sql(PredicateKind::Text),
         &[
             "at0012".to_owned(),

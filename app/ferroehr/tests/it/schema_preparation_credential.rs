@@ -27,7 +27,9 @@
 )]
 
 use crate::fixtures::{throwaway_password, with_role};
+use ferroehr::config::deployment::DeploymentProfile;
 use ferroehr::config::secret::SecretUrl;
+use ferroehr::db::domain::{Domain, DomainDsn, StorageConfig};
 use ferroehr::db::{DbConfig, DbError, MigrationMode};
 
 /// `SQLSTATE` 42501 `insufficient_privilege` — what `PostgreSQL` reports for a
@@ -82,16 +84,22 @@ async fn migrator_dsn(db: &testkit::TestDb) -> String {
 async fn the_boot_sequence_prepares_the_schema_on_separated_credentials() {
     let db = testkit::db().await.expect("testkit database");
     let settings = DbConfig {
-        url: SecretUrl::new(login_role(&db, "prepclin", "ferroehr_ehr").await.1),
-        demographic_url: Some(SecretUrl::new(
-            login_role(&db, "prepdemo", "ferroehr_demographic").await.1,
-        )),
+        url: SecretUrl::new(login_role(&db, "prepclin", "ferroehr_clinical").await.1),
         migrate_url: Some(SecretUrl::new(migrator_dsn(&db).await)),
         migrate: MigrationMode::Verify,
         ..DbConfig::default()
     };
+    let storage = StorageConfig {
+        party: DomainDsn {
+            url: Some(SecretUrl::new(
+                login_role(&db, "prepdemo", "ferroehr_party").await.1,
+            )),
+            url_file: None,
+        },
+        ..StorageConfig::default()
+    };
     assert!(
-        settings.roles_are_separated() && settings.migrator_is_separated(),
+        storage.is_separated(Domain::Party) && settings.migrator_is_separated(),
         "the fixture must configure three DSNs, else this passes vacuously"
     );
     assert_ne!(
@@ -101,18 +109,15 @@ async fn the_boot_sequence_prepares_the_schema_on_separated_credentials() {
     );
     assert_ne!(
         settings.migrate_dsn(),
-        settings.demographic_dsn(),
-        "nor as the demographic one"
+        storage.dsn(Domain::Party, &settings),
+        "nor as the party one"
     );
 
-    // The binary's own sequence: both runtime pools, then preparation.
-    let clinical = ferroehr::db::connect(&settings)
+    // The binary's own sequence: every runtime pool, then preparation.
+    let pools = ferroehr::db::connect_domains(&settings, &storage)
         .await
-        .expect("the clinical pool connects");
-    let demographic = ferroehr::db::connect_demographic(&settings)
-        .await
-        .expect("the demographic pool connects");
-    ferroehr::db::prepare(&settings, &clinical)
+        .expect("the domain pools connect");
+    ferroehr::db::prepare(&settings, &storage, &pools, DeploymentProfile::Sandbox)
         .await
         .expect("`verify` prepares the schema on the migration credential");
 
@@ -123,19 +128,19 @@ async fn the_boot_sequence_prepares_the_schema_on_separated_credentials() {
         migrate: MigrationMode::Apply,
         ..settings
     };
-    ferroehr::db::prepare(&applying, &clinical)
+    ferroehr::db::prepare(&applying, &storage, &pools, DeploymentProfile::Sandbox)
         .await
         .expect("`apply` prepares the schema on the migration credential");
 
     // The sequence ends with two usable runtime pools, each on its own domain.
     let versions: i64 = sqlx::query_scalar("SELECT count(*) FROM clinical.version")
-        .fetch_one(&clinical)
+        .fetch_one(&pools.clinical)
         .await
         .expect("the clinical pool reads its own domain");
     let parties: i64 = sqlx::query_scalar("SELECT count(*) FROM party.version")
-        .fetch_one(&demographic)
+        .fetch_one(&pools.party)
         .await
-        .expect("the demographic pool reads its own domain");
+        .expect("the party pool reads its own domain");
     assert_eq!(
         (versions, parties),
         (0, 0),
@@ -162,20 +167,30 @@ async fn a_single_dsn_deployment_prepares_the_schema_as_before() {
         "and preparation then runs on the clinical DSN"
     );
 
-    let pool = ferroehr::db::connect(&settings)
+    let pools = ferroehr::db::connect_domains(&settings, &StorageConfig::default())
         .await
-        .expect("the pool connects");
-    ferroehr::db::prepare(&settings, &pool)
-        .await
-        .expect("`verify` prepares the schema on the one DSN");
+        .expect("the pools connect");
+    ferroehr::db::prepare(
+        &settings,
+        &StorageConfig::default(),
+        &pools,
+        DeploymentProfile::Sandbox,
+    )
+    .await
+    .expect("`verify` prepares the schema on the one DSN");
 
     let applying = DbConfig {
         migrate: MigrationMode::Apply,
         ..settings
     };
-    ferroehr::db::prepare(&applying, &pool)
-        .await
-        .expect("`apply` prepares the schema on the one DSN");
+    ferroehr::db::prepare(
+        &applying,
+        &StorageConfig::default(),
+        &pools,
+        DeploymentProfile::Sandbox,
+    )
+    .await
+    .expect("`apply` prepares the schema on the one DSN");
 }
 
 /// A credential that cannot read a migration set is told which schema and
@@ -187,14 +202,14 @@ async fn a_single_dsn_deployment_prepares_the_schema_as_before() {
 #[tokio::test]
 async fn a_refused_bookkeeping_table_names_the_schema_and_the_role() {
     let db = testkit::db().await.expect("testkit database");
-    let (role, dsn) = login_role(&db, "prepnoext", "ferroehr_ehr").await;
+    let (role, dsn) = login_role(&db, "prepnoext", "ferroehr_clinical").await;
     let settings = DbConfig {
         migrate_url: Some(SecretUrl::new(dsn.clone())),
         migrate: MigrationMode::Verify,
         ..DbConfig::new(dsn)
     };
 
-    let error = ferroehr::db::verify_schema(&settings)
+    let error = ferroehr::db::verify_schema(&settings, &StorageConfig::default())
         .await
         .expect_err("a clinical credential cannot read every migration set");
 
@@ -237,7 +252,7 @@ async fn a_refused_bookkeeping_table_names_the_schema_and_the_role() {
 #[tokio::test]
 async fn a_refused_schema_names_the_schema_and_the_role() {
     let db = testkit::db().await.expect("testkit database");
-    let (role, dsn) = login_role(&db, "prepnodem", "ferroehr_ehr").await;
+    let (role, dsn) = login_role(&db, "prepnodem", "ferroehr_clinical").await;
     sqlx::query(sqlx::AssertSqlSafe(format!(
         "GRANT SELECT ON ext._sqlx_migrations, clinical._sqlx_migrations TO {role}"
     )))
@@ -250,7 +265,7 @@ async fn a_refused_schema_names_the_schema_and_the_role() {
         ..DbConfig::new(dsn)
     };
 
-    let error = ferroehr::db::verify_schema(&settings)
+    let error = ferroehr::db::verify_schema(&settings, &StorageConfig::default())
         .await
         .expect_err("a clinical credential cannot enter the party schema");
 

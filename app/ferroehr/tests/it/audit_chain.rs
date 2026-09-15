@@ -342,9 +342,14 @@ async fn verify_mode_accepts_a_migrated_database_and_refuses_a_stale_one() {
 
     let mut settings = db::DbConfig::new(testdb.url());
     settings.migrate = db::MigrationMode::Verify;
-    db::prepare(&settings, &pool)
-        .await
-        .expect("a fully migrated database must satisfy verify mode");
+    db::prepare(
+        &settings,
+        &db::domain::StorageConfig::default(),
+        &crate::fixtures::shared_pools(&pool),
+        ferroehr::config::deployment::DeploymentProfile::Sandbox,
+    )
+    .await
+    .expect("a fully migrated database must satisfy verify mode");
 
     // A schema this build owns but the database has never seen.
     sqlx::query("DROP SCHEMA audit CASCADE")
@@ -352,9 +357,14 @@ async fn verify_mode_accepts_a_migrated_database_and_refuses_a_stale_one() {
         .await
         .expect("drop one migration set");
 
-    let error = db::prepare(&settings, &pool)
-        .await
-        .expect_err("verify mode must refuse an unmigrated schema");
+    let error = db::prepare(
+        &settings,
+        &db::domain::StorageConfig::default(),
+        &crate::fixtures::shared_pools(&pool),
+        ferroehr::config::deployment::DeploymentProfile::Sandbox,
+    )
+    .await
+    .expect_err("verify mode must refuse an unmigrated schema");
     assert!(
         matches!(
             error,
@@ -369,9 +379,14 @@ async fn verify_mode_accepts_a_migrated_database_and_refuses_a_stale_one() {
 
     // Apply mode is the zero-config path, and it repairs what verify refused.
     settings.migrate = db::MigrationMode::Apply;
-    db::prepare(&settings, &pool)
-        .await
-        .expect("apply mode migrates");
+    db::prepare(
+        &settings,
+        &db::domain::StorageConfig::default(),
+        &crate::fixtures::shared_pools(&pool),
+        ferroehr::config::deployment::DeploymentProfile::Sandbox,
+    )
+    .await
+    .expect("apply mode migrates");
     db::verify_migrations(&pool)
         .await
         .expect("and the database then verifies");

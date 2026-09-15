@@ -14,6 +14,7 @@ use std::path::{Path, PathBuf};
 use crate::config::secret::Secret;
 use crate::config::secret::SecretUrl;
 use crate::db::DbConfig;
+use crate::db::domain::Domain;
 use crate::extensions::events::config::EventsConfig;
 use crate::extensions::fhir::config::FhirOutboundConfig;
 use config::{Config, Environment, File, FileFormat};
@@ -471,18 +472,16 @@ fn resolve_secret_files(config: &mut FerroEhrConfig, errors: &mut Vec<ConfigErro
         config.db.url_file.take(),
         errors,
     );
-    resolve_optional_secret_url(
-        "db.demographic_url",
-        &mut config.db.demographic_url,
-        config.db.demographic_url_file.take(),
-        errors,
-    );
-    resolve_optional_secret_url(
-        "db.linkage_url",
-        &mut config.db.linkage_url,
-        config.db.linkage_url_file.take(),
-        errors,
-    );
+    for domain in Domain::ALL {
+        let settings = config.storage.domain_mut(domain);
+        let file = settings.url_file.take();
+        resolve_optional_secret_url(
+            &format!("storage.{domain}.url"),
+            &mut settings.url,
+            file,
+            errors,
+        );
+    }
     resolve_optional_secret_url(
         "db.migrate_url",
         &mut config.db.migrate_url,

@@ -211,3 +211,17 @@ pub(crate) fn source_chain(error: &dyn std::error::Error) -> String {
     }
     out
 }
+
+/// The four domain pools of a co-located test database, and the layout that
+/// describes it.
+///
+/// Every DB-backed test runs one testkit database with all four schemas in it,
+/// which is the shared-DSN posture the boot gate reads as one credential.
+pub(crate) fn shared_pools(pool: &sqlx::PgPool) -> ferroehr::db::domain::DomainPools {
+    ferroehr::db::domain::DomainPools::from_shared(pool)
+}
+
+/// The domain layout of that same co-located database: four domains, one DSN.
+pub(crate) fn shared_layout() -> ferroehr::db::domain::DomainLayout {
+    ferroehr::db::domain::StorageConfig::default().layout(&ferroehr::db::DbConfig::default())
+}

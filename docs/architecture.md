@@ -160,15 +160,26 @@ fresh** (the diagrammed deep-dive is the book's Storage architecture page,
   demographic party to the EHR whose subject it is, temporal under a PG18
   `PRIMARY KEY … WITHOUT OVERLAPS` so a merge or split closes a row rather than
   deleting it. Identifiers only, no attributes. The service reaches it through
-  its own pool (`db::connect_linkage`), never through the clinical or party one.
-- **Five `NOINHERIT` runtime roles** hold the domains: `ferroehr_ehr` and its
-  read-only twin hold `clinical`, `ferroehr_demographic` and its twin hold
+  its own pool, never through the clinical or party one.
+- **One pool and one DSN per storage domain.** `[storage.clinical]`,
+  `[storage.party]`, `[storage.linkage]` and `[storage.audit]` each carry a
+  `url`/`url_file`, defaulting to the shared `[db].url`, and
+  `db::connect_domains` opens the four pools each with only its own schema on
+  its `search_path`. A domain whose DSN names another host lives in a database
+  or cluster of its own, which is the separation a schema cannot make (a base
+  backup, WAL archiving and physical replication carry every schema of a
+  database together). Schema preparation runs per database: the `ext` set is
+  applied by whichever domain reaches that database first, so two co-located
+  domains share one `ext` and a relocated domain carries its own copy.
+- **Five `NOINHERIT` runtime roles** hold the domains: `ferroehr_clinical` and
+  its read-only twin hold `clinical`, `ferroehr_party` and its twin hold
   `party`, and `ferroehr_linkage` holds `linkage` alone. Each is revoked from
-  the domains it does not own, in both directions, and the server refuses to
-  boot when any of them can read across (`db::verify_domain_isolation`). The
-  role names keep their first-generation spelling until #3343 renames them with
-  the per-domain DSNs.
-- Migrations via `sqlx migrate add` (official CLI): five sets, run in order —
+  the domains it does not own, in both directions, and the boot gate
+  (`db::verify_domain_isolation`) refuses to serve when any of them can read
+  across, when two separately-configured domains authenticate as one role, or —
+  under `deployment_profile = "production"` — when a domain role is missing.
+- Migrations via `sqlx migrate add` (official CLI): five sets, run per database
+  in order —
   `ext`, `clinical`, `party`, `linkage`, `audit` — each with its own
   `_sqlx_migrations` table, each a sequence of natural files with one concern
   apiece. A database carrying the first generation's `ehr` or `demographic`

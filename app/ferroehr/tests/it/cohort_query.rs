@@ -669,33 +669,38 @@ async fn the_crossing_runs_on_three_separated_credentials() {
 
     let db = testkit::db().await.expect("testkit database");
     let settings = DbConfig {
-        url: SecretUrl::new(crate::fixtures::dsn_as(&db, "cohclin", "ferroehr_ehr").await),
-        demographic_url: Some(SecretUrl::new(
-            crate::fixtures::dsn_as(&db, "cohdemo", "ferroehr_demographic").await,
-        )),
-        linkage_url: Some(SecretUrl::new(
-            crate::fixtures::dsn_as(&db, "cohlink", "ferroehr_linkage").await,
-        )),
+        url: SecretUrl::new(crate::fixtures::dsn_as(&db, "cohclin", "ferroehr_clinical").await),
         ..DbConfig::default()
     };
+    let storage = ferroehr::db::domain::StorageConfig {
+        party: ferroehr::db::domain::DomainDsn {
+            url: Some(SecretUrl::new(
+                crate::fixtures::dsn_as(&db, "cohdemo", "ferroehr_party").await,
+            )),
+            url_file: None,
+        },
+        linkage: ferroehr::db::domain::DomainDsn {
+            url: Some(SecretUrl::new(
+                crate::fixtures::dsn_as(&db, "cohlink", "ferroehr_linkage").await,
+            )),
+            url_file: None,
+        },
+        ..ferroehr::db::domain::StorageConfig::default()
+    };
     assert!(
-        settings.roles_are_separated() && settings.linkage_role_is_separated(),
+        storage.is_separated(ferroehr::db::domain::Domain::Party)
+            && storage.is_separated(ferroehr::db::domain::Domain::Linkage),
         "the fixture must actually separate all three credentials, or this \
          measures the shared-credential path again"
     );
 
-    let clinical = ferroehr::db::connect(&settings)
+    let pools = ferroehr::db::connect_domains(&settings, &storage)
         .await
-        .expect("the clinical pool connects on its own credential");
-    let demographic = ferroehr::db::connect_demographic(&settings)
-        .await
-        .expect("the demographic pool connects on its own credential");
-    let linkage = ferroehr::db::connect_linkage(&settings)
-        .await
-        .expect("the linkage pool connects on its own credential");
+        .expect("each pool connects on its own credential");
+    let linkage = pools.linkage.clone();
 
-    let svc = FerroEhrService::new(clinical)
-        .with_demographic_pool(demographic)
+    let svc = FerroEhrService::new(pools.clinical.clone())
+        .with_demographic_pool(pools.party.clone())
         .with_linkage_pool(linkage.clone())
         .with_cohort(cohort_config(0));
     let corpus = seed_corpus(&svc).await;

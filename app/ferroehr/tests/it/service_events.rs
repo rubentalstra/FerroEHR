@@ -390,7 +390,7 @@ async fn drainer_holds_pending_while_broker_down_then_drains_without_loss() {
     let handle = start_with_publisher(
         config,
         pool.clone(),
-        ferroehr::db::demographic_pool_from(&pool),
+        ferroehr::db::domain_pool_from(&pool, ferroehr::db::domain::Domain::Party),
         dyn_publisher,
     );
 

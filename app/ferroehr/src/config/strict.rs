@@ -31,7 +31,7 @@ pub(super) fn strict_env<S: std::hash::BuildHasher>(
         }
         // Canonical uniform form: `FERROEHR__<SECTION>__<TAIL>` — every segment
         // boundary, including after the prefix, is `__`. The leading section
-        // must be one of the known eighteen. `FERROEHR__SERVER__BIND` → `server`.
+        // must be one of the known sections. `FERROEHR__SERVER__BIND` → `server`.
         if let Some(tail) = key.strip_prefix("FERROEHR__") {
             let section = tail
                 .split("__")

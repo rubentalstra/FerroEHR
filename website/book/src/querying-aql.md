@@ -276,7 +276,7 @@ query and nothing else.
    subject of. Identifiers in, identifiers out.
 3. Your AQL runs on the clinical pool, scoped to exactly those EHRs.
 
-The three statements never meet. With `db.demographic_url` and `db.linkage_url`
+The three statements never meet. With `[storage.party] url` and `[storage.linkage] url`
 set, each pool authenticates as a role revoked from the other two, and the
 server refuses to boot if one can read across. You never receive a party
 identifier: the response carries what your AQL projected, plus counts.
