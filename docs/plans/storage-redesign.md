@@ -677,7 +677,13 @@ FerroEHR depends on a sibling being present: FerroPIX as an `I_EHR_INDEX`
 provider behind an `EhrIndexProvider` seam (ITI-83, ITI-78; #3380), FerroSMART
 as RFC 7662 introspection beside JWT validation plus SMART launch context as
 ABAC attributes (#3381), the FerroSYS seam over the operator surfaces (#3382),
-and the federation node contract for FerroFED over ITS-REST (#3383). The
+and the federation node contract for FerroFED over ITS-REST (#3383). Each
+platform service is its own product in its own repository (owner, 2026-09-14:
+FerroFED gets one, like FerroTERM, FerroBRIDGE and FerroCHART), so nothing of a
+gateway, an authorisation server, an MPI or a control plane is built here;
+#3383 reads the openEHR Federation Working Group's "Proposal for Federation
+Tier with AQL" (v0.9.0 release candidate, CC0) and its Apache-2.0 reference
+gateway as input for the node contract, never as a specification. The
 pseudonymisation domains and their role barriers are unrelated to tenancy and
 stay as §Domain topology draws them: they are the defence in depth a
 single-tenant instance keeps. Row-level security is not kept as a second layer
