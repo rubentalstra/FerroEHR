@@ -67,10 +67,15 @@ workflow refuses a tag that has no matching section here.
   - The runtime roles `ferroehr_ehr`, `ferroehr_ehr_reader`,
     `ferroehr_demographic` and `ferroehr_demographic_reader` are renamed to
     `ferroehr_clinical`, `ferroehr_clinical_reader`, `ferroehr_party` and
-    `ferroehr_party_reader`. New migrations create the new roles, move every
-    grant, and drop the old names; a login role that was a member of an old one
-    is granted the new one at deployment (`GRANT ferroehr_party TO <login>`).
-    `ferroehr_linkage` is unchanged.
+    `ferroehr_party_reader`. New migrations create the new roles and move every
+    grant onto them; a login role that was a member of an old one is granted the
+    new one at deployment (`GRANT ferroehr_party TO <login>`).
+    `ferroehr_linkage` is unchanged. The old names are left in place as empty
+    `NOLOGIN` roles holding nothing, because migrations are append-only: the
+    first-generation grant files still name them literally, and a `GRANT` to a
+    role that does not exist is an error rather than a no-op, so dropping them
+    would break the next re-migration of a recreated schema. Drop them by hand
+    if you are certain no database in the cluster will re-apply one.
   - The compose backup service `ferroehr-backup-demographic` is
     `ferroehr-backup-party`, its directory variable
     `FERROEHR_BACKUP_DEMOGRAPHIC_DIR` is `FERROEHR_BACKUP_PARTY_DIR`, and the

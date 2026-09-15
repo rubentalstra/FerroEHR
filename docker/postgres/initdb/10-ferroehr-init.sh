@@ -64,9 +64,9 @@ BEGIN
   -- The first generation's four domain names, created only so the migration
   -- sets that still grant to them by name can run: the app role holds no
   -- CREATEROLE, so a set's GRANT to a role that does not exist would fail the
-  -- migration. The audit set retires them once every grant has moved to the
-  -- names below (PostgreSQL 18, DROP ROLE,
-  -- https://www.postgresql.org/docs/18/sql-droprole.html).
+  -- migration (SQLSTATE 42704). The audit set withdraws their last grant, so
+  -- they end up empty; they are not dropped, because those grant files run
+  -- again whenever a schema is recreated.
   IF NOT EXISTS (SELECT FROM pg_roles WHERE rolname = 'ferroehr_ehr') THEN
     CREATE ROLE ferroehr_ehr NOLOGIN NOINHERIT;
   END IF;

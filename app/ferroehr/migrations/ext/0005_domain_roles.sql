@@ -46,9 +46,9 @@ END $$;
 -- A deployment whose login role was granted membership in ferroehr_ehr or
 -- ferroehr_demographic grants it the new name instead; nothing here carries a
 -- membership across, because the grant topology of a deployment is the
--- deployment's, not this file's. DROP ROLE revokes memberships by itself
--- (PostgreSQL 18, DROP ROLE, https://www.postgresql.org/docs/18/sql-droprole.html),
--- so the old names leave cleanly once the audit set drops them.
+-- deployment's, not this file's. The predecessors keep existing as empty
+-- NOLOGIN roles — the audit set withdraws their last grant and says why they
+-- cannot be dropped.
 
 DO $$
 BEGIN

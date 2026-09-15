@@ -13,7 +13,7 @@
 -- path and it is a function.
 --
 -- This set runs last, so it is the first place the predecessors hold nothing
--- anywhere and can be dropped.
+-- anywhere.
 --
 -- No openEHR spec governs database roles — our own design/extension.
 
@@ -51,16 +51,18 @@ BEGIN
 END
 $grants$;
 
--- The predecessors, emptied of this schema and then dropped.
+-- The predecessors, emptied of every grant this build's sets give them.
 --
--- DROP ROLE refuses while the role holds a privilege in any database of the
--- cluster (PostgreSQL 18, DROP ROLE,
--- https://www.postgresql.org/docs/18/sql-droprole.html). Every set above
--- withdrew this database's; a deployment that spreads its domains over several
--- databases of one cluster still has the other databases' grants in place when
--- the first one reaches this file, so a refusal is reported and the old name is
--- left behind rather than failing the migration. Memberships need no
--- withdrawal: DROP ROLE revokes them itself.
+-- They are NOT dropped, and the reason is the append-only migration rule: the
+-- first generation's grant files still name ferroehr_ehr and
+-- ferroehr_demographic literally, and a GRANT to a role that does not exist is
+-- an error (SQLSTATE 42704), not a no-op. Those files run again whenever a
+-- schema is recreated in an existing cluster — a reseed, a restore into a fresh
+-- schema, a second database of the same cluster — so a dropped role turns a
+-- routine re-migration into a failure. They stay as NOLOGIN, NOINHERIT roles
+-- holding nothing: every set above withdrew its grants, and nothing grants them
+-- membership any more. An operator who is certain no database in the cluster
+-- will re-apply a first-generation grant file may DROP ROLE them by hand.
 DO $retire$
 DECLARE
     retired text;
@@ -71,18 +73,13 @@ BEGIN
         IF NOT EXISTS (SELECT FROM pg_roles WHERE rolname = retired) THEN
             CONTINUE;
         END IF;
-        BEGIN
-            EXECUTE format('ALTER DEFAULT PRIVILEGES IN SCHEMA audit REVOKE ALL ON TABLES FROM %I', retired);
-            EXECUTE format('REVOKE ALL ON ALL TABLES IN SCHEMA audit FROM %I', retired);
-            EXECUTE format('REVOKE ALL ON ALL FUNCTIONS IN SCHEMA audit FROM %I', retired);
-            EXECUTE format('REVOKE ALL ON SCHEMA audit FROM %I', retired);
-            EXECUTE format('ALTER DEFAULT PRIVILEGES IN SCHEMA ext REVOKE ALL ON FUNCTIONS FROM %I', retired);
-            EXECUTE format('REVOKE ALL ON ALL FUNCTIONS IN SCHEMA ext FROM %I', retired);
-            EXECUTE format('REVOKE ALL ON SCHEMA ext FROM %I', retired);
-            EXECUTE format('DROP ROLE %I', retired);
-        EXCEPTION WHEN OTHERS THEN
-            RAISE NOTICE 'role % could not be retired (%); revoke its remaining privileges and DROP ROLE it by hand', retired, SQLERRM;
-        END;
+        EXECUTE format('ALTER DEFAULT PRIVILEGES IN SCHEMA audit REVOKE ALL ON TABLES FROM %I', retired);
+        EXECUTE format('REVOKE ALL ON ALL TABLES IN SCHEMA audit FROM %I', retired);
+        EXECUTE format('REVOKE ALL ON ALL FUNCTIONS IN SCHEMA audit FROM %I', retired);
+        EXECUTE format('REVOKE ALL ON SCHEMA audit FROM %I', retired);
+        EXECUTE format('ALTER DEFAULT PRIVILEGES IN SCHEMA ext REVOKE ALL ON FUNCTIONS FROM %I', retired);
+        EXECUTE format('REVOKE ALL ON ALL FUNCTIONS IN SCHEMA ext FROM %I', retired);
+        EXECUTE format('REVOKE ALL ON SCHEMA ext FROM %I', retired);
     END LOOP;
 END
 $retire$;

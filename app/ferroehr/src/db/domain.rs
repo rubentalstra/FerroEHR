@@ -129,6 +129,7 @@ impl Domain {
     /// The domain whose objects this domain's migration set names, and which
     /// must therefore be prepared in the same database.
     ///
+    ///
     /// `linkage`'s grant file revokes `party.resolve_national_identifier` from
     /// its own role, which is a function only the party set creates. Nothing
     /// else crosses: every other cross-domain statement names a SCHEMA, and the
@@ -230,15 +231,26 @@ impl StorageConfig {
         self.domain(domain).url.is_some()
     }
 
-    /// Whether every pseudonymisation domain connects on a DSN of its own.
+    /// Whether the three pseudonymisation domains connect on three different
+    /// DSNs.
     ///
-    /// The audit trail is deliberately not counted: it is not a
-    /// pseudonymisation domain, and requiring a fourth credential for it would
-    /// make the posture check say something other than what it means.
+    /// Pairwise distinctness rather than "each one is set": two domains
+    /// relocated to the SAME second database still share a credential, and a
+    /// posture check that counted them as separated would report a separation
+    /// that does not exist. The audit trail is deliberately not counted — it is
+    /// not a pseudonymisation domain, and requiring a fourth credential for it
+    /// would make the check say something other than what it means.
     #[must_use]
-    pub const fn pseudonymisation_domains_are_separated(&self) -> bool {
-        self.is_separated(Domain::Clinical)
-            || (self.is_separated(Domain::Party) && self.is_separated(Domain::Linkage))
+    pub fn pseudonymisation_domains_are_separated(&self, db: &DbConfig) -> bool {
+        let layout = self.layout(db);
+        let domains = [Domain::Clinical, Domain::Party, Domain::Linkage];
+        domains.iter().enumerate().all(|(index, domain)| {
+            domains.iter().skip(index + 1).all(|other| {
+                !layout
+                    .placement(*domain)
+                    .shares_dsn_with(layout.placement(*other))
+            })
+        })
     }
 
     /// The resolved layout: which DSN each domain connects on, and which

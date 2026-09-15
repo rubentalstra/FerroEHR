@@ -125,9 +125,13 @@ url = "postgres://ferroehr_party:***@pg:5432/ferroehr"
 url = "postgres://ferroehr_linkage:***@pg:5432/ferroehr"
 ```
 
-`migrate_url` prepares the databases the domains reach through `[db].url`; a
-domain given a DSN of its own is prepared on that DSN, because `migrate_url`
-names one database and a relocated domain is not in it.
+`migrate_url` prepares every domain that reaches the same DATABASE it does,
+which is all of them in the posture above: three credentials, one database. A
+domain whose DSN reaches a DIFFERENT database is prepared on its own DSN
+instead, because `migrate_url` names one database and a relocated domain is not
+in it. Which case a domain is in is read from the server itself
+(`pg_control_system()` and `current_database()`), never from the DSN text — two
+DSNs that differ only in their credential reach the same database.
 
 (or `migrate_url_file`, for a mounted secret). The connection is opened for
 preparation and closed again: no pool is held on it, and no request is ever

@@ -209,8 +209,10 @@ database:
   # the DDL of each resident migration set under config.db.migrate=apply, their
   # _sqlx_migrations bookkeeping tables under verify — while each runtime role
   # holds one domain, so a pod on ferroehr_clinical cannot even VERIFY, and is
-  # refused on the first set. It is used for the domains that share
-  # `database.url`; a domain given a DSN of its own is prepared on that DSN.
+  # refused on the first set. It prepares every domain whose DSN reaches the
+  # same DATABASE it does — all of them in the ordinary posture, where the
+  # per-domain credentials sit on one database; a domain relocated to another
+  # database is prepared on its own DSN.
   #
   # Set this whenever the pod's DSN is a domain-scoped role. The server opens
   # it for that one boot step and closes it again: no pool is held on it and no

@@ -139,8 +139,8 @@ url = "postgres://ferroehr:ferroehr@localhost:5432/ferroehr"  # PROD: real DSN v
 # under "verify" — so a deployment whose runtime DSNs each hold one domain
 # names the credential that can reach them all here. Unset, it falls back to
 # the url above, which is what every single-credential deployment runs. It
-# prepares the domains that share that url; a domain given a DSN of its own is
-# prepared on that DSN.
+# prepares every domain whose DSN reaches the same DATABASE it does; a domain
+# relocated to another database is prepared on its own DSN.
 #? migrate_url = "postgres://ferroehr_migrator:...@localhost:5432/ferroehr"
 #? migrate_url_file = "/run/secrets/db-migrate-dsn"
 # Whether the server issues DDL at boot. "apply" runs the embedded migrations

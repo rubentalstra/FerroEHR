@@ -223,7 +223,10 @@ impl DeploymentPosture {
     #[must_use]
     pub fn evaluate(config: &FerroEhrConfig, clusters: &ClusterIdentities) -> Self {
         let mut gaps = Vec::new();
-        if !config.storage.pseudonymisation_domains_are_separated() {
+        if !config
+            .storage
+            .pseudonymisation_domains_are_separated(&config.db)
+        {
             gaps.push(DeploymentGap::SharedCredential);
         }
         if clusters.any_shared() {
@@ -300,6 +303,10 @@ mod tests {
                 ..crate::db::DbConfig::default()
             },
             storage: crate::db::domain::StorageConfig {
+                clinical: crate::db::domain::DomainDsn {
+                    url: Some(SecretUrl::new("postgres://c@h/x")),
+                    url_file: None,
+                },
                 party: crate::db::domain::DomainDsn {
                     url: Some(SecretUrl::new("postgres://d@h/x")),
                     url_file: None,
