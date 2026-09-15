@@ -286,7 +286,16 @@ pub(crate) async fn set_association_location(
 /// period during which the two were one row. The successor's period opens at
 /// the same transaction timestamp the closed one ends at, so the two meet
 /// without overlapping.
-const CLOSE_ASSOCIATIONS: &str = "WITH closed AS (      UPDATE subject_ehr SET sys_period = tstzrange(lower(sys_period), now(), '[)')      WHERE {predicate} AND upper_inf(sys_period)      RETURNING party_id, ehr_id  ), reopened AS (      INSERT INTO subject_ehr (party_id, ehr_id)      SELECT party_id, ehr_id FROM closed WHERE party_id IS NOT NULL  )  SELECT count(*) FROM closed";
+const CLOSE_ASSOCIATIONS: &str = concat!(
+    "WITH closed AS (",
+    "  UPDATE subject_ehr SET sys_period = tstzrange(lower(sys_period), now(), '[)')",
+    "  WHERE {predicate} AND upper_inf(sys_period)",
+    "  RETURNING party_id, ehr_id",
+    "), reopened AS (",
+    "  INSERT INTO subject_ehr (party_id, ehr_id)",
+    "  SELECT party_id, ehr_id FROM closed WHERE party_id IS NOT NULL",
+    ") SELECT count(*) FROM closed",
+);
 
 /// [`CLOSE_ASSOCIATIONS`] with its one placeholder filled by a predicate this
 /// module wrote itself.
