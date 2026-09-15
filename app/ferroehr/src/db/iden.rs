@@ -42,6 +42,77 @@ pub enum Ehr {
     /// `is_modifiable` — promoted copy of the current
     /// `EHR_STATUS.is_modifiable`, backing the content-write guard.
     IsModifiable,
+    /// `restricted_at` — when restriction of processing was recorded for the
+    /// whole EHR (GDPR Art. 18(2)); `NULL` = unrestricted.
+    RestrictedAt,
+    /// `research_objected_at` — when the subject objected to research
+    /// processing (GDPR Art. 21(6)); `NULL` = no objection.
+    ResearchObjectedAt,
+    /// `research_objection_ground` — the controller's recorded public-interest
+    /// ground for overriding the objection; `NULL` while it stands.
+    ResearchObjectionGround,
+}
+
+/// `restriction` — the register behind a restriction-of-processing mark.
+#[derive(Debug, Clone, Copy, sea_query::Iden)]
+pub enum Restriction {
+    /// The `restriction` table itself.
+    #[iden = "restriction"]
+    Table,
+    /// `id` — the register row id (a uuidv7).
+    Id,
+    /// `ehr_id` — the EHR the restriction was requested for.
+    EhrId,
+    /// `vo_id` — the restricted versioned object, or `NULL` for the whole EHR.
+    VoId,
+    /// `ground` — the GDPR Art. 18(1) point the restriction rests on, or
+    /// `national` for a deployment-declared ground.
+    Ground,
+    /// `requested_at` — when the restriction was requested.
+    RequestedAt,
+    /// `lifted_at` — when it was lifted; `NULL` while it is in force.
+    LiftedAt,
+    /// `note` — the free-text record the controller kept beside the ground.
+    Note,
+}
+
+/// `retention_policy` — the retention period per content category and
+/// jurisdiction, with the legal citation it rests on.
+#[derive(Debug, Clone, Copy, sea_query::Iden)]
+pub enum RetentionPolicy {
+    /// The `retention_policy` table itself.
+    #[iden = "retention_policy"]
+    Table,
+    /// `kind` — the content category (`COMPOSITION` / `EHR_STATUS` / `FOLDER`
+    /// / `EHR`).
+    Kind,
+    /// `jurisdiction` — the ISO 3166-1 alpha-2 code whose rule this is.
+    Jurisdiction,
+    /// `period` — how long content of this category is kept.
+    Period,
+    /// `anchor` — what the period is measured from.
+    Anchor,
+    /// `source` — the legal citation the period comes from.
+    Source,
+}
+
+/// `retention_anchor` — the per-EHR facts the retention period is measured
+/// against, and any hold that suspends disposal.
+#[derive(Debug, Clone, Copy, sea_query::Iden)]
+pub enum RetentionAnchor {
+    /// The `retention_anchor` table itself.
+    #[iden = "retention_anchor"]
+    Table,
+    /// `ehr_id` — the EHR, and the primary key.
+    EhrId,
+    /// `jurisdiction` — the jurisdiction whose periods apply to this EHR.
+    Jurisdiction,
+    /// `anchored_at` — the anchor event instant, `NULL` until it is known.
+    AnchoredAt,
+    /// `hold_at` — when an EHR-wide hold was placed; nothing is due while set.
+    HoldAt,
+    /// `hold_ground` — the reason the hold was placed.
+    HoldGround,
 }
 
 /// `commit_audit` — `AUDIT_DETAILS` of every committed change.
@@ -576,6 +647,20 @@ mod tests {
         );
         assert_eq!(ItemTag::TargetVoId.to_string(), "target_vo_id");
         assert_eq!(SpDataFrame::PrimaryMethod.to_string(), "primary_method");
+        assert_eq!(Ehr::RestrictedAt.to_string(), "restricted_at");
+        assert_eq!(Ehr::ResearchObjectedAt.to_string(), "research_objected_at");
+        assert_eq!(
+            Ehr::ResearchObjectionGround.to_string(),
+            "research_objection_ground"
+        );
+        assert_eq!(Restriction::Table.to_string(), "restriction");
+        assert_eq!(Restriction::RequestedAt.to_string(), "requested_at");
+        assert_eq!(Restriction::LiftedAt.to_string(), "lifted_at");
+        assert_eq!(RetentionPolicy::Table.to_string(), "retention_policy");
+        assert_eq!(RetentionPolicy::Jurisdiction.to_string(), "jurisdiction");
+        assert_eq!(RetentionAnchor::Table.to_string(), "retention_anchor");
+        assert_eq!(RetentionAnchor::AnchoredAt.to_string(), "anchored_at");
+        assert_eq!(RetentionAnchor::HoldGround.to_string(), "hold_ground");
     }
 
     #[test]

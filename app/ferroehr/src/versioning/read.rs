@@ -160,7 +160,11 @@ impl VersionRead {
 /// carrying data reads back with that content.
 ///
 /// This is also the one seam a stored version body passes through on its way out
-/// of `version` and `node`, so it carries the read-time `spec_profile` gate
+/// of `version` and `node`, so it carries two read-time gates. The first is the
+/// restriction mark (`vo_head.restricted_at`): a restricted object answers
+/// `403`, because GDPR Art. 18(2) leaves storage as the only processing it
+/// admits (`docs/law/eu/gdpr/text.html`) — our own design/extension, no openEHR
+/// spec governs restriction of processing. The second is the `spec_profile` gate
 /// ([`crate::versioning::profile::gate`]): under the `stable` profile a version
 /// whose body only the development generations can express is a typed refusal.
 /// The gate sits here rather than per handler because every served kind reaches
@@ -174,8 +178,9 @@ impl VersionRead {
 /// `ORIGINAL_VERSION` fragment is not decodable, or when a stored commit-audit
 /// jsonb column is not the RM value it holds
 /// ([`crate::versioning::audit::AuditInput::from_meta`] carries the same
-/// rejections for the metadata-only read); the `409`-class
-/// [`ServiceError::Conflict`] of the `spec_profile` gate.
+/// rejections for the metadata-only read); the `403`-class
+/// [`ServiceError::Restricted`] when the object carries a restriction mark; the
+/// `409`-class [`ServiceError::Conflict`] of the `spec_profile` gate.
 fn version_read(
     profile: crate::config::profile::SpecProfile,
     stored: crate::storage::version_repo::read::StoredVersion,
@@ -195,6 +200,18 @@ fn version_read(
         stored.branch_number,
         stored.branch_version,
     );
+    // Restriction of processing, at the same seam and for the same reason as
+    // the profile gate below: every served version body passes through here.
+    // GDPR Art. 18(2) leaves storage as the only processing a restricted object
+    // admits (`docs/law/eu/gdpr/text.html`), so a marked object is refused
+    // rather than served. No openEHR spec governs restriction — our own
+    // design/extension.
+    if stored.restricted_at.is_some() {
+        return Err(ServiceError::restricted(&format!(
+            "versioned object {}",
+            stored.vo_id
+        )));
+    }
     crate::versioning::profile::gate(
         profile,
         kind,

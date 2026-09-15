@@ -103,6 +103,13 @@ pub struct StoredVersion {
     /// system ids; `None` for a row nothing stamped, which
     /// the read path (`versioning::origins::of_stored`) assesses from the body.
     pub origins: Option<Value>,
+    /// The restriction-of-processing mark of the versioned object this version
+    /// belongs to (`vo_head.restricted_at`), `None` when it is unrestricted.
+    /// GDPR Art. 18(2) leaves storage as the only processing a restriction
+    /// admits (`docs/law/eu/gdpr/text.html`), so the one seam a stored body
+    /// leaves storage through refuses a marked object. No openEHR spec governs
+    /// restriction of processing — our own design/extension.
+    pub restricted_at: Option<jiff::Timestamp>,
     /// The materialized canonical body (`version.body` — written from the
     /// same value the node rows decompose from), or [`Value::Null`] for a
     /// logically deleted version (master06 §Logical Deletion). [`Value::Null`]
@@ -154,11 +161,13 @@ macro_rules! version_select {
             "SELECT v.vo_id, v.kind, v.ehr_id, v.sys_version, v.trunk_version, v.branch_number, ",
             "v.branch_version, v.lifecycle_state, v.creating_system_id, v.preceding_version_uid, ",
             "v.other_input_version_uids, v.contribution_id, v.template_id, v.signature, ",
-            "v.signature_client_supplied, v.wrapped_original, v.stable_compatible, v.origins, v.body, ",
+            "v.signature_client_supplied, v.wrapped_original, v.stable_compatible, v.origins, ",
+            "v.body, h.restricted_at, ",
             "a.system_id, a.change_type, a.description, a.committer, a.attestation, ",
             "a.time_committed, ",
             "att.attestations_at_committal, att.attestations_after_committal ",
             "FROM version v JOIN commit_audit a ON a.id = v.commit_audit_id ",
+            "JOIN vo_head h ON h.vo_id = v.vo_id ",
             "LEFT JOIN LATERAL (",
             "SELECT coalesce(jsonb_agg(x.data ORDER BY x.time_committed, x.id) ",
             "FILTER (WHERE x.at_committal), '[]'::jsonb) AS attestations_at_committal, ",
@@ -183,11 +192,12 @@ macro_rules! version_select_raw {
             "v.branch_version, v.lifecycle_state, v.creating_system_id, v.preceding_version_uid, ",
             "v.other_input_version_uids, v.contribution_id, v.template_id, v.signature, ",
             "v.signature_client_supplied, v.wrapped_original, v.stable_compatible, ",
-            "v.origins, v.body, ",
+            "v.origins, v.body, h.restricted_at, ",
             "a.system_id, a.change_type, a.description, a.committer, a.attestation, ",
             "a.time_committed, ",
             "att.attestations_at_committal, att.attestations_after_committal ",
             "FROM version v JOIN commit_audit a ON a.id = v.commit_audit_id ",
+            "JOIN vo_head h ON h.vo_id = v.vo_id ",
             "LEFT JOIN LATERAL (",
             "SELECT coalesce(jsonb_agg(x.data ORDER BY x.time_committed, x.id) ",
             "FILTER (WHERE x.at_committal), '[]'::jsonb) AS attestations_at_committal, ",
@@ -288,6 +298,9 @@ fn stored_version_fields(
         wrapped_original: row.try_get("wrapped_original")?,
         stable_compatible: row.try_get("stable_compatible")?,
         origins: row.try_get("origins")?,
+        restricted_at: row
+            .try_get::<Option<jiff_sqlx::Timestamp>, _>("restricted_at")?
+            .map(jiff_sqlx::Timestamp::to_jiff),
         canonical,
         canonical_text,
         attestations_at_committal,
@@ -394,8 +407,7 @@ pub async fn read_current(
     vo_id: VoId,
 ) -> Result<Option<StoredVersion>, StorageError> {
     const SQL: &str = version_select!(
-        "JOIN vo_head h ON h.vo_id = v.vo_id AND h.trunk_head_sys_version = v.sys_version \
-         WHERE v.vo_id = $1"
+        "WHERE v.vo_id = $1 AND h.trunk_head_sys_version = v.sys_version"
     );
     sqlx::query(SQL)
         .bind(vo_id)
@@ -416,8 +428,7 @@ pub async fn read_current_raw(
     vo_id: VoId,
 ) -> Result<Option<StoredVersion>, StorageError> {
     const SQL: &str = version_select_raw!(
-        "JOIN vo_head h ON h.vo_id = v.vo_id AND h.trunk_head_sys_version = v.sys_version \
-         WHERE v.vo_id = $1"
+        "WHERE v.vo_id = $1 AND h.trunk_head_sys_version = v.sys_version"
     );
     sqlx::query(SQL)
         .bind(vo_id)
@@ -467,8 +478,7 @@ pub async fn read_currents(
     vo_ids: &[VoId],
 ) -> Result<Vec<StoredVersion>, StorageError> {
     const SQL: &str = version_select!(
-        "JOIN vo_head h ON h.vo_id = v.vo_id AND h.trunk_head_sys_version = v.sys_version \
-         WHERE v.vo_id = ANY($1)"
+        "WHERE v.vo_id = ANY($1) AND h.trunk_head_sys_version = v.sys_version"
     );
     if vo_ids.is_empty() {
         return Ok(Vec::new());
@@ -644,8 +654,7 @@ pub async fn read_current_of_kind(
     kind: &str,
 ) -> Result<Option<StoredVersion>, StorageError> {
     const SQL: &str = version_select!(
-        "JOIN vo_head h ON h.vo_id = v.vo_id AND h.trunk_head_sys_version = v.sys_version \
-         WHERE v.ehr_id = $1 AND v.kind = $2"
+        "WHERE v.ehr_id = $1 AND v.kind = $2 AND h.trunk_head_sys_version = v.sys_version"
     );
     sqlx::query(SQL)
         .bind(ehr_id)
@@ -703,8 +712,7 @@ pub async fn read_current_directory(
 ) -> Result<Option<StoredVersion>, StorageError> {
     const SQL: &str = version_select!(
         "JOIN ehr_folder f ON f.vo_id = v.vo_id \
-         JOIN vo_head h ON h.vo_id = v.vo_id AND h.trunk_head_sys_version = v.sys_version \
-         WHERE f.ehr_id = $1 \
+         WHERE f.ehr_id = $1 AND h.trunk_head_sys_version = v.sys_version \
          ORDER BY (v.lifecycle_state = '523'), f.rank LIMIT 1"
     );
     sqlx::query(SQL)

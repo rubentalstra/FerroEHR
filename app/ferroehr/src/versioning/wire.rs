@@ -78,6 +78,15 @@ pub(crate) async fn revision_history(
             format!("versioned object {vo_id} in EHR {ehr_id}"),
         ));
     }
+    // A revision history is a read of the object's change record, which
+    // Art. 18(2) does not admit for a restricted object any more than the
+    // content itself (`docs/law/eu/gdpr/text.html`); the version-body seam
+    // carries the same refusal. Our own design/extension.
+    if first.restricted {
+        return Err(ServiceError::restricted(&format!(
+            "versioned object {vo_id}"
+        )));
+    }
 
     let mut items = Vec::with_capacity(rows.len());
     for row in &rows {

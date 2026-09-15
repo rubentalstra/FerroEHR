@@ -81,6 +81,15 @@ pub enum CallStatusType {
     /// `Retry-After` (RFC 9110 §15.6.4; the ITS-REST status subset has no 503,
     /// so this is a documented extension).
     ServiceOverloaded,
+    /// Processing of the addressed object is restricted, so the server holds
+    /// it in storage and does nothing else with it. Not an SM
+    /// `CALL_STATUS_TYPE` member — an adapter affordance (like
+    /// [`Self::Conflict`]): no openEHR spec governs restriction of processing,
+    /// and GDPR Art. 18(2) leaves storage as the only processing a restriction
+    /// admits (`docs/law/eu/gdpr/text.html`). The wire maps it to `403
+    /// Forbidden`, the status RFC 9110 §15.5.4 gives a request the server
+    /// understood and refuses, and the body names the restriction.
+    ProcessingRestricted,
 
     // ── EHR_CALL_STATUS_TYPE (`ehr_call_status_type.adoc`) ──────────────────
     /// COMPOSITION not found (per-variant meanings are blank in the source).
@@ -150,6 +159,7 @@ impl CallStatusType {
             Self::NotImplemented => "not_implemented",
             Self::Conflict => "conflict",
             Self::ServiceOverloaded => "service_overloaded",
+            Self::ProcessingRestricted => "processing_restricted",
             Self::CompositionDoesNotExist => "composition_does_not_exist",
             Self::ContributionDoesNotExist => "contribution_does_not_exist",
             Self::CompositionArchetypeInvalid => "composition_archetype_invalid",
