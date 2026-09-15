@@ -15,6 +15,44 @@ workflow refuses a tag that has no matching section here.
 
 ## [Unreleased]
 
+### Added
+
+- **Restriction of processing, at whole-EHR or single-object grain** (#3324).
+  A restriction register records who asked, on what ground and when, and the
+  mark it drives stops every path that would process the object: a point read,
+  a versioned read and a revision history answer `403` with a body naming the
+  restriction, AQL omits it at every scope, an EHR Extract skips it and refuses
+  outright for a restricted EHR, the change-event stream neither emits nor
+  delivers an event about it, and a write to it is refused. The stored rows are
+  untouched — storage is the only processing GDPR Art. 18(2) leaves. Lifting
+  stamps the register rather than erasing it, so the sequence Art. 18(3) turns
+  on survives, and a whole-record lift leaves an object-scoped restriction
+  standing. `POST`/`GET {base}/admin/restriction` and
+  `POST {base}/admin/restriction/lift` drive it, each act an access record of
+  its own.
+- **A per-EHR objection to research processing** (#3325). While it stands, the
+  record leaves every full-population AQL query, every export and the event
+  stream, and a query naming the `ehr_id` or a read for care is untouched: GDPR
+  Art. 21(6) reaches research processing, not the care record. The
+  public-interest override the article admits is recorded beside the objection
+  and says on whose authority. `POST {base}/admin/research-objection`.
+- **A retention register, and a list of what has fallen due** (#3346). The
+  period per content category and jurisdiction with the legal citation it rests
+  on, a per-EHR anchor, a whole-record hold and a per-object hold, and a view
+  that lists the EHRs whose period has run with the counts of objects due and
+  objects exempted. Nothing is deleted on a timer: an openEHR record is
+  indelible, so acting on the list is the controller's decision, taken through
+  the physical delete. Five routes under `{base}/admin/retention/`, and a new
+  book page, [Retention, restriction and
+  objection](https://ferroehr.eu/book/compliance/retention.html).
+- **An access-log retention ceiling beside the floor** (#3346). Set
+  `[audit.store] sgb_v_309_controller = true` where the deploying organisation
+  is, or acts for, one of the controllers SGB V § 307 names for a German
+  telematics-infrastructure application, and boot refuses any
+  `retention_days` above the three-year period § 309 Abs. 1 sets — including
+  `0`, keep forever. A floor and a ceiling that contradict each other are
+  refused outright rather than silently resolved in favour of one.
+
 ### Changed
 
 - **An OPT 1.4 template whose ordinal symbol has no `<value>` element is

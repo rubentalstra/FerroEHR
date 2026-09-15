@@ -72,6 +72,7 @@
 - [Licensing & legal](licensing.md)
   - [Compliance overview](compliance/index.md)
   - [Shared responsibility](compliance/shared-responsibility.md)
+  - [Retention, restriction and objection](compliance/retention.md)
   - [Control matrix](compliance/control-matrix.md)
   - [EHDS readiness](compliance/ehds-readiness.md)
   - [Technical documentation readiness](compliance/technical-documentation.md)
