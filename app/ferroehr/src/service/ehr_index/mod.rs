@@ -13,17 +13,24 @@
 //! [`types`] = the SM information structures (`RESOURCE_STATUS`,
 //! `RESOURCE_INSTANCE_TYPE`, `LOCATION_DESC`, the `OBJECT_REF` subject key).
 //!
-//! NOTE: the SM defines no versioning for the index, so entries are plain SQL
-//! writes over the `ehr_index` table emitting no CONTRIBUTION or version; no
-//! openEHR spec governs the storage mechanism (our own design) while master07
-//! governs the operation semantics and error names.
+//! NOTE: the SM defines no versioning for the index, so entries are plain
+//! writes emitting no CONTRIBUTION or version; no openEHR spec governs the
+//! storage mechanism (our own design) while master07 governs the operation
+//! semantics and error names.
+//!
+//! The associations live in `linkage.subject_ehr`, reached through the linkage
+//! pool ([`crate::service::linkage::store`]), because master07 §Overview says
+//! what the index is for: "In a privacy-supporting environment, this enables
+//! EHRs to be persisted with only an EHR id; the EHR Index has to be used to
+//! obtain the subject identifier". Only the EHR-existence probe runs on the
+//! clinical pool, so each operation crosses at the APPLICATION layer over two
+//! pools and no statement names both domains.
 //!
 //! The index and the `ehr.subject_id` promotion are decoupled: an EHR created
 //! through the normal API is not auto-indexed here, and the index models the
-//! full N:M state. The `ehr_index` and `ehr`-existence SQL is this domain's own
-//! direct-SQL design, so the table access lives here rather than behind a
-//! storage-owned repository. No wire is mounted, EHR Index having no ITS-REST
-//! contract.
+//! full N:M state master07 §Overview requires ("There is no limit on the number
+//! of subject identifiers associated with a given EHR id, and vice versa"). No
+//! wire is mounted, EHR Index having no ITS-REST contract.
 
 pub mod conflicts;
 pub(crate) mod index;
@@ -32,9 +39,7 @@ pub mod types;
 use sqlx::Row;
 
 use crate::ids::EhrId;
-use crate::service::ehr_index::types::{
-    EhrIndexEntry, LocationDesc, ResourceInstanceType, ResourceStatus, SubjectRef,
-};
+use crate::service::ehr_index::types::{EhrIndexEntry, LocationDesc, ResourceStatus, SubjectRef};
 use crate::service::error::ServiceError;
 use crate::service::status::{CallStatusType, SmError};
 
@@ -91,8 +96,13 @@ impl From<IndexError> for SmError {
     }
 }
 
-/// Parse an ISO-8601 date-time string into a Postgres `timestamptz` binding, or
-/// `None`. An unparseable value is a `400`.
+/// Refuse a `RESOURCE_STATUS` whose validity bounds are not ISO-8601
+/// date-times. An unparseable value is a `400`.
+///
+/// The bounds are stored verbatim inside the association's `status` document,
+/// so this is the only place their form is enforced; a value that reached
+/// storage unchecked would come back out of a read as a token no client can
+/// interpret.
 ///
 /// NOTE: `RESOURCE_STATUS.start_valid_time`/`end_valid_time` are typed
 /// `@@` (an unresolved placeholder) in the SM — a recorded spec defect
@@ -103,24 +113,18 @@ impl From<IndexError> for SmError {
               parse error adds only its own wording, which is not part of the \
               wire contract"
 )]
-fn parse_valid_time(raw: Option<&str>) -> Result<Option<jiff_sqlx::Timestamp>, ServiceError> {
-    use jiff_sqlx::ToSqlx;
-    match raw {
-        None => Ok(None),
-        Some(s) => s
-            .parse::<jiff::Timestamp>()
-            .map(|t| Some(t.to_sqlx()))
-            .map_err(|_| ServiceError::precondition(format!("invalid valid_time: {s}"))),
+fn validate_status(status: &ResourceStatus) -> Result<(), ServiceError> {
+    for raw in [
+        status.start_valid_time.as_deref(),
+        status.end_valid_time.as_deref(),
+    ]
+    .into_iter()
+    .flatten()
+    {
+        raw.parse::<jiff::Timestamp>()
+            .map_err(|_| ServiceError::precondition(format!("invalid valid_time: {raw}")))?;
     }
-}
-
-/// Wrap a [`LocationDesc`] for its typed `jsonb` binding, or SQL NULL.
-///
-/// NOTE: `LOCATION_DESC` is an attribute-less stub in the SM
-/// (`location_desc.adoc`) — a recorded spec defect; the designed contract
-/// `{system_id, uri?, description?}` is our own design.
-fn location_binding(loc: Option<&LocationDesc>) -> Option<sqlx::types::Json<&LocationDesc>> {
-    loc.map(sqlx::types::Json)
+    Ok(())
 }
 
 /// Map a zero-rows-affected write to [`IndexError::SubjectDoesNotExist`]
@@ -132,26 +136,24 @@ fn require_association(affected: u64, subject: &SubjectRef) -> Result<(), IndexE
     Ok(())
 }
 
-/// Reassemble one [`EhrIndexEntry`] from an `ehr_index` row.
+/// Reassemble one [`EhrIndexEntry`] from a `linkage.subject_ehr` row.
+///
+/// A stored document that no longer decodes as the designed contract is a
+/// server fault: it surfaces through the `?` (the DB error path), never as a
+/// blanked field.
 fn row_to_entry(row: &sqlx::postgres::PgRow) -> Result<EhrIndexEntry, sqlx::Error> {
     let ehr_id: EhrId = row.try_get("ehr_id")?;
     let subject = SubjectRef {
         id: row.try_get("subject_id")?,
         namespace: row.try_get("subject_namespace")?,
-        r#type: row.try_get("subject_type")?,
+        r#type: row
+            .try_get::<Option<String>, _>("subject_type")?
+            .unwrap_or_else(|| SubjectRef::DEFAULT_TYPE.to_owned()),
     };
-    let start: Option<jiff_sqlx::Timestamp> = row.try_get("start_valid_time")?;
-    let end: Option<jiff_sqlx::Timestamp> = row.try_get("end_valid_time")?;
-    let status = ResourceStatus {
-        instance_type: ResourceInstanceType::from_str_or_primary(
-            &row.try_get::<String, _>("instance_type")?,
-        ),
-        start_valid_time: start.map(|t| t.to_jiff().to_string()),
-        end_valid_time: end.map(|t| t.to_jiff().to_string()),
-        notes: row.try_get("notes")?,
-    };
-    // A stored row that no longer decodes as the designed contract is a
-    // server fault: surface it (`?` → the DB error path), never blank fields.
+    let status = row
+        .try_get::<Option<sqlx::types::Json<ResourceStatus>>, _>("status")?
+        .map(|j| j.0)
+        .unwrap_or_default();
     let location = row
         .try_get::<Option<sqlx::types::Json<LocationDesc>>, _>("location")?
         .map(|j| j.0);
@@ -190,14 +192,25 @@ mod tests {
         assert_eq!(svc.status, CallStatusType::VersionedObjectDoesNotExist);
     }
 
+    /// A status whose validity bounds are absent or ISO-8601 is accepted; one
+    /// carrying a token that is neither is a `400`, so the stored document
+    /// cannot hold a bound no reader can interpret.
     #[test]
     fn valid_time_parsing() {
-        assert!(parse_valid_time(None).unwrap().is_none());
+        assert!(validate_status(&ResourceStatus::default()).is_ok());
         assert!(
-            parse_valid_time(Some("2021-01-01T00:00:00Z"))
-                .unwrap()
-                .is_some()
+            validate_status(&ResourceStatus {
+                start_valid_time: Some("2021-01-01T00:00:00Z".to_owned()),
+                ..ResourceStatus::default()
+            })
+            .is_ok()
         );
-        assert!(parse_valid_time(Some("not-a-time")).is_err());
+        assert!(
+            validate_status(&ResourceStatus {
+                end_valid_time: Some("not-a-time".to_owned()),
+                ..ResourceStatus::default()
+            })
+            .is_err()
+        );
     }
 }

@@ -2,9 +2,13 @@
 // SPDX-License-Identifier: BUSL-1.1
 
 //! `I_EHR_INDEX` operations (I1–I5, `i_ehr_index.adoc`) + the two
-//! design-filled reads. All direct SQL over the `ehr_index` table (no openEHR
-//! spec governs the storage — our own design; master07 governs the operation
-//! semantics + error names).
+//! design-filled reads.
+//!
+//! The associations live in `linkage.subject_ehr` and every statement over them
+//! runs on the linkage pool through [`crate::service::linkage::store`]; only the
+//! EHR-existence probe runs on the clinical pool. No openEHR spec governs the
+//! storage — our own design; master07 governs the operation semantics and error
+//! names.
 //!
 //! Every domain failure is an [`IndexError`], whose `From<IndexError> for
 //! SmError` maps `ehr_id_does_not_exist` / `subject_id_does_not_exist` onto
@@ -16,9 +20,10 @@ use uuid::Uuid;
 use crate::ids::EhrId;
 use crate::service::FerroEhrService;
 use crate::service::ehr_index::types::{EhrIndexEntry, LocationDesc, ResourceStatus, SubjectRef};
+use crate::service::linkage::store;
 use crate::service::status::SmError;
 
-use super::{IndexError, location_binding, parse_valid_time, require_association, row_to_entry};
+use super::{IndexError, require_association, row_to_entry, validate_status};
 
 /// Parse an `ehr_id` UUID. An unparseable id is a `400` precondition failure;
 /// a well-formed-but-unknown id surfaces as `ehr_id_does_not_exist` at the DB
@@ -39,11 +44,10 @@ impl FerroEhrService {
     /// SM `add_ehr_subject` (I1): associate `subject` with `ehr_id` with an
     /// optional status + location. The EHR must exist.
     ///
-    /// NOTE: "Add" is realized as an idempotent upsert
-    /// (`ON CONFLICT DO UPDATE`) — re-adding the same subject refreshes its
-    /// status/location rather than erroring; the `0..1` cardinality of
-    /// `add_ehr_subject` permits this. Status defaults to a `Primary` instance
-    /// (`i_ehr_index.adoc`).
+    /// NOTE: "Add" is realized as an idempotent upsert over the association in
+    /// force — re-adding the same subject refreshes its status/location rather
+    /// than erroring; the `0..1` cardinality of `add_ehr_subject` permits this.
+    /// Status defaults to a `Primary` instance (`i_ehr_index.adoc`).
     ///
     /// # Errors
     /// - `precondition_violation` (`400`) — `ehr_id` is not a well-formed UUID,
@@ -59,34 +63,11 @@ impl FerroEhrService {
     ) -> Result<(), SmError> {
         let ehr_id = parse_ehr_id(&ehr_id)?;
         self.index_ehr_exists(ehr_id).await?;
-        let default_status = ResourceStatus::default();
-        let status = status.as_ref().unwrap_or(&default_status);
-        let start =
-            parse_valid_time(status.start_valid_time.as_deref()).map_err(IndexError::Service)?;
-        let end =
-            parse_valid_time(status.end_valid_time.as_deref()).map_err(IndexError::Service)?;
-        sqlx::query(
-            "INSERT INTO ehr_index \
-             (ehr_id, subject_id, subject_namespace, subject_type, instance_type, \
-              start_valid_time, end_valid_time, notes, location) \
-             VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9) \
-             ON CONFLICT (ehr_id, subject_id, subject_namespace) DO UPDATE SET \
-              subject_type = EXCLUDED.subject_type, instance_type = EXCLUDED.instance_type, \
-              start_valid_time = EXCLUDED.start_valid_time, end_valid_time = EXCLUDED.end_valid_time, \
-              notes = EXCLUDED.notes, location = EXCLUDED.location",
-        )
-        .bind(ehr_id)
-        .bind(&subject.id)
-        .bind(&subject.namespace)
-        .bind(&subject.r#type)
-        .bind(status.instance_type.as_str())
-        .bind(start)
-        .bind(end)
-        .bind(status.notes.as_deref())
-        .bind(location_binding(loc.as_ref()))
-        .execute(&self.pool)
-        .await
-        .map_err(IndexError::from)?;
+        let status = status.unwrap_or_default();
+        validate_status(&status).map_err(IndexError::Service)?;
+        store::add_association(&self.linkage_pool, ehr_id, &subject, &status, loc.as_ref())
+            .await
+            .map_err(IndexError::from)?;
         Ok(())
     }
 
@@ -108,26 +89,11 @@ impl FerroEhrService {
     ) -> Result<(), SmError> {
         let ehr_id = parse_ehr_id(&ehr_id)?;
         self.index_ehr_exists(ehr_id).await?;
-        let start =
-            parse_valid_time(status.start_valid_time.as_deref()).map_err(IndexError::Service)?;
-        let end =
-            parse_valid_time(status.end_valid_time.as_deref()).map_err(IndexError::Service)?;
-        let updated = sqlx::query(
-            "UPDATE ehr_index SET instance_type = $4, start_valid_time = $5, \
-             end_valid_time = $6, notes = $7 \
-             WHERE ehr_id = $1 AND subject_id = $2 AND subject_namespace = $3",
-        )
-        .bind(ehr_id)
-        .bind(&subject.id)
-        .bind(&subject.namespace)
-        .bind(status.instance_type.as_str())
-        .bind(start)
-        .bind(end)
-        .bind(status.notes.as_deref())
-        .execute(&self.pool)
-        .await
-        .map_err(IndexError::from)?;
-        Ok(require_association(updated.rows_affected(), &subject)?)
+        validate_status(&status).map_err(IndexError::Service)?;
+        let updated = store::set_association_status(&self.linkage_pool, ehr_id, &subject, &status)
+            .await
+            .map_err(IndexError::from)?;
+        Ok(require_association(updated, &subject)?)
     }
 
     /// SM `update_ehr_subject_loc_desc` (I3): update (or clear, `loc = None`)
@@ -147,28 +113,25 @@ impl FerroEhrService {
     ) -> Result<(), SmError> {
         let ehr_id = parse_ehr_id(&ehr_id)?;
         self.index_ehr_exists(ehr_id).await?;
-        let updated = sqlx::query(
-            "UPDATE ehr_index SET location = $4 \
-             WHERE ehr_id = $1 AND subject_id = $2 AND subject_namespace = $3",
-        )
-        .bind(ehr_id)
-        .bind(&subject.id)
-        .bind(&subject.namespace)
-        .bind(location_binding(loc.as_ref()))
-        .execute(&self.pool)
-        .await
-        .map_err(IndexError::from)?;
-        Ok(require_association(updated.rows_affected(), &subject)?)
+        let updated =
+            store::set_association_location(&self.linkage_pool, ehr_id, &subject, loc.as_ref())
+                .await
+                .map_err(IndexError::from)?;
+        Ok(require_association(updated, &subject)?)
     }
 
-    /// SM `remove_ehr_subject` (I4): drop the `subject`↔`ehr_id` association
+    /// SM `remove_ehr_subject` (I4): end the `subject`↔`ehr_id` association
     /// (the subject may remain associated with other EHRs).
+    ///
+    /// NOTE: the association is CLOSED, not deleted — the linkage domain
+    /// corrects forward and its role holds no `DELETE`; a closed period is
+    /// exactly "this association ended", and no read serves it afterwards.
     ///
     /// # Errors
     /// - `precondition_violation` (`400`) — `ehr_id` is not a well-formed UUID.
     /// - `ehr_id_does_not_exist` — no EHR with that id.
     /// - `subject_id_does_not_exist` — the subject is not associated with the
-    ///   EHR (the delete matched no row).
+    ///   EHR (the close matched no row).
     /// - `exception` — a database fault while writing.
     pub async fn remove_ehr_subject(
         &self,
@@ -177,34 +140,23 @@ impl FerroEhrService {
     ) -> Result<(), SmError> {
         let ehr_id = parse_ehr_id(&ehr_id)?;
         self.index_ehr_exists(ehr_id).await?;
-        let deleted = sqlx::query(
-            "DELETE FROM ehr_index \
-             WHERE ehr_id = $1 AND subject_id = $2 AND subject_namespace = $3",
-        )
-        .bind(ehr_id)
-        .bind(&subject.id)
-        .bind(&subject.namespace)
-        .execute(&self.pool)
-        .await
-        .map_err(IndexError::from)?;
-        Ok(require_association(deleted.rows_affected(), &subject)?)
+        let closed = store::close_association(&self.linkage_pool, ehr_id, &subject)
+            .await
+            .map_err(IndexError::from)?;
+        Ok(require_association(closed, &subject)?)
     }
 
-    /// SM `remove_subject` (I5): drop all associations for `subject`.
+    /// SM `remove_subject` (I5): end all associations for `subject`.
     ///
     /// # Errors
     /// - `subject_id_does_not_exist` — the subject has no associations (the
-    ///   delete matched no row).
+    ///   close matched no row).
     /// - `exception` — a database fault while writing.
     pub async fn remove_subject(&self, subject: SubjectRef) -> Result<(), SmError> {
-        let deleted =
-            sqlx::query("DELETE FROM ehr_index WHERE subject_id = $1 AND subject_namespace = $2")
-                .bind(&subject.id)
-                .bind(&subject.namespace)
-                .execute(&self.pool)
-                .await
-                .map_err(IndexError::from)?;
-        Ok(require_association(deleted.rows_affected(), &subject)?)
+        let closed = store::close_subject_associations(&self.linkage_pool, &subject)
+            .await
+            .map_err(IndexError::from)?;
+        Ok(require_association(closed, &subject)?)
     }
 
     /// The subjects associated with an EHR (design-filled read; the SM defines
@@ -215,20 +167,7 @@ impl FerroEhrService {
     /// - `exception` — a database fault while reading.
     pub async fn ehr_subjects(&self, ehr_id: String) -> Result<Vec<EhrIndexEntry>, SmError> {
         let ehr_id = parse_ehr_id(&ehr_id)?;
-        let rows = sqlx::query(
-            "SELECT ehr_id, subject_id, subject_namespace, subject_type, instance_type, \
-             start_valid_time, end_valid_time, notes, location FROM ehr_index \
-             WHERE ehr_id = $1 ORDER BY subject_id, subject_namespace",
-        )
-        .bind(ehr_id)
-        .fetch_all(&self.pool)
-        .await
-        .map_err(IndexError::from)?;
-        Ok(rows
-            .iter()
-            .map(row_to_entry)
-            .collect::<Result<_, _>>()
-            .map_err(IndexError::from)?)
+        Ok(self.index_ehr_subjects(ehr_id).await?)
     }
 
     /// The EHRs associated with a subject (design-filled read; the SM defines
@@ -243,12 +182,27 @@ impl FerroEhrService {
     /// Confirm an EHR exists ([`IndexError::EhrDoesNotExist`] →
     /// `ehr_id_does_not_exist` otherwise). This distinguishes an unknown EHR
     /// from an unknown association to the caller (`master07 §Errors`).
+    ///
+    /// The one statement of these operations that runs on the CLINICAL pool:
+    /// the EHR's existence is a clinical fact, and the linkage role can see no
+    /// clinical relation by design.
     async fn index_ehr_exists(&self, ehr_id: EhrId) -> Result<(), IndexError> {
         let found: Option<Uuid> = sqlx::query_scalar("SELECT id FROM ehr WHERE id = $1")
             .bind(ehr_id)
             .fetch_optional(&self.pool)
             .await?;
         found.map(|_| ()).ok_or(IndexError::EhrDoesNotExist(ehr_id))
+    }
+
+    /// The associations of one EHR, as [`EhrIndexEntry`]s — shared by
+    /// [`Self::ehr_subjects`] and the duplicate-detection scan
+    /// ([`super::conflicts`]).
+    pub(super) async fn index_ehr_subjects(
+        &self,
+        ehr_id: EhrId,
+    ) -> Result<Vec<EhrIndexEntry>, IndexError> {
+        let rows = store::ehr_associations(&self.linkage_pool, ehr_id).await?;
+        Ok(rows.iter().map(row_to_entry).collect::<Result<_, _>>()?)
     }
 
     /// The EHRs associated with a subject, as [`EhrIndexEntry`]s — shared by
@@ -258,15 +212,7 @@ impl FerroEhrService {
         &self,
         subject: &SubjectRef,
     ) -> Result<Vec<EhrIndexEntry>, IndexError> {
-        let rows = sqlx::query(
-            "SELECT ehr_id, subject_id, subject_namespace, subject_type, instance_type, \
-             start_valid_time, end_valid_time, notes, location FROM ehr_index \
-             WHERE subject_id = $1 AND subject_namespace = $2 ORDER BY ehr_id",
-        )
-        .bind(&subject.id)
-        .bind(&subject.namespace)
-        .fetch_all(&self.pool)
-        .await?;
+        let rows = store::subject_associations(&self.linkage_pool, subject).await?;
         Ok(rows.iter().map(row_to_entry).collect::<Result<_, _>>()?)
     }
 }

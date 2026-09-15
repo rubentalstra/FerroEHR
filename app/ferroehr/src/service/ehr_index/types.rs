@@ -24,13 +24,18 @@ pub struct SubjectRef {
 }
 
 impl SubjectRef {
+    /// The `OBJECT_REF.type` a subject reference carries when none was
+    /// recorded: the common MPI case the SM's own wording assumes ("patient or
+    /// other subject or care identifiers", `master07 §Overview`).
+    pub const DEFAULT_TYPE: &'static str = "PERSON";
+
     /// A subject reference of the default `PERSON` type.
     #[must_use]
     pub fn person(id: impl Into<String>, namespace: impl Into<String>) -> Self {
         Self {
             id: id.into(),
             namespace: namespace.into(),
-            r#type: "PERSON".to_owned(),
+            r#type: Self::DEFAULT_TYPE.to_owned(),
         }
     }
 }
@@ -39,7 +44,7 @@ impl SubjectRef {
 ///
 /// "Enumeration of resource instance types" (`resource_instance_type.adoc`),
 /// surfacing the N:M duplicate-management states master07 §Overview describes.
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Default)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Default, serde::Serialize, serde::Deserialize)]
 pub enum ResourceInstanceType {
     /// "Primary instance of the resource."
     #[default]
@@ -78,7 +83,7 @@ impl ResourceInstanceType {
 /// NOTE: `start_valid_time`/`end_valid_time` are typed `@@` (an
 /// unresolved placeholder) in the SM — a recorded spec defect; implemented as
 /// ISO date-time strings (stored `timestamptz`).
-#[derive(Debug, Clone, PartialEq, Eq, Default)]
+#[derive(Debug, Clone, PartialEq, Eq, Default, serde::Serialize, serde::Deserialize)]
 pub struct ResourceStatus {
     /// `instance_type [1]` — "Type of resource instance."
     pub instance_type: ResourceInstanceType,

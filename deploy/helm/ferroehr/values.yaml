@@ -303,7 +303,7 @@ migrations:
 # design/extension.
 #
 # THE LINKAGE DOMAIN IS A THIRD ARTEFACT, not a place in either of the other
-# two. `linkage.party_ehr` is the map from a party to its EHR, so a dump
+# two. `linkage.subject_ehr` is the map from a party to its EHR, so a dump
 # carrying it beside the identities — or beside the clinical record — hands one
 # holder the join the schema split withholds. Three domains, three dumps, three
 # credentials.

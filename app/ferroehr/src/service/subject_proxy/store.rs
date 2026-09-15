@@ -15,6 +15,7 @@
 )]
 
 use serde_json::Value;
+use sha2::{Digest, Sha256};
 use sqlx::Row;
 
 use crate::service::FerroEhrService;
@@ -29,6 +30,39 @@ use crate::service::subject_proxy::variable::SubjectVariable;
 /// bounded ring, not an unbounded log).
 const SAMPLE_RETENTION: i64 = 100;
 
+/// Domain separation for [`subject_key`], so a digest taken here can never
+/// collide with one taken for another purpose over the same input.
+const SUBJECT_KEY_DOMAIN: &str = "ferroehr/subject-proxy/subject-key/v1";
+
+/// The opaque key the `sp_*` relations hold in place of
+/// `SUBJECT_PROXY.subject_id`.
+///
+/// `subject_id` is "Identifier of data subject" (`subject_proxy.adoc`) and a
+/// caller may hand the service a national identifier or a medical-record
+/// number. The clinical domain stores no such value: it stores this derivation,
+/// and the map that resolves a subject to an EHR lives in the linkage schema
+/// under its own role (GDPR Art. 4(5),
+/// <https://eur-lex.europa.eu/eli/reg/2016/679/oj>). The derivation is
+/// deterministic, so the same subject always reaches the same proxy across
+/// restarts, and one-way, so nothing here can be read back into an identifier.
+///
+/// NOTE: this is pseudonymisation, not anonymisation — an unkeyed digest of a
+/// low-entropy identifier is guessable by someone who can already read the
+/// clinical schema, which is why the resolvable map is held elsewhere.
+pub(super) fn subject_key(subject_id: &str) -> uuid::Uuid {
+    let mut hasher = Sha256::new();
+    hasher.update(SUBJECT_KEY_DOMAIN.as_bytes());
+    hasher.update([0x00]);
+    hasher.update(subject_id.as_bytes());
+    let digest = hasher.finalize();
+    let mut bytes = [0_u8; 16];
+    // The digest is 32 bytes wide, so the prefix is always present; the
+    // fallback keeps the slice non-panicking rather than describing a
+    // reachable state.
+    bytes.copy_from_slice(digest.get(..16).unwrap_or(&[0_u8; 16]));
+    uuid::Builder::from_custom_bytes(bytes).into_uuid()
+}
+
 /// Map a persistence failure to the SM `exception` status (server fault).
 pub(super) fn db_err(e: impl Into<ServiceError>) -> SmError {
     SmError::from(e.into())
@@ -42,8 +76,8 @@ pub(super) struct FrameRow {
 impl FerroEhrService {
     /// Whether a subject proxy is registered.
     pub(super) async fn sp_has_subject(&self, subject_id: &str) -> Result<bool, SmError> {
-        sqlx::query_scalar("SELECT EXISTS(SELECT 1 FROM sp_subject WHERE subject_id = $1)")
-            .bind(subject_id)
+        sqlx::query_scalar("SELECT EXISTS(SELECT 1 FROM sp_subject WHERE subject_key = $1)")
+            .bind(subject_key(subject_id))
             .fetch_one(&self.pool)
             .await
             .map_err(db_err)
@@ -79,9 +113,9 @@ impl FerroEhrService {
     ) -> Result<Option<SubjectVariable>, SmError> {
         let row = sqlx::query(
             "SELECT namespace, name, type_name, currency, ask_user, is_manual, frame_id, \
-             frame_path FROM sp_variable WHERE subject_id = $1 AND canonical_name = $2",
+             frame_path FROM sp_variable WHERE subject_key = $1 AND canonical_name = $2",
         )
-        .bind(subject_id)
+        .bind(subject_key(subject_id))
         .bind(canonical_name)
         .fetch_optional(&self.pool)
         .await
@@ -101,10 +135,10 @@ impl FerroEhrService {
     ) -> Result<Option<String>, SmError> {
         let def: Option<Value> = sqlx::query_scalar(
             "SELECT variables -> $2 FROM sp_data_set \
-             WHERE subject_id = $1 AND variables ? $2 \
+             WHERE subject_key = $1 AND variables ? $2 \
              ORDER BY id LIMIT 1",
         )
-        .bind(subject_id)
+        .bind(subject_key(subject_id))
         .bind(local_name)
         .fetch_optional(&self.pool)
         .await
@@ -126,18 +160,18 @@ impl FerroEhrService {
         var: &SubjectVariable,
         replace: bool,
     ) -> Result<(), SmError> {
-        const REPLACE_SQL: &str = "INSERT INTO sp_variable (subject_id, canonical_name, namespace, name, type_name, \
+        const REPLACE_SQL: &str = "INSERT INTO sp_variable (subject_key, canonical_name, namespace, name, type_name, \
              currency, ask_user, is_manual, frame_id, frame_path) \
              VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10) \
-             ON CONFLICT (subject_id, canonical_name) DO UPDATE SET \
+             ON CONFLICT (subject_key, canonical_name) DO UPDATE SET \
              namespace = EXCLUDED.namespace, name = EXCLUDED.name, \
              type_name = EXCLUDED.type_name, currency = EXCLUDED.currency, \
              ask_user = EXCLUDED.ask_user, is_manual = EXCLUDED.is_manual, \
              frame_id = EXCLUDED.frame_id, frame_path = EXCLUDED.frame_path";
-        const INSERT_SQL: &str = "INSERT INTO sp_variable (subject_id, canonical_name, namespace, name, type_name, \
+        const INSERT_SQL: &str = "INSERT INTO sp_variable (subject_key, canonical_name, namespace, name, type_name, \
              currency, ask_user, is_manual, frame_id, frame_path) \
              VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10) \
-             ON CONFLICT (subject_id, canonical_name) DO NOTHING";
+             ON CONFLICT (subject_key, canonical_name) DO NOTHING";
         if !var.name_valid() {
             return Err(SmError::precondition(format!(
                 "subject variable name {:?} (namespace {:?}) is not a valid canonical name \
@@ -147,7 +181,7 @@ impl FerroEhrService {
         }
         let sql = if replace { REPLACE_SQL } else { INSERT_SQL };
         sqlx::query(sql)
-            .bind(subject_id)
+            .bind(subject_key(subject_id))
             .bind(var.canonical_name())
             .bind(var.namespace.as_deref())
             .bind(&var.name)
@@ -174,9 +208,9 @@ impl FerroEhrService {
     ) -> Result<(), SmError> {
         sqlx::query(
             "UPDATE sp_variable SET currency = $3 \
-             WHERE subject_id = $1 AND canonical_name = $2",
+             WHERE subject_key = $1 AND canonical_name = $2",
         )
-        .bind(subject_id)
+        .bind(subject_key(subject_id))
         .bind(canonical_name)
         .bind(currency)
         .execute(&self.pool)
@@ -239,14 +273,11 @@ impl FerroEhrService {
                 return Ok(Some(id));
             }
         }
-        sqlx::query_scalar(
-            "SELECT ehr_id FROM ehr_index WHERE subject_id = $1 \
-             ORDER BY (instance_type = 'Primary') DESC, created_at ASC LIMIT 1",
-        )
-        .bind(subject_id)
-        .fetch_optional(&self.pool)
-        .await
-        .map_err(db_err)
+        let resolved =
+            crate::service::linkage::store::resolve_subject_ehr(&self.linkage_pool, subject_id)
+                .await
+                .map_err(db_err)?;
+        Ok(resolved.map(|ehr| ehr.0))
     }
 
     /// Record one retrieval attempt for a variable: the `VARIABLE_SAMPLE`
@@ -270,12 +301,12 @@ impl FerroEhrService {
             .map_err(|e| internal_fault("serialize a data-frame sample", &e))?;
         let mut tx = self.pool.begin().await.map_err(db_err)?;
         sqlx::query(
-            "INSERT INTO sp_sample (subject_id, canonical_name, frame_id, retrieve_time, \
+            "INSERT INTO sp_sample (subject_key, canonical_name, frame_id, retrieve_time, \
              effective_time, is_unavailable, sample, frame_sample) \
              VALUES ($1, $2, $3, \
              COALESCE($4::timestamptz, now()), $5::timestamptz, $6, $7, $8)",
         )
-        .bind(subject_id)
+        .bind(subject_key(subject_id))
         .bind(canonical_name)
         .bind(frame_id)
         .bind(&sample.retrieve_time)
@@ -290,10 +321,10 @@ impl FerroEhrService {
         sqlx::query(
             "DELETE FROM sp_sample WHERE id IN ( \
                SELECT id FROM sp_sample \
-               WHERE subject_id = $1 AND canonical_name = $2 \
+               WHERE subject_key = $1 AND canonical_name = $2 \
                ORDER BY retrieve_time DESC, id DESC OFFSET $3)",
         )
-        .bind(subject_id)
+        .bind(subject_key(subject_id))
         .bind(canonical_name)
         .bind(SAMPLE_RETENTION)
         .execute(&mut *tx)
@@ -312,10 +343,10 @@ impl FerroEhrService {
     ) -> Result<Option<(VariableSample, Option<DataFrameSample>)>, SmError> {
         let row = sqlx::query(
             "SELECT sample, frame_sample FROM sp_sample \
-             WHERE subject_id = $1 AND canonical_name = $2 \
+             WHERE subject_key = $1 AND canonical_name = $2 \
              ORDER BY retrieve_time DESC, id DESC LIMIT 1",
         )
-        .bind(subject_id)
+        .bind(subject_key(subject_id))
         .bind(canonical_name)
         .fetch_optional(&self.pool)
         .await
@@ -332,10 +363,10 @@ impl FerroEhrService {
     ) -> Result<Vec<(VariableSample, Option<DataFrameSample>)>, SmError> {
         let rows = sqlx::query(
             "SELECT sample, frame_sample FROM sp_sample \
-             WHERE subject_id = $1 AND canonical_name = $2 \
+             WHERE subject_key = $1 AND canonical_name = $2 \
              ORDER BY retrieve_time DESC, id DESC",
         )
-        .bind(subject_id)
+        .bind(subject_key(subject_id))
         .bind(canonical_name)
         .fetch_all(&self.pool)
         .await

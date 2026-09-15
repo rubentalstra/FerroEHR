@@ -11,7 +11,7 @@
 //! (`I_ADMIN_SERVICE/001-EHR.robot` + `admin_keywords.robot`): a physical,
 //! cascading delete after which every backing table returns to its pre-EHR
 //! baseline count. No openEHR spec governs the cascade SQL / FK graph — our own
-//! design over the greenfield schema (`0001_baseline.sql`).
+//! design over the greenfield schema.
 
 #![cfg_attr(
     feature = "multimedia",
@@ -256,6 +256,15 @@ impl FerroEhrService {
         }
 
         tx.commit().await?;
+
+        // Erasure reaches the cross-reference, on the linkage pool and after
+        // the clinical delete has committed. A row there naming an erased EHR
+        // is the additional information of GDPR Art. 4(5) outliving the data it
+        // was additional to, and Art. 17(1) reaches it
+        // (https://eur-lex.europa.eu/eli/reg/2016/679/oj).
+        self.erase_ehr_linkage(ehr_id)
+            .await
+            .map_err(|error| ServiceError::internal("erase the EHR's linkage map", error))?;
 
         // The EHR and its nodes are gone; GC any blob this EHR referenced that
         // no *surviving* node still references (content-addressed dedup means a

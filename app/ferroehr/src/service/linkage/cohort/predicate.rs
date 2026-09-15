@@ -197,7 +197,7 @@ mod tests {
                 "linkage.",
                 "ehr.",
                 "demographic.",
-                "party_ehr",
+                "subject_ehr",
                 "openehr-ehr-",
             ] {
                 assert!(

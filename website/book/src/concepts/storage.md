@@ -52,7 +52,7 @@ The database is PostgreSQL 18, split into five schemas:
 | `ext` | FerroEHR's own `IMMUTABLE` helper functions (`openehr_magnitude`, `openehr_timestamp`), the runtime roles and the deployment posture |
 | `clinical` | the clinical CDR: versions, heads, nodes, EHRs, contributions, templates, queries, tags |
 | `party` | the demographic pseudonymisation domain: party versions, heads, nodes, contributions, commit audits, and the sealed `national_identifier` values |
-| `linkage` | the linkage pseudonymisation domain: `party_ehr`, which party is the subject of which EHR |
+| `linkage` | the linkage pseudonymisation domain: `subject_ehr`, which party and which subject identifier name which EHR |
 | `audit` | the IHE ATNA Audit Record Repository (`audit_event`) |
 
 Each carries its own migration set and its own `_sqlx_migrations` bookkeeping
@@ -87,17 +87,22 @@ unchanged, and no SQL in the server names a domain schema. A test renders both
 files and refuses any difference beyond the kind `CHECK` and the foreign keys
 into the `ehr` relation, which the party domain has none of.
 
-The third domain is one table. `linkage.party_ehr` records which party is the
-subject of which EHR, temporally: a merge or a split closes the mapping in
-force and opens its successor, and the temporal primary key
-(`PRIMARY KEY (party_id, sys_period WITHOUT OVERLAPS)`) admits one
-open mapping per party. It carries identifiers and a validity period and
-nothing else, because a row here is already the additional information that
-re-attributes a record to a person. It holds no foreign key into either
-schema it joins, since PostgreSQL enforces a foreign key by reading the
-referenced row and no credential here may. `ferroehr_linkage` holds
-`SELECT`, `INSERT` and `UPDATE` on it and no `DELETE`, so a mapping is closed
-rather than removed.
+The third domain is one table. `linkage.subject_ehr` is the EHR id / subject
+cross-reference — the service the openEHR Service Model calls EHR Index — and
+it records which party and which subject identifier name which EHR,
+temporally: a merge, a split or an index correction closes the row in force and
+opens its successor, and the temporal key
+(`UNIQUE (party_id, sys_period WITHOUT OVERLAPS)`) admits one
+open mapping per party. It carries identifiers, the association metadata the
+Service Model defines, and a validity period, and nothing else, because a row
+here is already the additional information that re-attributes a record to a
+person. It holds no foreign key into either schema it joins, since PostgreSQL
+enforces a foreign key by reading the referenced row and no credential here
+may. `ferroehr_linkage` holds `SELECT`, `INSERT` and `UPDATE` on it and no
+`DELETE`, so a mapping is closed rather than removed — with one exception, and
+it is the one the law requires: `linkage.erase_ehr` is a `SECURITY DEFINER`
+function the role may execute, and deleting an EHR calls it so no row survives
+naming a record that no longer exists.
 
 The wire is unaffected. The ITS-REST Demographic API, the RM change-control
 semantics and every version identifier are exactly what they were; only where
@@ -165,8 +170,10 @@ erDiagram
 
 Supporting tables not drawn above: `stored_query` (stored AQL, qualified name
 plus SemVer), `archetype_store` and `adl2_artefact` (the two DEFINITION
-dialects), `ehr_index`, the `restriction` and retention registers, and the
-`sp_*` family (Subject Proxy Service). The `ehr` table itself carries the
+dialects), the `restriction` and retention registers, and the
+`sp_*` family (Subject Proxy Service), which keys its rows by a derived opaque
+subject key rather than by the caller's own subject identifier. The `ehr` table
+itself carries the
 three creation-immutable values the RM names (`system_id`, `id`,
 `time_created`) plus promoted copies of the current EHR_STATUS subject
 reference and `is_queryable` / `is_modifiable` flags, which back the

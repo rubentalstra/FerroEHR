@@ -293,7 +293,7 @@ services:
       ferroehr-postgres:
         condition: service_healthy
     # The third domain gets its OWN dump rather than a place in either of the
-    # other two, and that is the whole point: `linkage.party_ehr` is the map
+    # other two, and that is the whole point: `linkage.subject_ehr` is the map
     # from a party to its EHR, so an artefact carrying it together with either
     # side rebuilds exactly the join the schema split withholds (GDPR
     # Art. 4(5)). Three domains, three dumps, three destinations, and — in a
@@ -308,7 +308,7 @@ services:
     # extension ("pg_dump makes no attempt to dump any other database objects
     # that the selected schema(s) might depend upon" — PostgreSQL 18, pg_dump
     # §Notes), and the temporal PRIMARY KEY … WITHOUT OVERLAPS on
-    # linkage.party_ehr is a GiST index needing that extension's operator
+    # linkage.subject_ehr is a GiST index needing that extension's operator
     # classes. Measured 2026-09-11 on PostgreSQL 18.6: without the flag the
     # restore reports "data type uuid has no default operator class for access
     # method gist", pg_restore ignores the error by default, and the table

@@ -422,14 +422,14 @@ pg_dump --dbname="$LINKAGE_DSN" --format=custom --no-owner \
 > `--extension=btree_gist` on the linkage dump is load-bearing. A `--schema`
 > dump carries no extension — *"pg_dump makes no attempt to dump any other
 > database objects that the selected schema(s) might depend upon"* — and
-> `linkage.party_ehr`'s temporal `PRIMARY KEY … WITHOUT OVERLAPS` is a GiST
+> `linkage.subject_ehr`'s temporal `UNIQUE … WITHOUT OVERLAPS` is a GiST
 > index over that extension's operator classes. Without the flag the restore
 > reports *"data type uuid has no default operator class for access method
 > gist"*, `pg_restore` ignores the error by default, and the table comes back
 > with its rows and without the key that admits one open mapping per party.
 
 The third dump is a separate artefact for the same reason the first two are,
-and it is the one that matters most. `linkage.party_ehr` says which party is
+and it is the one that matters most. `linkage.subject_ehr` says which party is
 the subject of which EHR: it is the additional information that turns a
 pseudonymised record back into a person (GDPR Art. 4(5)), so a file carrying it
 beside either side of that map rebuilds the join the split exists to withhold.
@@ -510,8 +510,8 @@ own output, and confirm the map kept its temporal key:
 ```bash
 psql -d ferroehr_restored -c \
   "SELECT conname, pg_get_constraintdef(oid) FROM pg_constraint
-     WHERE conrelid = 'linkage.party_ehr'::regclass AND contype = 'p'"
-# expect: pk_party_ehr | PRIMARY KEY (party_id, sys_period WITHOUT OVERLAPS)
+     WHERE conrelid = 'linkage.subject_ehr'::regclass AND contype = 'u'"
+# expect: uq_subject_ehr_party | UNIQUE (party_id, sys_period WITHOUT OVERLAPS)
 ```
 
 Restoring only one domain is a supported outcome, not a mistake: a demographic

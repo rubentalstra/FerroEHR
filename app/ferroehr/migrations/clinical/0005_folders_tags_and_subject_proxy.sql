@@ -96,14 +96,26 @@ COMMENT ON COLUMN item_tag.target_version IS 'The {creating_system_id}::{version
 -- objects — no openEHR spec governs the storage form, our own design.
 
 -- SUBJECT_PROXY: one proxy per subject.
+--
+-- Keyed by an OPAQUE subject key, never by the caller's own subject
+-- identifier. `SUBJECT_PROXY.subject_id` is "Identifier of data subject"
+-- (subject_proxy.adoc) and the caller may hand the service a national
+-- identifier or a medical-record number; the clinical domain holds no such
+-- value (GDPR Art. 4(5),
+-- https://eur-lex.europa.eu/eli/reg/2016/679/oj — the cross-reference that
+-- resolves a subject lives in the linkage schema, under its own role). The key
+-- is derived from the subject identifier by the service, so the same subject
+-- always reaches the same proxy. No openEHR spec governs the storage key: our
+-- own design/extension.
 CREATE TABLE sp_subject (
-    subject_id       text NOT NULL,
+    subject_key      uuid NOT NULL,
     -- SUBJECT_PROXY.subject_category (free string; "not controlled" in the SM).
     subject_category text NOT NULL DEFAULT 'individual',
     create_time      timestamptz NOT NULL DEFAULT now(),
-    CONSTRAINT pk_sp_subject PRIMARY KEY (subject_id)
+    CONSTRAINT pk_sp_subject PRIMARY KEY (subject_key)
 );
-COMMENT ON TABLE sp_subject IS 'SUBJECT_PROXY config: one proxy per subject (SM openehr_platform master10-subject_proxy_service.adoc §Persistence — configuration only, cleared by reset()).';
+COMMENT ON TABLE sp_subject IS 'SUBJECT_PROXY config: one proxy per subject (SM openehr_platform master10-subject_proxy_service.adoc §Persistence — configuration only, cleared by reset()). Keyed by an opaque subject key derived by the service; the clinical domain holds no subject identifier of its own (GDPR Art. 4(5)).';
+COMMENT ON COLUMN sp_subject.subject_key IS 'The opaque key the service derives from SUBJECT_PROXY.subject_id. The identifier itself is never stored here; resolving it is the linkage domain''s job.';
 
 -- ENV_BINDING: one binding per execution environment.
 CREATE TABLE sp_binding (
@@ -132,7 +144,7 @@ COMMENT ON TABLE sp_data_frame IS 'SM-6 DATA_FRAME config: a retrieval frame wit
 
 -- SUBJECT_VARIABLE attached to a subject's proxy, keyed by canonical_name.
 CREATE TABLE sp_variable (
-    subject_id     text NOT NULL,
+    subject_key    uuid NOT NULL,
     canonical_name text NOT NULL,
     namespace      text,
     name           text NOT NULL,
@@ -143,8 +155,8 @@ CREATE TABLE sp_variable (
     is_manual      boolean NOT NULL DEFAULT false,
     frame_id       text NOT NULL,
     frame_path     text NOT NULL,
-    CONSTRAINT pk_sp_variable PRIMARY KEY (subject_id, canonical_name),
-    CONSTRAINT fk_sp_variable_subject FOREIGN KEY (subject_id) REFERENCES sp_subject (subject_id) ON DELETE CASCADE,
+    CONSTRAINT pk_sp_variable PRIMARY KEY (subject_key, canonical_name),
+    CONSTRAINT fk_sp_variable_subject FOREIGN KEY (subject_key) REFERENCES sp_subject (subject_key) ON DELETE CASCADE,
     -- A variable binds a frame that must exist (referential integrity — no
     -- spec governs the storage).
     CONSTRAINT fk_sp_variable_frame FOREIGN KEY (frame_id) REFERENCES sp_data_frame (frame_id)
@@ -156,13 +168,13 @@ COMMENT ON TABLE sp_variable IS 'SM-6 SUBJECT_VARIABLE config (SM subject_proxy_
 -- application. The variable set (data-set-local name → SUBJECT_VARIABLE) is
 -- stored verbatim as canonical JSON (the local aliases differ from canonical names).
 CREATE TABLE sp_data_set (
-    subject_id      text NOT NULL,
+    subject_key     uuid NOT NULL,
     id              text NOT NULL,
     creating_app_id text,
     using_app_ids   jsonb NOT NULL DEFAULT '[]'::jsonb,
     variables       jsonb NOT NULL,
-    CONSTRAINT pk_sp_data_set PRIMARY KEY (subject_id, id),
-    CONSTRAINT fk_sp_data_set_subject FOREIGN KEY (subject_id) REFERENCES sp_subject (subject_id) ON DELETE CASCADE
+    CONSTRAINT pk_sp_data_set PRIMARY KEY (subject_key, id),
+    CONSTRAINT fk_sp_data_set_subject FOREIGN KEY (subject_key) REFERENCES sp_subject (subject_key) ON DELETE CASCADE
 );
 -- remove_application(application_id) / has_application scan by creating app.
 CREATE INDEX idx_sp_data_set_creating_app ON sp_data_set (creating_app_id)
@@ -181,7 +193,7 @@ COMMENT ON TABLE sp_data_set IS 'SM-6 SUBJECT_DATA_SET config: variables registe
 -- the storage mechanics — our own design.
 CREATE TABLE sp_sample (
     id             uuid NOT NULL DEFAULT uuidv7(),
-    subject_id     text NOT NULL,
+    subject_key    uuid NOT NULL,
     canonical_name text NOT NULL,
     -- frame_id of the producing DATA_FRAME (NULL for a manually-notified sample).
     frame_id       text,
@@ -193,10 +205,10 @@ CREATE TABLE sp_sample (
     -- … and the producing DATA_FRAME_SAMPLE canonical JSON (frame-driven only).
     frame_sample   jsonb,
     CONSTRAINT pk_sp_sample PRIMARY KEY (id),
-    CONSTRAINT fk_sp_sample_variable FOREIGN KEY (subject_id, canonical_name)
-        REFERENCES sp_variable (subject_id, canonical_name) ON DELETE CASCADE
+    CONSTRAINT fk_sp_sample_variable FOREIGN KEY (subject_key, canonical_name)
+        REFERENCES sp_variable (subject_key, canonical_name) ON DELETE CASCADE
 );
 -- Freshness + history reads are newest-first per variable.
-CREATE INDEX idx_sp_sample_variable ON sp_sample (subject_id, canonical_name, retrieve_time DESC);
+CREATE INDEX idx_sp_sample_variable ON sp_sample (subject_key, canonical_name, retrieve_time DESC);
 COMMENT ON TABLE sp_sample IS 'SM-6 SAMPLE store: retrieve history per SUBJECT_VARIABLE (master10 §Samples, §Persistence); realizes history/last_frame + currency freshness.';
 

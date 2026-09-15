@@ -88,7 +88,7 @@ async fn migrations_apply_cleanly_and_idempotently() {
     assert_eq!(applied("ext").await, 4);
     assert_eq!(applied("clinical").await, 10);
     assert_eq!(applied("party").await, 7);
-    assert_eq!(applied("linkage").await, 3);
+    assert_eq!(applied("linkage").await, 4);
     assert_eq!(applied("audit").await, 6);
 
     let tables = |schema: &'static str| {
@@ -117,7 +117,6 @@ async fn migrations_apply_cleanly_and_idempotently() {
             "contribution",
             "ehr",
             "ehr_folder",
-            "ehr_index",
             "event_outbox",
             "event_outbox_reader",
             "event_subscription",
@@ -252,6 +251,117 @@ async fn no_relation_carries_a_tenant_column_and_no_row_policy_exists() {
     .await
     .expect("scan for row policies");
     assert!(policies.is_empty(), "no row policy may exist: {policies:?}");
+}
+
+/// The clinical domain holds exactly ONE subject identifier: the promoted
+/// `ehr.subject_id`/`subject_namespace` pair, and only under the pseudonym
+/// guard.
+///
+/// The pair has to stay there, because the wire binds it to EHR_STATUS content:
+/// `ehr_get_by_subject` matches `EHR_STATUS.subject.external_ref.id.value` and
+/// `.namespace` (ITS-REST `ehr_get_by_subject.yaml`) and a second EHR for the
+/// same subject is a `409` (`409_EHR.yaml`). Everything else that names a
+/// subject — the EHR Index associations, the subject-proxy registry — belongs to
+/// the cross-reference domain or holds an opaque derived key, because a
+/// clinical column no trigger guards is free to hold a national identifier, and
+/// the separation GDPR Art. 4(5) asks for
+/// (<https://eur-lex.europa.eu/eli/reg/2016/679/oj>) is only as good as its
+/// narrowest hole.
+#[tokio::test]
+async fn only_the_guarded_ehr_columns_name_a_subject_in_the_clinical_domain() {
+    let db = testkit::db().await.expect("testkit database");
+    let pool = db.pool();
+
+    let columns: Vec<(String, String)> = sqlx::query_as(
+        "SELECT table_name, column_name FROM information_schema.columns \
+         WHERE table_schema = 'clinical' AND column_name LIKE 'subject%' \
+         ORDER BY 1, 2",
+    )
+    .fetch_all(&pool)
+    .await
+    .expect("scan the clinical domain for subject columns");
+    assert_eq!(
+        columns,
+        vec![
+            ("ehr".to_owned(), "subject_id".to_owned()),
+            ("ehr".to_owned(), "subject_namespace".to_owned()),
+            ("sp_subject".to_owned(), "subject_category".to_owned()),
+            ("sp_subject".to_owned(), "subject_key".to_owned()),
+        ],
+        "only the guarded ehr pair may name a subject in clinical; the \
+         subject-proxy registry holds a derived key and a category, never an \
+         identifier"
+    );
+
+    // And the pair the wire needs is guarded: the trigger is what refuses a
+    // national identifier under `privacy.subject_namespaces`.
+    let guarded: Vec<String> = sqlx::query_scalar(
+        "SELECT t.tgname FROM pg_trigger t \
+         JOIN pg_class c ON c.oid = t.tgrelid \
+         JOIN pg_namespace n ON n.oid = c.relnamespace \
+         WHERE n.nspname = 'clinical' AND c.relname = 'ehr' AND NOT t.tgisinternal \
+         ORDER BY 1",
+    )
+    .fetch_all(&pool)
+    .await
+    .expect("read the ehr triggers");
+    assert!(
+        guarded
+            .iter()
+            .any(|name| name == "ehr_subject_pseudonym_guard"),
+        "the promoted subject pair must stay under the pseudonym guard: {guarded:?}"
+    );
+}
+
+/// The cross-reference lives in the linkage domain, and the erasure function is
+/// the only way its rows are ever removed.
+///
+/// The linkage role holds `SELECT`, `INSERT` and `UPDATE` and no `DELETE`, so a
+/// merge corrects forward and nothing quietly drops history; erasure still has
+/// to reach the map, because a row naming an erased EHR is the additional
+/// information of GDPR Art. 4(5) outliving the data it was additional to
+/// (<https://eur-lex.europa.eu/eli/reg/2016/679/oj>). A `SECURITY DEFINER`
+/// function is what squares the two.
+#[tokio::test]
+async fn the_linkage_role_erases_only_through_the_definer_function() {
+    let db = testkit::db().await.expect("testkit database");
+    let pool = db.pool();
+
+    let relations: Vec<String> = sqlx::query_scalar(
+        "SELECT c.relname FROM pg_class c JOIN pg_namespace n ON n.oid = c.relnamespace \
+         WHERE n.nspname = 'linkage' AND c.relkind IN ('r', 'p') \
+           AND c.relname <> '_sqlx_migrations' ORDER BY 1",
+    )
+    .fetch_all(&pool)
+    .await
+    .expect("linkage relations");
+    assert_eq!(relations, ["subject_ehr"], "linkage holds one relation");
+
+    let definer: (bool, String) = sqlx::query_as(
+        "SELECT p.prosecdef, pg_get_function_identity_arguments(p.oid) \
+         FROM pg_proc p JOIN pg_namespace n ON n.oid = p.pronamespace \
+         WHERE n.nspname = 'linkage' AND p.proname = 'erase_ehr'",
+    )
+    .fetch_one(&pool)
+    .await
+    .expect("the erase function exists");
+    assert_eq!(
+        definer,
+        (true, "an_ehr_id uuid".to_owned()),
+        "erase_ehr is SECURITY DEFINER over one EHR id"
+    );
+
+    // PUBLIC must not hold EXECUTE on a definer function: that would hand every
+    // role the owner's reach, including the DELETE this schema grants nobody.
+    let public_execute: bool = sqlx::query_scalar(
+        "SELECT has_function_privilege('public', p.oid, 'EXECUTE') \
+         FROM pg_proc p JOIN pg_namespace n ON n.oid = p.pronamespace \
+         WHERE n.nspname = 'linkage' AND p.proname = 'erase_ehr'",
+    )
+    .fetch_one(&pool)
+    .await
+    .expect("read PUBLIC's privilege on the erase function");
+    assert!(!public_execute, "PUBLIC may not execute linkage.erase_ehr");
 }
 
 /// A database created by a release older than the storage rewrite is refused at

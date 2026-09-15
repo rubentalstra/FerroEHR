@@ -1,12 +1,20 @@
 // SPDX-FileCopyrightText: Ruben Talstra
 // SPDX-License-Identifier: BUSL-1.1
 
-//! The LINKAGE service module: which demographic party is the subject of
-//! which EHR.
+//! The LINKAGE service module: which demographic party, and which subject
+//! identifier, name which EHR.
 //!
-//! **No openEHR spec governs this — our own design/extension.** It realizes no
-//! SM chapter: the SM has no linkage component, and nothing on the openEHR
-//! wire depends on this map. `ehr_get_by_subject` obliges a match against the
+//! **No openEHR spec governs the storage — our own design/extension.** The
+//! party-to-EHR map is ours; the relation it lives in
+//! (`linkage.subject_ehr`, written and read through [`store`]) also holds the
+//! SM's EHR Index associations, because master07 §Overview describes exactly
+//! this schema's purpose — "In a privacy-supporting environment, this enables
+//! EHRs to be persisted with only an EHR id; the EHR Index has to be used to
+//! obtain the subject identifier". The `I_EHR_INDEX` operations themselves
+//! live in [`crate::service::ehr_index`], which is the SM chapter; this module
+//! owns the relation.
+//!
+//! `ehr_get_by_subject` does NOT come here. It obliges a match against the
 //! EHR's own `EHR_STATUS.subject.external_ref.id.value` and `.namespace`
 //! (ITS-REST `specifications/operations/ehr_get_by_subject.yaml`), which the
 //! clinical schema serves from its own promoted columns — and which
@@ -31,9 +39,9 @@
 //! through `party.resolve_national_identifier`, which matches a keyed
 //! digest and never decrypts — for the party, and then asks the linkage pool
 //! for that party's EHR. Two connections, two search paths, and under
-//! `[db].demographic_url` + `[db].linkage_url` two database roles, each
-//! revoked from the other's schema in both directions by
-//! `linkage/0001_baseline`. No database credential spans the join, none must
+//! `[storage.party].url` + `[storage.linkage].url` two database roles, each
+//! revoked from the other's schema in both directions by the domains' grants.
+//! No database credential spans the join, none must
 //! ever be given one, and `crate::db::verify_domain_isolation` refuses to boot
 //! a database where one does.
 //!
@@ -43,10 +51,12 @@
 //! one transaction; nothing here deletes a row, and the linkage role holds no
 //! `DELETE` privilege to do it with. "Which party was the subject of this EHR
 //! when that composition was written" therefore stays answerable after the
-//! two person records have been merged. The temporal primary key
-//! (`PRIMARY KEY (party_id, sys_period WITHOUT OVERLAPS)`) is what
-//! enforces one mapping in force per party — the database, not whichever code
-//! path happens to write.
+//! two person records have been merged. The temporal key
+//! (`UNIQUE (party_id, sys_period WITHOUT OVERLAPS)`) is what enforces one
+//! mapping in force per party — the database, not whichever code path happens
+//! to write. The one destructive path is erasure
+//! ([`FerroEhrService::erase_ehr_linkage`]), which the role cannot perform
+//! itself and reaches only through a definer function.
 //!
 //! ## Every crossing is recorded
 //!
@@ -58,7 +68,7 @@
 //! says someone asked.
 
 pub mod cohort;
-mod store;
+pub(crate) mod store;
 
 use crate::ids::{EhrId, VoId};
 use crate::service::FerroEhrService;
@@ -165,8 +175,39 @@ impl FerroEhrService {
     /// in force — close it with [`Self::merge`] or [`Self::split`] first —
     /// and [`LinkageError::Database`] when the write fails.
     pub async fn link(&self, party_id: VoId, ehr_id: EhrId) -> Result<(), LinkageError> {
+        self.open_mapping_row(party_id, ehr_id, None).await
+    }
+
+    /// Open a mapping that also records the subject identifier the clinical
+    /// side now carries for the party.
+    ///
+    /// The map is where an `I_EHR_INDEX` lookup resolves a subject to an EHR
+    /// (SM master07 §Overview), so a server-minted pseudonym that has just been
+    /// written onto `EHR_STATUS` belongs on the row rather than only in the
+    /// clinical schema, where the linkage role cannot see it.
+    async fn link_with_subject(
+        &self,
+        party_id: VoId,
+        ehr_id: EhrId,
+        minted: &SubjectPseudonym,
+    ) -> Result<(), LinkageError> {
+        let subject = crate::service::ehr_index::types::SubjectRef::person(
+            minted.id.to_string(),
+            minted.namespace.clone(),
+        );
+        self.open_mapping_row(party_id, ehr_id, Some(subject)).await
+    }
+
+    /// The shared body of [`Self::link`] and [`Self::link_with_subject`]: one
+    /// insert, one access record, whether or not the row names a subject.
+    async fn open_mapping_row(
+        &self,
+        party_id: VoId,
+        ehr_id: EhrId,
+        subject: Option<crate::service::ehr_index::types::SubjectRef>,
+    ) -> Result<(), LinkageError> {
         let mut conn = self.linkage_pool.acquire().await.map_err(classify)?;
-        let outcome = store::open(&mut conn, party_id, ehr_id)
+        let outcome = store::open(&mut conn, party_id, ehr_id, subject.as_ref())
             .await
             .map_err(|error| classify_for(error, party_id));
         self.emit_linkage_access(
@@ -345,8 +386,40 @@ impl FerroEhrService {
         self.replace_ehr_status(ehr, envelope)
             .await
             .map_err(LinkageError::Status)?;
-        self.link(party, ehr).await?;
+        self.link_with_subject(party, ehr, &minted).await?;
         Ok(minted)
+    }
+
+    /// Remove every cross-reference row naming `ehr_id`, returning how many.
+    ///
+    /// The erasure path, and the only destructive one this domain has. A
+    /// physically deleted EHR must leave no row here asserting whose record it
+    /// was: that row is the additional information of GDPR Art. 4(5) outliving
+    /// the data it was additional to, and Art. 17(1) reaches it
+    /// (<https://eur-lex.europa.eu/eli/reg/2016/679/oj>). The role holds no
+    /// `DELETE`, so the work is done by the definer function the migration set
+    /// defines for exactly this.
+    ///
+    /// Called after the clinical delete has committed, never before: a map
+    /// erased ahead of a delete that then failed would leave a record no one
+    /// can attribute, which is the worse of the two half-states.
+    ///
+    /// # Errors
+    /// [`LinkageError::Database`] when the call fails — including the privilege
+    /// refusal of a deployment that granted the role no `EXECUTE` — and
+    /// [`LinkageError::Unrecorded`] when the access record is refused under
+    /// `fail_mode = "closed"`.
+    pub async fn erase_ehr_linkage(&self, ehr_id: EhrId) -> Result<u64, LinkageError> {
+        let outcome = store::erase_ehr(&self.linkage_pool, ehr_id)
+            .await
+            .map_err(classify);
+        self.emit_linkage_access(
+            EventActionCode::Delete,
+            format!("ehr:{ehr_id}"),
+            Some(ehr_id),
+            outcome.is_ok(),
+        )?;
+        outcome
     }
 
     /// Merge `from_party` into `into_party`: the EHR the first was the subject
@@ -418,8 +491,18 @@ impl FerroEhrService {
             .ok_or(LinkageError::NotLinked {
                 party_id: from_party,
             })?;
-        let successor = to_ehr.unwrap_or(closed);
-        store::open(&mut tx, to_party, successor)
+        let successor = to_ehr.unwrap_or(closed.ehr);
+        // The subject identifier travels with the EHR, not with the party: a
+        // merge leaves the same EHR carrying the same
+        // `EHR_STATUS.subject.external_ref`, so the successor keeps it, while a
+        // split moves the party onto an EHR whose status this map has never
+        // seen and must claim nothing about.
+        let subject = if successor == closed.ehr {
+            closed.subject
+        } else {
+            None
+        };
+        store::open(&mut tx, to_party, successor, subject.as_ref())
             .await
             .map_err(|error| classify_for(error, to_party))?;
         tx.commit().await.map_err(classify)?;

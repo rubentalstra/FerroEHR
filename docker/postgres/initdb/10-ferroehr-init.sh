@@ -110,7 +110,7 @@ CREATE SCHEMA IF NOT EXISTS audit AUTHORIZATION "${APP_USER}";
 CREATE EXTENSION IF NOT EXISTS "uuid-ossp" WITH SCHEMA ext;
 CREATE EXTENSION IF NOT EXISTS pgcrypto   WITH SCHEMA ext;
 CREATE EXTENSION IF NOT EXISTS pg_trgm    WITH SCHEMA ext;
--- Required by linkage.party_ehr's temporal PRIMARY KEY (... WITHOUT OVERLAPS),
+-- Required by linkage.subject_ehr's temporal UNIQUE (... WITHOUT OVERLAPS),
 -- which PostgreSQL enforces as a GiST index over btree_gist operator classes.
 CREATE EXTENSION IF NOT EXISTS btree_gist WITH SCHEMA ext;
 

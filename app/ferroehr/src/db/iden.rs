@@ -367,34 +367,33 @@ pub enum Adl2Artefact {
     CreatedAt,
 }
 
-/// `ehr_index` — SM-3 EHR Index (`I_EHR_INDEX`): N:M subject↔EHR associations.
+/// `linkage.subject_ehr` — the EHR id / demographic subject cross-reference
+/// (SM-3 `I_EHR_INDEX`) and the party-to-EHR map, in one temporal relation.
 #[derive(Debug, Clone, Copy, sea_query::Iden)]
-pub enum EhrIndex {
-    /// The `ehr_index` table itself.
-    #[iden = "ehr_index"]
+pub enum SubjectEhr {
+    /// The `subject_ehr` table itself.
+    #[iden = "subject_ehr"]
     Table,
-    /// `ehr_id` — the associated EHR.
+    /// `id` — the surrogate key; the two real keys are partial.
+    Id,
+    /// `party_id` — the party in the party domain, when the row names one.
+    PartyId,
+    /// `ehr_id` — the EHR the row names.
     EhrId,
-    /// `subject_id` — the associated subject's id.
+    /// `subject_id` — the subject identifier the clinical side carries.
     SubjectId,
     /// `subject_namespace` — the issuing namespace of `subject_id`.
     SubjectNamespace,
     /// `subject_type` — the subject's `OBJECT_REF.type` (`PERSON` by default).
     SubjectType,
-    /// `instance_type` — `Primary` (authoritative), `Duplicate`, or
-    /// `Supplementary`.
-    InstanceType,
-    /// `start_valid_time` — when the association became valid, if bounded.
-    StartValidTime,
-    /// `end_valid_time` — when the association stopped being valid, if bounded.
-    EndValidTime,
-    /// `notes` — free-text notes on the association.
-    Notes,
+    /// `status` — the `RESOURCE_STATUS` of the association, as canonical JSON.
+    Status,
     /// `location` — the `LOCATION_DESC` of the holding system, as canonical
     /// JSON.
     Location,
-    /// `created_at` — when the association was recorded.
-    CreatedAt,
+    /// `sys_period` — the row's validity interval; an open upper bound is the
+    /// row in force.
+    SysPeriod,
 }
 
 /// `sp_subject` — SM-6 Subject Proxy Service: one proxy per subject.
@@ -403,8 +402,9 @@ pub enum SpSubject {
     /// The `sp_subject` table itself.
     #[iden = "sp_subject"]
     Table,
-    /// `subject_id` — the proxied subject, which is also the primary key.
-    SubjectId,
+    /// `subject_key` — the opaque key derived from the proxied subject's
+    /// identifier, which is also the primary key.
+    SubjectKey,
     /// `subject_category` — `SUBJECT_PROXY.subject_category`, an uncontrolled
     /// string.
     SubjectCategory,
@@ -450,8 +450,8 @@ pub enum SpVariable {
     /// The `sp_variable` table itself.
     #[iden = "sp_variable"]
     Table,
-    /// `subject_id` — the proxy this variable hangs off.
-    SubjectId,
+    /// `subject_key` — the proxy this variable hangs off.
+    SubjectKey,
     /// `canonical_name` — the variable's canonical name, its key within the
     /// proxy.
     CanonicalName,
@@ -481,8 +481,8 @@ pub enum SpDataSet {
     /// The `sp_data_set` table itself.
     #[iden = "sp_data_set"]
     Table,
-    /// `subject_id` — the proxy the data set belongs to.
-    SubjectId,
+    /// `subject_key` — the proxy the data set belongs to.
+    SubjectKey,
     /// `id` — the data set's id within that proxy.
     Id,
     /// `creating_app_id` — the application that registered the data set.
@@ -514,7 +514,7 @@ mod tests {
         assert_eq!(ItemTag::Table.to_string(), "item_tag");
         assert_eq!(ArchetypeStore::Table.to_string(), "archetype_store");
         assert_eq!(Adl2Artefact::Table.to_string(), "adl2_artefact");
-        assert_eq!(EhrIndex::Table.to_string(), "ehr_index");
+        assert_eq!(SubjectEhr::Table.to_string(), "subject_ehr");
         assert_eq!(SpSubject::Table.to_string(), "sp_subject");
         assert_eq!(SpBinding::Table.to_string(), "sp_binding");
         assert_eq!(SpDataFrame::Table.to_string(), "sp_data_frame");

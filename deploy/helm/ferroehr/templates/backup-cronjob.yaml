@@ -43,7 +43,7 @@ than a set of parallel edits that can silently disagree.
             "secret" .Values.backup.linkage.existingSecret
             "schemas" (list "linkage")
             "extensions" (list "btree_gist")
-            "claimWhy" "name an EXISTING PersistentVolumeClaim for the linkage dump (schema linkage). It must be a different volume from the other two: linkage.party_ehr is the map from a party to its EHR, so a volume holding it beside either side of that map hands one holder the join the split withholds (GDPR Art. 4(5))."
+            "claimWhy" "name an EXISTING PersistentVolumeClaim for the linkage dump (schema linkage). It must be a different volume from the other two: linkage.subject_ehr is the map from a party to its EHR, so a volume holding it beside either side of that map hands one holder the join the split withholds (GDPR Art. 4(5))."
             "secretWhy" "name a Secret holding a BACKUP DSN for the linkage domain — a read-only role on linkage, and a different role from the other two. This credential reads the map that re-identifies a pseudonymised record, so it is the narrowest of the three.") }}
 {{- /* Every domain needs a destination of its own, and no two may share one.
        The collision is checked PAIRWISE rather than against the clinical claim
@@ -74,7 +74,7 @@ than a set of parallel edits that can silently disagree.
 {{- /* A `--schema` dump carries no extension ("pg_dump makes no attempt to dump
        any other database objects that the selected schema(s) might depend
        upon" — PostgreSQL 18, pg_dump §Notes), so a domain whose DDL needs one
-       names it here. linkage.party_ehr's temporal PRIMARY KEY … WITHOUT
+       names it here. linkage.subject_ehr's temporal UNIQUE … WITHOUT
        OVERLAPS is a GiST index over btree_gist operator classes: measured
        2026-09-11 on 18.6, a restore without the extension fails that one
        statement, pg_restore ignores the error by default, and the table comes
