@@ -55,6 +55,28 @@ workflow refuses a tag that has no matching section here.
 
 ### Changed
 
+- **A physical EHR delete reaches everything the erasure has to reach**
+  (#3347, #3403). `DELETE {base}/admin/ehr/{ehr_id}` runs one clinical
+  transaction that removes the EHR and, through the foreign-key graph, its
+  versions over both storage tiers with their nodes, attestations,
+  contributions, commit audits, item tags, folder memberships, restriction and
+  retention marks, multimedia blob references and pending change events; the
+  subject proxies of a subject whose only record this was go with it, and an
+  erasure tombstone is appended to the change-event stream, which each
+  registered reader receives and applies by deleting what it derived (GDPR
+  Art. 19). The cross-reference row naming the subject is then erased in the
+  linkage domain, on the bulk route as well as the single one, and the
+  externalized blobs no surviving version references leave the object store.
+  The audit records naming the `ehr_id` stay, because Art. 17(3)(b) withholds
+  erasure where a legal obligation requires the processing and the
+  access-logging periods are that obligation.
+- **Multimedia blob collection is an index lookup rather than a scan**
+  (#3347). `clinical.blob_ref` and its party twin record which stored version
+  references which externalized blob, written by the node write path, carried
+  across the archival tier move by their foreign key and removed with the
+  version. The collector reads that index instead of pulling every node body of
+  the deleted record into the process and substring-matching it against every
+  node of both domains.
 - **An OPT 1.4 template whose ordinal symbol has no `<value>` element is
   refused with the fix in the message** (#3395). The ITS-XML profile schema
   types `C_DV_ORDINAL.list` as the RM `DV_ORDINAL`, whose `symbol` is a

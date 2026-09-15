@@ -630,12 +630,17 @@ pairing a party with its EHR would be a second copy of the map the split
 exists to hold apart.
 
 Merges and splits are period-closing writes. A mapping that stops being true
-gets an end date; it is never deleted, and the linkage role holds no `DELETE`
-privilege to delete it with. "Which party was the subject of this EHR when
-that composition was written" therefore still has an answer after two person
-records have been merged. The database enforces one mapping in force per party
-with a temporal primary key, so the rule holds against any code path, not only
-the intended one.
+gets an end date rather than a deletion, and the linkage role holds no
+`DELETE` privilege to delete it with. "Which party was the subject of this EHR
+when that composition was written" therefore still has an answer after two
+person records have been merged. The database enforces one mapping in force per
+party with a temporal primary key, so the rule holds against any code path, not
+only the intended one.
+
+Erasure is the one exception, and the role still cannot perform it: physically
+deleting an EHR calls a `SECURITY DEFINER` function that removes the rows
+naming that one EHR id, in force or historical. A row that survived would go
+on asserting whose record an erased EHR was.
 
 Looking an EHR up by subject (`GET /ehr?subject_id=…&subject_namespace=…`)
 does **not** go through any of this. That operation matches the EHR's own

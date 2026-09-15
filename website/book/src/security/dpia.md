@@ -116,7 +116,7 @@ the controller's judgement rather than a default.
 |---|---|---|
 | Clinical content and its versions | Kept until an administrator deletes it. Archiving moves a record to the cold tier without expiring it | the admin API |
 | Demographic parties | The same | the admin API |
-| Linkage mappings | Never deleted while the EHR exists: a merge, a split or an index correction closes the period and opens a successor, and the linkage role holds no `DELETE`. Deleting an EHR removes the rows naming it, through a `SECURITY DEFINER` function the role may execute but whose reach is one EHR id, so no additional information outlives the record it was additional to (Art. 17(1)) | the admin API |
+| Linkage mappings | Kept while the EHR exists: a merge, a split or an index correction closes the period and opens a successor, and the linkage role holds no `DELETE`. Erasing the EHR erases them, through a `SECURITY DEFINER` function the role may execute but whose reach is one EHR id, so no additional information outlives the record it was additional to (Art. 17(1)) | the admin API |
 | Access records | Kept forever by default; reaped hourly when a retention is set | `[audit.store] retention_days` |
 | Change-event envelopes | Published rows pruned after seven days by default | `[events] retention_days` |
 

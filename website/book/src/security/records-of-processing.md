@@ -84,7 +84,7 @@ The identity fields Art. 30(1)(a) asks for are yours in every case:
 | Categories of personal data | Parties in the `demographic` schema with names, addresses and contacts as the template defines them; protected national identifiers sealed in `national_identifier`; the party-to-EHR map in `linkage`, which holds identifiers and a validity period and nothing else |
 | Recipients | *yours* |
 | Third-country transfers | *yours* |
-| Retention | Parties leave only by an administrator's deletion. A linkage mapping is never deleted: a merge or a split closes its period and opens a successor |
+| Retention | Parties leave only by an administrator's deletion. A linkage mapping leaves only with the EHR it names: a merge or a split closes its period and opens a successor, and erasing the EHR erases the rows naming it |
 | Security measures | Three schemas under three roles, revoked from each other in both directions and checked at boot; AES-256-GCM sealing with a keyed HMAC-SHA-256 digest for lookup, under per-domain subkeys; the one crossing runs in the application over two pools and writes an access record |
 
 ## 5. Access logging
