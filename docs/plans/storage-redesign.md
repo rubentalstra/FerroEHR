@@ -677,7 +677,13 @@ FerroEHR depends on a sibling being present: FerroPIX as an `I_EHR_INDEX`
 provider behind an `EhrIndexProvider` seam (ITI-83, ITI-78; #3380), FerroSMART
 as RFC 7662 introspection beside JWT validation plus SMART launch context as
 ABAC attributes (#3381), the FerroSYS seam over the operator surfaces (#3382),
-and the federation node contract for FerroFED over ITS-REST (#3383). The
+and the federation node contract for FerroFED over ITS-REST (#3383). Each
+platform service is its own product in its own repository (owner, 2026-09-14:
+FerroFED gets one, like FerroTERM, FerroBRIDGE and FerroCHART), so nothing of a
+gateway, an authorisation server, an MPI or a control plane is built here;
+#3383 reads the openEHR Federation Working Group's "Proposal for Federation
+Tier with AQL" (v0.9.0 release candidate, CC0) and its Apache-2.0 reference
+gateway as input for the node contract, never as a specification. The
 pseudonymisation domains and their role barriers are unrelated to tenancy and
 stay as §Domain topology draws them: they are the defence in depth a
 single-tenant instance keeps. Row-level security is not kept as a second layer
@@ -843,9 +849,9 @@ comparison exists before the rewrite lands:
 | Issue | What it delivers | Sequencing |
 |---|---|---|
 | #3367 | the storage benchmark harness (`benches/storage.rs`, criterion over a testkit database): commit and supersession, point reads, `version_at_time`, revision history, `If-Match`, AQL CONTAINS over one EHR and the population, archive, restore, prune; database-side facts (`n_tup_hot_upd`, `n_dead_tup`, WAL bytes, buffer hits) beside wall-clock; a comparable JSON record under `docs/conformance/storage/<generation>/` | first |
-| #3368 | the pre-rewrite baseline: the harness and the conformance instrument (class S, `aql-probe`) recorded for the current schema | blocks #3342 |
+| #3368 | the pre-rewrite baseline: the harness record for the current schema, committed (closed 2026-09-15); the wire-level side moved to #3350 by owner ruling of 2026-09-15 (no measured conformance runs during the rewrite; the published 4.3.0 image is the before side) | blocks #3342 |
 | #3369 | plan-shape tests: `EXPLAIN (ANALYZE, BUFFERS)` in a rolled-back transaction pins the node type, index and partition of every hot path, in the ordinary test battery | after #3342 |
-| #3350 | the after-rewrite comparison: H1-H11 against the baseline, no hot path slower beyond the stated tolerance, the partitioning and GIN alternatives decided | after #3342, #3367, #3368 |
+| #3350 | the after-rewrite comparison: H1-H11 against the baseline, no hot path slower beyond the stated tolerance, the partitioning and GIN alternatives decided; plus the wire-level before/after (`veredictum perf` class POC and `aql-probe`, the 4.3.0 image against the rewritten build, in one session at the end; class S is not measurable on this box) | after #3342, #3367, #3368 |
 | #3370 | a dispatch-only lane that repeats the comparison against the committed record with a stated tolerance; exploration, never a conformance record | after #3367 |
 
 Every number that reaches a page comes through a generated include over a

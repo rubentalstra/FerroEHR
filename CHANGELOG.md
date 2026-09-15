@@ -75,6 +75,11 @@ workflow refuses a tag that has no matching section here.
   `/admin/tenant` routes and the Helm and compose tenancy keys are gone. The
   pseudonymisation domains and their role barriers are unrelated to tenancy and
   stay.
+  
+### Security
+
+- **rustls 0.23.45** (RUSTSEC-2026-0285): the TLS stack no longer accepts TLS 1.3 handshake messages sent at the wrong encryption level after a key change (RFC 8446 §5.1). Lockfile bump only; no configuration changes.
+
 
 ## [4.3.0] - 2026-09-14
 
