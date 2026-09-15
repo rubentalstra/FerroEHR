@@ -206,7 +206,7 @@ fn element_a_the_accessing_organisation_is_recorded_and_rendered_in_fhir() {
 /// the client address it was asked from, and it now also carries where the
 /// content it served came from, read from the `FEEDER_AUDIT` provenance
 /// openEHR stamps on content (RM common `master04` §Feeder Audit) as the
-/// commit path derived it onto `vo_version.origins`, with the true distinct
+/// commit path derived it onto `version.origins`, with the true distinct
 /// count beside the capped set. The FHIR rendering carries one named entity
 /// per origin; the DICOM Audit Message of PS3.15 §A.5 defines no element for
 /// it, and a value appearing there would be invented.

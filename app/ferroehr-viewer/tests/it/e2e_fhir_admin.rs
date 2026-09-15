@@ -30,7 +30,7 @@
 //! entirely, and these journeys say so in their failure message rather than
 //! passing vacuously. The hidden-when-absent half is unit-tested in
 //! `ferroehr_viewer::fhir` against a probe that found no surface — the same
-//! split as the admin-group, management and tenant journeys.
+//! split as the admin-group and management journeys.
 //!
 //! **Nothing here commits a FHIR resource through the connector, because the
 //! viewer offers no path that could.** The read scene needs committed content

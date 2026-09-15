@@ -3,7 +3,7 @@
 
 //! The full version reads.
 //!
-//! One `vo_version`⋈`audit` statement (attestations folded in as a LATERAL
+//! One `version`⋈`audit` statement (attestations folded in as a LATERAL
 //! aggregate, the canonical body read off the row's own materialized `body`
 //! column), yielding the [`StoredVersion`] shape the versioning layer maps
 //! into a `VERSION`/`ORIGINAL_VERSION`.
@@ -12,10 +12,10 @@
 //! (§Versioned Objects, §Logical Deletion) and master08 §Change Management
 //! (time-travel).
 //!
-//! NOTE (no openEHR spec governs storage tiering — our own design): every
-//! full version read queries the `vo_version_all`/`vo_attestation_all` union
-//! views, so ONE statement serves both tiers — an archived object stays
-//! retrievable and a miss never pays a cold-tier retry transaction.
+//! NOTE (no openEHR spec governs storage tiering — our own design): every full
+//! version read names the partitioned parents `version`/`vo_attestation` and
+//! pins no tier, so ONE statement serves both partitions — an archived object
+//! stays retrievable and a miss never pays a cold-tier retry transaction.
 
 #![expect(
     clippy::disallowed_types,
@@ -31,7 +31,7 @@ use uuid::Uuid;
 use crate::ids::{EhrId, VoId};
 use crate::storage::error::StorageError;
 
-/// A loaded `vo_version`⋈`audit` row plus its reassembled content and
+/// A loaded `version`⋈`audit` row plus its reassembled content and
 /// attestations — the storage read shape the versioning layer maps into a
 /// `VERSION`/`ORIGINAL_VERSION`.
 ///
@@ -41,7 +41,7 @@ use crate::storage::error::StorageError;
 pub struct StoredVersion {
     /// The versioned object's id.
     pub vo_id: VoId,
-    /// The `vo_version.kind` discriminator text (`COMPOSITION` / `EHR_STATUS` /
+    /// The `version.kind` discriminator text (`COMPOSITION` / `EHR_STATUS` /
     /// `FOLDER` / …).
     pub kind: String,
     /// The owning EHR, or `None` for a demographic party (no EHR scope).
@@ -99,11 +99,11 @@ pub struct StoredVersion {
     /// `spec_profile` gate assesses on the fly. No openEHR spec governs runtime
     /// generation selection — our own design/extension.
     pub stable_compatible: Option<bool>,
-    /// The commit-time origin stamp (`vo_version.origins`), a JSON array of
+    /// The commit-time origin stamp (`version.origins`), a JSON array of
     /// system ids; `None` for a row nothing stamped, which
     /// the read path (`versioning::origins::of_stored`) assesses from the body.
     pub origins: Option<Value>,
-    /// The materialized canonical body (`vo_version.body` — written from the
+    /// The materialized canonical body (`version.body` — written from the
     /// same value the node rows decompose from), or [`Value::Null`] for a
     /// logically deleted version (master06 §Logical Deletion). [`Value::Null`]
     /// on a raw read that populated [`Self::canonical_text`] instead.
@@ -124,7 +124,7 @@ pub struct StoredVersion {
     pub attestations_after_committal: Vec<Value>,
 }
 
-/// The `vo_version`⋈`audit` column list every version read selects, as a
+/// The `version`⋈`audit` column list every version read selects, as a
 /// compile-time string concatenation so each query stays a static literal
 /// (`sqlx` 0.9 `SqlSafeStr` — no runtime SQL assembly).
 ///
@@ -158,13 +158,13 @@ macro_rules! version_select {
             "a.system_id, a.change_type, a.description, a.committer, a.attestation, ",
             "a.time_committed, ",
             "att.attestations_at_committal, att.attestations_after_committal ",
-            "FROM vo_version_all v JOIN audit a ON a.id = v.audit_id ",
+            "FROM version v JOIN commit_audit a ON a.id = v.commit_audit_id ",
             "LEFT JOIN LATERAL (",
             "SELECT coalesce(jsonb_agg(x.data ORDER BY x.time_committed, x.id) ",
             "FILTER (WHERE x.at_committal), '[]'::jsonb) AS attestations_at_committal, ",
             "coalesce(jsonb_agg(x.data ORDER BY x.time_committed, x.id) ",
             "FILTER (WHERE NOT x.at_committal), '[]'::jsonb) AS attestations_after_committal ",
-            "FROM vo_attestation_all x ",
+            "FROM vo_attestation x ",
             "WHERE x.vo_id = v.vo_id AND x.sys_version = v.sys_version",
             ") att ON true ",
             $tail
@@ -187,13 +187,13 @@ macro_rules! version_select_raw {
             "a.system_id, a.change_type, a.description, a.committer, a.attestation, ",
             "a.time_committed, ",
             "att.attestations_at_committal, att.attestations_after_committal ",
-            "FROM vo_version_all v JOIN audit a ON a.id = v.audit_id ",
+            "FROM version v JOIN commit_audit a ON a.id = v.commit_audit_id ",
             "LEFT JOIN LATERAL (",
             "SELECT coalesce(jsonb_agg(x.data ORDER BY x.time_committed, x.id) ",
             "FILTER (WHERE x.at_committal), '[]'::jsonb) AS attestations_at_committal, ",
             "coalesce(jsonb_agg(x.data ORDER BY x.time_committed, x.id) ",
             "FILTER (WHERE NOT x.at_committal), '[]'::jsonb) AS attestations_after_committal ",
-            "FROM vo_attestation_all x ",
+            "FROM vo_attestation x ",
             "WHERE x.vo_id = v.vo_id AND x.sys_version = v.sys_version",
             ") att ON true ",
             $tail
@@ -201,7 +201,7 @@ macro_rules! version_select_raw {
     };
 }
 
-/// Build a [`StoredVersion`] from a `vo_version`⋈`audit` row; the canonical
+/// Build a [`StoredVersion`] from a `version`⋈`audit` row; the canonical
 /// body is the row's own materialized `body` column (`NULL` → [`Value::Null`],
 /// a logical delete), so the whole version read is the ONE statement that
 /// produced `row`, on whichever tier's connection ran it.
@@ -223,7 +223,7 @@ fn stored_version_raw(vo_id: VoId, row: &PgRow) -> Result<StoredVersion, Storage
     stored_version_fields(vo_id, row, Value::Null, canonical_text)
 }
 
-/// The shared `vo_version`⋈`audit` field mapping of [`stored_version`] /
+/// The shared `version`⋈`audit` field mapping of [`stored_version`] /
 /// [`stored_version_raw`] — everything except the body representation, which
 /// the two builders extract each their own way.
 fn stored_version_fields(
@@ -244,7 +244,7 @@ fn stored_version_fields(
         .transpose()
         .map_err(|e| {
             StorageError::InvalidRows(format!(
-                "vo_version.other_input_version_uids of {vo_id} is not a list of \
+                "version.other_input_version_uids of {vo_id} is not a list of \
                  version uids: {e}"
             ))
         })?
@@ -307,7 +307,7 @@ pub struct ProfileGateCandidate {
     pub vo_id: VoId,
     /// The per-vo storage commit ordinal.
     pub sys_version: i32,
-    /// The `vo_version.kind` discriminator text.
+    /// The `version.kind` discriminator text.
     pub kind: String,
     /// The stored stamp: `Some(false)` (the released generations cannot express
     /// the body) or `None` (nothing stamped the row).
@@ -353,7 +353,7 @@ pub async fn read_profile_gate_candidates(
                 v.trunk_version, v.branch_number, v.branch_version, \
                 r.num AS root_num, r.num_cap AS root_num_cap \
          FROM unnest($1::uuid[], $2::int[]) AS a(vo_id, sys_version) \
-         JOIN vo_version v ON v.vo_id = a.vo_id AND v.sys_version = a.sys_version \
+         JOIN version v ON v.vo_id = a.vo_id AND v.sys_version = a.sys_version \
          LEFT JOIN node r ON r.vo_id = v.vo_id AND r.sys_version = v.sys_version AND r.num = 0 \
          WHERE v.stable_compatible IS NOT TRUE \
          ORDER BY v.vo_id, v.sys_version",
@@ -393,8 +393,10 @@ pub async fn read_current(
     pool: &PgPool,
     vo_id: VoId,
 ) -> Result<Option<StoredVersion>, StorageError> {
-    const SQL: &str =
-        version_select!("WHERE v.vo_id = $1 AND upper_inf(v.sys_period) AND v.branch_number = 0");
+    const SQL: &str = version_select!(
+        "JOIN vo_head h ON h.vo_id = v.vo_id AND h.trunk_head_sys_version = v.sys_version \
+         WHERE v.vo_id = $1"
+    );
     sqlx::query(SQL)
         .bind(vo_id)
         .fetch_optional(pool)
@@ -414,7 +416,8 @@ pub async fn read_current_raw(
     vo_id: VoId,
 ) -> Result<Option<StoredVersion>, StorageError> {
     const SQL: &str = version_select_raw!(
-        "WHERE v.vo_id = $1 AND upper_inf(v.sys_period) AND v.branch_number = 0"
+        "JOIN vo_head h ON h.vo_id = v.vo_id AND h.trunk_head_sys_version = v.sys_version \
+         WHERE v.vo_id = $1"
     );
     sqlx::query(SQL)
         .bind(vo_id)
@@ -464,7 +467,8 @@ pub async fn read_currents(
     vo_ids: &[VoId],
 ) -> Result<Vec<StoredVersion>, StorageError> {
     const SQL: &str = version_select!(
-        "WHERE v.vo_id = ANY($1) AND upper_inf(v.sys_period) AND v.branch_number = 0"
+        "JOIN vo_head h ON h.vo_id = v.vo_id AND h.trunk_head_sys_version = v.sys_version \
+         WHERE v.vo_id = ANY($1)"
     );
     if vo_ids.is_empty() {
         return Ok(Vec::new());
@@ -568,9 +572,11 @@ pub async fn read_versions_by_tree(
         .collect()
 }
 
-/// Read the version of an object current at a given instant (time-travel):
-/// the TRUNK row whose `sys_period` contains `at` (master08 §Change
-/// Management — any previous state reconstructable).
+/// Read the version of an object current at a given instant (time-travel).
+///
+/// The TRUNK row in force at `at` is the one with the greatest `committed_at`
+/// at or before it (master08 §Change Management — any previous state
+/// reconstructable).
 ///
 /// `None` if the object had no trunk version then.
 ///
@@ -586,6 +592,10 @@ pub async fn read_versions_by_tree(
 /// trunk versions, so every branch in a well-formed container has its trunk
 /// ancestry beside it.
 ///
+/// NOTE: the tie is unrepresentable rather than resolved — two trunk rows at one
+/// `committed_at` would both satisfy the strict `>`, and the one path that
+/// writes historical instants (the archive load) refuses that record outright.
+///
 /// # Errors
 /// Returns [`StorageError`] on a driver/reassembly failure.
 pub async fn version_at(
@@ -594,8 +604,12 @@ pub async fn version_at(
     at: jiff::Timestamp,
 ) -> Result<Option<StoredVersion>, StorageError> {
     const SQL: &str = version_select!(
-        "WHERE v.vo_id = $1 AND v.sys_period @> $2::timestamptz \
-         AND v.branch_number = 0"
+        "WHERE v.vo_id = $1 AND v.branch_number = 0 \
+         AND v.committed_at <= $2::timestamptz \
+         AND NOT EXISTS (SELECT 1 FROM version s \
+                         WHERE s.vo_id = v.vo_id AND s.branch_number = 0 \
+                           AND s.committed_at > v.committed_at \
+                           AND s.committed_at <= $2::timestamptz)"
     );
     let at = at.to_string();
     sqlx::query(SQL)
@@ -630,8 +644,8 @@ pub async fn read_current_of_kind(
     kind: &str,
 ) -> Result<Option<StoredVersion>, StorageError> {
     const SQL: &str = version_select!(
-        "WHERE v.ehr_id = $1 AND v.kind = $2 AND upper_inf(v.sys_period) \
-         AND v.branch_number = 0"
+        "JOIN vo_head h ON h.vo_id = v.vo_id AND h.trunk_head_sys_version = v.sys_version \
+         WHERE v.ehr_id = $1 AND v.kind = $2"
     );
     sqlx::query(SQL)
         .bind(ehr_id)
@@ -644,7 +658,7 @@ pub async fn read_current_of_kind(
 }
 
 /// [`read_current_of_kind`]'s time-travel form: the TRUNK version of the
-/// EHR's one container of `kind` whose `sys_period` contains `at`.
+/// EHR's one container of `kind` in force at `at`.
 ///
 /// # Errors
 /// Returns [`StorageError`] on a driver/decode failure.
@@ -655,8 +669,12 @@ pub async fn version_at_of_kind(
     at: jiff::Timestamp,
 ) -> Result<Option<StoredVersion>, StorageError> {
     const SQL: &str = version_select!(
-        "WHERE v.ehr_id = $1 AND v.kind = $2 AND v.sys_period @> $3::timestamptz \
-         AND v.branch_number = 0"
+        "WHERE v.ehr_id = $1 AND v.kind = $2 AND v.branch_number = 0 \
+         AND v.committed_at <= $3::timestamptz \
+         AND NOT EXISTS (SELECT 1 FROM version s \
+                         WHERE s.vo_id = v.vo_id AND s.branch_number = 0 \
+                           AND s.committed_at > v.committed_at \
+                           AND s.committed_at <= $3::timestamptz)"
     );
     let at = at.to_string();
     sqlx::query(SQL)
@@ -685,7 +703,8 @@ pub async fn read_current_directory(
 ) -> Result<Option<StoredVersion>, StorageError> {
     const SQL: &str = version_select!(
         "JOIN ehr_folder f ON f.vo_id = v.vo_id \
-         WHERE f.ehr_id = $1 AND upper_inf(v.sys_period) AND v.branch_number = 0 \
+         JOIN vo_head h ON h.vo_id = v.vo_id AND h.trunk_head_sys_version = v.sys_version \
+         WHERE f.ehr_id = $1 \
          ORDER BY (v.lifecycle_state = '523'), f.rank LIMIT 1"
     );
     sqlx::query(SQL)
@@ -698,7 +717,7 @@ pub async fn read_current_directory(
 }
 
 /// The stored canonical body BYTES of one version, across both storage tiers
-/// (`vo_version_all`), parsed back to a value with the stored key order kept.
+/// (`version`), parsed back to a value with the stored key order kept.
 ///
 /// This is the dump/export source: the archived payload carries the
 /// codec's own field order because it IS the committed bytes — a node-row
@@ -714,7 +733,7 @@ pub async fn stored_body_all(
     sys_version: i32,
 ) -> Result<Value, StorageError> {
     let row: Option<(Option<String>,)> =
-        sqlx::query_as("SELECT body FROM vo_version_all WHERE vo_id = $1 AND sys_version = $2")
+        sqlx::query_as("SELECT body FROM version WHERE vo_id = $1 AND sys_version = $2")
             .bind(vo_id)
             .bind(sys_version)
             .fetch_optional(pool)
@@ -747,7 +766,7 @@ pub async fn read_origins(
         "WITH o AS ( \
              SELECT DISTINCT e.origin \
              FROM unnest($1::uuid[], $2::int[]) AS a(vo_id, sys_version) \
-             JOIN vo_version_all v ON v.vo_id = a.vo_id AND v.sys_version = a.sys_version \
+             JOIN version v ON v.vo_id = a.vo_id AND v.sys_version = a.sys_version \
              CROSS JOIN LATERAL jsonb_array_elements_text( \
                  coalesce(v.origins, jsonb_build_array(v.creating_system_id))) AS e(origin) \
          ) \

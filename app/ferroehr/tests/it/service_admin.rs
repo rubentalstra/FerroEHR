@@ -10,7 +10,7 @@
 //! Robot prior art
 //! (`docs/specs/openehr/CNF/tests/platform/robot/I_ADMIN_SERVICE/001-EHR.robot`):
 //! after delete, every backing table returns to its pre-EHR baseline count. We
-//! assert **zero rows remain** for the deleted EHR across `ehr`, `vo_version`,
+//! assert **zero rows remain** for the deleted EHR across `ehr`, `version`,
 //! `node`, `contribution`, `audit`, and `item_tag`, while a second EHR is left
 //! entirely untouched.
 
@@ -49,7 +49,7 @@ use ferroehr::service::status::{CallStatusType, SmError};
 #[derive(Debug, Default, PartialEq, Eq)]
 struct EhrRows {
     ehr: i64,
-    vo_version: i64,
+    version: i64,
     node: i64,
     contribution: i64,
     item_tag: i64,
@@ -63,24 +63,24 @@ impl EhrRows {
 }
 
 async fn ehr_rows(pool: &PgPool, ehr_id: Uuid) -> EhrRows {
-    let audit_ids: Vec<Uuid> = sqlx::query_scalar(
-        "SELECT audit_id FROM vo_version WHERE ehr_id = $1 \
-         UNION SELECT audit_id FROM contribution WHERE ehr_id = $1",
+    let commit_audit_ids: Vec<Uuid> = sqlx::query_scalar(
+        "SELECT commit_audit_id FROM version WHERE ehr_id = $1 \
+         UNION SELECT commit_audit_id FROM contribution WHERE ehr_id = $1",
     )
     .bind(ehr_id)
     .fetch_all(pool)
     .await
     .expect("audit ids");
-    let audit: i64 = sqlx::query_scalar("SELECT count(*) FROM audit WHERE id = ANY($1)")
-        .bind(&audit_ids)
+    let audit: i64 = sqlx::query_scalar("SELECT count(*) FROM commit_audit WHERE id = ANY($1)")
+        .bind(&commit_audit_ids)
         .fetch_one(pool)
         .await
         .expect("audit count");
     EhrRows {
         ehr: count_for_ehr(pool, "SELECT count(*) FROM ehr WHERE id = $1", ehr_id).await,
-        vo_version: count_for_ehr(
+        version: count_for_ehr(
             pool,
-            "SELECT count(*) FROM vo_version WHERE ehr_id = $1",
+            "SELECT count(*) FROM version WHERE ehr_id = $1",
             ehr_id,
         )
         .await,
@@ -117,7 +117,7 @@ async fn admin_delete_cascades_and_leaves_other_ehr_untouched() {
     assert!(!before1.is_empty(), "ehr1 must be populated: {before1:?}");
     // EHR_STATUS v1+v2, EHR_ACCESS v1, FOLDER v1 → ≥4 versions; ≥3 contributions
     // (ehr create, status update, directory create); 1 item tag.
-    assert!(before1.ehr == 1 && before1.vo_version >= 4 && before1.node >= 4);
+    assert!(before1.ehr == 1 && before1.version >= 4 && before1.node >= 4);
     assert!(before1.contribution >= 3 && before1.item_tag == 1 && before1.audit >= 3);
 
     // Physical delete via the ADMIN seam (SM physical_ehr_delete).
@@ -311,14 +311,14 @@ async fn admin_template_delete_happy_unknown_and_referenced() {
     // refused (409; the generic SM `conflict` — a referenced-template conflict
     // is not a COMPOSITION conflict and the SM names nothing more precise,
     // #2151) so a physical delete never
-    // orphans clinical data. Pointing an existing vo_version at the template
-    // exercises the `vo_version.template_id` FK-reference guard directly (lighter
+    // orphans clinical data. Pointing an existing version row at the template
+    // exercises the `version.template_id` FK-reference guard directly (lighter
     // than a full validated composition commit, which the guard does not need).
     svc.template_adl14_upload(read_fixture(OPT_FIXTURE_REL))
         .await
         .expect("re-upload opt");
     let ehr: Uuid = svc.create_ehr(None).await.expect("ehr").into();
-    let referenced = sqlx::query("UPDATE vo_version SET template_id = $1 WHERE ehr_id = $2")
+    let referenced = sqlx::query("UPDATE version SET template_id = $1 WHERE ehr_id = $2")
         .bind(OPT_TEMPLATE_ID)
         .bind(ehr)
         .execute(pool)
@@ -327,7 +327,7 @@ async fn admin_template_delete_happy_unknown_and_referenced() {
         .rows_affected();
     assert!(
         referenced >= 1,
-        "a vo_version must now reference the template"
+        "a version row must now reference the template"
     );
 
     let res = svc.admin_template_delete(OPT_TEMPLATE_ID.to_owned()).await;
@@ -413,16 +413,16 @@ async fn make_person(svc: &FerroEhrService, name: &str) -> String {
         .to_owned()
 }
 
-/// The number of `vo_version` rows for one versioned object (0 = physically gone).
+/// The number of `version` rows for one versioned object (0 = physically gone).
 /// Version rows of a DEMOGRAPHIC versioned object (a party or a party
 /// relationship), named in the schema the pseudonymisation domain keeps them
 /// in — the pool's own search path serves the clinical schema.
-async fn vo_version_rows(pool: &PgPool, vo: &str) -> i64 {
-    sqlx::query_scalar("SELECT count(*) FROM demographic.vo_version WHERE vo_id = $1::uuid")
+async fn version_rows(pool: &PgPool, vo: &str) -> i64 {
+    sqlx::query_scalar("SELECT count(*) FROM party.version WHERE vo_id = $1::uuid")
         .bind(vo)
         .fetch_one(pool)
         .await
-        .expect("vo_version count")
+        .expect("version count")
 }
 
 #[tokio::test]
@@ -437,7 +437,7 @@ async fn admin_statistics_per_service_and_time_range() {
     // one vo with two versions + one vo with a single version → 2 versioned
     // compositions across 3 version rows. Reuse an existing audit/contribution.
     let (cid, aid): (Uuid, Uuid) =
-        sqlx::query_as("SELECT id, audit_id FROM contribution WHERE ehr_id = $1 LIMIT 1")
+        sqlx::query_as("SELECT id, commit_audit_id FROM contribution WHERE ehr_id = $1 LIMIT 1")
             .bind(ehr)
             .fetch_one(pool)
             .await
@@ -445,24 +445,12 @@ async fn admin_statistics_per_service_and_time_range() {
     let vo_x = Uuid::now_v7();
     let vo_y = Uuid::now_v7();
     for (vo, ver, period) in [
-        (
-            vo_x,
-            1,
-            "tstzrange(now() - interval '2 seconds', now() - interval '1 second', '[)')",
-        ),
-        (
-            vo_x,
-            2,
-            "tstzrange(now() - interval '1 second', NULL, '[)')",
-        ),
-        (
-            vo_y,
-            1,
-            "tstzrange(now() - interval '1 second', NULL, '[)')",
-        ),
+        (vo_x, 1, "now() - interval '2 seconds'"),
+        (vo_x, 2, "now() - interval '1 second'"),
+        (vo_y, 1, "now() - interval '1 second'"),
     ] {
         sqlx::query(AssertSqlSafe(format!(
-            "INSERT INTO vo_version (vo_id, kind, ehr_id, sys_version, trunk_version, sys_period, contribution_id, audit_id, creating_system_id) \
+            "INSERT INTO version (vo_id, kind, ehr_id, sys_version, trunk_version, committed_at, contribution_id, commit_audit_id, creating_system_id) \
              VALUES ($1, 'COMPOSITION', $2, $3, $3, {period}, $4, $5, 'ferroehr.test')"
         )))
         .bind(vo)
@@ -606,11 +594,11 @@ async fn physical_party_delete_cascades_relationships_and_spares_partner() {
         .to_owned();
 
     // No orphaned audits before the delete: every audit row is referenced by a
-    // vo_version or contribution.
+    // version or contribution.
     let orphan_audits_before: i64 = sqlx::query_scalar(
-        "SELECT count(*) FROM demographic.audit a \
-         WHERE NOT EXISTS (SELECT 1 FROM demographic.vo_version v WHERE v.audit_id = a.id) \
-           AND NOT EXISTS (SELECT 1 FROM demographic.contribution c WHERE c.audit_id = a.id)",
+        "SELECT count(*) FROM party.commit_audit a \
+         WHERE NOT EXISTS (SELECT 1 FROM party.version v WHERE v.commit_audit_id = a.id) \
+           AND NOT EXISTS (SELECT 1 FROM party.contribution c WHERE c.commit_audit_id = a.id)",
     )
     .fetch_one(pool)
     .await
@@ -623,24 +611,13 @@ async fn physical_party_delete_cascades_relationships_and_spares_partner() {
         .expect("physical party delete");
 
     // p1 and both relationships referencing it are physically gone.
-    assert_eq!(vo_version_rows(pool, &p1).await, 0, "p1 gone");
-    assert_eq!(
-        vo_version_rows(pool, &r1).await,
-        0,
-        "r1 (p1 as source) gone"
-    );
-    assert_eq!(
-        vo_version_rows(pool, &r2).await,
-        0,
-        "r2 (p1 as target) gone"
-    );
+    assert_eq!(version_rows(pool, &p1).await, 0, "p1 gone");
+    assert_eq!(version_rows(pool, &r1).await, 0, "r1 (p1 as source) gone");
+    assert_eq!(version_rows(pool, &r2).await, 0, "r2 (p1 as target) gone");
 
     // The partner party p2 and the unrelated relationship r3 survive.
-    assert!(vo_version_rows(pool, &p2).await > 0, "partner p2 survives");
-    assert!(
-        vo_version_rows(pool, &r3).await > 0,
-        "unrelated r3 survives"
-    );
+    assert!(version_rows(pool, &p2).await > 0, "partner p2 survives");
+    assert!(version_rows(pool, &r3).await > 0, "unrelated r3 survives");
     assert_eq!(
         svc.party_get(PartyKind::Person, p2.clone(), None)
             .await
@@ -651,9 +628,9 @@ async fn physical_party_delete_cascades_relationships_and_spares_partner() {
 
     // No orphaned audit rows were left behind (audits swept in the cascade).
     let orphan_audits_after: i64 = sqlx::query_scalar(
-        "SELECT count(*) FROM demographic.audit a \
-         WHERE NOT EXISTS (SELECT 1 FROM demographic.vo_version v WHERE v.audit_id = a.id) \
-           AND NOT EXISTS (SELECT 1 FROM demographic.contribution c WHERE c.audit_id = a.id)",
+        "SELECT count(*) FROM party.commit_audit a \
+         WHERE NOT EXISTS (SELECT 1 FROM party.version v WHERE v.commit_audit_id = a.id) \
+           AND NOT EXISTS (SELECT 1 FROM party.contribution c WHERE c.commit_audit_id = a.id)",
     )
     .fetch_one(pool)
     .await
@@ -696,7 +673,7 @@ async fn archive_marks_vos_idempotently_and_reads_stay_unchanged() {
     // The live VO count BEFORE archiving: the marker set must match it, and
     // reading it afterwards would be vacuous once the rows have moved tiers.
     let ehr_vo_count: i64 =
-        sqlx::query_scalar("SELECT count(DISTINCT vo_id) FROM vo_version WHERE ehr_id = $1")
+        sqlx::query_scalar("SELECT count(DISTINCT vo_id) FROM version WHERE ehr_id = $1")
             .bind(ehr)
             .fetch_one(pool)
             .await
@@ -708,8 +685,8 @@ async fn archive_marks_vos_idempotently_and_reads_stay_unchanged() {
         .await
         .expect("archive ehr");
     let archived: i64 = sqlx::query_scalar(
-        "SELECT count(*) FROM vo_archive va \
-         WHERE EXISTS (SELECT 1 FROM vo_version_all v \
+        "SELECT count(*) FROM vo_head va \
+         WHERE EXISTS (SELECT 1 FROM version v \
                        WHERE v.vo_id = va.vo_id AND v.ehr_id = $1)",
     )
     .bind(ehr)
@@ -722,22 +699,24 @@ async fn archive_marks_vos_idempotently_and_reads_stay_unchanged() {
     svc.archive_ehrs(vec![ehr.to_string()])
         .await
         .expect("re-archive ehr");
-    let archived_again: i64 = sqlx::query_scalar("SELECT count(*) FROM vo_archive")
-        .fetch_one(pool)
-        .await
-        .expect("total archived");
+    let archived_again: i64 =
+        sqlx::query_scalar("SELECT count(*) FROM vo_head WHERE archived_at IS NOT NULL")
+            .fetch_one(pool)
+            .await
+            .expect("total archived");
     assert_eq!(archived_again, ehr_vo_count, "re-archive is idempotent");
 
     // archive_parties marks the party VO.
     svc.archive_parties(vec![person.clone()])
         .await
         .expect("archive party");
-    let party_marked: i64 =
-        sqlx::query_scalar("SELECT count(*) FROM demographic.vo_archive WHERE vo_id = $1::uuid")
-            .bind(&person)
-            .fetch_one(pool)
-            .await
-            .expect("party archived");
+    let party_marked: i64 = sqlx::query_scalar(
+        "SELECT count(*) FROM party.vo_head WHERE vo_id = $1::uuid AND archived_at IS NOT NULL",
+    )
+    .bind(&person)
+    .fetch_one(pool)
+    .await
+    .expect("party archived");
     assert_eq!(party_marked, 1);
 
     // Reads are UNCHANGED after archival (zero wire drift): the EHR_STATUS and
@@ -756,10 +735,11 @@ async fn archive_marks_vos_idempotently_and_reads_stay_unchanged() {
     // All-or-nothing: a batch with one unknown EHR → 404 and nothing new is
     // archived (a fresh EHR paired with a bogus id stays unmarked).
     let fresh = seed_full_ehr(&svc).await;
-    let before: i64 = sqlx::query_scalar("SELECT count(*) FROM vo_archive")
-        .fetch_one(pool)
-        .await
-        .expect("before");
+    let before: i64 =
+        sqlx::query_scalar("SELECT count(*) FROM vo_head WHERE archived_at IS NOT NULL")
+            .fetch_one(pool)
+            .await
+            .expect("before");
     let res = svc
         .archive_ehrs(vec![fresh.to_string(), Uuid::now_v7().to_string()])
         .await;
@@ -773,10 +753,11 @@ async fn archive_marks_vos_idempotently_and_reads_stay_unchanged() {
         ),
         "an unknown EHR aborts the batch, got {res:?}"
     );
-    let after: i64 = sqlx::query_scalar("SELECT count(*) FROM vo_archive")
-        .fetch_one(pool)
-        .await
-        .expect("after");
+    let after: i64 =
+        sqlx::query_scalar("SELECT count(*) FROM vo_head WHERE archived_at IS NOT NULL")
+            .fetch_one(pool)
+            .await
+            .expect("after");
     assert_eq!(before, after, "all-or-nothing: nothing archived on failure");
 
     // Unknown party → 404 (`party_id_does_not_exist`).
@@ -825,10 +806,10 @@ async fn archive_physically_moves_rows_to_the_cold_tier_and_back() {
     let ehr = seed_full_ehr(&svc).await;
     let other = seed_full_ehr(&svc).await;
 
-    let hot_versions = tier_rows(pool, "vo_version", ehr).await;
-    let hot_nodes = tier_rows(pool, "node", ehr).await;
-    let other_versions = tier_rows(pool, "vo_version", other).await;
-    let other_nodes = tier_rows(pool, "node", other).await;
+    let hot_versions = tier_rows(pool, "version_hot", ehr).await;
+    let hot_nodes = tier_rows(pool, "node_hot", ehr).await;
+    let other_versions = tier_rows(pool, "version_hot", other).await;
+    let other_nodes = tier_rows(pool, "node_hot", other).await;
     assert!(hot_versions > 0 && hot_nodes > 0, "the EHR has stored rows");
 
     // The composition/EHR_STATUS content served before archiving, to compare
@@ -844,16 +825,16 @@ async fn archive_physically_moves_rows_to_the_cold_tier_and_back() {
 
     // 1. The primary tier shrank to nothing for this EHR; the cold tier holds
     //    exactly what left.
-    assert_eq!(tier_rows(pool, "vo_version", ehr).await, 0);
-    assert_eq!(tier_rows(pool, "node", ehr).await, 0);
-    assert_eq!(tier_rows(pool, "cold.vo_version", ehr).await, hot_versions);
-    assert_eq!(tier_rows(pool, "cold.node", ehr).await, hot_nodes);
+    assert_eq!(tier_rows(pool, "version_hot", ehr).await, 0);
+    assert_eq!(tier_rows(pool, "node_hot", ehr).await, 0);
+    assert_eq!(tier_rows(pool, "version_cold", ehr).await, hot_versions);
+    assert_eq!(tier_rows(pool, "node_cold", ehr).await, hot_nodes);
 
     // 2. An UNARCHIVED EHR is untouched in both directions.
-    assert_eq!(tier_rows(pool, "vo_version", other).await, other_versions);
-    assert_eq!(tier_rows(pool, "node", other).await, other_nodes);
-    assert_eq!(tier_rows(pool, "cold.vo_version", other).await, 0);
-    assert_eq!(tier_rows(pool, "cold.node", other).await, 0);
+    assert_eq!(tier_rows(pool, "version_hot", other).await, other_versions);
+    assert_eq!(tier_rows(pool, "node_hot", other).await, other_nodes);
+    assert_eq!(tier_rows(pool, "version_cold", other).await, 0);
+    assert_eq!(tier_rows(pool, "node_cold", other).await, 0);
     svc.get_ehr_status_at_time(other, None)
         .await
         .expect("the unarchived EHR still reads");
@@ -882,19 +863,18 @@ async fn archive_physically_moves_rows_to_the_cold_tier_and_back() {
     svc.archive_ehrs(vec![ehr.to_string()])
         .await
         .expect("re-archive");
-    assert_eq!(tier_rows(pool, "cold.vo_version", ehr).await, hot_versions);
+    assert_eq!(tier_rows(pool, "version_cold", ehr).await, hot_versions);
 
     // 5. The move reverses exactly, markers included.
     svc.restore_archived_ehrs(vec![ehr.to_string()])
         .await
         .expect("restore ehr");
-    assert_eq!(tier_rows(pool, "vo_version", ehr).await, hot_versions);
-    assert_eq!(tier_rows(pool, "node", ehr).await, hot_nodes);
-    assert_eq!(tier_rows(pool, "cold.vo_version", ehr).await, 0);
-    assert_eq!(tier_rows(pool, "cold.node", ehr).await, 0);
+    assert_eq!(tier_rows(pool, "version_hot", ehr).await, hot_versions);
+    assert_eq!(tier_rows(pool, "node_hot", ehr).await, hot_nodes);
+    assert_eq!(tier_rows(pool, "version_cold", ehr).await, 0);
+    assert_eq!(tier_rows(pool, "node_cold", ehr).await, 0);
     let markers: i64 = sqlx::query_scalar(
-        "SELECT count(*) FROM vo_archive va \
-         WHERE EXISTS (SELECT 1 FROM vo_version v WHERE v.vo_id = va.vo_id AND v.ehr_id = $1)",
+        "SELECT count(*) FROM vo_head WHERE ehr_id = $1 AND archived_at IS NOT NULL",
     )
     .bind(ehr)
     .fetch_one(pool)
@@ -909,8 +889,8 @@ async fn archive_physically_moves_rows_to_the_cold_tier_and_back() {
     );
 }
 
-/// A physical EHR delete reaches the cold tier, which no foreign key cascade
-/// can touch (the mirrors are deliberately FK-free).
+/// A physical EHR delete reaches the cold tier: the tier is a partition of the
+/// relation the delete names, so the same cascade carries archived rows away.
 #[tokio::test]
 async fn physical_delete_removes_archived_rows_from_the_cold_tier() {
     let (_db, pool, svc) = repository().await;
@@ -920,19 +900,21 @@ async fn physical_delete_removes_archived_rows_from_the_cold_tier() {
     svc.archive_ehrs(vec![ehr.to_string()])
         .await
         .expect("archive ehr");
-    assert!(tier_rows(pool, "cold.vo_version", ehr).await > 0);
+    assert!(tier_rows(pool, "version_cold", ehr).await > 0);
 
     svc.admin_ehr_delete(ehr.to_string())
         .await
         .expect("delete archived ehr");
 
-    assert_eq!(tier_rows(pool, "cold.vo_version", ehr).await, 0);
-    assert_eq!(tier_rows(pool, "cold.node", ehr).await, 0);
-    let markers: i64 = sqlx::query_scalar("SELECT count(*) FROM vo_archive WHERE vo_id = $1")
-        .bind(Uuid::from(ehr))
-        .fetch_one(pool)
-        .await
-        .expect("marker count");
+    assert_eq!(tier_rows(pool, "version_cold", ehr).await, 0);
+    assert_eq!(tier_rows(pool, "node_cold", ehr).await, 0);
+    let markers: i64 = sqlx::query_scalar(
+        "SELECT count(*) FROM vo_head WHERE ehr_id = $1 AND archived_at IS NOT NULL",
+    )
+    .bind(Uuid::from(ehr))
+    .fetch_one(pool)
+    .await
+    .expect("marker count");
     assert_eq!(markers, 0);
 }
 
@@ -956,8 +938,8 @@ async fn writing_an_archived_object_thaws_it_back_to_the_primary_tier() {
     svc.archive_ehrs(vec![ehr.to_string()])
         .await
         .expect("archive ehr");
-    assert_eq!(tier_rows(pool, "vo_version", ehr).await, 0);
-    assert_eq!(tier_rows(pool, "cold.vo_version", ehr).await, 2);
+    assert_eq!(tier_rows(pool, "version_hot", ehr).await, 0);
+    assert_eq!(tier_rows(pool, "version_cold", ehr).await, 2);
 
     let mut updated = before.clone();
     updated.as_object_mut().expect("status obj").remove("uid");
@@ -968,10 +950,10 @@ async fn writing_an_archived_object_thaws_it_back_to_the_primary_tier() {
     // ONLY the written object thaws: the EHR_STATUS is whole in the primary
     // tier (its archived version plus the new one), while the untouched
     // EHR_ACCESS stays archived.
-    assert_eq!(vo_rows(pool, "vo_version", &status_vo).await, 2);
-    assert_eq!(vo_rows(pool, "cold.vo_version", &status_vo).await, 0);
-    assert_eq!(tier_rows(pool, "cold.vo_version", ehr).await, 1);
-    assert_eq!(tier_rows(pool, "vo_version", ehr).await, 2);
+    assert_eq!(vo_rows(pool, "version_hot", &status_vo).await, 2);
+    assert_eq!(vo_rows(pool, "version_cold", &status_vo).await, 0);
+    assert_eq!(tier_rows(pool, "version_cold", ehr).await, 1);
+    assert_eq!(tier_rows(pool, "version_hot", ehr).await, 2);
     let revisions = svc
         .ehr_status_revision_history(ehr)
         .await
@@ -983,42 +965,53 @@ async fn writing_an_archived_object_thaws_it_back_to_the_primary_tier() {
     );
 }
 
-/// The cold mirrors must stay column-for-column identical to their primary
-/// relations: every move is an `INSERT … SELECT *` in either direction, so a
-/// column added to `vo_version` / `node` / `vo_attestation` without a matching
-/// column on the mirror would silently break archiving. This test is that
-/// guard.
+/// The archival tier is a PARTITION of the relation it archives, so a column
+/// added to `version` / `node` / `vo_attestation` reaches the cold rows by
+/// construction — the mirror relations that had to be kept in step by hand are
+/// gone. This test is what pins that: two partitions per relation, one
+/// attached for each tier, and no relation of those names outside the domain
+/// schemas.
 #[tokio::test]
-async fn cold_mirrors_match_the_primary_relations_column_for_column() {
+async fn the_archival_tier_is_a_partition_of_the_relation_it_archives() {
     let (_db, pool, _svc) = repository().await;
 
-    for relation in ["vo_version", "node", "vo_attestation"] {
-        let columns: Vec<(String, String, String)> = sqlx::query_as(
-            "SELECT table_schema, column_name, data_type \
-             FROM information_schema.columns \
-             WHERE (table_schema = 'ehr' OR table_schema = 'cold') AND table_name = $1 \
-             ORDER BY table_schema, ordinal_position",
+    for relation in ["version", "node", "vo_attestation"] {
+        let partitions: Vec<(String, String)> = sqlx::query_as(
+            "SELECT c.relname::text, pg_get_expr(c.relpartbound, c.oid)::text \
+             FROM pg_inherits i \
+             JOIN pg_class p ON p.oid = i.inhparent \
+             JOIN pg_class c ON c.oid = i.inhrelid \
+             JOIN pg_namespace n ON n.oid = p.relnamespace \
+             WHERE n.nspname = 'clinical' AND p.relname = $1 ORDER BY 1",
         )
         .bind(relation)
         .fetch_all(&pool)
         .await
-        .expect("column list");
+        .expect("partition list");
 
-        let cold: Vec<(&str, &str)> = columns
-            .iter()
-            .filter(|(schema, _, _)| schema == "cold")
-            .map(|(_, name, ty)| (name.as_str(), ty.as_str()))
-            .collect();
-        let primary: Vec<(&str, &str)> = columns
-            .iter()
-            .filter(|(schema, _, _)| schema == "ehr")
-            .map(|(_, name, ty)| (name.as_str(), ty.as_str()))
-            .collect();
-
-        assert!(!primary.is_empty(), "{relation} exists in the primary tier");
         assert_eq!(
-            cold, primary,
-            "cold.{relation} must mirror {relation} in column order, name and type"
+            partitions,
+            vec![
+                (
+                    format!("{relation}_cold"),
+                    "FOR VALUES IN ('cold')".to_owned()
+                ),
+                (
+                    format!("{relation}_hot"),
+                    "FOR VALUES IN ('hot')".to_owned()
+                ),
+            ],
+            "{relation} must carry exactly the hot and cold partitions"
         );
     }
+
+    // And no mirror schema survives to be kept in step by hand.
+    let mirrors: i64 = sqlx::query_scalar(
+        "SELECT count(*) FROM information_schema.schemata \
+         WHERE schema_name IN ('cold', 'cold_demographic')",
+    )
+    .fetch_one(&pool)
+    .await
+    .expect("count the mirror schemas");
+    assert_eq!(mirrors, 0, "the mirror schemas are gone");
 }

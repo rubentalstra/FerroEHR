@@ -105,10 +105,11 @@ fi
 
 # 3) Schemas owned by the app role + superuser-installed extensions, in the
 #    app database. `ext` holds the openEHR helper functions and, by convention,
-#    the extensions; both schemas are on the app's search_path (ehr, ext, public).
+#    the extensions; both schemas are on the app's search_path (clinical, ext,
+#    public).
 # shellcheck disable=SC2119 # the SQL arrives on stdin; the script's own $@ is not psql's
 psql_app <<SQL
-CREATE SCHEMA IF NOT EXISTS ehr AUTHORIZATION "${APP_USER}";
+CREATE SCHEMA IF NOT EXISTS clinical AUTHORIZATION "${APP_USER}";
 CREATE SCHEMA IF NOT EXISTS ext AUTHORIZATION "${APP_USER}";
 -- The local IHE ATNA Audit Record Repository, deliberately its own schema.
 CREATE SCHEMA IF NOT EXISTS audit AUTHORIZATION "${APP_USER}";
@@ -117,13 +118,14 @@ CREATE SCHEMA IF NOT EXISTS audit AUTHORIZATION "${APP_USER}";
 CREATE EXTENSION IF NOT EXISTS "uuid-ossp" WITH SCHEMA ext;
 CREATE EXTENSION IF NOT EXISTS pgcrypto   WITH SCHEMA ext;
 CREATE EXTENSION IF NOT EXISTS pg_trgm    WITH SCHEMA ext;
--- Required by the temporal vo_version PRIMARY KEY (... WITHOUT OVERLAPS).
+-- Required by linkage.party_ehr's temporal PRIMARY KEY (... WITHOUT OVERLAPS),
+-- which PostgreSQL enforces as a GiST index over btree_gist operator classes.
 CREATE EXTENSION IF NOT EXISTS btree_gist WITH SCHEMA ext;
 
 -- The app role owns the schemas already; make the intent explicit.
-GRANT ALL ON SCHEMA ehr   TO "${APP_USER}";
-GRANT ALL ON SCHEMA ext   TO "${APP_USER}";
-GRANT ALL ON SCHEMA audit TO "${APP_USER}";
+GRANT ALL ON SCHEMA clinical TO "${APP_USER}";
+GRANT ALL ON SCHEMA ext      TO "${APP_USER}";
+GRANT ALL ON SCHEMA audit    TO "${APP_USER}";
 SQL
 
 echo "ferroehr init: done"

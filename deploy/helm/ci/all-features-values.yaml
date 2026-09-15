@@ -93,13 +93,6 @@ config:
         policy_dir: /etc/ferroehr
   admin:
     enabled: true
-  tenancy:
-    enabled: true
-    claim: realm_access.tenant
-    header: X-FerroEHR-Tenant
-    # The all-features fixture turns authentication on too; the server refuses
-    # that pair at boot without this explicit acceptance.
-    insecure_header_override: true
   smart:
     enabled: true
     # Required whenever SMART is on: the launch context's service URLs are
@@ -312,8 +305,9 @@ backup:
   timeZone: Europe/Amsterdam
   clinical:
     persistentVolumeClaim: ferroehr-backup-clinical
-    # A BYPASSRLS role, read-only on the clinical schemas — not the pool's
-    # credential, which FORCE ROW LEVEL SECURITY makes pg_dump refuse.
+    # A read-only role on the clinical schemas — not the pool's
+    # credential, which is revoked from the other domains and would dump only
+    # part of the database.
     existingSecret: ferroehr-backup-clinical-dsn
   demographic:
     persistentVolumeClaim: ferroehr-backup-demographic

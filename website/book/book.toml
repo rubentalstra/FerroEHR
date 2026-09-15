@@ -28,7 +28,6 @@ enable = true
 "/admin-ui/demographics.html" = "../viewer/demographics.html"
 "/admin-ui/terminology.html" = "../viewer/terminology.html"
 "/admin-ui/operations.html" = "../viewer/operations.html"
-"/admin-ui/tenants.html" = "../viewer/tenants.html"
 "/admin-ui/fhir.html" = "../viewer/fhir.html"
 "/admin-ui/subscriptions.html" = "../viewer/subscriptions.html"
 "/admin-ui/dark-mode.html" = "../viewer/dark-mode.html"

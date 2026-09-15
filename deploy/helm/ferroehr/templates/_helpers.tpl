@@ -269,6 +269,14 @@ secret VALUE refused outright.
 */}}
 {{- define "ferroehr.configToml" -}}
 {{- $config := omit .Values.config "files" -}}
+{{/* Multi-tenancy was withdrawn: the server rejects unknown configuration keys,
+     so a values file still carrying config.tenancy renders a ferroehr.toml the
+     pod refuses at boot and crash-loops on. Refuse it here, where the operator
+     reads the reason (CHANGELOG.md, ### Removed: multi-tenancy is achieved by
+     running separate instances). */}}
+{{- if hasKey $config "tenancy" -}}
+{{- fail "config.tenancy is set, and multi-tenancy no longer exists: it is achieved by running separate instances — one instance, one database, one set of domain roles per organisation (CHANGELOG.md, ### Removed). The server refuses unknown configuration keys, so rendering this key would crash-loop the pod at boot. Drop config.tenancy." -}}
+{{- end -}}
 {{- $findings := include "ferroehr.secretScan" (dict "node" $config "path" "") | trim -}}
 {{- $lines := list -}}
 {{- range $finding := splitList "\n" $findings -}}
@@ -582,12 +590,9 @@ differs.
 Call with (dict "root" $ "domain" "clinical").
 
 The backup DSN is the domain's OWN backup Secret, never the pool's credential.
-Every tenant-scoped table carries FORCE ROW LEVEL SECURITY, so pg_dump refuses
-a table it would read through a policy — "query would be affected by row-level
-security policy" (PostgreSQL 18, pg_dump §Notes) — and the runtime role cannot
-take a backup at all. The dump needs a role with BYPASSRLS, read-only on its
-own domain, which is a different credential from the one the server serves
-with. Reusing the pool's DSN here would render CronJobs that fail every night.
+Each domain's runtime role is revoked from the other domains, so a dump taken
+through it would be silently partial. The dump needs a read-only role on its own
+domain, which is a different credential from the one the server serves with.
 */ -}}
 {{- define "ferroehr.backupDsnSecret" -}}
 {{ (index .root.Values.backup .domain).existingSecret }}

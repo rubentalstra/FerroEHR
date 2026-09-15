@@ -582,26 +582,6 @@ async fn the_system_screen_renders_its_cards_and_the_openapi_family_picker() {
     assert!(html.contains("Open audit browser"), "{html}");
 }
 
-// ---------------------------------------------------------------- tenants
-
-#[tokio::test]
-async fn the_tenants_screen_renders_the_session_context_card_and_the_create_form() {
-    let html = render_page("/tenants", &[], || {
-        view! { <ferroehr_viewer::pages::tenants::TenantsPage /> }.into_any()
-    });
-    assert!(html.contains("id=\"tenants-screen\""), "{html}");
-    assert!(html.contains(">Tenants</h1>"), "{html}");
-    assert!(html.contains("id=\"tenant-context\""), "{html}");
-    assert!(html.contains("resolving…"), "{html}");
-    for field in [
-        "id=\"tenant-create-name\"",
-        "id=\"tenant-create-system-id\"",
-        "id=\"tenant-create-submit\"",
-    ] {
-        assert!(html.contains(field), "{field} missing: {html}");
-    }
-}
-
 // ---------------------------------------------------------- subscriptions
 
 #[tokio::test]

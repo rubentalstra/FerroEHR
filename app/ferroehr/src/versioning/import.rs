@@ -15,12 +15,12 @@
 //! Concretely, per imported version row:
 //!
 //! * the LOCAL act — `contribution_id` (the one fresh import CONTRIBUTION),
-//!   `audit_id` (its `AUDIT_DETAILS`: this server's `system_id`, the importing
+//!   `commit_audit_id` (its `AUDIT_DETAILS`: this server's `system_id`, the importing
 //!   committer, the server-computed import instant, `249|creation|` per
 //!   §Contributions "import of item"), and the wrapper's own `signature`;
 //! * the FOREIGN act — the wrapped original's own `contribution` `OBJECT_REF`,
 //!   `commit_audit` (with its source `time_committed`) and `signature`, held
-//!   verbatim in `vo_version.wrapped_original`, beside its unchanged 3-part
+//!   verbatim in `version.wrapped_original`, beside its unchanged 3-part
 //!   identity, `lifecycle_state`, data and `attestations` ("the
 //!   `ORIGINAL_VERSION` instance is never modified", §Copying).
 //!
@@ -68,8 +68,6 @@ struct ContainerState {
     max_trunk: i32,
     /// The highest storage ordinal currently held.
     max_ordinal: i32,
-    /// Whether a still-open current TRUNK version exists.
-    trunk_open: bool,
 }
 
 /// Read + map the container state through the storage row I/O; an existing
@@ -90,7 +88,6 @@ async fn container_state(
         owner: row.owner,
         max_trunk: row.max_trunk,
         max_ordinal: row.max_ordinal,
-        trunk_open: row.trunk_open,
     })
 }
 
@@ -128,7 +125,7 @@ pub(crate) struct ImportVersion {
     pub(crate) attestations: Vec<Value>,
 }
 
-/// The `vo_version.wrapped_original` fragment for one received original: its
+/// The `version.wrapped_original` fragment for one received original: its
 /// own `contribution`, `commit_audit` and (optional) `signature`, verbatim —
 /// "the knowledge of the original Contribution and committal are retained
 /// inside the wrapped `ORIGINAL_VERSION` instance" (master06 §Committal and
@@ -326,7 +323,7 @@ struct ImportAct<'a> {
     privacy: &'a crate::privacy::PrivacyPolicy,
     ehr_id: Option<EhrId>,
     contribution_id: Uuid,
-    contribution_audit_id: Uuid,
+    contribution_commit_audit_id: Uuid,
     /// The canonical `AUDIT_DETAILS` fragment of the local act, signed into
     /// every wrapper.
     local_commit_audit: &'a Value,
@@ -407,16 +404,7 @@ async fn append_to_existing_clone(
             container.vo_id, state.max_trunk
         )));
     }
-    if state.trunk_open && container.versions.iter().any(|v| v.tree.is_trunk()) {
-        crate::storage::version_repo::import::close_lineage_at(
-            tx,
-            container.vo_id,
-            &(String::new(), 0, 0),
-            act.base,
-        )
-        .await?;
-    }
-    advance_existing_branches(tx, act, container).await
+    advance_existing_branches(tx, container).await
 }
 
 /// The BRANCH mirror of the trunk checks in [`append_to_existing_clone`].
@@ -424,16 +412,15 @@ async fn append_to_existing_clone(
 /// A later receipt may also advance an already-held branch lineage (master06
 /// §Copying — "previous copies have been made for the item"; §Semantics in
 /// Distributed Systems keeps lineages coexisting). Each incoming branch
-/// lineage must be strictly newer than the stored tip, and a still-open stored
-/// tip closes at the import base so the successor becomes that lineage's one
-/// open row.
+/// lineage must be strictly newer than the stored tip; the successor then
+/// becomes that lineage's tip by being its highest version, with nothing to
+/// close.
 ///
 /// # Errors
 /// [`ServiceError::Conflict`] on a re-imported branch version; storage errors
-/// from the lineage reads and closes.
+/// from the lineage reads.
 async fn advance_existing_branches(
     tx: &mut PgConnection,
-    act: &ImportAct<'_>,
     container: &ImportContainer,
 ) -> Result<(), ServiceError> {
     let mut incoming: BTreeMap<Lineage, i32> = BTreeMap::new();
@@ -449,27 +436,15 @@ async fn advance_existing_branches(
         *first = (*first).min(branch_version);
     }
     for (lineage, first_incoming) in &incoming {
-        let (max_stored, open) = crate::storage::version_repo::import::branch_lineage_state(
-            tx,
-            container.vo_id,
-            lineage,
-        )
-        .await?;
+        let max_stored =
+            crate::storage::version_repo::import::branch_lineage_head(tx, container.vo_id, lineage)
+                .await?;
         if max_stored > 0 && *first_incoming <= max_stored {
             return Err(ServiceError::conflict(format!(
                 "versioned object {} already has branch version {}.{}.{max_stored} — \
                  cannot re-import branch version {}.{}.{first_incoming}",
                 container.vo_id, lineage.1, lineage.2, lineage.1, lineage.2
             )));
-        }
-        if open {
-            crate::storage::version_repo::import::close_lineage_at(
-                tx,
-                container.vo_id,
-                lineage,
-                act.base,
-            )
-            .await?;
         }
     }
     Ok(())
@@ -518,7 +493,7 @@ async fn import_one_version(
             "import cursor addressed a version past the end of the container".to_owned(),
         ));
     };
-    let (lower, upper) = local_period(cursor, index, act.base);
+    let committed_at = local_commit_instant(index, act.base);
     let (trunk_version, branch_number, branch_version) = version.tree.columns();
     // The wrapped ORIGINAL_VERSION, reproduced exactly as received: its own
     // contribution reference, commit audit (with the SOURCE `time_committed`)
@@ -593,11 +568,10 @@ async fn import_one_version(
             preceding_version_uid: version.preceding_version_uid.as_deref(),
             other_input_version_uids: &version.other_input_version_uids,
             contribution_id: act.contribution_id,
-            audit_id: act.contribution_audit_id,
+            commit_audit_id: act.contribution_commit_audit_id,
             signature: signature.as_deref(),
             wrapped_original: &wrapped_original,
-            lower,
-            upper,
+            committed_at,
             body: (!served.is_null()).then_some(&served),
         },
     )
@@ -632,37 +606,19 @@ async fn import_one_version(
     }))
 }
 
-/// The synthetic local period of one imported version: a strictly-increasing
-/// 1 µs step off the import base, closed by the next version ON THE SAME
-/// LINEAGE (if the import carries one).
-fn local_period(
-    cursor: &ContainerCursor<'_>,
-    index: usize,
-    base: jiff::Timestamp,
-) -> (jiff::Timestamp, Option<jiff::Timestamp>) {
-    let lower = base + jiff::SignedDuration::from_micros(i64::try_from(index).unwrap_or(0));
-    let Some(version) = cursor.versions.get(index) else {
-        return (lower, None);
-    };
-    let upper = cursor
-        .versions
-        .iter()
-        .skip(index + 1)
-        .position(|later| later.lineage() == version.lineage())
-        .map(|offset| {
-            base + jiff::SignedDuration::from_micros(i64::try_from(index + 1 + offset).unwrap_or(0))
-        });
-    (lower, upper)
+/// The synthetic local commit instant of one imported version: a
+/// strictly-increasing 1 µs step off the import base.
+fn local_commit_instant(index: usize, base: jiff::Timestamp) -> jiff::Timestamp {
+    base + jiff::SignedDuration::from_micros(i64::try_from(index).unwrap_or(0))
 }
 
-/// NOTE (local temporal periods, master06 §Copying): all versions of an
-/// imported container are committed in the single local import act, so they get
-/// a synthetic strictly-increasing local `sys_period` chain (base = import time,
-/// 1 µs steps) **per lineage** with only each lineage's highest version open.
-/// That is exactly §Copying's rule that "the commit times always reflect the
-/// local (more recent) act of committal"; the source chronology is not lost but
-/// moved inside the wrapped `ORIGINAL_VERSION`, where §Committal and Audits
-/// puts it.
+/// NOTE (local commit instants, master06 §Copying): all versions of an imported
+/// container are committed in the single local import act, so they get a
+/// synthetic strictly-increasing local `committed_at` chain (base = import
+/// time, 1 µs steps), which is §Copying's rule that "the commit times always
+/// reflect the local (more recent) act of committal"; the source chronology is
+/// not lost but moved inside the wrapped `ORIGINAL_VERSION`, where §Committal
+/// and Audits puts it.
 async fn commit_import_scoped(
     tx: &mut PgConnection,
     ctx: &SigningCtx<'_>,
@@ -677,7 +633,7 @@ async fn commit_import_scoped(
     // open lineage before that row's lower bound. This ONE audit row is the
     // local act of committal for the CONTRIBUTION and every IMPORTED_VERSION it
     // carries (master06 §Committal and Audits).
-    let (contribution_audit_id, import_time) =
+    let (contribution_commit_audit_id, import_time) =
         crate::storage::version_repo::commit::insert_audit(tx, &import_audit.row()).await?;
     let base = import_time;
     let local_commit_audit = import_audit.canonical(&import_time);
@@ -685,7 +641,7 @@ async fn commit_import_scoped(
         tx,
         ctx.stamp.mint(),
         ehr_id,
-        contribution_audit_id,
+        contribution_commit_audit_id,
     )
     .await?;
     let act = ImportAct {
@@ -693,7 +649,7 @@ async fn commit_import_scoped(
         privacy,
         ehr_id,
         contribution_id,
-        contribution_audit_id,
+        contribution_commit_audit_id,
         local_commit_audit: &local_commit_audit,
         change_type: &import_audit.change_type,
         base,
@@ -726,8 +682,8 @@ async fn commit_import_scoped(
             }
         }
 
-        // Per-lineage period chains: within a lineage each version closes its
-        // predecessor; each lineage's last version stays open. Lineages coexist.
+        // Per-lineage commit chains: within a lineage each version supersedes
+        // its predecessor by carrying a later instant, and lineages coexist.
         let cursor = ContainerCursor {
             vo_id: container.vo_id,
             kind: container.kind,
@@ -738,6 +694,9 @@ async fn commit_import_scoped(
             ordinal += 1;
             outbox_versions.push(import_one_version(tx, &act, &cursor, index, ordinal).await?);
         }
+        // The head row is a pure function of the version rows, so a whole
+        // container recomputes it once at the end rather than per version.
+        crate::storage::version_repo::import::sync_heads(tx, &[container.vo_id]).await?;
     }
     if ctx.outbox_enabled && !outbox_versions.is_empty() {
         crate::storage::version_repo::commit::write_outbox(

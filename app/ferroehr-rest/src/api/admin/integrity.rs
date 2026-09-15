@@ -12,7 +12,7 @@
 //! two-copy storage design and this route over it are ours.
 //!
 //! What it exposes: the storage keeps every version's content twice — the
-//! materialized `vo_version.body` a point read serves, and the decomposed
+//! materialized `version.body` a point read serves, and the decomposed
 //! `node` rows the AQL engine queries. Read-time signature verification (RM
 //! common `master06-change_control_package.adoc` §Digital Signature) covers
 //! the first copy. This route re-derives the second one and compares, so

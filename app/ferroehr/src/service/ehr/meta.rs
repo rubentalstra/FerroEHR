@@ -42,10 +42,9 @@ const LOCAL_ISSUER: &str = "ferroehr";
 
 impl FerroEhrService {
     /// The current version `(vo_id, VERSION_TREE_ID)` of an EHR's object of a
-    /// given [`Kind`], if any — the current trunk row (`upper_inf(sys_period)`,
-    /// `branch_number = 0`).
+    /// given [`Kind`], if any — the trunk head the object's head row names.
     ///
-    /// The `vo_version` current-row read is a storage seam
+    /// The `version` current-row read is a storage seam
     /// ([`crate::storage::version_repo::meta::current_vo`]; no openEHR spec governs
     /// the SQL — our own design). The [`crate::versioning::CommitEnv`]
     /// `current_vo` hook adapts this `(Uuid, TreeId)` to its `(Uuid, i32)`
@@ -189,7 +188,7 @@ impl FerroEhrService {
     /// latest `version_uid` a `409`/`412` must echo in `ETag`/`Location`), or
     /// `None`.
     ///
-    /// Resolved and read in one metadata-only `vo_version`⋈`audit` statement
+    /// Resolved and read in one metadata-only `version`⋈`audit` statement
     /// (`current_version_meta_by_kind`): the `409` and `412` paths need only the
     /// full `OBJECT_VERSION_ID` and commit instant, so this avoids the node
     /// reassembly and attestation read a full version read pays. The emitted
@@ -212,7 +211,7 @@ impl FerroEhrService {
 
     /// The current version's `vo_id` **and** its [`ResourceMeta`] for an
     /// EHR-owned object of `kind`, resolved and read in the same ONE
-    /// metadata-only `vo_version`⋈`audit` statement [`Self::latest_version_meta`]
+    /// metadata-only `version`⋈`audit` statement [`Self::latest_version_meta`]
     /// uses. Threading the `vo_id` back to the caller lets a following write
     /// skip re-resolving `(ehr_id, kind) → vo_id`, so the `If-Match` pre-read
     /// and the write share one `current_vo` resolution. The

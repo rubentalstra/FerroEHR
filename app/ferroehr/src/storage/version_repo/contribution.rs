@@ -53,7 +53,7 @@ pub async fn contribution_audit(
     let Some(row) = sqlx::query(
         "SELECT a.system_id, a.change_type, a.description, a.committer, a.attestation, \
          a.time_committed \
-         FROM contribution c JOIN audit a ON a.id = c.audit_id \
+         FROM contribution c JOIN commit_audit a ON a.id = c.commit_audit_id \
          WHERE c.id = $1 AND c.ehr_id IS NOT DISTINCT FROM $2",
     )
     .bind(contribution_id)
@@ -90,12 +90,12 @@ pub async fn contribution_version_refs(
 ) -> Result<Vec<(VoId, (i32, i32, i32), String, String)>, StorageError> {
     let rows = sqlx::query(
         "SELECT vo_id, trunk_version, branch_number, branch_version, creating_system_id, \
-         kind FROM vo_version_all \
+         kind FROM version \
          WHERE contribution_id = $1 \
          UNION \
          SELECT v.vo_id, v.trunk_version, v.branch_number, v.branch_version, \
-         v.creating_system_id, v.kind FROM vo_version_all v \
-         JOIN vo_attestation_all att ON att.vo_id = v.vo_id AND att.sys_version = v.sys_version \
+         v.creating_system_id, v.kind FROM version v \
+         JOIN vo_attestation att ON att.vo_id = v.vo_id AND att.sys_version = v.sys_version \
          WHERE att.contribution_id = $1 \
          ORDER BY vo_id",
     )
@@ -151,7 +151,7 @@ pub async fn list_contribution_summaries(
 ) -> Result<Vec<ContributionSummary>, StorageError> {
     let rows = sqlx::query(
         "SELECT c.id, a.time_committed, a.change_type, a.committer #>> '{name}' AS committer_name \
-         FROM contribution c JOIN audit a ON a.id = c.audit_id \
+         FROM contribution c JOIN commit_audit a ON a.id = c.commit_audit_id \
          WHERE c.ehr_id = $1 \
          -- newest-first: this extension is an activity feed (the sibling SM
          -- list_contributions stays oldest-first; a deliberate divergence for
@@ -194,7 +194,7 @@ pub async fn list_contributions(
     limit: Option<i64>,
 ) -> Result<Vec<Uuid>, StorageError> {
     let rows = sqlx::query(
-        "SELECT c.id FROM contribution c JOIN audit a ON a.id = c.audit_id \
+        "SELECT c.id FROM contribution c JOIN commit_audit a ON a.id = c.commit_audit_id \
          WHERE c.ehr_id = $1 \
            AND ($2::timestamptz IS NULL OR a.time_committed >= $2::timestamptz) \
            AND ($3::timestamptz IS NULL OR a.time_committed <= $3::timestamptz) \
@@ -223,7 +223,7 @@ pub async fn count_contributions(
     upper: Option<jiff::Timestamp>,
 ) -> Result<i64, StorageError> {
     Ok(sqlx::query_scalar(
-        "SELECT count(*) FROM contribution c JOIN audit a ON a.id = c.audit_id \
+        "SELECT count(*) FROM contribution c JOIN commit_audit a ON a.id = c.commit_audit_id \
          WHERE c.ehr_id = $1 \
            AND ($2::timestamptz IS NULL OR a.time_committed >= $2::timestamptz) \
            AND ($3::timestamptz IS NULL OR a.time_committed <= $3::timestamptz)",

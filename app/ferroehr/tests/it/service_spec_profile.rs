@@ -85,15 +85,13 @@ fn development_only_composition() -> Value {
     )
 }
 
-/// The stored `vo_version.stable_compatible` of an object's only version.
+/// The stored `version.stable_compatible` of an object's only version.
 async fn stamp(pool: &sqlx::PgPool, vo_id: VoId) -> Option<bool> {
-    sqlx::query_scalar::<_, Option<bool>>(
-        "SELECT stable_compatible FROM vo_version WHERE vo_id = $1",
-    )
-    .bind(vo_id)
-    .fetch_one(pool)
-    .await
-    .expect("the stamp column is readable")
+    sqlx::query_scalar::<_, Option<bool>>("SELECT stable_compatible FROM version WHERE vo_id = $1")
+        .bind(vo_id)
+        .fetch_one(pool)
+        .await
+        .expect("the stamp column is readable")
 }
 
 /// A `stable`-profile service over the same database.
@@ -188,7 +186,7 @@ async fn an_unstamped_row_is_assessed_on_the_fly() {
     let (clean_ehr, clean_vo) = commit(&svc, &stable_clean_composition()).await;
     let (dirty_ehr, dirty_vo) = commit(&svc, &development_only_composition()).await;
 
-    sqlx::query("UPDATE vo_version SET stable_compatible = NULL WHERE vo_id = ANY($1)")
+    sqlx::query("UPDATE version SET stable_compatible = NULL WHERE vo_id = ANY($1)")
         .bind(vec![clean_vo, dirty_vo])
         .execute(&db.pool())
         .await
@@ -231,7 +229,7 @@ async fn archive_and_restore_preserve_the_stamp() {
         .await
         .expect("archive the EHR");
     let cold: Option<bool> = sqlx::query_scalar::<_, Option<bool>>(
-        "SELECT stable_compatible FROM cold.vo_version WHERE vo_id = $1",
+        "SELECT stable_compatible FROM version_cold WHERE vo_id = $1",
     )
     .bind(vo_id)
     .fetch_one(&db.pool())
@@ -509,7 +507,7 @@ async fn the_query_gate_assesses_unstamped_rows_on_the_fly() {
     let (clean_ehr, clean_vo) = commit(&svc, &stable_clean_composition()).await;
     let (dirty_ehr, dirty_vo) = commit(&svc, &development_only_composition()).await;
 
-    sqlx::query("UPDATE vo_version SET stable_compatible = NULL WHERE vo_id = ANY($1)")
+    sqlx::query("UPDATE version SET stable_compatible = NULL WHERE vo_id = ANY($1)")
         .bind(vec![clean_vo, dirty_vo])
         .execute(&db.pool())
         .await

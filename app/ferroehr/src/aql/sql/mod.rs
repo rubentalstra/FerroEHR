@@ -4,7 +4,7 @@
 //! IR to SQL lowering.
 //!
 //! Turns a typed [`QueryIr`] into one `SELECT` over the greenfield
-//! `node`/`vo_version`/`ehr`/`audit` store, built entirely with `sea-query`'s
+//! `node`/`version`/`ehr`/`audit` store, built entirely with `sea-query`'s
 //! typed expression API and `sea-query-sqlx`, with no string-concatenated SQL.
 //! Every table and column reference is an [`sea_query::Expr::col`], every
 //! literal binds through `Expr::val`, and the PostgreSQL-specific pieces use the
@@ -25,8 +25,8 @@
 //!
 //! ## Coupling to the storage schema
 //!
-//! The builder references the `node`/`vo_version`/`ehr`/`audit` column
-//! vocabulary directly and encodes the nested-set, `sys_period` and
+//! The builder references the `node`/`version`/`ehr`/`audit` column
+//! vocabulary directly and encodes the nested-set, tier and
 //! `branch_number` semantics of the greenfield store;
 //! the planner's own structure-root notion is the RM model's
 //! ([`openehr_rm::v1_2::model::is_structure_root`], kept in lockstep with the
@@ -37,7 +37,7 @@
 //! class resolves to (`from::is_vo_root_type`).
 //!
 //! The `column_vocab` unit test pins every column name the builder emits
-//! against `migrations/ehr/0001_baseline.sql`, so a schema rename surfaces as a
+//! against the clinical migration set, so a schema rename surfaces as a
 //! failing test rather than a runtime SQL error.
 
 mod expr;
@@ -197,7 +197,7 @@ pub struct ScopeQuery {
     pub columns: Vec<(String, String)>,
 }
 
-/// A VO "group": the node alias that roots it and the `vo_version` alias its
+/// A VO "group": the node alias that roots it and the `version` alias its
 /// nodes belong to. Content sources contained within it share the `vo` alias and
 /// interval-join into `node`.
 #[derive(Debug, Clone)]
@@ -234,7 +234,7 @@ struct Builder<'a> {
     /// The `EHR_STATUS` root-node alias joined for an EHR source's `ehr_status`
     /// path (keyed by EHR source id; joined once, lazily, on first use).
     ehr_status_node: HashMap<usize, String>,
-    /// The `vo_version` alias each versioned-object-root RM source opened
+    /// The `version` alias each versioned-object-root RM source opened
     /// (keyed by source id). Used to synthesize the server-assigned
     /// `OBJECT_VERSION_ID` for a `uid[/value]` path on a VO-root variable
     /// (RM common master06 §Version Identification), which is not stored in the
@@ -248,12 +248,12 @@ struct Builder<'a> {
     /// already covers them, so gating the root again would be a duplicate
     /// full-population subquery per query.
     roots_linked_to_ehr: std::collections::HashSet<String>,
-    /// The `vo_version` alias for each entry in `group_roots` (parallel vec) —
+    /// The `version` alias for each entry in `group_roots` (parallel vec) —
     /// the source of the touched `template_id` for the ABAC scope collection.
     group_vos: Vec<String>,
     /// Fresh-alias counter for anchor subqueries / anti-joins.
     sub_ctr: usize,
-    /// Whether the FROM was built in the STREAMING shape (one `vo_version`
+    /// Whether the FROM was built in the STREAMING shape (one `version`
     /// FROM item, everything else a join) — lazily summoned tables
     /// (`ensure_audit`, the population gate, the `EHR_STATUS` root) must
     /// then JOIN instead of adding comma-separated FROM items, or a later
@@ -422,12 +422,20 @@ pub fn build_scope(
 mod column_vocab {
     //! Pin the builder's storage-column vocabulary to the schema. Every column
     //! name the IR→SQL lowering emits (collected here, one group per table)
-    //! must be declared for that table in `migrations/ehr/0001_baseline.sql`,
-    //! so a schema rename fails this test instead of failing at query runtime.
+    //! must be declared for that table in the clinical migration set, so a
+    //! schema rename fails this test instead of failing at query runtime.
 
-    /// The baseline migration — the authoritative schema (no openEHR spec
-    /// governs the SQL — our own design).
-    const BASELINE: &str = include_str!("../../../migrations/ehr/0001_baseline.sql");
+    /// The change-control relations — the authoritative schema for `version`,
+    /// `vo_head` and `commit_audit` (no openEHR spec governs the SQL — our own
+    /// design).
+    const CHANGE_CONTROL: &str =
+        include_str!("../../../migrations/clinical/0003_change_control.sql");
+
+    /// The `node` relation.
+    const NODE: &str = include_str!("../../../migrations/clinical/0004_node.sql");
+
+    /// The `ehr` relation.
+    const EHR: &str = include_str!("../../../migrations/clinical/0002_ehr.sql");
 
     /// The columns the builder references, grouped by the table each `sea-query`
     /// alias resolves to. Keep in sync with the `col(..)` / `Expr::col(..)`
@@ -436,6 +444,7 @@ mod column_vocab {
         (
             "node",
             &[
+                "tier",
                 "vo_id",
                 "sys_version",
                 "num",
@@ -447,12 +456,15 @@ mod column_vocab {
                 "arch_concept",
                 "arch_major",
                 "name",
+                "name_code",
+                "name_terminology",
                 "data",
             ],
         ),
         (
-            "vo_version",
+            "version",
             &[
+                "tier",
                 "vo_id",
                 "kind",
                 "ehr_id",
@@ -460,14 +472,15 @@ mod column_vocab {
                 "trunk_version",
                 "branch_number",
                 "branch_version",
-                "sys_period",
+                "committed_at",
                 "lifecycle_state",
                 "creating_system_id",
                 "contribution_id",
-                "audit_id",
+                "commit_audit_id",
                 "template_id",
             ],
         ),
+        ("vo_head", &["vo_id", "trunk_head_sys_version"]),
         (
             "ehr",
             &[
@@ -479,7 +492,7 @@ mod column_vocab {
             ],
         ),
         (
-            "audit",
+            "commit_audit",
             &[
                 "id",
                 "time_committed",
@@ -491,28 +504,39 @@ mod column_vocab {
         ),
     ];
 
-    /// The `CREATE TABLE {table} ( … )` body from the baseline migration (the
-    /// text between the opening paren and the balanced closing paren).
+    /// The `CREATE TABLE {table} ( … )` body from the migration set (the text
+    /// between the opening paren and the balanced closing paren).
+    ///
+    /// Comments are stripped before the parens are counted: the DDL documents
+    /// itself in prose, and prose carries brackets that are not SQL — an
+    /// interval written `[a, b)` would otherwise close the table early and
+    /// silently hide every column after it.
     fn create_table_body(table: &str) -> String {
         let head = format!("CREATE TABLE {table} (");
-        let body = BASELINE
-            .split_once(&head)
-            .unwrap_or_else(|| panic!("no `{head}` in the baseline migration"))
+        let body = [CHANGE_CONTROL, NODE, EHR]
+            .into_iter()
+            .find_map(|file| file.split_once(&head))
+            .unwrap_or_else(|| panic!("no `{head}` in the clinical migration set"))
             .1;
+        let code: String = body
+            .lines()
+            .map(|line| line.split("--").next().unwrap_or(line))
+            .collect::<Vec<_>>()
+            .join("\n");
         let mut depth = 1usize;
-        for (i, ch) in body.char_indices() {
+        for (i, ch) in code.char_indices() {
             match ch {
                 '(' => depth += 1,
                 ')' => {
                     depth -= 1;
                     if depth == 0 {
-                        return body.get(..i).unwrap_or_default().to_owned();
+                        return code.get(..i).unwrap_or_default().to_owned();
                     }
                 }
                 _ => {}
             }
         }
-        panic!("unterminated CREATE TABLE {table} in the baseline migration");
+        panic!("unterminated CREATE TABLE {table} in the clinical migration set");
     }
 
     /// Whether `body` declares a column named exactly `col` — a line whose
@@ -527,14 +551,15 @@ mod column_vocab {
     }
 
     #[test]
-    fn builder_columns_exist_in_baseline_schema() {
+    fn builder_columns_exist_in_the_schema() {
         for (table, columns) in VOCAB {
             let body = create_table_body(table);
             for col in *columns {
                 assert!(
                     declares_column(&body, col),
                     "AQL SQL builder references column `{table}.{col}`, but it is not \
-                     declared in `CREATE TABLE {table}` in 0001_baseline.sql — schema drift"
+                     declared in `CREATE TABLE {table}` in the clinical migration set — \
+                     schema drift"
                 );
             }
         }

@@ -39,7 +39,7 @@ and published*.
 ## What we commit to
 
 - **One licence for all of our own code, with no open-core tier.**
-  Multi-tenancy, role- and attribute-based access control, IHE ATNA audit,
+  Role- and attribute-based access control, IHE ATNA audit,
   per-version digital signatures, the FHIR R4 connectors, change events and
   the viewer are in one repository under the Business Source License 1.1.
   Nothing is held back to be sold back

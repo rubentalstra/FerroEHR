@@ -118,8 +118,8 @@ flowchart LR
         lnksvc["service::linkage"]
     end
     audit["system_log store"]
-    pc[("clinical pool<br/>ferroehr_ehr → ehr, cold")]
-    pd[("demographic pool<br/>ferroehr_demographic → demographic, cold_demographic")]
+    pc[("clinical pool<br/>ferroehr_ehr → clinical")]
+    pd[("demographic pool<br/>ferroehr_demographic → party")]
     pl[("linkage pool<br/>ferroehr_linkage → linkage")]
 
     rest --> ehrsvc

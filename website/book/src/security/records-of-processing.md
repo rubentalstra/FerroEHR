@@ -42,7 +42,7 @@ The identity fields Art. 30(1)(a) asks for are yours in every case:
 | Recipients | *yours*: whoever the API is exposed to. The software discloses nothing on its own |
 | Third-country transfers | *yours*: wherever the deployment and its backups run |
 | Retention | No automatic expiry. Content leaves only by an administrator's deletion; archiving moves it to the cold tier without expiring it |
-| Security measures | Least-privilege database roles per pseudonymisation domain; a data-minimisation pass over every write; `FORCE ROW LEVEL SECURITY` for tenant scoping; TLS; authentication and layered authorization |
+| Security measures | Least-privilege database roles per pseudonymisation domain; a data-minimisation pass over every write; one instance per organisation; TLS; authentication and layered authorization |
 
 ## 2. Versioning and change control
 
@@ -85,7 +85,7 @@ The identity fields Art. 30(1)(a) asks for are yours in every case:
 | Recipients | *yours* |
 | Third-country transfers | *yours* |
 | Retention | Parties leave only by an administrator's deletion. A linkage mapping is never deleted: a merge or a split closes its period and opens a successor |
-| Security measures | Three schemas under three roles, revoked from each other in both directions and checked at boot; AES-256-GCM sealing with a keyed HMAC-SHA-256 digest for lookup, under per-domain and per-tenant subkeys; the one crossing runs in the application over two pools and writes an access record |
+| Security measures | Three schemas under three roles, revoked from each other in both directions and checked at boot; AES-256-GCM sealing with a keyed HMAC-SHA-256 digest for lookup, under per-domain subkeys; the one crossing runs in the application over two pools and writes an access record |
 
 ## 5. Access logging
 

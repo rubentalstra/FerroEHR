@@ -51,14 +51,14 @@ fn composition(name: &str) -> Value {
 // ── outbox helpers ───────────────────────────────────────────────────────────
 
 async fn pending_count(pool: &PgPool) -> i64 {
-    sqlx::query_scalar("SELECT count(*) FROM ehr.event_outbox WHERE published_at IS NULL")
+    sqlx::query_scalar("SELECT count(*) FROM clinical.event_outbox WHERE published_at IS NULL")
         .fetch_one(pool)
         .await
         .expect("pending count")
 }
 
 async fn total_count(pool: &PgPool) -> i64 {
-    sqlx::query_scalar("SELECT count(*) FROM ehr.event_outbox")
+    sqlx::query_scalar("SELECT count(*) FROM clinical.event_outbox")
         .fetch_one(pool)
         .await
         .expect("total count")
@@ -66,7 +66,7 @@ async fn total_count(pool: &PgPool) -> i64 {
 
 /// The most-recently written outbox row's envelope.
 async fn latest_envelope(pool: &PgPool) -> Value {
-    sqlx::query("SELECT envelope FROM ehr.event_outbox ORDER BY seq DESC LIMIT 1")
+    sqlx::query("SELECT envelope FROM clinical.event_outbox ORDER BY seq DESC LIMIT 1")
         .fetch_one(pool)
         .await
         .expect("latest row")
@@ -453,7 +453,7 @@ async fn drainer_holds_pending_while_broker_down_then_drains_without_loss() {
 async fn delivered_version_count(pool: &PgPool) -> usize {
     let n: i64 = sqlx::query_scalar(
         "SELECT coalesce(sum(jsonb_array_length(envelope -> 'versions')), 0)::bigint \
-         FROM ehr.event_outbox",
+         FROM clinical.event_outbox",
     )
     .fetch_one(pool)
     .await

@@ -9,8 +9,8 @@
 //! A **single** tokio task polls the outboxes, publishes pending rows in `seq`
 //! order (a global order that trivially preserves per-EHR order), and marks
 //! each published only after the broker confirms. There are two outboxes, one
-//! per pseudonymisation domain (`ehr.event_outbox` and
-//! `demographic.event_outbox` — a demographic contribution's foreign key must
+//! per pseudonymisation domain (`clinical.event_outbox` and
+//! `party.event_outbox` — a demographic contribution's foreign key must
 //! stay inside its own schema), drained by this one task; per-EHR ordering is
 //! unaffected, because a demographic event has no EHR. On a publish failure it stops
 //! the batch — never skipping ahead — so an EHR's events keep their order, and
@@ -49,7 +49,6 @@ use tokio::task::JoinHandle;
 
 use super::config::EventsConfig;
 use crate::extensions::outbox;
-use crate::extensions::tenant_context;
 use ferroehr_ext::events::amqp::AmqpPublisher;
 use ferroehr_ext::events::{EventError, EventPublisher};
 
@@ -203,37 +202,15 @@ async fn run(
         {
             tracing::debug!("event subscription sync deferred: {e}");
         }
-        // Every registered tenant in turn, under its scope: the outbox is
-        // tenant-scoped by row policy and the cursors are per tenant (#3355).
-        let tenants = match outbox::tenants(&pool).await {
-            Ok(tenants) => tenants,
-            Err(e) => {
-                tracing::warn!("event publisher could not list the tenants, pass skipped: {e}");
-                Vec::new()
-            }
-        };
-        for ctx in &tenants {
-            for domain in pools {
-                tenant_context::scope(
-                    ctx.clone(),
-                    drain_until_caught_up(domain, publisher.as_ref(), &config, &shutdown, &healthy),
-                )
-                .await;
-            }
+        for domain in pools {
+            drain_until_caught_up(domain, publisher.as_ref(), &config, &shutdown, &healthy).await;
         }
 
         // Retention prune (best-effort), on its own cadence.
         if last_prune.elapsed() >= prune_every {
-            for ctx in &tenants {
-                for domain in pools {
-                    if let Err(e) = tenant_context::scope(
-                        ctx.clone(),
-                        outbox::prune(domain, config.retention_days),
-                    )
-                    .await
-                    {
-                        tracing::warn!("event outbox retention prune failed: {e}");
-                    }
+            for domain in pools {
+                if let Err(e) = outbox::prune(domain, config.retention_days).await {
+                    tracing::warn!("event outbox retention prune failed: {e}");
                 }
             }
             last_prune = tokio::time::Instant::now();
@@ -247,18 +224,11 @@ async fn run(
 
     // Best-effort final drain so a clean shutdown flushes what the broker will
     // still take; anything left stays pending for next start (at-least-once).
-    let tenants = outbox::tenants(&pool).await.unwrap_or_default();
-    for ctx in &tenants {
-        for domain in pools {
-            if let Ok(n) = tenant_context::scope(
-                ctx.clone(),
-                drain_batch(domain, publisher.as_ref(), &config),
-            )
-            .await
-                && n > 0
-            {
-                tracing::debug!("event publisher flushed {n} events on shutdown");
-            }
+    for domain in pools {
+        if let Ok(n) = drain_batch(domain, publisher.as_ref(), &config).await
+            && n > 0
+        {
+            tracing::debug!("event publisher flushed {n} events on shutdown");
         }
     }
     tracing::debug!("event publisher loop exited");

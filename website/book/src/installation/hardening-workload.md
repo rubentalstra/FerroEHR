@@ -182,7 +182,7 @@ Restricted-compliant (the upstream `postgres` entrypoint must start as root), so
 labelling a namespace that contains one will refuse it. That is another reason the
 production posture puts the database outside the cluster.
 
-## Sandboxing is not tenant isolation
+## Sandboxing is not a substitute for instance separation
 
 **Not required, and the reason matters more than the conclusion.** The cheat sheet
 scopes sandboxing (Kata, gVisor, Firecracker) to clusters running *untrusted*
@@ -192,15 +192,14 @@ escape it hardens against is already narrowed by the pod's own user namespace,
 which is on by default.
 
 > [!IMPORTANT]
-> **A container sandbox does nothing for this server's multi-tenancy**, and that
-> is the misreading worth preventing. Tenants of a single release share **one
-> process and one database**; they are separated by PostgreSQL row-level security
-> and a per-request session setting, *inside* the container. A sandbox draws a
-> stronger boundary around the whole container, which both tenants are already on
-> the same side of. Hardening the sandbox changes nothing about tenant isolation;
-> only the [namespace-per-tenant
-> model](hardening-network-policy.md#namespaces-and-the-two-tenant-models) moves
-> that boundary.
+> **A container sandbox does nothing to separate organisations**, and that is the
+> misreading worth preventing. FerroEHR is single-tenant: one instance serves one
+> organisation, with its own database and its own domain roles. A sandbox draws a
+> stronger boundary around one container, which is a boundary a single
+> organisation is already alone inside. What separates two organisations is
+> running two instances; the [namespace
+> model](hardening-network-policy.md#namespaces-and-one-instance-per-organisation) is
+> where that is arranged.
 
 A sandbox is worth considering in one case: a cluster where this workload runs
 **beside** third-party or customer-supplied code, and you want to protect this

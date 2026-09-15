@@ -12,10 +12,9 @@
 //! correcting forward, not by erasing the record of what was believed).
 //!
 //! Every statement names its relations unqualified and resolves through the
-//! linkage pool's `search_path`, which carries neither `ehr` nor
-//! `demographic`. A statement here therefore cannot reach either domain even
-//! if it tried, and the tenant predicate is the table's own row policy rather
-//! than a `WHERE` clause a caller could forget.
+//! linkage pool's `search_path`, which carries neither `clinical` nor
+//! `party`. A statement here therefore cannot reach either domain even if it
+//! tried.
 
 use sqlx::{PgConnection, PgPool};
 use uuid::Uuid;

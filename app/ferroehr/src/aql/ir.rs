@@ -181,7 +181,7 @@ pub struct VersionSource {
 #[derive(Debug, Clone, PartialEq)]
 pub enum VersionScope {
     /// `LATEST_VERSION` (the default) — the current version
-    /// (`upper_inf(sys_period)` partial index).
+    /// (the head row's `trunk_head_sys_version`).
     Latest,
     /// `ALL_VERSIONS` — every version (the temporal table unfiltered; supported
     /// from day one by design).
@@ -216,7 +216,7 @@ pub struct VersionMetaPredicate {
 }
 
 /// A version-metadata field addressable on a VERSION variable (maps to
-/// `vo_version` / `audit` / `contribution` columns in the SQL package).
+/// `version` / `audit` / `contribution` columns in the SQL package).
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum VersionField {
     /// `uid/value` — the object version id (`vo_id::sys_version`).
@@ -530,7 +530,7 @@ pub enum PathTarget {
     /// A path into the EHR's current `EHR_STATUS` versioned object
     /// (`e/ehr_status[/...]`). `EHR` is not a `node` in the store and
     /// `EHR_STATUS` is a *separate* versioned object, so this addresses it via
-    /// an engine-level join (`vo_version.ehr_id = ehr.id`, `kind = EHR_STATUS`,
+    /// an engine-level join (`version.ehr_id = ehr.id`, `kind = EHR_STATUS`,
     /// latest version) rather than a node-tree walk. The wrapped [`LeafPath`] is
     /// analysed relative to the `EHR_STATUS` root (`leaf.source` = the EHR
     /// source), so the SQL package reuses the whole-object / anchor-walk /

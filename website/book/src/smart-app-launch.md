@@ -55,7 +55,7 @@ The boot rules, and why each one exists:
 
 SMART scopes ride only **Bearer** tokens, so the OIDC bearer requirement above
 is also what makes the scope gate able to see a scope at all (see
-[Security & multi-tenancy](security.md#authentication)).
+[Security](security.md#authentication)).
 
 ## Configuration keys
 
@@ -225,7 +225,7 @@ subject-scope layer's job, not the scope gate's.
 
 The SMART gate is one more layer in the authorization chain, evaluated
 **after** authentication, the per-EHR `EHR_ACCESS` gate, RBAC, and ABAC (see
-[Security & multi-tenancy](security.md#authorization)). Every active layer
+[Security](security.md#authorization)). Every active layer
 must allow the request; SMART never overrides a denial from another layer, and
 it can only narrow. A scope denial is a **403 Forbidden**.
 

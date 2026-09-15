@@ -13,7 +13,7 @@
 //! in care only for identification and under the act's conditions.
 //!
 //! The value therefore leaves the versioned body and lives in
-//! `demographic.national_identifier`, sealed under a per-tenant key, with a
+//! `party.national_identifier`, sealed under a per-domain key, with a
 //! keyed digest beside it for equality lookup without decryption. The body
 //! keeps a reference in its place.
 

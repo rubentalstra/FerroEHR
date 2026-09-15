@@ -19,7 +19,7 @@ Two different things are collected here, and they behave differently:
   `/message` group (EHR Extract and TDD import) are ordinary routes. They have
   no feature switch: they are served on every deployment and gated only by the
   same authentication and authorization as the clinical API
-  ([Security & multi-tenancy](../security.md)). The bundled openEHR terminology
+  ([Security](../security.md)). The bundled openEHR terminology
   is likewise always present in-process, with no configuration and no external
   dependency.
 - **Off until you configure them.** Everything that reaches *outside* the
@@ -96,6 +96,6 @@ for the exact list of settings a slim binary rejects.
   integrity verification on the way back in.
 
 Security, multi-tenancy, and the audit trail are covered in
-[Security & multi-tenancy](../security.md); running the server in production,
+[Security](../security.md); running the server in production,
 including the health and observability surfaces these integrations feed, is
 covered in [Operations](../operations.md).

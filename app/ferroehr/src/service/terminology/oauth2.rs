@@ -171,7 +171,7 @@ impl TokenSource {
                 // The OPERATOR detail — which configured client, and the
                 // upstream authorization server's own error — goes to the
                 // trace record; the wire body stays the curated 500 message.
-                // A tenant's clients must not be able to read the deployment's
+                // A client must not be able to read the deployment's
                 // credential configuration out of a response. (No openEHR spec
                 // governs 500 body content — our own design/extension.)
                 tracing::error!(

@@ -34,8 +34,8 @@ feature sets below; we run the latest patch (18.6) for the fixes.
 
 | Feature | Status | Where, or why not |
 |---|---|---|
-| **`uuidv7()` (native)** | **used** for database-minted ids | `audit.id`, `contribution.id` (fallback), `vo_attestation.id`, `item_tag.id`. Versioned-object and EHR ids are minted in Rust as v7 with the licence stamp, so `(vo_id, sys_version)` keys are NOT append-ordered. |
-| **Temporal `PRIMARY KEY`/`UNIQUE` `WITHOUT OVERLAPS`** | **used** on `linkage.party_ehr` | one mapping in force per party; a merge closes a row rather than deleting it. The key is enforced as a GiST exclusion (`sql-createtable.html`), which is why `btree_gist` is installed. NOT used on `vo_version`: partial unique btrees plus the per-object advisory lock hold the current-row invariant; the earlier GiST `EXCLUDE` constraints were removed after a measurement recorded on the tracker, and the documentation makes no statement about exclusion-constraint concurrency (it only says equality exclusion is slower than UNIQUE). |
+| **`uuidv7()` (native)** | **used** for database-minted ids | `commit_audit.id`, `contribution.id` (fallback), `vo_attestation.id`, `item_tag.id`. Versioned-object and EHR ids are minted in Rust as v7 with the licence stamp, so `(vo_id, sys_version)` keys are NOT append-ordered. |
+| **Temporal `PRIMARY KEY`/`UNIQUE` `WITHOUT OVERLAPS`** | **used** on `linkage.party_ehr` | one mapping in force per party; a merge closes a row rather than deleting it. The key is enforced as a GiST exclusion (`sql-createtable.html`), which is why `btree_gist` is installed. NOT used on `version`, which carries no interval at all: the store is append-only and validity is derived from `committed_at`. |
 | **Temporal `FOREIGN KEY`** | not used | NO ACTION only, and the pseudonymisation boundary refuses cross-domain foreign keys anyway. |
 | **`RETURNING OLD/NEW`** | not used | the commit path is one CTE chain with plain `RETURNING id`; nothing reads `old.`/`new.`. |
 | **Virtual generated columns** | not usable here | a virtual column "must not reference user-defined functions or types" (`ddl-generated-columns.html`), so it cannot call `ext.*`; a STORED one may call IMMUTABLE `openehr_magnitude` but never the STABLE timestamp parser. The promoted `node` columns are populated by the decomposer at write time. |
@@ -45,13 +45,15 @@ feature sets below; we run the latest patch (18.6) for the fixes.
 | **Self-join elimination** | planner-side | applies to the emitter's `node` self-joins without code. |
 | **`OR` → `= ANY(array)`** | emitter-side | the emitter writes `= ANY($1)` itself for `MATCHES` lists; the planner transformation is not relied on. |
 | **`jsonb` null → SQL `NULL` cast** | not relied on | no emitter site depends on it. |
-| **Partition planner improvements** | not yet | no relation is partitioned today; the storage redesign (#3337) partitions the version and node tables by tier. |
+| **Partition planner improvements** | **used** | `version`, `node` and `vo_attestation` are `PARTITION BY LIST (tier)` in both change-control domains. AQL writes `tier = 'hot'` as a literal so the cold partition is pruned at plan time; an `UPDATE` of the partition key is how archival moves rows, and the referencing rows follow through `ON UPDATE CASCADE` (verified first-hand on 18.6 — the documentation neither permits nor forbids it). |
 
 ## Feature → subsystem mapping (what the code actually does)
 
 - **Persistence / service layer:** `uuidv7()` for database-minted ids; one
   CTE chain per Contribution with `INSERT … ON CONFLICT` for the idempotent
-  rows; the temporal key on `linkage.party_ehr`.
+  rows and the head-row upsert; heap-only updates on `vo_head`; list
+  partitioning by tier on the change-control relations; the temporal key on
+  `linkage.party_ehr`.
 - **AQL engine:** `jsonb_path_query_first`, lateral `jsonb_path_query`,
   `ext.openehr_magnitude`, `ext.openehr_timestamp`, integer nested-set joins,
   promoted btree columns, `= ANY` lists (`.claude/rules/aql-engine.md`).

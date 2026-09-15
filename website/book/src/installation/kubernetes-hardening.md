@@ -35,7 +35,7 @@ what it did **not** exercise, so silence is never read as coverage.
 | [The cluster: hosts, control plane, access](hardening-cluster.md) | node and OS hardening, the supported version window, rolling upgrades, advisories, etcd, the port surface, cluster API access, cluster RBAC, kubelet authentication |
 | [Images: build, provenance, scanning](hardening-supply-chain.md) | the distroless image and what it costs you during an incident, keyless signing and the identity to trust, copyable admission policies, scanning after release, the full supply-chain map |
 | [The workload: security context & admission](hardening-workload.md) | the applied security context, user namespaces, AppArmor, Restricted-profile compliance versus enforcement, sandboxing, kernel modules |
-| [Namespaces, network & policy](hardening-network-policy.md) | namespace scoping, the two tenant models, the service-mesh decision, which admission engine, resource bounds in four layers, deny-by-default egress |
+| [Namespaces, network & policy](hardening-network-policy.md) | namespace scoping, one instance per organisation, the service-mesh decision, which admission engine, resource bounds in four layers, deny-by-default egress |
 | [Secrets, detection & response](hardening-detection-response.md) | Secrets at rest and exactly what ours contain, runtime detection on a shell-less image, per-replica alerting, breach containment and credential rotation, the two log streams, managed control planes |
 
 ## The ownership map
@@ -60,9 +60,9 @@ what it did **not** exercise, so silence is never read as coverage.
 | Supply chain | **CI**, with two gaps | [images](hardening-supply-chain.md#the-supply-chain-map) |
 | Pod/container security context | **chart** | [workload](hardening-workload.md#the-security-context-and-what-keeps-it-true) |
 | Pod Security Admission enforcement | operator (one `kubectl label`) | [workload](hardening-workload.md#pod-security-admission-complying-versus-being-refused) |
-| Container sandboxing | neither; a recorded decision | [workload](hardening-workload.md#sandboxing-is-not-tenant-isolation) |
+| Container sandboxing | neither; a recorded decision | [workload](hardening-workload.md#sandboxing-is-not-a-substitute-for-instance-separation) |
 | Kernel-module loading | **satisfied by the chart** | [workload](hardening-workload.md#kernel-modules-already-impossible) |
-| Namespace isolation | **chart** (namespace-scoped by construction) | [network](hardening-network-policy.md#namespaces-and-the-two-tenant-models) |
+| Namespace isolation | **chart** (namespace-scoped by construction) | [network](hardening-network-policy.md#namespaces-and-one-instance-per-organisation) |
 | Service mesh | neither; a recorded decision | [network](hardening-network-policy.md#service-mesh-a-recorded-decision) |
 | Centralized policy management | operator, for admission only | [network](hardening-network-policy.md#centralized-policy-and-which-engine) |
 | Container resource bounds | **chart** | [network](hardening-network-policy.md#resource-bounds-four-layers) |

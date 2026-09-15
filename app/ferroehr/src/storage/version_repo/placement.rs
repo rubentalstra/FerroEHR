@@ -26,7 +26,7 @@ use crate::storage::error::StorageError;
 pub struct TipRow {
     /// The owning EHR, or `None` for a demographic versioned object.
     pub ehr_id: Option<EhrId>,
-    /// The `vo_version.kind` discriminator text.
+    /// The `version.kind` discriminator text.
     pub kind: String,
     /// The per-object storage commit ordinal — NOT the wire version number.
     pub sys_version: i32,
@@ -40,7 +40,10 @@ pub struct TipRow {
     pub creating_system_id: String,
     /// The `version_lifecycle_state` numeric code.
     pub lifecycle_state: String,
-    /// Whether the tip is still open (`upper_inf(sys_period)`).
+    /// Whether this version is still the tip of its own lineage: no later
+    /// commit ordinal exists under the same branch number (RM common master06
+    /// §The 'Virtual Version Tree' — a branch fork does not supersede the
+    /// trunk).
     pub open: bool,
 }
 
@@ -79,6 +82,38 @@ pub struct Placement {
     pub now: jiff::Timestamp,
 }
 
+/// The leading data-modifying CTEs that bring an archived object back to the
+/// hot tier before a write lands on it.
+///
+/// One `UPDATE` of the partition key per relation set: the node and attestation
+/// rows follow their version rows through the foreign keys' `ON UPDATE
+/// CASCADE`, so neither is named here. Both statements match nothing in the
+/// common unarchived case.
+macro_rules! thaw_cte {
+    () => {
+        concat!(
+            "WITH tv AS (UPDATE version SET tier = 'hot' ",
+            "            WHERE vo_id = $1 AND tier = 'cold'), ",
+            "th AS (UPDATE vo_head SET tier = 'hot', archived_at = NULL, archive_reason = NULL ",
+            "       WHERE vo_id = $1 AND tier = 'cold'), "
+        )
+    };
+}
+
+/// Whether the row `t` is still the tip of its own lineage.
+///
+/// The store is append-only, so there is no open-ended validity interval to
+/// test: a version is superseded exactly when a later commit ordinal exists
+/// under the same branch number. A fork onto a branch carries a branch number
+/// of its own and therefore does not supersede the trunk (RM common master06
+/// §The 'Virtual Version Tree').
+macro_rules! is_lineage_tip {
+    () => {
+        "NOT EXISTS (SELECT 1 FROM src s \
+         WHERE s.branch_number = t.branch_number AND s.sys_version > t.sys_version)"
+    };
+}
+
 /// The version-tree placement read, merged into ONE statement — the thaw
 /// included.
 ///
@@ -90,13 +125,13 @@ pub struct Placement {
 /// master06 §Digital Signature) and commit through the folded CTE
 /// unconditionally.
 ///
-/// A new version must never land in the primary tier while its predecessors sit
-/// in the cold one, so the statement's leading data-modifying CTEs move any
-/// archived rows back first, as primary-key probes that find nothing in the
-/// common unarchived case. A same-statement `INSERT` is invisible to the sibling
-/// scans (<https://www.postgresql.org/docs/18/queries-with.html>), so the
-/// placement reads run over `vo_version` UNION ALL the thaw's own `RETURNING`
-/// rows.
+/// A new version must never land in the hot tier while its predecessors sit in
+/// the cold one, so the statement's leading data-modifying CTEs move any
+/// archived rows back first. The reads need no union to see them: `version` is
+/// partitioned by tier, so naming the parent relation reads both tiers, and the
+/// thaw's own effects being invisible to the sibling scans
+/// (<https://www.postgresql.org/docs/18/queries-with.html>) does not matter
+/// when the pre-statement snapshot already carries the rows.
 ///
 /// # Errors
 /// Returns [`StorageError::Database`] on a driver failure.
@@ -108,20 +143,10 @@ pub async fn next_placement(
     macro_rules! placement_select {
         ($tip_where:literal) => {
             concat!(
-                "WITH cv AS (DELETE FROM cold_vo_version WHERE vo_id = $1 RETURNING *), ",
-                "cn AS (DELETE FROM cold_node WHERE vo_id = $1 RETURNING *), ",
-                "ct AS (DELETE FROM cold_vo_attestation WHERE vo_id = $1 RETURNING *), ",
-                "cm AS (DELETE FROM vo_archive WHERE vo_id = $1), ",
-                "iv AS (INSERT INTO vo_version SELECT * FROM cv), ",
-                "inn AS (INSERT INTO node SELECT * FROM cn), ",
-                "it AS (INSERT INTO vo_attestation SELECT * FROM ct), ",
+                thaw_cte!(),
                 "src AS (SELECT vo_id, ehr_id, kind, sys_version, trunk_version, branch_number, ",
-                "               branch_version, creating_system_id, lifecycle_state, sys_period ",
-                "        FROM vo_version WHERE vo_id = $1 ",
-                "        UNION ALL ",
-                "        SELECT vo_id, ehr_id, kind, sys_version, trunk_version, branch_number, ",
-                "               branch_version, creating_system_id, lifecycle_state, sys_period ",
-                "        FROM cv) ",
+                "               branch_version, creating_system_id, lifecycle_state ",
+                "        FROM version WHERE vo_id = $1) ",
                 "SELECT o.next_ordinal, now() AS ts, tip.ehr_id, tip.kind, tip.sys_version, ",
                 "tip.trunk_version, tip.branch_number, tip.branch_version, ",
                 "tip.creating_system_id, tip.lifecycle_state, tip.open ",
@@ -130,7 +155,9 @@ pub async fn next_placement(
                 "LEFT JOIN LATERAL ( ",
                 "    SELECT t.ehr_id, t.kind, t.sys_version, t.trunk_version, ",
                 "           t.branch_number, t.branch_version, t.creating_system_id, ",
-                "           t.lifecycle_state, upper_inf(t.sys_period) AS open ",
+                "           t.lifecycle_state, ",
+                is_lineage_tip!(),
+                " AS open ",
                 "    FROM src t WHERE ",
                 $tip_where,
                 ") tip ON true"
@@ -140,7 +167,9 @@ pub async fn next_placement(
     let row = match expected {
         None => {
             sqlx::query(placement_select!(
-                "t.vo_id = $1 AND upper_inf(t.sys_period) AND t.branch_number = 0 "
+                "t.branch_number = 0 \
+                 AND t.sys_version = (SELECT MAX(s.sys_version) FROM src s \
+                                      WHERE s.branch_number = 0) "
             ))
             .bind(vo_id)
             .fetch_one(&mut *tx)
@@ -148,7 +177,7 @@ pub async fn next_placement(
         }
         Some((t, b, v)) => {
             sqlx::query(placement_select!(
-                "t.vo_id = $1 AND t.trunk_version = $2 AND t.branch_number = $3 \
+                "t.trunk_version = $2 AND t.branch_number = $3 \
                  AND t.branch_version = $4 "
             ))
             .bind(vo_id)
@@ -176,7 +205,7 @@ pub struct UpdatePlacement {
     /// timestamp). `tip = None` when the object has no current open trunk
     /// version.
     pub placement: Placement,
-    /// The tip's commit instant (`audit.time_committed`) — the `ETag` /
+    /// The tip's commit instant (`version.committed_at`) — the `ETag` /
     /// `If-Match` metadata instant. `None` iff there is no tip.
     pub tip_time_committed: Option<jiff::Timestamp>,
     /// The owning EHR's promoted `is_modifiable` flag. `None` iff there is no
@@ -198,10 +227,13 @@ pub struct UpdatePlacement {
 /// gate has already pinned the addressed version to the current trunk tip, so
 /// no expectation-addressed variant exists here) extended with the columns the
 /// former pool pre-read (`super::meta::current_composition_meta`) carried: the
-/// tip audit's commit instant, the owning EHR's `is_modifiable`, the stored
-/// template id, and the first content version's root fields. Run under the
-/// per-vo advisory lock inside the write transaction, it replaces that pool
-/// round trip entirely. No openEHR spec governs the SQL — our own design.
+/// tip's commit instant, the owning EHR's `is_modifiable`, the stored template
+/// id, and the first content version's root fields. The commit instant needs no
+/// join now that the version row carries `committed_at` (RM common master06
+/// §Committal and Audits: the contribution audit is copied into every version).
+/// Run under the per-vo advisory lock inside the write transaction, it replaces
+/// that pool round trip entirely. No openEHR spec governs the SQL — our own
+/// design.
 ///
 /// # Errors
 /// Returns [`StorageError::Database`] on a driver failure.
@@ -215,43 +247,32 @@ pub async fn update_placement(
     // targeted laterals instead — each touches exactly one row's body (the
     // tip's, and the earliest content version's).
     const SQL: &str = concat!(
-        "WITH cv AS (DELETE FROM cold_vo_version WHERE vo_id = $1 RETURNING *), ",
-        "cn AS (DELETE FROM cold_node WHERE vo_id = $1 RETURNING *), ",
-        "ct AS (DELETE FROM cold_vo_attestation WHERE vo_id = $1 RETURNING *), ",
-        "cm AS (DELETE FROM vo_archive WHERE vo_id = $1), ",
-        "iv AS (INSERT INTO vo_version SELECT * FROM cv), ",
-        "inn AS (INSERT INTO node SELECT * FROM cn), ",
-        "it AS (INSERT INTO vo_attestation SELECT * FROM ct), ",
+        thaw_cte!(),
         "src AS (SELECT vo_id, ehr_id, kind, sys_version, trunk_version, branch_number, ",
-        "               branch_version, creating_system_id, lifecycle_state, sys_period, ",
-        "               audit_id ",
-        "        FROM vo_version WHERE vo_id = $1 ",
-        "        UNION ALL ",
-        "        SELECT vo_id, ehr_id, kind, sys_version, trunk_version, branch_number, ",
-        "               branch_version, creating_system_id, lifecycle_state, sys_period, ",
-        "               audit_id ",
-        "        FROM cv) ",
+        "               branch_version, creating_system_id, lifecycle_state, committed_at ",
+        "        FROM version WHERE vo_id = $1) ",
         "SELECT o.next_ordinal, now() AS ts, tip.ehr_id, tip.kind, tip.sys_version, ",
         "tip.trunk_version, tip.branch_number, tip.branch_version, ",
         "tip.creating_system_id, tip.lifecycle_state, tip.open, ",
-        "a.time_committed, e.is_modifiable, tb.stored_template, ",
+        "tip.committed_at AS time_committed, e.is_modifiable, tb.stored_template, ",
         "fv.found AS first_found, fv.ani AS first_ani, fv.category AS first_category ",
         "FROM (SELECT (COALESCE(MAX(sys_version), 0) + 1)::int AS next_ordinal ",
         "      FROM src) o ",
         "LEFT JOIN LATERAL ( ",
         "    SELECT t.ehr_id, t.kind, t.sys_version, t.trunk_version, ",
         "           t.branch_number, t.branch_version, t.creating_system_id, ",
-        "           t.lifecycle_state, upper_inf(t.sys_period) AS open, t.audit_id ",
-        "    FROM src t WHERE upper_inf(t.sys_period) AND t.branch_number = 0 ",
+        "           t.lifecycle_state, t.committed_at, ",
+        is_lineage_tip!(),
+        " AS open ",
+        "    FROM src t WHERE t.branch_number = 0 ",
+        "      AND t.sys_version = (SELECT MAX(s.sys_version) FROM src s ",
+        "                           WHERE s.branch_number = 0) ",
         ") tip ON true ",
-        "LEFT JOIN audit a ON a.id = tip.audit_id ",
         "LEFT JOIN ehr e ON e.id = tip.ehr_id ",
         "LEFT JOIN LATERAL ( ",
         "    SELECT (b.body)::jsonb #>> '{archetype_details,template_id,value}' AS stored_template ",
-        "    FROM (SELECT body FROM vo_version ",
-        "          WHERE vo_id = $1 AND sys_version = tip.sys_version ",
-        "          UNION ALL ",
-        "          SELECT body FROM cv WHERE cv.sys_version = tip.sys_version) b ",
+        "    FROM version b ",
+        "    WHERE b.vo_id = $1 AND b.sys_version = tip.sys_version ",
         "    LIMIT 1 ",
         ") tb ON true ",
         "LEFT JOIN LATERAL ( ",
@@ -261,11 +282,8 @@ pub async fn update_placement(
         "    SELECT true AS found, ",
         "           (b.body)::jsonb ->> 'archetype_node_id' AS ani, ",
         "           (b.body)::jsonb #>> '{category,defining_code,code_string}' AS category ",
-        "    FROM (SELECT f.sys_version, f.body ",
-        "          FROM (SELECT sys_version, body FROM vo_version ",
-        "                WHERE vo_id = $1 AND body IS NOT NULL ",
-        "                UNION ALL ",
-        "                SELECT sys_version, body FROM cv WHERE body IS NOT NULL) f ",
+        "    FROM (SELECT f.body FROM version f ",
+        "          WHERE f.vo_id = $1 AND f.body IS NOT NULL ",
         "          ORDER BY f.sys_version LIMIT 1) b ",
         ") fv ON true"
     );
@@ -315,7 +333,7 @@ pub async fn next_branch_number(
     trunk_version: i32,
 ) -> Result<i32, StorageError> {
     Ok(sqlx::query_scalar(
-        "SELECT COALESCE(MAX(branch_number), 0) + 1 FROM vo_version \
+        "SELECT COALESCE(MAX(branch_number), 0) + 1 FROM version \
          WHERE vo_id = $1 AND trunk_version = $2",
     )
     .bind(vo_id)

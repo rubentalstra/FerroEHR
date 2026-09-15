@@ -264,8 +264,8 @@ impl FerroEhrService {
     }
 
     /// The `(vo_id, kind)` of every versioned object currently in the EHR (one
-    /// row per version container — its current, `upper_inf`, trunk version),
-    /// ordered by id for a deterministic extract.
+    /// row per version container — its trunk head, `vo_head`), ordered by id
+    /// for a deterministic extract.
     /// The primary set of one manifest entity: an explicit `item_list`; else
     /// the criteria queries (`master04-common_package.adoc` §`EXTRACT_SPEC`:
     /// criteria define "which items are to be retrieved from each entity's
@@ -414,9 +414,10 @@ impl FerroEhrService {
         ehr_id: EhrId,
     ) -> Result<Vec<(VoId, String)>, ServiceError> {
         let rows = sqlx::query(
-            "SELECT vo_id, kind FROM vo_version_all \
-             WHERE ehr_id = $1 AND upper_inf(sys_period) AND branch_number = 0 \
-             ORDER BY vo_id",
+            "SELECT version.vo_id, version.kind FROM version \
+             JOIN vo_head h ON h.vo_id = version.vo_id AND h.trunk_head_sys_version = version.sys_version \
+             WHERE version.ehr_id = $1 \
+             ORDER BY version.vo_id",
         )
         .bind(ehr_id)
         .fetch_all(&self.pool)
@@ -436,9 +437,9 @@ impl FerroEhrService {
         vo_id: VoId,
     ) -> Result<Option<String>, ServiceError> {
         Ok(sqlx::query_scalar(
-            "SELECT kind FROM vo_version_all \
-             WHERE vo_id = $1 AND ehr_id = $2 AND upper_inf(sys_period) \
-             AND branch_number = 0",
+            "SELECT version.kind FROM version \
+             JOIN vo_head h ON h.vo_id = version.vo_id AND h.trunk_head_sys_version = version.sys_version \
+             WHERE version.vo_id = $1 AND version.ehr_id = $2",
         )
         .bind(vo_id)
         .bind(ehr_id)
@@ -447,11 +448,13 @@ impl FerroEhrService {
     }
 
     /// The `sys_version`s of a version container, in order, each flagged with
-    /// whether it is the current (`upper_inf`, trunk) version.
+    /// whether it is the current trunk version (`vo_head.trunk_head_sys_version`).
     async fn vo_version_numbers(&self, vo_id: VoId) -> Result<Vec<(i32, bool)>, ServiceError> {
         let rows = sqlx::query(
-            "SELECT sys_version, (upper_inf(sys_period) AND branch_number = 0) AS is_current \
-             FROM vo_version_all WHERE vo_id = $1 ORDER BY sys_version",
+            "SELECT sys_version, EXISTS(SELECT 1 FROM vo_head h \
+                 WHERE h.vo_id = version.vo_id \
+                   AND h.trunk_head_sys_version = version.sys_version) AS is_current \
+             FROM version WHERE vo_id = $1 ORDER BY sys_version",
         )
         .bind(vo_id)
         .fetch_all(&self.pool)
@@ -475,7 +478,7 @@ impl FerroEhrService {
         }
         let ids: Vec<Uuid> = vo_ids.iter().map(|v| v.0).collect();
         let rows = sqlx::query(
-            "SELECT vo_id, count(*) AS n FROM vo_version_all WHERE vo_id = ANY($1) GROUP BY vo_id",
+            "SELECT vo_id, count(*) AS n FROM version WHERE vo_id = ANY($1) GROUP BY vo_id",
         )
         .bind(&ids)
         .fetch_all(&self.demographic_pool)

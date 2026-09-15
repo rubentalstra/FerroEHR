@@ -8,7 +8,7 @@
 //! adapter-side assembly the router consumes.
 
 use ferroehr::config::auth::AuthConfig;
-use ferroehr::config::server::{AdminConfig, ServerConfig, TenancyConfig};
+use ferroehr::config::server::{AdminConfig, ServerConfig};
 use ferroehr::config::smart::SmartConfig;
 
 /// The REST adapter's runtime configuration view, assembled by the binary
@@ -25,8 +25,6 @@ pub struct AppConfig {
     pub auth: AuthConfig,
     /// `[admin]` — the ADMIN API group toggle.
     pub admin: AdminConfig,
-    /// `[tenancy]` — multi-tenancy.
-    pub tenancy: TenancyConfig,
     /// `[smart]` — SMART App Launch resource-server posture.
     pub smart: SmartConfig,
     /// `[fhir].api_enabled` — mount the FHIR R4 inbound façade + admin mapping.
@@ -78,7 +76,6 @@ mod tests {
         let c = AppConfig::default();
         assert!(c.auth.enabled);
         assert!(!c.admin.enabled);
-        assert!(!c.tenancy.enabled);
         assert!(!c.smart.enabled);
         assert!(!c.fhir_api_enabled);
         assert!(!c.terminology_api_enabled);

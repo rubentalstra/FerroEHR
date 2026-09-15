@@ -785,7 +785,16 @@ fn full_scalar_function_set_plans() {
 /// subquery (a direct `ehr.is_queryable` column filter over a join),
 /// so every remaining `EXISTS` is a containment anchor (OR / NOT CONTAINS).
 fn anchor_exists(sql: &str) -> usize {
-    sql.matches("EXISTS(SELECT").count()
+    sql.matches("EXISTS(SELECT")
+        .count()
+        .saturating_sub(currency_probes(sql))
+}
+
+/// The trunk-head currency probes in `sql`: the `EXISTS` over `vo_head` every
+/// `LATEST_VERSION` version alias carries (`vo_head.trunk_head_sys_version` IS
+/// the trunk head — RM common master06 §The 'Virtual Version Tree').
+fn currency_probes(sql: &str) -> usize {
+    sql.matches(r#"FROM "vo_head" AS "#).count()
 }
 
 /// A predicate whose leaf crosses a MULTI-VALUED FRAGMENT attribute
@@ -1155,14 +1164,14 @@ fn projection_of_context_start_time_is_not_promoted() {
 }
 
 /// uid synthesis: `c/uid/value` on a COMPOSITION variable synthesizes the `OBJECT_VERSION_ID`
-/// from the joined `vo_version` (RM common master06 §Version Identification) —
+/// from the joined `version` (RM common master06 §Version Identification) —
 /// it is not stored in the fragment.
 #[test]
-fn composition_uid_value_is_synthesized_from_vo_version() {
+fn composition_uid_value_is_synthesized_from_the_version_row() {
     let sql = build_sql("SELECT c/uid/value FROM EHR e CONTAINS COMPOSITION c");
     assert!(
         sql.contains("creating_system_id"),
-        "uid/value is composed from vo_version columns: {sql}"
+        "uid/value is composed from version columns: {sql}"
     );
 }
 
@@ -1291,7 +1300,7 @@ fn population_gate_is_single_and_column_filtered() {
         "exactly one population gate on the EHR alias: {sql}"
     );
     assert!(
-        !sql.contains("AS \"qgv") && !sql.contains("EXISTS(SELECT"),
+        !sql.contains("AS \"qgv") && anchor_exists(&sql) == 0,
         "the per-EHR_STATUS EXISTS gate is gone: {sql}"
     );
 }
@@ -1312,9 +1321,40 @@ fn unlinked_vo_root_keeps_its_own_gate() {
         "the gate correlates the joined ehr row to the VO root's ehr_id: {sql}"
     );
     assert!(
-        !sql.contains("EXISTS(SELECT"),
+        anchor_exists(&sql) == 0,
         "the gate is a join + column filter, not an EXISTS probe: {sql}"
     );
+}
+
+/// Every partitioned relation the emitter names carries `tier = 'hot'` as a
+/// SQL LITERAL, never a bound parameter.
+///
+/// `version`, `node` and `vo_attestation` are partitioned by tier; a literal is
+/// what lets PostgreSQL prune the cold partition at PLAN time rather than at
+/// execution (PostgreSQL 18, "Partition Pruning"). Archived content therefore
+/// leaves the queryable store until it is restored. No openEHR spec governs
+/// storage tiering — our own design/extension.
+#[test]
+fn every_partitioned_relation_is_pinned_to_the_hot_tier_by_a_literal() {
+    for aql in [
+        "SELECT c/uid/value FROM EHR e CONTAINS COMPOSITION c",
+        WARD_QUERY,
+        "SELECT f1/name/value FROM EHR e CONTAINS FOLDER f1 NOT CONTAINS FOLDER f2",
+        "SELECT c/uid/value FROM EHR e CONTAINS VERSION v[ALL_VERSIONS] CONTAINS COMPOSITION c",
+    ] {
+        let sql = build_sql(aql);
+        // One `tier =` comparison per partitioned relation in the statement,
+        // and every one of them written out.
+        let comparisons = sql.matches(r#""tier" = "#).count();
+        // sea-query parenthesises a custom expression, so the emitted form is
+        // `"x"."tier" = ('hot')` — a literal either way.
+        let literals = sql.matches(r#""tier" = ('hot')"#).count();
+        assert!(comparisons > 0, "no tier predicate at all in: {sql}");
+        assert_eq!(
+            literals, comparisons,
+            "every tier predicate must be the literal 'hot', never a bind: {sql}"
+        );
+    }
 }
 
 // ── the LIMIT-streaming FROM shape ───────────────────────────────────────────
@@ -1342,7 +1382,7 @@ const WARD_QUERY: &str = "SELECT e/ehr_id/value, c/uid/value \
 /// A LIMIT-bearing, unordered population query lowers to the STREAMING
 /// shape: the version spine is the single FROM item, every node source is a
 /// `LATERAL` subquery behind the `OFFSET 0` pull-up fence, and the root is
-/// pre-filtered by `vo_version.kind` — so the planner walks current versions
+/// pre-filtered by `version.kind` — so the planner walks current versions
 /// lazily and stops at the LIMIT instead of materializing an
 /// archetype-anchor bitmap over the corpus (QUERY master03 §LIMIT: without
 /// ORDER BY, which rows return is explicitly non-deterministic).
@@ -1350,7 +1390,7 @@ const WARD_QUERY: &str = "SELECT e/ehr_id/value, c/uid/value \
 fn limit_without_order_by_streams() {
     let sql = build_sql_limited(WARD_QUERY);
     assert!(
-        sql.contains(r#"FROM "vo_version" AS "v"#),
+        sql.contains(r#"FROM "version" AS "v"#),
         "the version spine drives: {sql}"
     );
     // The dead-root elision (the post-streaming ladder's rung 1): this query
@@ -1504,7 +1544,7 @@ fn streaming_shape_keeps_the_population_gate() {
     // still the streaming shape (the spine drives), now with zero laterals.
     let bare = build_sql_limited("SELECT c/uid/value FROM COMPOSITION c");
     assert!(
-        bare.contains(r#"FROM "vo_version""#) && !bare.contains("JOIN LATERAL"),
+        bare.contains(r#"FROM "version""#) && !bare.contains("JOIN LATERAL"),
         "a bare uid-only VO root streams as the spine alone: {bare}"
     );
     assert!(
@@ -1530,16 +1570,20 @@ fn name_term_code_predicate_decomposes() {
             && dumped.contains("code: \"313267000\""),
         "parts decomposed (version suffix stays with the terminology): {dumped}"
     );
-    // SQL shape: TWO fragment extractions ANDed on the constrained node (the
-    // jsonpath text itself binds as a parameter).
+    // SQL shape: the two PROMOTED columns ANDed on the constrained node, never
+    // a JSON probe — the decomposer writes both at commit (QUERY
+    // master03-syntax §Node predicate).
     let sql = build_sql(
         "SELECT o/name/value FROM COMPOSITION c CONTAINS \
          OBSERVATION o CONTAINS ELEMENT e[at0002, snomed_ct(3.1)::313267000]",
     );
-    let extracts = sql.matches(r#"jsonb_path_query_first("n2"."data""#).count();
     assert!(
-        extracts >= 2,
-        "code_string AND terminology_id both extracted on the node: {sql}"
+        sql.contains(r#"("n2"."name_code" = $"#) && sql.contains(r#""n2"."name_terminology" = $"#),
+        "code_string AND terminology_id both compared as promoted columns: {sql}"
+    );
+    assert!(
+        !sql.contains(r#"jsonb_path_query_first("n2"."data""#),
+        "the coded-name predicate opens no JSON fragment: {sql}"
     );
 }
 
@@ -1692,7 +1736,7 @@ fn like_and_matches_lower_existentially_on_anchored_leaves() {
          WHERE NOT c/context/other_context[at0001]/items[at0002]/value/value LIKE 'x*'",
     );
     assert!(
-        !negated.contains("EXISTS(SELECT"),
+        anchor_exists(&negated) == 0,
         "negative polarity keeps the scalar lowering: {negated}"
     );
 }
@@ -1828,7 +1872,7 @@ fn not_contains_folder_negates_the_union_edge() {
         "the reference branch is the items lookup: {sql}"
     );
     assert!(
-        sql.contains("upper_inf"),
+        sql.contains(r#""xv1_head"."trunk_head_sys_version" = "xv1"."sys_version""#),
         "the branch folder binds its own version spine at latest scope: {sql}"
     );
 }

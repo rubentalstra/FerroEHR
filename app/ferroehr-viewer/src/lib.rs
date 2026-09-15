@@ -67,7 +67,6 @@ pub mod scopes;
 pub mod session_client;
 pub mod subscriptions;
 pub mod system_api;
-pub mod tenants;
 pub mod terminology;
 pub mod theme;
 pub mod uid;

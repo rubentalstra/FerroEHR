@@ -41,7 +41,7 @@ pub fn decompose(root: Value) -> Result<Vec<NodeRow>, StorageError> {
     }
 
     let mut rows = Vec::new();
-    walk(root, String::new(), -1, None, &mut rows)?;
+    walk(root, String::new(), -1, &mut rows)?;
 
     // num_cap: children always follow their parents — one reverse pass. `walk`
     // pushes rows in pre-order with `num == index`, so a row's `parent_num` is
@@ -77,7 +77,6 @@ fn walk(
     mut json: Value,
     path: String,
     parent: i32,
-    citem: Option<i32>,
     rows: &mut Vec<NodeRow>,
 ) -> Result<(), StorageError> {
     let index = rows.len();
@@ -107,17 +106,19 @@ fn walk(
         .and_then(|n| n.get("value"))
         .and_then(Value::as_str)
         .map(str::to_owned);
-    // The archetype ancestor for at-code scoping (this node if it carries a full
-    // archetype id itself, else inherited).
-    let child_citem = if archetype
-        .as_deref()
-        .is_some_and(|a| a.starts_with("openehr-"))
-    // the column is case-folded at write (above)
-    {
-        Some(num)
-    } else {
-        citem
-    };
+    // The coded half of a DV_CODED_TEXT name, promoted so the AQL node
+    // predicate matches a coded name without a JSON probe (QUERY
+    // master03-syntax.adoc §Node predicate). Absent on a plain DV_TEXT name.
+    let defining_code = json.get("name").and_then(|n| n.get("defining_code"));
+    let name_code = defining_code
+        .and_then(|c| c.get("code_string"))
+        .and_then(Value::as_str)
+        .map(str::to_owned);
+    let name_terminology = defining_code
+        .and_then(|c| c.get("terminology_id"))
+        .and_then(|t| t.get("value"))
+        .and_then(Value::as_str)
+        .map(str::to_owned);
     // Promoted-leaf capture (our own storage design — no openEHR spec
     // governs it): read the hot leaves off the node's *pre-pruning* JSON (the
     // value may sit inside an about-to-be-split structure child, e.g.
@@ -130,20 +131,21 @@ fn walk(
         num,
         num_cap: num,
         parent_num: parent.max(0),
-        citem_num: citem,
         rm_type,
         archetype,
         arch_entity,
         arch_concept,
         arch_major,
         name,
+        name_code,
+        name_terminology,
         path: String::new(),
         data: Value::Null,
         promoted,
     });
 
     if let Value::Object(map) = &mut json {
-        prune_children(map, &path, num, child_citem, rows)?;
+        prune_children(map, &path, num, rows)?;
     }
     // `index` is the slot this call pushed above, so it exists; fetched rather
     // than indexed so a future restructuring of `walk` cannot panic here.
@@ -167,7 +169,6 @@ fn prune_children(
     map: &mut Map<String, Value>,
     path: &str,
     num: i32,
-    citem: Option<i32>,
     rows: &mut Vec<NodeRow>,
 ) -> Result<(), StorageError> {
     let mut structure_attributes: Vec<String> = Vec::new();
@@ -179,11 +180,11 @@ fn prune_children(
     for attribute in structure_attributes {
         match map.shift_remove(&attribute) {
             Some(child @ Value::Object(_)) => {
-                walk(child, format!("{path}{attribute}."), num, citem, rows)?;
+                walk(child, format!("{path}{attribute}."), num, rows)?;
             }
             Some(Value::Array(items)) => {
                 for (i, item) in items.into_iter().enumerate() {
-                    walk(item, format!("{path}{attribute}{i}."), num, citem, rows)?;
+                    walk(item, format!("{path}{attribute}{i}."), num, rows)?;
                 }
             }
             _ => {}
@@ -357,7 +358,7 @@ mod tests {
         })
     }
 
-    type BriefRow<'a> = (&'a str, &'a str, i32, i32, i32, Option<i32>);
+    type BriefRow<'a> = (&'a str, &'a str, i32, i32, i32);
 
     #[test]
     fn decomposes_with_nested_set_numbers() {
@@ -371,18 +372,17 @@ mod tests {
                     r.num,
                     r.num_cap,
                     r.parent_num,
-                    r.citem_num,
                 )
             })
             .collect();
         assert_eq!(
             brief,
             vec![
-                ("COMPOSITION", "", 0, 4, 0, None),
-                ("EVENT_CONTEXT", "context.", 1, 1, 0, Some(0)),
-                ("OBSERVATION", "content0.", 2, 4, 0, Some(0)),
-                ("HISTORY", "content0.data.", 3, 4, 2, Some(2)),
-                ("POINT_EVENT", "content0.data.events0.", 4, 4, 3, Some(2)),
+                ("COMPOSITION", "", 0, 4, 0),
+                ("EVENT_CONTEXT", "context.", 1, 1, 0),
+                ("OBSERVATION", "content0.", 2, 4, 0),
+                ("HISTORY", "content0.data.", 3, 4, 2),
+                ("POINT_EVENT", "content0.data.events0.", 4, 4, 3),
             ]
         );
         // Structure children are pruned out of the parent fragments.
@@ -619,9 +619,6 @@ mod tests {
                 ("ELEMENT", "details.items0."),
             ]
         );
-        // Every container is at-coded here, so the whole tree is scoped by the
-        // PERSON root's own archetype id.
-        assert!(rows.iter().skip(1).all(|r| r.citem_num == Some(0)));
         assert_eq!(round_trip(&rows), original);
     }
 
@@ -650,11 +647,10 @@ mod tests {
         assert_eq!(round_trip(&rows), original);
     }
 
-    /// An archetyped container is the `citem` ancestor of its own subtree, so
-    /// an at-coded leaf under an `ADDRESS` is scoped by the ADDRESS archetype
-    /// rather than by the party root's.
+    /// A container carrying a full archetype HRID gets the promoted
+    /// subsumption columns parsed from it, and the tree still round-trips.
     #[test]
-    fn an_archetyped_address_scopes_its_own_leaves() {
+    fn an_archetyped_address_carries_its_own_subsumption_columns() {
         let mut original = person();
         original["contacts"][0]["addresses"][0]["archetype_node_id"] =
             json!("openEHR-DEMOGRAPHIC-ADDRESS.address.v1");
@@ -670,19 +666,17 @@ mod tests {
             Some("address"),
             "the ADDRESS row carries the promoted subsumption columns"
         );
-        assert_eq!(address.citem_num, Some(0), "scoped by the PERSON root");
-        for path in [
-            "contacts0.addresses0.details.",
-            "contacts0.addresses0.details.items0.",
-        ] {
-            assert_eq!(
-                row(path).citem_num,
-                Some(address.num),
-                "{path} is scoped by the ADDRESS"
-            );
-        }
-        // An at-coded sibling container keeps inheriting the party root.
-        assert_eq!(row("identities0.details.items0.").citem_num, Some(0));
+        assert_eq!(
+            address.arch_entity.as_deref(),
+            Some("openehr-demographic-address"),
+            "the entity half is parsed and lowercased"
+        );
+        assert_eq!(address.arch_major, Some(1));
+        // An at-coded sibling leaves them unset: only a full HRID populates
+        // them (BASE base_types master05 §Archetype Identifiers).
+        let at_coded = row("identities0.details.items0.");
+        assert_eq!(at_coded.arch_entity, None);
+        assert_eq!(at_coded.arch_concept, None);
         assert_eq!(round_trip(&rows), original);
     }
 

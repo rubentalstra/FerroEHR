@@ -13,7 +13,7 @@
 //! checked as the last possible spec home: master14 governs
 //! archetype-to-archetype data conversion (`GENERIC_ENTRY` + `FEEDER_AUDIT`) and
 //! not FHIR resources, message brokers or outbound emission; master13 is
-//! informative deployment guidance prescribing no eventing, multi-tenancy or
+//! informative deployment guidance prescribing no eventing or
 //! blob offload; master07 governs the `EHR_ACCESS` object and
 //! authn-at-deployment. The two places a submodule touches spec-defined data are
 //! the FHIR connector's `FEEDER_AUDIT` builder and the multimedia offload's
@@ -31,11 +31,8 @@
 //! | [`events`] | `events.enabled` |
 //! | [`fhir`] | `fhir.api_enabled` (routes) / `fhir.outbound.enabled` (emitter) |
 //! | [`multimedia`] | `multimedia.enabled` |
-//! | [`tenancy`] + [`tenant_context`] | tenancy-resolution middleware (configured) |
 
 pub mod events;
 pub mod fhir;
 pub mod multimedia;
 pub mod outbox;
-pub mod tenancy;
-pub mod tenant_context;

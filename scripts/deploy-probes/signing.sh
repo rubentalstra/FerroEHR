@@ -13,7 +13,7 @@
 # stored rows, change a byte of clinical content, and assert it is caught — the
 # only way to show the verification is real rather than a field nobody checks.
 # There are two stored copies of a version's content and one probe per copy:
-# vo_version.body, caught by the read path, and the node rows, caught by the
+# version.body, caught by the read path, and the node rows, caught by the
 # admin storage-parity sweep.
 #
 # Sourced by scripts/deploy-probe.sh; never run directly.
@@ -50,17 +50,17 @@ probes_signing() {
   # The one that makes the feature more than decoration. Reaching past the API
   # into the stored rows is the point: an attacker or a corrupt disk does not
   # go through the write path, so neither does this. The tamper target is
-  # vo_version.body — the materialized projection every point read serves. The
+  # version.body — the materialized projection every point read serves. The
   # node rows are the storage's OTHER copy, and P-NODE-TAMPER below covers
   # them through the channel that does see them.
   probe "P-SIGN-TAMPER" "broken" "server" "-" \
     "a tampered stored version is REFUSED on read, not served"
   local before after rows
   before="$(http_code -u "$BASIC" "$API/ehr/$ehr/versioned_ehr_status/version")"
-  rows="$(probe_psql "UPDATE ehr.vo_version
+  rows="$(probe_psql "UPDATE clinical.version
                          SET body = (jsonb_set((body)::jsonb, '{name,value}', '\"tampered\"'))::text
                        WHERE ehr_id = '$ehr'::uuid AND kind = 'EHR_STATUS';" \
-          && probe_psql "SELECT count(*) FROM ehr.vo_version
+          && probe_psql "SELECT count(*) FROM clinical.version
                           WHERE ehr_id = '$ehr'::uuid
                             AND (body)::jsonb #>> '{name,value}' = 'tampered';")"
   if [[ "${rows:-0}" = "0" ]]; then
@@ -76,7 +76,7 @@ probes_signing() {
   fi
   probe_done
 
-  # The storage keeps every version's content twice: vo_version.body, which the
+  # The storage keeps every version's content twice: version.body, which the
   # probe above covers, and the decomposed node rows the AQL engine queries. A
   # read-time signature check recomputes only the first, so a tampered node row
   # is invisible to it; the admin storage-parity sweep is the channel that sees
@@ -86,7 +86,7 @@ probes_signing() {
   local node_ehr node_vo node_rows sweep sweep_code
   node_ehr="$(curl -s -u "$BASIC" -X POST -D - -o /dev/null "$API/ehr" \
     | grep -i '^location' | tr -d '\r' | awk -F/ '{print $NF}')"
-  node_vo="$(probe_psql "SELECT vo_id FROM ehr.vo_version
+  node_vo="$(probe_psql "SELECT vo_id FROM clinical.version
                           WHERE ehr_id = '$node_ehr'::uuid AND kind = 'EHR_STATUS';" \
              | tr -d '[:space:]')"
   if [[ -z "$node_ehr" ]] || [[ -z "$node_vo" ]]; then
@@ -95,10 +95,10 @@ probes_signing() {
     probe_done
     return 0
   fi
-  node_rows="$(probe_psql "UPDATE ehr.node
+  node_rows="$(probe_psql "UPDATE clinical.node
                               SET data = jsonb_set(data, '{archetype_node_id}', '\"tampered\"')
                             WHERE vo_id = '$node_vo'::uuid AND num = 0;" \
-               && probe_psql "SELECT count(*) FROM ehr.node
+               && probe_psql "SELECT count(*) FROM clinical.node
                                WHERE vo_id = '$node_vo'::uuid
                                  AND data #>> '{archetype_node_id}' = 'tampered';")"
   if [[ "${node_rows:-0}" = "0" ]]; then

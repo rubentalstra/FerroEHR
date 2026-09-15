@@ -121,10 +121,10 @@ pub async fn current_status_root(
     ehr_id: EhrId,
 ) -> Result<Option<Value>, StorageError> {
     Ok(sqlx::query_scalar(
-        "SELECT n.data FROM vo_version_all v \
-         JOIN node_all n ON n.vo_id = v.vo_id AND n.sys_version = v.sys_version AND n.num = 0 \
-         WHERE v.ehr_id = $1 AND v.kind = 'EHR_STATUS' \
-           AND upper_inf(v.sys_period) AND v.branch_number = 0",
+        "SELECT n.data FROM version v \
+         JOIN node n ON n.vo_id = v.vo_id AND n.sys_version = v.sys_version AND n.num = 0 \
+         JOIN vo_head h ON h.vo_id = v.vo_id AND h.trunk_head_sys_version = v.sys_version \
+         WHERE v.ehr_id = $1 AND v.kind = 'EHR_STATUS'",
     )
     .bind(ehr_id)
     .fetch_optional(&mut *tx)
@@ -204,20 +204,22 @@ pub async fn ehr_summary_read(
                 COALESCE(f.folders, ARRAY[]::uuid[]) AS folders \
          FROM ehr e \
          LEFT JOIN LATERAL ( \
-             SELECT vo_id, trunk_version, branch_number, branch_version, \
-                    creating_system_id \
-             FROM vo_version_all WHERE ehr_id = e.id AND kind = 'EHR_STATUS' \
-               AND upper_inf(sys_period) AND branch_number = 0 \
+             SELECT version.vo_id, version.trunk_version, version.branch_number, \
+                    version.branch_version, version.creating_system_id \
+             FROM version \
+             JOIN vo_head h ON h.vo_id = version.vo_id AND h.trunk_head_sys_version = version.sys_version \
+             WHERE version.ehr_id = e.id AND version.kind = 'EHR_STATUS' \
          ) s ON true \
          LEFT JOIN LATERAL ( \
-             SELECT vo_id FROM vo_version_all WHERE ehr_id = e.id AND kind = 'EHR_ACCESS' \
-               AND upper_inf(sys_period) AND branch_number = 0 \
+             SELECT version.vo_id FROM version \
+             JOIN vo_head h ON h.vo_id = version.vo_id AND h.trunk_head_sys_version = version.sys_version \
+             WHERE version.ehr_id = e.id AND version.kind = 'EHR_ACCESS' \
          ) a ON true \
          LEFT JOIN LATERAL ( \
              SELECT array_agg(f.vo_id ORDER BY f.rank) AS folders \
              FROM ehr_folder f \
-             JOIN vo_version_all v ON v.vo_id = f.vo_id \
-               AND upper_inf(v.sys_period) AND v.branch_number = 0 \
+             JOIN version v ON v.vo_id = f.vo_id \
+             JOIN vo_head h ON h.vo_id = v.vo_id AND h.trunk_head_sys_version = v.sys_version \
              WHERE f.ehr_id = e.id AND v.lifecycle_state <> '523' \
          ) f ON true \
          WHERE e.id = $1",
@@ -296,8 +298,8 @@ pub struct EhrStatusIdentity {
 pub async fn directory_vo(pool: &PgPool, ehr_id: EhrId) -> Result<Option<VoId>, StorageError> {
     Ok(sqlx::query_scalar(
         "SELECT f.vo_id FROM ehr_folder f \
-         JOIN vo_version v ON v.vo_id = f.vo_id \
-         AND upper_inf(v.sys_period) AND v.branch_number = 0 \
+         JOIN version v ON v.vo_id = f.vo_id \
+         JOIN vo_head h ON h.vo_id = v.vo_id AND h.trunk_head_sys_version = v.sys_version \
          WHERE f.ehr_id = $1 \
          ORDER BY (v.lifecycle_state = '523'), f.rank \
          LIMIT 1",
@@ -311,7 +313,7 @@ pub async fn directory_vo(pool: &PgPool, ehr_id: EhrId) -> Result<Option<VoId>, 
 ///
 /// One statement covers the directory slot **and** its current version metadata
 /// **and** the EHR's `is_modifiable` content-write flag: the
-/// `ehr_folder`⋈`vo_version`⋈`audit`⋈`ehr` join, ordered live-first by `rank`
+/// `ehr_folder`⋈`version`⋈`audit`⋈`ehr` join, ordered live-first by `rank`
 /// (the same slot resolution [`directory_vo`] applies), projecting the current
 /// trunk version's `VERSION_TREE_ID` column ints + stored `creating_system_id` +
 /// audit `time_committed`, plus the promoted `ehr.is_modifiable`. Folds the
@@ -334,9 +336,9 @@ pub async fn directory_current_meta(
         "SELECT v.vo_id, v.trunk_version, v.branch_number, v.branch_version, \
          v.creating_system_id, a.time_committed, e.is_modifiable \
          FROM ehr_folder f \
-         JOIN vo_version v ON v.vo_id = f.vo_id \
-           AND upper_inf(v.sys_period) AND v.branch_number = 0 \
-         JOIN audit a ON a.id = v.audit_id \
+         JOIN version v ON v.vo_id = f.vo_id \
+         JOIN vo_head h ON h.vo_id = v.vo_id AND h.trunk_head_sys_version = v.sys_version \
+         JOIN commit_audit a ON a.id = v.commit_audit_id \
          JOIN ehr e ON e.id = f.ehr_id \
          WHERE f.ehr_id = $1 \
          ORDER BY (v.lifecycle_state = '523'), f.rank \
@@ -459,8 +461,8 @@ pub async fn live_directory_exists(pool: &PgPool, ehr_id: EhrId) -> Result<bool,
     Ok(sqlx::query_scalar(
         "SELECT EXISTS( \
            SELECT 1 FROM ehr_folder f \
-           JOIN vo_version v ON v.vo_id = f.vo_id \
-             AND upper_inf(v.sys_period) AND v.branch_number = 0 \
+           JOIN version v ON v.vo_id = f.vo_id \
+           JOIN vo_head h ON h.vo_id = v.vo_id AND h.trunk_head_sys_version = v.sys_version \
            WHERE f.ehr_id = $1 AND v.lifecycle_state <> '523')",
     )
     .bind(ehr_id)
@@ -470,7 +472,7 @@ pub async fn live_directory_exists(pool: &PgPool, ehr_id: EhrId) -> Result<bool,
 
 /// Which of `roots` exist as versioned objects in `ehr_id`.
 ///
-/// Reads the full physical store (`vo_version_all`: hot + cold, so an
+/// Reads the full physical store (`version`: hot + cold, so an
 /// archived target still resolves), in any lifecycle state (a logically
 /// deleted object still resolves — its container remains, RM common
 /// master06 §Logical Deletion).
@@ -483,7 +485,7 @@ pub async fn existing_vo_roots<'e>(
     roots: &[Uuid],
 ) -> Result<Vec<Uuid>, StorageError> {
     Ok(sqlx::query_scalar(
-        "SELECT DISTINCT vo_id FROM vo_version_all WHERE ehr_id = $1 AND vo_id = ANY($2)",
+        "SELECT DISTINCT vo_id FROM version WHERE ehr_id = $1 AND vo_id = ANY($2)",
     )
     .bind(ehr_id)
     .bind(roots)
@@ -509,8 +511,8 @@ pub async fn live_folder_root_exists(
     Ok(sqlx::query_scalar(
         "SELECT EXISTS( \
            SELECT 1 FROM ehr_folder f \
-           JOIN vo_version v ON v.vo_id = f.vo_id \
-             AND upper_inf(v.sys_period) AND v.branch_number = 0 \
+           JOIN version v ON v.vo_id = f.vo_id \
+           JOIN vo_head h ON h.vo_id = v.vo_id AND h.trunk_head_sys_version = v.sys_version \
            JOIN node n ON n.vo_id = v.vo_id AND n.sys_version = v.sys_version \
              AND n.num = 0 \
            WHERE f.ehr_id = $1 AND v.lifecycle_state <> '523' \

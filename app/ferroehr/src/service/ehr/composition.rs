@@ -78,10 +78,9 @@ impl FerroEhrService {
             "COMPOSITION creation",
             &self.effective_system_id(),
         )?;
-        // ONE pooled connection carries both gates AND the commit. Every
-        // checkout costs a `set_config` round trip while multi-tenancy is on
-        // (`crate::db::stamp_tenant_guc`), and this path used to take three or
-        // four of them: measured at +0.4 ms per commit on #3097.
+        // ONE pooled connection carries both gates AND the commit, rather
+        // than the three or four checkouts this path used to take: measured at
+        // +0.4 ms per commit on #3097.
         let mut conn = self.pool.acquire().await?;
         // The EHR-existence (404) and content-writability (409) gates in one
         // round trip: a COMPOSITION is EHR content (RM ehr master04 §EHR
@@ -92,7 +91,7 @@ impl FerroEhrService {
         self.reject_duplicate_persistent(&mut *conn, ehr_id, &composition)
             .await?;
 
-        // The committed template identity is promoted to `vo_version.template_id`
+        // The committed template identity is promoted to `version.template_id`
         // — the ABAC template attribute resolver (`template_of_version`) and the
         // template-delete guard both read that column, so the direct route
         // stamps it exactly like the CONTRIBUTION route.
@@ -615,7 +614,7 @@ impl FerroEhrService {
     /// attribute for the access pre-checks / any per-version resolver.
     ///
     /// NOTE (settled shape): this resolves through the promoted
-    /// `vo_version.template_id` column — one scalar `SELECT`, no node
+    /// `version.template_id` column — one scalar `SELECT`, no node
     /// reassembly — because it runs per authorization check. No openEHR spec
     /// governs the storage mechanics; the promoted column is our own design.
     ///
@@ -627,7 +626,7 @@ impl FerroEhrService {
         vo_id: VoId,
         version: Option<&str>,
     ) -> Result<Option<String>, ServiceError> {
-        // One scalar read of the promoted `vo_version.template_id` column —
+        // One scalar read of the promoted `version.template_id` column —
         // this resolver runs per authorization check, so it must never pay a
         // node reassembly.
         let tree = version.map(parse_tree_id).transpose()?;

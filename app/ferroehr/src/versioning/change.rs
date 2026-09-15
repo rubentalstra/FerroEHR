@@ -221,13 +221,12 @@ pub(crate) struct WriteEnvelope {
 struct PrecedingTip {
     ehr_id: Option<EhrId>,
     kind: Kind,
-    ordinal: i32,
     tree: TreeId,
     creating_system_id: String,
     /// The preceding version's lifecycle state — the "from" state of the
     /// transition.
     lifecycle_state: String,
-    /// Whether the tip is still open (`upper_inf(sys_period)`).
+    /// Whether this version is still the tip of its own lineage.
     open: bool,
 }
 
@@ -241,7 +240,6 @@ fn preceding_tip(
     Ok(PrecedingTip {
         ehr_id: row.ehr_id,
         kind,
-        ordinal: row.sys_version,
         tree: TreeId::from_columns(row.trunk_version, row.branch_number, row.branch_version),
         creating_system_id: row.creating_system_id,
         lifecycle_state: row.lifecycle_state,
@@ -253,9 +251,6 @@ fn preceding_tip(
 struct NextVersion {
     ordinal: i32,
     tree: TreeId,
-    /// The lineage tip to close on insert; `None` when the commit FORKS a new
-    /// branch and the preceding version stays valid.
-    close_ordinal: Option<i32>,
     /// The `preceding_version_uid` to store.
     preceding_uid: String,
     /// The preceding version's lifecycle state (the transition "from" state).
@@ -366,13 +361,13 @@ async fn next_version(
     }
     let preceding_uid = object_version_id(vo_id, &tip.creating_system_id, tip.tree);
 
-    let (tree, close_ordinal) = if composite_ids_equal(&tip.creating_system_id, local_system_id) {
-        // Continue the lineage this system owns; the preceding tip is superseded.
-        let tree = match tip.tree.branch {
+    let tree = if composite_ids_equal(&tip.creating_system_id, local_system_id) {
+        // Continue the lineage this system owns; the preceding tip is
+        // superseded by the head row advancing past it.
+        match tip.tree.branch {
             None => TreeId::trunk(tip.tree.trunk + 1),
             Some((b, v)) => TreeId::branch(tip.tree.trunk, b, v + 1),
-        };
-        (tree, Some(tip.ordinal))
+        }
     } else {
         // Local modification of a version copied from elsewhere: fork a branch
         // at the preceding version's trunk fork point (master06 §Distributed
@@ -387,12 +382,11 @@ async fn next_version(
         let next_branch =
             crate::storage::version_repo::placement::next_branch_number(tx, vo_id, tip.tree.trunk)
                 .await?;
-        (TreeId::branch(tip.tree.trunk, next_branch, 1), None)
+        TreeId::branch(tip.tree.trunk, next_branch, 1)
     };
     Ok(NextVersion {
         ordinal,
         tree,
-        close_ordinal,
         preceding_uid,
         preceding_lifecycle: tip.lifecycle_state,
         now,
@@ -411,7 +405,7 @@ enum ContributionCtx {
     Existing(Uuid),
 }
 
-/// A [`Change`] resolved to the concrete `vo_version` placement + content — the
+/// A [`Change`] resolved to the concrete `version` placement + content — the
 /// output of the per-arm decision (offload, lifecycle, decompose, version-tree
 /// placement) and the input to the shared write ([`commit_resolved`]).
 struct ResolvedWrite {
@@ -426,20 +420,17 @@ struct ResolvedWrite {
     /// `ORIGINAL_VERSION.preceding_version_uid` (`None` for a first version).
     preceding_uid: Option<String>,
     template_id: Option<String>,
-    /// The lineage tip storage ordinal to supersede at `now()` — `None` for a
-    /// first version or a FORK (master06 §The 'Virtual Version Tree').
-    close_ordinal: Option<i32>,
     /// A client-supplied `UPDATE_VERSION.signature`, stored verbatim (master06
     /// §Digital Signature); `None` on the direct endpoints.
     client_signature: Option<String>,
     /// The decomposed node rows (empty for a logical delete — data Void).
     rows: Vec<NodeRow>,
     /// The canonical body BYTES, serialized from the accepted, uid-stamped
-    /// value BEFORE decomposition — the stored `vo_version.body` text a point
+    /// value BEFORE decomposition — the stored `version.body` text a point
     /// read serves verbatim. `None` for a logical delete.
     canonical_text: Option<String>,
     /// Whether the RELEASED generation set can express this body — the
-    /// commit-time `vo_version.stable_compatible` stamp
+    /// commit-time `version.stable_compatible` stamp
     /// ([`crate::versioning::profile::stable_compatible`]).
     stable_compatible: bool,
     /// The distinct origins of the body, derived at commit
@@ -675,7 +666,6 @@ async fn apply_change(
                 lifecycle,
                 preceding_uid: None,
                 template_id,
-                close_ordinal: None,
                 client_signature: signature,
                 rows,
                 canonical_text,
@@ -731,7 +721,6 @@ async fn apply_change(
                 lifecycle,
                 preceding_uid: Some(next.preceding_uid),
                 template_id,
-                close_ordinal: next.close_ordinal,
                 client_signature: signature,
                 rows,
                 canonical_text,
@@ -763,7 +752,6 @@ async fn apply_change(
                 lifecycle: lifecycle::state::DELETED.to_owned(),
                 preceding_uid: Some(next.preceding_uid),
                 template_id: None,
-                close_ordinal: next.close_ordinal,
                 client_signature: signature,
                 rows: Vec::new(),
                 canonical_text: None,
@@ -781,10 +769,10 @@ async fn apply_change(
     commit_resolved(tx, ctx, audit, contribution, committer_fallback, resolved).await
 }
 
-/// Commit a [`ResolvedWrite`] — close the superseded lineage tip, compute the
-/// `VERSION.signature`, then write the `audit` (+ `contribution` for a
-/// standalone write) and the `vo_version` row in ONE data-modifying CTE, then
-/// the node rows, folder membership and accompanying attestations.
+/// Commit a [`ResolvedWrite`] — compute the `VERSION.signature`, then write the
+/// `commit_audit` (+ `contribution` for a standalone write), the `version` row
+/// and the object's head row in ONE data-modifying CTE, then the node rows,
+/// folder membership and accompanying attestations.
 ///
 /// The signature is computed over the assembled `ORIGINAL_VERSION` (RM common
 /// master06 §Digital Signature), which embeds `time_committed` and
@@ -792,14 +780,14 @@ async fn apply_change(
 /// being the transaction timestamp
 /// ([`tx_now`](crate::storage::version_repo::placement::tx_now)) and a
 /// standalone write generating its `contribution_id` here, so audit,
-/// contribution and `vo_version` collapse into one folded CTE. The lineage-tip
-/// close stays a separate prior statement: the one-open-row-per-lineage partial
-/// unique indexes need the old open row gone before the new one is inserted. No
-/// openEHR spec governs statement batching — our own design.
+/// contribution, `version` and the head upsert collapse into one folded CTE.
+/// Nothing is superseded in place: the store is append-only, so there is no
+/// close-out statement to order before the insert. No openEHR spec governs
+/// statement batching — our own design.
 ///
 /// # Errors
 /// [`ServiceError::Signing`] when the canonical form cannot be produced or the
-/// signer fails; the storage errors of the close / folded-insert / node /
+/// signer fails; the storage errors of the folded insert and the node /
 /// attestation writes; the attestation-completion `Unprocessable` rejections.
 async fn commit_resolved(
     tx: &mut PgConnection,
@@ -855,17 +843,13 @@ async fn commit_resolved(
         body: r.canonical_text.as_deref(),
         time_committed: r.time_committed,
         rows: &r.rows,
-        // The superseded lineage tip closes inside the SAME statement (its
-        // leading `cl` CTE, at the same bound instant) — the close boundary
-        // and the new `sys_period` open at the identical instant (master06
-        // §The 'Virtual Version Tree'), and the insert CTE depends on `cl`
-        // so the one-open-row-per-lineage partial unique indexes see the
-        // closed tip first.
-        close_ordinal: r.close_ordinal,
+        // Nothing is superseded in place: the head row advancing past the
+        // previous version inside the SAME statement is what makes this one
+        // current (master06 §The 'Virtual Version Tree').
     };
     // The folded statements BIND `r.time_committed` (the instant the signature
-    // was computed over) as the audit time and the `sys_period` open bound, so
-    // stored == signed holds by construction.
+    // was computed over) as the audit time and the version row's own
+    // `committed_at`, so stored == signed holds by construction.
     let time_committed = match contribution {
         ContributionCtx::New => {
             let (_cid, _aid, tc) = crate::storage::version_repo::commit::commit_new_version(
@@ -918,7 +902,7 @@ async fn commit_resolved(
 }
 
 /// Serializes the accepted, uid-stamped canonical value to the body bytes a
-/// point read serves verbatim (`vo_version.body`, text taken before node
+/// point read serves verbatim (`version.body`, text taken before node
 /// decomposition, so the served wire keeps the codec's `_type`-first,
 /// BMM-declared field order).
 ///
@@ -933,7 +917,7 @@ fn canonical_body_text(canonical: &Value) -> Result<String, ServiceError> {
 /// Reassemble the version body from the node rows and derive the signature
 /// over it.
 ///
-/// The signature input is the reassembled value; the stored `vo_version.body`
+/// The signature input is the reassembled value; the stored `version.body`
 /// is the pre-decomposition text ([`canonical_body_text`]). The two are the
 /// same VALUE by decompose/reassemble fidelity, and the signature
 /// canonicalization is RFC 8785 (key-order-insensitive), so signing the
@@ -992,7 +976,7 @@ fn version_signature(
         return Ok((None, false));
     }
     // The signed content is the SAME reassembled value the caller stores as
-    // `vo_version.body` — computed once, never re-reassembled here.
+    // `version.body` — computed once, never re-reassembled here.
     let signature = integrity::sign_version(
         ctx,
         audit,
@@ -1314,7 +1298,7 @@ pub(crate) async fn commit_contribution(
     // per-version `commit_audit`s are inserted per change below). A uid the
     // client did not supply is minted here, stamped, never by the database.
     let uid = supplied_uid.unwrap_or_else(|| ctx.stamp.mint());
-    let (contribution_id, _contribution_audit_id, contribution_time) =
+    let (contribution_id, _contribution_commit_audit_id, contribution_time) =
         crate::storage::version_repo::commit::write_contribution(
             tx,
             ehr_id,
@@ -1325,7 +1309,7 @@ pub(crate) async fn commit_contribution(
     let committer_fallback = &contribution_audit.committer;
     let mut committed = Vec::with_capacity(changes.len() + attests.len());
     for (version_audit, change) in changes {
-        // Each change writes its own `commit_audit` + `vo_version` under the
+        // Each change writes its own `commit_audit` + `version` under the
         // shared contribution, always through the folded CTE — the commit
         // instant is the contribution's transaction timestamp (one `now()`
         // for the whole set), so the signature is computable up front.

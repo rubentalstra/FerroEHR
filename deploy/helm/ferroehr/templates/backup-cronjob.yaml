@@ -25,18 +25,18 @@ than a set of parallel edits that can silently disagree.
             "schedule" .Values.backup.clinical.schedule
             "claim" .Values.backup.clinical.persistentVolumeClaim
             "secret" .Values.backup.clinical.existingSecret
-            "schemas" (list "ehr" "cold" "ext" "audit")
+            "schemas" (list "clinical" "ext" "audit")
             "extensions" (list)
-            "claimWhy" "name an EXISTING PersistentVolumeClaim for the clinical dump (schemas ehr, cold, ext, audit). The chart provisions no storage — a dump with nowhere to write is a backup that silently does not exist."
-            "secretWhy" "name a Secret holding a BACKUP DSN for the clinical domain — a role with BYPASSRLS, read-only on ehr, cold, ext and audit. It cannot be the pool's credential: every tenant-scoped table carries FORCE ROW LEVEL SECURITY, and pg_dump refuses a table it would read through a policy, so a CronJob wired to the runtime role fails every night.")
+            "claimWhy" "name an EXISTING PersistentVolumeClaim for the clinical dump (schemas clinical, ext, audit). The chart provisions no storage — a dump with nowhere to write is a backup that silently does not exist."
+            "secretWhy" "name a Secret holding a BACKUP DSN for the clinical domain — a read-only role on clinical, ext and audit. It cannot be the pool's credential: each domain's runtime role is revoked from the others, so a dump taken through it would be silently partial.")
       (dict "name" "demographic"
             "schedule" .Values.backup.demographic.schedule
             "claim" .Values.backup.demographic.persistentVolumeClaim
             "secret" .Values.backup.demographic.existingSecret
-            "schemas" (list "demographic" "cold_demographic")
+            "schemas" (list "party")
             "extensions" (list)
-            "claimWhy" "name an EXISTING PersistentVolumeClaim for the demographic dump (schemas demographic, cold_demographic). It must be a different volume from every other domain's — that separation is what this feature is for (GDPR Art. 4(5))."
-            "secretWhy" "name a Secret holding a BACKUP DSN for the demographic domain — a role with BYPASSRLS, read-only on demographic and cold_demographic. Give it its own role, not the clinical backup one: a single credential that dumps two domains re-joins in one identity what the split exists to separate (GDPR Art. 4(5)).")
+            "claimWhy" "name an EXISTING PersistentVolumeClaim for the demographic dump (schema party). It must be a different volume from every other domain's — that separation is what this feature is for (GDPR Art. 4(5))."
+            "secretWhy" "name a Secret holding a BACKUP DSN for the party domain — a read-only role on party. Give it its own role, not the clinical backup one: a single credential that dumps two domains re-joins in one identity what the split exists to separate (GDPR Art. 4(5)).")
       (dict "name" "linkage"
             "schedule" .Values.backup.linkage.schedule
             "claim" .Values.backup.linkage.persistentVolumeClaim
@@ -44,7 +44,7 @@ than a set of parallel edits that can silently disagree.
             "schemas" (list "linkage")
             "extensions" (list "btree_gist")
             "claimWhy" "name an EXISTING PersistentVolumeClaim for the linkage dump (schema linkage). It must be a different volume from the other two: linkage.party_ehr is the map from a party to its EHR, so a volume holding it beside either side of that map hands one holder the join the split withholds (GDPR Art. 4(5))."
-            "secretWhy" "name a Secret holding a BACKUP DSN for the linkage domain — a role with BYPASSRLS, read-only on linkage, and a different role from the other two. It cannot be the pool's credential either: linkage.party_ehr carries FORCE ROW LEVEL SECURITY, and pg_dump refuses a table it would read through a policy.") }}
+            "secretWhy" "name a Secret holding a BACKUP DSN for the linkage domain — a read-only role on linkage, and a different role from the other two. This credential reads the map that re-identifies a pseudonymised record, so it is the narrowest of the three.") }}
 {{- /* Every domain needs a destination of its own, and no two may share one.
        The collision is checked PAIRWISE rather than against the clinical claim
        only: with three domains, "demographic and linkage on one volume" is the

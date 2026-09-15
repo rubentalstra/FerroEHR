@@ -563,7 +563,6 @@ Three further families share the `/admin` path prefix but **not** the
 
 | Routes | Own switch | Documented in |
 |---|---|---|
-| `{base}/admin/tenant…` | `tenancy.enabled` | [Security & multi-tenancy](security.md) |
 | `{base}/admin/event_subscription…` | `events.admin_api` | [Change events (AMQP)](beyond-core/amqp.md) |
 | `{base}/admin/fhir_mapping…` | `fhir.api_enabled` | [FHIR connectors](beyond-core/fhir.md) |
 

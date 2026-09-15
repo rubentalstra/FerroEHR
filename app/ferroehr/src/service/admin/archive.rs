@@ -8,19 +8,22 @@
 //! `archive_ehrs` "Move selected EHRs to archival storage", `archive_parties`
 //! "Move selected Parties and relationships to archival storage".
 //!
-//! NOTE: `i_admin_archive.adoc` defines no storage form, so the cold schema and
-//! this movement are our own design — no openEHR spec governs storage tiering.
+//! NOTE: `i_admin_archive.adoc` defines no storage form, so the tier and this
+//! movement are our own design — no openEHR spec governs storage tiering.
 //!
-//! Each call writes the `vo_archive` markers and physically moves the marked
-//! objects' `vo_version`, `node` and `vo_attestation` rows into the cold tier
-//! ([`crate::storage::version_repo::tier`]) in one transaction. The move is
-//! reversible ([`FerroEhrService::restore_archived_ehrs`],
+//! Each call moves the named objects' `version` rows to the cold partition —
+//! one `UPDATE` of the partition key, with the `node` and `vo_attestation`
+//! rows carried across by their foreign keys
+//! ([`crate::storage::version_repo::tier`]) — and stamps the head row, in one
+//! transaction. The move is reversible
+//! ([`FerroEhrService::restore_archived_ehrs`],
 //! [`FerroEhrService::restore_archived_parties`]) and invisible on the wire:
-//! object-addressed reads fall back to the cold tier on a primary-tier miss and
-//! a write thaws the object first, so a versioned object is never split across
-//! tiers. An unknown id aborts the transaction before anything is written or
-//! moved. The AQL engine queries the primary tier alone, so archived content
-//! leaves the queryable store until it is restored.
+//! an object-addressed read names the parent relation and therefore reaches
+//! either tier in one statement, and a write thaws the object first, so a
+//! versioned object is never split across tiers. An unknown id aborts the
+//! transaction before anything is moved. The AQL engine queries the hot tier
+//! alone, so archived content leaves the queryable store until it is
+//! restored.
 
 use uuid::Uuid;
 
@@ -113,23 +116,15 @@ impl FerroEhrService {
         let mut tx = self.pool.begin().await?;
         require_ehrs_exist(&mut tx, ehr_ids).await?;
         for &ehr_id in ehr_ids {
-            // The still-live objects of this EHR: what the marker set and the
-            // move both address. Already-archived objects have no primary rows
-            // left, which is what makes re-archiving a no-op.
+            // The still-hot objects of this EHR: what the move addresses.
+            // An object already cold matches nothing, which is what makes
+            // re-archiving a no-op.
             let vo_ids: Vec<VoId> =
-                sqlx::query_scalar("SELECT DISTINCT vo_id FROM vo_version WHERE ehr_id = $1")
+                sqlx::query_scalar("SELECT vo_id FROM vo_head WHERE ehr_id = $1 AND tier = 'hot'")
                     .bind(ehr_id)
                     .fetch_all(&mut *tx)
                     .await?;
-            sqlx::query(
-                "INSERT INTO vo_archive (vo_id, reason) \
-                 SELECT unnest($1::uuid[]), 'archive_ehrs' \
-                 ON CONFLICT (vo_id) DO NOTHING",
-            )
-            .bind(&vo_ids)
-            .execute(&mut *tx)
-            .await?;
-            tier::freeze(&mut tx, &vo_ids).await?;
+            tier::freeze(&mut tx, &vo_ids, Some("archive_ehrs")).await?;
         }
         tx.commit().await?;
         Ok(())
@@ -152,15 +147,7 @@ impl FerroEhrService {
             }
             live.push(VoId(party_id));
         }
-        sqlx::query(
-            "INSERT INTO vo_archive (vo_id, reason) \
-             SELECT unnest($1::uuid[]), 'archive_parties' \
-             ON CONFLICT (vo_id) DO NOTHING",
-        )
-        .bind(&live)
-        .execute(&mut *tx)
-        .await?;
-        tier::freeze(&mut tx, &live).await?;
+        tier::freeze(&mut tx, &live, Some("archive_parties")).await?;
         tx.commit().await?;
         Ok(())
     }
@@ -171,7 +158,7 @@ impl FerroEhrService {
         require_ehrs_exist(&mut tx, ehr_ids).await?;
         for &ehr_id in ehr_ids {
             let vo_ids: Vec<VoId> =
-                sqlx::query_scalar("SELECT DISTINCT vo_id FROM cold_vo_version WHERE ehr_id = $1")
+                sqlx::query_scalar("SELECT vo_id FROM vo_head WHERE ehr_id = $1 AND tier = 'cold'")
                     .bind(ehr_id)
                     .fetch_all(&mut *tx)
                     .await?;
@@ -201,19 +188,19 @@ impl FerroEhrService {
     }
 }
 
-/// The `vo_version.kind` of a demographic (ehr-less) versioned object in EITHER
+/// The `version.kind` of a demographic (ehr-less) versioned object in EITHER
 /// storage tier — the guard both the archive and the restore call must answer
 /// the same way whichever tier the party currently lives in.
 async fn party_kind_any_tier(
     tx: &mut sqlx::PgConnection,
     party_id: Uuid,
 ) -> Result<Option<String>, ServiceError> {
-    Ok(sqlx::query_scalar(
-        "SELECT kind FROM vo_version_all WHERE vo_id = $1 AND ehr_id IS NULL LIMIT 1",
+    Ok(
+        sqlx::query_scalar("SELECT kind FROM version WHERE vo_id = $1 AND ehr_id IS NULL LIMIT 1")
+            .bind(party_id)
+            .fetch_optional(&mut *tx)
+            .await?,
     )
-    .bind(party_id)
-    .fetch_optional(&mut *tx)
-    .await?)
 }
 
 /// Refuse the whole operation unless every named EHR exists.

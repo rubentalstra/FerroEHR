@@ -14,7 +14,7 @@
 //!
 //! A commit under the development generations therefore also asks the released
 //! generation's reader whether it could read the same body and stores the answer
-//! (`vo_version.stable_compatible`). A deployment configured to the `stable`
+//! (`version.stable_compatible`). A deployment configured to the `stable`
 //! profile refuses to serve a version that answer marks inexpressible, rather
 //! than serving a body it does not implement or rewriting one it must not.
 
@@ -62,7 +62,7 @@ fn read_as_released(
 }
 
 /// Whether a version body about to be committed is expressible in the RELEASED
-/// generation set — the value stored in `vo_version.stable_compatible`.
+/// generation set — the value stored in `version.stable_compatible`.
 ///
 /// A version with no content (a logical delete stores no node rows — RM common
 /// `master06-change_control_package.adoc` §Logical Deletion) carries nothing a
@@ -116,7 +116,7 @@ fn refuse(
 /// The read-time profile gate: refuses a stored version body the ACTIVE profile
 /// cannot express, and passes everything else through untouched.
 ///
-/// `stamp` is the stored `vo_version.stable_compatible`: `Some` from the
+/// `stamp` is the stored `version.stable_compatible`: `Some` from the
 /// commit-time assessment, `None` for a row nothing stamped (committed before
 /// the column existed, or written by a verbatim-replay path — the EHR-Extract
 /// import and the archive load). A `None` row is assessed on the fly with the
@@ -210,7 +210,7 @@ pub(crate) async fn gate_result_bodies(
     for candidate in &candidates {
         let kind = Kind::from_type(&candidate.kind).ok_or_else(|| {
             ServiceError::exception(format!(
-                "vo_version.kind {:?} of versioned object {} is not an RM versioned type",
+                "version.kind {:?} of versioned object {} is not an RM versioned type",
                 candidate.kind, candidate.vo_id
             ))
         })?;

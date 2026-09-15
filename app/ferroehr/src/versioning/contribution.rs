@@ -975,7 +975,7 @@ async fn build_change(
 /// A CONTRIBUTION commit is a full commit route: its versions are validated
 /// exactly as a direct create/update, relaxed for a `553|incomplete|`
 /// lifecycle (master06 §Incomplete Content). A COMPOSITION stamps
-/// `vo_version.template_id` exactly like the direct commit path — the
+/// `version.template_id` exactly like the direct commit path — the
 /// template-delete `409` guard counts that column, so a
 /// contribution-committed composition must protect its template from physical
 /// deletion too.

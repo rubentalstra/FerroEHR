@@ -1,7 +1,7 @@
 // SPDX-FileCopyrightText: Ruben Talstra
 // SPDX-License-Identifier: BUSL-1.1
 
-//! Row I/O for the versioned-object spine: `vo_version`, `audit`,
+//! Row I/O for the versioned-object spine: `version`, `audit`,
 //! `contribution`, `vo_attestation`, plus the folder-membership and
 //! event-outbox writes that ride along inside the same commit transaction.
 //!
@@ -22,7 +22,7 @@
 //!   folded one-statement version commit, lineage-tip close, and the
 //!   ride-along folder-membership + event-outbox writes.
 //! - [`import`] — the EHR-Extract / archive-load write path: explicit
-//!   `sys_period` version rows, lineage close-at, container-state read.
+//!   `committed_at` version rows, the head sync, container-state read.
 //! - [`read`] — the full version reads ([`read::StoredVersion`]: metadata + body +
 //!   attestations) by current / ordinal / tree id / instant.
 //! - [`placement`] — the version-tree placement reads (lineage tip, next

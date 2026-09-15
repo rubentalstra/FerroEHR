@@ -42,7 +42,7 @@
 //! transition, sign, attest, import policy) and the builders
 //! (`ORIGINAL_VERSION` / `VERSIONED_OBJECT` / `REVISION_HISTORY` value
 //! construction). All `sqlx` execution is delegated to a storage-owned
-//! repository: [`crate::storage::version_repo`] for the `vo_version` / `audit` /
+//! repository: [`crate::storage::version_repo`] for the `version` / `audit` /
 //! `contribution` / `vo_attestation` spine plus the folder-membership and
 //! event-outbox writes, and [`crate::storage::node_repo`] for the `decompose` /
 //! `reassemble` codec and the `node` writes. The per-function docs there are the
@@ -83,10 +83,10 @@ pub(crate) mod wire;
 
 // Re-exports: the versioning API the service layer and SM adapters consume.
 
-/// The kind of versioned object (discriminates `vo_version.kind`).
+/// The kind of versioned object (discriminates `version.kind`).
 ///
 /// RM common master06 keeps one change-control model for all versioned content;
-/// this CDR realizes it with one unified `vo_version`/`node` machinery, so a
+/// this CDR realizes it with one unified `version`/`node` machinery, so a
 /// single [`Kind`] discriminates COMPOSITION / `EHR_STATUS` / `EHR_ACCESS` / FOLDER
 /// (EHR-scoped) and the demographic party roots + `PARTY_RELATIONSHIP` (no EHR
 /// scope, RM demographic).
@@ -121,7 +121,7 @@ pub enum Kind {
 }
 
 impl Kind {
-    /// The stored `vo_version.kind` discriminator — the full RM type name.
+    /// The stored `version.kind` discriminator — the full RM type name.
     pub(crate) fn as_str(self) -> &'static str {
         match self {
             Kind::Composition => "COMPOSITION",
@@ -180,8 +180,9 @@ impl Kind {
 /// assembled `ORIGINAL_VERSION` is signed (RM common master06 §Digital
 /// Signature). Borrows the effective system id and the configured [`Signer`].
 pub(crate) struct SigningCtx<'a> {
-    /// The effective openEHR `system_id` for this write — the current tenant's
-    /// own id when tenancy is on, else the service default.
+    /// The effective openEHR `system_id` for this write: the one logical EHR
+    /// system this instance is (BASE `architecture_overview` master06 §System
+    /// Identity).
     pub(crate) system_id: String,
     pub(crate) signer: &'a Signer,
     /// The licence stamp key every server-minted identifier on this write is
@@ -190,7 +191,7 @@ pub(crate) struct SigningCtx<'a> {
     pub(crate) stamp: &'a crate::licence::stamp::StampKey,
     /// The ACTIVE openEHR specification generation set. The commit path asks
     /// the RELEASED generation's reader whether it could express the accepted
-    /// body and stores the answer (`vo_version.stable_compatible`), so a
+    /// body and stores the answer (`version.stable_compatible`), so a
     /// deployment later configured to the `stable` profile can refuse rather
     /// than silently serve or down-convert
     /// ([`crate::versioning::profile`]).

@@ -58,11 +58,11 @@ three parts. Each schema is a separate category of data with its own role.
 
 | Schema | Personal data it holds | GDPR category |
 |---|---|---|
-| `ehr`, `cold` | Clinical content: compositions, EHR status, folders, contributions, attestations, item tags. The subject appears as `EHR_STATUS.subject.external_ref`, which is an opaque pseudonym once `[privacy] subject_namespaces` is declared | Art. 9 special-category health data |
-| `demographic`, `cold_demographic` | Parties: persons, organisations, groups, agents, roles and their relationships, with names, addresses and contacts as the operational template defines them. Protected national identifiers live in `national_identifier`, sealed under a per-tenant key with a keyed digest beside them | Art. 4(1) personal data; a national identifier is Art. 87 national identification number |
-| `linkage` | `party_ehr`: a party id, an EHR id, a tenant and a validity period. No attribute of any kind | The additional information of Art. 4(5): identifying only when joined to one of the other two |
+| `clinical` | Clinical content: compositions, EHR status, folders, contributions, attestations, item tags. The subject appears as `EHR_STATUS.subject.external_ref`, which is an opaque pseudonym once `[privacy] subject_namespaces` is declared | Art. 9 special-category health data |
+| `party` | Parties: persons, organisations, groups, agents, roles and their relationships, with names, addresses and contacts as the operational template defines them. Protected national identifiers live in `national_identifier`, sealed under a per-domain key with a keyed digest beside them | Art. 4(1) personal data; a national identifier is Art. 87 national identification number |
+| `linkage` | `party_ehr`: a party id, an EHR id and a validity period. No attribute of any kind | The additional information of Art. 4(5): identifying only when joined to one of the other two |
 | `audit` | One record per access: who, from which organisation, under which roles, what they read or wrote, the declared purpose, the outcome and the time | Art. 4(1) personal data about both the subject and the accessing person |
-| `ext` | No personal data. Helper functions and the tenant context | — |
+| `ext` | No personal data. Helper functions, the runtime roles and the deployment posture | — |
 
 ## 3. Roles and the credentials that serve them
 
@@ -83,8 +83,8 @@ only able to narrow the previous one. That layering is
 flowchart LR
     subject(["The person"])
     subgraph dom ["The pseudonymisation domain"]
-        clin[("ehr + cold<br/>clinical record,<br/>keyed by an opaque pseudonym")]
-        demo[("demographic + cold_demographic<br/>the person, and sealed<br/>national identifiers")]
+        clin[("clinical<br/>clinical record,<br/>keyed by an opaque pseudonym")]
+        demo[("party<br/>the person, and sealed<br/>national identifiers")]
         link[("linkage<br/>which party is the subject<br/>of which EHR")]
     end
     aud[("audit<br/>who reached what, when")]
@@ -140,14 +140,14 @@ assessment has to size.
 |---|---|---|---|
 | R1 | A clinical record and the identity of its subject are held together, so one credential re-identifies everyone | Three schemas, five `NOINHERIT` roles, explicit revokes in both directions, and a boot self-check that refuses to serve when a role can read across | With `[db] demographic_url` and `linkage_url` unset, all three pools use one credential and the split is a schema split. A superuser and a cluster-wide restore span everything |
 | R2 | A national identifier is written into clinical content | The identifier scanner over every string leaf of every clinical write, `strict` by default, with all eight shipped rules active; the subject rule; the refusal of identifying party proxies; and a database trigger on `ehr` once the namespaces are declared | A rule matches a checksummed number, not a name, an address or a local record number. `subject_namespaces` is empty by default, which leaves the subject rule and the trigger out of force |
-| R3 | A national identifier is readable in the demographic store, in a backup or on a replica | AES-256-GCM per record with the scheme and tenant bound in, a keyed HMAC-SHA-256 digest for lookup, per-domain and per-tenant subkeys, and a `SECURITY DEFINER` resolve function only the demographic role may execute | Protection is off by default. An identifier whose scheme is not configured stays in the versioned body. The root key held beside a dump defeats all of it |
+| R3 | A national identifier is readable in the party store, in a backup or on a replica | AES-256-GCM per record with the scheme bound in, a keyed HMAC-SHA-256 digest for lookup, per-domain subkeys, and a `SECURITY DEFINER` resolve function only the party role may execute | Protection is off by default. An identifier whose scheme is not configured stays in the versioned body. The root key held beside a dump defeats all of it |
 | R4 | Someone re-identifies a record and nobody can tell afterwards | Every resolve, link, merge and split writes a `linkage`-domain access record naming the actor, purpose and outcome, including a miss | Recording is not prevention. An actor entitled to the crossing re-identifies by design |
 | R5 | Content identifies a person without carrying an identifier | Small-cell suppression on the cohort query: a result serving fewer distinct EHRs than `cohort.small_cell_threshold` (default `5`) withholds its rows and says so | A rare diagnosis with a date and a place identifies without any identifier field. The threshold covers the cohort query alone; an ordinary AQL execution takes none |
-| R6 | One tenant reads another's rows | The tenant is resolved from a configured claim and applied as a session setting driving `FORCE ROW LEVEL SECURITY` on every tenant-scoped table, cold tiers included | `FERROEHR__TENANCY__HEADER` is a client-controlled selector that wins over the claim; leave it unset. A missing claim falls through to the default tenant |
+| R6 | One organisation reads another's rows | One instance per organisation: its own database, its own domain roles, and no relation, policy or session setting that two organisations could share. openEHR puts multi-tenancy at the layer hosting several systems rather than inside one (BASE `architecture_overview` `master06-design_of_the_ehr.adoc` §The EHR System) | The separation is now a deployment property, so two organisations pointed at one instance share everything and nothing in the software will catch it |
 | R7 | Access records are altered or lost | Records are hash-chained and `audit.verify_audit_chain()` names any that changed; the runtime role can insert and stamp delivery and nothing more; syslog and FHIR-feed forwarding put copies off the box | The chain is evidence, not prevention. A local repository shares the blast radius of the database it audits, and a read made straight against the database appears nowhere |
-| R8 | A backup carries what the grants withheld | One dump per domain, each under its own read-only `BYPASSRLS` role and its own claim, and the chart refuses to render when two domains name the same claim | Each dump is plaintext of its own domain. Two of them together rebuild the join. Nothing prunes old dumps |
+| R8 | A backup carries what the grants withheld | One dump per domain, each under its own read-only role and its own claim, and the chart refuses to render when two domains name the same claim | Each dump is plaintext of its own domain. Two of them together rebuild the join. Nothing prunes old dumps |
 | R9 | A deployment has made none of the separations and looks like one that has | `deployment_profile = "production"` refuses to start while a separation is open and not accepted by name; `sandbox` names every open one on the banner, in the log and on `GET /rest/status` | The default is `sandbox`, so an operator who sets nothing gets the loud version rather than the enforced one |
-| R10 | Anyone with a database connection is past every API control | Least-privilege roles, row-level security that binds the table owner too, and a version table that is appended to rather than overwritten | This is inherent. Authorization is enforced at the API, so protecting the credentials and the network path is yours |
+| R10 | Anyone with a database connection is past every API control | Least-privilege roles revoked from each other's domains, and a version table that is appended to rather than overwritten | This is inherent. Authorization is enforced at the API, so protecting the credentials and the network path is yours |
 
 ## 7. Controls, by issue and legal source
 

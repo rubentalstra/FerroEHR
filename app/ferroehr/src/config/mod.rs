@@ -77,8 +77,6 @@ pub struct FerroEhrConfig {
     pub authz: authz::AuthzConfig,
     /// `[admin]` — the ADMIN API group.
     pub admin: server::AdminConfig,
-    /// `[tenancy]` — multi-tenancy.
-    pub tenancy: server::TenancyConfig,
     /// `[smart]` — SMART App Launch.
     pub smart: smart::SmartConfig,
     /// `[management]` — the management/observability surface.
@@ -127,7 +125,6 @@ impl FerroEhrConfig {
         self.validate_system_id(&mut errors);
         self.validate_base_path(&mut errors);
         self.validate_mechanisms(&mut errors);
-        self.validate_tenancy(&mut errors);
         self.validate_signing(&mut errors);
         self.validate_key_sources(&mut errors);
         self.validate_privacy(&mut errors);
@@ -274,27 +271,6 @@ impl FerroEhrConfig {
                  a name an EHR_STATUS subject reference may claim"
                     .to_owned(),
             ));
-        }
-    }
-
-    /// `tenancy.header` lets a request name its own tenant, and the header wins
-    /// over the JWT claim. With an authentication scheme enabled that is every
-    /// authenticated caller reading and writing every tenant, so the pair is a
-    /// boot error unless `tenancy.insecure_header_override` accepts it by name.
-    /// The rest of the access layer is boot-validated the same way. No openEHR
-    /// spec governs multi-tenancy — our own design.
-    fn validate_tenancy(&self, errors: &mut Vec<ConfigError>) {
-        if self.tenancy.enabled
-            && self.auth.enabled
-            && !self.tenancy.insecure_header_override
-            && let Some(header) = self.tenancy.header.as_deref()
-        {
-            errors.push(ConfigError::semantic(format!(
-                "tenancy.header = {header:?} with auth.enabled = true lets any authenticated \
-                 caller select any tenant by naming it in that request header; unset \
-                 tenancy.header, or set tenancy.insecure_header_override = true on a \
-                 development deployment that accepts exactly that"
-            )));
         }
     }
 
@@ -1983,48 +1959,6 @@ mod tests {
             .validate()
             .expect_err("SMART without [auth.oidc] must refuse");
         assert!(format!("{err:?}").contains("auth.oidc"), "{err:?}");
-    }
-
-    /// `tenancy.header` with authentication on lets any authenticated caller
-    /// select any tenant, so the pair is refused at boot unless the loudly named
-    /// opt-in accepts it; with authentication off, or tenancy off, the header is
-    /// the development convenience it documents.
-    #[test]
-    fn a_tenant_header_with_authentication_is_refused_unless_opted_in() {
-        let tree = |tenancy_on: bool, auth_on: bool, opt_in: bool| FerroEhrConfig {
-            tenancy: server::TenancyConfig {
-                enabled: tenancy_on,
-                header: Some("X-FerroEHR-Tenant".to_owned()),
-                insecure_header_override: opt_in,
-                ..server::TenancyConfig::default()
-            },
-            auth: auth::AuthConfig {
-                enabled: auth_on,
-                ..auth::AuthConfig::default()
-            },
-            ..FerroEhrConfig::default()
-        };
-
-        let err = tree(true, true, false)
-            .validate()
-            .expect_err("a tenant header with authentication on must be refused");
-        let text = format!("{err:?}");
-        assert!(text.contains("tenancy.header"), "{text}");
-        assert!(text.contains("X-FerroEHR-Tenant"), "{text}");
-        assert!(text.contains("tenancy.insecure_header_override"), "{text}");
-
-        assert!(
-            tree(true, true, true).validate().is_ok(),
-            "the opt-in accepts the pair"
-        );
-        assert!(
-            tree(true, false, false).validate().is_ok(),
-            "no authentication: a dev header"
-        );
-        assert!(
-            tree(false, true, false).validate().is_ok(),
-            "tenancy off: the header is inert"
-        );
     }
 
     #[test]

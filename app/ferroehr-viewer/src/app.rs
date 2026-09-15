@@ -194,7 +194,6 @@ pub fn App() -> impl IntoView {
                         />
                         <Route path=path!("audit") view=crate::pages::audit::AuditPage />
                         <Route path=path!("system") view=crate::pages::system::SystemPage />
-                        <Route path=path!("tenants") view=crate::pages::tenants::TenantsPage />
                         <Route
                             path=path!("subscriptions")
                             view=crate::pages::subscriptions::SubscriptionsPage

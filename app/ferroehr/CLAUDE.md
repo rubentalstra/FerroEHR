@@ -21,25 +21,41 @@ module.**
   `docs/specs/openehr/` (`/spec-lookup`) — never from memory or EHRbase
   behaviour. Cite spec file + section in comments; the only citable references
   are the vendored specs and official external docs — NEVER an internal doc.
-- **Storage is greenfield PG18:** one `node` table (nested-set interval index,
-  canonical JSON fragments — no aliasing, no synthetic fields) + one temporal
-  `vo_version` table (`WITHOUT OVERLAPS`; `ALL_VERSIONS` supported). Every write
-  emits contribution + audit in the same transaction. Change-control semantics
-  are implemented against RM common master06 (`RM/docs/common/master06-change_control_package.adoc`)
-  — do not regress them casually.
-- **Two pseudonymisation domains, one set of storage code:** the `demographic`
-  schema mirrors `ehr` relation for relation, and the ONLY thing that selects a
-  domain is the pool's `search_path` (`db::connect_demographic`,
+- **Storage is greenfield PG18, second generation:** an APPEND-ONLY `version`
+  table (no validity interval, no close-out statement — validity is derived
+  from `committed_at`), one mutable `vo_head` row per versioned object whose
+  updated columns are in NO index so the per-commit UPDATE is heap-only, and
+  one `node` table (nested-set interval index, canonical JSON fragments — no
+  aliasing, no synthetic fields). `version`, `node` and `vo_attestation` are
+  partitioned `BY LIST (tier)` with `hot`/`cold` partitions, so archiving is
+  `UPDATE … SET tier = 'cold'` and the foreign keys carry the referencing rows
+  across with `ON UPDATE CASCADE`; there are no mirror tables and no `*_all`
+  views. `LATEST_VERSION` is `vo_head.trunk_head_sys_version`, `ALL_VERSIONS`
+  is `version` unfiltered. Every write emits contribution + commit audit in the
+  same transaction. Change-control semantics are implemented against RM common
+  master06 (`RM/docs/common/master06-change_control_package.adoc`) — do not
+  regress them casually.
+- **Two pseudonymisation domains, one set of storage code:** the `clinical`
+  and `party` schemas carry the same change-control and node relations, both
+  RENDERED FROM ONE DDL TEMPLATE (`migrations/templates/*.sql.in` +
+  `storage::ddl_template`, whose tests regenerate the committed files and
+  refuse any drift), and the ONLY thing that selects a domain is the pool's
+  `search_path` (`db::connect_demographic`,
   `FerroEhrService::demographic_pool`). Never schema-qualify a domain relation
   in SQL; `service::demographic/**` and the party-scoped `service::admin` paths
-  take `demographic_pool`, everything else takes `pool`. The cold tier is the
-  one exception, reached through the per-schema alias views `cold_vo_version` /
-  `cold_node` / `cold_vo_attestation`. A third domain, `linkage`, holds the
-  party-to-EHR map under its own `ferroehr_linkage` role and has no pool yet.
-  `db::verify_domain_isolation` is the boot gate over every runtime role.
+  take `demographic_pool`, everything else takes `pool`. A third domain,
+  `linkage`, holds the party-to-EHR map under its own `ferroehr_linkage` role.
+  `db::verify_domain_isolation` is the boot gate over every runtime role. The
+  runtime role NAMES still read `ferroehr_ehr`/`ferroehr_demographic`; #3343
+  renames them with the per-domain DSNs.
 - **AQL engine** (`src/aql/`): typed IR over the BMM-generated RM model, lowered
   via `sea-query`; every unsupported construct is a typed reject, never a silent
   wrong answer. Rules: `.claude/rules/aql-engine.md`.
+- **The instance is single-tenant.** No relation carries a `tenant_id`, no row
+  policy scopes a read, and no session GUC is stamped: isolation between
+  organisations is a deployment property. openEHR puts multi-tenancy at the
+  layer that hosts several logical EHR systems, not inside one (BASE
+  `architecture_overview/master06-design_of_the_ehr.adoc` §The EHR System).
 - **SQL:** `sqlx` + `sea-query` (never sea-orm); migrations only via
   `sqlx migrate add --sequential`, and **append-only** (owner ruling
   2026-09-09): never edit, rename or delete a migration that exists on `main`,

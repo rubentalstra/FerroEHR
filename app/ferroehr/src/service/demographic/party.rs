@@ -36,7 +36,7 @@ use crate::versioning::read::{VersionRead, demographic_current, object_kind};
 use openehr_its::rest::generated::common::UpdateAudit;
 
 /// The current version of a demographic party, resolved in ONE lean
-/// `vo_version`⋈`audit` read (no node reassembly). Carries the kind-checked
+/// `version`⋈`audit` read (no node reassembly). Carries the kind-checked
 /// identity + commit instant (the `ETag`/`If-Match` parts) and the not-deleted
 /// gate, so a write path resolves the target **once** and threads it — the
 /// dispatcher never resolves for `If-Match` and the service again for the

@@ -202,18 +202,20 @@ services:
   #
   # `--format=custom` (PostgreSQL 18, pg_dump §Options) so the restore side can
   # choose what to restore and in what order; `pg_restore` reads it.
+  # `--strict-names` is on every job: without it a `--schema` pattern that
+  # matches nothing is not an error, so a dump naming a schema this database
+  # does not have writes an artefact missing that half and exits 0 (PostgreSQL
+  # 18, pg_dump §Options, --strict-names). That is how a clinical backup ships
+  # with no clinical data and nobody finds out until the restore.
   # Point-in-time recovery is a different instrument and stays instance-wide:
   # see the operations page in the documentation.
   #
   # THE DUMP CONNECTS AS THE BOOTSTRAP SUPERUSER, and that is not laziness.
-  # Every tenant-scoped table carries FORCE ROW LEVEL SECURITY, so the policy
-  # applies to the table owner too, and pg_dump refuses a table it would have
-  # to read through a policy: "query would be affected by row-level security
-  # policy" (PostgreSQL 18, pg_dump §Notes). The application role therefore
-  # CANNOT take a backup — by design, because the alternative is worse: with
-  # --enable-row-security the dump succeeds and silently contains one tenant's
-  # rows. A backup credential needs BYPASSRLS or superuser; the operations page
-  # says so for deployments that do not share this stack's single credential.
+  # Each domain's runtime role is revoked from the other domains, so no runtime
+  # credential can read a whole database: that is the pseudonymisation boundary
+  # working, and a backup taken through one of them would be silently partial.
+  # The operations page says so for deployments that do not share this stack's
+  # single credential.
   ferroehr-backup-clinical:
     profiles: [backup]
     image: ${FERROEHR_POSTGRES_IMAGE:-ghcr.io/rubentalstra/ferroehr-postgres:4.3.0}
@@ -241,7 +243,7 @@ services:
       - >-
         pg_dump --host=ferroehr-postgres --username=postgres
         --dbname=${PG_INIT_DB:-ferroehr} --format=custom --no-owner
-        --schema=ehr --schema=cold --schema=ext --schema=audit
+        --strict-names --schema=clinical --schema=ext --schema=audit
         --file=/backup/clinical-$$(date -u +%Y%m%dT%H%M%SZ).dump
     volumes:
       - ${FERROEHR_BACKUP_CLINICAL_DIR:-./backups/clinical}:/backup
@@ -273,7 +275,7 @@ services:
       - >-
         pg_dump --host=ferroehr-postgres --username=postgres
         --dbname=${PG_INIT_DB:-ferroehr} --format=custom --no-owner
-        --schema=demographic --schema=cold_demographic
+        --strict-names --schema=party
         --file=/backup/demographic-$$(date -u +%Y%m%dT%H%M%SZ).dump
     volumes:
       - ${FERROEHR_BACKUP_DEMOGRAPHIC_DIR:-./backups/demographic}:/backup
@@ -317,7 +319,7 @@ services:
       - >-
         pg_dump --host=ferroehr-postgres --username=postgres
         --dbname=${PG_INIT_DB:-ferroehr} --format=custom --no-owner
-        --schema=linkage --extension=btree_gist
+        --strict-names --schema=linkage --extension=btree_gist
         --file=/backup/linkage-$$(date -u +%Y%m%dT%H%M%SZ).dump
     volumes:
       - ${FERROEHR_BACKUP_LINKAGE_DIR:-./backups/linkage}:/backup

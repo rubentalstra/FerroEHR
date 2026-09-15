@@ -306,7 +306,7 @@ async fn composer_identifiers_are_accepted_and_a_self_party_needs_the_opt_in() {
     permissive
         .create_composition(ehr_id, uv(&subject, "249", None))
         .await
-        .expect("the documented tenant opt-in accepts it");
+        .expect("the documented opt-in accepts it");
 }
 
 // ── the identifier scanner ────────────────────────────────────────────────────

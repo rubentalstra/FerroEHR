@@ -117,7 +117,7 @@ async fn counts(pool: &PgPool, ehr_id: Uuid) -> (i64, i64, i64, i64) {
     (
         count_for_ehr(
             pool,
-            "SELECT count(*) FROM vo_version WHERE ehr_id = $1",
+            "SELECT count(*) FROM version WHERE ehr_id = $1",
             ehr_id,
         )
         .await,
@@ -1127,6 +1127,124 @@ async fn attestations_round_trip_and_the_restored_signature_verifies() {
     assert_eq!(
         served_after, served_before,
         "the restored served document is identical to the source's"
+    );
+
+    let _ = std::fs::remove_dir_all(&dir);
+}
+
+/// An archived EHR and an archived standalone party both come back ARCHIVED:
+/// the dumped `archived_at` and `archive_reason` survive, and the rows sit in
+/// the cold partition rather than the hot one.
+///
+/// The two halves are one fact: a marker without the tier placement makes an
+/// archived object queryable again, and the tier without the marker loses the
+/// instant it was archived at. No openEHR spec governs archival — our own
+/// design/extension.
+#[tokio::test]
+async fn an_archived_ehr_and_party_round_trip_with_their_marker_and_tier() {
+    let (_src_db, src_pool, source) = repository().await;
+    let (_dst_db, dst_pool, target) = repository().await;
+
+    let ehr = seed_full_ehr(&source).await;
+    let person_vo = Box::pin(source.create_party(wave_uv(&wave_person("Archie"))))
+        .await
+        .expect("create_party");
+    source
+        .archive_ehrs(vec![ehr.to_string()])
+        .await
+        .expect("archive the EHR");
+    source
+        .archive_parties(vec![person_vo.to_string()])
+        .await
+        .expect("archive the party");
+
+    let src_ehr_marker = archive_marker(&src_pool, "clinical", ehr.0).await;
+    let src_party_marker = archive_marker(&src_pool, "party", person_vo.0).await;
+    assert!(src_ehr_marker.is_some(), "the EHR really is archived");
+    assert!(src_party_marker.is_some(), "the party really is archived");
+
+    let dir = archive_dir();
+    assert_clean(
+        &source
+            .export_ehrs(dir.clone(), ExportSpec::canonical_json(64))
+            .await
+            .expect("export"),
+        "export",
+    );
+    assert_clean(
+        &target.load_ehrs(dir.clone()).await.expect("load"),
+        "load into an empty repository",
+    );
+
+    assert_eq!(
+        archive_marker(&dst_pool, "clinical", ehr.0).await,
+        src_ehr_marker,
+        "the EHR's archive marker and tier must survive the round trip"
+    );
+    assert_eq!(
+        archive_marker(&dst_pool, "party", person_vo.0).await,
+        src_party_marker,
+        "the party's archive marker and tier must survive the round trip"
+    );
+
+    let _ = std::fs::remove_dir_all(&dir);
+}
+
+/// The `(archived_at, archive_reason, tier)` of every archived versioned object
+/// the id names in `schema`: the EHR's objects by `ehr_id`, a party by its own
+/// `vo_id`. `None` when nothing under that id is archived.
+///
+/// The schema is named explicitly because the two pseudonymisation domains are
+/// two schemas over one connection here, and only a pool's `search_path`
+/// chooses between them.
+async fn archive_marker(
+    pool: &PgPool,
+    schema: &'static str,
+    id: Uuid,
+) -> Option<Vec<(String, Option<String>, String)>> {
+    // `schema` is one of two literals at the call sites, never input.
+    let sql = format!(
+        "SELECT archived_at::text, archive_reason, tier FROM {schema}.vo_head \
+         WHERE (ehr_id = $1 OR vo_id = $1) AND archived_at IS NOT NULL \
+         ORDER BY vo_id"
+    );
+    let rows: Vec<(String, Option<String>, String)> = sqlx::query_as(sqlx::AssertSqlSafe(sql))
+        .bind(id)
+        .fetch_all(pool)
+        .await
+        .expect("archive markers");
+    (!rows.is_empty()).then_some(rows)
+}
+
+/// An archive written before the storage rewrite is refused by VERSION, naming
+/// the remedy, rather than failing somewhere inside the load on a column the
+/// operator never heard of.
+#[tokio::test]
+async fn an_archive_from_before_the_storage_rewrite_is_refused_with_the_remedy() {
+    let (_db, _pool, target) = repository().await;
+    let dir = archive_dir();
+    std::fs::create_dir_all(&dir).expect("archive dir");
+    // A first-generation manifest: archive_version 1, and no segments, so the
+    // refusal cannot be reached by an unrelated read failure.
+    std::fs::write(
+        std::path::Path::new(&dir).join("manifest.json"),
+        br#"{"format":"openehr_canonical_json","archive_version":1,"segment_split_size_kb":64,
+             "ehr_count":0,"segments":[]}"#,
+    )
+    .expect("write manifest");
+
+    let error = target
+        .load_ehrs(dir.clone())
+        .await
+        .expect_err("a pre-rewrite archive must be refused");
+    let message = error.to_string();
+    assert!(
+        message.contains("archive_version 1") && message.contains("predates the storage rewrite"),
+        "the refusal names the version it read and why: {message}"
+    );
+    assert!(
+        message.contains("export it again"),
+        "the refusal states the remedy: {message}"
     );
 
     let _ = std::fs::remove_dir_all(&dir);

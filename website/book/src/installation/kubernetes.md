@@ -38,7 +38,7 @@ kubectl -n ferroehr create secret generic ferroehr-db \
   --from-literal=FERROEHR__DB__URL='postgres://ferroehr_app:***@pg-host:5432/ferroehr?sslmode=verify-full'
 
 helm install ferroehr oci://ghcr.io/rubentalstra/charts/ferroehr \
-  --version 8.3.1 -n ferroehr \
+  --version 9.0.0 -n ferroehr \
   --set database.existingSecret=ferroehr-db \
   --set image.tag=4.3.0
 ```
@@ -55,7 +55,7 @@ helm install ferroehr oci://ghcr.io/rubentalstra/charts/ferroehr \
 reference. To read the chart's metadata without installing it:
 
 ```shell
-helm show chart oci://ghcr.io/rubentalstra/charts/ferroehr --version 8.3.1
+helm show chart oci://ghcr.io/rubentalstra/charts/ferroehr --version 9.0.0
 ```
 
 ### Pin two versions, not one
@@ -68,7 +68,7 @@ against.
 
 | | Selects | Pin with | Line |
 |---|---|---|---|
-| Chart version | templates, values schema, defaults | `--version 8.3.1` | SemVer over the chart's own contract |
+| Chart version | templates, values schema, defaults | `--version 9.0.0` | SemVer over the chart's own contract |
 | Image tag | the server binary | `--set image.tag=4.3.0` (or `image.digest`) | the application's SemVer line |
 
 Always pin the image to an immutable version or, better, a `@sha256` digest,
@@ -168,7 +168,7 @@ image, and FerroTERM.
 > the image itself as the authority:
 >
 > ```shell
-> helm template ferroehr oci://ghcr.io/rubentalstra/charts/ferroehr --version 8.3.1 \
+> helm template ferroehr oci://ghcr.io/rubentalstra/charts/ferroehr --version 9.0.0 \
 >   -s templates/configmap.yaml --set database.existingSecret=ferroehr-db \
 >   | sed -n '/ferroehr.toml/,$p' | sed '1d;s/^    //' > /tmp/ferroehr.toml
 > docker run --rm -v /tmp/ferroehr.toml:/etc/ferroehr/ferroehr.toml:ro \
@@ -519,11 +519,11 @@ loop).
 > repository one node eviction away from this state.
 >
 > One recovery path does **not** self-heal, and it is worth knowing before you try
-> it: restoring or dropping *part* of the schema set. The archival tier's tables
-> live in their own `cold` schema, so a `DROP SCHEMA ehr CASCADE` leaves them
-> behind, and re-running the migration set then fails permanently with
-> `relation "vo_version" already exists`: the pod crash-loops, and restarting it
-> retries the same failure. Recreate the whole database rather than one schema.
+> it: restoring or dropping *part* of the schema set. A restore that brings back
+> some of a domain's relations without its migration bookkeeping makes the next
+> migration run fail permanently with `relation "version" already exists`: the
+> pod crash-loops, and restarting it retries the same failure. Recreate the whole
+> database rather than one schema.
 
 The management surface is independent of the probes and stays ops-only
 (`/management/info`, `/prometheus`, `/metrics`, `/env`, `/loggers`,
@@ -600,7 +600,7 @@ config:
 
 ```shell
 helm upgrade ferroehr oci://ghcr.io/rubentalstra/charts/ferroehr \
-  --version 8.3.1 -n ferroehr --reuse-values \
+  --version 9.0.0 -n ferroehr --reuse-values \
   --set config.query.plan_cache_capacity=512
 ```
 
@@ -634,7 +634,6 @@ is an explicit, auditable decision:
 | ADMIN API | `config.admin.enabled` | off | Physical, irreversible delete. Gate behind admin RBAC. |
 | Terminology extension API | `config.terminology.api_enabled` | off | 404 when off. |
 | Event-subscription API | `config.events.admin_api` | off | Admin CRUD over event filters. |
-| Multi-tenancy | `config.tenancy.enabled` | off | Tenant from a JWT claim (`config.tenancy.claim`); never set `config.tenancy.header` in production. Pairs with PG row-level security. |
 | OAuth2/OIDC auth | `config.auth.oidc.issuer` | unset | Prefer JWKS/discovery over the HS256 `secrets.authOidcHmacSecret`. |
 | RBAC | `config.authz.rbac.enabled` | **on** | The coarse role gate (active while `config.auth.enabled`). |
 | ABAC | `config.authz.abac.enabled` | off | Cedar (policies via a `config.files` mount) or a remote policy decision point. |
@@ -648,7 +647,7 @@ is an explicit, auditable decision:
 | OTLP telemetry | `config.telemetry.otlp_endpoint` | unset | Setting the endpoint is all it takes; unset means the OpenTelemetry layer is not installed at all (zero overhead). With `networkPolicy.egress.enabled`, add a rule for the collector, since a blocked exporter drops spans without an error. |
 
 Full detail on each is in [Beyond the core](../beyond-core/index.md),
-[Security & multi-tenancy](../security.md), and [Operations](../operations.md).
+[Security](../security.md), and [Operations](../operations.md).
 
 ### FerroEHR Viewer (a second workload, off by default)
 
@@ -702,7 +701,7 @@ running. It is the Helm equivalent of the
 
 ```shell
 helm upgrade --install ferroehr oci://ghcr.io/rubentalstra/charts/ferroehr \
-  --version 8.3.1 -n ferroehr --reuse-values \
+  --version 9.0.0 -n ferroehr --reuse-values \
   --set terminology.enabled=true
 ```
 
@@ -857,11 +856,10 @@ per-domain backups exist to prevent.
 Each job needs **its own backup credential**, named by
 `backup.clinical.existingSecret`, `backup.demographic.existingSecret` and
 `backup.linkage.existingSecret`, and
-the render is refused without them. It cannot be the pool's credential: every
-tenant-scoped table carries `FORCE ROW LEVEL SECURITY`, so `pg_dump` refuses a
-table it would read through a policy, and a CronJob wired to the runtime role
-would fail every night. Give each domain a role with `BYPASSRLS`, read-only on
-that domain's schemas. Every job reads its DSN from a mounted file, never an
+the render is refused without them. It cannot be the pool's credential: each
+domain's runtime role is revoked from the other domains, so a dump taken through
+one would be silently partial. Give each domain a read-only role on that
+domain's schema alone. Every job reads its DSN from a mounted file, never an
 environment variable.
 
 The chart provisions no storage. Create the three claims yourself, and give them
@@ -935,7 +933,7 @@ Preview an upgrade against what you have installed with
 `helm diff`, or render the new chart version and read it:
 
 ```shell
-helm template ferroehr oci://ghcr.io/rubentalstra/charts/ferroehr --version 8.3.1 \
+helm template ferroehr oci://ghcr.io/rubentalstra/charts/ferroehr --version 9.0.0 \
   -n ferroehr -f my-values.yaml | less
 ```
 

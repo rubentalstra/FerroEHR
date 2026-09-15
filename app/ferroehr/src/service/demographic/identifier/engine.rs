@@ -18,7 +18,7 @@ use uuid::Uuid;
 use crate::service::demographic::identifier::body;
 use crate::service::demographic::identifier::config::IdentifierProtectionConfig;
 use crate::service::demographic::identifier::crypto::{
-    CryptoError, KeyDomain, RootKey, TenantKeys,
+    CryptoError, DomainKeys, KeyDomain, RootKey,
 };
 use crate::service::demographic::identifier::store::{IdentifierStore, StoreError};
 
@@ -101,17 +101,16 @@ impl IdentifierProtection {
     /// rather than proceeding: storing the body with the value still in it is
     /// precisely what this exists to prevent.
     pub async fn externalize(&self, party: Uuid, body: &mut Value) -> Result<usize, StoreError> {
-        let tenant = current_tenant();
         let found = body::find(body, &self.schemes);
         if found.is_empty() {
             return Ok(0);
         }
-        let keys = TenantKeys::derive(&self.root, KeyDomain::Demographic, tenant);
+        let keys = DomainKeys::derive(&self.root, KeyDomain::Demographic);
         let mut references = Vec::with_capacity(found.len());
         for identifier in &found {
             let row = self
                 .store
-                .seal(&keys, tenant, party, &identifier.scheme, &identifier.value)
+                .seal(&keys, party, &identifier.scheme, &identifier.value)
                 .await?;
             references.push((identifier.pointer.clone(), row));
         }
@@ -130,12 +129,11 @@ impl IdentifierProtection {
     /// leaves the reference in place, which says truthfully that the value was
     /// held and is no longer.
     pub async fn expand(&self, body: &mut Value) -> Result<usize, StoreError> {
-        let tenant = current_tenant();
-        let keys = TenantKeys::derive(&self.root, KeyDomain::Demographic, tenant);
+        let keys = DomainKeys::derive(&self.root, KeyDomain::Demographic);
         let references = referenced(body);
         let mut values = Vec::with_capacity(references.len());
         for (pointer, row) in references {
-            if let Some(value) = self.store.open(&keys, tenant, row).await? {
+            if let Some(value) = self.store.open(&keys, row).await? {
                 values.push((pointer, value));
             }
         }
@@ -143,11 +141,11 @@ impl IdentifierProtection {
         Ok(values.len())
     }
 
-    /// The opaque subject pseudonym `party` is known by on the clinical side,
-    /// for the current tenant ([`RootKey::subject_pseudonym`]).
+    /// The opaque subject pseudonym `party` is known by on the clinical side
+    /// ([`RootKey::subject_pseudonym`]).
     #[must_use]
     pub fn subject_pseudonym(&self, party: Uuid) -> Uuid {
-        self.root.subject_pseudonym(current_tenant(), party)
+        self.root.subject_pseudonym(party)
     }
 
     /// The party holding `value` in `scheme`, resolved through the keyed digest.
@@ -155,19 +153,9 @@ impl IdentifierProtection {
     /// # Errors
     /// [`StoreError`] when the resolution query fails.
     pub async fn resolve(&self, scheme: &str, value: &str) -> Result<Option<Uuid>, StoreError> {
-        let tenant = current_tenant();
-        let keys = TenantKeys::derive(&self.root, KeyDomain::Demographic, tenant);
-        self.store.resolve(&keys, tenant, scheme, value).await
+        let keys = DomainKeys::derive(&self.root, KeyDomain::Demographic);
+        self.store.resolve(&keys, scheme, value).await
     }
-}
-
-/// The tenant this operation belongs to, or the reserved default when tenancy
-/// is off.
-///
-/// The nil uuid is the same reserved id the storage layer stamps on an
-/// unscoped write, so the key derivation agrees with the rows it protects.
-fn current_tenant() -> Uuid {
-    crate::extensions::tenant_context::current().map_or_else(Uuid::nil, |ctx| ctx.tenant_id)
 }
 
 /// Every protected-identifier reference in a stored body, with its pointer.

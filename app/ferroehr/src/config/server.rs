@@ -12,12 +12,12 @@
 //!   surface + the `OPTIONS /` System-Options identity).
 //! - `AppConfig` — the adapter's runtime view, assembled by the binary (the
 //!   composition root) from the root config's `[server]`, `[auth]`, `[admin]`,
-//!   `[tenancy]`, `[smart]` sections plus the extension-group mount toggles.
+//!   `[smart]` section plus the extension-group mount toggles.
 //!   `ferroehr-rest` cannot depend on the `ferroehr` binary crate that owns the
 //!   root config, so the binary supplies exactly what the adapter needs
 //!   (dependency inversion).
 //!
-//! [`AdminConfig`] and [`TenancyConfig`] are `[admin]`/`[tenancy]` sections of
+//! [`AdminConfig`] is the `[admin]` section of
 //! the root tree that this crate owns and the root references.
 
 use serde::{Deserialize, Serialize};
@@ -68,8 +68,7 @@ pub struct ServerConfig {
     ///
     /// Distinct from [`SystemOptionsConfig`] (`[server.identity]`), which is the
     /// display identity of the `OPTIONS` System-Options manifest; `system_id`
-    /// names which system authored the data. With multi-tenancy on, a resolved
-    /// tenant's own `system_id` takes precedence for that request.
+    /// names which system authored the data.
     ///
     /// Defaults to [`crate::service::DEFAULT_SYSTEM_ID`]. No openEHR spec
     /// governs the configuration mechanism — our own design; the specs govern
@@ -429,75 +428,6 @@ impl ServerConfig {
             .unwrap_or(without_version)
             .to_owned()
     }
-}
-
-/// Multi-tenancy configuration (`[tenancy]`).
-///
-/// Off by default: with `enabled = false` the tenant middleware is never
-/// installed, the pool takes no per-acquire hook, and the `/admin/tenant` CRUD
-/// answers `404` — a single-tenant deployment is unchanged. When on, each
-/// request's tenant is resolved from `claim` (a JWT-claim path; dotted paths
-/// walk nested objects) with an optional dev-only `header` override, then
-/// applied as `SET ferroehr.tenant_id` for RLS scoping.
-#[derive(Debug, Clone, Serialize, Deserialize)]
-#[serde(default, deny_unknown_fields)]
-pub struct TenancyConfig {
-    /// Whether multi-tenancy is active.
-    pub enabled: bool,
-    /// The JWT-claim path carrying the tenant key (a tenant name or uuid). A
-    /// dotted path (e.g. `realm_access.tenant`) walks nested claim objects.
-    pub claim: String,
-    /// Optional development-only request-header override for the tenant key.
-    /// When set and present on the request it wins over the JWT claim, so any
-    /// caller selects any tenant: with authentication enabled, boot refuses it
-    /// unless [`Self::insecure_header_override`] accepts that explicitly.
-    pub header: Option<String>,
-    /// Accept `header` together with an enabled authentication scheme.
-    ///
-    /// Off by default. The name says what it grants: on a deployment with real
-    /// users, an authenticated caller can read and write every tenant by naming
-    /// it in a request header, because row-level security follows the tenant
-    /// GUC and the GUC follows this header. Set it only on a development
-    /// deployment that accepts exactly that.
-    pub insecure_header_override: bool,
-    /// What a request whose tenant key names no registered tenant gets.
-    pub unknown_tenant: UnknownTenant,
-}
-
-impl Default for TenancyConfig {
-    fn default() -> Self {
-        Self {
-            enabled: false,
-            claim: "tenant".to_owned(),
-            header: None,
-            insecure_header_override: false,
-            unknown_tenant: UnknownTenant::Refuse,
-        }
-    }
-}
-
-/// What a request whose tenant key names no registered tenant gets.
-///
-/// No openEHR spec governs multi-tenancy — our own design/extension.
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, Default)]
-#[serde(rename_all = "snake_case")]
-pub enum UnknownTenant {
-    /// Refuse with `403`.
-    ///
-    /// The default, because the alternative grants the caller the reserved
-    /// default tenant, which owns every row written while tenancy was off. A
-    /// key that does not resolve is a misspelled claim, a renamed tenant or a
-    /// drifted issuer mapping, and none of those should read data.
-    #[default]
-    Refuse,
-    /// Run unscoped, against the reserved default tenant, so a cross-tenant
-    /// access is an empty result set rather than a `403` that would confirm
-    /// another tenant's existence.
-    ///
-    /// That argument holds only while the default tenant is empty. On a
-    /// deployment that enabled tenancy after going live it holds the whole
-    /// pre-tenancy store, and boot says so.
-    DefaultTenant,
 }
 
 /// Configuration of the ADMIN API group (`[admin]`; SM `I_ADMIN_SERVICE`).

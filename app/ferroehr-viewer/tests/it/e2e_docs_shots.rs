@@ -872,15 +872,6 @@ async fn dark_admin_screens(h: &Harness, dir: &Path) {
     capture_dark_gated(
         h,
         dir,
-        "/tenants",
-        "tenants/tenants-dark",
-        "#tenants-screen",
-        "#tenants-disabled",
-    )
-    .await;
-    capture_dark_gated(
-        h,
-        dir,
         "/subscriptions",
         "subscriptions/subscriptions-dark",
         "#subscriptions-screen",
@@ -905,9 +896,9 @@ async fn dark_admin_screens(h: &Harness, dir: &Path) {
 /// signs in as the ORDINARY dev user, and a screen reading an `/admin` route
 /// answers that session `403` — so a capture taken there publishes the viewer's
 /// refusal card instead of the screen the book documents. That is not
-/// hypothetical: the committed `/tenants` shot was exactly that (issue #2578),
-/// and `/system`'s runtime-configuration card and the whole `/fhir` screen have
-/// the same shape. One session, one place to add the next one.
+/// hypothetical: `/system`'s runtime-configuration card and the whole `/fhir`
+/// screen have exactly that shape (issue #2578). One session, one place to add
+/// the next one.
 ///
 /// A fresh [`Harness`] rather than a re-login: a new browser session starts with
 /// no viewer cookie, so the admin sign-in cannot land on top of the ordinary
@@ -944,20 +935,6 @@ async fn capture_admin_screens(dir: &Path) {
     // /admin/config`, so the ordinary session gets a refusal there — below the
     // capture fold today, which is exactly how it stayed unnoticed.
     capture(&h, dir, "/system", "system/system", None).await;
-
-    // The tenant registry: probe-gated on the CDR's tenancy extension, which
-    // the E2E stack enables (docker/viewer/e2e-env.yml). Absent, the screen
-    // renders its disabled card, which is not what the book documents.
-    h.goto("/tenants").await;
-    h.wait_css("#tenants-screen").await;
-    if is_present(&h, "#tenants-disabled").await {
-        println!(
-            "SKIP docs-shots: tenants not captured — the CDR under test runs with \
-             [tenancy] enabled = false"
-        );
-    } else {
-        shot_to(&h, dir, "tenants/tenants").await;
-    }
 
     // The event subscriptions: probe-gated on `[events] admin_api`, which the
     // E2E stack enables (docker/viewer/e2e-env.yml). The capture seeds one

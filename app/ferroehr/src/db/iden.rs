@@ -2,7 +2,8 @@
 // SPDX-License-Identifier: BUSL-1.1
 
 //! `sea-query` identifier vocabulary for the live schema
-//! (`migrations/ehr/0001_baseline.sql`).
+//! (`migrations/clinical/`, and the party domain rendered from the same DDL
+//! template).
 //!
 //! No openEHR spec governs the SQL schema — this is our own PG18-native
 //! design.
@@ -38,13 +39,16 @@ pub enum Ehr {
     /// `is_queryable` — promoted copy of the current `EHR_STATUS.is_queryable`,
     /// backing the AQL full-population gate.
     IsQueryable,
+    /// `is_modifiable` — promoted copy of the current
+    /// `EHR_STATUS.is_modifiable`, backing the content-write guard.
+    IsModifiable,
 }
 
-/// `audit` — `AUDIT_DETAILS` of every committed change.
+/// `commit_audit` — `AUDIT_DETAILS` of every committed change.
 #[derive(Debug, Clone, Copy, sea_query::Iden)]
-pub enum Audit {
-    /// The `audit` table itself.
-    #[iden = "audit"]
+pub enum CommitAudit {
+    /// The `commit_audit` table itself.
+    #[iden = "commit_audit"]
     Table,
     /// `id` — the audit row id (a uuidv7).
     Id,
@@ -76,8 +80,8 @@ pub enum Contribution {
     /// `ehr_id` — the owning EHR, or `NULL` for a demographic (party)
     /// contribution, which no EHR owns.
     EhrId,
-    /// `audit_id` — the contribution's `AUDIT_DETAILS` row.
-    AuditId,
+    /// `commit_audit_id` — the contribution's `AUDIT_DETAILS` row.
+    CommitAuditId,
 }
 
 /// `template_store` — operational templates (OPT 1.4 XML); dual identity
@@ -90,7 +94,7 @@ pub enum TemplateStore {
     /// `id` — the SM OPT-by-UUID handle.
     Id,
     /// `template_id` — the wire address used by the DEFINITION API and by
-    /// `vo_version.template_id`; also the source of the reported template
+    /// `version.template_id`; also the source of the reported template
     /// version.
     TemplateId,
     /// `concept` — the template's concept name, as declared by the OPT.
@@ -103,12 +107,14 @@ pub enum TemplateStore {
     CreatedAt,
 }
 
-/// `vo_version` — one row per version of a versioned object (temporal PK).
+/// `version` — one write-once row per version of a versioned object.
 #[derive(Debug, Clone, Copy, sea_query::Iden)]
-pub enum VoVersion {
-    /// The `vo_version` table itself.
-    #[iden = "vo_version"]
+pub enum VersionRow {
+    /// The `version` table itself.
+    #[iden = "version"]
     Table,
+    /// `tier` — the storage tier, and the partition key: `hot` or `cold`.
+    Tier,
     /// `vo_id` — the versioned object's id (the `object_id` of every
     /// `OBJECT_VERSION_ID` in its tree).
     VoId,
@@ -118,8 +124,8 @@ pub enum VoVersion {
     /// `ehr_id` — the owning EHR, or `NULL` for a demographic party.
     EhrId,
     /// `sys_version` — the opaque per-object commit ordinal (1..n across trunk
-    /// AND branch commits); the join key of `node` / `vo_attestation`, and NOT
-    /// the wire version number.
+    /// AND branch commits); the key of `node` / `vo_attestation`, and NOT the
+    /// wire version number.
     SysVersion,
     /// `trunk_version` — `VERSION_TREE_ID` first part: the wire version number
     /// on a trunk row, the fork point on a branch row.
@@ -128,9 +134,6 @@ pub enum VoVersion {
     BranchNumber,
     /// `branch_version` — `VERSION_TREE_ID` third part; `0` = trunk row.
     BranchVersion,
-    /// `sys_period` — the validity interval `[committed, superseded)`; the
-    /// current trunk version is the one with an unbounded upper end.
-    SysPeriod,
     /// `lifecycle_state` — the `version_lifecycle_state` code (`523` is the
     /// content-less logical delete).
     LifecycleState,
@@ -142,16 +145,70 @@ pub enum VoVersion {
     PrecedingVersionUid,
     /// `signature` — `VERSION.signature`, opaque radix-64.
     Signature,
+    /// `signature_client_supplied` — whether the signature arrived verbatim
+    /// from the committing client rather than being generated here.
+    SignatureClientSupplied,
+    /// `wrapped_original` — the `IMPORTED_VERSION` discriminator and the
+    /// wrapped `ORIGINAL_VERSION`'s own wrapper-level provenance.
+    WrappedOriginal,
     /// `other_input_version_uids` — the merge provenance of an
     /// `ORIGINAL_VERSION`; `NULL` when the version is not a merge.
     OtherInputVersionUids,
+    /// `origins` — the distinct originating systems of the body.
+    Origins,
     /// `contribution_id` — the CONTRIBUTION this version was committed in.
     ContributionId,
-    /// `audit_id` — this version's own `AUDIT_DETAILS` row.
-    AuditId,
+    /// `commit_audit_id` — this version's own `AUDIT_DETAILS` row.
+    CommitAuditId,
     /// `template_id` — the OPT the content was validated against; `NULL` for
     /// template-less content.
     TemplateId,
+    /// `stable_compatible` — whether the released openEHR generation set can
+    /// express this version's body.
+    StableCompatible,
+    /// `committed_at` — the commit instant copied from the commit audit; the
+    /// store's whole temporal axis.
+    CommittedAt,
+    /// `body` — the canonical openEHR JSON bytes, verbatim.
+    Body,
+}
+
+/// `vo_head` — the one mutable row per versioned object.
+#[derive(Debug, Clone, Copy, sea_query::Iden)]
+pub enum VoHead {
+    /// The `vo_head` table itself.
+    #[iden = "vo_head"]
+    Table,
+    /// `vo_id` — the versioned object, and the primary key.
+    VoId,
+    /// `kind` — the versioned object's RM type.
+    Kind,
+    /// `ehr_id` — the owning EHR, or `NULL` for a demographic party.
+    EhrId,
+    /// `tier` — the tier the object's version and node rows sit in.
+    Tier,
+    /// `head_sys_version` — the greatest `sys_version` on ANY lineage: the
+    /// RM's `latest_version`.
+    HeadSysVersion,
+    /// `trunk_head_sys_version` — the greatest `sys_version` on the trunk:
+    /// `LATEST_VERSION`.
+    TrunkHeadSysVersion,
+    /// `lifecycle_state` — the lifecycle state of the trunk head.
+    LifecycleState,
+    /// `template_id` — the template of the trunk head.
+    TemplateId,
+    /// `committed_at` — the trunk head's commit instant.
+    CommittedAt,
+    /// `restricted_at` — when restriction of processing was recorded for this
+    /// object; `NULL` = unrestricted.
+    RestrictedAt,
+    /// `retention_hold_at` — when a retention hold was placed; `NULL` = none.
+    RetentionHoldAt,
+    /// `archived_at` — when the object moved to the cold tier; `NULL` while
+    /// hot.
+    ArchivedAt,
+    /// `archive_reason` — the reason the caller gave for archiving.
+    ArchiveReason,
 }
 
 /// `node` — the decomposed content: one row per RM structure node, per
@@ -161,9 +218,11 @@ pub enum Node {
     /// The `node` table itself.
     #[iden = "node"]
     Table,
+    /// `tier` — the storage tier, and the partition key: `hot` or `cold`.
+    Tier,
     /// `vo_id` — the versioned object this node belongs to.
     VoId,
-    /// `sys_version` — the `vo_version` commit ordinal this node belongs to.
+    /// `sys_version` — the `version` commit ordinal this node belongs to.
     SysVersion,
     /// `num` — the node's pre-order number within the version (root = 0).
     Num,
@@ -173,8 +232,6 @@ pub enum Node {
     /// `parent_num` — the `num` of the parent structure node (the root points
     /// at itself).
     ParentNum,
-    /// `citem_num` — the `num` of the nearest ancestor carrying an archetype id.
-    CitemNum,
     /// `ehr_id` — the owning EHR, denormalized onto every node for
     /// EHR-scoped querying.
     EhrId,
@@ -194,6 +251,11 @@ pub enum Node {
     ArchMajor,
     /// `name` — the node's `name.value`.
     Name,
+    /// `name_code` — the `code_string` of the node's `name/defining_code` when
+    /// its name is coded; `NULL` otherwise.
+    NameCode,
+    /// `name_terminology` — the `terminology_id` of that defining code.
+    NameTerminology,
     /// `path` — the materialized path from the root, whose byte order under
     /// `COLLATE "C"` equals tree order; used for reassembly, never as an AQL
     /// predicate.
@@ -209,6 +271,8 @@ pub enum VoAttestation {
     /// The `vo_attestation` table itself.
     #[iden = "vo_attestation"]
     Table,
+    /// `tier` — the storage tier, and the partition key: `hot` or `cold`.
+    Tier,
     /// `id` — the attestation row id (a uuidv7).
     Id,
     /// `vo_id` — the attested versioned object.
@@ -333,21 +397,6 @@ pub enum EhrIndex {
     CreatedAt,
 }
 
-/// `vo_archive` — SM-4 archive markers (`I_ADMIN_ARCHIVE`).
-#[derive(Debug, Clone, Copy, sea_query::Iden)]
-pub enum VoArchive {
-    /// The `vo_archive` table itself.
-    #[iden = "vo_archive"]
-    Table,
-    /// `vo_id` — the archived versioned object; a per-object marker, so
-    /// deliberately FK-less against the per-version `vo_version`.
-    VoId,
-    /// `archived_at` — when the object was marked archived.
-    ArchivedAt,
-    /// `reason` — the caller-supplied archival reason, if any.
-    Reason,
-}
-
 /// `sp_subject` — SM-6 Subject Proxy Service: one proxy per subject.
 #[derive(Debug, Clone, Copy, sea_query::Iden)]
 pub enum SpSubject {
@@ -454,10 +503,11 @@ mod tests {
     #[test]
     fn table_names_render_exactly() {
         assert_eq!(Ehr::Table.to_string(), "ehr");
-        assert_eq!(Audit::Table.to_string(), "audit");
+        assert_eq!(CommitAudit::Table.to_string(), "commit_audit");
         assert_eq!(Contribution::Table.to_string(), "contribution");
         assert_eq!(TemplateStore::Table.to_string(), "template_store");
-        assert_eq!(VoVersion::Table.to_string(), "vo_version");
+        assert_eq!(VersionRow::Table.to_string(), "version");
+        assert_eq!(VoHead::Table.to_string(), "vo_head");
         assert_eq!(Node::Table.to_string(), "node");
         assert_eq!(VoAttestation::Table.to_string(), "vo_attestation");
         assert_eq!(StoredQuery::Table.to_string(), "stored_query");
@@ -465,7 +515,6 @@ mod tests {
         assert_eq!(ArchetypeStore::Table.to_string(), "archetype_store");
         assert_eq!(Adl2Artefact::Table.to_string(), "adl2_artefact");
         assert_eq!(EhrIndex::Table.to_string(), "ehr_index");
-        assert_eq!(VoArchive::Table.to_string(), "vo_archive");
         assert_eq!(SpSubject::Table.to_string(), "sp_subject");
         assert_eq!(SpBinding::Table.to_string(), "sp_binding");
         assert_eq!(SpDataFrame::Table.to_string(), "sp_data_frame");
@@ -476,32 +525,51 @@ mod tests {
     #[test]
     fn column_names_render_exactly() {
         assert_eq!(Ehr::SystemId.to_string(), "system_id");
+        assert_eq!(Ehr::IsModifiable.to_string(), "is_modifiable");
+        assert_eq!(Node::Tier.to_string(), "tier");
         assert_eq!(Node::VoId.to_string(), "vo_id");
         assert_eq!(Node::SysVersion.to_string(), "sys_version");
         assert_eq!(Node::NumCap.to_string(), "num_cap");
-        assert_eq!(Node::CitemNum.to_string(), "citem_num");
         assert_eq!(Node::RmType.to_string(), "rm_type");
+        assert_eq!(Node::NameCode.to_string(), "name_code");
+        assert_eq!(Node::NameTerminology.to_string(), "name_terminology");
         assert_eq!(Node::ArchEntity.to_string(), "arch_entity");
         assert_eq!(Node::ArchConcept.to_string(), "arch_concept");
         assert_eq!(Node::ArchMajor.to_string(), "arch_major");
-        assert_eq!(VoVersion::TrunkVersion.to_string(), "trunk_version");
-        assert_eq!(VoVersion::BranchNumber.to_string(), "branch_number");
-        assert_eq!(VoVersion::BranchVersion.to_string(), "branch_version");
+        assert_eq!(VersionRow::Tier.to_string(), "tier");
+        assert_eq!(VersionRow::TrunkVersion.to_string(), "trunk_version");
+        assert_eq!(VersionRow::BranchNumber.to_string(), "branch_number");
+        assert_eq!(VersionRow::BranchVersion.to_string(), "branch_version");
         assert_eq!(
-            VoVersion::PrecedingVersionUid.to_string(),
+            VersionRow::PrecedingVersionUid.to_string(),
             "preceding_version_uid"
         );
-        assert_eq!(VoVersion::SysPeriod.to_string(), "sys_period");
-        assert_eq!(VoVersion::ContributionId.to_string(), "contribution_id");
+        assert_eq!(VersionRow::CommittedAt.to_string(), "committed_at");
+        assert_eq!(VersionRow::ContributionId.to_string(), "contribution_id");
+        assert_eq!(VersionRow::CommitAuditId.to_string(), "commit_audit_id");
         assert_eq!(
-            VoVersion::CreatingSystemId.to_string(),
+            VersionRow::CreatingSystemId.to_string(),
             "creating_system_id"
         );
         assert_eq!(
-            VoVersion::OtherInputVersionUids.to_string(),
+            VersionRow::OtherInputVersionUids.to_string(),
             "other_input_version_uids"
         );
-        assert_eq!(Audit::TimeCommitted.to_string(), "time_committed");
+        assert_eq!(
+            VersionRow::StableCompatible.to_string(),
+            "stable_compatible"
+        );
+        assert_eq!(VoHead::HeadSysVersion.to_string(), "head_sys_version");
+        assert_eq!(
+            VoHead::TrunkHeadSysVersion.to_string(),
+            "trunk_head_sys_version"
+        );
+        assert_eq!(VoHead::RestrictedAt.to_string(), "restricted_at");
+        assert_eq!(VoHead::RetentionHoldAt.to_string(), "retention_hold_at");
+        assert_eq!(VoHead::ArchivedAt.to_string(), "archived_at");
+        assert_eq!(VoHead::ArchiveReason.to_string(), "archive_reason");
+        assert_eq!(CommitAudit::TimeCommitted.to_string(), "time_committed");
+        assert_eq!(Contribution::CommitAuditId.to_string(), "commit_audit_id");
         assert_eq!(
             StoredQuery::ReverseDomainName.to_string(),
             "reverse_domain_name"

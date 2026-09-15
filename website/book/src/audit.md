@@ -143,7 +143,7 @@ the authority and the wording below is a paraphrase.
 | (b) the specific natural person or persons having accessed | `principal` (+ `token_id`, `client_ip`) | `ActiveParticipant/@UserID` | `agent.who` | Recorded |
 | (c) the categories of data accessed | `resource_class` + `domain` (+ `result_count`) | `ParticipantObjectIdentification` type and role codes | `entity.type` / `entity.role` | Partial |
 | (d) the time and date of access | `recorded_at` | `EventIdentification/@EventDateTime` | `recorded` | Recorded |
-| (e) the origin or origins of data | `origins` + `origin_count` (the `FEEDER_AUDIT` originating systems of the served version bodies, or the server that created them, derived at commit onto `vo_version.origins`) | — (no such element) | one `entity` per origin, named "origin of the served data" | Recorded |
+| (e) the origin or origins of data | `origins` + `origin_count` (the `FEEDER_AUDIT` originating systems of the served version bodies, or the server that created them, derived at commit onto `version.origins`) | — (no such element) | one `entity` per origin, named "origin of the served data" | Recorded |
 
 Read (a) beside (b): they are both about the accessing side, and the pair
 distinguishes the **organisation** on whose behalf the access happened from the
@@ -218,9 +218,9 @@ an operator says otherwise, rather than choosing a horizon on their behalf.
 Choosing that horizon is the deployment's, and it is a legal question rather
 than a technical one: EHDS sets no retention period for the access log, while
 national law does — NEN 7513 is the Dutch reference for this log and the
-Wabvpz for how long it must survive. The setting is per node, not per tenant:
-a multi-tenant deployment whose tenants need different horizons needs
-different nodes, and that limitation is stated here rather than discovered.
+Wabvpz for how long it must survive. The setting is per node, and one node
+serves one organisation, so two organisations needing different horizons run
+two instances.
 
 **A floor is enforced where a jurisdiction sets one.** The jurisdictions a
 deployment answers to are the ones its `[privacy.identifier_scan]` rules name,

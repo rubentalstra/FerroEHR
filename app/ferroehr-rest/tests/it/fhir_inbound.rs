@@ -454,12 +454,12 @@ async fn mapping_crud_over_http() {
     assert_eq!(status, StatusCode::NOT_FOUND);
 }
 
-/// The `(vo_version, ehr)` row counts — the dry run's commits-nothing proof.
+/// The `(version, ehr)` row counts — the dry run's commits-nothing proof.
 async fn commit_counts(pool: &PgPool) -> (i64, i64) {
-    let versions: i64 = sqlx::query_scalar("SELECT count(*) FROM vo_version")
+    let versions: i64 = sqlx::query_scalar("SELECT count(*) FROM version")
         .fetch_one(pool)
         .await
-        .expect("count vo_version");
+        .expect("count version");
     let ehrs: i64 = sqlx::query_scalar("SELECT count(*) FROM ehr")
         .fetch_one(pool)
         .await

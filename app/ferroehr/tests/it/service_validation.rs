@@ -87,9 +87,9 @@ const IPS_OPT: &str = "../../crates/openehr-its/tests/fixtures/sdk/ips.v0.opt";
 /// carry in `archetype_details.template_id.value`).
 const IPS_TEMPLATE_ID: &str = "International Patient Summary";
 
-/// Count the persisted COMPOSITION versions (kind discriminator on `vo_version`).
+/// Count the persisted COMPOSITION versions (kind discriminator on `version`).
 async fn composition_versions(pool: &PgPool) -> i64 {
-    sqlx::query_scalar("SELECT count(*) FROM vo_version WHERE kind = 'COMPOSITION'")
+    sqlx::query_scalar("SELECT count(*) FROM version WHERE kind = 'COMPOSITION'")
         .fetch_one(pool)
         .await
         .expect("count compositions")
@@ -235,7 +235,7 @@ async fn composition_update_is_validated() {
     );
 }
 
-/// The direct COMPOSITION routes stamp `vo_version.template_id` on every
+/// The direct COMPOSITION routes stamp `version.template_id` on every
 /// version they commit, exactly like the CONTRIBUTION route — the promoted
 /// column the ABAC template attribute (`template_of_version`) and the
 /// template-delete guard both read.
@@ -243,7 +243,7 @@ async fn composition_update_is_validated() {
 /// The silent-unbind twin is pinned by the same assertions: were the stamp to
 /// go back to `NULL`, `template_of_version` would answer `None` and a
 /// template-scoped ABAC rule would stop binding without any error.
-/// (`vo_version.template_id` is our own promoted column — no openEHR spec
+/// (`version.template_id` is our own promoted column — no openEHR spec
 /// governs the storage mechanics.)
 #[tokio::test]
 async fn direct_route_commits_stamp_the_template_id() {
@@ -304,14 +304,14 @@ async fn direct_route_commits_stamp_the_template_id() {
 
     // Every stored version row carries it — the cheap SQL prefilter the
     // template-delete guard counts.
-    let stamped: i64 = sqlx::query_scalar("SELECT count(*) FROM vo_version WHERE template_id = $1")
+    let stamped: i64 = sqlx::query_scalar("SELECT count(*) FROM version WHERE template_id = $1")
         .bind(IPS_TEMPLATE_ID)
         .fetch_one(&pool)
         .await
         .expect("count stamped versions");
     assert_eq!(stamped, 2, "both direct-route versions are stamped");
     let unstamped: i64 = sqlx::query_scalar(
-        "SELECT count(*) FROM vo_version WHERE kind = 'COMPOSITION' AND template_id IS NULL",
+        "SELECT count(*) FROM version WHERE kind = 'COMPOSITION' AND template_id IS NULL",
     )
     .fetch_one(&pool)
     .await
@@ -437,7 +437,7 @@ async fn incomplete_lifecycle_relaxes_lower_bounds_but_not_wrongness() {
 /// `WebTemplate` and does **not** re-read `template_store`. Proof by probe: after
 /// warming the cache with one commit, the stored OPT content is corrupted in
 /// place; a second commit still succeeds, which is only possible if the resolver
-/// never re-read the (now-broken) stored content. (The `vo_version.template_id`
+/// never re-read the (now-broken) stored content. (The `version.template_id`
 /// FK forbids deleting the referenced row, so the probe corrupts content rather
 /// than deleting — `UPDATE` is not a supported template mutation, only a probe.)
 #[tokio::test]
@@ -495,11 +495,11 @@ async fn warm_template_is_served_from_cache_without_a_store_read() {
 
 /// Deleting a template through the SM `delete_opt` path invalidates its cached
 /// `WebTemplate`. Proof: warm the cache via the example endpoint (no committed
-/// composition, so no `vo_version` FK reference blocks the delete), delete the
+/// composition, so no `version` FK reference blocks the delete), delete the
 /// OPT, then commit against it. With invalidation the resolver misses, re-reads
 /// the store, finds nothing, and returns the clean "template not known" 422.
 /// Were the entry NOT invalidated, the stale WebTemplate would validate the
-/// commit and the `vo_version.template_id` FK would then fail with a database
+/// commit and the `version.template_id` FK would then fail with a database
 /// error — a different, wrong outcome. Asserting the 422 proves eviction.
 #[tokio::test]
 async fn deleting_a_template_invalidates_its_web_template_cache() {
@@ -644,7 +644,7 @@ async fn element_without_value_or_null_flavour_is_rejected_at_commit() {
 
 /// The ADL2 twin of [`direct_route_commits_stamp_the_template_id`]: a
 /// direct-route commit against an **ADL2-registered** operational template is
-/// accepted and stamps `vo_version.template_id` — the FK target is the
+/// accepted and stamps `version.template_id` — the FK target is the
 /// `template_ref` registry (the union of BOTH template dialects' wire
 /// addresses, `0001_baseline.sql`), so the stamp is not refused as a foreign
 /// key violation the way a `template_store`-only FK would (the CNF

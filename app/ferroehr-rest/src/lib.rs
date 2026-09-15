@@ -22,7 +22,7 @@
 //! - [`extensions`] — everything the specs do **not** govern, quarantined and
 //!   flagged: authentication + authorization ([`extensions::access`]),
 //!   management/observability, `OpenAPI` serving, terminology, eventing, FHIR, and
-//!   multi-tenancy — each config-gated so a stock server exposes only the
+//!   each config-gated so a stock server exposes only the
 //!   standardised ITS-REST surface.
 //!
 //! [`router::router`] assembles these under the configured base path with the

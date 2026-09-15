@@ -39,6 +39,7 @@
 )]
 
 use ferroehr::service::FerroEhrService;
+use ferroehr::service::query::request::AqlQueryRequest;
 use serde_json::{Value, json};
 use uuid::Uuid;
 
@@ -494,4 +495,80 @@ async fn a_version_tree_with_branches_reexports_and_reimports_whole() {
         .await
         .expect("re-imported trunk current");
     assert_eq!(trunk["uid"]["value"].as_str().unwrap(), foreign_tip);
+}
+
+/// `ALL_VERSIONS` returns the BRANCH row beside the trunk ones: the version
+/// spine is the append-only `version` table unfiltered, so a fork is a row of
+/// the result rather than a row the currency predicate hides (QUERY
+/// `master03-syntax.adoc` §Containment over `VERSION`; the branch identity is
+/// RM common master06 §Version Identification).
+#[tokio::test]
+async fn all_versions_returns_the_branch_row_beside_the_trunk() {
+    let source_db = testkit::db().await.expect("testkit database");
+    let source_svc = FerroEhrService::new(source_db.pool());
+    let db = testkit::db().await.expect("testkit database");
+    let svc = FerroEhrService::new(db.pool());
+    let (extract, vo) = foreign_extract(&source_svc).await;
+    let (target, vo_id) = import_foreign(&svc, extract, &vo).await;
+
+    // Fork branch 2.1.1 off the imported foreign trunk tip.
+    svc.create_ehr_contribution(
+        target,
+        modify_contribution(&composition("local mod"), &format!("{vo_id}::{FOREIGN}::2")),
+    )
+    .await
+    .expect("branch-forking modification");
+
+    let request = AqlQueryRequest {
+        ehr_ids: vec![target.0.to_string()],
+        ..AqlQueryRequest::default()
+    };
+    let result = svc
+        .execute_ad_hoc_query(
+            "SELECT c/uid/value FROM EHR e CONTAINS VERSION v[ALL_VERSIONS] CONTAINS COMPOSITION c"
+                .to_owned(),
+            request,
+        )
+        .await
+        .expect("ALL_VERSIONS query")
+        .result_set;
+    let uids: Vec<String> = result["rows"]
+        .as_array()
+        .expect("rows")
+        .iter()
+        .filter_map(|row| row[0].as_str().map(str::to_owned))
+        .collect();
+    assert!(
+        uids.contains(&format!("{vo_id}::{LOCAL}::2.1.1")),
+        "the branch version is in the ALL_VERSIONS result: {uids:?}"
+    );
+    assert!(
+        uids.contains(&format!("{vo_id}::{FOREIGN}::2")),
+        "the trunk tip is in it too: {uids:?}"
+    );
+    // …and the branch is NOT in the LATEST_VERSION result, which is the trunk
+    // head alone (master06 §The 'Virtual Version Tree': a fork does not
+    // supersede the trunk).
+    let latest = svc
+        .execute_ad_hoc_query(
+            "SELECT c/uid/value FROM EHR e CONTAINS COMPOSITION c".to_owned(),
+            AqlQueryRequest {
+                ehr_ids: vec![target.0.to_string()],
+                ..AqlQueryRequest::default()
+            },
+        )
+        .await
+        .expect("LATEST_VERSION query")
+        .result_set;
+    let latest_uids: Vec<String> = latest["rows"]
+        .as_array()
+        .expect("rows")
+        .iter()
+        .filter_map(|row| row[0].as_str().map(str::to_owned))
+        .collect();
+    assert_eq!(
+        latest_uids,
+        vec![format!("{vo_id}::{FOREIGN}::2")],
+        "LATEST_VERSION is the trunk head alone"
+    );
 }

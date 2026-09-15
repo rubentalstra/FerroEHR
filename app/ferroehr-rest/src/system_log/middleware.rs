@@ -132,11 +132,6 @@ fn fill_access(event: &mut AuditEvent, access: &AccessContext, state: &AppState)
 /// The statement record answers "who ran what"; these answer "whose record was
 /// disclosed", which is the question NEN 7513 and EHDS Art. 9 put per record.
 /// Returns whether any record was refused under `fail_mode = closed`.
-#[expect(
-    clippy::too_many_arguments,
-    reason = "every argument is one audited fact the middleware already holds; \
-              bundling them into a struct would move the same fields, not fewer"
-)]
 fn emit_served_ehr_records(
     state: &AppState,
     resp: &Response,
@@ -144,7 +139,6 @@ fn emit_served_ehr_records(
     principal: Option<&Principal>,
     client_ip: Option<&str>,
     timestamp: jiff::Timestamp,
-    tenant: Option<uuid::Uuid>,
     access: &AccessContext,
 ) -> bool {
     let Some(AuditServedEhrs(served)) = resp.extensions().get::<AuditServedEhrs>() else {
@@ -166,7 +160,6 @@ fn emit_served_ehr_records(
         );
         event.ehr_id = Some(ehr_id.clone());
         event.object_id = Some(ehr_id.clone());
-        event.tenant_id = tenant;
         event.result_count = Some(*rows);
         fill_access(&mut event, access, state);
         rejected |= state.backend().emit(event) == EmitOutcome::Rejected;
@@ -248,12 +241,6 @@ pub async fn middleware(State(state): State<AppState>, req: Request, next: Next)
         organisation: caller_organisation(&state, principal.as_ref()),
     };
 
-    // Republished by the tenant-resolution middleware, whose task-local scope
-    // has exited by the time this outermost layer runs.
-    let tenant = resp
-        .extensions()
-        .get::<ferroehr::extensions::tenant_context::TenantContext>()
-        .map(|t| t.tenant_id);
     let fresh_auth = resp.extensions().get::<FreshAuthentication>().is_some();
 
     let mut op_rejected = false;
@@ -276,7 +263,6 @@ pub async fn middleware(State(state): State<AppState>, req: Request, next: Next)
             .as_ref()
             .and_then(|o| o.uid.clone())
             .or_else(|| object_id_from_path(op, &path));
-        event.tenant_id = tenant;
         event.result_count = object.as_ref().and_then(|o| o.result_count);
         if let Some(object) = object.as_ref() {
             event.record_origins(object.origins.clone(), object.origin_count);
@@ -295,7 +281,6 @@ pub async fn middleware(State(state): State<AppState>, req: Request, next: Next)
             principal.as_ref(),
             client_ip.as_deref(),
             timestamp,
-            tenant,
             &access,
         );
     }
@@ -313,7 +298,6 @@ pub async fn middleware(State(state): State<AppState>, req: Request, next: Next)
         event.event_type = Some(EventType::Login);
         // A 401 has no principal, so the caller is `UNKNOWN`; a 403 has one.
         fill_common(&mut event, principal.as_ref(), client_ip, timestamp);
-        event.tenant_id = tenant;
         let _ = state.backend().emit(event);
     } else if fresh_auth && !state.backend().suppress_login_events() {
         let mut event = AuditEvent::new(
@@ -323,7 +307,6 @@ pub async fn middleware(State(state): State<AppState>, req: Request, next: Next)
         );
         event.event_type = Some(EventType::Login);
         fill_common(&mut event, principal.as_ref(), client_ip, timestamp);
-        event.tenant_id = tenant;
         let _ = state.backend().emit(event);
     }
 

@@ -150,10 +150,6 @@ pub struct AuditEvent {
     /// — the minimal token identity the FHIR `AuditEvent` rendering records
     /// (never the token itself; token contents are never logged).
     pub token_id: Option<String>,
-    /// The audited request's resolved tenant, when tenancy is on and the
-    /// request carried one. Informational on the stored record (the node's
-    /// audit trail is an operator surface, not tenant-scoped).
-    pub tenant_id: Option<uuid::Uuid>,
     /// Which pseudonymisation domain the operation read or wrote.
     ///
     /// Derived from [`Self::object`] by [`AccessDomain::of`], so a new resource
@@ -194,10 +190,10 @@ pub struct AuditEvent {
 /// **No openEHR spec governs this — our own design/extension.**
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum AccessDomain {
-    /// The clinical `ehr` schema: EHRs, compositions, folders, contributions,
+    /// The `clinical` schema: EHRs, compositions, folders, contributions,
     /// extracts and the queries that read them.
     Ehr,
-    /// The `demographic` schema: parties and their change control.
+    /// The `party` schema: parties and their change control.
     Demographic,
     /// The `linkage` schema: the party-to-EHR resolve map.
     Linkage,
@@ -231,8 +227,8 @@ impl AccessDomain {
     #[must_use]
     pub fn as_str(self) -> &'static str {
         match self {
-            AccessDomain::Ehr => "ehr",
-            AccessDomain::Demographic => "demographic",
+            AccessDomain::Ehr => "clinical",
+            AccessDomain::Demographic => "party",
             AccessDomain::Linkage => "linkage",
             AccessDomain::System => "system",
         }
@@ -269,7 +265,6 @@ impl AuditEvent {
             ehr_id: None,
             object_id: None,
             token_id: None,
-            tenant_id: None,
             domain: AccessDomain::of(object),
             purpose: None,
             legal_basis: None,

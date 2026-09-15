@@ -240,7 +240,7 @@ artifact a human pulled. The chart's own commands are on the
 **Should the chart ship an admission policy? No, and the reason is structural:** an
 admission policy is cluster-scoped and governs workloads the chart knows nothing
 about, while the chart deliberately renders no cluster-scoped object at all (see
-[namespaces](hardening-network-policy.md#namespaces-and-the-two-tenant-models)). A
+[namespaces](hardening-network-policy.md#namespaces-and-one-instance-per-organisation)). A
 `ClusterPolicy` in this chart would mean `helm uninstall` removing a control that
 other releases had come to depend on. The chart's contribution is the policy
 *document*, here, versioned with the lanes whose identity it encodes.

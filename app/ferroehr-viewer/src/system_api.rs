@@ -106,7 +106,7 @@ mod tests {
         let m = manifest(&["/ehr", "/definition", "/query", "/demographic", "/admin"]);
         assert!(m.advertises("/admin"));
         assert!(m.advertises("/query"));
-        assert!(!m.advertises("/tenant"));
+        assert!(!m.advertises("/contribution"));
     }
 
     #[test]

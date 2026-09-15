@@ -31,7 +31,7 @@
 //! EHR (Cases 2 and 3).
 //!
 //! NOTE: imported COMPOSITION content is stored verbatim without re-linking its
-//! operational template (`vo_version.template_id` stays NULL) or re-running
+//! operational template (`version.template_id` stays NULL) or re-running
 //! WebTemplate and RM validation, so the OPT must already be provisioned in the
 //! target through the DEFINITION API (master06 §Copying, the rule the admin
 //! dump/load path follows too).

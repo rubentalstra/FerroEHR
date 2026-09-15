@@ -128,11 +128,11 @@ async fn the_boot_sequence_prepares_the_schema_on_separated_credentials() {
         .expect("`apply` prepares the schema on the migration credential");
 
     // The sequence ends with two usable runtime pools, each on its own domain.
-    let versions: i64 = sqlx::query_scalar("SELECT count(*) FROM ehr.vo_version")
+    let versions: i64 = sqlx::query_scalar("SELECT count(*) FROM clinical.version")
         .fetch_one(&clinical)
         .await
         .expect("the clinical pool reads its own domain");
-    let parties: i64 = sqlx::query_scalar("SELECT count(*) FROM demographic.vo_version")
+    let parties: i64 = sqlx::query_scalar("SELECT count(*) FROM party.version")
         .fetch_one(&demographic)
         .await
         .expect("the demographic pool reads its own domain");
@@ -232,14 +232,14 @@ async fn a_refused_bookkeeping_table_names_the_schema_and_the_role() {
 /// domain it does not own.
 ///
 /// The fixture grants the clinical credential the two bookkeeping tables it
-/// would otherwise stop at, so the check reaches `demographic`, which it
-/// cannot enter at all.
+/// would otherwise stop at, so the check reaches `party`, which it cannot enter
+/// at all.
 #[tokio::test]
 async fn a_refused_schema_names_the_schema_and_the_role() {
     let db = testkit::db().await.expect("testkit database");
     let (role, dsn) = login_role(&db, "prepnodem", "ferroehr_ehr").await;
     sqlx::query(sqlx::AssertSqlSafe(format!(
-        "GRANT SELECT ON ext._sqlx_migrations, ehr._sqlx_migrations TO {role}"
+        "GRANT SELECT ON ext._sqlx_migrations, clinical._sqlx_migrations TO {role}"
     )))
     .execute(&db.pool())
     .await
@@ -252,7 +252,7 @@ async fn a_refused_schema_names_the_schema_and_the_role() {
 
     let error = ferroehr::db::verify_schema(&settings)
         .await
-        .expect_err("a clinical credential cannot enter the demographic schema");
+        .expect_err("a clinical credential cannot enter the party schema");
 
     let rendered = error.to_string();
     let DbError::SchemaUnreadable {
@@ -263,7 +263,7 @@ async fn a_refused_schema_names_the_schema_and_the_role() {
     else {
         panic!("a privilege refusal must not surface as a bare driver error: {rendered}")
     };
-    assert_eq!(schema, "demographic", "the first set it cannot reach");
+    assert_eq!(schema, "party", "the first set it cannot reach");
     assert_eq!(named, role, "the credential the operator has to change");
     let sqlx::Error::Database(refusal) = &source else {
         panic!("the cause must be PostgreSQL's own refusal: {source}")

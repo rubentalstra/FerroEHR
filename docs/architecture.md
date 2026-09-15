@@ -27,7 +27,9 @@ Key architectural decisions (described in full in the sections below): the
 spec + ITS layer is generated from the vendored machine-readable specs
 (BMM/XSD/OAS) by `openehr-codegen`; the application is idiomatic Rust of our
 own design on those generated crates, with its own PG18-native storage (one
-`node` table + one temporal `vo_version` table) and its own typed AQL engine,
+`node` table, an append-only `version` table with one mutable `vo_head` row
+per object, and tier partitions instead of mirror tables) and its own typed AQL
+engine,
 and acceptance measured by the openEHR conformance suite (EHRbase is prior art,
 not an oracle); the application is four crates with zero re-exports, and its
 service layer follows the openEHR SM Platform Service Model (one module per SM
@@ -87,68 +89,90 @@ serves no range/ordering), the storage is a **decomposed node model designed
 fresh** (the diagrammed deep-dive is the book's Storage architecture page,
 `website/book/src/concepts/storage.md`):
 
+- **`version`** — one write-once row per version of a versioned object. A
+  version row and its node rows are never updated after commit (BASE
+  `architecture_overview/master07-security.adoc` §Integrity), so a supersession
+  is one insert: there is no validity interval, no partial index over a mutable
+  predicate and no close-out statement. Validity is derived from `committed_at`,
+  which the RM already copies into every version from the contribution audit
+  (RM common master06 §Committal and Audits): version *i* is valid over
+  `[committed_at_i, committed_at_i+1)`, and `version_at_time(t)` is the trunk
+  row with the greatest `committed_at` at or before `t`. A BRIN index on
+  `committed_at` serves time-range listing on the append-only heap.
+- **`vo_head`** — the one mutable row per versioned object, and the only row a
+  commit updates. It answers every "what is current" question in one
+  primary-key probe: `trunk_head_sys_version` IS `LATEST_VERSION`,
+  `head_sys_version` the RM's `latest_version`, plus the lifecycle state, the
+  template, the tier, the archive marker and the restriction and retention
+  marks. None of the columns a commit changes appears in an index, which is the
+  condition PostgreSQL 18 §"Heap-Only Tuples (HOT)" states for a heap-only
+  update; `fillfactor = 90` reserves the same-page room.
 - **`node`** — one unified table for all versioned-object content
   (COMPOSITION / EHR_STATUS / FOLDER). One row per RM structure node with a
-  **nested-set index** (`num`, `num_cap`, `parent_num`, `citem_num`): AQL
-  CONTAINS is an integer interval join, never a JSON walk. Promoted predicate
-  columns (`rm_type` — full RM type names, no alias compaction —,
-  `archetype`, `name`, `ehr_id`; `path COLLATE "C"` is the reassembly key
-  and never a predicate) and a **canonical openEHR JSON fragment** in
-  `data jsonb` (verbatim `openehr-its` encoding: zero translation between
-  storage and API, no synthetic fields). Point reads do not reassemble the
-  fragments: the whole canonical body is also stored verbatim as
-  `vo_version.body text` and served from there in one statement.
-- **`vo_version`** — one temporal version table (`sys_period tstzrange`,
-  `uuidv7()` keys) instead of current+`_history` pairs; current =
-  `upper_inf(sys_period)` partial index. The non-overlap invariant is held by
-  partial unique btrees plus the per-object advisory lock, not by a temporal
-  key: the GiST `EXCLUDE` constraints were removed after a measurement of the
-  hot write path recorded on its tracker issue, not in a committed artifact.
-  The PostgreSQL documentation makes no statement about exclusion-constraint
-  concurrency; what it does say is that an equality-only exclusion is slower
-  than a UNIQUE constraint (`CREATE TABLE`, EXCLUDE). The redesign in #3337
-  replaces this table.
-  `LATEST_VERSION` and **`ALL_VERSIONS`** both supported.
-- **`ehr`, `contribution`, `audit`, `template_store`, `stored_query`,
-  `item_tag`** — supporting tables; every write emits contribution + audit in
-  the same transaction (openEHR requirement).
-- **`demographic`** — the pseudonymisation domain: a relation-for-relation
-  mirror of the clinical schema (built with `CREATE TABLE … LIKE`) holding the
-  PARTY versioned objects and their change control, with its own
-  `cold_demographic` archival tier. A party body decomposes like clinical
-  content: the party root, each `PARTY_IDENTITY`, `CONTACT`, `ADDRESS` and
-  `CAPABILITY` nested in it, and the `ITEM_STRUCTURE` under each get their own
-  `node` row. Nothing selects a domain but the pool's
-  `search_path`, so one set of storage code serves both; a CHECK on each side
-  refuses the other's rows. Four `NOINHERIT` runtime roles
-  (`ferroehr_ehr`, `ferroehr_demographic` and a read-only twin of each) hold
-  their own domain and are revoked from the other, and the server refuses to
-  boot when either can read across (`db::verify_domain_isolation`). GDPR
-  Art. 4(5) and Art. 32(1)(a); no openEHR spec governs storage layout or
-  database roles.
-- **`linkage`** — the third pseudonymisation domain: `party_ehr`, the map from
-  a demographic party to the EHR whose subject it is, temporal under a PG18
-  `PRIMARY KEY … WITHOUT OVERLAPS` so a merge or split closes a row rather
-  than deleting it. Identifiers only, no attributes; a fifth `NOINHERIT` role
-  (`ferroehr_linkage`) holds it and is revoked from both domains it joins,
-  which are in turn revoked from it — the same boot gate covers all five. The
-  service reaches it through its own pool (`db::connect_linkage`), never
-  through the clinical or demographic one.
+  **nested-set index** (`num`, `num_cap`, `parent_num`): AQL CONTAINS is an
+  integer interval join, never a JSON walk. Promoted predicate columns
+  (`rm_type` — full RM type names, no alias compaction —, `archetype`, `name`,
+  `name_code`, `name_terminology`, `ehr_id`; `path COLLATE "C"` is the
+  reassembly key and never a predicate) and a **canonical openEHR JSON
+  fragment** in `data jsonb` (verbatim `openehr-its` encoding: zero translation
+  between storage and API, no synthetic fields). Point reads do not reassemble
+  the fragments: the whole canonical body is also stored verbatim as
+  `version.body text` and served from there in one statement.
+- **Tiers are partitions.** `version`, `node` and `vo_attestation` are each
+  `PARTITION BY LIST (tier)` with a `hot` and a `cold` partition and no default
+  partition. Archiving an EHR is `UPDATE version SET tier = 'cold' WHERE
+  ehr_id = $1`; PostgreSQL moves the rows between partitions and the `node` and
+  `vo_attestation` foreign keys carry their rows across with `ON UPDATE
+  CASCADE` — verified first-hand on PostgreSQL 18.6, since the documentation
+  neither permits nor forbids it. What that buys over the former mirror tables:
+  one relation, so foreign keys hold across the tier and every read path and
+  every future column reaches cold without a view rebuild; and AQL excludes
+  cold by writing `tier = 'hot'` as a literal, which the planner prunes at plan
+  time. The cold partitions carry the primary key alone, because archived
+  content leaves the queryable store until it is restored.
+- **`ehr`, `contribution`, `commit_audit`, `template_store`, `stored_query`,
+  `item_tag`, `ehr_folder`** — supporting tables; every write emits contribution
+  + commit audit in the same transaction (openEHR requirement).
+- **`restriction`, `retention_policy`, `retention_anchor`** — the registers
+  behind the legal marks on `vo_head`: the ground a restriction rests on (GDPR
+  Art. 18) and the retention period per category and jurisdiction with its
+  citation (Art. 5(1)(e), Art. 30(1)(f)). `retention_due` is a view, never a
+  job: the CDR deletes no clinical content on a timer.
 - **`ext`** — our own `IMMUTABLE` helper functions (e.g.
   `openehr_magnitude(jsonb)` for DV_ORDERED ordering semantics). The
   `IMMUTABLE` ones are index-legal, so an expression index can carry a
   measured hot path; none exists today, and `openehr_timestamp` is `STABLE`
   by necessity (its result depends on the session TimeZone) and can never be
   indexed.
-- **`cold`** — the physical archival tier: FK-free mirror relations of
-  `vo_version`/`node`/`vo_attestation` plus `*_all` union views.
-  Admin-archived objects move there transactionally (reversibly restored, or
-  thawed automatically on write); every full version read and every
-  whole-repository reader goes through the `*_all` union views in one
-  statement (there is no primary-miss retry), and AQL stays primary-only —
-  archived content leaves the queryable store until restored.
-- Migrations via `sqlx migrate add` (official CLI); `sqlx` pool + two-schema
-  migrator infrastructure.
+- **`party`** — the pseudonymisation domain: the PARTY versioned objects and
+  their change control, rendered from the SAME DDL template as the clinical
+  relations (`app/ferroehr/migrations/templates/*.sql.in`), so the two domains
+  cannot drift. A party body decomposes like clinical content: the party root,
+  each `PARTY_IDENTITY`, `CONTACT`, `ADDRESS` and `CAPABILITY` nested in it, and
+  the `ITEM_STRUCTURE` under each get their own `node` row. Beside them,
+  `national_identifier` holds identifiers sealed under authenticated encryption
+  and `party_relationship_target` is the target-side index behind
+  `PARTY.reverse_relationships`. Nothing selects a domain but the pool's
+  `search_path`, so one set of storage code serves both; a `CHECK` on each side
+  refuses the other's rows. GDPR Art. 4(5) and Art. 32(1)(a); no openEHR spec
+  governs storage layout or database roles.
+- **`linkage`** — the third pseudonymisation domain: `party_ehr`, the map from a
+  demographic party to the EHR whose subject it is, temporal under a PG18
+  `PRIMARY KEY … WITHOUT OVERLAPS` so a merge or split closes a row rather than
+  deleting it. Identifiers only, no attributes. The service reaches it through
+  its own pool (`db::connect_linkage`), never through the clinical or party one.
+- **Five `NOINHERIT` runtime roles** hold the domains: `ferroehr_ehr` and its
+  read-only twin hold `clinical`, `ferroehr_demographic` and its twin hold
+  `party`, and `ferroehr_linkage` holds `linkage` alone. Each is revoked from
+  the domains it does not own, in both directions, and the server refuses to
+  boot when any of them can read across (`db::verify_domain_isolation`). The
+  role names keep their first-generation spelling until #3343 renames them with
+  the per-domain DSNs.
+- Migrations via `sqlx migrate add` (official CLI): five sets, run in order —
+  `ext`, `clinical`, `party`, `linkage`, `audit` — each with its own
+  `_sqlx_migrations` table, each a sequence of natural files with one concern
+  apiece. A database carrying the first generation's `ehr` or `demographic`
+  bookkeeping is refused at boot, by name, with the remedy.
 
 ## AQL engine (ours)
 

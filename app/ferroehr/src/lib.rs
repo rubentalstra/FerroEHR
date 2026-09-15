@@ -30,7 +30,7 @@
 //! - [`db`] — pool, settings, migrators.
 //! - [`telemetry`] — observability infrastructure.
 //! - [`extensions`] — quarantined enterprise extensions (eventing, FHIR
-//!   connector, multimedia offload, tenancy), each off by default behind its
+//!   connector, multimedia offload), each off by default behind its
 //!   own config gate.
 
 // Doctests are copy-paste templates: they must use `?`, never unwrap

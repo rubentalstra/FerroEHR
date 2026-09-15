@@ -105,7 +105,7 @@ fn composition(name: &str) -> Value {
 }
 
 async fn pending_count(pool: &PgPool) -> i64 {
-    sqlx::query_scalar("SELECT count(*) FROM ehr.event_outbox WHERE published_at IS NULL")
+    sqlx::query_scalar("SELECT count(*) FROM clinical.event_outbox WHERE published_at IS NULL")
         .fetch_one(pool)
         .await
         .expect("pending count")
@@ -146,7 +146,7 @@ async fn drain_outbox(pool: &PgPool) {
 async fn version_count(pool: &PgPool) -> i64 {
     sqlx::query_scalar(
         "SELECT coalesce(sum(jsonb_array_length(envelope -> 'versions')), 0)::bigint \
-         FROM ehr.event_outbox",
+         FROM clinical.event_outbox",
     )
     .fetch_one(pool)
     .await

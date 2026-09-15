@@ -38,9 +38,13 @@ methods, no `JSON_TABLE`, no GIN operators) → execute (`sqlx`) →
 assemble `RESULT_SET` (schema 1.1.0). Keep the IR a distinct pass — that is
 what keeps the hard cases tractable — and do **not** collapse it away.
 
-Versioning semantics: `LATEST_VERSION` = the current partial index;
-`ALL_VERSIONS` = the temporal table unfiltered (supported). A pure
-perf tuning of the SQL that isn't needed for correctness is a
+Versioning semantics: `LATEST_VERSION` = the object's head row
+(`vo_head.trunk_head_sys_version`); `ALL_VERSIONS` = the append-only `version`
+table unfiltered (supported); a version predicate on the commit instant is the
+trunk row with the greatest `committed_at` at or before it. Every partitioned
+relation the emitter names carries `tier = 'hot'` as a LITERAL, so the cold
+partition is pruned at plan time and archived content leaves the queryable
+store. A pure perf tuning of the SQL that isn't needed for correctness is a
 `// TODO(perf):` for later optimization work.
 
 ## Spec sources (the oracle)

@@ -491,24 +491,15 @@ impl Builder<'_> {
             NameConstraint::Value(s) => Ok(col(node, "name").eq(Expr::val(s.clone()))),
             NameConstraint::Param(p) => Ok(col(node, "name").eq(Expr::val(self.param_str(p)?))),
             // The canonical expansion of the coded-name shortcut (QUERY
-            // master03 §Node predicate): code_string AND terminology_id/value
-            // compared separately; the informational `|value|` tail was
-            // already dropped at analysis.
-            NameConstraint::TermCode { terminology, code } => {
-                let code_extract = as_text(jsonb_path(
-                    col(node, "data"),
-                    "$.name.defining_code.code_string",
-                    None,
-                ));
-                let term_extract = as_text(jsonb_path(
-                    col(node, "data"),
-                    "$.name.defining_code.terminology_id.value",
-                    None,
-                ));
-                Ok(code_extract
-                    .eq(Expr::val(code.clone()))
-                    .and(term_extract.eq(Expr::val(terminology.clone()))))
-            }
+            // master03-syntax §Node predicate): code_string AND
+            // terminology_id/value compared separately; the informational
+            // `|value|` tail was already dropped at analysis. Both sides are
+            // promoted columns of `node`, written by the decomposer at commit,
+            // so a coded-name predicate is two column comparisons rather than
+            // two JSON probes.
+            NameConstraint::TermCode { terminology, code } => Ok(col(node, "name_code")
+                .eq(Expr::val(code.clone()))
+                .and(col(node, "name_terminology").eq(Expr::val(terminology.clone())))),
         }
     }
 

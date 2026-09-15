@@ -7,10 +7,9 @@
 //! No openEHR spec governs the persistence mechanism; the storage substrate is
 //! our own PG18-native design. This module is the single place the rest of the
 //! crate obtains a database handle: [`DbConfig`] (the `[db]` config section)
-//! feeds [`connect`] and [`connect_tenant_scoped`] for the clinical domain,
-//! [`connect_demographic`] / [`connect_tenant_scoped_demographic`] for the
-//! demographic one and [`connect_linkage`] / [`connect_tenant_scoped_linkage`]
-//! for the linkage one, and [`prepare`] brings the schema to the state this
+//! feeds [`connect`] for the clinical domain, [`connect_demographic`] for the
+//! party one and [`connect_linkage`] for the linkage one,
+//! and [`prepare`] brings the schema to the state this
 //! build requires — on the migration DSN ([`DbConfig::migrate_dsn`]), a fourth
 //! credential a deployment may name because preparation spans every schema
 //! while each runtime credential holds one domain. The three served domains
@@ -298,21 +297,20 @@ pub enum DbError {
         source: sqlx::Error,
     },
 
-    /// A cold archival tier outlived the primary tier it mirrors, in either
-    /// the clinical or the demographic domain.
+    /// The database was created by a release older than the storage rewrite.
     #[error(
-        "a cold archival tier is present but the primary tier it mirrors is not: \
-         `cold` without `ehr.vo_version`, or `cold_demographic` without \
-         `demographic.vo_version`. Each pair is one repository and has been wiped \
-         apart. The cold tables still hold content, and their column shape was \
-         copied from the primary tables as they stood before the wipe — so this \
-         server will not adopt them: a re-adopted mirror can differ in shape from the \
-         tier it mirrors, and the rows belong to a repository that no longer exists. \
-         Restore the whole database from backup (every schema together), or, if the \
-         wipe was intended, drop the surviving cold schema (`DROP SCHEMA cold \
-         CASCADE` / `DROP SCHEMA cold_demographic CASCADE`) and start again"
+        "this database predates the storage rewrite: schema `{schema}` carries its own \
+         migration bookkeeping, which only a release before the rewrite wrote. The storage \
+         schema was rewritten and the new migration sets replace the old ones outright, so \
+         there is nothing to upgrade in place: this server will not create its schemas beside \
+         the old ones and serve an empty repository while the existing content sits \
+         unreachable in the same database. Dump anything worth keeping, recreate the \
+         database, and start this server against it"
     )]
-    OrphanedArchiveTier,
+    FirstGenerationDatabase {
+        /// The first-generation schema whose migration bookkeeping was found.
+        schema: &'static str,
+    },
 
     /// A runtime role can read a relation belonging to a pseudonymisation
     /// domain it does not own.
@@ -396,32 +394,33 @@ pub enum SchemaMismatch {
 // ── Pool ─────────────────────────────────────────────────────────────────────
 
 /// Search path applied to every pooled connection serving the **clinical**
-/// domain: the EHR tables live in `ehr`, the AQL support functions and the
+/// domain: the EHR tables live in `clinical`, the AQL support functions and the
 /// `"C"`/`en_US` collations in `ext`. Set once per physical connection
 /// (`after_connect`) so queries may use unqualified table names.
-const CLINICAL_SEARCH_PATH: &str = "SET search_path TO ehr, ext, public";
+const CLINICAL_SEARCH_PATH: &str = "SET search_path TO clinical, ext, public";
 
-/// Search path applied to every pooled connection serving the **demographic**
-/// domain (`demographic/0001_baseline`), whose relations carry the same names
-/// and column shape as the clinical ones.
+/// Search path applied to every pooled connection serving the **party**
+/// domain, whose change-control and node relations are rendered from the same
+/// DDL template as the clinical ones and therefore carry the same names and
+/// column shape.
 ///
 /// This one constant is the whole routing mechanism: a pool opened with it
 /// reuses every storage function unchanged, because the SQL those functions
 /// emit names its relations unqualified and `search_path` decides which schema
-/// they resolve in. `ehr` is deliberately absent — a query this pool issues
-/// against a clinical relation must fail to resolve rather than quietly cross
-/// the pseudonymisation boundary.
+/// they resolve in. `clinical` is deliberately absent — a query this pool
+/// issues against a clinical relation must fail to resolve rather than quietly
+/// cross the pseudonymisation boundary.
 ///
 /// No openEHR spec governs storage layout or database roles — our own
 /// design/extension (GDPR Art. 4(5) and Art. 32(1)(a);
 /// <https://eur-lex.europa.eu/eli/reg/2016/679/oj>).
-const DEMOGRAPHIC_SEARCH_PATH: &str = "SET search_path TO demographic, ext, public";
+const DEMOGRAPHIC_SEARCH_PATH: &str = "SET search_path TO party, ext, public";
 
 /// Search path applied to every pooled connection serving the **linkage**
-/// domain (`linkage/0001_baseline`), which holds the one relation joining the
-/// other two: which demographic party is the subject of which EHR.
+/// domain, which holds the one relation joining the other two: which party is
+/// the subject of which EHR.
 ///
-/// Neither `ehr` nor `demographic` is on it, for the reason the schema exists:
+/// Neither `clinical` nor `party` is on it, for the reason the schema exists:
 /// a query issued on this pool against either domain's relations must fail to
 /// resolve rather than quietly re-join what the split holds apart. The
 /// crossing happens one layer up, in the service, over two pools — never
@@ -432,39 +431,19 @@ const DEMOGRAPHIC_SEARCH_PATH: &str = "SET search_path TO demographic, ext, publ
 /// <https://eur-lex.europa.eu/eli/reg/2016/679/oj>).
 const LINKAGE_SEARCH_PATH: &str = "SET search_path TO linkage, ext, public";
 
-/// Whether a pool stamps the per-request tenant on its connections.
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
-enum Tenancy {
-    /// Single-tenant: no GUC statement on any hook (zero checkout overhead).
-    Off,
-    /// Multi-tenant: the `ferroehr.tenant_id` session GUC is stamped on every
-    /// new connection and re-stamped on every checkout.
-    Scoped,
-}
-
-/// The session-level declaration of the reserved default tenant.
-const DEFAULT_TENANT_GUC: &str = "SET ferroehr.tenant_id = '00000000-0000-0000-0000-000000000000'";
-
 /// Everything a freshly-opened physical connection needs before it serves a
-/// query: the domain's search path, the statement-timeout backstop, and — when
-/// tenancy is on — the request's tenant GUC.
+/// query: the domain's search path and the statement-timeout backstop.
 ///
-/// One implementation for every pool, so a domain or tenancy variant cannot
-/// drop a setting. Dropping the timeout in particular silently disarms the
-/// DB-side runaway-query guard, and a broken control must never look like a
-/// policy outcome.
+/// One implementation for every pool, so a domain cannot drop a setting.
+/// Dropping the timeout in particular silently disarms the DB-side
+/// runaway-query guard, and a broken control must never look like a policy
+/// outcome.
 async fn open_session(
     conn: &mut PgConnection,
     search_path: &'static str,
     statement_timeout: Option<&str>,
-    tenancy: Tenancy,
 ) -> Result<(), sqlx::Error> {
     sqlx::query(search_path).execute(&mut *conn).await?;
-    // Every connection the server opens declares its tenant: the reserved
-    // default here, the request's tenant per checkout under `Scoped`. An
-    // undeclared tenant is what `ext.current_tenant_id()` refuses under the
-    // multi posture (#3341).
-    sqlx::query(DEFAULT_TENANT_GUC).execute(&mut *conn).await?;
     if let Some(statement_timeout) = statement_timeout {
         // A session-level SET on the physical connection, surviving every
         // checkout, where `SET LOCAL` would last one transaction.
@@ -475,9 +454,6 @@ async fn open_session(
             .execute(&mut *conn)
             .await?;
     }
-    if tenancy == Tenancy::Scoped {
-        stamp_tenant_guc(conn).await?;
-    }
     Ok(())
 }
 
@@ -486,13 +462,13 @@ async fn open_session(
 /// liveness ping. Connection retirement stays on the `sqlx` defaults (an idle
 /// reap plus a bounded lifetime — infinite-lived connections are discouraged by
 /// the driver, so we do not disable them).
-fn pool_options(settings: &DbConfig, search_path: &'static str, tenancy: Tenancy) -> PgPoolOptions {
+fn pool_options(settings: &DbConfig, search_path: &'static str) -> PgPoolOptions {
     // Rendered once here rather than per connection. The value is an integer
     // from our own configuration, never client input, and it is bound as a
     // literal because PostgreSQL's `SET` takes no parameter placeholder.
     let statement_timeout = (settings.statement_timeout_ms > 0)
         .then(|| format!("SET statement_timeout = {}", settings.statement_timeout_ms));
-    let options = PgPoolOptions::new()
+    PgPoolOptions::new()
         .max_connections(settings.max_connections)
         .min_connections(settings.min_connections)
         .acquire_timeout(Duration::from_secs(settings.acquire_timeout_secs))
@@ -504,32 +480,18 @@ fn pool_options(settings: &DbConfig, search_path: &'static str, tenancy: Tenancy
             // Cloned per call: `after_connect` takes an `Fn`, so the captured
             // value cannot be moved out of it.
             let statement_timeout = statement_timeout.clone();
-            Box::pin(async move {
-                open_session(conn, search_path, statement_timeout.as_deref(), tenancy).await
-            })
-        });
-    match tenancy {
-        Tenancy::Off => options,
-        // `after_connect` covers a connection freshly opened by `acquire`
-        // itself under pool growth; `before_acquire` re-stamps a previously
-        // idle connection on every checkout (docs.rs,
-        // `sqlx::pool::PoolOptions::before_acquire`: "This is _not_ invoked
-        // for new connections. Use `after_connect` for those.").
-        Tenancy::Scoped => options.before_acquire(|conn, _meta| {
-            Box::pin(async move {
-                stamp_tenant_guc(conn).await?;
-                Ok(true)
-            })
-        }),
-    }
+            Box::pin(
+                async move { open_session(conn, search_path, statement_timeout.as_deref()).await },
+            )
+        })
 }
 
-/// Create the clinical application connection pool (single-tenant / tenancy-off).
+/// Create the clinical application connection pool.
 ///
 /// Every physical connection is initialized with the clinical search path
-/// (`ehr, ext, public`) so queries can use unqualified table names, as the
-/// schema expects. There is no per-acquire hook: zero checkout overhead when
-/// tenancy is off.
+/// (`clinical, ext, public`) so queries can use unqualified table names, as
+/// the schema expects. There is no per-acquire hook, so a checkout costs
+/// nothing.
 ///
 /// # Errors
 ///
@@ -538,13 +500,13 @@ fn pool_options(settings: &DbConfig, search_path: &'static str, tenancy: Tenancy
 /// authentication, unknown database), or the search-path initialization
 /// statement fails on that first connection.
 pub async fn connect(settings: &DbConfig) -> Result<PgPool, DbError> {
-    let pool = pool_options(settings, CLINICAL_SEARCH_PATH, Tenancy::Off)
+    let pool = pool_options(settings, CLINICAL_SEARCH_PATH)
         .connect(settings.url.expose())
         .await?;
     Ok(pool)
 }
 
-/// Create the **demographic** connection pool (single-tenant / tenancy-off).
+/// Create the **party** connection pool.
 ///
 /// The twin of [`connect`] for the pseudonymisation domain: the same pool
 /// settings, the demographic search path, and [`DbConfig::demographic_dsn`] —
@@ -556,13 +518,13 @@ pub async fn connect(settings: &DbConfig) -> Result<PgPool, DbError> {
 ///
 /// The same failures as [`connect`], against the demographic DSN.
 pub async fn connect_demographic(settings: &DbConfig) -> Result<PgPool, DbError> {
-    let pool = pool_options(settings, DEMOGRAPHIC_SEARCH_PATH, Tenancy::Off)
+    let pool = pool_options(settings, DEMOGRAPHIC_SEARCH_PATH)
         .connect(settings.demographic_dsn())
         .await?;
     Ok(pool)
 }
 
-/// Create the **linkage** connection pool (single-tenant / tenancy-off).
+/// Create the **linkage** connection pool.
 ///
 /// The twin of [`connect_demographic`] for the third pseudonymisation domain:
 /// the same pool settings, the linkage search path, and [`DbConfig::linkage_dsn`]
@@ -574,88 +536,7 @@ pub async fn connect_demographic(settings: &DbConfig) -> Result<PgPool, DbError>
 ///
 /// The same failures as [`connect`], against the linkage DSN.
 pub async fn connect_linkage(settings: &DbConfig) -> Result<PgPool, DbError> {
-    let pool = pool_options(settings, LINKAGE_SEARCH_PATH, Tenancy::Off)
-        .connect(settings.linkage_dsn())
-        .await?;
-    Ok(pool)
-}
-
-/// Stamp the `ferroehr.tenant_id` session GUC on a connection from the
-/// current task's tenant context ([`crate::extensions::tenant_context::current`])
-/// — the reserved default tenant, declared explicitly, when no tenant is in
-/// scope (a background worker, or a request that resolved no tenant).
-async fn stamp_tenant_guc(conn: &mut PgConnection) -> Result<(), sqlx::Error> {
-    let tenant = crate::extensions::tenant_context::current().map_or_else(
-        || uuid::Uuid::nil().to_string(),
-        |t| t.tenant_id.to_string(),
-    );
-    sqlx::query("SELECT set_config('ferroehr.tenant_id', $1, false)")
-        .bind(tenant)
-        .execute(&mut *conn)
-        .await?;
-    Ok(())
-}
-
-/// Creates the **tenant-scoped** clinical pool.
-///
-/// Wraps [`connect`] with hooks that stamp the `ferroehr.tenant_id` session GUC
-/// on every checked-out connection from the current request's tenant context
-/// ([`crate::extensions::tenant_context::current`]). Multi-tenancy is our own
-/// deployment extension — no openEHR spec governs it.
-///
-/// This is the seam that scopes **both** autocommit reads and transactions:
-/// the service checks out a fresh connection per read and one per write
-/// transaction, and each carries the session GUC the RLS `tenant_isolation`
-/// policy (and the `tenant_id` column DEFAULT) read. A connection returning
-/// to the pool keeps its session-level GUC, so every acquire re-stamps it —
-/// to the request's tenant, or to `''` (⇒ the reserved default tenant) when
-/// no tenant is in scope — so a reused connection never leaks the previous
-/// request's tenant.
-///
-/// # Errors
-///
-/// Returns [`DbError::Sqlx`] when the DSN does not parse as a `PostgreSQL`
-/// URL, the initial connection fails (unreachable host, refused
-/// authentication, unknown database), or the search-path initialization
-/// statement fails on that first connection.
-pub async fn connect_tenant_scoped(settings: &DbConfig) -> Result<PgPool, DbError> {
-    let pool = pool_options(settings, CLINICAL_SEARCH_PATH, Tenancy::Scoped)
-        .connect(settings.url.expose())
-        .await?;
-    Ok(pool)
-}
-
-/// Creates the **tenant-scoped demographic** pool — [`connect_demographic`]
-/// with the tenant hooks of [`connect_tenant_scoped`].
-///
-/// The demographic relations carry the same `tenant_id` column, DEFAULT and
-/// `tenant_isolation` RLS policy as the clinical ones, so a demographic read is
-/// tenant-scoped exactly as a clinical one is.
-///
-/// # Errors
-///
-/// The same failures as [`connect_tenant_scoped`], against the demographic DSN.
-pub async fn connect_tenant_scoped_demographic(settings: &DbConfig) -> Result<PgPool, DbError> {
-    let pool = pool_options(settings, DEMOGRAPHIC_SEARCH_PATH, Tenancy::Scoped)
-        .connect(settings.demographic_dsn())
-        .await?;
-    Ok(pool)
-}
-
-/// Creates the **tenant-scoped linkage** pool — [`connect_linkage`] with the
-/// tenant hooks of [`connect_tenant_scoped`].
-///
-/// `linkage.party_ehr` carries the same `tenant_id` column, DEFAULT and
-/// `tenant_isolation` RLS policy as the clinical and demographic relations, and
-/// the tenant is a part of its temporal primary key — so a mapping written
-/// without the GUC stamped would land on the reserved default tenant whatever
-/// the request said, and resolve from there again.
-///
-/// # Errors
-///
-/// The same failures as [`connect_tenant_scoped`], against the linkage DSN.
-pub async fn connect_tenant_scoped_linkage(settings: &DbConfig) -> Result<PgPool, DbError> {
-    let pool = pool_options(settings, LINKAGE_SEARCH_PATH, Tenancy::Scoped)
+    let pool = pool_options(settings, LINKAGE_SEARCH_PATH)
         .connect(settings.linkage_dsn())
         .await?;
     Ok(pool)
@@ -680,7 +561,7 @@ pub async fn connect_tenant_scoped_linkage(settings: &DbConfig) -> Result<PgPool
 pub fn demographic_pool_from(pool: &PgPool) -> PgPool {
     let defaults = DbConfig::default();
     let options = pool.connect_options();
-    pool_options(&defaults, DEMOGRAPHIC_SEARCH_PATH, Tenancy::Off)
+    pool_options(&defaults, DEMOGRAPHIC_SEARCH_PATH)
         .min_connections(0)
         .connect_lazy_with(PgConnectOptions::clone(&options))
 }
@@ -692,69 +573,135 @@ pub fn demographic_pool_from(pool: &PgPool) -> PgPool {
 /// stays synchronous and infallible while still routing the linkage chapter at
 /// the `linkage` schema. It carries the pool defaults rather than the
 /// deployment's `[db]` tuning, and opens no connection until one is asked for.
-/// A deployment that tunes the pool, separates the runtime roles, or enables
-/// tenancy supplies its own pool through
+/// A deployment that tunes the pool or separates the runtime roles supplies
+/// its own pool through
 /// [`crate::service::FerroEhrService::with_linkage_pool`] instead.
 #[must_use]
 pub fn linkage_pool_from(pool: &PgPool) -> PgPool {
     let defaults = DbConfig::default();
     let options = pool.connect_options();
-    pool_options(&defaults, LINKAGE_SEARCH_PATH, Tenancy::Off)
+    pool_options(&defaults, LINKAGE_SEARCH_PATH)
         .min_connections(0)
         .connect_lazy_with(PgConnectOptions::clone(&options))
 }
 
 // ── Migrations ───────────────────────────────────────────────────────────────
 
-/// The `ext` schema: our openEHR support functions (`openehr_magnitude` and
-/// its ISO-8601 helpers). Runs before `ehr`.
+/// The `ext` schema: the runtime roles, our openEHR support functions
+/// (`openehr_magnitude` and its ISO-8601 helpers) and the deployment posture.
+/// Runs first, so every later set finds its roles and helpers in place.
 static EXT_MIGRATOR: Migrator = sqlx::migrate!("migrations/ext");
 
-/// The `ehr` schema — the greenfield PG18-native CDR schema (no openEHR spec
-/// governs the physical schema, spike-validated): the unified
-/// per-version `node` table, the temporal `vo_version` table, and the
-/// supporting tables.
-static EHR_MIGRATOR: Migrator = sqlx::migrate!("migrations/ehr");
+/// The `clinical` schema — the clinical pseudonymisation domain: the EHR-owned
+/// versioned objects, the append-only `version` store with its `vo_head`, the
+/// decomposed `node` table, and the supporting relations. No openEHR spec
+/// governs the physical schema; the change-control semantics it realizes are
+/// RM common `master06-change_control_package.adoc`.
+static CLINICAL_MIGRATOR: Migrator = sqlx::migrate!("migrations/clinical");
 
-/// The `demographic` schema — the demographic pseudonymisation domain: PARTY
+/// The `party` schema — the demographic pseudonymisation domain: PARTY
 /// versioned objects and their change control, physically separated from the
 /// clinical schema so no runtime role reads both (GDPR Art. 4(5) and
 /// Art. 32(1)(a); no openEHR spec governs storage layout — our own design).
-/// Runs after `ehr`: its relations are mirrored from the clinical ones and it
-/// moves the parties out of them.
-static DEMOGRAPHIC_MIGRATOR: Migrator = sqlx::migrate!("migrations/demographic");
+/// Its change-control and node relations are rendered from the same DDL
+/// template as the clinical ones, so the two cannot drift. Runs after
+/// `clinical`, because its grants revoke each domain's roles from the other's
+/// schema and both must exist.
+static PARTY_MIGRATOR: Migrator = sqlx::migrate!("migrations/party");
 
 /// The `linkage` schema — the linkage pseudonymisation domain: the map from a
-/// demographic party to the EHR whose subject it is, the additional
-/// information that re-joins a pseudonymised record to a person (GDPR
-/// Art. 4(5) and Art. 32(1)(a); no openEHR spec governs storage layout — our
-/// own design). Runs after `demographic`: its grants revoke the clinical and
-/// demographic roles from this schema and this schema's role from theirs, so
-/// both sets of relations must already exist.
+/// party to the EHR whose subject it is, the additional information that
+/// re-joins a pseudonymised record to a person (GDPR Art. 4(5) and
+/// Art. 32(1)(a); no openEHR spec governs storage layout — our own design).
+/// Runs after `party`: its grants revoke the clinical and party roles from
+/// this schema and this schema's role from theirs, so both sets of relations
+/// must already exist.
 static LINKAGE_MIGRATOR: Migrator = sqlx::migrate!("migrations/linkage");
 
 /// The `audit` schema — the local IHE ATNA Audit Record Repository (the
-/// `audit_event` table). Strictly outside the EHR content (BASE
-/// `architecture_overview/master07-security.adoc` §Access logging: in-system
-/// access logs, never part of the EHR proper); runs after `ehr`.
+/// `audit_event` table and its tamper chain). Strictly outside the EHR content
+/// (BASE `architecture_overview/master07-security.adoc` §Access logging:
+/// in-system access logs, never part of the EHR proper).
 static AUDIT_MIGRATOR: Migrator = sqlx::migrate!("migrations/audit");
 
 /// The migration sets in application order, each paired with the schema
 /// that carries its `_sqlx_migrations` bookkeeping table.
 const MIGRATION_SETS: &[(&str, &Migrator)] = &[
     ("ext", &EXT_MIGRATOR),
-    ("ehr", &EHR_MIGRATOR),
-    ("demographic", &DEMOGRAPHIC_MIGRATOR),
+    ("clinical", &CLINICAL_MIGRATOR),
+    ("party", &PARTY_MIGRATOR),
     ("linkage", &LINKAGE_MIGRATOR),
     ("audit", &AUDIT_MIGRATOR),
+];
+
+/// One schema of the first storage generation, and how to recognise its
+/// bookkeeping.
+#[derive(Debug, Clone, Copy)]
+struct FirstGenerationSet {
+    /// The schema the first generation's migration set ran in.
+    schema: &'static str,
+    /// The description sqlx recorded for that set's version 1, when this build
+    /// also owns a set of the same name; `None` when the schema itself is
+    /// first-generation and any bookkeeping in it is the signature.
+    ///
+    /// sqlx derives the description from the file name after the version
+    /// number, with underscores replaced by spaces, so `0001_baseline.sql`
+    /// records `baseline`.
+    first_description: Option<&'static str>,
+}
+
+/// The first storage generation's migration sets, which this build does not
+/// migrate and cannot read.
+///
+/// The rewrite is greenfield: the new sets replace the old ones outright,
+/// nothing is upgraded in place, and a database created by an earlier release
+/// is refused at boot rather than half-adopted.
+///
+/// Three of the five schema NAMES survive the rewrite (`ext`, `linkage`,
+/// `audit`), so for those the signature cannot be the bookkeeping's existence —
+/// it is which migration ran FIRST. Version 1 is the one row a set can never
+/// lack, and its description names the file: the first generation opened `ext`
+/// with `0001_openehr_functions.sql` where this one opens it with
+/// `0001_schema_and_roles.sql`, and opened `linkage`/`audit` with
+/// `0001_baseline.sql` where this one opens them with `0001_schema_and_role`
+/// and `0001_schema_and_roles`. For `ehr` and `demographic`, which this build
+/// owns no set for, any bookkeeping at all is the signature — a bare schema of
+/// the same name is not, because `CREATE SCHEMA` is cheap and someone may have
+/// made one, while the bookkeeping table is written only by a migrator that ran
+/// there.
+///
+/// Without this, a first-generation `ext`, `linkage` or `audit` set would reach
+/// its own migrator and fail on a checksum mismatch — an error about a hash
+/// where the operator needs the remedy.
+const FIRST_GENERATION_SETS: &[FirstGenerationSet] = &[
+    FirstGenerationSet {
+        schema: "ehr",
+        first_description: None,
+    },
+    FirstGenerationSet {
+        schema: "demographic",
+        first_description: None,
+    },
+    FirstGenerationSet {
+        schema: "ext",
+        first_description: Some("openehr functions"),
+    },
+    FirstGenerationSet {
+        schema: "linkage",
+        first_description: Some("baseline"),
+    },
+    FirstGenerationSet {
+        schema: "audit",
+        first_description: Some("baseline"),
+    },
 ];
 
 /// Bootstrap done outside the migrations: the five schemas and `btree_gist`
 /// (required by the temporal `WITHOUT OVERLAPS` primary key).
 const BOOTSTRAP: &[&str] = &[
     "CREATE SCHEMA IF NOT EXISTS ext",
-    "CREATE SCHEMA IF NOT EXISTS ehr",
-    "CREATE SCHEMA IF NOT EXISTS demographic",
+    "CREATE SCHEMA IF NOT EXISTS clinical",
+    "CREATE SCHEMA IF NOT EXISTS party",
     "CREATE SCHEMA IF NOT EXISTS linkage",
     "CREATE SCHEMA IF NOT EXISTS audit",
     "CREATE EXTENSION IF NOT EXISTS btree_gist WITH SCHEMA ext",
@@ -983,21 +930,17 @@ async fn verify_recorded_state(conn: &mut PgConnection) -> Result<(), DbError> {
 /// barred from both — a role holding the map and either side of it would hold
 /// the join the split exists to withhold. No openEHR spec governs database
 /// roles — our own design/extension.
+///
+/// The role names keep their first-generation spelling while their schemas are
+/// now `clinical` and `party`; renaming them belongs with the per-domain DSNs.
+/// TODO(#3343): rename the domain roles alongside the per-domain connection
+/// settings, which move every deployment artefact that names them.
 const DOMAIN_ROLE_BARRIERS: &[(&str, &[&str])] = &[
-    (
-        "ferroehr_ehr",
-        &["demographic", "cold_demographic", "linkage"],
-    ),
-    (
-        "ferroehr_ehr_reader",
-        &["demographic", "cold_demographic", "linkage"],
-    ),
-    ("ferroehr_demographic", &["ehr", "cold", "linkage"]),
-    ("ferroehr_demographic_reader", &["ehr", "cold", "linkage"]),
-    (
-        "ferroehr_linkage",
-        &["ehr", "cold", "demographic", "cold_demographic"],
-    ),
+    ("ferroehr_ehr", &["party", "linkage"]),
+    ("ferroehr_ehr_reader", &["party", "linkage"]),
+    ("ferroehr_demographic", &["clinical", "linkage"]),
+    ("ferroehr_demographic_reader", &["clinical", "linkage"]),
+    ("ferroehr_linkage", &["clinical", "party"]),
 ];
 
 /// Refuses to serve when a runtime role can read anything in a
@@ -1087,33 +1030,6 @@ pub async fn verify_domain_isolation(pool: &PgPool) -> Result<(), DbError> {
         }
     }
     Ok(())
-}
-
-/// How many stored versions the reserved default tenant owns.
-///
-/// The default tenant is the nil uuid, and `ext.current_tenant_id()` resolves
-/// an unset `ferroehr.tenant_id` GUC to it, so it owns every row written while
-/// tenancy was off. A request that reaches the tenancy middleware without a
-/// resolvable tenant runs unscoped and therefore reads exactly this content,
-/// which is why a deployment enabling tenancy over an existing store is told
-/// at boot what that tenant holds.
-///
-/// The count is taken over the primary tier only: an archived version is not
-/// reachable by a query, and the number exists to say whether the default
-/// tenant is empty, not to size the store.
-///
-/// No openEHR spec governs multi-tenancy — our own design/extension.
-///
-/// # Errors
-///
-/// [`DbError::Sqlx`] when the connection or the count fails.
-pub async fn default_tenant_versions(pool: &PgPool) -> Result<i64, DbError> {
-    let count: i64 = sqlx::query_scalar(
-        "SELECT count(*) FROM ehr.vo_version WHERE tenant_id = '00000000-0000-0000-0000-000000000000'::uuid",
-    )
-    .fetch_one(pool)
-    .await?;
-    Ok(count)
 }
 
 /// `SQLSTATE` 42501 `insufficient_privilege` — what `PostgreSQL` reports for a
@@ -1241,29 +1157,27 @@ async fn verify_set(
     Ok(())
 }
 
-/// The bootstrap + four-migrator sequence on one dedicated connection.
+/// The bootstrap + five-migrator sequence on one dedicated connection.
 async fn apply_migrations(conn: &mut PgConnection) -> Result<(), DbError> {
+    guard_first_generation_database(&mut *conn).await?;
     for &statement in BOOTSTRAP {
         sqlx::query(statement).execute(&mut *conn).await?;
     }
-    sqlx::query(DEFAULT_TENANT_GUC).execute(&mut *conn).await?;
 
     sqlx::query("SET search_path TO ext")
         .execute(&mut *conn)
         .await?;
     EXT_MIGRATOR.run(&mut *conn).await?;
 
-    guard_orphaned_archive_tier(&mut *conn).await?;
-
-    sqlx::query("SET search_path TO ehr, ext")
+    sqlx::query("SET search_path TO clinical, ext")
         .execute(&mut *conn)
         .await?;
-    EHR_MIGRATOR.run(&mut *conn).await?;
+    CLINICAL_MIGRATOR.run(&mut *conn).await?;
 
-    sqlx::query("SET search_path TO demographic, ext")
+    sqlx::query("SET search_path TO party, ext")
         .execute(&mut *conn)
         .await?;
-    DEMOGRAPHIC_MIGRATOR.run(&mut *conn).await?;
+    PARTY_MIGRATOR.run(&mut *conn).await?;
 
     sqlx::query("SET search_path TO linkage, ext")
         .execute(&mut *conn)
@@ -1277,39 +1191,50 @@ async fn apply_migrations(conn: &mut PgConnection) -> Result<(), DbError> {
     Ok(())
 }
 
-/// Refuse to migrate a database whose cold archival tier outlived its primary
-/// tier, in either domain.
+/// Refuse a database created by a release older than the storage rewrite.
 ///
-/// Two migrations create objects outside the schema whose set records them:
-/// `ehr/0007_cold_archive_tier` builds `cold` beside `ehr`, and
-/// `demographic/0001_baseline` builds `cold_demographic` beside `demographic`.
-/// So a `DROP SCHEMA … CASCADE` — a restore gone wrong, a recreated volume, a
-/// wiped test database — leaves the mirror tables standing while the
-/// bookkeeping that records them goes away. Re-applying then hits
-/// `relation "vo_version" already exists`, which is a permanent boot loop with
-/// no error naming the cause.
+/// The rewrite is greenfield: the migration sets replace the first
+/// generation's outright, so there is nothing to upgrade and nothing to adopt.
+/// Left to itself the sequence would create `clinical` and `party` beside the
+/// old `ehr` and `demographic` schemas and serve an empty repository, with the
+/// operator's data sitting untouched and unreachable in the same database.
+/// That is the one outcome worse than refusing.
 ///
-/// Making the migration re-runnable would be the wrong repair: those mirrors
-/// were built with `CREATE TABLE … (LIKE …)` against the primary tables as they
-/// stood, so adopting a surviving one silently accepts a mirror that may not
-/// match the tier it mirrors and re-attaches clinical rows to a repository that
-/// is gone. The refusal carries the remedy in its message.
+/// The signature is [`FIRST_GENERATION_SETS`]: bookkeeping in a schema this
+/// build owns no set for, or bookkeeping whose version 1 names the file the
+/// first generation opened that schema with.
 ///
-/// `to_regclass` is used rather than a catalog join because it answers `NULL` for
-/// a missing relation instead of failing
-/// (<https://www.postgresql.org/docs/18/functions-info.html>), so one statement
-/// covers both a fresh database and a healthy one.
-async fn guard_orphaned_archive_tier(conn: &mut PgConnection) -> Result<(), DbError> {
-    let orphaned: bool = sqlx::query_scalar(
-        "SELECT (to_regclass('cold.vo_version') IS NOT NULL
-                 AND to_regclass('ehr.vo_version') IS NULL)
-             OR (to_regclass('cold_demographic.vo_version') IS NOT NULL
-                 AND to_regclass('demographic.vo_version') IS NULL)",
-    )
-    .fetch_one(&mut *conn)
-    .await?;
-    if orphaned {
-        return Err(DbError::OrphanedArchiveTier);
+/// `to_regclass` answers `NULL` for a missing relation instead of failing
+/// (<https://www.postgresql.org/docs/18/functions-info.html>), so the presence
+/// probe is one statement over a fresh database and an old one alike.
+async fn guard_first_generation_database(conn: &mut PgConnection) -> Result<(), DbError> {
+    for set in FIRST_GENERATION_SETS {
+        let present: bool =
+            sqlx::query_scalar("SELECT to_regclass($1 || '._sqlx_migrations') IS NOT NULL")
+                .bind(set.schema)
+                .fetch_one(&mut *conn)
+                .await?;
+        if !present {
+            continue;
+        }
+        let Some(signature) = set.first_description else {
+            // This build owns no set of that name, so the bookkeeping can only
+            // be the first generation's.
+            return Err(DbError::FirstGenerationDatabase { schema: set.schema });
+        };
+        // The schema name survives the rewrite, so which migration ran FIRST is
+        // what separates the generations. `set.schema` is one of the literals
+        // in `FIRST_GENERATION_SETS` above, never input.
+        let sql = format!(
+            "SELECT description FROM {}._sqlx_migrations WHERE version = 1",
+            set.schema
+        );
+        let first: Option<String> = sqlx::query_scalar(sqlx::AssertSqlSafe(sql))
+            .fetch_optional(&mut *conn)
+            .await?;
+        if first.as_deref() == Some(signature) {
+            return Err(DbError::FirstGenerationDatabase { schema: set.schema });
+        }
     }
     Ok(())
 }
@@ -1336,33 +1261,16 @@ pub async fn cluster_identity(pool: &PgPool) -> Result<String, DbError> {
 /// an opaque UUID (#3241).
 ///
 /// `required` once the deployment declares its pseudonym namespaces, `open`
-/// otherwise. Written by the clinical runtime role on every boot, read by the
-/// `ehr_subject_pseudonym_guard` trigger.
+/// otherwise. Written by the clinical runtime role on every boot through the
+/// `SECURITY DEFINER` writer, and read by the `ehr_subject_pseudonym_guard`
+/// trigger — the runtime role holds no privilege on the posture table itself,
+/// so it cannot relax a guard by writing its own posture row.
 ///
 /// # Errors
 /// [`DbError::Sqlx`] when the write fails.
 pub async fn stamp_subject_posture(pool: &PgPool, required: bool) -> Result<(), DbError> {
     let value = if required { "required" } else { "open" };
-    sqlx::query(
-        "INSERT INTO posture (key, value) VALUES ('subject_pseudonyms', $1) \
-         ON CONFLICT (key) DO UPDATE SET value = EXCLUDED.value, stamped_at = now()",
-    )
-    .bind(value)
-    .execute(pool)
-    .await?;
-    Ok(())
-}
-
-/// Stamp the tenancy posture `ext.current_tenant_id()` reads (#3341).
-///
-/// `multi` when `tenancy.enabled`: an undeclared tenant on a connection is then
-/// refused instead of resolved to the reserved default. `single` otherwise.
-///
-/// # Errors
-/// [`DbError::Sqlx`] when the write fails.
-pub async fn stamp_tenancy_posture(pool: &PgPool, multi: bool) -> Result<(), DbError> {
-    let value = if multi { "multi" } else { "single" };
-    sqlx::query("SELECT ext.stamp_posture('tenancy', $1)")
+    sqlx::query("SELECT ext.stamp_posture('subject_pseudonyms', $1)")
         .bind(value)
         .execute(pool)
         .await?;

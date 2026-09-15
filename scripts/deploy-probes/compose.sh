@@ -445,8 +445,8 @@ YAML
 # shared infrastructure the clinical dump carries along, not a domain any role
 # is barred from.
 PROBE_DOMAINS=(
-  "clinical|ferroehr_ehr ferroehr_ehr_reader|ehr cold|ehr vo_version"
-  "demographic|ferroehr_demographic ferroehr_demographic_reader|demographic cold_demographic|demographic vo_version;demographic national_identifier"
+  "clinical|ferroehr_ehr ferroehr_ehr_reader|clinical|clinical version"
+  "demographic|ferroehr_demographic ferroehr_demographic_reader|party|party version;party national_identifier"
   "linkage|ferroehr_linkage|linkage|linkage party_ehr"
 )
 
@@ -769,8 +769,8 @@ probes_backup_restore() {
   # that one demonstrably reaches these files.
   #
   # The dumps go in TABLE ORDER, which is why `clinical` is first: the other
-  # domains' tables default and their policies read `ext.current_tenant_id()`,
-  # and that schema travels with the clinical dump.
+  # domains' relations depend on the `ext` helpers, and that schema travels
+  # with the clinical dump.
   local restore_script="id; ls -ln" restore_log network
   for record in "${PROBE_DOMAINS[@]}"; do
     restore_script="$restore_script /dumps/$(domain_field "$record" 1)"
@@ -808,20 +808,15 @@ probes_backup_restore() {
   # table comes back with its rows and without the key that admits one open
   # mapping per party. Far end: the restored catalogue itself.
   probe "P-BACKUP-MAP-RESTORED" "working" "database" "#3220" \
-    "the restored linkage map carries its temporal key and its forced row policy"
+    "the restored linkage map carries its temporal key"
   local map_shape
   map_shape="$(dc exec -T ferroehr-postgres psql -qtAX -U postgres -d "$restored" -c \
     "SELECT coalesce((SELECT pg_get_constraintdef(oid) FROM pg_constraint
                        WHERE conrelid = 'linkage.party_ehr'::regclass
-                         AND contype = 'p'), 'no primary key')
-         || ' | force_rls=' || (SELECT relforcerowsecurity
-                                  FROM pg_class WHERE oid = 'linkage.party_ehr'::regclass)" 2>&1)"
+                         AND contype = 'p'), 'no primary key')" 2>&1)"
   assert_contains "$map_shape" "WITHOUT OVERLAPS" \
     "a party_ehr restored without its temporal key admits two open mappings for one \
 party, and nothing downstream would notice"
-  assert_contains "$map_shape" "force_rls=t" \
-    "FORCE ROW LEVEL SECURITY is what makes the tenant policy apply to the table's \
-owner too; a restore that dropped it serves one tenant another's map"
   probe_done
 
   # And the half that makes the probe above mean something: the self-check has
@@ -830,22 +825,22 @@ owner too; a restore that dropped it serves one tenant another's map"
   probe "P-BACKUP-GRANTS-REFUSED" "broken" "database" "#3157" \
     "the self-check refuses a restore whose grants cross the domain boundary"
   dc exec -T ferroehr-postgres psql -qtAX -U "${PG_INIT_USER:-ferroehr}" -d "$restored" -c \
-    "GRANT USAGE ON SCHEMA demographic TO ferroehr_ehr_reader;
-     GRANT SELECT ON ALL TABLES IN SCHEMA demographic TO ferroehr_ehr_reader" >/dev/null 2>&1
+    "GRANT USAGE ON SCHEMA party TO ferroehr_ehr_reader;
+     GRANT SELECT ON ALL TABLES IN SCHEMA party TO ferroehr_ehr_reader" >/dev/null 2>&1
   local breach_out
   if breach_out="$(dc exec -T -e FERROEHR__DB__URL="$restored_dsn" \
       -e FERROEHR__DB__MIGRATE=verify \
       ferroehr /usr/local/bin/ferroehr db verify 2>&1)"; then
     probe_fail "\`ferroehr db verify\` refusing a cross-domain grant" \
-      "it accepted a database where ferroehr_ehr_reader can read demographic tables" \
+      "it accepted a database where ferroehr_ehr_reader can read party tables" \
       "the boot gate is then decorative, and a careless restore ships a collapsed boundary"
   else
     # A refusal for ANY other reason would make this probe pass without
     # measuring the gate at all — the vacuity this harness exists to avoid.
     assert_contains "$breach_out" "ferroehr_ehr_reader" \
       "the refusal must name the role that reached across, not merely be a refusal"
-    assert_contains "$breach_out" "demographic" \
-      "the refusal must name the domain it reached into"
+    assert_contains "$breach_out" "party." \
+      "the refusal must name the schema it reached into"
   fi
   probe_done
 

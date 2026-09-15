@@ -284,7 +284,7 @@ rather than inherit from a quickstart. See
 | `[db]` | PostgreSQL connection, pool, migrations | [Server, database & telemetry](config-server.md) |
 | `[log]`, `[telemetry]` | Log rendering and OpenTelemetry export | [Server, database & telemetry](config-server.md) |
 | `[auth]`, `[authz]` | Authentication (Basic, OAuth2/OIDC) and RBAC/ABAC | [Authentication & access](config-auth.md) |
-| `[admin]`, `[tenancy]`, `[management]` | The ADMIN API group, multi-tenancy, the ops-introspection surface | [Authentication & access](config-auth.md) |
+| `[admin]`, `[management]` | The ADMIN API group and the ops-introspection surface | [Authentication & access](config-auth.md) |
 | `[smart]` | SMART App Launch discovery and scope enforcement | [Authentication & access](config-auth.md) |
 | `[signing]` | VERSION signing and read-time verification | [Authentication & access](config-auth.md) |
 | `[licence]` | The commercial licence token | [Authentication & access](config-auth.md) |

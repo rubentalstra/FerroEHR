@@ -26,6 +26,42 @@ use serde_json::Value;
 use sqlx::{PgPool, Row};
 use uuid::Uuid;
 
+/// Every domain that carries change control holds its archival tier as a
+/// PARTITION of the relation it archives, not as a mirror in another schema:
+/// three partitioned relations, two partitions each. No openEHR spec governs
+/// storage tiering — our own design/extension.
+async fn assert_tier_partitions(pool: &PgPool) {
+    for schema in ["clinical", "party"] {
+        let partitions: Vec<(String, String)> = sqlx::query_as(
+            "SELECT p.relname, c.relname FROM pg_inherits i \
+             JOIN pg_class p ON p.oid = i.inhparent \
+             JOIN pg_class c ON c.oid = i.inhrelid \
+             JOIN pg_namespace n ON n.oid = p.relnamespace \
+             WHERE n.nspname = $1 AND p.relkind = 'p' AND c.relkind = 'r' \
+             ORDER BY 1, 2",
+        )
+        .bind(schema)
+        .fetch_all(pool)
+        .await
+        .expect("partitions");
+        assert_eq!(
+            partitions,
+            [
+                ("node".to_owned(), "node_cold".to_owned()),
+                ("node".to_owned(), "node_hot".to_owned()),
+                ("version".to_owned(), "version_cold".to_owned()),
+                ("version".to_owned(), "version_hot".to_owned()),
+                (
+                    "vo_attestation".to_owned(),
+                    "vo_attestation_cold".to_owned()
+                ),
+                ("vo_attestation".to_owned(), "vo_attestation_hot".to_owned()),
+            ],
+            "{schema}"
+        );
+    }
+}
+
 #[tokio::test]
 async fn migrations_apply_cleanly_and_idempotently() {
     let db = testkit::db().await.expect("testkit database");
@@ -35,37 +71,49 @@ async fn migrations_apply_cleanly_and_idempotently() {
         .await
         .expect("migrations idempotent");
 
-    let applied_ext: i64 = sqlx::query_scalar("SELECT count(*) FROM ext._sqlx_migrations")
-        .fetch_one(&pool)
-        .await
-        .expect("ext bookkeeping");
-    let applied_ehr: i64 = sqlx::query_scalar("SELECT count(*) FROM ehr._sqlx_migrations")
-        .fetch_one(&pool)
-        .await
-        .expect("ehr bookkeeping");
-    // One squashed baseline per set, then one append-only file per change (a
-    // shipped migration is never edited). ext: 0001_openehr_functions +
-    // 0002_tenant_context + 0003_tenant_posture + 0004_tenancy_posture_reader. ehr: 0001_baseline + 0002_event_outbox +
-    // 0003_event_subscription + 0004_multitenancy + 0005_fhir_mapping +
-    // 0006_fhir_outbound_cursor + 0007_cold_archive_tier +
-    // 0008_spec_profile_stable_compatible_stamp + 0009_subject_pseudonym_guard
-    // + 0010_version_origins + 0011_cold_alias_views + 0012_event_outbox_reader + 0013_outbox_reader_per_tenant.
-    assert_eq!((applied_ext, applied_ehr), (4, 13));
+    let applied = |schema: &'static str| {
+        let pool = pool.clone();
+        async move {
+            // The schema name is one of five literals below, never input.
+            sqlx::query_scalar::<_, i64>(sqlx::AssertSqlSafe(format!(
+                "SELECT count(*) FROM {schema}._sqlx_migrations"
+            )))
+            .fetch_one(&pool)
+            .await
+            .unwrap_or_else(|e| panic!("{schema} bookkeeping: {e}"))
+        }
+    };
+    // One file per concern, numbered per domain with no gaps, so
+    // `_sqlx_migrations` reads as the set's table of contents.
+    assert_eq!(applied("ext").await, 4);
+    assert_eq!(applied("clinical").await, 10);
+    assert_eq!(applied("party").await, 7);
+    assert_eq!(applied("linkage").await, 3);
+    assert_eq!(applied("audit").await, 6);
 
-    let tables: Vec<String> = sqlx::query_scalar(
-        "SELECT table_name FROM information_schema.tables \
-         WHERE table_schema = 'ehr' AND table_type = 'BASE TABLE' \
-           AND table_name <> '_sqlx_migrations' ORDER BY 1",
-    )
-    .fetch_all(&pool)
-    .await
-    .expect("tables");
+    let tables = |schema: &'static str| {
+        let pool = pool.clone();
+        async move {
+            sqlx::query_scalar::<_, String>(
+                "SELECT c.relname FROM pg_class c JOIN pg_namespace n ON n.oid = c.relnamespace \
+                 WHERE n.nspname = $1 AND c.relkind IN ('r', 'p') \
+                   AND c.relname <> '_sqlx_migrations' \
+                   AND NOT EXISTS (SELECT 1 FROM pg_inherits i WHERE i.inhrelid = c.oid) \
+                 ORDER BY 1",
+            )
+            .bind(schema)
+            .fetch_all(&pool)
+            .await
+            .unwrap_or_else(|e| panic!("{schema} tables: {e}"))
+        }
+    };
     assert_eq!(
-        tables,
+        tables("clinical").await,
         [
             "adl2_artefact",
             "archetype_store",
-            "audit",
+            "blob_ref",
+            "commit_audit",
             "contribution",
             "ehr",
             "ehr_folder",
@@ -76,7 +124,9 @@ async fn migrations_apply_cleanly_and_idempotently() {
             "fhir_mapping",
             "item_tag",
             "node",
-            "posture",
+            "restriction",
+            "retention_anchor",
+            "retention_policy",
             "sp_binding",
             "sp_data_frame",
             "sp_data_set",
@@ -86,98 +136,236 @@ async fn migrations_apply_cleanly_and_idempotently() {
             "stored_query",
             "template_ref",
             "template_store",
-            "tenant",
-            "vo_archive",
+            "version",
             "vo_attestation",
-            "vo_version",
+            "vo_head",
         ]
     );
-
-    // The cold archival tier (0007): one mirror per moved relation, the
-    // both-tier union views the whole-repository readers use, and the
-    // `cold_*` alias views that let one set of storage statements address
-    // whichever pseudonymisation domain the connection serves. No openEHR spec
-    // governs storage tiering — our own design/extension.
-    let views: Vec<String> = sqlx::query_scalar(
-        "SELECT table_name FROM information_schema.tables \
-         WHERE table_schema = 'ehr' AND table_type = 'VIEW' ORDER BY 1",
-    )
-    .fetch_all(&pool)
-    .await
-    .expect("views");
     assert_eq!(
-        views,
+        tables("party").await,
         [
-            "cold_node",
-            "cold_vo_attestation",
-            "cold_vo_version",
-            "node_all",
-            "vo_attestation_all",
-            "vo_version_all"
+            "commit_audit",
+            "contribution",
+            "event_outbox",
+            "event_outbox_reader",
+            "identifier_scheme",
+            "item_tag",
+            "national_identifier",
+            "node",
+            "party_relationship_target",
+            "version",
+            "vo_attestation",
+            "vo_head",
         ]
     );
 
-    let cold: Vec<String> = sqlx::query_scalar(
-        "SELECT table_name FROM information_schema.tables \
-         WHERE table_schema = 'cold' AND table_type = 'BASE TABLE' ORDER BY 1",
+    assert_tier_partitions(&pool).await;
+
+    // The mirror schemas and the union views they needed are gone with them.
+    let leftovers: i64 = sqlx::query_scalar(
+        "SELECT count(*) FROM information_schema.schemata \
+         WHERE schema_name IN ('ehr', 'demographic', 'cold', 'cold_demographic')",
     )
-    .fetch_all(&pool)
+    .fetch_one(&pool)
     .await
-    .expect("cold tables");
-    assert_eq!(cold, ["node", "vo_attestation", "vo_version"]);
+    .expect("count the first-generation schemas");
+    assert_eq!(leftovers, 0, "no first-generation schema may be created");
 }
 
-/// A wipe of the `ehr` schema alone leaves the cold archival tier standing, and
-/// the next boot refuses with the remedy rather than looping on a bare
-/// `relation "vo_version" already exists`.
+/// None of the four columns a commit updates on `vo_head` is indexed, in either
+/// domain.
 ///
-/// This is the exact sequence observed on a live cluster: `0007_cold_archive_tier`
-/// is the only migration in the set whose objects live outside `ehr`, so
-/// `DROP SCHEMA ehr CASCADE` takes the bookkeeping and leaves the mirrors. The
-/// refusal is deliberate — adopting a surviving mirror would accept a shape copied
-/// from the primary tables as they were before the wipe, and re-attach clinical
-/// rows to a repository that no longer exists.
+/// That is the STRUCTURAL half of the heap-only-update property: PostgreSQL 18
+/// §"Heap-Only Tuples (HOT)" makes an update heap-only when no indexed column
+/// changes, so the property is a fact about the index set rather than about a
+/// counter that happened to move during one run. Adding an index on any of
+/// these four columns would cost every commit an index insert and a new index
+/// entry per version, which is what this test exists to notice. No openEHR spec
+/// governs storage layout — our own design/extension.
 #[tokio::test]
-async fn a_cold_tier_that_outlived_its_primary_tier_is_refused_with_the_remedy() {
+async fn no_commit_updated_column_of_vo_head_is_indexed() {
+    // The columns `HeadUpsert`'s ON CONFLICT branch writes.
+    const UPDATED: [&str; 4] = [
+        "head_sys_version",
+        "trunk_head_sys_version",
+        "lifecycle_state",
+        "committed_at",
+    ];
+    let db = testkit::db().await.expect("testkit database");
+    let pool = db.pool();
+    for schema in ["clinical", "party"] {
+        let indexed: Vec<String> = sqlx::query_scalar(
+            "SELECT DISTINCT a.attname FROM pg_index i \
+             JOIN pg_class c ON c.oid = i.indrelid \
+             JOIN pg_namespace n ON n.oid = c.relnamespace \
+             JOIN pg_attribute a ON a.attrelid = c.oid AND a.attnum = ANY(i.indkey) \
+             WHERE n.nspname = $1 AND c.relname = 'vo_head' ORDER BY 1",
+        )
+        .bind(schema)
+        .fetch_all(&pool)
+        .await
+        .expect("indexed columns of vo_head");
+        for column in UPDATED {
+            assert!(
+                !indexed.iter().any(|c| c == column),
+                "{schema}.vo_head.{column} is indexed, so a commit's update of it is no \
+                 longer heap-only: {indexed:?}"
+            );
+        }
+    }
+}
+
+/// The instance is single-tenant: no relation in any domain carries a tenant
+/// column, and no row policy exists anywhere.
+///
+/// openEHR places multi-tenancy at the layer that HOSTS several logical EHR
+/// systems rather than inside one — BASE
+/// `architecture_overview/master06-design_of_the_ehr.adoc` §The EHR System: a
+/// system is "a distinct logical repository corresponding to an organisational
+/// entity that is legally responsible" for the data, and is "distinct from any
+/// underlying virtualisation infrastructure or cloud computing facility, which
+/// may house multiple logical EHR systems in a multi-tenant fashion". Isolation
+/// between organisations is therefore a deployment property here.
+#[tokio::test]
+async fn no_relation_carries_a_tenant_column_and_no_row_policy_exists() {
     let db = testkit::db().await.expect("testkit database");
     let pool = db.pool();
 
-    sqlx::query("DROP SCHEMA ehr CASCADE")
+    let tenant_columns: Vec<(String, String)> = sqlx::query_as(
+        "SELECT table_schema, table_name FROM information_schema.columns \
+         WHERE table_schema IN ('clinical', 'party', 'linkage', 'audit', 'ext') \
+           AND column_name = 'tenant_id' ORDER BY 1, 2",
+    )
+    .fetch_all(&pool)
+    .await
+    .expect("scan for tenant columns");
+    assert!(
+        tenant_columns.is_empty(),
+        "no relation may carry a tenant column: {tenant_columns:?}"
+    );
+
+    let policies: Vec<(String, String, String)> = sqlx::query_as(
+        "SELECT schemaname, tablename, policyname FROM pg_policies \
+         WHERE schemaname IN ('clinical', 'party', 'linkage', 'audit', 'ext') ORDER BY 1, 2, 3",
+    )
+    .fetch_all(&pool)
+    .await
+    .expect("scan for row policies");
+    assert!(policies.is_empty(), "no row policy may exist: {policies:?}");
+}
+
+/// A database created by a release older than the storage rewrite is refused at
+/// boot, with the remedy, rather than served as an empty repository beside the
+/// operator's unreachable content.
+///
+/// The rewrite is greenfield: the migration sets replace the first
+/// generation's outright, so there is nothing to upgrade in place. The
+/// signature is a first-generation schema that carries its own migration
+/// bookkeeping — a bare schema of that name is not evidence of anything.
+#[tokio::test]
+async fn a_database_from_before_the_storage_rewrite_is_refused_with_the_remedy() {
+    let db = testkit::db().await.expect("testkit database");
+    let pool = db.pool();
+
+    // The shape a pre-rewrite database has: the old schema, carrying the
+    // bookkeeping table only a migrator that ran there would have written.
+    sqlx::query("CREATE SCHEMA ehr")
         .execute(&pool)
         .await
-        .expect("drop the primary tier alone");
-
-    // The mirrors are in a different schema, so they are still here — which is
-    // the whole cause.
-    let survivors: i64 =
-        sqlx::query_scalar("SELECT count(*) FROM pg_tables WHERE schemaname = 'cold'")
-            .fetch_one(&pool)
-            .await
-            .expect("count the surviving mirrors");
-    assert_eq!(survivors, 3, "the cold tier must survive a wipe of `ehr`");
+        .expect("create the first-generation schema");
+    sqlx::query("CREATE TABLE ehr._sqlx_migrations (version bigint PRIMARY KEY)")
+        .execute(&pool)
+        .await
+        .expect("create the first-generation bookkeeping");
 
     let error = db::run_migrations(&pool)
         .await
-        .expect_err("re-migrating over an orphaned cold tier must be refused");
+        .expect_err("a pre-rewrite database must be refused");
     assert!(
-        matches!(error, db::DbError::OrphanedArchiveTier),
+        matches!(
+            error,
+            db::DbError::FirstGenerationDatabase { schema: "ehr" }
+        ),
         "the refusal must be the typed one, not a bare relation-exists error: {error}"
     );
     let message = error.to_string();
     assert!(
-        message.contains("DROP SCHEMA cold CASCADE"),
+        message.contains("recreate the database"),
         "the refusal must name the remedy: {message}"
     );
 
-    // And the remedy actually works: with the orphan removed, the set applies
-    // from scratch. Without this half the test would pin a refusal with no way out.
-    sqlx::query("DROP SCHEMA cold CASCADE")
+    // A bare schema of the same name is NOT the signature: someone may have
+    // made one, and refusing on it would strand a healthy deployment.
+    sqlx::query("DROP TABLE ehr._sqlx_migrations")
         .execute(&pool)
         .await
-        .expect("apply the remedy");
+        .expect("drop the bookkeeping");
     db::run_migrations(&pool)
         .await
-        .expect("the migrations apply once the orphaned tier is gone");
+        .expect("an empty schema of that name is not a pre-rewrite database");
+}
+
+/// A first-generation `ext`, `linkage` or `audit` set is refused by the SAME
+/// typed error, on the description of its version 1.
+///
+/// Those three schema NAMES survive the rewrite, so their bookkeeping exists in
+/// both generations and its mere presence proves nothing; which migration ran
+/// first does. Without this the old set would reach its own migrator and fail
+/// on a checksum mismatch — an error about a hash where the operator needs the
+/// remedy.
+#[tokio::test]
+async fn a_first_generation_set_in_a_surviving_schema_is_refused_by_its_first_migration() {
+    // (schema, the first generation's version-1 description, this build's).
+    const SIGNATURES: [(&str, &str, &str); 3] = [
+        ("ext", "openehr functions", "schema and roles"),
+        ("linkage", "baseline", "schema and role"),
+        ("audit", "baseline", "schema and roles"),
+    ];
+    for (schema, first_generation, second_generation) in SIGNATURES {
+        let db = testkit::db().await.expect("testkit database");
+        let pool = db.pool();
+        set_first_description(&pool, schema, first_generation).await;
+        let error = db::run_migrations(&pool)
+            .await
+            .expect_err("a first-generation set must be refused");
+        assert!(
+            matches!(&error, db::DbError::FirstGenerationDatabase { schema: s } if *s == schema),
+            "{schema}: the refusal must be the typed one, not a checksum error: {error}"
+        );
+        assert!(
+            error.to_string().contains("recreate the database"),
+            "{schema}: the refusal must name the remedy: {error}"
+        );
+
+        // The discrimination is real: the same bookkeeping carrying THIS
+        // build's version-1 description is a generation-2 set, and migrating it
+        // again is the no-op it should be.
+        let db = testkit::db().await.expect("testkit database");
+        let pool = db.pool();
+        set_first_description(&pool, schema, second_generation).await;
+        db::run_migrations(&pool)
+            .await
+            .unwrap_or_else(|e| panic!("{schema}: a generation-2 set must pass the guard: {e}"));
+    }
+}
+
+/// Rewrite the version-1 description of `schema`'s existing bookkeeping.
+///
+/// The harness hands out a MIGRATED database, so the three surviving schemas
+/// already carry this build's own bookkeeping: re-describing its first row is
+/// exactly the state a first-generation database is in, and nothing else about
+/// the database is disturbed.
+async fn set_first_description(pool: &PgPool, schema: &'static str, description: &str) {
+    // `schema` is one of the literals at the call sites, never input.
+    let updated = sqlx::query(sqlx::AssertSqlSafe(format!(
+        "UPDATE {schema}._sqlx_migrations SET description = $1 WHERE version = 1"
+    )))
+    .bind(description)
+    .execute(pool)
+    .await
+    .expect("re-describe version 1")
+    .rows_affected();
+    assert_eq!(updated, 1, "{schema} must carry exactly one version-1 row");
 }
 
 #[tokio::test]
@@ -237,54 +425,63 @@ async fn ext_magnitude_function_follows_the_spec_formulas() {
     assert!(none.is_none());
 }
 
+/// The store is append-only: a supersession is an insert, the trunk position is
+/// what a second version at the same position collides on, and the head row is
+/// what says which version is current (RM common master06 §The 'Virtual Version
+/// Tree').
 #[tokio::test]
-async fn temporal_versioning_model_behaves() {
+async fn the_append_only_versioning_model_behaves() {
     let db = testkit::db().await.expect("testkit database");
     let pool = db.pool();
     let (vo, ehr_id) = seed_version(&pool).await;
 
-    // an overlapping period is impossible at the database
-    let overlap = sqlx::query(
-        "INSERT INTO vo_version (vo_id, kind, ehr_id, sys_version, trunk_version, sys_period, contribution_id, audit_id, creating_system_id)
-         SELECT $1, 'COMPOSITION', $2, 2, 2, tstzrange(now(), NULL), contribution_id, audit_id, creating_system_id
-         FROM vo_version WHERE vo_id = $1",
+    // A second version at an occupied TRUNK POSITION is impossible at the
+    // database: the trunk line is one global sequence per container.
+    let duplicate = sqlx::query(
+        "INSERT INTO version (vo_id, kind, ehr_id, sys_version, trunk_version, committed_at, contribution_id, commit_audit_id, creating_system_id)
+         SELECT $1, 'COMPOSITION', $2, 2, 1, now(), contribution_id, commit_audit_id, 'other.system'
+         FROM version WHERE vo_id = $1 AND sys_version = 1",
     )
     .bind(vo)
     .bind(ehr_id)
     .execute(&pool)
     .await;
-    assert!(overlap.is_err(), "temporal PK must reject overlaps");
+    assert!(
+        duplicate.is_err(),
+        "a second version at trunk position 1 must be refused"
+    );
 
-    // close v1, open v2 — adjacent periods are fine
+    // The supersession is ONE insert: nothing is updated, and the previous
+    // version keeps every column it was committed with.
     sqlx::query(
-        "UPDATE vo_version SET sys_period = tstzrange(lower(sys_period), now())
-         WHERE vo_id = $1 AND upper_inf(sys_period)",
-    )
-    .bind(vo)
-    .execute(&pool)
-    .await
-    .expect("close v1");
-    sqlx::query(
-        "INSERT INTO vo_version (vo_id, kind, ehr_id, sys_version, trunk_version, sys_period, contribution_id, audit_id, creating_system_id)
-         SELECT $1, 'COMPOSITION', $2, 2, 2, tstzrange(upper(sys_period), NULL), contribution_id, audit_id, creating_system_id
-         FROM vo_version WHERE vo_id = $1 AND sys_version = 1",
+        "INSERT INTO version (vo_id, kind, ehr_id, sys_version, trunk_version, committed_at, contribution_id, commit_audit_id, creating_system_id)
+         SELECT $1, 'COMPOSITION', $2, 2, 2, now(), contribution_id, commit_audit_id, creating_system_id
+         FROM version WHERE vo_id = $1 AND sys_version = 1",
     )
     .bind(vo)
     .bind(ehr_id)
     .execute(&pool)
     .await
-    .expect("open v2");
+    .expect("commit v2");
+    sqlx::query(
+        "UPDATE vo_head SET head_sys_version = 2, trunk_head_sys_version = 2 WHERE vo_id = $1",
+    )
+    .bind(vo)
+    .execute(&pool)
+    .await
+    .expect("advance the head");
 
-    // LATEST_VERSION = the upper_inf partial index; ALL_VERSIONS = unfiltered
+    // LATEST_VERSION = the head row's answer; ALL_VERSIONS = unfiltered.
     let current: i32 = sqlx::query_scalar(
-        "SELECT sys_version FROM vo_version WHERE vo_id = $1 AND upper_inf(sys_period)",
+        "SELECT v.sys_version FROM version v JOIN vo_head h ON h.vo_id = v.vo_id \
+         AND h.trunk_head_sys_version = v.sys_version WHERE v.vo_id = $1",
     )
     .bind(vo)
     .fetch_one(&pool)
     .await
     .expect("current");
     assert_eq!(current, 2);
-    let all: i64 = sqlx::query_scalar("SELECT count(*) FROM vo_version WHERE vo_id = $1")
+    let all: i64 = sqlx::query_scalar("SELECT count(*) FROM version WHERE vo_id = $1")
         .bind(vo)
         .fetch_one(&pool)
         .await
@@ -327,8 +524,8 @@ async fn a_trunk_position_is_unique_across_creating_systems_but_a_branch_id_is_n
     let pool = db.pool();
     let (vo, ehr_id) = seed_version(&pool).await;
     // The seeded row is trunk 1 created by `ferroehr.test`.
-    let (contribution_id, audit_id): (Uuid, Uuid) =
-        sqlx::query_as("SELECT contribution_id, audit_id FROM vo_version WHERE vo_id = $1")
+    let (contribution_id, commit_audit_id): (Uuid, Uuid) =
+        sqlx::query_as("SELECT contribution_id, commit_audit_id FROM version WHERE vo_id = $1")
             .bind(vo)
             .fetch_one(&pool)
             .await
@@ -345,11 +542,10 @@ async fn a_trunk_position_is_unique_across_creating_systems_but_a_branch_id_is_n
             branch_version,
             preceding_version_uid: None,
             other_input_version_uids: None,
-            sys_period_lower: Some("2026-01-01T00:00:00Z"),
-            sys_period_upper: Some("2026-01-02T00:00:00Z"),
+            committed_at: Some("2026-01-01T00:00:00Z"),
             lifecycle_state: "532",
             contribution_id,
-            audit_id,
+            commit_audit_id,
             template_id: None,
             signature: None,
             signature_client_supplied: false,
@@ -380,21 +576,20 @@ async fn a_trunk_position_is_unique_across_creating_systems_but_a_branch_id_is_n
     // The database is the backstop behind the guard: the same row written past
     // the repository layer still cannot land.
     let raw = sqlx::query(
-        "INSERT INTO vo_version (vo_id, kind, ehr_id, sys_version, trunk_version, sys_period, \
-         contribution_id, audit_id, creating_system_id) \
-         VALUES ($1, 'COMPOSITION', $2, 2, 1, \
-                 tstzrange('2026-01-01T00:00:00Z'::timestamptz, '2026-01-02T00:00:00Z'::timestamptz), \
+        "INSERT INTO version (vo_id, kind, ehr_id, sys_version, trunk_version, committed_at, \
+         contribution_id, commit_audit_id, creating_system_id) \
+         VALUES ($1, 'COMPOSITION', $2, 2, 1, '2026-01-01T00:00:00Z'::timestamptz, \
                  $3, $4, 'sysB.example.org')",
     )
     .bind(vo)
     .bind(ehr_id)
     .bind(contribution_id)
-    .bind(audit_id)
+    .bind(commit_audit_id)
     .execute(&pool)
     .await;
     assert!(
         raw.is_err(),
-        "uq_vo_version_trunk_position must reject a second trunk row at one position"
+        "the trunk-position unique index must reject a second trunk row at one position"
     );
 
     // A BRANCH id, however, may repeat across creating systems: `1.1.1` minted
@@ -405,13 +600,12 @@ async fn a_trunk_position_is_unique_across_creating_systems_but_a_branch_id_is_n
     insert_version_verbatim(&mut conn, &row(1, 1, 1, "sysC.example.org", 4))
         .await
         .expect("another system's branch with the SAME branch id is a distinct version");
-    let branches: i64 = sqlx::query_scalar(
-        "SELECT count(*) FROM vo_version WHERE vo_id = $1 AND branch_number = 1",
-    )
-    .bind(vo)
-    .fetch_one(&pool)
-    .await
-    .expect("branch rows");
+    let branches: i64 =
+        sqlx::query_scalar("SELECT count(*) FROM version WHERE vo_id = $1 AND branch_number = 1")
+            .bind(vo)
+            .fetch_one(&pool)
+            .await
+            .expect("branch rows");
     assert_eq!(
         branches, 2,
         "cross-system branch-id collisions stay admitted (the 3-part identifier disambiguates)"
@@ -445,8 +639,8 @@ async fn an_as_of_read_resolves_along_the_trunk() {
     let db = testkit::db().await.expect("testkit database");
     let pool = db.pool();
     let (vo, ehr_id) = seed_version(&pool).await;
-    let (contribution_id, audit_id): (Uuid, Uuid) =
-        sqlx::query_as("SELECT contribution_id, audit_id FROM vo_version WHERE vo_id = $1")
+    let (contribution_id, commit_audit_id): (Uuid, Uuid) =
+        sqlx::query_as("SELECT contribution_id, commit_audit_id FROM version WHERE vo_id = $1")
             .bind(vo)
             .fetch_one(&pool)
             .await
@@ -462,11 +656,10 @@ async fn an_as_of_read_resolves_along_the_trunk() {
         branch_version: 1,
         preceding_version_uid: None,
         other_input_version_uids: None,
-        sys_period_lower: Some("2020-01-01T00:00:00Z"),
-        sys_period_upper: None,
+        committed_at: Some("2020-01-01T00:00:00Z"),
         lifecycle_state: "532",
         contribution_id,
-        audit_id,
+        commit_audit_id,
         template_id: None,
         signature: None,
         signature_client_supplied: false,
@@ -476,14 +669,14 @@ async fn an_as_of_read_resolves_along_the_trunk() {
     };
     let mut conn = pool.acquire().await.expect("connection");
 
-    // The seeded container's trunk version 1 is open from `now()`; a branch
-    // tip open across the same instant does not displace it.
+    // The seeded container's trunk version 1 was committed at `now()`; a branch
+    // tip live at the same instant does not displace it.
     insert_version_verbatim(&mut conn, &branch_row(VoId(vo), 2))
         .await
         .expect("branch beside the trunk");
-    // The server clock, not the test process's: `sys_period` is stamped by the
-    // database, and a client/DB skew under parallel load races the at-time read
-    // against the validity interval it is probing. Same reasoning as
+    // The server clock, not the test process's: `committed_at` is stamped by
+    // the database, and a client/DB skew under parallel load races the at-time
+    // read against the instants it is comparing. Same reasoning as
     // `service_demographic::db_now`.
     let at: jiff::Timestamp = sqlx::query_scalar::<_, jiff_sqlx::Timestamp>("SELECT now()")
         .fetch_one(&pool)
@@ -544,7 +737,8 @@ async fn node_codec_round_trips_through_the_database() {
         insert_nodes(&pool, vo, 1, ehr_id, &rows).await;
 
         let read: Vec<NodeRow> = sqlx::query(
-            "SELECT num, num_cap, parent_num, citem_num, rm_type, archetype, name, path, data
+            "SELECT num, num_cap, parent_num, rm_type, archetype, name, name_code,
+                    name_terminology, path, data
              FROM node WHERE vo_id = $1 AND sys_version = 1 ORDER BY num",
         )
         .bind(vo)
@@ -556,7 +750,6 @@ async fn node_codec_round_trips_through_the_database() {
             num: r.get("num"),
             num_cap: r.get("num_cap"),
             parent_num: r.get("parent_num"),
-            citem_num: r.get("citem_num"),
             rm_type: r.get("rm_type"),
             archetype: r.get("archetype"),
             // arch_* are query-only promoted columns, unused by `reassemble`.
@@ -564,6 +757,8 @@ async fn node_codec_round_trips_through_the_database() {
             arch_concept: None,
             arch_major: None,
             name: r.get("name"),
+            name_code: r.get("name_code"),
+            name_terminology: r.get("name_terminology"),
             path: r.get("path"),
             data: r.get("data"),
             // Promoted-leaf columns are query-only and unused by `reassemble`.
@@ -602,20 +797,20 @@ async fn node_codec_round_trips_through_the_database() {
     assert_eq!(contains, expected);
 }
 
-/// The stored `vo_version.template_id` is read back through the version
+/// The stored `version.template_id` is read back through the version
 /// read-back and surfaced by `FerroEhrService::template_of_version` (the ABAC
 /// template attribute).
 #[tokio::test]
-async fn template_id_is_read_back_from_vo_version() {
+async fn template_id_is_read_back_from_version() {
     use ferroehr::service::FerroEhrService;
 
     let db = testkit::db().await.expect("testkit database");
     let pool = db.pool();
     let (vo, ehr_id) = seed_version(&pool).await;
     // Production sets this on commit (service/vobject.rs); set it directly here.
-    // vo_version.template_id has an FK into template_ref — seed the template.
+    // version.template_id has an FK into template_ref — seed the template.
     seed_template(&pool, "org.openehr::vital_signs.v1").await;
-    sqlx::query("UPDATE vo_version SET template_id = $2 WHERE vo_id = $1")
+    sqlx::query("UPDATE version SET template_id = $2 WHERE vo_id = $1")
         .bind(vo)
         .bind("org.openehr::vital_signs.v1")
         .execute(&pool)
@@ -681,9 +876,9 @@ async fn query_subject_scope_filters_and_collects_projection_independently() {
             .execute(&pool)
             .await
             .expect("set subject");
-        // vo_version.template_id has an FK into template_store — seed first.
+        // version.template_id has an FK into template_store — seed first.
         seed_template(&pool, template).await;
-        sqlx::query("UPDATE vo_version SET template_id = $2 WHERE vo_id = $1")
+        sqlx::query("UPDATE version SET template_id = $2 WHERE vo_id = $1")
             .bind(vo)
             .bind(template)
             .execute(&pool)
@@ -732,9 +927,9 @@ fn row_count(result_set: &Value) -> usize {
 
 // ─── helpers ────────────────────────────────────────────────────────────────
 
-/// Creates ehr + audit + contribution + an open v1 `vo_version`; returns
+/// Creates ehr + audit + contribution + an open v1 `version`; returns
 /// `(vo_id, ehr_id)`.
-/// Seed a `template_store` row so `vo_version.template_id` (FK) can reference
+/// Seed a `template_store` row so `version.template_id` (FK) can reference
 /// it — production ingests the OPT before any commit can cite it.
 async fn seed_template(pool: &PgPool, template_id: &str) {
     sqlx::query(
@@ -746,7 +941,7 @@ async fn seed_template(pool: &PgPool, template_id: &str) {
     .await
     .expect("seed template_store");
     // Register the wire address exactly as `store_template` does — the
-    // vo_version.template_id FK targets the template_ref registry.
+    // version.template_id FK targets the template_ref registry.
     sqlx::query("INSERT INTO template_ref (template_id) VALUES ($1) ON CONFLICT DO NOTHING")
         .bind(template_id)
         .execute(pool)
@@ -765,8 +960,8 @@ async fn seed_version(pool: &PgPool) -> (Uuid, Uuid) {
         .expect("ehr row");
     // audit.change_type is a coded audit_change_type value ('249' creation),
     // enforced by ck_audit_change_type — not the rubric.
-    let audit_id: Uuid = sqlx::query_scalar(
-        "INSERT INTO audit (system_id, change_type, committer)
+    let commit_audit_id: Uuid = sqlx::query_scalar(
+        "INSERT INTO commit_audit (system_id, change_type, committer)
          VALUES ('test.system', '249', '{\"_type\":\"PARTY_SELF\"}'::jsonb)
          RETURNING id",
     )
@@ -774,25 +969,26 @@ async fn seed_version(pool: &PgPool) -> (Uuid, Uuid) {
     .await
     .expect("audit row");
     let contribution_id: Uuid = sqlx::query_scalar(
-        "INSERT INTO contribution (ehr_id, audit_id) VALUES ($1, $2) RETURNING id",
+        "INSERT INTO contribution (ehr_id, commit_audit_id) VALUES ($1, $2) RETURNING id",
     )
     .bind(ehr_id)
-    .bind(audit_id)
+    .bind(commit_audit_id)
     .fetch_one(pool)
     .await
     .expect("contribution row");
     // creating_system_id is NOT NULL.
     sqlx::query(
-        "INSERT INTO vo_version (vo_id, kind, ehr_id, sys_version, trunk_version, sys_period, contribution_id, audit_id, creating_system_id)
-         VALUES ($1, 'COMPOSITION', $2, 1, 1, tstzrange(now(), NULL), $3, $4, 'ferroehr.test')",
+        "INSERT INTO version (vo_id, kind, ehr_id, sys_version, trunk_version, committed_at, contribution_id, commit_audit_id, creating_system_id)
+         VALUES ($1, 'COMPOSITION', $2, 1, 1, now(), $3, $4, 'ferroehr.test')",
     )
     .bind(vo)
     .bind(ehr_id)
     .bind(contribution_id)
-    .bind(audit_id)
+    .bind(commit_audit_id)
     .execute(pool)
     .await
-    .expect("vo_version row");
+    .expect("version row");
+    seed_head(pool, vo).await;
     // Every EHR has an EHR_STATUS from creation (RM ehr §"EHR Creation");
     // the AQL population gate keys off its `is_queryable` flag
     // (`i_query_service.adoc`), so a spec-realistic fixture must seed one —
@@ -800,16 +996,17 @@ async fn seed_version(pool: &PgPool) -> (Uuid, Uuid) {
     // produce.
     let status_vo = Uuid::now_v7();
     sqlx::query(
-        "INSERT INTO vo_version (vo_id, kind, ehr_id, sys_version, trunk_version, sys_period, contribution_id, audit_id, creating_system_id)
-         VALUES ($1, 'EHR_STATUS', $2, 1, 1, tstzrange(now(), NULL), $3, $4, 'ferroehr.test')",
+        "INSERT INTO version (vo_id, kind, ehr_id, sys_version, trunk_version, committed_at, contribution_id, commit_audit_id, creating_system_id)
+         VALUES ($1, 'EHR_STATUS', $2, 1, 1, now(), $3, $4, 'ferroehr.test')",
     )
     .bind(status_vo)
     .bind(ehr_id)
     .bind(contribution_id)
-    .bind(audit_id)
+    .bind(commit_audit_id)
     .execute(pool)
     .await
-    .expect("ehr_status vo_version row");
+    .expect("ehr_status version row");
+    seed_head(pool, status_vo).await;
     sqlx::query(
         "INSERT INTO node (vo_id, sys_version, num, num_cap, parent_num, rm_type, ehr_id, path, data)
          VALUES ($1, 1, 0, 0, 0, 'EHR_STATUS', $2, '',
@@ -823,19 +1020,45 @@ async fn seed_version(pool: &PgPool) -> (Uuid, Uuid) {
     (vo, ehr_id)
 }
 
+/// Write the head row a seeded version needs, from the version rows themselves.
+///
+/// The commit path writes it in the same statement as the version; a fixture
+/// that inserts version rows directly has to write it too, or every read that
+/// asks "what is current" finds no answer.
+async fn seed_head(pool: &PgPool, vo: Uuid) {
+    sqlx::query(
+        "INSERT INTO vo_head (vo_id, kind, ehr_id, head_sys_version, trunk_head_sys_version, \
+             lifecycle_state, committed_at) \
+         SELECT a.vo_id, t.kind, t.ehr_id, a.head, t.sys_version, t.lifecycle_state, \
+                t.committed_at \
+         FROM (SELECT vo_id, max(sys_version) AS head FROM version \
+               WHERE vo_id = $1 GROUP BY vo_id) a \
+         JOIN LATERAL (SELECT kind, ehr_id, sys_version, lifecycle_state, committed_at \
+                       FROM version WHERE vo_id = a.vo_id AND branch_number = 0 \
+                       ORDER BY sys_version DESC LIMIT 1) t ON true \
+         ON CONFLICT (vo_id) DO UPDATE SET \
+             head_sys_version = EXCLUDED.head_sys_version, \
+             trunk_head_sys_version = EXCLUDED.trunk_head_sys_version, \
+             committed_at = EXCLUDED.committed_at",
+    )
+    .bind(vo)
+    .execute(pool)
+    .await
+    .expect("head row");
+}
+
 async fn insert_nodes(pool: &PgPool, vo: Uuid, sys_version: i32, ehr_id: Uuid, rows: &[NodeRow]) {
     for row in rows {
         sqlx::query(
-            "INSERT INTO node (vo_id, sys_version, num, num_cap, parent_num, citem_num,
+            "INSERT INTO node (vo_id, sys_version, num, num_cap, parent_num,
                                ehr_id, rm_type, archetype, name, path, data)
-             VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)",
+             VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)",
         )
         .bind(vo)
         .bind(sys_version)
         .bind(row.num)
         .bind(row.num_cap)
         .bind(row.parent_num)
-        .bind(row.citem_num)
         .bind(ehr_id)
         .bind(&row.rm_type)
         .bind(&row.archetype)
@@ -857,7 +1080,7 @@ fn corpus_sample() -> Value {
         .expect("parse composition")
 }
 
-/// The materialized `vo_version.body` is byte-identical to the node-row
+/// The materialized `version.body` is byte-identical to the node-row
 /// reassembly on a REAL service commit — the parity the body column's whole
 /// design rests on (reads serve `body`; AQL reads the nodes; both must be the
 /// same canonical value, RM common master06 §Copying: a stored version is
@@ -873,13 +1096,12 @@ async fn materialized_body_matches_node_reassembly_on_a_real_commit() {
     let ehr_id = service.create_ehr(None).await.expect("ehr create");
 
     // The EHR create commits an EHR_STATUS through the full commit path.
-    let (vo, body): (Uuid, Option<String>) = sqlx::query_as(
-        "SELECT vo_id, body FROM vo_version WHERE ehr_id = $1 AND kind = 'EHR_STATUS'",
-    )
-    .bind(ehr_id.0)
-    .fetch_one(&pool)
-    .await
-    .expect("status version row");
+    let (vo, body): (Uuid, Option<String>) =
+        sqlx::query_as("SELECT vo_id, body FROM version WHERE ehr_id = $1 AND kind = 'EHR_STATUS'")
+            .bind(ehr_id.0)
+            .fetch_one(&pool)
+            .await
+            .expect("status version row");
     let body: Value =
         serde_json::from_str(&body.expect("a content-bearing version materializes its body"))
             .expect("the stored body text parses");
@@ -888,7 +1110,7 @@ async fn materialized_body_matches_node_reassembly_on_a_real_commit() {
         .expect("node reassembly");
     assert_eq!(
         body, reassembled,
-        "vo_version.body must equal the node-row reassembly"
+        "version.body must equal the node-row reassembly"
     );
     assert_eq!(
         body.get("_type").and_then(Value::as_str),
@@ -914,13 +1136,14 @@ async fn write_nodes_survives_more_than_4095_rows() {
             num,
             num_cap: num,
             parent_num: 0,
-            citem_num: None,
             rm_type: "ELEMENT".to_owned(),
             archetype: None,
             arch_entity: None,
             arch_concept: None,
             arch_major: None,
             name: None,
+            name_code: None,
+            name_terminology: None,
             path: if i == 0 {
                 String::new()
             } else {
@@ -950,12 +1173,11 @@ async fn write_nodes_survives_more_than_4095_rows() {
     assert_eq!(count, 5_000);
 }
 
-/// The tenant-scoped pool applies the SAME session settings the base pool
-/// does — `statement_timeout` included (#2669: the tenant `after_connect`
-/// previously replaced the base hook and silently dropped the DB-side
-/// runaway-query guard).
+/// Every pooled connection carries the configured `statement_timeout`
+/// (#2669): the DB-side runaway-query guard is the one setting a pool variant
+/// must never silently drop.
 #[tokio::test]
-async fn tenant_scoped_pool_applies_statement_timeout() {
+async fn a_pooled_connection_applies_the_configured_statement_timeout() {
     let db = testkit::db().await.expect("testkit database");
     let settings = db::DbConfig {
         url: ferroehr::config::secret::SecretUrl::new(db.url()),
@@ -965,29 +1187,26 @@ async fn tenant_scoped_pool_applies_statement_timeout() {
         ..db::DbConfig::default()
     };
 
-    let pool = db::connect_tenant_scoped(&settings)
-        .await
-        .expect("tenant-scoped pool");
+    let pool = db::connect(&settings).await.expect("clinical pool");
     let timeout: String = sqlx::query_scalar("SHOW statement_timeout")
         .fetch_one(&pool)
         .await
         .expect("read timeout");
     assert_eq!(
         timeout, "12345ms",
-        "the tenant-scoped connection must carry the configured statement_timeout"
+        "a pooled connection must carry the configured statement_timeout"
     );
 }
 
-/// A partially wiped database comes back whole (#3298): the sandbox reset
-/// drops `ehr`, `audit`, `ext` and `cold` and leaves the demographic and
-/// linkage sets applied, so the clinical cold-tier alias views, which only the
-/// demographic baseline created, must come back with the clinical set itself
+/// A partially wiped database comes back whole (#3298): the sandbox reset drops
+/// the clinical, audit and ext schemas and leaves the party and linkage sets
+/// applied, so the clinical set has to rebuild everything the write path needs
 /// or every update fails on the placement read with 42P01.
 #[tokio::test]
-async fn a_wiped_clinical_schema_is_rebuilt_with_its_cold_alias_views() {
+async fn a_wiped_clinical_schema_is_rebuilt_and_serves_writes_again() {
     let db = testkit::db().await.expect("testkit database");
     let pool = db.pool();
-    for schema in ["ehr", "audit", "ext", "cold"] {
+    for schema in ["clinical", "audit", "ext"] {
         sqlx::query(sqlx::AssertSqlSafe(format!(
             "DROP SCHEMA IF EXISTS {schema} CASCADE"
         )))
@@ -997,17 +1216,7 @@ async fn a_wiped_clinical_schema_is_rebuilt_with_its_cold_alias_views() {
     }
     db::run_migrations(&pool)
         .await
-        .expect("the ehr set rebuilds its schema on a database whose demographic set is complete");
-    let views: Vec<String> = sqlx::query_scalar(
-        "SELECT viewname FROM pg_views WHERE schemaname = 'ehr' AND viewname LIKE 'cold_%' ORDER BY 1",
-    )
-    .fetch_all(&pool)
-    .await
-    .expect("list the alias views");
-    assert_eq!(
-        views,
-        ["cold_node", "cold_vo_attestation", "cold_vo_version"]
-    );
+        .expect("the clinical set rebuilds its schema on a database whose party set is complete");
 
     let svc = ferroehr::service::FerroEhrService::new(pool.clone());
     let ehr_id = svc.create_ehr(None).await.expect("create_ehr");

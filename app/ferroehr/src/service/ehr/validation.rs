@@ -491,7 +491,7 @@ pub(in crate::service) fn check_versioned_composition_first_root(
 
 /// The OPT `template_id` a COMPOSITION declares
 /// (`archetype_details.template_id.value`), if any. `pub(crate)` because the
-/// CONTRIBUTION commit path stamps `vo_version.template_id` with the same
+/// CONTRIBUTION commit path stamps `version.template_id` with the same
 /// derivation as the direct composition path (the template-delete 409 guard
 /// counts that column — physical deletes never orphan committed data).
 pub(crate) fn composition_template_id(composition: &Value) -> Option<&str> {

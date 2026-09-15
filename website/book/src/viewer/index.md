@@ -221,10 +221,6 @@ it in readable form.
 - **Operations:** dependency health, build and spec provenance, the metric
   registry, and runtime log control. Appears only when the CDR serves its
   management surface. See [Operations panel](operations.md).
-- **Tenants:** the tenant registry, and the tenant this session's credential
-  resolves to. Appears only when the CDR runs with multi-tenancy on. There is
-  no tenant switcher: tenancy is credential-derived, and the viewer displays
-  it rather than choosing it. See [Tenant registry](tenants.md).
 - **Subscriptions:** the event subscriptions that decide which committed
   versions the CDR publishes to a message broker. Appears only when the CDR
   serves its subscription API. See

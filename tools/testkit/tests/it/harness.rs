@@ -5,7 +5,7 @@
 //! and per-test cloning against a real `PostgreSQL` 18.
 
 /// Two clones from one process: unique databases, both fully migrated
-/// (the `ehr.node` table exists and is queryable), independent state.
+/// (the `clinical.node` table exists and is queryable), independent state.
 #[tokio::test]
 async fn clones_are_unique_and_fully_migrated() {
     let first = testkit::db().await.expect("first clone");
@@ -15,7 +15,7 @@ async fn clones_are_unique_and_fully_migrated() {
     for db in [&first, &second] {
         let migrated: bool = sqlx::query_scalar(
             "SELECT EXISTS (SELECT 1 FROM information_schema.tables \
-             WHERE table_schema = 'ehr' AND table_name = 'node')",
+             WHERE table_schema = 'clinical' AND table_name = 'node')",
         )
         .fetch_one(&db.pool())
         .await
@@ -26,18 +26,18 @@ async fn clones_are_unique_and_fully_migrated() {
     // Writes stay isolated per clone: an EHR row in one never shows in the
     // other (both tables start empty — the template carries schema only).
     sqlx::query(
-        "INSERT INTO ehr.ehr (id, system_id, time_created) \
+        "INSERT INTO clinical.ehr (id, system_id, time_created) \
          VALUES (gen_random_uuid(), 'testkit', now())",
     )
     .execute(&first.pool())
     .await
     .expect("insert into first");
     let counts: (i64, i64) = (
-        sqlx::query_scalar("SELECT count(*) FROM ehr.ehr")
+        sqlx::query_scalar("SELECT count(*) FROM clinical.ehr")
             .fetch_one(&first.pool())
             .await
             .expect("count first"),
-        sqlx::query_scalar("SELECT count(*) FROM ehr.ehr")
+        sqlx::query_scalar("SELECT count(*) FROM clinical.ehr")
             .fetch_one(&second.pool())
             .await
             .expect("count second"),

@@ -32,7 +32,7 @@ use tower::ServiceExt;
 
 use ferroehr::config::auth::AuthConfig;
 use ferroehr::config::management::{AccessLevel, EndpointLevels, ManagementConfig};
-use ferroehr::config::server::{AdminConfig, ServerConfig, TenancyConfig};
+use ferroehr::config::server::{AdminConfig, ServerConfig};
 use ferroehr::config::smart::SmartConfig;
 use ferroehr::telemetry::build_info::BuildInfo;
 use ferroehr::telemetry::health::HealthRegistry;
@@ -65,7 +65,6 @@ const FAMILY_SLUGS: &[&str] = &[
     "relationships",
     "messaging",
     "events",
-    "tenancy",
     "fhir",
     "smart",
 ];
@@ -105,7 +104,6 @@ fn extensions_doc_is_non_empty() {
         "/ferroehr/rest/openehr/v1/terminology",
         "/ferroehr/rest/openehr/v1/demographic/party_relationship",
         "/ferroehr/rest/openehr/v1/admin/event_subscription",
-        "/ferroehr/rest/openehr/v1/admin/tenant",
         "/ferroehr/rest/openehr/v1/fhir/r4/{resource_type}",
     ] {
         assert!(
@@ -534,10 +532,6 @@ fn app_config() -> AppConfig {
             ..AuthConfig::default()
         },
         admin: AdminConfig { enabled: true },
-        tenancy: TenancyConfig {
-            enabled: true,
-            ..TenancyConfig::default()
-        },
         smart: SmartConfig {
             enabled: true,
             ..SmartConfig::default()

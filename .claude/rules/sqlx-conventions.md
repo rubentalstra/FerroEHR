@@ -11,10 +11,14 @@ use it). **Not sea-orm.** Target PostgreSQL 18.6+.
 
 ## Migrations
 
-- The schema is **our own PG18-native design** (re-authored
-  enterprise-grade): the unified `node` table, the temporal
-  `vo_version` table, supporting tables, and our `ext` helper functions. It
-  is live and CNF-pipeline-verified.
+- The schema is **our own PG18-native design**: the append-only `version`
+  table with its mutable `vo_head` row, the unified `node` table, the
+  tier partitions that hold the archival tier, supporting tables, and our
+  `ext` helper functions. It is live and CNF-pipeline-verified. The clinical
+  and party domains' change-control and node relations are RENDERED from one
+  DDL template (`app/ferroehr/migrations/templates/`), so a change to either
+  is a change to the template plus a regeneration, never a hand edit of the
+  rendered file.
 - **Migrations are APPEND-ONLY (owner ruling 2026-09-09, declaring the
   stabilization the 2026-08-20 greenfield ruling reserved).** People run
   FerroEHR now, so wiping a volume is no longer an option and an installation
@@ -29,19 +33,44 @@ use it). **Not sea-orm.** Target PostgreSQL 18.6+.
   adding a constraint, backfilling a column, correcting a defect in an earlier
   migration: each is a new `sqlx migrate add` file that carries the change
   forward. A migration that was wrong is superseded, never rewritten.
+- **A SET is retired whole, or not at all.** The one change that is not an
+  edit is withdrawing a whole migration set, and it is only safe in one shape:
+  every file the base branch had under `app/ferroehr/migrations/<schema>/`
+  goes, so no half-set survives for a database to apply against — a NEW set may
+  take its place in the same directory, because a schema name can outlive the
+  set that used it — and `<schema>` is named in `FIRST_GENERATION_SETS`
+  (`app/ferroehr/src/db/mod.rs`) in the same change, so a database carrying that
+  set's bookkeeping is refused at boot by name, with the remedy. An installation
+  is then TOLD what happened instead of being locked out by a checksum it cannot
+  interpret. A single-file edit, a partial turnover, and a turnover the boot
+  refusal does not name all stay refused; a rename is judged as the deletion of
+  its old path, which is what an installed database sees.
+- **The refusal is a SIGNATURE, not a schema name.** Where this build owns no
+  set of that name (`ehr`, `demographic`), any bookkeeping in the schema is the
+  signature. Where the name survives the rewrite (`ext`, `linkage`, `audit`),
+  bookkeeping exists in both generations, so the signature is the description
+  sqlx recorded for VERSION 1 — the file that set was opened with. Without
+  that half, an old set reaches its own migrator and fails on a checksum
+  mismatch instead of the remedy.
 - Enforcement (tier 4): `scripts/checks/migration-immutability.sh`, run by the
   `migration-immutability` CI job over the pull request's diff against its
-  merge base. It fails on any modification, rename or deletion under
+  merge base. It fails on any modification, rename or partial deletion under
   `app/ferroehr/migrations/`; an added file passes, and so does further work
   on a file this branch itself added, because the comparison is against the
-  base. **There is deliberately no escape-hatch label:** the checksum makes
+  base. The whole-set retirement above is accepted only when the guard can
+  verify BOTH halves itself — every base file of that directory gone at head,
+  and the schema named in that table — so the acceptance cannot be claimed by a
+  comment. **There is deliberately no escape-hatch label:** the checksum makes
   the rule absolute, so an exception would only ever be a broken deployment.
 - Create migrations with the official CLI only:
   `sqlx migrate add --source app/ferroehr/migrations/<schema> --sequential <desc>`,
   written as modern PG 18 SQL (`uuidv7()`, temporal `WITHOUT OVERLAPS`,
   `RETURNING OLD/NEW` where the design calls for them).
-- `ferroehr::db::run_migrations` bootstraps schemas + extensions and runs the
-  `ext` migrator before `ehr`; each set keeps its own `_sqlx_migrations` table.
+- `ferroehr::db::prepare` bootstraps schemas + extensions and runs the sets in
+  order (`ext`, `clinical`, `party`, `linkage`, `audit`); each keeps its own
+  `_sqlx_migrations` table, and a database whose bookkeeping matches a
+  `FIRST_GENERATION_SETS` signature is refused at boot as predating the storage
+  rewrite.
 - `sea-query` `Iden` table/column definitions (`db/iden.rs`) + hand-written
   row-mapping structs (over the generated `openehr-rm` types) — no ORM/codegen.
 

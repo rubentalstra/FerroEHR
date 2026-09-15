@@ -5,7 +5,7 @@
 //! are re-derived and compared.
 //!
 //! NOTE: no openEHR spec governs storage mechanics — our own design/extension;
-//! the storage keeps a version's content twice, as `vo_version.body` (the
+//! the storage keeps a version's content twice, as `version.body` (the
 //! materialized projection point reads serve) and as the decomposed `node`
 //! rows (the AQL index), and their equality is an invariant of the commit path.
 //!
@@ -148,7 +148,7 @@ pub struct StorageParityMismatch {
     pub vo_id: Uuid,
     /// The per-object storage commit ordinal of the version.
     pub sys_version: i32,
-    /// The `vo_version.kind` discriminator (`COMPOSITION` / `EHR_STATUS` /
+    /// The `version.kind` discriminator (`COMPOSITION` / `EHR_STATUS` /
     /// `FOLDER` / a demographic PARTY class / …).
     pub kind: String,
     /// What the sweep found wrong with the two copies.
@@ -286,7 +286,7 @@ fn rows_are_current(stored: &[ReadRow], body: &Value) -> bool {
 
 impl FerroEhrService {
     /// Re-derives every stored version's content from its `node` rows and
-    /// compares it to the materialized `vo_version.body`, reporting every
+    /// compares it to the materialized `version.body`, reporting every
     /// disagreement.
     ///
     /// A version whose two copies agree is then decomposed once more from its
@@ -295,8 +295,9 @@ impl FerroEhrService {
     /// [`StorageParityDefect::StaleDecomposition`] rather than passed as
     /// healthy.
     ///
-    /// The sweep reads BOTH storage tiers (the `vo_version_all` / `node_all`
-    /// union views), so archived content is checked like everything else. It
+    /// The sweep reads BOTH storage tiers: it names the partitioned parents
+    /// `version` and `node` and pins no tier, so archived content is checked
+    /// like everything else. It
     /// takes no lock and holds no transaction: a version committed while the
     /// sweep runs is simply checked or not, and a version read mid-commit
     /// cannot be seen half-written because a commit writes both copies in one
@@ -460,7 +461,7 @@ impl FerroEhrService {
         let rows: Vec<(Uuid, i32, String)> = sqlx::query_as(
             "SELECT v.vo_id, v.sys_version, v.body \
              FROM unnest($1::uuid[], $2::int[]) AS k(vo_id, sys_version) \
-             JOIN vo_version_all v \
+             JOIN version v \
                ON v.vo_id = k.vo_id AND v.sys_version = k.sys_version \
              WHERE v.body IS NOT NULL",
         )
@@ -492,10 +493,10 @@ impl FerroEhrService {
         };
         let rows: Vec<(Uuid, i32, String, bool)> = sqlx::query_as(
             "SELECT vo_id, sys_version, kind, body IS NOT NULL \
-             FROM vo_version_all \
+             FROM version \
              WHERE ($1::uuid IS NULL OR (vo_id, sys_version) > ($1::uuid, $2::int)) \
                AND ($4::uuid IS NULL OR ehr_id = $4::uuid) \
-               AND ($5::timestamptz IS NULL OR lower(sys_period) >= $5::timestamptz) \
+               AND ($5::timestamptz IS NULL OR committed_at >= $5::timestamptz) \
                AND ($6::uuid IS NULL OR vo_id = $6::uuid) \
                AND ($6::uuid IS NULL OR $7::int IS NULL OR sys_version = $7::int) \
              ORDER BY vo_id, sys_version \

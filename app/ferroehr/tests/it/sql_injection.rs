@@ -42,9 +42,10 @@
 //!   for the streaming `EXISTS` probe (`aql::sql::value`). An AQL `AS <label>`
 //!   is carried on `ColumnSpec::name` for the `RESULT_SET` only and is never a
 //!   SQL identifier — see [`the_select_as_label_never_becomes_a_sql_identifier`].
-//! * **Function names** — the five literals passed to `aql::sql::expr::call`:
-//!   `to_jsonb`, `jsonb_path_query_first`, `upper_inf`, `openehr_magnitude`,
-//!   `jsonb_build_object`; plus the `Expr::cust`/`cust_with_exprs` fragments in
+//! * **Function names** — the six literals passed to `aql::sql::expr::call`:
+//!   `to_jsonb`, `jsonb_path_query_first`, `jsonb_path_query_array`,
+//!   `openehr_magnitude`, `openehr_timestamp`, `jsonb_build_object`; plus the
+//!   `Expr::cust`/`cust_with_exprs` fragments in
 //!   `aql::sql::predicate` and `aql::sql::value`, whose arguments are all
 //!   positional `$n` expressions.
 //! * **Cast types** — the seven literals passed to `aql::sql::expr::cast`:
@@ -544,16 +545,17 @@ const CORPUS: &[&str] = &[
 const IDENTIFIERS: &[&str] = &[
     // relations
     "node",
-    "vo_version",
+    "version",
+    "vo_head",
     "ehr",
-    "audit",
+    "commit_audit",
     // node
+    "tier",
     "vo_id",
     "sys_version",
     "num",
     "num_cap",
     "parent_num",
-    "citem_num",
     "ehr_id",
     "rm_type",
     "archetype",
@@ -561,20 +563,24 @@ const IDENTIFIERS: &[&str] = &[
     "arch_concept",
     "arch_major",
     "name",
+    "name_code",
+    "name_terminology",
     "path",
     "data",
     "context_start",
-    // vo_version
+    // version
     "kind",
     "trunk_version",
     "branch_number",
     "branch_version",
-    "sys_period",
+    "committed_at",
     "lifecycle_state",
     "creating_system_id",
     "contribution_id",
-    "audit_id",
+    "commit_audit_id",
     "template_id",
+    // vo_head
+    "trunk_head_sys_version",
     // ehr
     "id",
     "system_id",
@@ -606,6 +612,10 @@ const ALIAS_PATTERNS: &[&str] = &[
     r"^esv[0-9]+$",
     r"^esn[0-9]+$",
     r"^a_v[0-9]+$",
+    r"^v[0-9]+_head$",
+    r"^v[0-9]+_at$",
+    r"^esv[0-9]+_head$",
+    r"^xv[0-9]+_head$",
     r"^col[0-9]+(_(vo|sv|num|cap))?$",
     r"^scope_(ehr|template)_[0-9]+$",
     r"^access_(ehr|vo|sv)_[0-9]+$",
@@ -770,7 +780,7 @@ async fn the_application_database_role_cannot_run_ddl_or_escalate() {
     let mut conn = PgConnection::connect(&format!("{scheme}://{role}:testpw@{tail}"))
         .await
         .expect("connect as the app role");
-    sqlx::query("SET search_path TO ehr, ext, public")
+    sqlx::query("SET search_path TO clinical, ext, public")
         .execute(&mut conn)
         .await
         .expect("search_path");

@@ -89,7 +89,7 @@ pseudonym, or an identified party the deployment does not permit, with the same
 apply to the admin archive load for the same reason.
 
 When ATNA auditing is enabled (it is on by default, see
-[Security & multi-tenancy](../security.md#atna-audit-trail)) each completed
+[Security](../security.md#atna-audit-trail)) each completed
 export and import emits a security-audit event under the ATNA `Extract` object
 class, so records moving between systems are captured in the audit trail with
 their direction.

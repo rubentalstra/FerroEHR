@@ -55,8 +55,9 @@ impl HealthIndicator for DbHealth {
     }
 }
 
-/// `migrations` — verifies the greenfield schema is present (the `ehr.node` +
-/// `ehr.vo_version` core tables exist). Required for readiness.
+/// `migrations` — verifies the greenfield schema is present (the
+/// `clinical.node`, `clinical.version` and `clinical.vo_head` core relations
+/// exist). Required for readiness.
 #[derive(Debug)]
 pub struct MigrationsHealth {
     pool: PgPool,
@@ -77,8 +78,9 @@ impl HealthIndicator for MigrationsHealth {
     }
 
     async fn check(&self) -> Health {
-        let query = "SELECT (to_regclass('ehr.node') IS NOT NULL \
-             AND to_regclass('ehr.vo_version') IS NOT NULL) AS applied";
+        let query = "SELECT (to_regclass('clinical.node') IS NOT NULL \
+             AND to_regclass('clinical.version') IS NOT NULL \
+             AND to_regclass('clinical.vo_head') IS NOT NULL) AS applied";
         match sqlx::query_scalar::<_, bool>(query)
             .fetch_one(&self.pool)
             .await

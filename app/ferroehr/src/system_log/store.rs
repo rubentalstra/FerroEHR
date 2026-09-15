@@ -40,8 +40,8 @@ pub struct AuditStore {
 
 impl AuditStore {
     /// A store over the given pool. The pool should be the plain
-    /// (non-tenant-scoped) pool: the audit schema is not RLS-scoped and the
-    /// drain task runs outside any request's tenant session.
+    /// pool: the audit trail is the node's operator surface, written by the
+    /// drain task rather than by a request.
     #[must_use]
     pub fn new(pool: PgPool) -> Self {
         AuditStore { pool }
@@ -64,10 +64,10 @@ impl AuditStore {
         sqlx::query(
             "INSERT INTO audit.audit_event (recorded_at, action, outcome, event_code, \
              operation, principal, organisation, patient_id, resource_class, resource_id, \
-             client_ip, token_id, tenant_id, domain, purpose, legal_basis, result_count, \
+             client_ip, token_id, domain, purpose, legal_basis, result_count, \
              request_id, fhir, roles, origins, origin_count) \
              VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, \
-             $15, $16, $17, $18, $19, $20, $21, $22) \
+             $15, $16, $17, $18, $19, $20, $21) \
              RETURNING id",
         )
         .bind(Timestamp::from(event.timestamp))
@@ -82,7 +82,6 @@ impl AuditStore {
         .bind(event.object_id.as_deref())
         .bind(event.client_ip.as_deref())
         .bind(event.token_id.as_deref())
-        .bind(event.tenant_id)
         .bind(event.domain.as_str())
         .bind(event.purpose.as_deref())
         .bind(event.legal_basis.as_deref())
@@ -130,7 +129,6 @@ impl AuditStore {
         let mut resource_ids: Vec<Option<&str>> = Vec::with_capacity(records.len());
         let mut client_ips: Vec<Option<&str>> = Vec::with_capacity(records.len());
         let mut token_ids: Vec<Option<&str>> = Vec::with_capacity(records.len());
-        let mut tenant_ids: Vec<Option<Uuid>> = Vec::with_capacity(records.len());
         let mut domains: Vec<&str> = Vec::with_capacity(records.len());
         let mut purposes: Vec<Option<&str>> = Vec::with_capacity(records.len());
         let mut legal_bases: Vec<Option<&str>> = Vec::with_capacity(records.len());
@@ -156,7 +154,6 @@ impl AuditStore {
             resource_ids.push(event.object_id.as_deref());
             client_ips.push(event.client_ip.as_deref());
             token_ids.push(event.token_id.as_deref());
-            tenant_ids.push(event.tenant_id);
             domains.push(event.domain.as_str());
             purposes.push(event.purpose.as_deref());
             legal_bases.push(event.legal_basis.as_deref());
@@ -173,13 +170,13 @@ impl AuditStore {
         sqlx::query(
             "INSERT INTO audit.audit_event (recorded_at, action, outcome, event_code, \
              operation, principal, organisation, patient_id, resource_class, resource_id, \
-             client_ip, token_id, tenant_id, domain, purpose, legal_basis, result_count, \
+             client_ip, token_id, domain, purpose, legal_basis, result_count, \
              request_id, fhir, roles, origins, origin_count) \
              SELECT * FROM UNNEST($1::timestamptz[], $2::text[], $3::smallint[], $4::text[], \
              $5::text[], $6::text[], $7::text[], $8::text[], $9::text[], $10::text[], \
-             $11::text[], $12::text[], $13::uuid[], $14::text[], $15::text[], $16::text[], \
-             $17::bigint[], $18::text[], $19::jsonb[], $20::jsonb[], $21::jsonb[], \
-             $22::bigint[])",
+             $11::text[], $12::text[], $13::text[], $14::text[], $15::text[], \
+             $16::bigint[], $17::text[], $18::jsonb[], $19::jsonb[], $20::jsonb[], \
+             $21::bigint[])",
         )
         .bind(recorded_at)
         .bind(actions)
@@ -193,7 +190,6 @@ impl AuditStore {
         .bind(resource_ids)
         .bind(client_ips)
         .bind(token_ids)
-        .bind(tenant_ids)
         .bind(domains)
         .bind(purposes)
         .bind(legal_bases)

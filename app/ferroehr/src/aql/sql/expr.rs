@@ -31,6 +31,29 @@ pub(super) fn col(alias: &str, column: &str) -> Expr {
     Expr::col((Alias::new(alias), Alias::new(column)))
 }
 
+/// The hot-tier predicate on a partitioned relation, written as a LITERAL.
+///
+/// `version`, `node` and `vo_attestation` are partitioned by tier. A literal
+/// lets PostgreSQL prune the cold partition at PLAN time rather than at
+/// execution (PostgreSQL 18, "Partition Pruning",
+/// <https://www.postgresql.org/docs/18/ddl-partitioning.html>), and AQL wants
+/// exactly the hot tier: archived content leaves the queryable store until it
+/// is restored. No openEHR spec governs storage tiering — our own design.
+pub(super) fn hot(alias: &str) -> Expr {
+    col(alias, "tier").eq(Expr::cust(HOT_TIER_LITERAL))
+}
+
+/// The hot-tier predicate on an UNALIASED relation inside a subquery.
+pub(super) fn hot_unaliased() -> Expr {
+    Expr::col(Alias::new("tier")).eq(Expr::cust(HOT_TIER_LITERAL))
+}
+
+/// The tier AQL queries, as a SQL LITERAL. It is a constant of this module,
+/// never a caller-supplied byte, which is what makes writing it into the
+/// statement rather than binding it safe — and a bound parameter would move
+/// pruning from plan time to execution time.
+const HOT_TIER_LITERAL: &str = "'hot'";
+
 /// A typed custom-function call `name(args...)`.
 pub(super) fn call(name: &str, args: Vec<Expr>) -> Expr {
     let mut f = Func::cust(Alias::new(name));

@@ -15,6 +15,67 @@ workflow refuses a tag that has no matching section here.
 
 ## [Unreleased]
 
+### Changed
+
+- **BREAKING — the storage schema is rewritten, and a database created by an
+  earlier release must be recreated** (#3342, #3344). The rewrite is greenfield
+  (owner ruling 2026-09-14): the new migration sets replace the old ones
+  outright, nothing is upgraded in place, and the server refuses at boot a
+  database whose migration record predates the rewrite. Take a dump of anything
+  worth keeping before upgrading, recreate the database, and let the server
+  migrate it. What changed, and why:
+  - The `ehr` schema becomes `clinical` and `demographic` becomes `party`, each
+    laid out as a sequence of natural migration files with one concern apiece
+    rather than one squashed baseline.
+  - `version` is append-only: it carries no validity interval, so a
+    supersession writes no close-out statement, and the validity of a version
+    is derived from its `committed_at`. One mutable `vo_head` row per versioned
+    object answers "what is current", and none of the columns a commit updates
+    appears in an index, so that update is heap-only.
+  - `version`, `node` and `vo_attestation` are partitioned by storage tier, so
+    archiving an EHR is row movement inside one relation set rather than a copy
+    into mirror relations: the `cold` and `cold_demographic` schemas, every
+    `*_all` union view and the `vo_archive` marker table are gone, the archive
+    marker is two columns of `vo_head`, and a foreign key holds across the tier.
+  - `node` gains the promoted `name_code` and `name_terminology` the AQL node
+    predicate needs, and drops the unread `citem_num`.
+  - The clinical and party change-control and node relations are rendered from
+    one shared DDL template, so the two domains cannot drift.
+  - The party domain gains `party_relationship_target`, the target-side index
+    behind `PARTY.reverse_relationships`.
+  - The archive file format carries a version's `committed_at` instead of a
+    validity interval. An archive written by an earlier release does not load.
+
+- **The Helm chart is 9.0.0, a major bump** (#3342, #3344, #3378). The values
+  contract changed in two ways a values file can notice: `config.tenancy` no
+  longer exists and is refused at render with the reason, and the per-domain
+  backup CronJobs dump the generation-2 schemas (`clinical, ext, audit` and
+  `party`) instead of the retired mirror schemas. The docker-compose backup
+  services dump the same sets, and all six jobs now pass `--strict-names`, so a
+  `--schema` pattern matching nothing fails the dump instead of writing an
+  artefact that silently lacks that half (PostgreSQL 18, pg_dump §Options).
+
+### Removed
+
+- **Multi-tenancy** (#3378). Multi-tenancy is achieved by running separate
+  instances: one instance, one database, one set of domain roles per
+  organisation. That is where openEHR puts it. An openEHR *system* is "a
+  distinct logical repository corresponding to an organisational entity that is
+  legally responsible" for the data, and it is "distinct from any underlying
+  virtualisation infrastructure or cloud computing facility, which may house
+  multiple logical EHR systems in a multi-tenant fashion" (BASE
+  `architecture_overview/master06-design_of_the_ehr.adoc` §The EHR System) — so
+  tenancy belongs to the layer that hosts several systems, not inside one. The
+  same chapter's §System Identity is why housing several organisations in one
+  system was wrong rather than merely unnecessary: `system_id` names that one
+  legally responsible system, it "becomes embedded in the version identifiers of
+  committed -- and possibly signed -- content", and it "cannot easily be changed
+  afterwards". No relation carries a tenant column, no row policy or session GUC
+  scopes a read, and the `[tenancy]` configuration, the tenant middleware, the
+  `/admin/tenant` routes and the Helm and compose tenancy keys are gone. The
+  pseudonymisation domains and their role barriers are unrelated to tenancy and
+  stay.
+  
 ### Security
 
 - **rustls 0.23.45** (RUSTSEC-2026-0285): the TLS stack no longer accepts TLS 1.3 handshake messages sent at the wrong encryption level after a key change (RFC 8446 §5.1). Lockfile bump only; no configuration changes.

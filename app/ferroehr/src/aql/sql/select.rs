@@ -229,6 +229,7 @@ impl Builder<'_> {
         for step in &leaf.anchor {
             let alias = format!("w{}", self.next_ctr());
             self.q.from_as(Node::Table, Alias::new(alias.as_str()));
+            self.q.and_where(super::expr::hot(&alias));
             self.q
                 .and_where(col(&alias, "vo_id").eq(col(&prev, "vo_id")));
             self.q

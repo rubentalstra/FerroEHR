@@ -13,7 +13,6 @@
 
 use jiff::Timestamp;
 use sqlx::Row;
-use uuid::Uuid;
 
 use ferroehr::system_log::event::{
     AccessDomain, AuditEvent, EventActionCode, EventOutcome, EventType, ObjectClass,
@@ -42,7 +41,6 @@ fn read_event(at: Timestamp) -> AuditEvent {
     e.object_id = Some("8fa1::ferroehr::1".to_owned());
     e.event_type = Some(EventType::RestOperation("composition_get"));
     e.token_id = Some("jti-1".to_owned());
-    e.tenant_id = Some(Uuid::nil());
     e.timestamp = at;
     e
 }
@@ -62,7 +60,7 @@ async fn insert_persists_promoted_columns_and_fhir_payload() {
 
     let row = sqlx::query(
         "SELECT action, outcome, event_code, operation, principal, patient_id, \
-         resource_class, resource_id, client_ip, token_id, tenant_id, fhir, \
+         resource_class, resource_id, client_ip, token_id, fhir, \
          delivered_syslog_at, delivered_fhir_feed_at \
          FROM audit.audit_event",
     )
@@ -98,7 +96,6 @@ async fn insert_persists_promoted_columns_and_fhir_payload() {
         row.get::<Option<String>, _>("token_id").as_deref(),
         Some("jti-1")
     );
-    assert_eq!(row.get::<Option<Uuid>, _>("tenant_id"), Some(Uuid::nil()));
     // Both forwarding outbox stamps start pending.
     assert_eq!(
         row.get::<Option<jiff_sqlx::Timestamp>, _>("delivered_syslog_at")
@@ -258,7 +255,7 @@ async fn access_fields_round_trip_on_both_write_paths() {
 
     assert_eq!(
         rows[0].get::<Option<String>, _>("domain").as_deref(),
-        Some("ehr")
+        Some("clinical")
     );
     assert_eq!(
         rows[0].get::<Option<String>, _>("purpose").as_deref(),
@@ -279,7 +276,7 @@ async fn access_fields_round_trip_on_both_write_paths() {
     // pseudonymisation boundary exists to make answerable.
     assert_eq!(
         rows[1].get::<Option<String>, _>("domain").as_deref(),
-        Some("demographic")
+        Some("party")
     );
     assert_eq!(rows[1].get::<Option<i64>, _>("result_count"), Some(1));
     assert_eq!(

@@ -140,7 +140,7 @@ async fn composition_version_is_signed_and_digest_recomputes_from_served_version
 }
 
 #[tokio::test]
-async fn ehr_status_versions_are_signed_and_every_vo_version_carries_a_digest() {
+async fn ehr_status_versions_are_signed_and_every_version_carries_a_digest() {
     let db = testkit::db().await.expect("testkit database");
     let pool = db.pool();
     let svc = FerroEhrService::new(pool.clone());
@@ -184,14 +184,14 @@ async fn ehr_status_versions_are_signed_and_every_vo_version_carries_a_digest() 
 
     // Sweep: EHR_STATUS (x2), EHR_ACCESS, FOLDER — every stored version is signed
     // with a digest (signing is on by default).
-    let rows = sqlx::query("SELECT kind, signature FROM vo_version ORDER BY kind, sys_version")
+    let rows = sqlx::query("SELECT kind, signature FROM version ORDER BY kind, sys_version")
         .fetch_all(&pool)
         .await
-        .expect("select vo_version");
+        .expect("select version");
     assert!(!rows.is_empty());
     for row in &rows {
         let kind: String = row.try_get("kind").unwrap();
-        let sig: Option<String> = row.try_get("signature").unwrap();
+        let sig: Option<String> = row.try_get("signature").expect("signature");
         let sig = sig.unwrap_or_else(|| panic!("{kind} version is unsigned"));
         assert!(
             sig.starts_with("sha256:"),
@@ -311,12 +311,10 @@ async fn strict_verify_on_read_rejects_a_tampered_row() {
         .expect("clean read verifies");
 
     // Tamper the stored signature via SQL.
-    sqlx::query(
-        "UPDATE vo_version SET signature = 'sha256:dGFtcGVyZWQ=' WHERE kind = 'COMPOSITION'",
-    )
-    .execute(&pool)
-    .await
-    .expect("tamper");
+    sqlx::query("UPDATE version SET signature = 'sha256:dGFtcGVyZWQ=' WHERE kind = 'COMPOSITION'")
+        .execute(&pool)
+        .await
+        .expect("tamper");
 
     let tampered = svc
         .composition_version_envelope(ehr_uuid, ovid.parse().expect("ovid"))
@@ -360,12 +358,10 @@ async fn default_verify_on_read_is_strict_and_rejects_a_tampered_row() {
         .expect("clean read verifies under the strict default");
 
     // Tamper the stored (server-generated) signature.
-    sqlx::query(
-        "UPDATE vo_version SET signature = 'sha256:dGFtcGVyZWQ=' WHERE kind = 'COMPOSITION'",
-    )
-    .execute(&pool)
-    .await
-    .expect("tamper");
+    sqlx::query("UPDATE version SET signature = 'sha256:dGFtcGVyZWQ=' WHERE kind = 'COMPOSITION'")
+        .execute(&pool)
+        .await
+        .expect("tamper");
 
     let tampered = svc
         .composition_version_envelope(ehr_uuid, ovid.parse().expect("ovid"))
@@ -417,7 +413,7 @@ async fn warn_and_off_verify_on_read_serve_a_tampered_row() {
             .version_uid();
 
         sqlx::query(
-            "UPDATE vo_version SET signature = 'sha256:dGFtcGVyZWQ=' WHERE kind = 'COMPOSITION'",
+            "UPDATE version SET signature = 'sha256:dGFtcGVyZWQ=' WHERE kind = 'COMPOSITION'",
         )
         .execute(&pool)
         .await
@@ -488,7 +484,7 @@ async fn canonical_xml_carries_the_signature() {
 /// A service with server-side signing DISABLED — the common high-throughput
 /// config. With signing off the `audit → sign → version`
 /// dependency vanishes, so the commit path folds `audit`, `contribution` and
-/// `vo_version` into one statement; this test proves the folded path preserves
+/// `version` into one statement; this test proves the folded path preserves
 /// the RM common master06 versioning semantics byte-for-byte and stores no
 /// signature.
 fn signing_disabled(pool: PgPool) -> FerroEhrService {
@@ -505,6 +501,37 @@ fn signing_disabled(pool: PgPool) -> FerroEhrService {
     FerroEhrService::new(pool).with_signer(Arc::new(signer))
 }
 
+/// The two stored versions of one container after a supersession: exactly one
+/// is the trunk head, and neither is signed. The append-only write advances the
+/// head past its predecessor rather than closing a row (RM common master06 §The
+/// 'Virtual Version Tree').
+async fn assert_two_versions_one_head(pool: &PgPool, vo_uuid: ferroehr::ids::VoId) {
+    let rows = sqlx::query(
+        "SELECT v.sys_version, v.signature, \
+                (h.trunk_head_sys_version = v.sys_version) AS open \
+         FROM version v JOIN vo_head h ON h.vo_id = v.vo_id \
+         WHERE v.vo_id = $1 AND v.kind = 'COMPOSITION' ORDER BY v.sys_version",
+    )
+    .bind(vo_uuid)
+    .fetch_all(pool)
+    .await
+    .expect("select version");
+    assert_eq!(rows.len(), 2, "two composition versions stored");
+    let open: Vec<bool> = rows
+        .iter()
+        .map(|r| r.try_get("open").expect("open flag"))
+        .collect();
+    assert_eq!(
+        open,
+        vec![false, true],
+        "v1 superseded, v2 current (master06 §The 'Virtual Version Tree')"
+    );
+    for row in &rows {
+        let sig: Option<String> = row.try_get("signature").expect("signature");
+        assert!(sig.is_none(), "signing off → version.signature is NULL");
+    }
+}
+
 #[tokio::test]
 async fn signing_disabled_folds_commit_and_preserves_master06_semantics() {
     let db = testkit::db().await.expect("testkit database");
@@ -513,7 +540,7 @@ async fn signing_disabled_folds_commit_and_preserves_master06_semantics() {
     let ehr_id = create_ehr(&svc).await;
     let ehr_uuid = ferroehr::ids::EhrId(ehr_id.parse::<uuid::Uuid>().expect("ehr uuid"));
 
-    // CREATE → the folded path: audit + contribution + vo_version in one CTE.
+    // CREATE → the folded path: audit + contribution + version in one CTE.
     let ovid_v1 = svc
         .create_composition(ehr_uuid, uv(&composition("v1"), "249", None))
         .await
@@ -541,7 +568,7 @@ async fn signing_disabled_folds_commit_and_preserves_master06_semantics() {
         "commit_audit.time_committed is the server-computed instant"
     );
 
-    // UPDATE → the folded path with a prior lineage-tip close (v1 → v2).
+    // UPDATE → the folded path: the version row and the head upsert in one CTE.
     let ovid_v2 = svc
         .update_composition(
             ehr_uuid,
@@ -559,27 +586,7 @@ async fn signing_disabled_folds_commit_and_preserves_master06_semantics() {
         .expect("latest");
     assert_eq!(uid(&latest), ovid_v2, "current version is v2");
 
-    // Exactly one open trunk row (v1 closed, v2 open) and neither is signed —
-    // the folded write honours the one-open-row-per-lineage invariant.
-    let rows = sqlx::query(
-        "SELECT sys_version, signature, upper_inf(sys_period) AS open \
-         FROM vo_version WHERE vo_id = $1 AND kind = 'COMPOSITION' ORDER BY sys_version",
-    )
-    .bind(vo_uuid)
-    .fetch_all(&pool)
-    .await
-    .expect("select vo_version");
-    assert_eq!(rows.len(), 2, "two composition versions stored");
-    let open: Vec<bool> = rows.iter().map(|r| r.try_get("open").unwrap()).collect();
-    assert_eq!(
-        open,
-        vec![false, true],
-        "v1 superseded, v2 open (master06 §The 'Virtual Version Tree')"
-    );
-    for row in &rows {
-        let sig: Option<String> = row.try_get("signature").unwrap();
-        assert!(sig.is_none(), "signing off → vo_version.signature is NULL");
-    }
+    assert_two_versions_one_head(&pool, vo_uuid).await;
 
     // DELETE → folded path (523|deleted|, no node rows); the current version
     // then resolves to an empty body (204), never 404.

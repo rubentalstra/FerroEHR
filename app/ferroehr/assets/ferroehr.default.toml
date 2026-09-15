@@ -295,20 +295,6 @@ request_timeout_ms = 5000
 [admin]
 enabled = false
 
-# ── [tenancy] — multi-tenancy ─────────────────────────────────────────────────
-[tenancy]
-enabled = false
-claim = "tenant"
-#? header = "X-FerroEHR-Tenant"   # dev-only override; never in production
-insecure_header_override = false   # accept `header` with auth.enabled = true (development only)
-# What a tenant key that names no registered tenant gets: "refuse" (403) or
-# "default_tenant" (run unscoped against the reserved default tenant, so a
-# cross-tenant read is an empty set rather than a 403 confirming another
-# tenant exists). "default_tenant" is safe only while that tenant is empty —
-# it owns every row written before tenancy was enabled, and boot warns when
-# it holds any.
-unknown_tenant = "refuse"
-
 # ── [smart] — SMART App Launch ────────────────────────────────────────────────
 [smart]
 enabled = false
@@ -632,7 +618,7 @@ max_cohort_size = 100000
 
 # ── [demographic] — the demographic domain ────────────────────────────────────
 # National-identifier protection: the value leaves the versioned body for
-# `demographic.national_identifier`, sealed under a per-tenant AES-256-GCM key
+# `party.national_identifier`, sealed under a per-domain AES-256-GCM key
 # with an HMAC-SHA-256 digest beside it for equality lookup. GDPR Art. 32(1)(a)
 # names encryption as an appropriate measure; UAVG Art. 46 and the Wabvpz bound
 # what a BSN may be used for at all.

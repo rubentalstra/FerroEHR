@@ -2,7 +2,7 @@
 
 Who may call the server, what they may do once identified, and the surfaces
 that are gated rather than always-on: `[auth]`, `[authz]`, `[admin]`,
-`[tenancy]`, `[smart]`, `[management]`, and `[signing]`. Precedence, the
+`[smart]`, `[management]`, and `[signing]`. Precedence, the
 environment-name grammar, and file discovery are on the
 [Configuration reference](configuration.md) index.
 
@@ -197,19 +197,6 @@ order and design rationale are in [Security](../security.md).
 Physical deletion is irreversible, so the group stays off by default. With it
 on, `/admin` also joins the group list the `OPTIONS` System-Options manifest
 advertises, so the manifest never names a group that answers `404`.
-
-## `[tenancy]`
-
-Multi-tenancy. Off by default: the tenant middleware is not installed, the pool
-takes no per-acquire hook, and the tenant CRUD routes answer `404`, so a
-single-tenant deployment is unchanged.
-
-| Key | Type | Default | Description |
-|---|---|---|---|
-| `enabled` | bool | `false` | Activate the tenant middleware and row-level scoping. |
-| `claim` | string | `tenant` | JWT-claim path carrying the tenant key (a tenant name or uuid). A dotted path walks nested claim objects. |
-| `header` | string | unset | Development-only request-header tenant override; when set and present on the request it wins over the JWT claim. With `auth.enabled = true` the server refuses to boot on this key unless `insecure_header_override` is set: a client-supplied header must not select a tenant on a deployment with real users. |
-| `insecure_header_override` | bool | `false` | Accept `header` together with an enabled authentication scheme. The name says what it grants: any authenticated caller then reads and writes any tenant by naming it in the header. Development deployments only. |
 
 ## `[smart]`
 

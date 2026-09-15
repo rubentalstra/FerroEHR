@@ -93,7 +93,7 @@ fn cohort_config(small_cell_threshold: u32) -> CohortConfig {
 /// a full archetype HRID, so its ancestor is that CLUSTER; the city sits in the
 /// `details` of an archetyped `ADDRESS` under `contacts`, so its ancestor is
 /// the ADDRESS row. All three are what the predicate statement joins on
-/// (`node.citem_num` — the nearest ancestor row carrying an archetype id,
+/// (the nested-set interval of the ancestor row carrying the archetype id,
 /// `ferroehr::storage::codec`), and the third only exists because the
 /// demographic containers are decomposed into rows of their own.
 ///
@@ -593,7 +593,15 @@ fn the_two_statements_never_cross_the_boundary() {
         PredicateKind::BirthDate,
     ] {
         let sql = ferroehr::service::linkage::cohort::predicate::predicate_sql(kind);
-        for forbidden in ["openehr-ehr-", "/", "demographic.", "linkage.", "party_ehr"] {
+        for forbidden in [
+            "openehr-ehr-",
+            "/",
+            "clinical.",
+            "party.",
+            "demographic.",
+            "linkage.",
+            "party_ehr",
+        ] {
             assert!(
                 !sql.contains(forbidden),
                 "the {} predicate must not name `{forbidden}`: {sql}",
@@ -627,7 +635,7 @@ fn the_two_statements_never_cross_the_boundary() {
         "the EHR scope binds as an array: {}",
         prepared.sql
     );
-    for forbidden in ["city", "postcode", "demographic", "party_ehr", "ELEMENT"] {
+    for forbidden in ["city", "postcode", "party", "party_ehr", "ELEMENT"] {
         assert!(
             !prepared.sql.contains(forbidden),
             "the clinical statement must not name `{forbidden}`: {}",
@@ -707,14 +715,14 @@ async fn the_crossing_runs_on_three_separated_credentials() {
     // The credential that performed the crossing cannot perform either end of
     // it, which is the property the separation buys.
     assert!(
-        sqlx::query("SELECT count(*) FROM demographic.node")
+        sqlx::query("SELECT count(*) FROM party.node")
             .fetch_one(&linkage)
             .await
             .is_err(),
         "the linkage credential must not be able to read the demographic domain"
     );
     assert!(
-        sqlx::query("SELECT count(*) FROM ehr.node")
+        sqlx::query("SELECT count(*) FROM clinical.node")
             .fetch_one(&linkage)
             .await
             .is_err(),

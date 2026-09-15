@@ -53,7 +53,7 @@ use crate::versioning::{CommitEnv, Kind};
 use openehr_its::rest::generated::common::UpdateAudit;
 
 /// The current version of a `PARTY_RELATIONSHIP`, resolved in ONE lean
-/// `vo_version`⋈`audit` read (no node reassembly) — the relationship analogue
+/// `version`⋈`audit` read (no node reassembly) — the relationship analogue
 /// of the party's current handle: the write paths resolve the target **once**
 /// and thread it through the `If-Match` compare and the existence / not-deleted
 /// gates. RM common master06 §Version Identification / §Logical Deletion.

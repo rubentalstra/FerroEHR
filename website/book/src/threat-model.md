@@ -24,7 +24,7 @@ this document cannot see: your identity provider's token policy, your
 network, your operators, your backups. The value here is that you do not have
 to reverse-engineer *our* half of it from configuration prose.
 
-Read it alongside [Security & multi-tenancy](security.md) (how each control is
+Read it alongside [Security](security.md) (how each control is
 configured), [Audit trail](audit.md) (what is recorded),
 [Verifying releases](verifying-releases.md) (establishing what you are running),
 [Operations](operations.md) (the deployment surface) and
@@ -40,14 +40,14 @@ What an attacker wants, in the order the loss hurts:
 
 | Asset | Where it lives | Why it matters |
 |---|---|---|
-| **Clinical payload:** compositions, EHR status, folders | the `ehr` schema's `node` and `vo_version` tables, and the `cold` archive mirrors | this is PHI; disclosure is the primary harm and it is not undoable |
-| **Demographic parties and their identifiers** | the `demographic` schema and its `cold_demographic` tier, with protected national identifiers sealed in `national_identifier` | who the people are, held apart from what is recorded about them |
+| **Clinical payload:** compositions, EHR status, folders | the `clinical` schema's `node` and `version` tables, archival partitions included | this is PHI; disclosure is the primary harm and it is not undoable |
+| **Demographic parties and their identifiers** | the `party` schema, archival partitions included, with protected national identifiers sealed in `national_identifier` | who the people are, held apart from what is recorded about them |
 | **The party-to-EHR map** | `linkage.party_ehr` | the additional information that re-attributes a pseudonymised record to a person; on its own it names neither |
 | **The audit trail** | the `audit` schema, plus any configured forwarding sink | it is the evidence that everything else happened; an attacker who can edit it can make an access disappear |
-| **Version history and its integrity** | `vo_version`, `contribution`, attestations | an openEHR record's value is that it is *append-only and attributable*; a silently rewritten prior version is worse than a deleted one |
+| **Version history and its integrity** | `version`, `vo_head`, `contribution`, attestations | an openEHR record's value is that it is *append-only and attributable*; a silently rewritten prior version is worse than a deleted one |
 | **Signing keys** | the configured signing key material for commit attestation | forging an attestation forges provenance of clinical content |
 | **Bearer credentials and password hashes** | tokens in flight; Argon2id PHC hashes at rest | a stolen token is an authenticated clinical caller until it expires |
-| **Tenant separation** | the `ferroehr.tenant_id` session setting and the row-level-security policies | in a multi-tenant deployment, one tenant reading another is a breach of two organisations at once |
+| **Instance separation** | one instance, one database, one set of domain roles per organisation | two organisations sharing one instance is a breach of both at once |
 | **Availability** | the whole stack | a CDR that is down is a clinical system that is down; denial of service is a patient-safety issue here, not an inconvenience |
 
 ## Actors
@@ -57,7 +57,6 @@ What an attacker wants, in the order the loss hurts:
 | **Unauthenticated caller** | the listening port | can send arbitrary bytes, replay anything observed, and probe every route |
 | **Authenticated clinical caller** | the openEHR API within their grants | holds a valid token; may be a legitimate user acting outside their remit, or a compromised client |
 | **Admin / management caller** | the admin, management and messaging surfaces | can delete physically, archive, dump and load; the most dangerous *authorized* actor |
-| **Tenant peer** | their own tenant's API | a legitimate tenant of a shared deployment, trying to reach another's rows |
 | **Database** | everything stored | trusted for confidentiality, but assumed to be a place where a mistake is permanent |
 | **Terminology server (FHIR R4B)** | called out to at validation and commit time | operator-configured; semi-trusted: it answers our questions and can lie |
 | **Object store (S3)** | called out to for multimedia | operator-configured; semi-trusted, and its responses are parsed |
@@ -80,7 +79,7 @@ flowchart LR
       B2["B2 authentication"]
       B3["B3 authorization<br/>EHR_ACCESS - RBAC - ABAC - SMART"]
       B4["B4 content validation"]
-      B5["B5 tenant scoping"]
+      B5["B5 instance separation"]
     end
     DB[("B6 PostgreSQL")]
     AUD[("B7 audit store")]
@@ -244,40 +243,33 @@ to operator-configured endpoints.
 - **Validation does not make content true.** A well-formed composition asserting
   a clinically wrong fact is stored, correctly.
 
-### B5 — Tenant scoping
+### B5 — Instance separation
 
-**Control.** Off by default; when off the server is byte-for-byte
-single-tenant. When on, the tenant is resolved from a configured JWT claim and
-applied as a PostgreSQL session setting that drives **`FORCE ROW LEVEL
-SECURITY`** policies on every tenant-scoped table, including the cold-archive
-mirrors. A tenant key that names no registered tenant is refused with a `403`,
-because the reserved default tenant it would otherwise fall through to owns
-every row written while tenancy was off. A request carrying no tenant key at
-all still runs against that default rather than guessing.
-
-A tenant *registry* that cannot be reached is a separate case and is not read as
-"no tenant": it answers `503`, like any other dependency failure, rather than
-falling through to the default.
+**Control.** One instance serves one organisation: one database, one set of
+domain roles. There is no tenant column, no row policy and no session setting
+to get wrong, because there is nothing inside the instance to separate. That is
+also where openEHR puts the boundary — BASE `architecture_overview`
+`master06-design_of_the_ehr.adoc` §The EHR System calls a system "a distinct
+logical repository corresponding to an organisational entity that is _legally
+responsible_" for the data and "distinct from any underlying virtualisation
+infrastructure or cloud computing facility, which may house multiple logical
+EHR systems in a multi-tenant fashion".
 
 **Residual risk.**
 
-- **`FERROEHR__TENANCY__HEADER` is a tenant selector a client controls**, and
-  when set it **wins over the JWT claim**. It is a development affordance and
-  there is no way to make it safe in production. If it is set, tenancy is not a
-  boundary. Leave it unset.
-- **A missing claim still degrades quietly to the default tenant**, and so does
-  an unknown one when `FERROEHR__TENANCY__UNKNOWN_TENANT=default_tenant` is set
-  to trade the `403` for existence-hiding. On a deployment that enabled tenancy
-  after going live, that default tenant is the whole pre-tenancy store. The
-  server counts its stored versions at boot and warns when it holds any; moving
-  that content into a named tenant is a manual step today.
-- **Row-level security binds a connection, not a request.** The scoping is
-  applied per connection from a shared pool; a defect in that plumbing is a
-  cross-tenant read, which is why it is enforced by the database rather than by
-  application `WHERE` clauses: the database refuses even if the query forgets.
-- **Tenancy separates rows, not resources.** One tenant's expensive query
-  competes with another's for the same CPU, connections and disk. It is not a
-  noisy-neighbour control.
+- **Separation is now a deployment property, so a deployment mistake is the
+  whole risk.** Two organisations pointed at one instance share everything;
+  nothing in the software will catch it, because there is no longer a tenant
+  for it to compare against. The compensating control is that the mistake is
+  visible in the deployment, not buried in a session variable.
+- **Instance separation does not separate resources by itself.** Two instances
+  on one node still compete for CPU, connections and disk unless the platform
+  bounds them.
+- **`system_id` must differ per instance.** It "becomes embedded in the version
+  identifiers of committed -- and possibly signed -- content" and "cannot
+  easily be changed afterwards" (§System Identity), so two instances sharing
+  one value mint version identifiers that cannot tell the responsible parties
+  apart.
 
 ### B6 — The database
 
@@ -377,13 +369,13 @@ of no other, so a privilege cannot arrive through a membership.
 
 | Credential | Reaches | Cannot reach |
 |---|---|---|
-| `ferroehr_ehr` | `ehr` and `cold` with `SELECT`, `INSERT`, `UPDATE` and `DELETE`; the `ehr.posture` stamp; `USAGE` on `ext`; in `audit`, record an event, stamp it forwarded, run the retention reaper and verify the chain | `demographic`, `cold_demographic` and `linkage`, revoked explicitly and in both directions |
-| `ferroehr_ehr_reader` | `SELECT` on `ehr` and `cold`; `USAGE` on `ext`; read the `audit` repository and verify the chain | the same three schemas |
-| `ferroehr_demographic` | `demographic` and `cold_demographic` with `SELECT`, `INSERT`, `UPDATE` and `DELETE`, the sealed `national_identifier` rows included; `EXECUTE` on `demographic.resolve_national_identifier` | `ehr`, `cold` and `linkage`, revoked explicitly and in both directions |
-| `ferroehr_demographic_reader` | `SELECT` on `demographic` and `cold_demographic`. On `national_identifier` the table-level grant is revoked and re-granted column by column, so it reads `id`, `party_id`, `scheme`, `tenant_id` and `created_at` and never `nonce`, `ciphertext` or `lookup_digest` | `ehr`, `cold` and `linkage` |
-| `ferroehr_linkage` | `linkage.party_ehr` with `SELECT`, `INSERT` and `UPDATE`; `USAGE` on `ext` | `ehr`, `cold`, `demographic`, `cold_demographic`, and `demographic.resolve_national_identifier` by its own revoke. It holds no `DELETE` anywhere, so it cannot remove a mapping either |
+| `ferroehr_ehr` | `clinical`, archival partitions included, with `SELECT`, `INSERT`, `UPDATE` and `DELETE`; the `ext.posture` stamp; `USAGE` on `ext`; in `audit`, record an event, stamp it forwarded, run the retention reaper and verify the chain | `party` and `linkage`, revoked explicitly and in both directions |
+| `ferroehr_ehr_reader` | `SELECT` on `clinical`; `USAGE` on `ext`; read the `audit` repository and verify the chain | the same two schemas |
+| `ferroehr_demographic` | `party`, archival partitions included, with `SELECT`, `INSERT`, `UPDATE` and `DELETE`, the sealed `national_identifier` rows included; `EXECUTE` on `party.resolve_national_identifier` | `clinical` and `linkage`, revoked explicitly and in both directions |
+| `ferroehr_demographic_reader` | `SELECT` on `party`. On `national_identifier` the table-level grant is revoked and re-granted column by column, so it reads `id`, `party_id`, `scheme` and `created_at` and never `lookup_digest`, `nonce` or `ciphertext` | `clinical` and `linkage` |
+| `ferroehr_linkage` | `linkage.party_ehr` with `SELECT`, `INSERT` and `UPDATE`; `USAGE` on `ext` | `clinical`, `party`, and `party.resolve_national_identifier` by its own revoke. It holds no `DELETE` anywhere, so it cannot remove a mapping either |
 | The schema-preparation credential (`[db] migrate_url`, normally a member of `ferroehr_migrator`) | every schema: it issues the DDL of all five migration sets and reads all five `_sqlx_migrations` tables, and it owns the objects it created | nothing. The server opens it for that one boot step and closes it again, so no pool is held on it and no request is served through it |
-| `ferroehr_app`, `ferroehr_reader` | the earlier single-domain pair, still carrying `ehr`, `cold`, `ext` and the `audit` repository | `demographic`, `cold_demographic` and `linkage`, where they hold no grant. That is an absence of privilege rather than a revoke, and the boot self-check does not cover these two roles |
+| `ferroehr_app`, `ferroehr_reader` | the earlier single-domain pair, still carrying `clinical`, `ext` and the `audit` repository | `party` and `linkage`, where they hold no grant. That is an absence of privilege rather than a revoke, and the boot self-check does not cover these two roles |
 
 The `audit` schema is granted to the clinical pair (`ferroehr_ehr` records an
 event, stamps it forwarded, runs the retention reaper and verifies the chain;
@@ -418,13 +410,13 @@ the same check from outside the deployment.
 
 ### Backup artefacts
 
-A dump leaves the database with none of the grants attached, so the chart
-takes one per domain rather than one per cluster: `ehr` with `cold`, `ext` and
-`audit`; `demographic` with `cold_demographic`; `linkage` on its own. Each job
-authenticates as its own read-only role with `BYPASSRLS`, because every
-tenant-scoped table carries `FORCE ROW LEVEL SECURITY` and `pg_dump` refuses a
-table it would read through a policy. Each writes to its own claim, and the
-chart refuses to render when two domains name the same one.
+A dump leaves the database with none of the grants attached, so the chart takes
+one per domain rather than one per cluster: `clinical` with `ext` and `audit`;
+`party`; `linkage` on its own. Each job authenticates as its own read-only
+role, because every domain role is revoked from the other domains and a dump
+taken through a runtime credential would be silently partial. Each writes to
+its own claim, and the chart refuses to render when two domains name the same
+one.
 
 **Residual risk.**
 
@@ -496,7 +488,7 @@ are configuration rather than arithmetic.
 
 ### The map that rejoins the two domains
 
-**Control.** `linkage.party_ehr` holds a party id, an EHR id, a tenant and a
+**Control.** `linkage.party_ehr` holds a party id, an EHR id and a
 validity period. No name, no address and no plaintext identifier, because a
 row here is already the additional information that re-attributes a record.
 Its role is barred from both domains it joins and both of them from it. The
@@ -526,11 +518,11 @@ and the temporal primary key admits one mapping in force per party.
 
 **Control.** A protected national identifier leaves the versioned body and
 lives in `demographic.national_identifier` under AES-256-GCM with a fresh
-96-bit nonce per record, with the scheme code and the tenant bound in as
+96-bit nonce per record, with the scheme code bound in as
 associated data so a ciphertext moved between either fails to open. Beside it
 is an HMAC-SHA-256 digest under a separate subkey, which is what lets equality
 lookup work without the plaintext ever reaching the database. Both subkeys are
-derived per domain and per tenant from one configured root key. The resolve
+derived per domain from one configured root key. The resolve
 function is `SECURITY DEFINER`, `PUBLIC` is revoked from it, and only
 `ferroehr_demographic` may execute it. Every resolution records an access
 event naming the scheme and whether it matched, never the value. The scheme
@@ -550,16 +542,16 @@ be stored as a protected one at all.
 ### The subject pseudonym
 
 **Control.** `mint_subject_pseudonym` derives the value from the party id
-under the linkage key domain and the tenant, in the first declared pseudonym
+under the linkage key domain, in the first declared pseudonym
 namespace. No caller input enters it, so the same party yields the same
-pseudonym within a tenant and a national identifier cannot become a subject
+pseudonym and a national identifier cannot become a subject
 reference through that path.
 
 **Residual risk.** A stable per-subject identifier across the whole clinical
 store is what makes it an EHR, and it is also a linkage key. Anyone holding
 the clinical domain can gather every record of one subject, without knowing
-who the subject is. Across tenants the derivation differs, so the same person
-in two tenants is two pseudonyms.
+who the subject is. Across instances the derivation differs with the root key,
+so the same person in two instances is two pseudonyms.
 
 ### The audit trail as a re-identification surface
 
