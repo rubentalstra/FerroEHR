@@ -1075,3 +1075,418 @@ async fn the_archival_tier_is_a_partition_of_the_relation_it_archives() {
     .expect("count the mirror schemas");
     assert_eq!(mirrors, 0, "the mirror schemas are gone");
 }
+
+/// Physical erasure leaves no row naming the EHR in any domain, and leaves one
+/// tombstone on the outbox for every registered reader.
+///
+/// The relations are named one by one rather than swept, because the point of
+/// the assertion is that a relation ADDED to the schema has to be added here
+/// too: the cascade is a property of the foreign-key graph, and a new table
+/// that hangs off the EHR without one would pass a sweep that only counts what
+/// it knows. The EHR is archived first, so the delete is asserted to reach the
+/// cold partition as well as the hot one.
+///
+/// The tombstone is the GDPR Art. 19 notification: a consumer holds what it
+/// derived from this EHR, and its cursor has not reached the tombstone yet, so
+/// the row is still ahead of every registered reader.
+#[tokio::test]
+async fn erasure_leaves_no_row_in_any_domain_and_tombstones_the_outbox() {
+    let (_db, pool, svc) = repository().await;
+
+    let erased = seed_full_ehr(&svc).await;
+    let kept = seed_full_ehr(&svc).await;
+
+    // The marks, the cross-reference and a reader cursor: every relation the
+    // erasure has to reach, populated before it runs.
+    svc.restrict_processing(&erased.to_string(), None, "gdpr-18-1-c", None)
+        .await
+        .expect("record the restriction");
+    svc.put_retention_anchor(&erased.to_string(), "nl", None, None)
+        .await
+        .expect("record the retention anchor");
+    svc.link(ferroehr::ids::VoId(Uuid::now_v7()), erased)
+        .await
+        .expect("open the mapping");
+    sqlx::query(
+        "INSERT INTO event_outbox_reader (reader, last_seq, active) VALUES ('omop', 0, true)",
+    )
+    .execute(&pool)
+    .await
+    .expect("register a reader");
+
+    // The versioned objects of the EHR, captured while they exist: the
+    // attestation and blob-reference relations are keyed on them, not on the
+    // EHR.
+    let vo_ids: Vec<Uuid> =
+        sqlx::query_scalar("SELECT DISTINCT vo_id FROM version WHERE ehr_id = $1")
+            .bind(erased.0)
+            .fetch_all(&pool)
+            .await
+            .expect("the EHR's versioned objects");
+    assert!(!vo_ids.is_empty(), "the seed committed versioned objects");
+    let commit_audit_ids: Vec<Uuid> = sqlx::query_scalar(
+        "SELECT commit_audit_id FROM version WHERE ehr_id = $1 \
+         UNION SELECT commit_audit_id FROM contribution WHERE ehr_id = $1",
+    )
+    .bind(erased.0)
+    .fetch_all(&pool)
+    .await
+    .expect("the EHR's audit rows");
+
+    // Archived, so the delete has to reach the cold partition too.
+    svc.archive_ehrs(vec![erased.to_string()])
+        .await
+        .expect("archive the EHR");
+    let cold: i64 =
+        sqlx::query_scalar("SELECT count(*) FROM version WHERE ehr_id = $1 AND tier = 'cold'")
+            .bind(erased.0)
+            .fetch_one(&pool)
+            .await
+            .expect("count the archived versions");
+    assert!(cold > 0, "the versions really moved to the cold tier");
+
+    svc.admin_ehr_delete(erased.to_string())
+        .await
+        .expect("admin delete");
+
+    let by_ehr = |sql: &'static str| {
+        let pool = pool.clone();
+        async move { count_for_ehr(&pool, sql, erased.0).await }
+    };
+    for (relation, sql) in [
+        ("ehr", "SELECT count(*) FROM ehr WHERE id = $1"),
+        ("vo_head", "SELECT count(*) FROM vo_head WHERE ehr_id = $1"),
+        ("version", "SELECT count(*) FROM version WHERE ehr_id = $1"),
+        ("node", "SELECT count(*) FROM node WHERE ehr_id = $1"),
+        (
+            "contribution",
+            "SELECT count(*) FROM contribution WHERE ehr_id = $1",
+        ),
+        (
+            "item_tag",
+            "SELECT count(*) FROM item_tag WHERE ehr_id = $1",
+        ),
+        (
+            "ehr_folder",
+            "SELECT count(*) FROM ehr_folder WHERE ehr_id = $1",
+        ),
+        (
+            "restriction",
+            "SELECT count(*) FROM restriction WHERE ehr_id = $1",
+        ),
+        (
+            "retention_anchor",
+            "SELECT count(*) FROM retention_anchor WHERE ehr_id = $1",
+        ),
+        (
+            "linkage.subject_ehr",
+            "SELECT count(*) FROM linkage.subject_ehr WHERE ehr_id = $1",
+        ),
+        (
+            "event_outbox (commit events)",
+            "SELECT count(*) FROM event_outbox WHERE ehr_id = $1 AND contribution_id IS NOT NULL",
+        ),
+    ] {
+        assert_eq!(
+            by_ehr(sql).await,
+            0,
+            "{relation} still names the erased EHR"
+        );
+    }
+    for (relation, sql) in [
+        (
+            "vo_attestation",
+            "SELECT count(*) FROM vo_attestation WHERE vo_id = ANY($1)",
+        ),
+        (
+            "blob_ref",
+            "SELECT count(*) FROM blob_ref WHERE vo_id = ANY($1)",
+        ),
+    ] {
+        let remaining: i64 = sqlx::query_scalar(AssertSqlSafe(sql))
+            .bind(&vo_ids)
+            .fetch_one(&pool)
+            .await
+            .expect("count the rows keyed on the versioned objects");
+        assert_eq!(remaining, 0, "{relation} still names an erased object");
+    }
+    let audits: i64 = sqlx::query_scalar("SELECT count(*) FROM commit_audit WHERE id = ANY($1)")
+        .bind(&commit_audit_ids)
+        .fetch_one(&pool)
+        .await
+        .expect("count the audit rows");
+    assert_eq!(audits, 0, "commit_audit still holds the erased EHR's rows");
+
+    // One tombstone, contribution-less, ahead of every registered reader.
+    let (seq, envelope): (i64, Value) = sqlx::query_as(
+        "SELECT seq, envelope FROM event_outbox \
+         WHERE ehr_id = $1 AND contribution_id IS NULL",
+    )
+    .bind(erased.0)
+    .fetch_one(&pool)
+    .await
+    .expect("exactly one erasure tombstone");
+    assert_eq!(envelope["event"], json!("erase"));
+    assert_eq!(envelope["ehr_id"], json!(erased.0));
+    assert_eq!(envelope["versions"][0]["kind"], json!("EHR"));
+    let behind: i64 = sqlx::query_scalar(
+        "SELECT count(*) FROM event_outbox_reader WHERE active AND last_seq < $1",
+    )
+    .bind(seq)
+    .fetch_one(&pool)
+    .await
+    .expect("count the readers still to reach the tombstone");
+    assert_eq!(
+        behind, 1,
+        "every registered reader still receives the tombstone"
+    );
+
+    // The other EHR keeps everything, tombstone included.
+    let kept_rows = ehr_rows(&pool, kept.into()).await;
+    assert!(!kept_rows.is_empty(), "the other EHR is untouched");
+    let kept_tombstones: i64 = count_for_ehr(
+        &pool,
+        "SELECT count(*) FROM event_outbox WHERE ehr_id = $1 AND contribution_id IS NULL",
+        kept.0,
+    )
+    .await;
+    assert_eq!(
+        kept_tombstones, 0,
+        "no tombstone for an EHR that still exists"
+    );
+}
+
+/// Physical erasure removes the subject proxy of a subject this EHR was the
+/// last record of, under each identifier the proxy resolver accepts.
+///
+/// The `sp_*` family keys on a one-way derivation of the subject identifier
+/// (`subject_key`), so no foreign key can reach it from `ehr` and the rows
+/// outlive the record unless the erasure goes for them by name. What stays
+/// behind is a subject's variable definitions and the sample values they
+/// retrieved from the erased EHR — data about a person whose record was erased
+/// (GDPR Art. 17(1), `docs/law/eu/gdpr/text.html`).
+#[tokio::test]
+async fn erasure_removes_the_proxies_of_a_subject_with_no_other_ehr() {
+    let (_db, pool, svc) = repository().await;
+
+    let erased = svc
+        .create_ehr_for_subject(
+            ferroehr::service::ehr_index::types::SubjectRef::person("PID-SOLE", "mpi"),
+            None,
+        )
+        .await
+        .expect("create the EHR for its subject");
+
+    // The three spellings a proxy can be keyed on: the EHR id the resolver
+    // takes literally, the promoted EHR_STATUS subject, and an identifier the
+    // cross-reference associates with this EHR alone.
+    svc.add_ehr_subject(
+        erased.to_string(),
+        ferroehr::service::ehr_index::types::SubjectRef::person("MRN-SOLE", "local"),
+        None,
+        None,
+    )
+    .await
+    .expect("record the index association");
+    let subjects = [
+        erased.to_string(),
+        "PID-SOLE".to_owned(),
+        "MRN-SOLE".to_owned(),
+    ];
+    for subject in &subjects {
+        svc.register_subject(subject.clone(), None)
+            .await
+            .expect("register the subject proxy");
+    }
+    let proxies: i64 = sqlx::query_scalar("SELECT count(*) FROM sp_subject")
+        .fetch_one(&pool)
+        .await
+        .expect("count the proxies");
+    assert_eq!(proxies, 3, "one proxy per registered identifier");
+
+    // A variable and the value it retrieved, so the whole family has rows to
+    // lose: the samples are the subject's data, not just configuration.
+    svc.register_binding(ferroehr::service::subject_proxy::binding::EnvBinding {
+        env_id: "prod".to_owned(),
+        description: None,
+        data_frames: vec![ferroehr::service::subject_proxy::binding::DataFrame {
+            id: "manual".to_owned(),
+            model_type: "openehr".to_owned(),
+            primary_method: Some(
+                ferroehr::service::subject_proxy::binding::SystemCall::Query(
+                    ferroehr::service::subject_proxy::binding::SystemCallBody {
+                        call_name: Some("aql_query".to_owned()),
+                        query_text: Some(
+                            "SELECT c/name/value AS weight FROM EHR e CONTAINS COMPOSITION c"
+                                .to_owned(),
+                        ),
+                        ..ferroehr::service::subject_proxy::binding::SystemCallBody::default()
+                    },
+                ),
+            ),
+            fallback_method: None,
+        }],
+    })
+    .await
+    .expect("register the binding");
+    svc.add_subject_variable(
+        "PID-SOLE".to_owned(),
+        ferroehr::service::subject_proxy::variable::SubjectVariable {
+            namespace: None,
+            name: "weight".to_owned(),
+            type_name: "String".to_owned(),
+            currency: None,
+            ask_user: None,
+            is_manual: true,
+            frame_id: "manual".to_owned(),
+            frame_path: "weight".to_owned(),
+            history: Vec::new(),
+            last_frame: None,
+        },
+    )
+    .await
+    .expect("add the variable");
+    svc.notify_variable_sample(
+        "PID-SOLE".to_owned(),
+        "weight".to_owned(),
+        ferroehr::service::subject_proxy::sample::VariableSample::available(
+            ferroehr::service::subject_proxy::value::VariableValue::Single {
+                value: Some(json!("72 kg")),
+            },
+        ),
+    )
+    .await
+    .expect("push a sample");
+    for (relation, sql) in [
+        ("sp_variable", "SELECT count(*) FROM sp_variable"),
+        ("sp_sample", "SELECT count(*) FROM sp_sample"),
+    ] {
+        let rows: i64 = sqlx::query_scalar(AssertSqlSafe(sql))
+            .fetch_one(&pool)
+            .await
+            .expect("count the proxy rows");
+        assert!(rows > 0, "{relation} has a row to lose");
+    }
+
+    svc.admin_ehr_delete(erased.to_string())
+        .await
+        .expect("admin delete");
+
+    for subject in &subjects {
+        assert!(
+            !svc.has_subject(subject.clone()).await.expect("has_subject"),
+            "the proxy keyed on {subject:?} outlived the erased EHR"
+        );
+    }
+    for relation in ["sp_subject", "sp_variable", "sp_sample", "sp_data_set"] {
+        // The relation name is one of four literals, never input.
+        let remaining: i64 =
+            sqlx::query_scalar(AssertSqlSafe(format!("SELECT count(*) FROM {relation}")))
+                .fetch_one(&pool)
+                .await
+                .expect("count the proxy rows");
+        assert_eq!(remaining, 0, "{relation} outlived the erased subject");
+    }
+}
+
+/// A subject whose identifier still names another EHR keeps its proxy.
+///
+/// Erasure reaches the proxy because the subject has no record left, not
+/// because one of its records was erased: a shared identifier still resolves,
+/// and dropping its configuration would break a live subject's variables.
+#[tokio::test]
+async fn a_subject_with_another_ehr_keeps_its_proxy() {
+    let (_db, _pool, svc) = repository().await;
+
+    let erased = svc.create_ehr(None).await.expect("the erased EHR");
+    let kept = svc.create_ehr(None).await.expect("the surviving EHR");
+    for ehr in [erased, kept] {
+        svc.add_ehr_subject(
+            ehr.to_string(),
+            ferroehr::service::ehr_index::types::SubjectRef::person("PID-SHARED", "mpi"),
+            None,
+            None,
+        )
+        .await
+        .expect("record the index association");
+    }
+    svc.register_subject("PID-SHARED".to_owned(), None)
+        .await
+        .expect("register the subject proxy");
+
+    svc.admin_ehr_delete(erased.to_string())
+        .await
+        .expect("admin delete");
+
+    assert!(
+        svc.has_subject("PID-SHARED".to_owned())
+            .await
+            .expect("has_subject"),
+        "a subject that still has an EHR keeps its proxy"
+    );
+    let entries = svc
+        .subject_ehrs(ferroehr::service::ehr_index::types::SubjectRef::person(
+            "PID-SHARED",
+            "mpi",
+        ))
+        .await
+        .expect("the subject's associations");
+    assert_eq!(
+        entries.iter().map(|e| e.ehr_id.clone()).collect::<Vec<_>>(),
+        vec![kept.to_string()],
+        "the subject still resolves, to the surviving EHR alone"
+    );
+}
+
+/// A blob reference follows its version into the cold tier and dies with the
+/// EHR.
+///
+/// Both halves are the foreign key, not application code: `blob_ref` points at
+/// `version (tier, vo_id, sys_version)` with `ON UPDATE CASCADE ON DELETE
+/// CASCADE`, so archiving — one `UPDATE version SET tier = 'cold'`, which
+/// PostgreSQL performs as a move between partitions
+/// (<https://www.postgresql.org/docs/18/ddl-partitioning.html>) — carries the
+/// reference across, and the erasure removes it. A reference stranded in the
+/// hot partition would make the collector believe a blob is unreferenced while
+/// an archived version still holds it.
+#[tokio::test]
+async fn a_blob_reference_follows_its_version_across_the_tier_move() {
+    let (_db, pool, svc) = repository().await;
+
+    let ehr = seed_full_ehr(&svc).await;
+    let (vo_id, sys_version): (Uuid, i32) = sqlx::query_as(
+        "SELECT vo_id, sys_version FROM version WHERE ehr_id = $1 ORDER BY committed_at LIMIT 1",
+    )
+    .bind(ehr.0)
+    .fetch_one(&pool)
+    .await
+    .expect("a committed version");
+    sqlx::query(
+        "INSERT INTO blob_ref (vo_id, sys_version, uri) VALUES ($1, $2, 's3://blobs/cafe')",
+    )
+    .bind(vo_id)
+    .bind(sys_version)
+    .execute(&pool)
+    .await
+    .expect("record the reference");
+
+    svc.archive_ehrs(vec![ehr.to_string()])
+        .await
+        .expect("archive the EHR");
+    let tier: String = sqlx::query_scalar("SELECT tier FROM blob_ref WHERE vo_id = $1")
+        .bind(vo_id)
+        .fetch_one(&pool)
+        .await
+        .expect("the reference survived the move");
+    assert_eq!(tier, "cold", "the reference followed its version");
+
+    svc.admin_ehr_delete(ehr.to_string())
+        .await
+        .expect("admin delete");
+    let left: i64 = sqlx::query_scalar("SELECT count(*) FROM blob_ref WHERE vo_id = $1")
+        .bind(vo_id)
+        .fetch_one(&pool)
+        .await
+        .expect("count the references");
+    assert_eq!(left, 0, "the reference died with the version");
+}

@@ -442,6 +442,38 @@ pub(crate) async fn ehrs_with_multiple_subjects(pool: &PgPool) -> Result<Vec<Ehr
     Ok(rows.into_iter().map(EhrId).collect())
 }
 
+/// The subject identifiers this EHR is associated with that no other EHR is.
+///
+/// Read before an erasure, because the rows are about to go: a subject whose
+/// only EHR is erased resolves to nothing afterwards
+/// ([`resolve_subject_ehr`]), so whatever the clinical side keyed on that
+/// identifier — the subject proxy's configuration and its retrieved samples —
+/// is holding data about a record that no longer exists (GDPR Art. 17(1),
+/// `docs/law/eu/gdpr/text.html`). A subject that also names another EHR is not
+/// returned: its proxy still resolves and stays.
+///
+/// Matched on the identifier alone, exactly as [`resolve_subject_ehr`] matches,
+/// so the answer describes the resolution the proxy actually performs rather
+/// than a narrower key.
+///
+/// # Errors
+/// The driver error, when the read fails.
+pub(crate) async fn subject_ids_sole_to_ehr(
+    pool: &PgPool,
+    ehr: EhrId,
+) -> Result<Vec<String>, sqlx::Error> {
+    sqlx::query_scalar(
+        "SELECT DISTINCT s.subject_id FROM subject_ehr s \
+         WHERE s.ehr_id = $1 AND s.subject_id IS NOT NULL \
+           AND NOT EXISTS (SELECT 1 FROM subject_ehr o \
+                           WHERE o.subject_id = s.subject_id AND o.ehr_id <> s.ehr_id \
+                             AND upper_inf(o.sys_period))",
+    )
+    .bind(ehr.0)
+    .fetch_all(pool)
+    .await
+}
+
 /// Remove every row naming `ehr`, in force or historical, returning how many.
 ///
 /// The one destructive statement in this domain, and the role cannot issue it:

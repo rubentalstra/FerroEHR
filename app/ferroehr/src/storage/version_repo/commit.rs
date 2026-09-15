@@ -355,6 +355,10 @@ impl HeadUpsert<'_> {
 /// master06 §Committal and Audits). `time_committed` is the server-computed
 /// commit instant (master06 §Committal m3).
 ///
+/// The externalized multimedia URIs the node rows reference are indexed in the
+/// same transaction ([`crate::storage::blob_ref::record`]), which issues no
+/// statement when there are none.
+///
 /// This is the round-trip-collapsed equivalent of [`write_contribution`]
 /// followed by a plain `version` insert, byte-identical in the rows written
 /// and the values returned: the version's `committed_at` and the audit's
@@ -446,6 +450,7 @@ pub async fn commit_new_version(
     let time_committed = row
         .try_get::<jiff_sqlx::Timestamp, _>("time_committed")?
         .to_jiff();
+    crate::storage::blob_ref::record(tx, &[(v.vo_id, v.sys_version, v.rows)]).await?;
     Ok((contribution_id, commit_audit_id, time_committed))
 }
 
@@ -455,7 +460,9 @@ pub async fn commit_new_version(
 /// rows in ONE data-modifying CTE chain, referencing the pre-existing
 /// `contribution_id`.
 ///
-/// Returns `(commit_audit_id, time_committed)`. The CONTRIBUTION and its own audit
+/// Returns `(commit_audit_id, time_committed)`, and indexes the externalized
+/// multimedia URIs of the node rows in the same transaction
+/// ([`crate::storage::blob_ref::record`]). The CONTRIBUTION and its own audit
 /// were written earlier in the same transaction ([`write_contribution`]);
 /// each change carries its own `commit_audit` (master06 §Committal and
 /// Audits), stamped with the caller's bound [`FoldedVersion::time_committed`]
@@ -536,6 +543,7 @@ pub async fn commit_version_into(
     let time_committed = row
         .try_get::<jiff_sqlx::Timestamp, _>("time_committed")?
         .to_jiff();
+    crate::storage::blob_ref::record(tx, &[(v.vo_id, v.sys_version, v.rows)]).await?;
     Ok((commit_audit_id, time_committed))
 }
 

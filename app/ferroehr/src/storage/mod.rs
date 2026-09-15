@@ -29,6 +29,8 @@
 //!   mapping the write codec and the AQL read lowering both consult, so a hot
 //!   leaf reads an indexed column.
 //! - [`node_repo`] — `node`-table writes and the node-to-canonical reloads.
+//! - [`blob_ref`] — the multimedia blob reference index the node write path
+//!   maintains and the blob collector reads.
 //! - [`version_repo`] — the versioned-object spine (row I/O, folder-membership
 //!   and event-outbox writes, the [`version_repo::read::StoredVersion`] read
 //!   shape), itself one file per concern.
@@ -42,6 +44,7 @@
 //! sign, attest, import policy) and calls these functions with plain inputs,
 //! consuming [`version_repo::read::StoredVersion`] on read.
 
+pub mod blob_ref;
 pub mod codec;
 pub mod ddl_template;
 pub mod ehr_repo;

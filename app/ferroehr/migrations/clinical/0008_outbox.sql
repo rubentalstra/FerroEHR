@@ -10,6 +10,14 @@
 -- instant and the per-version kind/change type/template) — clinical content is
 -- never in an event; a consumer fetches bodies through the authenticated API.
 --
+-- The erasure tombstone is the one row that announces no commit. A physical
+-- EHR delete appends it in the same transaction as the delete, and every
+-- consumer that derived anything from that EHR applies it by deleting what it
+-- derived: GDPR Art. 19 makes the controller communicate an erasure "to each
+-- recipient to whom the personal data have been disclosed"
+-- (docs/law/eu/gdpr/text.html Art. 19). It carries no contribution, because
+-- the contributions of that EHR are gone with it.
+--
 -- No openEHR spec governs eventing: ITS-REST 1.1.0 defines no change
 -- notification, so this whole file is our own extension.
 --
@@ -20,7 +28,10 @@ CREATE TABLE event_outbox (
     -- generated identity rather than a uuidv7, so a drainer can ORDER BY it
     -- and a consumer can reason about ordering.
     seq             bigint GENERATED ALWAYS AS IDENTITY,
-    contribution_id uuid NOT NULL,
+    -- The announced commit; NULL on an erasure tombstone, which announces a
+    -- delete rather than a commit and outlives every contribution of the
+    -- erased EHR.
+    contribution_id uuid,
     -- The owning EHR, mirroring contribution.ehr_id; the per-EHR ordering
     -- group.
     ehr_id          uuid,
@@ -32,6 +43,11 @@ CREATE TABLE event_outbox (
     -- (at-least-once delivery).
     published_at    timestamptz,
     CONSTRAINT pk_event_outbox PRIMARY KEY (seq),
+    -- A contribution-less row is an erasure tombstone and nothing else, so a
+    -- write path cannot drop the contribution reference by accident and call
+    -- the result an event.
+    CONSTRAINT ck_event_outbox_contribution CHECK
+        (contribution_id IS NOT NULL OR envelope ->> 'event' = 'erase'),
     CONSTRAINT fk_event_outbox_contribution FOREIGN KEY (contribution_id)
         REFERENCES contribution (id) ON DELETE CASCADE
 );
@@ -45,8 +61,9 @@ CREATE INDEX idx_event_outbox_pending ON event_outbox (ehr_id, seq)
 CREATE INDEX idx_event_outbox_published ON event_outbox (published_at)
     WHERE published_at IS NOT NULL;
 
-COMMENT ON TABLE event_outbox IS 'Contribution-outbox eventing: one PHI-free event row per CONTRIBUTION commit, written in the same transaction and drained at-least-once in (ehr_id, seq) order. Not an audit record. Our own extension — no openEHR spec governs eventing.';
-COMMENT ON COLUMN event_outbox.envelope IS 'The PHI-free payload: contribution id, ehr_id, committed_at, and the per-version (vo_id, kind, sys_version, change_type, template_id). No clinical content.';
+COMMENT ON TABLE event_outbox IS 'Contribution-outbox eventing: one PHI-free event row per CONTRIBUTION commit, plus one erasure tombstone per physically deleted EHR (GDPR Art. 19), written in the same transaction and drained at-least-once in (ehr_id, seq) order. Not an audit record. Our own extension — no openEHR spec governs eventing.';
+COMMENT ON COLUMN event_outbox.contribution_id IS 'The announced commit; NULL on an erasure tombstone, whose EHR has no contribution left.';
+COMMENT ON COLUMN event_outbox.envelope IS 'The PHI-free payload: contribution id, ehr_id, committed_at, and the per-version (vo_id, kind, sys_version, change_type, template_id). An erasure tombstone carries event = erase and the erased ehr_id. No clinical content.';
 COMMENT ON COLUMN event_outbox.published_at IS 'NULL = pending; the publish instant once the broker acknowledges.';
 
 -- ── event_outbox_reader ──────────────────────────────────────────────────────

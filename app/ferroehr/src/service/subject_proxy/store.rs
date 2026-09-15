@@ -49,7 +49,7 @@ const SUBJECT_KEY_DOMAIN: &str = "ferroehr/subject-proxy/subject-key/v1";
 /// NOTE: this is pseudonymisation, not anonymisation — an unkeyed digest of a
 /// low-entropy identifier is guessable by someone who can already read the
 /// clinical schema, which is why the resolvable map is held elsewhere.
-pub(super) fn subject_key(subject_id: &str) -> uuid::Uuid {
+pub(crate) fn subject_key(subject_id: &str) -> uuid::Uuid {
     let mut hasher = Sha256::new();
     hasher.update(SUBJECT_KEY_DOMAIN.as_bytes());
     hasher.update([0x00]);

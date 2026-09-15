@@ -34,7 +34,7 @@ mod extract;
 mod frames;
 mod freshness;
 mod service;
-mod store;
+pub(crate) mod store;
 
 pub mod binding;
 pub mod data_set;

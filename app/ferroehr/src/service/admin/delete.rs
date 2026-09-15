@@ -74,8 +74,8 @@ impl FerroEhrService {
     /// # Errors
     /// - `versioned_object_does_not_exist` (`404`) — no template with that id.
     /// - `409` (`ServiceError::Conflict`) — a `version` row still references
-    ///   the template (`version.template_id` FK, `0001_baseline.sql`); a
-    ///   physical delete must never orphan the compositions built on it.
+    ///   the template (`version.template_id` FK, `clinical/0006_definitions.sql`);
+    ///   a physical delete must never orphan the compositions built on it.
     /// - `exception` — a database fault.
     pub async fn admin_template_delete(&self, template_id: String) -> Result<(), SmError> {
         Ok(self.delete_template_by_id(&template_id).await?)
@@ -109,7 +109,7 @@ impl FerroEhrService {
     /// version still references it. The reference count and the delete run in
     /// one transaction so the friendly 409 is consistent with the delete; the
     /// `version.template_id` → `template_ref` foreign key
-    /// (`0001_baseline.sql`, NO ACTION) is the underlying integrity guard that
+    /// (`clinical/0006_definitions.sql`, NO ACTION) is the underlying guard that
     /// makes orphaning impossible even under a concurrent commit.
     async fn delete_template_by_id(&self, template_id: &str) -> Result<(), ServiceError> {
         let mut tx = self.pool.begin().await?;
@@ -127,9 +127,9 @@ impl FerroEhrService {
                 format!("template {template_id}"),
             ));
         };
-        // Counted over BOTH storage tiers: the cold archival mirror is
-        // foreign-key-free, so an archived composition's reference is invisible
-        // to the `template_ref` FK and would be orphaned silently.
+        // Counted over BOTH storage tiers: `version` is one relation
+        // partitioned by tier, so this reaches an archived composition's
+        // reference as well as a live one.
         let refs: i64 = sqlx::query_scalar("SELECT count(*) FROM version WHERE template_id = $1")
             .bind(&stored)
             .fetch_one(&mut *tx)
@@ -181,18 +181,35 @@ impl FerroEhrService {
             .await?)
     }
 
-    /// Physically delete one EHR and every trace of it, in a single transaction.
+    /// Physically delete one EHR and every trace of it.
     ///
-    /// The FK graph (`0001_baseline.sql`) makes `DELETE FROM ehr` cascade to
-    /// `version` (→ `node`, → `vo_attestation`), `contribution`, and
-    /// `item_tag` (all `ON DELETE CASCADE`; `vo_attestation` cascades via its
-    /// `(vo_id, sys_version)` FK to `version`, and it carries no `audit` row
-    /// of its own). The `audit` rows have **no** FK from `ehr` —
-    /// `version.commit_audit_id` / `contribution.commit_audit_id` reference `audit`
-    /// (NO ACTION) — so the cascade cannot reach them and they would be
-    /// orphaned. We therefore capture the referenced audit ids first, let the
-    /// EHR delete cascade remove everything referencing `audit`, then delete the
-    /// captured audit rows.
+    /// The sequence, in order, is the erasure reach: one clinical transaction,
+    /// then the linkage domain, then the object store.
+    ///
+    /// 1. `DELETE FROM ehr` cascades through `vo_head`, `version` (both tier
+    ///    partitions), `node`, `vo_attestation`, `contribution`,
+    ///    `commit_audit`, `item_tag`, `ehr_folder`, `restriction`,
+    ///    `retention_anchor`, `blob_ref` and the EHR's `event_outbox` rows.
+    ///    The `commit_audit` rows are the exception: nothing references `ehr`
+    ///    from them, so their ids are captured before the cascade removes the
+    ///    version and contribution rows that name them, and they are deleted
+    ///    after it.
+    /// 2. The subject proxies of a subject this EHR was the last record of go
+    ///    in the same transaction, because a proxy holds the configuration and
+    ///    the retrieved sample values of a subject whose record no longer
+    ///    exists (GDPR Art. 17(1), `docs/law/eu/gdpr/text.html`).
+    /// 3. An erasure tombstone is appended to the outbox before the
+    ///    transaction commits, so every registered reader is told what to
+    ///    delete downstream (Art. 19: the controller communicates an erasure
+    ///    "to each recipient to whom the personal data have been disclosed").
+    /// 4. `linkage.erase_ehr` runs once the clinical delete has committed, so
+    ///    no cross-reference row outlives the record it named.
+    /// 5. The externalized blobs this EHR referenced and no surviving version
+    ///    still does are removed from the object store.
+    ///
+    /// The access records naming the EHR stay: Art. 17(3)(b) withholds erasure
+    /// where processing is necessary "for compliance with a legal obligation",
+    /// and the logging periods are that obligation.
     ///
     /// Row-count 0 on the EHR delete means the EHR did not exist (`has_ehr`
     /// false) → [`ServiceError::NotFound`].
@@ -202,13 +219,11 @@ impl FerroEhrService {
     /// to `NotFound` → HTTP `404`, the natural REST reading of an operation on a
     /// non-existent resource.
     async fn delete_ehr(&self, ehr_id: EhrId) -> Result<(), ServiceError> {
-        // Our own extension (no openEHR spec governs multimedia offload): when
-        // DV_MULTIMEDIA externalization is on, collect the blob keys this EHR's
-        // nodes reference *before* deletion, so we can GC the ones no other node
-        // still references once the delete commits.
+        // Read before the delete: the reference rows go with the versions that
+        // carry them.
         #[cfg(feature = "multimedia")]
-        let candidate_blobs = self.collect_ehr_blob_keys(ehr_id).await?;
-        // Externalization is compiled out of this build, so no stored node
+        let candidate_blobs = self.referenced_blob_uris(&[ehr_id]).await?;
+        // Externalization is compiled out of this build, so no stored version
         // references a blob and there is nothing to collect.
         #[cfg(not(feature = "multimedia"))]
         let candidate_blobs: Vec<String> = Vec::new();
@@ -227,12 +242,16 @@ impl FerroEhrService {
         .fetch_all(&mut *tx)
         .await?;
 
-        // The cold archival tier is foreign-key-free by design, so no cascade
-        // reaches it — the EHR's archived rows and their markers are removed
-        // explicitly (`crate::storage::version_repo::tier`).
-        crate::storage::version_repo::tier::purge_ehrs(&mut tx, &[ehr_id]).await?;
+        // The promoted subject of the EHR, read while the row is still there.
+        let subject_ids: Vec<String> = sqlx::query_scalar(
+            "SELECT subject_id FROM ehr WHERE id = $1 AND subject_id IS NOT NULL",
+        )
+        .bind(ehr_id)
+        .fetch_all(&mut *tx)
+        .await?;
 
-        // Delete the EHR — cascades version (→ node), contribution, item_tag.
+        // Delete the EHR — one statement, cascading through the FK graph and
+        // across both tier partitions.
         let deleted = sqlx::query("DELETE FROM ehr WHERE id = $1")
             .bind(ehr_id)
             .execute(&mut *tx)
@@ -255,6 +274,13 @@ impl FerroEhrService {
                 .await?;
         }
 
+        // The linkage read happens once the EHR is known to exist, so a delete
+        // of an unknown id records no crossing, and before `erase_ehr` below
+        // removes the rows it reads.
+        let sole_subjects = self.sole_subject_ids(ehr_id).await?;
+        purge_subject_proxies(&mut tx, &[ehr_id], &subject_ids, &sole_subjects).await?;
+        self.write_erase_tombstones(&mut tx, &[ehr_id]).await?;
+
         tx.commit().await?;
 
         // Erasure reaches the cross-reference, on the linkage pool and after
@@ -266,17 +292,20 @@ impl FerroEhrService {
             .await
             .map_err(|error| ServiceError::internal("erase the EHR's linkage map", error))?;
 
-        // The EHR and its nodes are gone; GC any blob this EHR referenced that
-        // no *surviving* node still references (content-addressed dedup means a
-        // blob shared with another EHR/version must be kept).
+        // The EHR and its versions are gone; GC any blob this EHR referenced
+        // that no *surviving* version still references (content-addressed dedup
+        // means a blob shared with another EHR or a party must be kept).
         self.gc_unreferenced_blobs(candidate_blobs).await;
         Ok(())
     }
 
-    /// Physically delete a set of EHRs, each with the full cascade of
-    /// [`Self::delete_ehr`] in its own transaction. Missing ids are skipped
-    /// (idempotent bulk delete); the count of EHRs actually deleted is
-    /// returned.
+    /// Physically delete a set of EHRs, each with the full erasure reach of
+    /// [`Self::delete_ehr`]. Missing ids are skipped (idempotent bulk delete);
+    /// the count of EHRs actually deleted is returned.
+    ///
+    /// The reach is the same, chunked: one transaction per chunk carries the
+    /// cascade, the subject-proxy purge and the erasure tombstones, and the
+    /// linkage erasure runs per EHR once that transaction has committed.
     ///
     /// NOTE (keep — spec-silent extension): `i_admin_service.adoc` has no
     /// bulk call, so the idempotent skip-missing semantics + returned count are
@@ -295,13 +324,15 @@ impl FerroEhrService {
         } else {
             ehr_ids.to_vec()
         };
-        // Three set statements per chunk, not a per-EHR transaction loop; a
-        // missing id deletes zero rows, and `DELETE … RETURNING id` counts the
-        // EHRs actually removed.
+        // Set statements per chunk, not a per-EHR transaction loop; a missing
+        // id deletes zero rows, and `DELETE … RETURNING id` counts the EHRs
+        // actually removed.
         let mut deleted = 0u64;
         for chunk in targets.chunks(CHUNK) {
             #[cfg(feature = "multimedia")]
-            let candidate_blobs = self.collect_blob_keys_for(chunk).await?;
+            let candidate_blobs = self.referenced_blob_uris(chunk).await?;
+            // Externalization is compiled out of this build, so no stored
+            // version references a blob and there is nothing to collect.
             #[cfg(not(feature = "multimedia"))]
             let candidate_blobs: Vec<String> = Vec::new();
             let mut tx = self.pool.begin().await?;
@@ -313,7 +344,12 @@ impl FerroEhrService {
             .bind(chunk)
             .fetch_all(&mut *tx)
             .await?;
-            crate::storage::version_repo::tier::purge_ehrs(&mut tx, chunk).await?;
+            let subject_ids: Vec<String> = sqlx::query_scalar(
+                "SELECT subject_id FROM ehr WHERE id = ANY($1) AND subject_id IS NOT NULL",
+            )
+            .bind(chunk)
+            .fetch_all(&mut *tx)
+            .await?;
             let removed: Vec<Uuid> =
                 sqlx::query_scalar("DELETE FROM ehr WHERE id = ANY($1) RETURNING id")
                     .bind(chunk)
@@ -325,7 +361,21 @@ impl FerroEhrService {
                     .execute(&mut *tx)
                     .await?;
             }
+            let removed_ids: Vec<EhrId> = removed.iter().copied().map(EhrId).collect();
+            // Asked only for the EHRs that were there: an id naming nothing
+            // records no crossing of the linkage boundary.
+            let mut sole_subjects: Vec<String> = Vec::new();
+            for ehr_id in &removed_ids {
+                sole_subjects.extend(self.sole_subject_ids(*ehr_id).await?);
+            }
+            purge_subject_proxies(&mut tx, &removed_ids, &subject_ids, &sole_subjects).await?;
+            self.write_erase_tombstones(&mut tx, &removed_ids).await?;
             tx.commit().await?;
+            for ehr_id in &removed_ids {
+                self.erase_ehr_linkage(*ehr_id).await.map_err(|error| {
+                    ServiceError::internal("erase the EHR's linkage map", error)
+                })?;
+            }
             #[expect(
                 clippy::as_conversions,
                 reason = "the removed-row count widens exactly: usize is at most 64 bits \
@@ -338,56 +388,40 @@ impl FerroEhrService {
         Ok(deleted)
     }
 
-    /// The distinct externalized-blob keys referenced by a SET of EHRs' nodes
-    /// (empty when no object store is reachable) — one read for the whole
-    /// chunk. Our own extension — no openEHR spec governs multimedia offload.
+    /// The externalized blob URIs the given EHRs' versions reference, read
+    /// from `blob_ref` before the delete removes those rows.
+    ///
+    /// The index is the whole point: the question "which blobs does this EHR
+    /// reference" used to pull every node body of the EHR into the process and
+    /// walk it, and it is now one index read over the reference rows the write
+    /// path maintains. Empty when no object store is reachable, because
+    /// nothing could then be collected. Our own extension — no openEHR spec
+    /// governs multimedia offload.
     ///
     /// NOTE: reachability, not `multimedia.enabled` — a deployment that stopped
     /// externalizing still has blobs to collect, and skipping them here would
     /// orphan every one of them in the bucket.
+    ///
+    /// # Errors
+    /// [`ServiceError::Database`] when the read fails.
     #[cfg(feature = "multimedia")]
-    async fn collect_blob_keys_for(&self, ehr_ids: &[EhrId]) -> Result<Vec<String>, ServiceError> {
-        let Some(engine) = &self.multimedia else {
+    async fn referenced_blob_uris(&self, ehr_ids: &[EhrId]) -> Result<Vec<String>, ServiceError> {
+        if self.multimedia.is_none() || ehr_ids.is_empty() {
             return Ok(Vec::new());
-        };
-        let datas: Vec<serde_json::Value> =
-            sqlx::query_scalar("SELECT data FROM node WHERE ehr_id = ANY($1)")
-                .bind(ehr_ids)
-                .fetch_all(&self.pool)
-                .await?;
-        let mut keys: Vec<String> = datas
-            .iter()
-            .flat_map(|d| engine.referenced_keys(d))
-            .collect();
-        keys.sort_unstable();
-        keys.dedup();
-        Ok(keys)
+        }
+        Ok(sqlx::query_scalar(
+            "SELECT DISTINCT b.uri FROM blob_ref b \
+             JOIN version v ON v.tier = b.tier AND v.vo_id = b.vo_id \
+                 AND v.sys_version = b.sys_version \
+             WHERE v.ehr_id = ANY($1)",
+        )
+        .bind(ehr_ids)
+        .fetch_all(&self.pool)
+        .await?)
     }
 
-    /// Collect the distinct externalized-blob keys referenced by an EHR's stored
-    /// nodes (empty when externalization is disabled). Read-only, on the pool.
-    /// Our own extension — no openEHR spec governs multimedia offload.
-    #[cfg(feature = "multimedia")]
-    async fn collect_ehr_blob_keys(&self, ehr_id: EhrId) -> Result<Vec<String>, ServiceError> {
-        let Some(engine) = &self.multimedia else {
-            return Ok(Vec::new());
-        };
-        let datas: Vec<serde_json::Value> =
-            sqlx::query_scalar("SELECT data FROM node WHERE ehr_id = $1")
-                .bind(ehr_id)
-                .fetch_all(&self.pool)
-                .await?;
-        let mut keys: Vec<String> = datas
-            .iter()
-            .flat_map(|d| engine.referenced_keys(d))
-            .collect();
-        keys.sort_unstable();
-        keys.dedup();
-        Ok(keys)
-    }
-
-    /// Collect the distinct externalized-blob keys the given demographic
-    /// versioned objects reference (empty when externalization is disabled).
+    /// The externalized blob URIs the given demographic versioned objects
+    /// reference.
     ///
     /// Reads inside the caller's transaction, because the rows are about to be
     /// deleted by it: a read on the pool could miss a row the transaction has
@@ -395,38 +429,58 @@ impl FerroEhrService {
     /// blob nothing will ever collect.
     ///
     /// Our own extension — no openEHR spec governs multimedia offload.
+    ///
+    /// # Errors
+    /// [`ServiceError::Database`] when the read fails.
     #[cfg(feature = "multimedia")]
-    async fn collect_party_blob_keys(
+    async fn party_blob_uris(
         &self,
         tx: &mut sqlx::Transaction<'_, sqlx::Postgres>,
         vo_ids: &[VoId],
     ) -> Result<Vec<String>, ServiceError> {
-        let Some(engine) = &self.multimedia else {
+        if self.multimedia.is_none() || vo_ids.is_empty() {
             return Ok(Vec::new());
-        };
-        let datas: Vec<serde_json::Value> =
-            sqlx::query_scalar("SELECT data FROM node WHERE vo_id = ANY($1)")
+        }
+        Ok(
+            sqlx::query_scalar("SELECT DISTINCT uri FROM blob_ref WHERE vo_id = ANY($1)")
                 .bind(vo_ids)
                 .fetch_all(&mut **tx)
-                .await?;
-        let mut keys: Vec<String> = datas
-            .iter()
-            .flat_map(|d| engine.referenced_keys(d))
-            .collect();
-        keys.sort_unstable();
-        keys.dedup();
-        Ok(keys)
+                .await?,
+        )
     }
 
-    /// Delete each candidate blob no longer referenced by any surviving `node`.
-    /// Our own extension — no openEHR spec governs multimedia offload. A
-    /// conservative scan-based GC (a `blob_ref` count table is a scale
-    /// nicety); a blob-store failure is logged, not fatal (the delete has
-    /// committed, an orphaned blob is harmless).
+    /// The subject identifiers whose only EHR is this one, from the linkage
+    /// domain.
     ///
-    /// The reference check is ONE pass over `node` for the whole candidate
-    /// set (the still-referenced keys fall out of a single scan joined
-    /// against the candidate array), never a scan per blob.
+    /// Empty when the domain is unreachable in this deployment: the proxies
+    /// keyed on an identifier this instance cannot resolve are then left for
+    /// the deployment that can. Our own design — no openEHR spec governs
+    /// erasure reach.
+    ///
+    /// # Errors
+    /// [`ServiceError::Internal`] when the linkage read or its access record
+    /// fails.
+    async fn sole_subject_ids(&self, ehr_id: EhrId) -> Result<Vec<String>, ServiceError> {
+        self.subjects_sole_to_ehr(ehr_id)
+            .await
+            .map_err(|error| ServiceError::internal("read the EHR's subject identifiers", error))
+    }
+
+    /// Delete each candidate blob no surviving version still references.
+    ///
+    /// The candidates are the URIs the erased versions referenced, read from
+    /// `blob_ref` before they went; the survivors are the rows of that same
+    /// index still standing. A blob is content-addressed, so one blob may be
+    /// referenced by several versions and by both pseudonymisation domains —
+    /// both are asked, because a party may be the only thing still holding a
+    /// blob a clinical version also had.
+    ///
+    /// A blob-store failure is logged, not fatal: the delete has committed, and
+    /// an orphaned blob is a storage cost rather than a correctness problem. A
+    /// failed reference read keeps every candidate, so the collector never
+    /// deletes on incomplete information.
+    ///
+    /// Our own extension — no openEHR spec governs multimedia offload.
     #[cfg(feature = "multimedia")]
     async fn gc_unreferenced_blobs(&self, candidates: Vec<String>) {
         let Some(engine) = &self.multimedia else {
@@ -435,35 +489,30 @@ impl FerroEhrService {
         if candidates.is_empty() {
             return;
         }
-        let uris: Vec<String> = candidates
-            .iter()
-            .map(|hex| engine.store().uri_for(hex))
-            .collect();
-        // BOTH pseudonymisation domains are scanned: a blob is shared content,
-        // and a party may be the only thing still referencing one. Scanning the
-        // clinical nodes alone would delete a blob a demographic node still
-        // points at.
         let mut still_referenced: Vec<String> = Vec::new();
         for domain in [&self.pool, &self.demographic_pool] {
-            match sqlx::query_scalar(
-                "SELECT DISTINCT k.uri FROM node n \
-                 JOIN unnest($1::text[]) AS k(uri) ON position(k.uri in n.data::text) > 0",
-            )
-            .bind(&uris)
-            .fetch_all(domain)
-            .await
+            match sqlx::query_scalar("SELECT DISTINCT uri FROM blob_ref WHERE uri = ANY($1)")
+                .bind(&candidates)
+                .fetch_all(domain)
+                .await
             {
                 Ok(rows) => still_referenced.extend(rows),
                 Err(e) => {
-                    tracing::warn!(error = %e, "multimedia blob GC reference scan failed; keeping all candidates");
+                    tracing::warn!(error = %e, "multimedia blob GC reference read failed; keeping all candidates");
                     return;
                 }
             }
         }
-        for (hex, uri) in candidates.iter().zip(&uris) {
+        for uri in &candidates {
             if still_referenced.contains(uri) {
                 continue;
             }
+            // A URI this store did not mint names someone else's bytes; the
+            // index records it (it is in a stored body) and the collector
+            // leaves it alone.
+            let Some(hex) = engine.store().key_from_uri(uri) else {
+                continue;
+            };
             if let Err(e) = engine.store().delete(hex).await {
                 tracing::warn!(blob = %hex, error = %e, "multimedia blob GC delete failed");
             }
@@ -557,16 +606,14 @@ impl FerroEhrService {
         // store forever, which is both a leak and a delete that did not
         // delete — a blob is content.
         #[cfg(feature = "multimedia")]
-        let candidate_blobs = self.collect_party_blob_keys(&mut tx, &vo_ids).await?;
+        let candidate_blobs = self.party_blob_uris(&mut tx, &vo_ids).await?;
         // Externalization is compiled out of this build, so no stored node
         // references a blob and there is nothing to collect.
         #[cfg(not(feature = "multimedia"))]
         let candidate_blobs: Vec<String> = Vec::new();
 
-        // Delete the versioned objects — cascades node + vo_attestation. The
-        // cold archival tier is foreign-key-free by design, so its rows and the
-        // archive markers go explicitly (`crate::storage::version_repo::tier`).
-        crate::storage::version_repo::tier::purge_vos(&mut tx, &vo_ids).await?;
+        // Delete the versioned objects — cascades node + vo_attestation, over
+        // both tier partitions of the one `version` relation.
         sqlx::query("DELETE FROM version WHERE vo_id = ANY($1)")
             .bind(&vo_ids)
             .execute(&mut *tx)
@@ -608,4 +655,118 @@ impl FerroEhrService {
         self.gc_unreferenced_blobs(candidate_blobs).await;
         Ok(())
     }
+
+    /// Append one erasure tombstone per erased EHR, inside the transaction that
+    /// erased it.
+    ///
+    /// GDPR Art. 19 (`docs/law/eu/gdpr/text.html`) makes the controller
+    /// communicate an erasure "to each recipient to whom the personal data have
+    /// been disclosed", and a consumer of the change-event stream is such a
+    /// recipient: it holds whatever it derived from this EHR and cannot know
+    /// the record is gone unless the stream says so. The row carries the erased
+    /// `ehr_id` and nothing else, and it is written before the commit for the
+    /// same reason every commit event is — an erasure that committed without
+    /// its tombstone would leave the derived copies standing. It is written on
+    /// the same gate as those events, because a deployment with no configured
+    /// consumer has disclosed nothing through this channel.
+    ///
+    /// It carries no contribution: the EHR's contributions went with it, and
+    /// their pending outbox rows with them. The routing key is `EHR.erase.-`,
+    /// so a consumer can bind to erasures alone and a wildcard subscription
+    /// receives them with everything else. No openEHR spec governs eventing —
+    /// our own extension; ITS-REST 1.1.0 defines no change notification.
+    ///
+    /// # Errors
+    /// [`ServiceError::Database`] when the insert fails.
+    async fn write_erase_tombstones(
+        &self,
+        tx: &mut sqlx::Transaction<'_, sqlx::Postgres>,
+        erased: &[EhrId],
+    ) -> Result<(), ServiceError> {
+        if !self.outbox_enabled {
+            return Ok(());
+        }
+        for ehr_id in erased {
+            let envelope = serde_json::json!({
+                "event": "erase",
+                "ehr_id": ehr_id.0,
+                "versions": [{"kind": "EHR", "change_type": "erase"}],
+            });
+            sqlx::query(
+                "INSERT INTO event_outbox (ehr_id, envelope, committed_at) \
+                 VALUES ($1, $2, now())",
+            )
+            .bind(*ehr_id)
+            .bind(&envelope)
+            .execute(&mut **tx)
+            .await?;
+        }
+        Ok(())
+    }
+}
+
+/// Remove the subject proxies of every subject the erased EHRs were the last
+/// record of.
+///
+/// The `sp_*` family keys on a one-way derivation of the subject identifier a
+/// caller registered ([`crate::service::subject_proxy::store::subject_key`]),
+/// so no cascade can reach it from `ehr`, and what stays behind is a
+/// subject's proxy configuration plus the sample values it retrieved from the
+/// erased record (GDPR Art. 17(1), `docs/law/eu/gdpr/text.html`). Three
+/// spellings of an identifier can key a proxy, because those are the three a
+/// subject resolves through:
+///
+/// * the EHR id itself, which the proxy resolver accepts literally and which
+///   resolves to nothing the moment the EHR is gone;
+/// * the promoted `ehr.subject_id`, dropped only when no EHR of that subject
+///   survives (a second EHR may carry the same identifier under another
+///   namespace);
+/// * an identifier the linkage domain associates with this EHR and no other,
+///   which the caller determined before the cross-reference rows were erased.
+///
+/// Deleting `sp_subject` cascades its variables, their samples and its data
+/// sets. No openEHR spec governs erasure reach — our own design/extension; the
+/// SM's own rule is that proxy content is configuration held "for the life of
+/// the system" (`master10-subject_proxy_service.adoc` §Persistence), which a
+/// subject whose record was erased has left.
+///
+/// # Errors
+/// [`ServiceError::Database`] when a statement fails.
+async fn purge_subject_proxies(
+    tx: &mut sqlx::Transaction<'_, sqlx::Postgres>,
+    erased: &[EhrId],
+    subject_ids: &[String],
+    sole_subjects: &[String],
+) -> Result<(), ServiceError> {
+    let mut keys: Vec<Uuid> = erased
+        .iter()
+        .map(|ehr_id| crate::service::subject_proxy::store::subject_key(&ehr_id.to_string()))
+        .collect();
+    for subject_id in subject_ids {
+        // Asked after the delete: another EHR of the same subject keeps the
+        // proxy resolvable, and the promoted column is unique only per
+        // (subject, namespace) pair.
+        let survives: bool =
+            sqlx::query_scalar("SELECT EXISTS(SELECT 1 FROM ehr WHERE subject_id = $1)")
+                .bind(subject_id)
+                .fetch_one(&mut **tx)
+                .await?;
+        if !survives {
+            keys.push(crate::service::subject_proxy::store::subject_key(
+                subject_id,
+            ));
+        }
+    }
+    keys.extend(
+        sole_subjects
+            .iter()
+            .map(|subject_id| crate::service::subject_proxy::store::subject_key(subject_id)),
+    );
+    keys.sort_unstable();
+    keys.dedup();
+    sqlx::query("DELETE FROM sp_subject WHERE subject_key = ANY($1)")
+        .bind(&keys)
+        .execute(&mut **tx)
+        .await?;
+    Ok(())
 }
