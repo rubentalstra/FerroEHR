@@ -12,8 +12,8 @@
 //! only the sanctioned typed escape hatches ([`Func::cust`] for functions
 //! sea-query does not model; [`PgFunc::any`] for `= ANY(ARRAY[…])`;
 //! [`BinOper::Custom`] for `#>>` / `->>` which have no
-//! typed variant). Runtime functions resolve unqualified (`search_path = ehr,
-//! ext, public`).
+//! typed variant). Runtime functions resolve unqualified (the domain's own
+//! `search_path`, which ends in `ext, public`).
 
 use std::collections::{BTreeMap, BTreeSet};
 use std::fmt::Write as _;

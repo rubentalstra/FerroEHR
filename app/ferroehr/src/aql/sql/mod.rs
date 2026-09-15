@@ -14,7 +14,7 @@
 //! [`sea_query::extension::postgres::PgExpr`], the built-in aggregates, and
 //! `cast_as` for casts. The only string-operator escapes are the sanctioned
 //! [`sea_query::BinOper::Custom`] set (`#>>`, `->>`). Runtime functions resolve
-//! unqualified (`search_path = ehr, ext, public`).
+//! unqualified (the domain's own `search_path`, which ends in `ext, public`).
 //!
 //! No openEHR spec governs the execution: openEHR defines the language, not its
 //! lowering, so the SQL shapes are our own design. The construct-by-construct
