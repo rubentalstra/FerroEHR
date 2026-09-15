@@ -88,6 +88,22 @@ that list:
 - A template with more than 200 violations reports the first 200 and a final
   `TRUNCATED` entry saying so.
 
+### What an OPT 1.4 export must carry
+
+One requirement of the OPT 1.4 XML format catches exported templates. Inside a
+`C_DV_ORDINAL`, every `list` entry is a `DV_ORDINAL` whose `symbol` is a
+`DV_CODED_TEXT`, and a `DV_CODED_TEXT` carries a `<value>` element beside its
+`defining_code`. The element may be empty, `<value/>`: the rubric a user sees is
+resolved from the template's `term_definitions`, not from this text. CKM's
+exporter writes the empty element, so its templates load. Archetype Designer
+omits it, and such a template is refused with **422**, naming the `<symbol>`
+element, its line, and the fix. Add `<value/>` to each ordinal symbol and upload
+again.
+
+Whether the schema should require the element on an ordinal symbol is a question
+for openEHR, tracked at
+<https://github.com/rubentalstra/FerroEHR/issues/3401>.
+
 ## Uploading ADL 2 artefacts
 
 ADL 2 artefacts (archetypes, templates and operational templates) are accepted
