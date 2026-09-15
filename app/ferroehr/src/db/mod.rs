@@ -6,19 +6,25 @@
 //!
 //! No openEHR spec governs the persistence mechanism; the storage substrate is
 //! our own PG18-native design. This module is the single place the rest of the
-//! crate obtains a database handle: [`DbConfig`] (the `[db]` config section)
-//! feeds [`connect`] for the clinical domain, [`connect_demographic`] for the
-//! party one and [`connect_linkage`] for the linkage one,
-//! and [`prepare`] brings the schema to the state this
-//! build requires — on the migration DSN ([`DbConfig::migrate_dsn`]), a fourth
-//! credential a deployment may name because preparation spans every schema
-//! while each runtime credential holds one domain. The three served domains
-//! differ only in the `search_path` their connections carry, so one set of
-//! storage functions serves them all. [`verify_domain_isolation`] is the boot gate that refuses to
-//! serve when the runtime roles can read across those boundaries. The `sea-query`
-//! identifier vocabulary for the live schema lives in [`iden`]. This is the
-//! defining module for the whole bootstrap surface, with no re-exports.
+//! crate obtains a database handle. [`DbConfig`] (the `[db]` config section)
+//! carries the shared DSN and the pool tuning; [`domain::StorageConfig`] (the
+//! `[storage]` section) carries one DSN per storage domain, each defaulting to
+//! the shared one. [`connect_domains`] opens the four pools
+//! ([`domain::DomainPools`]) and [`prepare`] brings each database they reach to
+//! the state this build requires — on the migration DSN
+//! ([`DbConfig::migrate_dsn`]) for the domains that share it, a credential a
+//! deployment may name because preparation spans every schema of a database
+//! while each runtime credential holds one domain. The domains differ in the
+//! `search_path` their connections carry, so one set of storage functions
+//! serves them all. [`verify_domain_isolation`] is the boot gate that refuses
+//! to serve when the runtime roles can read across those boundaries, when two
+//! separately-configured domains turn out to authenticate as one role, or —
+//! under `deployment_profile = "production"` — when a domain role is missing
+//! altogether. The `sea-query` identifier vocabulary for the live schema lives
+//! in [`iden`]. This is the defining module for the whole bootstrap surface,
+//! with no re-exports.
 
+pub mod domain;
 pub mod iden;
 
 use std::path::PathBuf;
@@ -29,7 +35,9 @@ use sqlx::migrate::Migrator;
 use sqlx::postgres::{PgConnectOptions, PgPoolOptions};
 use sqlx::{Connection, PgConnection, PgPool};
 
+use crate::config::deployment::DeploymentProfile;
 use crate::config::secret::SecretUrl;
+use crate::db::domain::{Domain, DomainLayout, DomainPools, StorageConfig};
 
 // ── Settings — the `[db]` config section ─────────────────────────────────────
 
@@ -80,39 +88,6 @@ pub struct DbConfig {
     /// `/proc/<pid>/environ` and inherited by every child process. Setting both
     /// this and a non-default `url` is a boot error.
     pub url_file: Option<PathBuf>,
-    /// DSN for the **demographic** pseudonymisation domain, when a deployment
-    /// separates the two runtime roles; unset (the default) reuses
-    /// [`Self::url`].
-    ///
-    /// The schema separation is unconditional — the demographic chapter always
-    /// reads and writes the `demographic` schema. This key is what turns it
-    /// into a ROLE separation as well: point it at a DSN authenticating as
-    /// `ferroehr_demographic`, leave [`Self::url`] on `ferroehr_ehr`, and
-    /// neither connection can reach the other domain's relations even if a
-    /// query tries (GDPR Art. 4(5) and Art. 32(1)(a); EDPB Guidelines 01/2025
-    /// require the separation to hold against internal actors). No openEHR
-    /// spec governs database roles — our own design/extension.
-    pub demographic_url: Option<SecretUrl>,
-    /// Path to a file holding [`Self::demographic_url`], read at boot in place
-    /// of it — the mounted-secret route, as [`Self::url_file`] is for the
-    /// clinical DSN. Setting both is a boot error.
-    pub demographic_url_file: Option<PathBuf>,
-    /// DSN for the **linkage** pseudonymisation domain, when a deployment
-    /// separates the runtime roles; unset (the default) reuses [`Self::url`].
-    ///
-    /// The third domain, and the one the other two exist to be kept apart
-    /// from: `linkage` holds which demographic party is the subject of which
-    /// EHR, which is the "additional information" that re-attributes a
-    /// pseudonymised record to a person. Point this at a DSN authenticating as
-    /// `ferroehr_linkage` and no runtime credential holds both the map and
-    /// either side of it (GDPR Art. 4(5) and Art. 32(1)(a); EDPB Guidelines
-    /// 01/2025 require the separation to hold against internal actors). No
-    /// openEHR spec governs database roles — our own design/extension.
-    pub linkage_url: Option<SecretUrl>,
-    /// Path to a file holding [`Self::linkage_url`], read at boot in place of
-    /// it — the mounted-secret route, as [`Self::url_file`] is for the
-    /// clinical DSN. Setting both is a boot error.
-    pub linkage_url_file: Option<PathBuf>,
     /// DSN that schema preparation ([`prepare`]) authenticates as; unset (the
     /// default) reuses [`Self::url`].
     ///
@@ -168,10 +143,6 @@ impl Default for DbConfig {
         Self {
             url: SecretUrl::new(DEFAULT_URL),
             url_file: None,
-            demographic_url: None,
-            demographic_url_file: None,
-            linkage_url: None,
-            linkage_url_file: None,
             migrate_url: None,
             migrate_url_file: None,
             // Deliberate defaults: 20 max (10 hard-capped realistic write
@@ -205,24 +176,6 @@ impl DbConfig {
         self.url.expose() == DEFAULT_URL
     }
 
-    /// The DSN the demographic pool connects with: [`Self::demographic_url`]
-    /// when the deployment separates the runtime roles, else [`Self::url`].
-    #[must_use]
-    pub fn demographic_dsn(&self) -> &str {
-        self.demographic_url
-            .as_ref()
-            .map_or_else(|| self.url.expose(), SecretUrl::expose)
-    }
-
-    /// The DSN the linkage pool connects with: [`Self::linkage_url`] when the
-    /// deployment separates the runtime roles, else [`Self::url`].
-    #[must_use]
-    pub fn linkage_dsn(&self) -> &str {
-        self.linkage_url
-            .as_ref()
-            .map_or_else(|| self.url.expose(), SecretUrl::expose)
-    }
-
     /// The DSN schema preparation connects with: [`Self::migrate_url`] when
     /// the deployment names a credential for it, else [`Self::url`].
     #[must_use]
@@ -230,20 +183,6 @@ impl DbConfig {
         self.migrate_url
             .as_ref()
             .map_or_else(|| self.url.expose(), SecretUrl::expose)
-    }
-
-    /// Whether the demographic domain authenticates as its own database role
-    /// (a distinct DSN), rather than sharing the clinical one.
-    #[must_use]
-    pub fn roles_are_separated(&self) -> bool {
-        self.demographic_url.is_some()
-    }
-
-    /// Whether the linkage domain authenticates as its own database role
-    /// (a distinct DSN), rather than sharing the clinical one.
-    #[must_use]
-    pub fn linkage_role_is_separated(&self) -> bool {
-        self.linkage_url.is_some()
     }
 
     /// Whether schema preparation authenticates as its own database role
@@ -332,6 +271,54 @@ pub enum DbError {
         /// The schema-qualified object it reaches.
         relation: String,
     },
+
+    /// Two domains a deployment placed on different DSNs authenticate as one
+    /// database role, so the separation it configured does not exist.
+    #[error(
+        "the `{domain}` and `{other}` domains are configured on separate DSNs but both \
+         authenticate as database role `{role}`, so one credential still holds both domains and \
+         the separation is only apparent. Give each domain a login role of its own — a member of \
+         that domain's runtime role and of no other (GDPR Art. 4(5) and Art. 32(1)(a); no openEHR \
+         spec governs database roles — our own design)"
+    )]
+    DomainRoleShared {
+        /// One of the two domains.
+        domain: Domain,
+        /// The other.
+        other: Domain,
+        /// The role both sessions authenticate as.
+        role: String,
+    },
+
+    /// A domain's runtime role does not exist, under a profile that requires
+    /// the grants to be real.
+    #[error(
+        "database role `{role}` does not exist, so the `{domain}` domain's grants separate \
+         nothing and this check has nothing to measure. deployment_profile = \"production\" \
+         requires the runtime roles to exist: the migrations create them only when the migrator \
+         holds CREATEROLE, so provision them (CREATE ROLE {role} NOLOGIN NOINHERIT) and grant \
+         each pool's login role membership in exactly one of them"
+    )]
+    DomainRoleMissing {
+        /// The absent role.
+        role: String,
+        /// The domain it serves.
+        domain: Domain,
+    },
+
+    /// A domain was placed on a DSN of its own, but its migration set names
+    /// another domain's objects.
+    #[error(
+        "the `{domain}` domain cannot be prepared without the `{required}` domain in the same \
+         database: its grant file revokes a function only the `{required}` set creates. Place \
+         both on one DSN, or prepare the `{domain}` database out of band"
+    )]
+    DomainCannotBeRelocated {
+        /// The domain that was relocated.
+        domain: Domain,
+        /// The domain its migration set depends on.
+        required: Domain,
+    },
 }
 
 /// How a database's recorded migration state differs from the one this binary
@@ -393,44 +380,6 @@ pub enum SchemaMismatch {
 
 // ── Pool ─────────────────────────────────────────────────────────────────────
 
-/// Search path applied to every pooled connection serving the **clinical**
-/// domain: the EHR tables live in `clinical`, the AQL support functions and the
-/// `"C"`/`en_US` collations in `ext`. Set once per physical connection
-/// (`after_connect`) so queries may use unqualified table names.
-const CLINICAL_SEARCH_PATH: &str = "SET search_path TO clinical, ext, public";
-
-/// Search path applied to every pooled connection serving the **party**
-/// domain, whose change-control and node relations are rendered from the same
-/// DDL template as the clinical ones and therefore carry the same names and
-/// column shape.
-///
-/// This one constant is the whole routing mechanism: a pool opened with it
-/// reuses every storage function unchanged, because the SQL those functions
-/// emit names its relations unqualified and `search_path` decides which schema
-/// they resolve in. `clinical` is deliberately absent — a query this pool
-/// issues against a clinical relation must fail to resolve rather than quietly
-/// cross the pseudonymisation boundary.
-///
-/// No openEHR spec governs storage layout or database roles — our own
-/// design/extension (GDPR Art. 4(5) and Art. 32(1)(a);
-/// <https://eur-lex.europa.eu/eli/reg/2016/679/oj>).
-const DEMOGRAPHIC_SEARCH_PATH: &str = "SET search_path TO party, ext, public";
-
-/// Search path applied to every pooled connection serving the **linkage**
-/// domain, which holds the one relation joining the other two: which party is
-/// the subject of which EHR.
-///
-/// Neither `clinical` nor `party` is on it, for the reason the schema exists:
-/// a query issued on this pool against either domain's relations must fail to
-/// resolve rather than quietly re-join what the split holds apart. The
-/// crossing happens one layer up, in the service, over two pools — never
-/// inside one statement.
-///
-/// No openEHR spec governs storage layout or database roles — our own
-/// design/extension (GDPR Art. 4(5) and Art. 32(1)(a);
-/// <https://eur-lex.europa.eu/eli/reg/2016/679/oj>).
-const LINKAGE_SEARCH_PATH: &str = "SET search_path TO linkage, ext, public";
-
 /// Everything a freshly-opened physical connection needs before it serves a
 /// query: the domain's search path and the statement-timeout backstop.
 ///
@@ -462,12 +411,13 @@ async fn open_session(
 /// liveness ping. Connection retirement stays on the `sqlx` defaults (an idle
 /// reap plus a bounded lifetime — infinite-lived connections are discouraged by
 /// the driver, so we do not disable them).
-fn pool_options(settings: &DbConfig, search_path: &'static str) -> PgPoolOptions {
+fn pool_options(settings: &DbConfig, domain: Domain) -> PgPoolOptions {
     // Rendered once here rather than per connection. The value is an integer
     // from our own configuration, never client input, and it is bound as a
     // literal because PostgreSQL's `SET` takes no parameter placeholder.
     let statement_timeout = (settings.statement_timeout_ms > 0)
         .then(|| format!("SET statement_timeout = {}", settings.statement_timeout_ms));
+    let search_path = domain.search_path();
     PgPoolOptions::new()
         .max_connections(settings.max_connections)
         .min_connections(settings.min_connections)
@@ -486,101 +436,90 @@ fn pool_options(settings: &DbConfig, search_path: &'static str) -> PgPoolOptions
         })
 }
 
-/// Create the clinical application connection pool.
+/// Create one domain's connection pool.
 ///
-/// Every physical connection is initialized with the clinical search path
-/// (`clinical, ext, public`) so queries can use unqualified table names, as
-/// the schema expects. There is no per-acquire hook, so a checkout costs
-/// nothing.
+/// Every physical connection is initialized with that domain's search path
+/// ([`Domain::search_path`]) so queries can use unqualified table names, as the
+/// schema expects, and with no other domain's schema on it — a query issued
+/// here against another domain's relation fails to resolve rather than quietly
+/// crossing the pseudonymisation boundary. The DSN is
+/// `[storage.<domain>].url` when the deployment gives the domain one, and
+/// `[db].url` otherwise: the schema separation is unconditional, the credential
+/// separation is the deployment's choice.
 ///
 /// # Errors
 ///
 /// Returns [`DbError::Sqlx`] when the DSN does not parse as a `PostgreSQL`
 /// URL, the initial connection fails (unreachable host, refused
-/// authentication, unknown database), or the search-path initialization
-/// statement fails on that first connection.
+/// authentication, unknown database), or the session-setup statements fail on
+/// that first connection.
+pub async fn connect_domain(
+    settings: &DbConfig,
+    storage: &StorageConfig,
+    domain: Domain,
+) -> Result<PgPool, DbError> {
+    let pool = pool_options(settings, domain)
+        .connect(storage.dsn(domain, settings))
+        .await?;
+    Ok(pool)
+}
+
+/// Create the clinical pool on the shared `[db].url`, for a caller that holds
+/// only a [`DbConfig`].
+///
+/// [`connect_domain`] over a default [`StorageConfig`] — the co-located
+/// deployment's clinical pool. The test harness and the operator checks use it;
+/// the serving path uses [`connect_domains`], which honours every
+/// `[storage.<domain>]` DSN.
+///
+/// # Errors
+///
+/// Whatever [`connect_domain`] returns.
 pub async fn connect(settings: &DbConfig) -> Result<PgPool, DbError> {
-    let pool = pool_options(settings, CLINICAL_SEARCH_PATH)
-        .connect(settings.url.expose())
-        .await?;
-    Ok(pool)
+    connect_domain(settings, &StorageConfig::default(), Domain::Clinical).await
 }
 
-/// Create the **party** connection pool.
+/// Create all four domain pools.
 ///
-/// The twin of [`connect`] for the pseudonymisation domain: the same pool
-/// settings, the demographic search path, and [`DbConfig::demographic_dsn`] —
-/// which is `[db].demographic_url` when a deployment separates the two runtime
-/// roles, and `[db].url` otherwise. The schema separation is therefore always
-/// on; the role separation is the deployment's choice.
+/// The boot path's one call: every domain gets its own pool, its own
+/// `search_path` and — where the deployment named one — its own credential.
 ///
 /// # Errors
 ///
-/// The same failures as [`connect`], against the demographic DSN.
-pub async fn connect_demographic(settings: &DbConfig) -> Result<PgPool, DbError> {
-    let pool = pool_options(settings, DEMOGRAPHIC_SEARCH_PATH)
-        .connect(settings.demographic_dsn())
-        .await?;
-    Ok(pool)
+/// Whatever [`connect_domain`] returns, for the first domain that cannot
+/// connect.
+pub async fn connect_domains(
+    settings: &DbConfig,
+    storage: &StorageConfig,
+) -> Result<DomainPools, DbError> {
+    Ok(DomainPools {
+        clinical: connect_domain(settings, storage, Domain::Clinical).await?,
+        party: connect_domain(settings, storage, Domain::Party).await?,
+        linkage: connect_domain(settings, storage, Domain::Linkage).await?,
+        audit: connect_domain(settings, storage, Domain::Audit).await?,
+    })
 }
 
-/// Create the **linkage** connection pool.
-///
-/// The twin of [`connect_demographic`] for the third pseudonymisation domain:
-/// the same pool settings, the linkage search path, and [`DbConfig::linkage_dsn`]
-/// — which is `[db].linkage_url` when a deployment separates the runtime roles,
-/// and `[db].url` otherwise. The schema separation is therefore always on; the
-/// role separation is the deployment's choice.
-///
-/// # Errors
-///
-/// The same failures as [`connect`], against the linkage DSN.
-pub async fn connect_linkage(settings: &DbConfig) -> Result<PgPool, DbError> {
-    let pool = pool_options(settings, LINKAGE_SEARCH_PATH)
-        .connect(settings.linkage_dsn())
-        .await?;
-    Ok(pool)
-}
-
-/// A demographic pool over the DSN an existing clinical pool already holds, for
-/// a caller that has a [`PgPool`] and no [`DbConfig`].
+/// A pool for `domain` over the DSN an existing pool already holds, for a
+/// caller that has a [`PgPool`] and no configuration.
 ///
 /// This is what lets [`crate::service::FerroEhrService::new`] stay synchronous
-/// and infallible while still routing the demographic chapter at the
-/// demographic schema: `PgPool::connect_options` hands back the connect options
-/// the pool was built from, and `PgPoolOptions::connect_lazy_with` builds a pool
-/// from them with no I/O at all.
+/// and infallible while still routing each chapter at its own schema:
+/// `PgPool::connect_options` hands back the connect options the pool was built
+/// from, and `PgPoolOptions::connect_lazy_with` builds a pool from them with no
+/// I/O at all.
 ///
 /// It carries the pool defaults rather than the deployment's `[db]` tuning,
 /// which it cannot see, and it opens no connection until one is asked for
 /// (`min_connections(0)`, so constructing a service costs nothing). A
-/// deployment that tunes the pool, separates the runtime roles, or enables
-/// tenancy supplies its own pool through
-/// [`crate::service::FerroEhrService::with_demographic_pool`] instead.
+/// deployment that tunes the pool or separates the runtime roles supplies its
+/// own pools through [`crate::service::FerroEhrService::with_demographic_pool`]
+/// and its siblings instead.
 #[must_use]
-pub fn demographic_pool_from(pool: &PgPool) -> PgPool {
+pub fn domain_pool_from(pool: &PgPool, domain: Domain) -> PgPool {
     let defaults = DbConfig::default();
     let options = pool.connect_options();
-    pool_options(&defaults, DEMOGRAPHIC_SEARCH_PATH)
-        .min_connections(0)
-        .connect_lazy_with(PgConnectOptions::clone(&options))
-}
-
-/// A linkage pool over the DSN an existing clinical pool already holds, the
-/// twin of [`demographic_pool_from`] for the third domain.
-///
-/// It exists for the same reason: [`crate::service::FerroEhrService::new`]
-/// stays synchronous and infallible while still routing the linkage chapter at
-/// the `linkage` schema. It carries the pool defaults rather than the
-/// deployment's `[db]` tuning, and opens no connection until one is asked for.
-/// A deployment that tunes the pool or separates the runtime roles supplies
-/// its own pool through
-/// [`crate::service::FerroEhrService::with_linkage_pool`] instead.
-#[must_use]
-pub fn linkage_pool_from(pool: &PgPool) -> PgPool {
-    let defaults = DbConfig::default();
-    let options = pool.connect_options();
-    pool_options(&defaults, LINKAGE_SEARCH_PATH)
+    pool_options(&defaults, domain)
         .min_connections(0)
         .connect_lazy_with(PgConnectOptions::clone(&options))
 }
@@ -624,15 +563,16 @@ static LINKAGE_MIGRATOR: Migrator = sqlx::migrate!("migrations/linkage");
 /// in-system access logs, never part of the EHR proper).
 static AUDIT_MIGRATOR: Migrator = sqlx::migrate!("migrations/audit");
 
-/// The migration sets in application order, each paired with the schema
-/// that carries its `_sqlx_migrations` bookkeeping table.
-const MIGRATION_SETS: &[(&str, &Migrator)] = &[
-    ("ext", &EXT_MIGRATOR),
-    ("clinical", &CLINICAL_MIGRATOR),
-    ("party", &PARTY_MIGRATOR),
-    ("linkage", &LINKAGE_MIGRATOR),
-    ("audit", &AUDIT_MIGRATOR),
-];
+/// The migrator for one domain's set, paired with the schema that carries its
+/// `_sqlx_migrations` bookkeeping table.
+const fn domain_migrator(domain: Domain) -> (&'static str, &'static Migrator) {
+    match domain {
+        Domain::Clinical => ("clinical", &CLINICAL_MIGRATOR),
+        Domain::Party => ("party", &PARTY_MIGRATOR),
+        Domain::Linkage => ("linkage", &LINKAGE_MIGRATOR),
+        Domain::Audit => ("audit", &AUDIT_MIGRATOR),
+    }
+}
 
 /// One schema of the first storage generation, and how to recognise its
 /// bookkeeping.
@@ -732,7 +672,9 @@ pub fn migration_fingerprint() -> String {
     for statement in BOOTSTRAP {
         eat(statement.as_bytes());
     }
-    for (_, migrator) in MIGRATION_SETS {
+    for migrator in std::iter::once(&EXT_MIGRATOR)
+        .chain(Domain::ALL.iter().map(|domain| domain_migrator(*domain).1))
+    {
         for migration in migrator.iter() {
             eat(&migration.version.to_le_bytes());
             eat(&migration.checksum);
@@ -741,12 +683,12 @@ pub fn migration_fingerprint() -> String {
     format!("{hash:016x}")
 }
 
-/// Bootstrap schemas/extensions and apply the migration sets, `ext` before
-/// `ehr`.
+/// Bootstrap schemas/extensions and apply every migration set on one
+/// connection — the single-database sequence.
 ///
 /// Each migrator runs on a connection whose `search_path` starts with its
 /// target schema, so the unqualified DDL and that set's `_sqlx_migrations`
-/// bookkeeping table land in the right schema (two independent bookkeeping
+/// bookkeeping table land in the right schema (five independent bookkeeping
 /// tables, one per set). Safe to call repeatedly: an already-applied migration
 /// is skipped, and its recorded checksum is validated against the embedded
 /// source.
@@ -766,26 +708,118 @@ pub fn migration_fingerprint() -> String {
 /// source.
 pub async fn run_migrations(pool: &PgPool) -> Result<(), DbError> {
     let mut conn = pool.acquire().await?.detach();
-    let outcome = apply_migrations(&mut conn).await;
+    let outcome = apply_migrations(&mut conn, &Domain::ALL).await;
     close_quietly(conn).await;
     outcome
 }
 
-/// Open the one-shot connection schema preparation runs on: the migration DSN
-/// ([`DbConfig::migrate_dsn`]), which is `[db].migrate_url` when a deployment
-/// names a credential for this step and `[db].url` otherwise.
+/// Open the one-shot connection one database's schema preparation runs on.
 ///
 /// Preparation is a boot step rather than a serving path, so it takes a single
-/// connection that is closed again instead of a third pool held for the
-/// process lifetime, and it carries none of the pools' session setup: no
-/// domain `search_path` (the sequence sets its own per set, and the
-/// bookkeeping reads are schema-qualified) and no `statement_timeout`, which
-/// is the backstop for request-serving statements and would cancel a long
-/// migration partway
+/// connection that is closed again instead of a pool held for the process
+/// lifetime, and it carries none of the pools' session setup: no domain
+/// `search_path` (the sequence sets its own per set, and the bookkeeping reads
+/// are schema-qualified) and no `statement_timeout`, which is the backstop for
+/// request-serving statements and would cancel a long migration partway
 /// (<https://www.postgresql.org/docs/18/runtime-config-client.html>).
-async fn migration_connection(settings: &DbConfig) -> Result<PgConnection, DbError> {
-    let conn = PgConnection::connect(settings.migrate_dsn()).await?;
+async fn migration_connection(dsn: &str) -> Result<PgConnection, DbError> {
+    let conn = PgConnection::connect(dsn).await?;
     Ok(conn)
+}
+
+/// The DSN one group of domains is prepared on.
+///
+/// A group whose domains sit on the shared `[db].url` is prepared by the
+/// migration credential (`[db].migrate_url`, falling back to `[db].url`) —
+/// the credential that may hold DDL rights while the runtime ones do not. A
+/// group a deployment relocated is prepared on the DSN that relocated it:
+/// `[db].migrate_url` names one database, and a relocated domain is not in it.
+fn group_migration_dsn(group: &domain::DomainGroup<'_>, layout: &DomainLayout, db: &DbConfig) -> String {
+    let separated = group
+        .domains
+        .first()
+        .is_some_and(|domain| layout.placement(*domain).separated);
+    if separated {
+        group.dsn().to_owned()
+    } else {
+        db.migrate_dsn().to_owned()
+    }
+}
+
+/// Refuse a layout that splits a domain from the domain its migration set
+/// needs in the same database ([`Domain::prepares_with`]).
+///
+/// Checked before anything connects, so the refusal names the configuration
+/// rather than a `PostgreSQL` error about a function nobody configured.
+fn check_preparation_dependencies(layout: &DomainLayout) -> Result<(), DbError> {
+    for placement in layout.placements() {
+        let Some(required) = placement.domain.prepares_with() else {
+            continue;
+        };
+        if !placement.shares_dsn_with(layout.placement(required)) {
+            return Err(DbError::DomainCannotBeRelocated {
+                domain: placement.domain,
+                required,
+            });
+        }
+    }
+    Ok(())
+}
+
+/// Applies the embedded migrations, one connection per distinct domain DSN.
+///
+/// The `ext` set is applied per DATABASE, by whichever domain group reaches it
+/// first: two domains sharing a DSN share one `ext`, and a relocated domain
+/// carries its own copy of the helper functions its storage code calls. Two
+/// DSNs that reach one database through different host names need no special
+/// handling — the second connection finds `ext` already recorded and applies
+/// nothing.
+///
+/// # Errors
+///
+/// [`DbError::DomainCannotBeRelocated`] when the layout splits a domain from
+/// the one its set depends on, [`DbError::Sqlx`] when a DSN does not parse, a
+/// connection fails, or a bootstrap statement is refused (a credential without
+/// `CREATE` on the database or on a schema), and [`DbError::Migrate`] when a
+/// migration fails to apply or an already-applied one fails checksum
+/// validation.
+pub async fn apply_schema(settings: &DbConfig, storage: &StorageConfig) -> Result<(), DbError> {
+    let layout = storage.layout(settings);
+    check_preparation_dependencies(&layout)?;
+    for group in layout.groups() {
+        let dsn = group_migration_dsn(&group, &layout, settings);
+        let mut conn = migration_connection(&dsn).await?;
+        let outcome = apply_migrations(&mut conn, &group.domains).await;
+        close_quietly(conn).await;
+        outcome?;
+    }
+    Ok(())
+}
+
+/// Verifies the recorded migration state on every database the domains reach.
+///
+/// [`verify_recorded_state`] over a connection per distinct DSN, for the same
+/// reason [`apply_schema`] takes one: the check reads each resident set's
+/// `_sqlx_migrations` table, which no single-domain runtime credential can do.
+/// Issues no DDL, so the credentials it names need read access and nothing
+/// more.
+///
+/// # Errors
+///
+/// [`DbError::SchemaNotReady`] naming the first divergence found,
+/// [`DbError::SchemaUnreadable`] when a credential cannot read a set's
+/// bookkeeping at all, or [`DbError::Sqlx`] when a connection or the read
+/// fails for any other reason.
+pub async fn verify_schema(settings: &DbConfig, storage: &StorageConfig) -> Result<(), DbError> {
+    let layout = storage.layout(settings);
+    for group in layout.groups() {
+        let dsn = group_migration_dsn(&group, &layout, settings);
+        let mut conn = migration_connection(&dsn).await?;
+        let outcome = verify_recorded_state(&mut conn, &group.domains).await;
+        close_quietly(conn).await;
+        outcome?;
+    }
+    Ok(())
 }
 
 /// Close a detached connection, reporting a failure to close as a trace event
@@ -797,51 +831,7 @@ async fn close_quietly(conn: PgConnection) {
     }
 }
 
-/// Applies the embedded migrations on the migration DSN
-/// ([`DbConfig::migrate_dsn`]) — the credential half of
-/// [`MigrationMode::Apply`].
-///
-/// [`run_migrations`] over a connection of its own rather than one from a
-/// runtime pool, so a deployment whose runtime credentials each hold a single
-/// pseudonymisation domain can still prepare a schema that spans all five.
-///
-/// # Errors
-///
-/// [`DbError::Sqlx`] when the migration DSN does not parse, the connection
-/// fails, or a bootstrap statement is refused (a credential without `CREATE`
-/// on the database or on a schema), and [`DbError::Migrate`] when a migration
-/// fails to apply or an already-applied one fails checksum validation.
-pub async fn apply_schema(settings: &DbConfig) -> Result<(), DbError> {
-    let mut conn = migration_connection(settings).await?;
-    let outcome = apply_migrations(&mut conn).await;
-    close_quietly(conn).await;
-    outcome
-}
-
-/// Verifies the recorded migration state on the migration DSN
-/// ([`DbConfig::migrate_dsn`]) — the credential half of
-/// [`MigrationMode::Verify`].
-///
-/// [`verify_migrations`] over a connection of its own, for the same reason
-/// [`apply_schema`] takes one: the check reads all five schemas'
-/// `_sqlx_migrations` tables, which no single-domain runtime credential can
-/// do. Issues no DDL, so the credential it names needs read access and
-/// nothing more.
-///
-/// # Errors
-///
-/// [`DbError::SchemaNotReady`] naming the first divergence found,
-/// [`DbError::SchemaUnreadable`] when the credential cannot read a set's
-/// bookkeeping at all, or [`DbError::Sqlx`] when the connection or the read
-/// fails for any other reason.
-pub async fn verify_schema(settings: &DbConfig) -> Result<(), DbError> {
-    let mut conn = migration_connection(settings).await?;
-    let outcome = verify_recorded_state(&mut conn).await;
-    close_quietly(conn).await;
-    outcome
-}
-
-/// Brings the database to the state this build requires, as
+/// Brings every database the domains reach to the state this build requires, as
 /// [`DbConfig::migrate`] directs, and then proves the pseudonymisation
 /// boundary holds.
 ///
@@ -851,14 +841,13 @@ pub async fn verify_schema(settings: &DbConfig) -> Result<(), DbError> {
 /// [`MigrationMode::Verify`] issues no DDL and only checks
 /// ([`verify_schema`]).
 ///
-/// **The two halves deliberately authenticate as different credentials, and
-/// that is the whole point of the split.** Schema preparation spans every
-/// schema — the DDL of all five migration sets under `apply`, all five
-/// `_sqlx_migrations` bookkeeping tables under `verify` — so it runs on the
-/// migration DSN ([`DbConfig::migrate_dsn`]), which a deployment separating
-/// its runtime roles points at a credential that can reach them all.
-/// [`verify_domain_isolation`] runs on `runtime_pool` instead, because it
-/// exists to measure what THAT credential can reach: it reads `pg_catalog`
+/// **Preparation and the boot gate deliberately authenticate as different
+/// credentials, and that is the whole point of the split.** Preparation spans
+/// every schema of a database — the DDL of each resident set under `apply`,
+/// their `_sqlx_migrations` tables under `verify` — so it runs on the
+/// migration DSN ([`DbConfig::migrate_dsn`]) for the domains that share it.
+/// [`verify_domain_isolation`] runs on the runtime pools instead, because it
+/// exists to measure what THOSE credentials can reach: it reads `pg_catalog`
 /// and the `has_*_privilege` functions, which any role may call
 /// (<https://www.postgresql.org/docs/18/functions-info.html>), so running it
 /// on the migration credential would not fail — it would silently measure a
@@ -868,24 +857,28 @@ pub async fn verify_schema(settings: &DbConfig) -> Result<(), DbError> {
 /// # Errors
 ///
 /// In `apply` mode, whatever [`apply_schema`] returns. In `verify` mode,
-/// [`DbError::SchemaNotReady`] when the database does not carry exactly this
+/// [`DbError::SchemaNotReady`] when a database does not carry exactly this
 /// build's migrations, [`DbError::SchemaUnreadable`] when the migration
 /// credential cannot read a set's bookkeeping at all, or [`DbError::Sqlx`]
-/// when the check itself cannot run. In both modes,
-/// [`DbError::DomainIsolationBreached`] when a runtime role can reach another
-/// pseudonymisation domain.
-pub async fn prepare(settings: &DbConfig, runtime_pool: &PgPool) -> Result<(), DbError> {
+/// when the check itself cannot run. In both modes, whatever
+/// [`verify_domain_isolation`] returns.
+pub async fn prepare(
+    settings: &DbConfig,
+    storage: &StorageConfig,
+    pools: &DomainPools,
+    profile: DeploymentProfile,
+) -> Result<(), DbError> {
     match settings.migrate {
-        MigrationMode::Apply => apply_schema(settings).await?,
+        MigrationMode::Apply => apply_schema(settings, storage).await?,
         MigrationMode::Verify => {
             tracing::info!(
                 "[db].migrate is `verify`: this server issues no DDL and requires an \
                  already-migrated database"
             );
-            verify_schema(settings).await?;
+            verify_schema(settings, storage).await?;
         }
     }
-    verify_domain_isolation(runtime_pool).await
+    verify_domain_isolation(pools, &storage.layout(settings), profile).await
 }
 
 /// Verifies, without issuing any DDL, that the database carries exactly the
@@ -905,46 +898,28 @@ pub async fn prepare(settings: &DbConfig, runtime_pool: &PgPool) -> Result<(), D
 /// bookkeeping read fails for any other reason.
 pub async fn verify_migrations(pool: &PgPool) -> Result<(), DbError> {
     let mut conn = pool.acquire().await?;
-    verify_recorded_state(&mut conn).await
+    verify_recorded_state(&mut conn, &Domain::ALL).await
 }
 
-/// Compare every migration set's bookkeeping against its embedded source, on
-/// one connection.
+/// Compare the `ext` set and each named domain's set against their embedded
+/// sources, on one connection.
 ///
 /// The shared body of [`verify_migrations`] (a pooled connection) and
-/// [`verify_schema`] (the one-shot migration connection), so the boot gate and
+/// [`verify_schema`] (the one-shot migration connections), so the boot gate and
 /// the operator check cannot drift apart.
-async fn verify_recorded_state(conn: &mut PgConnection) -> Result<(), DbError> {
-    for (schema, migrator) in MIGRATION_SETS {
+async fn verify_recorded_state(conn: &mut PgConnection, domains: &[Domain]) -> Result<(), DbError> {
+    verify_set(&mut *conn, "ext", &EXT_MIGRATOR).await?;
+    for domain in domains {
+        let (schema, migrator) = domain_migrator(*domain);
         verify_set(&mut *conn, schema, migrator).await?;
     }
     Ok(())
 }
 
-/// Every runtime role paired with the schemas it must not be able to read.
-///
-/// Three pseudonymisation domains, mutually barred. `ferroehr_ehr`/
-/// `ferroehr_ehr_reader` serve the clinical record; `ferroehr_demographic`/
-/// `ferroehr_demographic_reader` serve the identities; `ferroehr_linkage`
-/// serves the map that says which identity belongs to which record, and is
-/// barred from both — a role holding the map and either side of it would hold
-/// the join the split exists to withhold. No openEHR spec governs database
-/// roles — our own design/extension.
-///
-/// The role names keep their first-generation spelling while their schemas are
-/// now `clinical` and `party`; renaming them belongs with the per-domain DSNs.
-/// TODO(#3343): rename the domain roles alongside the per-domain connection
-/// settings, which move every deployment artefact that names them.
-const DOMAIN_ROLE_BARRIERS: &[(&str, &[&str])] = &[
-    ("ferroehr_ehr", &["party", "linkage"]),
-    ("ferroehr_ehr_reader", &["party", "linkage"]),
-    ("ferroehr_demographic", &["clinical", "linkage"]),
-    ("ferroehr_demographic_reader", &["clinical", "linkage"]),
-    ("ferroehr_linkage", &["clinical", "party"]),
-];
-
 /// Refuses to serve when a runtime role can read anything in a
-/// pseudonymisation domain it does not own.
+/// pseudonymisation domain it does not own, when two separately-configured
+/// domains turn out to authenticate as one role, or — under
+/// [`DeploymentProfile::Production`] — when a domain role is missing.
 ///
 /// The separation of the clinical record, the identity of its subject, and the
 /// map between them is a property of the DATABASE's grants, not of the
@@ -962,70 +937,159 @@ const DOMAIN_ROLE_BARRIERS: &[(&str, &[&str])] = &[
 /// PostgreSQL 18 `GRANT` §Notes,
 /// <https://www.postgresql.org/docs/18/sql-grant.html>).
 ///
-/// A role that does not exist is skipped rather than failed: role provisioning
-/// is a deployment step, and the migrations themselves create the roles only
-/// when the migrator holds `CREATEROLE` (dev, compose and the test harness run
-/// without them). The check therefore proves what it can see and never invents
-/// a failure out of an absent role.
+/// Two domains on ONE configured DSN are not a breach here — one DSN is one
+/// credential by construction, and that is the co-located posture the
+/// deployment profile reports as `shared_credential`. What is a breach is two
+/// domains the operator configured SEPARATELY that nevertheless authenticate as
+/// the same role: the deployment believes it made a separation it did not, and
+/// a control that cannot decide must never look like a policy outcome.
+///
+/// A role that does not exist is skipped with a warning under
+/// [`DeploymentProfile::Sandbox`] and refused under
+/// [`DeploymentProfile::Production`]: role provisioning is a deployment step,
+/// and the migrations create the roles only when the migrator holds
+/// `CREATEROLE` (dev, compose and the test harness run without it), so a
+/// sandbox proves what it can see — but a production deployment whose domain
+/// roles are absent has no grants to separate anything with, and this check
+/// would otherwise pass by having nothing to measure.
 ///
 /// # Errors
 ///
 /// [`DbError::DomainIsolationBreached`] naming the role, the object kind and
-/// the schema-qualified object it can reach, or [`DbError::Sqlx`] when the
-/// catalog read itself fails.
-pub async fn verify_domain_isolation(pool: &PgPool) -> Result<(), DbError> {
-    for (role, forbidden) in DOMAIN_ROLE_BARRIERS {
-        // The existence probe runs first and separately: `has_table_privilege`
-        // raises `undefined_object` for a role that does not exist
-        // (<https://www.postgresql.org/docs/18/functions-info.html>), so it can
-        // never be evaluated for one, not even under a WHERE that would discard
-        // the row.
-        let present: bool =
-            sqlx::query_scalar("SELECT EXISTS(SELECT 1 FROM pg_roles WHERE rolname = $1)")
-                .bind(role)
-                .fetch_one(pool)
-                .await?;
-        if !present {
-            continue;
+/// the schema-qualified object it can reach, [`DbError::DomainRoleShared`] when
+/// two separately-configured domains authenticate as one role,
+/// [`DbError::DomainRoleMissing`] under `production`, or [`DbError::Sqlx`] when
+/// a catalog read itself fails.
+pub async fn verify_domain_isolation(
+    pools: &DomainPools,
+    layout: &DomainLayout,
+    profile: DeploymentProfile,
+) -> Result<(), DbError> {
+    verify_role_barriers(pools.get(Domain::Clinical), profile).await?;
+    verify_configured_separation(pools, layout).await
+}
+
+/// The grant sweep: every domain role against every schema it must not reach.
+///
+/// One pool is enough and the clinical one is the natural choice: the check
+/// reads `pg_catalog` and the `has_*_privilege` functions, which answer about
+/// any role from any session.
+async fn verify_role_barriers(pool: &PgPool, profile: DeploymentProfile) -> Result<(), DbError> {
+    for domain in Domain::ALL {
+        let forbidden: Vec<String> = domain
+            .barred_from()
+            .iter()
+            .map(|schema| (*schema).to_owned())
+            .collect();
+        for role in domain.roles() {
+            // The existence probe runs first and separately:
+            // `has_table_privilege` raises `undefined_object` for a role that
+            // does not exist
+            // (<https://www.postgresql.org/docs/18/functions-info.html>), so it
+            // can never be evaluated for one, not even under a WHERE that would
+            // discard the row.
+            let present: bool =
+                sqlx::query_scalar("SELECT EXISTS(SELECT 1 FROM pg_roles WHERE rolname = $1)")
+                    .bind(role)
+                    .fetch_one(pool)
+                    .await?;
+            if !present {
+                if profile == DeploymentProfile::Production {
+                    return Err(DbError::DomainRoleMissing {
+                        role: (*role).to_owned(),
+                        domain,
+                    });
+                }
+                tracing::warn!(
+                    role = *role,
+                    %domain,
+                    "the domain role does not exist, so this database enforces no grant \
+                     separation for that domain; provision the runtime roles (the migrations \
+                     create them only with CREATEROLE). deployment_profile = \"production\" \
+                     refuses to boot in this state"
+                );
+                continue;
+            }
+            if forbidden.is_empty() {
+                continue;
+            }
+            let breach: Option<(String, String)> = sqlx::query_as(
+                "SELECT kind, relation FROM (
+                     SELECT CASE c.relkind
+                                WHEN 'S' THEN 'sequence'
+                                WHEN 'v' THEN 'view'
+                                WHEN 'm' THEN 'materialized view'
+                                WHEN 'f' THEN 'foreign table'
+                                ELSE 'table'
+                            END AS kind,
+                            n.nspname || '.' || c.relname AS relation
+                     FROM pg_namespace n
+                     JOIN pg_class c ON c.relnamespace = n.oid
+                     WHERE n.nspname = ANY($2)
+                       AND c.relkind IN ('r', 'p', 'v', 'm', 'f', 'S')
+                       AND CASE WHEN c.relkind = 'S'
+                                THEN has_sequence_privilege($1, c.oid, 'SELECT,USAGE')
+                                ELSE has_table_privilege($1, c.oid, 'SELECT')
+                           END
+                     UNION ALL
+                     SELECT 'function', n.nspname || '.' || p.proname
+                     FROM pg_namespace n
+                     JOIN pg_proc p ON p.pronamespace = n.oid
+                     WHERE n.nspname = ANY($2)
+                       AND has_function_privilege($1, p.oid, 'EXECUTE')
+                 ) reachable
+                 ORDER BY relation
+                 LIMIT 1",
+            )
+            .bind(role)
+            .bind(&forbidden)
+            .fetch_optional(pool)
+            .await?;
+            if let Some((kind, relation)) = breach {
+                return Err(DbError::DomainIsolationBreached {
+                    role: (*role).to_owned(),
+                    kind,
+                    relation,
+                });
+            }
         }
-        let forbidden: Vec<String> = forbidden.iter().map(|s| (*s).to_owned()).collect();
-        let breach: Option<(String, String)> = sqlx::query_as(
-            "SELECT kind, relation FROM (
-                 SELECT CASE c.relkind
-                            WHEN 'S' THEN 'sequence'
-                            WHEN 'v' THEN 'view'
-                            WHEN 'm' THEN 'materialized view'
-                            WHEN 'f' THEN 'foreign table'
-                            ELSE 'table'
-                        END AS kind,
-                        n.nspname || '.' || c.relname AS relation
-                 FROM pg_namespace n
-                 JOIN pg_class c ON c.relnamespace = n.oid
-                 WHERE n.nspname = ANY($2)
-                   AND c.relkind IN ('r', 'p', 'v', 'm', 'f', 'S')
-                   AND CASE WHEN c.relkind = 'S'
-                            THEN has_sequence_privilege($1, c.oid, 'SELECT,USAGE')
-                            ELSE has_table_privilege($1, c.oid, 'SELECT')
-                       END
-                 UNION ALL
-                 SELECT 'function', n.nspname || '.' || p.proname
-                 FROM pg_namespace n
-                 JOIN pg_proc p ON p.pronamespace = n.oid
-                 WHERE n.nspname = ANY($2)
-                   AND has_function_privilege($1, p.oid, 'EXECUTE')
-             ) reachable
-             ORDER BY relation
-             LIMIT 1",
-        )
-        .bind(role)
-        .bind(&forbidden)
-        .fetch_optional(pool)
-        .await?;
-        if let Some((kind, relation)) = breach {
-            return Err(DbError::DomainIsolationBreached {
-                role: (*role).to_owned(),
-                kind,
-                relation,
+    }
+    Ok(())
+}
+
+/// The credential check: two domains the operator placed on DIFFERENT DSNs must
+/// not authenticate as the same database role.
+///
+/// `current_user` is read from each pool rather than parsed out of the DSN: a
+/// DSN may take its user from the environment, a service file or a `.pgpass`
+/// entry, and what matters is the role the session actually holds
+/// (<https://www.postgresql.org/docs/18/functions-info.html>).
+async fn verify_configured_separation(
+    pools: &DomainPools,
+    layout: &DomainLayout,
+) -> Result<(), DbError> {
+    let mut roles: Vec<(Domain, String)> = Vec::new();
+    for domain in Domain::ALL {
+        let role: String = sqlx::query_scalar("SELECT current_user::text")
+            .fetch_one(pools.get(domain))
+            .await?;
+        roles.push((domain, role));
+    }
+    for (index, (domain, role)) in roles.iter().enumerate() {
+        for (other, other_role) in roles.iter().skip(index + 1) {
+            if role != other_role {
+                continue;
+            }
+            if layout
+                .placement(*domain)
+                .shares_dsn_with(layout.placement(*other))
+            {
+                continue;
+            }
+            return Err(DbError::DomainRoleShared {
+                domain: *domain,
+                other: *other,
+                role: role.clone(),
             });
         }
     }
@@ -1157,8 +1221,16 @@ async fn verify_set(
     Ok(())
 }
 
-/// The bootstrap + five-migrator sequence on one dedicated connection.
-async fn apply_migrations(conn: &mut PgConnection) -> Result<(), DbError> {
+/// The bootstrap, the `ext` set and each named domain's set, on one dedicated
+/// connection.
+///
+/// `ext` first, unconditionally: every later set finds its roles, helper
+/// functions and posture table in place, and a database that carries only one
+/// relocated domain still gets the helpers that domain's storage code calls.
+/// Already-applied sets are no-ops, which is what makes "the `ext` set is
+/// applied per database by whichever domain reaches it first" true without any
+/// bookkeeping of our own.
+async fn apply_migrations(conn: &mut PgConnection, domains: &[Domain]) -> Result<(), DbError> {
     guard_first_generation_database(&mut *conn).await?;
     for &statement in BOOTSTRAP {
         sqlx::query(statement).execute(&mut *conn).await?;
@@ -1169,25 +1241,16 @@ async fn apply_migrations(conn: &mut PgConnection) -> Result<(), DbError> {
         .await?;
     EXT_MIGRATOR.run(&mut *conn).await?;
 
-    sqlx::query("SET search_path TO clinical, ext")
-        .execute(&mut *conn)
-        .await?;
-    CLINICAL_MIGRATOR.run(&mut *conn).await?;
-
-    sqlx::query("SET search_path TO party, ext")
-        .execute(&mut *conn)
-        .await?;
-    PARTY_MIGRATOR.run(&mut *conn).await?;
-
-    sqlx::query("SET search_path TO linkage, ext")
-        .execute(&mut *conn)
-        .await?;
-    LINKAGE_MIGRATOR.run(&mut *conn).await?;
-
-    sqlx::query("SET search_path TO audit, ext")
-        .execute(&mut *conn)
-        .await?;
-    AUDIT_MIGRATOR.run(&mut *conn).await?;
+    for domain in domains {
+        let (schema, migrator) = domain_migrator(*domain);
+        // The schema name is one of the literals in `domain_migrator`, never
+        // input; PostgreSQL's SET takes no bind placeholder.
+        let search_path = format!("SET search_path TO {schema}, ext");
+        sqlx::query(sqlx::AssertSqlSafe(search_path))
+            .execute(&mut *conn)
+            .await?;
+        migrator.run(&mut *conn).await?;
+    }
     Ok(())
 }
 

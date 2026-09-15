@@ -265,7 +265,7 @@ impl FerroEhrService {
     /// and the default (server-side `digest`) version signer.
     ///
     /// The demographic pool is derived from `pool`'s own connect options
-    /// ([`crate::db::demographic_pool_from`]), so the demographic chapter reads
+    /// ([`crate::db::domain_pool_from`]), so the demographic chapter reads
     /// and writes the `demographic` schema without any further wiring — the
     /// SCHEMA separation is always on. A deployment that separates the runtime
     /// ROLES, tunes the pool, or enables tenancy supplies its own pool with
@@ -273,8 +273,8 @@ impl FerroEhrService {
     #[must_use]
     pub fn new(pool: PgPool) -> Self {
         Self {
-            demographic_pool: crate::db::demographic_pool_from(&pool),
-            linkage_pool: crate::db::linkage_pool_from(&pool),
+            demographic_pool: crate::db::domain_pool_from(&pool, crate::db::domain::Domain::Party),
+            linkage_pool: crate::db::domain_pool_from(&pool, crate::db::domain::Domain::Linkage),
             pool,
             system_id: DEFAULT_SYSTEM_ID.to_owned(),
             spec_profile: crate::config::profile::SpecProfile::default(),

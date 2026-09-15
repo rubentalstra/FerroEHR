@@ -107,8 +107,8 @@ impl std::str::FromStr for DeploymentProfile {
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize)]
 #[serde(rename_all = "snake_case")]
 pub enum DeploymentGap {
-    /// The clinical, demographic and linkage domains do not each connect on
-    /// their own database credential.
+    /// The clinical, party and linkage domains do not each connect on their own
+    /// database credential.
     SharedCredential,
     /// Two of the three domains reach the same `PostgreSQL` cluster, read from
     /// `pg_control_system().system_identifier` on each pool, never from the
@@ -146,12 +146,13 @@ impl DeploymentGap {
     pub const fn describe(self) -> &'static str {
         match self {
             Self::SharedCredential => {
-                "the clinical, demographic and linkage domains share a database credential; set \
-                 [db] demographic_url and linkage_url to roles that hold one domain each"
+                "the clinical, party and linkage domains share a database credential; set \
+                 [storage.party] url and [storage.linkage] url (or [storage.clinical] url) to \
+                 roles that hold one domain each"
             }
             Self::SharedCluster => {
                 "two domains reach the same PostgreSQL cluster (pg_control_system().system_identifier \
-                 is equal); give the demographic and linkage domains their own clusters"
+                 is equal); give the party and linkage domains their own clusters"
             }
             Self::OpenSubjectNamespace => {
                 "[privacy] subject_namespaces is empty, so an EHR_STATUS subject may carry a real \
@@ -183,8 +184,8 @@ impl fmt::Display for DeploymentGap {
 pub struct ClusterIdentities {
     /// The clinical pool's cluster.
     pub clinical: Option<String>,
-    /// The demographic pool's cluster.
-    pub demographic: Option<String>,
+    /// The party pool's cluster.
+    pub party: Option<String>,
     /// The linkage pool's cluster.
     pub linkage: Option<String>,
 }
@@ -193,7 +194,7 @@ impl ClusterIdentities {
     /// Whether any two known identifiers are equal.
     #[must_use]
     pub fn any_shared(&self) -> bool {
-        let known: Vec<&String> = [&self.clinical, &self.demographic, &self.linkage]
+        let known: Vec<&String> = [&self.clinical, &self.party, &self.linkage]
             .into_iter()
             .flatten()
             .collect();
@@ -222,7 +223,7 @@ impl DeploymentPosture {
     #[must_use]
     pub fn evaluate(config: &FerroEhrConfig, clusters: &ClusterIdentities) -> Self {
         let mut gaps = Vec::new();
-        if !(config.db.roles_are_separated() && config.db.linkage_role_is_separated()) {
+        if !config.storage.pseudonymisation_domains_are_separated() {
             gaps.push(DeploymentGap::SharedCredential);
         }
         if clusters.any_shared() {
@@ -295,10 +296,19 @@ mod tests {
     fn separated() -> FerroEhrConfig {
         FerroEhrConfig {
             db: crate::db::DbConfig {
-                demographic_url: Some(SecretUrl::new("postgres://d@h/x")),
-                linkage_url: Some(SecretUrl::new("postgres://l@h/x")),
                 migrate_url: Some(SecretUrl::new("postgres://m@h/x")),
                 ..crate::db::DbConfig::default()
+            },
+            storage: crate::db::domain::StorageConfig {
+                party: crate::db::domain::DomainDsn {
+                    url: Some(SecretUrl::new("postgres://d@h/x")),
+                    url_file: None,
+                },
+                linkage: crate::db::domain::DomainDsn {
+                    url: Some(SecretUrl::new("postgres://l@h/x")),
+                    url_file: None,
+                },
+                ..crate::db::domain::StorageConfig::default()
             },
             privacy: crate::privacy::config::PrivacyConfig {
                 subject_namespaces: vec!["urn:example:pseudonym".to_owned()],
@@ -318,7 +328,7 @@ mod tests {
     fn distinct_clusters() -> ClusterIdentities {
         ClusterIdentities {
             clinical: Some("1".to_owned()),
-            demographic: Some("2".to_owned()),
+            party: Some("2".to_owned()),
             linkage: Some("3".to_owned()),
         }
     }
@@ -332,7 +342,7 @@ mod tests {
         assert_eq!(config.deployment_profile, DeploymentProfile::Sandbox);
         let clusters = ClusterIdentities {
             clinical: Some("1".to_owned()),
-            demographic: Some("1".to_owned()),
+            party: Some("1".to_owned()),
             linkage: Some("1".to_owned()),
         };
         let posture = DeploymentPosture::evaluate(&config, &clusters);
@@ -395,7 +405,7 @@ mod tests {
         let config = production(separated());
         let same_cluster = ClusterIdentities {
             clinical: Some("7".to_owned()),
-            demographic: Some("7".to_owned()),
+            party: Some("7".to_owned()),
             linkage: Some("8".to_owned()),
         };
         let posture = DeploymentPosture::evaluate(&config, &same_cluster);

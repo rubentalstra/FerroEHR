@@ -65,8 +65,11 @@ pub struct FerroEhrConfig {
     pub deployment_accepts: Vec<deployment::DeploymentGap>,
     /// `[server]` — HTTP listener + REST surface + System-Options identity.
     pub server: server::ServerConfig,
-    /// `[db]` — `PostgreSQL` connection.
+    /// `[db]` — the shared `PostgreSQL` DSN, pool tuning and migration mode.
     pub db: crate::db::DbConfig,
+    /// `[storage]` — one DSN per storage domain (`clinical`, `party`,
+    /// `linkage`, `audit`), each defaulting to `[db].url`.
+    pub storage: crate::db::domain::StorageConfig,
     /// `[log]` — logging.
     pub log: crate::telemetry::config::LogConfig,
     /// `[telemetry]` — OpenTelemetry export.
