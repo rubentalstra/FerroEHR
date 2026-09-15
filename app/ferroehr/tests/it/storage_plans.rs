@@ -479,6 +479,78 @@ async fn a_point_read_on_the_partitioned_parent_probes_both_partitions() {
     assert_no_policy_qual(&plan, &scans);
 }
 
+// ── the head-row update ──────────────────────────────────────────────────────
+
+/// `(n_tup_upd, n_tup_hot_upd)` of `clinical.vo_head`.
+///
+/// The session's statistics snapshot is dropped first: a session reuses the
+/// snapshot it first read within a transaction
+/// (<https://www.postgresql.org/docs/18/monitoring-stats.html>).
+async fn head_update_counters(pool: &PgPool) -> (i64, i64) {
+    drop(
+        sqlx::query("SELECT pg_stat_clear_snapshot()")
+            .execute(pool)
+            .await,
+    );
+    sqlx::query_as(
+        "SELECT n_tup_upd, n_tup_hot_upd FROM pg_stat_user_tables \
+         WHERE schemaname = 'clinical' AND relname = 'vo_head'",
+    )
+    .fetch_one(pool)
+    .await
+    .expect("read the vo_head update counters")
+}
+
+/// Head-row updates the heap-only assertion counts.
+const SUPERSESSIONS: i64 = 3;
+
+#[tokio::test]
+async fn the_head_row_update_is_heap_only() {
+    let db = testkit::db().await.expect("testkit database");
+    let pool = db.pool();
+    let svc = FerroEhrService::new(pool.clone());
+    let ehr = svc.create_ehr(None).await.expect("create an EHR");
+    let body = composition("heap-only head");
+    let mut committed = svc
+        .create_composition(ehr, uv(&body, "249", None))
+        .await
+        .expect("commit the first version");
+
+    let (upd_before, hot_before) = head_update_counters(&pool).await;
+    for _ in 0..SUPERSESSIONS {
+        let preceding = committed.version_uid();
+        committed = svc
+            .update_composition(ehr, committed.vo_id, uv(&body, "251", Some(&preceding)))
+            .await
+            .expect("supersede the current version");
+    }
+
+    // A backend flushes its pending statistics when it next goes idle, so the
+    // counters are polled until the supersessions have arrived rather than
+    // read once after a guessed delay.
+    let mut counters = head_update_counters(&pool).await;
+    for _ in 0..100u32 {
+        if counters.0 - upd_before >= SUPERSESSIONS {
+            break;
+        }
+        tokio::time::sleep(std::time::Duration::from_millis(100)).await;
+        counters = head_update_counters(&pool).await;
+    }
+    let (updated, heap_only) = (counters.0 - upd_before, counters.1 - hot_before);
+    assert!(
+        updated >= SUPERSESSIONS,
+        "the supersessions reached the statistics collector: {updated} updates recorded"
+    );
+    // H1: the columns a commit writes on the head row are in no index, so every
+    // one of those updates is heap-only — no index insert, and the new tuple
+    // stays on its own page ("Heap-Only Tuples (HOT)",
+    // <https://www.postgresql.org/docs/18/storage-hot.html>).
+    assert_eq!(
+        heap_only, updated,
+        "H1: every commit's head-row update is heap-only ({heap_only} of {updated})"
+    );
+}
+
 // ── AQL ──────────────────────────────────────────────────────────────────────
 
 /// Lower an AQL statement to the SQL the engine runs, scoped to `ehr_ids`
