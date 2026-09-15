@@ -745,6 +745,19 @@ pub(crate) async fn ehr_create_with_id(
                                       Reachable only where `spec_profile = \"stable\"` \
                                       is configured; the body names switching \
                                       back to `development` as the remedy.",
+         body = serde_json::Value),
+        (status = 403, description = "OUR OWN EXTENSION — no ITS-REST \
+                                      operation defines restriction of \
+                                      processing. Processing of the addressed \
+                                      object is restricted, so the server holds \
+                                      it in storage and serves nothing from it \
+                                      (GDPR Art. 18(2) leaves storage as the \
+                                      only processing a restriction admits). \
+                                      Distinct from an authorization refusal: \
+                                      the same caller with the same rights is \
+                                      refused until the restriction is lifted, \
+                                      and the body says so. The 401/403 rows of \
+                                      the access layer are unchanged.",
          body = serde_json::Value)
     )
 )]
@@ -875,6 +888,19 @@ pub(crate) async fn ehr_status_get_by_version_id(
                                       Reachable only where `spec_profile = \"stable\"` \
                                       is configured; the body names switching \
                                       back to `development` as the remedy.",
+         body = serde_json::Value),
+        (status = 403, description = "OUR OWN EXTENSION — no ITS-REST \
+                                      operation defines restriction of \
+                                      processing. Processing of the addressed \
+                                      object is restricted, so the server holds \
+                                      it in storage and serves nothing from it \
+                                      (GDPR Art. 18(2) leaves storage as the \
+                                      only processing a restriction admits). \
+                                      Distinct from an authorization refusal: \
+                                      the same caller with the same rights is \
+                                      refused until the restriction is lifted, \
+                                      and the body says so. The 401/403 rows of \
+                                      the access layer are unchanged.",
          body = serde_json::Value)
     )
 )]
@@ -1166,6 +1192,19 @@ pub(crate) async fn ehr_status_get_at_time(
                                       status code `415 Unsupported Media Type`\"; \
                                       §\"Simplified Formats\" carries the same \
                                       MUST for the simplified types).",
+         body = serde_json::Value),
+        (status = 403, description = "OUR OWN EXTENSION — no ITS-REST \
+                                      operation defines restriction of \
+                                      processing. The addressed object, or the \
+                                      whole EHR, is restricted, so the write is \
+                                      refused and the stored content stays \
+                                      exactly as it is (GDPR Art. 18(2) leaves \
+                                      storage as the only processing a \
+                                      restriction admits). Distinct from an \
+                                      authorization refusal, and from the 409 a \
+                                      non-modifiable EHR answers with. The \
+                                      401/403 rows of the access layer are \
+                                      unchanged.",
          body = serde_json::Value)
     )
 )]
@@ -1357,6 +1396,19 @@ pub(crate) async fn versioned_ehr_status_get(
                                       with HTTP status code `406 Not \
                                       Acceptable`\"; the Simplified Formats are \
                                       not defined for this resource).",
+         body = serde_json::Value),
+        (status = 403, description = "OUR OWN EXTENSION — no ITS-REST \
+                                      operation defines restriction of \
+                                      processing. Processing of the addressed \
+                                      object is restricted, so the server holds \
+                                      it in storage and serves nothing from it \
+                                      (GDPR Art. 18(2) leaves storage as the \
+                                      only processing a restriction admits). \
+                                      Distinct from an authorization refusal: \
+                                      the same caller with the same rights is \
+                                      refused until the restriction is lifted, \
+                                      and the body says so. The 401/403 rows of \
+                                      the access layer are unchanged.",
          body = serde_json::Value)
     )
 )]
@@ -1525,6 +1577,19 @@ pub(crate) async fn versioned_ehr_status_revision_history(
                                       Reachable only where `spec_profile = \"stable\"` \
                                       is configured; the body names switching \
                                       back to `development` as the remedy.",
+         body = serde_json::Value),
+        (status = 403, description = "OUR OWN EXTENSION — no ITS-REST \
+                                      operation defines restriction of \
+                                      processing. Processing of the addressed \
+                                      object is restricted, so the server holds \
+                                      it in storage and serves nothing from it \
+                                      (GDPR Art. 18(2) leaves storage as the \
+                                      only processing a restriction admits). \
+                                      Distinct from an authorization refusal: \
+                                      the same caller with the same rights is \
+                                      refused until the restriction is lifted, \
+                                      and the body says so. The 401/403 rows of \
+                                      the access layer are unchanged.",
          body = serde_json::Value)
     )
 )]
@@ -1692,6 +1757,19 @@ pub(crate) async fn versioned_ehr_status_version_get_at_time(
                                       Reachable only where `spec_profile = \"stable\"` \
                                       is configured; the body names switching \
                                       back to `development` as the remedy.",
+         body = serde_json::Value),
+        (status = 403, description = "OUR OWN EXTENSION — no ITS-REST \
+                                      operation defines restriction of \
+                                      processing. Processing of the addressed \
+                                      object is restricted, so the server holds \
+                                      it in storage and serves nothing from it \
+                                      (GDPR Art. 18(2) leaves storage as the \
+                                      only processing a restriction admits). \
+                                      Distinct from an authorization refusal: \
+                                      the same caller with the same rights is \
+                                      refused until the restriction is lifted, \
+                                      and the body says so. The 401/403 rows of \
+                                      the access layer are unchanged.",
          body = serde_json::Value)
     )
 )]
@@ -2054,6 +2132,19 @@ pub(crate) async fn versioned_ehr_status_version_get_by_id(
                                       `specifications/responses/422.yaml`: \"the \
                                       underlying template is not known or is not \
                                       validating the supplied resource\").",
+         body = serde_json::Value),
+        (status = 403, description = "OUR OWN EXTENSION — no ITS-REST \
+                                      operation defines restriction of \
+                                      processing. The addressed object, or the \
+                                      whole EHR, is restricted, so the write is \
+                                      refused and the stored content stays \
+                                      exactly as it is (GDPR Art. 18(2) leaves \
+                                      storage as the only processing a \
+                                      restriction admits). Distinct from an \
+                                      authorization refusal, and from the 409 a \
+                                      non-modifiable EHR answers with. The \
+                                      401/403 rows of the access layer are \
+                                      unchanged.",
          body = serde_json::Value)
     )
 )]
@@ -2291,6 +2382,19 @@ pub(crate) async fn composition_create(
                                       Reachable only where `spec_profile = \"stable\"` \
                                       is configured; the body names switching \
                                       back to `development` as the remedy.",
+         body = serde_json::Value),
+        (status = 403, description = "OUR OWN EXTENSION — no ITS-REST \
+                                      operation defines restriction of \
+                                      processing. Processing of the addressed \
+                                      object is restricted, so the server holds \
+                                      it in storage and serves nothing from it \
+                                      (GDPR Art. 18(2) leaves storage as the \
+                                      only processing a restriction admits). \
+                                      Distinct from an authorization refusal: \
+                                      the same caller with the same rights is \
+                                      refused until the restriction is lifted, \
+                                      and the body says so. The 401/403 rows of \
+                                      the access layer are unchanged.",
          body = serde_json::Value)
     )
 )]
@@ -2733,6 +2837,19 @@ pub(crate) async fn composition_get(
                                       VERSIONED_COMPOSITION, and the conformance \
                                       catalogue carries the rule as a \
                                       register-backed, reported-only expectation.",
+         body = serde_json::Value),
+        (status = 403, description = "OUR OWN EXTENSION — no ITS-REST \
+                                      operation defines restriction of \
+                                      processing. The addressed object, or the \
+                                      whole EHR, is restricted, so the write is \
+                                      refused and the stored content stays \
+                                      exactly as it is (GDPR Art. 18(2) leaves \
+                                      storage as the only processing a \
+                                      restriction admits). Distinct from an \
+                                      authorization refusal, and from the 409 a \
+                                      non-modifiable EHR answers with. The \
+                                      401/403 rows of the access layer are \
+                                      unchanged.",
          body = serde_json::Value)
     )
 )]
@@ -2885,7 +3002,20 @@ pub(crate) async fn composition_update(
               description = "The commit instant of that current latest version as \
                              an HTTP-date, carried alongside the `ETag` \
                              (§\"ETag and Last-Modified\")."),
-         ))
+         )),
+        (status = 403, description = "OUR OWN EXTENSION — no ITS-REST \
+                                      operation defines restriction of \
+                                      processing. The addressed object, or the \
+                                      whole EHR, is restricted, so the write is \
+                                      refused and the stored content stays \
+                                      exactly as it is (GDPR Art. 18(2) leaves \
+                                      storage as the only processing a \
+                                      restriction admits). Distinct from an \
+                                      authorization refusal, and from the 409 a \
+                                      non-modifiable EHR answers with. The \
+                                      401/403 rows of the access layer are \
+                                      unchanged.",
+         body = serde_json::Value)
     )
 )]
 pub(crate) async fn composition_delete(
@@ -3112,6 +3242,19 @@ pub(crate) async fn versioned_composition_get(
                                       Format\": an unfulfillable `Accept` MUST be \
                                       `406`; the Simplified Formats are not \
                                       defined for this resource).",
+         body = serde_json::Value),
+        (status = 403, description = "OUR OWN EXTENSION — no ITS-REST \
+                                      operation defines restriction of \
+                                      processing. Processing of the addressed \
+                                      object is restricted, so the server holds \
+                                      it in storage and serves nothing from it \
+                                      (GDPR Art. 18(2) leaves storage as the \
+                                      only processing a restriction admits). \
+                                      Distinct from an authorization refusal: \
+                                      the same caller with the same rights is \
+                                      refused until the restriction is lifted, \
+                                      and the body says so. The 401/403 rows of \
+                                      the access layer are unchanged.",
          body = serde_json::Value)
     )
 )]
@@ -3319,6 +3462,19 @@ pub(crate) async fn versioned_composition_revision_history(
                                       Reachable only where `spec_profile = \"stable\"` \
                                       is configured; the body names switching \
                                       back to `development` as the remedy.",
+         body = serde_json::Value),
+        (status = 403, description = "OUR OWN EXTENSION — no ITS-REST \
+                                      operation defines restriction of \
+                                      processing. Processing of the addressed \
+                                      object is restricted, so the server holds \
+                                      it in storage and serves nothing from it \
+                                      (GDPR Art. 18(2) leaves storage as the \
+                                      only processing a restriction admits). \
+                                      Distinct from an authorization refusal: \
+                                      the same caller with the same rights is \
+                                      refused until the restriction is lifted, \
+                                      and the body says so. The 401/403 rows of \
+                                      the access layer are unchanged.",
          body = serde_json::Value)
     )
 )]
@@ -3543,6 +3699,19 @@ pub(crate) async fn versioned_composition_version_get_at_time(
                                       Reachable only where `spec_profile = \"stable\"` \
                                       is configured; the body names switching \
                                       back to `development` as the remedy.",
+         body = serde_json::Value),
+        (status = 403, description = "OUR OWN EXTENSION — no ITS-REST \
+                                      operation defines restriction of \
+                                      processing. Processing of the addressed \
+                                      object is restricted, so the server holds \
+                                      it in storage and serves nothing from it \
+                                      (GDPR Art. 18(2) leaves storage as the \
+                                      only processing a restriction admits). \
+                                      Distinct from an authorization refusal: \
+                                      the same caller with the same rights is \
+                                      refused until the restriction is lifted, \
+                                      and the body says so. The 401/403 rows of \
+                                      the access layer are unchanged.",
          body = serde_json::Value)
     )
 )]
@@ -3737,6 +3906,19 @@ pub(crate) async fn versioned_composition_version_get_by_id(
                                       Reachable only where `spec_profile = \"stable\"` \
                                       is configured; the body names switching \
                                       back to `development` as the remedy.",
+         body = serde_json::Value),
+        (status = 403, description = "OUR OWN EXTENSION — no ITS-REST \
+                                      operation defines restriction of \
+                                      processing. Processing of the addressed \
+                                      object is restricted, so the server holds \
+                                      it in storage and serves nothing from it \
+                                      (GDPR Art. 18(2) leaves storage as the \
+                                      only processing a restriction admits). \
+                                      Distinct from an authorization refusal: \
+                                      the same caller with the same rights is \
+                                      refused until the restriction is lifted, \
+                                      and the body says so. The 401/403 rows of \
+                                      the access layer are unchanged.",
          body = serde_json::Value)
     )
 )]
@@ -4127,6 +4309,19 @@ pub(crate) async fn directory_get_at_time(
                                       `object_ref.adoc`: targets \"may exist \
                                       locally or be maintained outside the \
                                       current namespace\").",
+         body = serde_json::Value),
+        (status = 403, description = "OUR OWN EXTENSION — no ITS-REST \
+                                      operation defines restriction of \
+                                      processing. The addressed object, or the \
+                                      whole EHR, is restricted, so the write is \
+                                      refused and the stored content stays \
+                                      exactly as it is (GDPR Art. 18(2) leaves \
+                                      storage as the only processing a \
+                                      restriction admits). Distinct from an \
+                                      authorization refusal, and from the 409 a \
+                                      non-modifiable EHR answers with. The \
+                                      401/403 rows of the access layer are \
+                                      unchanged.",
          body = serde_json::Value)
     )
 )]
@@ -4429,6 +4624,19 @@ pub(crate) async fn directory_update(
                                       `object_ref.adoc`: targets \"may exist \
                                       locally or be maintained outside the \
                                       current namespace\").",
+         body = serde_json::Value),
+        (status = 403, description = "OUR OWN EXTENSION — no ITS-REST \
+                                      operation defines restriction of \
+                                      processing. The addressed object, or the \
+                                      whole EHR, is restricted, so the write is \
+                                      refused and the stored content stays \
+                                      exactly as it is (GDPR Art. 18(2) leaves \
+                                      storage as the only processing a \
+                                      restriction admits). Distinct from an \
+                                      authorization refusal, and from the 409 a \
+                                      non-modifiable EHR answers with. The \
+                                      401/403 rows of the access layer are \
+                                      unchanged.",
          body = serde_json::Value)
     )
 )]
@@ -4626,6 +4834,19 @@ pub(crate) async fn directory_create(
                                       (`Resources.md` §Simplified Formats), so \
                                       the request is refused uniformly — even \
                                       though this operation takes no body.",
+         body = serde_json::Value),
+        (status = 403, description = "OUR OWN EXTENSION — no ITS-REST \
+                                      operation defines restriction of \
+                                      processing. The addressed object, or the \
+                                      whole EHR, is restricted, so the write is \
+                                      refused and the stored content stays \
+                                      exactly as it is (GDPR Art. 18(2) leaves \
+                                      storage as the only processing a \
+                                      restriction admits). Distinct from an \
+                                      authorization refusal, and from the 409 a \
+                                      non-modifiable EHR answers with. The \
+                                      401/403 rows of the access layer are \
+                                      unchanged.",
          body = serde_json::Value)
     )
 )]
@@ -4807,6 +5028,19 @@ pub(crate) async fn directory_delete(
                                       Reachable only where `spec_profile = \"stable\"` \
                                       is configured; the body names switching \
                                       back to `development` as the remedy.",
+         body = serde_json::Value),
+        (status = 403, description = "OUR OWN EXTENSION — no ITS-REST \
+                                      operation defines restriction of \
+                                      processing. Processing of the addressed \
+                                      object is restricted, so the server holds \
+                                      it in storage and serves nothing from it \
+                                      (GDPR Art. 18(2) leaves storage as the \
+                                      only processing a restriction admits). \
+                                      Distinct from an authorization refusal: \
+                                      the same caller with the same rights is \
+                                      refused until the restriction is lifted, \
+                                      and the body says so. The 401/403 rows of \
+                                      the access layer are unchanged.",
          body = serde_json::Value)
     )
 )]
@@ -5338,6 +5572,19 @@ pub(crate) async fn directory_get_by_version_id(
                                       does not declare — merge provenance is \
                                       served on reads only), is a `400` shape \
                                       failure, not a `422`.",
+         body = serde_json::Value),
+        (status = 403, description = "OUR OWN EXTENSION — no ITS-REST \
+                                      operation defines restriction of \
+                                      processing. The addressed object, or the \
+                                      whole EHR, is restricted, so the write is \
+                                      refused and the stored content stays \
+                                      exactly as it is (GDPR Art. 18(2) leaves \
+                                      storage as the only processing a \
+                                      restriction admits). Distinct from an \
+                                      authorization refusal, and from the 409 a \
+                                      non-modifiable EHR answers with. The \
+                                      401/403 rows of the access layer are \
+                                      unchanged.",
          body = serde_json::Value)
     )
 )]

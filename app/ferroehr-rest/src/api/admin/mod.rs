@@ -21,5 +21,6 @@ pub mod archive;
 pub mod dispatch;
 pub mod dump_load;
 pub mod integrity;
+pub mod marks;
 pub(crate) mod openapi_routes;
 pub mod report;

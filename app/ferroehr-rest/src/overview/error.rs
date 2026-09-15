@@ -110,7 +110,13 @@ pub(crate) fn sm_api_error(e: SmError) -> ApiError {
     use CallStatusType as S;
     let message = e.message;
     match e.status {
-        S::AuthFailure => ApiError::Forbidden(message),
+        // Two different refusals, one status. AuthFailure is the access
+        // layer's; ProcessingRestricted is the legal mark's, our own
+        // extension — no ITS-REST operation defines restriction of
+        // processing, and GDPR Art. 18(2) leaves storage as the only
+        // processing it admits (`docs/law/eu/gdpr/text.html`). RFC 9110
+        // §15.5.4 is the HTTP authority for both; the body says which.
+        S::AuthFailure | S::ProcessingRestricted => ApiError::Forbidden(message),
         S::PreconditionViolation | S::InvalidIdPattern => ApiError::BadRequest(message),
         S::ObjectVersionDoesNotExist
         | S::VersionedObjectDoesNotExist
