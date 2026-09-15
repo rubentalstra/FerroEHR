@@ -370,14 +370,15 @@ async fn a_restricted_composition_is_refused_while_the_record_stays_in_use() {
     assert_eq!(status, StatusCode::CREATED, "OPT upload: {body}");
 
     let ehr_id = create_ehr(&app).await;
-    let (status, body) = send(
-        &app,
-        post_json(
-            &format!("/ehr/{ehr_id}/composition"),
-            &common::ips_canonical_composition().to_string(),
-        ),
-    )
-    .await;
+    let mut commit = post_json(
+        &format!("/ehr/{ehr_id}/composition"),
+        &common::ips_canonical_composition().to_string(),
+    );
+    commit.headers_mut().insert(
+        "Prefer",
+        http::HeaderValue::from_static("return=representation"),
+    );
+    let (status, body) = send(&app, commit).await;
     assert_eq!(status, StatusCode::CREATED, "composition commit: {body}");
     let value: serde_json::Value = serde_json::from_str(&body).expect("composition json");
     let ovid = value["uid"]["value"].as_str().expect("uid").to_owned();

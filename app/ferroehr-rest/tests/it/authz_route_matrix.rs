@@ -340,6 +340,13 @@ const ADMIN_READ: &[(&str, &str)] = &[
     // defect classes only — a pinned EXTENSION_READ_ROUTES read despite the
     // POST verb, so a read-only integrity auditor can run it (#2692).
     ("POST", "/admin/integrity/verify"),
+    // The legal registers, read side: the restriction sequence a controller
+    // answers an Art. 18(3) notice from, the declared retention periods, and
+    // what has fallen due. They carry ids, grounds and citations, never
+    // content.
+    ("GET", "/admin/restriction"),
+    ("GET", "/admin/retention/policy"),
+    ("GET", "/admin/retention/due"),
 ];
 
 /// Admin-class writes (base-relative).
@@ -361,6 +368,16 @@ const ADMIN_WRITE: &[(&str, &str)] = &[
     ("POST", "/admin/archive/parties/restore"),
     ("POST", "/admin/dump"),
     ("POST", "/admin/load"),
+    // The legal marks, write side. Each one changes what every other route
+    // answers for the named record, so a read-only principal is refused: a
+    // restriction takes an object out of every read, query, export and event,
+    // and a retention hold decides what a disposal would cover.
+    ("POST", "/admin/restriction"),
+    ("POST", "/admin/restriction/lift"),
+    ("POST", "/admin/research-objection"),
+    ("PUT", "/admin/retention/policy"),
+    ("PUT", "/admin/retention/anchor"),
+    ("POST", "/admin/retention/hold"),
     // The repair the parity sweep is the diagnosis for. Unlike the sweep it
     // REPLACES stored rows, so it stays out of EXTENSION_READ_ROUTES and a
     // read-only server refuses it (#3143).
