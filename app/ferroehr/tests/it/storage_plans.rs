@@ -274,7 +274,7 @@ fn partitions<'a>(scans: &'a [Scan], relation: &str) -> Vec<&'a str> {
 /// Assert that no plan node carries a row-security qualifier.
 ///
 /// H9: the instance is single-tenant, so no policy exists to attach a qual or
-/// an InitPlan to any scan. The whole plan is searched as text because a policy
+/// an `InitPlan` to any scan. The whole plan is searched as text because a policy
 /// qual can surface as a `Filter`, an `Index Cond` or a subplan, and any of the
 /// three would be a regression.
 fn assert_no_policy_qual(plan: &Value, scans: &[Scan]) {
