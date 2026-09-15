@@ -41,6 +41,28 @@ comments where they carry prose. It does not rewrite the vendored specs
    digital world", "We stand at an inflection point", "As the healthcare
    landscape evolves". Open with the subject of the section.
 
+6. **The AI word list, banned outright (owner directive 2026-09-15).** These
+   words and phrases do not appear in anything a person reads, whether an
+   issue comment, a Discourse reply, a pull request body or a page: delve,
+   underscore, pivotal, realm, harness, illuminate, shed light on, facilitate,
+   refine, bolster, differentiate, streamline, leverage, elevate, testament,
+   landscape, seamless, empower, unlock, journey, robust, revolutionize,
+   innovative, cutting-edge, game-changing, transformative, holistic, synergy,
+   scalable solution, seamless integration; the transitions "that being said",
+   "at its core", "to put it simply", "this underscores the importance of",
+   "a key takeaway is", "from a broader perspective", "in short", "in
+   summary", "so, to the original question"; the hedges "generally speaking",
+   "typically", "tends to", "arguably", "to some extent", "broadly speaking".
+   Use the plain word or cut the sentence.
+7. **No padding and no flattery.** No praise of the reader's work ("you did
+   the hard part", "careful report", "exactly the right question"), no recap
+   of what the reader already knows, no closing summary, no sentence that
+   announces what the next sentence does ("Two things follow."). One
+   thank-you clause at most, then the facts.
+8. **No claim that something was done when it was not.** An issue on this
+   tracker is not an upstream report; a draft is not a submission. Name what
+   exists with its full link and say what has not happened yet.
+
 ## How to write instead
 
 Short sentences. Concrete nouns and numbers over adjectives. Say who does
@@ -50,5 +72,7 @@ what the server "is designed to" do.
 
 ## Enforcement
 
-Review-enforced (prose has no lint). The page-per-page website sweep is
-#2623; new prose is held to this rule at review from 2026-08-24 on.
+Review-enforced (prose has no lint). Before posting a comment, a Discourse
+reply or a PR body, grep the draft against the lists in items 3, 6 and 7. The
+page-per-page website sweep is #2623; new prose is held to this rule at review
+from 2026-08-24 on, and to the banned list from 2026-09-15 on.
