@@ -40,6 +40,7 @@ mod cohort_bench;
 mod cohort_query;
 mod directory_item_refs;
 mod events_amqp;
+mod ext_functions;
 mod fhir_ingest_translate;
 mod fhir_outbound_amqp;
 mod fhir_priority_categories;
