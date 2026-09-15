@@ -47,35 +47,40 @@ COMMENT ON TABLE fhir_mapping IS 'FHIR-connector mapping store: deployable artef
 COMMENT ON COLUMN fhir_mapping.definition IS 'The mapping definition (field bindings, code-system translations, subject/context rules), validated on upload and stored verbatim.';
 
 -- ── blob_ref ─────────────────────────────────────────────────────────────────
--- Which stored version references which content-addressed multimedia blob.
+-- Which stored version references which externalized multimedia blob.
 --
--- DV_MULTIMEDIA may carry its content by reference (RM data_types
--- master06-quantity_package.adoc is not its home; the class is
--- UML/classes/org.openehr.rm.data_types.dv_multimedia.adoc, whose `uri` is an
--- external reference), and the multimedia store holds the bytes outside the
--- database. Garbage collection then has to answer "is this blob still
--- referenced", which today scans every node row. This index answers it as an
--- anti-join instead.
+-- `DV_MULTIMEDIA` may carry its content by reference
+-- (`docs/specs/openehr/RM/docs/UML/classes/org.openehr.rm.data_types.dv_multimedia.adoc`:
+-- `uri` is a "URI reference to electronic information stored outside the
+-- record as a file, database entry etc"), and the multimedia store holds those
+-- bytes outside the database. Garbage collection after a physical delete
+-- then has to answer "does any surviving version still reference this blob",
+-- which a scan of every `node` row answers slowly and a lookup here answers as
+-- an index probe. Our own extension — no openEHR spec governs multimedia
+-- offload.
 --
--- DDL only in this change; the rows are not yet maintained.
--- TODO(#3347): populate blob_ref at commit and make the blob garbage
--- collection an anti-join over it rather than a scan of node.
+-- One row per (version, URI). The rows are written by the node write path, in
+-- the same transaction as the nodes they describe, so the index is never
+-- behind the content it indexes; and the foreign key below carries them across
+-- the tier move and removes them with the version, so nothing else maintains
+-- them.
 CREATE TABLE blob_ref (
+    -- The storage tier, kept in lockstep with the version row by the foreign
+    -- key's ON UPDATE CASCADE, exactly as `node` is.
+    tier        text NOT NULL DEFAULT 'hot',
     vo_id       uuid NOT NULL,
     sys_version integer NOT NULL,
-    ehr_id      uuid,
-    -- The content address of the referenced blob, as the multimedia store
-    -- spells it.
-    digest      text NOT NULL,
-    media_type  text,
-    size_bytes  bigint,
-    CONSTRAINT pk_blob_ref PRIMARY KEY (vo_id, sys_version, digest),
-    CONSTRAINT ck_blob_ref_size CHECK (size_bytes IS NULL OR size_bytes >= 0)
+    -- The referenced blob's URI, as the stored body spells it.
+    uri         text NOT NULL,
+    CONSTRAINT pk_blob_ref PRIMARY KEY (tier, vo_id, sys_version, uri),
+    CONSTRAINT ck_blob_ref_tier CHECK (tier IN ('hot', 'cold')),
+    CONSTRAINT fk_blob_ref_version FOREIGN KEY (tier, vo_id, sys_version)
+        REFERENCES version (tier, vo_id, sys_version)
+        ON DELETE CASCADE ON UPDATE CASCADE
 );
 
--- The garbage collector's question: does any version still reference this
--- blob.
-CREATE INDEX idx_blob_ref_digest ON blob_ref (digest);
+-- The collector's question, over both tiers: is this URI still referenced.
+CREATE INDEX idx_blob_ref_uri ON blob_ref (uri);
 
-COMMENT ON TABLE blob_ref IS 'Which stored version references which content-addressed multimedia blob, so blob garbage collection is an anti-join rather than a scan of node. Our own extension.';
-COMMENT ON COLUMN blob_ref.digest IS 'The content address of the referenced blob, as the multimedia store spells it.';
+COMMENT ON TABLE blob_ref IS 'Which stored version references which externalized multimedia blob, so blob garbage collection is a lookup rather than a scan of node. Written by the node write path in the same transaction; carried across the tier move and removed with the version by its foreign key. Our own extension.';
+COMMENT ON COLUMN blob_ref.uri IS 'The referenced blob''s URI, as the stored body spells it.';

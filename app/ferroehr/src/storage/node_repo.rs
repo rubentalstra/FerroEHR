@@ -152,6 +152,10 @@ static WRITE_NODES_BATCH_SQL: std::sync::LazyLock<String> =
 /// Deletion) has no node rows — the caller simply passes an empty slice and no
 /// statement runs.
 ///
+/// The externalized multimedia URIs the rows reference are indexed in the same
+/// transaction ([`crate::storage::blob_ref::record`]), so the blob collector
+/// never has to scan `node`.
+///
 /// # Errors
 ///
 /// Returns [`StorageError::Database`] on any driver/insert failure.
@@ -175,6 +179,7 @@ pub async fn write_nodes(
         .bind(ehr_id);
     let refs: Vec<&NodeRow> = rows.iter().collect();
     bind_node_arrays(query, &refs).execute(&mut *tx).await?;
+    crate::storage::blob_ref::record(tx, &[(vo_id, sys_version, rows)]).await?;
     Ok(())
 }
 
@@ -184,7 +189,10 @@ pub async fn write_nodes(
 /// The same fixed-text `unnest` shape as [`write_nodes`], with the storage
 /// context (`vo_id`/`sys_version`/`ehr_id`) unnesting per row instead of
 /// binding as constants. The archive load writes a whole record's node rows
-/// through this (never one statement per version).
+/// through this (never one statement per version), and their externalized
+/// multimedia URIs are indexed with them
+/// ([`crate::storage::blob_ref::record`]), so a loaded record's blobs are as
+/// visible to the collector as a committed one's.
 ///
 /// # Errors
 ///
@@ -214,6 +222,11 @@ pub async fn write_nodes_batch(
         .bind(sys_versions)
         .bind(ehr_ids);
     bind_node_arrays(query, &refs).execute(&mut *tx).await?;
+    let blob_refs: Vec<(VoId, i32, &[NodeRow])> = versions
+        .iter()
+        .map(|(vo_id, sys_version, _, rows)| (*vo_id, *sys_version, rows.as_slice()))
+        .collect();
+    crate::storage::blob_ref::record(tx, &blob_refs).await?;
     Ok(())
 }
 

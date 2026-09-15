@@ -1,7 +1,7 @@
 // SPDX-FileCopyrightText: Ruben Talstra
 // SPDX-License-Identifier: BUSL-1.1
 
-//! The cold archival storage tier: the move, its reverse, and the purge.
+//! The cold archival storage tier: the move and its reverse.
 //!
 //! No openEHR spec governs storage tiering — our own design/extension. The SM
 //! operation it realizes is `I_ADMIN_ARCHIVE`
@@ -26,7 +26,7 @@
 
 use sqlx::PgConnection;
 
-use crate::ids::{EhrId, VoId};
+use crate::ids::VoId;
 use crate::storage::error::StorageError;
 
 /// Moves every version of `vo_ids` to the cold tier, and records the move on
@@ -104,39 +104,4 @@ pub async fn archived(tx: &mut PgConnection, vo_ids: &[VoId]) -> Result<Vec<VoId
             .fetch_all(&mut *tx)
             .await?;
     Ok(rows.into_iter().map(VoId).collect())
-}
-
-/// Deletes every cold-tier row of one EHR.
-///
-/// Physical deletion reaches the cold tier by the ordinary `ehr_id` cascade now
-/// that the tier is a partition of the same relation, so this exists for the
-/// paths that delete tier by tier rather than by EHR row.
-///
-/// # Errors
-/// Returns [`StorageError::Database`] on any driver/statement failure.
-pub async fn purge_ehrs(tx: &mut PgConnection, ehr_ids: &[EhrId]) -> Result<(), StorageError> {
-    if ehr_ids.is_empty() {
-        return Ok(());
-    }
-    sqlx::query("DELETE FROM version WHERE ehr_id = ANY($1) AND tier = 'cold'")
-        .bind(ehr_ids)
-        .execute(&mut *tx)
-        .await?;
-    Ok(())
-}
-
-/// Deletes every cold-tier row of the named versioned objects — the tier's half
-/// of a physical PARTY delete.
-///
-/// # Errors
-/// Returns [`StorageError::Database`] on any driver/statement failure.
-pub async fn purge_vos(tx: &mut PgConnection, vo_ids: &[VoId]) -> Result<(), StorageError> {
-    if vo_ids.is_empty() {
-        return Ok(());
-    }
-    sqlx::query("DELETE FROM version WHERE vo_id = ANY($1) AND tier = 'cold'")
-        .bind(vo_ids)
-        .execute(&mut *tx)
-        .await?;
-    Ok(())
 }
