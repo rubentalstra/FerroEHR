@@ -420,6 +420,22 @@ impl DomainPools {
         }
     }
 
+    /// Four lazily-opened pools over the DSN one existing pool already holds —
+    /// the co-located deployment's four domains, for a caller that has a
+    /// [`PgPool`] and no configuration.
+    ///
+    /// [`crate::db::domain_pool_from`] per domain: pool defaults rather than a
+    /// deployment's tuning, and no connection opened until one is asked for.
+    #[must_use]
+    pub fn from_shared(pool: &PgPool) -> Self {
+        Self {
+            clinical: crate::db::domain_pool_from(pool, Domain::Clinical),
+            party: crate::db::domain_pool_from(pool, Domain::Party),
+            linkage: crate::db::domain_pool_from(pool, Domain::Linkage),
+            audit: crate::db::domain_pool_from(pool, Domain::Audit),
+        }
+    }
+
     /// Close every pool, in domain order.
     pub async fn close(&self) {
         for domain in Domain::ALL {
@@ -472,7 +488,7 @@ mod tests {
         let groups = layout.groups();
         assert_eq!(groups.len(), 2, "{groups:?}");
         assert_eq!(
-            groups[0].1,
+            groups[0].domains,
             vec![Domain::Clinical, Domain::Linkage, Domain::Audit]
         );
         assert_eq!(groups[1].domains, vec![Domain::Party]);

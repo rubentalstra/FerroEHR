@@ -122,65 +122,95 @@ database:
   # and use existingSecret in production. Ignored when existingSecret is set.
   url: ""
 
-  # ── the demographic pseudonymisation domain ────────────────────────────────
-  # The clinical and demographic schemas are separated unconditionally, and the
-  # server refuses to boot if either runtime role can read across. What the
-  # keys below add is the CREDENTIAL separation: point the demographic pool at
-  # its own DSN and one leaked connection string no longer reaches both
-  # domains. GDPR Art. 4(5) treats the identifying data as what must be kept
-  # apart; no openEHR spec governs database roles — our own design.
+  # ── one credential per storage domain ──────────────────────────────────────
+  # The four storage domains — clinical, party, linkage, audit — are separated
+  # by schema unconditionally, and the server refuses to boot if a runtime role
+  # can read across. What the blocks below add is the CREDENTIAL separation, and
+  # with it the ability to move a domain to a database or cluster of its own:
+  # each domain's pool connects on `[storage.<domain>].url`, and one leaked
+  # connection string then reaches one domain rather than all of them.
   #
-  # Leave both empty and the demographic pool uses the same DSN as the clinical
-  # one, which is the schema-only posture: still separated, still boot-checked,
-  # one credential.
+  # Leave a domain's block empty and it uses the DSN above, which is the
+  # schema-only posture: still separated, still boot-checked, one credential.
+  # GDPR Art. 4(5) treats the identifying data as what must be kept apart; the
+  # Swiss EPDV Art. 10 Abs. 1 lit. b asks for storage "von anderen Datenbeständen
+  # getrennt" and DSV Art. 4 Abs. 5 for the log to be kept "getrennt vom System,
+  # in welchem die Personendaten bearbeitet werden" — separations a schema inside
+  # one database cannot make, because a base backup, WAL archiving and physical
+  # replication carry every schema together. No openEHR spec governs database
+  # roles — our own design.
   #
-  # The four runtime roles (ferroehr_ehr, ferroehr_demographic and a read-only
-  # twin of each) are created by the migrations ONLY when the migrator holds
-  # CREATEROLE; otherwise they are skipped with a NOTICE and provisioning them
-  # is yours. `ferroehr db verify` reports whether the boundary holds.
-
-  # -- Reference an existing Secret holding the DEMOGRAPHIC-role DSN. Its value
-  # is a full `postgres://ferroehr_demographic:...@host:5432/ferroehr`, a
-  # different credential from `database.existingSecret` above.
-  demographicExistingSecret: ""
-  # -- Key WITHIN demographicExistingSecret holding the demographic DSN.
-  # Mounted as a file; only its PATH reaches the pod's environment.
-  demographicExistingSecretKey: FERROEHR__DB__DEMOGRAPHIC_URL
-  # -- Inline demographic DSN (DEV/TEST ONLY — lands in a chart-managed
-  # Secret). Ignored when demographicExistingSecret is set.
-  demographicUrl: ""
-
-  # ── the linkage pseudonymisation domain ────────────────────────────────────
-  # The third domain, and the one the other two exist to be kept apart from:
-  # `linkage` holds which party is the subject of which EHR, the map that
-  # re-attributes a pseudonymised record to a person (GDPR Art. 4(5)). Same
-  # arrangement as above — the schema separation is unconditional, and these
-  # keys add the CREDENTIAL separation.
+  # The five runtime roles (ferroehr_clinical, ferroehr_party and a read-only
+  # twin of each, plus ferroehr_linkage) are created by the migrations ONLY when
+  # the migrator holds CREATEROLE; otherwise they are skipped with a NOTICE and
+  # provisioning them is yours. `ferroehr db verify` reports whether the
+  # boundary holds, and `deployment_profile: production` refuses to boot while a
+  # domain role is missing.
   #
-  # Set all three DSNs and no credential the server uses can join an identity
-  # to a record in SQL: `ferroehr_linkage` is revoked from the clinical and
-  # demographic schemas and both are revoked from `linkage`, in both
-  # directions, and the boot self-check refuses a database where that is not
-  # true. The crossing then happens in the application, over two connections,
-  # and every resolution is recorded as a linkage-domain access event.
+  # Set every domain and no credential the server uses can join an identity to a
+  # record in SQL: ferroehr_linkage is revoked from the clinical and party
+  # schemas and both are revoked from linkage, in both directions. The crossing
+  # then happens in the application, over two connections, and every resolution
+  # is recorded as a linkage-domain access event.
+  #
+  # NOTE: the linkage domain's migration set names a function the party set
+  # creates, so the two are prepared in the same database; the server refuses a
+  # layout that splits them rather than failing partway through a migration.
 
-  # -- Reference an existing Secret holding the LINKAGE-role DSN. Its value is
-  # a full `postgres://ferroehr_linkage:...@host:5432/ferroehr`, a third
-  # credential distinct from the two above.
-  linkageExistingSecret: ""
-  # -- Key WITHIN linkageExistingSecret holding the linkage DSN. Mounted as a
-  # file; only its PATH reaches the pod's environment.
-  linkageExistingSecretKey: FERROEHR__DB__LINKAGE_URL
-  # -- Inline linkage DSN (DEV/TEST ONLY — lands in a chart-managed Secret).
-  # Ignored when linkageExistingSecret is set.
-  linkageUrl: ""
+  clinical:
+    # -- Reference an existing Secret holding the CLINICAL-role DSN
+    # (`postgres://ferroehr_clinical:...@host:5432/ferroehr`). Empty uses
+    # `database.existingSecret` / `database.url`.
+    existingSecret: ""
+    # -- Key WITHIN it holding that DSN. Mounted as a file; only its PATH
+    # reaches the pod's environment.
+    existingSecretKey: FERROEHR__STORAGE__CLINICAL__URL
+    # -- Inline clinical DSN (DEV/TEST ONLY — lands in a chart-managed Secret).
+    # Ignored when `clinical.existingSecret` is set.
+    url: ""
+
+  party:
+    # -- Reference an existing Secret holding the PARTY-role DSN
+    # (`postgres://ferroehr_party:...@host:5432/ferroehr`), a different
+    # credential from `database.existingSecret`.
+    existingSecret: ""
+    # -- Key WITHIN it holding that DSN. Mounted as a file.
+    existingSecretKey: FERROEHR__STORAGE__PARTY__URL
+    # -- Inline party DSN (DEV/TEST ONLY). Ignored when
+    # `party.existingSecret` is set.
+    url: ""
+
+  linkage:
+    # -- Reference an existing Secret holding the LINKAGE-role DSN
+    # (`postgres://ferroehr_linkage:...@host:5432/ferroehr`), a third
+    # credential distinct from the two above.
+    existingSecret: ""
+    # -- Key WITHIN it holding that DSN. Mounted as a file.
+    existingSecretKey: FERROEHR__STORAGE__LINKAGE__URL
+    # -- Inline linkage DSN (DEV/TEST ONLY). Ignored when
+    # `linkage.existingSecret` is set.
+    url: ""
+
+  audit:
+    # -- Reference an existing Secret holding the DSN the audit repository is
+    # written through. The audit trail is not a pseudonymisation domain — it is
+    # the node's security-surveillance record, strictly outside the EHR content
+    # — but it is the one domain a deployment most often wants on its own
+    # server, which DSV Art. 4 Abs. 5 asks for.
+    existingSecret: ""
+    # -- Key WITHIN it holding that DSN. Mounted as a file.
+    existingSecretKey: FERROEHR__STORAGE__AUDIT__URL
+    # -- Inline audit DSN (DEV/TEST ONLY). Ignored when
+    # `audit.existingSecret` is set.
+    url: ""
 
   # ── the credential that prepares the schema ────────────────────────────────
-  # Neither DSN above can do it. Preparing spans every schema at once — the DDL
-  # of all five migration sets under config.db.migrate=apply, all five
+  # No domain DSN above can do it. Preparing spans every schema of a database —
+  # the DDL of each resident migration set under config.db.migrate=apply, their
   # _sqlx_migrations bookkeeping tables under verify — while each runtime role
-  # holds one pseudonymisation domain, so a pod on ferroehr_ehr cannot even
-  # VERIFY, and is refused on the first set.
+  # holds one domain, so a pod on ferroehr_clinical cannot even VERIFY, and is
+  # refused on the first set. It is used for the domains that share
+  # `database.url`; a domain given a DSN of its own is prepared on that DSN.
   #
   # Set this whenever the pod's DSN is a domain-scoped role. The server opens
   # it for that one boot step and closes it again: no pool is held on it and no
@@ -264,8 +294,9 @@ migrations:
 # https://eur-lex.europa.eu/eli/reg/2016/679/oj), and the restore capability is
 # Art. 32(1)(c). The mechanism is `pg_dump --schema`
 # (https://www.postgresql.org/docs/18/app-pgdump.html): the clinical job dumps
-# clinical, ext and audit, the demographic job dumps party, and the linkage job
-# dumps linkage. Each domain's archival tier is a partition inside its own
+# clinical, ext and audit, the party job dumps party, and the linkage job dumps
+# linkage. A deployment that gives the audit domain a database of its own dumps
+# that database separately; co-located, it travels with the clinical dump. Each domain's archival tier is a partition inside its own
 # schema, so it travels with it. No openEHR spec governs backups — our own
 # design/extension.
 #
@@ -284,8 +315,8 @@ migrations:
 # an environment variable.
 #
 # The chart keeps the three dumps apart; ACCESS CONTROL over them is yours. Back
-# the three claims with different volumes and give the demographic and linkage
-# ones the narrower audience — any two domains sharing a claim is refused at
+# the three claims with different volumes and give the party and linkage ones the
+# narrower audience — any two domains sharing a claim is refused at
 # render, because that is the state this whole section exists to prevent.
 #
 # Off by default: the destination is a claim you provision. Two further things
@@ -345,7 +376,7 @@ backup:
     # clinical dumps are written to, mounted at /backup. The chart creates no
     # claim — its storage class, size, retention and who may read it are yours.
     persistentVolumeClaim: ""
-  demographic:
+  party:
     # -- Cron schedule for the party dump (schema party). Offset from the
     # clinical one by default so no two dumps read the database in the same
     # minute.
@@ -356,7 +387,7 @@ backup:
     # accordingly.
     existingSecret: ""
     # -- Key within `existingSecret` carrying that DSN.
-    existingSecretKey: FERROEHR__DB__DEMOGRAPHIC_URL
+    existingSecretKey: FERROEHR__STORAGE__PARTY__URL
     # -- REQUIRED when enabled: an EXISTING PersistentVolumeClaim for the
     # party dumps, and a DIFFERENT one from every other domain's claim
     # (two domains sharing a claim is refused at render). This is the volume
@@ -373,11 +404,11 @@ backup:
     # narrowest of the three.
     existingSecret: ""
     # -- Key within `existingSecret` carrying that DSN. The name follows its two
-    # siblings and matches the server's own `database.linkageExistingSecretKey`
+    # siblings and matches the server's own `database.linkage.existingSecretKey`
     # for the linkage POOL, but this must be a different Secret holding the
     # backup role's DSN: the pool's credential cannot dump the table. The probe
     # restores this dump and checks the map's temporal key and forced row policy.
-    existingSecretKey: FERROEHR__DB__LINKAGE_URL
+    existingSecretKey: FERROEHR__STORAGE__LINKAGE__URL
     # -- REQUIRED when enabled: an EXISTING PersistentVolumeClaim for the linkage
     # dumps, and a DIFFERENT one from the other two claims (two domains sharing a
     # claim is refused at render). A volume holding this dump beside either other

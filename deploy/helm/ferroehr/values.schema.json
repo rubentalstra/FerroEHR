@@ -131,29 +131,77 @@
           "description": "Inline DSN (dev/test only). Ignored when existingSecret is set.",
           "type": "string"
         },
-        "demographicExistingSecret": {
-          "description": "Secret holding the demographic-domain DSN, a different credential from existingSecret. Unset, both pools share the clinical DSN and the separation stays schema-only.",
-          "type": "string"
+        "clinical": {
+          "description": "The clinical storage domain's own DSN. Empty uses the shared existingSecret / url, which is the schema-only posture.",
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "existingSecret": {
+              "type": "string"
+            },
+            "existingSecretKey": {
+              "description": "A key name INSIDE existingSecret; the chart mounts that key as a file and passes only its path.",
+              "type": "string"
+            },
+            "url": {
+              "description": "Inline DSN (dev/test only). Ignored when existingSecret is set.",
+              "type": "string"
+            }
+          }
         },
-        "demographicExistingSecretKey": {
-          "description": "A key name INSIDE demographicExistingSecret; the chart mounts that key as a file and passes only its path.",
-          "type": "string"
+        "party": {
+          "description": "The party storage domain's own DSN. Empty uses the shared existingSecret / url, which is the schema-only posture.",
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "existingSecret": {
+              "type": "string"
+            },
+            "existingSecretKey": {
+              "description": "A key name INSIDE existingSecret; the chart mounts that key as a file and passes only its path.",
+              "type": "string"
+            },
+            "url": {
+              "description": "Inline DSN (dev/test only). Ignored when existingSecret is set.",
+              "type": "string"
+            }
+          }
         },
-        "demographicUrl": {
-          "description": "Inline demographic DSN (dev/test only). Ignored when demographicExistingSecret is set.",
-          "type": "string"
+        "linkage": {
+          "description": "The linkage storage domain's own DSN. Empty uses the shared existingSecret / url, which is the schema-only posture.",
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "existingSecret": {
+              "type": "string"
+            },
+            "existingSecretKey": {
+              "description": "A key name INSIDE existingSecret; the chart mounts that key as a file and passes only its path.",
+              "type": "string"
+            },
+            "url": {
+              "description": "Inline DSN (dev/test only). Ignored when existingSecret is set.",
+              "type": "string"
+            }
+          }
         },
-        "linkageExistingSecret": {
-          "description": "Secret holding the linkage-domain DSN, a third credential distinct from the clinical and demographic ones. Unset, that pool shares the clinical DSN and the separation stays schema-only.",
-          "type": "string"
-        },
-        "linkageExistingSecretKey": {
-          "description": "A key name INSIDE linkageExistingSecret; the chart mounts that key as a file and passes only its path.",
-          "type": "string"
-        },
-        "linkageUrl": {
-          "description": "Inline linkage DSN (dev/test only). Ignored when linkageExistingSecret is set.",
-          "type": "string"
+        "audit": {
+          "description": "The audit storage domain's own DSN. Empty uses the shared existingSecret / url, which is the schema-only posture.",
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "existingSecret": {
+              "type": "string"
+            },
+            "existingSecretKey": {
+              "description": "A key name INSIDE existingSecret; the chart mounts that key as a file and passes only its path.",
+              "type": "string"
+            },
+            "url": {
+              "description": "Inline DSN (dev/test only). Ignored when existingSecret is set.",
+              "type": "string"
+            }
+          }
         },
         "migrateExistingSecret": {
           "description": "Secret holding the DSN that prepares the schema, which spans every schema and is therefore neither runtime credential. Unset, preparation falls back to the clinical DSN.",
@@ -228,7 +276,7 @@
       }
     },
     "backup": {
-      "description": "Per-domain logical backups: one CronJob per pseudonymisation domain (clinical, demographic, linkage). Off by default, and enabling it requires a DISTINCT existing PersistentVolumeClaim per domain \u2014 the render is refused otherwise.",
+      "description": "Per-domain logical backups: one CronJob per pseudonymisation domain (clinical, party, linkage). Off by default, and enabling it requires a DISTINCT existing PersistentVolumeClaim per domain \u2014 the render is refused otherwise.",
       "type": "object",
       "additionalProperties": false,
       "properties": {
@@ -306,7 +354,7 @@
         "clinical": {
           "$ref": "#/definitions/backupDomain"
         },
-        "demographic": {
+        "party": {
           "$ref": "#/definitions/backupDomain"
         },
         "linkage": {

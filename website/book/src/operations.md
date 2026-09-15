@@ -32,10 +32,10 @@ record, the identity of its subject, and the map between the two:
 
 | Role | Reads and writes | Barred from |
 |---|---|---|
-| `ferroehr_ehr` | `clinical`, archival tier included | `party`, `linkage` |
-| `ferroehr_demographic` | `party`, archival tier included | `clinical`, `linkage` |
-| `ferroehr_ehr_reader` | read-only over `clinical` | `party`, `linkage` |
-| `ferroehr_demographic_reader` | read-only over `party` | `clinical`, `linkage` |
+| `ferroehr_clinical` | `clinical`, archival tier included | `party`, `linkage` |
+| `ferroehr_party` | `party`, archival tier included | `clinical`, `linkage` |
+| `ferroehr_clinical_reader` | read-only over `clinical` | `party`, `linkage` |
+| `ferroehr_party_reader` | read-only over `party` | `clinical`, `linkage` |
 | `ferroehr_linkage` | `linkage` (the party-to-EHR map) | `clinical`, `party` |
 
 The migrations create these roles idempotently, apply the per-schema grants,
@@ -60,56 +60,74 @@ can rewrite or remove one (see [Audit](audit.md)).
 ### Turning the schema split into a role split
 
 The **schema** separation is unconditional: the server always reads and writes
-parties in `demographic`, whatever it authenticates as. The **role** separation
-is a deployment choice, and it is one configuration key:
+parties in `party`, whatever it authenticates as, and each of the four pools
+carries only its own schema on its `search_path`. The **role** separation is a
+deployment choice, and it is one configuration table per domain:
 
 ```toml
-[db]
-url = "postgres://ferroehr_ehr:***@pg:5432/ferroehr"
-demographic_url = "postgres://ferroehr_demographic:***@pg:5432/ferroehr"
+[storage.party]
+url = "postgres://ferroehr_party:***@pg:5432/ferroehr"
+
+[storage.linkage]
+url = "postgres://ferroehr_linkage:***@pg:5432/ferroehr"
 ```
 
-(or `demographic_url_file`, for a mounted secret). With it set the server opens
-two pools on two credentials, and a flaw that reaches one of them reaches one
-domain. Left unset, both pools share the DSN above and the separation is
-schema-only.
+(or `url_file`, for a mounted secret). With a domain's `url` set the server
+opens that pool on that credential, and a flaw that reaches one of them reaches
+one domain. Left unset, the domain uses `[db].url` and the separation is
+schema-only. `linkage` holds which party is the subject of which EHR — the one
+map that re-joins the other two — so `ferroehr_linkage` is barred from both of
+them and both of them from it. Set every domain and no credential the server
+uses can perform that join in SQL; the crossing happens in the application, over
+two connections, and is recorded as an access event (see [Security → Resolving
+across the boundary](security.md#resolving-across-the-boundary)).
 
-The third domain takes its credential the same way:
+A DSN that names another host moves the domain to a **database or cluster of its
+own**, which is the separation a schema cannot make: a base backup, WAL
+archiving and physical replication carry every schema of a database together
+([PostgreSQL 18, Backup and
+Restore](https://www.postgresql.org/docs/18/backup-dump.html)). One constraint:
+the `linkage` migration set revokes a function the `party` set creates, so those
+two are prepared in the same database, and a layout that splits them is refused
+at boot with the remedy rather than failing partway through a migration.
 
-```toml
-[db]
-linkage_url = "postgres://ferroehr_linkage:***@pg:5432/ferroehr"
-```
-
-(or `linkage_url_file`). `linkage` holds which party is the subject of which
-EHR — the one map that re-joins the other two — so `ferroehr_linkage` is
-barred from both of them and both of them from it. Set all three and no
-credential the server uses can perform that join in SQL; the crossing happens
-in the application, over two connections, and is recorded as an access event
-(see [Security → Resolving across the
-boundary](security.md#resolving-across-the-boundary)).
+Two boot checks make the posture honest. Two domains configured on **different**
+DSNs that authenticate as the **same** database role are refused — a separation
+that exists only in the configuration reads as one that holds, which is worse
+than none. And a domain role that does not exist is a warning under
+`deployment_profile = "sandbox"` and a refusal under `production`: absent roles
+mean absent grants, and the boundary check would otherwise pass by having
+nothing to measure.
 
 ### Which credential prepares the schema
 
-**Neither of the two above.** Preparing the schema spans every schema at once:
-the DDL of all five migration sets under `db.migrate = "apply"`, and all five
-`_sqlx_migrations` bookkeeping tables under `"verify"` — a read, but a read
-across the whole database. Each runtime role holds exactly one pseudonymisation
-domain, so neither can do it, and `verify` is not the exception: a role that is
-a member of `ferroehr_ehr` and nothing else is refused on the very first set.
-That applies to the older single-domain roles too — `ferroehr_app` cannot read
-the `ext`, `demographic`, `linkage` or `audit` bookkeeping either.
+**None of the domain credentials.** Preparing a database spans every schema in
+it at once: the DDL of each resident migration set under `db.migrate = "apply"`,
+and their `_sqlx_migrations` bookkeeping tables under `"verify"` — a read, but a
+read across the whole database. Each runtime role holds exactly one domain, so
+none can do it, and `verify` is not the exception: a role that is a member of
+`ferroehr_clinical` and nothing else is refused on the very first set. That
+applies to the generic roles too — `ferroehr_app` cannot read the `ext`,
+`party`, `linkage` or `audit` bookkeeping either.
 
 So the credential that prepares the schema is named separately, and the server
 uses it for that one boot step:
 
 ```toml
 [db]
-url = "postgres://ferroehr_ehr:***@pg:5432/ferroehr"
-demographic_url = "postgres://ferroehr_demographic:***@pg:5432/ferroehr"
-linkage_url = "postgres://ferroehr_linkage:***@pg:5432/ferroehr"
+url = "postgres://ferroehr_clinical:***@pg:5432/ferroehr"
 migrate_url = "postgres://ferroehr_migrator:***@pg:5432/ferroehr"
+
+[storage.party]
+url = "postgres://ferroehr_party:***@pg:5432/ferroehr"
+
+[storage.linkage]
+url = "postgres://ferroehr_linkage:***@pg:5432/ferroehr"
 ```
+
+`migrate_url` prepares the databases the domains reach through `[db].url`; a
+domain given a DSN of its own is prepared on that DSN, because `migrate_url`
+names one database and a relocated domain is not in it.
 
 (or `migrate_url_file`, for a mounted secret). The connection is opened for
 preparation and closed again: no pool is held on it, and no request is ever
@@ -130,23 +148,28 @@ Either way the server **refuses to boot** when the grants themselves are wrong:
 a self-check enumerates every table, view, sequence and function in each
 domain and fails, naming the role and the object, if either runtime role can
 read across the boundary. `ferroehr db verify` runs the same check. When the
-five roles do not exist at all (the development, compose and test-harness
-case, where the migrator holds no `CREATEROLE`) the check passes rather than
-inventing a failure.
+five roles do not exist at all (the development, compose and test-harness case,
+where the migrator holds no `CREATEROLE`) the check warns rather than inventing
+a failure — under `deployment_profile = "production"` it refuses, because absent
+roles mean absent grants and there is then nothing to measure.
 
 On Kubernetes the same choice is chart values, mounted as files the same way
 the clinical DSN is, so no credential enters the pod's environment:
 
 ```yaml
 database:
-  existingSecret: ferroehr-db                          # postgres://ferroehr_ehr:…
-  demographicExistingSecret: ferroehr-db-demographic   # postgres://ferroehr_demographic:…
-  linkageExistingSecret: ferroehr-db-linkage           # postgres://ferroehr_linkage:…
-  migrateExistingSecret: ferroehr-db-migrator          # postgres://ferroehr_migrator:…
+  existingSecret: ferroehr-db                 # postgres://ferroehr_clinical:…
+  party:
+    existingSecret: ferroehr-db-party         # postgres://ferroehr_party:…
+  linkage:
+    existingSecret: ferroehr-db-linkage       # postgres://ferroehr_linkage:…
+  audit:
+    existingSecret: ferroehr-db-audit         # the audit repository's own DSN
+  migrateExistingSecret: ferroehr-db-migrator # postgres://ferroehr_migrator:…
 ```
 
-Leave `demographicExistingSecret` and `linkageExistingSecret` unset and those
-pools share the clinical DSN, which is the schema-only posture.
+Leave a domain's block unset and that pool uses the shared DSN, which is the
+schema-only posture.
 
 Provisioning the five roles is yours in both cases. The migrations create them
 only when the migrator holds `CREATEROLE` and skip them with a `NOTICE`
@@ -154,27 +177,26 @@ otherwise, so on a managed database — where the migrator usually does not —
 create them before the first deploy:
 
 ```sql
-CREATE ROLE ferroehr_ehr NOLOGIN NOINHERIT;
-CREATE ROLE ferroehr_demographic NOLOGIN NOINHERIT;
-CREATE ROLE ferroehr_ehr_reader NOLOGIN NOINHERIT;
-CREATE ROLE ferroehr_demographic_reader NOLOGIN NOINHERIT;
+CREATE ROLE ferroehr_clinical NOLOGIN NOINHERIT;
+CREATE ROLE ferroehr_party NOLOGIN NOINHERIT;
+CREATE ROLE ferroehr_clinical_reader NOLOGIN NOINHERIT;
+CREATE ROLE ferroehr_party_reader NOLOGIN NOINHERIT;
 CREATE ROLE ferroehr_linkage NOLOGIN NOINHERIT;
 ```
 
 then give each login role membership of exactly one of them. `ferroehr db
 verify` tells you whether the boundary holds afterwards.
 
-The local Audit Record Repository is written on the clinical pool, and the
-`audit` schema is granted to `ferroehr_ehr` (record an event, stamp it
-forwarded, run the retention reaper, verify the chain) and to
-`ferroehr_ehr_reader` (read it and verify the chain), the same privileges the
-single-domain pair holds there. A clinical login role that is a member of
-`ferroehr_ehr` alone writes its own access log; no extra membership is needed.
-The audit trail is not a pseudonymisation domain, so this grant adds no reach
-into `party` or `linkage`.
+The local Audit Record Repository is written on its own pool
+(`[storage.audit]`), and the `audit` schema is granted to `ferroehr_clinical`
+(record an event, stamp it forwarded, run the retention reaper, verify the
+chain) and to `ferroehr_clinical_reader` (read it and verify the chain). A
+clinical login role that is a member of `ferroehr_clinical` alone writes its own
+access log; no extra membership is needed. The audit trail is not a
+pseudonymisation domain, so this grant adds no reach into `party` or `linkage`.
 
-The compose stacks create all five and grant the clinical and demographic
-domains to the single dev login role, which owns the database. That
+The compose stacks create all five and grant the clinical and party domains to
+the single dev login role, which owns the database. That
 demonstrates the schema separation and exercises the boot self-check; it is
 deliberately **not** the credential separation, because one container with one
 DSN cannot show that half honestly.
@@ -205,10 +227,13 @@ Exercised against a real PostgreSQL 18:
 Not exercised by anything, and stated rather than left to inference:
 
 - **A separated `migrate_url` alongside the linkage credential in one boot.**
-  The preparation tests configure the clinical and demographic DSNs.
+  The preparation tests configure the clinical and party DSNs.
+- **A domain actually relocated to another database**, as opposed to a second
+  credential on the same one. The layout, the per-database preparation and the
+  refusals are covered in process; no suite runs two PostgreSQL databases.
 - **A real deployment on separated DSNs**: a container booting with the DSN
   files mounted, and the chart wiring them through
-  `database.demographicExistingSecret`, `database.linkageExistingSecret` and
+  `database.party.existingSecret`, `database.linkage.existingSecret` and
   `database.migrateExistingSecret`. What is covered is the in-process half.
 - **Role provisioning on a managed database** where the migrator holds no
   `CREATEROLE` and the roles are created by the manual step above.

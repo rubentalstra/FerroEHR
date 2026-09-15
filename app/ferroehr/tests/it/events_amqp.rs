@@ -322,7 +322,7 @@ async fn end_to_end_publish_and_consume() {
     let handle = start(
         events_config(url),
         pool.clone(),
-        ferroehr::db::demographic_pool_from(&pool),
+        ferroehr::db::domain_pool_from(&pool, ferroehr::db::domain::Domain::Party),
     );
 
     // The bound queue receives exactly the composition event.
@@ -377,7 +377,7 @@ async fn broker_down_then_up_delivers_without_loss() {
     let down = start(
         events_config(bad_url),
         pool.clone(),
-        ferroehr::db::demographic_pool_from(&pool),
+        ferroehr::db::domain_pool_from(&pool, ferroehr::db::domain::Domain::Party),
     );
     tokio::time::sleep(Duration::from_millis(600)).await;
     assert_eq!(
@@ -391,7 +391,7 @@ async fn broker_down_then_up_delivers_without_loss() {
     let up = start(
         events_config(url),
         pool.clone(),
-        ferroehr::db::demographic_pool_from(&pool),
+        ferroehr::db::domain_pool_from(&pool, ferroehr::db::domain::Domain::Party),
     );
     drain_outbox(&pool).await;
 
@@ -441,7 +441,7 @@ async fn subscriptions_route_by_predicate_and_wildcard_receives_all() {
     let handle = start(
         events_config(url.clone()),
         pool.clone(),
-        ferroehr::db::demographic_pool_from(&pool),
+        ferroehr::db::domain_pool_from(&pool, ferroehr::db::domain::Domain::Party),
     );
     drain_outbox(&pool).await;
 

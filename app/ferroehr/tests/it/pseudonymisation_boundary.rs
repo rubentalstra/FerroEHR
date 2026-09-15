@@ -150,12 +150,12 @@ async fn the_boundary_refuses_an_ehr_scoped_object_in_the_demographic_schema() {
 /// from both of the domains its rows join. No openEHR spec governs database
 /// roles — our own design/extension.
 const BARRIERS: &[(&str, &str, &[&str])] = &[
-    ("ew", "ferroehr_ehr", &["party", "linkage"]),
-    ("er", "ferroehr_ehr_reader", &["party", "linkage"]),
-    ("dw", "ferroehr_demographic", &["clinical", "linkage"]),
+    ("ew", "ferroehr_clinical", &["party", "linkage"]),
+    ("er", "ferroehr_clinical_reader", &["party", "linkage"]),
+    ("dw", "ferroehr_party", &["clinical", "linkage"]),
     (
         "dr",
-        "ferroehr_demographic_reader",
+        "ferroehr_party_reader",
         &["clinical", "linkage"],
     ),
     ("lk", "ferroehr_linkage", &["clinical", "party"]),
@@ -361,8 +361,12 @@ async fn the_boot_self_check_refuses_a_cross_domain_grant() {
     let db = testkit::db().await.expect("testkit database");
     let pool = db.pool();
 
-    ferroehr::db::verify_domain_isolation(&pool)
-        .await
+    ferroehr::db::verify_domain_isolation(
+        &crate::fixtures::shared_pools(&pool),
+        &crate::fixtures::shared_layout(),
+        ferroehr::config::deployment::DeploymentProfile::Sandbox,
+    )
+    .await
         .expect("a correctly migrated database passes the boot gate");
 
     // One object of each kind the gate claims to cover, granted and revoked in
@@ -375,19 +379,19 @@ async fn the_boot_self_check_refuses_a_cross_domain_grant() {
             .expect("the demographic outbox identity sequence");
     for (role, object, grant, revoke) in [
         (
-            "ferroehr_ehr",
+            "ferroehr_clinical",
             "party.version",
             "GRANT SELECT ON",
             "REVOKE SELECT ON",
         ),
         (
-            "ferroehr_ehr",
+            "ferroehr_clinical",
             "party.version",
             "GRANT SELECT ON",
             "REVOKE SELECT ON",
         ),
         (
-            "ferroehr_ehr",
+            "ferroehr_clinical",
             sequence.as_str(),
             "GRANT SELECT ON SEQUENCE",
             "REVOKE SELECT ON SEQUENCE",
@@ -396,13 +400,13 @@ async fn the_boot_self_check_refuses_a_cross_domain_grant() {
         // it holds the join, and so does the linkage role that can read a
         // clinical relation.
         (
-            "ferroehr_ehr",
+            "ferroehr_clinical",
             "linkage.party_ehr",
             "GRANT SELECT ON",
             "REVOKE SELECT ON",
         ),
         (
-            "ferroehr_demographic",
+            "ferroehr_party",
             "linkage.party_ehr",
             "GRANT SELECT ON",
             "REVOKE SELECT ON",
@@ -425,7 +429,12 @@ async fn the_boot_self_check_refuses_a_cross_domain_grant() {
             .await
             .expect("grant across the boundary");
 
-        let refused = ferroehr::db::verify_domain_isolation(&pool).await;
+        let refused = ferroehr::db::verify_domain_isolation(
+            &crate::fixtures::shared_pools(&pool),
+            &crate::fixtures::shared_layout(),
+            ferroehr::config::deployment::DeploymentProfile::Sandbox,
+        )
+        .await;
         let error = refused.expect_err("a role reaching another domain must refuse the boot");
         let text = error.to_string();
         assert!(
@@ -439,9 +448,13 @@ async fn the_boot_self_check_refuses_a_cross_domain_grant() {
         .execute(&pool)
         .await
         .expect("revoke across the boundary");
-        ferroehr::db::verify_domain_isolation(&pool)
-            .await
-            .unwrap_or_else(|e| panic!("the gate passes again once {object} is revoked: {e}"));
+        ferroehr::db::verify_domain_isolation(
+            &crate::fixtures::shared_pools(&pool),
+            &crate::fixtures::shared_layout(),
+            ferroehr::config::deployment::DeploymentProfile::Sandbox,
+        )
+        .await
+        .unwrap_or_else(|e| panic!("the gate passes again once {object} is revoked: {e}"));
     }
 }
 
@@ -506,7 +519,7 @@ async fn a_sealed_identifier_round_trips_and_resolves_to_its_party() {
     use ferroehr::service::demographic::identifier::store::IdentifierStore;
 
     let db = testkit::db().await.expect("testkit database");
-    let store = IdentifierStore::new(ferroehr::db::demographic_pool_from(&db.pool()));
+    let store = IdentifierStore::new(ferroehr::db::domain_pool_from(&db.pool(), ferroehr::db::domain::Domain::Party));
     let keys = test_keys();
     let party = Uuid::now_v7();
 
@@ -561,7 +574,7 @@ async fn an_unregistered_scheme_is_refused() {
     use ferroehr::service::demographic::identifier::store::{IdentifierStore, StoreError};
 
     let db = testkit::db().await.expect("testkit database");
-    let store = IdentifierStore::new(ferroehr::db::demographic_pool_from(&db.pool()));
+    let store = IdentifierStore::new(ferroehr::db::domain_pool_from(&db.pool(), ferroehr::db::domain::Domain::Party));
     let refused = store
         .seal(&test_keys(), Uuid::now_v7(), "zz-invented", SYNTHETIC_BSN)
         .await;
@@ -581,7 +594,7 @@ async fn an_unregistered_scheme_is_refused() {
 async fn only_the_demographic_writer_reaches_the_sealed_value() {
     let db = testkit::db().await.expect("testkit database");
 
-    for (suffix, role) in [("nie", "ferroehr_ehr"), ("nir", "ferroehr_ehr_reader")] {
+    for (suffix, role) in [("nie", "ferroehr_clinical"), ("nir", "ferroehr_clinical_reader")] {
         let mut conn = role_conn(&db, suffix, role).await;
         let refused = sqlx::query("SELECT ciphertext FROM party.national_identifier")
             .fetch_all(&mut conn)
@@ -600,7 +613,7 @@ async fn only_the_demographic_writer_reaches_the_sealed_value() {
         );
     }
 
-    let mut reader = role_conn(&db, "nidr", "ferroehr_demographic_reader").await;
+    let mut reader = role_conn(&db, "nidr", "ferroehr_party_reader").await;
     for column in ["ciphertext", "lookup_digest"] {
         let refused = sqlx::query(sqlx::AssertSqlSafe(format!(
             "SELECT {column} FROM party.national_identifier"
@@ -650,7 +663,7 @@ async fn a_protected_identifier_never_reaches_the_versioned_body() {
             key_file: None,
         },
         Some(&ferroehr::config::secret::Secret::new(TEST_ROOT_KEY)),
-        ferroehr::db::demographic_pool_from(&pool),
+        ferroehr::db::domain_pool_from(&pool, ferroehr::db::domain::Domain::Party),
     )
     .expect("the engine builds")
     .expect("protection is enabled");
@@ -713,7 +726,7 @@ async fn a_protected_identifier_never_reaches_the_versioned_body() {
 
     // The sealed row exists, and resolution finds this party by the value.
     let store = ferroehr::service::demographic::identifier::store::IdentifierStore::new(
-        ferroehr::db::demographic_pool_from(&pool),
+        ferroehr::db::domain_pool_from(&pool, ferroehr::db::domain::Domain::Party),
     );
     assert_eq!(
         store
@@ -749,7 +762,7 @@ async fn resolving_an_identifier_is_recorded_as_an_access() {
             key_file: None,
         },
         Some(&ferroehr::config::secret::Secret::new(TEST_ROOT_KEY)),
-        ferroehr::db::demographic_pool_from(&pool),
+        ferroehr::db::domain_pool_from(&pool, ferroehr::db::domain::Domain::Party),
     )
     .expect("the engine builds")
     .expect("protection is enabled");
@@ -909,22 +922,29 @@ async fn a_sealed_identifier_resolves_on_the_separated_demographic_credential() 
     let db = testkit::db().await.expect("testkit database");
     let settings = DbConfig {
         url: ferroehr::config::secret::SecretUrl::new(
-            crate::fixtures::dsn_as(&db, "sealclin", "ferroehr_ehr").await,
+            crate::fixtures::dsn_as(&db, "sealclin", "ferroehr_clinical").await,
         ),
-        demographic_url: Some(ferroehr::config::secret::SecretUrl::new(
-            crate::fixtures::dsn_as(&db, "sealdemo", "ferroehr_demographic").await,
-        )),
         ..DbConfig::default()
     };
+    let storage = ferroehr::db::domain::StorageConfig {
+        party: ferroehr::db::domain::DomainDsn {
+            url: Some(ferroehr::config::secret::SecretUrl::new(
+                crate::fixtures::dsn_as(&db, "sealdemo", "ferroehr_party").await,
+            )),
+            url_file: None,
+        },
+        ..ferroehr::db::domain::StorageConfig::default()
+    };
     assert!(
-        settings.roles_are_separated(),
+        storage.is_separated(ferroehr::db::domain::Domain::Party),
         "the fixture must actually separate the credentials, or this measures \
          the shared-credential path again"
     );
 
-    let demographic = ferroehr::db::connect_demographic(&settings)
-        .await
-        .expect("the demographic pool connects on its own credential");
+    let demographic =
+        ferroehr::db::connect_domain(&settings, &storage, ferroehr::db::domain::Domain::Party)
+            .await
+            .expect("the party pool connects on its own credential");
     let store = IdentifierStore::new(demographic);
     let keys = test_keys();
     let party = Uuid::now_v7();
@@ -1211,30 +1231,37 @@ async fn an_identity_resolves_to_an_ehr_across_three_separated_credentials() {
 
     let db = testkit::db().await.expect("testkit database");
     let settings = DbConfig {
-        url: SecretUrl::new(crate::fixtures::dsn_as(&db, "linkclin", "ferroehr_ehr").await),
-        demographic_url: Some(SecretUrl::new(
-            crate::fixtures::dsn_as(&db, "linkdemo", "ferroehr_demographic").await,
-        )),
-        linkage_url: Some(SecretUrl::new(
-            crate::fixtures::dsn_as(&db, "linklink", "ferroehr_linkage").await,
-        )),
+        url: SecretUrl::new(crate::fixtures::dsn_as(&db, "linkclin", "ferroehr_clinical").await),
         ..DbConfig::default()
     };
+    let storage = ferroehr::db::domain::StorageConfig {
+        party: ferroehr::db::domain::DomainDsn {
+            url: Some(SecretUrl::new(
+                crate::fixtures::dsn_as(&db, "linkdemo", "ferroehr_party").await,
+            )),
+            url_file: None,
+        },
+        linkage: ferroehr::db::domain::DomainDsn {
+            url: Some(SecretUrl::new(
+                crate::fixtures::dsn_as(&db, "linklink", "ferroehr_linkage").await,
+            )),
+            url_file: None,
+        },
+        ..ferroehr::db::domain::StorageConfig::default()
+    };
     assert!(
-        settings.roles_are_separated() && settings.linkage_role_is_separated(),
+        storage.is_separated(ferroehr::db::domain::Domain::Party)
+            && storage.is_separated(ferroehr::db::domain::Domain::Linkage),
         "the fixture must actually separate all three credentials, or this \
          measures the shared-credential path again"
     );
 
-    let clinical = ferroehr::db::connect(&settings)
+    let pools = ferroehr::db::connect_domains(&settings, &storage)
         .await
-        .expect("the clinical pool connects on its own credential");
-    let demographic = ferroehr::db::connect_demographic(&settings)
-        .await
-        .expect("the demographic pool connects on its own credential");
-    let linkage = ferroehr::db::connect_linkage(&settings)
-        .await
-        .expect("the linkage pool connects on its own credential");
+        .expect("each pool connects on its own credential");
+    let clinical = pools.clinical.clone();
+    let demographic = pools.party.clone();
+    let linkage = pools.linkage.clone();
 
     // The identity half: a sealed identifier held on the demographic
     // credential, resolvable by keyed digest without decryption.
@@ -1317,7 +1344,7 @@ async fn the_server_mints_the_subject_pseudonym_and_no_caller_value_enters_it() 
             key_file: None,
         },
         Some(&ferroehr::config::secret::Secret::new(TEST_ROOT_KEY)),
-        ferroehr::db::demographic_pool_from(&pool),
+        ferroehr::db::domain_pool_from(&pool, ferroehr::db::domain::Domain::Party),
     )
     .expect("the engine builds")
     .expect("protection is enabled");
@@ -1410,7 +1437,7 @@ async fn the_split_clinical_role_writes_and_reads_the_audit_trail() {
     let db = testkit::db().await.expect("testkit database");
     let clinical = ferroehr::db::connect(&DbConfig {
         url: ferroehr::config::secret::SecretUrl::new(
-            crate::fixtures::dsn_as(&db, "audclin", "ferroehr_ehr").await,
+            crate::fixtures::dsn_as(&db, "audclin", "ferroehr_clinical").await,
         ),
         ..DbConfig::default()
     })
@@ -1440,7 +1467,7 @@ async fn the_split_clinical_role_writes_and_reads_the_audit_trail() {
 
     let reader = ferroehr::db::connect(&DbConfig {
         url: ferroehr::config::secret::SecretUrl::new(
-            crate::fixtures::dsn_as(&db, "audread", "ferroehr_ehr_reader").await,
+            crate::fixtures::dsn_as(&db, "audread", "ferroehr_clinical_reader").await,
         ),
         ..DbConfig::default()
     })

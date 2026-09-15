@@ -445,8 +445,8 @@ YAML
 # shared infrastructure the clinical dump carries along, not a domain any role
 # is barred from.
 PROBE_DOMAINS=(
-  "clinical|ferroehr_ehr ferroehr_ehr_reader|clinical|clinical version"
-  "demographic|ferroehr_demographic ferroehr_demographic_reader|party|party version;party national_identifier"
+  "clinical|ferroehr_clinical ferroehr_clinical_reader|clinical|clinical version"
+  "party|ferroehr_party ferroehr_party_reader|party|party version;party national_identifier"
   "linkage|ferroehr_linkage|linkage|linkage party_ehr"
 )
 
@@ -585,11 +585,11 @@ probes_domain_roles() {
   # as a measurement rather than left to the reader to assume either way.
   probe "P-ROLE-ONE-CREDENTIAL" "working" "compose" "#3179" \
     "the compose stack is single-credential by design, and says so"
-  local demographic_dsn
-  demographic_dsn="$(curl -s -u "$BASIC" "$CDR/management/env" | grep -o '"demographic_url":"[^"]*"' || true)"
-  case "$demographic_dsn" in
-    ''|*'"demographic_url":""'*|*'"demographic_url":null'*) : ;;
-    *) probe_fail "no separate demographic DSN in the demo stack" "$demographic_dsn" \
+  local party_dsn
+  party_dsn="$(curl -s -u "$BASIC" "$CDR/management/env" | grep -o '"party":{[^}]*}' || true)"
+  case "$party_dsn" in
+    ''|*'"url":null'*|*'"url":""'*) : ;;
+    *) probe_fail "no separate party DSN in the demo stack" "$party_dsn" \
          "if the stack grew one, this probe's premise is stale and the note in the init script is wrong" ;;
   esac
   probe_done
@@ -602,12 +602,13 @@ probes_domain_roles() {
      both domains through the wire, and asserts that each of the server's own pools is
      refused the other domain's relations with SQLSTATE 42501. What remains uncovered by
      any probe is a real DEPLOYMENT on two DSNs: a container booting with
-     FERROEHR__DB__DEMOGRAPHIC_URL_FILE mounted, schema preparation by a role that is
-     neither runtime credential, and the chart's database.demographicExistingSecret
-     and database.linkageExistingSecret wiring the three. The server opens three
-     pools (db::connect, connect_demographic, connect_linkage — [db] url,
-     demographic_url, linkage_url) and the boundary suite exercises all three
-     credentials in-process; no probe here boots a container on three DSNs."
+     FERROEHR__STORAGE__PARTY__URL_FILE mounted, schema preparation by a role that is
+     neither runtime credential, and the chart's database.party.existingSecret
+     and database.linkage.existingSecret wiring the three. The server opens four
+     pools (db::connect_domains over [storage.clinical], [storage.party],
+     [storage.linkage] and [storage.audit], each defaulting to [db] url) and the
+     boundary suite exercises all three credentials in-process; no probe here boots a
+     container on three DSNs."
   uncovered "role provisioning on a managed database" \
     "the compose init creates the domain roles as the bootstrap superuser. A managed
      PostgreSQL where the migrator holds no CREATEROLE takes the documented manual
@@ -825,19 +826,19 @@ party, and nothing downstream would notice"
   probe "P-BACKUP-GRANTS-REFUSED" "broken" "database" "#3157" \
     "the self-check refuses a restore whose grants cross the domain boundary"
   dc exec -T ferroehr-postgres psql -qtAX -U "${PG_INIT_USER:-ferroehr}" -d "$restored" -c \
-    "GRANT USAGE ON SCHEMA party TO ferroehr_ehr_reader;
-     GRANT SELECT ON ALL TABLES IN SCHEMA party TO ferroehr_ehr_reader" >/dev/null 2>&1
+    "GRANT USAGE ON SCHEMA party TO ferroehr_clinical_reader;
+     GRANT SELECT ON ALL TABLES IN SCHEMA party TO ferroehr_clinical_reader" >/dev/null 2>&1
   local breach_out
   if breach_out="$(dc exec -T -e FERROEHR__DB__URL="$restored_dsn" \
       -e FERROEHR__DB__MIGRATE=verify \
       ferroehr /usr/local/bin/ferroehr db verify 2>&1)"; then
     probe_fail "\`ferroehr db verify\` refusing a cross-domain grant" \
-      "it accepted a database where ferroehr_ehr_reader can read party tables" \
+      "it accepted a database where ferroehr_clinical_reader can read party tables" \
       "the boot gate is then decorative, and a careless restore ships a collapsed boundary"
   else
     # A refusal for ANY other reason would make this probe pass without
     # measuring the gate at all — the vacuity this harness exists to avoid.
-    assert_contains "$breach_out" "ferroehr_ehr_reader" \
+    assert_contains "$breach_out" "ferroehr_clinical_reader" \
       "the refusal must name the role that reached across, not merely be a refusal"
     assert_contains "$breach_out" "party." \
       "the refusal must name the schema it reached into"
