@@ -206,6 +206,19 @@ pub struct AuditConfig {
     /// (<https://eur-lex.europa.eu/eli/reg/2016/679/oj>) and every access under
     /// this deployment carries it. Unset records nothing rather than a guess.
     pub legal_basis: Option<String>,
+    /// Whether this deployment is one of the controllers SGB V § 307 names for
+    /// a German telematics-infrastructure application
+    /// (`FERROEHR__AUDIT__SGB_V_309_CONTROLLER`). **Off by default.**
+    ///
+    /// SGB V § 309 Abs. 1 binds "die Verantwortlichen nach § 307" of the
+    /// applications under §§ 327 and 334 Abs. 1, and Abs. 3 then requires the
+    /// log data to be deleted "unverzüglich" once the three-year limitation
+    /// period has run (`docs/law/de/sgb-v/BJNR024820988.xml`). That is a
+    /// CEILING on access-log retention, and it reaches a CDR only when the
+    /// deploying organisation actually is, or acts for, one of those
+    /// controllers — which the software cannot tell from its configuration.
+    /// So the deployment declares it, and the DE ceiling applies from then on.
+    pub sgb_v_309_controller: bool,
     /// `[audit.store]` — the local Audit Record Repository.
     pub store: StoreConfig,
     /// `[audit.syslog]` — the classic DICOM-over-syslog feed.
@@ -229,6 +242,7 @@ impl Default for AuditConfig {
             purpose_header: "x-purpose-of-use".to_owned(),
             purpose_codes: Vec::new(),
             legal_basis: None,
+            sgb_v_309_controller: false,
             store: StoreConfig::default(),
             syslog: SyslogConfig::default(),
             fhir_feed: FhirFeedConfig::default(),
@@ -335,6 +349,31 @@ pub fn retention_floor_days(jurisdiction: &str) -> Option<u32> {
     match jurisdiction {
         "NL" => Some(1830),
         "CH" => Some(366),
+        _ => None,
+    }
+}
+
+/// The maximum number of days a jurisdiction allows an access-log record to be
+/// kept, where one is registered (#3346).
+///
+/// The mirror of [`retention_floor_days`], keyed the same way, and empty for
+/// every jurisdiction but one: a rule that caps a log is rare, and an unknown
+/// cap is never guessed at.
+///
+/// `DE`: the access logs of a telematics-infrastructure application under
+/// §§ 327 and 334 Abs. 1 SGB V are kept for the three-year limitation period of
+/// § 195 BGB and then deleted "unverzüglich" — SGB V § 309 Abs. 1 and Abs. 3
+/// (`docs/law/de/sgb-v/BJNR024820988.xml`,
+/// <https://www.gesetze-im-internet.de/sgb_5/__309.html>). Three calendar years
+/// are never fewer than 1095 days, so that is the ceiling in days: a horizon at
+/// or below it cannot outlast the period. The provision binds "die
+/// Verantwortlichen nach § 307", so it reaches a deployment only once that
+/// deployment declares itself one (`[audit] sgb_v_309_controller`), which is
+/// why `declared` gates the row rather than the jurisdiction alone.
+#[must_use]
+pub fn retention_ceiling_days(jurisdiction: &str, sgb_v_309_controller: bool) -> Option<u32> {
+    match jurisdiction {
+        "DE" if sgb_v_309_controller => Some(1095),
         _ => None,
     }
 }

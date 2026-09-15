@@ -531,11 +531,21 @@ queue_capacity = 8192
 purpose_header = "x-purpose-of-use"
 purpose_codes = []
 #? legal_basis = "gdpr-art-9-2-h"
+# Set this only if the deploying organisation is, or acts for, one of the
+# controllers SGB V § 307 names for a German telematics-infrastructure
+# application. It caps the access-log horizon below at the three-year period of
+# § 309 Abs. 1, after which Abs. 3 requires deletion unverzüglich — so a
+# declared controller cannot keep records forever.
+sgb_v_309_controller = false
 
 # The local Audit Record Repository (the durability anchor).
 [audit.store]
 enabled = true
 retention_days = 0           # 0 = keep forever; reaped hourly otherwise
+                             # Floors and ceilings are jurisdictional: five
+                             # years NL, one year CH, at most three years DE
+                             # under sgb_v_309_controller. Boot refuses a
+                             # horizon outside them.
 
 # Classic ATNA feed: DICOM PS3.15 audit XML over syslog (IHE ITI-20).
 [audit.syslog]
