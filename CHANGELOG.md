@@ -55,6 +55,19 @@ workflow refuses a tag that has no matching section here.
 
 ### Changed
 
+- **The `ext` value helpers no longer trap errors, and read fewer things than
+  PostgreSQL's own date parser did** (#3351). Each helper is one SQL
+  expression whose casts are guarded by a pattern instead of an `EXCEPTION`
+  block, so a value the pattern refuses reads as NULL and the planner folds the
+  helper into the statement. Three readings tighten as a result, all of them
+  values openEHR does not define: a date whose year carried leading whitespace
+  or a sign is now unreadable, a date handed to the time parser no longer
+  yields a number, and `ext.openehr_timestamp` refuses a date that is not
+  zero-padded (`2021-1-2`), an ordinal date (`2021-002`), and the words
+  PostgreSQL accepts (`now`, `today`, `yesterday`, `epoch`, `infinity`). The
+  first two made a stored value read as the current time. In the
+  other direction it now reads the lowercase `t` and space separators on a
+  reduced-precision date, which it used to read only at full precision.
 - **A physical EHR delete reaches everything the erasure has to reach**
   (#3347, #3403). `DELETE {base}/admin/ehr/{ehr_id}` runs one clinical
   transaction that removes the EHR and, through the foreign-key graph, its

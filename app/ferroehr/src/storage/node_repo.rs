@@ -44,7 +44,7 @@ fn write_nodes_sql(per_row_context: bool) -> String {
     let mut names = String::new();
     for (i, leaf) in crate::storage::promoted::PROMOTED_LEAVES.iter().enumerate() {
         columns.push_str(", ");
-        columns.push_str(leaf.column);
+        columns.push_str(sea_query::Iden::unquoted(&leaf.column));
         match leaf.kind {
             crate::storage::promoted::PromotedKind::Timestamp => {
                 let _ = write!(selects, ", ext.openehr_timestamp(t.p{i})");
@@ -98,7 +98,7 @@ pub(crate) fn node_insert_cte(vo: &str, sys: &str, ehr: &str, first_array_param:
     let mut names = String::new();
     for (i, leaf) in crate::storage::promoted::PROMOTED_LEAVES.iter().enumerate() {
         columns.push_str(", ");
-        columns.push_str(leaf.column);
+        columns.push_str(sea_query::Iden::unquoted(&leaf.column));
         match leaf.kind {
             crate::storage::promoted::PromotedKind::Timestamp => {
                 let _ = write!(selects, ", ext.openehr_timestamp(t.p{i})");

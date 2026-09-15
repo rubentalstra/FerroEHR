@@ -38,6 +38,15 @@ methods, no `JSON_TABLE`, no GIN operators) → execute (`sqlx`) →
 assemble `RESULT_SET` (schema 1.1.0). Keep the IR a distinct pass — that is
 what keeps the hard cases tractable — and do **not** collapse it away.
 
+Every table and column the emitter names comes from the schema catalog
+(`app/ferroehr/src/db/iden.rs`), whose tests pin each name against the clinical
+migration set and refuse a column spelled as a string under `aql/sql/`; the one
+exception is `derived_col`, for the output of a subquery or a set-returning
+function, which no relation declares. The `ext` helpers the emitter calls are
+`LANGUAGE sql` expressions with guarded casts and no `EXCEPTION` block, so the
+planner folds them into the statement and a value the guard refuses reads as
+NULL rather than erroring.
+
 Versioning semantics: `LATEST_VERSION` = the object's head row
 (`vo_head.trunk_head_sys_version`); `ALL_VERSIONS` = the append-only `version`
 table unfiltered (supported); a version predicate on the commit instant is the

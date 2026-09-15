@@ -56,7 +56,11 @@ feature sets below; we run the latest patch (18.6) for the fixes.
   `linkage.subject_ehr`.
 - **AQL engine:** `jsonb_path_query_first`, lateral `jsonb_path_query`,
   `ext.openehr_magnitude`, `ext.openehr_timestamp`, integer nested-set joins,
-  promoted btree columns, `= ANY` lists (`.claude/rules/aql-engine.md`).
+  promoted btree columns, `= ANY` lists (`.claude/rules/aql-engine.md`). The
+  `ext` helpers are `LANGUAGE sql` expressions with no `EXCEPTION` block, which
+  the docs call "significantly more expensive to enter and exit than a block
+  without one" (`plpgsql-control-structures.html`); a read the pattern refuses
+  is NULL, so a stored value can never make a query error.
 - **Auth:** app-level OAuth2/OIDC (crates) is primary; DB `oauth` is unused.
 - **Optimization:** a feature that is *only* a performance win is adopted on a
   committed measurement, never on this list; the candidates and their

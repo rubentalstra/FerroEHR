@@ -36,9 +36,10 @@
 //! demographic party roots and the containers nested in them, which no FROM
 //! class resolves to (`from::is_vo_root_type`).
 //!
-//! The `column_vocab` unit test pins every column name the builder emits
-//! against the clinical migration set, so a schema rename surfaces as a
-//! failing test rather than a runtime SQL error.
+//! Every column is named through the schema catalog ([`crate::db::iden`]),
+//! whose own tests pin each name against the clinical migration set and refuse
+//! a column spelled as a string here, so a schema rename surfaces as a failing
+//! test rather than a runtime SQL error.
 
 mod expr;
 mod from;
@@ -46,6 +47,7 @@ mod predicate;
 mod select;
 mod value;
 
+use crate::db::iden::{Node, VersionRow};
 use crate::ids::EhrId;
 use std::collections::HashMap;
 use std::sync::Arc;
@@ -403,8 +405,11 @@ pub fn build_scope(
     for (i, (node, vo)) in roots.iter().enumerate() {
         let ehr_col = format!("scope_ehr_{i}");
         let template_col = format!("scope_template_{i}");
-        b.q.expr_as(col(node, "ehr_id"), Alias::new(ehr_col.as_str()));
-        b.q.expr_as(col(vo, "template_id"), Alias::new(template_col.as_str()));
+        b.q.expr_as(col(node, Node::EhrId), Alias::new(ehr_col.as_str()));
+        b.q.expr_as(
+            col(vo, VersionRow::TemplateId),
+            Alias::new(template_col.as_str()),
+        );
         columns.push((ehr_col, template_col));
     }
     b.q.distinct();
@@ -414,154 +419,4 @@ pub fn build_scope(
         values,
         columns,
     }))
-}
-
-// ── test-only inline renderers ─────────────────────────────────────────────
-
-#[cfg(test)]
-mod column_vocab {
-    //! Pin the builder's storage-column vocabulary to the schema. Every column
-    //! name the IR→SQL lowering emits (collected here, one group per table)
-    //! must be declared for that table in the clinical migration set, so a
-    //! schema rename fails this test instead of failing at query runtime.
-
-    /// The change-control relations — the authoritative schema for `version`,
-    /// `vo_head` and `commit_audit` (no openEHR spec governs the SQL — our own
-    /// design).
-    const CHANGE_CONTROL: &str =
-        include_str!("../../../migrations/clinical/0003_change_control.sql");
-
-    /// The `node` relation.
-    const NODE: &str = include_str!("../../../migrations/clinical/0004_node.sql");
-
-    /// The `ehr` relation.
-    const EHR: &str = include_str!("../../../migrations/clinical/0002_ehr.sql");
-
-    /// The columns the builder references, grouped by the table each `sea-query`
-    /// alias resolves to. Keep in sync with the `col(..)` / `Expr::col(..)`
-    /// call sites across `from`/`select`/`predicate`/`value`/`expr`.
-    const VOCAB: &[(&str, &[&str])] = &[
-        (
-            "node",
-            &[
-                "tier",
-                "vo_id",
-                "sys_version",
-                "num",
-                "num_cap",
-                "ehr_id",
-                "rm_type",
-                "archetype",
-                "arch_entity",
-                "arch_concept",
-                "arch_major",
-                "name",
-                "name_code",
-                "name_terminology",
-                "data",
-            ],
-        ),
-        (
-            "version",
-            &[
-                "tier",
-                "vo_id",
-                "kind",
-                "ehr_id",
-                "sys_version",
-                "trunk_version",
-                "branch_number",
-                "branch_version",
-                "committed_at",
-                "lifecycle_state",
-                "creating_system_id",
-                "contribution_id",
-                "commit_audit_id",
-                "template_id",
-            ],
-        ),
-        ("vo_head", &["vo_id", "trunk_head_sys_version"]),
-        (
-            "ehr",
-            &[
-                "id",
-                "system_id",
-                "time_created",
-                "subject_id",
-                "is_queryable",
-            ],
-        ),
-        (
-            "commit_audit",
-            &[
-                "id",
-                "time_committed",
-                "system_id",
-                "change_type",
-                "description",
-                "committer",
-            ],
-        ),
-    ];
-
-    /// The `CREATE TABLE {table} ( … )` body from the migration set (the text
-    /// between the opening paren and the balanced closing paren).
-    ///
-    /// Comments are stripped before the parens are counted: the DDL documents
-    /// itself in prose, and prose carries brackets that are not SQL — an
-    /// interval written `[a, b)` would otherwise close the table early and
-    /// silently hide every column after it.
-    fn create_table_body(table: &str) -> String {
-        let head = format!("CREATE TABLE {table} (");
-        let body = [CHANGE_CONTROL, NODE, EHR]
-            .into_iter()
-            .find_map(|file| file.split_once(&head))
-            .unwrap_or_else(|| panic!("no `{head}` in the clinical migration set"))
-            .1;
-        let code: String = body
-            .lines()
-            .map(|line| line.split("--").next().unwrap_or(line))
-            .collect::<Vec<_>>()
-            .join("\n");
-        let mut depth = 1usize;
-        for (i, ch) in code.char_indices() {
-            match ch {
-                '(' => depth += 1,
-                ')' => {
-                    depth -= 1;
-                    if depth == 0 {
-                        return code.get(..i).unwrap_or_default().to_owned();
-                    }
-                }
-                _ => {}
-            }
-        }
-        panic!("unterminated CREATE TABLE {table} in the clinical migration set");
-    }
-
-    /// Whether `body` declares a column named exactly `col` — a line whose
-    /// trimmed text is `col` followed by a non-identifier char (so `num` does
-    /// not match the `num_cap` declaration).
-    fn declares_column(body: &str, col: &str) -> bool {
-        body.lines().any(|line| {
-            let t = line.trim_start();
-            t.strip_prefix(col)
-                .is_some_and(|rest| rest.starts_with([' ', '\t']))
-        })
-    }
-
-    #[test]
-    fn builder_columns_exist_in_the_schema() {
-        for (table, columns) in VOCAB {
-            let body = create_table_body(table);
-            for col in *columns {
-                assert!(
-                    declares_column(&body, col),
-                    "AQL SQL builder references column `{table}.{col}`, but it is not \
-                     declared in `CREATE TABLE {table}` in the clinical migration set — \
-                     schema drift"
-                );
-            }
-        }
-    }
 }
