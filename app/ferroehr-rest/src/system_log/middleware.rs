@@ -132,11 +132,6 @@ fn fill_access(event: &mut AuditEvent, access: &AccessContext, state: &AppState)
 /// The statement record answers "who ran what"; these answer "whose record was
 /// disclosed", which is the question NEN 7513 and EHDS Art. 9 put per record.
 /// Returns whether any record was refused under `fail_mode = closed`.
-#[expect(
-    clippy::too_many_arguments,
-    reason = "every argument is one audited fact the middleware already holds; \
-              bundling them into a struct would move the same fields, not fewer"
-)]
 fn emit_served_ehr_records(
     state: &AppState,
     resp: &Response,

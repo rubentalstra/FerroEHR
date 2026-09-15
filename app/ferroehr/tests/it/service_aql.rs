@@ -731,6 +731,112 @@ async fn archetype_lineage_from_the_stored_adl2_family() {
 }
 
 #[tokio::test]
+async fn all_versions_includes_a_branch_row() {
+    use ferroehr::ids::{EhrId, VoId};
+    use ferroehr::storage::version_repo::import::{VerbatimVersionRow, insert_version_verbatim};
+
+    let db = testkit::db().await.expect("testkit database");
+    let pool = db.pool();
+    let svc = FerroEhrService::new(pool.clone());
+
+    let ehr_id = create_ehr(&svc).await;
+    let ovid = create_comp(&svc, &ehr_id, "v", 10.0).await;
+    let vo_id = ovid.split("::").next().unwrap().to_owned();
+    let vo: Uuid = vo_id.parse().expect("vo_id uuid");
+    let ehr_uuid: Uuid = ehr_id.parse().expect("ehr_id uuid");
+
+    // A branch `1.1.1` off trunk node 1, minted by the same system: the live
+    // write paths never branch (RM common master06 §Copying §Subsequent Local
+    // Modifications), so the row arrives the way an EHR_EXTRACT import brings
+    // it, and its node rows are the trunk version's re-keyed to the branch.
+    let (contribution_id, commit_audit_id, system): (Uuid, Uuid, String) = sqlx::query_as(
+        "SELECT contribution_id, commit_audit_id, creating_system_id FROM version \
+             WHERE vo_id = $1 AND sys_version = 1",
+    )
+    .bind(vo)
+    .fetch_one(&pool)
+    .await
+    .expect("the trunk row's provenance");
+    let mut conn = pool.acquire().await.expect("connection");
+    insert_version_verbatim(
+        &mut conn,
+        &VerbatimVersionRow {
+            vo_id: VoId(vo),
+            kind: "COMPOSITION",
+            ehr_id: Some(EhrId(ehr_uuid)),
+            sys_version: 2,
+            trunk_version: 1,
+            branch_number: 1,
+            branch_version: 1,
+            preceding_version_uid: None,
+            other_input_version_uids: None,
+            committed_at: Some("2026-01-01T00:00:00Z"),
+            lifecycle_state: "532",
+            contribution_id,
+            commit_audit_id,
+            template_id: None,
+            signature: None,
+            signature_client_supplied: false,
+            creating_system_id: &system,
+            wrapped_original: None,
+            body: None,
+        },
+    )
+    .await
+    .expect("a branch row off trunk 1");
+    drop(conn);
+    sqlx::query(
+        "INSERT INTO node SELECT (json_populate_record(n, '{\"sys_version\": 2}'::json)).* \
+         FROM node n WHERE n.vo_id = $1 AND n.sys_version = 1",
+    )
+    .bind(vo)
+    .execute(&pool)
+    .await
+    .expect("the branch version's node rows");
+
+    // LATEST_VERSION is the trunk head and does not see the branch.
+    let r = run_aql(
+        &svc,
+        "SELECT COUNT(*) FROM EHR e CONTAINS COMPOSITION c",
+        ehr_scope(&ehr_id),
+    )
+    .await;
+    assert_eq!(
+        rows(&r)[0][0],
+        json!(1),
+        "LATEST_VERSION → the trunk head alone"
+    );
+
+    // ALL_VERSIONS applies no lineage filter: the branch row is a version too.
+    let r = run_aql(
+        &svc,
+        "SELECT COUNT(*) FROM EHR e CONTAINS VERSION v[ALL_VERSIONS] CONTAINS COMPOSITION c",
+        ehr_scope(&ehr_id),
+    )
+    .await;
+    assert_eq!(
+        rows(&r)[0][0],
+        json!(2),
+        "ALL_VERSIONS → trunk 1 and branch 1.1.1"
+    );
+    let r = run_aql(
+        &svc,
+        "SELECT c/uid/value FROM EHR e CONTAINS VERSION v[ALL_VERSIONS] CONTAINS COMPOSITION c",
+        ehr_scope(&ehr_id),
+    )
+    .await;
+    let uids: Vec<String> = rows(&r)
+        .iter()
+        .map(|row| row[0].as_str().expect("a uid string").to_owned())
+        .collect();
+    assert!(
+        uids.iter()
+            .any(|uid| uid == &format!("{vo_id}::{system}::1.1.1")),
+        "the branch version's OBJECT_VERSION_ID is served: {uids:?}"
+    );
+}
+
+#[tokio::test]
 async fn latest_versus_all_versions() {
     let db = testkit::db().await.expect("testkit database");
     let pool = db.pool();

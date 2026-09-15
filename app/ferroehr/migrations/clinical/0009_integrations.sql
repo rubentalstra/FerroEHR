@@ -8,10 +8,11 @@
 -- schema because their rows are EHR-scoped and reached through the clinical
 -- pool.
 --
--- The FHIR facade is leaving this product: the mapping registry and the
--- conversion core move to FerroBRIDGE, which holds no data of its own and
--- translates on demand. `fhir_mapping` stays only until that move lands.
--- TODO(#3386): remove fhir_mapping when the FHIR facade moves to FerroBRIDGE.
+-- Where the FHIR R4 surface of a deployment lives — this product's `fhir`
+-- feature or FerroBRIDGE's facade — is the owner decision #3386 records.
+-- `fhir_mapping` is the mapping registry that surface reads.
+-- TODO(#3386): fhir_mapping leaves with the FHIR facade if the owner's
+-- decision moves it to FerroBRIDGE.
 --
 -- Runs with search_path = clinical, ext, public.
 
