@@ -39,8 +39,10 @@ pub mod types;
 use sqlx::Row;
 
 use crate::ids::EhrId;
+use crate::service::FerroEhrService;
 use crate::service::ehr_index::types::{EhrIndexEntry, LocationDesc, ResourceStatus, SubjectRef};
 use crate::service::error::ServiceError;
+use crate::service::linkage::LinkageError;
 use crate::service::status::{CallStatusType, SmError};
 use crate::system_log::event::EventActionCode;
 
@@ -128,7 +130,7 @@ fn validate_status(status: &ResourceStatus) -> Result<(), ServiceError> {
     Ok(())
 }
 
-impl crate::service::FerroEhrService {
+impl FerroEhrService {
     /// Record one EHR Index operation as a linkage-domain access, naming both
     /// halves of the association it touched.
     ///
@@ -210,7 +212,7 @@ impl crate::service::FerroEhrService {
 /// A completed operation whose crossing could not be recorded is withheld under
 /// `fail_mode = "closed"`, and the caller is told nothing about the audit
 /// pipeline beyond that the server failed.
-fn index_access_refused(error: crate::service::linkage::LinkageError) -> SmError {
+fn index_access_refused(error: LinkageError) -> SmError {
     SmError::exception("the linkage access record could not be taken").with_source(error)
 }
 

@@ -72,6 +72,7 @@ pub(crate) mod store;
 
 use crate::ids::{EhrId, VoId};
 use crate::service::FerroEhrService;
+use crate::service::ehr_index::types::SubjectRef;
 use crate::service::status::SmError;
 use crate::system_log::event::{
     AccessDomain, AuditEvent, EventActionCode, EventOutcome, ObjectClass,
@@ -191,10 +192,7 @@ impl FerroEhrService {
         ehr_id: EhrId,
         minted: &SubjectPseudonym,
     ) -> Result<(), LinkageError> {
-        let subject = crate::service::ehr_index::types::SubjectRef::person(
-            minted.id.to_string(),
-            minted.namespace.clone(),
-        );
+        let subject = SubjectRef::person(minted.id.to_string(), minted.namespace.clone());
         self.open_mapping_row(party_id, ehr_id, Some(subject)).await
     }
 
@@ -204,7 +202,7 @@ impl FerroEhrService {
         &self,
         party_id: VoId,
         ehr_id: EhrId,
-        subject: Option<crate::service::ehr_index::types::SubjectRef>,
+        subject: Option<SubjectRef>,
     ) -> Result<(), LinkageError> {
         let mut conn = self.linkage_pool.acquire().await.map_err(classify)?;
         let outcome = store::open(&mut conn, party_id, ehr_id, subject.as_ref())
