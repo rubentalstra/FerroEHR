@@ -5,7 +5,7 @@
 //! design-filled reads.
 //!
 //! The associations live in `linkage.subject_ehr` and every statement over them
-//! runs on the linkage pool through [`crate::service::linkage::store`]; only the
+//! runs on the linkage pool through the [`crate::service::linkage`] store; only the
 //! EHR-existence probe runs on the clinical pool. No openEHR spec governs the
 //! storage — our own design; master07 governs the operation semantics and error
 //! names.

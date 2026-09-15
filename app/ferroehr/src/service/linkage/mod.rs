@@ -6,7 +6,8 @@
 //!
 //! **No openEHR spec governs the storage — our own design/extension.** The
 //! party-to-EHR map is ours; the relation it lives in
-//! (`linkage.subject_ehr`, written and read through [`store`]) also holds the
+//! (`linkage.subject_ehr`, written and read through this module's `store`)
+//! also holds the
 //! SM's EHR Index associations, because master07 §Overview describes exactly
 //! this schema's purpose — "In a privacy-supporting environment, this enables
 //! EHRs to be persisted with only an EHR id; the EHR Index has to be used to

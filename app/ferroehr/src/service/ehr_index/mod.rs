@@ -19,7 +19,8 @@
 //! semantics and error names.
 //!
 //! The associations live in `linkage.subject_ehr`, reached through the linkage
-//! pool ([`crate::service::linkage::store`]), because master07 §Overview says
+//! pool by the store the [`crate::service::linkage`] module owns, because
+//! master07 §Overview says
 //! what the index is for: "In a privacy-supporting environment, this enables
 //! EHRs to be persisted with only an EHR id; the EHR Index has to be used to
 //! obtain the subject identifier". Only the EHR-existence probe runs on the
