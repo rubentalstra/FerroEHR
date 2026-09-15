@@ -15,3 +15,5 @@ Licences: all four are Business Source License 1.1. FerroTERM and FerroBRIDGE we
 **Why:** the owner treats each as a separate product but wants the whole family under the same resale and hosting protection; the earlier plan to keep the bridge open source was reversed on 2026-09-04.
 
 **How to apply:** never edit a sibling repo from a FerroEHR session unless the owner asks; when a FerroEHR text describes a sibling's licence, say BUSL-1.1 and, if it matters, check the sibling's `LICENSE` first-hand; FerroEHR's `ferroehr-ext` FHIR feature is expected to be retired in favour of FerroBRIDGE (#3080); FerroBRIDGE consumes FerroEHR strictly over ITS-REST, never as a crate dependency. See [[license-busl]].
+
+Update 2026-09-14: the FerroHEALTH platform services (FerroPIX, FerroSMART, FerroFED, FerroSYS) are each their own product in their own repository; FerroFED's repository is confirmed. FerroEHR builds only the seams (#3377). The openEHR Federation Working Group's "Federation Tier with AQL" proposal (syntaric, v0.9.0 RC, CC0) and its Apache-2.0 reference gateway are input for #3383, never a specification. See [[platform-shape-single-tenant-ferrobridge]].
