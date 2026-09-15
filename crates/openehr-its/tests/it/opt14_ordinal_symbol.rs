@@ -14,11 +14,9 @@
 //! and the rubric is resolved from `term_definitions`. A symbol without the
 //! element is refused, and the refusal names that one-element fix (#3067).
 
-#![allow(
+#![expect(
     clippy::expect_used,
-    clippy::unwrap_used,
-    clippy::panic,
-    reason = "integration-test assertions and fixture plumbing outside #[test] fns, which the clippy.toml allow-*-in-tests scoping does not reach"
+    reason = "fixture plumbing outside #[test] fns, which the clippy.toml allow-*-in-tests scoping does not reach"
 )]
 
 use openehr_its::xml::runtime::XmlError;
