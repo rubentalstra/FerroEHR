@@ -42,12 +42,15 @@ Every table and column the emitter names comes from the schema catalog
 (`app/ferroehr/src/db/iden.rs`), whose tests pin each name against the clinical
 migration set and refuse a column spelled as a string under `aql/sql/`; the one
 exception is `derived_col`, for the output of a subquery or a set-returning
-function, which no relation declares. No `ext` helper the emitter calls carries
-an `EXCEPTION` block, so none opens a subtransaction per row; each ships in the
-language that measured faster over the values it actually sees (`sql` where the
-body reads its input once or twice and folds into the statement, `plpgsql` for
-the two date/time parsers that read it a dozen times), and a value a guard
-refuses reads as NULL rather than erroring.
+function, which no relation declares. Each `ext` helper the emitter calls ships
+in the language and shape that measured fastest over the values it actually sees
+— `sql` where the body reads its input once or twice and folds into the
+statement, `plpgsql` for the three date/time parsers that read it many times
+over — and two of them, `openehr_date_days` and `openehr_timestamp`, keep an
+`EXCEPTION` block because the trapped cast measured cheaper than any guard that
+would let the same cast run untrapped, while the other five open no
+subtransaction at all. A value any helper refuses reads as NULL rather than
+erroring.
 
 Versioning semantics: `LATEST_VERSION` = the object's head row
 (`vo_head.trunk_head_sys_version`); `ALL_VERSIONS` = the append-only `version`

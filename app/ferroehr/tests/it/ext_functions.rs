@@ -5,13 +5,15 @@
 //!
 //! The helpers used to be PL/pgSQL bodies ending in
 //! `EXCEPTION WHEN others THEN RETURN NULL`, which opens a subtransaction on
-//! every call; their casts are now guarded instead of trapped. Three things are
-//! proven here against a real database, none of them from a recorded fixture:
-//! the first generation's own bodies are installed beside the current ones and
-//! both are read over the same corpus, so every agreement and every divergence
-//! is live; the divergence set is pinned value by value; and no helper traps an
-//! error, while the ones written as a single SQL expression fold into the plan
-//! of a representative AQL predicate.
+//! every call; five of the seven now reach every cast through a guard instead,
+//! and the two whose whole body is "parse a date or a time" keep the trap
+//! because it measured cheaper than any guard that would replace it. Three
+//! things are proven here against a real database, none of them from a recorded
+//! fixture: the first generation's own bodies are installed beside the current
+//! ones and both are read over the same corpus, so every agreement and every
+//! divergence is live; the divergence set is pinned value by value; and exactly
+//! the two measured parsers trap an error, while the ones written as a single
+//! SQL expression fold into the plan of a representative AQL predicate.
 
 #![expect(
     clippy::expect_used,
@@ -573,9 +575,10 @@ async fn the_deviations_do_not_depend_on_the_session_time_zone() {
 async fn null_reads_as_null() {
     let db = testkit::db().await.expect("testkit database");
     let pool = db.pool();
-    // The helpers are no longer STRICT, because a strict function whose body
-    // holds a CASE is never folded into the calling query. Each therefore has
-    // to answer NULL itself.
+    // The helpers written as a single SQL expression are not STRICT, because a
+    // strict function whose body holds a CASE is never folded into the calling
+    // query. Each of those answers NULL itself; the PL/pgSQL ones are STRICT
+    // and PostgreSQL answers for them.
     for helper in TEXT_HELPERS {
         let sql = format!("SELECT ext.{helper}(NULL::text) IS NULL AS null_in_null_out");
         let is_null: bool = sqlx::query_scalar(sqlx::AssertSqlSafe(sql))
@@ -597,17 +600,26 @@ async fn null_reads_as_null() {
     }
 }
 
+/// The helpers whose measurement earned them an error trap, in `pg_proc` order.
+///
+/// A trap opens a subtransaction on every call, so it survives in `ext` only
+/// where the trapped cast measured cheaper than any guard that would let the
+/// same cast run untrapped — which is the case for exactly these two, whose
+/// whole body is "parse a date or a time".
+const TRAPPING_HELPERS: [&str; 2] = ["openehr_date_days", "openehr_timestamp"];
+
 #[tokio::test]
-async fn no_ext_function_traps_an_error() {
+async fn exactly_the_two_measured_parsers_trap_an_error() {
     let db = testkit::db().await.expect("testkit database");
     let pool = db.pool();
-    // The point of the rewrite is that no helper opens a subtransaction per
-    // call, which is what an EXCEPTION clause costs. Which language each helper
-    // is written in is a measured choice, not the property under test; the
-    // absence of an error trap is.
-    let trapping: Vec<String> = sqlx::query_scalar(
-        "SELECT p.proname::text FROM pg_proc p \
-         JOIN pg_namespace n ON n.oid = p.pronamespace \
+    // Both ends are asserted from the database itself: which functions carry an
+    // EXCEPTION clause, read from their source, and whether each of those
+    // carries the measurement that justifies it, read from its comment. A trap
+    // added to a third helper fails the first assertion; a justification
+    // dropped from one of these two fails the second.
+    let trapping: Vec<(String, String)> = sqlx::query_as(
+        "SELECT p.proname::text, coalesce(obj_description(p.oid, 'pg_proc'), '') \
+         FROM pg_proc p JOIN pg_namespace n ON n.oid = p.pronamespace \
          WHERE n.nspname = 'ext' AND p.prosrc ILIKE '%exception%' \
            AND NOT EXISTS (SELECT FROM pg_depend d \
                            WHERE d.objid = p.oid AND d.deptype = 'e') \
@@ -616,10 +628,23 @@ async fn no_ext_function_traps_an_error() {
     .fetch_all(&pool)
     .await
     .expect("read the ext function inventory");
-    assert!(
-        trapping.is_empty(),
-        "no ext function this build defines traps an error; found {trapping:?}"
+
+    let names: Vec<&str> = trapping.iter().map(|(name, _)| name.as_str()).collect();
+    assert_eq!(
+        names, TRAPPING_HELPERS,
+        "only the helpers whose measurement earned a trap carry one"
     );
+    for (name, comment) in &trapping {
+        assert!(
+            comment.contains("error trap"),
+            "ext.{name} says in its comment that it traps: {comment}"
+        );
+        assert!(
+            comment.matches(" ms").count() >= 3,
+            "ext.{name} carries the measurement that earned the trap — this reading \
+             and the readings it was measured against: {comment}"
+        );
+    }
 }
 
 #[tokio::test]
