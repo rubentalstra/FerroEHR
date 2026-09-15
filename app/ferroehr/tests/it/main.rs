@@ -45,6 +45,7 @@ mod fhir_outbound_amqp;
 mod fhir_priority_categories;
 mod fixtures;
 mod item_tag_fixture;
+mod legal_marks;
 mod licence_stamp;
 mod multimedia_s3;
 mod one_schema_per_statement;

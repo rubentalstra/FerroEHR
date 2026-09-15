@@ -980,6 +980,18 @@ impl Builder<'_> {
     }
 
     pub(super) fn apply_ehr_scope(&mut self) {
+        // The whole-EHR restriction, at EVERY scope. The per-object predicate
+        // covers every version spine (a whole-EHR restriction stamps each
+        // `vo_head`), but a bare `FROM EHR e` has no spine, so the `ehr` row
+        // carries it. Unlike the objection below, this is not a population-only
+        // gate: GDPR Art. 18(2) leaves storage as the only processing a
+        // restriction admits (`docs/law/eu/gdpr/text.html`), so naming the
+        // `ehr_id` does not make the content answerable.
+        for alias in self.ehr_alias.values().cloned().collect::<Vec<_>>() {
+            self.q.and_where(
+                Expr::col((Alias::new(alias.as_str()), Alias::new("restricted_at"))).is_null(),
+            );
+        }
         // Multi-EHR scoping (`ehr_ids: List<UUID>`): restrict every VO root to
         // the id set with `ehr_id = ANY($ids)` — ONE array bind rather than one
         // bind per id, so a cohort of any size stays inside the 65535-parameter

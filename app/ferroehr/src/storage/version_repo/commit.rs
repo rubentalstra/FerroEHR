@@ -600,19 +600,26 @@ pub async fn write_outbox(
         "committed_at": committed_at.to_string(),
         "versions": versions,
     });
-    sqlx::query(
+    // The party domain carries no `ehr` relation, and a demographic commit has
+    // no EHR to mark, so the marked-EHR filter is on the clinical statement
+    // alone: naming `ehr` in the party domain would fail at parse time.
+    let sql = if ehr_id.is_some() {
         "INSERT INTO event_outbox (contribution_id, ehr_id, envelope, committed_at) \
          SELECT $1, $2, $3, $4::timestamptz \
          WHERE NOT EXISTS (SELECT 1 FROM ehr e WHERE e.id = $2 \
              AND (e.restricted_at IS NOT NULL \
                   OR (e.research_objected_at IS NOT NULL \
-                      AND e.research_objection_ground IS NULL)))",
-    )
-    .bind(contribution_id)
-    .bind(ehr_id)
-    .bind(&envelope)
-    .bind(committed_at.to_string())
-    .execute(&mut *tx)
-    .await?;
+                      AND e.research_objection_ground IS NULL)))"
+    } else {
+        "INSERT INTO event_outbox (contribution_id, ehr_id, envelope, committed_at) \
+         VALUES ($1, $2, $3, $4::timestamptz)"
+    };
+    sqlx::query(sql)
+        .bind(contribution_id)
+        .bind(ehr_id)
+        .bind(&envelope)
+        .bind(committed_at.to_string())
+        .execute(&mut *tx)
+        .await?;
     Ok(())
 }
