@@ -153,11 +153,7 @@ const BARRIERS: &[(&str, &str, &[&str])] = &[
     ("ew", "ferroehr_clinical", &["party", "linkage"]),
     ("er", "ferroehr_clinical_reader", &["party", "linkage"]),
     ("dw", "ferroehr_party", &["clinical", "linkage"]),
-    (
-        "dr",
-        "ferroehr_party_reader",
-        &["clinical", "linkage"],
-    ),
+    ("dr", "ferroehr_party_reader", &["clinical", "linkage"]),
     ("lk", "ferroehr_linkage", &["clinical", "party"]),
 ];
 
@@ -367,7 +363,7 @@ async fn the_boot_self_check_refuses_a_cross_domain_grant() {
         ferroehr::config::deployment::DeploymentProfile::Sandbox,
     )
     .await
-        .expect("a correctly migrated database passes the boot gate");
+    .expect("a correctly migrated database passes the boot gate");
 
     // One object of each kind the gate claims to cover, granted and revoked in
     // turn: the gate must fail while the grant stands and pass once it is gone,
@@ -519,7 +515,10 @@ async fn a_sealed_identifier_round_trips_and_resolves_to_its_party() {
     use ferroehr::service::demographic::identifier::store::IdentifierStore;
 
     let db = testkit::db().await.expect("testkit database");
-    let store = IdentifierStore::new(ferroehr::db::domain_pool_from(&db.pool(), ferroehr::db::domain::Domain::Party));
+    let store = IdentifierStore::new(ferroehr::db::domain_pool_from(
+        &db.pool(),
+        ferroehr::db::domain::Domain::Party,
+    ));
     let keys = test_keys();
     let party = Uuid::now_v7();
 
@@ -574,7 +573,10 @@ async fn an_unregistered_scheme_is_refused() {
     use ferroehr::service::demographic::identifier::store::{IdentifierStore, StoreError};
 
     let db = testkit::db().await.expect("testkit database");
-    let store = IdentifierStore::new(ferroehr::db::domain_pool_from(&db.pool(), ferroehr::db::domain::Domain::Party));
+    let store = IdentifierStore::new(ferroehr::db::domain_pool_from(
+        &db.pool(),
+        ferroehr::db::domain::Domain::Party,
+    ));
     let refused = store
         .seal(&test_keys(), Uuid::now_v7(), "zz-invented", SYNTHETIC_BSN)
         .await;
@@ -594,7 +596,10 @@ async fn an_unregistered_scheme_is_refused() {
 async fn only_the_demographic_writer_reaches_the_sealed_value() {
     let db = testkit::db().await.expect("testkit database");
 
-    for (suffix, role) in [("nie", "ferroehr_clinical"), ("nir", "ferroehr_clinical_reader")] {
+    for (suffix, role) in [
+        ("nie", "ferroehr_clinical"),
+        ("nir", "ferroehr_clinical_reader"),
+    ] {
         let mut conn = role_conn(&db, suffix, role).await;
         let refused = sqlx::query("SELECT ciphertext FROM party.national_identifier")
             .fetch_all(&mut conn)

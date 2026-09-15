@@ -24,9 +24,9 @@ use std::time::Duration;
 use anyhow::Context as _;
 use clap::{Parser, Subcommand};
 use ferroehr::config::deployment::{ClusterIdentities, DeploymentPosture, DeploymentProfile};
-use ferroehr::db::domain::{Domain, DomainPools};
 use ferroehr::config::management::EndpointLevels;
 use ferroehr::config::management::ManagementConfig;
+use ferroehr::db::domain::{Domain, DomainPools};
 use ferroehr::system_log::config::AuditConfig;
 use ferroehr::system_log::config::AuditPosture;
 use ferroehr::system_log::sender::{AuditHandle, AuditSender, SubjectResolver};
@@ -190,7 +190,9 @@ async fn run_db(
 /// # Errors
 /// A schema divergence, an unreadable migration set, a breached domain
 /// boundary, or a connection failure.
-async fn verify_schema_and_isolation(config: &ferroehr::config::FerroEhrConfig) -> anyhow::Result<()> {
+async fn verify_schema_and_isolation(
+    config: &ferroehr::config::FerroEhrConfig,
+) -> anyhow::Result<()> {
     db::verify_schema(&config.db, &config.storage)
         .await
         .map_err(|error| anyhow::Error::new(error).context("verifying the schema"))?;
@@ -411,10 +413,9 @@ fn assemble_service(
         service = service.with_audit(sender);
     }
     if audit_enabled && config.audit.store.enabled {
-        service =
-            service.with_audit_store(ferroehr::system_log::store::AuditStore::new(
-                pools.audit.clone(),
-            ));
+        service = service.with_audit_store(ferroehr::system_log::store::AuditStore::new(
+            pools.audit.clone(),
+        ));
     }
 
     service = attach_terminology(service, config)?;

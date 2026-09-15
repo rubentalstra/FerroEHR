@@ -102,7 +102,8 @@ fn literals(source: &str) -> Vec<Literal> {
             }
             hashes
         });
-        let opens_raw = raw_hashes.is_some_and(|hashes| chars.get(index + 1 + hashes) == Some(&'"'));
+        let opens_raw =
+            raw_hashes.is_some_and(|hashes| chars.get(index + 1 + hashes) == Some(&'"'));
         if !opens_raw && current != '"' {
             only_whitespace_since_literal = false;
             index += 1;
@@ -115,10 +116,7 @@ fn literals(source: &str) -> Vec<Literal> {
         if opens_raw {
             let hashes = raw_hashes.unwrap_or(0);
             cursor = index + 2 + hashes;
-            loop {
-                let Some(&character) = chars.get(cursor) else {
-                    break;
-                };
+            while let Some(&character) = chars.get(cursor) {
                 if character == '"'
                     && (0..hashes).all(|offset| chars.get(cursor + 1 + offset) == Some(&'#'))
                 {
@@ -133,10 +131,7 @@ fn literals(source: &str) -> Vec<Literal> {
             }
         } else {
             cursor = index + 1;
-            loop {
-                let Some(&character) = chars.get(cursor) else {
-                    break;
-                };
+            while let Some(&character) = chars.get(cursor) {
                 if character == '\\' {
                     // An escape: skip the escaped character, and keep counting
                     // lines through a line continuation.

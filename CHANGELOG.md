@@ -46,11 +46,61 @@ workflow refuses a tag that has no matching section here.
   - The archive file format carries a version's `committed_at` instead of a
     validity interval. An archive written by an earlier release does not load.
 
-- **The Helm chart is 9.0.0, a major bump** (#3342, #3344, #3378). The values
-  contract changed in two ways a values file can notice: `config.tenancy` no
-  longer exists and is refused at render with the reason, and the per-domain
-  backup CronJobs dump the generation-2 schemas (`clinical, ext, audit` and
-  `party`) instead of the retired mirror schemas. The docker-compose backup
+- **BREAKING — one pool and one DSN per storage domain, and the runtime roles
+  are named after them** (#3343). Each of the four storage domains — `clinical`,
+  `party`, `linkage`, `audit` — now has its own configuration table,
+  `[storage.<domain>]` with `url`/`url_file`, and its own connection pool
+  carrying only that domain's schema on its `search_path`. Every domain defaults
+  to the shared `[db].url`, so a configuration file that names no `[storage]`
+  table at all, and the compose quickstart, behave exactly as before. What
+  changed for a deployment that had already separated its credentials:
+  - `[db].demographic_url`, `[db].demographic_url_file`, `[db].linkage_url` and
+    `[db].linkage_url_file` are gone. Move them to `[storage.party]` and
+    `[storage.linkage]`; the old keys are refused at boot by name rather than
+    ignored.
+  - The chart's `database.demographicExistingSecret`,
+    `database.linkageExistingSecret` and their `*Key`/`*Url` siblings become
+    `database.<domain>.{existingSecret,existingSecretKey,url}` for `clinical`,
+    `party`, `linkage` and `audit`. The mounted files are
+    `storage.<domain>.url` and the environment names are
+    `FERROEHR__STORAGE__<DOMAIN>__URL_FILE`.
+  - The runtime roles `ferroehr_ehr`, `ferroehr_ehr_reader`,
+    `ferroehr_demographic` and `ferroehr_demographic_reader` are renamed to
+    `ferroehr_clinical`, `ferroehr_clinical_reader`, `ferroehr_party` and
+    `ferroehr_party_reader`. New migrations create the new roles, move every
+    grant, and drop the old names; a login role that was a member of an old one
+    is granted the new one at deployment (`GRANT ferroehr_party TO <login>`).
+    `ferroehr_linkage` is unchanged.
+  - The compose backup service `ferroehr-backup-demographic` is
+    `ferroehr-backup-party`, its directory variable
+    `FERROEHR_BACKUP_DEMOGRAPHIC_DIR` is `FERROEHR_BACKUP_PARTY_DIR`, and the
+    chart's `backup.demographic.*` values are `backup.party.*`.
+
+  A DSN naming another host moves that domain to a database or cluster of its
+  own, which is the separation a schema inside one database cannot make: a base
+  backup, WAL archiving and physical replication carry every schema of a
+  database together (PostgreSQL 18, Backup and Restore). Schema preparation
+  follows: the `ext` set is applied per database by whichever domain reaches it
+  first, so two co-located domains share one copy and a relocated domain carries
+  its own. One layout is refused rather than half-applied — the `linkage`
+  migration set revokes a function the `party` set creates, so those two are
+  prepared in the same database.
+
+  The boot gate grew two refusals. Two domains configured on DIFFERENT DSNs that
+  authenticate as the SAME database role are refused, because a separation that
+  exists only in the configuration reads as one that holds. And a domain role
+  that does not exist is a warning under `deployment_profile = "sandbox"` and a
+  refusal under `production`, where absent roles mean absent grants and the
+  check would otherwise pass by having nothing to measure. `ferroehr config
+  check` prints the resolved domain layout, naming no DSN.
+
+- **The Helm chart is 10.0.0, a major bump** (#3342, #3343, #3344, #3378). The
+  values contract changed in three ways a values file can notice: the per-domain
+  `database.<domain>` blocks above replace the flat `demographicExistingSecret`
+  and `linkageExistingSecret` keys, `config.tenancy` no longer exists and is
+  refused at render with the reason, and the per-domain backup CronJobs dump the
+  generation-2 schemas (`clinical, ext, audit` and `party`) instead of the
+  retired mirror schemas. The docker-compose backup
   services dump the same sets, and all six jobs now pass `--strict-names`, so a
   `--schema` pattern matching nothing fails the dump instead of writing an
   artefact that silently lacks that half (PostgreSQL 18, pg_dump §Options).

@@ -734,7 +734,11 @@ async fn migration_connection(dsn: &str) -> Result<PgConnection, DbError> {
 /// the credential that may hold DDL rights while the runtime ones do not. A
 /// group a deployment relocated is prepared on the DSN that relocated it:
 /// `[db].migrate_url` names one database, and a relocated domain is not in it.
-fn group_migration_dsn(group: &domain::DomainGroup<'_>, layout: &DomainLayout, db: &DbConfig) -> String {
+fn group_migration_dsn(
+    group: &domain::DomainGroup<'_>,
+    layout: &DomainLayout,
+    db: &DbConfig,
+) -> String {
     let separated = group
         .domains
         .first()
@@ -916,10 +920,13 @@ async fn verify_recorded_state(conn: &mut PgConnection, domains: &[Domain]) -> R
     Ok(())
 }
 
-/// Refuses to serve when a runtime role can read anything in a
-/// pseudonymisation domain it does not own, when two separately-configured
-/// domains turn out to authenticate as one role, or — under
-/// [`DeploymentProfile::Production`] — when a domain role is missing.
+/// Refuses to serve when the database's grants do not hold the domain
+/// boundaries the deployment claims.
+///
+/// Three refusals: a runtime role that can read a pseudonymisation domain it
+/// does not own, two separately-configured domains that authenticate as one
+/// role, and — under [`DeploymentProfile::Production`] — a domain role that
+/// does not exist.
 ///
 /// The separation of the clinical record, the identity of its subject, and the
 /// map between them is a property of the DATABASE's grants, not of the
