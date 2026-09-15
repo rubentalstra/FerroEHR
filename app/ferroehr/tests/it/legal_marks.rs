@@ -22,7 +22,6 @@
 
 #![expect(
     clippy::expect_used,
-    clippy::panic,
     clippy::indexing_slicing,
     reason = "clippy's in-test lint scoping (clippy.toml `allow-*-in-tests`) only \
               reaches `#[test]`-annotated functions, so it misses this integration \
