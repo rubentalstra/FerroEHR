@@ -39,7 +39,33 @@ CREATE TABLE ehr (
     -- everything other than the EHR_STATUS object"). The content-write guard
     -- reads this column rather than the current EHR_STATUS root node.
     is_modifiable     boolean NOT NULL DEFAULT true,
-    CONSTRAINT pk_ehr PRIMARY KEY (id)
+    -- Restriction of processing at whole-EHR grain: set while every object of
+    -- this EHR may be stored but not otherwise processed. GDPR Art. 4(3) calls
+    -- restriction "the marking of stored personal data with the aim of limiting
+    -- their processing in the future" and Art. 18(2) leaves only storage
+    -- (docs/law/eu/gdpr/text.html). The register that records the ground is
+    -- `restriction`; this column and `vo_head.restricted_at` are the marks the
+    -- read paths filter on. No openEHR spec governs restriction of processing:
+    -- our own design/extension.
+    restricted_at     timestamptz,
+    -- The subject's objection to processing for research (GDPR Art. 21(6),
+    -- docs/law/eu/gdpr/text.html: a right to object to processing "for
+    -- scientific or historical research purposes or statistical purposes
+    -- pursuant to Article 89(1)"). Set while the objection stands; the
+    -- population query, every export and the outbox emitter skip the EHR. A
+    -- single-EHR read for care is untouched — Art. 21(6) reaches research
+    -- processing, not the care record. Our own design/extension.
+    research_objected_at      timestamptz,
+    -- The controller's recorded ground for overriding the objection, which
+    -- Art. 21(6) admits where "the processing is necessary for the performance
+    -- of a task carried out for reasons of public interest". NULL while the
+    -- objection stands, so the mark is `research_objected_at IS NOT NULL AND
+    -- research_objection_ground IS NULL` and the override is auditable rather
+    -- than a silent clearing of the objection.
+    research_objection_ground text,
+    CONSTRAINT pk_ehr PRIMARY KEY (id),
+    CONSTRAINT ck_ehr_objection_ground CHECK
+        (research_objection_ground IS NULL OR research_objected_at IS NOT NULL)
 ) WITH (fillfactor = 90);
 
 CREATE INDEX idx_ehr_time_created ON ehr (time_created DESC, id);
@@ -59,6 +85,15 @@ COMMENT ON COLUMN ehr.subject_id IS 'Denormalized copy of the current EHR_STATUS
 COMMENT ON COLUMN ehr.subject_namespace IS 'Denormalized copy of the current EHR_STATUS subject.external_ref.namespace.';
 COMMENT ON COLUMN ehr.is_queryable IS 'Promoted copy of the current EHR_STATUS.is_queryable (RM ehr master04 §EHR Status); backs the AQL full-population gate (SM i_query_service.adoc). Our own storage design.';
 COMMENT ON COLUMN ehr.is_modifiable IS 'Promoted copy of the current EHR_STATUS.is_modifiable (RM ehr master04 §EHR Active Status); backs the content-write guard. Our own storage design.';
+COMMENT ON COLUMN ehr.restricted_at IS 'When restriction of processing was recorded for the whole EHR (GDPR Art. 4(3), Art. 18(2)); NULL = unrestricted. Our own design/extension — no openEHR spec governs restriction.';
+COMMENT ON COLUMN ehr.research_objected_at IS 'When the subject objected to research processing (GDPR Art. 21(6)); while set and unoverridden, population AQL, every export and the outbox emitter skip this EHR. Our own design/extension.';
+COMMENT ON COLUMN ehr.research_objection_ground IS 'The controller''s recorded public-interest ground for overriding the objection (GDPR Art. 21(6)); NULL while the objection stands.';
+
+-- No index on either mark, deliberately. Every reader either has the row
+-- already (the AQL population gate, which filters the UNMARKED majority on
+-- rows its scan has reached) or reaches it by primary key (the mark read, the
+-- outbox emitter and the drainer's NOT EXISTS). A partial index over the
+-- marked minority would serve none of them.
 
 -- ── the subject pseudonym guard ──────────────────────────────────────────────
 -- A deployment that declares subject namespaces holds an OPAQUE pseudonym on

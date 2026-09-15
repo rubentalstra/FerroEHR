@@ -138,6 +138,7 @@ impl FerroEhrService {
                 "no EHR with id {an_ehr_id}"
             )));
         }
+        self.refuse_objected_export(an_ehr_id).await?;
         let extract = self.export_whole_ehr(an_ehr_id, 1).await?;
         self.emit_extract_audit(an_ehr_id, EventActionCode::Read)?;
         Ok(vec![extract])
@@ -178,6 +179,8 @@ impl FerroEhrService {
             let ehr_id =
                 resolve_entity_ehr(self, entity.ehr_id.as_deref(), entity.subject_id.as_deref())
                     .await?;
+
+            self.refuse_objected_export(ehr_id).await?;
 
             let vo_kinds = self
                 .entity_primary_set(ehr_id, entity, criteria_present, &extract_spec)
@@ -409,6 +412,41 @@ impl FerroEhrService {
         Ok(out)
     }
 
+    /// Refuse an Extract of an EHR whose subject objected to research
+    /// processing, and of an EHR restricted as a whole.
+    ///
+    /// An Extract leaves this repository for another system, which is the
+    /// surface a secondary-use consumer reads the record through, so both marks
+    /// bite here. The refusal is loud rather than an empty Extract: a caller
+    /// handed an Extract with nothing in it would record an absence of data
+    /// where there is data the server declines to disclose. GDPR Art. 18(2) and
+    /// Art. 21(6) (`docs/law/eu/gdpr/text.html`); no openEHR spec governs
+    /// either mark — our own design/extension.
+    ///
+    /// # Errors
+    /// [`ServiceError::Restricted`] (`403`) when either mark stands; the
+    /// storage read error of the mark read.
+    async fn refuse_objected_export(&self, ehr_id: EhrId) -> Result<(), ServiceError> {
+        let Some(marks) = crate::storage::marks::ehr_marks(&self.pool, ehr_id).await? else {
+            return Ok(());
+        };
+        if marks.restricted {
+            return Err(ServiceError::restricted(&format!("EHR {ehr_id}")));
+        }
+        if marks.research_objected {
+            return Err(ServiceError::research_objected(&format!("EHR {ehr_id}")));
+        }
+        Ok(())
+    }
+
+    /// Every version container of an EHR, restricted objects omitted.
+    ///
+    /// An Extract is a disclosure of the record to another system, which
+    /// GDPR Art. 18(2) does not admit for a restricted object
+    /// (`docs/law/eu/gdpr/text.html`): storage is the only processing left. The
+    /// object is therefore absent from the Extract rather than failing the
+    /// whole export, the same treatment the AQL result set gives it. No openEHR
+    /// spec governs restriction of processing — our own design/extension.
     async fn ehr_versioned_objects(
         &self,
         ehr_id: EhrId,
@@ -416,7 +454,7 @@ impl FerroEhrService {
         let rows = sqlx::query(
             "SELECT version.vo_id, version.kind FROM version \
              JOIN vo_head h ON h.vo_id = version.vo_id AND h.trunk_head_sys_version = version.sys_version \
-             WHERE version.ehr_id = $1 \
+             WHERE version.ehr_id = $1 AND h.restricted_at IS NULL \
              ORDER BY version.vo_id",
         )
         .bind(ehr_id)
@@ -439,7 +477,7 @@ impl FerroEhrService {
         Ok(sqlx::query_scalar(
             "SELECT version.kind FROM version \
              JOIN vo_head h ON h.vo_id = version.vo_id AND h.trunk_head_sys_version = version.sys_version \
-             WHERE version.vo_id = $1 AND version.ehr_id = $2",
+             WHERE version.vo_id = $1 AND version.ehr_id = $2 AND h.restricted_at IS NULL",
         )
         .bind(vo_id)
         .bind(ehr_id)

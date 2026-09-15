@@ -34,6 +34,8 @@
 //!   shape), itself one file per concern.
 //! - [`ehr_repo`] — `ehr`-table and `ehr_folder`-membership reads and writes.
 //! - [`tag_repo`] — the `item_tag` store (EHR-scoped and demographic).
+//! - [`marks`] — the restriction register, the research objection and the
+//!   retention register, and the marks on `ehr` / `vo_head` they drive.
 //!
 //! The seam with the versioning layer is a value contract rather than shared
 //! SQL: versioning owns the semantics (classify, tree placement, lifecycle,
@@ -44,6 +46,7 @@ pub mod codec;
 pub mod ddl_template;
 pub mod ehr_repo;
 pub mod error;
+pub mod marks;
 pub mod node_repo;
 pub mod promoted;
 pub mod row;

@@ -115,6 +115,49 @@ fn folder_items_exists(parent_node: &str, child_node: &str) -> Expr {
     Expr::exists(sub)
 }
 
+/// The restriction gate on a version spine: the object's head row carries no
+/// restriction mark.
+///
+/// GDPR Art. 18(2) leaves storage as the only processing a restricted object
+/// admits (`docs/law/eu/gdpr/text.html`), and answering a query from its
+/// content is processing, so the mark is a predicate on the head join rather
+/// than a post-filter — a restricted object contributes no row to any result
+/// set, under `LATEST_VERSION` and `ALL_VERSIONS` alike. It is not a row the
+/// caller may know about and is refused: `RESULT_SET` has no per-row
+/// diagnostic channel (QUERY master01 §Result Set), so the honest answer to a
+/// population query is the rows it may see. A point read of the same object
+/// answers `403` instead, where the caller addressed it and an explanation
+/// fits. No openEHR spec governs restriction of processing — our own
+/// design/extension.
+fn head_unrestricted(version_alias: &str) -> Expr {
+    let h = format!("{version_alias}_mark");
+    let mut sub = Query::select();
+    sub.expr(Expr::val(1));
+    sub.from_as(VoHead::Table, Alias::new(h.as_str()));
+    sub.and_where(col(&h, "vo_id").eq(col(version_alias, "vo_id")));
+    sub.and_where(col(&h, "restricted_at").is_null());
+    Expr::exists(sub)
+}
+
+/// The research objection is not standing on this `ehr` alias.
+///
+/// GDPR Art. 21(6) gives the subject a right to object to processing "for
+/// scientific or historical research purposes or statistical purposes pursuant
+/// to Article 89(1)" unless the controller has a public-interest ground
+/// (`docs/law/eu/gdpr/text.html`), and a full-population query is the surface
+/// a secondary-use consumer reads this repository through. So an objected EHR
+/// leaves the population, while a query that names its `ehr_id` — a clinician
+/// reading the record for care — is untouched, because the objection reaches
+/// research processing and not the care record. The controller's recorded
+/// override is the second column: while `research_objection_ground` is set,
+/// the EHR is in the population again and the ground says on whose authority.
+/// No openEHR spec governs the objection — our own design/extension.
+fn research_objection_clear(ehr_alias: &str) -> Expr {
+    col(ehr_alias, "research_objected_at")
+        .is_null()
+        .or(col(ehr_alias, "research_objection_ground").is_not_null())
+}
+
 /// `LATEST_VERSION`: the version row is the object's current TRUNK head.
 ///
 /// The store is append-only, so "current" is the head row's answer rather than
@@ -851,6 +894,7 @@ impl Builder<'_> {
                         let voa = format!("xv{}", self.next_ctr());
                         sub.from_as(VersionRow::Table, Alias::new(voa.as_str()));
                         sub.and_where(hot(&voa));
+                        sub.and_where(head_unrestricted(&voa));
                         sub.and_where(col(alias, "vo_id").eq(col(&voa, "vo_id")));
                         sub.and_where(col(alias, "sys_version").eq(col(&voa, "sys_version")));
                         match scope {
@@ -879,6 +923,7 @@ impl Builder<'_> {
                         let voa = format!("xv{}", self.next_ctr());
                         sub.from_as(VersionRow::Table, Alias::new(voa.as_str()));
                         sub.and_where(hot(&voa));
+                        sub.and_where(head_unrestricted(&voa));
                         sub.and_where(col(alias, "vo_id").eq(col(&voa, "vo_id")));
                         sub.and_where(col(alias, "sys_version").eq(col(&voa, "sys_version")));
                         match scope {
@@ -904,6 +949,7 @@ impl Builder<'_> {
                 let voa = format!("xv{}", self.next_ctr());
                 sub.from_as(VersionRow::Table, Alias::new(voa.as_str()));
                 sub.and_where(hot(&voa));
+                sub.and_where(head_unrestricted(&voa));
                 sub.and_where(col(alias, "vo_id").eq(col(&voa, "vo_id")));
                 sub.and_where(col(alias, "sys_version").eq(col(&voa, "sys_version")));
                 sub.and_where(col(alias, "ehr_id").eq(col(e, "id")));
@@ -930,6 +976,16 @@ impl Builder<'_> {
     }
 
     pub(super) fn apply_ehr_scope(&mut self) {
+        // The whole-EHR restriction, at EVERY scope. The per-object predicate
+        // covers every version spine (a whole-EHR restriction stamps each
+        // `vo_head`), but a bare `FROM EHR e` has no spine, so the `ehr` row
+        // carries it. Unlike the objection below, this is not a population-only
+        // gate: GDPR Art. 18(2) leaves storage as the only processing a
+        // restriction admits (`docs/law/eu/gdpr/text.html`), so naming the
+        // `ehr_id` does not make the content answerable.
+        for alias in self.ehr_alias.values().cloned().collect::<Vec<_>>() {
+            self.q.and_where(col(&alias, "restricted_at").is_null());
+        }
         // Multi-EHR scoping (`ehr_ids: List<UUID>`): restrict every VO root to
         // the id set with `ehr_id = ANY($ids)` — ONE array bind rather than one
         // bind per id, so a cohort of any size stays inside the 65535-parameter
@@ -994,7 +1050,19 @@ impl Builder<'_> {
         // promoted `is_queryable` column directly.
         for alias in self.ehr_alias.values().cloned().collect::<Vec<_>>() {
             self.q.and_where(col(&alias, "is_queryable").eq(true));
+            self.q.and_where(research_objection_clear(&alias));
         }
+    }
+
+    /// The EHR-scoped restriction mark on a population query.
+    ///
+    /// The per-object predicate ([`head_unrestricted`]) already removes every
+    /// restricted object; this removes an EHR restricted as a whole, whose
+    /// objects carry the mark too but whose `ehr` row is the cheaper place to
+    /// decide it once the population gate has already joined it.
+    fn gate_ehr_marks(&mut self, alias: &str) {
+        self.q.and_where(col(alias, "restricted_at").is_null());
+        self.q.and_where(research_objection_clear(alias));
     }
 
     /// Gate an unlinked versioned-object root (no bound EHR alias covers it):
@@ -1019,6 +1087,7 @@ impl Builder<'_> {
             self.q.and_where(link);
         }
         self.q.and_where(col(&alias, "is_queryable").eq(true));
+        self.gate_ehr_marks(&alias);
     }
 
     /// Join the EHR's current `EHR_STATUS` versioned-object root node for an EHR
@@ -1066,6 +1135,7 @@ impl Builder<'_> {
         }
         self.q.and_where(hot(&vo));
         self.q.and_where(hot(&node));
+        self.q.and_where(head_unrestricted(&vo));
         self.q
             .and_where(col(&vo, "kind").eq(Expr::val("EHR_STATUS")));
         // Current = latest trunk (master06 latest_trunk_version).
@@ -1103,6 +1173,7 @@ impl Builder<'_> {
     }
 
     fn push_scope(&mut self, voa: &str, scope: &VersionScope) -> Result<(), AqlError> {
+        self.q.and_where(head_unrestricted(voa));
         match scope {
             VersionScope::Latest => {
                 // LATEST_VERSION = the latest TRUNK version (RM common master06

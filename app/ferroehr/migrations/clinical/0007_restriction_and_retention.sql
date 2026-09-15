@@ -4,13 +4,9 @@
 -- clinical: the restriction register, the retention register, and the anchors
 -- and holds that decide what is due.
 --
--- DDL only. The relations exist so the marks on vo_head and ehr have somewhere
--- to record their ground, and so the retention question has an answer path;
--- the read-path and write-path behaviour that consults them is separate work.
--- TODO(#3324): enforce restriction of processing on every read, write, export
--- and outbox emission, and answer a restricted object with a typed refusal.
--- TODO(#3346): serve the retention registers — the due view, the jurisdiction
--- defaults and the audit-domain ceiling.
+-- The relations are the evidence and the register; the marks they drive sit on
+-- `vo_head.restricted_at` / `vo_head.retention_hold_at` and on `ehr`, and the
+-- service reads them through `crate::storage::marks`.
 --
 -- No openEHR spec governs restriction of processing or retention: our own
 -- design/extension. The obligations the relations exist to answer are GDPR
@@ -107,20 +103,38 @@ COMMENT ON TABLE retention_anchor IS 'Per-EHR retention facts: the jurisdiction,
 COMMENT ON COLUMN retention_anchor.hold_at IS 'When a hold was placed (a litigation hold, or a national obligation to keep); while set, nothing is due.';
 
 -- ── retention_due ────────────────────────────────────────────────────────────
--- The EHRs whose period has run and which carry no hold. A VIEW, never a job:
--- listing what is due is a question the controller answers, and the CDR
--- deletes nothing on a timer.
+-- The EHRs whose period has run and which carry no EHR-wide hold, one row per
+-- retention category in force. A VIEW, never a job: listing what is due is a
+-- question the controller answers, and the CDR deletes nothing on a timer.
+--
+-- Two holds exist and both are honoured here. The EHR-wide one
+-- (`retention_anchor.hold_at`) keeps the EHR off the list entirely. The
+-- per-object one (`vo_head.retention_hold_at`) exempts single objects while the
+-- rest of the EHR falls due, which is the shape EPDV Art. 10 Abs. 2 lit. b asks
+-- for — the patient may have "Daten von der Vernichtung nach Absatz 1 Buchstabe
+-- d ausgenommen" (docs/law/ch/epdv/text-de.html). So the row carries both
+-- counts: a controller acting on this list disposes of `objects_due` and leaves
+-- `objects_held` where they are.
 CREATE VIEW retention_due WITH (security_invoker = true) AS
     SELECT a.ehr_id,
            a.jurisdiction,
            p.kind,
            p.source,
-           a.anchored_at + p.period AS due_at
+           a.anchored_at + p.period AS due_at,
+           o.objects_due,
+           o.objects_held
     FROM retention_anchor a
     JOIN retention_policy p
       ON p.jurisdiction = a.jurisdiction
+    CROSS JOIN LATERAL (
+        SELECT count(*) FILTER (WHERE h.retention_hold_at IS NULL) AS objects_due,
+               count(*) FILTER (WHERE h.retention_hold_at IS NOT NULL) AS objects_held
+          FROM vo_head h
+         WHERE h.ehr_id = a.ehr_id
+           AND (p.kind = 'EHR' OR h.kind = p.kind)
+    ) o
     WHERE a.anchored_at IS NOT NULL
       AND a.hold_at IS NULL
       AND a.anchored_at + p.period <= now();
 
-COMMENT ON VIEW retention_due IS 'The EHRs whose retention period has run and which carry no hold, with the citation the period rests on. A list, never a disposal: the CDR deletes no clinical content on a timer (RM common master06 §Logical Deletion).';
+COMMENT ON VIEW retention_due IS 'The EHRs whose retention period has run and which carry no EHR-wide hold, with the citation the period rests on and the per-object hold counts. A list, never a disposal: the CDR deletes no clinical content on a timer (RM common master06 §Logical Deletion).';

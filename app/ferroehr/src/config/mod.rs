@@ -152,13 +152,20 @@ impl FerroEhrConfig {
         }
     }
 
-    /// A retention shorter than a jurisdiction's floor erases the access log
-    /// while the chain still verifies (#3242). The jurisdictions in force are
-    /// the ones the active identifier rules name; `0` keeps forever and is
-    /// always above every floor.
+    /// The access-log horizon sits between the floors and the ceilings the
+    /// jurisdictions in force declare.
+    ///
+    /// A retention shorter than a floor erases the log while the chain still
+    /// verifies (#3242); a retention longer than a ceiling keeps log data past
+    /// the point the law says to delete it (#3346), which `0` — keep forever —
+    /// always does. The jurisdictions in force are the ones the active
+    /// identifier rules name, and the German ceiling additionally waits for the
+    /// deployment to declare itself one of the SGB V § 307 controllers. Where a
+    /// floor and a ceiling contradict each other, no horizon satisfies both and
+    /// the refusal says so rather than silently preferring one.
     fn validate_audit(&self, errors: &mut Vec<ConfigError>) {
         let store = &self.audit.store;
-        if !(self.audit.enabled && store.enabled) || store.retention_days == 0 {
+        if !(self.audit.enabled && store.enabled) {
             return;
         }
         let jurisdictions: std::collections::BTreeSet<&str> = self
@@ -169,17 +176,53 @@ impl FerroEhrConfig {
             .filter_map(|key| crate::privacy::detect::rule(key))
             .map(|rule| rule.jurisdiction)
             .collect();
+        let declared = self.audit.store.sgb_v_309_controller;
+        let mut floors: Vec<(&str, u32)> = Vec::new();
+        let mut ceilings: Vec<(&str, u32)> = Vec::new();
         for jurisdiction in jurisdictions {
-            let Some(floor) = crate::system_log::config::retention_floor_days(jurisdiction) else {
-                continue;
-            };
-            if store.retention_days < floor {
+            if let Some(floor) = crate::system_log::config::retention_floor_days(jurisdiction) {
+                floors.push((jurisdiction, floor));
+            }
+            if let Some(ceiling) =
+                crate::system_log::config::retention_ceiling_days(jurisdiction, declared)
+            {
+                ceilings.push((jurisdiction, ceiling));
+            }
+        }
+        for &(jurisdiction, floor) in &floors {
+            for &(capped, ceiling) in &ceilings {
+                if ceiling < floor {
+                    errors.push(ConfigError::semantic(format!(
+                        "the {capped} access-log retention ceiling of {ceiling} days is below \
+                         the {jurisdiction} floor of {floor} days, so no horizon satisfies \
+                         both; run the two jurisdictions as separate deployments, or drop the \
+                         privacy.identifier_scan rule that does not apply here"
+                    )));
+                }
+            }
+            if store.retention_days > 0 && store.retention_days < floor {
                 errors.push(ConfigError::semantic(format!(
                     "audit.store.retention_days = {} is below the {jurisdiction} access-log \
                      retention floor of {floor} days (five years, Besluit vaststelling \
                      bewaartermijn logging, https://wetten.overheid.nl/BWBR0042391); keep \
                      records at least that long, or set 0 to keep them forever",
                     store.retention_days
+                )));
+            }
+        }
+        for &(jurisdiction, ceiling) in &ceilings {
+            if store.retention_days == 0 || store.retention_days > ceiling {
+                let horizon = match store.retention_days {
+                    0 => "0 (keep forever)".to_owned(),
+                    days => days.to_string(),
+                };
+                errors.push(ConfigError::semantic(format!(
+                    "audit.store.retention_days = {horizon} is above the {jurisdiction} \
+                     access-log retention ceiling of {ceiling} days (the three-year limitation \
+                     period of SGB V § 309 Abs. 1, after which Abs. 3 requires deletion \
+                     unverzüglich, https://www.gesetze-im-internet.de/sgb_5/__309.html); set a \
+                     horizon at or below it, or clear audit.store.sgb_v_309_controller if this \
+                     deployment is not one of the § 307 controllers"
                 )));
             }
         }
@@ -783,6 +826,58 @@ mod tests {
         config
             .validate()
             .expect("a jurisdiction with no registered floor imposes none");
+    }
+
+    /// The German ceiling reaches a deployment only once it declares itself one
+    /// of the SGB V § 307 controllers, and then caps the horizon — including
+    /// "keep forever", which is the case the floor rule could never produce
+    /// (#3346).
+    #[test]
+    fn the_sgb_v_ceiling_applies_only_to_a_declared_controller() {
+        let mut config = FerroEhrConfig::default();
+        config.privacy.identifier_scan.rules = vec!["de-kvnr".to_owned()];
+        config.audit.store.retention_days = 0;
+        config
+            .validate()
+            .expect("an undeclared deployment carries no ceiling");
+
+        config.audit.store.sgb_v_309_controller = true;
+        let errors = config
+            .validate()
+            .expect_err("keep forever outlasts the three-year period");
+        let text = errors.to_string();
+        assert!(
+            text.contains("keep forever") && text.contains("1095"),
+            "{text}"
+        );
+
+        config.audit.store.retention_days = 1096;
+        let errors = config
+            .validate()
+            .expect_err("1096 days is above the ceiling");
+        assert!(errors.to_string().contains("1095"), "{errors}");
+
+        config.audit.store.retention_days = 1095;
+        config.validate().expect("the ceiling itself passes");
+    }
+
+    /// A ceiling below a floor is a contradiction no horizon resolves, so it is
+    /// refused at boot rather than silently resolved in favour of one of them
+    /// (#3346).
+    #[test]
+    fn a_ceiling_below_a_floor_is_refused() {
+        let mut config = FerroEhrConfig::default();
+        config.audit.store.sgb_v_309_controller = true;
+        config.privacy.identifier_scan.rules = vec!["de-kvnr".to_owned(), "nl-bsn".to_owned()];
+        config.audit.store.retention_days = 1095;
+        let errors = config
+            .validate()
+            .expect_err("the DE ceiling is below the NL floor");
+        let text = errors.to_string();
+        assert!(
+            text.contains("ceiling of 1095") && text.contains("floor of 1830"),
+            "{text}"
+        );
     }
 
     use assert_fs::prelude::*;

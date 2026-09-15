@@ -174,6 +174,36 @@ Two consequences to plan for:
   visibility is the effect to plan around, and the restore routes are how you
   get it back.
 
+## Legal marks: restriction, objection and retention
+
+Eight routes behind the same switch and role, carrying the three marks the law
+asks a repository to hold beside its clinical content. None of them deletes
+anything.
+
+| Route | Body or parameter | Success |
+|---|---|---|
+| `POST {base}/admin/restriction` | `{"ehr_id": "…", "vo_id": "…"?, "ground": "…", "note": "…"?}` | **204**: the restriction is recorded and in force |
+| `GET {base}/admin/restriction` | `?ehr_id=…` | **200**: the register, newest request first, lifts included |
+| `POST {base}/admin/restriction/lift` | `{"ehr_id": "…", "vo_id": "…"?}` | **204**: every in-force restriction at that grain is lifted |
+| `POST {base}/admin/research-objection` | `{"ehr_id": "…", "objected": true, "ground": "…"?}` | **204**: the objection, its override, or its withdrawal is recorded |
+| `PUT {base}/admin/retention/policy` | `{"kind": "…", "jurisdiction": "…", "period": "…", "anchor": "…", "source": "…"}` | **204**: the period is declared |
+| `GET {base}/admin/retention/policy` | — | **200**: the whole retention register |
+| `PUT {base}/admin/retention/anchor` | `{"ehr_id": "…", "jurisdiction": "…", "anchored_at": "…"?, "hold_at": "…"?, "hold_ground": "…"?}` | **204**: the EHR's anchor and any whole-record hold |
+| `POST {base}/admin/retention/hold` | `{"vo_id": "…", "held": true}` | **204**: the per-object exemption is placed or released |
+| `GET {base}/admin/retention/due` | `?limit=100` | **200**: what has run out, oldest first, with the due and held object counts |
+
+A body of the wrong shape or a malformed id is **400**, an id that names nothing
+is **404**, and a body without `Content-Type: application/json` is **415**, in
+each case before anything is recorded. Setting or lifting a mark is an access
+record of its own.
+
+Restricting a record changes what every other route answers: reads of a
+restricted object become **403**, it leaves AQL results at every scope, exports
+skip it and the event stream withholds it, and writes to it are refused. What
+each mark means, which provision it serves and what the deploying organisation
+still has to decide are on [Retention, restriction and
+objection](compliance/retention.md).
+
 ## Storage integrity
 
 Two routes that check the stored data against itself and repair what they

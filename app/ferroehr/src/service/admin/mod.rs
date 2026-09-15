@@ -18,6 +18,9 @@
 //! - `statistics` — `I_ADMIN_SERVICE.list_contributions` / `contribution_count`
 //!   / `versioned_composition_count` / `composition_version_count`.
 //! - `archive` — `I_ADMIN_ARCHIVE.archive_ehrs` / `archive_parties`.
+//! - [`marks`] — the legal marks: the restriction register, the research
+//!   objection and the retention register. No SM interface declares any of
+//!   them; our own extension.
 //! - `dump_load` — `I_ADMIN_DUMP_LOAD.export_ehrs` / `load_ehrs`.
 //! - [`integrity`] — the storage-parity sweep, our own extension: no SM
 //!   interface declares it and no openEHR spec governs storage mechanics.
@@ -41,6 +44,7 @@ mod dump_load;
 mod statistics;
 
 pub mod integrity;
+pub mod marks;
 pub mod types;
 
 use uuid::Uuid;

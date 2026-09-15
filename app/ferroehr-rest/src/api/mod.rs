@@ -169,6 +169,7 @@ pub(crate) fn api_openapi_router() -> OpenApiRouter<AppState> {
         .merge(admin::report::report_routes())
         .merge(admin::dump_load::dump_load_routes())
         .merge(admin::integrity::integrity_routes())
+        .merge(admin::marks::marks_routes())
         .merge(message::extract::extract_routes())
         .merge(message::tdd::tdd_routes())
         .merge(terminology::routes())

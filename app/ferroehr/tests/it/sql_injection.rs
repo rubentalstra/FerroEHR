@@ -581,6 +581,9 @@ const IDENTIFIERS: &[&str] = &[
     "template_id",
     // vo_head
     "trunk_head_sys_version",
+    "restricted_at",
+    "research_objected_at",
+    "research_objection_ground",
     // ehr
     "id",
     "system_id",
@@ -616,6 +619,9 @@ const ALIAS_PATTERNS: &[&str] = &[
     r"^v[0-9]+_at$",
     r"^esv[0-9]+_head$",
     r"^xv[0-9]+_head$",
+    r"^v[0-9]+_mark$",
+    r"^esv[0-9]+_mark$",
+    r"^xv[0-9]+_mark$",
     r"^col[0-9]+(_(vo|sv|num|cap))?$",
     r"^scope_(ehr|template)_[0-9]+$",
     r"^access_(ehr|vo|sv)_[0-9]+$",

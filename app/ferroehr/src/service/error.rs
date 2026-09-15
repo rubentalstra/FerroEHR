@@ -306,6 +306,20 @@ pub enum ServiceError {
     /// produced, so the SM route reports the same status.
     #[error("access unrecorded: {0}")]
     Unrecorded(#[source] SmError),
+    /// Processing of the addressed object is restricted: the server holds it
+    /// in storage and refuses everything else — the wire's `403`.
+    ///
+    /// GDPR Art. 4(3) defines restriction as "the marking of stored personal
+    /// data with the aim of limiting their processing in the future" and
+    /// Art. 18(2) leaves storage as the only processing it admits
+    /// (`docs/law/eu/gdpr/text.html`). No openEHR spec governs restriction of
+    /// processing and no ITS-REST operation declares it, so this refusal is
+    /// our own design/extension; the carried message names the restriction so
+    /// a caller can tell it from an authorization refusal.
+    ///
+    /// Construct with [`ServiceError::restricted`].
+    #[error("restricted: {0}")]
+    Restricted(#[source] SmError),
 }
 
 /// The client-visible message of a server-side fault (`500`). Deliberately
@@ -425,6 +439,7 @@ impl From<SmError> for ServiceError {
             | S::AuthFailure
             | S::NotImplemented
             | S::ServiceOverloaded => ServiceError::Internal(e),
+            S::ProcessingRestricted => ServiceError::Restricted(e),
             S::PreconditionViolation | S::InvalidIdPattern => ServiceError::BadRequest(e),
             S::ObjectVersionDoesNotExist
             | S::VersionedObjectDoesNotExist
@@ -491,6 +506,48 @@ impl ServiceError {
     #[must_use]
     pub fn precondition(message: impl Into<String>) -> Self {
         ServiceError::BadRequest(SmError::precondition(message))
+    }
+
+    /// A restriction refusal (`403`) naming the restricted object.
+    ///
+    /// The message is client-visible and says WHICH object is restricted and
+    /// that the refusal is a restriction rather than an authorization outcome:
+    /// GDPR Art. 18(2) leaves storage as the only processing a restricted
+    /// object admits (`docs/law/eu/gdpr/text.html`), so the same caller with
+    /// the same rights is refused, and a caller that could not tell the two
+    /// apart would retry against the access layer forever. No openEHR spec
+    /// governs restriction of processing — our own design/extension.
+    #[must_use]
+    pub fn restricted(subject: &str) -> Self {
+        ServiceError::Restricted(SmError::new(
+            CallStatusType::ProcessingRestricted,
+            format!(
+                "processing of {subject} is restricted: it is held in storage and is not \
+                 otherwise processed until the restriction is lifted (GDPR Art. 18)"
+            ),
+        ))
+    }
+
+    /// A refusal (`403`) of a research-side disclosure the subject objected to.
+    ///
+    /// GDPR Art. 21(6) gives the subject a right to object to processing "for
+    /// scientific or historical research purposes or statistical purposes
+    /// pursuant to Article 89(1)" (`docs/law/eu/gdpr/text.html`). It shares the
+    /// wire outcome and the status of the Art. 18 refusal because the server is
+    /// doing the same thing in both cases — holding the data and declining to
+    /// process it — and the message is what says which provision applies. A
+    /// read of the same EHR for care is untouched: the objection reaches
+    /// research processing, not the care record. No openEHR spec governs the
+    /// objection — our own design/extension.
+    #[must_use]
+    pub fn research_objected(subject: &str) -> Self {
+        ServiceError::Restricted(SmError::new(
+            CallStatusType::ProcessingRestricted,
+            format!(
+                "the subject of {subject} has objected to research processing, so its content \
+                 is not exported or published for secondary use (GDPR Art. 21(6))"
+            ),
+        ))
     }
 
     /// A state-conflict refusal (`409`) reporting the generic SM `conflict`
@@ -688,8 +745,10 @@ impl From<ServiceError> for SmError {
             // The curated row: the detail and the whole cause chain go to the
             // trace record, the client gets `exception` + `INTERNAL_MESSAGE`.
             ServiceError::Internal(sm) => internal_fault_caused("complete the request", &sm),
-            // Fail-closed: the status the record helper chose travels as is.
-            ServiceError::Unrecorded(sm) => sm,
+            // Fail-closed: the status the record helper chose travels as is,
+            // and so does the restriction refusal's own status, so the SM route
+            // reports what the wire reports.
+            ServiceError::Unrecorded(sm) | ServiceError::Restricted(sm) => sm,
         }
     }
 }
@@ -750,6 +809,9 @@ impl From<ServiceError> for ApiError {
             // audit trail's availability); RFC 9110 §15.6.4 is the HTTP
             // authority for the 503.
             ServiceError::Unrecorded(sm) => ApiError::ServiceUnavailable(sm.message),
+            // Our own refusal (no openEHR spec governs restriction of
+            // processing); RFC 9110 §15.5.4 is the HTTP authority for the 403.
+            ServiceError::Restricted(sm) => ApiError::Forbidden(sm.message),
         }
     }
 }

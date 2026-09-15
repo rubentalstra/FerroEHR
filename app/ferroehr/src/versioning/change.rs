@@ -189,6 +189,17 @@ pub(crate) enum Change {
 }
 
 impl Change {
+    /// The versioned object this change writes to, when it already exists.
+    ///
+    /// `None` on a create: the object is minted by the change itself, so the
+    /// only mark that can reach it is the EHR's.
+    pub(crate) fn target_vo_id(&self) -> Option<VoId> {
+        match *self {
+            Change::Create { .. } => None,
+            Change::Modify { vo_id, .. } | Change::Delete { vo_id, .. } => Some(vo_id),
+        }
+    }
+
     /// The versioned-object [`Kind`] this change writes.
     pub(crate) fn kind(&self) -> Kind {
         match *self {
@@ -596,6 +607,47 @@ async fn seal_protected_identifiers(
     Ok(())
 }
 
+/// Refuse a write that would process an object whose processing is restricted.
+///
+/// GDPR Art. 18(2) leaves storage as the only processing a restricted object
+/// admits (`docs/law/eu/gdpr/text.html`), so a new version of it, a logical
+/// delete of it or an attestation appended to it is refused — while the rows
+/// already stored stay exactly where they are. The mark is read inside the
+/// commit transaction, like the `is_modifiable` gate beside it, so a
+/// concurrent lift either commits first and is seen or waits for this commit.
+/// Both grains are checked: a whole-EHR restriction reaches an object that has
+/// no mark of its own yet, because it is created after the restriction was
+/// recorded. No openEHR spec governs restriction of processing — our own
+/// design/extension.
+///
+/// # Errors
+/// [`ServiceError::Restricted`] (`403`) when either grain is marked;
+/// [`ServiceError::Database`] if the marks cannot be read.
+pub(crate) async fn ensure_not_restricted_tx(
+    tx: &mut PgConnection,
+    ehr_id: Option<EhrId>,
+    vo_id: Option<VoId>,
+) -> Result<(), ServiceError> {
+    if let Some(ehr_id) = ehr_id {
+        let restricted: Option<bool> =
+            sqlx::query_scalar("SELECT restricted_at IS NOT NULL FROM ehr WHERE id = $1")
+                .bind(ehr_id)
+                .fetch_optional(&mut *tx)
+                .await?;
+        if restricted == Some(true) {
+            return Err(ServiceError::restricted(&format!("EHR {ehr_id}")));
+        }
+    }
+    if let Some(vo_id) = vo_id
+        && crate::storage::marks::is_restricted(&mut *tx, vo_id).await?
+    {
+        return Err(ServiceError::restricted(&format!(
+            "versioned object {vo_id}"
+        )));
+    }
+    Ok(())
+}
+
 #[expect(
     clippy::too_many_lines,
     reason = "the three change arms build one resolved write; splitting them \
@@ -615,6 +667,7 @@ async fn apply_change(
         known_now,
         preplaced,
     } = scope;
+    ensure_not_restricted_tx(tx, ehr_id, change.target_vo_id()).await?;
     let resolved = match change {
         Change::Create {
             kind,
@@ -1332,6 +1385,7 @@ pub(crate) async fn commit_contribution(
     // Standalone 666 attestations of existing versions (no new version) —
     // completed with the contribution's commit-act time.
     for item in attests {
+        ensure_not_restricted_tx(tx, ehr_id, Some(item.vo_id)).await?;
         let full = attestation::complete_attestation(
             &item.partial,
             &ctx.system_id,

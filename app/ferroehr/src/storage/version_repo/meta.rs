@@ -74,6 +74,11 @@ pub struct VersionMeta {
     /// master06 §Attestation), folded into the meta row so a revision history
     /// never issues a second attestation query; `[]` in the common case.
     pub attestations: Vec<Value>,
+    /// Whether the versioned object carries a restriction-of-processing mark
+    /// (`vo_head.restricted_at`). The same fact on every row of one object;
+    /// carried here so the revision-history read needs no second statement to
+    /// refuse a restricted object. Our own design/extension.
+    pub restricted: bool,
 }
 
 /// All version metadata rows of an object, ordered by storage ordinal.
@@ -87,8 +92,10 @@ pub async fn all_version_meta(
     const SQL: &str = "SELECT v.ehr_id, v.kind, v.sys_version, v.trunk_version, v.branch_number, \
                        v.branch_version, v.creating_system_id, v.lifecycle_state, \
                        a.system_id, a.change_type, a.description, a.committer, a.attestation, \
-                       a.time_committed, att.attestations \
+                       a.time_committed, att.attestations, \
+                       h.restricted_at IS NOT NULL AS restricted \
                        FROM version v JOIN commit_audit a ON a.id = v.commit_audit_id \
+                       JOIN vo_head h ON h.vo_id = v.vo_id \
                        LEFT JOIN LATERAL ( \
                        SELECT coalesce(jsonb_agg(x.data ORDER BY x.time_committed, x.id), \
                        '[]'::jsonb) AS attestations \
@@ -121,6 +128,7 @@ pub async fn all_version_meta(
                     .as_array()
                     .cloned()
                     .unwrap_or_default(),
+                restricted: row.try_get("restricted")?,
             })
         })
         .collect()

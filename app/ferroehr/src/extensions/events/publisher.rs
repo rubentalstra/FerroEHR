@@ -176,8 +176,13 @@ async fn run(
 ) {
     // Both outboxes are drained; only the clinical pool reads the subscription
     // registry, because subscriptions are deployment configuration rather than
-    // domain content and `event_subscription` lives only in `ehr`.
-    let pools = [&pool, &demographic_pool];
+    // domain content and `event_subscription` lives only in the clinical
+    // schema. The domain travels with the pool because the legal marks live on
+    // `ehr`, which the party domain does not have.
+    let pools = [
+        (&pool, OutboxDomain::Clinical),
+        (&demographic_pool, OutboxDomain::Party),
+    ];
     let poll_interval = Duration::from_millis(config.poll_interval_ms.max(1));
     let prune_every = Duration::from_secs(config.prune_interval_secs.max(1));
     let mut last_prune = tokio::time::Instant::now();
@@ -202,13 +207,21 @@ async fn run(
         {
             tracing::debug!("event subscription sync deferred: {e}");
         }
-        for domain in pools {
-            drain_until_caught_up(domain, publisher.as_ref(), &config, &shutdown, &healthy).await;
+        for (domain, kind) in pools {
+            drain_until_caught_up(
+                domain,
+                kind,
+                publisher.as_ref(),
+                &config,
+                &shutdown,
+                &healthy,
+            )
+            .await;
         }
 
         // Retention prune (best-effort), on its own cadence.
         if last_prune.elapsed() >= prune_every {
-            for domain in pools {
+            for (domain, _) in pools {
                 if let Err(e) = outbox::prune(domain, config.retention_days).await {
                     tracing::warn!("event outbox retention prune failed: {e}");
                 }
@@ -224,8 +237,8 @@ async fn run(
 
     // Best-effort final drain so a clean shutdown flushes what the broker will
     // still take; anything left stays pending for next start (at-least-once).
-    for domain in pools {
-        if let Ok(n) = drain_batch(domain, publisher.as_ref(), &config).await
+    for (domain, kind) in pools {
+        if let Ok(n) = drain_batch(domain, kind, publisher.as_ref(), &config).await
             && n > 0
         {
             tracing::debug!("event publisher flushed {n} events on shutdown");
@@ -241,6 +254,7 @@ async fn run(
 /// outbox is now empty.
 async fn drain_until_caught_up(
     pool: &PgPool,
+    domain: OutboxDomain,
     publisher: &dyn EventPublisher,
     config: &EventsConfig,
     shutdown: &watch::Receiver<bool>,
@@ -250,7 +264,7 @@ async fn drain_until_caught_up(
         if *shutdown.borrow() {
             return;
         }
-        match drain_batch(pool, publisher, config).await {
+        match drain_batch(pool, domain, publisher, config).await {
             Ok(n) => {
                 healthy.store(true, Ordering::Relaxed);
                 if usize::try_from(config.batch_size).unwrap_or(usize::MAX) > n {
@@ -323,20 +337,54 @@ async fn sync_subscriptions(
     Ok(())
 }
 
+/// Which pseudonymisation domain an outbox drain is running in.
+///
+/// The two outboxes are the same relation in two schemas, but only the clinical
+/// one sits beside an `ehr` table, and the legal marks that withhold an event
+/// live there. Naming `ehr` from the party domain would fail at parse time, so
+/// the domain decides which statement runs.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+enum OutboxDomain {
+    /// The clinical schema, whose `ehr` rows carry the restriction and
+    /// research-objection marks.
+    Clinical,
+    /// The party schema, which has no EHR and therefore no mark to honour.
+    Party,
+}
+
 /// Publish one batch of pending rows in `seq` order, marking each published only
 /// after the broker confirms. Returns the count published this pass, or a
 /// [`DrainError`] (the published prefix is committed first, preserving per-EHR
 /// order). `FOR UPDATE SKIP LOCKED` makes concurrent instances safe.
 async fn drain_batch(
     pool: &PgPool,
+    domain: OutboxDomain,
     publisher: &dyn EventPublisher,
     config: &EventsConfig,
 ) -> Result<usize, DrainError> {
     let mut tx = pool.begin().await.map_err(DrainError::Db)?;
-    let rows = sqlx::query(
-        "SELECT seq, envelope FROM event_outbox \
-         WHERE published_at IS NULL ORDER BY seq LIMIT $1 FOR UPDATE SKIP LOCKED",
-    )
+    // A mark recorded after the commit withholds the row instead of dropping
+    // it: it stays pending and publishes if the restriction is lifted (GDPR
+    // Art. 18(3) contemplates exactly that) or if the controller records an
+    // Art. 21(6) override, and it leaves with the EHR if the EHR is erased.
+    // Only the clinical statement names `ehr`, which is the only domain that
+    // has it. `docs/law/eu/gdpr/text.html`; no openEHR spec governs eventing —
+    // our own extension.
+    let rows = sqlx::query(match domain {
+        OutboxDomain::Clinical => {
+            "SELECT seq, envelope FROM event_outbox o \
+             WHERE o.published_at IS NULL \
+               AND NOT EXISTS (SELECT 1 FROM ehr e WHERE e.id = o.ehr_id \
+                   AND (e.restricted_at IS NOT NULL \
+                        OR (e.research_objected_at IS NOT NULL \
+                            AND e.research_objection_ground IS NULL))) \
+             ORDER BY o.seq LIMIT $1 FOR UPDATE SKIP LOCKED"
+        }
+        OutboxDomain::Party => {
+            "SELECT seq, envelope FROM event_outbox \
+             WHERE published_at IS NULL ORDER BY seq LIMIT $1 FOR UPDATE SKIP LOCKED"
+        }
+    })
     .bind(config.batch_size)
     .fetch_all(&mut *tx)
     .await

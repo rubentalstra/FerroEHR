@@ -162,6 +162,7 @@ async fn audit_capture(suppress_login: bool) -> (UdpSocket, AuditSender) {
         store: StoreConfig {
             enabled: false,
             retention_days: 0,
+            sgb_v_309_controller: false,
         },
         syslog: SyslogConfig {
             enabled: true,
@@ -194,6 +195,7 @@ async fn audit_capture_fail_closed() -> AuditSender {
         store: StoreConfig {
             enabled: false,
             retention_days: 0,
+            sgb_v_309_controller: false,
         },
         syslog: SyslogConfig {
             enabled: true,
@@ -758,6 +760,7 @@ async fn composition_get_records_the_origins_of_the_served_data() {
         store: StoreConfig {
             enabled: true,
             retention_days: 0,
+            sgb_v_309_controller: false,
         },
         ..AuditConfig::default()
     };
