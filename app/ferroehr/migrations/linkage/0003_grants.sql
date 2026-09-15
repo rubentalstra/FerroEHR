@@ -29,13 +29,9 @@ BEGIN
             FROM ferroehr_linkage;
 
         REVOKE ALL ON SCHEMA linkage
-            FROM ferroehr_app, ferroehr_reader,
-                 ferroehr_ehr, ferroehr_ehr_reader,
-                 ferroehr_demographic, ferroehr_demographic_reader;
+            FROM ferroehr_clinical, ferroehr_clinical_reader, ferroehr_party, ferroehr_party_reader;
         REVOKE ALL ON ALL TABLES IN SCHEMA linkage
-            FROM ferroehr_app, ferroehr_reader,
-                 ferroehr_ehr, ferroehr_ehr_reader,
-                 ferroehr_demographic, ferroehr_demographic_reader;
+            FROM ferroehr_clinical, ferroehr_clinical_reader, ferroehr_party, ferroehr_party_reader;
     ELSE
         RAISE NOTICE 'skipping linkage grants (role absent — see the ext role block NOTICE)';
     END IF;

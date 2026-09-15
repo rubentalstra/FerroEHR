@@ -238,7 +238,7 @@ boot_one() {
     base="$(basename "$p")"
     [[ -e "${secdir}/${base}" ]] && continue
     case "$base" in
-      db.url) printf 'postgres://ferroehr_app:pw@postgres:5432/ferroehr' > "${secdir}/${base}" ;;
+      db.url) printf 'postgres://ferroehr_clinical:pw@postgres:5432/ferroehr' > "${secdir}/${base}" ;;
       # A storage domain's own DSN (#3343). Without a stand-in here, no ci
       # overlay could set database.<domain>.existingSecret without failing this
       # check, so the branch that gives each domain its own credential would

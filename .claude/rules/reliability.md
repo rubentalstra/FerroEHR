@@ -289,26 +289,29 @@ chapters, the Clippy book, and the Cargo/rustdoc books.)
   CodeQL's `actions` language on every pull request. An accepted finding is an
   inline `# zizmor: ignore[rule]` carrying its reason, never a silent
   suppression.
-- **A migration that has shipped is never edited** (owner ruling 2026-09-09,
-  declaring the stabilization the greenfield ruling reserved; the policy is
-  `sqlx-conventions.md` §Migrations). People run FerroEHR now, and sqlx
-  refuses a database whose recorded checksum no longer matches the migration
-  file, so editing one does not revise history: it locks every existing
-  installation out of its own database at boot, reporting a checksum rather
-  than the edit. A schema change is a NEW file; a migration that was wrong is
-  superseded, never rewritten. A whole SET may be retired, and only in the
-  shape that keeps an installation told rather than locked out: every file the
-  base branch had under `app/ferroehr/migrations/<schema>/` goes at once (a new
-  set may take the directory), and `<schema>` is named in
+- **A migration that has shipped is never edited** (owner rulings 2026-09-09
+  and 2026-09-15; the policy is `sqlx-conventions.md` §Migrations). Shipped
+  means present at the latest release tag: sqlx refuses a database whose
+  recorded checksum no longer matches the migration file, so editing one an
+  installation has applied does not revise history, it locks that installation
+  out of its own database at boot, reporting a checksum rather than the edit.
+  A file in no release yet has been applied by nobody and is fixed in place
+  (the rewrite is breaking changes only, no rename migrations or placeholders).
+  For a shipped file a schema change is a NEW file; a shipped migration that
+  was wrong is superseded, never rewritten. A whole shipped SET may be retired,
+  and only in the shape that keeps an installation told rather than locked
+  out: every shipped file under `app/ferroehr/migrations/<schema>/` goes at
+  once (a new set may take the directory), and `<schema>` is named in
   `FIRST_GENERATION_SETS` (`app/ferroehr/src/db/mod.rs`) in the same change, so
   the boot refusal names that database and states the remedy — by the
   bookkeeping's existence where this build owns no set of that name, and by the
   description of its version 1 where the name survives the rewrite. Enforcement
   (tier 4): `scripts/checks/migration-immutability.sh`, run per-PR by the
-  `migration-immutability` CI job against the pull request's merge base, and
-  refusing any modification or partial turnover under
+  `migration-immutability` CI job against the pull request's merge base over
+  the files the latest reachable release tag carries, and refusing any
+  modification or partial turnover of those under
   `app/ferroehr/migrations/`; it accepts a retirement only after verifying both
-  halves itself — every base file of that directory gone at head, the schema
+  halves itself — every shipped file of that directory gone at head, the schema
   named in that table — so the acceptance cannot be claimed in prose. Its detector is mutation-proven
   by its own `--self-test`, which the CI job runs first. There is deliberately
   no escape-hatch label: the checksum makes the rule absolute, so an exception

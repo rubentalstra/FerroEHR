@@ -14,8 +14,8 @@ Run once, on an empty data directory, as the bootstrap superuser
 - a **non-superuser** login role (default `ferroehr`) and a **database it owns**
   (default `ferroehr`);
 - the three NOLOGIN group roles of the layered role architecture —
-  **`ferroehr_migrator`**, **`ferroehr_app`**, **`ferroehr_reader`** — with the
-  login role granted `ferroehr_migrator` + `ferroehr_app`, so dev/compose has
+  **`ferroehr_migrator`**, **`ferroehr_clinical`**, **`ferroehr_clinical_reader`** — with the
+  login role granted `ferroehr_migrator` + `ferroehr_clinical`, so dev/compose has
   the same grant topology as a hardened deployment;
 - schemas **`ehr`**, **`ext`** and **`audit`** (the local IHE ATNA Audit Record
   Repository), all owned by the app role;

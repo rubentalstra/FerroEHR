@@ -106,9 +106,8 @@ it at once: the DDL of each resident migration set under `db.migrate = "apply"`,
 and their `_sqlx_migrations` bookkeeping tables under `"verify"` — a read, but a
 read across the whole database. Each runtime role holds exactly one domain, so
 none can do it, and `verify` is not the exception: a role that is a member of
-`ferroehr_clinical` and nothing else is refused on the very first set. That
-applies to the generic roles too — `ferroehr_app` cannot read the `ext`,
-`party`, `linkage` or `audit` bookkeeping either.
+`ferroehr_clinical` and nothing else is refused on the very first set: it
+cannot read the `ext`, `party`, `linkage` or `audit` bookkeeping.
 
 So the credential that prepares the schema is named separately, and the server
 uses it for that one boot step:
@@ -242,18 +241,12 @@ Not exercised by anything, and stated rather than left to inference:
 - **Role provisioning on a managed database** where the migrator holds no
   `CREATEROLE` and the roles are created by the manual step above.
 
-> [!NOTE]
-> `ferroehr_app` and `ferroehr_reader` are the previous single-domain pair. They
-> still exist and still hold their clinical grants, but a deployment should move
-> its runtime DSNs to the domain roles above; they are retired after a
-> deprecation release.
-
 Which posture you actually get depends on `db.migrate`, because the server's
 embedded migrations are DDL: a self-migrating deployment necessarily runs as a
 role that can execute DDL. The single-container quickstart takes that path: its
 DSN authenticates as a non-superuser role that owns the database and is a member
-of `ferroehr_migrator`, `ferroehr_app`, `ferroehr_clinical` and
-`ferroehr_party`.
+of `ferroehr_migrator`, `ferroehr_clinical`, `ferroehr_party` and
+`ferroehr_linkage`.
 
 ## Applying migrations
 

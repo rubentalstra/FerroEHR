@@ -48,37 +48,13 @@ BEGIN
   IF NOT EXISTS (SELECT FROM pg_roles WHERE rolname = 'ferroehr_migrator') THEN
     CREATE ROLE ferroehr_migrator NOLOGIN;
   END IF;
-  IF NOT EXISTS (SELECT FROM pg_roles WHERE rolname = 'ferroehr_app') THEN
-    CREATE ROLE ferroehr_app NOLOGIN;
-  END IF;
-  IF NOT EXISTS (SELECT FROM pg_roles WHERE rolname = 'ferroehr_reader') THEN
-    CREATE ROLE ferroehr_reader NOLOGIN;
-  END IF;
-  -- The five domain-named roles, for the same reason as the three above: the
-  -- party and linkage baselines grant to them only if they already exist,
-  -- and without them compose runs with no domain grants at all and a "roles
+  -- The five domain roles, created here because the migration sets grant to
+  -- them only if they already exist, and the app role holds no CREATEROLE:
+  -- without them compose would run with no domain grants at all and a "roles
   -- absent" NOTICE nobody reads. NOINHERIT and no membership in one another —
   -- a role that could inherit the other domain's grants would make the
   -- boundary a naming convention (PostgreSQL 18, CREATE ROLE
   -- https://www.postgresql.org/docs/18/sql-createrole.html).
-  -- The first generation's four domain names, created only so the migration
-  -- sets that still grant to them by name can run: the app role holds no
-  -- CREATEROLE, so a set's GRANT to a role that does not exist would fail the
-  -- migration (SQLSTATE 42704). The audit set withdraws their last grant, so
-  -- they end up empty; they are not dropped, because those grant files run
-  -- again whenever a schema is recreated.
-  IF NOT EXISTS (SELECT FROM pg_roles WHERE rolname = 'ferroehr_ehr') THEN
-    CREATE ROLE ferroehr_ehr NOLOGIN NOINHERIT;
-  END IF;
-  IF NOT EXISTS (SELECT FROM pg_roles WHERE rolname = 'ferroehr_ehr_reader') THEN
-    CREATE ROLE ferroehr_ehr_reader NOLOGIN NOINHERIT;
-  END IF;
-  IF NOT EXISTS (SELECT FROM pg_roles WHERE rolname = 'ferroehr_demographic') THEN
-    CREATE ROLE ferroehr_demographic NOLOGIN NOINHERIT;
-  END IF;
-  IF NOT EXISTS (SELECT FROM pg_roles WHERE rolname = 'ferroehr_demographic_reader') THEN
-    CREATE ROLE ferroehr_demographic_reader NOLOGIN NOINHERIT;
-  END IF;
   IF NOT EXISTS (SELECT FROM pg_roles WHERE rolname = 'ferroehr_clinical') THEN
     CREATE ROLE ferroehr_clinical NOLOGIN NOINHERIT;
   END IF;
@@ -96,7 +72,6 @@ BEGIN
   END IF;
   -- In dev the single app user plays both migrator and writer.
   GRANT ferroehr_migrator TO "${APP_USER}";
-  GRANT ferroehr_app TO "${APP_USER}";
   -- ONE login credential, deliberately. This stack demonstrates the SCHEMA
   -- separation — which is unconditional, and which the server's boot
   -- self-check verifies — not the CREDENTIAL separation. A deployment reaches

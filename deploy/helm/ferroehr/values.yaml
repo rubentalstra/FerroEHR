@@ -95,7 +95,7 @@ serviceAccount:
 # database MUST be an externally-managed, backed-up, PITR-capable PostgreSQL 18
 # (managed service or an operator-run cluster) — never a chart-side sidecar.
 #
-# The application connects as the UNPRIVILEGED `ferroehr_app` writer role: a
+# The application connects as the UNPRIVILEGED `ferroehr_clinical` writer role: a
 # LOGIN role granted the DML privileges the runtime needs and none of the DDL
 # ones, so a compromised app process cannot alter the schema (PostgreSQL 18
 # docs, "Database Roles": https://www.postgresql.org/docs/18/user-manag.html).
@@ -109,7 +109,7 @@ serviceAccount:
 database:
   # -- Reference an existing Secret holding the app-role DSN (STRONGLY preferred
   # for production — keeps the credential out of chart values and git). The
-  # secret's value must be a full `postgres://ferroehr_app:...@host:5432/ferroehr`
+  # secret's value must be a full `postgres://ferroehr_clinical:...@host:5432/ferroehr`
   # (optionally `?sslmode=verify-full`).
   existingSecret: ""
   # -- Key WITHIN existingSecret that holds the DSN. This is a Secret key name,
@@ -244,7 +244,7 @@ database:
 #       default). Simplest, and the runtime DSN must then be a member of
 #       ferroehr_migrator — i.e. the running process holds DDL rights.
 #   (b) A separate migration step under a migrator DSN, with the server on
-#       config.db.migrate=verify and a DSN that is ferroehr_app ONLY. The server
+#       config.db.migrate=verify and a DSN that is ferroehr_clinical ONLY. The server
 #       then issues no DDL at all and refuses to boot against a database that
 #       has not been migrated. Recommended for production.
 # Setting migrations.job.enabled runs (b) for you as a pre-install/pre-upgrade
@@ -574,7 +574,7 @@ config:
   db:
     # apply | verify — whether the server runs its embedded migrations at boot.
     # `verify` issues no DDL and refuses to boot against a database that has not
-    # been migrated, which is what lets the runtime DSN be ferroehr_app only.
+    # been migrated, which is what lets the runtime DSN be ferroehr_clinical only.
     # Pair it with migrations.job.enabled (see the Migrations section above).
     migrate: apply
     max_connections: 10

@@ -52,7 +52,7 @@ pub const DEFAULT_URL: &str = "postgres://ferroehr:ferroehr@localhost:5432/ferro
 /// that can execute DDL — and a role that can rewrite the schema is a role an
 /// application-level SQL flaw can rewrite the schema with. This setting is how
 /// a deployment opts out of that: the schema is applied out of band by the
-/// migrator role, and the server connects as the DML-only `ferroehr_app` role.
+/// migrator role, and the server connects as the DML-only `ferroehr_clinical` role.
 ///
 /// No openEHR spec governs migration mechanics or database roles — our own
 /// design/extension.

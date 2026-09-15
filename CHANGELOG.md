@@ -17,6 +17,13 @@ workflow refuses a tag that has no matching section here.
 
 ### Changed
 
+- **The migration-immutability rule binds SHIPPED files only** (owner ruling
+  2026-09-15). A migration is immutable once it is in a release (present at
+  the latest `vX.Y.Z` tag); a file on `main` that no release carries has been
+  applied by no installation and is fixed in place. The guard
+  (`scripts/checks/migration-immutability.sh`) judges the pull request's diff
+  against the release tag's tree and re-arms at every cut; nothing changes for
+  an installation on a released version.
 - **BREAKING — the storage schema is rewritten, and a database created by an
   earlier release must be recreated** (#3342, #3344). The rewrite is greenfield
   (owner ruling 2026-09-14): the new migration sets replace the old ones
@@ -64,18 +71,17 @@ workflow refuses a tag that has no matching section here.
     `party`, `linkage` and `audit`. The mounted files are
     `storage.<domain>.url` and the environment names are
     `FERROEHR__STORAGE__<DOMAIN>__URL_FILE`.
-  - The runtime roles `ferroehr_ehr`, `ferroehr_ehr_reader`,
-    `ferroehr_demographic` and `ferroehr_demographic_reader` are renamed to
-    `ferroehr_clinical`, `ferroehr_clinical_reader`, `ferroehr_party` and
-    `ferroehr_party_reader`. New migrations create the new roles and move every
-    grant onto them; a login role that was a member of an old one is granted the
-    new one at deployment (`GRANT ferroehr_party TO <login>`).
-    `ferroehr_linkage` is unchanged. The old names are left in place as empty
-    `NOLOGIN` roles holding nothing, because migrations are append-only: the
-    first-generation grant files still name them literally, and a `GRANT` to a
-    role that does not exist is an error rather than a no-op, so dropping them
-    would break the next re-migration of a recreated schema. Drop them by hand
-    if you are certain no database in the cluster will re-apply one.
+  - The runtime roles are the domain roles and nothing else:
+    `ferroehr_clinical`, `ferroehr_clinical_reader`, `ferroehr_party`,
+    `ferroehr_party_reader` and `ferroehr_linkage`, beside the DDL-only
+    `ferroehr_migrator`. The first generation's `ferroehr_ehr`,
+    `ferroehr_ehr_reader`, `ferroehr_demographic`, `ferroehr_demographic_reader`
+    and the generic `ferroehr_app`/`ferroehr_reader` pair are gone: no
+    migration creates or grants to them, the compose database image no longer
+    provisions them, and a DSN that authenticates as one of them holds nothing.
+    A login role is granted the domain role of the pool it serves
+    (`GRANT ferroehr_clinical TO <login>`); the clinical role also writes the
+    local Audit Record Repository.
   - The compose backup service `ferroehr-backup-demographic` is
     `ferroehr-backup-party`, its directory variable
     `FERROEHR_BACKUP_DEMOGRAPHIC_DIR` is `FERROEHR_BACKUP_PARTY_DIR`, and the

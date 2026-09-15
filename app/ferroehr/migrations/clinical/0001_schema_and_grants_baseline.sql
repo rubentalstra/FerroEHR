@@ -47,18 +47,18 @@ BEGIN
     EXCEPTION WHEN insufficient_privilege THEN
         RAISE NOTICE 'skipping public-schema lockdown (not schema owner)';
     END;
-    IF EXISTS (SELECT FROM pg_roles WHERE rolname = 'ferroehr_app') THEN
+    IF EXISTS (SELECT FROM pg_roles WHERE rolname = 'ferroehr_clinical') THEN
         GRANT USAGE ON SCHEMA clinical
-            TO ferroehr_app, ferroehr_reader, ferroehr_ehr, ferroehr_ehr_reader;
+            TO ferroehr_clinical, ferroehr_clinical_reader;
         -- Every relation the later files in this set create is reachable
         -- without a manual grant (PostgreSQL 18, ALTER DEFAULT PRIVILEGES,
         -- https://www.postgresql.org/docs/18/sql-alterdefaultprivileges.html).
         -- The explicit grants over the finished relations are 0010.
         ALTER DEFAULT PRIVILEGES IN SCHEMA clinical
             GRANT SELECT, INSERT, UPDATE, DELETE ON TABLES
-            TO ferroehr_app, ferroehr_ehr;
+            TO ferroehr_clinical;
         ALTER DEFAULT PRIVILEGES IN SCHEMA clinical
-            GRANT SELECT ON TABLES TO ferroehr_reader, ferroehr_ehr_reader;
+            GRANT SELECT ON TABLES TO ferroehr_clinical_reader;
     ELSE
         RAISE NOTICE 'skipping clinical schema grants (roles absent — see the ext role block NOTICE)';
     END IF;

@@ -26,29 +26,23 @@ BEGIN
         IF NOT EXISTS (SELECT FROM pg_roles WHERE rolname = 'ferroehr_migrator') THEN
             CREATE ROLE ferroehr_migrator NOLOGIN;
         END IF;
-        IF NOT EXISTS (SELECT FROM pg_roles WHERE rolname = 'ferroehr_app') THEN
-            CREATE ROLE ferroehr_app NOLOGIN;
+        IF NOT EXISTS (SELECT FROM pg_roles WHERE rolname = 'ferroehr_clinical') THEN
+            CREATE ROLE ferroehr_clinical NOLOGIN NOINHERIT;
         END IF;
-        IF NOT EXISTS (SELECT FROM pg_roles WHERE rolname = 'ferroehr_reader') THEN
-            CREATE ROLE ferroehr_reader NOLOGIN;
+        IF NOT EXISTS (SELECT FROM pg_roles WHERE rolname = 'ferroehr_clinical_reader') THEN
+            CREATE ROLE ferroehr_clinical_reader NOLOGIN NOINHERIT;
         END IF;
-        IF NOT EXISTS (SELECT FROM pg_roles WHERE rolname = 'ferroehr_ehr') THEN
-            CREATE ROLE ferroehr_ehr NOLOGIN NOINHERIT;
+        IF NOT EXISTS (SELECT FROM pg_roles WHERE rolname = 'ferroehr_party') THEN
+            CREATE ROLE ferroehr_party NOLOGIN NOINHERIT;
         END IF;
-        IF NOT EXISTS (SELECT FROM pg_roles WHERE rolname = 'ferroehr_ehr_reader') THEN
-            CREATE ROLE ferroehr_ehr_reader NOLOGIN NOINHERIT;
-        END IF;
-        IF NOT EXISTS (SELECT FROM pg_roles WHERE rolname = 'ferroehr_demographic') THEN
-            CREATE ROLE ferroehr_demographic NOLOGIN NOINHERIT;
-        END IF;
-        IF NOT EXISTS (SELECT FROM pg_roles WHERE rolname = 'ferroehr_demographic_reader') THEN
-            CREATE ROLE ferroehr_demographic_reader NOLOGIN NOINHERIT;
+        IF NOT EXISTS (SELECT FROM pg_roles WHERE rolname = 'ferroehr_party_reader') THEN
+            CREATE ROLE ferroehr_party_reader NOLOGIN NOINHERIT;
         END IF;
         IF NOT EXISTS (SELECT FROM pg_roles WHERE rolname = 'ferroehr_linkage') THEN
             CREATE ROLE ferroehr_linkage NOLOGIN NOINHERIT;
         END IF;
     EXCEPTION WHEN insufficient_privilege THEN
-        RAISE NOTICE 'skipping role creation (no CREATEROLE privilege): create ferroehr_migrator/ferroehr_app/ferroehr_reader/ferroehr_ehr/ferroehr_ehr_reader/ferroehr_demographic/ferroehr_demographic_reader/ferroehr_linkage at deployment';
+        RAISE NOTICE 'skipping role creation (no CREATEROLE privilege): create ferroehr_migrator/ferroehr_clinical/ferroehr_clinical_reader/ferroehr_party/ferroehr_party_reader/ferroehr_linkage at deployment';
     END;
 END $$;
 
@@ -64,25 +58,16 @@ COMMENT ON FUNCTION ext.storage_generation() IS
 
 DO $$
 BEGIN
-    IF EXISTS (SELECT FROM pg_roles WHERE rolname = 'ferroehr_app') THEN
+    IF EXISTS (SELECT FROM pg_roles WHERE rolname = 'ferroehr_clinical') THEN
         GRANT USAGE ON SCHEMA ext TO
-            ferroehr_app, ferroehr_reader,
-            ferroehr_ehr, ferroehr_ehr_reader,
-            ferroehr_demographic, ferroehr_demographic_reader,
-            ferroehr_linkage;
+            ferroehr_clinical, ferroehr_clinical_reader, ferroehr_party, ferroehr_party_reader, ferroehr_linkage;
         -- Future ext functions reachable without a manual grant (PostgreSQL 18
         -- docs, ALTER DEFAULT PRIVILEGES).
         ALTER DEFAULT PRIVILEGES IN SCHEMA ext
             GRANT EXECUTE ON FUNCTIONS TO
-                ferroehr_app, ferroehr_reader,
-                ferroehr_ehr, ferroehr_ehr_reader,
-                ferroehr_demographic, ferroehr_demographic_reader,
-                ferroehr_linkage;
+                ferroehr_clinical, ferroehr_clinical_reader, ferroehr_party, ferroehr_party_reader, ferroehr_linkage;
         GRANT EXECUTE ON FUNCTION ext.storage_generation() TO
-            ferroehr_app, ferroehr_reader,
-            ferroehr_ehr, ferroehr_ehr_reader,
-            ferroehr_demographic, ferroehr_demographic_reader,
-            ferroehr_linkage;
+            ferroehr_clinical, ferroehr_clinical_reader, ferroehr_party, ferroehr_party_reader, ferroehr_linkage;
     ELSE
         RAISE NOTICE 'skipping ext grants (roles absent — see the role block NOTICE)';
     END IF;

@@ -79,7 +79,7 @@ role, NOT the runtime app role.
   "{{ .Values.migrations.job.existingSecret }}" key "{{ .Values.migrations.job.existingSecretKey }}"  [OK]
   {{ if eq (.Values.config.db.migrate | default "apply") "verify" -}}
   Server posture: config.db.migrate=verify — the server issues no DDL, so its
-  own DSN can be ferroehr_app only.  [least privilege]
+  own DSN can be ferroehr_clinical only.  [least privilege]
   {{ else -}}
   ⚠  config.db.migrate is "apply": the server still migrates itself at boot, so
      its DSN must hold DDL rights and the Job buys you nothing. Set

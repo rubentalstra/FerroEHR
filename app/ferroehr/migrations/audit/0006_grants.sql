@@ -24,26 +24,26 @@
 -- and nothing that can rewrite or remove one.
 DO $grants$
 BEGIN
-    IF EXISTS (SELECT FROM pg_roles WHERE rolname = 'ferroehr_app') THEN
-        GRANT USAGE ON SCHEMA audit TO ferroehr_app, ferroehr_reader;
+    IF EXISTS (SELECT FROM pg_roles WHERE rolname = 'ferroehr_clinical') THEN
+        GRANT USAGE ON SCHEMA audit TO ferroehr_clinical, ferroehr_clinical_reader;
 
         -- Revoke first: a table-level REVOKE also removes column-level grants,
         -- so the column grant below has to come after it (PostgreSQL 18 docs,
         -- REVOKE: https://www.postgresql.org/docs/18/sql-revoke.html).
         REVOKE ALL ON audit_event
-            FROM ferroehr_app, ferroehr_reader, ferroehr_ehr, ferroehr_ehr_reader;
-        GRANT SELECT, INSERT ON audit_event TO ferroehr_app, ferroehr_ehr;
+            FROM ferroehr_clinical, ferroehr_clinical_reader;
+        GRANT SELECT, INSERT ON audit_event TO ferroehr_clinical;
         GRANT UPDATE (delivered_syslog_at, delivered_fhir_feed_at)
-            ON audit_event TO ferroehr_app, ferroehr_ehr;
-        GRANT SELECT ON audit_event TO ferroehr_reader, ferroehr_ehr_reader;
+            ON audit_event TO ferroehr_clinical;
+        GRANT SELECT ON audit_event TO ferroehr_clinical_reader;
 
         REVOKE ALL ON audit_chain_state, audit_chain_gap
-            FROM ferroehr_app, ferroehr_reader, ferroehr_ehr, ferroehr_ehr_reader;
+            FROM ferroehr_clinical, ferroehr_clinical_reader;
         GRANT SELECT ON audit_chain_state, audit_chain_gap
-            TO ferroehr_app, ferroehr_reader, ferroehr_ehr, ferroehr_ehr_reader;
+            TO ferroehr_clinical, ferroehr_clinical_reader;
 
         GRANT EXECUTE ON FUNCTION audit.verify_audit_chain()
-            TO ferroehr_app, ferroehr_reader, ferroehr_ehr, ferroehr_ehr_reader;
+            TO ferroehr_clinical, ferroehr_clinical_reader;
 
     ELSE
         RAISE NOTICE 'skipping audit chain grants (roles absent — see the ext role block NOTICE)';
@@ -53,10 +53,10 @@ $grants$;
 
 DO $grants$
 BEGIN
-    IF EXISTS (SELECT FROM pg_roles WHERE rolname = 'ferroehr_app') THEN
+    IF EXISTS (SELECT FROM pg_roles WHERE rolname = 'ferroehr_clinical') THEN
         REVOKE ALL ON FUNCTION audit.reap_audit_events(integer) FROM PUBLIC;
         GRANT EXECUTE ON FUNCTION audit.reap_audit_events(integer)
-            TO ferroehr_app, ferroehr_ehr;
+            TO ferroehr_clinical;
     ELSE
         RAISE NOTICE 'skipping audit retention grants (roles absent — see the ext role block NOTICE)';
     END IF;

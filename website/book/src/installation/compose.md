@@ -31,7 +31,7 @@ FerroEHR publishes three container images to GHCR:
 | Image | Contents |
 |---|---|
 | `ghcr.io/rubentalstra/ferroehr` | The `ferroehr` server binary on a distroless, non-root, shell-less multi-arch base (amd64 + arm64). Configured by a mounted TOML file and/or `FERROEHR__*` environment variables. |
-| `ghcr.io/rubentalstra/ferroehr-postgres` | `postgres:18.6` (with Debian security updates applied at image build) plus init scripts that pre-create the application login role, the eight `NOLOGIN` group roles (`ferroehr_migrator`, `ferroehr_app`, `ferroehr_reader`, and the five domain roles `ferroehr_clinical`, `ferroehr_party`, `ferroehr_clinical_reader`, `ferroehr_party_reader`, `ferroehr_linkage`), the database, the schemas (`clinical`, `ext`, `audit`) and the extensions (`uuid-ossp`, `pgcrypto`, `pg_trgm`, `btree_gist`), so the app role never needs superuser. |
+| `ghcr.io/rubentalstra/ferroehr-postgres` | `postgres:18.6` (with Debian security updates applied at image build) plus init scripts that pre-create the application login role, the eight `NOLOGIN` group roles (`ferroehr_migrator`, `ferroehr_clinical`, `ferroehr_clinical_reader`, and the five domain roles `ferroehr_clinical`, `ferroehr_party`, `ferroehr_clinical_reader`, `ferroehr_party_reader`, `ferroehr_linkage`), the database, the schemas (`clinical`, `ext`, `audit`) and the extensions (`uuid-ossp`, `pgcrypto`, `pg_trgm`, `btree_gist`), so the app role never needs superuser. |
 | `ghcr.io/rubentalstra/ferroehr-viewer` | The [viewer](../viewer/index.md), a standalone web application that talks to the CDR strictly over ITS-REST. Optional; see the `viewer` profile below. |
 
 Each image is published under several tags:
@@ -51,7 +51,7 @@ they cannot be forgotten at a cut. To run something else, set the image
 variables in [the table below](#variables-the-compose-files-read).
 
 The role the server connects as in the quickstart owns the database and is a
-member of `ferroehr_migrator` and `ferroehr_app`, which is what lets it apply
+member of `ferroehr_migrator` and `ferroehr_clinical`, which is what lets it apply
 migrations at boot, and of `ferroehr_clinical` and `ferroehr_party`, so the
 schema separation is exercised on one credential. That single credential is
 deliberate: one container with one DSN cannot demonstrate the credential
@@ -62,7 +62,7 @@ A least-privilege deployment sets `db.migrate = "verify"`, runs
 narrow runtime credential. It also has to name the credential that prepares
 the schema, in `[db] migrate_url`: preparation reads all five
 `_sqlx_migrations` bookkeeping tables even under `verify`, which no
-least-privilege role can do, `ferroehr_app` included. Unset, `migrate_url`
+least-privilege role can do, `ferroehr_clinical` included. Unset, `migrate_url`
 falls back to `[db] url`, which is what the quickstart runs. See
 [Operations → Which credential prepares the
 schema](../operations.md#which-credential-prepares-the-schema) and

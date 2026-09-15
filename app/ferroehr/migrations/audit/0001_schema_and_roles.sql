@@ -25,16 +25,16 @@ COMMENT ON SCHEMA audit IS 'The local IHE ATNA Audit Record Repository (IHE ITI 
 
 DO $$
 BEGIN
-    IF EXISTS (SELECT FROM pg_roles WHERE rolname = 'ferroehr_app') THEN
+    IF EXISTS (SELECT FROM pg_roles WHERE rolname = 'ferroehr_clinical') THEN
         GRANT USAGE ON SCHEMA audit
-            TO ferroehr_app, ferroehr_reader, ferroehr_ehr, ferroehr_ehr_reader;
+            TO ferroehr_clinical, ferroehr_clinical_reader;
         -- The audit trail is not a pseudonymisation domain: the clinical
         -- runtime role writes it (the store writes through the clinical pool),
         -- and each reader holds what its writer holds minus the writes.
         ALTER DEFAULT PRIVILEGES IN SCHEMA audit
-            GRANT SELECT, INSERT ON TABLES TO ferroehr_app, ferroehr_ehr;
+            GRANT SELECT, INSERT ON TABLES TO ferroehr_clinical;
         ALTER DEFAULT PRIVILEGES IN SCHEMA audit
-            GRANT SELECT ON TABLES TO ferroehr_reader, ferroehr_ehr_reader;
+            GRANT SELECT ON TABLES TO ferroehr_clinical_reader;
     ELSE
         RAISE NOTICE 'skipping audit schema grants (roles absent — see the ext role block NOTICE)';
     END IF;

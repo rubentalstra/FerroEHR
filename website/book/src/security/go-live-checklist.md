@@ -47,9 +47,9 @@ and [the threat model](../threat-model.md#what-each-database-credential-can-reac
 > [!WARNING]
 > A login role that is a member of two domain roles crosses the boundary that
 > `ferroehr db verify` reports as intact: the check measures the group roles.
-> Give each login role one membership. The exception is the clinical login
-> role, which also needs `ferroehr_app` for the local Audit Record Repository,
-> and `ferroehr_app` holds no grant in the other two domains.
+> Give each login role one membership. The clinical login role's membership in
+> `ferroehr_clinical` also covers the local Audit Record Repository, which that
+> role writes; it holds no grant in the other two domains.
 
 - [ ] Five domain roles exist, each `NOINHERIT` and a member of no other.
 - [ ] Each login role is a member of exactly one domain role.
@@ -223,7 +223,7 @@ SELECT * FROM audit.verify_audit_chain();
 
 Preparing the schema spans every schema at once: the DDL of all five migration
 sets under `migrate = "apply"`, all five `_sqlx_migrations` bookkeeping tables
-under `"verify"`. No least-privilege runtime role can do either, `ferroehr_app`
+under `"verify"`. No least-privilege runtime role can do either, `ferroehr_clinical`
 included, so `[db] migrate_url` names the credential that can. Unset, it falls
 back to `[db] url`, which is the single-credential posture.
 
