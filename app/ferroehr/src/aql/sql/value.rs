@@ -19,10 +19,10 @@ use sea_query::{Alias, Expr, ExprTrait as _, Order, Query};
 
 use crate::aql::error::{AnalysisError, AqlError, SqlError};
 use crate::aql::ir::{Coercion, EhrField, LeafPath, OrderKey, PathTarget, Source, VersionField};
-use crate::db::iden::Node;
+use crate::db::iden::{CommitAudit, Ehr, Node, VersionRow};
 use crate::storage::promoted::{PROMOTED_LEAVES, PromotedKind};
 
-use super::expr::{as_text, call, cast, col, extract_base, order_coercion};
+use super::expr::{as_text, call, cast, col, derived_col, extract_base, order_coercion};
 use super::from::is_vo_root_type;
 use super::{Builder, ValueMode};
 
@@ -107,7 +107,7 @@ impl Builder<'_> {
         };
 
         if leaf.anchor.is_empty() {
-            let base = extract(col(&src, "data"));
+            let base = extract(col(&src, Node::Data));
             let value = coerce_value(base, mode, leaf);
             // A root predicate guards the inline read: the value only exists
             // where the source node satisfies it (QUERY master03 §Identified
@@ -124,7 +124,7 @@ impl Builder<'_> {
                 sub.and_where(cond);
             }
         }
-        let base = extract(col(&last, "data"));
+        let base = extract(col(&last, Node::Data));
         sub.expr(coerce_value(base, mode, leaf));
         sub.limit(1);
         Ok(Expr::from(sub))
@@ -147,10 +147,12 @@ impl Builder<'_> {
         for step in &leaf.anchor {
             let alias = format!("s{}", self.next_ctr());
             sub.from_as(Node::Table, Alias::new(alias.as_str()));
-            sub.and_where(super::expr::hot(&alias));
-            sub.and_where(col(&alias, "vo_id").eq(col(&prev, "vo_id")));
-            sub.and_where(col(&alias, "sys_version").eq(col(&prev, "sys_version")));
-            sub.and_where(col(&alias, "num").between(col(&prev, "num"), col(&prev, "num_cap")));
+            sub.and_where(super::expr::hot(&alias, Node::Tier));
+            sub.and_where(col(&alias, Node::VoId).eq(col(&prev, Node::VoId)));
+            sub.and_where(col(&alias, Node::SysVersion).eq(col(&prev, Node::SysVersion)));
+            sub.and_where(
+                col(&alias, Node::Num).between(col(&prev, Node::Num), col(&prev, Node::NumCap)),
+            );
             if let Some(cond) = super::expr::type_cond(&alias, &step.node_types) {
                 sub.and_where(cond);
             }
@@ -207,17 +209,17 @@ impl Builder<'_> {
                 return Ok(None);
             };
             let mut sub = Query::select();
-            let base = fragment_items(&mut sub, col(&src, "data"), &jp, vars, self.next_ctr());
+            let base = fragment_items(&mut sub, col(&src, Node::Data), &jp, vars, self.next_ctr());
             (sub, base)
         } else {
             let (mut sub, last) = self.anchored_walk(leaf, &src)?;
             let base = match (fragment, multi) {
                 (Some((jp, vars)), true) => {
-                    fragment_items(&mut sub, col(&last, "data"), &jp, vars, self.next_ctr())
+                    fragment_items(&mut sub, col(&last, Node::Data), &jp, vars, self.next_ctr())
                 }
                 (fragment, _) => {
                     let (jp, vars) = fragment.unzip();
-                    extract_base(col(&last, "data"), jp.as_deref(), vars.flatten())
+                    extract_base(col(&last, Node::Data), jp.as_deref(), vars.flatten())
                 }
             };
             (sub, base)
@@ -247,7 +249,7 @@ impl Builder<'_> {
                 Alias::new(probe.as_str()),
                 Expr::val(true),
             );
-            return Ok(Some(col(&probe, "hit")));
+            return Ok(Some(derived_col(&probe, "hit")));
         }
         Ok(Some(Expr::exists(sub)))
     }
@@ -488,7 +490,7 @@ impl Builder<'_> {
             } = &path
                 && let Some(alias) = self.ehr_alias.get(&source.0).cloned()
             {
-                self.q.order_by_expr(col(&alias, "id"), order);
+                self.q.order_by_expr(col(&alias, Ehr::Id), order);
                 continue;
             }
             let coercion = order_coercion(&path);
@@ -637,41 +639,41 @@ pub(super) fn version_field_expr(
     };
     match field {
         VersionField::Uid => concat(vec![
-            cast(col(voa, "vo_id"), "text"),
+            cast(col(voa, VersionRow::VoId), "text"),
             Expr::val("::"),
-            col(voa, "creating_system_id"),
+            col(voa, VersionRow::CreatingSystemId),
             Expr::val("::"),
-            cast(col(voa, "trunk_version"), "text"),
+            cast(col(voa, VersionRow::TrunkVersion), "text"),
             Expr::cust_with_exprs(
                 "CASE WHEN $1 > 0 THEN '.' || $2 || '.' || $3 ELSE '' END",
                 [
-                    col(voa, "branch_number"),
-                    cast(col(voa, "branch_number"), "text"),
-                    cast(col(voa, "branch_version"), "text"),
+                    col(voa, VersionRow::BranchNumber),
+                    cast(col(voa, VersionRow::BranchNumber), "text"),
+                    cast(col(voa, VersionRow::BranchVersion), "text"),
                 ],
             ),
         ]),
-        VersionField::TimeCommitted => col(&audit(), "time_committed"),
-        VersionField::SystemId => col(&audit(), "system_id"),
-        VersionField::ChangeType => col(&audit(), "change_type"),
+        VersionField::TimeCommitted => col(&audit(), CommitAudit::TimeCommitted),
+        VersionField::SystemId => col(&audit(), CommitAudit::SystemId),
+        VersionField::ChangeType => col(&audit(), CommitAudit::ChangeType),
         // The rubric renders from the openEHR terminology group at SQL-build
         // time — the bundle is the authority, never a hardcoded rubric.
         VersionField::ChangeTypeRubric => {
-            coded_rubric_case(&col(&audit(), "change_type"), "audit_change_type")
+            coded_rubric_case(&col(&audit(), CommitAudit::ChangeType), "audit_change_type")
         }
-        VersionField::Committer => col(&audit(), "committer"),
+        VersionField::Committer => col(&audit(), CommitAudit::Committer),
         // The stored description is the whole canonical DV_TEXT fragment, so
         // the addressed representation is a jsonb extraction: the bare
         // attribute is the object (as `committer` is), each scalar sub-path a
         // `->>` text read that is NULL when the description is uncoded.
-        VersionField::Description => col(&audit(), "description"),
+        VersionField::Description => col(&audit(), CommitAudit::Description),
         VersionField::DescriptionValue => sea_query::extension::postgres::PgExpr::cast_json_field(
-            col(&audit(), "description"),
+            col(&audit(), CommitAudit::Description),
             Expr::val("value"),
         ),
         VersionField::DescriptionCode => sea_query::extension::postgres::PgExpr::cast_json_field(
             sea_query::extension::postgres::PgExpr::get_json_field(
-                col(&audit(), "description"),
+                col(&audit(), CommitAudit::Description),
                 Expr::val("defining_code"),
             ),
             Expr::val("code_string"),
@@ -680,7 +682,7 @@ pub(super) fn version_field_expr(
             sea_query::extension::postgres::PgExpr::cast_json_field(
                 sea_query::extension::postgres::PgExpr::get_json_field(
                     sea_query::extension::postgres::PgExpr::get_json_field(
-                        col(&audit(), "description"),
+                        col(&audit(), CommitAudit::Description),
                         Expr::val("defining_code"),
                     ),
                     Expr::val("terminology_id"),
@@ -688,11 +690,12 @@ pub(super) fn version_field_expr(
                 Expr::val("value"),
             )
         }
-        VersionField::ContributionId => cast(col(voa, "contribution_id"), "text"),
-        VersionField::LifecycleState => col(voa, "lifecycle_state"),
-        VersionField::LifecycleStateRubric => {
-            coded_rubric_case(&col(voa, "lifecycle_state"), "version_lifecycle_state")
-        }
+        VersionField::ContributionId => cast(col(voa, VersionRow::ContributionId), "text"),
+        VersionField::LifecycleState => col(voa, VersionRow::LifecycleState),
+        VersionField::LifecycleStateRubric => coded_rubric_case(
+            &col(voa, VersionRow::LifecycleState),
+            "version_lifecycle_state",
+        ),
         // Both coded version fields belong to the constant `openehr`
         // terminology.
         VersionField::ChangeTypeTerminology | VersionField::LifecycleStateTerminology => {
@@ -720,8 +723,8 @@ fn coded_rubric_case(code_col: &Expr, group_id: &str) -> Expr {
 /// `system_id`). RM 1.2.0 `EHR` (`docs/specs/openehr/RM/docs/ehr/`).
 pub(super) fn ehr_field_expr(alias: &str, field: EhrField, system_id: &str) -> Expr {
     match field {
-        EhrField::EhrId | EhrField::Whole => cast(col(alias, "id"), "text"),
-        EhrField::TimeCreated => col(alias, "time_created"),
+        EhrField::EhrId | EhrField::Whole => cast(col(alias, Ehr::Id), "text"),
+        EhrField::TimeCreated => col(alias, Ehr::TimeCreated),
         EhrField::SystemId => Expr::val(system_id.to_owned()),
     }
 }
@@ -753,7 +756,7 @@ fn fragment_items(
         func = func.arg(vars);
     }
     sub.from_function(func, Alias::new(alias.as_str()));
-    col(&alias, &alias)
+    derived_col(&alias, &alias)
 }
 
 // ── jsonpaths ───────────────────────────────────────────────────────────────

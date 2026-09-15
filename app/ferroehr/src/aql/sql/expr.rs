@@ -12,23 +12,32 @@
 //! only the sanctioned typed escape hatches ([`Func::cust`] for functions
 //! sea-query does not model; [`PgFunc::any`] for `= ANY(ARRAY[…])`;
 //! [`BinOper::Custom`] for `#>>` / `->>` which have no
-//! typed variant). Runtime functions resolve unqualified (`search_path = ehr,
-//! ext, public`).
+//! typed variant). Runtime functions resolve unqualified (the domain's own
+//! `search_path`, which ends in `ext, public`).
 
 use std::collections::{BTreeMap, BTreeSet};
 use std::fmt::Write as _;
 
 use sea_query::extension::postgres::PgFunc;
-use sea_query::{Alias, BinOper, Expr, ExprTrait as _, Func, Value};
+use sea_query::{Alias, BinOper, Expr, ExprTrait as _, Func, IntoIden, Value};
 
 use openehr_query::lexer::CompOp;
 
 use crate::aql::ir::{Coercion, EhrField, LeafPath, PathTarget, TypeSet, TypedLit, VersionField};
 use crate::aql::lineage::{ArchetypeLineage, decompose_hrid};
+use crate::db::iden::Node;
 
-/// A typed `"alias"."column"` reference.
-pub(super) fn col(alias: &str, column: &str) -> Expr {
-    Expr::col((Alias::new(alias), Alias::new(column)))
+/// A typed `"alias"."column"` reference, the column named through the schema
+/// catalog ([`crate::db::iden`]) rather than as a string.
+pub(super) fn col(alias: &str, column: impl IntoIden) -> Expr {
+    Expr::col((Alias::new(alias), column.into_iden()))
+}
+
+/// A typed `"alias"."name"` reference to a DERIVED column — the output of a
+/// subquery or of a set-returning function, which no schema relation declares
+/// and the catalog therefore cannot name.
+pub(super) fn derived_col(alias: &str, name: &str) -> Expr {
+    Expr::col((Alias::new(alias), Alias::new(name)))
 }
 
 /// The hot-tier predicate on a partitioned relation, written as a LITERAL.
@@ -39,13 +48,13 @@ pub(super) fn col(alias: &str, column: &str) -> Expr {
 /// <https://www.postgresql.org/docs/18/ddl-partitioning.html>), and AQL wants
 /// exactly the hot tier: archived content leaves the queryable store until it
 /// is restored. No openEHR spec governs storage tiering — our own design.
-pub(super) fn hot(alias: &str) -> Expr {
-    col(alias, "tier").eq(Expr::cust(HOT_TIER_LITERAL))
+pub(super) fn hot(alias: &str, tier: impl IntoIden) -> Expr {
+    col(alias, tier).eq(Expr::cust(HOT_TIER_LITERAL))
 }
 
 /// The hot-tier predicate on an UNALIASED relation inside a subquery.
 pub(super) fn hot_unaliased() -> Expr {
-    Expr::col(Alias::new("tier")).eq(Expr::cust(HOT_TIER_LITERAL))
+    Expr::col(Node::Tier).eq(Expr::cust(HOT_TIER_LITERAL))
 }
 
 /// The tier AQL queries, as a SQL LITERAL. It is a constant of this module,
@@ -149,7 +158,7 @@ pub(super) fn type_cond(node: &str, types: &TypeSet) -> Option<Expr> {
         return None;
     }
     let members: Vec<Expr> = types.names().iter().map(|t| Expr::val(t.clone())).collect();
-    Some(col(node, "rm_type").is_in(members))
+    Some(col(node, Node::RmType).is_in(members))
 }
 
 /// The coercion an ORDER BY key uses (QUERY master03 §ORDER BY — Ordered types
@@ -298,11 +307,11 @@ pub(super) fn archetype_predicate(node: &str, value: &str, lineage: &ArchetypeLi
         let mut concept_cond = concept_match(node, &concepts);
         if legacy_form && own_group {
             let child_prefix = format!("{}-%", like_escape(&queried.concept));
-            concept_cond = concept_cond.or(col(node, "arch_concept").like(child_prefix));
+            concept_cond = concept_cond.or(col(node, Node::ArchConcept).like(child_prefix));
         }
-        let group_cond = col(node, "arch_entity")
+        let group_cond = col(node, Node::ArchEntity)
             .eq(Expr::val(entity))
-            .and(col(node, "arch_major").eq(Expr::val(group_major)))
+            .and(col(node, Node::ArchMajor).eq(Expr::val(group_major)))
             .and(concept_cond);
         cond = Some(match cond {
             None => group_cond,
@@ -322,8 +331,8 @@ pub(super) fn archetype_predicate(node: &str, value: &str, lineage: &ArchetypeLi
 fn concept_match(node: &str, concepts: &BTreeSet<String>) -> Expr {
     let members: Vec<String> = concepts.iter().cloned().collect();
     match members.as_slice() {
-        [only] => col(node, "arch_concept").eq(Expr::val(only.clone())),
-        _ => col(node, "arch_concept").eq(Expr::from(PgFunc::any(Expr::val(members)))),
+        [only] => col(node, Node::ArchConcept).eq(Expr::val(only.clone())),
+        _ => col(node, Node::ArchConcept).eq(Expr::from(PgFunc::any(Expr::val(members)))),
     }
 }
 
@@ -333,7 +342,7 @@ fn concept_match(node: &str, concepts: &BTreeSet<String>) -> Expr {
 /// Identifiers and Case"), so folding the BIND VALUE alone yields plain
 /// indexed column equality with honest planner statistics.
 fn archetype_equality(node: &str, value: &str) -> Expr {
-    col(node, "archetype").eq(Expr::val(value.to_ascii_lowercase()))
+    col(node, Node::Archetype).eq(Expr::val(value.to_ascii_lowercase()))
 }
 
 /// Escape the SQL `LIKE` metacharacters (`%`, `_`, `\`) in a literal prefix.

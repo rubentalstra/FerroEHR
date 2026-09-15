@@ -49,7 +49,7 @@ impl Builder<'_> {
         for (i, root) in roots.iter().enumerate() {
             let alias = format!("{}{i}", super::ACCESS_EHR_PREFIX);
             self.q
-                .expr_as(col(root, "ehr_id"), Alias::new(alias.as_str()));
+                .expr_as(col(root, Node::EhrId), Alias::new(alias.as_str()));
             aliases.push(alias);
         }
         aliases
@@ -72,9 +72,10 @@ impl Builder<'_> {
         for (i, root) in roots.iter().enumerate() {
             let vo = format!("{}{i}", super::ACCESS_VO_PREFIX);
             let sv = format!("{}{i}", super::ACCESS_SV_PREFIX);
-            self.q.expr_as(col(root, "vo_id"), Alias::new(vo.as_str()));
             self.q
-                .expr_as(col(root, "sys_version"), Alias::new(sv.as_str()));
+                .expr_as(col(root, Node::VoId), Alias::new(vo.as_str()));
+            self.q
+                .expr_as(col(root, Node::SysVersion), Alias::new(sv.as_str()));
             aliases.push((vo, sv));
         }
         aliases
@@ -229,13 +230,14 @@ impl Builder<'_> {
         for step in &leaf.anchor {
             let alias = format!("w{}", self.next_ctr());
             self.q.from_as(Node::Table, Alias::new(alias.as_str()));
-            self.q.and_where(super::expr::hot(&alias));
+            self.q.and_where(super::expr::hot(&alias, Node::Tier));
             self.q
-                .and_where(col(&alias, "vo_id").eq(col(&prev, "vo_id")));
+                .and_where(col(&alias, Node::VoId).eq(col(&prev, Node::VoId)));
             self.q
-                .and_where(col(&alias, "sys_version").eq(col(&prev, "sys_version")));
-            self.q
-                .and_where(col(&alias, "num").between(col(&prev, "num"), col(&prev, "num_cap")));
+                .and_where(col(&alias, Node::SysVersion).eq(col(&prev, Node::SysVersion)));
+            self.q.and_where(
+                col(&alias, Node::Num).between(col(&prev, Node::Num), col(&prev, Node::NumCap)),
+            );
             if let Some(cond) = type_cond(&alias, &step.node_types) {
                 self.q.and_where(cond);
             }

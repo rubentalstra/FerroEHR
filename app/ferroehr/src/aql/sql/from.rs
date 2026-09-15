@@ -102,15 +102,17 @@ fn folder_items_exists(parent_node: &str, child_node: &str) -> Expr {
     let mut sub = Query::select();
     sub.expr(Expr::val(1));
     sub.from_as(Node::Table, Alias::new(sf.as_str()));
-    sub.and_where(hot(&sf));
-    sub.and_where(col(&sf, "vo_id").eq(col(parent_node, "vo_id")));
-    sub.and_where(col(&sf, "sys_version").eq(col(parent_node, "sys_version")));
-    sub.and_where(col(&sf, "num").between(col(parent_node, "num"), col(parent_node, "num_cap")));
-    sub.and_where(col(&sf, "rm_type").eq(Expr::val("FOLDER")));
+    sub.and_where(hot(&sf, Node::Tier));
+    sub.and_where(col(&sf, Node::VoId).eq(col(parent_node, Node::VoId)));
+    sub.and_where(col(&sf, Node::SysVersion).eq(col(parent_node, Node::SysVersion)));
+    sub.and_where(
+        col(&sf, Node::Num).between(col(parent_node, Node::Num), col(parent_node, Node::NumCap)),
+    );
+    sub.and_where(col(&sf, Node::RmType).eq(Expr::val("FOLDER")));
     sub.and_where(Expr::cust_with_exprs(
         "EXISTS (SELECT 1 FROM jsonb_array_elements(COALESCE($1 -> 'items', '[]'::jsonb)) AS item \
          WHERE split_part(item.value #>> '{id,value}', '::', 1) = ($2)::text)",
-        [col(&sf, "data"), col(child_node, "vo_id")],
+        [col(&sf, Node::Data), col(child_node, Node::VoId)],
     ));
     Expr::exists(sub)
 }
@@ -134,8 +136,8 @@ fn head_unrestricted(version_alias: &str) -> Expr {
     let mut sub = Query::select();
     sub.expr(Expr::val(1));
     sub.from_as(VoHead::Table, Alias::new(h.as_str()));
-    sub.and_where(col(&h, "vo_id").eq(col(version_alias, "vo_id")));
-    sub.and_where(col(&h, "restricted_at").is_null());
+    sub.and_where(col(&h, VoHead::VoId).eq(col(version_alias, VersionRow::VoId)));
+    sub.and_where(col(&h, VoHead::RestrictedAt).is_null());
     Expr::exists(sub)
 }
 
@@ -153,9 +155,11 @@ fn head_unrestricted(version_alias: &str) -> Expr {
 /// the EHR is in the population again and the ground says on whose authority.
 /// No openEHR spec governs the objection — our own design/extension.
 fn research_objection_clear(ehr_alias: &str) -> Expr {
-    col(ehr_alias, "research_objected_at")
-        .is_null()
-        .or(col(ehr_alias, "research_objection_ground").is_not_null())
+    col(ehr_alias, Ehr::ResearchObjectedAt).is_null().or(col(
+        ehr_alias,
+        Ehr::ResearchObjectionGround,
+    )
+    .is_not_null())
 }
 
 /// `LATEST_VERSION`: the version row is the object's current TRUNK head.
@@ -170,8 +174,10 @@ fn is_trunk_head(version_alias: &str) -> Expr {
     let mut sub = Query::select();
     sub.expr(Expr::val(1));
     sub.from_as(VoHead::Table, Alias::new(h.as_str()));
-    sub.and_where(col(&h, "vo_id").eq(col(version_alias, "vo_id")));
-    sub.and_where(col(&h, "trunk_head_sys_version").eq(col(version_alias, "sys_version")));
+    sub.and_where(col(&h, VoHead::VoId).eq(col(version_alias, VersionRow::VoId)));
+    sub.and_where(
+        col(&h, VoHead::TrunkHeadSysVersion).eq(col(version_alias, VersionRow::SysVersion)),
+    );
     Expr::exists(sub)
 }
 
@@ -187,12 +193,12 @@ fn trunk_at_instant(version_alias: &str, at: Expr) -> Expr {
     let mut sub = Query::select();
     sub.expr(Expr::val(1));
     sub.from_as(VersionRow::Table, Alias::new(s.as_str()));
-    sub.and_where(hot(&s));
-    sub.and_where(col(&s, "vo_id").eq(col(version_alias, "vo_id")));
-    sub.and_where(col(&s, "branch_number").eq(Expr::val(0)));
-    sub.and_where(col(&s, "committed_at").gt(col(version_alias, "committed_at")));
-    sub.and_where(col(&s, "committed_at").lte(at.clone()));
-    col(version_alias, "committed_at")
+    sub.and_where(hot(&s, VersionRow::Tier));
+    sub.and_where(col(&s, VersionRow::VoId).eq(col(version_alias, VersionRow::VoId)));
+    sub.and_where(col(&s, VersionRow::BranchNumber).eq(Expr::val(0)));
+    sub.and_where(col(&s, VersionRow::CommittedAt).gt(col(version_alias, VersionRow::CommittedAt)));
+    sub.and_where(col(&s, VersionRow::CommittedAt).lte(at.clone()));
+    col(version_alias, VersionRow::CommittedAt)
         .lte(at)
         .and(Expr::exists(sub).not())
 }
@@ -202,11 +208,11 @@ fn trunk_at_instant(version_alias: &str, at: Expr) -> Expr {
 /// same versioned folder tree (same `(vo_id, sys_version)`; strict, because
 /// the inclusive interval would self-match every folder row).
 fn folder_by_value_child(parent_node: &str, child_node: &str) -> Expr {
-    col(child_node, "vo_id")
-        .eq(col(parent_node, "vo_id"))
-        .and(col(child_node, "sys_version").eq(col(parent_node, "sys_version")))
-        .and(col(child_node, "num").gt(col(parent_node, "num")))
-        .and(col(child_node, "num").lte(col(parent_node, "num_cap")))
+    col(child_node, Node::VoId)
+        .eq(col(parent_node, Node::VoId))
+        .and(col(child_node, Node::SysVersion).eq(col(parent_node, Node::SysVersion)))
+        .and(col(child_node, Node::Num).gt(col(parent_node, Node::Num)))
+        .and(col(child_node, Node::Num).lte(col(parent_node, Node::NumCap)))
 }
 
 /// The streaming-shape plan: the linear containment chain eligible for the
@@ -426,9 +432,9 @@ impl Builder<'_> {
         // The version spine: the one FROM item everything joins onto.
         let v = format!("v{}", plan.root);
         self.q.from_as(VersionRow::Table, Alias::new(v.as_str()));
-        self.q.and_where(hot(&v));
+        self.q.and_where(hot(&v, VersionRow::Tier));
         let kinds: Vec<String> = root.rm_type.names().to_vec();
-        self.q.and_where(col(&v, "kind").is_in(kinds));
+        self.q.and_where(col(&v, VersionRow::Kind).is_in(kinds));
         self.push_scope(&v, &root.scope)?;
 
         if let Some(esid) = plan.ehr {
@@ -437,7 +443,7 @@ impl Builder<'_> {
                 JoinType::Join,
                 Ehr::Table,
                 Alias::new(e.as_str()),
-                col(&e, "id").eq(col(&v, "ehr_id")),
+                col(&e, Ehr::Id).eq(col(&v, VersionRow::EhrId)),
             );
             let Some(Source::Ehr(src)) = self.ir.sources.get(esid).cloned() else {
                 return Err(SqlError::Unsupported(
@@ -481,17 +487,17 @@ impl Builder<'_> {
             sub.column(Asterisk).from(Node::Table).offset(0);
             sub.and_where(hot_unaliased());
             if let Some(p) = &parent_alias {
-                sub.and_where(Expr::col(Alias::new("vo_id")).eq(col(p, "vo_id")))
-                    .and_where(Expr::col(Alias::new("sys_version")).eq(col(p, "sys_version")))
+                sub.and_where(Expr::col(Node::VoId).eq(col(p, Node::VoId)))
+                    .and_where(Expr::col(Node::SysVersion).eq(col(p, Node::SysVersion)))
                     .and_where(
-                        Expr::col(Alias::new("num")).between(col(p, "num"), col(p, "num_cap")),
+                        Expr::col(Node::Num).between(col(p, Node::Num), col(p, Node::NumCap)),
                     );
             } else {
                 // Dead-root binding: the root's subtree is the whole
                 // versioned object, so containment in it IS version
                 // membership — same `(vo_id, sys_version)` as the spine.
-                sub.and_where(Expr::col(Alias::new("vo_id")).eq(col(&v, "vo_id")))
-                    .and_where(Expr::col(Alias::new("sys_version")).eq(col(&v, "sys_version")));
+                sub.and_where(Expr::col(Node::VoId).eq(col(&v, VersionRow::VoId)))
+                    .and_where(Expr::col(Node::SysVersion).eq(col(&v, VersionRow::SysVersion)));
             }
             self.q.join_lateral(
                 JoinType::Join,
@@ -539,9 +545,9 @@ impl Builder<'_> {
         sub.column(Asterisk)
             .from(Node::Table)
             .and_where(hot_unaliased())
-            .and_where(Expr::col(Alias::new("vo_id")).eq(col(v, "vo_id")))
-            .and_where(Expr::col(Alias::new("sys_version")).eq(col(v, "sys_version")))
-            .and_where(Expr::col(Alias::new("num")).eq(Expr::val(0)))
+            .and_where(Expr::col(Node::VoId).eq(col(v, VersionRow::VoId)))
+            .and_where(Expr::col(Node::SysVersion).eq(col(v, VersionRow::SysVersion)))
+            .and_where(Expr::col(Node::Num).eq(Expr::val(0)))
             .offset(0);
         self.q.join_lateral(
             JoinType::Join,
@@ -740,7 +746,7 @@ impl Builder<'_> {
     ) -> Result<VoGroup, AqlError> {
         let node = format!("n{sid}");
         self.q.from_as(Node::Table, Alias::new(node.as_str()));
-        self.q.and_where(hot(&node));
+        self.q.and_where(hot(&node, Node::Tier));
         self.node_alias.insert(sid, node.clone());
         for cond in self.rm_conds(&node, r)? {
             self.q.and_where(cond);
@@ -755,12 +761,13 @@ impl Builder<'_> {
 
         if let (Some(EdgeKind::Structural), Some(parent)) = (edge, vo) {
             self.q
-                .and_where(col(&node, "vo_id").eq(col(&parent.node, "vo_id")));
+                .and_where(col(&node, Node::VoId).eq(col(&parent.node, Node::VoId)));
             self.q
-                .and_where(col(&node, "sys_version").eq(col(&parent.node, "sys_version")));
-            self.q.and_where(
-                col(&node, "num").between(col(&parent.node, "num"), col(&parent.node, "num_cap")),
-            );
+                .and_where(col(&node, Node::SysVersion).eq(col(&parent.node, Node::SysVersion)));
+            self.q.and_where(col(&node, Node::Num).between(
+                col(&parent.node, Node::Num),
+                col(&parent.node, Node::NumCap),
+            ));
             Ok(VoGroup {
                 node,
                 vo: parent.vo.clone(),
@@ -769,10 +776,11 @@ impl Builder<'_> {
         } else {
             let voa = format!("v{sid}");
             self.q.from_as(VersionRow::Table, Alias::new(voa.as_str()));
-            self.q.and_where(hot(&voa));
-            self.q.and_where(col(&node, "vo_id").eq(col(&voa, "vo_id")));
+            self.q.and_where(hot(&voa, VersionRow::Tier));
             self.q
-                .and_where(col(&node, "sys_version").eq(col(&voa, "sys_version")));
+                .and_where(col(&node, Node::VoId).eq(col(&voa, VersionRow::VoId)));
+            self.q
+                .and_where(col(&node, Node::SysVersion).eq(col(&voa, VersionRow::SysVersion)));
             // The audit join is summoned lazily (`ensure_audit`) by the
             // version-field expressions that actually read it — a query that
             // never projects/filters audit fields pays no join to the
@@ -786,7 +794,8 @@ impl Builder<'_> {
                 // per versioned object (RM ehr master04 §EHR) makes the node
                 // rows' `ehr_id` equal by construction, and the spine predicate
                 // drives idx_version_hot_ehr with no per-node-row index.
-                self.q.and_where(col(&voa, "ehr_id").eq(col(e, "id")));
+                self.q
+                    .and_where(col(&voa, VersionRow::EhrId).eq(col(e, Ehr::Id)));
                 self.roots_linked_to_ehr.insert(node.clone());
             }
             // FolderItems: the child's own version group is open; the
@@ -843,7 +852,7 @@ impl Builder<'_> {
                 let mut sub = Query::select();
                 sub.expr(Expr::val(1));
                 sub.from_as(Node::Table, Alias::new(alias.as_str()));
-                sub.and_where(hot(&alias));
+                sub.and_where(hot(&alias, Node::Tier));
                 self.anchor_correlation(&mut sub, anchor, &alias, &r.rm_type, &r.scope)?;
                 for cond in self.rm_conds(&alias, &r)? {
                     sub.and_where(cond);
@@ -880,10 +889,13 @@ impl Builder<'_> {
             ExistsAnchor::Vo(parent, parent_types) => {
                 match classify_edge(parent_types, child_types)? {
                     EdgeKind::Structural => {
-                        sub.and_where(col(alias, "vo_id").eq(col(parent, "vo_id")));
-                        sub.and_where(col(alias, "sys_version").eq(col(parent, "sys_version")));
+                        sub.and_where(col(alias, Node::VoId).eq(col(parent, Node::VoId)));
                         sub.and_where(
-                            col(alias, "num").between(col(parent, "num"), col(parent, "num_cap")),
+                            col(alias, Node::SysVersion).eq(col(parent, Node::SysVersion)),
+                        );
+                        sub.and_where(
+                            col(alias, Node::Num)
+                                .between(col(parent, Node::Num), col(parent, Node::NumCap)),
                         );
                     }
                     EdgeKind::FolderChild => {
@@ -893,13 +905,15 @@ impl Builder<'_> {
                         // parent's spine row.
                         let voa = format!("xv{}", self.next_ctr());
                         sub.from_as(VersionRow::Table, Alias::new(voa.as_str()));
-                        sub.and_where(hot(&voa));
+                        sub.and_where(hot(&voa, VersionRow::Tier));
                         sub.and_where(head_unrestricted(&voa));
-                        sub.and_where(col(alias, "vo_id").eq(col(&voa, "vo_id")));
-                        sub.and_where(col(alias, "sys_version").eq(col(&voa, "sys_version")));
+                        sub.and_where(col(alias, Node::VoId).eq(col(&voa, VersionRow::VoId)));
+                        sub.and_where(
+                            col(alias, Node::SysVersion).eq(col(&voa, VersionRow::SysVersion)),
+                        );
                         match scope {
                             VersionScope::Latest => {
-                                sub.and_where(col(&voa, "branch_number").eq(Expr::val(0)));
+                                sub.and_where(col(&voa, VersionRow::BranchNumber).eq(Expr::val(0)));
                                 sub.and_where(is_trunk_head(&voa));
                             }
                             VersionScope::All => {}
@@ -922,13 +936,15 @@ impl Builder<'_> {
                         // the reference edge over the anchor folder's subtree.
                         let voa = format!("xv{}", self.next_ctr());
                         sub.from_as(VersionRow::Table, Alias::new(voa.as_str()));
-                        sub.and_where(hot(&voa));
+                        sub.and_where(hot(&voa, VersionRow::Tier));
                         sub.and_where(head_unrestricted(&voa));
-                        sub.and_where(col(alias, "vo_id").eq(col(&voa, "vo_id")));
-                        sub.and_where(col(alias, "sys_version").eq(col(&voa, "sys_version")));
+                        sub.and_where(col(alias, Node::VoId).eq(col(&voa, VersionRow::VoId)));
+                        sub.and_where(
+                            col(alias, Node::SysVersion).eq(col(&voa, VersionRow::SysVersion)),
+                        );
                         match scope {
                             VersionScope::Latest => {
-                                sub.and_where(col(&voa, "branch_number").eq(Expr::val(0)));
+                                sub.and_where(col(&voa, VersionRow::BranchNumber).eq(Expr::val(0)));
                                 sub.and_where(is_trunk_head(&voa));
                             }
                             VersionScope::All => {}
@@ -948,18 +964,18 @@ impl Builder<'_> {
             ExistsAnchor::Ehr(e) => {
                 let voa = format!("xv{}", self.next_ctr());
                 sub.from_as(VersionRow::Table, Alias::new(voa.as_str()));
-                sub.and_where(hot(&voa));
+                sub.and_where(hot(&voa, VersionRow::Tier));
                 sub.and_where(head_unrestricted(&voa));
-                sub.and_where(col(alias, "vo_id").eq(col(&voa, "vo_id")));
-                sub.and_where(col(alias, "sys_version").eq(col(&voa, "sys_version")));
-                sub.and_where(col(alias, "ehr_id").eq(col(e, "id")));
+                sub.and_where(col(alias, Node::VoId).eq(col(&voa, VersionRow::VoId)));
+                sub.and_where(col(alias, Node::SysVersion).eq(col(&voa, VersionRow::SysVersion)));
+                sub.and_where(col(alias, Node::EhrId).eq(col(e, Ehr::Id)));
                 // Same version-spine mirror as the FROM path (see above):
                 // lets the planner bound the EXISTS by the EHR instead of the
                 // corpus. Identical semantics by construction.
-                sub.and_where(col(&voa, "ehr_id").eq(col(e, "id")));
+                sub.and_where(col(&voa, VersionRow::EhrId).eq(col(e, Ehr::Id)));
                 match scope {
                     VersionScope::Latest => {
-                        sub.and_where(col(&voa, "branch_number").eq(Expr::val(0)));
+                        sub.and_where(col(&voa, VersionRow::BranchNumber).eq(Expr::val(0)));
                         sub.and_where(is_trunk_head(&voa));
                     }
                     VersionScope::All => {}
@@ -984,7 +1000,7 @@ impl Builder<'_> {
         // restriction admits (`docs/law/eu/gdpr/text.html`), so naming the
         // `ehr_id` does not make the content answerable.
         for alias in self.ehr_alias.values().cloned().collect::<Vec<_>>() {
-            self.q.and_where(col(&alias, "restricted_at").is_null());
+            self.q.and_where(col(&alias, Ehr::RestrictedAt).is_null());
         }
         // Multi-EHR scoping (`ehr_ids: List<UUID>`): restrict every VO root to
         // the id set with `ehr_id = ANY($ids)` — ONE array bind rather than one
@@ -998,7 +1014,7 @@ impl Builder<'_> {
             let ids: Vec<Uuid> = self.ctx.ehr_ids.iter().map(|id| id.0).collect();
             for root in self.group_roots.clone() {
                 self.q.and_where(
-                    col(&root, "ehr_id").eq(Expr::from(PgFunc::any(Expr::val(ids.clone())))),
+                    col(&root, Node::EhrId).eq(Expr::from(PgFunc::any(Expr::val(ids.clone())))),
                 );
             }
             // A bare `FROM EHR e` (no CONTAINS) has no VO root — the scope
@@ -1007,7 +1023,7 @@ impl Builder<'_> {
             // "used to execute the query within a single EHR context").
             for alias in self.ehr_alias.values().cloned().collect::<Vec<_>>() {
                 self.q.and_where(
-                    col(&alias, "id").eq(Expr::from(PgFunc::any(Expr::val(ids.clone())))),
+                    col(&alias, Ehr::Id).eq(Expr::from(PgFunc::any(Expr::val(ids.clone())))),
                 );
             }
         }
@@ -1017,10 +1033,10 @@ impl Builder<'_> {
         if let Some(subject) = self.ctx.subject_scope.clone() {
             for root in self.group_roots.clone() {
                 let mut sub = Query::select();
-                sub.column(Alias::new("id"))
+                sub.column(Ehr::Id)
                     .from(Ehr::Table)
-                    .and_where(Expr::col(Alias::new("subject_id")).eq(Expr::val(subject.clone())));
-                self.q.and_where(col(&root, "ehr_id").in_subquery(sub));
+                    .and_where(Expr::col(Ehr::SubjectId).eq(Expr::val(subject.clone())));
+                self.q.and_where(col(&root, Node::EhrId).in_subquery(sub));
             }
         }
     }
@@ -1049,7 +1065,7 @@ impl Builder<'_> {
         // An EHR source already has its `ehr` row in the FROM — filter its
         // promoted `is_queryable` column directly.
         for alias in self.ehr_alias.values().cloned().collect::<Vec<_>>() {
-            self.q.and_where(col(&alias, "is_queryable").eq(true));
+            self.q.and_where(col(&alias, Ehr::IsQueryable).eq(true));
             self.q.and_where(research_objection_clear(&alias));
         }
     }
@@ -1061,7 +1077,7 @@ impl Builder<'_> {
     /// objects carry the mark too but whose `ehr` row is the cheaper place to
     /// decide it once the population gate has already joined it.
     fn gate_ehr_marks(&mut self, alias: &str) {
-        self.q.and_where(col(alias, "restricted_at").is_null());
+        self.q.and_where(col(alias, Ehr::RestrictedAt).is_null());
         self.q.and_where(research_objection_clear(alias));
     }
 
@@ -1078,7 +1094,7 @@ impl Builder<'_> {
     /// spec governs the join mechanics — our own storage design.
     fn gate_vo_root(&mut self, root: &str) {
         let alias = format!("qg{}", self.next_ctr());
-        let link = col(&alias, "id").eq(col(root, "ehr_id"));
+        let link = col(&alias, Ehr::Id).eq(col(root, Node::EhrId));
         if self.streaming {
             self.q
                 .join_as(JoinType::Join, Ehr::Table, Alias::new(alias.as_str()), link);
@@ -1086,7 +1102,7 @@ impl Builder<'_> {
             self.q.from_as(Ehr::Table, Alias::new(alias.as_str()));
             self.q.and_where(link);
         }
-        self.q.and_where(col(&alias, "is_queryable").eq(true));
+        self.q.and_where(col(&alias, Ehr::IsQueryable).eq(true));
         self.gate_ehr_marks(&alias);
     }
 
@@ -1110,10 +1126,10 @@ impl Builder<'_> {
         })?;
         let vo = format!("esv{}", self.next_ctr());
         let node = format!("esn{}", self.next_ctr());
-        let vo_link = col(&vo, "ehr_id").eq(col(&ehr, "id"));
-        let node_link = col(&node, "vo_id")
-            .eq(col(&vo, "vo_id"))
-            .and(col(&node, "sys_version").eq(col(&vo, "sys_version")));
+        let vo_link = col(&vo, VersionRow::EhrId).eq(col(&ehr, Ehr::Id));
+        let node_link = col(&node, Node::VoId)
+            .eq(col(&vo, VersionRow::VoId))
+            .and(col(&node, Node::SysVersion).eq(col(&vo, VersionRow::SysVersion)));
         if self.streaming {
             self.q.join_as(
                 JoinType::Join,
@@ -1133,15 +1149,16 @@ impl Builder<'_> {
             self.q.and_where(vo_link);
             self.q.and_where(node_link);
         }
-        self.q.and_where(hot(&vo));
-        self.q.and_where(hot(&node));
+        self.q.and_where(hot(&vo, VersionRow::Tier));
+        self.q.and_where(hot(&node, Node::Tier));
         self.q.and_where(head_unrestricted(&vo));
         self.q
-            .and_where(col(&vo, "kind").eq(Expr::val("EHR_STATUS")));
+            .and_where(col(&vo, VersionRow::Kind).eq(Expr::val("EHR_STATUS")));
         // Current = latest trunk (master06 latest_trunk_version).
-        self.q.and_where(col(&vo, "branch_number").eq(Expr::val(0)));
+        self.q
+            .and_where(col(&vo, VersionRow::BranchNumber).eq(Expr::val(0)));
         self.q.and_where(is_trunk_head(&vo));
-        self.q.and_where(col(&node, "num").eq(Expr::val(0)));
+        self.q.and_where(col(&node, Node::Num).eq(Expr::val(0)));
         self.ehr_status_node.insert(ehr_sid, node.clone());
         // Register as the source node so `source_node`/`whole_object_alias`/
         // `data_leaf_expr` (which start from the leaf's source node) resolve the
@@ -1155,7 +1172,7 @@ impl Builder<'_> {
             return a.clone();
         }
         let alias = format!("a_{voa}");
-        let cond = col(&alias, "id").eq(col(voa, "commit_audit_id"));
+        let cond = col(&alias, CommitAudit::Id).eq(col(voa, VersionRow::CommitAuditId));
         if self.streaming {
             self.q.join_as(
                 JoinType::Join,
@@ -1179,7 +1196,8 @@ impl Builder<'_> {
                 // LATEST_VERSION = the latest TRUNK version (RM common master06
                 // latest_trunk_version; open branch tips coexist and are not
                 // "the latest version" of the container).
-                self.q.and_where(col(voa, "branch_number").eq(Expr::val(0)));
+                self.q
+                    .and_where(col(voa, VersionRow::BranchNumber).eq(Expr::val(0)));
                 self.q.and_where(is_trunk_head(voa));
             }
             VersionScope::All => {}
@@ -1188,7 +1206,8 @@ impl Builder<'_> {
                 // branch version live at that instant coexists by design and
                 // must not duplicate the row.
                 let value = self.bind_value(&p.value)?;
-                self.q.and_where(col(voa, "branch_number").eq(Expr::val(0)));
+                self.q
+                    .and_where(col(voa, VersionRow::BranchNumber).eq(Expr::val(0)));
                 self.q
                     .and_where(trunk_at_instant(voa, cast(Expr::val(value), "timestamptz")));
             }
@@ -1206,9 +1225,9 @@ impl Builder<'_> {
     fn push_ehr_predicate(&mut self, alias: &str, p: &EhrPredicate) -> Result<(), AqlError> {
         let value = self.bind_value(&p.value)?;
         let (lhs, rhs) = match p.field {
-            EhrField::EhrId => (col(alias, "id"), cast(Expr::val(value), "uuid")),
+            EhrField::EhrId => (col(alias, Ehr::Id), cast(Expr::val(value), "uuid")),
             EhrField::TimeCreated => (
-                col(alias, "time_created"),
+                col(alias, Ehr::TimeCreated),
                 cast(Expr::val(value), "timestamptz"),
             ),
             EhrField::SystemId | EhrField::Whole => {

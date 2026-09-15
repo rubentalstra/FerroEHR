@@ -1,20 +1,26 @@
 // SPDX-FileCopyrightText: Ruben Talstra
 // SPDX-License-Identifier: BUSL-1.1
 
-//! `sea-query` identifier vocabulary for the live schema
-//! (`migrations/clinical/`, and the party domain rendered from the same DDL
-//! template).
+//! `sea-query` identifier vocabulary for the relations the AQL SQL generator
+//! builds against (`migrations/clinical/`, and the party domain rendered from
+//! the same DDL template).
 //!
 //! No openEHR spec governs the SQL schema — this is our own PG18-native
 //! design.
 //!
 //! One enum per table, in the official `sea-query` derive shape: the `Table`
-//! variant carries an explicit `#[iden = "..."]` and renders the table name and
-//! every other variant renders its `snake_cased` column name. This is the single
-//! typed name catalog, consumed by the AQL SQL generator and by dynamic SQL
-//! elsewhere rather than string-duplicating names. Every rendered name is pinned
-//! to the deployed DDL byte-for-byte by the tests below, and the catalog is kept
-//! complete against the schema, a drifted catalog forcing raw column strings.
+//! variant carries an explicit `#[iden = "..."]` and renders the table name,
+//! and every other variant renders its `snake_cased` column name. This is the
+//! typed name catalog the generator reaches for instead of writing a column as
+//! a string, and its tests hold both ends of that: every name here is declared
+//! by the clinical migration set, and nothing under `aql/sql/` names a column
+//! any other way.
+//!
+//! It covers the five relations the generator reads and nothing else. A
+//! relation reached only through a static, compile-time-checked `sqlx::query!`
+//! needs no entry, because that query is checked against the live schema
+//! already; an entry it could not use would be a second, unchecked copy of the
+//! DDL.
 
 /// `ehr` — one row per EHR.
 #[derive(Debug, Clone, Copy, sea_query::Iden)]
@@ -53,68 +59,6 @@ pub enum Ehr {
     ResearchObjectionGround,
 }
 
-/// `restriction` — the register behind a restriction-of-processing mark.
-#[derive(Debug, Clone, Copy, sea_query::Iden)]
-pub enum Restriction {
-    /// The `restriction` table itself.
-    #[iden = "restriction"]
-    Table,
-    /// `id` — the register row id (a uuidv7).
-    Id,
-    /// `ehr_id` — the EHR the restriction was requested for.
-    EhrId,
-    /// `vo_id` — the restricted versioned object, or `NULL` for the whole EHR.
-    VoId,
-    /// `ground` — the GDPR Art. 18(1) point the restriction rests on, or
-    /// `national` for a deployment-declared ground.
-    Ground,
-    /// `requested_at` — when the restriction was requested.
-    RequestedAt,
-    /// `lifted_at` — when it was lifted; `NULL` while it is in force.
-    LiftedAt,
-    /// `note` — the free-text record the controller kept beside the ground.
-    Note,
-}
-
-/// `retention_policy` — the retention period per content category and
-/// jurisdiction, with the legal citation it rests on.
-#[derive(Debug, Clone, Copy, sea_query::Iden)]
-pub enum RetentionPolicy {
-    /// The `retention_policy` table itself.
-    #[iden = "retention_policy"]
-    Table,
-    /// `kind` — the content category (`COMPOSITION` / `EHR_STATUS` / `FOLDER`
-    /// / `EHR`).
-    Kind,
-    /// `jurisdiction` — the ISO 3166-1 alpha-2 code whose rule this is.
-    Jurisdiction,
-    /// `period` — how long content of this category is kept.
-    Period,
-    /// `anchor` — what the period is measured from.
-    Anchor,
-    /// `source` — the legal citation the period comes from.
-    Source,
-}
-
-/// `retention_anchor` — the per-EHR facts the retention period is measured
-/// against, and any hold that suspends disposal.
-#[derive(Debug, Clone, Copy, sea_query::Iden)]
-pub enum RetentionAnchor {
-    /// The `retention_anchor` table itself.
-    #[iden = "retention_anchor"]
-    Table,
-    /// `ehr_id` — the EHR, and the primary key.
-    EhrId,
-    /// `jurisdiction` — the jurisdiction whose periods apply to this EHR.
-    Jurisdiction,
-    /// `anchored_at` — the anchor event instant, `NULL` until it is known.
-    AnchoredAt,
-    /// `hold_at` — when an EHR-wide hold was placed; nothing is due while set.
-    HoldAt,
-    /// `hold_ground` — the reason the hold was placed.
-    HoldGround,
-}
-
 /// `commit_audit` — `AUDIT_DETAILS` of every committed change.
 #[derive(Debug, Clone, Copy, sea_query::Iden)]
 pub enum CommitAudit {
@@ -138,44 +82,6 @@ pub enum CommitAudit {
     /// `attestation` — the `ATTESTATION`-declared attributes as JSONB when the
     /// commit audit is an `ATTESTATION`, else NULL.
     Attestation,
-}
-
-/// `contribution` — the change-set envelope.
-#[derive(Debug, Clone, Copy, sea_query::Iden)]
-pub enum Contribution {
-    /// The `contribution` table itself.
-    #[iden = "contribution"]
-    Table,
-    /// `id` — the CONTRIBUTION uid (a uuidv7).
-    Id,
-    /// `ehr_id` — the owning EHR, or `NULL` for a demographic (party)
-    /// contribution, which no EHR owns.
-    EhrId,
-    /// `commit_audit_id` — the contribution's `AUDIT_DETAILS` row.
-    CommitAuditId,
-}
-
-/// `template_store` — operational templates (OPT 1.4 XML); dual identity
-/// (`id` = SM UUID handle, `template_id` = wire address).
-#[derive(Debug, Clone, Copy, sea_query::Iden)]
-pub enum TemplateStore {
-    /// The `template_store` table itself.
-    #[iden = "template_store"]
-    Table,
-    /// `id` — the SM OPT-by-UUID handle.
-    Id,
-    /// `template_id` — the wire address used by the DEFINITION API and by
-    /// `version.template_id`; also the source of the reported template
-    /// version.
-    TemplateId,
-    /// `concept` — the template's concept name, as declared by the OPT.
-    Concept,
-    /// `root_archetype` — the archetype id at the template root.
-    RootArchetype,
-    /// `content` — the uploaded OPT XML, stored verbatim.
-    Content,
-    /// `created_at` — when the template was uploaded.
-    CreatedAt,
 }
 
 /// `version` — one write-once row per version of a versioned object.
@@ -334,236 +240,10 @@ pub enum Node {
     /// `data` — the node's canonical openEHR JSON fragment verbatim, with
     /// structure children pruned.
     Data,
-}
-
-/// `vo_attestation` — `ATTESTATION`s appended to an `ORIGINAL_VERSION`.
-#[derive(Debug, Clone, Copy, sea_query::Iden)]
-pub enum VoAttestation {
-    /// The `vo_attestation` table itself.
-    #[iden = "vo_attestation"]
-    Table,
-    /// `tier` — the storage tier, and the partition key: `hot` or `cold`.
-    Tier,
-    /// `id` — the attestation row id (a uuidv7).
-    Id,
-    /// `vo_id` — the attested versioned object.
-    VoId,
-    /// `sys_version` — the attested version's commit ordinal.
-    SysVersion,
-    /// `contribution_id` — the CONTRIBUTION that appended the attestation.
-    ContributionId,
-    /// `time_committed` — when the attestation was appended.
-    TimeCommitted,
-    /// `data` — the canonical `ATTESTATION` JSON, verbatim.
-    Data,
-}
-
-/// `stored_query` — semver-addressed stored AQL queries.
-#[derive(Debug, Clone, Copy, sea_query::Iden)]
-pub enum StoredQuery {
-    /// The `stored_query` table itself.
-    #[iden = "stored_query"]
-    Table,
-    /// `reverse_domain_name` — the qualified name's namespace half.
-    ReverseDomainName,
-    /// `semantic_id` — the qualified name's local half.
-    SemanticId,
-    /// `semver` — the stored version of this query name.
-    Semver,
-    /// `query_type` — the query formalism (`AQL`).
-    QueryType,
-    /// `query_text` — the query source, stored verbatim.
-    QueryText,
-    /// `created_at` — when this version was stored.
-    CreatedAt,
-}
-
-/// `item_tag` — the store behind the RELEASED ITS-REST 1.1.0 tags API
-/// (SPECITS-77) and the two `openehr-item-tag` wrapper headers.
-#[derive(Debug, Clone, Copy, sea_query::Iden)]
-pub enum ItemTag {
-    /// The `item_tag` table itself.
-    #[iden = "item_tag"]
-    Table,
-    /// `id` — the tag id (a uuidv7).
-    Id,
-    /// `ehr_id` — the owning EHR, or `NULL` when the target is a party.
-    EhrId,
-    /// `target_vo_id` — the tagged versioned object; deliberately FK-less,
-    /// because a tag target may address a container or one version.
-    TargetVoId,
-    /// `target_type` — the RM type of the tagged object.
-    TargetType,
-    /// `key` — the tag key.
-    Key,
-    /// `value` — the tag value, optional.
-    Value,
-    /// `target_path` — the path within the target the tag applies to, if any.
-    TargetPath,
-    /// `created_at` — when the tag was written.
-    CreatedAt,
-}
-
-/// `archetype_store` — ADL 1.4 source archetypes (`I_DEFINITION_ADL14`).
-#[derive(Debug, Clone, Copy, sea_query::Iden)]
-pub enum ArchetypeStore {
-    /// The `archetype_store` table itself.
-    #[iden = "archetype_store"]
-    Table,
-    /// `archetype_id` — the archetype id, which is also the primary key.
-    ArchetypeId,
-    /// `adl` — the ADL 1.4 source text, stored verbatim.
-    Adl,
-    /// `created_at` — when the archetype was uploaded.
-    CreatedAt,
-}
-
-/// `adl2_artefact` — SM-2 ADL2 artefacts (`I_DEFINITION_ADL2`).
-#[derive(Debug, Clone, Copy, sea_query::Iden)]
-pub enum Adl2Artefact {
-    /// The `adl2_artefact` table itself.
-    #[iden = "adl2_artefact"]
-    Table,
-    /// `hrid` — the `ARCHETYPE_HRID`, which is also the primary key.
-    Hrid,
-    /// `kind` — which artefact this is: `archetype`, `template`, or
-    /// `operational_template`.
-    Kind,
-    /// `adl` — the ADL2 source text, stored verbatim.
-    Adl,
-    /// `parent_hrid` — the declared `specialize` parent HRID (NULL when the
-    /// artefact is not specialised); the archetype-lineage edge.
-    ParentHrid,
-    /// `created_at` — when the artefact was uploaded.
-    CreatedAt,
-}
-
-/// `linkage.subject_ehr` — the EHR id / demographic subject cross-reference
-/// (SM-3 `I_EHR_INDEX`) and the party-to-EHR map, in one temporal relation.
-#[derive(Debug, Clone, Copy, sea_query::Iden)]
-pub enum SubjectEhr {
-    /// The `subject_ehr` table itself.
-    #[iden = "subject_ehr"]
-    Table,
-    /// `id` — the surrogate key; the two real keys are partial.
-    Id,
-    /// `party_id` — the party in the party domain, when the row names one.
-    PartyId,
-    /// `ehr_id` — the EHR the row names.
-    EhrId,
-    /// `subject_id` — the subject identifier the clinical side carries.
-    SubjectId,
-    /// `subject_namespace` — the issuing namespace of `subject_id`.
-    SubjectNamespace,
-    /// `subject_type` — the subject's `OBJECT_REF.type` (`PERSON` by default).
-    SubjectType,
-    /// `status` — the `RESOURCE_STATUS` of the association, as canonical JSON.
-    Status,
-    /// `location` — the `LOCATION_DESC` of the holding system, as canonical
-    /// JSON.
-    Location,
-    /// `sys_period` — the row's validity interval; an open upper bound is the
-    /// row in force.
-    SysPeriod,
-}
-
-/// `sp_subject` — SM-6 Subject Proxy Service: one proxy per subject.
-#[derive(Debug, Clone, Copy, sea_query::Iden)]
-pub enum SpSubject {
-    /// The `sp_subject` table itself.
-    #[iden = "sp_subject"]
-    Table,
-    /// `subject_key` — the opaque key derived from the proxied subject's
-    /// identifier, which is also the primary key.
-    SubjectKey,
-    /// `subject_category` — `SUBJECT_PROXY.subject_category`, an uncontrolled
-    /// string.
-    SubjectCategory,
-    /// `create_time` — when the proxy was created.
-    CreateTime,
-}
-
-/// `sp_binding` — SM-6 SPS: one `ENV_BINDING` per execution environment.
-#[derive(Debug, Clone, Copy, sea_query::Iden)]
-pub enum SpBinding {
-    /// The `sp_binding` table itself.
-    #[iden = "sp_binding"]
-    Table,
-    /// `env_id` — the execution environment, which is also the primary key.
-    EnvId,
-    /// `description` — free-text description of the binding.
-    Description,
-}
-
-/// `sp_data_frame` — SM-6 SPS: a `DATA_FRAME` within a binding.
-#[derive(Debug, Clone, Copy, sea_query::Iden)]
-pub enum SpDataFrame {
-    /// The `sp_data_frame` table itself.
-    #[iden = "sp_data_frame"]
-    Table,
-    /// `env_id` — the binding this frame belongs to.
-    EnvId,
-    /// `frame_id` — the frame's id, unique service-wide because `get_frame`
-    /// addresses a frame without an environment.
-    FrameId,
-    /// `model_type` — the information model the frame retrieves from.
-    ModelType,
-    /// `primary_method` — the canonical JSON of the frame's retrieval method.
-    PrimaryMethod,
-    /// `fallback_method` — the canonical JSON of the method tried when the
-    /// primary one yields nothing.
-    FallbackMethod,
-}
-
-/// `sp_variable` — SM-6 SPS: a `SUBJECT_VARIABLE` on a subject's proxy.
-#[derive(Debug, Clone, Copy, sea_query::Iden)]
-pub enum SpVariable {
-    /// The `sp_variable` table itself.
-    #[iden = "sp_variable"]
-    Table,
-    /// `subject_key` — the proxy this variable hangs off.
-    SubjectKey,
-    /// `canonical_name` — the variable's canonical name, its key within the
-    /// proxy.
-    CanonicalName,
-    /// `namespace` — the namespace half of the variable's name, if any.
-    Namespace,
-    /// `name` — the local half of the variable's name.
-    Name,
-    /// `type_name` — the RM type of the retrieved value.
-    TypeName,
-    /// `currency` — the ISO 8601 duration a retrieved value stays valid for;
-    /// unset means "the most recent available valid value".
-    Currency,
-    /// `ask_user` — whether the value may be asked of the user.
-    AskUser,
-    /// `is_manual` — whether the value is supplied manually rather than
-    /// retrieved.
-    IsManual,
-    /// `frame_id` — the `DATA_FRAME` this variable is retrieved through.
-    FrameId,
-    /// `frame_path` — the path within the frame's result that holds the value.
-    FramePath,
-}
-
-/// `sp_data_set` — SM-6 SPS: a `SUBJECT_DATA_SET` registered by an application.
-#[derive(Debug, Clone, Copy, sea_query::Iden)]
-pub enum SpDataSet {
-    /// The `sp_data_set` table itself.
-    #[iden = "sp_data_set"]
-    Table,
-    /// `subject_key` — the proxy the data set belongs to.
-    SubjectKey,
-    /// `id` — the data set's id within that proxy.
-    Id,
-    /// `creating_app_id` — the application that registered the data set.
-    CreatingAppId,
-    /// `using_app_ids` — the applications currently using it, as a JSON array.
-    UsingAppIds,
-    /// `variables` — the data-set-local name → `SUBJECT_VARIABLE` map, stored
-    /// verbatim as canonical JSON because the local aliases differ from the
-    /// canonical names.
-    Variables,
+    /// `context_start` — the promoted `EVENT_CONTEXT.start_time.value` of the
+    /// `COMPOSITION` root row; `NULL` elsewhere and on a context-less
+    /// persistent composition.
+    ContextStart,
 }
 
 #[cfg(test)]
@@ -571,96 +251,198 @@ mod tests {
     use super::*;
     use sea_query::{Expr, ExprTrait as _, Iden as _, PostgresQueryBuilder, Query};
 
-    #[test]
-    fn table_names_render_exactly() {
-        assert_eq!(Ehr::Table.to_string(), "ehr");
-        assert_eq!(CommitAudit::Table.to_string(), "commit_audit");
-        assert_eq!(Contribution::Table.to_string(), "contribution");
-        assert_eq!(TemplateStore::Table.to_string(), "template_store");
-        assert_eq!(VersionRow::Table.to_string(), "version");
-        assert_eq!(VoHead::Table.to_string(), "vo_head");
-        assert_eq!(Node::Table.to_string(), "node");
-        assert_eq!(VoAttestation::Table.to_string(), "vo_attestation");
-        assert_eq!(StoredQuery::Table.to_string(), "stored_query");
-        assert_eq!(ItemTag::Table.to_string(), "item_tag");
-        assert_eq!(ArchetypeStore::Table.to_string(), "archetype_store");
-        assert_eq!(Adl2Artefact::Table.to_string(), "adl2_artefact");
-        assert_eq!(SubjectEhr::Table.to_string(), "subject_ehr");
-        assert_eq!(SpSubject::Table.to_string(), "sp_subject");
-        assert_eq!(SpBinding::Table.to_string(), "sp_binding");
-        assert_eq!(SpDataFrame::Table.to_string(), "sp_data_frame");
-        assert_eq!(SpVariable::Table.to_string(), "sp_variable");
-        assert_eq!(SpDataSet::Table.to_string(), "sp_data_set");
+    /// The relations the emitter names, and the clinical migrations that
+    /// declare them.
+    const DDL: &[(&str, &str)] = &[
+        (
+            "ehr",
+            include_str!("../../migrations/clinical/0002_ehr.sql"),
+        ),
+        (
+            "version",
+            include_str!("../../migrations/clinical/0003_change_control.sql"),
+        ),
+        (
+            "vo_head",
+            include_str!("../../migrations/clinical/0003_change_control.sql"),
+        ),
+        (
+            "commit_audit",
+            include_str!("../../migrations/clinical/0003_change_control.sql"),
+        ),
+        (
+            "node",
+            include_str!("../../migrations/clinical/0004_node.sql"),
+        ),
+    ];
+
+    /// The `CREATE TABLE {table} ( … )` body, comments stripped before the
+    /// parentheses are counted: the DDL documents itself in prose, and an
+    /// interval written `[a, b)` would otherwise close the table early and
+    /// hide every column after it.
+    fn create_table_body(table: &str) -> String {
+        let head = format!("CREATE TABLE {table} (");
+        let body = DDL
+            .iter()
+            .filter(|(name, _)| *name == table)
+            .find_map(|(_, file)| file.split_once(&head))
+            .unwrap_or_else(|| panic!("no `{head}` in the clinical migration set"))
+            .1;
+        let code: String = body
+            .lines()
+            .map(|line| line.split("--").next().unwrap_or(line))
+            .collect::<Vec<_>>()
+            .join("\n");
+        let mut depth = 1usize;
+        for (i, ch) in code.char_indices() {
+            match ch {
+                '(' => depth += 1,
+                ')' => {
+                    depth -= 1;
+                    if depth == 0 {
+                        return code.get(..i).unwrap_or_default().to_owned();
+                    }
+                }
+                _ => {}
+            }
+        }
+        panic!("unterminated CREATE TABLE {table} in the clinical migration set");
+    }
+
+    /// Whether `body` declares a column named exactly `col` — a line whose
+    /// trimmed text is `col` followed by a non-identifier character (so `num`
+    /// does not match the `num_cap` declaration).
+    fn declares_column(body: &str, col: &str) -> bool {
+        body.lines().any(|line| {
+            let t = line.trim_start();
+            t.strip_prefix(col)
+                .is_some_and(|rest| rest.starts_with([' ', '\t']))
+        })
+    }
+
+    /// Every catalog entry, as `(table, [column, …])`, rendered through the
+    /// derive rather than retyped.
+    fn catalog() -> Vec<(String, Vec<String>)> {
+        vec![
+            (
+                Ehr::Table.to_string(),
+                vec![
+                    Ehr::Id.to_string(),
+                    Ehr::SystemId.to_string(),
+                    Ehr::TimeCreated.to_string(),
+                    Ehr::SubjectId.to_string(),
+                    Ehr::SubjectNamespace.to_string(),
+                    Ehr::IsQueryable.to_string(),
+                    Ehr::IsModifiable.to_string(),
+                    Ehr::RestrictedAt.to_string(),
+                    Ehr::ResearchObjectedAt.to_string(),
+                    Ehr::ResearchObjectionGround.to_string(),
+                ],
+            ),
+            (
+                CommitAudit::Table.to_string(),
+                vec![
+                    CommitAudit::Id.to_string(),
+                    CommitAudit::TimeCommitted.to_string(),
+                    CommitAudit::SystemId.to_string(),
+                    CommitAudit::ChangeType.to_string(),
+                    CommitAudit::Description.to_string(),
+                    CommitAudit::Committer.to_string(),
+                    CommitAudit::Attestation.to_string(),
+                ],
+            ),
+            (
+                VersionRow::Table.to_string(),
+                vec![
+                    VersionRow::Tier.to_string(),
+                    VersionRow::VoId.to_string(),
+                    VersionRow::Kind.to_string(),
+                    VersionRow::EhrId.to_string(),
+                    VersionRow::SysVersion.to_string(),
+                    VersionRow::TrunkVersion.to_string(),
+                    VersionRow::BranchNumber.to_string(),
+                    VersionRow::BranchVersion.to_string(),
+                    VersionRow::LifecycleState.to_string(),
+                    VersionRow::CreatingSystemId.to_string(),
+                    VersionRow::PrecedingVersionUid.to_string(),
+                    VersionRow::Signature.to_string(),
+                    VersionRow::SignatureClientSupplied.to_string(),
+                    VersionRow::WrappedOriginal.to_string(),
+                    VersionRow::OtherInputVersionUids.to_string(),
+                    VersionRow::Origins.to_string(),
+                    VersionRow::ContributionId.to_string(),
+                    VersionRow::CommitAuditId.to_string(),
+                    VersionRow::TemplateId.to_string(),
+                    VersionRow::StableCompatible.to_string(),
+                    VersionRow::CommittedAt.to_string(),
+                    VersionRow::Body.to_string(),
+                ],
+            ),
+            (
+                VoHead::Table.to_string(),
+                vec![
+                    VoHead::VoId.to_string(),
+                    VoHead::Kind.to_string(),
+                    VoHead::EhrId.to_string(),
+                    VoHead::Tier.to_string(),
+                    VoHead::HeadSysVersion.to_string(),
+                    VoHead::TrunkHeadSysVersion.to_string(),
+                    VoHead::LifecycleState.to_string(),
+                    VoHead::TemplateId.to_string(),
+                    VoHead::CommittedAt.to_string(),
+                    VoHead::RestrictedAt.to_string(),
+                    VoHead::RetentionHoldAt.to_string(),
+                    VoHead::ArchivedAt.to_string(),
+                    VoHead::ArchiveReason.to_string(),
+                ],
+            ),
+            (
+                Node::Table.to_string(),
+                vec![
+                    Node::Tier.to_string(),
+                    Node::VoId.to_string(),
+                    Node::SysVersion.to_string(),
+                    Node::Num.to_string(),
+                    Node::NumCap.to_string(),
+                    Node::ParentNum.to_string(),
+                    Node::EhrId.to_string(),
+                    Node::RmType.to_string(),
+                    Node::Archetype.to_string(),
+                    Node::ArchEntity.to_string(),
+                    Node::ArchConcept.to_string(),
+                    Node::ArchMajor.to_string(),
+                    Node::Name.to_string(),
+                    Node::NameCode.to_string(),
+                    Node::NameTerminology.to_string(),
+                    Node::Path.to_string(),
+                    Node::Data.to_string(),
+                    Node::ContextStart.to_string(),
+                ],
+            ),
+        ]
     }
 
     #[test]
-    fn column_names_render_exactly() {
-        assert_eq!(Ehr::SystemId.to_string(), "system_id");
-        assert_eq!(Ehr::IsModifiable.to_string(), "is_modifiable");
-        assert_eq!(Node::Tier.to_string(), "tier");
-        assert_eq!(Node::VoId.to_string(), "vo_id");
-        assert_eq!(Node::SysVersion.to_string(), "sys_version");
-        assert_eq!(Node::NumCap.to_string(), "num_cap");
-        assert_eq!(Node::RmType.to_string(), "rm_type");
-        assert_eq!(Node::NameCode.to_string(), "name_code");
-        assert_eq!(Node::NameTerminology.to_string(), "name_terminology");
-        assert_eq!(Node::ArchEntity.to_string(), "arch_entity");
-        assert_eq!(Node::ArchConcept.to_string(), "arch_concept");
-        assert_eq!(Node::ArchMajor.to_string(), "arch_major");
-        assert_eq!(VersionRow::Tier.to_string(), "tier");
-        assert_eq!(VersionRow::TrunkVersion.to_string(), "trunk_version");
-        assert_eq!(VersionRow::BranchNumber.to_string(), "branch_number");
-        assert_eq!(VersionRow::BranchVersion.to_string(), "branch_version");
-        assert_eq!(
-            VersionRow::PrecedingVersionUid.to_string(),
-            "preceding_version_uid"
-        );
-        assert_eq!(VersionRow::CommittedAt.to_string(), "committed_at");
-        assert_eq!(VersionRow::ContributionId.to_string(), "contribution_id");
-        assert_eq!(VersionRow::CommitAuditId.to_string(), "commit_audit_id");
-        assert_eq!(
-            VersionRow::CreatingSystemId.to_string(),
-            "creating_system_id"
-        );
-        assert_eq!(
-            VersionRow::OtherInputVersionUids.to_string(),
-            "other_input_version_uids"
-        );
-        assert_eq!(
-            VersionRow::StableCompatible.to_string(),
-            "stable_compatible"
-        );
-        assert_eq!(VoHead::HeadSysVersion.to_string(), "head_sys_version");
-        assert_eq!(
-            VoHead::TrunkHeadSysVersion.to_string(),
-            "trunk_head_sys_version"
-        );
-        assert_eq!(VoHead::RestrictedAt.to_string(), "restricted_at");
-        assert_eq!(VoHead::RetentionHoldAt.to_string(), "retention_hold_at");
-        assert_eq!(VoHead::ArchivedAt.to_string(), "archived_at");
-        assert_eq!(VoHead::ArchiveReason.to_string(), "archive_reason");
-        assert_eq!(CommitAudit::TimeCommitted.to_string(), "time_committed");
-        assert_eq!(Contribution::CommitAuditId.to_string(), "commit_audit_id");
-        assert_eq!(
-            StoredQuery::ReverseDomainName.to_string(),
-            "reverse_domain_name"
-        );
-        assert_eq!(ItemTag::TargetVoId.to_string(), "target_vo_id");
-        assert_eq!(SpDataFrame::PrimaryMethod.to_string(), "primary_method");
-        assert_eq!(Ehr::RestrictedAt.to_string(), "restricted_at");
-        assert_eq!(Ehr::ResearchObjectedAt.to_string(), "research_objected_at");
-        assert_eq!(
-            Ehr::ResearchObjectionGround.to_string(),
-            "research_objection_ground"
-        );
-        assert_eq!(Restriction::Table.to_string(), "restriction");
-        assert_eq!(Restriction::RequestedAt.to_string(), "requested_at");
-        assert_eq!(Restriction::LiftedAt.to_string(), "lifted_at");
-        assert_eq!(RetentionPolicy::Table.to_string(), "retention_policy");
-        assert_eq!(RetentionPolicy::Jurisdiction.to_string(), "jurisdiction");
-        assert_eq!(RetentionAnchor::Table.to_string(), "retention_anchor");
-        assert_eq!(RetentionAnchor::AnchoredAt.to_string(), "anchored_at");
-        assert_eq!(RetentionAnchor::HoldGround.to_string(), "hold_ground");
+    fn every_catalog_name_is_declared_by_the_schema() {
+        for (table, columns) in catalog() {
+            let body = create_table_body(&table);
+            for column in columns {
+                assert!(
+                    declares_column(&body, &column),
+                    "the catalog names `{table}.{column}`, which `CREATE TABLE {table}` does not \
+                     declare in the clinical migration set — schema drift"
+                );
+            }
+        }
+    }
+
+    #[test]
+    fn the_table_names_render_exactly() {
+        assert_eq!(Ehr::Table.to_string(), "ehr");
+        assert_eq!(CommitAudit::Table.to_string(), "commit_audit");
+        assert_eq!(VersionRow::Table.to_string(), "version");
+        assert_eq!(VoHead::Table.to_string(), "vo_head");
+        assert_eq!(Node::Table.to_string(), "node");
     }
 
     #[test]
@@ -674,5 +456,74 @@ mod tests {
             sql,
             r#"SELECT "node"."num" FROM "node" WHERE "rm_type" = $1"#
         );
+    }
+
+    /// The emitter names every column through this catalog: no `col(alias,
+    /// "literal")`, no `Expr::col(Alias::new("literal"))`, and no
+    /// `.column(Alias::new("literal"))` anywhere under `aql/sql/`.
+    ///
+    /// The catalog exists for the typo protection a string cannot give, and a
+    /// column that drops out of the schema has to be a failing test rather
+    /// than a runtime SQL error. `derived_col` is the sanctioned exception and
+    /// is why the scan is spelled on the `col(` token: a subquery's or a
+    /// set-returning function's output column is declared by no relation, so
+    /// the catalog cannot name it.
+    #[test]
+    fn the_emitter_names_no_column_as_a_string() {
+        const SOURCES: &[(&str, &str)] = &[
+            ("mod.rs", include_str!("../aql/sql/mod.rs")),
+            ("expr.rs", include_str!("../aql/sql/expr.rs")),
+            ("from.rs", include_str!("../aql/sql/from.rs")),
+            ("predicate.rs", include_str!("../aql/sql/predicate.rs")),
+            ("select.rs", include_str!("../aql/sql/select.rs")),
+            ("value.rs", include_str!("../aql/sql/value.rs")),
+        ];
+        // `expr.rs` defines `col` and `derived_col` themselves, so its two
+        // definition lines are the one place the tokens appear without naming
+        // a column.
+        const DEFINITIONS: &[&str] = &[
+            "pub(super) fn col(alias: &str, column: impl IntoIden) -> Expr {",
+            "pub(super) fn derived_col(alias: &str, name: &str) -> Expr {",
+        ];
+        let mut offenders = Vec::new();
+        for (name, source) in SOURCES {
+            for (number, line) in source.lines().enumerate() {
+                if DEFINITIONS.contains(&line.trim()) {
+                    continue;
+                }
+                let raw_column = is_string_column(line, "col(")
+                    || line.contains("Expr::col(Alias::new(\"")
+                    || line.contains(".column(Alias::new(\"");
+                if raw_column {
+                    offenders.push(format!("{name}:{}: {}", number + 1, line.trim()));
+                }
+            }
+        }
+        assert!(
+            offenders.is_empty(),
+            "the AQL emitter names a column as a string instead of through `crate::db::iden`; \
+             use the catalog, or `derived_col` for a column no relation declares:\n{}",
+            offenders.join("\n")
+        );
+    }
+
+    /// Whether `line` calls `token` — as a whole word, so `Expr::col(` and
+    /// `derived_col(` do not match `col(` — with a string literal in its
+    /// second argument.
+    fn is_string_column(line: &str, token: &str) -> bool {
+        let mut rest = line;
+        while let Some(at) = rest.find(token) {
+            let leads = rest
+                .get(..at)
+                .and_then(|before| before.chars().next_back())
+                .is_none_or(|c| !c.is_alphanumeric() && c != '_' && c != ':');
+            let args = rest.get(at + token.len()..).unwrap_or_default();
+            let second = args.find(',').and_then(|comma| args.get(comma + 1..));
+            if leads && second.is_some_and(|s| s.trim_start().starts_with('"')) {
+                return true;
+            }
+            rest = args;
+        }
+        false
     }
 }

@@ -16,6 +16,7 @@ use crate::aql::ir::{
     ArchetypeConstraint, Bind, Coercion, EhrField, Expr as IrExpr, LeafPath, LikePattern,
     NameConstraint, NodeConstraint, Operand, PathTarget, ScalarFn, StdPredicate, TypedLit,
 };
+use crate::db::iden::{Ehr, Node};
 use openehr_query::lexer::CompOp;
 
 use super::expr::{aql_like_to_sql, archetype_predicate, as_text, binoper, cast, col, jsonb_path};
@@ -254,7 +255,7 @@ impl Builder<'_> {
         Ok(Some(match raw.parse::<uuid::Uuid>() {
             Ok(u) => {
                 let rhs_uuid = cast(Expr::val(u.to_string()), "uuid");
-                col(&alias, "id").binary(binoper(op), rhs_uuid)
+                col(&alias, Ehr::Id).binary(binoper(op), rhs_uuid)
             }
             // Not a uuid → it can equal no EHR id: `=` is constant false,
             // `!=` constant true.
@@ -488,8 +489,8 @@ impl Builder<'_> {
 
     pub(super) fn name_cond(&self, node: &str, n: &NameConstraint) -> Result<Expr, AqlError> {
         match n {
-            NameConstraint::Value(s) => Ok(col(node, "name").eq(Expr::val(s.clone()))),
-            NameConstraint::Param(p) => Ok(col(node, "name").eq(Expr::val(self.param_str(p)?))),
+            NameConstraint::Value(s) => Ok(col(node, Node::Name).eq(Expr::val(s.clone()))),
+            NameConstraint::Param(p) => Ok(col(node, Node::Name).eq(Expr::val(self.param_str(p)?))),
             // The canonical expansion of the coded-name shortcut (QUERY
             // master03-syntax §Node predicate): code_string AND
             // terminology_id/value compared separately; the informational
@@ -497,15 +498,15 @@ impl Builder<'_> {
             // promoted columns of `node`, written by the decomposer at commit,
             // so a coded-name predicate is two column comparisons rather than
             // two JSON probes.
-            NameConstraint::TermCode { terminology, code } => Ok(col(node, "name_code")
+            NameConstraint::TermCode { terminology, code } => Ok(col(node, Node::NameCode)
                 .eq(Expr::val(code.clone()))
-                .and(col(node, "name_terminology").eq(Expr::val(terminology.clone())))),
+                .and(col(node, Node::NameTerminology).eq(Expr::val(terminology.clone())))),
         }
     }
 
     pub(super) fn std_cond(&self, node: &str, sp: &StdPredicate) -> Result<Expr, AqlError> {
         let jp = jsonpath(&sp.path);
-        let lhs = as_text(jsonb_path(col(node, "data"), &jp, None));
+        let lhs = as_text(jsonb_path(col(node, Node::Data), &jp, None));
         let rhs = cast(Expr::val(self.bind_value(&sp.value)?), "text");
         Ok(lhs.binary(binoper(sp.op), rhs))
     }

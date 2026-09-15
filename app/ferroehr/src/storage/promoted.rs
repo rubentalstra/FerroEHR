@@ -62,8 +62,8 @@ pub struct PromotedLeaf {
     /// `anchor` attributes followed by the `fragment` names (the structural
     /// split is an analysis artifact this deliberately abstracts over).
     pub path: &'static [&'static str],
-    /// The physical `node` column name.
-    pub column: &'static str,
+    /// The physical `node` column, named through the schema catalog.
+    pub column: crate::db::iden::Node,
     /// The column's physical kind.
     pub kind: PromotedKind,
 }
@@ -76,7 +76,7 @@ pub static PROMOTED_LEAVES: &[PromotedLeaf] = &[
     PromotedLeaf {
         rm_type: "COMPOSITION",
         path: &["context", "start_time", "value"],
-        column: "context_start",
+        column: crate::db::iden::Node::ContextStart,
         kind: PromotedKind::Timestamp,
     },
 ];
