@@ -89,10 +89,11 @@ COMMENT ON COLUMN ehr.restricted_at IS 'When restriction of processing was recor
 COMMENT ON COLUMN ehr.research_objected_at IS 'When the subject objected to research processing (GDPR Art. 21(6)); while set and unoverridden, population AQL, every export and the outbox emitter skip this EHR. Our own design/extension.';
 COMMENT ON COLUMN ehr.research_objection_ground IS 'The controller''s recorded public-interest ground for overriding the objection (GDPR Art. 21(6)); NULL while the objection stands.';
 
--- The marked EHRs are a small minority, so both marks ride one partial index
--- the population gate and the export scans probe.
-CREATE INDEX idx_ehr_legal_marks ON ehr (id)
-    WHERE restricted_at IS NOT NULL OR research_objected_at IS NOT NULL;
+-- No index on either mark, deliberately. Every reader either has the row
+-- already (the AQL population gate, which filters the UNMARKED majority on
+-- rows its scan has reached) or reaches it by primary key (the mark read, the
+-- outbox emitter and the drainer's NOT EXISTS). A partial index over the
+-- marked minority would serve none of them.
 
 -- ── the subject pseudonym guard ──────────────────────────────────────────────
 -- A deployment that declares subject namespaces holds an OPAQUE pseudonym on

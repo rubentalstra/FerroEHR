@@ -351,3 +351,88 @@ async fn the_mark_routes_are_behind_the_admin_switch() {
         assert_eq!(status, StatusCode::METHOD_NOT_ALLOWED, "{body}");
     }
 }
+
+/// A restriction at SINGLE-OBJECT grain, on the operations that address a
+/// COMPOSITION: the restricted composition is refused while the rest of the
+/// record stays in use, which is the case GDPR Art. 18(1)(a) describes — a
+/// subject contesting the accuracy of one entry.
+#[tokio::test]
+async fn a_restricted_composition_is_refused_while_the_record_stays_in_use() {
+    let (_pg, app) = app().await;
+
+    let req = Request::builder()
+        .method("POST")
+        .uri(format!("{BASE}/definition/template/adl1.4"))
+        .header(http::header::CONTENT_TYPE, "application/xml")
+        .body(Body::from(common::ips_opt_xml()))
+        .expect("request");
+    let (status, body) = send(&app, req).await;
+    assert_eq!(status, StatusCode::CREATED, "OPT upload: {body}");
+
+    let ehr_id = create_ehr(&app).await;
+    let (status, body) = send(
+        &app,
+        post_json(
+            &format!("/ehr/{ehr_id}/composition"),
+            &common::ips_canonical_composition().to_string(),
+        ),
+    )
+    .await;
+    assert_eq!(status, StatusCode::CREATED, "composition commit: {body}");
+    let value: serde_json::Value = serde_json::from_str(&body).expect("composition json");
+    let ovid = value["uid"]["value"].as_str().expect("uid").to_owned();
+    let vo_id = ovid.split("::").next().expect("object id").to_owned();
+
+    let reads = [
+        format!("/ehr/{ehr_id}/composition/{vo_id}"),
+        format!("/ehr/{ehr_id}/versioned_composition/{vo_id}/revision_history"),
+        format!("/ehr/{ehr_id}/versioned_composition/{vo_id}/version"),
+        format!("/ehr/{ehr_id}/versioned_composition/{vo_id}/version/{ovid}"),
+    ];
+    for path in &reads {
+        let (status, body) = send(&app, get(path)).await;
+        assert_eq!(status, StatusCode::OK, "before the mark, {path}: {body}");
+    }
+
+    let (status, body) = send(
+        &app,
+        post_json(
+            "/admin/restriction",
+            &format!(r#"{{"ehr_id":"{ehr_id}","vo_id":"{vo_id}","ground":"gdpr-18-1-a"}}"#),
+        ),
+    )
+    .await;
+    assert_eq!(status, StatusCode::NO_CONTENT, "restrict: {body}");
+
+    for path in &reads {
+        let (status, body) = send(&app, get(path)).await;
+        assert_eq!(status, StatusCode::FORBIDDEN, "{path}: {body}");
+        assert!(body.contains("restricted"), "{path}: {body}");
+    }
+
+    // A DELETE of the restricted composition is refused too: a logical delete
+    // commits a new version, which is processing Art. 18(2) does not admit.
+    let req = Request::builder()
+        .method("DELETE")
+        .uri(format!("{BASE}/ehr/{ehr_id}/composition/{ovid}"))
+        .body(Body::empty())
+        .expect("request");
+    let (status, body) = send(&app, req).await;
+    assert_eq!(status, StatusCode::FORBIDDEN, "a delete is refused: {body}");
+
+    // The rest of the record is untouched: this is the grain the whole issue
+    // turns on.
+    let (status, body) = send(&app, get(&format!("/ehr/{ehr_id}/ehr_status"))).await;
+    assert_eq!(status, StatusCode::OK, "the EHR_STATUS still reads: {body}");
+
+    send(
+        &app,
+        post_json(
+            "/admin/restriction/lift",
+            &format!(r#"{{"ehr_id":"{ehr_id}","vo_id":"{vo_id}"}}"#),
+        ),
+    )
+    .await;
+    let (status, body) = send(&app, get(&reads[0])).await;
+    assert_eq!(status, StatusCode::OK, "after the lift: {body}");
+}

@@ -135,7 +135,7 @@ fn head_unrestricted(version_alias: &str) -> Expr {
     sub.expr(Expr::val(1));
     sub.from_as(VoHead::Table, Alias::new(h.as_str()));
     sub.and_where(col(&h, "vo_id").eq(col(version_alias, "vo_id")));
-    sub.and_where(Expr::col((Alias::new(h.as_str()), Alias::new("restricted_at"))).is_null());
+    sub.and_where(col(&h, "restricted_at").is_null());
     Expr::exists(sub)
 }
 
@@ -153,13 +153,9 @@ fn head_unrestricted(version_alias: &str) -> Expr {
 /// the EHR is in the population again and the ground says on whose authority.
 /// No openEHR spec governs the objection — our own design/extension.
 fn research_objection_clear(ehr_alias: &str) -> Expr {
-    Expr::col((Alias::new(ehr_alias), Alias::new("research_objected_at")))
+    col(ehr_alias, "research_objected_at")
         .is_null()
-        .or(Expr::col((
-            Alias::new(ehr_alias),
-            Alias::new("research_objection_ground"),
-        ))
-        .is_not_null())
+        .or(col(ehr_alias, "research_objection_ground").is_not_null())
 }
 
 /// `LATEST_VERSION`: the version row is the object's current TRUNK head.
@@ -988,9 +984,7 @@ impl Builder<'_> {
         // restriction admits (`docs/law/eu/gdpr/text.html`), so naming the
         // `ehr_id` does not make the content answerable.
         for alias in self.ehr_alias.values().cloned().collect::<Vec<_>>() {
-            self.q.and_where(
-                Expr::col((Alias::new(alias.as_str()), Alias::new("restricted_at"))).is_null(),
-            );
+            self.q.and_where(col(&alias, "restricted_at").is_null());
         }
         // Multi-EHR scoping (`ehr_ids: List<UUID>`): restrict every VO root to
         // the id set with `ehr_id = ANY($ids)` — ONE array bind rather than one
@@ -1067,8 +1061,7 @@ impl Builder<'_> {
     /// objects carry the mark too but whose `ehr` row is the cheaper place to
     /// decide it once the population gate has already joined it.
     fn gate_ehr_marks(&mut self, alias: &str) {
-        self.q
-            .and_where(Expr::col((Alias::new(alias), Alias::new("restricted_at"))).is_null());
+        self.q.and_where(col(alias, "restricted_at").is_null());
         self.q.and_where(research_objection_clear(alias));
     }
 
