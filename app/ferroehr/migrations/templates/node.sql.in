@@ -45,7 +45,12 @@ CREATE TABLE node (
     ehr_id      uuid,
     -- The node's full RM type name, never an alias.
     rm_type     text NOT NULL,
-    -- The node's archetype_node_id when it carries one.
+    -- The node's archetype_node_id when it carries one, stored LOWERCASED:
+    -- openEHR identifier equality is case-insensitive (BASE base_types
+    -- master05 §Composite Identifiers and Case), so the promoted predicate
+    -- column holds the comparison form and AQL equality stays plain indexed
+    -- equality with honest statistics. The canonical `data` fragment keeps the
+    -- casing the document was written with.
     archetype   text,
     -- Archetype-subsumption columns, parsed from a full archetype HRID and
     -- comparison-normalized (lowercased); NULL on at-code/id-code nodes. Parts
@@ -144,6 +149,7 @@ COMMENT ON COLUMN node.num IS 'Pre-order number within the versioned object (roo
 COMMENT ON COLUMN node.num_cap IS 'The highest num in this node''s subtree: the subtree is num..=num_cap (AQL CONTAINS).';
 COMMENT ON COLUMN node.parent_num IS 'The num of the parent structure node (the root points at itself).';
 COMMENT ON COLUMN node.name IS 'The node''s name.value, promoted for the AQL node predicate (QUERY master03-syntax.adoc §Node predicate).';
+COMMENT ON COLUMN node.archetype IS 'The node''s archetype_node_id, stored lowercased for comparison: openEHR identifier equality is case-insensitive (BASE base_types master05 §Composite Identifiers and Case). The canonical data fragment keeps its own casing.';
 COMMENT ON COLUMN node.name_code IS 'The code_string of the node''s name/defining_code when its name is coded; NULL otherwise. Promoted for the AQL node predicate (QUERY master03-syntax.adoc §Node predicate). Our own storage design.';
 COMMENT ON COLUMN node.name_terminology IS 'The terminology_id of the node''s name/defining_code when its name is coded; NULL otherwise. Our own storage design.';
 COMMENT ON COLUMN node.arch_entity IS 'qualified_rm_entity of a full archetype HRID, lowercased for comparison (BASE base_types master05 §Archetype Identifiers); NULL on at/id-code nodes.';

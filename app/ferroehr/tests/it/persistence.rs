@@ -305,6 +305,69 @@ async fn a_database_from_before_the_storage_rewrite_is_refused_with_the_remedy()
         .expect("an empty schema of that name is not a pre-rewrite database");
 }
 
+/// A first-generation `ext`, `linkage` or `audit` set is refused by the SAME
+/// typed error, on the description of its version 1.
+///
+/// Those three schema NAMES survive the rewrite, so their bookkeeping exists in
+/// both generations and its mere presence proves nothing; which migration ran
+/// first does. Without this the old set would reach its own migrator and fail
+/// on a checksum mismatch — an error about a hash where the operator needs the
+/// remedy.
+#[tokio::test]
+async fn a_first_generation_set_in_a_surviving_schema_is_refused_by_its_first_migration() {
+    // (schema, the first generation's version-1 description, this build's).
+    const SIGNATURES: [(&str, &str, &str); 3] = [
+        ("ext", "openehr functions", "schema and roles"),
+        ("linkage", "baseline", "schema and role"),
+        ("audit", "baseline", "schema and roles"),
+    ];
+    for (schema, first_generation, second_generation) in SIGNATURES {
+        let db = testkit::db().await.expect("testkit database");
+        let pool = db.pool();
+        set_first_description(&pool, schema, first_generation).await;
+        let error = db::run_migrations(&pool)
+            .await
+            .expect_err("a first-generation set must be refused");
+        assert!(
+            matches!(&error, db::DbError::FirstGenerationDatabase { schema: s } if *s == schema),
+            "{schema}: the refusal must be the typed one, not a checksum error: {error}"
+        );
+        assert!(
+            error.to_string().contains("recreate the database"),
+            "{schema}: the refusal must name the remedy: {error}"
+        );
+
+        // The discrimination is real: the same bookkeeping carrying THIS
+        // build's version-1 description is a generation-2 set, and migrating it
+        // again is the no-op it should be.
+        let db = testkit::db().await.expect("testkit database");
+        let pool = db.pool();
+        set_first_description(&pool, schema, second_generation).await;
+        db::run_migrations(&pool)
+            .await
+            .unwrap_or_else(|e| panic!("{schema}: a generation-2 set must pass the guard: {e}"));
+    }
+}
+
+/// Rewrite the version-1 description of `schema`'s existing bookkeeping.
+///
+/// The harness hands out a MIGRATED database, so the three surviving schemas
+/// already carry this build's own bookkeeping: re-describing its first row is
+/// exactly the state a first-generation database is in, and nothing else about
+/// the database is disturbed.
+async fn set_first_description(pool: &PgPool, schema: &'static str, description: &str) {
+    // `schema` is one of the literals at the call sites, never input.
+    let updated = sqlx::query(sqlx::AssertSqlSafe(format!(
+        "UPDATE {schema}._sqlx_migrations SET description = $1 WHERE version = 1"
+    )))
+    .bind(description)
+    .execute(pool)
+    .await
+    .expect("re-describe version 1")
+    .rows_affected();
+    assert_eq!(updated, 1, "{schema} must carry exactly one version-1 row");
+}
+
 #[tokio::test]
 async fn ext_magnitude_function_follows_the_spec_formulas() {
     let db = testkit::db().await.expect("testkit database");
