@@ -185,6 +185,87 @@ async fn subject_proxy_pulls_variable_through_openehr_frame() {
     );
 }
 
+/// A subject that is NOT an EHR id resolves through the cross-reference, on the
+/// linkage pool.
+///
+/// The openEHR frame has to scope its AQL to one EHR, and `i_data_binding.adoc`
+/// leaves the resolution to another service: "this service might need to
+/// resolve it through another service". That service is the EHR Index
+/// (`master07-ehr_index_service.adoc` §Overview — "the EHR Index has to be used
+/// to obtain the subject identifier"), whose associations live in the linkage
+/// domain. The literal-EHR-id shortcut the other frame tests take never touches
+/// that path, so without this test the moved seam is unexercised.
+#[tokio::test]
+async fn subject_proxy_resolves_a_non_ehr_subject_through_the_cross_reference() {
+    use ferroehr::service::ehr_index::types::SubjectRef;
+
+    let db = testkit::db().await.expect("testkit database");
+    let svc = FerroEhrService::new(db.pool());
+
+    let ehr = svc.create_ehr(None).await.expect("ehr");
+    svc.create_composition(ehr, uv(&composition("vitals")))
+        .await
+        .expect("commit composition");
+
+    // The subject is an MPI identifier, not an EHR id, so nothing but the
+    // cross-reference can answer which EHR the frame runs over.
+    let subject = "PID-SP-1".to_owned();
+    svc.add_ehr_subject(
+        ehr.to_string(),
+        SubjectRef::person(subject.clone(), "mpi"),
+        None,
+        None,
+    )
+    .await
+    .expect("the association is recorded");
+
+    svc.register_binding(EnvBinding {
+        env_id: "prod".to_owned(),
+        description: None,
+        data_frames: vec![openehr_frame("openehr::comps")],
+    })
+    .await
+    .expect("register_binding");
+    svc.register_subject(subject.clone(), None)
+        .await
+        .expect("register_subject");
+    // Zero currency, so every read re-executes the frame instead of serving the
+    // stored sample: what is under test is the resolution, not the cache.
+    let mut var = variable("latest_comp", "openehr::comps");
+    var.currency = Some("PT0S".to_owned());
+    svc.add_subject_variable(subject.clone(), var)
+        .await
+        .expect("add_subject_variable");
+
+    let value = svc
+        .get_variable(subject.clone(), "latest_comp".to_owned())
+        .await
+        .expect("get_variable");
+    assert_eq!(
+        value,
+        VariableValue::Single {
+            value: Some(json!("vitals"))
+        },
+        "the frame resolved the subject through the cross-reference and read that EHR"
+    );
+
+    // And ending the association takes the resolution with it: the frame can no
+    // longer say which EHR to run over, so the sample comes back unavailable
+    // rather than reading some other EHR.
+    svc.remove_ehr_subject(ehr.to_string(), SubjectRef::person(subject.clone(), "mpi"))
+        .await
+        .expect("the association ends");
+    let after = svc
+        .get_variable(subject, "latest_comp".to_owned())
+        .await
+        .expect("get_variable still answers");
+    assert_eq!(
+        after,
+        VariableValue::Single { value: None },
+        "an unresolved subject yields an unavailable sample, never another EHR's data"
+    );
+}
+
 /// A data set registered by an application resolves through `get_data_set`, and
 /// `remove_application` drops it (with `has_application` gating).
 #[tokio::test]
