@@ -521,7 +521,7 @@ refused when below the floor.
 and pending `event_outbox` rows; (2) `SELECT linkage.erase_ehr($1)`; (3) an
 `erase` tombstone appended to the outbox before step 1 commits, which every
 downstream consumer (FerroBRIDGE's OMOP load among them) applies by deleting
-what it derived from that `ehr_id`; (4) multimedia blob GC as today. Audit
+what it derived from that `ehr_id`; (4) multimedia blob GC as an anti-join over `blob_ref (tier, vo_id, sys_version, uri)`, maintained at every node write and carried across the tier move by its FK, so no statement scans `node` for URIs (landed, #3416; the party domain carries the same relation because the commit path is one code path over two schemas). The subject-proxy rows of a subject whose last EHR was deleted go in the clinical transaction (#3403). Audit
 events naming the `ehr_id` stay (report 3 B.1 Art. 17(3)(b): the logging
 periods are a legal obligation), and the page says so. The delete test asserts
 zero rows per relation per domain. `admin_ehr_delete_all` stays behind the
