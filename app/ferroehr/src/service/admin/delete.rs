@@ -221,7 +221,12 @@ impl FerroEhrService {
     async fn delete_ehr(&self, ehr_id: EhrId) -> Result<(), ServiceError> {
         // Read before the delete: the reference rows go with the versions that
         // carry them.
+        #[cfg(feature = "multimedia")]
         let candidate_blobs = self.referenced_blob_uris(&[ehr_id]).await?;
+        // Externalization is compiled out of this build, so no stored version
+        // references a blob and there is nothing to collect.
+        #[cfg(not(feature = "multimedia"))]
+        let candidate_blobs: Vec<String> = Vec::new();
 
         let mut tx = self.pool.begin().await?;
 
@@ -324,7 +329,12 @@ impl FerroEhrService {
         // actually removed.
         let mut deleted = 0u64;
         for chunk in targets.chunks(CHUNK) {
+            #[cfg(feature = "multimedia")]
             let candidate_blobs = self.referenced_blob_uris(chunk).await?;
+            // Externalization is compiled out of this build, so no stored
+            // version references a blob and there is nothing to collect.
+            #[cfg(not(feature = "multimedia"))]
+            let candidate_blobs: Vec<String> = Vec::new();
             let mut tx = self.pool.begin().await?;
             let commit_audit_ids: Vec<Uuid> = sqlx::query_scalar(
                 "SELECT commit_audit_id FROM version WHERE ehr_id = ANY($1) \
@@ -408,20 +418,6 @@ impl FerroEhrService {
         .bind(ehr_ids)
         .fetch_all(&self.pool)
         .await?)
-    }
-
-    /// The slim twin: externalization is compiled out, so no version can
-    /// reference a blob.
-    ///
-    /// # Errors
-    /// Never; the signature matches the multimedia twin its callers await.
-    #[cfg(not(feature = "multimedia"))]
-    #[expect(
-        clippy::unused_async,
-        reason = "the multimedia twin reads the database; callers await unconditionally"
-    )]
-    async fn referenced_blob_uris(&self, _ehr_ids: &[EhrId]) -> Result<Vec<String>, ServiceError> {
-        Ok(Vec::new())
     }
 
     /// The externalized blob URIs the given demographic versioned objects
