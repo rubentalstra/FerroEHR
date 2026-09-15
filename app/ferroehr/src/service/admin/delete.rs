@@ -74,8 +74,8 @@ impl FerroEhrService {
     /// # Errors
     /// - `versioned_object_does_not_exist` (`404`) — no template with that id.
     /// - `409` (`ServiceError::Conflict`) — a `version` row still references
-    ///   the template (`version.template_id` FK, `0001_baseline.sql`); a
-    ///   physical delete must never orphan the compositions built on it.
+    ///   the template (`version.template_id` FK, `clinical/0006_definitions.sql`);
+    ///   a physical delete must never orphan the compositions built on it.
     /// - `exception` — a database fault.
     pub async fn admin_template_delete(&self, template_id: String) -> Result<(), SmError> {
         Ok(self.delete_template_by_id(&template_id).await?)
@@ -109,7 +109,7 @@ impl FerroEhrService {
     /// version still references it. The reference count and the delete run in
     /// one transaction so the friendly 409 is consistent with the delete; the
     /// `version.template_id` → `template_ref` foreign key
-    /// (`0001_baseline.sql`, NO ACTION) is the underlying integrity guard that
+    /// (`clinical/0006_definitions.sql`, NO ACTION) is the underlying guard that
     /// makes orphaning impossible even under a concurrent commit.
     async fn delete_template_by_id(&self, template_id: &str) -> Result<(), ServiceError> {
         let mut tx = self.pool.begin().await?;
