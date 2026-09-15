@@ -1117,11 +1117,12 @@ async fn erasure_leaves_no_row_in_any_domain_and_tombstones_the_outbox() {
     // The versioned objects of the EHR, captured while they exist: the
     // attestation and blob-reference relations are keyed on them, not on the
     // EHR.
-    let vo_ids: Vec<Uuid> = sqlx::query_scalar("SELECT DISTINCT vo_id FROM version WHERE ehr_id = $1")
-        .bind(erased.0)
-        .fetch_all(&pool)
-        .await
-        .expect("the EHR's versioned objects");
+    let vo_ids: Vec<Uuid> =
+        sqlx::query_scalar("SELECT DISTINCT vo_id FROM version WHERE ehr_id = $1")
+            .bind(erased.0)
+            .fetch_all(&pool)
+            .await
+            .expect("the EHR's versioned objects");
     assert!(!vo_ids.is_empty(), "the seed committed versioned objects");
     let commit_audit_ids: Vec<Uuid> = sqlx::query_scalar(
         "SELECT commit_audit_id FROM version WHERE ehr_id = $1 \
@@ -1161,7 +1162,10 @@ async fn erasure_leaves_no_row_in_any_domain_and_tombstones_the_outbox() {
             "contribution",
             "SELECT count(*) FROM contribution WHERE ehr_id = $1",
         ),
-        ("item_tag", "SELECT count(*) FROM item_tag WHERE ehr_id = $1"),
+        (
+            "item_tag",
+            "SELECT count(*) FROM item_tag WHERE ehr_id = $1",
+        ),
         (
             "ehr_folder",
             "SELECT count(*) FROM ehr_folder WHERE ehr_id = $1",
@@ -1183,14 +1187,21 @@ async fn erasure_leaves_no_row_in_any_domain_and_tombstones_the_outbox() {
             "SELECT count(*) FROM event_outbox WHERE ehr_id = $1 AND contribution_id IS NOT NULL",
         ),
     ] {
-        assert_eq!(by_ehr(sql).await, 0, "{relation} still names the erased EHR");
+        assert_eq!(
+            by_ehr(sql).await,
+            0,
+            "{relation} still names the erased EHR"
+        );
     }
     for (relation, sql) in [
         (
             "vo_attestation",
             "SELECT count(*) FROM vo_attestation WHERE vo_id = ANY($1)",
         ),
-        ("blob_ref", "SELECT count(*) FROM blob_ref WHERE vo_id = ANY($1)"),
+        (
+            "blob_ref",
+            "SELECT count(*) FROM blob_ref WHERE vo_id = ANY($1)",
+        ),
     ] {
         let remaining: i64 = sqlx::query_scalar(AssertSqlSafe(sql))
             .bind(&vo_ids)
@@ -1225,7 +1236,10 @@ async fn erasure_leaves_no_row_in_any_domain_and_tombstones_the_outbox() {
     .fetch_one(&pool)
     .await
     .expect("count the readers still to reach the tombstone");
-    assert_eq!(behind, 1, "every registered reader still receives the tombstone");
+    assert_eq!(
+        behind, 1,
+        "every registered reader still receives the tombstone"
+    );
 
     // The other EHR keeps everything, tombstone included.
     let kept_rows = ehr_rows(&pool, kept.into()).await;
@@ -1236,7 +1250,10 @@ async fn erasure_leaves_no_row_in_any_domain_and_tombstones_the_outbox() {
         kept.0,
     )
     .await;
-    assert_eq!(kept_tombstones, 0, "no tombstone for an EHR that still exists");
+    assert_eq!(
+        kept_tombstones, 0,
+        "no tombstone for an EHR that still exists"
+    );
 }
 
 /// Physical erasure removes the subject proxy of a subject this EHR was the
@@ -1271,7 +1288,11 @@ async fn erasure_removes_the_proxies_of_a_subject_with_no_other_ehr() {
     )
     .await
     .expect("record the index association");
-    let subjects = [erased.to_string(), "PID-SOLE".to_owned(), "MRN-SOLE".to_owned()];
+    let subjects = [
+        erased.to_string(),
+        "PID-SOLE".to_owned(),
+        "MRN-SOLE".to_owned(),
+    ];
     for subject in &subjects {
         svc.register_subject(subject.clone(), None)
             .await
@@ -1289,9 +1310,7 @@ async fn erasure_removes_the_proxies_of_a_subject_with_no_other_ehr() {
 
     for subject in &subjects {
         assert!(
-            !svc.has_subject(subject.clone())
-                .await
-                .expect("has_subject"),
+            !svc.has_subject(subject.clone()).await.expect("has_subject"),
             "the proxy keyed on {subject:?} outlived the erased EHR"
         );
     }
@@ -1374,12 +1393,14 @@ async fn a_blob_reference_follows_its_version_across_the_tier_move() {
     .fetch_one(&pool)
     .await
     .expect("a committed version");
-    sqlx::query("INSERT INTO blob_ref (vo_id, sys_version, uri) VALUES ($1, $2, 's3://blobs/cafe')")
-        .bind(vo_id)
-        .bind(sys_version)
-        .execute(&pool)
-        .await
-        .expect("record the reference");
+    sqlx::query(
+        "INSERT INTO blob_ref (vo_id, sys_version, uri) VALUES ($1, $2, 's3://blobs/cafe')",
+    )
+    .bind(vo_id)
+    .bind(sys_version)
+    .execute(&pool)
+    .await
+    .expect("record the reference");
 
     svc.archive_ehrs(vec![ehr.to_string()])
         .await
