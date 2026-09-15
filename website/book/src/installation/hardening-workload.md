@@ -198,7 +198,7 @@ which is on by default.
 > stronger boundary around one container, which is a boundary a single
 > organisation is already alone inside. What separates two organisations is
 > running two instances; the [namespace
-> model](hardening-network-policy.md#namespaces-and-the-two-tenant-models) is
+> model](hardening-network-policy.md#namespaces-and-one-instance-per-organisation) is
 > where that is arranged.
 
 A sandbox is worth considering in one case: a cluster where this workload runs

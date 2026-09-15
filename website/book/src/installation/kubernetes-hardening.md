@@ -62,7 +62,7 @@ what it did **not** exercise, so silence is never read as coverage.
 | Pod Security Admission enforcement | operator (one `kubectl label`) | [workload](hardening-workload.md#pod-security-admission-complying-versus-being-refused) |
 | Container sandboxing | neither; a recorded decision | [workload](hardening-workload.md#sandboxing-is-not-a-substitute-for-instance-separation) |
 | Kernel-module loading | **satisfied by the chart** | [workload](hardening-workload.md#kernel-modules-already-impossible) |
-| Namespace isolation | **chart** (namespace-scoped by construction) | [network](hardening-network-policy.md#namespaces-and-the-two-tenant-models) |
+| Namespace isolation | **chart** (namespace-scoped by construction) | [network](hardening-network-policy.md#namespaces-and-one-instance-per-organisation) |
 | Service mesh | neither; a recorded decision | [network](hardening-network-policy.md#service-mesh-a-recorded-decision) |
 | Centralized policy management | operator, for admission only | [network](hardening-network-policy.md#centralized-policy-and-which-engine) |
 | Container resource bounds | **chart** | [network](hardening-network-policy.md#resource-bounds-four-layers) |
