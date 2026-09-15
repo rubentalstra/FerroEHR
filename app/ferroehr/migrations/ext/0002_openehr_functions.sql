@@ -10,22 +10,40 @@
 -- Iso8601_date / Iso8601_date_time class tables under BASE docs/UML/classes/) —
 -- but nothing in openEHR says a database should carry them.
 --
--- Every body is ONE expression in `LANGUAGE sql`, validated by a pattern and
--- yielding NULL for input the pattern refuses. None carries an EXCEPTION block:
--- "A block containing an EXCEPTION clause is significantly more expensive to
--- enter and exit than a block without one. Therefore, don't use EXCEPTION
--- without need." (PostgreSQL 18, "Control Structures",
+-- NO HELPER TRAPS AN ERROR. Not one carries an `EXCEPTION` clause, because the
+-- documentation is direct about what that costs: "A block containing an
+-- EXCEPTION clause is significantly more expensive to enter and exit than a
+-- block without one. Therefore, don't use EXCEPTION without need."
+-- (PostgreSQL 18, "Control Structures",
 -- https://www.postgresql.org/docs/18/plpgsql-control-structures.html). A helper
--- is read once per candidate row per AQL predicate, so "without need" is the
--- whole of this file: a value that is not of the shape the helper reads is a
--- comparison miss (NULL), never an error the caller sees as a 500.
+-- is read once per candidate row per AQL predicate, so a per-call subtransaction
+-- is exactly the cost this file exists to avoid. Every cast is instead reachable
+-- only through a guard that proves it cannot raise, and a value the guard
+-- refuses reads as NULL — a comparison miss, never an error the caller sees as
+-- a 500.
 --
--- Consequence of having no error trap: every cast is reachable only through a
--- guard that proves it cannot raise, and the guards are nested CASE expressions
--- rather than AND chains, because SQL fixes no evaluation order between the
--- operands of AND while CASE evaluates its arms in order (PostgreSQL 18,
--- "Expression Evaluation Rules",
--- https://www.postgresql.org/docs/18/sql-expressions.html).
+-- The guards are ordered, never conjunctions: SQL fixes no evaluation order
+-- between the operands of AND (PostgreSQL 18, "Expression Evaluation Rules",
+-- https://www.postgresql.org/docs/18/sql-expressions.html), so a cast is only
+-- ever reached from inside a CASE arm or a nested IF whose condition has
+-- already proved it safe.
+--
+-- LANGUAGE IS A MEASURED CHOICE PER HELPER, not a house style. A `LANGUAGE sql`
+-- body folds into the calling query, which removes the call but substitutes the
+-- argument expression at every parameter reference; a PL/pgSQL body reads its
+-- argument into a local variable once but is always a call. Which wins depends
+-- on how many times the body reads its input, so each helper ships in the form
+-- that measured faster over a 50 000-row corpus of the values it actually sees:
+-- `sql` for the four that read their input once or twice, `plpgsql` for the two
+-- date/time parsers that read it a dozen times. The corpus test pins the
+-- results, not the languages.
+--
+-- The PL/pgSQL bodies SCHEMA-QUALIFY every helper they call. PL/pgSQL resolves
+-- function names at execution time against the caller's search_path
+-- (PostgreSQL 18, "Writing SECURITY DEFINER Functions Safely",
+-- https://www.postgresql.org/docs/18/sql-createfunction.html), so an
+-- unqualified call can be captured by a schema the caller put first; the
+-- `LANGUAGE sql` bodies bind at definition time and need no such care.
 --
 -- Volatility is unchanged from the first generation, and it is load-bearing:
 -- the parsers and ext.openehr_magnitude are IMMUTABLE, so they are legal in an
@@ -36,121 +54,152 @@
 -- (PostgreSQL 18, "Function Volatility Categories",
 -- https://www.postgresql.org/docs/18/xfunc-volatility.html).
 --
--- The functions are NOT declared STRICT, unlike the first generation's: a
--- strict function whose body holds a CASE is never folded into the calling
--- query, and folding is what removes the per-row call. Each body therefore
--- returns NULL for NULL input by construction, which the ext-function test
--- pins value by value.
---
--- Runs with search_path = ext, so the helpers below resolve each other
--- unqualified and the RETURN bodies bind them at definition time.
+-- Runs with search_path = ext.
 
 -- The numeric value of a canonical JSON number's text.
 --
 -- substring() with a pattern yields NULL when the pattern does not match, so
 -- the guard and the extraction are the same operation and the parameter is read
--- once. The accepted shape is JSON's own number grammar (RFC 8259 §6,
--- https://www.rfc-editor.org/rfc/rfc8259#section-6) plus the leading minus;
--- anything else — a string, an object, an absent key — reads as NULL.
+-- once, which is what lets this fold into its caller for free. The accepted
+-- shape is JSON's own number grammar (RFC 8259 §6,
+-- https://www.rfc-editor.org/rfc/rfc8259#section-6) plus the leading minus.
 CREATE FUNCTION openehr_numeric(t text) RETURNS numeric
 LANGUAGE sql IMMUTABLE PARALLEL SAFE
 RETURN substring(t FROM '^-?[0-9]+(?:\.[0-9]+)?(?:[eE][-+]?[0-9]+)?$')::numeric;
 
--- Days since 0001-01-01 for an ISO 8601 BASIC-format date (`YYYYMMDD`), its
--- reduced-precision prefixes, and trailing text the reading ignores.
---
--- BASE foundation_types master06-time_types.adoc admits reduced precision down
--- to the year, so `YYYY` and `YYYYMM` read as the first month and first day.
--- The first pattern is the length contract the positional reads below need:
--- from eight characters the first eight are digits, from six the first six,
--- from four the first four — matching what the reading actually consumes and
--- nothing more.
---
--- make_date() raises on a triple that is not a real date, so the calendar is
--- checked first: a month in 1..12 and a day within that month's length, with
--- February resolved by the Gregorian leap rule, which PostgreSQL applies to
--- every year because it "uses the Gregorian calendar for all dates and times"
--- (PostgreSQL 18, "Date/Time Support",
--- https://www.postgresql.org/docs/18/datetime-appendix.html). Year 0000 is
--- refused because make_date() has no year zero.
-CREATE FUNCTION openehr_basic_date_days(s text) RETURNS numeric
-LANGUAGE sql IMMUTABLE PARALLEL SAFE
-RETURN CASE
-    WHEN s ~ '^([0-9]{8}.*|[0-9]{6}.?|[0-9]{4}.?)$' THEN
-        CASE WHEN left(s, 4) <> '0000'
-                  AND (length(s) < 6 OR substring(s FROM 5 FOR 2)::integer BETWEEN 1 AND 12)
-                  AND (length(s) < 8 OR substring(s FROM 7 FOR 2)::integer BETWEEN 1 AND
-                       CASE substring(s FROM 5 FOR 2)
-                            WHEN '02' THEN CASE WHEN (left(s, 4)::integer % 4 = 0
-                                                      AND left(s, 4)::integer % 100 <> 0)
-                                                     OR left(s, 4)::integer % 400 = 0
-                                                THEN 29 ELSE 28 END
-                            WHEN '04' THEN 30 WHEN '06' THEN 30
-                            WHEN '09' THEN 30 WHEN '11' THEN 30
-                            ELSE 31 END)
-        THEN make_date(left(s, 4)::integer,
-                       CASE WHEN length(s) >= 6 THEN substring(s FROM 5 FOR 2)::integer ELSE 1 END,
-                       CASE WHEN length(s) >= 8 THEN substring(s FROM 7 FOR 2)::integer ELSE 1 END)
-             - DATE '0001-01-01'
-        END
-END;
-
 -- Days since 0001-01-01 for an ISO 8601 date in either format.
 --
--- Removing the hyphens folds the extended format (`YYYY-MM-DD`, the form BASE
+-- BASE foundation_types master06-time_types.adoc admits reduced precision down
+-- to the year, so `YYYY` and `YYYY-MM` read as the first month and first day;
+-- removing the hyphens folds the extended format (`YYYY-MM-DD`, the form BASE
 -- calls preferred) onto the basic one, so one reading serves both.
-CREATE FUNCTION openehr_date_days(v text) RETURNS numeric
-LANGUAGE sql IMMUTABLE PARALLEL SAFE
-RETURN openehr_basic_date_days(replace(v, '-', ''));
-
--- Seconds since the start of the day for a clock reading with no zone suffix
--- and no leading `T`.
 --
--- Two forms, split on whether a colon is present: the basic `hhmmss` (which
--- needs a length of more than two, or `hh` would read as the first field of the
--- extended form) and the extended `hh:mm:ss`. Each pattern admits exactly the
--- text the reading below casts, including the fractional second BASE
--- foundation_types master06-time_types.adoc allows on the last field. Fields
--- the input omits read as zero, which is the reduced precision the same section
--- admits.
-CREATE FUNCTION openehr_hms_seconds(t text) RETURNS numeric
-LANGUAGE sql IMMUTABLE PARALLEL SAFE
-RETURN CASE
-    WHEN position(':' in t) = 0 AND length(t) > 2 THEN
-        CASE WHEN t ~ '^([0-9]{4}([0-9]+(\.[0-9]+)?|\.[0-9]+)|[0-9]{4}.?|[0-9]{2}.)$'
-        THEN left(t, 2)::numeric * 3600
-           + CASE WHEN length(t) >= 4 THEN substring(t FROM 3 FOR 2)::numeric ELSE 0 END * 60
-           + CASE WHEN length(t) >= 6 THEN substring(t FROM 5)::numeric ELSE 0 END
-        END
-    ELSE
-        CASE WHEN t ~ '^([0-9]+(\.[0-9]+)?|\.[0-9]+)?(:([0-9]+(\.[0-9]+)?|\.[0-9]+)(:([0-9]+(\.[0-9]+)?|\.[0-9]+)(:.*)?)?)?$'
-        THEN coalesce(nullif(split_part(t, ':', 1), '')::numeric, 0) * 3600
-           + coalesce(nullif(split_part(t, ':', 2), '')::numeric, 0) * 60
-           + coalesce(nullif(split_part(t, ':', 3), '')::numeric, 0)
-        END
-END;
+-- PL/pgSQL, because the reading looks at its input a dozen times and a folded
+-- body would re-evaluate the caller's jsonb extraction once per look.
+--
+-- make_date() raises on a triple that is not a real date, so the calendar is
+-- checked first, as text: the fields are zero-padded, so a text comparison
+-- orders them exactly as the numbers do and costs less than a cast. A day at or
+-- below 28 is valid in every month and needs no month length at all; only a
+-- later day pays for one, with February resolved by the Gregorian leap rule,
+-- which PostgreSQL applies to every year because it "uses the Gregorian
+-- calendar for all dates and times" (PostgreSQL 18, "Date/Time Support",
+-- https://www.postgresql.org/docs/18/datetime-appendix.html). translate() is
+-- the digit check: what it leaves after removing digits is empty only when
+-- every character was one. Year 0000 is refused because make_date() has no
+-- year zero.
+CREATE FUNCTION openehr_date_days(v text) RETURNS numeric
+LANGUAGE plpgsql IMMUTABLE STRICT PARALLEL SAFE AS $$
+DECLARE
+    s text := replace(v, '-', '');
+BEGIN
+    IF length(s) >= 8 THEN
+        IF translate(substr(s, 1, 8), '0123456789', '') = ''
+           AND substr(s, 1, 4) <> '0000'
+           AND substr(s, 5, 2) BETWEEN '01' AND '12'
+           AND substr(s, 7, 2) >= '01'
+        THEN
+        IF substr(s, 7, 2) <= '28'
+           OR substr(s, 7, 2) <= (CASE substr(s, 5, 2)
+                   WHEN '02' THEN CASE WHEN (substr(s, 1, 4)::integer % 4 = 0
+                                             AND substr(s, 1, 4)::integer % 100 <> 0)
+                                            OR substr(s, 1, 4)::integer % 400 = 0
+                                       THEN '29' ELSE '28' END
+                   WHEN '04' THEN '30' WHEN '06' THEN '30'
+                   WHEN '09' THEN '30' WHEN '11' THEN '30' ELSE '31' END)
+        THEN
+            RETURN make_date(substr(s, 1, 4)::integer, substr(s, 5, 2)::integer,
+                             substr(s, 7, 2)::integer) - DATE '0001-01-01';
+        END IF;
+        END IF;
+        RETURN NULL;
+    END IF;
+    IF length(s) >= 6 THEN
+        IF translate(substr(s, 1, 6), '0123456789', '') <> ''
+           OR substr(s, 1, 4) = '0000'
+           OR substr(s, 5, 2) NOT BETWEEN '01' AND '12'
+        THEN RETURN NULL; END IF;
+        RETURN make_date(substr(s, 1, 4)::integer, substr(s, 5, 2)::integer, 1)
+               - DATE '0001-01-01';
+    END IF;
+    IF length(s) >= 4 THEN
+        IF translate(substr(s, 1, 4), '0123456789', '') <> ''
+           OR substr(s, 1, 4) = '0000'
+        THEN RETURN NULL; END IF;
+        RETURN make_date(substr(s, 1, 4)::integer, 1, 1) - DATE '0001-01-01';
+    END IF;
+    RETURN NULL;
+END $$;
 
 -- Seconds since the start of the day for an ISO 8601 time, ignoring any zone
 -- suffix — the caller applies the offset through openehr_tz_offset_seconds.
 --
--- The `T` designator and the zone suffix are cut positionally rather than by
--- substitution; the suffix's length is what the pattern yields, and no suffix
--- yields the empty string, so the reading is the whole text.
+-- PL/pgSQL for the same reason as the date reading. The `T` designator and the
+-- zone suffix are cut positionally rather than by substitution, and the two
+-- field forms BASE foundation_types master06-time_types.adoc defines are split
+-- on whether a colon is present: the basic `hhmmss` (which needs a length above
+-- two, or `hh` would read as the first field of the extended form) and the
+-- extended `hh:mm:ss`. A field is accepted when it is digits with at most one
+-- decimal point, which is the fractional second the same section allows on the
+-- last field; fields the input omits read as zero, which is the reduced
+-- precision it also admits.
 CREATE FUNCTION openehr_time_seconds(v text) RETURNS numeric
-LANGUAGE sql IMMUTABLE PARALLEL SAFE
-RETURN openehr_hms_seconds(
-    substring(CASE WHEN left(v, 1) IN ('T', 't') THEN substring(v FROM 2) ELSE v END
-              FROM 1 FOR
-              length(CASE WHEN left(v, 1) IN ('T', 't') THEN substring(v FROM 2) ELSE v END)
-              - length(coalesce(substring(CASE WHEN left(v, 1) IN ('T', 't') THEN substring(v FROM 2) ELSE v END
-                                          FROM '([Zz]|[+-][0-9]{2}:?[0-9]{0,2})$'), ''))));
+LANGUAGE plpgsql IMMUTABLE STRICT PARALLEL SAFE AS $$
+DECLARE
+    t     text := v;
+    zone  text;
+    field text;
+    parts text[];
+    h numeric := 0; m numeric := 0; s numeric := 0;
+BEGIN
+    IF left(t, 1) IN ('T', 't') THEN t := substr(t, 2); END IF;
+    zone := substring(t FROM '([Zz]|[+-][0-9]{2}:?[0-9]{0,2})$');
+    IF zone IS NOT NULL THEN t := substr(t, 1, length(t) - length(zone)); END IF;
+
+    IF position(':' in t) = 0 AND length(t) > 2 THEN
+        IF translate(substr(t, 1, 2), '0123456789', '') <> '' THEN RETURN NULL; END IF;
+        h := substr(t, 1, 2)::numeric;
+        IF length(t) >= 4 THEN
+            IF translate(substr(t, 3, 2), '0123456789', '') <> '' THEN RETURN NULL; END IF;
+            m := substr(t, 3, 2)::numeric;
+        END IF;
+        IF length(t) >= 6 THEN
+            field := substr(t, 5);
+            IF field = '.' OR translate(field, '0123456789', '') NOT IN ('', '.')
+            THEN RETURN NULL; END IF;
+            s := field::numeric;
+        END IF;
+        RETURN h * 3600 + m * 60 + s;
+    END IF;
+
+    parts := string_to_array(t, ':');
+    IF parts[1] <> '' THEN
+        IF parts[1] = '.' OR translate(parts[1], '0123456789', '') NOT IN ('', '.')
+        THEN RETURN NULL; END IF;
+        h := parts[1]::numeric;
+    END IF;
+    IF array_length(parts, 1) >= 2 THEN
+        IF parts[2] = '' OR parts[2] = '.'
+           OR translate(parts[2], '0123456789', '') NOT IN ('', '.')
+        THEN RETURN NULL; END IF;
+        m := parts[2]::numeric;
+    END IF;
+    IF array_length(parts, 1) >= 3 THEN
+        IF parts[3] = '' OR parts[3] = '.'
+           OR translate(parts[3], '0123456789', '') NOT IN ('', '.')
+        THEN RETURN NULL; END IF;
+        s := parts[3]::numeric;
+    END IF;
+    RETURN h * 3600 + m * 60 + s;
+END $$;
 
 -- The zone offset in seconds carried by an ISO 8601 time's suffix; zero when
 -- the value carries none.
 --
 -- `Z` is zero by definition (BASE foundation_types master06-time_types.adoc:
--- "'Z' and 'T' are literals"); `±hh`, `±hhmm` and `±hh:mm` are read from the
--- end of the value. NULL input is answered first, because the trailing
+-- "'Z' and 'T' are literals"), and testing the last character for it answers
+-- the common case before any pattern runs. `±hh`, `±hhmm` and `±hh:mm` are read
+-- from the end of the value. NULL input is answered first, because the trailing
 -- zero-offset arm would otherwise turn it into a number.
 CREATE FUNCTION openehr_tz_offset_seconds(v text) RETURNS numeric
 LANGUAGE sql IMMUTABLE PARALLEL SAFE
@@ -177,15 +226,15 @@ RETURN openehr_date_days(split_part(v, 'T', 1)) * 86400
                  - openehr_tz_offset_seconds(split_part(v, 'T', 2))
             ELSE 0 END;
 
--- Seconds for an ISO 8601 duration, using openEHR's NOMINAL year and month
--- lengths.
+-- Seconds for an ISO 8601 duration, using openEHR's definite-arithmetic
+-- averages.
 --
 -- BASE foundation_types master06-time_types.adoc §Computational Functions
--- distinguishes definite arithmetic, which "treats all values as definite,
--- i.e. exact and invariant, based on constant values for length of year and
--- month, defined by Time_definitions.Average_days_in_month and
--- Time_definitions.Average_days_in_year", from nominal calendar arithmetic;
--- an ordering key can only be the definite one, so the averages below are those
+-- distinguishes definite arithmetic, which treats all values as "exact and
+-- invariant, based on constant values for length of year and month, defined by
+-- Time_definitions.Average_days_in_month and
+-- Time_definitions.Average_days_in_year", from nominal calendar arithmetic; an
+-- ordering key can only be the definite one, so the averages below are those
 -- two constants. The designator letters are literals of the same section.
 CREATE FUNCTION openehr_duration_seconds(v text) RETURNS numeric
 LANGUAGE sql IMMUTABLE PARALLEL SAFE
@@ -214,7 +263,8 @@ END;
 -- carrier is not a number, read as NULL.
 --
 -- The simple CASE form evaluates its operand once, which matters because the
--- argument at an AQL call site is a jsonb path extraction.
+-- argument at an AQL call site is a jsonb path extraction and this body folds
+-- into the statement.
 CREATE FUNCTION openehr_magnitude(dv jsonb) RETURNS numeric
 LANGUAGE sql IMMUTABLE PARALLEL SAFE
 RETURN CASE dv->>'_type'
@@ -239,66 +289,91 @@ END;
 -- Coercion::Temporal), so the promoted fast path and the jsonb lowering cannot
 -- disagree.
 --
--- Three arms, in order.
---
--- The first is the full-precision extended form, which PostgreSQL's own
--- date/time input reads correctly and far more cheaply than a decomposition
--- can. Its pattern is what makes the cast unable to raise: a calendar-valid
--- month and day (February 29 falls through to the completion arm, which
--- resolves the leap year), an hour below 24, a minute and second below 60, and
--- a zone offset within the range PostgreSQL accepts. ISO 8601 permits a COMMA
--- decimal sign on the fractional second (BASE foundation_types master06
--- §Class Definitions, `[(,|.)sss]`), which PostgreSQL rejects, so the comma
--- normalizes to the dot before the cast.
---
--- The second and third complete reduced precision instead, which the cast
--- cannot read at all: a partial date assumes the first month and day, a partial
--- time assumes zero, and a time-only value anchors on 0001-01-01 — the same
--- floor openehr_date_days and openehr_time_seconds document. Mixed-precision
--- ordering is genuinely unspecified upstream, and the floor is our own recorded
--- semantics that does not depend on its resolution.
+-- Two readings. The first is the full-precision extended form, which
+-- PostgreSQL's own date/time input reads correctly and far more cheaply than a
+-- decomposition can; what makes the cast unable to raise is the guard before
+-- it, which pins the separator positions with a LIKE pattern, proves every
+-- other character of the first nineteen is a digit with one translate(), and
+-- then bounds each field as text. The second completes reduced precision, which
+-- the cast cannot read at all: a partial date assumes the first month and day,
+-- a partial time assumes zero, and a time-only value anchors on 0001-01-01 —
+-- the same floor openehr_date_days and openehr_time_seconds document.
+-- Mixed-precision ordering is genuinely unspecified upstream, and the floor is
+-- our own recorded semantics that does not depend on its resolution.
 --
 -- The offset-less reading takes the session TimeZone, spelled as AT TIME ZONE
--- over current_setting('TimeZone') rather than a cast, so the whole completion
--- is one expression with the local timestamp read once.
+-- over current_setting('TimeZone') rather than a cast, so the completion is one
+-- expression with the local timestamp read once.
 --
 -- Malformed input returns NULL — a comparison miss, never an error. Input that
 -- is not ISO 8601 at all, including the words PostgreSQL's own parser accepts
 -- (`now`, `today`, `infinity`), is malformed here: a stored value must not read
 -- as the current time.
 CREATE FUNCTION openehr_timestamp(v text) RETURNS timestamptz
-LANGUAGE sql STABLE PARALLEL SAFE
-RETURN CASE
-    WHEN left(v, 4) <> '0000' AND v ~
-         '^[0-9]{4}-((0[13578]|1[02])-(0[1-9]|[12][0-9]|3[01])|(0[469]|11)-(0[1-9]|[12][0-9]|30)|02-(0[1-9]|1[0-9]|2[0-8]))[Tt ]([01][0-9]|2[0-3]):[0-5][0-9]:[0-5][0-9]([.,][0-9]+)?([Zz]|[+-](0[0-9]|1[0-5])(:?[0-5][0-9])?)?$'
-    THEN replace(v, ',', '.')::timestamptz
-    WHEN left(translate(replace(v, ',', '.'), 't ', 'TT'), 1) = 'T'
-         OR translate(replace(v, ',', '.'), 't ', 'TT') ~ '^[0-9]{1,2}:' THEN
-        (TIMESTAMP '0001-01-01 00:00:00'
-         + make_interval(secs => (openehr_time_seconds(replace(v, ',', '.'))
-                                  - openehr_tz_offset_seconds(replace(v, ',', '.')))::double precision))
-        AT TIME ZONE (CASE WHEN replace(v, ',', '.') ~ '([Zz]|[+-][0-9]{2}:?[0-9]{0,2})$'
-                           THEN 'UTC' ELSE current_setting('TimeZone') END)
-    WHEN split_part(translate(replace(v, ',', '.'), 't ', 'TT'), 'T', 1)
-         ~ '^[0-9]{4}(-[0-9]{2}(-[0-9]{2})?|[0-9]{2}([0-9]{2})?)?$' THEN
-        ((DATE '0001-01-01'
-          + openehr_date_days(split_part(translate(replace(v, ',', '.'), 't ', 'TT'), 'T', 1))::integer)::timestamp
-         + make_interval(secs => (openehr_time_seconds(split_part(translate(replace(v, ',', '.'), 't ', 'TT'), 'T', 2))
-                                  - openehr_tz_offset_seconds(split_part(translate(replace(v, ',', '.'), 't ', 'TT'), 'T', 2)))::double precision))
-        AT TIME ZONE (CASE WHEN split_part(translate(replace(v, ',', '.'), 't ', 'TT'), 'T', 2)
-                                ~ '([Zz]|[+-][0-9]{2}:?[0-9]{0,2})$'
-                           THEN 'UTC' ELSE current_setting('TimeZone') END)
-END;
+LANGUAGE plpgsql STABLE STRICT PARALLEL SAFE AS $$
+DECLARE
+    s text := replace(v, ',', '.');
+BEGIN
+    IF s LIKE '____-__-_____:__:__%'
+       AND translate(substr(s, 1, 19), '0123456789', '') IN ('--T::', '--t::', '-- ::')
+       AND substr(s, 20) IN ('', 'Z', 'z')
+    THEN
+        IF substr(s, 1, 4) <> '0000'
+           AND substr(s, 6, 2) BETWEEN '01' AND '12'
+           AND substr(s, 12, 2) <= '23'
+           AND substr(s, 15, 2) <= '59'
+           AND substr(s, 18, 2) <= '59'
+           AND substr(s, 9, 2) >= '01'
+           AND substr(s, 9, 2) <= (CASE substr(s, 6, 2)
+                   WHEN '02' THEN CASE WHEN (substr(s, 1, 4)::integer % 4 = 0
+                                             AND substr(s, 1, 4)::integer % 100 <> 0)
+                                            OR substr(s, 1, 4)::integer % 400 = 0
+                                       THEN '29' ELSE '28' END
+                   WHEN '04' THEN '30' WHEN '06' THEN '30'
+                   WHEN '09' THEN '30' WHEN '11' THEN '30' ELSE '31' END)
+        THEN
+            RETURN s::timestamptz;
+        END IF;
+    END IF;
+
+    DECLARE
+        date_part text;
+        time_part text;
+        sep       integer;
+        days      numeric;
+        sod       numeric;
+        local_ts  timestamp;
+    BEGIN
+        sep := coalesce(nullif(position('T' in s), 0),
+                        nullif(position('t' in s), 0),
+                        nullif(position(' ' in s), 0), 0);
+        IF sep = 1 OR s ~ '^[0-9]{1,2}:' THEN
+            time_part := CASE WHEN sep = 1 THEN substr(s, 2) ELSE s END;
+            days := 0;
+        ELSE
+            date_part := CASE WHEN sep = 0 THEN s ELSE substr(s, 1, sep - 1) END;
+            time_part := CASE WHEN sep = 0 THEN '' ELSE substr(s, sep + 1) END;
+            IF date_part !~ '^[0-9]{4}(-[0-9]{2}(-[0-9]{2})?|[0-9]{2}([0-9]{2})?)?$'
+            THEN RETURN NULL; END IF;
+            days := ext.openehr_date_days(date_part);
+            IF days IS NULL THEN RETURN NULL; END IF;
+        END IF;
+        sod := ext.openehr_time_seconds(time_part);
+        IF sod IS NULL THEN RETURN NULL; END IF;
+        local_ts := (DATE '0001-01-01' + days::integer)::timestamp
+                    + make_interval(secs => (sod - ext.openehr_tz_offset_seconds(time_part))::double precision);
+        IF time_part ~ '([Zz]|[+-][0-9]{2}:?[0-9]{0,2})$' THEN
+            RETURN local_ts AT TIME ZONE 'UTC';
+        END IF;
+        RETURN local_ts AT TIME ZONE current_setting('TimeZone');
+    END;
+END $$;
 
 -- ── Function documentation ─────────────────────────────────────
 COMMENT ON FUNCTION ext.openehr_numeric(text) IS
     'The numeric value of a canonical JSON number''s text (RFC 8259 §6), NULL for anything else. IMMUTABLE — index-legal.';
-COMMENT ON FUNCTION ext.openehr_basic_date_days(text) IS
-    'Days since 0001-01-01 for an ISO 8601 basic-format date (YYYYMMDD) and its reduced-precision prefixes; NULL when the text is not one, or names no real calendar date. Reduced precision assumes the first month/day. IMMUTABLE.';
 COMMENT ON FUNCTION ext.openehr_date_days(text) IS
-    'Days since 0001-01-01 for an ISO 8601 date in either format; NULL on unreadable input. Reduced precision assumes the first month/day. IMMUTABLE — index-legal.';
-COMMENT ON FUNCTION ext.openehr_hms_seconds(text) IS
-    'Seconds since the start of the day for a clock reading with no T designator and no zone suffix; NULL on unreadable input. Omitted fields read as 0. IMMUTABLE.';
+    'Days since 0001-01-01 for an ISO 8601 date in either format; NULL when the text is not one, or names no real calendar date. Reduced precision assumes the first month/day. IMMUTABLE — index-legal.';
 COMMENT ON FUNCTION ext.openehr_time_seconds(text) IS
     'Seconds since the start of the day for an ISO 8601 time, ignoring any zone suffix (callers apply the offset); NULL on unreadable input. Reduced precision assumes 0. IMMUTABLE.';
 COMMENT ON FUNCTION ext.openehr_tz_offset_seconds(text) IS

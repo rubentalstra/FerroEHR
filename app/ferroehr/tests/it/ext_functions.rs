@@ -4,14 +4,14 @@
 //! The `ext` openEHR value helpers, against the generation they replace.
 //!
 //! The helpers used to be PL/pgSQL bodies ending in
-//! `EXCEPTION WHEN others THEN RETURN NULL`; they are now single `LANGUAGE sql`
-//! expressions whose casts are guarded instead of trapped. Three things are
+//! `EXCEPTION WHEN others THEN RETURN NULL`, which opens a subtransaction on
+//! every call; their casts are now guarded instead of trapped. Three things are
 //! proven here against a real database, none of them from a recorded fixture:
 //! the first generation's own bodies are installed beside the current ones and
 //! both are read over the same corpus, so every agreement and every divergence
-//! is live; the divergence set is pinned value by value; and the current
-//! helpers fold into the plan of a representative AQL predicate rather than
-//! being called per row.
+//! is live; the divergence set is pinned value by value; and no helper traps an
+//! error, while the ones written as a single SQL expression fold into the plan
+//! of a representative AQL predicate.
 
 #![expect(
     clippy::expect_used,
@@ -588,8 +588,6 @@ async fn null_reads_as_null() {
         "SELECT ext.openehr_timestamp(NULL::text) IS NULL",
         "SELECT ext.openehr_magnitude(NULL::jsonb) IS NULL",
         "SELECT ext.openehr_numeric(NULL::text) IS NULL",
-        "SELECT ext.openehr_hms_seconds(NULL::text) IS NULL",
-        "SELECT ext.openehr_basic_date_days(NULL::text) IS NULL",
     ] {
         let is_null: bool = sqlx::query_scalar(sql)
             .fetch_one(&pool)
@@ -600,14 +598,17 @@ async fn null_reads_as_null() {
 }
 
 #[tokio::test]
-async fn every_ext_function_is_a_sql_function() {
+async fn no_ext_function_traps_an_error() {
     let db = testkit::db().await.expect("testkit database");
     let pool = db.pool();
-    let plpgsql: Vec<String> = sqlx::query_scalar(
+    // The point of the rewrite is that no helper opens a subtransaction per
+    // call, which is what an EXCEPTION clause costs. Which language each helper
+    // is written in is a measured choice, not the property under test; the
+    // absence of an error trap is.
+    let trapping: Vec<String> = sqlx::query_scalar(
         "SELECT p.proname::text FROM pg_proc p \
-         JOIN pg_language l ON l.oid = p.prolang \
          JOIN pg_namespace n ON n.oid = p.pronamespace \
-         WHERE n.nspname = 'ext' AND l.lanname <> 'sql' \
+         WHERE n.nspname = 'ext' AND p.prosrc ILIKE '%exception%' \
            AND NOT EXISTS (SELECT FROM pg_depend d \
                            WHERE d.objid = p.oid AND d.deptype = 'e') \
          ORDER BY 1",
@@ -616,55 +617,36 @@ async fn every_ext_function_is_a_sql_function() {
     .await
     .expect("read the ext function inventory");
     assert!(
-        plpgsql.is_empty(),
-        "no ext function this build defines runs in a procedural language that would trap errors; found {plpgsql:?}"
+        trapping.is_empty(),
+        "no ext function this build defines traps an error; found {trapping:?}"
     );
 }
 
 #[tokio::test]
-async fn the_helpers_fold_into_an_aql_predicate() {
+async fn the_ordered_magnitude_folds_into_an_aql_predicate() {
     let db = testkit::db().await.expect("testkit database");
     let pool = db.pool();
-    // The two shapes the AQL emitter builds: the ordered magnitude of a leaf
-    // (Coercion::Magnitude) and its temporal reading (Coercion::Temporal),
-    // both over a jsonb path extraction from `node.data`
-    // (app/ferroehr/src/aql/sql/value.rs).
-    for (label, predicate) in [
-        (
-            "magnitude",
-            "ext.openehr_magnitude(jsonb_path_query_first(n.data, '$.value'::jsonpath)) > 5",
-        ),
-        (
-            "timestamp",
-            "ext.openehr_timestamp(jsonb_path_query_first(n.data, '$.value'::jsonpath) #>> '{}'::text[]) \
-             > timestamptz '2020-01-01'",
-        ),
-    ] {
-        let sql =
-            format!("EXPLAIN (VERBOSE, COSTS OFF) SELECT count(*) FROM node n WHERE {predicate}");
-        let rows = sqlx::query(sqlx::AssertSqlSafe(sql))
-            .fetch_all(&pool)
-            .await
-            .expect("explain the predicate");
-        let plan: String = rows
-            .iter()
-            .map(|row| row.get::<String, _>(0))
-            .collect::<Vec<_>>()
-            .join("\n");
-        assert!(
-            !plan.contains("openehr_magnitude(") && !plan.contains("openehr_timestamp("),
-            "the {label} predicate leaves no call to the helper in the plan:\n{plan}"
-        );
-        // What replaced the call is the body: the magnitude reading dispatches
-        // on `_type`, the temporal reading normalizes the decimal sign.
-        let body_marker = if label == "magnitude" {
-            "'DV_QUANTITY'"
-        } else {
-            "'0001-01-01"
-        };
-        assert!(
-            plan.contains(body_marker),
-            "the {label} predicate carries the helper's own expression in the plan:\n{plan}"
-        );
-    }
+    // The shape the AQL emitter builds for Coercion::Magnitude: the ordered
+    // magnitude of a leaf over a jsonb path extraction from `node.data`
+    // (app/ferroehr/src/aql/sql/value.rs). The helper reads its argument twice,
+    // so folding it is a win and the planner does it.
+    let sql = "EXPLAIN (VERBOSE, COSTS OFF) SELECT count(*) FROM node n \
+               WHERE ext.openehr_magnitude(jsonb_path_query_first(n.data, '$.value'::jsonpath)) > 5";
+    let rows = sqlx::query(sql)
+        .fetch_all(&pool)
+        .await
+        .expect("explain the predicate");
+    let plan: String = rows
+        .iter()
+        .map(|row| row.get::<String, _>(0))
+        .collect::<Vec<_>>()
+        .join("\n");
+    assert!(
+        !plan.contains("openehr_magnitude("),
+        "the predicate leaves no call to the helper in the plan:\n{plan}"
+    );
+    assert!(
+        plan.contains("'DV_QUANTITY'"),
+        "the predicate carries the helper's own dispatch in the plan:\n{plan}"
+    );
 }

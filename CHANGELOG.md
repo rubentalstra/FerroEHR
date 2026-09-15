@@ -56,10 +56,10 @@ workflow refuses a tag that has no matching section here.
 ### Changed
 
 - **The `ext` value helpers no longer trap errors, and read fewer things than
-  PostgreSQL's own date parser did** (#3351). Each helper is one SQL
-  expression whose casts are guarded by a pattern instead of an `EXCEPTION`
-  block, so a value the pattern refuses reads as NULL and the planner folds the
-  helper into the statement. Three readings tighten as a result, all of them
+  PostgreSQL's own date parser did** (#3351). Not one carries an `EXCEPTION`
+  block any more, so none opens a subtransaction per row; each guards its casts
+  ahead of them instead, and a value a guard refuses reads as NULL. Three
+  readings tighten as a result, all of them
   values openEHR does not define: a date whose year carried leading whitespace
   or a sign is now unreadable, a date handed to the time parser no longer
   yields a number, and `ext.openehr_timestamp` refuses a date that is not
