@@ -42,6 +42,7 @@ use crate::ids::EhrId;
 use crate::service::ehr_index::types::{EhrIndexEntry, LocationDesc, ResourceStatus, SubjectRef};
 use crate::service::error::ServiceError;
 use crate::service::status::{CallStatusType, SmError};
+use crate::system_log::event::EventActionCode;
 
 /// The precise EHR-index failure kind.
 ///
@@ -125,6 +126,92 @@ fn validate_status(status: &ResourceStatus) -> Result<(), ServiceError> {
             .map_err(|_| ServiceError::precondition(format!("invalid valid_time: {raw}")))?;
     }
     Ok(())
+}
+
+impl crate::service::FerroEhrService {
+    /// Record one EHR Index operation as a linkage-domain access, naming both
+    /// halves of the association it touched.
+    ///
+    /// The relation these operations read and write is the one the linkage
+    /// service owns, so a crossing here is recorded exactly as a crossing
+    /// there is ([`crate::service::linkage`]). The record carries the
+    /// namespace, never the identifier value: a trail holding the subject id
+    /// would hold the very data the separation keeps out of readable storage.
+    ///
+    /// # Errors
+    /// [`SmError`] when the sender rejected the record under
+    /// `fail_mode = "closed"`; the caller withholds its result.
+    fn record_index_access(
+        &self,
+        action: EventActionCode,
+        ehr_id: EhrId,
+        subject: &SubjectRef,
+        count: u64,
+        succeeded: bool,
+    ) -> Result<(), SmError> {
+        self.emit_linkage_access(
+            action,
+            format!("ehr-subject:{ehr_id}@{}", subject.namespace),
+            Some(ehr_id),
+            count,
+            succeeded,
+        )
+        .map_err(index_access_refused)
+    }
+
+    /// Record one subject-scoped EHR Index operation, which names no single
+    /// EHR.
+    ///
+    /// # Errors
+    /// [`SmError`] when the sender rejected the record under
+    /// `fail_mode = "closed"`.
+    fn record_subject_access(
+        &self,
+        action: EventActionCode,
+        subject: &SubjectRef,
+        count: u64,
+        succeeded: bool,
+    ) -> Result<(), SmError> {
+        self.emit_linkage_access(
+            action,
+            format!("subject:{}", subject.namespace),
+            None,
+            count,
+            succeeded,
+        )
+        .map_err(index_access_refused)
+    }
+
+    /// Record one EHR-scoped EHR Index read.
+    ///
+    /// # Errors
+    /// [`SmError`] when the sender rejected the record under
+    /// `fail_mode = "closed"`.
+    fn record_ehr_access(
+        &self,
+        action: EventActionCode,
+        ehr_id: EhrId,
+        count: u64,
+        succeeded: bool,
+    ) -> Result<(), SmError> {
+        self.emit_linkage_access(
+            action,
+            format!("ehr-subject:{ehr_id}"),
+            Some(ehr_id),
+            count,
+            succeeded,
+        )
+        .map_err(index_access_refused)
+    }
+}
+
+/// Render a refused access record as the server fault it is.
+///
+/// A completed operation whose crossing could not be recorded is withheld under
+/// `fail_mode = "closed"`, and the caller is told nothing about the audit
+/// pipeline beyond that the server failed.
+fn index_access_refused(error: crate::service::linkage::LinkageError) -> SmError {
+    SmError::exception("the linkage access record could not be taken").with_source(error)
 }
 
 /// Map a zero-rows-affected write to [`IndexError::SubjectDoesNotExist`]

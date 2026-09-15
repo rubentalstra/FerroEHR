@@ -257,7 +257,7 @@ async fn no_relation_carries_a_tenant_column_and_no_row_policy_exists() {
 /// `ehr.subject_id`/`subject_namespace` pair, and only under the pseudonym
 /// guard.
 ///
-/// The pair has to stay there, because the wire binds it to EHR_STATUS content:
+/// The pair has to stay there, because the wire binds it to `EHR_STATUS` content:
 /// `ehr_get_by_subject` matches `EHR_STATUS.subject.external_ref.id.value` and
 /// `.namespace` (ITS-REST `ehr_get_by_subject.yaml`) and a second EHR for the
 /// same subject is a `409` (`409_EHR.yaml`). Everything else that names a
@@ -285,8 +285,11 @@ async fn only_the_guarded_ehr_columns_name_a_subject_in_the_clinical_domain() {
         vec![
             ("ehr".to_owned(), "subject_id".to_owned()),
             ("ehr".to_owned(), "subject_namespace".to_owned()),
+            ("sp_data_set".to_owned(), "subject_key".to_owned()),
+            ("sp_sample".to_owned(), "subject_key".to_owned()),
             ("sp_subject".to_owned(), "subject_category".to_owned()),
             ("sp_subject".to_owned(), "subject_key".to_owned()),
+            ("sp_variable".to_owned(), "subject_key".to_owned()),
         ],
         "only the guarded ehr pair may name a subject in clinical; the \
          subject-proxy registry holds a derived key and a category, never an \

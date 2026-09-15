@@ -53,6 +53,28 @@ workflow refuses a tag that has no matching section here.
   - The archive file format carries a version's `committed_at` instead of a
     validity interval. An archive written by an earlier release does not load.
 
+- **BREAKING — the EHR id / subject cross-reference moves to the linkage
+  domain, and erasure reaches it** (#3345). `linkage.party_ehr` becomes
+  `linkage.subject_ehr` and absorbs `ehr.ehr_index`: one temporal relation
+  holding both the party-to-EHR map and the openEHR Service Model's EHR Index
+  associations (`I_EHR_INDEX`), which is what that service is for — an EHR
+  persisted with only an EHR id, and a separate index to obtain the subject
+  identifier. The `EHR_INDEX` operations and the subject-proxy subject
+  resolution now run on the linkage pool; the clinical schema keeps only the
+  promoted `ehr.subject_id`/`subject_namespace` pair, under the pseudonym
+  guard, because the wire binds `ehr_get_by_subject` and the one-EHR-per-subject
+  `409` to EHR_STATUS content. The subject-proxy relations (`sp_subject`,
+  `sp_variable`, `sp_data_set`, `sp_sample`) key on a derived opaque
+  `subject_key` instead of the caller's own subject identifier, so no
+  unguarded subject identifier remains in the clinical domain (GDPR Art. 4(5)),
+  and a catalog test asserts it. Deleting an EHR now removes the
+  cross-reference rows naming it, through `linkage.erase_ehr` — a
+  `SECURITY DEFINER` function the `ferroehr_linkage` role may execute while
+  still holding no `DELETE` on the table — so an erased record leaves no row
+  behind saying whose it was (Art. 17(1)). Subject-proxy registrations and
+  index associations made under an earlier release do not carry over; the
+  storage rewrite above requires a fresh database in any case.
+
 - **BREAKING — one pool and one DSN per storage domain, and the runtime roles
   are named after them** (#3343). Each of the four storage domains — `clinical`,
   `party`, `linkage`, `audit` — now has its own configuration table,

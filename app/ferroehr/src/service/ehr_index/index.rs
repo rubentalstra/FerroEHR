@@ -22,6 +22,7 @@ use crate::service::FerroEhrService;
 use crate::service::ehr_index::types::{EhrIndexEntry, LocationDesc, ResourceStatus, SubjectRef};
 use crate::service::linkage::store;
 use crate::service::status::SmError;
+use crate::system_log::event::EventActionCode;
 
 use super::{IndexError, require_association, row_to_entry, validate_status};
 
@@ -38,6 +39,15 @@ fn parse_ehr_id(raw: &str) -> Result<EhrId, SmError> {
     Uuid::parse_str(raw)
         .map(EhrId)
         .map_err(|_| SmError::precondition(format!("invalid ehr id: {raw}")))
+}
+
+/// How many entries a read served, as the access record's count.
+///
+/// `usize` is wider than `u64` on no target this builds for, so the fallback is
+/// unreachable arithmetic rather than a described state; saturating keeps the
+/// conversion non-panicking without a suppression.
+fn entry_count(entries: &[EhrIndexEntry]) -> u64 {
+    u64::try_from(entries.len()).unwrap_or(u64::MAX)
 }
 
 impl FerroEhrService {
@@ -65,10 +75,18 @@ impl FerroEhrService {
         self.index_ehr_exists(ehr_id).await?;
         let status = status.unwrap_or_default();
         validate_status(&status).map_err(IndexError::Service)?;
-        store::add_association(&self.linkage_pool, ehr_id, &subject, &status, loc.as_ref())
-            .await
-            .map_err(IndexError::from)?;
-        Ok(())
+        let outcome =
+            store::add_association(&self.linkage_pool, ehr_id, &subject, &status, loc.as_ref())
+                .await
+                .map_err(IndexError::from);
+        self.record_index_access(
+            EventActionCode::Create,
+            ehr_id,
+            &subject,
+            1,
+            outcome.is_ok(),
+        )?;
+        Ok(outcome?)
     }
 
     /// SM `update_ehr_subject_status` (I2): update the status of an existing
@@ -93,6 +111,13 @@ impl FerroEhrService {
         let updated = store::set_association_status(&self.linkage_pool, ehr_id, &subject, &status)
             .await
             .map_err(IndexError::from)?;
+        self.record_index_access(
+            EventActionCode::Update,
+            ehr_id,
+            &subject,
+            updated,
+            updated > 0,
+        )?;
         Ok(require_association(updated, &subject)?)
     }
 
@@ -117,6 +142,13 @@ impl FerroEhrService {
             store::set_association_location(&self.linkage_pool, ehr_id, &subject, loc.as_ref())
                 .await
                 .map_err(IndexError::from)?;
+        self.record_index_access(
+            EventActionCode::Update,
+            ehr_id,
+            &subject,
+            updated,
+            updated > 0,
+        )?;
         Ok(require_association(updated, &subject)?)
     }
 
@@ -143,6 +175,13 @@ impl FerroEhrService {
         let closed = store::close_association(&self.linkage_pool, ehr_id, &subject)
             .await
             .map_err(IndexError::from)?;
+        self.record_index_access(
+            EventActionCode::Delete,
+            ehr_id,
+            &subject,
+            closed,
+            closed > 0,
+        )?;
         Ok(require_association(closed, &subject)?)
     }
 
@@ -156,6 +195,7 @@ impl FerroEhrService {
         let closed = store::close_subject_associations(&self.linkage_pool, &subject)
             .await
             .map_err(IndexError::from)?;
+        self.record_subject_access(EventActionCode::Delete, &subject, closed, closed > 0)?;
         Ok(require_association(closed, &subject)?)
     }
 
@@ -167,7 +207,10 @@ impl FerroEhrService {
     /// - `exception` — a database fault while reading.
     pub async fn ehr_subjects(&self, ehr_id: String) -> Result<Vec<EhrIndexEntry>, SmError> {
         let ehr_id = parse_ehr_id(&ehr_id)?;
-        Ok(self.index_ehr_subjects(ehr_id).await?)
+        let entries = self.index_ehr_subjects(ehr_id).await;
+        let count = entries.as_ref().map_or(0, |found| entry_count(found));
+        self.record_ehr_access(EventActionCode::Read, ehr_id, count, entries.is_ok())?;
+        Ok(entries?)
     }
 
     /// The EHRs associated with a subject (design-filled read; the SM defines
@@ -176,7 +219,10 @@ impl FerroEhrService {
     /// # Errors
     /// - `exception` — a database fault while reading.
     pub async fn subject_ehrs(&self, subject: SubjectRef) -> Result<Vec<EhrIndexEntry>, SmError> {
-        Ok(self.index_subject_ehrs(&subject).await?)
+        let entries = self.index_subject_ehrs(&subject).await;
+        let count = entries.as_ref().map_or(0, |found| entry_count(found));
+        self.record_subject_access(EventActionCode::Read, &subject, count, entries.is_ok())?;
+        Ok(entries?)
     }
 
     /// Confirm an EHR exists ([`IndexError::EhrDoesNotExist`] →

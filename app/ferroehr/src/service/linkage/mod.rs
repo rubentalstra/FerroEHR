@@ -214,6 +214,7 @@ impl FerroEhrService {
             EventActionCode::Create,
             format!("party-ehr:{party_id}"),
             outcome.is_ok().then_some(ehr_id),
+            u64::from(outcome.is_ok()),
             outcome.is_ok(),
         )?;
         outcome
@@ -238,6 +239,7 @@ impl FerroEhrService {
             EventActionCode::Read,
             format!("party-ehr:{party_id}"),
             resolved,
+            u64::from(resolved.is_some()),
             true,
         )?;
         Ok(resolved)
@@ -417,6 +419,7 @@ impl FerroEhrService {
             EventActionCode::Delete,
             format!("ehr:{ehr_id}"),
             Some(ehr_id),
+            outcome.as_ref().copied().unwrap_or(0),
             outcome.is_ok(),
         )?;
         outcome
@@ -443,6 +446,7 @@ impl FerroEhrService {
             EventActionCode::Update,
             format!("party-ehr:{from_party}->{into_party}"),
             outcome.as_ref().ok().copied(),
+            u64::from(outcome.is_ok()),
             outcome.is_ok(),
         )?;
         outcome.map(|_| ())
@@ -466,6 +470,7 @@ impl FerroEhrService {
             EventActionCode::Update,
             format!("party-ehr:{party_id}"),
             outcome.as_ref().ok().copied(),
+            u64::from(outcome.is_ok()),
             outcome.is_ok(),
         )?;
         outcome.map(|_| ())
@@ -511,22 +516,30 @@ impl FerroEhrService {
 
     /// Record one linkage-domain access.
     ///
-    /// The record names the mapping (`party-ehr:<party>`, and both parties on
-    /// a merge), the EHR it resolved to when it resolved to one, and the count, never an identifier value: a trail carrying the
-    /// identity would hold the very data the sealing keeps out of readable
-    /// storage. The actor is the request's authenticated committer and the
-    /// purpose is the code the deployment's own vocabulary accepted
+    /// The record names the row (`party-ehr:<party>`, and both parties on a
+    /// merge; `subject:<namespace>` for an index operation), the EHR it
+    /// resolved to when it resolved to exactly one, and how many rows it
+    /// touched — never an identifier value: a trail carrying the identity
+    /// would hold the very data the sealing keeps out of readable storage. The
+    /// actor is the request's authenticated committer and the purpose is the
+    /// code the deployment's own vocabulary accepted
     /// ([`crate::system_log::access_context`]); outside a request scope both
     /// are absent, which the record states rather than guesses.
+    ///
+    /// `pub(crate)`: the SM `I_EHR_INDEX` operations
+    /// ([`crate::service::ehr_index`]) reach the same relation through the same
+    /// pool, and a crossing recorded from one module and not the other would
+    /// make the trail depend on which door was used.
     ///
     /// # Errors
     /// [`LinkageError::Unrecorded`] when the sender rejected the record under
     /// `fail_mode = "closed"`; the caller withholds its result.
-    fn emit_linkage_access(
+    pub(crate) fn emit_linkage_access(
         &self,
         action: EventActionCode,
         object_id: String,
         ehr_id: Option<EhrId>,
+        result_count: u64,
         succeeded: bool,
     ) -> Result<(), LinkageError> {
         if !self.audit_enabled() {
@@ -541,7 +554,7 @@ impl FerroEhrService {
         event.domain = AccessDomain::Linkage;
         event.object_id = Some(object_id);
         event.ehr_id = ehr_id.map(|id| id.to_string());
-        event.result_count = Some(u64::from(ehr_id.is_some()));
+        event.result_count = Some(result_count);
         stamp_requester(&mut event);
         event.legal_basis = self.audit_legal_basis().map(str::to_owned);
         self.record_access(event).map_err(LinkageError::Unrecorded)

@@ -428,11 +428,12 @@ the party relations.
 
 | column | note |
 |---|---|
-| `party_id uuid` | the party's versioned-object id in `party`; no FK across the boundary |
+| `id uuid` | surrogate primary key; both real keys are partial, and PostgreSQL has no partial primary key |
+| `party_id uuid` | the party's versioned-object id in `party`; no FK across the boundary. NULL on a row that records only an index association |
 | `ehr_id uuid` | the EHR; no FK across the boundary |
-| `subject_id text`, `subject_namespace text` | the identifier the clinical side carries in `EHR_STATUS.subject.external_ref` (the opaque pseudonym), so `I_EHR_INDEX` lookups resolve here |
-| `status text`, `location text` | `I_EHR_INDEX.add_ehr_subject(status, loc_desc)` |
-| `sys_period tstzrange` | `PRIMARY KEY (party_id, sys_period WITHOUT OVERLAPS)`, kept: a merge closes a row (report 1 §3.1 confirms the GiST key) |
+| `subject_id text`, `subject_namespace text`, `subject_type text` | the identifier the clinical side carries in `EHR_STATUS.subject.external_ref` (the opaque pseudonym), so `I_EHR_INDEX` lookups resolve here. NULL on a row that records only a party mapping |
+| `status jsonb`, `location jsonb` | `RESOURCE_STATUS` and `LOCATION_DESC` verbatim (`I_EHR_INDEX.add_ehr_subject(status, loc_desc)`); `jsonb` rather than `text` because `RESOURCE_STATUS` carries four attributes and `LOCATION_DESC` three, and flattening them would drop the validity bounds, the notes and the location the SM defines |
+| `sys_period tstzrange` | `UNIQUE (party_id, sys_period WITHOUT OVERLAPS)`, kept: a merge closes a row (report 1 §3.1 confirms the GiST key). `UNIQUE` rather than `PRIMARY KEY` because the key part is nullable and because master07 §Overview forbids making the constraint total — "There is no limit on the number of subject identifiers associated with a given EHR id, and vice versa, since in real environments both situations commonly occur", and the two N:M states are exactly what the index metadata exists "to detect and rectify". A partial unique index over `(ehr_id, subject_id, subject_namespace)` among the rows in force carries the association identity beside it |
 
 This absorbs today's `ehr.ehr_index` and the subject columns of the `sp_*`
 tables: the SM names EHR Index "the EHR id / demographic subject
@@ -441,7 +442,11 @@ cross-reference domain, never in the clinical one. `ehr.subject_id` and
 `ehr.subject_namespace` stay promoted in `clinical` because the wire binds
 `ehr_get_by_subject` and the 409 to EHR_STATUS content (S12), guarded by the
 pseudonym trigger; the linkage role holds the map from that pseudonym to the
-party. `linkage.erase_ehr(ehr_id)` is a `SECURITY DEFINER` function the
+party. The `sp_*` family keeps its own rows in `clinical` — they are
+configuration and retrieved values, not a cross-reference — but keys them by an
+opaque `subject_key` the service derives from `SUBJECT_PROXY.subject_id`, so
+no caller-supplied identifier reaches the clinical schema, and its subject-to-EHR
+resolution runs on the linkage pool. `linkage.erase_ehr(ehr_id)` is a `SECURITY DEFINER` function the
 linkage role may execute while holding no table `DELETE`, so physical erasure
 reaches the map without widening the role. `subject_ehr` is the in-instance
 realisation of the SM `I_EHR_INDEX` provider; the FerroHEALTH drawing places

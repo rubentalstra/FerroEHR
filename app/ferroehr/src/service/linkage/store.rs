@@ -137,11 +137,11 @@ pub(super) async fn close(
     .bind(party.0)
     .fetch_optional(conn)
     .await?;
-    closed.map(closed_mapping).transpose()
+    closed.as_ref().map(closed_mapping).transpose()
 }
 
 /// Reassemble a [`ClosedMapping`] from the `RETURNING` row of [`close`].
-fn closed_mapping(row: PgRow) -> Result<ClosedMapping, sqlx::Error> {
+fn closed_mapping(row: &PgRow) -> Result<ClosedMapping, sqlx::Error> {
     let ehr: EhrId = row.try_get("ehr_id")?;
     let id: Option<String> = row.try_get("subject_id")?;
     let namespace: Option<String> = row.try_get("subject_namespace")?;
@@ -272,51 +272,66 @@ pub(crate) async fn set_association_location(
     Ok(updated.rows_affected())
 }
 
+/// The shared body of the two closes.
+///
+/// Closed, not deleted: the SM's `remove_ehr_subject` and `remove_subject` END
+/// an association, and ending one is exactly what a closed period records. The
+/// role holds no `DELETE` to do otherwise with.
+///
+/// A row may carry a party mapping as well as the association — one written by
+/// `link_as_subject`, which records the pseudonym it put on `EHR_STATUS` — and
+/// ending the association must not end the mapping. So a closed row that named
+/// a party is reopened in the same statement without its subject: the
+/// association leaves force, the mapping stays, and the history keeps the
+/// period during which the two were one row. The successor's period opens at
+/// the same transaction timestamp the closed one ends at, so the two meet
+/// without overlapping.
+const CLOSE_ASSOCIATIONS: &str = "WITH closed AS (      UPDATE subject_ehr SET sys_period = tstzrange(lower(sys_period), now(), '[)')      WHERE {predicate} AND upper_inf(sys_period)      RETURNING party_id, ehr_id  ), reopened AS (      INSERT INTO subject_ehr (party_id, ehr_id)      SELECT party_id, ehr_id FROM closed WHERE party_id IS NOT NULL  )  SELECT count(*) FROM closed";
+
+/// [`CLOSE_ASSOCIATIONS`] with its one placeholder filled by a predicate this
+/// module wrote itself.
+fn close_statement(predicate: &str) -> String {
+    CLOSE_ASSOCIATIONS.replace("{predicate}", predicate)
+}
+
 /// Close the association of `subject` with `ehr`, returning how many rows
 /// matched.
 ///
-/// Closed, not deleted: the SM's `remove_ehr_subject` ends an association, and
-/// ending one is exactly what a closed period records. The role holds no
-/// `DELETE` to do otherwise with.
-///
 /// # Errors
-/// The driver error, when the update fails.
+/// The driver error, when the statement fails.
 pub(crate) async fn close_association(
     pool: &PgPool,
     ehr: EhrId,
     subject: &SubjectRef,
 ) -> Result<u64, sqlx::Error> {
-    let closed = sqlx::query(
-        "UPDATE subject_ehr SET sys_period = tstzrange(lower(sys_period), now(), '[)') \
-         WHERE ehr_id = $1 AND subject_id = $2 AND subject_namespace = $3 \
-           AND upper_inf(sys_period)",
-    )
+    let closed: i64 = sqlx::query_scalar(sqlx::AssertSqlSafe(close_statement(
+        "ehr_id = $1 AND subject_id = $2 AND subject_namespace = $3",
+    )))
     .bind(ehr.0)
     .bind(&subject.id)
     .bind(&subject.namespace)
-    .execute(pool)
+    .fetch_one(pool)
     .await?;
-    Ok(closed.rows_affected())
+    Ok(closed.unsigned_abs())
 }
 
 /// Close every association of `subject`, whichever EHR it names, returning how
 /// many rows matched.
 ///
 /// # Errors
-/// The driver error, when the update fails.
+/// The driver error, when the statement fails.
 pub(crate) async fn close_subject_associations(
     pool: &PgPool,
     subject: &SubjectRef,
 ) -> Result<u64, sqlx::Error> {
-    let closed = sqlx::query(
-        "UPDATE subject_ehr SET sys_period = tstzrange(lower(sys_period), now(), '[)') \
-         WHERE subject_id = $1 AND subject_namespace = $2 AND upper_inf(sys_period)",
-    )
+    let closed: i64 = sqlx::query_scalar(sqlx::AssertSqlSafe(close_statement(
+        "subject_id = $1 AND subject_namespace = $2",
+    )))
     .bind(&subject.id)
     .bind(&subject.namespace)
-    .execute(pool)
+    .fetch_one(pool)
     .await?;
-    Ok(closed.rows_affected())
+    Ok(closed.unsigned_abs())
 }
 
 /// The associations of `ehr` in force, ordered by subject key.
@@ -353,11 +368,17 @@ pub(crate) async fn subject_associations(
     .await
 }
 
-/// The EHR an association in force names for `subject`, preferring the
-/// `Primary` instance and then the oldest period.
+/// The EHR a row in force names for `subject_id`, by descending authority and
+/// then by the oldest period.
 ///
 /// The subject-proxy resolution step: an identifier in, an EHR id out, without
-/// the clinical domain holding either the identifier or the map.
+/// the clinical domain holding either the identifier or the map. The order is
+/// the `RESOURCE_INSTANCE_TYPE` ranking (`resource_instance_type.adoc`) — a
+/// `Primary` association is "the primary instance of the resource", a
+/// `Duplicate` is the error state master07 §Overview asks to be rectified —
+/// with a row carrying no status (a party mapping whose subject pseudonym the
+/// server wrote itself) ranked between them, because nothing about it is
+/// declared secondary.
 ///
 /// # Errors
 /// The driver error, when the read fails.
@@ -368,7 +389,12 @@ pub(crate) async fn resolve_subject_ehr(
     let found: Option<Uuid> = sqlx::query_scalar(
         "SELECT ehr_id FROM subject_ehr \
          WHERE subject_id = $1 AND upper_inf(sys_period) \
-         ORDER BY (status ->> 'instance_type' = 'Primary') DESC NULLS LAST, lower(sys_period) \
+         ORDER BY CASE status ->> 'instance_type' \
+                      WHEN 'Primary' THEN 0 \
+                      WHEN 'Supplementary' THEN 2 \
+                      WHEN 'Duplicate' THEN 3 \
+                      ELSE 1 \
+                  END, lower(sys_period) \
          LIMIT 1",
     )
     .bind(subject_id)
