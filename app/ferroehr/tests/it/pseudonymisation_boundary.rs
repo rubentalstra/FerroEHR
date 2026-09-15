@@ -1510,10 +1510,10 @@ async fn the_server_mints_the_subject_pseudonym_and_no_caller_value_enters_it() 
 ///
 /// The store writes through the clinical pool. Before the grant migration the
 /// Audit Record Repository was held by the single-domain pair only, so a
-/// deployment whose clinical credential is a member of `ferroehr_ehr` alone
+/// deployment whose clinical credential is a member of `ferroehr_clinical` alone
 /// wrote no access record at all: dropped and metered under
 /// `fail_mode = "open"`, every auditable operation refused under `"closed"`.
-/// Runs as a fresh login role IN ROLE `ferroehr_ehr`, never as the superuser
+/// Runs as a fresh login role IN ROLE `ferroehr_clinical`, never as the superuser
 /// the testkit pool is.
 #[tokio::test]
 async fn the_split_clinical_role_writes_and_reads_the_audit_trail() {

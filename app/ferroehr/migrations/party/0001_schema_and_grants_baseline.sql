@@ -41,16 +41,16 @@ COMMENT ON SCHEMA party IS 'The party pseudonymisation domain: the demographic v
 
 DO $$
 BEGIN
-    IF EXISTS (SELECT FROM pg_roles WHERE rolname = 'ferroehr_demographic') THEN
+    IF EXISTS (SELECT FROM pg_roles WHERE rolname = 'ferroehr_party') THEN
         GRANT USAGE ON SCHEMA party
-            TO ferroehr_demographic, ferroehr_demographic_reader;
+            TO ferroehr_party, ferroehr_party_reader;
         -- Every relation the later files in this set create is reachable
         -- without a manual grant (PostgreSQL 18, ALTER DEFAULT PRIVILEGES).
         -- The explicit grants over the finished relations are 0007.
         ALTER DEFAULT PRIVILEGES IN SCHEMA party
-            GRANT SELECT, INSERT, UPDATE, DELETE ON TABLES TO ferroehr_demographic;
+            GRANT SELECT, INSERT, UPDATE, DELETE ON TABLES TO ferroehr_party;
         ALTER DEFAULT PRIVILEGES IN SCHEMA party
-            GRANT SELECT ON TABLES TO ferroehr_demographic_reader;
+            GRANT SELECT ON TABLES TO ferroehr_party_reader;
     ELSE
         RAISE NOTICE 'skipping party schema grants (roles absent — see the ext role block NOTICE)';
     END IF;

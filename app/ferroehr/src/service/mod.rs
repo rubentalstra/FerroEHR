@@ -376,7 +376,7 @@ impl FerroEhrService {
     /// Install the pool serving the demographic pseudonymisation domain.
     ///
     /// This is what makes the ROLE separation a deployment choice: the pool may
-    /// authenticate as `ferroehr_demographic` on its own DSN
+    /// authenticate as `ferroehr_party` on its own DSN
     /// (`[db].demographic_url`), so neither runtime credential can read the
     /// other domain's relations. Without it, [`Self::new`]'s derived pool runs
     /// the same schema separation over the clinical credential.

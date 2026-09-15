@@ -1,31 +1,24 @@
 ---
 name: migrations-are-append-only
-description: "Owner ruling 2026-09-09 — stabilization declared: migration files are APPEND-ONLY, never edited; a schema change is a new file, guarded by migration-immutability.sh"
+description: "Owner rulings 2026-09-09 + 2026-09-15 — a migration that has SHIPPED (is at the latest vX.Y.Z tag) is never edited; a file on main but in no release is fixed in place; guarded by migration-immutability.sh against the release tag"
 metadata:
   type: feedback
 ---
 
-Owner ruling 2026-09-09: people run FerroEHR now, so wiping a volume is no
-longer an option and an installation upgrades its database in place. Migration
-files are **append-only**. Never edit, rename or delete a migration that exists
-on `main`, including the squashed baselines and including a comment or a typo.
-A schema change is a NEW `sqlx migrate add` file; a migration that turned out
-wrong is superseded by a later one, never rewritten.
+A migration file present at the latest release tag is **append-only**: never
+edit, rename or delete it, including a comment or a typo; a schema change is a
+NEW `sqlx migrate add` file and a wrong shipped migration is superseded. A file
+that is on `main` but in NO release yet has been applied by no installation and
+is **fixed in place** (owner 2026-09-15: the rewrite is breaking changes only;
+no rename migrations, placeholder roles or compatibility paths).
 
-**Why:** sqlx records a checksum of every applied migration and refuses a
-database whose recorded checksum no longer matches the file, so an edit does
-not revise history. It locks every existing installation out of its own
-database at boot, reporting a checksum rather than the edit that caused it.
+**Why:** sqlx checksums every applied migration and refuses a database whose
+checksum no longer matches, so an edit to a shipped file locks installations
+out; an edit to an unshipped file locks nobody out and keeps the design clean.
 
-**How to apply:** a new file, always. Editing a migration this branch itself
-added is fine, because the guard compares against the merge base. There is no
-escape-hatch label, deliberately.
-
-This SUPERSEDES the greenfield ruling of 2026-08-20 (#2452), which said
-migration files are edited in place and reserved this reversal for the moment
-the owner declared stabilization. That moment is now, so the machinery that
-ruling rejected as dead weight is exactly what belongs here: the durable rule
-is `.claude/rules/sqlx-conventions.md` §Migrations, and
-`scripts/checks/migration-immutability.sh` (the `migration-immutability` CI
-job) is its failing check. Related: [[rewrite-not-inherited-code]],
-[[en-route-findings-always-filed]].
+**How to apply:** `scripts/checks/migration-immutability.sh --diff origin/main HEAD`
+judges only files the latest reachable `v*` tag carries (all base files when no
+tag is reachable); a shipped SET is retired only whole and only with the boot
+refusal naming its schema (`FIRST_GENERATION_SETS`). The rule re-arms itself at
+every release cut. Related: [[rewrite-breaks-everything-shipped-means-released]],
+[[storage-rewrite-is-greenfield]].

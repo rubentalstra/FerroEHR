@@ -252,7 +252,7 @@ async fn the_application_role_cannot_run_ddl_or_rewrite_the_audit_trail() {
     let pool = testdb.pool();
     let role = format!("{}_auditrole", testdb.name());
     sqlx::query(AssertSqlSafe(format!(
-        "CREATE ROLE {role} LOGIN PASSWORD 'testpw' IN ROLE ferroehr_app"
+        "CREATE ROLE {role} LOGIN PASSWORD 'testpw' IN ROLE ferroehr_clinical"
     )))
     .execute(&pool)
     .await

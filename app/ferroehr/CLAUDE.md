@@ -64,10 +64,12 @@ module.**
   layer that hosts several logical EHR systems, not inside one (BASE
   `architecture_overview/master06-design_of_the_ehr.adoc` §The EHR System).
 - **SQL:** `sqlx` + `sea-query` (never sea-orm); migrations only via
-  `sqlx migrate add --sequential`, and **append-only** (owner ruling
-  2026-09-09): never edit, rename or delete a migration that exists on `main`,
-  because sqlx checksums each applied file and an edit locks every existing
-  installation out of its database at boot. A schema change is a NEW file.
+  `sqlx migrate add --sequential`, and **append-only once shipped** (owner
+  rulings 2026-09-09 and 2026-09-15): never edit, rename or delete a migration
+  that is in a release (the latest `vX.Y.Z` tag), because sqlx checksums each
+  applied file and an edit locks every installation out of its database at
+  boot; a file in no release yet is fixed in place, never papered over. For a
+  shipped file a schema change is a NEW file.
   Rules: `.claude/rules/sqlx-conventions.md`.
 - **System log** (`src/system_log/`): the ARR drain batches (`recv_many` → one
   multi-row UNNEST INSERT when syslog is off) with concurrent memoized subject

@@ -755,7 +755,7 @@ fn hostile_execution_context_values_bind() {
 /// The privilege posture of the role the running server connects as.
 ///
 /// The shipped deployments authenticate as a **non-superuser** login role that
-/// is a member of `ferroehr_app` (`deploy/helm/ferroehr/values.yaml`,
+/// is a member of `ferroehr_clinical` (`deploy/helm/ferroehr/values.yaml`,
 /// `docker/postgres/initdb/10-ferroehr-init.sh`). This test creates such a role
 /// and verifies the negative half first-hand: it is not a superuser, does not
 /// bypass row-level security, cannot create or drop schema objects, and cannot
@@ -769,7 +769,7 @@ async fn the_application_database_role_cannot_run_ddl_or_escalate() {
     let pool = testdb.pool();
     let role = format!("{}_leastpriv", testdb.name());
     sqlx::query(AssertSqlSafe(format!(
-        "CREATE ROLE {role} LOGIN PASSWORD 'testpw' IN ROLE ferroehr_app"
+        "CREATE ROLE {role} LOGIN PASSWORD 'testpw' IN ROLE ferroehr_clinical"
     )))
     .execute(&pool)
     .await

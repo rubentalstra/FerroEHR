@@ -35,7 +35,7 @@ deploys. Create a Secret holding the app-role connection string, then install:
 ```shell
 kubectl create namespace ferroehr
 kubectl -n ferroehr create secret generic ferroehr-db \
-  --from-literal=FERROEHR__DB__URL='postgres://ferroehr_app:***@pg-host:5432/ferroehr?sslmode=verify-full'
+  --from-literal=FERROEHR__DB__URL='postgres://ferroehr_clinical:***@pg-host:5432/ferroehr?sslmode=verify-full'
 
 helm install ferroehr oci://ghcr.io/rubentalstra/charts/ferroehr \
   --version 10.0.0 -n ferroehr \
@@ -249,8 +249,8 @@ superuser. Four roles cover the single-domain posture:
 |---|---|
 | owner | owns the database (provisioning only) |
 | `ferroehr_migrator` | runs the append-only schema migrations |
-| `ferroehr_app` | day-to-day reads and writes; **the running pod connects as this** |
-| `ferroehr_reader` | read-only, for replicas and reporting |
+| `ferroehr_clinical` | day-to-day reads and writes; **the running pod connects as this** |
+| `ferroehr_clinical_reader` | read-only, for replicas and reporting |
 
 Migrations are DDL, so whoever applies them can rewrite the schema. Two flows,
 and `config.db.migrate` is where you choose:
@@ -276,7 +276,7 @@ authenticates from its **own** Secret (deliberately a different credential from
 
 ```yaml
 database:
-  existingSecret: ferroehr-db                 # postgres://ferroehr_app:…
+  existingSecret: ferroehr-db                 # postgres://ferroehr_clinical:…
   migrateExistingSecret: ferroehr-db-migrator # postgres://ferroehr_migrator:…
 migrations:
   job:
@@ -315,7 +315,7 @@ credential reaching every schema. Preparation spans them all at once: the DDL
 of all five migration sets under `config.db.migrate: apply`, all five
 `_sqlx_migrations` bookkeeping tables under `verify`. So **`verify` is not the
 exception**, and this is not only about the domain roles. `ferroehr_clinical` holds
-one pseudonymisation domain, `ferroehr_app` holds the clinical schemas, and
+one pseudonymisation domain, `ferroehr_clinical` holds the clinical schemas, and
 neither can read the `demographic` or `linkage` bookkeeping at all; without
 this value the pod is refused on the first set it cannot read and does not
 start. It is normally the same credential

@@ -14,9 +14,9 @@ REVOKE ALL ON FUNCTION stamp_posture(text, text) FROM PUBLIC;
 
 DO $$
 BEGIN
-    IF EXISTS (SELECT FROM pg_roles WHERE rolname = 'ferroehr_app') THEN
+    IF EXISTS (SELECT FROM pg_roles WHERE rolname = 'ferroehr_clinical') THEN
         GRANT EXECUTE ON FUNCTION ext.stamp_posture(text, text)
-            TO ferroehr_app, ferroehr_ehr;
+            TO ferroehr_clinical;
     ELSE
         RAISE NOTICE 'skipping ext.stamp_posture grant (roles absent — see the role block NOTICE)';
     END IF;

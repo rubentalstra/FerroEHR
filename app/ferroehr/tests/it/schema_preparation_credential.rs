@@ -79,7 +79,7 @@ async fn migrator_dsn(db: &testkit::TestDb) -> String {
 /// This is what the book recommends and the chart configures, and until
 /// `[db] migrate_url` existed it could not get past boot at all: `verify`
 /// failed on the FIRST migration set, because a role that is a member of
-/// `ferroehr_ehr` and nothing else cannot read `ext._sqlx_migrations`.
+/// `ferroehr_clinical` and nothing else cannot read `ext._sqlx_migrations`.
 #[tokio::test]
 async fn the_boot_sequence_prepares_the_schema_on_separated_credentials() {
     let db = testkit::db().await.expect("testkit database");
@@ -196,7 +196,7 @@ async fn a_single_dsn_deployment_prepares_the_schema_as_before() {
 /// A credential that cannot read a migration set is told which schema and
 /// which role, not handed a bare 42501 about a table it has never heard of.
 ///
-/// The refusal here is on the bookkeeping TABLE: a member of `ferroehr_ehr`
+/// The refusal here is on the bookkeeping TABLE: a member of `ferroehr_clinical`
 /// may enter `ext` (its helper functions are on the clinical search path) and
 /// is refused the `SELECT`.
 #[tokio::test]

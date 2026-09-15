@@ -375,11 +375,10 @@ of no other, so a privilege cannot arrive through a membership.
 | `ferroehr_party_reader` | `SELECT` on `party`. On `national_identifier` the table-level grant is revoked and re-granted column by column, so it reads `id`, `party_id`, `scheme` and `created_at` and never `lookup_digest`, `nonce` or `ciphertext` | `clinical` and `linkage` |
 | `ferroehr_linkage` | `linkage.party_ehr` with `SELECT`, `INSERT` and `UPDATE`; `USAGE` on `ext` | `clinical`, `party`, and `party.resolve_national_identifier` by its own revoke. It holds no `DELETE` anywhere, so it cannot remove a mapping either |
 | The schema-preparation credential (`[db] migrate_url`, normally a member of `ferroehr_migrator`) | every schema: it issues the DDL of all five migration sets and reads all five `_sqlx_migrations` tables, and it owns the objects it created | nothing. The server opens it for that one boot step and closes it again, so no pool is held on it and no request is served through it |
-| `ferroehr_app`, `ferroehr_reader` | the earlier single-domain pair, still carrying `clinical`, `ext` and the `audit` repository | `party` and `linkage`, where they hold no grant. That is an absence of privilege rather than a revoke, and the boot self-check does not cover these two roles |
 
 The `audit` schema is granted to the clinical pair (`ferroehr_clinical` records an
 event, stamps it forwarded, runs the retention reaper and verifies the chain;
-`ferroehr_clinical_reader` reads it) exactly as it is to the generic pair.
+`ferroehr_clinical_reader` reads it).
 The local Audit Record Repository is written on the clinical pool, so a login
 role that is a member of `ferroehr_clinical` alone writes its own access log. The
 audit trail is not a pseudonymisation domain: the demographic and linkage

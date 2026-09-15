@@ -19,24 +19,29 @@ use it). **Not sea-orm.** Target PostgreSQL 18.6+.
   DDL template (`app/ferroehr/migrations/templates/`), so a change to either
   is a change to the template plus a regeneration, never a hand edit of the
   rendered file.
-- **Migrations are APPEND-ONLY (owner ruling 2026-09-09, declaring the
-  stabilization the 2026-08-20 greenfield ruling reserved).** People run
-  FerroEHR now, so wiping a volume is no longer an option and an installation
-  upgrades its database in place. **Never edit, rename or delete a migration
-  file that exists on `main`** — including the squashed baselines, including a
-  comment or a typo. sqlx records a checksum of each applied migration and
-  refuses a database whose recorded checksum no longer matches the file
-  (https://docs.rs/sqlx/latest/sqlx/migrate/struct.Migrator.html), so an edit
-  does not change history, it locks every existing installation out of its own
-  database at boot.
-- **A schema change is a NEW file, always.** Altering an existing table,
-  adding a constraint, backfilling a column, correcting a defect in an earlier
-  migration: each is a new `sqlx migrate add` file that carries the change
-  forward. A migration that was wrong is superseded, never rewritten.
-- **A SET is retired whole, or not at all.** The one change that is not an
-  edit is withdrawing a whole migration set, and it is only safe in one shape:
-  every file the base branch had under `app/ferroehr/migrations/<schema>/`
-  goes, so no half-set survives for a database to apply against — a NEW set may
+- **A migration that has SHIPPED is never edited (owner rulings 2026-09-09
+  and 2026-09-15).** SHIPPED means present at the latest release tag
+  (`vX.Y.Z`). sqlx records a checksum of each applied migration and refuses a
+  database whose recorded checksum no longer matches the file
+  (https://docs.rs/sqlx/latest/sqlx/migrate/struct.Migrator.html), so editing
+  a file an installation has applied does not change history, it locks that
+  installation out of its own database at boot. **Never edit, rename or delete
+  a migration file that is in a release** — including a comment or a typo.
+- **A file in no release yet is rewrite material and is fixed IN PLACE.** It
+  has been applied by no installation, so a wrong name, column, grant or
+  comment is corrected in the file that defines it, never papered over by a
+  follow-up file, a rename migration, a placeholder role or a compatibility
+  path (owner ruling 2026-09-15: the rewrite is breaking changes only). The
+  rule re-arms by itself at the next release cut.
+- **For a shipped file a schema change is a NEW file, always.** Altering an
+  existing table, adding a constraint, backfilling a column, correcting a
+  defect in a shipped migration: each is a new `sqlx migrate add` file that
+  carries the change forward. A shipped migration that was wrong is
+  superseded, never rewritten.
+- **A shipped SET is retired whole, or not at all.** The one change to shipped
+  files that is not an edit is withdrawing a whole migration set, and it is
+  only safe in one shape: every shipped file under
+  `app/ferroehr/migrations/<schema>/` goes, so no half-set survives for a database to apply against — a NEW set may
   take its place in the same directory, because a schema name can outlive the
   set that used it — and `<schema>` is named in `FIRST_GENERATION_SETS`
   (`app/ferroehr/src/db/mod.rs`) in the same change, so a database carrying that
@@ -54,11 +59,13 @@ use it). **Not sea-orm.** Target PostgreSQL 18.6+.
   mismatch instead of the remedy.
 - Enforcement (tier 4): `scripts/checks/migration-immutability.sh`, run by the
   `migration-immutability` CI job over the pull request's diff against its
-  merge base. It fails on any modification, rename or partial deletion under
-  `app/ferroehr/migrations/`; an added file passes, and so does further work
-  on a file this branch itself added, because the comparison is against the
-  base. The whole-set retirement above is accepted only when the guard can
-  verify BOTH halves itself — every base file of that directory gone at head,
+  merge base, judging only the files present at the latest release tag
+  reachable from that merge base (every base file when no tag is reachable).
+  It fails on any modification, rename or partial deletion of a shipped file
+  under `app/ferroehr/migrations/`; an added file passes, and so does any
+  change to a file no release carries. The whole-set retirement above is
+  accepted only when the guard can verify BOTH halves itself — every shipped
+  file of that directory gone at head,
   and the schema named in that table — so the acceptance cannot be claimed by a
   comment. **There is deliberately no escape-hatch label:** the checksum makes
   the rule absolute, so an exception would only ever be a broken deployment.
