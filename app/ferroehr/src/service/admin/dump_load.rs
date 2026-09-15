@@ -1347,8 +1347,8 @@ impl FerroEhrService {
     ///   one — see `unreadable_archive_entry`), or the manifest declares a
     ///   logical format that names no `EXPORT_FORMAT` member.
     /// - `precondition_violation` (`400`) — the archive predates the storage
-    ///   rewrite (`archive_version` below [`ARCHIVE_VERSION_FLOOR`]), or it
-    ///   carries externalized multimedia blobs but this server has no
+    ///   rewrite (an `archive_version` below the floor this server reads), or
+    ///   it carries externalized multimedia blobs but this server has no
     ///   multimedia store configured.
     /// - `unprocessable` — an archive record carries overlapping version
     ///   validity periods (a corrupted/hand-crafted archive; the record's

@@ -394,7 +394,7 @@ pub async fn delete_version_nodes(
 /// Fetch the read rows of whole stored versions in **one** statement, keyed by
 /// `(vo_id, sys_version)` and ordered by `num` within each version.
 ///
-/// This is the row half of [`read_version_canonical_all`] for a page of
+/// This is the row half of [`read_version_canonical`] for a page of
 /// versions: the same tier-inclusive rows, one round trip instead of one per
 /// version. A version with no stored nodes (a logical delete, RM common
 /// master06 §Logical Deletion) is absent from the map.
