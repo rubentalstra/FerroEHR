@@ -10,9 +10,16 @@
 -- instead of looking like tampering.
 --
 -- The horizon is a floor question as much as a ceiling one: national rules set
--- a minimum a log must be kept for, and a deployment may not reap below it.
--- TODO(#3346): carry the per-jurisdiction floor and ceiling here and refuse a
--- configured horizon below the floor.
+-- a minimum a log must be kept for, and one national rule sets a maximum. The
+-- floor and the ceiling are configuration, not data, so they live beside the
+-- horizon they bound rather than in this schema
+-- (`crate::system_log::config::retention_floor_days` /
+-- `retention_ceiling_days`, checked at boot by `AppConfig::validate_audit`):
+-- SGB V § 309 Abs. 1 and Abs. 3 ask the § 307 controllers of a telematics
+-- application to keep access logs for the three-year limitation period and to
+-- delete them "unverzüglich" after it (docs/law/de/sgb-v/BJNR024820988.xml),
+-- while the Dutch and Swiss rules set minima. This function reaps to whatever
+-- horizon the boot-validated configuration hands it.
 --
 -- No openEHR spec governs audit retention: our own design/extension.
 --
