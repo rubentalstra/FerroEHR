@@ -31,6 +31,36 @@ use sqlx::{PgPool, Row};
 use crate::ids::{EhrId, VoId};
 use crate::storage::error::StorageError;
 
+// ── the rendered statements ──────────────────────────────────────────────────
+// Two of the reads below expose the statement they run as a named constant, so
+// the plan-shape suite (`tests/it/storage_plans.rs`) explains the statement the
+// read path emits rather than a copy of it.
+
+/// The statement [`all_version_meta`] runs: every version row of one object in
+/// storage-ordinal order — the revision history.
+pub const ALL_VERSION_META_SQL: &str = "SELECT v.ehr_id, v.kind, v.sys_version, v.trunk_version, v.branch_number, \
+     v.branch_version, v.creating_system_id, v.lifecycle_state, \
+     a.system_id, a.change_type, a.description, a.committer, a.attestation, \
+     a.time_committed, att.attestations, \
+     h.restricted_at IS NOT NULL AS restricted \
+     FROM version v JOIN commit_audit a ON a.id = v.commit_audit_id \
+     JOIN vo_head h ON h.vo_id = v.vo_id \
+     LEFT JOIN LATERAL ( \
+     SELECT coalesce(jsonb_agg(x.data ORDER BY x.time_committed, x.id), \
+     '[]'::jsonb) AS attestations \
+     FROM vo_attestation x \
+     WHERE x.vo_id = v.vo_id AND x.sys_version = v.sys_version \
+     ) att ON true \
+     WHERE v.vo_id = $1 ORDER BY v.sys_version";
+
+/// The statement [`current_version_meta_scoped`] runs: the `ETag`/`If-Match`
+/// identity of one EHR-owned object's current trunk version.
+pub const CURRENT_VERSION_META_SCOPED_SQL: &str = "SELECT v.vo_id, v.trunk_version, v.branch_number, v.branch_version, \
+     v.creating_system_id, a.time_committed \
+     FROM version v JOIN commit_audit a ON a.id = v.commit_audit_id \
+     JOIN vo_head h ON h.vo_id = v.vo_id AND h.trunk_head_sys_version = v.sys_version \
+     WHERE v.vo_id = $1 AND v.ehr_id = $2";
+
 // ── revision-history enumeration ──────────────────────────────────────────────
 
 /// One version's metadata row (`version` ⋈ `audit`).
@@ -89,21 +119,10 @@ pub async fn all_version_meta(
     pool: &PgPool,
     vo_id: VoId,
 ) -> Result<Vec<VersionMeta>, StorageError> {
-    const SQL: &str = "SELECT v.ehr_id, v.kind, v.sys_version, v.trunk_version, v.branch_number, \
-                       v.branch_version, v.creating_system_id, v.lifecycle_state, \
-                       a.system_id, a.change_type, a.description, a.committer, a.attestation, \
-                       a.time_committed, att.attestations, \
-                       h.restricted_at IS NOT NULL AS restricted \
-                       FROM version v JOIN commit_audit a ON a.id = v.commit_audit_id \
-                       JOIN vo_head h ON h.vo_id = v.vo_id \
-                       LEFT JOIN LATERAL ( \
-                       SELECT coalesce(jsonb_agg(x.data ORDER BY x.time_committed, x.id), \
-                       '[]'::jsonb) AS attestations \
-                       FROM vo_attestation x \
-                       WHERE x.vo_id = v.vo_id AND x.sys_version = v.sys_version \
-                       ) att ON true \
-                       WHERE v.vo_id = $1 ORDER BY v.sys_version";
-    let rows = sqlx::query(SQL).bind(vo_id).fetch_all(pool).await?;
+    let rows = sqlx::query(ALL_VERSION_META_SQL)
+        .bind(vo_id)
+        .fetch_all(pool)
+        .await?;
     rows.iter()
         .map(|row| {
             Ok(VersionMeta {
@@ -503,12 +522,7 @@ pub async fn current_version_meta_scoped(
     vo_id: VoId,
     ehr_id: EhrId,
 ) -> Result<Option<CurrentMeta>, StorageError> {
-    const SQL: &str = "SELECT v.vo_id, v.trunk_version, v.branch_number, v.branch_version, \
-                       v.creating_system_id, a.time_committed \
-                       FROM version v JOIN commit_audit a ON a.id = v.commit_audit_id \
-                       JOIN vo_head h ON h.vo_id = v.vo_id AND h.trunk_head_sys_version = v.sys_version \
-                       WHERE v.vo_id = $1 AND v.ehr_id = $2";
-    let found = sqlx::query(SQL)
+    let found = sqlx::query(CURRENT_VERSION_META_SCOPED_SQL)
         .bind(vo_id)
         .bind(ehr_id)
         .fetch_optional(pool)

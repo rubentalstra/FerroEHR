@@ -86,6 +86,7 @@ mod service_validation;
 mod signing_pgp;
 mod sql_injection;
 mod storage_parity;
+mod storage_plans;
 mod subject_pseudonym_guard;
 mod system_log_tls_roundtrip;
 mod telemetry;

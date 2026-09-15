@@ -211,6 +211,34 @@ macro_rules! version_select_raw {
     };
 }
 
+// ── the rendered statements ──────────────────────────────────────────────────
+// The three point reads below expose the statement they run as a named
+// constant. Their access path is pinned by the plan-shape suite
+// (`tests/it/storage_plans.rs`), which runs EXPLAIN over these constants, so
+// what it explains is the statement the read path emits and not a copy that can
+// drift away from it.
+
+/// The statement [`read_current`] runs: the current trunk version of an object
+/// by id, resolved through the head row's `trunk_head_sys_version`.
+pub const READ_CURRENT_SQL: &str =
+    version_select!("WHERE v.vo_id = $1 AND h.trunk_head_sys_version = v.sys_version");
+
+/// The statement [`version_at`] runs: the trunk version of an object in force
+/// at an instant.
+pub const VERSION_AT_SQL: &str = version_select!(
+    "WHERE v.vo_id = $1 AND v.branch_number = 0 \
+     AND v.committed_at <= $2::timestamptz \
+     AND NOT EXISTS (SELECT 1 FROM version s \
+                     WHERE s.vo_id = v.vo_id AND s.branch_number = 0 \
+                       AND s.committed_at > v.committed_at \
+                       AND s.committed_at <= $2::timestamptz)"
+);
+
+/// The statement [`read_version_by_ordinal`] runs: one version of an object by
+/// its storage ordinal, addressed on the partitioned parent.
+pub const READ_VERSION_BY_ORDINAL_SQL: &str =
+    version_select!("WHERE v.vo_id = $1 AND v.sys_version = $2");
+
 /// Build a [`StoredVersion`] from a `version`⋈`audit` row; the canonical
 /// body is the row's own materialized `body` column (`NULL` → [`Value::Null`],
 /// a logical delete), so the whole version read is the ONE statement that
@@ -406,9 +434,7 @@ pub async fn read_current(
     pool: &PgPool,
     vo_id: VoId,
 ) -> Result<Option<StoredVersion>, StorageError> {
-    const SQL: &str =
-        version_select!("WHERE v.vo_id = $1 AND h.trunk_head_sys_version = v.sys_version");
-    sqlx::query(SQL)
+    sqlx::query(READ_CURRENT_SQL)
         .bind(vo_id)
         .fetch_optional(pool)
         .await?
@@ -501,8 +527,7 @@ pub async fn read_version_by_ordinal(
     vo_id: VoId,
     ordinal: i32,
 ) -> Result<Option<StoredVersion>, StorageError> {
-    const SQL: &str = version_select!("WHERE v.vo_id = $1 AND v.sys_version = $2");
-    sqlx::query(SQL)
+    sqlx::query(READ_VERSION_BY_ORDINAL_SQL)
         .bind(vo_id)
         .bind(ordinal)
         .fetch_optional(pool)
@@ -610,16 +635,8 @@ pub async fn version_at(
     vo_id: VoId,
     at: jiff::Timestamp,
 ) -> Result<Option<StoredVersion>, StorageError> {
-    const SQL: &str = version_select!(
-        "WHERE v.vo_id = $1 AND v.branch_number = 0 \
-         AND v.committed_at <= $2::timestamptz \
-         AND NOT EXISTS (SELECT 1 FROM version s \
-                         WHERE s.vo_id = v.vo_id AND s.branch_number = 0 \
-                           AND s.committed_at > v.committed_at \
-                           AND s.committed_at <= $2::timestamptz)"
-    );
     let at = at.to_string();
-    sqlx::query(SQL)
+    sqlx::query(VERSION_AT_SQL)
         .bind(vo_id)
         .bind(&at)
         .fetch_optional(pool)
