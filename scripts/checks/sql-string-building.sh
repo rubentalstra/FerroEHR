@@ -55,15 +55,16 @@ KEYWORDS='SELECT|FROM|WHERE|ORDER[[:space:]]+BY|GROUP[[:space:]]+BY|HAVING|JOIN|
 # a neighbouring statement.
 #
 # `node_repo.rs` composes the promoted-column list of one INSERT header from
-# `storage::promoted::PROMOTED_LEAVES`, whose `column` field is a
-# `&'static str` in our own source — a closed set with no request-time input, and
-# the values themselves are bound through `QueryBuilder::push_bind`.
+# `storage::promoted::PROMOTED_LEAVES`, whose `column` field is a variant of the
+# schema catalog `crate::db::iden::Node` — a closed set of identifiers in our own
+# source, with no request-time input, and the values themselves are bound through
+# `QueryBuilder::push_bind`.
 #
 # `ddl_template.rs` renders MIGRATION FILES, not statements a server executes:
 # its inputs are the two `Domain` constants in the same file and a committed
 # template, and its only consumer is a test that compares the rendering with the
 # committed migrations. Nothing here reaches a connection.
-EXEMPT='app/ferroehr/src/storage/node_repo.rs:push_str(leaf.column)
+EXEMPT='app/ferroehr/src/storage/node_repo.rs:push_str(sea_query::Iden::unquoted(&leaf.column))
 app/ferroehr/src/storage/ddl_template.rs:out.push_str(&line.replace(KINDS, &kinds))'
 
 collect() {
