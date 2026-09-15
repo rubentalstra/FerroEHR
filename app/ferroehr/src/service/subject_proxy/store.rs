@@ -257,8 +257,13 @@ impl FerroEhrService {
     /// (`i_data_binding.adoc`'s own TODO: "this service might need to resolve
     /// it through another service" — the EHR Index is that service,
     /// `master07-ehr_index_service.adoc`). Order: literal EHR id (UUID that
-    /// exists in `ehr`), then the EHR Index by subject id (any namespace;
-    /// `Primary` instances first). `None` = unresolved.
+    /// exists in `ehr`), then the cross-reference by subject id (any
+    /// namespace; `Primary` instances first). `None` = unresolved.
+    ///
+    /// The second step runs on the LINKAGE pool, which is where the
+    /// cross-reference lives; the first runs on the clinical one, because an
+    /// EHR's existence is a clinical fact. Neither statement names the other
+    /// domain's relations.
     pub(super) async fn sp_resolve_subject_ehr(
         &self,
         subject_id: &str,
