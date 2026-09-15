@@ -77,8 +77,12 @@ pub enum XmlError {
     /// A mandatory child element is absent from the element the reader just
     /// finished. Carries where that element sits in the document and which
     /// class attribute the child realises, so an author can find an element
-    /// that is not there by the element that should hold it.
-    #[error("{location} is missing mandatory child <{child}> ({owner}.{child})")]
+    /// that is not there by the element that should hold it, and the remedy
+    /// where the absent element has one.
+    #[error(
+        "{location} is missing mandatory child <{child}> ({owner}.{child}){}",
+        missing_child_remedy(.location, .owner, .child)
+    )]
     MissingChild {
         /// The element that should hold the child.
         location: Box<Location>,
@@ -667,6 +671,26 @@ impl std::fmt::Display for Location {
             "> at line {}, column {} ({})",
             self.line, self.column, self.path
         )
+    }
+}
+
+/// The fix for an absent mandatory child the document's author can act on,
+/// appended to the refusal, or the empty string where there is none.
+///
+/// One absent element has such a fix: the `<value>` of a `DV_CODED_TEXT` under
+/// a `<symbol>`. The ITS-XML profile schema types `C_DV_ORDINAL.list` as the RM
+/// `DV_ORDINAL` (`components/AM/Release-1.4/OpenehrProfile.xsd`), whose `symbol`
+/// is a `DV_CODED_TEXT` with a mandatory `value`, so a symbol without the
+/// element is not a document the format admits. The value itself carries
+/// nothing: AOM 1.4 models the symbol as a `CODE_PHRASE` and the rubric is
+/// resolved from `term_definitions`, which is why an empty element is the
+/// remedy.
+fn missing_child_remedy(location: &Location, owner: &str, child: &str) -> &'static str {
+    if location.element == "symbol" && owner == "DV_CODED_TEXT" && child == "value" {
+        ". Add <value/> (empty is valid; the rubric is resolved from term_definitions; \
+         the ITS-XML profile schema requires the element on an ordinal symbol, see #3401)"
+    } else {
+        ""
     }
 }
 

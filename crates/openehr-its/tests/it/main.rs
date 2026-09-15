@@ -48,6 +48,7 @@ mod model_walkgen;
 mod nonempty_wire;
 mod oas_update_version_sync;
 mod opt14_corpus;
+mod opt14_ordinal_symbol;
 mod opt14_v1_4_divergence;
 mod rest_contract;
 mod rm_validation;
