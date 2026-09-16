@@ -324,7 +324,7 @@ workflow refuses a tag that has no matching section here.
   check would otherwise pass by having nothing to measure. `ferroehr config
   check` prints the resolved domain layout, naming no DSN.
 
-- **The Helm chart is 10.0.0, a major bump** (#3342, #3343, #3344, #3378). The
+- **The Helm chart is 10.1.1, a major bump** (#3342, #3343, #3344, #3378). The
   values contract changed in three ways a values file can notice: the per-domain
   `database.<domain>` blocks above replace the flat `demographicExistingSecret`
   and `linkageExistingSecret` keys, `config.tenancy` no longer exists and is
