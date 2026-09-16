@@ -1,11 +1,11 @@
 # `ferroehr` — the platform library
 
-The application core (four app crates, zero re-exports). Top-level modules
+The application core (five app crates, zero re-exports). Top-level modules
 (`src/lib.rs`): `service` (the SM service layer), `storage`, `aql` (the query
-engine), `versioning` (change-control + VERSION `signature` signing),
-`validation`, `templates`, `db` (sqlx pool + migrations), `config` (the full
-`ferroehr.toml` tree), `telemetry`, `system_log` (IHE ATNA), `ids`, `codec_serde`,
-`extensions`, `banner`. Hand-written idiomatic Rust of our own design on the
+engine), `versioning` (change control + VERSION `signature` signing),
+`validation`, `templates`, `db` (sqlx pools + migrations), `config` (the full
+`ferroehr.toml` tree), `telemetry`, `system_log` (IHE ATNA), `privacy`,
+`licence`, `ids`, `extensions`, `banner`. Hand-written idiomatic Rust of our own design on the
 generated `openehr-*` crates. The binary lives in `app/ferroehr-server`; the REST
 adapter (`ferroehr-rest`) depends on this crate and calls the concrete
 `FerroEhrService` directly. **Zero re-exports: every import names its defining
@@ -13,8 +13,8 @@ module.**
 
 - **Service layer = one module per SM chapter, concrete methods, no trait
   catalog** (`service::{ehr, definition, demographic, query, validity, admin,
-  ehr_index, terminology, message}` + support modules
-  `committer`, `version_update`, `status`, `response`, `error`,
+  ehr_index, terminology, message}`, plus `linkage` and the support modules
+  `committer`, `version_update`, `status`, `response`, `list`, `error`,
   `platform_service`). SM design authority: `docs/specs/openehr/SM/`.
 - **Spec first:** every spec-facing behaviour (versioning/change-control,
   validation, AQL semantics) is implemented from the vendored text under

@@ -13,21 +13,28 @@ Run once, on an empty data directory, as the bootstrap superuser
 
 - a **non-superuser** login role (default `ferroehr`) and a **database it owns**
   (default `ferroehr`);
-- the three NOLOGIN group roles of the layered role architecture —
-  **`ferroehr_migrator`**, **`ferroehr_clinical`**, **`ferroehr_clinical_reader`** — with the
-  login role granted `ferroehr_migrator` + `ferroehr_clinical`, so dev/compose has
-  the same grant topology as a hardened deployment;
-- schemas **`ehr`**, **`ext`** and **`audit`** (the local IHE ATNA Audit Record
-  Repository), all owned by the app role;
+- the six NOLOGIN group roles — **`ferroehr_migrator`** and the five domain
+  roles **`ferroehr_clinical`**, **`ferroehr_clinical_reader`**,
+  **`ferroehr_party`**, **`ferroehr_party_reader`** and **`ferroehr_linkage`**,
+  each `NOINHERIT` — with the login role granted the migrator and the three
+  writer roles, so dev/compose has the same grant topology as a hardened
+  deployment. It is one credential playing every part: this stack shows the
+  schema separation, not the credential separation, which a deployment reaches
+  by giving each domain its own DSN;
+- schemas **`clinical`**, **`ext`** and **`audit`** (the local IHE ATNA Audit
+  Record Repository), owned by the app role. The other two storage schemas,
+  **`party`** and **`linkage`**, are left to the server: `ferroehr::db::prepare`
+  creates all five itself before the first migrator runs, and the app role owns
+  the database, so it needs no help with the two this script omits;
 - **`btree_gist`** in `ext`, the one extension the schema needs (it backs the
   temporal `linkage.subject_ehr` `UNIQUE (... WITHOUT OVERLAPS)`), installed
   **by the superuser** so the app role never needs the privilege.
 
-This is exactly the set the application's migrator
-(`ferroehr::db::run_migrations`) expects to find when it connects as the app
-role: its bootstrap `CREATE SCHEMA IF NOT EXISTS {ehr,ext,audit}` and
-`CREATE EXTENSION IF NOT EXISTS btree_gist WITH SCHEMA ext` all become no-ops,
-and it then migrates the schema **content** into `ehr`/`ext`.
+The server's own bootstrap then finds this in place: its
+`CREATE SCHEMA IF NOT EXISTS {ext,clinical,party,linkage,audit}` and
+`CREATE EXTENSION IF NOT EXISTS btree_gist WITH SCHEMA ext` become no-ops for
+what the script already made, and it migrates the schema **content** into the
+five sets.
 
 ## Init-scripts only — NO baked migration state (policy)
 
@@ -39,7 +46,8 @@ every boot (a per-schema `_sqlx_migrations` ledger makes re-runs no-ops).
 Baking migration state into the image would couple the two images' release
 cycles for zero gain and risk a checksum mismatch between a stale baked schema
 and the running binary's embedded migrations. The single source of truth for
-schema content is `app/ferroehr/migrations/{ext,ehr}/`, applied at boot. This
+schema content is `app/ferroehr/migrations/{ext,clinical,party,linkage,audit}/`,
+applied at boot. This
 is also the official EHRbase precedent (its postgres image is init-scripts
 only).
 
