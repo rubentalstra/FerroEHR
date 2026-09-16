@@ -89,7 +89,9 @@ jobs:
         with:
           name: storage-bench-record-${{ inputs.class }}
           path: docs/benchmarks/storage/*/record.json
-          if-no-files-found: error
+          # A bench that died before writing has nothing to upload, and the
+          # step that died is already the run's failure.
+          if-no-files-found: warn
       - name: Compare with the committed record
         env:
           TOLERANCE_PERCENT: ${{ inputs.tolerance_percent }}
