@@ -70,7 +70,10 @@ FETCH_LIMIT=10000
 # here returning 404 (#3177).
 #
 # Last checked, all 200: 2026-09-13 (the DE and CH entries added that day;
-# the NL, EU and INT ones re-checked 2026-09-09).
+# the NL, EU and INT ones re-checked 2026-09-09). The EPDV entry was added and
+# checked 200 on 2026-09-16; its URL is the "whatever is current" form
+# `docs/law/ch/epdv/PROVENANCE.md` records beside the consolidation the corpus
+# vendors, the same shape the EPDG entry above carries.
 LEGAL_SOURCES=(
   "GDPR|EU|https://eur-lex.europa.eu/eli/reg/2016/679/oj"
   "EHDS|EU|https://eur-lex.europa.eu/eli/reg/2025/327/oj"
@@ -87,6 +90,7 @@ LEGAL_SOURCES=(
   "DSG|CH|https://www.fedlex.admin.ch/eli/cc/2022/491/de"
   "DSV|CH|https://www.fedlex.admin.ch/eli/cc/2022/568/de"
   "EPDG|CH|https://www.fedlex.admin.ch/eli/cc/2017/203/de"
+  "EPDV|CH|https://www.fedlex.admin.ch/eli/cc/2017/204/de"
   "IHE ATNA|INT|https://profiles.ihe.net/ITI/TF/Volume1/ch-9.html"
 )
 

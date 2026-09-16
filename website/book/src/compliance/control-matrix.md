@@ -102,6 +102,7 @@ last regenerated, and from which commit, is the file's own git history.
 | [SGB V](https://www.gesetze-im-internet.de/sgb_5/) | DE | § 309 Abs. 3 | A retention register of the period per content category and jurisdiction with its legal citation, per-EHR anchors, whole-record and per-object holds, a view of what has run out, and a boot-checked ceiling on access-log retention | [#3346](https://github.com/rubentalstra/FerroEHR/issues/3346) | Shipped | [#3410](https://github.com/rubentalstra/FerroEHR/pull/3410) |
 | [GDNG](https://www.gesetze-im-internet.de/gdng/) | DE | § 6 Abs. 1 | A retention register of the period per content category and jurisdiction with its legal citation, per-EHR anchors, whole-record and per-object holds, a view of what has run out, and a boot-checked ceiling on access-log retention | [#3346](https://github.com/rubentalstra/FerroEHR/issues/3346) | Shipped | [#3410](https://github.com/rubentalstra/FerroEHR/pull/3410) |
 | [DSG](https://www.fedlex.admin.ch/eli/cc/2022/491/de) | CH | Art. 25 Abs. 2 lit. d | A retention register of the period per content category and jurisdiction with its legal citation, per-EHR anchors, whole-record and per-object holds, a view of what has run out, and a boot-checked ceiling on access-log retention | [#3346](https://github.com/rubentalstra/FerroEHR/issues/3346) | Shipped | [#3410](https://github.com/rubentalstra/FerroEHR/pull/3410) |
+| [EPDV](https://www.fedlex.admin.ch/eli/cc/2017/204/de) | CH | Art. 10 | A retention register of the period per content category and jurisdiction with its legal citation, per-EHR anchors, whole-record and per-object holds, a view of what has run out, and a boot-checked ceiling on access-log retention | [#3346](https://github.com/rubentalstra/FerroEHR/issues/3346) | Shipped | [#3410](https://github.com/rubentalstra/FerroEHR/pull/3410) |
 
 ## Legal sources
 
@@ -125,6 +126,7 @@ authority; nothing on this page restates it.
 | DSG | CH | [https://www.fedlex.admin.ch/eli/cc/2022/491/de](https://www.fedlex.admin.ch/eli/cc/2022/491/de) |
 | DSV | CH | [https://www.fedlex.admin.ch/eli/cc/2022/568/de](https://www.fedlex.admin.ch/eli/cc/2022/568/de) |
 | EPDG | CH | [https://www.fedlex.admin.ch/eli/cc/2017/203/de](https://www.fedlex.admin.ch/eli/cc/2017/203/de) |
+| EPDV | CH | [https://www.fedlex.admin.ch/eli/cc/2017/204/de](https://www.fedlex.admin.ch/eli/cc/2017/204/de) |
 | IHE ATNA | INT | [https://profiles.ihe.net/ITI/TF/Volume1/ch-9.html](https://profiles.ihe.net/ITI/TF/Volume1/ch-9.html) |
 
 `EU` and `INT` apply to every deployment. A two-letter country code is
