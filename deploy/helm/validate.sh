@@ -31,6 +31,9 @@
 #                        must be refused, the message asserted, and the
 #                        ENUMERATION checked both ways, so a `fail` added with
 #                        no probe fails this script
+#   9. chart pins      — the `helm install … --version` pins in README.md and the
+#                        book's Kubernetes page follow Chart.yaml's version
+#                        (--update rewrites them)
 #
 # What it does NOT check is printed at the end of every run, and is not a
 # footnote: every one of those properties has failed while this script was green
@@ -41,7 +44,8 @@
 #
 # Usage:
 #   deploy/helm/validate.sh            # validate (fails on lint/render/golden drift)
-#   deploy/helm/validate.sh --update   # regenerate the golden renders, then validate
+#   deploy/helm/validate.sh --update   # regenerate the golden renders and the
+#                                     # published chart-version pins, then validate
 #
 # No cluster and no network are required for steps 1–4.
 # The CI gate is the `helm-golden` job in .github/workflows/ci.yml.
@@ -49,6 +53,7 @@
 set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+REPO_ROOT="$(cd "${SCRIPT_DIR}/../.." && pwd)"
 CHART_DIR="${SCRIPT_DIR}/ferroehr"
 CI_DIR="${SCRIPT_DIR}/ci"
 GOLDEN_DIR="${SCRIPT_DIR}/golden"
@@ -889,6 +894,34 @@ else
     printf '%s\n' "helm-docs: not installed — skipping the chart README drift check"
   fi
 fi
+
+# ── the published chart-version pins follow the chart version ────────────────
+# `helm install … --version X.Y.Z` is pinned in README.md and in the book's
+# Kubernetes page. A chart bump that leaves them behind teaches an operator to
+# pull the previous chart. `scripts/checks/docs-claims.sh` caught that, but only
+# as a separate CI job, so every chart bump of this cycle went red there after
+# this script had said green (#3405). The pins are now part of what `--update`
+# regenerates, and a stale one fails here.
+echo
+CHART_VERSION="$(awk '$1=="version:"{print $2; exit}' "${CHART_DIR}/Chart.yaml")"
+[[ -n "$CHART_VERSION" ]] || { red "no version in ${CHART_DIR}/Chart.yaml"; exit 1; }
+for page in "${REPO_ROOT}/README.md" "${REPO_ROOT}/website/book/src/installation/kubernetes.md"; do
+  rel="${page#"${REPO_ROOT}/"}"
+  [[ -f "$page" ]] || { red "chart-version pin page missing: ${rel}"; FAIL=1; continue; }
+  stale="$(grep -ohE -- '--version +[0-9]+\.[0-9]+\.[0-9]+' "$page" | awk '{print $2}' | sort -u | grep -vx "$CHART_VERSION" || true)"
+  if [[ -z "$stale" ]]; then
+    green "${rel}: chart pins are ${CHART_VERSION}"
+  elif [[ "$UPDATE" -eq 1 ]]; then
+    tmp="$(mktemp)"
+    sed -E "s/(--version )[0-9]+\.[0-9]+\.[0-9]+/\1${CHART_VERSION}/g" "$page" > "$tmp"
+    mv "$tmp" "$page"
+    green "${rel}: rewrote the chart pins $(echo "$stale" | tr '\n' ' ')to ${CHART_VERSION}"
+  else
+    red "${rel}: pins chart --version $(echo "$stale" | tr '\n' ' ')— Chart.yaml says ${CHART_VERSION}"
+    red "  fix: deploy/helm/validate.sh --update"
+    FAIL=1
+  fi
+done
 
 # ── What a green run above does NOT mean ─────────────────────────────────────
 # Printed unconditionally, on success and on failure. It is the direct answer to
