@@ -62,11 +62,7 @@ Statement-level profiling evidence is not produced here. `veredictum aql-probe`
 seeds a class-scale corpus, fires the measurement machinery's AQL set against
 the composed stack, and attributes the database-side cost per statement through
 `pg_stat_statements`; its report is exploration evidence and never a
-conformance record. `conformance/ferroehr/cohort-bench.json` is the
-cohort-query benchmark record — how the demographic predicate and the clinical
-statement behave as the cohort grows — produced by the ignored `cohort_bench`
-test (`COHORT_BENCH_N=100000 cargo nextest run -p ferroehr -E 'test(cohort_bench)'
---run-ignored all`); it is a measurement, never a conformance record.
+conformance record.
 
 - `benchmarks/` — benchmark records, which are deliberately NOT under
   `conformance/`: conformance is the CNF 2.0 suite
@@ -76,4 +72,9 @@ test (`COHORT_BENCH_N=100000 cargo nextest run -p ferroehr -E 'test(cohort_bench
   latencies for the write path, the point reads, AQL CONTAINS, archive/restore
   and prune, with the database-side facts beside them. Records are gitignored
   except a deliberately committed baseline; the shape is documented in
-  `benchmarks/storage/README.md`.
+  `benchmarks/storage/README.md`. `benchmarks/cohort/record.json` is the
+  cohort-query record — how the demographic predicate and the clinical
+  statement behave as the cohort grows — produced by the ignored `cohort_bench`
+  test (`COHORT_BENCH_N=100000 cargo nextest run -p ferroehr -E 'test(cohort_bench)'
+  --run-ignored all`); the book's AQL page includes the table
+  `scripts/render/cohort-bench.sh` renders from it.

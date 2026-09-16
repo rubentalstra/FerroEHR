@@ -2,7 +2,7 @@
 # SPDX-FileCopyrightText: Vernum Projecten B.V.
 # SPDX-License-Identifier: BUSL-1.1
 # Render the cohort-query benchmark table for the book FROM the committed
-# record, docs/conformance/ferroehr/cohort-bench.json (#3159).
+# record, docs/benchmarks/cohort/record.json (#3159).
 #
 # The stale-numbers gate (scripts/checks/conformance-numbers.sh) forbids a
 # hand-typed latency in the site sources, so the querying page includes this
@@ -15,7 +15,7 @@ set -euo pipefail
 cd "$(dirname "$0")/../.."
 command -v jq >/dev/null || { echo "error: jq is required" >&2; exit 1; }
 
-RECORD="${1:-docs/conformance/ferroehr/cohort-bench.json}"
+RECORD="${1:-docs/benchmarks/cohort/record.json}"
 OUT="${2:-website/book/generated/cohort-bench.md}"
 [[ -f "$RECORD" ]] || { echo "cohort-bench: $RECORD missing — run the ignored cohort_bench test first" >&2; exit 1; }
 mkdir -p "$(dirname "$OUT")"
