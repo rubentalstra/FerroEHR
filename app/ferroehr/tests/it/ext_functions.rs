@@ -247,6 +247,8 @@ const CORPUS: &[&str] = &[
     "20210102XYZ",
     "2021a",
     "202101a",
+    "2021-01-02 BC",
+    "2021-01-02 Europe/Amsterdam",
     // Date-times, every separator and every offset form.
     "2021-01-02T10:30:45",
     "2021-01-02T10:30:45Z",
@@ -378,7 +380,7 @@ const ORDERED_CORPUS: &[&str] = &[
 /// `(function, input, the reading now)` with `None` for NULL.
 ///
 /// Every one of them is the first generation reading something that is not an
-/// openEHR value, and the deviations fall into four groups.
+/// openEHR value, and the deviations fall into five groups.
 ///
 /// The year came out of `text::integer`, which skips leading whitespace and
 /// accepts a sign, so `  12` was the year 12 and `+2021-01-02` the year 202.
@@ -404,11 +406,41 @@ const ORDERED_CORPUS: &[&str] = &[
 /// used to reach by accident: the lowercase `t` and space separators on a
 /// reduced-precision date, which the cast read only when the whole value was
 /// full precision.
+///
+/// `openehr_date_days` read the leading four, six or eight characters and
+/// ignored whatever followed, so a complete date with text after it was that
+/// date (`20210102XYZ`, `2021-01-02 BC`, `2021-01-02 Europe/Amsterdam`) and a
+/// year with a letter after it was that year (`2021a`, `202101a`, `1030a`).
+/// The same section's `Iso8601_date` admits none of them, and the reading now
+/// holds the tail to the date-time alphabet, so `openehr_date_time_seconds`
+/// (which hands this helper the part before the `T`) refuses them too.
 const DIVERGENCES: &[(&str, &str, Option<&str>)] = &[
     ("openehr_date_days", "  12", None),
     ("openehr_date_days", "+2021-01-02", None),
+    ("openehr_date_days", "1030a", None),
+    ("openehr_date_days", "2021-01-02 BC", None),
+    ("openehr_date_days", "2021-01-02 Europe/Amsterdam", None),
+    ("openehr_date_days", "2021-01-02T10:30:45 BC", None),
+    (
+        "openehr_date_days",
+        "2021-01-02T10:30:45 Europe/Amsterdam",
+        None,
+    ),
+    ("openehr_date_days", "20210102XYZ", None),
+    ("openehr_date_days", "202101a", None),
+    ("openehr_date_days", "2021a", None),
     ("openehr_date_time_seconds", "  12", None),
     ("openehr_date_time_seconds", "+2021-01-02", None),
+    ("openehr_date_time_seconds", "1030a", None),
+    ("openehr_date_time_seconds", "2021-01-02 BC", None),
+    (
+        "openehr_date_time_seconds",
+        "2021-01-02 Europe/Amsterdam",
+        None,
+    ),
+    ("openehr_date_time_seconds", "20210102XYZ", None),
+    ("openehr_date_time_seconds", "202101a", None),
+    ("openehr_date_time_seconds", "2021a", None),
     ("openehr_time_seconds", "0000-01-01", None),
     ("openehr_time_seconds", "0001-01-01", None),
     ("openehr_time_seconds", "2020-02-29", None),
@@ -427,6 +459,8 @@ const DIVERGENCES: &[(&str, &str, Option<&str>)] = &[
         Some("2021-01-01 10:30:00+00"),
     ),
     ("openehr_timestamp", "2021-002", None),
+    ("openehr_timestamp", "2021-01-02 BC", None),
+    ("openehr_timestamp", "2021-01-02 Europe/Amsterdam", None),
     ("openehr_timestamp", "2021-01-02T10:30:45 BC", None),
     (
         "openehr_timestamp",
@@ -522,6 +556,69 @@ async fn text_divergences(
     }
     found.sort();
     found
+}
+
+/// The `CREATE FUNCTION` statements of `sql`, each from its `CREATE FUNCTION`
+/// line through the line that closes the body (`$$;`), with the prose between
+/// them dropped.
+fn create_function_statements(sql: &str) -> Vec<String> {
+    let mut out = Vec::new();
+    let mut current: Option<Vec<&str>> = None;
+    for line in sql.lines() {
+        if line.starts_with("CREATE FUNCTION") {
+            current = Some(Vec::new());
+        }
+        if let Some(body) = current.as_mut() {
+            body.push(line);
+            if line.trim_end().ends_with("$$;") {
+                out.push(body.join("\n"));
+                current = None;
+            }
+        }
+    }
+    out
+}
+
+/// [`GENERATION_1_BODIES`] is byte-identical to the file it claims to copy.
+///
+/// Without this the comparison every other test here runs could be measuring a
+/// re-vendored or hand-edited constant against the current helpers and still
+/// pass, while proving nothing about the generation it names. The file is read
+/// from the `v4.3.0` tag, the last release that shipped it; where the tag is
+/// unreachable — a shallow clone fetches none — the test says so and stops
+/// rather than passing quietly on an unread file.
+#[test]
+fn generation_1_bodies_are_the_v4_3_0_file() {
+    const TAG: &str = "v4.3.0";
+    const PATH: &str = "app/ferroehr/migrations/ext/0001_openehr_functions.sql";
+
+    let shown = std::process::Command::new("git")
+        .args(["show", &format!("{TAG}:{PATH}")])
+        .current_dir(env!("CARGO_MANIFEST_DIR"))
+        .output()
+        .expect("run git show");
+    if !shown.status.success() {
+        eprintln!(
+            "skipping: `git show {TAG}:{PATH}` failed, so the first generation's file cannot be \
+             read here (a shallow clone carries no tags): {}",
+            String::from_utf8_lossy(&shown.stderr).trim()
+        );
+        return;
+    }
+    let file = String::from_utf8(shown.stdout).expect("the migration file is UTF-8");
+
+    let at_tag = create_function_statements(&file);
+    let embedded = create_function_statements(GENERATION_1_BODIES);
+    assert_eq!(
+        embedded.len(),
+        TEXT_HELPERS.len() + 2,
+        "the constant must hold the seven first-generation helpers"
+    );
+    assert_eq!(
+        embedded, at_tag,
+        "GENERATION_1_BODIES is no longer byte-identical to {PATH} at {TAG}, so every comparison \
+         in this file is running against something other than the first generation"
+    );
 }
 
 #[tokio::test]
