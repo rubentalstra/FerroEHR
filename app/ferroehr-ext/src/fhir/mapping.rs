@@ -904,15 +904,16 @@ mod tests {
 
     // ── End-to-end: FHIR → FLAT → canonical COMPOSITION ──────────────────────
     // Justification for the corpus template: `ehrbase_blood_pressure_simple.de.v0`
-    // (vendored under app/ferroehr/tests/resources) is a small, single-OBSERVATION
+    // (vendored under corpus/fixtures/service) is a small, single-OBSERVATION
     // blood-pressure template whose flat json-ids (systolic/diastolic
     // magnitude+unit) map cleanly to a FHIR BP Observation's components — the
     // canonical starter mapping. The FLAT keys used here were taken from
     // `to_flat(example_composition(wt))` for this OPT, so they are exactly the
     // template's committable json-id leaves.
     fn bp_web_template() -> WebTemplate {
-        let path = PathBuf::from(env!("CARGO_MANIFEST_DIR"))
-            .join("../ferroehr/tests/resources/service/knowledge/opt/ehrbase_blood_pressure_simple.de.v0.opt");
+        let path = PathBuf::from(env!("CARGO_MANIFEST_DIR")).join(
+            "../../corpus/fixtures/service/knowledge/opt/ehrbase_blood_pressure_simple.de.v0.opt",
+        );
         let xml = std::fs::read_to_string(path).expect("read opt");
         let opt = opt14::from_xml(&xml).expect("parse opt");
         build_web_template(&opt).expect("build wt")

@@ -46,13 +46,16 @@ const MAPPINGS: &str = "/ferroehr/rest/openehr/v1/admin/fhir_mapping";
 // on the real commit path — an OBSERVATION template would need event `offset`
 // and an ITEM_LIST-constrained data slot that the reverse-FLAT builder does not
 // materialise (an ArchetypeValidation/from_flat gap, out of E3 scope).
-const OPT_REL: &str = "tests/resources/service/knowledge/opt/minimal_evaluation.opt";
+const OPT_REL: &str = "knowledge/opt/minimal_evaluation.opt";
 const TEMPLATE_ID: &str = "minimal_evaluation.en.v1";
 const PROFILE_OK: &str = "http://example.org/StructureDefinition/bp";
 const PROFILE_BAD: &str = "http://example.org/StructureDefinition/bp-bad";
 
 fn fixture(rel: &str) -> String {
-    let path = format!("{}/../ferroehr/{rel}", env!("CARGO_MANIFEST_DIR"));
+    let path = format!(
+        "{}/../../corpus/fixtures/service/{rel}",
+        env!("CARGO_MANIFEST_DIR")
+    );
     std::fs::read_to_string(&path).unwrap_or_else(|e| panic!("read {path}: {e}"))
 }
 

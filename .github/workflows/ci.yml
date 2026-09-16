@@ -611,6 +611,10 @@ jobs:
         run: bash scripts/checks/migration-citations.sh --self-test
       - name: Every cited migration file exists
         run: bash scripts/checks/migration-citations.sh --all
+      - name: The application-path detector catches what it claims to
+        run: bash scripts/checks/crate-tests-read-no-app.sh --self-test
+      - name: No test in a published crate reads the application tree
+        run: bash scripts/checks/crate-tests-read-no-app.sh
 
   # No Python anywhere (.claude/rules/rust-style.md §No Python): the tooling
   # languages are bash and Rust. Embedded Python is the worst case — a heredoc

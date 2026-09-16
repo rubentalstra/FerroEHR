@@ -88,7 +88,7 @@ fn opt_dirs() -> Vec<PathBuf> {
     vec![
         manifest_dir().join("tests/fixtures/sdk"),
         manifest_dir().join("tests/fixtures/better"),
-        manifest_dir().join("../../app/ferroehr/tests/resources/service"),
+        crate::common::service_corpus_dir(),
     ]
 }
 

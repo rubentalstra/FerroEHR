@@ -27,11 +27,14 @@ use ferroehr::service::status::{CallStatusType, SmError};
 const NOW: &str = "2024-01-01T00:00:00Z";
 
 /// A representative corpus template (Ocean Template Designer OPT 1.4 XML).
-const TEMPLATE_REL: &str = "tests/resources/service/knowledge/IDCR Allergies List.v0.opt";
+const TEMPLATE_REL: &str = "knowledge/IDCR Allergies List.v0.opt";
 const TEMPLATE_ID: &str = "IDCR Allergies List.v0";
 
 fn corpus_opt(rel: &str) -> String {
-    let path = format!("{}/{rel}", env!("CARGO_MANIFEST_DIR"));
+    let path = format!(
+        "{}/../../corpus/fixtures/service/{rel}",
+        env!("CARGO_MANIFEST_DIR")
+    );
     std::fs::read_to_string(&path).unwrap_or_else(|e| panic!("read {path}: {e}"))
 }
 
@@ -170,9 +173,9 @@ async fn invalid_opt_xml_is_rejected() {
 /// Varied real templates: an OBSERVATION with a history of events, an
 /// EVALUATION-list, and one carrying an ACTION/INSTRUCTION structure.
 const EXAMPLE_TEMPLATES: &[&str] = &[
-    "tests/resources/service/knowledge/Vital Signs Encounter (Composition).opt",
-    "tests/resources/service/knowledge/IDCR Allergies List.v0.opt",
-    "tests/resources/service/knowledge/IDCR - Immunisation summary.v0.opt",
+    "knowledge/Vital Signs Encounter (Composition).opt",
+    "knowledge/IDCR Allergies List.v0.opt",
+    "knowledge/IDCR - Immunisation summary.v0.opt",
 ];
 
 /// The (cached) `WebTemplate` built from an OPT file, as the service builds it.
@@ -316,7 +319,7 @@ async fn opt_converts_to_adl2_sources() {
     let db = testkit::db().await.expect("testkit database");
     let svc = FerroEhrService::new(&ferroehr::db::domain::DomainPools::from_shared(&db.pool()));
     // A minimal template: a COMPOSITION root with one embedded OBSERVATION root.
-    let xml = corpus_opt("tests/resources/service/knowledge/opt/minimal_observation.opt");
+    let xml = corpus_opt("knowledge/opt/minimal_observation.opt");
     svc.upload_opt(xml).await.expect("upload opt");
     let opt_uuid = svc
         .list_opts_adl14(Page::all())

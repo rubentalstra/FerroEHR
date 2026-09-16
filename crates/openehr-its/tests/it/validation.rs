@@ -944,8 +944,7 @@ fn data_structure_shapes_are_enforced() {
 /// The `IDCR Problem List.v1.opt` corpus template, whose slot assertions carry
 /// no `string_expression`.
 fn idcr_problem_list() -> Result<WebTemplate, String> {
-    let path = manifest_dir()
-        .join("../../app/ferroehr/tests/resources/service/knowledge/IDCR Problem List.v1.opt");
+    let path = crate::common::service_corpus_dir().join("knowledge/IDCR Problem List.v1.opt");
     let xml = std::fs::read_to_string(&path).map_err(|e| format!("read: {e}"))?;
     let opt = opt14::from_xml(&xml).map_err(|e| format!("opt14 parse: {e}"))?;
     build_web_template(&opt).map_err(|e| format!("build: {e}"))

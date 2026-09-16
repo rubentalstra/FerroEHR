@@ -113,8 +113,9 @@ archetype-conformance pass. Proven by
   determinism manifest) — never weaken or skip one to get green; a gate failure
   means the emitter or runtime is wrong.
 - `tests/it/opt14_corpus.rs` carries TWO parse gates: (1) every vendored `.opt`
-  under `app/ferroehr/tests/resources/service` parses + round-trips through the
-  generated `opt14::OperationalTemplate`; (2) every official CNF robot
+  under the shared corpus at `corpus/fixtures/service` (reached through
+  `common::service_corpus_dir()`; a test in this crate never reads `app/`)
+  parses + round-trips through the generated `opt14::OperationalTemplate`; (2) every official CNF robot
   VALID-template fixture (`docs/specs/openehr/CNF/tests/platform/robot/
   _resources/test_data_sets/valid_templates`) parses, with exactly two fixtures
   adjudicated XSD-invalid (a missing mandatory `OPERATIONAL_TEMPLATE.language`

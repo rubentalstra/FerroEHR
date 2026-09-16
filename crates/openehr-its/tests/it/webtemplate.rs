@@ -24,7 +24,7 @@ use openehr_its::flat::webtemplate::model::{WebTemplateInputType, WebTemplateNod
 use openehr_its::opt14;
 
 fn corpus_dir() -> PathBuf {
-    PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("../../app/ferroehr/tests/resources/service")
+    crate::common::service_corpus_dir()
 }
 
 fn better_fixtures_dir() -> PathBuf {

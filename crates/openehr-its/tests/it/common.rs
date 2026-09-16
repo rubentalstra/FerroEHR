@@ -266,13 +266,19 @@ pub(crate) fn composition_dir() -> PathBuf {
         .join("tests/vendor/openehr_sdk/composition/canonical_json")
 }
 
+/// The shared service fixture corpus (`corpus/fixtures/service`), resolved
+/// from this crate's manifest directory.
+pub(crate) fn service_corpus_dir() -> PathBuf {
+    Path::new(env!("CARGO_MANIFEST_DIR")).join("../../corpus/fixtures/service")
+}
+
 /// All directories that hold `.opt` operational templates for pairing.
 pub(crate) fn opt_dirs() -> Vec<PathBuf> {
     let manifest = Path::new(env!("CARGO_MANIFEST_DIR"));
     vec![
         manifest.join("tests/fixtures/sdk"),
         manifest.join("tests/fixtures/better"),
-        manifest.join("../../app/ferroehr/tests/resources/service"),
+        service_corpus_dir(),
     ]
 }
 
