@@ -31,10 +31,9 @@ psql_app() { psql -v ON_ERROR_STOP=1 --username "$POSTGRES_USER" --dbname "$APP_
 
 echo "ferroehr init: creating role '${APP_USER}' and database '${APP_DB}'"
 
-# 1) Login role (idempotent) — non-superuser by design — plus the eight
-#    NOLOGIN group roles of the layered role architecture: the three generic
-#    ones and the five domain-named ones. The app
-#    role has no CREATEROLE, so the baseline migration can only grant to these
+# 1) Login role (idempotent) — non-superuser by design — plus the six NOLOGIN
+#    group roles: the DDL-only ferroehr_migrator and the five domain roles. The
+#    app role has no CREATEROLE, so the migration sets can only grant to these
 #    roles if they already exist; creating them here gives dev/compose the
 #    same grant topology as a hardened deployment (no "roles absent" NOTICEs).
 psql_super <<SQL

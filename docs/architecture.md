@@ -31,7 +31,7 @@ own design on those generated crates, with its own PG18-native storage (one
 per object, and tier partitions instead of mirror tables) and its own typed AQL
 engine,
 and acceptance measured by the openEHR conformance suite (EHRbase is prior art,
-not an oracle); the application is four crates with zero re-exports, and its
+not an oracle); the application is five crates with zero re-exports, and its
 service layer follows the openEHR SM Platform Service Model (one module per SM
 chapter, concrete methods).
 
@@ -130,16 +130,37 @@ fresh** (the diagrammed deep-dive is the book's Storage architecture page,
   cold by writing `tier = 'hot'` as a literal, which the planner prunes at plan
   time. The cold partitions carry the primary key alone, because archived
   content leaves the queryable store until it is restored.
-- **`ehr`, `contribution`, `commit_audit`, `template_store`, `stored_query`,
-  `item_tag`, `ehr_folder`** — supporting tables; every write emits contribution
-  + commit audit in the same transaction (openEHR requirement).
+- **The supporting relations** — `ehr`, `contribution` and `commit_audit`;
+  `ehr_folder` and `item_tag`, which stand outside change control; the
+  definition stores `template_ref`, `template_store`, `archetype_store`,
+  `adl2_artefact` and `stored_query`; the change-event `event_outbox` with its
+  `event_outbox_reader` cursors and `event_subscription` filters; and
+  `blob_ref`, which records that a version references an externalized
+  multimedia blob so collection is an index probe rather than a scan of `node`.
+  Every write emits contribution + commit audit in the same transaction
+  (openEHR requirement).
 - **`restriction`, `retention_policy`, `retention_anchor`** — the registers
-  behind the legal marks on `vo_head`: the ground a restriction rests on (GDPR
-  Art. 18) and the retention period per category and jurisdiction with its
-  citation (Art. 5(1)(e), Art. 30(1)(f)). `retention_due` is a view, never a
-  job: the CDR deletes no clinical content on a timer.
-- **`ext`** — our own `IMMUTABLE` helper functions (e.g.
-  `openehr_magnitude(jsonb)` for DV_ORDERED ordering semantics). The
+  behind the legal marks: the ground a restriction rests on (GDPR Art. 18),
+  denormalised onto `vo_head.restricted_at` and `ehr.restricted_at`, and the
+  retention period per category and jurisdiction with its citation
+  (Art. 5(1)(e), Art. 30(1)(f)), measured against each EHR's anchor and
+  suspended by a whole-record or per-object hold. The subject's objection to
+  research processing (Art. 21(6)) needs no register of its own: it is
+  `ehr.research_objected_at` with the controller's public-interest ground
+  beside it. `retention_due` is a view, never a job: the CDR deletes no
+  clinical content on a timer.
+- **`ext`** — our own helper functions over openEHR values
+  (`openehr_magnitude(jsonb)` for DV_ORDERED ordering semantics, the date,
+  time, date-time and duration readers, `openehr_numeric`), the `posture`
+  table the server stamps at boot and the clinical subject guard reads, and
+  `storage_generation()`, a label the measurement harness files its records
+  under. Each helper ships in the language that measured faster over a
+  50 000-row corpus of the values it sees: five fold into the calling statement
+  as `LANGUAGE sql`, and the three that read their argument many times stay
+  PL/pgSQL. Only `openehr_date_days` and `openehr_timestamp` keep an
+  `EXCEPTION` block, because there the trapped native cast measured cheaper
+  than any guard that would let the same cast run untrapped; every other helper
+  reaches a cast through an ordered guard that proves it cannot raise. The
   `IMMUTABLE` ones are index-legal, so an expression index can carry a
   measured hot path; none exists today, and `openehr_timestamp` is `STABLE`
   by necessity (its result depends on the session TimeZone) and can never be
@@ -151,8 +172,10 @@ fresh** (the diagrammed deep-dive is the book's Storage architecture page,
   each `PARTY_IDENTITY`, `CONTACT`, `ADDRESS` and `CAPABILITY` nested in it, and
   the `ITEM_STRUCTURE` under each get their own `node` row. Beside them,
   `national_identifier` holds identifiers sealed under authenticated encryption
-  and `party_relationship_target` is the target-side index behind
-  `PARTY.reverse_relationships`. Nothing selects a domain but the pool's
+  against the schemes `identifier_scheme` declares, `party_relationship_target`
+  is the target-side index behind `PARTY.reverse_relationships`, and the domain
+  carries its own `item_tag`, `event_outbox` and `blob_ref` because the commit
+  path is one code path over two schemas. Nothing selects a domain but the pool's
   `search_path`, so one set of storage code serves both; a `CHECK` on each side
   refuses the other's rows. GDPR Art. 4(5) and Art. 32(1)(a); no openEHR spec
   governs storage layout or database roles.
@@ -182,11 +205,13 @@ fresh** (the diagrammed deep-dive is the book's Storage architecture page,
   across, when two separately-configured domains authenticate as one role, or —
   under `deployment_profile = "production"` — when a domain role is missing.
 - Migrations via `sqlx migrate add` (official CLI): five sets, run per database
-  in order —
-  `ext`, `clinical`, `party`, `linkage`, `audit` — each with its own
-  `_sqlx_migrations` table, each a sequence of natural files with one concern
-  apiece. A database carrying the first generation's `ehr` or `demographic`
-  bookkeeping is refused at boot, by name, with the remedy.
+  in order — `ext`, then `clinical`, `party`, `linkage`, `audit` — each with
+  its own `_sqlx_migrations` table, each a sequence of natural files with one
+  concern apiece and its grants in the last file of the set, so a relation file
+  stays a declaration of shape. The five schemas and `btree_gist`, the one
+  extension the DDL needs, are created by the server before the first migrator
+  runs. A database carrying the first generation's `ehr` or
+  `demographic` bookkeeping is refused at boot, by name, with the remedy.
 
 ## AQL engine (ours)
 
@@ -302,9 +327,12 @@ issues for triage.
 ## PostgreSQL 18
 
 We target **PG 18** (18.6+). In use: `uuidv7()` for database-minted ids,
-the temporal `UNIQUE … WITHOUT OVERLAPS` on `linkage.subject_ehr`, the
-SQL/JSON path functions (`jsonb_path_query*`, PG 17), and the planner-side
-gains that need no code (skip scan, `OR` to `= ANY`, async I/O). Available
+the temporal `UNIQUE … WITHOUT OVERLAPS` on `linkage.subject_ehr` (enforced
+as a GiST exclusion over `btree_gist`, the one extension the DDL needs),
+`PARTITION BY LIST (tier)` on `version`, `node` and `vo_attestation` with the
+cold partition pruned at plan time, the SQL/JSON path functions
+(`jsonb_path_query*`, PG 17), and the planner-side gains that need no code
+(skip scan, self-join elimination, async I/O). Available
 and deliberately not used, with the reason for each: `RETURNING OLD/NEW`,
 `JSON_TABLE`, jsonpath item methods, `MERGE`, generated columns. The
 used/available table is `docs/postgres-features.md`.
@@ -367,9 +395,10 @@ The service layer realizes the openEHR **SM Platform Service Model**
 | `openehr-adl` | ADL 2.4 engine: ADL2/cADL/ODIN parser, AOM2 validation, flattener, OPT2, ADL 1.4→2 conversion | hand-written |
 | `openehr-codegen` | BMM/XSD/OAS → Rust generator (+ `emit-rm-model`) | tooling |
 | `ferroehr-rest` | ITS-REST protocol adapter (axum) + auth + ATNA audit middleware; `access` module = RBAC/ABAC authz; calls the concrete `FerroEhrService` | application |
-| `ferroehr` | The platform library: storage, service layer (one module per SM chapter), AQL engine, versioning, the full config tree, telemetry, `signing` + `system_log`, `licence` (the boot-verified grant in force and the identifier stamp it keys) | application |
+| `ferroehr` | The platform library: storage, service layer (one module per SM chapter), AQL engine, `versioning` (change control plus the VERSION `signature` signing under `versioning::signature`), validation, templates, the full config tree, telemetry, `privacy`, `system_log`, `licence` (the boot-verified grant in force and the identifier stamp it keys) | application |
 | `ferroehr-server` | The wiring-only binary (config → pool → migrations → service → serve); bin name `ferroehr` | application |
 | `ferroehr-ext` | Optional integrations behind additive features (`fhir`, `events`, `multimedia`): FHIR mapping/reverse/feeder-audit cores, the AMQP events transport, the content-addressed multimedia store | application |
+| `ferroehr-viewer` | The Leptos SSR viewer: its own binary and OCI image, consuming the CDR strictly over ITS-REST | application |
 | `testkit` | Shared test-database harness: one PG18 server + template-database cloning (`tools/*`) | tooling |
 
 ## Build state

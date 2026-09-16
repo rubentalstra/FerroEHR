@@ -129,6 +129,18 @@ process it stops:
   an event about it;
 - a write to it is refused, and nothing already stored changes.
 
+The restriction refusal is the last gate on a write. The checks that need no
+transaction run first: a body the template refuses is **422**, and a write to an
+EHR whose `is_modifiable` is false, or a second directory for one EHR, is
+**409**. Only the commit transaction itself reads the mark and answers **403**.
+The order is deliberate. Validation stays outside the transaction so the
+transaction is short, and the mark is read inside it so a concurrent lift either
+commits before the write and is seen, or waits for it. A malformed write to a
+restricted object therefore answers 422 rather than 403: the request is refused
+either way and nothing stored changes, but the status names the gate that
+stopped the write, not whether the restriction is in force.
+`GET {base}/admin/restriction?ehr_id=…` answers that.
+
 ```http
 POST {base}/admin/restriction
 Content-Type: application/json

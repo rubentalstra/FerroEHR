@@ -2,7 +2,7 @@
 
 Pure-Rust, openEHR-conformant clinical data repository (ITS-REST 1.1.0 + AQL 1.1). A single static binary deployed with a hardened-by-default security posture: runs as a non-root, read-only-rootfs workload whose NetworkPolicy admits its serving port only, and that connects to an EXTERNAL PostgreSQL 18 as an unprivileged app role, with schema preparation on its own credential.
 
-![Version: 10.0.2](https://img.shields.io/badge/Version-10.0.2-informational?style=flat-square) ![Type: application](https://img.shields.io/badge/Type-application-informational?style=flat-square) ![AppVersion: 4.3.0](https://img.shields.io/badge/AppVersion-4.3.0-informational?style=flat-square)
+![Version: 10.1.0](https://img.shields.io/badge/Version-10.1.0-informational?style=flat-square) ![Type: application](https://img.shields.io/badge/Type-application-informational?style=flat-square) ![AppVersion: 4.3.0](https://img.shields.io/badge/AppVersion-4.3.0-informational?style=flat-square)
 
 FerroEHR is a pure-Rust openEHR Clinical Data Repository: ITS-REST 1.1.0 at the
 API, AQL 1.1 as the query language, PostgreSQL 18-native storage, shipped as a
@@ -33,7 +33,7 @@ to add; `helm repo add` does not apply to this chart:
 
 ```console
 helm install ferroehr oci://ghcr.io/rubentalstra/charts/ferroehr \
-  --version 10.0.2 \
+  --version 10.1.0 \
   --namespace ferroehr --create-namespace \
   --set database.existingSecret=ferroehr-db \
   --set image.tag=4.3.0
@@ -47,7 +47,7 @@ They are independent SemVer lines and they move independently:
 
 | What | Set with | This release |
 |---|---|---|
-| the **chart** (templates, defaults, this document) | `--version` | `10.0.2` |
+| the **chart** (templates, defaults, this document) | `--version` | `10.1.0` |
 | the **server image** | `image.tag` | `4.3.0` |
 
 `appVersion` is the image the chart defaults to; pinning `image.tag` explicitly
@@ -59,7 +59,7 @@ The chart carries two keyless Sigstore artifacts, and they answer different
 questions. A **cosign signature:** who signed this:
 
 ```console
-cosign verify ghcr.io/rubentalstra/charts/ferroehr:10.0.2 \
+cosign verify ghcr.io/rubentalstra/charts/ferroehr:10.1.0 \
   --certificate-identity-regexp '^https://github\.com/rubentalstra/FerroEHR/\.github/workflows/publish-chart\.yml@' \
   --certificate-oidc-issuer https://token.actions.githubusercontent.com
 ```
@@ -67,7 +67,7 @@ cosign verify ghcr.io/rubentalstra/charts/ferroehr:10.0.2 \
 A **SLSA build provenance attestation:** what source it was built from, and how:
 
 ```console
-gh attestation verify oci://ghcr.io/rubentalstra/charts/ferroehr:10.0.2 \
+gh attestation verify oci://ghcr.io/rubentalstra/charts/ferroehr:10.1.0 \
   -R rubentalstra/FerroEHR
 gh attestation verify oci://ghcr.io/rubentalstra/ferroehr:4.3.0 \
   -R rubentalstra/FerroEHR
@@ -164,12 +164,16 @@ Kubernetes: `>=1.36.0-0`
 | autoscaling.targetCPUUtilizationPercentage | int | `75` | Target average CPU. 0 removes the metric; removing BOTH metrics is refused, since an HPA with none never scales. |
 | autoscaling.targetMemoryUtilizationPercentage | int | `0` | Target average memory. 0 removes the metric. A CDR is usually CPU-bound, so this is off by default. |
 | backup.activeDeadlineSeconds | int | `7200` | Hard ceiling on one dump, so a dump blocked on the database ends rather than overlapping the next schedule. |
+| backup.audit.existingSecret | string | `""` | REQUIRED when the audit domain has its own DSN: Secret holding the audit BACKUP DSN — a read-only role on the audit schema in the database `database.audit` points at. The clinical backup DSN is not it: that one names the clinical database, which is not where this trail lives. |
+| backup.audit.existingSecretKey | string | `"FERROEHR__STORAGE__AUDIT__URL"` | Key within `existingSecret` carrying that DSN. |
+| backup.audit.persistentVolumeClaim | string | `""` | REQUIRED when the audit domain has its own DSN: an EXISTING PersistentVolumeClaim for the audit dumps, and a DIFFERENT one from every other domain's. The trail names patients and principals; it is the record of who read what, so give its volume its own audience. |
+| backup.audit.schedule | string | `"45 2 * * *"` | Cron schedule for the audit dump (schema audit). Offset from the other three by default so no two dumps read a database in the same minute. Only read when `database.audit.existingSecret` is set; otherwise the trail travels with the clinical dump and no audit job renders. |
 | backup.backoffLimit | int | `2` | Retries before a dump is declared failed. |
 | backup.clinical.existingSecret | string | `""` | REQUIRED when enabled: Secret holding the clinical BACKUP DSN — a role read-only on the clinical schemas, and not the pool's credential: each domain's runtime role is revoked from the others, so a dump taken through it would be silently partial. |
 | backup.clinical.existingSecretKey | string | `"FERROEHR__DB__URL"` | Key within `existingSecret` carrying that DSN. |
 | backup.clinical.persistentVolumeClaim | string | `""` | REQUIRED when enabled: the name of an EXISTING PersistentVolumeClaim the clinical dumps are written to, mounted at /backup. The chart creates no claim — its storage class, size, retention and who may read it are yours. |
-| backup.clinical.schedule | string | `"15 1 * * *"` | Cron schedule for the clinical dump (schemas clinical, ext, audit). |
-| backup.enabled | bool | `false` | Render the three per-domain backup CronJobs. Each domain then needs its own `persistentVolumeClaim` below, or the render is refused. |
+| backup.clinical.schedule | string | `"15 1 * * *"` | Cron schedule for the clinical dump (schemas clinical and ext, plus audit while the audit domain shares this database). |
+| backup.enabled | bool | `false` | Render the per-domain backup CronJobs: clinical, party, linkage, and audit when `database.audit.existingSecret` gives it a database of its own. Each rendered domain then needs its own `persistentVolumeClaim` below, or the render is refused. |
 | backup.image.digest | string | `""` | Image digest (`sha256:…`); wins over `tag` entirely when set. |
 | backup.image.pullPolicy | string | `"IfNotPresent"` | Pull policy. |
 | backup.image.repository | string | `"ghcr.io/rubentalstra/ferroehr-postgres"` | Image carrying `pg_dump`. The project's own PostgreSQL 18 image, so the dump is taken by the same major version the server runs against. |
