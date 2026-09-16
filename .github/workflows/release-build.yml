@@ -80,7 +80,7 @@ jobs:
       # tarballs were being linked from cached bytes this job did not build.
       # A publishing lane restores no cache — nothing a prior run could have
       # poisoned may influence the artifact it signs.
-      - uses: actions-rust-lang/setup-rust-toolchain@166cdcfd11aee3cb47222f9ddb555ce30ddb9659 # v1.17.0
+      - uses: actions-rust-lang/setup-rust-toolchain@ecabd13d1c56bd1345c230e542e9144811ad706f # v2.0.0
         with:
           cache: false
       # `cargo auditable` embeds the compressed dependency list in the
@@ -89,7 +89,7 @@ jobs:
       # page's SBOM never travelled with it
       # (https://github.com/rust-secure-code/cargo-auditable).
       - name: Install cargo-auditable
-        uses: taiki-e/install-action@84f5ac3124727fb3d284d4d22ee9ab3654fd09a6 # v2.87.7
+        uses: taiki-e/install-action@3f74d7c16a4242f1c95561e98edc25d36adb4375 # v2.87.12
         with:
           tool: cargo-auditable@0.7.5
       - name: Build server
@@ -138,7 +138,7 @@ jobs:
       # Generated from the release commit's own `Cargo.lock` with `--locked`, so
       # it describes the graph that was actually built, not one resolved later.
       - name: Install cargo-cyclonedx
-        uses: taiki-e/install-action@84f5ac3124727fb3d284d4d22ee9ab3654fd09a6 # v2.87.7
+        uses: taiki-e/install-action@3f74d7c16a4242f1c95561e98edc25d36adb4375 # v2.87.12
         with:
           tool: cargo-cyclonedx
       - name: Generate the dependency SBOM

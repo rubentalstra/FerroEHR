@@ -60,7 +60,7 @@ jobs:
           persist-credentials: false
       # No cache in a publishing lane: the dry run must verify the same bytes
       # the real publish will upload (setup-rust-toolchain caches by default).
-      - uses: actions-rust-lang/setup-rust-toolchain@166cdcfd11aee3cb47222f9ddb555ce30ddb9659 # v1.17.0
+      - uses: actions-rust-lang/setup-rust-toolchain@ecabd13d1c56bd1345c230e542e9144811ad706f # v2.0.0
         with:
           cache: false
       - name: Package + verify every publishable crate (no upload)
@@ -94,7 +94,7 @@ jobs:
           persist-credentials: false
       # No cache in the lane that uploads to crates.io: a published version is
       # immutable, so it must be built from this checkout and nothing else.
-      - uses: actions-rust-lang/setup-rust-toolchain@166cdcfd11aee3cb47222f9ddb555ce30ddb9659 # v1.17.0
+      - uses: actions-rust-lang/setup-rust-toolchain@ecabd13d1c56bd1345c230e542e9144811ad706f # v2.0.0
         with:
           cache: false
       - id: auth

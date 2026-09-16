@@ -153,12 +153,12 @@ jobs:
           sudo apt-get update && sudo apt-get install -y postgresql-client libxml2-utils
           PGPASSWORD=openehr psql -h localhost -U openehr -d postgres \
             -c "ALTER SYSTEM SET fsync = off" -c "ALTER SYSTEM SET synchronous_commit = off" -c "ALTER SYSTEM SET full_page_writes = off" -c "SELECT pg_reload_conf()"
-      - uses: actions-rust-lang/setup-rust-toolchain@166cdcfd11aee3cb47222f9ddb555ce30ddb9659 # v1.17.0
+      - uses: actions-rust-lang/setup-rust-toolchain@ecabd13d1c56bd1345c230e542e9144811ad706f # v2.0.0
         with:
           components: llvm-tools-preview
           cache-shared-key: sonar
           cache-save-if: ${{ github.ref == 'refs/heads/main' }}
-      - uses: taiki-e/install-action@84f5ac3124727fb3d284d4d22ee9ab3654fd09a6 # v2.87.7
+      - uses: taiki-e/install-action@3f74d7c16a4242f1c95561e98edc25d36adb4375 # v2.87.12
         with:
           tool: cargo-llvm-cov,cargo-nextest
       # The shard index reaches the command through `env:`, never interpolated
@@ -191,12 +191,12 @@ jobs:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           persist-credentials: false
-      - uses: actions-rust-lang/setup-rust-toolchain@166cdcfd11aee3cb47222f9ddb555ce30ddb9659 # v1.17.0
+      - uses: actions-rust-lang/setup-rust-toolchain@ecabd13d1c56bd1345c230e542e9144811ad706f # v2.0.0
         with:
           components: llvm-tools-preview
           cache-shared-key: sonar-viewer
           cache-save-if: ${{ github.ref == 'refs/heads/main' }}
-      - uses: taiki-e/install-action@84f5ac3124727fb3d284d4d22ee9ab3654fd09a6 # v2.87.7
+      - uses: taiki-e/install-action@3f74d7c16a4242f1c95561e98edc25d36adb4375 # v2.87.12
         with:
           tool: cargo-llvm-cov,cargo-nextest
       - run: cargo llvm-cov --no-report nextest --locked -p ferroehr-viewer --features ssr --no-tests=pass --profile ci
@@ -240,7 +240,7 @@ jobs:
       # Build cache for the analyzer's own Clippy run. This lane publishes
       # nothing, so restoring a cache is inside the reliability.md rule
       # (only publishing lanes must run cache-free).
-      - uses: actions-rust-lang/setup-rust-toolchain@166cdcfd11aee3cb47222f9ddb555ce30ddb9659 # v1.17.0
+      - uses: actions-rust-lang/setup-rust-toolchain@ecabd13d1c56bd1345c230e542e9144811ad706f # v2.0.0
         with:
           cache-shared-key: sonar
           cache-save-if: ${{ github.ref == 'refs/heads/main' }}
@@ -307,7 +307,7 @@ jobs:
         run: bash scripts/sonar/issues-to-sarif.sh rubentalstra_FerroEHR sonar-findings.sarif
       - name: Upload the findings to code scanning
         if: github.event_name == 'push'
-        uses: github/codeql-action/upload-sarif@cdf488f595d80d6e07e03d4674febd5ab45fa938 # v4.37.9
+        uses: github/codeql-action/upload-sarif@b96794f015dfd88f77b49b1c93e0fa7110f94c63 # v4.38.0
         with:
           sarif_file: sonar-findings.sarif
           category: sonarcloud
