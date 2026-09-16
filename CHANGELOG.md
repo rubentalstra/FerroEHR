@@ -322,6 +322,13 @@ workflow refuses a tag that has no matching section here.
   `org.opencontainers.image.base.digest` label moves with it in both
   Dockerfiles and in the two publishing lanes, which is what the image-labels
   guard checks.
+- **Four runtime dependencies move to their current patch** (#3442). `lapin`
+  4.11.0 retries the initial AMQP connection properly when recovery is on,
+  which is the mode the events transport runs in; `reqwest` 0.13.5 fixes proxy
+  authentication picking the wrong credentials when several proxies match a
+  request, and a blocking-client timeout panic; `tokio-rustls` 0.26.5 returns
+  more data per `poll_read` on a TLS stream; `fancy-regex` 0.19.2 cuts pattern
+  build time. No API a caller here uses changed.
 
 ### Removed
 
