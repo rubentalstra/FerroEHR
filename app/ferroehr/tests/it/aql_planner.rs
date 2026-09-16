@@ -1872,7 +1872,7 @@ fn not_contains_folder_negates_the_union_edge() {
         "the reference branch is the items lookup: {sql}"
     );
     assert!(
-        sql.contains(r#""xv1_head"."trunk_head_sys_version" = "xv1"."sys_version""#),
+        sql.contains(r#""xv1"."sys_version" = "xv1_head"."trunk_head_sys_version""#),
         "the branch folder binds its own version spine at latest scope: {sql}"
     );
 }

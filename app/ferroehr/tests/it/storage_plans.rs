@@ -172,6 +172,17 @@ struct Scan {
     /// appear in the plan at all; a node that appears but never ran was left
     /// unexecuted at run time, which is a different fact.
     executed: bool,
+    /// Shared buffers hit by the node over all its loops, and the loops: the
+    /// quotient is the cost of one probe, which no machine load can move.
+    shared_hit_blocks: f64,
+    loops: f64,
+}
+
+impl Scan {
+    /// Shared buffers one execution of the node touched.
+    fn blocks_per_loop(&self) -> f64 {
+        self.shared_hit_blocks / self.loops.max(1.0)
+    }
 }
 
 /// Every relation-reading node of a plan tree, outermost first.
@@ -197,6 +208,14 @@ fn scans(plan: &Value) -> Vec<Scan> {
                     .get("Actual Loops")
                     .and_then(Value::as_i64)
                     .is_some_and(|loops| loops > 0),
+                shared_hit_blocks: node
+                    .get("Shared Hit Blocks")
+                    .and_then(Value::as_f64)
+                    .unwrap_or_default(),
+                loops: node
+                    .get("Actual Loops")
+                    .and_then(Value::as_f64)
+                    .unwrap_or_default(),
             });
         }
         // An index name can also sit on a Bitmap Index Scan, whose own node
@@ -611,6 +630,7 @@ async fn aql_over_one_ehr_reads_the_hot_partition_only() {
         "H4: and the hot version partition and no other:\n{}",
         render(&scans)
     );
+    assert_head_join_by_key(&scans);
     assert!(
         scans
             .iter()
@@ -646,8 +666,46 @@ async fn aql_over_the_population_reads_the_hot_partition_only() {
         "H4: and the hot version partition and no other:\n{}",
         render(&scans)
     );
+    assert_head_join_by_key(&scans);
     // H9: nothing attaches a row-security qual to the population scan.
     assert_no_policy_qual(&plan, &scans);
+}
+
+/// The `LATEST_VERSION` binding under `CONTAINS` costs one key probe per
+/// object, not a walk of its trunk (#3453).
+///
+/// The head row is reached by `pk_vo_head`, and the version row through its
+/// primary key with `sys_version` bound, never through the at-time index,
+/// which is the only index a `vo_id`-alone probe can use and which made the
+/// planner read every trunk version of the object per node row (75 601 of
+/// 93 255 buffers in the class-`s` population `CONTAINS` recorded on #3350).
+/// A probe of a row by a three-column key touches the index's root and leaf
+/// and the heap page: a ceiling of eight buffers a loop holds that reading
+/// and fails the walk, whose per-loop cost was about twenty-two.
+fn assert_head_join_by_key(scans: &[Scan]) {
+    let heads = on(scans, "vo_head");
+    assert!(
+        !heads.is_empty()
+            && heads
+                .iter()
+                .all(|s| s.index.as_deref() == Some("pk_vo_head")),
+        "#3453: the head row is reached by its primary key:\n{}",
+        render(scans)
+    );
+    for version in on(scans, "version_hot") {
+        assert_ne!(
+            version.index.as_deref(),
+            Some("idx_version_hot_trunk_at_time"),
+            "#3453: LATEST_VERSION must not walk the trunk through the at-time index:\n{}",
+            render(scans)
+        );
+        assert!(
+            version.blocks_per_loop() <= 8.0,
+            "#3453: a version probe costs a key lookup, not a walk ({} buffers a loop):\n{}",
+            version.blocks_per_loop(),
+            render(scans)
+        );
+    }
 }
 
 // ── the commit-time range ────────────────────────────────────────────────────

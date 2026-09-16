@@ -88,6 +88,15 @@ workflow refuses a tag that has no matching section here.
 
 ### Changed
 
+- **`LATEST_VERSION` under `CONTAINS` is one key probe per object** (#3453).
+  The AQL emitter used to express "this row is the current trunk version" as
+  two correlated `EXISTS` subqueries over the head table, which let the planner
+  reach the version row by `vo_id` alone through the commit-time index and walk
+  every trunk version of the object for every node row: 75 601 of the 93 255
+  buffers a class-`s` population `CONTAINS` read. The head row is now joined on
+  its primary key and the version row reached through its own, `sys_version`
+  bound; the plan-shape tests pin the index and a ceiling of eight buffers per
+  probe. Results are unchanged.
 - **The server needs only `btree_gist`, which it installs itself** (#3433). The
   second-generation schema calls nothing from `uuid-ossp`, `pgcrypto` or
   `pg_trgm`, so the PostgreSQL image no longer installs them and the CI step no

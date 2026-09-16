@@ -117,28 +117,39 @@ fn folder_items_exists(parent_node: &str, child_node: &str) -> Expr {
     Expr::exists(sub)
 }
 
-/// The restriction gate on a version spine: the object's head row carries no
-/// restriction mark.
+/// Bind the head row of the object `version_alias` belongs to into `q`, and
+/// return its alias.
 ///
-/// GDPR Art. 18(2) leaves storage as the only processing a restricted object
-/// admits (`docs/law/eu/gdpr/text.html`), and answering a query from its
-/// content is processing, so the mark is a predicate on the head join rather
-/// than a post-filter — a restricted object contributes no row to any result
-/// set, under `LATEST_VERSION` and `ALL_VERSIONS` alike. It is not a row the
-/// caller may know about and is refused: `RESULT_SET` has no per-row
-/// diagnostic channel (QUERY master01 §Result Set), so the honest answer to a
-/// population query is the rows it may see. A point read of the same object
-/// answers `403` instead, where the caller addressed it and an explanation
-/// fits. No openEHR spec governs restriction of processing — our own
-/// design/extension.
-fn head_unrestricted(version_alias: &str) -> Expr {
-    let h = format!("{version_alias}_mark");
-    let mut sub = Query::select();
-    sub.expr(Expr::val(1));
-    sub.from_as(VoHead::Table, Alias::new(h.as_str()));
-    sub.and_where(col(&h, VoHead::VoId).eq(col(version_alias, VersionRow::VoId)));
-    sub.and_where(col(&h, VoHead::RestrictedAt).is_null());
-    Expr::exists(sub)
+/// One join serves two predicates that used to be two correlated `EXISTS`
+/// subqueries. The restriction gate: GDPR Art. 18(2) leaves storage as the
+/// only processing a restricted object admits (`docs/law/eu/gdpr/text.html`),
+/// and answering a query from its content is processing, so the mark is a
+/// predicate on the head join rather than a post-filter — a restricted object
+/// contributes no row to any result set, under `LATEST_VERSION` and
+/// `ALL_VERSIONS` alike (`RESULT_SET` has no per-row diagnostic channel, QUERY
+/// master01 §Result Set; a point read of the same object answers `403`). And,
+/// when the caller asks for it, `LATEST_VERSION`: the version row is the
+/// object's current TRUNK head, `vo_head.trunk_head_sys_version` IS
+/// `latest_trunk_version` (RM common master06 §The 'Virtual Version Tree').
+///
+/// Written as a join on the head's primary key, the version row is reached
+/// through `pk_version` with all three columns bound; the `EXISTS` form let the
+/// planner reach it by `vo_id` alone through the at-time index and walk every
+/// trunk version of the object per node row (#3453). The `branch_number = 0`
+/// predicate is implied by the head and deliberately not written: it is what
+/// made that partial index applicable. No openEHR spec governs restriction of
+/// processing or storage access paths — our own design/extension.
+fn bind_head(q: &mut SelectStatement, version_alias: &str, latest: bool) -> String {
+    let h = format!("{version_alias}_head");
+    q.from_as(VoHead::Table, Alias::new(h.as_str()));
+    q.and_where(col(&h, VoHead::VoId).eq(col(version_alias, VersionRow::VoId)));
+    q.and_where(col(&h, VoHead::RestrictedAt).is_null());
+    if latest {
+        q.and_where(
+            col(version_alias, VersionRow::SysVersion).eq(col(&h, VoHead::TrunkHeadSysVersion)),
+        );
+    }
+    h
 }
 
 /// The research objection is not standing on this `ehr` alias.
@@ -160,25 +171,6 @@ fn research_objection_clear(ehr_alias: &str) -> Expr {
         Ehr::ResearchObjectionGround,
     )
     .is_not_null())
-}
-
-/// `LATEST_VERSION`: the version row is the object's current TRUNK head.
-///
-/// The store is append-only, so "current" is the head row's answer rather than
-/// an open-ended validity interval: `vo_head.trunk_head_sys_version` IS
-/// `latest_trunk_version` (RM common master06 §The 'Virtual Version Tree'). An
-/// open branch tip coexists and is not the latest version of the container,
-/// which is why the trunk predicate stays beside this one.
-fn is_trunk_head(version_alias: &str) -> Expr {
-    let h = format!("{version_alias}_head");
-    let mut sub = Query::select();
-    sub.expr(Expr::val(1));
-    sub.from_as(VoHead::Table, Alias::new(h.as_str()));
-    sub.and_where(col(&h, VoHead::VoId).eq(col(version_alias, VersionRow::VoId)));
-    sub.and_where(
-        col(&h, VoHead::TrunkHeadSysVersion).eq(col(version_alias, VersionRow::SysVersion)),
-    );
-    Expr::exists(sub)
 }
 
 /// Version-at-time: the version row is the TRUNK version in force at `at`.
@@ -906,17 +898,17 @@ impl Builder<'_> {
                         let voa = format!("xv{}", self.next_ctr());
                         sub.from_as(VersionRow::Table, Alias::new(voa.as_str()));
                         sub.and_where(hot(&voa, VersionRow::Tier));
-                        sub.and_where(head_unrestricted(&voa));
                         sub.and_where(col(alias, Node::VoId).eq(col(&voa, VersionRow::VoId)));
                         sub.and_where(
                             col(alias, Node::SysVersion).eq(col(&voa, VersionRow::SysVersion)),
                         );
                         match scope {
                             VersionScope::Latest => {
-                                sub.and_where(col(&voa, VersionRow::BranchNumber).eq(Expr::val(0)));
-                                sub.and_where(is_trunk_head(&voa));
+                                bind_head(sub, &voa, true);
                             }
-                            VersionScope::All => {}
+                            VersionScope::All => {
+                                bind_head(sub, &voa, false);
+                            }
                             VersionScope::Predicate(_) => {
                                 return Err(SqlError::Unsupported(
                                     "a version predicate on an OR/NOT-CONTAINS branch VO"
@@ -937,17 +929,17 @@ impl Builder<'_> {
                         let voa = format!("xv{}", self.next_ctr());
                         sub.from_as(VersionRow::Table, Alias::new(voa.as_str()));
                         sub.and_where(hot(&voa, VersionRow::Tier));
-                        sub.and_where(head_unrestricted(&voa));
                         sub.and_where(col(alias, Node::VoId).eq(col(&voa, VersionRow::VoId)));
                         sub.and_where(
                             col(alias, Node::SysVersion).eq(col(&voa, VersionRow::SysVersion)),
                         );
                         match scope {
                             VersionScope::Latest => {
-                                sub.and_where(col(&voa, VersionRow::BranchNumber).eq(Expr::val(0)));
-                                sub.and_where(is_trunk_head(&voa));
+                                bind_head(sub, &voa, true);
                             }
-                            VersionScope::All => {}
+                            VersionScope::All => {
+                                bind_head(sub, &voa, false);
+                            }
                             VersionScope::Predicate(_) => {
                                 return Err(SqlError::Unsupported(
                                     "a version predicate on an OR/NOT-CONTAINS branch VO"
@@ -965,7 +957,6 @@ impl Builder<'_> {
                 let voa = format!("xv{}", self.next_ctr());
                 sub.from_as(VersionRow::Table, Alias::new(voa.as_str()));
                 sub.and_where(hot(&voa, VersionRow::Tier));
-                sub.and_where(head_unrestricted(&voa));
                 sub.and_where(col(alias, Node::VoId).eq(col(&voa, VersionRow::VoId)));
                 sub.and_where(col(alias, Node::SysVersion).eq(col(&voa, VersionRow::SysVersion)));
                 sub.and_where(col(alias, Node::EhrId).eq(col(e, Ehr::Id)));
@@ -975,10 +966,11 @@ impl Builder<'_> {
                 sub.and_where(col(&voa, VersionRow::EhrId).eq(col(e, Ehr::Id)));
                 match scope {
                     VersionScope::Latest => {
-                        sub.and_where(col(&voa, VersionRow::BranchNumber).eq(Expr::val(0)));
-                        sub.and_where(is_trunk_head(&voa));
+                        bind_head(sub, &voa, true);
                     }
-                    VersionScope::All => {}
+                    VersionScope::All => {
+                        bind_head(sub, &voa, false);
+                    }
                     VersionScope::Predicate(_) => {
                         return Err(SqlError::Unsupported(
                             "a version predicate on an OR/NOT-CONTAINS branch VO".to_owned(),
@@ -1072,7 +1064,7 @@ impl Builder<'_> {
 
     /// The EHR-scoped restriction mark on a population query.
     ///
-    /// The per-object predicate ([`head_unrestricted`]) already removes every
+    /// The per-object predicate ([`bind_head`]) already removes every
     /// restricted object; this removes an EHR restricted as a whole, whose
     /// objects carry the mark too but whose `ehr` row is the cheaper place to
     /// decide it once the population gate has already joined it.
@@ -1151,13 +1143,10 @@ impl Builder<'_> {
         }
         self.q.and_where(hot(&vo, VersionRow::Tier));
         self.q.and_where(hot(&node, Node::Tier));
-        self.q.and_where(head_unrestricted(&vo));
         self.q
             .and_where(col(&vo, VersionRow::Kind).eq(Expr::val("EHR_STATUS")));
         // Current = latest trunk (master06 latest_trunk_version).
-        self.q
-            .and_where(col(&vo, VersionRow::BranchNumber).eq(Expr::val(0)));
-        self.q.and_where(is_trunk_head(&vo));
+        self.bind_head(&vo, true);
         self.q.and_where(col(&node, Node::Num).eq(Expr::val(0)));
         self.ehr_status_node.insert(ehr_sid, node.clone());
         // Register as the source node so `source_node`/`whole_object_alias`/
@@ -1189,19 +1178,41 @@ impl Builder<'_> {
         alias
     }
 
+    /// Bind the object's head row for the version spine `voa` (the restriction
+    /// gate, and `LATEST_VERSION` when `latest`): a `JOIN` on the streaming
+    /// shape, a FROM item with its predicates otherwise. See [`bind_head`].
+    fn bind_head(&mut self, voa: &str, latest: bool) -> String {
+        let h = format!("{voa}_head");
+        let mut cond = col(&h, VoHead::VoId)
+            .eq(col(voa, VersionRow::VoId))
+            .and(col(&h, VoHead::RestrictedAt).is_null());
+        if latest {
+            cond =
+                cond.and(col(voa, VersionRow::SysVersion).eq(col(&h, VoHead::TrunkHeadSysVersion)));
+        }
+        if self.streaming {
+            self.q
+                .join_as(JoinType::Join, VoHead::Table, Alias::new(h.as_str()), cond);
+        } else {
+            self.q.from_as(VoHead::Table, Alias::new(h.as_str()));
+            self.q.and_where(cond);
+        }
+        h
+    }
+
     fn push_scope(&mut self, voa: &str, scope: &VersionScope) -> Result<(), AqlError> {
-        self.q.and_where(head_unrestricted(voa));
         match scope {
             VersionScope::Latest => {
                 // LATEST_VERSION = the latest TRUNK version (RM common master06
                 // latest_trunk_version; open branch tips coexist and are not
                 // "the latest version" of the container).
-                self.q
-                    .and_where(col(voa, VersionRow::BranchNumber).eq(Expr::val(0)));
-                self.q.and_where(is_trunk_head(voa));
+                self.bind_head(voa, true);
             }
-            VersionScope::All => {}
+            VersionScope::All => {
+                self.bind_head(voa, false);
+            }
             VersionScope::Predicate(p) if p.field == VersionField::TimeCommitted => {
+                self.bind_head(voa, false);
                 // Version-at-time: the TRUNK version in force at the instant; a
                 // branch version live at that instant coexists by design and
                 // must not duplicate the row.
@@ -1212,6 +1223,7 @@ impl Builder<'_> {
                     .and_where(trunk_at_instant(voa, cast(Expr::val(value), "timestamptz")));
             }
             VersionScope::Predicate(p) => {
+                self.bind_head(voa, false);
                 let system_id = self.ctx.system_id.clone();
                 let rhs = cast(Expr::val(self.bind_value(&p.value)?), "text");
                 let lhs = version_field_expr(voa, || self.ensure_audit(voa), p.field, &system_id);

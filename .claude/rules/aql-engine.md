@@ -53,7 +53,12 @@ subtransaction at all. A value any helper refuses reads as NULL rather than
 erroring.
 
 Versioning semantics: `LATEST_VERSION` = the object's head row
-(`vo_head.trunk_head_sys_version`); `ALL_VERSIONS` = the append-only `version`
+(`vo_head.trunk_head_sys_version`), bound as a JOIN on the head's primary key
+so the version row is reached through `pk_version` with `sys_version` bound,
+never as an `EXISTS` the planner can answer through the commit-time index by
+walking the object's trunk (#3453; `tests/it/storage_plans.rs` pins the probe
+at eight buffers a loop); the restriction gate (`restricted_at IS NULL`) rides
+the same join; `ALL_VERSIONS` = the append-only `version`
 table unfiltered (supported); a version predicate on the commit instant is the
 trunk row with the greatest `committed_at` at or before it. Every partitioned
 relation the emitter names carries `tier = 'hot'` as a LITERAL, so the cold
