@@ -97,9 +97,9 @@ fn valid_minimal_passes() {
 /// must still upload — the ingestion checks may never mis-reject a legitimate
 /// template.
 ///
-/// Parseability is asserted here because this pack lives with the app tests;
-/// the `openehr-its` `opt14_corpus` gate reads the shared corpus tree at the
-/// repository root and never reaches into `app/`.
+/// Parseability is asserted here as well as in the `openehr-its` `opt14_corpus`
+/// gate: a template this sweep cannot read is a finding either way, and
+/// skipping it silently would make the upload assertion vacuous for that file.
 #[test]
 fn corpus_all_valid_opts_pass() {
     // The service knowledge corpus is the upload-surface oracle. (The

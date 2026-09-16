@@ -455,16 +455,17 @@ fn matches_operands(
 /// payload is dropped.
 #[test]
 fn expr_leaf_any_type_items_carry_their_payload() {
-    let path = corpus_dir().join("knowledge/IDCR Problem List.v1.opt");
-    let xml = std::fs::read_to_string(&path).expect("read the IDCR corpus OPT");
-    let opt = openehr_its::opt14::from_xml(&xml).expect("the IDCR OPT parses");
+    let path = Path::new(env!("CARGO_MANIFEST_DIR"))
+        .join("tests/fixtures/sdk/AlternativeEvents.opt");
+    let xml = std::fs::read_to_string(&path).expect("read the AlternativeEvents fixture");
+    let opt = openehr_its::opt14::from_xml(&xml).expect("the AlternativeEvents OPT parses");
 
     let found = slots(&opt.definition);
     let slot = found
         .iter()
-        .find(|s| s.node_id == "at0002")
-        .expect("the problem/diagnosis EVALUATION slot at0002");
-    let assertion = slot.includes.first().expect("at0002 has an includes");
+        .find(|s| s.node_id == "at0020")
+        .expect("the device CLUSTER slot at0020");
+    let assertion = slot.includes.first().expect("at0020 has an includes");
     let (left, right) = matches_operands(assertion);
 
     // Left operand: the attribute path, a bare text payload under an
@@ -480,10 +481,11 @@ fn expr_leaf_any_type_items_carry_their_payload() {
             .item
             .child("pattern")
             .map(openehr_its::xml::runtime::XmlAny::text),
-        Some(r"openEHR-EHR-EVALUATION\.problem_diagnosis(-[a-zA-Z0-9_]+)*\.v1".to_owned()),
+        Some(r"openEHR-EHR-CLUSTER\.device(-[a-zA-Z0-9_]+)*\.v1".to_owned()),
     );
 
-    // Every slot in this template constrains a real archetype id.
+    // Every slot in this template keeps its C_STRING pattern, whether it names
+    // an archetype id or admits any of them.
     for s in &found {
         for a in &s.includes {
             let (_, constraint) = matches_operands(a);
