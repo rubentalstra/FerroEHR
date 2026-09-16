@@ -796,7 +796,7 @@ a new file, as the rule says).
 
 Two rules keep the layout honest: a file carries the tables of one concern
 and the indexes and comments that belong to them, never a grant — every grant
-of a domain is in the file named for them, which is the LAST file of that set
+of a domain sits in the file named for grants, which is the LAST file of its set
 (`ext/0004`, `clinical/0010`, `party/0008`, `linkage/0004`, `audit/0006`), so
 the catalog sweep and the boot gate have one file to read per domain; and the
 numbering is per domain with no gaps, so `_sqlx_migrations` reads as the table
