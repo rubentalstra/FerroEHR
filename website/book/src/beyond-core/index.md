@@ -23,9 +23,9 @@ Two different things are collected here, and they behave differently:
   is likewise always present in-process, with no configuration and no external
   dependency.
 - **Off until you configure them.** Everything that reaches *outside* the
-  server is opt-in: external terminology servers, Subject Proxy FHIR systems,
-  change events, the FHIR connector and its outbound emitter, and multimedia
-  offload to object storage. A bare server contacts none of them, and its
+  server is opt-in: external terminology servers, change events, the FHIR
+  connector and its outbound emitter, and multimedia offload to object
+  storage. A bare server contacts none of them, and its
   clinical behaviour is that of a single-tenant, integration-free openEHR CDR
   until you enable one.
 
@@ -41,7 +41,7 @@ Every configuration key these chapters name lives in the
 [configuration reference](../installation/configuration.md); the integration
 sections are on
 [Integrations](../installation/config-integrations.md) and
-[Audit & subject proxy](../installation/config-audit.md).
+[Audit](../installation/config-audit.md).
 
 ## Build features, and what a slim build refuses
 
@@ -80,11 +80,6 @@ for the exact list of settings a slim binary rejects.
   for local codes, plus any number of external FHIR terminology servers for
   validating coded values against external value sets; FerroTERM ships with the
   quickstart as the terminology overlay and runs beside the sandbox CDR.
-- **[Subject Proxy](subject-proxy.md):** read facts about a subject
-  ("date of birth", "latest blood pressure") through named variables backed by
-  data frames: AQL against this CDR, reads from configured external FHIR
-  servers, or values pushed in manually. A service-layer capability; it has no
-  REST endpoints.
 - **[Change events (AMQP)](amqp.md):** a transactional outbox that publishes a
   PHI-free, at-least-once event for every commit to an AMQP broker, so
   downstream systems can respond to changes instead of polling.

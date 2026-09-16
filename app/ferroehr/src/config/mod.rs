@@ -102,8 +102,6 @@ pub struct FerroEhrConfig {
     /// `[audit]` — the IHE ATNA audit trail / System Log (local Audit Record
     /// Repository + the syslog and FHIR-feed forwarding sinks).
     pub audit: crate::system_log::config::AuditConfig,
-    /// `[subject_proxy]` — Subject Proxy FHIR systems.
-    pub subject_proxy: crate::service::subject_proxy::config::SubjectProxyConfig,
     /// `[privacy]` — the clinical-side data-minimisation policy.
     pub privacy: crate::privacy::config::PrivacyConfig,
     /// `[demographic]` — the demographic domain, including national-identifier
@@ -1058,8 +1056,8 @@ mod tests {
                 ("FERROEHR__AUTH__OIDC__AUDIENCES", "ferroehr,other"),
                 ("FERROEHR__AUTH__OIDC__REQUEST_TIMEOUT_MS", "1500"),
                 (
-                    "FERROEHR__SUBJECT_PROXY__SYSTEMS__PAS__BASE_URL",
-                    "https://pas/r4",
+                    "FERROEHR__TERMINOLOGY__EXTERNAL__PROVIDERS__ONTO__URL",
+                    "https://onto/fhir",
                 ),
             ]),
             &[],
@@ -1077,8 +1075,13 @@ mod tests {
         assert_eq!(oidc.connect_timeout_ms, 3_000);
         assert_eq!(oidc.negative_cache_ttl_seconds, 10);
         assert_eq!(
-            c.subject_proxy.systems.get("pas").expect("pas").base_url,
-            "https://pas/r4"
+            c.terminology
+                .external
+                .providers
+                .get("onto")
+                .expect("onto")
+                .url,
+            "https://onto/fhir"
         );
     }
 
@@ -1122,8 +1125,9 @@ mod tests {
 
     /// A list nested under a MAP key is addressable from the environment too,
     /// so it needs registration like any other — `authz.abac.policy.<kind>` is
-    /// a map, not an array of tables, and `subject_proxy.systems.<name>` above
-    /// already proves the env grammar reaches into one.
+    /// a map, not an array of tables, and
+    /// `terminology.external.providers.<name>` above already proves the env
+    /// grammar reaches into one.
     #[test]
     fn a_list_under_a_map_key_parses_from_env() {
         let c = assemble_ok(

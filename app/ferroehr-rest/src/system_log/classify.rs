@@ -452,7 +452,7 @@ mod tests {
     #[test]
     fn unrecognised_operation_fails_closed_to_default() {
         assert_eq!(classify("terminology_expand_value_set"), DEFAULT);
-        assert_eq!(classify("subject_proxy_register"), DEFAULT);
+        assert_eq!(classify("some_future_extension_op"), DEFAULT);
         assert_eq!(
             audit_for("no_such_operation"),
             Some((Execute, ObjectClass::ApplicationActivity))

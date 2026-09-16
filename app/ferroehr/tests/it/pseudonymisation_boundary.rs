@@ -455,22 +455,18 @@ async fn the_boot_self_check_refuses_a_cross_domain_grant() {
             .fetch_one(&pool)
             .await
             .expect("the demographic outbox identity sequence");
-    for (role, object, grant, revoke) in [
+    for (role, object, kind, grant, revoke) in [
         (
             "ferroehr_clinical",
             "party.version",
-            "GRANT SELECT ON",
-            "REVOKE SELECT ON",
-        ),
-        (
-            "ferroehr_clinical",
-            "party.version",
+            "table",
             "GRANT SELECT ON",
             "REVOKE SELECT ON",
         ),
         (
             "ferroehr_clinical",
             sequence.as_str(),
+            "sequence",
             "GRANT SELECT ON SEQUENCE",
             "REVOKE SELECT ON SEQUENCE",
         ),
@@ -480,26 +476,41 @@ async fn the_boot_self_check_refuses_a_cross_domain_grant() {
         (
             "ferroehr_clinical",
             "linkage.subject_ehr",
+            "table",
             "GRANT SELECT ON",
             "REVOKE SELECT ON",
         ),
         (
             "ferroehr_party",
             "linkage.subject_ehr",
+            "table",
             "GRANT SELECT ON",
             "REVOKE SELECT ON",
         ),
         (
             "ferroehr_linkage",
             "party.version",
+            "table",
             "GRANT SELECT ON",
             "REVOKE SELECT ON",
         ),
         (
             "ferroehr_linkage",
             "clinical.version",
+            "table",
             "GRANT SELECT ON",
             "REVOKE SELECT ON",
+        ),
+        // A function is the fourth breach shape, and the erasure definer is
+        // the one that matters: it runs as its owner and deletes rows the
+        // caller cannot, so a clinical role holding EXECUTE reaches into the
+        // linkage domain without holding a single grant on its table.
+        (
+            "ferroehr_clinical",
+            "linkage.erase_ehr(uuid)",
+            "function",
+            "GRANT EXECUTE ON FUNCTION",
+            "REVOKE EXECUTE ON FUNCTION",
         ),
     ] {
         sqlx::query(sqlx::AssertSqlSafe(format!("{grant} {object} TO {role}")))
@@ -515,9 +526,14 @@ async fn the_boot_self_check_refuses_a_cross_domain_grant() {
         .await;
         let error = refused.expect_err("a role reaching another domain must refuse the boot");
         let text = error.to_string();
+        // The object is named without its argument list, which only the GRANT
+        // statement needs. Kind and object are matched as one phrase: the
+        // message's remedy mentions functions whatever the kind, so the word
+        // alone would prove nothing.
+        let named = object.split('(').next().unwrap_or(object);
         assert!(
-            text.contains(role) && text.contains(object),
-            "the refusal names the role and the object it can reach: {text}"
+            text.contains(role) && text.contains(&format!("the {kind} `{named}`")),
+            "the refusal names the role, the kind and the object it can reach: {text}"
         );
 
         sqlx::query(sqlx::AssertSqlSafe(format!(

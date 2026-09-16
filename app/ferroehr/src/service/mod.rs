@@ -45,7 +45,6 @@ pub mod ehr_index;
 pub mod linkage;
 pub mod message;
 pub mod query;
-pub mod subject_proxy;
 pub mod terminology;
 
 pub mod committer;
@@ -62,7 +61,6 @@ use crate::service::definition::lineage::{ArchetypeLineageCache, archetype_linea
 use crate::service::ehr::access::EhrAccessCache;
 use crate::service::query::config::QueryConfig;
 use crate::service::query::plan_cache::PlanCache;
-use crate::service::subject_proxy::config::SubjectProxyFhir;
 use crate::service::terminology::fhir::FhirTerminologyProvider;
 use crate::service::terminology::router::TerminologyRouter;
 
@@ -187,10 +185,6 @@ pub struct FerroEhrService {
     /// behaviour byte-identical.
     #[cfg(feature = "multimedia")]
     pub(crate) multimedia: Option<Arc<ferroehr_ext::multimedia::MultimediaEngine>>,
-    /// The optional Subject Proxy FHIR-frame executor, selected when a
-    /// deployment configures FHIR systems ([`crate::service::subject_proxy::config::SubjectProxyConfig`]). `None`
-    /// (default) makes every FHIR frame a typed rejection (fail-closed).
-    pub(crate) subject_proxy_fhir: Option<Arc<SubjectProxyFhir>>,
     /// Per-EHR cache of the current `EHR_ACCESS` scheme settings ("All access
     /// decisions to data in the EHR must be made in accordance with the
     /// policies and rules in this object" — RM ehr `ehr_access.adoc`).
@@ -294,7 +288,6 @@ impl FerroEhrService {
             terminology: None,
             #[cfg(feature = "multimedia")]
             multimedia: None,
-            subject_proxy_fhir: None,
             ehr_access: EhrAccessCache::default(),
             plan_cache: PlanCache::default(),
             archetype_lineage: archetype_lineage_cache(),
@@ -532,15 +525,6 @@ impl FerroEhrService {
         engine: Arc<ferroehr_ext::multimedia::MultimediaEngine>,
     ) -> Self {
         self.multimedia = Some(engine);
-        self
-    }
-
-    /// Install the Subject Proxy FHIR-frame executor (opt-in via
-    /// [`crate::service::subject_proxy::config::SubjectProxyConfig`]). Without it, an `API_CALL`/`fhir_get`
-    /// `DATA_FRAME` is a typed rejection (fail-closed).
-    #[must_use]
-    pub fn with_subject_proxy(mut self, fhir: Arc<SubjectProxyFhir>) -> Self {
-        self.subject_proxy_fhir = Some(fhir);
         self
     }
 

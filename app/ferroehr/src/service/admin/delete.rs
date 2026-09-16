@@ -194,17 +194,13 @@ impl FerroEhrService {
     ///    from them, so their ids are captured before the cascade removes the
     ///    version and contribution rows that name them, and they are deleted
     ///    after it.
-    /// 2. The subject proxies of a subject this EHR was the last record of go
-    ///    in the same transaction, because a proxy holds the configuration and
-    ///    the retrieved sample values of a subject whose record no longer
-    ///    exists (GDPR Art. 17(1), `docs/law/eu/gdpr/text.html`).
-    /// 3. An erasure tombstone is appended to the outbox before the
+    /// 2. An erasure tombstone is appended to the outbox before the
     ///    transaction commits, so every registered reader is told what to
     ///    delete downstream (Art. 19: the controller communicates an erasure
     ///    "to each recipient to whom the personal data have been disclosed").
-    /// 4. `linkage.erase_ehr` runs once the clinical delete has committed, so
+    /// 3. `linkage.erase_ehr` runs once the clinical delete has committed, so
     ///    no cross-reference row outlives the record it named.
-    /// 5. The externalized blobs this EHR referenced and no surviving version
+    /// 4. The externalized blobs this EHR referenced and no surviving version
     ///    still does are removed from the object store.
     ///
     /// The access records naming the EHR stay: Art. 17(3)(b) withholds erasure
@@ -242,14 +238,6 @@ impl FerroEhrService {
         .fetch_all(&mut *tx)
         .await?;
 
-        // The promoted subject of the EHR, read while the row is still there.
-        let subject_ids: Vec<String> = sqlx::query_scalar(
-            "SELECT subject_id FROM ehr WHERE id = $1 AND subject_id IS NOT NULL",
-        )
-        .bind(ehr_id)
-        .fetch_all(&mut *tx)
-        .await?;
-
         // Delete the EHR — one statement, cascading through the FK graph and
         // across both tier partitions.
         let deleted = sqlx::query("DELETE FROM ehr WHERE id = $1")
@@ -274,11 +262,6 @@ impl FerroEhrService {
                 .await?;
         }
 
-        // The linkage read happens once the EHR is known to exist, so a delete
-        // of an unknown id records no crossing, and before `erase_ehr` below
-        // removes the rows it reads.
-        let sole_subjects = self.sole_subject_ids(ehr_id).await?;
-        purge_subject_proxies(&mut tx, &[ehr_id], &subject_ids, &sole_subjects).await?;
         self.write_erase_tombstones(&mut tx, &[ehr_id]).await?;
 
         tx.commit().await?;
@@ -304,8 +287,8 @@ impl FerroEhrService {
     /// the count of EHRs actually deleted is returned.
     ///
     /// The reach is the same, chunked: one transaction per chunk carries the
-    /// cascade, the subject-proxy purge and the erasure tombstones, and the
-    /// linkage erasure runs per EHR once that transaction has committed.
+    /// cascade and the erasure tombstones, and the linkage erasure runs per
+    /// EHR once that transaction has committed.
     ///
     /// NOTE (keep — spec-silent extension): `i_admin_service.adoc` has no
     /// bulk call, so the idempotent skip-missing semantics + returned count are
@@ -344,12 +327,6 @@ impl FerroEhrService {
             .bind(chunk)
             .fetch_all(&mut *tx)
             .await?;
-            let subject_ids: Vec<String> = sqlx::query_scalar(
-                "SELECT subject_id FROM ehr WHERE id = ANY($1) AND subject_id IS NOT NULL",
-            )
-            .bind(chunk)
-            .fetch_all(&mut *tx)
-            .await?;
             let removed: Vec<Uuid> =
                 sqlx::query_scalar("DELETE FROM ehr WHERE id = ANY($1) RETURNING id")
                     .bind(chunk)
@@ -362,13 +339,6 @@ impl FerroEhrService {
                     .await?;
             }
             let removed_ids: Vec<EhrId> = removed.iter().copied().map(EhrId).collect();
-            // Asked only for the EHRs that were there: an id naming nothing
-            // records no crossing of the linkage boundary.
-            let mut sole_subjects: Vec<String> = Vec::new();
-            for ehr_id in &removed_ids {
-                sole_subjects.extend(self.sole_subject_ids(*ehr_id).await?);
-            }
-            purge_subject_proxies(&mut tx, &removed_ids, &subject_ids, &sole_subjects).await?;
             self.write_erase_tombstones(&mut tx, &removed_ids).await?;
             tx.commit().await?;
             for ehr_id in &removed_ids {
@@ -447,23 +417,6 @@ impl FerroEhrService {
                 .fetch_all(&mut **tx)
                 .await?,
         )
-    }
-
-    /// The subject identifiers whose only EHR is this one, from the linkage
-    /// domain.
-    ///
-    /// Empty when the domain is unreachable in this deployment: the proxies
-    /// keyed on an identifier this instance cannot resolve are then left for
-    /// the deployment that can. Our own design — no openEHR spec governs
-    /// erasure reach.
-    ///
-    /// # Errors
-    /// [`ServiceError::Internal`] when the linkage read or its access record
-    /// fails.
-    async fn sole_subject_ids(&self, ehr_id: EhrId) -> Result<Vec<String>, ServiceError> {
-        self.subjects_sole_to_ehr(ehr_id)
-            .await
-            .map_err(|error| ServiceError::internal("read the EHR's subject identifiers", error))
     }
 
     /// Delete each candidate blob no surviving version still references.
@@ -647,6 +600,9 @@ impl FerroEhrService {
             .execute(&mut *tx)
             .await?;
 
+        self.write_party_erase_tombstone(&mut tx, party_id, kind.as_deref(), &vo_ids)
+            .await?;
+
         tx.commit().await?;
 
         // After the commit, so a blob is only collected once nothing can
@@ -703,70 +659,65 @@ impl FerroEhrService {
         }
         Ok(())
     }
-}
 
-/// Remove the subject proxies of every subject the erased EHRs were the last
-/// record of.
-///
-/// The `sp_*` family keys on a one-way derivation of the subject identifier a
-/// caller registered ([`crate::service::subject_proxy::store::subject_key`]),
-/// so no cascade can reach it from `ehr`, and what stays behind is a
-/// subject's proxy configuration plus the sample values it retrieved from the
-/// erased record (GDPR Art. 17(1), `docs/law/eu/gdpr/text.html`). Three
-/// spellings of an identifier can key a proxy, because those are the three a
-/// subject resolves through:
-///
-/// * the EHR id itself, which the proxy resolver accepts literally and which
-///   resolves to nothing the moment the EHR is gone;
-/// * the promoted `ehr.subject_id`, dropped only when no EHR of that subject
-///   survives (a second EHR may carry the same identifier under another
-///   namespace);
-/// * an identifier the linkage domain associates with this EHR and no other,
-///   which the caller determined before the cross-reference rows were erased.
-///
-/// Deleting `sp_subject` cascades its variables, their samples and its data
-/// sets. No openEHR spec governs erasure reach — our own design/extension; the
-/// SM's own rule is that proxy content is configuration held "for the life of
-/// the system" (`master10-subject_proxy_service.adoc` §Persistence), which a
-/// subject whose record was erased has left.
-///
-/// # Errors
-/// [`ServiceError::Database`] when a statement fails.
-async fn purge_subject_proxies(
-    tx: &mut sqlx::Transaction<'_, sqlx::Postgres>,
-    erased: &[EhrId],
-    subject_ids: &[String],
-    sole_subjects: &[String],
-) -> Result<(), ServiceError> {
-    let mut keys: Vec<Uuid> = erased
-        .iter()
-        .map(|ehr_id| crate::service::subject_proxy::store::subject_key(&ehr_id.to_string()))
-        .collect();
-    for subject_id in subject_ids {
-        // Asked after the delete: another EHR of the same subject keeps the
-        // proxy resolvable, and the promoted column is unique only per
-        // (subject, namespace) pair.
-        let survives: bool =
-            sqlx::query_scalar("SELECT EXISTS(SELECT 1 FROM ehr WHERE subject_id = $1)")
-                .bind(subject_id)
-                .fetch_one(&mut **tx)
-                .await?;
-        if !survives {
-            keys.push(crate::service::subject_proxy::store::subject_key(
-                subject_id,
-            ));
+    /// Append the erasure tombstone for one physically deleted party, inside
+    /// the transaction that erased it.
+    ///
+    /// The clinical twin of this row is [`Self::write_erase_tombstones`], and
+    /// the ground is the same: GDPR Art. 19 (`docs/law/eu/gdpr/text.html`)
+    /// makes the controller communicate an erasure "to each recipient to whom
+    /// the personal data have been disclosed", and a consumer of the party
+    /// change-event stream holds whatever it derived from this party. Without
+    /// the row it is never told the identity is gone, because every event it
+    /// did receive announced a commit that no longer has a subject.
+    ///
+    /// One row covers the whole call: the party and every `PARTY_RELATIONSHIP`
+    /// erased with it get an entry under their own RM type, so a consumer bound
+    /// to relationships alone receives the erasure of the ones it tracked. The
+    /// row carries no contribution, because the party's contributions went with
+    /// it, and it is written before the commit for the same reason every commit
+    /// event is. No openEHR spec governs eventing — our own extension.
+    ///
+    /// # Errors
+    /// [`ServiceError::Database`] when the insert fails.
+    async fn write_party_erase_tombstone(
+        &self,
+        tx: &mut sqlx::Transaction<'_, sqlx::Postgres>,
+        party_id: VoId,
+        party_kind: Option<&str>,
+        erased: &[VoId],
+    ) -> Result<(), ServiceError> {
+        if !self.outbox_enabled {
+            return Ok(());
         }
-    }
-    keys.extend(
-        sole_subjects
+        let versions: Vec<serde_json::Value> = erased
             .iter()
-            .map(|subject_id| crate::service::subject_proxy::store::subject_key(subject_id)),
-    );
-    keys.sort_unstable();
-    keys.dedup();
-    sqlx::query("DELETE FROM sp_subject WHERE subject_key = ANY($1)")
-        .bind(&keys)
+            .map(|vo_id| {
+                let kind = if *vo_id == party_id {
+                    party_kind.unwrap_or("PARTY")
+                } else {
+                    "PARTY_RELATIONSHIP"
+                };
+                serde_json::json!({
+                    "vo_id": vo_id.0,
+                    "kind": kind,
+                    "change_type": "erase",
+                })
+            })
+            .collect();
+        let envelope = serde_json::json!({
+            "event": "erase",
+            "ehr_id": serde_json::Value::Null,
+            "vo_id": party_id.0,
+            "versions": versions,
+        });
+        sqlx::query(
+            "INSERT INTO event_outbox (ehr_id, envelope, committed_at) \
+             VALUES (NULL, $1, now())",
+        )
+        .bind(&envelope)
         .execute(&mut **tx)
         .await?;
-    Ok(())
+        Ok(())
+    }
 }

@@ -32,8 +32,9 @@ spec_profile = "development"
 # patient data and says which separations are missing on the banner, in the
 # log and on GET /rest/status; `production` refuses to start while one is
 # missing and not named in deployment_accepts (shared_credential,
-# shared_cluster, open_subject_namespace, audit_off,
-# migrate_on_runtime_credential). Our own posture, not a legal requirement.
+# shared_cluster, open_subject_namespace, audit_off, audit_fails_open,
+# open_ehr_access_default, migrate_on_runtime_credential). Our own posture,
+# not a legal requirement.
 deployment_profile = "sandbox"   # sandbox | production
 #? deployment_accepts = ["shared_cluster"]
 
@@ -564,14 +565,6 @@ url = "http://localhost:8080/fhir"   # POSTs {url}/AuditEvent; URL creds redacte
 batch_size = 64
 poll_interval_ms = 2000
 max_retries = 3
-
-# ── [subject_proxy] — Subject Proxy FHIR systems (fail-closed) ────────────────
-[subject_proxy]
-# Named FHIR systems an API_CALL/fhir_get DATA_FRAME may retrieve from (map):
-#? [subject_proxy.systems.pas]
-#? base_url = "https://fhir.example.org/r4"
-#? connect_timeout_ms = 2000
-#? request_timeout_ms = 10000
 
 # ── [privacy] — the clinical-side data-minimisation policy ────────────────────
 # GDPR Art. 4(5) + Art. 25(2); the openEHR RM leaves the subject reference open

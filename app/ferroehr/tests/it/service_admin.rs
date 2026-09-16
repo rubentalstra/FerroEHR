@@ -608,6 +608,106 @@ async fn admin_statistics_per_service_and_time_range() {
     );
 }
 
+/// A physically deleted party leaves one erasure tombstone on the party
+/// outbox, ahead of every registered reader.
+///
+/// The party domain carries its own outbox, so a consumer of the party stream
+/// learns nothing from the clinical tombstone: every party event it received
+/// announced a commit, and without this row the identity simply stops being
+/// mentioned. GDPR Art. 19 (`docs/law/eu/gdpr/text.html`) makes the controller
+/// communicate the erasure to each recipient the data reached. The row carries
+/// no contribution, because the party's contributions went with it, and it
+/// names the relationships erased alongside so a consumer that tracked only
+/// those is told as well. No openEHR spec governs eventing.
+#[tokio::test]
+async fn physical_party_delete_tombstones_the_party_outbox() {
+    let (_db, pool, svc) = repository().await;
+
+    let p1 = make_person(&svc, "T1").await;
+    let p2 = make_person(&svc, "T2").await;
+    let rel = svc
+        .party_relationship_create(typed(&party_relationship("tr", &p1, &p2)), None)
+        .await
+        .expect("the relationship commits");
+    let rel_id = rel.body["uid"]["value"]
+        .as_str()
+        .expect("uid")
+        .split("::")
+        .next()
+        .expect("versioned-object id")
+        .to_owned();
+
+    sqlx::query(
+        "INSERT INTO party.event_outbox_reader (reader, last_seq, active) \
+         VALUES ('omop', 0, true)",
+    )
+    .execute(&pool)
+    .await
+    .expect("register a reader over the party outbox");
+
+    svc.physical_party_delete(p1.clone())
+        .await
+        .expect("physical party delete");
+
+    let (seq, envelope): (i64, Value) = sqlx::query_as(
+        "SELECT seq, envelope FROM party.event_outbox WHERE contribution_id IS NULL",
+    )
+    .fetch_one(&pool)
+    .await
+    .expect("exactly one erasure tombstone");
+    assert_eq!(envelope["event"], json!("erase"));
+    assert_eq!(envelope["ehr_id"], Value::Null);
+    assert_eq!(envelope["vo_id"], json!(p1));
+    let erased: Vec<(String, String)> = envelope["versions"]
+        .as_array()
+        .expect("the tombstone names what it erased")
+        .iter()
+        .map(|v| {
+            (
+                v["vo_id"].as_str().unwrap_or_default().to_owned(),
+                v["kind"].as_str().unwrap_or_default().to_owned(),
+            )
+        })
+        .collect();
+    assert!(
+        erased.contains(&(p1.clone(), "PERSON".to_owned())),
+        "the party itself is named under its RM type: {erased:?}"
+    );
+    assert!(
+        erased.contains(&(rel_id, "PARTY_RELATIONSHIP".to_owned())),
+        "the relationship erased with it is named too: {erased:?}"
+    );
+    assert!(
+        envelope["versions"]
+            .as_array()
+            .is_some_and(|v| v.iter().all(|e| e["change_type"] == json!("erase"))),
+        "every entry announces an erasure: {envelope}"
+    );
+
+    let behind: i64 = sqlx::query_scalar(
+        "SELECT count(*) FROM party.event_outbox_reader WHERE active AND last_seq < $1",
+    )
+    .bind(seq)
+    .fetch_one(&pool)
+    .await
+    .expect("count the readers still to reach the tombstone");
+    assert_eq!(
+        behind, 1,
+        "every registered reader still receives the tombstone"
+    );
+
+    // A party that still exists is never announced as erased.
+    let surviving: i64 = sqlx::query_scalar(
+        "SELECT count(*) FROM party.event_outbox \
+         WHERE contribution_id IS NULL AND envelope ->> 'vo_id' = $1",
+    )
+    .bind(&p2)
+    .fetch_one(&pool)
+    .await
+    .expect("count the tombstones naming the surviving party");
+    assert_eq!(surviving, 0, "no tombstone for a party that still exists");
+}
+
 #[tokio::test]
 async fn physical_party_delete_cascades_relationships_and_spares_partner() {
     let (_db, pool, svc) = repository().await;
@@ -1253,188 +1353,6 @@ async fn erasure_leaves_no_row_in_any_domain_and_tombstones_the_outbox() {
     assert_eq!(
         kept_tombstones, 0,
         "no tombstone for an EHR that still exists"
-    );
-}
-
-/// Physical erasure removes the subject proxy of a subject this EHR was the
-/// last record of, under each identifier the proxy resolver accepts.
-///
-/// The `sp_*` family keys on a one-way derivation of the subject identifier
-/// (`subject_key`), so no foreign key can reach it from `ehr` and the rows
-/// outlive the record unless the erasure goes for them by name. What stays
-/// behind is a subject's variable definitions and the sample values they
-/// retrieved from the erased EHR — data about a person whose record was erased
-/// (GDPR Art. 17(1), `docs/law/eu/gdpr/text.html`).
-#[tokio::test]
-async fn erasure_removes_the_proxies_of_a_subject_with_no_other_ehr() {
-    let (_db, pool, svc) = repository().await;
-
-    let erased = svc
-        .create_ehr_for_subject(
-            ferroehr::service::ehr_index::types::SubjectRef::person("PID-SOLE", "mpi"),
-            None,
-        )
-        .await
-        .expect("create the EHR for its subject");
-
-    // The three spellings a proxy can be keyed on: the EHR id the resolver
-    // takes literally, the promoted EHR_STATUS subject, and an identifier the
-    // cross-reference associates with this EHR alone.
-    svc.add_ehr_subject(
-        erased.to_string(),
-        ferroehr::service::ehr_index::types::SubjectRef::person("MRN-SOLE", "local"),
-        None,
-        None,
-    )
-    .await
-    .expect("record the index association");
-    let subjects = [
-        erased.to_string(),
-        "PID-SOLE".to_owned(),
-        "MRN-SOLE".to_owned(),
-    ];
-    for subject in &subjects {
-        svc.register_subject(subject.clone(), None)
-            .await
-            .expect("register the subject proxy");
-    }
-    let proxies: i64 = sqlx::query_scalar("SELECT count(*) FROM sp_subject")
-        .fetch_one(&pool)
-        .await
-        .expect("count the proxies");
-    assert_eq!(proxies, 3, "one proxy per registered identifier");
-
-    // A variable and the value it retrieved, so the whole family has rows to
-    // lose: the samples are the subject's data, not just configuration.
-    svc.register_binding(ferroehr::service::subject_proxy::binding::EnvBinding {
-        env_id: "prod".to_owned(),
-        description: None,
-        data_frames: vec![ferroehr::service::subject_proxy::binding::DataFrame {
-            id: "manual".to_owned(),
-            model_type: "openehr".to_owned(),
-            primary_method: Some(
-                ferroehr::service::subject_proxy::binding::SystemCall::Query(
-                    ferroehr::service::subject_proxy::binding::SystemCallBody {
-                        call_name: Some("aql_query".to_owned()),
-                        query_text: Some(
-                            "SELECT c/name/value AS weight FROM EHR e CONTAINS COMPOSITION c"
-                                .to_owned(),
-                        ),
-                        ..ferroehr::service::subject_proxy::binding::SystemCallBody::default()
-                    },
-                ),
-            ),
-            fallback_method: None,
-        }],
-    })
-    .await
-    .expect("register the binding");
-    svc.add_subject_variable(
-        "PID-SOLE".to_owned(),
-        ferroehr::service::subject_proxy::variable::SubjectVariable {
-            namespace: None,
-            name: "weight".to_owned(),
-            type_name: "String".to_owned(),
-            currency: None,
-            ask_user: None,
-            is_manual: true,
-            frame_id: "manual".to_owned(),
-            frame_path: "weight".to_owned(),
-            history: Vec::new(),
-            last_frame: None,
-        },
-    )
-    .await
-    .expect("add the variable");
-    svc.notify_variable_sample(
-        "PID-SOLE".to_owned(),
-        "weight".to_owned(),
-        ferroehr::service::subject_proxy::sample::VariableSample::available(
-            ferroehr::service::subject_proxy::value::VariableValue::Single {
-                value: Some(json!("72 kg")),
-            },
-        ),
-    )
-    .await
-    .expect("push a sample");
-    for (relation, sql) in [
-        ("sp_variable", "SELECT count(*) FROM sp_variable"),
-        ("sp_sample", "SELECT count(*) FROM sp_sample"),
-    ] {
-        let rows: i64 = sqlx::query_scalar(AssertSqlSafe(sql))
-            .fetch_one(&pool)
-            .await
-            .expect("count the proxy rows");
-        assert!(rows > 0, "{relation} has a row to lose");
-    }
-
-    svc.admin_ehr_delete(erased.to_string())
-        .await
-        .expect("admin delete");
-
-    for subject in &subjects {
-        assert!(
-            !svc.has_subject(subject.clone()).await.expect("has_subject"),
-            "the proxy keyed on {subject:?} outlived the erased EHR"
-        );
-    }
-    for relation in ["sp_subject", "sp_variable", "sp_sample", "sp_data_set"] {
-        // The relation name is one of four literals, never input.
-        let remaining: i64 =
-            sqlx::query_scalar(AssertSqlSafe(format!("SELECT count(*) FROM {relation}")))
-                .fetch_one(&pool)
-                .await
-                .expect("count the proxy rows");
-        assert_eq!(remaining, 0, "{relation} outlived the erased subject");
-    }
-}
-
-/// A subject whose identifier still names another EHR keeps its proxy.
-///
-/// Erasure reaches the proxy because the subject has no record left, not
-/// because one of its records was erased: a shared identifier still resolves,
-/// and dropping its configuration would break a live subject's variables.
-#[tokio::test]
-async fn a_subject_with_another_ehr_keeps_its_proxy() {
-    let (_db, _pool, svc) = repository().await;
-
-    let erased = svc.create_ehr(None).await.expect("the erased EHR");
-    let kept = svc.create_ehr(None).await.expect("the surviving EHR");
-    for ehr in [erased, kept] {
-        svc.add_ehr_subject(
-            ehr.to_string(),
-            ferroehr::service::ehr_index::types::SubjectRef::person("PID-SHARED", "mpi"),
-            None,
-            None,
-        )
-        .await
-        .expect("record the index association");
-    }
-    svc.register_subject("PID-SHARED".to_owned(), None)
-        .await
-        .expect("register the subject proxy");
-
-    svc.admin_ehr_delete(erased.to_string())
-        .await
-        .expect("admin delete");
-
-    assert!(
-        svc.has_subject("PID-SHARED".to_owned())
-            .await
-            .expect("has_subject"),
-        "a subject that still has an EHR keeps its proxy"
-    );
-    let entries = svc
-        .subject_ehrs(ferroehr::service::ehr_index::types::SubjectRef::person(
-            "PID-SHARED",
-            "mpi",
-        ))
-        .await
-        .expect("the subject's associations");
-    assert_eq!(
-        entries.iter().map(|e| e.ehr_id.clone()).collect::<Vec<_>>(),
-        vec![kept.to_string()],
-        "the subject still resolves, to the surviving EHR alone"
     );
 }
 

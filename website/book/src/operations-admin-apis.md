@@ -70,12 +70,18 @@ transaction removes the EHR row and, through the foreign-key graph, its
 versions over both storage tiers, their nodes, attestations, contributions,
 commit audits, item tags, folder memberships, the restriction and retention
 marks, the multimedia blob references and every pending change event of the
-EHR; the subject proxies of a subject whose only record this was go in the
-same transaction, and an erasure tombstone is appended to the change-event
-stream so a consumer that derived anything from the EHR is told to delete it
-(GDPR Art. 19). The cross-reference row that names the EHR's subject is then
-erased in the linkage domain, and the externalized multimedia blobs no
+EHR; an erasure tombstone is appended to the change-event stream in the same
+transaction, so a consumer that derived anything from the EHR is told to
+delete it (GDPR Art. 19). The cross-reference row that names the EHR's subject
+is then erased in the linkage domain, and the externalized multimedia blobs no
 surviving version still references are removed from the object store.
+
+**A party delete announces itself the same way.** The SM
+`physical_party_delete` operation, which this release exposes on the service
+layer and on no REST route, writes one erasure tombstone on the party domain's
+own outbox before its transaction commits, naming the party and every
+`PARTY_RELATIONSHIP` erased with it. A consumer of the party stream has no
+other way to learn the identity is gone.
 
 **What it keeps:** the audit records naming the `ehr_id`. Art. 17(3)(b)
 withholds erasure where processing is necessary for compliance with a legal

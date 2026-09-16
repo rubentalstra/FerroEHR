@@ -1,7 +1,6 @@
-# Audit & subject proxy
+# Audit
 
-The IHE ATNA audit trail (`[audit]` and its three sinks) and the FHIR systems a
-subject-proxy frame may read from (`[subject_proxy]`). Precedence, the
+The IHE ATNA audit trail: `[audit]` and its three sinks. Precedence, the
 environment-name grammar, and file discovery are on the
 [Configuration reference](configuration.md) index.
 
@@ -90,12 +89,3 @@ FHIR feed drains from it, so a down repository loses nothing.
 With the local store on, the feed drains the store's outbox and is therefore
 loss-free across a repository outage. With the store off it ships in-drain, and
 a record that exhausts its retries is dropped and counted.
-
-## `[subject_proxy]`
-
-The named FHIR systems a subject-proxy `API_CALL`/`fhir_get` data frame may
-retrieve from. **Empty by default and fail-closed**: no external FHIR system is
-reachable until one is named here, and a frame whose `system_id` matches no
-configured system is a typed rejection rather than an arbitrary outbound
-request. The per-system key table and examples live on
-[Subject Proxy — Connecting FHIR systems](../beyond-core/subject-proxy.md#connecting-fhir-systems).

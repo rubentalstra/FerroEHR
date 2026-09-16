@@ -391,43 +391,6 @@ impl FerroEhrService {
         Ok(minted)
     }
 
-    /// The subject identifiers whose only EHR is `ehr_id`, read before an
-    /// erasure.
-    ///
-    /// A subject proxy is keyed on a one-way derivation of the subject
-    /// identifier the caller registered, and the identifier itself is resolved
-    /// here, so the clinical side cannot name the proxies of an erased EHR's
-    /// subject without asking this domain which identifiers named it. The
-    /// answer travels no further than the derivation: the caller hashes each
-    /// identifier into the proxy key and keeps neither the identifier nor the
-    /// key (GDPR Art. 4(5), `docs/law/eu/gdpr/text.html`).
-    ///
-    /// A subject that also names another EHR is left out: its proxy still
-    /// resolves to a record and stays.
-    ///
-    /// # Errors
-    /// [`LinkageError::Database`] when the read fails, and
-    /// [`LinkageError::Unrecorded`] when the access record is refused under
-    /// `fail_mode = "closed"`.
-    pub(crate) async fn subjects_sole_to_ehr(
-        &self,
-        ehr_id: EhrId,
-    ) -> Result<Vec<String>, LinkageError> {
-        let outcome = store::subject_ids_sole_to_ehr(&self.linkage_pool, ehr_id)
-            .await
-            .map_err(classify);
-        self.emit_linkage_access(
-            EventActionCode::Read,
-            format!("ehr:{ehr_id}"),
-            Some(ehr_id),
-            outcome
-                .as_ref()
-                .map_or(0, |ids| ids.len().try_into().unwrap_or(u64::MAX)),
-            outcome.is_ok(),
-        )?;
-        outcome
-    }
-
     /// Remove every cross-reference row naming `ehr_id`, returning how many.
     ///
     /// The erasure path, and the only destructive one this domain has. A

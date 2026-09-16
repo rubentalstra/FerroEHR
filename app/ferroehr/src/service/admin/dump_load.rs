@@ -1547,6 +1547,17 @@ impl FerroEhrService {
     /// records into `blobs/<hex>` archive entries, returning the blob keys
     /// written (empty when externalization is off). Our own extension — no
     /// openEHR spec governs multimedia offload.
+    ///
+    /// The keys come from `blob_ref`, the reference index the node write path
+    /// maintains in the same transaction as the nodes it describes, so the
+    /// export reads one index per domain instead of walking every exported
+    /// body in process. An exported version that references no blob contributes
+    /// no row, and an archived version's references moved to the cold tier with
+    /// it, so both tiers answer from the same relation.
+    ///
+    /// # Errors
+    /// [`SmError`] when a reference read, a blob fetch or an archive write
+    /// fails.
     #[cfg(feature = "multimedia")]
     async fn export_referenced_blobs(
         &self,
@@ -1557,11 +1568,22 @@ impl FerroEhrService {
         let Some(engine) = &self.multimedia else {
             return Ok(Vec::new());
         };
-        let mut keys: Vec<String> = records
+        let mut uris = self
+            .blob_uris_of_versions(&self.pool, records.iter().flat_map(|r| r.versions.iter()))
+            .await?;
+        uris.extend(
+            self.blob_uris_of_versions(
+                &self.demographic_pool,
+                demographic.iter().flat_map(|r| r.versions.iter()),
+            )
+            .await?,
+        );
+        // NOTE: a URI this store did not mint names someone else's bytes, which
+        // is an absent key rather than a defect — the index records every URI a
+        // stored body carries, foreign ones included.
+        let mut keys: Vec<String> = uris
             .iter()
-            .flat_map(|r| r.versions.iter())
-            .chain(demographic.iter().flat_map(|r| r.versions.iter()))
-            .flat_map(|v| engine.referenced_keys(&v.body))
+            .filter_map(|uri| engine.store().key_from_uri(uri).map(str::to_owned))
             .collect();
         keys.sort_unstable();
         keys.dedup();
@@ -1572,6 +1594,36 @@ impl FerroEhrService {
             archive.write(&format!("{BLOB_PREFIX}{hex}"), &bytes)?;
         }
         Ok(keys)
+    }
+
+    /// The blob URIs `blob_ref` records for the given versions, in one domain.
+    ///
+    /// Keyed on `(vo_id, sys_version)` without a tier predicate, so a version
+    /// the export read from the cold partition answers from the reference rows
+    /// its foreign key carried there. Our own extension.
+    ///
+    /// # Errors
+    /// [`ServiceError::Database`] when the read fails.
+    #[cfg(feature = "multimedia")]
+    async fn blob_uris_of_versions<'a>(
+        &self,
+        pool: &sqlx::PgPool,
+        versions: impl Iterator<Item = &'a VersionRecord>,
+    ) -> Result<Vec<String>, ServiceError> {
+        let (vo_ids, sys_versions): (Vec<VoId>, Vec<i32>) =
+            versions.map(|v| (v.vo_id, v.sys_version)).unzip();
+        if vo_ids.is_empty() {
+            return Ok(Vec::new());
+        }
+        Ok(sqlx::query_scalar(
+            "SELECT DISTINCT b.uri FROM blob_ref b \
+             JOIN unnest($1::uuid[], $2::int[]) AS t(vo_id, sys_version) \
+               ON t.vo_id = b.vo_id AND t.sys_version = b.sys_version",
+        )
+        .bind(&vo_ids)
+        .bind(&sys_versions)
+        .fetch_all(pool)
+        .await?)
     }
 
     /// Re-put each archived blob (`blobs/<hex>`) into the object store on load

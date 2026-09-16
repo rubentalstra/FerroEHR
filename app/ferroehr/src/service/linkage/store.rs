@@ -377,41 +377,6 @@ pub(crate) async fn subject_associations(
     .await
 }
 
-/// The EHR a row in force names for `subject_id`, by descending authority and
-/// then by the oldest period.
-///
-/// The subject-proxy resolution step: an identifier in, an EHR id out, without
-/// the clinical domain holding either the identifier or the map. The order is
-/// the `RESOURCE_INSTANCE_TYPE` ranking (`resource_instance_type.adoc`) — a
-/// `Primary` association is "the primary instance of the resource", a
-/// `Duplicate` is the error state master07 §Overview asks to be rectified —
-/// with a row carrying no status (a party mapping whose subject pseudonym the
-/// server wrote itself) ranked between them, because nothing about it is
-/// declared secondary.
-///
-/// # Errors
-/// The driver error, when the read fails.
-pub(crate) async fn resolve_subject_ehr(
-    pool: &PgPool,
-    subject_id: &str,
-) -> Result<Option<EhrId>, sqlx::Error> {
-    let found: Option<Uuid> = sqlx::query_scalar(
-        "SELECT ehr_id FROM subject_ehr \
-         WHERE subject_id = $1 AND upper_inf(sys_period) \
-         ORDER BY CASE status ->> 'instance_type' \
-                      WHEN 'Primary' THEN 0 \
-                      WHEN 'Supplementary' THEN 2 \
-                      WHEN 'Duplicate' THEN 3 \
-                      ELSE 1 \
-                  END, lower(sys_period) \
-         LIMIT 1",
-    )
-    .bind(subject_id)
-    .fetch_optional(pool)
-    .await?;
-    Ok(found.map(EhrId))
-}
-
 /// The subjects that more than one EHR is associated with, in force.
 ///
 /// # Errors
@@ -440,38 +405,6 @@ pub(crate) async fn ehrs_with_multiple_subjects(pool: &PgPool) -> Result<Vec<Ehr
     .fetch_all(pool)
     .await?;
     Ok(rows.into_iter().map(EhrId).collect())
-}
-
-/// The subject identifiers this EHR is associated with that no other EHR is.
-///
-/// Read before an erasure, because the rows are about to go: a subject whose
-/// only EHR is erased resolves to nothing afterwards
-/// ([`resolve_subject_ehr`]), so whatever the clinical side keyed on that
-/// identifier — the subject proxy's configuration and its retrieved samples —
-/// is holding data about a record that no longer exists (GDPR Art. 17(1),
-/// `docs/law/eu/gdpr/text.html`). A subject that also names another EHR is not
-/// returned: its proxy still resolves and stays.
-///
-/// Matched on the identifier alone, exactly as [`resolve_subject_ehr`] matches,
-/// so the answer describes the resolution the proxy actually performs rather
-/// than a narrower key.
-///
-/// # Errors
-/// The driver error, when the read fails.
-pub(crate) async fn subject_ids_sole_to_ehr(
-    pool: &PgPool,
-    ehr: EhrId,
-) -> Result<Vec<String>, sqlx::Error> {
-    sqlx::query_scalar(
-        "SELECT DISTINCT s.subject_id FROM subject_ehr s \
-         WHERE s.ehr_id = $1 AND s.subject_id IS NOT NULL \
-           AND NOT EXISTS (SELECT 1 FROM subject_ehr o \
-                           WHERE o.subject_id = s.subject_id AND o.ehr_id <> s.ehr_id \
-                             AND upper_inf(o.sys_period))",
-    )
-    .bind(ehr.0)
-    .fetch_all(pool)
-    .await
 }
 
 /// Remove every row naming `ehr`, in force or historical, returning how many.

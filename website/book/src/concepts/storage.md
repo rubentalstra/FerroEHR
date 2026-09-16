@@ -170,9 +170,7 @@ erDiagram
 
 Supporting tables not drawn above: `stored_query` (stored AQL, qualified name
 plus SemVer), `archetype_store` and `adl2_artefact` (the two DEFINITION
-dialects), the `restriction` and retention registers, and the
-`sp_*` family (Subject Proxy Service), which keys its rows by a derived opaque
-subject key rather than by the caller's own subject identifier. The `ehr` table
+dialects), and the `restriction` and retention registers. The `ehr` table
 itself carries the
 three creation-immutable values the RM names (`system_id`, `id`,
 `time_created`) plus promoted copies of the current EHR_STATUS subject

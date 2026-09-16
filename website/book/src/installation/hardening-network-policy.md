@@ -293,7 +293,6 @@ only the rows you have switched on:
 | Object store | `config.multimedia.enabled` plus `config.multimedia.endpoint` (unset means AWS regional resolution) | 443, or the endpoint's | off-cluster |
 | Syslog audit repository | `config.audit.syslog.enabled` | 514 UDP, or 6514 TCP with `config.audit.syslog.transport: tls` | off-cluster |
 | FHIR audit repository | `config.audit.fhir_feed.enabled` plus `secrets.auditFhirFeedUrl` | 443 | off-cluster |
-| Subject-proxy source system | a `config.subject_proxy.systems` entry's `base_url` | 443 | off-cluster |
 
 The viewer, when enabled, carries its own egress policy rather than
 appearing in this table: it admits the CDR Service, DNS, and outbound HTTPS for an

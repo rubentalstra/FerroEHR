@@ -17,6 +17,13 @@ workflow refuses a tag that has no matching section here.
 
 ### Added
 
+- **An erasure tombstone on the party change-event stream** (#3417). A
+  physically deleted party now leaves one contribution-less row on the party
+  domain's own outbox before the delete commits, naming the party and every
+  `PARTY_RELATIONSHIP` erased with it, so a consumer of the party stream is
+  told to delete what it derived. GDPR Art. 19 makes the controller
+  communicate an erasure to each recipient the data reached, and the clinical
+  outbox has carried the same row since #3416.
 - **A dispatch-only storage benchmark lane** (#3370). It runs the storage
   benchmark against a PostgreSQL 18 service with durability on, compares every
   operation with the record committed for the same schema generation, and fails
@@ -63,6 +70,40 @@ workflow refuses a tag that has no matching section here.
 
 ### Changed
 
+- **The `production` deployment profile refuses the two compatibility
+  defaults** (#3323). The per-EHR `EHR_ACCESS` default is `open` and the audit
+  trail fails open, both chosen so the conformance instrument and the
+  development stacks work out of the box. Neither default changes; what changes
+  is that `deployment_profile = "production"` now refuses to start while either
+  stands, naming the key, the value and the remedy, unless the deployment
+  accepts it by name in `deployment_accepts` — the mechanism the profile
+  already uses. The two new gap tokens are `open_ehr_access_default` and
+  `audit_fails_open`. GDPR Art. 25(2) asks that by default personal data not be
+  made accessible without the individual's intervention to an indefinite number
+  of natural persons; the obligation binds the controller's production posture,
+  which is what the profile expresses.
+- **The deployment posture reads the audit pool and every domain database**
+  (#3398). `shared_cluster` now includes the audit pool's own cluster identity,
+  so an audit database co-located with a pseudonymisation domain is reported
+  instead of being invisible (Swiss DSV Art. 4 Abs. 5 keeps the log on a system
+  separate from the one processing the data). `migrate_on_runtime_credential`
+  is evaluated per domain database rather than only from `[db] migrate_url`: a
+  domain relocated to a database of its own is prepared on that domain's
+  runtime DSN, which is the same gap under a different key.
+- **`ext.openehr_timestamp` refuses a zone name and a `BC` era** (#3427).
+  PostgreSQL's own date/time input reads `2021-01-02T10:30:45
+  Europe/Amsterdam` and `2021-01-02T10:30:45 BC`, and the separator-position
+  gate in front of it let both through. BASE `foundation_types`
+  master06-time_types.adoc §Iso8601_date_time ends the value at the offset, so
+  both now read as NULL: an AQL comparison against such a stored value misses
+  rather than matching a date the record does not carry. The check costs the
+  helper 93 ms per 50 000 readings against 65 ms without it, measured on the
+  same corpus where the first generation took 117 ms.
+- **The archive export lists multimedia blobs from the reference index**
+  (#3420). It used to walk every exported body in process to find the blob
+  keys; it now reads `blob_ref`, the index the node write path maintains in
+  the same transaction as the nodes it describes, once per domain. The archive
+  it writes is unchanged.
 - **The `ext` value helpers are each in the form that measured fastest, and read
   fewer things than PostgreSQL's own date parser did** (#3351). Five of the
   seven no longer open a subtransaction per row: they guard their casts ahead of
@@ -234,6 +275,15 @@ workflow refuses a tag that has no matching section here.
 
 ### Removed
 
+- **The Subject Proxy service** (#3431). It realised SM
+  `I_SUBJECT_PROXY_SERVICE` and `I_DATA_BINDING` over the `sp_*` tables, had no
+  REST route and no consumer outside its own configuration. Gone with it: the
+  `[subject_proxy]` configuration section and its FHIR-frame executor, the
+  `sp_*` tables, the erasure reach into them, the Helm `config.subject_proxy`
+  values and the Subject Proxy book page. No openEHR specification obliges a
+  CDR to realise every SM component; SM `master02` presents the platform as a
+  set of services a deployment composes. `docs/architecture.md` lists the
+  component as not realised.
 - **Multi-tenancy** (#3378). Multi-tenancy is achieved by running separate
   instances: one instance, one database, one set of domain roles per
   organisation. That is where openEHR puts it. An openEHR *system* is "a
