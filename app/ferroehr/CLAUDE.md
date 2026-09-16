@@ -98,8 +98,10 @@ module.**
   `pg_stat_user_tables`, never a table name, so it measures a rewritten schema
   unchanged. A benchmark, never a conformance record.
 - **One integration-test binary:** `tests/it/main.rs` + one `mod` per topic
-  file; `tests/resources/` holds the shared fixtures (paths are anchored at
-  `CARGO_MANIFEST_DIR`). A new suite is a module registered in `main.rs`, never
+  file. The OPT/archetype fixtures the suites upload live in the shared corpus
+  at `corpus/fixtures/service`, reached as `../../corpus/fixtures/service`
+  from `CARGO_MANIFEST_DIR`; a test in this crate never reaches into another
+  crate's tree either. A new suite is a module registered in `main.rs`, never
   a new top-level `tests/*.rs`. The three container suites (`events_amqp`,
   `fhir_outbound_amqp`, `multimedia_s3`) are serialized by the nextest
   `containers` group, which matches them by module prefix — renaming one of
