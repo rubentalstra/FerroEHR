@@ -316,6 +316,12 @@ workflow refuses a tag that has no matching section here.
   services dump the same sets, and all six jobs now pass `--strict-names`, so a
   `--schema` pattern matching nothing fails the dump instead of writing an
   artefact that silently lacks that half (PostgreSQL 18, pg_dump §Options).
+- **A newer runtime base image** (#3439). The server and the viewer image build
+  on `gcr.io/distroless/cc-debian13:nonroot` at digest `sha256:54df941e`, the
+  digest that tag resolves to today. The
+  `org.opencontainers.image.base.digest` label moves with it in both
+  Dockerfiles and in the two publishing lanes, which is what the image-labels
+  guard checks.
 
 ### Removed
 
