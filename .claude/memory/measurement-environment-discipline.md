@@ -27,3 +27,5 @@ a contaminated or env-shifted number would have been committed as a regression.
 **How to apply:** before any `veredictum stress|aql-probe|perf` run: idle box
 (no agents, no builds), fresh volumes, ixit container names verified against
 `docker ps`. Related: [[owner-work-style]].
+
+**Update 2026-09-16:** the first generation-2 harness record was taken at a load average above 50 on the 8-core box (OneDrive File Provider, `fileproviderd` and the ESET scanner each at 50 to 70 % CPU after a `cargo clean` rebuilt 130 GB under `./target`), and read 10 of 12 operations as regressed by up to 360 %. Before any measurement: `uptime` 1-minute load under 2, `ps -Ao pcpu,comm -r | head` showing no sync or scanner at the top, the IDE quiet; otherwise wait or ask the owner to pause OneDrive and exclude `./target` from the scanner. Buffer counts from `EXPLAIN (ANALYZE, BUFFERS)` are the load-independent signal to compare first.

@@ -10,3 +10,6 @@ While the storage rewrite (#3337) is in progress, no `CONF_PERF_CLASS` measured 
 **Why:** the hour-plus exclusive runs block the checkout and the box for the rewrite's critical path, and the 4.3.0 image preserves the "before" side indefinitely.
 
 **How to apply:** file wire-level measurement under the after-rewrite comparison (#3350), never as a prerequisite of an implementation issue; keep the box free for the workers. Related: [[rewrite-needs-baseline-and-harness]], [[measurement-environment-discipline]].
+
+
+**Update 2026-09-16:** the owner ruled the hour-long wire runs out of the v4.3.1 cut as well ("we will not run the hour long test, that should move out of this milestone"); they live in #3452 (v4.3.2). Never schedule a `veredictum perf` or `stress` session in a milestone the owner has not opened for it.
