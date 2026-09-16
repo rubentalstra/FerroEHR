@@ -71,6 +71,14 @@ applies to every crate — generated and hand-written alike.
   Prefer an existing golden vector over a hand-written fixture. A test that
   encodes a spec rule cites the spec/CNF section it asserts
   (spec-adherence.md).
+- **Material two sides read lives under `corpus/`, and a test in a published
+  crate never reads a path under `app/`** (#3408). The dependency arrows run
+  `app/* -> crates/*`, and a fixture path is a string the compiler cannot
+  check, so a `crates/` test opening `../../app/...` makes the crate
+  untestable from its own package and pins a fixture the application is then
+  not free to move. Each `corpus/` subtree carries its own `PROVENANCE.md`.
+  Enforced by `scripts/checks/crate-tests-read-no-app.sh` (the
+  `spec-citations` CI job, with a `--self-test` that runs first).
 
 ## Where tests live
 
