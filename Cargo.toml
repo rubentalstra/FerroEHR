@@ -450,9 +450,11 @@ panic = "unwind"
 # "incomprehensible" (rustc book, -Cstrip) — never enable it for size.
 debug = "line-tables-only"
 # Whole-binary optimisation for a CPU-bound serialize/validate/canonicalise
-# path (Cargo book, profiles §lto and §codegen-units); #3098.
+# path (Cargo book, profiles §lto); #3098. `codegen-units = 1` is deliberately
+# NOT set: with it the arm64 release build exhausted the 16 GB runner twice
+# (exit 137 while compiling ferroehr-rest), and thin LTO optimises across the
+# default units anyway.
 lto = "thin"
-codegen-units = 1
 
 # WASM bundle profile for the viewer (Leptos book `deployment/binary_size`):
 # size-optimized client bundle, wired via the crate's `lib-profile-release`.
