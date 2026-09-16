@@ -30,7 +30,7 @@ async fn seqs(pool: &PgPool) -> Vec<i64> {
 /// Five EHR creations, each one published outbox row aged well past the
 /// window.
 async fn seed_published_rows(pool: &PgPool) -> Vec<i64> {
-    let svc = FerroEhrService::new(pool.clone());
+    let svc = FerroEhrService::new(pool.clone()).await;
     for _ in 0..5 {
         svc.create_ehr(None).await.expect("create_ehr");
     }

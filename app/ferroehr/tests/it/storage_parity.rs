@@ -81,7 +81,7 @@ async fn tamper(pool: &PgPool, sql: &'static str, vo_id: Uuid, sys_version: i32)
 #[tokio::test]
 async fn a_committed_composition_sweeps_clean() {
     let db = testkit::db().await.expect("testkit database");
-    let svc = FerroEhrService::new(db.pool());
+    let svc = FerroEhrService::new(db.pool()).await;
     seed_ehr_with_composition(&svc).await;
 
     let report = svc
@@ -109,7 +109,7 @@ async fn a_committed_composition_sweeps_clean() {
 async fn a_tampered_node_row_is_reported_as_content_differs() {
     let db = testkit::db().await.expect("testkit database");
     let pool = db.pool();
-    let svc = FerroEhrService::new(pool.clone());
+    let svc = FerroEhrService::new(pool.clone()).await;
     let ehr_id = seed_ehr_with_composition(&svc).await;
     let (vo_id, sys_version) = one_version(&pool, ehr_id, "COMPOSITION").await;
 
@@ -144,7 +144,7 @@ async fn a_tampered_node_row_is_reported_as_content_differs() {
 async fn a_tampered_version_body_is_reported_as_content_differs() {
     let db = testkit::db().await.expect("testkit database");
     let pool = db.pool();
-    let svc = FerroEhrService::new(pool.clone());
+    let svc = FerroEhrService::new(pool.clone()).await;
     let ehr_id = seed_ehr_with_composition(&svc).await;
     let (vo_id, sys_version) = one_version(&pool, ehr_id, "COMPOSITION").await;
 
@@ -174,7 +174,7 @@ async fn a_tampered_version_body_is_reported_as_content_differs() {
 async fn a_version_whose_node_rows_are_gone_is_reported_as_nodes_missing() {
     let db = testkit::db().await.expect("testkit database");
     let pool = db.pool();
-    let svc = FerroEhrService::new(pool.clone());
+    let svc = FerroEhrService::new(pool.clone()).await;
     let ehr_id = seed_ehr_with_composition(&svc).await;
     let (vo_id, sys_version) = one_version(&pool, ehr_id, "COMPOSITION").await;
 
@@ -202,7 +202,7 @@ async fn a_version_whose_node_rows_are_gone_is_reported_as_nodes_missing() {
 async fn a_logically_deleted_version_sweeps_clean() {
     let db = testkit::db().await.expect("testkit database");
     let pool = db.pool();
-    let svc = FerroEhrService::new(pool.clone());
+    let svc = FerroEhrService::new(pool.clone()).await;
     let ehr_id = svc.create_ehr(None).await.expect("ehr create");
     let dir = svc
         .create_directory(ehr_id, uv(&folder("root"), "249", None))
@@ -236,7 +236,7 @@ async fn a_logically_deleted_version_sweeps_clean() {
 async fn node_rows_under_a_bodiless_version_are_reported_as_unexpected_nodes() {
     let db = testkit::db().await.expect("testkit database");
     let pool = db.pool();
-    let svc = FerroEhrService::new(pool.clone());
+    let svc = FerroEhrService::new(pool.clone()).await;
     let ehr_id = svc.create_ehr(None).await.expect("ehr create");
     let dir = svc
         .create_directory(ehr_id, uv(&folder("root"), "249", None))
@@ -285,7 +285,7 @@ async fn node_rows_under_a_bodiless_version_are_reported_as_unexpected_nodes() {
 async fn a_scoped_sweep_covers_only_its_own_ehr() {
     let db = testkit::db().await.expect("testkit database");
     let pool = db.pool();
-    let svc = FerroEhrService::new(pool.clone());
+    let svc = FerroEhrService::new(pool.clone()).await;
 
     let damaged = seed_ehr_with_composition(&svc).await;
     let intact = seed_ehr_with_composition(&svc).await;
@@ -338,7 +338,7 @@ async fn a_scoped_sweep_covers_only_its_own_ehr() {
 async fn a_committed_since_bound_excludes_earlier_versions() {
     let db = testkit::db().await.expect("testkit database");
     let pool = db.pool();
-    let svc = FerroEhrService::new(pool.clone());
+    let svc = FerroEhrService::new(pool.clone()).await;
 
     seed_ehr_with_composition(&svc).await;
     let before = svc
@@ -393,7 +393,7 @@ async fn a_committed_since_bound_excludes_earlier_versions() {
 async fn the_streamed_sweep_reports_the_same_findings_as_the_aggregated_one() {
     let db = testkit::db().await.expect("testkit database");
     let pool = db.pool();
-    let svc = FerroEhrService::new(pool.clone());
+    let svc = FerroEhrService::new(pool.clone()).await;
     let ehr_id = seed_ehr_with_composition(&svc).await;
     let (vo_id, sys_version) = one_version(&pool, ehr_id, "COMPOSITION").await;
     tamper(
@@ -447,7 +447,7 @@ async fn the_streamed_sweep_reports_the_same_findings_as_the_aggregated_one() {
 #[tokio::test]
 async fn a_dropped_stream_stops_the_sweep_where_it_stood() {
     let db = testkit::db().await.expect("testkit database");
-    let svc = FerroEhrService::new(db.pool());
+    let svc = FerroEhrService::new(db.pool()).await;
     seed_ehr_with_composition(&svc).await;
 
     // One batch, then drop. Nothing may panic and nothing may run on: the
@@ -500,7 +500,7 @@ async fn aql_composition_names(svc: &FerroEhrService) -> Vec<String> {
 async fn a_rebuild_over_an_undamaged_repository_writes_nothing() {
     let db = testkit::db().await.expect("testkit database");
     let pool = db.pool();
-    let svc = FerroEhrService::new(pool.clone());
+    let svc = FerroEhrService::new(pool.clone()).await;
     let ehr_id = seed_ehr_with_composition(&svc).await;
 
     let before: i64 = sqlx::query_scalar("SELECT count(*) FROM node WHERE ehr_id = $1")
@@ -538,7 +538,7 @@ async fn a_rebuild_over_an_undamaged_repository_writes_nothing() {
 async fn a_tampered_node_row_is_rebuilt_and_the_sweep_goes_clean() {
     let db = testkit::db().await.expect("testkit database");
     let pool = db.pool();
-    let svc = FerroEhrService::new(pool.clone());
+    let svc = FerroEhrService::new(pool.clone()).await;
     let ehr_id = seed_ehr_with_composition(&svc).await;
     let (vo_id, sys_version) = one_version(&pool, ehr_id, "COMPOSITION").await;
 
@@ -613,7 +613,7 @@ async fn a_tampered_node_row_is_rebuilt_and_the_sweep_goes_clean() {
 async fn a_version_whose_node_rows_are_gone_is_rebuilt_from_its_body() {
     let db = testkit::db().await.expect("testkit database");
     let pool = db.pool();
-    let svc = FerroEhrService::new(pool.clone());
+    let svc = FerroEhrService::new(pool.clone()).await;
     let ehr_id = seed_ehr_with_composition(&svc).await;
     let (vo_id, sys_version) = one_version(&pool, ehr_id, "COMPOSITION").await;
 
@@ -665,7 +665,7 @@ async fn a_version_whose_node_rows_are_gone_is_rebuilt_from_its_body() {
 async fn node_rows_under_a_bodiless_version_rebuild_to_none() {
     let db = testkit::db().await.expect("testkit database");
     let pool = db.pool();
-    let svc = FerroEhrService::new(pool.clone());
+    let svc = FerroEhrService::new(pool.clone()).await;
     let ehr_id = seed_ehr_with_composition(&svc).await;
     let (vo_id, sys_version) = one_version(&pool, ehr_id, "COMPOSITION").await;
 
@@ -715,7 +715,7 @@ async fn node_rows_under_a_bodiless_version_rebuild_to_none() {
 async fn a_body_that_does_not_decompose_is_refused_and_its_rows_are_untouched() {
     let db = testkit::db().await.expect("testkit database");
     let pool = db.pool();
-    let svc = FerroEhrService::new(pool.clone());
+    let svc = FerroEhrService::new(pool.clone()).await;
     let ehr_id = seed_ehr_with_composition(&svc).await;
     let (vo_id, sys_version) = one_version(&pool, ehr_id, "COMPOSITION").await;
 
@@ -776,7 +776,7 @@ async fn a_body_that_does_not_decompose_is_refused_and_its_rows_are_untouched() 
 async fn an_archived_version_is_rebuilt_and_stays_archived() {
     let db = testkit::db().await.expect("testkit database");
     let pool = db.pool();
-    let svc = FerroEhrService::new(pool.clone());
+    let svc = FerroEhrService::new(pool.clone()).await;
     let ehr_id = seed_ehr_with_composition(&svc).await;
     let (vo_id, sys_version) = one_version(&pool, ehr_id, "COMPOSITION").await;
 
@@ -841,7 +841,7 @@ async fn an_archived_version_is_rebuilt_and_stays_archived() {
 async fn a_scoped_rebuild_repairs_only_its_own_ehr() {
     let db = testkit::db().await.expect("testkit database");
     let pool = db.pool();
-    let svc = FerroEhrService::new(pool.clone());
+    let svc = FerroEhrService::new(pool.clone()).await;
     let repaired = seed_ehr_with_composition(&svc).await;
     let left_alone = seed_ehr_with_composition(&svc).await;
 
@@ -910,7 +910,7 @@ async fn seed_party(svc: &FerroEhrService, pool: &PgPool) -> (Uuid, i32) {
 async fn a_damaged_party_is_reported_by_a_sweep_with_no_scope() {
     let db = testkit::db().await.expect("testkit database");
     let pool = db.pool();
-    let svc = FerroEhrService::new(pool.clone());
+    let svc = FerroEhrService::new(pool.clone()).await;
     let (vo_id, sys_version) = seed_party(&svc, &pool).await;
 
     tamper(
@@ -945,7 +945,7 @@ async fn a_damaged_party_is_reported_by_a_sweep_with_no_scope() {
 async fn a_sweep_with_no_scope_counts_versions_from_both_domains() {
     let db = testkit::db().await.expect("testkit database");
     let pool = db.pool();
-    let svc = FerroEhrService::new(pool.clone());
+    let svc = FerroEhrService::new(pool.clone()).await;
     seed_ehr_with_composition(&svc).await;
 
     let clinical_only = svc
@@ -972,7 +972,7 @@ async fn a_sweep_with_no_scope_counts_versions_from_both_domains() {
 async fn a_damaged_party_is_rebuilt_and_reads_correctly_afterwards() {
     let db = testkit::db().await.expect("testkit database");
     let pool = db.pool();
-    let svc = FerroEhrService::new(pool.clone());
+    let svc = FerroEhrService::new(pool.clone()).await;
     let (vo_id, sys_version) = seed_party(&svc, &pool).await;
 
     tamper(
@@ -1197,7 +1197,7 @@ async fn write_the_old_party_shape(pool: &PgPool, vo_id: VoId, sys_version: i32)
 async fn a_stale_decomposition_is_reported_and_rebuilt() {
     let db = testkit::db().await.expect("testkit database");
     let pool = db.pool();
-    let svc = FerroEhrService::new(pool.clone());
+    let svc = FerroEhrService::new(pool.clone()).await;
     let (vo_id, sys_version) = seed_contactable_party(&svc, &pool).await;
     let served = svc.get_party(vo_id).await.expect("read the fresh party");
 
@@ -1274,7 +1274,7 @@ async fn a_stale_decomposition_is_reported_and_rebuilt() {
 async fn a_freshly_committed_repository_reports_no_stale_decomposition() {
     let db = testkit::db().await.expect("testkit database");
     let pool = db.pool();
-    let svc = FerroEhrService::new(pool.clone());
+    let svc = FerroEhrService::new(pool.clone()).await;
     seed_ehr_with_composition(&svc).await;
     seed_contactable_party(&svc, &pool).await;
 

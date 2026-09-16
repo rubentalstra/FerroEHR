@@ -47,7 +47,7 @@ fn assert_unresolvable(err: &SmError, expected_path_fragment: &str) {
 #[tokio::test]
 async fn direct_directory_routes_gate_this_system_refs() {
     let db = testkit::db().await.expect("testkit database");
-    let svc = FerroEhrService::new(db.pool());
+    let svc = FerroEhrService::new(db.pool()).await;
     let ehr_uuid = svc.create_ehr(None).await.expect("ehr_create");
 
     // A this-system (`local`) reference to a uid that exists nowhere: refused,
@@ -131,7 +131,7 @@ async fn direct_directory_routes_gate_this_system_refs() {
 #[tokio::test]
 async fn contribution_path_gates_this_system_refs() {
     let db = testkit::db().await.expect("testkit database");
-    let svc = FerroEhrService::new(db.pool());
+    let svc = FerroEhrService::new(db.pool()).await;
     let ehr_uuid = svc.create_ehr(None).await.expect("ehr_create");
 
     // Version identity is repository-allocated (a CONTRIBUTION member never

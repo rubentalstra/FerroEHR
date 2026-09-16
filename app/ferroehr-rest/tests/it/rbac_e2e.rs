@@ -124,7 +124,7 @@ fn authz(enabled: bool) -> Option<Arc<AuthzHandle>> {
 /// A real service over a fresh DB, optionally wired with an ATNA audit sender.
 async fn service(audit: Option<AuditSender>) -> (testkit::TestDb, Arc<FerroEhrService>) {
     let (pg, pool) = common::migrated_pool().await;
-    let mut svc = FerroEhrService::new(pool);
+    let mut svc = FerroEhrService::new(pool).await;
     if let Some(sender) = audit {
         svc = svc.with_audit(sender);
     }

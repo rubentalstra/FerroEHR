@@ -50,7 +50,7 @@ fn section_from(name: &str, system_id: &str) -> Value {
 
 async fn setup() -> (testkit::TestDb, FerroEhrService, EhrId) {
     let db = testkit::db().await.expect("testkit database");
-    let svc = FerroEhrService::new(db.pool());
+    let svc = FerroEhrService::new(db.pool()).await;
     let ehr_id = svc.create_ehr(None).await.expect("create_ehr");
     (db, svc, ehr_id)
 }

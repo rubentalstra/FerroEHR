@@ -258,14 +258,22 @@ impl FerroEhrService {
     /// Construct the service over a connection pool with the default system id
     /// and the default (server-side `digest`) version signer.
     ///
-    /// The demographic pool is derived from `pool`'s own connect options
-    /// ([`crate::db::domain_pool_from`]), so the demographic chapter reads
-    /// and writes the `demographic` schema without any further wiring — the
-    /// SCHEMA separation is always on. A deployment that separates the runtime
-    /// ROLES, tunes the pool, or enables tenancy supplies its own pool with
+    /// The demographic and linkage pools are derived from `pool`'s own connect
+    /// options ([`crate::db::domain_pool_from`]), so those chapters read and
+    /// write their own schema without any further wiring — the SCHEMA
+    /// separation is always on. A deployment that separates the runtime ROLES,
+    /// tunes the pool, or enables tenancy supplies its own pool with
     /// [`Self::with_demographic_pool`].
-    #[must_use]
-    pub fn new(pool: PgPool) -> Self {
+    ///
+    /// The constructor is `async` because deriving those pools spawns each
+    /// pool's sqlx maintenance task, which needs a tokio runtime in scope; the
+    /// `.await` makes the runtime a precondition of calling it at all.
+    ///
+    /// # Panics
+    ///
+    /// Panics when the returned future is polled outside a tokio runtime,
+    /// which no `.await` inside this workspace's tokio-driven code can do.
+    pub async fn new(pool: PgPool) -> Self {
         Self {
             demographic_pool: crate::db::domain_pool_from(&pool, crate::db::domain::Domain::Party),
             linkage_pool: crate::db::domain_pool_from(&pool, crate::db::domain::Domain::Linkage),

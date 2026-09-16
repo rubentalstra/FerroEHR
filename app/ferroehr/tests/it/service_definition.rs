@@ -50,7 +50,7 @@ const OPT_TEMPLATE_ID: &str = "IDCR Allergies List.v0";
 #[tokio::test]
 async fn archetype_upload_get_list_match_replace_delete() {
     let db = testkit::db().await.expect("testkit database");
-    let svc = FerroEhrService::new(db.pool());
+    let svc = FerroEhrService::new(db.pool()).await;
     let adl = fixture(ARCHETYPE_REL);
 
     // Precondition: not present yet.
@@ -124,7 +124,7 @@ async fn archetype_upload_get_list_match_replace_delete() {
 #[tokio::test]
 async fn archetype_with_revision_history_section_uploads() {
     let db = testkit::db().await.expect("testkit database");
-    let svc = FerroEhrService::new(db.pool());
+    let svc = FerroEhrService::new(db.pool()).await;
     let adl = fixture(REVISION_HISTORY_ARCHETYPE_REL);
 
     assert!(
@@ -149,7 +149,7 @@ async fn archetype_with_revision_history_section_uploads() {
 #[tokio::test]
 async fn archetype_errors() {
     let db = testkit::db().await.expect("testkit database");
-    let svc = FerroEhrService::new(db.pool());
+    let svc = FerroEhrService::new(db.pool()).await;
 
     // Invalid ADL → 422 reporting invalid_archetype (i_definition_adl14.adoc
     // §upload_archetype .Errors).
@@ -225,7 +225,7 @@ async fn archetype_semantic_validity_runs_the_14_engine() {
     // rule is rejected. ADL1.4 master08 §Validity Rules VARDT — the topmost
     // definition typename must match the RM class of the archetype id.
     let db = testkit::db().await.expect("testkit database");
-    let svc = FerroEhrService::new(db.pool());
+    let svc = FerroEhrService::new(db.pool()).await;
     let adl = fixture(ARCHETYPE_REL);
 
     // Break VARDT: the id is a COMPOSITION, the definition root now claims
@@ -266,7 +266,7 @@ async fn adl14_convert_to_adl2_migration_round_trip() {
     // (the same service path a native ADL2 upload takes). No openEHR spec
     // governs 1.4 → 2 conversion — our own design/extension.
     let db = testkit::db().await.expect("testkit database");
-    let svc = FerroEhrService::new(db.pool());
+    let svc = FerroEhrService::new(db.pool()).await;
     let adl = fixture(ARCHETYPE_REL);
 
     svc.upload_archetype(adl)
@@ -312,7 +312,7 @@ async fn adl14_convert_to_adl2_migration_round_trip() {
 #[tokio::test]
 async fn opt_upload_has_get_list_match_delete() {
     let db = testkit::db().await.expect("testkit database");
-    let svc = FerroEhrService::new(db.pool());
+    let svc = FerroEhrService::new(db.pool()).await;
     let xml = fixture(OPT_REL);
 
     // valid_opt on good vs bad XML.
@@ -378,7 +378,7 @@ async fn opt_upload_has_get_list_match_delete() {
 async fn opt_delete_refuses_while_referenced() {
     let db = testkit::db().await.expect("testkit database");
     let pool = db.pool();
-    let svc = FerroEhrService::new(pool.clone());
+    let svc = FerroEhrService::new(pool.clone()).await;
 
     svc.upload_opt(fixture(OPT_REL)).await.expect("upload opt");
     let opts = svc.list_opts_adl14(Page::all()).await.unwrap();
@@ -438,7 +438,7 @@ async fn opt_delete_refuses_while_referenced() {
 #[tokio::test]
 async fn template_adl14_list_filters_and_paginates() {
     let db = testkit::db().await.expect("testkit database");
-    let svc = FerroEhrService::new(db.pool());
+    let svc = FerroEhrService::new(db.pool()).await;
 
     // Two templates: "IDCR Allergies List.v0" and "IDCR Problem List.v1".
     svc.template_adl14_upload(fixture(OPT_REL))
@@ -537,7 +537,7 @@ async fn template_adl14_list_filters_and_paginates() {
 #[tokio::test]
 async fn template_adl14_list_absent_version_collapses_to_latest() {
     let db = testkit::db().await.expect("testkit database");
-    let svc = FerroEhrService::new(db.pool());
+    let svc = FerroEhrService::new(db.pool()).await;
 
     // Two versions of the one family: the v0 fixture, and a v9 sibling made
     // by re-versioning its template_id (the store keys by template_id, so
@@ -597,7 +597,7 @@ async fn template_adl14_list_absent_version_collapses_to_latest() {
 #[tokio::test]
 async fn query_store_rejects_non_aql_formalism() {
     let db = testkit::db().await.expect("testkit database");
-    let svc = FerroEhrService::new(db.pool());
+    let svc = FerroEhrService::new(db.pool()).await;
 
     let aql = "SELECT c FROM EHR e CONTAINS COMPOSITION c".to_owned();
 
@@ -641,7 +641,7 @@ async fn query_store_rejects_non_aql_formalism() {
 #[tokio::test]
 async fn query_store_name_grammar_and_reserved_name() {
     let db = testkit::db().await.expect("testkit database");
-    let svc = FerroEhrService::new(db.pool());
+    let svc = FerroEhrService::new(db.pool()).await;
 
     let aql = "SELECT c FROM EHR e CONTAINS COMPOSITION c".to_owned();
 
@@ -700,7 +700,7 @@ async fn query_store_name_grammar_and_reserved_name() {
 #[tokio::test]
 async fn opt_errors() {
     let db = testkit::db().await.expect("testkit database");
-    let svc = FerroEhrService::new(db.pool());
+    let svc = FerroEhrService::new(db.pool()).await;
 
     // Invalid OPT → 422 reporting invalid_template (i_definition_adl14.adoc
     // §upload_opt .Errors).
@@ -770,7 +770,7 @@ const ADL2_TMPL_HRID: &str = "openEHR-EHR-COMPOSITION.t_vitals.v2.0.0";
 #[tokio::test]
 async fn adl2_upload_get_list_by_kind_match_replace_delete() {
     let db = testkit::db().await.expect("testkit database");
-    let svc = FerroEhrService::new(db.pool());
+    let svc = FerroEhrService::new(db.pool()).await;
 
     // Preconditions: empty, and valid_artefact on good vs bad source.
     assert_eq!(svc.artefacts_count().await.unwrap(), 0);
@@ -864,7 +864,7 @@ async fn adl2_upload_get_list_by_kind_match_replace_delete() {
 #[tokio::test]
 async fn adl2_errors() {
     let db = testkit::db().await.expect("testkit database");
-    let svc = FerroEhrService::new(db.pool());
+    let svc = FerroEhrService::new(db.pool()).await;
 
     // Unparseable ADL2 (unrecognised header) is *syntactically invalid
     // content* — the released 400 branch (ITS-REST `responses/400.yaml`:
@@ -960,7 +960,7 @@ async fn adl2_errors() {
 )]
 async fn query_valid_store_list_match_delete() {
     let db = testkit::db().await.expect("testkit database");
-    let svc = FerroEhrService::new(db.pool());
+    let svc = FerroEhrService::new(db.pool()).await;
     let good = "SELECT c FROM COMPOSITION c";
 
     // valid_query: formalism equivalence + parse.
@@ -1133,7 +1133,7 @@ async fn query_valid_store_list_match_delete() {
 #[tokio::test]
 async fn query_store_set_not_implemented() {
     let db = testkit::db().await.expect("testkit database");
-    let svc = FerroEhrService::new(db.pool());
+    let svc = FerroEhrService::new(db.pool()).await;
     // store_query_set is a spec TODO → 501 (trait default, NOTE).
     let err = svc.store_query_set(None).expect_err("not implemented");
     assert!(
@@ -1156,7 +1156,7 @@ async fn query_store_set_not_implemented() {
 #[tokio::test]
 async fn adl2_template_upload_wire_conflicts_on_duplicate() {
     let db = testkit::db().await.expect("testkit database");
-    let svc = FerroEhrService::new(db.pool());
+    let svc = FerroEhrService::new(db.pool()).await;
 
     let tmpl = adl2_source("template", "openEHR-EHR-COMPOSITION.t_wire.v1.0.0", None);
     let hrid = svc
@@ -1213,7 +1213,7 @@ async fn adl2_template_resolves_on_the_commit_path_and_validates() {
     const HRID: &str = "openEHR-EHR-COMPOSITION.commit_resolver.v1.0.0";
 
     let db = testkit::db().await.expect("testkit database");
-    let svc = FerroEhrService::new(db.pool());
+    let svc = FerroEhrService::new(db.pool()).await;
 
     let opt = adl2_source("operational_template", HRID, None);
     svc.upload_artefact(opt).await.expect("upload ADL2 OPT");
@@ -1300,7 +1300,7 @@ async fn adl2_template_with_filler_projects_the_filled_web_template() {
     const ARCH: &str = include_str!("../../../../corpus/fixtures/adl2/archetype/cnf_count_a.adls");
     const TMPL: &str = include_str!("../../../../corpus/fixtures/adl2/opt/flat_parity_a.adls");
     let db = testkit::db().await.expect("testkit database");
-    let svc = FerroEhrService::new(db.pool());
+    let svc = FerroEhrService::new(db.pool()).await;
 
     svc.upload_artefact(ARCH.to_owned())
         .await
@@ -1338,7 +1338,7 @@ async fn definitions_valid_resolves_archetype_ids_against_the_stored_repositorie
     const ADL2_HRID: &str = "openEHR-EHR-SECTION.validity_known.v1.0.0";
 
     let db = testkit::db().await.expect("testkit database");
-    let svc = FerroEhrService::new(db.pool());
+    let svc = FerroEhrService::new(db.pool()).await;
     svc.upload_archetype(fixture(ARCHETYPE_REL))
         .await
         .expect("upload the ADL 1.4 archetype");

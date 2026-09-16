@@ -175,7 +175,7 @@ fn uv<T: serde::de::DeserializeOwned>(data: &Value, preceding: Option<&str>) -> 
 #[tokio::test]
 async fn party_sm_calls_round_trip() {
     let db = testkit::db().await.expect("testkit database");
-    let svc = FerroEhrService::new(db.pool());
+    let svc = FerroEhrService::new(db.pool()).await;
 
     // create_party(UV_PARTY) → the new VERSIONED_OBJECT's id.
     // Boxed: the typed `UPDATE_VERSION<PARTY>` argument rides the SM future
@@ -256,7 +256,7 @@ async fn party_sm_calls_round_trip() {
 async fn person_lifecycle_end_to_end() {
     let db = testkit::db().await.expect("testkit database");
     let pool = db.pool();
-    let svc = FerroEhrService::new(pool.clone());
+    let svc = FerroEhrService::new(pool.clone()).await;
 
     // create → v1
     let created = svc
@@ -394,7 +394,7 @@ async fn person_lifecycle_end_to_end() {
 #[tokio::test]
 async fn party_write_responses_match_a_fresh_read() {
     let db = testkit::db().await.expect("testkit database");
-    let svc = FerroEhrService::new(db.pool());
+    let svc = FerroEhrService::new(db.pool()).await;
 
     // create → the built-from-commit body equals a fresh read.
     let created = svc
@@ -464,7 +464,7 @@ async fn party_write_responses_match_a_fresh_read() {
 #[tokio::test]
 async fn person_delete_by_versioned_uid_with_if_match() {
     let db = testkit::db().await.expect("testkit database");
-    let svc = FerroEhrService::new(db.pool());
+    let svc = FerroEhrService::new(db.pool()).await;
 
     let created = svc
         .party_create(PartyKind::Person, typed(&person("Jane")), None)
@@ -491,7 +491,7 @@ async fn person_delete_by_versioned_uid_with_if_match() {
 #[tokio::test]
 async fn role_create_and_get() {
     let db = testkit::db().await.expect("testkit database");
-    let svc = FerroEhrService::new(db.pool());
+    let svc = FerroEhrService::new(db.pool()).await;
 
     let created = svc
         .party_create(PartyKind::Role, typed(&role("Clinician")), None)
@@ -510,7 +510,7 @@ async fn role_create_and_get() {
 #[tokio::test]
 async fn demographic_contribution_multi_version() {
     let db = testkit::db().await.expect("testkit database");
-    let svc = FerroEhrService::new(db.pool());
+    let svc = FerroEhrService::new(db.pool()).await;
 
     let body = json!({
         "_type": "CONTRIBUTION",
@@ -577,7 +577,7 @@ async fn demographic_contribution_multi_version() {
 #[tokio::test]
 async fn party_tags_crud() {
     let db = testkit::db().await.expect("testkit database");
-    let svc = FerroEhrService::new(db.pool());
+    let svc = FerroEhrService::new(db.pool()).await;
 
     let created = svc
         .party_create(PartyKind::Person, typed(&person("Tagged")), None)
@@ -636,7 +636,7 @@ async fn party_tags_crud() {
 #[tokio::test]
 async fn party_update_if_match_is_case_insensitive_and_quote_tolerant() {
     let db = testkit::db().await.expect("testkit database");
-    let svc = FerroEhrService::new(db.pool());
+    let svc = FerroEhrService::new(db.pool()).await;
 
     let created = svc
         .party_create(PartyKind::Person, typed(&person("Jane")), None)
@@ -721,7 +721,7 @@ async fn party_update_if_match_is_case_insensitive_and_quote_tolerant() {
 async fn inline_relationships_are_stored_and_served_verbatim() {
     let db = testkit::db().await.expect("testkit database");
     let pool = db.pool();
-    let svc = FerroEhrService::new(pool.clone());
+    let svc = FerroEhrService::new(pool.clone()).await;
 
     let relationship = json!({
         "_type": "PARTY_RELATIONSHIP",
@@ -789,7 +789,7 @@ async fn inline_relationships_are_stored_and_served_verbatim() {
 #[tokio::test]
 async fn inline_relationship_source_matches_the_version_container_not_the_version() {
     let db = testkit::db().await.expect("testkit database");
-    let svc = FerroEhrService::new(db.pool());
+    let svc = FerroEhrService::new(db.pool()).await;
 
     let created = svc
         .party_create(PartyKind::Person, typed(&person("Jane Container")), None)
@@ -889,7 +889,7 @@ async fn inline_relationship_source_matches_the_version_container_not_the_versio
 #[tokio::test]
 async fn versioned_party_owner_id_names_the_serving_system() {
     let db = testkit::db().await.expect("testkit database");
-    let svc = FerroEhrService::new(db.pool());
+    let svc = FerroEhrService::new(db.pool()).await;
 
     let created = svc
         .party_create(PartyKind::Person, typed(&person("Jane")), None)

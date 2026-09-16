@@ -491,6 +491,7 @@ async fn app() -> (testkit::TestDb, Router) {
     // — without a store that route answers `404` and its admin cell would be
     // unobservable.
     let svc = ferroehr::service::FerroEhrService::new(pool.clone())
+        .await
         .with_audit_store(ferroehr::system_log::store::AuditStore::new(pool));
     let app = ferroehr_rest::build_full(
         matrix_config(),
@@ -780,7 +781,7 @@ async fn the_swagger_surface_honours_its_access_level() {
         };
         let app = ferroehr_rest::build_full(
             cfg,
-            Arc::new(ferroehr::service::FerroEhrService::new(pool)),
+            Arc::new(ferroehr::service::FerroEhrService::new(pool).await),
             authz(),
             ferroehr_rest::extensions::management::Observability::default(),
         )

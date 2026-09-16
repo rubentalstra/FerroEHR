@@ -74,7 +74,7 @@ fn config(fhir_enabled: bool) -> AppConfig {
 
 /// Build the router over the real service with an OPT already ingested.
 async fn app_with_template(pool: PgPool, fhir_enabled: bool) -> (Arc<FerroEhrService>, Router) {
-    let svc = Arc::new(FerroEhrService::new(pool));
+    let svc = Arc::new(FerroEhrService::new(pool).await);
     svc.template_adl14_upload(fixture(OPT_REL))
         .await
         .expect("ingest OPT");

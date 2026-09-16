@@ -920,7 +920,7 @@ async fn template_id_is_read_back_from_version() {
     let rows = decompose(corpus_sample()).expect("decompose");
     insert_nodes(&pool, vo, 1, ehr_id, &rows).await;
 
-    let service = FerroEhrService::new(pool);
+    let service = FerroEhrService::new(pool).await;
     // Current version.
     assert_eq!(
         service
@@ -988,7 +988,7 @@ async fn query_subject_scope_filters_and_collects_projection_independently() {
         insert_nodes(&pool, vo, 1, ehr, &rows).await;
     }
 
-    let service = FerroEhrService::new(pool);
+    let service = FerroEhrService::new(pool).await;
     // The projection is `c/name/value` — neither ehr_id nor a template path.
     let aql = "SELECT c/name/value FROM COMPOSITION c";
 
@@ -1192,7 +1192,7 @@ async fn materialized_body_matches_node_reassembly_on_a_real_commit() {
 
     let db = testkit::db().await.expect("testkit database");
     let pool = db.pool();
-    let service = FerroEhrService::new(pool.clone());
+    let service = FerroEhrService::new(pool.clone()).await;
     let ehr_id = service.create_ehr(None).await.expect("ehr create");
 
     // The EHR create commits an EHR_STATUS through the full commit path.
@@ -1318,7 +1318,7 @@ async fn a_wiped_clinical_schema_is_rebuilt_and_serves_writes_again() {
         .await
         .expect("the clinical set rebuilds its schema on a database whose party set is complete");
 
-    let svc = ferroehr::service::FerroEhrService::new(pool.clone());
+    let svc = ferroehr::service::FerroEhrService::new(pool.clone()).await;
     let ehr_id = svc.create_ehr(None).await.expect("create_ehr");
     let body = crate::fixtures::composition("after the wipe");
     let created = svc

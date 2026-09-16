@@ -148,6 +148,7 @@ async fn mount_system_probe(server: &MockServer, total: u32) {
 async fn service_at(server: &MockServer) -> (testkit::TestDb, FerroEhrService) {
     let db = testkit::db().await.expect("testkit database");
     let svc = FerroEhrService::new(db.pool())
+        .await
         .with_external_terminology(Arc::new(provider(&server.uri())));
     (db, svc)
 }

@@ -295,7 +295,7 @@ fn assert_no_policy_qual(plan: &Value, scans: &[Scan]) {
 async fn the_current_version_read_probes_the_head_row_by_primary_key() {
     let db = testkit::db().await.expect("testkit database");
     let pool = db.pool();
-    let svc = FerroEhrService::new(pool.clone());
+    let svc = FerroEhrService::new(pool.clone()).await;
     let seeded = seed(&svc, &pool).await;
 
     let mut tx = explain_tx(&pool).await;
@@ -341,7 +341,7 @@ async fn the_current_version_read_probes_the_head_row_by_primary_key() {
 async fn version_at_time_probes_the_descending_commit_index() {
     let db = testkit::db().await.expect("testkit database");
     let pool = db.pool();
-    let svc = FerroEhrService::new(pool.clone());
+    let svc = FerroEhrService::new(pool.clone()).await;
     let seeded = seed(&svc, &pool).await;
 
     let mut tx = explain_tx(&pool).await;
@@ -373,7 +373,7 @@ async fn version_at_time_probes_the_descending_commit_index() {
 async fn the_if_match_check_probes_the_head_row_by_primary_key() {
     let db = testkit::db().await.expect("testkit database");
     let pool = db.pool();
-    let svc = FerroEhrService::new(pool.clone());
+    let svc = FerroEhrService::new(pool.clone()).await;
     let seeded = seed(&svc, &pool).await;
 
     let mut tx = explain_tx(&pool).await;
@@ -406,7 +406,7 @@ async fn the_if_match_check_probes_the_head_row_by_primary_key() {
 async fn the_revision_history_walks_one_object_by_index() {
     let db = testkit::db().await.expect("testkit database");
     let pool = db.pool();
-    let svc = FerroEhrService::new(pool.clone());
+    let svc = FerroEhrService::new(pool.clone()).await;
     let seeded = seed(&svc, &pool).await;
 
     let mut tx = explain_tx(&pool).await;
@@ -443,7 +443,7 @@ async fn the_revision_history_walks_one_object_by_index() {
 async fn a_point_read_on_the_partitioned_parent_probes_both_partitions() {
     let db = testkit::db().await.expect("testkit database");
     let pool = db.pool();
-    let svc = FerroEhrService::new(pool.clone());
+    let svc = FerroEhrService::new(pool.clone()).await;
     let seeded = seed(&svc, &pool).await;
 
     let mut tx = explain_tx(&pool).await;
@@ -508,7 +508,7 @@ const SUPERSESSIONS: i64 = 3;
 async fn the_head_row_update_is_heap_only() {
     let db = testkit::db().await.expect("testkit database");
     let pool = db.pool();
-    let svc = FerroEhrService::new(pool.clone());
+    let svc = FerroEhrService::new(pool.clone()).await;
     let ehr = svc.create_ehr(None).await.expect("create an EHR");
     let body = composition("heap-only head");
     let mut committed = svc
@@ -591,7 +591,7 @@ const CONTAINS_AQL: &str = "SELECT c/uid/value FROM EHR e CONTAINS COMPOSITION c
 async fn aql_over_one_ehr_reads_the_hot_partition_only() {
     let db = testkit::db().await.expect("testkit database");
     let pool = db.pool();
-    let svc = FerroEhrService::new(pool.clone());
+    let svc = FerroEhrService::new(pool.clone()).await;
     let seeded = seed(&svc, &pool).await;
 
     let plan = explain_aql(&pool, aql_sql(CONTAINS_AQL, vec![seeded.ehr])).await;
@@ -627,7 +627,7 @@ async fn aql_over_one_ehr_reads_the_hot_partition_only() {
 async fn aql_over_the_population_reads_the_hot_partition_only() {
     let db = testkit::db().await.expect("testkit database");
     let pool = db.pool();
-    let svc = FerroEhrService::new(pool.clone());
+    let svc = FerroEhrService::new(pool.clone()).await;
     seed(&svc, &pool).await;
 
     let plan = explain_aql(&pool, aql_sql(CONTAINS_AQL, Vec::new())).await;
@@ -669,7 +669,7 @@ const COMMITTED_RANGE_SQL: &str =
 async fn a_commit_time_range_serves_from_the_brin_index() {
     let db = testkit::db().await.expect("testkit database");
     let pool = db.pool();
-    let svc = FerroEhrService::new(pool.clone());
+    let svc = FerroEhrService::new(pool.clone()).await;
     let seeded = seed(&svc, &pool).await;
 
     let mut tx = explain_tx(&pool).await;

@@ -151,7 +151,7 @@ async fn seed_scheme(svc: &FerroEhrService, ehr_id: ferroehr::ids::EhrId, scheme
 /// a 403 (isolating what we assert).
 async fn app(auth_enabled: bool, scheme: Option<Value>) -> (testkit::TestDb, Router) {
     let (pg, pool) = common::migrated_pool().await;
-    let svc = FerroEhrService::new(pool);
+    let svc = FerroEhrService::new(pool).await;
     let ehr_id: ferroehr::ids::EhrId = EHR_ID.parse().expect("valid ehr uuid");
     svc.create_ehr_with_id(ehr_id, None)
         .await

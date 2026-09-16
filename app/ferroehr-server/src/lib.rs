@@ -360,7 +360,7 @@ fn mounted_management_endpoints(levels: EndpointLevels) -> String {
 /// # Errors
 /// Any collaborator whose configuration is enabled but unbuildable — a slim
 /// build missing its cargo feature, or an unusable external dependency.
-fn assemble_service(
+async fn assemble_service(
     config: &ferroehr::config::FerroEhrConfig,
     pools: &DomainPools,
     audit_sender: Option<AuditSender>,
@@ -399,6 +399,7 @@ fn assemble_service(
     tracing::info!(licence = %licence, "licence");
 
     let mut service = FerroEhrService::new(pool.clone())
+        .await
         .with_demographic_pool(pools.party.clone())
         .with_linkage_pool(pools.linkage.clone())
         .with_spec_profile(config.spec_profile)
@@ -943,14 +944,17 @@ async fn serve(config_path: Option<&Path>, overrides: &[(String, String)]) -> an
     tracing::info!(system_id = %config.server.system_id, "openEHR system identifier");
 
     let audit_enabled = audit_sender.is_some();
-    let service = Arc::new(assemble_service(
-        &config,
-        &pools,
-        audit_sender,
-        outbox_enabled,
-        signer,
-        deployment,
-    )?);
+    let service = Arc::new(
+        assemble_service(
+            &config,
+            &pools,
+            audit_sender,
+            outbox_enabled,
+            signer,
+            deployment,
+        )
+        .await?,
+    );
 
     // Off by default (it carries PHI) and gated on the `fhir` feature, which
     // itself implies `events` for the broker transport.
