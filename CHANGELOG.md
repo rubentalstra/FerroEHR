@@ -329,6 +329,13 @@ workflow refuses a tag that has no matching section here.
   request, and a blocking-client timeout panic; `tokio-rustls` 0.26.5 returns
   more data per `poll_read` on a TLS stream; `fancy-regex` 0.19.2 cuts pattern
   build time. No API a caller here uses changed.
+- **`jsonschema` 0.55.1** (#3443). It compiles the vendored ITS-JSON schema
+  behind `openehr-its`'s `schema-validation` feature. The releases since 0.53.0
+  correct the keyword location an error names and several schema
+  canonicalisation defects; the 626-test `openehr-its` suite, the ITS-JSON
+  corpus gate among it, passes unchanged. The eight published `openehr-*`
+  crates step to 0.0.67 with it, since the requirement is part of their
+  packaged manifest.
 
 ### Removed
 
