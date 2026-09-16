@@ -9,10 +9,10 @@
 -- pool.
 --
 -- Where the FHIR R4 surface of a deployment lives — this product's `fhir`
--- feature or FerroBRIDGE's facade — is the owner decision #3386 records.
+-- feature or FerroBRIDGE's facade — was ruled on 2026-09-03: it is FerroBRIDGE's (#3080).
 -- `fhir_mapping` is the mapping registry that surface reads.
--- TODO(#3386): fhir_mapping leaves with the FHIR facade if the owner's
--- decision moves it to FerroBRIDGE.
+-- TODO(#3080): fhir_mapping leaves with the in-tree FHIR connector, retired
+-- in favour of FerroBRIDGE (owner ruling 2026-09-03).
 --
 -- Runs with search_path = clinical, ext, public.
 
