@@ -63,8 +63,7 @@ async fn stamped_identities(svc: &FerroEhrService) -> (String, String, String) {
 #[tokio::test]
 async fn configured_system_id_stamps_ehr_audit_and_version_uid() {
     let db = testkit::db().await.expect("testkit database");
-    let svc = FerroEhrService::new(db.pool())
-        .await
+    let svc = FerroEhrService::new(&ferroehr::db::domain::DomainPools::from_shared(&db.pool()))
         .with_system_id("custom.sys");
 
     let (ehr_system_id, ovid, audit_system_id) = stamped_identities(&svc).await;
@@ -92,7 +91,7 @@ async fn configured_system_id_stamps_ehr_audit_and_version_uid() {
 #[tokio::test]
 async fn unset_system_id_keeps_the_compatibility_default() {
     let db = testkit::db().await.expect("testkit database");
-    let svc = FerroEhrService::new(db.pool()).await;
+    let svc = FerroEhrService::new(&ferroehr::db::domain::DomainPools::from_shared(&db.pool()));
 
     let (ehr_system_id, ovid, audit_system_id) = stamped_identities(&svc).await;
 

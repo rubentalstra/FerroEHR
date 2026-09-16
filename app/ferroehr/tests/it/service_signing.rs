@@ -108,7 +108,7 @@ async fn create_ehr(svc: &FerroEhrService) -> String {
 #[tokio::test]
 async fn composition_version_is_signed_and_digest_recomputes_from_served_version() {
     let db = testkit::db().await.expect("testkit database");
-    let svc = FerroEhrService::new(db.pool()).await;
+    let svc = FerroEhrService::new(&ferroehr::db::domain::DomainPools::from_shared(&db.pool()));
     let ehr_id = create_ehr(&svc).await;
     let ehr_uuid = ferroehr::ids::EhrId(ehr_id.parse::<uuid::Uuid>().expect("ehr uuid"));
 
@@ -143,7 +143,7 @@ async fn composition_version_is_signed_and_digest_recomputes_from_served_version
 async fn ehr_status_versions_are_signed_and_every_version_carries_a_digest() {
     let db = testkit::db().await.expect("testkit database");
     let pool = db.pool();
-    let svc = FerroEhrService::new(pool.clone()).await;
+    let svc = FerroEhrService::new(&ferroehr::db::domain::DomainPools::from_shared(&pool));
     let ehr_id = create_ehr(&svc).await;
     let ehr_uuid = ferroehr::ids::EhrId(ehr_id.parse::<uuid::Uuid>().expect("ehr uuid"));
 
@@ -203,7 +203,7 @@ async fn ehr_status_versions_are_signed_and_every_version_carries_a_digest() {
 #[tokio::test]
 async fn contribution_versions_are_signed() {
     let db = testkit::db().await.expect("testkit database");
-    let svc = FerroEhrService::new(db.pool()).await;
+    let svc = FerroEhrService::new(&ferroehr::db::domain::DomainPools::from_shared(&db.pool()));
     let ehr_id = create_ehr(&svc).await;
     let ehr_uuid = ferroehr::ids::EhrId(ehr_id.parse::<uuid::Uuid>().expect("ehr uuid"));
 
@@ -245,7 +245,7 @@ async fn client_supplied_signature_is_stored_verbatim() {
     const CLIENT_SIG: &str =
         "-----BEGIN PGP SIGNATURE-----\nauthored-elsewhere\n-----END PGP SIGNATURE-----";
     let db = testkit::db().await.expect("testkit database");
-    let svc = FerroEhrService::new(db.pool()).await;
+    let svc = FerroEhrService::new(&ferroehr::db::domain::DomainPools::from_shared(&db.pool()));
     let ehr_id = create_ehr(&svc).await;
     let ehr_uuid = ferroehr::ids::EhrId(ehr_id.parse::<uuid::Uuid>().expect("ehr uuid"));
 
@@ -295,8 +295,7 @@ async fn strict_verify_on_read_rejects_a_tampered_row() {
         verify_on_read: Some(VerifyOnRead::Strict),
     };
     let signer = Signer::from_config(&config).expect("strict signer");
-    let svc = FerroEhrService::new(pool.clone())
-        .await
+    let svc = FerroEhrService::new(&ferroehr::db::domain::DomainPools::from_shared(&pool))
         .with_signer(Arc::new(signer));
     let ehr_id = create_ehr(&svc).await;
     let ehr_uuid = ferroehr::ids::EhrId(ehr_id.parse::<uuid::Uuid>().expect("ehr uuid"));
@@ -344,7 +343,7 @@ async fn default_verify_on_read_is_strict_and_rejects_a_tampered_row() {
     // no explicit signing config, to prove the DEFAULT posture.
     let db = testkit::db().await.expect("testkit database");
     let pool = db.pool();
-    let svc = FerroEhrService::new(pool.clone()).await;
+    let svc = FerroEhrService::new(&ferroehr::db::domain::DomainPools::from_shared(&pool));
     let ehr_id = create_ehr(&svc).await;
     let ehr_uuid = ferroehr::ids::EhrId(ehr_id.parse::<uuid::Uuid>().expect("ehr uuid"));
 
@@ -381,7 +380,7 @@ async fn default_verify_on_read_is_strict_and_rejects_a_tampered_row() {
 }
 
 /// Build a digest-mode service with an explicit `verify_on_read` policy.
-async fn service_with_verify(pool: PgPool, policy: VerifyOnRead) -> FerroEhrService {
+fn service_with_verify(pool: &PgPool, policy: VerifyOnRead) -> FerroEhrService {
     let config = SigningConfig {
         enabled: true,
         mode: Mode::Digest,
@@ -392,8 +391,7 @@ async fn service_with_verify(pool: PgPool, policy: VerifyOnRead) -> FerroEhrServ
         verify_on_read: Some(policy),
     };
     let signer = Signer::from_config(&config).expect("signer");
-    FerroEhrService::new(pool)
-        .await
+    FerroEhrService::new(&ferroehr::db::domain::DomainPools::from_shared(pool))
         .with_signer(Arc::new(signer))
 }
 
@@ -406,7 +404,7 @@ async fn warn_and_off_verify_on_read_serve_a_tampered_row() {
     for policy in [VerifyOnRead::Warn, VerifyOnRead::Off] {
         let db = testkit::db().await.expect("testkit database");
         let pool = db.pool();
-        let svc = service_with_verify(pool.clone(), policy).await;
+        let svc = service_with_verify(&pool, policy);
         let ehr_id = create_ehr(&svc).await;
         let ehr_uuid = ferroehr::ids::EhrId(ehr_id.parse::<uuid::Uuid>().expect("ehr uuid"));
 
@@ -491,7 +489,7 @@ async fn canonical_xml_carries_the_signature() {
 /// `version` into one statement; this test proves the folded path preserves
 /// the RM common master06 versioning semantics byte-for-byte and stores no
 /// signature.
-async fn signing_disabled(pool: PgPool) -> FerroEhrService {
+fn signing_disabled(pool: &PgPool) -> FerroEhrService {
     let config = SigningConfig {
         enabled: false,
         mode: Mode::Digest,
@@ -502,8 +500,7 @@ async fn signing_disabled(pool: PgPool) -> FerroEhrService {
         verify_on_read: Some(VerifyOnRead::Off),
     };
     let signer = Signer::from_config(&config).expect("disabled signer");
-    FerroEhrService::new(pool)
-        .await
+    FerroEhrService::new(&ferroehr::db::domain::DomainPools::from_shared(pool))
         .with_signer(Arc::new(signer))
 }
 
@@ -542,7 +539,7 @@ async fn assert_two_versions_one_head(pool: &PgPool, vo_uuid: ferroehr::ids::VoI
 async fn signing_disabled_folds_commit_and_preserves_master06_semantics() {
     let db = testkit::db().await.expect("testkit database");
     let pool = db.pool();
-    let svc = signing_disabled(pool.clone()).await;
+    let svc = signing_disabled(&pool);
     let ehr_id = create_ehr(&svc).await;
     let ehr_uuid = ferroehr::ids::EhrId(ehr_id.parse::<uuid::Uuid>().expect("ehr uuid"));
 
@@ -648,8 +645,7 @@ async fn creating_system_id_and_signature_survive_a_system_id_change() {
     let pool = db.pool();
 
     // Commit a composition under system id "sys-origin".
-    let svc_a = FerroEhrService::new(pool.clone())
-        .await
+    let svc_a = FerroEhrService::new(&ferroehr::db::domain::DomainPools::from_shared(&pool))
         .with_system_id("sys-origin");
     let ehr_id = create_ehr(&svc_a).await;
     let ehr_uuid = ferroehr::ids::EhrId(ehr_id.parse::<uuid::Uuid>().expect("ehr uuid"));
@@ -668,8 +664,7 @@ async fn creating_system_id_and_signature_survive_a_system_id_change() {
     );
 
     // A second service over the SAME pool with a DIFFERENT system id.
-    let svc_b = FerroEhrService::new(pool.clone())
-        .await
+    let svc_b = FerroEhrService::new(&ferroehr::db::domain::DomainPools::from_shared(&pool))
         .with_system_id("sys-changed");
 
     // Reading the composition back: the injected uid still carries "sys-origin"
@@ -710,7 +705,7 @@ async fn creating_system_id_and_signature_survive_a_system_id_change() {
 async fn at_committal_attestation_is_signed_and_a_tamper_is_caught() {
     let db = testkit::db().await.expect("testkit database");
     let pool = db.pool();
-    let svc = service_with_verify(pool.clone(), VerifyOnRead::Strict).await;
+    let svc = service_with_verify(&pool, VerifyOnRead::Strict);
     let ehr_id = create_ehr(&svc).await;
     let ehr_uuid = ferroehr::ids::EhrId(ehr_id.parse::<uuid::Uuid>().expect("ehr uuid"));
 
@@ -777,7 +772,7 @@ async fn at_committal_attestation_is_signed_and_a_tamper_is_caught() {
 async fn after_committal_attestation_is_outside_the_signed_form() {
     let db = testkit::db().await.expect("testkit database");
     let pool = db.pool();
-    let svc = service_with_verify(pool.clone(), VerifyOnRead::Strict).await;
+    let svc = service_with_verify(&pool, VerifyOnRead::Strict);
     let ehr_id = create_ehr(&svc).await;
     let ehr_uuid = ferroehr::ids::EhrId(ehr_id.parse::<uuid::Uuid>().expect("ehr uuid"));
 

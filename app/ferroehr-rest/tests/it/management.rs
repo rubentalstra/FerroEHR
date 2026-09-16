@@ -607,9 +607,10 @@ async fn a_management_request_is_recorded_in_the_audit_trail() {
         .await
         .expect("the audit sender");
     let service = Arc::new(
-        ferroehr::service::FerroEhrService::new(pool.clone())
-            .await
-            .with_audit(sender),
+        ferroehr::service::FerroEhrService::new(&ferroehr::db::domain::DomainPools::from_shared(
+            &pool,
+        ))
+        .with_audit(sender),
     );
     let config = base_config(auth_config(&["ADMIN"]));
     let authz = authz_for(&config, true);

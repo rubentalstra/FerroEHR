@@ -101,13 +101,16 @@ fn development_only_composition() -> Value {
 }
 
 /// A router over the given profile, on an existing pool.
-async fn router_for(profile: SpecProfile, pool: sqlx::PgPool) -> Router {
+fn router_for(profile: SpecProfile, pool: &sqlx::PgPool) -> Router {
     let mut config = AppConfig::default();
     config.auth.enabled = false;
     config.spec_profile = profile;
     common::router_with(
         config,
-        Arc::new(FerroEhrService::new(pool).await.with_spec_profile(profile)),
+        Arc::new(
+            FerroEhrService::new(&ferroehr::db::domain::DomainPools::from_shared(pool))
+                .with_spec_profile(profile),
+        ),
     )
 }
 
@@ -117,7 +120,7 @@ async fn router_for(profile: SpecProfile, pool: sqlx::PgPool) -> Router {
 #[tokio::test]
 async fn a_development_only_composition_is_a_conflict_under_the_stable_profile() {
     let db = common::test_db().await;
-    let development = router_for(SpecProfile::Development, db.pool()).await;
+    let development = router_for(SpecProfile::Development, &db.pool());
 
     let (status, body) = send(
         &development,
@@ -175,7 +178,7 @@ async fn a_development_only_composition_is_a_conflict_under_the_stable_profile()
     assert_eq!(status, StatusCode::OK);
 
     // The stable profile refuses it — loudly, with the remedy in the body.
-    let stable = router_for(SpecProfile::Stable, db.pool()).await;
+    let stable = router_for(SpecProfile::Stable, &db.pool());
     let (status, body) = send(
         &stable,
         Request::builder()
@@ -213,7 +216,7 @@ async fn a_development_only_composition_is_a_conflict_under_the_stable_profile()
 #[tokio::test]
 async fn an_aql_whole_object_projection_is_a_conflict_under_the_stable_profile() {
     let db = common::test_db().await;
-    let development = router_for(SpecProfile::Development, db.pool()).await;
+    let development = router_for(SpecProfile::Development, &db.pool());
 
     let (status, body) = send(
         &development,
@@ -276,7 +279,7 @@ async fn an_aql_whole_object_projection_is_a_conflict_under_the_stable_profile()
         assert_eq!(status, StatusCode::OK, "{uri}: {body}");
     }
 
-    let stable = router_for(SpecProfile::Stable, db.pool()).await;
+    let stable = router_for(SpecProfile::Stable, &db.pool());
     let (status, body) = send(
         &stable,
         Request::builder()

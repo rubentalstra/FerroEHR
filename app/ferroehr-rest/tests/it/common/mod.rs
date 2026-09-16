@@ -58,7 +58,12 @@ pub(crate) async fn migrated_pool() -> (testkit::TestDb, PgPool) {
 /// The real platform service over a fresh database.
 pub(crate) async fn test_service() -> (testkit::TestDb, Arc<FerroEhrService>) {
     let (db, pool) = migrated_pool().await;
-    (db, Arc::new(FerroEhrService::new(pool).await))
+    (
+        db,
+        Arc::new(FerroEhrService::new(
+            &ferroehr::db::domain::DomainPools::from_shared(&pool),
+        )),
+    )
 }
 
 /// The assembled router over a real service with the given configuration —

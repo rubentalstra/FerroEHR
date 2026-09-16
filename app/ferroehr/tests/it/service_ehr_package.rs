@@ -94,7 +94,7 @@ const REPORT: &str = "openEHR-EHR-COMPOSITION.report.v1";
 #[tokio::test]
 async fn versioned_composition_cannot_switch_archetype() {
     let db = testkit::db().await.expect("testkit database");
-    let svc = FerroEhrService::new(db.pool()).await;
+    let svc = FerroEhrService::new(&ferroehr::db::domain::DomainPools::from_shared(&db.pool()));
     let ehr = svc.create_ehr(None).await.expect("ehr");
     let v1 = svc
         .create_composition(
@@ -141,7 +141,7 @@ async fn versioned_composition_cannot_switch_archetype() {
 #[tokio::test]
 async fn versioned_composition_cannot_flip_persistence() {
     let db = testkit::db().await.expect("testkit database");
-    let svc = FerroEhrService::new(db.pool()).await;
+    let svc = FerroEhrService::new(&ferroehr::db::domain::DomainPools::from_shared(&db.pool()));
     let ehr = svc.create_ehr(None).await.expect("ehr");
     let v1 = svc
         .create_composition(
@@ -183,7 +183,7 @@ async fn versioned_composition_cannot_flip_persistence() {
 #[tokio::test]
 async fn tag_targets_must_be_within_the_same_ehr() {
     let db = testkit::db().await.expect("testkit database");
-    let svc = FerroEhrService::new(db.pool()).await;
+    let svc = FerroEhrService::new(&ferroehr::db::domain::DomainPools::from_shared(&db.pool()));
     let ehr_a = svc.create_ehr(None).await.expect("ehr A");
     let ehr_b = svc.create_ehr(None).await.expect("ehr B");
     let v1 = svc
@@ -237,7 +237,7 @@ async fn tag_targets_must_be_within_the_same_ehr() {
 #[tokio::test]
 async fn tagging_does_not_re_version_or_contribute() {
     let db = testkit::db().await.expect("testkit database");
-    let svc = FerroEhrService::new(db.pool()).await;
+    let svc = FerroEhrService::new(&ferroehr::db::domain::DomainPools::from_shared(&db.pool()));
     let ehr = svc.create_ehr(None).await.expect("ehr");
     let v1 = svc
         .create_composition(

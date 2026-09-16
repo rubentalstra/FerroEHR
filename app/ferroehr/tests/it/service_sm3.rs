@@ -88,7 +88,7 @@ async fn seed_ehr(pool: &PgPool) -> Uuid {
 #[tokio::test]
 async fn relationship_sm_calls_round_trip() {
     let db = testkit::db().await.expect("testkit database");
-    let svc = FerroEhrService::new(db.pool()).await;
+    let svc = FerroEhrService::new(&ferroehr::db::domain::DomainPools::from_shared(&db.pool()));
 
     let src = "11111111-1111-4111-8111-111111111111";
     let tgt = "22222222-2222-4222-8222-222222222222";
@@ -163,7 +163,7 @@ async fn relationship_sm_calls_round_trip() {
 async fn relationship_lifecycle_end_to_end() {
     let db = testkit::db().await.expect("testkit database");
     let pool = db.pool();
-    let svc = FerroEhrService::new(pool.clone()).await;
+    let svc = FerroEhrService::new(&ferroehr::db::domain::DomainPools::from_shared(&pool));
 
     let src = "11111111-1111-4111-8111-111111111111";
     let tgt = "22222222-2222-4222-8222-222222222222";
@@ -291,7 +291,7 @@ async fn relationship_lifecycle_end_to_end() {
 #[tokio::test]
 async fn relationship_error_cases() {
     let db = testkit::db().await.expect("testkit database");
-    let svc = FerroEhrService::new(db.pool()).await;
+    let svc = FerroEhrService::new(&ferroehr::db::domain::DomainPools::from_shared(&db.pool()));
 
     // unknown id → 404
     let unknown = svc
@@ -351,7 +351,7 @@ async fn relationship_error_cases() {
 #[tokio::test]
 async fn relationship_via_demographic_contribution() {
     let db = testkit::db().await.expect("testkit database");
-    let svc = FerroEhrService::new(db.pool()).await;
+    let svc = FerroEhrService::new(&ferroehr::db::domain::DomainPools::from_shared(&db.pool()));
 
     // A demographic CONTRIBUTION accepts a PARTY_RELATIONSHIP version (the
     // ehr-less scope now covers relationships as well as party roots).
@@ -392,7 +392,7 @@ async fn relationship_via_demographic_contribution() {
 async fn ehr_index_add_defaults_primary_and_reads() {
     let db = testkit::db().await.expect("testkit database");
     let pool = db.pool();
-    let svc = FerroEhrService::new(pool.clone()).await;
+    let svc = FerroEhrService::new(&ferroehr::db::domain::DomainPools::from_shared(&pool));
     let ehr = seed_ehr(&pool).await;
     let subject = SubjectRef::person("PID-1", "mpi");
 
@@ -422,7 +422,7 @@ async fn ehr_index_add_defaults_primary_and_reads() {
 async fn ehr_index_n_to_m() {
     let db = testkit::db().await.expect("testkit database");
     let pool = db.pool();
-    let svc = FerroEhrService::new(pool.clone()).await;
+    let svc = FerroEhrService::new(&ferroehr::db::domain::DomainPools::from_shared(&pool));
 
     let ehr_a = seed_ehr(&pool).await;
     let ehr_b = seed_ehr(&pool).await;
@@ -465,7 +465,7 @@ async fn ehr_index_n_to_m() {
 async fn ehr_index_update_status_loc_and_remove() {
     let db = testkit::db().await.expect("testkit database");
     let pool = db.pool();
-    let svc = FerroEhrService::new(pool.clone()).await;
+    let svc = FerroEhrService::new(&ferroehr::db::domain::DomainPools::from_shared(&pool));
     let ehr = seed_ehr(&pool).await;
     let subject = SubjectRef::person("PID-9", "mpi");
 
@@ -535,7 +535,7 @@ async fn ehr_index_update_status_loc_and_remove() {
 async fn ehr_index_remove_subject_wide_and_unknown_ehr() {
     let db = testkit::db().await.expect("testkit database");
     let pool = db.pool();
-    let svc = FerroEhrService::new(pool.clone()).await;
+    let svc = FerroEhrService::new(&ferroehr::db::domain::DomainPools::from_shared(&pool));
     let ehr_a = seed_ehr(&pool).await;
     let ehr_b = seed_ehr(&pool).await;
     let subject = SubjectRef::person("W", "mpi");

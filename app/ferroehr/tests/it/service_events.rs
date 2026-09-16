@@ -148,7 +148,7 @@ async fn create_ehr(svc: &FerroEhrService) -> ferroehr::ids::EhrId {
 async fn composition_and_contribution_commits_each_write_one_phi_free_outbox_row() {
     let db = testkit::db().await.expect("testkit database");
     let pool = db.pool();
-    let svc = FerroEhrService::new(pool.clone()).await;
+    let svc = FerroEhrService::new(&ferroehr::db::domain::DomainPools::from_shared(&pool));
 
     // EHR creation is itself a CONTRIBUTION → its own outbox row (baseline).
     let ehr = create_ehr(&svc).await;
@@ -215,8 +215,7 @@ async fn outbox_disabled_writes_no_rows() {
     // ever read it. No openEHR spec governs eventing (our own extension).
     let db = testkit::db().await.expect("testkit database");
     let pool = db.pool();
-    let svc = FerroEhrService::new(pool.clone())
-        .await
+    let svc = FerroEhrService::new(&ferroehr::db::domain::DomainPools::from_shared(&pool))
         .with_outbox_enabled(false);
 
     // EHR creation, a direct composition commit, and a CONTRIBUTION commit —
@@ -266,7 +265,7 @@ async fn outbox_disabled_writes_no_rows() {
 async fn rolled_back_commit_writes_no_outbox_row() {
     let db = testkit::db().await.expect("testkit database");
     let pool = db.pool();
-    let svc = FerroEhrService::new(pool.clone()).await;
+    let svc = FerroEhrService::new(&ferroehr::db::domain::DomainPools::from_shared(&pool));
 
     // First EHR with a subject: one outbox row for its creation.
     let status = json!({
@@ -364,7 +363,7 @@ where
 async fn drainer_holds_pending_while_broker_down_then_drains_without_loss() {
     let db = testkit::db().await.expect("testkit database");
     let pool = db.pool();
-    let svc = FerroEhrService::new(pool.clone()).await;
+    let svc = FerroEhrService::new(&ferroehr::db::domain::DomainPools::from_shared(&pool));
 
     // Commit some work: an EHR + two compositions ⇒ three outbox rows.
     let ehr = create_ehr(&svc).await;
@@ -466,10 +465,14 @@ async fn delivered_version_count(pool: &PgPool) -> usize {
 #[tokio::test]
 async fn import_writes_one_phi_free_outbox_row() {
     let source_db = testkit::db().await.expect("testkit database");
-    let source = FerroEhrService::new(source_db.pool()).await;
+    let source = FerroEhrService::new(&ferroehr::db::domain::DomainPools::from_shared(
+        &source_db.pool(),
+    ));
     let target_db = testkit::db().await.expect("testkit database");
     let target_pool = target_db.pool();
-    let target = FerroEhrService::new(target_pool.clone()).await;
+    let target = FerroEhrService::new(&ferroehr::db::domain::DomainPools::from_shared(
+        &target_pool,
+    ));
 
     // Seed a source EHR with an EHR_STATUS (EHR creation + the auto EHR_ACCESS).
     let ehr = source.create_ehr(None).await.expect("source ehr");

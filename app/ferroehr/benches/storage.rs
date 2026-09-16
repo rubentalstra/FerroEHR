@@ -1214,7 +1214,11 @@ fn storage(c: &mut Criterion) {
     // The service builds a lazy sqlx pool of its own, and sqlx spawns that
     // pool's maintenance task at construction, so it is built inside the
     // runtime rather than beside it.
-    let svc = rt.block_on(async { Arc::new(FerroEhrService::new(pool.clone()).await) });
+    let svc = rt.block_on(async {
+        Arc::new(FerroEhrService::new(
+            &ferroehr::db::domain::DomainPools::from_shared(&pool),
+        ))
+    });
     let corpus = rt.block_on(seed(&svc, class));
 
     let groups = vec![

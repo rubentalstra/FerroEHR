@@ -68,7 +68,7 @@ fn ehr_access_with_settings() -> Value {
 #[tokio::test]
 async fn ehr_access_settings_round_trip_through_contribution() {
     let db = testkit::db().await.expect("testkit database");
-    let svc = FerroEhrService::new(db.pool()).await;
+    let svc = FerroEhrService::new(&ferroehr::db::domain::DomainPools::from_shared(&db.pool()));
 
     // A fresh EHR gets the default (settings-less) EHR_ACCESS → default-open.
     let ehr_id = svc.create_ehr(None).await.expect("create_ehr");

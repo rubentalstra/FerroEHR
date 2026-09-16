@@ -72,6 +72,7 @@ use std::time::Duration;
 use serde_json::Value;
 use sqlx::PgPool;
 
+use crate::db::domain::DomainPools;
 use crate::ids::EhrId;
 use crate::system_log::sender::AuditSender;
 use crate::versioning::SigningCtx;
@@ -255,29 +256,25 @@ pub struct FerroEhrService {
 }
 
 impl FerroEhrService {
-    /// Construct the service over a connection pool with the default system id
-    /// and the default (server-side `digest`) version signer.
+    /// Construct the service over a domain's already-open pools, with the
+    /// default system id and the default (server-side `digest`) version signer.
     ///
-    /// The demographic and linkage pools are derived from `pool`'s own connect
-    /// options ([`crate::db::domain_pool_from`]), so those chapters read and
-    /// write their own schema without any further wiring — the SCHEMA
-    /// separation is always on. A deployment that separates the runtime ROLES,
-    /// tunes the pool, or enables tenancy supplies its own pool with
-    /// [`Self::with_demographic_pool`].
-    ///
-    /// The constructor is `async` because deriving those pools spawns each
-    /// pool's sqlx maintenance task, which needs a tokio runtime in scope; the
-    /// `.await` makes the runtime a precondition of calling it at all.
-    ///
-    /// # Panics
-    ///
-    /// Panics when the returned future is polled outside a tokio runtime,
-    /// which no `.await` inside this workspace's tokio-driven code can do.
-    pub async fn new(pool: PgPool) -> Self {
+    /// It takes [`DomainPools`] rather than one pool because building a pool
+    /// spawns that pool's sqlx maintenance task, which panics outside a tokio
+    /// runtime: this constructor opens nothing and spawns nothing, so it cannot
+    /// panic, and the caller builds the pools where a runtime is in scope
+    /// ([`DomainPools::from_shared`] derives all four from one existing pool).
+    /// The clinical pool serves this service, the party pool the demographic
+    /// chapter and the linkage pool the EHR Index, so the SCHEMA separation is
+    /// always on. A deployment that separates the runtime ROLES, tunes a pool,
+    /// or enables tenancy passes pools of its own, or replaces one afterwards
+    /// with [`Self::with_demographic_pool`].
+    #[must_use]
+    pub fn new(pools: &DomainPools) -> Self {
         Self {
-            demographic_pool: crate::db::domain_pool_from(&pool, crate::db::domain::Domain::Party),
-            linkage_pool: crate::db::domain_pool_from(&pool, crate::db::domain::Domain::Linkage),
-            pool,
+            demographic_pool: pools.party.clone(),
+            linkage_pool: pools.linkage.clone(),
+            pool: pools.clinical.clone(),
             system_id: DEFAULT_SYSTEM_ID.to_owned(),
             spec_profile: crate::config::profile::SpecProfile::default(),
             web_templates: WebTemplateCache::default(),

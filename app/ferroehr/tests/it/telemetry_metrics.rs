@@ -68,7 +68,7 @@ fn committed(registry: &prometheus::Registry, change_type: &str) -> u64 {
 async fn compositions_committed_total_counts_every_committed_composition_version() {
     let handle = recorder();
     let db = testkit::db().await.expect("testkit database");
-    let svc = FerroEhrService::new(db.pool()).await;
+    let svc = FerroEhrService::new(&ferroehr::db::domain::DomainPools::from_shared(&db.pool()));
     let ehr_id = svc.create_ehr(None).await.expect("create_ehr");
 
     let (creations, modifications, deletions) = (

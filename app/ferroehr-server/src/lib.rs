@@ -360,7 +360,7 @@ fn mounted_management_endpoints(levels: EndpointLevels) -> String {
 /// # Errors
 /// Any collaborator whose configuration is enabled but unbuildable — a slim
 /// build missing its cargo feature, or an unusable external dependency.
-async fn assemble_service(
+fn assemble_service(
     config: &ferroehr::config::FerroEhrConfig,
     pools: &DomainPools,
     audit_sender: Option<AuditSender>,
@@ -368,7 +368,6 @@ async fn assemble_service(
     signer: Arc<Signer>,
     deployment: DeploymentPosture,
 ) -> anyhow::Result<FerroEhrService> {
-    let pool = &pools.clinical;
     let audit_enabled = audit_sender.is_some();
     // The MRN patterns compiled here; `FerroEhrConfig::validate` already
     // refused an uncompilable one at boot, so this cannot be the first place a
@@ -398,10 +397,7 @@ async fn assemble_service(
     );
     tracing::info!(licence = %licence, "licence");
 
-    let mut service = FerroEhrService::new(pool.clone())
-        .await
-        .with_demographic_pool(pools.party.clone())
-        .with_linkage_pool(pools.linkage.clone())
+    let mut service = FerroEhrService::new(pools)
         .with_spec_profile(config.spec_profile)
         .with_system_id(config.server.system_id.clone())
         .with_signer(signer)
@@ -944,17 +940,14 @@ async fn serve(config_path: Option<&Path>, overrides: &[(String, String)]) -> an
     tracing::info!(system_id = %config.server.system_id, "openEHR system identifier");
 
     let audit_enabled = audit_sender.is_some();
-    let service = Arc::new(
-        assemble_service(
-            &config,
-            &pools,
-            audit_sender,
-            outbox_enabled,
-            signer,
-            deployment,
-        )
-        .await?,
-    );
+    let service = Arc::new(assemble_service(
+        &config,
+        &pools,
+        audit_sender,
+        outbox_enabled,
+        signer,
+        deployment,
+    )?);
 
     // Off by default (it carries PHI) and gated on the `fhir` feature, which
     // itself implies `events` for the broker transport.

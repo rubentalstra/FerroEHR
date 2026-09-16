@@ -89,7 +89,7 @@ fn provider(base: &str) -> FhirTerminologyProvider {
 #[tokio::test]
 async fn translate_mapping_without_a_provider_fails_closed() {
     let db = testkit::db().await.expect("testkit database");
-    let svc = FerroEhrService::new(db.pool()).await;
+    let svc = FerroEhrService::new(&ferroehr::db::domain::DomainPools::from_shared(&db.pool()));
     svc.template_adl14_upload(opt_xml())
         .await
         .expect("ingest OPT");
@@ -133,8 +133,7 @@ async fn translate_mapping_drives_the_terminology_seam_before_the_build() {
         .await;
 
     let db = testkit::db().await.expect("testkit database");
-    let svc = FerroEhrService::new(db.pool())
-        .await
+    let svc = FerroEhrService::new(&ferroehr::db::domain::DomainPools::from_shared(&db.pool()))
         .with_terminology_router(Arc::new(TerminologyRouter::single(Arc::new(provider(
             &server.uri(),
         )))));

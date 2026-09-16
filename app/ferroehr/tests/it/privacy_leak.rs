@@ -100,14 +100,13 @@ fn assert_no_identifier_but_the_pseudonym(sink: &str, text: &str) {
     assert_no_forbidden_literal(sink, text);
 }
 
-async fn enforcing_service(db: &testkit::TestDb) -> FerroEhrService {
+fn enforcing_service(db: &testkit::TestDb) -> FerroEhrService {
     let policy = PrivacyPolicy::compile(&PrivacyConfig {
         subject_namespaces: vec![PSEUDONYM_NS.to_owned()],
         ..PrivacyConfig::default()
     })
     .expect("the deployment policy compiles");
-    FerroEhrService::new(db.pool())
-        .await
+    FerroEhrService::new(&ferroehr::db::domain::DomainPools::from_shared(&db.pool()))
         .with_privacy(Arc::new(policy))
 }
 
@@ -155,7 +154,7 @@ fn pseudonymised_composition() -> Value {
 async fn the_outbox_envelope_carries_no_subject_identifier() {
     let db = testkit::db().await.expect("testkit database");
     let pool = db.pool();
-    let svc = enforcing_service(&db).await;
+    let svc = enforcing_service(&db);
     let ehr_id = svc
         .create_ehr(Some(pseudonymised_status()))
         .await
@@ -193,7 +192,7 @@ async fn the_outbox_envelope_carries_no_subject_identifier() {
 async fn the_atna_records_carry_the_opaque_pseudonym_and_nothing_else() {
     let db = testkit::db().await.expect("testkit database");
     let pool = db.pool();
-    let svc = enforcing_service(&db).await;
+    let svc = enforcing_service(&db);
     let ehr_id = svc
         .create_ehr(Some(pseudonymised_status()))
         .await
@@ -276,7 +275,7 @@ impl<'a> tracing_subscriber::fmt::MakeWriter<'a> for CapturedTraces {
 #[tokio::test(flavor = "multi_thread")]
 async fn the_commit_traces_carry_no_subject_identifier() {
     let db = testkit::db().await.expect("testkit database");
-    let svc = enforcing_service(&db).await;
+    let svc = enforcing_service(&db);
 
     // Everything the commit says, at the loudest level a deployment can turn
     // on: span open/close records and every event, ours and the driver's.
@@ -324,7 +323,7 @@ async fn an_identifying_subject_never_reaches_any_sink_because_the_write_is_refu
     // never enters. Both the write path and the database refuse it.
     let db = testkit::db().await.expect("testkit database");
     let pool = db.pool();
-    let svc = enforcing_service(&db).await;
+    let svc = enforcing_service(&db);
 
     let identifying: openehr_rm::prelude::EhrStatus =
         openehr_its::json::from_canonical_value(&json!({

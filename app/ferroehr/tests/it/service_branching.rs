@@ -173,9 +173,11 @@ async fn modifying_an_imported_foreign_version_forks_a_branch() {
     // versioned object keeps its vo_id, so importing into the SAME repository
     // that already owns it is — correctly — a conflict).
     let source_db = testkit::db().await.expect("testkit database");
-    let source_svc = FerroEhrService::new(source_db.pool()).await;
+    let source_svc = FerroEhrService::new(&ferroehr::db::domain::DomainPools::from_shared(
+        &source_db.pool(),
+    ));
     let db = testkit::db().await.expect("testkit database");
-    let svc = FerroEhrService::new(db.pool()).await;
+    let svc = FerroEhrService::new(&ferroehr::db::domain::DomainPools::from_shared(&db.pool()));
     let (extract, vo) = foreign_extract(&source_svc).await;
     let (target, vo_id) = import_foreign(&svc, extract, &vo).await;
 
@@ -289,9 +291,11 @@ async fn modifying_an_imported_foreign_version_forks_a_branch() {
 #[tokio::test]
 async fn the_served_imported_version_is_the_wrapper_shape_without_data() {
     let source_db = testkit::db().await.expect("testkit database");
-    let source_svc = FerroEhrService::new(source_db.pool()).await;
+    let source_svc = FerroEhrService::new(&ferroehr::db::domain::DomainPools::from_shared(
+        &source_db.pool(),
+    ));
     let db = testkit::db().await.expect("testkit database");
-    let svc = FerroEhrService::new(db.pool()).await;
+    let svc = FerroEhrService::new(&ferroehr::db::domain::DomainPools::from_shared(&db.pool()));
     let (extract, vo) = foreign_extract(&source_svc).await;
     let (target, vo_id) = import_foreign(&svc, extract, &vo).await;
 
@@ -347,9 +351,11 @@ async fn merge_provenance_is_preserved_by_the_route_that_carries_it() {
     // version keeps its inputs and serves them, while a locally committed
     // version carries none (`Is_merged_validity`).
     let source_db = testkit::db().await.expect("testkit database");
-    let source_svc = FerroEhrService::new(source_db.pool()).await;
+    let source_svc = FerroEhrService::new(&ferroehr::db::domain::DomainPools::from_shared(
+        &source_db.pool(),
+    ));
     let db = testkit::db().await.expect("testkit database");
-    let svc = FerroEhrService::new(db.pool()).await;
+    let svc = FerroEhrService::new(&ferroehr::db::domain::DomainPools::from_shared(&db.pool()));
     let (mut extract, vo) = foreign_extract(&source_svc).await;
 
     // Stamp merge provenance onto the LATEST foreign version, as a merging
@@ -433,9 +439,11 @@ fn stamp_merge_provenance(extract: &mut Value, version_uid: &str, merged_in: &st
 #[tokio::test]
 async fn a_version_tree_with_branches_reexports_and_reimports_whole() {
     let source_db = testkit::db().await.expect("testkit database");
-    let source_svc = FerroEhrService::new(source_db.pool()).await;
+    let source_svc = FerroEhrService::new(&ferroehr::db::domain::DomainPools::from_shared(
+        &source_db.pool(),
+    ));
     let db = testkit::db().await.expect("testkit database");
-    let svc = FerroEhrService::new(db.pool()).await;
+    let svc = FerroEhrService::new(&ferroehr::db::domain::DomainPools::from_shared(&db.pool()));
     let (extract, vo) = foreign_extract(&source_svc).await;
     let (target, vo_id) = import_foreign(&svc, extract, &vo).await;
 
@@ -465,7 +473,9 @@ async fn a_version_tree_with_branches_reexports_and_reimports_whole() {
         "the exported version tree must include the branch version"
     );
     let third_db = testkit::db().await.expect("testkit database");
-    let third_svc = FerroEhrService::new(third_db.pool()).await;
+    let third_svc = FerroEhrService::new(&ferroehr::db::domain::DomainPools::from_shared(
+        &third_db.pool(),
+    ));
     let third = ferroehr::ids::EhrId(Uuid::now_v7());
     third_svc
         .import_ehr(
@@ -505,9 +515,11 @@ async fn a_version_tree_with_branches_reexports_and_reimports_whole() {
 #[tokio::test]
 async fn all_versions_returns_the_branch_row_beside_the_trunk() {
     let source_db = testkit::db().await.expect("testkit database");
-    let source_svc = FerroEhrService::new(source_db.pool()).await;
+    let source_svc = FerroEhrService::new(&ferroehr::db::domain::DomainPools::from_shared(
+        &source_db.pool(),
+    ));
     let db = testkit::db().await.expect("testkit database");
-    let svc = FerroEhrService::new(db.pool()).await;
+    let svc = FerroEhrService::new(&ferroehr::db::domain::DomainPools::from_shared(&db.pool()));
     let (extract, vo) = foreign_extract(&source_svc).await;
     let (target, vo_id) = import_foreign(&svc, extract, &vo).await;
 

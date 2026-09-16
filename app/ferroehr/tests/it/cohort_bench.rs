@@ -311,8 +311,7 @@ async fn cohort_bench() {
     let db = testkit::db().await.expect("testkit database");
     let pool = db.pool();
     let svc = Arc::new(
-        FerroEhrService::new(pool.clone())
-            .await
+        FerroEhrService::new(&ferroehr::db::domain::DomainPools::from_shared(&pool))
             .with_cohort(bench_config(n)),
     );
 

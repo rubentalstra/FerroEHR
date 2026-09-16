@@ -325,8 +325,7 @@ async fn blob_store_round_trips_against_seaweedfs() {
 async fn commit_offloads_large_multimedia_and_expands() {
     let db = testkit::db().await.expect("testkit database");
     let sw = Seaweed::start().await;
-    let svc = FerroEhrService::new(db.pool())
-        .await
+    let svc = FerroEhrService::new(&ferroehr::db::domain::DomainPools::from_shared(&db.pool()))
         .with_multimedia(sw.engine());
 
     // Commit an EHR whose EHR_STATUS carries a >threshold inline multimedia.
@@ -392,8 +391,7 @@ async fn commit_offloads_large_multimedia_and_expands() {
 async fn small_multimedia_stays_inline() {
     let db = testkit::db().await.expect("testkit database");
     let sw = Seaweed::start().await;
-    let svc = FerroEhrService::new(db.pool())
-        .await
+    let svc = FerroEhrService::new(&ferroehr::db::domain::DomainPools::from_shared(&db.pool()))
         .with_multimedia(sw.engine());
 
     let media = multimedia(100); // below the 256-byte threshold
@@ -424,8 +422,7 @@ async fn corrupted_blob_fails_integrity_on_expand() {
 
     let db = testkit::db().await.expect("testkit database");
     let sw = Seaweed::start().await;
-    let svc = FerroEhrService::new(db.pool())
-        .await
+    let svc = FerroEhrService::new(&ferroehr::db::domain::DomainPools::from_shared(&db.pool()))
         .with_multimedia(sw.engine());
 
     let ehr = svc
@@ -463,8 +460,7 @@ async fn gc_removes_unreferenced_but_keeps_shared_blobs() {
     let db = testkit::db().await.expect("testkit database");
     let sw = Seaweed::start().await;
     let pool = db.pool();
-    let svc = FerroEhrService::new(pool.clone())
-        .await
+    let svc = FerroEhrService::new(&ferroehr::db::domain::DomainPools::from_shared(&pool))
         .with_multimedia(sw.engine());
 
     // Two EHRs carrying the *same* bytes → the same content-addressed blob.
@@ -507,8 +503,7 @@ async fn gc_removes_unreferenced_but_keeps_shared_blobs() {
 async fn physical_party_delete_collects_its_blobs_but_keeps_shared_ones() {
     let db = testkit::db().await.expect("testkit database");
     let sw = Seaweed::start().await;
-    let svc = FerroEhrService::new(db.pool())
-        .await
+    let svc = FerroEhrService::new(&ferroehr::db::domain::DomainPools::from_shared(&db.pool()))
         .with_multimedia(sw.engine());
 
     // One party holds a blob nothing else references; a second holds one it
@@ -569,13 +564,15 @@ async fn physical_party_delete_collects_its_blobs_but_keeps_shared_ones() {
 async fn dump_load_carries_blobs() {
     let source_db = testkit::db().await.expect("testkit database");
     let sw = Seaweed::start().await;
-    let source = FerroEhrService::new(source_db.pool())
-        .await
-        .with_multimedia(sw.engine());
+    let source = FerroEhrService::new(&ferroehr::db::domain::DomainPools::from_shared(
+        &source_db.pool(),
+    ))
+    .with_multimedia(sw.engine());
     let target_db = testkit::db().await.expect("testkit database");
-    let target = FerroEhrService::new(target_db.pool())
-        .await
-        .with_multimedia(sw.engine());
+    let target = FerroEhrService::new(&ferroehr::db::domain::DomainPools::from_shared(
+        &target_db.pool(),
+    ))
+    .with_multimedia(sw.engine());
 
     let ehr = source
         .create_ehr(Some(status_with_media(multimedia(1000))))
@@ -628,7 +625,7 @@ async fn dump_load_carries_blobs() {
 #[tokio::test]
 async fn disabled_by_default_stores_inline_verbatim() {
     let db = testkit::db().await.expect("testkit database");
-    let svc = FerroEhrService::new(db.pool()).await;
+    let svc = FerroEhrService::new(&ferroehr::db::domain::DomainPools::from_shared(&db.pool()));
 
     let media = multimedia(4096); // well above any threshold
     let inline_data = media.get("data").cloned();
@@ -661,7 +658,7 @@ async fn disabled_by_default_stores_inline_verbatim() {
 #[tokio::test]
 async fn unreachable_store_refuses_expansion_instead_of_answering_silently() {
     let db = testkit::db().await.expect("testkit database");
-    let svc = FerroEhrService::new(db.pool()).await;
+    let svc = FerroEhrService::new(&ferroehr::db::domain::DomainPools::from_shared(&db.pool()));
 
     // A body shaped like a stored, already-externalized record. Built by hand
     // because reaching this state through the service would require the very

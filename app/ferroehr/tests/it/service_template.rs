@@ -38,7 +38,7 @@ fn corpus_opt(rel: &str) -> String {
 #[tokio::test]
 async fn template_upload_list_get_roundtrip() {
     let db = testkit::db().await.expect("testkit database");
-    let svc = FerroEhrService::new(db.pool()).await;
+    let svc = FerroEhrService::new(&ferroehr::db::domain::DomainPools::from_shared(&db.pool()));
     let xml = corpus_opt(TEMPLATE_REL);
 
     // Upload the OPT XML (arrives as a JSON string, as the lenient body reader hands it over).
@@ -125,7 +125,7 @@ async fn template_upload_list_get_roundtrip() {
 #[tokio::test]
 async fn get_unknown_template_is_not_found() {
     let db = testkit::db().await.expect("testkit database");
-    let svc = FerroEhrService::new(db.pool()).await;
+    let svc = FerroEhrService::new(&ferroehr::db::domain::DomainPools::from_shared(&db.pool()));
     // NOTE: `get_opt` is UUID-keyed at the SM seam, so an unknown OPT is an
     // absent (well-formed) uuid → 404 (`template_does_not_exist`,
     // `definition_call_status_type.adoc`).
@@ -148,7 +148,7 @@ async fn get_unknown_template_is_not_found() {
 #[tokio::test]
 async fn invalid_opt_xml_is_rejected() {
     let db = testkit::db().await.expect("testkit database");
-    let svc = FerroEhrService::new(db.pool()).await;
+    let svc = FerroEhrService::new(&ferroehr::db::domain::DomainPools::from_shared(&db.pool()));
     let err = svc
         .template_adl14_upload("<not-a-template/>".to_owned())
         .await
@@ -189,7 +189,7 @@ fn web_template_of(rel: &str) -> openehr_its::flat::webtemplate::model::WebTempl
 #[tokio::test]
 async fn required_example_validates_and_converts() {
     let db = testkit::db().await.expect("testkit database");
-    let svc = FerroEhrService::new(db.pool()).await;
+    let svc = FerroEhrService::new(&ferroehr::db::domain::DomainPools::from_shared(&db.pool()));
 
     for (i, rel) in EXAMPLE_TEMPLATES.iter().enumerate() {
         let xml = corpus_opt(rel);
@@ -267,7 +267,7 @@ async fn required_example_validates_and_converts() {
 #[tokio::test]
 async fn example_for_unknown_template_is_not_found() {
     let db = testkit::db().await.expect("testkit database");
-    let svc = FerroEhrService::new(db.pool()).await;
+    let svc = FerroEhrService::new(&ferroehr::db::domain::DomainPools::from_shared(&db.pool()));
     let err = svc
         .template_adl14_example("does.not.exist.v0".to_owned(), None, None)
         .await
@@ -287,7 +287,7 @@ async fn example_for_unknown_template_is_not_found() {
 #[tokio::test]
 async fn example_with_invalid_detail_level_is_bad_request() {
     let db = testkit::db().await.expect("testkit database");
-    let svc = FerroEhrService::new(db.pool()).await;
+    let svc = FerroEhrService::new(&ferroehr::db::domain::DomainPools::from_shared(&db.pool()));
     // Upload a template so the failure is the detail_level, not a missing id.
     let xml = corpus_opt(TEMPLATE_REL);
     svc.template_adl14_upload(xml).await.expect("upload");
@@ -314,7 +314,7 @@ async fn example_with_invalid_detail_level_is_bad_request() {
 #[tokio::test]
 async fn opt_converts_to_adl2_sources() {
     let db = testkit::db().await.expect("testkit database");
-    let svc = FerroEhrService::new(db.pool()).await;
+    let svc = FerroEhrService::new(&ferroehr::db::domain::DomainPools::from_shared(&db.pool()));
     // A minimal template: a COMPOSITION root with one embedded OBSERVATION root.
     let xml = corpus_opt("tests/resources/service/knowledge/opt/minimal_observation.opt");
     svc.upload_opt(xml).await.expect("upload opt");

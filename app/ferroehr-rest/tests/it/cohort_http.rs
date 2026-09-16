@@ -177,7 +177,10 @@ fn body(predicate: &str, value: &str) -> String {
 #[tokio::test]
 async fn a_bound_deployment_serves_a_cohort() {
     let (db, pool) = common::migrated_pool().await;
-    let service = Arc::new(FerroEhrService::new(pool).await.with_cohort(bound_config()));
+    let service = Arc::new(
+        FerroEhrService::new(&ferroehr::db::domain::DomainPools::from_shared(&pool))
+            .with_cohort(bound_config()),
+    );
     seed(&service, "Groningen", &["Ada", "Bram", "Cato"]).await;
     seed(&service, "Assen", &["Daan"]).await;
     let app = common::router_with(common::api_config(false), service);
@@ -218,7 +221,10 @@ async fn a_bound_deployment_serves_a_cohort() {
 #[tokio::test]
 async fn an_unbound_predicate_is_refused() {
     let (db, pool) = common::migrated_pool().await;
-    let service = Arc::new(FerroEhrService::new(pool).await.with_cohort(bound_config()));
+    let service = Arc::new(
+        FerroEhrService::new(&ferroehr::db::domain::DomainPools::from_shared(&pool))
+            .with_cohort(bound_config()),
+    );
     let app = common::router_with(common::api_config(false), service);
 
     let (status, text) = common::send_body(
