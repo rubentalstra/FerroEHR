@@ -479,11 +479,6 @@ data:
         token_endpoint = "https://keycloak.example.com/realms/ferroehr/protocol/openid-connect/token"
         token_endpoint_auth_methods_supported = ["client_secret_basic", "private_key_jwt"]
     
-    [subject_proxy]
-      [subject_proxy.systems]
-        [subject_proxy.systems.pas]
-          base_url = "https://pas.example.com/fhir"
-    
     [telemetry]
       environment = "production"
       metrics_push = true
@@ -1010,7 +1005,7 @@ spec:
         # secret values. Hashing the ConfigMap template alone missed the last two,
         # so a rotated passphrase or an edited Cedar policy propagated into the
         # volume while every pod kept running on the value it read at startup.
-        checksum/config: 6af60ff7050a516ef0e5f33ff3f9cee144f58f71793e78fb46be67bc223e2db5
+        checksum/config: a43a5b15ebb785b38a261631ca6b18123fae4969f6ff7c1b98f7246a2921f3a4
         prometheus.io/scrape: "true"
         prometheus.io/port: "9100"
         prometheus.io/path: "/management/prometheus"

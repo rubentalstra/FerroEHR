@@ -565,14 +565,6 @@ batch_size = 64
 poll_interval_ms = 2000
 max_retries = 3
 
-# ── [subject_proxy] — Subject Proxy FHIR systems (fail-closed) ────────────────
-[subject_proxy]
-# Named FHIR systems an API_CALL/fhir_get DATA_FRAME may retrieve from (map):
-#? [subject_proxy.systems.pas]
-#? base_url = "https://fhir.example.org/r4"
-#? connect_timeout_ms = 2000
-#? request_timeout_ms = 10000
-
 # ── [privacy] — the clinical-side data-minimisation policy ────────────────────
 # GDPR Art. 4(5) + Art. 25(2); the openEHR RM leaves the subject reference open
 # and only advises against identifying party proxies, so these are FerroEHR

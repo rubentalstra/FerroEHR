@@ -126,12 +126,6 @@ async fn migrations_apply_cleanly_and_idempotently() {
             "restriction",
             "retention_anchor",
             "retention_policy",
-            "sp_binding",
-            "sp_data_frame",
-            "sp_data_set",
-            "sp_sample",
-            "sp_subject",
-            "sp_variable",
             "stored_query",
             "template_ref",
             "template_store",
@@ -262,10 +256,9 @@ async fn no_relation_carries_a_tenant_column_and_no_row_policy_exists() {
 /// `ehr_get_by_subject` matches `EHR_STATUS.subject.external_ref.id.value` and
 /// `.namespace` (ITS-REST `ehr_get_by_subject.yaml`) and a second EHR for the
 /// same subject is a `409` (`409_EHR.yaml`). Everything else that names a
-/// subject — the EHR Index associations, the subject-proxy registry — belongs to
-/// the cross-reference domain or holds an opaque derived key, because a
-/// clinical column no trigger guards is free to hold a national identifier, and
-/// the separation GDPR Art. 4(5) asks for
+/// subject — the EHR Index associations — belongs to the cross-reference
+/// domain, because a clinical column no trigger guards is free to hold a
+/// national identifier, and the separation GDPR Art. 4(5) asks for
 /// (<https://eur-lex.europa.eu/eli/reg/2016/679/oj>) is only as good as its
 /// narrowest hole.
 #[tokio::test]
@@ -286,15 +279,8 @@ async fn only_the_guarded_ehr_columns_name_a_subject_in_the_clinical_domain() {
         vec![
             ("ehr".to_owned(), "subject_id".to_owned()),
             ("ehr".to_owned(), "subject_namespace".to_owned()),
-            ("sp_data_set".to_owned(), "subject_key".to_owned()),
-            ("sp_sample".to_owned(), "subject_key".to_owned()),
-            ("sp_subject".to_owned(), "subject_category".to_owned()),
-            ("sp_subject".to_owned(), "subject_key".to_owned()),
-            ("sp_variable".to_owned(), "subject_key".to_owned()),
         ],
-        "only the guarded ehr pair may name a subject in clinical; the \
-         subject-proxy registry holds a derived key and a category, never an \
-         identifier"
+        "only the guarded ehr pair may name a subject in the clinical domain"
     );
 
     // And the pair the wire needs is guarded: the trigger is what refuses a

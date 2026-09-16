@@ -234,6 +234,15 @@ workflow refuses a tag that has no matching section here.
 
 ### Removed
 
+- **The Subject Proxy service** (#3431). It realised SM
+  `I_SUBJECT_PROXY_SERVICE` and `I_DATA_BINDING` over the `sp_*` tables, had no
+  REST route and no consumer outside its own configuration. Gone with it: the
+  `[subject_proxy]` configuration section and its FHIR-frame executor, the
+  `sp_*` tables, the erasure reach into them, the Helm `config.subject_proxy`
+  values and the Subject Proxy book page. No openEHR specification obliges a
+  CDR to realise every SM component; SM `master02` presents the platform as a
+  set of services a deployment composes. `docs/architecture.md` lists the
+  component as not realised.
 - **Multi-tenancy** (#3378). Multi-tenancy is achieved by running separate
   instances: one instance, one database, one set of domain roles per
   organisation. That is where openEHR puts it. An openEHR *system* is "a

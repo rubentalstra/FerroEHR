@@ -469,12 +469,12 @@ mod tests {
             "https://x.test",
             "",
             "latest",
-            "beyond-core/subject-proxy.html",
-            Some("Subject Proxy - FerroEHR Documentation"),
+            "beyond-core/s3-multimedia.html",
+            Some("S3 multimedia - FerroEHR Documentation"),
         );
         assert!(json.contains(r#""name":"FerroEHR""#), "{json}");
         assert!(json.contains(r#""name":"Beyond Core""#), "{json}");
-        assert!(json.contains(r#""name":"Subject Proxy""#), "{json}");
+        assert!(json.contains(r#""name":"S3 multimedia""#), "{json}");
         assert!(json.contains(r#""position":4"#), "{json}");
     }
 

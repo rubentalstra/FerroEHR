@@ -207,10 +207,6 @@ config:
     bucket: openehr-multimedia
     region: eu-west-1
     allow_http: false
-  subject_proxy:
-    systems:
-      pas:
-        base_url: https://pas.example.com/fhir
   files:
     signing.asc: |
       -----BEGIN PGP PRIVATE KEY BLOCK-----

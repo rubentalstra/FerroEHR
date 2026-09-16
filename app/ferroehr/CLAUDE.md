@@ -13,7 +13,7 @@ module.**
 
 - **Service layer = one module per SM chapter, concrete methods, no trait
   catalog** (`service::{ehr, definition, demographic, query, validity, admin,
-  ehr_index, terminology, message, subject_proxy}` + support modules
+  ehr_index, terminology, message}` + support modules
   `committer`, `version_update`, `status`, `response`, `error`,
   `platform_service`). SM design authority: `docs/specs/openehr/SM/`.
 - **Spec first:** every spec-facing behaviour (versioning/change-control,

@@ -419,7 +419,6 @@ fn assemble_service(
     }
 
     service = attach_terminology(service, config)?;
-    service = attach_subject_proxy(service, config)?;
     attach_multimedia(service, config)
 }
 
@@ -750,25 +749,6 @@ fn attach_terminology(
         "external FHIR terminology providers configured"
     );
     Ok(service.with_terminology_router(Arc::new(router)))
-}
-
-/// Wires the opt-in Subject Proxy FHIR-frame executor (fail-closed).
-///
-/// # Errors
-/// An executor that cannot be built.
-fn attach_subject_proxy(
-    service: FerroEhrService,
-    config: &ferroehr::config::FerroEhrConfig,
-) -> anyhow::Result<FerroEhrService> {
-    let Some(fhir) = config
-        .subject_proxy
-        .build()
-        .context("initialising the subject-proxy FHIR executor")?
-    else {
-        return Ok(service);
-    };
-    tracing::info!("subject-proxy FHIR-frame executor configured");
-    Ok(service.with_subject_proxy(Arc::new(fhir)))
 }
 
 /// Wires the opt-in `DV_MULTIMEDIA` externalization behind the `multimedia`

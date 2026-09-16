@@ -68,7 +68,6 @@ pub(super) const SECTIONS: &[&str] = &[
     "terminology",
     "multimedia",
     "audit",
-    "subject_proxy",
     "privacy",
     "demographic",
     "cohort",
@@ -114,7 +113,7 @@ pub(super) const LIST_KEYS: &[&str] = &[
     "privacy.identifier_scan.patterns",
     "demographic.identifier_protection.schemes",
     // `authz.abac.policy` is a MAP, so the env grammar reaches into it the way
-    // it reaches `subject_proxy.systems.<name>`. The resource kinds are the
+    // it reaches `terminology.external.providers.<name>`. The resource kinds are the
     // closed set the enforcement point consults (`ResourceKind`), so each is
     // named rather than pattern-matched — `with_list_parse_key` takes exact
     // paths, and a wildcard here would be a second grammar to keep true.

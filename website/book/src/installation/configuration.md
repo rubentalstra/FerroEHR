@@ -291,8 +291,7 @@ rather than inherit from a quickstart. See
 | `[query]` | AQL execution budgets and result ceilings | [Integrations](config-integrations.md) |
 | `[events]`, `[fhir]` | Change eventing and the FHIR connector | [Integrations](config-integrations.md) |
 | `[terminology]`, `[multimedia]` | External terminology servers, multimedia externalization | [Integrations](config-integrations.md) |
-| `[audit]`, `[audit.store]`, `[audit.syslog]`, `[audit.fhir_feed]` | The IHE ATNA audit trail and its sinks | [Audit & subject proxy](config-audit.md) |
-| `[subject_proxy]` | The FHIR systems subject-proxy frames may read | [Audit & subject proxy](config-audit.md) |
+| `[audit]`, `[audit.store]`, `[audit.syslog]`, `[audit.fhir_feed]` | The IHE ATNA audit trail and its sinks | [Audit](config-audit.md) |
 | `[privacy]`, `[privacy.identifier_scan]` | What the clinical side refuses to hold: the subject reference, identified parties, the identifier scanner | [Privacy & data minimisation](config-privacy.md) |
 | `[cohort]`, `[cohort.predicates]` | Cross-domain cohort queries: the demographic predicate allow-list, the small-cell floor, the cohort ceiling | [Privacy & data minimisation](config-privacy.md) |
 | `[demographic.identifier_protection]` | Sealing national identifiers in the demographic domain, and the key that opens them | [Privacy & data minimisation](config-privacy.md) |
