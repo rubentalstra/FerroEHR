@@ -227,9 +227,9 @@ SPDX-License-Identifier = "LicenseRef-openEHR-unstated"
 # 106 of its 108 files came verbatim from EHRbase's own
 # `service/src/test/resources/` with the fork import at v2.33.0, whose
 # repository LICENSE is Apache-2.0; the other two were written here. Measured
-# over the tree on 2026-09-16: every OPT carries an EMPTY
-# `other_details id="Copyright"`, the one `licence` element in the set is empty
-# too, and no archetype states a licence — so the upstream repository's grant is
+# over the tree on 2026-09-16: 91 of the 92 OPT files carry an
+# `other_details id="Copyright"` element and all 91 are EMPTY, the one `licence`
+# element in the set is empty too, and no archetype states a licence — so the upstream repository's grant is
 # the only one there is, which is why this is Apache-2.0 and not a LicenseRef.
 # The subtree's PROVENANCE.md carries the measurement and the two-file table.
 [[annotations]]

@@ -2,10 +2,9 @@
 
 Beside this record the directory holds 108 fixture files: 92 OPT 1.4
 operational templates, 7 ADL 1.4 archetypes, 5 JSON bodies, 3 XML samples and
-one AQL query. They are the upload-surface and
-round-trip material for the service, REST and ITS suites, and the `.json`,
-`.xml` and `.aql` files are also symlinked into the fuzz seed corpus by
-`fuzz/seeds.sh`.
+one AQL query. They are the upload-surface and round-trip material for the
+service, REST and ITS suites, and the `.json`, `.xml` and `.aql` files are also
+symlinked into the fuzz seed corpus by `fuzz/seeds.sh`.
 
 ## Where the material comes from
 
@@ -29,11 +28,11 @@ Two files were written in this repository:
 
 Apache-2.0, the licence of the EHRbase repository these files were imported
 from, which is the only licence stated anywhere for them: measured on
-2026-09-16, every one of the 92 OPT files carries an EMPTY
-`other_details id="Copyright"` element, the single `other_details id="licence"`
-element in the set (in `non_unique_aql_paths.opt`) is empty as well, and none
-of the 7 archetypes carries a `licence` or `copyright` field in its
-`description` block. The templates name clinical-model authors in their
+2026-09-16, 91 of the 92 OPT files carry an `other_details id="Copyright"`
+element and every one of those 91 is EMPTY (the 92nd carries no such element
+at all), the single `other_details id="licence"` element in the set (in
+`non_unique_aql_paths.opt`) is empty as well, and none of the 7 archetypes
+carries a `licence` or `copyright` field in its `description` block. The templates name clinical-model authors in their
 metadata (Ocean Informatics, Ripple, IDCR, COLNEC and others) without stating
 terms, so the tree licence is the upstream repository's and the copyright
 holders named in `REUSE.toml` are the openEHR Foundation, the EHRbase
