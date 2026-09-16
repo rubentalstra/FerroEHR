@@ -1010,6 +1010,8 @@ jobs:
         with:
           persist-credentials: false
           fetch-depth: 0
+      - name: The exemption list honours a needle with spaces
+        run: bash scripts/checks/sql-string-building.sh --self-test
       - name: No string-built SQL in the query engine
         run: bash scripts/checks/sql-string-building.sh --all
 
