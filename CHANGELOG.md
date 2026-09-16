@@ -17,6 +17,13 @@ workflow refuses a tag that has no matching section here.
 
 ### Added
 
+- **An erasure tombstone on the party change-event stream** (#3417). A
+  physically deleted party now leaves one contribution-less row on the party
+  domain's own outbox before the delete commits, naming the party and every
+  `PARTY_RELATIONSHIP` erased with it, so a consumer of the party stream is
+  told to delete what it derived. GDPR Art. 19 makes the controller
+  communicate an erasure to each recipient the data reached, and the clinical
+  outbox has carried the same row since #3416.
 - **A dispatch-only storage benchmark lane** (#3370). It runs the storage
   benchmark against a PostgreSQL 18 service with durability on, compares every
   operation with the record committed for the same schema generation, and fails

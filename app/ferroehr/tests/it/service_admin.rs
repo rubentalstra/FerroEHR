@@ -608,6 +608,106 @@ async fn admin_statistics_per_service_and_time_range() {
     );
 }
 
+/// A physically deleted party leaves one erasure tombstone on the party
+/// outbox, ahead of every registered reader.
+///
+/// The party domain carries its own outbox, so a consumer of the party stream
+/// learns nothing from the clinical tombstone: every party event it received
+/// announced a commit, and without this row the identity simply stops being
+/// mentioned. GDPR Art. 19 (`docs/law/eu/gdpr/text.html`) makes the controller
+/// communicate the erasure to each recipient the data reached. The row carries
+/// no contribution, because the party's contributions went with it, and it
+/// names the relationships erased alongside so a consumer that tracked only
+/// those is told as well. No openEHR spec governs eventing.
+#[tokio::test]
+async fn physical_party_delete_tombstones_the_party_outbox() {
+    let (_db, pool, svc) = repository().await;
+
+    let p1 = make_person(&svc, "T1").await;
+    let p2 = make_person(&svc, "T2").await;
+    let rel = svc
+        .party_relationship_create(typed(&party_relationship("tr", &p1, &p2)), None)
+        .await
+        .expect("the relationship commits");
+    let rel_id = rel.body["uid"]["value"]
+        .as_str()
+        .expect("uid")
+        .split("::")
+        .next()
+        .expect("versioned-object id")
+        .to_owned();
+
+    sqlx::query(
+        "INSERT INTO party.event_outbox_reader (reader, last_seq, active) \
+         VALUES ('omop', 0, true)",
+    )
+    .execute(&pool)
+    .await
+    .expect("register a reader over the party outbox");
+
+    svc.physical_party_delete(p1.clone())
+        .await
+        .expect("physical party delete");
+
+    let (seq, envelope): (i64, Value) = sqlx::query_as(
+        "SELECT seq, envelope FROM party.event_outbox WHERE contribution_id IS NULL",
+    )
+    .fetch_one(&pool)
+    .await
+    .expect("exactly one erasure tombstone");
+    assert_eq!(envelope["event"], json!("erase"));
+    assert_eq!(envelope["ehr_id"], Value::Null);
+    assert_eq!(envelope["vo_id"], json!(p1));
+    let erased: Vec<(String, String)> = envelope["versions"]
+        .as_array()
+        .expect("the tombstone names what it erased")
+        .iter()
+        .map(|v| {
+            (
+                v["vo_id"].as_str().unwrap_or_default().to_owned(),
+                v["kind"].as_str().unwrap_or_default().to_owned(),
+            )
+        })
+        .collect();
+    assert!(
+        erased.contains(&(p1.clone(), "PERSON".to_owned())),
+        "the party itself is named under its RM type: {erased:?}"
+    );
+    assert!(
+        erased.contains(&(rel_id, "PARTY_RELATIONSHIP".to_owned())),
+        "the relationship erased with it is named too: {erased:?}"
+    );
+    assert!(
+        envelope["versions"]
+            .as_array()
+            .is_some_and(|v| v.iter().all(|e| e["change_type"] == json!("erase"))),
+        "every entry announces an erasure: {envelope}"
+    );
+
+    let behind: i64 = sqlx::query_scalar(
+        "SELECT count(*) FROM party.event_outbox_reader WHERE active AND last_seq < $1",
+    )
+    .bind(seq)
+    .fetch_one(&pool)
+    .await
+    .expect("count the readers still to reach the tombstone");
+    assert_eq!(
+        behind, 1,
+        "every registered reader still receives the tombstone"
+    );
+
+    // A party that still exists is never announced as erased.
+    let surviving: i64 = sqlx::query_scalar(
+        "SELECT count(*) FROM party.event_outbox \
+         WHERE contribution_id IS NULL AND envelope ->> 'vo_id' = $1",
+    )
+    .bind(&p2)
+    .fetch_one(&pool)
+    .await
+    .expect("count the tombstones naming the surviving party");
+    assert_eq!(surviving, 0, "no tombstone for a party that still exists");
+}
+
 #[tokio::test]
 async fn physical_party_delete_cascades_relationships_and_spares_partner() {
     let (_db, pool, svc) = repository().await;
