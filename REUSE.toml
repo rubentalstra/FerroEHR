@@ -329,6 +329,11 @@ path = [
   "crates/openehr-term/assets/PROVENANCE.md",
   "corpus/fixtures/service/PROVENANCE.md",
   ".github/cff-schema/PROVENANCE.md",
+  "corpus/PROVENANCE.md",
+  "corpus/archetypes/adl2/PROVENANCE.md",
+  "corpus/archetypes/ckm/PROVENANCE.md",
+  "corpus/templates/ckm/PROVENANCE.md",
+  "corpus/templates/ckm/full/PROVENANCE.md",
 ]
 precedence = "override"
 SPDX-FileCopyrightText = "Vernum Projecten B.V."

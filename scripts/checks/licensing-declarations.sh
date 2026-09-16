@@ -4,14 +4,15 @@
 # The licensing declarations, the licence texts and the licensing chapter must
 # describe the same set of licences.
 #
-# `reuse lint` already proves that every file in the tree carries licensing
-# information and that no licence text is orphaned. What it cannot check is the
-# thing this repository actually gets wrong over time: the human-readable
-# licensing chapter drifting away from the machine-readable declarations, so a
-# compliance reviewer reading the site and a scanner reading `REUSE.toml` are
-# told different things.
+# The `licensing` CI job runs `reuse lint` in the step before this one, which
+# proves that every file in the tree carries licensing information and that no
+# licence text is orphaned. This script runs no linter of its own: it checks
+# the thing this repository actually gets wrong over time, which `reuse lint`
+# cannot see — the human-readable licensing chapter drifting away from the
+# machine-readable declarations, so a compliance reviewer reading the site and
+# a scanner reading `REUSE.toml` are told different things.
 #
-# Three assertions, all mechanical:
+# Four assertions, all mechanical:
 #   1. every SPDX identifier used in REUSE.toml has its text in LICENSES/;
 #   2. every text in LICENSES/ is used by REUSE.toml (no orphan);
 #   3. every SPDX identifier used in REUSE.toml is named in the licensing
