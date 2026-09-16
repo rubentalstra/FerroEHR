@@ -43,10 +43,15 @@ count() { jq "[(.cases // .outcomes)[] | select(.status == \"$2\")] | length" "$
 # made just past local midnight would otherwise regenerate a DIFFERENT day
 # than the one rendered before it was committed, and the regenerate-and-diff
 # gate turns that into a permanent drift failure baked into the tag's tree.
+# It is the AUTHOR date (%ad), not the committer date: a rebase or a re-signing
+# of history restamps the committer date of every commit it touches, and the
+# rewrite of `main` on 2026-09-16 moved this page's run date a day forward
+# while the run itself had not moved (the Docs build then failed its own
+# drift gate on every push). The author date survives both.
 run_date() {
   local d
   d=$(TZ=UTC git log --follow --diff-filter=AM -1 --date=format-local:%Y-%m-%d \
-    --format=%cd -- "$1/results.json" 2>/dev/null || true)
+    --format=%ad -- "$1/results.json" 2>/dev/null || true)
   if [[ -z "$d" ]]; then
     # The mtime fallback exists ONLY for a local, not-yet-committed
     # regeneration. Under CI an empty git log means a SHALLOW checkout, and

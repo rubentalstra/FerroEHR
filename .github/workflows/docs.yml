@@ -125,7 +125,7 @@ jobs:
           persist-credentials: false
           # Full history: the party-documents drift gate regenerates
           # COMPARISON.md, whose run dates derive from the conformance
-          # artifacts' COMMIT dates (scripts/render/comparison.sh). On a
+          # artifacts' AUTHOR dates (scripts/render/comparison.sh). On a
           # shallow checkout that git log is empty and the mtime fallback
           # stamps the CHECKOUT day — green only on the baseline's own UTC
           # day, red every day after (#2402; it failed both the v3.17.6 and

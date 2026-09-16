@@ -38,8 +38,10 @@ na=$(jq '[.outcomes[] | select(.status == "not_applicable" or .status == "skippe
 driven=$((passed + failed + errored))
 
 # The results artifact is deliberately clock-free (deterministic re-runs);
-# the run date is the artifact's last commit date (fallback: file mtime).
-run_date=$(git log -1 --format=%cs -- "$ART/results.json" 2>/dev/null || true)
+# the run date is the AUTHOR date of the artifact's last commit (fallback:
+# file mtime). The committer date is restamped by a rebase or a re-signing
+# of history, which is what moved the comparison page's date on 2026-09-16.
+run_date=$(git log -1 --format=%as -- "$ART/results.json" 2>/dev/null || true)
 [[ -n "$run_date" ]] || run_date=$(date -r "$ART/results.json" +%Y-%m-%d)
 
 # ── profile verdicts, straight from the computed verdict report ──────────────
