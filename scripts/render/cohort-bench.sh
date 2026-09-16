@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# SPDX-FileCopyrightText: Ruben Talstra
+# SPDX-FileCopyrightText: Vernum Projecten B.V.
 # SPDX-License-Identifier: BUSL-1.1
 # Render the cohort-query benchmark table for the book FROM the committed
 # record, docs/conformance/ferroehr/cohort-bench.json (#3159).

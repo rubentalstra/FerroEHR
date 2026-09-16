@@ -404,11 +404,14 @@ chapters, the Clippy book, and the Cargo/rustdoc books.)
   use is free for Non-Commercial Purposes only (research, teaching, personal
   use, non-profit or public bodies outside the course of a business), and any
   other production use, hosting for third parties, or distribution for a fee
-  needs a commercial licence from the Licensor (Ruben Talstra, who is also the sole
-  copyright holder every SPDX header names), and each version becomes Apache
-  License 2.0 four years after publication (`LICENSE` carries the parameters;
-  releases up to v4.0.17 and crate versions up to 0.0.56 stay MIT as
-  published). The chosen licence deliberately blocks resale and hosted
+  needs a commercial licence from the Licensor (Vernum Projecten B.V., which is
+  also the sole copyright holder every SPDX header names — owner ruling
+  2026-09-16, issue #3435; Ruben Talstra stays the maintainer credit the
+  banner, `MAINTAINERS.md` and the OCI `authors` label carry), and each version
+  becomes Apache License 2.0 four years after publication (`LICENSE` carries
+  the parameters; releases up to v4.0.17 and crate versions up to 0.0.56 stay
+  MIT as published, under the holder they were published with, which is what
+  `LICENSES/MIT.txt` reproduces). The chosen licence deliberately blocks resale and hosted
   offering by others; contributions carry the relicensing grant in
   `CONTRIBUTING.md` so the work stays one work under one licensor. The
   Apache-2.0 carve-out that covered the

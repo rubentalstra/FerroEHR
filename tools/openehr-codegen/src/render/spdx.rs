@@ -1,4 +1,4 @@
-// SPDX-FileCopyrightText: Ruben Talstra
+// SPDX-FileCopyrightText: Vernum Projecten B.V.
 // SPDX-License-Identifier: BUSL-1.1
 
 //! The SPDX licensing header every emitted file carries (REUSE Specification
@@ -21,7 +21,7 @@
 /// This project's own copyright holder, spelled as the repository's
 /// `REUSE.toml` spells it, so a header and the glob declaration covering the
 /// same file cannot disagree.
-pub(crate) const PROJECT_COPYRIGHT: &str = "Ruben Talstra";
+pub(crate) const PROJECT_COPYRIGHT: &str = "Vernum Projecten B.V.";
 
 /// The copyright holder of the openEHR material a published spec crate carries
 /// — the specification documentation text propagated into the emitted doc
@@ -125,7 +125,7 @@ mod tests {
     #[test]
     fn dual_crates_state_both_positions() {
         let h = header("openehr-rm");
-        assert!(h.contains("SPDX-FileCopyrightText: Ruben Talstra"));
+        assert!(h.contains("SPDX-FileCopyrightText: Vernum Projecten B.V."));
         assert!(h.contains("SPDX-FileCopyrightText: openEHR Foundation"));
         assert!(h.ends_with("SPDX-License-Identifier: Apache-2.0\n"));
     }
@@ -141,7 +141,7 @@ mod tests {
     fn other_crates_are_plain_busl() {
         assert_eq!(
             header("openehr-query"),
-            "// SPDX-FileCopyrightText: Ruben Talstra\n\
+            "// SPDX-FileCopyrightText: Vernum Projecten B.V.\n\
              // SPDX-License-Identifier: BUSL-1.1\n"
         );
     }
@@ -162,7 +162,7 @@ mod tests {
         );
         let lines: Vec<&str> = out.lines().collect();
         assert_eq!(lines[0], "// @generated x — DO NOT EDIT.");
-        assert_eq!(lines[1], "// SPDX-FileCopyrightText: Ruben Talstra");
+        assert_eq!(lines[1], "// SPDX-FileCopyrightText: Vernum Projecten B.V.");
         assert_eq!(lines[3], "// SPDX-License-Identifier: Apache-2.0");
         assert_eq!(lines[4], "");
         assert_eq!(lines[5], "pub mod a;");
@@ -173,7 +173,7 @@ mod tests {
         let out = stamp("openehr-query", "pub mod a;\n");
         assert_eq!(
             out,
-            "// SPDX-FileCopyrightText: Ruben Talstra\n\
+            "// SPDX-FileCopyrightText: Vernum Projecten B.V.\n\
              // SPDX-License-Identifier: BUSL-1.1\n\
              pub mod a;\n"
         );
@@ -187,7 +187,7 @@ mod tests {
 
     #[test]
     fn a_leading_header_is_stripped_with_its_blank_line() {
-        let text = "// SPDX-FileCopyrightText: Ruben Talstra\n\
+        let text = "// SPDX-FileCopyrightText: Vernum Projecten B.V.\n\
                     // SPDX-License-Identifier: Apache-2.0\n\
                     \n\
                     //! Docs.\n";

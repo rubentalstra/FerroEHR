@@ -2,7 +2,7 @@
   "product": {
     "name": "FerroEHR",
     "version": "4.3.0",
-    "vendor": "Ruben Talstra",
+    "vendor": "Vernum Projecten B.V.",
     "identifier": "urn:rubentalstra:ferroehr"
   },
   "schedule_release": "cnf-2.0-w2",
@@ -123,7 +123,7 @@
     "environment_ref": "ixit.json#/environment"
   },
   "attestation": {
-    "signatory": "Ruben Talstra",
+    "signatory": "Vernum Projecten B.V.",
     "role": "Owner",
     "date": "2026-07-22",
     "statement": "We declare conformance of FerroEHR to the openEHR CNF 2.0 platform test schedule under the declared capabilities, options and technology profile; every claim derives from the committed machine-verified results."

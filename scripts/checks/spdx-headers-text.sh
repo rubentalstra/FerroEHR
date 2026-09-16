@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# SPDX-FileCopyrightText: Ruben Talstra
+# SPDX-FileCopyrightText: Vernum Projecten B.V.
 # SPDX-License-Identifier: BUSL-1.1
 # Every first-party shell, SQL and YAML file states its licensing INSIDE itself.
 #
@@ -48,7 +48,7 @@ esac
 # licensing, and `reuse lint` reads a tag wherever it appears — the
 # specification's own remedy for a file that quotes the syntax it checks.
 # REUSE-IgnoreStart
-readonly COPYRIGHT='SPDX-FileCopyrightText: Ruben Talstra'
+readonly COPYRIGHT='SPDX-FileCopyrightText: Vernum Projecten B.V.'
 readonly LICENSE='SPDX-License-Identifier: BUSL-1.1'
 # REUSE-IgnoreEnd
 

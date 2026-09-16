@@ -116,8 +116,8 @@ and are not packaged.
   FerroEHR application: all non-production use is free, production use is free
   for Non-Commercial Purposes, and any other production use, hosting for third
   parties or distribution for a fee needs a commercial licence from the
-  Licensor, Ruben Talstra. Each version becomes Apache License 2.0 four years
-  after it is published.
+  Licensor, Vernum Projecten B.V. Each version becomes Apache License 2.0 four
+  years after it is published.
 - The package embeds material derived from the official openEHR
   machine-readable specification artifacts, which openEHR publishes under
   Apache-2.0 ([`LICENSE-APACHE-2.0`](LICENSE-APACHE-2.0)): the generated

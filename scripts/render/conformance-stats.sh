@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# SPDX-FileCopyrightText: Ruben Talstra
+# SPDX-FileCopyrightText: Vernum Projecten B.V.
 # SPDX-License-Identifier: BUSL-1.1
 # Derive every website conformance claim from the committed CNF artifacts
 # (docs/conformance/ferroehr/: results.json + verdicts.json) at BUILD time —
