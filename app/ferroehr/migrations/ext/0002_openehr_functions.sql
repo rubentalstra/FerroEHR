@@ -96,6 +96,20 @@ RETURN substring(t FROM '^-?[0-9]+(?:\.[0-9]+)?(?:[eE][-+]?[0-9]+)?$')::numeric;
 -- proves the fields are digits before the cast — what it leaves after removing
 -- digits is empty only when every character was one.
 --
+-- A second translate() reads the TAIL, because the fields alone say nothing
+-- about what follows them: reading the leading four, six or eight characters
+-- and ignoring the rest made `20210102XYZ`, `2021-01-02 BC`,
+-- `2021-01-02 Europe/Amsterdam` and `2021a` read as dates. BASE
+-- foundation_types master06-time_types.adoc §Iso8601_date gives the value as
+-- `YYYY-MM-DD`, its compact form or a partial variant, and none of those four
+-- is in it. What may follow is a time, because openehr_date_time_seconds splits
+-- on `T` and hands the leading part here, so the tail is held to the alphabet
+-- openehr_timestamp gates its cast with (plus the comma that helper normalises
+-- away first) rather than refused outright.
+-- Over the 50 000-row date corpus the timings above use, best of 21 interleaved
+-- runs on PostgreSQL 18.6, the tail check costs 2.6 ms (65.6 ms against
+-- 63.0 ms) and the two are indistinguishable at the median.
+--
 -- The calendar goes through make_date() rather than a date cast because this
 -- helper is IMMUTABLE and index-legal: the date input function reads the
 -- session DateStyle (`01-02-2021` is January under MDY and February under DMY),
@@ -111,16 +125,19 @@ DECLARE
 BEGIN
     IF length(s) >= 8 THEN
         IF translate(substr(s, 1, 8), '0123456789', '') <> '' THEN RETURN NULL; END IF;
+        IF translate(substr(s, 9), '0123456789.,:+- TtZz', '') <> '' THEN RETURN NULL; END IF;
         RETURN make_date(substr(s, 1, 4)::integer, substr(s, 5, 2)::integer,
                          substr(s, 7, 2)::integer) - DATE '0001-01-01';
     END IF;
     IF length(s) >= 6 THEN
         IF translate(substr(s, 1, 6), '0123456789', '') <> '' THEN RETURN NULL; END IF;
+        IF translate(substr(s, 7), '0123456789.,:+- TtZz', '') <> '' THEN RETURN NULL; END IF;
         RETURN make_date(substr(s, 1, 4)::integer, substr(s, 5, 2)::integer, 1)
                - DATE '0001-01-01';
     END IF;
     IF length(s) >= 4 THEN
         IF translate(substr(s, 1, 4), '0123456789', '') <> '' THEN RETURN NULL; END IF;
+        IF translate(substr(s, 5), '0123456789.,:+- TtZz', '') <> '' THEN RETURN NULL; END IF;
         RETURN make_date(substr(s, 1, 4)::integer, 1, 1) - DATE '0001-01-01';
     END IF;
     RETURN NULL;
