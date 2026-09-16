@@ -223,7 +223,13 @@ record of its own.
 
 Restricting a record changes what every other route answers: reads of a
 restricted object become **403**, it leaves AQL results at every scope, exports
-skip it and the event stream withholds it, and writes to it are refused. What
+skip it and the event stream withholds it, and writes to it are refused. On a
+write the restriction is the LAST gate: content validation answers **422** and
+the preconditions that run before the commit transaction, a non-modifiable EHR
+or a second directory, answer **409**, while the mark is read inside the
+transaction. A malformed write to a restricted object therefore answers 422
+rather than 403. Both refuse the write and neither changes what is stored, so
+read the register itself to learn whether a restriction is in force. What
 each mark means, which provision it serves and what the deploying organisation
 still has to decide are on [Retention, restriction and
 objection](compliance/retention.md).
