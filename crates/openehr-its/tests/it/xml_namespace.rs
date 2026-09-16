@@ -2,14 +2,7 @@
 // SPDX-FileCopyrightText: openEHR Foundation
 // SPDX-License-Identifier: BUSL-1.1 AND Apache-2.0
 
-#![allow(
-    clippy::panic,
-    clippy::expect_used,
-    clippy::print_stdout,
-    clippy::print_stderr,
-    let_underscore_drop,
-    reason = "test assertions/diagnostics/fixtures"
-)]
+#![expect(clippy::expect_used, reason = "test assertions/diagnostics/fixtures")]
 //! The two published ITS-XML wire lineages over ONE generated codec.
 //!
 //! `docs/specs/openehr/ITS-XML/README.adoc` §"Releases and IM Versions"

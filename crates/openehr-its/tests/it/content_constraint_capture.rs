@@ -21,12 +21,7 @@
 //!   commit time (`AM/docs/AOM1.4/master04-constraint_model_package.adoc`
 //!   §Reference Objects) → NO leaf constraint captured.
 
-#![allow(
-    clippy::panic,
-    clippy::print_stdout,
-    let_underscore_drop,
-    reason = "test assertions/diagnostics"
-)]
+#![expect(clippy::panic, reason = "test assertions/diagnostics")]
 
 use std::path::PathBuf;
 

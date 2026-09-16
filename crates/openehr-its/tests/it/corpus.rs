@@ -2,14 +2,6 @@
 // SPDX-FileCopyrightText: openEHR Foundation
 // SPDX-License-Identifier: BUSL-1.1 AND Apache-2.0
 
-#![allow(clippy::doc_markdown, reason = "prose with spec/crate proper nouns")]
-#![allow(
-    clippy::panic,
-    clippy::print_stdout,
-    clippy::print_stderr,
-    let_underscore_drop,
-    reason = "test assertions/diagnostics/fixtures"
-)]
 //! Sanity + wiring for the vendored ITS material: the EHRbase canonical-JSON
 //! corpus (`tests/vendor/`) and the ITS-JSON schema (`schemas/`).
 //!

@@ -2,12 +2,7 @@
 // SPDX-FileCopyrightText: openEHR Foundation
 // SPDX-License-Identifier: BUSL-1.1 AND Apache-2.0
 
-#![allow(
-    clippy::panic,
-    clippy::print_stdout,
-    let_underscore_drop,
-    reason = "test assertions/diagnostics"
-)]
+#![expect(clippy::panic, reason = "test assertions/diagnostics")]
 //! Archetype **constraint bindings** — the OPT → `WebTemplate` capture and the
 //! instance-side check collection.
 //!

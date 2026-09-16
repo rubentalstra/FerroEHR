@@ -2,13 +2,7 @@
 // SPDX-FileCopyrightText: openEHR Foundation
 // SPDX-License-Identifier: BUSL-1.1 AND Apache-2.0
 
-#![allow(
-    clippy::panic,
-    clippy::print_stdout,
-    clippy::print_stderr,
-    let_underscore_drop,
-    reason = "test assertions/diagnostics/fixtures"
-)]
+#![expect(clippy::panic, reason = "test assertions/diagnostics/fixtures")]
 //! STRUCTURED (structSDT) `RM ⇄ STRUCTURED` converter tests.
 //!
 //! STRUCTURED composes the pure nesting transform
@@ -26,7 +20,7 @@
 //! * **cross-format consistency** — `to_structured` and `to_flat` on the same
 //!   composition carry identical leaf values (index-normalised).
 //! * **insta goldens** — deterministic structured snapshots.
-#![allow(
+#![expect(
     clippy::doc_markdown,
     reason = "the module docs quote openEHR spec prose and Simplified-Formats key names as text, not as Rust code references"
 )]

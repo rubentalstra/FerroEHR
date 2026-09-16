@@ -2,12 +2,7 @@
 // SPDX-FileCopyrightText: openEHR Foundation
 // SPDX-License-Identifier: BUSL-1.1 AND Apache-2.0
 
-#![allow(
-    clippy::panic,
-    clippy::print_stdout,
-    clippy::print_stderr,
-    reason = "test assertions/diagnostics/fixtures"
-)]
+#![expect(clippy::panic, reason = "test assertions/diagnostics/fixtures")]
 //! Breadth gate over the FULL vendored openEHR CKM template library
 //! (`corpus/templates/ckm/full/`, vendored by
 //! `scripts/vendor/ckm-templates.sh`): every OPT the public CKM publishes

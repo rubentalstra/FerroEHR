@@ -2,13 +2,6 @@
 // SPDX-FileCopyrightText: openEHR Foundation
 // SPDX-License-Identifier: BUSL-1.1 AND Apache-2.0
 
-#![allow(
-    clippy::panic,
-    clippy::print_stdout,
-    clippy::print_stderr,
-    let_underscore_drop,
-    reason = "test assertions/diagnostics/fixtures"
-)]
 //! Regression guard for the CNF-runner corpus vitals template
 //! (`corpus/templates/vitals.opt`, corpus alias
 //! `cnf.opt.vitals`, `template_id` `cnf.vitals`).

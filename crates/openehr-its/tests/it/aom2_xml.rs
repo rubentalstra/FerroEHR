@@ -2,11 +2,7 @@
 // SPDX-FileCopyrightText: openEHR Foundation
 // SPDX-License-Identifier: BUSL-1.1 AND Apache-2.0
 
-#![allow(
-    clippy::panic,
-    clippy::print_stdout,
-    reason = "test assertions/diagnostics/fixtures"
-)]
+#![expect(clippy::panic, reason = "test assertions/diagnostics/fixtures")]
 //! AOM2 archetype XML codec gate — the ADL 2 counterpart of `opt14`.
 //!
 //! Corpus: the **8 example documents openEHR ships inside the vendored ITS-XML

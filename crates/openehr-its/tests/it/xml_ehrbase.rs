@@ -2,17 +2,6 @@
 // SPDX-FileCopyrightText: openEHR Foundation
 // SPDX-License-Identifier: BUSL-1.1 AND Apache-2.0
 
-#![allow(
-    clippy::doc_markdown,
-    reason = "prose with proper nouns (EHRbase, openEHR, RM)"
-)]
-#![allow(
-    clippy::panic,
-    clippy::print_stdout,
-    clippy::print_stderr,
-    let_underscore_drop,
-    reason = "test assertions/diagnostics/fixtures"
-)]
 //! Read-fidelity gate against real EHRbase XML fixtures.
 //!
 //! `FromXml` must parse stock EHRbase-authored XML into the RM types, and the

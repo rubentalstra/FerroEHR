@@ -2,11 +2,9 @@
 // SPDX-FileCopyrightText: openEHR Foundation
 // SPDX-License-Identifier: BUSL-1.1 AND Apache-2.0
 
-#![allow(
+#![expect(
     clippy::panic,
-    clippy::print_stdout,
     clippy::print_stderr,
-    let_underscore_drop,
     reason = "test assertions/diagnostics/fixtures"
 )]
 //! FLAT (simSDT) `RM ⇄ FLAT` converter tests.
@@ -27,7 +25,7 @@
 //! * **insta goldens** — deterministic flat snapshots for representative pairs.
 //! * **targeted key assertions** — Better flat key shape (`|magnitude`,
 //!   `|unit` singular, `|code`).
-#![allow(
+#![expect(
     clippy::doc_markdown,
     reason = "prose with many proper nouns (EHRbase, simSDT, …)"
 )]

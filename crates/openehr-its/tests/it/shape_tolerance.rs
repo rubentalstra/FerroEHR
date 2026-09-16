@@ -2,12 +2,7 @@
 // SPDX-FileCopyrightText: openEHR Foundation
 // SPDX-License-Identifier: BUSL-1.1 AND Apache-2.0
 
-#![allow(
-    clippy::expect_used,
-    clippy::unwrap_used,
-    clippy::panic,
-    reason = "test assertions/diagnostics/fixtures"
-)]
+#![expect(clippy::expect_used, reason = "test assertions/diagnostics/fixtures")]
 //! Verdict invariance across the legal canonical-JSON spelling freedoms.
 //!
 //! Canonical JSON admits several spellings of the same instance, and the

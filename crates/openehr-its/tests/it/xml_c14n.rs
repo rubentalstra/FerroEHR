@@ -2,16 +2,9 @@
 // SPDX-FileCopyrightText: openEHR Foundation
 // SPDX-License-Identifier: BUSL-1.1 AND Apache-2.0
 
-#![allow(
+#![expect(
     clippy::doc_markdown,
     reason = "prose with proper nouns (openEHR, EHRbase, CNF, cabolabs)"
-)]
-#![allow(
-    clippy::panic,
-    clippy::print_stdout,
-    clippy::print_stderr,
-    let_underscore_drop,
-    reason = "test assertions/diagnostics/fixtures"
 )]
 //! C14N byte-parity gate for canonical XML.
 //!

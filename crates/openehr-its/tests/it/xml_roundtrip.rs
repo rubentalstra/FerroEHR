@@ -2,13 +2,6 @@
 // SPDX-FileCopyrightText: openEHR Foundation
 // SPDX-License-Identifier: BUSL-1.1 AND Apache-2.0
 
-#![allow(
-    clippy::panic,
-    clippy::print_stdout,
-    clippy::print_stderr,
-    let_underscore_drop,
-    reason = "test assertions/diagnostics/fixtures"
-)]
 //! XML round-trip fidelity gate: for every composition in the openEHR
 //! corpus, RM → XML → RM → XML must be stable, proving the generated `ToXml` and
 //! `FromXml` impls are mutually consistent on real data.

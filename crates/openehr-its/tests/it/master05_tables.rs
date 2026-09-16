@@ -49,25 +49,20 @@
 //!   asserted structurally in [`check`] — a new required row cannot be added
 //!   without stating its enforcement. Where the flat build genuinely rejects,
 //!   the section test carries the negative assertion as well.
-#![allow(
+#![expect(
     clippy::panic,
     clippy::expect_used,
-    clippy::unwrap_used,
     reason = "integration-test assertions and fixture plumbing outside #[test] fns, which the clippy.toml allow-*-in-tests scoping does not reach"
 )]
-#![allow(
+#![expect(
     clippy::doc_markdown,
     reason = "the module docs quote openEHR spec prose and Simplified-Formats key names as text, not as Rust code references"
 )]
-#![allow(
-    clippy::too_many_lines,
-    reason = "one master05 table per test fn — the length is the size of the table being pinned, not logic"
-)]
-#![allow(
+#![expect(
     clippy::needless_pass_by_value,
     reason = "fixture builders take `Value` by value so call sites read as the JSON they build (`element(json!({…}))`); `json!` interpolation borrows"
 )]
-#![allow(
+#![expect(
     clippy::assigning_clones,
     reason = "fixture mutation reads clearer as a plain assignment of a freshly-built value than as `clone_from`"
 )]

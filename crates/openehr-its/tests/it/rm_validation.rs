@@ -2,12 +2,9 @@
 // SPDX-FileCopyrightText: openEHR Foundation
 // SPDX-License-Identifier: BUSL-1.1 AND Apache-2.0
 
-#![allow(
+#![expect(
     clippy::expect_used,
-    clippy::unwrap_used,
     clippy::panic,
-    clippy::print_stderr,
-    let_underscore_drop,
     reason = "test assertions/diagnostics/fixtures"
 )]
 //! The **wire-boundary RM class-invariant dispatcher** gate
