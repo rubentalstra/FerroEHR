@@ -5,23 +5,16 @@
 #![expect(clippy::panic, reason = "test assertions/diagnostics/fixtures")]
 //! OPT 1.4 corpus gate: every vendored `.opt` operational template
 //! must parse into the generated `opt14::types::OperationalTemplate` model without
-//! error.
-//!
-//! The templates come from the shared breadth-corpus tree at the repository
-//! root (`corpus/templates/`, `corpus/PROVENANCE.md`), which is where material
-//! several crates read lives; the crate reaches it by the same
-//! `CARGO_MANIFEST_DIR` hop its sibling gates use, so the layout this file
-//! assumes is `<crate>/../../corpus/templates/`. The `ferroehr` app tree keeps
-//! its own OPT pack and gates its parseability itself
-//! (`app/ferroehr/tests/it/validation_opt.rs`).
+//! error. The corpus lives with the `ferroehr` app tests; this crate reads it by
+//! a workspace-relative path.
 
 use std::fmt::Write as _;
 use std::path::{Path, PathBuf};
 
-/// The OPT corpus dir (`corpus/templates`), resolved from this crate's manifest
-/// dir.
+/// The OPT corpus dir (`app/ferroehr/tests/resources/service`), resolved from
+/// this crate's manifest dir.
 fn corpus_dir() -> PathBuf {
-    Path::new(env!("CARGO_MANIFEST_DIR")).join("../../corpus/templates")
+    Path::new(env!("CARGO_MANIFEST_DIR")).join("../../app/ferroehr/tests/resources/service")
 }
 
 /// Recursively collect every `*.opt` file under `dir`.
@@ -49,8 +42,8 @@ fn opt_files(dir: &Path) -> Vec<PathBuf> {
 fn every_opt_template_parses() {
     let files = opt_files(&corpus_dir());
     assert!(
-        files.len() >= 400,
-        "expected the full vendored template corpus (~407 files), found {}",
+        files.len() >= 90,
+        "expected the full OPT corpus (~91 files), found {}",
         files.len()
     );
 
@@ -455,17 +448,16 @@ fn matches_operands(
 /// payload is dropped.
 #[test]
 fn expr_leaf_any_type_items_carry_their_payload() {
-    let path = Path::new(env!("CARGO_MANIFEST_DIR"))
-        .join("tests/fixtures/sdk/AlternativeEvents.opt");
-    let xml = std::fs::read_to_string(&path).expect("read the AlternativeEvents fixture");
-    let opt = openehr_its::opt14::from_xml(&xml).expect("the AlternativeEvents OPT parses");
+    let path = corpus_dir().join("knowledge/IDCR Problem List.v1.opt");
+    let xml = std::fs::read_to_string(&path).expect("read the IDCR corpus OPT");
+    let opt = openehr_its::opt14::from_xml(&xml).expect("the IDCR OPT parses");
 
     let found = slots(&opt.definition);
     let slot = found
         .iter()
-        .find(|s| s.node_id == "at0020")
-        .expect("the device CLUSTER slot at0020");
-    let assertion = slot.includes.first().expect("at0020 has an includes");
+        .find(|s| s.node_id == "at0002")
+        .expect("the problem/diagnosis EVALUATION slot at0002");
+    let assertion = slot.includes.first().expect("at0002 has an includes");
     let (left, right) = matches_operands(assertion);
 
     // Left operand: the attribute path, a bare text payload under an
@@ -481,11 +473,10 @@ fn expr_leaf_any_type_items_carry_their_payload() {
             .item
             .child("pattern")
             .map(openehr_its::xml::runtime::XmlAny::text),
-        Some(r"openEHR-EHR-CLUSTER\.device(-[a-zA-Z0-9_]+)*\.v1".to_owned()),
+        Some(r"openEHR-EHR-EVALUATION\.problem_diagnosis(-[a-zA-Z0-9_]+)*\.v1".to_owned()),
     );
 
-    // Every slot in this template keeps its C_STRING pattern, whether it names
-    // an archetype id or admits any of them.
+    // Every slot in this template constrains a real archetype id.
     for s in &found {
         for a in &s.includes {
             let (_, constraint) = matches_operands(a);
