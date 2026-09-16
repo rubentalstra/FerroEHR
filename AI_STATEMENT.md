@@ -5,7 +5,7 @@
 | Version | 1.0.0 |
 | Effective date | 2026-08-24 |
 | Status | Active |
-| Author and owner | Ruben Talstra, maintainer |
+| Author and maintainer | Ruben Talstra |
 | Canonical location | `AI_STATEMENT.md` at the repository root |
 | Licence | Business Source License 1.1, like the rest of the project's own text (the `openehr-*` spec crates are Apache 2.0) |
 | Review | at every major or minor release, and on any trigger in §13 |

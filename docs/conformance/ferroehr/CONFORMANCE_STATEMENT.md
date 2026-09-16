@@ -104,4 +104,4 @@ Beside the openEHR resources of ITS-REST 1.1.0, this product serves the route fa
 
 We declare conformance of FerroEHR to the openEHR CNF 2.0 platform test schedule under the declared capabilities, options and technology profile; every claim derives from the committed machine-verified results.
 
-Signed: Vernum Projecten B.V. (Owner) — 2026-07-22
+Signed: Ruben Talstra, for Vernum Projecten B.V. (Owner) — 2026-09-16
