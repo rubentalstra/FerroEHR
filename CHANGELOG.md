@@ -70,6 +70,13 @@ workflow refuses a tag that has no matching section here.
 
 ### Changed
 
+- **The server needs only `btree_gist`, which it installs itself** (#3433). The
+  second-generation schema calls nothing from `uuid-ossp`, `pgcrypto` or
+  `pg_trgm`, so the PostgreSQL image no longer installs them and the CI step no
+  longer creates them. `btree_gist` backs the temporal key on
+  `linkage.subject_ehr` and the server creates it at boot, so a plain
+  PostgreSQL 18 database with a migration credential that may create it serves
+  with nothing preinstalled.
 - **The Licensor and copyright holder is Vernum Projecten B.V.** (#3435). Every
   statement of the holder names the company: `LICENSE` and the per-crate
   licence texts, `REUSE.toml`, the SPDX header of every first-party file

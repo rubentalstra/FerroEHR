@@ -1,7 +1,7 @@
 #cloud-config
 # The sandbox DATABASE box (ferroehr-sandbox-postgres): a dedicated CX33
-# running the project's own ferroehr-postgres image (PG 18 with uuid-ossp,
-# pgcrypto and pg_trgm), reachable ONLY over the Hetzner private network
+# running the project's own ferroehr-postgres image (PG 18 with btree_gist,
+# the one extension the schema needs), reachable ONLY over the Hetzner private network
 # (ferroehr-sandbox-net, 10.0.0.0/24). Pass this as the server's user data at
 # creation; provisioned 2026-09-01 (#3015).
 #
