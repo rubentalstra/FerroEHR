@@ -316,6 +316,26 @@ workflow refuses a tag that has no matching section here.
   services dump the same sets, and all six jobs now pass `--strict-names`, so a
   `--schema` pattern matching nothing fails the dump instead of writing an
   artefact that silently lacks that half (PostgreSQL 18, pg_dump §Options).
+- **A newer runtime base image** (#3439). The server and the viewer image build
+  on `gcr.io/distroless/cc-debian13:nonroot` at digest `sha256:54df941e`, the
+  digest that tag resolves to today. The
+  `org.opencontainers.image.base.digest` label moves with it in both
+  Dockerfiles and in the two publishing lanes, which is what the image-labels
+  guard checks.
+- **Four runtime dependencies move to their current patch** (#3442). `lapin`
+  4.11.0 retries the initial AMQP connection properly when recovery is on,
+  which is the mode the events transport runs in; `reqwest` 0.13.5 fixes proxy
+  authentication picking the wrong credentials when several proxies match a
+  request, and a blocking-client timeout panic; `tokio-rustls` 0.26.5 returns
+  more data per `poll_read` on a TLS stream; `fancy-regex` 0.19.2 cuts pattern
+  build time. No API a caller here uses changed.
+- **`jsonschema` 0.55.1** (#3443). It compiles the vendored ITS-JSON schema
+  behind `openehr-its`'s `schema-validation` feature. The releases since 0.53.0
+  correct the keyword location an error names and several schema
+  canonicalisation defects; the 626-test `openehr-its` suite, the ITS-JSON
+  corpus gate among it, passes unchanged. The eight published `openehr-*`
+  crates step to 0.0.67 with it, since the requirement is part of their
+  packaged manifest.
 
 ### Removed
 

@@ -2674,9 +2674,9 @@ dependencies = [
 
 [[package]]
 name = "fancy-regex"
-version = "0.19.0"
+version = "0.19.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "476de73bddf2ef8490aa4ee8f1cf40b430bf1d56c48c22080e5186952cd580e6"
+checksum = "d301f5bf187b3c295fce6468d3875037a0bccc5f6b151c63cac2f85babf21912"
 dependencies = [
  "bit-set",
  "regex-automata",
@@ -2734,7 +2734,7 @@ dependencies = [
  "quick-xml 0.42.0",
  "rand 0.8.7",
  "regex",
- "reqwest 0.13.4",
+ "reqwest 0.13.5",
  "rustls",
  "sea-query",
  "sea-query-sqlx",
@@ -2825,7 +2825,7 @@ dependencies = [
  "opentelemetry_sdk",
  "pprof",
  "prometheus",
- "reqwest 0.13.4",
+ "reqwest 0.13.5",
  "rustls",
  "serde",
  "serde_json",
@@ -2861,7 +2861,7 @@ dependencies = [
  "ferroehr",
  "ferroehr-rest",
  "openehr-its",
- "reqwest 0.13.4",
+ "reqwest 0.13.5",
  "serde_json",
  "sqlx",
  "tokio",
@@ -2897,7 +2897,7 @@ dependencies = [
  "openehr-its",
  "openehr-query",
  "openidconnect",
- "reqwest 0.13.4",
+ "reqwest 0.13.5",
  "serde",
  "serde_json",
  "thaw",
@@ -4352,9 +4352,9 @@ dependencies = [
 
 [[package]]
 name = "jsonschema"
-version = "0.53.0"
+version = "0.55.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "ca2ea2207f8ccb34b6d4d041fe9deb08fff3cbc43750012caa2c3d1e860188e4"
+checksum = "b68339c3d874e48151d74ffe256d93a58cffa240983cb0967d3cbaea083a44fe"
 dependencies = [
  "ahash",
  "bytecount",
@@ -4372,7 +4372,7 @@ dependencies = [
  "percent-encoding",
  "referencing",
  "regex",
- "reqwest 0.13.4",
+ "reqwest 0.13.5",
  "rustls",
  "serde",
  "serde_json",
@@ -4383,18 +4383,18 @@ dependencies = [
 
 [[package]]
 name = "jsonschema-regex"
-version = "0.53.0"
+version = "0.55.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "5426a01d944d044c9c5e459f603419d1b539358f5496b1041df45a7a86d2d38f"
+checksum = "6307b5b51216ec9b941b52244c74043fa0b1d6b657b56199f57cb1416d3641c5"
 dependencies = [
  "regex-syntax",
 ]
 
 [[package]]
 name = "jsonschema-value"
-version = "0.53.0"
+version = "0.55.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "65b6ec7deaeaab6320efc3084d8a9e91d5b4985ee36ffffef45dbff9516ff7a8"
+checksum = "0230ac05e09c6111e96c147b75c390579f5cbd45654b980c68ac60fe17b3f129"
 dependencies = [
  "ahash",
  "bytecount",
@@ -4496,9 +4496,9 @@ dependencies = [
 
 [[package]]
 name = "lapin"
-version = "4.10.0"
+version = "4.11.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "0fd20e01fd92597ca352ca7ceed3c589851ebad279dfcada48aa4d24fd3a7caa"
+checksum = "24b99d8cdfe3f6223f9f75e35e7510a8662767bee27c1cf870d503fc3bb2428a"
 dependencies = [
  "amq-protocol",
  "async-rs",
@@ -5429,7 +5429,7 @@ dependencies = [
  "percent-encoding",
  "quick-xml 0.41.0",
  "rand 0.10.2",
- "reqwest 0.13.4",
+ "reqwest 0.13.5",
  "rustls-pki-types",
  "serde",
  "serde_json",
@@ -5505,7 +5505,7 @@ checksum = "c08d65885ee38876c4f86fa503fb49d7b507c2b62552df7c70b2fce627e06381"
 
 [[package]]
 name = "openehr-adl"
-version = "0.0.66"
+version = "0.0.67"
 dependencies = [
  "indexmap 2.14.2",
  "openehr-am",
@@ -5521,7 +5521,7 @@ dependencies = [
 
 [[package]]
 name = "openehr-am"
-version = "0.0.66"
+version = "0.0.67"
 dependencies = [
  "openehr-base",
  "openehr-lang",
@@ -5531,7 +5531,7 @@ dependencies = [
 
 [[package]]
 name = "openehr-base"
-version = "0.0.66"
+version = "0.0.67"
 dependencies = [
  "serde",
  "serde_json",
@@ -5550,7 +5550,7 @@ dependencies = [
 
 [[package]]
 name = "openehr-its"
-version = "0.0.66"
+version = "0.0.67"
 dependencies = [
  "async-trait",
  "axum",
@@ -5580,7 +5580,7 @@ dependencies = [
 
 [[package]]
 name = "openehr-lang"
-version = "0.0.66"
+version = "0.0.67"
 dependencies = [
  "assert_fs",
  "chumsky",
@@ -5594,7 +5594,7 @@ dependencies = [
 
 [[package]]
 name = "openehr-query"
-version = "0.0.66"
+version = "0.0.67"
 dependencies = [
  "chumsky",
  "logos",
@@ -5603,7 +5603,7 @@ dependencies = [
 
 [[package]]
 name = "openehr-rm"
-version = "0.0.66"
+version = "0.0.67"
 dependencies = [
  "insta",
  "jsonschema",
@@ -5621,7 +5621,7 @@ dependencies = [
 
 [[package]]
 name = "openehr-term"
-version = "0.0.66"
+version = "0.0.67"
 dependencies = [
  "openehr-base",
  "roxmltree",
@@ -5690,7 +5690,7 @@ dependencies = [
  "bytes",
  "http",
  "opentelemetry",
- "reqwest 0.13.4",
+ "reqwest 0.13.5",
 ]
 
 [[package]]
@@ -5705,7 +5705,7 @@ dependencies = [
  "opentelemetry-proto",
  "opentelemetry_sdk",
  "prost",
- "reqwest 0.13.4",
+ "reqwest 0.13.5",
  "thiserror 2.0.20",
  "tokio",
  "tonic",
@@ -7003,9 +7003,9 @@ dependencies = [
 
 [[package]]
 name = "referencing"
-version = "0.53.0"
+version = "0.55.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "fb406ba984c08d1b91781d7507d103296cf6dec3256c33c388b468957f4b43bb"
+checksum = "a196a5b4a8a12f46b6353174df865a05d41a6055aff212ec30877492788618b6"
 dependencies = [
  "ahash",
  "fluent-uri",
@@ -7093,11 +7093,11 @@ dependencies = [
 
 [[package]]
 name = "reqwest"
-version = "0.13.4"
+version = "0.13.5"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "219c5811de6525e5416c7d5d53bb656d3afdbc6c5af816e0802bcfa42dbdc1c3"
+checksum = "16a1cfa75cc186dd73d5818e510e042e40927bccc9c236b061cea97e1eb08029"
 dependencies = [
- "base64 0.22.1",
+ "base64 0.23.1",
  "bytes",
  "futures-channel",
  "futures-core",
@@ -8638,7 +8638,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "32497e9a4c7b38532efcdebeef879707aa9f794296a4f0244f6f69e9bc8574bd"
 dependencies = [
  "fastrand",
- "getrandom 0.3.4",
+ "getrandom 0.4.3",
  "once_cell",
  "rustix",
  "windows-sys 0.61.2",
@@ -8796,7 +8796,7 @@ dependencies = [
  "http",
  "indexmap 2.14.2",
  "pastey",
- "reqwest 0.13.4",
+ "reqwest 0.13.5",
  "serde",
  "serde_json",
  "serde_repr",
@@ -8984,9 +8984,9 @@ dependencies = [
 
 [[package]]
 name = "tokio-rustls"
-version = "0.26.4"
+version = "0.26.5"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "1729aa945f29d91ba541258c8df89027d5792d85a8841fb65e8bf0f4ede4ef61"
+checksum = "b0c85f2c3ef0b1cd58b36682f4b17aaa995f0e5db534d85692b4903abce21f67"
 dependencies = [
  "rustls",
  "tokio",

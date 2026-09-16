@@ -68,3 +68,4 @@
 - [Many issues per PR](many-issues-per-pr.md) — owner 2026-09-16: batch six to ten related issues per PR, one Closes line each; one issue per PR is too slow
 - [v5 withdrawn; rewrites are v4.3.1/v4.3.2](v5-withdrawn-rewrites-are-v431-v432.md) — owner 2026-09-16: no v5.x milestone for rework; open design decisions are decided and recorded in-session, not deferred
 - [Update-branch is unsigned](update-branch-is-unsigned.md) — never `gh pr update-branch` or the web button: API merge commits are unsigned and the main ruleset blocks them; rebase locally and force-with-lease
+- [History rewrite 2026-09-16](history-rewrite-2026-09-16.md) — main rewritten to drop the #2708 contributor commit, 371 commits re-signed, tags v4.0.14..v4.3.0 off-lineage until the v4.3.1 cut; never resolve "latest release" by ancestry; owner pushes with --force-with-lease

@@ -73,13 +73,21 @@ jobs:
           persist-credentials: false
 
       - name: Install nightly Rust
-        uses: actions-rust-lang/setup-rust-toolchain@166cdcfd11aee3cb47222f9ddb555ce30ddb9659 # v1.17.0
+        uses: actions-rust-lang/setup-rust-toolchain@ecabd13d1c56bd1345c230e542e9144811ad706f # v2.0.0
         with:
           toolchain: nightly
+          # The action's default is `deny`, and on nightly cargo that also
+          # denies MANIFEST lints: it asks for kebab-case binary names, while a
+          # cargo-fuzz target is named after its `fuzz_targets/*.rs` file and
+          # that tool writes them snake_case. Renaming them would throw away
+          # every accumulated corpus. Harness code was never held to -D
+          # warnings here either — `cargo fuzz` replaces RUSTFLAGS with its own
+          # sanitizer set — so this states what the lane already did.
+          build-warnings: warn
           cache: false
 
       - name: Install cargo-fuzz
-        uses: taiki-e/install-action@84f5ac3124727fb3d284d4d22ee9ab3654fd09a6 # v2.87.7
+        uses: taiki-e/install-action@3f74d7c16a4242f1c95561e98edc25d36adb4375 # v2.87.12
         with:
           tool: cargo-fuzz@0.13.2
 
@@ -154,14 +162,22 @@ jobs:
           persist-credentials: false
 
       - name: Install nightly Rust
-        uses: actions-rust-lang/setup-rust-toolchain@166cdcfd11aee3cb47222f9ddb555ce30ddb9659 # v1.17.0
+        uses: actions-rust-lang/setup-rust-toolchain@ecabd13d1c56bd1345c230e542e9144811ad706f # v2.0.0
         with:
           toolchain: nightly
+          # The action's default is `deny`, and on nightly cargo that also
+          # denies MANIFEST lints: it asks for kebab-case binary names, while a
+          # cargo-fuzz target is named after its `fuzz_targets/*.rs` file and
+          # that tool writes them snake_case. Renaming them would throw away
+          # every accumulated corpus. Harness code was never held to -D
+          # warnings here either — `cargo fuzz` replaces RUSTFLAGS with its own
+          # sanitizer set — so this states what the lane already did.
+          build-warnings: warn
           # The fuzz build tree is cached below, keyed on the fuzz lockfile.
           cache: false
 
       - name: Install cargo-fuzz
-        uses: taiki-e/install-action@84f5ac3124727fb3d284d4d22ee9ab3654fd09a6 # v2.87.7
+        uses: taiki-e/install-action@3f74d7c16a4242f1c95561e98edc25d36adb4375 # v2.87.12
         with:
           # Not in install-action's managed manifest set, so this resolves
           # through its cargo-binstall fallback against the upstream release
