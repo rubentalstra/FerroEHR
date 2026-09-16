@@ -1,6 +1,6 @@
 ---
 name: license-busl
-description: "Since 2026-09-03 FerroEHR's own code is under the Business Source License 1.1 (not MIT), Licensor and copyright holder Ruben Talstra; since 2026-09-04 the three hand-written spec engines (openehr-query, openehr-adl, openehr-its) are BUSL too and only the five generated model crates stay Apache-2.0"
+description: "Since 2026-09-03 FerroEHR's own code is under the Business Source License 1.1 (not MIT), Licensor and copyright holder Vernum Projecten B.V. since 2026-09-16 (Ruben Talstra before that, and still the maintainer credit), source-available not open source"
 metadata: 
   node_type: memory
   type: project
