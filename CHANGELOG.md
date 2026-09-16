@@ -70,6 +70,20 @@ workflow refuses a tag that has no matching section here.
 
 ### Changed
 
+- **The Licensor and copyright holder is Vernum Projecten B.V.** (#3435). Every
+  statement of the holder names the company: `LICENSE` and the per-crate
+  licence texts, `REUSE.toml`, the SPDX header of every first-party file
+  (emitted for the generated crates, so they were regenerated), the licensing
+  page, the landing footer and the conformance party statement, whose rendered
+  statement and certificate were regenerated with it. The licences themselves
+  are unchanged — the application and the three hand-written engines stay
+  Business Source License 1.1 with the same Additional Use Grant, Change Date
+  and Change License, the five generated model crates stay Apache-2.0, and
+  releases up to v4.0.17 and crate versions up to 0.0.56 stay MIT as published,
+  under the holder they were published with. Ruben Talstra remains the
+  maintainer credit the banner, `MAINTAINERS.md`, the OCI `authors` label and
+  the chart maintainers carry, and the `urn:rubentalstra:ferroehr` conformance
+  identifier is an identifier rather than a holder statement and stays.
 - **The `production` deployment profile refuses the two compatibility
   defaults** (#3323). The per-EHR `EHR_ACCESS` default is `open` and the audit
   trail fails open, both chosen so the conformance instrument and the

@@ -1,13 +1,13 @@
 #!/usr/bin/env bash
-# SPDX-FileCopyrightText: Ruben Talstra
+# SPDX-FileCopyrightText: Vernum Projecten B.V.
 # SPDX-License-Identifier: BUSL-1.1
 # One copyright holder, stated identically everywhere it is stated.
 #
-# `LICENSE` once said "Ruben Talstra" while `REUSE.toml`, the codegen header
-# constant and 2470 file headers said "FerroEHR contributors" (#2325). Since the
-# 2026-09-03 relicensing the Business Source License names Ruben Talstra as the
-# Licensor and copyright holder, so every source states that. Asserting two
-# holders means a downstream redistributor reading a file
+# `LICENSE` once said one holder while `REUSE.toml`, the codegen header constant
+# and 2470 file headers said "FerroEHR contributors" (#2325). The Business
+# Source License names Vernum Projecten B.V. as the Licensor and copyright
+# holder (#3435), so every source states that. Asserting two holders means a
+# downstream redistributor reading a file
 # header and a lawyer reading LICENSE come away with different answers about who
 # holds the copyright — the exact ambiguity per-file licensing exists to remove.
 #
@@ -15,7 +15,9 @@
 #
 # NOT compared: `CITATION.cff` authors and `.zenodo.json` creators. Those record
 # AUTHORSHIP for citation, which is a different datum from the copyright holder
-# and is correctly a named person.
+# and is correctly a named person. Nor `LICENSES/MIT.txt`, which reproduces the
+# grant the MIT-published versions carry and keeps the holder they were
+# published under.
 #
 # Usage: scripts/checks/copyright-holder.sh   (no arguments)
 set -euo pipefail
@@ -26,7 +28,7 @@ guard_no_args "$@"
 
 cd "$(dirname "$0")/../.."
 
-readonly HOLDER='Ruben Talstra'
+readonly HOLDER='Vernum Projecten B.V.'
 
 fail=0
 check() {
@@ -39,9 +41,11 @@ check() {
   fi
 }
 
-# `LICENSE` — the Business Source License's "The Licensed Work is (c) YYYY …" line.
+# `LICENSE` — the Business Source License's "The Licensed Work is (c) YYYY …"
+# line, taken to end of line: a holder whose own name ends in a period closes
+# the sentence with it rather than doubling it.
 check "LICENSE" \
-  "$(sed -n 's/^.*The Licensed Work is (c) [0-9]\{4\} \(.*\)\.$/\1/p' LICENSE | head -1)"
+  "$(sed -n 's/^.*The Licensed Work is (c) [0-9]\{4\} \(.*\)$/\1/p' LICENSE | head -1)"
 
 # `REUSE.toml` — the first-party annotation (the openEHR Foundation appears as a
 # SECOND holder on vendored-derived files, which is a different statement).

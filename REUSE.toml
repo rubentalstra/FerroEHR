@@ -42,7 +42,7 @@ version = 1
 [[annotations]]
 path = "**"
 precedence = "closest"
-SPDX-FileCopyrightText = "Ruben Talstra"
+SPDX-FileCopyrightText = "Vernum Projecten B.V."
 SPDX-License-Identifier = "BUSL-1.1"
 
 # ── The five generated model crates: Apache-2.0 ────────────────────────────
@@ -61,7 +61,7 @@ path = [
   "crates/openehr-term/**",
 ]
 precedence = "closest"
-SPDX-FileCopyrightText = ["Ruben Talstra", "openEHR Foundation"]
+SPDX-FileCopyrightText = ["Vernum Projecten B.V.", "openEHR Foundation"]
 SPDX-License-Identifier = "Apache-2.0"
 
 # ── The three hand-written spec engines: BUSL-1.1 ──────────────────────────
@@ -75,7 +75,7 @@ path = [
   "crates/openehr-adl/**",
 ]
 precedence = "closest"
-SPDX-FileCopyrightText = "Ruben Talstra"
+SPDX-FileCopyrightText = "Vernum Projecten B.V."
 SPDX-License-Identifier = "BUSL-1.1"
 
 # openehr-its derives its generated codecs and REST contract from the openEHR
@@ -85,7 +85,7 @@ SPDX-License-Identifier = "BUSL-1.1"
 [[annotations]]
 path = "crates/openehr-its/**"
 precedence = "closest"
-SPDX-FileCopyrightText = ["Ruben Talstra", "openEHR Foundation"]
+SPDX-FileCopyrightText = ["Vernum Projecten B.V.", "openEHR Foundation"]
 SPDX-License-Identifier = "BUSL-1.1 AND Apache-2.0"
 
 # ── openEHR machine-readable artifacts — Apache-2.0 ─────────────────────────
@@ -162,7 +162,7 @@ SPDX-License-Identifier = "Apache-2.0"
 [[annotations]]
 path = "crates/openehr-its/tests/fixtures/named_event/**"
 precedence = "override"
-SPDX-FileCopyrightText = ["openEHR Foundation", "Ruben Talstra"]
+SPDX-FileCopyrightText = ["openEHR Foundation", "Vernum Projecten B.V."]
 SPDX-License-Identifier = "CC-BY-SA-3.0"
 
 # Three BMM reference models inside that set are offered by their authors under
@@ -266,7 +266,7 @@ SPDX-License-Identifier = "MPL-1.1"
 [[annotations]]
 path = "fuzz/regressions/**"
 precedence = "override"
-SPDX-FileCopyrightText = "Ruben Talstra"
+SPDX-FileCopyrightText = "Vernum Projecten B.V."
 SPDX-License-Identifier = "BUSL-1.1"
 
 # ── Self-hosted KaTeX assets — MIT ──────────────────────────────────────────
@@ -314,7 +314,7 @@ path = [
   ".github/cff-schema/PROVENANCE.md",
 ]
 precedence = "override"
-SPDX-FileCopyrightText = "Ruben Talstra"
+SPDX-FileCopyrightText = "Vernum Projecten B.V."
 SPDX-License-Identifier = "BUSL-1.1"
 
 # ── The vendored regulation corpus ──────────────────────────────────────────
@@ -402,5 +402,5 @@ path = [
   "docs/law/**/SHA256SUMS",
 ]
 precedence = "override"
-SPDX-FileCopyrightText = "Ruben Talstra"
+SPDX-FileCopyrightText = "Vernum Projecten B.V."
 SPDX-License-Identifier = "BUSL-1.1"

@@ -58,10 +58,11 @@ Everything written for this project (the server and application crates, the
 code generator and tooling, the viewer, and the three hand-written
 specification engines `openehr-query`, `openehr-adl` and `openehr-its`) is licensed under the
 [Business Source License 1.1](https://github.com/rubentalstra/FerroEHR/blob/main/LICENSE),
-SPDX identifier `BUSL-1.1`. The Licensor is Ruben Talstra. The copyright holder
-is stated as *Ruben Talstra*, identically in `LICENSE`, in `REUSE.toml`,
-and in every first-party file header; a CI gate compares the three so they
-cannot drift apart.
+SPDX identifier `BUSL-1.1`. The Licensor is Vernum Projecten B.V. The copyright
+holder is stated as *Vernum Projecten B.V.*, identically in `LICENSE`, in
+`REUSE.toml`, and in every first-party file header; a CI gate compares the
+three so they cannot drift apart. Ruben Talstra remains the maintainer, which
+is a credit rather than a holder statement.
 
 FerroEHR is source-available. The Business Source License 1.1 is not an
 OSI-approved open-source licence, and this project does not claim that it is.
@@ -102,7 +103,9 @@ the MIT terms they were published with, and so do the `openehr-*` crate
 versions 0.0.56 and earlier on crates.io (MIT AND Apache-2.0 for the crates
 that embed openEHR-derived material); `openehr-query`, `openehr-adl` and
 `openehr-its` 0.0.58 and 0.0.59 stay Apache-2.0. Relicensing changes future
-versions only.
+versions only. `LICENSES/MIT.txt` reproduces that grant as those versions carry
+it, Ruben Talstra's copyright line included, because a published grant is a
+record of what was handed out and is not rewritten afterwards.
 
 The conformance instrument is no longer part of this repository. It is
 [Veredictum](https://github.com/rubentalstra/Veredictum), an independent

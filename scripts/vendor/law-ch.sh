@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# SPDX-FileCopyrightText: Ruben Talstra
+# SPDX-FileCopyrightText: Vernum Projecten B.V.
 # SPDX-License-Identifier: BUSL-1.1
 # Vendors the Swiss federal law the compliance pages cite into docs/law/ch/,
 # one directory per act, in the format its publisher serves.
