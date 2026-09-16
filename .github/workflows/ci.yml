@@ -607,6 +607,10 @@ jobs:
           fetch-depth: 0
       - name: Every cited openEHR spec file exists
         run: bash scripts/checks/spec-citations.sh --all
+      - name: The migration-citation detector catches what it claims to
+        run: bash scripts/checks/migration-citations.sh --self-test
+      - name: Every cited migration file exists
+        run: bash scripts/checks/migration-citations.sh --all
 
   # No Python anywhere (.claude/rules/rust-style.md §No Python): the tooling
   # languages are bash and Rust. Embedded Python is the worst case — a heredoc
