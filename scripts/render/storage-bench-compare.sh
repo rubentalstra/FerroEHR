@@ -159,6 +159,13 @@ compare() {
   compare_flag=true
   [[ "$measured_class" == "$baseline_class" ]] || compare_flag=false
 
+  # A run that measured nothing leaves the committed record where it was, and
+  # comparing that file with itself reads as a perfectly unchanged system.
+  if [[ "$(jq -r '.measured_at' "$measured")" == "$(jq -r '.measured_at' "$baseline")" ]]; then
+    echo "error: $measured is the committed record itself — the bench wrote none" >&2
+    return 2
+  fi
+
   emit "## Storage benchmark, schema generation \`$generation\`" ""
   emit "Exploration, never a conformance record: this lane measures the storage" \
        "layer below the wire and earns no performance class. The records live in" \
@@ -218,7 +225,7 @@ compare() {
 # a mismatched class, and a generation with no committed record.
 
 record_fixture() {
-  local path="$1" generation="$2" class="$3" ehrs="$4" p50="$5" p99="$6"
+  local path="$1" generation="$2" class="$3" ehrs="$4" p50="$5" p99="$6" when="${7:-2026-09-15T11:00:00Z}"
   mkdir -p "$(dirname "$path")"
   cat > "$path" <<EOF
 {
@@ -228,7 +235,7 @@ record_fixture() {
   "cpu_count": 8,
   "memory_bytes": 17179869184,
   "measured_at_commit": "0123456789abcdef0123456789abcdef01234567",
-  "measured_at": "2026-09-15T10:00:00Z",
+  "measured_at": "$when",
   "timings_measured": true,
   "seed": { "ehrs": $ehrs, "compositions": 300, "template_id": "Vital signs",
             "entry_rm_type": "OBSERVATION", "seconds": 1.0 },
@@ -251,7 +258,7 @@ self_test() {
   trap 'rm -rf "$tmp"' RETURN
 
   # The baseline every case compares against.
-  record_fixture "$tmp/baseline.json" generation-1 poc 20 1000000 2000000
+  record_fixture "$tmp/baseline.json" generation-1 poc 20 1000000 2000000 2026-09-15T10:00:00Z
 
   # 1. An improvement: both percentiles fall.
   record_fixture "$tmp/faster.json" generation-1 poc 20 800000 1600000
@@ -308,11 +315,19 @@ self_test() {
   grep -q 'supersede.*not measured in this run' <<<"$out" \
     || { echo "self-test: a baseline operation missing from the run was not reported" >&2; failures=1; }
 
+  # 6. The bench wrote nothing and the committed record is still on disk: a
+  # comparison of one file with itself is refused rather than reported green.
+  status=0
+  compare "$tmp/baseline.json" "$tmp/baseline.json" 15 "self-test" \
+    > "$tmp/unwritten.out" 2>&1 || status=$?
+  [[ "$status" -eq 2 ]] \
+    || { echo "self-test: a record compared with itself was not refused" >&2; failures=1; }
+
   if [[ "$failures" -ne 0 ]]; then
     echo "storage-bench-compare: SELF-TEST FAILED" >&2
     return 1
   fi
-  echo "storage-bench-compare: self-test passed (5 cases)."
+  echo "storage-bench-compare: self-test passed (6 cases)."
   return 0
 }
 
