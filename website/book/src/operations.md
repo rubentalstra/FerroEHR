@@ -399,7 +399,10 @@ identities and the map land in three different artefacts with three different
 audiences. `ferroehr config check` prints the resolved layout, which is the
 list a backup runbook is written from. The audit repository travels with the
 clinical dump while it shares that database (`--schema=audit` below) and needs a
-dump of its own once `[storage.audit]` names another one.
+dump of its own once `[storage.audit]` names another one. On Kubernetes that
+fourth dump is not yours to schedule: the chart renders a `backup.audit`
+CronJob as soon as `database.audit` carries a Secret of its own, and drops
+`--schema=audit` from the clinical job in the same render.
 
 ```bash
 # The clinical domain
@@ -416,6 +419,13 @@ pg_dump --dbname="$PARTY_DSN" --format=custom --no-owner \
 pg_dump --dbname="$LINKAGE_DSN" --format=custom --no-owner \
   --schema=linkage --extension=btree_gist \
   --file=/backups/linkage/linkage-$(date -u +%Y%m%dT%H%M%SZ).dump
+
+# The audit trail, ONLY when [storage.audit] names a database of its own —
+# co-located it is in the clinical dump above, and dumping it twice is a second
+# copy of who read what
+pg_dump --dbname="$AUDIT_DSN" --format=custom --no-owner \
+  --schema=audit \
+  --file=/backups/audit/audit-$(date -u +%Y%m%dT%H%M%SZ).dump
 ```
 
 > [!IMPORTANT]

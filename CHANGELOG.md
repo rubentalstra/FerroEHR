@@ -17,6 +17,14 @@ workflow refuses a tag that has no matching section here.
 
 ### Added
 
+- **A fourth backup CronJob for the audit domain** (#3399). The Helm chart
+  renders `backup.audit` as soon as `database.audit.existingSecret` gives the
+  audit trail a database of its own, with its own claim, credential and
+  schedule, and drops `--schema=audit` from the clinical dump in the same
+  render. Until then nothing changes: the trail shares the clinical database
+  and travels with that dump. Before this, an audit database placed elsewhere
+  was backed up by nothing and the operations page told the operator to dump it
+  by hand.
 - **An erasure tombstone on the party change-event stream** (#3417). A
   physically deleted party now leaves one contribution-less row on the party
   domain's own outbox before the delete commits, naming the party and every

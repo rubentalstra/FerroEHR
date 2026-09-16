@@ -38,7 +38,7 @@ kubectl -n ferroehr create secret generic ferroehr-db \
   --from-literal=FERROEHR__DB__URL='postgres://ferroehr_clinical:***@pg-host:5432/ferroehr?sslmode=verify-full'
 
 helm install ferroehr oci://ghcr.io/rubentalstra/charts/ferroehr \
-  --version 10.0.2 -n ferroehr \
+  --version 10.1.0 -n ferroehr \
   --set database.existingSecret=ferroehr-db \
   --set image.tag=4.3.0
 ```
@@ -55,7 +55,7 @@ helm install ferroehr oci://ghcr.io/rubentalstra/charts/ferroehr \
 reference. To read the chart's metadata without installing it:
 
 ```shell
-helm show chart oci://ghcr.io/rubentalstra/charts/ferroehr --version 10.0.2
+helm show chart oci://ghcr.io/rubentalstra/charts/ferroehr --version 10.1.0
 ```
 
 ### Pin two versions, not one
@@ -68,7 +68,7 @@ against.
 
 | | Selects | Pin with | Line |
 |---|---|---|---|
-| Chart version | templates, values schema, defaults | `--version 10.0.2` | SemVer over the chart's own contract |
+| Chart version | templates, values schema, defaults | `--version 10.1.0` | SemVer over the chart's own contract |
 | Image tag | the server binary | `--set image.tag=4.3.0` (or `image.digest`) | the application's SemVer line |
 
 Always pin the image to an immutable version or, better, a `@sha256` digest,
@@ -168,7 +168,7 @@ image, and FerroTERM.
 > the image itself as the authority:
 >
 > ```shell
-> helm template ferroehr oci://ghcr.io/rubentalstra/charts/ferroehr --version 10.0.2 \
+> helm template ferroehr oci://ghcr.io/rubentalstra/charts/ferroehr --version 10.1.0 \
 >   -s templates/configmap.yaml --set database.existingSecret=ferroehr-db \
 >   | sed -n '/ferroehr.toml/,$p' | sed '1d;s/^    //' > /tmp/ferroehr.toml
 > docker run --rm -v /tmp/ferroehr.toml:/etc/ferroehr/ferroehr.toml:ro \
@@ -602,7 +602,7 @@ config:
 
 ```shell
 helm upgrade ferroehr oci://ghcr.io/rubentalstra/charts/ferroehr \
-  --version 10.0.2 -n ferroehr --reuse-values \
+  --version 10.1.0 -n ferroehr --reuse-values \
   --set config.query.plan_cache_capacity=512
 ```
 
@@ -703,7 +703,7 @@ running. It is the Helm equivalent of the
 
 ```shell
 helm upgrade --install ferroehr oci://ghcr.io/rubentalstra/charts/ferroehr \
-  --version 10.0.2 -n ferroehr --reuse-values \
+  --version 10.1.0 -n ferroehr --reuse-values \
   --set terminology.enabled=true
 ```
 
@@ -839,7 +839,7 @@ Because that digest is set, `terminology.image.tag` alone deploys nothing: the
 digest wins, and a tag pointing anywhere else is refused at render rather than
 ignored. Clear the digest to deploy by tag.
 
-### Per-domain backups (three CronJobs, off by default)
+### Per-domain backups (one CronJob per domain, off by default)
 
 `backup.enabled` renders one CronJob per pseudonymisation domain:
 `backup.clinical.schedule` dumps the clinical schemas, `backup.party.schedule`
@@ -849,6 +849,14 @@ each writes to its own existing claim (`backup.clinical.persistentVolumeClaim`,
 `backup.linkage.persistentVolumeClaim`).
 The image is `backup.image.repository`, which carries `pg_dump`.
 
+**A fourth job renders for the audit domain when `database.audit.existingSecret`
+gives it a database of its own.** While the trail shares the clinical database
+the clinical dump names its schema and nothing more is needed; once it is
+somewhere else, that dump cannot reach it and nothing else would take it, so
+`backup.audit.schedule`, `backup.audit.existingSecret` and
+`backup.audit.persistentVolumeClaim` become required the same way the other
+three are, and the clinical dump stops naming the `audit` schema.
+
 The chart refuses to render rather than let the separation collapse quietly: a
 missing claim is an error naming the value, and naming the **same** claim for
 any two domains is an error too, because one volume holding two of them — the
@@ -856,15 +864,16 @@ clinical record, the identities, or the map that joins them — is the state
 per-domain backups exist to prevent.
 
 Each job needs **its own backup credential**, named by
-`backup.clinical.existingSecret`, `backup.party.existingSecret` and
-`backup.linkage.existingSecret`, and
+`backup.clinical.existingSecret`, `backup.party.existingSecret`,
+`backup.linkage.existingSecret` and, when it renders,
+`backup.audit.existingSecret`, and
 the render is refused without them. It cannot be the pool's credential: each
 domain's runtime role is revoked from the other domains, so a dump taken through
 one would be silently partial. Give each domain a read-only role on that
 domain's schema alone. Every job reads its DSN from a mounted file, never an
 environment variable.
 
-The chart provisions no storage. Create the three claims yourself, and give them
+The chart provisions no storage. Create the claims yourself, and give them
 different access control; that part no chart can do for you. The restore
 procedure, and the `ferroehr db verify` gate that judges it, are on the
 [Operating](../operations.md) page.
@@ -935,7 +944,7 @@ Preview an upgrade against what you have installed with
 `helm diff`, or render the new chart version and read it:
 
 ```shell
-helm template ferroehr oci://ghcr.io/rubentalstra/charts/ferroehr --version 10.0.2 \
+helm template ferroehr oci://ghcr.io/rubentalstra/charts/ferroehr --version 10.1.0 \
   -n ferroehr -f my-values.yaml | less
 ```
 

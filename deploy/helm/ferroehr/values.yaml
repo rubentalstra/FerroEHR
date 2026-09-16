@@ -289,18 +289,21 @@ migrations:
 # ─────────────────────────────────────────────────────────────────────────────
 # Per-domain logical backups (off by default).
 #
-# Three CronJobs, one per pseudonymisation domain, each dumping ONLY its own
+# One CronJob per pseudonymisation domain, each dumping ONLY its own
 # schemas into its OWN PersistentVolumeClaim under its OWN credential. A single
 # artefact carrying the clinical record and the identifying data together undoes
 # the separation pseudonymisation rests on (GDPR Art. 4(5),
 # https://eur-lex.europa.eu/eli/reg/2016/679/oj), and the restore capability is
 # Art. 32(1)(c). The mechanism is `pg_dump --schema`
 # (https://www.postgresql.org/docs/18/app-pgdump.html): the clinical job dumps
-# clinical, ext and audit, the party job dumps party, and the linkage job dumps
-# linkage. A deployment that gives the audit domain a database of its own dumps
-# that database separately; co-located, it travels with the clinical dump. Each domain's archival tier is a partition inside its own
-# schema, so it travels with it. No openEHR spec governs backups — our own
-# design/extension.
+# clinical and ext, the party job dumps party, and the linkage job dumps
+# linkage. THE AUDIT DOMAIN IS A FOURTH JOB, rendered only when
+# `database.audit.existingSecret` gives that domain a database of its own: there
+# the clinical dump cannot reach the trail and nothing else would take it. While
+# the audit domain shares the clinical database it has no job of its own and the
+# clinical dump names its schema instead. Each domain's archival tier is a
+# partition inside its own schema, so it travels with it. No openEHR spec
+# governs backups — our own design/extension.
 #
 # THE LINKAGE DOMAIN IS A THIRD ARTEFACT, not a place in either of the other
 # two. `linkage.subject_ehr` is the map from a party to its EHR, so a dump
@@ -316,10 +319,10 @@ migrations:
 # `backup.<domain>.existingSecret`. The DSN arrives as a mounted file, never as
 # an environment variable.
 #
-# The chart keeps the three dumps apart; ACCESS CONTROL over them is yours. Back
-# the three claims with different volumes and give the party and linkage ones the
-# narrower audience — any two domains sharing a claim is refused at
-# render, because that is the state this whole section exists to prevent.
+# The chart keeps the dumps apart; ACCESS CONTROL over them is yours. Back the
+# claims with different volumes and give the party and linkage ones the narrower
+# audience — any two domains sharing a claim is refused at render, because that
+# is the state this whole section exists to prevent.
 #
 # Off by default: the destination is a claim you provision. Two further things
 # this chart does not do, said here rather than assumed: nothing prunes old
@@ -327,8 +330,10 @@ migrations:
 # not point-in-time recovery — PITR is instance-wide and stays database-side.
 # ─────────────────────────────────────────────────────────────────────────────
 backup:
-  # -- Render the three per-domain backup CronJobs. Each domain then needs its
-  # own `persistentVolumeClaim` below, or the render is refused.
+  # -- Render the per-domain backup CronJobs: clinical, party, linkage, and
+  # audit when `database.audit.existingSecret` gives it a database of its own.
+  # Each rendered domain then needs its own `persistentVolumeClaim` below, or
+  # the render is refused.
   enabled: false
   image:
     # -- Image carrying `pg_dump`. The project's own PostgreSQL 18 image, so the
@@ -365,7 +370,8 @@ backup:
   # -- Tolerations for the dump pods.
   tolerations: []
   clinical:
-    # -- Cron schedule for the clinical dump (schemas clinical, ext, audit).
+    # -- Cron schedule for the clinical dump (schemas clinical and ext, plus
+    # audit while the audit domain shares this database).
     schedule: "15 1 * * *"
     # -- REQUIRED when enabled: Secret holding the clinical BACKUP DSN — a role
     # read-only on the clinical schemas, and not the pool's credential: each
@@ -415,6 +421,24 @@ backup:
     # dumps, and a DIFFERENT one from the other two claims (two domains sharing a
     # claim is refused at render). A volume holding this dump beside either other
     # domain's rebuilds the join the split exists to withhold.
+    persistentVolumeClaim: ""
+  audit:
+    # -- Cron schedule for the audit dump (schema audit). Offset from the other
+    # three by default so no two dumps read a database in the same minute. Only
+    # read when `database.audit.existingSecret` is set; otherwise the trail
+    # travels with the clinical dump and no audit job renders.
+    schedule: "45 2 * * *"
+    # -- REQUIRED when the audit domain has its own DSN: Secret holding the
+    # audit BACKUP DSN — a read-only role on the audit schema in the database
+    # `database.audit` points at. The clinical backup DSN is not it: that one
+    # names the clinical database, which is not where this trail lives.
+    existingSecret: ""
+    # -- Key within `existingSecret` carrying that DSN.
+    existingSecretKey: FERROEHR__STORAGE__AUDIT__URL
+    # -- REQUIRED when the audit domain has its own DSN: an EXISTING
+    # PersistentVolumeClaim for the audit dumps, and a DIFFERENT one from every
+    # other domain's. The trail names patients and principals; it is the record
+    # of who read what, so give its volume its own audience.
     persistentVolumeClaim: ""
 
 # ─────────────────────────────────────────────────────────────────────────────

@@ -276,7 +276,7 @@
       }
     },
     "backup": {
-      "description": "Per-domain logical backups: one CronJob per pseudonymisation domain (clinical, party, linkage). Off by default, and enabling it requires a DISTINCT existing PersistentVolumeClaim per domain \u2014 the render is refused otherwise.",
+      "description": "Per-domain logical backups: one CronJob per pseudonymisation domain (clinical, party, linkage), plus audit when database.audit gives that domain a database of its own. Off by default, and enabling it requires a DISTINCT existing PersistentVolumeClaim per rendered domain \u2014 the render is refused otherwise.",
       "type": "object",
       "additionalProperties": false,
       "properties": {
@@ -358,6 +358,9 @@
           "$ref": "#/definitions/backupDomain"
         },
         "linkage": {
+          "$ref": "#/definitions/backupDomain"
+        },
+        "audit": {
           "$ref": "#/definitions/backupDomain"
         }
       }

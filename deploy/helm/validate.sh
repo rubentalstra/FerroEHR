@@ -499,6 +499,13 @@ refusal_registry_gate() {
     "backup-cronjob.yaml|existingSecret is empty|${base}|--set backup.enabled=true --set backup.clinical.persistentVolumeClaim=clinical-dumps --set backup.party.persistentVolumeClaim=party-dumps --set backup.linkage.persistentVolumeClaim=linkage-dumps|backup.clinical.existingSecret;silently partial"
     "backup-cronjob.yaml|existingSecret is empty|${base}|--set backup.enabled=true --set backup.clinical.persistentVolumeClaim=clinical-dumps --set backup.party.persistentVolumeClaim=party-dumps --set backup.linkage.persistentVolumeClaim=linkage-dumps --set backup.clinical.existingSecret=clinical-backup-dsn|backup.party.existingSecret;its own role"
     "backup-cronjob.yaml|existingSecret is empty|${base}|--set backup.enabled=true --set backup.clinical.persistentVolumeClaim=clinical-dumps --set backup.party.persistentVolumeClaim=party-dumps --set backup.linkage.persistentVolumeClaim=linkage-dumps --set backup.clinical.existingSecret=clinical-backup-dsn --set backup.party.existingSecret=party-backup-dsn|backup.linkage.existingSecret;narrowest of the three"
+    # The audit domain joins the same three refusals, and only when
+    # database.audit gives it a database of its own: without that set, the
+    # three probes above already pass with no audit claim and no audit secret,
+    # which is what proves the fourth job is conditional rather than always on.
+    "backup-cronjob.yaml|persistentVolumeClaim is empty|${base}|--set database.audit.existingSecret=audit-dsn --set backup.enabled=true --set backup.clinical.persistentVolumeClaim=clinical-dumps --set backup.party.persistentVolumeClaim=party-dumps --set backup.linkage.persistentVolumeClaim=linkage-dumps|backup.audit.persistentVolumeClaim;nothing backs up the access log"
+    "backup-cronjob.yaml|name the same claim|${base}|--set database.audit.existingSecret=audit-dsn --set backup.enabled=true --set backup.clinical.persistentVolumeClaim=clinical-dumps --set backup.party.persistentVolumeClaim=party-dumps --set backup.linkage.persistentVolumeClaim=one-claim --set backup.audit.persistentVolumeClaim=one-claim|backup.linkage.persistentVolumeClaim;backup.audit.persistentVolumeClaim"
+    "backup-cronjob.yaml|existingSecret is empty|${base}|--set database.audit.existingSecret=audit-dsn --set backup.enabled=true --set backup.clinical.persistentVolumeClaim=clinical-dumps --set backup.party.persistentVolumeClaim=party-dumps --set backup.linkage.persistentVolumeClaim=linkage-dumps --set backup.audit.persistentVolumeClaim=audit-dumps --set backup.clinical.existingSecret=clinical-backup-dsn --set backup.party.existingSecret=party-backup-dsn --set backup.linkage.existingSecret=linkage-backup-dsn|backup.audit.existingSecret;not where this trail lives"
   )
 
   local record values probe wants want out refused=0
@@ -630,6 +637,7 @@ schema_gate() {
     "backup.clinical.schedule=17|/backup/clinical/schedule"
     "backup.party.schedule=daily|/backup/party/schedule"
     "backup.linkage.schedule=weekly|/backup/linkage/schedule"
+    "backup.audit.schedule=nightly|/backup/audit/schedule"
     "backup.backoffLimit=-1|/backup/backoffLimit"
   )
   local refused=0 probe want out
