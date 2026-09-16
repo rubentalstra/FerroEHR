@@ -32,6 +32,21 @@ cargo bench -p ferroehr --bench storage -- --profile-time 10
 The database comes from the shared testkit harness (`testkit::db()`), so the
 run needs the same PostgreSQL 18 container the test suite uses and nothing else.
 
+`.github/workflows/storage-bench.yml` runs the same benchmark on a
+GitHub-hosted runner by dispatch and hands the fresh record to
+`scripts/render/storage-bench-compare.sh`, which compares it per operation with
+the record committed for the same generation and fails the run when a p50 or
+p99 rose further than the dispatched tolerance. That comparison runs locally
+too:
+
+```bash
+bash scripts/render/storage-bench-compare.sh --tolerance 15
+```
+
+It reads the baseline from `HEAD`, because the run just overwrote the
+working-tree copy, and judges nothing when the two records carry different
+`bench_class` values.
+
 ## The shape
 
 ```json
