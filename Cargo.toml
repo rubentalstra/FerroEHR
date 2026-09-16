@@ -449,6 +449,10 @@ panic = "unwind"
 # `strip` stays at its default "none": stripping symbols makes traces
 # "incomprehensible" (rustc book, -Cstrip) — never enable it for size.
 debug = "line-tables-only"
+# Whole-binary optimisation for a CPU-bound serialize/validate/canonicalise
+# path (Cargo book, profiles §lto and §codegen-units); #3098.
+lto = "thin"
+codegen-units = 1
 
 # WASM bundle profile for the viewer (Leptos book `deployment/binary_size`):
 # size-optimized client bundle, wired via the crate's `lib-profile-release`.

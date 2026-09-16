@@ -88,6 +88,12 @@ workflow refuses a tag that has no matching section here.
 
 ### Changed
 
+- **The release profile links with thin LTO and one codegen unit** (#3098).
+  `[profile.release]` gains `lto = "thin"` and `codegen-units = 1`, the
+  whole-binary optimisation the Cargo book describes for a CPU-bound path; the
+  overflow-checks, `panic = "unwind"` and line-table posture is unchanged. A
+  release build takes longer; the throughput before/after is measured under
+  #3452 once the box can be idle.
 - **`LATEST_VERSION` under `CONTAINS` is one key probe per object** (#3453).
   The AQL emitter used to express "this row is the current trunk version" as
   two correlated `EXISTS` subqueries over the head table, which let the planner
