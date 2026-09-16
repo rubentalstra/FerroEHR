@@ -1,0 +1,104 @@
+# SPDX-FileCopyrightText: Ruben Talstra
+# SPDX-License-Identifier: BUSL-1.1
+
+# .github/workflows/storage-bench.yml
+#
+# Runs the storage benchmark (app/ferroehr/benches/storage.rs) against a
+# PostgreSQL 18 service and compares every operation with the record committed
+# for the same schema generation (#3370).
+#
+# EXPLORATION, never a conformance record. Conformance is the CNF 2.0 suite
+# Veredictum runs, and the performance classes are earned by its own measured
+# runs under docs/conformance/<sut>/. This lane earns no class, publishes no
+# number, and writes nothing back to the repository: the fresh record leaves as
+# a run artifact, and the committed baseline changes only through a pull
+# request that says which machine measured it.
+#
+# DISPATCH ONLY, for the reason the issue states: a hosted runner is shared
+# hardware with noisy neighbours, so a latency measured here is comparable with
+# the committed baseline only loosely. The tolerance is therefore an input with
+# a wide default, and the summary names both machines so a red verdict is
+# attributed to the runner or to the code rather than guessed. Point this at a
+# dedicated runner and the tolerance can come down.
+#
+# The service container is NOT given the non-durable tuning the test job
+# applies (fsync, synchronous_commit, full_page_writes off): a commit's WAL
+# flush is the physical floor the storage design is argued against
+# (website/book/src/performance.md § The durability floor), and a benchmark
+# that removes it measures a server nobody runs.
+name: Storage bench
+
+on:
+  workflow_dispatch:
+    inputs:
+      class:
+        description: "Corpus the harness seeds: poc (20 EHRs, 300 compositions) or s (100, 3000)"
+        required: false
+        default: poc
+        type: choice
+        options:
+          - poc
+          - s
+      tolerance_percent:
+        description: "How far an operation's p50 or p99 may rise above the committed record before the run fails"
+        required: false
+        default: "15"
+        type: string
+
+permissions: {}
+
+jobs:
+  bench:
+    name: measure + compare
+    runs-on: ubuntu-latest
+    timeout-minutes: 120
+    permissions:
+      contents: read
+    services:
+      postgres:
+        image: postgres:18.6@sha256:4ef4dbc939d61acea57712655ddb4b4ab27419c913f94cca0cd57cb3ea3c2280
+        env:
+          POSTGRES_USER: openehr
+          POSTGRES_PASSWORD: openehr
+          POSTGRES_DB: openehr_test
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U openehr"
+          --health-interval 10s --health-timeout 5s --health-retries 10
+    env:
+      # The shared test-database harness (tools/testkit) migrates its template
+      # on this server, exactly as the test job does.
+      FERROEHR_TEST_PG_URL: postgres://openehr:openehr@localhost:5432/postgres
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions-rust-lang/setup-rust-toolchain@166cdcfd11aee3cb47222f9ddb555ce30ddb9659 # v1.17.0
+        with:
+          cache-save-if: false
+      - name: Run the storage benchmark
+        env:
+          STORAGE_BENCH_CLASS: ${{ inputs.class }}
+        run: cargo bench --locked -p ferroehr --bench storage
+      # The record leaves as an artifact whatever the comparison says: a red
+      # verdict is exactly when the numbers behind it are worth reading. It is
+      # never committed from here — the baseline moves in a pull request.
+      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        if: always()
+        with:
+          name: storage-bench-record-${{ inputs.class }}
+          path: docs/benchmarks/storage/*/record.json
+          # A bench that died before writing has nothing to upload, and the
+          # step that died is already the run's failure.
+          if-no-files-found: warn
+      - name: Compare with the committed record
+        env:
+          TOLERANCE_PERCENT: ${{ inputs.tolerance_percent }}
+        # RUNNER_OS, RUNNER_ARCH and RUNNER_NAME are the runner's own default
+        # environment, so the machine reaches the summary without a `${{ }}`
+        # expression in a shell (reliability.md § The build pipeline is code).
+        run: |
+          bash scripts/render/storage-bench-compare.sh \
+            --tolerance "$TOLERANCE_PERCENT" \
+            --runner "GitHub-hosted $RUNNER_OS/$RUNNER_ARCH ($RUNNER_NAME), $(nproc) cores"

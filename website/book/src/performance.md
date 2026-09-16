@@ -316,6 +316,26 @@ instrument. It earns no class and touches no conformance artifact; the record's
 shape is documented in `docs/benchmarks/storage/README.md`. Records are local by
 default, and the committed baseline is what this page renders.
 
+### Running it against a committed baseline
+
+A dispatch-only workflow (`.github/workflows/storage-bench.yml`) runs the same
+benchmark on a GitHub-hosted runner, against a PostgreSQL 18 service with its
+durability left on, and compares every operation with the record committed for
+that schema generation. The dispatch picks the corpus class and the tolerance.
+The run summary lists each operation with its baseline p50 and p99, the
+measured pair, the delta and a verdict, and a p50 or p99 that rose further than
+the tolerance fails the run. Both machines are named in the summary, because a
+hosted runner is shared hardware and a latency measured there is read against
+the box it came from.
+
+That lane is exploration, never a conformance record. It earns no performance
+class, publishes no number, and writes nothing back to the repository: the
+fresh record leaves as a run artifact, and the committed baseline under
+`docs/benchmarks/storage/<generation>/` moves only in a pull request that says
+which machine measured it. A generation with no committed record is reported as
+such and the run passes; a run whose class differs from the baseline's shows the
+deltas and judges nothing, since the two measured different corpora.
+
 {{#include ../generated/storage-bench.md}}
 
 ## The latest measured run

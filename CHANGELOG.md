@@ -17,6 +17,14 @@ workflow refuses a tag that has no matching section here.
 
 ### Added
 
+- **A dispatch-only storage benchmark lane** (#3370). It runs the storage
+  benchmark against a PostgreSQL 18 service with durability on, compares every
+  operation with the record committed for the same schema generation, and fails
+  the run when a p50 or p99 rose further above it than the dispatched tolerance.
+  The summary lists each operation's baseline, measurement, delta and verdict
+  and names both machines; the fresh record leaves as a run artifact and the
+  committed baseline changes only in a pull request. Exploration, never a
+  conformance record: it earns no performance class.
 - **Restriction of processing, at whole-EHR or single-object grain** (#3324).
   A restriction register records who asked, on what ground and when, and the
   mark it drives stops every path that would process the object: a point read,
