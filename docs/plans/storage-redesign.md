@@ -710,8 +710,10 @@ decided here. The FHIR R4 facade is FerroBRIDGE's ("holds no data of its own
 and translates on demand"), so the FHIR conversion core and outbound feed this
 repository ships in `ferroehr-ext` behind the `fhir` feature, with the
 `fhir_mapping` relation and the `fhir_outbound` reader, overlap with a
-sibling; whether they stay is the owner's call (#3386), and the `clinical`
-set's `0009_integrations` file carries `fhir_mapping` until it is made. And a
+sibling; the in-tree connector retires in FerroBRIDGE's favour (owner ruling
+2026-09-03, #3080, now v4.3.2 under #3377; the terminology client and the
+ATNA rendering stay), and the `clinical` set's `0009_integrations` file
+carries `fhir_mapping` until that lands. And a
 record moved between federation nodes must keep its `OBJECT_VERSION_ID` with
 its `creating_system_id` intact (RM common master06 §Moving Version
 Containers), which the EHR_EXTRACT surface this repository already serves
@@ -834,7 +836,7 @@ compose stack), and the conformance instrument's `perf` classes and
 | # | Hypothesis | Mechanism (doc-grounded) | Measurement | Class / instrument |
 |---|---|---|---|---|
 | H1 | Commit latency and write amplification fall | the supersession no longer inserts into eleven indexes and no longer leaves a dead `vo_version` tuple (report 1 §2.1); the `vo_head` UPDATE is HOT | `pg_stat_user_tables.n_tup_upd` vs `n_tup_hot_upd` on `vo_head` (expect the ratio near 1) and `n_dead_tup` on `version` (expect near 0) after a seeded run; `EXPLAIN (ANALYZE, WAL)` WAL bytes per commit before vs after | `veredictum perf` class S write mix; `aql-probe` statement attribution |
-| H2 | Bloat and VACUUM pressure on the version store fall | `version` is append-only; autovacuum rides the insert threshold instead of the 20% update scale factor (report 1 §15.1) | `pgstattuple` dead-tuple percentage on `version` vs today's `vo_version` after the same seed; autovacuum run count | class L seed via synthgen (#3332) |
+| H2 | Bloat and VACUUM pressure on the version store fall | `version` is append-only; autovacuum rides the insert threshold instead of the 20% update scale factor (report 1 §15.1) | `pgstattuple` dead-tuple percentage on `version` vs today's `vo_version` after the same seed; autovacuum run count | the harness's `s` class; class L on the wire side is Veredictum's seed |
 | H3 | Current-version probes get cheaper and stay cheap | one PK probe on `vo_head` replaces a partial-index probe whose predicate calls `upper_inf` (report 1 §7.7); index-only scans on `version` stop degrading because pages become all-visible once (§7.2) | `EXPLAIN (ANALYZE, BUFFERS)` shared-hit counts for `composition_get` latest and `If-Match` paths | `aql-probe` |
 | H4 | Population AQL over a store with an archive is unaffected by the archive's size | `tier = 'hot'` is a literal, pruned at plan time (report 1 §5.2); the mirror design already excluded cold, so the claim is parity, not gain | `EXPLAIN` shows one partition; latency equal within noise to a store with no cold rows | class L with a 30% archived seed |
 | H5 | Point reads on the partitioned parent cost one extra empty probe | two partition PK indexes are probed (report 1 §5.1 corollary) | `EXPLAIN (ANALYZE, BUFFERS)` on `version_get_by_id`: expect one additional index probe with zero heap fetches | `aql-probe`; acceptance is "no p99 regression" on class S |
@@ -855,7 +857,7 @@ Two alternatives the plan names for measurement rather than adopting:
   if archival volume dominates and the archive unit can be a time range
   rather than an EHR.
 
-Both are decided by a class L run on the synthgen corpus, after v4.3.0.
+Both are decided by the after-rewrite comparison (#3350) over the harness's own classes (`STORAGE_BENCH_CLASS`) and, on the wire side, the corpus Veredictum seeds by class; no in-repo corpus generator exists (#3332 closed as not planned, owner 2026-09-16: it duplicated Veredictum's seeding).
 
 ### The measurement program
 
@@ -907,7 +909,8 @@ Existing issues re-pointed rather than duplicated:
 - **#3331** (the secondary-use domain) and **#3333** (its book page) are
   closed as superseded: secondary use leaves through FerroBRIDGE to the OMOP
   CDM (§Secondary use), and the CDR side is #3379 in v4.3.2. **#3332**
-  (synthgen) is re-parented under #3337 as the benchmark and seeding corpus.
+  (synthgen) is closed as not planned (owner 2026-09-16): it duplicated the
+  corpus Veredictum seeds by class, and the harness seeds itself.
   **#3160** (their parent) is closed as superseded by #3379. **#3325** (the
   research objection) stays in v4.3.1 as a mark the restriction register
   carries and AQL honours, `blocked-by S1`.
