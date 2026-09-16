@@ -222,7 +222,8 @@ compare() {
 # ── the self-test ───────────────────────────────────────────────────────────
 # The verdict logic is what this script exists for, so it is exercised rather
 # than trusted: an improvement, a rise inside the tolerance, a rise beyond it,
-# a mismatched class, and a generation with no committed record.
+# a mismatched class, an operation each side carries alone, and a record
+# compared with itself.
 
 record_fixture() {
   local path="$1" generation="$2" class="$3" ehrs="$4" p50="$5" p99="$6" when="${7:-2026-09-15T11:00:00Z}"
