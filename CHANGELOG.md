@@ -15,6 +15,8 @@ workflow refuses a tag that has no matching section here.
 
 ## [Unreleased]
 
+## [4.3.1] - 2026-09-16
+
 ### Added
 
 - **A fourth backup CronJob for the audit domain** (#3399). The Helm chart
@@ -9760,7 +9762,8 @@ but has not yet run in production.
   seccomp, default-deny NetworkPolicy) and golden-render validation.
 
 
-[unreleased]: https://github.com/rubentalstra/FerroEHR/compare/v4.3.0...HEAD
+[unreleased]: https://github.com/rubentalstra/FerroEHR/compare/v4.3.1...HEAD
+[4.3.1]: https://github.com/rubentalstra/FerroEHR/compare/v4.3.0...v4.3.1
 [4.3.0]: https://github.com/rubentalstra/FerroEHR/compare/v4.2.5...v4.3.0
 [4.2.5]: https://github.com/rubentalstra/FerroEHR/compare/v4.2.4...v4.2.5
 [4.2.4]: https://github.com/rubentalstra/FerroEHR/compare/v4.2.3...v4.2.4
