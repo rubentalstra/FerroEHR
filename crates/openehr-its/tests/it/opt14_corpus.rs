@@ -11,16 +11,23 @@
 )]
 //! OPT 1.4 corpus gate: every vendored `.opt` operational template
 //! must parse into the generated `opt14::types::OperationalTemplate` model without
-//! error. The corpus lives with the `ferroehr` app tests; this crate reads it by
-//! a workspace-relative path.
+//! error.
+//!
+//! The templates come from the shared breadth-corpus tree at the repository
+//! root (`corpus/templates/`, `corpus/PROVENANCE.md`), which is where material
+//! several crates read lives; the crate reaches it by the same
+//! `CARGO_MANIFEST_DIR` hop its sibling gates use, so the layout this file
+//! assumes is `<crate>/../../corpus/templates/`. The `ferroehr` app tree keeps
+//! its own OPT pack and gates its parseability itself
+//! (`app/ferroehr/tests/it/validation_opt.rs`).
 
 use std::fmt::Write as _;
 use std::path::{Path, PathBuf};
 
-/// The OPT corpus dir (`app/ferroehr/tests/resources/service`), resolved from
-/// this crate's manifest dir.
+/// The OPT corpus dir (`corpus/templates`), resolved from this crate's manifest
+/// dir.
 fn corpus_dir() -> PathBuf {
-    Path::new(env!("CARGO_MANIFEST_DIR")).join("../../app/ferroehr/tests/resources/service")
+    Path::new(env!("CARGO_MANIFEST_DIR")).join("../../corpus/templates")
 }
 
 /// Recursively collect every `*.opt` file under `dir`.
@@ -48,8 +55,8 @@ fn opt_files(dir: &Path) -> Vec<PathBuf> {
 fn every_opt_template_parses() {
     let files = opt_files(&corpus_dir());
     assert!(
-        files.len() >= 90,
-        "expected the full OPT corpus (~91 files), found {}",
+        files.len() >= 400,
+        "expected the full vendored template corpus (~407 files), found {}",
         files.len()
     );
 

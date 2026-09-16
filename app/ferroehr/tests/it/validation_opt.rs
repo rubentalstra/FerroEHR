@@ -93,9 +93,13 @@ fn valid_minimal_passes() {
     validate_opt_artefact(&opt).expect("the vendored minimal OPT is valid");
 }
 
-/// Every vendored valid OPT (the 91-file corpus, the same set the
-/// `openehr-its` `opt14_corpus` gate parses) must still upload — the new
-/// ingestion checks may never mis-reject a legitimate template.
+/// Every vendored valid OPT under this crate's own resources must parse and
+/// must still upload — the ingestion checks may never mis-reject a legitimate
+/// template.
+///
+/// Parseability is asserted here because this pack lives with the app tests;
+/// the `openehr-its` `opt14_corpus` gate reads the shared corpus tree at the
+/// repository root and never reaches into `app/`.
 #[test]
 fn corpus_all_valid_opts_pass() {
     // The service knowledge corpus is the upload-surface oracle. (The
@@ -130,9 +134,12 @@ fn corpus_all_valid_opts_pass() {
     let mut failures = Vec::new();
     for path in &files {
         let xml = std::fs::read_to_string(path).expect("read opt");
-        // Parseability is the `opt14_corpus` gate's job, not ours.
-        let Ok(opt) = opt14::from_xml(&xml) else {
-            continue;
+        let opt = match opt14::from_xml(&xml) {
+            Ok(opt) => opt,
+            Err(e) => {
+                failures.push(format!("{}: does not parse: {e}", path.display()));
+                continue;
+            }
         };
         if let Err(e) = validate_opt_artefact(&opt) {
             failures.push(format!("{}: {e}", path.display()));
