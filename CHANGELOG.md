@@ -70,6 +70,11 @@ workflow refuses a tag that has no matching section here.
 
 ### Changed
 
+- **The archive export lists multimedia blobs from the reference index**
+  (#3420). It used to walk every exported body in process to find the blob
+  keys; it now reads `blob_ref`, the index the node write path maintains in
+  the same transaction as the nodes it describes, once per domain. The archive
+  it writes is unchanged.
 - **The `ext` value helpers are each in the form that measured fastest, and read
   fewer things than PostgreSQL's own date parser did** (#3351). Five of the
   seven no longer open a subtransaction per row: they guard their casts ahead of
