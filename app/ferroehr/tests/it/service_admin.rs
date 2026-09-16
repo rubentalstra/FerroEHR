@@ -315,11 +315,13 @@ async fn admin_delete_all_with_empty_list_deletes_every_ehr() {
 // deletes); they mirror the EHR-delete surface. See
 // `app/ferroehr/src/service/admin/delete.rs`.
 
-const OPT_FIXTURE_REL: &str = "tests/resources/service/knowledge/IDCR Allergies List.v0.opt";
+const OPT_FIXTURE_REL: &str = "knowledge/IDCR Allergies List.v0.opt";
 const OPT_TEMPLATE_ID: &str = "IDCR Allergies List.v0";
 
 fn read_fixture(rel: &str) -> String {
-    let path = std::path::Path::new(env!("CARGO_MANIFEST_DIR")).join(rel);
+    let path = std::path::Path::new(env!("CARGO_MANIFEST_DIR"))
+        .join("../../corpus/fixtures/service")
+        .join(rel);
     std::fs::read_to_string(&path).unwrap_or_else(|e| panic!("read {}: {e}", path.display()))
 }
 

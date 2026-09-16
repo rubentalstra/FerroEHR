@@ -5,16 +5,17 @@
 #![expect(clippy::panic, reason = "test assertions/diagnostics/fixtures")]
 //! OPT 1.4 corpus gate: every vendored `.opt` operational template
 //! must parse into the generated `opt14::types::OperationalTemplate` model without
-//! error. The corpus lives with the `ferroehr` app tests; this crate reads it by
-//! a workspace-relative path.
+//! error. The corpus is the shared one at `corpus/fixtures/service`; this crate
+//! reads it by a workspace-relative path.
 
 use std::fmt::Write as _;
 use std::path::{Path, PathBuf};
 
-/// The OPT corpus dir (`app/ferroehr/tests/resources/service`), resolved from
-/// this crate's manifest dir.
+use crate::common;
+
+/// The OPT corpus dir (`corpus/fixtures/service`).
 fn corpus_dir() -> PathBuf {
-    Path::new(env!("CARGO_MANIFEST_DIR")).join("../../app/ferroehr/tests/resources/service")
+    common::service_corpus_dir()
 }
 
 /// Recursively collect every `*.opt` file under `dir`.

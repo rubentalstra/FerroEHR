@@ -40,7 +40,7 @@ use ferroehr::service::FerroEhrService;
 
 /// The separate PHI exchange the outbound emitter publishes to.
 const EXCHANGE: &str = "ferroehr.fhir";
-const OPT_REL: &str = "tests/resources/service/knowledge/opt/minimal_evaluation.opt";
+const OPT_REL: &str = "knowledge/opt/minimal_evaluation.opt";
 const TEMPLATE_ID: &str = "minimal_evaluation.en.v1";
 const PROFILE: &str = "http://example.org/StructureDefinition/bp";
 
@@ -51,7 +51,10 @@ async fn amqp_url(rmq: &ContainerAsync<RabbitMq>) -> String {
 }
 
 fn fixture(rel: &str) -> String {
-    let path = format!("{}/{rel}", env!("CARGO_MANIFEST_DIR"));
+    let path = format!(
+        "{}/../../corpus/fixtures/service/{rel}",
+        env!("CARGO_MANIFEST_DIR")
+    );
     std::fs::read_to_string(&path).unwrap_or_else(|e| panic!("read {path}: {e}"))
 }
 

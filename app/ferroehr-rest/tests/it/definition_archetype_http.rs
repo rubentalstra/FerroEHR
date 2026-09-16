@@ -35,13 +35,12 @@ use crate::common;
 
 const BASE: &str = "/ferroehr/rest/openehr/v1";
 
-/// A known-good ADL 1.4 source archetype (the same fixture the service-layer
-/// Definitions battery uses), read from the `ferroehr` crate's test resources.
+/// A known-good ADL 1.4 source archetype: the same fixture the service-layer
+/// Definitions battery uses, read from the shared corpus at
+/// `corpus/fixtures/service/knowledge/archetypes`.
 fn adl14_source() -> String {
     let path = std::path::Path::new(env!("CARGO_MANIFEST_DIR"))
-        .parent()
-        .expect("app/")
-        .join("ferroehr/tests/resources/service/knowledge/archetypes")
+        .join("../../corpus/fixtures/service/knowledge/archetypes")
         .join("openEHR-EHR-COMPOSITION.prescription.v1.adl");
     std::fs::read_to_string(&path).unwrap_or_else(|e| panic!("read {}: {e}", path.display()))
 }

@@ -30,19 +30,21 @@ use ferroehr::service::list::Page;
 use crate::adl2_fixture::adl2_source;
 
 fn fixture(rel: &str) -> String {
-    let path = format!("{}/{rel}", env!("CARGO_MANIFEST_DIR"));
+    let path = format!(
+        "{}/../../corpus/fixtures/service/{rel}",
+        env!("CARGO_MANIFEST_DIR")
+    );
     std::fs::read_to_string(&path).unwrap_or_else(|e| panic!("read {path}: {e}"))
 }
 
-const ARCHETYPE_REL: &str =
-    "tests/resources/service/knowledge/archetypes/openEHR-EHR-COMPOSITION.prescription.v1.adl";
+const ARCHETYPE_REL: &str = "knowledge/archetypes/openEHR-EHR-COMPOSITION.prescription.v1.adl";
 const ARCHETYPE_ID: &str = "openEHR-EHR-COMPOSITION.prescription.v1";
 
 const REVISION_HISTORY_ARCHETYPE_REL: &str =
-    "tests/resources/service/knowledge/archetypes/openEHR-EHR-OBSERVATION.revision_history.v1.adl";
+    "knowledge/archetypes/openEHR-EHR-OBSERVATION.revision_history.v1.adl";
 const REVISION_HISTORY_ARCHETYPE_ID: &str = "openEHR-EHR-OBSERVATION.revision_history.v1";
 
-const OPT_REL: &str = "tests/resources/service/knowledge/IDCR Allergies List.v0.opt";
+const OPT_REL: &str = "knowledge/IDCR Allergies List.v0.opt";
 const OPT_TEMPLATE_ID: &str = "IDCR Allergies List.v0";
 
 // ── ADL 1.4 archetypes (I_DEFINITION_ADL14) ──────────────────────────────────
@@ -444,11 +446,9 @@ async fn template_adl14_list_filters_and_paginates() {
     svc.template_adl14_upload(fixture(OPT_REL))
         .await
         .expect("upload allergies");
-    svc.template_adl14_upload(fixture(
-        "tests/resources/service/knowledge/IDCR Problem List.v1.opt",
-    ))
-    .await
-    .expect("upload problem");
+    svc.template_adl14_upload(fixture("knowledge/IDCR Problem List.v1.opt"))
+        .await
+        .expect("upload problem");
 
     let template_ids = |list: &[serde_json::Value]| -> Vec<String> {
         list.iter()

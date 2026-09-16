@@ -108,7 +108,7 @@ fn corpus_all_valid_opts_pass() {
     // the AOM validity rules — e.g. `sdk/section_cardinality.opt` breaks VCOC
     // with mandatory-occurrence sums exceeding the container cardinality — so
     // a conformant server MUST reject them at upload.)
-    let dir = PathBuf::from(manifest()).join("tests/resources/service");
+    let dir = PathBuf::from(manifest()).join("../../corpus/fixtures/service");
     let mut files = Vec::new();
     let mut stack = vec![dir.clone()];
     while let Some(d) = stack.pop() {

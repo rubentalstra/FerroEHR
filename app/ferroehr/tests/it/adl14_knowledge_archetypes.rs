@@ -1,8 +1,8 @@
 // SPDX-FileCopyrightText: Vernum Projecten B.V.
 // SPDX-License-Identifier: BUSL-1.1
 
-//! Parse gate over the ADL 1.4 archetype resources this crate ships as test
-//! knowledge (`tests/resources/service/knowledge/archetypes/`).
+//! Parse gate over the ADL 1.4 archetype resources of the shared corpus
+//! (`corpus/fixtures/service/knowledge/archetypes/`).
 //!
 //! These are real-world CKM-lineage 1.4 sources (Ocean Informatics, 2007) —
 //! the only artefacts in the tree that carry `ac`-code constraints with a
@@ -72,7 +72,7 @@ const ARCHETYPES: &[(&str, Expect)] = &[
 ];
 
 fn tree() -> PathBuf {
-    Path::new(env!("CARGO_MANIFEST_DIR")).join("tests/resources/service/knowledge/archetypes")
+    Path::new(env!("CARGO_MANIFEST_DIR")).join("../../corpus/fixtures/service/knowledge/archetypes")
 }
 
 #[test]

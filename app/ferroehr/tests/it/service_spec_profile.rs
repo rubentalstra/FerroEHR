@@ -544,15 +544,18 @@ async fn the_query_gate_assesses_unstamped_rows_on_the_fly() {
 // ── The FHIR read façade goes through the same gate ──────────────────────────
 
 /// The OPT the FHIR mapping binds to, and its ids.
-const OPT_REL: &str = "tests/resources/service/knowledge/opt/minimal_evaluation.opt";
+const OPT_REL: &str = "knowledge/opt/minimal_evaluation.opt";
 const TEMPLATE_ID: &str = "minimal_evaluation.en.v1";
 const ROOT_ARCHETYPE: &str = "openEHR-EHR-COMPOSITION.minimal.v1";
 /// The FHIR subject external id both compositions hang off.
 const SUBJECT: &str = "p-42";
 
-/// Read a test resource anchored at the crate manifest directory.
+/// Read a fixture from the shared corpus at `corpus/fixtures/service`.
 fn fixture(rel: &str) -> String {
-    let path = format!("{}/{rel}", env!("CARGO_MANIFEST_DIR"));
+    let path = format!(
+        "{}/../../corpus/fixtures/service/{rel}",
+        env!("CARGO_MANIFEST_DIR")
+    );
     std::fs::read_to_string(&path).expect("read the OPT fixture")
 }
 

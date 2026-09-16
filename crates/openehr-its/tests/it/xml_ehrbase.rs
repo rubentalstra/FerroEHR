@@ -20,16 +20,16 @@ use openehr_its::xml::runtime::{FromXml, ToXml, from_xml};
 use openehr_its::xml::to_canonical_xml;
 use openehr_rm::prelude::{Composition, ItemTree};
 
-const DIR: &str = concat!(
-    env!("CARGO_MANIFEST_DIR"),
-    "/../../app/ferroehr/tests/resources/service/samples"
-);
+/// The EHRbase-derived XML samples in the shared corpus.
+fn samples_dir() -> std::path::PathBuf {
+    crate::common::service_corpus_dir().join("samples")
+}
 
 /// Parse `xml` into `T`, re-serialize, and confirm the canonical output is
 /// stable across a second parse (`FromXml`/`ToXml` are mutually consistent on
 /// this real input).
 fn read_and_round_trip<T: FromXml + ToXml>(file: &str, tag: &str) -> Result<usize, String> {
-    let xml = std::fs::read_to_string(format!("{DIR}/{file}"))
+    let xml = std::fs::read_to_string(samples_dir().join(file))
         .map_err(|e| format!("read {file}: {e}"))?;
     let value: T = from_xml(&xml).map_err(|e| format!("parse {file}: {e}"))?;
     let out = to_canonical_xml(&value, tag).map_err(|e| format!("serialize {file}: {e}"))?;
@@ -72,7 +72,9 @@ fn ferroehr_xml_fixtures_read_and_round_trip() {
     // `rawdb_*`, not ITS-XML canonical input. Assert it exists so a rename does
     // not silently drop the exclusion.
     assert!(
-        std::path::Path::new(&format!("{DIR}/RIPPLE_conformanceTesting_RAW.xml")).exists(),
+        samples_dir()
+            .join("RIPPLE_conformanceTesting_RAW.xml")
+            .exists(),
         "raw-DB fixture missing; revisit the exclusion note"
     );
 }

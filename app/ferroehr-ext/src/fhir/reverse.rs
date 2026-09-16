@@ -252,8 +252,9 @@ mod tests {
     /// The same corpus template the inbound end-to-end test uses (see
     /// `mapping::tests`): a small single-OBSERVATION blood-pressure OPT.
     fn bp_web_template() -> WebTemplate {
-        let path = PathBuf::from(env!("CARGO_MANIFEST_DIR"))
-            .join("../ferroehr/tests/resources/service/knowledge/opt/ehrbase_blood_pressure_simple.de.v0.opt");
+        let path = PathBuf::from(env!("CARGO_MANIFEST_DIR")).join(
+            "../../corpus/fixtures/service/knowledge/opt/ehrbase_blood_pressure_simple.de.v0.opt",
+        );
         let xml = std::fs::read_to_string(path).expect("read opt");
         let opt = opt14::from_xml(&xml).expect("parse opt");
         build_web_template(&opt).expect("build wt")

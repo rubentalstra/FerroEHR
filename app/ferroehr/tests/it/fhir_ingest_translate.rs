@@ -27,11 +27,14 @@ use serde_json::{Value, json};
 use wiremock::matchers::{method, path, query_param};
 use wiremock::{Mock, MockServer, ResponseTemplate};
 
-const OPT_REL: &str = "tests/resources/service/knowledge/opt/minimal_evaluation.opt";
+const OPT_REL: &str = "knowledge/opt/minimal_evaluation.opt";
 const TEMPLATE_ID: &str = "minimal_evaluation.en.v1";
 
 fn opt_xml() -> String {
-    let path = format!("{}/{OPT_REL}", env!("CARGO_MANIFEST_DIR"));
+    let path = format!(
+        "{}/../../corpus/fixtures/service/{OPT_REL}",
+        env!("CARGO_MANIFEST_DIR")
+    );
     std::fs::read_to_string(&path).expect("read the OPT fixture")
 }
 

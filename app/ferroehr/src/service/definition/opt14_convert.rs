@@ -1816,19 +1816,21 @@ mod tests {
 
     use super::*;
 
-    /// The vendored OPT corpus (real Ocean/EHRbase-generated operational
-    /// templates). One minimal COMPOSITION+OBSERVATION, one minimal EVALUATION
+    /// Paths under `corpus/fixtures/service`, the vendored OPT corpus of real
+    /// Ocean/EHRbase-generated operational templates. One minimal
+    /// COMPOSITION+OBSERVATION, one minimal EVALUATION
     /// (carries a `C_DV_QUANTITY`), and a large multi-archetype template
     /// (`Vital Signs`: 12 embedded roots, ordinals/quantities/integers/reals/
     /// strings/booleans/code phrases).
-    const MINIMAL_OBSERVATION: &str =
-        "tests/resources/service/knowledge/opt/minimal_observation.opt";
-    const MINIMAL_EVALUATION: &str = "tests/resources/service/knowledge/opt/minimal_evaluation.opt";
-    const VITAL_SIGNS: &str =
-        "tests/resources/service/knowledge/opt/Vital Signs Encounter (Composition).opt";
+    const MINIMAL_OBSERVATION: &str = "knowledge/opt/minimal_observation.opt";
+    const MINIMAL_EVALUATION: &str = "knowledge/opt/minimal_evaluation.opt";
+    const VITAL_SIGNS: &str = "knowledge/opt/Vital Signs Encounter (Composition).opt";
 
     fn parse_opt(rel: &str) -> opt14::types::OperationalTemplate {
-        let path = format!("{}/{rel}", env!("CARGO_MANIFEST_DIR"));
+        let path = format!(
+            "{}/../../corpus/fixtures/service/{rel}",
+            env!("CARGO_MANIFEST_DIR")
+        );
         let xml = std::fs::read_to_string(&path).unwrap_or_else(|e| panic!("read {path}: {e}"));
         opt14::from_xml(&xml).unwrap_or_else(|e| panic!("parse OPT {rel}: {e:?}"))
     }
@@ -1917,7 +1919,7 @@ mod tests {
     #[test]
     fn whole_opt_corpus_converts_and_reparses() {
         let dir = format!(
-            "{}/tests/resources/service/knowledge/opt",
+            "{}/../../corpus/fixtures/service/knowledge/opt",
             env!("CARGO_MANIFEST_DIR")
         );
         let mut count = 0usize;
