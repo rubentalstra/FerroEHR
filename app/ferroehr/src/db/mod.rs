@@ -1418,9 +1418,9 @@ pub async fn cluster_identity(pool: &PgPool) -> Result<String, DbError> {
 /// migration DSN names ONE database, so a domain living in another one is
 /// prepared on its own DSN, and that DSN is the credential serving its
 /// requests. The answer therefore comes from the preparation plan itself
-/// ([`preparation_plan`]), which resolves database identity rather than DSN
-/// text, so a second credential on the migrator's own database is correctly
-/// not counted.
+/// (the same private plan [`prepare`] runs), which resolves database identity
+/// rather than DSN text, so a second credential on the migrator's own database
+/// is correctly not counted.
 ///
 /// Empty under [`MigrationMode::Verify`], which issues no DDL at all, and empty
 /// when every domain is prepared by the migration credential.
@@ -1428,8 +1428,9 @@ pub async fn cluster_identity(pool: &PgPool) -> Result<String, DbError> {
 /// No openEHR spec governs deployment posture — our own design/extension.
 ///
 /// # Errors
-/// Whatever [`preparation_plan`] returns: a migration connection that cannot be
-/// opened, or a plan the domain dependencies refuse.
+/// [`DbError::Sqlx`] when a migration connection cannot be opened or its
+/// database identity cannot be read, and [`DbError::DomainCannotBeRelocated`]
+/// when a domain's database is not the one its migration set needs.
 pub async fn domains_prepared_on_a_runtime_credential(
     settings: &DbConfig,
     storage: &StorageConfig,
