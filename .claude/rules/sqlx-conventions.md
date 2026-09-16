@@ -59,8 +59,9 @@ use it). **Not sea-orm.** Target PostgreSQL 18.6+.
   mismatch instead of the remedy.
 - Enforcement (tier 4): `scripts/checks/migration-immutability.sh`, run by the
   `migration-immutability` CI job over the pull request's diff against its
-  merge base, judging only the files present at the latest release tag
-  reachable from that merge base (every base file when no tag is reachable).
+  merge base, judging only the files present at the highest release tag
+  in the repository, whether or not the branch descends from it (every base
+  file when the repository carries no tag).
   It fails on any modification, rename or partial deletion of a shipped file
   under `app/ferroehr/migrations/`; an added file passes, and so does any
   change to a file no release carries. The whole-set retirement above is

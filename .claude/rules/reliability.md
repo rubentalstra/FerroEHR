@@ -308,7 +308,8 @@ chapters, the Clippy book, and the Cargo/rustdoc books.)
   description of its version 1 where the name survives the rewrite. Enforcement
   (tier 4): `scripts/checks/migration-immutability.sh`, run per-PR by the
   `migration-immutability` CI job against the pull request's merge base over
-  the files the latest reachable release tag carries, and refusing any
+  the files the highest release tag in the repository carries (ancestry not
+  required: a rewritten `main` leaves the tags on the old lineage), and refusing any
   modification or partial turnover of those under
   `app/ferroehr/migrations/`; it accepts a retirement only after verifying both
   halves itself — every shipped file of that directory gone at head, the schema
