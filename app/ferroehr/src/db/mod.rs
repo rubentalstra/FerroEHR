@@ -1410,6 +1410,44 @@ pub async fn cluster_identity(pool: &PgPool) -> Result<String, DbError> {
     Ok(id)
 }
 
+/// The domains whose database schema preparation reaches on a credential that
+/// also serves requests.
+///
+/// The posture used to ask one question — is `[db].migrate_url` set — which
+/// stopped being the whole answer once a domain could be relocated: the
+/// migration DSN names ONE database, so a domain living in another one is
+/// prepared on its own DSN, and that DSN is the credential serving its
+/// requests. The answer therefore comes from the preparation plan itself
+/// ([`preparation_plan`]), which resolves database identity rather than DSN
+/// text, so a second credential on the migrator's own database is correctly
+/// not counted.
+///
+/// Empty under [`MigrationMode::Verify`], which issues no DDL at all, and empty
+/// when every domain is prepared by the migration credential.
+///
+/// No openEHR spec governs deployment posture — our own design/extension.
+///
+/// # Errors
+/// Whatever [`preparation_plan`] returns: a migration connection that cannot be
+/// opened, or a plan the domain dependencies refuse.
+pub async fn domains_prepared_on_a_runtime_credential(
+    settings: &DbConfig,
+    storage: &StorageConfig,
+) -> Result<Vec<Domain>, DbError> {
+    if settings.migrate != MigrationMode::Apply {
+        return Ok(Vec::new());
+    }
+    let migration_dsn = settings.migrate_dsn();
+    let mut on_runtime: Vec<Domain> = preparation_plan(settings, storage)
+        .await?
+        .into_iter()
+        .filter(|group| group.dsn != migration_dsn)
+        .flat_map(|group| group.domains)
+        .collect();
+    on_runtime.sort_unstable();
+    Ok(on_runtime)
+}
+
 /// Stamp whether the database guards hold every stored subject reference to
 /// an opaque UUID (#3241).
 ///

@@ -110,10 +110,14 @@ pub enum DeploymentGap {
     /// The clinical, party and linkage domains do not each connect on their own
     /// database credential.
     SharedCredential,
-    /// Two of the three domains reach the same `PostgreSQL` cluster, read from
+    /// Two of the four domains reach the same `PostgreSQL` cluster, read from
     /// `pg_control_system().system_identifier` on each pool, never from the
     /// DSN text: two DSNs can reach one cluster through different names, a
     /// proxy or a pooler.
+    ///
+    /// The audit trail counts, because the separation it needs is its own:
+    /// `docs/law/ch/dpo/text-de.html Art. 4 Abs. 5` keeps the log "getrennt
+    /// vom System, in welchem die Personendaten bearbeitet werden".
     SharedCluster,
     /// `privacy.subject_namespaces` is empty, so the rule that refuses a real
     /// identifier as an `EHR_STATUS` subject is out of force.
@@ -121,9 +125,23 @@ pub enum DeploymentGap {
     /// Auditing is off, or on with no durable sink, so access is not recorded
     /// (EHDS Annex II 3.2 is not satisfiable by a deployment that logs nothing).
     AuditOff,
-    /// Schema preparation runs on the clinical runtime credential
-    /// (`db.migrate = "apply"` with no `db.migrate_url`), so the credential
-    /// that serves requests can also alter the schema.
+    /// Auditing is on and `audit.fail_mode` is `open`, so a record the queue
+    /// cannot take is dropped and the request succeeds: the access happened and
+    /// nothing says so.
+    AuditFailsOpen,
+    /// `authz.rbac.ehr_access_default` is `open`, so an EHR carrying no
+    /// `ACCESS_CONTROL_SETTINGS` — which every new EHR does — admits any caller
+    /// the coarse layers already let through.
+    ///
+    /// `docs/law/eu/gdpr/text.html Art. 25(2)`: measures "shall ensure that by
+    /// default personal data are not made accessible without the individual's
+    /// intervention to an indefinite number of natural persons". RM ehr
+    /// master04 §EHR Access makes `EHR_ACCESS` the gateway for access decisions
+    /// and defines no default, so which one to ship is ours to choose.
+    OpenEhrAccessDefault,
+    /// Schema preparation runs on a credential that also serves requests —
+    /// `db.migrate = "apply"` with no `db.migrate_url`, or a relocated domain
+    /// whose database is prepared on the domain's own runtime DSN.
     MigrateOnRuntimeCredential,
 }
 
@@ -136,6 +154,8 @@ impl DeploymentGap {
             Self::SharedCluster => "shared_cluster",
             Self::OpenSubjectNamespace => "open_subject_namespace",
             Self::AuditOff => "audit_off",
+            Self::AuditFailsOpen => "audit_fails_open",
+            Self::OpenEhrAccessDefault => "open_ehr_access_default",
             Self::MigrateOnRuntimeCredential => "migrate_on_runtime_credential",
         }
     }
@@ -152,7 +172,8 @@ impl DeploymentGap {
             }
             Self::SharedCluster => {
                 "two domains reach the same PostgreSQL cluster (pg_control_system().system_identifier \
-                 is equal); give the party and linkage domains their own clusters"
+                 is equal); give the party, linkage and audit domains their own clusters through \
+                 [storage.party], [storage.linkage] and [storage.audit] url"
             }
             Self::OpenSubjectNamespace => {
                 "[privacy] subject_namespaces is empty, so an EHR_STATUS subject may carry a real \
@@ -162,9 +183,21 @@ impl DeploymentGap {
                 "no access log is written: [audit] is disabled or has no durable sink; enable it \
                  with the local store, syslog or the FHIR feed on"
             }
+            Self::AuditFailsOpen => {
+                "[audit] fail_mode is `open`, so a record the audit queue cannot take is dropped \
+                 and the request succeeds; set [audit] fail_mode = \"closed\" to refuse the \
+                 operation instead"
+            }
+            Self::OpenEhrAccessDefault => {
+                "[authz.rbac] ehr_access_default is `open`, so an EHR carrying no \
+                 ACCESS_CONTROL_SETTINGS admits every caller the coarse layers already let \
+                 through; set [authz.rbac] ehr_access_default = \"restricted\", or author the \
+                 settings per EHR"
+            }
             Self::MigrateOnRuntimeCredential => {
-                "[db] migrate is `apply` on the clinical runtime credential; set [db] migrate_url to \
-                 the credential that prepares the schema, or run migrate = \"verify\""
+                "[db] migrate is `apply` on a credential that also serves requests; set [db] \
+                 migrate_url to the credential that prepares the schema, give a relocated domain \
+                 a migrator of its own, or run migrate = \"verify\""
             }
         }
     }
@@ -188,13 +221,20 @@ pub struct ClusterIdentities {
     pub party: Option<String>,
     /// The linkage pool's cluster.
     pub linkage: Option<String>,
+    /// The audit pool's cluster.
+    ///
+    /// Measured like the other three, because the audit trail's separation is
+    /// its own duty rather than a consequence of theirs:
+    /// `docs/law/ch/dpo/text-de.html Art. 4 Abs. 5` keeps the log "getrennt vom
+    /// System, in welchem die Personendaten bearbeitet werden".
+    pub audit: Option<String>,
 }
 
 impl ClusterIdentities {
     /// Whether any two known identifiers are equal.
     #[must_use]
     pub fn any_shared(&self) -> bool {
-        let known: Vec<&String> = [&self.clinical, &self.party, &self.linkage]
+        let known: Vec<&String> = [&self.clinical, &self.party, &self.linkage, &self.audit]
             .into_iter()
             .flatten()
             .collect();
@@ -203,6 +243,24 @@ impl ClusterIdentities {
             .enumerate()
             .any(|(i, a)| known.iter().skip(i + 1).any(|b| a == b))
     }
+}
+
+/// What the database layer measured about this deployment's databases.
+///
+/// Both members are facts a connection produced, not configuration: the
+/// clusters the pools reached, and the domains whose database schema
+/// preparation will touch on a credential that also serves requests. Both are
+/// empty in the banner's pre-pool evaluation, which is what makes that reading
+/// the configuration's own posture and this one the measured posture.
+#[derive(Debug, Clone, Default, PartialEq, Eq)]
+pub struct DatabaseFacts {
+    /// The cluster each domain pool reached.
+    pub clusters: ClusterIdentities,
+    /// The domains whose database is prepared on a runtime credential, as the
+    /// preparation plan resolved it — a relocated domain prepares its own
+    /// database, because `[db].migrate_url` names one database and the domain
+    /// is not in it.
+    pub prepared_on_runtime_credential: Vec<crate::db::domain::Domain>,
 }
 
 /// The evaluated posture: what the profile asserts, what is open, what was
@@ -221,7 +279,8 @@ impl DeploymentPosture {
     /// Evaluate the posture from the resolved configuration and the clusters
     /// the pools reached.
     #[must_use]
-    pub fn evaluate(config: &FerroEhrConfig, clusters: &ClusterIdentities) -> Self {
+    pub fn evaluate(config: &FerroEhrConfig, databases: &DatabaseFacts) -> Self {
+        let clusters = &databases.clusters;
         let mut gaps = Vec::new();
         if !config
             .storage
@@ -240,8 +299,18 @@ impl DeploymentPosture {
             || !(audit.store.enabled || audit.syslog.enabled || audit.fhir_feed.enabled)
         {
             gaps.push(DeploymentGap::AuditOff);
+        } else if audit.fail_mode == crate::system_log::config::FailMode::Open {
+            // Only while a trail exists: a disabled trail makes the fail mode
+            // moot, and naming both would report one posture twice.
+            gaps.push(DeploymentGap::AuditFailsOpen);
         }
-        if config.db.migrate == MigrationMode::Apply && !config.db.migrator_is_separated() {
+        if config.authz.rbac.ehr_access_default == crate::config::authz::EhrAccessDefault::Open {
+            gaps.push(DeploymentGap::OpenEhrAccessDefault);
+        }
+        if config.db.migrate == MigrationMode::Apply
+            && (!config.db.migrator_is_separated()
+                || !databases.prepared_on_runtime_credential.is_empty())
+        {
             gaps.push(DeploymentGap::MigrateOnRuntimeCredential);
         }
         let accepted = gaps
@@ -321,6 +390,17 @@ mod tests {
                 subject_namespaces: vec!["urn:example:pseudonym".to_owned()],
                 ..crate::privacy::config::PrivacyConfig::default()
             },
+            audit: crate::system_log::config::AuditConfig {
+                fail_mode: crate::system_log::config::FailMode::Closed,
+                ..crate::system_log::config::AuditConfig::default()
+            },
+            authz: crate::config::authz::AuthzConfig {
+                rbac: crate::config::authz::RbacConfig {
+                    ehr_access_default: crate::config::authz::EhrAccessDefault::Restricted,
+                    ..crate::config::authz::RbacConfig::default()
+                },
+                ..crate::config::authz::AuthzConfig::default()
+            },
             ..FerroEhrConfig::default()
         }
     }
@@ -332,17 +412,29 @@ mod tests {
         }
     }
 
-    fn distinct_clusters() -> ClusterIdentities {
-        ClusterIdentities {
-            clinical: Some("1".to_owned()),
-            party: Some("2".to_owned()),
-            linkage: Some("3".to_owned()),
+    fn distinct_clusters() -> DatabaseFacts {
+        DatabaseFacts {
+            clusters: ClusterIdentities {
+                clinical: Some("1".to_owned()),
+                party: Some("2".to_owned()),
+                linkage: Some("3".to_owned()),
+                audit: Some("4".to_owned()),
+            },
+            prepared_on_runtime_credential: Vec::new(),
+        }
+    }
+
+    /// The clusters alone, with nothing measured about preparation.
+    fn on(clusters: ClusterIdentities) -> DatabaseFacts {
+        DatabaseFacts {
+            clusters,
+            prepared_on_runtime_credential: Vec::new(),
         }
     }
 
     /// The shipped default is `sandbox`, and a stock configuration on one
     /// cluster is exactly the deployment that must not hold real data: every
-    /// gap but the audit one is open, and boot is permitted.
+    /// gap but the audit-off one is open, and boot is permitted.
     #[test]
     fn the_default_is_sandbox_and_a_stock_deployment_names_its_gaps() {
         let config = FerroEhrConfig::default();
@@ -351,14 +443,17 @@ mod tests {
             clinical: Some("1".to_owned()),
             party: Some("1".to_owned()),
             linkage: Some("1".to_owned()),
+            audit: Some("1".to_owned()),
         };
-        let posture = DeploymentPosture::evaluate(&config, &clusters);
+        let posture = DeploymentPosture::evaluate(&config, &on(clusters));
         assert_eq!(
             posture.gaps,
             [
                 DeploymentGap::SharedCredential,
                 DeploymentGap::SharedCluster,
                 DeploymentGap::OpenSubjectNamespace,
+                DeploymentGap::AuditFailsOpen,
+                DeploymentGap::OpenEhrAccessDefault,
                 DeploymentGap::MigrateOnRuntimeCredential,
             ],
             "auditing is on by default with the local store, so it is not a gap"
@@ -376,13 +471,14 @@ mod tests {
             },
             ..FerroEhrConfig::default()
         });
-        let posture = DeploymentPosture::evaluate(&config, &ClusterIdentities::default());
+        let posture = DeploymentPosture::evaluate(&config, &DatabaseFacts::default());
         assert!(!posture.permits_boot());
         let message = posture.refusal_message();
         for gap in [
             DeploymentGap::SharedCredential,
             DeploymentGap::OpenSubjectNamespace,
             DeploymentGap::AuditOff,
+            DeploymentGap::OpenEhrAccessDefault,
             DeploymentGap::MigrateOnRuntimeCredential,
         ] {
             assert!(message.contains(gap.as_str()), "{message}");
@@ -392,9 +488,13 @@ mod tests {
             !posture.gaps.contains(&DeploymentGap::SharedCluster),
             "an unknown cluster identity is never read as a gap"
         );
+        assert!(
+            !posture.gaps.contains(&DeploymentGap::AuditFailsOpen),
+            "a disabled trail makes the fail mode moot, so it is named once"
+        );
     }
 
-    /// A fully separated deployment on three clusters boots as `production`
+    /// A fully separated deployment on four clusters boots as `production`
     /// with nothing open.
     #[test]
     fn a_separated_deployment_boots_as_production() {
@@ -410,11 +510,12 @@ mod tests {
     #[test]
     fn a_shared_cluster_is_refused_by_identity_and_accepted_only_by_name() {
         let config = production(separated());
-        let same_cluster = ClusterIdentities {
+        let same_cluster = on(ClusterIdentities {
             clinical: Some("7".to_owned()),
             party: Some("7".to_owned()),
             linkage: Some("8".to_owned()),
-        };
+            audit: Some("9".to_owned()),
+        });
         let posture = DeploymentPosture::evaluate(&config, &same_cluster);
         assert_eq!(posture.gaps, [DeploymentGap::SharedCluster]);
         assert!(!posture.permits_boot());
@@ -451,6 +552,8 @@ mod tests {
             DeploymentGap::SharedCluster,
             DeploymentGap::OpenSubjectNamespace,
             DeploymentGap::AuditOff,
+            DeploymentGap::AuditFailsOpen,
+            DeploymentGap::OpenEhrAccessDefault,
             DeploymentGap::MigrateOnRuntimeCredential,
         ] {
             assert_eq!(
@@ -458,5 +561,145 @@ mod tests {
                 Some(format!("\"{}\"", gap.as_str()))
             );
         }
+    }
+
+    /// The two compatibility defaults are open gaps under `production`, each
+    /// named with its key, its value and its remedy, and each accepted only by
+    /// name.
+    ///
+    /// The shipped defaults do not change: they serve the conformance
+    /// instrument and the development stacks, where a closed `EHR_ACCESS` default
+    /// would refuse every read of a fresh EHR. What changes is that a
+    /// production deployment has to say it wants them.
+    /// `docs/law/eu/gdpr/text.html Art. 25(2)` is the ground for the access
+    /// default: measures "shall ensure that by default personal data are not
+    /// made accessible without the individual's intervention to an indefinite
+    /// number of natural persons".
+    #[test]
+    fn production_refuses_the_open_access_default_and_the_open_audit_fail_mode() {
+        let config = production(FerroEhrConfig {
+            audit: crate::system_log::config::AuditConfig {
+                fail_mode: crate::system_log::config::FailMode::Open,
+                ..crate::system_log::config::AuditConfig::default()
+            },
+            authz: crate::config::authz::AuthzConfig {
+                rbac: crate::config::authz::RbacConfig {
+                    ehr_access_default: crate::config::authz::EhrAccessDefault::Open,
+                    ..crate::config::authz::RbacConfig::default()
+                },
+                ..crate::config::authz::AuthzConfig::default()
+            },
+            ..separated()
+        });
+        let posture = DeploymentPosture::evaluate(&config, &distinct_clusters());
+        assert_eq!(
+            posture.gaps,
+            [
+                DeploymentGap::AuditFailsOpen,
+                DeploymentGap::OpenEhrAccessDefault
+            ]
+        );
+        assert!(!posture.permits_boot());
+        let message = posture.refusal_message();
+        for gap in [
+            DeploymentGap::AuditFailsOpen,
+            DeploymentGap::OpenEhrAccessDefault,
+        ] {
+            assert!(message.contains(gap.as_str()), "{message}");
+            assert!(message.contains(gap.describe()), "{message}");
+        }
+        assert!(message.contains("ehr_access_default"), "{message}");
+        assert!(message.contains("fail_mode"), "{message}");
+        assert!(message.contains("restricted"), "{message}");
+        assert!(message.contains("closed"), "{message}");
+
+        // Accepted by name: the deployment boots and both stay listed.
+        let accepted = DeploymentPosture::evaluate(
+            &FerroEhrConfig {
+                deployment_accepts: vec![
+                    DeploymentGap::AuditFailsOpen,
+                    DeploymentGap::OpenEhrAccessDefault,
+                ],
+                ..config
+            },
+            &distinct_clusters(),
+        );
+        assert!(accepted.permits_boot());
+        assert_eq!(
+            accepted.accepted,
+            [
+                DeploymentGap::AuditFailsOpen,
+                DeploymentGap::OpenEhrAccessDefault
+            ]
+        );
+    }
+
+    /// A `sandbox` deployment runs on the shipped defaults and says so; the two
+    /// gaps refuse nothing there.
+    #[test]
+    fn sandbox_runs_the_shipped_defaults_and_only_names_them() {
+        let config = FerroEhrConfig::default();
+        assert_eq!(
+            config.authz.rbac.ehr_access_default,
+            crate::config::authz::EhrAccessDefault::Open,
+            "the shipped access default is unchanged"
+        );
+        assert_eq!(
+            config.audit.fail_mode,
+            crate::system_log::config::FailMode::Open,
+            "the shipped audit fail mode is unchanged"
+        );
+        let posture = DeploymentPosture::evaluate(&config, &distinct_clusters());
+        assert!(posture.gaps.contains(&DeploymentGap::AuditFailsOpen));
+        assert!(posture.gaps.contains(&DeploymentGap::OpenEhrAccessDefault));
+        assert!(posture.permits_boot(), "sandbox refuses nothing");
+    }
+
+    /// An audit database sharing a cluster with a pseudonymisation domain is a
+    /// `SharedCluster` gap.
+    ///
+    /// `docs/law/ch/dpo/text-de.html Art. 4 Abs. 5`: "Die Protokolle müssen
+    /// während mindestens einem Jahr getrennt vom System, in welchem die
+    /// Personendaten bearbeitet werden, aufbewahrt werden." The posture reads
+    /// the audit pool's own cluster identity, so an audit database co-located
+    /// with the clinical one is visible rather than silently uncounted.
+    #[test]
+    fn the_audit_cluster_counts_towards_the_shared_cluster_gap() {
+        let config = production(separated());
+        let audit_with_clinical = on(ClusterIdentities {
+            clinical: Some("1".to_owned()),
+            party: Some("2".to_owned()),
+            linkage: Some("3".to_owned()),
+            audit: Some("1".to_owned()),
+        });
+        let posture = DeploymentPosture::evaluate(&config, &audit_with_clinical);
+        assert_eq!(posture.gaps, [DeploymentGap::SharedCluster]);
+        assert!(!posture.permits_boot());
+        let message = posture.refusal_message();
+        assert!(
+            message.contains("[storage.audit]"),
+            "the remedy names the audit domain's own DSN: {message}"
+        );
+    }
+
+    /// A domain whose database schema preparation reaches on its own runtime
+    /// DSN opens `MigrateOnRuntimeCredential`, even with `[db].migrate_url`
+    /// set.
+    #[test]
+    fn a_relocated_domain_prepared_on_its_runtime_credential_is_a_gap() {
+        let config = production(separated());
+        let separated_migrator = DeploymentPosture::evaluate(&config, &distinct_clusters());
+        assert!(
+            separated_migrator.gaps.is_empty(),
+            "[db].migrate_url alone closes it while nothing is relocated: {separated_migrator:?}"
+        );
+
+        let relocated = DatabaseFacts {
+            prepared_on_runtime_credential: vec![crate::db::domain::Domain::Party],
+            ..distinct_clusters()
+        };
+        let posture = DeploymentPosture::evaluate(&config, &relocated);
+        assert_eq!(posture.gaps, [DeploymentGap::MigrateOnRuntimeCredential]);
+        assert!(!posture.permits_boot());
     }
 }

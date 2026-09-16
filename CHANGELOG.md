@@ -70,6 +70,26 @@ workflow refuses a tag that has no matching section here.
 
 ### Changed
 
+- **The `production` deployment profile refuses the two compatibility
+  defaults** (#3323). The per-EHR `EHR_ACCESS` default is `open` and the audit
+  trail fails open, both chosen so the conformance instrument and the
+  development stacks work out of the box. Neither default changes; what changes
+  is that `deployment_profile = "production"` now refuses to start while either
+  stands, naming the key, the value and the remedy, unless the deployment
+  accepts it by name in `deployment_accepts` — the mechanism the profile
+  already uses. The two new gap tokens are `open_ehr_access_default` and
+  `audit_fails_open`. GDPR Art. 25(2) asks that by default personal data not be
+  made accessible without the individual's intervention to an indefinite number
+  of natural persons; the obligation binds the controller's production posture,
+  which is what the profile expresses.
+- **The deployment posture reads the audit pool and every domain database**
+  (#3398). `shared_cluster` now includes the audit pool's own cluster identity,
+  so an audit database co-located with a pseudonymisation domain is reported
+  instead of being invisible (Swiss DSV Art. 4 Abs. 5 keeps the log on a system
+  separate from the one processing the data). `migrate_on_runtime_credential`
+  is evaluated per domain database rather than only from `[db] migrate_url`: a
+  domain relocated to a database of its own is prepared on that domain's
+  runtime DSN, which is the same gap under a different key.
 - **`ext.openehr_timestamp` refuses a zone name and a `BC` era** (#3427).
   PostgreSQL's own date/time input reads `2021-01-02T10:30:45
   Europe/Amsterdam` and `2021-01-02T10:30:45 BC`, and the separator-position

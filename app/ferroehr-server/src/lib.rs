@@ -23,7 +23,9 @@ use std::time::Duration;
 
 use anyhow::Context as _;
 use clap::{Parser, Subcommand};
-use ferroehr::config::deployment::{ClusterIdentities, DeploymentPosture, DeploymentProfile};
+use ferroehr::config::deployment::{
+    ClusterIdentities, DatabaseFacts, DeploymentPosture, DeploymentProfile,
+};
 use ferroehr::config::management::EndpointLevels;
 use ferroehr::config::management::ManagementConfig;
 use ferroehr::db::domain::{Domain, DomainPools};
@@ -541,8 +543,22 @@ async fn evaluate_deployment(
                 .await
                 .context("reading the linkage pool's cluster identity")?,
         ),
+        audit: Some(
+            db::cluster_identity(&pools.audit)
+                .await
+                .context("reading the audit pool's cluster identity")?,
+        ),
     };
-    let posture = DeploymentPosture::evaluate(config, &clusters);
+    let databases = DatabaseFacts {
+        clusters,
+        prepared_on_runtime_credential: db::domains_prepared_on_a_runtime_credential(
+            &config.db,
+            &config.storage,
+        )
+        .await
+        .context("resolving which databases schema preparation reaches on a runtime credential")?,
+    };
+    let posture = DeploymentPosture::evaluate(config, &databases);
     if !posture.permits_boot() {
         anyhow::bail!("{}", posture.refusal_message());
     }
@@ -834,7 +850,7 @@ async fn serve(config_path: Option<&Path>, overrides: &[(String, String)]) -> an
     if prints_banner(telemetry_config.log.format, std::io::stdout().is_terminal()) {
         // The posture the configuration alone shows; the cluster check needs
         // the pools and follows in the boot log.
-        let declared = DeploymentPosture::evaluate(&config, &ClusterIdentities::default());
+        let declared = DeploymentPosture::evaluate(&config, &DatabaseFacts::default());
         ferroehr::banner::print(config.spec_profile, &declared, true);
     }
 

@@ -397,7 +397,7 @@ const ORDERED_CORPUS: &[&str] = &[
 /// `2021-0102`), the words `now`, `today`, `yesterday`, `epoch` and
 /// `infinity` — of which the first two made a stored value read as the current
 /// time — and, after a full-precision date-time, a zone NAME or a ` BC` era,
-/// where BASE `foundation_types` master06-time_types.adoc §Iso8601_date_time
+/// where BASE `foundation_types` master06-time_types.adoc `§Iso8601_date_time`
 /// ends the value at the offset.
 ///
 /// In the other direction the completion arms now accept what that fast path

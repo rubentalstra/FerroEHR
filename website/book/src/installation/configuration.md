@@ -73,7 +73,7 @@ Scalars are typed automatically (bool / int / float, else string).
 **List-typed keys take comma-separated values**
 (`FERROEHR__AUTH__OIDC__AUDIENCES=ferroehr,other`). Map-keyed tables are
 reachable too: the map key is just another segment
-(`FERROEHR__SUBJECT_PROXY__SYSTEMS__PAS__BASE_URL`). Arrays of tables (the
+(`FERROEHR__TERMINOLOGY__EXTERNAL__PROVIDERS__SNOMED__URL`). Arrays of tables (the
 Basic-auth user store) are **file-only**, because the environment grammar has
 no way to spell an array index.
 
@@ -254,10 +254,12 @@ ticked by being present:
 | Gap token | What `production` requires |
 |---|---|
 | `shared_credential` | `[storage.party] url` and `[storage.linkage] url` set, so the domains connect on their own database roles |
-| `shared_cluster` | The three pools reach three different PostgreSQL clusters, read from `pg_control_system().system_identifier` on each pool, never from the DSN text |
+| `shared_cluster` | The four pools reach four different PostgreSQL clusters, read from `pg_control_system().system_identifier` on each pool, never from the DSN text. The audit pool counts: Swiss law keeps the access log on a system separate from the one processing the data |
 | `open_subject_namespace` | `[privacy] subject_namespaces` declared, so an `EHR_STATUS` subject is an opaque pseudonym |
 | `audit_off` | `[audit]` enabled with a durable sink (the local store, syslog or the FHIR feed) |
-| `migrate_on_runtime_credential` | `[db] migrate_url` set, or `migrate = "verify"`, so the credential that serves requests cannot alter the schema |
+| `audit_fails_open` | `[audit] fail_mode = "closed"`, so an operation whose access record cannot be taken is refused instead of succeeding unlogged |
+| `open_ehr_access_default` | `[authz.rbac] ehr_access_default = "restricted"`, so an EHR carrying no `ACCESS_CONTROL_SETTINGS` is reachable only by an admin. The shipped default is `open` |
+| `migrate_on_runtime_credential` | `[db] migrate_url` set, or `migrate = "verify"`, so no credential that serves requests can alter the schema. Evaluated per domain database: a domain relocated to a database of its own is prepared on that domain's runtime DSN |
 
 An accepted gap is stated on every boot and on `/rest/status`; it can be run,
 not hidden. Environment form: `FERROEHR__DEPLOYMENT_PROFILE=production`,

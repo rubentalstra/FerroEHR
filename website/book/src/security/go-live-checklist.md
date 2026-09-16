@@ -73,15 +73,24 @@ in deployment_accepts (which is then stated on every boot and on /rest/status):
 ```
 
 The gaps are `shared_credential`, `shared_cluster`, `open_subject_namespace`,
-`audit_off` and `migrate_on_runtime_credential`. `shared_cluster` is read from
-`pg_control_system().system_identifier` on each pool rather than from the DSN
-text, so two names for one cluster do not pass it.
+`audit_off`, `audit_fails_open`, `open_ehr_access_default` and
+`migrate_on_runtime_credential`. `shared_cluster` is read from
+`pg_control_system().system_identifier` on each pool, the audit pool included,
+rather than from the DSN text, so two names for one cluster do not pass it.
+
+Two of them are the shipped compatibility defaults, kept as they are because
+the conformance instrument and the development stacks need them: the
+`EHR_ACCESS` default is `open`, and the audit trail fails open. A production
+deployment either changes both, or names each in `deployment_accepts` and
+carries the decision.
 
 A gap you have decided to run with goes in `deployment_accepts` by name. It is
 then stated on every boot and on `GET /ferroehr/rest/status`, so it is run
 rather than hidden.
 
 - [ ] `deployment_profile = "production"` and the server starts.
+- [ ] `[authz.rbac] ehr_access_default` and `[audit] fail_mode` are the values
+      this deployment intends, not the ones it inherited.
 - [ ] Every entry in `deployment_accepts` is a decision someone recorded, not a
       leftover.
 - [ ] `GET /ferroehr/rest/status` shows the profile and an accepted-gap list

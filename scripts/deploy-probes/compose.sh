@@ -121,6 +121,61 @@ probes_shipped_config_boots() {
   probe_done
 }
 
+probes_deployment_posture() {
+  bold "deployment posture"
+
+  # #3226 gave the server a declared posture and #3398/#3323 widened what it
+  # measures: the audit pool's cluster, schema preparation per domain database,
+  # and the two compatibility defaults. Nothing observed that a stack the
+  # project ships reports any of it. Far end: the SERVER's own /rest/status,
+  # not the configuration that was supposed to produce it.
+  probe "P-POSTURE-01" "working" "image" "#3226" \
+    "/rest/status carries the declared deployment posture"
+  local status
+  status="$(curl -s "$CDR/ferroehr/rest/status")"
+  assert_contains "$status" '"deployment"' "the posture block is served"
+  assert_contains "$status" '"profile":"sandbox"' \
+    "the quickstart declares the sandbox profile"
+  probe_done
+
+  # The quickstart runs all four domains on one database and applies its own
+  # migrations, so the two separation gaps must be reported. The audit pool is
+  # measured like the other three: its cluster is read from its own connection
+  # (docs/law/ch/dpo/text-de.html Art. 4 Abs. 5 keeps the log "getrennt vom
+  # System, in welchem die Personendaten bearbeitet werden").
+  probe "P-POSTURE-02" "working" "image" "#3398" \
+    "the co-located quickstart reports its separation gaps"
+  assert_contains "$status" '"shared_credential"' \
+    "one DSN for four domains is a shared credential"
+  assert_contains "$status" '"shared_cluster"' \
+    "one cluster for four domains, audit included, is a shared cluster"
+  assert_contains "$status" '"migrate_on_runtime_credential"' \
+    "the quickstart applies its own migrations on the runtime credential"
+  probe_done
+
+  # The shipped defaults are deliberate and disclosed, which is only true if
+  # the running server actually discloses them (GDPR Art. 25(2),
+  # docs/law/eu/gdpr/text.html).
+  probe "P-POSTURE-03" "working" "image" "#3323" \
+    "the two compatibility defaults are reported as open gaps"
+  assert_contains "$status" '"open_ehr_access_default"' \
+    "the open EHR_ACCESS default is disclosed rather than silent"
+  assert_contains "$status" '"audit_fails_open"' \
+    "the open audit fail mode is disclosed rather than silent"
+  probe_done
+
+  uncovered "the production profile's refusal" \
+    "declaring deployment_profile = production would stop this stack booting at
+     all, which the harness reads as a dead SUT rather than as the refusal it
+     is. The refusal itself is unit-covered in config::deployment; what is not
+     observed anywhere is a REAL server refusing to start on it."
+  uncovered "an audit database in a cluster of its own" \
+    "the audit half of the shared-cluster gap is proven here only by the
+     co-located reading. Showing the gap CLOSE would need a second PostgreSQL
+     cluster in the compose file with [storage.audit] url pointed at it, and a
+     second migrated database is a stack change, not a probe."
+}
+
 probes_multimedia() {
   bold "multimedia (S3 externalization)"
 
