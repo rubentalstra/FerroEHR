@@ -52,7 +52,7 @@ fn persistent_minimal_opt() -> String {
 #[tokio::test]
 async fn tdd_import_rejects_malformed_payload() {
     let db = testkit::db().await.expect("testkit database");
-    let svc = FerroEhrService::new(db.pool());
+    let svc = FerroEhrService::new(&ferroehr::db::domain::DomainPools::from_shared(&db.pool()));
     let ehr = svc.create_ehr(None).await.expect("ehr");
 
     let err = svc
@@ -71,7 +71,7 @@ async fn tdd_import_rejects_malformed_payload() {
 #[tokio::test]
 async fn tdd_import_rejects_non_tdd_xml() {
     let db = testkit::db().await.expect("testkit database");
-    let svc = FerroEhrService::new(db.pool());
+    let svc = FerroEhrService::new(&ferroehr::db::domain::DomainPools::from_shared(&db.pool()));
     let ehr = svc.create_ehr(None).await.expect("ehr");
 
     // Well-formed XML, but a canonical-openEHR (not templates) namespace.
@@ -92,7 +92,7 @@ async fn tdd_import_rejects_non_tdd_xml() {
 #[tokio::test]
 async fn tdd_import_rejects_unknown_ehr() {
     let db = testkit::db().await.expect("testkit database");
-    let svc = FerroEhrService::new(db.pool());
+    let svc = FerroEhrService::new(&ferroehr::db::domain::DomainPools::from_shared(&db.pool()));
 
     let err = svc
         .import_tdd(
@@ -114,7 +114,7 @@ async fn tdd_import_rejects_unknown_ehr() {
 #[tokio::test]
 async fn tdd_import_rejects_unknown_template() {
     let db = testkit::db().await.expect("testkit database");
-    let svc = FerroEhrService::new(db.pool());
+    let svc = FerroEhrService::new(&ferroehr::db::domain::DomainPools::from_shared(&db.pool()));
     let ehr = svc.create_ehr(None).await.expect("ehr");
 
     let err = svc
@@ -140,7 +140,7 @@ async fn tdd_import_rejects_unknown_template() {
 async fn tdd_import_commits_composition() {
     let db = testkit::db().await.expect("testkit database");
     let pool = db.pool();
-    let svc = FerroEhrService::new(pool.clone());
+    let svc = FerroEhrService::new(&ferroehr::db::domain::DomainPools::from_shared(&pool));
     let ehr = svc.create_ehr(None).await.expect("ehr");
 
     // Provision the operational template the TDD instantiates.
@@ -200,7 +200,7 @@ async fn tdd_import_commits_composition() {
 async fn tdd_import_tdds_batch_commits_all() {
     let db = testkit::db().await.expect("testkit database");
     let pool = db.pool();
-    let svc = FerroEhrService::new(pool.clone());
+    let svc = FerroEhrService::new(&ferroehr::db::domain::DomainPools::from_shared(&pool));
     let ehr = svc.create_ehr(None).await.expect("ehr");
     svc.template_adl14_upload(persistent_minimal_opt())
         .await
@@ -230,7 +230,7 @@ async fn tdd_import_tdds_batch_commits_all() {
 #[tokio::test]
 async fn tdd_import_tdds_batch_fail_fast() {
     let db = testkit::db().await.expect("testkit database");
-    let svc = FerroEhrService::new(db.pool());
+    let svc = FerroEhrService::new(&ferroehr::db::domain::DomainPools::from_shared(&db.pool()));
     let ehr = svc.create_ehr(None).await.expect("ehr");
 
     let err = svc

@@ -32,14 +32,60 @@
 # identifier in the emitted SQL comes from the closed set, over a corpus of
 # queries carrying hostile text in every user-supplied position.
 #
-# Usage: scripts/checks/sql-string-building.sh [--all | <file>...]
-#   no args  → the changed files that fall inside the scanned directories
-#   --all    → every tracked .rs file in those directories
+# Usage: scripts/checks/sql-string-building.sh [--all | --self-test | <file>...]
+#   no args     → the changed files that fall inside the scanned directories
+#   --all       → every tracked .rs file in those directories
+#   --self-test → runs the guard over a fixture the guard flags, once with a
+#   space-carrying exemption naming it and once with no exemption at all, and
+#   asserts the first is accepted and the second rejected. The exemption list is
+#   read line by line, and an iteration never shown to honour a needle with a
+#   space is a green light nobody has tested (reliability.md §enforcement tiers).
 set -euo pipefail
+
+if [[ "${1:-}" == "--self-test" ]]; then
+  cd "$(dirname "$0")/../.."
+  self_root="$(mktemp -d)"
+  trap 'rm -rf "$self_root"' EXIT
+  mkdir -p "$self_root/scripts" "$self_root/app/ferroehr/src/storage"
+  cp -R scripts/checks scripts/lib "$self_root/scripts/"
+  self_file='app/ferroehr/src/storage/self_test.rs'
+  # Rule 3 flags this line: a runtime value appended to a string under
+  # construction. Its exemption needle carries two spaces.
+  printf '    out.push_str(&render(a, b, c));\n' > "$self_root/$self_file"
+  self_guard="$self_root/scripts/checks/sql-string-building.sh"
+  self_fail=0
+  # <label>|<exemption list>|<expected exit: 0 accept, 1 reject>
+  self_cases=(
+    "a needle carrying spaces|${self_file}:out.push_str(&render(a, b, c))|0"
+    "the same line with no exemption||1"
+  )
+  for self_case in "${self_cases[@]}"; do
+    label="${self_case%%|*}"
+    rest="${self_case#*|}"
+    exempt="${rest%%|*}"
+    want="${rest#*|}"
+    awk -v repl="EXEMPT='${exempt}'" '
+      /^EXEMPT=/ { print repl; skip = 1; next }
+      skip && /'"'"'$/ { skip = 0; next }
+      !skip { print }
+    ' "$self_guard" > "$self_guard.case"
+    got=0
+    (cd "$self_root" && bash scripts/checks/sql-string-building.sh.case "$self_file" >/dev/null 2>&1) || got=1
+    if [[ "$got" != "$want" ]]; then
+      echo "::error::--self-test: ${label} — expected exit ${want}, got ${got}." >&2
+      self_fail=1
+    else
+      echo "  self-test: ${label} → exit ${got} as expected"
+    fi
+  done
+  [[ "$self_fail" -eq 0 ]] || exit 1
+  echo "sql-string-building --self-test: the exemption list honours a needle with spaces — OK."
+  exit 0
+fi
 
 # shellcheck source=scripts/lib/guard-args.sh
 . "$(dirname "$0")/../lib/guard-args.sh"
-guard_known_flags "[--all | <file>...]" "--all" "$@"
+guard_known_flags "[--all | --self-test | <file>...]" "--all --self-test" "$@"
 cd "$(dirname "$0")/../.."
 
 # The directories whose SQL is built at runtime. Everything else in the tree
@@ -50,9 +96,9 @@ SCOPE='app/ferroehr/src/aql/ app/ferroehr/src/storage/ app/ferroehr/src/system_l
 # fragment, not prose.
 KEYWORDS='SELECT|FROM|WHERE|ORDER[[:space:]]+BY|GROUP[[:space:]]+BY|HAVING|JOIN|INSERT[[:space:]]+INTO|UPDATE[[:space:]]|DELETE[[:space:]]+FROM|UNION|LIMIT|OFFSET'
 
-# Narrow, named exemptions. Each is a `file:needle` pair: the needle must appear
-# on the flagged line for the exemption to apply, so it cannot silently widen to
-# a neighbouring statement.
+# Narrow, named exemptions, one per line. Each is a `file:needle` pair: the
+# needle must appear on the flagged line for the exemption to apply, so it cannot
+# silently widen to a neighbouring statement, and it may carry spaces.
 #
 # `node_repo.rs` composes the promoted-column list of one INSERT header from
 # `storage::promoted::PROMOTED_LEAVES`, whose `column` field is a variant of the
@@ -87,16 +133,19 @@ report() {
 }
 
 # Whether `$1:$2` (file, line body) is one of the named exemptions.
+# The list is read line by line: a needle is arbitrary source text and may hold
+# spaces, which word splitting would break into entries that never match.
 exempted() {
   local file=$1 body=$2 entry needle
-  for entry in $EXEMPT; do
+  while IFS= read -r entry; do
+    [[ -n "$entry" ]] || continue
     [[ "${entry%%:*}" = "$file" ]] || continue
     needle=${entry#*:}
     case $body in
     *"$needle"*) return 0 ;;
     *) ;;
     esac
-  done
+  done < <(printf '%s\n' "$EXEMPT")
   return 1
 }
 

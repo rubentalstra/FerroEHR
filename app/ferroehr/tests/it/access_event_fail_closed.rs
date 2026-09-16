@@ -98,13 +98,14 @@ async fn a_linkage_resolution_is_withheld_when_its_record_is_rejected() {
     let pool = db.pool();
     // The mapping is opened under a healthy, fail-open sender so the fixture is
     // not what is under test.
-    let open = FerroEhrService::new(pool.clone());
+    let open = FerroEhrService::new(&ferroehr::db::domain::DomainPools::from_shared(&pool));
     let party = VoId(Uuid::now_v7());
     let ehr = EhrId(Uuid::now_v7());
     open.link(party, ehr).await.expect("the mapping opens");
 
     let (sender, _handle) = rejecting_sender().await;
-    let closed = FerroEhrService::new(pool.clone()).with_audit(sender);
+    let closed = FerroEhrService::new(&ferroehr::db::domain::DomainPools::from_shared(&pool))
+        .with_audit(sender);
 
     let refused = closed.resolve_ehr_for_party(party).await;
     assert!(
@@ -124,7 +125,8 @@ async fn a_linkage_resolution_is_withheld_when_its_record_is_rejected() {
 async fn a_subject_lookup_is_withheld_when_its_record_is_rejected() {
     let db = testkit::db().await.expect("testkit database");
     let (sender, _handle) = rejecting_sender().await;
-    let closed = FerroEhrService::new(db.pool()).with_audit(sender);
+    let closed = FerroEhrService::new(&ferroehr::db::domain::DomainPools::from_shared(&db.pool()))
+        .with_audit(sender);
 
     let refused = closed
         .has_ehr_for_subject(SubjectRef {
@@ -155,7 +157,7 @@ async fn an_identifier_resolution_is_withheld_when_its_record_is_rejected() {
     .expect("the engine builds")
     .expect("protection is enabled");
     let (sender, _handle) = rejecting_sender().await;
-    let closed = FerroEhrService::new(pool.clone())
+    let closed = FerroEhrService::new(&ferroehr::db::domain::DomainPools::from_shared(&pool))
         .with_identifier_protection(Arc::new(engine))
         .with_audit(sender);
 
@@ -172,11 +174,12 @@ async fn an_identifier_resolution_is_withheld_when_its_record_is_rejected() {
 async fn an_extract_export_is_withheld_when_its_record_is_rejected() {
     let db = testkit::db().await.expect("testkit database");
     let pool = db.pool();
-    let seeded = FerroEhrService::new(pool.clone());
+    let seeded = FerroEhrService::new(&ferroehr::db::domain::DomainPools::from_shared(&pool));
     let ehr = seed_full_ehr(&seeded).await;
 
     let (sender, _handle) = rejecting_sender().await;
-    let closed = FerroEhrService::new(pool.clone()).with_audit(sender);
+    let closed = FerroEhrService::new(&ferroehr::db::domain::DomainPools::from_shared(&pool))
+        .with_audit(sender);
 
     let refused = closed.extract_ehrs(ehr).await;
     let error = refused.expect_err("the export ran, and its record was rejected");

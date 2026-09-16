@@ -163,7 +163,7 @@ terminology
 async fn ferroterm_decides_vetdf_for_the_three_binding_outcomes() {
     let ferroterm = FerroTerm::start().await;
     let db = testkit::db().await.expect("testkit database");
-    let svc = FerroEhrService::new(db.pool())
+    let svc = FerroEhrService::new(&ferroehr::db::domain::DomainPools::from_shared(&db.pool()))
         .with_external_terminology(Arc::new(provider(&ferroterm.base)));
 
     // 1. A SNOMED CT concept URI on a server that serves no SNOMED CT: the
@@ -224,7 +224,7 @@ async fn ferroterm_decides_vetdf_for_the_three_binding_outcomes() {
 async fn a_ckm_archetype_with_snomed_bindings_uploads_when_snomed_is_not_served() {
     let ferroterm = FerroTerm::start().await;
     let db = testkit::db().await.expect("testkit database");
-    let svc = FerroEhrService::new(db.pool())
+    let svc = FerroEhrService::new(&ferroehr::db::domain::DomainPools::from_shared(&db.pool()))
         .with_external_terminology(Arc::new(provider(&ferroterm.base)));
 
     let source = std::fs::read_to_string(

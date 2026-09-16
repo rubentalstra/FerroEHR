@@ -267,7 +267,8 @@ mod tests {
             .expect("build router")
             .expect("router");
         let db = testkit::db().await.expect("testkit database");
-        FerroEhrService::new(db.pool()).with_terminology_router(Arc::new(router))
+        FerroEhrService::new(&crate::db::domain::DomainPools::from_shared(&db.pool()))
+            .with_terminology_router(Arc::new(router))
     }
 
     /// A code the bound value set contains is accepted (BASE master12
@@ -319,12 +320,13 @@ mod tests {
     /// whole point of `[terminology.external] fail_on_error`.
     #[tokio::test]
     async fn an_unresolvable_binding_follows_fail_on_error() {
-        // A started-then-dropped server yields an address nothing listens on,
-        // so the provider's connect fails the way a TS outage does.
-        let dead_uri = {
-            let ts = MockServer::start().await;
-            ts.uri()
-        };
+        // TEST-NET-1 (RFC 5737 §3: 192.0.2.0/24 "for use in documentation",
+        // never routed on the public internet), so the provider's connect fails
+        // the way a TS outage does, within the 500 ms connect timeout. A
+        // started-then-dropped mock server would leave a port the operating
+        // system may hand to the next listener, which is not an unreachable
+        // endpoint.
+        let dead_uri = "http://192.0.2.1:1".to_owned();
 
         let open = service(&dead_uri, false).await;
         let violations = open
@@ -359,7 +361,8 @@ mod tests {
     async fn the_disabled_default_resolves_nothing() {
         let ts = validate_code_server("278149003").await;
         let db = testkit::db().await.expect("testkit database");
-        let service = FerroEhrService::new(db.pool());
+        let service =
+            FerroEhrService::new(&crate::db::domain::DomainPools::from_shared(&db.pool()));
         let violations = service
             // A code that WOULD be refused if the binding were resolved.
             .constraint_binding_violations(&coded_instance("999999"), &bound_template())

@@ -74,7 +74,7 @@ fn first_version_uid(contribution: &Value) -> String {
 #[tokio::test]
 async fn accompanying_attestation_then_standalone_666_attestation() {
     let db = testkit::db().await.expect("testkit database");
-    let svc = FerroEhrService::new(db.pool());
+    let svc = FerroEhrService::new(&ferroehr::db::domain::DomainPools::from_shared(&db.pool()));
     let ehr_id = create_ehr(&svc).await;
 
     // (1) A CONTRIBUTION that creates a COMPOSITION carrying an attestation
@@ -182,7 +182,7 @@ async fn accompanying_attestation_then_standalone_666_attestation() {
 #[tokio::test]
 async fn attestation_error_cases() {
     let db = testkit::db().await.expect("testkit database");
-    let svc = FerroEhrService::new(db.pool());
+    let svc = FerroEhrService::new(&ferroehr::db::domain::DomainPools::from_shared(&db.pool()));
     let ehr_id = create_ehr(&svc).await;
 
     // A real composition to attest.
@@ -359,7 +359,7 @@ fn ehr_status(queryable: bool) -> Value {
 #[tokio::test]
 async fn contribution_listing_count_and_ehr_summary() {
     let db = testkit::db().await.expect("testkit database");
-    let svc = FerroEhrService::new(db.pool());
+    let svc = FerroEhrService::new(&ferroehr::db::domain::DomainPools::from_shared(&db.pool()));
 
     // Unknown EHR → NotFound (SM `ehr_id_does_not_exist`, carried granularly
     // through the ServiceError round-trip) for every native call.
@@ -498,7 +498,7 @@ async fn contribution_listing_count_and_ehr_summary() {
 #[tokio::test]
 async fn ehr_contribution_list_page_extension() {
     let db = testkit::db().await.expect("testkit database");
-    let svc = FerroEhrService::new(db.pool());
+    let svc = FerroEhrService::new(&ferroehr::db::domain::DomainPools::from_shared(&db.pool()));
 
     // Unknown EHR → NotFound (404, SM `ehr_id_does_not_exist`), like the
     // sibling EHR reads.
@@ -607,7 +607,7 @@ async fn contribution_honors_the_five_lifecycle_states() {
     // normative code; only the delete path is forced to 523. 553/800/801 are
     // NOT deletions — the version is readable with its data.
     let db = testkit::db().await.expect("testkit database");
-    let svc = FerroEhrService::new(db.pool());
+    let svc = FerroEhrService::new(&ferroehr::db::domain::DomainPools::from_shared(&db.pool()));
     let ehr_id = create_ehr(&svc).await;
 
     // (1) Create v1 as incomplete (553).
@@ -783,7 +783,7 @@ async fn version_commit_audit_defaults_from_the_contribution_audit() {
     // of the commit_audit of each VERSION" when the version item omits them; a
     // version item that supplies its own values keeps them verbatim.
     let db = testkit::db().await.expect("testkit database");
-    let svc = FerroEhrService::new(db.pool());
+    let svc = FerroEhrService::new(&ferroehr::db::domain::DomainPools::from_shared(&db.pool()));
     let ehr_id = create_ehr(&svc).await;
 
     let created = svc
@@ -854,7 +854,7 @@ async fn version_commit_audit_defaults_from_the_contribution_audit() {
 #[tokio::test]
 async fn contribution_resolve_refs() {
     let db = testkit::db().await.expect("testkit database");
-    let svc = FerroEhrService::new(db.pool());
+    let svc = FerroEhrService::new(&ferroehr::db::domain::DomainPools::from_shared(&db.pool()));
 
     let ehr_id = create_ehr(&svc).await;
     let ehr_uuid = ferroehr::ids::EhrId(ehr_id.parse::<uuid::Uuid>().expect("ehr uuid"));
@@ -906,7 +906,7 @@ async fn contribution_resolve_refs() {
 #[tokio::test]
 async fn contribution_supplied_uid() {
     let db = testkit::db().await.expect("testkit database");
-    let svc = FerroEhrService::new(db.pool());
+    let svc = FerroEhrService::new(&ferroehr::db::domain::DomainPools::from_shared(&db.pool()));
 
     let ehr_id = create_ehr(&svc).await;
     let ehr_uuid = ferroehr::ids::EhrId(ehr_id.parse::<uuid::Uuid>().expect("ehr uuid"));
@@ -951,7 +951,7 @@ async fn contribution_supplied_uid() {
 #[tokio::test]
 async fn create_composition_gate_error_surface_survives_the_writability_fold() {
     let db = testkit::db().await.expect("testkit database");
-    let svc = FerroEhrService::new(db.pool());
+    let svc = FerroEhrService::new(&ferroehr::db::domain::DomainPools::from_shared(&db.pool()));
 
     // (1) Unknown EHR → 404 `ehr_id_does_not_exist` (the existence signal of
     // the folded query), never a conflict and never a driver error.
@@ -1023,7 +1023,7 @@ async fn create_composition_gate_error_surface_survives_the_writability_fold() {
 async fn one_version_of_a_lineage_is_in_force_at_any_instant() {
     let db = testkit::db().await.expect("testkit database");
     let pool = db.pool();
-    let svc = FerroEhrService::new(pool.clone());
+    let svc = FerroEhrService::new(&ferroehr::db::domain::DomainPools::from_shared(&pool));
 
     let ehr_id = create_ehr(&svc).await;
     let ehr_uuid = ferroehr::ids::EhrId(ehr_id.parse::<uuid::Uuid>().expect("ehr uuid"));
@@ -1092,7 +1092,7 @@ async fn one_version_of_a_lineage_is_in_force_at_any_instant() {
 #[tokio::test]
 async fn contribution_cannot_delete_the_ehr_status() {
     let db = testkit::db().await.expect("testkit database");
-    let svc = FerroEhrService::new(db.pool());
+    let svc = FerroEhrService::new(&ferroehr::db::domain::DomainPools::from_shared(&db.pool()));
 
     let ehr_id = create_ehr(&svc).await;
     let ehr_uuid = ferroehr::ids::EhrId(ehr_id.parse::<uuid::Uuid>().expect("ehr uuid"));
@@ -1151,7 +1151,7 @@ async fn contribution_cannot_delete_the_ehr_status() {
 #[tokio::test]
 async fn data_carrying_deleted_lifecycle_is_refused_on_both_routes() {
     let db = testkit::db().await.expect("testkit database");
-    let svc = FerroEhrService::new(db.pool());
+    let svc = FerroEhrService::new(&ferroehr::db::domain::DomainPools::from_shared(&db.pool()));
     let ehr_id = create_ehr(&svc).await;
     let ehr_uuid = ferroehr::ids::EhrId(ehr_id.parse::<uuid::Uuid>().expect("ehr uuid"));
 
@@ -1258,7 +1258,7 @@ async fn data_carrying_deleted_lifecycle_is_refused_on_both_routes() {
 #[tokio::test]
 async fn a_delete_member_with_a_contradictory_lifecycle_state_is_refused() {
     let db = testkit::db().await.expect("testkit database");
-    let svc = FerroEhrService::new(db.pool());
+    let svc = FerroEhrService::new(&ferroehr::db::domain::DomainPools::from_shared(&db.pool()));
     let ehr_id = create_ehr(&svc).await;
     let ehr_uuid = ferroehr::ids::EhrId(ehr_id.parse::<uuid::Uuid>().expect("ehr uuid"));
 
@@ -1358,7 +1358,7 @@ async fn a_delete_member_with_a_contradictory_lifecycle_state_is_refused() {
 #[tokio::test]
 async fn incomplete_admits_missing_composition_data_but_never_wrong_data() {
     let db = testkit::db().await.expect("testkit database");
-    let svc = FerroEhrService::new(db.pool());
+    let svc = FerroEhrService::new(&ferroehr::db::domain::DomainPools::from_shared(&db.pool()));
     let ehr_id = create_ehr(&svc).await;
     let ehr_uuid = ferroehr::ids::EhrId(ehr_id.parse::<uuid::Uuid>().expect("ehr uuid"));
 
@@ -1482,7 +1482,7 @@ async fn incomplete_admits_missing_composition_data_but_never_wrong_data() {
 #[tokio::test]
 async fn incomplete_relaxes_the_folder_kind_too() {
     let db = testkit::db().await.expect("testkit database");
-    let svc = FerroEhrService::new(db.pool());
+    let svc = FerroEhrService::new(&ferroehr::db::domain::DomainPools::from_shared(&db.pool()));
     let ehr_id = create_ehr(&svc).await;
     let ehr_uuid = ferroehr::ids::EhrId(ehr_id.parse::<uuid::Uuid>().expect("ehr uuid"));
 
@@ -1535,7 +1535,7 @@ async fn incomplete_relaxes_the_folder_kind_too() {
 #[tokio::test]
 async fn contribution_member_without_lifecycle_state_is_refused() {
     let db = testkit::db().await.expect("testkit database");
-    let svc = FerroEhrService::new(db.pool());
+    let svc = FerroEhrService::new(&ferroehr::db::domain::DomainPools::from_shared(&db.pool()));
     let ehr_id = create_ehr(&svc).await;
     let ehr_uuid = ferroehr::ids::EhrId(ehr_id.parse::<uuid::Uuid>().expect("ehr uuid"));
 
@@ -1595,7 +1595,7 @@ async fn contribution_member_without_lifecycle_state_is_refused() {
 #[tokio::test]
 async fn merge_provenance_is_refused_on_the_commit_wire() {
     let db = testkit::db().await.expect("testkit database");
-    let svc = FerroEhrService::new(db.pool());
+    let svc = FerroEhrService::new(&ferroehr::db::domain::DomainPools::from_shared(&db.pool()));
     let ehr_id = create_ehr(&svc).await;
     let ehr_uuid = ferroehr::ids::EhrId(ehr_id.parse::<uuid::Uuid>().expect("ehr uuid"));
 
@@ -1680,7 +1680,7 @@ async fn merge_provenance_is_refused_on_the_commit_wire() {
 #[tokio::test]
 async fn foreign_version_identity_is_refused_on_the_commit_wire() {
     let db = testkit::db().await.expect("testkit database");
-    let svc = FerroEhrService::new(db.pool());
+    let svc = FerroEhrService::new(&ferroehr::db::domain::DomainPools::from_shared(&db.pool()));
     let ehr_id = create_ehr(&svc).await;
     let ehr_uuid = ferroehr::ids::EhrId(ehr_id.parse::<uuid::Uuid>().expect("ehr uuid"));
 
@@ -1799,7 +1799,7 @@ async fn foreign_version_identity_is_refused_on_the_commit_wire() {
 #[tokio::test]
 async fn an_undeclared_contribution_member_key_is_refused_with_its_path() {
     let db = testkit::db().await.expect("testkit database");
-    let svc = FerroEhrService::new(db.pool());
+    let svc = FerroEhrService::new(&ferroehr::db::domain::DomainPools::from_shared(&db.pool()));
     let ehr_id = create_ehr(&svc).await;
     let ehr_uuid: ferroehr::ids::EhrId = ehr_id.parse().expect("ehr uuid");
 
@@ -1851,7 +1851,7 @@ async fn an_undeclared_contribution_member_key_is_refused_with_its_path() {
 #[tokio::test]
 async fn contribution_audit_change_type_is_required_not_derived() {
     let db = testkit::db().await.expect("testkit database");
-    let svc = FerroEhrService::new(db.pool());
+    let svc = FerroEhrService::new(&ferroehr::db::domain::DomainPools::from_shared(&db.pool()));
     let ehr_id = create_ehr(&svc).await;
     let ehr_uuid: ferroehr::ids::EhrId = ehr_id.parse().expect("ehr uuid");
 
@@ -1946,7 +1946,7 @@ async fn contribution_audit_change_type_is_required_not_derived() {
 #[tokio::test]
 async fn member_scoped_refusals_name_the_offending_version_index() {
     let db = testkit::db().await.expect("testkit database");
-    let svc = FerroEhrService::new(db.pool());
+    let svc = FerroEhrService::new(&ferroehr::db::domain::DomainPools::from_shared(&db.pool()));
     let ehr_id = create_ehr(&svc).await;
     let ehr = ehr_id.parse().expect("ehr uuid");
 
@@ -2079,7 +2079,7 @@ async fn current_status_uid(svc: &FerroEhrService, ehr: ferroehr::ids::EhrId) ->
 #[tokio::test]
 async fn deactivating_contribution_carries_its_final_content() {
     let db = testkit::db().await.expect("testkit database");
-    let svc = FerroEhrService::new(db.pool());
+    let svc = FerroEhrService::new(&ferroehr::db::domain::DomainPools::from_shared(&db.pool()));
     let ehr_id = create_ehr(&svc).await;
     let ehr_uuid: ferroehr::ids::EhrId = ehr_id.parse().expect("ehr uuid");
     let status_uid = current_status_uid(&svc, ehr_uuid).await;
@@ -2113,7 +2113,7 @@ async fn deactivating_contribution_carries_its_final_content() {
 #[tokio::test]
 async fn reactivating_contribution_unlocks_its_own_content() {
     let db = testkit::db().await.expect("testkit database");
-    let svc = FerroEhrService::new(db.pool());
+    let svc = FerroEhrService::new(&ferroehr::db::domain::DomainPools::from_shared(&db.pool()));
     let ehr_id = create_ehr(&svc).await;
     let ehr_uuid: ferroehr::ids::EhrId = ehr_id.parse().expect("ehr uuid");
 
@@ -2185,7 +2185,7 @@ async fn reactivating_contribution_unlocks_its_own_content() {
 #[tokio::test]
 async fn concurrent_deactivation_is_seen_by_the_content_commit() {
     let db = testkit::db().await.expect("testkit database");
-    let svc = FerroEhrService::new(db.pool());
+    let svc = FerroEhrService::new(&ferroehr::db::domain::DomainPools::from_shared(&db.pool()));
     let ehr_id = create_ehr(&svc).await;
     let ehr_uuid: ferroehr::ids::EhrId = ehr_id.parse().expect("ehr uuid");
 
@@ -2201,7 +2201,7 @@ async fn concurrent_deactivation_is_seen_by_the_content_commit() {
     // the committed flip and refuse.
     let pool = db.pool();
     let racing = tokio::spawn(async move {
-        let svc = FerroEhrService::new(pool);
+        let svc = FerroEhrService::new(&ferroehr::db::domain::DomainPools::from_shared(&pool));
         let ehr_uuid: ferroehr::ids::EhrId = ehr_id.parse().expect("ehr uuid");
         let content = json!({
             "versions": [ member(composition("raced"), ("249", "creation"), None) ],
@@ -2234,7 +2234,7 @@ async fn concurrent_deactivation_is_seen_by_the_content_commit() {
 #[tokio::test]
 async fn create_body_uid_is_replaced_by_the_minted_identity() {
     let db = testkit::db().await.expect("testkit database");
-    let svc = FerroEhrService::new(db.pool());
+    let svc = FerroEhrService::new(&ferroehr::db::domain::DomainPools::from_shared(&db.pool()));
     let ehr_id = create_ehr(&svc).await;
     let ehr_uuid: ferroehr::ids::EhrId = ehr_id.parse().expect("ehr uuid");
 
@@ -2273,7 +2273,7 @@ async fn create_body_uid_is_replaced_by_the_minted_identity() {
 #[tokio::test]
 async fn a_deactivated_ehr_reports_the_state_conflict_before_a_content_defect() {
     let db = testkit::db().await.expect("testkit database");
-    let svc = FerroEhrService::new(db.pool());
+    let svc = FerroEhrService::new(&ferroehr::db::domain::DomainPools::from_shared(&db.pool()));
     let ehr_id = create_ehr(&svc).await;
     let ehr_uuid: ferroehr::ids::EhrId = ehr_id.parse().expect("ehr uuid");
     let status_uid = current_status_uid(&svc, ehr_uuid).await;

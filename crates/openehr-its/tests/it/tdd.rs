@@ -2,13 +2,7 @@
 // SPDX-FileCopyrightText: openEHR Foundation
 // SPDX-License-Identifier: BUSL-1.1 AND Apache-2.0
 
-#![allow(
-    clippy::panic,
-    clippy::print_stdout,
-    clippy::print_stderr,
-    let_underscore_drop,
-    reason = "test assertions/diagnostics/fixtures"
-)]
+#![expect(clippy::panic, reason = "test assertions/diagnostics/fixtures")]
 //! TDD (Ocean **Template Data Document**) → canonical `COMPOSITION` conversion,
 //! against the vendored CNF corpus TDD instances + their operational templates
 //! (`docs/specs/openehr/CNF/tests/platform/robot/_resources/test_data_sets/`).
@@ -24,9 +18,8 @@
 //! (`archetype_node_id`s, re-materialised `HISTORY`/`EVENT`/`ITEM_TREE`/`ELEMENT`
 //! wrappers, `_type` tags) and the *instance* leaf/context values carried from
 //! the TDD are exactly as expected.
-#![allow(
+#![expect(
     clippy::expect_used,
-    clippy::unwrap_used,
     reason = "integration-test assertions, diagnostics and fixture plumbing outside #[test] fns, which the clippy.toml allow-*-in-tests scoping does not reach"
 )]
 

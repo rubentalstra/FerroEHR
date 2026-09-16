@@ -99,7 +99,7 @@ async fn composition_versions(pool: &PgPool) -> i64 {
 async fn composition_validation_gates_persistence() {
     let db = testkit::db().await.expect("testkit database");
     let pool = db.pool();
-    let svc = FerroEhrService::new(pool.clone());
+    let svc = FerroEhrService::new(&ferroehr::db::domain::DomainPools::from_shared(&pool));
 
     // Ingest the IPS operational template (the validation target).
     svc.template_adl14_upload(fixture(IPS_OPT))
@@ -186,7 +186,7 @@ async fn composition_validation_gates_persistence() {
 async fn composition_update_is_validated() {
     let db = testkit::db().await.expect("testkit database");
     let pool = db.pool();
-    let svc = FerroEhrService::new(pool.clone());
+    let svc = FerroEhrService::new(&ferroehr::db::domain::DomainPools::from_shared(&pool));
 
     svc.template_adl14_upload(fixture(IPS_OPT))
         .await
@@ -249,7 +249,7 @@ async fn composition_update_is_validated() {
 async fn direct_route_commits_stamp_the_template_id() {
     let db = testkit::db().await.expect("testkit database");
     let pool = db.pool();
-    let svc = FerroEhrService::new(pool.clone());
+    let svc = FerroEhrService::new(&ferroehr::db::domain::DomainPools::from_shared(&pool));
 
     svc.template_adl14_upload(fixture(IPS_OPT))
         .await
@@ -355,7 +355,7 @@ async fn incomplete_lifecycle_relaxes_lower_bounds_but_not_wrongness() {
     // while every wrongness check still applies ("but it may not be wrong").
     let db = testkit::db().await.expect("testkit database");
     let pool = db.pool();
-    let svc = FerroEhrService::new(pool.clone());
+    let svc = FerroEhrService::new(&ferroehr::db::domain::DomainPools::from_shared(&pool));
 
     svc.template_adl14_upload(fixture(IPS_OPT))
         .await
@@ -444,7 +444,7 @@ async fn incomplete_lifecycle_relaxes_lower_bounds_but_not_wrongness() {
 async fn warm_template_is_served_from_cache_without_a_store_read() {
     let db = testkit::db().await.expect("testkit database");
     let pool = db.pool();
-    let svc = FerroEhrService::new(pool.clone());
+    let svc = FerroEhrService::new(&ferroehr::db::domain::DomainPools::from_shared(&pool));
 
     let desc = svc
         .template_adl14_upload(fixture(IPS_OPT))
@@ -505,7 +505,7 @@ async fn warm_template_is_served_from_cache_without_a_store_read() {
 async fn deleting_a_template_invalidates_its_web_template_cache() {
     let db = testkit::db().await.expect("testkit database");
     let pool = db.pool();
-    let svc = FerroEhrService::new(pool.clone());
+    let svc = FerroEhrService::new(&ferroehr::db::domain::DomainPools::from_shared(&pool));
 
     let desc = svc
         .template_adl14_upload(fixture(IPS_OPT))
@@ -611,7 +611,7 @@ fn strip_first_element_value(v: &mut Value, path: &str) -> Option<String> {
 async fn element_without_value_or_null_flavour_is_rejected_at_commit() {
     let db = testkit::db().await.expect("testkit database");
     let pool = db.pool();
-    let svc = FerroEhrService::new(pool.clone());
+    let svc = FerroEhrService::new(&ferroehr::db::domain::DomainPools::from_shared(&pool));
 
     svc.template_adl14_upload(fixture(IPS_OPT))
         .await
@@ -646,7 +646,8 @@ async fn element_without_value_or_null_flavour_is_rejected_at_commit() {
 /// direct-route commit against an **ADL2-registered** operational template is
 /// accepted and stamps `version.template_id` — the FK target is the
 /// `template_ref` registry (the union of BOTH template dialects' wire
-/// addresses, `0001_baseline.sql`), so the stamp is not refused as a foreign
+/// addresses, `clinical/0006_definitions.sql`), so the stamp is not refused as
+/// a foreign
 /// key violation the way a `template_store`-only FK would (the CNF
 /// `SF-FLAT-adl2_commit` regression). The in-use delete guard then refuses the
 /// ADL2 template's physical delete while the version references it (the same
@@ -658,7 +659,7 @@ async fn direct_route_commit_against_an_adl2_template_stamps_and_guards() {
     const ADL2_TEMPLATE_ID: &str = "openEHR-EHR-COMPOSITION.cnf_adl2_flat_a.v1.0.0";
     let db = testkit::db().await.expect("testkit database");
     let pool = db.pool();
-    let svc = FerroEhrService::new(pool.clone());
+    let svc = FerroEhrService::new(&ferroehr::db::domain::DomainPools::from_shared(&pool));
 
     // The CNF `SF-FLAT-adl2_commit` provisioning pair + FLAT body, read from
     // the committed catalogue corpus (golden vectors over hand-written

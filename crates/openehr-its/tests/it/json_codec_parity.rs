@@ -2,18 +2,13 @@
 // SPDX-FileCopyrightText: openEHR Foundation
 // SPDX-License-Identifier: BUSL-1.1 AND Apache-2.0
 
-#![allow(
+#![expect(
     clippy::doc_markdown,
     clippy::doc_lazy_continuation,
     reason = "prose with proper nouns + numbered case docs"
 )]
-#![allow(
+#![expect(
     clippy::expect_used,
-    clippy::panic,
-    clippy::print_stdout,
-    clippy::print_stderr,
-    clippy::float_cmp,
-    let_underscore_drop,
     reason = "test assertions/diagnostics/fixtures (expects in helper fns, not #[test] bodies)"
 )]
 //! The **canonical-JSON codec contract** gate: byte hazards + `FromJson`

@@ -352,7 +352,7 @@ predicate name, a malformed age band (the form is `<min>-<max>` whole years,
 both inclusive) or a request with no predicate at all is a `400`. An empty
 cohort runs no AQL and answers an empty result set.
 
-**Measured.** The committed record `docs/conformance/ferroehr/cohort-bench.json`
+**Measured.** The committed record `docs/benchmarks/cohort/record.json`
 in the repository (produced by the ignored `cohort_bench` test, not by the
 conformance instrument) measures the whole call, predicate to result set, over
 a corpus of 100 000 parties, each the subject of one EHR holding one

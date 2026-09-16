@@ -2,11 +2,8 @@
 // SPDX-FileCopyrightText: openEHR Foundation
 // SPDX-License-Identifier: BUSL-1.1 AND Apache-2.0
 
-#![allow(
-    clippy::panic,
+#![expect(
     clippy::expect_used,
-    clippy::unwrap_used,
-    clippy::indexing_slicing,
     reason = "test assertions and fixture plumbing outside #[test] fns, which the \
               clippy.toml allow-*-in-tests scoping does not reach"
 )]

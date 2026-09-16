@@ -122,7 +122,7 @@ async fn drainable_rows(pool: &PgPool, ehr_id: EhrId) -> i64 {
 async fn a_restricted_object_is_refused_on_every_read_and_write_path() {
     let db = testkit::db().await.expect("testkit database");
     let pool = db.pool();
-    let svc = FerroEhrService::new(pool.clone());
+    let svc = FerroEhrService::new(&ferroehr::db::domain::DomainPools::from_shared(&pool));
     let (ehr_id, status_vo) = seed(&svc).await;
 
     // Before the mark: the EHR_STATUS reads, and the population query sees it.
@@ -213,7 +213,7 @@ async fn a_restricted_object_is_refused_on_every_read_and_write_path() {
 async fn a_whole_ehr_restriction_reaches_every_object_and_the_event_stream() {
     let db = testkit::db().await.expect("testkit database");
     let pool = db.pool();
-    let svc = FerroEhrService::new(pool.clone());
+    let svc = FerroEhrService::new(&ferroehr::db::domain::DomainPools::from_shared(&pool));
     let (ehr_id, _status_vo) = seed(&svc).await;
 
     svc.restrict_processing(
@@ -272,7 +272,7 @@ async fn a_whole_ehr_restriction_reaches_every_object_and_the_event_stream() {
 #[tokio::test]
 async fn an_object_restriction_survives_a_whole_ehr_lift() {
     let db = testkit::db().await.expect("testkit database");
-    let svc = FerroEhrService::new(db.pool());
+    let svc = FerroEhrService::new(&ferroehr::db::domain::DomainPools::from_shared(&db.pool()));
     let (ehr_id, status_vo) = seed(&svc).await;
 
     svc.restrict_processing(&ehr_id.to_string(), None, "gdpr-18-1-c", None)
@@ -299,7 +299,7 @@ async fn an_object_restriction_survives_a_whole_ehr_lift() {
 #[tokio::test]
 async fn an_unknown_target_or_ground_is_refused_before_anything_is_recorded() {
     let db = testkit::db().await.expect("testkit database");
-    let svc = FerroEhrService::new(db.pool());
+    let svc = FerroEhrService::new(&ferroehr::db::domain::DomainPools::from_shared(&db.pool()));
     let (ehr_id, status_vo) = seed(&svc).await;
 
     let bad_ground = svc
@@ -338,7 +338,7 @@ async fn an_unknown_target_or_ground_is_refused_before_anything_is_recorded() {
 async fn a_research_objection_leaves_the_population_and_the_care_record_alone() {
     let db = testkit::db().await.expect("testkit database");
     let pool = db.pool();
-    let svc = FerroEhrService::new(pool.clone());
+    let svc = FerroEhrService::new(&ferroehr::db::domain::DomainPools::from_shared(&pool));
     let (ehr_id, _status_vo) = seed(&svc).await;
 
     assert_eq!(population_rows(&svc).await, 1);
@@ -407,7 +407,7 @@ async fn a_research_objection_leaves_the_population_and_the_care_record_alone() 
 async fn the_retention_register_lists_what_is_due_and_deletes_nothing() {
     let db = testkit::db().await.expect("testkit database");
     let pool = db.pool();
-    let svc = FerroEhrService::new(pool.clone());
+    let svc = FerroEhrService::new(&ferroehr::db::domain::DomainPools::from_shared(&pool));
     let (ehr_id, status_vo) = seed(&svc).await;
 
     // EPDV Art. 10 Abs. 1 lit. d asks a certified community to destroy the
@@ -506,7 +506,8 @@ async fn setting_and_lifting_a_mark_is_recorded_in_the_access_trail() {
     let (sender, _handle) = sender::start(config, None, Some(pool.clone()))
         .await
         .expect("the audit sender");
-    let svc = FerroEhrService::new(pool.clone()).with_audit(sender);
+    let svc = FerroEhrService::new(&ferroehr::db::domain::DomainPools::from_shared(&pool))
+        .with_audit(sender);
     let (ehr_id, _status_vo) = seed(&svc).await;
 
     svc.restrict_processing(&ehr_id.to_string(), None, "gdpr-18-1-d", None)

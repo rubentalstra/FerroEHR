@@ -19,9 +19,9 @@ Run once, on an empty data directory, as the bootstrap superuser
   the same grant topology as a hardened deployment;
 - schemas **`ehr`**, **`ext`** and **`audit`** (the local IHE ATNA Audit Record
   Repository), all owned by the app role;
-- extensions installed **by the superuser** so the app role never needs one:
-  `uuid-ossp`, `pgcrypto`, `pg_trgm`, and **`btree_gist`** (required by the
-  temporal `vo_version` `PRIMARY KEY (... WITHOUT OVERLAPS)`), all in `ext`.
+- **`btree_gist`** in `ext`, the one extension the schema needs (it backs the
+  temporal `linkage.subject_ehr` `UNIQUE (... WITHOUT OVERLAPS)`), installed
+  **by the superuser** so the app role never needs the privilege.
 
 This is exactly the set the application's migrator
 (`ferroehr::db::run_migrations`) expects to find when it connects as the app

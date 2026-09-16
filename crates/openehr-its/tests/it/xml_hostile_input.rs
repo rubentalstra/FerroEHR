@@ -22,11 +22,7 @@
 //!
 //! No openEHR spec governs these bounds — our own design.
 
-#![allow(
-    clippy::panic_in_result_fn,
-    clippy::unwrap_used,
-    reason = "test assertions and fixtures"
-)]
+#![expect(clippy::panic_in_result_fn, reason = "test assertions and fixtures")]
 
 use openehr_its::xml::runtime::MAX_DEPTH;
 use openehr_its::xml::runtime::XmlError;

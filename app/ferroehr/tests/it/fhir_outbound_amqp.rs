@@ -170,7 +170,9 @@ async fn commit_emits_reverse_mapped_fhir_resource() {
     let url = amqp_url(&rmq).await;
 
     // Ingest the OPT + create the mapping.
-    let svc = Arc::new(FerroEhrService::new(pool.clone()));
+    let svc = Arc::new(FerroEhrService::new(
+        &ferroehr::db::domain::DomainPools::from_shared(&pool),
+    ));
     svc.template_adl14_upload(fixture(OPT_REL))
         .await
         .expect("ingest OPT");

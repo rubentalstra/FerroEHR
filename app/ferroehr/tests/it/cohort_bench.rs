@@ -6,7 +6,7 @@
 //!
 //! **No openEHR spec governs the cohort surface — our own design/extension**,
 //! and this is a MEASUREMENT, not an acceptance gate: it is `#[ignore]`d, it
-//! writes its record to `docs/conformance/ferroehr/cohort-bench.json`, and it
+//! writes its record to `docs/benchmarks/cohort/record.json`, and it
 //! asserts nothing about timing. The conformance instrument stays the only
 //! acceptance authority.
 //!
@@ -46,7 +46,7 @@ use ferroehr::service::linkage::cohort::{CohortPredicate, CohortQueryRequest};
 use crate::fixtures::{composition, uv};
 
 /// Where the record lands, relative to the repository root.
-const RECORD: &str = "docs/conformance/ferroehr/cohort-bench.json";
+const RECORD: &str = "docs/benchmarks/cohort/record.json";
 /// How many seeds run at once. The service call is I/O-bound on PostgreSQL, so
 /// the width is about keeping the pool busy, not about CPU.
 const SEED_CONCURRENCY: usize = 16;
@@ -310,7 +310,10 @@ async fn cohort_bench() {
         .unwrap_or(100_000);
     let db = testkit::db().await.expect("testkit database");
     let pool = db.pool();
-    let svc = Arc::new(FerroEhrService::new(pool.clone()).with_cohort(bench_config(n)));
+    let svc = Arc::new(
+        FerroEhrService::new(&ferroehr::db::domain::DomainPools::from_shared(&pool))
+            .with_cohort(bench_config(n)),
+    );
 
     let seeded = seed_corpus(&svc, n).await;
     let mut cohorts = Vec::new();

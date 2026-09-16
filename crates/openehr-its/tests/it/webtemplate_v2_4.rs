@@ -13,17 +13,17 @@
 //! (`corpus/adl2-reference`); `openehr-adl` is a dev-only dependency here
 //! (the production `v2_4` front end takes an already-created OPT as input).
 
-#![allow(
+#![expect(
     clippy::expect_used,
     clippy::unwrap_used,
     clippy::panic,
     reason = "integration-test assertions and fixture plumbing outside #[test] fns, which the clippy.toml allow-*-in-tests scoping does not reach"
 )]
-#![allow(
+#![expect(
     clippy::doc_markdown,
     reason = "the module docs quote openEHR spec prose and Simplified-Formats key names as text, not as Rust code references"
 )]
-#![allow(
+#![expect(
     clippy::items_after_statements,
     reason = "fixture helper fns are declared next to the assertions that use them, which keeps each case self-contained"
 )]

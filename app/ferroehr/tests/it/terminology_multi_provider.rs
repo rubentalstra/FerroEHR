@@ -275,7 +275,7 @@ async fn the_disabled_default_builds_no_router_and_calls_nothing() {
     // A bare service answers the bundle terminologies exactly as before and
     // never reaches out.
     let db = testkit::db().await.expect("testkit database");
-    let service = FerroEhrService::new(db.pool());
+    let service = FerroEhrService::new(&ferroehr::db::domain::DomainPools::from_shared(&db.pool()));
     assert!(
         service
             .has_term("ISO_3166-1", "NL", None)
@@ -537,5 +537,6 @@ async fn expand_server(value_set_url: &str, codes: &[&str]) -> MockServer {
 /// comes from the shared harness — never a per-test container.
 async fn service_with(router: TerminologyRouter) -> FerroEhrService {
     let db = testkit::db().await.expect("testkit database");
-    FerroEhrService::new(db.pool()).with_terminology_router(Arc::new(router))
+    FerroEhrService::new(&ferroehr::db::domain::DomainPools::from_shared(&db.pool()))
+        .with_terminology_router(Arc::new(router))
 }

@@ -68,8 +68,30 @@ workflow refuses a tag that has no matching section here.
   `0`, keep forever. A floor and a ceiling that contradict each other are
   refused outright rather than silently resolved in favour of one.
 
+### Fixed
+
+- **A date with text after it compares as no date** (#3436). `openehr_date_days`
+  read the leading four, six or eight characters of a value and ignored the
+  rest, so `20210102XYZ`, `2021-01-02 BC`, `2021-01-02 Europe/Amsterdam` and
+  `2021a` compared and ordered as dates in AQL. BASE `foundation_types`
+  master06-time_types.adoc §Iso8601_date admits none of them, and each now reads
+  as NULL, which is a comparison miss rather than an error. `2021-01-02T10:30:45`
+  and its space-separated and lowercase-`t` variants are unchanged.
+
 ### Changed
 
+- **The server needs only `btree_gist`, which it installs itself** (#3433). The
+  second-generation schema calls nothing from `uuid-ossp`, `pgcrypto` or
+  `pg_trgm`, so the PostgreSQL image no longer installs them and the CI step no
+  longer creates them. `btree_gist` backs the temporal key on
+  `linkage.subject_ehr` and the server creates it at boot, so a plain
+  PostgreSQL 18 database with a migration credential that may create it serves
+  with nothing preinstalled.
+- **The conformance statement is signed by a named person for the company**
+  (#3438). A company signs through someone: the party statement's signatory is
+  now "Ruben Talstra, for Vernum Projecten B.V." with the date of the change,
+  and the rendered statement follows. `AI_STATEMENT.md` names Ruben Talstra as
+  author and maintainer, since the owner of the work is the company.
 - **The Licensor and copyright holder is Vernum Projecten B.V.** (#3435). Every
   statement of the holder names the company: `LICENSE` and the per-crate
   licence texts, `REUSE.toml`, the SPDX header of every first-party file

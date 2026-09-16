@@ -450,7 +450,8 @@ impl FerroEhrService {
         .await?;
         // Maintain the `template_ref` registry (the version.template_id FK
         // target) in the same transaction: a template-kind HRID is a commit
-        // addressable wire identity (`0001_baseline.sql` §template_ref). A
+        // addressable wire identity (`clinical/0006_definitions.sql`
+        // §template_ref). A
         // replace that DEMOTES a template to an archetype deregisters the id
         // unless the OPT 1.4 store also claims it — and the FK blocks the
         // deregistration loudly when committed versions still reference it.

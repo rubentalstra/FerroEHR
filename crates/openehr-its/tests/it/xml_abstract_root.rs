@@ -2,14 +2,7 @@
 // SPDX-FileCopyrightText: openEHR Foundation
 // SPDX-License-Identifier: BUSL-1.1 AND Apache-2.0
 
-#![allow(
-    clippy::panic,
-    clippy::expect_used,
-    clippy::print_stdout,
-    clippy::print_stderr,
-    let_underscore_drop,
-    reason = "test assertions/diagnostics/fixtures"
-)]
+#![expect(clippy::expect_used, reason = "test assertions/diagnostics/fixtures")]
 //! The abstract-root serialization path (`to_canonical_xml_declared`).
 //!
 //! `ALL/Version.xsd` publishes exactly one global element for the change-control

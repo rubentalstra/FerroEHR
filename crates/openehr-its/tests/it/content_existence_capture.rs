@@ -16,14 +16,7 @@
 //! the vendored CNF base OBSERVATION template, then asserting a committed EVENT
 //! that omits `state` is rejected while one carrying it is not.
 
-#![allow(
-    clippy::panic,
-    clippy::expect_used,
-    clippy::unwrap_used,
-    clippy::print_stdout,
-    let_underscore_drop,
-    reason = "test assertions/diagnostics"
-)]
+#![expect(clippy::expect_used, reason = "test assertions/diagnostics")]
 
 use std::path::PathBuf;
 

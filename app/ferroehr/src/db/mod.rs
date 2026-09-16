@@ -636,8 +636,15 @@ const FIRST_GENERATION_SETS: &[FirstGenerationSet] = &[
     },
 ];
 
-/// Bootstrap done outside the migrations: the five schemas and `btree_gist`
-/// (required by the temporal `WITHOUT OVERLAPS` primary key).
+/// Bootstrap done outside the migrations: the five schemas and `btree_gist`.
+///
+/// `btree_gist` is the only extension the schema needs — it backs
+/// `linkage.subject_ehr`'s temporal `UNIQUE (... WITHOUT OVERLAPS)`, which
+/// PostgreSQL enforces as a `GiST` index over its operator classes
+/// (<https://www.postgresql.org/docs/18/sql-createtable.html>) — and installing
+/// it here is what lets a plain PostgreSQL 18 database serve with nothing
+/// preinstalled. Every test proves it: `testkit` builds its template databases
+/// by running exactly this path against a fresh database.
 const BOOTSTRAP: &[&str] = &[
     "CREATE SCHEMA IF NOT EXISTS ext",
     "CREATE SCHEMA IF NOT EXISTS clinical",

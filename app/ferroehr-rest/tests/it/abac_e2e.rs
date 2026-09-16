@@ -210,7 +210,7 @@ fn authz_with(
 /// A real service over a fresh DB, optionally wired with an ATNA audit sender.
 async fn service(audit: Option<AuditSender>) -> (testkit::TestDb, Arc<FerroEhrService>) {
     let (pg, pool) = common::migrated_pool().await;
-    let mut svc = FerroEhrService::new(pool);
+    let mut svc = FerroEhrService::new(&ferroehr::db::domain::DomainPools::from_shared(&pool));
     if let Some(sender) = audit {
         svc = svc.with_audit(sender);
     }
@@ -547,7 +547,10 @@ async fn the_accessing_organisation_reaches_the_stored_record() {
     let (sender, _handle) = start(cfg, None, Some(pool.clone()))
         .await
         .expect("audit start");
-    let svc = Arc::new(FerroEhrService::new(pool.clone()).with_audit(sender));
+    let svc = Arc::new(
+        FerroEhrService::new(&ferroehr::db::domain::DomainPools::from_shared(&pool))
+            .with_audit(sender),
+    );
     let seed = build_with(seed_config(), Arc::clone(&svc)).expect("seed app");
     seed_ehr(&seed, EHR_OWN).await;
     let app = abac_app(Arc::clone(&svc), true);
@@ -615,7 +618,10 @@ async fn the_accessing_organisation_is_recorded_with_the_abac_gate_off() {
     let (sender, _handle) = start(cfg, None, Some(pool.clone()))
         .await
         .expect("audit start");
-    let svc = Arc::new(FerroEhrService::new(pool.clone()).with_audit(sender));
+    let svc = Arc::new(
+        FerroEhrService::new(&ferroehr::db::domain::DomainPools::from_shared(&pool))
+            .with_audit(sender),
+    );
     let seed = build_with(seed_config(), Arc::clone(&svc)).expect("seed app");
     seed_ehr(&seed, EHR_OWN).await;
     let app = abac_app(Arc::clone(&svc), false);

@@ -106,7 +106,8 @@ fn enforcing_service(db: &testkit::TestDb) -> FerroEhrService {
         ..PrivacyConfig::default()
     })
     .expect("the deployment policy compiles");
-    FerroEhrService::new(db.pool()).with_privacy(Arc::new(policy))
+    FerroEhrService::new(&ferroehr::db::domain::DomainPools::from_shared(&db.pool()))
+        .with_privacy(Arc::new(policy))
 }
 
 fn pseudonymised_status() -> openehr_rm::prelude::EhrStatus {

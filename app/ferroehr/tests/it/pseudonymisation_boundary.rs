@@ -262,7 +262,7 @@ async fn each_runtime_role_is_refused_every_relation_in_the_other_domain() {
 async fn a_party_committed_through_the_service_lands_only_in_the_demographic_domain() {
     let db = testkit::db().await.expect("testkit database");
     let pool = db.pool();
-    let service = FerroEhrService::new(pool.clone());
+    let service = FerroEhrService::new(&ferroehr::db::domain::DomainPools::from_shared(&pool));
 
     let created = service
         .party_create(PartyKind::Person, typed(&a_person()), None)
@@ -770,8 +770,8 @@ async fn a_protected_identifier_never_reaches_the_versioned_body() {
     )
     .expect("the engine builds")
     .expect("protection is enabled");
-    let service =
-        FerroEhrService::new(pool.clone()).with_identifier_protection(std::sync::Arc::new(engine));
+    let service = FerroEhrService::new(&ferroehr::db::domain::DomainPools::from_shared(&pool))
+        .with_identifier_protection(std::sync::Arc::new(engine));
 
     let mut person = a_person();
     person["identities"][0]["details"]["items"]
@@ -881,7 +881,7 @@ async fn resolving_an_identifier_is_recorded_as_an_access() {
     let (sender, _handle): (_, AuditHandle) = start(audit_config, None, Some(pool.clone()))
         .await
         .expect("the audit sender");
-    let service = FerroEhrService::new(pool.clone())
+    let service = FerroEhrService::new(&ferroehr::db::domain::DomainPools::from_shared(&pool))
         .with_identifier_protection(std::sync::Arc::new(engine))
         .with_audit(sender);
 
@@ -1111,7 +1111,7 @@ async fn mapping_counts(pool: &PgPool, party: Uuid) -> (i64, i64) {
 async fn a_merge_and_a_split_keep_their_history_and_leave_one_open_mapping() {
     let db = testkit::db().await.expect("testkit database");
     let pool = db.pool();
-    let service = FerroEhrService::new(pool.clone());
+    let service = FerroEhrService::new(&ferroehr::db::domain::DomainPools::from_shared(&pool));
 
     let (alice, bob) = (
         ferroehr::ids::VoId(Uuid::now_v7()),
@@ -1238,7 +1238,8 @@ async fn resolving_a_party_to_its_ehr_is_recorded_as_an_access() {
     let (sender, _handle): (_, AuditHandle) = start(audit_config, None, Some(pool.clone()))
         .await
         .expect("the audit sender");
-    let service = FerroEhrService::new(pool.clone()).with_audit(sender);
+    let service = FerroEhrService::new(&ferroehr::db::domain::DomainPools::from_shared(&pool))
+        .with_audit(sender);
 
     let party = ferroehr::ids::VoId(Uuid::now_v7());
     let ehr = ferroehr::ids::EhrId(Uuid::now_v7());
@@ -1390,7 +1391,7 @@ async fn an_identity_resolves_to_an_ehr_across_three_separated_credentials() {
     .expect("the engine builds")
     .expect("protection is enabled");
 
-    let service = FerroEhrService::new(clinical)
+    let service = FerroEhrService::new(&ferroehr::db::domain::DomainPools::from_shared(&clinical))
         .with_linkage_pool(linkage.clone())
         .with_identifier_protection(std::sync::Arc::new(engine));
 
@@ -1461,7 +1462,7 @@ async fn the_server_mints_the_subject_pseudonym_and_no_caller_value_enters_it() 
             ..ferroehr::privacy::config::PrivacyConfig::default()
         })
         .expect("the policy compiles");
-    let service = FerroEhrService::new(pool.clone())
+    let service = FerroEhrService::new(&ferroehr::db::domain::DomainPools::from_shared(&pool))
         .with_identifier_protection(std::sync::Arc::new(engine))
         .with_privacy(std::sync::Arc::new(policy));
 
@@ -1507,18 +1508,20 @@ async fn the_server_mints_the_subject_pseudonym_and_no_caller_value_enters_it() 
 
     // Without a declared namespace there is nothing to mint into; without the
     // key there is nothing to derive from. Both refuse, typed.
-    let unnamed = FerroEhrService::new(pool.clone()).with_identifier_protection_opt(None);
+    let unnamed = FerroEhrService::new(&ferroehr::db::domain::DomainPools::from_shared(&pool))
+        .with_identifier_protection_opt(None);
     assert!(matches!(
         unnamed.mint_subject_pseudonym(party),
         Err(LinkageError::NoPseudonymNamespace)
     ));
-    let keyless = FerroEhrService::new(pool.clone()).with_privacy(std::sync::Arc::new(
-        ferroehr::privacy::PrivacyPolicy::compile(&ferroehr::privacy::config::PrivacyConfig {
-            subject_namespaces: vec![namespace.to_owned()],
-            ..ferroehr::privacy::config::PrivacyConfig::default()
-        })
-        .expect("compiles"),
-    ));
+    let keyless = FerroEhrService::new(&ferroehr::db::domain::DomainPools::from_shared(&pool))
+        .with_privacy(std::sync::Arc::new(
+            ferroehr::privacy::PrivacyPolicy::compile(&ferroehr::privacy::config::PrivacyConfig {
+                subject_namespaces: vec![namespace.to_owned()],
+                ..ferroehr::privacy::config::PrivacyConfig::default()
+            })
+            .expect("compiles"),
+        ));
     assert!(matches!(
         keyless.mint_subject_pseudonym(party),
         Err(LinkageError::NoMintingKey)

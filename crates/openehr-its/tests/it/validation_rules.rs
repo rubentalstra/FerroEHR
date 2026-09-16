@@ -6,13 +6,6 @@
 //! `WebTemplate` nodes + minimal instances (no OPT parsing) so each rule is
 //! exercised in isolation. End-to-end corpus tests live in `tests/validation.rs`.
 
-#![allow(
-    clippy::panic,
-    clippy::print_stdout,
-    clippy::print_stderr,
-    let_underscore_drop,
-    reason = "test assertions/diagnostics/fixtures"
-)]
 use indexmap::IndexMap;
 use serde_json::{Value, json};
 

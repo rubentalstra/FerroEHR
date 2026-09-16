@@ -55,7 +55,8 @@ const SYNTHETIC_FODSELSNUMMER: &str = "15038545660";
 
 fn service(db: &testkit::TestDb, config: &PrivacyConfig) -> FerroEhrService {
     let policy = PrivacyPolicy::compile(config).expect("the test policy compiles");
-    FerroEhrService::new(db.pool()).with_privacy(Arc::new(policy))
+    FerroEhrService::new(&ferroehr::db::domain::DomainPools::from_shared(&db.pool()))
+        .with_privacy(Arc::new(policy))
 }
 
 /// The configuration a deployment that has declared its pseudonymisation

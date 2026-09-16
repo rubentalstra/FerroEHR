@@ -60,8 +60,9 @@ specification engines `openehr-query`, `openehr-adl` and `openehr-its`) is licen
 [Business Source License 1.1](https://github.com/rubentalstra/FerroEHR/blob/main/LICENSE),
 SPDX identifier `BUSL-1.1`. The Licensor is Vernum Projecten B.V. The copyright
 holder is stated as *Vernum Projecten B.V.*, identically in `LICENSE`, in
-`REUSE.toml`, and in every first-party file header; a CI gate compares the
-three so they cannot drift apart. Ruben Talstra remains the maintainer, which
+`REUSE.toml`, and in every first-party file header; a CI gate compares those
+sources with this page and with the `README.md` of each hand-written engine
+crate, so they cannot drift apart. Ruben Talstra remains the maintainer, which
 is a credit rather than a holder statement.
 
 FerroEHR is source-available. The Business Source License 1.1 is not an
@@ -278,7 +279,7 @@ see part of the picture:
   states a license other than the one declared for its path: one for Rust, one
   for shell, SQL and YAML.
 - One check fails if the copyright holder is stated differently in `LICENSE`,
-  `REUSE.toml`, and the file headers.
+  `REUSE.toml`, the file headers, this page, or an engine crate's `README.md`.
 - One check refuses copyleft license **text** inside this project's own source,
   which is a conflict no reviewer reliably catches by eye.
 

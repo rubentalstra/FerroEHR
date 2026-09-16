@@ -10,8 +10,8 @@
 //! service") and an optional `Interval<Iso8601_date_time>` matched against the
 //! CONTRIBUTION / version audit `time_committed`. The enumeration members are
 //! `platform_service.adoc`. No openEHR spec governs the SQL that answers these —
-//! our own design over the greenfield `contribution` / `version` / `audit`
-//! tables (`0001_baseline.sql`).
+//! our own design over the greenfield `contribution` / `version` /
+//! `commit_audit` tables (`clinical/0003_change_control.sql`).
 
 use crate::service::FerroEhrService;
 use crate::service::admin::types::StatTimeRange;
@@ -105,7 +105,8 @@ impl FerroEhrService {
         // `($3 AND …) OR (NOT $3 AND …)` scoping predicate resists index
         // planning. Unbounded takes an index-only count over
         // `idx_contribution_ehr_id`, bounded the audit join behind
-        // `idx_audit_time_committed` (0001_baseline.sql).
+        // `idx_commit_audit_time_committed`
+        // (clinical/0003_change_control.sql).
         let count: i64 = if lo.is_none() && hi.is_none() {
             let sql = if ehr_scoped {
                 "SELECT count(*) FROM contribution WHERE ehr_id IS NOT NULL"

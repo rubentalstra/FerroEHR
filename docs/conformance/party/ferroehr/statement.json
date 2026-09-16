@@ -123,9 +123,9 @@
     "environment_ref": "ixit.json#/environment"
   },
   "attestation": {
-    "signatory": "Vernum Projecten B.V.",
+    "signatory": "Ruben Talstra, for Vernum Projecten B.V.",
     "role": "Owner",
-    "date": "2026-07-22",
+    "date": "2026-09-16",
     "statement": "We declare conformance of FerroEHR to the openEHR CNF 2.0 platform test schedule under the declared capabilities, options and technology profile; every claim derives from the committed machine-verified results."
   }
 }

@@ -25,8 +25,9 @@
 //!   `Iden` enums, one variant per relation, no string path in.
 //! * **Columns** — string literals at every `aql::sql::expr::col` call site,
 //!   plus `storage::promoted::PROMOTED_LEAVES[..].column`, whose fields are
-//!   `&'static str`. The `column_vocab` unit test in `aql::sql` pins the whole
-//!   vocabulary against `migrations/ehr/0001_baseline.sql`.
+//!   `&'static str`. `IDENTIFIERS` below pins the whole vocabulary against the
+//!   clinical migrations that define those relations
+//!   (`migrations/clinical/0002_ehr.sql` through `0006_definitions.sql`).
 //! * **Table aliases** — `format!` over an integer source id or the builder's
 //!   own counter, never over query text: `n{sid}`, `v{sid}`, `e{sid}`,
 //!   `x{ctr}`, `xv{ctr}`, `s{ctr}`, `w{ctr}`, `p{ctr}`, `qg{ctr}`, `esv{ctr}`,
@@ -540,8 +541,8 @@ const CORPUS: &[&str] = &[
 /// The relation and column names the lowering may emit, plus the one `to_char`
 /// format fragment that renders inside double quotes.
 ///
-/// The column names are the vocabulary the `column_vocab` unit test in
-/// `aql::sql` pins against `migrations/ehr/0001_baseline.sql`.
+/// The column names are the vocabulary the clinical migrations define
+/// (`migrations/clinical/0002_ehr.sql` through `0006_definitions.sql`).
 const IDENTIFIERS: &[&str] = &[
     // relations
     "node",

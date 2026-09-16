@@ -2,13 +2,6 @@
 // SPDX-FileCopyrightText: openEHR Foundation
 // SPDX-License-Identifier: BUSL-1.1 AND Apache-2.0
 
-#![allow(
-    clippy::panic,
-    clippy::print_stdout,
-    clippy::print_stderr,
-    let_underscore_drop,
-    reason = "test assertions/diagnostics/fixtures"
-)]
 //! opt14 ↔ `v1_4` constraint-model divergence sentinel.
 //!
 //! The AOM 1.4 constraint model exists twice by design: BMM-generated

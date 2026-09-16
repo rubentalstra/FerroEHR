@@ -92,7 +92,7 @@ async fn every_server_minted_identifier_carries_the_stamp_in_force() {
     let db = testkit::db().await.expect("testkit database");
 
     // A bare service: no licence in force, the fail-safe key.
-    let svc = FerroEhrService::new(db.pool());
+    let svc = FerroEhrService::new(&ferroehr::db::domain::DomainPools::from_shared(&db.pool()));
     let fail_safe = StampKey::fail_safe();
     let ehr_id = svc.create_ehr(None).await.expect("create_ehr");
     assert!(fail_safe.carries(ehr_id.0), "EHR id {ehr_id:?}");
@@ -106,7 +106,8 @@ async fn every_server_minted_identifier_carries_the_stamp_in_force() {
     // With a licence in force: its key, and the fail-safe key no longer matches.
     let licence_id = Uuid::now_v7();
     let key = StampKey::for_licence(licence_id);
-    let svc = FerroEhrService::new(db.pool()).with_licence(licensed(licence_id));
+    let svc = FerroEhrService::new(&ferroehr::db::domain::DomainPools::from_shared(&db.pool()))
+        .with_licence(licensed(licence_id));
     assert!(svc.licence().is_licensed());
     let ehr_id = svc.create_ehr(None).await.expect("create_ehr");
     assert!(key.carries(ehr_id.0), "EHR id {ehr_id:?}");

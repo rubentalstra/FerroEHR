@@ -2,11 +2,7 @@
 // SPDX-FileCopyrightText: openEHR Foundation
 // SPDX-License-Identifier: BUSL-1.1 AND Apache-2.0
 
-#![allow(
-    clippy::panic,
-    clippy::print_stdout,
-    reason = "test assertions/diagnostics/fixtures"
-)]
+#![expect(clippy::panic, reason = "test assertions/diagnostics/fixtures")]
 //! Breadth gate over the AM 1.4 **archetype XML** twin of the CKM archetype
 //! pack (`corpus/archetypes/ckm/xml/`, vendored by
 //! `scripts/vendor/ckm-archetypes.sh --with-xml`).

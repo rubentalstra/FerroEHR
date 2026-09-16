@@ -36,7 +36,7 @@ use crate::fixtures::{uid, uv, vo_of};
 pub(crate) async fn repository() -> (testkit::TestDb, PgPool, FerroEhrService) {
     let db = testkit::db().await.expect("testkit database");
     let pool = db.pool();
-    let service = FerroEhrService::new(pool.clone());
+    let service = FerroEhrService::new(&ferroehr::db::domain::DomainPools::from_shared(&pool));
     (db, pool, service)
 }
 

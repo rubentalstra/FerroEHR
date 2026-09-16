@@ -11,7 +11,12 @@
 # header and a lawyer reading LICENSE come away with different answers about who
 # holds the copyright — the exact ambiguity per-file licensing exists to remove.
 #
-# The divergence survived because nothing compared the three sources. This does.
+# The divergence survived because nothing compared the sources. This compares
+# seven: the three that state the holder in a machine-readable field (`LICENSE`,
+# `REUSE.toml`, the emitter constant) and the four that state it in prose a
+# reader is handed — the published licensing page, which states it twice, and
+# the `README.md` of each hand-written engine crate, which ships inside the
+# published package (#3438).
 #
 # NOT compared: `CITATION.cff` authors and `.zenodo.json` creators. Those record
 # AUTHORSHIP for citation, which is a different datum from the copyright holder
@@ -56,6 +61,33 @@ check "REUSE.toml" \
 check "tools/openehr-codegen/src/render/spdx.rs" \
   "$(sed -n 's/^pub(crate) const PROJECT_COPYRIGHT: &str = "\(.*\)";$/\1/p' \
        tools/openehr-codegen/src/render/spdx.rs | head -1)"
+
+# The prose sources: a file states the holder by name, a fixed number of times.
+# Prose carries no field to parse, so the assertion is the COUNT — rewrite one
+# of the licensing page's two statements and the count drops to one.
+check_count() {
+  local what="$1" file="$2" want="$3" got
+  if [[ ! -f "$file" ]]; then
+    echo "error: $what is missing: $file" >&2
+    fail=1
+    return
+  fi
+  got=$(grep -o -F "$HOLDER" "$file" | wc -l | tr -d ' ')
+  if [[ "$got" != "$want" ]]; then
+    echo "error: $what states '$HOLDER' $got time(s); it must state it $want time(s)" >&2
+    fail=1
+  fi
+}
+
+# The published licensing page names the Licensor and then states the holder.
+check_count "website/book/src/licensing.md" website/book/src/licensing.md 2
+
+# The three hand-written engine crates carry the BUSL paragraph by hand, and a
+# crate README ships inside the published package.
+for crate_readme in crates/openehr-adl/README.md crates/openehr-query/README.md \
+  crates/openehr-its/README.md; do
+  check_count "$crate_readme" "$crate_readme" 1
+done
 
 if [[ "$fail" -ne 0 ]]; then
   echo >&2

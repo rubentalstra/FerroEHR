@@ -141,7 +141,7 @@ impl FerroEhrService {
         // Register the wire address in `template_ref` (the version.template_id
         // FK target) in the same transaction — the registry is the union of both
         // template dialects' addresses, so `DO NOTHING` absorbs an ADL2 claim of
-        // the same id (`0001_baseline.sql` §template_ref).
+        // the same id (`clinical/0006_definitions.sql` §template_ref).
         sqlx::query("INSERT INTO template_ref (template_id) VALUES ($1) ON CONFLICT DO NOTHING")
             .bind(&template_id)
             .execute(&mut *tx)
@@ -219,8 +219,9 @@ impl FerroEhrService {
 
     /// The openEHR template descriptor for one row (ITS-REST template list shape).
     ///
-    /// `template_id`/`created_at` are `NOT NULL` (`0001_baseline.sql`
-    /// §`template_store`), so a decode failure there is a genuine server fault:
+    /// `template_id`/`created_at` are `NOT NULL`
+    /// (`clinical/0006_definitions.sql` §`template_store`), so a decode failure
+    /// there is a genuine server fault:
     /// surface it (`?` → `500`) rather than silently blanking the field.
     /// `concept`/`root_archetype` are genuinely nullable, so a SQL
     /// `NULL` stays `None` while a *decode* error still propagates.

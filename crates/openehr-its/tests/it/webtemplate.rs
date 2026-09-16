@@ -2,13 +2,7 @@
 // SPDX-FileCopyrightText: openEHR Foundation
 // SPDX-License-Identifier: BUSL-1.1 AND Apache-2.0
 
-#![allow(
-    clippy::panic,
-    clippy::print_stdout,
-    clippy::print_stderr,
-    let_underscore_drop,
-    reason = "test assertions/diagnostics/fixtures"
-)]
+#![expect(clippy::panic, reason = "test assertions/diagnostics/fixtures")]
 //! `WebTemplate` builder tests.
 //!
 //! * **smoke gate** — every `.opt` in the 91-file service corpus AND the full

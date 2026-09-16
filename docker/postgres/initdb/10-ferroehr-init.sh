@@ -11,9 +11,9 @@
 #   * schemas `clinical`, `ext` and `audit` owned by that role (the app's
 #     `CREATE SCHEMA IF NOT EXISTS` then no-ops; it also bootstraps `party` and
 #     `linkage`, which it owns and this script leaves to it);
-#   * the extensions the stack needs, installed here by the superuser
-#     (`CREATE EXTENSION` on non-trusted extensions requires superuser — the
-#     whole reason this image exists). The app's bootstrap
+#   * btree_gist, the one extension the schema needs, installed here by the
+#     superuser (`CREATE EXTENSION` on non-trusted extensions requires
+#     superuser — the whole reason this image exists). The app's bootstrap
 #     `CREATE EXTENSION IF NOT EXISTS btree_gist WITH SCHEMA ext` then no-ops.
 set -Eeuo pipefail
 
@@ -106,12 +106,11 @@ CREATE SCHEMA IF NOT EXISTS ext AUTHORIZATION "${APP_USER}";
 -- The local IHE ATNA Audit Record Repository, deliberately its own schema.
 CREATE SCHEMA IF NOT EXISTS audit AUTHORIZATION "${APP_USER}";
 
--- Installed by the superuser so the app role never needs it.
-CREATE EXTENSION IF NOT EXISTS "uuid-ossp" WITH SCHEMA ext;
-CREATE EXTENSION IF NOT EXISTS pgcrypto   WITH SCHEMA ext;
-CREATE EXTENSION IF NOT EXISTS pg_trgm    WITH SCHEMA ext;
--- Required by linkage.subject_ehr's temporal UNIQUE (... WITHOUT OVERLAPS),
--- which PostgreSQL enforces as a GiST index over btree_gist operator classes.
+-- btree_gist is the one extension the schema needs: it backs
+-- linkage.subject_ehr's temporal UNIQUE (... WITHOUT OVERLAPS), which
+-- PostgreSQL enforces as a GiST index over btree_gist operator classes.
+-- Installed here by the superuser so the app role never needs it; the server's
+-- own bootstrap runs the same statement and then no-ops.
 CREATE EXTENSION IF NOT EXISTS btree_gist WITH SCHEMA ext;
 
 -- The app role owns the schemas already; make the intent explicit.

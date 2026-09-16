@@ -43,7 +43,7 @@ const SYNTHETIC_BSN: &str = "111222333"; // privacy-allow: synthetic
 
 /// A repository that accepts anything: the source side, which has to hold the
 /// identifier the target refuses.
-fn permissive(pool: PgPool) -> FerroEhrService {
+fn permissive(pool: &PgPool) -> FerroEhrService {
     let policy = PrivacyPolicy::compile(&PrivacyConfig {
         allow_identified_parties_in_ehr: true,
         identifier_scan: IdentifierScanConfig {
@@ -54,14 +54,16 @@ fn permissive(pool: PgPool) -> FerroEhrService {
         ..PrivacyConfig::default()
     })
     .expect("the permissive policy compiles");
-    FerroEhrService::new(pool).with_privacy(Arc::new(policy))
+    FerroEhrService::new(&ferroehr::db::domain::DomainPools::from_shared(pool))
+        .with_privacy(Arc::new(policy))
 }
 
 /// A repository under the configuration default: every rule, `strict`.
-fn strict(pool: PgPool) -> FerroEhrService {
+fn strict(pool: &PgPool) -> FerroEhrService {
     let policy =
         PrivacyPolicy::compile(&PrivacyConfig::default()).expect("the default policy compiles");
-    FerroEhrService::new(pool).with_privacy(Arc::new(policy))
+    FerroEhrService::new(&ferroehr::db::domain::DomainPools::from_shared(pool))
+        .with_privacy(Arc::new(policy))
 }
 
 /// An EHR whose directory FOLDER is named with the synthetic identifier,
@@ -100,9 +102,9 @@ async fn version_rows(pool: &PgPool, ehr: EhrId) -> i64 {
 #[tokio::test]
 async fn an_extract_carrying_an_identifier_is_refused_on_import() {
     let source_db = testkit::db().await.expect("testkit database");
-    let source = permissive(source_db.pool());
+    let source = permissive(&source_db.pool());
     let target_db = testkit::db().await.expect("testkit database");
-    let target = strict(target_db.pool());
+    let target = strict(&target_db.pool());
 
     let ehr = seed_ehr_with_identifier_in_folder(&source).await;
     let mut extracts = source.extract_ehrs(ehr).await.expect("export");
@@ -134,9 +136,9 @@ async fn an_extract_carrying_an_identifier_is_refused_on_import() {
 #[tokio::test]
 async fn an_archive_carrying_an_identifier_is_refused_on_load() {
     let source_db = testkit::db().await.expect("testkit database");
-    let source = permissive(source_db.pool());
+    let source = permissive(&source_db.pool());
     let target_db = testkit::db().await.expect("testkit database");
-    let target = strict(target_db.pool());
+    let target = strict(&target_db.pool());
 
     let ehr = seed_ehr_with_identifier_in_folder(&source).await;
     let dir = archive_dir();

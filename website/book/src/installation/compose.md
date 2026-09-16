@@ -31,7 +31,7 @@ FerroEHR publishes three container images to GHCR:
 | Image | Contents |
 |---|---|
 | `ghcr.io/rubentalstra/ferroehr` | The `ferroehr` server binary on a distroless, non-root, shell-less multi-arch base (amd64 + arm64). Configured by a mounted TOML file and/or `FERROEHR__*` environment variables. |
-| `ghcr.io/rubentalstra/ferroehr-postgres` | `postgres:18.6` (with Debian security updates applied at image build) plus init scripts that pre-create the application login role, the eight `NOLOGIN` group roles (`ferroehr_migrator`, `ferroehr_clinical`, `ferroehr_clinical_reader`, and the five domain roles `ferroehr_clinical`, `ferroehr_party`, `ferroehr_clinical_reader`, `ferroehr_party_reader`, `ferroehr_linkage`), the database, the schemas (`clinical`, `ext`, `audit`) and the extensions (`uuid-ossp`, `pgcrypto`, `pg_trgm`, `btree_gist`), so the app role never needs superuser. |
+| `ghcr.io/rubentalstra/ferroehr-postgres` | `postgres:18.6` (with Debian security updates applied at image build) plus init scripts that pre-create the application login role, the eight `NOLOGIN` group roles (`ferroehr_migrator`, `ferroehr_clinical`, `ferroehr_clinical_reader`, and the five domain roles `ferroehr_clinical`, `ferroehr_party`, `ferroehr_clinical_reader`, `ferroehr_party_reader`, `ferroehr_linkage`), the database, the schemas (`clinical`, `ext`, `audit`) and the one extension the schema needs, `btree_gist`, so the app role never needs superuser. |
 | `ghcr.io/rubentalstra/ferroehr-viewer` | The [viewer](../viewer/index.md), a standalone web application that talks to the CDR strictly over ITS-REST. Optional; see the `viewer` profile below. |
 
 Each image is published under several tags:
@@ -69,7 +69,10 @@ schema](../operations.md#which-credential-prepares-the-schema) and
 [Applying migrations](../operations.md#applying-migrations).
 
 The PostgreSQL image is **init-scripts only**: it creates roles, schemas and
-extensions, and bakes in no migration state. The server owns the schema content
+`btree_gist`, and bakes in no migration state. That extension is the only one
+the schema needs, and the server installs it itself at boot
+(`CREATE EXTENSION IF NOT EXISTS btree_gist`), so a plain PostgreSQL 18 with a
+superuser-capable migration credential serves just as well. The server owns the schema content
 and applies its migrations idempotently at every boot, so a fresh database
 self-provisions and a restart is a no-op.
 

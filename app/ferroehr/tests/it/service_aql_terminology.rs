@@ -164,7 +164,7 @@ fn names(result: &Value) -> Vec<String> {
 #[tokio::test]
 async fn terminology_expand_bundle_merges_group_codes() {
     let db = testkit::db().await.expect("testkit database");
-    let svc = FerroEhrService::new(db.pool());
+    let svc = FerroEhrService::new(&ferroehr::db::domain::DomainPools::from_shared(&db.pool()));
     let ehr = create_ehr(&svc).await;
 
     // `249` (creation) is in the `audit_change_type` group; `433` (event) is a
@@ -198,7 +198,7 @@ async fn terminology_expand_bundle_merges_group_codes() {
 #[tokio::test]
 async fn terminology_expand_unknown_service_is_bad_request() {
     let db = testkit::db().await.expect("testkit database");
-    let svc = FerroEhrService::new(db.pool());
+    let svc = FerroEhrService::new(&ferroehr::db::domain::DomainPools::from_shared(&db.pool()));
     let ehr = create_ehr(&svc).await;
     create_coded(&svc, &ehr, "x", "openehr", "249").await;
 
@@ -219,7 +219,7 @@ async fn terminology_expand_unknown_service_is_bad_request() {
 #[tokio::test]
 async fn terminology_expand_unknown_value_set_is_bad_request() {
     let db = testkit::db().await.expect("testkit database");
-    let svc = FerroEhrService::new(db.pool());
+    let svc = FerroEhrService::new(&ferroehr::db::domain::DomainPools::from_shared(&db.pool()));
     let ehr = create_ehr(&svc).await;
     create_coded(&svc, &ehr, "x", "openehr", "249").await;
 
@@ -284,7 +284,7 @@ fn fhir_provider(base: &str) -> FhirTerminologyProvider {
 async fn terminology_expand_fhir_merges_expansion_codes() {
     let server = fhir_expand_server().await;
     let db = testkit::db().await.expect("testkit database");
-    let svc = FerroEhrService::new(db.pool())
+    let svc = FerroEhrService::new(&ferroehr::db::domain::DomainPools::from_shared(&db.pool()))
         .with_external_terminology(Arc::new(fhir_provider(&server.uri())));
     let ehr = create_ehr(&svc).await;
 
@@ -317,7 +317,7 @@ async fn terminology_expand_fhir_merges_expansion_codes() {
 #[tokio::test]
 async fn terminology_query_is_never_cached() {
     let db = testkit::db().await.expect("testkit database");
-    let svc = FerroEhrService::new(db.pool());
+    let svc = FerroEhrService::new(&ferroehr::db::domain::DomainPools::from_shared(&db.pool()));
     let ehr = create_ehr(&svc).await;
     create_coded(&svc, &ehr, "in-group", "openehr", "249").await;
 

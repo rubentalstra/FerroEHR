@@ -95,8 +95,9 @@ async fn stamp(pool: &sqlx::PgPool, vo_id: VoId) -> Option<bool> {
 }
 
 /// A `stable`-profile service over the same database.
-fn stable_service(pool: sqlx::PgPool) -> FerroEhrService {
-    FerroEhrService::new(pool).with_spec_profile(SpecProfile::Stable)
+fn stable_service(pool: &sqlx::PgPool) -> FerroEhrService {
+    FerroEhrService::new(&ferroehr::db::domain::DomainPools::from_shared(pool))
+        .with_spec_profile(SpecProfile::Stable)
 }
 
 /// Commit one COMPOSITION into a fresh EHR under the DEVELOPMENT profile.
@@ -114,7 +115,7 @@ async fn commit(svc: &FerroEhrService, body: &Value) -> (EhrId, VoId) {
 #[tokio::test]
 async fn a_released_surface_composition_stamps_true_and_reads_under_both_profiles() {
     let db = testkit::db().await.expect("testkit database");
-    let svc = FerroEhrService::new(db.pool());
+    let svc = FerroEhrService::new(&ferroehr::db::domain::DomainPools::from_shared(&db.pool()));
     let (ehr_id, vo_id) = commit(&svc, &stable_clean_composition()).await;
 
     assert_eq!(
@@ -129,7 +130,7 @@ async fn a_released_surface_composition_stamps_true_and_reads_under_both_profile
         .expect("served under the development profile");
     assert_eq!(under_development["_type"], "COMPOSITION");
 
-    let under_stable = stable_service(db.pool())
+    let under_stable = stable_service(&db.pool())
         .get_composition_latest(ehr_id, vo_id)
         .await
         .expect("served under the stable profile");
@@ -142,7 +143,7 @@ async fn a_released_surface_composition_stamps_true_and_reads_under_both_profile
 #[tokio::test]
 async fn a_development_only_composition_stamps_false_and_is_refused_under_stable() {
     let db = testkit::db().await.expect("testkit database");
-    let svc = FerroEhrService::new(db.pool());
+    let svc = FerroEhrService::new(&ferroehr::db::domain::DomainPools::from_shared(&db.pool()));
     let (ehr_id, vo_id) = commit(&svc, &development_only_composition()).await;
 
     assert_eq!(
@@ -157,7 +158,7 @@ async fn a_development_only_composition_stamps_false_and_is_refused_under_stable
         .expect("served under the development profile that accepted it");
     assert_eq!(served["content"][0]["data"]["_type"], "CLUSTER");
 
-    let refused = stable_service(db.pool())
+    let refused = stable_service(&db.pool())
         .get_composition_latest(ehr_id, vo_id)
         .await;
     let Err(SmError {
@@ -182,7 +183,7 @@ async fn a_development_only_composition_stamps_false_and_is_refused_under_stable
 #[tokio::test]
 async fn an_unstamped_row_is_assessed_on_the_fly() {
     let db = testkit::db().await.expect("testkit database");
-    let svc = FerroEhrService::new(db.pool());
+    let svc = FerroEhrService::new(&ferroehr::db::domain::DomainPools::from_shared(&db.pool()));
     let (clean_ehr, clean_vo) = commit(&svc, &stable_clean_composition()).await;
     let (dirty_ehr, dirty_vo) = commit(&svc, &development_only_composition()).await;
 
@@ -192,7 +193,7 @@ async fn an_unstamped_row_is_assessed_on_the_fly() {
         .await
         .expect("unstamp the two rows");
 
-    let stable = stable_service(db.pool());
+    let stable = stable_service(&db.pool());
     stable
         .get_composition_latest(clean_ehr, clean_vo)
         .await
@@ -221,7 +222,7 @@ async fn an_unstamped_row_is_assessed_on_the_fly() {
 #[tokio::test]
 async fn archive_and_restore_preserve_the_stamp() {
     let db = testkit::db().await.expect("testkit database");
-    let svc = FerroEhrService::new(db.pool());
+    let svc = FerroEhrService::new(&ferroehr::db::domain::DomainPools::from_shared(&db.pool()));
     let (ehr_id, vo_id) = commit(&svc, &development_only_composition()).await;
     assert_eq!(stamp(&db.pool(), vo_id).await, Some(false));
 
@@ -238,7 +239,7 @@ async fn archive_and_restore_preserve_the_stamp() {
     assert_eq!(cold, Some(false), "the cold mirror carries the stamp");
 
     // An archived object stays retrievable, and the gate still applies to it.
-    let refused = stable_service(db.pool())
+    let refused = stable_service(&db.pool())
         .get_composition_latest(ehr_id, vo_id)
         .await;
     assert!(
@@ -290,8 +291,12 @@ fn archive_dir() -> String {
 async fn dump_and_load_into_a_fresh_repository_preserve_the_stamp() {
     let source_db = testkit::db().await.expect("testkit database");
     let target_db = testkit::db().await.expect("testkit database");
-    let source = FerroEhrService::new(source_db.pool());
-    let target = FerroEhrService::new(target_db.pool());
+    let source = FerroEhrService::new(&ferroehr::db::domain::DomainPools::from_shared(
+        &source_db.pool(),
+    ));
+    let target = FerroEhrService::new(&ferroehr::db::domain::DomainPools::from_shared(
+        &target_db.pool(),
+    ));
 
     let (ehr_id, vo_id) = commit(&source, &development_only_composition()).await;
     assert_eq!(stamp(&source_db.pool(), vo_id).await, Some(false));
@@ -330,7 +335,7 @@ async fn dump_and_load_into_a_fresh_repository_preserve_the_stamp() {
         .expect("the loaded body is served under the development profile");
     assert_eq!(served["content"][0]["data"]["_type"], "CLUSTER");
 
-    let refused = stable_service(target_db.pool())
+    let refused = stable_service(&target_db.pool())
         .get_composition_latest(ehr_id, vo_id)
         .await;
     let Err(SmError {
@@ -357,8 +362,12 @@ async fn dump_and_load_into_a_fresh_repository_preserve_the_stamp() {
 async fn dump_and_load_keep_a_released_surface_body_readable_under_stable() {
     let source_db = testkit::db().await.expect("testkit database");
     let target_db = testkit::db().await.expect("testkit database");
-    let source = FerroEhrService::new(source_db.pool());
-    let target = FerroEhrService::new(target_db.pool());
+    let source = FerroEhrService::new(&ferroehr::db::domain::DomainPools::from_shared(
+        &source_db.pool(),
+    ));
+    let target = FerroEhrService::new(&ferroehr::db::domain::DomainPools::from_shared(
+        &target_db.pool(),
+    ));
 
     let (ehr_id, vo_id) = commit(&source, &stable_clean_composition()).await;
     let dir = archive_dir();
@@ -377,7 +386,7 @@ async fn dump_and_load_keep_a_released_surface_body_readable_under_stable() {
         .get_composition_latest(ehr_id, vo_id)
         .await
         .expect("served under the development profile");
-    let under_stable = stable_service(target_db.pool())
+    let under_stable = stable_service(&target_db.pool())
         .get_composition_latest(ehr_id, vo_id)
         .await
         .expect("served under the stable profile");
@@ -434,14 +443,14 @@ const WHOLE_OBJECT_AQL: &str = "SELECT c FROM EHR e CONTAINS COMPOSITION c";
 #[tokio::test]
 async fn an_aql_whole_object_projection_is_gated_by_the_spec_profile() {
     let db = testkit::db().await.expect("testkit database");
-    let svc = FerroEhrService::new(db.pool());
+    let svc = FerroEhrService::new(&ferroehr::db::domain::DomainPools::from_shared(&db.pool()));
     let (ehr_id, vo_id) = commit(&svc, &development_only_composition()).await;
 
     let served = query_rows(&svc, WHOLE_OBJECT_AQL, ehr_id).await;
     assert_eq!(served.len(), 1, "the development profile serves the row");
     assert_eq!(served[0][0]["content"][0]["data"]["_type"], "CLUSTER");
 
-    let message = query_conflict(&stable_service(db.pool()), WHOLE_OBJECT_AQL, ehr_id).await;
+    let message = query_conflict(&stable_service(&db.pool()), WHOLE_OBJECT_AQL, ehr_id).await;
     assert!(message.contains("stable"), "{message}");
     assert!(message.contains("development"), "{message}");
     assert!(
@@ -456,11 +465,11 @@ async fn an_aql_whole_object_projection_is_gated_by_the_spec_profile() {
 #[tokio::test]
 async fn an_aql_whole_object_projection_over_clean_rows_serves_under_both_profiles() {
     let db = testkit::db().await.expect("testkit database");
-    let svc = FerroEhrService::new(db.pool());
+    let svc = FerroEhrService::new(&ferroehr::db::domain::DomainPools::from_shared(&db.pool()));
     let (ehr_id, _) = commit(&svc, &stable_clean_composition()).await;
 
     let under_development = query_rows(&svc, WHOLE_OBJECT_AQL, ehr_id).await;
-    let under_stable = query_rows(&stable_service(db.pool()), WHOLE_OBJECT_AQL, ehr_id).await;
+    let under_stable = query_rows(&stable_service(&db.pool()), WHOLE_OBJECT_AQL, ehr_id).await;
     assert_eq!(under_development.len(), 1);
     assert_eq!(under_stable, under_development);
 }
@@ -472,10 +481,10 @@ async fn an_aql_whole_object_projection_over_clean_rows_serves_under_both_profil
 #[tokio::test]
 async fn an_aql_leaf_projection_is_not_gated_by_the_spec_profile() {
     let db = testkit::db().await.expect("testkit database");
-    let svc = FerroEhrService::new(db.pool());
+    let svc = FerroEhrService::new(&ferroehr::db::domain::DomainPools::from_shared(&db.pool()));
     let (ehr_id, _) = commit(&svc, &development_only_composition()).await;
 
-    let stable = stable_service(db.pool());
+    let stable = stable_service(&db.pool());
     let ehr_leaf = query_rows(&stable, "SELECT e/ehr_id/value FROM EHR e", ehr_id).await;
     assert_eq!(ehr_leaf.len(), 1, "the EHR leaf projection is served");
     assert_eq!(ehr_leaf[0][0], Value::String(ehr_id.to_string()));
@@ -503,7 +512,7 @@ async fn an_aql_leaf_projection_is_not_gated_by_the_spec_profile() {
 #[tokio::test]
 async fn the_query_gate_assesses_unstamped_rows_on_the_fly() {
     let db = testkit::db().await.expect("testkit database");
-    let svc = FerroEhrService::new(db.pool());
+    let svc = FerroEhrService::new(&ferroehr::db::domain::DomainPools::from_shared(&db.pool()));
     let (clean_ehr, clean_vo) = commit(&svc, &stable_clean_composition()).await;
     let (dirty_ehr, dirty_vo) = commit(&svc, &development_only_composition()).await;
 
@@ -513,7 +522,7 @@ async fn the_query_gate_assesses_unstamped_rows_on_the_fly() {
         .await
         .expect("unstamp the two rows");
 
-    let stable = stable_service(db.pool());
+    let stable = stable_service(&db.pool());
     let served = query_rows(&stable, WHOLE_OBJECT_AQL, clean_ehr).await;
     assert_eq!(
         served.len(),
@@ -630,7 +639,7 @@ async fn stamp_template_on_stored_root(pool: &sqlx::PgPool, vo_id: VoId) {
 #[tokio::test]
 async fn the_fhir_read_facade_is_gated_by_the_spec_profile() {
     let db = testkit::db().await.expect("testkit database");
-    let svc = FerroEhrService::new(db.pool());
+    let svc = FerroEhrService::new(&ferroehr::db::domain::DomainPools::from_shared(&db.pool()));
     svc.template_adl14_upload(fixture(OPT_REL))
         .await
         .expect("ingest the OPT");
@@ -680,7 +689,7 @@ async fn the_fhir_read_facade_is_gated_by_the_spec_profile() {
 
     // Under `stable` the same façade refuses rather than mapping a body the
     // released generations do not define.
-    let refused = stable_service(db.pool())
+    let refused = stable_service(&db.pool())
         .fhir_search("Observation".to_owned(), ehr_id.to_string(), None)
         .await;
     let Err(SmError {

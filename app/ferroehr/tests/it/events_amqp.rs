@@ -312,7 +312,7 @@ async fn end_to_end_publish_and_consume() {
     let (_conn, mut consumer) = bound_consumer(&url, "COMPOSITION.#").await;
 
     // Commit an EHR (→ EHR_STATUS event, not COMPOSITION) then a composition.
-    let svc = FerroEhrService::new(pool.clone());
+    let svc = FerroEhrService::new(&ferroehr::db::domain::DomainPools::from_shared(&pool));
     let ehr = svc.create_ehr(None).await.expect("create_ehr");
     svc.create_composition(ehr, uv(&composition("v1"), "249"))
         .await
@@ -356,7 +356,7 @@ async fn broker_down_then_up_delivers_without_loss() {
     let (_conn, mut consumer) = bound_consumer(&url, "#").await;
 
     // Commit an EHR + a composition ⇒ two pending outbox rows.
-    let svc = FerroEhrService::new(pool.clone());
+    let svc = FerroEhrService::new(&ferroehr::db::domain::DomainPools::from_shared(&pool));
     let ehr = svc.create_ehr(None).await.expect("create_ehr");
     svc.create_composition(ehr, uv(&composition("v1"), "249"))
         .await
@@ -414,7 +414,7 @@ async fn subscriptions_route_by_predicate_and_wildcard_receives_all() {
         .expect("start rabbitmq (is Docker running?)");
     let pool = db.pool();
     let url = amqp_url(&rmq).await;
-    let svc = FerroEhrService::new(pool.clone());
+    let svc = FerroEhrService::new(&ferroehr::db::domain::DomainPools::from_shared(&pool));
 
     // Two subscriptions: a wildcard (all predicates NULL → binding
     // key *.*.* → every event) and a kind filter (kind=COMPOSITION → binding key

@@ -622,8 +622,9 @@ impl FerroEhrService {
 
 /// The openEHR stored-query descriptor for one row (the ITS-REST wire shape).
 ///
-/// Every projected column is `NOT NULL` (`0001_baseline.sql` §`stored_query`),
-/// so a decode failure is a genuine server fault, not an empty field:
+/// Every projected column is `NOT NULL` (`clinical/0006_definitions.sql`
+/// §`stored_query`), so a decode failure is a genuine server fault, not an
+/// empty field:
 /// surface it (`?` → `500`) rather than silently blanking the value.
 fn stored_query_json(row: &PgRow) -> Result<Value, ServiceError> {
     let rdn = row.try_get::<String, _>("reverse_domain_name")?;
@@ -651,8 +652,9 @@ fn stored_query_json(row: &PgRow) -> Result<Value, ServiceError> {
 /// `semantic` when the domain is empty); `formalism` is the `query_type`
 /// lowercased (`QUERY_DESCRIPTOR` spells AQL `"aql"`).
 ///
-/// Every projected column is `NOT NULL` (`0001_baseline.sql` §`stored_query`),
-/// so a decode failure is a genuine server fault: surface it (`?` → `500`)
+/// Every projected column is `NOT NULL` (`clinical/0006_definitions.sql`
+/// §`stored_query`), so a decode failure is a genuine server fault: surface it
+/// (`?` → `500`)
 /// rather than silently blanking the descriptor field.
 fn descriptor_from_row(row: &PgRow) -> Result<QueryDescriptor, ServiceError> {
     let rdn: String = row.try_get("reverse_domain_name")?;

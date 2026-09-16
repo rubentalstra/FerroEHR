@@ -2,14 +2,8 @@
 // SPDX-FileCopyrightText: openEHR Foundation
 // SPDX-License-Identifier: BUSL-1.1 AND Apache-2.0
 
-#![allow(clippy::doc_markdown, reason = "prose with spec/crate proper nouns")]
-#![allow(
-    clippy::panic,
-    clippy::print_stdout,
-    clippy::print_stderr,
-    let_underscore_drop,
-    reason = "test assertions/diagnostics/fixtures"
-)]
+#![expect(clippy::doc_markdown, reason = "prose with spec/crate proper nouns")]
+#![expect(let_underscore_drop, reason = "test assertions/diagnostics/fixtures")]
 //! Interop fidelity gate — deserialize the real EHRbase / openEHR_SDK canonical
 //! JSON corpus (`tests/vendor/`) into our **generated** `openehr-rm` types.
 //!

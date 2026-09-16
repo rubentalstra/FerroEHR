@@ -2,7 +2,7 @@
 // SPDX-FileCopyrightText: openEHR Foundation
 // SPDX-License-Identifier: BUSL-1.1 AND Apache-2.0
 
-#![allow(clippy::expect_used, reason = "test assertions/diagnostics/fixtures")]
+#![expect(clippy::expect_used, reason = "test assertions/diagnostics/fixtures")]
 //! **Wire-level negatives for every `1..*` model container.**
 //!
 //! A container whose BMM cardinality has a lower bound of 1 emits as

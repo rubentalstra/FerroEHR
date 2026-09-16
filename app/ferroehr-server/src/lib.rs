@@ -368,7 +368,6 @@ fn assemble_service(
     signer: Arc<Signer>,
     deployment: DeploymentPosture,
 ) -> anyhow::Result<FerroEhrService> {
-    let pool = &pools.clinical;
     let audit_enabled = audit_sender.is_some();
     // The MRN patterns compiled here; `FerroEhrConfig::validate` already
     // refused an uncompilable one at boot, so this cannot be the first place a
@@ -398,9 +397,7 @@ fn assemble_service(
     );
     tracing::info!(licence = %licence, "licence");
 
-    let mut service = FerroEhrService::new(pool.clone())
-        .with_demographic_pool(pools.party.clone())
-        .with_linkage_pool(pools.linkage.clone())
+    let mut service = FerroEhrService::new(pools)
         .with_spec_profile(config.spec_profile)
         .with_system_id(config.server.system_id.clone())
         .with_signer(signer)

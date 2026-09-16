@@ -113,7 +113,7 @@ fn find_by_xtype<'a>(extract: &'a Value, xtype: &str) -> Option<&'a Value> {
 #[tokio::test]
 async fn export_ehrs_carries_every_versioned_object_latest_only() {
     let db = testkit::db().await.expect("testkit database");
-    let svc = FerroEhrService::new(db.pool());
+    let svc = FerroEhrService::new(&ferroehr::db::domain::DomainPools::from_shared(&db.pool()));
     let (ehr, _status_vo) = seed_ehr(&svc).await;
 
     let extracts = svc.extract_ehrs(ehr).await.expect("export_ehrs");
@@ -179,7 +179,7 @@ async fn export_ehrs_carries_every_versioned_object_latest_only() {
 #[tokio::test]
 async fn export_ehr_extracts_honours_item_list_and_all_versions() {
     let db = testkit::db().await.expect("testkit database");
-    let svc = FerroEhrService::new(db.pool());
+    let svc = FerroEhrService::new(&ferroehr::db::domain::DomainPools::from_shared(&db.pool()));
     let (ehr, status_vo) = seed_ehr(&svc).await;
 
     // Request only the EHR_STATUS version container, all versions, with revision
@@ -264,7 +264,7 @@ async fn export_ehr_extracts_honours_item_list_and_all_versions() {
 #[tokio::test]
 async fn export_ehrs_unknown_ehr_is_ehr_id_does_not_exist() {
     let db = testkit::db().await.expect("testkit database");
-    let svc = FerroEhrService::new(db.pool());
+    let svc = FerroEhrService::new(&ferroehr::db::domain::DomainPools::from_shared(&db.pool()));
     let err = svc
         .extract_ehrs(ferroehr::ids::EhrId(uuid::Uuid::now_v7()))
         .await
@@ -283,7 +283,7 @@ async fn export_ehrs_unknown_ehr_is_ehr_id_does_not_exist() {
 #[tokio::test]
 async fn extract_spec_flags_are_honoured() {
     let db = testkit::db().await.expect("testkit database");
-    let svc = FerroEhrService::new(db.pool());
+    let svc = FerroEhrService::new(&ferroehr::db::domain::DomainPools::from_shared(&db.pool()));
     let (ehr, _status_vo) = seed_ehr(&svc).await;
 
     // Bad extract_type → precondition.
@@ -432,7 +432,7 @@ fn criteria_spec(ehr: &str, criteria: &Value) -> ExtractSpec {
 #[tokio::test]
 async fn criteria_select_the_primary_set_ehr_bound() {
     let db = testkit::db().await.expect("testkit database");
-    let svc = FerroEhrService::new(db.pool());
+    let svc = FerroEhrService::new(&ferroehr::db::domain::DomainPools::from_shared(&db.pool()));
     let (ehr, _status_vo) = seed_ehr(&svc).await;
 
     let spec = criteria_spec(
@@ -466,7 +466,7 @@ async fn criteria_select_the_primary_set_ehr_bound() {
 #[tokio::test]
 async fn criteria_in_a_foreign_formalism_are_refused() {
     let db = testkit::db().await.expect("testkit database");
-    let svc = FerroEhrService::new(db.pool());
+    let svc = FerroEhrService::new(&ferroehr::db::domain::DomainPools::from_shared(&db.pool()));
     let (ehr, _status_vo) = seed_ehr(&svc).await;
 
     let spec = criteria_spec(
@@ -493,7 +493,7 @@ async fn criteria_in_a_foreign_formalism_are_refused() {
 #[tokio::test]
 async fn criteria_that_do_not_parse_as_aql_are_refused() {
     let db = testkit::db().await.expect("testkit database");
-    let svc = FerroEhrService::new(db.pool());
+    let svc = FerroEhrService::new(&ferroehr::db::domain::DomainPools::from_shared(&db.pool()));
     let (ehr, _status_vo) = seed_ehr(&svc).await;
 
     let spec = criteria_spec(

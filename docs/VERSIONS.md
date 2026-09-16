@@ -62,7 +62,7 @@ escape with `cargo build --ignore-rust-version`.
 | Item | Pin |
 |---|---|
 | PostgreSQL | 18, target 18.6 or newer (CI runs `postgres:18.6`) |
-| Required extensions | `uuid-ossp`, `pgcrypto`, `pg_trgm` |
+| Required extension | `btree_gist`, installed by the server at boot |
 
 PostgreSQL is the only component in the stack with a meaningful version delta
 (upstream EHRbase targets PG 15/16; we target PG 18). PG 18 brings asynchronous I/O,

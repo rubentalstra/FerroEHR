@@ -9,10 +9,8 @@
 //! (`T_COMPLEX_OBJECT`, the OPT `constraints` element) whose typed
 //! `default_value` has no content.
 
-#![allow(
+#![expect(
     clippy::expect_used,
-    clippy::unwrap_used,
-    clippy::panic,
     reason = "integration-test assertions and fixture plumbing outside #[test] fns, which the clippy.toml allow-*-in-tests scoping does not reach"
 )]
 

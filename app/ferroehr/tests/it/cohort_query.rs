@@ -292,7 +292,8 @@ fn served_uids(result_set: &Value) -> Vec<String> {
 #[tokio::test]
 async fn a_city_predicate_selects_only_the_linked_ehrs() {
     let db = testkit::db().await.expect("testkit database");
-    let svc = FerroEhrService::new(db.pool()).with_cohort(cohort_config(0));
+    let svc = FerroEhrService::new(&ferroehr::db::domain::DomainPools::from_shared(&db.pool()))
+        .with_cohort(cohort_config(0));
     let corpus = seed_corpus(&svc).await;
 
     let outcome = svc
@@ -349,7 +350,8 @@ async fn a_city_predicate_selects_only_the_linked_ehrs() {
 #[tokio::test]
 async fn a_small_cell_is_suppressed() {
     let db = testkit::db().await.expect("testkit database");
-    let svc = FerroEhrService::new(db.pool()).with_cohort(cohort_config(5));
+    let svc = FerroEhrService::new(&ferroehr::db::domain::DomainPools::from_shared(&db.pool()))
+        .with_cohort(cohort_config(5));
     seed_corpus(&svc).await;
 
     let outcome = svc
@@ -389,7 +391,8 @@ async fn a_small_cell_is_suppressed() {
 #[tokio::test]
 async fn predicates_intersect() {
     let db = testkit::db().await.expect("testkit database");
-    let svc = FerroEhrService::new(db.pool()).with_cohort(cohort_config(0));
+    let svc = FerroEhrService::new(&ferroehr::db::domain::DomainPools::from_shared(&db.pool()))
+        .with_cohort(cohort_config(0));
     let corpus = seed_corpus(&svc).await;
 
     // city ∧ sex: Ada and Cato are the Groningen women.
@@ -443,7 +446,7 @@ async fn predicates_intersect() {
 async fn an_unknown_predicate_and_an_unbound_deployment_are_refused() {
     let db = testkit::db().await.expect("testkit database");
 
-    let unbound = FerroEhrService::new(db.pool());
+    let unbound = FerroEhrService::new(&ferroehr::db::domain::DomainPools::from_shared(&db.pool()));
     assert!(!unbound.cohort_enabled(), "no predicate is bound");
     assert!(
         matches!(
@@ -455,7 +458,8 @@ async fn an_unknown_predicate_and_an_unbound_deployment_are_refused() {
         "an unbound deployment refuses NotConfigured"
     );
 
-    let svc = FerroEhrService::new(db.pool()).with_cohort(cohort_config(0));
+    let svc = FerroEhrService::new(&ferroehr::db::domain::DomainPools::from_shared(&db.pool()))
+        .with_cohort(cohort_config(0));
     assert!(svc.cohort_enabled());
     match svc
         .execute_cohort_query(request(&[("national_identifier", "x")]))
@@ -512,7 +516,7 @@ async fn every_execution_is_recorded_as_a_linkage_access() {
         .expect("the audit sender");
     // The floor is above the corpus, so this execution is the suppressed one —
     // the case a record could most plausibly be skipped on.
-    let svc = FerroEhrService::new(pool.clone())
+    let svc = FerroEhrService::new(&ferroehr::db::domain::DomainPools::from_shared(&pool))
         .with_cohort(cohort_config(5))
         .with_audit(sender);
     seed_corpus(&svc).await;
@@ -700,10 +704,12 @@ async fn the_crossing_runs_on_three_separated_credentials() {
         .expect("each pool connects on its own credential");
     let linkage = pools.linkage.clone();
 
-    let svc = FerroEhrService::new(pools.clinical.clone())
-        .with_demographic_pool(pools.party.clone())
-        .with_linkage_pool(linkage.clone())
-        .with_cohort(cohort_config(0));
+    let svc = FerroEhrService::new(&ferroehr::db::domain::DomainPools::from_shared(
+        &pools.clinical,
+    ))
+    .with_demographic_pool(pools.party.clone())
+    .with_linkage_pool(linkage.clone())
+    .with_cohort(cohort_config(0));
     let corpus = seed_corpus(&svc).await;
 
     let outcome = svc
@@ -741,7 +747,8 @@ async fn the_crossing_runs_on_three_separated_credentials() {
 #[tokio::test]
 async fn the_result_carries_no_party_identifier() {
     let db = testkit::db().await.expect("testkit database");
-    let svc = FerroEhrService::new(db.pool()).with_cohort(cohort_config(0));
+    let svc = FerroEhrService::new(&ferroehr::db::domain::DomainPools::from_shared(&db.pool()))
+        .with_cohort(cohort_config(0));
     let corpus = seed_corpus(&svc).await;
 
     let outcome = svc

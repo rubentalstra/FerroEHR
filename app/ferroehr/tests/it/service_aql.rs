@@ -231,7 +231,7 @@ fn ehr_scope_multi(ehr_ids: &[&str]) -> AqlQueryRequest {
 async fn aql_acceptance_set() {
     let db = testkit::db().await.expect("testkit database");
     let pool = db.pool();
-    let svc = FerroEhrService::new(pool);
+    let svc = FerroEhrService::new(&ferroehr::db::domain::DomainPools::from_shared(&pool));
 
     let ehr_id = create_ehr(&svc).await;
     // Magnitudes 80, 100, 120; two share the name "BP", one is "HR".
@@ -472,7 +472,7 @@ async fn aql_acceptance_set() {
 async fn whole_object_projection_batches_over_a_multi_row_page() {
     let db = testkit::db().await.expect("testkit database");
     let pool = db.pool();
-    let svc = FerroEhrService::new(pool);
+    let svc = FerroEhrService::new(&ferroehr::db::domain::DomainPools::from_shared(&pool));
     let ehr_id = create_ehr(&svc).await;
 
     // A page of distinct compositions in one EHR — each its own versioned
@@ -552,7 +552,7 @@ async fn whole_object_projection_batches_over_a_multi_row_page() {
 async fn archetype_specialisation_subsumption() {
     let db = testkit::db().await.expect("testkit database");
     let pool = db.pool();
-    let svc = FerroEhrService::new(pool);
+    let svc = FerroEhrService::new(&ferroehr::db::domain::DomainPools::from_shared(&pool));
 
     let ehr_id = create_ehr(&svc).await;
     // One composition with the PARENT archetype, one with a SPECIALISATION child
@@ -634,7 +634,7 @@ async fn archetype_specialisation_subsumption() {
 async fn archetype_lineage_from_the_stored_adl2_family() {
     let db = testkit::db().await.expect("testkit database");
     let pool = db.pool();
-    let svc = FerroEhrService::new(pool);
+    let svc = FerroEhrService::new(&ferroehr::db::domain::DomainPools::from_shared(&pool));
 
     // The stored family: `hdl_result` specialises `lipid_panel`. The child's
     // concept is NOT a `lipid_panel-…` extension, so only the declared
@@ -737,7 +737,7 @@ async fn all_versions_includes_a_branch_row() {
 
     let db = testkit::db().await.expect("testkit database");
     let pool = db.pool();
-    let svc = FerroEhrService::new(pool.clone());
+    let svc = FerroEhrService::new(&ferroehr::db::domain::DomainPools::from_shared(&pool));
 
     let ehr_id = create_ehr(&svc).await;
     let ovid = create_comp(&svc, &ehr_id, "v", 10.0).await;
@@ -840,7 +840,7 @@ async fn all_versions_includes_a_branch_row() {
 async fn latest_versus_all_versions() {
     let db = testkit::db().await.expect("testkit database");
     let pool = db.pool();
-    let svc = FerroEhrService::new(pool);
+    let svc = FerroEhrService::new(&ferroehr::db::domain::DomainPools::from_shared(&pool));
 
     let ehr_id = create_ehr(&svc).await;
     let ovid = create_comp(&svc, &ehr_id, "v", 10.0).await;
@@ -957,7 +957,7 @@ async fn latest_versus_all_versions() {
 async fn population_query_excludes_not_queryable_ehrs() {
     let db = testkit::db().await.expect("testkit database");
     let pool = db.pool();
-    let svc = FerroEhrService::new(pool);
+    let svc = FerroEhrService::new(&ferroehr::db::domain::DomainPools::from_shared(&pool));
 
     // Two EHRs; both start queryable (the default EHR_STATUS). Flip one off
     // through the canonical EHR_STATUS update path.
@@ -998,7 +998,7 @@ async fn population_query_excludes_not_queryable_ehrs() {
 async fn scoped_query_bypasses_the_population_gate() {
     let db = testkit::db().await.expect("testkit database");
     let pool = db.pool();
-    let svc = FerroEhrService::new(pool);
+    let svc = FerroEhrService::new(&ferroehr::db::domain::DomainPools::from_shared(&pool));
 
     let hidden = create_ehr(&svc).await;
     create_comp(&svc, &hidden, "BP", 80.0).await;
@@ -1039,7 +1039,7 @@ async fn scoped_query_bypasses_the_population_gate() {
 async fn multi_ehr_ids_scopes_to_the_set() {
     let db = testkit::db().await.expect("testkit database");
     let pool = db.pool();
-    let svc = FerroEhrService::new(pool);
+    let svc = FerroEhrService::new(&ferroehr::db::domain::DomainPools::from_shared(&pool));
 
     let a = create_ehr(&svc).await;
     let b = create_ehr(&svc).await;
@@ -1069,7 +1069,7 @@ async fn multi_ehr_ids_scopes_to_the_set() {
 async fn absent_ehr_id_raises_ehr_id_does_not_exist() {
     let db = testkit::db().await.expect("testkit database");
     let pool = db.pool();
-    let svc = FerroEhrService::new(pool);
+    let svc = FerroEhrService::new(&ferroehr::db::domain::DomainPools::from_shared(&pool));
 
     let real = create_ehr(&svc).await;
     let ghost = Uuid::now_v7().to_string();
@@ -1121,7 +1121,7 @@ async fn absent_ehr_id_raises_ehr_id_does_not_exist() {
 async fn executed_aql_substitutes_bound_parameters() {
     let db = testkit::db().await.expect("testkit database");
     let pool = db.pool();
-    let svc = FerroEhrService::new(pool);
+    let svc = FerroEhrService::new(&ferroehr::db::domain::DomainPools::from_shared(&pool));
 
     let ehr_id = create_ehr(&svc).await;
     create_comp(&svc, &ehr_id, "BP", 120.0).await;
@@ -1161,7 +1161,7 @@ async fn executed_aql_substitutes_bound_parameters() {
 async fn result_set_carries_the_its_rest_shape() {
     let db = testkit::db().await.expect("testkit database");
     let pool = db.pool();
-    let svc = FerroEhrService::new(pool);
+    let svc = FerroEhrService::new(&ferroehr::db::domain::DomainPools::from_shared(&pool));
 
     let ehr_id = create_ehr(&svc).await;
     create_comp(&svc, &ehr_id, "BP", 120.0).await;
@@ -1217,7 +1217,7 @@ async fn result_set_carries_the_its_rest_shape() {
 async fn ehr_status_on_ehr_variable() {
     let db = testkit::db().await.expect("testkit database");
     let pool = db.pool();
-    let svc = FerroEhrService::new(pool);
+    let svc = FerroEhrService::new(&ferroehr::db::domain::DomainPools::from_shared(&pool));
 
     let ehr_id = create_ehr(&svc).await;
 
@@ -1292,7 +1292,7 @@ async fn ehr_status_on_ehr_variable() {
 async fn ehr_status_query_empty_db() {
     let db = testkit::db().await.expect("testkit database");
     let pool = db.pool();
-    let svc = FerroEhrService::new(pool);
+    let svc = FerroEhrService::new(&ferroehr::db::domain::DomainPools::from_shared(&pool));
 
     let r = run_aql(
         &svc,
@@ -1317,7 +1317,7 @@ async fn ehr_status_query_empty_db() {
 async fn scalar_functions_execute() {
     let db = testkit::db().await.expect("testkit database");
     let pool = db.pool();
-    let svc = FerroEhrService::new(pool);
+    let svc = FerroEhrService::new(&ferroehr::db::domain::DomainPools::from_shared(&pool));
 
     let ehr_id = create_ehr(&svc).await;
     create_comp(&svc, &ehr_id, "BP", 81.5).await;
@@ -1443,7 +1443,7 @@ fn composition_spanning(name: &str, temporal: &str) -> Value {
 #[tokio::test]
 async fn partial_precision_temporals_compare_and_order() {
     let db = testkit::db().await.expect("testkit database");
-    let svc = FerroEhrService::new(db.pool());
+    let svc = FerroEhrService::new(&ferroehr::db::domain::DomainPools::from_shared(&db.pool()));
     let ehr_id = create_ehr(&svc).await;
     for (name, temporal) in [
         ("year-only", "2019"),
@@ -1575,7 +1575,7 @@ async fn create_comp_body(svc: &FerroEhrService, ehr_id: &str, body: Value, name
 async fn dashboard_context_start_ordering_and_uid() {
     let db = testkit::db().await.expect("testkit database");
     let pool = db.pool();
-    let svc = FerroEhrService::new(pool);
+    let svc = FerroEhrService::new(&ferroehr::db::domain::DomainPools::from_shared(&pool));
     let ehr_id = create_ehr(&svc).await;
 
     // Distinct start times, seeded out of chronological order so ORDER BY (not
@@ -1690,7 +1690,7 @@ async fn dashboard_context_start_ordering_and_uid() {
 #[tokio::test]
 async fn plan_cache_reuses_plan_and_binds_per_request() {
     let db = testkit::db().await.expect("testkit database");
-    let svc = FerroEhrService::new(db.pool());
+    let svc = FerroEhrService::new(&ferroehr::db::domain::DomainPools::from_shared(&db.pool()));
 
     let ehr_id = create_ehr(&svc).await;
     create_comp(&svc, &ehr_id, "BP", 80.0).await;
@@ -1790,7 +1790,7 @@ async fn plan_cache_reuses_plan_and_binds_per_request() {
 #[tokio::test]
 async fn ehr_scope_binds_the_bare_ehr_source() {
     let db = testkit::db().await.expect("testkit database");
-    let svc = FerroEhrService::new(db.pool());
+    let svc = FerroEhrService::new(&ferroehr::db::domain::DomainPools::from_shared(&db.pool()));
 
     let a = create_ehr(&svc).await;
     let _b = create_ehr(&svc).await; // a second EHR the scope must exclude
@@ -1818,7 +1818,7 @@ async fn ehr_scope_binds_the_bare_ehr_source() {
 async fn distinct_order_by_limit_and_now_comparison() {
     let db = testkit::db().await.expect("testkit database");
     let pool = db.pool();
-    let svc = FerroEhrService::new(pool);
+    let svc = FerroEhrService::new(&ferroehr::db::domain::DomainPools::from_shared(&pool));
 
     let ehr_id = create_ehr(&svc).await;
     create_comp(&svc, &ehr_id, "BP", 80.0).await;
@@ -1876,7 +1876,7 @@ async fn distinct_order_by_limit_and_now_comparison() {
 #[tokio::test]
 async fn like_and_matches_are_any_match_on_multi_valued_paths() {
     let db = testkit::db().await.expect("testkit database");
-    let svc = FerroEhrService::new(db.pool());
+    let svc = FerroEhrService::new(&ferroehr::db::domain::DomainPools::from_shared(&db.pool()));
     let ehr_id = create_ehr(&svc).await;
 
     let mut c = composition("multi-item", 1.0);
@@ -1942,7 +1942,7 @@ async fn like_and_matches_are_any_match_on_multi_valued_paths() {
 #[tokio::test]
 async fn like_escaped_wildcards_match_the_literal_character() {
     let db = testkit::db().await.expect("testkit database");
-    let svc = FerroEhrService::new(db.pool());
+    let svc = FerroEhrService::new(&ferroehr::db::domain::DomainPools::from_shared(&db.pool()));
     let ehr_id = create_ehr(&svc).await;
 
     let mut c = composition("escape-target", 1.0);
@@ -2028,7 +2028,7 @@ fn multi_fragment_composition() -> Value {
 #[tokio::test]
 async fn multi_valued_fragment_predicates_are_any_match() {
     let db = testkit::db().await.expect("testkit database");
-    let svc = FerroEhrService::new(db.pool());
+    let svc = FerroEhrService::new(&ferroehr::db::domain::DomainPools::from_shared(&db.pool()));
     let ehr_id = create_ehr(&svc).await;
     svc.create_composition(
         ehr_id.parse().expect("ehr_id uuid"),
@@ -2120,7 +2120,7 @@ async fn multi_valued_fragment_predicates_are_any_match() {
 #[tokio::test]
 async fn multi_valued_fragment_projection_serves_every_match() {
     let db = testkit::db().await.expect("testkit database");
-    let svc = FerroEhrService::new(db.pool());
+    let svc = FerroEhrService::new(&ferroehr::db::domain::DomainPools::from_shared(&db.pool()));
     let ehr_id = create_ehr(&svc).await;
     svc.create_composition(
         ehr_id.parse().expect("ehr_id uuid"),
@@ -2170,7 +2170,7 @@ async fn multi_valued_fragment_projection_serves_every_match() {
 #[tokio::test]
 async fn fragment_step_predicates_filter_the_matching_elements() {
     let db = testkit::db().await.expect("testkit database");
-    let svc = FerroEhrService::new(db.pool());
+    let svc = FerroEhrService::new(&ferroehr::db::domain::DomainPools::from_shared(&db.pool()));
     let ehr_id = create_ehr(&svc).await;
     svc.create_composition(
         ehr_id.parse().expect("ehr_id uuid"),
@@ -2221,7 +2221,7 @@ async fn fragment_step_predicates_filter_the_matching_elements() {
 #[tokio::test]
 async fn whole_object_root_predicate_serves_null_for_non_matches() {
     let db = testkit::db().await.expect("testkit database");
-    let svc = FerroEhrService::new(db.pool());
+    let svc = FerroEhrService::new(&ferroehr::db::domain::DomainPools::from_shared(&db.pool()));
     let ehr_id = create_ehr(&svc).await;
     create_comp(&svc, &ehr_id, "minimal-root", 1.0).await;
 
@@ -2259,7 +2259,7 @@ async fn whole_object_root_predicate_serves_null_for_non_matches() {
 #[tokio::test]
 async fn an_uncoercible_temporal_binding_is_the_callers_400() {
     let db = testkit::db().await.expect("testkit database");
-    let svc = FerroEhrService::new(db.pool());
+    let svc = FerroEhrService::new(&ferroehr::db::domain::DomainPools::from_shared(&db.pool()));
     let ehr_id = create_ehr(&svc).await;
     create_comp(&svc, &ehr_id, "BP", 120.0).await;
 
@@ -2313,7 +2313,7 @@ fn uid_root(ovid: &str) -> String {
 #[tokio::test]
 async fn folder_containment_resolves_references() {
     let db = testkit::db().await.expect("testkit database");
-    let svc = FerroEhrService::new(db.pool());
+    let svc = FerroEhrService::new(&ferroehr::db::domain::DomainPools::from_shared(&db.pool()));
     let ehr_id = create_ehr(&svc).await;
     let ehr_uuid = ferroehr::ids::EhrId(ehr_id.parse::<Uuid>().expect("ehr uuid"));
 
@@ -2470,7 +2470,7 @@ async fn folder_containment_resolves_references() {
 #[tokio::test]
 async fn folder_contains_folder_reaches_items_referenced_versioned_folders() {
     let db = testkit::db().await.expect("testkit database");
-    let svc = FerroEhrService::new(db.pool());
+    let svc = FerroEhrService::new(&ferroehr::db::domain::DomainPools::from_shared(&db.pool()));
     let ehr_id = create_ehr(&svc).await;
     let ehr_uuid = ferroehr::ids::EhrId(ehr_id.parse::<Uuid>().expect("ehr uuid"));
 
@@ -2652,10 +2652,11 @@ async fn folder_contains_folder_reaches_items_referenced_versioned_folders() {
 #[tokio::test]
 async fn an_explicit_page_above_the_result_ceiling_is_refused() {
     let db = testkit::db().await.expect("testkit database");
-    let svc = FerroEhrService::new(db.pool()).with_query_config(&QueryConfig {
-        max_result_rows: 2,
-        ..QueryConfig::default()
-    });
+    let svc = FerroEhrService::new(&ferroehr::db::domain::DomainPools::from_shared(&db.pool()))
+        .with_query_config(&QueryConfig {
+            max_result_rows: 2,
+            ..QueryConfig::default()
+        });
     let ehr_id = create_ehr(&svc).await;
     for magnitude in [80.0, 90.0, 100.0, 110.0] {
         create_comp(&svc, &ehr_id, "BP", magnitude).await;
@@ -2709,10 +2710,12 @@ async fn an_explicit_page_above_the_result_ceiling_is_refused() {
     );
     refused(&format!("{aql} LIMIT 4"), scoped(Some(3))).await;
     // `0` means unbounded: the same page is then served whole.
-    let unbounded = FerroEhrService::new(db.pool()).with_query_config(&QueryConfig {
-        max_result_rows: 0,
-        ..QueryConfig::default()
-    });
+    let unbounded =
+        FerroEhrService::new(&ferroehr::db::domain::DomainPools::from_shared(&db.pool()))
+            .with_query_config(&QueryConfig {
+                max_result_rows: 0,
+                ..QueryConfig::default()
+            });
     assert_eq!(
         rows(&run_aql(&unbounded, aql, scoped(Some(1_000))).await).len(),
         4

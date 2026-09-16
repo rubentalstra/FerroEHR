@@ -126,7 +126,7 @@ async fn seed(
 async fn app(with_store: bool, rbac: bool) -> (testkit::TestDb, Router, AuditStore) {
     let (pg, pool) = common::migrated_pool().await;
     let store = AuditStore::new(pool.clone());
-    let mut svc = FerroEhrService::new(pool);
+    let mut svc = FerroEhrService::new(&ferroehr::db::domain::DomainPools::from_shared(&pool));
     if with_store {
         svc = svc.with_audit_store(store.clone());
     }
