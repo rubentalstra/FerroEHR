@@ -1,6 +1,6 @@
 # Memory index
 
-- [Licence is BUSL 1.1](license-busl.md) — application+tooling are Business Source License 1.1 since 2026-09-03 (non-commercial production only), the eight openehr-* crates stay Apache-2.0, holder Ruben Talstra, source-available never "open source"; grant text is owner legal text; stale-MIT guard in licensing-declarations.sh
+- [Licence is BUSL 1.1](license-busl.md) — application+tooling are Business Source License 1.1 since 2026-09-03 (non-commercial production only), the eight openehr-* crates stay Apache-2.0, holder Vernum Projecten B.V. since 2026-09-16 (#3435; Ruben Talstra = maintainer credit only), source-available never "open source"; grant text is owner legal text; stale-MIT guard in licensing-declarations.sh
 - [Sibling products](sibling-products.md) — ferroehr / FerroTERM (was notio) / FerroBRIDGE / FerroCKM (BUSL, the CKM; shares the app layer) (Apache-2.0, the FHIR (FHIRconnect) + OMOP (OMOCL) bridge; FerroEHR #2646 + #2652 moved there); never edit a sibling from here
 - [Owner work style](owner-work-style.md) — defer nothing; no quick fixes (proper rewrites welcome); orchestrator codes context-heavy work itself; big-bang rewrites converge once at the end (no intermediate stubs); specs re-read first-hand; never copy a number forward; rerun `scripts/conformance.sh` after runner/validation merges
 - [Autonomous phase flow](autonomous-phase-flow.md) — standing: PR+merge each phase, checkout main, start the next without asking; never branch while finished work sits unmerged
@@ -32,7 +32,7 @@
 - [K8s testing uses a compose postgres](k8s-testing-uses-compose-postgres.md) — database runs in docker compose on the host and the chart points at it; never deploy postgres into the test cluster
 - [This is a rewrite, not inherited code](rewrite-not-inherited-code.md) — existing code is never assumed correct; read the ancestor spec + existing code before implementing; breaking changes preferred over preserving bad code; distrust instruments too
 - [One Closes keyword per issue; current milestone always](pr-closes-one-keyword-per-issue.md) — "Closes #1, #2, #3" closes only #1, verify after merge; every en-route issue goes in the CURRENT milestone, never the next
-- [Migrations are append-only](migrations-are-append-only.md) — owner declared stabilization 2026-09-09: never edit/rename/delete a migration on main (sqlx checksums lock existing installations out); a schema change is a NEW file, guarded by migration-immutability.sh
+- [Migrations are append-only](migrations-are-append-only.md) — shipped = present at the latest release tag (owner 2026-09-15): never edit a released migration (sqlx checksums lock installations out), unreleased files are fixed in place, guarded by migration-immutability.sh
 - [Rewrite fn docs on update](rewrite-fn-docs-on-update.md) — always fully rewrite a touched function's doc comment; include the /// block in old_string so docs never orphan
 - [UNLOGGED node rejected](unlogged-node-rejected.md) — owner ruling 2026-08-25: node stays LOGGED; never re-propose reduced-durability storage tiers (measured record on #2698)
 - [Public comments: one and short](public-comments-one-and-short.md) — external-facing threads get exactly ONE short plain comment; edit it rather than adding another
@@ -65,3 +65,6 @@
 - [Rewrite breaks everything; shipped = released](rewrite-breaks-everything-shipped-means-released.md) — owner 2026-09-15: only breaking changes in the rewrite; files on main but not at the latest release tag are editable; no shims, placeholder roles or rename migrations
 - [Design record updated in the same turn](design-record-updated-in-the-same-turn.md) — owner 2026-09-15: every design-changing decision updates the plan, the parent's design comment (edit in place) and the affected issues in the same turn; a stale record is legacy
 - [OPT 1.4 format is the XSD](opt14-format-is-the-xsd.md) — the ITS-XML schema is the only definition of OPT 1.4 XML; schema beats the AOM abstract model for document validity (ordinal symbol value, #3395/#3401); other implementations' leniency is never an argument
+- [Many issues per PR](many-issues-per-pr.md) — owner 2026-09-16: batch six to ten related issues per PR, one Closes line each; one issue per PR is too slow
+- [v5 withdrawn; rewrites are v4.3.1/v4.3.2](v5-withdrawn-rewrites-are-v431-v432.md) — owner 2026-09-16: no v5.x milestone for rework; open design decisions are decided and recorded in-session, not deferred
+- [Update-branch is unsigned](update-branch-is-unsigned.md) — never `gh pr update-branch` or the web button: API merge commits are unsigned and the main ruleset blocks them; rebase locally and force-with-lease
