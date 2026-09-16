@@ -297,6 +297,18 @@ END;
 -- format. A value the cast then refuses falls through to the second reading,
 -- which is what the first generation did too.
 --
+-- The separator positions are not enough on their own, because both patterns
+-- end in a wildcard and PostgreSQL reads what follows: a zone NAME
+-- (`2021-01-02T10:30:45 Europe/Amsterdam`) and a ` BC` era, neither of which
+-- BASE foundation_types master06-time_types.adoc §Iso8601_date_time admits:
+-- the value is `YYYY-MM-DDThh:mm:ss[(,|.)sss][Z | ±hh[:mm]]`, the compact form
+-- of the same, or a partial variant, so the text ends at the offset. One
+-- translate() closes both: every character of a date-time is a digit, a
+-- separator, a sign or the zone letter, so a value carrying anything else
+-- never reaches the cast. It costs the reading 93 ms per 50 000 against 65 ms
+-- without it, which is still under the 117 ms the first generation took on the
+-- same corpus and the same machine.
+--
 -- The second reading completes reduced precision, which the cast cannot read at
 -- all: a partial date assumes the first month and day, a partial time assumes
 -- zero, and a time-only value anchors on 0001-01-01 — the same floor
@@ -325,7 +337,8 @@ LANGUAGE plpgsql STABLE STRICT PARALLEL SAFE AS $$
 DECLARE
     s text := replace(v, ',', '.');
 BEGIN
-    IF s LIKE '____-__-_____:__%' OR s LIKE '________T__%' THEN
+    IF (s LIKE '____-__-_____:__%' OR s LIKE '________T__%')
+       AND translate(s, '0123456789.:+- TtZz', '') = '' THEN
         BEGIN
             RETURN s::timestamptz;
         EXCEPTION WHEN others THEN
@@ -382,7 +395,7 @@ COMMENT ON FUNCTION ext.openehr_duration_seconds(text) IS
 COMMENT ON FUNCTION ext.openehr_magnitude(jsonb) IS
     'The ordered magnitude (numeric) of a canonical DV_ORDERED value, per the per-subtype comparison the RM defines (RM data_types master06-quantity_package.adoc). NULL for non-ordered or unreadable values. IMMUTABLE + PARALLEL SAFE, so it is legal in a btree expression index.';
 COMMENT ON FUNCTION ext.openehr_timestamp(text) IS
-    'Total ISO-8601 text -> timestamptz: PostgreSQL''s own parser for the full-precision forms, floor completion for reduced precision (partial dates assume the first month/day, partial times 0, time-only values anchor on 0001-01-01), NULL for anything else — never an error. The parser runs inside an error trap, which is what measured cheapest: 70 ms per 50 000 readings, against 104 ms for the first generation and 235 ms for the same readings with the fields and the calendar checked by hand so the cast can run untrapped. The ONE partial-temporal semantics: feeds the promoted timestamp columns (node.context_start) AND the AQL temporal coercion. STABLE (TimeZone-dependent); not legal in index expressions.';
+    'Total ISO-8601 text -> timestamptz: PostgreSQL''s own parser for the full-precision forms, floor completion for reduced precision (partial dates assume the first month/day, partial times 0, time-only values anchor on 0001-01-01), NULL for anything else — never an error. The parser runs inside an error trap, which is what measured cheapest: 70 ms per 50 000 readings, against 104 ms for the first generation and 235 ms for the same readings with the fields and the calendar checked by hand so the cast can run untrapped. It is reached only through the separator positions AND a character-set check, which is what refuses the zone name and the BC era PostgreSQL would otherwise read (BASE foundation_types master06-time_types.adoc §Iso8601_date_time admits neither). The ONE partial-temporal semantics: feeds the promoted timestamp columns (node.context_start) AND the AQL temporal coercion. STABLE (TimeZone-dependent); not legal in index expressions.';
 
 -- The runtime writers execute these on the write path (promoted-column
 -- population) and the readers on the AQL path; ext/0001 already installed

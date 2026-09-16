@@ -271,6 +271,11 @@ const CORPUS: &[&str] = &[
     "0001-01-01T00:00:00Z",
     "2021-02-30T10:00:00Z",
     "2021-01-02T25:00:00",
+    // The two suffixes PostgreSQL's own parser reads after a full-precision
+    // date-time and BASE foundation_types master06-time_types.adoc
+    // §Iso8601_date_time does not define: a zone NAME and a ` BC` era.
+    "2021-01-02T10:30:45 Europe/Amsterdam",
+    "2021-01-02T10:30:45 BC",
     // The daylight-saving edges of a zone with one: the ambiguous hour and the
     // hour that does not exist.
     "2021-10-31T02:30:00",
@@ -387,11 +392,13 @@ const ORDERED_CORPUS: &[&str] = &[
 /// field is now unsigned, and a date is not a time.
 ///
 /// `openehr_timestamp` tried PostgreSQL's own date/time input first and used
-/// whatever came back, which accepted three things openEHR does not define: a
+/// whatever came back, which accepted four things openEHR does not define: a
 /// date that is not zero-padded or is ordinal (`2021-1-2`, `2021-002`,
-/// `2021-0102`), and the words `now`, `today`, `yesterday`, `epoch` and
+/// `2021-0102`), the words `now`, `today`, `yesterday`, `epoch` and
 /// `infinity` — of which the first two made a stored value read as the current
-/// time.
+/// time — and, after a full-precision date-time, a zone NAME or a ` BC` era,
+/// where BASE `foundation_types` master06-time_types.adoc §Iso8601_date_time
+/// ends the value at the offset.
 ///
 /// In the other direction the completion arms now accept what that fast path
 /// used to reach by accident: the lowercase `t` and space separators on a
@@ -420,6 +427,12 @@ const DIVERGENCES: &[(&str, &str, Option<&str>)] = &[
         Some("2021-01-01 10:30:00+00"),
     ),
     ("openehr_timestamp", "2021-002", None),
+    ("openehr_timestamp", "2021-01-02T10:30:45 BC", None),
+    (
+        "openehr_timestamp",
+        "2021-01-02T10:30:45 Europe/Amsterdam",
+        None,
+    ),
     ("openehr_timestamp", "2021-0102", None),
     ("openehr_timestamp", "2021-1-2", None),
     (

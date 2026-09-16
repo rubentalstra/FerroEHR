@@ -70,6 +70,15 @@ workflow refuses a tag that has no matching section here.
 
 ### Changed
 
+- **`ext.openehr_timestamp` refuses a zone name and a `BC` era** (#3427).
+  PostgreSQL's own date/time input reads `2021-01-02T10:30:45
+  Europe/Amsterdam` and `2021-01-02T10:30:45 BC`, and the separator-position
+  gate in front of it let both through. BASE `foundation_types`
+  master06-time_types.adoc §Iso8601_date_time ends the value at the offset, so
+  both now read as NULL: an AQL comparison against such a stored value misses
+  rather than matching a date the record does not carry. The check costs the
+  helper 93 ms per 50 000 readings against 65 ms without it, measured on the
+  same corpus where the first generation took 117 ms.
 - **The archive export lists multimedia blobs from the reference index**
   (#3420). It used to walk every exported body in process to find the blob
   keys; it now reads `blob_ref`, the index the node write path maintains in
