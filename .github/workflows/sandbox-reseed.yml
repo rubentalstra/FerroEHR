@@ -20,6 +20,11 @@
 # (#2941/#2948): the server runs its migrations only at boot, and on one box
 # a fresh boot is one `docker compose restart ferroehr` away.
 #
+# The release pipeline calls this seed-only (#3467): its `sandbox` job wipes
+# BEFORE the deploy, so the deploy's recreate is the fresh boot. The v4.3.1
+# image refused the box's first-generation database at boot; with the wipe
+# chained behind the deploy, nothing could ever clear it.
+#
 # Secrets: HOSTED_SSH_KEY / HOSTED_KNOWN_HOSTS — the deploy key, in the
 # hosted environment. An empty secret is a hard failure, never a skip
 # (#2755). Environment secrets demonstrably reach these jobs on the
@@ -32,10 +37,20 @@ on:
   schedule:
     - cron: "0 0 * * *" # nightly, around midnight UTC
   workflow_dispatch: {}
-  # The release pipeline calls this after the hosted deploy (#2724), so a
-  # release that edits the baseline migration heals at deploy time; the
-  # nightly run stays as the janitor.
-  workflow_call: {}
+  # The release pipeline calls this after the hosted deploy (#2724), seed-only
+  # since #3467: the release's own `sandbox` job wipes before it deploys, so
+  # the deploy is the fresh boot. The nightly run stays as the janitor and
+  # keeps its wipe and restart.
+  workflow_call:
+    inputs:
+      seed-only:
+        description: >-
+          Skip the wipe and the restart and only seed. The release pipeline
+          passes this: its `sandbox` job wipes before it deploys, and the
+          deploy's recreate is the fresh boot that migrates (#3467).
+        required: false
+        type: boolean
+        default: false
 
 permissions: {}
 
@@ -46,7 +61,7 @@ concurrency:
 jobs:
   wipe:
     name: wipe the sandbox schemas (on the box)
-    if: github.repository == 'rubentalstra/FerroEHR'
+    if: github.repository == 'rubentalstra/FerroEHR' && !inputs.seed-only
     runs-on: ubuntu-latest
     timeout-minutes: 15
     environment: hosted
@@ -83,6 +98,7 @@ jobs:
   restart:
     name: restart the CDR (fresh boot re-runs the migrations)
     needs: wipe
+    if: ${{ !inputs.seed-only }}
     runs-on: ubuntu-latest
     timeout-minutes: 30
     environment: hosted
@@ -132,6 +148,9 @@ jobs:
   seed:
     name: seed the demo data
     needs: restart
+    # Seed-only skips the two jobs above; a skipped `needs` would otherwise
+    # skip this one too.
+    if: ${{ !cancelled() && (inputs.seed-only || needs.restart.result == 'success') }}
     runs-on: ubuntu-latest
     timeout-minutes: 20
     permissions:

@@ -84,13 +84,19 @@ every step. Three callers:
 
 1. **A real release** — the `sandbox` job in `release.yml`, after scan-and-tag
    moves `:latest`. A prerelease moves no `:latest`, so it deploys nothing.
-   The `sandbox-reseed` leg then wipes, restarts and reseeds.
+   The job wipes the schemas FIRST (verb `wipe`), then deploys: the recreate
+   is the fresh boot that migrates the empty database, so a release that
+   changes the storage generation lands too (the v4.3.1 image refused the
+   first-generation database it found, #3467). The `sandbox-reseed` leg then
+   seeds only.
 2. **A manual `workflow_dispatch`** of `.github/workflows/hosted-deploy.yml`.
-3. **The reseed** (`sandbox-reseed.yml`, nightly + after every release
-   deploy) — verbs `wipe` (drop the CDR's five schemas on the private database
-   box, plus the four superseded first-generation ones a box seeded before the
-   storage rewrite still carries, with the DSN this box already holds) and `restart` (recreate the CDR so
-   a fresh boot re-runs the migrations against the wiped database).
+   It wipes nothing: a redeploy of the same image keeps the day's demo data.
+3. **The reseed** (`sandbox-reseed.yml`, nightly; the release calls it
+   seed-only) — verbs `wipe` (drop the CDR's five schemas on the private
+   database box, plus the four superseded first-generation ones a box seeded
+   before the storage rewrite still carries, with the DSN this box already
+   holds) and `restart` (recreate the CDR so a fresh boot re-runs the
+   migrations against the wiped database).
 
 The deploy key is restricted on the box to `deploy.sh` (`command=` in
 `cloud-init.yaml`), which reads `SSH_ORIGINAL_COMMAND` and accepts exactly

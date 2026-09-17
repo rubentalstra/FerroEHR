@@ -986,6 +986,19 @@ jobs:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           persist-credentials: false
+      # The wipe comes BEFORE the deploy (#3467). The sandbox is demo data,
+      # reset every night, and a release may change the storage generation:
+      # the v4.3.1 image refused the box's first-generation database at boot,
+      # served 502 for the whole verify window, and the reseed that would have
+      # wiped it sat behind the failed deploy. Wiped first, the deploy's own
+      # recreate is the fresh boot that migrates the empty database, and the
+      # verify below reads the release it just deployed.
+      - name: Wipe the sandbox schemas (the deploy migrates a fresh database)
+        uses: ./.github/actions/hosted-deploy
+        with:
+          verb: wipe
+          ssh-key: ${{ secrets.HOSTED_SSH_KEY }}
+          known-hosts: ${{ secrets.HOSTED_KNOWN_HOSTS }}
       - name: Deploy the hosted sandbox
         uses: ./.github/actions/hosted-deploy
         with:
@@ -993,8 +1006,9 @@ jobs:
           ssh-key: ${{ secrets.HOSTED_SSH_KEY }}
           known-hosts: ${{ secrets.HOSTED_KNOWN_HOSTS }}
 
-  # After the deploy, the reseed: a release that edits the baseline migration
-  # heals at deploy time instead of at the next midnight. Environment secrets
+  # After the deploy, the seed. The wipe and the fresh boot happened in the
+  # `sandbox` job above, so the reseed workflow is called seed-only; the
+  # nightly schedule keeps its own wipe and restart. Environment secrets
   # reach the called workflow's own environment-naming jobs here (measured:
   # the v4.0.13 release's reseed succeeded through two call hops).
   #
@@ -1010,6 +1024,8 @@ jobs:
       contents: read
     secrets: inherit # zizmor: ignore[secrets-inherit]
     uses: ./.github/workflows/sandbox-reseed.yml
+    with:
+      seed-only: true
 
   # ── Freeze /docs/vX.Y.Z/ ────────────────────────────────────────────────────
   # Moved out of docs.yml (#2776), which had no prerelease guard: an `-rc1` tag
