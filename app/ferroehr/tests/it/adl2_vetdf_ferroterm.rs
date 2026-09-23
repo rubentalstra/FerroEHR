@@ -43,7 +43,10 @@ use testcontainers::{ContainerAsync, GenericImage, ImageExt};
 
 /// The `FerroTERM` release the compose overlay pins (`docker-compose.terminology.yml`).
 const FERROTERM_IMAGE: &str = "ghcr.io/rubentalstra/ferroterm";
-const FERROTERM_TAG: &str = "0.1.3";
+/// Tag AND index digest, the reference the overlay carries: the digest is what
+/// is pulled, so this suite measures the exact bytes a deployment runs.
+const FERROTERM_TAG: &str =
+    "0.1.4@sha256:f3b5f35a60d99d5c837125e5f8cf39d8eeecf9f69dbc79b9a526cc45aa706470";
 const FERROTERM_PORT: ContainerPort = ContainerPort::Tcp(8080);
 /// The shaped code system the seed serves (`docker/terminology/seed/`).
 const SHAPED_SYSTEM: &str = "http://cnf.example.test/fhir/CodeSystem/sct-shaped";
