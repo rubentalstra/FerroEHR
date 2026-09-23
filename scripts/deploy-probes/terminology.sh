@@ -192,7 +192,7 @@ TERM_FT_NON_MEMBER="corpus/fixtures/composition/terminology_binding_sct_non_memb
 
 # The overlay stack: base file + overlay, the s3 profile the other families
 # assume, and ferroterm explicitly. `--wait` returns once FerroTERM's own
-# HEALTHCHECK (`ferroterm healthcheck`, 0.1.3) reports healthy and the CDR,
+# HEALTHCHECK (`ferroterm healthcheck`, 0.1.4) reports healthy and the CDR,
 # which depends on that, is healthy too; no host-side polling is needed.
 term_ft_up() {
   dc -f docker-compose.yml -f "$TERM_FT_OVERLAY" --profile s3 up -d --wait ferroehr ferroterm >/dev/null 2>&1

@@ -15,6 +15,20 @@ workflow refuses a tag that has no matching section here.
 
 ## [Unreleased]
 
+### Changed
+
+- **FerroTERM moves to 0.1.4 everywhere the product pins it** (#3474). The
+  quickstart overlay `docker-compose.terminology.yml`, the hosted sandbox
+  compose file, the Helm chart (`terminology.image.digest` and the pinned
+  version its tag default and Artifact Hub annotation read) and the
+  integration test that starts the real server all name
+  `ghcr.io/rubentalstra/ferroterm:0.1.4@sha256:f3b5f35a60d99d5c837125e5f8cf39d8eeecf9f69dbc79b9a526cc45aa706470`,
+  the index digest read from GHCR. That release reloads its served set without
+  a restart, treats an index root's child directories as releases, ships the
+  `ferroterm-sync` service, and carries the standard concept status properties
+  on locally authored code systems. The chart version becomes 10.1.2; an
+  install that pins the chart keeps running the image it pinned.
+
 ## [4.3.1] - 2026-09-16
 
 ### Added

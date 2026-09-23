@@ -19,7 +19,7 @@ type: application
 # A published OCI version is immutable by refusal rather than by the registry —
 # `helm push` over an existing tag replaces it silently — so a correction always
 # ships as a NEW version and the published one stands as it was.
-version: 10.1.1
+version: 10.1.2
 # The DEFAULT container image tag (overridable via image.tag). Equals the
 # workspace version in Cargo.toml, bumped in the release PR beside the
 # docker-compose.yml image tags — one version sweep, the compose treatment
@@ -199,7 +199,7 @@ annotations:
     # the digest to `terminology.image.digest` in values.yaml. Bumping FerroTERM
     # is those two edits; this line is then checked, not maintained.
     - name: ferroterm
-      image: ghcr.io/rubentalstra/ferroterm:0.1.3@sha256:b1ef80382e03c2474bfec2ec57a698d83314e1290dd0cb5a2612ea208bde020c  # party: third
+      image: ghcr.io/rubentalstra/ferroterm:0.1.4@sha256:f3b5f35a60d99d5c837125e5f8cf39d8eeecf9f69dbc79b9a526cc45aa706470  # party: third
       platforms:
         - linux/amd64
         - linux/arm64
