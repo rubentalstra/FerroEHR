@@ -17,6 +17,19 @@ workflow refuses a tag that has no matching section here.
 
 ### Changed
 
+- **FerroTERM moves to 0.1.5 everywhere the product pins it.** The quickstart
+  overlay `docker-compose.terminology.yml`, the hosted sandbox compose file, the
+  Helm chart (`terminology.image.digest` and the pinned version its tag default
+  and Artifact Hub annotation read) and the integration test that starts the
+  real server all name
+  `ghcr.io/rubentalstra/ferroterm:0.1.5@sha256:61a2d4aefc4a48e9e90b9a698a64bdfeb7ef6443744a1fe50972099456891fe9`,
+  the index digest read from GHCR. That release adds the history interaction,
+  `_summary` and `_elements` on read, a 406 on an unacceptable `Accept`, refuses
+  a write that would duplicate a canonical, and states the position of a
+  refused expression constraint on the `OperationOutcome`. The chart version
+  becomes 10.1.3; an install that pins the chart keeps running the image it
+  pinned.
+
 - **`openehr-its` is split in two, and the wire layer is Apache-2.0 again**
   (#3482). The new crate `openehr-sdt` (BUSL-1.1) holds the hand-written
   Simplified Formats (FLAT, STRUCTURED, Web Template, TDD import), the
