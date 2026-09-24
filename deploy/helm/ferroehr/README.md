@@ -2,7 +2,7 @@
 
 Pure-Rust, openEHR-conformant clinical data repository (ITS-REST 1.1.0 + AQL 1.1). A single static binary deployed with a hardened-by-default security posture: runs as a non-root, read-only-rootfs workload whose NetworkPolicy admits its serving port only, and that connects to an EXTERNAL PostgreSQL 18 as an unprivileged app role, with schema preparation on its own credential.
 
-![Version: 10.1.2](https://img.shields.io/badge/Version-10.1.2-informational?style=flat-square) ![Type: application](https://img.shields.io/badge/Type-application-informational?style=flat-square) ![AppVersion: 4.3.1](https://img.shields.io/badge/AppVersion-4.3.1-informational?style=flat-square)
+![Version: 10.1.3](https://img.shields.io/badge/Version-10.1.3-informational?style=flat-square) ![Type: application](https://img.shields.io/badge/Type-application-informational?style=flat-square) ![AppVersion: 4.3.1](https://img.shields.io/badge/AppVersion-4.3.1-informational?style=flat-square)
 
 FerroEHR is a pure-Rust openEHR Clinical Data Repository: ITS-REST 1.1.0 at the
 API, AQL 1.1 as the query language, PostgreSQL 18-native storage, shipped as a
@@ -33,7 +33,7 @@ to add; `helm repo add` does not apply to this chart:
 
 ```console
 helm install ferroehr oci://ghcr.io/rubentalstra/charts/ferroehr \
-  --version 10.1.2 \
+  --version 10.1.3 \
   --namespace ferroehr --create-namespace \
   --set database.existingSecret=ferroehr-db \
   --set image.tag=4.3.1
@@ -47,7 +47,7 @@ They are independent SemVer lines and they move independently:
 
 | What | Set with | This release |
 |---|---|---|
-| the **chart** (templates, defaults, this document) | `--version` | `10.1.2` |
+| the **chart** (templates, defaults, this document) | `--version` | `10.1.3` |
 | the **server image** | `image.tag` | `4.3.1` |
 
 `appVersion` is the image the chart defaults to; pinning `image.tag` explicitly
@@ -59,7 +59,7 @@ The chart carries two keyless Sigstore artifacts, and they answer different
 questions. A **cosign signature:** who signed this:
 
 ```console
-cosign verify ghcr.io/rubentalstra/charts/ferroehr:10.1.2 \
+cosign verify ghcr.io/rubentalstra/charts/ferroehr:10.1.3 \
   --certificate-identity-regexp '^https://github\.com/rubentalstra/FerroEHR/\.github/workflows/publish-chart\.yml@' \
   --certificate-oidc-issuer https://token.actions.githubusercontent.com
 ```
@@ -67,7 +67,7 @@ cosign verify ghcr.io/rubentalstra/charts/ferroehr:10.1.2 \
 A **SLSA build provenance attestation:** what source it was built from, and how:
 
 ```console
-gh attestation verify oci://ghcr.io/rubentalstra/charts/ferroehr:10.1.2 \
+gh attestation verify oci://ghcr.io/rubentalstra/charts/ferroehr:10.1.3 \
   -R rubentalstra/FerroEHR
 gh attestation verify oci://ghcr.io/rubentalstra/ferroehr:4.3.1 \
   -R rubentalstra/FerroEHR
@@ -374,10 +374,10 @@ Kubernetes: `>=1.36.0-0`
 | terminology.enabled | bool | `false` | Deploy FerroTERM alongside the CDR. |
 | terminology.extraEnv | list | `[]` | Extra environment for FerroTERM (escape hatch). |
 | terminology.failOnError | bool | `false` | What the CDR does when the terminology server cannot answer. `false` (the server's own shipped default) accepts the binding; `true` turns an unreachable server into a 422 refusal. No released openEHR text decides between the two. |
-| terminology.image.digest | string | `"sha256:f3b5f35a60d99d5c837125e5f8cf39d8eeecf9f69dbc79b9a526cc45aa706470"` | Image digest (`sha256:…`); wins over `tag`. Pinned by default, so an install runs the exact image this chart was validated against. |
+| terminology.image.digest | string | `"sha256:61a2d4aefc4a48e9e90b9a698a64bdfeb7ef6443744a1fe50972099456891fe9"` | Image digest (`sha256:…`); wins over `tag`. Pinned by default, so an install runs the exact image this chart was validated against. |
 | terminology.image.pullPolicy | string | `"IfNotPresent"` | Pull policy. |
 | terminology.image.repository | string | `"ghcr.io/rubentalstra/ferroterm"` | FerroTERM image repository. A separate product on its own release line (https://github.com/rubentalstra/FerroTERM), BUSL-1.1 from the same Licensor as FerroEHR. |
-| terminology.image.tag | string | `""` | Image tag. Empty falls back to the FerroTERM release this chart is pinned to (0.1.4) — never `.Chart.appVersion`, which is FerroEHR's line. A tag other than that pin is REFUSED while `digest` below is non-empty: the digest wins, so the tag would be inert while the values file claimed otherwise. Clear `digest` to deploy a tag. |
+| terminology.image.tag | string | `""` | Image tag. Empty falls back to the FerroTERM release this chart is pinned to (0.1.5) — never `.Chart.appVersion`, which is FerroEHR's line. A tag other than that pin is REFUSED while `digest` below is non-empty: the digest wins, so the tag would be inert while the values file claimed otherwise. Clear `digest` to deploy a tag. |
 | terminology.index.mountPath | string | `"/data/index"` | Directory the index claim is mounted at, read-only. Rendered as `FERROTERM_INDEX` only when a claim is named. |
 | terminology.index.persistentVolumeClaim | string | `""` | Name of an EXISTING PersistentVolumeClaim holding a built index for a release you hold a licence for. Empty means the shaped seed is served alone. The chart provisions no storage and renders no build Job: build the index off-cluster with `ferroterm-build --rf2 <release.zip> --out <dir>` and fill the claim from that output. |
 | terminology.logFormat | string | `"json"` | Log format (`json` or `pretty`). |
