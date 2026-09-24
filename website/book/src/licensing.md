@@ -134,7 +134,7 @@ redistributed verbatim with attribution, so it declares
 Apache-2.0 openEHR XSD, OpenAPI and BMM artifacts, and it embeds the vendored
 ITS-JSON schema. The hand-written runtimes, canonical JSON entry points and
 wire-validation dispatcher are Apache-2.0 with it, because the generated code
-cannot ship without them. From 0.0.68 it declares `Apache-2.0`, and every
+cannot ship without them. From 0.0.69 it declares `Apache-2.0`, and every
 file names the openEHR Foundation as the second copyright holder.
 
 The three hand-written engines, `openehr-query` (the AQL parser), `openehr-adl`

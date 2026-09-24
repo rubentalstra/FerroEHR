@@ -24,7 +24,7 @@ workflow refuses a tag that has no matching section here.
   grammar. `openehr-its` keeps the ITS wire layer: the generated canonical JSON
   dispatch, the canonical XML codecs, the ITS-REST contract, the OPT 1.4 and
   AOM2 archetype XML codecs, and the hand-written runtimes, canonical JSON entry
-  points and wire-validation dispatcher they need. From 0.0.68 it is published
+  points and wire-validation dispatcher they need. From 0.0.69 it is published
   under Apache-2.0, so a consumer of canonical JSON takes on no BUSL-1.1 code.
   Rust callers import `openehr_sdt::flat`, `openehr_sdt::rm_instance` and
   `openehr_sdt::smart_scopes` in place of `openehr_its::flat`,
@@ -35,8 +35,9 @@ workflow refuses a tag that has no matching section here.
   `default-features = false` compiles to the scope grammar alone, with no
   dependency. Published versions keep their licence: `openehr-its` 0.0.60 to
   0.0.67 stay `BUSL-1.1 AND Apache-2.0`.
-- **The published `openehr-*` crates are nine, and all step to 0.0.68** (#3482).
-  `openehr-sdt` joins the lockstep line at 0.0.68 and publishes after
+- **The published `openehr-*` crates are nine, and all step to 0.0.69** (#3482).
+  `openehr-sdt` was first published alone at 0.0.68, built against the 0.0.67
+  siblings; it joins the lockstep line at 0.0.69 and publishes after
   `openehr-its` and before `openehr-adl`.
 - **FerroTERM moves to 0.1.4 everywhere the product pins it** (#3474). The
   quickstart overlay `docker-compose.terminology.yml`, the hosted sandbox

@@ -21,8 +21,8 @@ vendored specification text.
 
 ```toml
 [dependencies]
-openehr-rm = "0.0.68"
-openehr-its = "0.0.68"
+openehr-rm = "0.0.69"
+openehr-its = "0.0.69"
 ```
 
 All nine are **edition 2024** with an MSRV of **Rust 1.97**, and all nine
@@ -117,8 +117,8 @@ OPT 1.4 template:
 
 ```toml
 [dependencies]
-openehr-its = { version = "0.0.68", default-features = false, features = ["opt14"] }
-openehr-sdt = { version = "0.0.68", default-features = false, features = ["flat"] }
+openehr-its = { version = "0.0.69", default-features = false, features = ["opt14"] }
+openehr-sdt = { version = "0.0.69", default-features = false, features = ["flat"] }
 ```
 
 With `default-features = false` and no feature at all, `openehr-sdt` compiles
@@ -182,9 +182,11 @@ time (MIT AND Apache-2.0 for the crates that embed openEHR material) and keep
 them; 0.0.57 was never published; 0.0.58 and 0.0.59 are Apache-2.0 for all
 eight crates of that time. From 0.0.60 `openehr-query` and `openehr-adl` are
 BUSL-1.1, and `openehr-its` was published as `BUSL-1.1 AND Apache-2.0` from
-0.0.60 to 0.0.67. From 0.0.68 `openehr-its` is Apache-2.0 again, and its
-hand-written Simplified Formats, RM-instance validation and scope grammar moved
-into the new `openehr-sdt`, which starts at 0.0.68 under BUSL-1.1. Published
+0.0.60 to 0.0.67; its 0.0.68 was never published, and from 0.0.69 it is
+Apache-2.0 again. Its hand-written Simplified Formats, RM-instance validation
+and scope grammar moved into the new `openehr-sdt`, first published alone at
+0.0.68 under BUSL-1.1 against the 0.0.67 siblings and in lockstep from 0.0.69.
+Published
 versions keep the licence they were published with. The full picture, including
 the vendored material that never reaches a published package, is in
 [Licensing](licensing.md).

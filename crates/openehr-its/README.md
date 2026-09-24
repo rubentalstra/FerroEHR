@@ -139,9 +139,9 @@ Foundation as copyright holders.
 
 Version history: up to 0.0.59 the crate was published under Apache-2.0;
 0.0.60 to 0.0.67 were published as `BUSL-1.1 AND Apache-2.0` and keep that;
-from 0.0.68 it is Apache-2.0 again. The hand-written Simplified Formats,
+0.0.68 was never published; from 0.0.69 it is Apache-2.0 again. The hand-written Simplified Formats,
 RM-instance validation and SMART scope grammar that carried the BUSL-1.1
-position moved to [`openehr-sdt`](https://docs.rs/openehr-sdt) at 0.0.68.
+position moved to [`openehr-sdt`](https://docs.rs/openehr-sdt).
 
 ## Part of FerroEHR
 

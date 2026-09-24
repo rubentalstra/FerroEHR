@@ -107,7 +107,8 @@ for third parties or distribution for a fee needs a commercial licence from the
 Licensor, Vernum Projecten B.V. Each version becomes Apache License 2.0 four
 years after it is published. The crate is hand-written; the openEHR
 specification text it implements is the authority but is not embedded in the
-package. The crate was first published at 0.0.68; its code was published as
+package. The crate was first published at 0.0.68, built against the 0.0.67 siblings;
+from 0.0.69 it moves in lockstep with them. Its code was published as
 part of `openehr-its` before that.
 
 ## Part of FerroEHR
