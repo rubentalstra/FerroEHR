@@ -21,7 +21,7 @@
 //! - `runtime` — the derived near-runtime form
 //!   (`BASE/docs/architecture_overview/master10-archetypes.adoc` §Archetypes and
 //!   Templates at Runtime, §Deploying Archetypes and Templates), `moka`-cached;
-//!   the `WebTemplate` format is spec-silent and stays in `openehr_its::flat`.
+//!   the `WebTemplate` format is spec-silent and stays in `openehr_sdt::flat`.
 //!
 //! The service methods live on [`crate::service::FerroEhrService`], defined
 //! across `store` (`store_template`, `get_template_xml`, `template_summaries`)

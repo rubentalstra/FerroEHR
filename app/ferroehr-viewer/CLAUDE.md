@@ -53,7 +53,7 @@ extension); the wire it consumes IS spec-bound (`docs/specs/openehr/ITS-REST/`
   hiding one never recolours the others.
 - **Every scope string the viewer EXPLAINS is read by ONE grammar and rendered
   by ONE kit.**
-  The parse is `openehr_its::rest::smart_scopes` — the same master08 module the
+  The parse is `openehr_sdt::smart_scopes` — the same master08 module the
   CDR's scope gate enforces with, so the viewer's explanation can never drift
   from the server's behaviour; NEVER write a second scope parser here. It is
   reachable on BOTH targets because the crate is taken

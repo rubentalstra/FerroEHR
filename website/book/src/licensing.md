@@ -45,10 +45,11 @@ published. A commercial licence starts with a short conversation with the
 maintainer named in
 [`MAINTAINERS.md`](https://github.com/rubentalstra/FerroEHR/blob/main/MAINTAINERS.md).
 
-The eight `openehr-*` crates on crates.io are a separate question. The five
-generated model crates are Apache-2.0, so any Rust project can use them without
-a licence conversation; the three hand-written engines carry the same Business
-Source License as the application. Full detail is under
+The nine `openehr-*` crates on crates.io are a separate question. The five
+generated model crates and the `openehr-its` wire layer are Apache-2.0, so any
+Rust project can use them without a licence conversation; the three
+hand-written engines carry the same Business Source License as the
+application. Full detail is under
 [FerroEHR's own code](#ferroehrs-own-code-the-business-source-license-11)
 below.
 
@@ -56,7 +57,7 @@ below.
 
 Everything written for this project (the server and application crates, the
 code generator and tooling, the viewer, and the three hand-written
-specification engines `openehr-query`, `openehr-adl` and `openehr-its`) is licensed under the
+specification engines `openehr-query`, `openehr-adl` and `openehr-sdt`) is licensed under the
 [Business Source License 1.1](https://github.com/rubentalstra/FerroEHR/blob/main/LICENSE),
 SPDX identifier `BUSL-1.1`. The Licensor is Vernum Projecten B.V. The copyright
 holder is stated as *Vernum Projecten B.V.*, identically in `LICENSE`, in
@@ -103,8 +104,9 @@ Ruben Talstra, `@rubentalstra` on GitHub.
 the MIT terms they were published with, and so do the `openehr-*` crate
 versions 0.0.56 and earlier on crates.io (MIT AND Apache-2.0 for the crates
 that embed openEHR-derived material); `openehr-query`, `openehr-adl` and
-`openehr-its` 0.0.58 and 0.0.59 stay Apache-2.0. Relicensing changes future
-versions only. `LICENSES/MIT.txt` reproduces that grant as those versions carry
+`openehr-its` 0.0.58 and 0.0.59 stay Apache-2.0, and `openehr-its` 0.0.60 to
+0.0.67 stay `BUSL-1.1 AND Apache-2.0`. Relicensing changes future versions
+only. `LICENSES/MIT.txt` reproduces that grant as those versions carry
 it, Ruben Talstra's copyright line included, because a published grant is a
 record of what was handed out and is not rewritten afterwards.
 
@@ -114,7 +116,7 @@ project under Apache-2.0, and the conformance pipeline here consumes it at a
 pinned version. The vendored test corpora this repository still carries keep
 their upstream terms exactly as the table below states.
 
-**Five of the eight published `openehr-*` spec crates are the exception: they
+**Six of the nine published `openehr-*` spec crates are the exception: they
 are Apache-2.0, not BUSL-1.1.** `openehr-base`, `openehr-rm`, `openehr-am`,
 `openehr-lang` and `openehr-term` are the generated openEHR model, published on
 crates.io under the licence of the openEHR machine-readable artifacts they are
@@ -127,15 +129,20 @@ openEHR terminology XML, which is CC-BY-SA 3.0 (see the table below) and is
 redistributed verbatim with attribution, so it declares
 `Apache-2.0 AND CC-BY-SA-3.0` and ships both texts.
 
+`openehr-its`, the ITS wire layer, is the sixth. Its canonical XML codecs,
+`_type` dispatch, REST contract and archetype XML codecs are generated from the
+Apache-2.0 openEHR XSD, OpenAPI and BMM artifacts, and it embeds the vendored
+ITS-JSON schema. The hand-written runtimes, canonical JSON entry points and
+wire-validation dispatcher are Apache-2.0 with it, because the generated code
+cannot ship without them. From 0.0.69 it declares `Apache-2.0`, and every
+file names the openEHR Foundation as the second copyright holder.
+
 The three hand-written engines, `openehr-query` (the AQL parser), `openehr-adl`
-(the ADL engine) and `openehr-its` (the canonical codecs, the REST contract and
-the Simplified Formats), are the project's own engineering and carry the
-Business Source License 1.1 like the application, each with its own `LICENSE`
-naming the crate as the Licensed Work. `openehr-its` declares
-`BUSL-1.1 AND Apache-2.0`: its generated codecs and contract derive from the
-Apache-2.0 openEHR XSD, OpenAPI and BMM artifacts and it embeds the vendored
-ITS-JSON schema, so it ships both texts and names the openEHR Foundation as a
-second holder. See [Rust crates](crates.md#licensing).
+(the ADL engine) and `openehr-sdt` (the Simplified Formats, RM-instance
+validation and the SMART scope grammar), are the project's own engineering and
+carry the Business Source License 1.1 like the application, each with its own
+`LICENSE` naming the crate as the Licensed Work and each declaring `BUSL-1.1`.
+See [Rust crates](crates.md#licensing).
 
 ## Vendored third-party material
 
@@ -252,11 +259,10 @@ So licensing is **also** published in the machine-readable form the
   `SPDX-FileCopyrightText` line and an `SPDX-License-Identifier` line stating the
   same position `REUSE.toml` declares for it, so a file copied out of this
   repository takes its licensing along. Rust files of the five generated spec
-  crates state `Apache-2.0`, those of `openehr-its` state
-  `BUSL-1.1 AND Apache-2.0`, and every other first-party Rust, shell, SQL and
-  YAML file, the `openehr-query` and `openehr-adl` sources included, states
-  `BUSL-1.1`. A copied migration or script arrives licensed, which is the whole
-  point.
+  crates and of `openehr-its` state `Apache-2.0`, and every other first-party
+  Rust, shell, SQL and YAML file, the `openehr-query`, `openehr-adl` and
+  `openehr-sdt` sources included, states `BUSL-1.1`. A copied migration or
+  script arrives licensed, which is the whole point.
 
 The vendored trees are glob-declared rather than headered for a reason that is
 not convenience: **no vendored file may be edited**, so a header sweep over

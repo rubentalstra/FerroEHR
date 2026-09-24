@@ -14,7 +14,7 @@ running a clinical deployment under change control has to plan around it.
 |---|---|---|
 | The server (GitHub releases, container images) | product SemVer, currently `4.x` | the newest `vX.Y.Z` tag, and nothing older |
 | The Helm chart (`oci://ghcr.io/rubentalstra/charts`) | its own SemVer, independent of the server | the newest published chart version |
-| The `openehr-*` crates (crates.io) | their own lockstep `0.0.x` line | the newest published version of all eight |
+| The `openehr-*` crates (crates.io) | their own lockstep `0.0.x` line | the newest published version of all nine |
 
 **How a security fix reaches you.** The fix lands on `main` and ships in the
 next tagged release. That is normally the next *patch* on the current minor

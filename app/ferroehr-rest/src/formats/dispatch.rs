@@ -6,7 +6,7 @@
 //!
 //! The wire seam between the negotiation core
 //! ([`crate::overview::negotiate`], which classifies the media type) and the
-//! `openehr_its::flat` conversion engine, in both directions for the FLAT and
+//! `openehr_sdt::flat` conversion engine, in both directions for the FLAT and
 //! STRUCTURED representations of a versioned object.
 //!
 //! On a request it parses the simplified body per its media type, resolves the
@@ -92,11 +92,11 @@ fn missing_template_id() -> RestError {
 /// but does not conform to the target template's simplified-data-template shape
 /// — well-formed-but-semantically-invalid client content → `422`
 /// (`Requests_and_responses.md §HTTP status codes`, row `422`).
-fn flat_input_err(e: &openehr_its::flat::error::FlatError) -> RestError {
+fn flat_input_err(e: &openehr_sdt::flat::error::FlatError) -> RestError {
     // NOTE: TEMPLATE-INDEPENDENT FLAT violations are the 400 row, everything
     // template-/RM-mediated the 422 row ("could be converted to a resource",
     // `responses/{400,422}.yaml`) — no released text splits the two.
-    use openehr_its::flat::error::FlatError;
+    use openehr_sdt::flat::error::FlatError;
     let syntactic = matches!(
         e,
         FlatError::MalformedPath { .. }
@@ -116,7 +116,7 @@ fn flat_input_err(e: &openehr_its::flat::error::FlatError) -> RestError {
 /// form. Stored data is the server's own and should always convert, so this is
 /// a server fault → `500` (`Requests_and_responses.md §HTTP status codes`, row
 /// `500`).
-fn flat_output_err(e: &openehr_its::flat::error::FlatError) -> RestError {
+fn flat_output_err(e: &openehr_sdt::flat::error::FlatError) -> RestError {
     internal(e)
 }
 
@@ -137,7 +137,7 @@ pub(crate) async fn composition_from_flat(
         .web_template(&template_id)
         .await
         .map_err(RestError::from)?;
-    openehr_its::flat::convert::submitted_composition_from_flat(&flat, &wt, &now())
+    openehr_sdt::flat::convert::submitted_composition_from_flat(&flat, &wt, &now())
         .map_err(|e| flat_input_err(&e))
 }
 
@@ -158,7 +158,7 @@ pub(crate) async fn composition_from_structured(
         .web_template(&template_id)
         .await
         .map_err(RestError::from)?;
-    openehr_its::flat::convert::submitted_composition_from_structured(&structured, &wt, &now())
+    openehr_sdt::flat::convert::submitted_composition_from_structured(&structured, &wt, &now())
         .map_err(|e| flat_input_err(&e))
 }
 
@@ -194,9 +194,9 @@ pub(crate) async fn composition_flat_response(
 pub(crate) fn composition_flat_response_with(
     status: StatusCode,
     comp: &Value,
-    wt: &openehr_its::flat::webtemplate::model::WebTemplate,
+    wt: &openehr_sdt::flat::webtemplate::model::WebTemplate,
 ) -> Result<Response, RestError> {
-    let flat = openehr_its::flat::convert::composition_to_flat(comp, wt)
+    let flat = openehr_sdt::flat::convert::composition_to_flat(comp, wt)
         .map_err(|e| flat_output_err(&e))?;
     let json =
         serde_json::to_string(&flat).map_err(|e| internal(format!("FLAT serialization: {e}")))?;
@@ -223,9 +223,9 @@ pub(crate) async fn composition_structured_response(
 pub(crate) fn composition_structured_response_with(
     status: StatusCode,
     comp: &Value,
-    wt: &openehr_its::flat::webtemplate::model::WebTemplate,
+    wt: &openehr_sdt::flat::webtemplate::model::WebTemplate,
 ) -> Result<Response, RestError> {
-    let structured = openehr_its::flat::convert::composition_to_structured(comp, wt)
+    let structured = openehr_sdt::flat::convert::composition_to_structured(comp, wt)
         .map_err(|e| flat_output_err(&e))?;
     let json = serde_json::to_string(&structured)
         .map_err(|e| internal(format!("STRUCTURED serialization: {e}")))?;
@@ -277,10 +277,10 @@ pub(crate) async fn contribution_from_simplified(
                         "a FLAT CONTRIBUTION versions[].data must be a JSON object".to_owned(),
                     ))
                 })?;
-                openehr_its::flat::convert::submitted_composition_from_flat(map, &wt, &now)
+                openehr_sdt::flat::convert::submitted_composition_from_flat(map, &wt, &now)
             }
             WireFormat::Structured => {
-                openehr_its::flat::convert::submitted_composition_from_structured(data, &wt, &now)
+                openehr_sdt::flat::convert::submitted_composition_from_structured(data, &wt, &now)
             }
             _ => {
                 return Err(internal(
@@ -330,10 +330,10 @@ pub(crate) async fn contribution_to_simplified(
                 .map_err(RestError::from)?;
             let simplified = match format {
                 WireFormat::Flat => {
-                    openehr_its::flat::convert::composition_to_flat(&data, &wt).map(Value::Object)
+                    openehr_sdt::flat::convert::composition_to_flat(&data, &wt).map(Value::Object)
                 }
                 WireFormat::Structured => {
-                    openehr_its::flat::convert::composition_to_structured(&data, &wt)
+                    openehr_sdt::flat::convert::composition_to_structured(&data, &wt)
                 }
                 _ => {
                     return Err(internal(
@@ -423,7 +423,7 @@ mod tests {
     /// §HTTP status codes).
     #[test]
     fn input_conversion_failure_maps_to_422() {
-        let e = openehr_its::flat::error::FlatError::Conversion("bad leaf".to_owned());
+        let e = openehr_sdt::flat::error::FlatError::Conversion("bad leaf".to_owned());
         let status = flat_input_err(&e).into_response().status();
         assert_eq!(status, StatusCode::UNPROCESSABLE_ENTITY);
     }
@@ -431,7 +431,7 @@ mod tests {
     /// An output conversion failure (rendering stored server data) stays `500`.
     #[test]
     fn output_conversion_failure_stays_500() {
-        let e = openehr_its::flat::error::FlatError::Conversion("bad leaf".to_owned());
+        let e = openehr_sdt::flat::error::FlatError::Conversion("bad leaf".to_owned());
         let status = flat_output_err(&e).into_response().status();
         assert_eq!(status, StatusCode::INTERNAL_SERVER_ERROR);
     }

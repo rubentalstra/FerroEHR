@@ -6,7 +6,7 @@
 //! previewer field for any scope a reader pastes in.
 //!
 //! The reading itself is [`crate::scopes`] over the shared master08 grammar
-//! (`openehr_its::rest::smart_scopes`) — a pure function, so this module is a
+//! (`openehr_sdt::smart_scopes`) — a pure function, so this module is a
 //! thin view: no server round-trip for a parse, and identical markup on the
 //! server pass and at hydration.
 

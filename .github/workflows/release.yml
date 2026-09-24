@@ -1118,7 +1118,7 @@ jobs:
   # name. The shared implementation is scripts/release/publish-crates.sh, which
   # both lanes call.
   #
-  # Consequence, stated where it bites: each of the eight crates needs a Trusted
+  # Consequence, stated where it bites: each of the nine crates needs a Trusted
   # Publisher entry for THIS workflow file (repository `rubentalstra/FerroEHR`,
   # workflow `release.yml`, environment `crates-io`) beside the one naming
   # `publish-crates.yml`. Without it the token exchange below is refused, and
@@ -1154,7 +1154,7 @@ jobs:
       - id: auth
         name: Exchange the OIDC identity for a temporary crates.io token
         uses: rust-lang/crates-io-auth-action@c6f97d42243bad5fab37ca0427f495c86d5b1a18 # v1.0.5
-      - name: Publish the eight spec crates in dependency order
+      - name: Publish the nine spec crates in dependency order
         env:
           CARGO_REGISTRY_TOKEN: ${{ steps.auth.outputs.token }}
         run: bash scripts/release/publish-crates.sh publish
@@ -1163,7 +1163,7 @@ jobs:
       # run that uploaded everything but misread its own output would otherwise
       # end red with nothing to contradict it, and one that genuinely stranded a
       # crate would end red without naming which.
-      - name: Verify all eight crates resolve at the same version
+      - name: Verify all nine crates resolve at the same version
         if: always()
         run: bash scripts/release/publish-crates.sh verify
 
@@ -1290,7 +1290,7 @@ jobs:
               "$([ "$R_SANDBOX" = "success" ] && echo "serving ${VERSION}" || echo "$R_SANDBOX")"
             printf '| docs | %s |\n' \
               "$([ "$R_DOCS_FREEZE" = "success" ] && echo "/docs/${TAG}/ frozen, /docs/latest/ -> ${TAG}" || echo "$R_DOCS_FREEZE")"
-            # The eight spec crates publish on their own lockstep SemVer line,
+            # The nine spec crates publish on their own lockstep SemVer line,
             # unrelated to $VERSION — an unchanged cycle re-approves the same
             # version as a no-op.
             printf '| crates.io | %s |\n' \
@@ -1311,7 +1311,7 @@ jobs:
                 '  Do NOT re-run the leg — bump `Chart.yaml` version and publish the next one' \
                 '  from publish-chart.yml (dispatch with `publish: true`). That lane says the' \
                 '  same thing at the point of failure.' \
-                '- **crates.io refused the token exchange**: each of the eight crates needs a' \
+                '- **crates.io refused the token exchange**: each of the nine crates needs a' \
                 '  Trusted Publisher entry naming `release.yml` (repository, workflow file,' \
                 '  environment `crates-io`) beside the one naming `publish-crates.yml` —' \
                 '  Trusted Publishing matches the top-level workflow filename. Add the entries' \

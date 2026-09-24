@@ -10,7 +10,7 @@
 //! `template_id` "International Patient Summary") paired with its canonical-JSON
 //! compositions (`openehr-its/tests/vendor/openehr_sdk/composition/…`):
 //! `ips_canonical.json` (valid) and `ips_invalid.json` (out-of-range magnitudes
-//! and coded values outside the value set). Same pairing the `openehr_its::flat`
+//! and coded values outside the value set). Same pairing the `openehr_sdt::flat`
 //! validator's own corpus tests use (`openehr-its/tests/validation.rs`).
 //!
 //! Spec: openEHR ITS-REST 1.1.0 —
@@ -677,7 +677,7 @@ async fn direct_route_commit_against_an_adl2_template_stamps_and_guards() {
         .expect("upload the ADL2 operational template");
 
     // Convert the FLAT body exactly as the REST edge does (WebTemplate via the
-    // dialect-resolving public seam, `openehr_its::flat` conversion).
+    // dialect-resolving public seam, `openehr_sdt::flat` conversion).
     let wt = svc
         .web_template(ADL2_TEMPLATE_ID)
         .await
@@ -688,7 +688,7 @@ async fn direct_route_commit_against_an_adl2_template_stamps_and_guards() {
     )
     .expect("FLAT JSON");
     let composition =
-        openehr_its::flat::convert::composition_from_flat(&flat, &wt, "2026-08-03T12:00:00Z")
+        openehr_sdt::flat::convert::composition_from_flat(&flat, &wt, "2026-08-03T12:00:00Z")
             .expect("FLAT converts to a canonical COMPOSITION");
 
     let ehr_id = svc.create_ehr(None).await.expect("create_ehr").to_string();

@@ -14,7 +14,7 @@
 //! in archetype validation; the data-side consequence, that an instance code
 //! must be in the bound value set, is what this module enforces at ingestion.
 //!
-//! `openehr_its::flat::validation::collect_constraint_binding_checks` walks the
+//! `openehr_sdt::flat::validation::collect_constraint_binding_checks` walks the
 //! COMPOSITION against its `WebTemplate` and returns one
 //! [`ConstraintBindingCheck`] per bound coded value present in the instance.
 //! Each check is resolved against the terminology server the binding routes to
@@ -45,9 +45,9 @@
               canonical openEHR JSON, dynamic by construction"
 )]
 
-use openehr_its::flat::validation::ConstraintBindingCheck;
-use openehr_its::flat::webtemplate::model::WebTemplate;
-use openehr_its::rm_instance::{ValidationKind, ValidationMessage};
+use openehr_sdt::flat::validation::ConstraintBindingCheck;
+use openehr_sdt::flat::webtemplate::model::WebTemplate;
+use openehr_sdt::rm_instance::{ValidationKind, ValidationMessage};
 use serde_json::Value;
 
 use crate::service::FerroEhrService;
@@ -68,7 +68,7 @@ impl FerroEhrService {
             return Vec::new();
         };
         let checks =
-            openehr_its::flat::validation::collect_constraint_binding_checks(composition, wt);
+            openehr_sdt::flat::validation::collect_constraint_binding_checks(composition, wt);
         if checks.is_empty() {
             return Vec::new();
         }
@@ -157,7 +157,7 @@ mod tests {
     use std::collections::BTreeMap;
     use std::sync::Arc;
 
-    use openehr_its::flat::webtemplate::model::{
+    use openehr_sdt::flat::webtemplate::model::{
         WebTemplate, WebTemplateConstraintBinding, WebTemplateNode,
     };
     use serde_json::json;

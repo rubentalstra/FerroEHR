@@ -1,6 +1,6 @@
 // SPDX-FileCopyrightText: Vernum Projecten B.V.
 // SPDX-FileCopyrightText: openEHR Foundation
-// SPDX-License-Identifier: BUSL-1.1 AND Apache-2.0
+// SPDX-License-Identifier: Apache-2.0
 
 #![expect(clippy::expect_used, reason = "test assertions/diagnostics/fixtures")]
 //! The abstract-root serialization path (`to_canonical_xml_declared`).

@@ -36,6 +36,7 @@ on:
       - "crates/openehr-adl/**"
       - "crates/openehr-base/**"
       - "crates/openehr-its/**"
+      - "crates/openehr-sdt/**"
       - "crates/openehr-query/**"
       - "crates/openehr-rm/**"
       - ".github/workflows/fuzz.yml"

@@ -1,6 +1,6 @@
 // SPDX-FileCopyrightText: Vernum Projecten B.V.
 // SPDX-FileCopyrightText: openEHR Foundation
-// SPDX-License-Identifier: BUSL-1.1 AND Apache-2.0
+// SPDX-License-Identifier: Apache-2.0
 
 #![expect(clippy::panic, reason = "test assertions/diagnostics/fixtures")]
 //! Breadth gate over the AM 1.4 **archetype XML** twin of the CKM archetype

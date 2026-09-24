@@ -193,11 +193,11 @@ chapters, the Clippy book, and the Cargo/rustdoc books.)
   fallible, getters without `get_` prefixes. (Tier 3 via pedantic +
   review; `avoid-breaking-exported-api = false` in `clippy.toml` keeps the
   API-shape lints live. The justification is NOT "nothing publishes" — the
-  eight `openehr-*` crates publish to crates.io — it is the line they publish
+  nine `openehr-*` crates publish to crates.io — it is the line they publish
   on: `0.0.x`, where cargo treats every patch as its own compatibility set
   (https://doc.rust-lang.org/cargo/reference/semver.html), so no consumer
   version range spans a break, and any packaged-content change already bumps
-  all eight in the same PR. The `ferroehr-*` crates remain unpublished.
+  all nine in the same PR. The `ferroehr-*` crates remain unpublished.
   Re-adjudicate if the line graduates past `0.x` — the same trigger the
   C-STABLE entry below carries.)
 - **Blocking never hides in async**: no `std::sync` locks held across
@@ -395,13 +395,14 @@ chapters, the Clippy book, and the Cargo/rustdoc books.)
 - **C-PERMISSIVE — not followed; the project's own code is under the Business
   Source License 1.1** (owner decision 2026-09-03, superseding the MIT decision
   of 2026-07-31; coverage corrected 2026-08-04, issue #1883). BUSL-1.1 is
-  The five generated `openehr-*` model crates (`base`, `rm`, `am`, `lang`,
-  `term`) are the EXCEPTION: they publish under Apache-2.0 (the licence of
-  their openEHR inputs) so any Rust project can consume them; C-PERMISSIVE
-  holds for them. The three hand-written engines (`openehr-query`,
-  `openehr-adl`, `openehr-its`) carry BUSL-1.1 like the application (owner
-  decision 2026-09-04; `openehr-its` declares `BUSL-1.1 AND Apache-2.0` for the
-  openEHR-derived material it embeds). The application is source-available, not open source: non-production use is free, production
+  The six generated-or-wire `openehr-*` crates (`base`, `rm`, `am`, `lang`,
+  `term`, `its`) are the EXCEPTION: they publish under Apache-2.0 (the licence
+  of their openEHR inputs; `openehr-its` carries the hand-written runtimes,
+  entry points and wire-validation dispatcher its generated code cannot ship
+  without) so any Rust project can consume them; C-PERMISSIVE holds for them.
+  The three hand-written engines (`openehr-query`, `openehr-adl`,
+  `openehr-sdt`) carry BUSL-1.1 like the application (owner decisions
+  2026-09-04 and 2026-09-24, #3482). The application is source-available, not open source: non-production use is free, production
   use is free for Non-Commercial Purposes only (research, teaching, personal
   use, non-profit or public bodies outside the course of a business), and any
   other production use, hosting for third parties, or distribution for a fee

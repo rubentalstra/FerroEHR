@@ -52,4 +52,5 @@ anyhow.workspace = true
 assert_fs.workspace = true
 clap.workspace = true
 openehr-its = { path = "../../crates/openehr-its" }
+openehr-sdt = { path = "../../crates/openehr-sdt" }
 tokio.workspace = true

@@ -357,7 +357,7 @@ accepted, so the boundary is exact in both directions.
 ## The openEHR specification layer, as Rust crates
 
 You do not need the whole CDR to get the openEHR specifications in Rust. The
-generated specification layer is published on crates.io as eight
+generated specification layer is published on crates.io as nine
 independently usable crates, the same code this server runs on:
 
 | Crate                                                                                                                                                              | What it gives you                                                                                                                |
@@ -366,7 +366,8 @@ independently usable crates, the same code this server runs on:
 | ![Crates.io Version](https://img.shields.io/crates/v/openehr-base?style=flat&logo=rust&label=openehr-base&link=https%3A%2F%2Fcrates.io%2Fcrates%2Fopenehr-base)    | BASE: the foundation + base types (identifiers, intervals, the terminology-facing types)                                         |
 | ![Crates.io Version](https://img.shields.io/crates/v/openehr-am?style=flat&logo=rust&label=openehr-am&link=https%3A%2F%2Fcrates.io%2Fcrates%2Fopenehr-am)          | The Archetype Model, both generations: AOM 1.4 and AOM 2.4                                                                       |
 | ![Crates.io Version](https://img.shields.io/crates/v/openehr-adl?style=flat&logo=rust&label=openehr-adl&link=https%3A%2F%2Fcrates.io%2Fcrates%2Fopenehr-adl)       | The ADL engine: ADL2/cADL/ODIN parser, AOM2 validity catalogue, specialisation flattener, OPT2 generator, ADL 1.4 → 2 conversion |
-| ![Crates.io Version](https://img.shields.io/crates/v/openehr-its?style=flat&logo=rust&label=openehr-its&link=https%3A%2F%2Fcrates.io%2Fcrates%2Fopenehr-its)       | Canonical JSON + XML codecs, the ITS-REST contract, and the Simplified Formats (WebTemplate, FLAT, STRUCTURED)                   |
+| ![Crates.io Version](https://img.shields.io/crates/v/openehr-its?style=flat&logo=rust&label=openehr-its&link=https%3A%2F%2Fcrates.io%2Fcrates%2Fopenehr-its)       | Canonical JSON + XML codecs, the ITS-REST contract, and the OPT 1.4 and AOM2 archetype XML codecs                                |
+| ![Crates.io Version](https://img.shields.io/crates/v/openehr-sdt?style=flat&logo=rust&label=openehr-sdt&link=https%3A%2F%2Fcrates.io%2Fcrates%2Fopenehr-sdt)       | The Simplified Formats (WebTemplate, FLAT, STRUCTURED, TDD), RM-instance validation, and the SMART scope grammar                 |
 | ![Crates.io Version](https://img.shields.io/crates/v/openehr-query?style=flat&logo=rust&label=openehr-query&link=https%3A%2F%2Fcrates.io%2Fcrates%2Fopenehr-query) | The AQL 1.1 lexer, parser and AST                                                                                                |
 | ![Crates.io Version](https://img.shields.io/crates/v/openehr-term?style=flat&logo=rust&label=openehr-term&link=https%3A%2F%2Fcrates.io%2Fcrates%2Fopenehr-term)    | The terminology model plus the bundled openEHR terminology                                                                       |
 | ![Crates.io Version](https://img.shields.io/crates/v/openehr-lang?style=flat&logo=rust&label=openehr-lang&link=https%3A%2F%2Fcrates.io%2Fcrates%2Fopenehr-lang)    | The BMM/P_BMM object model and the ODIN instance reader                                                                          |
@@ -397,7 +398,7 @@ flowchart TB
     specs["openEHR machine-readable specs<br/>(BMM · XSD · OpenAPI — vendored + pinned)"]
 
     subgraph crates ["crates/* — the specification layer (generated where the specs are machine-readable)"]
-        openehr["openehr-base · openehr-rm · openehr-am · openehr-term · openehr-lang (BMM · ODIN · BEL)<br/>openehr-its (native canonical JSON/XML codecs + ITS-REST contract + Simplified Formats: WebTemplate · FLAT · STRUCTURED)<br/>openehr-adl (ADL 1.4 + 2.4 engine: parser · AOM2 validation · flattener · OPT2)<br/>openehr-query (AQL parser)"]
+        openehr["openehr-base · openehr-rm · openehr-am · openehr-term · openehr-lang (BMM · ODIN · BEL)<br/>openehr-its (native canonical JSON/XML codecs + ITS-REST contract)<br/>openehr-sdt (Simplified Formats: WebTemplate · FLAT · STRUCTURED · SMART scope grammar)<br/>openehr-adl (ADL 1.4 + 2.4 engine: parser · AOM2 validation · flattener · OPT2)<br/>openehr-query (AQL parser)"]
     end
 
     subgraph app ["app/* — the application (five crates, five roles)"]
@@ -655,12 +656,12 @@ file: point `[licence] file` (or `FERROEHR__LICENCE__FILE`) at it and
 `GET /ferroehr/rest/status` reports the grant in force. Without one the server
 runs identically under the embedded non-commercial grant, and says so there.
 
-The eight `openehr-*` crates on crates.io are a separate question. The five
+The nine `openehr-*` crates on crates.io are a separate question. The five
 generated model crates (`openehr-base`, `openehr-rm`, `openehr-am`,
-`openehr-lang`, `openehr-term`) are Apache-2.0, so any Rust project can use
-them without a licence conversation; the three hand-written engines
-(`openehr-query`, `openehr-adl`, `openehr-its`) carry the same Business
-Source License as the application. The full picture, including every vendored
+`openehr-lang`, `openehr-term`) and the `openehr-its` wire layer are
+Apache-2.0, so any Rust project can use them without a licence conversation;
+the three hand-written engines (`openehr-query`, `openehr-adl`,
+`openehr-sdt`) carry the same Business Source License as the application. The full picture, including every vendored
 third-party tree, is on the documentation site's
 [Licensing & legal](https://ferroehr.eu/docs/latest/licensing.html) page.
 

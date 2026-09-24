@@ -1,7 +1,7 @@
 // SPDX-FileCopyrightText: Vernum Projecten B.V.
 // SPDX-License-Identifier: BUSL-1.1
 
-//! The Simplified Formats readers (`openehr_its::flat`): FLAT and STRUCTURED
+//! The Simplified Formats readers (`openehr_sdt::flat`): FLAT and STRUCTURED
 //! composition bodies, which the ITS-REST Formats sub-spec accepts on a
 //! composition write.
 //!
@@ -24,9 +24,9 @@ fuzz_target!(|data: &[u8]| {
 
     // A FLAT body is a JSON object of path→value; a STRUCTURED body is a tree.
     if let serde_json::Value::Object(map) = &value {
-        let _ = openehr_its::flat::sim::flat::parse_flat(map);
-        let _ = openehr_its::flat::convert::flat_to_structured(map);
+        let _ = openehr_sdt::flat::sim::flat::parse_flat(map);
+        let _ = openehr_sdt::flat::convert::flat_to_structured(map);
     }
-    let _ = openehr_its::flat::sim::structured::parse_structured(&value);
-    let _ = openehr_its::flat::convert::structured_to_flat(&value);
+    let _ = openehr_sdt::flat::sim::structured::parse_structured(&value);
+    let _ = openehr_sdt::flat::convert::structured_to_flat(&value);
 });

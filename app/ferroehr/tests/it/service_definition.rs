@@ -1233,9 +1233,9 @@ async fn adl2_template_resolves_on_the_commit_path_and_validates() {
 
     // A composition declaring that template validates end-to-end through the same
     // per-commit choke point.
-    let mut comp = openehr_its::flat::example::example_composition(
+    let mut comp = openehr_sdt::flat::example::example_composition(
         &wt,
-        openehr_its::flat::example::DetailLevel::Complete,
+        openehr_sdt::flat::example::DetailLevel::Complete,
     );
     assert_eq!(
         comp.pointer("/archetype_details/template_id/value")
@@ -1278,16 +1278,16 @@ async fn adl2_template_resolves_on_the_commit_path_and_validates() {
 #[tokio::test]
 async fn adl2_template_with_filler_projects_the_filled_web_template() {
     fn find<'a>(
-        n: &'a openehr_its::flat::webtemplate::model::WebTemplateNode,
+        n: &'a openehr_sdt::flat::webtemplate::model::WebTemplateNode,
         id: &str,
-    ) -> Option<&'a openehr_its::flat::webtemplate::model::WebTemplateNode> {
+    ) -> Option<&'a openehr_sdt::flat::webtemplate::model::WebTemplateNode> {
         if n.id == id {
             return Some(n);
         }
         n.children.iter().find_map(|c| find(c, id))
     }
     fn dump(
-        n: &openehr_its::flat::webtemplate::model::WebTemplateNode,
+        n: &openehr_sdt::flat::webtemplate::model::WebTemplateNode,
         d: usize,
         out: &mut String,
     ) {

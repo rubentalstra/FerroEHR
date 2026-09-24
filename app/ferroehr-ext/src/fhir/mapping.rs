@@ -14,9 +14,9 @@
 //! template. Each of its `entries` reads a value out of the incoming resource
 //! through a `FHIRPath`-lite dot-path (see [`resolve`]) and writes it to a
 //! template-relative openEHR FLAT path (the `id[:i]/…|suffix` key
-//! `openehr_its::flat` consumes, `simplified_formats` master04 §Field
+//! `openehr_sdt::flat` consumes, `simplified_formats` master04 §Field
 //! Identifiers). The resulting flat map goes to
-//! [`composition_from_flat`](openehr_its::flat::convert::composition_from_flat)
+//! [`composition_from_flat`](openehr_sdt::flat::convert::composition_from_flat)
 //! with the template's `WebTemplate`, and the COMPOSITION it builds commits
 //! through the platform's normal validated path. This module is protocol-free
 //! and DB-free; the orchestration lives on `FerroEhrService`.
@@ -268,7 +268,7 @@ pub enum FhirMapError {
     /// error says WHICH node defeated the walk, which a string cannot be
     /// matched on.
     #[error("could not flatten COMPOSITION for reverse mapping: {0}")]
-    ReverseFailed(String, #[source] openehr_its::flat::error::FlatError),
+    ReverseFailed(String, #[source] openehr_sdt::flat::error::FlatError),
 }
 
 /// Resolve a **`FHIRPath`-lite** dot-path against a JSON value.
@@ -734,10 +734,10 @@ pub fn extract_subject(
 mod tests {
     use std::path::PathBuf;
 
-    use openehr_its::flat::convert::composition_from_flat;
-    use openehr_its::flat::webtemplate::builder::build_web_template;
-    use openehr_its::flat::webtemplate::model::WebTemplate;
     use openehr_its::opt14;
+    use openehr_sdt::flat::convert::composition_from_flat;
+    use openehr_sdt::flat::webtemplate::builder::build_web_template;
+    use openehr_sdt::flat::webtemplate::model::WebTemplate;
     use serde_json::json;
 
     use super::super::feeder_audit::{

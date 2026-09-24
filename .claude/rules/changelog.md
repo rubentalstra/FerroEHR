@@ -155,7 +155,7 @@ optional:
   — the dry run (its default) and the recovery path when a release's leg fails
   — the same split `publish-chart.yml` has against `build-chart.yml`.
   **Trusted Publishing matches the top-level workflow FILENAME**, so each of
-  the eight crates carries TWO publisher entries — one naming `release.yml`,
+  the nine crates carries TWO publisher entries — one naming `release.yml`,
   one naming `publish-crates.yml` — both under repository
   `rubentalstra/FerroEHR` and environment `crates-io`; a missing entry is
   refused at the token exchange, and the release run's summary names that as
@@ -165,7 +165,7 @@ optional:
 
   Both lanes authenticate via **crates.io Trusted Publishing** (OIDC,
   `rust-lang/crates-io-auth-action`, `id-token: write`, the `crates-io`
-  environment) and publish the eight `crates/*` members **one at a time in
+  environment) and publish the nine `crates/*` members **one at a time in
   dependency order**, treating "already exists on crates.io index" as done —
   no long-lived crates.io token exists anywhere. The upload and its
   registry read-back are ONE implementation,

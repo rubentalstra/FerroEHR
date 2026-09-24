@@ -141,7 +141,7 @@ impl FerroEhrService {
 /// Collects, lowercased, every node id a resolved template's tree carries, so
 /// archetype ids the operational template inlines resolve through it.
 fn collect_template_node_ids(
-    node: &openehr_its::flat::webtemplate::model::WebTemplateNode,
+    node: &openehr_sdt::flat::webtemplate::model::WebTemplateNode,
     covered: &mut std::collections::BTreeSet<String>,
 ) {
     if let Some(node_id) = &node.node_id {

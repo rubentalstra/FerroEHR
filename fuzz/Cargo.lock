@@ -418,6 +418,7 @@ dependencies = [
  "openehr-its",
  "openehr-query",
  "openehr-rm",
+ "openehr-sdt",
  "serde_json",
 ]
 
@@ -1202,7 +1203,7 @@ checksum = "9f7c3e4beb33f85d45ae3e3a1792185706c8e16d043238c593331cc7cd313b50"
 
 [[package]]
 name = "openehr-adl"
-version = "0.0.67"
+version = "0.0.69"
 dependencies = [
  "indexmap",
  "openehr-am",
@@ -1218,7 +1219,7 @@ dependencies = [
 
 [[package]]
 name = "openehr-am"
-version = "0.0.67"
+version = "0.0.69"
 dependencies = [
  "openehr-base",
  "openehr-lang",
@@ -1228,7 +1229,7 @@ dependencies = [
 
 [[package]]
 name = "openehr-base"
-version = "0.0.67"
+version = "0.0.69"
 dependencies = [
  "serde",
  "serde_json",
@@ -1238,22 +1239,19 @@ dependencies = [
 
 [[package]]
 name = "openehr-its"
-version = "0.0.67"
+version = "0.0.69"
 dependencies = [
  "async-trait",
  "axum",
- "fancy-regex",
  "http",
  "indexmap",
  "jsonschema",
- "moka",
  "openehr-am",
  "openehr-base",
  "openehr-lang",
  "openehr-rm",
  "openehr-term",
  "quick-xml",
- "regex",
  "serde",
  "serde_json",
  "serde_path_to_error",
@@ -1263,7 +1261,7 @@ dependencies = [
 
 [[package]]
 name = "openehr-lang"
-version = "0.0.67"
+version = "0.0.69"
 dependencies = [
  "chumsky",
  "indexmap",
@@ -1276,7 +1274,7 @@ dependencies = [
 
 [[package]]
 name = "openehr-query"
-version = "0.0.67"
+version = "0.0.69"
 dependencies = [
  "chumsky",
  "logos",
@@ -1285,7 +1283,7 @@ dependencies = [
 
 [[package]]
 name = "openehr-rm"
-version = "0.0.67"
+version = "0.0.69"
 dependencies = [
  "openehr-base",
  "openehr-term",
@@ -1299,8 +1297,28 @@ dependencies = [
 ]
 
 [[package]]
+name = "openehr-sdt"
+version = "0.0.69"
+dependencies = [
+ "fancy-regex",
+ "indexmap",
+ "moka",
+ "openehr-am",
+ "openehr-base",
+ "openehr-its",
+ "openehr-lang",
+ "openehr-rm",
+ "openehr-term",
+ "quick-xml",
+ "regex",
+ "serde",
+ "serde_json",
+ "thiserror",
+]
+
+[[package]]
 name = "openehr-term"
-version = "0.0.67"
+version = "0.0.69"
 dependencies = [
  "openehr-base",
  "roxmltree",

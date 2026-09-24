@@ -8,9 +8,9 @@
 //!
 //! The exact inverse of [`build_flat`](super::mapping::build_flat): the
 //! COMPOSITION is flattened through
-//! [`composition_to_flat`](openehr_its::flat::convert::composition_to_flat) to
+//! [`composition_to_flat`](openehr_sdt::flat::convert::composition_to_flat) to
 //! the same FLAT map
-//! [`composition_from_flat`](openehr_its::flat::convert::composition_from_flat)
+//! [`composition_from_flat`](openehr_sdt::flat::convert::composition_from_flat)
 //! consumes, so the leaf keys are byte-identical to what an entry wrote inbound;
 //! each mapping entry then reads its leaves back out and writes them to its
 //! `FHIRPath`-lite target. `code_map` is applied in reverse.
@@ -45,11 +45,11 @@ use super::mapping::{FhirMapError, FhirMappingDefinition, MappingEntry, Transfor
 pub fn to_fhir(
     resource_type: &str,
     composition: &Value,
-    wt: &openehr_its::flat::webtemplate::model::WebTemplate,
+    wt: &openehr_sdt::flat::webtemplate::model::WebTemplate,
     def: &FhirMappingDefinition,
     subject_id: Option<&str>,
 ) -> Result<Value, FhirMapError> {
-    let flat = openehr_its::flat::convert::composition_to_flat(composition, wt)
+    let flat = openehr_sdt::flat::convert::composition_to_flat(composition, wt)
         .map_err(|e| FhirMapError::ReverseFailed(e.to_string(), e))?;
     let mut resource = json!({ "resourceType": resource_type });
     if let Some(sid) = subject_id {
@@ -159,7 +159,7 @@ fn reverse_code_map(code_map: &BTreeMap<String, String>, terminology: &str) -> O
 
 /// A minimal FLAT-map lookup seam so [`reverse_entry`] can be exercised against
 /// both
-/// [`composition_to_flat`](openehr_its::flat::convert::composition_to_flat)'s map and
+/// [`composition_to_flat`](openehr_sdt::flat::convert::composition_to_flat)'s map and
 /// a plain map in unit tests without naming the crate-private `FlatMap` alias.
 trait FlatLookup {
     /// The value stored at the exact FLAT key, if any.
@@ -236,10 +236,10 @@ fn place(cur: &mut Value, segments: &[(&str, Option<usize>)], value: Value) {
 mod tests {
     use std::path::PathBuf;
 
-    use openehr_its::flat::convert::composition_from_flat;
-    use openehr_its::flat::webtemplate::builder::build_web_template;
-    use openehr_its::flat::webtemplate::model::WebTemplate;
     use openehr_its::opt14;
+    use openehr_sdt::flat::convert::composition_from_flat;
+    use openehr_sdt::flat::webtemplate::builder::build_web_template;
+    use openehr_sdt::flat::webtemplate::model::WebTemplate;
     use serde_json::json;
 
     use super::super::mapping::{CodeTranslations, build_flat};

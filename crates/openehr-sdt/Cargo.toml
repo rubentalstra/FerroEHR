@@ -1,0 +1,83 @@
+[package]
+name = "openehr-sdt"
+version = "0.0.69"
+description = "openEHR Simplified Data Template formats (FLAT / STRUCTURED / Web Template / TDD), template-independent RM-instance validation, and the SMART on openEHR scope grammar, hand-written over the openehr-its wire layer"
+edition.workspace = true
+rust-version.workspace = true
+license = "BUSL-1.1"
+repository.workspace = true
+documentation = "https://docs.rs/openehr-sdt"
+readme = "README.md"
+keywords = ["openehr", "flat", "webtemplate", "healthcare", "validation"]
+categories = ["encoding", "data-structures"]
+include = ["src/**", "README.md", "LICENSE"]
+
+# EVERY dependency is optional and belongs to the `flat` layer or above, so
+# `default-features = false` yields the dependency-free `smart_scopes` island
+# alone — the std-only SMART scope grammar a REST client compiled to
+# `wasm32-unknown-unknown` (the viewer) parses with.
+[dependencies]
+serde = { workspace = true, optional = true }
+serde_json = { workspace = true, optional = true }
+thiserror = { workspace = true, optional = true }
+quick-xml = { workspace = true, optional = true }
+# Web Template node groups keep document order (the OPT's ordered sequences).
+indexmap = { workspace = true, optional = true }
+# The field-identifier / node-id regex machinery (`regex` + `fancy-regex` for
+# the cADL backreference cases).
+regex = { workspace = true, optional = true }
+fancy-regex = { workspace = true, optional = true }
+# The async WebTemplate cache (`flat::cache`).
+moka = { workspace = true, optional = true }
+# The wire layer this crate builds on: canonical JSON, the XML runtime and the
+# OPT 1.4 reader (`opt14` pulls `xml` and `json` in).
+openehr-its = { path = "../openehr-its", version = "0.0.69", default-features = false, optional = true }
+openehr-base = { path = "../openehr-base", version = "0.0.69", optional = true }
+openehr-rm = { path = "../openehr-rm", version = "0.0.69", optional = true }
+openehr-am = { path = "../openehr-am", version = "0.0.69", optional = true }
+openehr-lang = { path = "../openehr-lang", version = "0.0.69", optional = true }
+openehr-term = { path = "../openehr-term", version = "0.0.69", optional = true }
+
+[features]
+default = ["full"]
+full = ["flat", "cache"]
+# Simplified Formats (`flat`) and the RM-instance validation composed over them
+# (`rm_instance`), WITHOUT the WebTemplate cache. A `wasm32-unknown-unknown`
+# consumer takes exactly this.
+flat = [
+    "dep:serde",
+    "dep:serde_json",
+    "dep:thiserror",
+    "dep:quick-xml",
+    "dep:indexmap",
+    "dep:regex",
+    "dep:fancy-regex",
+    "dep:openehr-its",
+    "openehr-its/opt14",
+    "dep:openehr-base",
+    "dep:openehr-rm",
+    "dep:openehr-am",
+    "dep:openehr-lang",
+    "dep:openehr-term",
+]
+# The async WebTemplate cache (`flat::cache`) — the crate's only `moka` user.
+cache = ["flat", "dep:moka"]
+
+[dev-dependencies]
+serde_json.workspace = true
+insta.workspace = true   # FLAT / STRUCTURED / Web Template output snapshots
+testkit = { path = "../../tools/testkit" }   # the shared canonical-json-literals gate scanner (path-only: stripped at packaging)
+# The `flat::cache` tests run under a tokio runtime.
+tokio = { workspace = true, features = ["macros", "rt"] }
+# The v2_4 Web-Template builder tests turn real ADL2 corpus sources into
+# operational templates (dev-only; the production v2_4 front end takes an
+# already-created OPT as input).
+openehr-adl = { path = "../openehr-adl" }
+# The canonical JSON entry points and the OPT 1.4 reader the tests drive.
+openehr-its = { path = "../openehr-its", default-features = false, features = ["opt14"] }
+
+[lints]
+workspace = true
+
+[package.metadata.docs.rs]
+all-features = true

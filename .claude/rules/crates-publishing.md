@@ -4,7 +4,7 @@ paths: ["crates/**"]
 
 # Published crates discipline (crates.io)
 
-The eight `crates/*` spec crates are **published on crates.io** (issue #1886;
+The nine `crates/*` spec crates are **published on crates.io** (issue #1886;
 policy in `docs/VERSIONS.md` §Product and crate versioning, procedure in
 `.claude/rules/changelog.md` §Publishing the openehr-* crates). Published
 versions are immutable, so version hygiene is a hard rule, machine-enforced
@@ -23,7 +23,7 @@ by the `crate-version-guard` CI job.
   `cargo package` renders the concrete requirement — so a workspace-table
   version bump of a crates-consumed dependency needs the lockstep step even
   though no `crates/*` file moves; both guard halves detect it.
-- **Bumps are lockstep across all eight** (`0.0.x` — cargo treats every
+- **Bumps are lockstep across all nine** (`0.0.x` — cargo treats every
   `0.0.x` as its own compatibility set, so the internal `version =`
   requirements must move together): bump every crate's `version` AND every
   internal dependency requirement to the same new `0.0.x` in one edit sweep.
@@ -67,8 +67,9 @@ by the `crate-version-guard` CI job.
 
 ## The publish lane is per crate, resumable, and verified
 
-Both lanes publish the eight members **one at a time in dependency order**,
-treat "already exists on crates.io index" as done, and read the registry back
+Both lanes publish the nine members **one at a time in dependency order**
+(`openehr-base`, `openehr-lang`, `openehr-term`, `openehr-rm`, `openehr-am`,
+`openehr-query`, `openehr-its`, `openehr-sdt`, `openehr-adl`), treat "already exists on crates.io index" as done, and read the registry back
 before reporting success. That is one implementation,
 `scripts/release/publish-crates.sh` (`publish` / `verify` / `version`), called
 from an inline step in each lane — never a reusable workflow, because the OIDC
@@ -99,16 +100,18 @@ every member is verified together.
   `cargo publish --workspace --dry-run --locked`.
 - New vendored/embedded material changes the license adjudication: openEHR
   machine-readable artifacts are Apache-2.0, so a crate that first embeds
-  the crate keeps `Apache-2.0` in its `license` expression (the five generated
-  model crates are `Apache-2.0`; the three hand-written engines are
-  `BUSL-1.1`, with `openehr-its` declaring `BUSL-1.1 AND Apache-2.0` for the
-  openEHR-derived material it embeds — owner decisions 2026-09-03 and
-  2026-09-04; each BUSL crate ships its own `LICENSE` naming the crate as the
-  Licensed Work) and ships
+  the crate keeps `Apache-2.0` in its `license` expression (six crates are
+  `Apache-2.0`: the five generated model crates plus `openehr-its`, whose
+  hand-written runtimes, entry points and wire-validation dispatcher ship
+  with the generated code they carry; the three hand-written engines
+  `openehr-query`, `openehr-adl` and `openehr-sdt` are `BUSL-1.1` — owner
+  decisions 2026-09-03, 2026-09-04 and 2026-09-24, #3482; each BUSL crate
+  ships its own `LICENSE` naming the crate as the Licensed Work) and ships
   `LICENSE-APACHE-2.0`.
 - Internal dev-dependencies stay **path-only** (no `version =`) — cargo
   strips them at packaging, which is what keeps the dev-only dependency
-  cycles (`openehr-rm` ⇢ `openehr-its`, `openehr-its` ⇢ `openehr-adl`)
+  cycles (`openehr-rm` ⇢ `openehr-its`, `openehr-its` ⇢ `openehr-adl`,
+  `openehr-sdt` ⇢ `openehr-adl`)
   publishable. Never add a version to a dev-dependency on a sibling crate.
 - Each crate's `README.md` is part of the published package and its
   crates.io front page — keep it accurate in the same PR that changes what
@@ -127,7 +130,7 @@ every member is verified together.
   default) and the recovery path when a release's leg fails — re-running it
   finishes a split set, because "already exists" counts as done.
 - **Trusted Publishing matches the top-level workflow FILENAME**, so each of
-  the eight crates carries two publisher entries on crates.io, one naming
+  the nine crates carries two publisher entries on crates.io, one naming
   `release.yml` and one naming `publish-crates.yml`, both under repository
   `rubentalstra/FerroEHR` and environment `crates-io`. A missing entry is
   refused at the token exchange. Adding the entries and the environment

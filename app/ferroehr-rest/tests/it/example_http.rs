@@ -49,12 +49,12 @@ const FLAT_MIME: &str = "application/openehr.wt.flat+json";
 const STRUCTURED_MIME: &str = "application/openehr.wt.structured+json";
 
 fn flat_crate_dir() -> PathBuf {
-    PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("../../crates/openehr-its")
+    PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("../../crates/openehr-sdt")
 }
 
 fn opt_xml() -> String {
     std::fs::read_to_string(flat_crate_dir().join("tests/fixtures/better/Demo Vitals.opt"))
-        .expect("Demo Vitals.opt vendored in openehr-its")
+        .expect("Demo Vitals.opt vendored in openehr-sdt")
 }
 
 fn config() -> AppConfig {

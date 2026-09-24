@@ -2,7 +2,7 @@
 // SPDX-License-Identifier: BUSL-1.1
 
 //! Derived-runtime resolution: the cached [`WebTemplate`] and example
-//! COMPOSITION surfaces, thin over `openehr_its::flat`.
+//! COMPOSITION surfaces, thin over `openehr_sdt::flat`.
 //!
 //! Spec: `BASE/docs/architecture_overview/master10-archetypes.adoc`.
 //! §Archetypes and Templates at Runtime gives a template two runtime functions,
@@ -14,7 +14,7 @@
 //! memoised in a `moka` cache.
 //!
 //! NOTE: the concrete `WebTemplate` JSON shape is not openEHR-normative, being
-//! the Better `web-template` SDT format living in `openehr_its::flat`, so this
+//! the Better `web-template` SDT format living in `openehr_sdt::flat`, so this
 //! module stores, resolves and caches it without presenting it as canonical
 //! openEHR; the builder's own id-sanitisation is a vendor rule, distinct from
 //! the §Composite Identifiers and Case identity law applied to the cache key
@@ -28,8 +28,8 @@
 
 use std::sync::Arc;
 
-use openehr_its::flat::example::{DetailLevel, ExampleType};
-use openehr_its::flat::webtemplate::model::WebTemplate;
+use openehr_sdt::flat::example::{DetailLevel, ExampleType};
+use openehr_sdt::flat::webtemplate::model::WebTemplate;
 use serde_json::Value;
 
 use super::identity;
@@ -92,7 +92,7 @@ impl FerroEhrService {
     ///
     /// NOTE: example generation is not spec-mandated; it is a convenience
     /// surface, produced from the template's cached [`WebTemplate`] by
-    /// [`example_composition`](openehr_its::flat::example::example_composition)
+    /// [`example_composition`](openehr_sdt::flat::example::example_composition)
     /// at the requested [`DetailLevel`], with a deterministic `uid` for the
     /// `output` ([`ExampleType::Output`]) form.
     ///
@@ -134,9 +134,9 @@ impl FerroEhrService {
             self.build_cached_web_template(&key, template_id, &xml)
                 .await?
         };
-        let mut composition = openehr_its::flat::example::example_composition(&wt, level);
+        let mut composition = openehr_sdt::flat::example::example_composition(&wt, level);
         if kind == ExampleType::Output {
-            openehr_its::flat::example::apply_output_uid(&mut composition, template_id);
+            openehr_sdt::flat::example::apply_output_uid(&mut composition, template_id);
         }
         Ok(composition)
     }
@@ -162,8 +162,8 @@ impl FerroEhrService {
         self.web_templates
             .get_or_build(key, || {
                 let opt = openehr_its::opt14::from_xml(xml)
-                    .map_err(openehr_its::flat::error::FlatError::OptParse)?;
-                openehr_its::flat::webtemplate::builder::build_web_template(&opt)
+                    .map_err(openehr_sdt::flat::error::FlatError::OptParse)?;
+                openehr_sdt::flat::webtemplate::builder::build_web_template(&opt)
             })
             .await
             .map_err(|e| {

@@ -50,7 +50,7 @@ opentelemetry-otlp.workspace = true
 opentelemetry-prometheus.workspace = true
 prometheus.workspace = true
 jiff-sqlx.workspace = true
-# FHIR reverse-mapping: `openehr_its::flat` FLAT conversion returns an
+# FHIR reverse-mapping: `openehr_sdt::flat` FLAT conversion returns an
 # `IndexMap` FLAT map the reverse transform reads leaf-by-leaf.
 indexmap.workspace = true
 # `events` module (contribution-outbox eventing — no openEHR spec governs
@@ -120,6 +120,7 @@ openehr-base = { path = "../../crates/openehr-base" }
 openehr-term = { path = "../../crates/openehr-term" }
 openehr-rm = { path = "../../crates/openehr-rm" }
 openehr-its = { path = "../../crates/openehr-its" }
+openehr-sdt = { path = "../../crates/openehr-sdt" }
 openehr-lang = { path = "../../crates/openehr-lang" }
 openehr-am = { path = "../../crates/openehr-am" }
 openehr-adl = { path = "../../crates/openehr-adl" }

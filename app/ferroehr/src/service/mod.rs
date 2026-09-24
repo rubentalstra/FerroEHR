@@ -77,8 +77,8 @@ use crate::ids::EhrId;
 use crate::system_log::sender::AuditSender;
 use crate::versioning::SigningCtx;
 use crate::versioning::signature::signer::Signer;
-use openehr_its::flat::cache::WebTemplateCache;
-use openehr_its::flat::webtemplate::model::WebTemplate;
+use openehr_sdt::flat::cache::WebTemplateCache;
+use openehr_sdt::flat::webtemplate::model::WebTemplate;
 use status::SmError;
 
 /// The default openEHR system identifier stamped into `EHR.system_id`,

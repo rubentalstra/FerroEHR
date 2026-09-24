@@ -14,7 +14,7 @@
 //!   (master04 §Service Discovery), served pre-auth;
 //! - the master08 resource-scope grammar
 //!   (`compartment/resource.permission`, `*`/`**`/`ns::*` patterns) —
-//!   `openehr_its::rest::smart_scopes`, parsed from the validated token's
+//!   `openehr_sdt::smart_scopes`, parsed from the validated token's
 //!   `scope` claim;
 //! - [`enforce`] — scope enforcement riding the existing ABAC PEP
 //!   ([`crate::extensions::access::pep`]), AND-composed after RBAC/Cedar, plus the
@@ -28,5 +28,5 @@
 
 pub mod discovery;
 pub mod enforce;
-// The scope grammar itself lives in `openehr_its::rest::smart_scopes` (one
+// The scope grammar itself lives in `openehr_sdt::smart_scopes` (one
 // grammar for the gate here and for REST clients previewing grants).

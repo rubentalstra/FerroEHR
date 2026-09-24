@@ -26,7 +26,7 @@ wide_id_items) exists. The archie citation is purged.**
   `archetype_node_id`/`links`/`items`/`folders` and never inspects `details`,
   while the sibling `EHR_STATUS.other_details` IS checked (`:540`). The
   whole-instance pass cannot cover it: `rm_invariant_pass`
-  (`crates/openehr-its/src/flat/validation/mod.rs:686`) trusts the node's own
+  (`crates/openehr-sdt/src/flat/validation/mod.rs:686`) trusts the node's own
   `_type` tag (`declared_concrete_type` is only a fallback for UNTAGGED nodes)
   and there is no slot conformance outside the WebTemplate pass. JSON write
   bodies are NOT typed-decoded (`negotiate.rs:505` → `parse_json`, untyped),

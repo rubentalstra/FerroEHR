@@ -99,7 +99,7 @@ referenced by only 3 ops (the two example_gets + adl1.4 template get).
 
 ## Implementation + tests
 
-`crates/openehr-its/src/flat/` (hand-written, 23.8k L): `path.rs` FlatKey parser ·
+`crates/openehr-sdt/src/flat/` (hand-written, 23.8k L): `path.rs` FlatKey parser ·
 `sim/{flat,structured}.rs` wire codecs over `sim::SimNode` · `flatten.rs` RM→sim ·
 `build.rs` sim→RM · `map/{data_values,parties,structures}.rs` = the master05 tables ·
 `ctx.rs` = master06 · `webtemplate/id.rs` = the 7-step node-id algorithm ·

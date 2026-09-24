@@ -75,6 +75,6 @@ A hand edit is silently overwritten on the next `emit` and fails the CI
   The spec *text* at `docs/specs/openehr/` is read-only reference for humans/agents
   (spec-adherence.md) — never a codegen input, never hand-edited.
 - Hand-written spec crates (NOT generated): `openehr-term` bundle/assets,
-  `openehr-its` runtime (`xml/runtime.rs`, `rest/runtime.rs`) + the `flat`
-  module (Simplified Formats), `openehr-query` (AQL parser). These follow
+  `openehr-its` runtime (`xml/runtime.rs`, `rest/runtime.rs`), `openehr-sdt`
+  (Simplified Formats + RM-instance validation), `openehr-query` (AQL parser). These follow
   `rust-style.md`.

@@ -1,6 +1,6 @@
 // SPDX-FileCopyrightText: Vernum Projecten B.V.
 // SPDX-FileCopyrightText: openEHR Foundation
-// SPDX-License-Identifier: BUSL-1.1 AND Apache-2.0
+// SPDX-License-Identifier: Apache-2.0
 
 //! Regression test (canonical-XML audit): `LOCATABLE` subtypes that
 //! live *outside* the v1 `ALL/` XSD bundle — `EHR_STATUS` / `EHR_ACCESS` (EHR

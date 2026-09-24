@@ -14,7 +14,7 @@ Sibling of [[rm-common-ch234-fix-verification]].
   (`ferroehr-rest/src/overview/negotiate.rs:594 rm_value::<Folder>` on BOTH
   branches, called at `api/ehr/directory.rs:85,151`), and the model-driven
   `check_declared_slot_type` (`openehr-rm/src/v1_2/validate.rs:286`) runs at
-  EVERY slot of the walk (`openehr-its/src/rm_instance/mod.rs:388-395,402,422`)
+  EVERY slot of the walk (`openehr-sdt/src/rm_instance/mod.rs:388-395,402,422`)
   — so the predicted JSON-201-then-XML-500 asymmetry is structurally gone. The
   bespoke `EHR_STATUS.other_details` check is gone too (generic pass covers it).
 - Served XML default is **V2** (`negotiate.rs:366`, owner ruling #1666); the

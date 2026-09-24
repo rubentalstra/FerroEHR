@@ -45,6 +45,7 @@ readonly -a EXCLUDED=(
   ':(exclude)crates/openehr-adl/tests/corpus/**'
   ':(exclude)crates/openehr-its/tests/vendor/**'
   ':(exclude)crates/openehr-its/tests/fixtures/**'
+  ':(exclude)crates/openehr-sdt/tests/fixtures/**'
   ':(exclude)crates/openehr-lang/tests/vendor/**'
   ':(exclude)crates/openehr-term/tests/**'
   ':(exclude)corpus/**'

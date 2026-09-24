@@ -49,7 +49,7 @@ use crate::state::AppState;
 use crate::{negotiate, params};
 use ferroehr::config::smart::SmartConfig;
 use ferroehr::versioning::object_version_id::parse_uid_based_id;
-use openehr_its::rest::smart_scopes::SmartScope;
+use openehr_sdt::smart_scopes::SmartScope;
 
 /// Whether an operation is ABAC-checked, and when.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -682,8 +682,8 @@ fn smart_skip_family_gate(
     if !matches!(
         family,
         Some(
-            openehr_its::rest::smart_scopes::ResourceFamily::Template
-                | openehr_its::rest::smart_scopes::ResourceFamily::Aql
+            openehr_sdt::smart_scopes::ResourceFamily::Template
+                | openehr_sdt::smart_scopes::ResourceFamily::Aql
         )
     ) {
         return Ok(());

@@ -1,5 +1,5 @@
 ---
-paths: ["crates/openehr-its/**"]
+paths: ["crates/openehr-its/**", "crates/openehr-sdt/**"]
 ---
 
 # Serialization rules — canonical JSON, canonical XML, FLAT/STRUCTURED
@@ -95,7 +95,10 @@ entry points.
   map.
 - C14N uses the `xmllint --c14n` shell fallback — never hand-roll C14N.
 
-## FLAT / STRUCTURED / Web Template (`openehr_its::flat`, hand-written)
+## FLAT / STRUCTURED / Web Template (`openehr_sdt::flat`, hand-written)
+
+The Simplified Formats live in the `openehr-sdt` crate, over the
+`openehr-its` wire layer.
 
 - **The oracle is the STABLE ITS-REST Simplified Formats spec**
   (`docs/specs/openehr/ITS-REST/docs/simplified_formats/`): `master04`

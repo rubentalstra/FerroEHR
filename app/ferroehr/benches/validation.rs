@@ -51,7 +51,7 @@ use std::path::{Path, PathBuf};
 
 use criterion::profiler::Profiler;
 use criterion::{Criterion, criterion_group, criterion_main};
-use openehr_its::flat::webtemplate::model::WebTemplate;
+use openehr_sdt::flat::webtemplate::model::WebTemplate;
 use serde_json::Value;
 
 /// The vendored CKM corpus directory, anchored at the crate manifest so the
@@ -70,7 +70,7 @@ fn fixture(stem: &str) -> (Value, WebTemplate) {
     let xml = std::fs::read_to_string(dir.join(format!("{stem}.opt")))
         .expect("the corpus operational template must be readable");
     let opt = openehr_its::opt14::from_xml(&xml).expect("the corpus OPT must parse");
-    let web_template = openehr_its::flat::webtemplate::builder::build_web_template(&opt)
+    let web_template = openehr_sdt::flat::webtemplate::builder::build_web_template(&opt)
         .expect("the corpus OPT must build into a WebTemplate");
     (composition, web_template)
 }
@@ -86,12 +86,12 @@ fn commit_validation(c: &mut Criterion) {
         let (composition, web_template) = fixture(stem);
         c.bench_function(&format!("validate_rm_terminology/{stem}"), |b| {
             b.iter(|| {
-                openehr_its::rm_instance::validate_rm_and_terminology(black_box(&composition))
+                openehr_sdt::rm_instance::validate_rm_and_terminology(black_box(&composition))
             });
         });
         c.bench_function(&format!("validate_archetype_conformance/{stem}"), |b| {
             b.iter(|| {
-                openehr_its::flat::validation::validate_archetype_conformance(
+                openehr_sdt::flat::validation::validate_archetype_conformance(
                     black_box(&composition),
                     black_box(&web_template),
                 )
@@ -100,9 +100,9 @@ fn commit_validation(c: &mut Criterion) {
         c.bench_function(&format!("validate_both_passes/{stem}"), |b| {
             b.iter(|| {
                 let mut messages =
-                    openehr_its::rm_instance::validate_rm_and_terminology(black_box(&composition));
+                    openehr_sdt::rm_instance::validate_rm_and_terminology(black_box(&composition));
                 messages.extend(
-                    openehr_its::flat::validation::validate_archetype_conformance(
+                    openehr_sdt::flat::validation::validate_archetype_conformance(
                         black_box(&composition),
                         black_box(&web_template),
                     ),
@@ -130,7 +130,7 @@ fn template_ingestion(c: &mut Criterion) {
         let opt = openehr_its::opt14::from_xml(&xml).expect("the OPT must parse");
         c.bench_function(&format!("web_template_build/{stem}"), |b| {
             b.iter(|| {
-                openehr_its::flat::webtemplate::builder::build_web_template(black_box(&opt))
+                openehr_sdt::flat::webtemplate::builder::build_web_template(black_box(&opt))
                     .expect("the OPT must build into a WebTemplate")
             });
         });

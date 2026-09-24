@@ -3,7 +3,7 @@
 # SPDX-License-Identifier: BUSL-1.1
 # A published crate's tests never read the application tree (#3408).
 #
-# The eight `crates/openehr-*` packages publish to crates.io and the
+# The nine `crates/openehr-*` packages publish to crates.io and the
 # dependency arrows point one way: `app/*` reads `crates/*`, never the
 # reverse. A test that opens `../../app/ferroehr/tests/resources/...` breaks
 # that in the one place the compiler cannot see it, because the path is a

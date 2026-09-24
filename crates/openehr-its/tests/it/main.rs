@@ -1,13 +1,12 @@
 // SPDX-FileCopyrightText: Vernum Projecten B.V.
 // SPDX-FileCopyrightText: openEHR Foundation
-// SPDX-License-Identifier: BUSL-1.1 AND Apache-2.0
+// SPDX-License-Identifier: Apache-2.0
 
 //! Integration tests for `openehr-its`: the openEHR Implementation
 //! Technology Specification surfaces — canonical JSON (fidelity, contract,
 //! codec parity, ITS-JSON schema validation), canonical XML (round-trip,
 //! namespaces, C14N/hash, locatable attributes), the generated ITS-REST
-//! contract, RM/template validation, and the Simplified Formats
-//! (Web Template / FLAT / STRUCTURED / TDD).
+//! contract, and the wire-boundary RM validation dispatch.
 //!
 //! One binary per crate, split into topic modules
 //! (`.claude/rules/testing.md` §One integration-test binary per crate);
@@ -27,24 +26,12 @@ mod attested_version;
 mod canonical_contract;
 mod canonical_json_literals;
 mod ckm_archetype_xml;
-mod ckm_full_pack;
-mod cnf_vitals_template;
-mod coded_names;
-mod constraint_binding_capture;
-mod content_constraint_capture;
-mod content_existence_capture;
 mod corpus;
 mod dispatch_lockstep;
-mod example_rm_validity;
-mod example_stub;
 mod fidelity;
 mod fixture_twins;
-mod flat;
-mod format_parity;
 mod its_json_delta;
 mod json_codec_parity;
-mod master05_tables;
-mod model_walkgen;
 mod nonempty_wire;
 mod oas_update_version_sync;
 mod opt14_corpus;
@@ -52,16 +39,6 @@ mod opt14_ordinal_symbol;
 mod opt14_v1_4_divergence;
 mod rest_contract;
 mod rm_validation;
-mod shape_tolerance;
-mod spec_vectors;
-mod structured;
-mod tdd;
-mod untagged_nodes;
-mod validation;
-mod validation_checklist;
-mod validation_rules;
-mod webtemplate;
-mod webtemplate_v2_4;
 mod xml_abstract_root;
 mod xml_c14n;
 mod xml_diagnostics;

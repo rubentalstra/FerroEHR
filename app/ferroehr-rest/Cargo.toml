@@ -18,6 +18,7 @@ urlencoding.workspace = true
 openehr-base = { path = "../../crates/openehr-base" }
 openehr-rm = { path = "../../crates/openehr-rm" }
 openehr-its = { path = "../../crates/openehr-its" }
+openehr-sdt = { path = "../../crates/openehr-sdt" }
 # The platform library: the SM-shaped service this crate dispatches to, plus its
 # response/query types. The audit tower layer emits through the platform's SM
 # `SystemLog` component; the ATNA event model + `EmitOutcome` come from here.

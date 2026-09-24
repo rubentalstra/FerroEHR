@@ -23,7 +23,7 @@
 //!    `..__invalid_opt_doesnt_exist` case; a stored-but-unbuildable template
 //!    surfaces through [`FerroEhrService::web_template_for`]).
 //! 2. **Body conversion** — the OPT-guided TDD-body → canonical-COMPOSITION walk
-//!    ([`openehr_its::flat::tdd::from_tdd`]): the template node names are matched to the
+//!    ([`openehr_sdt::flat::tdd::from_tdd`]): the template node names are matched to the
 //!    `WebTemplate` node tree to supply `archetype_node_id`s, re-materialise the
 //!    `HISTORY`/`EVENT`/`ITEM_TREE`/`ELEMENT` wrappers the template compacts, and
 //!    parse each `rm:`-namespaced leaf into its RM datatype. A body that does not
@@ -267,7 +267,7 @@ impl FerroEhrService {
         // OPT-guided body → canonical COMPOSITION. A body that does not conform
         // to the template is a typed precondition_violation (never a silent
         // partial COMPOSITION).
-        openehr_its::flat::tdd::from_tdd(tdd, &web_template).map_err(|e| {
+        openehr_sdt::flat::tdd::from_tdd(tdd, &web_template).map_err(|e| {
             SmError::precondition(format!(
                 "TDD body does not conform to operational template {:?}: {e}",
                 envelope.template_id

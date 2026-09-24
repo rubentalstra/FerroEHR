@@ -293,10 +293,13 @@ rule per resource kind the PEP consults.
 OPT 1.4 XML ingestion → `openehr-am`; WebTemplate builder (`moka`-cached);
 composition validation (walker over WebTemplate + RM invariants + terminology
 binding via `openehr-term`); FLAT/STRUCTURED/Web-Template JSON in
-`openehr_its::flat`, whose only authority is the vendored Simplified Formats
+`openehr_sdt::flat`, whose only authority is the vendored Simplified Formats
 spec text — there is no vendor-quirk mode and no feature flag; vendor
-implementations are prior art only. Simplified Formats is a STABLE ITS-REST 1.1.0 sub-specification, so it
-lives in `openehr-its` beside the other ITS surfaces.
+implementations are prior art only. Simplified Formats is a STABLE ITS-REST
+1.1.0 sub-specification with no machine-readable model, so it is hand-written
+in `openehr-sdt`, beside the template-independent RM-instance validation
+(`openehr_sdt::rm_instance`) and the SMART scope grammar
+(`openehr_sdt::smart_scopes`), over the `openehr-its` wire layer.
 
 ## Spec version policy
 
@@ -353,7 +356,8 @@ binary/OCI image, consuming the CDR strictly over ITS-REST);
 tooling that is *not* part of the shipped application
 (`testkit` — the shared test-database harness, and
 `openehr-codegen` — the BMM/XSD/OAS → Rust generator); **`crates/*`** holds the
-generated openEHR spec layer + its tooling (`openehr-*`). Root
+generated openEHR spec layer + its tooling (`openehr-*`; the one internal
+arrow beyond the generated crates' own is `openehr-sdt → openehr-its`). Root
 workspace `members = ["crates/*", "app/*", "tools/*"]`. Arrows:
 `ferroehr-server → {ferroehr-rest, ferroehr}`, `ferroehr-rest → ferroehr`,
 `ferroehr → ferroehr-ext` (optional, feature-forwarded),
@@ -390,7 +394,8 @@ The service layer realizes the openEHR **SM Platform Service Model**
 | `openehr-am` | AM 1.4 + 2.4 (`v1_4`/`v2_4`) | generated |
 | `openehr-term` | TERM classes + terminology bundle | generated + hand-written |
 | `openehr-lang` | BMM/P_BMM object model | generated |
-| `openehr-its` | Canonical JSON/XML + ITS-REST contract + runtimes + gates + Simplified Formats (`flat`: FLAT / STRUCTURED / Web Template) | generated + hand-written |
+| `openehr-its` | Canonical JSON/XML + ITS-REST contract + OPT 1.4/AOM2 archetype XML + runtimes + wire validation + gates | generated + hand-written |
+| `openehr-sdt` | Simplified Formats (`flat`: FLAT / STRUCTURED / Web Template / TDD) + RM-instance validation (`rm_instance`) + the SMART scope grammar (`smart_scopes`), over `openehr-its` | hand-written |
 | `openehr-query` | AQL 1.1 lexer + parser + AST | hand-written |
 | `openehr-adl` | ADL 2.4 engine: ADL2/cADL/ODIN parser, AOM2 validation, flattener, OPT2, ADL 1.4→2 conversion | hand-written |
 | `openehr-codegen` | BMM/XSD/OAS → Rust generator (+ `emit-rm-model`) | tooling |
