@@ -96,9 +96,9 @@ if [[ "${1:-}" == "--self-test" ]]; then
     "a first-party tag moved off appVersion|${self_chart}|s|^      image: ghcr.io/rubentalstra/ferroehr:.*|      image: ghcr.io/rubentalstra/ferroehr:0.0.1  # party: first|"
     "an image line with no party marker|${self_chart}|s|^\\(      image: ghcr.io/rubentalstra/ferroehr:[^ ]*\\)  # party: first|\\1|"
     "the FerroTERM tag moved off the helper pin|${self_chart}|s|ferroterm:[0-9][^@]*@|ferroterm:9.9.9@|"
-    "the FerroTERM digest moved off the values pin|${self_chart}|s|@sha256:f3b5f35a|@sha256:0000c0de|"
-    "the helper pin moved without the annotation|${self_helpers}|s|^0\\.1\\.4$|9.9.9|"
-    "the values digest moved without the annotation|${self_values}|s|^    digest: sha256:f3b5f35a|    digest: sha256:0000c0de|"
+    "the FerroTERM digest moved off the values pin|${self_chart}|s|@sha256:[0-9a-f]\\{8\\}|@sha256:0000c0de|"
+    "the helper pin moved without the annotation|${self_helpers}|s|^[0-9]*\\.[0-9]*\\.[0-9]*$|9.9.9|"
+    "the values digest moved without the annotation|${self_values}|s|^    digest: sha256:[0-9a-f]\\{8\\}|    digest: sha256:0000c0de|"
   )
   for mutation in "${mutations[@]}"; do
     label="${mutation%%|*}"
