@@ -213,7 +213,7 @@ pub(in crate::service) fn initial_ehr_access() -> Value {
 ///
 /// No openEHR spec governs this cache — our own design/extension. `moka`'s
 /// `Cache` is `Arc`-backed, so every clone of the owning service shares one
-/// cache (mirroring `openehr_its::flat::cache::WebTemplateCache`).
+/// cache (mirroring `openehr_sdt::flat::cache::WebTemplateCache`).
 #[derive(Debug, Clone)]
 pub(in crate::service) struct EhrAccessCache {
     inner: Cache<EhrId, Arc<Option<EhrAccessSettings>>>,

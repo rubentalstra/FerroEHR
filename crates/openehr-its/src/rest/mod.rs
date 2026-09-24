@@ -1,6 +1,6 @@
 // SPDX-FileCopyrightText: Vernum Projecten B.V.
 // SPDX-FileCopyrightText: openEHR Foundation
-// SPDX-License-Identifier: BUSL-1.1 AND Apache-2.0
+// SPDX-License-Identifier: Apache-2.0
 
 //! **ITS-REST** — the openEHR REST API contract (ITS-REST 1.1.0).
 //!
@@ -21,4 +21,3 @@
 pub mod generated;
 #[cfg(feature = "rest-server")]
 pub mod runtime;
-pub mod smart_scopes;

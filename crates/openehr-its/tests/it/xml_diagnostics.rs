@@ -1,6 +1,6 @@
 // SPDX-FileCopyrightText: Vernum Projecten B.V.
 // SPDX-FileCopyrightText: openEHR Foundation
-// SPDX-License-Identifier: BUSL-1.1 AND Apache-2.0
+// SPDX-License-Identifier: Apache-2.0
 
 //! A mandatory element that is absent cannot be searched for, so its refusal
 //! names the element that should hold it, where that element sits in the

@@ -124,12 +124,12 @@ exceptions = [
   { allow = ["BUSL-1.1"], crate = "openehr-codegen" },
   { allow = ["BUSL-1.1"], crate = "testkit" },
   { allow = ["BUSL-1.1"], crate = "docs-meta" },
-  # The three hand-written spec engines moved to the Business Source License on
-  # 2026-09-04 (owner decision); the five generated model crates stay Apache-2.0.
-  # openehr-its also carries the Apache-2.0 openEHR-derived material it embeds.
+  # The three hand-written spec engines carry the Business Source License
+  # (owner decisions 2026-09-04 and 2026-09-24); the five generated model
+  # crates and the openehr-its wire layer stay Apache-2.0.
   { allow = ["BUSL-1.1"], crate = "openehr-adl" },
   { allow = ["BUSL-1.1"], crate = "openehr-query" },
-  { allow = ["BUSL-1.1"], crate = "openehr-its" },
+  { allow = ["BUSL-1.1"], crate = "openehr-sdt" },
 ]
 
 [bans]

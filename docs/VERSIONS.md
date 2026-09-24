@@ -31,7 +31,7 @@ generation): the generated crates carry an emitted `Generation` enum
 constant — with derived `Default` marking the current generation, from the
 codegen composition table); no version CONSTANT exists anywhere in them; the hand-written single-spec crates keep a literal
 crate-level `SPEC_VERSION`. The crates release in lockstep — while the line is
-`0.0.x`, a bump bumps all eight plus their internal version requirements
+`0.0.x`, a bump bumps all nine plus their internal version requirements
 (cargo treats every `0.0.x` as its own compatibility set). Spec-crate
 releases never ride the product version.
 

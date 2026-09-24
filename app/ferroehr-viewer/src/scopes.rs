@@ -4,7 +4,7 @@
 //! The scope previewer's presentation model: one pure function from a SMART
 //! scope string to the grant the viewer renders for it.
 //!
-//! **The parse is never ours.** It is `openehr_its::rest::smart_scopes` — the
+//! **The parse is never ours.** It is `openehr_sdt::smart_scopes` — the
 //! ONE SMART on openEHR grammar
 //! (`docs/specs/openehr/ITS-REST/docs/smart_app_launch/master08-scopes.adoc`
 //! §Resource Scopes, plus the master07/master09 launch contexts), the same code
@@ -23,7 +23,7 @@
 //! access control policies, the authenticated user's permissions" — so the CDR
 //! remains the enforcer and a previewed grant is an upper bound, never a promise.
 
-use openehr_its::rest::smart_scopes::{
+use openehr_sdt::smart_scopes::{
     Compartment, LaunchContext, Permissions, ResourceScope, ResourceSelector, SmartScope,
 };
 

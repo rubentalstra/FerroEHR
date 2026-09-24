@@ -27,7 +27,7 @@
 //!   Basic session the harness logs in with, the existing full-access note;
 //! - the free previewer renders a two-scope claim as two parsed grants with the
 //!   right compartment/permission chips (the parse is the shared master08
-//!   grammar `openehr_its::rest::smart_scopes`, running in the browser);
+//!   grammar `openehr_sdt::smart_scopes`, running in the browser);
 //! - a resource-shaped scope the grammar rejects explains itself instead of
 //!   silently reading as nothing.
 //!

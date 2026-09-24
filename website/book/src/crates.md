@@ -1,10 +1,10 @@
 # Rust crates
 
-FerroEHR's openEHR specification layer is published on crates.io as eight
+FerroEHR's openEHR specification layer is published on crates.io as nine
 standalone Rust crates, usable without the CDR. They are the same crates the
 server itself is built on: the spec types are generated deterministically from
 the official openEHR machine-readable artifacts (BMM/XSD/OpenAPI), and the
-engines (ADL, AQL, serialization runtimes) are hand-written against the
+engines (ADL, AQL, Simplified Formats, serialization runtimes) are hand-written against the
 vendored specification text.
 
 | Crate | Implements | What it gives you |
@@ -16,15 +16,16 @@ vendored specification text.
 | [`openehr-term`](https://crates.io/crates/openehr-term) | TERM 3.1.0 | Terminology model + the embedded official openEHR terminology (five languages: `en`, `es`, `ja`, `pt`, `zh`) |
 | [`openehr-lang`](https://crates.io/crates/openehr-lang) | LANG 1.0.0 + 1.1.0 | The BMM meta-model and its P_BMM schema form, plus hand-written ODIN, BEL and Expression-Language readers |
 | [`openehr-query`](https://crates.io/crates/openehr-query) | QUERY 1.1.0 | AQL lexer, parser, typed AST, and canonical printer |
-| [`openehr-its`](https://crates.io/crates/openehr-its) | ITS-JSON, ITS-XML, ITS-REST 1.1.0 | Canonical JSON + XML codecs, the generated ITS-REST contract, OPT 1.4, Simplified Formats (FLAT/STRUCTURED/Web Template) |
+| [`openehr-its`](https://crates.io/crates/openehr-its) | ITS-JSON, ITS-XML, ITS-REST 1.1.0 | Canonical JSON + XML codecs, the generated ITS-REST contract, OPT 1.4 and AOM2 archetype XML |
+| [`openehr-sdt`](https://crates.io/crates/openehr-sdt) | ITS-REST 1.1.0 Simplified Formats + SMART App Launch | Simplified Formats (FLAT/STRUCTURED/Web Template, TDD import), template-independent RM-instance validation, the SMART on openEHR scope grammar |
 
 ```toml
 [dependencies]
-openehr-rm = "0.0.64"
-openehr-its = "0.0.64"
+openehr-rm = "0.0.68"
+openehr-its = "0.0.68"
 ```
 
-All eight are **edition 2024** with an MSRV of **Rust 1.97**, and all eight
+All nine are **edition 2024** with an MSRV of **Rust 1.97**, and all nine
 inherit the workspace lint table, including `unsafe_code = "forbid"`, which no
 attribute anywhere in the crate can relax. There is no `unsafe` block in the
 published specification layer.
@@ -74,7 +75,7 @@ The package version is the crates' **own independent SemVer line**: it tracks
 this implementation's code and moves freely with fixes and improvements, never
 with the vendored openEHR specification versions. While the line is `0.0.x`,
 expect breaking changes between releases, which always ship in lockstep across
-all eight crates.
+all nine crates.
 
 The implemented specification version is therefore a **separate datum, per
 generation**. Each generated crate emits a `Generation` enum that is the only
@@ -90,38 +91,44 @@ assert_eq!(openehr_rm::Generation::default().as_str(), "v1_2");
 
 There is deliberately **no crate-level `SPEC_VERSION` constant in the generated
 crates**: a single constant would contradict a caller using a non-current
-generation. Exactly three crates implement one specification each and do expose
-one: `openehr_its::SPEC_VERSION`, `openehr_query::SPEC_VERSION`,
-`openehr_adl::SPEC_VERSION`.
+generation. Exactly four crates implement one specification each and do expose
+one: `openehr_its::SPEC_VERSION`, `openehr_sdt::SPEC_VERSION`,
+`openehr_query::SPEC_VERSION`, `openehr_adl::SPEC_VERSION`.
 
-## Taking only the part of `openehr-its` you need
+## Taking only the part of `openehr-its` and `openehr-sdt` you need
 
 `openehr-its` layers its features so a browser or embedded consumer does not
 have to compile an HTTP server to read a template. The parsing spine is
-`json` → `xml` → `opt14` → `flat`, each pulling in the one below it. Three
-layers sit beside the spine and are declined independently: `cache` (the
-async WebTemplate cache, the crate's only `moka` user), `schema-validation`
+`json` → `xml` → `opt14`, each pulling in the one below it. Two layers sit
+beside the spine and are declined independently: `schema-validation`
 (validation against the compiled-in ITS-JSON RM schema, its only `jsonschema`
 user) and `rest-server` (the generated ITS-REST contract and its response
 runtime, which is what brings in `axum`). The default feature `full` is all
-seven, so an existing dependency line keeps the crate it had.
+five, so an existing dependency line keeps the crate it had. With
+`default-features = false` and no feature at all, `openehr-its` compiles
+empty.
 
-`flat` and `opt14` build for `wasm32-unknown-unknown`, so a browser consumer
-can call `flat::build_web_template` or read an OPT 1.4 template:
+`openehr-sdt` sits on top: its `flat` feature pulls `openehr-its` with `opt14`
+and adds the Simplified Formats and RM-instance validation, and `cache` adds
+the async Web Template cache (the only `moka` user). Its default `full` is
+both. `opt14` and `flat` build for `wasm32-unknown-unknown`, so a browser
+consumer can call `flat::webtemplate::builder::build_web_template` or read an
+OPT 1.4 template:
 
 ```toml
 [dependencies]
-openehr-its = { version = "0.0.64", default-features = false, features = ["flat"] }
+openehr-its = { version = "0.0.68", default-features = false, features = ["opt14"] }
+openehr-sdt = { version = "0.0.68", default-features = false, features = ["flat"] }
 ```
 
-With `default-features = false` and no feature at all, the crate compiles to
-the SMART App Launch scope grammar alone: std-only, with no dependency of any
-kind, so a REST client can parse scope strings with the grammar the CDR
+With `default-features = false` and no feature at all, `openehr-sdt` compiles
+to the SMART App Launch scope grammar alone: std-only, with no dependency of
+any kind, so a REST client can parse scope strings with the grammar the CDR
 enforces instead of carrying a second one.
 
 ## Releases
 
-The eight crates publish as the last leg of the release pipeline, gated on a
+The nine crates publish as the last leg of the release pipeline, gated on a
 human: the leg runs in a protected environment with a required reviewer, so
 the run pauses there and nothing reaches crates.io without an explicit
 approval. A separate dispatch lane covers a publish between releases and the
@@ -131,35 +138,36 @@ Both lanes authenticate with **crates.io Trusted Publishing** (OIDC, no
 long-lived token anywhere) and publish the crates **one at a time in
 dependency order**, treating "already exists on the index" as done, so a run
 interrupted halfway can be re-run to finish the set. The lane then reads the
-registry back and refuses to report success unless all eight resolve at the
+registry back and refuses to report success unless all nine resolve at the
 same version, because while the line is `0.0.x` a straggler makes its
 siblings' internal requirements unresolvable for every consumer.
 
 ## Licensing
 
-The eight crates fall into two groups.
+The nine crates fall into two groups.
 
-The five generated model crates (`openehr-base`, `openehr-rm`, `openehr-am`,
-`openehr-lang`, `openehr-term`) are **`Apache-2.0`**, the licence of the openEHR
-machine-readable artifacts they are generated from, so any Rust project can use
-them, in proprietary and hosted products included. They embed material derived
-from those artifacts (generated types carrying specification documentation
-text), which is Apache-2.0 as well, and their generated files name the openEHR
-Foundation as a second copyright holder.
+The six generated-or-wire crates (`openehr-base`, `openehr-rm`, `openehr-am`,
+`openehr-lang`, `openehr-term`, `openehr-its`) are **`Apache-2.0`**, the
+licence of the openEHR machine-readable artifacts they are generated from, so
+any Rust project can use them, in proprietary and hosted products included.
+They embed material derived from those artifacts (generated types carrying
+specification documentation text, codecs and a REST contract generated from
+the XSD, OpenAPI and BMM files), which is Apache-2.0 as well, and their files
+name the openEHR Foundation as a second copyright holder. `openehr-its` also
+carries the hand-written runtimes, canonical JSON entry points and
+wire-validation dispatcher the generated code cannot ship without, and it
+packages the vendored ITS-JSON schema as bytes, so its README carries that
+file's attribution (upstream repository, the exact vendored commit, and the
+licence) inside the package, where it travels with any redistribution.
 
-The three hand-written engines are under the **Business Source License 1.1**,
-the licence of the FerroEHR application (each ships its `LICENSE` with the
-parameters): `openehr-query` and `openehr-adl` declare **`BUSL-1.1`** and ship
-only their own Rust sources, the README and that text; `openehr-its` declares
-**`BUSL-1.1 AND Apache-2.0`**, because its generated codecs and REST contract
-derive from the Apache-2.0 openEHR XSD, OpenAPI and BMM artifacts and it
-packages the vendored ITS-JSON schema as bytes, so it ships both texts and its
-README carries that file's attribution (upstream repository, the exact vendored
-commit, and the licence) inside the package, where it travels with any
-redistribution. Non-production use of these three is free, production use is
-free for Non-Commercial Purposes, and any other production use, hosting for
-third parties or distribution for a fee needs a commercial licence, exactly as
-for the application.
+The three hand-written engines, `openehr-query`, `openehr-adl` and
+`openehr-sdt`, are under the **Business Source License 1.1**, the licence of
+the FerroEHR application. Each declares **`BUSL-1.1`** and ships only its own
+Rust sources, the README and its `LICENSE` with the parameters. Non-production
+use of these three is free, production use is free for Non-Commercial
+Purposes, and any other production use, hosting for third parties or
+distribution for a fee needs a commercial licence, exactly as for the
+application.
 
 `openehr-term` carries a third term, because it embeds a different kind of
 openEHR material: the official terminology XML (the five language bundles, the
@@ -172,7 +180,11 @@ travels under CC-BY-SA 3.0.
 Versions 0.0.56 and earlier were published under the MIT terms in force at the
 time (MIT AND Apache-2.0 for the crates that embed openEHR material) and keep
 them; 0.0.57 was never published; 0.0.58 and 0.0.59 are Apache-2.0 for all
-eight; from 0.0.60 the three engines are BUSL-1.1 as stated above. Published
+eight crates of that time. From 0.0.60 `openehr-query` and `openehr-adl` are
+BUSL-1.1, and `openehr-its` was published as `BUSL-1.1 AND Apache-2.0` from
+0.0.60 to 0.0.67. From 0.0.68 `openehr-its` is Apache-2.0 again, and its
+hand-written Simplified Formats, RM-instance validation and scope grammar moved
+into the new `openehr-sdt`, which starts at 0.0.68 under BUSL-1.1. Published
 versions keep the licence they were published with. The full picture, including
 the vendored material that never reaches a published package, is in
 [Licensing](licensing.md).

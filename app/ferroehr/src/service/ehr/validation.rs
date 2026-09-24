@@ -178,9 +178,9 @@ impl FerroEhrService {
     ///
     /// The template lookup goes through `web_template_for`, the
     /// template-independent passes through
-    /// `openehr_its::rm_instance::validate_rm_and_terminology` and the
+    /// `openehr_sdt::rm_instance::validate_rm_and_terminology` and the
     /// archetype-conformance pass through
-    /// `openehr_its::flat::validation::validate_archetype_conformance*`.
+    /// `openehr_sdt::flat::validation::validate_archetype_conformance*`.
     ///
     /// # Errors
     /// [`ServiceError::ValidationFailed`] carrying every RM/terminology/
@@ -199,12 +199,12 @@ impl FerroEhrService {
         let hand_off = exceeds_node_count(composition, VALIDATION_HANDOFF_NODES);
         let mut messages = run_validation_pass(hand_off, || {
             if incomplete {
-                openehr_its::rm_instance::validate_rm_and_terminology_incomplete_as(
+                openehr_sdt::rm_instance::validate_rm_and_terminology_incomplete_as(
                     composition,
                     "COMPOSITION",
                 )
             } else {
-                openehr_its::rm_instance::validate_rm_and_terminology(composition)
+                openehr_sdt::rm_instance::validate_rm_and_terminology(composition)
             }
         });
         let rm_terminology_failures = messages.len();
@@ -217,12 +217,12 @@ impl FerroEhrService {
             let wt = self.web_template_for(template_id).await?;
             messages.extend(run_validation_pass(hand_off, || {
                 if incomplete {
-                    openehr_its::flat::validation::validate_archetype_conformance_incomplete(
+                    openehr_sdt::flat::validation::validate_archetype_conformance_incomplete(
                         composition,
                         &wt,
                     )
                 } else {
-                    openehr_its::flat::validation::validate_archetype_conformance(composition, &wt)
+                    openehr_sdt::flat::validation::validate_archetype_conformance(composition, &wt)
                 }
             }));
             template_failures = messages.len() - rm_terminology_failures;
@@ -390,9 +390,9 @@ pub(in crate::service) fn validate_rm_invariants_for_commit(
     incomplete: bool,
 ) -> Result<(), ServiceError> {
     let messages = if incomplete {
-        openehr_its::rm_instance::validate_rm_and_terminology_incomplete_as(data, declared)
+        openehr_sdt::rm_instance::validate_rm_and_terminology_incomplete_as(data, declared)
     } else {
-        openehr_its::rm_instance::validate_rm_and_terminology_as(data, declared)
+        openehr_sdt::rm_instance::validate_rm_and_terminology_as(data, declared)
     };
     if messages.is_empty() {
         return Ok(());

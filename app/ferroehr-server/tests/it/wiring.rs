@@ -204,19 +204,19 @@ fn shipped_default_config() -> ferroehr::config::FerroEhrConfig {
         .expect("the shipped template assembles")
 }
 
-/// The [`WebTemplate`](openehr_its::flat::webtemplate::model::WebTemplate) of
+/// The [`WebTemplate`](openehr_sdt::flat::webtemplate::model::WebTemplate) of
 /// the operational template the browser journey battery seeds.
 ///
 /// The real generator is driven off this rather than a literal body: a
 /// hand-written composition would drift away from what
 /// `GET /definition/template/adl1.4/{id}/example` actually hands out, which is
 /// the loop that has to hold.
-fn seed_web_template() -> openehr_its::flat::webtemplate::model::WebTemplate {
+fn seed_web_template() -> openehr_sdt::flat::webtemplate::model::WebTemplate {
     let opt = std::path::PathBuf::from(env!("CARGO_MANIFEST_DIR"))
         .join("../ferroehr-viewer/tests/fixtures/minimal_evaluation.opt");
     let xml = std::fs::read_to_string(&opt).expect("the seed operational template reads");
     let parsed = openehr_its::opt14::from_xml(&xml).expect("the seed OPT parses");
-    openehr_its::flat::webtemplate::builder::build_web_template(&parsed)
+    openehr_sdt::flat::webtemplate::builder::build_web_template(&parsed)
         .expect("the seed OPT builds a WebTemplate")
 }
 
@@ -243,15 +243,15 @@ fn the_shipped_privacy_default_accepts_this_servers_own_example_composition() {
     for (label, level) in [
         (
             "required",
-            openehr_its::flat::example::DetailLevel::Required,
+            openehr_sdt::flat::example::DetailLevel::Required,
         ),
-        ("medium", openehr_its::flat::example::DetailLevel::Medium),
+        ("medium", openehr_sdt::flat::example::DetailLevel::Medium),
         (
             "complete",
-            openehr_its::flat::example::DetailLevel::Complete,
+            openehr_sdt::flat::example::DetailLevel::Complete,
         ),
     ] {
-        let example = openehr_its::flat::example::example_composition(&wt, level);
+        let example = openehr_sdt::flat::example::example_composition(&wt, level);
         let findings = policy.findings("COMPOSITION", &example);
         assert!(
             findings.is_empty(),

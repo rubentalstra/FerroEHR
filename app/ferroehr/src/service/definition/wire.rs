@@ -19,7 +19,7 @@
 use regex::Regex;
 use serde_json::Value;
 
-use openehr_its::flat::example::{DetailLevel, ExampleType};
+use openehr_sdt::flat::example::{DetailLevel, ExampleType};
 
 use crate::service::FerroEhrService;
 use crate::service::definition::types::{Adl2Template, TemplateListFilter};

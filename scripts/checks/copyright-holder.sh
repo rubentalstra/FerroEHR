@@ -85,7 +85,7 @@ check_count "website/book/src/licensing.md" website/book/src/licensing.md 2
 # The three hand-written engine crates carry the BUSL paragraph by hand, and a
 # crate README ships inside the published package.
 for crate_readme in crates/openehr-adl/README.md crates/openehr-query/README.md \
-  crates/openehr-its/README.md; do
+  crates/openehr-sdt/README.md; do
   check_count "$crate_readme" "$crate_readme" 1
 done
 

@@ -1,6 +1,6 @@
 // SPDX-FileCopyrightText: Vernum Projecten B.V.
 // SPDX-FileCopyrightText: openEHR Foundation
-// SPDX-License-Identifier: BUSL-1.1 AND Apache-2.0
+// SPDX-License-Identifier: Apache-2.0
 
 //! Sanity + wiring for the vendored ITS material: the EHRbase canonical-JSON
 //! corpus (`tests/vendor/`) and the ITS-JSON schema (`schemas/`).

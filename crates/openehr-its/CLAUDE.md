@@ -1,7 +1,12 @@
-# `openehr-its` — canonical JSON/XML + the ITS-REST contract + Simplified Formats (MIXED)
+# `openehr-its` — canonical JSON/XML + the ITS-REST contract + the archetype XML codecs (MIXED)
 
-Four ITS surfaces in one crate, with a strict generated/hand-written split.
-Know which half you are touching before editing anything.
+The ITS wire layer, with a strict generated/hand-written split. Know which
+part you are touching before editing anything. Licence `Apache-2.0` (holders
+Vernum Projecten B.V. and openEHR Foundation): the hand-written runtimes, entry
+points and wire-validation dispatcher are here because the generated code
+cannot ship without them. The hand-written Simplified Formats, RM-instance
+validation and SMART scope grammar are `openehr-sdt`, which builds on this
+crate (never the reverse).
 
 **ITS-BMM is deliberately NOT here.** The vendored BMM meta-model that drives
 code generation lives at `tools/openehr-codegen/vendor/bmm/` (read by the
@@ -17,20 +22,17 @@ surface is API nobody can use.
 | `src/json_codec/generated/structural.rs` (the `_type` → decode dispatch + the declared-key table) | **GENERATED** (`emit-json`, from BMM) | edit the emitter, regenerate |
 | `src/rest/generated/` (ITS-REST DTOs, server traits, routes) | **GENERATED** (`emit-rest`, from the vendored OAS) | edit the emitter, regenerate |
 | `xml/runtime.rs`, `rest/runtime.rs`, `json` + `wire_validate` entry points, validation, fidelity gates | hand-written | edit normally, with spec citations |
-| `src/flat/` — Simplified Formats (FLAT / STRUCTURED / Web Template / TDD) | hand-written (BMM has no simplified-format model) | edit normally, with spec citations |
-| `src/rest/smart_scopes.rs` — the SMART on openEHR scope grammar (master08 resource scopes + master07/09 launch contexts) | hand-written (an ITS-REST sub-spec with no machine-readable model) | edit normally, with spec citations — the ONE grammar the CDR's scope gate AND scope-previewing REST clients (the viewer) parse with |
 
 **Features (`default = ["full"]` = everything, so consumers are unaffected).**
-The graph underneath is layered: `json` → `xml` → `opt14` → `flat` are the
-openEHR content surfaces and are all wasm-safe; `cache` (`moka`),
-`schema-validation` (`jsonschema` + the embedded RM schema) and `rest-server`
-(the generated contract + `axum`) sit outside that chain. A browser consumer
-takes `default-features = false, features = ["flat"]`, and CI clippies exactly
-that on `wasm32-unknown-unknown`. Two rules when adding surface: put a new
-dependency in the layer that uses it (never in `json`, which every layer
-inherits), and keep the `rest::smart_scopes` island dependency-free —
-`default-features = false` alone must still compile it, so nothing under it may
-reach for serde, axum, a spec crate, or any other dep.
+The graph underneath is layered: `json` → `xml` → `opt14` are the openEHR
+content surfaces and are all wasm-safe; `schema-validation` (`jsonschema` + the
+embedded RM schema) and `rest-server` (the generated contract + `axum`) sit
+outside that chain. A browser consumer takes
+`default-features = false, features = ["opt14"]`, and CI clippies that
+selection on `wasm32-unknown-unknown`. There is no dependency-free island:
+`default-features = false` alone compiles an empty crate. When adding surface,
+put a new dependency in the layer that uses it (never in `json`, which every
+layer inherits).
 
 **Canonical JSON is EMITTED `serde` impls on the spec types themselves, and
 they do NOT live in this crate.** `serde::Serialize`/`Deserialize` and the spec
@@ -59,10 +61,10 @@ at once, so the codec is the structural-conformance authority for EVERY emitted
 class (a defective node of a class with no invariant is refused too). It only
 ROUTES: every value-level decision (the fast path, the typed table, the
 invariant cores, the mandatory-container bounds, the JSON-level per-node checks,
-the terminology binding table) is defined in `openehr_rm::validate`. The template-independent whole-instance passes live in
-`rm_instance` (`validate_rm_and_terminology{,_as}`, the composed
-`validate_composition`); `flat::validation` holds ONLY the template-driven
-archetype-conformance pass. Proven by
+the terminology binding table) is defined in `openehr_rm::validate`. The
+template-independent whole-instance passes (`rm_instance`) and the
+template-driven `flat::validation` pass live in `openehr-sdt`;
+`wire_validate` stays here. Proven by
 `tests/it/json_codec_parity.rs` (byte hazards + reader tolerance) +
 `tests/it/canonical_contract.rs` (the R0 determinism manifest).
 
@@ -122,45 +124,7 @@ archetype-conformance pass. Proven by
   per Template.xsd; a missing mandatory `DV_PROPORTION.type` per BaseTypes.xsd)
   — each pinned as an EXPECTED rejection with its citation; a fixture that
   starts parsing must be re-adjudicated, never silently dropped.
-
-## The `flat` module — Simplified Formats (`openehr_its::flat`, hand-written)
-
-FLAT + STRUCTURED data instances, the Web Template model, and the
-TDD → COMPOSITION converter (`flat::tdd::from_tdd`, corpus-verified). This is
-the ITS-REST **Formats** sub-specification (STABLE) living beside the other
-ITS surfaces; it is hand-written because the BMM has no simplified-format
-model.
-
-- **The wire oracle is the ITS-REST Simplified Formats specification**
-  (`docs/specs/openehr/ITS-REST/docs/simplified_formats/`, STABLE):
-  `master04` (field identifiers, node-id algorithm, level removal, `|raw`,
-  `|other`, FLAT⇄STRUCTURED algorithms), `master05` (per-RM-type mapping
-  tables), `master06` (the `ctx/` vocabulary). SM SIM-B / SDF are
-  DEVELOPMENT-state model documents — never implement their terse string
-  encodings; SDT carries upstream `spec_status: RETIRED` and is never
-  implemented. No vendor implementation is an oracle.
-- **Architecture: one internal tree** (`flat::sim::SimNode`) — FLAT
-  (`flat::sim::flat`) and STRUCTURED (`flat::sim::structured`) are pure codecs
-  over it; the template-driven RM conversion is written once (`flat::flatten`
-  RM→sim, `flat::build` sim→RM, entry points in `flat::convert`). Datum codecs
-  from the `master05` tables live in `flat::map`; the `ctx/` vocabulary in
-  `flat::ctx`; the Web Template model/builder in `flat::webtemplate` (node ids
-  per `master04 §Node ID Generation Rules`; the document shape serves
-  `application/openehr.wt+json`).
-- Path/key encoding (`a/b:0/c|unit`) is load-bearing wire surface — no
-  ad-hoc changes; every accepted/emitted form needs a spec citation and a
-  round-trip test. Spec-example JSON blocks are the primary test vectors;
-  the OPT corpus is regression.
-- Consumes `openehr-rm`/`openehr-am` types directly (canonical JSON with
-  `_type` tagging); never re-models the RM. Carries the crate's ITS 1.1.0
-  spec version (the Simplified Formats spec is part of ITS-REST 1.1.0; no
-  separate pin).
-- Fidelity gates for it live in the crate's `tests/` — never weaken or skip
-  one. Two complementary ones: `spec_vectors.rs` replays every
-  `simplified_formats` example block for **syntax** + FLAT⇄STRUCTURED
-  stability, and `master05_tables.rs` is the **semantic** battery — one test
-  per `master05` section, one assertion per mapping-table row (Flat Path +
-  Flat type against a minimal RM value through `composition_to_flat`), with
-  every row the implementation relocates or does not emit recorded explicitly
-  rather than skipped. Plus the `insta` goldens and the OPT-corpus
-  round-trips. A new/changed `master05` row lands with its battery row.
+- The shared canonical-JSON corpus `tests/vendor/openehr_sdk` and the
+  `tests/fixtures/{sdk,twins,repeated_member}` fixtures are also read by
+  `openehr-sdt`'s tests, at `../openehr-its/tests/…`. Moving or renaming one
+  moves those paths too.

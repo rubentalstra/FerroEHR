@@ -59,34 +59,29 @@ path = [
   "crates/openehr-am/**",
   "crates/openehr-lang/**",
   "crates/openehr-term/**",
+  "crates/openehr-its/**",
 ]
 precedence = "closest"
 SPDX-FileCopyrightText = ["Vernum Projecten B.V.", "openEHR Foundation"]
 SPDX-License-Identifier = "Apache-2.0"
 
 # ── The three hand-written spec engines: BUSL-1.1 ──────────────────────────
-# Owner decision 2026-09-04: the ADL engine, the AQL parser and the ITS codec
-# crate are the project's own engineering and carry the Business Source
-# License like the application (the parameters are in each crate's LICENSE).
-# The two engines that embed no openEHR material have one holder.
+# Owner decisions 2026-09-04 and 2026-09-24 (#3482): the ADL engine, the AQL
+# parser and the Simplified Data Template engine are the project's own
+# engineering and carry the Business Source License like the application (the
+# parameters are in each crate's LICENSE). None of them embeds openEHR
+# material, so each has one holder. openehr-its, the ITS wire layer generated
+# from the Apache-2.0 XSD/OpenAPI/BMM artifacts with the ITS-JSON schema
+# embedded, is Apache-2.0 with the generated model crates above.
 [[annotations]]
 path = [
   "crates/openehr-query/**",
   "crates/openehr-adl/**",
+  "crates/openehr-sdt/**",
 ]
 precedence = "closest"
 SPDX-FileCopyrightText = "Vernum Projecten B.V."
 SPDX-License-Identifier = "BUSL-1.1"
-
-# openehr-its derives its generated codecs and REST contract from the openEHR
-# XSD/OpenAPI/BMM artifacts and embeds the ITS-JSON schema, all Apache-2.0, so
-# its files carry both positions: the project's BUSL-1.1 and the openEHR
-# Foundation's Apache-2.0.
-[[annotations]]
-path = "crates/openehr-its/**"
-precedence = "closest"
-SPDX-FileCopyrightText = ["Vernum Projecten B.V.", "openEHR Foundation"]
-SPDX-License-Identifier = "BUSL-1.1 AND Apache-2.0"
 
 # ── openEHR machine-readable artifacts — Apache-2.0 ─────────────────────────
 # The BMM meta-models, XML Schemas, OpenAPI documents, JSON Schemas and ANTLR
@@ -148,6 +143,7 @@ SPDX-License-Identifier = "AGPL-3.0-only"
 path = [
   "crates/openehr-its/tests/vendor/**",
   "crates/openehr-its/tests/fixtures/**",
+  "crates/openehr-sdt/tests/fixtures/**",
   "crates/openehr-lang/tests/vendor/**",
   "crates/openehr-adl/tests/corpus/rm/**",
 ]
@@ -160,7 +156,7 @@ SPDX-License-Identifier = "Apache-2.0"
 # that licence and both copyright holders. Its own PROVENANCE.md records the
 # upstream commit and every edit.
 [[annotations]]
-path = "crates/openehr-its/tests/fixtures/named_event/**"
+path = "crates/openehr-sdt/tests/fixtures/named_event/**"
 precedence = "override"
 SPDX-FileCopyrightText = ["openEHR Foundation", "Vernum Projecten B.V."]
 SPDX-License-Identifier = "CC-BY-SA-3.0"

@@ -8,7 +8,7 @@ metadata:
 Confirmed 2026-08-01 (red row
 `I_EHR_COMPOSITION.create_composition-setting_invalid`, 201 instead of 422).
 
-**Mechanism.** `crates/openehr-its/src/flat/validation/terminology.rs:38`
+**Mechanism.** `crates/openehr-sdt/src/flat/validation/terminology.rs:38`
 (`obj.get("_type")…unwrap_or("")` → `slots_for("")` = empty) and
 `crates/openehr-its/src/rm_validate.rs:147`/`164` (`let Some(ty) = value.get("_type")
 … else { return }`) both key on the **wire tag**. Canonical JSON only requires

@@ -35,7 +35,7 @@ Distributed]).
 - **The §Incomplete Content relaxation stops at the archetype layer.**
   `service/ehr/validation.rs:119` runs `validate_rm_and_terminology`
   UNCONDITIONALLY, and that reaches
-  `crates/openehr-its/src/rm_instance/mod.rs:250 check_mandatory_containers`,
+  `crates/openehr-sdt/src/rm_instance/mod.rs:250 check_mandatory_containers`,
   which 422s an absent OR present-but-empty mandatory container — exactly what
   the §Incomplete Content NOTE says a 553 commit must tolerate ("container
   attributes may be empty, even though they may have minimum … cardinality …

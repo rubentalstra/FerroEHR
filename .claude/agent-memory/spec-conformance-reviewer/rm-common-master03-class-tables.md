@@ -44,7 +44,7 @@ structural conformance and nested `Links_valid` are ALL unenforced.
 `is_archetype_root()` has no defining formula in the class table (Meaning
 only), so `is_archetype_root xor archetype_details = Void` reads as
 `X xor not X` under the reference-object-model derivation. The adjudication
-lives as a `// NOTE:` at `crates/openehr-its/src/flat/validation/mod.rs:750`
+lives as a `// NOTE:` at `crates/openehr-sdt/src/flat/validation/mod.rs:750`
 and leans partly on stalled CNF data sets — not in
 Veredictum's `artifacts/registers/ambiguities.yaml`.
 

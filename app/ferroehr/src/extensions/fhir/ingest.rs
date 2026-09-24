@@ -681,7 +681,7 @@ impl FerroEhrService {
         let flat = ferroehr_ext::fhir::mapping::build_flat(&a_resource, &def, &translations)
             .map_err(|e| SmError::precondition(e.to_string()).with_source(e))?;
         let now = ferroehr_ext::fhir::feeder_audit::now_iso();
-        let mut composition = openehr_its::flat::convert::composition_from_flat(&flat, &wt, &now)
+        let mut composition = openehr_sdt::flat::convert::composition_from_flat(&flat, &wt, &now)
             .map_err(|e| {
             SmError::new(
                 CallStatusType::ContentInvalid,
@@ -829,10 +829,10 @@ impl FerroEhrService {
         resource_type: &str,
         a_resource: &Value,
         flat: &serde_json::Map<String, Value>,
-        wt: &openehr_its::flat::webtemplate::model::WebTemplate,
+        wt: &openehr_sdt::flat::webtemplate::model::WebTemplate,
         now: &str,
     ) -> Result<Option<String>, SmError> {
-        let mut composition = match openehr_its::flat::convert::composition_from_flat(flat, wt, now)
+        let mut composition = match openehr_sdt::flat::convert::composition_from_flat(flat, wt, now)
         {
             Ok(c) => c,
             Err(e) => {

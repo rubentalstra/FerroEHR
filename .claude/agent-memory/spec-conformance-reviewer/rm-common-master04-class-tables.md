@@ -43,7 +43,7 @@ re-walk it.
   (`crates/openehr-its/vendor/rest-oas/ehr-codegen.openapi.yaml`), so a coded
   description IS expressible.
 - **FLAT ctx fabricates `function: {"_type":"DV_TEXT","value":""}`**
-  (`crates/openehr-its/src/flat/ctx.rs:346-349`,
+  (`crates/openehr-sdt/src/flat/ctx.rs:346-349`,
   `function.unwrap_or("")`) when `ctx/participation_name`/`_id`/`_identifiers`
   is given without `ctx/participation_function`. Violates
   `DV_TEXT.Valid_value` (`not value.is_empty`); fails loud as a misattributed
@@ -79,7 +79,7 @@ re-walk it.
 **#1623 (`PARTY_IDENTIFIED.Identifiers_valid` Unrealized) is a CHOICE, not an
 impossibility:** the wire-boundary venue already realizes the identical
 present-but-empty rule for 10 class/attribute pairs
-(`crates/openehr-its/src/flat/validation/mod.rs:872-907` RULES table) and
+(`crates/openehr-sdt/src/flat/validation/mod.rs:872-907` RULES table) and
 `versioning/audit.rs:483` already reads the raw `identifiers` array. The class
 table lists it as a coequal peer of `Name_valid`.
 

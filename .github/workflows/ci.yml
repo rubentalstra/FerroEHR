@@ -1189,23 +1189,24 @@ jobs:
       - run: cargo clippy --locked -p ferroehr-server --no-default-features --features events --all-targets -- -D warnings
       - run: cargo clippy --locked -p ferroehr-server --no-default-features --features fhir --all-targets -- -D warnings
 
-  # ── openehr-its on wasm32: the browser-consumer feature selection ──────────
+  # ── openehr-its + openehr-sdt on wasm32: the browser-consumer selection ────
   # `openehr-its` publishes a feature graph whose openEHR content layers
-  # (`json` → `xml` → `opt14` → `flat`) are meant to compile for a browser
-  # client, while `cache` (moka), `schema-validation` (jsonschema) and
-  # `rest-server` (axum) deliberately do not. Nothing else in CI compiles that
-  # selection: the clippy job runs --all-features, and the viewer's wasm lane
-  # takes the crate with default-features = false, which reaches only the
-  # dependency-free `rest::smart_scopes` island. So the property was claimed by
-  # the manifest and checked by no lane at all.
+  # (`json` → `xml` → `opt14`) are meant to compile for a browser client, while
+  # `schema-validation` (jsonschema) and `rest-server` (axum) deliberately do
+  # not; `openehr-sdt` adds the Simplified Formats (`flat`) on top and keeps
+  # the dependency-free `smart_scopes` island under `default-features = false`.
+  # Nothing else in CI compiles those selections: the clippy job runs
+  # --all-features, and the viewer's wasm lane takes the crates with
+  # default-features = false, which reaches only the scope-grammar island. So
+  # the property was claimed by the manifests and checked by no lane at all.
   #
-  # Library target only, no --all-targets: the crate's dev-dependencies
+  # Library target only, no --all-targets: the crates' dev-dependencies
   # (testkit -> sqlx, tokio -> mio) are native by construction and cannot build
   # for wasm32-unknown-unknown. The features are spelled out rather than left to
-  # `flat`'s implication chain, so a change to that chain cannot silently narrow
-  # what this lane covers.
+  # the implication chains, so a change to a chain cannot silently narrow what
+  # this lane covers.
   its-wasm:
-    name: clippy (openehr-its on wasm32)
+    name: clippy (openehr-its + openehr-sdt on wasm32)
     needs: changes
     # The feature selection IS the test, and it is declared here (#2373).
     if: needs.changes.outputs.code == 'true' || needs.changes.outputs.workflows == 'true'
@@ -1225,10 +1226,11 @@ jobs:
           components: clippy
           target: wasm32-unknown-unknown
           cache-save-if: ${{ github.ref == 'refs/heads/main' }}
-      - run: cargo clippy --locked -p openehr-its --target wasm32-unknown-unknown --no-default-features --features flat,opt14,xml,json -- -D warnings
+      - run: cargo clippy --locked -p openehr-its --target wasm32-unknown-unknown --no-default-features --features opt14,xml,json -- -D warnings
+      - run: cargo clippy --locked -p openehr-sdt --target wasm32-unknown-unknown --no-default-features --features flat -- -D warnings
       # The island the manifest promises a scope-parsing client: no feature, no
       # dependency, and it must still compile for the browser on its own.
-      - run: cargo clippy --locked -p openehr-its --target wasm32-unknown-unknown --no-default-features -- -D warnings
+      - run: cargo clippy --locked -p openehr-sdt --target wasm32-unknown-unknown --no-default-features -- -D warnings
 
   # ── Rustdoc: intra-doc links + doc lints are inert unless rustdoc runs ──────
   # [workspace.lints.rustdoc] levels apply to every `cargo doc`; the -D
@@ -2137,22 +2139,22 @@ jobs:
           old=$(git show "$BASE:crates/openehr-base/Cargo.toml" | grep -m1 '^version = ')
           new=$(git show "$HEAD:crates/openehr-base/Cargo.toml" | grep -m1 '^version = ')
           if [ "$old" = "$new" ]; then
-            echo "::error::This PR changes packaged content of the published crates/* members but does not bump the lockstep 0.0.x crate version (bump all eight 'version' fields + the internal version requirements — .claude/rules/crates-publishing.md), and does not carry the 'no-crate-bump' label." >&2
+            echo "::error::This PR changes packaged content of the published crates/* members but does not bump the lockstep 0.0.x crate version (bump all nine 'version' fields + the internal version requirements — .claude/rules/crates-publishing.md), and does not carry the 'no-crate-bump' label." >&2
             exit 1
           fi
-          # Lockstep: all eight crates carry ONE version, and every internal
+          # Lockstep: all nine crates carry ONE version, and every internal
           # dependency requirement names exactly that version.
           #
           # fuzz/ is its OWN workspace (never a root member), so its lock records
-          # the eight by path dependency and goes stale silently when the bump
+          # the nine by path dependency and goes stale silently when the bump
           # lands — the fuzz lane then builds against manifests the lock
           # contradicts, and `--locked` there means nothing (issue #2762).
           ver=$(echo "$new" | sed -E 's/version = "([^"]+)".*/\1/')
           fuzz_lock=$(git show "$HEAD:fuzz/Cargo.lock")
-          for c in base rm am adl term lang query its; do
+          for c in base rm am adl term lang query its sdt; do
             v=$(git show "$HEAD:crates/openehr-$c/Cargo.toml" | grep -m1 '^version = ' | sed -E 's/version = "([^"]+)".*/\1/')
             if [ "$v" != "$ver" ]; then
-              echo "::error::crates/openehr-$c is at $v but the lockstep version is $ver — bump all eight together." >&2
+              echo "::error::crates/openehr-$c is at $v but the lockstep version is $ver — bump all nine together." >&2
               exit 1
             fi
             locked=$(awk -v n="\"openehr-$c\"" '$1 == "name" && $3 == n { hit = 1; next } hit && $1 == "version" { gsub(/"/, "", $3); print $3; exit }' <<< "$fuzz_lock")

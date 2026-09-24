@@ -68,11 +68,11 @@ if [ -n "$old_ver" ] && [ "$old_ver" = "$new_ver" ]; then
   exit 2
 fi
 
-# fuzz/ is its own workspace, so its lock records the eight by path dependency
+# fuzz/ is its own workspace, so its lock records the nine by path dependency
 # and goes stale silently when the bump lands — the fuzz lane then builds
 # against manifests the lock contradicts.
 ver="$(printf '%s' "$new_ver" | sed -E 's/version = "([^"]+)".*/\1/')"
-for c in base rm am adl term lang query its; do
+for c in base rm am adl term lang query its sdt; do
   locked="$(awk -v n="\"openehr-$c\"" '$1 == "name" && $3 == n { hit = 1; next } hit && $1 == "version" { gsub(/"/, "", $3); print $3; exit }' fuzz/Cargo.lock 2>/dev/null || true)"
   if [ "$locked" != "$ver" ]; then
     echo "BLOCKED: fuzz/Cargo.lock records openehr-$c ${locked:-nothing} but the lockstep crate version is $ver. Refresh it with 'cargo update --manifest-path fuzz/Cargo.toml --workspace' and commit the lock in this branch." >&2

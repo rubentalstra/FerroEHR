@@ -22,6 +22,7 @@ serde_json = { version = "1", features = ["preserve_order"] }
 openehr-adl = { path = "../crates/openehr-adl" }
 openehr-base = { path = "../crates/openehr-base" }
 openehr-its = { path = "../crates/openehr-its" }
+openehr-sdt = { path = "../crates/openehr-sdt" }
 openehr-query = { path = "../crates/openehr-query" }
 openehr-rm = { path = "../crates/openehr-rm" }
 

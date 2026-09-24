@@ -123,7 +123,7 @@ pub async fn fetch_adl2_json(
 /// AOM2
 /// [`OperationalTemplate`](openehr_am::v2_4::aom2::archetype::operational_template::OperationalTemplate)
 /// — the exact type the CDR serialized — then
-/// [`openehr_its::flat::webtemplate::builder_v2_4::build_web_template_v2_4`]
+/// [`openehr_sdt::flat::webtemplate::builder_v2_4::build_web_template_v2_4`]
 /// produces the Web Template and [`crate::builder::catalog::from_web_template`]
 /// the slim tree the views render. Both stages are named in the error.
 /// # Errors
@@ -135,7 +135,7 @@ pub fn adl2_catalog_from_json(json: &str) -> Result<CatalogNode, ViewerError> {
         openehr_am::v2_4::aom2::archetype::operational_template::OperationalTemplate,
     >(json)
     .map_err(|e| ViewerError::Internal(format!("OperationalTemplateV2 parse: {e}")))?;
-    let web_template = openehr_its::flat::webtemplate::builder_v2_4::build_web_template_v2_4(&opt)
+    let web_template = openehr_sdt::flat::webtemplate::builder_v2_4::build_web_template_v2_4(&opt)
         .map_err(|e| ViewerError::Internal(format!("WebTemplate build: {e}")))?;
     Ok(crate::builder::catalog::from_web_template(&web_template))
 }

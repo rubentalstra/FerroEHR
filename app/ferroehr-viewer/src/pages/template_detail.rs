@@ -10,7 +10,7 @@
 //! example composition, switchable by representation, detail level and example
 //! form). No openEHR spec governs the viewer — our own design / product
 //! extension; the `WebTemplate` shape it renders
-//! is `openehr_its::flat`'s (built from the CDR's OPT), per the ITS-REST
+//! is `openehr_sdt::flat`'s (built from the CDR's OPT), per the ITS-REST
 //! Simplified Formats spec (`master04`).
 //!
 //! The WT catalog, the OPT source pane and the identity card are three views
@@ -75,7 +75,7 @@ pub struct TemplateDetail {
 ///
 /// The XML is parsed with [`openehr_its::opt14::from_xml`] — the OPT 1.4
 /// canonical-XML parse entry (root `<template>` = `OPERATIONAL_TEMPLATE`) —
-/// then [`openehr_its::flat::webtemplate::builder::build_web_template`]
+/// then [`openehr_sdt::flat::webtemplate::builder::build_web_template`]
 /// produces the Web Template, and
 /// [`crate::builder::catalog::from_web_template`] the slim serializable tree.
 ///
@@ -86,7 +86,7 @@ pub struct TemplateDetail {
 pub fn template_detail_from_opt(source: String) -> Result<TemplateDetail, ViewerError> {
     let opt = openehr_its::opt14::from_xml(&source)
         .map_err(|e| ViewerError::Internal(format!("OPT 1.4 parse: {e}")))?;
-    let web_template = openehr_its::flat::webtemplate::builder::build_web_template(&opt)
+    let web_template = openehr_sdt::flat::webtemplate::builder::build_web_template(&opt)
         .map_err(|e| ViewerError::Internal(format!("WebTemplate build: {e}")))?;
     Ok(TemplateDetail {
         meta: TemplateMeta {

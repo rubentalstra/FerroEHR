@@ -50,7 +50,7 @@ const WT_MIME: &str = "application/openehr.wt+json";
 
 fn opt_xml() -> String {
     let path = PathBuf::from(env!("CARGO_MANIFEST_DIR"))
-        .join("../../crates/openehr-its/tests/fixtures/better/Demo Vitals.opt");
+        .join("../../crates/openehr-sdt/tests/fixtures/better/Demo Vitals.opt");
     std::fs::read_to_string(path).expect("Demo Vitals.opt vendored in openehr-its")
 }
 

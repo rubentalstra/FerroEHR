@@ -36,12 +36,12 @@ use openehr_am::v2_4::aom2::archetype::archetype::Archetype;
 use openehr_am::v2_4::aom2::archetype::authored_archetype::AuthoredArchetype;
 use openehr_am::v2_4::aom2::archetype::operational_template::OperationalTemplate;
 use openehr_base::validate::InvariantViolation;
-use openehr_its::flat::example::{DetailLevel, ExampleType, apply_output_uid, example_composition};
-use openehr_its::flat::webtemplate::builder_v2_4::build_web_template_v2_4;
+use openehr_sdt::flat::example::{DetailLevel, ExampleType, apply_output_uid, example_composition};
+use openehr_sdt::flat::webtemplate::builder_v2_4::build_web_template_v2_4;
 
 use crate::service::definition::binding_uri::code_system_and_code;
 use crate::service::terminology::fhir::TermExistence;
-use openehr_its::flat::webtemplate::model::WebTemplate;
+use openehr_sdt::flat::webtemplate::model::WebTemplate;
 use serde_json::Value;
 use sqlx::Row;
 
@@ -585,13 +585,13 @@ impl FerroEhrService {
     /// The stored source is resolved (`template_id` → HRID), parsed, compiled to
     /// its operational template (`create_opt`), turned into a `WebTemplate` by
     /// the `v2_4` front end
-    /// ([`openehr_its::flat::webtemplate::builder_v2_4::build_web_template_v2_4`]),
+    /// ([`openehr_sdt::flat::webtemplate::builder_v2_4::build_web_template_v2_4`]),
     /// and walked into a canonical example COMPOSITION at the requested
     /// [`DetailLevel`] by the same generator the ADL 1.4 example endpoint uses.
     /// The `output` form ([`ExampleType::Output`]) carries a deterministic `uid`.
     /// Example generation is not spec-mandated; a generated example is validated
     /// by the template-independent RM-invariant and terminology pass
-    /// ([`openehr_its::rm_instance::validate_rm_and_terminology`]).
+    /// ([`openehr_sdt::rm_instance::validate_rm_and_terminology`]).
     ///
     /// # Errors
     ///

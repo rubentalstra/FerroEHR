@@ -18,7 +18,7 @@
 //!   recursive top-down data-conformance function
 //!   (`AM/docs/AOM1.4/master04-constraint_model_package.adoc` §`Valid_value`)
 //!   runs at commit time over the compacted `WebTemplate`, lives in
-//!   `openehr_its::flat`, and is invoked from the EHR commit choke point
+//!   `openehr_sdt::flat`, and is invoked from the EHR commit choke point
 //!   `service::ehr::composition_validate`.
 //! - Surface C, per-kind RM structural validators (a seam, not here): the
 //!   RM-invariant checks on template-less commit bodies (`EHR_STATUS`,

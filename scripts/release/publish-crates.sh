@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # SPDX-FileCopyrightText: Vernum Projecten B.V.
 # SPDX-License-Identifier: BUSL-1.1
-# The crates.io upload of the eight `openehr-*` spec crates, and its read-back,
+# The crates.io upload of the nine `openehr-*` spec crates, and its read-back,
 # as ONE implementation.
 #
 # Two workflows publish these crates — the `crates` leg of `release.yml` on a
@@ -44,10 +44,11 @@ readonly CRATES=(
   openehr-am
   openehr-query
   openehr-its
+  openehr-sdt
   openehr-adl
 )
 
-# The eight versions move in lockstep (`.claude/rules/crates-publishing.md`), so
+# The nine versions move in lockstep (`.claude/rules/crates-publishing.md`), so
 # one manifest answers for the set. The `[package]` table's own `version`, never
 # the first `version = ` line in the file: a manifest carries dependency
 # versions too.

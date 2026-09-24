@@ -21,7 +21,7 @@ to catch.
 | `canonical_json` | every REST write body | `openehr_its::json` typed reader, the negotiation wire door, the RM/terminology validators |
 | `canonical_xml` | the same writes via content negotiation, plus archetype XML | `openehr_its::xml::runtime::XmlReader`, `from_canonical_xml`, `openehr_its::aom2`/`aom2_model` |
 | `aql_query` | arbitrary query text from any authenticated caller | `openehr_query::parser::parse_str`, plus the printer's documented `parse(to_aql(ast)) == ast` invariant |
-| `simplified_formats` | FLAT / STRUCTURED composition bodies | `openehr_its::flat::sim`, `openehr_its::flat::convert` |
+| `simplified_formats` | FLAT / STRUCTURED composition bodies | `openehr_sdt::flat::sim`, `openehr_sdt::flat::convert` |
 | `adl2_source` | archetype uploads, both dialects | `openehr_adl::source::parse_source` |
 | `opt14_template` | operational-template uploads | `openehr_its::opt14::from_xml`, then `build_web_template` |
 | `identifiers` | the `{version_uid}` PATH parameter, reached before any body, negotiation or authorization | `ObjectVersionId`/`HierObjectId`/`ArchetypeId`/`VersionTreeId` `from_str`, plus the composite's recomposition contract |

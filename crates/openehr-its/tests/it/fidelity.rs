@@ -1,6 +1,6 @@
 // SPDX-FileCopyrightText: Vernum Projecten B.V.
 // SPDX-FileCopyrightText: openEHR Foundation
-// SPDX-License-Identifier: BUSL-1.1 AND Apache-2.0
+// SPDX-License-Identifier: Apache-2.0
 
 #![expect(clippy::doc_markdown, reason = "prose with spec/crate proper nouns")]
 #![expect(let_underscore_drop, reason = "test assertions/diagnostics/fixtures")]

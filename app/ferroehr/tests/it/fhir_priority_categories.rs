@@ -31,9 +31,9 @@ use std::path::PathBuf;
 
 use ferroehr_ext::fhir::mapping::{FhirMappingDefinition, MappingEntry, SubjectMapping, Transform};
 use ferroehr_ext::fhir::reverse::to_fhir;
-use openehr_its::flat::convert::composition_to_flat;
-use openehr_its::flat::webtemplate::builder::build_web_template;
 use openehr_its::opt14;
+use openehr_sdt::flat::convert::composition_to_flat;
+use openehr_sdt::flat::webtemplate::builder::build_web_template;
 use serde_json::{Map, Value};
 
 /// The FHIR element every case maps its derived leaf onto: R4
